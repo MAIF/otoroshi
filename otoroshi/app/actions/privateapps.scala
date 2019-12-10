@@ -8,13 +8,14 @@ import models.PrivateAppsUser
 import play.api.mvc._
 
 import scala.concurrent.{ExecutionContext, Future}
+import utils.RequestImplicits._
 
 case class PrivateAppsActionContext[A](request: Request[A],
                                        user: Option[PrivateAppsUser],
                                        globalConfig: models.GlobalConfig) {
   def connected: Boolean = user.isDefined
-  def from: String       = request.headers.get("X-Forwarded-For").getOrElse(request.remoteAddress)
-  def ua: String         = request.headers.get("User-Agent").getOrElse("none")
+  def from(implicit env: Env): String       = request.theIpAddress
+  def ua: String         = request.theUserAgent
 }
 
 class PrivateAppsAction(val parser: BodyParser[AnyContent])(implicit env: Env)

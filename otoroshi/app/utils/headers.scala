@@ -71,17 +71,24 @@ object HeadersHelper {
   import HeadersHelperImplicits._
 
   @inline
-  def xForwardedHeader(desc: ServiceDescriptor, request: RequestHeader): Seq[(String, String)] = {
-    if (desc.xForwardedHeaders) {
+  def xForwardedHeader(desc: ServiceDescriptor, request: RequestHeader)(implicit env: Env): Seq[(String, String)] = {
+    if (desc.xForwardedHeaders && env.trustXForwarded) {
       val xForwardedFor = request.headers
         .get("X-Forwarded-For")
         .map(v => v + ", " + request.remoteAddress)
         .getOrElse(request.remoteAddress)
       val xForwardedProto = request.theProtocol
-      val xForwardedHost  = request.headers.get("X-Forwarded-Host").getOrElse(request.host)
+      val xForwardedHost  = request.theHost
       Seq("X-Forwarded-For"   -> xForwardedFor,
           "X-Forwarded-Host"  -> xForwardedHost,
           "X-Forwarded-Proto" -> xForwardedProto)
+    } else if (desc.xForwardedHeaders && !env.trustXForwarded) {
+      val xForwardedFor = request.remoteAddress
+      val xForwardedProto = request.theProtocol
+      val xForwardedHost  = request.theHost
+      Seq("X-Forwarded-For"   -> xForwardedFor,
+        "X-Forwarded-Host"  -> xForwardedHost,
+        "X-Forwarded-Proto" -> xForwardedProto)
     } else {
       Seq.empty[(String, String)]
     }
@@ -198,7 +205,7 @@ object HeadersHelper {
         .appendAll(additionalHeaders)
         .appendAll(jwtAdditionalHeaders)
         .removeAll(jwtInjection.removeHeaders)
-        .appendAll(xForwardedHeader(descriptor, req))
+        .appendAll(xForwardedHeader(descriptor, req)(env))
     }
   }
 
@@ -488,8 +495,7 @@ object HeadersHelper {
         .getOrElse(Map.empty[String, String]) ++ jwtInjection.additionalHeaders).toSeq
         .filterNot(t => jwtInjection.removeHeaders.contains(t._1)) ++ xForwardedHeader(
         descriptor,
-        req
-      )
+        req)(env)
     }
     headersIn
   }

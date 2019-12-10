@@ -4,6 +4,7 @@ import java.util.Base64
 import java.util.concurrent.ConcurrentHashMap
 
 import akka.http.scaladsl.model.Uri
+import env.Env
 import play.api.mvc.RequestHeader
 import ssl.PemHeaders
 
@@ -21,21 +22,67 @@ object RequestImplicits {
         Try(Uri(uri).toRelative.toString()).getOrElse(uri)
       })
     }
-    def theProtocol: String = {
-      requestHeader.headers
-        .get("X-Forwarded-Proto")
-        .orElse(requestHeader.headers.get("X-Forwarded-Protocol"))
-        .map(_ == "https")
-        .orElse(Some(requestHeader.secure))
-        .map {
-          case true  => "https"
-          case false => "http"
-        }
-        .getOrElse("http")
+    @inline
+    def theDomain(implicit env: Env): String = theHost.split(':').head
+    @inline
+    def theSecured(implicit env: Env): Boolean = {
+      if (env.trustXForwarded) {
+        requestHeader.headers
+          .get("X-Forwarded-Proto")
+          .orElse(requestHeader.headers.get("X-Forwarded-Protocol"))
+          .map(_ == "https")
+          .getOrElse(requestHeader.secure)
+      } else {
+        requestHeader.secure
+      }
     }
-    def theIpAddress: String = {
-      requestHeader.headers.get("X-Forwarded-For").getOrElse(requestHeader.remoteAddress)
+    @inline
+    def theProtocol(implicit env: Env): String = {
+      if (env.trustXForwarded) {
+        requestHeader.headers
+          .get("X-Forwarded-Proto")
+          .orElse(requestHeader.headers.get("X-Forwarded-Protocol"))
+          .map(_ == "https")
+          .orElse(Some(requestHeader.secure))
+          .map {
+            case true => "https"
+            case false => "http"
+          }
+          .getOrElse("http")
+      } else {
+        if (requestHeader.secure) "https" else "http"
+      }
     }
+    @inline
+    def theWsProtocol(implicit env: Env): String = {
+      if (env.trustXForwarded) {
+        requestHeader.headers
+          .get("X-Forwarded-Proto")
+          .orElse(requestHeader.headers.get("X-Forwarded-Protocol"))
+          .map(_ == "https")
+          .orElse(Some(requestHeader.secure))
+          .map {
+            case true => "wss"
+            case false => "ws"
+          }
+          .getOrElse("ws")
+      } else {
+        if (requestHeader.secure) "wss" else "ws"
+      }
+    }
+    @inline
+    def theHost(implicit env: Env): String = {
+      requestHeader.headers.get("X-Forwarded-Host").filter(_ => env.trustXForwarded).getOrElse(requestHeader.host)
+    }
+    @inline
+    def theIpAddress(implicit env: Env): String = {
+      requestHeader.headers.get("X-Forwarded-For").filter(_ => env.trustXForwarded).getOrElse(requestHeader.remoteAddress)
+    }
+    @inline
+    def theUserAgent: String = {
+      requestHeader.headers.get("User-Agent").getOrElse("none")
+    }
+    @inline
     def clientCertChainPem: Seq[String] = {
       requestHeader.clientCertificateChain
         .map(
@@ -46,7 +93,7 @@ object RequestImplicits {
         )
         .getOrElse(Seq.empty[String])
     }
-
+    @inline
     def clientCertChainPemString: String = clientCertChainPem.mkString("\n")
   }
 }

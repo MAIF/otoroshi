@@ -102,36 +102,6 @@ class WebSocketHandler()(implicit env: Env) {
 
   def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), Charsets.UTF_8)
 
-  @inline
-  def getProtocolFor(req: RequestHeader): String = {
-    req.headers
-      .get("X-Forwarded-Proto")
-      .orElse(req.headers.get("X-Forwarded-Protocol"))
-      .map(_ == "https")
-      .orElse(Some(req.secure))
-      .map {
-        case true  => "https"
-        case false => "http"
-      }
-      .getOrElse("http")
-  }
-
-  def xForwardedHeader(desc: ServiceDescriptor, request: RequestHeader): Seq[(String, String)] = {
-    if (desc.xForwardedHeaders) {
-      val xForwardedFor = request.headers
-        .get("X-Forwarded-For")
-        .map(v => v + ", " + request.remoteAddress)
-        .getOrElse(request.remoteAddress)
-      val xForwardedProto = getProtocolFor(request)
-      val xForwardedHost  = request.headers.get("X-Forwarded-Host").getOrElse(request.host)
-      Seq("X-Forwarded-For"   -> xForwardedFor,
-          "X-Forwarded-Host"  -> xForwardedHost,
-          "X-Forwarded-Proto" -> xForwardedProto)
-    } else {
-      Seq.empty[(String, String)]
-    }
-  }
-
   def isPrivateAppsSessionValid(req: RequestHeader, desc: ServiceDescriptor): Future[Option[PrivateAppsUser]] = {
     desc.authConfigRef match {
       case Some(ref) =>
@@ -343,28 +313,6 @@ class WebSocketHandler()(implicit env: Env) {
     }
   }
 
-  @inline
-  def getWsProtocolFor(req: RequestHeader): String = {
-    req.headers
-      .get("X-Forwarded-Proto")
-      .orElse(req.headers.get("X-Forwarded-Protocol"))
-      .map(_ == "https")
-      .orElse(Some(req.secure))
-      .map {
-        case true  => "wss"
-        case false => "ws"
-      }
-      .getOrElse("ws")
-  }
-
-  @inline
-  def getSecuredFor(req: RequestHeader): Boolean = {
-    getWsProtocolFor(req) match {
-      case "ws"  => false
-      case "wss" => true
-    }
-  }
-
   def proxyWebSocket() = WebSocket.acceptOrResult[PlayWSMessage, PlayWSMessage] { req =>
     logger.trace("[WEBSOCKET] proxy ws call !!!")
 
@@ -373,10 +321,10 @@ class WebSocketHandler()(implicit env: Env) {
     val calledAt         = DateTime.now()
     val requestTimestamp = calledAt.toString("yyyy-MM-dd'T'HH:mm:ss.SSSZZ")
     val reqNumber        = reqCounter.incrementAndGet()
-    val remoteAddress    = req.headers.get("X-Forwarded-For").getOrElse(req.remoteAddress)
-    val isSecured        = getSecuredFor(req)
-    val protocol         = getWsProtocolFor(req)
-    val from             = req.headers.get("X-Forwarded-For").getOrElse(req.remoteAddress)
+    val remoteAddress    = req.theIpAddress
+    val isSecured        = req.theSecured
+    val protocol         = req.theWsProtocol
+    val from             = req.theIpAddress
     val counterIn        = new AtomicLong(0L)
     val counterOut       = new AtomicLong(0L)
     val start            = System.currentTimeMillis()
@@ -515,7 +463,7 @@ class WebSocketHandler()(implicit env: Env) {
                                   value = s"${env.sign(canaryId)}::$canaryId",
                                   maxAge = Some(2592000),
                                   path = "/",
-                                  domain = Some(req.domain),
+                                  domain = Some(req.theDomain),
                                   httpOnly = false
                                 )
                               )
@@ -526,7 +474,7 @@ class WebSocketHandler()(implicit env: Env) {
                                       value = trackingId,
                                       maxAge = Some(2592000),
                                       path = "/",
-                                      domain = Some(req.domain),
+                                      domain = Some(req.theDomain),
                                       httpOnly = false
                                     )
                                   )
@@ -821,7 +769,7 @@ class WebSocketHandler()(implicit env: Env) {
                                             `@calledAt` = calledAt,
                                             protocol = req.version,
                                             to = Location(
-                                              scheme = getWsProtocolFor(req),
+                                              scheme = req.theWsProtocol,
                                               host = req.host,
                                               uri = req.relativeUri
                                             ),
@@ -1385,7 +1333,7 @@ class WebSocketHandler()(implicit env: Env) {
                                                                     env.env,
                                                                     req,
                                                                     key,
-                                                                    descriptor)
+                                                                    descriptor, env)
                                           )
                                           Errors
                                             .craftResponseResult("Bad API key",
@@ -1543,7 +1491,7 @@ class WebSocketHandler()(implicit env: Env) {
                                                                               env.env,
                                                                               req,
                                                                               apiKey,
-                                                                              descriptor)
+                                                                              descriptor, env)
                                                     )
                                                     Errors
                                                       .craftResponseResult("Bad API key",
@@ -1609,7 +1557,7 @@ class WebSocketHandler()(implicit env: Env) {
                                                                         env.env,
                                                                         req,
                                                                         key,
-                                                                        descriptor)
+                                                                        descriptor, env)
                                               )
                                               Errors
                                                 .craftResponseResult("Bad API key",
@@ -1722,8 +1670,8 @@ class WebSocketHandler()(implicit env: Env) {
                                         .asLeft[WSFlow]
                                     } else {
                                       if (!isSecured && desc.forceHttps) {
-                                        val theDomain = req.domain
-                                        val protocol  = getWsProtocolFor(req)
+                                        val theDomain = req.theDomain
+                                        val protocol  = req.theWsProtocol
                                         logger.trace(
                                           s"redirects prod service from ${protocol}://$theDomain${req.relativeUri} to wss://$theDomain${req.relativeUri}"
                                         )

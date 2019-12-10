@@ -44,6 +44,7 @@ libraryDependencies ++= Seq(
   "com.sun.xml.bind"       % "jaxb-core"             % "2.3.0",
   "com.sun.xml.bind"       % "jaxb-impl"             % "2.3.0",
   "org.reactivemongo"      %% "reactivemongo"        % "0.13.0",
+  "com.github.blemale"     %% "scaffeine"            % "3.1.0",
   "org.scalatestplus.play" %% "scalatestplus-play"   % "3.1.2" % Test,
   "com.datastax.cassandra" % "cassandra-driver-core" % "3.7.2" classifier "shaded" excludeAll (
     ExclusionRule(organization = "io.netty"),

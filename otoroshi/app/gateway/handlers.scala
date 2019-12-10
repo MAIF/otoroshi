@@ -56,7 +56,7 @@ class ErrorHandler()(implicit env: Env) extends HttpErrorHandler {
 
   def onClientError(request: RequestHeader, statusCode: Int, mess: String) = {
     val message       = Option(mess).filterNot(_.trim.isEmpty).getOrElse("An error occurred")
-    val remoteAddress = request.headers.get("X-Forwarded-For").getOrElse(request.remoteAddress)
+    val remoteAddress = request.theIpAddress
     logger.error(
       s"Client Error: $message from ${remoteAddress} on ${request.method} ${request.theProtocol}://${request.host}${request.relativeUri} ($statusCode) - ${request.headers.toSimpleMap
         .mkString(";")}"
@@ -77,7 +77,7 @@ class ErrorHandler()(implicit env: Env) extends HttpErrorHandler {
 
   def onServerError(request: RequestHeader, exception: Throwable) = {
     // exception.printStackTrace()
-    val remoteAddress = request.headers.get("X-Forwarded-For").getOrElse(request.remoteAddress)
+    val remoteAddress = request.theIpAddress
     logger.error(
       s"Server Error ${exception.getMessage} from ${remoteAddress} on ${request.method} ${request.theProtocol}://${request.host}${request.relativeUri} - ${request.headers.toSimpleMap
         .mkString(";")}",
@@ -206,8 +206,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
         Some(globalMaintenanceMode(TypedMap.empty))
       }
     } else {
-      val isSecured    = getSecuredFor(request)
-      val protocol     = getProtocolFor(request)
+      val isSecured    = request.theSecured
+      val protocol     = request.theProtocol
       lazy val url     = ByteString(s"$protocol://${request.host}${request.relativeUri}")
       lazy val cookies = request.cookies.map(_.value).map(ByteString.apply)
       lazy val headers = request.headers.toSimpleMap.map(t => (ByteString.apply(t._1), ByteString.apply(t._2)))
@@ -599,8 +599,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
   }
 
   def redirectToHttps() = actionBuilder { req =>
-    val domain   = req.domain
-    val protocol = getProtocolFor(req)
+    val domain   = req.theDomain
+    val protocol = req.theProtocol
     logger.trace(
       s"redirectToHttps from ${protocol}://$domain${req.relativeUri} to ${env.rootScheme}$domain${req.relativeUri}"
     )
@@ -608,10 +608,10 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
   }
 
   def redirectToMainDomain() = actionBuilder { req =>
-    val domain: String = env.redirections.foldLeft(req.domain)((domain, item) => domain.replace(item, env.domain))
-    val protocol       = getProtocolFor(req)
+    val domain: String = env.redirections.foldLeft(req.theDomain)((domain, item) => domain.replace(item, env.domain))
+    val protocol       = req.theProtocol
     logger.debug(
-      s"redirectToMainDomain from $protocol://${req.domain}${req.relativeUri} to $protocol://$domain${req.relativeUri}"
+      s"redirectToMainDomain from $protocol://${req.theDomain}${req.relativeUri} to $protocol://$domain${req.relativeUri}"
     )
     Redirect(s"$protocol://$domain${req.relativeUri}")
   }
@@ -771,28 +771,6 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
     }
   }
 
-  @inline
-  def getProtocolFor(req: RequestHeader): String = {
-    req.headers
-      .get("X-Forwarded-Proto")
-      .orElse(req.headers.get("X-Forwarded-Protocol"))
-      .map(_ == "https")
-      .orElse(Some(req.secure))
-      .map {
-        case true  => "https"
-        case false => "http"
-      }
-      .getOrElse("http")
-  }
-
-  @inline
-  def getSecuredFor(req: RequestHeader): Boolean = {
-    getProtocolFor(req) match {
-      case "http"  => false
-      case "https" => true
-    }
-  }
-
   def stateRespValid(stateValue: String,
                      stateResp: Option[String],
                      jti: String,
@@ -875,14 +853,14 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
     val callDate            = DateTime.now()
     val requestTimestamp    = callDate.toString("yyyy-MM-dd'T'HH:mm:ss.SSSZZ")
     val reqNumber           = reqCounter.incrementAndGet()
-    val remoteAddress       = req.headers.get("X-Forwarded-For").getOrElse(req.remoteAddress)
-    val isSecured           = getSecuredFor(req)
-    val from                = req.headers.get("X-Forwarded-For").getOrElse(req.remoteAddress)
+    val remoteAddress       = req.theIpAddress
+    val isSecured           = req.theSecured
+    val from                = req.theIpAddress
     val counterIn           = new AtomicLong(0L)
     val counterOut          = new AtomicLong(0L)
     val start               = System.currentTimeMillis()
     val bodyAlreadyConsumed = new AtomicBoolean(false)
-    val protocol            = getProtocolFor(req)
+    val protocol            = req.theProtocol
     val attrs = utils.TypedMap.empty.put(
       otoroshi.plugins.Keys.SnowFlakeKey        -> snowflake,
       otoroshi.plugins.Keys.RequestTimestampKey -> callDate,
@@ -1070,7 +1048,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                           value = s"${env.sign(canaryId)}::$canaryId",
                                           maxAge = Some(2592000),
                                           path = "/",
-                                          domain = Some(req.domain),
+                                          domain = Some(req.theDomain),
                                           httpOnly = false
                                         )
                                       )
@@ -1081,7 +1059,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                               value = trackingId,
                                               maxAge = Some(2592000),
                                               path = "/",
-                                              domain = Some(req.domain),
+                                              domain = Some(req.theDomain),
                                               httpOnly = false
                                             )
                                           )
@@ -1360,7 +1338,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                             currentOverhead = overhead,
                                             serviceDescriptor = descriptor,
                                             target = Location(
-                                              scheme = getProtocolFor(req),
+                                              scheme = req.theProtocol,
                                               host = req.host,
                                               uri = req.relativeUri
                                             )
@@ -1417,7 +1395,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                   `@calledAt` = callDate,
                                                   protocol = req.version,
                                                   to = Location(
-                                                    scheme = getProtocolFor(req),
+                                                    scheme = req.theProtocol,
                                                     host = req.host,
                                                     uri = req.relativeUri
                                                   ),
@@ -2129,7 +2107,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                               }
                                               case Some(key)
                                                   if key.restrictions.enabled && key.restrictions
-                                                    .isNotFound(req.method, req.domain, req.relativeUri) => {
+                                                    .isNotFound(req.method, req.theDomain, req.relativeUri) => {
                                                 Errors.craftResponseResult(
                                                   "Not Found",
                                                   NotFound,
@@ -2189,7 +2167,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                                           env.env,
                                                                           req,
                                                                           key,
-                                                                          descriptor)
+                                                                          descriptor, env)
                                                 )
                                                 Errors.craftResponseResult(
                                                   "Bad API key",
@@ -2361,7 +2339,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                                                     env.env,
                                                                                     req,
                                                                                     apiKey,
-                                                                                    descriptor)
+                                                                                    descriptor, env)
                                                           )
                                                           Errors.craftResponseResult(
                                                             s"Bad API key",
@@ -2440,7 +2418,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                                               env.env,
                                                                               req,
                                                                               key,
-                                                                              descriptor)
+                                                                              descriptor, env)
                                                     )
                                                     Errors.craftResponseResult(
                                                       "Bad API key",
@@ -2613,8 +2591,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                         )
                                       } else {
                                         if (!isSecured && desc.forceHttps) {
-                                          val theDomain = req.domain
-                                          val protocol  = getProtocolFor(req)
+                                          val theDomain = req.theDomain
+                                          val protocol  = req.theProtocol
                                           logger.trace(
                                             s"redirects prod service from ${protocol}://$theDomain${req.relativeUri} to https://$theDomain${req.relativeUri}"
                                           )

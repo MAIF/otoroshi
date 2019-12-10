@@ -202,6 +202,9 @@ class Env(val configuration: Configuration,
   lazy val requestTimeout: FiniteDuration =
     configuration.getOptional[Int]("app.proxy.requestTimeout").map(_.millis).getOrElse(1.hour)
 
+  lazy val trustXForwarded: Boolean =
+    configuration.getOptional[Boolean]("otoroshi.options.trustXForwarded").getOrElse(true)
+
   lazy val manualDnsResolve: Boolean =
     configuration.getOptional[Boolean]("otoroshi.options.manualDnsResolve").getOrElse(true)
   lazy val useOldHeadersComposition: Boolean =

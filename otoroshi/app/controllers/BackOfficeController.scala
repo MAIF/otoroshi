@@ -30,6 +30,7 @@ import security._
 import ssl.FakeKeyStore.KeystoreSettings
 import ssl.{Cert, CertificateData, FakeKeyStore, PemHeaders}
 import utils.LocalCache
+import utils.RequestImplicits._
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -74,7 +75,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
     logger.debug(s"Calling ${ctx.request.method} $url/$path with Host = $host")
     val headers = Seq(
       "Host"                           -> host,
-      "X-Forwarded-For"                -> ctx.request.headers.get("X-Forwarded-For").getOrElse(ctx.request.remoteAddress),
+      "X-Forwarded-For"                -> ctx.request.theIpAddress,
       env.Headers.OtoroshiVizFromLabel -> "Otoroshi Admin UI",
       env.Headers.OtoroshiVizFrom      -> "otoroshi-admin-ui",
       env.Headers.OtoroshiClientId     -> env.backOfficeApiKey.clientId,

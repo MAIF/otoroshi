@@ -5,13 +5,10 @@ import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.google.common.base.Charsets
 import env.Env
-import events.{Alerts, RevokedApiKeyUsageAlert}
-import gateway.Errors
 import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc.RequestHeader
-import play.api.mvc.Results.{BadGateway, BadRequest, TooManyRequests}
 import security.{IdGenerator, OtoroshiClaim}
 import storage.BasicStore
 

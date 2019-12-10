@@ -20,6 +20,7 @@ import utils.future.Implicits._
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
+import utils.RequestImplicits._
 
 class MaxMindGeolocationInfoExtractor extends PreRouting {
 
@@ -58,7 +59,7 @@ class MaxMindGeolocationInfoExtractor extends PreRouting {
   override def preRoute(ctx: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     val pathOpt = (ctx.config \ "GeolocationInfo" \ "path").asOpt[String]
     val log     = (ctx.config \ "GeolocationInfo" \ "log").asOpt[Boolean].getOrElse(false)
-    val from    = ctx.request.headers.get("X-Forwarded-For").getOrElse(ctx.request.remoteAddress)
+    val from    = ctx.request.theIpAddress
     pathOpt match {
       case None => funit
       case Some("global") =>
@@ -125,7 +126,7 @@ class IpStackGeolocationInfoExtractor extends PreRouting {
     val timeout: Long = (ctx.config \ "GeolocationInfo" \ "timeout").asOpt[Long].getOrElse(2000)
     val apiKeyOpt     = (ctx.config \ "GeolocationInfo" \ "apikey").asOpt[String]
     val log           = (ctx.config \ "GeolocationInfo" \ "log").asOpt[Boolean].getOrElse(false)
-    val from          = ctx.request.headers.get("X-Forwarded-For").getOrElse(ctx.request.remoteAddress)
+    val from          = ctx.request.theIpAddress
     apiKeyOpt match {
       case None => funit
       case Some(apiKey) =>
@@ -174,7 +175,7 @@ class GeolocationInfoHeader extends RequestTransformer {
       ctx: TransformerRequestContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     val headerName = (ctx.config \ "GeolocationInfoHeader" \ "headerName").asOpt[String].getOrElse("X-Geolocation-Info")
-    val from       = ctx.request.headers.get("X-Forwarded-For").getOrElse(ctx.request.remoteAddress)
+    val from       = ctx.request.theIpAddress
     ctx.attrs.get(otoroshi.plugins.Keys.GeolocationInfoKey) match {
       case None => Right(ctx.otoroshiRequest).future
       case Some(location) => {

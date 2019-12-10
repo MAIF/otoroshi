@@ -14,14 +14,15 @@ import utils.future.Implicits._
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
+import utils.RequestImplicits._
 
 case class ApiActionContext[A](apiKey: ApiKey, request: Request[A]) {
   def user(implicit env: Env): Option[JsValue] =
     request.headers
       .get(env.Headers.OtoroshiAdminProfile)
       .flatMap(p => Try(Json.parse(new String(Base64.getDecoder.decode(p), Charsets.UTF_8))).toOption)
-  def from: String = request.headers.get("X-Forwarded-For").getOrElse(request.remoteAddress)
-  def ua: String   = request.headers.get("User-Agent").getOrElse("none")
+  def from(implicit env: Env): String = request.theIpAddress
+  def ua: String   = request.theUserAgent
 }
 
 class ApiAction(val parser: BodyParser[AnyContent])(implicit env: Env)

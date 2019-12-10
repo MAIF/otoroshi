@@ -32,6 +32,7 @@ import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.{FiniteDuration, _}
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
+import utils.RequestImplicits._
 
 case class ServiceDescriptorQuery(subdomain: String,
                                   line: String = "prod",
@@ -173,7 +174,7 @@ trait LoadBalancing {
              trackingId: String,
              requestHeader: RequestHeader,
              targets: Seq[Target],
-             desc: ServiceDescriptor): Target
+             desc: ServiceDescriptor)(implicit env: Env): Target
 }
 
 object LoadBalancing {
@@ -200,7 +201,7 @@ object RoundRobin extends LoadBalancing {
                       trackingId: String,
                       req: RequestHeader,
                       targets: Seq[Target],
-                      desc: ServiceDescriptor): Target = {
+                      desc: ServiceDescriptor)(implicit env: Env): Target = {
     val index: Int = reqCounter.incrementAndGet() % (if (targets.nonEmpty) targets.size else 1)
     targets.apply(index)
   }
@@ -215,7 +216,7 @@ object Random extends LoadBalancing {
                       trackingId: String,
                       req: RequestHeader,
                       targets: Seq[Target],
-                      desc: ServiceDescriptor): Target = {
+                      desc: ServiceDescriptor)(implicit env: Env): Target = {
     val index = random.nextInt(targets.length)
     targets.apply(index)
   }
@@ -228,7 +229,7 @@ object Sticky extends LoadBalancing {
                       trackingId: String,
                       req: RequestHeader,
                       targets: Seq[Target],
-                      desc: ServiceDescriptor): Target = {
+                      desc: ServiceDescriptor)(implicit env: Env): Target = {
     val hash: Int  = Math.abs(scala.util.hashing.MurmurHash3.stringHash(trackingId))
     val index: Int = Hashing.consistentHash(hash, targets.size)
     targets.apply(index)
@@ -242,8 +243,8 @@ object IpAddressHash extends LoadBalancing {
                       trackingId: String,
                       req: RequestHeader,
                       targets: Seq[Target],
-                      desc: ServiceDescriptor): Target = {
-    val remoteAddress = req.headers.get("X-Forwarded-For").getOrElse(req.remoteAddress)
+                      desc: ServiceDescriptor)(implicit env: Env): Target = {
+    val remoteAddress = req.theIpAddress
     val hash: Int     = Math.abs(scala.util.hashing.MurmurHash3.stringHash(remoteAddress))
     val index: Int    = Hashing.consistentHash(hash, targets.size)
     targets.apply(index)
@@ -275,7 +276,7 @@ object BestResponseTime extends LoadBalancing {
                       trackingId: String,
                       req: RequestHeader,
                       targets: Seq[Target],
-                      desc: ServiceDescriptor): Target = {
+                      desc: ServiceDescriptor)(implicit env: Env): Target = {
     val keys                     = targets.map(t => s"${desc.id}-${t.asKey}")
     val existing                 = responseTimes.toSeq.filter(t => keys.exists(k => t._1 == k))
     val nonExisting: Seq[String] = keys.filterNot(k => responseTimes.contains(k))
@@ -302,7 +303,7 @@ case class WeightedBestResponseTime(ratio: Double) extends LoadBalancing {
                       trackingId: String,
                       req: RequestHeader,
                       targets: Seq[Target],
-                      desc: ServiceDescriptor): Target = {
+                      desc: ServiceDescriptor)(implicit env: Env): Target = {
     val keys                     = targets.map(t => s"${desc.id}-${t.asKey}")
     val existing                 = BestResponseTime.responseTimes.toSeq.filter(t => keys.exists(k => t._1 == k))
     val nonExisting: Seq[String] = keys.filterNot(k => BestResponseTime.responseTimes.contains(k))
@@ -1663,7 +1664,7 @@ case class Restrictions(
 
     if (enabled) {
       val method = req.method
-      val domain = req.domain
+      val domain = req.theDomain
       val path   = req.relativeUri
       val key    = s"${descriptor.id}:${apk.map(_.clientId).getOrElse("none")}:$method:$domain:$path"
       cache.getOrElseUpdate(

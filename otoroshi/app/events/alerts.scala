@@ -761,14 +761,14 @@ case class RevokedApiKeyUsageAlert(`@id`: String,
                                    `@env`: String,
                                    req: RequestHeader,
                                    apiKey: ApiKey,
-                                   descriptor: ServiceDescriptor)
+                                   descriptor: ServiceDescriptor, env: Env)
     extends AlertEvent {
 
   override def `@service`: String   = descriptor.name
   override def `@serviceId`: String = descriptor.id
 
-  override def fromOrigin: Option[String]    = Some(req.headers.get("X-Forwarded-For").getOrElse(req.remoteAddress))
-  override def fromUserAgent: Option[String] = Some(req.headers.get("User-Agent").getOrElse("none"))
+  override def fromOrigin: Option[String]    = Some(req.theIpAddress(env))
+  override def fromUserAgent: Option[String] = Some(req.theUserAgent)
 
   override def toJson(implicit _env: Env): JsValue = Json.obj(
     "@id"        -> `@id`,

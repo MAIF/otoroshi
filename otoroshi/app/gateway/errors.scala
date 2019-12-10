@@ -56,15 +56,7 @@ object Errors {
             `@calledAt` = DateTime.now(),
             protocol = req.version,
             to = Location(
-              scheme = req.headers
-                .get("X-Forwarded-Protocol")
-                .map(_ == "https")
-                .orElse(Some(req.secure))
-                .map {
-                  case true  => "https"
-                  case false => "http"
-                }
-                .getOrElse("http"),
+              scheme = req.theProtocol,
               host = req.host,
               uri = req.relativeUri
             ),
@@ -80,7 +72,7 @@ object Errors {
             callAttempts = callAttempts,
             url = s"${descriptor.target.scheme}://${descriptor.target.host}${descriptor.root}${req.relativeUri}",
             method = req.method,
-            from = req.headers.get("X-Forwarded-For").getOrElse(req.remoteAddress),
+            from = req.theIpAddress,
             env = descriptor.env,
             data = DataInOut(
               dataIn = 0,
@@ -112,15 +104,7 @@ object Errors {
             `@calledAt` = DateTime.now(),
             protocol = req.version,
             to = Location(
-              scheme = req.headers
-                .get("X-Forwarded-Protocol")
-                .map(_ == "https")
-                .orElse(Some(req.secure))
-                .map {
-                  case true  => "https"
-                  case false => "http"
-                }
-                .getOrElse("http"),
+              scheme = req.theProtocol,
               host = req.host,
               uri = req.relativeUri
             ),
@@ -136,7 +120,7 @@ object Errors {
             callAttempts = callAttempts,
             url = s"${req.theProtocol}://${req.host}${req.relativeUri}",
             method = req.method,
-            from = req.headers.get("X-Forwarded-For").getOrElse(req.remoteAddress),
+            from = req.theIpAddress,
             env = "prod",
             data = DataInOut(
               dataIn = 0,

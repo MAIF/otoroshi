@@ -20,13 +20,13 @@ import scala.concurrent.{ExecutionContext, Future}
 
 case class BackOfficeActionContext[A](request: Request[A], user: Option[BackOfficeUser]) {
   def connected: Boolean = user.isDefined
-  def from: String       = request.headers.get("X-Forwarded-For").getOrElse(request.remoteAddress)
-  def ua: String         = request.headers.get("User-Agent").getOrElse("none")
+  def from(implicit env: Env): String       = request.theIpAddress
+  def ua: String         = request.theUserAgent
 }
 
 case class BackOfficeActionContextAuth[A](request: Request[A], user: BackOfficeUser) {
-  def from: String = request.headers.get("X-Forwarded-For").getOrElse(request.remoteAddress)
-  def ua: String   = request.headers.get("User-Agent").getOrElse("none")
+  def from(implicit env: Env): String = request.theIpAddress
+  def ua: String   = request.theUserAgent
 }
 
 class BackOfficeAction(val parser: BodyParser[AnyContent])(implicit env: Env)
@@ -93,8 +93,8 @@ class BackOfficeActionAuth(val parser: BodyParser[AnyContent])(implicit env: Env
                         env.snowflakeGenerator.nextIdStr(),
                         env.env,
                         user,
-                        request.headers.get("X-Forwarded-For").getOrElse(request.remoteAddress),
-                        request.headers.get("User-Agent").getOrElse("none")
+                        request.theIpAddress,
+                        request.theUserAgent
                       )
                     )
                     FastFuture.successful(

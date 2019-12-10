@@ -620,8 +620,8 @@ class BodyLogger extends RequestTransformer {
               url = ctx.rawRequest.url,
               headers = ctx.rawRequest.headers,
               body = ref.get(),
-              from = ctx.request.headers.get("X-Forwarded-For").getOrElse(ctx.request.remoteAddress),
-              ua = ctx.request.headers.get("User-Agent").getOrElse("none")
+              from = ctx.request.theIpAddress,
+              ua = ctx.request.theUserAgent
             )
             if (config.log) {
               event.log()
@@ -673,8 +673,8 @@ class BodyLogger extends RequestTransformer {
               headers = ctx.rawResponse.headers,
               status = ctx.rawResponse.status,
               body = ref.get(),
-              from = ctx.request.headers.get("X-Forwarded-For").getOrElse(ctx.request.remoteAddress),
-              ua = ctx.request.headers.get("User-Agent").getOrElse("none")
+              from = ctx.request.theIpAddress,
+              ua = ctx.request.theUserAgent
             )
             if (config.log) {
               event.log()
