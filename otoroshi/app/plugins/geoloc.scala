@@ -32,7 +32,7 @@ class MaxMindGeolocationInfoExtractor extends PreRouting {
     Some(
       Json.obj(
         "GeolocationInfo" -> Json.obj(
-          "path" -> "/foo/bar/cities.mmdb",
+          "path" -> "global",
           "log"  -> false,
         )
       )
@@ -259,7 +259,9 @@ object MaxMindGeolocationHelper {
   def dbRefInit(path: String)(implicit env: Env, ec: ExecutionContext): Unit = {
     dbs.putIfAbsent(path, (new AtomicReference[DatabaseReader](), new AtomicBoolean(false), new AtomicBoolean(false)))
     dbs.get(path) match {
-      case None => () // wait what ???
+      case None => 
+        logger.info("wait what ???")
+        () // wait what ???
       case Some((_, initializing, _)) => {
         if (initializing.compareAndSet(false, true)) {
           if (path.startsWith("http://") || path.startsWith("https://")) {
@@ -275,6 +277,9 @@ object MaxMindGeolocationHelper {
             logger.info(s"Initializing Geolocation db from file path: $path ...")
             initDbFromFilePath(path)
           }
+        } else {
+          logger.info("Bad init ...")
+          ()
         }
       }
     }
