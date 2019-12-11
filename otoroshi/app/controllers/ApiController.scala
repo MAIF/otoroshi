@@ -53,10 +53,14 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
       } else if (req.accepts("application/json") && asArray) {
         val metrics = Json.parse(env.metrics.jsonExport(None))
         val res = metrics.as[JsObject].value.toSeq.foldLeft(Json.arr()) {
-          case (arr, (key, value)) => 
-            value.as[JsObject].value.toSeq.foldLeft(Json.arr()) {
-              case (arr2, (key2, value2)) => arr2 ++ Json.arr(value2.as[JsObject] ++ Json.obj("name" -> key2, "type" -> key))
+          case (arr, (key, JsObject(value))) => 
+            arr ++ value.toSeq.foldLeft(Json.arr()) {
+              case (arr2, (key2, value2@JsObject(_))) => 
+                arr2 ++ Json.arr(value2 ++ Json.obj("name" -> key2, "type" -> key))
+              case (arr2, (key2, value2)) => 
+                arr2 
             }
+          case (arr, (key, value)) => arr 
         }
         Ok(res).withHeaders("Content-Type" -> "application/json")
       } else if (req.accepts("application/prometheus")) {

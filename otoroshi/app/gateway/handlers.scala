@@ -225,7 +225,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
       } else {
         val toHttps    = env.exposedRootSchemeIsHttps
         val host       = request.theDomain // if (request.host.contains(":")) request.host.split(":")(0) else request.host
-        val monitoring = monitoringPaths.contains(request.relativeUri)
+        val monitoring = monitoringPaths.exists(p => request.relativeUri.startsWith(p))
         host match {
           case str if matchRedirection(str)                                          => Some(redirectToMainDomain())
           case _ if ipRegex.matches(request.theHost) && monitoring                   => super.routeRequest(request)
