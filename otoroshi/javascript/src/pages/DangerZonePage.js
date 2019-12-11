@@ -1151,7 +1151,7 @@ class GlobalScripts extends Component {
           refs={config.sinkRefs}
           type="sink"
           onChange={e => this.changeTheValue('sinkRefs', e)}
-          config={config.sinkRefs}
+          config={config.sinkConfig}
           onChangeConfig={e => this.changeTheValue('sinkConfig', e)}
         />
         <div className="form-group">
@@ -1169,7 +1169,7 @@ class GlobalScripts extends Component {
           refs={config.preRouteRefs}
           type="preroute"
           onChange={e => this.changeTheValue('preRouteRefs', e)}
-          config={config.preRouteRefs}
+          config={config.preRouteConfig}
           onChangeConfig={e => this.changeTheValue('preRouteConfig', e)}
         />
         <div className="form-group">
@@ -1187,7 +1187,7 @@ class GlobalScripts extends Component {
           refs={config.validatorRefs}
           type="validator"
           onChange={e => this.changeTheValue('validatorRefs', e)}
-          config={config.validatorRefs}
+          config={config.validatorConfig}
           onChangeConfig={e => this.changeTheValue('validatorConfig', e)}
         />
         <div className="form-group">
@@ -1205,7 +1205,7 @@ class GlobalScripts extends Component {
           refs={config.transformersRefs}
           type="transformer"
           onChange={e => this.changeTheValue('transformersRefs', e)}
-          config={config.validatorRefs}
+          config={config.transformersConfig}
           onChangeConfig={e => this.changeTheValue('transformersConfig', e)}
         />
         <div className="form-group">

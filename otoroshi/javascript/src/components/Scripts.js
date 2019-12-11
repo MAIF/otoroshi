@@ -82,7 +82,9 @@ class PluginsDescription extends Component {
 
   inject = script => {
     if (script.defaultConfig) {
-      this.props.onChangeConfig(_.merge({}, this.props.config, script.defaultConfig));
+      console.log(this.props.config, this.props)
+      this.props.onChangeConfig({ ...this.props.config, ...script.defaultConfig });
+      // this.props.onChangeConfig(_.merge({}, this.props.config, script.defaultConfig));
     }
   };
 
