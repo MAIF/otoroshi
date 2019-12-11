@@ -30,7 +30,7 @@ object UserAgentHelper {
   private val cache                    = new TrieMap[String, Option[JsObject]]()
 
   def userAgentDetails(ua: String)(implicit env: Env): Option[JsObject] = {
-    env.metrics.withTimer("otoroshi.useragent.details") {
+    env.metrics.withTimer("otoroshi.plugins.useragent.details") {
       if (parserInitializing.compareAndSet(false, true)) {
         val start = System.currentTimeMillis()
         logger.info("Initializing User-Agent parser ...")

@@ -223,7 +223,7 @@ object IpStackGeolocationHelper {
 
   def find(ip: String, apikey: String, timeout: Long)(implicit env: Env,
                                                       ec: ExecutionContext): Future[Option[JsValue]] = {
-    env.metrics.withTimerAsync("otoroshi.geolocation.ipstack.details") {
+    env.metrics.withTimerAsync("otoroshi.plugins.geolocation.ipstack.details") {
       cache.get(ip) match {
         case Some(details) => FastFuture.successful(details)
         case None => {
@@ -443,7 +443,7 @@ s                     |mv *.mmdb geolite.mmdb
   }
 
   def find(ip: String, file: String)(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] = {
-    env.metrics.withTimerAsync("otoroshi.geolocation.maxmind.details") {
+    env.metrics.withTimerAsync("otoroshi.plugins.geolocation.maxmind.details") {
       dbRefInit(file)
       cache.get(ip) match {
         case loc @ Some(_) => FastFuture.successful(loc.flatten)
