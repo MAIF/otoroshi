@@ -45,9 +45,20 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
   }
 
   def processMetrics() = Action.async { req =>
+
+    val asArray = req.getQueryString("format").contains("array") || req.getQueryString("format").contains("arr")
     def fetchMetrics(): Result = {
-      if (req.accepts("application/json")) {
+      if (req.accepts("application/json") && !asArray) {
         Ok(env.metrics.jsonExport(None)).withHeaders("Content-Type" -> "application/json")
+      } else if (req.accepts("application/json") && asArray) {
+        val metrics = Json.parse(env.metrics.jsonExport(None))
+        val res = metrics.as[JsObject].value.toSeq.foldLeft(Json.arr()) {
+          case (arr, (key, value)) => 
+            value.as[JsObject].value.toSeq.foldLeft(Json.arr()) {
+              case (arr2, (key2, value2)) => arr2 ++ Json.arr(value2.as[JsObject] ++ Json.obj("name" -> key2, "type" -> key))
+            }
+        }
+        Ok(res).withHeaders("Content-Type" -> "application/json")
       } else if (req.accepts("application/prometheus")) {
         Ok(env.metrics.prometheusExport(None)).withHeaders("Content-Type" -> "text/plain")
       } else {
