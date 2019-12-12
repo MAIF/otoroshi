@@ -480,7 +480,9 @@ s                     |mv *.mmdb geolite.mmdb
                   FastFuture.successful(None)
                 case Some(db) => {
                   Try(db.city(inet)) match { // TODO: blocking ???
-                    case Failure(e) => cache.putIfAbsent(ip, None)
+                    case Failure(e) =>
+                      logger.error("failed to find city", e)
+                      cache.putIfAbsent(ip, None)
                     case Success(city) => {
                       Option(city)
                         .map { c =>
@@ -520,7 +522,9 @@ s                     |mv *.mmdb geolite.mmdb
           }
           FastFuture.successful(cache.get(ip).flatten)
         }
-        case _ => FastFuture.successful(None) // initialization in progress
+        case _ =>
+          logger.info("initializing ...")
+          FastFuture.successful(None) // initialization in progress
       }
     }
   }
