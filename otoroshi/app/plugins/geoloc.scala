@@ -257,38 +257,53 @@ object MaxMindGeolocationHelper {
     ExecutionContext.fromExecutor(Executors.newFixedThreadPool(Runtime.getRuntime.availableProcessors() + 1))
 
   def dbRefInit(path: String)(implicit env: Env, ec: ExecutionContext): Unit = {
-    dbs.putIfAbsent(path, (new AtomicReference[DatabaseReader](), new AtomicBoolean(false), new AtomicBoolean(false)))
-    dbs.get(path) match {
-      case None => 
-        logger.info("wait what ???")
-        () // wait what ???
-      case Some((_, initializing, _)) => {
-        if (initializing.compareAndSet(false, true)) {
-          if (path.startsWith("http://") || path.startsWith("https://")) {
-            logger.info(s"Initializing Geolocation db from URL: $path ...")
-            initDbFromURL(path)
-          } else if (path.startsWith("http:zip://") || path.startsWith("https:zip://")) {
-            logger.info(s"Initializing Geolocation db from zip file URL: ${path.replace("zip:", "")} ...")
-            initDbFromURLWithUnzip(path.replace("zip:", ""))
-          } else if (path.startsWith("http:tgz://") || path.startsWith("https:tgz://")) {
-            logger.info(s"Initializing Geolocation db from tar.gz file URL: ${path.replace("tgz:", "")} ...")
-            initDbFromURLWithUntar(path.replace("tgz:", ""))
-          } else {
-            logger.info(s"Initializing Geolocation db from file path: $path ...")
-            initDbFromFilePath(path)
-          }
+
+
+    def init(initializing: AtomicBoolean): Future[Unit] = {
+      if (initializing.compareAndSet(false, true)) {
+        if (path.startsWith("http://") || path.startsWith("https://")) {
+          logger.info(s"Initializing Geolocation db from URL: $path ...")
+          initDbFromURL(path)
+        } else if (path.startsWith("http:zip://") || path.startsWith("https:zip://")) {
+          logger.info(s"Initializing Geolocation db from zip file URL: ${path.replace("zip:", "")} ...")
+          initDbFromURLWithUnzip(path.replace("zip:", ""))
+        } else if (path.startsWith("http:tgz://") || path.startsWith("https:tgz://")) {
+          logger.info(s"Initializing Geolocation db from tar.gz file URL: ${path.replace("tgz:", "")} ...")
+          initDbFromURLWithUntar(path.replace("tgz:", ""))
         } else {
-          logger.info("Bad init ...")
-          ()
+          logger.info(s"Initializing Geolocation db from file path: $path ...")
+          initDbFromFilePath(path)
         }
+      } else {
+        logger.info("Bad init ...")
+        FastFuture.successful(())
       }
     }
+    
+    def tryInit(): Future[Unit] = {
+      dbs.get(path) match {
+        case None =>
+          dbs.putIfAbsent(path, (new AtomicReference[DatabaseReader](), new AtomicBoolean(false), new AtomicBoolean(false)))
+          tryInit()
+        case Some((_, _, initialized)) if initialized.get() =>
+          FastFuture.successful(())
+        case Some((_, initializing, _)) if initializing.get() =>
+          FastFuture.successful(())
+        case Some((_, initializing, _)) =>
+          env.metrics.withTimerAsync("otoroshi.plugins.geolocation.maxmind.init") {
+            init(initializing)
+          }
+      }
+    }
+
+    tryInit()
+    ()
   }
 
   def dbRefSet(path: String, reader: DatabaseReader): Unit = dbs.get(path).foreach(_._1.set(reader))
-  def dbInitializationDoneSet(path: String): Unit = dbs.get(path).foreach(_._3.compareAndSet(false, true))
-  def dbInitializationDoneGet(path: String): Boolean = dbs.get(path).exists(_._2.get())
   def dbRefGet(path: String): Option[DatabaseReader] = dbs.get(path).flatMap(t => Option(t._1.get()))
+  def dbInitializationDoneSet(path: String): Unit = dbs.get(path).foreach(_._3.compareAndSet(false, true))
+  def dbInitializationDoneGet(path: String): Boolean = dbs.get(path).exists(_._3.get())
 
   private def initDbFromFilePath(file: String)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     Future {
@@ -448,6 +463,7 @@ s                     |mv *.mmdb geolite.mmdb
   }
 
   def find(ip: String, file: String)(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] = {
+    logger.info(s"try to find $ip in $file")
     env.metrics.withTimerAsync("otoroshi.plugins.geolocation.maxmind.details") {
       dbRefInit(file)
       cache.get(ip) match {
