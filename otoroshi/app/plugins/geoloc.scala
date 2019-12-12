@@ -7,7 +7,7 @@ import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
-import akka.stream.scaladsl.{FileIO, Source, StreamConverters}
+import akka.stream.scaladsl.FileIO
 import com.maxmind.geoip2.DatabaseReader
 import env.Env
 import otoroshi.plugins.Keys
@@ -15,12 +15,12 @@ import otoroshi.script._
 import play.api.Logger
 import play.api.libs.json.{JsNumber, JsObject, JsValue, Json}
 import play.api.mvc.{Result, Results}
+import utils.RequestImplicits._
 import utils.future.Implicits._
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
-import utils.RequestImplicits._
 
 class MaxMindGeolocationInfoExtractor extends PreRouting {
 
@@ -57,7 +57,8 @@ class MaxMindGeolocationInfoExtractor extends PreRouting {
     )
 
   override def preRoute(ctx: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
-    val pathOpt = (ctx.config \ "GeolocationInfo" \ "path").asOpt[String]
+    val config = (ctx.config \ "GeolocationInfo").asOpt[JsValue].orElse((ctx.globalConfig \ "GeolocationInfo").asOpt[JsValue]).getOrElse(Json.obj())
+    val pathOpt = (config \ "path").asOpt[String]
     val log     = (ctx.config \ "GeolocationInfo" \ "log").asOpt[Boolean].getOrElse(false)
     val from    = ctx.request.theIpAddress
     pathOpt match {
@@ -123,9 +124,10 @@ class IpStackGeolocationInfoExtractor extends PreRouting {
     """.stripMargin)
 
   override def preRoute(ctx: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
-    val timeout: Long = (ctx.config \ "GeolocationInfo" \ "timeout").asOpt[Long].getOrElse(2000)
-    val apiKeyOpt     = (ctx.config \ "GeolocationInfo" \ "apikey").asOpt[String]
-    val log           = (ctx.config \ "GeolocationInfo" \ "log").asOpt[Boolean].getOrElse(false)
+    val config        = (ctx.config \ "GeolocationInfo").asOpt[JsValue].orElse((ctx.globalConfig \ "GeolocationInfo").asOpt[JsValue]).getOrElse(Json.obj())
+    val timeout: Long = (config \ "timeout").asOpt[Long].getOrElse(2000)
+    val apiKeyOpt     = (config \ "apikey").asOpt[String]
+    val log           = (config \ "log").asOpt[Boolean].getOrElse(false)
     val from          = ctx.request.theIpAddress
     apiKeyOpt match {
       case None => funit
@@ -174,7 +176,8 @@ class GeolocationInfoHeader extends RequestTransformer {
   override def transformRequestWithCtx(
       ctx: TransformerRequestContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
-    val headerName = (ctx.config \ "GeolocationInfoHeader" \ "headerName").asOpt[String].getOrElse("X-Geolocation-Info")
+    val config     = (ctx.config \ "GeolocationInfoHeader").asOpt[JsValue].orElse((ctx.globalConfig \ "GeolocationInfoHeader").asOpt[JsValue]).getOrElse(Json.obj())
+    val headerName = (config \ "headerName").asOpt[String].getOrElse("X-Geolocation-Info")
     ctx.attrs.get(otoroshi.plugins.Keys.GeolocationInfoKey) match {
       case None => Right(ctx.otoroshiRequest).future
       case Some(location) => {
