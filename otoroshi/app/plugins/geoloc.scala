@@ -448,7 +448,7 @@ s                     |mv *.mmdb geolite.mmdb
                     val cityDb     = new DatabaseReader.Builder(cityDbFile).build()
                     dbRefSet(url, cityDb)
                     dbInitializationDoneSet(url)
-                    logger.info(s"Geolocation db from tar.gz file URL initialized at ${cityDbFile.getAbsolutePath}")
+                    logger.info(s"Geolocation db from tar.gz file URL initialized at ${cityDbFile.getAbsolutePath} ${cityDbFile.exists()}")
                   case code =>
                     dbInitializationDoneSet(url)
                     logger.error(s"Geolocation db initialization from tar.gz file URL failed, tar.gz extraction failed: $code")
