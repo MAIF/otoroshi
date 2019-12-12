@@ -58,7 +58,7 @@ class MaxMindGeolocationInfoExtractor extends PreRouting {
 
   override def preRoute(ctx: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     val config = ctx.configFor("GeolocationInfo")
-    val pathOpt = (config \ "path").asOpt[String]
+    val pathOpt = (config \ "path").asOpt[String].orElse(Some("global"))
     val log     = (config \ "log").asOpt[Boolean].getOrElse(false)
     val from    = ctx.request.theIpAddress
     pathOpt match {
@@ -210,8 +210,8 @@ class GeolocationInfoEndpoint extends RequestTransformer {
   override def transformRequestWithCtx(ctx: TransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     (ctx.rawRequest.method.toLowerCase(), ctx.rawRequest.path) match {
       case ("get", "/.well-known/otoroshi/plugins/geolocation") => ctx.attrs.get(otoroshi.plugins.Keys.GeolocationInfoKey) match {
-        case None => Right(ctx.otoroshiRequest).future
-        case Some(location) =>  Left(Results.Ok(location)).future
+        case None => Left(Results.NotFound(Json.obj("error" -> "geolocation not found"))).future // Right(ctx.otoroshiRequest).future
+        case Some(location) => Left(Results.Ok(location)).future
       }
       case _ => Right(ctx.otoroshiRequest).future
     }
@@ -448,7 +448,7 @@ s                     |mv *.mmdb geolite.mmdb
                     val cityDb     = new DatabaseReader.Builder(cityDbFile).build()
                     dbRefSet(url, cityDb)
                     dbInitializationDoneSet(url)
-                    logger.info("Geolocation db from tar.gz file URL initialized")
+                    logger.info(s"Geolocation db from tar.gz file URL initialized at ${cityDbFile.getAbsolutePath}")
                   case code =>
                     dbInitializationDoneSet(url)
                     logger.error(s"Geolocation db initialization from tar.gz file URL failed, tar.gz extraction failed: $code")
