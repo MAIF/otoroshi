@@ -268,10 +268,10 @@ object MaxMindGeolocationHelper {
           initDbFromURL(path)
         } else if (path.startsWith("http:zip://") || path.startsWith("https:zip://")) {
           logger.info(s"Initializing Geolocation db from zip file URL: ${path.replace("zip:", "")} ...")
-          initDbFromURLWithUnzip(path.replace("zip:", ""))
+          initDbFromURLWithUnzip(path)
         } else if (path.startsWith("http:tgz://") || path.startsWith("https:tgz://")) {
           logger.info(s"Initializing Geolocation db from tar.gz file URL: ${path.replace("tgz:", "")} ...")
-          initDbFromURLWithUntar(path.replace("tgz:", ""))
+          initDbFromURLWithUntar(path)
         } else {
           logger.info(s"Initializing Geolocation db from file path: $path ...")
           initDbFromFilePath(path)
@@ -356,9 +356,10 @@ object MaxMindGeolocationHelper {
         }
   }
 
-  private def initDbFromURLWithUnzip(url: String)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  private def initDbFromURLWithUnzip(rawUrl: String)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     val dir  = java.nio.file.Files.createTempDirectory("oto-geolite-")
     val file = dir.resolve("geolite.zip")
+    val url = rawUrl.replace("zip:", "")
     env.Ws.url(url)
       .withRequestTimeout(30.seconds)
       .withFollowRedirects(false)
@@ -367,12 +368,12 @@ object MaxMindGeolocationHelper {
       .map {
         case resp if resp.status != 200 =>
           logger.error("Geolocation db initialization from zip file URL failed, status was not 200")
-          dbInitializationDoneSet(url)
+          dbInitializationDoneSet(rawUrl)
         case resp => {
           resp.bodyAsSource.runWith(FileIO.toPath(file))(env.otoroshiMaterializer).map {
             case res if !res.wasSuccessful =>
               logger.error("Geolocation db initialization from zip file URL failed, could not write file on disk")
-              dbInitializationDoneSet(url)
+              dbInitializationDoneSet(rawUrl)
             case res if res.wasSuccessful =>
               Try {
                 val builder = new ProcessBuilder
@@ -395,12 +396,12 @@ s                     |mv *.mmdb geolite.mmdb
                   case 0 =>
                     val cityDbFile = dir.resolve("geolite.mmdb").toFile
                     val cityDb     = new DatabaseReader.Builder(cityDbFile).build()
-                    dbRefSet(url, cityDb)
-                    dbInitializationDoneSet(url)
+                    dbRefSet(rawUrl, cityDb)
+                    dbInitializationDoneSet(rawUrl)
                     logger.info("Geolocation db initialized from zip file URL")
                   case _ =>
                     logger.error("Geolocation db initialization from zip file URL failed, extraction failed")
-                    dbInitializationDoneSet(url)
+                    dbInitializationDoneSet(rawUrl)
                 }
               } match {
                 case Success(_) =>
@@ -412,9 +413,10 @@ s                     |mv *.mmdb geolite.mmdb
       }
   }
 
-  private def initDbFromURLWithUntar(url: String)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  private def initDbFromURLWithUntar(rawUrl: String)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     val dir  = java.nio.file.Files.createTempDirectory("oto-geolite-")
     val file = dir.resolve("geolite.tar.gz")
+    val url = rawUrl.replace("tgz:", "")
     env.Ws.url(url)
       .withRequestTimeout(30.seconds)
       .withFollowRedirects(false)
@@ -423,12 +425,12 @@ s                     |mv *.mmdb geolite.mmdb
       .map {
         case resp if resp.status != 200 =>
           logger.error("Geolocation db initialization from tar.gz file URL failed, status was not 200")
-          dbInitializationDoneSet(url)
+          dbInitializationDoneSet(rawUrl)
         case resp => {
           resp.bodyAsSource.runWith(FileIO.toPath(file))(env.otoroshiMaterializer).map {
             case res if !res.wasSuccessful =>
               logger.error("Geolocation db initialization from tar.gz file URL failed, could not write file on disk")
-              dbInitializationDoneSet(url)
+              dbInitializationDoneSet(rawUrl)
             case res if res.wasSuccessful =>
               Try {
                 val builder = new ProcessBuilder
@@ -451,11 +453,11 @@ s                     |mv *.mmdb geolite.mmdb
                   case 0 =>
                     val cityDbFile = dir.resolve("geolite.mmdb").toFile
                     val cityDb     = new DatabaseReader.Builder(cityDbFile).build()
-                    dbRefSet(url, cityDb)
-                    dbInitializationDoneSet(url)
+                    dbRefSet(rawUrl, cityDb)
+                    dbInitializationDoneSet(rawUrl)
                     logger.info(s"Geolocation db from tar.gz file URL initialized at ${cityDbFile.getAbsolutePath} ${cityDbFile.exists()}")
                   case code =>
-                    dbInitializationDoneSet(url)
+                    dbInitializationDoneSet(rawUrl)
                     logger.error(s"Geolocation db initialization from tar.gz file URL failed, tar.gz extraction failed: $code")
                 }
               } match {
