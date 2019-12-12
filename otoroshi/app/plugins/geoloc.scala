@@ -261,7 +261,6 @@ object MaxMindGeolocationHelper {
 
   def dbRefInit(path: String)(implicit env: Env, ec: ExecutionContext): Unit = {
 
-
     def init(initializing: AtomicBoolean): Future[Unit] = {
       if (initializing.compareAndSet(false, true)) {
         if (path.startsWith("http://") || path.startsWith("https://")) {
@@ -304,7 +303,13 @@ object MaxMindGeolocationHelper {
 
   def dbRefSet(path: String, reader: DatabaseReader): Unit = dbs.get(path).foreach(_._1.set(reader))
   def dbRefGet(path: String): Option[DatabaseReader] = dbs.get(path).flatMap(t => Option(t._1.get()))
-  def dbInitializationDoneSet(path: String): Unit = dbs.get(path).foreach(_._3.compareAndSet(false, true))
+  def dbInitializationDoneSet(path: String): Unit = {
+    logger.info(s"dbInitializationDoneSet $path")
+    dbs.get(path).foreach { tuple =>
+      tuple._2.set(true)
+      tuple._3.set(true)
+    }
+  }
   def dbInitializationDoneGet(path: String): Boolean = dbs.get(path).exists(_._3.get())
 
   private def initDbFromFilePath(file: String)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
@@ -471,10 +476,10 @@ s                     |mv *.mmdb geolite.mmdb
         case loc @ Some(_) => FastFuture.successful(loc.flatten)
         case None if dbInitializationDoneGet(file) => {
           val inet = ipCache.getOrElseUpdate(ip, InetAddress.getByName(ip))
-          dbs.get(file) match {
-            case None =>
-              logger.error(s"Did not found db for $file")
-            case Some((ref, _, _)) => {
+          //dbs.get(file) match {
+          //  case None =>
+          //    logger.error(s"Did not found db for $file")
+          //  case Some((ref, _, _)) => {
               dbRefGet(file) match {
                 case None =>
                   logger.error(s"Did not found dbref for $file")
@@ -519,8 +524,8 @@ s                     |mv *.mmdb geolite.mmdb
                   }
                 }
               }
-            }
-          }
+            //}
+          //}
           FastFuture.successful(cache.get(ip).flatten)
         }
         case _ =>
