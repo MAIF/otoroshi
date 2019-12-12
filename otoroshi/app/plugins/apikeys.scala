@@ -40,7 +40,7 @@ class HasAllowedApiKeyValidator extends AccessValidator {
       case Some(apiKey) => {
         val config = (context.config \ "HasAllowedApiKeyValidator")
           .asOpt[JsValue]
-          .orElse((context.config \ "GlobalHasAllowedApiKeyValidator").asOpt[JsValue])
+          .orElse((context.config \ "HasAllowedApiKeyValidator").asOpt[JsValue])
           .getOrElse(context.config)
         val allowedClientIds =
           (config \ "clientIds").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])

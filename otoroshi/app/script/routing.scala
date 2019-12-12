@@ -57,15 +57,15 @@ case class PreRoutingContext(
     config: JsValue,
     attrs: TypedMap,
     globalConfig: JsValue
-) {
-  def conf[A](prefix: String = "config-"): Option[JsValue] = {
+) extends ContextWithConfig {
+  private def conf[A](prefix: String = "config-"): Option[JsValue] = {
     config match {
       case json: JsArray  => Option(json.value(index)).orElse((config \ s"$prefix$index").asOpt[JsValue])
       case json: JsObject => (json \ s"$prefix$index").asOpt[JsValue]
       case _              => None
     }
   }
-  def confAt[A](key: String, prefix: String = "config-")(implicit fjs: Reads[A]): Option[A] = {
+  private def confAt[A](key: String, prefix: String = "config-")(implicit fjs: Reads[A]): Option[A] = {
     val conf = config match {
       case json: JsArray  => Option(json.value(index)).getOrElse((config \ s"$prefix$index").as[JsValue])
       case json: JsObject => (json \ s"$prefix$index").as[JsValue]

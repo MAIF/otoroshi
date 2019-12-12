@@ -98,7 +98,30 @@ case class HttpRequest(url: String,
 
 case class HttpResponse(status: Int, headers: Map[String, String], cookies: Seq[WSCookie] = Seq.empty[WSCookie])
 
-sealed trait TransformerContext {
+trait ContextWithConfig {
+  def index: Int
+  def config: JsValue
+  def globalConfig: JsValue
+  def configExists(name: String): Boolean = (config \ name).asOpt[JsValue].orElse((globalConfig \ name).asOpt[JsValue]).isDefined
+  def configFor(name: String): JsValue = (config \ name).asOpt[JsValue].orElse((globalConfig \ name).asOpt[JsValue]).getOrElse(Json.obj())
+  private def conf[A](prefix: String = "config-"): Option[JsValue] = {
+    config match {
+      case json: JsArray  => Option(json.value(index)).orElse((config \ s"$prefix$index").asOpt[JsValue])
+      case json: JsObject => (json \ s"$prefix$index").asOpt[JsValue]
+      case _              => None
+    }
+  }
+  private def confAt[A](key: String, prefix: String = "config-")(implicit fjs: Reads[A]): Option[A] = {
+    val conf = config match {
+      case json: JsArray  => Option(json.value(index)).getOrElse((config \ s"$prefix$index").as[JsValue])
+      case json: JsObject => (json \ s"$prefix$index").as[JsValue]
+      case _              => Json.obj()
+    }
+    (conf \ key).asOpt[A]
+  }
+}
+
+sealed trait TransformerContext extends ContextWithConfig {
   def index: Int
   def snowflake: String
   def descriptor: ServiceDescriptor
@@ -108,14 +131,14 @@ sealed trait TransformerContext {
   def config: JsValue
   def attrs: TypedMap
   def globalConfig: JsValue
-  def conf[A](prefix: String = "config-"): Option[JsValue] = {
+  private def conf[A](prefix: String = "config-"): Option[JsValue] = {
     config match {
       case json: JsArray  => Option(json.value(index)).orElse((config \ s"$prefix$index").asOpt[JsValue])
       case json: JsObject => (json \ s"$prefix$index").asOpt[JsValue]
       case _              => None
     }
   }
-  def confAt[A](key: String, prefix: String = "config-")(implicit fjs: Reads[A]): Option[A] = {
+  private def confAt[A](key: String, prefix: String = "config-")(implicit fjs: Reads[A]): Option[A] = {
     val conf = config match {
       case json: JsArray  => Option(json.value(index)).getOrElse((config \ s"$prefix$index").as[JsValue])
       case json: JsObject => (json \ s"$prefix$index").as[JsValue]

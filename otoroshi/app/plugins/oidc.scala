@@ -82,7 +82,7 @@ class OIDCHeaders extends RequestTransformer {
     ctx.user match {
       case Some(user) if user.token.asOpt[JsObject].exists(_.value.nonEmpty) => {
 
-        val config = (ctx.config \ "OIDCHeaders").asOpt[JsObject].getOrElse(Json.obj())
+        val config = ctx.configFor("OIDCHeaders")
 
         val sendProfile       = (config \ "profile" \ "send").asOpt[Boolean].getOrElse(true)
         val profileHeaderName = (config \ "profile" \ "headerName").asOpt[String].getOrElse("X-OIDC-User")

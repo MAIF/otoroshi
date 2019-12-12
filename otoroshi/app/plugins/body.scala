@@ -388,7 +388,7 @@ class BodyLogger extends RequestTransformer {
   override def transformRequestWithCtx(
       ctx: TransformerRequestContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
-    val config = BodyLoggerConfig((ctx.config \ "BodyLogger").asOpt[JsValue].getOrElse(Json.obj()))
+    val config = BodyLoggerConfig(ctx.configFor("BodyLogger"))
     (ctx.rawRequest.method.toLowerCase(), ctx.rawRequest.path) match {
       case ("get", "/.well-known/otoroshi/plugins/bodylogger") =>
         passWithAuth(config, ctx) {
@@ -592,7 +592,7 @@ class BodyLogger extends RequestTransformer {
   override def transformRequestBodyWithCtx(
       ctx: TransformerRequestBodyContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
-    val config = BodyLoggerConfig((ctx.config \ "BodyLogger").asOpt[JsValue].getOrElse(Json.obj()))
+    val config = BodyLoggerConfig(ctx.configFor("BodyLogger"))
     if (config.enabled && filter(ctx.request, config)) {
       val size = new AtomicLong(0L)
       val ref  = new AtomicReference[ByteString](ByteString.empty)
@@ -644,7 +644,7 @@ class BodyLogger extends RequestTransformer {
   override def transformResponseBodyWithCtx(
       ctx: TransformerResponseBodyContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
-    val config = BodyLoggerConfig((ctx.config \ "BodyLogger").asOpt[JsValue].getOrElse(Json.obj()))
+    val config = BodyLoggerConfig(ctx.configFor("BodyLogger"))
     if (config.enabled && filter(ctx.request, config, Some(ctx.rawResponse.status))) {
       val size = new AtomicLong(0L)
       val ref  = new AtomicReference[ByteString](ByteString.empty)

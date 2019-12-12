@@ -9,7 +9,7 @@ import env.Env
 import otoroshi.plugins.Keys
 import otoroshi.script._
 import play.api.Logger
-import play.api.libs.json.{JsObject, JsString, Json}
+import play.api.libs.json.{JsObject, JsString, JsValue, Json}
 import play.api.mvc.{Result, Results}
 import utils.future.Implicits._
 
@@ -94,7 +94,8 @@ class UserAgentExtractor extends PreRouting {
     """.stripMargin)
 
   override def preRoute(ctx: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
-    val log = (ctx.config \ "UserAgentInfo" \ "log").asOpt[Boolean].getOrElse(false)
+    val config = ctx.configFor("UserAgentInfo")
+    val log = (config \ "log").asOpt[Boolean].getOrElse(false)
     ctx.request.headers.get("User-Agent") match {
       case None => funit
       case Some(ua) =>
@@ -167,7 +168,8 @@ class UserAgentInfoHeader extends RequestTransformer {
   override def transformRequestWithCtx(
       ctx: TransformerRequestContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
-    val headerName = (ctx.config \ "UserAgentInfoHeader" \ "headerName").asOpt[String].getOrElse("X-User-Agent-Info")
+    val config = ctx.configFor("UserAgentInfoHeader")
+    val headerName = (config \ "headerName").asOpt[String].getOrElse("X-User-Agent-Info")
     ctx.attrs.get(otoroshi.plugins.Keys.UserAgentInfoKey) match {
       case None => Right(ctx.otoroshiRequest).future
       case Some(info) => {

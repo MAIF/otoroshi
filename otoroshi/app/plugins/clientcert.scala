@@ -68,7 +68,7 @@ class HasClientCertMatchingValidator extends AccessValidator {
       case Some(certs) => {
         val config = (context.config \ "HasClientCertMatchingValidator")
           .asOpt[JsValue]
-          .orElse((context.globalConfig \ "GlobalHasClientCertMatchingValidator").asOpt[JsValue])
+          .orElse((context.globalConfig \ "HasClientCertMatchingValidator").asOpt[JsValue])
           .getOrElse(context.config)
         val allowedSerialNumbers =
           (config \ "serialNumbers").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
@@ -214,7 +214,7 @@ class HasClientCertMatchingHttpValidator extends AccessValidator {
       case Some(certs) => {
         val config = (context.config \ "HasClientCertMatchingHttpValidator")
           .asOpt[JsValue]
-          .orElse((context.globalConfig \ "GlobalHasClientCertMatchingHttpValidator").asOpt[JsValue])
+          .orElse((context.globalConfig \ "HasClientCertMatchingHttpValidator").asOpt[JsValue])
           .getOrElse(context.config)
         val url     = (config \ "url").as[String]
         val headers = (config \ "headers").asOpt[Map[String, String]].getOrElse(Map.empty)
@@ -312,7 +312,7 @@ class ClientCertChainHeader extends RequestTransformer {
       case None => Right(ctx.otoroshiRequest).future
       case Some(chain) => {
 
-        val config = (ctx.config \ "ClientCertChain").asOpt[JsObject].getOrElse(Json.obj())
+        val config = ctx.configFor("ClientCertChain")
 
         val sendAsPem = (config \ "pem" \ "send").asOpt[Boolean].getOrElse(false)
         val pemHeaderName =

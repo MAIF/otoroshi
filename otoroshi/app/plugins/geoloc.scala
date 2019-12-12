@@ -57,9 +57,9 @@ class MaxMindGeolocationInfoExtractor extends PreRouting {
     )
 
   override def preRoute(ctx: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
-    val config = (ctx.config \ "GeolocationInfo").asOpt[JsValue].orElse((ctx.globalConfig \ "GeolocationInfo").asOpt[JsValue]).getOrElse(Json.obj())
+    val config = ctx.configFor("GeolocationInfo")
     val pathOpt = (config \ "path").asOpt[String]
-    val log     = (ctx.config \ "GeolocationInfo" \ "log").asOpt[Boolean].getOrElse(false)
+    val log     = (config \ "log").asOpt[Boolean].getOrElse(false)
     val from    = ctx.request.theIpAddress
     pathOpt match {
       case None => funit
@@ -124,7 +124,7 @@ class IpStackGeolocationInfoExtractor extends PreRouting {
     """.stripMargin)
 
   override def preRoute(ctx: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
-    val config        = (ctx.config \ "GeolocationInfo").asOpt[JsValue].orElse((ctx.globalConfig \ "GeolocationInfo").asOpt[JsValue]).getOrElse(Json.obj())
+    val config = ctx.configFor("GeolocationInfo")
     val timeout: Long = (config \ "timeout").asOpt[Long].getOrElse(2000)
     val apiKeyOpt     = (config \ "apikey").asOpt[String]
     val log           = (config \ "log").asOpt[Boolean].getOrElse(false)
@@ -176,7 +176,7 @@ class GeolocationInfoHeader extends RequestTransformer {
   override def transformRequestWithCtx(
       ctx: TransformerRequestContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
-    val config     = (ctx.config \ "GeolocationInfoHeader").asOpt[JsValue].orElse((ctx.globalConfig \ "GeolocationInfoHeader").asOpt[JsValue]).getOrElse(Json.obj())
+    val config = ctx.configFor("GeolocationInfoHeader")
     val headerName = (config \ "headerName").asOpt[String].getOrElse("X-Geolocation-Info")
     ctx.attrs.get(otoroshi.plugins.Keys.GeolocationInfoKey) match {
       case None => Right(ctx.otoroshiRequest).future
@@ -278,7 +278,6 @@ object MaxMindGeolocationHelper {
           initDbFromFilePath(path)
         }
       } else {
-        logger.info("Bad init ...")
         FastFuture.successful(())
       }
     }
@@ -466,7 +465,6 @@ s                     |mv *.mmdb geolite.mmdb
   }
 
   def find(ip: String, file: String)(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] = {
-    logger.info(s"try to find $ip in $file")
     env.metrics.withTimerAsync("otoroshi.plugins.geolocation.maxmind.details") {
       dbRefInit(file)
       cache.get(ip) match {
@@ -475,11 +473,11 @@ s                     |mv *.mmdb geolite.mmdb
           val inet = ipCache.getOrElseUpdate(ip, InetAddress.getByName(ip))
           dbs.get(file) match {
             case None =>
-              logger.info(s"Did not found db for $file")
+              logger.error(s"Did not found db for $file")
             case Some((ref, _, _)) => {
               dbRefGet(file) match {
                 case None =>
-                  logger.info(s"Did not found dbref for $file")
+                  logger.error(s"Did not found dbref for $file")
                   FastFuture.successful(None)
                 case Some(db) => {
                   Try(db.city(inet)) match { // TODO: blocking ???
@@ -526,7 +524,6 @@ s                     |mv *.mmdb geolite.mmdb
           FastFuture.successful(cache.get(ip).flatten)
         }
         case _ =>
-          logger.info("initializing ...")
           FastFuture.successful(None) // initialization in progress
       }
     }

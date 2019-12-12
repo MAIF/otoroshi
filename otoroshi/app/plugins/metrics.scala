@@ -5,7 +5,7 @@ import env.Env
 import otoroshi.script._
 import play.api.mvc.{Result, Results}
 import otoroshi.utils.string.Implicits._
-import play.api.libs.json.{JsObject, Json}
+import play.api.libs.json.{JsObject, JsValue, Json}
 import utils.RequestImplicits._
 import utils.future.Implicits._
 
@@ -60,8 +60,9 @@ class ServiceMetrics extends RequestTransformer {
           }
         }
 
-        val queryName = (ctx.config \ "ServiceMetrics" \ "accessKeyQuery").asOpt[String].getOrElse("access_key")
-        (ctx.config \ "ServiceMetrics" \ "accessKeyValue").asOpt[String] match {
+        val config = ctx.configFor("ServiceMetrics")
+        val queryName = (config \ "accessKeyQuery").asOpt[String].getOrElse("access_key")
+        (config \ "accessKeyValue").asOpt[String] match {
           case None => result()
           case Some("${config.app.health.accessKey}")
               if env.healthAccessKey.isDefined && ctx.request

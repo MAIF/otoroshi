@@ -139,13 +139,14 @@ class AccessLog extends RequestTransformer {
     val method    = ctx.request.method
     val userId    = ctx.user.map(_.name).orElse(ctx.apikey.map(_.clientName)).getOrElse("-")
 
-    val (matchPath, methodMatch, statusMatch, identityMatch, enabled) = if ((ctx.config \ "AccessLog").isDefined) {
-      val enabled: Boolean          = (ctx.config \ "AccessLog" \ "enabled").asOpt[Boolean].getOrElse(true)
-      val validPaths: Seq[String]   = (ctx.config \ "AccessLog" \ "paths").asOpt[Seq[String]].getOrElse(Seq.empty)
-      val validStatuses: Seq[Int]   = (ctx.config \ "AccessLog" \ "statuses").asOpt[Seq[Int]].getOrElse(Seq.empty)
-      val validMethods: Seq[String] = (ctx.config \ "AccessLog" \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty)
+    val (matchPath, methodMatch, statusMatch, identityMatch, enabled) = if (ctx.configExists("AccessLog")) {
+      val config = ctx.configFor("AccessLog")
+      val enabled: Boolean          = (config \ "enabled").asOpt[Boolean].getOrElse(true)
+      val validPaths: Seq[String]   = (config \ "paths").asOpt[Seq[String]].getOrElse(Seq.empty)
+      val validStatuses: Seq[Int]   = (config \ "statuses").asOpt[Seq[Int]].getOrElse(Seq.empty)
+      val validMethods: Seq[String] = (config \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty)
       val validIdentities: Seq[String] =
-        (ctx.config \ "AccessLog" \ "identities").asOpt[Seq[String]].getOrElse(Seq.empty)
+        (config \ "identities").asOpt[Seq[String]].getOrElse(Seq.empty)
 
       val matchPath = if (validPaths.isEmpty) true else validPaths.exists(p => RegexPool.regex(p).matches(path))
       val methodMatch =
@@ -196,13 +197,14 @@ class AccessLog extends RequestTransformer {
     val method    = ctx.request.method
     val userId    = ctx.user.map(_.name).orElse(ctx.apikey.map(_.clientName)).getOrElse("-")
 
-    val (matchPath, methodMatch, statusMatch, identityMatch, enabled) = if ((ctx.config \ "AccessLog").isDefined) {
-      val enabled: Boolean          = (ctx.config \ "AccessLog" \ "enabled").asOpt[Boolean].getOrElse(true)
-      val validPaths: Seq[String]   = (ctx.config \ "AccessLog" \ "paths").asOpt[Seq[String]].getOrElse(Seq.empty)
-      val validStatuses: Seq[Int]   = (ctx.config \ "AccessLog" \ "statuses").asOpt[Seq[Int]].getOrElse(Seq.empty)
-      val validMethods: Seq[String] = (ctx.config \ "AccessLog" \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty)
+    val (matchPath, methodMatch, statusMatch, identityMatch, enabled) = if (ctx.configExists("AccessLog")) {
+      val config = ctx.configFor("AccessLog")
+      val enabled: Boolean          = (config \ "enabled").asOpt[Boolean].getOrElse(true)
+      val validPaths: Seq[String]   = (config \ "paths").asOpt[Seq[String]].getOrElse(Seq.empty)
+      val validStatuses: Seq[Int]   = (config \ "statuses").asOpt[Seq[Int]].getOrElse(Seq.empty)
+      val validMethods: Seq[String] = (config \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty)
       val validIdentities: Seq[String] =
-        (ctx.config \ "AccessLog" \ "identities").asOpt[Seq[String]].getOrElse(Seq.empty)
+        (config \ "identities").asOpt[Seq[String]].getOrElse(Seq.empty)
 
       val matchPath = if (validPaths.isEmpty) true else validPaths.exists(p => RegexPool.regex(p).matches(path))
       val methodMatch =
@@ -291,13 +293,14 @@ class AccessLogJson extends RequestTransformer {
     val method    = ctx.request.method
     val userId    = ctx.user.map(_.name).orElse(ctx.apikey.map(_.clientName)).getOrElse("-")
 
-    val (matchPath, methodMatch, statusMatch, identityMatch, enabled) = if ((ctx.config \ "AccessLog").isDefined) {
-      val enabled: Boolean          = (ctx.config \ "AccessLog" \ "enabled").asOpt[Boolean].getOrElse(true)
-      val validPaths: Seq[String]   = (ctx.config \ "AccessLog" \ "paths").asOpt[Seq[String]].getOrElse(Seq.empty)
-      val validStatuses: Seq[Int]   = (ctx.config \ "AccessLog" \ "statuses").asOpt[Seq[Int]].getOrElse(Seq.empty)
-      val validMethods: Seq[String] = (ctx.config \ "AccessLog" \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty)
+    val (matchPath, methodMatch, statusMatch, identityMatch, enabled) = if (ctx.configExists("AccessLog")) {
+      val config = ctx.configFor("AccessLog")
+      val enabled: Boolean          = (config \ "enabled").asOpt[Boolean].getOrElse(true)
+      val validPaths: Seq[String]   = (config \ "paths").asOpt[Seq[String]].getOrElse(Seq.empty)
+      val validStatuses: Seq[Int]   = (config \ "statuses").asOpt[Seq[Int]].getOrElse(Seq.empty)
+      val validMethods: Seq[String] = (config \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty)
       val validIdentities: Seq[String] =
-        (ctx.config \ "AccessLog" \ "identities").asOpt[Seq[String]].getOrElse(Seq.empty)
+        (config \ "identities").asOpt[Seq[String]].getOrElse(Seq.empty)
 
       val matchPath = if (validPaths.isEmpty) true else validPaths.exists(p => RegexPool.regex(p).matches(path))
       val methodMatch =
@@ -373,13 +376,14 @@ class AccessLogJson extends RequestTransformer {
     val method    = ctx.request.method
     val userId    = ctx.user.map(_.name).orElse(ctx.apikey.map(_.clientName)).getOrElse("-")
 
-    val (matchPath, methodMatch, statusMatch, identityMatch, enabled) = if ((ctx.config \ "AccessLog").isDefined) {
-      val enabled: Boolean          = (ctx.config \ "AccessLog" \ "enabled").asOpt[Boolean].getOrElse(true)
-      val validPaths: Seq[String]   = (ctx.config \ "AccessLog" \ "paths").asOpt[Seq[String]].getOrElse(Seq.empty)
-      val validStatuses: Seq[Int]   = (ctx.config \ "AccessLog" \ "statuses").asOpt[Seq[Int]].getOrElse(Seq.empty)
-      val validMethods: Seq[String] = (ctx.config \ "AccessLog" \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty)
+    val (matchPath, methodMatch, statusMatch, identityMatch, enabled) = if (ctx.configExists("AccessLog")) {
+      val config = ctx.configFor("AccessLog")
+      val enabled: Boolean          = (config \ "enabled").asOpt[Boolean].getOrElse(true)
+      val validPaths: Seq[String]   = (config \ "paths").asOpt[Seq[String]].getOrElse(Seq.empty)
+      val validStatuses: Seq[Int]   = (config \ "statuses").asOpt[Seq[Int]].getOrElse(Seq.empty)
+      val validMethods: Seq[String] = (config \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty)
       val validIdentities: Seq[String] =
-        (ctx.config \ "AccessLog" \ "identities").asOpt[Seq[String]].getOrElse(Seq.empty)
+        (config \ "identities").asOpt[Seq[String]].getOrElse(Seq.empty)
 
       val matchPath = if (validPaths.isEmpty) true else validPaths.exists(p => RegexPool.regex(p).matches(path))
       val methodMatch =
@@ -436,7 +440,7 @@ class AccessLogJson extends RequestTransformer {
             "host"       -> host,
             "error"      -> true,
             "errorMsg"   -> ctx.message,
-            "errorCause" -> ctx.maybeCauseId.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+            "errorCause" -> ctx.maybeCauseId.map(JsString.apply).getOrElse(JsNull).as[JsValue]
           )
         )
       )
@@ -510,18 +514,19 @@ class KafkaAccessLog extends RequestTransformer {
             val userId    = ctx.user.map(_.name).orElse(ctx.apikey.map(_.clientName)).getOrElse("-")
 
             val (matchPath, methodMatch, statusMatch, identityMatch, enabled, topic) =
-              if ((ctx.config \ "KafkaAccessLog").isDefined) {
-                val enabled: Boolean = (ctx.config \ "KafkaAccessLog" \ "enabled").asOpt[Boolean].getOrElse(true)
+              if (ctx.configExists("KafkaAccessLog")) {
+                val config = ctx.configFor("KafkaAccessLog")
+                val enabled: Boolean = (config \ "enabled").asOpt[Boolean].getOrElse(true)
                 val topic: String =
-                  (ctx.config \ "KafkaAccessLog" \ "topic").asOpt[String].getOrElse("otoroshi-access-log")
+                  (config \ "topic").asOpt[String].getOrElse("otoroshi-access-log")
                 val validPaths: Seq[String] =
-                  (ctx.config \ "KafkaAccessLog" \ "paths").asOpt[Seq[String]].getOrElse(Seq.empty)
+                  (config \ "paths").asOpt[Seq[String]].getOrElse(Seq.empty)
                 val validStatuses: Seq[Int] =
-                  (ctx.config \ "KafkaAccessLog" \ "statuses").asOpt[Seq[Int]].getOrElse(Seq.empty)
+                  (config \ "statuses").asOpt[Seq[Int]].getOrElse(Seq.empty)
                 val validMethods: Seq[String] =
-                  (ctx.config \ "KafkaAccessLog" \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty)
+                  (config \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty)
                 val validIdentities: Seq[String] =
-                  (ctx.config \ "KafkaAccessLog" \ "identities").asOpt[Seq[String]].getOrElse(Seq.empty)
+                  (config \ "identities").asOpt[Seq[String]].getOrElse(Seq.empty)
 
                 val matchPath =
                   if (validPaths.isEmpty) true else validPaths.exists(p => RegexPool.regex(p).matches(path))
@@ -628,18 +633,19 @@ class KafkaAccessLog extends RequestTransformer {
             val userId    = ctx.user.map(_.name).orElse(ctx.apikey.map(_.clientName)).getOrElse("-")
 
             val (matchPath, methodMatch, statusMatch, identityMatch, enabled, topic) =
-              if ((ctx.config \ "KafkaAccessLog").isDefined) {
-                val enabled: Boolean = (ctx.config \ "KafkaAccessLog" \ "enabled").asOpt[Boolean].getOrElse(true)
+              if (ctx.configExists("KafkaAccessLog")) {
+                val config = ctx.configFor("KafkaAccessLog")
+                val enabled: Boolean = (config \ "enabled").asOpt[Boolean].getOrElse(true)
                 val topic: String =
-                  (ctx.config \ "KafkaAccessLog" \ "topic").asOpt[String].getOrElse("otoroshi-access-log")
+                  (config \ "topic").asOpt[String].getOrElse("otoroshi-access-log")
                 val validPaths: Seq[String] =
-                  (ctx.config \ "KafkaAccessLog" \ "paths").asOpt[Seq[String]].getOrElse(Seq.empty)
+                  (config \ "paths").asOpt[Seq[String]].getOrElse(Seq.empty)
                 val validStatuses: Seq[Int] =
-                  (ctx.config \ "KafkaAccessLog" \ "statuses").asOpt[Seq[Int]].getOrElse(Seq.empty)
+                  (config \ "statuses").asOpt[Seq[Int]].getOrElse(Seq.empty)
                 val validMethods: Seq[String] =
-                  (ctx.config \ "KafkaAccessLog" \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty)
+                  (config \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty)
                 val validIdentities: Seq[String] =
-                  (ctx.config \ "KafkaAccessLog" \ "identities").asOpt[Seq[String]].getOrElse(Seq.empty)
+                  (config \ "identities").asOpt[Seq[String]].getOrElse(Seq.empty)
 
                 val matchPath =
                   if (validPaths.isEmpty) true else validPaths.exists(p => RegexPool.regex(p).matches(path))

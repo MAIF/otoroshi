@@ -209,7 +209,7 @@ class ExternalHttpValidator extends AccessValidator {
   def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
     val config = (context.config \ "ExternalHttpValidator")
       .asOpt[JsValue]
-      .orElse((context.config \ "GlobalExternalHttpValidator").asOpt[JsValue])
+      .orElse((context.config \ "ExternalHttpValidator").asOpt[JsValue])
       .getOrElse(context.config)
     val valCfg = ExternalHttpValidatorConfig(config)
     context.request.clientCertificateChain match {

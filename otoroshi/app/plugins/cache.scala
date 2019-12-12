@@ -215,7 +215,7 @@ class ResponseCache extends RequestTransformer {
   override def transformRequestWithCtx(
       ctx: TransformerRequestContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
-    val config = ResponseCacheConfig((ctx.config \ "ResponseCache").asOpt[JsValue].getOrElse(Json.obj()))
+    val config = ResponseCacheConfig(ctx.configFor("ResponseCache"))
     if (config.enabled) {
       cachedResponse(ctx, config).map {
         case Left(_) => Right(ctx.otoroshiRequest)
@@ -244,7 +244,7 @@ class ResponseCache extends RequestTransformer {
   override def transformResponseBodyWithCtx(
       ctx: TransformerResponseBodyContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
-    val config = ResponseCacheConfig((ctx.config \ "ResponseCache").asOpt[JsValue].getOrElse(Json.obj()))
+    val config = ResponseCacheConfig(ctx.configFor("ResponseCache"))
     if (config.enabled && couldCacheResponse(ctx, config)) {
       val size = new AtomicLong(0L)
       val ref  = new AtomicReference[ByteString](ByteString.empty)

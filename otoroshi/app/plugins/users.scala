@@ -42,7 +42,7 @@ class HasAllowedUsersValidator extends AccessValidator {
       case Some(user) => {
         val config = (context.config \ "HasAllowedUsersValidator")
           .asOpt[JsValue]
-          .orElse((context.config \ "GlobalHasAllowedUsersValidator").asOpt[JsValue])
+          .orElse((context.config \ "HasAllowedUsersValidator").asOpt[JsValue])
           .getOrElse(context.config)
         val allowedUsernames =
           (config \ "usernames").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])

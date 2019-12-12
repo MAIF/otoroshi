@@ -91,23 +91,7 @@ case class AccessContext(
     config: JsValue,
     attrs: TypedMap,
     globalConfig: JsValue
-) {
-  def conf[A](prefix: String = "config-"): Option[JsValue] = {
-    config match {
-      case json: JsArray  => Option(json.value(index)).orElse((config \ s"$prefix$index").asOpt[JsValue])
-      case json: JsObject => (json \ s"$prefix$index").asOpt[JsValue]
-      case _              => None
-    }
-  }
-  def confAt[A](key: String, prefix: String = "config-")(implicit fjs: Reads[A]): Option[A] = {
-    val conf = config match {
-      case json: JsArray  => Option(json.value(index)).getOrElse((config \ s"$prefix$index").as[JsValue])
-      case json: JsObject => (json \ s"$prefix$index").as[JsValue]
-      case _              => Json.obj()
-    }
-    (conf \ key).asOpt[A]
-  }
-}
+) extends ContextWithConfig
 
 object DefaultValidator extends AccessValidator {
   def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
