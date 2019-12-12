@@ -304,7 +304,6 @@ object MaxMindGeolocationHelper {
   def dbRefSet(path: String, reader: DatabaseReader): Unit = dbs.get(path).foreach(_._1.set(reader))
   def dbRefGet(path: String): Option[DatabaseReader] = dbs.get(path).flatMap(t => Option(t._1.get()))
   def dbInitializationDoneSet(path: String): Unit = {
-    logger.info(s"dbInitializationDoneSet $path")
     dbs.get(path).foreach { tuple =>
       tuple._2.set(true)
       tuple._3.set(true)
@@ -455,7 +454,7 @@ s                     |mv *.mmdb geolite.mmdb
                     val cityDb     = new DatabaseReader.Builder(cityDbFile).build()
                     dbRefSet(rawUrl, cityDb)
                     dbInitializationDoneSet(rawUrl)
-                    logger.info(s"Geolocation db from tar.gz file URL initialized at ${cityDbFile.getAbsolutePath} ${cityDbFile.exists()}")
+                    logger.info(s"Geolocation db from tar.gz file URL initialized")
                   case code =>
                     dbInitializationDoneSet(rawUrl)
                     logger.error(s"Geolocation db initialization from tar.gz file URL failed, tar.gz extraction failed: $code")
@@ -489,7 +488,6 @@ s                     |mv *.mmdb geolite.mmdb
                 case Some(db) => {
                   Try(db.city(inet)) match { // TODO: blocking ???
                     case Failure(e) =>
-                      logger.error("failed to find city", e)
                       cache.putIfAbsent(ip, None)
                     case Success(city) => {
                       Option(city)
