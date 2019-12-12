@@ -279,7 +279,7 @@ object MaxMindGeolocationHelper {
         FastFuture.successful(())
       }
     }
-    
+
     def tryInit(): Future[Unit] = {
       dbs.get(path) match {
         case None =>
@@ -472,9 +472,12 @@ s                     |mv *.mmdb geolite.mmdb
           val inet = ipCache.getOrElseUpdate(ip, InetAddress.getByName(ip))
           dbs.get(file) match {
             case None =>
+              logger.info(s"Did not found db for $file")
             case Some((ref, _, _)) => {
               dbRefGet(file) match {
-                case None => FastFuture.successful(None)
+                case None =>
+                  logger.info(s"Did not found dbref for $file")
+                  FastFuture.successful(None)
                 case Some(db) => {
                   Try(db.city(inet)) match { // TODO: blocking ???
                     case Failure(e) => cache.putIfAbsent(ip, None)
