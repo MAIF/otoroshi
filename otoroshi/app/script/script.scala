@@ -7,6 +7,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 
 import actions.ApiAction
+import akka.Done
 import akka.actor.{Actor, ActorRef, Cancellable, Props}
 import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.util.FastFuture
@@ -148,6 +149,26 @@ sealed trait TransformerContext extends ContextWithConfig {
   }
 }
 
+case class BeforeRequestContext(
+  index: Int,
+  snowflake: String,
+  descriptor: ServiceDescriptor,
+  request: RequestHeader,
+  config: JsValue,
+  attrs: TypedMap,
+  globalConfig: JsValue = Json.obj()
+) extends ContextWithConfig {}
+
+case class AfterRequestContext(
+  index: Int,
+  snowflake: String,
+  descriptor: ServiceDescriptor,
+  request: RequestHeader,
+  config: JsValue,
+  attrs: TypedMap,
+  globalConfig: JsValue = Json.obj()
+) extends ContextWithConfig {}
+
 case class TransformerRequestContext(
     rawRequest: HttpRequest,
     otoroshiRequest: HttpRequest,
@@ -226,6 +247,14 @@ case class TransformerErrorContext(
 trait RequestTransformer extends StartableAndStoppable with NamedPlugin with InternalEventListener {
 
   def pluginType: PluginType = TransformerType
+
+  def beforeRequest(context: BeforeRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
+    FastFuture.successful(())
+  }
+
+  def afterRequest(context: AfterRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
+    FastFuture.successful(())
+  }
 
   def transformErrorWithCtx(
       context: TransformerErrorContext
@@ -380,42 +409,34 @@ trait NanoApp extends RequestTransformer {
 
   private val awaitingRequests = new TrieMap[String, Promise[Source[ByteString, _]]]()
 
-  override def transformRequest(
-      snowflake: String,
-      rawRequest: HttpRequest,
-      otoroshiRequest: HttpRequest,
-      desc: ServiceDescriptor,
-      apiKey: Option[ApiKey] = None,
-      user: Option[PrivateAppsUser] = None
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
-    awaitingRequests.putIfAbsent(snowflake, Promise[Source[ByteString, _]])
-    awaitingRequests.get(snowflake).map { promise =>
+  override def beforeRequest(ctx: BeforeRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
+    awaitingRequests.putIfAbsent(ctx.snowflake, Promise[Source[ByteString, _]])
+    funit
+  }
+
+  override def afterRequest(ctx: AfterRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
+    awaitingRequests.remove(ctx.snowflake)
+    funit
+  }
+
+  override def transformRequestWithCtx(ctx: TransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
+    awaitingRequests.get(ctx.snowflake).map { promise =>
       val consumed = new AtomicBoolean(false)
       val bodySource: Source[ByteString, _] = Source.fromFuture(promise.future).flatMapConcat(s => s).alsoTo(Sink.onComplete {
         case _ => consumed.set(true)
       })
-      route(rawRequest, bodySource).map { r =>
+      route(ctx.rawRequest, bodySource).map { r =>
         if (!consumed.get()) bodySource.runWith(Sink.ignore)
-        awaitingRequests.remove(snowflake)
         Left(r)
       }
     } getOrElse {
-      FastFuture.successful(Left(Results.InternalServerError(Json.obj("error" -> s"no body promise found for $snowflake"))))
+      FastFuture.successful(Left(Results.InternalServerError(Json.obj("error" -> s"no body promise found for ${ctx.snowflake}"))))
     }
   }
 
-  override def transformRequestBody(
-      snowflake: String,
-      body: Source[ByteString, _],
-      rawRequest: HttpRequest,
-      otoroshiRequest: HttpRequest,
-      desc: ServiceDescriptor,
-      apiKey: Option[ApiKey] = None,
-      user: Option[PrivateAppsUser] = None
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
-    awaitingRequests.putIfAbsent(snowflake, Promise[Source[ByteString, _]])
-    awaitingRequests.get(snowflake).map(_.trySuccess(body))
-    body
+  override def transformRequestBodyWithCtx(ctx: TransformerRequestBodyContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
+    awaitingRequests.get(ctx.snowflake).map(_.trySuccess(ctx.body))
+    ctx.body
   }
 
   def route(
@@ -761,6 +782,70 @@ class ScriptManager(env: Env) {
 object Implicits {
 
   implicit class ServiceDescriptorWithTransformer(val desc: ServiceDescriptor) extends AnyVal {
+
+    def beforeRequest(
+      ctx: BeforeRequestContext
+    )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Done] = {
+      env.metrics.withTimerAsync("otoroshi.core.proxy.before-request") {
+        env.scriptingEnabled match {
+          case true =>
+            val gScripts = env.datastores.globalConfigDataStore.latestSafe
+              .filter(_.scripts.enabled)
+              .map(_.scripts)
+              .getOrElse(GlobalScripts(transformersConfig = Json.obj()))
+            val refs = gScripts.transformersRefs ++ desc.transformerRefs
+            if (refs.nonEmpty) {
+              Source(refs.toList.zipWithIndex).runForeach {
+                case (ref, index) =>
+                  env.scriptManager
+                    .getScript(ref)
+                    .beforeRequest(
+                      ctx.copy(
+                        index = index,
+                        config = ctx.config,
+                        globalConfig = gScripts.transformersConfig
+                      )
+                    )(env, ec, mat)
+              }
+            } else {
+              FastFuture.successful(Done)
+            }
+          case _ => FastFuture.successful(Done)
+        }
+      }
+    }
+
+    def afterRequest(
+      ctx: AfterRequestContext
+    )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Done] = {
+      env.metrics.withTimerAsync("otoroshi.core.proxy.after-request") {
+        env.scriptingEnabled match {
+          case true =>
+            val gScripts = env.datastores.globalConfigDataStore.latestSafe
+              .filter(_.scripts.enabled)
+              .map(_.scripts)
+              .getOrElse(GlobalScripts(transformersConfig = Json.obj()))
+            val refs = gScripts.transformersRefs ++ desc.transformerRefs
+            if (refs.nonEmpty) {
+              Source(refs.toList.zipWithIndex).runForeach {
+                case (ref, index) =>
+                  env.scriptManager
+                    .getScript(ref)
+                    .afterRequest(
+                      ctx.copy(
+                        index = index,
+                        config = ctx.config,
+                        globalConfig = gScripts.transformersConfig
+                      )
+                    )(env, ec, mat)
+              }
+            } else {
+              FastFuture.successful(Done)
+            }
+          case _ => FastFuture.successful(Done)
+        }
+      }
+    }
 
     def transformRequest(
         context: TransformerRequestContext

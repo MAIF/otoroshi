@@ -965,7 +965,15 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                       attrs = attrs
                     )
                   } else {
-                    rawDesc.preRoute(snowflake, req, attrs) {
+                    rawDesc.beforeRequest(BeforeRequestContext(
+                      index = -1,
+                      snowflake = snowflake,
+                      descriptor = rawDesc,
+                      request = req,
+                      config = rawDesc.transformerConfig,
+                      attrs = attrs
+                    )).flatMap { _ =>
+                      rawDesc.preRoute(snowflake, req, attrs) {
                       passWithTcpUdpTunneling(req, rawDesc, attrs) {
                         passWithHeadersVerification(rawDesc, req, None, None, elCtx, attrs) {
                           passWithReadOnly(rawDesc.readOnly, req, attrs) {
@@ -1496,22 +1504,20 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                           target = Some(_target),
                                           claims = claim
                                         )
-                                        val upstreamStart = System.currentTimeMillis()
+                                        val transReqCtx = TransformerRequestContext(
+                                          index = -1,
+                                          snowflake = snowflake,
+                                          rawRequest = rawRequest,
+                                          otoroshiRequest = otoroshiRequest,
+                                          descriptor = descriptor,
+                                          apikey = apiKey,
+                                          user = paUsr,
+                                          request = req,
+                                          config = descriptor.transformerConfig,
+                                          attrs = attrs
+                                        )
                                         val finalRequest = descriptor
-                                          .transformRequest(
-                                            TransformerRequestContext(
-                                              index = -1,
-                                              snowflake = snowflake,
-                                              rawRequest = rawRequest,
-                                              otoroshiRequest = otoroshiRequest,
-                                              descriptor = descriptor,
-                                              apikey = apiKey,
-                                              user = paUsr,
-                                              request = req,
-                                              config = descriptor.transformerConfig,
-                                              attrs = attrs
-                                            )
-                                          )
+                                          .transformRequest(transReqCtx)
                                         val finalBody = descriptor.transformRequestBody(
                                           TransformerRequestBodyContext(
                                             index = -1,
@@ -1559,6 +1565,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                             }
                                           }
                                           case Right(httpRequest) => {
+                                            val upstreamStart = System.currentTimeMillis()
                                             val body =
                                               if (currentReqHasBody) SourceBody(finalBody)
                                               else EmptyBody
@@ -2779,6 +2786,16 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
 
                         }
                       }
+                    }
+                    }.andThen {
+                      case _ => rawDesc.afterRequest(AfterRequestContext(
+                        index = -1,
+                        snowflake = snowflake,
+                        descriptor = rawDesc,
+                        request = req,
+                        config = rawDesc.transformerConfig,
+                        attrs = attrs
+                      ))
                     }
                   }
                 }
