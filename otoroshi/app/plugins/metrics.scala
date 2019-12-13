@@ -49,14 +49,37 @@ class ServiceMetrics extends RequestTransformer {
     (ctx.rawRequest.method, ctx.rawRequest.path) match {
       case ("GET", "/.well-known/otoroshi/plugins/metrics") => {
 
+        val format  = ctx.request.getQueryString("format")
+
         def result(): Future[Either[Result, HttpRequest]] = {
           val filter = Some(s"*otoroshi.service.requests.*.*.${ctx.descriptor.name.slug}*")
-          if (ctx.request.accepts("application/json")) {
-            Left(Results.Ok(env.metrics.jsonExport(filter)).withHeaders("Content-Type" -> "application/json")).future
+
+          def transformToArray(input: String): JsValue = {
+            val metrics = Json.parse(input)
+            metrics.as[JsObject].value.toSeq.foldLeft(Json.arr()) {
+              case (arr, (key, JsObject(value))) =>
+                arr ++ value.toSeq.foldLeft(Json.arr()) {
+                  case (arr2, (key2, value2@JsObject(_))) =>
+                    arr2 ++ Json.arr(value2 ++ Json.obj("name" -> key2, "type" -> key))
+                  case (arr2, (key2, value2)) =>
+                    arr2
+                }
+              case (arr, (key, value)) => arr
+            }
+          }
+
+          if (format.contains("old_json") || format.contains("old")) {
+            Left(Results.Ok(env.metrics.jsonExport(filter)).as("application/json")).future
+          } else if (format.contains("json")) {
+            Left(Results.Ok(transformToArray(env.metrics.jsonExport(filter))).as("application/json")).future
+          } else if (format.contains("prometheus") || format.contains("prom")) {
+            Left(Results.Ok(env.metrics.prometheusExport(filter)).as("text/plain")).future
+          } else if (ctx.request.accepts("application/json")) {
+            Left(Results.Ok(transformToArray(env.metrics.jsonExport(filter))).as("application/json")).future
           } else if (ctx.request.accepts("application/prometheus")) {
-            Left(Results.Ok(env.metrics.prometheusExport(filter)).withHeaders("Content-Type" -> "text/plain")).future
+            Left(Results.Ok(env.metrics.prometheusExport(filter)).as("text/plain")).future
           } else {
-            Left(Results.Ok(env.metrics.defaultHttpFormat(filter))).future
+            Left(Results.Ok(transformToArray(env.metrics.jsonExport(filter))).as("application/json")).future
           }
         }
 

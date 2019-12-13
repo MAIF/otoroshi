@@ -46,27 +46,35 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
 
   def processMetrics() = Action.async { req =>
 
-    val asArray = req.getQueryString("format").contains("array") || req.getQueryString("format").contains("arr")
+    val format  = req.getQueryString("format")
+
+    def transformToArray(input: String): JsValue = {
+      val metrics = Json.parse(input)
+      metrics.as[JsObject].value.toSeq.foldLeft(Json.arr()) {
+        case (arr, (key, JsObject(value))) =>
+          arr ++ value.toSeq.foldLeft(Json.arr()) {
+            case (arr2, (key2, value2@JsObject(_))) =>
+              arr2 ++ Json.arr(value2 ++ Json.obj("name" -> key2, "type" -> key))
+            case (arr2, (key2, value2)) =>
+              arr2
+          }
+        case (arr, (key, value)) => arr
+      }
+    }
+
     def fetchMetrics(): Result = {
-      if (req.accepts("application/json") && !asArray) {
-        Ok(env.metrics.jsonExport(None)).withHeaders("Content-Type" -> "application/json")
-      } else if (req.accepts("application/json") && asArray) {
-        val metrics = Json.parse(env.metrics.jsonExport(None))
-        val res = metrics.as[JsObject].value.toSeq.foldLeft(Json.arr()) {
-          case (arr, (key, JsObject(value))) => 
-            arr ++ value.toSeq.foldLeft(Json.arr()) {
-              case (arr2, (key2, value2@JsObject(_))) => 
-                arr2 ++ Json.arr(value2 ++ Json.obj("name" -> key2, "type" -> key))
-              case (arr2, (key2, value2)) => 
-                arr2 
-            }
-          case (arr, (key, value)) => arr 
-        }
-        Ok(res).withHeaders("Content-Type" -> "application/json")
+      if (format.contains("old_json") || format.contains("old")) {
+        Ok(env.metrics.jsonExport(None)).as("application/json")
+      } else if (format.contains("json")) {
+        Ok(transformToArray(env.metrics.jsonExport(None))).as("application/json")
+      } else if (format.contains("prometheus") || format.contains("prom")) {
+        Ok(env.metrics.prometheusExport(None)).as("text/plain")
+      } else if (req.accepts("application/json")) {
+        Ok(transformToArray(env.metrics.jsonExport(None))).as("application/json")
       } else if (req.accepts("application/prometheus")) {
-        Ok(env.metrics.prometheusExport(None)).withHeaders("Content-Type" -> "text/plain")
+        Ok(env.metrics.prometheusExport(None)).as("text/plain")
       } else {
-        Ok(env.metrics.defaultHttpFormat(None))
+        Ok(transformToArray(env.metrics.jsonExport(None))).as("application/json")
       }
     }
 
