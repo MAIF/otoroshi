@@ -263,15 +263,15 @@ object MaxMindGeolocationHelper {
 
     def init(initializing: AtomicBoolean): Future[Unit] = {
       if (initializing.compareAndSet(false, true)) {
-        if (path.startsWith("http://") || path.startsWith("https://")) {
-          logger.info(s"Initializing Geolocation db from URL: $path ...")
-          initDbFromURL(path)
-        } else if (path.startsWith("http:zip://") || path.startsWith("https:zip://")) {
+        if (path.startsWith("http:zip://") || path.startsWith("https:zip://") || path.toLowerCase().contains(".zip")) {
           logger.info(s"Initializing Geolocation db from zip file URL: ${path.replace("zip:", "")} ...")
           initDbFromURLWithUnzip(path)
-        } else if (path.startsWith("http:tgz://") || path.startsWith("https:tgz://")) {
+        } else if (path.startsWith("http:tgz://") || path.startsWith("https:tgz://") || path.toLowerCase().contains(".tar.gz")) {
           logger.info(s"Initializing Geolocation db from tar.gz file URL: ${path.replace("tgz:", "")} ...")
           initDbFromURLWithUntar(path)
+        } else if (path.startsWith("http://") || path.startsWith("https://")) {
+          logger.info(s"Initializing Geolocation db from URL: $path ...")
+          initDbFromURL(path)
         } else {
           logger.info(s"Initializing Geolocation db from file path: $path ...")
           initDbFromFilePath(path)
