@@ -137,14 +137,14 @@ class Geolocation extends Component {
               schema={this.maxmindForm}
               style={{ marginTop: 5 }}
             />
-            <div className="form-group">
+            {/*<div className="form-group">
               <label className="col-xs-12 col-sm-2 control-label" />
               <div className="col-sm-10">
                 <button type="button" className="btn btn-success btn-xs" onClick={this.download}>
                   download GeoLite2 db (for testing purpose only)
                 </button>
               </div>
-            </div>
+            </div>*/}
           </>
         )}
       </div>
