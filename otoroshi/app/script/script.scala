@@ -618,7 +618,7 @@ class ScriptManager(env: Env) {
   }
 
   private def initClasspathModules(): Future[Unit] = {
-    env.metrics.withTimerAsync("otoroshi.core.plugin.classpath-scanning-starting") {
+    env.metrics.withTimerAsync("otoroshi.core.plugins.classpath-scanning-starting") {
       Future {
         logger.info("Finding and starting plugins ...")
         val start = System.currentTimeMillis()
@@ -677,7 +677,7 @@ class ScriptManager(env: Env) {
   }
 
   private def updateScriptCache(first: Boolean = false): Future[Unit] = {
-    env.metrics.withTimerAsync("otoroshi.core.plugin.update-scripts") {
+    env.metrics.withTimerAsync("otoroshi.core.plugins.update-scripts") {
       logger.debug(s"updateScriptCache")
       if (first) logger.info("Compiling and starting scripts ...")
       val start = System.currentTimeMillis()
