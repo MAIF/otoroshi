@@ -388,10 +388,20 @@ trait NanoApp extends RequestTransformer {
       apiKey: Option[ApiKey] = None,
       user: Option[PrivateAppsUser] = None
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
-    val promise = Promise[Source[ByteString, _]]
-    awaitingRequests.put(snowflake, promise)
-    val bodySource: Source[ByteString, _] = Source.fromFuture(promise.future).flatMapConcat(s => s)
-    route(rawRequest, bodySource).map(r => Left(r))
+    awaitingRequests.putIfAbsent(snowflake, Promise[Source[ByteString, _]])
+    awaitingRequests.get(snowflake).map { promise =>
+      val consumed = new AtomicBoolean(false)
+      val bodySource: Source[ByteString, _] = Source.fromFuture(promise.future).flatMapConcat(s => s).alsoTo(Sink.onComplete {
+        case _ => consumed.set(true)
+      })
+      route(rawRequest, bodySource).map { r =>
+        if (!consumed.get()) bodySource.runWith(Sink.ignore)
+        awaitingRequests.remove(snowflake)
+        Left(r)
+      }
+    } getOrElse {
+      FastFuture.successful(Left(Results.InternalServerError(Json.obj("error" -> s"no body promise found for $snowflake"))))
+    }
   }
 
   override def transformRequestBody(
@@ -403,8 +413,8 @@ trait NanoApp extends RequestTransformer {
       apiKey: Option[ApiKey] = None,
       user: Option[PrivateAppsUser] = None
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
+    awaitingRequests.putIfAbsent(snowflake, Promise[Source[ByteString, _]])
     awaitingRequests.get(snowflake).map(_.trySuccess(body))
-    awaitingRequests.remove(snowflake)
     body
   }
 
