@@ -107,14 +107,25 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) {
   def timer(name: String): Timer                    = metricRegistry.timer(name)
   def withTimer[T](name: String)(f: => T): T = {
     val ctx = metricRegistry.timer(name).time()
-    val res = f
-    ctx.close()
-    res
+    try {
+      val res = f
+      ctx.close()
+      res
+    } catch {
+      case e: Throwable =>
+        ctx.close()
+        metricRegistry.counter(name + ".errors").inc()
+        throw e
+    }
   }
   def withTimerAsync[T](name: String)(f: => Future[T])(implicit ec: ExecutionContext): Future[T] = {
     val ctx = metricRegistry.timer(name).time()
     f.andThen {
-      case _ => ctx.close()
+      case r =>
+        ctx.close()
+        if (r.isFailure) {
+          metricRegistry.counter(name + ".errors").inc()
+        }
     }
   }
 
