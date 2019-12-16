@@ -161,6 +161,7 @@ object LetsEncryptHelper {
   private def doChallenges(order: Order, domain: String)(implicit ec: ExecutionContext, env: Env, mat: Materializer): Future[Either[String, Seq[Status]]] = {
     Source(order.getAuthorizations.asScala.toList).mapAsync(1) { authorization =>
       val challenge = authorization.findChallenge(classOf[Http01Challenge])
+      logger.info("setting challenge content in datastore")
       env.datastores.rawDataStore.set(s"${env.storageRoot}:letsencrypt:challenges:$domain:${challenge.getToken}", ByteString(challenge.getAuthorization), Some(10.minutes.toMillis))
       authorizeOrder(domain, authorization.getStatus, challenge)
     }.toMat(Sink.seq)(Keep.right).run().map { seq =>
@@ -177,7 +178,7 @@ object LetsEncryptHelper {
         FastFuture.successful(Right(Status.VALID))
       } else {
         challenge.trigger()
-        Source.tick(1.seconds, 1.seconds, ())
+        Source.tick(1.seconds, 3.seconds, ())
           .mapAsync(1) { _ =>
             Future {
               challenge.update()
@@ -198,7 +199,7 @@ object LetsEncryptHelper {
   }
 
   private def orderCertificate(order: Order, csr: ByteString)(implicit ec: ExecutionContext, env: Env, mat: Materializer): Future[Either[String, Order]] = {
-    Source.tick(1.seconds, 1.seconds, ())
+    Source.tick(1.seconds, 3.seconds, ())
       .mapAsync(1) { _ =>
         Future {
           order.update()
