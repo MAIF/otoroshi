@@ -2,7 +2,7 @@ package otoroshi.utils
 
 import java.io.StringWriter
 import java.security.cert.X509Certificate
-import java.security.spec.PKCS8EncodedKeySpec
+import java.security.spec.{PKCS8EncodedKeySpec, X509EncodedKeySpec}
 import java.security.{KeyFactory, KeyPair}
 import java.util.Base64
 import java.util.concurrent.Executors
@@ -35,16 +35,14 @@ case class LetsEncryptSettings(enabled: Boolean = false, server: String = "acme:
       privko <- Option(privateKey).filter(_.trim.nonEmpty)
         .map(_.replace(PemHeaders.BeginPrivateKey, "").replace(PemHeaders.EndPrivateKey, "").trim())
         .map { content =>
-          val matcher: Matcher = PRIVATE_KEY_PATTERN.matcher(content)
-          val encodedKey: Array[Byte] = base64Decode(matcher.group(1))
+          val encodedKey: Array[Byte] = base64Decode(content)
           new PKCS8EncodedKeySpec(encodedKey)
         }
       pubko <- Option(publicKey).filter(_.trim.nonEmpty)
         .map(_.replace(PemHeaders.BeginPublicKey, "").replace(PemHeaders.EndPublicKey, "").trim)
         .map { content =>
-          val matcher: Matcher = PUBLIC_KEY_PATTERN.matcher(content)
-          val encodedKey: Array[Byte] = base64Decode(matcher.group(1))
-          new PKCS8EncodedKeySpec(encodedKey)
+          val encodedKey: Array[Byte] = base64Decode(content)
+          new X509EncodedKeySpec(encodedKey)
         }
     } yield {
       Try(KeyFactory.getInstance("RSA"))
@@ -170,7 +168,7 @@ object LetsEncryptHelper {
   }
 
   private def authorizeOrder(domain: String, status: Status, challenge: Http01Challenge)(implicit ec: ExecutionContext, env: Env, mat: Materializer): Future[Either[String, Status]] = {
-    logger.info(s"Authorizing order $domain")
+    logger.info(s"authorizing order $domain")
     if (status == Status.VALID) {
       FastFuture.successful(Right(Status.VALID))
     } else {

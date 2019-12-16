@@ -258,20 +258,25 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
 
   def letsEncrypt() = actionBuilder.async { req =>
     logger.info("acme endpoint")
-    env.datastores.globalConfigDataStore.latestSafe match {
-      case None => FastFuture.successful(InternalServerError(Json.obj("error" -> "no config found !")))
-      case Some(config) if !config.letsEncryptSettings.enabled =>
-        logger.info("acme endpoint: disabled")
-        FastFuture.successful(InternalServerError(Json.obj("error" -> "config disabled !")))
-      case Some(config) => {
-        logger.info("acme endpoint: enabled")
-        val domain = req.theDomain
-        val token = req.relativeUri.split("\\?").head.replace("/.well-known/acme-challenge/", "")
-        LetsEncryptHelper.getChallengeForToken(domain, token).map {
-          case None => NotFound(Json.obj("error" -> "token not found !"))
-          case Some(body) => Ok(body.utf8String).as("text/plain")
+    if (!req.theSecured) {
+      env.datastores.globalConfigDataStore.latestSafe match {
+        case None => FastFuture.successful(InternalServerError(Json.obj("error" -> "no config found !")))
+        case Some(config) if !config.letsEncryptSettings.enabled =>
+          logger.info("acme endpoint: disabled")
+          FastFuture.successful(InternalServerError(Json.obj("error" -> "config disabled !")))
+        case Some(config) => {
+          logger.info("acme endpoint: enabled")
+          val domain = req.theDomain
+          val token = req.relativeUri.split("\\?").head.replace("/.well-known/acme-challenge/", "")
+          LetsEncryptHelper.getChallengeForToken(domain, token).map {
+            case None => NotFound(Json.obj("error" -> "token not found !"))
+            case Some(body) => Ok(body.utf8String).as("text/plain")
+          }
         }
       }
+    } else {
+      logger.info("acme endpoint not on secured channel")
+      FastFuture.successful(InternalServerError(Json.obj("error" -> "no config found !")))
     }
   }
 

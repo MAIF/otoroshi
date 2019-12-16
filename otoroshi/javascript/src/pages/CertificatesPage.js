@@ -393,12 +393,13 @@ export class CertificatesPage extends Component {
         BackOfficeServices.letsEncryptCert(value).then(cert => {
           if (cert.error) {
             window.newAlert(`Error while creating let's encrypt certificate: ${cert.error}`)
+          } else if (cert['Otoroshi-Error']) {
+            window.newAlert(`Error while creating let's encrypt certificate: ${cert['Otoroshi-Error']}`)
           } else {
             this.props.setTitle(`Create a new certificate`);
             window.history.replaceState({}, '', `/bo/dashboard/certificates/add`);
             this.table.setState({ currentItem: cert, showAddForm: true });
           }
-          
         });
       }
     });
