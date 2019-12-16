@@ -1,11 +1,14 @@
 package models
 
+import java.security.KeyPair
+
 import akka.http.scaladsl.util.FastFuture
 import com.risksense.ipaddr.IpNetwork
 import env.Env
 import events._
 import otoroshi.plugins.geoloc.{IpStackGeolocationHelper, MaxMindGeolocationHelper}
 import otoroshi.plugins.useragent.UserAgentHelper
+import otoroshi.utils.LetsEncryptSettings
 import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.ws.WSProxyServer
@@ -257,7 +260,10 @@ case class UserAgentSettings(enabled: Boolean) {
   }
 }
 
+
+
 case class GlobalConfig(
+    letsEncryptSettings: LetsEncryptSettings = LetsEncryptSettings(),
     lines: Seq[String] = Seq("prod"),
     enableEmbeddedMetrics: Boolean = true,
     streamEntityOnly: Boolean = true,
@@ -377,6 +383,7 @@ object GlobalConfig {
           )
       }
       Json.obj(
+        "letsEncryptSettings" -> o.letsEncryptSettings.json,
         "lines"                   -> JsArray(o.lines.map(JsString.apply)),
         "maintenanceMode"         -> o.maintenanceMode,
         "enableEmbeddedMetrics"   -> o.enableEmbeddedMetrics,
@@ -530,7 +537,10 @@ object GlobalConfig {
             .getOrElse(NoneGeolocationSettings),
           userAgentSettings = UserAgentSettings.format
             .reads((json \ "userAgentSettings").asOpt[JsValue].getOrElse(JsNull))
-            .getOrElse(UserAgentSettings(false))
+            .getOrElse(UserAgentSettings(false)),
+          letsEncryptSettings = LetsEncryptSettings.format
+            .reads((json \ "letsEncryptSettings").asOpt[JsValue].getOrElse(JsNull))
+            .getOrElse(LetsEncryptSettings())
         )
       } map {
         case sd => JsSuccess(sd)

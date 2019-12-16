@@ -387,6 +387,23 @@ export class CertificatesPage extends Component {
     });
   };
 
+  createLetsEncrypt = () => {
+    window.newPrompt('Certificate hostname').then(value => {
+      if (value && value.trim() !== '') {
+        BackOfficeServices.letsEncryptCert(value).then(cert => {
+          if (cert.error) {
+            window.newAlert(`Error while creating let's encrypt certificate: ${cert.error}`)
+          } else {
+            this.props.setTitle(`Create a new certificate`);
+            window.history.replaceState({}, '', `/bo/dashboard/certificates/add`);
+            this.table.setState({ currentItem: cert, showAddForm: true });
+          }
+          
+        });
+      }
+    });
+  };
+
   createCASigned = (e, id) => {
     e.preventDefault();
     e.stopPropagation();
@@ -446,6 +463,13 @@ export class CertificatesPage extends Component {
               style={{ marginRight: 0 }}
               className="btn btn-primary">
               <i className="glyphicon glyphicon-plus-sign" /> Self signed cert.
+            </button>
+            <button
+              type="button"
+              onClick={this.createLetsEncrypt}
+              style={{ marginRight: 0 }}
+              className="btn btn-primary">
+              <i className="glyphicon glyphicon-plus-sign" /> Let's Encrypt cert.
             </button>
             {
               <button

@@ -589,6 +589,30 @@ export class DangerZonePage extends Component {
         help: '...',
       },
     },
+    'letsEncryptSettings.enabled': {
+      type: 'bool',
+      props: {
+        label: 'Enabled',
+      },
+    },
+    'letsEncryptSettings.server': {
+      type: 'string',
+      props: {
+        label: 'Server URL',
+      },
+    },
+    'letsEncryptSettings.publicKey': {
+      type: 'text',
+      props: {
+        label: 'Public Key',
+      },
+    },
+    'letsEncryptSettings.privateKey': {
+      type: 'text',
+      props: {
+        label: 'Private Key',
+      },
+    },
     'mailGunSettings.eu': {
       type: 'bool',
       props: {
@@ -819,6 +843,11 @@ export class DangerZonePage extends Component {
     '>>>Backoffice auth. settings',
     'backOfficeAuthRef',
     'backOfficeAuthButtons',
+    '>>>Let\'s encrypt settings',
+    'letsEncryptSettings.enabled',
+    'letsEncryptSettings.server',
+    'letsEncryptSettings.publicKey',
+    'letsEncryptSettings.privateKey',
     '>>>Mailer settings',
     'mailerSettings',
     '>>>CleverCloud settings',

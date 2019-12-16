@@ -989,6 +989,18 @@ export function selfSignedCert(host) {
   }).then(r => r.json());
 }
 
+export function letsEncryptCert(host) {
+  return fetch(`/bo/api/certificates/_letsencrypt`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ host }),
+  }).then(r => r.json());
+}
+
 export function caSignedCert(id, host) {
   return fetch(`/bo/api/certificates/_caSigned`, {
     method: 'POST',

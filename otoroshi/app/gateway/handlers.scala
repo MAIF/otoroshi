@@ -42,6 +42,7 @@ import scala.util.{Failure, Success, Try}
 import utils.RequestImplicits._
 import otoroshi.script.Implicits._
 import otoroshi.script._
+import otoroshi.utils.LetsEncryptHelper
 import utils.http.Implicits._
 import play.libs.ws.WSCookie
 import ssl.PemHeaders
@@ -236,6 +237,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
           case _ if request.relativeUri.startsWith("/.well-known/otoroshi/login")  => Some(setPrivateAppsCookies())
           case _ if request.relativeUri.startsWith("/.well-known/otoroshi/logout") => Some(removePrivateAppsCookies())
           case _ if request.relativeUri.startsWith("/.well-known/otoroshi/me")     => Some(myProfile())
+          case _ if request.relativeUri.startsWith("/.well-known/acme-challenge/") => Some(letsEncrypt())
           case env.backOfficeHost if !isSecured && toHttps                         => Some(redirectToHttps())
           case env.privateAppsHost if !isSecured && toHttps                        => Some(redirectToHttps())
           case env.backOfficeHost if monitoring                                    => Some(forbidden())
@@ -249,6 +251,21 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
               case None    => Some(forwardCall())
               case Some(_) => Some(webSocketHandler.proxyWebSocket())
             }
+        }
+      }
+    }
+  }
+
+  def letsEncrypt() = actionBuilder.async { req =>
+    env.datastores.globalConfigDataStore.latestSafe match {
+      case None => FastFuture.successful(InternalServerError(Json.obj("error" -> "no config found !")))
+      case Some(config) if !config.letsEncryptSettings.enabled => FastFuture.successful(InternalServerError(Json.obj("error" -> "config disabled !")))
+      case Some(config) => {
+        val domain = req.theDomain
+        val token = req.relativeUri.split("\\?").head.replace("/.well-known/acme-challenge/", "")
+        LetsEncryptHelper.getChallengeForToken(domain, token).map {
+          case None => NotFound(Json.obj("error" -> "token not found !"))
+          case Some(body) => Ok(body.utf8String).as("text/plain")
         }
       }
     }

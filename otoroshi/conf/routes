@@ -66,6 +66,8 @@ POST    /bo/api/certificates/_selfSigned                      controllers.BackOf
 POST    /bo/api/certificates/_caSigned                        controllers.BackOfficeController.caSignedCert()
 POST    /bo/api/certificates/_ca                              controllers.BackOfficeController.caCert()
 POST    /bo/api/certificates/:id/_renew                       controllers.BackOfficeController.renew(id)
+POST    /bo/api/certificates/_letsencrypt                     controllers.BackOfficeController.createLetsEncryptCertificate()
+
 
 POST    /bo/api/oidc/_fetchConfig                            controllers.BackOfficeController.fetchOpenIdConfiguration()
 

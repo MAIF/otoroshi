@@ -101,6 +101,7 @@ case class Cert(
     ca: Boolean = false,
     valid: Boolean = false,
     autoRenew: Boolean = false,
+    letsEncrypt: Boolean = false,
     subject: String = "--",
     from: DateTime = DateTime.now(),
     to: DateTime = DateTime.now(),
@@ -274,6 +275,7 @@ object Cert {
       "ca"         -> cert.ca,
       "valid"      -> cert.valid,
       "autoRenew"  -> cert.autoRenew,
+      "letsEncrypt" -> cert.letsEncrypt,
       "subject"    -> cert.subject,
       "from"       -> cert.from.getMillis,
       "to"         -> cert.to.getMillis,
@@ -292,6 +294,7 @@ object Cert {
           client = (json \ "client").asOpt[Boolean].getOrElse(false),
           valid = (json \ "valid").asOpt[Boolean].getOrElse(false),
           autoRenew = (json \ "autoRenew").asOpt[Boolean].getOrElse(false),
+          letsEncrypt = (json \ "letsEncrypt").asOpt[Boolean].getOrElse(false),
           subject = (json \ "subject").asOpt[String].getOrElse("--"),
           from = (json \ "from").asOpt[Long].map(v => new DateTime(v)).getOrElse(DateTime.now()),
           to = (json \ "to").asOpt[Long].map(v => new DateTime(v)).getOrElse(DateTime.now())
@@ -452,8 +455,12 @@ object DynamicSSLEngineProvider {
     CASE_INSENSITIVE
   )
 
-  private val KEY_PATTERN: Pattern = Pattern.compile(
+  val PRIVATE_KEY_PATTERN: Pattern = Pattern.compile(
     "-+BEGIN\\s+.*PRIVATE\\s+KEY[^-]*-+(?:\\s|\\r|\\n)+" + "([a-z0-9+/=\\r\\n]+)" + "-+END\\s+.*PRIVATE\\s+KEY[^-]*-+",
+    CASE_INSENSITIVE
+  )
+  val PUBLIC_KEY_PATTERN: Pattern = Pattern.compile(
+    "-+BEGIN\\s+.*PUBLIC\\s+KEY[^-]*-+(?:\\s|\\r|\\n)+" + "([a-z0-9+/=\\r\\n]+)" + "-+END\\s+.*PUBLIC\\s+KEY[^-]*-+",
     CASE_INSENSITIVE
   )
   private val certificates = new TrieMap[String, Cert]()
@@ -682,7 +689,7 @@ object DynamicSSLEngineProvider {
                      keyPassword: Option[String],
                      log: Boolean = true): Either[KeyStoreError, PKCS8EncodedKeySpec] = {
     if (log) logger.debug(s"Reading private key for $id")
-    val matcher: Matcher = KEY_PATTERN.matcher(content)
+    val matcher: Matcher = PRIVATE_KEY_PATTERN.matcher(content)
     if (!matcher.find) {
       logger.debug(s"[$id] Found no private key :(")
       Left(s"[$id] Found no private key")

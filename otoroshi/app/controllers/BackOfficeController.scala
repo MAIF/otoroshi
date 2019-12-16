@@ -952,4 +952,13 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
       }
     }
   }
+
+  def createLetsEncryptCertificate() = BackOfficeActionAuth.async(parse.json) { ctx =>
+    (ctx.request.body \ "host").asOpt[String] match {
+      case None => FastFuture.successful(BadRequest(Json.obj("error" -> "no domain found in request")))
+      case Some(domain) => otoroshi.utils.LetsEncryptHelper.createCertificate(domain).map { cert =>
+        Ok(cert.toJson)
+      }
+    }
+  }
 }
