@@ -128,7 +128,7 @@ object LetsEncryptHelper {
 
               val certificate: X509Certificate = order.getCertificate.getCertificate
 
-              val cert = Cert.apply(certificate, keyPair, None, false).copy(letsEncrypt = true).enrich()
+              val cert = Cert.apply(certificate, keyPair, None, false).copy(letsEncrypt = true, autoRenew = true).enrich()
 
               cert.save().map(_ => cert)
             }

@@ -350,6 +350,12 @@ export class CertificatesPage extends Component {
       notFilterable: true,
     },
     {
+      title: 'Let\'s Encrypt',
+      content: item => (!item.letsEncrypt ? 'no' : <span className="label label-success">yes</span>),
+      style: { textAlign: 'center', width: 70 },
+      notFilterable: true,
+    },
+    {
       title: 'Client',
       content: item => (!item.client ? 'no' : <span className="label label-success">yes</span>),
       style: { textAlign: 'center', width: 70 },
@@ -391,10 +397,8 @@ export class CertificatesPage extends Component {
     window.newPrompt('Certificate hostname').then(value => {
       if (value && value.trim() !== '') {
         BackOfficeServices.letsEncryptCert(value).then(cert => {
-          if (cert.error) {
+          if (!cert.chain) {
             window.newAlert(`Error while creating let's encrypt certificate: ${cert.error}`)
-          } else if (cert['Otoroshi-Error']) {
-            window.newAlert(`Error while creating let's encrypt certificate: ${cert['Otoroshi-Error']}`)
           } else {
             this.props.setTitle(`Create a new certificate`);
             window.history.replaceState({}, '', `/bo/dashboard/certificates/add`);
