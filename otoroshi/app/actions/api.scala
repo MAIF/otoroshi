@@ -79,16 +79,16 @@ class ApiAction(val parser: BodyParser[AnyContent])(implicit env: Env)
                           case Failure(err) => error(s"Server error : $err", Some(err))
                         }
                       }
-                      case _ => error("You're not authorized 1")
+                      case _ => error("You're not authorized")
                     }
                   } recoverWith {
-                  case _ => error("You're not authorized 2")
+                  case _ => error("You're not authorized")
                 }
               }
-              case _ => error("You're not authorized 3")
+              case _ => error("You're not authorized")
             }
           }
-          case _ => error("You're not authorized 4")
+          case _ => error("You're not authorized")
         }
       }
       case _ => error(s"Not found")
