@@ -471,15 +471,13 @@ export class CertificatesPage extends Component {
               className="btn btn-primary">
               <i className="glyphicon glyphicon-plus-sign" /> Let's Encrypt cert.
             </button>
-            {
-              <button
-                type="button"
-                onClick={this.createCA}
-                style={{ marginRight: 0 }}
-                className="btn btn-primary">
-                <i className="glyphicon glyphicon-plus-sign" /> Self signed Certificate Authority
-              </button>
-            }
+            <button
+              type="button"
+              onClick={this.createCA}
+              style={{ marginRight: 0 }}
+              className="btn btn-primary">
+              <i className="glyphicon glyphicon-plus-sign" /> Self signed Certificate Authority
+            </button>
           </div>
         )}
       />
