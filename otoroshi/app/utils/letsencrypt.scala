@@ -137,8 +137,9 @@ object LetsEncryptHelper {
                       FastFuture.successful(Left("No certificate found !"))
                     case Some(c) => {
                       // env.datastores.rawDataStore.del(Seq(s"${env.storageRoot}:letsencrypt:challenges:$domain:$token"))
+                      val ca: X509Certificate = c.getCertificateChain.get(1)
                       val certificate: X509Certificate = c.getCertificate
-                      val cert = Cert.apply(certificate, keyPair, None, false).copy(letsEncrypt = true, autoRenew = true).enrich()
+                      val cert = Cert.apply(certificate, keyPair, ca, false).copy(letsEncrypt = true, autoRenew = true).enrich()
                       cert.save().map(_ => Right(cert))
                     }
                   }

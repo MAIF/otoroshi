@@ -260,6 +260,20 @@ object Cert {
     )
   }
 
+  def apply(cert: X509Certificate, keyPair: KeyPair, ca: X509Certificate, client: Boolean): Cert = {
+    Cert(
+      id = IdGenerator.token(32),
+      chain = s"${PemHeaders.BeginCertificate}\n${Base64.getEncoder
+        .encodeToString(cert.getEncoded)}\n${PemHeaders.EndCertificate}\n${PemHeaders.BeginCertificate}\n${Base64.getEncoder
+        .encodeToString(ca.getEncoded)}\n${PemHeaders.EndCertificate}\n",
+      privateKey =
+        s"${PemHeaders.BeginPrivateKey}\n${Base64.getEncoder.encodeToString(keyPair.getPrivate.getEncoded)}\n${PemHeaders.EndPrivateKey}",
+      caRef = None,
+      autoRenew = false,
+      client = client
+    )
+  }
+
   val _fmt: Format[Cert] = new Format[Cert] {
     override def writes(cert: Cert): JsValue = Json.obj(
       "id"         -> cert.id,
