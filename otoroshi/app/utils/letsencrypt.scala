@@ -117,7 +117,7 @@ object LetsEncryptHelper {
             case Left(err) => 
               logger.error(s"challenges failed: $err")
               FastFuture.successful(Left(err))
-            case Right(statuses) => {
+            case Right(_) => {
 
               logger.info(s"building csr for $domain")
               val keyPair = KeyPairUtils.createKeyPair(2048)

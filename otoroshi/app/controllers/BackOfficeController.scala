@@ -20,6 +20,7 @@ import models._
 import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
+import otoroshi.utils.LetsEncryptHelper
 import play.api.Logger
 import play.api.http.HttpEntity
 import play.api.libs.json._
@@ -748,45 +749,62 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
   }
 
   def renew(id: String) = BackOfficeActionAuth.async { ctx =>
-    env.datastores.certificatesDataStore.findById(id).flatMap {
+    env.datastores.certificatesDataStore.findById(id).map(_.map(_.enrich())).flatMap {
       case None => FastFuture.successful(NotFound(Json.obj("error" -> s"No Certificate found")))
-      case Some(original) if original.ca && original.selfSigned => {
-        val keyPair: KeyPair      = original.keyPair
-        val cert: X509Certificate = FakeKeyStore.createCA(original.subject, FiniteDuration(365, TimeUnit.DAYS), keyPair)
-        val certificate: Cert     = Cert(cert, keyPair, None, original.client).enrich().copy(id = original.id)
-        certificate.save().map { _ =>
-          Ok(certificate.toJson)
+      case Some(cert) if cert.letsEncrypt => {
+        LetsEncryptHelper.renew(cert).map(c => Ok(c.toJson))
+      }
+      case Some(cert) if !cert.letsEncrypt && cert.ca => {
+        val renewFor = FiniteDuration(365, TimeUnit.DAYS)
+        val newCert = cert.renew(renewFor, None)
+        newCert.save().map(_ => Ok(newCert.toJson))
+      }
+      case Some(cert) if !cert.letsEncrypt => {
+        env.datastores.certificatesDataStore.findAll().flatMap { certificates =>
+          val renewableCas = certificates
+            .filter(cert => cert.ca && cert.selfSigned)
+          val renewFor = FiniteDuration(365, TimeUnit.DAYS)
+          val newCert = cert.renew(renewFor, renewableCas.find(_.id == cert.id))
+          newCert.save().map(_ => Ok(newCert.toJson))
         }
       }
-      case Some(original) if original.selfSigned => {
-        val keyPair: KeyPair = original.keyPair
-        val cert: X509Certificate =
-          FakeKeyStore.createSelfSignedCertificate(original.domain, FiniteDuration(365, TimeUnit.DAYS), keyPair)
-        val certificate: Cert = Cert(cert, keyPair, None, original.client).enrich().copy(id = original.id)
-        certificate.save().map { _ =>
-          Ok(certificate.toJson)
-        }
-      }
-      case Some(original) if original.caRef.isDefined => {
-        env.datastores.certificatesDataStore.findById(original.caRef.get).flatMap {
-          case None => FastFuture.successful(NotFound(Json.obj("error" -> s"No Certificate found")))
-          case Some(ca) => {
-            val keyPair: KeyPair = original.keyPair
-            val cert: X509Certificate = FakeKeyStore.createCertificateFromCA(original.domain,
-                                                                             FiniteDuration(365, TimeUnit.DAYS),
-                                                                             keyPair,
-                                                                             ca.certificate.get,
-                                                                             ca.keyPair)
-            val certificate: Cert = Cert(cert, keyPair, None, original.client).enrich().copy(id = original.id)
-            certificate.save().map { _ =>
-              Ok(certificate.toJson)
-            }
-          }
-        }
-      }
-      case _ => {
-        FastFuture.successful(BadRequest(Json.obj("error" -> s"Bad renew")))
-      }
+      // case Some(original) if original.ca && original.selfSigned => {
+      //   val keyPair: KeyPair      = original.keyPair
+      //   val cert: X509Certificate = FakeKeyStore.createCA(original.subject, FiniteDuration(365, TimeUnit.DAYS), keyPair)
+      //   val certificate: Cert     = Cert(cert, keyPair, None, original.client).enrich().copy(id = original.id)
+      //   certificate.save().map { _ =>
+      //     Ok(certificate.toJson)
+      //   }
+      // }
+      // case Some(original) if original.selfSigned => {
+      //   val keyPair: KeyPair = original.keyPair
+      //   val cert: X509Certificate =
+      //     FakeKeyStore.createSelfSignedCertificate(original.domain, FiniteDuration(365, TimeUnit.DAYS), keyPair)
+      //   val certificate: Cert = Cert(cert, keyPair, None, original.client).enrich().copy(id = original.id)
+      //   certificate.save().map { _ =>
+      //     Ok(certificate.toJson)
+      //   }
+      // }
+      // case Some(original) if original.caRef.isDefined => {
+      //   env.datastores.certificatesDataStore.findById(original.caRef.get).flatMap {
+      //     case None => FastFuture.successful(NotFound(Json.obj("error" -> s"No Certificate found")))
+      //     case Some(ca) => {
+      //       val keyPair: KeyPair = original.keyPair
+      //       val cert: X509Certificate = FakeKeyStore.createCertificateFromCA(original.domain,
+      //                                                                        FiniteDuration(365, TimeUnit.DAYS),
+      //                                                                        keyPair,
+      //                                                                        ca.certificate.get,
+      //                                                                        ca.keyPair)
+      //       val certificate: Cert = Cert(cert, keyPair, None, original.client).enrich().copy(id = original.id)
+      //       certificate.save().map { _ =>
+      //         Ok(certificate.toJson)
+      //       }
+      //     }
+      //   }
+      // }
+      // case _ => {
+      //   FastFuture.successful(BadRequest(Json.obj("error" -> s"Bad renew")))
+      // }
     }
   }
 
