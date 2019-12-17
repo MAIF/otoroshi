@@ -162,6 +162,29 @@ object LetsEncryptHelper {
     }
   }
 
+  def renew(cert: Cert)(implicit ec: ExecutionContext, env: Env, mat: Materializer): Future[Cert] = {
+    env.datastores.rawDataStore.get(s"${env.storageRoot}:letsencrypt:renew:${cert.id}").flatMap {
+      case None =>
+        logger.info(s"Certificate already in renewing process: ${cert.id} for ${cert.domain}")
+        FastFuture.successful(cert)
+      case Some(_) => {
+        val enriched = cert.enrich()
+        env.datastores.rawDataStore.set(s"${env.storageRoot}:letsencrypt:renew:${cert.id}", ByteString("true"), Some(10.minutes.toMillis)).flatMap { _ =>
+          createCertificate(enriched.domain).flatMap {
+            case Left(err) =>
+              logger.error(s"Error while renewing certificate ${cert.id} for ${enriched.domain}: $err")
+              FastFuture.successful(enriched)
+            case Right(c) =>
+              val cenriched = c.enrich()
+              enriched.copy(chain = cenriched.chain, privateKey = cenriched.privateKey, autoRenew = true, letsEncrypt = true).save().map(_ => cenriched)
+          }.andThen {
+            case _ => env.datastores.rawDataStore.del(Seq(s"${env.storageRoot}:letsencrypt:renew:${cert.id}"))
+          }
+        }
+      }
+    }
+  }
+
   private def orderLetsEncryptCertificate(account: Account, domain: String)(implicit ec: ExecutionContext, env: Env, mat: Materializer): Future[Order] = {
     Future {
       account.newOrder().domains(domain).create()

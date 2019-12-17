@@ -17,16 +17,11 @@ import java.util.{Base64, Date}
 
 import actions.ApiAction
 import akka.http.scaladsl.util.FastFuture
-import akka.stream.scaladsl.Flow
+import akka.stream.Materializer
+import akka.stream.scaladsl.{Flow, Sink, Source}
 import akka.util.ByteString
 import com.google.common.base.Charsets
-import com.typesafe.sslconfig.ssl.{
-  KeyManagerConfig,
-  KeyStoreConfig,
-  SSLConfigSettings,
-  TrustManagerConfig,
-  TrustStoreConfig
-}
+import com.typesafe.sslconfig.ssl.{KeyManagerConfig, KeyStoreConfig, SSLConfigSettings, TrustManagerConfig, TrustStoreConfig}
 import env.Env
 import gateway.Errors
 import javax.crypto.Cipher.DECRYPT_MODE
@@ -37,6 +32,7 @@ import models._
 import org.apache.commons.codec.binary.Hex
 import org.apache.commons.codec.digest.DigestUtils
 import org.joda.time.{DateTime, Interval}
+import otoroshi.utils.LetsEncryptHelper
 import play.api.{Configuration, Logger}
 import play.api.libs.json._
 import play.api.libs.ws.WSProxyServer
@@ -322,7 +318,8 @@ object Cert {
 
 trait CertificateDataStore extends BasicStore[Cert] {
 
-  def renewCertificates()(implicit ec: ExecutionContext, env: Env): Future[Unit] = {
+  def renewCertificates()(implicit ec: ExecutionContext, env: Env, mat: Materializer): Future[Unit] = {
+
     def willBeInvalidSoon(cert: Cert): Boolean = {
       val enriched         = cert.enrich()
       val globalInterval   = new Interval(enriched.from, enriched.to)
@@ -330,19 +327,40 @@ trait CertificateDataStore extends BasicStore[Cert] {
       val percentage: Long = (nowInterval.toDurationMillis * 100) / globalInterval.toDurationMillis
       percentage < 20
     }
-    findAll().flatMap { certificates =>
+
+    def renewSelfSignedCertificates(certificates: Seq[Cert]): Future[Unit] = {
       val renewFor = FiniteDuration(365, TimeUnit.DAYS)
-      val renewableCas =
-        certificates.filter(cert => cert.ca && cert.selfSigned).filter(willBeInvalidSoon).map(_.renew(renewFor, None))
-      val renewableCertificates = certificates
-        .filter { cert =>
-          !cert.ca && (cert.selfSigned || cert.caRef.nonEmpty)
-        }
+      val renewableCas = certificates
+        .filter(_.autoRenew)
+        .filter(cert => cert.ca && cert.selfSigned)
         .filter(willBeInvalidSoon)
-        .map(c => c.renew(renewFor, renewableCas.find(_.id == c.id)))
-      val certs = renewableCas ++ renewableCertificates
-      Future.sequence(certs.map(_.save())).map(_ => ())
+      val renewableCertificates = certificates
+        .filter(_.autoRenew)
+        .filter { cert => !cert.ca && (cert.selfSigned || cert.caRef.nonEmpty) }
+        .filter(willBeInvalidSoon)
+      Source(renewableCas.toList ++ renewableCertificates.toList)
+        .mapAsync(1) {
+          case c if c.ca => c.renew(renewFor, None).save()
+          case c => c.renew(renewFor, renewableCas.find(_.id == c.id)).save()
+        }
+        .runWith(Sink.ignore).map(_ => ())
     }
+
+    def renewLetsEncryptCertificates(certificates: Seq[Cert]): Future[Unit] = {
+      val renewableCertificates = certificates
+        .filter(_.autoRenew)
+        .filter(_.letsEncrypt)
+        .filter(willBeInvalidSoon)
+      Source(renewableCertificates.toList)
+        .mapAsync(1)(c => LetsEncryptHelper.renew(c))
+        .runWith(Sink.ignore).map(_ => ())
+    }
+
+    for {
+      certificates <- findAll()
+      _            <- renewSelfSignedCertificates(certificates)
+      _            <- renewLetsEncryptCertificates(certificates)
+    } yield ()
   }
 
   def readCertOrKey(conf: Configuration, path: String, env: Env): Option[String] = {

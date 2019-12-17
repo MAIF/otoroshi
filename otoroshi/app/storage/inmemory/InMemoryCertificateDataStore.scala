@@ -37,6 +37,7 @@ class InMemoryCertificateDataStore(redisCli: RedisLike, _env: Env)
 
   def startSync(): Unit = {
     implicit val ec  = _env.otoroshiExecutionContext
+    implicit val mat  = _env.otoroshiMaterializer
     implicit val env = _env
     importInitialCerts(logger)
     cancelRenewRef.set(_env.otoroshiActorSystem.scheduler.schedule(60.seconds, 1.hour) {
