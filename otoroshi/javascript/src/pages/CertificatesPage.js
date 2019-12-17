@@ -57,6 +57,7 @@ class CertificateInfos extends Component {
         <TextInput label="Subject" disabled={true} value={this.state.cert.subjectDN} />
         <TextInput label="Issuer" disabled={true} value={this.state.cert.issuerDN} />
         <TextInput label="Domain" disabled={true} value={this.state.cert.domain} />
+        <BooleanInput label="Let's Encrypt" disabled={true} value={this.state.cert.letsEncrypt} />
         <BooleanInput label="Self signed" disabled={true} value={this.state.cert.selfSigned} />
         <BooleanInput label="CA" disabled={true} value={this.state.cert.ca} />
         <TextInput
