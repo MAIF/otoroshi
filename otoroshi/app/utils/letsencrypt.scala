@@ -164,10 +164,10 @@ object LetsEncryptHelper {
 
   def renew(cert: Cert)(implicit ec: ExecutionContext, env: Env, mat: Materializer): Future[Cert] = {
     env.datastores.rawDataStore.get(s"${env.storageRoot}:letsencrypt:renew:${cert.id}").flatMap {
-      case None =>
+      case Some(_) =>
         logger.warn(s"Certificate already in renewing process: ${cert.id} for ${cert.domain}")
         FastFuture.successful(cert)
-      case Some(_) => {
+      case None => {
         val enriched = cert.enrich()
         env.datastores.rawDataStore.set(s"${env.storageRoot}:letsencrypt:renew:${cert.id}", ByteString("true"), Some(10.minutes.toMillis)).flatMap { _ =>
           createCertificate(enriched.domain).flatMap {
