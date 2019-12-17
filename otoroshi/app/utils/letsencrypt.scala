@@ -85,9 +85,9 @@ object LetsEncryptHelper {
 
   private val logger = Logger("LetsEncryptHelper")
 
-  private val blockingEc = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(2))
+  private val blockingEc = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(16))
 
-  def createCertificate(domain: String)(implicit ec: ExecutionContext, env: Env, mat: Materializer): Future[Cert] = {
+  def createCertificate(domain: String)(implicit ec: ExecutionContext, env: Env, mat: Materializer): Future[Either[String, Cert]] = {
 
     env.datastores.globalConfigDataStore.singleton().flatMap { config =>
       val letsEncryptSettings = config.letsEncryptSettings
@@ -114,23 +114,37 @@ object LetsEncryptHelper {
         orderLetsEncryptCertificate(account, domain).flatMap { order =>
 
           logger.info(s"waiting for challenge challenge $domain")
-          doChallenges(order, domain).flatMap { _ =>
+          doChallenges(order, domain).flatMap {
+            case Left(err) => 
+              logger.error(s"challenges failed: $err")
+              FastFuture.successful(Left(err))
+            case Right(statuses) => {
 
-            logger.info(s"building csr for $domain")
-            val keyPair = KeyPairUtils.createKeyPair(2048)
-            val csrByteString = buildCsr(domain, keyPair)
+              logger.info(s"building csr for $domain")
+              val keyPair = KeyPairUtils.createKeyPair(2048)
+              val csrByteString = buildCsr(domain, keyPair)
 
-            logger.info(s"ordering certificate for $domain")
+              logger.info(s"ordering certificate for $domain")
 
-            orderCertificate(order, csrByteString).flatMap { _ =>
-
-              logger.info(s"storing certificate for $domain")
-
-              val certificate: X509Certificate = order.getCertificate.getCertificate
-
-              val cert = Cert.apply(certificate, keyPair, None, false).copy(letsEncrypt = true, autoRenew = true).enrich()
-
-              cert.save().map(_ => cert)
+              orderCertificate(order, csrByteString).flatMap {
+                case Left(err) => 
+                  logger.error(s"ordering certificate failed: $err")
+                  FastFuture.successful(Left(err))
+                case Right(newOrder) => {
+                  logger.info(s"storing certificate for $domain")
+                  Option(newOrder.getCertificate) match {
+                    case None => 
+                      logger.error(s"storing certificate failed: No certificate found !")
+                      FastFuture.successful(Left("No certificate found !"))
+                    case Some(c) => {
+                      // env.datastores.rawDataStore.del(Seq(s"${env.storageRoot}:letsencrypt:challenges:$domain:$token"))
+                      val certificate: X509Certificate = c.getCertificate
+                      val cert = Cert.apply(certificate, keyPair, None, false).copy(letsEncrypt = true, autoRenew = true).enrich()
+                      cert.save().map(_ => Right(cert))
+                    }
+                  }
+                }
+              }
             }
           }
         }
@@ -139,13 +153,12 @@ object LetsEncryptHelper {
   }
 
   def getChallengeForToken(domain: String, token: String)(implicit ec: ExecutionContext, env: Env, mat: Materializer): Future[Option[ByteString]] = {
-    env.datastores.rawDataStore.get(s"${env.storageRoot}:letsencrypt:$domain:challenges:$token").map {
+    env.datastores.rawDataStore.get(s"${env.storageRoot}:letsencrypt:challenges:$domain:$token").map {
       case None =>
         logger.info(s"Trying to access token ${token} for domain ${domain} but none found")
         None
       case s@Some(_) =>
         logger.info(s"Trying to access token ${token} for domain ${domain}: found !")
-        env.datastores.rawDataStore.del(Seq(s"${env.storageRoot}:letsencrypt:$domain:challenges:$token"))
         s
     }
   }
@@ -196,31 +209,35 @@ object LetsEncryptHelper {
     }
   }
 
-  private def orderCertificate(order: Order, csr: ByteString)(implicit ec: ExecutionContext, env: Env, mat: Materializer): Future[Either[String, Order]] = {
-    Source.tick(1.seconds, 3.seconds, ())
-      .mapAsync(1) { _ =>
-        Future {
-          order.update()
-          order
-        }(blockingEc)
-      }
-      .take(10)
-      .filter(_.getStatus == Status.VALID)
-      .take(1)
-      .map(o => Right(o))
-      .recover { case e => Left(s"Failed to order certificate for domain, ${e.getMessage}") }
-      .toMat(Sink.headOption)(Keep.right).run().map {
-        case None => Left(s"Failed to order certificate for domain, empty")
-        case Some(e) => e
-      }
+  private def orderCertificate(order: Order, csr: Array[Byte])(implicit ec: ExecutionContext, env: Env, mat: Materializer): Future[Either[String, Order]] = {
+    Future {
+      order.execute(csr)
+    }(blockingEc).flatMap { _ =>
+      Source.tick(1.seconds, 5.seconds, ())
+        .mapAsync(1) { _ =>
+          Future {
+            order.update()
+            order
+          }(blockingEc)
+        }
+        .take(10)
+        .filter(_.getStatus == Status.VALID)
+        .take(1)
+        .map(o => Right(o))
+        .recover { case e => Left(s"Failed to order certificate for domain, ${e.getMessage}") }
+        .toMat(Sink.headOption)(Keep.right).run().map {
+          case None => Left(s"Failed to order certificate for domain, empty")
+          case Some(e) => e
+        }
+    }
   }
 
-  private def buildCsr(domain: String, keyPair: KeyPair): ByteString = {
+  private def buildCsr(domain: String, keyPair: KeyPair): Array[Byte] = {
     val csrb = new CSRBuilder()
     csrb.addDomains(domain)
     csrb.sign(keyPair)
     val stringWriter = new StringWriter()
     csrb.write(stringWriter)
-    ByteString(csrb.getEncoded)
+    csrb.getEncoded
   }
 }

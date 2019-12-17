@@ -401,8 +401,8 @@ export class CertificatesPage extends Component {
             window.newAlert(`Error while creating let's encrypt certificate: ${cert.error}`)
           } else {
             this.props.setTitle(`Create a new certificate`);
-            window.history.replaceState({}, '', `/bo/dashboard/certificates/add`);
-            this.table.setState({ currentItem: cert, showAddForm: true });
+            window.history.replaceState({}, '', `/bo/dashboard/certificates/edit/${cert.id}`);
+            this.table.setState({ currentItem: cert, showEditForm: true });
           }
         });
       }
