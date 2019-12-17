@@ -23,6 +23,7 @@ import akka.util.ByteString
 import com.google.common.base.Charsets
 import com.typesafe.sslconfig.ssl.{KeyManagerConfig, KeyStoreConfig, SSLConfigSettings, TrustManagerConfig, TrustStoreConfig}
 import env.Env
+import events.{Alerts, CertRenewalAlert}
 import gateway.Errors
 import javax.crypto.Cipher.DECRYPT_MODE
 import javax.crypto.spec.PBEKeySpec
@@ -354,8 +355,17 @@ trait CertificateDataStore extends BasicStore[Cert] {
         .filter(willBeInvalidSoon)
       Source(renewableCas.toList ++ renewableCertificates.toList)
         .mapAsync(1) {
-          case c if c.ca => c.renew(renewFor, None).save()
-          case c => c.renew(renewFor, renewableCas.find(_.id == c.id)).save()
+          case c if c.ca => c.renew(renewFor, None).save().map(_ => c)
+          case c => c.renew(renewFor, renewableCas.find(_.id == c.id)).save().map(_ => c)
+        }
+        .map { c =>
+          Alerts.send(
+            CertRenewalAlert(
+              env.snowflakeGenerator.nextIdStr(),
+              env.env,
+              c
+            )
+          )
         }
         .runWith(Sink.ignore).map(_ => ())
     }

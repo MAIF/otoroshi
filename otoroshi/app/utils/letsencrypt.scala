@@ -12,6 +12,7 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.{Keep, Sink, Source}
 import akka.util.ByteString
 import env.Env
+import events.{Alerts, CertRenewalAlert}
 import org.shredzone.acme4j._
 import org.shredzone.acme4j.challenge._
 import org.shredzone.acme4j.util._
@@ -177,6 +178,13 @@ object LetsEncryptHelper {
               FastFuture.successful(enriched)
             case Right(c) =>
               val cenriched = c.enrich()
+              Alerts.send(
+                CertRenewalAlert(
+                  env.snowflakeGenerator.nextIdStr(),
+                  env.env,
+                  cenriched
+                )
+              )
               enriched.copy(chain = cenriched.chain, privateKey = cenriched.privateKey, autoRenew = true, letsEncrypt = true).save().map(_ => cenriched)
           }.andThen {
             case _ => env.datastores.rawDataStore.del(Seq(s"${env.storageRoot}:letsencrypt:renew:${cert.id}"))

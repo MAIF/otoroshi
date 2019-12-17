@@ -16,6 +16,7 @@ import play.api.Logger
 import play.api.libs.json.{JsArray, JsValue, Json, Writes}
 import play.api.libs.ws.WSAuthScheme
 import play.api.mvc.RequestHeader
+import ssl.Cert
 import utils.EmailLocation
 
 import scala.concurrent.duration.Duration
@@ -438,6 +439,29 @@ case class CertDeleteAlert(`@id`: String,
     "audit"         -> audit.toJson
   )
 }
+
+case class CertRenewalAlert(`@id`: String, `@env`: String, cert: Cert, `@timestamp`: DateTime = DateTime.now())
+  extends AlertEvent {
+
+  override def `@service`: String   = "Otoroshi"
+  override def `@serviceId`: String = "--"
+
+  override def fromOrigin: Option[String]    = None
+  override def fromUserAgent: Option[String] = None
+
+  override def toJson(implicit _env: Env): JsValue = Json.obj(
+    "@id"        -> `@id`,
+    "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
+    "@type"      -> `@type`,
+    "@product"   -> _env.eventsName,
+    "@serviceId" -> `@serviceId`,
+    "@service"   -> `@service`,
+    "@env"       -> `@env`,
+    "audit"      -> "CertRenewalAlert",
+    "certificate" -> cert.toJson,
+  )
+}
+
 
 case class SnowMonkeyOutageRegisteredAlert(`@id`: String,
                                            `@env`: String,
