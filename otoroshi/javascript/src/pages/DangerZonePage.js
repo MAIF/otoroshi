@@ -605,12 +605,14 @@ export class DangerZonePage extends Component {
       type: 'text',
       props: {
         label: 'Public Key',
+        style: { fontFamily: 'monospace'}
       },
     },
     'letsEncryptSettings.privateKey': {
       type: 'text',
       props: {
         label: 'Private Key',
+        style: { fontFamily: 'monospace'}
       },
     },
     'mailGunSettings.eu': {

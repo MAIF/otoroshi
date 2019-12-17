@@ -76,6 +76,7 @@ export class TextareaInput extends Component {
             placeholder={this.props.placeholder}
             value={this.props.value || ''}
             onChange={this.onChange}
+            style={this.props.style}
             rows={this.props.rows || 3}
           />
         </div>

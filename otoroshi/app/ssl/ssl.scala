@@ -838,6 +838,7 @@ object noCATrustManager extends X509TrustManager {
 object CertificateData {
 
   import collection.JavaConverters._
+  import ssl.SSLImplicits._
 
   private val logger                                 = Logger("otoroshi-cert-data")
   private val encoder                                = Base64.getEncoder
@@ -870,7 +871,7 @@ object CertificateData {
       "rawDomain"    -> rawDomain,
       "version"      -> cert.getVersion,
       "type"         -> cert.getType,
-      "publicKey"    -> new String(encoder.encode(cert.getPublicKey.getEncoded)),
+      "publicKey"    -> cert.getPublicKey.asPem, // new String(encoder.encode(cert.getPublicKey.getEncoded)),
       "selfSigned"   -> DynamicSSLEngineProvider.isSelfSigned(cert),
       "constraints"  -> cert.getBasicConstraints,
       "ca"           -> (cert.getBasicConstraints != -1),

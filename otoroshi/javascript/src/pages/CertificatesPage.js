@@ -75,16 +75,16 @@ class CertificateInfos extends Component {
           disabled={true}
           value={moment(this.state.cert.notAfter).format('DD/MM/YYYY HH:mm:ss')}
         />
-        <TextareaInput
+        <TextInput
           label="Signature"
           disabled={true}
-          rows={6}
           value={this.state.cert.signature}
         />
         <TextareaInput
           label="Public key"
           disabled={true}
           rows={6}
+          style={{ fontFamily: 'monospace' }}
           value={this.state.cert.publicKey}
         />
       </div>
@@ -306,11 +306,11 @@ export class CertificatesPage extends Component {
     },
     chain: {
       type: 'text',
-      props: { label: 'Certificate full chain', rows: 6 },
+      props: { label: 'Certificate full chain', rows: 6, style: { fontFamily: 'monospace'} },
     },
     privateKey: {
       type: 'text',
-      props: { label: 'Certificate private key', rows: 6 },
+      props: { label: 'Certificate private key', rows: 6, style: { fontFamily: 'monospace'} },
     },
     autoRenew: {
       type: 'bool',
