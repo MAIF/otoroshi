@@ -40,7 +40,7 @@ class InMemoryCertificateDataStore(redisCli: RedisLike, _env: Env)
     implicit val mat  = _env.otoroshiMaterializer
     implicit val env = _env
     importInitialCerts(logger)
-    cancelRenewRef.set(_env.otoroshiActorSystem.scheduler.schedule(60.seconds, 1.hour) {
+    cancelRenewRef.set(_env.otoroshiActorSystem.scheduler.schedule(60.seconds, 1.hour + ((Math.random() * 10) + 1).minutes) {
       _env.datastores.certificatesDataStore.renewCertificates()
     })
     cancelRef.set(_env.otoroshiActorSystem.scheduler.schedule(2.seconds, 2.seconds) {
