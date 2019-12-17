@@ -92,11 +92,13 @@ object RequestImplicits {
     }
     @inline
     def clientCertChainPem: Seq[String] = {
+      import ssl.SSLImplicits._
       requestHeader.clientCertificateChain
         .map(
           chain =>
             chain.map { cert =>
-              s"${PemHeaders.BeginCertificate}\n${Base64.getEncoder.encodeToString(cert.getEncoded)}\n${PemHeaders.EndCertificate}"
+              cert.asPem
+              // s"${PemHeaders.BeginCertificate}\n${Base64.getEncoder.encodeToString(cert.getEncoded)}\n${PemHeaders.EndCertificate}"
           }
         )
         .getOrElse(Seq.empty[String])

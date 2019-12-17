@@ -912,6 +912,8 @@ object PemHeaders {
 
 object FakeKeyStore {
 
+  import ssl.SSLImplicits._
+
   private val EMPTY_PASSWORD = Array.emptyCharArray
   private val encoder        = Base64.getEncoder
 
@@ -956,10 +958,9 @@ object FakeKeyStore {
     Cert(
       id = IdGenerator.token(32),
       domain = host,
-      chain =
-        s"${PemHeaders.BeginCertificate}\n${new String(encoder.encode(cert.getEncoded), Charsets.UTF_8)}\n${PemHeaders.EndCertificate}",
-      privateKey = s"${PemHeaders.BeginPrivateKey}\n${new String(encoder.encode(keyPair.getPrivate.getEncoded),
-                                                                 Charsets.UTF_8)}\n${PemHeaders.EndPrivateKey}",
+      chain = cert.asPem,
+        // s"${PemHeaders.BeginCertificate}\n${new String(encoder.encode(cert.getEncoded), Charsets.UTF_8)}\n${PemHeaders.EndCertificate}",
+      privateKey = keyPair.getPrivate.asPem, // s"${PemHeaders.BeginPrivateKey}\n${new String(encoder.encode(keyPair.getPrivate.getEncoded), Charsets.UTF_8)}\n${PemHeaders.EndPrivateKey}",
       caRef = None,
       autoRenew = false,
       client = false
@@ -1353,6 +1354,7 @@ case class ClientCertificateValidator(
   import play.api.http.websocket.{Message => PlayWSMessage}
 
   import scala.concurrent.duration._
+  import ssl.SSLImplicits._
 
   def save()(implicit ec: ExecutionContext, env: Env) = env.datastores.clientCertificateValidationDataStore.set(this)
 
@@ -1367,7 +1369,8 @@ case class ClientCertificateValidator(
   )(implicit ec: ExecutionContext, env: Env): Future[Option[Boolean]] = {
     val certPayload = chain
       .map { cert =>
-        s"${PemHeaders.BeginCertificate}\n${Base64.getEncoder.encodeToString(cert.getEncoded)}\n${PemHeaders.EndCertificate}"
+        cert.asPem
+        // s"${PemHeaders.BeginCertificate}\n${Base64.getEncoder.encodeToString(cert.getEncoded)}\n${PemHeaders.EndCertificate}"
       }
       .mkString("\n")
     val payload = Json.obj(

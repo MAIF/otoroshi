@@ -123,10 +123,12 @@ class ExternalHttpValidator extends AccessValidator {
       user: Option[PrivateAppsUser] = None,
       cfg: ExternalHttpValidatorConfig
   )(implicit ec: ExecutionContext, env: Env): Future[Option[Boolean]] = {
+    import ssl.SSLImplicits._
     val globalConfig = env.datastores.globalConfigDataStore.latest()
     val certPayload = chain
       .map { cert =>
-        s"${PemHeaders.BeginCertificate}\n${Base64.getEncoder.encodeToString(cert.getEncoded)}\n${PemHeaders.EndCertificate}"
+        cert.asPem
+        //s"${PemHeaders.BeginCertificate}\n${Base64.getEncoder.encodeToString(cert.getEncoded)}\n${PemHeaders.EndCertificate}"
       }
       .mkString("\n")
     val payload = Json.obj(

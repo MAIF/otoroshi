@@ -689,6 +689,8 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
     }
   }
 
+  import ssl.SSLImplicits._
+
   def caCert(): Action[Source[ByteString, _]] = BackOfficeActionAuth.async(sourceBodyParser) { ctx =>
     ctx.request.body.runFold(ByteString.empty)(_ ++ _).map { body =>
       Try {
@@ -700,10 +702,10 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
             val ca      = FakeKeyStore.createCA(s"CN=$cn", FiniteDuration(365, TimeUnit.DAYS), keyPair)
             val cert = Cert(
               id = IdGenerator.token(32),
-              chain =
-                s"${PemHeaders.BeginCertificate}\n${Base64.getEncoder.encodeToString(ca.getEncoded)}\n${PemHeaders.EndCertificate}",
-              privateKey =
-                s"${PemHeaders.BeginPrivateKey}\n${Base64.getEncoder.encodeToString(keyPair.getPrivate.getEncoded)}\n${PemHeaders.EndPrivateKey}",
+              chain = ca.asPem,
+                // s"${PemHeaders.BeginCertificate}\n${Base64.getEncoder.encodeToString(ca.getEncoded)}\n${PemHeaders.EndCertificate}",
+              privateKey = keyPair.getPrivate.asPem,
+                // s"${PemHeaders.BeginPrivateKey}\n${Base64.getEncoder.encodeToString(keyPair.getPrivate.getEncoded)}\n${PemHeaders.EndPrivateKey}",
               caRef = None,
               autoRenew = false,
               client = false
