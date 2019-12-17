@@ -132,7 +132,7 @@ class Commands extends Component {
   render() {
     const certIsEmpty = !(this.props.rawValue.chain && this.props.rawValue.privateKey);
     const canRenew =
-      this.props.rawValue.ca || this.props.rawValue.selfSigned || !!this.props.rawValue.caRef;
+      this.props.rawValue.letsEncrypt || this.props.rawValue.ca || this.props.rawValue.selfSigned || !!this.props.rawValue.caRef;
     return (
       <div style={{ width: '100%', display: 'flex', justifyContent: 'flex-end', marginBottom: 20 }}>
         <div className="btn-group">

@@ -109,28 +109,28 @@ object LetsEncryptHelper {
           .useKeyPair(userKeyPair)
           .create(session)
 
-        logger.info(s"ordering lets encrypt certificate for $domain")
+        logger.debug(s"ordering lets encrypt certificate for $domain")
         orderLetsEncryptCertificate(account, domain).flatMap { order =>
 
-          logger.info(s"waiting for challenge challenge $domain")
+          logger.debug(s"waiting for challenge challenge $domain")
           doChallenges(order, domain).flatMap {
             case Left(err) => 
               logger.error(s"challenges failed: $err")
               FastFuture.successful(Left(err))
             case Right(_) => {
 
-              logger.info(s"building csr for $domain")
+              logger.debug(s"building csr for $domain")
               val keyPair = KeyPairUtils.createKeyPair(2048)
               val csrByteString = buildCsr(domain, keyPair)
 
-              logger.info(s"ordering certificate for $domain")
+              logger.debug(s"ordering certificate for $domain")
 
               orderCertificate(order, csrByteString).flatMap {
                 case Left(err) => 
                   logger.error(s"ordering certificate failed: $err")
                   FastFuture.successful(Left(err))
                 case Right(newOrder) => {
-                  logger.info(s"storing certificate for $domain")
+                  logger.debug(s"storing certificate for $domain")
                   Option(newOrder.getCertificate) match {
                     case None => 
                       logger.error(s"storing certificate failed: No certificate found !")
@@ -154,10 +154,10 @@ object LetsEncryptHelper {
   def getChallengeForToken(domain: String, token: String)(implicit ec: ExecutionContext, env: Env, mat: Materializer): Future[Option[ByteString]] = {
     env.datastores.rawDataStore.get(s"${env.storageRoot}:letsencrypt:challenges:$domain:$token").map {
       case None =>
-        logger.info(s"Trying to access token ${token} for domain ${domain} but none found")
+        logger.debug(s"Trying to access token ${token} for domain ${domain} but none found")
         None
       case s@Some(_) =>
-        logger.info(s"Trying to access token ${token} for domain ${domain}: found !")
+        logger.debug(s"Trying to access token ${token} for domain ${domain}: found !")
         s
     }
   }
@@ -165,7 +165,7 @@ object LetsEncryptHelper {
   def renew(cert: Cert)(implicit ec: ExecutionContext, env: Env, mat: Materializer): Future[Cert] = {
     env.datastores.rawDataStore.get(s"${env.storageRoot}:letsencrypt:renew:${cert.id}").flatMap {
       case None =>
-        logger.info(s"Certificate already in renewing process: ${cert.id} for ${cert.domain}")
+        logger.warn(s"Certificate already in renewing process: ${cert.id} for ${cert.domain}")
         FastFuture.successful(cert)
       case Some(_) => {
         val enriched = cert.enrich()
