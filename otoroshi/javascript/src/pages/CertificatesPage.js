@@ -399,15 +399,17 @@ export class CertificatesPage extends Component {
         if (value.indexOf('*') > -1 ) {
           window.newAlert('Domain name cannot contain * character')
         } else {
-          BackOfficeServices.letsEncryptCert(value).then(cert => {
-            if (!cert.chain) {
-              window.newAlert(`Error while creating let's encrypt certificate: ${cert.error}`)
-            } else {
-              this.props.setTitle(`Create a new certificate`);
-              window.history.replaceState({}, '', `/bo/dashboard/certificates/edit/${cert.id}`);
-              this.table.setState({ currentItem: cert, showEditForm: true });
-            }
-          });
+          window.newAlert(<LetsEncryptCreation 
+            domain={value} 
+            onCreated={(cert, setError) => {
+              if (!cert.chain) {
+                setError(`Error while creating let's encrypt certificate: ${cert.error}`)
+              } else {
+                this.props.setTitle(`Edit certificate`);
+                window.history.replaceState({}, '', `/bo/dashboard/certificates/edit/${cert.id}`);
+                this.table.setState({ currentItem: cert, showEditForm: true });
+              }
+            }} />, `Ordering certificate for ${value}`);
         }
       }
     });
@@ -494,6 +496,72 @@ export class CertificatesPage extends Component {
           </>
         )}
       />
+    );
+  }
+}
+
+class LetsEncryptCreation extends Component {
+
+  state = { error: null, done: false };
+
+  componentDidMount() {
+    BackOfficeServices.letsEncryptCert(this.props.domain)
+      .then(cert => {
+        this.setState({ done: true });
+        setTimeout(() => {
+          this.props.onCreated(cert, e => this.setState({ error: e }))
+        }, 1000);
+      })
+      .catch(e => {
+        this.setState({ error: e.message ? e.message : e })
+      });
+  }
+
+  render() {
+    if (this.state.error) {
+      return (
+        <span className="label label-danger">{this.state.error}</span>
+      );
+    }
+    if (this.state.done) {
+      return (
+      <span className="label label-success">Certificate for {this.props.domain} created successfully !</span>
+      );
+    }
+    return (
+      <div
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            width: '100%',
+            height: 300,
+          }}>
+          <svg
+            width="142px"
+            height="142px"
+            viewBox="0 0 100 100"
+            preserveAspectRatio="xMidYMid"
+            className="uil-ring-alt">
+            <rect x="0" y="0" width="100" height="100" fill="none" className="bk" />
+            <circle cx="50" cy="50" r="40" stroke="#222222" fill="none" strokeLinecap="round" />
+            <circle cx="50" cy="50" r="40" stroke="#f9b000" fill="none" strokeLinecap="round">
+              <animate
+                attributeName="stroke-dashoffset"
+                dur="2s"
+                repeatCount="indefinite"
+                from="0"
+                to="502"
+              />
+              <animate
+                attributeName="stroke-dasharray"
+                dur="2s"
+                repeatCount="indefinite"
+                values="150.6 100.4;1 250;150.6 100.4"
+              />
+            </circle>
+          </svg>
+        </div>
     );
   }
 }
