@@ -461,6 +461,16 @@ export class CertificatesPage extends Component {
         extractKey={item => item.id}
         injectTable={table => (this.table = table)}
         injectTopBar={() => (
+          <>
+          <div className="btn-group">
+            <button
+              type="button"
+              onClick={this.createLetsEncrypt}
+              style={{ marginRight: 0 }}
+              className="btn btn-primary">
+              <i className="glyphicon glyphicon-plus-sign" /> Let's Encrypt cert.
+            </button>
+          </div>
           <div className="btn-group">
             <button
               type="button"
@@ -471,19 +481,13 @@ export class CertificatesPage extends Component {
             </button>
             <button
               type="button"
-              onClick={this.createLetsEncrypt}
-              style={{ marginRight: 0 }}
-              className="btn btn-primary">
-              <i className="glyphicon glyphicon-plus-sign" /> Let's Encrypt cert.
-            </button>
-            <button
-              type="button"
               onClick={this.createCA}
               style={{ marginRight: 0 }}
               className="btn btn-primary">
               <i className="glyphicon glyphicon-plus-sign" /> Self signed Certificate Authority
             </button>
           </div>
+          </>
         )}
       />
     );

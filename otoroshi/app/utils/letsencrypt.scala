@@ -6,7 +6,6 @@ import java.security.spec.{PKCS8EncodedKeySpec, X509EncodedKeySpec}
 import java.security.{KeyFactory, KeyPair}
 import java.util.Base64
 import java.util.concurrent.Executors
-import java.util.regex.Matcher
 
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
@@ -18,7 +17,7 @@ import org.shredzone.acme4j.challenge._
 import org.shredzone.acme4j.util._
 import play.api.Logger
 import play.api.libs.json._
-import ssl.DynamicSSLEngineProvider.{PRIVATE_KEY_PATTERN, PUBLIC_KEY_PATTERN, base64Decode}
+import ssl.DynamicSSLEngineProvider.base64Decode
 import ssl.{Cert, PemHeaders}
 
 import scala.collection.JavaConverters._
@@ -26,7 +25,7 @@ import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-case class LetsEncryptSettings(enabled: Boolean = false, server: String = "acme://letsencrypt.org/staging", publicKey: String = "", privateKey: String = "") {
+case class LetsEncryptSettings(enabled: Boolean = false, server: String = "acme://letsencrypt.org", publicKey: String = "", privateKey: String = "") {
 
   def json: JsValue = LetsEncryptSettings.format.writes(this)
 
