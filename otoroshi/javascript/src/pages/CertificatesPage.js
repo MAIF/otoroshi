@@ -382,7 +382,7 @@ export class CertificatesPage extends Component {
   }
 
   createSelfSigned = () => {
-    window.newPrompt('Certificate hostname').then(value => {
+    window.newPrompt('Certificate domain').then(value => {
       if (value && value.trim() !== '') {
         BackOfficeServices.selfSignedCert(value).then(cert => {
           this.props.setTitle(`Create a new certificate`);
@@ -394,17 +394,21 @@ export class CertificatesPage extends Component {
   };
 
   createLetsEncrypt = () => {
-    window.newPrompt('Certificate hostname').then(value => {
+    window.newPrompt('Certificate domain').then(value => {
       if (value && value.trim() !== '') {
-        BackOfficeServices.letsEncryptCert(value).then(cert => {
-          if (!cert.chain) {
-            window.newAlert(`Error while creating let's encrypt certificate: ${cert.error}`)
-          } else {
-            this.props.setTitle(`Create a new certificate`);
-            window.history.replaceState({}, '', `/bo/dashboard/certificates/edit/${cert.id}`);
-            this.table.setState({ currentItem: cert, showEditForm: true });
-          }
-        });
+        if (value.indexOf('*') > -1 ) {
+          window.newAlert('Domain name cannot contain * character')
+        } else {
+          BackOfficeServices.letsEncryptCert(value).then(cert => {
+            if (!cert.chain) {
+              window.newAlert(`Error while creating let's encrypt certificate: ${cert.error}`)
+            } else {
+              this.props.setTitle(`Create a new certificate`);
+              window.history.replaceState({}, '', `/bo/dashboard/certificates/edit/${cert.id}`);
+              this.table.setState({ currentItem: cert, showEditForm: true });
+            }
+          });
+        }
       }
     });
   };
@@ -462,7 +466,7 @@ export class CertificatesPage extends Component {
         injectTable={table => (this.table = table)}
         injectTopBar={() => (
           <>
-          <div className="btn-group">
+          <div className="btn-group" style={{ marginRight: 5 }}>
             <button
               type="button"
               onClick={this.createLetsEncrypt}
