@@ -231,6 +231,8 @@ case class Cert(
 
 object Cert {
 
+  import SSLImplicits._
+
   val OtoroshiCA = "otoroshi-ca"
 
   lazy val logger = Logger("otoroshi-cert")
@@ -238,10 +240,8 @@ object Cert {
   def apply(cert: X509Certificate, keyPair: KeyPair, caRef: Option[String], client: Boolean): Cert = {
     Cert(
       id = IdGenerator.token(32),
-      chain =
-        s"${PemHeaders.BeginCertificate}\n${Base64.getEncoder.encodeToString(cert.getEncoded)}\n${PemHeaders.EndCertificate}",
-      privateKey =
-        s"${PemHeaders.BeginPrivateKey}\n${Base64.getEncoder.encodeToString(keyPair.getPrivate.getEncoded)}\n${PemHeaders.EndPrivateKey}",
+      chain = cert.asPem,
+      privateKey = keyPair.getPrivate.asPem,
       caRef = caRef,
       autoRenew = false,
       client = client
@@ -251,10 +251,8 @@ object Cert {
   def apply(cert: X509Certificate, keyPair: KeyPair, ca: Cert, client: Boolean): Cert = {
     Cert(
       id = IdGenerator.token(32),
-      chain = s"${PemHeaders.BeginCertificate}\n${Base64.getEncoder
-        .encodeToString(cert.getEncoded)}\n${PemHeaders.EndCertificate}\n${ca.chain}",
-      privateKey =
-        s"${PemHeaders.BeginPrivateKey}\n${Base64.getEncoder.encodeToString(keyPair.getPrivate.getEncoded)}\n${PemHeaders.EndPrivateKey}",
+      chain = cert.asPem + "\n" + ca.chain,
+      privateKey = keyPair.getPrivate.asPem,
       caRef = Some(ca.id),
       autoRenew = false,
       client = client
@@ -264,11 +262,12 @@ object Cert {
   def apply(cert: X509Certificate, keyPair: KeyPair, ca: X509Certificate, client: Boolean): Cert = {
     Cert(
       id = IdGenerator.token(32),
-      chain = s"${PemHeaders.BeginCertificate}\n${Base64.getEncoder
-        .encodeToString(cert.getEncoded)}\n${PemHeaders.EndCertificate}\n${PemHeaders.BeginCertificate}\n${Base64.getEncoder
-        .encodeToString(ca.getEncoded)}\n${PemHeaders.EndCertificate}\n",
-      privateKey =
-        s"${PemHeaders.BeginPrivateKey}\n${Base64.getEncoder.encodeToString(keyPair.getPrivate.getEncoded)}\n${PemHeaders.EndPrivateKey}",
+      chain = cert.asPem + "\n" + ca.asPem,
+        //s"${PemHeaders.BeginCertificate}\n${Base64.getEncoder
+        //.encodeToString(cert.getEncoded)}\n${PemHeaders.EndCertificate}\n${PemHeaders.BeginCertificate}\n${Base64.getEncoder
+        //.encodeToString(ca.getEncoded)}\n${PemHeaders.EndCertificate}\n",
+      privateKey = keyPair.getPrivate.asPem,
+        // s"${PemHeaders.BeginPrivateKey}\n${Base64.getEncoder.encodeToString(keyPair.getPrivate.getEncoded)}\n${PemHeaders.EndPrivateKey}",
       caRef = None,
       autoRenew = false,
       client = client
@@ -1665,6 +1664,18 @@ class FakeTrustManager(managers: Seq[X509TrustManager]) extends X509ExtendedTrus
       case m: X509ExtendedTrustManager => Try(m.checkServerTrusted(var1, var2, var3)).isSuccess
       case m: X509TrustManager         => Try(m.checkServerTrusted(var1, var2)).isSuccess
     }
+  }
+}
+
+object SSLImplicits {
+  implicit class EnhancedCertificate(val cert: X509Certificate) extends AnyVal {
+    def asPem: String = s"${PemHeaders.BeginCertificate}\n${Base64.getEncoder.encodeToString(cert.getEncoded).grouped(80).mkString("\n")}\n${PemHeaders.EndCertificate}\n"
+  }
+  implicit class EnhancedPublicKey(val key: PublicKey) extends AnyVal {
+    def asPem: String = s"${PemHeaders.BeginPublicKey}\n${Base64.getEncoder.encodeToString(key.getEncoded).grouped(80).mkString("\n")}\n${PemHeaders.EndPublicKey}\n"
+  }
+  implicit class EnhancedPrivateKey(val key: PrivateKey) extends AnyVal {
+    def asPem: String = s"${PemHeaders.BeginPrivateKey}\n${Base64.getEncoder.encodeToString(key.getEncoded).grouped(80).mkString("\n")}\n${PemHeaders.EndPrivateKey}\n"
   }
 }
 

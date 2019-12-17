@@ -672,7 +672,9 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
                                                                 keyPair,
                                                                 ca.certificate.get,
                                                                 ca.keyPair)
-                Ok(Cert(cert, keyPair, ca, false).enrich().toJson)
+                val c = Cert(cert, keyPair, ca, false)
+                val cc = c.enrich()
+                Ok(cc.toJson)
               }
             }
             Ok(FakeKeyStore.generateCert(host).toJson)
@@ -768,43 +770,6 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
           newCert.save().map(_ => Ok(newCert.toJson))
         }
       }
-      // case Some(original) if original.ca && original.selfSigned => {
-      //   val keyPair: KeyPair      = original.keyPair
-      //   val cert: X509Certificate = FakeKeyStore.createCA(original.subject, FiniteDuration(365, TimeUnit.DAYS), keyPair)
-      //   val certificate: Cert     = Cert(cert, keyPair, None, original.client).enrich().copy(id = original.id)
-      //   certificate.save().map { _ =>
-      //     Ok(certificate.toJson)
-      //   }
-      // }
-      // case Some(original) if original.selfSigned => {
-      //   val keyPair: KeyPair = original.keyPair
-      //   val cert: X509Certificate =
-      //     FakeKeyStore.createSelfSignedCertificate(original.domain, FiniteDuration(365, TimeUnit.DAYS), keyPair)
-      //   val certificate: Cert = Cert(cert, keyPair, None, original.client).enrich().copy(id = original.id)
-      //   certificate.save().map { _ =>
-      //     Ok(certificate.toJson)
-      //   }
-      // }
-      // case Some(original) if original.caRef.isDefined => {
-      //   env.datastores.certificatesDataStore.findById(original.caRef.get).flatMap {
-      //     case None => FastFuture.successful(NotFound(Json.obj("error" -> s"No Certificate found")))
-      //     case Some(ca) => {
-      //       val keyPair: KeyPair = original.keyPair
-      //       val cert: X509Certificate = FakeKeyStore.createCertificateFromCA(original.domain,
-      //                                                                        FiniteDuration(365, TimeUnit.DAYS),
-      //                                                                        keyPair,
-      //                                                                        ca.certificate.get,
-      //                                                                        ca.keyPair)
-      //       val certificate: Cert = Cert(cert, keyPair, None, original.client).enrich().copy(id = original.id)
-      //       certificate.save().map { _ =>
-      //         Ok(certificate.toJson)
-      //       }
-      //     }
-      //   }
-      // }
-      // case _ => {
-      //   FastFuture.successful(BadRequest(Json.obj("error" -> s"Bad renew")))
-      // }
     }
   }
 
