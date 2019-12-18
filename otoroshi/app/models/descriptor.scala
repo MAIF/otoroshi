@@ -1829,6 +1829,7 @@ case class ServiceDescriptor(
     useNewWSClient: Boolean = false,
     tcpUdpTunneling: Boolean = false,
     detectApiKeySooner: Boolean = false,
+    letsEncrypt: Boolean = false,
     // TODO: group secCom configs in v2, not done yet to avoid breaking stuff
     enforceSecureCommunication: Boolean = true,
     sendInfoToken: Boolean = true,
@@ -2379,6 +2380,7 @@ object ServiceDescriptor {
           xForwardedHeaders = (json \ "xForwardedHeaders").asOpt[Boolean].getOrElse(false),
           overrideHost = (json \ "overrideHost").asOpt[Boolean].getOrElse(true),
           allowHttp10 = (json \ "allowHttp10").asOpt[Boolean].getOrElse(true),
+          letsEncrypt = (json \ "letsEncrypt").asOpt[Boolean].getOrElse(false),
           secComHeaders = (json \ "secComHeaders").asOpt(SecComHeaders.format).getOrElse(SecComHeaders()),
           secComTtl =
             (json \ "secComTtl").asOpt[Long].map(v => FiniteDuration(v, TimeUnit.MILLISECONDS)).getOrElse(30.seconds),
@@ -2493,6 +2495,7 @@ object ServiceDescriptor {
       "xForwardedHeaders"          -> sd.xForwardedHeaders,
       "overrideHost"               -> sd.overrideHost,
       "allowHttp10"                -> sd.allowHttp10,
+      "letsEncrypt"                -> sd.letsEncrypt,
       "secComHeaders"              -> sd.secComHeaders.json,
       "secComTtl"                  -> sd.secComTtl.toMillis,
       "secComVersion"              -> sd.secComVersion.json,
@@ -2571,6 +2574,7 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
       enforceSecureCommunication = false, // try to hide otoroshi as much as possible
       forceHttps = if (env.exposedRootSchemeIsHttps) true else false,
       allowHttp10 = true,
+      letsEncrypt = false,
       removeHeadersIn = Seq.empty,
       removeHeadersOut = Seq.empty,
       accessValidator = AccessValidatorRef(),

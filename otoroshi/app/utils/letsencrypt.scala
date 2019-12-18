@@ -20,6 +20,7 @@ import play.api.Logger
 import play.api.libs.json._
 import ssl.DynamicSSLEngineProvider.base64Decode
 import ssl.{Cert, PemHeaders}
+import utils.RegexPool
 
 import scala.collection.JavaConverters._
 import scala.concurrent.duration._
@@ -190,6 +191,35 @@ object LetsEncryptHelper {
             case _ => env.datastores.rawDataStore.del(Seq(s"${env.storageRoot}:letsencrypt:renew:${cert.id}"))
           }
         }
+      }
+    }
+  }
+
+  def createFromServices()(implicit ec: ExecutionContext, env: Env, mat: Materializer): Future[Unit] = {
+    env.datastores.certificatesDataStore.findAll().flatMap { certificates =>
+      env.datastores.serviceDescriptorDataStore.findAll().flatMap { services =>
+        val letsEncryptCertificates = certificates.filter(_.letsEncrypt)
+        val letsEncryptServicesHosts = services.filter(_.letsEncrypt).flatMap(_.allHosts).filterNot(s => letsEncryptCertificates.exists(c => RegexPool(c.domain).matches(s)))
+        Source(letsEncryptServicesHosts.toList)
+          .mapAsync(1) { host =>
+            env.datastores.rawDataStore.get(s"${env.storageRoot}:letsencrypt:create:$host").flatMap {
+              case Some(_) =>
+                logger.warn(s"Certificate already in creating process: $host")
+                FastFuture.successful(())
+              case None => {
+                env.datastores.rawDataStore.set(s"${env.storageRoot}:letsencrypt:create:$host", ByteString("true"), Some(4.minutes.toMillis)).flatMap { _ =>
+                  createCertificate(host).map(e => (host, e))
+                }.andThen {
+                  case _ => env.datastores.rawDataStore.del(Seq(s"${env.storageRoot}:letsencrypt:create:$host"))
+                }
+              }
+            }
+          }
+          .map {
+            case (host, Left(err)) => logger.error(s"Error while creating let's encrypt certificate for $host. $err")
+            case (host, Right(_)) => logger.info(s"Successfully created let's encrypt certificate for $host")
+          }
+          .runWith(Sink.ignore).map(_ => ())
       }
     }
   }

@@ -501,7 +501,7 @@ export class CertificatesPage extends Component {
   }
 }
 
-class LetsEncryptCreation extends Component {
+export class LetsEncryptCreation extends Component {
 
   state = { error: null, done: false };
 

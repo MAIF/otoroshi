@@ -7,6 +7,7 @@ import java.util.concurrent.atomic.AtomicReference
 import akka.actor.Cancellable
 import env.Env
 import models.Key
+import otoroshi.utils.LetsEncryptHelper
 import play.api.Logger
 import play.api.libs.json.Format
 import security.IdGenerator
@@ -34,6 +35,7 @@ class InMemoryCertificateDataStore(redisCli: RedisLike, _env: Env)
   val lastUpdatedRef = new AtomicReference[String]("0")
   val cancelRef      = new AtomicReference[Cancellable](null)
   val cancelRenewRef = new AtomicReference[Cancellable](null)
+  val cancelCreateRef = new AtomicReference[Cancellable](null)
 
   def startSync(): Unit = {
     implicit val ec  = _env.otoroshiExecutionContext
@@ -42,6 +44,9 @@ class InMemoryCertificateDataStore(redisCli: RedisLike, _env: Env)
     importInitialCerts(logger)
     cancelRenewRef.set(_env.otoroshiActorSystem.scheduler.schedule(60.seconds, 1.hour + ((Math.random() * 10) + 1).minutes) {
       _env.datastores.certificatesDataStore.renewCertificates()
+    })
+    cancelCreateRef.set(_env.otoroshiActorSystem.scheduler.schedule(60.seconds, 5.minutes) {
+      LetsEncryptHelper.createFromServices()
     })
     cancelRef.set(_env.otoroshiActorSystem.scheduler.schedule(2.seconds, 2.seconds) {
       for {
@@ -57,6 +62,7 @@ class InMemoryCertificateDataStore(redisCli: RedisLike, _env: Env)
   }
 
   def stopSync(): Unit = {
+    Option(cancelCreateRef.get()).foreach(_.cancel())
     Option(cancelRenewRef.get()).foreach(_.cancel())
     Option(cancelRef.get()).foreach(_.cancel())
   }

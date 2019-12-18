@@ -20,6 +20,8 @@ import {
   HelpInput,
 } from '../components/inputs';
 
+import { LetsEncryptCreation } from './CertificatesPage';
+
 const CodeInput = React.lazy(() => Promise.resolve(require('../components/inputs/CodeInput')));
 
 import faker from 'faker';
@@ -772,6 +774,23 @@ export class ServicePage extends Component {
     });
   };
 
+  createLetsEncrypt = () => {
+    const line = this.state.service.line;
+    const domainName =
+      this.state.service.subdomain +
+      (line ? (line === 'prod' ? '' : '.' + line) : '') +
+      '.' +
+      this.state.service.domain;
+
+    window.newAlert(<LetsEncryptCreation 
+      domain={domainName} 
+      onCreated={(cert, setError) => {
+        if (!cert.chain) {
+          setError(`Error while creating let's encrypt certificate: ${cert.error}`)
+        }
+      }} />, `Ordering certificate for ${domainName}`);
+  };
+
   computeIfButtonDisabled = header => {
     return !!this.state.service.additionalHeadersOut[header];
   };
@@ -1032,6 +1051,12 @@ export class ServicePage extends Component {
                   help="If the service is public and you provide an apikey, otoroshi will detect it and validate it. Of course this setting may impact performances because of useless apikey lookups."
                   onChange={v => this.changeTheValue('detectApiKeySooner', v)}
                 />
+                <BiColumnBooleanInput
+                  label="Issue Let's Encrypt cert."
+                  value={this.state.service.letsEncrypt}
+                  help="Automatically issue and renew let's encrypt certificate based on domain name. Only if Let's Encrypt enabled in global config."
+                  onChange={v => this.changeTheValue('letsEncrypt', v)}
+                />
               </div>
               <div className="col-md-6">
                 <BiColumnBooleanInput
@@ -1156,6 +1181,11 @@ export class ServicePage extends Component {
                   {this.state.freeDomain ? 'exposed domain assistant' : 'exposed domain free input'}
                 </button>
                 {!this.state.neverSaved && (
+                  <button type="button" onClick={this.createLetsEncrypt} className="btn btn-xs btn-info">
+                    <i className="glyphicon glyphicon-plus-sign" /> Create Let's Encrypt cert.
+                  </button>
+                )}
+                {!this.state.neverSaved && (
                   <button
                     type="button"
                     onClick={this.createSelfSignedCert}
@@ -1163,11 +1193,6 @@ export class ServicePage extends Component {
                     <i className="glyphicon glyphicon-plus-sign" /> Create self signed cert.
                   </button>
                 )}
-                {/*!this.state.neverSaved && (
-                  <button type="button" disabled className="btn btn-xs btn-info">
-                    <i className="glyphicon glyphicon-plus-sign" /> Create Let's Encrypt cert.
-                  </button>
-                )*/}
               </div>
             </div>
             {this.state.service.env === 'prod' &&
