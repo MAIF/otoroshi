@@ -212,11 +212,21 @@ class Target extends Component {
             // { label: 'DataCenterMatch', value: 'DataCenterMatch' },
             // { label: 'InfraMatch', value: 'InfraMatch' },
             // { label: 'RackMatch', value: 'RackMatch' },
+            { value: 'GeolocationMatch', label: 'GeolocationMatch' },
             { value: 'NetworkLocationMatch', label: 'NetworkLocationMatch' },
           ]}
           help="The predicate of the target. Only used with experimental client"
           onChange={e => this.changeTheValue('predicate', { type: e })}
         />
+        {value.predicate.type === 'GeolocationMatch' && (
+          <ArrayInput
+            label="Postions"
+            placeholder="1.3963;-0.6981;1000"
+            value={value.predicate.positions}
+            help="The possible location with their radius in Km"
+            onChange={e => this.changeTheValue('predicate.positions', e)}
+          />
+        )}
         {value.predicate.type === 'NetworkLocationMatch' && [
           <TextInput
             label="Provider"

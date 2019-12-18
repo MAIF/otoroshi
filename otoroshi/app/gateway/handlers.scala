@@ -1238,7 +1238,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                             }
                                           } else {
                                             val targets: Seq[Target] = descriptor.targets
-                                              .filter(_.predicate.matches(reqNumber.toString))
+                                              .filter(_.predicate.matches(reqNumber.toString, req, attrs))
                                               .flatMap(t => Seq.fill(t.weight)(t))
                                             val target = descriptor.targetsLoadBalancing.select(reqNumber.toString,
                                                                                                 trackingId,

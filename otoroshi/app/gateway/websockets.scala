@@ -574,7 +574,7 @@ class WebSocketHandler()(implicit env: Env) {
                                         }
                                       } else {
                                         val targets: Seq[Target] = descriptor.targets
-                                          .filter(_.predicate.matches(reqNumber.toString))
+                                          .filter(_.predicate.matches(reqNumber.toString, req, attrs))
                                           .flatMap(t => Seq.fill(t.weight)(t))
                                         //val index = reqCounter.get() % (if (targets.nonEmpty)
                                         //                                  targets.size

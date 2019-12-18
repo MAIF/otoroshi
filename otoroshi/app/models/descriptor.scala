@@ -327,7 +327,7 @@ case class WeightedBestResponseTime(ratio: Double) extends LoadBalancing {
 }
 
 trait TargetPredicate {
-  def matches(reqId: String)(implicit env: Env): Boolean
+  def matches(reqId: String, req: RequestHeader, attrs: TypedMap)(implicit env: Env): Boolean
   def toJson: JsValue
 }
 
@@ -352,6 +352,13 @@ object TargetPredicate {
         //   zone = (json \ "rack").asOpt[String].getOrElse("local")
         // ))
         case "AlwaysMatch" => JsSuccess(AlwaysMatch)
+        case "GeolocationMatch" => JsSuccess(
+          GeolocationMatch(
+            positions =  (json \ "positions").asOpt[Seq[String]].map(_.map(_.split(";").toList.map(_.trim)).collect {
+              case lat :: lng :: radius :: Nil => GeoPositionRadius(lat.toDouble, lng.toDouble, radius.toDouble)
+            }).getOrElse(Seq.empty)
+          )
+        )
         case "NetworkLocationMatch" =>
           JsSuccess(
             NetworkLocationMatch(
@@ -368,42 +375,61 @@ object TargetPredicate {
   }
 }
 
+case class GeoPositionRadius(latitude: Double, longitude: Double, radius: Double) {
+  def toJson: JsValue = JsString(s"$latitude:$longitude:$radius")
+  def near(lat: Double, lng: Double): Boolean = Math.acos(Math.sin(latitude) * Math.sin(lat) + Math.cos(latitude) * Math.cos(lat) * Math.cos(lng - longitude)) * 6371 <= radius
+}
+
+case class GeolocationMatch(positions: Seq[GeoPositionRadius]) extends TargetPredicate {
+  def toJson: JsValue                                             = Json.obj("type" -> "GeolocationMatch", "positions" -> JsArray(positions.map(_.toJson)))
+  override def matches(reqId: String, req: RequestHeader, attrs: TypedMap)(implicit env: Env): Boolean = {
+    attrs.get(otoroshi.plugins.Keys.GeolocationInfoKey) match {
+      case None => true
+      case Some(geoloc) => {
+        val lat = ((geoloc \ "latitude").as[Double] * Math.PI) / 180.0
+        val lng = ((geoloc \ "longitude").as[Double] * Math.PI) / 180.0
+        positions.exists(_.near(lat, lng))
+      }
+    }
+  }
+}
+
 object AlwaysMatch extends TargetPredicate {
   def toJson: JsValue                                             = Json.obj("type" -> "AlwaysMatch")
-  override def matches(reqId: String)(implicit env: Env): Boolean = true
+  override def matches(reqId: String, req: RequestHeader, attrs: TypedMap)(implicit env: Env): Boolean = true
 }
 
 case class RegionMatch(region: String) extends TargetPredicate {
   def toJson: JsValue = Json.obj("type" -> "RegionMatch", "region" -> region)
-  override def matches(reqId: String)(implicit env: Env): Boolean = {
+  override def matches(reqId: String, req: RequestHeader, attrs: TypedMap)(implicit env: Env): Boolean = {
     env.region.trim.toLowerCase == region.trim.toLowerCase
   }
 }
 
 case class ZoneMatch(zone: String) extends TargetPredicate {
   def toJson: JsValue = Json.obj("type" -> "ZoneMatch", "zone" -> zone)
-  override def matches(reqId: String)(implicit env: Env): Boolean = {
+  override def matches(reqId: String, req: RequestHeader, attrs: TypedMap)(implicit env: Env): Boolean = {
     env.zone.trim.toLowerCase == zone.trim.toLowerCase
   }
 }
 
 case class DataCenterMatch(dc: String) extends TargetPredicate {
   def toJson: JsValue = Json.obj("type" -> "DataCenterMatch", "dc" -> dc)
-  override def matches(reqId: String)(implicit env: Env): Boolean = {
+  override def matches(reqId: String, req: RequestHeader, attrs: TypedMap)(implicit env: Env): Boolean = {
     env.dataCenter.trim.toLowerCase == dc.trim.toLowerCase
   }
 }
 
 case class InfraProviderMatch(provider: String) extends TargetPredicate {
   def toJson: JsValue = Json.obj("type" -> "InfraProviderMatch", "provider" -> provider)
-  override def matches(reqId: String)(implicit env: Env): Boolean = {
+  override def matches(reqId: String, req: RequestHeader, attrs: TypedMap)(implicit env: Env): Boolean = {
     env.infraProvider.trim.toLowerCase == provider.trim.toLowerCase
   }
 }
 
 case class RackMatch(rack: String) extends TargetPredicate {
   def toJson: JsValue = Json.obj("type" -> "RackMatch", "rack" -> rack)
-  override def matches(reqId: String)(implicit env: Env): Boolean = {
+  override def matches(reqId: String, req: RequestHeader, attrs: TypedMap)(implicit env: Env): Boolean = {
     env.rack.trim.toLowerCase == rack.trim.toLowerCase
   }
 }
@@ -423,7 +449,7 @@ case class NetworkLocationMatch(
     "dc"       -> dataCenter,
     "rack"     -> rack,
   )
-  override def matches(reqId: String)(implicit env: Env): Boolean = {
+  override def matches(reqId: String, req: RequestHeader, attrs: TypedMap)(implicit env: Env): Boolean = {
     utils.RegexPool(provider.trim.toLowerCase).matches(env.infraProvider.trim.toLowerCase) &&
     utils.RegexPool(region.trim.toLowerCase).matches(env.region.trim.toLowerCase) &&
     utils.RegexPool(zone.trim.toLowerCase).matches(env.zone.trim.toLowerCase) &&
