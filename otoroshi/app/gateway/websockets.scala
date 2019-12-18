@@ -509,6 +509,7 @@ class WebSocketHandler()(implicit env: Env) {
                                             req,
                                             s"WS ${req.method} ${req.relativeUri}",
                                             counter,
+                                            attrs, 
                                             (t, attempts) =>
                                               actuallyCallDownstream(t,
                                                 apiKey,

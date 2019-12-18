@@ -1132,6 +1132,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                 bodyAlreadyConsumed,
                                                 s"${req.method} ${req.relativeUri}",
                                                 counter,
+                                                attrs,
                                                 (t, attempts) =>
                                                   actuallyCallDownstream(t,
                                                                          apiKey,

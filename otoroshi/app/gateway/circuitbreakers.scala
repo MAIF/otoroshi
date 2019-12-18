@@ -15,10 +15,11 @@ import models.{ServiceDescriptor, Target}
 import play.api.Logger
 import play.api.http.websocket.{Message => PlayWSMessage}
 import play.api.mvc.{RequestHeader, Result}
+import utils.TypedMap
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration._
-import scala.concurrent.{duration, ExecutionContext, Future, Promise}
+import scala.concurrent.{ExecutionContext, Future, Promise, duration}
 import scala.util.control.NoStackTrace
 import scala.util.{Failure, Success}
 
@@ -114,9 +115,9 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
                    path: String,
                    reqId: String,
                    trackingId: String,
-                   requestHeader: RequestHeader): Option[(Target, AkkaCircuitBreaker)] = {
+                   requestHeader: RequestHeader, attrs: TypedMap): Option[(Target, AkkaCircuitBreaker)] = {
     val targets = descriptor.targets
-      .filter(_.predicate.matches(reqId))
+      .filter(_.predicate.matches(reqId, requestHeader, attrs))
       .filterNot(t => breakers.get(t.host).exists(_.isOpen))
       .flatMap(t => Seq.fill(t.weight)(t))
     // val index = reqCounter.incrementAndGet() % (if (targets.nonEmpty) targets.size else 1)
@@ -190,6 +191,7 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
            bodyAlreadyConsumed: AtomicBoolean,
            ctx: String,
            counter: AtomicInteger,
+           attrs: TypedMap,
            f: (Target, Int) => Future[Result])(
       implicit env: Env
   ): Future[Result] = {
@@ -204,7 +206,7 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
       if (bodyAlreadyConsumed.get) {
         FastFuture.failed(BodyAlreadyConsumedException)
       } else {
-        chooseTarget(descriptor, path, reqId, trackingId, requestHeader) match {
+        chooseTarget(descriptor, path, reqId, trackingId, requestHeader, attrs) match {
           case Some((target, breaker)) =>
             breaker.withCircuitBreaker {
               logger.debug(s"Try to call target : $target")
@@ -224,6 +226,7 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
              requestHeader: RequestHeader,
              ctx: String,
              counter: AtomicInteger,
+             attrs: TypedMap,
              f: (Target, Int) => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]])(
       implicit env: Env
   ): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
@@ -235,7 +238,7 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
                                    descriptor.clientConfig.backoffFactor,
                                    descriptor.name + " : " + ctx,
                                    counter) { attempts =>
-      chooseTarget(descriptor, path, reqId, trackingId, requestHeader) match {
+      chooseTarget(descriptor, path, reqId, trackingId, requestHeader, attrs) match {
         case Some((target, breaker)) =>
           logger.debug(s"Try to call WS target : $target")
           breaker.withCircuitBreaker(f(target, attempts))
