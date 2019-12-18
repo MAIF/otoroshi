@@ -1889,6 +1889,18 @@ case class ServiceDescriptor(
   lazy val allHosts: Seq[String] = hosts :+ toHost
   lazy val allPaths: Seq[String] = paths ++ matchingRoot.toSeq
 
+  def maybeStrippedUri(req: RequestHeader, rawUri: String): String = {
+    val root = req.relativeUri
+    val rootMatched = allPaths match { //rootMatched was this.matchingRoot
+      case ps if ps.isEmpty => None
+      case ps => ps.find(p => root.startsWith(p))
+    }
+    rootMatched
+      .filter(_ => stripPath)
+      .map(m => root.replace(m, ""))
+      .getOrElse(rawUri)
+  }
+
   def target: Target                                    = targets.head
   def save()(implicit ec: ExecutionContext, env: Env)   = env.datastores.serviceDescriptorDataStore.set(this)
   def delete()(implicit ec: ExecutionContext, env: Env) = env.datastores.serviceDescriptorDataStore.delete(this)

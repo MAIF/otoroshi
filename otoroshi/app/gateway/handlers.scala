@@ -1282,11 +1282,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                         }
                                         val rawUri   = req.relativeUri.substring(1)
                                         val uriParts = rawUri.split("/").toSeq
-                                        val uri: String =
-                                          descriptor.matchingRoot
-                                            .filter(_ => descriptor.stripPath)
-                                            .map(m => req.relativeUri.replace(m, ""))
-                                            .getOrElse(rawUri)
+                                        val uri: String = descriptor.maybeStrippedUri(req, rawUri)
                                         val scheme =
                                           if (descriptor.redirectToLocal) descriptor.localScheme else _target.scheme
                                         val host = TargetExpressionLanguage(if (descriptor.redirectToLocal)
