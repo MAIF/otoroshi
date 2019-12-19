@@ -817,17 +817,17 @@ case class AkkaWsClientRequest(
   override def queryString: Map[String, Seq[String]]      = _uri.query().toMultiMap
   override def get(): Future[WSResponse]                  = withMethod("GET").execute()
   override def post[T](body: T)(implicit evidence$2: BodyWritable[T]): Future[WSResponse] =
-    withMethod("POST").withBody(evidence$2.transform(body)).execute()
+    withMethod("POST").withBody(evidence$2.transform(body)).addHttpHeaders("Content-Type" -> evidence$2.contentType).execute()
   override def post(body: File): Future[WSResponse] =
-    withMethod("POST").withBody(InMemoryBody(ByteString(scala.io.Source.fromFile(body).mkString))).execute()
+    withMethod("POST").withBody(InMemoryBody(ByteString(scala.io.Source.fromFile(body).mkString))).addHttpHeaders("Content-Type" -> "application/octet-stream").execute()
   override def patch[T](body: T)(implicit evidence$3: BodyWritable[T]): Future[WSResponse] =
-    withMethod("PATCH").withBody(evidence$3.transform(body)).execute()
+    withMethod("PATCH").withBody(evidence$3.transform(body)).addHttpHeaders("Content-Type" -> evidence$3.contentType).execute()
   override def patch(body: File): Future[WSResponse] =
-    withMethod("PATCH").withBody(InMemoryBody(ByteString(scala.io.Source.fromFile(body).mkString))).execute()
+    withMethod("PATCH").withBody(InMemoryBody(ByteString(scala.io.Source.fromFile(body).mkString))).addHttpHeaders("Content-Type" -> "application/octet-stream").execute()
   override def put[T](body: T)(implicit evidence$4: BodyWritable[T]): Future[WSResponse] =
-    withMethod("PUT").withBody(evidence$4.transform(body)).execute()
+    withMethod("PUT").withBody(evidence$4.transform(body)).addHttpHeaders("Content-Type" -> evidence$4.contentType).execute()
   override def put(body: File): Future[WSResponse] =
-    withMethod("PUT").withBody(InMemoryBody(ByteString(scala.io.Source.fromFile(body).mkString))).execute()
+    withMethod("PUT").withBody(InMemoryBody(ByteString(scala.io.Source.fromFile(body).mkString))).addHttpHeaders("Content-Type" -> "application/octet-stream").execute()
   override def delete(): Future[WSResponse]     = withMethod("DELETE").execute()
   override def head(): Future[WSResponse]       = withMethod("HEAD").execute()
   override def options(): Future[WSResponse]    = withMethod("OPTIONS").execute()
