@@ -33,7 +33,22 @@ import play.api.inject.ApplicationLifecycle
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) {
+trait TimerMetrics {
+  def withTimer[T](name: String)(f: => T): T = f
+  def withTimerAsync[T](name: String)(f: => Future[T])(implicit ec: ExecutionContext): Future[T] = f
+}
+
+object FakeTimerMetrics extends TimerMetrics
+
+trait HasMetrics {
+  def metrics: TimerMetrics
+}
+
+object FakeHasMetrics extends HasMetrics {
+  val metrics: TimerMetrics = FakeTimerMetrics
+}
+
+class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) extends TimerMetrics {
 
   private implicit val ev                    = env
   private implicit val ec                    = env.otoroshiExecutionContext
@@ -105,7 +120,7 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) {
   def counter(name: String): Counter                = metricRegistry.counter(name)
   def histogram(name: String): Histogram            = metricRegistry.histogram(name)
   def timer(name: String): Timer                    = metricRegistry.timer(name)
-  def withTimer[T](name: String)(f: => T): T = {
+  override def withTimer[T](name: String)(f: => T): T = {
     val ctx = metricRegistry.timer(name).time()
     try {
       val res = f
@@ -118,7 +133,7 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) {
         throw e
     }
   }
-  def withTimerAsync[T](name: String)(f: => Future[T])(implicit ec: ExecutionContext): Future[T] = {
+  override def withTimerAsync[T](name: String)(f: => Future[T])(implicit ec: ExecutionContext): Future[T] = {
     val ctx = metricRegistry.timer(name).time()
     f.andThen {
       case r =>

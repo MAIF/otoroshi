@@ -36,7 +36,7 @@ import storage.leveldb.LevelDbDataStores
 import storage.mongo.MongoDataStores
 import storage.redis.RedisDataStores
 import storage.redis.next._
-import utils.Metrics
+import utils.{HasMetrics, Metrics}
 import utils.http._
 import otoroshi.tcp.{TcpProxy, TcpService}
 import otoroshi.script.AccessValidatorRef
@@ -60,7 +60,7 @@ class Env(val configuration: Configuration,
           val environment: Environment,
           val lifecycle: ApplicationLifecycle,
           wsClient: WSClient,
-          val circuitBeakersHolder: CircuitBreakersHolder) {
+          val circuitBeakersHolder: CircuitBreakersHolder) extends HasMetrics {
 
   val logger = Logger("otoroshi-env")
 

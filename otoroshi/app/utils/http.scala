@@ -447,15 +447,17 @@ class AkkWsClient(config: WSClientConfig, env: Env)(implicit system: ActorSystem
           pool)
       }
       case Some(cert) => {
-        // TODO: optimize
-        val pool = customizer(connectionPoolSettings).withMaxConnections(512)
-        val sslContext = DynamicSSLEngineProvider.setupSslContextFor(cert)
-        val cctx = if (loose) {
-          ConnectionContext.https(sslContext, sslConfig = Some(akkaSSLLooseConfig))
-        } else {
-          ConnectionContext.https(sslContext, sslConfig = Some(akkaSSLConfig))
+        // TODO: optimize with cache
+        val sslContext = DynamicSSLEngineProvider.setupSslContextFor(cert, env)
+        env.metrics.withTimer("otoroshi.core.tls.http-client.single-context-call") {
+          val pool = customizer(connectionPoolSettings).withMaxConnections(512)
+          val cctx = if (loose) {
+            ConnectionContext.https(sslContext, sslConfig = Some(akkaSSLLooseConfig))
+          } else {
+            ConnectionContext.https(sslContext, sslConfig = Some(akkaSSLConfig))
+          }
+          client.singleRequest(request, cctx, pool)
         }
-        client.singleRequest(request, cctx, pool)
       }
     }
   }
@@ -487,19 +489,21 @@ class AkkWsClient(config: WSClientConfig, env: Env)(implicit system: ActorSystem
         )(mat)
       }
       case Some(cert) => {
-        // TODO: optimize
-        val sslContext = DynamicSSLEngineProvider.setupSslContextFor(cert)
-        val cctx = if (loose) {
-          ConnectionContext.https(sslContext, sslConfig = Some(akkaSSLLooseConfig))
-        } else {
-          ConnectionContext.https(sslContext, sslConfig = Some(akkaSSLConfig))
+        // TODO: optimize with cache
+        val sslContext = DynamicSSLEngineProvider.setupSslContextFor(cert, env)
+        env.metrics.withTimer("otoroshi.core.tls.http-client.single-context-call") {
+          val cctx = if (loose) {
+            ConnectionContext.https(sslContext, sslConfig = Some(akkaSSLLooseConfig))
+          } else {
+            ConnectionContext.https(sslContext, sslConfig = Some(akkaSSLConfig))
+          }
+          client.singleWebSocketRequest(
+            request = request,
+            clientFlow = clientFlow,
+            connectionContext = cctx,
+            settings = customizer(ClientConnectionSettings(system))
+          )(mat)
         }
-        client.singleWebSocketRequest(
-          request = request,
-          clientFlow = clientFlow,
-          connectionContext = cctx,
-          settings = customizer(ClientConnectionSettings(system))
-        )(mat)
       }
     }
   }

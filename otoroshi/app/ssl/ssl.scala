@@ -48,7 +48,7 @@ import storage.redis.RedisStore
 import storage.{BasicStore, RedisLike, RedisLikeStore}
 import sun.security.util.{DerValue, ObjectIdentifier}
 import sun.security.x509._
-import utils.TypedMap
+import utils.{FakeHasMetrics, HasMetrics, TypedMap}
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.FiniteDuration
@@ -509,7 +509,7 @@ object DynamicSSLEngineProvider {
 
   val certificates = new TrieMap[String, Cert]()
 
-  private lazy val currentContext           = new AtomicReference[SSLContext](setupContext())
+  private lazy val currentContext           = new AtomicReference[SSLContext](setupContext(FakeHasMetrics))
   private lazy val currentSslConfigSettings = new AtomicReference[SSLConfigSettings](null)
   private val currentEnv                    = new AtomicReference[Env](null)
   private val defaultSslContext             = SSLContext.getDefault
@@ -518,7 +518,7 @@ object DynamicSSLEngineProvider {
     currentEnv.set(env)
   }
 
-  private def setupContext(): SSLContext = {
+  private def setupContext(env: HasMetrics): SSLContext = env.metrics.withTimer("otoroshi.core.tls.setup-global-context") {
 
     val optEnv = Option(currentEnv.get)
 
@@ -610,7 +610,7 @@ object DynamicSSLEngineProvider {
     sslContext
   }
 
-  def setupSslContextFor(cert: Cert): SSLContext = {
+  def setupSslContextFor(cert: Cert, env: Env): SSLContext = env.metrics.withTimer("otoroshi.core.tls.setup-single-context") {
 
     val optEnv = Option(currentEnv.get)
 
@@ -670,17 +670,17 @@ object DynamicSSLEngineProvider {
     certificates.values.map(_.domain).toSet.toSeq
   }
 
-  def addCertificates(certs: Seq[Cert]): SSLContext = {
+  def addCertificates(certs: Seq[Cert], env: Env): SSLContext = {
     certs.foreach(crt => certificates.put(crt.id, crt))
-    val ctx = setupContext()
+    val ctx = setupContext(env)
     currentContext.set(ctx)
     ctx
   }
 
-  def setCertificates(certs: Seq[Cert]): SSLContext = {
+  def setCertificates(certs: Seq[Cert], env: Env): SSLContext = {
     certificates.clear()
     certs.foreach(crt => certificates.put(crt.id, crt))
-    val ctx = setupContext()
+    val ctx = setupContext(env)
     currentContext.set(ctx)
     ctx
   }

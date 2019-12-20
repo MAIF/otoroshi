@@ -55,7 +55,7 @@ class RedisCertificateDataStore(redisCli: RedisClientMasterSlaves, _env: Env)
       } yield {
         if (last != lastUpdatedRef.get()) {
           lastUpdatedRef.set(last)
-          DynamicSSLEngineProvider.setCertificates(certs)
+          DynamicSSLEngineProvider.setCertificates(certs, env)
         }
       }
     })
