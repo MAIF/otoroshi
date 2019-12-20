@@ -90,6 +90,8 @@ object ClientAuth {
 
 case class Cert(
     id: String,
+    // name: String,
+    // description: String,
     chain: String,
     privateKey: String,
     caRef: Option[String],
@@ -504,7 +506,8 @@ object DynamicSSLEngineProvider {
     "-+BEGIN\\s+.*PUBLIC\\s+KEY[^-]*-+(?:\\s|\\r|\\n)+" + "([a-z0-9+/=\\r\\n]+)" + "-+END\\s+.*PUBLIC\\s+KEY[^-]*-+",
     CASE_INSENSITIVE
   )
-  private val certificates = new TrieMap[String, Cert]()
+
+  val certificates = new TrieMap[String, Cert]()
 
   private lazy val currentContext           = new AtomicReference[SSLContext](setupContext())
   private lazy val currentSslConfigSettings = new AtomicReference[SSLConfigSettings](null)
@@ -602,6 +605,58 @@ object DynamicSSLEngineProvider {
         )
       }
     }
+    logger.debug(s"SSL Context init done ! (${keyStore.size()})")
+    SSLContext.setDefault(sslContext)
+    sslContext
+  }
+
+  def setupSslContextFor(cert: Cert): SSLContext = {
+
+    val optEnv = Option(currentEnv.get)
+
+    val trustAll: Boolean =
+      optEnv.flatMap(e => e.configuration.getOptional[Boolean]("otoroshi.ssl.trust.all")).getOrElse(false)
+
+    val cacertPath = optEnv
+      .flatMap(e => e.configuration.getOptional[String]("otoroshi.ssl.cacert.path"))
+      .map(
+        path =>
+          path
+            .replace("${JAVA_HOME}", System.getProperty("java.home"))
+            .replace("$JAVA_HOME", System.getProperty("java.home"))
+      )
+      .getOrElse(System.getProperty("java.home") + "/lib/security/cacerts")
+
+    val cacertPassword = optEnv
+      .flatMap(e => e.configuration.getOptional[String]("otoroshi.ssl.cacert.password"))
+      .getOrElse("changeit")
+
+    logger.debug("Setting up SSL Context ")
+    val sslContext: SSLContext = SSLContext.getInstance("TLS")
+    val keyStore: KeyStore     = createKeyStore(Seq(cert))
+
+    val keyManagerFactory: KeyManagerFactory =
+      Try(KeyManagerFactory.getInstance("X509")).orElse(Try(KeyManagerFactory.getInstance("SunX509"))).get
+    keyManagerFactory.init(keyStore, EMPTY_PASSWORD)
+    logger.debug("SSL Context init ...")
+    val keyManagers: Array[KeyManager] = keyManagerFactory.getKeyManagers.map(
+      m => new X509KeyManagerSnitch(m.asInstanceOf[X509KeyManager]).asInstanceOf[KeyManager]
+    )
+    val tm: Array[TrustManager] =
+      optEnv.flatMap(e => e.configuration.getOptional[Boolean]("play.server.https.trustStore.noCaVerification")).map {
+        case true  => Array[TrustManager](noCATrustManager)
+        case false => createTrustStore(keyStore, cacertPath, cacertPassword)
+      } getOrElse {
+        if (trustAll) {
+          Array[TrustManager](
+            new VeryNiceTrustManager(Seq.empty[X509TrustManager])
+          )
+        } else {
+          createTrustStore(keyStore, cacertPath, cacertPassword)
+        }
+      }
+
+    sslContext.init(keyManagers, tm, null)
     logger.debug(s"SSL Context init done ! (${keyStore.size()})")
     SSLContext.setDefault(sslContext)
     sslContext

@@ -466,7 +466,8 @@ case class Target(
     predicate: TargetPredicate = AlwaysMatch,
     ipAddress: Option[String] = None,
     loose: Boolean = false,
-    mtls: Boolean = false
+    mtls: Boolean = false,
+    certId: Option[String] = None
 ) {
   def toJson      = Target.format.writes(this)
   def asUrl       = s"${scheme}://$host"
@@ -495,6 +496,7 @@ object Target {
       "weight"    -> o.weight,
       "loose"     -> o.loose,
       "mtls"      -> o.mtls,
+      "certId"    -> o.certId.map(JsString.apply).getOrElse(JsNull).as[JsValue],
       "protocol"  -> o.protocol.value,
       "predicate" -> o.predicate.toJson,
       "ipAddress" -> o.ipAddress.map(JsString.apply).getOrElse(JsNull).as[JsValue],
@@ -507,6 +509,7 @@ object Target {
           weight = (json \ "weight").asOpt[Int].getOrElse(1),
           loose = (json \ "loose").asOpt[Boolean].getOrElse(false),
           mtls = (json \ "mtls").asOpt[Boolean].getOrElse(false),
+          certId = (json \ "certId").asOpt[String].filter(_.trim.nonEmpty),
           protocol = (json \ "protocol")
             .asOpt[String]
             .filterNot(_.trim.isEmpty)

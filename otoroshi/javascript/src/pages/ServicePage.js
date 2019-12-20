@@ -200,6 +200,15 @@ class Target extends Component {
           help="If enabled, Otoroshi will accept any certificate and disable hostname verification"
           onChange={e => this.changeTheValue('loose', e)}
         />
+        {value.mtls && <SelectInput
+          label="Certificate"
+          placeholder=""
+          value={value.certId}
+          valuesFrom="/bo/api/proxy/api/certificates"
+            transformer={a => ({ value: a.id, label: a.subject })}
+          help="The certificate used when performing a mTLS call"
+          onChange={e => this.changeTheValue('certId', e)}
+        />}
         <Separator title="Target filter" />,
         <SelectInput
           label="Predicate"

@@ -28,9 +28,9 @@ import org.apache.commons.codec.binary.Base64
 import play.api.libs.json.{JsValue, Json}
 import play.api.libs.ws._
 import play.api.mvc.MultipartFormData
-import play.api.{libs, Logger}
+import play.api.Logger
 import play.shaded.ahc.org.asynchttpclient.util.Assertions
-import ssl.DynamicSSLEngineProvider
+import ssl.{Cert, DynamicSSLEngineProvider}
 
 import scala.collection.immutable.TreeMap
 import scala.concurrent.duration.{Duration, _}
@@ -70,9 +70,10 @@ class WsClientChooser(standardClient: WSClient,
 
   def ws[T](request: WebSocketRequest,
             loose: Boolean,
+            targetOpt: Option[Target],
             clientFlow: Flow[Message, Message, T],
             customizer: ClientConnectionSettings => ClientConnectionSettings): (Future[WebSocketUpgradeResponse], T) = {
-    akkaClient.executeWsRequest(request, loose, clientFlow, customizer)
+    akkaClient.executeWsRequest(request, loose, targetOpt.filter(_.mtls).flatMap(_.certId).flatMap(DynamicSSLEngineProvider.certificates.get), clientFlow, customizer)
   }
 
   def url(url: String): WSRequest = {
@@ -213,6 +214,29 @@ class WsClientChooser(standardClient: WSClient,
                                 env = env)(
           akkaClient.mat
         )
+      case p if p.startsWith("mtls#") => {
+        val parts = url.split("://")
+        val mtlsConfigRaw = parts.apply(0).replace("mtls#", "")
+        val urlEnds = parts.apply(1)
+        val (loose, certId) = if (mtlsConfigRaw.contains("loose#")) {
+          (true, mtlsConfigRaw.replace("loose#", ""))
+        } else {
+          (false, mtlsConfigRaw)
+        }
+        new AkkaWsClientRequest(akkaClient,
+          "https://" + urlEnds,
+          Some(Target(
+            host = urlEnds,
+            loose = loose,
+            mtls = true,
+            certId = Some(certId)
+          )),
+          HttpProtocols.`HTTP/1.1`,
+          clientConfig = clientConfig,
+          env = env)(
+          akkaClient.mat
+        )
+      }
       case "http2" =>
         new AkkaWsClientRequest(akkaClient,
                                 url.replace("http2://", "http://"),
@@ -257,7 +281,7 @@ object AkkWsClient {
         case c: `Set-Cookie` => c.cookie
       }
       .map { c =>
-        libs.ws.DefaultWSCookie(
+        DefaultWSCookie(
           name = c.name,
           value = c.value,
           domain = c.domain,
@@ -363,7 +387,7 @@ class AkkWsClient(config: WSClientConfig, env: Env)(implicit system: ActorSystem
     config.ssl
     // huge workaround for https://github.com/akka/akka-http/issues/92,  can be disabled by setting otoroshi.options.manualDnsResolve to false
       .callIf(env.manualDnsResolve, _.withHostnameVerifierClass(classOf[CustomLooseHostnameVerifier]))
-      .withLoose(config.ssl.loose.withAcceptAnyCertificate(true)) // .withDisableHostnameVerification(true))
+      .withLoose(config.ssl.loose.withAcceptAnyCertificate(true).withDisableHostnameVerification(true))
       .withSslParametersConfig(
         config.ssl.sslParametersConfig
           .withClientAuth(com.typesafe.sslconfig.ssl.ClientAuth.need) // TODO: do we really need that ?
@@ -392,46 +416,82 @@ class AkkWsClient(config: WSClientConfig, env: Env)(implicit system: ActorSystem
   private[utils] def executeRequest[T](
       request: HttpRequest,
       loose: Boolean,
+      clientCert: Option[Cert],
       customizer: ConnectionPoolSettings => ConnectionPoolSettings
   ): Future[HttpResponse] = {
-    val currentSslContext = DynamicSSLEngineProvider.current
-    if (currentSslContext != null && !currentSslContext.equals(lastSslContext.get())) {
-      lastSslContext.set(currentSslContext)
-      val connectionContext: HttpsConnectionContext =
-        ConnectionContext.https(currentSslContext, sslConfig = Some(akkaSSLConfig))
-      val connectionContextLoose: HttpsConnectionContext =
-        ConnectionContext.https(currentSslContext, sslConfig = Some(akkaSSLLooseConfig))
-      connectionContextHolder.set(connectionContext)
-      connectionContextLooseHolder.set(connectionContextLoose)
+    clientCert match {
+      case None => {
+        val currentSslContext = DynamicSSLEngineProvider.current
+        if (currentSslContext != null && !currentSslContext.equals(lastSslContext.get())) {
+          lastSslContext.set(currentSslContext)
+          val connectionContext: HttpsConnectionContext =
+            ConnectionContext.https(currentSslContext, sslConfig = Some(akkaSSLConfig))
+          val connectionContextLoose: HttpsConnectionContext =
+            ConnectionContext.https(currentSslContext, sslConfig = Some(akkaSSLLooseConfig))
+          connectionContextHolder.set(connectionContext)
+          connectionContextLooseHolder.set(connectionContextLoose)
+        }
+        val pool = customizer(connectionPoolSettings).withMaxConnections(512)
+        client.singleRequest(request,
+          if (loose) connectionContextLooseHolder.get() else connectionContextHolder.get(),
+          pool)
+      }
+      case Some(cert) => {
+        // TODO: optimize
+        val pool = customizer(connectionPoolSettings).withMaxConnections(512)
+        val sslContext = DynamicSSLEngineProvider.setupSslContextFor(cert)
+        val cctx = if (loose) {
+          ConnectionContext.https(sslContext, sslConfig = Some(akkaSSLLooseConfig))
+        } else {
+          ConnectionContext.https(sslContext, sslConfig = Some(akkaSSLConfig))
+        }
+        client.singleRequest(request, cctx, pool)
+      }
     }
-    val pool = customizer(connectionPoolSettings).withMaxConnections(512)
-    client.singleRequest(request,
-                         if (loose) connectionContextLooseHolder.get() else connectionContextHolder.get(),
-                         pool)
   }
 
   private[utils] def executeWsRequest[T](
       request: WebSocketRequest,
       loose: Boolean,
+      clientCert: Option[Cert],
       clientFlow: Flow[Message, Message, T],
       customizer: ClientConnectionSettings => ClientConnectionSettings
   ): (Future[WebSocketUpgradeResponse], T) = {
-    val currentSslContext = DynamicSSLEngineProvider.current
-    if (currentSslContext != null && !currentSslContext.equals(lastSslContext.get())) {
-      lastSslContext.set(currentSslContext)
-      val connectionContext: HttpsConnectionContext =
-        ConnectionContext.https(currentSslContext, sslConfig = Some(akkaSSLConfig))
-      val connectionContextLoose: HttpsConnectionContext =
-        ConnectionContext.https(currentSslContext, sslConfig = Some(akkaSSLLooseConfig))
-      connectionContextHolder.set(connectionContext)
-      connectionContextLooseHolder.set(connectionContextLoose)
+    clientCert match {
+      case None => {
+        val currentSslContext = DynamicSSLEngineProvider.current
+        if (currentSslContext != null && !currentSslContext.equals(lastSslContext.get())) {
+          lastSslContext.set(currentSslContext)
+          val connectionContext: HttpsConnectionContext =
+            ConnectionContext.https(currentSslContext, sslConfig = Some(akkaSSLConfig))
+          val connectionContextLoose: HttpsConnectionContext =
+            ConnectionContext.https(currentSslContext, sslConfig = Some(akkaSSLLooseConfig))
+          connectionContextHolder.set(connectionContext)
+          connectionContextLooseHolder.set(connectionContextLoose)
+        }
+        client.singleWebSocketRequest(
+          request = request,
+          clientFlow = clientFlow,
+          connectionContext = if (loose) connectionContextLooseHolder.get() else connectionContextHolder.get(),
+          settings = customizer(ClientConnectionSettings(system))
+        )(mat)
+      }
+      case Some(cert) => {
+        // TODO: optimize
+        val sslContext = DynamicSSLEngineProvider.setupSslContextFor(cert)
+        val cctx = if (loose) {
+          ConnectionContext.https(sslContext, sslConfig = Some(akkaSSLLooseConfig))
+        } else {
+          ConnectionContext.https(sslContext, sslConfig = Some(akkaSSLConfig))
+        }
+        client.singleWebSocketRequest(
+          request = request,
+          clientFlow = clientFlow,
+          connectionContext = cctx,
+          settings = customizer(ClientConnectionSettings(system))
+        )(mat)
+      }
     }
-    client.singleWebSocketRequest(
-      request = request,
-      clientFlow = clientFlow,
-      connectionContext = if (loose) connectionContextLooseHolder.get() else connectionContextHolder.get(),
-      settings = customizer(ClientConnectionSettings(system))
-    )(mat)
   }
 }
 
@@ -701,7 +761,7 @@ case class AkkaWsClientRequest(
   def stream(): Future[WSResponse] = {
     val req = buildRequest()
     client
-      .executeRequest(req, targetOpt.exists(_.loose), customizer)
+      .executeRequest(req, targetOpt.exists(_.loose), targetOpt.filter(_.mtls).flatMap(_.certId).flatMap(DynamicSSLEngineProvider.certificates.get), customizer)
       .map { resp =>
         AkkWsClientStreamedResponse(resp,
                                     rawUrl,
@@ -718,7 +778,7 @@ case class AkkaWsClientRequest(
 
   override def execute(): Future[WSResponse] = {
     client
-      .executeRequest(buildRequest(), targetOpt.exists(_.loose), customizer)
+      .executeRequest(buildRequest(), targetOpt.exists(_.loose), targetOpt.filter(_.mtls).flatMap(_.certId).flatMap(DynamicSSLEngineProvider.certificates.get), customizer)
       .flatMap { response: HttpResponse =>
         response.entity
           .toStrict(FiniteDuration(client.wsClientConfig.requestTimeout._1, client.wsClientConfig.requestTimeout._2))
@@ -839,7 +899,7 @@ case class AkkaWsClientRequest(
       headers.flatMap { header =>
         header.split(";").map { value =>
           val parts = value.split("=")
-          libs.ws.DefaultWSCookie(
+          DefaultWSCookie(
             name = parts(0),
             value = parts(1)
           )

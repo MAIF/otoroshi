@@ -1880,6 +1880,7 @@ object WebSocketProxyActor {
     val (connected, (publisher, subscriber)) = env.gatewayClient.ws(
       request,
       target.loose,
+      Some(target),
       flow,
       //a => a
       descriptor.clientConfig.proxy
@@ -2000,6 +2001,7 @@ class WebSocketProxyActor(url: String,
       val (connected, materialized) = env.gatewayClient.ws(
         request,
         target.loose,
+        Some(target),
         Flow
           .fromSinkAndSourceMat(
             Sink.foreach[akka.http.scaladsl.model.ws.Message] {
