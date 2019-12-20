@@ -202,7 +202,7 @@ class Target extends Component {
         />
         {value.mtls && <SelectInput
           label="Certificate"
-          placeholder=""
+          placeholder="Certificate for mTLS call"
           value={value.certId}
           valuesFrom="/bo/api/proxy/api/certificates"
             transformer={a => ({ value: a.id, label: a.subject })}

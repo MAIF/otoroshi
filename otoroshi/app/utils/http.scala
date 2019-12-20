@@ -91,6 +91,16 @@ class WsClientChooser(standardClient: WSClient,
       akkaClient.mat
     )
   }
+  def urlWithCert(url: String, certId: Option[String], mtls: Boolean = false, loose: Boolean = false): WSRequest = {
+    new AkkaWsClientRequest(akkaClient, url, certId.map(c => Target(
+      host = "####",
+      loose = loose,
+      mtls = mtls,
+      certId = Some(c)
+    )), HttpProtocols.`HTTP/1.1`, clientConfig = ClientConfig(), env = env)(
+      akkaClient.mat
+    )
+  }
   def akkaUrlWithTarget(url: String, target: Target, clientConfig: ClientConfig = ClientConfig()): WSRequest = {
     new AkkaWsClientRequest(akkaClient,
                             url,

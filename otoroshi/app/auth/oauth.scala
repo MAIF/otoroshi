@@ -67,6 +67,9 @@ object GenericOauth2ModuleConfig extends FromJson[AuthModuleConfig] {
             .getOrElse("http://privateapps.oto.tools:8080/privateapps/generic/callback"),
           oidConfig = (json \ "oidConfig").asOpt[String],
           proxy = (json \ "proxy").asOpt[JsValue].flatMap(p => WSProxyServerJson.proxyFromJson(p)),
+          certId = (json \ "certId").asOpt[String].filter(_.trim.nonEmpty),
+          tlsLoose = (json \ "tlsLoose").asOpt[Boolean].getOrElse(false),
+          mtls = (json \ "mtls").asOpt[Boolean].getOrElse(false),
           extraMetadata = (json \ "extraMetadata").asOpt[JsObject].getOrElse(Json.obj())
         )
       )
@@ -103,7 +106,10 @@ case class GenericOauth2ModuleConfig(
     callbackUrl: String = "http://privateapps.oto.tools:8080/privateapps/generic/callback",
     oidConfig: Option[String] = None,
     proxy: Option[WSProxyServer] = None,
-    extraMetadata: JsObject = Json.obj()
+    extraMetadata: JsObject = Json.obj(),
+    certId: Option[String] = None,
+    tlsLoose: Boolean = false,
+    mtls: Boolean = false
 ) extends OAuth2ModuleConfig {
   def `type`: String                                        = "oauth2"
   override def authModule(config: GlobalConfig): AuthModule = GenericOauth2Module(this)
@@ -134,7 +140,10 @@ case class GenericOauth2ModuleConfig(
     "apiKeyTagsField"      -> this.apiKeyTagsField,
     "otoroshiDataField"    -> this.otoroshiDataField,
     "callbackUrl"          -> this.callbackUrl,
+    "tlsLoose"             -> this.tlsLoose,
+    "mtls"                 -> this.mtls,
     "oidConfig"            -> this.oidConfig.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+    "certId"               -> this.certId.map(JsString.apply).getOrElse(JsNull).as[JsValue],
     "proxy"                -> WSProxyServerJson.maybeProxyToJson(this.proxy),
     "extraMetadata"        -> this.extraMetadata
   )
@@ -235,7 +244,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
           case None => Left("No code :(").asFuture
           case Some(code) => {
             val builder =
-              env.Ws.url(authConfig.tokenUrl).withMaybeProxyServer(authConfig.proxy.orElse(config.proxies.auth))
+              env.Ws.urlWithCert(authConfig.tokenUrl, authConfig.certId,  authConfig.mtls, authConfig.tlsLoose).withMaybeProxyServer(authConfig.proxy.orElse(config.proxies.auth))
             val future1 = if (authConfig.useJson) {
               builder.post(
                 Json.obj(
@@ -280,7 +289,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
                   }
                 } else {
                   val builder2 = env.Ws
-                    .url(authConfig.userInfoUrl)
+                    .urlWithCert(authConfig.userInfoUrl, authConfig.certId, authConfig.mtls, authConfig.tlsLoose)
                     .withMaybeProxyServer(authConfig.proxy.orElse(config.proxies.auth))
                   val future2 = if (authConfig.useJson) {
                     builder2.post(

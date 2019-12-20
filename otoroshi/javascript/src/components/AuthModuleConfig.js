@@ -151,6 +151,7 @@ export class Oauth2ModuleConfig extends Component {
     apiKeyTagsField: 'apkTags',
     otoroshiDataField: 'app_metadata | otoroshi_data',
     extraMetadata: {},
+    certId: null
   };
 
   componentDidCatch(error) {
@@ -440,6 +441,28 @@ export class Oauth2ModuleConfig extends Component {
           path={`jwtVerifier`}
           changeTheValue={this.changeTheValue}
           algo={settings.jwtVerifier}
+        />
+        <Separator title="Certificate" />
+        <BooleanInput
+          label="mTLS calls"
+          value={settings.mtls}
+          help="..."
+          onChange={v => changeTheValue(path + '.mtls', v)}
+        />
+        <BooleanInput
+          label="TLS loose"
+          value={settings.tlsLoose}
+          help="..."
+          onChange={v => changeTheValue(path + '.tlsLoose', v)}
+        />
+        <SelectInput
+          label="Certificate"
+          placeholder="Certificate for mTLS call"
+          value={settings.certId}
+          valuesFrom="/bo/api/proxy/api/certificates"
+            transformer={a => ({ value: a.id, label: a.subject })}
+          help="The certificate used when performing a mTLS call"
+          onChange={e => changeTheValue(path + '.certId', e)}
         />
       </div>
     );

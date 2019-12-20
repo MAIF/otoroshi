@@ -94,6 +94,9 @@ trait OAuth2ModuleConfig extends AuthModuleConfig {
   def oidConfig: Option[String]
   def proxy: Option[WSProxyServer]
   def extraMetadata: JsObject
+  def certId: Option[String]
+  def tlsLoose: Boolean
+  def mtls: Boolean
 }
 
 trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {
