@@ -80,10 +80,11 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
 
     if (env.metricsEnabled) {
       FastFuture.successful(
-        ((req.getQueryString("access_key"), env.metricsAccessKey) match {
-          case (_, None)                                  => fetchMetrics()
-          case (Some(header), Some(key)) if header == key => fetchMetrics()
-          case _                                          => Unauthorized(Json.obj("error" -> "unauthorized"))
+        ((req.getQueryString("access_key"), req.getQueryString("X-Access-Key"), env.metricsAccessKey) match {
+          case (_, _, None)                                  => fetchMetrics()
+          case (Some(header), _, Some(key)) if header == key => fetchMetrics()
+          case (_, Some(header), Some(key)) if header == key => fetchMetrics()
+          case _                                             => Unauthorized(Json.obj("error" -> "unauthorized"))
         }) withHeaders (
           env.Headers.OtoroshiStateResp -> req.headers
             .get(env.Headers.OtoroshiState)
@@ -145,10 +146,11 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
       }
     }
 
-    ((req.getQueryString("access_key"), env.healthAccessKey) match {
-      case (_, None)                                  => fetchHealth()
-      case (Some(header), Some(key)) if header == key => fetchHealth()
-      case _                                          => FastFuture.successful(Unauthorized(Json.obj("error" -> "unauthorized")))
+    ((req.getQueryString("access_key"), req.getQueryString("X-Access-Key"), env.healthAccessKey) match {
+      case (_, _, None)                                  => fetchHealth()
+      case (Some(header), _, Some(key)) if header == key => fetchHealth()
+      case (_, Some(header), Some(key)) if header == key => fetchHealth()
+      case _                                             => FastFuture.successful(Unauthorized(Json.obj("error" -> "unauthorized")))
     }) map { res =>
       res.withHeaders(
         env.Headers.OtoroshiStateResp -> req.headers
