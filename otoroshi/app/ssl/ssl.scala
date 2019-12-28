@@ -5,6 +5,7 @@ import java.lang.reflect.Field
 import java.math.BigInteger
 import java.net.Socket
 import java.nio.ByteBuffer
+import java.nio.charset.StandardCharsets
 import java.nio.charset.StandardCharsets.US_ASCII
 import java.security._
 import java.security.cert.{Certificate => _, _}
@@ -21,6 +22,7 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.{Flow, Sink, Source}
 import akka.util.ByteString
 import com.google.common.base.Charsets
+import com.google.common.hash.Hashing
 import com.typesafe.sslconfig.ssl.{KeyManagerConfig, KeyStoreConfig, SSLConfigSettings, TrustManagerConfig, TrustStoreConfig}
 import env.Env
 import events.{Alerts, CertRenewalAlert}
@@ -104,8 +106,13 @@ case class Cert(
     subject: String = "--",
     from: DateTime = DateTime.now(),
     to: DateTime = DateTime.now(),
-    client: Boolean
+    client: Boolean,
+    sans: Seq[String] = Seq.empty
 ) {
+
+  lazy val cacheKey: String = s"$id###$contentHash"
+  lazy val contentHash: String = Hashing.sha256().hashString(s"$chain:$privateKey", StandardCharsets.UTF_8).toString
+
   def signature: Option[String]    = this.metadata.map(v => (v \ "signature").as[String])
   def serialNumber: Option[String] = this.metadata.map(v => (v \ "serialNumber").as[String])
   def renew(duration: FiniteDuration, caOpt: Option[Cert]): Cert = {
@@ -140,6 +147,7 @@ case class Cert(
   }
   def enrich() = {
     val meta = this.metadata.get
+    println("enrich", (meta \ "subAltNames").asOpt[Seq[String]].getOrElse(Seq.empty))
     this.copy(
       domain = (meta \ "domain").asOpt[String].getOrElse("--"),
       selfSigned = (meta \ "selfSigned").asOpt[Boolean].getOrElse(false),
@@ -147,7 +155,8 @@ case class Cert(
       valid = this.isValid,
       subject = (meta \ "subjectDN").as[String],
       from = (meta \ "notBefore").asOpt[Long].map(v => new DateTime(v)).getOrElse(DateTime.now()),
-      to = (meta \ "notAfter").asOpt[Long].map(v => new DateTime(v)).getOrElse(DateTime.now())
+      to = (meta \ "notAfter").asOpt[Long].map(v => new DateTime(v)).getOrElse(DateTime.now()),
+      sans = (meta \ "subAltNames").asOpt[Seq[String]].getOrElse(Seq.empty)
     )
   }
   def delete()(implicit ec: ExecutionContext, env: Env) = env.datastores.certificatesDataStore.delete(this)
@@ -291,13 +300,15 @@ object Cert {
       "subject"    -> cert.subject,
       "from"       -> cert.from.getMillis,
       "to"         -> cert.to.getMillis,
-      "client"     -> cert.client
+      "client"     -> cert.client,
+      "sans"       -> JsArray(cert.sans.map(JsString.apply))
     )
     override def reads(json: JsValue): JsResult[Cert] =
       Try {
         Cert(
           id = (json \ "id").as[String],
           domain = (json \ "domain").as[String],
+          sans = (json \ "sans").asOpt[Seq[String]].getOrElse(Seq.empty),
           chain = (json \ "chain").as[String],
           caRef = (json \ "caRef").asOpt[String],
           privateKey = (json \ "privateKey").asOpt[String].getOrElse(""),
@@ -571,40 +582,40 @@ object DynamicSSLEngineProvider {
     }
 
     sslContext.init(keyManagers, tm, null)
-    dumpPath match {
-      case Some(path) => {
-        currentSslConfigSettings.set(
-          SSLConfigSettings()
-          //.withHostnameVerifierClass(classOf[OtoroshiHostnameVerifier])
-            .withKeyManagerConfig(
-              KeyManagerConfig().withKeyStoreConfigs(
-                List(KeyStoreConfig(None, Some(path)).withPassword(Some(String.valueOf(EMPTY_PASSWORD))))
-              )
-            )
-            .withTrustManagerConfig(
-              TrustManagerConfig().withTrustStoreConfigs(
-                certificates.values.toList.map(c => TrustStoreConfig(Option(c.chain).map(_.trim), None))
-              )
-            )
-        )
-      }
-      case None => {
-        currentSslConfigSettings.set(
-          SSLConfigSettings()
-          //.withHostnameVerifierClass(classOf[OtoroshiHostnameVerifier])
-            .withKeyManagerConfig(
-              KeyManagerConfig().withKeyStoreConfigs(
-                certificates.values.toList.map(c => KeyStoreConfig(Option(c.chain).map(_.trim), None))
-              )
-            )
-            .withTrustManagerConfig(
-              TrustManagerConfig().withTrustStoreConfigs(
-                certificates.values.toList.map(c => TrustStoreConfig(Option(c.chain).map(_.trim), None))
-              )
-            )
-        )
-      }
-    }
+    // dumpPath match {
+    //   case Some(path) => {
+    //     currentSslConfigSettings.set(
+    //       SSLConfigSettings()
+    //       //.withHostnameVerifierClass(classOf[OtoroshiHostnameVerifier])
+    //         .withKeyManagerConfig(
+    //           KeyManagerConfig().withKeyStoreConfigs(
+    //             List(KeyStoreConfig(None, Some(path)).withPassword(Some(String.valueOf(EMPTY_PASSWORD))))
+    //           )
+    //         )
+    //         .withTrustManagerConfig(
+    //           TrustManagerConfig().withTrustStoreConfigs(
+    //             certificates.values.toList.map(c => TrustStoreConfig(Option(c.chain).map(_.trim), None))
+    //           )
+    //         )
+    //     )
+    //   }
+    //   case None => {
+    //     currentSslConfigSettings.set(
+    //       SSLConfigSettings()
+    //       //.withHostnameVerifierClass(classOf[OtoroshiHostnameVerifier])
+    //         .withKeyManagerConfig(
+    //           KeyManagerConfig().withKeyStoreConfigs(
+    //             certificates.values.toList.map(c => KeyStoreConfig(Option(c.chain).map(_.trim), None))
+    //           )
+    //         )
+    //         .withTrustManagerConfig(
+    //           TrustManagerConfig().withTrustStoreConfigs(
+    //             certificates.values.toList.map(c => TrustStoreConfig(Option(c.chain).map(_.trim), None))
+    //           )
+    //         )
+    //     )
+    //   }
+    // }
     logger.debug(s"SSL Context init done ! (${keyStore.size()})")
     SSLContext.setDefault(sslContext)
     sslContext
@@ -713,6 +724,8 @@ object DynamicSSLEngineProvider {
           if (!keyStore.containsAlias(domain)) {
             keyStore.setCertificateEntry(domain, certificate)
           }
+          // Handle SANs
+          cert.sans.filter(name => !keyStore.containsAlias(name)).foreach(name => keyStore.setCertificateEntry(name, certificate))
         }
       }
       case cert => {
@@ -738,6 +751,12 @@ object DynamicSSLEngineProvider {
                                  key,
                                  cert.password.getOrElse("").toCharArray,
                                  certificateChain.toArray[java.security.cert.Certificate])
+
+            // Handle SANs
+            cert.sans.filter(name => !keyStore.containsAlias(name)).foreach(name => keyStore.setKeyEntry(name, key,
+              cert.password.getOrElse("").toCharArray,
+              certificateChain.toArray[java.security.cert.Certificate]))
+
             certificateChain.tail.foreach { cert =>
               val id = "ca-" + cert.getSerialNumber.toString(16)
               if (!keyStore.containsAlias(id)) {

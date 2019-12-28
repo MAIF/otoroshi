@@ -2542,7 +2542,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
     Cert.fromJsonSafe(body) match {
       case JsError(e) => BadRequest(Json.obj("error" -> "Bad Cert format")).asFuture
       case JsSuccess(group, _) =>
-        group.save().map {
+        group.enrich().save().map {
           case true => {
             val event: AdminApiEvent = AdminApiEvent(
               env.snowflakeGenerator.nextIdStr(),
@@ -2600,7 +2600,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
                                ctx.from,
                                ctx.ua)
             )
-            newGroup.save().map(_ => Ok(newGroup.toJson))
+            newGroup.enrich().save().map(_ => Ok(newGroup.toJson))
           }
         }
       }
@@ -2639,7 +2639,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
                                ctx.from,
                                ctx.ua)
             )
-            newGroup.save().map(_ => Ok(newGroup.toJson))
+            newGroup.enrich().save().map(_ => Ok(newGroup.toJson))
           }
         }
       }

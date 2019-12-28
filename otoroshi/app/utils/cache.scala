@@ -2,6 +2,8 @@ package utils
 
 import java.util.concurrent.ConcurrentHashMap
 
+import com.github.blemale.scaffeine.Cache
+
 object SimpleCache {
   def apply[K, V](initialValue: Map[K, (Long, V)] = Map.empty) = new SimpleCache[K, V](initialValue)
 }
@@ -60,5 +62,17 @@ class SimpleCache[K, V](initialValue: Map[K, (Long, V)] = Map.empty) {
     }.toSet
     killKeys.map(k => cache.remove(k))
     f(time)
+  }
+}
+
+object CacheImplicits {
+  implicit class BetterCache[A, B](val cache: Cache[A, B]) extends AnyVal {
+    def getOrElse(key: A, el: => B): B = {
+      cache.getIfPresent(key).getOrElse {
+        val res = el
+        cache.put(key, res)
+        res
+      }
+    }
   }
 }

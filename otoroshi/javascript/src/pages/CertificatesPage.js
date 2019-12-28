@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import * as BackOfficeServices from '../services/BackOfficeServices';
-import { Table, TextInput, TextareaInput, LabelInput, BooleanInput } from '../components/inputs';
+import { Table, TextInput, TextareaInput, LabelInput, BooleanInput, ArrayInput } from '../components/inputs';
 import moment from 'moment';
 import faker from 'faker';
 
@@ -57,6 +57,7 @@ class CertificateInfos extends Component {
         <TextInput label="Subject" disabled={true} value={this.state.cert.subjectDN} />
         <TextInput label="Issuer" disabled={true} value={this.state.cert.issuerDN} />
         <TextInput label="Domain" disabled={true} value={this.state.cert.domain} />
+        <TextInput label="Subject Alternate Names" disabled={true} value={(this.state.cert.sans || []).join(", ")} />
         <BooleanInput label="Let's Encrypt" disabled={true} value={this.props.rawValue.letsEncrypt} />
         <BooleanInput label="Self signed" disabled={true} value={this.state.cert.selfSigned} />
         <BooleanInput label="CA" disabled={true} value={this.state.cert.ca} />
@@ -288,6 +289,11 @@ export class CertificatesPage extends Component {
       type: 'string',
       disabled: true,
       props: { label: 'Certificate domain', placeholder: 'www.oto.tools' },
+    },
+    subAltNames: {
+      type: 'array',
+      disabled: true,
+      props: { label: 'Subject Alternate Names', placeholder: '' },
     },
     commands: {
       type: Commands,
