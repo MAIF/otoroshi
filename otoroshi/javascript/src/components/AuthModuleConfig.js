@@ -460,7 +460,7 @@ export class Oauth2ModuleConfig extends Component {
           placeholder="Certificate for mTLS call"
           value={settings.certId}
           valuesFrom="/bo/api/proxy/api/certificates"
-            transformer={a => ({ value: a.id, label: a.subject })}
+          transformer={a => ({ value: a.id, label: a.name + ': ' + a.description })}
           help="The certificate used when performing a mTLS call"
           onChange={e => changeTheValue(path + '.mtlsConfig.certId', e)}
         />

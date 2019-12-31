@@ -288,6 +288,23 @@ export class DangerZonePage extends Component {
         placeholderValue: 'Value of the header',
       },
     },
+    'mtlsConfig.mtls': {
+      type: 'bool',
+      props: { label: 'MTLS' },
+    },
+    'mtlsConfig.loose': {
+      type: 'bool',
+      props: { label: 'MTLS loose', placeholder: 'Event type' },
+    },
+    'mtlsConfig.certId': {
+      type: 'select',
+      props: { 
+        label: 'MTLS loose', 
+        placeholder: 'Client certificate',
+        valuesFrom="/bo/api/proxy/api/certificates",
+        transformer: a => ({ value: a.id, label: a.name + ': ' + a.description })
+      },
+    }
   };
 
   analyticsWebhooksFormSchema = {
@@ -303,9 +320,26 @@ export class DangerZonePage extends Component {
         placeholderValue: 'Value of the header',
       },
     },
+    'mtlsConfig.mtls': {
+      type: 'bool',
+      props: { label: 'MTLS' },
+    },
+    'mtlsConfig.loose': {
+      type: 'bool',
+      props: { label: 'MTLS loose', placeholder: 'Event type' },
+    },
+    'mtlsConfig.certId': {
+      type: 'select',
+      props: { 
+        label: 'MTLS loose', 
+        placeholder: 'Client certificate',
+        valuesFrom="/bo/api/proxy/api/certificates",
+        transformer: a => ({ value: a.id, label: a.name + ': ' + a.description })
+      },
+    }
   };
 
-  elasticConfigFormFlow = ['clusterUri', 'index', 'type', 'user', 'password'];
+  elasticConfigFormFlow = ['clusterUri', 'index', 'type', 'user', 'password', 'mtlsConfig.mtls', 'mtlsConfig.loose', 'mtlsConfig.certId'];
 
   elasticConfigFormSchema = {
     clusterUri: {
@@ -328,6 +362,23 @@ export class DangerZonePage extends Component {
       type: 'string',
       props: { label: 'Password', placeholder: 'Elastic password (optional)', type: 'password' },
     },
+    'mtlsConfig.mtls': {
+      type: 'bool',
+      props: { label: 'MTLS' },
+    },
+    'mtlsConfig.loose': {
+      type: 'bool',
+      props: { label: 'MTLS loose', placeholder: 'Event type' },
+    },
+    'mtlsConfig.certId': {
+      type: 'select',
+      props: { 
+        label: 'MTLS loose', 
+        placeholder: 'Client certificate',
+        valuesFrom="/bo/api/proxy/api/certificates",
+        transformer: a => ({ value: a.id, label: a.name + ': ' + a.description })
+      },
+    }
   };
 
   analyticsEventsUrlFromSchema = {
@@ -343,9 +394,26 @@ export class DangerZonePage extends Component {
         placeholderValue: 'Value of the header',
       },
     },
+    'mtlsConfig.mtls': {
+      type: 'bool',
+      props: { label: 'MTLS' },
+    },
+    'mtlsConfig.loose': {
+      type: 'bool',
+      props: { label: 'MTLS loose', placeholder: 'Event type' },
+    },
+    'mtlsConfig.certId': {
+      type: 'select',
+      props: { 
+        label: 'MTLS loose', 
+        placeholder: 'Client certificate',
+        valuesFrom="/bo/api/proxy/api/certificates",
+        transformer: a => ({ value: a.id, label: a.name + ': ' + a.description })
+      },
+    }
   };
 
-  webhooksFormFlow = ['url', 'headers'];
+  webhooksFormFlow = ['url', 'headers', 'mtlsConfig.mtls', 'mtlsConfig.loose', 'mtlsConfig.certId'];
 
   formSchema = {
     'ipFiltering.whitelist': {

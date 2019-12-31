@@ -140,7 +140,7 @@ object ClusterConfig {
       compression = configuration.getOptional[Int]("compression").getOrElse(-1),
       mtlsConfig = MtlsConfig(
         certId = configuration.getOptional[String]("mtls.cert"),
-        loose = configuration.getOptional[Boolean]("mtls.loosse").getOrElse(false),
+        loose = configuration.getOptional[Boolean]("mtls.loose").getOrElse(false),
         mtls = configuration.getOptional[Boolean]("mtls.enabled").getOrElse(false),
       ),
       proxy = configuration.getOptional[String]("proxy.host").map { host =>
