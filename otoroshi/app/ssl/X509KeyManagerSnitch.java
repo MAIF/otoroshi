@@ -81,17 +81,14 @@ public class X509KeyManagerSnitch extends X509ExtendedKeyManager {
                     return first;
                 } else {
                     throw new NoCertificateFoundException(host);
-                    // return this.chooseServerAlias(s, p, (Socket) null);
                 }
             } else {
                 throw new NoHostFoundException();
-                // return this.chooseServerAlias(s, p, (Socket) null);
             }
         } catch (Exception e) {
-            // e.printStackTrace();
+            // return this.chooseServerAlias(s, p, (Socket) null);
             DynamicSSLEngineProvider.logger().underlyingLogger().error("Error while chosing server alias", e);
             return "--";
-            // return this.chooseServerAlias(s, p, (Socket) null);
         }
     }
 }
