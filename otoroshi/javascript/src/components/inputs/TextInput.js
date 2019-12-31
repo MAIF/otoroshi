@@ -63,7 +63,6 @@ export class TextareaInput extends Component {
   };
 
   onDrop = ev => {
-    console.log('onDrop')
     ev.preventDefault();
     if (ev.dataTransfer.items) {
       for (var i = 0; i < ev.dataTransfer.items.length; i++) {
