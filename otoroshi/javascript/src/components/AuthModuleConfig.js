@@ -447,13 +447,13 @@ export class Oauth2ModuleConfig extends Component {
           label="mTLS calls"
           value={settings.mtls}
           help="..."
-          onChange={v => changeTheValue(path + '.mtls', v)}
+          onChange={v => changeTheValue(path + '.mtlsConfig.mtls', v)}
         />
         <BooleanInput
           label="TLS loose"
           value={settings.tlsLoose}
           help="..."
-          onChange={v => changeTheValue(path + '.tlsLoose', v)}
+          onChange={v => changeTheValue(path + '.mtlsConfig.loose', v)}
         />
         <SelectInput
           label="Certificate"
@@ -462,7 +462,7 @@ export class Oauth2ModuleConfig extends Component {
           valuesFrom="/bo/api/proxy/api/certificates"
             transformer={a => ({ value: a.id, label: a.subject })}
           help="The certificate used when performing a mTLS call"
-          onChange={e => changeTheValue(path + '.certId', e)}
+          onChange={e => changeTheValue(path + '.mtlsConfig.certId', e)}
         />
       </div>
     );

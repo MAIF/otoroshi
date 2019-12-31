@@ -16,21 +16,6 @@ class WebHookAnalytics(webhook: Webhook, config: GlobalConfig) extends Analytics
 
   lazy val logger = Logger("otoroshi-analytics-webhook")
 
-  // def basicCall(path: String,
-  //               service: Option[String],
-  //               from: Option[DateTime],
-  //               to: Option[DateTime],
-  //               page: Option[Int] = None,
-  //               size: Option[Int] = None)(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] =
-  //   env.Ws
-  //     .url(webhook.url + path)
-  //     .withHttpHeaders(webhook.headers.toSeq: _*)
-  //     .withQueryStringParameters(defaultParams(service, from, to, page, size): _*)
-  //     .withMaybeProxyServer(config.proxies.eventsWebhooks)
-  //     .get()
-  //     .map(r => Json.parse(r.body))
-  //     .map(r => Some(r))
-
   private def defaultParams(service: Option[String],
                             from: Option[DateTime],
                             to: Option[DateTime],

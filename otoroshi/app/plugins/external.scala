@@ -55,6 +55,11 @@ class ExternalHttpValidator extends AccessValidator {
           "noCache"           -> false,
           "allowNoClientCert" -> false,
           "headers"           -> Json.obj(),
+          "mtlsConfig"        -> Json.obj(
+            "certId"          -> JsNull,
+            "mtls"            -> false,
+            "loose"           -> false
+          )
         )
       )
     )

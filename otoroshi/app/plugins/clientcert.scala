@@ -132,7 +132,12 @@ class HasClientCertMatchingHttpValidator extends AccessValidator {
         "HasClientCertMatchingHttpValidator" -> Json.obj(
           "url"     -> "http://foo.bar",
           "ttl"     -> 600000,
-          "headers" -> Json.obj()
+          "headers" -> Json.obj(),
+          "mtlsConfig"        -> Json.obj(
+            "certId"          -> JsNull,
+            "mtls"            -> false,
+            "loose"           -> false
+          )
         )
       )
     )
