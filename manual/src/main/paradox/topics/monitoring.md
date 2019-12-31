@@ -3,7 +3,7 @@
 The Otoroshi API exposes two endpoints for 
 
 * `/health`: the health of the Otoroshi instance
-* `/metrics`: the metrics of the Otoroshi instance, either in JSON or Prometheus format
+* `/metrics`: the metrics of the Otoroshi instance, either in JSON or Prometheus format using the `Accept` header (with `application/json` / `application/prometheus` values) or the `format` query param (with `json` or `prometheus` values)
 
 ## Endpoints security
 
