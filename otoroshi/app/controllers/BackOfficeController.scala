@@ -700,8 +700,10 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
             keyPairGenerator.initialize(KeystoreSettings.KeyPairKeyLength)
             val keyPair = keyPairGenerator.generateKeyPair()
             val ca      = FakeKeyStore.createCA(s"CN=$cn", FiniteDuration(365, TimeUnit.DAYS), keyPair)
-            val cert = Cert(
+            val _cert = Cert(
               id = IdGenerator.token(32),
+              name = "none",
+              description = "none",
               chain = ca.asPem,
                 // s"${PemHeaders.BeginCertificate}\n${Base64.getEncoder.encodeToString(ca.getEncoded)}\n${PemHeaders.EndCertificate}",
               privateKey = keyPair.getPrivate.asPem,
@@ -710,6 +712,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
               autoRenew = false,
               client = false
             ).enrich()
+            val cert = _cert.copy(name = _cert.domain, description = s"Certificate for ${_cert.subject}")
             Ok(cert.toJson)
           }
           case None => BadRequest(Json.obj("error" -> s"No host provided"))

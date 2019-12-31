@@ -288,6 +288,14 @@ class CertificateValid extends Component {
 export class CertificatesPage extends Component {
   formSchema = {
     id: { type: 'string', disabled: true, props: { label: 'Id', placeholder: '---' } },
+    name: {
+      type: 'string',
+      props: { label: 'Name', placeholder: 'www.oto.tools' },
+    },
+    description: {
+      type: 'string',
+      props: { label: 'Description', placeholder: 'Certificate for www.oto.tools' },
+    },
     domain: {
       type: 'string',
       disabled: true,
@@ -327,6 +335,8 @@ export class CertificatesPage extends Component {
   };
 
   columns = [
+    { title: 'Name', content: item => item.name },
+    { title: 'Description', content: item => item.description },
     { title: 'Domain', content: item => (!item.ca ? item.domain : '') },
     { title: 'Subject', content: item => item.subject },
     {
@@ -376,7 +386,7 @@ export class CertificatesPage extends Component {
     { title: 'To', content: item => moment(item.to).format('DD/MM/YYYY HH:mm:ss') },
   ];
 
-  formFlow = ['id', 'commands', 'valid', 'chain', 'privateKey', 'autoRenew', 'client', 'infos'];
+  formFlow = ['id', 'name', 'description', 'autoRenew', 'client', 'commands', 'valid', 'chain', 'privateKey', 'infos'];
 
   componentDidMount() {
     this.props.setTitle(`All certificates`);

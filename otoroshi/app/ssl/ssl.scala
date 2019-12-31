@@ -92,8 +92,8 @@ object ClientAuth {
 
 case class Cert(
     id: String,
-    // name: String,
-    // description: String,
+    name: String,
+    description: String,
     chain: String,
     privateKey: String,
     caRef: Option[String],
@@ -248,30 +248,38 @@ object Cert {
   lazy val logger = Logger("otoroshi-cert")
 
   def apply(cert: X509Certificate, keyPair: KeyPair, caRef: Option[String], client: Boolean): Cert = {
-    Cert(
+    val c = Cert(
       id = IdGenerator.token(32),
+      name = "none",
+      description = "none",
       chain = cert.asPem,
       privateKey = keyPair.getPrivate.asPem,
       caRef = caRef,
       autoRenew = false,
       client = client
-    )
+    ).enrich()
+    c.copy(name = c.domain, description = s"Certificate for ${c.subject}")
   }
 
   def apply(cert: X509Certificate, keyPair: KeyPair, ca: Cert, client: Boolean): Cert = {
-    Cert(
+    val c = Cert(
       id = IdGenerator.token(32),
+      name = "none",
+      description = "none",
       chain = cert.asPem + "\n" + ca.chain,
       privateKey = keyPair.getPrivate.asPem,
       caRef = Some(ca.id),
       autoRenew = false,
       client = client
-    )
+    ).enrich()
+    c.copy(name = c.domain, description = s"Certificate for ${c.subject}")
   }
 
   def apply(cert: X509Certificate, keyPair: KeyPair, ca: X509Certificate, client: Boolean): Cert = {
-    Cert(
+    val c = Cert(
       id = IdGenerator.token(32),
+      name = "none",
+      description = "none",
       chain = cert.asPem + "\n" + ca.asPem,
         //s"${PemHeaders.BeginCertificate}\n${Base64.getEncoder
         //.encodeToString(cert.getEncoded)}\n${PemHeaders.EndCertificate}\n${PemHeaders.BeginCertificate}\n${Base64.getEncoder
@@ -281,13 +289,16 @@ object Cert {
       caRef = None,
       autoRenew = false,
       client = client
-    )
+    ).enrich()
+    c.copy(name = c.domain, description = s"Certificate for ${c.subject}")
   }
 
   val _fmt: Format[Cert] = new Format[Cert] {
     override def writes(cert: Cert): JsValue = Json.obj(
       "id"         -> cert.id,
       "domain"     -> cert.domain,
+      "name"       -> cert.name,
+      "description" -> cert.description,
       "chain"      -> cert.chain,
       "caRef"      -> cert.caRef,
       "privateKey" -> cert.privateKey,
@@ -306,6 +317,8 @@ object Cert {
       Try {
         Cert(
           id = (json \ "id").as[String],
+          name = (json \ "name").asOpt[String].orElse((json \ "domain").asOpt[String]).getOrElse("none"),
+          description = (json \ "description").asOpt[String].orElse((json \ "domain").asOpt[String].map(v => s"Certificate for $v")).getOrElse("none"),
           domain = (json \ "domain").as[String],
           sans = (json \ "sans").asOpt[Seq[String]].getOrElse(Seq.empty),
           chain = (json \ "chain").as[String],
@@ -427,14 +440,17 @@ trait CertificateDataStore extends BasicStore[Cert] {
       ec: ExecutionContext
   ): Unit = {
     readCertOrKey(conf, caPath, env).foreach { cacert =>
-      val cert = Cert(
+      val _cert = Cert(
         id = IdGenerator.uuid,
+        name = "none",
+        description = "none",
         chain = cacert,
         privateKey = "",
         caRef = None,
         ca = true,
         client = false
       ).enrich()
+      val cert = _cert.copy(name = _cert.domain, description = s"Certificate for ${_cert.subject}")
       findAll().map { certs =>
         val found = certs
           .map(_.enrich())
@@ -454,13 +470,16 @@ trait CertificateDataStore extends BasicStore[Cert] {
       certContent <- readCertOrKey(conf, certPath, env)
       keyContent  <- readCertOrKey(conf, keyPath, env)
     } yield {
-      val cert = Cert(
+      val _cert = Cert(
         id = IdGenerator.uuid,
+        name = "none",
+        description = "none",
         chain = certContent,
         privateKey = keyContent,
         caRef = None,
         client = false
       ).enrich()
+      val cert = _cert.copy(name = _cert.domain, description = s"Certificate for ${_cert.subject}")
       findAll().map { certs =>
         val found = certs
           .map(_.enrich())
@@ -1031,6 +1050,8 @@ object FakeKeyStore {
     val (cert, keyPair) = generateX509Certificate(host)
     Cert(
       id = IdGenerator.token(32),
+      name = host,
+      description = s"Certificate for $host",
       domain = host,
       chain = cert.asPem,
         // s"${PemHeaders.BeginCertificate}\n${new String(encoder.encode(cert.getEncoded), Charsets.UTF_8)}\n${PemHeaders.EndCertificate}",
