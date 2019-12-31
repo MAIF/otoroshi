@@ -62,6 +62,24 @@ export class TextareaInput extends Component {
     this.props.onChange(e.target.value);
   };
 
+  onDrop = ev => {
+    console.log('onDrop')
+    ev.preventDefault();
+    if (ev.dataTransfer.items) {
+      for (var i = 0; i < ev.dataTransfer.items.length; i++) {
+        if (ev.dataTransfer.items[i].kind === 'file') {
+          const file = ev.dataTransfer.items[i].getAsFile();
+          file.text().then(text => this.props.onChange(text));
+        }
+      }
+    } else {
+      for (var i = 0; i < ev.dataTransfer.files.length; i++) {
+        const file = ev.dataTransfer.files[i];
+        file.text().then(text => this.props.onChange(text));
+      }
+    }
+  };
+
   render() {
     return (
       <div className="form-group">
@@ -78,6 +96,8 @@ export class TextareaInput extends Component {
             onChange={this.onChange}
             style={this.props.style}
             rows={this.props.rows || 3}
+            onDrop={this.props.onDrop || this.onDrop}
+            onDragOver={e => e.preventDefault()}
           />
         </div>
       </div>

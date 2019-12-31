@@ -147,7 +147,6 @@ case class Cert(
   }
   def enrich() = {
     val meta = this.metadata.get
-    println("enrich", (meta \ "subAltNames").asOpt[Seq[String]].getOrElse(Seq.empty))
     this.copy(
       domain = (meta \ "domain").asOpt[String].getOrElse("--"),
       selfSigned = (meta \ "selfSigned").asOpt[Boolean].getOrElse(false),
@@ -930,7 +929,7 @@ object CertificateData {
       .flatMap(_.split(",").toSeq.map(_.trim).find(_.startsWith("CN=")))
       .map(_.replace("CN=", ""))
       .getOrElse(cert.getSubjectDN.getName)
-    val domain: String = altNames.headOption.getOrElse(rawDomain)
+    val domain: String = rawDomain // altNames.headOption.getOrElse(rawDomain)
     Json.obj(
       "issuerDN"     -> cert.getIssuerDN.getName,
       "notAfter"     -> cert.getNotAfter.getTime,
@@ -1756,6 +1755,11 @@ object SSLImplicits {
     def asPem: String = s"${PemHeaders.BeginPrivateKey}\n${Base64.getEncoder.encodeToString(key.getEncoded).grouped(80).mkString("\n")}\n${PemHeaders.EndPrivateKey}\n"
   }
 }
+
+import scala.util.control.NoStackTrace
+
+case class NoCertificateFoundException(hostname: String) extends RuntimeException(s"No certificate found for: $hostname !") with NoStackTrace
+case class NoHostFoundException() extends RuntimeException(s"No hostname found !") with NoStackTrace
 
 /**
 FROM ubuntu:18.04

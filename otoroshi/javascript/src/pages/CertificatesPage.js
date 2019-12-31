@@ -52,14 +52,15 @@ class CertificateInfos extends Component {
           <LabelInput label="Infos" value={this.state.error} />
         </div>
       );
-      console.log(this.state)
     return (
       <div>
         <TextInput label="Subject" disabled={true} value={this.state.cert.subjectDN} />
         <TextInput label="Issuer" disabled={true} value={this.state.cert.issuerDN} />
         <TextInput label="Domain" disabled={true} value={this.state.cert.domain} />
-        {/*<TextInput label="Subject Alternate Names" disabled={true} value={(this.state.cert.subAltNames || []).join(", ")} />*/}
-        <ArrayInput label="Subject Alternate Names" disabled={true} value={this.state.cert.subAltNames || []} />
+        {(this.state.cert.subAltNames || []).map((name, idx) => (
+          <TextInput label={idx === 0 ? 'SANs' : ''} help={idx === 0 ? 'Certificate Subject Alternate Names' : null} disabled={true} value={name} />
+        ))}
+        {/*<ArrayInput label="Subject Alternate Names" disabled={true} value={this.state.cert.subAltNames || []} />*/}
         <BooleanInput label="Let's Encrypt" disabled={true} value={this.props.rawValue.letsEncrypt} />
         <BooleanInput label="Self signed" disabled={true} value={this.state.cert.selfSigned} />
         <BooleanInput label="CA" disabled={true} value={this.state.cert.ca} />

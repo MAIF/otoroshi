@@ -74,16 +74,24 @@ public class X509KeyManagerSnitch extends X509ExtendedKeyManager {
             if (host != null && aliases != null) {
                 List<String> al = Arrays.asList(aliases);
                 Optional<String> theFirst = al.stream().findFirst();
-                String first = al.stream().filter(alias -> RegexPool.apply(alias).matches(host)).findFirst().orElse(theFirst.get());
-                DynamicSSLEngineProvider.logger().underlyingLogger().debug("chooseEngineServerAlias: " + host + " - " + theFirst + " - " + first);
-                return first;
+                Optional<String> theFirstMatching = al.stream().filter(alias -> RegexPool.apply(alias).matches(host)).findFirst();
+                if (theFirstMatching.isPresent()) {
+                    String first = theFirstMatching.orElse(theFirst.get());
+                    DynamicSSLEngineProvider.logger().underlyingLogger().debug("chooseEngineServerAlias: " + host + " - " + theFirst + " - " + first);
+                    return first;
+                } else {
+                    throw new NoCertificateFoundException(host);
+                    // return this.chooseServerAlias(s, p, (Socket) null);
+                }
             } else {
-                return this.chooseServerAlias(s, p, (Socket) null);
+                throw new NoHostFoundException();
+                // return this.chooseServerAlias(s, p, (Socket) null);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            // e.printStackTrace();
             DynamicSSLEngineProvider.logger().underlyingLogger().error("Error while chosing server alias", e);
-            return this.chooseServerAlias(s, p, (Socket) null);
+            return "--";
+            // return this.chooseServerAlias(s, p, (Socket) null);
         }
     }
 }
