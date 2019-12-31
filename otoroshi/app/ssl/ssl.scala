@@ -1487,7 +1487,7 @@ case class ClientCertificateValidator(
     val finalHeaders: Seq[(String, String)] = headers.toSeq ++ Seq("Host" -> host,
                                                                    "Content-Type" -> "application/json",
                                                                    "Accept"       -> "application/json")
-    env.Ws
+    env.Ws // no need for mtls here
       .url(url + path)
       .withHttpHeaders(finalHeaders: _*)
       .withMethod(method)

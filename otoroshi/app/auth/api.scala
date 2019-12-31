@@ -7,6 +7,7 @@ import play.api.libs.json._
 import play.api.libs.ws.WSProxyServer
 import play.api.mvc.{AnyContent, Request, RequestHeader, Result}
 import storage.BasicStore
+import utils.http.MtlsConfig
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -94,9 +95,7 @@ trait OAuth2ModuleConfig extends AuthModuleConfig {
   def oidConfig: Option[String]
   def proxy: Option[WSProxyServer]
   def extraMetadata: JsObject
-  def certId: Option[String]
-  def tlsLoose: Boolean
-  def mtls: Boolean
+  def mtlsConfig: MtlsConfig
 }
 
 trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {

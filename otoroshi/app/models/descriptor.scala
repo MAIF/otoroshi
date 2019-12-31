@@ -33,6 +33,7 @@ import scala.concurrent.duration.{FiniteDuration, _}
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
 import utils.RequestImplicits._
+import utils.http.MtlsConfig
 
 case class ServiceDescriptorQuery(subdomain: String,
                                   line: String = "prod",
@@ -469,6 +470,7 @@ case class Target(
     mtls: Boolean = false,
     certId: Option[String] = None
 ) {
+  lazy val mtlsConfig = MtlsConfig(certId, mtls, loose)
   def toJson      = Target.format.writes(this)
   def asUrl       = s"${scheme}://$host"
   def asKey       = s"${protocol.value}:$scheme://$host@${ipAddress.getOrElse(host)}"
@@ -1178,7 +1180,7 @@ case class OIDCThirdPartyApiKeyConfig(
                                             }
                                             case _ => {
                                               val clientSecret = Option(oidcAuth.clientSecret).filterNot(_.trim.isEmpty)
-                                              val builder      = env.Ws.url(oidcAuth.introspectionUrl)
+                                              val builder      = env.MtlsWs.url(oidcAuth.introspectionUrl, oidcAuth.mtlsConfig)
                                               val future1 = if (oidcAuth.useJson) {
                                                 builder.post(
                                                   Json.obj(

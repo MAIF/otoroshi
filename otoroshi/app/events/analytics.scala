@@ -60,11 +60,7 @@ class AnalyticsActor(implicit env: Env) extends Actor {
           config.analyticsWebhooks.map(c => new WebHookAnalytics(c, config)) ++
           config.elasticWritesConfigs.map(
             c =>
-              new ElasticWritesAnalytics(c,
-                                         env.environment,
-                                         env,
-                                         env.analyticsExecutionContext,
-                                         env.analyticsActorSystem)
+              new ElasticWritesAnalytics(c, env)
           )
         ) {
           _.publish(evts)
@@ -521,7 +517,7 @@ class AnalyticsReadsServiceImpl(globalConfig: GlobalConfig, env: Env) extends An
     FastFuture.successful(
       globalConfig.elasticReadsConfig.map(
         c =>
-          new ElasticReadsAnalytics(c, env.environment, env.Ws, env.analyticsExecutionContext, env.analyticsActorSystem)
+          new ElasticReadsAnalytics(c, env)
       )
     )
   }

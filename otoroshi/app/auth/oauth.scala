@@ -15,6 +15,7 @@ import security.IdGenerator
 import storage.BasicStore
 import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
 import play.api.libs.ws.WSProxyServer
+import utils.http.MtlsConfig
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -67,10 +68,8 @@ object GenericOauth2ModuleConfig extends FromJson[AuthModuleConfig] {
             .getOrElse("http://privateapps.oto.tools:8080/privateapps/generic/callback"),
           oidConfig = (json \ "oidConfig").asOpt[String],
           proxy = (json \ "proxy").asOpt[JsValue].flatMap(p => WSProxyServerJson.proxyFromJson(p)),
-          certId = (json \ "certId").asOpt[String].filter(_.trim.nonEmpty),
-          tlsLoose = (json \ "tlsLoose").asOpt[Boolean].getOrElse(false),
-          mtls = (json \ "mtls").asOpt[Boolean].getOrElse(false),
-          extraMetadata = (json \ "extraMetadata").asOpt[JsObject].getOrElse(Json.obj())
+          extraMetadata = (json \ "extraMetadata").asOpt[JsObject].getOrElse(Json.obj()),
+          mtlsConfig = MtlsConfig.read((json \ "mtlsConfig").asOpt[JsValue])
         )
       )
     } recover {
@@ -107,9 +106,7 @@ case class GenericOauth2ModuleConfig(
     oidConfig: Option[String] = None,
     proxy: Option[WSProxyServer] = None,
     extraMetadata: JsObject = Json.obj(),
-    certId: Option[String] = None,
-    tlsLoose: Boolean = false,
-    mtls: Boolean = false
+    mtlsConfig: MtlsConfig = MtlsConfig()
 ) extends OAuth2ModuleConfig {
   def `type`: String                                        = "oauth2"
   override def authModule(config: GlobalConfig): AuthModule = GenericOauth2Module(this)
@@ -140,10 +137,8 @@ case class GenericOauth2ModuleConfig(
     "apiKeyTagsField"      -> this.apiKeyTagsField,
     "otoroshiDataField"    -> this.otoroshiDataField,
     "callbackUrl"          -> this.callbackUrl,
-    "tlsLoose"             -> this.tlsLoose,
-    "mtls"                 -> this.mtls,
     "oidConfig"            -> this.oidConfig.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-    "certId"               -> this.certId.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+    "mtlsConfig"           -> this.mtlsConfig.json,
     "proxy"                -> WSProxyServerJson.maybeProxyToJson(this.proxy),
     "extraMetadata"        -> this.extraMetadata
   )
@@ -244,7 +239,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
           case None => Left("No code :(").asFuture
           case Some(code) => {
             val builder =
-              env.Ws.urlWithCert(authConfig.tokenUrl, authConfig.certId,  authConfig.mtls, authConfig.tlsLoose).withMaybeProxyServer(authConfig.proxy.orElse(config.proxies.auth))
+              env.MtlsWs.url(authConfig.tokenUrl, authConfig.mtlsConfig).withMaybeProxyServer(authConfig.proxy.orElse(config.proxies.auth))
             val future1 = if (authConfig.useJson) {
               builder.post(
                 Json.obj(
@@ -288,8 +283,8 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
                     case None => FastFuture.failed(new RuntimeException("Bad algorithm"))
                   }
                 } else {
-                  val builder2 = env.Ws
-                    .urlWithCert(authConfig.userInfoUrl, authConfig.certId, authConfig.mtls, authConfig.tlsLoose)
+                  val builder2 = env.MtlsWs
+                    .url(authConfig.userInfoUrl, authConfig.mtlsConfig)
                     .withMaybeProxyServer(authConfig.proxy.orElse(config.proxies.auth))
                   val future2 = if (authConfig.useJson) {
                     builder2.post(
@@ -356,7 +351,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
           case None => Left("No code :(").asFuture
           case Some(code) => {
             val builder =
-              env.Ws.url(authConfig.tokenUrl).withMaybeProxyServer(authConfig.proxy.orElse(config.proxies.auth))
+              env.MtlsWs.url(authConfig.tokenUrl, authConfig.mtlsConfig).withMaybeProxyServer(authConfig.proxy.orElse(config.proxies.auth))
             val future1 = if (authConfig.useJson) {
               builder.post(
                 Json.obj(
@@ -398,8 +393,8 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
                     case None => FastFuture.failed(new RuntimeException("Bad algorithm"))
                   }
                 } else {
-                  val builder2 = env.Ws
-                    .url(authConfig.userInfoUrl)
+                  val builder2 = env.MtlsWs
+                    .url(authConfig.userInfoUrl, authConfig.mtlsConfig)
                     .withMaybeProxyServer(authConfig.proxy.orElse(config.proxies.auth))
                   val future2 = if (authConfig.useJson) {
                     builder2.post(

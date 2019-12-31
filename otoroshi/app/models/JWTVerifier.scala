@@ -25,6 +25,7 @@ import security.IdGenerator
 import ssl.PemUtils
 import storage.BasicStore
 import utils.TypedMap
+import utils.http.MtlsConfig
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.FiniteDuration
@@ -371,7 +372,8 @@ object JWKSAlgoSettings extends FromJson[JWKSAlgoSettings] {
             .map(v => FiniteDuration(v, TimeUnit.MILLISECONDS))
             .getOrElse(FiniteDuration(60 * 60 * 1000, TimeUnit.MILLISECONDS)),
           (json \ "kty").asOpt[String].map(v => KeyType.parse(v)).getOrElse(KeyType.RSA),
-          (json \ "proxy").asOpt[JsValue].flatMap(v => WSProxyServerJson.proxyFromJson(v))
+          (json \ "proxy").asOpt[JsValue].flatMap(v => WSProxyServerJson.proxyFromJson(v)),
+          MtlsConfig.read((json \ "mtlsConfig").asOpt[JsValue])
         )
       )
     } recover {
@@ -384,7 +386,8 @@ case class JWKSAlgoSettings(url: String,
                             timeout: FiniteDuration,
                             ttl: FiniteDuration,
                             kty: KeyType,
-                            proxy: Option[WSProxyServer] = None)
+                            proxy: Option[WSProxyServer] = None,
+                            mtlsConfig: MtlsConfig)
     extends AlgoSettings {
 
   val logger = Logger("otoroshi-jwks")
@@ -425,9 +428,9 @@ case class JWKSAlgoSettings(url: String,
             }
           }
           case _ => {
-            val protocol = url.split("://").toSeq.headOption.getOrElse("http")
-            env.Ws
-              .urlWithProtocol(protocol, url)
+            // val protocol = url.split("://").toSeq.headOption.getOrElse("http")
+            env.MtlsWs
+              .url(url, mtlsConfig)
               .withRequestTimeout(timeout)
               .withHttpHeaders(headers.toSeq: _*)
               .withMaybeProxyServer(
@@ -471,7 +474,8 @@ case class JWKSAlgoSettings(url: String,
     "headers" -> headers,
     "ttl"     -> ttl.toMillis,
     "kty"     -> kty.getValue,
-    "proxy"   -> WSProxyServerJson.maybeProxyToJson(proxy)
+    "proxy"   -> WSProxyServerJson.maybeProxyToJson(proxy),
+    "mtlsConfig" -> mtlsConfig.json
   )
 }
 

@@ -14,6 +14,7 @@ import otoroshi.script.{AccessContext, AccessValidator}
 import play.api.libs.json._
 import play.api.libs.ws.WSProxyServer
 import ssl.{ClientCertificateValidator, PemHeaders}
+import utils.http.MtlsConfig
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.Duration
@@ -31,6 +32,7 @@ case class ExternalHttpValidatorConfig(config: JsValue) {
   lazy val headers: Map[String, String] = (config \ "headers").asOpt[Map[String, String]].getOrElse(Map.empty)
   lazy val proxy: Option[WSProxyServer] =
     (config \ "proxy").asOpt[JsValue].flatMap(p => WSProxyServerJson.proxyFromJson(p))
+  lazy val mtlsConfig: MtlsConfig       = MtlsConfig.read((config \ "mtlsConfig").asOpt[JsValue])
 }
 
 class ExternalHttpValidator extends AccessValidator {
@@ -150,8 +152,8 @@ class ExternalHttpValidator extends AccessValidator {
     val finalHeaders: Seq[(String, String)] = cfg.headers.toSeq ++ Seq("Host" -> cfg.host,
                                                                        "Content-Type" -> "application/json",
                                                                        "Accept"       -> "application/json")
-    env.Ws
-      .url(cfg.url + cfg.path)
+    env.MtlsWs
+      .url(cfg.url + cfg.path, cfg.mtlsConfig)
       .withHttpHeaders(finalHeaders: _*)
       .withMethod(cfg.method)
       .withBody(payload)
@@ -179,7 +181,7 @@ class ExternalHttpValidator extends AccessValidator {
   def canAccessWithClientCertChain(
       chain: Seq[X509Certificate],
       context: AccessContext,
-      valCfg: ExternalHttpValidatorConfig
+      valCfg: ExternalHttpValidatorConfig,
   )(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
     val apikey = context.apikey
     val user   = context.user

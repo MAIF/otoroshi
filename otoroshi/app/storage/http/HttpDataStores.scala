@@ -112,7 +112,7 @@ class HttpDbDataStores(configuration: Configuration,
     val headers = stateHeaders.toSeq ++ Seq(
       "Accept" -> "application/x-ndjson"
     )
-    env.Ws
+    env.Ws // no need for mtls here
       .url(stateUrl)
       .withRequestTimeout(stateTimeout)
       .withHttpHeaders(headers: _*)
@@ -178,7 +178,7 @@ class HttpDbDataStores(configuration: Configuration,
     val headers = stateHeaders.toSeq ++ Seq(
       "Content-Type" -> "application/x-ndjson"
     )
-    env.Ws
+    env.Ws // no need for mtls here
       .url(stateUrl)
       .withRequestTimeout(stateTimeout)
       .withHttpHeaders(headers: _*)

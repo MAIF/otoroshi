@@ -40,6 +40,7 @@ import storage.inmemory._
 import storage._
 import storage.inmemory.concurrent.{Memory, SwappableInMemoryRedis}
 import utils.http.Implicits._
+import utils.http.MtlsConfig
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.{Duration, FiniteDuration}
@@ -121,6 +122,7 @@ case class ClusterConfig(
     mode: ClusterMode = ClusterMode.Off,
     compression: Int = -1,
     proxy: Option[WSProxyServer],
+    mtlsConfig: MtlsConfig,
     leader: LeaderConfig = LeaderConfig(),
     worker: WorkerConfig = WorkerConfig()
 ) {
@@ -136,6 +138,11 @@ object ClusterConfig {
     ClusterConfig(
       mode = configuration.getOptional[String]("mode").flatMap(ClusterMode.apply).getOrElse(ClusterMode.Off),
       compression = configuration.getOptional[Int]("compression").getOrElse(-1),
+      mtlsConfig = MtlsConfig(
+        certId = configuration.getOptional[String]("mtls.cert"),
+        loose = configuration.getOptional[Boolean]("mtls.loosse").getOrElse(false),
+        mtls = configuration.getOptional[Boolean]("mtls.enabled").getOrElse(false),
+      ),
       proxy = configuration.getOptional[String]("proxy.host").map { host =>
         DefaultWSProxyServer(
           host = host,
@@ -1026,8 +1033,8 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
     if (env.clusterConfig.mode.isWorker) {
       Retry
         .retry(times = config.worker.retries, delay = 20, ctx = "leader-session-valid") { tryCount =>
-          env.Ws
-            .url(otoroshiUrl + s"/api/cluster/sessions/$id")
+          env.MtlsWs
+            .url(otoroshiUrl + s"/api/cluster/sessions/$id", config.mtlsConfig)
             .withHttpHeaders(
               "Host"                                    -> config.leader.host,
               ClusterAgent.OtoroshiWorkerNameHeader     -> config.worker.name,
@@ -1059,8 +1066,8 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
     if (env.clusterConfig.mode.isWorker) {
       Retry
         .retry(times = config.worker.retries, delay = 20, ctx = "leader-create-session") { tryCount =>
-          env.Ws
-            .url(otoroshiUrl + s"/api/cluster/sessions")
+          env.MtlsWs
+            .url(otoroshiUrl + s"/api/cluster/sessions", config.mtlsConfig)
             .withHttpHeaders(
               "Host"                                    -> config.leader.host,
               "Content-Type"                            -> "application/json",
@@ -1150,8 +1157,8 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
           .retry(times = if (cannotServeRequests()) 10 else config.worker.state.retries,
                  delay = 20,
                  ctx = "leader-fetch-state") { tryCount =>
-            env.Ws
-              .url(otoroshiUrl + "/api/cluster/state")
+            env.MtlsWs
+              .url(otoroshiUrl + "/api/cluster/state", config.mtlsConfig)
               .withHttpHeaders(
                 "Host"   -> config.leader.host,
                 "Accept" -> "application/x-ndjson",
@@ -1303,8 +1310,8 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
               val globalSource = Source.single(stats)
               val body         = apiIncrSource.concat(serviceIncrSource).concat(globalSource).via(env.clusterConfig.gzip())
               val wsBody       = SourceBody(body)
-              env.Ws
-                .url(otoroshiUrl + "/api/cluster/quotas")
+              env.MtlsWs
+                .url(otoroshiUrl + "/api/cluster/quotas", config.mtlsConfig)
                 .withHttpHeaders(
                   "Host"         -> config.leader.host,
                   "Content-Type" -> "application/x-ndjson",

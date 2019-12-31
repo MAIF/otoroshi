@@ -99,7 +99,7 @@ class CleverCloudClient(env: Env, config: GlobalConfig, val settings: CleverSett
       .map { case (k, v) => s"""$k="$v"""" }
       .mkString(",")
 
-    val builder = env.Ws
+    val builder = env.Ws // no need for mtls here
       .url(url)
       .withHttpHeaders("Authorization" -> params)
       .withMaybeProxyServer(config.proxies.clevercloud)

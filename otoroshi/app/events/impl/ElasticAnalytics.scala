@@ -113,16 +113,16 @@ object ElasticWritesAnalytics {
   }
 }
 
-class ElasticWritesAnalytics(config: ElasticAnalyticsConfig,
-                             environment: Environment,
-                             env: Env,
-                             executionContext: ExecutionContext,
-                             system: ActorSystem)
+class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env)
     extends AnalyticsWritesService {
 
   import utils.http.Implicits._
 
   lazy val logger = Logger("otoroshi-analytics-writes-elastic")
+
+  private val environment: Environment = env.environment
+  private val executionContext: ExecutionContext = env.analyticsExecutionContext
+  private val system: ActorSystem = env.analyticsActorSystem
 
   private def urlFromPath(path: String): String = s"${config.clusterUri}$path"
   private val index: String                     = config.index.getOrElse("otoroshi-events")
@@ -131,7 +131,7 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig,
 
   private def url(url: String): WSRequest = {
     val builder =
-      env.Ws.url(url).withMaybeProxyServer(env.datastores.globalConfigDataStore.latestSafe.flatMap(_.proxies.elastic))
+      env.MtlsWs.url(url, config.mtlsConfig).withMaybeProxyServer(env.datastores.globalConfigDataStore.latestSafe.flatMap(_.proxies.elastic))
     authHeader()
       .fold(builder) { h =>
         builder.withHttpHeaders("Authorization" -> h)
@@ -217,8 +217,8 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig,
   }
 
   override def publish(event: Seq[JsValue])(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
-    val builder = env.Ws
-      .url(urlFromPath("/_bulk"))
+    val builder = env.MtlsWs
+      .url(urlFromPath("/_bulk"), config.mtlsConfig)
       .withMaybeProxyServer(env.datastores.globalConfigDataStore.latestSafe.flatMap(_.proxies.elastic))
 
     val clientInstance = authHeader()
@@ -256,12 +256,11 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig,
   }
 }
 
-class ElasticReadsAnalytics(config: ElasticAnalyticsConfig,
-                            environment: Environment,
-                            client: WSClient,
-                            executionContext: ExecutionContext,
-                            system: ActorSystem)
+class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env)
     extends AnalyticsReadsService {
+
+  private val executionContext: ExecutionContext = env.analyticsExecutionContext
+  private val system: ActorSystem = env.analyticsActorSystem
 
   private def urlFromPath(path: String): String = s"${config.clusterUri}$path"
   private val `type`: String                    = config.`type`.getOrElse("type")
@@ -277,7 +276,7 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig,
   lazy val logger = Logger("otoroshi-analytics-reads-elastic")
 
   private def url(url: String): WSRequest = {
-    val builder = client.url(url)
+    val builder = env.MtlsWs.url(url, config.mtlsConfig)
     authHeader()
       .fold(builder) { h =>
         builder.withHttpHeaders("Authorization" -> h)
@@ -533,7 +532,7 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig,
     statsHistogram("overhead", filterable, from, to).map(Some.apply)
 
   private def query(query: JsObject)(implicit ec: ExecutionContext): Future[JsValue] = {
-    val builder = client.url(searchUri)
+    val builder = env.MtlsWs.url(searchUri, config.mtlsConfig)
 
     logger.debug(s"Query to Elasticsearch: ${Json.prettyPrint(query)}")
 

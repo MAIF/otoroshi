@@ -32,6 +32,7 @@ import ssl.FakeKeyStore.KeystoreSettings
 import ssl.{Cert, CertificateData, FakeKeyStore, PemHeaders}
 import utils.LocalCache
 import utils.RequestImplicits._
+import utils.http.MtlsConfig
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -89,7 +90,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
     } ++ ctx.request.headers.get("Accept").map { accept =>
       "Accept" -> accept
     }
-    env.Ws
+    env.Ws // MTLS needed here ???
       .url(s"$url/$path")
       .withHttpHeaders(headers: _*)
       .withFollowRedirects(false)
@@ -223,7 +224,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
           case uri if uri.startsWith("/") => s"${service.target.scheme}://${service.target.host}${uri}"
           case url                        => url
         }
-        env.Ws
+        env.Ws // no need for mtls here
           .url(url)
           .withRequestTimeout(10.seconds)
           .withHttpHeaders(
@@ -803,8 +804,8 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
           )
         )
       case Some(url) => {
-        // TODO: use a possible proxy ????
-        env.Ws.url(url).withRequestTimeout(10.seconds).get().map { resp =>
+        env.Ws.url(url) // no need for mtls here
+          .withRequestTimeout(10.seconds).get().map { resp =>
           if (resp.status == 200) {
             Try {
               val config = GenericOauth2ModuleConfig(
@@ -860,7 +861,8 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
                           timeout = FiniteDuration(2000, TimeUnit.MILLISECONDS),
                           ttl = FiniteDuration(60 * 60 * 1000, TimeUnit.MILLISECONDS),
                           kty = KeyType.RSA,
-                          None
+                          None,
+                          MtlsConfig.default
                       )
                     )
                   )
@@ -911,32 +913,6 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
             "request"  -> req.map(_.utf8String).map(Json.parse).getOrElse(JsNull).as[JsValue]
           )
         )
-      }
-    }
-  }
-
-  def fetchLatestGeoLite2() = BackOfficeActionAuth.async { ctx =>
-    val dir  = java.nio.file.Files.createTempDirectory("oto-geolite-")
-    val file = dir.resolve("geolite.tar.gz")
-    env.Ws.url("https://geolite.maxmind.com/download/geoip/database/GeoLite2-City.tar.gz").get().flatMap { resp =>
-      resp.bodyAsSource.runWith(FileIO.toPath(file)).map { io =>
-        if (io.wasSuccessful) {
-          val builder = new ProcessBuilder
-          builder.command(
-            "/bin/sh",
-            "-c",
-            String.format(
-              "cd %s; tar -xvf geolite.tar.gz; rm -rf geolite.tar.gz; mv Geo* geolite; mv geolite/GeoLite2-City.mmdb geolite.mmdb; rm -rf ./geolite",
-              dir
-            )
-          )
-          builder.directory(dir.toFile)
-          val process  = builder.start
-          val exitCode = process.waitFor
-          Ok(Json.obj("path" -> dir.resolve("geolite.mmdb").toFile.getAbsolutePath, "exitCode" -> exitCode))
-        } else {
-          InternalServerError(Json.obj("path" -> file.toFile.getAbsolutePath))
-        }
       }
     }
   }

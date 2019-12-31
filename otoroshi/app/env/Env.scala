@@ -391,7 +391,8 @@ class Env(val configuration: Configuration,
   def rootScheme               = s"${exposedRootScheme}://"
   def exposedRootSchemeIsHttps = exposedRootScheme == "https"
 
-  def Ws = _internalClient
+  lazy val Ws = _internalClient
+  lazy val MtlsWs = utils.http.MtlsWs(_internalClient)
 
   lazy val snowflakeSeed      = configuration.getOptional[Long]("app.snowflake.seed").get
   lazy val snowflakeGenerator = IdGenerator(snowflakeSeed)

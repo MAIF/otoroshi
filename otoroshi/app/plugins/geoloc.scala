@@ -230,7 +230,7 @@ object IpStackGeolocationHelper {
       cache.get(ip) match {
         case Some(details) => FastFuture.successful(details)
         case None => {
-          env.Ws
+          env.Ws // no need for mtls here
             .url(s"http://api.ipstack.com/$ip?access_key=$apikey&format=1")
             .withFollowRedirects(false)
             .withRequestTimeout(timeout.millis)
@@ -330,7 +330,7 @@ object MaxMindGeolocationHelper {
   private def initDbFromURL(url: String)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     val dir  = java.nio.file.Files.createTempDirectory("oto-geolite-")
     val file = dir.resolve("geolite.mmdb")
-    env.Ws.url(url)
+    env.Ws.url(url) // no need for mtls here
       .withRequestTimeout(30.seconds)
         .withFollowRedirects(false)
         .withMethod("GET")
@@ -359,7 +359,7 @@ object MaxMindGeolocationHelper {
     val dir  = java.nio.file.Files.createTempDirectory("oto-geolite-")
     val file = dir.resolve("geolite.zip")
     val url = rawUrl.replace("zip:", "")
-    env.Ws.url(url)
+    env.Ws.url(url) // no need for mtls here
       .withRequestTimeout(30.seconds)
       .withFollowRedirects(false)
       .withMethod("GET")
@@ -416,7 +416,7 @@ s                     |mv *.mmdb geolite.mmdb
     val dir  = java.nio.file.Files.createTempDirectory("oto-geolite-")
     val file = dir.resolve("geolite.tar.gz")
     val url = rawUrl.replace("tgz:", "")
-    env.Ws.url(url)
+    env.Ws.url(url) // no need for mtls here
       .withRequestTimeout(30.seconds)
       .withFollowRedirects(false)
       .withMethod("GET")

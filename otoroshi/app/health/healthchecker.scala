@@ -9,6 +9,7 @@ import models.ServiceDescriptor
 import org.joda.time.DateTime
 import play.api.Logger
 import security.{IdGenerator, OtoroshiClaim}
+import utils.http.MtlsConfig
 
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
@@ -33,7 +34,8 @@ class HealthCheckerActor()(implicit env: Env) extends Actor {
 
   def checkService(desc: ServiceDescriptor): Future[Unit] =
     Future
-      .sequence(desc.targets.map(t => s"${t.scheme}://${t.host}${desc.healthCheck.url}").map { url =>
+      .sequence(desc.targets.map { target =>
+        val url = s"${target.scheme}://${target.host}${desc.healthCheck.url}"
         val start = System.currentTimeMillis()
         val state = IdGenerator.extendedToken(128)
         val value = env.snowflakeGenerator.nextIdStr()
@@ -45,8 +47,8 @@ class HealthCheckerActor()(implicit env: Env) extends Actor {
           iat = DateTime.now().toDate.getTime,
           jti = IdGenerator.uuid
         ).serialize(desc.secComSettings)(env)
-        env.Ws
-          .url(url)
+        env.MtlsWs
+          .url(url, target.mtlsConfig)
           .withRequestTimeout(Duration(30, TimeUnit.SECONDS))
           .withHttpHeaders(
             env.Headers.OtoroshiState                -> state,

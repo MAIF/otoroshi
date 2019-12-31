@@ -11,6 +11,7 @@ import play.api.mvc.Result
 import utils.RegexPool
 import utils.RequestImplicits._
 import utils.future.Implicits._
+import utils.http.MtlsConfig
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.{ExecutionContext, Future}
@@ -187,10 +188,10 @@ class HasClientCertMatchingHttpValidator extends AccessValidator {
     }
   }
 
-  private def fetch(url: String, headers: Map[String, String], ttl: Long)(implicit env: Env,
+  private def fetch(url: String, headers: Map[String, String], ttl: Long, mtlsConfig: MtlsConfig)(implicit env: Env,
                                                                           ec: ExecutionContext): Future[JsValue] = {
-    env.Ws
-      .url(url)
+    env.MtlsWs
+      .url(url, mtlsConfig)
       .withHttpHeaders(headers.toSeq: _*)
       .get()
       .map {
@@ -212,21 +213,22 @@ class HasClientCertMatchingHttpValidator extends AccessValidator {
   def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
     context.request.clientCertificateChain match {
       case Some(certs) => {
-        val config = (context.config \ "HasClientCertMatchingHttpValidator")
+        val config: JsValue = (context.config \ "HasClientCertMatchingHttpValidator")
           .asOpt[JsValue]
           .orElse((context.globalConfig \ "HasClientCertMatchingHttpValidator").asOpt[JsValue])
           .getOrElse(context.config)
+        val mtlsConfig = MtlsConfig.read((config \ "mtlsConfig").asOpt[JsValue])
         val url     = (config \ "url").as[String]
         val headers = (config \ "headers").asOpt[Map[String, String]].getOrElse(Map.empty)
         val ttl     = (config \ "ttl").asOpt[Long].getOrElse(10 * 60000L)
         val start   = System.currentTimeMillis()
         cache.get(url) match {
           case None =>
-            fetch(url, headers, ttl).map(b => validate(certs, b))
+            fetch(url, headers, ttl, mtlsConfig).map(b => validate(certs, b))
           case Some((time, values)) if start - time <= ttl =>
             FastFuture.successful(validate(certs, values))
           case Some((time, values)) if start - time > ttl =>
-            fetch(url, headers, ttl)
+            fetch(url, headers, ttl, mtlsConfig)
             FastFuture.successful(validate(certs, values))
         }
       }

@@ -223,7 +223,7 @@ class MailgunMailer(env: Env, config: GlobalConfig) extends Mailer {
       implicit ec: ExecutionContext
   ): Future[Unit] = {
     val fu = config.mailerSettings.flatMap(_.mailgunSettings).map { mailgunSettings =>
-      env.Ws
+      env.Ws // no need for mtls here
         .url(mailgunSettings.eu match {
           case true  => s"https://api.eu.mailgun.net/v3/${mailgunSettings.domain}/messages"
           case false => s"https://api.mailgun.net/v3/${mailgunSettings.domain}/messages"
@@ -259,7 +259,7 @@ class MailjetMailer(env: Env, config: GlobalConfig) extends Mailer {
       implicit ec: ExecutionContext
   ): Future[Unit] = {
     val fu = config.mailerSettings.flatMap(_.mailjetSettings).map { settings =>
-      env.Ws
+      env.Ws // no need for mtls here
         .url(s"https://api.mailjet.com/v3.1/send")
         .withAuth(settings.apiKeyPublic, settings.apiKeyPrivate, WSAuthScheme.BASIC)
         .withHttpHeaders("Content-Type" -> "application/json")
@@ -308,7 +308,7 @@ class GenericMailer(env: Env, config: GlobalConfig) extends Mailer {
       implicit ec: ExecutionContext
   ): Future[Unit] = {
     val fu = config.mailerSettings.flatMap(_.genericSettings).map { settings =>
-      env.Ws
+      env.Ws // no need for mtls here
         .url(settings.url)
         .withHttpHeaders("Content-Type" -> "application/json")
         .addHttpHeaders(settings.headers.toSeq: _*)

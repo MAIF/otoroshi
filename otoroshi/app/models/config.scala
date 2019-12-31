@@ -16,9 +16,10 @@ import storage.BasicStore
 import security.{Auth0Config, IdGenerator}
 import utils.{CleverCloudClient, MailerSettings, MailgunSettings}
 import utils.CleverCloudClient.{CleverSettings, UserTokens}
+import utils.http.MtlsConfig
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Try
+import scala.util.{Failure, Success, Try}
 
 case class ElasticAnalyticsConfig(
     clusterUri: String,
@@ -26,7 +27,8 @@ case class ElasticAnalyticsConfig(
     `type`: Option[String] = None,
     user: Option[String] = None,
     password: Option[String] = None,
-    headers: Map[String, String] = Map.empty[String, String]
+    headers: Map[String, String] = Map.empty[String, String],
+    mtlsConfig: MtlsConfig = MtlsConfig.default
 ) {
   def toJson: JsValue = ElasticAnalyticsConfig.format.writes(this)
 }
@@ -40,6 +42,7 @@ object ElasticAnalyticsConfig {
       "user"       -> o.user.map(JsString.apply).getOrElse(JsNull).as[JsValue],
       "password"   -> o.password.map(JsString.apply).getOrElse(JsNull).as[JsValue],
       "headers"    -> JsObject(o.headers.mapValues(JsString.apply)),
+      "mtlsConfig" -> o.mtlsConfig.json
     )
     override def reads(json: JsValue) =
       Try {
@@ -50,7 +53,8 @@ object ElasticAnalyticsConfig {
             `type` = (json \ "type").asOpt[String].map(_.trim).filter(_.nonEmpty),
             user = (json \ "user").asOpt[String].map(_.trim).filter(_.nonEmpty),
             password = (json \ "password").asOpt[String].map(_.trim).filter(_.nonEmpty),
-            headers = (json \ "headers").asOpt[Map[String, String]].getOrElse(Map.empty[String, String])
+            headers = (json \ "headers").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
+            mtlsConfig = MtlsConfig.read((json \ "mtlsConfig").asOpt[JsValue])
           )
         )
       } recover {
@@ -59,12 +63,27 @@ object ElasticAnalyticsConfig {
   }
 }
 
-case class Webhook(url: String, headers: Map[String, String] = Map.empty[String, String]) {
-  def toJson: JsObject = Webhook.format.writes(this)
+case class Webhook(url: String, headers: Map[String, String] = Map.empty[String, String], mtlsConfig: MtlsConfig = MtlsConfig.default) {
+  def toJson: JsValue = Webhook.format.writes(this)
 }
 
 object Webhook {
-  implicit val format = Json.format[Webhook]
+  implicit val format = new Format[Webhook] {
+    override def reads(json: JsValue): JsResult[Webhook] = Try {
+      Webhook(
+        url = (json \ "url").as[String],
+        headers = (json \ "headers").asOpt[Map[String, String]].getOrElse(Map.empty),
+        mtlsConfig = MtlsConfig.read((json \ "mtlsConfig").asOpt[JsValue])
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(v) => JsSuccess(v)
+    }
+
+    override def writes(o: Webhook): JsValue = Json.obj(
+
+    )
+  }
 }
 
 case class CleverCloudSettings(consumerKey: String,

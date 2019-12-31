@@ -1119,8 +1119,8 @@ class AlertsActor(implicit env: Env) extends Actor {
         if (config.kafkaConfig.isEmpty) kafkaWrapper.close()
         Future.sequence(config.alertsWebhooks.map { webhook =>
           val url = webhook.url
-          env.Ws
-            .url(url)
+          env.MtlsWs
+            .url(url, webhook.mtlsConfig)
             .withHttpHeaders(webhook.headers.toSeq: _*)
             .withMaybeProxyServer(config.proxies.alertWebhooks)
             .post(Json.obj("event" -> "ALERT", "payload" -> evt))

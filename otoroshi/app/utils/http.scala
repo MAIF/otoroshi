@@ -26,7 +26,7 @@ import env.Env
 import javax.net.ssl.{HostnameVerifier, SSLContext, SSLSession}
 import models.{ClientConfig, Target}
 import org.apache.commons.codec.binary.Base64
-import play.api.libs.json.{JsValue, Json}
+import play.api.libs.json._
 import play.api.libs.ws._
 import play.api.mvc.MultipartFormData
 import play.api.Logger
@@ -36,8 +36,42 @@ import ssl.{Cert, DynamicSSLEngineProvider}
 import scala.collection.immutable.TreeMap
 import scala.concurrent.duration.{Duration, _}
 import scala.concurrent.{Await, Future}
-import scala.util.{Failure, Try}
+import scala.util.{Failure, Success, Try}
 import scala.xml.{Elem, XML}
+
+case class MtlsConfig(certId: Option[String] = None, mtls: Boolean = false, loose: Boolean = false) {
+  def json: JsValue = MtlsConfig.format.writes(this)
+}
+
+object MtlsConfig {
+  val default = MtlsConfig()
+  def read(opt: Option[JsValue]): MtlsConfig = opt.flatMap(json => format.reads(json).asOpt).getOrElse(default)
+  val format = new Format[MtlsConfig] {
+    override def reads(json: JsValue): JsResult[MtlsConfig] = Try {
+      MtlsConfig(
+        certId = (json \ "certId").asOpt[String].filter(_.trim.nonEmpty),
+        mtls = (json \ "mtls").asOpt[Boolean].getOrElse(false),
+        loose = (json \ "loose").asOpt[Boolean].getOrElse(false),
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage())
+      case Success(v) => JsSuccess(v)
+    }
+    override def writes(o: MtlsConfig): JsValue = Json.obj(
+      "certId" -> o.certId.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      "mtls" -> o.mtls,
+      "loose" -> o.loose
+    )
+  }
+}
+
+class MtlsWs(chooser: WsClientChooser) {
+  def url(url: String, config: MtlsConfig): WSRequest = chooser.urlWithCert(url, config.certId, config.mtls, config.loose)
+}
+
+object MtlsWs {
+  def apply(chooser: WsClientChooser): MtlsWs = new MtlsWs(chooser)
+}
 
 object WsClientChooser {
   def apply(standardClient: WSClient,
