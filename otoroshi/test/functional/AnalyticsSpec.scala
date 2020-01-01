@@ -29,11 +29,10 @@ class AnalyticsSpec(name: String, configurationSpec: => Configuration)
   lazy val ws: WSClient = otoroshiComponents.wsClient
   lazy val elasticUrl   = "http://127.0.0.1:9200"
   lazy val analytics = new ElasticWritesAnalytics(
-    ElasticAnalyticsConfig(elasticUrl, Some("otoroshi-events"), Some("event"), None, None),
-    otoroshiComponents.environment,
-    otoroshiComponents.env,
-    otoroshiComponents.executionContext,
-    otoroshiComponents.actorSystem
+    ElasticAnalyticsConfig(
+      elasticUrl, Some("otoroshi-events"), Some("event"), None, None
+    ),
+    otoroshiComponents.env
   )
 
   override def getConfiguration(configuration: Configuration) = configuration ++ configurationSpec ++ Configuration(
