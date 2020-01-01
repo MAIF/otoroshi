@@ -301,7 +301,7 @@ export class DangerZonePage extends Component {
       props: { 
         label: 'MTLS loose', 
         placeholder: 'Client certificate',
-        valuesFrom="/bo/api/proxy/api/certificates",
+        valuesFrom: "/bo/api/proxy/api/certificates",
         transformer: a => ({ value: a.id, label: a.name + ': ' + a.description })
       },
     }
@@ -333,7 +333,7 @@ export class DangerZonePage extends Component {
       props: { 
         label: 'MTLS loose', 
         placeholder: 'Client certificate',
-        valuesFrom="/bo/api/proxy/api/certificates",
+        valuesFrom: "/bo/api/proxy/api/certificates",
         transformer: a => ({ value: a.id, label: a.name + ': ' + a.description })
       },
     }
@@ -375,7 +375,7 @@ export class DangerZonePage extends Component {
       props: { 
         label: 'MTLS loose', 
         placeholder: 'Client certificate',
-        valuesFrom="/bo/api/proxy/api/certificates",
+        valuesFrom: "/bo/api/proxy/api/certificates",
         transformer: a => ({ value: a.id, label: a.name + ': ' + a.description })
       },
     }
@@ -407,7 +407,7 @@ export class DangerZonePage extends Component {
       props: { 
         label: 'MTLS loose', 
         placeholder: 'Client certificate',
-        valuesFrom="/bo/api/proxy/api/certificates",
+        valuesFrom: "/bo/api/proxy/api/certificates",
         transformer: a => ({ value: a.id, label: a.name + ': ' + a.description })
       },
     }
