@@ -44,7 +44,7 @@ import play.core.ApplicationProvider
 import play.server.api.SSLEngineProvider
 import redis.RedisClientMasterSlaves
 import security.IdGenerator
-import ssl.CertificateData.encoder
+import ssl.CertificateData.{encoder, logger}
 import ssl.DynamicSSLEngineProvider.certificates
 import storage.redis.RedisStore
 import storage.{BasicStore, RedisLike, RedisLikeStore}
@@ -715,6 +715,9 @@ object DynamicSSLEngineProvider {
   }
 
   def createKeyStore(certificates: Seq[Cert]): KeyStore = {
+
+    import SSLImplicits._
+
     logger.debug(s"Creating keystore ...")
     val keyStore: KeyStore = KeyStore.getInstance("JKS")
     keyStore.load(null, null)
@@ -732,12 +735,7 @@ object DynamicSSLEngineProvider {
           val id                                     = "trusted-" + certificate.getSerialNumber.toString(16)
           val certificateChain: Seq[X509Certificate] = readCertificateChain(cert.domain, cert.chain)
           val domain = Try {
-            certificateChain.head.getSubjectDN.getName
-              .split(",")
-              .map(_.trim)
-              .find(_.toLowerCase().startsWith("cn="))
-              .map(_.replace("CN=", "").replace("cn=", ""))
-              .getOrElse(cert.domain)
+            certificateChain.head.maybeDomain.getOrElse(cert.domain)
           }.toOption.getOrElse(cert.domain)
           // not sure it's actually needed
           if (!keyStore.containsAlias(domain)) {
@@ -760,12 +758,7 @@ object DynamicSSLEngineProvider {
             } else {
               logger.debug(s"Adding entry for ${cert.domain} with chain of ${certificateChain.size}")
               val domain = Try {
-                certificateChain.head.getSubjectDN.getName
-                  .split(",")
-                  .map(_.trim)
-                  .find(_.toLowerCase().startsWith("cn="))
-                  .map(_.replace("CN=", "").replace("cn=", ""))
-                  .getOrElse(cert.domain)
+                certificateChain.head.maybeDomain.getOrElse(cert.domain)
               }.toOption.getOrElse(cert.domain)
               keyStore.setKeyEntry(
                 if (cert.client) "client-cert-" + certificate.getSerialNumber.toString(16) else domain,
@@ -952,13 +945,10 @@ object CertificateData {
     val buffer = base64Decode(
       pemContent.replace(PemHeaders.BeginCertificate, "").replace(PemHeaders.EndCertificate, "")
     )
-    val cert     = certificateFactory.generateCertificate(new ByteArrayInputStream(buffer)).asInstanceOf[X509Certificate]
-    val altNames = CertInfo.getSubjectAlternativeNames(cert, logger).asScala.toSeq
-    val rawDomain: String = Option(cert.getSubjectDN.getName)
-      .flatMap(_.split(",").toSeq.map(_.trim).find(_.startsWith("CN=")))
-      .map(_.replace("CN=", ""))
-      .getOrElse(cert.getSubjectDN.getName)
-    val domain: String = rawDomain // altNames.headOption.getOrElse(rawDomain)
+    val cert           = certificateFactory.generateCertificate(new ByteArrayInputStream(buffer)).asInstanceOf[X509Certificate]
+    val altNames       = cert.altNames
+    val rawDomain      = cert.rawDomain
+    val domain: String = cert.domain
     Json.obj(
       "issuerDN"     -> cert.getIssuerDN.getName,
       "notAfter"     -> cert.getNotAfter.getTime,
@@ -970,7 +960,7 @@ object CertificateData {
       "signature"    -> DigestUtils.sha256Hex(cert.getSignature).toUpperCase().grouped(2).mkString(":"),
       "subjectDN"    -> cert.getSubjectDN.getName,
       "domain"       -> domain,
-      "rawDomain"    -> rawDomain,
+      "rawDomain"    -> rawDomain.map(JsString.apply).getOrElse(JsNull).as[JsValue],
       "version"      -> cert.getVersion,
       "type"         -> cert.getType,
       "publicKey"    -> cert.getPublicKey.asPem, // new String(encoder.encode(cert.getPublicKey.getEncoded)),
@@ -1776,8 +1766,22 @@ class FakeTrustManager(managers: Seq[X509TrustManager]) extends X509ExtendedTrus
 }
 
 object SSLImplicits {
+
+  import collection.JavaConverters._
+
+  private val logger = Logger("SSLImplicits")
+
   implicit class EnhancedCertificate(val cert: X509Certificate) extends AnyVal {
     def asPem: String = s"${PemHeaders.BeginCertificate}\n${Base64.getEncoder.encodeToString(cert.getEncoded).grouped(64).mkString("\n")}\n${PemHeaders.EndCertificate}\n"
+    def altNames: Seq[String] = CertInfo.getSubjectAlternativeNames(cert, logger).asScala.toSeq
+    def rawDomain: Option[String] = {
+      Option(cert.getSubjectDN.getName)
+        .flatMap(_.split(",").toSeq.map(_.trim).find(_.toLowerCase.startsWith("cn=")))
+        .map(_.replace("CN=", "").replace("cn=", ""))
+    }
+    def maybeDomain: Option[String] = domains.headOption
+    def domain: String = domains.headOption.getOrElse(cert.getSubjectDN.getName)
+    def domains: Seq[String] = (rawDomain ++ altNames).toSeq
   }
   implicit class EnhancedPublicKey(val key: PublicKey) extends AnyVal {
     def asPem: String = s"${PemHeaders.BeginPublicKey}\n${Base64.getEncoder.encodeToString(key.getEncoded).grouped(64).mkString("\n")}\n${PemHeaders.EndPublicKey}\n"

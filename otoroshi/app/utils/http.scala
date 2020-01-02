@@ -68,9 +68,9 @@ object MtlsConfig {
 class MtlsWs(chooser: WsClientChooser) {
   @inline
   def url(url: String, config: MtlsConfig): WSRequest = config match {
-    case MtlsConfig(None, _, _) => chooser.url(url)
+    case MtlsConfig(None, _, _)        => chooser.url(url)
     case MtlsConfig(Some(_), false, _) => chooser.url(url)
-    case MtlsConfig(Some(_), true, _) => chooser.urlWithCert(url, config.certId, config.mtls, config.loose)
+    case MtlsConfig(Some(_), true, _)  => chooser.urlWithCert(url, config.certId, config.mtls, config.loose)
   }
 }
 
