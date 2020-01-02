@@ -201,11 +201,11 @@ class Target extends Component {
           onChange={e => this.changeTheValue('loose', e)}
         />
         {value.mtls && <SelectInput
-          label="Certificate"
-          placeholder="Certificate for mTLS call"
+          label="Client certificate"
+          placeholder="Choose a client certificate"
           value={value.certId}
-          valuesFrom="/bo/api/proxy/api/certificates"
-            transformer={a => ({ value: a.id, label: a.subject })}
+          valuesFrom="/bo/api/proxy/api/certificates?client=true"
+          transformer={a => ({ value: a.id, label: a.name + ' - ' + a.description })}
           help="The certificate used when performing a mTLS call"
           onChange={e => this.changeTheValue('certId', e)}
         />}

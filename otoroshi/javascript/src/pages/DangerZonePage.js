@@ -290,19 +290,19 @@ export class DangerZonePage extends Component {
     },
     'mtlsConfig.mtls': {
       type: 'bool',
-      props: { label: 'MTLS' },
+      props: { label: 'Use mTLS' },
     },
     'mtlsConfig.loose': {
       type: 'bool',
-      props: { label: 'MTLS loose', placeholder: 'Event type' },
+      props: { label: 'TLS loose' },
     },
     'mtlsConfig.certId': {
       type: 'select',
       props: { 
-        label: 'MTLS loose', 
-        placeholder: 'Client certificate',
-        valuesFrom: "/bo/api/proxy/api/certificates",
-        transformer: a => ({ value: a.id, label: a.name + ': ' + a.description })
+        label: 'Client certificate', 
+        placeholder: 'Choose a client certificate',
+        valuesFrom: "/bo/api/proxy/api/certificates?client=true",
+        transformer: a => ({ value: a.id, label: a.name + ' - ' + a.description })
       },
     }
   };
@@ -322,19 +322,19 @@ export class DangerZonePage extends Component {
     },
     'mtlsConfig.mtls': {
       type: 'bool',
-      props: { label: 'MTLS' },
+      props: { label: 'Use mTLS' },
     },
     'mtlsConfig.loose': {
       type: 'bool',
-      props: { label: 'MTLS loose', placeholder: 'Event type' },
+      props: { label: 'TLS loose' },
     },
     'mtlsConfig.certId': {
       type: 'select',
       props: { 
-        label: 'MTLS loose', 
-        placeholder: 'Client certificate',
-        valuesFrom: "/bo/api/proxy/api/certificates",
-        transformer: a => ({ value: a.id, label: a.name + ': ' + a.description })
+        label: 'Client certificate', 
+        placeholder: 'Choose a client certificate',
+        valuesFrom: "/bo/api/proxy/api/certificates?client=true",
+        transformer: a => ({ value: a.id, label: a.name + ' - ' + a.description })
       },
     }
   };
@@ -364,19 +364,19 @@ export class DangerZonePage extends Component {
     },
     'mtlsConfig.mtls': {
       type: 'bool',
-      props: { label: 'MTLS' },
+      props: { label: 'Use mTLS' },
     },
     'mtlsConfig.loose': {
       type: 'bool',
-      props: { label: 'MTLS loose', placeholder: 'Event type' },
+      props: { label: 'TLS loose' },
     },
     'mtlsConfig.certId': {
       type: 'select',
       props: { 
-        label: 'MTLS loose', 
-        placeholder: 'Client certificate',
-        valuesFrom: "/bo/api/proxy/api/certificates",
-        transformer: a => ({ value: a.id, label: a.name + ': ' + a.description })
+        label: 'Client certificate', 
+        placeholder: 'Choose a client certificate',
+        valuesFrom: "/bo/api/proxy/api/certificates?client=true",
+        transformer: a => ({ value: a.id, label: a.name + ' - ' + a.description })
       },
     }
   };
@@ -396,19 +396,19 @@ export class DangerZonePage extends Component {
     },
     'mtlsConfig.mtls': {
       type: 'bool',
-      props: { label: 'MTLS' },
+      props: { label: 'Use mTLS' },
     },
     'mtlsConfig.loose': {
       type: 'bool',
-      props: { label: 'MTLS loose', placeholder: 'Event type' },
+      props: { label: 'TLS loose' },
     },
     'mtlsConfig.certId': {
       type: 'select',
       props: { 
-        label: 'MTLS loose', 
-        placeholder: 'Client certificate',
-        valuesFrom: "/bo/api/proxy/api/certificates",
-        transformer: a => ({ value: a.id, label: a.name + ': ' + a.description })
+        label: 'Client certificate', 
+        placeholder: 'Choose a client certificate',
+        valuesFrom: "/bo/api/proxy/api/certificates?client=true",
+        transformer: a => ({ value: a.id, label: a.name + ' - ' + a.description })
       },
     }
   };

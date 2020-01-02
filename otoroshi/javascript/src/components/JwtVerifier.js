@@ -161,6 +161,11 @@ export class AlgoSettings extends Component {
                   timeout: 2000,
                   ttl: 5 * 60 * 60 * 1000,
                   kty: 'RSA',
+                  mtlsConfig: {
+                    mtls: false,
+                    loose: false,
+                    certId: null
+                  }
                 });
                 break;
             }
@@ -277,6 +282,28 @@ export class AlgoSettings extends Component {
             value={algo.kty}
             onChange={v => changeTheValue(path + '.kty', v)}
             possibleValues={[{ label: 'RSA', value: 'RSA' }, { label: 'EC', value: 'EC' }]}
+          />,
+          <Separator title="TLS settings" />,
+          <BooleanInput
+            label="Use mTLS"
+            value={algo.mtlsConfig.mtls}
+            help="..."
+            onChange={v => changeTheValue(path + '.mtlsConfig.mtls', v)}
+          />,
+          <BooleanInput
+            label="TLS loose"
+            value={algo.mtlsConfig.loose}
+            help="..."
+            onChange={v => changeTheValue(path + '.mtlsConfig.loose', v)}
+          />,
+          <SelectInput
+            label="Client certificate"
+            placeholder="Choose a client certificate"
+            value={algo.mtlsConfig.certId}
+            valuesFrom="/bo/api/proxy/api/certificates?client=true"
+            transformer={a => ({ value: a.id, label: a.name + ' - ' + a.description })}
+            help="The certificate used when performing a mTLS call"
+            onChange={v => changeTheValue(path + '.mtlsConfig.certId', v)}
           />,
           <Separator title="Proxy" />,
           <Proxy value={algo.proxy} onChange={v => changeTheValue(path + '.proxy', v)} />,

@@ -442,25 +442,25 @@ export class Oauth2ModuleConfig extends Component {
           changeTheValue={this.changeTheValue}
           algo={settings.jwtVerifier}
         />
-        <Separator title="Certificate" />
+        <Separator title="TLS settings" />
         <BooleanInput
-          label="mTLS calls"
-          value={settings.mtls}
+          label="Use mTLS"
+          value={settings.mtlsConfig.mtls}
           help="..."
           onChange={v => changeTheValue(path + '.mtlsConfig.mtls', v)}
         />
         <BooleanInput
           label="TLS loose"
-          value={settings.tlsLoose}
+          value={settings.mtlsConfig.loose}
           help="..."
           onChange={v => changeTheValue(path + '.mtlsConfig.loose', v)}
         />
         <SelectInput
-          label="Certificate"
-          placeholder="Certificate for mTLS call"
-          value={settings.certId}
-          valuesFrom="/bo/api/proxy/api/certificates"
-          transformer={a => ({ value: a.id, label: a.name + ': ' + a.description })}
+          label="Client certificate"
+          placeholder="Choose a client certificate"
+          value={settings.mtlsConfig.certId}
+          valuesFrom="/bo/api/proxy/api/certificates?client=true"
+          transformer={a => ({ value: a.id, label: a.name + ' - ' + a.description })}
           help="The certificate used when performing a mTLS call"
           onChange={e => changeTheValue(path + '.mtlsConfig.certId', e)}
         />
