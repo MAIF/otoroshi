@@ -242,7 +242,7 @@ export class AlgoSettings extends Component {
             label="Public key"
             value={algo.publicKey}
             help="The ECDSA public key"
-            style={{ fontFamily: 'monospace'}}
+            style={{ fontFamily: 'monospace' }}
             onChange={e => changeTheValue(path + '.publicKey', e)}
           />,
           <TextareaInput

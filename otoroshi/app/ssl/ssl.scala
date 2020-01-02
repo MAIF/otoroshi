@@ -1777,13 +1777,13 @@ class FakeTrustManager(managers: Seq[X509TrustManager]) extends X509ExtendedTrus
 
 object SSLImplicits {
   implicit class EnhancedCertificate(val cert: X509Certificate) extends AnyVal {
-    def asPem: String = s"${PemHeaders.BeginCertificate}\n${Base64.getEncoder.encodeToString(cert.getEncoded).grouped(80).mkString("\n")}\n${PemHeaders.EndCertificate}\n"
+    def asPem: String = s"${PemHeaders.BeginCertificate}\n${Base64.getEncoder.encodeToString(cert.getEncoded).grouped(64).mkString("\n")}\n${PemHeaders.EndCertificate}\n"
   }
   implicit class EnhancedPublicKey(val key: PublicKey) extends AnyVal {
-    def asPem: String = s"${PemHeaders.BeginPublicKey}\n${Base64.getEncoder.encodeToString(key.getEncoded).grouped(80).mkString("\n")}\n${PemHeaders.EndPublicKey}\n"
+    def asPem: String = s"${PemHeaders.BeginPublicKey}\n${Base64.getEncoder.encodeToString(key.getEncoded).grouped(64).mkString("\n")}\n${PemHeaders.EndPublicKey}\n"
   }
   implicit class EnhancedPrivateKey(val key: PrivateKey) extends AnyVal {
-    def asPem: String = s"${PemHeaders.BeginPrivateKey}\n${Base64.getEncoder.encodeToString(key.getEncoded).grouped(80).mkString("\n")}\n${PemHeaders.EndPrivateKey}\n"
+    def asPem: String = s"${PemHeaders.BeginPrivateKey}\n${Base64.getEncoder.encodeToString(key.getEncoded).grouped(64).mkString("\n")}\n${PemHeaders.EndPrivateKey}\n"
   }
 }
 
