@@ -81,7 +81,9 @@ object Webhook {
     }
 
     override def writes(o: Webhook): JsValue = Json.obj(
-
+      "url" -> o.url,
+      "headers" -> o.headers,
+      "mtlsConfig" -> o.mtlsConfig.json
     )
   }
 }

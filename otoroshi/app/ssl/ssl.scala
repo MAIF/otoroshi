@@ -739,46 +739,56 @@ object DynamicSSLEngineProvider {
               .map(_.replace("CN=", "").replace("cn=", ""))
               .getOrElse(cert.domain)
           }.toOption.getOrElse(cert.domain)
+          // not sure it's actually needed
           if (!keyStore.containsAlias(domain)) {
             keyStore.setCertificateEntry(domain, certificate)
           }
-          // Handle SANs
+          // Handle SANs, not sure it's actually needed
           cert.sans.filter(name => !keyStore.containsAlias(name)).foreach(name => keyStore.setCertificateEntry(name, certificate))
         }
       }
       case cert => {
-        readPrivateKey(cert.domain, cert.privateKey, cert.password).foreach { encodedKeySpec: PKCS8EncodedKeySpec =>
-          val key: PrivateKey = Try(KeyFactory.getInstance("RSA"))
-            .orElse(Try(KeyFactory.getInstance("DSA")))
-            .map(_.generatePrivate(encodedKeySpec))
-            .get
-          val certificateChain: Seq[X509Certificate] = readCertificateChain(cert.domain, cert.chain)
-          if (certificateChain.isEmpty) {
-            logger.error(s"[${cert.id}] Certificate file does not contain any certificates :(")
-          } else {
-            logger.debug(s"Adding entry for ${cert.domain} with chain of ${certificateChain.size}")
-            val domain = Try {
-              certificateChain.head.getSubjectDN.getName
-                .split(",")
-                .map(_.trim)
-                .find(_.toLowerCase().startsWith("cn="))
-                .map(_.replace("CN=", "").replace("cn=", ""))
-                .getOrElse(cert.domain)
-            }.toOption.getOrElse(cert.domain)
-            keyStore.setKeyEntry(domain,
-                                 key,
-                                 cert.password.getOrElse("").toCharArray,
-                                 certificateChain.toArray[java.security.cert.Certificate])
+        cert.certificate.foreach { certificate =>
+          readPrivateKey(cert.domain, cert.privateKey, cert.password).foreach { encodedKeySpec: PKCS8EncodedKeySpec =>
+            val key: PrivateKey = Try(KeyFactory.getInstance("RSA"))
+              .orElse(Try(KeyFactory.getInstance("DSA")))
+              .map(_.generatePrivate(encodedKeySpec))
+              .get
+            val certificateChain: Seq[X509Certificate] = readCertificateChain(cert.domain, cert.chain)
+            if (certificateChain.isEmpty) {
+              logger.error(s"[${cert.id}] Certificate file does not contain any certificates :(")
+            } else {
+              logger.debug(s"Adding entry for ${cert.domain} with chain of ${certificateChain.size}")
+              val domain = Try {
+                certificateChain.head.getSubjectDN.getName
+                  .split(",")
+                  .map(_.trim)
+                  .find(_.toLowerCase().startsWith("cn="))
+                  .map(_.replace("CN=", "").replace("cn=", ""))
+                  .getOrElse(cert.domain)
+              }.toOption.getOrElse(cert.domain)
+              keyStore.setKeyEntry(
+                if (cert.client) "client-cert-" + certificate.getSerialNumber.toString(16) else domain,
+                key,
+                cert.password.getOrElse("").toCharArray,
+                certificateChain.toArray[java.security.cert.Certificate]
+              )
 
-            // Handle SANs
-            cert.sans.filter(name => !keyStore.containsAlias(name)).foreach(name => keyStore.setKeyEntry(name, key,
-              cert.password.getOrElse("").toCharArray,
-              certificateChain.toArray[java.security.cert.Certificate]))
+              // Handle SANs
+              if (!cert.client) {
+                cert.sans.filter(name => !keyStore.containsAlias(name)).foreach(name => keyStore.setKeyEntry(
+                  name,
+                  key,
+                  cert.password.getOrElse("").toCharArray,
+                  certificateChain.toArray[java.security.cert.Certificate]
+                ))
+              }
 
-            certificateChain.tail.foreach { cert =>
-              val id = "ca-" + cert.getSerialNumber.toString(16)
-              if (!keyStore.containsAlias(id)) {
-                keyStore.setCertificateEntry(id, cert)
+              certificateChain.tail.foreach { cert =>
+                val id = "ca-" + cert.getSerialNumber.toString(16)
+                if (!keyStore.containsAlias(id)) {
+                  keyStore.setCertificateEntry(id, cert)
+                }
               }
             }
           }
