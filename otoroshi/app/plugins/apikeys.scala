@@ -19,7 +19,7 @@ class HasAllowedApiKeyValidator extends AccessValidator {
     """{
       |  "clientIds": {
       |    "type": "array",
-      |    "props": { "label": "Allowed client ids" }
+      |    "props": { "label": "Allowed apikeys", "valuesFrom": "/bo/api/proxy/api/apikeys", "transformerMapping": { "label":"clientName", "value":"clientId" } }
       |  },
       |  "tags": {
       |    "type": "array",
@@ -48,7 +48,7 @@ class HasAllowedApiKeyValidator extends AccessValidator {
       |{
       |  "HasAllowedApiKeyValidator": {
       |    "clientIds": [],  // list of allowed client ids,
-      |    "tags": [],       // list of allowed tafs
+      |    "tags": [],       // list of allowed tags
       |    "metadata": {}    // allowed metadata
       |  }
       |}

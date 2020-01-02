@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { Component, useState } from 'react';
 import { Help } from './Help';
 import AceEditor from 'react-ace';
 import _ from 'lodash';
@@ -10,6 +10,22 @@ import 'brace/ext/language_tools';
 import 'brace/ext/searchbox';
 
 export default class CodeInput extends Component {
+
+  static Toggle = (props) => {
+    const [display, setDisplay] = useState(true);
+    if (display) return <CodeInput {...props} />
+    return (
+      <div className="form-group">
+        <label htmlFor={`input-${props.label}`} className="col-sm-2 control-label">
+          {props.label} <Help text={props.help} />
+        </label>
+        <div className="col-sm-10">
+          <button type="button" className="btn btn-default" onClick={e => setDisplay(!display)}>Display</button>
+        </div>
+      </div>
+    );
+  }
+
   state = {
     value: null,
   };

@@ -53,7 +53,17 @@ export class SelectInput extends Component {
       },
     })
       .then(r => r.json())
-      .then(values => values.map(this.props.transformer || (a => a)))
+      .then(values => values.map(v => {
+        if (this.props.transformerMapping) {
+          const value = v[this.props.transformerMapping.value];
+          const label = v[this.props.transformerMapping.label];
+          return { value, label };
+        } else if (this.props.transformer) {
+          return this.props.transformer(v);
+        } else {
+          return v;
+        }
+      }))
       .then(values => this.setState({ values, loading: false }));
   };
 
