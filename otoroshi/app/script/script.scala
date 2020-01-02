@@ -76,6 +76,9 @@ trait NamedPlugin { self =>
   def name: String                    = self.getClass.getName
   def description: Option[String]     = None
   def defaultConfig: Option[JsObject] = None
+  def configRoot: Option[String]      = None
+  def configSchema: Option[JsObject]  = None
+  def configFlow: Seq[String]         = Seq.empty
 }
 
 case class HttpRequest(url: String,
@@ -1173,7 +1176,10 @@ class ScriptApiController(ApiAction: ApiAction, cc: ControllerComponents)(
               "id"            -> s"cp:$c",
               "name"          -> instance.name,
               "description"   -> instance.description.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-              "defaultConfig" -> instance.defaultConfig.getOrElse(JsNull).as[JsValue]
+              "defaultConfig" -> instance.defaultConfig.getOrElse(JsNull).as[JsValue],
+              "configRoot"    -> instance.configRoot.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+              "configSchema"  -> instance.configSchema.getOrElse(JsNull).as[JsValue],
+              "configFlow"    -> JsArray(instance.configFlow.map(JsString.apply))
             )
         }
       }

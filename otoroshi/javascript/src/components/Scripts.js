@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import ReactDOM from 'react-dom';
-import { ArrayInput } from './inputs';
+import { ArrayInput, Form } from './inputs';
 
 import showdown from 'showdown';
 import hljs from 'highlight.js';
@@ -88,6 +88,10 @@ class PluginsDescription extends Component {
     }
   };
 
+  displayForm = (script) => {
+    return script.configRoot && script.configFlow && script.configSchema; // && !!this.props.config[script.configRoot];
+  }
+
   render() {
     return (
       <>
@@ -129,9 +133,20 @@ class PluginsDescription extends Component {
                       </button>
                     )}
                     <p
-                      style={{ textAlign: 'justify' }}
+                      style={{ textAlign: 'justify', marginBottom: 10 }}
                       dangerouslySetInnerHTML={{ __html: converter.makeHtml(script.description) }}
                     />
+                    {this.displayForm(script) && <h4 style={{ marginTop: 20 }}>Plugin configuration</h4>}
+                    {this.displayForm(script) && <Form
+                      value={this.props.config[script.configRoot] || { ...script.defaultConfig[script.configRoot] }}
+                      onChange={e => {
+                        const newConfig = { ...this.props.config, [script.configRoot]: e };
+                        this.props.onChangeConfig(newConfig);
+                      }}
+                      flow={script.configFlow}
+                      schema={script.configSchema}
+                      style={{ marginTop: 20, backgroundColor: '#373735', padding: 10, borderRadius: 5 }}
+                    />}
                   </div>
                 </div>
               </div>

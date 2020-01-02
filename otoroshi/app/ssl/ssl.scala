@@ -21,9 +21,8 @@ import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Flow, Sink, Source}
 import akka.util.ByteString
-import com.google.common.base.Charsets
 import com.google.common.hash.Hashing
-import com.typesafe.sslconfig.ssl.{KeyManagerConfig, KeyStoreConfig, SSLConfigSettings, TrustManagerConfig, TrustStoreConfig}
+import com.typesafe.sslconfig.ssl.SSLConfigSettings
 import env.Env
 import events.{Alerts, CertRenewalAlert}
 import gateway.Errors
@@ -36,19 +35,17 @@ import org.apache.commons.codec.binary.Hex
 import org.apache.commons.codec.digest.DigestUtils
 import org.joda.time.{DateTime, Interval}
 import otoroshi.utils.LetsEncryptHelper
-import play.api.{Configuration, Logger}
 import play.api.libs.json._
 import play.api.libs.ws.WSProxyServer
 import play.api.mvc._
+import play.api.{Configuration, Logger}
 import play.core.ApplicationProvider
 import play.server.api.SSLEngineProvider
 import redis.RedisClientMasterSlaves
 import security.IdGenerator
-import ssl.CertificateData.{encoder, logger}
-import ssl.DynamicSSLEngineProvider.certificates
 import storage.redis.RedisStore
 import storage.{BasicStore, RedisLike, RedisLikeStore}
-import sun.security.util.{DerValue, ObjectIdentifier}
+import sun.security.util.ObjectIdentifier
 import sun.security.x509._
 import utils.{FakeHasMetrics, HasMetrics, TypedMap}
 
@@ -932,8 +929,9 @@ object noCATrustManager extends X509TrustManager {
 
 object CertificateData {
 
-  import collection.JavaConverters._
   import ssl.SSLImplicits._
+
+  import collection.JavaConverters._
 
   private val logger                                 = Logger("otoroshi-cert-data")
   private val encoder                                = Base64.getEncoder
@@ -1065,7 +1063,6 @@ object FakeKeyStore {
   def createSelfSignedCertificate(host: String, duration: FiniteDuration, keyPair: KeyPair): X509Certificate = {
 
     import sun.security.x509.DNSName
-    import sun.security.x509.GeneralNameInterface
 
     val certInfo = new X509CertInfo()
 
@@ -1447,9 +1444,9 @@ case class ClientCertificateValidator(
    */
 
   import play.api.http.websocket.{Message => PlayWSMessage}
+  import ssl.SSLImplicits._
 
   import scala.concurrent.duration._
-  import ssl.SSLImplicits._
 
   def save()(implicit ec: ExecutionContext, env: Env) = env.datastores.clientCertificateValidationDataStore.set(this)
 

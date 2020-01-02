@@ -11,10 +11,30 @@ class HasAllowedApiKeyValidator extends AccessValidator {
 
   override def name: String = "Allowed apikeys only"
 
+  override def configRoot: Option[String] = Some("HasAllowedApiKeyValidator")
+
+  override def configFlow: Seq[String] = Seq("clientIds", "tags", "metadata")
+
+  override def configSchema: Option[JsObject] = Some(Json.parse(
+    """{
+      |  "clientIds": {
+      |    "type": "array",
+      |    "props": { "label": "Allowed client ids" }
+      |  },
+      |  "tags": {
+      |    "type": "array",
+      |    "props": { "label": "Allowed tags" }
+      |  },
+      |  "metadata": {
+      |    "type": "object",
+      |    "props": { "label": "Allowed metadata" }
+      |  }
+      |}""".stripMargin).as[JsObject])
+
   override def defaultConfig: Option[JsObject] =
     Some(
       Json.obj(
-        "HasAllowedApiKeyValidator" -> Json.obj(
+        configRoot.get -> Json.obj(
           "clientIds" -> Json.arr(),
           "tags"      -> Json.arr(),
           "metadata"  -> Json.obj(),
