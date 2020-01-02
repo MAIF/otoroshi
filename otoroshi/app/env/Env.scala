@@ -86,9 +86,14 @@ class Env(val configuration: Configuration,
   private lazy val halloweenStop =
     DateTime.now().withMonthOfYear(10).withDayOfMonth(31).plusDays(1).withMillisOfDay(1)
 
+  private lazy val disableFunnyLogos: Boolean =
+    configuration.getOptional[Boolean]("otoroshi.options.disableFunnyLogos").getOrElse(false)
+
   def otoroshiLogo: String = {
     val now = DateTime.now()
-    if (now.isAfter(xmasStart) && now.isBefore(xmasStop)) {
+    if (disableFunnyLogos) {
+      "/__otoroshi_assets/images/otoroshi-logo-color.png"
+    } else if (now.isAfter(xmasStart) && now.isBefore(xmasStop)) {
       "/__otoroshi_assets/images/otoroshi-logo-xmas.png"
     } else if (now.isAfter(halloweenStart) && now.isBefore(halloweenStop)) {
       "/__otoroshi_assets/images/otoroshi-logo-halloween3.png"
