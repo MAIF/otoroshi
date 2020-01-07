@@ -817,15 +817,16 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
   def caSignedClientCert(): Action[Source[ByteString, _]] = BackOfficeActionAuth.async(sourceBodyParser) { ctx =>
     ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { body =>
       Try {
-        (Json.parse(body.utf8String).\("id").asOpt[String], Json.parse(body.utf8String).\("host").asOpt[String]) match {
-          case (Some(id), Some(host)) => {
+        (Json.parse(body.utf8String).\("id").asOpt[String], Json.parse(body.utf8String).\("dn").asOpt[String]) match {
+          case (Some(id), Some(dn)) => {
             env.datastores.certificatesDataStore.findById(id).map {
               case None => NotFound(Json.obj("error" -> s"No CA found"))
               case Some(ca) => {
                 // val keyPairGenerator = KeyPairGenerator.getInstance(KeystoreSettings.KeyPairAlgorithmName)
                 // keyPairGenerator.initialize(KeystoreSettings.KeyPairKeyLength)
                 // val keyPair = keyPairGenerator.generateKeyPair()
-                val cert = FakeKeyStore.createClientCertificateFromCA(host,
+                val cert = FakeKeyStore.createClientCertificateFromCA(
+                  dn,
                   FiniteDuration(365, TimeUnit.DAYS),
                   None,
                   ca.certificate.get,

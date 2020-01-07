@@ -989,7 +989,7 @@ export function selfSignedCert(host) {
   }).then(r => r.json());
 }
 
-export function selfSignedClientCert(cn) {
+export function selfSignedClientCert(dn) {
   return fetch(`/bo/api/certificates/_selfSignedClient`, {
     method: 'POST',
     credentials: 'include',
@@ -997,7 +997,7 @@ export function selfSignedClientCert(cn) {
       Accept: 'application/json',
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ cn }),
+    body: JSON.stringify({ dn }),
   }).then(r => r.json());
 }
 
@@ -1037,7 +1037,7 @@ export function caSignedCert(id, host) {
   }).then(r => r.json());
 }
 
-export function caSignedClientCert(id, host) {
+export function caSignedClientCert(id, dn) {
   return fetch(`/bo/api/certificates/_caSignedClient`, {
     method: 'POST',
     credentials: 'include',
@@ -1045,7 +1045,7 @@ export function caSignedClientCert(id, host) {
       Accept: 'application/json',
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ id, host }),
+    body: JSON.stringify({ id, dn }),
   }).then(r => r.json());
 }
 

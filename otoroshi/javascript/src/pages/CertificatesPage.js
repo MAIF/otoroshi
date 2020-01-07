@@ -409,9 +409,10 @@ export class CertificatesPage extends Component {
   };
 
   createSelfSignedClient = () => {
-    window.newPrompt('Certificate CN').then(value => {
+    window.newPrompt('Certificate DN').then(value => {
       if (value && value.trim() !== '') {
         BackOfficeServices.selfSignedClientCert(value).then(cert => {
+          console.log(cert);
           this.props.setTitle(`Create a new certificate`);
           window.history.replaceState({}, '', `/bo/dashboard/certificates/add`);
           this.table.setState({ currentItem: cert, showAddForm: true });

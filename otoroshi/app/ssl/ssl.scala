@@ -1150,7 +1150,7 @@ object FakeKeyStore {
     ), ca, caKeyPair.getPrivate)
 
     val resp = Await.result(f, 30.seconds)
-
+    
     resp.right.get
   }
 
