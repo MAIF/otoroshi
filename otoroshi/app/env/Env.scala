@@ -788,13 +788,13 @@ class Env(val configuration: Configuration,
                 if (!hasInitialCert && certs.isEmpty) {
                   val foundOtoroshiCa         = certs.find(c => c.ca && c.id == Cert.OtoroshiCA)
                   val foundOtoroshiDomainCert = certs.find(c => c.domain == s"*.${this.domain}")
-                  val keyPairGenerator        = KeyPairGenerator.getInstance(KeystoreSettings.KeyPairAlgorithmName)
-                  keyPairGenerator.initialize(KeystoreSettings.KeyPairKeyLength)
-                  val keyPair1 = keyPairGenerator.generateKeyPair()
-                  val keyPair2 = keyPairGenerator.generateKeyPair()
-                  val keyPair3 = keyPairGenerator.generateKeyPair()
-                  val ca       = FakeKeyStore.createCA(s"CN=Otoroshi Root", FiniteDuration(365, TimeUnit.DAYS), Some(keyPair1))
-                  val caCert   = Cert(ca.cert, keyPair1, None, false).enrich()
+                  // val keyPairGenerator        = KeyPairGenerator.getInstance(KeystoreSettings.KeyPairAlgorithmName)
+                  // keyPairGenerator.initialize(KeystoreSettings.KeyPairKeyLength)
+                  // val keyPair1 = keyPairGenerator.generateKeyPair()
+                  // val keyPair2 = keyPairGenerator.generateKeyPair()
+                  // val keyPair3 = keyPairGenerator.generateKeyPair()
+                  val ca       = FakeKeyStore.createCA(s"CN=Otoroshi Root", FiniteDuration(365, TimeUnit.DAYS), None, None)
+                  val caCert   = Cert(ca.cert, ca.keyPair, None, false).enrich()
                   if (foundOtoroshiCa.isEmpty) {
                     logger.info(s"Generating CA certificate for Otoroshi self signed certificates ...")
                     caCert.copy(id = Cert.OtoroshiCA).save()
@@ -803,10 +803,10 @@ class Env(val configuration: Configuration,
                     logger.info(s"Generating a self signed SSL certificate for https://*.${this.domain} ...")
                     val cert1 = FakeKeyStore.createCertificateFromCA(s"*.${this.domain}",
                                                                      FiniteDuration(365, TimeUnit.DAYS),
-                                                                     Some(keyPair2),
+                                                                     None, None,
                                                                      ca.cert,
-                                                                     keyPair1)
-                    Cert(cert1.cert, keyPair2, foundOtoroshiCa.getOrElse(caCert), false).enrich().save()
+                                                                     ca.keyPair)
+                    Cert(cert1.cert, cert1.keyPair, foundOtoroshiCa.getOrElse(caCert), false).enrich().save()
                   }
                 }
               }

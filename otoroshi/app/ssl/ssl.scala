@@ -117,27 +117,26 @@ case class Cert(
 
   def signature: Option[String]    = this.metadata.map(v => (v \ "signature").as[String])
   def serialNumber: Option[String] = this.metadata.map(v => (v \ "serialNumber").as[String])
+
   def renew(duration: FiniteDuration, caOpt: Option[Cert])(implicit env: Env, ec: ExecutionContext): Cert = {
+    import SSLImplicits._
     this match {
       case original if original.ca && original.selfSigned => {
         val keyPair: KeyPair      = original.keyPair
-        val resp                  = FakeKeyStore.createCA(original.subject, duration, Some(keyPair))
-        val certificate: Cert     = Cert(resp.cert, keyPair, None, client).enrich().copy(id = original.id)
-        certificate
+        val resp                  = FakeKeyStore.createCA(original.subject, duration, Some(keyPair), certificate.map(_.getSerialNumber.longValue()))
+        copy(chain = resp.cert.asPem, privateKey = resp.key.asPem).enrich()
       }
       case original if original.selfSigned => {
         val keyPair: KeyPair      = original.keyPair
-        val resp                  = FakeKeyStore.createSelfSignedCertificate(original.domain, duration, Some(keyPair))
-        val certificate: Cert     = Cert(resp.cert, keyPair, None, client).enrich().copy(id = original.id)
-        certificate
+        val resp                  = FakeKeyStore.createSelfSignedCertificate(original.domain, duration, Some(keyPair), certificate.map(_.getSerialNumber.longValue()))
+        copy(chain = resp.cert.asPem, privateKey = resp.key.asPem).enrich()
       }
       case original if original.caRef.isDefined && caOpt.isDefined && caOpt.get.id == original.caRef.get => {
         val ca               = caOpt.get
         val keyPair: KeyPair = original.keyPair
         val resp =
-          FakeKeyStore.createCertificateFromCA(original.domain, duration, Some(keyPair), ca.certificate.get, ca.keyPair)
-        val certificate: Cert = Cert(resp.cert, keyPair, None, client).enrich().copy(id = original.id)
-        certificate
+          FakeKeyStore.createCertificateFromCA(original.domain, duration, Some(keyPair), certificate.map(_.getSerialNumber.longValue()), ca.certificate.get, ca.keyPair)
+        copy(chain = resp.cert.asPem, privateKey = resp.key.asPem).enrich()
       }
       case _ => this
     }
@@ -1049,7 +1048,7 @@ object FakeKeyStore {
     // val keyPairGenerator = KeyPairGenerator.getInstance(KeystoreSettings.KeyPairAlgorithmName)
     // keyPairGenerator.initialize(KeystoreSettings.KeyPairKeyLength)
     // val keyPair = keyPairGenerator.generateKeyPair()
-    val resp    = createSelfSignedCertificate(host, 365.days, None)
+    val resp    = createSelfSignedCertificate(host, 365.days, None, None)
     (resp.cert, resp.keyPair)
   }
 
@@ -1069,7 +1068,7 @@ object FakeKeyStore {
     )
   }
 
-  def createSelfSignedCertificate(host: String, duration: FiniteDuration, kp: Option[KeyPair]): GenCertResponse = {
+  def createSelfSignedCertificate(host: String, duration: FiniteDuration, kp: Option[KeyPair], serial: Option[Long]): GenCertResponse = {
 
     val pki = new BouncyCastlePki(IdGenerator(0)) // no comment
 
@@ -1078,7 +1077,8 @@ object FakeKeyStore {
       key = GenKeyPairQuery(KeystoreSettings.KeyPairAlgorithmName, KeystoreSettings.KeyPairKeyLength),
       name = Map("CN" -> host),
       duration = duration,
-      existingKeyPair = kp
+      existingKeyPair = kp,
+      existingSerialNumber = serial
     ))
 
     val resp = Await.result(f, 30.seconds)
@@ -1135,6 +1135,7 @@ object FakeKeyStore {
   def createClientCertificateFromCA(dn: String,
                               duration: FiniteDuration,
                               kp: Option[KeyPair],
+                              serial: Option[Long],
                               ca: X509Certificate,
                               caKeyPair: KeyPair): GenCertResponse = {
 
@@ -1146,17 +1147,18 @@ object FakeKeyStore {
       subject = Some(dn),
       duration = duration,
       existingKeyPair = kp,
+      existingSerialNumber = serial,
       client = true
     ), ca, caKeyPair.getPrivate)
 
     val resp = Await.result(f, 30.seconds)
-    
+
     resp.right.get
   }
 
   def createSelfSignedClientCertificate(dn: String,
                                     duration: FiniteDuration,
-                                    kp: Option[KeyPair]): GenCertResponse = {
+                                    kp: Option[KeyPair], serial: Option[Long]): GenCertResponse = {
 
     val pki = new BouncyCastlePki(IdGenerator(0)) // no comment
 
@@ -1166,6 +1168,7 @@ object FakeKeyStore {
       subject = Some(dn),
       duration = duration,
       existingKeyPair = kp,
+      existingSerialNumber = serial,
       client = true
     ))
 
@@ -1177,6 +1180,7 @@ object FakeKeyStore {
   def createCertificateFromCA(host: String,
                               duration: FiniteDuration,
                               kp: Option[KeyPair],
+                              serial: Option[Long],
                               ca: X509Certificate,
                               caKeyPair: KeyPair): GenCertResponse = {
 
@@ -1187,7 +1191,8 @@ object FakeKeyStore {
       key = GenKeyPairQuery(KeystoreSettings.KeyPairAlgorithmName, KeystoreSettings.KeyPairKeyLength),
       name = Map("CN" -> host),
       duration = duration,
-      existingKeyPair = kp
+      existingKeyPair = kp,
+      existingSerialNumber = serial
     ), ca, caKeyPair.getPrivate)
 
     val resp = Await.result(f, 30.seconds)
@@ -1240,7 +1245,7 @@ object FakeKeyStore {
     */
   }
 
-  def createCA(cn: String, duration: FiniteDuration, kp: Option[KeyPair]): GenCertResponse = {
+  def createCA(cn: String, duration: FiniteDuration, kp: Option[KeyPair], serial: Option[Long]): GenCertResponse = {
 
     val pki = new BouncyCastlePki(IdGenerator(0)) // no comment
 
@@ -1250,6 +1255,7 @@ object FakeKeyStore {
       subject = Some(cn),
       duration = duration,
       existingKeyPair = kp,
+      existingSerialNumber = serial,
       ca = true
     ))
 

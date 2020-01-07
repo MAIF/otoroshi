@@ -52,7 +52,8 @@ object models {
                           duration: FiniteDuration = 365.days,
                           signatureAlg: String = "SHA256WithRSAEncryption",
                           digestAlg: String = "SHA-256",
-                          existingKeyPair: Option[KeyPair] = None
+                          existingKeyPair: Option[KeyPair] = None,
+                          existingSerialNumber: Option[Long] = None
                         ) {
     def subj: String = subject.getOrElse(name.map(t => s"${t._1}=${t._2}").mkString(","))
     def json: JsValue = GenCsrQuery.format.writes(this)
@@ -337,7 +338,7 @@ class BouncyCastlePki(generator: IdGenerator) extends Pki {
             csrBuilder.addAttribute(PKCSObjectIdentifiers.pkcs_9_at_extensionRequest /* x509Certificate */ , extensionsGenerator.generate)
             val csr = csrBuilder.build(signer)
             val issuer = csr.getSubject
-            val serial = java.math.BigInteger.valueOf(_serial) // new java.math.BigInteger(32, new SecureRandom)
+            val serial = java.math.BigInteger.valueOf(query.existingSerialNumber.getOrElse(_serial)) // new java.math.BigInteger(32, new SecureRandom)
             val from = new java.util.Date
             val to = new java.util.Date(System.currentTimeMillis + query.duration.toMillis)
             val certgen = new X509v3CertificateBuilder(issuer, serial, from, to, csr.getSubject, csr.getSubjectPublicKeyInfo)
@@ -384,7 +385,7 @@ class BouncyCastlePki(generator: IdGenerator) extends Pki {
           csrBuilder.addAttribute(PKCSObjectIdentifiers.pkcs_9_at_extensionRequest /* x509Certificate */ , extensionsGenerator.generate)
           val csr = csrBuilder.build(signer)
           val issuer = csr.getSubject
-          val serial = java.math.BigInteger.valueOf(_serial) // new java.math.BigInteger(32, new SecureRandom)
+          val serial = java.math.BigInteger.valueOf(query.existingSerialNumber.getOrElse(_serial)) // new java.math.BigInteger(32, new SecureRandom)
           val from = new java.util.Date
           val to = new java.util.Date(System.currentTimeMillis + query.duration.toMillis)
           val certgen = new X509v3CertificateBuilder(issuer, serial, from, to, csr.getSubject, csr.getSubjectPublicKeyInfo)

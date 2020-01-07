@@ -666,7 +666,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
               case None => {
                 val cert = FakeKeyStore.createSelfSignedCertificate(host,
                   FiniteDuration(365, TimeUnit.DAYS),
-                  None)
+                  None, None)
                 val c = Cert(cert.cert, cert.keyPair, None, false)
                 val cc = c.enrich()
                 Ok(cc.toJson)
@@ -674,7 +674,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
               case Some(ca) => {
                 val cert = FakeKeyStore.createCertificateFromCA(host,
                                                                 FiniteDuration(365, TimeUnit.DAYS),
-                                                                None,
+                                                                None, None,
                                                                 ca.certificate.get,
                                                                 ca.keyPair)
                 val c = Cert(cert.cert, cert.keyPair, ca, false)
@@ -703,7 +703,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
                 val cert = FakeKeyStore.createSelfSignedClientCertificate(
                   dn,
                   FiniteDuration(365, TimeUnit.DAYS),
-                  None)
+                  None, None)
                 val c = Cert(cert.cert, cert.keyPair, None, true)
                 val cc = c.enrich()
                 Ok(cc.toJson)
@@ -712,7 +712,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
                 val cert = FakeKeyStore.createClientCertificateFromCA(
                   dn,
                   FiniteDuration(365, TimeUnit.DAYS),
-                  None,
+                  None, None,
                   ca.certificate.get,
                   ca.keyPair)
                 val c = Cert(cert.cert, cert.keyPair, ca, true)
@@ -760,7 +760,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
             // val keyPairGenerator = KeyPairGenerator.getInstance(KeystoreSettings.KeyPairAlgorithmName)
             // keyPairGenerator.initialize(KeystoreSettings.KeyPairKeyLength)
             // val keyPair = keyPairGenerator.generateKeyPair()
-            val ca      = FakeKeyStore.createCA(s"CN=$cn", FiniteDuration(365, TimeUnit.DAYS), None)
+            val ca      = FakeKeyStore.createCA(s"CN=$cn", FiniteDuration(365, TimeUnit.DAYS), None, None)
             val _cert = Cert(
               id = IdGenerator.token(32),
               name = "none",
@@ -797,7 +797,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
                 // val keyPair = keyPairGenerator.generateKeyPair()
                 val cert = FakeKeyStore.createCertificateFromCA(host,
                                                                 FiniteDuration(365, TimeUnit.DAYS),
-                                                                None,
+                                                                None, None,
                                                                 ca.certificate.get,
                                                                 ca.keyPair)
                 Ok(Cert(cert.cert, cert.keyPair, ca, false).enrich().toJson)
@@ -828,7 +828,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
                 val cert = FakeKeyStore.createClientCertificateFromCA(
                   dn,
                   FiniteDuration(365, TimeUnit.DAYS),
-                  None,
+                  None, None,
                   ca.certificate.get,
                   ca.keyPair)
                 Ok(Cert(cert.cert, cert.keyPair, ca, true).enrich().toJson)
