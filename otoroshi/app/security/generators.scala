@@ -1,11 +1,13 @@
 package security
 
 import java.util.concurrent.atomic.AtomicLong
-import scala.util.Random
+
+import scala.util.{Random, Try}
 
 class IdGenerator(generatorId: Long) {
-  def nextId(): Long      = IdGenerator.nextId(generatorId)
-  def nextIdStr(): String = IdGenerator.nextIdStr(generatorId)
+  def nextId(): Long          = IdGenerator.nextId(generatorId)
+  def nextIdSafe(): Try[Long] = Try(nextId())
+  def nextIdStr(): String     = IdGenerator.nextIdStr(generatorId)
 }
 
 object IdGenerator {

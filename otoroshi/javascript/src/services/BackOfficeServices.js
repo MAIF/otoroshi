@@ -989,6 +989,30 @@ export function selfSignedCert(host) {
   }).then(r => r.json());
 }
 
+export function selfSignedClientCert(cn) {
+  return fetch(`/bo/api/certificates/_selfSignedClient`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ cn }),
+  }).then(r => r.json());
+}
+
+export function importP12(password, content) {
+  return fetch(`/bo/api/certificates/_importP12?password=${password}`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/octet-stream',
+    },
+    body: content,
+  }).then(r => r.json());
+}
+
 export function letsEncryptCert(host) {
   return fetch(`/bo/api/certificates/_letsencrypt`, {
     method: 'POST',
@@ -1003,6 +1027,18 @@ export function letsEncryptCert(host) {
 
 export function caSignedCert(id, host) {
   return fetch(`/bo/api/certificates/_caSigned`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ id, host }),
+  }).then(r => r.json());
+}
+
+export function caSignedClientCert(id, host) {
+  return fetch(`/bo/api/certificates/_caSignedClient`, {
     method: 'POST',
     credentials: 'include',
     headers: {

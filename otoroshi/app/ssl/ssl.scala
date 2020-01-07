@@ -10,7 +10,7 @@ import java.nio.charset.StandardCharsets.US_ASCII
 import java.security._
 import java.security.cert.{Certificate => _, _}
 import java.security.spec.PKCS8EncodedKeySpec
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.{Executors, TimeUnit}
 import java.util.concurrent.atomic.AtomicReference
 import java.util.regex.Pattern.CASE_INSENSITIVE
 import java.util.regex.{Matcher, Pattern}
@@ -33,7 +33,10 @@ import javax.net.ssl._
 import models._
 import org.apache.commons.codec.binary.Hex
 import org.apache.commons.codec.digest.DigestUtils
+import org.bouncycastle.pkcs.PKCS10CertificationRequest
 import org.joda.time.{DateTime, Interval}
+import otoroshi.ssl.pki.BouncyCastlePki
+import otoroshi.ssl.pki.models.{GenCertResponse, GenCsrQuery, GenKeyPairQuery}
 import otoroshi.utils.LetsEncryptHelper
 import play.api.libs.json._
 import play.api.libs.ws.WSProxyServer
@@ -51,8 +54,10 @@ import utils.{FakeHasMetrics, HasMetrics, TypedMap}
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
+
+import scala.concurrent.duration._
 
 /**
  * git over http works with otoroshi
@@ -112,26 +117,26 @@ case class Cert(
 
   def signature: Option[String]    = this.metadata.map(v => (v \ "signature").as[String])
   def serialNumber: Option[String] = this.metadata.map(v => (v \ "serialNumber").as[String])
-  def renew(duration: FiniteDuration, caOpt: Option[Cert]): Cert = {
+  def renew(duration: FiniteDuration, caOpt: Option[Cert])(implicit env: Env, ec: ExecutionContext): Cert = {
     this match {
       case original if original.ca && original.selfSigned => {
         val keyPair: KeyPair      = original.keyPair
-        val cert: X509Certificate = FakeKeyStore.createCA(original.subject, duration, keyPair)
-        val certificate: Cert     = Cert(cert, keyPair, None, client).enrich().copy(id = original.id)
+        val resp                  = FakeKeyStore.createCA(original.subject, duration, Some(keyPair))
+        val certificate: Cert     = Cert(resp.cert, keyPair, None, client).enrich().copy(id = original.id)
         certificate
       }
       case original if original.selfSigned => {
         val keyPair: KeyPair      = original.keyPair
-        val cert: X509Certificate = FakeKeyStore.createSelfSignedCertificate(original.domain, duration, keyPair)
-        val certificate: Cert     = Cert(cert, keyPair, None, client).enrich().copy(id = original.id)
+        val resp                  = FakeKeyStore.createSelfSignedCertificate(original.domain, duration, Some(keyPair))
+        val certificate: Cert     = Cert(resp.cert, keyPair, None, client).enrich().copy(id = original.id)
         certificate
       }
       case original if original.caRef.isDefined && caOpt.isDefined && caOpt.get.id == original.caRef.get => {
         val ca               = caOpt.get
         val keyPair: KeyPair = original.keyPair
-        val cert: X509Certificate =
-          FakeKeyStore.createCertificateFromCA(original.domain, duration, keyPair, ca.certificate.get, ca.keyPair)
-        val certificate: Cert = Cert(cert, keyPair, None, client).enrich().copy(id = original.id)
+        val resp =
+          FakeKeyStore.createCertificateFromCA(original.domain, duration, Some(keyPair), ca.certificate.get, ca.keyPair)
+        val certificate: Cert = Cert(resp.cert, keyPair, None, client).enrich().copy(id = original.id)
         certificate
       }
       case _ => this
@@ -991,14 +996,16 @@ object CertificateData {
 }
 
 object PemHeaders {
-  val BeginCertificate   = "-----BEGIN CERTIFICATE-----"
-  val EndCertificate     = "-----END CERTIFICATE-----"
-  val BeginPublicKey     = "-----BEGIN PUBLIC KEY-----"
-  val EndPublicKey       = "-----END PUBLIC KEY-----"
-  val BeginPrivateKey    = "-----BEGIN PRIVATE KEY-----"
-  val EndPrivateKey      = "-----END PRIVATE KEY-----"
-  val BeginPrivateRSAKey = "-----BEGIN RSA PRIVATE KEY-----"
-  val EndPrivateRSAKey   = "-----END RSA PRIVATE KEY-----"
+  val BeginCertificate        = "-----BEGIN CERTIFICATE-----"
+  val EndCertificate          = "-----END CERTIFICATE-----"
+  val BeginPublicKey          = "-----BEGIN PUBLIC KEY-----"
+  val EndPublicKey            = "-----END PUBLIC KEY-----"
+  val BeginPrivateKey         = "-----BEGIN PRIVATE KEY-----"
+  val EndPrivateKey           = "-----END PRIVATE KEY-----"
+  val BeginPrivateRSAKey      = "-----BEGIN RSA PRIVATE KEY-----"
+  val EndPrivateRSAKey        = "-----END RSA PRIVATE KEY-----"
+  val BeginCertificateRequest = "-----BEGIN CERTIFICATE REQUEST-----"
+  val EndCertificateRequest   = "-----END CERTIFICATE REQUEST-----"
 }
 
 object FakeKeyStore {
@@ -1027,7 +1034,9 @@ object FakeKeyStore {
     val SignatureAlgorithmOID: ObjectIdentifier = AlgorithmId.sha256WithRSAEncryption_oid
   }
 
-  def generateKeyStore(host: String): KeyStore = {
+  private implicit val ec = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(4))
+
+  def generateKeyStore(host: String)(implicit env: Env, ec: ExecutionContext): KeyStore = {
     val keyStore: KeyStore = KeyStore.getInstance(KeystoreSettings.KeystoreType)
     val (cert, keyPair)    = generateX509Certificate(host)
     keyStore.load(null, EMPTY_PASSWORD)
@@ -1037,11 +1046,11 @@ object FakeKeyStore {
   }
 
   def generateX509Certificate(host: String): (X509Certificate, KeyPair) = {
-    val keyPairGenerator = KeyPairGenerator.getInstance(KeystoreSettings.KeyPairAlgorithmName)
-    keyPairGenerator.initialize(KeystoreSettings.KeyPairKeyLength)
-    val keyPair = keyPairGenerator.generateKeyPair()
-    val cert    = createSelfSignedCertificate(host, FiniteDuration(365, TimeUnit.DAYS), keyPair)
-    (cert, keyPair)
+    // val keyPairGenerator = KeyPairGenerator.getInstance(KeystoreSettings.KeyPairAlgorithmName)
+    // keyPairGenerator.initialize(KeystoreSettings.KeyPairKeyLength)
+    // val keyPair = keyPairGenerator.generateKeyPair()
+    val resp    = createSelfSignedCertificate(host, 365.days, None)
+    (resp.cert, resp.keyPair)
   }
 
   def generateCert(host: String): Cert = {
@@ -1060,8 +1069,23 @@ object FakeKeyStore {
     )
   }
 
-  def createSelfSignedCertificate(host: String, duration: FiniteDuration, keyPair: KeyPair): X509Certificate = {
+  def createSelfSignedCertificate(host: String, duration: FiniteDuration, kp: Option[KeyPair]): GenCertResponse = {
 
+    val pki = new BouncyCastlePki(IdGenerator(0)) // no comment
+
+    val f = pki.genSelfSignedCert(GenCsrQuery(
+      hosts = Seq(host),
+      key = GenKeyPairQuery(KeystoreSettings.KeyPairAlgorithmName, KeystoreSettings.KeyPairKeyLength),
+      name = Map("CN" -> host),
+      duration = duration,
+      existingKeyPair = kp
+    ))
+
+    val resp = Await.result(f, 30.seconds)
+
+    resp.right.get
+
+    /*
     import sun.security.x509.DNSName
 
     val certInfo = new X509CertInfo()
@@ -1105,13 +1129,72 @@ object FakeKeyStore {
     val newCert = new X509CertImpl(certInfo)
     newCert.sign(keyPair.getPrivate, KeystoreSettings.SignatureAlgorithmName)
     newCert
+    */
+  }
+
+  def createClientCertificateFromCA(dn: String,
+                              duration: FiniteDuration,
+                              kp: Option[KeyPair],
+                              ca: X509Certificate,
+                              caKeyPair: KeyPair): GenCertResponse = {
+
+    val pki = new BouncyCastlePki(IdGenerator(0)) // no comment
+
+    val f = pki.genCert(GenCsrQuery(
+      hosts = Seq.empty,
+      key = GenKeyPairQuery(KeystoreSettings.KeyPairAlgorithmName, KeystoreSettings.KeyPairKeyLength),
+      subject = Some(dn),
+      duration = duration,
+      existingKeyPair = kp,
+      client = true
+    ), ca, caKeyPair.getPrivate)
+
+    val resp = Await.result(f, 30.seconds)
+
+    resp.right.get
+  }
+
+  def createSelfSignedClientCertificate(dn: String,
+                                    duration: FiniteDuration,
+                                    kp: Option[KeyPair]): GenCertResponse = {
+
+    val pki = new BouncyCastlePki(IdGenerator(0)) // no comment
+
+    val f = pki.genSelfSignedCert(GenCsrQuery(
+      hosts = Seq.empty,
+      key = GenKeyPairQuery(KeystoreSettings.KeyPairAlgorithmName, KeystoreSettings.KeyPairKeyLength),
+      subject = Some(dn),
+      duration = duration,
+      existingKeyPair = kp,
+      client = true
+    ))
+
+    val resp = Await.result(f, 30.seconds)
+
+    resp.right.get
   }
 
   def createCertificateFromCA(host: String,
                               duration: FiniteDuration,
-                              kp: KeyPair,
+                              kp: Option[KeyPair],
                               ca: X509Certificate,
-                              caKeyPair: KeyPair): X509Certificate = {
+                              caKeyPair: KeyPair): GenCertResponse = {
+
+    val pki = new BouncyCastlePki(IdGenerator(0)) // no comment
+
+    val f = pki.genCert(GenCsrQuery(
+      hosts = Seq(host),
+      key = GenKeyPairQuery(KeystoreSettings.KeyPairAlgorithmName, KeystoreSettings.KeyPairKeyLength),
+      name = Map("CN" -> host),
+      duration = duration,
+      existingKeyPair = kp
+    ), ca, caKeyPair.getPrivate)
+
+    val resp = Await.result(f, 30.seconds)
+
+    resp.right.get
+
+    /*
     val certInfo = new X509CertInfo()
 
     // Serial number and version
@@ -1154,9 +1237,26 @@ object FakeKeyStore {
     val newCert = new X509CertImpl(certInfo)
     newCert.sign(caKeyPair.getPrivate, issuerSigAlg)
     newCert
+    */
   }
 
-  def createCA(cn: String, duration: FiniteDuration, keyPair: KeyPair): X509Certificate = {
+  def createCA(cn: String, duration: FiniteDuration, kp: Option[KeyPair]): GenCertResponse = {
+
+    val pki = new BouncyCastlePki(IdGenerator(0)) // no comment
+
+    val f = pki.genSelfSignedCA(GenCsrQuery(
+      hosts = Seq.empty,
+      key = GenKeyPairQuery(KeystoreSettings.KeyPairAlgorithmName, KeystoreSettings.KeyPairKeyLength),
+      subject = Some(cn),
+      duration = duration,
+      existingKeyPair = kp,
+      ca = true
+    ))
+
+    val resp = Await.result(f, 30.seconds)
+
+    resp.right.get
+    /*
     val certInfo = new X509CertInfo()
 
     // Serial number and version
@@ -1194,6 +1294,7 @@ object FakeKeyStore {
     val newCert = new X509CertImpl(certInfo)
     newCert.sign(keyPair.getPrivate, KeystoreSettings.SignatureAlgorithmName)
     newCert
+    */
   }
 
 }
@@ -1768,7 +1869,10 @@ object SSLImplicits {
 
   private val logger = Logger("SSLImplicits")
 
-  implicit class EnhancedCertificate(val cert: X509Certificate) extends AnyVal {
+  implicit class EnhancedCertificate(val cert: java.security.cert.Certificate) extends AnyVal {
+    def asPem: String = s"${PemHeaders.BeginCertificate}\n${Base64.getEncoder.encodeToString(cert.getEncoded).grouped(64).mkString("\n")}\n${PemHeaders.EndCertificate}\n"
+  }
+  implicit class EnhancedX509Certificate(val cert: X509Certificate) extends AnyVal {
     def asPem: String = s"${PemHeaders.BeginCertificate}\n${Base64.getEncoder.encodeToString(cert.getEncoded).grouped(64).mkString("\n")}\n${PemHeaders.EndCertificate}\n"
     def altNames: Seq[String] = CertInfo.getSubjectAlternativeNames(cert, logger).asScala.toSeq
     def rawDomain: Option[String] = {
@@ -1780,11 +1884,18 @@ object SSLImplicits {
     def domain: String = domains.headOption.getOrElse(cert.getSubjectDN.getName)
     def domains: Seq[String] = (rawDomain ++ altNames).toSeq
   }
+  implicit class EnhancedKey(val key: java.security.Key) extends AnyVal {
+    def asPublicKeyPem: String  = s"${PemHeaders.BeginPublicKey}\n${Base64.getEncoder.encodeToString(key.getEncoded).grouped(64).mkString("\n")}\n${PemHeaders.EndPublicKey}\n"
+    def asPrivateKeyPem: String = s"${PemHeaders.BeginPrivateKey}\n${Base64.getEncoder.encodeToString(key.getEncoded).grouped(64).mkString("\n")}\n${PemHeaders.EndPrivateKey}\n"
+  }
   implicit class EnhancedPublicKey(val key: PublicKey) extends AnyVal {
     def asPem: String = s"${PemHeaders.BeginPublicKey}\n${Base64.getEncoder.encodeToString(key.getEncoded).grouped(64).mkString("\n")}\n${PemHeaders.EndPublicKey}\n"
   }
   implicit class EnhancedPrivateKey(val key: PrivateKey) extends AnyVal {
     def asPem: String = s"${PemHeaders.BeginPrivateKey}\n${Base64.getEncoder.encodeToString(key.getEncoded).grouped(64).mkString("\n")}\n${PemHeaders.EndPrivateKey}\n"
+  }
+  implicit class EnhancedPKCS10CertificationRequest(val csr: PKCS10CertificationRequest) extends AnyVal {
+    def asPem: String = s"${PemHeaders.BeginCertificateRequest}\n${Base64.getEncoder.encodeToString(csr.getEncoded).grouped(64).mkString("\n")}\n${PemHeaders.EndCertificateRequest}\n"
   }
 }
 

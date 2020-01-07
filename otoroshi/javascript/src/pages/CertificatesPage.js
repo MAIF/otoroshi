@@ -408,6 +408,31 @@ export class CertificatesPage extends Component {
     });
   };
 
+  createSelfSignedClient = () => {
+    window.newPrompt('Certificate CN').then(value => {
+      if (value && value.trim() !== '') {
+        BackOfficeServices.selfSignedClientCert(value).then(cert => {
+          this.props.setTitle(`Create a new certificate`);
+          window.history.replaceState({}, '', `/bo/dashboard/certificates/add`);
+          this.table.setState({ currentItem: cert, showAddForm: true });
+        });
+      }
+    });
+  };
+
+  importP12 = () => {
+    const input = document.querySelector('input[type="file"]');
+    const data = new FormData();
+    data.append('file', input.files[0]);
+    return window.newPrompt('Certificate password ?').then(password => {
+      if (password) {
+        return BackOfficeServices.importP12(password, input.files[0]).then(() => {
+          this.table.update();
+        });
+      }
+    });
+  }
+
   createLetsEncrypt = () => {
     window.newPrompt('Certificate domain').then(value => {
       if (value && value.trim() !== '') {
@@ -433,15 +458,29 @@ export class CertificatesPage extends Component {
   createCASigned = (e, id) => {
     e.preventDefault();
     e.stopPropagation();
-    window.newPrompt('Certificate hostname').then(value => {
-      if (value && value.trim() !== '') {
-        BackOfficeServices.caSignedCert(id, value).then(cert => {
-          this.props.setTitle(`Create a new certificate`);
-          window.history.replaceState({}, '', `/bo/dashboard/certificates/add`);
-          this.table.setState({ currentItem: cert, showAddForm: true });
+    window.newConfirm("Is certificate a client certificate ?").then(ok => {
+      if (ok) {
+        window.newPrompt('Certificate DN').then(value => {
+          if (value && value.trim() !== '') {
+            BackOfficeServices.caSignedClientCert(id, value).then(cert => {
+              this.props.setTitle(`Create a new certificate`);
+              window.history.replaceState({}, '', `/bo/dashboard/certificates/add`);
+              this.table.setState({ currentItem: cert, showAddForm: true });
+            });
+          }
+        });
+      } else {
+        window.newPrompt('Certificate hostname').then(value => {
+          if (value && value.trim() !== '') {
+            BackOfficeServices.caSignedCert(id, value).then(cert => {
+              this.props.setTitle(`Create a new certificate`);
+              window.history.replaceState({}, '', `/bo/dashboard/certificates/add`);
+              this.table.setState({ currentItem: cert, showAddForm: true });
+            });
+          }
         });
       }
-    });
+    })
   };
 
   createCA = () => {
@@ -502,11 +541,33 @@ export class CertificatesPage extends Component {
             </button>
             <button
               type="button"
+              onClick={this.createSelfSignedClient}
+              style={{ marginRight: 0 }}
+              className="btn btn-primary">
+              <i className="glyphicon glyphicon-plus-sign" /> Self signed client cert.
+            </button>
+            <button
+              type="button"
               onClick={this.createCA}
               style={{ marginRight: 0 }}
               className="btn btn-primary">
-              <i className="glyphicon glyphicon-plus-sign" /> Self signed Certificate Authority
+              <i className="glyphicon glyphicon-plus-sign" /> Self signed CA
             </button>
+            <input
+              type="file"
+              name="export"
+              id="export"
+              className="inputfile btn btn-primary"
+              ref={ref => (this.fileUpload = ref)}
+              style={{ display: 'none' }}
+              onChange={this.importP12}
+            />
+            <label
+              htmlFor="export"
+              style={{ marginRight: 0 }}
+              className="fake-inputfile btn btn-primary ">
+              <i className="glyphicon glyphicon-file" /> Import .p12 file
+            </label>
           </div>
           </>
         )}

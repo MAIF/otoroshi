@@ -63,10 +63,13 @@ GET     /bo/api/bodies/:serviceId/:requestId                  controllers.BackOf
 POST    /bo/api/certificates/_data                            controllers.BackOfficeController.certificateData()
 POST    /bo/api/certificates/_valid                           controllers.BackOfficeController.certificateIsValid()
 POST    /bo/api/certificates/_selfSigned                      controllers.BackOfficeController.selfSignedCert()
+POST    /bo/api/certificates/_selfSignedClient                controllers.BackOfficeController.selfSignedClientCert()
 POST    /bo/api/certificates/_caSigned                        controllers.BackOfficeController.caSignedCert()
+POST    /bo/api/certificates/_caSignedClient                  controllers.BackOfficeController.caSignedClientCert()
 POST    /bo/api/certificates/_ca                              controllers.BackOfficeController.caCert()
 POST    /bo/api/certificates/:id/_renew                       controllers.BackOfficeController.renew(id)
 POST    /bo/api/certificates/_letsencrypt                     controllers.BackOfficeController.createLetsEncryptCertificate()
+POST    /bo/api/certificates/_importP12                       controllers.BackOfficeController.importP12File()
 
 
 POST    /bo/api/oidc/_fetchConfig                            controllers.BackOfficeController.fetchOpenIdConfiguration()
