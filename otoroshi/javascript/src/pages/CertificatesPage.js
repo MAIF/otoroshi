@@ -337,7 +337,7 @@ export class CertificatesPage extends Component {
   columns = [
     { title: 'Name', content: item => item.name },
     { title: 'Description', content: item => item.description },
-    { title: 'Domain', content: item => (!item.ca ? item.domain : '') },
+    // { title: 'Domain', content: item => (!item.ca ? item.domain : '') },
     { title: 'Subject', content: item => item.subject },
     // {
     //   title: 'Valid',
@@ -365,12 +365,6 @@ export class CertificatesPage extends Component {
       notFilterable: true,
     },
     {
-      title: 'Let\'s Encrypt',
-      content: item => (!item.letsEncrypt ? 'no' : <span className="label label-success">yes</span>),
-      style: { textAlign: 'center', width: 70 },
-      notFilterable: true,
-    },
-    {
       title: 'Client',
       content: item => (!item.client ? 'no' : <span className="label label-success">yes</span>),
       style: { textAlign: 'center', width: 70 },
@@ -379,11 +373,25 @@ export class CertificatesPage extends Component {
     {
       title: 'Self signed',
       content: item => (item.selfSigned ? <span className="label label-danger">yes</span> : 'no'),
-      style: { textAlign: 'center', width: 100 },
+      style: { textAlign: 'center', width: 90 },
       notFilterable: true,
     },
-    { title: 'From', content: item => moment(item.from).format('DD/MM/YYYY HH:mm:ss') },
-    { title: 'To', content: item => moment(item.to).format('DD/MM/YYYY HH:mm:ss') },
+    {
+      title: 'Let\'s Encrypt',
+      content: item => (!item.letsEncrypt ? 'no' : <span className="label label-success">yes</span>),
+      style: { textAlign: 'center', width: 90 },
+      notFilterable: true,
+    },
+    { 
+      title: 'From', 
+      content: item => moment(item.from).format('DD/MM/YYYY HH:mm:ss'),
+      style: { textAlign: 'center', width: 150 },
+    },
+    { 
+      title: 'To', 
+      content: item => moment(item.to).format('DD/MM/YYYY HH:mm:ss'),
+      style: { textAlign: 'center', width: 150 },
+    },
   ];
 
   formFlow = ['id', 'name', 'description', 'autoRenew', 'client', 'commands', 'valid', 'chain', 'privateKey', 'infos'];
