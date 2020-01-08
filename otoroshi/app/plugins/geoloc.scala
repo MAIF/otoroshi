@@ -100,7 +100,8 @@ class IpStackGeolocationInfoExtractor extends PreRouting {
     Some(
       Json.obj(
         "GeolocationInfo" -> Json.obj(
-          "path" -> "/foo/bar/cities.mmdb",
+          "apikey" -> "xxxxxxx",
+          "timeout" -> 2000,
           "log"  -> false,
         )
       )

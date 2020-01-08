@@ -62,6 +62,7 @@ class HasClientCertMatchingValidator extends AccessValidator {
       |    "regexIssuerDNs": [],  // allowed certificated issuer DNs matching regex
       |  }
       |}
+      |```
     """.stripMargin)
 
   def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
@@ -134,7 +135,7 @@ class HasClientCertMatchingHttpValidator extends AccessValidator {
           "ttl"     -> 600000,
           "headers" -> Json.obj(),
           "mtlsConfig"        -> Json.obj(
-            "certId"          -> JsNull,
+            "certId"          -> "...",
             "mtls"            -> false,
             "loose"           -> false
           )
@@ -162,12 +163,30 @@ class HasClientCertMatchingHttpValidator extends AccessValidator {
       |```json
       |{
       |  "HasClientCertMatchingValidator": {
-      |    "url"          // url for the call
-      |    "headers": {}  // http header for the call
-      |    "ttl": 600000  // cache ttl
+      |    "url": "...",   // url for the call
+      |    "headers": {},  // http header for the call
+      |    "ttl": 600000,  // cache ttl,
+      |    "mtlsConfig": {
+      |      "certId": "xxxxx",
+      |       "mtls": false,
+      |       "loose": false
+      |    }
       |  }
       |}
+      |```
     """.stripMargin)
+
+  override def configSchema: Option[JsObject] = super.configSchema.map(_ ++ Json.obj(
+    "mtlsConfig.certId" -> Json.obj(
+      "type" -> "select",
+      "props" -> Json.obj(
+        "label" -> "certId",
+        "placeholer" -> "Client cert used for mTLS call",
+        "valuesFrom" -> "/bo/api/proxy/api/certificates?client=true",
+        "transformerMapping" -> Json.obj("label" -> "name", "value" -> "id")
+      )
+    )
+  ))
 
   private val cache = new TrieMap[String, (Long, JsValue)]
 
@@ -257,6 +276,28 @@ class ClientCertChainHeader extends RequestTransformer {
         )
       )
     )
+
+  override def configFlow: Seq[String] = Seq(
+    "pem.send",
+    "pem.header",
+    "dns.send",
+    "dns.header",
+    "chain.send",
+    "chain.header",
+    "claims.send",
+    "claims.name"
+  )
+
+  override def configSchema = Some(Json.obj(
+    "pem.send" -> Json.obj("type" -> "bool", "props" -> Json.obj("label" -> "pem.send")),
+    "pem.header" -> Json.obj("type" -> "string", "props" -> Json.obj("label" -> "pem.header")),
+    "dns.send" -> Json.obj("type" -> "bool", "props" -> Json.obj("label" -> "dns.send")),
+    "dns.header" -> Json.obj("type" -> "string", "props" -> Json.obj("label" -> "dns.header")),
+    "chain.send" -> Json.obj("type" -> "bool", "props" -> Json.obj("label" -> "chain.send")),
+    "chain.header" -> Json.obj("type" -> "string", "props" -> Json.obj("label" -> "chain.header")),
+    "claims.send" -> Json.obj("type" -> "bool", "props" -> Json.obj("label" -> "claims.send")),
+    "claims.name" -> Json.obj("type" -> "string", "props" -> Json.obj("label" -> "claims.names")),
+  ))
 
   override def description: Option[String] =
     Some("""This plugin pass client certificate informations to the target in headers.

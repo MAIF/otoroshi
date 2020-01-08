@@ -165,7 +165,7 @@ export class ArrayInput extends Component {
                     )}
                     <input
                       disabled={this.props.disabled}
-                      type="text"
+                      type={this.props.inputType || "text"}
                       className="form-control"
                       id={`input-${this.props.label}`}
                       placeholder={this.props.placeholder}

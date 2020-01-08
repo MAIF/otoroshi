@@ -91,6 +91,8 @@ class AccessLog extends RequestTransformer {
 
   override def name: String = "Access log (CLF)"
 
+  override def configRoot: Option[String] = Some("AccessLog")
+
   override def defaultConfig: Option[JsObject] =
     Some(
       Json.obj(
@@ -143,7 +145,7 @@ class AccessLog extends RequestTransformer {
       val config = ctx.configFor("AccessLog")
       val enabled: Boolean          = (config \ "enabled").asOpt[Boolean].getOrElse(true)
       val validPaths: Seq[String]   = (config \ "paths").asOpt[Seq[String]].getOrElse(Seq.empty)
-      val validStatuses: Seq[Int]   = (config \ "statuses").asOpt[Seq[Int]].getOrElse(Seq.empty)
+      val validStatuses: Seq[Int]   = (config \ "statuses").asOpt[Seq[Int]].orElse((config \ "statuses").asOpt[Seq[String]].map(_.map(_.toInt))).getOrElse(Seq.empty)
       val validMethods: Seq[String] = (config \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty)
       val validIdentities: Seq[String] =
         (config \ "identities").asOpt[Seq[String]].getOrElse(Seq.empty)
@@ -201,7 +203,7 @@ class AccessLog extends RequestTransformer {
       val config = ctx.configFor("AccessLog")
       val enabled: Boolean          = (config \ "enabled").asOpt[Boolean].getOrElse(true)
       val validPaths: Seq[String]   = (config \ "paths").asOpt[Seq[String]].getOrElse(Seq.empty)
-      val validStatuses: Seq[Int]   = (config \ "statuses").asOpt[Seq[Int]].getOrElse(Seq.empty)
+      val validStatuses: Seq[Int]   = (config \ "statuses").asOpt[Seq[Int]].orElse((config \ "statuses").asOpt[Seq[String]].map(_.map(_.toInt))).getOrElse(Seq.empty)
       val validMethods: Seq[String] = (config \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty)
       val validIdentities: Seq[String] =
         (config \ "identities").asOpt[Seq[String]].getOrElse(Seq.empty)
@@ -297,7 +299,7 @@ class AccessLogJson extends RequestTransformer {
       val config = ctx.configFor("AccessLog")
       val enabled: Boolean          = (config \ "enabled").asOpt[Boolean].getOrElse(true)
       val validPaths: Seq[String]   = (config \ "paths").asOpt[Seq[String]].getOrElse(Seq.empty)
-      val validStatuses: Seq[Int]   = (config \ "statuses").asOpt[Seq[Int]].getOrElse(Seq.empty)
+      val validStatuses: Seq[Int]   = (config \ "statuses").asOpt[Seq[Int]].orElse((config \ "statuses").asOpt[Seq[String]].map(_.map(_.toInt))).getOrElse(Seq.empty)
       val validMethods: Seq[String] = (config \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty)
       val validIdentities: Seq[String] =
         (config \ "identities").asOpt[Seq[String]].getOrElse(Seq.empty)
@@ -380,7 +382,7 @@ class AccessLogJson extends RequestTransformer {
       val config = ctx.configFor("AccessLog")
       val enabled: Boolean          = (config \ "enabled").asOpt[Boolean].getOrElse(true)
       val validPaths: Seq[String]   = (config \ "paths").asOpt[Seq[String]].getOrElse(Seq.empty)
-      val validStatuses: Seq[Int]   = (config \ "statuses").asOpt[Seq[Int]].getOrElse(Seq.empty)
+      val validStatuses: Seq[Int]   = (config \ "statuses").asOpt[Seq[Int]].orElse((config \ "statuses").asOpt[Seq[String]].map(_.map(_.toInt))).getOrElse(Seq.empty)
       val validMethods: Seq[String] = (config \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty)
       val validIdentities: Seq[String] =
         (config \ "identities").asOpt[Seq[String]].getOrElse(Seq.empty)
@@ -522,7 +524,7 @@ class KafkaAccessLog extends RequestTransformer {
                 val validPaths: Seq[String] =
                   (config \ "paths").asOpt[Seq[String]].getOrElse(Seq.empty)
                 val validStatuses: Seq[Int] =
-                  (config \ "statuses").asOpt[Seq[Int]].getOrElse(Seq.empty)
+                  (config \ "statuses").asOpt[Seq[Int]].orElse((config \ "statuses").asOpt[Seq[String]].map(_.map(_.toInt))).getOrElse(Seq.empty)
                 val validMethods: Seq[String] =
                   (config \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty)
                 val validIdentities: Seq[String] =
@@ -641,7 +643,7 @@ class KafkaAccessLog extends RequestTransformer {
                 val validPaths: Seq[String] =
                   (config \ "paths").asOpt[Seq[String]].getOrElse(Seq.empty)
                 val validStatuses: Seq[Int] =
-                  (config \ "statuses").asOpt[Seq[Int]].getOrElse(Seq.empty)
+                  (config \ "statuses").asOpt[Seq[Int]].orElse((config \ "statuses").asOpt[Seq[String]].map(_.map(_.toInt))).getOrElse(Seq.empty)
                 val validMethods: Seq[String] =
                   (config \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty)
                 val validIdentities: Seq[String] =

@@ -20,10 +20,10 @@ import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
 case class ResponseCacheFilterConfig(json: JsValue) {
-  lazy val statuses: Seq[Int]      = (json \ "statuses").asOpt[Seq[Int]].getOrElse(Seq(200))
+  lazy val statuses: Seq[Int]      = (json \ "statuses").asOpt[Seq[Int]].orElse((json \ "statuses").asOpt[Seq[String]].map(_.map(_.toInt))).getOrElse(Seq(200))
   lazy val methods: Seq[String]    = (json \ "methods").asOpt[Seq[String]].getOrElse(Seq("GET"))
   lazy val paths: Seq[String]      = (json \ "paths").asOpt[Seq[String]].getOrElse(Seq("/.*"))
-  lazy val notStatuses: Seq[Int]   = (json \ "not" \ "statuses").asOpt[Seq[Int]].getOrElse(Seq(200))
+  lazy val notStatuses: Seq[Int]   = (json \ "not" \ "statuses").asOpt[Seq[Int]].orElse((json \ "not" \ "statuses").asOpt[Seq[String]].map(_.map(_.toInt))).getOrElse(Seq.empty)
   lazy val notMethods: Seq[String] = (json \ "not" \ "methods").asOpt[Seq[String]].getOrElse(Seq("GET"))
   lazy val notPaths: Seq[String]   = (json \ "not" \ "paths").asOpt[Seq[String]].getOrElse(Seq("/.*"))
 }
@@ -76,7 +76,7 @@ class ResponseCache extends RequestTransformer {
       |
       |```json
       |{
-      |  "BodyLogger": {
+      |  "ResponseCache": {
       |    "enabled": true, // enabled cache
       |    "ttl": 300000,  // store it for some times (5 minutes by default)
       |    "maxSize": 5242880, // max body size (body will be cut after that)

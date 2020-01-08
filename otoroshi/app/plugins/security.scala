@@ -18,11 +18,11 @@ class SecurityTxt extends RequestTransformer {
       Json.obj(
         "SecurityTxt" -> Json.obj(
           "Contact"             -> "contact@foo.bar",
-          "Encryption"          -> JsNull,
-          "Acknowledgments"     -> JsNull,
+          "Encryption"          -> "https://...",
+          "Acknowledgments"     -> "https://...",
           "Preferred-Languages" -> "en, fr",
-          "Policy"              -> JsNull,
-          "Hiring"              -> JsNull,
+          "Policy"              -> "https://...",
+          "Hiring"              -> "https://...",
         )
       )
     )

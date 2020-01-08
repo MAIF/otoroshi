@@ -56,7 +56,7 @@ class ExternalHttpValidator extends AccessValidator {
           "allowNoClientCert" -> false,
           "headers"           -> Json.obj(),
           "mtlsConfig"        -> Json.obj(
-            "certId"          -> JsNull,
+            "certId"          -> "...",
             "mtls"            -> false,
             "loose"           -> false
           )
@@ -84,20 +84,37 @@ class ExternalHttpValidator extends AccessValidator {
       |```json
       |{
       |  "ExternalHttpValidator": {
-      |    "url"                             // url for the http call
-      |    "host"                            // value of the host header for the call. default is host of the url
-      |    "goodTtl": 600000                 // ttl in ms for a validated call
-      |    "badTtl": 60000,                  // ttl in ms for a not validated call
-      |    "method": "POST"                  // http methode
-      |    "path": "/certificates/_validate" // http uri path
-      |    "timeout": 10000,                 // http call timeout
-      |    "noCache": false,                 // use cache or not
-      |    "allowNoClientCert": false,       //
-      |    "headers": {}                     // headers for the http call if needed
+      |    "url": "...",                      // url for the http call
+      |    "host": "...",                     // value of the host header for the call. default is host of the url
+      |    "goodTtl": 600000,                 // ttl in ms for a validated call
+      |    "badTtl": 60000,                   // ttl in ms for a not validated call
+      |    "method": "POST",                  // http methode
+      |    "path": "/certificates/_validate", // http uri path
+      |    "timeout": 10000,                  // http call timeout
+      |    "noCache": false,                  // use cache or not
+      |    "allowNoClientCert": false,        //
+      |    "headers": {},                      // headers for the http call if needed
+      |    "mtlsConfig": {
+      |      "certId": "xxxxx",
+      |       "mtls": false,
+      |       "loose": false
+      |    }
       |  }
       |}
       |```
     """.stripMargin)
+
+  override def configSchema: Option[JsObject] = super.configSchema.map(_ ++ Json.obj(
+    "mtlsConfig.certId" -> Json.obj(
+      "type" -> "select",
+      "props" -> Json.obj(
+        "label" -> "certId",
+        "placeholer" -> "Client cert used for mTLS call",
+        "valuesFrom" -> "/bo/api/proxy/api/certificates?client=true",
+        "transformerMapping" -> Json.obj("label" -> "name", "value" -> "id")
+      )
+    )
+  ))
 
   private val digester = MessageDigest.getInstance("SHA-1")
 

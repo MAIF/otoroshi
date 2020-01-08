@@ -75,10 +75,57 @@ trait NamedPlugin { self =>
   def pluginType: PluginType
   def name: String                    = self.getClass.getName
   def description: Option[String]     = None
+
   def defaultConfig: Option[JsObject] = None
-  def configRoot: Option[String]      = None
-  def configSchema: Option[JsObject]  = None
-  def configFlow: Seq[String]         = Seq.empty
+  def configRoot: Option[String]      = defaultConfig match {
+    case None => None
+    case Some(config) if config.value.size > 1 => None
+    case Some(config) if config.value.isEmpty => None
+    case Some(config) if config.value.size == 1 => config.value.headOption.map(_._1)
+  }
+
+  def configSchema: Option[JsObject]  = defaultConfig.flatMap(c => configRoot.map(r => (c \ r).asOpt[JsObject].getOrElse(Json.obj()))) match {
+    case None => None
+    case Some(config) => {
+      def genSchema(jsobj: JsObject, prefix: String): JsObject = {
+        jsobj.value.toSeq.map {
+          case (key, JsString(_))  => Json.obj(prefix + key -> Json.obj("type" -> "string", "props" -> Json.obj("label" -> (prefix + key))))
+          case (key, JsNumber(_))  => Json.obj(prefix + key -> Json.obj("type" -> "number", "props" -> Json.obj("label" -> (prefix + key))))
+          case (key, JsBoolean(_)) => Json.obj(prefix + key -> Json.obj("type" -> "bool", "props" -> Json.obj("label" -> (prefix + key))))
+          case (key, JsArray(values)) => {
+            if (values.isEmpty) {
+              Json.obj(prefix + key -> Json.obj("type" -> "array", "props" -> Json.obj("label" -> (prefix + key))))
+            } else {
+              values.head match {
+                case JsNumber(_) => Json.obj(prefix + key -> Json.obj("type" -> "array", "props" -> Json.obj("label" -> (prefix + key), "inputType" -> "number")))
+                case _ => Json.obj(prefix+ key -> Json.obj("type" -> "array", "props" -> Json.obj("label" -> (prefix + key))))
+              }
+            }
+          }
+          case ("mtlsConfig", a@JsObject(_))  => genSchema(a, prefix + "mtlsConfig.")
+          case ("filter", a@JsObject(_))  => genSchema(a, prefix + "filter.")
+          case ("not", a@JsObject(_))  => genSchema(a, prefix + "not.")
+          case (key, JsObject(_))  => Json.obj(prefix + key -> Json.obj("type" -> "object", "props" -> Json.obj("label" -> (prefix + key))))
+          case (key, JsNull)       => Json.obj()
+        }.foldLeft(Json.obj())(_ ++ _)
+      }
+      Some(genSchema(config, ""))
+    }
+  }
+  def configFlow: Seq[String] = defaultConfig.flatMap(c => configRoot.map(r => (c \ r).asOpt[JsObject].getOrElse(Json.obj()))) match {
+    case None => Seq.empty
+    case Some(config) => {
+      def genFlow(jsobj: JsObject, prefix: String): Seq[String] = {
+        jsobj.value.toSeq.flatMap {
+          case ("mtlsConfig", a@JsObject(_)) => genFlow(a, prefix + "mtlsConfig.")
+          case ("filter", a@JsObject(_)) => genFlow(a, prefix + "filter.")
+          case ("not", a@JsObject(_)) => genFlow(a, prefix + "not.")
+          case (key, value) => Seq(prefix + key)
+        }
+      }
+      genFlow(config, "")
+    }
+  }
 }
 
 case class HttpRequest(url: String,

@@ -45,7 +45,7 @@ class OIDCHeaders extends RequestTransformer {
       |
       |```json
       |{
-      |    "OIDCHeaders": {
+      |  "OIDCHeaders": {
       |    "profile": {
       |      "send": true,
       |      "headerName": "X-OIDC-User"
