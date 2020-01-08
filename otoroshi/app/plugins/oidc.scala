@@ -67,6 +67,13 @@ class OIDCHeaders extends RequestTransformer {
       |```
     """.stripMargin)
 
+  override def configSchema: Option[JsObject] = Some(Json.parse(
+    """{"accesstoken.headerName":{"type":"string","props":{"label":"accesstoken.headerName"}},"idtoken.headerName":{"type":"string","props":{"label":"idtoken.headerName"}},"idtoken.name":{"type":"string","props":{"label":"idtoken.name"}},"accesstoken.name":{"type":"string","props":{"label":"accesstoken.name"}},"idtoken.send":{"type":"bool","props":{"label":"idtoken.send"}},"profile.headerName":{"type":"string","props":{"label":"profile.headerName"}},"accesstoken.send":{"type":"bool","props":{"label":"accesstoken.send"}},"idtoken.jwt":{"type":"bool","props":{"label":"idtoken.jwt"}},"profile.send":{"type":"bool","props":{"label":"profile.send"}},"accesstoken.jwt":{"type":"bool","props":{"label":"accesstoken.jwt"}}}""".stripMargin).as[JsObject])
+
+  override def configFlow: Seq[String] = Seq(
+    "profile.send","profile.headerName","idtoken.send","idtoken.name","idtoken.headerName","idtoken.jwt","accesstoken.send","accesstoken.name","accesstoken.headerName","accesstoken.jwt"
+  )
+
   private def extract(payload: JsValue, name: String, jwt: Boolean): String = {
     (payload \ name).asOpt[String] match {
       case None => "--"
