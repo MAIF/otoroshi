@@ -20,6 +20,8 @@ import models._
 import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
+import otoroshi.ssl.pki.BouncyCastlePki
+import otoroshi.ssl.pki.models.{GenCertResponse, GenCsrQuery, GenKeyPairQuery}
 import otoroshi.utils.LetsEncryptHelper
 import play.api.Logger
 import play.api.http.HttpEntity
@@ -822,9 +824,6 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
             env.datastores.certificatesDataStore.findById(id).map {
               case None => NotFound(Json.obj("error" -> s"No CA found"))
               case Some(ca) => {
-                // val keyPairGenerator = KeyPairGenerator.getInstance(KeystoreSettings.KeyPairAlgorithmName)
-                // keyPairGenerator.initialize(KeystoreSettings.KeyPairKeyLength)
-                // val keyPair = keyPairGenerator.generateKeyPair()
                 val cert = FakeKeyStore.createClientCertificateFromCA(
                   dn,
                   FiniteDuration(365, TimeUnit.DAYS),
@@ -848,23 +847,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
   def renew(id: String) = BackOfficeActionAuth.async { ctx =>
     env.datastores.certificatesDataStore.findById(id).map(_.map(_.enrich())).flatMap {
       case None => FastFuture.successful(NotFound(Json.obj("error" -> s"No Certificate found")))
-      case Some(cert) if cert.letsEncrypt => {
-        LetsEncryptHelper.renew(cert).map(c => Ok(c.toJson))
-      }
-      case Some(cert) if !cert.letsEncrypt && cert.ca => {
-        val renewFor = FiniteDuration(365, TimeUnit.DAYS)
-        val newCert = cert.renew(renewFor, None)
-        newCert.save().map(_ => Ok(newCert.toJson))
-      }
-      case Some(cert) if !cert.letsEncrypt => {
-        env.datastores.certificatesDataStore.findAll().flatMap { certificates =>
-          val renewableCas = certificates
-            .filter(cert => cert.ca && cert.selfSigned)
-          val renewFor = FiniteDuration(365, TimeUnit.DAYS)
-          val newCert = cert.renew(renewFor, renewableCas.find(_.id == cert.id))
-          newCert.save().map(_ => Ok(newCert.toJson))
-        }
-      }
+      case Some(cert) => cert.renew().map(c => Ok(c.toJson))
     }
   }
 
@@ -1012,6 +995,72 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
       case Some(domain) => otoroshi.utils.LetsEncryptHelper.createCertificate(domain).map { 
         case Left(err) => InternalServerError(Json.obj("error" -> err))
         case Right(cert) => Ok(cert.toJson)
+      }
+    }
+  }
+
+  def createCsr = BackOfficeActionAuth.async(parse.json) { ctx =>
+
+    import utils.future.Implicits._
+
+    val issuerRef = (ctx.request.body \ "caRef").asOpt[String]
+
+    GenCsrQuery.fromJson(ctx.request.body) match {
+      case Left(err) => BadRequest(Json.obj("error" -> err)).future
+      case Right(query) => {
+        val pki = new BouncyCastlePki(env.snowflakeGenerator)
+        env.datastores.certificatesDataStore.findAll().flatMap { certificates =>
+          issuerRef.flatMap(ref => certificates.find(_.id == ref)) match {
+            case None => BadRequest(Json.obj("error" -> "no issuer defined")).future
+            case Some(issuer) => {
+              pki.genCsr(query, issuer.certificate.get, issuer.keyPair.getPrivate).map {
+                case Left(err) => BadRequest(Json.obj("error" -> err))
+                case Right(res) => Ok(res.json)
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  def createCertificate = BackOfficeActionAuth.async(parse.json) { ctx =>
+    import utils.future.Implicits._
+
+    val pki = new BouncyCastlePki(env.snowflakeGenerator)
+
+    val issuerRef = (ctx.request.body \ "caRef").asOpt[String]
+    val maybeHost = (ctx.request.body \ "host").asOpt[String]
+
+    def handle(r: Future[Either[String, GenCertResponse]]): Future[Result] = {
+      r.map {
+        case Left(err) => BadRequest(Json.obj("error" -> err))
+        case Right(res) => Ok(res.toCert.toJson)
+      }
+    }
+
+    env.datastores.certificatesDataStore.findAll().flatMap { certificates =>
+      val issuer = issuerRef.flatMap(ref => certificates.find(_.id == ref))
+      (ctx.request.body \ "letsEncrypt").asOpt[Boolean] match {
+        case Some(true) => maybeHost match {
+          case None => BadRequest(Json.obj("error" -> "No domain found !")).future
+          case Some(domain) => otoroshi.utils.LetsEncryptHelper.createCertificate(domain).map {
+            case Left(err) => InternalServerError(Json.obj("error" -> err))
+            case Right(cert) => Ok(cert.toJson)
+          }
+        }
+        case _ => {
+          GenCsrQuery.fromJson(ctx.request.body) match {
+            case Left(err) => BadRequest(Json.obj("error" -> err)).future
+            case Right(query) if query.ca && issuer.isEmpty => handle(pki.genSelfSignedCA(query))
+            case Right(query) if query.ca && issuer.isDefined => handle(pki.genSubCA(query, issuer.get.certificate.get, issuer.get.keyPair.getPrivate()))
+            case Right(query) if query.client && issuer.isEmpty => handle(pki.genSelfSignedCert(query))
+            case Right(query) if query.client && issuer.isDefined => handle(pki.genCert(query, issuer.get.certificate.get, issuer.get.keyPair.getPrivate()))
+            case Right(query) if issuer.isEmpty => handle(pki.genSelfSignedCert(query))
+            case Right(query) if issuer.isDefined => handle(pki.genCert(query, issuer.get.certificate.get, issuer.get.keyPair.getPrivate()))
+            case _ => BadRequest(Json.obj("error" -> "bad state")).future
+          }
+        }
       }
     }
   }

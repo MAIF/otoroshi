@@ -33,6 +33,7 @@ import javax.net.ssl._
 import models._
 import org.apache.commons.codec.binary.Hex
 import org.apache.commons.codec.digest.DigestUtils
+import org.bouncycastle.asn1.x509.{ExtendedKeyUsage, KeyPurposeId}
 import org.bouncycastle.pkcs.PKCS10CertificationRequest
 import org.joda.time.{DateTime, Interval}
 import otoroshi.ssl.pki.BouncyCastlePki
@@ -56,7 +57,6 @@ import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
-
 import scala.concurrent.duration._
 
 /**
@@ -118,27 +118,37 @@ case class Cert(
   def signature: Option[String]    = this.metadata.map(v => (v \ "signature").as[String])
   def serialNumber: Option[String] = this.metadata.map(v => (v \ "serialNumber").as[String])
 
-  def renew(duration: FiniteDuration, caOpt: Option[Cert])(implicit env: Env, ec: ExecutionContext): Cert = {
+  def renew(_duration: Option[FiniteDuration] = None)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Cert] = {
     import SSLImplicits._
+    val duration = _duration.getOrElse(FiniteDuration(365, TimeUnit.DAYS))
     this match {
-      case original if original.ca && original.selfSigned => {
-        val keyPair: KeyPair      = original.keyPair
-        val resp                  = FakeKeyStore.createCA(original.subject, duration, Some(keyPair), certificate.map(_.getSerialNumber.longValue()))
-        copy(chain = resp.cert.asPem, privateKey = resp.key.asPem).enrich()
+      case original if original.letsEncrypt => LetsEncryptHelper.renew(this)
+      case _ => {
+        env.datastores.certificatesDataStore.findAll().map { certificates =>
+          val cas = certificates.filter(cert => cert.ca)
+          caRef.flatMap(ref => cas.find(_.id == ref)) match {
+            case None if ca =>
+              val resp = FakeKeyStore.createCA(subject, duration, Some(keyPair), certificate.map(_.getSerialNumber.longValue()))
+              copy(chain = resp.cert.asPem, privateKey = resp.key.asPem).enrich()
+            case None if selfSigned =>
+              val resp = FakeKeyStore.createSelfSignedCertificate(domain, duration, Some(keyPair), certificate.map(_.getSerialNumber.longValue()))
+              copy(chain = resp.cert.asPem, privateKey = resp.key.asPem).enrich()
+            case None => // should not happens
+              val resp = FakeKeyStore.createSelfSignedCertificate(domain, duration, Some(keyPair), certificate.map(_.getSerialNumber.longValue()))
+              copy(chain = resp.cert.asPem, privateKey = resp.key.asPem).enrich()
+            case Some(caCert) if ca =>
+              val resp = FakeKeyStore.createSubCa(domain, duration, Some(keyPair), certificate.map(_.getSerialNumber.longValue()), caCert.certificate.get, caCert.keyPair)
+              copy(chain = resp.cert.asPem + "\n" + caCert.chain, privateKey = resp.key.asPem).enrich()
+            case Some(caCert) =>
+              val resp = FakeKeyStore.createCertificateFromCA(domain, duration, Some(keyPair), certificate.map(_.getSerialNumber.longValue()), caCert.certificate.get, caCert.keyPair)
+              copy(chain = resp.cert.asPem + "\n" + caCert.chain, privateKey = resp.key.asPem).enrich()
+            case _ =>
+              println("wait what ???")
+              val resp = FakeKeyStore.createSelfSignedCertificate(domain, duration, Some(keyPair), certificate.map(_.getSerialNumber.longValue()))
+              copy(chain = resp.cert.asPem, privateKey = resp.key.asPem).enrich()
+          }
+        }
       }
-      case original if original.selfSigned => {
-        val keyPair: KeyPair      = original.keyPair
-        val resp                  = FakeKeyStore.createSelfSignedCertificate(original.domain, duration, Some(keyPair), certificate.map(_.getSerialNumber.longValue()))
-        copy(chain = resp.cert.asPem, privateKey = resp.key.asPem).enrich()
-      }
-      case original if original.caRef.isDefined && caOpt.isDefined && caOpt.get.id == original.caRef.get => {
-        val ca               = caOpt.get
-        val keyPair: KeyPair = original.keyPair
-        val resp =
-          FakeKeyStore.createCertificateFromCA(original.domain, duration, Some(keyPair), certificate.map(_.getSerialNumber.longValue()), ca.certificate.get, ca.keyPair)
-        copy(chain = resp.cert.asPem, privateKey = resp.key.asPem).enrich()
-      }
-      case _ => this
     }
   }
   def password: Option[String] = None
@@ -152,6 +162,7 @@ case class Cert(
       domain = (meta \ "domain").asOpt[String].getOrElse("--"),
       selfSigned = (meta \ "selfSigned").asOpt[Boolean].getOrElse(false),
       ca = (meta \ "ca").asOpt[Boolean].getOrElse(false),
+      client = (meta \ "client").asOpt[Boolean].getOrElse(false),
       valid = this.isValid,
       subject = (meta \ "subjectDN").as[String],
       from = (meta \ "notBefore").asOpt[Long].map(v => new DateTime(v)).getOrElse(DateTime.now()),
@@ -368,20 +379,14 @@ trait CertificateDataStore extends BasicStore[Cert] {
       percentage < 20
     }
 
-    def renewSelfSignedCertificates(certificates: Seq[Cert]): Future[Unit] = {
-      val renewFor = FiniteDuration(365, TimeUnit.DAYS)
+    def renewCAs(certificates: Seq[Cert]): Future[Unit] = {
       val renewableCas = certificates
         .filter(_.autoRenew)
-        .filter(cert => cert.ca && cert.selfSigned)
+        .filter(cert => cert.ca)
         .filter(willBeInvalidSoon)
-      val renewableCertificates = certificates
-        .filter(_.autoRenew)
-        .filter { cert => !cert.ca && (cert.selfSigned || cert.caRef.nonEmpty) }
-        .filter(willBeInvalidSoon)
-      Source(renewableCas.toList ++ renewableCertificates.toList)
+      Source(renewableCas.toList)
         .mapAsync(1) {
-          case c if c.ca => c.renew(renewFor, None).save().map(_ => c)
-          case c => c.renew(renewFor, renewableCas.find(_.id == c.id)).save().map(_ => c)
+          case c => c.renew().flatMap(c => c.save().map(_ => c))
         }
         .map { c =>
           Alerts.send(
@@ -395,20 +400,32 @@ trait CertificateDataStore extends BasicStore[Cert] {
         .runWith(Sink.ignore).map(_ => ())
     }
 
-    def renewLetsEncryptCertificates(certificates: Seq[Cert]): Future[Unit] = {
+    def renewSelfSignedCertificates(certificates: Seq[Cert]): Future[Unit] = {
       val renewableCertificates = certificates
         .filter(_.autoRenew)
-        .filter(_.letsEncrypt)
+        .filterNot(_.ca)
         .filter(willBeInvalidSoon)
       Source(renewableCertificates.toList)
-        .mapAsync(1)(c => LetsEncryptHelper.renew(c))
+        .mapAsync(1) {
+          case c => c.renew().flatMap(c => c.save().map(_ => c))
+        }
+        .map { c =>
+          Alerts.send(
+            CertRenewalAlert(
+              env.snowflakeGenerator.nextIdStr(),
+              env.env,
+              c
+            )
+          )
+        }
         .runWith(Sink.ignore).map(_ => ())
     }
 
     for {
-      certificates <- findAll()
-      _            <- renewSelfSignedCertificates(certificates)
-      _            <- renewLetsEncryptCertificates(certificates)
+      certificates  <- findAll()
+      _             <- renewCAs(certificates)
+      ncertificates <- findAll()
+      _             <- renewSelfSignedCertificates(ncertificates)
     } yield ()
   }
 
@@ -947,10 +964,11 @@ object CertificateData {
     val buffer = base64Decode(
       pemContent.replace(PemHeaders.BeginCertificate, "").replace(PemHeaders.EndCertificate, "")
     )
-    val cert           = certificateFactory.generateCertificate(new ByteArrayInputStream(buffer)).asInstanceOf[X509Certificate]
-    val altNames       = cert.altNames
-    val rawDomain      = cert.rawDomain
-    val domain: String = cert.domain
+    val cert            = certificateFactory.generateCertificate(new ByteArrayInputStream(buffer)).asInstanceOf[X509Certificate]
+    val altNames        = cert.altNames
+    val rawDomain       = cert.rawDomain
+    val domain: String  = cert.domain
+    val client: Boolean = Try(cert.getExtensionValue("2.5.29.37")).map(v => ExtendedKeyUsage.getInstance(v).getUsages.find(_ == KeyPurposeId.id_kp_clientAuth).isDefined).toOption.getOrElse(false)
     Json.obj(
       "issuerDN"     -> cert.getIssuerDN.getName,
       "notAfter"     -> cert.getNotAfter.getTime,
@@ -969,6 +987,7 @@ object CertificateData {
       "selfSigned"   -> DynamicSSLEngineProvider.isSelfSigned(cert),
       "constraints"  -> cert.getBasicConstraints,
       "ca"           -> (cert.getBasicConstraints != -1),
+      "client"       -> client,
       "subAltNames"  -> JsArray(altNames.map(JsString.apply)),
       "cExtensions" -> JsArray(
         Option(cert.getCriticalExtensionOIDs).map(_.asScala.toSeq).getOrElse(Seq.empty[String]).map { oid =>
@@ -1045,9 +1064,6 @@ object FakeKeyStore {
   }
 
   def generateX509Certificate(host: String): (X509Certificate, KeyPair) = {
-    // val keyPairGenerator = KeyPairGenerator.getInstance(KeystoreSettings.KeyPairAlgorithmName)
-    // keyPairGenerator.initialize(KeystoreSettings.KeyPairKeyLength)
-    // val keyPair = keyPairGenerator.generateKeyPair()
     val resp    = createSelfSignedCertificate(host, 365.days, None, None)
     (resp.cert, resp.keyPair)
   }
@@ -1060,8 +1076,7 @@ object FakeKeyStore {
       description = s"Certificate for $host",
       domain = host,
       chain = cert.asPem,
-        // s"${PemHeaders.BeginCertificate}\n${new String(encoder.encode(cert.getEncoded), Charsets.UTF_8)}\n${PemHeaders.EndCertificate}",
-      privateKey = keyPair.getPrivate.asPem, // s"${PemHeaders.BeginPrivateKey}\n${new String(encoder.encode(keyPair.getPrivate.getEncoded), Charsets.UTF_8)}\n${PemHeaders.EndPrivateKey}",
+      privateKey = keyPair.getPrivate.asPem,
       caRef = None,
       autoRenew = false,
       client = false
@@ -1084,52 +1099,6 @@ object FakeKeyStore {
     val resp = Await.result(f, 30.seconds)
 
     resp.right.get
-
-    /*
-    import sun.security.x509.DNSName
-
-    val certInfo = new X509CertInfo()
-
-    // Serial number and version
-    certInfo.set(X509CertInfo.SERIAL_NUMBER, new CertificateSerialNumber(new BigInteger(64, new SecureRandom())))
-    certInfo.set(X509CertInfo.VERSION, new CertificateVersion(CertificateVersion.V3))
-
-    // Validity
-    val validFrom = new Date()
-    val validTo   = new Date(validFrom.getTime + duration.toMillis)
-    val validity  = new CertificateValidity(validFrom, validTo)
-    certInfo.set(X509CertInfo.VALIDITY, validity)
-
-    // Subject and issuer
-    val owner = new X500Name(SelfSigned.DistinguishedName(host))
-    certInfo.set(X509CertInfo.SUBJECT, owner)
-    certInfo.set(X509CertInfo.ISSUER, owner)
-
-    // Key and algorithm
-    certInfo.set(X509CertInfo.KEY, new CertificateX509Key(keyPair.getPublic))
-    val algorithm = new AlgorithmId(KeystoreSettings.SignatureAlgorithmOID)
-    certInfo.set(X509CertInfo.ALGORITHM_ID, new CertificateAlgorithmId(algorithm))
-
-    if (!host.contains("*")) {
-      val extensions   = new CertificateExtensions()
-      val generalNames = new GeneralNames()
-      generalNames.add(new GeneralName(new DNSName(host)))
-      extensions.set(SubjectAlternativeNameExtension.NAME, new SubjectAlternativeNameExtension(false, generalNames))
-      certInfo.set(X509CertInfo.EXTENSIONS, extensions)
-    }
-
-    // Create a new certificate and sign it
-    val cert = new X509CertImpl(certInfo)
-    cert.sign(keyPair.getPrivate, KeystoreSettings.SignatureAlgorithmName)
-
-    // Since the signature provider may have a different algorithm ID to what we think it should be,
-    // we need to reset the algorithm ID, and resign the certificate
-    val actualAlgorithm = cert.get(X509CertImpl.SIG_ALG).asInstanceOf[AlgorithmId]
-    certInfo.set(CertificateAlgorithmId.NAME + "." + CertificateAlgorithmId.ALGORITHM, actualAlgorithm)
-    val newCert = new X509CertImpl(certInfo)
-    newCert.sign(keyPair.getPrivate, KeystoreSettings.SignatureAlgorithmName)
-    newCert
-    */
   }
 
   def createClientCertificateFromCA(dn: String,
@@ -1198,51 +1167,25 @@ object FakeKeyStore {
     val resp = Await.result(f, 30.seconds)
 
     resp.right.get
+  }
 
-    /*
-    val certInfo = new X509CertInfo()
+  def createSubCa(cn: String, duration: FiniteDuration, kp: Option[KeyPair], serial: Option[Long], ca: X509Certificate, caKeyPair: KeyPair): GenCertResponse = {
 
-    // Serial number and version
-    certInfo.set(X509CertInfo.SERIAL_NUMBER, new CertificateSerialNumber(new BigInteger(64, new SecureRandom())))
-    certInfo.set(X509CertInfo.VERSION, new CertificateVersion(CertificateVersion.V3))
+    val pki = new BouncyCastlePki(IdGenerator(0)) // no comment
 
-    // Validity
-    val validFrom = new Date()
-    val validTo   = new Date(validFrom.getTime + duration.toMillis)
-    val validity  = new CertificateValidity(validFrom, validTo)
-    certInfo.set(X509CertInfo.VALIDITY, validity)
+    val f = pki.genSubCA(GenCsrQuery(
+      hosts = Seq.empty,
+      key = GenKeyPairQuery(KeystoreSettings.KeyPairAlgorithmName, KeystoreSettings.KeyPairKeyLength),
+      subject = Some(cn),
+      duration = duration,
+      existingKeyPair = kp,
+      existingSerialNumber = serial,
+      ca = true
+    ), ca, caKeyPair.getPrivate)
 
-    // Subject and issuer
-    val owner = new X500Name(s"CN=$host")
-    certInfo.set(X509CertInfo.SUBJECT, owner)
-    certInfo.set(X509CertInfo.ISSUER, ca.getSubjectDN)
+    val resp = Await.result(f, 30.seconds)
 
-    // Key and algorithm
-    certInfo.set(X509CertInfo.KEY, new CertificateX509Key(kp.getPublic))
-    val algorithm = new AlgorithmId(KeystoreSettings.SignatureAlgorithmOID)
-    certInfo.set(X509CertInfo.ALGORITHM_ID, new CertificateAlgorithmId(algorithm))
-
-    if (!host.contains("*")) {
-      val extensions   = new CertificateExtensions()
-      val generalNames = new GeneralNames()
-      generalNames.add(new GeneralName(new DNSName(host)))
-      extensions.set(SubjectAlternativeNameExtension.NAME, new SubjectAlternativeNameExtension(false, generalNames))
-      certInfo.set(X509CertInfo.EXTENSIONS, extensions)
-    }
-
-    // Create a new certificate and sign it
-    val cert                 = new X509CertImpl(certInfo)
-    val issuerSigAlg: String = ca.getSigAlgName
-    cert.sign(caKeyPair.getPrivate, issuerSigAlg)
-
-    // Since the signature provider may have a different algorithm ID to what we think it should be,
-    // we need to reset the algorithm ID, and resign the certificate
-    val actualAlgorithm = cert.get(X509CertImpl.SIG_ALG).asInstanceOf[AlgorithmId]
-    certInfo.set(CertificateAlgorithmId.NAME + "." + CertificateAlgorithmId.ALGORITHM, actualAlgorithm)
-    val newCert = new X509CertImpl(certInfo)
-    newCert.sign(caKeyPair.getPrivate, issuerSigAlg)
-    newCert
-    */
+    resp.right.get
   }
 
   def createCA(cn: String, duration: FiniteDuration, kp: Option[KeyPair], serial: Option[Long]): GenCertResponse = {
@@ -1262,47 +1205,7 @@ object FakeKeyStore {
     val resp = Await.result(f, 30.seconds)
 
     resp.right.get
-    /*
-    val certInfo = new X509CertInfo()
-
-    // Serial number and version
-    certInfo.set(X509CertInfo.SERIAL_NUMBER, new CertificateSerialNumber(new BigInteger(64, new SecureRandom())))
-    certInfo.set(X509CertInfo.VERSION, new CertificateVersion(CertificateVersion.V3))
-
-    // Validity
-    val validFrom = new Date()
-    val validTo   = new Date(validFrom.getTime + duration.toMillis)
-    val validity  = new CertificateValidity(validFrom, validTo)
-    certInfo.set(X509CertInfo.VALIDITY, validity)
-
-    // Subject and issuer
-    val owner = new X500Name(cn)
-    certInfo.set(X509CertInfo.SUBJECT, owner)
-    certInfo.set(X509CertInfo.ISSUER, owner)
-
-    // Key and algorithm
-    certInfo.set(X509CertInfo.KEY, new CertificateX509Key(keyPair.getPublic))
-    val algorithm = new AlgorithmId(KeystoreSettings.SignatureAlgorithmOID)
-    certInfo.set(X509CertInfo.ALGORITHM_ID, new CertificateAlgorithmId(algorithm))
-
-    val exts = new CertificateExtensions
-    exts.set(BasicConstraintsExtension.NAME, new BasicConstraintsExtension(true, -1))
-    certInfo.set(X509CertInfo.EXTENSIONS, exts)
-
-    // Create a new certificate and sign it
-    val cert = new X509CertImpl(certInfo)
-    cert.sign(keyPair.getPrivate, KeystoreSettings.SignatureAlgorithmName)
-
-    // Since the signature provider may have a different algorithm ID to what we think it should be,
-    // we need to reset the algorithm ID, and resign the certificate
-    val actualAlgorithm = cert.get(X509CertImpl.SIG_ALG).asInstanceOf[AlgorithmId]
-    certInfo.set(CertificateAlgorithmId.NAME + "." + CertificateAlgorithmId.ALGORITHM, actualAlgorithm)
-    val newCert = new X509CertImpl(certInfo)
-    newCert.sign(keyPair.getPrivate, KeystoreSettings.SignatureAlgorithmName)
-    newCert
-    */
   }
-
 }
 
 class CustomSSLEngine(delegate: SSLEngine) extends SSLEngine {

@@ -168,6 +168,31 @@ class Prompt extends Component {
   }
 }
 
+class Popup extends Component {
+  render() {
+    return (
+      <div className="modal" tabindex="-1" role="dialog" style={{ display: 'block' }}>
+        <div className="modal-dialog" role="document">
+          <div className="modal-content">
+            <div className="modal-header">
+              <button
+                type="button"
+                className="close"
+                data-dismiss="modal"
+                onClick={this.props.cancel}
+                aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+              <h4 className="modal-title">{this.props.title}</h4>
+            </div>
+            {this.props.body(this.props.ok, this.props.cancel)}
+          </div>
+        </div>
+      </div>
+    );
+  }
+}
+
 export function registerAlert() {
   window.oldAlert = window.alert;
   if (!document.getElementById('otoroshi-alerts-container')) {
@@ -244,6 +269,34 @@ export function registerPrompt() {
             success(null);
             ReactDOM.unmountComponentAtNode(document.getElementById('otoroshi-alerts-container'));
           }}
+        />,
+        document.getElementById('otoroshi-alerts-container')
+      );
+    });
+  };
+}
+
+export function registerPopup() {
+  if (!document.getElementById('otoroshi-alerts-container')) {
+    const div = document.createElement('div');
+    div.setAttribute('id', 'otoroshi-alerts-container');
+    document.body.appendChild(div);
+  }
+  window.popup = (title, fn, props = {}) => {
+    return new Promise((success, failure) => {
+      ReactDOM.render(
+        <Popup
+          body={fn}
+          title={title}
+          ok={inputValue => {
+            success(inputValue);
+            ReactDOM.unmountComponentAtNode(document.getElementById('otoroshi-alerts-container'));
+          }}
+          cancel={() => {
+            success(null);
+            ReactDOM.unmountComponentAtNode(document.getElementById('otoroshi-alerts-container'));
+          }}
+          {...props}
         />,
         document.getElementById('otoroshi-alerts-container')
       );

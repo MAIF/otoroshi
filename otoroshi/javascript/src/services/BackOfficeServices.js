@@ -1061,6 +1061,30 @@ export function caCert(cn) {
   }).then(r => r.json());
 }
 
+export function createCertificateFromForm(form) {
+  return fetch(`/bo/api/certificates/_createCertificate`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(form),
+  }).then(r => r.json());
+}
+
+export function createCSR(form) {
+  return fetch(`/bo/api/certificates/_createCSR`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(form),
+  }).then(r => r.json());
+}
+
 export function renewCert(id) {
   return fetch(`/bo/api/certificates/${id}/_renew`, {
     method: 'POST',

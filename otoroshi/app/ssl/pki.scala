@@ -20,6 +20,7 @@ import org.bouncycastle.util.io.pem.PemReader
 import otoroshi.ssl.pki.models._
 import play.api.libs.json._
 import security.IdGenerator
+import ssl.Cert
 import ssl.SSLImplicits._
 import utils.future.Implicits._
 
@@ -123,6 +124,7 @@ object models {
     def chain: String = s"${key.asPem}\n${cert.asPem}\n${ca.asPem}"
     def chainWithCsr: String = s"${key.asPem}\n${cert.asPem}\n${ca.asPem}\n${csr.asPem}"
     def keyPair: KeyPair = new KeyPair(cert.getPublicKey, key)
+    def toCert: Cert = Cert.apply(cert, keyPair, ca, false).enrich()
   }
 
   case class SignCertResponse(cert: X509Certificate, csr: PKCS10CertificationRequest, ca: Option[X509Certificate]) {
@@ -158,12 +160,12 @@ trait Pki {
   }
 
   // sign             signs a certificate
-  def signCert(csr: ByteString, validity: FiniteDuration, caCert: X509Certificate, caKey: PrivateKey)(implicit ec: ExecutionContext): Future[Either[String, SignCertResponse]] = {
+  def signCert(csr: ByteString, validity: FiniteDuration, caCert: X509Certificate, caKey: PrivateKey, existingSerialNumber: Option[Long])(implicit ec: ExecutionContext): Future[Either[String, SignCertResponse]] = {
     val pemReader = new PemReader(new StringReader(csr.utf8String))
     val pemObject = pemReader.readPemObject()
     val _csr = new PKCS10CertificationRequest(pemObject.getContent)
     pemReader.close()
-    signCert(_csr, validity, caCert, caKey)
+    signCert(_csr, validity, caCert, caKey, existingSerialNumber)
   }
 
   // selfsign         generates a self-signed certificate
@@ -191,11 +193,13 @@ trait Pki {
   def genCert(query: GenCsrQuery, caCert: X509Certificate, caKey: PrivateKey)(implicit ec: ExecutionContext): Future[Either[String, GenCertResponse]]
 
   // sign             signs a certificate
-  def signCert(csr: PKCS10CertificationRequest, validity: FiniteDuration, caCert: X509Certificate, caKey: PrivateKey)(implicit ec: ExecutionContext): Future[Either[String, SignCertResponse]]
+  def signCert(csr: PKCS10CertificationRequest, validity: FiniteDuration, caCert: X509Certificate, caKey: PrivateKey, existingSerialNumber: Option[Long])(implicit ec: ExecutionContext): Future[Either[String, SignCertResponse]]
 
   def genSelfSignedCA(query: GenCsrQuery)(implicit ec: ExecutionContext): Future[Either[String, GenCertResponse]]
 
   def genSelfSignedCert(query: GenCsrQuery)(implicit ec: ExecutionContext): Future[Either[String, GenCertResponse]]
+
+  def genSubCA(query: GenCsrQuery, caCert: X509Certificate, caKey: PrivateKey)(implicit ec: ExecutionContext): Future[Either[String, GenCertResponse]]
 }
 
 class BouncyCastlePki(generator: IdGenerator) extends Pki {
@@ -258,7 +262,7 @@ class BouncyCastlePki(generator: IdGenerator) extends Pki {
       csr <- genCsr(query, caCert, caKey)
       cert <- csr match {
         case Left(err) => FastFuture.successful(Left(err))
-        case Right(_csr) => signCert(_csr.csr, query.duration, caCert, caKey)
+        case Right(_csr) => signCert(_csr.csr, query.duration, caCert, caKey, query.existingSerialNumber)
       }
     } yield cert match {
       case Left(err) => Left(err)
@@ -272,11 +276,11 @@ class BouncyCastlePki(generator: IdGenerator) extends Pki {
   }
 
   // sign             signs a certificate
-  override def signCert(csr: PKCS10CertificationRequest, validity: FiniteDuration, caCert: X509Certificate, caKey: PrivateKey)(implicit ec: ExecutionContext): Future[Either[String, SignCertResponse]] = {
+  override def signCert(csr: PKCS10CertificationRequest, validity: FiniteDuration, caCert: X509Certificate, caKey: PrivateKey, existingSerialNumber: Option[Long])(implicit ec: ExecutionContext): Future[Either[String, SignCertResponse]] = {
     generator.nextIdSafe().map { _serial =>
       val issuer = new X500Name(caCert.getSubjectX500Principal.getName)
-      val serial = java.math.BigInteger.valueOf(_serial) // new java.math.BigInteger(32, new SecureRandom)
-    val from = new java.util.Date
+      val serial = java.math.BigInteger.valueOf(existingSerialNumber.getOrElse(_serial)) // new java.math.BigInteger(32, new SecureRandom)
+      val from = new java.util.Date
       val to = new java.util.Date(System.currentTimeMillis + validity.toMillis)
       val certgen = new X509v3CertificateBuilder(issuer, serial, from, to, csr.getSubject, csr.getSubjectPublicKeyInfo)
       csr.getAttributes.foreach(attr => {
@@ -367,7 +371,7 @@ class BouncyCastlePki(generator: IdGenerator) extends Pki {
     }
   }
 
-  def genSelfSignedCA(query: GenCsrQuery)(implicit ec: ExecutionContext): Future[Either[String, GenCertResponse]] = {
+  override def genSelfSignedCA(query: GenCsrQuery)(implicit ec: ExecutionContext): Future[Either[String, GenCertResponse]] = {
     genKeyPair(query.key).flatMap {
       case Left(e) => Left(e).future
       case Right(_kpr) =>
@@ -399,6 +403,53 @@ class BouncyCastlePki(generator: IdGenerator) extends Pki {
             }
           })
           val holder = certgen.build(signer)
+          val certencoded = holder.toASN1Structure.getEncoded
+          val certificateFactory: CertificateFactory = CertificateFactory.getInstance("X.509")
+          val cert = certificateFactory
+            .generateCertificate(new ByteArrayInputStream(certencoded))
+            .asInstanceOf[X509Certificate]
+          Right(GenCertResponse(_serial, cert, csr, kpr.privateKey, cert))
+        } match {
+          case Failure(e) => Left(e.getMessage).future
+          case Success(either) => either.future
+        }
+    }
+  }
+
+  override def genSubCA(query: GenCsrQuery, caCert: X509Certificate, caKey: PrivateKey)(implicit ec: ExecutionContext): Future[Either[String, GenCertResponse]] = {
+    genKeyPair(query.key).flatMap {
+      case Left(e) => Left(e).future
+      case Right(_kpr) =>
+        val kpr = query.existingKeyPair.map(v => GenKeyPairResponse(v.getPublic, v.getPrivate)).getOrElse(_kpr)
+        generator.nextIdSafe().map { _serial =>
+          val privateKey = PrivateKeyFactory.createKey(kpr.privateKey.getEncoded)
+          val signatureAlgorithm = new DefaultSignatureAlgorithmIdentifierFinder().find(query.signatureAlg)
+          val digestAlgorithm = new DefaultDigestAlgorithmIdentifierFinder().find(query.digestAlg)
+          val signer = new BcRSAContentSignerBuilder(signatureAlgorithm, digestAlgorithm).build(privateKey)
+          val names = new GeneralNames(query.hosts.map(name => new GeneralName(GeneralName.dNSName, name)).toArray)
+          val csrBuilder = new JcaPKCS10CertificationRequestBuilder(new X500Name(query.subj), kpr.publicKey)
+          val extensionsGenerator = new ExtensionsGenerator
+          extensionsGenerator.addExtension(Extension.basicConstraints, true, new BasicConstraints(true))
+          extensionsGenerator.addExtension(Extension.keyUsage, true, new KeyUsage(KeyUsage.keyCertSign | KeyUsage.cRLSign))
+          extensionsGenerator.addExtension(Extension.authorityKeyIdentifier, false, new AuthorityKeyIdentifier(new GeneralNames(new GeneralName(new X509Name(caCert.getSubjectX500Principal.getName))), caCert.getSerialNumber))
+          csrBuilder.addAttribute(PKCSObjectIdentifiers.pkcs_9_at_extensionRequest /* x509Certificate */ , extensionsGenerator.generate)
+          val csr = csrBuilder.build(signer)
+          val issuer = csr.getSubject
+          val serial = java.math.BigInteger.valueOf(query.existingSerialNumber.getOrElse(_serial)) // new java.math.BigInteger(32, new SecureRandom)
+          val from = new java.util.Date
+          val to = new java.util.Date(System.currentTimeMillis + query.duration.toMillis)
+          val certgen = new X509v3CertificateBuilder(issuer, serial, from, to, csr.getSubject, csr.getSubjectPublicKeyInfo)
+          csr.getAttributes.foreach(attr => {
+            attr.getAttributeValues.collect {
+              case exts: Extensions => {
+                exts.getExtensionOIDs.map(id => exts.getExtension(id)).filter(_ != null).foreach { ext =>
+                  certgen.addExtension(ext.getExtnId, ext.isCritical, ext.getParsedValue)
+                }
+              }
+            }
+          })
+          val certsigner = new BcRSAContentSignerBuilder(csr.getSignatureAlgorithm, digestAlgorithm).build(PrivateKeyFactory.createKey(caKey.getEncoded))
+          val holder = certgen.build(certsigner)
           val certencoded = holder.toASN1Structure.getEncoded
           val certificateFactory: CertificateFactory = CertificateFactory.getInstance("X.509")
           val cert = certificateFactory

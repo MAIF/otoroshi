@@ -70,6 +70,8 @@ POST    /bo/api/certificates/_ca                              controllers.BackOf
 POST    /bo/api/certificates/:id/_renew                       controllers.BackOfficeController.renew(id)
 POST    /bo/api/certificates/_letsencrypt                     controllers.BackOfficeController.createLetsEncryptCertificate()
 POST    /bo/api/certificates/_importP12                       controllers.BackOfficeController.importP12File()
+POST    /bo/api/certificates/_createCertificate               controllers.BackOfficeController.createCertificate()
+POST    /bo/api/certificates/_createCSR                       controllers.BackOfficeController.createCsr()
 
 
 POST    /bo/api/oidc/_fetchConfig                            controllers.BackOfficeController.fetchOpenIdConfiguration()

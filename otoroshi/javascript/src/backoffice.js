@@ -19,7 +19,7 @@ import { GenericLoginPage, GenericLoginPageWithWebAuthn } from './pages/GenericL
 import { SelfUpdatePage } from './pages/SelfUpdatePage';
 import * as BackOfficeServices from './services/BackOfficeServices';
 
-import { registerAlert, registerConfirm, registerPrompt } from './components/window';
+import { registerAlert, registerConfirm, registerPrompt, registerPopup } from './components/window';
 
 if (!window.Symbol) {
   window.Symbol = Symbol;
@@ -111,6 +111,7 @@ function setupWindowUtils() {
   registerAlert();
   registerConfirm();
   registerPrompt();
+  registerPopup();
 }
 
 export function init(node) {
