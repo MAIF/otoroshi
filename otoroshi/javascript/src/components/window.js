@@ -171,7 +171,7 @@ class Prompt extends Component {
 class Popup extends Component {
   render() {
     return (
-      <div className="modal" tabindex="-1" role="dialog" style={{ display: 'block' }}>
+      <div className="modal" tabindex="-1" role="dialog" style={{ display: 'block', ...this.props.style }}>
         <div className="modal-dialog" role="document">
           <div className="modal-content">
             <div className="modal-header">

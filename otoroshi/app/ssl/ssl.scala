@@ -961,6 +961,7 @@ object CertificateData {
   private def base64Decode(base64: String): Array[Byte] = Base64.getMimeDecoder.decode(base64.getBytes(US_ASCII))
 
   def apply(pemContent: String): JsValue = {
+    val finContent = PemHeaders.BeginCertificate + "\n" + pemContent + "\n" + PemHeaders.EndCertificate
     val buffer = base64Decode(
       pemContent.replace(PemHeaders.BeginCertificate, "").replace(PemHeaders.EndCertificate, "")
     )
@@ -968,7 +969,12 @@ object CertificateData {
     val altNames        = cert.altNames
     val rawDomain       = cert.rawDomain
     val domain: String  = cert.domain
-    val client: Boolean = Try(cert.getExtensionValue("2.5.29.37")).map(v => ExtendedKeyUsage.getInstance(v).getUsages.find(_ == KeyPurposeId.id_kp_clientAuth).isDefined).toOption.getOrElse(false)
+    val pemReader       = new org.bouncycastle.openssl.PEMParser(new StringReader(finContent))
+    val holder          = pemReader.readObject().asInstanceOf[org.bouncycastle.cert.X509CertificateHolder]
+    pemReader.close()
+    val usages = ExtendedKeyUsage.fromExtensions(holder.getExtensions).getUsages
+    val client: Boolean = usages.contains(KeyPurposeId.id_kp_clientAuth)
+    // val client: Boolean = Try(cert.getExtensionValue("2.5.29.37")) match {
     Json.obj(
       "issuerDN"     -> cert.getIssuerDN.getName,
       "notAfter"     -> cert.getNotAfter.getTime,

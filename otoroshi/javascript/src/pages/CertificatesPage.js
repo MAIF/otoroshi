@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import * as BackOfficeServices from '../services/BackOfficeServices';
-import { Table, TextInput, TextareaInput, LabelInput, BooleanInput, ArrayInput, SelectInput, NumberInput } from '../components/inputs';
+import { Table, TextInput, TextareaInput, LabelInput, BooleanInput, ArrayInput, SelectInput, NumberInput, BiColumnBooleanInput } from '../components/inputs';
 import moment from 'moment';
 import faker from 'faker';
 
@@ -339,15 +339,15 @@ export class CertificatesPage extends Component {
     { title: 'Description', content: item => item.description },
     { title: 'Domain', content: item => (!item.ca ? item.domain : '') },
     { title: 'Subject', content: item => item.subject },
-    {
-      title: 'Valid',
-      content: item => {
-        const now = Date.now();
-        return item.valid && (now > item.from && now < item.to) ? 'yes' : 'no';
-      },
-      style: { textAlign: 'center', width: 70 },
-      notFilterable: true,
-    },
+    // {
+    //   title: 'Valid',
+    //   content: item => {
+    //     const now = Date.now();
+    //     return item.valid && (now > item.from && now < item.to) ? 'yes' : 'no';
+    //   },
+    //   style: { textAlign: 'center', width: 70 },
+    //   notFilterable: true,
+    // },
     {
       title: 'CA',
       content: item =>
@@ -435,7 +435,7 @@ export class CertificatesPage extends Component {
   }
 
   createLetsEncrypt = () => {
-    window.popup('New Certificate', (ok, cancel) => <NewCertificateForm ok={ok} cancel={cancel} letsEncrypt={true} />).then(form => {
+    window.popup('New Certificate', (ok, cancel) => <NewCertificateForm ok={ok} cancel={cancel} letsEncrypt={true} />, { style: { width: '100%' }}).then(form => {
       if (form) {
         BackOfficeServices.createCertificateFromForm(form).then(cert => {
           this.props.setTitle(`Create a new Certificate`);
@@ -472,7 +472,7 @@ export class CertificatesPage extends Component {
   createCASigned = (e, id) => {
     e.preventDefault();
     e.stopPropagation();
-    window.popup('New Certificate', (ok, cancel) => <NewCertificateForm ok={ok} cancel={cancel} caRef={id}/>).then(form => {
+    window.popup('New Certificate', (ok, cancel) => <NewCertificateForm ok={ok} cancel={cancel} caRef={id}/>, { style: { width: '100%' }}).then(form => {
       if (form) {
         BackOfficeServices.createCertificateFromForm(form).then(cert => {
           this.props.setTitle(`Create a new Certificate`);
@@ -524,7 +524,7 @@ export class CertificatesPage extends Component {
 
   createCertificate = (e) => {
     e.preventDefault();
-    window.popup('New Certificate', (ok, cancel) => <NewCertificateForm ok={ok} cancel={cancel} />).then(form => {
+    window.popup('New Certificate', (ok, cancel) => <NewCertificateForm ok={ok} cancel={cancel} />, { style: { width: '100%' }}).then(form => {
       if (form) {
         BackOfficeServices.createCertificateFromForm(form).then(cert => {
           console.log(form)
@@ -603,7 +603,7 @@ export class CertificatesPage extends Component {
                 onClick={this.createLetsEncrypt}
                 style={{ marginRight: 0 }}
                 className="btn btn-primary">
-                <i className="glyphicon glyphicon-plus-sign" /> Let's Encrypt cert.
+                <i className="glyphicon glyphicon-plus-sign" /> Let's Encrypt Certificate
               </button>
             <button
               type="button"
@@ -722,24 +722,30 @@ class NewCertificateForm extends Component {
               valuesFrom="/bo/api/proxy/api/certificates?ca=true"
               transformer={a => ({ value: a.id, label: a.name + ' - ' + a.description })}
             />
-            <BooleanInput 
-              label="Let's Encrypt"
-              value={this.state.letsEncrypt}
-              onChange={v => this.changeTheValue('letsEncrypt', v)}
-              help="Is your certificate a Let's Encrypt certificate"
-            />
-            {!this.state.client && <BooleanInput 
-              label="CA certificate"
-              value={this.state.ca}
-              onChange={v => this.changeTheValue('ca', v)}
-              help="Is your certificate a CA"
-            />}
-            {!this.state.ca && <BooleanInput 
-              label="Client certificate"
-              value={this.state.client}
-              onChange={v => this.changeTheValue('client', v)}
-              help="Is your certificate a client certificate"
-            />}
+            <div className="row">
+              <div className="col-md-6">
+                {!this.state.client && <BiColumnBooleanInput 
+                  label="CA certificate"
+                  value={this.state.ca}
+                  onChange={v => this.changeTheValue('ca', v)}
+                  help="Is your certificate a CA"
+                />}
+                {!this.state.ca && <BiColumnBooleanInput 
+                  label="Client certificate"
+                  value={this.state.client}
+                  onChange={v => this.changeTheValue('client', v)}
+                  help="Is your certificate a client certificate"
+                />}
+              </div>
+              <div className="col-md-6">
+                <BiColumnBooleanInput 
+                  label="Let's Encrypt"
+                  value={this.state.letsEncrypt}
+                  onChange={v => this.changeTheValue('letsEncrypt', v)}
+                  help="Is your certificate a Let's Encrypt certificate"
+                />
+              </div>
+            </div>
             <SelectInput
               label="Key Type"
               help="The type of the private key"
@@ -758,6 +764,32 @@ class NewCertificateForm extends Component {
                 { label: '1024', value: 1024 },
                 { label: '2048', value: 2048 },
                 { label: '4096', value: 4096 },
+              ]}
+            />
+            <SelectInput
+              label="Signature Algorithm"
+              help="The signature algorithm used"
+              value={this.state.signatureAlg}
+              onChange={v => changeTheValue('signatureAlg', v)}
+              possibleValues={[
+                { label: 'SHA224WithRSAEncryption', value: 'SHA224WithRSAEncryption' },
+                { label: 'SHA256WithRSAEncryption', value: 'SHA256WithRSAEncryption' },
+                { label: 'SHA384WithRSAEncryption', value: 'SHA384WithRSAEncryption' },
+                { label: 'SHA512WithRSAEncryption', value: 'SHA512WithRSAEncryption' },
+              ]}
+            />
+            <SelectInput
+              label="Digest Algorithm"
+              help="The digest algorithm used"
+              value={this.state.digestAlg}
+              onChange={v => changeTheValue('digestAlg', v)}
+              possibleValues={[
+                { label: "SHA-224", value: "SHA-224" },
+                { label: "SHA-256", value: "SHA-256" },
+                { label: "SHA-384", value: "SHA-384" },
+                { label: "SHA-512", value: "SHA-512" },
+                { label: "SHA-512-224", value: "SHA-512-224" },
+                { label: "SHA-512-256", value: "SHA-512-256" }
               ]}
             />
             <NumberInput
@@ -779,17 +811,12 @@ class NewCertificateForm extends Component {
               onChange={v => this.changeTheValue('hosts', v)}
               help="The hosts of your certificate"
             />}
-            {this.state.caRef && <div className="form-group">
-              <label className="col-xs-12 col-sm-2 control-label" />
-              <div className="col-sm-10">
-                <button type="button" className="btn btn-primary" onClick={this.csr}>
-                  <i className="glyphicon glyphicon-file" /> Download CSR
-                </button>
-              </div>
-            </div>}
           </form>
         </div>
         <div className="modal-footer">
+          {this.state.caRef && <button type="button" className="btn btn-primary" onClick={this.csr}>
+            <i className="glyphicon glyphicon-file" /> Download CSR
+          </button>}
           <button type="button" className="btn btn-danger" onClick={this.props.cancel}>
             Cancel
           </button>

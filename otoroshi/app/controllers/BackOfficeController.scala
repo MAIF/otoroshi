@@ -632,13 +632,13 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
             Ok(CertificateData(content))
           } recover {
             case e =>
-              e.printStackTrace()
+              // e.printStackTrace()
               BadRequest(Json.obj("error" -> s"Bad certificate : $e"))
           } get
         }
       } recover {
         case e =>
-          e.printStackTrace()
+          // e.printStackTrace()
           BadRequest(Json.obj("error" -> s"Bad certificate : $e"))
       } get
     }
@@ -1050,7 +1050,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
           }
         }
         case _ => {
-          GenCsrQuery.fromJson(ctx.request.body) match {
+          GenCsrQuery.fromJson(ctx.request.body).map(v => v.copy(duration = v.duration * (24 * 60 * 60 * 1000))) match {
             case Left(err) => BadRequest(Json.obj("error" -> err)).future
             case Right(query) if query.ca && issuer.isEmpty => handle(pki.genSelfSignedCA(query))
             case Right(query) if query.ca && issuer.isDefined => handle(pki.genSubCA(query, issuer.get.certificate.get, issuer.get.keyPair.getPrivate()))
