@@ -105,10 +105,11 @@ case class Cert(
     valid: Boolean = false,
     autoRenew: Boolean = false,
     letsEncrypt: Boolean = false,
+    client: Boolean = false,
+    keypair: Boolean = false,
     subject: String = "--",
     from: DateTime = DateTime.now(),
     to: DateTime = DateTime.now(),
-    client: Boolean,
     sans: Seq[String] = Seq.empty
 ) {
 
@@ -129,23 +130,23 @@ case class Cert(
           val cas = certificates.filter(cert => cert.ca)
           caRef.flatMap(ref => cas.find(_.id == ref)) match {
             case None if ca =>
-              val resp = FakeKeyStore.createCA(subject, duration, Some(keyPair), certificate.map(_.getSerialNumber.longValue()))
+              val resp = FakeKeyStore.createCA(subject, duration, Some(cryptoKeyPair), certificate.map(_.getSerialNumber.longValue()))
               copy(chain = resp.cert.asPem, privateKey = resp.key.asPem).enrich()
             case None if selfSigned =>
-              val resp = FakeKeyStore.createSelfSignedCertificate(domain, duration, Some(keyPair), certificate.map(_.getSerialNumber.longValue()))
+              val resp = FakeKeyStore.createSelfSignedCertificate(domain, duration, Some(cryptoKeyPair), certificate.map(_.getSerialNumber.longValue()))
               copy(chain = resp.cert.asPem, privateKey = resp.key.asPem).enrich()
             case None => // should not happens
-              val resp = FakeKeyStore.createSelfSignedCertificate(domain, duration, Some(keyPair), certificate.map(_.getSerialNumber.longValue()))
+              val resp = FakeKeyStore.createSelfSignedCertificate(domain, duration, Some(cryptoKeyPair), certificate.map(_.getSerialNumber.longValue()))
               copy(chain = resp.cert.asPem, privateKey = resp.key.asPem).enrich()
             case Some(caCert) if ca =>
-              val resp = FakeKeyStore.createSubCa(domain, duration, Some(keyPair), certificate.map(_.getSerialNumber.longValue()), caCert.certificate.get, caCert.keyPair)
+              val resp = FakeKeyStore.createSubCa(domain, duration, Some(cryptoKeyPair), certificate.map(_.getSerialNumber.longValue()), caCert.certificate.get, caCert.cryptoKeyPair)
               copy(chain = resp.cert.asPem + "\n" + caCert.chain, privateKey = resp.key.asPem).enrich()
             case Some(caCert) =>
-              val resp = FakeKeyStore.createCertificateFromCA(domain, duration, Some(keyPair), certificate.map(_.getSerialNumber.longValue()), caCert.certificate.get, caCert.keyPair)
+              val resp = FakeKeyStore.createCertificateFromCA(domain, duration, Some(cryptoKeyPair), certificate.map(_.getSerialNumber.longValue()), caCert.certificate.get, caCert.cryptoKeyPair)
               copy(chain = resp.cert.asPem + "\n" + caCert.chain, privateKey = resp.key.asPem).enrich()
             case _ =>
               println("wait what ???")
-              val resp = FakeKeyStore.createSelfSignedCertificate(domain, duration, Some(keyPair), certificate.map(_.getSerialNumber.longValue()))
+              val resp = FakeKeyStore.createSelfSignedCertificate(domain, duration, Some(cryptoKeyPair), certificate.map(_.getSerialNumber.longValue()))
               copy(chain = resp.cert.asPem, privateKey = resp.key.asPem).enrich()
           }
         }
@@ -241,7 +242,7 @@ case class Cert(
         false
     } getOrElse false
   }
-  lazy val keyPair: KeyPair = {
+  lazy val cryptoKeyPair: KeyPair = {
     val privkeySpec = DynamicSSLEngineProvider.readPrivateKey(id, privateKey, None).right.get
     val privkey: PrivateKey = Try(KeyFactory.getInstance("RSA"))
       .orElse(Try(KeyFactory.getInstance("DSA")))
@@ -269,7 +270,7 @@ object Cert {
       privateKey = keyPair.getPrivate.asPem,
       caRef = caRef,
       autoRenew = false,
-      client = client
+      client = client,
     ).enrich()
     c.copy(name = c.domain, description = s"Certificate for ${c.subject}")
   }
@@ -324,6 +325,7 @@ object Cert {
       "from"       -> cert.from.getMillis,
       "to"         -> cert.to.getMillis,
       "client"     -> cert.client,
+      "keypair"    -> cert.keypair,
       "sans"       -> JsArray(cert.sans.map(JsString.apply))
     )
     override def reads(json: JsValue): JsResult[Cert] =
@@ -340,6 +342,7 @@ object Cert {
           selfSigned = (json \ "selfSigned").asOpt[Boolean].getOrElse(false),
           ca = (json \ "ca").asOpt[Boolean].getOrElse(false),
           client = (json \ "client").asOpt[Boolean].getOrElse(false),
+          keypair = (json \ "keypair").asOpt[Boolean].getOrElse(false),
           valid = (json \ "valid").asOpt[Boolean].getOrElse(false),
           autoRenew = (json \ "autoRenew").asOpt[Boolean].getOrElse(false),
           letsEncrypt = (json \ "letsEncrypt").asOpt[Boolean].getOrElse(false),
@@ -973,7 +976,7 @@ object CertificateData {
     val pemReader       = new org.bouncycastle.openssl.PEMParser(new StringReader(finContent))
     val holder          = pemReader.readObject().asInstanceOf[org.bouncycastle.cert.X509CertificateHolder]
     pemReader.close()
-    val usages = ExtendedKeyUsage.fromExtensions(holder.getExtensions).getUsages
+    val usages = Option(ExtendedKeyUsage.fromExtensions(holder.getExtensions)).map(_.getUsages).getOrElse(Array.empty)
     val client: Boolean = usages.contains(KeyPurposeId.id_kp_clientAuth)
     // val client: Boolean = Try(cert.getExtensionValue("2.5.29.37")) match {
     Json.obj(

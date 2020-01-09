@@ -678,7 +678,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
                                                                 FiniteDuration(365, TimeUnit.DAYS),
                                                                 None, None,
                                                                 ca.certificate.get,
-                                                                ca.keyPair)
+                                                                ca.cryptoKeyPair)
                 val c = Cert(cert.cert, cert.keyPair, ca, false)
                 val cc = c.enrich()
                 Ok(cc.toJson)
@@ -716,7 +716,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
                   FiniteDuration(365, TimeUnit.DAYS),
                   None, None,
                   ca.certificate.get,
-                  ca.keyPair)
+                  ca.cryptoKeyPair)
                 val c = Cert(cert.cert, cert.keyPair, ca, true)
                 val cc = c.enrich()
                 Ok(cc.toJson)
@@ -801,7 +801,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
                                                                 FiniteDuration(365, TimeUnit.DAYS),
                                                                 None, None,
                                                                 ca.certificate.get,
-                                                                ca.keyPair)
+                                                                ca.cryptoKeyPair)
                 Ok(Cert(cert.cert, cert.keyPair, ca, false).enrich().toJson)
               }
             }
@@ -829,7 +829,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
                   FiniteDuration(365, TimeUnit.DAYS),
                   None, None,
                   ca.certificate.get,
-                  ca.keyPair)
+                  ca.cryptoKeyPair)
                 Ok(Cert(cert.cert, cert.keyPair, ca, true).enrich().toJson)
               }
             }
@@ -1050,11 +1050,11 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
           GenCsrQuery.fromJson(ctx.request.body).map(v => v.copy(duration = v.duration * (24 * 60 * 60 * 1000))) match {
             case Left(err) => BadRequest(Json.obj("error" -> err)).future
             case Right(query) if query.ca && issuer.isEmpty => handle(env.pki.genSelfSignedCA(query))
-            case Right(query) if query.ca && issuer.isDefined => handle(env.pki.genSubCA(query, issuer.get.certificate.get, issuer.get.keyPair.getPrivate()))
+            case Right(query) if query.ca && issuer.isDefined => handle(env.pki.genSubCA(query, issuer.get.certificate.get, issuer.get.cryptoKeyPair.getPrivate()))
             case Right(query) if query.client && issuer.isEmpty => handle(env.pki.genSelfSignedCert(query))
-            case Right(query) if query.client && issuer.isDefined => handle(env.pki.genCert(query, issuer.get.certificate.get, issuer.get.keyPair.getPrivate()))
+            case Right(query) if query.client && issuer.isDefined => handle(env.pki.genCert(query, issuer.get.certificate.get, issuer.get.cryptoKeyPair.getPrivate()))
             case Right(query) if issuer.isEmpty => handle(env.pki.genSelfSignedCert(query))
-            case Right(query) if issuer.isDefined => handle(env.pki.genCert(query, issuer.get.certificate.get, issuer.get.keyPair.getPrivate()))
+            case Right(query) if issuer.isDefined => handle(env.pki.genCert(query, issuer.get.certificate.get, issuer.get.cryptoKeyPair.getPrivate()))
             case _ => BadRequest(Json.obj("error" -> "bad state")).future
           }
         }

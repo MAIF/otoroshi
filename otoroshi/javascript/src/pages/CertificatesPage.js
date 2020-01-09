@@ -102,15 +102,28 @@ class Commands extends Component {
   createCASigned = (e, id) => {
     e.preventDefault();
     e.stopPropagation();
-    window.newPrompt('Certificate hostname').then(value => {
-      if (value && value.trim() !== '') {
-        BackOfficeServices.caSignedCert(id, value).then(cert => {
-          this.props.setTitle(`Create a new certificate`);
+    window.popup('New Certificate', (ok, cancel) => <NewCertificateForm ok={ok} cancel={cancel} caRef={id}/>, { style: { width: '100%' }}).then(form => {
+      if (form) {
+        BackOfficeServices.createCertificateFromForm(form).then(cert => {
+          this.props.setTitle(`Create a new Certificate`);
           window.history.replaceState({}, '', `/bo/dashboard/certificates/add`);
-          this.props.table().setState({ currentItem: cert, showAddForm: true });
+          if (form.letsEncrypt) {
+            this.table.setState({ currentItem: cert, showEditForm: true });
+          } else {
+            this.table.setState({ currentItem: cert, showAddForm: true });
+          }
         });
       }
     });
+    // window.newPrompt('Certificate hostname').then(value => {
+    //   if (value && value.trim() !== '') {
+    //     BackOfficeServices.caSignedCert(id, value).then(cert => {
+    //       this.props.setTitle(`Create a new certificate`);
+    //       window.history.replaceState({}, '', `/bo/dashboard/certificates/add`);
+    //       this.props.table().setState({ currentItem: cert, showAddForm: true });
+    //     });
+    //   }
+    // });
   };
 
   componentDidMount() {
@@ -332,6 +345,10 @@ export class CertificatesPage extends Component {
       type: 'bool',
       props: { label: 'Client cert.' },
     },
+    keypair: {
+      type: 'bool',
+      props: { label: 'Keypair' },
+    },
   };
 
   columns = [
@@ -349,10 +366,10 @@ export class CertificatesPage extends Component {
     //   notFilterable: true,
     // },
     {
-      title: 'CA',
+      title: ' ',
       content: item =>
         !item.ca ? (
-          'no'
+          null
         ) : (
           /*'yes'*/ <button
             type="button"
@@ -365,23 +382,41 @@ export class CertificatesPage extends Component {
       notFilterable: true,
     },
     {
-      title: 'Client',
-      content: item => (!item.client ? 'no' : <span className="label label-success">yes</span>),
-      style: { textAlign: 'center', width: 70 },
+      title: 'Type',
+      content: item => (
+        item.client ?             <span className="label label-primary">client</span> : (
+          item.ca ?               <span className="label label-info">ca</span> : (
+            item.letsEncrypt ?    <span className="label label-warning">let's encrypt</span> : (
+              item.keypair ?      <span className="label label-default">keypair</span> : (
+                item.selfSigned ? <span className="label label-danger">self signed</span> : (
+                  <span className="label label-success">certificate</span>
+                )
+              )
+            )
+          )
+        )
+      ),
+      style: { textAlign: 'center', width: 100 },
       notFilterable: true,
     },
-    {
-      title: 'Self signed',
-      content: item => (item.selfSigned ? <span className="label label-danger">yes</span> : 'no'),
-      style: { textAlign: 'center', width: 90 },
-      notFilterable: true,
-    },
-    {
-      title: 'Let\'s Encrypt',
-      content: item => (!item.letsEncrypt ? 'no' : <span className="label label-success">yes</span>),
-      style: { textAlign: 'center', width: 90 },
-      notFilterable: true,
-    },
+    // {
+    //   title: 'Client',
+    //   content: item => (!item.client ? 'no' : <span className="label label-success">yes</span>),
+    //   style: { textAlign: 'center', width: 70 },
+    //   notFilterable: true,
+    // },
+    // {
+    //   title: 'Self signed',
+    //   content: item => (item.selfSigned ? <span className="label label-danger">yes</span> : 'no'),
+    //   style: { textAlign: 'center', width: 90 },
+    //   notFilterable: true,
+    // },
+    // {
+    //   title: 'Let\'s Encrypt',
+    //   content: item => (!item.letsEncrypt ? 'no' : <span className="label label-success">yes</span>),
+    //   style: { textAlign: 'center', width: 90 },
+    //   notFilterable: true,
+    // },
     { 
       title: 'From', 
       content: item => moment(item.from).format('DD/MM/YYYY HH:mm:ss'),
@@ -394,7 +429,7 @@ export class CertificatesPage extends Component {
     },
   ];
 
-  formFlow = ['id', 'name', 'description', 'autoRenew', 'client', 'commands', 'valid', 'chain', 'privateKey', 'infos'];
+  formFlow = ['id', 'name', 'description', 'autoRenew', 'client', 'keypair', 'commands', 'valid', 'chain', 'privateKey', 'infos'];
 
   componentDidMount() {
     this.props.setTitle(`All certificates`);

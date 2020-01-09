@@ -179,6 +179,7 @@ object AlgoSettings extends FromJson[AlgoSettings] {
         case "RSAlgoSettings"   => RSAlgoSettings.fromJson(json)
         case "ESAlgoSettings"   => ESAlgoSettings.fromJson(json)
         case "JWKSAlgoSettings" => JWKSAlgoSettings.fromJson(json)
+        case "RSAKPAlgoSettings" => RSAKPAlgoSettings.fromJson(json)
       }
     } recover {
       case e => Left(e)
@@ -476,6 +477,49 @@ case class JWKSAlgoSettings(url: String,
     "kty"     -> kty.getValue,
     "proxy"   -> WSProxyServerJson.maybeProxyToJson(proxy),
     "mtlsConfig" -> mtlsConfig.json
+  )
+}
+
+object RSAKPAlgoSettings extends FromJson[RSAKPAlgoSettings] {
+  override def fromJson(json: JsValue): Either[Throwable, RSAKPAlgoSettings] =
+    Try {
+      Right(
+        RSAKPAlgoSettings(
+          (json \ "size").as[Int],
+          (json \ "certId").as[String]
+        )
+      )
+    } recover {
+      case e => Left(e)
+    } get
+}
+case class RSAKPAlgoSettings(size: Int, certId: String) extends AlgoSettings {
+
+  import scala.concurrent.duration._
+
+  override def asAlgorithm(mode: AlgoMode)(implicit env: Env): Option[Algorithm] = {
+    Await.result(asAlgorithmF(mode)(env, env.otoroshiExecutionContext), 10.seconds)
+  }
+
+  override def asAlgorithmF(mode: AlgoMode)(implicit env: Env, ec: ExecutionContext): Future[Option[Algorithm]] = {
+    env.datastores.certificatesDataStore.findById(certId).map(_.flatMap { cert =>
+      val keyPair = cert.cryptoKeyPair
+      (keyPair.getPublic, keyPair.getPrivate) match {
+        case (pk: RSAPublicKey, pkk: RSAPrivateKey) => size match {
+          case 256 => Some(Algorithm.RSA256(pk, pkk))
+          case 384 => Some(Algorithm.RSA384(pk, pkk))
+          case 512 => Some(Algorithm.RSA512(pk, pkk))
+          case _   => None
+        }
+        case _ => None
+      }
+    })
+  }
+
+  override def asJson = Json.obj(
+    "type"   -> "RSAKPAlgoSettings",
+    "size"   -> this.size,
+    "certId" -> this.certId
   )
 }
 

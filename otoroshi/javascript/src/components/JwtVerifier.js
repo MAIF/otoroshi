@@ -168,6 +168,13 @@ export class AlgoSettings extends Component {
                   }
                 });
                 break;
+              case 'RSAKPAlgoSettings':
+                changeTheValue(path + '', {
+                  type: 'RSAKPAlgoSettings',
+                  size: 512,
+                  certId: null,
+                });
+                break;
             }
             // changeTheValue(path + '', e)
           }}
@@ -176,6 +183,7 @@ export class AlgoSettings extends Component {
             { label: 'RSASSA-PKCS1 + SHA', value: 'RSAlgoSettings' },
             { label: 'ECDSA + SHA', value: 'ESAlgoSettings' },
             { label: 'JWK Set', value: 'JWKSAlgoSettings' },
+            { label: 'RSASSA-PKCS1 + SHA from KeyPair', value: 'RSAKPAlgoSettings' },
           ]}
           help="What kind of algorithm you want to use to verify/sign your JWT token with"
         />
@@ -224,6 +232,27 @@ export class AlgoSettings extends Component {
             style={{ fontFamily: 'monospace'}}
             help="The RSA private key, private key can be empty if not used for JWT token signing"
             onChange={e => changeTheValue(path + '.privateKey', e)}
+          />,
+        ]}
+        {algo.type === 'RSAKPAlgoSettings' && [
+          <SelectInput
+            label="SHA Size"
+            help="Word size for the SHA-2 hash function used"
+            value={algo.size}
+            onChange={v => changeTheValue(path + '.size', v)}
+            possibleValues={[
+              { label: '256', value: 256 },
+              { label: '384', value: 384 },
+              { label: '512', value: 512 },
+            ]}
+          />,
+          <SelectInput
+            label="KeyPair"
+            help="The keypair used to sign/verify token"
+            value={algo.certId}
+            onChange={v => changeTheValue(path + '.certId', v)}
+            valuesFrom="/bo/api/proxy/api/certificates?keypair=true"
+            transformer={a => ({ value: a.id, label: a.name + ' - ' + a.description })}
           />,
         ]}
         {algo.type === 'ESAlgoSettings' && [

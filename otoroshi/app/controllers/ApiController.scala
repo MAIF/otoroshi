@@ -2693,11 +2693,12 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
         ctx.from
       )
     )
-    val id: Option[String]      = ctx.request.queryString.get("id").flatMap(_.headOption)
-    val domain: Option[String]  = ctx.request.queryString.get("domain").flatMap(_.headOption)
-    val client: Option[Boolean] = ctx.request.queryString.get("client").flatMap(_.headOption).map(_.contains("true"))
-    val ca: Option[Boolean]     = ctx.request.queryString.get("ca").flatMap(_.headOption).map(_.contains("true"))
-    val hasFilters              = id.orElse(domain).orElse(client).orElse(ca).isDefined
+    val id: Option[String]       = ctx.request.queryString.get("id").flatMap(_.headOption)
+    val domain: Option[String]   = ctx.request.queryString.get("domain").flatMap(_.headOption)
+    val client: Option[Boolean]  = ctx.request.queryString.get("client").flatMap(_.headOption).map(_.contains("true"))
+    val ca: Option[Boolean]      = ctx.request.queryString.get("ca").flatMap(_.headOption).map(_.contains("true"))
+    val keypair: Option[Boolean] = ctx.request.queryString.get("keypair").flatMap(_.headOption).map(_.contains("true"))
+    val hasFilters               = id.orElse(domain).orElse(client).orElse(ca).orElse(keypair).isDefined
     env.datastores.certificatesDataStore.streamedFindAndMat(_ => true, 50, paginationPage, paginationPageSize).map {
       groups =>
         if (hasFilters) {
@@ -2705,11 +2706,12 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
             JsArray(
               groups
                 .filter {
-                  case group if ca.isDefined && ca.get && group.ca             => true
-                  case group if client.isDefined && client.get && group.client => true
-                  case group if id.isDefined && group.id == id.get             => true
-                  case group if domain.isDefined && group.domain == domain.get => true
-                  case _                                                       => false
+                  case group if keypair.isDefined && keypair.get && group.keypair => true
+                  case group if ca.isDefined && ca.get && group.ca                => true
+                  case group if client.isDefined && client.get && group.client    => true
+                  case group if id.isDefined && group.id == id.get                => true
+                  case group if domain.isDefined && group.domain == domain.get    => true
+                  case _                                                          => false
                 }
                 .map(_.toJson)
             )

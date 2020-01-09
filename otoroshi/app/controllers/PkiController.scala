@@ -48,7 +48,7 @@ class PkiController(ApiAction: ApiAction,  cc: ControllerComponents)(implicit en
             case Left(err) => BadRequest(Json.obj("error" -> err)).future
             case Right(resp) =>
               val _cert = resp.toCert
-              val cert = _cert.copy(name = s"KeyPair $serialNumber", description = "Public / Private key pair")
+              val cert = _cert.copy(name = s"KeyPair - $serialNumber", description = s"Public / Private key pair - $serialNumber", keypair = true)
               cert.save().map(_ => Ok(kp.json.as[JsObject] ++ Json.obj("certId" -> cert.id)))
           }
       }
@@ -68,7 +68,7 @@ class PkiController(ApiAction: ApiAction,  cc: ControllerComponents)(implicit en
 
   def genSelfSignedCert() = ApiAction.async(sourceBodyParser) { ctx =>
     ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { body =>
-      env.pki.genSelfSignedCA(body).flatMap {
+      env.pki.genSelfSignedCert(body).flatMap {
         case Left(err) => BadRequest(Json.obj("error" -> err)).future
         case Right(kp) =>
           val cert = kp.toCert
@@ -82,7 +82,7 @@ class PkiController(ApiAction: ApiAction,  cc: ControllerComponents)(implicit en
     ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { body =>
       findCertificateByIdOrSerialNumber(ca).flatMap {
         case None => NotFound(Json.obj("error" -> "ca not found !")).future
-        case Some(cacert) => env.pki.signCert(body, duration, cacert.certificate.get, cacert.keyPair.getPrivate, None).map {
+        case Some(cacert) => env.pki.signCert(body, duration, cacert.certificate.get, cacert.cryptoKeyPair.getPrivate, None).map {
           case Left(err) => BadRequest(Json.obj("error" -> err))
           case Right(kp) => Ok(kp.json)
         }
@@ -117,7 +117,7 @@ class PkiController(ApiAction: ApiAction,  cc: ControllerComponents)(implicit en
     ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { body =>
       findCertificateByIdOrSerialNumber(ca).flatMap {
         case None => NotFound(Json.obj("error" -> "ca not found !")).future
-        case Some(cacert) => env.pki.genCert(body, cacert.certificate.get, cacert.keyPair.getPrivate).flatMap {
+        case Some(cacert) => env.pki.genCert(body, cacert.certificate.get, cacert.cryptoKeyPair.getPrivate).flatMap {
           case Left(err) => BadRequest(Json.obj("error" -> err)).future
           case Right(kp) =>
             val cert = kp.toCert
@@ -131,7 +131,7 @@ class PkiController(ApiAction: ApiAction,  cc: ControllerComponents)(implicit en
     ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { body =>
       findCertificateByIdOrSerialNumber(ca).flatMap {
         case None => NotFound(Json.obj("error" -> "ca not found !")).future
-        case Some(cacert) => env.pki.genSubCA(body, cacert.certificate.get, cacert.keyPair.getPrivate).flatMap {
+        case Some(cacert) => env.pki.genSubCA(body, cacert.certificate.get, cacert.cryptoKeyPair.getPrivate).flatMap {
           case Left(err) => BadRequest(Json.obj("error" -> err)).future
           case Right(kp) =>
             val cert = kp.toCert
