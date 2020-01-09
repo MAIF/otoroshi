@@ -103,6 +103,7 @@ object models {
       "privateKey" -> privateKey.asPem
     )
     def chain: String = s"${publicKey.asPem}\n${privateKey.asPem}"
+    def keyPair: KeyPair = new KeyPair(publicKey, privateKey)
   }
 
   case class GenCsrResponse(csr: PKCS10CertificationRequest, publicKey: PublicKey, privateKey: PrivateKey) {

@@ -3,6 +3,7 @@ package controllers
 import actions.ApiAction
 import akka.util.ByteString
 import env.Env
+import otoroshi.ssl.pki.models.GenCsrQuery
 import play.api.Logger
 import play.api.libs.json.{JsObject, Json}
 import play.api.libs.streams.Accumulator
@@ -34,11 +35,22 @@ class PkiController(ApiAction: ApiAction,  cc: ControllerComponents)(implicit en
 
   def genKeyPair() = ApiAction.async(sourceBodyParser) { ctx =>
     ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { body =>
-      env.pki.genKeyPair(body).map {
-        case Left(err) => BadRequest(Json.obj("error" -> err))
+      env.pki.genKeyPair(body).flatMap {
+        case Left(err) => BadRequest(Json.obj("error" -> err)).future
         case Right(kp) =>
-          // TODO: save ????
-          Ok(kp.json)
+          val serialNumber = env.snowflakeGenerator.nextId()
+          env.pki.genSelfSignedCert(GenCsrQuery(
+            subject = Some(s"CN=keypair-$serialNumber"),
+            duration = (10 * 365).days,
+            existingKeyPair = Some(kp.keyPair),
+            existingSerialNumber = Some(serialNumber)
+          )).flatMap {
+            case Left(err) => BadRequest(Json.obj("error" -> err)).future
+            case Right(resp) =>
+              val _cert = resp.toCert
+              val cert = _cert.copy(name = s"KeyPair $serialNumber", description = "Public / Private key pair")
+              cert.save().map(_ => Ok(kp.json.as[JsObject] ++ Json.obj("certId" -> cert.id)))
+          }
       }
     }
   }
