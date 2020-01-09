@@ -383,7 +383,7 @@ export class CertificatesPage extends Component {
     },
     {
       title: 'Type',
-      content: item => (
+      cell: (v, item, table) => (
         item.client ?             <span className="label label-primary">client</span> : (
           item.ca ?               <span className="label label-info">ca</span> : (
             item.letsEncrypt ?    <span className="label label-warning">let's encrypt</span> : (
@@ -396,8 +396,21 @@ export class CertificatesPage extends Component {
           )
         )
       ),
+      content: item => (
+        item.client ?             'client' : (
+          item.ca ?               'ca' : (
+            item.letsEncrypt ?    'letsencrypt' : (
+              item.keypair ?      'keypair' : (
+                item.selfSigned ? 'selfsigned' : (
+                                  'certificate'
+                )
+              )
+            )
+          )
+        )
+      ),
       style: { textAlign: 'center', width: 100 },
-      notFilterable: true,
+      notFilterable: false,
     },
     // {
     //   title: 'Client',
