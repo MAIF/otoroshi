@@ -313,7 +313,7 @@ class RedisLikeWrapper(redis: RedisLike, env: Env) extends RedisLike {
   override def stop(): Unit                                                     = redis.stop()
 
   override def rawGet(key: String): Future[Option[Any]] = redis.get(key)
-  
+
   override def flushall(): Future[Boolean] = {
     env.metrics.counter("redis.ops").inc()
     redis.flushall()

@@ -4,7 +4,7 @@ import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
-import akka.stream.scaladsl.Source
+import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
 import auth.AuthConfigsDataStore
 import cluster.{ClusterStateDataStore, InMemoryClusterStateDataStore}
@@ -407,6 +407,71 @@ abstract class AbstractRedisDataStores(configuration: Configuration,
       .mapConcat(_.toList)
   }
 
+
+  override def fullNdJsonExport(): Future[Source[JsValue, _]] = {
+
+    implicit val ev = env
+    implicit val ecc = env.otoroshiExecutionContext
+    implicit val mat = env.otoroshiMaterializer
+
+    FastFuture.successful(
+      Source
+        .fromFuture(redis.keys(s"${env.storageRoot}:*"))
+        .mapConcat(_.toList)
+        .grouped(10)
+        .mapAsync(1) {
+          case keys if keys.isEmpty => FastFuture.successful(Seq.empty[JsValue])
+          case keys => {
+            Source(keys.toList)
+              .mapAsync(1) { key =>
+                for {
+                  w     <- typeOfKey(key)
+                  ttl   <- redis.pttl(key)
+                  value <- fetchValueForType(w, key)
+                } yield
+                  value match {
+                    case JsNull => JsNull
+                    case _ =>
+                      Json.obj("k" -> key,
+                        "v" -> value,
+                        "t" -> (if (ttl == -1) -1 else (System.currentTimeMillis() + ttl)),
+                        "w" -> w)
+                  }
+              }.runWith(Sink.seq).map(_.filterNot(_ == JsNull))
+          }
+        }
+        .mapConcat(_.toList)
+    )
+  }
+
+  override def fullNdJsonImport(export: Source[JsValue, _]): Future[Unit] = {
+
+    implicit val ev = env
+    implicit val ecc = env.otoroshiExecutionContext
+    implicit val mat = env.otoroshiMaterializer
+
+    export
+      .mapAsync(1) { json =>
+        val key = (json \ "k").as[String]
+        val value = (json \ "v").as[JsValue]
+        val pttl = (json \ "t").as[Long]
+        val what = (json \ "what").as[String]
+        (what match {
+          case "string" => redis.set(key, Json.stringify(value))
+          case "hash"   => Source(value.as[JsObject].value.toList).mapAsync(1)(v => redis.hset(key, v._1, Json.stringify(v._2))).runWith(Sink.ignore)
+          case "list"   => redis.lpush(key, value.as[JsArray].value.map(Json.stringify): _*)
+          case "set"    => redis.sadd(key, value.as[JsArray].value.map(Json.stringify): _*)
+          case _        => FastFuture.successful(0L)
+        }).flatMap { _ =>
+          if (pttl > -1L) {
+            redis.pexpire(key, pttl)
+          } else {
+            FastFuture.successful(true)
+          }
+        }
+      }.runWith(Sink.ignore).map(_ => ())
+  }
+
   private def fetchValueForType(typ: String, key: String)(implicit ec: ExecutionContext): Future[JsValue] = {
     typ match {
       case "hash" => redis.hgetall(key).map(m => JsObject(m.map(t => (t._1, JsString(t._2.utf8String)))))
@@ -529,4 +594,6 @@ class RedisCommandsStore(redis: RedisCommands, env: Env, executionContext: Execu
   override def sremBS(key: String, members: ByteString*): Future[Long] = redis.srem(key, members: _*)
 
   override def scard(key: String): Future[Long] = redis.scard(key)
+
+  override def rawGet(key: String): Future[Option[Any]] = redis.get(key)
 }
