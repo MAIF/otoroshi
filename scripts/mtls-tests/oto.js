@@ -51,7 +51,9 @@ const service = {
       "predicate": {
         "type": "AlwaysMatch"
       },
-      "ipAddress": null
+      "ipAddress": null,
+      "mtls": true,
+      "certId": "otoCertBack"
     }
   ],
   "root": "/hello",

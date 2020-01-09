@@ -976,7 +976,7 @@ object CertificateData {
     val pemReader       = new org.bouncycastle.openssl.PEMParser(new StringReader(finContent))
     val holder          = pemReader.readObject().asInstanceOf[org.bouncycastle.cert.X509CertificateHolder]
     pemReader.close()
-    val usages = Option(ExtendedKeyUsage.fromExtensions(holder.getExtensions)).map(_.getUsages).getOrElse(Array.empty)
+    val usages: Array[KeyPurposeId] = Option(holder.getExtensions).flatMap(exts => Option(ExtendedKeyUsage.fromExtensions(exts))).map(_.getUsages).getOrElse(Array.empty)
     val client: Boolean = usages.contains(KeyPurposeId.id_kp_clientAuth)
     // val client: Boolean = Try(cert.getExtensionValue("2.5.29.37")) match {
     Json.obj(
