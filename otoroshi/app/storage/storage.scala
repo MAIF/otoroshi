@@ -58,6 +58,9 @@ trait DataStores {
   def rawDataStore: RawDataStore
   def webAuthnAdminDataStore: WebAuthnAdminDataStore
   def webAuthnRegistrationsDataStore: WebAuthnRegistrationsDataStore
+  ////
+  def fullNdJsonImport(export: Source[JsValue, _]): Future[Unit]
+  def fullNdJsonExport(): Future[Source[JsValue, _]]
 }
 
 trait RawDataStore {
@@ -148,6 +151,7 @@ trait RedisLike {
   def srem(key: String, members: String*): Future[Long]
   def sremBS(key: String, members: ByteString*): Future[Long]
   def scard(key: String): Future[Long]
+  def rawGet(key: String): Future[Option[Any]]
 }
 
 trait RedisLikeStore[T] extends BasicStore[T] {
@@ -308,6 +312,8 @@ class RedisLikeWrapper(redis: RedisLike, env: Env) extends RedisLike {
   override def start(): Unit                                                    = redis.start()
   override def stop(): Unit                                                     = redis.stop()
 
+  override def rawGet(key: String): Future[Option[Any]] = redis.get(key)
+  
   override def flushall(): Future[Boolean] = {
     env.metrics.counter("redis.ops").inc()
     redis.flushall()

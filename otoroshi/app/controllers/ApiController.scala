@@ -9,7 +9,7 @@ import gnieh.diffson.playJson._
 import actions.{ApiAction, UnAuthApiAction}
 import akka.NotUsed
 import akka.http.scaladsl.util.FastFuture
-import akka.stream.scaladsl.Source
+import akka.stream.scaladsl.{Framing, Source}
 import akka.util.ByteString
 import auth.{AuthModuleConfig, BasicAuthModule, BasicAuthUser, GenericOauth2ModuleConfig}
 import cluster.{ClusterMode, MemberView, StatsView}
@@ -19,6 +19,7 @@ import models._
 import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
 import play.api.Logger
+import play.api.http.HttpEntity
 import play.api.libs.json.{JsSuccess, Json, _}
 import play.api.libs.streams.Accumulator
 import play.api.mvc._
@@ -2159,29 +2160,59 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   def fullExport() = ApiAction.async { ctx =>
-    env.datastores.globalConfigDataStore.fullExport().map { e =>
-      val event = AdminApiEvent(
-        env.snowflakeGenerator.nextIdStr(),
-        env.env,
-        Some(ctx.apiKey),
-        ctx.user,
-        "FULL_OTOROSHI_EXPORT",
-        s"Admin exported Otoroshi",
-        ctx.from,
-        ctx.ua,
-        e
-      )
-      Audit.send(event)
-      Alerts.send(
-        OtoroshiExportAlert(env.snowflakeGenerator.nextIdStr(),
-                            env.env,
-                            ctx.user.getOrElse(Json.obj()),
-                            event,
-                            e,
-                            ctx.from,
-                            ctx.ua)
-      )
-      Ok(Json.prettyPrint(e)).as("application/json")
+    ctx.request.accepts("application/x-ndjson") match {
+      case true => {
+        env.datastores.fullNdJsonExport().map { source =>
+          val event = AdminApiEvent(
+            env.snowflakeGenerator.nextIdStr(),
+            env.env,
+            Some(ctx.apiKey),
+            ctx.user,
+            "FULL_OTOROSHI_EXPORT",
+            s"Admin exported Otoroshi",
+            ctx.from,
+            ctx.ua,
+            Json.obj()
+          )
+          Audit.send(event)
+          Alerts.send(
+            OtoroshiExportAlert(env.snowflakeGenerator.nextIdStr(),
+              env.env,
+              ctx.user.getOrElse(Json.obj()),
+              event,
+              Json.obj(),
+              ctx.from,
+              ctx.ua)
+          )
+          Ok.sendEntity(HttpEntity.Streamed.apply(source.map(v => ByteString(Json.stringify(v) + "\n")), None, Some("application/x-ndjson"))).as("application/x-ndjson")
+        }
+      }
+      case false => {
+        env.datastores.globalConfigDataStore.fullExport().map { e =>
+          val event = AdminApiEvent(
+            env.snowflakeGenerator.nextIdStr(),
+            env.env,
+            Some(ctx.apiKey),
+            ctx.user,
+            "FULL_OTOROSHI_EXPORT",
+            s"Admin exported Otoroshi",
+            ctx.from,
+            ctx.ua,
+            e
+          )
+          Audit.send(event)
+          Alerts.send(
+            OtoroshiExportAlert(env.snowflakeGenerator.nextIdStr(),
+              env.env,
+              ctx.user.getOrElse(Json.obj()),
+              event,
+              e,
+              ctx.from,
+              ctx.ua)
+          )
+          Ok(Json.prettyPrint(e)).as("application/json")
+        }
+      }
     }
   }
 
@@ -2197,13 +2228,24 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
   }
 
   def fullImport() = ApiAction.async(sourceBodyParser) { ctx =>
-    ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { body =>
-      val json = Json.parse(body.utf8String).as[JsObject]
-      env.datastores.globalConfigDataStore
-        .fullImport(json)
-        .map(_ => Ok(Json.obj("done" -> true)))
-    } recover {
-      case e => InternalServerError(Json.obj("error" -> e.getMessage))
+    ctx.request.contentType match {
+      case Some("application/x-ndjson") => {
+        env.datastores
+          .fullNdJsonImport(ctx.request.body.via(Framing.delimiter(ByteString("\n"), Int.MaxValue, false)).map(v => Json.parse(v.utf8String)))
+          .map(_ => Ok(Json.obj("done" -> true))) recover {
+            case e => InternalServerError(Json.obj("error" -> e.getMessage))
+          }
+      }
+      case _ => {
+        ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { body =>
+          val json = Json.parse(body.utf8String).as[JsObject]
+          env.datastores.globalConfigDataStore
+            .fullImport(json)
+            .map(_ => Ok(Json.obj("done" -> true)))
+        } recover {
+          case e => InternalServerError(Json.obj("error" -> e.getMessage))
+        }
+      }
     }
   }
 

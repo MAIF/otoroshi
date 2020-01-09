@@ -4,7 +4,7 @@ import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
-import akka.stream.scaladsl.Source
+import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
 import auth.AuthConfigsDataStore
 import cluster.{ClusterStateDataStore, InMemoryClusterStateDataStore}
@@ -173,6 +173,74 @@ class InMemoryDataStores(configuration: Configuration,
       }
       .map(_.filterNot(_ == JsNull))
       .mapConcat(_.toList)
+  }
+
+  override def fullNdJsonExport(): Future[Source[JsValue, _]] = {
+
+    implicit val ev = env
+    implicit val ecc = env.otoroshiExecutionContext
+    implicit val mat = env.otoroshiMaterializer
+
+    FastFuture.successful(
+      Source
+        .fromFuture(redis.keys(s"${env.storageRoot}:*"))
+        .mapConcat(_.toList)
+        .grouped(10)
+        .mapAsync(1) {
+          case keys if keys.isEmpty => FastFuture.successful(Seq.empty[JsValue])
+          case keys => {
+            Source(keys.toList)
+              .mapAsync(1) { key =>
+                redis.rawGet(key).flatMap {
+                  case None => FastFuture.successful(JsNull)
+                  case Some(value) => {
+                    toJson(value) match {
+                      case (_, JsNull) => FastFuture.successful(JsNull)
+                      case (what, jsonValue) =>
+                        redis.pttl(key).map { ttl =>
+                          Json.obj(
+                            "k" -> key,
+                            "v" -> jsonValue,
+                            "t" -> (if (ttl == -1) -1 else (System.currentTimeMillis() + ttl)),
+                            "w" -> what
+                          )
+                        }
+                    }
+                  }
+                }
+              }.runWith(Sink.seq).map(_.filterNot(_ == JsNull))
+          }
+        }
+        .mapConcat(_.toList)
+    )
+  }
+
+  override def fullNdJsonImport(export: Source[JsValue, _]): Future[Unit] = {
+
+    implicit val ev = env
+    implicit val ecc = env.otoroshiExecutionContext
+    implicit val mat = env.otoroshiMaterializer
+
+    export
+      .mapAsync(1) { json =>
+        val key = (json \ "k").as[String]
+        val value = (json \ "v").as[JsValue]
+        val pttl = (json \ "t").as[Long]
+        val what = (json \ "what").as[String]
+        (what match {
+          case "string" => redis.set(key, Json.stringify(value))
+          case "hash"   => Source(value.as[JsObject].value.toList).mapAsync(1)(v => redis.hset(key, v._1, Json.stringify(v._2))).runWith(Sink.ignore)
+          case "list"   => redis.lpush(key, value.as[JsArray].value.map(Json.stringify): _*)
+          case "set"    => redis.sadd(key, value.as[JsArray].value.map(Json.stringify): _*)
+          case _        => FastFuture.successful(0L)
+        }).flatMap { _ =>
+          if (pttl > -1L) {
+            redis.pexpire(key, pttl)
+          } else {
+            FastFuture.successful(true)
+          }
+        }
+      }.runWith(Sink.ignore).map(_ => ())
   }
 
   private def toJson(value: Any): (String, JsValue) = {

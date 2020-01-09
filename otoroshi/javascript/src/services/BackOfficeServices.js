@@ -641,12 +641,12 @@ export function discardAdmin(username, id, type) {
   }
 }
 
-export function fetchOtoroshi() {
+export function fetchOtoroshi(ctype) {
   return fetch(`/bo/api/proxy/api/otoroshi.json`, {
     method: 'GET',
     credentials: 'include',
     headers: {
-      Accept: 'application/json',
+      Accept: ctype || 'application/json',
     },
   }).then(r => r.json());
 }

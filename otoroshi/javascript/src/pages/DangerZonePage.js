@@ -1032,6 +1032,24 @@ export class DangerZonePage extends Component {
     });
   };
 
+  fullExportNdJson = e => {
+    if (e && e.preventDefault) e.preventDefault();
+    BackOfficeServices.fetchOtoroshi("application/x-ndjson").then(otoroshi => {
+      const json = JSON.stringify(otoroshi, null, 2);
+      const blob = new Blob([json], { type: 'application/x-ndjson' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.download = `${window.__isDev ? 'dev-' : ''}otoroshi-${moment().format(
+        'YYYY-MM-DD-HH-mm-ss'
+      )}.ndjson`;
+      a.href = url;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => document.body.removeChild(a), 300);
+    });
+  };
+
   importData = e => {
     if (e && e.preventDefault()) e.preventDefault();
 
@@ -1145,6 +1163,9 @@ export class DangerZonePage extends Component {
             <div className="col-sm-10">
               <button type="button" className="btn btn-success" onClick={this.fullExport}>
                 <i className="glyphicon glyphicon-export" /> Full export
+              </button>
+              <button type="button" className="btn btn-success" onClick={this.fullExportNdJson}>
+                <i className="glyphicon glyphicon-export" /> Full export (ndjson)
               </button>
               <button
                 type="button"
