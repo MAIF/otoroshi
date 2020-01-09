@@ -1035,8 +1035,7 @@ export class DangerZonePage extends Component {
   fullExportNdJson = e => {
     if (e && e.preventDefault) e.preventDefault();
     BackOfficeServices.fetchOtoroshi("application/x-ndjson").then(otoroshi => {
-      const json = JSON.stringify(otoroshi, null, 2);
-      const blob = new Blob([json], { type: 'application/x-ndjson' });
+      const blob = new Blob([otoroshi], { type: 'application/x-ndjson' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.style.display = 'none';
