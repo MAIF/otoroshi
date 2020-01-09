@@ -40,6 +40,7 @@ import utils.{HasMetrics, Metrics}
 import utils.http._
 import otoroshi.tcp.{TcpProxy, TcpService}
 import otoroshi.script.AccessValidatorRef
+import otoroshi.ssl.pki.BouncyCastlePki
 import storage.file.FileDbDataStores
 import storage.http.HttpDbDataStores
 
@@ -386,6 +387,7 @@ class Env(val configuration: Configuration,
 
   lazy val statsd  = new StatsdWrapper(otoroshiActorSystem, this)
   lazy val metrics = new Metrics(this, lifecycle)
+  lazy val pki = new BouncyCastlePki(snowflakeGenerator)
 
   lazy val hash = s"${System.currentTimeMillis()}"
 
@@ -788,11 +790,6 @@ class Env(val configuration: Configuration,
                 if (!hasInitialCert && certs.isEmpty) {
                   val foundOtoroshiCa         = certs.find(c => c.ca && c.id == Cert.OtoroshiCA)
                   val foundOtoroshiDomainCert = certs.find(c => c.domain == s"*.${this.domain}")
-                  // val keyPairGenerator        = KeyPairGenerator.getInstance(KeystoreSettings.KeyPairAlgorithmName)
-                  // keyPairGenerator.initialize(KeystoreSettings.KeyPairKeyLength)
-                  // val keyPair1 = keyPairGenerator.generateKeyPair()
-                  // val keyPair2 = keyPairGenerator.generateKeyPair()
-                  // val keyPair3 = keyPairGenerator.generateKeyPair()
                   val ca       = FakeKeyStore.createCA(s"CN=Otoroshi Root", FiniteDuration(365, TimeUnit.DAYS), None, None)
                   val caCert   = Cert(ca.cert, ca.keyPair, None, false).enrich()
                   if (foundOtoroshiCa.isEmpty) {

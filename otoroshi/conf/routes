@@ -179,6 +179,14 @@ PATCH   /api/certificates/:certId                             controllers.ApiCon
 GET     /api/certificates                                     controllers.ApiController.allCerts()
 POST    /api/certificates                                     controllers.ApiController.createCert()
 
+POST    /api/pki/keys                                         controllers.PkiController.genKeyPair()
+POST    /api/pki/cas                                          controllers.PkiController.genSelfSignedCA()
+POST    /api/pki/certs                                        controllers.PkiController.genSelfSignedCert()
+POST    /api/pki/csrs                                         controllers.PkiController.genCsr()
+POST    /api/pki/cas/:ca/certs/_sign                          controllers.PkiController.signCert(ca)
+POST    /api/pki/cas/:ca/certs                                controllers.PkiController.genCert(ca)
+POST    /api/pki/cas/:ca/cas                                  controllers.PkiController.genSubCA(ca)
+
 GET     /api/lines/:line/services                             controllers.ApiController.servicesForALine(line)
 GET     /api/lines                                            controllers.ApiController.allLines()
 

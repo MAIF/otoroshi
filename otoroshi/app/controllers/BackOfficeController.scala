@@ -1008,12 +1008,11 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
     GenCsrQuery.fromJson(ctx.request.body) match {
       case Left(err) => BadRequest(Json.obj("error" -> err)).future
       case Right(query) => {
-        val pki = new BouncyCastlePki(env.snowflakeGenerator)
         env.datastores.certificatesDataStore.findAll().flatMap { certificates =>
           issuerRef.flatMap(ref => certificates.find(_.id == ref)) match {
             case None => BadRequest(Json.obj("error" -> "no issuer defined")).future
             case Some(issuer) => {
-              pki.genCsr(query, issuer.certificate.get, issuer.keyPair.getPrivate).map {
+              env.pki.genCsr(query, issuer.certificate).map {
                 case Left(err) => BadRequest(Json.obj("error" -> err))
                 case Right(res) => Ok(res.json)
               }
@@ -1026,8 +1025,6 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
 
   def createCertificate = BackOfficeActionAuth.async(parse.json) { ctx =>
     import utils.future.Implicits._
-
-    val pki = new BouncyCastlePki(env.snowflakeGenerator)
 
     val issuerRef = (ctx.request.body \ "caRef").asOpt[String]
     val maybeHost = (ctx.request.body \ "host").asOpt[String]
@@ -1052,12 +1049,12 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
         case _ => {
           GenCsrQuery.fromJson(ctx.request.body).map(v => v.copy(duration = v.duration * (24 * 60 * 60 * 1000))) match {
             case Left(err) => BadRequest(Json.obj("error" -> err)).future
-            case Right(query) if query.ca && issuer.isEmpty => handle(pki.genSelfSignedCA(query))
-            case Right(query) if query.ca && issuer.isDefined => handle(pki.genSubCA(query, issuer.get.certificate.get, issuer.get.keyPair.getPrivate()))
-            case Right(query) if query.client && issuer.isEmpty => handle(pki.genSelfSignedCert(query))
-            case Right(query) if query.client && issuer.isDefined => handle(pki.genCert(query, issuer.get.certificate.get, issuer.get.keyPair.getPrivate()))
-            case Right(query) if issuer.isEmpty => handle(pki.genSelfSignedCert(query))
-            case Right(query) if issuer.isDefined => handle(pki.genCert(query, issuer.get.certificate.get, issuer.get.keyPair.getPrivate()))
+            case Right(query) if query.ca && issuer.isEmpty => handle(env.pki.genSelfSignedCA(query))
+            case Right(query) if query.ca && issuer.isDefined => handle(env.pki.genSubCA(query, issuer.get.certificate.get, issuer.get.keyPair.getPrivate()))
+            case Right(query) if query.client && issuer.isEmpty => handle(env.pki.genSelfSignedCert(query))
+            case Right(query) if query.client && issuer.isDefined => handle(env.pki.genCert(query, issuer.get.certificate.get, issuer.get.keyPair.getPrivate()))
+            case Right(query) if issuer.isEmpty => handle(env.pki.genSelfSignedCert(query))
+            case Right(query) if issuer.isDefined => handle(env.pki.genCert(query, issuer.get.certificate.get, issuer.get.keyPair.getPrivate()))
             case _ => BadRequest(Json.obj("error" -> "bad state")).future
           }
         }

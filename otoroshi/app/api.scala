@@ -100,6 +100,7 @@ class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfi
   lazy val clientValidatorController = wire[ClientValidatorsController]
   lazy val scriptApiController       = wire[ScriptApiController]
   lazy val tcpServiceApiController   = wire[TcpServiceApiController]
+  lazy val pkiController             = wire[PkiController]
 
   override lazy val assets: Assets = wire[Assets]
 

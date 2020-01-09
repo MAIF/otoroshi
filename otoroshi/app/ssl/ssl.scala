@@ -117,6 +117,7 @@ case class Cert(
 
   def signature: Option[String]    = this.metadata.map(v => (v \ "signature").as[String])
   def serialNumber: Option[String] = this.metadata.map(v => (v \ "serialNumber").as[String])
+  def serialNumberLng: Option[Long] = this.metadata.map(v => (v \ "serialNumberLng").as[Long])
 
   def renew(_duration: Option[FiniteDuration] = None)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Cert] = {
     import SSLImplicits._
@@ -980,6 +981,7 @@ object CertificateData {
       "notAfter"     -> cert.getNotAfter.getTime,
       "notBefore"    -> cert.getNotBefore.getTime,
       "serialNumber" -> cert.getSerialNumber.toString(16),
+      "serialNumberLng" -> cert.getSerialNumber,
       "sigAlgName"   -> cert.getSigAlgName,
       "sigAlgOID"    -> cert.getSigAlgOID,
       "_signature"   -> new String(encoder.encode(cert.getSignature)),
@@ -1060,7 +1062,7 @@ object FakeKeyStore {
 
   private implicit val ec = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(4))
 
-  def generateKeyStore(host: String)(implicit env: Env, ec: ExecutionContext): KeyStore = {
+  def generateKeyStore(host: String)(implicit env: Env): KeyStore = {
     val keyStore: KeyStore = KeyStore.getInstance(KeystoreSettings.KeystoreType)
     val (cert, keyPair)    = generateX509Certificate(host)
     keyStore.load(null, EMPTY_PASSWORD)
@@ -1069,12 +1071,12 @@ object FakeKeyStore {
     keyStore
   }
 
-  def generateX509Certificate(host: String): (X509Certificate, KeyPair) = {
+  def generateX509Certificate(host: String)(implicit env: Env): (X509Certificate, KeyPair) = {
     val resp    = createSelfSignedCertificate(host, 365.days, None, None)
     (resp.cert, resp.keyPair)
   }
 
-  def generateCert(host: String): Cert = {
+  def generateCert(host: String)(implicit env: Env): Cert = {
     val (cert, keyPair) = generateX509Certificate(host)
     Cert(
       id = IdGenerator.token(32),
@@ -1089,11 +1091,9 @@ object FakeKeyStore {
     )
   }
 
-  def createSelfSignedCertificate(host: String, duration: FiniteDuration, kp: Option[KeyPair], serial: Option[Long]): GenCertResponse = {
+  def createSelfSignedCertificate(host: String, duration: FiniteDuration, kp: Option[KeyPair], serial: Option[Long])(implicit env: Env): GenCertResponse = {
 
-    val pki = new BouncyCastlePki(IdGenerator(0)) // no comment
-
-    val f = pki.genSelfSignedCert(GenCsrQuery(
+    val f = env.pki.genSelfSignedCert(GenCsrQuery(
       hosts = Seq(host),
       key = GenKeyPairQuery(KeystoreSettings.KeyPairAlgorithmName, KeystoreSettings.KeyPairKeyLength),
       name = Map("CN" -> host),
@@ -1112,11 +1112,9 @@ object FakeKeyStore {
                               kp: Option[KeyPair],
                               serial: Option[Long],
                               ca: X509Certificate,
-                              caKeyPair: KeyPair): GenCertResponse = {
+                              caKeyPair: KeyPair)(implicit env: Env): GenCertResponse = {
 
-    val pki = new BouncyCastlePki(IdGenerator(0)) // no comment
-
-    val f = pki.genCert(GenCsrQuery(
+    val f = env.pki.genCert(GenCsrQuery(
       hosts = Seq.empty,
       key = GenKeyPairQuery(KeystoreSettings.KeyPairAlgorithmName, KeystoreSettings.KeyPairKeyLength),
       subject = Some(dn),
@@ -1133,11 +1131,9 @@ object FakeKeyStore {
 
   def createSelfSignedClientCertificate(dn: String,
                                     duration: FiniteDuration,
-                                    kp: Option[KeyPair], serial: Option[Long]): GenCertResponse = {
+                                    kp: Option[KeyPair], serial: Option[Long])(implicit env: Env): GenCertResponse = {
 
-    val pki = new BouncyCastlePki(IdGenerator(0)) // no comment
-
-    val f = pki.genSelfSignedCert(GenCsrQuery(
+    val f = env.pki.genSelfSignedCert(GenCsrQuery(
       hosts = Seq.empty,
       key = GenKeyPairQuery(KeystoreSettings.KeyPairAlgorithmName, KeystoreSettings.KeyPairKeyLength),
       subject = Some(dn),
@@ -1157,11 +1153,9 @@ object FakeKeyStore {
                               kp: Option[KeyPair],
                               serial: Option[Long],
                               ca: X509Certificate,
-                              caKeyPair: KeyPair): GenCertResponse = {
+                              caKeyPair: KeyPair)(implicit env: Env): GenCertResponse = {
 
-    val pki = new BouncyCastlePki(IdGenerator(0)) // no comment
-
-    val f = pki.genCert(GenCsrQuery(
+    val f = env.pki.genCert(GenCsrQuery(
       hosts = Seq(host),
       key = GenKeyPairQuery(KeystoreSettings.KeyPairAlgorithmName, KeystoreSettings.KeyPairKeyLength),
       name = Map("CN" -> host),
@@ -1175,11 +1169,9 @@ object FakeKeyStore {
     resp.right.get
   }
 
-  def createSubCa(cn: String, duration: FiniteDuration, kp: Option[KeyPair], serial: Option[Long], ca: X509Certificate, caKeyPair: KeyPair): GenCertResponse = {
+  def createSubCa(cn: String, duration: FiniteDuration, kp: Option[KeyPair], serial: Option[Long], ca: X509Certificate, caKeyPair: KeyPair)(implicit env: Env): GenCertResponse = {
 
-    val pki = new BouncyCastlePki(IdGenerator(0)) // no comment
-
-    val f = pki.genSubCA(GenCsrQuery(
+    val f = env.pki.genSubCA(GenCsrQuery(
       hosts = Seq.empty,
       key = GenKeyPairQuery(KeystoreSettings.KeyPairAlgorithmName, KeystoreSettings.KeyPairKeyLength),
       subject = Some(cn),
@@ -1194,11 +1186,9 @@ object FakeKeyStore {
     resp.right.get
   }
 
-  def createCA(cn: String, duration: FiniteDuration, kp: Option[KeyPair], serial: Option[Long]): GenCertResponse = {
+  def createCA(cn: String, duration: FiniteDuration, kp: Option[KeyPair], serial: Option[Long])(implicit env: Env): GenCertResponse = {
 
-    val pki = new BouncyCastlePki(IdGenerator(0)) // no comment
-
-    val f = pki.genSelfSignedCA(GenCsrQuery(
+    val f = env.pki.genSelfSignedCA(GenCsrQuery(
       hosts = Seq.empty,
       key = GenKeyPairQuery(KeystoreSettings.KeyPairAlgorithmName, KeystoreSettings.KeyPairKeyLength),
       subject = Some(cn),
