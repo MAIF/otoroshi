@@ -4,7 +4,7 @@ import actions.ApiAction
 import akka.util.ByteString
 import env.Env
 import play.api.Logger
-import play.api.libs.json.Json
+import play.api.libs.json.{JsObject, Json}
 import play.api.libs.streams.Accumulator
 import play.api.mvc.{AbstractController, BodyParser, ControllerComponents}
 import ssl.Cert
@@ -47,7 +47,9 @@ class PkiController(ApiAction: ApiAction,  cc: ControllerComponents)(implicit en
     ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { body =>
       env.pki.genSelfSignedCA(body).flatMap {
         case Left(err) => BadRequest(Json.obj("error" -> err)).future
-        case Right(kp) => kp.toCert.save().map(_ => Ok(kp.json))
+        case Right(kp) =>
+          val cert = kp.toCert
+          cert.save().map(_ => Ok(kp.json.as[JsObject] ++ Json.obj("certId" -> cert.id)))
       }
     }
   }
@@ -56,7 +58,9 @@ class PkiController(ApiAction: ApiAction,  cc: ControllerComponents)(implicit en
     ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { body =>
       env.pki.genSelfSignedCA(body).flatMap {
         case Left(err) => BadRequest(Json.obj("error" -> err)).future
-        case Right(kp) => kp.toCert.save().map(_ => Ok(kp.json))
+        case Right(kp) =>
+          val cert = kp.toCert
+          cert.save().map(_ => Ok(kp.json.as[JsObject] ++ Json.obj("certId" -> cert.id)))
       }
     }
   }
@@ -103,7 +107,9 @@ class PkiController(ApiAction: ApiAction,  cc: ControllerComponents)(implicit en
         case None => NotFound(Json.obj("error" -> "ca not found !")).future
         case Some(cacert) => env.pki.genCert(body, cacert.certificate.get, cacert.keyPair.getPrivate).flatMap {
           case Left(err) => BadRequest(Json.obj("error" -> err)).future
-          case Right(kp) => kp.toCert.save().map(_ => Ok(kp.json))
+          case Right(kp) =>
+            val cert = kp.toCert
+            cert.save().map(_ => Ok(kp.json.as[JsObject] ++ Json.obj("certId" -> cert.id)))
         }
       }
     }
@@ -115,7 +121,9 @@ class PkiController(ApiAction: ApiAction,  cc: ControllerComponents)(implicit en
         case None => NotFound(Json.obj("error" -> "ca not found !")).future
         case Some(cacert) => env.pki.genSubCA(body, cacert.certificate.get, cacert.keyPair.getPrivate).flatMap {
           case Left(err) => BadRequest(Json.obj("error" -> err)).future
-          case Right(kp) => kp.toCert.save().map(_ => Ok(kp.json))
+          case Right(kp) =>
+            val cert = kp.toCert
+            cert.save().map(_ => Ok(kp.json.as[JsObject] ++ Json.obj("certId" -> cert.id)))
         }
       }
     }
