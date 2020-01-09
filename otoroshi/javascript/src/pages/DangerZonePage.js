@@ -1067,7 +1067,7 @@ export class DangerZonePage extends Component {
               method: 'POST',
               credentials: 'include',
               headers: {
-                Accept: 'application/json',
+                Accept: input.files[0].name.indexOf('ndjson') > -1 ? 'application/x-ndjson' : 'application/json',
               },
               body: input.files[0],
             }).then(r => window.location.reload(), e => console.log(e));
