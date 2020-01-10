@@ -69,6 +69,7 @@ package object modules {
     lazy val scriptApiController       = wire[ScriptApiController]
     lazy val tcpServiceApiController   = wire[TcpServiceApiController]
     lazy val pkiController             = wire[PkiController]
+    lazy val usersController             = wire[UsersController]
 
     override lazy val assets: Assets = wire[Assets]
     lazy val router: Router = {

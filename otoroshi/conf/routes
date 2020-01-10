@@ -184,6 +184,8 @@ POST    /api/pki/keys                                         controllers.PkiCon
 POST    /api/pki/cas                                          controllers.PkiController.genSelfSignedCA()
 POST    /api/pki/certs/_letencrypt                            controllers.PkiController.genLetsEncryptCert()
 POST    /api/pki/certs/_p12                                   controllers.PkiController.importCertFromP12()
+POST    /api/pki/certs/_valid                                 controllers.PkiController.certificateIsValid()
+POST    /api/pki/certs/_data                                  controllers.PkiController.certificateData()
 POST    /api/pki/certs                                        controllers.PkiController.genSelfSignedCert()
 POST    /api/pki/csrs                                         controllers.PkiController.genCsr()
 POST    /api/pki/cas/:ca/certs/_sign                          controllers.PkiController.signCert(ca)
@@ -263,7 +265,26 @@ GET     /api/tcp/services                                     otoroshi.tcp.TcpSe
 GET     /api/stats/global                                     controllers.AnalyticsController.globalStats(from: Option[String], to: Option[String])
 GET     /api/stats                                            controllers.AnalyticsController.filterableStats(from: Option[String], to: Option[String])
 GET     /api/events                                           controllers.AnalyticsController.filterableEvents(from: Option[String], to: Option[String])
-# POST    /api/users                                            controllers.ApiController.registerSimpleAdmin()
+
+GET     /api/admin-sessions                                   controllers.UsersController.sessions()
+DELETE  /api/admin-sessions/:id                               controllers.UsersController.discardSession(id)
+DELETE  /api/admin-sessions                                   controllers.UsersController.discardAllSessions()
+
+GET     /api/apps-sessions                                    controllers.UsersController.privateAppsSessions()
+DELETE  /api/apps-sessions/:id                                controllers.UsersController.discardPrivateAppsSession(id)
+DELETE  /api/apps-sessions                                    controllers.UsersController.discardAllPrivateAppsSessions()
+
+GET     /api/audit/events                                     controllers.UsersController.auditEvents()
+
+GET     /api/alert/events                                     controllers.UsersController.alertEvents()
+
+POST    /api/admins/simple                                    controllers.UsersController.registerSimpleAdmin()
+GET     /api/admins/simple                                    controllers.UsersController.simpleAdmins()
+DELETE  /api/admins/simple/:username                          controllers.UsersController.deleteAdmin(username)
+
+GET     /api/admins/webauthn                                  controllers.UsersController.webAuthnAdmins()
+POST    /api/admins/webauthn                                  controllers.UsersController.registerWebAuthnAdmin()
+DELETE  /api/admins/webauthn/:username/:id                    controllers.UsersController.webAuthnDeleteAdmin(username, id)
 
 GET     /api/swagger.json                                     controllers.SwaggerController.swagger()
 GET     /api/swagger/ui                                       controllers.SwaggerController.swaggerUi()
