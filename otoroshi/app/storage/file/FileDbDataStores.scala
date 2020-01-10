@@ -276,6 +276,7 @@ class FileDbDataStores(configuration: Configuration,
           case keys => {
             Source(keys.toList)
               .mapAsync(1) { key =>
+                println(s"key: $key")
                 redis.rawGet(key).flatMap {
                   case None => FastFuture.successful(JsNull)
                   case Some(value) => {
@@ -306,26 +307,31 @@ class FileDbDataStores(configuration: Configuration,
     implicit val ecc = env.otoroshiExecutionContext
     implicit val mat = env.otoroshiMaterializer
 
-    export
-      .mapAsync(1) { json =>
-        val key = (json \ "k").as[String]
-        val value = (json \ "v").as[JsValue]
-        val pttl = (json \ "t").as[Long]
-        val what = (json \ "what").as[String]
-        (what match {
-          case "string" => redis.set(key, Json.stringify(value))
-          case "hash"   => Source(value.as[JsObject].value.toList).mapAsync(1)(v => redis.hset(key, v._1, Json.stringify(v._2))).runWith(Sink.ignore)
-          case "list"   => redis.lpush(key, value.as[JsArray].value.map(Json.stringify): _*)
-          case "set"    => redis.sadd(key, value.as[JsArray].value.map(Json.stringify): _*)
-          case _        => FastFuture.successful(0L)
-        }).flatMap { _ =>
-          if (pttl > -1L) {
-            redis.pexpire(key, pttl)
-          } else {
-            FastFuture.successful(true)
+    redis
+      .keys(s"${env.storageRoot}:*")
+      .flatMap(keys => if (keys.nonEmpty) redis.del(keys: _*) else FastFuture.successful(0L)).flatMap { _ =>
+      export
+        .mapAsync(1) { json =>
+          val key = (json \ "k").as[String]
+          val value = (json \ "v").as[JsValue]
+          val pttl = (json \ "t").as[Long]
+          val what = (json \ "w").as[String]
+          println(s"key - $key")
+          (what match {
+            case "string" => redis.set(key, value.as[String])
+            case "hash"   => Source(value.as[JsObject].value.toList).mapAsync(1)(v => redis.hset(key, v._1, Json.stringify(v._2))).runWith(Sink.ignore)
+            case "list"   => redis.lpush(key, value.as[JsArray].value.map(Json.stringify): _*)
+            case "set"    => redis.sadd(key, value.as[JsArray].value.map(Json.stringify): _*)
+            case _        => FastFuture.successful(0L)
+          }).flatMap { _ =>
+            if (pttl > -1L) {
+              redis.pexpire(key, pttl)
+            } else {
+              FastFuture.successful(true)
+            }
           }
-        }
-      }.runWith(Sink.ignore).map(_ => ())
+        }.runWith(Sink.ignore).map(_ => ())
+    }
   }
 
   def completeExport(

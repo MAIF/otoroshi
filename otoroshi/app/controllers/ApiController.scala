@@ -9,7 +9,7 @@ import gnieh.diffson.playJson._
 import actions.{ApiAction, UnAuthApiAction}
 import akka.NotUsed
 import akka.http.scaladsl.util.FastFuture
-import akka.stream.scaladsl.{Framing, Source}
+import akka.stream.scaladsl.{Framing, Source, FileIO}
 import akka.util.ByteString
 import auth.{AuthModuleConfig, BasicAuthModule, BasicAuthUser, GenericOauth2ModuleConfig}
 import cluster.{ClusterMode, MemberView, StatsView}
@@ -2217,21 +2217,39 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
   }
 
   def fullImportFromFile() = ApiAction.async(parse.temporaryFile) { ctx =>
-    val source = scala.io.Source.fromFile(ctx.request.body.path.toFile, "utf-8").getLines().mkString("\n")
-    val json   = Json.parse(source).as[JsObject]
-    env.datastores.globalConfigDataStore
-      .fullImport(json)
-      .map(_ => Ok(Json.obj("done" -> true)))
-      .recover {
-        case e => InternalServerError(Json.obj("error" -> e.getMessage))
+    ctx.request.headers.get("X-Content-Type") match {
+      case Some("application/x-ndjson") => {
+        val body = FileIO.fromPath(ctx.request.body.path)
+        val source = body
+          .via(Framing.delimiter(ByteString("\n"), Int.MaxValue, false))
+          .map(v => Json.parse(v.utf8String))
+        env.datastores
+          .fullNdJsonImport(source)
+          .map(_ => Ok(Json.obj("done" -> true))) recover {
+          case e => InternalServerError(Json.obj("error" -> e.getMessage))
+        }
       }
+      case _ => {
+        val source = scala.io.Source.fromFile(ctx.request.body.path.toFile, "utf-8").getLines().mkString("\n")
+        val json   = Json.parse(source).as[JsObject]
+        env.datastores.globalConfigDataStore
+          .fullImport(json)
+          .map(_ => Ok(Json.obj("done" -> true)))
+          .recover {
+            case e => InternalServerError(Json.obj("error" -> e.getMessage))
+          }
+      }
+    }
   }
 
   def fullImport() = ApiAction.async(sourceBodyParser) { ctx =>
     ctx.request.contentType match {
       case Some("application/x-ndjson") => {
+        val source = ctx.request.body
+          .via(Framing.delimiter(ByteString("\n"), Int.MaxValue, false))
+          .map(v => Json.parse(v.utf8String))
         env.datastores
-          .fullNdJsonImport(ctx.request.body.via(Framing.delimiter(ByteString("\n"), Int.MaxValue, false)).map(v => Json.parse(v.utf8String)))
+          .fullNdJsonImport(source)
           .map(_ => Ok(Json.obj("done" -> true))) recover {
             case e => InternalServerError(Json.obj("error" -> e.getMessage))
           }

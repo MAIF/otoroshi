@@ -12,6 +12,7 @@ target
 /pc.stdout.log
 /leveldb
 /filedb
+/fdb
 /leveldb-old
 /.ensime
 /.bloop

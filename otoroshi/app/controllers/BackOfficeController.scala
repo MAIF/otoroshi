@@ -91,7 +91,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
       "Content-Type" -> ctype
     } ++ ctx.request.headers.get("Accept").map { accept =>
       "Accept" -> accept
-    }
+    } ++ ctx.request.headers.get("X-Content-Type").map(v => "X-Content-Type" -> v)
     env.Ws // MTLS needed here ???
       .url(s"$url/$path")
       .withHttpHeaders(headers: _*)
