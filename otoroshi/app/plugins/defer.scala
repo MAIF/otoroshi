@@ -3,6 +3,7 @@ package otoroshi.plugins.defer
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
 import env.Env
+import org.joda.time.DateTime
 import otoroshi.script.{RequestTransformer, TransformerRequestContext, _}
 import play.api.libs.json.{JsObject, Json}
 import play.api.mvc.Result
@@ -46,7 +47,9 @@ class DeferPlugin extends RequestTransformer {
     val defaultTimeout = (config \ "defaultDefer").asOpt[Long].getOrElse(0L).millis
     val headerTimeout = ctx.request.headers.get("X-Defer").map(_.toLong.millis)
     val queryTimeout = ctx.request.getQueryString("defer").map(_.toLong.millis)
-    val timeout = headerTimeout.orElse(queryTimeout).getOrElse(defaultTimeout)
+    val _timeout = headerTimeout.orElse(queryTimeout).getOrElse(defaultTimeout)
+    val elapsed = System.currentTimeMillis() - ctx.attrs.get(otoroshi.plugins.Keys.RequestTimestampKey).getOrElse(DateTime.now()).toDate.getTime
+    val timeout = (if ((_timeout.toMillis - elapsed) < 0L) 0L else _timeout.toMillis - elapsed).millis
     if (timeout.toMillis == 0L) {
       FastFuture.successful(Right(ctx.otoroshiRequest))
     } else {
