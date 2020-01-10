@@ -13,7 +13,7 @@ import scala.concurrent.{ExecutionContext, Future, Promise}
 
 class DeferPlugin extends RequestTransformer {
 
-  override def name: String = "Defer plugin"
+  override def name: String = "Defer Responses"
 
   override def defaultConfig: Option[JsObject] =
     Some(
