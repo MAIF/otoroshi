@@ -172,6 +172,7 @@ GET     /api/groups                                           controllers.ApiCon
 POST    /api/groups                                           controllers.ApiController.createGroup()
 
 ## Certificates
+POST    /api/certificates/:certId/_renew                      controllers.ApiController.renewCert(certId)
 GET     /api/certificates/:certId                             controllers.ApiController.oneCert(certId)
 DELETE  /api/certificates/:certId                             controllers.ApiController.deleteCert(certId)
 PUT     /api/certificates/:certId                             controllers.ApiController.updateCert(certId)
@@ -181,6 +182,8 @@ POST    /api/certificates                                     controllers.ApiCon
 
 POST    /api/pki/keys                                         controllers.PkiController.genKeyPair()
 POST    /api/pki/cas                                          controllers.PkiController.genSelfSignedCA()
+POST    /api/pki/certs/_letencrypt                            controllers.PkiController.genLetsEncryptCert()
+POST    /api/pki/certs/_p12                                   controllers.PkiController.importCertFromP12()
 POST    /api/pki/certs                                        controllers.PkiController.genSelfSignedCert()
 POST    /api/pki/csrs                                         controllers.PkiController.genCsr()
 POST    /api/pki/cas/:ca/certs/_sign                          controllers.PkiController.signCert(ca)

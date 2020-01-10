@@ -739,7 +739,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
       Try {
         val certs = P12Helper.extractCertificate(body, password)
         Source(certs.toList)
-          .mapAsync(1) { cert => cert.save() }
+          .mapAsync(1) { cert => cert.enrich().save() }
           .runWith(Sink.ignore)
           .map { _ =>
             Ok(Json.obj("done" -> true))

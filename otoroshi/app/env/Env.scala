@@ -784,9 +784,7 @@ class Env(val configuration: Configuration,
         _ <- datastores.certificatesDataStore
               .findAll()
               .map { certs =>
-                val hasInitialCert =
-                (configuration.has("otoroshi.ssl.initialCacert") && configuration.has("otoroshi.ssl.initialCert") && configuration
-                  .has("otoroshi.ssl.initialCertKey")) || configuration.has("otoroshi.ssl.initialCerts")
+                val hasInitialCert = datastores.certificatesDataStore.hasInitialCerts()(this, otoroshiExecutionContext)
                 if (!hasInitialCert && certs.isEmpty) {
                   val foundOtoroshiCa         = certs.find(c => c.ca && c.id == Cert.OtoroshiCA)
                   val foundOtoroshiDomainCert = certs.find(c => c.domain == s"*.${this.domain}")

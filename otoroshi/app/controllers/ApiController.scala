@@ -2736,6 +2736,13 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
     }
   }
 
+  def renewCert(id: String) = ApiAction.async { ctx =>
+    env.datastores.certificatesDataStore.findById(id).map(_.map(_.enrich())).flatMap {
+      case None => FastFuture.successful(NotFound(Json.obj("error" -> s"No Certificate found")))
+      case Some(cert) => cert.renew().map(c => Ok(c.toJson))
+    }
+  }
+
   def allCerts() = ApiAction.async { ctx =>
     val paginationPage: Int = ctx.request.queryString.get("page").flatMap(_.headOption).map(_.toInt).getOrElse(1)
     val paginationPageSize: Int =

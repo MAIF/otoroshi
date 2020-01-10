@@ -1,6 +1,8 @@
 package controllers
 
 import actions.ApiAction
+import akka.http.scaladsl.util.FastFuture
+import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
 import env.Env
 import otoroshi.ssl.pki.models.GenCsrQuery
@@ -8,11 +10,12 @@ import play.api.Logger
 import play.api.libs.json.{JsObject, Json}
 import play.api.libs.streams.Accumulator
 import play.api.mvc.{AbstractController, BodyParser, ControllerComponents}
-import ssl.Cert
+import ssl.{Cert, P12Helper}
 import utils.future.Implicits._
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
+import scala.util.Try
 
 class PkiController(ApiAction: ApiAction,  cc: ControllerComponents)(implicit env: Env)
   extends AbstractController(cc) {
@@ -138,6 +141,37 @@ class PkiController(ApiAction: ApiAction,  cc: ControllerComponents)(implicit en
             cert.save().map(_ => Ok(kp.json.as[JsObject] ++ Json.obj("certId" -> cert.id)))
         }
       }
+    }
+  }
+
+  def genLetsEncryptCert() = ApiAction.async(sourceBodyParser) { ctx =>
+    ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { body =>
+      val jsonBody = Json.parse(body.utf8String)
+      (jsonBody \ "host").asOpt[String] match {
+        case None => FastFuture.successful(BadRequest(Json.obj("error" -> "no domain found in request")))
+        case Some(domain) => otoroshi.utils.LetsEncryptHelper.createCertificate(domain).map {
+          case Left(err) => InternalServerError(Json.obj("error" -> err))
+          case Right(cert) => Ok(cert.toGenCertResponse.json.as[JsObject] ++ Json.obj("certId" -> cert.id))
+        }
+      }
+    }
+  }
+
+  def importCertFromP12() = ApiAction.async(sourceBodyParser) { ctx =>
+    val password = ctx.request.getQueryString("password").getOrElse("")
+    ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { body =>
+      Try {
+        val certs = P12Helper.extractCertificate(body, password)
+        Source(certs.toList)
+          .mapAsync(1) { cert => cert.enrich().save() }
+          .runWith(Sink.ignore)
+          .map { _ =>
+            Ok(Json.obj("done" -> true))
+          }
+      } recover {
+        case e =>
+          FastFuture.successful(BadRequest(Json.obj("error" -> s"Bad p12 : $e")))
+      } get
     }
   }
 }

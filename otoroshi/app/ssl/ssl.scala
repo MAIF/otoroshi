@@ -2,13 +2,12 @@ package ssl
 
 import java.io._
 import java.lang.reflect.Field
-import java.math.BigInteger
 import java.net.Socket
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 import java.nio.charset.StandardCharsets.US_ASCII
 import java.security._
-import java.security.cert.{Certificate => _, _}
+import java.security.cert._
 import java.security.spec.PKCS8EncodedKeySpec
 import java.util.concurrent.{Executors, TimeUnit}
 import java.util.concurrent.atomic.AtomicReference
@@ -36,7 +35,6 @@ import org.apache.commons.codec.digest.DigestUtils
 import org.bouncycastle.asn1.x509.{ExtendedKeyUsage, KeyPurposeId}
 import org.bouncycastle.pkcs.PKCS10CertificationRequest
 import org.joda.time.{DateTime, Interval}
-import otoroshi.ssl.pki.BouncyCastlePki
 import otoroshi.ssl.pki.models.{GenCertResponse, GenCsrQuery, GenKeyPairQuery}
 import otoroshi.utils.LetsEncryptHelper
 import play.api.libs.json._
@@ -210,6 +208,15 @@ case class Cert(
         .asInstanceOf[X509Certificate]
     }
   }.toOption.flatten
+  lazy val caFromChain: Option[X509Certificate] = Try {
+    chain.split(PemHeaders.BeginCertificate).toSeq.tail.lastOption.map { cert =>
+      val content: String                        = cert.replace(PemHeaders.EndCertificate, "")
+      val certificateFactory: CertificateFactory = CertificateFactory.getInstance("X.509")
+      certificateFactory
+        .generateCertificate(new ByteArrayInputStream(DynamicSSLEngineProvider.base64Decode(content)))
+        .asInstanceOf[X509Certificate]
+    }
+  }.toOption.flatten
   lazy val metadata: Option[JsValue] = {
     chain.split(PemHeaders.BeginCertificate).toSeq.tail.headOption.map { cert =>
       val content: String = cert.replace(PemHeaders.EndCertificate, "")
@@ -253,6 +260,19 @@ case class Cert(
       .get
     val pubkey: PublicKey = certificate.get.getPublicKey
     new KeyPair(pubkey, privkey)
+  }
+
+  def toGenCertResponse(implicit env: Env): GenCertResponse = {
+    GenCertResponse(
+      serial = serialNumberLng.get,
+      cert = certificate.get,
+      csr = Await.result(env.pki.genCsr(GenCsrQuery(
+        hosts = Seq(domain),
+        subject = Some(subject)
+      ), None)(env.otoroshiExecutionContext), 10.seconds).right.get.csr,
+      key = cryptoKeyPair.getPrivate,
+      ca = caFromChain.get
+    )
   }
 }
 
@@ -460,7 +480,7 @@ trait CertificateDataStore extends BasicStore[Cert] {
     }
   }
 
-  def importOneCert(conf: Configuration, caPath: String, certPath: String, keyPath: String, logger: Logger)(
+  def importOneCert(conf: Configuration, caPath: String, certPath: String, keyPath: String, logger: Logger, id: Option[String] = None)(
       implicit env: Env,
       ec: ExecutionContext
   ): Unit = {
@@ -524,6 +544,11 @@ trait CertificateDataStore extends BasicStore[Cert] {
 
   def importInitialCerts(logger: Logger)(implicit env: Env, ec: ExecutionContext) = {
     importOneCert(env.configuration,
+      "otoroshi.ssl.rootCa.ca",
+      "otoroshi.ssl.rootCa.cert",
+      "otoroshi.ssl.rootCa.key",
+      logger, Some(Cert.OtoroshiCA))(env, ec)
+    importOneCert(env.configuration,
                   "otoroshi.ssl.initialCacert",
                   "otoroshi.ssl.initialCert",
                   "otoroshi.ssl.initialCertKey",
@@ -534,6 +559,17 @@ trait CertificateDataStore extends BasicStore[Cert] {
       .foreach { conf =>
         importOneCert(conf, "ca", "cert", "key", logger)(env, ec)
       }
+  }
+
+  def hasInitialCerts()(implicit env: Env, ec: ExecutionContext): Boolean = {
+    val hasInitialCert = (
+      env.configuration.has("otoroshi.ssl.initialCacert") &&
+      env.configuration.has("otoroshi.ssl.initialCert") &&
+      env.configuration.has("otoroshi.ssl.initialCertKey")
+    )
+    val hasInitialCerts = env.configuration.has("otoroshi.ssl.initialCerts")
+    val hasRootCA = env.configuration.has("otoroshi.ssl.rootCa.cert") && env.configuration.has("otoroshi.ssl.rootCa.key")
+    hasInitialCert || hasInitialCerts || hasRootCA
   }
 }
 
