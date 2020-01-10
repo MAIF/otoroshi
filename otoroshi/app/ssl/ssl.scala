@@ -135,6 +135,9 @@ case class Cert(
             case None if selfSigned =>
               val resp = FakeKeyStore.createSelfSignedCertificate(domain, duration, Some(cryptoKeyPair), certificate.map(_.getSerialNumber.longValue()))
               copy(chain = resp.cert.asPem, privateKey = resp.key.asPem).enrich()
+            case None if keypair =>
+              val resp = FakeKeyStore.createSelfSignedCertificate(domain, duration, Some(cryptoKeyPair), certificate.map(_.getSerialNumber.longValue()))
+              copy(chain = resp.cert.asPem, privateKey = resp.key.asPem).enrich()
             case None => // should not happens
               val resp = FakeKeyStore.createSelfSignedCertificate(domain, duration, Some(cryptoKeyPair), certificate.map(_.getSerialNumber.longValue()))
               copy(chain = resp.cert.asPem, privateKey = resp.key.asPem).enrich()
