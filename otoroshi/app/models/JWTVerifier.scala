@@ -200,16 +200,20 @@ object HSAlgoSettings extends FromJson[HSAlgoSettings] {
       Right(
         HSAlgoSettings(
           (json \ "size").as[Int],
-          (json \ "secret").as[String]
+          (json \ "secret").as[String],
+          (json \ "base64").asOpt[Boolean].getOrElse(false)
         )
       )
     } recover {
       case e => Left(e)
     } get
 }
-case class HSAlgoSettings(size: Int, secret: String) extends AlgoSettings {
+case class HSAlgoSettings(size: Int, secret: String, base64: Boolean) extends AlgoSettings {
 
   override def asAlgorithm(mode: AlgoMode)(implicit env: Env): Option[Algorithm] = size match {
+    case 256 if base64 => Some(Algorithm.HMAC256(ApacheBase64.decodeBase64(transformValue(secret))))
+    case 384 if base64 => Some(Algorithm.HMAC384(ApacheBase64.decodeBase64(transformValue(secret))))
+    case 512 if base64 => Some(Algorithm.HMAC512(ApacheBase64.decodeBase64(transformValue(secret))))
     case 256 => Some(Algorithm.HMAC256(transformValue(secret)))
     case 384 => Some(Algorithm.HMAC384(transformValue(secret)))
     case 512 => Some(Algorithm.HMAC512(transformValue(secret)))
@@ -218,7 +222,8 @@ case class HSAlgoSettings(size: Int, secret: String) extends AlgoSettings {
   override def asJson = Json.obj(
     "type"   -> "HSAlgoSettings",
     "size"   -> this.size,
-    "secret" -> this.secret
+    "secret" -> this.secret,
+    "base64" -> this.base64,
   )
 }
 object RSAlgoSettings extends FromJson[RSAlgoSettings] {
@@ -1015,7 +1020,7 @@ case class LocalJwtVerifier(
     strict: Boolean = true,
     excludedPatterns: Seq[String] = Seq.empty[String],
     source: JwtTokenLocation = InHeader("X-JWT-Token"),
-    algoSettings: AlgoSettings = HSAlgoSettings(512, "secret"),
+    algoSettings: AlgoSettings = HSAlgoSettings(512, "secret", false),
     strategy: VerifierStrategy = PassThrough(VerificationSettings(Map.empty))
 ) extends JwtVerifier
     with AsJson {
@@ -1290,7 +1295,7 @@ case class GlobalJwtVerifier(
     desc: String,
     strict: Boolean = true,
     source: JwtTokenLocation = InHeader("X-JWT-Token"),
-    algoSettings: AlgoSettings = HSAlgoSettings(512, "secret"),
+    algoSettings: AlgoSettings = HSAlgoSettings(512, "secret", false),
     strategy: VerifierStrategy = PassThrough(VerificationSettings(Map("iss" -> "The Issuer")))
 ) extends JwtVerifier
     with AsJson {
@@ -1380,7 +1385,7 @@ object JwtVerifier extends FromJson[JwtVerifier] {
   def mock1: JwtVerifier = LocalJwtVerifier(
     strict = true,
     source = InHeader("Authorization", "Bearer "),
-    algoSettings = HSAlgoSettings(256, "secret"),
+    algoSettings = HSAlgoSettings(256, "secret", false),
     strategy = Transform(
       transformSettings = TransformSettings(
         location = InHeader("X-Fuuuuu"),

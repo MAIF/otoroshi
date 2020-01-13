@@ -206,6 +206,13 @@ export class AlgoSettings extends Component {
             help="The Hmac secret"
             onChange={e => changeTheValue(path + '.secret', e)}
           />,
+          <BooleanInput
+            label="Base64 encoded secret"
+            placeholder="secret"
+            value={algo.base64}
+            help="Is the secret encoded with base64"
+            onChange={e => changeTheValue(path + '.base64', e)}
+          />,
         ]}
         {algo.type === 'RSAlgoSettings' && [
           <SelectInput

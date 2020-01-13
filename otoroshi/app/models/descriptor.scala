@@ -1872,7 +1872,8 @@ case class ServiceDescriptor(
     secComExcludedPatterns: Seq[String] = Seq.empty[String],
     secComSettings: AlgoSettings = HSAlgoSettings(
       512,
-      "${config.app.claim.sharedKey}"
+      "${config.app.claim.sharedKey}",
+      false
     ),
     ////////////
     securityExcludedPatterns: Seq[String] = Seq.empty[String],
@@ -2465,7 +2466,7 @@ object ServiceDescriptor {
             .getOrElse(RefJwtVerifier()),
           secComSettings = AlgoSettings
             .fromJson((json \ "secComSettings").asOpt[JsValue].getOrElse(JsNull))
-            .getOrElse(HSAlgoSettings(512, "${config.app.claim.sharedKey}")),
+            .getOrElse(HSAlgoSettings(512, "${config.app.claim.sharedKey}", false)),
           authConfigRef = (json \ "authConfigRef").asOpt[String].filterNot(_.trim.isEmpty),
           clientValidatorRef = (json \ "clientValidatorRef").asOpt[String].filterNot(_.trim.isEmpty),
           transformerRefs = (json \ "transformerRefs")

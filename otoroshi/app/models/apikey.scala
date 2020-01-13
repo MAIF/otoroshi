@@ -98,7 +98,6 @@ case class ApiKey(clientId: String = IdGenerator.token(16),
     } else if (shouldNotSearchForAnApiKey) {
       true
     } else {
-
       val matchOnRole: Boolean = Option(sr.apiKeyConstraints.routing.oneTagIn)
         .filter(_.nonEmpty)
         .map(tags => this.tags.findOne(tags))
