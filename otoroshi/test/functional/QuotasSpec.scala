@@ -134,13 +134,13 @@ class QuotasSpec(name: String, configurationSpec: => Configuration)
       val resp1 = call(basicAuthDaily)
       val resp2 = call(basicAuthDaily)
       val resp3 = call(basicAuthDaily)
-      val resp4 = call(basicAuthDaily)
+      // val resp4 = call(basicAuthDaily)
       val resp5 = call(basicAuthDaily)
 
       resp1.status mustBe 200
       resp2.status mustBe 200
       resp3.status mustBe 200
-      resp4.status mustBe 200
+      // resp4.status mustBe 200
       resp5.status mustBe 429
       resp5.body.contains("") mustBe true
     }
@@ -159,13 +159,13 @@ class QuotasSpec(name: String, configurationSpec: => Configuration)
       val resp1 = call(basicAuthMonthly)
       val resp2 = call(basicAuthMonthly)
       val resp3 = call(basicAuthMonthly)
-      val resp4 = call(basicAuthMonthly)
+      // val resp4 = call(basicAuthMonthly)
       val resp5 = call(basicAuthMonthly)
 
       resp1.status mustBe 200
       resp2.status mustBe 200
       resp3.status mustBe 200
-      resp4.status mustBe 200
+      // resp4.status mustBe 200
       resp5.status mustBe 429
       resp5.body.contains("") mustBe true
     }

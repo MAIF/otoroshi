@@ -164,13 +164,13 @@ class RedisApiKeyDataStore(redisCli: RedisClientMasterSlaves, _env: Env)
       .map(_.map(_.utf8String.toLong).getOrElse(0L) <= (apiKey.throttlingQuota * env.throttlingWindow))
 
   override def withinDailyQuota(apiKey: ApiKey)(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
-    redisCli.get(dailyQuotaKey(apiKey.clientId)).fast.map(_.map(_.utf8String.toLong).getOrElse(0L) <= apiKey.dailyQuota)
+    redisCli.get(dailyQuotaKey(apiKey.clientId)).fast.map(_.map(_.utf8String.toLong).getOrElse(0L) < apiKey.dailyQuota)
 
   override def withinMonthlyQuota(apiKey: ApiKey)(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
     redisCli
       .get(monthlyQuotaKey(apiKey.clientId))
       .fast
-      .map(_.map(_.utf8String.toLong).getOrElse(0L) <= apiKey.monthlyQuota)
+      .map(_.map(_.utf8String.toLong).getOrElse(0L) < apiKey.monthlyQuota)
 
   // optimized
   override def findByService(serviceId: String)(implicit ec: ExecutionContext, env: Env): Future[Seq[ApiKey]] = {
