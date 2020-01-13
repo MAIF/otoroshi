@@ -139,9 +139,9 @@ object ClusterConfig {
       mode = configuration.getOptional[String]("mode").flatMap(ClusterMode.apply).getOrElse(ClusterMode.Off),
       compression = configuration.getOptional[Int]("compression").getOrElse(-1),
       mtlsConfig = MtlsConfig(
-        certId = configuration.getOptional[String]("mtls.cert"),
+        certs = configuration.getOptional[Seq[String]]("mtls.certs").getOrElse(Seq.empty),
         loose = configuration.getOptional[Boolean]("mtls.loose").getOrElse(false),
-        mtls = configuration.getOptional[Boolean]("mtls.enabled").getOrElse(false),
+        mtls = configuration.getOptional[Boolean]("mtls.enabled").getOrElse(false)
       ),
       proxy = configuration.getOptional[String]("proxy.host").map { host =>
         DefaultWSProxyServer(

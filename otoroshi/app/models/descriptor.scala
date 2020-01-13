@@ -466,11 +466,9 @@ case class Target(
     protocol: HttpProtocol = HttpProtocols.`HTTP/1.1`,
     predicate: TargetPredicate = AlwaysMatch,
     ipAddress: Option[String] = None,
-    loose: Boolean = false,
-    mtls: Boolean = false,
-    certId: Option[String] = None
+    mtlsConfig: MtlsConfig = MtlsConfig()
 ) {
-  lazy val mtlsConfig = MtlsConfig(certId, mtls, loose)
+
   def toJson      = Target.format.writes(this)
   def asUrl       = s"${scheme}://$host"
   def asKey       = s"${protocol.value}:$scheme://$host@${ipAddress.getOrElse(host)}"
@@ -496,9 +494,10 @@ object Target {
       "host"      -> o.host,
       "scheme"    -> o.scheme,
       "weight"    -> o.weight,
-      "loose"     -> o.loose,
-      "mtls"      -> o.mtls,
-      "certId"    -> o.certId.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      "mtlsConfig" -> o.mtlsConfig.json,
+      // "loose"     -> o.loose,
+      // "mtls"      -> o.mtls,
+      // "certId"    -> o.certId.map(JsString.apply).getOrElse(JsNull).as[JsValue],
       "protocol"  -> o.protocol.value,
       "predicate" -> o.predicate.toJson,
       "ipAddress" -> o.ipAddress.map(JsString.apply).getOrElse(JsNull).as[JsValue],
@@ -509,9 +508,10 @@ object Target {
           host = (json \ "host").as[String],
           scheme = (json \ "scheme").asOpt[String].filterNot(_.trim.isEmpty).getOrElse("https"),
           weight = (json \ "weight").asOpt[Int].getOrElse(1),
-          loose = (json \ "loose").asOpt[Boolean].getOrElse(false),
-          mtls = (json \ "mtls").asOpt[Boolean].getOrElse(false),
-          certId = (json \ "certId").asOpt[String].filter(_.trim.nonEmpty),
+          mtlsConfig = MtlsConfig.read((json \ "mtlsConfig").asOpt[JsValue]),
+          // loose = (json \ "loose").asOpt[Boolean].getOrElse(false),
+          // mtls = (json \ "mtls").asOpt[Boolean].getOrElse(false),
+          // certId = (json \ "certId").asOpt[String].filter(_.trim.nonEmpty),
           protocol = (json \ "protocol")
             .asOpt[String]
             .filterNot(_.trim.isEmpty)
@@ -2608,7 +2608,8 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
       targets = Seq(
         Target(
           host = "changeme.cleverapps.io",
-          scheme = "https"
+          scheme = "https",
+          mtlsConfig = MtlsConfig()
         )
       ),
       detectApiKeySooner = false,

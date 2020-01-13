@@ -190,24 +190,25 @@ class Target extends Component {
         />
         <BooleanInput
           label="use mTLS"
-          value={value.mtls}
+          value={value.mtlsConfig.mtls}
           help="If enabled, Otoroshi will try to provide client certificate trusted by the target server."
-          onChange={e => this.changeTheValue('mtls', e)}
+          onChange={e => this.changeTheValue('mtlsConfig.mtls', e)}
         />
         <BooleanInput
           label="TLS loose"
-          value={value.loose}
+          value={value.mtlsConfig.loose}
           help="If enabled, Otoroshi will accept any certificate and disable hostname verification"
-          onChange={e => this.changeTheValue('loose', e)}
+          onChange={e => this.changeTheValue('mtlsConfig.loose', e)}
         />
-        {value.mtls && <SelectInput
+        {/* `[${a.certType}] ${a.name} - ${a.description}` */}
+        {value.mtlsConfig.mtls && <ArrayInput
           label="Client certificate"
           placeholder="Choose a client certificate"
-          value={value.certId}
-          valuesFrom="/bo/api/proxy/api/certificates?client=true"
-          transformer={a => ({ value: a.id, label: a.name + ' - ' + a.description })}
+          value={value.mtlsConfig.certs}
+          valuesFrom="/bo/api/proxy/api/certificates"
+          transformer={a => ({ value: a.id, label: <span><span className="label label-success" style={{ minWidth: 63 }}>{a.certType}</span> {a.name} - {a.description}</span>  })}
           help="The certificate used when performing a mTLS call"
-          onChange={e => this.changeTheValue('certId', e)}
+          onChange={e => this.changeTheValue('mtlsConfig.certs', e)}
         />}
         <Separator title="Target filter" />,
         <SelectInput

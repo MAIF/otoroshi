@@ -296,13 +296,13 @@ export class DangerZonePage extends Component {
       type: 'bool',
       props: { label: 'TLS loose' },
     },
-    'mtlsConfig.certId': {
-      type: 'select',
+    'mtlsConfig.certs': {
+      type: 'array',
       props: { 
         label: 'Client certificate', 
         placeholder: 'Choose a client certificate',
-        valuesFrom: "/bo/api/proxy/api/certificates?client=true",
-        transformer: a => ({ value: a.id, label: a.name + ' - ' + a.description })
+        valuesFrom: "/bo/api/proxy/api/certificates",
+        transformer: a => ({ value: a.id, label: <span><span className="label label-success" style={{ minWidth: 63 }}>{a.certType}</span> {a.name} - {a.description}</span> })
       },
     }
   };
@@ -328,18 +328,18 @@ export class DangerZonePage extends Component {
       type: 'bool',
       props: { label: 'TLS loose' },
     },
-    'mtlsConfig.certId': {
-      type: 'select',
+    'mtlsConfig.certs': {
+      type: 'array',
       props: { 
         label: 'Client certificate', 
         placeholder: 'Choose a client certificate',
-        valuesFrom: "/bo/api/proxy/api/certificates?client=true",
-        transformer: a => ({ value: a.id, label: a.name + ' - ' + a.description })
+        valuesFrom: "/bo/api/proxy/api/certificates",
+        transformer: a => ({ value: a.id, label: <span><span className="label label-success" style={{ minWidth: 63 }}>{a.certType}</span> {a.name} - {a.description}</span> })
       },
     }
   };
 
-  elasticConfigFormFlow = ['clusterUri', 'index', 'type', 'user', 'password', 'mtlsConfig.mtls', 'mtlsConfig.loose', 'mtlsConfig.certId'];
+  elasticConfigFormFlow = ['clusterUri', 'index', 'type', 'user', 'password', 'mtlsConfig.mtls', 'mtlsConfig.loose', 'mtlsConfig.certs'];
 
   elasticConfigFormSchema = {
     clusterUri: {
@@ -370,13 +370,13 @@ export class DangerZonePage extends Component {
       type: 'bool',
       props: { label: 'TLS loose' },
     },
-    'mtlsConfig.certId': {
-      type: 'select',
+    'mtlsConfig.certs': {
+      type: 'array',
       props: { 
         label: 'Client certificate', 
         placeholder: 'Choose a client certificate',
-        valuesFrom: "/bo/api/proxy/api/certificates?client=true",
-        transformer: a => ({ value: a.id, label: a.name + ' - ' + a.description })
+        valuesFrom: "/bo/api/proxy/api/certificates",
+        transformer: a => ({ value: a.id, label: <span><span className="label label-success" style={{ minWidth: 63 }}>{a.certType}</span> {a.name} - {a.description}</span> })
       },
     }
   };
@@ -402,18 +402,18 @@ export class DangerZonePage extends Component {
       type: 'bool',
       props: { label: 'TLS loose' },
     },
-    'mtlsConfig.certId': {
-      type: 'select',
+    'mtlsConfig.certs': {
+      type: 'array',
       props: { 
         label: 'Client certificate', 
         placeholder: 'Choose a client certificate',
-        valuesFrom: "/bo/api/proxy/api/certificates?client=true",
-        transformer: a => ({ value: a.id, label: a.name + ' - ' + a.description })
+        valuesFrom: "/bo/api/proxy/api/certificates",
+        transformer: a => ({ value: a.id, label: <span><span className="label label-success" style={{ minWidth: 63 }}>{a.certType}</span> {a.name} - {a.description}</span> })
       },
     }
   };
 
-  webhooksFormFlow = ['url', 'headers', 'mtlsConfig.mtls', 'mtlsConfig.loose', 'mtlsConfig.certId'];
+  webhooksFormFlow = ['url', 'headers', 'mtlsConfig.mtls', 'mtlsConfig.loose', 'mtlsConfig.certs'];
 
   formSchema = {
     'ipFiltering.whitelist': {

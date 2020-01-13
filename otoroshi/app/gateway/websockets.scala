@@ -1879,7 +1879,6 @@ object WebSocketProxyActor {
     )(Keep.both)
     val (connected, (publisher, subscriber)) = env.gatewayClient.ws(
       request,
-      target.loose,
       Some(target),
       flow,
       //a => a
@@ -2000,7 +1999,6 @@ class WebSocketProxyActor(url: String,
       )
       val (connected, materialized) = env.gatewayClient.ws(
         request,
-        target.loose,
         Some(target),
         Flow
           .fromSinkAndSourceMat(

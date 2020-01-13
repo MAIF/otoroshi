@@ -164,7 +164,7 @@ export class AlgoSettings extends Component {
                   mtlsConfig: {
                     mtls: false,
                     loose: false,
-                    certId: null
+                    certs: []
                   }
                 });
                 break;
@@ -329,14 +329,14 @@ export class AlgoSettings extends Component {
             help="..."
             onChange={v => changeTheValue(path + '.mtlsConfig.loose', v)}
           />,
-          <SelectInput
+          <ArrayInput
             label="Client certificate"
             placeholder="Choose a client certificate"
-            value={algo.mtlsConfig.certId}
-            valuesFrom="/bo/api/proxy/api/certificates?client=true"
-            transformer={a => ({ value: a.id, label: a.name + ' - ' + a.description })}
+            value={algo.mtlsConfig.certs}
+            valuesFrom="/bo/api/proxy/api/certificates"
+            transformer={a => ({ value: a.id, label: <span><span className="label label-success" style={{ minWidth: 63 }}>{a.certType}</span> {a.name} - {a.description}</span> })}
             help="The certificate used when performing a mTLS call"
-            onChange={v => changeTheValue(path + '.mtlsConfig.certId', v)}
+            onChange={v => changeTheValue(path + '.mtlsConfig.certs', v)}
           />,
           <Separator title="Proxy" />,
           <Proxy value={algo.proxy} onChange={v => changeTheValue(path + '.proxy', v)} />,

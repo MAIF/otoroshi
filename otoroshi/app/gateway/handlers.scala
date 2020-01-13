@@ -1606,7 +1606,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                             attrs.put(otoroshi.plugins.Keys.RequestTargetKey -> finalTarget)
 
                                             val clientReq = descriptor.useAkkaHttpClient match {
-                                              case _ if finalTarget.mtls =>
+                                              case _ if finalTarget.mtlsConfig.mtls =>
                                                 env.gatewayClient.akkaUrlWithTarget(
                                                   UrlSanitizer.sanitize(httpRequest.url),
                                                   finalTarget,

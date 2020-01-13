@@ -1,6 +1,6 @@
 import React, { Component, Suspense } from 'react';
 
-import { TextInput, NumberInput, SelectInput, BooleanInput, PasswordInput } from './inputs';
+import { TextInput, NumberInput, SelectInput, BooleanInput, PasswordInput, ArrayInput } from './inputs';
 
 const CodeInput = React.lazy(() => Promise.resolve(require('./inputs/CodeInput')));
 
@@ -151,7 +151,11 @@ export class Oauth2ModuleConfig extends Component {
     apiKeyTagsField: 'apkTags',
     otoroshiDataField: 'app_metadata | otoroshi_data',
     extraMetadata: {},
-    certId: null
+    mtlsConfig: {
+      mtls: false,
+      loose: false,
+      certs: []
+    }
   };
 
   componentDidCatch(error) {
@@ -455,14 +459,14 @@ export class Oauth2ModuleConfig extends Component {
           help="..."
           onChange={v => changeTheValue(path + '.mtlsConfig.loose', v)}
         />
-        <SelectInput
+        <ArrayInput
           label="Client certificate"
           placeholder="Choose a client certificate"
-          value={settings.mtlsConfig.certId}
-          valuesFrom="/bo/api/proxy/api/certificates?client=true"
-          transformer={a => ({ value: a.id, label: a.name + ' - ' + a.description })}
+          value={settings.mtlsConfig.certs}
+          valuesFrom="/bo/api/proxy/api/certificates"
+          transformer={a => ({ value: a.id, label: <span><span className="label label-success" style={{ minWidth: 63 }}>{a.certType}</span> {a.name} - {a.description}</span> })}
           help="The certificate used when performing a mTLS call"
-          onChange={e => changeTheValue(path + '.mtlsConfig.certId', e)}
+          onChange={e => changeTheValue(path + '.mtlsConfig.certs', e)}
         />
       </div>
     );
