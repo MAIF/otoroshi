@@ -68,8 +68,8 @@ object MtlsConfig {
 class MtlsWs(chooser: WsClientChooser) {
   @inline
   def url(url: String, config: MtlsConfig): WSRequest = config match {
-    case MtlsConfig(seq, _, _)     if seq.isEmpty  => chooser.url(url)
-    case MtlsConfig(seq, false, _) if seq.nonEmpty => chooser.url(url)
+    case MtlsConfig(seq, _, _)       if seq.isEmpty  => chooser.url(url)
+    case MtlsConfig(seq, false, _)   if seq.nonEmpty => chooser.url(url)
     case m@MtlsConfig(seq, true, _)  if seq.nonEmpty => chooser.urlWithCert(url, Some(m))
   }
 }
@@ -436,6 +436,7 @@ class AkkWsClient(config: WSClientConfig, env: Env)(implicit system: ActorSystem
 
   override def close(): Unit = Await.ready(client.shutdownAllConnectionPools(), 10.seconds)
 
+  private[utils] val logger = Logger("otoroshi-akka-ws-client")
   private[utils] val wsClientConfig: WSClientConfig = config
   private[utils] val akkaSSLConfig: AkkaSSLConfig = AkkaSSLConfig(system).withSettings(
     config.ssl
@@ -507,6 +508,7 @@ class AkkWsClient(config: WSClientConfig, env: Env)(implicit system: ActorSystem
           pool)
       }
       case certs if certs.nonEmpty => {
+        logger.info(s"Calling ${request.uri} with mTLS context of ${certs.size} certificates")
         val sslContext = env.metrics.withTimer("otoroshi.core.tls.http-client.single-context-fetch") {
           val cacheKey = certs.sortWith((c1, c2) => c1.id.compareTo(c2.id) > 0).map(_.cacheKey).mkString("-")
           singleSslContextCache.getOrElse(cacheKey, DynamicSSLEngineProvider.setupSslContextFor(certs, env))
@@ -551,6 +553,7 @@ class AkkWsClient(config: WSClientConfig, env: Env)(implicit system: ActorSystem
         )(mat)
       }
       case certs if certs.nonEmpty => {
+        logger.info(s"Calling ws ${request.uri} with mTLS context of ${certs.size} certificates")
         val sslContext = env.metrics.withTimer("otoroshi.core.tls.http-client.single-context-fetch") {
           val cacheKey = certs.sortWith((c1, c2) => c1.id.compareTo(c2.id) > 0).map(_.cacheKey).mkString("-")
           singleSslContextCache.getOrElse(cacheKey, DynamicSSLEngineProvider.setupSslContextFor(certs, env))

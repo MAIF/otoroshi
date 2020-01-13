@@ -208,7 +208,7 @@ object HSAlgoSettings extends FromJson[HSAlgoSettings] {
       case e => Left(e)
     } get
 }
-case class HSAlgoSettings(size: Int, secret: String, base64: Boolean) extends AlgoSettings {
+case class HSAlgoSettings(size: Int, secret: String, base64: Boolean = false) extends AlgoSettings {
 
   override def asAlgorithm(mode: AlgoMode)(implicit env: Env): Option[Algorithm] = size match {
     case 256 if base64 => Some(Algorithm.HMAC256(ApacheBase64.decodeBase64(transformValue(secret))))
