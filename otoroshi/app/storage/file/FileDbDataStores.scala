@@ -316,7 +316,6 @@ class FileDbDataStores(configuration: Configuration,
           val value = (json \ "v").as[JsValue]
           val pttl = (json \ "t").as[Long]
           val what = (json \ "w").as[String]
-          println(s"key - $key")
           (what match {
             case "string" => redis.set(key, value.as[String])
             case "hash"   => Source(value.as[JsObject].value.toList).mapAsync(1)(v => redis.hset(key, v._1, Json.stringify(v._2))).runWith(Sink.ignore)
