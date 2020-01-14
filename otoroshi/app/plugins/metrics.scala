@@ -298,22 +298,62 @@ class PrometheusServiceMetrics extends RequestTransformer {
       .create()
   )
 
+  private val reqDurationHistogramWithUri = PrometheusSupport.register(
+    Histogram.build()
+      .name("otoroshi_service_requests_wu_duration_millis")
+      .help("How long it took to process the request on a service, partitioned by status code, protocol, method and uri")
+      .labelNames("code", "method", "protocol", "service", "uri")
+      .buckets(0.1, 0.3, 1.2, 5.0, 10)
+      .create()
+  )
+
+  private val reqTotalHistogramWithUri = PrometheusSupport.register(
+    Counter.build()
+      .name("otoroshi_service_requests_wu_total")
+      .help("How many HTTP requests processed on a service, partitioned by status code, protocol, method and uri")
+      .labelNames("code", "method", "protocol", "service", "uri")
+      .create()
+  )
+
   override def name: String = "Prometheus Service Metrics"
 
-  override def defaultConfig: Option[JsObject] = None
+  override def defaultConfig: Option[JsObject] = Some(Json.obj(
+    "PrometheusServiceMetrics" -> Json.obj(
+      "includeUri" -> false
+    )
+  ))
 
   override def description: Option[String] =
     Some(
-      """This plugin collects service metrics and can be used with the `Prometheus Endpoint` plugin to expose those metrics""".stripMargin
+      """This plugin collects service metrics and can be used with the `Prometheus Endpoint` (in the Danger Zone) plugin to expose those metrics
+        |
+        |This plugin can accept the following configuration
+        |
+        |```json
+        |{
+        |  "PrometheusServiceMetrics": {
+        |    "includeUri": false // include http uri in metrics. WARNING this could implies serious performance issuess
+        |  }
+        |}
+        |```
+      """.stripMargin
     )
 
   override def transformResponseWithCtx(ctx: TransformerResponseContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] = {
     val start: Long    = ctx.attrs.get(otoroshi.plugins.Keys.RequestStartKey).getOrElse(0L)
     val duration: Long = System.currentTimeMillis() - start
+    val config = ctx.configFor("PrometheusServiceMetrics")
+    val includeUri = (config \ "includeUri").asOpt[Boolean].getOrElse(false)
+
     requestCounterGlobal.inc()
     reqDurationGlobal.observe(duration)
-    reqDurationHistogram.labels(ctx.otoroshiResponse.status.toString, ctx.request.method.toLowerCase(), ctx.request.theProtocol, ctx.descriptor.name.slug).observe(duration)
-    reqTotalHistogram.labels(ctx.otoroshiResponse.status.toString, ctx.request.method.toLowerCase(), ctx.request.theProtocol, ctx.descriptor.name.slug).inc()
+    if (includeUri) {
+      reqDurationHistogramWithUri.labels(ctx.otoroshiResponse.status.toString, ctx.request.method.toLowerCase(), ctx.request.theProtocol, ctx.descriptor.name.slug, ctx.request.relativeUri).observe(duration)
+      reqTotalHistogramWithUri.labels(ctx.otoroshiResponse.status.toString, ctx.request.method.toLowerCase(), ctx.request.theProtocol, ctx.descriptor.name.slug, ctx.request.relativeUri).inc()
+    } else {
+      reqDurationHistogram.labels(ctx.otoroshiResponse.status.toString, ctx.request.method.toLowerCase(), ctx.request.theProtocol, ctx.descriptor.name.slug).observe(duration)
+      reqTotalHistogram.labels(ctx.otoroshiResponse.status.toString, ctx.request.method.toLowerCase(), ctx.request.theProtocol, ctx.descriptor.name.slug).inc()
+    }
     Right(ctx.otoroshiResponse).future
   }
 
@@ -322,10 +362,18 @@ class PrometheusServiceMetrics extends RequestTransformer {
                                     )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Result] = {
     val start: Long    = ctx.attrs.get(otoroshi.plugins.Keys.RequestStartKey).getOrElse(0L)
     val duration: Long = System.currentTimeMillis() - start
+    val config = ctx.configFor("PrometheusServiceMetrics")
+    val includeUri = (config \ "includeUri").asOpt[Boolean].getOrElse(false)
+
     requestCounterGlobal.inc()
     reqDurationGlobal.observe(duration)
-    reqDurationHistogram.labels(ctx.otoroshiResponse.status.toString, ctx.request.method.toLowerCase(), ctx.request.theProtocol, ctx.descriptor.name.slug).observe(duration)
-    reqTotalHistogram.labels(ctx.otoroshiResponse.status.toString, ctx.request.method.toLowerCase(), ctx.request.theProtocol, ctx.descriptor.name.slug).inc()
+    if (includeUri) {
+      reqDurationHistogramWithUri.labels(ctx.otoroshiResponse.status.toString, ctx.request.method.toLowerCase(), ctx.request.theProtocol, ctx.descriptor.name.slug, ctx.request.relativeUri).observe(duration)
+      reqTotalHistogramWithUri.labels(ctx.otoroshiResponse.status.toString, ctx.request.method.toLowerCase(), ctx.request.theProtocol, ctx.descriptor.name.slug, ctx.request.relativeUri).inc()
+    } else {
+      reqDurationHistogram.labels(ctx.otoroshiResponse.status.toString, ctx.request.method.toLowerCase(), ctx.request.theProtocol, ctx.descriptor.name.slug).observe(duration)
+      reqTotalHistogram.labels(ctx.otoroshiResponse.status.toString, ctx.request.method.toLowerCase(), ctx.request.theProtocol, ctx.descriptor.name.slug).inc()
+    }
     ctx.otoroshiResult.future
   }
 }
