@@ -28,6 +28,7 @@ import com.codahale.metrics.jvm.{MemoryUsageGaugeSet, ThreadStatesGaugeSet}
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.prometheus.client.Collector
 import io.prometheus.client.dropwizard.DropwizardExports
+import io.prometheus.client.dropwizard.samplebuilder.{CustomMappingSampleBuilder, MapperConfig}
 import io.prometheus.client.exporter.common.TextFormat
 import play.api.inject.ApplicationLifecycle
 
@@ -152,7 +153,28 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) extends Time
 
   private val objectMapper = new ObjectMapper()
   objectMapper.registerModule(new MetricsModule(TimeUnit.SECONDS, TimeUnit.MILLISECONDS, false))
-  private val prometheus = new DropwizardExports(metricRegistry)
+
+  private val prometheus = {
+
+    val labels = new HashMap[String,String]()
+    labels.put("service", "${0}")
+    labels.put("protocol", "${1}")
+    labels.put("method", "${2}")
+    labels.put("status", "${3}")
+
+    val configDuration = new MapperConfig()
+    configDuration.setMatch("otoroshi.service.requests.duration.millis.*.*.*.*")
+    configDuration.setName("otoroshi.service.requests.duration.millis")
+    configDuration.setLabels(labels)
+
+    val configTotal = new MapperConfig()
+    configTotal.setMatch("otoroshi.service.requests.total.*.*.*.*")
+    configTotal.setName("otoroshi.service.requests.total")
+    configTotal.setLabels(labels)
+
+    val sampleBuilder = new CustomMappingSampleBuilder(Arrays.asList(configDuration, configTotal))
+    new DropwizardExports(metricRegistry, sampleBuilder)
+  }
 
   def prometheusExport(filter: Option[String] = None): String = {
     filter match {
