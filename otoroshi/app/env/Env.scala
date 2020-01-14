@@ -11,8 +11,9 @@ import akka.http.scaladsl.util.FastFuture
 import akka.http.scaladsl.util.FastFuture._
 import akka.stream.ActorMaterializer
 import auth.AuthModuleConfig
+import ch.qos.logback.classic.{Level, LoggerContext}
 import cluster.{ClusterAgent, _}
-import com.typesafe.config.{ConfigFactory, ConfigRenderOptions}
+import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions}
 import events._
 import gateway.CircuitBreakersHolder
 import health.{HealthCheckerActor, StartHealthCheck}
@@ -20,6 +21,7 @@ import javax.management.remote.{JMXConnectorServerFactory, JMXServiceURL}
 import models._
 import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
+import org.slf4j.LoggerFactory
 import otoroshi.script.{ScriptCompiler, ScriptManager}
 import play.api._
 import play.api.inject.ApplicationLifecycle
@@ -609,9 +611,33 @@ class Env(val configuration: Configuration,
     logger.info(s"Starting JMX remote server at 127.0.0.1:$jmxPort")
   }
 
+  private def setupLoggers(): Unit = {
+    val loggerContext = LoggerFactory.getILoggerFactory.asInstanceOf[LoggerContext]
+    val loggersAndLevel: Seq[(String, String)] = configuration.getOptional[Configuration]("otoroshi.loggers").map { loggers =>
+      loggers.entrySet.map {
+        case (key, value) => (key, value.unwrapped().asInstanceOf[String])
+      }.toSeq
+    }.getOrElse(Seq.empty) ++ {
+      sys.env.toSeq.filter {
+        case (key, _) if key.toLowerCase().startsWith("otoroshi_loggers_") => true
+        case _ => false
+      }.map {
+        case (key, value) => (key.toLowerCase.replace("otoroshi_loggers_", ""), value)
+      }
+    }
+    loggersAndLevel.foreach {
+      case (logName, level) =>
+        logger.info(s"Setting logger $logName to level $level")
+        val _logger = loggerContext.getLogger(logName)
+        _logger.setLevel(Level.valueOf(level))
+    }
+  }
+
   timeout(300.millis).andThen {
     case _ =>
       implicit val ec = otoroshiExecutionContext // internalActorSystem.dispatcher
+
+      setupLoggers()
 
       clusterAgent.warnAboutHttpLeaderUrls()
       if (clusterConfig.mode == ClusterMode.Leader) {

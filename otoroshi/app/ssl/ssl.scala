@@ -1911,7 +1911,9 @@ object SSLImplicits {
 import scala.util.control.NoStackTrace
 
 case class NoCertificateFoundException(hostname: String) extends RuntimeException(s"No certificate found for: $hostname !") with NoStackTrace
-case class NoHostFoundException() extends RuntimeException(s"No hostname found !") with NoStackTrace
+case class NoHostFoundException() extends RuntimeException(s"No hostname or aliasess found !") with NoStackTrace
+case class NoAliasesFoundException() extends RuntimeException(s"No aliases found in SSLContext !") with NoStackTrace
+case class NoHostnameFoundException() extends RuntimeException(s"No hostname found in SSLContext !") with NoStackTrace
 
 /**
 FROM ubuntu:18.04
