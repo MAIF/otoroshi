@@ -2,19 +2,20 @@ package otoroshi.plugins.metrics
 
 import java.io.StringWriter
 
-import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
 import env.Env
-import io.prometheus.client.CollectorRegistry
+import io.prometheus.client.{Collector, CollectorRegistry}
 import io.prometheus.client.exporter.common.TextFormat
 import otoroshi.script._
 import otoroshi.utils.string.Implicits._
 import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.mvc.{Result, Results}
+import utils.RegexPool
 import utils.RequestImplicits._
 import utils.future.Implicits._
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Try
 
 class ServiceMetrics extends RequestTransformer {
 
@@ -176,10 +177,21 @@ class ServiceMetrics extends RequestTransformer {
 }
 
 object PrometheusSupport {
-  val registry = new CollectorRegistry()
+
+  private[metrics] val registry = new CollectorRegistry()
+
+  def register[T <: Collector](collector: T): T = {
+    Try(registry.unregister(collector))
+    collector.register(registry)
+    collector
+  }
 }
 
 class PrometheusEndpoint extends RequestSink {
+
+  private val ipRegex = RegexPool.regex(
+    "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(:\\d{2,5})?$"
+  )
 
   override def name: String = "Prometheus Endpoint"
 
@@ -188,7 +200,8 @@ class PrometheusEndpoint extends RequestSink {
       Json.obj(
         "PrometheusEndpoint" -> Json.obj(
           "accessKeyValue" -> "${config.app.health.accessKey}",
-          "accessKeyQuery" -> "access_key"
+          "accessKeyQuery" -> "access_key",
+          "includeMetrics" -> false
         )
       )
     )
@@ -204,7 +217,8 @@ class PrometheusEndpoint extends RequestSink {
         |{
         |  "PrometheusEndpoint": {
         |    "accessKeyValue": "secret", // if not defined, public access. Can be ${config.app.health.accessKey}
-        |    "accessKeyQuery": "access_key"
+        |    "accessKeyQuery": "access_key",
+        |    "includeMetrics": false
         |  }
         |}
         |```
@@ -212,21 +226,29 @@ class PrometheusEndpoint extends RequestSink {
     )
 
   override def matches(ctx: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Boolean = {
-    println(s"sink ${ctx.request}")
-    false
+    ctx.request.headers.get("Host") match {
+      case Some(v) if v == env.adminApiHost && ctx.request.uri == "/prometheus" => true
+      case Some(v) if ipRegex.matches(ctx.request.theHost) && ctx.request.uri == "/prometheus" => true
+      case _ => false
+    }
   }
 
   override def handle(ctx: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Future[Result] = {
 
-    def result(): Future[Either[Result, HttpRequest]] = {
-      val writer = new StringWriter()
-      TextFormat.write004(writer, PrometheusSupport.registry.metricFamilySamples())
-      val payload = writer.toString
-      Left(Results.Ok(payload).as("text/plain")).future
-    }
-
     val config = ctx.configFor("PrometheusEndpoint")
     val queryName = (config \ "accessKeyQuery").asOpt[String].getOrElse("access_key")
+    val includeMetrics = (config \ "includeMetrics").asOpt[Boolean].getOrElse(false)
+
+    def result(): Future[Result] = {
+      val writer = new StringWriter()
+      TextFormat.write004(writer, PrometheusSupport.registry.metricFamilySamples())
+      var payload = writer.toString
+      if (includeMetrics) {
+        payload = payload + env.metrics.prometheusExport(None)
+      }
+      Results.Ok(payload).as("text/plain").future
+    }
+
     (config \ "accessKeyValue").asOpt[String] match {
       case None => result()
       case Some("${config.app.health.accessKey}")
@@ -235,9 +257,8 @@ class PrometheusEndpoint extends RequestSink {
           .contains(env.healthAccessKey.get) =>
         result()
       case Some(value) if ctx.request.getQueryString(queryName).contains(value) => result()
-      case _                                                                    => Left(Results.Unauthorized(Json.obj("error" -> "not authorized !"))).future
+      case _                                                                    => Results.Unauthorized(Json.obj("error" -> "not authorized !")).future
     }
-    FastFuture.successful(Results.NotImplemented(Json.obj("error" -> "not implemented yet")))
   }
 }
 
@@ -245,22 +266,37 @@ class PrometheusServiceMetrics extends RequestTransformer {
 
   import io.prometheus.client._
 
-  private val requestCounterGlobal = Counter.build()
-    .name("otoroshi_requests_count_total")
-    .help("How many HTTP requests processed globally")
-    .register(PrometheusSupport.registry)
+  private val requestCounterGlobal = PrometheusSupport.register(
+    Counter.build()
+      .name("otoroshi_requests_count_total")
+      .help("How many HTTP requests processed globally")
+      .create()
+  )
 
-  private val reqDurationHistogram = Histogram.build()
-    .name("otoroshi_service_requests_duration_millis")
-    .help("How long it took to process the request on a service, partitioned by status code, protocol, and method")
-    .labelNames("code", "method", "protocol", "service")
-    .register(PrometheusSupport.registry)
+  private val reqDurationGlobal = PrometheusSupport.register(
+    Histogram.build()
+      .name("otoroshi_requests_duration_millis")
+      .help("How long it took to process requests globally")
+      .buckets(0.1, 0.3, 1.2, 5.0, 10)
+      .create()
+  )
 
-  private val reqTotalHistogram = Counter.build()
-    .name("otoroshi_service_requests_total")
-    .help("How many HTTP requests processed on a service, partitioned by status code, protocol, and method")
-    .labelNames("code", "method", "protocol", "service")
-    .register(PrometheusSupport.registry)
+  private val reqDurationHistogram = PrometheusSupport.register(
+    Histogram.build()
+      .name("otoroshi_service_requests_duration_millis")
+      .help("How long it took to process the request on a service, partitioned by status code, protocol, and method")
+      .labelNames("code", "method", "protocol", "service")
+      .buckets(0.1, 0.3, 1.2, 5.0, 10)
+      .create()
+  )
+
+  private val reqTotalHistogram = PrometheusSupport.register(
+    Counter.build()
+      .name("otoroshi_service_requests_total")
+      .help("How many HTTP requests processed on a service, partitioned by status code, protocol, and method")
+      .labelNames("code", "method", "protocol", "service")
+      .create()
+  )
 
   override def name: String = "Prometheus Service Metrics"
 
@@ -275,6 +311,7 @@ class PrometheusServiceMetrics extends RequestTransformer {
     val start: Long    = ctx.attrs.get(otoroshi.plugins.Keys.RequestStartKey).getOrElse(0L)
     val duration: Long = System.currentTimeMillis() - start
     requestCounterGlobal.inc()
+    reqDurationGlobal.observe(duration)
     reqDurationHistogram.labels(ctx.otoroshiResponse.status.toString, ctx.request.method.toLowerCase(), ctx.request.theProtocol, ctx.descriptor.name.slug).observe(duration)
     reqTotalHistogram.labels(ctx.otoroshiResponse.status.toString, ctx.request.method.toLowerCase(), ctx.request.theProtocol, ctx.descriptor.name.slug).inc()
     Right(ctx.otoroshiResponse).future
@@ -286,6 +323,7 @@ class PrometheusServiceMetrics extends RequestTransformer {
     val start: Long    = ctx.attrs.get(otoroshi.plugins.Keys.RequestStartKey).getOrElse(0L)
     val duration: Long = System.currentTimeMillis() - start
     requestCounterGlobal.inc()
+    reqDurationGlobal.observe(duration)
     reqDurationHistogram.labels(ctx.otoroshiResponse.status.toString, ctx.request.method.toLowerCase(), ctx.request.theProtocol, ctx.descriptor.name.slug).observe(duration)
     reqTotalHistogram.labels(ctx.otoroshiResponse.status.toString, ctx.request.method.toLowerCase(), ctx.request.theProtocol, ctx.descriptor.name.slug).inc()
     ctx.otoroshiResult.future

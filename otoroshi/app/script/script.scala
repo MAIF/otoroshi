@@ -769,6 +769,7 @@ class ScriptManager(env: Env) {
                 tr.asInstanceOf[InternalEventListener].startEvent(env)
               }
             case Failure(e) =>
+              e.printStackTrace()
               logger.error(s"Classpath script `$ref` does not exists ...")
           }
         }
