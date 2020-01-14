@@ -71,6 +71,7 @@ public class X509KeyManagerSnitch extends X509ExtendedKeyManager {
         try {
             String host = ssl.getPeerHost();
             String[] aliases = manager.getServerAliases(s, p);
+            DynamicSSLEngineProvider.logger().underlyingLogger().debug("host: " + host + ", aliases: " + (aliases != null ? aliases.length : 0));
             if (host != null && aliases != null) {
                 List<String> al = Arrays.asList(aliases);
                 Optional<String> theFirst = al.stream().findFirst();
