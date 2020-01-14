@@ -155,7 +155,7 @@ case class Cert(
               val resp = FakeKeyStore.createCertificateFromCA(domain, duration, Some(cryptoKeyPair), certificate.map(_.getSerialNumber.longValue()), caCert.certificate.get, caCert.cryptoKeyPair)
               copy(chain = resp.cert.asPem + "\n" + caCert.chain, privateKey = resp.key.asPem).enrich()
             case _ =>
-              println("wait what ???")
+              // println("wait what ???")
               val resp = FakeKeyStore.createSelfSignedCertificate(domain, duration, Some(cryptoKeyPair), certificate.map(_.getSerialNumber.longValue()))
               copy(chain = resp.cert.asPem, privateKey = resp.key.asPem).enrich()
           }
@@ -174,7 +174,7 @@ case class Cert(
       domain = (meta \ "domain").asOpt[String].getOrElse("--"),
       selfSigned = (meta \ "selfSigned").asOpt[Boolean].getOrElse(false),
       ca = (meta \ "ca").asOpt[Boolean].getOrElse(false),
-      client = (meta \ "client").asOpt[Boolean].getOrElse(false),
+      // client = (meta \ "client").asOpt[Boolean].getOrElse(false),
       valid = this.isValid,
       subject = (meta \ "subjectDN").as[String],
       from = (meta \ "notBefore").asOpt[Long].map(v => new DateTime(v)).getOrElse(DateTime.now()),
@@ -646,7 +646,7 @@ object DynamicSSLEngineProvider {
     val sslContext: SSLContext = SSLContext.getInstance("TLS")
     val keyStore: KeyStore     = createKeyStore(certificates.values.toSeq) //.filterNot(_.ca))
     dumpPath.foreach { path =>
-      logger.debug(s"Dumping keystore at $dumpPath")
+      logger.info(s"Dumping keystore at $dumpPath")
       keyStore.store(new FileOutputStream(path), EMPTY_PASSWORD)
     }
     val keyManagerFactory: KeyManagerFactory =
