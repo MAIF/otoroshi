@@ -1305,7 +1305,7 @@ export class ServicePage extends Component {
             {this.state.service.issueCert && <SelectInput
               label="Certificate authority"
               placeholder="Choose a CA certificate"
-              value={value.issueCertCA}
+              value={this.state.service.issueCertCA}
               valuesFrom="/bo/api/proxy/api/certificates?ca=true"
               transformer={a => ({ value: a.id, label: <span><span className="label label-success" style={{ minWidth: 63 }}>{a.certType}</span> {a.name} - {a.description}</span>  })}
               help="The CA used to issue certificate"
