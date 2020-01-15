@@ -27,7 +27,9 @@ case class KafkaConfig(servers: Seq[String],
                        alertsTopic: String = "otoroshi-alerts",
                        analyticsTopic: String = "otoroshi-analytics",
                        auditTopic: String = "otoroshi-audits",
-                       mtlsConfig: MtlsConfig = MtlsConfig())
+                       mtlsConfig: MtlsConfig = MtlsConfig()) {
+  def json: JsValue = KafkaConfig.format.writes(this)
+}
 
 object KafkaConfig {
 
@@ -87,7 +89,7 @@ object KafkaSettings {
       settings
         .withProperty(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, "SSL")
         .withProperty(BrokerSecurityConfigs.SSL_CLIENT_AUTH_CONFIG, "required")
-        .withProperty(SslConfigs.SSL_KEY_PASSWORD_CONFIG, password)
+        .withProperty(SslConfigs.SSL_KEY_PASSWORD_CONFIG, "")
         .withProperty(SslConfigs.SSL_KEYSTORE_LOCATION_CONFIG, jks.getAbsolutePath)
         .withProperty(SslConfigs.SSL_KEYSTORE_PASSWORD_CONFIG, password)
         .withProperty(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, jks.getAbsolutePath)

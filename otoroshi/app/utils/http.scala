@@ -46,10 +46,10 @@ case class MtlsConfig(certs: Seq[String] = Seq.empty, mtls: Boolean = false, loo
   def json: JsValue = MtlsConfig.format.writes(this)
   def toJKS(implicit env: Env): (java.io.File, String) = {
     val password = IdGenerator.token
-    val path = java.nio.file.Files.createTempFile("oto-keystore-", ".jks")
+    val path = java.nio.file.Files.createTempFile("oto-kafka-keystore-", ".jks")
     val certificates = certs.flatMap(DynamicSSLEngineProvider.certificates.get)
     val keystore = DynamicSSLEngineProvider.createKeyStore(certificates)
-    keystore.store(new FileOutputStream(path.toFile), Array.emptyCharArray)
+    keystore.store(new FileOutputStream(path.toFile), password.toCharArray)
     env.lifecycle.addStopHook { () =>
       path.toFile.delete()
       path.toFile.deleteOnExit()
