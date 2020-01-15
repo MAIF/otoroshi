@@ -208,7 +208,7 @@ class PrometheusEndpoint extends RequestSink {
 
   override def description: Option[String] =
     Some(
-      """This plugin exposes metrics collected by `Prometheus Service Metrics` on a /prometheus` endpoint.
+      """This plugin exposes metrics collected by `Prometheus Service Metrics` on a `/prometheus` endpoint.
         |You can protect it with an access key defined in the configuration
         |
         |This plugin can accept the following configuration
@@ -227,8 +227,8 @@ class PrometheusEndpoint extends RequestSink {
 
   override def matches(ctx: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Boolean = {
     ctx.request.headers.get("Host") match {
-      case Some(v) if v == env.adminApiHost && ctx.request.uri == "/prometheus" => true
-      case Some(v) if ipRegex.matches(ctx.request.theHost) && ctx.request.uri == "/prometheus" => true
+      case Some(v) if v == env.adminApiHost && ctx.request.uri.startsWith("/prometheus") => true
+      case Some(v) if ipRegex.matches(ctx.request.theHost) && ctx.request.uri.startsWith("/prometheus") => true
       case _ => false
     }
   }
