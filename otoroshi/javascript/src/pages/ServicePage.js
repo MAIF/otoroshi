@@ -20,7 +20,7 @@ import {
   HelpInput,
 } from '../components/inputs';
 
-import { LetsEncryptCreation } from './CertificatesPage';
+import { LetsEncryptCreation, NewCertificateForm } from './CertificatesPage';
 
 const CodeInput = React.lazy(() => Promise.resolve(require('../components/inputs/CodeInput')));
 
@@ -782,33 +782,64 @@ export class ServicePage extends Component {
     }
   };
 
-  createSelfSignedCert = () => {
+  createCert = () => {
+    
     const line = this.state.service.line;
-    const value =
+
+    const host =
       this.state.service.subdomain +
       (line ? (line === 'prod' ? '' : '.' + line) : '') +
       '.' +
       this.state.service.domain;
-    BackOfficeServices.selfSignedCert(value).then(cert => {
-      window.history.pushState({ cert: cert }, '', `/bo/dashboard/certificates/add`);
+
+    window.popup('New Certificate', (ok, cancel) => <NewCertificateForm ok={ok} cancel={cancel} host={host} />, { style: { width: '100%' }}).then(form => {
+      if (form) {
+        BackOfficeServices.createCertificateFromForm(form).then(cert => {
+          this.props.setTitle(`Create a new Certificate`);
+          window.history.replaceState({}, '', `/bo/dashboard/certificates/add`);
+          if (form.letsEncrypt) {
+            this.table.setState({ currentItem: cert, showEditForm: true });
+          } else {
+            this.table.setState({ currentItem: cert, showAddForm: true });
+          }
+        });
+      }
     });
   };
 
   createLetsEncrypt = () => {
     const line = this.state.service.line;
-    const domainName =
+    const host =
       this.state.service.subdomain +
       (line ? (line === 'prod' ? '' : '.' + line) : '') +
       '.' +
       this.state.service.domain;
 
-    window.newAlert(<LetsEncryptCreation 
-      domain={domainName} 
-      onCreated={(cert, setError) => {
-        if (!cert.chain) {
-          setError(`Error while creating let's encrypt certificate: ${cert.error}`)
-        }
-      }} />, `Ordering certificate for ${domainName}`);
+    window.popup(`Ordering certificate for ${host}`, (ok, cancel) => <NewCertificateForm ok={ok} cancel={cancel} host={host} letsEncrypt={true} />, { style: { width: '100%' }}).then(form => {
+      if (form) {
+        BackOfficeServices.createCertificateFromForm(form).then(cert => {
+          if (!cert.chain) {
+            window.newAlert(`Error while creating let's encrypt certificate: ${cert.error}`, `Ordering certificate for ${host}`);
+          } else {
+            this.props.setTitle(`Create a new Certificate`);
+            window.history.replaceState({}, '', `/bo/dashboard/certificates/add`);
+            if (form.letsEncrypt) {
+              this.table.setState({ currentItem: cert, showEditForm: true });
+            } else {
+              this.table.setState({ currentItem: cert, showAddForm: true });
+            }
+          }
+        });
+      }
+    });
+
+    // window.newAlert(<LetsEncryptCreation 
+    //   domain={domainName} 
+    //   onCreated={(cert, setError) => {
+    //     if (!cert.chain) {
+    //       setError(`Error while creating let's encrypt certificate: ${cert.error}`)
+    //     }
+    //   }} />, `Ordering certificate for ${domainName}`);
   };
 
   computeIfButtonDisabled = header => {
@@ -1071,12 +1102,6 @@ export class ServicePage extends Component {
                   help="If the service is public and you provide an apikey, otoroshi will detect it and validate it. Of course this setting may impact performances because of useless apikey lookups."
                   onChange={v => this.changeTheValue('detectApiKeySooner', v)}
                 />
-                <BiColumnBooleanInput
-                  label="Issue Let's Encrypt cert."
-                  value={this.state.service.letsEncrypt}
-                  help="Automatically issue and renew let's encrypt certificate based on domain name. Only if Let's Encrypt enabled in global config."
-                  onChange={v => this.changeTheValue('letsEncrypt', v)}
-                />
               </div>
               <div className="col-md-6">
                 <BiColumnBooleanInput
@@ -1228,9 +1253,9 @@ export class ServicePage extends Component {
                 {!this.state.neverSaved && (
                   <button
                     type="button"
-                    onClick={this.createSelfSignedCert}
+                    onClick={this.createCert}
                     className="btn btn-xs btn-info">
-                    <i className="glyphicon glyphicon-plus-sign" /> Create self signed cert.
+                    <i className="glyphicon glyphicon-plus-sign" /> Create certificate
                   </button>
                 )}
               </div>
@@ -1265,6 +1290,27 @@ export class ServicePage extends Component {
               help="When matching, strip the matching prefix from the upstream request URL. Defaults to true"
               onChange={e => this.changeTheValue('stripPath', e)}
             />
+            <BooleanInput
+              label="Issue Let's Encrypt cert."
+              value={this.state.service.letsEncrypt}
+              help="Automatically issue and renew let's encrypt certificate based on domain name. Only if Let's Encrypt enabled in global config."
+              onChange={v => this.changeTheValue('letsEncrypt', v)}
+            />
+            <BooleanInput
+              label="Issue certificate"
+              value={this.state.service.issueCert}
+              help="Automatically issue and renew a certificate based on domain name"
+              onChange={v => this.changeTheValue('issueCert', v)}
+            />
+            {this.state.service.issueCert && <SelectInput
+              label="Certificate authority"
+              placeholder="Choose a CA certificate"
+              value={value.issueCertCA}
+              valuesFrom="/bo/api/proxy/api/certificates?ca=true"
+              transformer={a => ({ value: a.id, label: <span><span className="label label-success" style={{ minWidth: 63 }}>{a.certType}</span> {a.name} - {a.description}</span>  })}
+              help="The CA used to issue certificate"
+              onChange={e => this.changeTheValue('issueCertCA', e)}
+            />}
           </Collapse>
           <Collapse
             notVisible={this.state.service.tcpUdpTunneling}

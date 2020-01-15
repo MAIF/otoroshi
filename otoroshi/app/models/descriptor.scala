@@ -1909,6 +1909,8 @@ case class ServiceDescriptor(
     preRouting: PreRoutingRef = PreRoutingRef(),
     hosts: Seq[String] = Seq.empty[String],
     paths: Seq[String] = Seq.empty[String],
+    issueCert: Boolean = false,
+    issueCertCA: Option[String] = None,
 ) {
 
   lazy val toHost: String = subdomain match {
@@ -2495,6 +2497,8 @@ object ServiceDescriptor {
             .reads((json \ "preRouting").asOpt[JsValue].getOrElse(JsNull))
             .getOrElse(PreRoutingRef()),
           hosts = (json \ "hosts").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+          issueCert = (json \ "issueCert").asOpt[Boolean].getOrElse(false),
+          issueCertCA = (json \ "issueCertCA").asOpt[String],
         )
       } map {
         case sd => JsSuccess(sd)
@@ -2579,6 +2583,8 @@ object ServiceDescriptor {
       "accessValidator"            -> sd.accessValidator.json,
       "preRouting"                 -> sd.preRouting.json,
       "hosts"                      -> JsArray(sd.hosts.map(JsString.apply)),
+      "issueCert"                  -> sd.issueCert,
+      "issueCertCA"                -> sd.issueCertCA.map(JsString.apply).getOrElse(JsNull).as[JsValue],
     )
   }
   def toJson(value: ServiceDescriptor): JsValue = _fmt.writes(value)

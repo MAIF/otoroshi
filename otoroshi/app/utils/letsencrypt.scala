@@ -202,15 +202,15 @@ object LetsEncryptHelper {
         val letsEncryptServicesHosts = services.filter(_.letsEncrypt).flatMap(_.allHosts).filterNot(s => letsEncryptCertificates.exists(c => RegexPool(c.domain).matches(s)))
         Source(letsEncryptServicesHosts.toList)
           .mapAsync(1) { host =>
-            env.datastores.rawDataStore.get(s"${env.storageRoot}:letsencrypt:create:$host").flatMap {
+            env.datastores.rawDataStore.get(s"${env.storageRoot}:certs-issuer:letsencrypt:create:$host").flatMap {
               case Some(_) =>
                 logger.warn(s"Certificate already in creating process: $host")
                 FastFuture.successful(())
               case None => {
-                env.datastores.rawDataStore.set(s"${env.storageRoot}:letsencrypt:create:$host", ByteString("true"), Some(4.minutes.toMillis)).flatMap { _ =>
+                env.datastores.rawDataStore.set(s"${env.storageRoot}:certs-issuer:letsencrypt:create:$host", ByteString("true"), Some(4.minutes.toMillis)).flatMap { _ =>
                   createCertificate(host).map(e => (host, e))
                 }.andThen {
-                  case _ => env.datastores.rawDataStore.del(Seq(s"${env.storageRoot}:letsencrypt:create:$host"))
+                  case _ => env.datastores.rawDataStore.del(Seq(s"${env.storageRoot}:certs-issuer:letsencrypt:create:$host"))
                 }
               }
             }

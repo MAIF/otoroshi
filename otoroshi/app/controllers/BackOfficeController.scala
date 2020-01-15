@@ -1003,11 +1003,12 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
 
     val issuerRef = (ctx.request.body \ "caRef").asOpt[String]
     val maybeHost = (ctx.request.body \ "host").asOpt[String]
+    val client = (ctx.request.body \ "client").asOpt[Boolean].getOrElse(false)
 
     def handle(r: Future[Either[String, GenCertResponse]]): Future[Result] = {
       r.map {
         case Left(err) => BadRequest(Json.obj("error" -> err))
-        case Right(res) => Ok(res.toCert.toJson)
+        case Right(res) => Ok(res.toCert.copy(client = client, autoRenew = true).toJson)
       }
     }
 

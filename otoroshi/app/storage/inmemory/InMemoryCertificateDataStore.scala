@@ -47,6 +47,7 @@ class InMemoryCertificateDataStore(redisCli: RedisLike, _env: Env)
     })
     cancelCreateRef.set(_env.otoroshiActorSystem.scheduler.schedule(60.seconds, 2.minutes) {
       LetsEncryptHelper.createFromServices()
+      Cert.createFromServices()
     })
     cancelRef.set(_env.otoroshiActorSystem.scheduler.schedule(2.seconds, 2.seconds) {
       for {

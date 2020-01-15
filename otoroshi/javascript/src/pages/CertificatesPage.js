@@ -691,18 +691,18 @@ export class CertificatesPage extends Component {
   }
 }
 
-class NewCertificateForm extends Component {
+export class NewCertificateForm extends Component {
   state = {
-    ca: false,
-    client: false,
+    ca: this.props.ca || false,
+    client: this.props.client || false,
     letsEncrypt: this.props.letsEncrypt || false,
     caRef: this.props.caRef || null,
     keyType: 'RSA',
     keySize: 2048,
     duration: 365,
-    subject: "C=FR, L=Poitiers, O=OtoroshiLabs, OU=Foo",
-    host: 'www.foo.bar',
-    hosts: [],
+    subject: this.props.subject || "C=FR, L=Poitiers, O=OtoroshiLabs, OU=Foo",
+    host: this.props.host || 'www.foo.bar',
+    hosts: this.props.host ? [this.props.host] : (this.props.hosts || []),
     signatureAlg: 'SHA256WithRSAEncryption',
     digestAlg: 'SHA-256'
   }

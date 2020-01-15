@@ -49,7 +49,7 @@ import storage.redis.RedisStore
 import storage.{BasicStore, RedisLike, RedisLikeStore}
 import sun.security.util.ObjectIdentifier
 import sun.security.x509._
-import utils.{FakeHasMetrics, HasMetrics, TypedMap}
+import utils.{FakeHasMetrics, HasMetrics, RegexPool, TypedMap}
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.FiniteDuration
@@ -402,6 +402,41 @@ object Cert {
       }
     }
   def fromJsonSafe(value: JsValue): JsResult[Cert] = _fmt.reads(value)
+
+  def createFromServices()(implicit ec: ExecutionContext, env: Env, mat: Materializer): Future[Unit] = {
+    env.datastores.certificatesDataStore.findAll().flatMap { certificates =>
+      env.datastores.serviceDescriptorDataStore.findAll().flatMap { services =>
+        val certs = certificates.filterNot(_.letsEncrypt)
+        val letsEncryptServicesHosts = services.filter(_.issueCert).flatMap(s => s.allHosts.map(h => (s, h))).filterNot(s => certs.exists(c => RegexPool(c.domain).matches(s._2)))
+        Source(letsEncryptServicesHosts.toList)
+          .mapAsync(1) {
+            case (service, host) =>
+              env.datastores.rawDataStore.get(s"${env.storageRoot}:certs-issuer:local:create:$host").flatMap {
+                case Some(_) =>
+                  logger.warn(s"Certificate already in creating process: $host")
+                  FastFuture.successful(())
+                case None => {
+                  env.datastores.rawDataStore.set(s"${env.storageRoot}:certs-issuer:local:create:$host", ByteString("true"), Some(1.minutes.toMillis)).flatMap { _ =>
+                    val cert = certs.find(c => RegexPool(c.domain).matches(host)).get
+                    if (cert.autoRenew) {
+                      cert.renew()
+                    } else {
+                      FastFuture.successful(cert)
+                    }
+                  }.andThen {
+                    case _ => env.datastores.rawDataStore.del(Seq(s"${env.storageRoot}:certs-issuer:local:create:$host"))
+                  }
+                }
+              }
+          }
+          .map {
+            case (host, Left(err)) => logger.error(s"Error while creating certificate for $host. $err")
+            case (host, Right(_)) => logger.info(s"Successfully created certificate for $host")
+          }
+          .runWith(Sink.ignore).map(_ => ())
+      }
+    }
+  }
 }
 
 trait CertificateDataStore extends BasicStore[Cert] {
