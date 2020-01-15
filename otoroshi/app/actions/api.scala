@@ -22,7 +22,7 @@ case class ApiActionContext[A](apiKey: ApiKey, request: Request[A]) {
       .get(env.Headers.OtoroshiAdminProfile)
       .flatMap(p => Try(Json.parse(new String(Base64.getDecoder.decode(p), Charsets.UTF_8))).toOption)
   def from(implicit env: Env): String = request.theIpAddress
-  def ua: String   = request.theUserAgent
+  def ua: String                      = request.theUserAgent
 }
 
 class ApiAction(val parser: BodyParser[AnyContent])(implicit env: Env)

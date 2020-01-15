@@ -15,7 +15,7 @@ final class WorkQueue[A](buffer: Int)(implicit mat: Materializer) {
     val promise = Promise[A]
     queue.offer(task -> promise) flatMap {
       case QueueOfferResult.Enqueued => promise.future
-      case result => Future failed new Exception(s"Can't enqueue: $result")
+      case result                    => Future failed new Exception(s"Can't enqueue: $result")
     }
   }
 

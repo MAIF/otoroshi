@@ -211,7 +211,10 @@ export class GlobalEventsPage extends Component {
       this.state.to,
       limit,
       this.state.asc ? 'asc' : 'desc'
-    ).then(d => d.events, err => console.error(err));
+    ).then(
+      d => d.events,
+      err => console.error(err)
+    );
   };
 
   updateDateRange = (from, to) => {

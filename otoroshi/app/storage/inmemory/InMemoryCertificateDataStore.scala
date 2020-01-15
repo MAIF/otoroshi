@@ -32,19 +32,21 @@ class InMemoryCertificateDataStore(redisCli: RedisLike, _env: Env)
 
   val lastUpdatedKey = (Key.Empty / _env.storageRoot / "certs-last-updated").key
 
-  val lastUpdatedRef = new AtomicReference[String]("0")
-  val cancelRef      = new AtomicReference[Cancellable](null)
-  val cancelRenewRef = new AtomicReference[Cancellable](null)
+  val lastUpdatedRef  = new AtomicReference[String]("0")
+  val cancelRef       = new AtomicReference[Cancellable](null)
+  val cancelRenewRef  = new AtomicReference[Cancellable](null)
   val cancelCreateRef = new AtomicReference[Cancellable](null)
 
   def startSync(): Unit = {
     implicit val ec  = _env.otoroshiExecutionContext
-    implicit val mat  = _env.otoroshiMaterializer
+    implicit val mat = _env.otoroshiMaterializer
     implicit val env = _env
     importInitialCerts(logger)
-    cancelRenewRef.set(_env.otoroshiActorSystem.scheduler.schedule(60.seconds, 1.hour + ((Math.random() * 10) + 1).minutes) {
-      _env.datastores.certificatesDataStore.renewCertificates()
-    })
+    cancelRenewRef.set(
+      _env.otoroshiActorSystem.scheduler.schedule(60.seconds, 1.hour + ((Math.random() * 10) + 1).minutes) {
+        _env.datastores.certificatesDataStore.renewCertificates()
+      }
+    )
     cancelCreateRef.set(_env.otoroshiActorSystem.scheduler.schedule(60.seconds, 2.minutes) {
       LetsEncryptHelper.createFromServices()
       Cert.createFromServices()

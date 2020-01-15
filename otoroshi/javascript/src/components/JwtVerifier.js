@@ -164,8 +164,8 @@ export class AlgoSettings extends Component {
                   mtlsConfig: {
                     mtls: false,
                     loose: false,
-                    certs: []
-                  }
+                    certs: [],
+                  },
                 });
                 break;
               case 'RSAKPAlgoSettings':
@@ -230,13 +230,13 @@ export class AlgoSettings extends Component {
             label="Public key"
             value={algo.publicKey}
             help="The RSA public key"
-            style={{ fontFamily: 'monospace'}}
+            style={{ fontFamily: 'monospace' }}
             onChange={e => changeTheValue(path + '.publicKey', e)}
           />,
           <TextareaInput
             label="Private key"
             value={algo.privateKey}
-            style={{ fontFamily: 'monospace'}}
+            style={{ fontFamily: 'monospace' }}
             help="The RSA private key, private key can be empty if not used for JWT token signing"
             onChange={e => changeTheValue(path + '.privateKey', e)}
           />,
@@ -284,7 +284,7 @@ export class AlgoSettings extends Component {
           <TextareaInput
             label="Private key"
             value={algo.privateKey}
-            style={{ fontFamily: 'monospace'}}
+            style={{ fontFamily: 'monospace' }}
             help="The ECDSA private key, private key can be empty if not used for JWT token signing"
             onChange={e => changeTheValue(path + '.privateKey', e)}
           />,
@@ -321,7 +321,10 @@ export class AlgoSettings extends Component {
             help="Type of key"
             value={algo.kty}
             onChange={v => changeTheValue(path + '.kty', v)}
-            possibleValues={[{ label: 'RSA', value: 'RSA' }, { label: 'EC', value: 'EC' }]}
+            possibleValues={[
+              { label: 'RSA', value: 'RSA' },
+              { label: 'EC', value: 'EC' },
+            ]}
           />,
           <Separator title="TLS settings" />,
           <BooleanInput
@@ -341,7 +344,17 @@ export class AlgoSettings extends Component {
             placeholder="Choose a client certificate"
             value={algo.mtlsConfig.certs}
             valuesFrom="/bo/api/proxy/api/certificates"
-            transformer={a => ({ value: a.id, label: <span><span className="label label-success" style={{ minWidth: 63 }}>{a.certType}</span> {a.name} - {a.description}</span> })}
+            transformer={a => ({
+              value: a.id,
+              label: (
+                <span>
+                  <span className="label label-success" style={{ minWidth: 63 }}>
+                    {a.certType}
+                  </span>{' '}
+                  {a.name} - {a.description}
+                </span>
+              ),
+            })}
             help="The certificate used when performing a mTLS call"
             onChange={v => changeTheValue(path + '.mtlsConfig.certs', v)}
           />,

@@ -35,7 +35,7 @@ import play.api.inject.ApplicationLifecycle
 import scala.concurrent.{ExecutionContext, Future}
 
 trait TimerMetrics {
-  def withTimer[T](name: String)(f: => T): T = f
+  def withTimer[T](name: String)(f: => T): T                                                     = f
   def withTimerAsync[T](name: String)(f: => Future[T])(implicit ec: ExecutionContext): Future[T] = f
 }
 
@@ -156,7 +156,7 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) extends Time
 
   private val prometheus = {
 
-    val labels = new HashMap[String,String]()
+    val labels = new HashMap[String, String]()
     labels.put("service", "${0}")
     labels.put("protocol", "${1}")
     labels.put("method", "${2}")

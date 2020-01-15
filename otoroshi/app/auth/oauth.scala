@@ -239,7 +239,9 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
           case None => Left("No code :(").asFuture
           case Some(code) => {
             val builder =
-              env.MtlsWs.url(authConfig.tokenUrl, authConfig.mtlsConfig).withMaybeProxyServer(authConfig.proxy.orElse(config.proxies.auth))
+              env.MtlsWs
+                .url(authConfig.tokenUrl, authConfig.mtlsConfig)
+                .withMaybeProxyServer(authConfig.proxy.orElse(config.proxies.auth))
             val future1 = if (authConfig.useJson) {
               builder.post(
                 Json.obj(
@@ -351,7 +353,9 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
           case None => Left("No code :(").asFuture
           case Some(code) => {
             val builder =
-              env.MtlsWs.url(authConfig.tokenUrl, authConfig.mtlsConfig).withMaybeProxyServer(authConfig.proxy.orElse(config.proxies.auth))
+              env.MtlsWs
+                .url(authConfig.tokenUrl, authConfig.mtlsConfig)
+                .withMaybeProxyServer(authConfig.proxy.orElse(config.proxies.auth))
             val future1 = if (authConfig.useJson) {
               builder.post(
                 Json.obj(

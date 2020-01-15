@@ -1,6 +1,16 @@
 import React, { Component } from 'react';
 import * as BackOfficeServices from '../services/BackOfficeServices';
-import { Table, TextInput, TextareaInput, LabelInput, BooleanInput, ArrayInput, SelectInput, NumberInput, BiColumnBooleanInput } from '../components/inputs';
+import {
+  Table,
+  TextInput,
+  TextareaInput,
+  LabelInput,
+  BooleanInput,
+  ArrayInput,
+  SelectInput,
+  NumberInput,
+  BiColumnBooleanInput,
+} from '../components/inputs';
 import moment from 'moment';
 import faker from 'faker';
 
@@ -58,10 +68,19 @@ class CertificateInfos extends Component {
         <TextInput label="Issuer" disabled={true} value={this.state.cert.issuerDN} />
         <TextInput label="Domain" disabled={true} value={this.state.cert.domain} />
         {(this.state.cert.subAltNames || []).map((name, idx) => (
-          <TextInput label={idx === 0 ? 'SANs' : ''} help={idx === 0 ? 'Certificate Subject Alternate Names' : null} disabled={true} value={name} />
+          <TextInput
+            label={idx === 0 ? 'SANs' : ''}
+            help={idx === 0 ? 'Certificate Subject Alternate Names' : null}
+            disabled={true}
+            value={name}
+          />
         ))}
         {/*<ArrayInput label="Subject Alternate Names" disabled={true} value={this.state.cert.subAltNames || []} />*/}
-        <BooleanInput label="Let's Encrypt" disabled={true} value={this.props.rawValue.letsEncrypt} />
+        <BooleanInput
+          label="Let's Encrypt"
+          disabled={true}
+          value={this.props.rawValue.letsEncrypt}
+        />
         <BooleanInput label="Self signed" disabled={true} value={this.state.cert.selfSigned} />
         <BooleanInput label="CA" disabled={true} value={this.state.cert.ca} />
         <TextInput
@@ -79,11 +98,7 @@ class CertificateInfos extends Component {
           disabled={true}
           value={moment(this.state.cert.notAfter).format('DD/MM/YYYY HH:mm:ss')}
         />
-        <TextInput
-          label="Signature"
-          disabled={true}
-          value={this.state.cert.signature}
-        />
+        <TextInput label="Signature" disabled={true} value={this.state.cert.signature} />
         <TextareaInput
           label="Public key"
           disabled={true}
@@ -102,19 +117,25 @@ class Commands extends Component {
   createCASigned = (e, id) => {
     e.preventDefault();
     e.stopPropagation();
-    window.popup('New Certificate', (ok, cancel) => <NewCertificateForm ok={ok} cancel={cancel} caRef={id}/>, { style: { width: '100%' }}).then(form => {
-      if (form) {
-        BackOfficeServices.createCertificateFromForm(form).then(cert => {
-          this.props.setTitle(`Create a new Certificate`);
-          window.history.replaceState({}, '', `/bo/dashboard/certificates/add`);
-          if (form.letsEncrypt) {
-            this.table.setState({ currentItem: cert, showEditForm: true });
-          } else {
-            this.table.setState({ currentItem: cert, showAddForm: true });
-          }
-        });
-      }
-    });
+    window
+      .popup(
+        'New Certificate',
+        (ok, cancel) => <NewCertificateForm ok={ok} cancel={cancel} caRef={id} />,
+        { style: { width: '100%' } }
+      )
+      .then(form => {
+        if (form) {
+          BackOfficeServices.createCertificateFromForm(form).then(cert => {
+            this.props.setTitle(`Create a new Certificate`);
+            window.history.replaceState({}, '', `/bo/dashboard/certificates/add`);
+            if (form.letsEncrypt) {
+              this.table.setState({ currentItem: cert, showEditForm: true });
+            } else {
+              this.table.setState({ currentItem: cert, showAddForm: true });
+            }
+          });
+        }
+      });
     // window.newPrompt('Certificate hostname').then(value => {
     //   if (value && value.trim() !== '') {
     //     BackOfficeServices.caSignedCert(id, value).then(cert => {
@@ -150,7 +171,10 @@ class Commands extends Component {
   render() {
     const certIsEmpty = !(this.props.rawValue.chain && this.props.rawValue.privateKey);
     const canRenew =
-      this.props.rawValue.letsEncrypt || this.props.rawValue.ca || this.props.rawValue.selfSigned || !!this.props.rawValue.caRef;
+      this.props.rawValue.letsEncrypt ||
+      this.props.rawValue.ca ||
+      this.props.rawValue.selfSigned ||
+      !!this.props.rawValue.caRef;
     return (
       <div style={{ width: '100%', display: 'flex', justifyContent: 'flex-end', marginBottom: 20 }}>
         <div className="btn-group">
@@ -331,11 +355,11 @@ export class CertificatesPage extends Component {
     },
     chain: {
       type: 'text',
-      props: { label: 'Certificate full chain', rows: 6, style: { fontFamily: 'monospace'} },
+      props: { label: 'Certificate full chain', rows: 6, style: { fontFamily: 'monospace' } },
     },
     privateKey: {
       type: 'text',
-      props: { label: 'Certificate private key', rows: 6, style: { fontFamily: 'monospace'} },
+      props: { label: 'Certificate private key', rows: 6, style: { fontFamily: 'monospace' } },
     },
     autoRenew: {
       type: 'bool',
@@ -368,9 +392,7 @@ export class CertificatesPage extends Component {
     {
       title: ' ',
       content: item =>
-        !item.ca ? (
-          null
-        ) : (
+        !item.ca ? null : (
           /*'yes'*/ <button
             type="button"
             className="btn btn-primary btn-sm"
@@ -383,32 +405,32 @@ export class CertificatesPage extends Component {
     },
     {
       title: 'Type',
-      cell: (v, item, table) => (
-        item.client ?             <span className="label label-primary">client</span> : (
-          item.ca ?               <span className="label label-info">ca</span> : (
-            item.letsEncrypt ?    <span className="label label-warning">let's encrypt</span> : (
-              item.keypair ?      <span className="label label-default">keypair</span> : (
-                item.selfSigned ? <span className="label label-danger">self signed</span> : (
-                  <span className="label label-success">certificate</span>
-                )
-              )
-            )
-          )
-        )
-      ),
-      content: item => (
-        item.client ?             'client' : (
-          item.ca ?               'ca' : (
-            item.letsEncrypt ?    'letsencrypt' : (
-              item.keypair ?      'keypair' : (
-                item.selfSigned ? 'selfsigned' : (
-                                  'certificate'
-                )
-              )
-            )
-          )
-        )
-      ),
+      cell: (v, item, table) =>
+        item.client ? (
+          <span className="label label-primary">client</span>
+        ) : item.ca ? (
+          <span className="label label-info">ca</span>
+        ) : item.letsEncrypt ? (
+          <span className="label label-warning">let's encrypt</span>
+        ) : item.keypair ? (
+          <span className="label label-default">keypair</span>
+        ) : item.selfSigned ? (
+          <span className="label label-danger">self signed</span>
+        ) : (
+          <span className="label label-success">certificate</span>
+        ),
+      content: item =>
+        item.client
+          ? 'client'
+          : item.ca
+          ? 'ca'
+          : item.letsEncrypt
+          ? 'letsencrypt'
+          : item.keypair
+          ? 'keypair'
+          : item.selfSigned
+          ? 'selfsigned'
+          : 'certificate',
       style: { textAlign: 'center', width: 100 },
       notFilterable: false,
     },
@@ -430,19 +452,31 @@ export class CertificatesPage extends Component {
     //   style: { textAlign: 'center', width: 90 },
     //   notFilterable: true,
     // },
-    { 
-      title: 'From', 
+    {
+      title: 'From',
       content: item => moment(item.from).format('DD/MM/YYYY HH:mm:ss'),
       style: { textAlign: 'center', width: 150 },
     },
-    { 
-      title: 'To', 
+    {
+      title: 'To',
       content: item => moment(item.to).format('DD/MM/YYYY HH:mm:ss'),
       style: { textAlign: 'center', width: 150 },
     },
   ];
 
-  formFlow = ['id', 'name', 'description', 'autoRenew', 'client', 'keypair', 'commands', 'valid', 'chain', 'privateKey', 'infos'];
+  formFlow = [
+    'id',
+    'name',
+    'description',
+    'autoRenew',
+    'client',
+    'keypair',
+    'commands',
+    'valid',
+    'chain',
+    'privateKey',
+    'infos',
+  ];
 
   componentDidMount() {
     this.props.setTitle(`All certificates`);
@@ -488,29 +522,35 @@ export class CertificatesPage extends Component {
         });
       }
     });
-  }
+  };
 
   createLetsEncrypt = () => {
-    window.popup('New Certificate', (ok, cancel) => <NewCertificateForm ok={ok} cancel={cancel} letsEncrypt={true} />, { style: { width: '100%' }}).then(form => {
-      if (form) {
-        BackOfficeServices.createCertificateFromForm(form).then(cert => {
-          this.props.setTitle(`Create a new Certificate`);
-          window.history.replaceState({}, '', `/bo/dashboard/certificates/add`);
-          if (form.letsEncrypt) {
-            this.table.setState({ currentItem: cert, showEditForm: true });
-          } else {
-            this.table.setState({ currentItem: cert, showAddForm: true });
-          }
-        });
-      }
-    });
+    window
+      .popup(
+        'New Certificate',
+        (ok, cancel) => <NewCertificateForm ok={ok} cancel={cancel} letsEncrypt={true} />,
+        { style: { width: '100%' } }
+      )
+      .then(form => {
+        if (form) {
+          BackOfficeServices.createCertificateFromForm(form).then(cert => {
+            this.props.setTitle(`Create a new Certificate`);
+            window.history.replaceState({}, '', `/bo/dashboard/certificates/add`);
+            if (form.letsEncrypt) {
+              this.table.setState({ currentItem: cert, showEditForm: true });
+            } else {
+              this.table.setState({ currentItem: cert, showAddForm: true });
+            }
+          });
+        }
+      });
     // window.newPrompt('Certificate domain').then(value => {
     //   if (value && value.trim() !== '') {
     //     if (value.indexOf('*') > -1 ) {
     //       window.newAlert('Domain name cannot contain * character')
     //     } else {
-    //       window.newAlert(<LetsEncryptCreation 
-    //         domain={value} 
+    //       window.newAlert(<LetsEncryptCreation
+    //         domain={value}
     //         onCreated={(cert, setError) => {
     //           if (!cert.chain) {
     //             setError(`Error while creating let's encrypt certificate: ${cert.error}`)
@@ -528,19 +568,25 @@ export class CertificatesPage extends Component {
   createCASigned = (e, id) => {
     e.preventDefault();
     e.stopPropagation();
-    window.popup('New Certificate', (ok, cancel) => <NewCertificateForm ok={ok} cancel={cancel} caRef={id}/>, { style: { width: '100%' }}).then(form => {
-      if (form) {
-        BackOfficeServices.createCertificateFromForm(form).then(cert => {
-          this.props.setTitle(`Create a new Certificate`);
-          window.history.replaceState({}, '', `/bo/dashboard/certificates/add`);
-          if (form.letsEncrypt) {
-            this.table.setState({ currentItem: cert, showEditForm: true });
-          } else {
-            this.table.setState({ currentItem: cert, showAddForm: true });
-          }
-        });
-      }
-    });
+    window
+      .popup(
+        'New Certificate',
+        (ok, cancel) => <NewCertificateForm ok={ok} cancel={cancel} caRef={id} />,
+        { style: { width: '100%' } }
+      )
+      .then(form => {
+        if (form) {
+          BackOfficeServices.createCertificateFromForm(form).then(cert => {
+            this.props.setTitle(`Create a new Certificate`);
+            window.history.replaceState({}, '', `/bo/dashboard/certificates/add`);
+            if (form.letsEncrypt) {
+              this.table.setState({ currentItem: cert, showEditForm: true });
+            } else {
+              this.table.setState({ currentItem: cert, showAddForm: true });
+            }
+          });
+        }
+      });
     // window.newConfirm("Is certificate a client certificate ?").then(ok => {
     //   if (ok) {
     //     window.newPrompt('Certificate DN').then(value => {
@@ -578,23 +624,27 @@ export class CertificatesPage extends Component {
     });
   };
 
-  createCertificate = (e) => {
+  createCertificate = e => {
     e.preventDefault();
-    window.popup('New Certificate', (ok, cancel) => <NewCertificateForm ok={ok} cancel={cancel} />, { style: { width: '100%' }}).then(form => {
-      if (form) {
-        BackOfficeServices.createCertificateFromForm(form).then(cert => {
-          console.log(form)
-          this.props.setTitle(`Create a new Certificate`);
-          window.history.replaceState({}, '', `/bo/dashboard/certificates/add`);
-          if (form.letsEncrypt) {
-            this.table.setState({ currentItem: cert, showEditForm: true });
-          } else {
-            this.table.setState({ currentItem: cert, showAddForm: true });
-          }
-        });
-      }
-    });
-  }
+    window
+      .popup('New Certificate', (ok, cancel) => <NewCertificateForm ok={ok} cancel={cancel} />, {
+        style: { width: '100%' },
+      })
+      .then(form => {
+        if (form) {
+          BackOfficeServices.createCertificateFromForm(form).then(cert => {
+            console.log(form);
+            this.props.setTitle(`Create a new Certificate`);
+            window.history.replaceState({}, '', `/bo/dashboard/certificates/add`);
+            if (form.letsEncrypt) {
+              this.table.setState({ currentItem: cert, showEditForm: true });
+            } else {
+              this.table.setState({ currentItem: cert, showAddForm: true });
+            }
+          });
+        }
+      });
+  };
 
   render() {
     return (
@@ -623,7 +673,7 @@ export class CertificatesPage extends Component {
         injectTable={table => (this.table = table)}
         injectTopBar={() => (
           <>
-          {/*<div className="btn-group" style={{ marginRight: 5 }}>
+            {/*<div className="btn-group" style={{ marginRight: 5 }}>
             <button
               type="button"
               onClick={this.createLetsEncrypt}
@@ -632,8 +682,8 @@ export class CertificatesPage extends Component {
               <i className="glyphicon glyphicon-plus-sign" /> Let's Encrypt cert.
             </button>
           </div>*/}
-          <div className="btn-group">
-            {/*<button
+            <div className="btn-group">
+              {/*<button
               type="button"
               onClick={this.createSelfSigned}
               style={{ marginRight: 0 }}
@@ -654,36 +704,36 @@ export class CertificatesPage extends Component {
               className="btn btn-primary">
               <i className="glyphicon glyphicon-plus-sign" /> Self signed CA
             </button>*/}
-            <button
+              <button
                 type="button"
                 onClick={this.createLetsEncrypt}
                 style={{ marginRight: 0 }}
                 className="btn btn-primary">
                 <i className="glyphicon glyphicon-plus-sign" /> Let's Encrypt Certificate
               </button>
-            <button
-              type="button"
-              onClick={this.createCertificate}
-              style={{ marginRight: 0 }}
-              className="btn btn-primary">
-              <i className="glyphicon glyphicon-plus-sign" /> Create Certificate
-            </button>
-            <input
-              type="file"
-              name="export"
-              id="export"
-              className="inputfile btn btn-primary"
-              ref={ref => (this.fileUpload = ref)}
-              style={{ display: 'none' }}
-              onChange={this.importP12}
-            />
-            <label
-              htmlFor="export"
-              style={{ marginRight: 0 }}
-              className="fake-inputfile btn btn-primary ">
-              <i className="glyphicon glyphicon-file" /> Import .p12 file
-            </label>
-          </div>
+              <button
+                type="button"
+                onClick={this.createCertificate}
+                style={{ marginRight: 0 }}
+                className="btn btn-primary">
+                <i className="glyphicon glyphicon-plus-sign" /> Create Certificate
+              </button>
+              <input
+                type="file"
+                name="export"
+                id="export"
+                className="inputfile btn btn-primary"
+                ref={ref => (this.fileUpload = ref)}
+                style={{ display: 'none' }}
+                onChange={this.importP12}
+              />
+              <label
+                htmlFor="export"
+                style={{ marginRight: 0 }}
+                className="fake-inputfile btn btn-primary ">
+                <i className="glyphicon glyphicon-file" /> Import .p12 file
+              </label>
+            </div>
           </>
         )}
       />
@@ -700,12 +750,12 @@ export class NewCertificateForm extends Component {
     keyType: 'RSA',
     keySize: 2048,
     duration: 365,
-    subject: this.props.subject || "C=FR, L=Poitiers, O=OtoroshiLabs, OU=Foo",
+    subject: this.props.subject || 'C=FR, L=Poitiers, O=OtoroshiLabs, OU=Foo',
     host: this.props.host || 'www.foo.bar',
-    hosts: this.props.host ? [this.props.host] : (this.props.hosts || []),
+    hosts: this.props.host ? [this.props.host] : this.props.hosts || [],
     signatureAlg: 'SHA256WithRSAEncryption',
-    digestAlg: 'SHA-256'
-  }
+    digestAlg: 'SHA-256',
+  };
 
   componentDidMount() {
     this.okRef.focus();
@@ -713,9 +763,9 @@ export class NewCertificateForm extends Component {
 
   changeTheValue = (name, value) => {
     this.setState({ [name]: value });
-  }
+  };
 
-  csr = (e) => {
+  csr = e => {
     BackOfficeServices.createCSR(this.state).then(csr => {
       console.log('csr', csr);
       const url = URL.createObjectURL(
@@ -723,53 +773,53 @@ export class NewCertificateForm extends Component {
           type: 'application/x-pem-file',
         })
       );
-      const a = document.createElement("a");
-      a.setAttribute("href", url);
-      a.setAttribute("download", 'csr.pem');
+      const a = document.createElement('a');
+      a.setAttribute('href', url);
+      a.setAttribute('download', 'csr.pem');
       a.click();
-    })
-  }
+    });
+  };
 
   render() {
     if (this.state.letsEncrypt) {
       return (
         <>
-        <div className="modal-body">
-          <form className="form-horizontal">
-            <BooleanInput 
-              label="Let's Encrypt"
-              value={this.state.letsEncrypt}
-              onChange={v => this.changeTheValue('letsEncrypt', v)}
-              help="Is your certificate a Let's Encrypt certificate"
-            />
-            <TextInput 
-              label="Host"
-              value={this.state.host}
-              onChange={v => this.changeTheValue('host', v)}
-              help="The host of your certificate"
-            />
-          </form>
-        </div>
-        <div className="modal-footer">
-          <button type="button" className="btn btn-danger" onClick={this.props.cancel}>
-            Cancel
-          </button>
-          <button
-            type="button"
-            className="btn btn-success"
-            ref={r => (this.okRef = r)}
-            onClick={e => this.props.ok(this.state)}>
-            Create
-          </button>
-        </div>
-      </>
-      )
+          <div className="modal-body">
+            <form className="form-horizontal">
+              <BooleanInput
+                label="Let's Encrypt"
+                value={this.state.letsEncrypt}
+                onChange={v => this.changeTheValue('letsEncrypt', v)}
+                help="Is your certificate a Let's Encrypt certificate"
+              />
+              <TextInput
+                label="Host"
+                value={this.state.host}
+                onChange={v => this.changeTheValue('host', v)}
+                help="The host of your certificate"
+              />
+            </form>
+          </div>
+          <div className="modal-footer">
+            <button type="button" className="btn btn-danger" onClick={this.props.cancel}>
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="btn btn-success"
+              ref={r => (this.okRef = r)}
+              onClick={e => this.props.ok(this.state)}>
+              Create
+            </button>
+          </div>
+        </>
+      );
     }
     return (
       <>
         <div className="modal-body">
           <form className="form-horizontal">
-            <SelectInput 
+            <SelectInput
               label="Issuer"
               value={this.state.caRef}
               onChange={v => this.changeTheValue('caRef', v)}
@@ -780,21 +830,25 @@ export class NewCertificateForm extends Component {
             />
             <div className="row">
               <div className="col-md-6">
-                {!this.state.client && <BiColumnBooleanInput 
-                  label="CA certificate"
-                  value={this.state.ca}
-                  onChange={v => this.changeTheValue('ca', v)}
-                  help="Is your certificate a CA"
-                />}
-                {!this.state.ca && <BiColumnBooleanInput 
-                  label="Client certificate"
-                  value={this.state.client}
-                  onChange={v => this.changeTheValue('client', v)}
-                  help="Is your certificate a client certificate"
-                />}
+                {!this.state.client && (
+                  <BiColumnBooleanInput
+                    label="CA certificate"
+                    value={this.state.ca}
+                    onChange={v => this.changeTheValue('ca', v)}
+                    help="Is your certificate a CA"
+                  />
+                )}
+                {!this.state.ca && (
+                  <BiColumnBooleanInput
+                    label="Client certificate"
+                    value={this.state.client}
+                    onChange={v => this.changeTheValue('client', v)}
+                    help="Is your certificate a client certificate"
+                  />
+                )}
               </div>
               <div className="col-md-6">
-                <BiColumnBooleanInput 
+                <BiColumnBooleanInput
                   label="Let's Encrypt"
                   value={this.state.letsEncrypt}
                   onChange={v => this.changeTheValue('letsEncrypt', v)}
@@ -807,9 +861,7 @@ export class NewCertificateForm extends Component {
               help="The type of the private key"
               value={this.state.keyType}
               onChange={v => changeTheValue('keyType', v)}
-              possibleValues={[
-                { label: 'RSA', value: 'RSA' }
-              ]}
+              possibleValues={[{ label: 'RSA', value: 'RSA' }]}
             />
             <SelectInput
               label="Key Size"
@@ -840,12 +892,12 @@ export class NewCertificateForm extends Component {
               value={this.state.digestAlg}
               onChange={v => changeTheValue('digestAlg', v)}
               possibleValues={[
-                { label: "SHA-224", value: "SHA-224" },
-                { label: "SHA-256", value: "SHA-256" },
-                { label: "SHA-384", value: "SHA-384" },
-                { label: "SHA-512", value: "SHA-512" },
-                { label: "SHA-512-224", value: "SHA-512-224" },
-                { label: "SHA-512-256", value: "SHA-512-256" }
+                { label: 'SHA-224', value: 'SHA-224' },
+                { label: 'SHA-256', value: 'SHA-256' },
+                { label: 'SHA-384', value: 'SHA-384' },
+                { label: 'SHA-512', value: 'SHA-512' },
+                { label: 'SHA-512-224', value: 'SHA-512-224' },
+                { label: 'SHA-512-256', value: 'SHA-512-256' },
               ]}
             />
             <NumberInput
@@ -855,24 +907,28 @@ export class NewCertificateForm extends Component {
               help="How much time your certificate will be valid"
               suffix="days"
             />
-            <TextInput 
+            <TextInput
               label="Subject DN"
               value={this.state.subject}
               onChange={v => this.changeTheValue('subject', v)}
               help="The subject DN of your certificate"
             />
-            {!this.state.ca && !this.state.client && <ArrayInput 
-              label="Hosts"
-              value={this.state.hosts}
-              onChange={v => this.changeTheValue('hosts', v)}
-              help="The hosts of your certificate"
-            />}
+            {!this.state.ca && !this.state.client && (
+              <ArrayInput
+                label="Hosts"
+                value={this.state.hosts}
+                onChange={v => this.changeTheValue('hosts', v)}
+                help="The hosts of your certificate"
+              />
+            )}
           </form>
         </div>
         <div className="modal-footer">
-          {this.state.caRef && <button type="button" className="btn btn-primary" onClick={this.csr}>
-            <i className="glyphicon glyphicon-file" /> Download CSR
-          </button>}
+          {this.state.caRef && (
+            <button type="button" className="btn btn-primary" onClick={this.csr}>
+              <i className="glyphicon glyphicon-file" /> Download CSR
+            </button>
+          )}
           <button type="button" className="btn btn-danger" onClick={this.props.cancel}>
             Cancel
           </button>
@@ -885,12 +941,11 @@ export class NewCertificateForm extends Component {
           </button>
         </div>
       </>
-    )
+    );
   }
 }
 
 export class LetsEncryptCreation extends Component {
-
   state = { error: null, done: false };
 
   componentDidMount() {
@@ -898,59 +953,59 @@ export class LetsEncryptCreation extends Component {
       .then(cert => {
         this.setState({ done: true });
         setTimeout(() => {
-          this.props.onCreated(cert, e => this.setState({ error: e }))
+          this.props.onCreated(cert, e => this.setState({ error: e }));
         }, 1000);
       })
       .catch(e => {
-        this.setState({ error: e.message ? e.message : e })
+        this.setState({ error: e.message ? e.message : e });
       });
   }
 
   render() {
     if (this.state.error) {
-      return (
-        <span className="label label-danger">{this.state.error}</span>
-      );
+      return <span className="label label-danger">{this.state.error}</span>;
     }
     if (this.state.done) {
       return (
-      <span className="label label-success">Certificate for {this.props.domain} created successfully !</span>
+        <span className="label label-success">
+          Certificate for {this.props.domain} created successfully !
+        </span>
       );
     }
     return (
       <div
-          style={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            width: '100%',
-            height: 300,
-          }}>
-          <svg
-            width="142px"
-            height="142px"
-            viewBox="0 0 100 100"
-            preserveAspectRatio="xMidYMid"
-            className="uil-ring-alt">
-            <rect x="0" y="0" width="100" height="100" fill="none" className="bk" />
-            <circle cx="50" cy="50" r="40" stroke="#222222" fill="none" strokeLinecap="round" />
-            <circle cx="50" cy="50" r="40" stroke="#f9b000" fill="none" strokeLinecap="round">
-              <animate
-                attributeName="stroke-dashoffset"
-                dur="2s"
-                repeatCount="indefinite"
-                from="0"
-                to="502"
-              />
-              <animate
-                attributeName="stroke-dasharray"
-                dur="2s"
-                repeatCount="indefinite"
-                values="150.6 100.4;1 250;150.6 100.4"
-              />
-            </circle>
-          </svg>
-        </div>
+        style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          width: '100%',
+          height: 300,
+        }}>
+        <svg
+          width="142px"
+          height="142px"
+          viewBox="0 0 100 100"
+          preserveAspectRatio="xMidYMid"
+          className="uil-ring-alt">
+          <rect x="0" y="0" width="100" height="100" fill="none" className="bk" />
+          <circle cx="50" cy="50" r="40" stroke="#222222" fill="none" strokeLinecap="round" />
+          <circle cx="50" cy="50" r="40" stroke="#f9b000" fill="none" strokeLinecap="round">
+            <animate
+              attributeName="stroke-dashoffset"
+              dur="2s"
+              repeatCount="indefinite"
+              from="0"
+              to="502"
+            />
+            <animate
+              attributeName="stroke-dasharray"
+              dur="2s"
+              repeatCount="indefinite"
+              values="150.6 100.4;1 250;150.6 100.4"
+            />
+          </circle>
+        </svg>
+      </div>
     );
   }
 }

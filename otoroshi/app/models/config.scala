@@ -67,26 +67,29 @@ object ElasticAnalyticsConfig {
   }
 }
 
-case class Webhook(url: String, headers: Map[String, String] = Map.empty[String, String], mtlsConfig: MtlsConfig = MtlsConfig.default) {
+case class Webhook(url: String,
+                   headers: Map[String, String] = Map.empty[String, String],
+                   mtlsConfig: MtlsConfig = MtlsConfig.default) {
   def toJson: JsValue = Webhook.format.writes(this)
 }
 
 object Webhook {
   implicit val format = new Format[Webhook] {
-    override def reads(json: JsValue): JsResult[Webhook] = Try {
-      Webhook(
-        url = (json \ "url").as[String],
-        headers = (json \ "headers").asOpt[Map[String, String]].getOrElse(Map.empty),
-        mtlsConfig = MtlsConfig.read((json \ "mtlsConfig").asOpt[JsValue])
-      )
-    } match {
-      case Failure(e) => JsError(e.getMessage)
-      case Success(v) => JsSuccess(v)
-    }
+    override def reads(json: JsValue): JsResult[Webhook] =
+      Try {
+        Webhook(
+          url = (json \ "url").as[String],
+          headers = (json \ "headers").asOpt[Map[String, String]].getOrElse(Map.empty),
+          mtlsConfig = MtlsConfig.read((json \ "mtlsConfig").asOpt[JsValue])
+        )
+      } match {
+        case Failure(e) => JsError(e.getMessage)
+        case Success(v) => JsSuccess(v)
+      }
 
     override def writes(o: Webhook): JsValue = Json.obj(
-      "url" -> o.url,
-      "headers" -> o.headers,
+      "url"        -> o.url,
+      "headers"    -> o.headers,
       "mtlsConfig" -> o.mtlsConfig.json
     )
   }
@@ -285,8 +288,6 @@ case class UserAgentSettings(enabled: Boolean) {
   }
 }
 
-
-
 case class GlobalConfig(
     letsEncryptSettings: LetsEncryptSettings = LetsEncryptSettings(),
     lines: Seq[String] = Seq("prod"),
@@ -385,18 +386,18 @@ object GlobalConfig {
           )
       }
       val kafkaConfig: JsValue = o.kafkaConfig match {
-        case None => JsNull
+        case None         => JsNull
         case Some(config) => config.json
-          // Json.obj(
-          //   "servers"        -> JsArray(config.servers.map(JsString.apply)),
-          //   "keyPass"        -> config.keyPass.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-          //   "keystore"       -> config.keystore.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-          //   "truststore"     -> config.truststore.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-          //   "alertsTopic"    -> config.alertsTopic,
-          //   "analyticsTopic" -> config.analyticsTopic,
-          //   "auditTopic"     -> config.auditTopic,
-          //   "sendEvents"     -> config.sendEvents
-          // )
+        // Json.obj(
+        //   "servers"        -> JsArray(config.servers.map(JsString.apply)),
+        //   "keyPass"        -> config.keyPass.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+        //   "keystore"       -> config.keystore.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+        //   "truststore"     -> config.truststore.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+        //   "alertsTopic"    -> config.alertsTopic,
+        //   "analyticsTopic" -> config.analyticsTopic,
+        //   "auditTopic"     -> config.auditTopic,
+        //   "sendEvents"     -> config.sendEvents
+        // )
       }
       val statsdConfig: JsValue = o.statsdConfig match {
         case None => JsNull
@@ -408,7 +409,7 @@ object GlobalConfig {
           )
       }
       Json.obj(
-        "letsEncryptSettings" -> o.letsEncryptSettings.json,
+        "letsEncryptSettings"     -> o.letsEncryptSettings.json,
         "lines"                   -> JsArray(o.lines.map(JsString.apply)),
         "maintenanceMode"         -> o.maintenanceMode,
         "enableEmbeddedMetrics"   -> o.enableEmbeddedMetrics,
@@ -504,27 +505,27 @@ object GlobalConfig {
           },
           kafkaConfig = (json \ "kafkaConfig").asOpt[JsValue].flatMap { config =>
             KafkaConfig.format.reads(config).asOpt
-            // (
-            //   (config \ "servers").asOpt[Seq[String]].filter(_.nonEmpty),
-            //   (config \ "keyPass").asOpt[String],
-            //   (config \ "keystore").asOpt[String],
-            //   (config \ "truststore").asOpt[String],
-            //   (config \ "sendEvents").asOpt[Boolean].getOrElse(true),
-            //   (config \ "alertsTopic").asOpt[String].filter(_.nonEmpty),
-            //   (config \ "analyticsTopic").asOpt[String].filter(_.nonEmpty),
-            //   (config \ "auditTopic").asOpt[String].filter(_.nonEmpty)
-            // ) match {
-            //   case (Some(servers),
-            //         keyPass,
-            //         keystore,
-            //         truststore,
-            //         sendEvents,
-            //         Some(alertsTopic),
-            //         Some(analyticsTopic),
-            //         Some(auditTopic)) =>
-            //     Some(KafkaConfig(servers, keyPass, keystore, truststore, sendEvents, alertsTopic, analyticsTopic, auditTopic))
-            //   case e => None
-            // }
+          // (
+          //   (config \ "servers").asOpt[Seq[String]].filter(_.nonEmpty),
+          //   (config \ "keyPass").asOpt[String],
+          //   (config \ "keystore").asOpt[String],
+          //   (config \ "truststore").asOpt[String],
+          //   (config \ "sendEvents").asOpt[Boolean].getOrElse(true),
+          //   (config \ "alertsTopic").asOpt[String].filter(_.nonEmpty),
+          //   (config \ "analyticsTopic").asOpt[String].filter(_.nonEmpty),
+          //   (config \ "auditTopic").asOpt[String].filter(_.nonEmpty)
+          // ) match {
+          //   case (Some(servers),
+          //         keyPass,
+          //         keystore,
+          //         truststore,
+          //         sendEvents,
+          //         Some(alertsTopic),
+          //         Some(analyticsTopic),
+          //         Some(auditTopic)) =>
+          //     Some(KafkaConfig(servers, keyPass, keystore, truststore, sendEvents, alertsTopic, analyticsTopic, auditTopic))
+          //   case e => None
+          // }
           },
           backOfficeAuthRef = (json \ "backOfficeAuthRef").asOpt[String],
           mailerSettings = (json \ "mailerSettings").asOpt[JsValue].flatMap { config =>

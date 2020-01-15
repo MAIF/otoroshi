@@ -1,6 +1,13 @@
 import React, { Component, Suspense } from 'react';
 
-import { TextInput, NumberInput, SelectInput, BooleanInput, PasswordInput, ArrayInput } from './inputs';
+import {
+  TextInput,
+  NumberInput,
+  SelectInput,
+  BooleanInput,
+  PasswordInput,
+  ArrayInput,
+} from './inputs';
 
 const CodeInput = React.lazy(() => Promise.resolve(require('./inputs/CodeInput')));
 
@@ -154,8 +161,8 @@ export class Oauth2ModuleConfig extends Component {
     mtlsConfig: {
       mtls: false,
       loose: false,
-      certs: []
-    }
+      certs: [],
+    },
   };
 
   componentDidCatch(error) {
@@ -464,7 +471,17 @@ export class Oauth2ModuleConfig extends Component {
           placeholder="Choose a client certificate"
           value={settings.mtlsConfig.certs}
           valuesFrom="/bo/api/proxy/api/certificates"
-          transformer={a => ({ value: a.id, label: <span><span className="label label-success" style={{ minWidth: 63 }}>{a.certType}</span> {a.name} - {a.description}</span> })}
+          transformer={a => ({
+            value: a.id,
+            label: (
+              <span>
+                <span className="label label-success" style={{ minWidth: 63 }}>
+                  {a.certType}
+                </span>{' '}
+                {a.name} - {a.description}
+              </span>
+            ),
+          })}
           help="The certificate used when performing a mTLS call"
           onChange={e => changeTheValue(path + '.mtlsConfig.certs', e)}
         />

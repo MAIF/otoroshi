@@ -54,7 +54,7 @@ class SecurityTxt extends RequestTransformer {
     (ctx.rawRequest.method, ctx.rawRequest.path) match {
       case ("GET", "/.well-known/security.txt") => {
         val config = ctx.configFor("SecurityTxt")
-        val host = s"https://${ctx.descriptor.toHost}"
+        val host   = s"https://${ctx.descriptor.toHost}"
         val contact =
           (config \ "contact").asOpt[String].orElse((config \ "Contact").asOpt[String]).map(c => s"Contact: $c\n")
         val values = Seq("Encryption", "Acknowledgments", "Preferred-Languages", "Policy", "Hiring").map { key =>

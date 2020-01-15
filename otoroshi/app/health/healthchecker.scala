@@ -35,7 +35,7 @@ class HealthCheckerActor()(implicit env: Env) extends Actor {
   def checkService(desc: ServiceDescriptor): Future[Unit] =
     Future
       .sequence(desc.targets.map { target =>
-        val url = s"${target.scheme}://${target.host}${desc.healthCheck.url}"
+        val url   = s"${target.scheme}://${target.host}${desc.healthCheck.url}"
         val start = System.currentTimeMillis()
         val state = IdGenerator.extendedToken(128)
         val value = env.snowflakeGenerator.nextIdStr()

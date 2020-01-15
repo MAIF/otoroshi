@@ -648,7 +648,7 @@ export function fetchOtoroshi(ctype) {
     headers: {
       Accept: ctype || 'application/json',
     },
-  }).then(r => ctype === 'application/json' ? r.json() : r.text());
+  }).then(r => (ctype === 'application/json' ? r.json() : r.text()));
 }
 
 export function fetchAuditEvents() {

@@ -45,10 +45,10 @@ import scala.xml.{Elem, XML}
 case class MtlsConfig(certs: Seq[String] = Seq.empty, mtls: Boolean = false, loose: Boolean = false) {
   def json: JsValue = MtlsConfig.format.writes(this)
   def toJKS(implicit env: Env): (java.io.File, String) = {
-    val password = IdGenerator.token
-    val path = java.nio.file.Files.createTempFile("oto-kafka-keystore-", ".jks")
+    val password     = IdGenerator.token
+    val path         = java.nio.file.Files.createTempFile("oto-kafka-keystore-", ".jks")
     val certificates = certs.flatMap(DynamicSSLEngineProvider.certificates.get)
-    val keystore = DynamicSSLEngineProvider.createKeyStore(certificates)
+    val keystore     = DynamicSSLEngineProvider.createKeyStore(certificates)
     keystore.store(new FileOutputStream(path.toFile), password.toCharArray)
     env.lifecycle.addStopHook { () =>
       path.toFile.delete()
@@ -60,22 +60,27 @@ case class MtlsConfig(certs: Seq[String] = Seq.empty, mtls: Boolean = false, loo
 }
 
 object MtlsConfig {
-  val default = MtlsConfig()
+  val default                                = MtlsConfig()
   def read(opt: Option[JsValue]): MtlsConfig = opt.flatMap(json => format.reads(json).asOpt).getOrElse(default)
   val format = new Format[MtlsConfig] {
-    override def reads(json: JsValue): JsResult[MtlsConfig] = Try {
-      MtlsConfig(
-        certs = (json \ "certs").asOpt[Seq[String]].orElse((json \ "certId").asOpt[String].map(v => Seq(v))).map(_.filter(_.trim.nonEmpty)).getOrElse(Seq.empty),
-        mtls = (json \ "mtls").asOpt[Boolean].getOrElse(false),
-        loose = (json \ "loose").asOpt[Boolean].getOrElse(false)
-      )
-    } match {
-      case Failure(e) => JsError(e.getMessage())
-      case Success(v) => JsSuccess(v)
-    }
+    override def reads(json: JsValue): JsResult[MtlsConfig] =
+      Try {
+        MtlsConfig(
+          certs = (json \ "certs")
+            .asOpt[Seq[String]]
+            .orElse((json \ "certId").asOpt[String].map(v => Seq(v)))
+            .map(_.filter(_.trim.nonEmpty))
+            .getOrElse(Seq.empty),
+          mtls = (json \ "mtls").asOpt[Boolean].getOrElse(false),
+          loose = (json \ "loose").asOpt[Boolean].getOrElse(false)
+        )
+      } match {
+        case Failure(e) => JsError(e.getMessage())
+        case Success(v) => JsSuccess(v)
+      }
     override def writes(o: MtlsConfig): JsValue = Json.obj(
       "certs" -> JsArray(o.certs.map(JsString.apply)),
-      "mtls" -> o.mtls,
+      "mtls"  -> o.mtls,
       "loose" -> o.loose
     )
   }
@@ -84,9 +89,9 @@ object MtlsConfig {
 class MtlsWs(chooser: WsClientChooser) {
   @inline
   def url(url: String, config: MtlsConfig): WSRequest = config match {
-    case MtlsConfig(seq, _, _)       if seq.isEmpty  => chooser.url(url)
-    case MtlsConfig(seq, false, _)   if seq.nonEmpty => chooser.url(url)
-    case m@MtlsConfig(seq, true, _)  if seq.nonEmpty => chooser.urlWithCert(url, Some(m))
+    case MtlsConfig(seq, _, _) if seq.isEmpty         => chooser.url(url)
+    case MtlsConfig(seq, false, _) if seq.nonEmpty    => chooser.url(url)
+    case m @ MtlsConfig(seq, true, _) if seq.nonEmpty => chooser.urlWithCert(url, Some(m))
   }
 }
 
@@ -128,7 +133,11 @@ class WsClientChooser(standardClient: WSClient,
             targetOpt: Option[Target],
             clientFlow: Flow[Message, Message, T],
             customizer: ClientConnectionSettings => ClientConnectionSettings): (Future[WebSocketUpgradeResponse], T) = {
-    val certs: Seq[Cert] = targetOpt.filter(_.mtlsConfig.mtls).toSeq.flatMap(_.mtlsConfig.certs).flatMap(DynamicSSLEngineProvider.certificates.get)
+    val certs: Seq[Cert] = targetOpt
+      .filter(_.mtlsConfig.mtls)
+      .toSeq
+      .flatMap(_.mtlsConfig.certs)
+      .flatMap(DynamicSSLEngineProvider.certificates.get)
     akkaClient.executeWsRequest(request, targetOpt.exists(_.mtlsConfig.loose), certs, clientFlow, customizer)
   }
 
@@ -161,10 +170,18 @@ class WsClientChooser(standardClient: WSClient,
   // }
 
   def urlWithCert(url: String, mtlsConfig: Option[MtlsConfig]): WSRequest = {
-    new AkkaWsClientRequest(akkaClient, url, mtlsConfig.map(c => Target(
-      host = "####",
-      mtlsConfig = c
-    )), HttpProtocols.`HTTP/1.1`, clientConfig = ClientConfig(), env = env)(
+    new AkkaWsClientRequest(akkaClient,
+                            url,
+                            mtlsConfig.map(
+                              c =>
+                                Target(
+                                  host = "####",
+                                  mtlsConfig = c
+                              )
+                            ),
+                            HttpProtocols.`HTTP/1.1`,
+                            clientConfig = ClientConfig(),
+                            env = env)(
       akkaClient.mat
     )
   }
@@ -292,26 +309,30 @@ class WsClientChooser(standardClient: WSClient,
           akkaClient.mat
         )
       case p if p.startsWith("mtls#") => {
-        val parts = url.split("://")
+        val parts         = url.split("://")
         val mtlsConfigRaw = parts.apply(0).replace("mtls#", "")
-        val urlEnds = parts.apply(1)
+        val urlEnds       = parts.apply(1)
         val (loose, certId) = if (mtlsConfigRaw.contains("loose#")) {
           (true, mtlsConfigRaw.replace("loose#", ""))
         } else {
           (false, mtlsConfigRaw)
         }
-        new AkkaWsClientRequest(akkaClient,
+        new AkkaWsClientRequest(
+          akkaClient,
           "https://" + urlEnds,
-          Some(Target(
-            host = urlEnds,
-            mtlsConfig = MtlsConfig(Seq(certId), true, loose)
-            // loose = loose,
-            // mtls = true,
-            // certId = Some(certId)
-          )),
+          Some(
+            Target(
+              host = urlEnds,
+              mtlsConfig = MtlsConfig(Seq(certId), true, loose)
+              // loose = loose,
+              // mtls = true,
+              // certId = Some(certId)
+            )
+          ),
           HttpProtocols.`HTTP/1.1`,
           clientConfig = clientConfig,
-          env = env)(
+          env = env
+        )(
           akkaClient.mat
         )
       }
@@ -452,7 +473,7 @@ class AkkWsClient(config: WSClientConfig, env: Env)(implicit system: ActorSystem
 
   override def close(): Unit = Await.ready(client.shutdownAllConnectionPools(), 10.seconds)
 
-  private[utils] val logger = Logger("otoroshi-akka-ws-client")
+  private[utils] val logger                         = Logger("otoroshi-akka-ws-client")
   private[utils] val wsClientConfig: WSClientConfig = config
   private[utils] val akkaSSLConfig: AkkaSSLConfig = AkkaSSLConfig(system).withSettings(
     config.ssl
@@ -520,8 +541,8 @@ class AkkWsClient(config: WSClientConfig, env: Env)(implicit system: ActorSystem
         }
         val pool = customizer(connectionPoolSettings).withMaxConnections(512)
         client.singleRequest(request,
-          if (loose) connectionContextLooseHolder.get() else connectionContextHolder.get(),
-          pool)
+                             if (loose) connectionContextLooseHolder.get() else connectionContextHolder.get(),
+                             pool)
       }
       case certs if certs.nonEmpty => {
         logger.info(s"Calling ${request.uri} with mTLS context of ${certs.size} certificates")
@@ -856,7 +877,11 @@ case class AkkaWsClientRequest(
   override def withHeaders(headers: (String, String)*): WSRequest = withHttpHeaders(headers: _*)
 
   def stream(): Future[WSResponse] = {
-    val certs: Seq[Cert] = targetOpt.filter(_.mtlsConfig.mtls).toSeq.flatMap(_.mtlsConfig.certs).flatMap(DynamicSSLEngineProvider.certificates.get)
+    val certs: Seq[Cert] = targetOpt
+      .filter(_.mtlsConfig.mtls)
+      .toSeq
+      .flatMap(_.mtlsConfig.certs)
+      .flatMap(DynamicSSLEngineProvider.certificates.get)
     val req = buildRequest()
     client
       .executeRequest(req, targetOpt.exists(_.mtlsConfig.loose), certs, customizer)
@@ -875,7 +900,11 @@ case class AkkaWsClientRequest(
   }
 
   override def execute(): Future[WSResponse] = {
-    val certs: Seq[Cert] = targetOpt.filter(_.mtlsConfig.mtls).toSeq.flatMap(_.mtlsConfig.certs).flatMap(DynamicSSLEngineProvider.certificates.get)
+    val certs: Seq[Cert] = targetOpt
+      .filter(_.mtlsConfig.mtls)
+      .toSeq
+      .flatMap(_.mtlsConfig.certs)
+      .flatMap(DynamicSSLEngineProvider.certificates.get)
     client
       .executeRequest(buildRequest(), targetOpt.exists(_.mtlsConfig.loose), certs, customizer)
       .flatMap { response: HttpResponse =>
@@ -976,17 +1005,35 @@ case class AkkaWsClientRequest(
   override def queryString: Map[String, Seq[String]]      = _uri.query().toMultiMap
   override def get(): Future[WSResponse]                  = withMethod("GET").execute()
   override def post[T](body: T)(implicit evidence$2: BodyWritable[T]): Future[WSResponse] =
-    withMethod("POST").withBody(evidence$2.transform(body)).addHttpHeaders("Content-Type" -> evidence$2.contentType).execute()
+    withMethod("POST")
+      .withBody(evidence$2.transform(body))
+      .addHttpHeaders("Content-Type" -> evidence$2.contentType)
+      .execute()
   override def post(body: File): Future[WSResponse] =
-    withMethod("POST").withBody(InMemoryBody(ByteString(scala.io.Source.fromFile(body).mkString))).addHttpHeaders("Content-Type" -> "application/octet-stream").execute()
+    withMethod("POST")
+      .withBody(InMemoryBody(ByteString(scala.io.Source.fromFile(body).mkString)))
+      .addHttpHeaders("Content-Type" -> "application/octet-stream")
+      .execute()
   override def patch[T](body: T)(implicit evidence$3: BodyWritable[T]): Future[WSResponse] =
-    withMethod("PATCH").withBody(evidence$3.transform(body)).addHttpHeaders("Content-Type" -> evidence$3.contentType).execute()
+    withMethod("PATCH")
+      .withBody(evidence$3.transform(body))
+      .addHttpHeaders("Content-Type" -> evidence$3.contentType)
+      .execute()
   override def patch(body: File): Future[WSResponse] =
-    withMethod("PATCH").withBody(InMemoryBody(ByteString(scala.io.Source.fromFile(body).mkString))).addHttpHeaders("Content-Type" -> "application/octet-stream").execute()
+    withMethod("PATCH")
+      .withBody(InMemoryBody(ByteString(scala.io.Source.fromFile(body).mkString)))
+      .addHttpHeaders("Content-Type" -> "application/octet-stream")
+      .execute()
   override def put[T](body: T)(implicit evidence$4: BodyWritable[T]): Future[WSResponse] =
-    withMethod("PUT").withBody(evidence$4.transform(body)).addHttpHeaders("Content-Type" -> evidence$4.contentType).execute()
+    withMethod("PUT")
+      .withBody(evidence$4.transform(body))
+      .addHttpHeaders("Content-Type" -> evidence$4.contentType)
+      .execute()
   override def put(body: File): Future[WSResponse] =
-    withMethod("PUT").withBody(InMemoryBody(ByteString(scala.io.Source.fromFile(body).mkString))).addHttpHeaders("Content-Type" -> "application/octet-stream").execute()
+    withMethod("PUT")
+      .withBody(InMemoryBody(ByteString(scala.io.Source.fromFile(body).mkString)))
+      .addHttpHeaders("Content-Type" -> "application/octet-stream")
+      .execute()
   override def delete(): Future[WSResponse]     = withMethod("DELETE").execute()
   override def head(): Future[WSResponse]       = withMethod("HEAD").execute()
   override def options(): Future[WSResponse]    = withMethod("OPTIONS").execute()

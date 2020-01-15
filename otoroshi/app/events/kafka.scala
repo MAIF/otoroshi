@@ -36,33 +36,34 @@ object KafkaConfig {
   implicit val format = new Format[KafkaConfig] { // Json.format[KafkaConfig]
 
     override def writes(o: KafkaConfig): JsValue = Json.obj(
-      "servers" -> JsArray(o.servers.map(JsString.apply)),
-      "keyPass" -> o.keyPass.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-      "keystore" -> o.keystore.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-      "truststore" -> o.truststore.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-      "sendEvents" -> o.sendEvents,
-      "alertsTopic" -> o.alertsTopic,
+      "servers"        -> JsArray(o.servers.map(JsString.apply)),
+      "keyPass"        -> o.keyPass.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      "keystore"       -> o.keystore.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      "truststore"     -> o.truststore.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      "sendEvents"     -> o.sendEvents,
+      "alertsTopic"    -> o.alertsTopic,
       "analyticsTopic" -> o.analyticsTopic,
-      "auditTopic" -> o.auditTopic,
-      "mtlsConfig" -> o.mtlsConfig.json,
+      "auditTopic"     -> o.auditTopic,
+      "mtlsConfig"     -> o.mtlsConfig.json,
     )
 
-    override def reads(json: JsValue): JsResult[KafkaConfig] = Try {
-      KafkaConfig(
-        servers = (json \ "servers").asOpt[Seq[String]].getOrElse(Seq.empty),
-        keyPass = (json \ "keyPass").asOpt[String],
-        keystore = (json \ "keystore").asOpt[String],
-        truststore = (json \ "truststore").asOpt[String],
-        sendEvents = (json \ "sendEvents").asOpt[Boolean].getOrElse(false),
-        alertsTopic = (json \ "alertsTopic").asOpt[String].getOrElse("otoroshi-alerts"),
-        analyticsTopic = (json \ "analyticsTopic").asOpt[String].getOrElse("otoroshi-analytics"),
-        auditTopic = (json \ "auditTopic").asOpt[String].getOrElse("otoroshi-audits"),
-        mtlsConfig = MtlsConfig.read((json \ "mtlsConfig").asOpt[JsValue])
-      )
-    } match {
-      case Failure(e) => JsError(e.getMessage)
-      case Success(kc) => JsSuccess(kc)
-    }
+    override def reads(json: JsValue): JsResult[KafkaConfig] =
+      Try {
+        KafkaConfig(
+          servers = (json \ "servers").asOpt[Seq[String]].getOrElse(Seq.empty),
+          keyPass = (json \ "keyPass").asOpt[String],
+          keystore = (json \ "keystore").asOpt[String],
+          truststore = (json \ "truststore").asOpt[String],
+          sendEvents = (json \ "sendEvents").asOpt[Boolean].getOrElse(false),
+          alertsTopic = (json \ "alertsTopic").asOpt[String].getOrElse("otoroshi-alerts"),
+          analyticsTopic = (json \ "analyticsTopic").asOpt[String].getOrElse("otoroshi-analytics"),
+          auditTopic = (json \ "auditTopic").asOpt[String].getOrElse("otoroshi-audits"),
+          mtlsConfig = MtlsConfig.read((json \ "mtlsConfig").asOpt[JsValue])
+        )
+      } match {
+        case Failure(e)  => JsError(e.getMessage)
+        case Success(kc) => JsSuccess(kc)
+      }
   }
 }
 
@@ -71,7 +72,8 @@ object KafkaSettings {
   import scala.concurrent.duration._
 
   def waitForFirstSetup(env: Env): Future[Unit] = {
-    Source.tick(0.second, 1.second, ())
+    Source
+      .tick(0.second, 1.second, ())
       .filter(_ => DynamicSSLEngineProvider.isFirstSetupDone)
       .take(1)
       .runWith(Sink.head)(env.otoroshiMaterializer)

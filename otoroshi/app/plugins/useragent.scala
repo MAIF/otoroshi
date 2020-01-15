@@ -95,7 +95,7 @@ class UserAgentExtractor extends PreRouting {
 
   override def preRoute(ctx: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     val config = ctx.configFor("UserAgentInfo")
-    val log = (config \ "log").asOpt[Boolean].getOrElse(false)
+    val log    = (config \ "log").asOpt[Boolean].getOrElse(false)
     ctx.request.headers.get("User-Agent") match {
       case None => funit
       case Some(ua) =>
@@ -125,12 +125,15 @@ class UserAgentInfoEndpoint extends RequestTransformer {
       """.stripMargin
     )
 
-  override def transformRequestWithCtx(ctx: TransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
+  override def transformRequestWithCtx(
+      ctx: TransformerRequestContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     (ctx.rawRequest.method.toLowerCase(), ctx.rawRequest.path) match {
-      case ("get", "/.well-known/otoroshi/plugins/user-agent") => ctx.attrs.get(otoroshi.plugins.Keys.UserAgentInfoKey) match {
-        case None => Right(ctx.otoroshiRequest).future
-        case Some(location) =>  Left(Results.Ok(location)).future
-      }
+      case ("get", "/.well-known/otoroshi/plugins/user-agent") =>
+        ctx.attrs.get(otoroshi.plugins.Keys.UserAgentInfoKey) match {
+          case None           => Right(ctx.otoroshiRequest).future
+          case Some(location) => Left(Results.Ok(location)).future
+        }
       case _ => Right(ctx.otoroshiRequest).future
     }
   }
@@ -168,7 +171,7 @@ class UserAgentInfoHeader extends RequestTransformer {
   override def transformRequestWithCtx(
       ctx: TransformerRequestContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
-    val config = ctx.configFor("UserAgentInfoHeader")
+    val config     = ctx.configFor("UserAgentInfoHeader")
     val headerName = (config \ "headerName").asOpt[String].getOrElse("X-User-Agent-Info")
     ctx.attrs.get(otoroshi.plugins.Keys.UserAgentInfoKey) match {
       case None => Right(ctx.otoroshiRequest).future

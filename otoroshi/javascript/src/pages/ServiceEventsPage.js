@@ -228,7 +228,10 @@ export class ServiceEventsPage extends Component {
       this.state.to,
       limit,
       this.state.asc ? 'asc' : 'desc'
-    ).then(d => d, err => console.error(err));
+    ).then(
+      d => d,
+      err => console.error(err)
+    );
   };
 
   updateDateRange = (from, to) => {

@@ -94,24 +94,38 @@ object GlobalExpressionLanguage {
             case r"env.$field@(.*):$dv@(.*)" => Option(System.getenv(field)).getOrElse(dv)
             case r"env.$field@(.*)"          => Option(System.getenv(field)).getOrElse(s"no-env-var-$field")
 
-            case r"config.$field@(.*):$dv@(.*)" => env.configuration.getOptional[String](field).orElse(
-                                                     env.configuration.getOptional[Int](field).map(_.toString)
-                                                   ).orElse(
-                                                     env.configuration.getOptional[Double](field).map(_.toString)
-                                                   ).orElse(
-                                                     env.configuration.getOptional[Long](field).map(_.toString)
-                                                   ).orElse(
-                                                     env.configuration.getOptional[Boolean](field).map(_.toString)
-                                                   ).getOrElse(dv)
-            case r"config.$field@(.*)"          => env.configuration.getOptional[String](field).orElse(
-                                                     env.configuration.getOptional[Int](field).map(_.toString)
-                                                   ).orElse(
-                                                     env.configuration.getOptional[Double](field).map(_.toString)
-                                                   ).orElse(
-                                                     env.configuration.getOptional[Long](field).map(_.toString)
-                                                   ).orElse(
-                                                     env.configuration.getOptional[Boolean](field).map(_.toString)
-                                                   ).getOrElse(s"no-config-$field")
+            case r"config.$field@(.*):$dv@(.*)" =>
+              env.configuration
+                .getOptional[String](field)
+                .orElse(
+                  env.configuration.getOptional[Int](field).map(_.toString)
+                )
+                .orElse(
+                  env.configuration.getOptional[Double](field).map(_.toString)
+                )
+                .orElse(
+                  env.configuration.getOptional[Long](field).map(_.toString)
+                )
+                .orElse(
+                  env.configuration.getOptional[Boolean](field).map(_.toString)
+                )
+                .getOrElse(dv)
+            case r"config.$field@(.*)" =>
+              env.configuration
+                .getOptional[String](field)
+                .orElse(
+                  env.configuration.getOptional[Int](field).map(_.toString)
+                )
+                .orElse(
+                  env.configuration.getOptional[Double](field).map(_.toString)
+                )
+                .orElse(
+                  env.configuration.getOptional[Long](field).map(_.toString)
+                )
+                .orElse(
+                  env.configuration.getOptional[Boolean](field).map(_.toString)
+                )
+                .getOrElse(s"no-config-$field")
 
             case r"ctx.$field@(.*).replace\('$a@(.*)', '$b@(.*)'\)" =>
               context.get(field).map(v => v.replace(a, b)).getOrElse(s"no-ctx-$field")

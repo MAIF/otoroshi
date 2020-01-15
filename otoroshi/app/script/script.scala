@@ -36,7 +36,6 @@ import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
 
-
 sealed trait PluginType {
   def name: String
 }
@@ -73,59 +72,75 @@ trait StartableAndStoppable {
 
 trait NamedPlugin { self =>
   def pluginType: PluginType
-  def name: String                    = self.getClass.getName
-  def description: Option[String]     = None
+  def name: String                = self.getClass.getName
+  def description: Option[String] = None
 
   def defaultConfig: Option[JsObject] = None
-  def configRoot: Option[String]      = defaultConfig match {
-    case None => None
-    case Some(config) if config.value.size > 1 => None
-    case Some(config) if config.value.isEmpty => None
+  def configRoot: Option[String] = defaultConfig match {
+    case None                                   => None
+    case Some(config) if config.value.size > 1  => None
+    case Some(config) if config.value.isEmpty   => None
     case Some(config) if config.value.size == 1 => config.value.headOption.map(_._1)
   }
 
-  def configSchema: Option[JsObject]  = defaultConfig.flatMap(c => configRoot.map(r => (c \ r).asOpt[JsObject].getOrElse(Json.obj()))) match {
-    case None => None
-    case Some(config) => {
-      def genSchema(jsobj: JsObject, prefix: String): JsObject = {
-        jsobj.value.toSeq.map {
-          case (key, JsString(_))  => Json.obj(prefix + key -> Json.obj("type" -> "string", "props" -> Json.obj("label" -> (prefix + key))))
-          case (key, JsNumber(_))  => Json.obj(prefix + key -> Json.obj("type" -> "number", "props" -> Json.obj("label" -> (prefix + key))))
-          case (key, JsBoolean(_)) => Json.obj(prefix + key -> Json.obj("type" -> "bool", "props" -> Json.obj("label" -> (prefix + key))))
-          case (key, JsArray(values)) => {
-            if (values.isEmpty) {
-              Json.obj(prefix + key -> Json.obj("type" -> "array", "props" -> Json.obj("label" -> (prefix + key))))
-            } else {
-              values.head match {
-                case JsNumber(_) => Json.obj(prefix + key -> Json.obj("type" -> "array", "props" -> Json.obj("label" -> (prefix + key), "inputType" -> "number")))
-                case _ => Json.obj(prefix+ key -> Json.obj("type" -> "array", "props" -> Json.obj("label" -> (prefix + key))))
+  def configSchema: Option[JsObject] =
+    defaultConfig.flatMap(c => configRoot.map(r => (c \ r).asOpt[JsObject].getOrElse(Json.obj()))) match {
+      case None => None
+      case Some(config) => {
+        def genSchema(jsobj: JsObject, prefix: String): JsObject = {
+          jsobj.value.toSeq
+            .map {
+              case (key, JsString(_)) =>
+                Json.obj(prefix + key -> Json.obj("type" -> "string", "props" -> Json.obj("label" -> (prefix + key))))
+              case (key, JsNumber(_)) =>
+                Json.obj(prefix + key -> Json.obj("type" -> "number", "props" -> Json.obj("label" -> (prefix + key))))
+              case (key, JsBoolean(_)) =>
+                Json.obj(prefix + key -> Json.obj("type" -> "bool", "props" -> Json.obj("label" -> (prefix + key))))
+              case (key, JsArray(values)) => {
+                if (values.isEmpty) {
+                  Json.obj(prefix + key -> Json.obj("type" -> "array", "props" -> Json.obj("label" -> (prefix + key))))
+                } else {
+                  values.head match {
+                    case JsNumber(_) =>
+                      Json.obj(
+                        prefix + key -> Json.obj("type" -> "array",
+                                                 "props" -> Json.obj("label" -> (prefix + key),
+                                                                     "inputType" -> "number"))
+                      )
+                    case _ =>
+                      Json.obj(
+                        prefix + key -> Json.obj("type" -> "array", "props" -> Json.obj("label" -> (prefix + key)))
+                      )
+                  }
+                }
               }
+              case ("mtlsConfig", a @ JsObject(_)) => genSchema(a, prefix + "mtlsConfig.")
+              case ("filter", a @ JsObject(_))     => genSchema(a, prefix + "filter.")
+              case ("not", a @ JsObject(_))        => genSchema(a, prefix + "not.")
+              case (key, JsObject(_)) =>
+                Json.obj(prefix + key -> Json.obj("type" -> "object", "props" -> Json.obj("label" -> (prefix + key))))
+              case (key, JsNull) => Json.obj()
             }
-          }
-          case ("mtlsConfig", a@JsObject(_))  => genSchema(a, prefix + "mtlsConfig.")
-          case ("filter", a@JsObject(_))  => genSchema(a, prefix + "filter.")
-          case ("not", a@JsObject(_))  => genSchema(a, prefix + "not.")
-          case (key, JsObject(_))  => Json.obj(prefix + key -> Json.obj("type" -> "object", "props" -> Json.obj("label" -> (prefix + key))))
-          case (key, JsNull)       => Json.obj()
-        }.foldLeft(Json.obj())(_ ++ _)
-      }
-      Some(genSchema(config, ""))
-    }
-  }
-  def configFlow: Seq[String] = defaultConfig.flatMap(c => configRoot.map(r => (c \ r).asOpt[JsObject].getOrElse(Json.obj()))) match {
-    case None => Seq.empty
-    case Some(config) => {
-      def genFlow(jsobj: JsObject, prefix: String): Seq[String] = {
-        jsobj.value.toSeq.flatMap {
-          case ("mtlsConfig", a@JsObject(_)) => genFlow(a, prefix + "mtlsConfig.")
-          case ("filter", a@JsObject(_)) => genFlow(a, prefix + "filter.")
-          case ("not", a@JsObject(_)) => genFlow(a, prefix + "not.")
-          case (key, value) => Seq(prefix + key)
+            .foldLeft(Json.obj())(_ ++ _)
         }
+        Some(genSchema(config, ""))
       }
-      genFlow(config, "")
     }
-  }
+  def configFlow: Seq[String] =
+    defaultConfig.flatMap(c => configRoot.map(r => (c \ r).asOpt[JsObject].getOrElse(Json.obj()))) match {
+      case None => Seq.empty
+      case Some(config) => {
+        def genFlow(jsobj: JsObject, prefix: String): Seq[String] = {
+          jsobj.value.toSeq.flatMap {
+            case ("mtlsConfig", a @ JsObject(_)) => genFlow(a, prefix + "mtlsConfig.")
+            case ("filter", a @ JsObject(_))     => genFlow(a, prefix + "filter.")
+            case ("not", a @ JsObject(_))        => genFlow(a, prefix + "not.")
+            case (key, value)                    => Seq(prefix + key)
+          }
+        }
+        genFlow(config, "")
+      }
+    }
 }
 
 case class HttpRequest(url: String,
@@ -153,8 +168,10 @@ trait ContextWithConfig {
   def index: Int
   def config: JsValue
   def globalConfig: JsValue
-  def configExists(name: String): Boolean = (config \ name).asOpt[JsValue].orElse((globalConfig \ name).asOpt[JsValue]).isDefined
-  def configFor(name: String): JsValue = (config \ name).asOpt[JsValue].orElse((globalConfig \ name).asOpt[JsValue]).getOrElse(Json.obj())
+  def configExists(name: String): Boolean =
+    (config \ name).asOpt[JsValue].orElse((globalConfig \ name).asOpt[JsValue]).isDefined
+  def configFor(name: String): JsValue =
+    (config \ name).asOpt[JsValue].orElse((globalConfig \ name).asOpt[JsValue]).getOrElse(Json.obj())
   private def conf[A](prefix: String = "config-"): Option[JsValue] = {
     config match {
       case json: JsArray  => Option(json.value(index)).orElse((config \ s"$prefix$index").asOpt[JsValue])
@@ -200,23 +217,23 @@ sealed trait TransformerContext extends ContextWithConfig {
 }
 
 case class BeforeRequestContext(
-  index: Int,
-  snowflake: String,
-  descriptor: ServiceDescriptor,
-  request: RequestHeader,
-  config: JsValue,
-  attrs: TypedMap,
-  globalConfig: JsValue = Json.obj()
+    index: Int,
+    snowflake: String,
+    descriptor: ServiceDescriptor,
+    request: RequestHeader,
+    config: JsValue,
+    attrs: TypedMap,
+    globalConfig: JsValue = Json.obj()
 ) extends ContextWithConfig {}
 
 case class AfterRequestContext(
-  index: Int,
-  snowflake: String,
-  descriptor: ServiceDescriptor,
-  request: RequestHeader,
-  config: JsValue,
-  attrs: TypedMap,
-  globalConfig: JsValue = Json.obj()
+    index: Int,
+    snowflake: String,
+    descriptor: ServiceDescriptor,
+    request: RequestHeader,
+    config: JsValue,
+    attrs: TypedMap,
+    globalConfig: JsValue = Json.obj()
 ) extends ContextWithConfig {}
 
 case class TransformerRequestContext(
@@ -298,11 +315,15 @@ trait RequestTransformer extends StartableAndStoppable with NamedPlugin with Int
 
   def pluginType: PluginType = TransformerType
 
-  def beforeRequest(context: BeforeRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
+  def beforeRequest(
+      context: BeforeRequestContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
     FastFuture.successful(())
   }
 
-  def afterRequest(context: AfterRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
+  def afterRequest(
+      context: AfterRequestContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
     FastFuture.successful(())
   }
 
@@ -459,32 +480,45 @@ trait NanoApp extends RequestTransformer {
 
   private val awaitingRequests = new TrieMap[String, Promise[Source[ByteString, _]]]()
 
-  override def beforeRequest(ctx: BeforeRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
+  override def beforeRequest(
+      ctx: BeforeRequestContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
     awaitingRequests.putIfAbsent(ctx.snowflake, Promise[Source[ByteString, _]])
     funit
   }
 
-  override def afterRequest(ctx: AfterRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
+  override def afterRequest(
+      ctx: AfterRequestContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
     awaitingRequests.remove(ctx.snowflake)
     funit
   }
 
-  override def transformRequestWithCtx(ctx: TransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
+  override def transformRequestWithCtx(
+      ctx: TransformerRequestContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     awaitingRequests.get(ctx.snowflake).map { promise =>
       val consumed = new AtomicBoolean(false)
-      val bodySource: Source[ByteString, _] = Source.fromFuture(promise.future).flatMapConcat(s => s).alsoTo(Sink.onComplete {
-        case _ => consumed.set(true)
-      })
+      val bodySource: Source[ByteString, _] = Source
+        .fromFuture(promise.future)
+        .flatMapConcat(s => s)
+        .alsoTo(Sink.onComplete {
+          case _ => consumed.set(true)
+        })
       route(ctx.rawRequest, bodySource).map { r =>
         if (!consumed.get()) bodySource.runWith(Sink.ignore)
         Left(r)
       }
     } getOrElse {
-      FastFuture.successful(Left(Results.InternalServerError(Json.obj("error" -> s"no body promise found for ${ctx.snowflake}"))))
+      FastFuture.successful(
+        Left(Results.InternalServerError(Json.obj("error" -> s"no body promise found for ${ctx.snowflake}")))
+      )
     }
   }
 
-  override def transformRequestBodyWithCtx(ctx: TransformerRequestBodyContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
+  override def transformRequestBodyWithCtx(
+      ctx: TransformerRequestBodyContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
     awaitingRequests.get(ctx.snowflake).map(_.trySuccess(ctx.body))
     ctx.body
   }
@@ -622,7 +656,9 @@ class ScriptManager(env: Env) {
       scanResult.getClassesImplementing(classOf[RequestSink].getName).asScala).filterNot(predicate).map(_.getName)
 
       val listenerNames: Seq[String] = (scanResult.getSubclasses(classOf[OtoroshiEventListener].getName).asScala ++
-        scanResult.getClassesImplementing(classOf[OtoroshiEventListener].getName).asScala).filterNot(predicate).map(_.getName)
+      scanResult.getClassesImplementing(classOf[OtoroshiEventListener].getName).asScala)
+        .filterNot(predicate)
+        .map(_.getName)
 
       (requestTransformers, validators, preRoutes, reqSinks, listenerNames)
     } catch {
@@ -645,14 +681,20 @@ class ScriptManager(env: Env) {
   }
 
   def stop(): Unit = {
-    cache.foreach(s => Try {
-      s._2._3.asInstanceOf[StartableAndStoppable].stop(env)
-      s._2._3.asInstanceOf[InternalEventListener].stopEvent(env)
-    })
-    cpCache.foreach(s => Try {
-      s._2._2.asInstanceOf[StartableAndStoppable].stop(env)
-      s._2._2.asInstanceOf[InternalEventListener].stopEvent(env)
-    })
+    cache.foreach(
+      s =>
+        Try {
+          s._2._3.asInstanceOf[StartableAndStoppable].stop(env)
+          s._2._3.asInstanceOf[InternalEventListener].stopEvent(env)
+      }
+    )
+    cpCache.foreach(
+      s =>
+        Try {
+          s._2._2.asInstanceOf[StartableAndStoppable].stop(env)
+          s._2._2.asInstanceOf[InternalEventListener].stopEvent(env)
+      }
+    )
     Option(updateRef.get()).foreach(_.cancel())
   }
 
@@ -718,11 +760,12 @@ class ScriptManager(env: Env) {
 
   private def compileAndUpdateIfNeeded(script: Script): Future[Unit] = {
     (cache.get(script.id), compiling.get(script.id)) match {
-      case (None, None)                             => compileAndUpdate(script, None)
-      case (None, Some(_))                          => FastFuture.successful(()) // do nothing as something is compiling
-      case (Some(_), Some(_))                       => FastFuture.successful(()) // do nothing as something is compiling
-      case (Some(cs), None) if cs._1 != script.hash => compileAndUpdate(script, Some(cs._3.asInstanceOf[InternalEventListener]))
-      case (Some(_), None)                          => FastFuture.successful(()) // do nothing as script has not changed from cache
+      case (None, None)       => compileAndUpdate(script, None)
+      case (None, Some(_))    => FastFuture.successful(()) // do nothing as something is compiling
+      case (Some(_), Some(_)) => FastFuture.successful(()) // do nothing as something is compiling
+      case (Some(cs), None) if cs._1 != script.hash =>
+        compileAndUpdate(script, Some(cs._3.asInstanceOf[InternalEventListener]))
+      case (Some(_), None) => FastFuture.successful(()) // do nothing as script has not changed from cache
     }
   }
 
@@ -835,7 +878,7 @@ object Implicits {
   implicit class ServiceDescriptorWithTransformer(val desc: ServiceDescriptor) extends AnyVal {
 
     def beforeRequest(
-      ctx: BeforeRequestContext
+        ctx: BeforeRequestContext
     )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Done] = {
       env.metrics.withTimerAsync("otoroshi.core.proxy.before-request") {
         env.scriptingEnabled match {
@@ -867,7 +910,7 @@ object Implicits {
     }
 
     def afterRequest(
-      ctx: AfterRequestContext
+        ctx: AfterRequestContext
     )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Done] = {
       env.metrics.withTimerAsync("otoroshi.core.proxy.after-request") {
         env.scriptingEnabled match {
@@ -1187,7 +1230,7 @@ class ScriptApiController(ApiAction: ApiAction, cc: ControllerComponents)(
       val validatorsNames   = env.scriptManager.validatorsNames
       val preRouteNames     = env.scriptManager.preRouteNames
       val reqSinkNames      = env.scriptManager.reqSinkNames
-      val listenerNames      = env.scriptManager.listenerNames
+      val listenerNames     = env.scriptManager.listenerNames
 
       val typ = ctx.request.getQueryString("type")
       val cpTransformers = typ match {
@@ -1212,9 +1255,9 @@ class ScriptApiController(ApiAction: ApiAction, cc: ControllerComponents)(
         case _            => Seq.empty
       }
       val cpListenerNames = typ match {
-        case None         => listenerNames
+        case None             => listenerNames
         case Some("listener") => listenerNames
-        case _            => Seq.empty
+        case _                => Seq.empty
       }
       def extractInfos(c: String): JsValue = {
         env.scriptManager.getAnyScript[NamedPlugin](s"cp:$c") match {

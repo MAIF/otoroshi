@@ -9,7 +9,7 @@ import gnieh.diffson.playJson._
 import actions.{ApiAction, UnAuthApiAction}
 import akka.NotUsed
 import akka.http.scaladsl.util.FastFuture
-import akka.stream.scaladsl.{Framing, Source, FileIO}
+import akka.stream.scaladsl.{FileIO, Framing, Source}
 import akka.util.ByteString
 import auth.{AuthModuleConfig, BasicAuthModule, BasicAuthUser, GenericOauth2ModuleConfig}
 import cluster.{ClusterMode, MemberView, StatsView}
@@ -46,15 +46,14 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
   }
 
   def processMetrics() = Action.async { req =>
-
-    val format  = req.getQueryString("format")
+    val format = req.getQueryString("format")
 
     def transformToArray(input: String): JsValue = {
       val metrics = Json.parse(input)
       metrics.as[JsObject].value.toSeq.foldLeft(Json.arr()) {
         case (arr, (key, JsObject(value))) =>
           arr ++ value.toSeq.foldLeft(Json.arr()) {
-            case (arr2, (key2, value2@JsObject(_))) =>
+            case (arr2, (key2, value2 @ JsObject(_))) =>
               arr2 ++ Json.arr(value2 ++ Json.obj("name" -> key2, "type" -> key))
             case (arr2, (key2, value2)) =>
               arr2
@@ -2177,14 +2176,18 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
           Audit.send(event)
           Alerts.send(
             OtoroshiExportAlert(env.snowflakeGenerator.nextIdStr(),
-              env.env,
-              ctx.user.getOrElse(Json.obj()),
-              event,
-              Json.obj(),
-              ctx.from,
-              ctx.ua)
+                                env.env,
+                                ctx.user.getOrElse(Json.obj()),
+                                event,
+                                Json.obj(),
+                                ctx.from,
+                                ctx.ua)
           )
-          Ok.sendEntity(HttpEntity.Streamed.apply(source.map(v => ByteString(Json.stringify(v) + "\n")), None, Some("application/x-ndjson"))).as("application/x-ndjson")
+          Ok.sendEntity(
+              HttpEntity.Streamed
+                .apply(source.map(v => ByteString(Json.stringify(v) + "\n")), None, Some("application/x-ndjson"))
+            )
+            .as("application/x-ndjson")
         }
       }
       case false => {
@@ -2203,12 +2206,12 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
           Audit.send(event)
           Alerts.send(
             OtoroshiExportAlert(env.snowflakeGenerator.nextIdStr(),
-              env.env,
-              ctx.user.getOrElse(Json.obj()),
-              event,
-              e,
-              ctx.from,
-              ctx.ua)
+                                env.env,
+                                ctx.user.getOrElse(Json.obj()),
+                                event,
+                                e,
+                                ctx.from,
+                                ctx.ua)
           )
           Ok(Json.prettyPrint(e)).as("application/json")
         }
@@ -2251,8 +2254,8 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
         env.datastores
           .fullNdJsonImport(source)
           .map(_ => Ok(Json.obj("done" -> true))) recover {
-            case e => InternalServerError(Json.obj("error" -> e.getMessage))
-          }
+          case e => InternalServerError(Json.obj("error" -> e.getMessage))
+        }
       }
       case _ => {
         ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { body =>
@@ -2738,7 +2741,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
 
   def renewCert(id: String) = ApiAction.async { ctx =>
     env.datastores.certificatesDataStore.findById(id).map(_.map(_.enrich())).flatMap {
-      case None => FastFuture.successful(NotFound(Json.obj("error" -> s"No Certificate found")))
+      case None       => FastFuture.successful(NotFound(Json.obj("error" -> s"No Certificate found")))
       case Some(cert) => cert.renew().map(c => Ok(c.toJson))
     }
   }

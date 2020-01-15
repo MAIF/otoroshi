@@ -113,16 +113,15 @@ object ElasticWritesAnalytics {
   }
 }
 
-class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env)
-    extends AnalyticsWritesService {
+class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env) extends AnalyticsWritesService {
 
   import utils.http.Implicits._
 
   lazy val logger = Logger("otoroshi-analytics-writes-elastic")
 
-  private val environment: Environment = env.environment
+  private val environment: Environment           = env.environment
   private val executionContext: ExecutionContext = env.analyticsExecutionContext
-  private val system: ActorSystem = env.analyticsActorSystem
+  private val system: ActorSystem                = env.analyticsActorSystem
 
   private def urlFromPath(path: String): String = s"${config.clusterUri}$path"
   private val index: String                     = config.index.getOrElse("otoroshi-events")
@@ -131,7 +130,9 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env)
 
   private def url(url: String): WSRequest = {
     val builder =
-      env.MtlsWs.url(url, config.mtlsConfig).withMaybeProxyServer(env.datastores.globalConfigDataStore.latestSafe.flatMap(_.proxies.elastic))
+      env.MtlsWs
+        .url(url, config.mtlsConfig)
+        .withMaybeProxyServer(env.datastores.globalConfigDataStore.latestSafe.flatMap(_.proxies.elastic))
     authHeader()
       .fold(builder) { h =>
         builder.withHttpHeaders("Authorization" -> h)
@@ -256,11 +257,10 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env)
   }
 }
 
-class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env)
-    extends AnalyticsReadsService {
+class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends AnalyticsReadsService {
 
   private val executionContext: ExecutionContext = env.analyticsExecutionContext
-  private val system: ActorSystem = env.analyticsActorSystem
+  private val system: ActorSystem                = env.analyticsActorSystem
 
   private def urlFromPath(path: String): String = s"${config.clusterUri}$path"
   private val `type`: String                    = config.`type`.getOrElse("type")

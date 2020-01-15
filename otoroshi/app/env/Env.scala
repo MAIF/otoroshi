@@ -63,7 +63,8 @@ class Env(val configuration: Configuration,
           val environment: Environment,
           val lifecycle: ApplicationLifecycle,
           wsClient: WSClient,
-          val circuitBeakersHolder: CircuitBreakersHolder) extends HasMetrics {
+          val circuitBeakersHolder: CircuitBreakersHolder)
+    extends HasMetrics {
 
   val logger = Logger("otoroshi-env")
 
@@ -389,7 +390,7 @@ class Env(val configuration: Configuration,
 
   lazy val statsd  = new StatsdWrapper(otoroshiActorSystem, this)
   lazy val metrics = new Metrics(this, lifecycle)
-  lazy val pki = new BouncyCastlePki(snowflakeGenerator)
+  lazy val pki     = new BouncyCastlePki(snowflakeGenerator)
 
   lazy val hash = s"${System.currentTimeMillis()}"
 
@@ -400,7 +401,7 @@ class Env(val configuration: Configuration,
   def rootScheme               = s"${exposedRootScheme}://"
   def exposedRootSchemeIsHttps = exposedRootScheme == "https"
 
-  lazy val Ws = _internalClient
+  lazy val Ws     = _internalClient
   lazy val MtlsWs = utils.http.MtlsWs(_internalClient)
 
   lazy val snowflakeSeed      = configuration.getOptional[Long]("app.snowflake.seed").get
@@ -613,17 +614,22 @@ class Env(val configuration: Configuration,
 
   private def setupLoggers(): Unit = {
     val loggerContext = LoggerFactory.getILoggerFactory.asInstanceOf[LoggerContext]
-    val loggersAndLevel: Seq[(String, String)] = configuration.getOptional[Configuration]("otoroshi.loggers").map { loggers =>
-      loggers.entrySet.map {
-        case (key, value) => (key, value.unwrapped().asInstanceOf[String])
-      }.toSeq
-    }.getOrElse(Seq.empty) ++ {
-      sys.env.toSeq.filter {
-        case (key, _) if key.toLowerCase().startsWith("otoroshi_loggers_") => true
-        case _ => false
-      }.map {
-        case (key, value) => (key.toLowerCase.replace("otoroshi_loggers_", ""), value)
+    val loggersAndLevel: Seq[(String, String)] = configuration
+      .getOptional[Configuration]("otoroshi.loggers")
+      .map { loggers =>
+        loggers.entrySet.map {
+          case (key, value) => (key, value.unwrapped().asInstanceOf[String])
+        }.toSeq
       }
+      .getOrElse(Seq.empty) ++ {
+      sys.env.toSeq
+        .filter {
+          case (key, _) if key.toLowerCase().startsWith("otoroshi_loggers_") => true
+          case _                                                             => false
+        }
+        .map {
+          case (key, value) => (key.toLowerCase.replace("otoroshi_loggers_", ""), value)
+        }
     }
     loggersAndLevel.foreach {
       case (logName, level) =>
@@ -814,8 +820,8 @@ class Env(val configuration: Configuration,
                 if (!hasInitialCert && certs.isEmpty) {
                   val foundOtoroshiCa         = certs.find(c => c.ca && c.id == Cert.OtoroshiCA)
                   val foundOtoroshiDomainCert = certs.find(c => c.domain == s"*.${this.domain}")
-                  val ca       = FakeKeyStore.createCA(s"CN=Otoroshi Root", FiniteDuration(365, TimeUnit.DAYS), None, None)
-                  val caCert   = Cert(ca.cert, ca.keyPair, None, false).enrich()
+                  val ca                      = FakeKeyStore.createCA(s"CN=Otoroshi Root", FiniteDuration(365, TimeUnit.DAYS), None, None)
+                  val caCert                  = Cert(ca.cert, ca.keyPair, None, false).enrich()
                   if (foundOtoroshiCa.isEmpty) {
                     logger.info(s"Generating CA certificate for Otoroshi self signed certificates ...")
                     caCert.copy(id = Cert.OtoroshiCA).save()
@@ -824,7 +830,8 @@ class Env(val configuration: Configuration,
                     logger.info(s"Generating a self signed SSL certificate for https://*.${this.domain} ...")
                     val cert1 = FakeKeyStore.createCertificateFromCA(s"*.${this.domain}",
                                                                      FiniteDuration(365, TimeUnit.DAYS),
-                                                                     None, None,
+                                                                     None,
+                                                                     None,
                                                                      ca.cert,
                                                                      ca.keyPair)
                     Cert(cert1.cert, cert1.keyPair, foundOtoroshiCa.getOrElse(caCert), false).enrich().save()

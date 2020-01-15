@@ -30,7 +30,11 @@ class AnalyticsSpec(name: String, configurationSpec: => Configuration)
   lazy val elasticUrl   = "http://127.0.0.1:9200"
   lazy val analytics = new ElasticWritesAnalytics(
     ElasticAnalyticsConfig(
-      elasticUrl, Some("otoroshi-events"), Some("event"), None, None
+      elasticUrl,
+      Some("otoroshi-events"),
+      Some("event"),
+      None,
+      None
     ),
     otoroshiComponents.env
   )

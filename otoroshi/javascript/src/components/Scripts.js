@@ -82,15 +82,15 @@ class PluginsDescription extends Component {
 
   inject = script => {
     if (script.defaultConfig) {
-      console.log(this.props.config, this.props)
+      console.log(this.props.config, this.props);
       this.props.onChangeConfig({ ...this.props.config, ...script.defaultConfig });
       // this.props.onChangeConfig(_.merge({}, this.props.config, script.defaultConfig));
     }
   };
 
-  displayForm = (script) => {
+  displayForm = script => {
     return script.configRoot && script.configFlow && script.configSchema; // && !!this.props.config[script.configRoot];
-  }
+  };
 
   render() {
     return (
@@ -136,17 +136,30 @@ class PluginsDescription extends Component {
                       style={{ textAlign: 'justify', marginBottom: 10 }}
                       dangerouslySetInnerHTML={{ __html: converter.makeHtml(script.description) }}
                     />
-                    {this.displayForm(script) && <h4 style={{ marginTop: 20 }}>Plugin configuration</h4>}
-                    {this.displayForm(script) && <Form
-                      value={this.props.config[script.configRoot] || { ...script.defaultConfig[script.configRoot] }}
-                      onChange={e => {
-                        const newConfig = { ...this.props.config, [script.configRoot]: e };
-                        this.props.onChangeConfig(newConfig);
-                      }}
-                      flow={script.configFlow}
-                      schema={script.configSchema}
-                      style={{ marginTop: 20, backgroundColor: '#373735', padding: 10, borderRadius: 5 }}
-                    />}
+                    {this.displayForm(script) && (
+                      <h4 style={{ marginTop: 20 }}>Plugin configuration</h4>
+                    )}
+                    {this.displayForm(script) && (
+                      <Form
+                        value={
+                          this.props.config[script.configRoot] || {
+                            ...script.defaultConfig[script.configRoot],
+                          }
+                        }
+                        onChange={e => {
+                          const newConfig = { ...this.props.config, [script.configRoot]: e };
+                          this.props.onChangeConfig(newConfig);
+                        }}
+                        flow={script.configFlow}
+                        schema={script.configSchema}
+                        style={{
+                          marginTop: 20,
+                          backgroundColor: '#373735',
+                          padding: 10,
+                          borderRadius: 5,
+                        }}
+                      />
+                    )}
                   </div>
                 </div>
               </div>

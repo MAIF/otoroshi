@@ -18,7 +18,12 @@ import play.api.inject.ApplicationLifecycle
 import play.api.libs.json._
 import play.api.{Configuration, Environment, Logger}
 import reactivemongo.api.{MongoConnection, MongoDriver}
-import ssl.{CertificateDataStore, ClientCertificateValidationDataStore, InMemoryClientCertificateValidationDataStore, RedisClientCertificateValidationDataStore}
+import ssl.{
+  CertificateDataStore,
+  ClientCertificateValidationDataStore,
+  InMemoryClientCertificateValidationDataStore,
+  RedisClientCertificateValidationDataStore
+}
 import storage.inmemory._
 import storage._
 import otoroshi.tcp.{InMemoryTcpServiceDataStoreDataStore, TcpServiceDataStore}
@@ -211,7 +216,7 @@ class MongoDataStores(configuration: Configuration, environment: Environment, li
 
   override def fullNdJsonExport(): Future[Source[JsValue, _]] = {
 
-    implicit val ev = env
+    implicit val ev  = env
     implicit val ecc = env.otoroshiExecutionContext
     implicit val mat = env.otoroshiMaterializer
 
@@ -224,27 +229,30 @@ class MongoDataStores(configuration: Configuration, environment: Environment, li
           case keys if keys.isEmpty => FastFuture.successful(Seq.empty[JsValue])
           case keys => {
             Source(keys.toList)
-              .mapAsync(1) { key =>
-                redis.rawGet(key).flatMap {
-                  case None => FastFuture.successful(JsNull)
-                  case Some(rawDoc) => {
-                    val currentTime = System.currentTimeMillis()
-                    val ttl         = rawDoc.getAs[Long]("ttl").getOrElse(currentTime - 1) - currentTime
-                    val typ         = rawDoc.getAs[String]("type").get
-                    fetchValueForType(typ, key).map {
-                      case JsNull => JsNull
-                      case value =>
-                        Json.obj(
-                          "k" -> key,
-                          "v" -> value,
-                          "t" -> (if (ttl == -1) -1 else (System.currentTimeMillis() + ttl)),
-                          "w" -> typ
-                        )
+              .mapAsync(1) {
+                key =>
+                  redis.rawGet(key).flatMap {
+                    case None => FastFuture.successful(JsNull)
+                    case Some(rawDoc) => {
+                      val currentTime = System.currentTimeMillis()
+                      val ttl         = rawDoc.getAs[Long]("ttl").getOrElse(currentTime - 1) - currentTime
+                      val typ         = rawDoc.getAs[String]("type").get
+                      fetchValueForType(typ, key).map {
+                        case JsNull => JsNull
+                        case value =>
+                          Json.obj(
+                            "k" -> key,
+                            "v" -> value,
+                            "t" -> (if (ttl == -1) -1 else (System.currentTimeMillis() + ttl)),
+                            "w" -> typ
+                          )
 
+                      }
                     }
                   }
-                }
-              }.runWith(Sink.seq).map(_.filterNot(_ == JsNull))
+              }
+              .runWith(Sink.seq)
+              .map(_.filterNot(_ == JsNull))
           }
         }
         .mapConcat(_.toList)
@@ -253,34 +261,40 @@ class MongoDataStores(configuration: Configuration, environment: Environment, li
 
   override def fullNdJsonImport(export: Source[JsValue, _]): Future[Unit] = {
 
-    implicit val ev = env
+    implicit val ev  = env
     implicit val ecc = env.otoroshiExecutionContext
     implicit val mat = env.otoroshiMaterializer
 
     redis
       .keys(s"${env.storageRoot}:*")
-      .flatMap(keys => if (keys.nonEmpty) redis.del(keys: _*) else FastFuture.successful(0L)).flatMap { _ =>
-      export
-        .mapAsync(1) { json =>
-          val key = (json \ "k").as[String]
-          val value = (json \ "v").as[JsValue]
-          val pttl = (json \ "t").as[Long]
-          val what = (json \ "w").as[String]
-          (what match {
-            case "string" => redis.set(key, value.as[String])
-            case "hash" => Source(value.as[JsObject].value.toList).mapAsync(1)(v => redis.hset(key, v._1, Json.stringify(v._2))).runWith(Sink.ignore)
-            case "list" => redis.lpush(key, value.as[JsArray].value.map(Json.stringify): _*)
-            case "set" => redis.sadd(key, value.as[JsArray].value.map(Json.stringify): _*)
-            case _ => FastFuture.successful(0L)
-          }).flatMap { _ =>
-            if (pttl > -1L) {
-              redis.pexpire(key, pttl)
-            } else {
-              FastFuture.successful(true)
+      .flatMap(keys => if (keys.nonEmpty) redis.del(keys: _*) else FastFuture.successful(0L))
+      .flatMap { _ =>
+        export
+          .mapAsync(1) { json =>
+            val key   = (json \ "k").as[String]
+            val value = (json \ "v").as[JsValue]
+            val pttl  = (json \ "t").as[Long]
+            val what  = (json \ "w").as[String]
+            (what match {
+              case "string" => redis.set(key, value.as[String])
+              case "hash" =>
+                Source(value.as[JsObject].value.toList)
+                  .mapAsync(1)(v => redis.hset(key, v._1, Json.stringify(v._2)))
+                  .runWith(Sink.ignore)
+              case "list" => redis.lpush(key, value.as[JsArray].value.map(Json.stringify): _*)
+              case "set"  => redis.sadd(key, value.as[JsArray].value.map(Json.stringify): _*)
+              case _      => FastFuture.successful(0L)
+            }).flatMap { _ =>
+              if (pttl > -1L) {
+                redis.pexpire(key, pttl)
+              } else {
+                FastFuture.successful(true)
+              }
             }
           }
-        }.runWith(Sink.ignore).map(_ => ())
-    }
+          .runWith(Sink.ignore)
+          .map(_ => ())
+      }
   }
 
   private def fetchValueForType(typ: String, key: String)(implicit ec: ExecutionContext): Future[JsValue] = {

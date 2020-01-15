@@ -441,7 +441,7 @@ case class CertDeleteAlert(`@id`: String,
 }
 
 case class CertRenewalAlert(`@id`: String, `@env`: String, cert: Cert, `@timestamp`: DateTime = DateTime.now())
-  extends AlertEvent {
+    extends AlertEvent {
 
   override def `@service`: String   = "Otoroshi"
   override def `@serviceId`: String = "--"
@@ -450,18 +450,17 @@ case class CertRenewalAlert(`@id`: String, `@env`: String, cert: Cert, `@timesta
   override def fromUserAgent: Option[String] = None
 
   override def toJson(implicit _env: Env): JsValue = Json.obj(
-    "@id"        -> `@id`,
-    "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
-    "@type"      -> `@type`,
-    "@product"   -> _env.eventsName,
-    "@serviceId" -> `@serviceId`,
-    "@service"   -> `@service`,
-    "@env"       -> `@env`,
-    "audit"      -> "CertRenewalAlert",
+    "@id"         -> `@id`,
+    "@timestamp"  -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
+    "@type"       -> `@type`,
+    "@product"    -> _env.eventsName,
+    "@serviceId"  -> `@serviceId`,
+    "@service"    -> `@service`,
+    "@env"        -> `@env`,
+    "audit"       -> "CertRenewalAlert",
     "certificate" -> cert.toJson,
   )
 }
-
 
 case class SnowMonkeyOutageRegisteredAlert(`@id`: String,
                                            `@env`: String,
@@ -785,7 +784,8 @@ case class RevokedApiKeyUsageAlert(`@id`: String,
                                    `@env`: String,
                                    req: RequestHeader,
                                    apiKey: ApiKey,
-                                   descriptor: ServiceDescriptor, env: Env)
+                                   descriptor: ServiceDescriptor,
+                                   env: Env)
     extends AlertEvent {
 
   override def `@service`: String   = descriptor.name

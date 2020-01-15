@@ -175,10 +175,10 @@ object AlgoSettings extends FromJson[AlgoSettings] {
   override def fromJson(json: JsValue): Either[Throwable, AlgoSettings] =
     Try {
       (json \ "type").as[String] match {
-        case "HSAlgoSettings"   => HSAlgoSettings.fromJson(json)
-        case "RSAlgoSettings"   => RSAlgoSettings.fromJson(json)
-        case "ESAlgoSettings"   => ESAlgoSettings.fromJson(json)
-        case "JWKSAlgoSettings" => JWKSAlgoSettings.fromJson(json)
+        case "HSAlgoSettings"    => HSAlgoSettings.fromJson(json)
+        case "RSAlgoSettings"    => RSAlgoSettings.fromJson(json)
+        case "ESAlgoSettings"    => ESAlgoSettings.fromJson(json)
+        case "JWKSAlgoSettings"  => JWKSAlgoSettings.fromJson(json)
         case "RSAKPAlgoSettings" => RSAKPAlgoSettings.fromJson(json)
       }
     } recover {
@@ -214,10 +214,10 @@ case class HSAlgoSettings(size: Int, secret: String, base64: Boolean = false) ex
     case 256 if base64 => Some(Algorithm.HMAC256(ApacheBase64.decodeBase64(transformValue(secret))))
     case 384 if base64 => Some(Algorithm.HMAC384(ApacheBase64.decodeBase64(transformValue(secret))))
     case 512 if base64 => Some(Algorithm.HMAC512(ApacheBase64.decodeBase64(transformValue(secret))))
-    case 256 => Some(Algorithm.HMAC256(transformValue(secret)))
-    case 384 => Some(Algorithm.HMAC384(transformValue(secret)))
-    case 512 => Some(Algorithm.HMAC512(transformValue(secret)))
-    case _   => None
+    case 256           => Some(Algorithm.HMAC256(transformValue(secret)))
+    case 384           => Some(Algorithm.HMAC384(transformValue(secret)))
+    case 512           => Some(Algorithm.HMAC512(transformValue(secret)))
+    case _             => None
   }
   override def asJson = Json.obj(
     "type"   -> "HSAlgoSettings",
@@ -474,13 +474,13 @@ case class JWKSAlgoSettings(url: String,
   }
 
   override def asJson: JsValue = Json.obj(
-    "type"    -> "JWKSAlgoSettings",
-    "url"     -> url,
-    "timeout" -> timeout.toMillis,
-    "headers" -> headers,
-    "ttl"     -> ttl.toMillis,
-    "kty"     -> kty.getValue,
-    "proxy"   -> WSProxyServerJson.maybeProxyToJson(proxy),
+    "type"       -> "JWKSAlgoSettings",
+    "url"        -> url,
+    "timeout"    -> timeout.toMillis,
+    "headers"    -> headers,
+    "ttl"        -> ttl.toMillis,
+    "kty"        -> kty.getValue,
+    "proxy"      -> WSProxyServerJson.maybeProxyToJson(proxy),
     "mtlsConfig" -> mtlsConfig.json
   )
 }
@@ -507,18 +507,21 @@ case class RSAKPAlgoSettings(size: Int, certId: String) extends AlgoSettings {
   }
 
   override def asAlgorithmF(mode: AlgoMode)(implicit env: Env, ec: ExecutionContext): Future[Option[Algorithm]] = {
-    env.datastores.certificatesDataStore.findById(certId).map(_.flatMap { cert =>
-      val keyPair = cert.cryptoKeyPair
-      (keyPair.getPublic, keyPair.getPrivate) match {
-        case (pk: RSAPublicKey, pkk: RSAPrivateKey) => size match {
-          case 256 => Some(Algorithm.RSA256(pk, pkk))
-          case 384 => Some(Algorithm.RSA384(pk, pkk))
-          case 512 => Some(Algorithm.RSA512(pk, pkk))
-          case _   => None
+    env.datastores.certificatesDataStore
+      .findById(certId)
+      .map(_.flatMap { cert =>
+        val keyPair = cert.cryptoKeyPair
+        (keyPair.getPublic, keyPair.getPrivate) match {
+          case (pk: RSAPublicKey, pkk: RSAPrivateKey) =>
+            size match {
+              case 256 => Some(Algorithm.RSA256(pk, pkk))
+              case 384 => Some(Algorithm.RSA384(pk, pkk))
+              case 512 => Some(Algorithm.RSA512(pk, pkk))
+              case _   => None
+            }
+          case _ => None
         }
-        case _ => None
-      }
-    })
+      })
   }
 
   override def asJson = Json.obj(
@@ -968,7 +971,8 @@ sealed trait JwtVerifier extends AsJson {
                                       apikey,
                                       user,
                                       context,
-                                      attrs, env)
+                                      attrs,
+                                      env)
                             .as[JsObject]
                         val newJsonToken: JsObject = JsObject(
                           (tSettings.mappingSettings.map
@@ -982,7 +986,8 @@ sealed trait JwtVerifier extends AsJson {
                                                                     apikey,
                                                                     user,
                                                                     context,
-                                                                    attrs, env))
+                                                                    attrs,
+                                                                    env))
                                   .-(b._1)
                             ) ++ evaluatedValues).fields
                             .filterNot {

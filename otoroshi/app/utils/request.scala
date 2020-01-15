@@ -45,7 +45,7 @@ object RequestImplicits {
           .map(_ == "https")
           .orElse(Some(requestHeader.secure))
           .map {
-            case true => "https"
+            case true  => "https"
             case false => "http"
           }
           .getOrElse("http")
@@ -62,7 +62,7 @@ object RequestImplicits {
           .map(_ == "https")
           .orElse(Some(requestHeader.secure))
           .map {
-            case true => "wss"
+            case true  => "wss"
             case false => "ws"
           }
           .getOrElse("ws")
@@ -98,7 +98,7 @@ object RequestImplicits {
           chain =>
             chain.map { cert =>
               cert.asPem
-              // s"${PemHeaders.BeginCertificate}\n${Base64.getEncoder.encodeToString(cert.getEncoded)}\n${PemHeaders.EndCertificate}"
+            // s"${PemHeaders.BeginCertificate}\n${Base64.getEncoder.encodeToString(cert.getEncoded)}\n${PemHeaders.EndCertificate}"
           }
         )
         .getOrElse(Seq.empty[String])

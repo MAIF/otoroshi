@@ -40,7 +40,10 @@ export class AuditPage extends Component {
   }
 
   fetchEvents = () => {
-    return BackOfficeServices.fetchAuditEvents().then(d => d, err => console.error(err));
+    return BackOfficeServices.fetchAuditEvents().then(
+      d => d,
+      err => console.error(err)
+    );
   };
 
   render() {

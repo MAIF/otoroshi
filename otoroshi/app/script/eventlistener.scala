@@ -7,19 +7,19 @@ import env.Env
 import events.{AnalyticEvent, OtoroshiEvent}
 import play.api.Logger
 
-
 object InternalEventListenerActor {
-  val logger = Logger("otoroshi-plugins-internal-eventlistener-actor")
+  val logger                                           = Logger("otoroshi-plugins-internal-eventlistener-actor")
   def props(listener: InternalEventListener, env: Env) = Props(new InternalEventListenerActor(listener, env))
 }
 
 class InternalEventListenerActor(listener: InternalEventListener, env: Env) extends Actor {
   override def receive: Receive = {
-    case evt: OtoroshiEvent => try {
-      listener.onEvent(evt)(env)
-    } catch {
-      case e: Throwable => InternalEventListenerActor.logger.error("Error while dispatching event", e)
-    }
+    case evt: OtoroshiEvent =>
+      try {
+        listener.onEvent(evt)(env)
+      } catch {
+        case e: Throwable => InternalEventListenerActor.logger.error("Error while dispatching event", e)
+      }
     case _ =>
   }
 }

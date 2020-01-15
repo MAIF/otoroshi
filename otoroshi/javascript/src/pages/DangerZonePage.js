@@ -12,7 +12,7 @@ import _ from 'lodash';
 function tryOrTrue(f) {
   try {
     return f();
-  } catch(e) {
+  } catch (e) {
     return true;
   }
 }
@@ -306,13 +306,23 @@ export class DangerZonePage extends Component {
     },
     'mtlsConfig.certs': {
       type: 'array',
-      props: { 
-        label: 'Client certificate', 
+      props: {
+        label: 'Client certificate',
         placeholder: 'Choose a client certificate',
-        valuesFrom: "/bo/api/proxy/api/certificates",
-        transformer: a => ({ value: a.id, label: <span><span className="label label-success" style={{ minWidth: 63 }}>{a.certType}</span> {a.name} - {a.description}</span> })
+        valuesFrom: '/bo/api/proxy/api/certificates',
+        transformer: a => ({
+          value: a.id,
+          label: (
+            <span>
+              <span className="label label-success" style={{ minWidth: 63 }}>
+                {a.certType}
+              </span>{' '}
+              {a.name} - {a.description}
+            </span>
+          ),
+        }),
       },
-    }
+    },
   };
 
   analyticsWebhooksFormSchema = {
@@ -338,16 +348,35 @@ export class DangerZonePage extends Component {
     },
     'mtlsConfig.certs': {
       type: 'array',
-      props: { 
-        label: 'Client certificate', 
+      props: {
+        label: 'Client certificate',
         placeholder: 'Choose a client certificate',
-        valuesFrom: "/bo/api/proxy/api/certificates",
-        transformer: a => ({ value: a.id, label: <span><span className="label label-success" style={{ minWidth: 63 }}>{a.certType}</span> {a.name} - {a.description}</span> })
+        valuesFrom: '/bo/api/proxy/api/certificates',
+        transformer: a => ({
+          value: a.id,
+          label: (
+            <span>
+              <span className="label label-success" style={{ minWidth: 63 }}>
+                {a.certType}
+              </span>{' '}
+              {a.name} - {a.description}
+            </span>
+          ),
+        }),
       },
-    }
+    },
   };
 
-  elasticConfigFormFlow = ['clusterUri', 'index', 'type', 'user', 'password', 'mtlsConfig.mtls', 'mtlsConfig.loose', 'mtlsConfig.certs'];
+  elasticConfigFormFlow = [
+    'clusterUri',
+    'index',
+    'type',
+    'user',
+    'password',
+    'mtlsConfig.mtls',
+    'mtlsConfig.loose',
+    'mtlsConfig.certs',
+  ];
 
   elasticConfigFormSchema = {
     clusterUri: {
@@ -380,13 +409,23 @@ export class DangerZonePage extends Component {
     },
     'mtlsConfig.certs': {
       type: 'array',
-      props: { 
-        label: 'Client certificate', 
+      props: {
+        label: 'Client certificate',
         placeholder: 'Choose a client certificate',
-        valuesFrom: "/bo/api/proxy/api/certificates",
-        transformer: a => ({ value: a.id, label: <span><span className="label label-success" style={{ minWidth: 63 }}>{a.certType}</span> {a.name} - {a.description}</span> })
+        valuesFrom: '/bo/api/proxy/api/certificates',
+        transformer: a => ({
+          value: a.id,
+          label: (
+            <span>
+              <span className="label label-success" style={{ minWidth: 63 }}>
+                {a.certType}
+              </span>{' '}
+              {a.name} - {a.description}
+            </span>
+          ),
+        }),
       },
-    }
+    },
   };
 
   analyticsEventsUrlFromSchema = {
@@ -412,13 +451,23 @@ export class DangerZonePage extends Component {
     },
     'mtlsConfig.certs': {
       type: 'array',
-      props: { 
-        label: 'Client certificate', 
+      props: {
+        label: 'Client certificate',
         placeholder: 'Choose a client certificate',
-        valuesFrom: "/bo/api/proxy/api/certificates",
-        transformer: a => ({ value: a.id, label: <span><span className="label label-success" style={{ minWidth: 63 }}>{a.certType}</span> {a.name} - {a.description}</span> })
+        valuesFrom: '/bo/api/proxy/api/certificates',
+        transformer: a => ({
+          value: a.id,
+          label: (
+            <span>
+              <span className="label label-success" style={{ minWidth: 63 }}>
+                {a.certType}
+              </span>{' '}
+              {a.name} - {a.description}
+            </span>
+          ),
+        }),
       },
-    }
+    },
   };
 
   webhooksFormFlow = ['url', 'headers', 'mtlsConfig.mtls', 'mtlsConfig.loose', 'mtlsConfig.certs'];
@@ -650,14 +699,14 @@ export class DangerZonePage extends Component {
       type: 'text',
       props: {
         label: 'Public Key',
-        style: { fontFamily: 'monospace'}
+        style: { fontFamily: 'monospace' },
       },
     },
     'letsEncryptSettings.privateKey': {
       type: 'text',
       props: {
         label: 'Private Key',
-        style: { fontFamily: 'monospace'}
+        style: { fontFamily: 'monospace' },
       },
     },
     'mailGunSettings.eu': {
@@ -766,8 +815,18 @@ export class DangerZonePage extends Component {
       props: {
         label: 'Client certs.',
         placeholder: 'Choose a client certificate',
-        valuesFrom: "/bo/api/proxy/api/certificates",
-        transformer: a => ({ value: a.id, label: <span><span className="label label-success" style={{ minWidth: 63 }}>{a.certType}</span> {a.name} - {a.description}</span> }),
+        valuesFrom: '/bo/api/proxy/api/certificates',
+        transformer: a => ({
+          value: a.id,
+          label: (
+            <span>
+              <span className="label label-success" style={{ minWidth: 63 }}>
+                {a.certType}
+              </span>{' '}
+              {a.name} - {a.description}
+            </span>
+          ),
+        }),
       },
     },
     'kafkaConfig.sendEvents': {
@@ -912,7 +971,7 @@ export class DangerZonePage extends Component {
     '>>>Backoffice auth. settings',
     'backOfficeAuthRef',
     'backOfficeAuthButtons',
-    '>>>Let\'s encrypt settings',
+    ">>>Let's encrypt settings",
     'letsEncryptSettings.enabled',
     'letsEncryptSettings.server',
     'letsEncryptSettings.publicKey',
@@ -1064,7 +1123,7 @@ export class DangerZonePage extends Component {
 
   fullExportNdJson = e => {
     if (e && e.preventDefault) e.preventDefault();
-    BackOfficeServices.fetchOtoroshi("application/x-ndjson").then(otoroshi => {
+    BackOfficeServices.fetchOtoroshi('application/x-ndjson').then(otoroshi => {
       const blob = new Blob([otoroshi], { type: 'application/x-ndjson' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -1097,10 +1156,16 @@ export class DangerZonePage extends Component {
               credentials: 'include',
               headers: {
                 Accept: 'application/json',
-                'X-Content-Type': input.files[0].name.indexOf('ndjson') > -1 ? 'application/x-ndjson' : 'application/json',
+                'X-Content-Type':
+                  input.files[0].name.indexOf('ndjson') > -1
+                    ? 'application/x-ndjson'
+                    : 'application/json',
               },
               body: input.files[0],
-            }).then(r => window.location.reload(), e => console.log(e));
+            }).then(
+              r => window.location.reload(),
+              e => console.log(e)
+            );
           }
         });
       });

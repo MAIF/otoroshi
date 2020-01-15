@@ -15,8 +15,9 @@ class HasAllowedApiKeyValidator extends AccessValidator {
 
   override def configFlow: Seq[String] = Seq("clientIds", "tags", "metadata")
 
-  override def configSchema: Option[JsObject] = Some(Json.parse(
-    """{
+  override def configSchema: Option[JsObject] =
+    Some(
+      Json.parse("""{
       |  "clientIds": {
       |    "type": "array",
       |    "props": { "label": "Allowed apikeys", "valuesFrom": "/bo/api/proxy/api/apikeys", "transformerMapping": { "label":"clientName", "value":"clientId" } }
@@ -29,7 +30,8 @@ class HasAllowedApiKeyValidator extends AccessValidator {
       |    "type": "object",
       |    "props": { "label": "Allowed metadata" }
       |  }
-      |}""".stripMargin).as[JsObject])
+      |}""".stripMargin).as[JsObject]
+    )
 
   override def defaultConfig: Option[JsObject] =
     Some(

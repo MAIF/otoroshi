@@ -32,7 +32,7 @@ case class ExternalHttpValidatorConfig(config: JsValue) {
   lazy val headers: Map[String, String] = (config \ "headers").asOpt[Map[String, String]].getOrElse(Map.empty)
   lazy val proxy: Option[WSProxyServer] =
     (config \ "proxy").asOpt[JsValue].flatMap(p => WSProxyServerJson.proxyFromJson(p))
-  lazy val mtlsConfig: MtlsConfig       = MtlsConfig.read((config \ "mtlsConfig").asOpt[JsValue])
+  lazy val mtlsConfig: MtlsConfig = MtlsConfig.read((config \ "mtlsConfig").asOpt[JsValue])
 }
 
 class ExternalHttpValidator extends AccessValidator {
@@ -55,10 +55,10 @@ class ExternalHttpValidator extends AccessValidator {
           "noCache"           -> false,
           "allowNoClientCert" -> false,
           "headers"           -> Json.obj(),
-          "mtlsConfig"        -> Json.obj(
-            "certId"          -> "...",
-            "mtls"            -> false,
-            "loose"           -> false
+          "mtlsConfig" -> Json.obj(
+            "certId" -> "...",
+            "mtls"   -> false,
+            "loose"  -> false
           )
         )
       )
@@ -104,17 +104,20 @@ class ExternalHttpValidator extends AccessValidator {
       |```
     """.stripMargin)
 
-  override def configSchema: Option[JsObject] = super.configSchema.map(_ ++ Json.obj(
-    "mtlsConfig.certId" -> Json.obj(
-      "type" -> "select",
-      "props" -> Json.obj(
-        "label" -> "certId",
-        "placeholer" -> "Client cert used for mTLS call",
-        "valuesFrom" -> "/bo/api/proxy/api/certificates?client=true",
-        "transformerMapping" -> Json.obj("label" -> "name", "value" -> "id")
+  override def configSchema: Option[JsObject] =
+    super.configSchema.map(
+      _ ++ Json.obj(
+        "mtlsConfig.certId" -> Json.obj(
+          "type" -> "select",
+          "props" -> Json.obj(
+            "label"              -> "certId",
+            "placeholer"         -> "Client cert used for mTLS call",
+            "valuesFrom"         -> "/bo/api/proxy/api/certificates?client=true",
+            "transformerMapping" -> Json.obj("label" -> "name", "value" -> "id")
+          )
+        )
       )
     )
-  ))
 
   private val digester = MessageDigest.getInstance("SHA-1")
 
@@ -152,7 +155,7 @@ class ExternalHttpValidator extends AccessValidator {
     val certPayload = chain
       .map { cert =>
         cert.asPem
-        //s"${PemHeaders.BeginCertificate}\n${Base64.getEncoder.encodeToString(cert.getEncoded)}\n${PemHeaders.EndCertificate}"
+      //s"${PemHeaders.BeginCertificate}\n${Base64.getEncoder.encodeToString(cert.getEncoded)}\n${PemHeaders.EndCertificate}"
       }
       .mkString("\n")
     val payload = Json.obj(

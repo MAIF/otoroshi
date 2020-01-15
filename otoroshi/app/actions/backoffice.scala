@@ -19,14 +19,14 @@ import utils.TypedMap
 import scala.concurrent.{ExecutionContext, Future}
 
 case class BackOfficeActionContext[A](request: Request[A], user: Option[BackOfficeUser]) {
-  def connected: Boolean = user.isDefined
-  def from(implicit env: Env): String       = request.theIpAddress
-  def ua: String         = request.theUserAgent
+  def connected: Boolean              = user.isDefined
+  def from(implicit env: Env): String = request.theIpAddress
+  def ua: String                      = request.theUserAgent
 }
 
 case class BackOfficeActionContextAuth[A](request: Request[A], user: BackOfficeUser) {
   def from(implicit env: Env): String = request.theIpAddress
-  def ua: String   = request.theUserAgent
+  def ua: String                      = request.theUserAgent
 }
 
 class BackOfficeAction(val parser: BodyParser[AnyContent])(implicit env: Env)

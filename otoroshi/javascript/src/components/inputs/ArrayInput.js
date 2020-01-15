@@ -19,17 +19,19 @@ export class ArrayInput extends Component {
         },
       })
         .then(r => r.json())
-        .then(values => values.map(v => {
-          if (this.props.transformerMapping) {
-            const value = v[this.props.transformerMapping.value];
-            const label = v[this.props.transformerMapping.label];
-            return { value, label };
-          } else if (this.props.transformer) {
-            return this.props.transformer(v);
-          } else {
-            return v;
-          }
-        }))
+        .then(values =>
+          values.map(v => {
+            if (this.props.transformerMapping) {
+              const value = v[this.props.transformerMapping.value];
+              const label = v[this.props.transformerMapping.label];
+              return { value, label };
+            } else if (this.props.transformer) {
+              return this.props.transformer(v);
+            } else {
+              return v;
+            }
+          })
+        )
         .then(values => this.setState({ values, loading: false }));
     }
   }
@@ -165,7 +167,7 @@ export class ArrayInput extends Component {
                     )}
                     <input
                       disabled={this.props.disabled}
-                      type={this.props.inputType || "text"}
+                      type={this.props.inputType || 'text'}
                       className="form-control"
                       id={`input-${this.props.label}`}
                       placeholder={this.props.placeholder}

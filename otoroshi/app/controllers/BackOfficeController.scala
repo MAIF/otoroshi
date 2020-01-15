@@ -49,9 +49,8 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
   implicit lazy val ec  = env.otoroshiExecutionContext
   implicit lazy val lat = env.otoroshiMaterializer
 
-  lazy val logger = Logger("otoroshi-backoffice-api")
+  lazy val logger        = Logger("otoroshi-backoffice-api")
   lazy val commitVersion = Option(System.getenv("COMMIT_ID")).getOrElse(env.otoroshiVersion)
-
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Proxy
@@ -77,9 +76,14 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
 
   def proxyAdminApi(path: String) = BackOfficeActionAuth.async(sourceBodyParser) { ctx =>
     env.datastores.apiKeyDataStore.findById(env.backOfficeApiKey.clientId).flatMap {
-      case None => FastFuture.successful(NotFound(Json.obj(
-        "error" -> "admin sapikey not found !"
-      )))
+      case None =>
+        FastFuture.successful(
+          NotFound(
+            Json.obj(
+              "error" -> "admin sapikey not found !"
+            )
+          )
+        )
       case Some(apikey) => {
         val host                   = env.adminApiExposedHost
         val localUrl               = if (env.adminApiProxyHttps) s"https://127.0.0.1:${env.port}" else s"http://127.0.0.1:${env.port}"
@@ -148,8 +152,8 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
   def version = BackOfficeActionAuth {
     Ok(
       Json.obj("version"        -> commitVersion,
-        "currentVersion" -> env.otoroshiVersion,
-        "nextVersion"    -> env.latestVersionHolder.get())
+               "currentVersion" -> env.otoroshiVersion,
+               "nextVersion"    -> env.latestVersionHolder.get())
     )
   }
 
@@ -340,15 +344,15 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
     val query = (ctx.request.body \ "query").asOpt[String].getOrElse("--").toLowerCase()
     Audit.send(
       BackOfficeEvent(env.snowflakeGenerator.nextIdStr(),
-        env.env,
-        ctx.user,
-        "SERVICESEARCH",
-        "user searched for a service",
-        ctx.from,
-        ctx.ua,
-        Json.obj(
-          "query" -> query
-        ))
+                      env.env,
+                      ctx.user,
+                      "SERVICESEARCH",
+                      "user searched for a service",
+                      ctx.from,
+                      ctx.ua,
+                      Json.obj(
+                        "query" -> query
+                      ))
     )
     val fu: Future[Seq[SearchedService]] =
       Option(LocalCache.allServices.getIfPresent("all")).map(_.asInstanceOf[Seq[SearchedService]]) match {
@@ -360,8 +364,8 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
           } yield {
             val finalServices = (
               services.map(s => SearchedService(s.name, s.id, s.groupId, s.env, "http")) ++
-                tcServices.map(s => SearchedService(s.name, s.id, "tcp", "prod", "tcp"))
-              )
+              tcServices.map(s => SearchedService(s.name, s.id, "tcp", "prod", "tcp"))
+            )
             LocalCache.allServices.put("all", finalServices)
             finalServices
           }
@@ -503,71 +507,88 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
           )
         )
       case Some(url) => {
-        env.Ws.url(url) // no need for mtls here
-          .withRequestTimeout(10.seconds).get().map { resp =>
-          if (resp.status == 200) {
-            Try {
-              val config = GenericOauth2ModuleConfig(
-                id = id,
-                name = name,
-                desc = desc,
-                oidConfig = Some(url)
-              )
-              val body             = Json.parse(resp.body)
-              val issuer           = (body \ "issuer").asOpt[String].getOrElse("http://localhost:8082/")
-              val tokenUrl         = (body \ "token_endpoint").asOpt[String].getOrElse(config.tokenUrl)
-              val authorizeUrl     = (body \ "authorization_endpoint").asOpt[String].getOrElse(config.authorizeUrl)
-              val userInfoUrl      = (body \ "userinfo_endpoint").asOpt[String].getOrElse(config.userInfoUrl)
-              val introspectionUrl = (body \ "introspection_endpoint").asOpt[String].getOrElse(config.introspectionUrl)
-              val loginUrl         = (body \ "authorization_endpoint").asOpt[String].getOrElse(authorizeUrl)
-              val logoutUrl = (body \ "end_session_endpoint")
-                .asOpt[String]
-                .orElse((body \ "ping_end_session_endpoint").asOpt[String])
-                .getOrElse((issuer + "/logout").replace("//logout", "/logout"))
-              val jwksUri = (body \ "jwks_uri").asOpt[String]
-              val scope = (body \ "scopes_supported")
-                .asOpt[Seq[String]]
-                .map(_.mkString(" "))
-                .getOrElse("openid profile email name")
-              val claims =
-                (body \ "claims_supported").asOpt[JsArray].map(Json.stringify).getOrElse("""["email","name"]""")
-              Ok(
-                config
-                  .copy(
+        env.Ws
+          .url(url) // no need for mtls here
+          .withRequestTimeout(10.seconds)
+          .get()
+          .map { resp =>
+            if (resp.status == 200) {
+              Try {
+                val config = GenericOauth2ModuleConfig(
+                  id = id,
+                  name = name,
+                  desc = desc,
+                  oidConfig = Some(url)
+                )
+                val body         = Json.parse(resp.body)
+                val issuer       = (body \ "issuer").asOpt[String].getOrElse("http://localhost:8082/")
+                val tokenUrl     = (body \ "token_endpoint").asOpt[String].getOrElse(config.tokenUrl)
+                val authorizeUrl = (body \ "authorization_endpoint").asOpt[String].getOrElse(config.authorizeUrl)
+                val userInfoUrl  = (body \ "userinfo_endpoint").asOpt[String].getOrElse(config.userInfoUrl)
+                val introspectionUrl =
+                  (body \ "introspection_endpoint").asOpt[String].getOrElse(config.introspectionUrl)
+                val loginUrl = (body \ "authorization_endpoint").asOpt[String].getOrElse(authorizeUrl)
+                val logoutUrl = (body \ "end_session_endpoint")
+                  .asOpt[String]
+                  .orElse((body \ "ping_end_session_endpoint").asOpt[String])
+                  .getOrElse((issuer + "/logout").replace("//logout", "/logout"))
+                val jwksUri = (body \ "jwks_uri").asOpt[String]
+                val scope = (body \ "scopes_supported")
+                  .asOpt[Seq[String]]
+                  .map(_.mkString(" "))
+                  .getOrElse("openid profile email name")
+                val claims =
+                  (body \ "claims_supported").asOpt[JsArray].map(Json.stringify).getOrElse("""["email","name"]""")
+                Ok(
+                  config
+                    .copy(
+                      clientId = clientId,
+                      clientSecret = clientSecret,
+                      tokenUrl = tokenUrl,
+                      authorizeUrl = authorizeUrl,
+                      userInfoUrl = userInfoUrl,
+                      introspectionUrl = introspectionUrl,
+                      loginUrl = loginUrl,
+                      logoutUrl = logoutUrl,
+                      callbackUrl =
+                        s"${env.rootScheme}${env.privateAppsHost}${env.privateAppsPort.map(v => ":" + v).getOrElse("")}/privateapps/generic/callback",
+                      scope = scope,
+                      claims = "",
+                      accessTokenField = "access_token", // jwksUri.map(_ => "id_token").getOrElse("access_token"),
+                      useJson = false,
+                      useCookie = false,
+                      readProfileFromToken = false,
+                      nameField = (if (scope.contains(config.nameField)) config.nameField else config.emailField),
+                      oidConfig = Some(url),
+                      jwtVerifier = jwksUri.map(
+                        url =>
+                          JWKSAlgoSettings(
+                            url = url,
+                            headers = Map.empty[String, String],
+                            timeout = FiniteDuration(2000, TimeUnit.MILLISECONDS),
+                            ttl = FiniteDuration(60 * 60 * 1000, TimeUnit.MILLISECONDS),
+                            kty = KeyType.RSA,
+                            None,
+                            MtlsConfig.default
+                        )
+                      )
+                    )
+                    .asJson
+                )
+              } getOrElse {
+                resp.ignore()
+                Ok(
+                  GenericOauth2ModuleConfig(
+                    id = id,
+                    name = name,
+                    desc = desc,
                     clientId = clientId,
                     clientSecret = clientSecret,
-                    tokenUrl = tokenUrl,
-                    authorizeUrl = authorizeUrl,
-                    userInfoUrl = userInfoUrl,
-                    introspectionUrl = introspectionUrl,
-                    loginUrl = loginUrl,
-                    logoutUrl = logoutUrl,
-                    callbackUrl =
-                      s"${env.rootScheme}${env.privateAppsHost}${env.privateAppsPort.map(v => ":" + v).getOrElse("")}/privateapps/generic/callback",
-                    scope = scope,
-                    claims = "",
-                    accessTokenField = "access_token", // jwksUri.map(_ => "id_token").getOrElse("access_token"),
-                    useJson = false,
-                    useCookie = false,
-                    readProfileFromToken = false,
-                    nameField = (if (scope.contains(config.nameField)) config.nameField else config.emailField),
-                    oidConfig = Some(url),
-                    jwtVerifier = jwksUri.map(
-                      url =>
-                        JWKSAlgoSettings(
-                          url = url,
-                          headers = Map.empty[String, String],
-                          timeout = FiniteDuration(2000, TimeUnit.MILLISECONDS),
-                          ttl = FiniteDuration(60 * 60 * 1000, TimeUnit.MILLISECONDS),
-                          kty = KeyType.RSA,
-                          None,
-                          MtlsConfig.default
-                        )
-                    )
-                  )
-                  .asJson
-              )
-            } getOrElse {
+                    oidConfig = Some(url)
+                  ).asJson
+                )
+              }
+            } else {
               resp.ignore()
               Ok(
                 GenericOauth2ModuleConfig(
@@ -580,20 +601,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
                 ).asJson
               )
             }
-          } else {
-            resp.ignore()
-            Ok(
-              GenericOauth2ModuleConfig(
-                id = id,
-                name = name,
-                desc = desc,
-                clientId = clientId,
-                clientSecret = clientSecret,
-                oidConfig = Some(url)
-              ).asJson
-            )
           }
-        }
       }
     }
   }
@@ -745,15 +753,15 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
     env.datastores.auditDataStore.findAllRaw().map { elems =>
       val filtered = elems.drop(paginationPosition).take(paginationPageSize)
       Ok.chunked(
-        Source
-          .single(ByteString("["))
-          .concat(
-            Source
-              .apply(scala.collection.immutable.Iterable.empty[ByteString] ++ filtered)
-              .intersperse(ByteString(","))
-          )
-          .concat(Source.single(ByteString("]")))
-      )
+          Source
+            .single(ByteString("["))
+            .concat(
+              Source
+                .apply(scala.collection.immutable.Iterable.empty[ByteString] ++ filtered)
+                .intersperse(ByteString(","))
+            )
+            .concat(Source.single(ByteString("]")))
+        )
         .as("application/json")
     }
   }
@@ -766,15 +774,15 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
     env.datastores.alertDataStore.findAllRaw().map { elems =>
       val filtered = elems.drop(paginationPosition).take(paginationPageSize)
       Ok.chunked(
-        Source
-          .single(ByteString("["))
-          .concat(
-            Source
-              .apply(scala.collection.immutable.Iterable.empty[ByteString] ++ filtered)
-              .intersperse(ByteString(","))
-          )
-          .concat(Source.single(ByteString("]")))
-      )
+          Source
+            .single(ByteString("["))
+            .concat(
+              Source
+                .apply(scala.collection.immutable.Iterable.empty[ByteString] ++ filtered)
+                .intersperse(ByteString(","))
+            )
+            .concat(Source.single(ByteString("]")))
+        )
         .as("application/json")
     }
   }
@@ -786,20 +794,20 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
           case Some(host) => {
             env.datastores.certificatesDataStore.findById(Cert.OtoroshiCA).map {
               case None => {
-                val cert = FakeKeyStore.createSelfSignedCertificate(host,
-                  FiniteDuration(365, TimeUnit.DAYS),
-                  None, None)
-                val c = Cert(cert.cert, cert.keyPair, None, false)
+                val cert =
+                  FakeKeyStore.createSelfSignedCertificate(host, FiniteDuration(365, TimeUnit.DAYS), None, None)
+                val c  = Cert(cert.cert, cert.keyPair, None, false)
                 val cc = c.enrich()
                 Ok(cc.toJson)
               }
               case Some(ca) => {
                 val cert = FakeKeyStore.createCertificateFromCA(host,
-                  FiniteDuration(365, TimeUnit.DAYS),
-                  None, None,
-                  ca.certificate.get,
-                  ca.cryptoKeyPair)
-                val c = Cert(cert.cert, cert.keyPair, ca, false)
+                                                                FiniteDuration(365, TimeUnit.DAYS),
+                                                                None,
+                                                                None,
+                                                                ca.certificate.get,
+                                                                ca.cryptoKeyPair)
+                val c  = Cert(cert.cert, cert.keyPair, ca, false)
                 val cc = c.enrich()
                 Ok(cc.toJson)
               }
@@ -822,22 +830,20 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
           case Some(dn) => {
             env.datastores.certificatesDataStore.findById(Cert.OtoroshiCA).map {
               case None => {
-                val cert = FakeKeyStore.createSelfSignedClientCertificate(
-                  dn,
-                  FiniteDuration(365, TimeUnit.DAYS),
-                  None, None)
-                val c = Cert(cert.cert, cert.keyPair, None, true)
+                val cert =
+                  FakeKeyStore.createSelfSignedClientCertificate(dn, FiniteDuration(365, TimeUnit.DAYS), None, None)
+                val c  = Cert(cert.cert, cert.keyPair, None, true)
                 val cc = c.enrich()
                 Ok(cc.toJson)
               }
               case Some(ca) => {
-                val cert = FakeKeyStore.createClientCertificateFromCA(
-                  dn,
-                  FiniteDuration(365, TimeUnit.DAYS),
-                  None, None,
-                  ca.certificate.get,
-                  ca.cryptoKeyPair)
-                val c = Cert(cert.cert, cert.keyPair, ca, true)
+                val cert = FakeKeyStore.createClientCertificateFromCA(dn,
+                                                                      FiniteDuration(365, TimeUnit.DAYS),
+                                                                      None,
+                                                                      None,
+                                                                      ca.certificate.get,
+                                                                      ca.cryptoKeyPair)
+                val c  = Cert(cert.cert, cert.keyPair, ca, true)
                 val cc = c.enrich()
                 Ok(cc.toJson)
               }
@@ -859,7 +865,9 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
       Try {
         val certs = P12Helper.extractCertificate(body, password)
         Source(certs.toList)
-          .mapAsync(1) { cert => cert.enrich().save() }
+          .mapAsync(1) { cert =>
+            cert.enrich().save()
+          }
           .runWith(Sink.ignore)
           .map { _ =>
             Ok(Json.obj("done" -> true))
@@ -882,7 +890,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
             // val keyPairGenerator = KeyPairGenerator.getInstance(KeystoreSettings.KeyPairAlgorithmName)
             // keyPairGenerator.initialize(KeystoreSettings.KeyPairKeyLength)
             // val keyPair = keyPairGenerator.generateKeyPair()
-            val ca      = FakeKeyStore.createCA(s"CN=$cn", FiniteDuration(365, TimeUnit.DAYS), None, None)
+            val ca = FakeKeyStore.createCA(s"CN=$cn", FiniteDuration(365, TimeUnit.DAYS), None, None)
             val _cert = Cert(
               id = IdGenerator.token(32),
               name = "none",
@@ -918,10 +926,11 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
                 // keyPairGenerator.initialize(KeystoreSettings.KeyPairKeyLength)
                 // val keyPair = keyPairGenerator.generateKeyPair()
                 val cert = FakeKeyStore.createCertificateFromCA(host,
-                  FiniteDuration(365, TimeUnit.DAYS),
-                  None, None,
-                  ca.certificate.get,
-                  ca.cryptoKeyPair)
+                                                                FiniteDuration(365, TimeUnit.DAYS),
+                                                                None,
+                                                                None,
+                                                                ca.certificate.get,
+                                                                ca.cryptoKeyPair)
                 Ok(Cert(cert.cert, cert.keyPair, ca, false).enrich().toJson)
               }
             }
@@ -944,12 +953,12 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
             env.datastores.certificatesDataStore.findById(id).map {
               case None => NotFound(Json.obj("error" -> s"No CA found"))
               case Some(ca) => {
-                val cert = FakeKeyStore.createClientCertificateFromCA(
-                  dn,
-                  FiniteDuration(365, TimeUnit.DAYS),
-                  None, None,
-                  ca.certificate.get,
-                  ca.cryptoKeyPair)
+                val cert = FakeKeyStore.createClientCertificateFromCA(dn,
+                                                                      FiniteDuration(365, TimeUnit.DAYS),
+                                                                      None,
+                                                                      None,
+                                                                      ca.certificate.get,
+                                                                      ca.cryptoKeyPair)
                 Ok(Cert(cert.cert, cert.keyPair, ca, true).enrich().toJson)
               }
             }
@@ -966,7 +975,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
 
   def renew(id: String) = BackOfficeActionAuth.async { ctx =>
     env.datastores.certificatesDataStore.findById(id).map(_.map(_.enrich())).flatMap {
-      case None => FastFuture.successful(NotFound(Json.obj("error" -> s"No Certificate found")))
+      case None       => FastFuture.successful(NotFound(Json.obj("error" -> s"No Certificate found")))
       case Some(cert) => cert.renew().map(c => Ok(c.toJson))
     }
   }
@@ -974,15 +983,15 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
   def createLetsEncryptCertificate() = BackOfficeActionAuth.async(parse.json) { ctx =>
     (ctx.request.body \ "host").asOpt[String] match {
       case None => FastFuture.successful(BadRequest(Json.obj("error" -> "no domain found in request")))
-      case Some(domain) => otoroshi.utils.LetsEncryptHelper.createCertificate(domain).map {
-        case Left(err) => InternalServerError(Json.obj("error" -> err))
-        case Right(cert) => Ok(cert.toJson)
-      }
+      case Some(domain) =>
+        otoroshi.utils.LetsEncryptHelper.createCertificate(domain).map {
+          case Left(err)   => InternalServerError(Json.obj("error" -> err))
+          case Right(cert) => Ok(cert.toJson)
+        }
     }
   }
 
   def createCsr = BackOfficeActionAuth.async(parse.json) { ctx =>
-
     import utils.future.Implicits._
 
     val issuerRef = (ctx.request.body \ "caRef").asOpt[String]
@@ -995,7 +1004,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
             case None => BadRequest(Json.obj("error" -> "no issuer defined")).future
             case Some(issuer) => {
               env.pki.genCsr(query, issuer.certificate).map {
-                case Left(err) => BadRequest(Json.obj("error" -> err))
+                case Left(err)  => BadRequest(Json.obj("error" -> err))
                 case Right(res) => Ok(res.json)
               }
             }
@@ -1010,11 +1019,11 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
 
     val issuerRef = (ctx.request.body \ "caRef").asOpt[String]
     val maybeHost = (ctx.request.body \ "host").asOpt[String]
-    val client = (ctx.request.body \ "client").asOpt[Boolean].getOrElse(false)
+    val client    = (ctx.request.body \ "client").asOpt[Boolean].getOrElse(false)
 
     def handle(r: Future[Either[String, GenCertResponse]]): Future[Result] = {
       r.map {
-        case Left(err) => BadRequest(Json.obj("error" -> err))
+        case Left(err)  => BadRequest(Json.obj("error" -> err))
         case Right(res) => Ok(res.toCert.copy(client = client, autoRenew = true).toJson)
       }
     }
@@ -1022,22 +1031,27 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
     env.datastores.certificatesDataStore.findAll().flatMap { certificates =>
       val issuer = issuerRef.flatMap(ref => certificates.find(_.id == ref))
       (ctx.request.body \ "letsEncrypt").asOpt[Boolean] match {
-        case Some(true) => maybeHost match {
-          case None => BadRequest(Json.obj("error" -> "No domain found !")).future
-          case Some(domain) => otoroshi.utils.LetsEncryptHelper.createCertificate(domain).map {
-            case Left(err) => InternalServerError(Json.obj("error" -> err))
-            case Right(cert) => Ok(cert.toJson)
+        case Some(true) =>
+          maybeHost match {
+            case None => BadRequest(Json.obj("error" -> "No domain found !")).future
+            case Some(domain) =>
+              otoroshi.utils.LetsEncryptHelper.createCertificate(domain).map {
+                case Left(err)   => InternalServerError(Json.obj("error" -> err))
+                case Right(cert) => Ok(cert.toJson)
+              }
           }
-        }
         case _ => {
           GenCsrQuery.fromJson(ctx.request.body).map(v => v.copy(duration = v.duration * (24 * 60 * 60 * 1000))) match {
-            case Left(err) => BadRequest(Json.obj("error" -> err)).future
+            case Left(err)                                  => BadRequest(Json.obj("error" -> err)).future
             case Right(query) if query.ca && issuer.isEmpty => handle(env.pki.genSelfSignedCA(query))
-            case Right(query) if query.ca && issuer.isDefined => handle(env.pki.genSubCA(query, issuer.get.certificate.get, issuer.get.cryptoKeyPair.getPrivate()))
+            case Right(query) if query.ca && issuer.isDefined =>
+              handle(env.pki.genSubCA(query, issuer.get.certificate.get, issuer.get.cryptoKeyPair.getPrivate()))
             case Right(query) if query.client && issuer.isEmpty => handle(env.pki.genSelfSignedCert(query))
-            case Right(query) if query.client && issuer.isDefined => handle(env.pki.genCert(query, issuer.get.certificate.get, issuer.get.cryptoKeyPair.getPrivate()))
+            case Right(query) if query.client && issuer.isDefined =>
+              handle(env.pki.genCert(query, issuer.get.certificate.get, issuer.get.cryptoKeyPair.getPrivate()))
             case Right(query) if issuer.isEmpty => handle(env.pki.genSelfSignedCert(query))
-            case Right(query) if issuer.isDefined => handle(env.pki.genCert(query, issuer.get.certificate.get, issuer.get.cryptoKeyPair.getPrivate()))
+            case Right(query) if issuer.isDefined =>
+              handle(env.pki.genCert(query, issuer.get.certificate.get, issuer.get.cryptoKeyPair.getPrivate()))
             case _ => BadRequest(Json.obj("error" -> "bad state")).future
           }
         }

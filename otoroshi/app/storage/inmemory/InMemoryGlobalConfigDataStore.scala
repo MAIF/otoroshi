@@ -371,5 +371,4 @@ class InMemoryGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
     }
   }
 
-
 }

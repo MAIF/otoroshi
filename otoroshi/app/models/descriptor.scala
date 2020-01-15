@@ -353,13 +353,17 @@ object TargetPredicate {
         //   zone = (json \ "rack").asOpt[String].getOrElse("local")
         // ))
         case "AlwaysMatch" => JsSuccess(AlwaysMatch)
-        case "GeolocationMatch" => JsSuccess(
-          GeolocationMatch(
-            positions =  (json \ "positions").asOpt[Seq[String]].map(_.map(_.split(";").toList.map(_.trim)).collect {
-              case lat :: lng :: radius :: Nil => GeoPositionRadius(lat.toDouble, lng.toDouble, radius.toDouble)
-            }).getOrElse(Seq.empty)
+        case "GeolocationMatch" =>
+          JsSuccess(
+            GeolocationMatch(
+              positions = (json \ "positions")
+                .asOpt[Seq[String]]
+                .map(_.map(_.split(";").toList.map(_.trim)).collect {
+                  case lat :: lng :: radius :: Nil => GeoPositionRadius(lat.toDouble, lng.toDouble, radius.toDouble)
+                })
+                .getOrElse(Seq.empty)
+            )
           )
-        )
         case "NetworkLocationMatch" =>
           JsSuccess(
             NetworkLocationMatch(
@@ -378,11 +382,12 @@ object TargetPredicate {
 
 case class GeoPositionRadius(latitude: Double, longitude: Double, radius: Double) {
   def toJson: JsValue = JsString(s"$latitude:$longitude:$radius")
-  def near(lat: Double, lng: Double): Boolean = Math.acos(Math.sin(latitude) * Math.sin(lat) + Math.cos(latitude) * Math.cos(lat) * Math.cos(lng - longitude)) * 6371 <= radius
+  def near(lat: Double, lng: Double): Boolean =
+    Math.acos(Math.sin(latitude) * Math.sin(lat) + Math.cos(latitude) * Math.cos(lat) * Math.cos(lng - longitude)) * 6371 <= radius
 }
 
 case class GeolocationMatch(positions: Seq[GeoPositionRadius]) extends TargetPredicate {
-  def toJson: JsValue                                             = Json.obj("type" -> "GeolocationMatch", "positions" -> JsArray(positions.map(_.toJson)))
+  def toJson: JsValue = Json.obj("type" -> "GeolocationMatch", "positions" -> JsArray(positions.map(_.toJson)))
   override def matches(reqId: String, req: RequestHeader, attrs: TypedMap)(implicit env: Env): Boolean = {
     attrs.get(otoroshi.plugins.Keys.GeolocationInfoKey) match {
       case None => true
@@ -396,7 +401,7 @@ case class GeolocationMatch(positions: Seq[GeoPositionRadius]) extends TargetPre
 }
 
 object AlwaysMatch extends TargetPredicate {
-  def toJson: JsValue                                             = Json.obj("type" -> "AlwaysMatch")
+  def toJson: JsValue                                                                                  = Json.obj("type" -> "AlwaysMatch")
   override def matches(reqId: String, req: RequestHeader, attrs: TypedMap)(implicit env: Env): Boolean = true
 }
 
@@ -491,9 +496,9 @@ case class Target(
 object Target {
   val format = new Format[Target] {
     override def writes(o: Target): JsValue = Json.obj(
-      "host"      -> o.host,
-      "scheme"    -> o.scheme,
-      "weight"    -> o.weight,
+      "host"       -> o.host,
+      "scheme"     -> o.scheme,
+      "weight"     -> o.weight,
       "mtlsConfig" -> o.mtlsConfig.json,
       // "loose"     -> o.loose,
       // "mtls"      -> o.mtls,
@@ -828,7 +833,8 @@ case class RedirectionSettings(enabled: Boolean = false, code: Int = 303, to: St
   def formattedTo(request: RequestHeader,
                   descriptor: ServiceDescriptor,
                   ctx: Map[String, String],
-                  attrs: utils.TypedMap, env: Env): String =
+                  attrs: utils.TypedMap,
+                  env: Env): String =
     RedirectionExpressionLanguage(to, Some(request), Some(descriptor), None, None, ctx, attrs, env)
 }
 
@@ -1180,7 +1186,8 @@ case class OIDCThirdPartyApiKeyConfig(
                                             }
                                             case _ => {
                                               val clientSecret = Option(oidcAuth.clientSecret).filterNot(_.trim.isEmpty)
-                                              val builder      = env.MtlsWs.url(oidcAuth.introspectionUrl, oidcAuth.mtlsConfig)
+                                              val builder =
+                                                env.MtlsWs.url(oidcAuth.introspectionUrl, oidcAuth.mtlsConfig)
                                               val future1 = if (oidcAuth.useJson) {
                                                 builder.post(
                                                   Json.obj(
@@ -1927,7 +1934,7 @@ case class ServiceDescriptor(
     val root = req.relativeUri
     val rootMatched = allPaths match { //rootMatched was this.matchingRoot
       case ps if ps.isEmpty => None
-      case ps => ps.find(p => root.startsWith(p))
+      case ps               => ps.find(p => root.startsWith(p))
     }
     rootMatched
       .filter(_ => stripPath)

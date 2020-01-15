@@ -41,7 +41,10 @@ export class AlertPage extends Component {
   }
 
   fetchEvents = () => {
-    return BackOfficeServices.fetchAlertEvents().then(d => d, err => console.error(err));
+    return BackOfficeServices.fetchAlertEvents().then(
+      d => d,
+      err => console.error(err)
+    );
   };
 
   render() {

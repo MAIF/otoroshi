@@ -12,9 +12,8 @@ import play.api.libs.json.{JsArray, JsValue, Json}
 import play.api.mvc._
 import security.IdGenerator
 
-class UsersController(ApiAction: ApiAction,
-                    cc: ControllerComponents)(implicit env: Env)
-  extends AbstractController(cc) {
+class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env: Env)
+    extends AbstractController(cc) {
 
   implicit lazy val ec = env.otoroshiExecutionContext
 
@@ -53,7 +52,14 @@ class UsersController(ApiAction: ApiAction,
         )
         Audit.send(event)
         Alerts
-          .send(SessionDiscardedAlert(env.snowflakeGenerator.nextIdStr(), env.env, fakeBackOfficeUser, event, ctx.from, ctx.ua))
+          .send(
+            SessionDiscardedAlert(env.snowflakeGenerator.nextIdStr(),
+                                  env.env,
+                                  fakeBackOfficeUser,
+                                  event,
+                                  ctx.from,
+                                  ctx.ua)
+          )
         Ok(Json.obj("done" -> true))
       }
     } recover {
@@ -77,7 +83,14 @@ class UsersController(ApiAction: ApiAction,
         )
         Audit.send(event)
         Alerts
-          .send(SessionsDiscardedAlert(env.snowflakeGenerator.nextIdStr(), env.env, fakeBackOfficeUser, event, ctx.from, ctx.ua))
+          .send(
+            SessionsDiscardedAlert(env.snowflakeGenerator.nextIdStr(),
+                                   env.env,
+                                   fakeBackOfficeUser,
+                                   event,
+                                   ctx.from,
+                                   ctx.ua)
+          )
         Ok(Json.obj("done" -> true))
       }
     } recover {
@@ -111,7 +124,14 @@ class UsersController(ApiAction: ApiAction,
         )
         Audit.send(event)
         Alerts
-          .send(SessionDiscardedAlert(env.snowflakeGenerator.nextIdStr(), env.env, fakeBackOfficeUser, event, ctx.from, ctx.ua))
+          .send(
+            SessionDiscardedAlert(env.snowflakeGenerator.nextIdStr(),
+                                  env.env,
+                                  fakeBackOfficeUser,
+                                  event,
+                                  ctx.from,
+                                  ctx.ua)
+          )
         Ok(Json.obj("done" -> true))
       }
     } recover {
@@ -135,7 +155,14 @@ class UsersController(ApiAction: ApiAction,
         )
         Audit.send(event)
         Alerts
-          .send(SessionsDiscardedAlert(env.snowflakeGenerator.nextIdStr(), env.env, fakeBackOfficeUser, event, ctx.from, ctx.ua))
+          .send(
+            SessionsDiscardedAlert(env.snowflakeGenerator.nextIdStr(),
+                                   env.env,
+                                   fakeBackOfficeUser,
+                                   event,
+                                   ctx.from,
+                                   ctx.ua)
+          )
         Ok(Json.obj("done" -> true))
       }
     } recover {
@@ -151,15 +178,15 @@ class UsersController(ApiAction: ApiAction,
     env.datastores.auditDataStore.findAllRaw().map { elems =>
       val filtered = elems.drop(paginationPosition).take(paginationPageSize)
       Ok.chunked(
-        Source
-          .single(ByteString("["))
-          .concat(
-            Source
-              .apply(scala.collection.immutable.Iterable.empty[ByteString] ++ filtered)
-              .intersperse(ByteString(","))
-          )
-          .concat(Source.single(ByteString("]")))
-      )
+          Source
+            .single(ByteString("["))
+            .concat(
+              Source
+                .apply(scala.collection.immutable.Iterable.empty[ByteString] ++ filtered)
+                .intersperse(ByteString(","))
+            )
+            .concat(Source.single(ByteString("]")))
+        )
         .as("application/json")
     }
   }
@@ -172,15 +199,15 @@ class UsersController(ApiAction: ApiAction,
     env.datastores.alertDataStore.findAllRaw().map { elems =>
       val filtered = elems.drop(paginationPosition).take(paginationPageSize)
       Ok.chunked(
-        Source
-          .single(ByteString("["))
-          .concat(
-            Source
-              .apply(scala.collection.immutable.Iterable.empty[ByteString] ++ filtered)
-              .intersperse(ByteString(","))
-          )
-          .concat(Source.single(ByteString("]")))
-      )
+          Source
+            .single(ByteString("["))
+            .concat(
+              Source
+                .apply(scala.collection.immutable.Iterable.empty[ByteString] ++ filtered)
+                .intersperse(ByteString(","))
+            )
+            .concat(Source.single(ByteString("]")))
+        )
         .as("application/json")
     }
   }
@@ -225,7 +252,9 @@ class UsersController(ApiAction: ApiAction,
         Json.obj("username" -> username)
       )
       Audit.send(event)
-      Alerts.send(U2FAdminDeletedAlert(env.snowflakeGenerator.nextIdStr(), env.env, fakeBackOfficeUser, event, ctx.from, ctx.ua))
+      Alerts.send(
+        U2FAdminDeletedAlert(env.snowflakeGenerator.nextIdStr(), env.env, fakeBackOfficeUser, event, ctx.from, ctx.ua)
+      )
       Ok(Json.obj("done" -> true))
     }
   }
@@ -246,12 +275,17 @@ class UsersController(ApiAction: ApiAction,
     val labelOpt           = (ctx.request.body \ "label").asOpt[String]
     val authorizedGroupOpt = (ctx.request.body \ "authorizedGroup").asOpt[String]
     val credentialOpt      = (ctx.request.body \ "credential").asOpt[JsValue]
-    val handleOpt      = (ctx.request.body \ "handle").asOpt[String]
+    val handleOpt          = (ctx.request.body \ "handle").asOpt[String]
     (usernameOpt, passwordOpt, labelOpt, authorizedGroupOpt, handleOpt) match {
       case (Some(username), Some(password), Some(label), _, Some(handle)) => {
         val saltedPassword = BCrypt.hashpw(password, BCrypt.gensalt())
         env.datastores.webAuthnAdminDataStore
-          .registerUser(username, saltedPassword, label, authorizedGroupOpt, credentialOpt.getOrElse(Json.obj()), handle)
+          .registerUser(username,
+                        saltedPassword,
+                        label,
+                        authorizedGroupOpt,
+                        credentialOpt.getOrElse(Json.obj()),
+                        handle)
           .map { _ =>
             Ok(Json.obj("username" -> username))
           }
@@ -275,7 +309,14 @@ class UsersController(ApiAction: ApiAction,
       )
       Audit.send(event)
       Alerts
-        .send(WebAuthnAdminDeletedAlert(env.snowflakeGenerator.nextIdStr(), env.env, fakeBackOfficeUser, event, ctx.from, ctx.ua))
+        .send(
+          WebAuthnAdminDeletedAlert(env.snowflakeGenerator.nextIdStr(),
+                                    env.env,
+                                    fakeBackOfficeUser,
+                                    event,
+                                    ctx.from,
+                                    ctx.ua)
+        )
       Ok(Json.obj("done" -> true))
     }
   }

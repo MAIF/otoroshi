@@ -120,14 +120,16 @@ case class Cert(
     else "certificate"
   }
 
-  lazy val cacheKey: String = s"$id###$contentHash"
+  lazy val cacheKey: String    = s"$id###$contentHash"
   lazy val contentHash: String = Hashing.sha256().hashString(s"$chain:$privateKey", StandardCharsets.UTF_8).toString
 
-  def signature: Option[String]    = this.metadata.map(v => (v \ "signature").as[String])
-  def serialNumber: Option[String] = this.metadata.map(v => (v \ "serialNumber").as[String])
+  def signature: Option[String]     = this.metadata.map(v => (v \ "signature").as[String])
+  def serialNumber: Option[String]  = this.metadata.map(v => (v \ "serialNumber").as[String])
   def serialNumberLng: Option[Long] = this.metadata.map(v => (v \ "serialNumberLng").as[Long])
 
-  def renew(_duration: Option[FiniteDuration] = None)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Cert] = {
+  def renew(
+      _duration: Option[FiniteDuration] = None
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Cert] = {
     import SSLImplicits._
     val duration = _duration.getOrElse(FiniteDuration(365, TimeUnit.DAYS))
     this match {
@@ -137,26 +139,49 @@ case class Cert(
           val cas = certificates.filter(cert => cert.ca)
           caRef.flatMap(ref => cas.find(_.id == ref)) match {
             case None if ca =>
-              val resp = FakeKeyStore.createCA(subject, duration, Some(cryptoKeyPair), certificate.map(_.getSerialNumber.longValue()))
+              val resp = FakeKeyStore
+                .createCA(subject, duration, Some(cryptoKeyPair), certificate.map(_.getSerialNumber.longValue()))
               copy(chain = resp.cert.asPem, privateKey = resp.key.asPem).enrich()
             case None if selfSigned =>
-              val resp = FakeKeyStore.createSelfSignedCertificate(domain, duration, Some(cryptoKeyPair), certificate.map(_.getSerialNumber.longValue()))
+              val resp = FakeKeyStore.createSelfSignedCertificate(domain,
+                                                                  duration,
+                                                                  Some(cryptoKeyPair),
+                                                                  certificate.map(_.getSerialNumber.longValue()))
               copy(chain = resp.cert.asPem, privateKey = resp.key.asPem).enrich()
             case None if keypair =>
-              val resp = FakeKeyStore.createSelfSignedCertificate(domain, duration, Some(cryptoKeyPair), certificate.map(_.getSerialNumber.longValue()))
+              val resp = FakeKeyStore.createSelfSignedCertificate(domain,
+                                                                  duration,
+                                                                  Some(cryptoKeyPair),
+                                                                  certificate.map(_.getSerialNumber.longValue()))
               copy(chain = resp.cert.asPem, privateKey = resp.key.asPem).enrich()
             case None => // should not happens
-              val resp = FakeKeyStore.createSelfSignedCertificate(domain, duration, Some(cryptoKeyPair), certificate.map(_.getSerialNumber.longValue()))
+              val resp = FakeKeyStore.createSelfSignedCertificate(domain,
+                                                                  duration,
+                                                                  Some(cryptoKeyPair),
+                                                                  certificate.map(_.getSerialNumber.longValue()))
               copy(chain = resp.cert.asPem, privateKey = resp.key.asPem).enrich()
             case Some(caCert) if ca =>
-              val resp = FakeKeyStore.createSubCa(domain, duration, Some(cryptoKeyPair), certificate.map(_.getSerialNumber.longValue()), caCert.certificate.get, caCert.cryptoKeyPair)
+              val resp = FakeKeyStore.createSubCa(domain,
+                                                  duration,
+                                                  Some(cryptoKeyPair),
+                                                  certificate.map(_.getSerialNumber.longValue()),
+                                                  caCert.certificate.get,
+                                                  caCert.cryptoKeyPair)
               copy(chain = resp.cert.asPem + "\n" + caCert.chain, privateKey = resp.key.asPem).enrich()
             case Some(caCert) =>
-              val resp = FakeKeyStore.createCertificateFromCA(domain, duration, Some(cryptoKeyPair), certificate.map(_.getSerialNumber.longValue()), caCert.certificate.get, caCert.cryptoKeyPair)
+              val resp = FakeKeyStore.createCertificateFromCA(domain,
+                                                              duration,
+                                                              Some(cryptoKeyPair),
+                                                              certificate.map(_.getSerialNumber.longValue()),
+                                                              caCert.certificate.get,
+                                                              caCert.cryptoKeyPair)
               copy(chain = resp.cert.asPem + "\n" + caCert.chain, privateKey = resp.key.asPem).enrich()
             case _ =>
               // println("wait what ???")
-              val resp = FakeKeyStore.createSelfSignedCertificate(domain, duration, Some(cryptoKeyPair), certificate.map(_.getSerialNumber.longValue()))
+              val resp = FakeKeyStore.createSelfSignedCertificate(domain,
+                                                                  duration,
+                                                                  Some(cryptoKeyPair),
+                                                                  certificate.map(_.getSerialNumber.longValue()))
               copy(chain = resp.cert.asPem, privateKey = resp.key.asPem).enrich()
           }
         }
@@ -275,10 +300,16 @@ case class Cert(
     GenCertResponse(
       serial = serialNumberLng.get,
       cert = certificate.get,
-      csr = Await.result(env.pki.genCsr(GenCsrQuery(
-        hosts = Seq(domain),
-        subject = Some(subject)
-      ), None)(env.otoroshiExecutionContext), 10.seconds).right.get.csr,
+      csr = Await
+        .result(env.pki.genCsr(GenCsrQuery(
+                                 hosts = Seq(domain),
+                                 subject = Some(subject)
+                               ),
+                               None)(env.otoroshiExecutionContext),
+                10.seconds)
+        .right
+        .get
+        .csr,
       key = cryptoKeyPair.getPrivate,
       ca = caFromChain.get
     )
@@ -327,11 +358,11 @@ object Cert {
       name = "none",
       description = "none",
       chain = cert.asPem + "\n" + ca.asPem,
-        //s"${PemHeaders.BeginCertificate}\n${Base64.getEncoder
-        //.encodeToString(cert.getEncoded)}\n${PemHeaders.EndCertificate}\n${PemHeaders.BeginCertificate}\n${Base64.getEncoder
-        //.encodeToString(ca.getEncoded)}\n${PemHeaders.EndCertificate}\n",
+      //s"${PemHeaders.BeginCertificate}\n${Base64.getEncoder
+      //.encodeToString(cert.getEncoded)}\n${PemHeaders.EndCertificate}\n${PemHeaders.BeginCertificate}\n${Base64.getEncoder
+      //.encodeToString(ca.getEncoded)}\n${PemHeaders.EndCertificate}\n",
       privateKey = keyPair.getPrivate.asPem,
-        // s"${PemHeaders.BeginPrivateKey}\n${Base64.getEncoder.encodeToString(keyPair.getPrivate.getEncoded)}\n${PemHeaders.EndPrivateKey}",
+      // s"${PemHeaders.BeginPrivateKey}\n${Base64.getEncoder.encodeToString(keyPair.getPrivate.getEncoded)}\n${PemHeaders.EndPrivateKey}",
       caRef = None,
       autoRenew = false,
       client = client
@@ -341,32 +372,35 @@ object Cert {
 
   val _fmt: Format[Cert] = new Format[Cert] {
     override def writes(cert: Cert): JsValue = Json.obj(
-      "id"         -> cert.id,
-      "domain"     -> cert.domain,
-      "name"       -> cert.name,
+      "id"          -> cert.id,
+      "domain"      -> cert.domain,
+      "name"        -> cert.name,
       "description" -> cert.description,
-      "chain"      -> cert.chain,
-      "caRef"      -> cert.caRef,
-      "privateKey" -> cert.privateKey,
-      "selfSigned" -> cert.selfSigned,
-      "ca"         -> cert.ca,
-      "valid"      -> cert.valid,
-      "autoRenew"  -> cert.autoRenew,
+      "chain"       -> cert.chain,
+      "caRef"       -> cert.caRef,
+      "privateKey"  -> cert.privateKey,
+      "selfSigned"  -> cert.selfSigned,
+      "ca"          -> cert.ca,
+      "valid"       -> cert.valid,
+      "autoRenew"   -> cert.autoRenew,
       "letsEncrypt" -> cert.letsEncrypt,
-      "subject"    -> cert.subject,
-      "from"       -> cert.from.getMillis,
-      "to"         -> cert.to.getMillis,
-      "client"     -> cert.client,
-      "keypair"    -> cert.keypair,
-      "sans"       -> JsArray(cert.sans.map(JsString.apply)),
-      "certType"   -> cert.certType
+      "subject"     -> cert.subject,
+      "from"        -> cert.from.getMillis,
+      "to"          -> cert.to.getMillis,
+      "client"      -> cert.client,
+      "keypair"     -> cert.keypair,
+      "sans"        -> JsArray(cert.sans.map(JsString.apply)),
+      "certType"    -> cert.certType
     )
     override def reads(json: JsValue): JsResult[Cert] =
       Try {
         Cert(
           id = (json \ "id").as[String],
           name = (json \ "name").asOpt[String].orElse((json \ "domain").asOpt[String]).getOrElse("none"),
-          description = (json \ "description").asOpt[String].orElse((json \ "domain").asOpt[String].map(v => s"Certificate for $v")).getOrElse("none"),
+          description = (json \ "description")
+            .asOpt[String]
+            .orElse((json \ "domain").asOpt[String].map(v => s"Certificate for $v"))
+            .getOrElse("none"),
           domain = (json \ "domain").as[String],
           sans = (json \ "sans").asOpt[Seq[String]].getOrElse(Seq.empty),
           chain = (json \ "chain").as[String],
@@ -407,7 +441,10 @@ object Cert {
     env.datastores.certificatesDataStore.findAll().flatMap { certificates =>
       env.datastores.serviceDescriptorDataStore.findAll().flatMap { services =>
         val certs = certificates.filterNot(_.letsEncrypt)
-        val letsEncryptServicesHosts = services.filter(_.issueCert).flatMap(s => s.allHosts.map(h => (s, h))).filterNot(s => certs.exists(c => RegexPool(c.domain).matches(s._2)))
+        val letsEncryptServicesHosts = services
+          .filter(_.issueCert)
+          .flatMap(s => s.allHosts.map(h => (s, h)))
+          .filterNot(s => certs.exists(c => RegexPool(c.domain).matches(s._2)))
         Source(letsEncryptServicesHosts.toList)
           .mapAsync(1) {
             case (service, host) =>
@@ -416,24 +453,31 @@ object Cert {
                   logger.warn(s"Certificate already in creating process: $host")
                   FastFuture.successful(())
                 case None => {
-                  env.datastores.rawDataStore.set(s"${env.storageRoot}:certs-issuer:local:create:$host", ByteString("true"), Some(1.minutes.toMillis)).flatMap { _ =>
-                    val cert = certs.find(c => RegexPool(c.domain).matches(host)).get
-                    if (cert.autoRenew) {
-                      cert.renew()
-                    } else {
-                      FastFuture.successful(cert)
+                  env.datastores.rawDataStore
+                    .set(s"${env.storageRoot}:certs-issuer:local:create:$host",
+                         ByteString("true"),
+                         Some(1.minutes.toMillis))
+                    .flatMap { _ =>
+                      val cert = certs.find(c => RegexPool(c.domain).matches(host)).get
+                      if (cert.autoRenew) {
+                        cert.renew()
+                      } else {
+                        FastFuture.successful(cert)
+                      }
                     }
-                  }.andThen {
-                    case _ => env.datastores.rawDataStore.del(Seq(s"${env.storageRoot}:certs-issuer:local:create:$host"))
-                  }
+                    .andThen {
+                      case _ =>
+                        env.datastores.rawDataStore.del(Seq(s"${env.storageRoot}:certs-issuer:local:create:$host"))
+                    }
                 }
               }
           }
           .map {
             case (host, Left(err)) => logger.error(s"Error while creating certificate for $host. $err")
-            case (host, Right(_)) => logger.info(s"Successfully created certificate for $host")
+            case (host, Right(_))  => logger.info(s"Successfully created certificate for $host")
           }
-          .runWith(Sink.ignore).map(_ => ())
+          .runWith(Sink.ignore)
+          .map(_ => ())
       }
     }
   }
@@ -469,7 +513,8 @@ trait CertificateDataStore extends BasicStore[Cert] {
             )
           )
         }
-        .runWith(Sink.ignore).map(_ => ())
+        .runWith(Sink.ignore)
+        .map(_ => ())
     }
 
     def renewSelfSignedCertificates(certificates: Seq[Cert]): Future[Unit] = {
@@ -490,7 +535,8 @@ trait CertificateDataStore extends BasicStore[Cert] {
             )
           )
         }
-        .runWith(Sink.ignore).map(_ => ())
+        .runWith(Sink.ignore)
+        .map(_ => ())
     }
 
     for {
@@ -525,7 +571,12 @@ trait CertificateDataStore extends BasicStore[Cert] {
     }
   }
 
-  def importOneCert(conf: Configuration, caPath: String, certPath: String, keyPath: String, logger: Logger, id: Option[String] = None)(
+  def importOneCert(conf: Configuration,
+                    caPath: String,
+                    certPath: String,
+                    keyPath: String,
+                    logger: Logger,
+                    id: Option[String] = None)(
       implicit env: Env,
       ec: ExecutionContext
   ): Unit = {
@@ -589,10 +640,11 @@ trait CertificateDataStore extends BasicStore[Cert] {
 
   def importInitialCerts(logger: Logger)(implicit env: Env, ec: ExecutionContext) = {
     importOneCert(env.configuration,
-      "otoroshi.ssl.rootCa.ca",
-      "otoroshi.ssl.rootCa.cert",
-      "otoroshi.ssl.rootCa.key",
-      logger, Some(Cert.OtoroshiCA))(env, ec)
+                  "otoroshi.ssl.rootCa.ca",
+                  "otoroshi.ssl.rootCa.cert",
+                  "otoroshi.ssl.rootCa.key",
+                  logger,
+                  Some(Cert.OtoroshiCA))(env, ec)
     importOneCert(env.configuration,
                   "otoroshi.ssl.initialCacert",
                   "otoroshi.ssl.initialCert",
@@ -613,7 +665,9 @@ trait CertificateDataStore extends BasicStore[Cert] {
       env.configuration.has("otoroshi.ssl.initialCertKey")
     )
     val hasInitialCerts = env.configuration.has("otoroshi.ssl.initialCerts")
-    val hasRootCA = env.configuration.has("otoroshi.ssl.rootCa.cert") && env.configuration.has("otoroshi.ssl.rootCa.key")
+    val hasRootCA = env.configuration.has("otoroshi.ssl.rootCa.cert") && env.configuration.has(
+      "otoroshi.ssl.rootCa.key"
+    )
     hasInitialCert || hasInitialCerts || hasRootCA
   }
 }
@@ -656,131 +710,133 @@ object DynamicSSLEngineProvider {
     currentEnv.set(env)
   }
 
-  private def setupContext(env: HasMetrics): SSLContext = env.metrics.withTimer("otoroshi.core.tls.setup-global-context") {
+  private def setupContext(env: HasMetrics): SSLContext =
+    env.metrics.withTimer("otoroshi.core.tls.setup-global-context") {
 
-    val optEnv = Option(currentEnv.get)
+      val optEnv = Option(currentEnv.get)
 
-    val trustAll: Boolean =
-      optEnv.flatMap(e => e.configuration.getOptional[Boolean]("otoroshi.ssl.trust.all")).getOrElse(false)
+      val trustAll: Boolean =
+        optEnv.flatMap(e => e.configuration.getOptional[Boolean]("otoroshi.ssl.trust.all")).getOrElse(false)
 
-    val cacertPath = optEnv
-      .flatMap(e => e.configuration.getOptional[String]("otoroshi.ssl.cacert.path"))
-      .map(
-        path =>
-          path
-            .replace("${JAVA_HOME}", System.getProperty("java.home"))
-            .replace("$JAVA_HOME", System.getProperty("java.home"))
-      )
-      .getOrElse(System.getProperty("java.home") + "/lib/security/cacerts")
-
-    val cacertPassword = optEnv
-      .flatMap(e => e.configuration.getOptional[String]("otoroshi.ssl.cacert.password"))
-      .getOrElse("changeit")
-
-    val dumpPath: Option[String] =
-      optEnv.flatMap(e => e.configuration.getOptional[String]("play.server.https.keyStoreDumpPath"))
-
-    logger.debug("Setting up SSL Context ")
-    val sslContext: SSLContext = SSLContext.getInstance("TLS")
-    val keyStore: KeyStore     = createKeyStore(certificates.values.toSeq) //.filterNot(_.ca))
-    dumpPath.foreach { path =>
-      logger.debug(s"Dumping keystore at $dumpPath")
-      keyStore.store(new FileOutputStream(path), EMPTY_PASSWORD)
-    }
-    val keyManagerFactory: KeyManagerFactory =
-      Try(KeyManagerFactory.getInstance("X509")).orElse(Try(KeyManagerFactory.getInstance("SunX509"))).get
-    keyManagerFactory.init(keyStore, EMPTY_PASSWORD)
-    logger.debug("SSL Context init ...")
-    val keyManagers: Array[KeyManager] = keyManagerFactory.getKeyManagers.map(
-      m => new X509KeyManagerSnitch(m.asInstanceOf[X509KeyManager]).asInstanceOf[KeyManager]
-    )
-    val tm: Array[TrustManager] =
-    optEnv.flatMap(e => e.configuration.getOptional[Boolean]("play.server.https.trustStore.noCaVerification")).map {
-      case true  => Array[TrustManager](noCATrustManager)
-      case false => createTrustStore(keyStore, cacertPath, cacertPassword)
-    } getOrElse {
-      if (trustAll) {
-        Array[TrustManager](
-          new VeryNiceTrustManager(Seq.empty[X509TrustManager])
+      val cacertPath = optEnv
+        .flatMap(e => e.configuration.getOptional[String]("otoroshi.ssl.cacert.path"))
+        .map(
+          path =>
+            path
+              .replace("${JAVA_HOME}", System.getProperty("java.home"))
+              .replace("$JAVA_HOME", System.getProperty("java.home"))
         )
-      } else {
-        createTrustStore(keyStore, cacertPath, cacertPassword)
+        .getOrElse(System.getProperty("java.home") + "/lib/security/cacerts")
+
+      val cacertPassword = optEnv
+        .flatMap(e => e.configuration.getOptional[String]("otoroshi.ssl.cacert.password"))
+        .getOrElse("changeit")
+
+      val dumpPath: Option[String] =
+        optEnv.flatMap(e => e.configuration.getOptional[String]("play.server.https.keyStoreDumpPath"))
+
+      logger.debug("Setting up SSL Context ")
+      val sslContext: SSLContext = SSLContext.getInstance("TLS")
+      val keyStore: KeyStore     = createKeyStore(certificates.values.toSeq) //.filterNot(_.ca))
+      dumpPath.foreach { path =>
+        logger.debug(s"Dumping keystore at $dumpPath")
+        keyStore.store(new FileOutputStream(path), EMPTY_PASSWORD)
       }
+      val keyManagerFactory: KeyManagerFactory =
+        Try(KeyManagerFactory.getInstance("X509")).orElse(Try(KeyManagerFactory.getInstance("SunX509"))).get
+      keyManagerFactory.init(keyStore, EMPTY_PASSWORD)
+      logger.debug("SSL Context init ...")
+      val keyManagers: Array[KeyManager] = keyManagerFactory.getKeyManagers.map(
+        m => new X509KeyManagerSnitch(m.asInstanceOf[X509KeyManager]).asInstanceOf[KeyManager]
+      )
+      val tm: Array[TrustManager] =
+      optEnv.flatMap(e => e.configuration.getOptional[Boolean]("play.server.https.trustStore.noCaVerification")).map {
+        case true  => Array[TrustManager](noCATrustManager)
+        case false => createTrustStore(keyStore, cacertPath, cacertPassword)
+      } getOrElse {
+        if (trustAll) {
+          Array[TrustManager](
+            new VeryNiceTrustManager(Seq.empty[X509TrustManager])
+          )
+        } else {
+          createTrustStore(keyStore, cacertPath, cacertPassword)
+        }
+      }
+
+      sslContext.init(keyManagers, tm, null)
+      // dumpPath match {
+      //   case Some(path) => {
+      //     currentSslConfigSettings.set(
+      //       SSLConfigSettings()
+      //       //.withHostnameVerifierClass(classOf[OtoroshiHostnameVerifier])
+      //         .withKeyManagerConfig(
+      //           KeyManagerConfig().withKeyStoreConfigs(
+      //             List(KeyStoreConfig(None, Some(path)).withPassword(Some(String.valueOf(EMPTY_PASSWORD))))
+      //           )
+      //         )
+      //         .withTrustManagerConfig(
+      //           TrustManagerConfig().withTrustStoreConfigs(
+      //             certificates.values.toList.map(c => TrustStoreConfig(Option(c.chain).map(_.trim), None))
+      //           )
+      //         )
+      //     )
+      //   }
+      //   case None => {
+      //     currentSslConfigSettings.set(
+      //       SSLConfigSettings()
+      //       //.withHostnameVerifierClass(classOf[OtoroshiHostnameVerifier])
+      //         .withKeyManagerConfig(
+      //           KeyManagerConfig().withKeyStoreConfigs(
+      //             certificates.values.toList.map(c => KeyStoreConfig(Option(c.chain).map(_.trim), None))
+      //           )
+      //         )
+      //         .withTrustManagerConfig(
+      //           TrustManagerConfig().withTrustStoreConfigs(
+      //             certificates.values.toList.map(c => TrustStoreConfig(Option(c.chain).map(_.trim), None))
+      //           )
+      //         )
+      //     )
+      //   }
+      // }
+      logger.debug(s"SSL Context init done ! (${keyStore.size()})")
+      SSLContext.setDefault(sslContext)
+      sslContext
     }
 
-    sslContext.init(keyManagers, tm, null)
-    // dumpPath match {
-    //   case Some(path) => {
-    //     currentSslConfigSettings.set(
-    //       SSLConfigSettings()
-    //       //.withHostnameVerifierClass(classOf[OtoroshiHostnameVerifier])
-    //         .withKeyManagerConfig(
-    //           KeyManagerConfig().withKeyStoreConfigs(
-    //             List(KeyStoreConfig(None, Some(path)).withPassword(Some(String.valueOf(EMPTY_PASSWORD))))
-    //           )
-    //         )
-    //         .withTrustManagerConfig(
-    //           TrustManagerConfig().withTrustStoreConfigs(
-    //             certificates.values.toList.map(c => TrustStoreConfig(Option(c.chain).map(_.trim), None))
-    //           )
-    //         )
-    //     )
-    //   }
-    //   case None => {
-    //     currentSslConfigSettings.set(
-    //       SSLConfigSettings()
-    //       //.withHostnameVerifierClass(classOf[OtoroshiHostnameVerifier])
-    //         .withKeyManagerConfig(
-    //           KeyManagerConfig().withKeyStoreConfigs(
-    //             certificates.values.toList.map(c => KeyStoreConfig(Option(c.chain).map(_.trim), None))
-    //           )
-    //         )
-    //         .withTrustManagerConfig(
-    //           TrustManagerConfig().withTrustStoreConfigs(
-    //             certificates.values.toList.map(c => TrustStoreConfig(Option(c.chain).map(_.trim), None))
-    //           )
-    //         )
-    //     )
-    //   }
-    // }
-    logger.debug(s"SSL Context init done ! (${keyStore.size()})")
-    SSLContext.setDefault(sslContext)
-    sslContext
-  }
+  def setupSslContextFor(cert: Cert, env: Env): SSLContext =
+    env.metrics.withTimer("otoroshi.core.tls.setup-single-context") {
 
-  def setupSslContextFor(cert: Cert, env: Env): SSLContext = env.metrics.withTimer("otoroshi.core.tls.setup-single-context") {
+      val optEnv = Option(currentEnv.get)
 
-    val optEnv = Option(currentEnv.get)
+      val trustAll: Boolean =
+        optEnv.flatMap(e => e.configuration.getOptional[Boolean]("otoroshi.ssl.trust.all")).getOrElse(false)
 
-    val trustAll: Boolean =
-      optEnv.flatMap(e => e.configuration.getOptional[Boolean]("otoroshi.ssl.trust.all")).getOrElse(false)
+      val cacertPath = optEnv
+        .flatMap(e => e.configuration.getOptional[String]("otoroshi.ssl.cacert.path"))
+        .map(
+          path =>
+            path
+              .replace("${JAVA_HOME}", System.getProperty("java.home"))
+              .replace("$JAVA_HOME", System.getProperty("java.home"))
+        )
+        .getOrElse(System.getProperty("java.home") + "/lib/security/cacerts")
 
-    val cacertPath = optEnv
-      .flatMap(e => e.configuration.getOptional[String]("otoroshi.ssl.cacert.path"))
-      .map(
-        path =>
-          path
-            .replace("${JAVA_HOME}", System.getProperty("java.home"))
-            .replace("$JAVA_HOME", System.getProperty("java.home"))
+      val cacertPassword = optEnv
+        .flatMap(e => e.configuration.getOptional[String]("otoroshi.ssl.cacert.password"))
+        .getOrElse("changeit")
+
+      logger.debug("Setting up SSL Context ")
+      val sslContext: SSLContext = SSLContext.getInstance("TLS")
+      val keyStore: KeyStore     = createKeyStore(Seq(cert))
+
+      val keyManagerFactory: KeyManagerFactory =
+        Try(KeyManagerFactory.getInstance("X509")).orElse(Try(KeyManagerFactory.getInstance("SunX509"))).get
+      keyManagerFactory.init(keyStore, EMPTY_PASSWORD)
+      logger.debug("SSL Context init ...")
+      val keyManagers: Array[KeyManager] = keyManagerFactory.getKeyManagers.map(
+        m => new X509KeyManagerSnitch(m.asInstanceOf[X509KeyManager]).asInstanceOf[KeyManager]
       )
-      .getOrElse(System.getProperty("java.home") + "/lib/security/cacerts")
-
-    val cacertPassword = optEnv
-      .flatMap(e => e.configuration.getOptional[String]("otoroshi.ssl.cacert.password"))
-      .getOrElse("changeit")
-
-    logger.debug("Setting up SSL Context ")
-    val sslContext: SSLContext = SSLContext.getInstance("TLS")
-    val keyStore: KeyStore     = createKeyStore(Seq(cert))
-
-    val keyManagerFactory: KeyManagerFactory =
-      Try(KeyManagerFactory.getInstance("X509")).orElse(Try(KeyManagerFactory.getInstance("SunX509"))).get
-    keyManagerFactory.init(keyStore, EMPTY_PASSWORD)
-    logger.debug("SSL Context init ...")
-    val keyManagers: Array[KeyManager] = keyManagerFactory.getKeyManagers.map(
-      m => new X509KeyManagerSnitch(m.asInstanceOf[X509KeyManager]).asInstanceOf[KeyManager]
-    )
-    val tm: Array[TrustManager] =
+      val tm: Array[TrustManager] =
       optEnv.flatMap(e => e.configuration.getOptional[Boolean]("play.server.https.trustStore.noCaVerification")).map {
         case true  => Array[TrustManager](noCATrustManager)
         case false => createTrustStore(keyStore, cacertPath, cacertPassword)
@@ -794,45 +850,46 @@ object DynamicSSLEngineProvider {
         }
       }
 
-    sslContext.init(keyManagers, tm, null)
-    logger.debug(s"SSL Context init done ! (${keyStore.size()})")
-    SSLContext.setDefault(sslContext)
-    sslContext
-  }
+      sslContext.init(keyManagers, tm, null)
+      logger.debug(s"SSL Context init done ! (${keyStore.size()})")
+      SSLContext.setDefault(sslContext)
+      sslContext
+    }
 
-  def setupSslContextFor(certs: Seq[Cert], env: Env): SSLContext = env.metrics.withTimer("otoroshi.core.tls.setup-single-context") {
+  def setupSslContextFor(certs: Seq[Cert], env: Env): SSLContext =
+    env.metrics.withTimer("otoroshi.core.tls.setup-single-context") {
 
-    val optEnv = Option(currentEnv.get)
+      val optEnv = Option(currentEnv.get)
 
-    val trustAll: Boolean =
-      optEnv.flatMap(e => e.configuration.getOptional[Boolean]("otoroshi.ssl.trust.all")).getOrElse(false)
+      val trustAll: Boolean =
+        optEnv.flatMap(e => e.configuration.getOptional[Boolean]("otoroshi.ssl.trust.all")).getOrElse(false)
 
-    val cacertPath = optEnv
-      .flatMap(e => e.configuration.getOptional[String]("otoroshi.ssl.cacert.path"))
-      .map(
-        path =>
-          path
-            .replace("${JAVA_HOME}", System.getProperty("java.home"))
-            .replace("$JAVA_HOME", System.getProperty("java.home"))
+      val cacertPath = optEnv
+        .flatMap(e => e.configuration.getOptional[String]("otoroshi.ssl.cacert.path"))
+        .map(
+          path =>
+            path
+              .replace("${JAVA_HOME}", System.getProperty("java.home"))
+              .replace("$JAVA_HOME", System.getProperty("java.home"))
+        )
+        .getOrElse(System.getProperty("java.home") + "/lib/security/cacerts")
+
+      val cacertPassword = optEnv
+        .flatMap(e => e.configuration.getOptional[String]("otoroshi.ssl.cacert.password"))
+        .getOrElse("changeit")
+
+      logger.debug("Setting up SSL Context ")
+      val sslContext: SSLContext = SSLContext.getInstance("TLS")
+      val keyStore: KeyStore     = createKeyStore(certs)
+
+      val keyManagerFactory: KeyManagerFactory =
+        Try(KeyManagerFactory.getInstance("X509")).orElse(Try(KeyManagerFactory.getInstance("SunX509"))).get
+      keyManagerFactory.init(keyStore, EMPTY_PASSWORD)
+      logger.debug("SSL Context init ...")
+      val keyManagers: Array[KeyManager] = keyManagerFactory.getKeyManagers.map(
+        m => new X509KeyManagerSnitch(m.asInstanceOf[X509KeyManager]).asInstanceOf[KeyManager]
       )
-      .getOrElse(System.getProperty("java.home") + "/lib/security/cacerts")
-
-    val cacertPassword = optEnv
-      .flatMap(e => e.configuration.getOptional[String]("otoroshi.ssl.cacert.password"))
-      .getOrElse("changeit")
-
-    logger.debug("Setting up SSL Context ")
-    val sslContext: SSLContext = SSLContext.getInstance("TLS")
-    val keyStore: KeyStore     = createKeyStore(certs)
-
-    val keyManagerFactory: KeyManagerFactory =
-      Try(KeyManagerFactory.getInstance("X509")).orElse(Try(KeyManagerFactory.getInstance("SunX509"))).get
-    keyManagerFactory.init(keyStore, EMPTY_PASSWORD)
-    logger.debug("SSL Context init ...")
-    val keyManagers: Array[KeyManager] = keyManagerFactory.getKeyManagers.map(
-      m => new X509KeyManagerSnitch(m.asInstanceOf[X509KeyManager]).asInstanceOf[KeyManager]
-    )
-    val tm: Array[TrustManager] =
+      val tm: Array[TrustManager] =
       optEnv.flatMap(e => e.configuration.getOptional[Boolean]("play.server.https.trustStore.noCaVerification")).map {
         case true  => Array[TrustManager](noCATrustManager)
         case false => createTrustStore(keyStore, cacertPath, cacertPassword)
@@ -846,11 +903,11 @@ object DynamicSSLEngineProvider {
         }
       }
 
-    sslContext.init(keyManagers, tm, null)
-    logger.debug(s"SSL Context init done ! (${keyStore.size()})")
-    SSLContext.setDefault(sslContext)
-    sslContext
-  }
+      sslContext.init(keyManagers, tm, null)
+      logger.debug(s"SSL Context init done ! (${keyStore.size()})")
+      SSLContext.setDefault(sslContext)
+      sslContext
+    }
 
   def current = currentContext.get()
 
@@ -905,7 +962,9 @@ object DynamicSSLEngineProvider {
             keyStore.setCertificateEntry(domain, certificate)
           }
           // Handle SANs, not sure it's actually needed
-          cert.sans.filter(name => !keyStore.containsAlias(name)).foreach(name => keyStore.setCertificateEntry(name, certificate))
+          cert.sans
+            .filter(name => !keyStore.containsAlias(name))
+            .foreach(name => keyStore.setCertificateEntry(name, certificate))
         }
       }
       case cert => {
@@ -932,12 +991,17 @@ object DynamicSSLEngineProvider {
 
               // Handle SANs
               if (!cert.client) {
-                cert.sans.filter(name => !keyStore.containsAlias(name)).foreach(name => keyStore.setKeyEntry(
-                  name,
-                  key,
-                  cert.password.getOrElse("").toCharArray,
-                  certificateChain.toArray[java.security.cert.Certificate]
-                ))
+                cert.sans
+                  .filter(name => !keyStore.containsAlias(name))
+                  .foreach(
+                    name =>
+                      keyStore.setKeyEntry(
+                        name,
+                        key,
+                        cert.password.getOrElse("").toCharArray,
+                        certificateChain.toArray[java.security.cert.Certificate]
+                    )
+                  )
               }
 
               certificateChain.tail.foreach { cert =>
@@ -1110,37 +1174,40 @@ object CertificateData {
     val buffer = base64Decode(
       pemContent.replace(PemHeaders.BeginCertificate, "").replace(PemHeaders.EndCertificate, "")
     )
-    val cert            = certificateFactory.generateCertificate(new ByteArrayInputStream(buffer)).asInstanceOf[X509Certificate]
-    val altNames        = cert.altNames
-    val rawDomain       = cert.rawDomain
-    val domain: String  = cert.domain
-    val pemReader       = new org.bouncycastle.openssl.PEMParser(new StringReader(finContent))
-    val holder          = pemReader.readObject().asInstanceOf[org.bouncycastle.cert.X509CertificateHolder]
+    val cert           = certificateFactory.generateCertificate(new ByteArrayInputStream(buffer)).asInstanceOf[X509Certificate]
+    val altNames       = cert.altNames
+    val rawDomain      = cert.rawDomain
+    val domain: String = cert.domain
+    val pemReader      = new org.bouncycastle.openssl.PEMParser(new StringReader(finContent))
+    val holder         = pemReader.readObject().asInstanceOf[org.bouncycastle.cert.X509CertificateHolder]
     pemReader.close()
-    val usages: Array[KeyPurposeId] = Option(holder.getExtensions).flatMap(exts => Option(ExtendedKeyUsage.fromExtensions(exts))).map(_.getUsages).getOrElse(Array.empty)
+    val usages: Array[KeyPurposeId] = Option(holder.getExtensions)
+      .flatMap(exts => Option(ExtendedKeyUsage.fromExtensions(exts)))
+      .map(_.getUsages)
+      .getOrElse(Array.empty)
     val client: Boolean = usages.contains(KeyPurposeId.id_kp_clientAuth)
     // val client: Boolean = Try(cert.getExtensionValue("2.5.29.37")) match {
     Json.obj(
-      "issuerDN"     -> cert.getIssuerDN.getName,
-      "notAfter"     -> cert.getNotAfter.getTime,
-      "notBefore"    -> cert.getNotBefore.getTime,
-      "serialNumber" -> cert.getSerialNumber.toString(16),
+      "issuerDN"        -> cert.getIssuerDN.getName,
+      "notAfter"        -> cert.getNotAfter.getTime,
+      "notBefore"       -> cert.getNotBefore.getTime,
+      "serialNumber"    -> cert.getSerialNumber.toString(16),
       "serialNumberLng" -> cert.getSerialNumber,
-      "sigAlgName"   -> cert.getSigAlgName,
-      "sigAlgOID"    -> cert.getSigAlgOID,
-      "_signature"   -> new String(encoder.encode(cert.getSignature)),
-      "signature"    -> DigestUtils.sha256Hex(cert.getSignature).toUpperCase().grouped(2).mkString(":"),
-      "subjectDN"    -> cert.getSubjectDN.getName,
-      "domain"       -> domain,
-      "rawDomain"    -> rawDomain.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-      "version"      -> cert.getVersion,
-      "type"         -> cert.getType,
-      "publicKey"    -> cert.getPublicKey.asPem, // new String(encoder.encode(cert.getPublicKey.getEncoded)),
-      "selfSigned"   -> DynamicSSLEngineProvider.isSelfSigned(cert),
-      "constraints"  -> cert.getBasicConstraints,
-      "ca"           -> (cert.getBasicConstraints != -1),
-      "client"       -> client,
-      "subAltNames"  -> JsArray(altNames.map(JsString.apply)),
+      "sigAlgName"      -> cert.getSigAlgName,
+      "sigAlgOID"       -> cert.getSigAlgOID,
+      "_signature"      -> new String(encoder.encode(cert.getSignature)),
+      "signature"       -> DigestUtils.sha256Hex(cert.getSignature).toUpperCase().grouped(2).mkString(":"),
+      "subjectDN"       -> cert.getSubjectDN.getName,
+      "domain"          -> domain,
+      "rawDomain"       -> rawDomain.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      "version"         -> cert.getVersion,
+      "type"            -> cert.getType,
+      "publicKey"       -> cert.getPublicKey.asPem, // new String(encoder.encode(cert.getPublicKey.getEncoded)),
+      "selfSigned"      -> DynamicSSLEngineProvider.isSelfSigned(cert),
+      "constraints"     -> cert.getBasicConstraints,
+      "ca"              -> (cert.getBasicConstraints != -1),
+      "client"          -> client,
+      "subAltNames"     -> JsArray(altNames.map(JsString.apply)),
       "cExtensions" -> JsArray(
         Option(cert.getCriticalExtensionOIDs).map(_.asScala.toSeq).getOrElse(Seq.empty[String]).map { oid =>
           val ext: String =
@@ -1216,7 +1283,7 @@ object FakeKeyStore {
   }
 
   def generateX509Certificate(host: String)(implicit env: Env): (X509Certificate, KeyPair) = {
-    val resp    = createSelfSignedCertificate(host, 365.days, None, None)
+    val resp = createSelfSignedCertificate(host, 365.days, None, None)
     (resp.cert, resp.keyPair)
   }
 
@@ -1235,16 +1302,20 @@ object FakeKeyStore {
     )
   }
 
-  def createSelfSignedCertificate(host: String, duration: FiniteDuration, kp: Option[KeyPair], serial: Option[Long])(implicit env: Env): GenCertResponse = {
+  def createSelfSignedCertificate(host: String, duration: FiniteDuration, kp: Option[KeyPair], serial: Option[Long])(
+      implicit env: Env
+  ): GenCertResponse = {
 
-    val f = env.pki.genSelfSignedCert(GenCsrQuery(
-      hosts = Seq(host),
-      key = GenKeyPairQuery(KeystoreSettings.KeyPairAlgorithmName, KeystoreSettings.KeyPairKeyLength),
-      name = Map("CN" -> host),
-      duration = duration,
-      existingKeyPair = kp,
-      existingSerialNumber = serial
-    ))
+    val f = env.pki.genSelfSignedCert(
+      GenCsrQuery(
+        hosts = Seq(host),
+        key = GenKeyPairQuery(KeystoreSettings.KeyPairAlgorithmName, KeystoreSettings.KeyPairKeyLength),
+        name = Map("CN" -> host),
+        duration = duration,
+        existingKeyPair = kp,
+        existingSerialNumber = serial
+      )
+    )
 
     val resp = Await.result(f, 30.seconds)
 
@@ -1252,21 +1323,25 @@ object FakeKeyStore {
   }
 
   def createClientCertificateFromCA(dn: String,
-                              duration: FiniteDuration,
-                              kp: Option[KeyPair],
-                              serial: Option[Long],
-                              ca: X509Certificate,
-                              caKeyPair: KeyPair)(implicit env: Env): GenCertResponse = {
+                                    duration: FiniteDuration,
+                                    kp: Option[KeyPair],
+                                    serial: Option[Long],
+                                    ca: X509Certificate,
+                                    caKeyPair: KeyPair)(implicit env: Env): GenCertResponse = {
 
-    val f = env.pki.genCert(GenCsrQuery(
-      hosts = Seq.empty,
-      key = GenKeyPairQuery(KeystoreSettings.KeyPairAlgorithmName, KeystoreSettings.KeyPairKeyLength),
-      subject = Some(dn),
-      duration = duration,
-      existingKeyPair = kp,
-      existingSerialNumber = serial,
-      client = true
-    ), ca, caKeyPair.getPrivate)
+    val f = env.pki.genCert(
+      GenCsrQuery(
+        hosts = Seq.empty,
+        key = GenKeyPairQuery(KeystoreSettings.KeyPairAlgorithmName, KeystoreSettings.KeyPairKeyLength),
+        subject = Some(dn),
+        duration = duration,
+        existingKeyPair = kp,
+        existingSerialNumber = serial,
+        client = true
+      ),
+      ca,
+      caKeyPair.getPrivate
+    )
 
     val resp = Await.result(f, 30.seconds)
 
@@ -1274,18 +1349,21 @@ object FakeKeyStore {
   }
 
   def createSelfSignedClientCertificate(dn: String,
-                                    duration: FiniteDuration,
-                                    kp: Option[KeyPair], serial: Option[Long])(implicit env: Env): GenCertResponse = {
+                                        duration: FiniteDuration,
+                                        kp: Option[KeyPair],
+                                        serial: Option[Long])(implicit env: Env): GenCertResponse = {
 
-    val f = env.pki.genSelfSignedCert(GenCsrQuery(
-      hosts = Seq.empty,
-      key = GenKeyPairQuery(KeystoreSettings.KeyPairAlgorithmName, KeystoreSettings.KeyPairKeyLength),
-      subject = Some(dn),
-      duration = duration,
-      existingKeyPair = kp,
-      existingSerialNumber = serial,
-      client = true
-    ))
+    val f = env.pki.genSelfSignedCert(
+      GenCsrQuery(
+        hosts = Seq.empty,
+        key = GenKeyPairQuery(KeystoreSettings.KeyPairAlgorithmName, KeystoreSettings.KeyPairKeyLength),
+        subject = Some(dn),
+        duration = duration,
+        existingKeyPair = kp,
+        existingSerialNumber = serial,
+        client = true
+      )
+    )
 
     val resp = Await.result(f, 30.seconds)
 
@@ -1299,48 +1377,65 @@ object FakeKeyStore {
                               ca: X509Certificate,
                               caKeyPair: KeyPair)(implicit env: Env): GenCertResponse = {
 
-    val f = env.pki.genCert(GenCsrQuery(
-      hosts = Seq(host),
-      key = GenKeyPairQuery(KeystoreSettings.KeyPairAlgorithmName, KeystoreSettings.KeyPairKeyLength),
-      name = Map("CN" -> host),
-      duration = duration,
-      existingKeyPair = kp,
-      existingSerialNumber = serial
-    ), ca, caKeyPair.getPrivate)
+    val f = env.pki.genCert(
+      GenCsrQuery(
+        hosts = Seq(host),
+        key = GenKeyPairQuery(KeystoreSettings.KeyPairAlgorithmName, KeystoreSettings.KeyPairKeyLength),
+        name = Map("CN" -> host),
+        duration = duration,
+        existingKeyPair = kp,
+        existingSerialNumber = serial
+      ),
+      ca,
+      caKeyPair.getPrivate
+    )
 
     val resp = Await.result(f, 30.seconds)
 
     resp.right.get
   }
 
-  def createSubCa(cn: String, duration: FiniteDuration, kp: Option[KeyPair], serial: Option[Long], ca: X509Certificate, caKeyPair: KeyPair)(implicit env: Env): GenCertResponse = {
+  def createSubCa(cn: String,
+                  duration: FiniteDuration,
+                  kp: Option[KeyPair],
+                  serial: Option[Long],
+                  ca: X509Certificate,
+                  caKeyPair: KeyPair)(implicit env: Env): GenCertResponse = {
 
-    val f = env.pki.genSubCA(GenCsrQuery(
-      hosts = Seq.empty,
-      key = GenKeyPairQuery(KeystoreSettings.KeyPairAlgorithmName, KeystoreSettings.KeyPairKeyLength),
-      subject = Some(cn),
-      duration = duration,
-      existingKeyPair = kp,
-      existingSerialNumber = serial,
-      ca = true
-    ), ca, caKeyPair.getPrivate)
+    val f = env.pki.genSubCA(
+      GenCsrQuery(
+        hosts = Seq.empty,
+        key = GenKeyPairQuery(KeystoreSettings.KeyPairAlgorithmName, KeystoreSettings.KeyPairKeyLength),
+        subject = Some(cn),
+        duration = duration,
+        existingKeyPair = kp,
+        existingSerialNumber = serial,
+        ca = true
+      ),
+      ca,
+      caKeyPair.getPrivate
+    )
 
     val resp = Await.result(f, 30.seconds)
 
     resp.right.get
   }
 
-  def createCA(cn: String, duration: FiniteDuration, kp: Option[KeyPair], serial: Option[Long])(implicit env: Env): GenCertResponse = {
+  def createCA(cn: String, duration: FiniteDuration, kp: Option[KeyPair], serial: Option[Long])(
+      implicit env: Env
+  ): GenCertResponse = {
 
-    val f = env.pki.genSelfSignedCA(GenCsrQuery(
-      hosts = Seq.empty,
-      key = GenKeyPairQuery(KeystoreSettings.KeyPairAlgorithmName, KeystoreSettings.KeyPairKeyLength),
-      subject = Some(cn),
-      duration = duration,
-      existingKeyPair = kp,
-      existingSerialNumber = serial,
-      ca = true
-    ))
+    val f = env.pki.genSelfSignedCA(
+      GenCsrQuery(
+        hosts = Seq.empty,
+        key = GenKeyPairQuery(KeystoreSettings.KeyPairAlgorithmName, KeystoreSettings.KeyPairKeyLength),
+        subject = Some(cn),
+        duration = duration,
+        existingKeyPair = kp,
+        existingSerialNumber = serial,
+        ca = true
+      )
+    )
 
     val resp = Await.result(f, 30.seconds)
 
@@ -1612,7 +1707,7 @@ case class ClientCertificateValidator(
     val certPayload = chain
       .map { cert =>
         cert.asPem
-        // s"${PemHeaders.BeginCertificate}\n${Base64.getEncoder.encodeToString(cert.getEncoded)}\n${PemHeaders.EndCertificate}"
+      // s"${PemHeaders.BeginCertificate}\n${Base64.getEncoder.encodeToString(cert.getEncoded)}\n${PemHeaders.EndCertificate}"
       }
       .mkString("\n")
     val payload = Json.obj(
@@ -1919,10 +2014,12 @@ object SSLImplicits {
   private val logger = Logger("otoroshi-ssl-implicits")
 
   implicit class EnhancedCertificate(val cert: java.security.cert.Certificate) extends AnyVal {
-    def asPem: String = s"${PemHeaders.BeginCertificate}\n${Base64.getEncoder.encodeToString(cert.getEncoded).grouped(64).mkString("\n")}\n${PemHeaders.EndCertificate}\n"
+    def asPem: String =
+      s"${PemHeaders.BeginCertificate}\n${Base64.getEncoder.encodeToString(cert.getEncoded).grouped(64).mkString("\n")}\n${PemHeaders.EndCertificate}\n"
   }
   implicit class EnhancedX509Certificate(val cert: X509Certificate) extends AnyVal {
-    def asPem: String = s"${PemHeaders.BeginCertificate}\n${Base64.getEncoder.encodeToString(cert.getEncoded).grouped(64).mkString("\n")}\n${PemHeaders.EndCertificate}\n"
+    def asPem: String =
+      s"${PemHeaders.BeginCertificate}\n${Base64.getEncoder.encodeToString(cert.getEncoded).grouped(64).mkString("\n")}\n${PemHeaders.EndCertificate}\n"
     def altNames: Seq[String] = CertInfo.getSubjectAlternativeNames(cert, logger).asScala.toSeq
     def rawDomain: Option[String] = {
       Option(cert.getSubjectDN.getName)
@@ -1930,29 +2027,36 @@ object SSLImplicits {
         .map(_.replace("CN=", "").replace("cn=", ""))
     }
     def maybeDomain: Option[String] = domains.headOption
-    def domain: String = domains.headOption.getOrElse(cert.getSubjectDN.getName)
-    def domains: Seq[String] = (rawDomain ++ altNames).toSeq
+    def domain: String              = domains.headOption.getOrElse(cert.getSubjectDN.getName)
+    def domains: Seq[String]        = (rawDomain ++ altNames).toSeq
   }
   implicit class EnhancedKey(val key: java.security.Key) extends AnyVal {
-    def asPublicKeyPem: String  = s"${PemHeaders.BeginPublicKey}\n${Base64.getEncoder.encodeToString(key.getEncoded).grouped(64).mkString("\n")}\n${PemHeaders.EndPublicKey}\n"
-    def asPrivateKeyPem: String = s"${PemHeaders.BeginPrivateKey}\n${Base64.getEncoder.encodeToString(key.getEncoded).grouped(64).mkString("\n")}\n${PemHeaders.EndPrivateKey}\n"
+    def asPublicKeyPem: String =
+      s"${PemHeaders.BeginPublicKey}\n${Base64.getEncoder.encodeToString(key.getEncoded).grouped(64).mkString("\n")}\n${PemHeaders.EndPublicKey}\n"
+    def asPrivateKeyPem: String =
+      s"${PemHeaders.BeginPrivateKey}\n${Base64.getEncoder.encodeToString(key.getEncoded).grouped(64).mkString("\n")}\n${PemHeaders.EndPrivateKey}\n"
   }
   implicit class EnhancedPublicKey(val key: PublicKey) extends AnyVal {
-    def asPem: String = s"${PemHeaders.BeginPublicKey}\n${Base64.getEncoder.encodeToString(key.getEncoded).grouped(64).mkString("\n")}\n${PemHeaders.EndPublicKey}\n"
+    def asPem: String =
+      s"${PemHeaders.BeginPublicKey}\n${Base64.getEncoder.encodeToString(key.getEncoded).grouped(64).mkString("\n")}\n${PemHeaders.EndPublicKey}\n"
   }
   implicit class EnhancedPrivateKey(val key: PrivateKey) extends AnyVal {
-    def asPem: String = s"${PemHeaders.BeginPrivateKey}\n${Base64.getEncoder.encodeToString(key.getEncoded).grouped(64).mkString("\n")}\n${PemHeaders.EndPrivateKey}\n"
+    def asPem: String =
+      s"${PemHeaders.BeginPrivateKey}\n${Base64.getEncoder.encodeToString(key.getEncoded).grouped(64).mkString("\n")}\n${PemHeaders.EndPrivateKey}\n"
   }
   implicit class EnhancedPKCS10CertificationRequest(val csr: PKCS10CertificationRequest) extends AnyVal {
-    def asPem: String = s"${PemHeaders.BeginCertificateRequest}\n${Base64.getEncoder.encodeToString(csr.getEncoded).grouped(64).mkString("\n")}\n${PemHeaders.EndCertificateRequest}\n"
+    def asPem: String =
+      s"${PemHeaders.BeginCertificateRequest}\n${Base64.getEncoder.encodeToString(csr.getEncoded).grouped(64).mkString("\n")}\n${PemHeaders.EndCertificateRequest}\n"
   }
 }
 
 import scala.util.control.NoStackTrace
 
-case class NoCertificateFoundException(hostname: String) extends RuntimeException(s"No certificate found for: $hostname !") with NoStackTrace
-case class NoHostFoundException() extends RuntimeException(s"No hostname or aliasess found !") with NoStackTrace
-case class NoAliasesFoundException() extends RuntimeException(s"No aliases found in SSLContext !") with NoStackTrace
+case class NoCertificateFoundException(hostname: String)
+    extends RuntimeException(s"No certificate found for: $hostname !")
+    with NoStackTrace
+case class NoHostFoundException()     extends RuntimeException(s"No hostname or aliasess found !") with NoStackTrace
+case class NoAliasesFoundException()  extends RuntimeException(s"No aliases found in SSLContext !") with NoStackTrace
 case class NoHostnameFoundException() extends RuntimeException(s"No hostname found in SSLContext !") with NoStackTrace
 
 /**
