@@ -4,6 +4,48 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.16] - 2020-01-15
+
+https://github.com/MAIF/otoroshi/milestone/26?closed=1
+https://github.com/MAIF/otoroshi/compare/v1.4.15...v1.4.16
+https://github.com/MAIF/otoroshi/releases/tag/v1.4.16
+
+### Added 
+
+- Support Let's Encrypt certificate creation and renew (#178)
+- Customize created certificates (#182)
+- Integration with enterprise PKIs (#274)
+- Add internal PKI to Otoroshi
+- Automatically download maxmind db (#409)
+- Listen to internal events in plugins (#410)
+- Disable kafka event sending on demand (#411)
+- Add configuration access in EL (#412)
+- Trust X-Forwarded-* headers or not (#413)
+- Add request lifecycle handlers in request transformers (#416)
+- [plugin] Add configuration description in plugin to generate UI automatically (#420)
+- HMAC secret can be base64 encoded (#423)
+
+### Changed
+
+- Add reponse format in query string for metrics (#417)
+
+### Fixed 
+
+- Fix configuration access for plugins (#414)
+- Fix nano apps when request body involved (#415)
+- Certificate with SANs doesn't seems to work (#419)
+- constrainedServicesOnly does not work as expected (#422)
+- Quotas + 1 (#421)
+
+## [1.4.15] - 2019-11-29
+
+https://github.com/MAIF/otoroshi/compare/v1.4.14...v1.4.15
+https://github.com/MAIF/otoroshi/releases/tag/v1.4.15
+
+### Fixed 
+
+- routing on /.well-known/otoroshi/*
+
 ## [1.4.14] - 2019-11-29
 
 https://github.com/MAIF/otoroshi/milestone/25?closed=1
