@@ -15,6 +15,7 @@ const CodeInput = React.lazy(() => Promise.resolve(require('./CodeInput')));
 
 import _ from 'lodash';
 import deepGet from 'get-value';
+import deepSet from 'set-value';
 import { Separator } from '../Separator';
 import { Collapse } from './Collapse';
 import { TextareaInput } from './TextInput';
@@ -28,17 +29,20 @@ export class Form extends Component {
   };
 
   changeValue = (name, value) => {
-    if (name.indexOf('.') > -1) {
-      const [key1, key2] = name.split('.');
-      const newValue = {
-        ...this.props.value,
-        [key1]: { ...this.props.value[key1], [key2]: value },
-      };
-      this.props.onChange(newValue);
-    } else {
-      const newValue = { ...this.props.value, [name]: value };
-      this.props.onChange(newValue);
-    }
+    const newValue = _.cloneDeep(this.props.value);
+    deepSet(newValue, name, value);
+    this.props.onChange(newValue);
+    //if (name.indexOf('.') > -1) {
+    //  const [key1, key2] = name.split('.');
+    //  const newValue = {
+    //    ...this.props.value,
+    //    [key1]: { ...this.props.value[key1], [key2]: value },
+    //  };
+    //  this.props.onChange(newValue);
+    //} else {
+    //  const newValue = { ...this.props.value, [name]: value };
+    //  this.props.onChange(newValue);
+    //}
   };
 
   getValue = (name, defaultValue) => {

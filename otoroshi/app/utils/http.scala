@@ -1,7 +1,8 @@
 package utils.http
 
-import java.io.File
+import java.io.{File, FileOutputStream}
 import java.net.{InetAddress, InetSocketAddress, URI}
+import java.nio.file.Path
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 
@@ -12,6 +13,7 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.model.ws.{Message, WebSocketRequest, WebSocketUpgradeResponse}
 import akka.http.scaladsl.settings.{ClientConnectionSettings, ConnectionPoolSettings}
+import akka.http.scaladsl.util.FastFuture
 import akka.http.scaladsl.{ClientTransport, ConnectionContext, Http, HttpsConnectionContext}
 import akka.stream.Materializer
 import akka.stream.TLSProtocol.NegotiateNewSession
@@ -31,6 +33,7 @@ import play.api.libs.ws._
 import play.api.mvc.MultipartFormData
 import play.api.Logger
 import play.shaded.ahc.org.asynchttpclient.util.Assertions
+import security.IdGenerator
 import ssl.{Cert, DynamicSSLEngineProvider}
 
 import scala.collection.immutable.TreeMap
@@ -41,6 +44,19 @@ import scala.xml.{Elem, XML}
 
 case class MtlsConfig(certs: Seq[String] = Seq.empty, mtls: Boolean = false, loose: Boolean = false) {
   def json: JsValue = MtlsConfig.format.writes(this)
+  def toJKS(implicit env: Env): (java.io.File, String) = {
+    val password = IdGenerator.token
+    val path = java.nio.file.Files.createTempFile("oto-keystore-", ".jks")
+    val certificates = certs.flatMap(DynamicSSLEngineProvider.certificates.get)
+    val keystore = DynamicSSLEngineProvider.createKeyStore(certificates)
+    keystore.store(new FileOutputStream(path.toFile), Array.emptyCharArray)
+    env.lifecycle.addStopHook { () =>
+      path.toFile.delete()
+      path.toFile.deleteOnExit()
+      Future.successful(())
+    }
+    (path.toFile, password)
+  }
 }
 
 object MtlsConfig {

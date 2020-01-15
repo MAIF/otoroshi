@@ -10,7 +10,7 @@ import java.security._
 import java.security.cert._
 import java.security.spec.PKCS8EncodedKeySpec
 import java.util.concurrent.{Executors, TimeUnit}
-import java.util.concurrent.atomic.AtomicReference
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 import java.util.regex.Pattern.CASE_INSENSITIVE
 import java.util.regex.{Matcher, Pattern}
 import java.util.{Base64, Date}
@@ -609,10 +609,13 @@ object DynamicSSLEngineProvider {
 
   val certificates = new TrieMap[String, Cert]()
 
+  private lazy val firstSetupDone           = new AtomicBoolean(false)
   private lazy val currentContext           = new AtomicReference[SSLContext](setupContext(FakeHasMetrics))
   private lazy val currentSslConfigSettings = new AtomicReference[SSLConfigSettings](null)
   private val currentEnv                    = new AtomicReference[Env](null)
   private val defaultSslContext             = SSLContext.getDefault
+
+  def isFirstSetupDone: Boolean = firstSetupDone.get()
 
   def setCurrentEnv(env: Env): Unit = {
     currentEnv.set(env)
@@ -823,6 +826,7 @@ object DynamicSSLEngineProvider {
   }
 
   def addCertificates(certs: Seq[Cert], env: Env): SSLContext = {
+    firstSetupDone.compareAndSet(false, true)
     certs.foreach(crt => certificates.put(crt.id, crt))
     val ctx = setupContext(env)
     currentContext.set(ctx)
@@ -830,6 +834,7 @@ object DynamicSSLEngineProvider {
   }
 
   def setCertificates(certs: Seq[Cert], env: Env): SSLContext = {
+    firstSetupDone.compareAndSet(false, true)
     certificates.clear()
     certs.foreach(crt => certificates.put(crt.id, crt))
     val ctx = setupContext(env)

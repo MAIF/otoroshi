@@ -9,6 +9,14 @@ import moment from 'moment';
 import deepSet from 'set-value';
 import _ from 'lodash';
 
+function tryOrTrue(f) {
+  try {
+    return f();
+  } catch(e) {
+    return true;
+  }
+}
+
 const CodeInput = React.lazy(() => Promise.resolve(require('../components/inputs/CodeInput')));
 
 function shallowDiffers(a, b) {
@@ -717,6 +725,7 @@ export class DangerZonePage extends Component {
     },
     'kafkaConfig.keyPass': {
       type: 'string',
+      display: v => tryOrTrue(() => !v.kafkaConfig.mtlsConfig.mtls),
       props: {
         label: 'Kafka keypass',
         placeholder: 'secret',
@@ -726,6 +735,7 @@ export class DangerZonePage extends Component {
     },
     'kafkaConfig.keystore': {
       type: 'string',
+      display: v => tryOrTrue(() => !v.kafkaConfig.mtlsConfig.mtls),
       props: {
         label: 'Kafka keystore path',
         placeholder: '/home/bas/client.keystore.jks',
@@ -735,11 +745,29 @@ export class DangerZonePage extends Component {
     },
     'kafkaConfig.truststore': {
       type: 'string',
+      display: v => tryOrTrue(() => !v.kafkaConfig.mtlsConfig.mtls),
       props: {
         label: 'Kafka truststore path',
         placeholder: '/home/bas/client.truststore.jks',
         help:
           'The truststore path on the server if you use a keystore/truststore to connect to Kafka cluster',
+      },
+    },
+    'kafkaConfig.mtlsConfig.mtls': {
+      type: 'bool',
+      props: {
+        label: 'Use client certs.',
+        help: 'Use client certs. from Otoroshi datastore',
+      },
+    },
+    'kafkaConfig.mtlsConfig.certs': {
+      type: 'array',
+      display: v => tryOrTrue(() => v.kafkaConfig.mtlsConfig.mtls),
+      props: {
+        label: 'Client certs.',
+        placeholder: 'Choose a client certificate',
+        valuesFrom: "/bo/api/proxy/api/certificates",
+        transformer: a => ({ value: a.id, label: <span><span className="label label-success" style={{ minWidth: 63 }}>{a.certType}</span> {a.name} - {a.description}</span> }),
       },
     },
     'kafkaConfig.sendEvents': {
@@ -865,9 +893,11 @@ export class DangerZonePage extends Component {
     'elasticReadsConfig',
     '>>>Analytics: Kafka',
     'kafkaConfig.servers',
+    'kafkaConfig.mtlsConfig.mtls',
     'kafkaConfig.keyPass',
     'kafkaConfig.keystore',
     'kafkaConfig.truststore',
+    'kafkaConfig.mtlsConfig.certs',
     'kafkaConfig.sendEvents',
     'kafkaConfig.alertsTopic',
     'kafkaConfig.analyticsTopic',

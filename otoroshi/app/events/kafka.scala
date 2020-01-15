@@ -1,7 +1,7 @@
 package events
 
-import scala.concurrent.{Future, Promise}
-import scala.util.{Failure, Try}
+import scala.concurrent.{Await, Future, Promise}
+import scala.util.{Failure, Success, Try}
 import scala.util.control.NonFatal
 import org.apache.kafka.clients.CommonClientConfigs
 import org.apache.kafka.clients.producer.{Callback, KafkaProducer, ProducerRecord, RecordMetadata}
@@ -11,10 +11,13 @@ import akka.actor.{Actor, ActorSystem, Props}
 import akka.http.scaladsl.util.FastFuture._
 import akka.http.scaladsl.util.FastFuture
 import akka.kafka.ProducerSettings
+import akka.stream.scaladsl.{Sink, Source}
 import org.apache.kafka.common.config.SslConfigs
 import play.api.libs.json._
 import env.Env
 import org.apache.kafka.common.config.internals.BrokerSecurityConfigs
+import ssl.DynamicSSLEngineProvider
+import utils.http.MtlsConfig
 
 case class KafkaConfig(servers: Seq[String],
                        keyPass: Option[String] = None,
@@ -23,35 +26,90 @@ case class KafkaConfig(servers: Seq[String],
                        sendEvents: Boolean = true,
                        alertsTopic: String = "otoroshi-alerts",
                        analyticsTopic: String = "otoroshi-analytics",
-                       auditTopic: String = "otoroshi-audits")
+                       auditTopic: String = "otoroshi-audits",
+                       mtlsConfig: MtlsConfig = MtlsConfig())
 
 object KafkaConfig {
-  implicit val format = Json.format[KafkaConfig]
+
+  implicit val format = new Format[KafkaConfig] { // Json.format[KafkaConfig]
+
+    override def writes(o: KafkaConfig): JsValue = Json.obj(
+      "servers" -> JsArray(o.servers.map(JsString.apply)),
+      "keyPass" -> o.keyPass.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      "keystore" -> o.keystore.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      "truststore" -> o.truststore.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      "sendEvents" -> o.sendEvents,
+      "alertsTopic" -> o.alertsTopic,
+      "analyticsTopic" -> o.analyticsTopic,
+      "auditTopic" -> o.auditTopic,
+      "mtlsConfig" -> o.mtlsConfig.json,
+    )
+
+    override def reads(json: JsValue): JsResult[KafkaConfig] = Try {
+      KafkaConfig(
+        servers = (json \ "servers").asOpt[Seq[String]].getOrElse(Seq.empty),
+        keyPass = (json \ "keyPass").asOpt[String],
+        keystore = (json \ "keystore").asOpt[String],
+        truststore = (json \ "truststore").asOpt[String],
+        sendEvents = (json \ "sendEvents").asOpt[Boolean].getOrElse(true),
+        alertsTopic = (json \ "alertsTopic").asOpt[String].getOrElse("otoroshi-alerts"),
+        analyticsTopic = (json \ "analyticsTopic").asOpt[String].getOrElse("otoroshi-analytics"),
+        auditTopic = (json \ "auditTopic").asOpt[String].getOrElse("otoroshi-audits"),
+        mtlsConfig = MtlsConfig.read((json \ "mtlsConfig").asOpt[JsValue])
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(kc) => JsSuccess(kc)
+    }
+  }
 }
 
 object KafkaSettings {
 
+  import scala.concurrent.duration._
+
+  def waitForFirstSetup(env: Env): Future[Unit] = {
+    Source.tick(0.second, 1.second, ())
+      .filter(_ => DynamicSSLEngineProvider.isFirstSetupDone)
+      .take(1)
+      .runWith(Sink.head)(env.otoroshiMaterializer)
+  }
+
   def producerSettings(_env: env.Env, config: KafkaConfig): ProducerSettings[Array[Byte], String] = {
+
     val settings = ProducerSettings
       .create(_env.analyticsActorSystem, new ByteArraySerializer(), new StringSerializer())
       .withBootstrapServers(config.servers.mkString(","))
 
-    val s = for {
-      ks <- config.keystore
-      ts <- config.truststore
-      kp <- config.keyPass
-    } yield {
+    if (config.mtlsConfig.mtls) {
+      val (jks, password) = config.mtlsConfig.toJKS(_env)
+      Await.result(waitForFirstSetup(_env), 5.seconds) // wait until certs fully populated at least once
       settings
         .withProperty(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, "SSL")
         .withProperty(BrokerSecurityConfigs.SSL_CLIENT_AUTH_CONFIG, "required")
-        .withProperty(SslConfigs.SSL_KEY_PASSWORD_CONFIG, kp)
-        .withProperty(SslConfigs.SSL_KEYSTORE_LOCATION_CONFIG, ks)
-        .withProperty(SslConfigs.SSL_KEYSTORE_PASSWORD_CONFIG, kp)
-        .withProperty(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, ts)
-        .withProperty(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, kp)
-    }
+        .withProperty(SslConfigs.SSL_KEY_PASSWORD_CONFIG, password)
+        .withProperty(SslConfigs.SSL_KEYSTORE_LOCATION_CONFIG, jks.getAbsolutePath)
+        .withProperty(SslConfigs.SSL_KEYSTORE_PASSWORD_CONFIG, password)
+        .withProperty(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, jks.getAbsolutePath)
+        .withProperty(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, password)
+    } else {
+      val s = for {
+        ks <- config.keystore
+        ts <- config.truststore
+        kp <- config.keyPass
+      } yield {
+        settings
+          .withProperty(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, "SSL")
+          .withProperty(BrokerSecurityConfigs.SSL_CLIENT_AUTH_CONFIG, "required")
+          .withProperty(SslConfigs.SSL_KEY_PASSWORD_CONFIG, kp)
+          .withProperty(SslConfigs.SSL_KEYSTORE_LOCATION_CONFIG, ks)
+          .withProperty(SslConfigs.SSL_KEYSTORE_PASSWORD_CONFIG, kp)
+          .withProperty(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, ts)
+          .withProperty(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, kp)
+      }
 
-    s.getOrElse(settings)
+      s.getOrElse(settings)
+    }
   }
 }
 
