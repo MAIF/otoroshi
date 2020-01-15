@@ -181,9 +181,8 @@ object PrometheusSupport {
   private[metrics] val registry = new CollectorRegistry()
 
   def register[T <: Collector](collector: T): T = {
-    registry.
     Try(registry.unregister(collector))
-    collector.register(registry)
+    Try(collector.register(registry))
     collector
   }
 }
@@ -267,14 +266,14 @@ class PrometheusServiceMetrics extends RequestTransformer {
 
   import io.prometheus.client._
 
-  private val requestCounterGlobal = PrometheusSupport.register(
+  private lazy val requestCounterGlobal = PrometheusSupport.register(
     Counter.build()
       .name("otoroshi_requests_count_total")
       .help("How many HTTP requests processed globally")
       .create()
   )
 
-  private val reqDurationGlobal = PrometheusSupport.register(
+  private lazy val reqDurationGlobal = PrometheusSupport.register(
     Histogram.build()
       .name("otoroshi_requests_duration_millis")
       .help("How long it took to process requests globally")
@@ -282,7 +281,7 @@ class PrometheusServiceMetrics extends RequestTransformer {
       .create()
   )
 
-  private val reqDurationHistogram = PrometheusSupport.register(
+  private lazy val reqDurationHistogram = PrometheusSupport.register(
     Histogram.build()
       .name("otoroshi_service_requests_duration_millis")
       .help("How long it took to process the request on a service, partitioned by status code, protocol, and method")
@@ -291,7 +290,7 @@ class PrometheusServiceMetrics extends RequestTransformer {
       .create()
   )
 
-  private val reqTotalHistogram = PrometheusSupport.register(
+  private lazy val reqTotalHistogram = PrometheusSupport.register(
     Counter.build()
       .name("otoroshi_service_requests_total")
       .help("How many HTTP requests processed on a service, partitioned by status code, protocol, and method")
@@ -299,7 +298,7 @@ class PrometheusServiceMetrics extends RequestTransformer {
       .create()
   )
 
-  private val reqDurationHistogramWithUri = PrometheusSupport.register(
+  private lazy val reqDurationHistogramWithUri = PrometheusSupport.register(
     Histogram.build()
       .name("otoroshi_service_requests_wu_duration_millis")
       .help("How long it took to process the request on a service, partitioned by status code, protocol, method and uri")
@@ -308,7 +307,7 @@ class PrometheusServiceMetrics extends RequestTransformer {
       .create()
   )
 
-  private val reqTotalHistogramWithUri = PrometheusSupport.register(
+  private lazy val reqTotalHistogramWithUri = PrometheusSupport.register(
     Counter.build()
       .name("otoroshi_service_requests_wu_total")
       .help("How many HTTP requests processed on a service, partitioned by status code, protocol, method and uri")
