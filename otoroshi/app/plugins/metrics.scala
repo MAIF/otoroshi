@@ -181,6 +181,7 @@ object PrometheusSupport {
   private[metrics] val registry = new CollectorRegistry()
 
   def register[T <: Collector](collector: T): T = {
+    registry.
     Try(registry.unregister(collector))
     collector.register(registry)
     collector
@@ -332,7 +333,7 @@ class PrometheusServiceMetrics extends RequestTransformer {
         |```json
         |{
         |  "PrometheusServiceMetrics": {
-        |    "includeUri": false // include http uri in metrics. WARNING this could implies serious performance issuess
+        |    "includeUri": false // include http uri in metrics. WARNING this could implies serious performance issues, use at your own risks
         |  }
         |}
         |```
