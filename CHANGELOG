@@ -37,7 +37,7 @@ https://github.com/MAIF/otoroshi/releases/tag/v1.4.16
 - constrainedServicesOnly does not work as expected (#422)
 - Quotas + 1 (#421)
 
-## [1.4.15] - 2019-11-29
+## [1.4.15] - 2019-12-02
 
 https://github.com/MAIF/otoroshi/compare/v1.4.14...v1.4.15
 https://github.com/MAIF/otoroshi/releases/tag/v1.4.15
