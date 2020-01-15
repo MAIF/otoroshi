@@ -84,7 +84,7 @@ object LetsEncryptSettings {
 
 object LetsEncryptHelper {
 
-  private val logger = Logger("LetsEncryptHelper")
+  private val logger = Logger("otoroshi-lets-encrypt-helper")
 
   private val blockingEc = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(16))
 

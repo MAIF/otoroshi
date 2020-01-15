@@ -1916,7 +1916,7 @@ object SSLImplicits {
 
   import collection.JavaConverters._
 
-  private val logger = Logger("SSLImplicits")
+  private val logger = Logger("otoroshi-ssl-implicits")
 
   implicit class EnhancedCertificate(val cert: java.security.cert.Certificate) extends AnyVal {
     def asPem: String = s"${PemHeaders.BeginCertificate}\n${Base64.getEncoder.encodeToString(cert.getEncoded).grouped(64).mkString("\n")}\n${PemHeaders.EndCertificate}\n"

@@ -184,7 +184,7 @@ object TlsMode {
 object TcpService {
 
   private val reqCounter = new AtomicLong(0L)
-  private val log        = Logger("tcp-proxy")
+  private val log        = Logger("otoroshi-tcp-proxy")
 
   def fromJsons(value: JsValue): TcpService =
     try {
@@ -633,7 +633,7 @@ class TcpProxy(interface: String, port: Int, tls: TlsMode, sni: Boolean, clientA
     mat: ActorMaterializer
 ) {
 
-  private val log         = Logger("tcp-proxy")
+  private val log         = Logger("otoroshi-tcp-proxy")
   private implicit val ec = system.dispatcher
   private val provider    = new TcpEngineProvider()
 
@@ -833,7 +833,7 @@ class RunningServers(env: Env) {
   private val running         = new AtomicBoolean(false)
   private val syncing         = new AtomicBoolean(false)
   private val runningServers  = new AtomicReference[Seq[RunningServer]](Seq.empty)
-  private val log             = Logger("tcp-proxy")
+  private val log             = Logger("otoroshi-tcp-proxy")
 
   private def updateRunningServers(): Unit = {
     if (running.get() && syncing.compareAndSet(false, true)) {

@@ -9,7 +9,7 @@ import play.api.Logger
 
 
 object InternalEventListenerActor {
-  val logger = Logger("InternalEventListenerActor")
+  val logger = Logger("otoroshi-plugins-internal-eventlistener-actor")
   def props(listener: InternalEventListener, env: Env) = Props(new InternalEventListenerActor(listener, env))
 }
 

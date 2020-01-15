@@ -109,7 +109,7 @@ class WsClientChooser(standardClient: WSClient,
                       env: Env)
     extends WSClient {
 
-  private[utils] val logger                  = Logger("otoroshi-WsClientChooser")
+  private[utils] val logger                  = Logger("otoroshi-ws-client-chooser")
   private[utils] val lastSslConfig           = new AtomicReference[SSLConfigSettings](null)
   private[utils] val connectionContextHolder = new AtomicReference[WSClient](null)
 

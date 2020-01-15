@@ -24,7 +24,7 @@ import scala.util.{Failure, Success, Try}
 
 class MaxMindGeolocationInfoExtractor extends PreRouting {
 
-  private val logger = Logger("MaxMindGeolocationInfo")
+  private val logger = Logger("otoroshi-plugins-maxmind-geolocation-info")
 
   override def name: String = "Geolocation details extractor (using Maxmind db)"
 
@@ -92,7 +92,7 @@ class MaxMindGeolocationInfoExtractor extends PreRouting {
 
 class IpStackGeolocationInfoExtractor extends PreRouting {
 
-  private val logger = Logger("IpStackGeolocationInfo")
+  private val logger = Logger("otoroshi-plugins-ipstack-geolocation-info")
 
   override def name: String = "Geolocation details extractor (using IpStack api)"
 
@@ -253,7 +253,7 @@ object MaxMindGeolocationHelper {
 
   import scala.concurrent.duration._
 
-  private val logger  = Logger("MaxMindGeolocationHelper")
+  private val logger  = Logger("otoroshi-plugins-maxmind-geolocation-helper")
   private val ipCache = new TrieMap[String, InetAddress]()
   private val cache   = new TrieMap[String, Option[JsValue]]()
   private val dbs = new TrieMap[String, (AtomicReference[DatabaseReader], AtomicBoolean, AtomicBoolean)]()

@@ -21,7 +21,7 @@ object UserAgentHelper {
 
   import collection.JavaConverters._
 
-  private val logger = Logger("UserAgentHelper")
+  private val logger = Logger("otoroshi-plugins-user-agent-helper")
 
   private val ec                       = ExecutionContext.fromExecutor(Executors.newSingleThreadExecutor())
   private val parserInitializing       = new AtomicBoolean(false)
@@ -65,7 +65,7 @@ object UserAgentHelper {
 
 class UserAgentExtractor extends PreRouting {
 
-  private val logger = Logger("UserAgentExtractor")
+  private val logger = Logger("otoroshi-plugins-user-agent-extractor")
 
   override def name: String = "User-Agent details extractor"
 

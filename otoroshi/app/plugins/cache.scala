@@ -40,7 +40,7 @@ case class ResponseCacheConfig(json: JsValue) {
 object ResponseCache {
   val base64Encoder = java.util.Base64.getEncoder
   val base64Decoder = java.util.Base64.getDecoder
-  val logger        = Logger("response-cache")
+  val logger        = Logger("otoroshi-plugins-response-cache")
 }
 
 class ResponseCache extends RequestTransformer {
