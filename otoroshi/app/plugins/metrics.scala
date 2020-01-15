@@ -333,7 +333,7 @@ class PrometheusServiceMetrics extends RequestTransformer {
         |```json
         |{
         |  "PrometheusServiceMetrics": {
-        |    "includeUri": false // include http uri in metrics. WARNING this could implies serious performance issues, use at your own risks
+        |    "includeUri": false // include http uri in metrics. WARNING this could impliess performance issues, use at your own risks
         |  }
         |}
         |```
