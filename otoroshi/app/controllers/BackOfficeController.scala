@@ -76,56 +76,63 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
     }
 
   def proxyAdminApi(path: String) = BackOfficeActionAuth.async(sourceBodyParser) { ctx =>
-    val host                   = env.adminApiExposedHost
-    val localUrl               = if (env.adminApiProxyHttps) s"https://127.0.0.1:${env.port}" else s"http://127.0.0.1:${env.port}"
-    val url                    = if (env.adminApiProxyUseLocal) localUrl else s"https://${env.adminApiExposedHost}"
-    lazy val currentReqHasBody = hasBody(ctx.request)
-    logger.debug(s"Calling ${ctx.request.method} $url/$path with Host = $host")
-    val headers = Seq(
-      "Host"                           -> host,
-      "X-Forwarded-For"                -> ctx.request.theIpAddress,
-      env.Headers.OtoroshiVizFromLabel -> "Otoroshi Admin UI",
-      env.Headers.OtoroshiVizFrom      -> "otoroshi-admin-ui",
-      env.Headers.OtoroshiClientId     -> env.backOfficeApiKey.clientId,
-      env.Headers.OtoroshiClientSecret -> env.backOfficeApiKey.clientSecret,
-      env.Headers.OtoroshiAdminProfile -> Base64.getUrlEncoder.encodeToString(
-        Json.stringify(ctx.user.profile).getBytes(Charsets.UTF_8)
-      )
-    ) ++ ctx.request.headers.get("Content-Type").filter(_ => currentReqHasBody).map { ctype =>
-      "Content-Type" -> ctype
-    } ++ ctx.request.headers.get("Accept").map { accept =>
-      "Accept" -> accept
-    } ++ ctx.request.headers.get("X-Content-Type").map(v => "X-Content-Type" -> v)
-    env.Ws // MTLS needed here ???
-      .url(s"$url/$path")
-      .withHttpHeaders(headers: _*)
-      .withFollowRedirects(false)
-      .withMethod(ctx.request.method)
-      .withRequestTimeout(1.minute)
-      .withQueryStringParameters(ctx.request.queryString.toSeq.map(t => (t._1, t._2.head)): _*)
-      .withBody(if (currentReqHasBody) SourceBody(ctx.request.body) else EmptyBody)
-      .stream()
-      .fast
-      .map { res =>
-        val ctype = res.headers.get("Content-Type").flatMap(_.headOption).getOrElse("application/json")
-        Status(res.status)
-          .sendEntity(
-            HttpEntity.Streamed(
-              Source.lazily(() => res.bodyAsSource),
-              res.headers.get("Content-Length").flatMap(_.lastOption).map(_.toInt),
-              res.headers.get("Content-Type").flatMap(_.headOption)
-            )
+    env.datastores.apiKeyDataStore.findById(env.backOfficeApiKey.clientId).flatMap {
+      case None => FastFuture.successful(NotFound(Json.obj(
+        "error" -> "admin sapikey not found !"
+      )))
+      case Some(apikey) => {
+        val host                   = env.adminApiExposedHost
+        val localUrl               = if (env.adminApiProxyHttps) s"https://127.0.0.1:${env.port}" else s"http://127.0.0.1:${env.port}"
+        val url                    = if (env.adminApiProxyUseLocal) localUrl else s"https://${env.adminApiExposedHost}"
+        lazy val currentReqHasBody = hasBody(ctx.request)
+        logger.debug(s"Calling ${ctx.request.method} $url/$path with Host = $host")
+        val headers = Seq(
+          "Host"                           -> host,
+          "X-Forwarded-For"                -> ctx.request.theIpAddress,
+          env.Headers.OtoroshiVizFromLabel -> "Otoroshi Admin UI",
+          env.Headers.OtoroshiVizFrom      -> "otoroshi-admin-ui",
+          env.Headers.OtoroshiClientId     -> apikey.clientId,
+          env.Headers.OtoroshiClientSecret -> apikey.clientSecret,
+          env.Headers.OtoroshiAdminProfile -> Base64.getUrlEncoder.encodeToString(
+            Json.stringify(ctx.user.profile).getBytes(Charsets.UTF_8)
           )
-          .withHeaders(
-            res.headers
-              .mapValues(_.head)
-              .toSeq
-              .filter(_._1 != "Content-Type")
-              .filter(_._1 != "Content-Length")
-              .filter(_._1 != "Transfer-Encoding"): _*
-          )
-          .as(ctype)
+        ) ++ ctx.request.headers.get("Content-Type").filter(_ => currentReqHasBody).map { ctype =>
+          "Content-Type" -> ctype
+        } ++ ctx.request.headers.get("Accept").map { accept =>
+          "Accept" -> accept
+        } ++ ctx.request.headers.get("X-Content-Type").map(v => "X-Content-Type" -> v)
+        env.Ws // MTLS needed here ???
+          .url(s"$url/$path")
+          .withHttpHeaders(headers: _*)
+          .withFollowRedirects(false)
+          .withMethod(ctx.request.method)
+          .withRequestTimeout(1.minute)
+          .withQueryStringParameters(ctx.request.queryString.toSeq.map(t => (t._1, t._2.head)): _*)
+          .withBody(if (currentReqHasBody) SourceBody(ctx.request.body) else EmptyBody)
+          .stream()
+          .fast
+          .map { res =>
+            val ctype = res.headers.get("Content-Type").flatMap(_.headOption).getOrElse("application/json")
+            Status(res.status)
+              .sendEntity(
+                HttpEntity.Streamed(
+                  Source.lazily(() => res.bodyAsSource),
+                  res.headers.get("Content-Length").flatMap(_.lastOption).map(_.toInt),
+                  res.headers.get("Content-Type").flatMap(_.headOption)
+                )
+              )
+              .withHeaders(
+                res.headers
+                  .mapValues(_.head)
+                  .toSeq
+                  .filter(_._1 != "Content-Type")
+                  .filter(_._1 != "Content-Length")
+                  .filter(_._1 != "Transfer-Encoding"): _*
+              )
+              .as(ctype)
+          }
       }
+    }
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
