@@ -358,6 +358,25 @@ export class AlgoSettings extends Component {
             help="The certificate used when performing a mTLS call"
             onChange={v => changeTheValue(path + '.mtlsConfig.certs', v)}
           />,
+          <ArrayInput
+            label="Trusted certificate"
+            placeholder="Choose a trusted certificate"
+            value={algo.mtlsConfig.trustedCerts}
+            valuesFrom="/bo/api/proxy/api/certificates"
+            transformer={a => ({
+              value: a.id,
+              label: (
+                <span>
+                  <span className="label label-success" style={{ minWidth: 63 }}>
+                    {a.certType}
+                  </span>{' '}
+                  {a.name} - {a.description}
+                </span>
+              ),
+            })}
+            help="The trusted certificate used when performing a mTLS call"
+            onChange={v => changeTheValue(path + '.mtlsConfig.trustedCerts', v)}
+          />,
           <Separator title="Proxy" />,
           <Proxy value={algo.proxy} onChange={v => changeTheValue(path + '.proxy', v)} />,
         ]}

@@ -467,7 +467,7 @@ export class Oauth2ModuleConfig extends Component {
           onChange={v => changeTheValue(path + '.mtlsConfig.loose', v)}
         />
         <ArrayInput
-          label="Client certificate"
+          label="Client certificates"
           placeholder="Choose a client certificate"
           value={settings.mtlsConfig.certs}
           valuesFrom="/bo/api/proxy/api/certificates"
@@ -482,8 +482,27 @@ export class Oauth2ModuleConfig extends Component {
               </span>
             ),
           })}
-          help="The certificate used when performing a mTLS call"
+          help="The certificates used when performing a mTLS call"
           onChange={e => changeTheValue(path + '.mtlsConfig.certs', e)}
+        />
+        <ArrayInput
+          label="Trusted certificates"
+          placeholder="Choose a trusted certificate"
+          value={settings.mtlsConfig.trustedCerts}
+          valuesFrom="/bo/api/proxy/api/certificates"
+          transformer={a => ({
+            value: a.id,
+            label: (
+              <span>
+                <span className="label label-success" style={{ minWidth: 63 }}>
+                  {a.certType}
+                </span>{' '}
+                {a.name} - {a.description}
+              </span>
+            ),
+          })}
+          help="The trusted certificates used when performing a mTLS call"
+          onChange={e => changeTheValue(path + '.mtlsConfig.trustedCerts', e)}
         />
       </div>
     );

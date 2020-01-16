@@ -222,6 +222,27 @@ class Target extends Component {
             onChange={e => this.changeTheValue('mtlsConfig.certs', e)}
           />
         )}
+        {value.mtlsConfig.mtls && (
+          <ArrayInput
+            label="Trusted certificates"
+            placeholder="Choose a trusted certificate"
+            value={value.mtlsConfig.trustedCerts}
+            valuesFrom="/bo/api/proxy/api/certificates"
+            transformer={a => ({
+              value: a.id,
+              label: (
+                <span>
+                  <span className="label label-success" style={{ minWidth: 63 }}>
+                    {a.certType}
+                  </span>{' '}
+                  {a.name} - {a.description}
+                </span>
+              ),
+            })}
+            help="The trusted certificate used when performing a mTLS call"
+            onChange={e => this.changeTheValue('mtlsConfig.trustedCerts', e)}
+          />
+        )}
         <Separator title="Target filter" />,
         <SelectInput
           label="Predicate"

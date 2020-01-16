@@ -323,6 +323,25 @@ export class DangerZonePage extends Component {
         }),
       },
     },
+    'mtlsConfig.trustedCerts': {
+      type: 'array',
+      props: {
+        label: 'Trusted certificate',
+        placeholder: 'Choose a trusted certificate',
+        valuesFrom: '/bo/api/proxy/api/certificates',
+        transformer: a => ({
+          value: a.id,
+          label: (
+            <span>
+              <span className="label label-success" style={{ minWidth: 63 }}>
+                {a.certType}
+              </span>{' '}
+              {a.name} - {a.description}
+            </span>
+          ),
+        }),
+      },
+    },
   };
 
   analyticsWebhooksFormSchema = {
@@ -365,6 +384,25 @@ export class DangerZonePage extends Component {
         }),
       },
     },
+    'mtlsConfig.trustedCerts': {
+      type: 'array',
+      props: {
+        label: 'Trusted certificate',
+        placeholder: 'Choose a trusted certificate',
+        valuesFrom: '/bo/api/proxy/api/certificates',
+        transformer: a => ({
+          value: a.id,
+          label: (
+            <span>
+              <span className="label label-success" style={{ minWidth: 63 }}>
+                {a.certType}
+              </span>{' '}
+              {a.name} - {a.description}
+            </span>
+          ),
+        }),
+      },
+    },
   };
 
   elasticConfigFormFlow = [
@@ -376,6 +414,7 @@ export class DangerZonePage extends Component {
     'mtlsConfig.mtls',
     'mtlsConfig.loose',
     'mtlsConfig.certs',
+    'mtlsConfig.trustedCerts',
   ];
 
   elasticConfigFormSchema = {
@@ -412,6 +451,25 @@ export class DangerZonePage extends Component {
       props: {
         label: 'Client certificate',
         placeholder: 'Choose a client certificate',
+        valuesFrom: '/bo/api/proxy/api/certificates',
+        transformer: a => ({
+          value: a.id,
+          label: (
+            <span>
+              <span className="label label-success" style={{ minWidth: 63 }}>
+                {a.certType}
+              </span>{' '}
+              {a.name} - {a.description}
+            </span>
+          ),
+        }),
+      },
+    },
+    'mtlsConfig.trustedCerts': {
+      type: 'array',
+      props: {
+        label: 'Trusted certificate',
+        placeholder: 'Choose a trusted certificate',
         valuesFrom: '/bo/api/proxy/api/certificates',
         transformer: a => ({
           value: a.id,
@@ -468,9 +526,28 @@ export class DangerZonePage extends Component {
         }),
       },
     },
+    'mtlsConfig.trustedCerts': {
+      type: 'array',
+      props: {
+        label: 'Trusted certificate',
+        placeholder: 'Choose a trusted certificate',
+        valuesFrom: '/bo/api/proxy/api/certificates',
+        transformer: a => ({
+          value: a.id,
+          label: (
+            <span>
+              <span className="label label-success" style={{ minWidth: 63 }}>
+                {a.certType}
+              </span>{' '}
+              {a.name} - {a.description}
+            </span>
+          ),
+        }),
+      },
+    },
   };
 
-  webhooksFormFlow = ['url', 'headers', 'mtlsConfig.mtls', 'mtlsConfig.loose', 'mtlsConfig.certs'];
+  webhooksFormFlow = ['url', 'headers', 'mtlsConfig.mtls', 'mtlsConfig.loose', 'mtlsConfig.certs', 'mtlsConfig.trustedCerts'];
 
   formSchema = {
     'ipFiltering.whitelist': {

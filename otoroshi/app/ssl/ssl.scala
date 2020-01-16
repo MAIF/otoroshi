@@ -803,6 +803,7 @@ object DynamicSSLEngineProvider {
       sslContext
     }
 
+  /*
   def setupSslContextFor(cert: Cert, env: Env): SSLContext =
     env.metrics.withTimer("otoroshi.core.tls.setup-single-context") {
 
@@ -855,8 +856,9 @@ object DynamicSSLEngineProvider {
       SSLContext.setDefault(sslContext)
       sslContext
     }
+  */
 
-  def setupSslContextFor(certs: Seq[Cert], env: Env): SSLContext =
+  def setupSslContextFor(certs: Seq[Cert], trustedCerts: Seq[Cert], env: Env): SSLContext =
     env.metrics.withTimer("otoroshi.core.tls.setup-single-context") {
 
       val optEnv = Option(currentEnv.get)
@@ -880,31 +882,32 @@ object DynamicSSLEngineProvider {
 
       logger.debug("Setting up SSL Context ")
       val sslContext: SSLContext = SSLContext.getInstance("TLS")
-      val keyStore: KeyStore     = createKeyStore(certs)
-
+      val keyStore1: KeyStore = createKeyStore(certs)
       val keyManagerFactory: KeyManagerFactory =
         Try(KeyManagerFactory.getInstance("X509")).orElse(Try(KeyManagerFactory.getInstance("SunX509"))).get
-      keyManagerFactory.init(keyStore, EMPTY_PASSWORD)
+      keyManagerFactory.init(keyStore1, EMPTY_PASSWORD)
       logger.debug("SSL Context init ...")
       val keyManagers: Array[KeyManager] = keyManagerFactory.getKeyManagers.map(
         m => new X509KeyManagerSnitch(m.asInstanceOf[X509KeyManager]).asInstanceOf[KeyManager]
       )
+
+      val keyStore2: KeyStore = if (trustedCerts.nonEmpty) createKeyStore(trustedCerts) else keyStore1
       val tm: Array[TrustManager] =
       optEnv.flatMap(e => e.configuration.getOptional[Boolean]("play.server.https.trustStore.noCaVerification")).map {
         case true  => Array[TrustManager](noCATrustManager)
-        case false => createTrustStore(keyStore, cacertPath, cacertPassword)
+        case false => createTrustStore(keyStore2, cacertPath, cacertPassword)
       } getOrElse {
         if (trustAll) {
           Array[TrustManager](
             new VeryNiceTrustManager(Seq.empty[X509TrustManager])
           )
         } else {
-          createTrustStore(keyStore, cacertPath, cacertPassword)
+          createTrustStore(keyStore2, cacertPath, cacertPassword)
         }
       }
 
       sslContext.init(keyManagers, tm, null)
-      logger.debug(s"SSL Context init done ! (${keyStore.size()})")
+      logger.debug(s"SSL Context init done ! (${keyStore1.size()} - ${keyStore2.size()})")
       SSLContext.setDefault(sslContext)
       sslContext
     }
