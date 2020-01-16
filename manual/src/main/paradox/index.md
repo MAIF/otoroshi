@@ -21,13 +21,13 @@ You can install and run Otoroshi with this little bash snippet
 
 ```sh
 curl -L -o otoroshi.jar 'https://github.com/MAIF/otoroshi/releases/download/v1.4.18-dev/otoroshi.jar'
-java -Dapp.domain=oto.tools -jar otoroshi.jar
+java -jar otoroshi.jar
 ```
 
 or using docker
 
 ```sh
-docker run -p "8080:8080" -e "APP_DOMAIN=oto.tools" maif/otoroshi:1.4.18-dev
+docker run -p "8080:8080" maif/otoroshi:1.4.18-dev
 ```
 
 now open your browser to <a href="http://otoroshi.oto.tools:8080/" target="_blank">http://otoroshi.oto.tools:8080/</a>, **log in with the credential generated in the logs** and explore by yourself, if you want better instructions, just go to the @ref:[Quick Start](./quickstart.md) or directly to the @ref:[installation instructions](./getotoroshi/index.md)

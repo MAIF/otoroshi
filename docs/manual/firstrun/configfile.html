@@ -241,10 +241,10 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <h1><a href="#config-with-files" name="config-with-files" class="anchor"><span class="anchor-link"></span></a>Config. with files</h1>
 <p>There is a lot of things you can configure in Otoroshi. By default, Otoroshi provides a configuration that should be enough for testing purpose. But you&rsquo;ll likely need to update this configuration when you&rsquo;ll need to move into production.</p>
 <p>In this page, any configuration property can be set at runtime using a <code>-D</code> flag when launching Otoroshi like</p>
-<pre class="prettyprint"><code class="language-sh">java -Dapp.domain=oto.tools -Dhttp.port=8080 -jar otoroshi.jar
+<pre class="prettyprint"><code class="language-sh">java -Dhttp.port=8080 -jar otoroshi.jar
 </code></pre>
 <p>or</p>
-<pre class="prettyprint"><code class="language-sh">./bin/otoroshi -Dhttp.port=8080 -Dapp.domain=oto.tools 
+<pre class="prettyprint"><code class="language-sh">./bin/otoroshi -Dhttp.port=8080
 </code></pre>
 <h2><a href="#common-configuration" name="common-configuration" class="anchor"><span class="anchor-link"></span></a>Common configuration</h2>
 <table>

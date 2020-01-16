@@ -5,13 +5,13 @@ There is a lot of things you can configure in Otoroshi. By default, Otoroshi pro
 In this page, any configuration property can be set at runtime using a `-D` flag when launching Otoroshi like
 
 ```sh
-java -Dapp.domain=oto.tools -Dhttp.port=8080 -jar otoroshi.jar
+java -Dhttp.port=8080 -jar otoroshi.jar
 ```
 
 or
 
 ```sh
-./bin/otoroshi -Dhttp.port=8080 -Dapp.domain=oto.tools 
+./bin/otoroshi -Dhttp.port=8080 
 ```
 
 ## Common configuration
