@@ -203,7 +203,7 @@ class Target extends Component {
         {/* `[${a.certType}] ${a.name} - ${a.description}` */}
         {value.mtlsConfig.mtls && (
           <ArrayInput
-            label="Client certificate"
+            label="Client certificates"
             placeholder="Choose a client certificate"
             value={value.mtlsConfig.certs}
             valuesFrom="/bo/api/proxy/api/certificates"

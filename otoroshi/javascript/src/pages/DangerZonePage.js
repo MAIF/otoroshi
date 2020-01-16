@@ -307,7 +307,7 @@ export class DangerZonePage extends Component {
     'mtlsConfig.certs': {
       type: 'array',
       props: {
-        label: 'Client certificate',
+        label: 'Client certificates',
         placeholder: 'Choose a client certificate',
         valuesFrom: '/bo/api/proxy/api/certificates',
         transformer: a => ({
@@ -326,7 +326,7 @@ export class DangerZonePage extends Component {
     'mtlsConfig.trustedCerts': {
       type: 'array',
       props: {
-        label: 'Trusted certificate',
+        label: 'Trusted certificates',
         placeholder: 'Choose a trusted certificate',
         valuesFrom: '/bo/api/proxy/api/certificates',
         transformer: a => ({
@@ -368,7 +368,7 @@ export class DangerZonePage extends Component {
     'mtlsConfig.certs': {
       type: 'array',
       props: {
-        label: 'Client certificate',
+        label: 'Client certificates',
         placeholder: 'Choose a client certificate',
         valuesFrom: '/bo/api/proxy/api/certificates',
         transformer: a => ({
@@ -387,7 +387,7 @@ export class DangerZonePage extends Component {
     'mtlsConfig.trustedCerts': {
       type: 'array',
       props: {
-        label: 'Trusted certificate',
+        label: 'Trusted certificates',
         placeholder: 'Choose a trusted certificate',
         valuesFrom: '/bo/api/proxy/api/certificates',
         transformer: a => ({
@@ -449,7 +449,7 @@ export class DangerZonePage extends Component {
     'mtlsConfig.certs': {
       type: 'array',
       props: {
-        label: 'Client certificate',
+        label: 'Client certificates',
         placeholder: 'Choose a client certificate',
         valuesFrom: '/bo/api/proxy/api/certificates',
         transformer: a => ({
@@ -468,7 +468,7 @@ export class DangerZonePage extends Component {
     'mtlsConfig.trustedCerts': {
       type: 'array',
       props: {
-        label: 'Trusted certificate',
+        label: 'Trusted certificates',
         placeholder: 'Choose a trusted certificate',
         valuesFrom: '/bo/api/proxy/api/certificates',
         transformer: a => ({
@@ -510,7 +510,7 @@ export class DangerZonePage extends Component {
     'mtlsConfig.certs': {
       type: 'array',
       props: {
-        label: 'Client certificate',
+        label: 'Client certificates',
         placeholder: 'Choose a client certificate',
         valuesFrom: '/bo/api/proxy/api/certificates',
         transformer: a => ({
@@ -529,7 +529,7 @@ export class DangerZonePage extends Component {
     'mtlsConfig.trustedCerts': {
       type: 'array',
       props: {
-        label: 'Trusted certificate',
+        label: 'Trusted certificates',
         placeholder: 'Choose a trusted certificate',
         valuesFrom: '/bo/api/proxy/api/certificates',
         transformer: a => ({
@@ -890,7 +890,7 @@ export class DangerZonePage extends Component {
       type: 'array',
       display: v => tryOrTrue(() => v.kafkaConfig.mtlsConfig.mtls),
       props: {
-        label: 'Client certs.',
+        label: 'Client certificates',
         placeholder: 'Choose a client certificate',
         valuesFrom: '/bo/api/proxy/api/certificates',
         transformer: a => ({
