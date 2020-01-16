@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.17] - 2020-01-16
+
+https://github.com/MAIF/otoroshi/compare/v1.4.16...v1.4.17
+https://github.com/MAIF/otoroshi/releases/tag/v1.4.17
+
+### Added 
+
+- Really fine tuning of the trust part of the SSL context per target for better mTLS handlings
+
 ## [1.4.16] - 2020-01-15
 
 https://github.com/MAIF/otoroshi/milestone/26?closed=1
@@ -24,6 +33,7 @@ https://github.com/MAIF/otoroshi/releases/tag/v1.4.16
 - Add request lifecycle handlers in request transformers (#416)
 - [plugin] Add configuration description in plugin to generate UI automatically (#420)
 - HMAC secret can be base64 encoded (#423)
+- Really fine tuning of the SSL context per target for better mTLS handlings
 
 ### Changed
 

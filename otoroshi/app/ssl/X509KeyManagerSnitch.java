@@ -68,7 +68,6 @@ public class X509KeyManagerSnitch extends X509ExtendedKeyManager {
 
     public String chooseEngineServerAlias(String s, Principal[] p, SSLEngine ssl) {
         debug("X509KeyManagerSnitch.chooseEngineServerAlias(" + s + ")");
-        // DynamicSSLEngineProvider.logger().underlyingLogger().info("s: " + s + ", " + ssl.getPeerHost() + ", ");
         try {
             String host = ssl.getPeerHost();
             String[] aliases = manager.getServerAliases(s, p);
