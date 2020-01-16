@@ -468,7 +468,8 @@ object GlobalConfig {
           throttlingQuota = (json \ "throttlingQuota").asOpt[Long].getOrElse(BaseQuotas.MaxValue),
           perIpThrottlingQuota = (json \ "perIpThrottlingQuota").asOpt[Long].getOrElse(BaseQuotas.MaxValue),
           elasticReadsConfig = (json \ "elasticReadsConfig").asOpt[JsObject].flatMap { config =>
-            (
+            ElasticAnalyticsConfig.format.reads(config).asOpt
+            /*(
               (config \ "clusterUri").asOpt[String],
               (config \ "index").asOpt[String],
               (config \ "type").asOpt[String],
@@ -478,7 +479,7 @@ object GlobalConfig {
               case (Some(clusterUri), index, typ, user, password) if clusterUri.nonEmpty =>
                 Some(ElasticAnalyticsConfig(clusterUri, index, typ, user, password))
               case e => None
-            }
+            }*/
           },
           analyticsWebhooks =
             (json \ "analyticsWebhooks").asOpt[Seq[Webhook]](Reads.seq(Webhook.format)).getOrElse(Seq.empty[Webhook]),

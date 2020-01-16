@@ -326,7 +326,7 @@ export class AlgoSettings extends Component {
               { label: 'EC', value: 'EC' },
             ]}
           />,
-          <Separator title="TLS settings" />,
+          <Separator title="TLS settings for JWKS fetching" />,
           <BooleanInput
             label="Use mTLS"
             value={algo.mtlsConfig.mtls}
