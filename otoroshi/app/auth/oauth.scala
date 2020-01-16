@@ -263,6 +263,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
             }
             future1
               .flatMap { resp =>
+                // TODO: check status code
                 val rawToken: JsValue = resp.json
                 val accessToken       = (rawToken \ authConfig.accessTokenField).as[String]
                 if (authConfig.readProfileFromToken && authConfig.jwtVerifier.isDefined) {
@@ -301,6 +302,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
                       )
                     )(writeableOf_urlEncodedSimpleForm)
                   }
+                  // TODO: check status code
                   future2.map(h => (h.json, rawToken))
                 }
               }
@@ -377,6 +379,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
             }
             future1
               .flatMap { resp =>
+                // TODO: check status code
                 val accessToken = (resp.json \ authConfig.accessTokenField).as[String]
                 if (authConfig.readProfileFromToken && authConfig.jwtVerifier.isDefined) {
                   val algoSettings = authConfig.jwtVerifier.get
@@ -413,6 +416,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
                       )
                     )(writeableOf_urlEncodedSimpleForm)
                   }
+                  // TODO: check status code
                   future2.map(_.json)
                 }
               }

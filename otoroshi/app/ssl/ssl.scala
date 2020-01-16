@@ -1454,6 +1454,7 @@ class CustomSSLEngine(delegate: SSLEngine) extends SSLEngine {
   // javax.net.ssl.X509ExtendedTrustManager
   private val hostnameHolder = new AtomicReference[String]()
 
+  // TODO: add try to avoid future issue ?
   private lazy val field: Field = {
     val f = Option(classOf[SSLEngine].getDeclaredField("peerHost")).getOrElse(classOf[SSLEngine].getField("peerHost"))
     f.setAccessible(true)
@@ -1463,6 +1464,7 @@ class CustomSSLEngine(delegate: SSLEngine) extends SSLEngine {
   def setEngineHostName(hostName: String): Unit = {
     DynamicSSLEngineProvider.logger.debug(s"Setting current session hostname to $hostName")
     hostnameHolder.set(hostName)
+    // TODO: add try to avoid future issue ?
     field.set(this, hostName)
     field.set(delegate, hostName)
   }
