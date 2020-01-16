@@ -547,7 +547,14 @@ export class DangerZonePage extends Component {
     },
   };
 
-  webhooksFormFlow = ['url', 'headers', 'mtlsConfig.mtls', 'mtlsConfig.loose', 'mtlsConfig.certs', 'mtlsConfig.trustedCerts'];
+  webhooksFormFlow = [
+    'url',
+    'headers',
+    'mtlsConfig.mtls',
+    'mtlsConfig.loose',
+    'mtlsConfig.certs',
+    'mtlsConfig.trustedCerts',
+  ];
 
   formSchema = {
     'ipFiltering.whitelist': {

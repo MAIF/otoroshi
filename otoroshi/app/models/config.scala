@@ -469,7 +469,7 @@ object GlobalConfig {
           perIpThrottlingQuota = (json \ "perIpThrottlingQuota").asOpt[Long].getOrElse(BaseQuotas.MaxValue),
           elasticReadsConfig = (json \ "elasticReadsConfig").asOpt[JsObject].flatMap { config =>
             ElasticAnalyticsConfig.format.reads(config).asOpt
-            /*(
+          /*(
               (config \ "clusterUri").asOpt[String],
               (config \ "index").asOpt[String],
               (config \ "type").asOpt[String],

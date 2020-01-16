@@ -42,13 +42,18 @@ import scala.concurrent.{Await, Future}
 import scala.util.{Failure, Success, Try}
 import scala.xml.{Elem, XML}
 
-case class MtlsConfig(certs: Seq[String] = Seq.empty, trustedCerts: Seq[String] = Seq.empty, mtls: Boolean = false, loose: Boolean = false) {
+case class MtlsConfig(certs: Seq[String] = Seq.empty,
+                      trustedCerts: Seq[String] = Seq.empty,
+                      mtls: Boolean = false,
+                      loose: Boolean = false) {
   def json: JsValue = MtlsConfig.format.writes(this)
   def toJKS(implicit env: Env): (java.io.File, String) = {
-    val password     = IdGenerator.token
-    val path         = java.nio.file.Files.createTempFile("oto-kafka-keystore-", ".jks")
-    val certificates = certs.flatMap(DynamicSSLEngineProvider.certificates.get) ++ trustedCerts.flatMap(DynamicSSLEngineProvider.certificates.get)
-    val keystore     = DynamicSSLEngineProvider.createKeyStore(certificates)
+    val password = IdGenerator.token
+    val path     = java.nio.file.Files.createTempFile("oto-kafka-keystore-", ".jks")
+    val certificates = certs.flatMap(DynamicSSLEngineProvider.certificates.get) ++ trustedCerts.flatMap(
+      DynamicSSLEngineProvider.certificates.get
+    )
+    val keystore = DynamicSSLEngineProvider.createKeyStore(certificates)
     keystore.store(new FileOutputStream(path.toFile), password.toCharArray)
     env.lifecycle.addStopHook { () =>
       path.toFile.delete()
@@ -83,10 +88,10 @@ object MtlsConfig {
         case Success(v) => JsSuccess(v)
       }
     override def writes(o: MtlsConfig): JsValue = Json.obj(
-      "certs" -> JsArray(o.certs.map(JsString.apply)),
+      "certs"        -> JsArray(o.certs.map(JsString.apply)),
       "trustedCerts" -> JsArray(o.trustedCerts.map(JsString.apply)),
-      "mtls"  -> o.mtls,
-      "loose" -> o.loose
+      "mtls"         -> o.mtls,
+      "loose"        -> o.loose
     )
   }
 }
@@ -148,7 +153,12 @@ class WsClientChooser(standardClient: WSClient,
       .toSeq
       .flatMap(_.mtlsConfig.trustedCerts)
       .flatMap(DynamicSSLEngineProvider.certificates.get)
-    akkaClient.executeWsRequest(request, targetOpt.exists(_.mtlsConfig.loose), certs, trustedCerts, clientFlow, customizer)
+    akkaClient.executeWsRequest(request,
+                                targetOpt.exists(_.mtlsConfig.loose),
+                                certs,
+                                trustedCerts,
+                                clientFlow,
+                                customizer)
   }
 
   def url(url: String): WSRequest = {
@@ -559,7 +569,8 @@ class AkkWsClient(config: WSClientConfig, env: Env)(implicit system: ActorSystem
         logger.info(s"Calling ${request.uri} with mTLS context of ${certs.size} certificates")
         val sslContext = env.metrics.withTimer("otoroshi.core.tls.http-client.single-context-fetch") {
           val cacheKey = certs.sortWith((c1, c2) => c1.id.compareTo(c2.id) > 0).map(_.cacheKey).mkString("-")
-          singleSslContextCache.getOrElse(cacheKey, DynamicSSLEngineProvider.setupSslContextFor(certs, trustedCerts, env))
+          singleSslContextCache.getOrElse(cacheKey,
+                                          DynamicSSLEngineProvider.setupSslContextFor(certs, trustedCerts, env))
         }
         env.metrics.withTimer("otoroshi.core.tls.http-client.single-context-call") {
           val pool = customizer(connectionPoolSettings).withMaxConnections(512)
@@ -605,7 +616,8 @@ class AkkWsClient(config: WSClientConfig, env: Env)(implicit system: ActorSystem
         logger.info(s"Calling ws ${request.uri} with mTLS context of ${certs.size} certificates")
         val sslContext = env.metrics.withTimer("otoroshi.core.tls.http-client.single-context-fetch") {
           val cacheKey = certs.sortWith((c1, c2) => c1.id.compareTo(c2.id) > 0).map(_.cacheKey).mkString("-")
-          singleSslContextCache.getOrElse(cacheKey, DynamicSSLEngineProvider.setupSslContextFor(certs, trustedCerts, env))
+          singleSslContextCache.getOrElse(cacheKey,
+                                          DynamicSSLEngineProvider.setupSslContextFor(certs, trustedCerts, env))
         }
         env.metrics.withTimer("otoroshi.core.tls.http-client.single-context-call") {
           val cctx = if (loose) {

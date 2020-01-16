@@ -856,7 +856,7 @@ object DynamicSSLEngineProvider {
       SSLContext.setDefault(sslContext)
       sslContext
     }
-  */
+   */
 
   def setupSslContextFor(certs: Seq[Cert], trustedCerts: Seq[Cert], env: Env): SSLContext =
     env.metrics.withTimer("otoroshi.core.tls.setup-single-context") {
@@ -882,7 +882,7 @@ object DynamicSSLEngineProvider {
 
       logger.debug("Setting up SSL Context ")
       val sslContext: SSLContext = SSLContext.getInstance("TLS")
-      val keyStore1: KeyStore = createKeyStore(certs)
+      val keyStore1: KeyStore    = createKeyStore(certs)
       val keyManagerFactory: KeyManagerFactory =
         Try(KeyManagerFactory.getInstance("X509")).orElse(Try(KeyManagerFactory.getInstance("SunX509"))).get
       keyManagerFactory.init(keyStore1, EMPTY_PASSWORD)
