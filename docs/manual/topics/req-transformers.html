@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+
+<head>
+<title>Request transformers · Otoroshi</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="description" content='otoroshi-manual'/>
+<link href="https://fonts.googleapis.com/css?family=Roboto:100normal,100italic,300normal,300italic,400normal,400italic,500normal,500italic,700normal,700italic,900normal,900italicc" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="../lib/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../js/page.js"></script>
+<script type="text/javascript" src="../js/groups.js"></script>
+<link rel="stylesheet" type="text/css" href="../lib/normalize.css/normalize.css"/>
+<link rel="stylesheet" type="text/css" href="../lib/foundation/dist/foundation.min.css"/>
+<link rel="stylesheet" type="text/css" href="../css/page.css"/>
+
+<!--
+<link rel="shortcut icon" href="../images/favicon.ico" />
+-->
+</head>
+
+<body>
+<div class="off-canvas-wrapper">
+<div class="off-canvas-wrapper-inner" data-off-canvas-wrapper>
+
+<div class="off-canvas position-left" id="off-canvas-menu" data-off-canvas>
+<nav class="off-canvas-nav">
+<div class="nav-home">
+<a href="../index.html" >
+<span class="home-icon">⌂</span>Otoroshi
+</a>
+<div class="version-number">
+1.4.17
+</div>
+</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../about.html" class="page">About Otoroshi</a></li>
+  <li><a href="../archi.html" class="page">Architecture</a></li>
+  <li><a href="../features.html" class="page">Features</a></li>
+  <li><a href="../quickstart.html" class="page">Try Otoroshi in 5 minutes</a></li>
+  <li><a href="../videos.html" class="page">Video tutorials</a></li>
+  <li><a href="../getotoroshi/index.html" class="page">Get Otoroshi</a>
+  <ul>
+    <li><a href="../getotoroshi/fromsources.html" class="page">From sources</a></li>
+    <li><a href="../getotoroshi/frombinaries.html" class="page">From binaries</a></li>
+    <li><a href="../getotoroshi/fromdocker.html" class="page">From docker</a></li>
+  </ul></li>
+  <li><a href="../firstrun/index.html" class="page">First run</a>
+  <ul>
+    <li><a href="../firstrun/datastore.html" class="page">Choose your datastore</a></li>
+    <li><a href="../firstrun/configfile.html" class="page">Config. with files</a></li>
+    <li><a href="../firstrun/env.html" class="page">Config. with ENVs</a></li>
+    <li><a href="../firstrun/initialstate.html" class="page">Import initial state</a></li>
+    <li><a href="../firstrun/host.html" class="page">Setup your hosts</a></li>
+    <li><a href="../firstrun/run.html" class="page">Run Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../setup/index.html" class="page">Setup Otoroshi</a>
+  <ul>
+    <li><a href="../setup/admin.html" class="page">Manage admin users</a></li>
+    <li><a href="../setup/dangerzone.html" class="page">Configure the Danger zone</a></li>
+  </ul></li>
+  <li><a href="../usage/index.html" class="page">Using Otoroshi</a>
+  <ul>
+    <li><a href="../usage/1-groups.html" class="page">Managing service groups</a></li>
+    <li><a href="../usage/2-services.html" class="page">Managing services</a></li>
+    <li><a href="../usage/3-apikeys.html" class="page">Managing API keys</a></li>
+    <li><a href="../usage/4-monitor.html" class="page">Monitoring services</a></li>
+    <li><a href="../usage/5-sessions.html" class="page">Managing sessions</a></li>
+    <li><a href="../usage/6-audit.html" class="page">Auditing Otoroshi</a></li>
+    <li><a href="../usage/7-metrics.html" class="page">Otoroshi global metrics</a></li>
+    <li><a href="../usage/8-importsexports.html" class="page">Import and export</a></li>
+    <li><a href="../usage/9-auth.html" class="page">Authentication</a></li>
+  </ul></li>
+  <li><a href="../integrations/index.html" class="page">Third party Integrations</a>
+  <ul>
+    <li><a href="../integrations/analytics.html" class="page">Analytics</a></li>
+    <li><a href="../integrations/mailgun.html" class="page">Mailgun</a></li>
+    <li><a href="../integrations/statsd.html" class="page">StatsD / Datadog</a></li>
+    <li><a href="../integrations/clevercloud.html" class="page">Clever Cloud</a></li>
+  </ul></li>
+  <li><a href="../topics/index.html" class="page">Detailed topics</a>
+  <ul>
+    <li><a href="../topics/snow-monkey.html" class="page">Chaos engineering with the Snow Monkey</a></li>
+    <li><a href="../topics/service-mesh.html" class="page">Service mesh with Otoroshi</a></li>
+    <li><a href="../topics/jwt-verifications.html" class="page">JWT Tokens verification</a></li>
+    <li><a href="../topics/ssl.html" class="page">SSL/TLS termination with Otoroshi</a></li>
+    <li><a href="../topics/mtls.html" class="page">Mutual TLS with Otoroshi</a></li>
+    <li><a href="../topics/clustering.html" class="page">Otoroshi clustering</a></li>
+    <li><a href="../topics/req-transformers.html" class="active page">Request transformers</a></li>
+    <li><a href="../topics/monitoring.html" class="page">Monitoring Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../api.html" class="page">Admin REST API</a></li>
+  <li><a href="../embedding.html" class="page">Embedding Otoroshi</a></li>
+  <li><a href="../cli.html" class="page">Rust CLI</a></li>
+  <li><a href="../deploy/index.html" class="page">Deploy to production</a>
+  <ul>
+    <li><a href="../deploy/clevercloud.html" class="page">Clever Cloud</a></li>
+    <li><a href="../deploy/aws-beanstalk.html" class="page">AWS - Elastic Beanstalk</a></li>
+    <li><a href="../deploy/other.html" class="page">Others</a></li>
+    <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../connectors/index.html" class="page">Connectors</a>
+  <ul>
+    <li><a href="../connectors/clevercloud.html" class="page">Clever Cloud *</a></li>
+    <li><a href="../connectors/kubernetes.html" class="page">Kubernetes *</a></li>
+    <li><a href="../connectors/rancher.html" class="page">Rancher *</a></li>
+  </ul></li>
+</ul>
+</div>
+
+</nav>
+</div>
+
+<div class="off-canvas-content" data-off-canvas-content>
+
+<header class="site-header expanded row">
+<div class="small-12 column">
+<a href="#" class="off-canvas-toggle hide-for-medium" data-toggle="off-canvas-menu"><svg class="svg-icon svg-icon-menu" version="1.1" id="Menu" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 20 20" enable-background="new 0 0 20 20" xml:space="preserve"> <path class="svg-icon-menu-path" fill="#53CDEC" d="M16.4,9H3.6C3.048,9,3,9.447,3,10c0,0.553,0.048,1,0.6,1H16.4c0.552,0,0.6-0.447,0.6-1C17,9.447,16.952,9,16.4,9z M16.4,13
+H3.6C3.048,13,3,13.447,3,14c0,0.553,0.048,1,0.6,1H16.4c0.552,0,0.6-0.447,0.6-1C17,13.447,16.952,13,16.4,13z M3.6,7H16.4
+C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.048,7,3.6,7z"/></svg>
+</a>
+<div class="title-wrapper">
+<div class="title-logo"></div>
+<div class="title"><a href="../index.html">Otoroshi</a></div>
+</div>
+<!--
+<a href="https://www.example.com" class="logo show-for-medium">logo</a>
+-->
+</div>
+</header>
+
+<div class="expanded row">
+
+<div class="medium-3 large-2 show-for-medium column">
+<nav class="site-nav">
+<div class="nav-home">
+<a href="../index.html" >
+<span class="home-icon">⌂</span>Otoroshi
+</a>
+<div class="version-number">
+1.4.17
+</div>
+</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../about.html" class="page">About Otoroshi</a></li>
+  <li><a href="../archi.html" class="page">Architecture</a></li>
+  <li><a href="../features.html" class="page">Features</a></li>
+  <li><a href="../quickstart.html" class="page">Try Otoroshi in 5 minutes</a></li>
+  <li><a href="../videos.html" class="page">Video tutorials</a></li>
+  <li><a href="../getotoroshi/index.html" class="page">Get Otoroshi</a>
+  <ul>
+    <li><a href="../getotoroshi/fromsources.html" class="page">From sources</a></li>
+    <li><a href="../getotoroshi/frombinaries.html" class="page">From binaries</a></li>
+    <li><a href="../getotoroshi/fromdocker.html" class="page">From docker</a></li>
+  </ul></li>
+  <li><a href="../firstrun/index.html" class="page">First run</a>
+  <ul>
+    <li><a href="../firstrun/datastore.html" class="page">Choose your datastore</a></li>
+    <li><a href="../firstrun/configfile.html" class="page">Config. with files</a></li>
+    <li><a href="../firstrun/env.html" class="page">Config. with ENVs</a></li>
+    <li><a href="../firstrun/initialstate.html" class="page">Import initial state</a></li>
+    <li><a href="../firstrun/host.html" class="page">Setup your hosts</a></li>
+    <li><a href="../firstrun/run.html" class="page">Run Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../setup/index.html" class="page">Setup Otoroshi</a>
+  <ul>
+    <li><a href="../setup/admin.html" class="page">Manage admin users</a></li>
+    <li><a href="../setup/dangerzone.html" class="page">Configure the Danger zone</a></li>
+  </ul></li>
+  <li><a href="../usage/index.html" class="page">Using Otoroshi</a>
+  <ul>
+    <li><a href="../usage/1-groups.html" class="page">Managing service groups</a></li>
+    <li><a href="../usage/2-services.html" class="page">Managing services</a></li>
+    <li><a href="../usage/3-apikeys.html" class="page">Managing API keys</a></li>
+    <li><a href="../usage/4-monitor.html" class="page">Monitoring services</a></li>
+    <li><a href="../usage/5-sessions.html" class="page">Managing sessions</a></li>
+    <li><a href="../usage/6-audit.html" class="page">Auditing Otoroshi</a></li>
+    <li><a href="../usage/7-metrics.html" class="page">Otoroshi global metrics</a></li>
+    <li><a href="../usage/8-importsexports.html" class="page">Import and export</a></li>
+    <li><a href="../usage/9-auth.html" class="page">Authentication</a></li>
+  </ul></li>
+  <li><a href="../integrations/index.html" class="page">Third party Integrations</a>
+  <ul>
+    <li><a href="../integrations/analytics.html" class="page">Analytics</a></li>
+    <li><a href="../integrations/mailgun.html" class="page">Mailgun</a></li>
+    <li><a href="../integrations/statsd.html" class="page">StatsD / Datadog</a></li>
+    <li><a href="../integrations/clevercloud.html" class="page">Clever Cloud</a></li>
+  </ul></li>
+  <li><a href="../topics/index.html" class="page">Detailed topics</a>
+  <ul>
+    <li><a href="../topics/snow-monkey.html" class="page">Chaos engineering with the Snow Monkey</a></li>
+    <li><a href="../topics/service-mesh.html" class="page">Service mesh with Otoroshi</a></li>
+    <li><a href="../topics/jwt-verifications.html" class="page">JWT Tokens verification</a></li>
+    <li><a href="../topics/ssl.html" class="page">SSL/TLS termination with Otoroshi</a></li>
+    <li><a href="../topics/mtls.html" class="page">Mutual TLS with Otoroshi</a></li>
+    <li><a href="../topics/clustering.html" class="page">Otoroshi clustering</a></li>
+    <li><a href="../topics/req-transformers.html" class="active page">Request transformers</a></li>
+    <li><a href="../topics/monitoring.html" class="page">Monitoring Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../api.html" class="page">Admin REST API</a></li>
+  <li><a href="../embedding.html" class="page">Embedding Otoroshi</a></li>
+  <li><a href="../cli.html" class="page">Rust CLI</a></li>
+  <li><a href="../deploy/index.html" class="page">Deploy to production</a>
+  <ul>
+    <li><a href="../deploy/clevercloud.html" class="page">Clever Cloud</a></li>
+    <li><a href="../deploy/aws-beanstalk.html" class="page">AWS - Elastic Beanstalk</a></li>
+    <li><a href="../deploy/other.html" class="page">Others</a></li>
+    <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../connectors/index.html" class="page">Connectors</a>
+  <ul>
+    <li><a href="../connectors/clevercloud.html" class="page">Clever Cloud *</a></li>
+    <li><a href="../connectors/kubernetes.html" class="page">Kubernetes *</a></li>
+    <li><a href="../connectors/rancher.html" class="page">Rancher *</a></li>
+  </ul></li>
+</ul>
+</div>
+
+</nav>
+</div>
+
+<div class="small-12 medium-9 large-10 column">
+<section class="site-content">
+
+<div class="page-header row">
+<div class="medium-12 show-for-medium column">
+<div class="nav-breadcrumbs">
+<ul>
+  <li><a href="../index.html">Otoroshi</a></li>
+  <li><a href="../topics/index.html">Detailed topics</a></li>
+  <li>Request transformers</li>
+</ul>
+</div>
+</div>
+</div>
+
+<div class="page-content row">
+<div class="small-12 large-9 column" id="docs">
+<h1><a href="#request-transformers" name="request-transformers" class="anchor"><span class="anchor-link"></span></a>Request transformers</h1>
+<p>When everything has failed and you absolutely need a feature in Otoroshi to make your use case work, there is a solution. Request transformer is an experimental feature hidden behind a feature flag that allow you to code how Otoroshi should behave when receiving and rounting an http request. With request transformers, you can change request / response headers and request / response body to way you want.</p><div class="callout note "><div class="callout-title">Experimental Feature</div>
+<p>Request transformers is an experimental feature. It can change until it becomess an official feature</p></div><div class="callout warning "><div class="callout-title">Use at your own risk</div>
+<p>Request transformers is a <strong>very</strong> powerful feature that allow you to do almost everything you want. But like any powerful feature, it comes with a price. The fact that you are responsible for how the request is transformed makes you responsible for all issues introduced by the transformer. If you block the current thread, introduce big latency, generate uncatched exceptions, etc. it&rsquo;s <strong>your fault</strong>. You have to ensure that your code is fast, non blocking, safe, etc. In any case, Otoroshi developers will not responsible for issues caused by a request transformer.</p>
+<p>And always remember this quote from <del>uncle Ben</del> Winston Churchill:</p>
+<p style="font-style: italic; text-align: right">"Where there is great power there is great responsibility"</p></div>
+<h2><a href="#enabling-request-transformers" name="enabling-request-transformers" class="anchor"><span class="anchor-link"></span></a>Enabling request transformers</h2>
+<p>First you have to enable Otoroshi request transformers with the <code>-Dotoroshi.scripts.enabled=true</code> flag, or using env. variable <code>OTOROSHI_SCRIPTS_ENABLED=true</code>.</p>
+<h2><a href="#anatomy-of-a-transformer" name="anatomy-of-a-transformer" class="anchor"><span class="anchor-link"></span></a>Anatomy of a transformer</h2>
+<p>A request transformer is a piece of Scala code than can handle the complete lifecycle of an http request made on Otoroshi</p>
+<pre class="prettyprint"><code class="language-scala">case class HttpRequest(url: String, method: String, headers: Map[String, String], query: Map[String, String], cookies: Seq[WSCookie] = Seq.empty[WSCookie]) {
+  lazy val host: String = headers.getOrElse(&quot;Host&quot;, &quot;&quot;)
+  lazy val uri: Uri = Uri(url)
+  lazy val scheme: String = uri.scheme
+  lazy val authority: Uri.Authority = uri.authority
+  lazy val fragment: Option[String] = uri.fragment
+  lazy val path: String = uri.path.toString()
+  lazy val queryString: Option[String] = uri.rawQueryString
+  lazy val relativeUri: String = uri.toRelative.toString()
+}
+case class HttpResponse(status: Int, headers: Map[String, String], cookies: Seq[WSCookie] = Seq.empty[WSCookie])
+
+trait RequestTransformer {
+
+  /**
+   * See RequestTransformer.transformRequest
+   */
+  def transformRequestSync(
+    snowflake: String, // a cluster unique request id
+    rawRequest: HttpRequest, // the http request as received by Otoroshi
+    otoroshiRequest: HttpRequest, // the http request modified by Otoroshi, ready to be sent to the target service
+    desc: ServiceDescriptor, // the service description for the request 
+    apiKey: Option[ApiKey] = None, // the api key used, if one
+    user: Option[PrivateAppsUser] = None // the user, if one
+  )(implicit 
+      env: Env, // the otoroshi environnment
+      ec: ExecutionContext, // the threadpool for the request to perform async actions
+      mat: Materializer // the akka materializer to work with streams
+  ): Either[Result, HttpRequest] = {
+    Right(otoroshiRequest)
+  }
+
+  /**
+   * Transform the request forwarded from Otoroshi to the target service
+   */
+  def transformRequest(
+    snowflake: String, // a cluster unique request id
+    rawRequest: HttpRequest, // the http request as received by Otoroshi
+    otoroshiRequest: HttpRequest, // the http request modified by Otoroshi, ready to be sent to the target service
+    desc: ServiceDescriptor, // the service description for the request 
+    apiKey: Option[ApiKey] = None, // the api key used, if one
+    user: Option[PrivateAppsUser] = None // the user, if one
+  )(implicit 
+      env: Env, // the otoroshi environnment
+      ec: ExecutionContext, // the threadpool for the request to perform async actions
+      mat: Materializer // the akka materializer to work with streams
+    ): Future[Either[Result, HttpRequest]] = { // return a future of Either. On the left side, an http error if there was en err. On the Right side, the transformed http request
+    FastFuture.successful(transformRequestSync(snowflake, rawRequest, otoroshiRequest, desc, apiKey, user)(env, ec, mat))
+  }
+
+  /**
+   * See RequestTransformer.transformResponse
+   */
+  def transformResponseSync(
+    snowflake: String, // a cluster unique request id
+    rawResponse: HttpResponse, // the http response as received by Otoroshi from the target service
+    otoroshiResponse: HttpResponse, // the http response modified by Otoroshi, ready to be sent back to the client
+    desc: ServiceDescriptor, // the service description for the request 
+    apiKey: Option[ApiKey] = None, // the api key used, if one
+    user: Option[PrivateAppsUser] = None // the user, if one
+  )(implicit 
+      env: Env,  // the otoroshi environnment
+      ec: ExecutionContext, // the threadpool for the request to perform async actions
+      mat: Materializer // the akka materializer to work with streams
+  ): Either[Result, HttpResponse] = {
+    Right(otoroshiResponse)
+  }
+
+  /**
+   * Transform the response from the target to the client
+   */ 
+  def transformResponse(
+    snowflake: String, // a cluster unique request id
+    rawResponse: HttpResponse, // the http response as received by Otoroshi from the target service
+    otoroshiResponse: HttpResponse, // the http response modified by Otoroshi, ready to be sent back to the client
+    desc: ServiceDescriptor, // the service description for the request 
+    apiKey: Option[ApiKey] = None, // the api key used, if one
+    user: Option[PrivateAppsUser] = None // the user, if one
+  )(implicit 
+      env: Env, // the otoroshi environnment
+      ec: ExecutionContext, // the threadpool for the request to perform async actions
+      mat: Materializer // the akka materializer to work with streams
+  ): Future[Either[Result, HttpResponse]] = { // return a future of Either. On the left side, an http error if there was en err. On the Right side, the transformed http response
+    FastFuture.successful(transformResponseSync(snowflake, rawResponse, otoroshiResponse, desc, apiKey, user)(env, ec, mat))
+  }
+
+  /**
+   * Transform the request body forwarded from Otoroshi to the target service
+   * It uses akka-stream (see https://doc.akka.io/docs/akka/2.5/index.html)
+   */
+  def transformRequestBody(
+    snowflake: String, // a cluster unique request id
+    body: Source[ByteString, _], // the body of the request, a stream of byte array
+    rawRequest: HttpRequest, // the http request as received by Otoroshi
+    otoroshiRequest: HttpRequest, // the http request modified by Otoroshi, ready to be sent to the target service
+    desc: ServiceDescriptor, // the service description for the request 
+    apiKey: Option[ApiKey] = None, // the api key used, if one
+    user: Option[PrivateAppsUser] = None // the user, if one
+  )(implicit 
+      env: Env, // the otoroshi environnment
+      ec: ExecutionContext, // the threadpool for the request to perform async actions
+      mat: Materializer // the akka materializer to work with streams
+  ): Source[ByteString, _] = { // return a stream of byte array
+    body
+  }
+
+  /**
+   * Transform the response body forwarded from target to the client. 
+   * It uses akka-stream (see https://doc.akka.io/docs/akka/2.5/index.html)
+   */
+  def transformResponseBody(
+    snowflake: String, // a cluster unique request id
+    body: Source[ByteString, _], // the body of the response, a stream of byte array
+    rawResponse: HttpResponse, // the http response as received by Otoroshi from the target service
+    otoroshiResponse: HttpResponse, // the http response modified by Otoroshi, ready to be sent back to the client
+    desc: ServiceDescriptor, // the service description for the request 
+    apiKey: Option[ApiKey] = None, // the api key used, if one
+    user: Option[PrivateAppsUser] = None // the user, if one
+  )(implicit 
+      env: Env, // the otoroshi environnment
+      ec: ExecutionContext, // the threadpool for the request to perform async actions
+      mat: Materializer // the akka materializer to work with streams
+  ): Source[ByteString, _] = {
+    body
+  }
+}
+</code></pre>
+<p>for more information about APIs you can use</p>
+<ul>
+  <li><a href="https://www.playframework.com/documentation/2.6.x/api/scala/index.html#package">https://www.playframework.com/documentation/2.6.x/api/scala/index.html#package</a></li>
+  <li><a href="https://www.playframework.com/documentation/2.6.x/api/scala/index.html#play.api.mvc.Results">https://www.playframework.com/documentation/2.6.x/api/scala/index.html#play.api.mvc.Results</a></li>
+  <li><a href="https://github.com/MAIF/otoroshi">https://github.com/MAIF/otoroshi</a></li>
+  <li><a href="https://doc.akka.io/docs/akka/2.5/stream/index.html">https://doc.akka.io/docs/akka/2.5/stream/index.html</a></li>
+  <li><a href="https://doc.akka.io/api/akka/current/akka/stream/index.html">https://doc.akka.io/api/akka/current/akka/stream/index.html</a></li>
+  <li><a href="https://doc.akka.io/api/akka/current/akka/stream/scaladsl/Source.html">https://doc.akka.io/api/akka/current/akka/stream/scaladsl/Source.html</a></li>
+</ul>
+<h2><a href="#writing-a-transformer-from-otoroshi-ui" name="writing-a-transformer-from-otoroshi-ui" class="anchor"><span class="anchor-link"></span></a>Writing a transformer from Otoroshi UI</h2>
+<p>Log into Otoroshi and go to <code>Settings (cog icon) / Scripts</code>. Here you can create multiple request transformer scripts and associate it with service descriptor later.</p><div class="centered-img">
+<img src="../img/scripts-1.png" /></div>
+<p>when you write an instance of a transformer in the Otoroshi UI, do the following</p>
+<pre class="prettyprint"><code class="language-scala">import akka.stream.Materializer
+import env.Env
+import models.{ApiKey, PrivateAppsUser, ServiceDescriptor}
+import otoroshi.script._
+import play.api.Logger
+import play.api.mvc.{Result, Results}
+import scala.util._
+import scala.concurrent.{ExecutionContext, Future}
+
+class MyTransformer extends RequestTransformer {
+
+  val logger = Logger(&quot;my-transformer&quot;)
+
+  // implements the methods you want
+}
+
+// WARN: do not forget this line to provide a working instance of your transformer to Otoroshi
+new MyTransformer()
+</code></pre>
+<p>You can use the compile button to check if the script compiles, or code the transformer in your IDE (see next point).</p>
+<p>Then go to a service descriptor, scroll to the bottom of the page, and select your transformer in the list</p><div class="centered-img">
+<img src="../img/scripts-2.png" /></div>
+<h2><a href="#providing-a-transformer-from-java-classpath" name="providing-a-transformer-from-java-classpath" class="anchor"><span class="anchor-link"></span></a>Providing a transformer from Java classpath</h2>
+<p>You can write your own transformer using your favorite IDE. Just create an SBT project with the following dependencies. It can be quite handy to manage the source code like any other piece of code, and it avoid the compilation time for the script at Otoroshi startup.</p>
+<pre class="prettyprint"><code class="language-scala">lazy val root = (project in file(&quot;.&quot;)).
+  settings(
+    inThisBuild(List(
+      organization := &quot;com.example&quot;,
+      scalaVersion := &quot;2.12.7&quot;,
+      version      := &quot;0.1.0-SNAPSHOT&quot;
+    )),
+    name := &quot;request-transformer-example&quot;,
+    resolvers += Resolver.bintrayRepo(&quot;maif&quot;, &quot;maven&quot;),
+    libraryDependencies += &quot;fr.maif.otoroshi&quot; %% &quot;otoroshi&quot; % &quot;1.x.x&quot;
+  )
+</code></pre>
+<p>When your code is ready, create a jar file </p>
+<pre><code>sbt package
+</code></pre>
+<p>and add the jar file to the Otoroshi classpath</p>
+<pre class="prettyprint"><code class="language-sh">java -Dotoroshi.scripts.enabled=true -cp &quot;/path/to/transformer.jar:$/path/to/otoroshi.jar&quot; play.core.server.ProdServerStart
+</code></pre>
+<p>then, in your service descriptor, you can chose your transformer in the list. If you want to do it from the API, you have to defined the transformerRef using <code>cp:</code> prefix like </p>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;transformerRef&quot;: &quot;cp:my.class.package.MyTransformer&quot;
+}
+</code></pre>
+<h2><a href="#getting-custom-configuration-from-the-otoroshi-config-file" name="getting-custom-configuration-from-the-otoroshi-config-file" class="anchor"><span class="anchor-link"></span></a>Getting custom configuration from the Otoroshi config. file</h2>
+<p>Let say you need to provide custom configuration values for a script, then you can customize a configuration file of Otoroshi</p>
+<pre class="prettyprint"><code class="language-hocon">include &quot;application.conf&quot;
+
+otoroshi {
+  scripts {
+    enabled = true
+  }
+}
+
+my-transformer {
+  env = &quot;prod&quot;
+  maxRequestBodySize = 2048
+  maxResponseBodySize = 2048
+}
+</code></pre>
+<p>then start Otoroshi like</p>
+<pre class="prettyprint"><code class="language-sh">java -Dconfig.file=/path/to/custom.conf -jar otoroshi.jar
+</code></pre>
+<p>then, in your transformer, you can write something like </p>
+<pre class="prettyprint"><code class="language-scala">package com.example.otoroshi
+
+import akka.stream.Materializer
+import akka.stream.scaladsl._
+import akka.util.ByteString
+import env.Env
+import models.{ApiKey, PrivateAppsUser, ServiceDescriptor}
+import otoroshi.script._
+import play.api.Logger
+import play.api.mvc.{Result, Results}
+import scala.util._
+import scala.concurrent.{ExecutionContext, Future}
+
+class BodyLengthLimiter extends RequestTransformer {
+
+  override def transformResponseBody(
+    snowflake: String,
+    body: Source[ByteString, _],
+    rawResponse: HttpResponse,
+    otoroshiResponse: HttpResponse,
+    desc: ServiceDescriptor,
+    apiKey: Option[ApiKey],
+    user: Option[PrivateAppsUser])(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
+    val max = env.configuration.getOptional[Long](&quot;my-transformer.maxResponseBodySize&quot;).getOrElse(Long.MaxValue)
+    body.limitWeighted(max)(_.size)
+  }
+
+  override def transformRequestBody(
+    snowflake: String,
+    body: Source[ByteString, _],
+    rawRequest: HttpRequest,
+    otoroshiRequest: HttpRequest,
+    desc: ServiceDescriptor,
+    apiKey: Option[ApiKey],
+    user: Option[PrivateAppsUser])(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
+    val max = env.configuration.getOptional[Long](&quot;my-transformer.maxRequestBodySize&quot;).getOrElse(Long.MaxValue)
+    body.limitWeighted(max)(_.size)
+  }
+}
+</code></pre>
+<h2><a href="#using-a-library-that-is-not-embedded-in-otoroshi" name="using-a-library-that-is-not-embedded-in-otoroshi" class="anchor"><span class="anchor-link"></span></a>Using a library that is not embedded in Otoroshi</h2>
+<p>Just use the <code>classpath</code> option when running Otoroshi</p>
+<pre class="prettyprint"><code class="language-sh">java -Dotoroshi.scripts.enabled=true -cp &quot;/path/to/library.jar:$/path/to/otoroshi.jar&quot; play.core.server.ProdServerStart
+</code></pre>
+<p>Be carefull as your library can conflict with other libraries used by Otoroshi and affect its stability</p>
+<div class="nav-next">
+<p><strong>Next:</strong> <a href="../topics/monitoring.html">Monitoring Otoroshi</a></p>
+</div>
+</div>
+<div class="large-3 show-for-large column" data-sticky-container>
+<nav class="sidebar sticky" data-sticky data-anchor="docs" data-sticky-on="large">
+<div class="page-nav">
+<div class="nav-title">On this page:</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../topics/req-transformers.html#request-transformers" class="header">Request transformers</a>
+  <ul>
+    <li><a href="../topics/req-transformers.html#enabling-request-transformers" class="header">Enabling request transformers</a></li>
+    <li><a href="../topics/req-transformers.html#anatomy-of-a-transformer" class="header">Anatomy of a transformer</a></li>
+    <li><a href="../topics/req-transformers.html#writing-a-transformer-from-otoroshi-ui" class="header">Writing a transformer from Otoroshi UI</a></li>
+    <li><a href="../topics/req-transformers.html#providing-a-transformer-from-java-classpath" class="header">Providing a transformer from Java classpath</a></li>
+    <li><a href="../topics/req-transformers.html#getting-custom-configuration-from-the-otoroshi-config-file" class="header">Getting custom configuration from the Otoroshi config. file</a></li>
+    <li><a href="../topics/req-transformers.html#using-a-library-that-is-not-embedded-in-otoroshi" class="header">Using a library that is not embedded in Otoroshi</a></li>
+  </ul></li>
+</ul>
+</div>
+</div>
+</nav>
+</div>
+</div>
+
+</section>
+</div>
+
+</div>
+
+<footer class="site-footer">
+
+<section class="site-footer-nav">
+<div class="expanded row">
+<div class="small-12 large-offset-2 large-10 column">
+<div class="row site-footer-content">
+
+<div class="small-12 medium-4 large-3 text-center column">
+<div class="nav-links">
+<ul>
+<!-- <li><a href="https://www.example.com/products/">Products</a> -->
+</ul>
+</div>
+</div>
+
+</div>
+</div>
+</div>
+</section>
+
+<section class="site-footer-base">
+<div class="expanded row">
+<div class="small-12 large-offset-2 large-10 column">
+<div class="row site-footer-content">
+
+<div class="small-12 text-center large-9 column">
+
+<!--
+<div class="copyright">
+<span class="text">&copy; 2020</span>
+<a href="https://www.example.com" class="logo">logo</a>
+</div>
+-->
+</div>
+
+</div>
+</div>
+</div>
+</section>
+</footer>
+
+</div>
+</div>
+</div>
+</body>
+
+<script type="text/javascript" src="../lib/foundation/dist/foundation.min.js"></script>
+<script type="text/javascript">jQuery(document).foundation();</script>
+<script type="text/javascript" src="../js/magellan.js"></script>
+
+<style type="text/css">@import "../lib/prettify/prettify.css";</style>
+<script type="text/javascript" src="../lib/prettify/prettify.js"></script>
+<script type="text/javascript" src="../lib/prettify/lang-scala.js"></script>
+<script type="text/javascript">jQuery(function(){window.prettyPrint && prettyPrint()});</script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/elasticlunr/0.9.5/elasticlunr.js"></script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-112498312-1"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+
+gtag('config', 'UA-112498312-1');
+</script>
+</html>
+
+
+
+
