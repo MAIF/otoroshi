@@ -47,20 +47,28 @@ case class MtlsConfig(certs: Seq[String] = Seq.empty,
                       mtls: Boolean = false,
                       loose: Boolean = false) {
   def json: JsValue = MtlsConfig.format.writes(this)
-  def toJKS(implicit env: Env): (java.io.File, String) = {
+  def toJKS(implicit env: Env): (java.io.File, java.io.File, String) = {
     val password = IdGenerator.token
-    val path     = java.nio.file.Files.createTempFile("oto-kafka-keystore-", ".jks")
-    val certificates = certs.flatMap(DynamicSSLEngineProvider.certificates.get) ++ trustedCerts.flatMap(
-      DynamicSSLEngineProvider.certificates.get
-    )
-    val keystore = DynamicSSLEngineProvider.createKeyStore(certificates)
-    keystore.store(new FileOutputStream(path.toFile), password.toCharArray)
+    val path1     = java.nio.file.Files.createTempFile("oto-kafka-keystore-", ".jks")
+    val path2     = java.nio.file.Files.createTempFile("oto-kafka-truststore-", ".jks")
+    val certificates1 = certs.flatMap(DynamicSSLEngineProvider.certificates.get)
+    val certificates2 = trustedCerts.flatMap(DynamicSSLEngineProvider.certificates.get)
+    val keystore1 = DynamicSSLEngineProvider.createKeyStore(certificates1)
+    keystore1.store(new FileOutputStream(path1.toFile), password.toCharArray)
+    val keystore2 = DynamicSSLEngineProvider.createKeyStore(certificates2)
+    keystore2.store(new FileOutputStream(path2.toFile), password.toCharArray)
     env.lifecycle.addStopHook { () =>
-      path.toFile.delete()
-      path.toFile.deleteOnExit()
+      path1.toFile.delete()
+      path1.toFile.deleteOnExit()
+      path2.toFile.delete()
+      path2.toFile.deleteOnExit()
       Future.successful(())
     }
-    (path.toFile, password)
+    if (trustedCerts.isEmpty) {
+      (path1.toFile, path1.toFile, password)
+    } else {
+      (path1.toFile, path2.toFile, password)
+    }
   }
 }
 

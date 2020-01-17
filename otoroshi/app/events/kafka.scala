@@ -86,15 +86,15 @@ object KafkaSettings {
       .withBootstrapServers(config.servers.mkString(","))
 
     if (config.mtlsConfig.mtls) {
-      val (jks, password) = config.mtlsConfig.toJKS(_env)
       Await.result(waitForFirstSetup(_env), 5.seconds) // wait until certs fully populated at least once
+      val (jks1, jks2, password) = config.mtlsConfig.toJKS(_env)
       settings
         .withProperty(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, "SSL")
         .withProperty(BrokerSecurityConfigs.SSL_CLIENT_AUTH_CONFIG, "required")
         .withProperty(SslConfigs.SSL_KEY_PASSWORD_CONFIG, "")
-        .withProperty(SslConfigs.SSL_KEYSTORE_LOCATION_CONFIG, jks.getAbsolutePath)
+        .withProperty(SslConfigs.SSL_KEYSTORE_LOCATION_CONFIG, jks1.getAbsolutePath)
         .withProperty(SslConfigs.SSL_KEYSTORE_PASSWORD_CONFIG, password)
-        .withProperty(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, jks.getAbsolutePath)
+        .withProperty(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, jks2.getAbsolutePath)
         .withProperty(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, password)
     } else {
       val s = for {
