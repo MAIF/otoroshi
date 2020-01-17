@@ -45,7 +45,7 @@ cd wrk_test
 LOCATION=`pwd`
 
 if [ ! -f "$LOCATION/otoroshi.jar" ]; then
-  wget -q --show-progress 'https://github.com/MAIF/otoroshi/releases/download/v1.4.18-dev/otoroshi.jar'
+  wget -q --show-progress 'https://github.com/MAIF/otoroshi/releases/download/v1.4.18/otoroshi.jar'
 fi 
 
 if [ ! -f "$LOCATION/otoroshicli.toml" ]; then
@@ -53,7 +53,7 @@ if [ ! -f "$LOCATION/otoroshicli.toml" ]; then
 fi
 
 if [ ! -f "$LOCATION/otoroshicli" ]; then
-	wget -q --show-progress https://github.com/MAIF/otoroshi/releases/download/v1.4.18-dev/otoroshi.jar/linux-otoroshicli
+	wget -q --show-progress https://github.com/MAIF/otoroshi/releases/download/v1.4.18/otoroshi.jar/linux-otoroshicli
 fi
 
 if [ ! -f "$LOCATION/traefik_darwin-amd64" ]; then	
