@@ -13,7 +13,7 @@ https://github.com/MAIF/otoroshi/releases/tag/v1.4.18
 
 - trust all in mtls config
 - template API for each API entity
-- new mode for cluster state export for leaderss 
+- new mode for cluster state export for leaders
 
 ## [1.4.17] - 2020-01-16
 
