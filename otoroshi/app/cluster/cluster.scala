@@ -8,7 +8,7 @@ import java.util.concurrent.{ConcurrentHashMap, TimeUnit}
 import java.util.regex.Pattern
 
 import actions.ApiAction
-import akka.NotUsed
+import akka.{Done, NotUsed}
 import akka.actor.{ActorSystem, Cancellable}
 import akka.http.scaladsl.model.HttpResponse
 import akka.http.scaladsl.util.FastFuture
@@ -123,6 +123,7 @@ case class ClusterConfig(
     compression: Int = -1,
     proxy: Option[WSProxyServer],
     mtlsConfig: MtlsConfig,
+    autoUpdateState: Boolean,
     leader: LeaderConfig = LeaderConfig(),
     worker: WorkerConfig = WorkerConfig()
 ) {
@@ -138,6 +139,7 @@ object ClusterConfig {
     ClusterConfig(
       mode = configuration.getOptional[String]("mode").flatMap(ClusterMode.apply).getOrElse(ClusterMode.Off),
       compression = configuration.getOptional[Int]("compression").getOrElse(-1),
+      autoUpdateState = configuration.getOptional[Boolean]("autoUpdateState").getOrElse(false),
       mtlsConfig = MtlsConfig(
         certs = configuration.getOptional[Seq[String]]("mtls.certs").getOrElse(Seq.empty),
         loose = configuration.getOptional[Boolean]("mtls.loose").getOrElse(false),
@@ -682,7 +684,9 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
             }
           }
           .runWith(Sink.ignore)
-          .map(_ => Ok(Json.obj("done" -> true)))
+          .map { _ =>
+            Ok(Json.obj("done" -> true))
+          }
           .recover {
             case e =>
               Cluster.logger.error("Error while updating quotas", e)
@@ -691,6 +695,8 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
       }
       case Leader => {
         // Cluster.logger.trace(s"[${env.clusterConfig.mode.name}] updating quotas")
+        val budget: Long = ctx.request.getQueryString("budget").map(_.toLong).getOrElse(2000L)
+        val start: Long = System.currentTimeMillis()
         val bytesCounter = new AtomicLong(0L)
         env.datastores.globalConfigDataStore.singleton().flatMap { config =>
           ctx.request.body
@@ -751,6 +757,9 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
               case _ =>
                 Cluster.logger.trace(s"[${env.clusterConfig.mode.name}] updated quotas (${bytesCounter.get()} b)")
                 env.datastores.clusterStateDataStore.updateDataIn(bytesCounter.get())
+                if ((System.currentTimeMillis() - start) > budget) {
+                  Cluster.logger.warn(s"[${env.clusterConfig.mode.name}] Quotas update from worker ran over time budget, maybe the datastore is slow ?")
+                }
             }
             .map(_ => Ok(Json.obj("done" -> true)))
             .recover {
@@ -787,6 +796,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
       }
       case Leader => {
 
+        val budget: Long = ctx.request.getQueryString("budget").map(_.toLong).getOrElse(2000L)
         val cachedValue = cachedRef.get()
 
         ctx.request.headers.get(ClusterAgent.OtoroshiWorkerNameHeader).map { name =>
@@ -805,7 +815,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
         def sendAndCache() = {
           // Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Exporting raw state")
           if (caching.compareAndSet(false, true)) {
-            val start      = System.currentTimeMillis()
+            val start: Long = System.currentTimeMillis()
             var stateCache = ByteString.empty
             Ok.sendEntity(
               HttpEntity.Streamed(
@@ -818,6 +828,9 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
                   .alsoTo(Sink.foreach(bs => stateCache = stateCache ++ bs))
                   .alsoTo(Sink.onComplete {
                     case Success(_) =>
+                      if ((System.currentTimeMillis() - start) > budget) {
+                        Cluster.logger.warn(s"[${env.clusterConfig.mode.name}] Datastore export to worker ran over time budget, maybe the datastore is slow ?")
+                      }
                       cachedRef.set(stateCache)
                       cachedAt.set(System.currentTimeMillis())
                       caching.compareAndSet(true, false)
@@ -834,6 +847,8 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
                 None,
                 Some("application/x-ndjson")
               )
+            ).withHeaders(
+              "X-Data-From" -> s"${System.currentTimeMillis()}"
             ) //.withHeaders("Content-Encoding" -> "gzip")
           } else {
             Cluster.logger.debug(
@@ -843,20 +858,31 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
           }
         }
 
-        if (cachedValue == null) {
+        if (env.clusterConfig.autoUpdateState) {
+          Cluster.logger.debug(
+            s"[${env.clusterConfig.mode.name}] Sending state from auto cache (${cachedValue.size / 1024} Kb) ..."
+          )
+          Ok.sendEntity(HttpEntity.Streamed(Source.single(env.clusterLeaderAgent.cachedState), None, Some("application/x-ndjson"))).withHeaders(
+            "X-Data-From" -> s"${env.clusterLeaderAgent.cachedTimestamp}"
+          )
+        } else if (cachedValue == null) {
           sendAndCache()
         } else if (caching.get()) {
           Cluster.logger.debug(
             s"[${env.clusterConfig.mode.name}] Sending state from cache (${cachedValue.size / 1024} Kb) ..."
           )
-          Ok.sendEntity(HttpEntity.Streamed(Source.single(cachedValue), None, Some("application/x-ndjson")))
+          Ok.sendEntity(HttpEntity.Streamed(Source.single(cachedValue), None, Some("application/x-ndjson"))).withHeaders(
+            "X-Data-From" -> s"${cachedAt.get()}"
+          )
         } else if ((cachedAt.get() + env.clusterConfig.leader.cacheStateFor) < System.currentTimeMillis()) {
           sendAndCache()
         } else {
           Cluster.logger.debug(
             s"[${env.clusterConfig.mode.name}] Sending state from cache (${cachedValue.size / 1024} Kb) ..."
           )
-          Ok.sendEntity(HttpEntity.Streamed(Source.single(cachedValue), None, Some("application/x-ndjson")))
+          Ok.sendEntity(HttpEntity.Streamed(Source.single(cachedValue), None, Some("application/x-ndjson"))).withHeaders(
+            "X-Data-From" -> s"${cachedAt.get()}"
+          )
         }
       }
     }
@@ -904,6 +930,11 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
   implicit lazy val _env  = env
 
   private val membershipRef = new AtomicReference[Cancellable]()
+  private val stateUpdaterRef = new AtomicReference[Cancellable]()
+
+  private val caching   = new AtomicBoolean(false)
+  private val cachedAt  = new AtomicLong(0L)
+  private val cachedRef = new AtomicReference[ByteString](ByteString.empty)
 
   private lazy val hostAddress: String = env.configuration
     .getOptional[String]("otoroshi.cluster.selfAddress")
@@ -982,11 +1013,52 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
           }
         )
       )
+      if (env.clusterConfig.autoUpdateState) {
+        Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Starting cluster state auto update")
+        stateUpdaterRef.set(
+          env.otoroshiScheduler.schedule(1.second, env.clusterConfig.leader.cacheStateFor.millis)(
+            try {
+              cacheState()
+            } catch {
+              case e: Throwable =>
+                Cluster.logger.error(s"Error while renewing leader membership of ${env.clusterConfig.leader.name}", e)
+            }
+          )
+        )
+      }
     }
   }
   def stop(): Unit = {
     if (config.mode == ClusterMode.Leader) {
       Option(membershipRef.get()).foreach(_.cancel())
+      Option(stateUpdaterRef.get()).foreach(_.cancel())
+    }
+  }
+
+  def cachedState = cachedRef.get()
+  def cachedTimestamp = cachedAt.get()
+
+  private def cacheState(): Unit = {
+    if (caching.compareAndSet(false, true)) {
+      var stateCache = ByteString.empty
+      env.datastores
+        .rawExport(env.clusterConfig.leader.groupingBy)
+        .map { item =>
+          ByteString(Json.stringify(item) + "\n")
+        }
+        .via(env.clusterConfig.gzip())
+        .alsoTo(Sink.foreach(bs => stateCache = stateCache ++ bs))
+        .alsoTo(Sink.onComplete {
+          case Success(_) =>
+            cachedRef.set(stateCache)
+            cachedAt.set(System.currentTimeMillis())
+            caching.compareAndSet(true, false)
+            env.datastores.clusterStateDataStore.updateDataOut(stateCache.size)
+            env.clusterConfig.leader.stateDumpPath
+              .foreach(path => Future(Files.write(stateCache.toArray, new File(path))))
+          case Failure(e) =>
+            Cluster.logger.error(s"[${env.clusterConfig.mode.name}] Stream error while exporting raw state", e)
+        }).runWith(Sink.ignore)
     }
   }
 }
@@ -1158,7 +1230,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
                  delay = 20,
                  ctx = "leader-fetch-state") { tryCount =>
             env.MtlsWs
-              .url(otoroshiUrl + "/api/cluster/state", config.mtlsConfig)
+              .url(otoroshiUrl + s"/api/cluster/state?budget=${config.worker.state.timeout}", config.mtlsConfig)
               .withHttpHeaders(
                 "Host"   -> config.leader.host,
                 "Accept" -> "application/x-ndjson",
@@ -1311,7 +1383,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
               val body         = apiIncrSource.concat(serviceIncrSource).concat(globalSource).via(env.clusterConfig.gzip())
               val wsBody       = SourceBody(body)
               env.MtlsWs
-                .url(otoroshiUrl + "/api/cluster/quotas", config.mtlsConfig)
+                .url(otoroshiUrl + s"/api/cluster/quotas?budget=${config.worker.quotas.timeout}", config.mtlsConfig)
                 .withHttpHeaders(
                   "Host"         -> config.leader.host,
                   "Content-Type" -> "application/x-ndjson",
