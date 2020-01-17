@@ -1327,7 +1327,8 @@ class ScriptApiController(ApiAction: ApiAction, cc: ControllerComponents)(
   def createScript() = ApiAction.async(parse.json) { ctx =>
     OnlyIfScriptingEnabled {
       val id = (ctx.request.body \ "id").asOpt[String]
-      val body = ctx.request.body.as[JsObject] ++ id.map(v => Json.obj("id" -> id)).getOrElse(Json.obj("id" -> IdGenerator.token))
+      val body = ctx.request.body
+        .as[JsObject] ++ id.map(v => Json.obj("id" -> id)).getOrElse(Json.obj("id" -> IdGenerator.token))
       Script.fromJsonSafe(body) match {
         case Left(_) => BadRequest(Json.obj("error" -> "Bad Script format")).asFuture
         case Right(script) =>

@@ -938,7 +938,8 @@ export class DangerZonePage extends Component {
     },
     'kafkaConfig.mtlsConfig.trustedCerts': {
       type: 'array',
-      display: v => tryOrTrue(() => v.kafkaConfig.mtlsConfig.mtls && !v.kafkaConfig.mtlsConfig.trustAll),
+      display: v =>
+        tryOrTrue(() => v.kafkaConfig.mtlsConfig.mtls && !v.kafkaConfig.mtlsConfig.trustAll),
       props: {
         label: 'Trusted certificates',
         placeholder: 'Choose a trusted certificate',

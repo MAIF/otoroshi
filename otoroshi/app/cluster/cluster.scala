@@ -696,7 +696,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
       case Leader => {
         // Cluster.logger.trace(s"[${env.clusterConfig.mode.name}] updating quotas")
         val budget: Long = ctx.request.getQueryString("budget").map(_.toLong).getOrElse(2000L)
-        val start: Long = System.currentTimeMillis()
+        val start: Long  = System.currentTimeMillis()
         val bytesCounter = new AtomicLong(0L)
         env.datastores.globalConfigDataStore.singleton().flatMap { config =>
           ctx.request.body
@@ -758,7 +758,9 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
                 Cluster.logger.trace(s"[${env.clusterConfig.mode.name}] updated quotas (${bytesCounter.get()} b)")
                 env.datastores.clusterStateDataStore.updateDataIn(bytesCounter.get())
                 if ((System.currentTimeMillis() - start) > budget) {
-                  Cluster.logger.warn(s"[${env.clusterConfig.mode.name}] Quotas update from worker ran over time budget, maybe the datastore is slow ?")
+                  Cluster.logger.warn(
+                    s"[${env.clusterConfig.mode.name}] Quotas update from worker ran over time budget, maybe the datastore is slow ?"
+                  )
                 }
             }
             .map(_ => Ok(Json.obj("done" -> true)))
@@ -797,7 +799,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
       case Leader => {
 
         val budget: Long = ctx.request.getQueryString("budget").map(_.toLong).getOrElse(2000L)
-        val cachedValue = cachedRef.get()
+        val cachedValue  = cachedRef.get()
 
         ctx.request.headers.get(ClusterAgent.OtoroshiWorkerNameHeader).map { name =>
           env.datastores.clusterStateDataStore.registerMember(
@@ -816,40 +818,43 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
           // Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Exporting raw state")
           if (caching.compareAndSet(false, true)) {
             val start: Long = System.currentTimeMillis()
-            var stateCache = ByteString.empty
+            var stateCache  = ByteString.empty
             Ok.sendEntity(
-              HttpEntity.Streamed(
-                env.datastores
-                  .rawExport(env.clusterConfig.leader.groupingBy)
-                  .map { item =>
-                    ByteString(Json.stringify(item) + "\n")
-                  }
-                  .via(env.clusterConfig.gzip())
-                  .alsoTo(Sink.foreach(bs => stateCache = stateCache ++ bs))
-                  .alsoTo(Sink.onComplete {
-                    case Success(_) =>
-                      if ((System.currentTimeMillis() - start) > budget) {
-                        Cluster.logger.warn(s"[${env.clusterConfig.mode.name}] Datastore export to worker ran over time budget, maybe the datastore is slow ?")
-                      }
-                      cachedRef.set(stateCache)
-                      cachedAt.set(System.currentTimeMillis())
-                      caching.compareAndSet(true, false)
-                      env.datastores.clusterStateDataStore.updateDataOut(stateCache.size)
-                      env.clusterConfig.leader.stateDumpPath
-                        .foreach(path => Future(Files.write(stateCache.toArray, new File(path))))
-                      Cluster.logger.debug(
-                        s"[${env.clusterConfig.mode.name}] Exported raw state (${stateCache.size / 1024} Kb) in ${System.currentTimeMillis - start} ms."
-                      )
-                    case Failure(e) =>
-                      Cluster.logger.error(s"[${env.clusterConfig.mode.name}] Stream error while exporting raw state",
-                                           e)
-                  }),
-                None,
-                Some("application/x-ndjson")
+                HttpEntity.Streamed(
+                  env.datastores
+                    .rawExport(env.clusterConfig.leader.groupingBy)
+                    .map { item =>
+                      ByteString(Json.stringify(item) + "\n")
+                    }
+                    .via(env.clusterConfig.gzip())
+                    .alsoTo(Sink.foreach(bs => stateCache = stateCache ++ bs))
+                    .alsoTo(Sink.onComplete {
+                      case Success(_) =>
+                        if ((System.currentTimeMillis() - start) > budget) {
+                          Cluster.logger.warn(
+                            s"[${env.clusterConfig.mode.name}] Datastore export to worker ran over time budget, maybe the datastore is slow ?"
+                          )
+                        }
+                        cachedRef.set(stateCache)
+                        cachedAt.set(System.currentTimeMillis())
+                        caching.compareAndSet(true, false)
+                        env.datastores.clusterStateDataStore.updateDataOut(stateCache.size)
+                        env.clusterConfig.leader.stateDumpPath
+                          .foreach(path => Future(Files.write(stateCache.toArray, new File(path))))
+                        Cluster.logger.debug(
+                          s"[${env.clusterConfig.mode.name}] Exported raw state (${stateCache.size / 1024} Kb) in ${System.currentTimeMillis - start} ms."
+                        )
+                      case Failure(e) =>
+                        Cluster.logger.error(s"[${env.clusterConfig.mode.name}] Stream error while exporting raw state",
+                                             e)
+                    }),
+                  None,
+                  Some("application/x-ndjson")
+                )
               )
-            ).withHeaders(
-              "X-Data-From" -> s"${System.currentTimeMillis()}"
-            ) //.withHeaders("Content-Encoding" -> "gzip")
+              .withHeaders(
+                "X-Data-From" -> s"${System.currentTimeMillis()}"
+              ) //.withHeaders("Content-Encoding" -> "gzip")
           } else {
             Cluster.logger.debug(
               s"[${env.clusterConfig.mode.name}] Sending state from cache (${cachedValue.size / 1024} Kb) ..."
@@ -862,27 +867,32 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
           Cluster.logger.debug(
             s"[${env.clusterConfig.mode.name}] Sending state from auto cache (${cachedValue.size / 1024} Kb) ..."
           )
-          Ok.sendEntity(HttpEntity.Streamed(Source.single(env.clusterLeaderAgent.cachedState), None, Some("application/x-ndjson"))).withHeaders(
-            "X-Data-From" -> s"${env.clusterLeaderAgent.cachedTimestamp}"
-          )
+          Ok.sendEntity(
+              HttpEntity.Streamed(Source.single(env.clusterLeaderAgent.cachedState), None, Some("application/x-ndjson"))
+            )
+            .withHeaders(
+              "X-Data-From" -> s"${env.clusterLeaderAgent.cachedTimestamp}"
+            )
         } else if (cachedValue == null) {
           sendAndCache()
         } else if (caching.get()) {
           Cluster.logger.debug(
             s"[${env.clusterConfig.mode.name}] Sending state from cache (${cachedValue.size / 1024} Kb) ..."
           )
-          Ok.sendEntity(HttpEntity.Streamed(Source.single(cachedValue), None, Some("application/x-ndjson"))).withHeaders(
-            "X-Data-From" -> s"${cachedAt.get()}"
-          )
+          Ok.sendEntity(HttpEntity.Streamed(Source.single(cachedValue), None, Some("application/x-ndjson")))
+            .withHeaders(
+              "X-Data-From" -> s"${cachedAt.get()}"
+            )
         } else if ((cachedAt.get() + env.clusterConfig.leader.cacheStateFor) < System.currentTimeMillis()) {
           sendAndCache()
         } else {
           Cluster.logger.debug(
             s"[${env.clusterConfig.mode.name}] Sending state from cache (${cachedValue.size / 1024} Kb) ..."
           )
-          Ok.sendEntity(HttpEntity.Streamed(Source.single(cachedValue), None, Some("application/x-ndjson"))).withHeaders(
-            "X-Data-From" -> s"${cachedAt.get()}"
-          )
+          Ok.sendEntity(HttpEntity.Streamed(Source.single(cachedValue), None, Some("application/x-ndjson")))
+            .withHeaders(
+              "X-Data-From" -> s"${cachedAt.get()}"
+            )
         }
       }
     }
@@ -929,7 +939,7 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
   implicit lazy val sched = env.otoroshiScheduler
   implicit lazy val _env  = env
 
-  private val membershipRef = new AtomicReference[Cancellable]()
+  private val membershipRef   = new AtomicReference[Cancellable]()
   private val stateUpdaterRef = new AtomicReference[Cancellable]()
 
   private val caching   = new AtomicBoolean(false)
@@ -1035,12 +1045,12 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
     }
   }
 
-  def cachedState = cachedRef.get()
+  def cachedState     = cachedRef.get()
   def cachedTimestamp = cachedAt.get()
 
   private def cacheState(): Unit = {
     if (caching.compareAndSet(false, true)) {
-      val start = System.currentTimeMillis()
+      val start      = System.currentTimeMillis()
       var stateCache = ByteString.empty
       env.datastores
         .rawExport(env.clusterConfig.leader.groupingBy)
@@ -1057,10 +1067,13 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
             env.datastores.clusterStateDataStore.updateDataOut(stateCache.size)
             env.clusterConfig.leader.stateDumpPath
               .foreach(path => Future(Files.write(stateCache.toArray, new File(path))))
-            Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Auto-cache updated in ${System.currentTimeMillis() - start} ms.")
+            Cluster.logger.debug(
+              s"[${env.clusterConfig.mode.name}] Auto-cache updated in ${System.currentTimeMillis() - start} ms."
+            )
           case Failure(e) =>
             Cluster.logger.error(s"[${env.clusterConfig.mode.name}] Stream error while exporting raw state", e)
-        }).runWith(Sink.ignore)
+        })
+        .runWith(Sink.ignore)
     }
   }
 }

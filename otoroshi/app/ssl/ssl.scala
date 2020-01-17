@@ -863,8 +863,10 @@ object DynamicSSLEngineProvider {
 
       val optEnv = Option(env)
 
-      val trustAll: Boolean = if (forceTrustAll) true else
-        optEnv.flatMap(e => e.configuration.getOptional[Boolean]("otoroshi.ssl.trust.all")).getOrElse(false)
+      val trustAll: Boolean =
+        if (forceTrustAll) true
+        else
+          optEnv.flatMap(e => e.configuration.getOptional[Boolean]("otoroshi.ssl.trust.all")).getOrElse(false)
 
       val cacertPath = optEnv
         .flatMap(e => e.configuration.getOptional[String]("otoroshi.ssl.cacert.path"))
@@ -1906,7 +1908,8 @@ class ClientValidatorsController(ApiAction: ApiAction, cc: ControllerComponents)
 
   def createClientValidator() = ApiAction.async(parse.json) { ctx =>
     val id = (ctx.request.body \ "id").asOpt[String]
-    val body = ctx.request.body.as[JsObject] ++ id.map(v => Json.obj("id" -> id)).getOrElse(Json.obj("id" -> IdGenerator.token))
+    val body = ctx.request.body
+      .as[JsObject] ++ id.map(v => Json.obj("id" -> id)).getOrElse(Json.obj("id" -> IdGenerator.token))
     ClientCertificateValidator.fromJson(body) match {
       case Left(_) => BadRequest(Json.obj("error" -> "Bad ClientValidator format")).asFuture
       case Right(newVerifier) =>

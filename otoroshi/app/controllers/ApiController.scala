@@ -730,7 +730,6 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
     }
   }
 
-
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   def createService() = ApiAction.async(parse.json) { ctx =>
@@ -2422,7 +2421,8 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
 
   def createGlobalJwtVerifier() = ApiAction.async(parse.json) { ctx =>
     val id = (ctx.request.body \ "id").asOpt[String]
-    val body = ctx.request.body.as[JsObject] ++ id.map(v => Json.obj("id" -> id)).getOrElse(Json.obj("id" -> IdGenerator.token))
+    val body = ctx.request.body
+      .as[JsObject] ++ id.map(v => Json.obj("id" -> id)).getOrElse(Json.obj("id" -> IdGenerator.token))
     GlobalJwtVerifier.fromJson(body) match {
       case Left(e) => BadRequest(Json.obj("error" -> "Bad GlobalJwtVerifier format")).asFuture
       case Right(newVerifier) =>
@@ -2489,7 +2489,8 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
 
   def createGlobalAuthModule() = ApiAction.async(parse.json) { ctx =>
     val id = (ctx.request.body \ "id").asOpt[String]
-    val body = ctx.request.body.as[JsObject] ++ id.map(v => Json.obj("id" -> id)).getOrElse(Json.obj("id" -> IdGenerator.token))
+    val body = ctx.request.body
+      .as[JsObject] ++ id.map(v => Json.obj("id" -> id)).getOrElse(Json.obj("id" -> IdGenerator.token))
     AuthModuleConfig._fmt.reads(body) match {
       case JsError(e) => BadRequest(Json.obj("error" -> "Bad GlobalAuthModule format")).asFuture
       case JsSuccess(newVerifier, _) =>

@@ -963,7 +963,8 @@ class TcpServiceApiController(ApiAction: ApiAction, cc: ControllerComponents)(
 
   def createTcpService() = ApiAction.async(parse.json) { ctx =>
     val id = (ctx.request.body \ "id").asOpt[String]
-    val body = ctx.request.body.as[JsObject] ++ id.map(v => Json.obj("id" -> id)).getOrElse(Json.obj("id" -> IdGenerator.token))
+    val body = ctx.request.body
+      .as[JsObject] ++ id.map(v => Json.obj("id" -> id)).getOrElse(Json.obj("id" -> IdGenerator.token))
     TcpService.fromJsonSafe(body) match {
       case Left(_) => BadRequest(Json.obj("error" -> "Bad TcpService format")).asFuture
       case Right(service) =>
