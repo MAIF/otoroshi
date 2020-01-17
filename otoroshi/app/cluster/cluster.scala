@@ -51,8 +51,8 @@ import scala.util.{Failure, Success, Try}
 /**
  * # Test
  *
- * java -Dhttp.port=8080 -Dhttps.port=8443 -Dotoroshi.cluster.mode=leader -jar otoroshi.jar
- * java -Dhttp.port=9080 -Dhttps.port=9443 -Dotoroshi.cluster.mode=worker -jar otoroshi.jar
+ * java -Dhttp.port=8080 -Dhttps.port=8443 -Dotoroshi.cluster.mode=leader -Dotoroshi.cluster.autoUpdateState=true -Dapp.adminPassword=password -Dapp.storage=file -Dotoroshi.loggers.otoroshi-cluster=DEBUG -jar otoroshi.jar
+ * java -Dhttp.port=9080 -Dhttps.port=9443 -Dotoroshi.cluster.mode=worker  -Dapp.storage=file -Dotoroshi.loggers.otoroshi-cluster=DEBUG -jar otoroshi.jar
  *
  */
 object Cluster {
@@ -1040,6 +1040,7 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
 
   private def cacheState(): Unit = {
     if (caching.compareAndSet(false, true)) {
+      val start = System.currentTimeMillis()
       var stateCache = ByteString.empty
       env.datastores
         .rawExport(env.clusterConfig.leader.groupingBy)
@@ -1056,7 +1057,7 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
             env.datastores.clusterStateDataStore.updateDataOut(stateCache.size)
             env.clusterConfig.leader.stateDumpPath
               .foreach(path => Future(Files.write(stateCache.toArray, new File(path))))
-            Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] auto cache updated")
+            Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Auto-cache updated in ${System.currentTimeMillis() - start} ms.")
           case Failure(e) =>
             Cluster.logger.error(s"[${env.clusterConfig.mode.name}] Stream error while exporting raw state", e)
         }).runWith(Sink.ignore)
