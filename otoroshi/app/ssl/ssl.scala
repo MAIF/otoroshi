@@ -858,12 +858,12 @@ object DynamicSSLEngineProvider {
     }
    */
 
-  def setupSslContextFor(certs: Seq[Cert], trustedCerts: Seq[Cert], env: Env): SSLContext =
+  def setupSslContextFor(certs: Seq[Cert], trustedCerts: Seq[Cert], forceTrustAll: Boolean, env: Env): SSLContext =
     env.metrics.withTimer("otoroshi.core.tls.setup-single-context") {
 
-      val optEnv = Option(currentEnv.get)
+      val optEnv = Option(env)
 
-      val trustAll: Boolean =
+      val trustAll: Boolean = if (forceTrustAll) true else
         optEnv.flatMap(e => e.configuration.getOptional[Boolean]("otoroshi.ssl.trust.all")).getOrElse(false)
 
       val cacertPath = optEnv
@@ -1026,6 +1026,7 @@ object DynamicSSLEngineProvider {
     val tmf = TrustManagerFactory.getInstance("SunX509")
     tmf.init(keyStore)
     val javaKs = KeyStore.getInstance("JKS")
+    // TODO: optimize here: avoid reading file all the time
     javaKs.load(new FileInputStream(cacertPath), cacertPassword.toCharArray)
     val tmf2 = TrustManagerFactory.getInstance("SunX509")
     tmf2.init(javaKs)

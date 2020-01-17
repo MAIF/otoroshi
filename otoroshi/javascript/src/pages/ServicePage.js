@@ -200,6 +200,12 @@ class Target extends Component {
           help="If enabled, Otoroshi will accept any certificate and disable hostname verification"
           onChange={e => this.changeTheValue('mtlsConfig.loose', e)}
         />
+        <BooleanInput
+          label="Trust all"
+          value={value.mtlsConfig.trustAll}
+          help="If enabled, Otoroshi will accept trust all certificates"
+          onChange={e => this.changeTheValue('mtlsConfig.trustAll', e)}
+        />
         {/* `[${a.certType}] ${a.name} - ${a.description}` */}
         {value.mtlsConfig.mtls && (
           <ArrayInput

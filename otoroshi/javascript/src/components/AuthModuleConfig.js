@@ -466,6 +466,12 @@ export class Oauth2ModuleConfig extends Component {
           help="..."
           onChange={v => changeTheValue(path + '.mtlsConfig.loose', v)}
         />
+        <BooleanInput
+          label="Trust all"
+          value={settings.mtlsConfig.trustAll}
+          help="..."
+          onChange={v => changeTheValue(path + '.mtlsConfig.trustAll', v)}
+        />
         <ArrayInput
           label="Client certificates"
           placeholder="Choose a client certificate"

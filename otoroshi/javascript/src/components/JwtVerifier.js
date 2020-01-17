@@ -339,6 +339,12 @@ export class AlgoSettings extends Component {
             help="..."
             onChange={v => changeTheValue(path + '.mtlsConfig.loose', v)}
           />,
+          <BooleanInput
+            label="Trust all"
+            value={algo.mtlsConfig.trustAll}
+            help="..."
+            onChange={v => changeTheValue(path + '.mtlsConfig.trustAll', v)}
+          />,
           <ArrayInput
             label="Client certificate"
             placeholder="Choose a client certificate"

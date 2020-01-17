@@ -304,6 +304,10 @@ export class DangerZonePage extends Component {
       type: 'bool',
       props: { label: 'TLS loose' },
     },
+    'mtlsConfig.trustAll': {
+      type: 'bool',
+      props: { label: 'TrustAll' },
+    },
     'mtlsConfig.certs': {
       type: 'array',
       props: {
@@ -365,6 +369,10 @@ export class DangerZonePage extends Component {
       type: 'bool',
       props: { label: 'TLS loose' },
     },
+    'mtlsConfig.trustAll': {
+      type: 'bool',
+      props: { label: 'TrustAll' },
+    },
     'mtlsConfig.certs': {
       type: 'array',
       props: {
@@ -413,6 +421,7 @@ export class DangerZonePage extends Component {
     'password',
     'mtlsConfig.mtls',
     'mtlsConfig.loose',
+    'mtlsConfig.trustAll',
     'mtlsConfig.certs',
     'mtlsConfig.trustedCerts',
   ];
@@ -445,6 +454,10 @@ export class DangerZonePage extends Component {
     'mtlsConfig.loose': {
       type: 'bool',
       props: { label: 'TLS loose' },
+    },
+    'mtlsConfig.trustAll': {
+      type: 'bool',
+      props: { label: 'TrustAll' },
     },
     'mtlsConfig.certs': {
       type: 'array',
@@ -507,6 +520,10 @@ export class DangerZonePage extends Component {
       type: 'bool',
       props: { label: 'TLS loose' },
     },
+    'mtlsConfig.trustAll': {
+      type: 'bool',
+      props: { label: 'TrustAll' },
+    },
     'mtlsConfig.certs': {
       type: 'array',
       props: {
@@ -552,6 +569,7 @@ export class DangerZonePage extends Component {
     'headers',
     'mtlsConfig.mtls',
     'mtlsConfig.loose',
+    'mtlsConfig.trustAll',
     'mtlsConfig.certs',
     'mtlsConfig.trustedCerts',
   ];
@@ -893,12 +911,37 @@ export class DangerZonePage extends Component {
         help: 'Use client certs. from Otoroshi datastore',
       },
     },
+    'kafkaConfig.mtlsConfig.trustAll': {
+      type: 'bool',
+      display: v => tryOrTrue(() => v.kafkaConfig.mtlsConfig.mtls),
+      props: { label: 'TrustAll' },
+    },
     'kafkaConfig.mtlsConfig.certs': {
       type: 'array',
       display: v => tryOrTrue(() => v.kafkaConfig.mtlsConfig.mtls),
       props: {
         label: 'Client certificates',
         placeholder: 'Choose a client certificate',
+        valuesFrom: '/bo/api/proxy/api/certificates',
+        transformer: a => ({
+          value: a.id,
+          label: (
+            <span>
+              <span className="label label-success" style={{ minWidth: 63 }}>
+                {a.certType}
+              </span>{' '}
+              {a.name} - {a.description}
+            </span>
+          ),
+        }),
+      },
+    },
+    'kafkaConfig.mtlsConfig.trustedCerts': {
+      type: 'array',
+      display: v => tryOrTrue(() => v.kafkaConfig.mtlsConfig.mtls && !v.kafkaConfig.mtlsConfig.trustAll),
+      props: {
+        label: 'Trusted certificates',
+        placeholder: 'Choose a trusted certificate',
         valuesFrom: '/bo/api/proxy/api/certificates',
         transformer: a => ({
           value: a.id,
@@ -1040,7 +1083,9 @@ export class DangerZonePage extends Component {
     'kafkaConfig.keyPass',
     'kafkaConfig.keystore',
     'kafkaConfig.truststore',
+    'kafkaConfig.mtlsConfig.trustAll',
     'kafkaConfig.mtlsConfig.certs',
+    'kafkaConfig.mtlsConfig.trustedCerts',
     'kafkaConfig.sendEvents',
     'kafkaConfig.alertsTopic',
     'kafkaConfig.analyticsTopic',

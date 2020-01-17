@@ -45,7 +45,8 @@ import scala.xml.{Elem, XML}
 case class MtlsConfig(certs: Seq[String] = Seq.empty,
                       trustedCerts: Seq[String] = Seq.empty,
                       mtls: Boolean = false,
-                      loose: Boolean = false) {
+                      loose: Boolean = false,
+                      trustAll: Boolean = false) {
   def json: JsValue = MtlsConfig.format.writes(this)
   def toJKS(implicit env: Env): (java.io.File, java.io.File, String) = {
     val password = IdGenerator.token
@@ -89,7 +90,8 @@ object MtlsConfig {
             .map(_.filter(_.trim.nonEmpty))
             .getOrElse(Seq.empty),
           mtls = (json \ "mtls").asOpt[Boolean].getOrElse(false),
-          loose = (json \ "loose").asOpt[Boolean].getOrElse(false)
+          loose = (json \ "loose").asOpt[Boolean].getOrElse(false),
+            trustAll = (json \ "trustAll").asOpt[Boolean].getOrElse(false)
         )
       } match {
         case Failure(e) => JsError(e.getMessage())
@@ -99,7 +101,8 @@ object MtlsConfig {
       "certs"        -> JsArray(o.certs.map(JsString.apply)),
       "trustedCerts" -> JsArray(o.trustedCerts.map(JsString.apply)),
       "mtls"         -> o.mtls,
-      "loose"        -> o.loose
+      "loose"        -> o.loose,
+      "trustAll"     -> o.trustAll
     )
   }
 }
@@ -107,9 +110,9 @@ object MtlsConfig {
 class MtlsWs(chooser: WsClientChooser) {
   @inline
   def url(url: String, config: MtlsConfig): WSRequest = config match {
-    case MtlsConfig(seq, seq2, _, _) if (seq ++ seq2).isEmpty         => chooser.url(url)
-    case MtlsConfig(seq, seq2, false, _) if (seq ++ seq2).nonEmpty    => chooser.url(url)
-    case m @ MtlsConfig(seq, seq2, true, _) if (seq ++ seq2).nonEmpty => chooser.urlWithCert(url, Some(m))
+    case MtlsConfig(seq, seq2, _, _, _) if (seq ++ seq2).isEmpty         => chooser.url(url)
+    case MtlsConfig(seq, seq2, false, _, _) if (seq ++ seq2).nonEmpty    => chooser.url(url)
+    case m @ MtlsConfig(seq, seq2, true, _, _) if (seq ++ seq2).nonEmpty => chooser.urlWithCert(url, Some(m))
   }
 }
 
@@ -163,6 +166,9 @@ class WsClientChooser(standardClient: WSClient,
       .flatMap(DynamicSSLEngineProvider.certificates.get)
     akkaClient.executeWsRequest(request,
                                 targetOpt.exists(_.mtlsConfig.loose),
+                                targetOpt
+                                  .filter(_.mtlsConfig.mtls)
+                                  .exists(_.mtlsConfig.trustAll),
                                 certs,
                                 trustedCerts,
                                 clientFlow,
@@ -552,6 +558,7 @@ class AkkWsClient(config: WSClientConfig, env: Env)(implicit system: ActorSystem
   private[utils] def executeRequest[T](
       request: HttpRequest,
       loose: Boolean,
+      trustAll: Boolean,
       clientCerts: Seq[Cert],
       trustedCerts: Seq[Cert],
       customizer: ConnectionPoolSettings => ConnectionPoolSettings
@@ -578,7 +585,7 @@ class AkkWsClient(config: WSClientConfig, env: Env)(implicit system: ActorSystem
         val sslContext = env.metrics.withTimer("otoroshi.core.tls.http-client.single-context-fetch") {
           val cacheKey = certs.sortWith((c1, c2) => c1.id.compareTo(c2.id) > 0).map(_.cacheKey).mkString("-")
           singleSslContextCache.getOrElse(cacheKey,
-                                          DynamicSSLEngineProvider.setupSslContextFor(certs, trustedCerts, env))
+                                          DynamicSSLEngineProvider.setupSslContextFor(certs, trustedCerts, trustAll, env))
         }
         env.metrics.withTimer("otoroshi.core.tls.http-client.single-context-call") {
           val pool = customizer(connectionPoolSettings).withMaxConnections(512)
@@ -596,6 +603,7 @@ class AkkWsClient(config: WSClientConfig, env: Env)(implicit system: ActorSystem
   private[utils] def executeWsRequest[T](
       request: WebSocketRequest,
       loose: Boolean,
+      trustAll: Boolean,
       clientCerts: Seq[Cert],
       trustedCerts: Seq[Cert],
       clientFlow: Flow[Message, Message, T],
@@ -625,7 +633,7 @@ class AkkWsClient(config: WSClientConfig, env: Env)(implicit system: ActorSystem
         val sslContext = env.metrics.withTimer("otoroshi.core.tls.http-client.single-context-fetch") {
           val cacheKey = certs.sortWith((c1, c2) => c1.id.compareTo(c2.id) > 0).map(_.cacheKey).mkString("-")
           singleSslContextCache.getOrElse(cacheKey,
-                                          DynamicSSLEngineProvider.setupSslContextFor(certs, trustedCerts, env))
+                                          DynamicSSLEngineProvider.setupSslContextFor(certs, trustedCerts, trustAll, env))
         }
         env.metrics.withTimer("otoroshi.core.tls.http-client.single-context-call") {
           val cctx = if (loose) {
@@ -919,9 +927,12 @@ case class AkkaWsClientRequest(
       .toSeq
       .flatMap(_.mtlsConfig.trustedCerts)
       .flatMap(DynamicSSLEngineProvider.certificates.get)
+    val trustAll: Boolean = targetOpt
+      .filter(_.mtlsConfig.mtls)
+      .exists(_.mtlsConfig.trustAll)
     val req = buildRequest()
     client
-      .executeRequest(req, targetOpt.exists(_.mtlsConfig.loose), certs, trustedCerts, customizer)
+      .executeRequest(req, targetOpt.exists(_.mtlsConfig.loose), trustAll, certs, trustedCerts, customizer)
       .map { resp =>
         AkkWsClientStreamedResponse(resp,
                                     rawUrl,
@@ -947,8 +958,11 @@ case class AkkaWsClientRequest(
       .toSeq
       .flatMap(_.mtlsConfig.trustedCerts)
       .flatMap(DynamicSSLEngineProvider.certificates.get)
+    val trustAll: Boolean = targetOpt
+      .filter(_.mtlsConfig.mtls)
+      .exists(_.mtlsConfig.trustAll)
     client
-      .executeRequest(buildRequest(), targetOpt.exists(_.mtlsConfig.loose), certs, trustedCerts, customizer)
+      .executeRequest(buildRequest(), targetOpt.exists(_.mtlsConfig.loose), trustAll, certs, trustedCerts, customizer)
       .flatMap { response: HttpResponse =>
         response.entity
           .toStrict(FiniteDuration(client.wsClientConfig.requestTimeout._1, client.wsClientConfig.requestTimeout._2))
