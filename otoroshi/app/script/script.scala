@@ -26,7 +26,7 @@ import play.api.libs.streams.Accumulator
 import play.api.libs.ws.{DefaultWSCookie, WSCookie}
 import play.api.mvc._
 import redis.RedisClientMasterSlaves
-import security.OtoroshiClaim
+import security.{IdGenerator, OtoroshiClaim}
 import storage.redis.RedisStore
 import storage.{BasicStore, RedisLike, RedisLikeStore}
 import utils.TypedMap
@@ -1326,7 +1326,9 @@ class ScriptApiController(ApiAction: ApiAction, cc: ControllerComponents)(
 
   def createScript() = ApiAction.async(parse.json) { ctx =>
     OnlyIfScriptingEnabled {
-      Script.fromJsonSafe(ctx.request.body) match {
+      val id = (ctx.request.body \ "id").asOpt[String]
+      val body = ctx.request.body.as[JsObject] ++ id.map(v => Json.obj("id" -> id)).getOrElse(Json.obj("id" -> IdGenerator.token))
+      Script.fromJsonSafe(body) match {
         case Left(_) => BadRequest(Json.obj("error" -> "Bad Script format")).asFuture
         case Right(script) =>
           env.datastores.scriptDataStore.set(script).map { _ =>

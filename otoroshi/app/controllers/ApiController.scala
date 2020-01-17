@@ -1334,10 +1334,13 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   def createApiKey(serviceId: String) = ApiAction.async(parse.json) { ctx =>
-    val body: JsObject = (ctx.request.body \ "clientId").asOpt[String] match {
+    val body: JsObject = ((ctx.request.body \ "clientId").asOpt[String] match {
       case None    => ctx.request.body.as[JsObject] ++ Json.obj("clientId" -> IdGenerator.token(16))
       case Some(b) => ctx.request.body.as[JsObject]
-    }
+    }) ++ ((ctx.request.body \ "clientSecret").asOpt[String] match {
+      case None    => Json.obj("clientSecret" -> IdGenerator.token(64))
+      case Some(b) => Json.obj()
+    })
     env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
       case None => NotFound(Json.obj("error" -> s"Service with id $serviceId not found")).asFuture
       case Some(desc) =>
@@ -1391,10 +1394,13 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
   }
 
   def createApiKeyFromGroup(groupId: String) = ApiAction.async(parse.json) { ctx =>
-    val body: JsObject = (ctx.request.body \ "clientId").asOpt[String] match {
+    val body: JsObject = ((ctx.request.body \ "clientId").asOpt[String] match {
       case None    => ctx.request.body.as[JsObject] ++ Json.obj("clientId" -> IdGenerator.token(16))
       case Some(b) => ctx.request.body.as[JsObject]
-    }
+    }) ++ ((ctx.request.body \ "clientSecret").asOpt[String] match {
+      case None    => Json.obj("clientSecret" -> IdGenerator.token(64))
+      case Some(b) => Json.obj()
+    })
     env.datastores.serviceGroupDataStore.findById(groupId).flatMap {
       case None => NotFound(Json.obj("error" -> s"Service group not found")).asFuture
       case Some(group) => {
@@ -2415,7 +2421,9 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
   }
 
   def createGlobalJwtVerifier() = ApiAction.async(parse.json) { ctx =>
-    GlobalJwtVerifier.fromJson(ctx.request.body) match {
+    val id = (ctx.request.body \ "id").asOpt[String]
+    val body = ctx.request.body.as[JsObject] ++ id.map(v => Json.obj("id" -> id)).getOrElse(Json.obj("id" -> IdGenerator.token))
+    GlobalJwtVerifier.fromJson(body) match {
       case Left(e) => BadRequest(Json.obj("error" -> "Bad GlobalJwtVerifier format")).asFuture
       case Right(newVerifier) =>
         env.datastores.globalJwtVerifierDataStore.set(newVerifier).map(_ => Ok(newVerifier.asJson))
@@ -2480,7 +2488,9 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
   }
 
   def createGlobalAuthModule() = ApiAction.async(parse.json) { ctx =>
-    AuthModuleConfig._fmt.reads(ctx.request.body) match {
+    val id = (ctx.request.body \ "id").asOpt[String]
+    val body = ctx.request.body.as[JsObject] ++ id.map(v => Json.obj("id" -> id)).getOrElse(Json.obj("id" -> IdGenerator.token))
+    AuthModuleConfig._fmt.reads(body) match {
       case JsError(e) => BadRequest(Json.obj("error" -> "Bad GlobalAuthModule format")).asFuture
       case JsSuccess(newVerifier, _) =>
         env.datastores.authConfigsDataStore.set(newVerifier).map(_ => Ok(newVerifier.asJson))

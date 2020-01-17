@@ -1905,7 +1905,9 @@ class ClientValidatorsController(ApiAction: ApiAction, cc: ControllerComponents)
   }
 
   def createClientValidator() = ApiAction.async(parse.json) { ctx =>
-    ClientCertificateValidator.fromJson(ctx.request.body) match {
+    val id = (ctx.request.body \ "id").asOpt[String]
+    val body = ctx.request.body.as[JsObject] ++ id.map(v => Json.obj("id" -> id)).getOrElse(Json.obj("id" -> IdGenerator.token))
+    ClientCertificateValidator.fromJson(body) match {
       case Left(_) => BadRequest(Json.obj("error" -> "Bad ClientValidator format")).asFuture
       case Right(newVerifier) =>
         env.datastores.clientCertificateValidationDataStore.set(newVerifier).map(_ => Ok(newVerifier.asJson))
