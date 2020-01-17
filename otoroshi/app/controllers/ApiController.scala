@@ -730,35 +730,6 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
     }
   }
 
-  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-  def initiateApiKey(groupId: Option[String]) = ApiAction.async { ctx =>
-    groupId match {
-      case Some(gid) => {
-        env.datastores.serviceGroupDataStore.findById(gid).map {
-          case Some(group) => {
-            val apiKey = env.datastores.apiKeyDataStore.initiateNewApiKey(gid)
-            Ok(apiKey.toJson)
-          }
-          case None => NotFound(Json.obj("error" -> s"Group with id `$gid` does not exist"))
-        }
-      }
-      case None => {
-        val apiKey = env.datastores.apiKeyDataStore.initiateNewApiKey("default")
-        FastFuture.successful(Ok(apiKey.toJson))
-      }
-    }
-  }
-
-  def initiateServiceGroup() = ApiAction { ctx =>
-    val group = env.datastores.serviceGroupDataStore.initiateNewGroup()
-    Ok(group.toJson)
-  }
-
-  def initiateService() = ApiAction { ctx =>
-    val desc = env.datastores.serviceDescriptorDataStore.initiateNewDescriptor()
-    Ok(desc.toJson)
-  }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

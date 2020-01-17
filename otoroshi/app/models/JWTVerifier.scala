@@ -1397,7 +1397,7 @@ object JwtVerifier extends FromJson[JwtVerifier] {
         mappingSettings = MappingSettings(
           map = Map("name" -> "MyNameIs"),
           values = Json.obj(
-            "fuuu" -> 123
+            "foo" -> 123
           )
         )
       ),

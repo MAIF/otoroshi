@@ -113,10 +113,10 @@ POST    /backoffice/auth0/callback                            controllers.AuthCo
 # Admin API
 
 ## new models
-GET     /api/new/apikey                                       controllers.ApiController.initiateApiKey(groupId: Option[String])
-GET     /api/new/service                                      controllers.ApiController.initiateService()
-GET     /api/new/tcp/service                                  otoroshi.tcp.TcpServiceApiController.initiateTcpService()
-GET     /api/new/group                                        controllers.ApiController.initiateServiceGroup()
+GET     /api/new/apikey                                       controllers.TemplatesController.initiateApiKey(groupId: Option[String])
+GET     /api/new/service                                      controllers.TemplatesController.initiateService()
+GET     /api/new/tcp/service                                  controllers.TemplatesController.initiateTcpService()
+GET     /api/new/group                                        controllers.TemplatesController.initiateServiceGroup()
 
 ## ApiKeys
 GET     /api/services/:serviceId/apikeys/:clientId/quotas     controllers.ApiController.apiKeyQuotas(serviceId, clientId)
@@ -138,9 +138,11 @@ PATCH   /api/groups/:groupId/apikeys/:clientId                controllers.ApiCon
 DELETE  /api/groups/:groupId/apikeys/:clientId                controllers.ApiController.deleteApiKeyFromGroup(groupId, clientId)
 POST    /api/groups/:groupId/apikeys                          controllers.ApiController.createApiKeyFromGroup(groupId)
 GET     /api/groups/:groupId/apikeys                          controllers.ApiController.apiKeysFromGroup(groupId)
+GET     /api/apikeys/_template                                controllers.TemplatesController.initiateApiKey(groupId: Option[String])
 GET     /api/apikeys                                          controllers.ApiController.allApiKeys()
 
 ## Services
+GET     /api/services/_template                               controllers.TemplatesController.initiateService()
 GET     /api/services/:serviceId/template                     controllers.ApiController.serviceTemplate(serviceId)
 PUT     /api/services/:serviceId/template                     controllers.ApiController.updateServiceTemplate(serviceId)
 POST    /api/services/:serviceId/template                     controllers.ApiController.createServiceTemplate(serviceId)
@@ -163,6 +165,7 @@ GET     /api/services                                         controllers.ApiCon
 POST    /api/services                                         controllers.ApiController.createService()
 
 ## ServiceGroup
+GET     /api/groups/_template                                 controllers.TemplatesController.initiateServiceGroup()
 GET     /api/groups/:serviceGroupId/services                  controllers.ApiController.serviceGroupServices(serviceGroupId)
 GET     /api/groups/:serviceGroupId                           controllers.ApiController.serviceGroup(serviceGroupId)
 DELETE  /api/groups/:serviceGroupId                           controllers.ApiController.deleteGroup(serviceGroupId)
@@ -172,6 +175,7 @@ GET     /api/groups                                           controllers.ApiCon
 POST    /api/groups                                           controllers.ApiController.createGroup()
 
 ## Certificates
+GET     /api/certificates/_template                           controllers.TemplatesController.initiateCertificate()
 POST    /api/certificates/:certId/_renew                      controllers.ApiController.renewCert(certId)
 GET     /api/certificates/:certId                             controllers.ApiController.oneCert(certId)
 DELETE  /api/certificates/:certId                             controllers.ApiController.deleteCert(certId)
@@ -199,6 +203,7 @@ GET     /api/live/host                                        controllers.ApiCon
 GET     /api/live/:id                                         controllers.ApiController.serviceLiveStats(id, every: Option[Int])
 GET     /api/live                                             controllers.ApiController.globalLiveStats()
 
+GET     /api/globalconfig/_template                           controllers.TemplatesController.initiateGlobalConfig()
 GET     /api/globalconfig                                     controllers.ApiController.globalConfig()
 PUT     /api/globalconfig                                     controllers.ApiController.updateGlobalConfig()
 PATCH   /api/globalconfig                                     controllers.ApiController.patchGlobalConfig()
@@ -215,6 +220,7 @@ GET     /api/snowmonkey/config                                controllers.ApiCon
 PUT     /api/snowmonkey/config                                controllers.ApiController.updateSnowMonkey()
 PATCH   /api/snowmonkey/config                                controllers.ApiController.patchSnowMonkey()
 
+GET     /api/verifiers/_template                              controllers.TemplatesController.initiateJwtVerifier()
 GET     /api/verifiers/:id                                    controllers.ApiController.findGlobalJwtVerifiersById(id)
 DELETE  /api/verifiers/:id                                    controllers.ApiController.deleteGlobalJwtVerifier(id)
 PUT     /api/verifiers/:id                                    controllers.ApiController.updateGlobalJwtVerifier(id)
@@ -229,6 +235,7 @@ PATCH   /api/client-validators/:id                            ssl.ClientValidato
 GET     /api/client-validators                                ssl.ClientValidatorsController.findAllClientValidators()
 POST    /api/client-validators                                ssl.ClientValidatorsController.createClientValidator()
 
+GET     /api/auths/_template                                  controllers.TemplatesController.initiateAuthModule()
 POST    /api/auths/:id/register/start                         controllers.ApiController.startRegistration(id)
 POST    /api/auths/:id/register/finish                        controllers.ApiController.finishRegistration(id)
 GET     /api/auths/:id                                        controllers.ApiController.findGlobalAuthModuleById(id)
@@ -246,6 +253,7 @@ GET     /api/cluster/members                                  cluster.ClusterCon
 DELETE  /api/cluster/members                                  cluster.ClusterController.clearClusterMembers()
 GET     /api/cluster/live                                     cluster.ClusterController.liveCluster()
 
+GET     /api/scripts/_template                                controllers.TemplatesController.initiateScript()
 GET     /api/scripts/_list                                    otoroshi.script.ScriptApiController.findAllScriptsList()
 GET     /api/scripts/:id                                      otoroshi.script.ScriptApiController.findScriptById(id)
 PUT     /api/scripts/:id                                      otoroshi.script.ScriptApiController.updateScript(id)
@@ -255,6 +263,7 @@ POST    /api/scripts/_compile                                 otoroshi.script.Sc
 POST    /api/scripts                                          otoroshi.script.ScriptApiController.createScript()
 GET     /api/scripts                                          otoroshi.script.ScriptApiController.findAllScripts()
 
+GET     /api/tcp/_template                                    controllers.TemplatesController.initiateTcpService()
 GET     /api/tcp/services/:id                                 otoroshi.tcp.TcpServiceApiController.findTcpServiceById(id)
 PUT     /api/tcp/services/:id                                 otoroshi.tcp.TcpServiceApiController.updateTcpService(id)
 PATCH   /api/tcp/services/:id                                 otoroshi.tcp.TcpServiceApiController.patchTcpService(id)
@@ -278,10 +287,12 @@ GET     /api/audit/events                                     controllers.UsersC
 
 GET     /api/alert/events                                     controllers.UsersController.alertEvents()
 
+GET     /api/admins/simple/_template                          controllers.TemplatesController.initiateSimpleAdmin()
 POST    /api/admins/simple                                    controllers.UsersController.registerSimpleAdmin()
 GET     /api/admins/simple                                    controllers.UsersController.simpleAdmins()
 DELETE  /api/admins/simple/:username                          controllers.UsersController.deleteAdmin(username)
 
+GET     /api/admins/webauthn/_template                        controllers.TemplatesController.initiateWebauthnAdmin()
 GET     /api/admins/webauthn                                  controllers.UsersController.webAuthnAdmins()
 POST    /api/admins/webauthn                                  controllers.UsersController.registerWebAuthnAdmin()
 DELETE  /api/admins/webauthn/:username/:id                    controllers.UsersController.webAuthnDeleteAdmin(username, id)

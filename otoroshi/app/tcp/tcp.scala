@@ -947,32 +947,6 @@ class TcpServiceApiController(ApiAction: ApiAction, cc: ControllerComponents)(
 
   val logger = Logger("otoroshi-tcp-service-api")
 
-  def initiateTcpService() = ApiAction { ctx =>
-    Ok(
-      TcpService(
-        id = IdGenerator.token,
-        enabled = true,
-        tls = TlsMode.Disabled,
-        sni = SniSettings(false, false),
-        clientAuth = ClientAuth.None,
-        port = 4200,
-        rules = Seq(
-          TcpRule(
-            domain = "*",
-            targets = Seq(
-              TcpTarget(
-                "42.42.42.42",
-                None,
-                4200,
-                false
-              )
-            )
-          )
-        )
-      ).json
-    )
-  }
-
   def findAllTcpServices() = ApiAction.async { ctx =>
     env.datastores.tcpServiceDataStore.findAll().map(all => Ok(JsArray(all.map(_.json))))
   }
