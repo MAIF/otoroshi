@@ -1056,6 +1056,7 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
             env.datastores.clusterStateDataStore.updateDataOut(stateCache.size)
             env.clusterConfig.leader.stateDumpPath
               .foreach(path => Future(Files.write(stateCache.toArray, new File(path))))
+            Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] auto cache updated")
           case Failure(e) =>
             Cluster.logger.error(s"[${env.clusterConfig.mode.name}] Stream error while exporting raw state", e)
         }).runWith(Sink.ignore)
