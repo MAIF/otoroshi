@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+
+<head>
+<title>JWT Tokens verification · Otoroshi</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="description" content='otoroshi-manual'/>
+<link href="https://fonts.googleapis.com/css?family=Roboto:100normal,100italic,300normal,300italic,400normal,400italic,500normal,500italic,700normal,700italic,900normal,900italicc" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="../lib/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../js/page.js"></script>
+<script type="text/javascript" src="../js/groups.js"></script>
+<link rel="stylesheet" type="text/css" href="../lib/normalize.css/normalize.css"/>
+<link rel="stylesheet" type="text/css" href="../lib/foundation/dist/foundation.min.css"/>
+<link rel="stylesheet" type="text/css" href="../css/page.css"/>
+
+<!--
+<link rel="shortcut icon" href="../images/favicon.ico" />
+-->
+</head>
+
+<body>
+<div class="off-canvas-wrapper">
+<div class="off-canvas-wrapper-inner" data-off-canvas-wrapper>
+
+<div class="off-canvas position-left" id="off-canvas-menu" data-off-canvas>
+<nav class="off-canvas-nav">
+<div class="nav-home">
+<a href="../index.html" >
+<span class="home-icon">⌂</span>Otoroshi
+</a>
+<div class="version-number">
+1.4.19
+</div>
+</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../about.html" class="page">About Otoroshi</a></li>
+  <li><a href="../archi.html" class="page">Architecture</a></li>
+  <li><a href="../features.html" class="page">Features</a></li>
+  <li><a href="../quickstart.html" class="page">Try Otoroshi in 5 minutes</a></li>
+  <li><a href="../videos.html" class="page">Video tutorials</a></li>
+  <li><a href="../getotoroshi/index.html" class="page">Get Otoroshi</a>
+  <ul>
+    <li><a href="../getotoroshi/fromsources.html" class="page">From sources</a></li>
+    <li><a href="../getotoroshi/frombinaries.html" class="page">From binaries</a></li>
+    <li><a href="../getotoroshi/fromdocker.html" class="page">From docker</a></li>
+  </ul></li>
+  <li><a href="../firstrun/index.html" class="page">First run</a>
+  <ul>
+    <li><a href="../firstrun/datastore.html" class="page">Choose your datastore</a></li>
+    <li><a href="../firstrun/configfile.html" class="page">Config. with files</a></li>
+    <li><a href="../firstrun/env.html" class="page">Config. with ENVs</a></li>
+    <li><a href="../firstrun/initialstate.html" class="page">Import initial state</a></li>
+    <li><a href="../firstrun/host.html" class="page">Setup your hosts</a></li>
+    <li><a href="../firstrun/run.html" class="page">Run Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../setup/index.html" class="page">Setup Otoroshi</a>
+  <ul>
+    <li><a href="../setup/admin.html" class="page">Manage admin users</a></li>
+    <li><a href="../setup/dangerzone.html" class="page">Configure the Danger zone</a></li>
+  </ul></li>
+  <li><a href="../usage/index.html" class="page">Using Otoroshi</a>
+  <ul>
+    <li><a href="../usage/1-groups.html" class="page">Managing service groups</a></li>
+    <li><a href="../usage/2-services.html" class="page">Managing services</a></li>
+    <li><a href="../usage/3-apikeys.html" class="page">Managing API keys</a></li>
+    <li><a href="../usage/4-monitor.html" class="page">Monitoring services</a></li>
+    <li><a href="../usage/5-sessions.html" class="page">Managing sessions</a></li>
+    <li><a href="../usage/6-audit.html" class="page">Auditing Otoroshi</a></li>
+    <li><a href="../usage/7-metrics.html" class="page">Otoroshi global metrics</a></li>
+    <li><a href="../usage/8-importsexports.html" class="page">Import and export</a></li>
+    <li><a href="../usage/9-auth.html" class="page">Authentication</a></li>
+  </ul></li>
+  <li><a href="../integrations/index.html" class="page">Third party Integrations</a>
+  <ul>
+    <li><a href="../integrations/analytics.html" class="page">Analytics</a></li>
+    <li><a href="../integrations/mailgun.html" class="page">Mailgun</a></li>
+    <li><a href="../integrations/statsd.html" class="page">StatsD / Datadog</a></li>
+    <li><a href="../integrations/clevercloud.html" class="page">Clever Cloud</a></li>
+  </ul></li>
+  <li><a href="../topics/index.html" class="page">Detailed topics</a>
+  <ul>
+    <li><a href="../topics/snow-monkey.html" class="page">Chaos engineering with the Snow Monkey</a></li>
+    <li><a href="../topics/service-mesh.html" class="page">Service mesh with Otoroshi</a></li>
+    <li><a href="../topics/jwt-verifications.html" class="active page">JWT Tokens verification</a></li>
+    <li><a href="../topics/ssl.html" class="page">SSL/TLS termination with Otoroshi</a></li>
+    <li><a href="../topics/mtls.html" class="page">Mutual TLS with Otoroshi</a></li>
+    <li><a href="../topics/clustering.html" class="page">Otoroshi clustering</a></li>
+    <li><a href="../topics/req-transformers.html" class="page">Request transformers</a></li>
+    <li><a href="../topics/monitoring.html" class="page">Monitoring Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../api.html" class="page">Admin REST API</a></li>
+  <li><a href="../embedding.html" class="page">Embedding Otoroshi</a></li>
+  <li><a href="../cli.html" class="page">Rust CLI</a></li>
+  <li><a href="../deploy/index.html" class="page">Deploy to production</a>
+  <ul>
+    <li><a href="../deploy/clevercloud.html" class="page">Clever Cloud</a></li>
+    <li><a href="../deploy/aws-beanstalk.html" class="page">AWS - Elastic Beanstalk</a></li>
+    <li><a href="../deploy/other.html" class="page">Others</a></li>
+    <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../connectors/index.html" class="page">Connectors</a>
+  <ul>
+    <li><a href="../connectors/clevercloud.html" class="page">Clever Cloud *</a></li>
+    <li><a href="../connectors/kubernetes.html" class="page">Kubernetes *</a></li>
+    <li><a href="../connectors/rancher.html" class="page">Rancher *</a></li>
+  </ul></li>
+</ul>
+</div>
+
+</nav>
+</div>
+
+<div class="off-canvas-content" data-off-canvas-content>
+
+<header class="site-header expanded row">
+<div class="small-12 column">
+<a href="#" class="off-canvas-toggle hide-for-medium" data-toggle="off-canvas-menu"><svg class="svg-icon svg-icon-menu" version="1.1" id="Menu" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 20 20" enable-background="new 0 0 20 20" xml:space="preserve"> <path class="svg-icon-menu-path" fill="#53CDEC" d="M16.4,9H3.6C3.048,9,3,9.447,3,10c0,0.553,0.048,1,0.6,1H16.4c0.552,0,0.6-0.447,0.6-1C17,9.447,16.952,9,16.4,9z M16.4,13
+H3.6C3.048,13,3,13.447,3,14c0,0.553,0.048,1,0.6,1H16.4c0.552,0,0.6-0.447,0.6-1C17,13.447,16.952,13,16.4,13z M3.6,7H16.4
+C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.048,7,3.6,7z"/></svg>
+</a>
+<div class="title-wrapper">
+<div class="title-logo"></div>
+<div class="title"><a href="../index.html">Otoroshi</a></div>
+</div>
+<!--
+<a href="https://www.example.com" class="logo show-for-medium">logo</a>
+-->
+</div>
+</header>
+
+<div class="expanded row">
+
+<div class="medium-3 large-2 show-for-medium column">
+<nav class="site-nav">
+<div class="nav-home">
+<a href="../index.html" >
+<span class="home-icon">⌂</span>Otoroshi
+</a>
+<div class="version-number">
+1.4.19
+</div>
+</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../about.html" class="page">About Otoroshi</a></li>
+  <li><a href="../archi.html" class="page">Architecture</a></li>
+  <li><a href="../features.html" class="page">Features</a></li>
+  <li><a href="../quickstart.html" class="page">Try Otoroshi in 5 minutes</a></li>
+  <li><a href="../videos.html" class="page">Video tutorials</a></li>
+  <li><a href="../getotoroshi/index.html" class="page">Get Otoroshi</a>
+  <ul>
+    <li><a href="../getotoroshi/fromsources.html" class="page">From sources</a></li>
+    <li><a href="../getotoroshi/frombinaries.html" class="page">From binaries</a></li>
+    <li><a href="../getotoroshi/fromdocker.html" class="page">From docker</a></li>
+  </ul></li>
+  <li><a href="../firstrun/index.html" class="page">First run</a>
+  <ul>
+    <li><a href="../firstrun/datastore.html" class="page">Choose your datastore</a></li>
+    <li><a href="../firstrun/configfile.html" class="page">Config. with files</a></li>
+    <li><a href="../firstrun/env.html" class="page">Config. with ENVs</a></li>
+    <li><a href="../firstrun/initialstate.html" class="page">Import initial state</a></li>
+    <li><a href="../firstrun/host.html" class="page">Setup your hosts</a></li>
+    <li><a href="../firstrun/run.html" class="page">Run Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../setup/index.html" class="page">Setup Otoroshi</a>
+  <ul>
+    <li><a href="../setup/admin.html" class="page">Manage admin users</a></li>
+    <li><a href="../setup/dangerzone.html" class="page">Configure the Danger zone</a></li>
+  </ul></li>
+  <li><a href="../usage/index.html" class="page">Using Otoroshi</a>
+  <ul>
+    <li><a href="../usage/1-groups.html" class="page">Managing service groups</a></li>
+    <li><a href="../usage/2-services.html" class="page">Managing services</a></li>
+    <li><a href="../usage/3-apikeys.html" class="page">Managing API keys</a></li>
+    <li><a href="../usage/4-monitor.html" class="page">Monitoring services</a></li>
+    <li><a href="../usage/5-sessions.html" class="page">Managing sessions</a></li>
+    <li><a href="../usage/6-audit.html" class="page">Auditing Otoroshi</a></li>
+    <li><a href="../usage/7-metrics.html" class="page">Otoroshi global metrics</a></li>
+    <li><a href="../usage/8-importsexports.html" class="page">Import and export</a></li>
+    <li><a href="../usage/9-auth.html" class="page">Authentication</a></li>
+  </ul></li>
+  <li><a href="../integrations/index.html" class="page">Third party Integrations</a>
+  <ul>
+    <li><a href="../integrations/analytics.html" class="page">Analytics</a></li>
+    <li><a href="../integrations/mailgun.html" class="page">Mailgun</a></li>
+    <li><a href="../integrations/statsd.html" class="page">StatsD / Datadog</a></li>
+    <li><a href="../integrations/clevercloud.html" class="page">Clever Cloud</a></li>
+  </ul></li>
+  <li><a href="../topics/index.html" class="page">Detailed topics</a>
+  <ul>
+    <li><a href="../topics/snow-monkey.html" class="page">Chaos engineering with the Snow Monkey</a></li>
+    <li><a href="../topics/service-mesh.html" class="page">Service mesh with Otoroshi</a></li>
+    <li><a href="../topics/jwt-verifications.html" class="active page">JWT Tokens verification</a></li>
+    <li><a href="../topics/ssl.html" class="page">SSL/TLS termination with Otoroshi</a></li>
+    <li><a href="../topics/mtls.html" class="page">Mutual TLS with Otoroshi</a></li>
+    <li><a href="../topics/clustering.html" class="page">Otoroshi clustering</a></li>
+    <li><a href="../topics/req-transformers.html" class="page">Request transformers</a></li>
+    <li><a href="../topics/monitoring.html" class="page">Monitoring Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../api.html" class="page">Admin REST API</a></li>
+  <li><a href="../embedding.html" class="page">Embedding Otoroshi</a></li>
+  <li><a href="../cli.html" class="page">Rust CLI</a></li>
+  <li><a href="../deploy/index.html" class="page">Deploy to production</a>
+  <ul>
+    <li><a href="../deploy/clevercloud.html" class="page">Clever Cloud</a></li>
+    <li><a href="../deploy/aws-beanstalk.html" class="page">AWS - Elastic Beanstalk</a></li>
+    <li><a href="../deploy/other.html" class="page">Others</a></li>
+    <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../connectors/index.html" class="page">Connectors</a>
+  <ul>
+    <li><a href="../connectors/clevercloud.html" class="page">Clever Cloud *</a></li>
+    <li><a href="../connectors/kubernetes.html" class="page">Kubernetes *</a></li>
+    <li><a href="../connectors/rancher.html" class="page">Rancher *</a></li>
+  </ul></li>
+</ul>
+</div>
+
+</nav>
+</div>
+
+<div class="small-12 medium-9 large-10 column">
+<section class="site-content">
+
+<div class="page-header row">
+<div class="medium-12 show-for-medium column">
+<div class="nav-breadcrumbs">
+<ul>
+  <li><a href="../index.html">Otoroshi</a></li>
+  <li><a href="../topics/index.html">Detailed topics</a></li>
+  <li>JWT Tokens verification</li>
+</ul>
+</div>
+</div>
+</div>
+
+<div class="page-content row">
+<div class="small-12 large-9 column" id="docs">
+<h1><a href="#jwt-tokens-verification" name="jwt-tokens-verification" class="anchor"><span class="anchor-link"></span></a>JWT Tokens verification</h1>
+<p>Sometimes, it can be pretty useful to verify Jwt tokens coming from other provider on some services. Otoroshi provides a tool to do that per service. In the Service descriptor page, you can find a <code>Jwt token Verification</code> section dedicated to this topic.</p>
+<h2><a href="#service-descriptor-local-verifications" name="service-descriptor-local-verifications" class="anchor"><span class="anchor-link"></span></a>Service descriptor local verifications</h2><div class="centered-img">
+<img src="../img/jwt-verif-capture.png" /></div>
+<p>in this section you can select the type of verification you can choose if the verifier is local to the <code>Service descriptor</code> or reference a global one.</p>
+<p>You can also enabled/disable jwt verification and activate strict mode. In strict mode, requests will be rejected if the jwt token is not found.</p>
+<h3><a href="#jwt-token-location" name="jwt-token-location" class="anchor"><span class="anchor-link"></span></a>Jwt token location</h3>
+<p>You can use the <code>Source</code> selector to specify where the Jwt token can be found. </p>
+<ul>
+  <li>in a query string param</li>
+</ul><div class="centered-img">
+<img src="../img/jwt-verif-inquery.png" /></div>
+<ul>
+  <li>in a header</li>
+</ul><div class="centered-img">
+<img src="../img/jwt-verif-inheader.png" /></div>
+<ul>
+  <li>in a cookie</li>
+</ul><div class="centered-img">
+<img src="../img/jwt-verif-incookie.png" /></div>
+<h3><a href="#jwt-signing" name="jwt-signing" class="anchor"><span class="anchor-link"></span></a>Jwt signing</h3>
+<p>You can use the <code>Algo.</code> selector to specify the signing algorithm to use to verifiy the token</p><div class="centered-img">
+<img src="../img/jwt-verif-signing-1.png" /></div>
+<p>you can choose between</p>
+<ul>
+  <li>Hmac + SHA256</li>
+  <li>Hmac + SHA384</li>
+  <li>Hmac + SHA512</li>
+  <li>RSA + SHA256</li>
+  <li>RSA + SHA384</li>
+  <li>RSA + SHA512</li>
+  <li>Elliptic Curve + SHA256</li>
+  <li>Elliptic Curve + SHA384</li>
+  <li>Elliptic Curve + SHA512</li>
+</ul><div class="centered-img">
+<img src="../img/jwt-verif-signing-2.png" /></div>
+<p>You can use syntax like <code>${env.MY_ENV_VAR}</code> or <code>${config.my.config.path}</code> to provide secret/keys values. </p>
+<h3><a href="#just-verify-signature-and-fields-value" name="just-verify-signature-and-fields-value" class="anchor"><span class="anchor-link"></span></a>Just verify signature and fields value</h3>
+<p>Using the <code>Verif. strategy</code> selector, you can choose <code>Verify jwt token</code>. This will verify if the token is signed using the settings from <code>jwt signing</code> section and the value of the fields provided in <code>Verify token fields</code>. Then the token will be send to the target just like that.</p><div class="centered-img">
+<img src="../img/jwt-verif-verify.png" /></div>
+<h3><a href="#re-sign-the-token" name="re-sign-the-token" class="anchor"><span class="anchor-link"></span></a>Re-sign the token</h3>
+<p>Using the <code>Verif. strategy</code> selector, you can choose <code>Verify and re-sign jwt token</code>. This will verify if the token is signed using the settings from <code>jwt signing</code> section and the value of the fields provided in <code>Verify token fields</code>. Then the token will be re-signed using the settings provided in <code>Re-sign algo</code> and will be send to the target.</p><div class="centered-img">
+<img src="../img/jwt-verif-resign.png" /></div>
+<h3><a href="#transform-the-token" name="transform-the-token" class="anchor"><span class="anchor-link"></span></a>Transform the token</h3>
+<p>Using the <code>Verif. strategy</code> selector, you can choose <code>Verify, re-sign and transform jwt token</code>. This will verify if the token is signed using the settings from <code>jwt signing</code> section and the value of the fields provided in <code>Verify token fields</code>. Then the token will be re-signed using the settings provided in <code>Re-sign algo</code>. You can also change the location of the token using <code>Token location</code>, remove fields using <code>Remove token fields</code>, set fields value using <code>Set token fields</code> and even rename fields using <code>Rename token fields</code>.</p><div class="centered-img">
+<img src="../img/jwt-verif-transform.png" /></div>
+<p>You can also use a mini expression language in <code>Set token fields</code>. You just have to add expressions in values like <code>${expression}</code>. Supported expressions are the following :</p>
+<ul>
+  <li><code>${date}</code> =&gt; set the current date</li>
+  <li><code>${date.format(&#39;dd/MM/yyyy&#39;)}</code> =&gt; set the current date formatted with the format you want</li>
+  <li><code>${token.fieldName}</code> =&gt; get the value of the field named <code>fieldName</code></li>
+  <li><code>${token.fieldName.replace(&#39;a&#39;, &#39;b&#39;)}</code> =&gt; get the value of the field named <code>fieldName</code> and replace <code>a</code> with <code>b</code></li>
+  <li><code>${token.fieldName.replaceAll(&#39;[0-9]&#39;, &#39;-&#39;)}</code> =&gt; get the value of the field named <code>fieldName</code> and replace digits with <code>-</code></li>
+</ul>
+<p>you can of course use multiple expressions in one field like <code>my-value-is-${date}-with${token.user}</code></p>
+<h2><a href="#global-verifications" name="global-verifications" class="anchor"><span class="anchor-link"></span></a>Global verifications</h2>
+<p>You can create global jwt verifiers and reference them in your services (from the <code>Type</code> selector). When you set the type of verification to <code>Reference to a global definition</code>, you can choose an existing global jwt verifier</p><div class="centered-img">
+<img src="../img/jwt-verif-global-ref.png" /></div>
+<p>To create a global verifier, go to <code>Settings (cog icon) / Global Jwt Verifiers</code> and it will display the list of global verifiers.</p><div class="centered-img">
+<img src="../img/jwt-verif-global-verifiers.png" /></div>
+<p>you can them create, edit or delete verifiers</p><div class="centered-img">
+<img src="../img/jwt-verif-global-verifier.png" /></div>
+<div class="nav-next">
+<p><strong>Next:</strong> <a href="../topics/ssl.html">SSL/TLS termination with Otoroshi</a></p>
+</div>
+</div>
+<div class="large-3 show-for-large column" data-sticky-container>
+<nav class="sidebar sticky" data-sticky data-anchor="docs" data-sticky-on="large">
+<div class="page-nav">
+<div class="nav-title">On this page:</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../topics/jwt-verifications.html#jwt-tokens-verification" class="header">JWT Tokens verification</a>
+  <ul>
+    <li><a href="../topics/jwt-verifications.html#service-descriptor-local-verifications" class="header">Service descriptor local verifications</a></li>
+    <li><a href="../topics/jwt-verifications.html#global-verifications" class="header">Global verifications</a></li>
+  </ul></li>
+</ul>
+</div>
+</div>
+</nav>
+</div>
+</div>
+
+</section>
+</div>
+
+</div>
+
+<footer class="site-footer">
+
+<section class="site-footer-nav">
+<div class="expanded row">
+<div class="small-12 large-offset-2 large-10 column">
+<div class="row site-footer-content">
+
+<div class="small-12 medium-4 large-3 text-center column">
+<div class="nav-links">
+<ul>
+<!-- <li><a href="https://www.example.com/products/">Products</a> -->
+</ul>
+</div>
+</div>
+
+</div>
+</div>
+</div>
+</section>
+
+<section class="site-footer-base">
+<div class="expanded row">
+<div class="small-12 large-offset-2 large-10 column">
+<div class="row site-footer-content">
+
+<div class="small-12 text-center large-9 column">
+
+<!--
+<div class="copyright">
+<span class="text">&copy; 2020</span>
+<a href="https://www.example.com" class="logo">logo</a>
+</div>
+-->
+</div>
+
+</div>
+</div>
+</div>
+</section>
+</footer>
+
+</div>
+</div>
+</div>
+</body>
+
+<script type="text/javascript" src="../lib/foundation/dist/foundation.min.js"></script>
+<script type="text/javascript">jQuery(document).foundation();</script>
+<script type="text/javascript" src="../js/magellan.js"></script>
+
+<style type="text/css">@import "../lib/prettify/prettify.css";</style>
+<script type="text/javascript" src="../lib/prettify/prettify.js"></script>
+<script type="text/javascript" src="../lib/prettify/lang-scala.js"></script>
+<script type="text/javascript">jQuery(function(){window.prettyPrint && prettyPrint()});</script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/elasticlunr/0.9.5/elasticlunr.js"></script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-112498312-1"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+
+gtag('config', 'UA-112498312-1');
+</script>
+</html>
+
+
+
+
