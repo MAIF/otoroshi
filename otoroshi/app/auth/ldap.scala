@@ -174,8 +174,11 @@ case class LdapAuthModuleConfig(
     val searchControls = new SearchControls()
     searchControls.setSearchScope(SearchControls.SUBTREE_SCOPE)
 
+    LdapAuthModuleConfig.logger.debug(s"bind user for ${username}")
+
     val usersInGroup: Seq[String] = groupFilter
       .map { filter =>
+        LdapAuthModuleConfig.logger.debug(s"searching `$searchBase` with filter `$filter` ")
         val groupSearch = ctx.search(searchBase, filter, searchControls)
         val uids = if (groupSearch.hasMore) {
           val item  = groupSearch.next()
@@ -190,13 +193,17 @@ case class LdapAuthModuleConfig(
         uids
       }
       .getOrElse(Seq.empty[String])
+    LdapAuthModuleConfig.logger.debug(s"found ${usersInGroup.size} users in group : ${usersInGroup.mkString(", ")}")
+    LdapAuthModuleConfig.logger.debug(s"searching user in ${userBase.map(_ + ",").getOrElse("") + searchBase} with filter ${searchFilter.replace("${username}", username)}")
     val res = ctx.search(userBase.map(_ + ",").getOrElse("") + searchBase,
                          searchFilter.replace("${username}", username),
                          searchControls)
     val boundUser: Option[LdapAuthUser] = if (res.hasMore) {
       val item = res.next()
       val dn   = item.getNameInNamespace
+      LdapAuthModuleConfig.logger.debug(s"found user with dn `$dn`")
       if (groupFilter.map(_ => usersInGroup.contains(dn)).getOrElse(true)) {
+        LdapAuthModuleConfig.logger.debug(s"user found in group")
         val attrs = item.getAttributes
         val env2  = new util.Hashtable[String, AnyRef]
         env2.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory")
@@ -222,9 +229,11 @@ case class LdapAuthModuleConfig(
           case _ => None
         } get
       } else {
+        LdapAuthModuleConfig.logger.debug(s"user not found in group")
         None
       }
     } else {
+      LdapAuthModuleConfig.logger.debug(s"no user found")
       None
     }
     res.close()

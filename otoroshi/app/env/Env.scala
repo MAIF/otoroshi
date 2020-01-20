@@ -628,7 +628,7 @@ class Env(val configuration: Configuration,
           case _                                                             => false
         }
         .map {
-          case (key, value) => (key.toLowerCase.replace("otoroshi_loggers_", ""), value)
+          case (key, value) => (key.toLowerCase.replace("otoroshi_loggers_", "").replaceAll("_", "-"), value)
         }
     }
     loggersAndLevel.foreach {
