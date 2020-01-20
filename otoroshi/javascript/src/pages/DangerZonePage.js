@@ -1058,7 +1058,7 @@ export class DangerZonePage extends Component {
       type: 'select',
       props: {
         label: 'CA',
-        placeholder: '--',
+        placeholder: 'Selet a CA certificate',
         help: '...',
         valuesFrom: '/bo/api/proxy/api/certificates?ca=true',
         transformer: a => ({
