@@ -1046,6 +1046,34 @@ export class DangerZonePage extends Component {
       type: GlobalScripts,
       props: {},
     },
+    'autoCert.enabled': {
+      type: 'bool',
+      props: {
+        label: 'Enabled',
+        placeholder: '--',
+        help: '...',
+      },
+    },
+    'autoCert.caRef': {
+      type: 'select',
+      props: {
+        label: 'CA',
+        placeholder: '--',
+        help: '...',
+        valuesFrom: '/bo/api/proxy/api/certificates?ca=true',
+        transformer: a => ({
+          value: a.id,
+          label: (
+            <span>
+              <span className="label label-success" style={{ minWidth: 63 }}>
+                {a.certType}
+              </span>{' '}
+              {a.name} - {a.description}
+            </span>
+          ),
+        }),
+      },
+    },
   };
 
   formFlow = [
@@ -1139,6 +1167,9 @@ export class DangerZonePage extends Component {
     'userAgentSettings.enabled',
     '>>>Geolocation extraction settings',
     'geolocationSettings',
+    '>>>Auto Generate Certificates',
+    'autoCert.enabled',
+    'autoCert.caRef',
   ];
 
   syncSchema = {

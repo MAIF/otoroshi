@@ -670,6 +670,61 @@ trait CertificateDataStore extends BasicStore[Cert] {
     )
     hasInitialCert || hasInitialCerts || hasRootCA
   }
+
+  def autoGenerateCertificateForDomain(domain: String)(implicit env: Env, ec: ExecutionContext): Future[Option[Cert]] = {
+    env.datastores.globalConfigDataStore.latestSafe match {
+      case None => FastFuture.successful(None)
+      case Some(config) => {
+        config.autoCert match {
+          case AutoCert(true, Some(ref)) => {
+            env.datastores.certificatesDataStore.findById(ref).flatMap {
+              case None =>
+                DynamicSSLEngineProvider.logger.error(s"CA cert not found to generate certificate for $domain")
+                FastFuture.successful(None)
+              case Some(cert) => {
+                env.datastores.certificatesDataStore.findAll().flatMap { certificates =>
+                  certificates.find(c => (c.sans :+ c.domain).contains(domain)) match {
+                    case Some(_) => FastFuture.successful(None)
+                    case _ => {
+                      env.pki.genCert(GenCsrQuery(
+                        hosts = Seq(domain),
+                        subject = Some(s"CN=$domain,OU=Auto Generated Certs")
+                      ), cert.certificate.get, cert.cryptoKeyPair.getPrivate).flatMap {
+                        case Left(err) =>
+                          DynamicSSLEngineProvider.logger.error(s"error while generating certificate for $domain: $err")
+                          FastFuture.successful(None)
+                        case Right(resp) => {
+                          val cert = resp
+                            .toCert
+                            .copy(name = s"Certificate for $domain", description = s"Auto Generated Certificate for $domain", autoRenew = true)
+                          cert.save().map { _ =>
+                            Some(cert)
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+          case _ => FastFuture.successful(None)
+        }
+      }
+    }
+  }
+
+  def jautoGenerateCertificateForDomain(domain: String, env: Env): Option[Cert] = {
+    import scala.concurrent.duration._
+    Try {
+      implicit val ec = env.otoroshiExecutionContext
+      implicit val ev = env
+      Await.result(env.datastores.certificatesDataStore.autoGenerateCertificateForDomain(domain), 10.seconds)
+    } match {
+      case Failure(e) => None
+      case Success(opt) => opt
+    }
+  }
 }
 
 object DynamicSSLEngineProvider {
@@ -708,6 +763,10 @@ object DynamicSSLEngineProvider {
 
   def setCurrentEnv(env: Env): Unit = {
     currentEnv.set(env)
+  }
+
+  def getCurrentEnv(): Env = {
+    currentEnv.get()
   }
 
   private def setupContext(env: HasMetrics): SSLContext =
@@ -934,6 +993,13 @@ object DynamicSSLEngineProvider {
     firstSetupDone.compareAndSet(false, true)
     certificates.clear()
     certs.foreach(crt => certificates.put(crt.id, crt))
+    val ctx = setupContext(env)
+    currentContext.set(ctx)
+    ctx
+  }
+
+  def forceUpdate(env: Env): SSLContext = {
+    firstSetupDone.compareAndSet(false, true)
     val ctx = setupContext(env)
     currentContext.set(ctx)
     ctx

@@ -288,6 +288,29 @@ case class UserAgentSettings(enabled: Boolean) {
   }
 }
 
+case class AutoCert(enabled: Boolean = false, caRef: Option[String] = None) {
+  def json: JsValue = AutoCert.format.writes(this)
+}
+
+object AutoCert {
+  val format = new Format[AutoCert] {
+    override def writes(o: AutoCert): JsValue = Json.obj(
+      "enabled" -> o.enabled,
+      "caRef" -> o.caRef.map(JsString.apply).getOrElse(JsNull).as[JsValue]
+    )
+
+    override def reads(json: JsValue): JsResult[AutoCert] = Try {
+      AutoCert(
+        enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
+        caRef = (json \ "caRef").asOpt[String]
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(ac) => JsSuccess(ac)
+    }
+  }
+}
+
 case class GlobalConfig(
     letsEncryptSettings: LetsEncryptSettings = LetsEncryptSettings(),
     lines: Seq[String] = Seq("prod"),
@@ -326,7 +349,8 @@ case class GlobalConfig(
     proxies: Proxies = Proxies(),
     scripts: GlobalScripts = GlobalScripts(),
     geolocationSettings: GeolocationSettings = NoneGeolocationSettings,
-    userAgentSettings: UserAgentSettings = UserAgentSettings(false)
+    userAgentSettings: UserAgentSettings = UserAgentSettings(false),
+    autoCert: AutoCert = AutoCert()
 ) {
   def save()(implicit ec: ExecutionContext, env: Env)   = env.datastores.globalConfigDataStore.set(this)
   def delete()(implicit ec: ExecutionContext, env: Env) = env.datastores.globalConfigDataStore.delete(this)
@@ -445,6 +469,7 @@ object GlobalConfig {
         "scripts"                 -> o.scripts.json,
         "geolocationSettings"     -> o.geolocationSettings.json,
         "userAgentSettings"       -> o.userAgentSettings.json,
+        "autoCert"                -> o.autoCert.json,
       )
     }
     override def reads(json: JsValue): JsResult[GlobalConfig] =
@@ -568,7 +593,10 @@ object GlobalConfig {
             .getOrElse(UserAgentSettings(false)),
           letsEncryptSettings = LetsEncryptSettings.format
             .reads((json \ "letsEncryptSettings").asOpt[JsValue].getOrElse(JsNull))
-            .getOrElse(LetsEncryptSettings())
+            .getOrElse(LetsEncryptSettings()),
+          autoCert = AutoCert.format
+            .reads((json \ "autoCert").asOpt[JsValue].getOrElse(JsNull))
+            .getOrElse(AutoCert()),
         )
       } map {
         case sd => JsSuccess(sd)

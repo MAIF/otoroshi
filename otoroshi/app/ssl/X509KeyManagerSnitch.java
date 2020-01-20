@@ -1,5 +1,6 @@
 package ssl;
 
+import scala.Option;
 import utils.RegexPool;
 
 import javax.net.ssl.SSLEngine;
@@ -81,8 +82,18 @@ public class X509KeyManagerSnitch extends X509ExtendedKeyManager {
                     DynamicSSLEngineProvider.logger().underlyingLogger().debug("chooseEngineServerAlias: " + host + " - " + theFirst + " - " + first);
                     return first;
                 } else {
-
-                    throw new NoCertificateFoundException(host);
+                    env.Env env = DynamicSSLEngineProvider.getCurrentEnv();
+                    if (env != null) {
+                        Option<Cert> cert = env.datastores().certificatesDataStore().jautoGenerateCertificateForDomain(host, env);
+                        if (cert.isDefined()) {
+                            DynamicSSLEngineProvider.addCertificates(cert.toList(), env);
+                            return host;
+                        } else {
+                            throw new NoCertificateFoundException(host);
+                        }
+                    } else {
+                        throw new NoCertificateFoundException(host);
+                    }
                 }
             } else {
                 if (host == null) {
