@@ -690,35 +690,61 @@ trait CertificateDataStore extends BasicStore[Cert] {
     env.datastores.globalConfigDataStore.latestSafe match {
       case None => FastFuture.successful(None)
       case Some(config) => {
+        println(config.autoCert)
         config.autoCert match {
-          case AutoCert(true, Some(ref)) => {
+          case AutoCert(true, Some(ref), allowed, notAllowed, replyNicely) => {
             env.datastores.certificatesDataStore.findById(ref).flatMap {
               case None =>
                 DynamicSSLEngineProvider.logger.error(s"CA cert not found to generate certificate for $domain")
                 FastFuture.successful(None)
               case Some(cert) => {
-                env.datastores.certificatesDataStore.findAll().flatMap { certificates =>
-                  certificates.find(c => (c.sans :+ c.domain).contains(domain)) match {
-                    case Some(_) => FastFuture.successful(None)
-                    case _ => {
-                      env.pki.genCert(GenCsrQuery(
-                        hosts = Seq(domain),
-                        subject = Some(s"CN=$domain,OU=Auto Generated Certs")
-                      ), cert.certificate.get, cert.cryptoKeyPair.getPrivate).flatMap {
-                        case Left(err) =>
-                          DynamicSSLEngineProvider.logger.error(s"error while generating certificate for $domain: $err")
-                          FastFuture.successful(None)
-                        case Right(resp) => {
-                          val cert = resp
-                            .toCert
-                            .copy(name = s"Certificate for $domain", description = s"Auto Generated Certificate for $domain", autoRenew = true)
-                          cert.save().map { _ =>
-                            Some(cert)
+                !notAllowed.exists(p => utils.RegexPool.apply(p).matches(domain)) && allowed.exists(
+                  p => utils.RegexPool.apply(p).matches(domain)
+                ) match {
+                  case true => {
+                    env.datastores.certificatesDataStore.findAll().flatMap { certificates =>
+                      certificates.find(c => (c.sans :+ c.domain).contains(domain)) match {
+                        case Some(_) => FastFuture.successful(None)
+                        case _ => {
+                          env.pki.genCert(GenCsrQuery(
+                            hosts = Seq(domain),
+                            subject = Some(s"CN=$domain,OU=Auto Generated Certs")
+                          ), cert.certificate.get, cert.cryptoKeyPair.getPrivate).flatMap {
+                            case Left(err) =>
+                              DynamicSSLEngineProvider.logger.error(s"error while generating certificate for $domain: $err")
+                              FastFuture.successful(None)
+                            case Right(resp) => {
+                              val cert = resp
+                                .toCert
+                                .copy(name = s"Certificate for $domain", description = s"Auto Generated Certificate for $domain", autoRenew = true)
+                              println(s"saving cert for domain $domain")
+                              cert.save().map { _ =>
+                                Some(cert)
+                              }
+                            }
                           }
                         }
                       }
                     }
                   }
+                  case false if replyNicely => {
+                    println("replyNicely")
+                    env.pki.genCert(GenCsrQuery(
+                      hosts = Seq(domain),
+                      subject = Some(SSLSessionJavaHelper.BadDN)
+                    ), cert.certificate.get, cert.cryptoKeyPair.getPrivate).flatMap {
+                      case Left(err) =>
+                        DynamicSSLEngineProvider.logger.error(s"error while generating certificate for $domain: $err")
+                        FastFuture.successful(None)
+                      case Right(resp) => {
+                        val cert = resp
+                          .toCert
+                          .copy(name = s"Certificate for $domain", description = s"Auto Generated Certificate for $domain", autoRenew = true)
+                        FastFuture.successful(Some(cert))
+                      }
+                    }
+                  }
+                  case _ => FastFuture.successful(None)
                 }
               }
             }
@@ -732,6 +758,7 @@ trait CertificateDataStore extends BasicStore[Cert] {
   def jautoGenerateCertificateForDomain(domain: String, env: Env): Option[Cert] = {
     import scala.concurrent.duration._
     Try {
+      // TODO: blocking ec
       implicit val ec = env.otoroshiExecutionContext
       implicit val ev = env
       Await.result(env.datastores.certificatesDataStore.autoGenerateCertificateForDomain(domain), 10.seconds)
@@ -2139,6 +2166,19 @@ object SSLImplicits {
   implicit class EnhancedPKCS10CertificationRequest(val csr: PKCS10CertificationRequest) extends AnyVal {
     def asPem: String =
       s"${PemHeaders.BeginCertificateRequest}\n${Base64.getEncoder.encodeToString(csr.getEncoded).grouped(64).mkString("\n")}\n${PemHeaders.EndCertificateRequest}\n"
+  }
+}
+
+object SSLSessionJavaHelper {
+
+  val BadDN = "CN=NotAllowedCert,OU=Auto Generated Certs"
+
+  def computeKey(session: SSLSession): Option[String] = {
+    computeKey(session.toString)
+  }
+
+  def computeKey(session: String): Option[String] = {
+    Try(session.split(",")(0).replace("[", "")).toOption
   }
 }
 

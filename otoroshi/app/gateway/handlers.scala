@@ -45,7 +45,7 @@ import otoroshi.script._
 import otoroshi.utils.LetsEncryptHelper
 import utils.http.Implicits._
 import play.libs.ws.WSCookie
-import ssl.PemHeaders
+import ssl.{PemHeaders, SSLSessionJavaHelper, X509KeyManagerSnitch}
 
 case class ProxyDone(status: Int, isChunked: Boolean, upstreamLatency: Long, headersOut: Seq[Header])
 
@@ -199,7 +199,41 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
   def matchRedirection(host: String): Boolean =
     env.redirections.nonEmpty && env.redirections.exists(it => host.contains(it))
 
+  def badCertReply(request: RequestHeader) = actionBuilder.async { req =>
+    Errors.craftResponseResult(
+      "No SSL/TLS certificate found for the current domain name !",
+      NotFound,
+      req,
+      None,
+      Some("errors.ssl.nocert"),
+      attrs = TypedMap.empty
+    )
+  }
+
   override def routeRequest(request: RequestHeader): Option[Handler] = {
+    val config = env.datastores.globalConfigDataStore.latestSafe
+    if (request.theSecured && config.isDefined && config.get.autoCert.enabled && config.get.autoCert.replyNicely) {
+      request.headers.get("Tls-Session-Info").flatMap(SSLSessionJavaHelper.computeKey) match {
+        case Some(key) => {
+          println(key)
+          Option(X509KeyManagerSnitch.sslSessions.getIfPresent(key)) match {
+            case Some((_, _, chain)) if chain.headOption.exists(_.getSubjectDN.getName.contains("CN=NotAllowedCert")) => Some(badCertReply(request))  // TODO: replace
+            case a =>
+              a.foreach {
+                case (_, _, chain) => println(chain.headOption.map(_.getSubjectDN.getName))
+              }
+              println(a)
+              internalRouteRequest(request)
+          }
+        }
+        case _ => Some(badCertReply(request)) // TODO: is it accurate ?
+      }
+    } else {
+      internalRouteRequest(request)
+    }
+  }
+
+  def internalRouteRequest(request: RequestHeader): Option[Handler] = {
     if (env.globalMaintenanceMode) {
       if (request.relativeUri.contains("__otoroshi_assets")) {
         super.routeRequest(request)
