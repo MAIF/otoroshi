@@ -1,6 +1,10 @@
 package ssl;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import scala.Option;
+import scala.reflect.ClassTag;
+import scala.reflect.ClassTag$;
 import utils.RegexPool;
 
 import javax.net.ssl.SSLEngine;
@@ -13,10 +17,16 @@ import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 public class X509KeyManagerSnitch extends X509ExtendedKeyManager {
 
     private X509KeyManager manager;
+
+    private Cache<String, Cert> cache = Caffeine.newBuilder()
+            .maximumSize(100)
+            .expireAfterWrite(20, TimeUnit.SECONDS)
+            .build();
 
     public X509KeyManagerSnitch(X509KeyManager manager) {
         this.manager = manager;
@@ -24,6 +34,14 @@ public class X509KeyManagerSnitch extends X509ExtendedKeyManager {
 
     private void debug(String message) {
         DynamicSSLEngineProvider.logger().underlyingLogger().debug(message);
+    }
+
+    private void error(String message, Throwable e) {
+        DynamicSSLEngineProvider.logger().underlyingLogger().error(message, e);
+    }
+
+    private void info(String message) {
+        DynamicSSLEngineProvider.logger().underlyingLogger().info(message);
     }
 
     @Override
@@ -36,6 +54,11 @@ public class X509KeyManagerSnitch extends X509ExtendedKeyManager {
     public String chooseClientAlias(String[] s, Principal[] p, Socket so) {
         debug("X509KeyManagerSnitch.chooseClientAlias(" + s + ")");
         return manager.chooseClientAlias(s, p, so);
+    }
+
+    public String chooseEngineClientAlias(String[] s, Principal[] p, SSLEngine ssl) {
+        debug("X509KeyManagerSnitch.chooseEngineClientAlias(" + s + ")");
+        return this.chooseClientAlias(s, p, (Socket) null);
     }
 
     @Override
@@ -53,60 +76,85 @@ public class X509KeyManagerSnitch extends X509ExtendedKeyManager {
     @Override
     public X509Certificate[] getCertificateChain(String s) {
         debug("X509KeyManagerSnitch.getCertificateChain(" + s + ")");
-        return manager.getCertificateChain(s);
+        if (s.startsWith("tmp-gen-")) {
+            Cert cert = cache.getIfPresent(s);
+            if (cert != null) {
+                return cert.certificatesChain();
+            } else {
+                return manager.getCertificateChain(s.replace("tmp-gen-", ""));
+            }
+        } else {
+            return manager.getCertificateChain(s);
+        }
     }
 
     @Override
     public PrivateKey getPrivateKey(String s) {
         debug("X509KeyManagerSnitch.getPrivateKey(" + s + ")");
-        return manager.getPrivateKey(s);
-    }
-
-    public String chooseEngineClientAlias(String[] s, Principal[] p, SSLEngine ssl) {
-        debug("X509KeyManagerSnitch.chooseEngineClientAlias(" + s + ")");
-        return this.chooseClientAlias(s, p, (Socket) null);
+        if (s.startsWith("tmp-gen-")) {
+            Cert cert = cache.getIfPresent(s);
+            if (cert != null) {
+                return cert.cryptoKeyPair().getPrivate();
+            } else {
+                return manager.getPrivateKey(s.replace("tmp-gen-", ""));
+            }
+        } else {
+            return manager.getPrivateKey(s);
+        }
     }
 
     public String chooseEngineServerAlias(String s, Principal[] p, SSLEngine ssl) {
         debug("X509KeyManagerSnitch.chooseEngineServerAlias(" + s + ")");
         try {
             String host = ssl.getPeerHost();
-            String[] aliases = manager.getServerAliases(s, p);
-            DynamicSSLEngineProvider.logger().underlyingLogger().debug("host: " + host + ", sni: " + s + ",  aliases: " + (aliases != null ? aliases.length : 0));
-            if (host != null && aliases != null) {
-                List<String> al = Arrays.asList(aliases);
-                Optional<String> theFirst = al.stream().findFirst();
-                Optional<String> theFirstMatching = al.stream().filter(alias -> RegexPool.apply(alias).matches(host)).findFirst();
-                if (theFirstMatching.isPresent()) {
-                    String first = theFirstMatching.orElse(theFirst.get());
-                    DynamicSSLEngineProvider.logger().underlyingLogger().debug("chooseEngineServerAlias: " + host + " - " + theFirst + " - " + first);
-                    return first;
-                } else {
-                    env.Env env = DynamicSSLEngineProvider.getCurrentEnv();
-                    if (env != null) {
-                        Option<Cert> cert = env.datastores().certificatesDataStore().jautoGenerateCertificateForDomain(host, env);
-                        if (cert.isDefined()) {
-                            DynamicSSLEngineProvider.addCertificates(cert.toList(), env);
-                            return host;
-                        } else {
-                            throw new NoCertificateFoundException(host);
-                        }
+            if (host != null) {
+                String key = "tmp-gen-" + host;
+                String[] aliases = manager.getServerAliases(s, p);
+                debug("host: " + host + ", aliases: " + (aliases != null ? aliases.length : 0));
+                if (host != null && aliases != null) {
+                    List<String> al = Arrays.asList(aliases);
+                    Optional<String> theFirst = al.stream().findFirst();
+                    Optional<String> theFirstMatching = al.stream().filter(alias -> RegexPool.apply(alias).matches(host)).findFirst();
+                    if (theFirstMatching.isPresent()) {
+                        String first = theFirstMatching.orElse(theFirst.get());
+                        debug("chooseEngineServerAlias: " + host + " - " + theFirst + " - " + first);
+                        return first;
                     } else {
-                        throw new NoCertificateFoundException(host);
+                        if (cache.getIfPresent(key) != null) {
+                            return key;
+                        } else {
+                            env.Env env = DynamicSSLEngineProvider.getCurrentEnv();
+                            if (env != null) {
+                                Option<Cert> certOpt = env.datastores().certificatesDataStore().jautoGenerateCertificateForDomain(host, env);
+                                if (certOpt.isDefined()) {
+                                    Cert cert = certOpt.get();
+                                    cache.put(key, cert);
+                                    DynamicSSLEngineProvider.addCertificates(certOpt.toList(), env);
+                                    return key;
+                                } else {
+                                    throw new NoCertificateFoundException(host);
+                                }
+                            } else {
+                                throw new NoCertificateFoundException(host);
+                            }
+                        }
+                    }
+                } else {
+                    if (cache.getIfPresent(key) != null) {
+                        return key;
+                    } else if (host == null) {
+                        throw new NoHostnameFoundException();
+                    } else if (aliases == null) {
+                        throw new NoAliasesFoundException();
+                    } else {
+                        throw new NoHostFoundException();
                     }
                 }
             } else {
-                if (host == null) {
-                    throw new NoHostnameFoundException();
-                } else if (aliases == null) {
-                    throw new NoAliasesFoundException();
-                } else {
-                    throw new NoHostFoundException();
-                }
+                throw new NoHostnameFoundException();
             }
         } catch (Exception e) {
-            // return this.chooseServerAlias(s, p, (Socket) null);
-            DynamicSSLEngineProvider.logger().underlyingLogger().error("Error while chosing server alias", e);
+            error("Error while chosing server alias", e);
             return "--";
         }
     }

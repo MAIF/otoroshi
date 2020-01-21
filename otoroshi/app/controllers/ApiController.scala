@@ -24,7 +24,7 @@ import play.api.libs.json.{JsSuccess, Json, _}
 import play.api.libs.streams.Accumulator
 import play.api.mvc._
 import security.IdGenerator
-import ssl.Cert
+import ssl.{Cert, DynamicSSLEngineProvider}
 import storage.{Healthy, Unhealthy, Unreachable}
 import utils.Metrics
 import utils.future.Implicits._
@@ -121,6 +121,10 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
             Json.obj("cluster" -> Json.obj("health" -> health))
           }
         }
+        val certificates = DynamicSSLEngineProvider.isFirstSetupDone match {
+          case true  => "loaded"
+          case false => "loading"
+        }
         val payload = Json.obj(
           "otoroshi" -> JsString(_health match {
             case Healthy if overhead <= env.healthLimit => "healthy"
@@ -133,6 +137,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
             case Unhealthy   => "unhealthy"
             case Unreachable => "unreachable"
           }),
+          "certificates" -> certificates,
           "scripts" -> scripts
         ) ++ cluster
         val err = (payload \ "otoroshi").asOpt[String].exists(_ != "healthy") ||

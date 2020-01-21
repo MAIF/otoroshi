@@ -233,6 +233,20 @@ case class Cert(
         case Success(cert) => cert
       }
   }
+
+  lazy val certificatesChain: Array[X509Certificate] = {  //certificates.toArray
+    Try {
+      chain.split(PemHeaders.BeginCertificate).toSeq.map(_.trim).filterNot(_.isEmpty).map { content =>
+        content.replace(PemHeaders.BeginCertificate, "").replace(PemHeaders.EndCertificate, "")
+      }.map { content =>
+        val certificateFactory: CertificateFactory = CertificateFactory.getInstance("X.509")
+        certificateFactory
+          .generateCertificate(new ByteArrayInputStream(DynamicSSLEngineProvider.base64Decode(content)))
+          .asInstanceOf[X509Certificate]
+      }.toArray
+    }.getOrElse(Array.empty)
+  }
+
   lazy val certificate: Option[X509Certificate] = Try {
     chain.split(PemHeaders.BeginCertificate).toSeq.tail.headOption.map { cert =>
       val content: String                        = cert.replace(PemHeaders.EndCertificate, "")
@@ -242,6 +256,7 @@ case class Cert(
         .asInstanceOf[X509Certificate]
     }
   }.toOption.flatten
+
   lazy val caFromChain: Option[X509Certificate] = Try {
     chain.split(PemHeaders.BeginCertificate).toSeq.tail.lastOption.map { cert =>
       val content: String                        = cert.replace(PemHeaders.EndCertificate, "")
