@@ -276,7 +276,6 @@ class FileDbDataStores(configuration: Configuration,
           case keys => {
             Source(keys.toList)
               .mapAsync(1) { key =>
-                println(s"key: $key")
                 redis.rawGet(key).flatMap {
                   case None => FastFuture.successful(JsNull)
                   case Some(value) => {

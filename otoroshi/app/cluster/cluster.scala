@@ -1503,6 +1503,10 @@ class SwappableInMemoryDataStores(configuration: Configuration,
                                   env: Env)
     extends DataStores {
 
+  import scala.concurrent.duration._
+  import scala.util.hashing.MurmurHash3
+  import akka.stream.{ActorMaterializer, Materializer}
+
   lazy val redisStatsItems: Int  = configuration.get[Option[Int]]("app.inmemory.windowSize").getOrElse(99)
   lazy val experimental: Boolean = configuration.get[Option[Boolean]]("app.inmemory.experimental").getOrElse(false)
   lazy val actorSystem =
@@ -1513,12 +1517,26 @@ class SwappableInMemoryDataStores(configuration: Configuration,
         .map(_.underlying)
         .getOrElse(ConfigFactory.empty)
     )
+  private val materializer = ActorMaterializer.create(actorSystem)
   lazy val redis = new SwappableInMemoryRedis(env, actorSystem)
 
   override def before(configuration: Configuration,
                       environment: Environment,
                       lifecycle: ApplicationLifecycle): Future[Unit] = {
+    import collection.JavaConverters._
     Cluster.logger.info("Now using Swappable InMemory DataStores")
+    dbPathOpt.foreach { dbPath =>
+      val file = new File(dbPath)
+      if (!file.exists()) {
+        Cluster.logger.info(s"Creating ClusterDb file and directory ('$dbPath')")
+        file.getParentFile.mkdirs()
+        file.createNewFile()
+      }
+      readStateFromDisk(java.nio.file.Files.readAllLines(file.toPath).asScala.toSeq)
+      cancelRef.set(actorSystem.scheduler.schedule(1.second, 5.seconds) {
+        Await.result(writeStateToDisk(dbPath)(actorSystem.dispatcher, materializer), 10.seconds)
+      }(actorSystem.dispatcher))
+    }
     redis.start()
     _serviceDescriptorDataStore.startCleanup(env)
     _certificateDataStore.startSync()
@@ -1531,12 +1549,80 @@ class SwappableInMemoryDataStores(configuration: Configuration,
     _serviceDescriptorDataStore.stopCleanup()
     _certificateDataStore.stopSync()
     redis.stop()
+    cancelRef.get().cancel()
+    dbPathOpt.foreach { dbPath =>
+      Await.result(writeStateToDisk(dbPath)(actorSystem.dispatcher, materializer), 10.seconds)
+    }
     actorSystem.terminate()
     FastFuture.successful(())
   }
 
   def swap(memory: Memory): Unit = {
     redis.swap(memory)
+  }
+
+  private val cancelRef    = new AtomicReference[Cancellable]()
+  private val lastHash     = new AtomicReference[Int](0)
+  private val dbPathOpt: Option[String] = configuration.getOptional[String]("otoroshi.cluster.dbpath")
+
+  private def readStateFromDisk(source: Seq[String]): Unit = {
+    Cluster.logger.debug("Reading state from disk ...")
+    val store       = new ConcurrentHashMap[String, Any]()
+    val expirations = new ConcurrentHashMap[String, Long]()
+    source.foreach { raw =>
+      val item  = Json.parse(raw)
+      val key   = (item \ "k").as[String]
+      val value = (item \ "v").as[JsValue]
+      val what  = (item \ "w").as[String]
+      val ttl   = (item \ "t").asOpt[Long].getOrElse(-1L)
+      fromJson(what, value).foreach(v => store.put(key, v))
+      if (ttl > -1L) {
+        expirations.put(key, ttl)
+      }
+    }
+    redis.swap(Memory(store, expirations))
+  }
+
+  private def fromJson(what: String, value: JsValue): Option[Any] = {
+
+    import collection.JavaConverters._
+
+    what match {
+      case "string" => Some(ByteString(value.as[String]))
+      case "set" => {
+        val list = new java.util.concurrent.CopyOnWriteArraySet[ByteString]
+        list.addAll(value.as[JsArray].value.map(a => ByteString(a.as[String])).asJava)
+        Some(list)
+      }
+      case "list" => {
+        val list = new java.util.concurrent.CopyOnWriteArrayList[ByteString]
+        list.addAll(value.as[JsArray].value.map(a => ByteString(a.as[String])).asJava)
+        Some(list)
+      }
+      case "hash" => {
+        val map = new java.util.concurrent.ConcurrentHashMap[String, ByteString]
+        map.putAll(value.as[JsObject].value.map(t => (t._1, ByteString(t._2.as[String]))).asJava)
+        Some(map)
+      }
+      case _ => None
+    }
+  }
+
+  private def writeStateToDisk(dbPath: String)(implicit ec: ExecutionContext, mat: Materializer): Future[Unit] = {
+    val file = new File(dbPath)
+    completeExport(100)(ec, mat, env)
+      .map { item =>
+        Json.stringify(item) + "\n"
+      }
+      .runFold("")(_ + _)
+      .map { content =>
+        val hash = MurmurHash3.stringHash(content)
+        if (hash != lastHash.get()) {
+          Cluster.logger.debug("Writing state to disk ...")
+          java.nio.file.Files.write(file.toPath, content.getBytes(com.google.common.base.Charsets.UTF_8))
+          lastHash.set(hash)
+        }
+      }
   }
 
   private lazy val _privateAppsUserDataStore   = new InMemoryPrivateAppsUserDataStore(redis, env)
@@ -1730,6 +1816,44 @@ class SwappableInMemoryDataStores(configuration: Configuration,
           .map(_ => ())
       }
   }
+
+  def completeExport(
+    group: Int
+)(implicit ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = {
+  Source
+    .fromFuture(
+      redis.keys(s"${env.storageRoot}:*")
+    )
+    .mapConcat(_.toList)
+    .grouped(group)
+    .mapAsync(1) {
+      case keys if keys.isEmpty => FastFuture.successful(Seq.empty[JsValue])
+      case keys => {
+        Future.sequence(
+          keys
+            .map { key =>
+              redis.rawGet(key).flatMap {
+                case None => FastFuture.successful(JsNull)
+                case Some(value) => {
+                  toJson(value) match {
+                    case (_, JsNull) => FastFuture.successful(JsNull)
+                    case (what, jsonValue) =>
+                      redis.pttl(key).map { ttl =>
+                        Json.obj("k" -> key,
+                                 "v" -> jsonValue,
+                                 "t" -> (if (ttl == -1) -1 else (System.currentTimeMillis() + ttl)),
+                                 "w" -> what)
+                      }
+                  }
+                }
+              }
+            }
+        )
+      }
+    }
+    .map(_.filterNot(_ == JsNull))
+    .mapConcat(_.toList)
+}
 
   private def toJson(value: Any): (String, JsValue) = {
 
