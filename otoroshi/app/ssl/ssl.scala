@@ -690,7 +690,6 @@ trait CertificateDataStore extends BasicStore[Cert] {
     env.datastores.globalConfigDataStore.latestSafe match {
       case None => FastFuture.successful(None)
       case Some(config) => {
-        println(config.autoCert)
         config.autoCert match {
           case AutoCert(true, Some(ref), allowed, notAllowed, replyNicely) => {
             env.datastores.certificatesDataStore.findById(ref).flatMap {
@@ -717,7 +716,6 @@ trait CertificateDataStore extends BasicStore[Cert] {
                               val cert = resp
                                 .toCert
                                 .copy(name = s"Certificate for $domain", description = s"Auto Generated Certificate for $domain", autoRenew = true)
-                              println(s"saving cert for domain $domain")
                               cert.save().map { _ =>
                                 Some(cert)
                               }
@@ -728,7 +726,6 @@ trait CertificateDataStore extends BasicStore[Cert] {
                     }
                   }
                   case false if replyNicely => {
-                    println("replyNicely")
                     env.pki.genCert(GenCsrQuery(
                       hosts = Seq(domain),
                       subject = Some(SSLSessionJavaHelper.BadDN)
@@ -2171,7 +2168,8 @@ object SSLImplicits {
 
 object SSLSessionJavaHelper {
 
-  val BadDN = "CN=NotAllowedCert,OU=Auto Generated Certs"
+  val NotAllowed = "CN=NotAllowedCert"
+  val BadDN = s"O=Otoroshi,OU=Auto Generated Certs,$NotAllowed"
 
   def computeKey(session: SSLSession): Option[String] = {
     computeKey(session.toString)

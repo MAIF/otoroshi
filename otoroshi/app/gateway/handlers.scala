@@ -201,7 +201,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
 
   def badCertReply(request: RequestHeader) = actionBuilder.async { req =>
     Errors.craftResponseResult(
-      "No SSL/TLS certificate found for the current domain name !",
+      "No SSL/TLS certificate found for the current domain name. Connection refused !",
       NotFound,
       req,
       None,
@@ -215,15 +215,9 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
     if (request.theSecured && config.isDefined && config.get.autoCert.enabled && config.get.autoCert.replyNicely) {
       request.headers.get("Tls-Session-Info").flatMap(SSLSessionJavaHelper.computeKey) match {
         case Some(key) => {
-          println(key)
           Option(X509KeyManagerSnitch.sslSessions.getIfPresent(key)) match {
-            case Some((_, _, chain)) if chain.headOption.exists(_.getSubjectDN.getName.contains("CN=NotAllowedCert")) => Some(badCertReply(request))  // TODO: replace
-            case a =>
-              a.foreach {
-                case (_, _, chain) => println(chain.headOption.map(_.getSubjectDN.getName))
-              }
-              println(a)
-              internalRouteRequest(request)
+            case Some((_, _, chain)) if chain.headOption.exists(_.getSubjectDN.getName.contains(SSLSessionJavaHelper.NotAllowed)) => Some(badCertReply(request))
+            case a => internalRouteRequest(request)
           }
         }
         case _ => Some(badCertReply(request)) // TODO: is it accurate ?

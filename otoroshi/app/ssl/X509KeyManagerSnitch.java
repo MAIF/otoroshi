@@ -130,7 +130,6 @@ public class X509KeyManagerSnitch extends X509ExtendedKeyManager {
                         String first = theFirstMatching.orElse(theFirst.get());
                         debug("chooseEngineServerAlias: " + host + " - " + theFirst + " - " + first);
                         sessionKey.foreach(skey -> {
-                            info("putting 1 " + skey);
                             sslSessions.put(skey, Tuple3.apply(ssl.getSession(), manager.getPrivateKey(first), manager.getCertificateChain(first)));
                             return Unit$.MODULE$;
                         });
@@ -145,11 +144,10 @@ public class X509KeyManagerSnitch extends X509ExtendedKeyManager {
                                 if (certOpt.isDefined()) {
                                     Cert cert = certOpt.get();
                                     cache.put(key, cert);
-                                    if (!cert.subject().contains("CN=NotAllowedCert")) { // TODO: replace
+                                    if (!cert.subject().contains(SSLSessionJavaHelper.NotAllowed())) {
                                         DynamicSSLEngineProvider.addCertificates(certOpt.toList(), env);
                                     }
                                     sessionKey.foreach(skey -> {
-                                        info("putting 2 " + skey);
                                         sslSessions.put(skey, Tuple3.apply(ssl.getSession(), cert.cryptoKeyPair().getPrivate(), cert.certificatesChain()));
                                         return Unit$.MODULE$;
                                     });
@@ -166,7 +164,6 @@ public class X509KeyManagerSnitch extends X509ExtendedKeyManager {
                     Cert c = cache.getIfPresent(key);
                     if (c != null) {
                         sessionKey.foreach(skey -> {
-                            info("putting 3 " + skey);
                             sslSessions.put(skey, Tuple3.apply(ssl.getSession(), c.cryptoKeyPair().getPrivate(), c.certificatesChain()));
                             return Unit$.MODULE$;
                         });
