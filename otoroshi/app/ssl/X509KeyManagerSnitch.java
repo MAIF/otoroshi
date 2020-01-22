@@ -1,15 +1,21 @@
 package ssl;
 
+import akka.util.ByteString;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import scala.Option;
+import scala.Tuple3;
+import scala.Unit;
+import scala.Unit$;
 import scala.reflect.ClassTag;
 import scala.reflect.ClassTag$;
 import utils.RegexPool;
 
 import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLSession;
 import javax.net.ssl.X509ExtendedKeyManager;
 import javax.net.ssl.X509KeyManager;
+import java.math.BigInteger;
 import java.net.Socket;
 import java.security.Principal;
 import java.security.PrivateKey;
@@ -22,6 +28,11 @@ import java.util.concurrent.TimeUnit;
 public class X509KeyManagerSnitch extends X509ExtendedKeyManager {
 
     private X509KeyManager manager;
+
+    public static Cache<String, Tuple3<SSLSession, PrivateKey, X509Certificate[]>> sslSessions = Caffeine.newBuilder()
+            .maximumSize(1000)
+            .expireAfterWrite(5, TimeUnit.SECONDS)
+            .build();
 
     private Cache<String, Cert> cache = Caffeine.newBuilder()
             .maximumSize(100)
@@ -104,7 +115,7 @@ public class X509KeyManagerSnitch extends X509ExtendedKeyManager {
     }
 
     public String chooseEngineServerAlias(String s, Principal[] p, SSLEngine ssl) {
-        debug("X509KeyManagerSnitch.chooseEngineServerAlias(" + s + ")");
+        Option<String> sessionKey = SSLSessionJavaHelper.computeKey(ssl.getHandshakeSession());
         try {
             String host = ssl.getPeerHost();
             if (host != null) {
@@ -118,9 +129,18 @@ public class X509KeyManagerSnitch extends X509ExtendedKeyManager {
                     if (theFirstMatching.isPresent()) {
                         String first = theFirstMatching.orElse(theFirst.get());
                         debug("chooseEngineServerAlias: " + host + " - " + theFirst + " - " + first);
+                        sessionKey.foreach(skey -> {
+                            sslSessions.put(skey, Tuple3.apply(ssl.getSession(), manager.getPrivateKey(first), manager.getCertificateChain(first)));
+                            return Unit$.MODULE$;
+                        });
                         return first;
                     } else {
-                        if (cache.getIfPresent(key) != null) {
+                        Cert c = cache.getIfPresent(key);
+                        if (c != null) {
+                            sessionKey.foreach(skey -> {
+                                sslSessions.put(skey, Tuple3.apply(ssl.getSession(), c.cryptoKeyPair().getPrivate(), c.certificatesChain()));
+                                return Unit$.MODULE$;
+                            });
                             return key;
                         } else {
                             env.Env env = DynamicSSLEngineProvider.getCurrentEnv();
@@ -129,7 +149,13 @@ public class X509KeyManagerSnitch extends X509ExtendedKeyManager {
                                 if (certOpt.isDefined()) {
                                     Cert cert = certOpt.get();
                                     cache.put(key, cert);
-                                    DynamicSSLEngineProvider.addCertificates(certOpt.toList(), env);
+                                    if (!cert.subject().contains(SSLSessionJavaHelper.NotAllowed())) {
+                                        DynamicSSLEngineProvider.addCertificates(certOpt.toList(), env);
+                                    }
+                                    sessionKey.foreach(skey -> {
+                                        sslSessions.put(skey, Tuple3.apply(ssl.getSession(), cert.cryptoKeyPair().getPrivate(), cert.certificatesChain()));
+                                        return Unit$.MODULE$;
+                                    });
                                     return key;
                                 } else {
                                     throw new NoCertificateFoundException(host);
@@ -140,7 +166,12 @@ public class X509KeyManagerSnitch extends X509ExtendedKeyManager {
                         }
                     }
                 } else {
-                    if (cache.getIfPresent(key) != null) {
+                    Cert c = cache.getIfPresent(key);
+                    if (c != null) {
+                        sessionKey.foreach(skey -> {
+                            sslSessions.put(skey, Tuple3.apply(ssl.getSession(), c.cryptoKeyPair().getPrivate(), c.certificatesChain()));
+                            return Unit$.MODULE$;
+                        });
                         return key;
                     } else if (host == null) {
                         throw new NoHostnameFoundException();

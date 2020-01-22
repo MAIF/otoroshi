@@ -288,7 +288,7 @@ case class UserAgentSettings(enabled: Boolean) {
   }
 }
 
-case class AutoCert(enabled: Boolean = false, caRef: Option[String] = None) {
+case class AutoCert(enabled: Boolean = false, caRef: Option[String] = None, allowed: Seq[String] = Seq.empty, notAllowed: Seq[String] = Seq.empty, replyNicely: Boolean = false) {
   def json: JsValue = AutoCert.format.writes(this)
 }
 
@@ -296,13 +296,19 @@ object AutoCert {
   val format = new Format[AutoCert] {
     override def writes(o: AutoCert): JsValue = Json.obj(
       "enabled" -> o.enabled,
-      "caRef" -> o.caRef.map(JsString.apply).getOrElse(JsNull).as[JsValue]
+      "replyNicely" -> o.replyNicely,
+      "caRef" -> o.caRef.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      "allowed" -> JsArray(o.allowed.map(JsString.apply)),
+      "notAllowed" -> JsArray(o.notAllowed.map(JsString.apply)),
     )
 
     override def reads(json: JsValue): JsResult[AutoCert] = Try {
       AutoCert(
         enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
-        caRef = (json \ "caRef").asOpt[String]
+        replyNicely = (json \ "replyNicely").asOpt[Boolean].getOrElse(false),
+        caRef = (json \ "caRef").asOpt[String],
+        allowed = (json \ "allowed").asOpt[Seq[String]].getOrElse(Seq("*")),
+        notAllowed = (json \ "notAllowed").asOpt[Seq[String]].getOrElse(Seq.empty)
       )
     } match {
       case Failure(e) => JsError(e.getMessage)

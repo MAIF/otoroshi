@@ -1051,6 +1051,30 @@ export class DangerZonePage extends Component {
       props: {
         label: 'Enabled',
         placeholder: '--',
+        help: 'Generate certificates on the fly when they not exist',
+      },
+    },
+    'autoCert.replyNicely': {
+      type: 'bool',
+      props: {
+        label: 'Reply Nicely',
+        placeholder: '--',
+        help: 'When not allowed domain name, accept connection and display a nice error message',
+      },
+    },
+    'autoCert.allowed': {
+      type: 'array',
+      props: {
+        label: 'Allowed domains',
+        placeholder: 'domain name',
+        help: '...',
+      },
+    },
+    'autoCert.notAllowed': {
+      type: 'array',
+      props: {
+        label: 'Not allowed domains',
+        placeholder: 'domain name',
         help: '...',
       },
     },
@@ -1169,7 +1193,10 @@ export class DangerZonePage extends Component {
     'geolocationSettings',
     '>>>Auto Generate Certificates',
     'autoCert.enabled',
+    'autoCert.replyNicely',
     'autoCert.caRef',
+    'autoCert.allowed',
+    'autoCert.notAllowed',
   ];
 
   syncSchema = {
