@@ -135,7 +135,12 @@ public class X509KeyManagerSnitch extends X509ExtendedKeyManager {
                         });
                         return first;
                     } else {
-                        if (cache.getIfPresent(key) != null) {
+                        Cert c = cache.getIfPresent(key);
+                        if (c != null) {
+                            sessionKey.foreach(skey -> {
+                                sslSessions.put(skey, Tuple3.apply(ssl.getSession(), c.cryptoKeyPair().getPrivate(), c.certificatesChain()));
+                                return Unit$.MODULE$;
+                            });
                             return key;
                         } else {
                             env.Env env = DynamicSSLEngineProvider.getCurrentEnv();

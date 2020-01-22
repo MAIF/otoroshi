@@ -288,7 +288,7 @@ case class UserAgentSettings(enabled: Boolean) {
   }
 }
 
-case class AutoCert(enabled: Boolean = false, caRef: Option[String] = None, allowed: Seq[String] = Seq.empty, notAllowed: Seq[String] = Seq.empty, replyNicely: Boolean = true) {
+case class AutoCert(enabled: Boolean = false, caRef: Option[String] = None, allowed: Seq[String] = Seq.empty, notAllowed: Seq[String] = Seq.empty, replyNicely: Boolean = false) {
   def json: JsValue = AutoCert.format.writes(this)
 }
 
@@ -305,9 +305,9 @@ object AutoCert {
     override def reads(json: JsValue): JsResult[AutoCert] = Try {
       AutoCert(
         enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
-        replyNicely = (json \ "replyNicely").asOpt[Boolean].getOrElse(true),
+        replyNicely = (json \ "replyNicely").asOpt[Boolean].getOrElse(false),
         caRef = (json \ "caRef").asOpt[String],
-        allowed = (json \ "allowed").asOpt[Seq[String]].getOrElse(Seq.empty),
+        allowed = (json \ "allowed").asOpt[Seq[String]].getOrElse(Seq("*")),
         notAllowed = (json \ "notAllowed").asOpt[Seq[String]].getOrElse(Seq.empty)
       )
     } match {
