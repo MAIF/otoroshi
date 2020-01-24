@@ -104,6 +104,7 @@ case class WorkerConfig(
     name: String = s"otoroshi-worker-${IdGenerator.token(16)}",
     retries: Int = 3,
     timeout: Long = 2000,
+    dbPath: Option[String] = None,
     state: WorkerStateConfig = WorkerStateConfig(),
     quotas: WorkerQuotasConfig = WorkerQuotasConfig(),
     //initialCacert: Option[String] = None
@@ -184,6 +185,7 @@ object ClusterConfig {
           .getOrElse(s"otoroshi-worker-${IdGenerator.token(16)}"),
         retries = configuration.getOptional[Int]("worker.retries").getOrElse(3),
         timeout = configuration.getOptional[Long]("worker.timeout").getOrElse(2000),
+        dbPath = configuration.getOptional[String]("worker.dbpath"),
         state = WorkerStateConfig(
           timeout = configuration.getOptional[Long]("worker.state.timeout").getOrElse(2000),
           retries = configuration.getOptional[Int]("worker.state.retries").getOrElse(3),
@@ -1563,7 +1565,7 @@ class SwappableInMemoryDataStores(configuration: Configuration,
 
   private val cancelRef    = new AtomicReference[Cancellable]()
   private val lastHash     = new AtomicReference[Int](0)
-  private val dbPathOpt: Option[String] = configuration.getOptional[String]("otoroshi.cluster.dbpath")
+  private val dbPathOpt: Option[String] = env.clusterConfig.worker.dbPath
 
   private def readStateFromDisk(source: Seq[String]): Unit = {
     Cluster.logger.debug("Reading state from disk ...")
