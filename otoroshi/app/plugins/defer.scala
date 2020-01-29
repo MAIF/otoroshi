@@ -45,21 +45,19 @@ class DeferPlugin extends RequestTransformer {
       ctx: TransformerRequestContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     val config         = ctx.configFor("DeferPlugin")
-    val defaultTimeout = (config \ "defaultDefer").asOpt[Long].getOrElse(0L).millis
-    val headerTimeout  = ctx.request.headers.get("X-Defer").map(_.toLong.millis)
-    val queryTimeout   = ctx.request.getQueryString("defer").map(_.toLong.millis)
-    val _timeout       = headerTimeout.orElse(queryTimeout).getOrElse(defaultTimeout)
+    val defaultTimeout = (config \ "defaultDefer").asOpt[Long].getOrElse(0L)
+    val headerTimeout  = ctx.request.headers.get("X-Defer").map(_.toLong)
+    val queryTimeout   = ctx.request.getQueryString("defer").map(_.toLong)
+    val timeout       = headerTimeout.orElse(queryTimeout).getOrElse(defaultTimeout)
     val elapsed = System.currentTimeMillis() - ctx.attrs
       .get(otoroshi.plugins.Keys.RequestTimestampKey)
       .getOrElse(DateTime.now())
-      .toDate
-      .getTime
-    val timeout = (if ((_timeout.toMillis - elapsed) < 0L) 0L else _timeout.toMillis - elapsed).millis
-    if (timeout.toMillis == 0L) {
+      .getMillis
+    if (timeout - elapsed <= 0L) {
       FastFuture.successful(Right(ctx.otoroshiRequest))
     } else {
       val promise = Promise[Either[Result, HttpRequest]]
-      env.otoroshiScheduler.scheduleOnce(timeout) {
+      env.otoroshiScheduler.scheduleOnce((timeout - elapsed).millis) {
         promise.trySuccess(Right(ctx.otoroshiRequest))
       }
       promise.future
