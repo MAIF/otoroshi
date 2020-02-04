@@ -188,6 +188,15 @@ export class TopBar extends Component {
             value: 'scripts',
           });
         }
+        if (this.state.env.providerDashboardUrl) {
+          const providerDashboardTitle = this.state.env.providerDashboardTitle;
+          options.push({
+            action: () => (window.location.href = '/bo/dashboard/provider'),
+            env: <img src="/assets/images/otoroshi-logo-inverse.png" width="16" />,
+            label: providerDashboardTitle,
+            value: providerDashboardTitle.toLowerCase(),
+          });
+        }
         options.push({
           action: () => (window.location.href = '/bo/dashboard/snowmonkey'),
           env: (
@@ -587,6 +596,16 @@ export class TopBar extends Component {
                     </a>
                   </li>
                   <li role="separator" className="divider" />
+                  {this.state.env.providerDashboardUrl && (
+                    <>
+                      <li>
+                        <a href="/bo/dashboard/provider">
+                          <img src="/assets/images/otoroshi-logo-inverse.png" width="16" /> {this.state.env.providerDashboardTitle}
+                        </a>
+                      </li>
+                      <li role="separator" className="divider" />
+                    </>
+                  )}
                   <li>
                     <a href="/bo/dashboard/snowmonkey">
                       <svg

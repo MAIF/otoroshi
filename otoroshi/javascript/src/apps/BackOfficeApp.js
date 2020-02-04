@@ -35,6 +35,7 @@ import { ClientValidatorsPage } from '../pages/ClientValidatorsPage';
 import { GroupStatsPage } from '../pages/GroupStatsPage';
 import { ApiKeyStatsPage } from '../pages/ApiKeyStatsPage';
 import { TcpServicesPage } from '../pages/TcpServicesPage';
+import { ProvidersDashboardPage } from '../pages/ProvidersDashboardPage';
 
 import { TopBar } from '../components/TopBar';
 import { ReloadNewVersion } from '../components/ReloadNewVersion';
@@ -383,6 +384,10 @@ class BackOfficeAppContainer extends Component {
                         <Route
                           path="/scripts"
                           component={props => this.decorate(ScriptsPage, props)}
+                        />
+                        <Route
+                          path="/provider"
+                          component={props => this.decorate(ProvidersDashboardPage, props)}
                         />
 
                         <Route

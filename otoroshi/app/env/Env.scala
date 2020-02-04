@@ -195,6 +195,15 @@ class Env(val configuration: Configuration,
 
   lazy val staticExposedDomainEnabled: Boolean = staticExposedDomain.isDefined
 
+  lazy val providerDashboardUrl: Option[String] =
+    configuration.getOptional[String]("otoroshi.provider.dashboardUrl")
+
+  lazy val providerDashboardSecret: String =
+    configuration.getOptional[String]("otoroshi.provider.secret").getOrElse("secret")
+
+  lazy val providerDashboardTitle: String =
+    configuration.getOptional[String]("otoroshi.provider.title").getOrElse("Provider's dashboard")
+
   lazy val useEventStreamForScriptEvents: Boolean =
     configuration.getOptional[Boolean]("otoroshi.options.useEventStreamForScriptEvents").getOrElse(true)
 
