@@ -256,6 +256,19 @@ export class ServicesPage extends Component {
           firstSort={0}
           extractKey={item => item.id}
           itemUrl={i => `/bo/dashboard/lines/${i.env}/services/${i.id}`}
+          injectTopBar={() => (
+            <>
+              <div className="btn-group" style={{ marginRight: 5 }}>
+                <button
+                  type="button"
+                  onClick={this.addService}
+                  style={{ marginRight: 0 }}
+                  className="btn btn-primary">
+                  <i className="glyphicon glyphicon-plus-sign" /> Create new service
+                </button>
+              </div>
+            </>
+          )}
         />
       </div>
     );
