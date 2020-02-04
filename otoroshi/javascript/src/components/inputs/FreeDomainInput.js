@@ -108,6 +108,7 @@ export class FreeDomainInput extends Component {
             className="form-control"
             value={value}
             onChange={this.change}
+            disabled={this.props.disabled}
           />
           {this.state.error && <span className="label label-danger">{this.state.error}</span>}
         </div>

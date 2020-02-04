@@ -49,6 +49,24 @@ class RedisServiceDescriptorDataStore(redisCli: RedisClientMasterSlaves, maxQueu
   private def dataInForServiceStatsKey(name: String)  = s"${_env.storageRoot}:data:$name:stats:in"
   private def dataOutForServiceStatsKey(name: String) = s"${_env.storageRoot}:data:$name:stats:out"
 
+  override def set(value: ServiceDescriptor, pxMilliseconds: Option[Duration])(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
+    if (env.staticExposedDomainEnabled && value.id != env.backOfficeServiceId) {
+      val (_subdomain, _envir, _domain) = env.staticExposedDomain.map { v =>
+        ServiceLocation.fullQuery(v, env.datastores.globalConfigDataStore.latest()(env.otoroshiExecutionContext, env)) match {
+          case None => (value.subdomain, value.env, value.domain)
+          case Some(location) => (location.subdomain, location.env, location.domain)
+        }
+      } getOrElse (value.subdomain, value.env, value.domain)
+      super.set(value.copy(
+        domain = _domain,
+        env = _envir,
+        subdomain = _subdomain
+      ), pxMilliseconds)
+    } else {
+      super.set(value, pxMilliseconds)
+    }
+  }
+
   def startCleanup(env: Env): Unit = {
     updateRef.set(
       env.otoroshiScheduler.schedule(10.seconds, 5.minutes)(

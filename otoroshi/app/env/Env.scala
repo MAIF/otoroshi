@@ -190,6 +190,11 @@ class Env(val configuration: Configuration,
   lazy val metricsEnabled: Boolean =
     configuration.getOptional[Boolean]("otoroshi.metrics.enabled").getOrElse(true)
 
+  lazy val staticExposedDomain: Option[String] =
+    configuration.getOptional[String]("otoroshi.options.staticExposedDomain")
+
+  lazy val staticExposedDomainEnabled: Boolean = staticExposedDomain.isDefined
+
   lazy val useEventStreamForScriptEvents: Boolean =
     configuration.getOptional[Boolean]("otoroshi.options.useEventStreamForScriptEvents").getOrElse(true)
 

@@ -1222,6 +1222,7 @@ export class ServicePage extends Component {
                 placeholder="(http|https)://subdomain?.env?.domain.tld?/root?"
                 help="The domain used to expose your service. Should follow pattern: (http|https)://subdomain?.env?.domain.tld?/root? or regex (http|https):\/\/(.*?)\.?(.*?)\.?(.*?)\.?(.*)\/?(.*)"
                 value={this.state.service}
+                disabled={!!(this.state.env && this.state.env.staticExposedDomain)}
                 onChange={newService => {
                   this.setState({
                     changed: shallowDiffers(this.state.originalService, newService),
@@ -1235,6 +1236,7 @@ export class ServicePage extends Component {
                 label="Subdomain"
                 placeholder="The subdomain on which the service is available"
                 value={this.state.service.subdomain}
+                disabled={!!(this.state.env && this.state.env.staticExposedDomain)}
                 help="The subdomain on which the service is available"
                 onChange={e => this.changeTheValue('subdomain', e)}
               />
@@ -1245,6 +1247,7 @@ export class ServicePage extends Component {
                 placeholder="The line on which the service is available"
                 value={this.state.service.env}
                 onChange={e => this.changeTheValue('env', e)}
+                disabled={!!(this.state.env && this.state.env.staticExposedDomain)}
                 valuesFrom="/bo/api/proxy/api/lines"
                 help="The line on which the service is available. Based on that value, the name of the line will be appended to the subdomain. For line prod, nothing will be appended. For example, if the subdomain is 'foo' and line is 'preprod', then the exposed service will be available at 'foo.preprod.mydomain'"
                 transformer={v => ({ value: v, label: v })}
@@ -1257,6 +1260,7 @@ export class ServicePage extends Component {
                 value={this.state.service.domain}
                 help="The domain on which the service is available."
                 onChange={e => this.changeTheValue('domain', e)}
+                disabled={!!(this.state.env && this.state.env.staticExposedDomain)}
               />
             )}
             {!this.state.freeDomain && (
@@ -1277,6 +1281,7 @@ export class ServicePage extends Component {
                   value={this.state.service.hosts}
                   help="All the possible hostnames for your service"
                   onChange={e => this.changeTheValue('hosts', e)}
+                  disabled={!!(this.state.env && this.state.env.staticExposedDomain)}
                 />
                 <ArrayInput
                   label="Possible matching paths"

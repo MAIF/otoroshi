@@ -2612,13 +2612,20 @@ object ServiceDescriptorDataStore {
 }
 
 trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
-  def initiateNewDescriptor()(implicit env: Env): ServiceDescriptor =
+
+  def initiateNewDescriptor()(implicit env: Env): ServiceDescriptor = {
+    val (subdomain, envir, domain) = env.staticExposedDomain.map { v =>
+      ServiceLocation.fullQuery(v, env.datastores.globalConfigDataStore.latest()(env.otoroshiExecutionContext, env)) match {
+        case None => ("myservice", "prod", env.domain)
+        case Some(location) => (location.subdomain, location.env, location.domain)
+      }
+    } getOrElse ("myservice", "prod", env.domain)
     ServiceDescriptor(
       id = IdGenerator.token(64),
       name = "my-service",
-      env = "prod",
-      domain = env.domain,
-      subdomain = "myservice",
+      env = envir,
+      domain = domain,
+      subdomain = subdomain,
       targets = Seq(
         Target(
           host = "changeme.cleverapps.io",
@@ -2640,6 +2647,7 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
       missingOnlyHeadersOut = Map.empty,
       stripPath = true
     )
+  }
   def updateMetrics(id: String,
                     callDuration: Long,
                     callOverhead: Long,
