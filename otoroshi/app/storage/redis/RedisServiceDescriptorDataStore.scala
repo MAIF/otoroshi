@@ -60,7 +60,8 @@ class RedisServiceDescriptorDataStore(redisCli: RedisClientMasterSlaves, maxQueu
       super.set(value.copy(
         domain = _domain,
         env = _envir,
-        subdomain = _subdomain
+        subdomain = _subdomain,
+        hosts = Seq.empty
       ), pxMilliseconds)
     } else {
       super.set(value, pxMilliseconds)

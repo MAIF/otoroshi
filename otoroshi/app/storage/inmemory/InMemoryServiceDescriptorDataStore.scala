@@ -60,7 +60,8 @@ class InMemoryServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int,
       super.set(value.copy(
         domain = _domain,
         env = _envir,
-        subdomain = _subdomain
+        subdomain = _subdomain,
+        hosts = Seq.empty
       ), pxMilliseconds)
     } else {
       super.set(value, pxMilliseconds)
