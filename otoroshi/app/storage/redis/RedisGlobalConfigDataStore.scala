@@ -233,15 +233,15 @@ class RedisGlobalConfigDataStore(redisCli: RedisClientMasterSlaves, _env: Env)
   }
 
   override def fullExport()(implicit ec: ExecutionContext, env: Env): Future[JsValue] = {
-    val appConfig =
-      Json.parse(
-        env.configuration
-          .getOptional[play.api.Configuration]("app")
-          .get
-          .underlying
-          .root()
-          .render(ConfigRenderOptions.concise())
-      )
+    // val appConfig =
+    //   Json.parse(
+    //     env.configuration
+    //       .getOptional[play.api.Configuration]("app")
+    //       .get
+    //       .underlying
+    //       .root()
+    //       .render(ConfigRenderOptions.concise())
+    //   )
     for {
       config           <- env.datastores.globalConfigDataStore.singleton()
       descs            <- env.datastores.serviceDescriptorDataStore.findAll()
@@ -270,7 +270,7 @@ class RedisGlobalConfigDataStore(redisCli: RedisClientMasterSlaves, _env: Env)
           "dataOut" -> dataOut
         ),
         "config"             -> config.toJson,
-        "appConfig"          -> appConfig,
+        // "appConfig"          -> appConfig,
         "admins"             -> JsArray(admins),
         "simpleAdmins"       -> JsArray(simpleAdmins),
         "serviceGroups"      -> JsArray(groups.map(_.toJson)),

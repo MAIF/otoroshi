@@ -48,7 +48,7 @@ class DeferPlugin extends RequestTransformer {
     val defaultTimeout = (config \ "defaultDefer").asOpt[Long].getOrElse(0L)
     val headerTimeout  = ctx.request.headers.get("X-Defer").map(_.toLong)
     val queryTimeout   = ctx.request.getQueryString("defer").map(_.toLong)
-    val timeout       = headerTimeout.orElse(queryTimeout).getOrElse(defaultTimeout)
+    val timeout        = headerTimeout.orElse(queryTimeout).getOrElse(defaultTimeout)
     val elapsed = System.currentTimeMillis() - ctx.attrs
       .get(otoroshi.plugins.Keys.RequestTimestampKey)
       .getOrElse(DateTime.now())
