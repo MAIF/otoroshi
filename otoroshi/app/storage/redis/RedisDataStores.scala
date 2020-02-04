@@ -22,6 +22,7 @@ import ssl.{CertificateDataStore, ClientCertificateValidationDataStore, RedisCli
 import storage._
 import otoroshi.tcp.{RedisTcpServiceDataStoreDataStore, TcpServiceDataStore}
 import storage.inmemory.{InMemoryRawDataStore, WebAuthnAdminDataStore, WebAuthnRegistrationsDataStore}
+import storage.redis.next.RedisMember
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -58,6 +59,9 @@ class RedisDataStores(configuration: Configuration, environment: Environment, li
           password = config.getOptional[String]("password")
         )
       })
+      .orElse {
+        configuration.getOptional[String]("app.redis.slavesStr").map(RedisMember.fromList).map(_.map(_.toRedisServer))
+      }
       .getOrElse(Seq.empty[RedisServer])
     val cli: RedisClientMasterSlaves = RedisClientMasterSlaves(
       master,
