@@ -73,7 +73,9 @@ trait RawDataStore {
   def incr(key: String)(implicit ec: ExecutionContext, env: Env): Future[Long] = incrby(key, 1L)
   def incrby(key: String, incr: Long)(implicit ec: ExecutionContext, env: Env): Future[Long]
   def keys(pattern: String)(implicit ec: ExecutionContext, env: Env): Future[Seq[String]]
+  def pexpire(key: String, pttl: Long)(implicit ec: ExecutionContext, env: Env): Future[Boolean]
 }
+
 
 trait BasicStore[T] {
   def key(id: String): Key
@@ -107,6 +109,7 @@ trait BasicStore[T] {
   ): Future[Seq[T]]
   def clearFromCache(id: String)(implicit env: Env): Unit
   def clearCache(id: String)(implicit env: Env): Unit
+  def countAll()(implicit ec: ExecutionContext, env: Env): Future[Long]
 }
 
 trait RedisLike {
@@ -175,6 +178,10 @@ trait RedisLikeStore[T] extends BasicStore[T] {
 
   private val findAllCache     = new java.util.concurrent.atomic.AtomicReference[Seq[T]](null)
   private val lastFindAllCache = new java.util.concurrent.atomic.AtomicLong(0L)
+
+  def countAll()(implicit ec: ExecutionContext, env: Env): Future[Long] = {
+    redisLike.keys(key("*").key).map(_.size)
+  }
 
   def clearFromCache(id: String)(implicit env: Env): Unit = {
     if (_findAllCached) {

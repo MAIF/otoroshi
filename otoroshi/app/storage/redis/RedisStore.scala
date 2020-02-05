@@ -79,6 +79,10 @@ trait RedisStore[T] extends BasicStore[T] {
     }
   }
 
+  def countAll()(implicit ec: ExecutionContext, env: Env): Future[Long] = {
+    _redis.keys(key("*").key).map(_.size)
+  }
+
   def clearCache(id: String)(implicit env: Env): Unit = {
     if (_findAllCached) {
       findAllCache.set(null)
