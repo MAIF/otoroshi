@@ -426,6 +426,39 @@ export class ServiceApiKeysPage extends Component {
     },
     remainingMonthlyQuota: { type: 'label', props: { label: 'Monthly quota' } },
     restrictions: { type: Restrictions, props: { path: 'restrictions' } },
+
+    'rotation.enabled': {
+      type: 'bool',
+      props: {
+        label: 'Enabled',
+        help: 'Enabled automatic apikey secret rotation',
+      },
+    },
+    'rotation.rotationEvery': {
+      type: 'number',
+      props: {
+        label: 'Rotation every',
+        placeholder: 'rotate secrets every',
+        suffix: 'hours',
+        help: 'rotate secrets every',
+      },
+    },
+    'rotation.gracePeriod': {
+      type: 'number',
+      props: {
+        label: 'Grace period',
+        placeholder: 'period when both secrets can be used',
+        suffix: 'hours',
+        help: 'period when both secrets can be used',
+      },
+    },
+    'rotation.nextSecret': {
+      type: 'string',
+      props: {
+        disabled: true,
+        label: 'Next client secret',
+      },
+    },
   };
 
   columns = [
@@ -514,6 +547,11 @@ export class ServiceApiKeysPage extends Component {
     'metadata',
     '>>>Service Group settings',
     'authorizedGroup',
+    '>>>Automatic secret rotation',
+    'rotation.enabled',
+    'rotation.rotationEvery',
+    'rotation.gracePeriod',
+    'rotation.nextSecret',
     '>>>Restrictions',
     'restrictions',
     '>>>Call examples',
