@@ -129,6 +129,30 @@ class InMemoryGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
   private val configCache     = new java.util.concurrent.atomic.AtomicReference[GlobalConfig](null)
   private val lastConfigCache = new java.util.concurrent.atomic.AtomicLong(0L)
 
+
+  override def findById(id: String)(implicit ec: ExecutionContext, env: Env): Future[Option[GlobalConfig]] = {
+    val staticGlobalScripts: GlobalScripts = env.staticGlobalScripts
+    if (env.staticExposedDomainEnabled && staticGlobalScripts.enabled) {
+      super.findById(id)(ec, env).map(_.map { c =>
+        c.copy(
+          scripts = GlobalScripts(
+            enabled = true,
+            transformersRefs = staticGlobalScripts.transformersRefs ++ c.scripts.transformersRefs,
+            transformersConfig = staticGlobalScripts.transformersConfig.as[JsObject] ++ c.scripts.transformersConfig.as[JsObject],
+            validatorRefs = staticGlobalScripts.validatorRefs ++ c.scripts.validatorRefs,
+            validatorConfig = staticGlobalScripts.validatorConfig.as[JsObject] ++ c.scripts.validatorConfig.as[JsObject],
+            preRouteRefs = staticGlobalScripts.preRouteRefs ++ c.scripts.preRouteRefs,
+            preRouteConfig = staticGlobalScripts.preRouteConfig.as[JsObject] ++ c.scripts.preRouteConfig.as[JsObject],
+            sinkRefs = staticGlobalScripts.sinkRefs ++ c.scripts.sinkRefs,
+            sinkConfig = staticGlobalScripts.sinkConfig.as[JsObject] ++ c.scripts.sinkConfig.as[JsObject]
+          )
+        )
+      })
+    } else {
+      super.findById(id)(ec, env)
+    }
+  }
+
   override def latest()(implicit ec: ExecutionContext, env: Env): GlobalConfig = {
     val ref = configCache.get()
     if (ref == null) {

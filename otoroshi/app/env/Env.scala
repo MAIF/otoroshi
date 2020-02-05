@@ -222,6 +222,40 @@ class Env(val configuration: Configuration,
       .map(v => FiniteDuration(v, TimeUnit.MILLISECONDS))
       .getOrElse(FiniteDuration(30, TimeUnit.SECONDS))
 
+  lazy val staticGlobalScripts: GlobalScripts = {
+    GlobalScripts(
+      enabled = configuration.getOptional[Boolean]("otoroshi.scripts.static.enabled").getOrElse(false),
+      transformersRefs = configuration.getOptional[Seq[String]]("otoroshi.scripts.static.transformersRefs")
+        .orElse(configuration.getOptional[String]("otoroshi.scripts.static.transformersRefsStr").map(_.split(",").map(_.trim).toSeq))
+        .getOrElse(Seq.empty[String]),
+      transformersConfig = configuration.getOptional[Configuration]("otoroshi.scripts.static.transformersConfig")
+        .map(c => Json.parse(c.underlying.root().render(ConfigRenderOptions.concise())))
+        .orElse(configuration.getOptional[String]("otoroshi.scripts.static.transformersConfigStr").map(Json.parse))
+        .getOrElse(Json.obj()),
+      validatorRefs = configuration.getOptional[Seq[String]]("otoroshi.scripts.static.validatorRefs")
+        .orElse(configuration.getOptional[String]("otoroshi.scripts.static.validatorRefsStr").map(_.split(",").map(_.trim).toSeq))
+        .getOrElse(Seq.empty[String]),
+      validatorConfig = configuration.getOptional[Configuration]("otoroshi.scripts.static.validatorConfig")
+        .map(c => Json.parse(c.underlying.root().render(ConfigRenderOptions.concise())))
+        .orElse(configuration.getOptional[String]("otoroshi.scripts.static.validatorConfigStr").map(Json.parse))
+        .getOrElse(Json.obj()),
+      preRouteRefs = configuration.getOptional[Seq[String]]("otoroshi.scripts.static.preRouteRefs")
+        .orElse(configuration.getOptional[String]("otoroshi.scripts.static.preRouteRefsStr").map(_.split(",").map(_.trim).toSeq))
+        .getOrElse(Seq.empty[String]),
+      preRouteConfig = configuration.getOptional[Configuration]("otoroshi.scripts.static.preRouteConfig")
+        .map(c => Json.parse(c.underlying.root().render(ConfigRenderOptions.concise())))
+        .orElse(configuration.getOptional[String]("otoroshi.scripts.static.preRouteConfigStr").map(Json.parse))
+        .getOrElse(Json.obj()),
+      sinkRefs = configuration.getOptional[Seq[String]]("otoroshi.scripts.static.sinkRefs")
+        .orElse(configuration.getOptional[String]("otoroshi.scripts.static.sinkRefsStr").map(_.split(",").map(_.trim).toSeq))
+        .getOrElse(Seq.empty[String]),
+      sinkConfig = configuration.getOptional[Configuration]("otoroshi.scripts.static.sinkConfig")
+        .map(c => Json.parse(c.underlying.root().render(ConfigRenderOptions.concise())))
+        .orElse(configuration.getOptional[String]("otoroshi.scripts.static.sinkConfigStr").map(Json.parse))
+        .getOrElse(Json.obj())
+    )
+  }
+
   lazy val requestTimeout: FiniteDuration =
     configuration.getOptional[Int]("app.proxy.requestTimeout").map(_.millis).getOrElse(1.hour)
 
