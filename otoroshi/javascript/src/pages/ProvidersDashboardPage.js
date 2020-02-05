@@ -22,7 +22,6 @@ export class ProvidersDashboardPage extends Component {
     const secret = this.state.env.providerDashboardSecret;
     this.sha256Hex(`${id}:${secret}:${timestamp}`).then(token => {
       const url = `${this.state.env.providerDashboardUrl}?user=${user}&id=${id}&timestamp=${timestamp}&token=${token}`;
-      console.log(token, url);
       this.setState({ url });
     });    
   }
