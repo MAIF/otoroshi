@@ -186,9 +186,12 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
             "adminApiId"           -> env.backOfficeServiceId,
             "adminGroupId"         -> env.backOfficeGroupId,
             "adminApikeyId"        -> env.backOfficeApiKeyClientId,
+            "user"                 -> ctx.user.email,
+            "instanceId"           -> config.otoroshiId,
             "staticExposedDomain"  -> env.staticExposedDomain.map(JsString.apply).getOrElse(JsNull).as[JsValue],
             "providerDashboardUrl" -> env.providerDashboardUrl.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-            "providerDashboardTitle" -> env.providerDashboardTitle
+            "providerDashboardTitle" -> env.providerDashboardTitle,
+            "providerDashboardSecret" -> env.providerDashboardSecret
           )
         )
       }

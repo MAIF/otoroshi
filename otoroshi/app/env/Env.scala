@@ -595,7 +595,9 @@ class Env(val configuration: Configuration,
 
   lazy val defaultConfig = GlobalConfig(
     perIpThrottlingQuota = 500,
-    throttlingQuota = 100000
+    throttlingQuota = 100000,
+    maxLogsSize = configuration.getOptional[Int]("app.events.maxSize").getOrElse(100),
+    otoroshiId = configuration.getOptional[String]("otoroshi.instanceId").getOrElse(IdGenerator.uuid),
   )
 
   lazy val backOfficeGroup = ServiceGroup(
