@@ -1,10 +1,12 @@
 package models
 
 import akka.http.scaladsl.util.FastFuture
+import akka.util.ByteString
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.google.common.base.Charsets
 import env.Env
+import events.{Alerts, ApiKeySecretHasRotated, ApiKeySecretWillRotate}
 import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.json._
@@ -39,6 +41,39 @@ object RemainingQuotas {
   val MaxValue: Long = 10000000L
   implicit val fmt   = Json.format[RemainingQuotas]
 }
+
+case class ApiKeyRotation(
+   enabled: Boolean = false,
+   rotationEvery: Long = 31 * 24,
+   gracePeriod: Long = 7 * 24,
+   nextSecret: Option[String] = None
+) {
+  def json: JsValue = ApiKeyRotation.fmt.writes(this)
+}
+
+object ApiKeyRotation {
+  val fmt   = new Format[ApiKeyRotation] {
+    override def writes(o: ApiKeyRotation): JsValue = Json.obj(
+      "enabled" -> o.enabled,
+      "rotationEvery" -> o.rotationEvery,
+      "gracePeriod" -> o.gracePeriod,
+      "nextSecret" -> o.nextSecret.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+    )
+    override def reads(json: JsValue): JsResult[ApiKeyRotation] = Try {
+      ApiKeyRotation(
+        enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
+        rotationEvery = (json \ "rotationEvery").asOpt[Long].getOrElse(31 * 24),
+        gracePeriod = (json \ "gracePeriod").asOpt[Long].getOrElse(7 * 24),
+        nextSecret = (json \ "nextSecret").asOpt[String]
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(apkr) => JsSuccess(apkr)
+    }
+  }
+}
+
+
 case class ApiKey(clientId: String = IdGenerator.token(16),
                   clientSecret: String = IdGenerator.token(64),
                   clientName: String,
@@ -52,13 +87,14 @@ case class ApiKey(clientId: String = IdGenerator.token(16),
                   constrainedServicesOnly: Boolean = false,
                   restrictions: Restrictions = Restrictions(),
                   validUntil: Option[DateTime] = None,
+                  rotation: ApiKeyRotation = ApiKeyRotation(),
                   tags: Seq[String] = Seq.empty[String],
                   metadata: Map[String, String] = Map.empty[String, String]) {
   def save()(implicit ec: ExecutionContext, env: Env)   = env.datastores.apiKeyDataStore.set(this)
   def delete()(implicit ec: ExecutionContext, env: Env) = env.datastores.apiKeyDataStore.delete(this)
   def exists()(implicit ec: ExecutionContext, env: Env) = env.datastores.apiKeyDataStore.exists(this)
   def toJson                                            = ApiKey.toJson(this)
-  def isValid(value: String): Boolean                   = enabled && value == clientSecret
+  def isValid(value: String): Boolean                   = enabled && ((value == clientSecret) || (rotation.enabled && rotation.nextSecret.contains(value)))
   def isInvalid(value: String): Boolean                 = !isValid(value)
   def group(implicit ec: ExecutionContext, env: Env): Future[Option[ServiceGroup]] =
     env.datastores.serviceGroupDataStore.findById(authorizedGroup)
@@ -77,8 +113,14 @@ case class ApiKey(clientId: String = IdGenerator.token(16),
     env.datastores.apiKeyDataStore.withinDailyQuota(this)
   def withinMonthlyQuota()(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
     env.datastores.apiKeyDataStore.withinMonthlyQuota(this)
-  def withingQuotas()(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
+  def withinQuotas()(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
     env.datastores.apiKeyDataStore.withingQuotas(this)
+  def withinQuotasAndRotation()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
+    for {
+      within <- env.datastores.apiKeyDataStore.withingQuotas(this)
+      _      <- env.datastores.apiKeyDataStore.keyRotation(this)
+    } yield within
+  }
   def metadataJson: JsValue = JsObject(metadata.mapValues(JsString.apply))
   def lightJson: JsObject = Json.obj(
     "clientId"   -> clientId,
@@ -158,6 +200,7 @@ object ApiKey {
         "monthlyQuota"            -> apk.monthlyQuota,
         "constrainedServicesOnly" -> apk.constrainedServicesOnly,
         "restrictions"            -> apk.restrictions.json,
+        "rotation"                -> apk.rotation.json,
         "validUntil"              -> apk.validUntil.map(v => JsNumber(v.toDate.getTime)).getOrElse(JsNull).as[JsValue],
         "tags"                    -> JsArray(apk.tags.map(JsString.apply)),
         "metadata"                -> JsObject(apk.metadata.filter(_._1.nonEmpty).mapValues(JsString.apply))
@@ -186,6 +229,9 @@ object ApiKey {
           restrictions = Restrictions.format
             .reads((json \ "restrictions").asOpt[JsValue].getOrElse(JsNull))
             .getOrElse(Restrictions()),
+          rotation = ApiKeyRotation.fmt
+            .reads((json \ "rotation").asOpt[JsValue].getOrElse(JsNull))
+            .getOrElse(ApiKeyRotation()),
           validUntil = rawValidUntil,
           tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
           metadata = (json \ "metadata")
@@ -242,6 +288,60 @@ trait ApiKeyDataStore extends BasicStore[ApiKey] {
   def addFastLookupByService(serviceId: String, apiKey: ApiKey)(implicit ec: ExecutionContext, env: Env): Future[Long]
   def clearFastLookupByGroup(groupId: String)(implicit ec: ExecutionContext, env: Env): Future[Long]
   def clearFastLookupByService(serviceId: String)(implicit ec: ExecutionContext, env: Env): Future[Long]
+
+  def keyRotation(apiKey: ApiKey)(implicit ec: ExecutionContext, env: Env): Future[Unit] = {
+    if (apiKey.rotation.enabled) {
+      val key = s"${env.storageRoot}:apikeys-rotation:${apiKey.clientId}"
+      env.datastores.rawDataStore.get(key).flatMap {
+        case None =>
+          val newApk = apiKey.copy(rotation = apiKey.rotation.copy(nextSecret = None))
+          env.datastores.rawDataStore.set(key, ByteString(Json.stringify(Json.obj(
+            "start" -> System.currentTimeMillis()
+          ))), Some((newApk.rotation.rotationEvery * 60 * 60 * 1000) + (5 * 60 * 1000))).flatMap { _ =>
+            newApk.save().map(_ => ())
+          }
+        case Some(body) => {
+          val json = Json.parse(body.utf8String)
+          val start = new DateTime((json \ "start").as[Long])
+          val end = start.plusHours(apiKey.rotation.rotationEvery.toInt)
+          val startGrace = end.minusHours(apiKey.rotation.gracePeriod.toInt)
+          val now = DateTime.now()
+          val beforeGracePeriod = now.isAfter(start) && now.isBefore(startGrace) && now.isBefore(end)
+          val inGracePeriod     = now.isAfter(start) && now.isAfter(startGrace) && now.isBefore(end)
+          val afterGracePeriod  = now.isAfter(start) && now.isAfter(startGrace) && now.isAfter(end)
+          if (beforeGracePeriod) {
+            FastFuture.successful(())
+          } else if (inGracePeriod) {
+            val newApk = apiKey.copy(rotation = apiKey.rotation.copy(nextSecret = apiKey.rotation.nextSecret.orElse(Some(IdGenerator.token(64)))))
+            Alerts.send(ApiKeySecretWillRotate(
+              `@id` = env.snowflakeGenerator.nextIdStr(),
+              `@env` = env.env,
+              apikey = newApk
+            ))
+            newApk.save().map(_ => ())
+          } else if (afterGracePeriod) {
+            val newApk = apiKey.copy(clientSecret = apiKey.rotation.nextSecret.getOrElse(IdGenerator.token(64)), rotation = apiKey.rotation.copy(nextSecret = None))
+            Alerts.send(ApiKeySecretHasRotated(
+              `@id` = env.snowflakeGenerator.nextIdStr(),
+              `@env` = env.env,
+              oldApikey = apiKey,
+              apikey = newApk
+            ))
+            env.datastores.rawDataStore.set(key, ByteString(Json.stringify(Json.obj(
+              "start" -> System.currentTimeMillis()
+            ))), Some((newApk.rotation.rotationEvery * 60 * 60 * 1000) + (5 * 60 * 1000))).flatMap { _ =>
+              newApk.save().map(_ => ())
+            }
+          } else {
+            FastFuture.successful(())
+          }
+        }
+      }
+    } else {
+      FastFuture.successful(())
+    }
+  }
+
 }
 
 object ApiKeyHelper {

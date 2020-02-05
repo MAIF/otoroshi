@@ -29,6 +29,59 @@ trait AlertEvent extends AnalyticEvent {
   override def `@type`: String = "AlertEvent"
 }
 
+case class ApiKeySecretWillRotate(`@id`: String,
+                                  `@env`: String,
+                                  apikey: ApiKey,
+                                  `@timestamp`: DateTime = DateTime.now())
+  extends AlertEvent {
+
+  override def `@service`: String   = "Otoroshi"
+  override def `@serviceId`: String = "--"
+
+  override def fromOrigin: Option[String]    = None
+  override def fromUserAgent: Option[String] = None
+
+  override def toJson(implicit _env: Env): JsValue = Json.obj(
+    "@id"        -> `@id`,
+    "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
+    "@type"      -> `@type`,
+    "@product"   -> _env.eventsName,
+    "@serviceId" -> `@serviceId`,
+    "@service"   -> `@service`,
+    "@env"       -> `@env`,
+    "alert"      -> "ApiKeySecretWillRotate",
+    "inHoursOrLess" -> apikey.rotation.gracePeriod,
+    "apikey"     -> apikey.toJson
+  )
+}
+
+case class ApiKeySecretHasRotated(`@id`: String,
+                                  `@env`: String,
+                                  oldApikey: ApiKey,
+                                  apikey: ApiKey,
+                                  `@timestamp`: DateTime = DateTime.now())
+  extends AlertEvent {
+
+  override def `@service`: String   = "Otoroshi"
+  override def `@serviceId`: String = "--"
+
+  override def fromOrigin: Option[String]    = None
+  override def fromUserAgent: Option[String] = None
+
+  override def toJson(implicit _env: Env): JsValue = Json.obj(
+    "@id"        -> `@id`,
+    "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
+    "@type"      -> `@type`,
+    "@product"   -> _env.eventsName,
+    "@serviceId" -> `@serviceId`,
+    "@service"   -> `@service`,
+    "@env"       -> `@env`,
+    "alert"      -> "ApiKeySecretHasRotated",
+    "oldApikey"     -> oldApikey.toJson,
+    "apikey"     -> apikey.toJson
+  )
+}
+
 case class MaxConcurrentRequestReachedAlert(`@id`: String,
                                             `@env`: String,
                                             limit: Long,

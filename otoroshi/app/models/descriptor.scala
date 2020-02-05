@@ -1160,7 +1160,7 @@ case class OIDCThirdPartyApiKeyConfig(
                                       }
                                   }) flatMap { apiKey =>
                                     (quotasEnabled match {
-                                      case true  => apiKey.withingQuotas()
+                                      case true  => apiKey.withinQuotasAndRotation()
                                       case false => FastFuture.successful(true)
                                     }).flatMap {
                                       case true => {

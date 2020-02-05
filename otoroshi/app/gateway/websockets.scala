@@ -1332,7 +1332,7 @@ class WebSocketHandler()(implicit env: Env) {
                                                 .asLeft[WSFlow]
                                             }
                                             case Some(key) if key.allowClientIdOnly =>
-                                              key.withingQuotas().flatMap {
+                                              key.withinQuotasAndRotation().flatMap {
                                                 case true => callDownstream(config, Some(key))
                                                 case false =>
                                                   Errors
@@ -1402,7 +1402,7 @@ class WebSocketHandler()(implicit env: Env) {
                                                 .asLeft[WSFlow]
                                             }
                                             case Some(key) if key.isValid(clientSecret) =>
-                                              key.withingQuotas().flatMap {
+                                              key.withinQuotasAndRotation().flatMap {
                                                 case true => callDownstream(config, Some(key))
                                                 case false =>
                                                   Errors
@@ -1514,7 +1514,7 @@ class WebSocketHandler()(implicit env: Env) {
                                                           .asLeft[WSFlow]
                                                       }
                                                       case Success(_) =>
-                                                        apiKey.withingQuotas().flatMap {
+                                                        apiKey.withinQuotasAndRotation().flatMap {
                                                           case true => callDownstream(config, Some(apiKey))
                                                           case false =>
                                                             Errors
@@ -1634,7 +1634,7 @@ class WebSocketHandler()(implicit env: Env) {
                                                     .asLeft[WSFlow]
                                                 }
                                                 case Some(key) if key.isValid(apiKeySecret) =>
-                                                  key.withingQuotas().flatMap {
+                                                  key.withinQuotasAndRotation().flatMap {
                                                     case true => callDownstream(config, Some(key))
                                                     case false =>
                                                       Errors
