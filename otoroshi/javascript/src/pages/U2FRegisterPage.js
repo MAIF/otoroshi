@@ -5,6 +5,7 @@ import { Table } from '../components/inputs';
 import { Link } from 'react-router-dom';
 import moment from 'moment';
 import faker from 'faker';
+import bcrypt from 'bcryptjs';
 
 function Base64Url() {
   let chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
@@ -153,34 +154,43 @@ export class U2FRegisterPage extends Component {
       style: { width: 50, textAlign: 'center' },
     },
     {
-      title: 'Action',
-      style: { textAlign: 'center', width: 150 },
+      title: 'Actions',
+      style: { textAlign: 'right', width: 250 },
       notSortable: true,
       notFilterable: true,
       content: item => item,
       cell: (v, item, table) => {
         return (
-          <button
-            type="button"
-            className="btn btn-danger btn-xs"
-            onClick={e =>
-              this.discardAdmin(
-                e,
-                item.username,
-                item.registration ? item.registration.keyHandle : null,
-                table,
-                item.type
-              )
-            }>
-            <i className="glyphicon glyphicon-fire" /> Discard User
-          </button>
+          <>
+            {item.username === window.__userid && <button
+                type="button"
+                className="btn btn-success btn-xs"
+                onClick={this.updateCurrentUser}>
+                <i className="glyphicon glyphicon-refresh" /> Update User
+              </button>
+            }
+            <button
+              type="button"
+              className="btn btn-danger btn-xs"
+              onClick={e =>
+                this.discardAdmin(
+                  e,
+                  item.username,
+                  item.registration ? item.registration.keyHandle : null,
+                  table,
+                  item.type
+                )
+              }>
+              <i className="glyphicon glyphicon-fire" /> Discard User
+            </button>
+          </>
         );
       },
     },
   ];
 
   componentDidMount() {
-    this.props.setTitle(`Register new admin`);
+    this.props.setTitle(`Local admins`);
   }
 
   onChange = e => {
@@ -195,7 +205,8 @@ export class U2FRegisterPage extends Component {
     this.setState({ error: message });
   };
 
-  register = e => {
+  /*
+  registerU2F = e => {
     if (e && e.preventDefault) {
       e.preventDefault();
     }
@@ -383,6 +394,7 @@ export class U2FRegisterPage extends Component {
           .catch(this.handleError);
       });
   };
+  */
 
   discardAdmin = (e, username, id, table, type) => {
     if (e && e.preventDefault) e.preventDefault();
@@ -400,6 +412,35 @@ export class U2FRegisterPage extends Component {
       });
   };
 
+  createAdmin = () => {
+    BackOfficeServices.fetchAdmins().then(admins => {
+      window
+      .popup(
+        'Register new admin',
+        (ok, cancel) => <RegisterAdminModal ok={ok} cancel={cancel}  users={admins} mode="create" />,
+        { style: { width: '100%' } }
+      )
+      .then(form => {
+        if (this.table) this.table.update();
+      });
+    });
+  }
+
+  updateCurrentUser = () => {
+    BackOfficeServices.fetchAdmins().then(admins => {
+      const user = admins.filter(a => a.username === window.__userid)[0];
+      window
+      .popup(
+        'Update admin',
+        (ok, cancel) => <RegisterAdminModal ok={ok} cancel={cancel} user={user} users={admins} mode="update" />,
+        { style: { width: '100%' } }
+      )
+      .then(form => {
+        if (this.table) this.table.update();
+      });
+    });
+  }
+
   render() {
     return (
       <div>
@@ -409,7 +450,7 @@ export class U2FRegisterPage extends Component {
             new admin account.
           </div>
         )}
-        <form className="form-horizontal">
+        <form className="form-horizontal hide">
           <div className="form-group">
             <label className="col-sm-2 control-label">Label</label>
             <div className="col-sm-10">
@@ -464,13 +505,13 @@ export class U2FRegisterPage extends Component {
               <button type="button" className="btn btn-success" onClick={this.simpleRegister}>
                 Register Admin
               </button>
-              <button
+              {/*<button
                 type="button"
                 className="btn btn-success hide"
                 style={{ marginLeft: 10 }}
-                onClick={this.register}>
+                onClick={this.registerU2F}>
                 Register FIDO U2F Admin
-              </button>
+              </button>*/}
               <button
                 type="button"
                 className="btn btn-success"
@@ -488,7 +529,7 @@ export class U2FRegisterPage extends Component {
             </div>
           </div>
         </form>
-        <hr />
+        <hr className="hide" />
         <Table
           parentProps={this.props}
           selfUrl="admins"
@@ -501,8 +542,291 @@ export class U2FRegisterPage extends Component {
           showLink={false}
           injectTable={t => (this.table = t)}
           extractKey={item => (item.registration ? item.registration.keyHandle : item.username)}
+          injectTopBar={() => (
+            <>
+              <div className="btn-group">
+                <button type="button" className="btn btn-primary" onClick={this.createAdmin}>
+                  <i className="glyphicon glyphicon-plus-sign" /> Register admin.
+                </button>
+              </div>
+            </>
+          )}
         />
       </div>
+    );
+  }
+}
+
+export class RegisterAdminModal extends Component {
+
+  state = {
+    mode: this.props.mode || 'create',
+    email: this.props.mode === 'update' && this.props.user ? this.props.user.username : '',
+    label: this.props.mode === 'update' && this.props.user ? this.props.user.label : '',
+    oldPassword: '',
+    password: '',
+    passwordcheck: '',
+    error: null,
+    message: null,
+  };
+
+  onChange = e => {
+    this.setState({ [e.target.name]: e.target.value });
+  };
+
+  handleError = err => {
+    this.setState({ error: err.message });
+  };
+
+  handleErrorWithMessage = message => () => {
+    this.setState({ error: message });
+  };
+
+  verifyAndDestroy = (f) => {
+    if (this.props.user && this.props.mode === 'update') {
+      if (bcrypt.compareSync(this.state.oldPassword, this.props.user.password)) {
+        BackOfficeServices.discardAdmin(this.props.user.username, this.props.user.registration ? this.props.user.registration.keyHandle : null, this.props.user.type).then(() => {
+          f();
+        });
+      } else {
+        this.props.ok(this.state);
+        setTimeout(() => {
+          window.newAlert('Old passsword does not match !', 'Error');
+        }, 500)
+      }
+    } else {
+      f();
+    }
+  }
+
+  simpleRegister = e => this.verifyAndDestroy(() => {
+    if (e && e.preventDefault) {
+      e.preventDefault();
+    }
+    const username = this.state.email;
+    const password = this.state.password;
+    const passwordcheck = this.state.passwordcheck;
+    const label = this.state.label;
+    if (password !== passwordcheck) {
+      return window.newAlert('Password does not match !!!', 'Password error');
+    }
+    fetch(`/bo/simple/admins`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        username,
+        password,
+        label,
+      }),
+    })
+      .then(r => r.json(), this.handleError)
+      .then(data => {
+        if (this.table) this.table.update();
+        this.setState({
+          error: null,
+          email: '',
+          label: '',
+          password: '',
+          passwordcheck: '',
+          message: `Registration done for '${data.username}'`,
+        });
+        this.props.ok(this.state)
+      }, this.handleError);
+  });
+
+  registerWebAuthn = e => this.verifyAndDestroy(() => {
+    if (e && e.preventDefault) {
+      e.preventDefault();
+    }
+
+    const username = this.state.email;
+    const password = this.state.password;
+    const passwordcheck = this.state.passwordcheck;
+    const label = this.state.label;
+
+    if (password !== passwordcheck) {
+      return window.newAlert('Password does not match !!!', 'Password error');
+    }
+
+    return fetch('/bo/webauthn/register/start', {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        username,
+        password,
+        label,
+        origin: window.location.origin,
+      }),
+    })
+      .then(r => r.json())
+      .then(resp => {
+        const requestId = resp.requestId;
+        const publicKeyCredentialCreationOptions = resp.request;
+        const handle = publicKeyCredentialCreationOptions.user.id + '';
+        publicKeyCredentialCreationOptions.challenge = base64url.decode(
+          publicKeyCredentialCreationOptions.challenge
+        );
+        publicKeyCredentialCreationOptions.user.id = base64url.decode(
+          publicKeyCredentialCreationOptions.user.id
+        );
+        return navigator.credentials
+          .create(
+            {
+              publicKey: publicKeyCredentialCreationOptions,
+            },
+            this.handleErrorWithMessage('Webauthn error')
+          )
+          .then(credentials => {
+            const json = responseToObject(credentials);
+            return fetch('/bo/webauthn/register/finish', {
+              method: 'POST',
+              credentials: 'include',
+              headers: {
+                Accept: 'application/json',
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                requestId,
+                webauthn: json,
+                otoroshi: {
+                  origin: window.location.origin,
+                  username,
+                  password,
+                  label,
+                  handle,
+                },
+              }),
+            })
+              .then(r => r.json())
+              .then(resp => {
+                if (this.table) this.table.update();
+                this.setState({
+                  error: null,
+                  email: '',
+                  label: '',
+                  password: '',
+                  passwordcheck: '',
+                  message: `Registration done for '${username}'`,
+                });
+                this.props.ok(this.state);
+              });
+          }, this.handleErrorWithMessage('Webauthn error'))
+          .catch(this.handleError);
+      });
+  });
+
+  render() {
+    return (
+      <>
+        <div className="modal-body">
+          <form className="form-horizontal">
+            <div className="form-group">
+              <label className="col-sm-2 control-label">Label</label>
+              <div className="col-sm-10">
+                <input
+                  type="text"
+                  className="form-control"
+                  name="label"
+                  value={this.state.label}
+                  onChange={this.onChange}
+                />
+              </div>
+            </div>
+            <div className="form-group">
+              <label className="col-sm-2 control-label">Username</label>
+              <div className="col-sm-10">
+                <input
+                  type="text"
+                  className="form-control"
+                  name="email"
+                  disabled={this.props.mode === 'update'}
+                  value={this.state.email}
+                  onChange={this.onChange}
+                />
+              </div>
+            </div>
+            {this.props.mode === 'update' && (
+              <div className="form-group">
+                <label className="col-sm-2 control-label">Old Password</label>
+                <div className="col-sm-10">
+                  <input
+                    type="password"
+                    className="form-control"
+                    name="oldPassword"
+                    value={this.state.oldPassword}
+                    onChange={this.onChange}
+                  />
+                </div>
+              </div>
+            )}
+            <div className="form-group">
+              <label className="col-sm-2 control-label">Password</label>
+              <div className="col-sm-10">
+                <input
+                  type="password"
+                  className="form-control"
+                  name="password"
+                  value={this.state.password}
+                  onChange={this.onChange}
+                />
+              </div>
+            </div>
+            <div className="form-group">
+              <label className="col-sm-2 control-label">Re-type Password</label>
+              <div className="col-sm-10">
+                <input
+                  type="password"
+                  className="form-control"
+                  name="passwordcheck"
+                  value={this.state.passwordcheck}
+                  onChange={this.onChange}
+                />
+              </div>
+            </div>
+            <div className="form-group hide">
+              <label className="col-sm-2 control-label" />
+              <div className="col-sm-10"></div>
+            </div>
+            <div className="form-group">
+              <label className="col-sm-2 control-label" />
+              <div className="col-sm-10">
+                <p>{!this.state.error && this.state.message}</p>
+                <p style={{ color: 'red' }}>{!!this.state.error && this.state.error}</p>
+              </div>
+            </div>
+          </form>
+        </div>
+        <div className="modal-footer">
+          <button type="button" className="btn btn-danger" onClick={this.props.cancel}>
+            Cancel
+          </button>
+          <button type="button" className="btn btn-success" onClick={this.simpleRegister}>
+            {this.props.mode === 'update' ? 'Update' : 'Register'} Admin
+          </button>
+          <button
+            type="button"
+            className="btn btn-success"
+            style={{ marginLeft: 10 }}
+            onClick={this.registerWebAuthn}>
+            {this.props.mode === 'update' ? 'Update' : 'Register'}  Admin with WebAuthn
+          </button>
+          <button
+            type="button"
+            className="btn btn-success hide"
+            ref={r => (this.okRef = r)}
+            onClick={e => this.props.ok(this.state)}>
+            Create
+          </button>
+        </div>
+      </>
     );
   }
 }
