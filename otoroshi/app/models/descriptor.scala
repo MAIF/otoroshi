@@ -2504,6 +2504,7 @@ object ServiceDescriptor {
             .reads((json \ "preRouting").asOpt[JsValue].getOrElse(JsNull))
             .getOrElse(PreRoutingRef()),
           hosts = (json \ "hosts").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+          paths = (json \ "paths").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
           issueCert = (json \ "issueCert").asOpt[Boolean].getOrElse(false),
           issueCertCA = (json \ "issueCertCA").asOpt[String],
         )
@@ -2590,6 +2591,7 @@ object ServiceDescriptor {
       "accessValidator"            -> sd.accessValidator.json,
       "preRouting"                 -> sd.preRouting.json,
       "hosts"                      -> JsArray(sd.hosts.map(JsString.apply)),
+      "paths"                      -> JsArray(sd.paths.map(JsString.apply)),
       "issueCert"                  -> sd.issueCert,
       "issueCertCA"                -> sd.issueCertCA.map(JsString.apply).getOrElse(JsNull).as[JsValue],
     )
