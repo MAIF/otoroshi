@@ -583,7 +583,7 @@ export class RegisterAdminModal extends Component {
   };
 
   verifyAndDestroy = (f) => {
-    if (this.props.user && this.props.mode === 'update') {
+    if (this.props.user && this.props.mode === 'update' && this.state.oldPassword) {
       if (bcrypt.compareSync(this.state.oldPassword, this.props.user.password)) {
         BackOfficeServices.discardAdmin(this.props.user.username, this.props.user.registration ? this.props.user.registration.keyHandle : null, this.props.user.type).then(() => {
           f();
@@ -595,7 +595,15 @@ export class RegisterAdminModal extends Component {
         }, 500)
       }
     } else {
-      f();
+      // TODO: test if password
+      if (!this.state.oldPassword) {
+        this.props.ok(this.state);
+        setTimeout(() => {
+          window.newAlert('You did not provide your password', 'Error');
+        }, 500)
+      } else {
+        f();
+      }
     }
   }
 
@@ -604,8 +612,8 @@ export class RegisterAdminModal extends Component {
       e.preventDefault();
     }
     const username = this.state.email;
-    const password = this.state.password;
-    const passwordcheck = this.state.passwordcheck;
+    const password = (this.props.mode === 'update' && !this.state.password && this.state.oldPassword) ? this.state.oldPassword : this.state.password;
+    const passwordcheck = (this.props.mode === 'update' && !this.state.password && this.state.oldPassword) ? this.state.oldPassword : this.state.passwordcheck;
     const label = this.state.label;
     if (password !== passwordcheck) {
       return window.newAlert('Password does not match !!!', 'Password error');
@@ -761,6 +769,7 @@ export class RegisterAdminModal extends Component {
                     type="password"
                     className="form-control"
                     name="oldPassword"
+                    placeholder="type your current password (required)"
                     value={this.state.oldPassword}
                     onChange={this.onChange}
                   />
@@ -774,6 +783,7 @@ export class RegisterAdminModal extends Component {
                   type="password"
                   className="form-control"
                   name="password"
+                  placeholder={this.props.mode === 'update' ? "type your new password" : "type your password"}
                   value={this.state.password}
                   onChange={this.onChange}
                 />
@@ -786,6 +796,7 @@ export class RegisterAdminModal extends Component {
                   type="password"
                   className="form-control"
                   name="passwordcheck"
+                  placeholder={this.props.mode === 'update' ? "re-type your new password" : "re-type your password"}
                   value={this.state.passwordcheck}
                   onChange={this.onChange}
                 />
