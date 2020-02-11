@@ -22,7 +22,7 @@ https://github.com/MAIF/otoroshi/releases/tag/v1.4.20
 - Add option to set global plugin per instance (#433)
 - Add plugin to limit global handled request per day and month per instance (#434)
 - Public quotas per service plugin (#438)
-- Provide a plugin to use client certs as apikey (#439)"
+- Provide a plugin to use client certs as apikey (#439)
 
 ### Fixed
 
