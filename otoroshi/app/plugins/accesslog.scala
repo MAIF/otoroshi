@@ -172,7 +172,7 @@ class AccessLog extends RequestTransformer {
         .toString("yyyy-MM-dd HH:mm:ss.SSS z")
       val duration =
         ctx.attrs.get(otoroshi.plugins.Keys.RequestStartKey).map(v => System.currentTimeMillis() - v).getOrElse(0L)
-      val to       = ctx.attrs.get(otoroshi.plugins.Keys.RequestTargetKey).map(_.asTargetStr).getOrElse("-")
+      val to       = ctx.attrs.get(otoroshi.plugins.Keys.RequestTargetKey).map(_.asCleanTarget).getOrElse("-")
       val http     = ctx.request.theProtocol
       val protocol = ctx.request.version
       val size = ctx.rawResponse.headers
@@ -233,7 +233,7 @@ class AccessLog extends RequestTransformer {
         .toString("yyyy-MM-dd HH:mm:ss.SSS z")
       val duration =
         ctx.attrs.get(otoroshi.plugins.Keys.RequestStartKey).map(v => System.currentTimeMillis() - v).getOrElse(0L)
-      val to       = ctx.attrs.get(otoroshi.plugins.Keys.RequestTargetKey).map(_.asTargetStr).getOrElse("-")
+      val to       = ctx.attrs.get(otoroshi.plugins.Keys.RequestTargetKey).map(_.asCleanTarget).getOrElse("-")
       val http     = ctx.request.theProtocol
       val protocol = ctx.request.version
       val size = ctx.otoroshiResponse.headers
@@ -332,7 +332,7 @@ class AccessLogJson extends RequestTransformer {
         .toString("yyyy-MM-dd HH:mm:ss.SSS z")
       val duration =
         ctx.attrs.get(otoroshi.plugins.Keys.RequestStartKey).map(v => System.currentTimeMillis() - v).getOrElse(0L)
-      val to       = ctx.attrs.get(otoroshi.plugins.Keys.RequestTargetKey).map(_.asTargetStr).getOrElse("-")
+      val to       = ctx.attrs.get(otoroshi.plugins.Keys.RequestTargetKey).map(_.asCleanTarget).getOrElse("-")
       val http     = ctx.request.theProtocol
       val protocol = ctx.request.version
       val size = ctx.rawResponse.headers
@@ -351,6 +351,7 @@ class AccessLogJson extends RequestTransformer {
             "timestamp"  -> timestamp,
             "service"    -> ctx.descriptor.name,
             "serviceId"  -> ctx.descriptor.id,
+            "client"     -> ctx.apikey.map(_.clientId).map(JsString.apply).getOrElse(JsNull).as[JsValue],
             "status"     -> status,
             "statusTxt"  -> statusTxt,
             "path"       -> path,
@@ -418,7 +419,7 @@ class AccessLogJson extends RequestTransformer {
         .toString("yyyy-MM-dd HH:mm:ss.SSS z")
       val duration =
         ctx.attrs.get(otoroshi.plugins.Keys.RequestStartKey).map(v => System.currentTimeMillis() - v).getOrElse(0L)
-      val to       = ctx.attrs.get(otoroshi.plugins.Keys.RequestTargetKey).map(_.asTargetStr).getOrElse("-")
+      val to       = ctx.attrs.get(otoroshi.plugins.Keys.RequestTargetKey).map(_.asCleanTarget).getOrElse("-")
       val http     = ctx.request.theProtocol
       val protocol = ctx.request.version
       val size = ctx.otoroshiResponse.headers
@@ -437,6 +438,7 @@ class AccessLogJson extends RequestTransformer {
             "timestamp"  -> timestamp,
             "service"    -> ctx.descriptor.name,
             "serviceId"  -> ctx.descriptor.id,
+            "client"     -> ctx.apikey.map(_.clientId).map(JsString.apply).getOrElse(JsNull).as[JsValue],
             "status"     -> status,
             "statusTxt"  -> statusTxt,
             "path"       -> path,
@@ -564,7 +566,7 @@ class KafkaAccessLog extends RequestTransformer {
                 .get(otoroshi.plugins.Keys.RequestStartKey)
                 .map(v => System.currentTimeMillis() - v)
                 .getOrElse(0L)
-              val to       = ctx.attrs.get(otoroshi.plugins.Keys.RequestTargetKey).map(_.asTargetStr).getOrElse("-")
+              val to       = ctx.attrs.get(otoroshi.plugins.Keys.RequestTargetKey).map(_.asCleanTarget).getOrElse("-")
               val http     = ctx.request.theProtocol
               val protocol = ctx.request.version
               val size = ctx.rawResponse.headers
@@ -590,6 +592,7 @@ class KafkaAccessLog extends RequestTransformer {
                   "@timestamp"         -> timestamp.toDate.getTime,
                   "@service"           -> ctx.descriptor.name,
                   "@serviceId"         -> ctx.descriptor.id,
+                  "client"             -> ctx.apikey.map(_.clientId).map(JsString.apply).getOrElse(JsNull).as[JsValue],
                   "status"             -> status,
                   "statusTxt"          -> statusTxt,
                   "path"               -> path,
@@ -689,7 +692,7 @@ class KafkaAccessLog extends RequestTransformer {
                 .get(otoroshi.plugins.Keys.RequestStartKey)
                 .map(v => System.currentTimeMillis() - v)
                 .getOrElse(0L)
-              val to       = ctx.attrs.get(otoroshi.plugins.Keys.RequestTargetKey).map(_.asTargetStr).getOrElse("-")
+              val to       = ctx.attrs.get(otoroshi.plugins.Keys.RequestTargetKey).map(_.asCleanTarget).getOrElse("-")
               val http     = ctx.request.theProtocol
               val protocol = ctx.request.version
               val size = ctx.otoroshiResponse.headers
@@ -715,6 +718,7 @@ class KafkaAccessLog extends RequestTransformer {
                   "@timestamp"         -> timestamp.toDate.getTime,
                   "@service"           -> ctx.descriptor.name,
                   "@serviceId"         -> ctx.descriptor.id,
+                  "client"             -> ctx.apikey.map(_.clientId).map(JsString.apply).getOrElse(JsNull).as[JsValue],
                   "status"             -> status,
                   "statusTxt"          -> statusTxt,
                   "path"               -> path,

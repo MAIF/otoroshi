@@ -478,6 +478,7 @@ case class Target(
   def asUrl       = s"${scheme}://$host"
   def asKey       = s"${protocol.value}:$scheme://$host@${ipAddress.getOrElse(host)}"
   def asTargetStr = s"$scheme://$host@${ipAddress.getOrElse(host)}"
+  def asCleanTarget = s"$scheme://$host${ipAddress.map(v => s"@$v").getOrElse("")}"
 
   lazy val thePort: Int = if (host.contains(":")) {
     host.split(":").last.toInt
