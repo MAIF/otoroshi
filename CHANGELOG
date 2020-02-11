@@ -4,6 +4,30 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.20] - 2020-02-11
+
+https://github.com/MAIF/otoroshi/milestone/27?closed=1
+https://github.com/MAIF/otoroshi/compare/v1.4.19...v1.4.20
+https://github.com/MAIF/otoroshi/releases/tag/v1.4.20
+
+### Added
+
+- Allow changing password your own admin account (#172)
+- Add a "new service" button at the top of services list (#424)
+- Store cluster datastore content on file for faster restarts (#428)
+- Add env. var. for array values (redis connector)  (#429)
+- Add apikey rotation plugin (#430)
+- Add option to block exposed domain name for the instance (#431)
+- Add option to inject provider UI (#432)
+- Add option to set global plugin per instance (#433)
+- Add plugin to limit global handled request per day and month per instance (#434)
+- Public quotas per service plugin (#438)
+- Provide a plugin to use client certs as apikey (#439)"
+
+### Fixed
+
+- possible matching root fails from UI (#437)
+
 ## [1.4.19] - 2020-01-20
 
 https://github.com/MAIF/otoroshi/compare/v1.4.18...v1.4.19
