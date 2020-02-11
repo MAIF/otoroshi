@@ -118,7 +118,7 @@ class CertificateAsApikey extends PreRouting {
 
   override def defaultConfig: Option[JsObject] =
     Some(
-      Json.obj(
+      Json.obj("CertificateAsApikey" -> Json.obj(
         "readOnly" ->false,
         "allowClientIdOnly" -> false,
         "throttlingQuota" -> 100,
@@ -127,7 +127,7 @@ class CertificateAsApikey extends PreRouting {
         "constrainedServicesOnly" -> false,
         "tags" -> Json.arr(),
         "metadata" -> Json.obj(),
-      )
+      ))
     )
 
   override def description: Option[String] =
@@ -135,7 +135,7 @@ class CertificateAsApikey extends PreRouting {
       s"""This plugin uses client certificate as an apikey. The apikey will be stored for classic apikey usage
         |
         |```json
-        |${Json.prettyPrint(Json.obj("CertificateAsApikey" -> defaultConfig.get))}
+        |${Json.prettyPrint(defaultConfig.get)}
         |```
       """.stripMargin
     )
