@@ -623,7 +623,7 @@ class KafkaAccessLog extends RequestTransformer {
                     case _                  => "none"
                   })
                 )
-              )(env, kafkaConfig)
+              , true)(env, kafkaConfig)
             }
             Right(ctx.otoroshiResponse).future
           }
@@ -748,7 +748,7 @@ class KafkaAccessLog extends RequestTransformer {
                     case _                  => "none"
                   })
                 )
-              )(env, kafkaConfig)
+              , true)(env, kafkaConfig)
             }
             ctx.otoroshiResult.future
           }

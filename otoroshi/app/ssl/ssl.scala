@@ -1170,10 +1170,10 @@ object DynamicSSLEngineProvider {
     } else {
       val encodedKey: Array[Byte] = base64Decode(matcher.group(1))
       keyPassword
-        .map { _ =>
+        .map { kpv =>
           val encryptedPrivateKeyInfo      = new EncryptedPrivateKeyInfo(encodedKey)
           val keyFactory: SecretKeyFactory = SecretKeyFactory.getInstance(encryptedPrivateKeyInfo.getAlgName)
-          val secretKey: SecretKey         = keyFactory.generateSecret(new PBEKeySpec(keyPassword.get.toCharArray))
+          val secretKey: SecretKey         = keyFactory.generateSecret(new PBEKeySpec(kpv.toCharArray))
           val cipher: Cipher               = Cipher.getInstance(encryptedPrivateKeyInfo.getAlgName)
           cipher.init(DECRYPT_MODE, secretKey, encryptedPrivateKeyInfo.getAlgParameters)
           Right(encryptedPrivateKeyInfo.getKeySpec(cipher))

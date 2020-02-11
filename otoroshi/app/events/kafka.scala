@@ -124,8 +124,8 @@ class KafkaWrapper(actorSystem: ActorSystem, env: Env, topicFunction: KafkaConfi
 
   val kafkaWrapperActor = actorSystem.actorOf(KafkaWrapperActor.props(env, topicFunction))
 
-  def publish(event: JsValue)(env: Env, config: KafkaConfig): Future[Done] = {
-    kafkaWrapperActor ! KafkaWrapperEvent(event, env, config)
+  def publish(event: JsValue, forcePush: Boolean = false)(env: Env, config: KafkaConfig): Future[Done] = {
+    kafkaWrapperActor ! KafkaWrapperEvent(event, env, if (forcePush) config.copy(sendEvents = true) else config)
     FastFuture.successful(Done)
   }
 
