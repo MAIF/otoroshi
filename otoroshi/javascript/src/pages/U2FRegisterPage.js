@@ -162,13 +162,14 @@ export class U2FRegisterPage extends Component {
       cell: (v, item, table) => {
         return (
           <>
-            {item.username === window.__userid && <button
+            {item.username === window.__userid && (
+              <button
                 type="button"
                 className="btn btn-success btn-xs"
                 onClick={this.updateCurrentUser}>
                 <i className="glyphicon glyphicon-refresh" /> Update User
               </button>
-            }
+            )}
             <button
               type="button"
               className="btn btn-danger btn-xs"
@@ -415,31 +416,35 @@ export class U2FRegisterPage extends Component {
   createAdmin = () => {
     BackOfficeServices.fetchAdmins().then(admins => {
       window
-      .popup(
-        'Register new admin',
-        (ok, cancel) => <RegisterAdminModal ok={ok} cancel={cancel}  users={admins} mode="create" />,
-        { style: { width: '100%' } }
-      )
-      .then(form => {
-        if (this.table) this.table.update();
-      });
+        .popup(
+          'Register new admin',
+          (ok, cancel) => (
+            <RegisterAdminModal ok={ok} cancel={cancel} users={admins} mode="create" />
+          ),
+          { style: { width: '100%' } }
+        )
+        .then(form => {
+          if (this.table) this.table.update();
+        });
     });
-  }
+  };
 
   updateCurrentUser = () => {
     BackOfficeServices.fetchAdmins().then(admins => {
       const user = admins.filter(a => a.username === window.__userid)[0];
       window
-      .popup(
-        'Update admin',
-        (ok, cancel) => <RegisterAdminModal ok={ok} cancel={cancel} user={user} users={admins} mode="update" />,
-        { style: { width: '100%' } }
-      )
-      .then(form => {
-        if (this.table) this.table.update();
-      });
+        .popup(
+          'Update admin',
+          (ok, cancel) => (
+            <RegisterAdminModal ok={ok} cancel={cancel} user={user} users={admins} mode="update" />
+          ),
+          { style: { width: '100%' } }
+        )
+        .then(form => {
+          if (this.table) this.table.update();
+        });
     });
-  }
+  };
 
   render() {
     return (
@@ -558,7 +563,6 @@ export class U2FRegisterPage extends Component {
 }
 
 export class RegisterAdminModal extends Component {
-
   state = {
     mode: this.props.mode || 'create',
     email: this.props.mode === 'update' && this.props.user ? this.props.user.username : '',
@@ -582,17 +586,21 @@ export class RegisterAdminModal extends Component {
     this.setState({ error: message });
   };
 
-  verifyAndDestroy = (f) => {
+  verifyAndDestroy = f => {
     if (this.props.user && this.props.mode === 'update' && this.state.oldPassword) {
       if (bcrypt.compareSync(this.state.oldPassword, this.props.user.password)) {
-        BackOfficeServices.discardAdmin(this.props.user.username, this.props.user.registration ? this.props.user.registration.keyHandle : null, this.props.user.type).then(() => {
+        BackOfficeServices.discardAdmin(
+          this.props.user.username,
+          this.props.user.registration ? this.props.user.registration.keyHandle : null,
+          this.props.user.type
+        ).then(() => {
           f();
         });
       } else {
         this.props.ok(this.state);
         setTimeout(() => {
           window.newAlert('Old passsword does not match !', 'Error');
-        }, 500)
+        }, 500);
       }
     } else {
       // TODO: test if password
@@ -600,136 +608,144 @@ export class RegisterAdminModal extends Component {
         this.props.ok(this.state);
         setTimeout(() => {
           window.newAlert('You did not provide your password', 'Error');
-        }, 500)
+        }, 500);
       } else {
         f();
       }
     }
-  }
+  };
 
-  simpleRegister = e => this.verifyAndDestroy(() => {
-    if (e && e.preventDefault) {
-      e.preventDefault();
-    }
-    const username = this.state.email;
-    const password = (this.props.mode === 'update' && !this.state.password && this.state.oldPassword) ? this.state.oldPassword : this.state.password;
-    const passwordcheck = (this.props.mode === 'update' && !this.state.password && this.state.oldPassword) ? this.state.oldPassword : this.state.passwordcheck;
-    const label = this.state.label;
-    if (password !== passwordcheck) {
-      return window.newAlert('Password does not match !!!', 'Password error');
-    }
-    fetch(`/bo/simple/admins`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        username,
-        password,
-        label,
-      }),
-    })
-      .then(r => r.json(), this.handleError)
-      .then(data => {
-        if (this.table) this.table.update();
-        this.setState({
-          error: null,
-          email: '',
-          label: '',
-          password: '',
-          passwordcheck: '',
-          message: `Registration done for '${data.username}'`,
-        });
-        this.props.ok(this.state)
-      }, this.handleError);
-  });
+  simpleRegister = e =>
+    this.verifyAndDestroy(() => {
+      if (e && e.preventDefault) {
+        e.preventDefault();
+      }
+      const username = this.state.email;
+      const password =
+        this.props.mode === 'update' && !this.state.password && this.state.oldPassword
+          ? this.state.oldPassword
+          : this.state.password;
+      const passwordcheck =
+        this.props.mode === 'update' && !this.state.password && this.state.oldPassword
+          ? this.state.oldPassword
+          : this.state.passwordcheck;
+      const label = this.state.label;
+      if (password !== passwordcheck) {
+        return window.newAlert('Password does not match !!!', 'Password error');
+      }
+      fetch(`/bo/simple/admins`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username,
+          password,
+          label,
+        }),
+      })
+        .then(r => r.json(), this.handleError)
+        .then(data => {
+          if (this.table) this.table.update();
+          this.setState({
+            error: null,
+            email: '',
+            label: '',
+            password: '',
+            passwordcheck: '',
+            message: `Registration done for '${data.username}'`,
+          });
+          this.props.ok(this.state);
+        }, this.handleError);
+    });
 
-  registerWebAuthn = e => this.verifyAndDestroy(() => {
-    if (e && e.preventDefault) {
-      e.preventDefault();
-    }
+  registerWebAuthn = e =>
+    this.verifyAndDestroy(() => {
+      if (e && e.preventDefault) {
+        e.preventDefault();
+      }
 
-    const username = this.state.email;
-    const password = this.state.password;
-    const passwordcheck = this.state.passwordcheck;
-    const label = this.state.label;
+      const username = this.state.email;
+      const password = this.state.password;
+      const passwordcheck = this.state.passwordcheck;
+      const label = this.state.label;
 
-    if (password !== passwordcheck) {
-      return window.newAlert('Password does not match !!!', 'Password error');
-    }
+      if (password !== passwordcheck) {
+        return window.newAlert('Password does not match !!!', 'Password error');
+      }
 
-    return fetch('/bo/webauthn/register/start', {
-      method: 'POST',
-      credentials: 'include',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        username,
-        password,
-        label,
-        origin: window.location.origin,
-      }),
-    })
-      .then(r => r.json())
-      .then(resp => {
-        const requestId = resp.requestId;
-        const publicKeyCredentialCreationOptions = resp.request;
-        const handle = publicKeyCredentialCreationOptions.user.id + '';
-        publicKeyCredentialCreationOptions.challenge = base64url.decode(
-          publicKeyCredentialCreationOptions.challenge
-        );
-        publicKeyCredentialCreationOptions.user.id = base64url.decode(
-          publicKeyCredentialCreationOptions.user.id
-        );
-        return navigator.credentials
-          .create(
-            {
-              publicKey: publicKeyCredentialCreationOptions,
-            },
-            this.handleErrorWithMessage('Webauthn error')
-          )
-          .then(credentials => {
-            const json = responseToObject(credentials);
-            return fetch('/bo/webauthn/register/finish', {
-              method: 'POST',
-              credentials: 'include',
-              headers: {
-                Accept: 'application/json',
-                'Content-Type': 'application/json',
+      return fetch('/bo/webauthn/register/start', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username,
+          password,
+          label,
+          origin: window.location.origin,
+        }),
+      })
+        .then(r => r.json())
+        .then(resp => {
+          const requestId = resp.requestId;
+          const publicKeyCredentialCreationOptions = resp.request;
+          const handle = publicKeyCredentialCreationOptions.user.id + '';
+          publicKeyCredentialCreationOptions.challenge = base64url.decode(
+            publicKeyCredentialCreationOptions.challenge
+          );
+          publicKeyCredentialCreationOptions.user.id = base64url.decode(
+            publicKeyCredentialCreationOptions.user.id
+          );
+          return navigator.credentials
+            .create(
+              {
+                publicKey: publicKeyCredentialCreationOptions,
               },
-              body: JSON.stringify({
-                requestId,
-                webauthn: json,
-                otoroshi: {
-                  origin: window.location.origin,
-                  username,
-                  password,
-                  label,
-                  handle,
+              this.handleErrorWithMessage('Webauthn error')
+            )
+            .then(credentials => {
+              const json = responseToObject(credentials);
+              return fetch('/bo/webauthn/register/finish', {
+                method: 'POST',
+                credentials: 'include',
+                headers: {
+                  Accept: 'application/json',
+                  'Content-Type': 'application/json',
                 },
-              }),
-            })
-              .then(r => r.json())
-              .then(resp => {
-                if (this.table) this.table.update();
-                this.setState({
-                  error: null,
-                  email: '',
-                  label: '',
-                  password: '',
-                  passwordcheck: '',
-                  message: `Registration done for '${username}'`,
+                body: JSON.stringify({
+                  requestId,
+                  webauthn: json,
+                  otoroshi: {
+                    origin: window.location.origin,
+                    username,
+                    password,
+                    label,
+                    handle,
+                  },
+                }),
+              })
+                .then(r => r.json())
+                .then(resp => {
+                  if (this.table) this.table.update();
+                  this.setState({
+                    error: null,
+                    email: '',
+                    label: '',
+                    password: '',
+                    passwordcheck: '',
+                    message: `Registration done for '${username}'`,
+                  });
+                  this.props.ok(this.state);
                 });
-                this.props.ok(this.state);
-              });
-          }, this.handleErrorWithMessage('Webauthn error'))
-          .catch(this.handleError);
-      });
-  });
+            }, this.handleErrorWithMessage('Webauthn error'))
+            .catch(this.handleError);
+        });
+    });
 
   render() {
     return (
@@ -783,7 +799,9 @@ export class RegisterAdminModal extends Component {
                   type="password"
                   className="form-control"
                   name="password"
-                  placeholder={this.props.mode === 'update' ? "type your new password" : "type your password"}
+                  placeholder={
+                    this.props.mode === 'update' ? 'type your new password' : 'type your password'
+                  }
                   value={this.state.password}
                   onChange={this.onChange}
                 />
@@ -796,7 +814,11 @@ export class RegisterAdminModal extends Component {
                   type="password"
                   className="form-control"
                   name="passwordcheck"
-                  placeholder={this.props.mode === 'update' ? "re-type your new password" : "re-type your password"}
+                  placeholder={
+                    this.props.mode === 'update'
+                      ? 're-type your new password'
+                      : 're-type your password'
+                  }
                   value={this.state.passwordcheck}
                   onChange={this.onChange}
                 />
@@ -827,7 +849,7 @@ export class RegisterAdminModal extends Component {
             className="btn btn-success"
             style={{ marginLeft: 10 }}
             onClick={this.registerWebAuthn}>
-            {this.props.mode === 'update' ? 'Update' : 'Register'}  Admin with WebAuthn
+            {this.props.mode === 'update' ? 'Update' : 'Register'} Admin with WebAuthn
           </button>
           <button
             type="button"

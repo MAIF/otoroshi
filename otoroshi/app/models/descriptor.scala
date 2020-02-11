@@ -474,10 +474,10 @@ case class Target(
     mtlsConfig: MtlsConfig = MtlsConfig()
 ) {
 
-  def toJson      = Target.format.writes(this)
-  def asUrl       = s"${scheme}://$host"
-  def asKey       = s"${protocol.value}:$scheme://$host@${ipAddress.getOrElse(host)}"
-  def asTargetStr = s"$scheme://$host@${ipAddress.getOrElse(host)}"
+  def toJson        = Target.format.writes(this)
+  def asUrl         = s"${scheme}://$host"
+  def asKey         = s"${protocol.value}:$scheme://$host@${ipAddress.getOrElse(host)}"
+  def asTargetStr   = s"$scheme://$host@${ipAddress.getOrElse(host)}"
   def asCleanTarget = s"$scheme://$host${ipAddress.map(v => s"@$v").getOrElse("")}"
 
   lazy val thePort: Int = if (host.contains(":")) {
@@ -2619,7 +2619,7 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
   def initiateNewDescriptor()(implicit env: Env): ServiceDescriptor = {
     val (subdomain, envir, domain) = env.staticExposedDomain.map { v =>
       ServiceLocation.fullQuery(v, env.datastores.globalConfigDataStore.latest()(env.otoroshiExecutionContext, env)) match {
-        case None => ("myservice", "prod", env.domain)
+        case None           => ("myservice", "prod", env.domain)
         case Some(location) => (location.subdomain, location.env, location.domain)
       }
     } getOrElse ("myservice", "prod", env.domain)

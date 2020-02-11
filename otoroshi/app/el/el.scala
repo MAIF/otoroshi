@@ -49,7 +49,8 @@ object GlobalExpressionLanguage {
             case r"service.metadata.$field@(.*)" if service.isDefined =>
               service.get.metadata.get(field).getOrElse(s"no-meta-$field")
 
-            case "req.fullUrl" if req.isDefined     => s"${req.get.theProtocol(env)}://${req.get.theHost(env)}${req.get.relativeUri}"
+            case "req.fullUrl" if req.isDefined =>
+              s"${req.get.theProtocol(env)}://${req.get.theHost(env)}${req.get.relativeUri}"
             case "req.path" if req.isDefined     => req.get.path
             case "req.uri" if req.isDefined      => req.get.relativeUri
             case "req.host" if req.isDefined     => req.get.theHost(env)

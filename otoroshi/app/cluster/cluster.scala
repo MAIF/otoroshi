@@ -1520,7 +1520,7 @@ class SwappableInMemoryDataStores(configuration: Configuration,
         .getOrElse(ConfigFactory.empty)
     )
   private val materializer = ActorMaterializer.create(actorSystem)
-  lazy val redis = new SwappableInMemoryRedis(env, actorSystem)
+  lazy val redis           = new SwappableInMemoryRedis(env, actorSystem)
 
   override def before(configuration: Configuration,
                       environment: Environment,
@@ -1563,8 +1563,8 @@ class SwappableInMemoryDataStores(configuration: Configuration,
     redis.swap(memory)
   }
 
-  private val cancelRef    = new AtomicReference[Cancellable]()
-  private val lastHash     = new AtomicReference[Int](0)
+  private val cancelRef                 = new AtomicReference[Cancellable]()
+  private val lastHash                  = new AtomicReference[Int](0)
   private val dbPathOpt: Option[String] = env.clusterConfig.worker.dbPath
 
   private def readStateFromDisk(source: Seq[String]): Unit = {
@@ -1820,42 +1820,42 @@ class SwappableInMemoryDataStores(configuration: Configuration,
   }
 
   def completeExport(
-    group: Int
-)(implicit ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = {
-  Source
-    .fromFuture(
-      redis.keys(s"${env.storageRoot}:*")
-    )
-    .mapConcat(_.toList)
-    .grouped(group)
-    .mapAsync(1) {
-      case keys if keys.isEmpty => FastFuture.successful(Seq.empty[JsValue])
-      case keys => {
-        Future.sequence(
-          keys
-            .map { key =>
-              redis.rawGet(key).flatMap {
-                case None => FastFuture.successful(JsNull)
-                case Some(value) => {
-                  toJson(value) match {
-                    case (_, JsNull) => FastFuture.successful(JsNull)
-                    case (what, jsonValue) =>
-                      redis.pttl(key).map { ttl =>
-                        Json.obj("k" -> key,
-                                 "v" -> jsonValue,
-                                 "t" -> (if (ttl == -1) -1 else (System.currentTimeMillis() + ttl)),
-                                 "w" -> what)
-                      }
+      group: Int
+  )(implicit ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = {
+    Source
+      .fromFuture(
+        redis.keys(s"${env.storageRoot}:*")
+      )
+      .mapConcat(_.toList)
+      .grouped(group)
+      .mapAsync(1) {
+        case keys if keys.isEmpty => FastFuture.successful(Seq.empty[JsValue])
+        case keys => {
+          Future.sequence(
+            keys
+              .map { key =>
+                redis.rawGet(key).flatMap {
+                  case None => FastFuture.successful(JsNull)
+                  case Some(value) => {
+                    toJson(value) match {
+                      case (_, JsNull) => FastFuture.successful(JsNull)
+                      case (what, jsonValue) =>
+                        redis.pttl(key).map { ttl =>
+                          Json.obj("k" -> key,
+                                   "v" -> jsonValue,
+                                   "t" -> (if (ttl == -1) -1 else (System.currentTimeMillis() + ttl)),
+                                   "w" -> what)
+                        }
+                    }
                   }
                 }
               }
-            }
-        )
+          )
+        }
       }
-    }
-    .map(_.filterNot(_ == JsNull))
-    .mapConcat(_.toList)
-}
+      .map(_.filterNot(_ == JsNull))
+      .mapConcat(_.toList)
+  }
 
   private def toJson(value: Any): (String, JsValue) = {
 

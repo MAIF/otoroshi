@@ -601,7 +601,8 @@ export class TopBar extends Component {
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         className="monkeyMenu"
-                        viewBox="0 0 244.1 244.1" style={{ width: 16, marginLeft: 0 }}>
+                        viewBox="0 0 244.1 244.1"
+                        style={{ width: 16, marginLeft: 0 }}>
                         <title>nihonzaru</title>
                         <g id="_x34_9a67235-e3a1-4929-8868-b30847745300">
                           <g id="b11c2c3a-c434-45dc-a441-e60dd5d9d3f6">
@@ -768,7 +769,8 @@ export class TopBar extends Component {
                     <>
                       <li>
                         <a href="/bo/dashboard/provider">
-                          <img src="/assets/images/otoroshi-logo-inverse.png" width="16" /> {this.state.env.providerDashboardTitle}
+                          <img src="/assets/images/otoroshi-logo-inverse.png" width="16" />{' '}
+                          {this.state.env.providerDashboardTitle}
                         </a>
                       </li>
                       <li role="separator" className="divider" />

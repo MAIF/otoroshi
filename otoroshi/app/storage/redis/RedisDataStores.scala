@@ -315,5 +315,6 @@ class RedisRawDataStore(redis: RedisClientMasterSlaves) extends RawDataStore {
 
   override def keys(pattern: String)(implicit ec: ExecutionContext, env: Env): Future[Seq[String]] = redis.keys(pattern)
 
-  override def pexpire(key: String, pttl: Long)(implicit ec: ExecutionContext, env: Env): Future[Boolean] = redis.pexpire(key, pttl)
+  override def pexpire(key: String, pttl: Long)(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
+    redis.pexpire(key, pttl)
 }

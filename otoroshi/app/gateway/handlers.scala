@@ -216,7 +216,9 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
       request.headers.get("Tls-Session-Info").flatMap(SSLSessionJavaHelper.computeKey) match {
         case Some(key) => {
           Option(X509KeyManagerSnitch.sslSessions.getIfPresent(key)) match {
-            case Some((_, _, chain)) if chain.headOption.exists(_.getSubjectDN.getName.contains(SSLSessionJavaHelper.NotAllowed)) => Some(badCertReply(request))
+            case Some((_, _, chain))
+                if chain.headOption.exists(_.getSubjectDN.getName.contains(SSLSessionJavaHelper.NotAllowed)) =>
+              Some(badCertReply(request))
             case a => internalRouteRequest(request)
           }
         }

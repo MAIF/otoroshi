@@ -33,7 +33,7 @@ case class ApiKeySecretWillRotate(`@id`: String,
                                   `@env`: String,
                                   apikey: ApiKey,
                                   `@timestamp`: DateTime = DateTime.now())
-  extends AlertEvent {
+    extends AlertEvent {
 
   override def `@service`: String   = "Otoroshi"
   override def `@serviceId`: String = "--"
@@ -42,16 +42,16 @@ case class ApiKeySecretWillRotate(`@id`: String,
   override def fromUserAgent: Option[String] = None
 
   override def toJson(implicit _env: Env): JsValue = Json.obj(
-    "@id"        -> `@id`,
-    "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
-    "@type"      -> `@type`,
-    "@product"   -> _env.eventsName,
-    "@serviceId" -> `@serviceId`,
-    "@service"   -> `@service`,
-    "@env"       -> `@env`,
-    "alert"      -> "ApiKeySecretWillRotate",
+    "@id"           -> `@id`,
+    "@timestamp"    -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
+    "@type"         -> `@type`,
+    "@product"      -> _env.eventsName,
+    "@serviceId"    -> `@serviceId`,
+    "@service"      -> `@service`,
+    "@env"          -> `@env`,
+    "alert"         -> "ApiKeySecretWillRotate",
     "inHoursOrLess" -> apikey.rotation.gracePeriod,
-    "apikey"     -> apikey.toJson
+    "apikey"        -> apikey.toJson
   )
 }
 
@@ -60,7 +60,7 @@ case class ApiKeySecretHasRotated(`@id`: String,
                                   oldApikey: ApiKey,
                                   apikey: ApiKey,
                                   `@timestamp`: DateTime = DateTime.now())
-  extends AlertEvent {
+    extends AlertEvent {
 
   override def `@service`: String   = "Otoroshi"
   override def `@serviceId`: String = "--"
@@ -77,7 +77,7 @@ case class ApiKeySecretHasRotated(`@id`: String,
     "@service"   -> `@service`,
     "@env"       -> `@env`,
     "alert"      -> "ApiKeySecretHasRotated",
-    "oldApikey"     -> oldApikey.toJson,
+    "oldApikey"  -> oldApikey.toJson,
     "apikey"     -> apikey.toJson
   )
 }

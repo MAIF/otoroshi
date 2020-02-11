@@ -118,16 +118,18 @@ class CertificateAsApikey extends PreRouting {
 
   override def defaultConfig: Option[JsObject] =
     Some(
-      Json.obj("CertificateAsApikey" -> Json.obj(
-        "readOnly" ->false,
-        "allowClientIdOnly" -> false,
-        "throttlingQuota" -> 100,
-        "dailyQuota" -> RemainingQuotas.MaxValue,
-        "monthlyQuota" -> RemainingQuotas.MaxValue,
-        "constrainedServicesOnly" -> false,
-        "tags" -> Json.arr(),
-        "metadata" -> Json.obj(),
-      ))
+      Json.obj(
+        "CertificateAsApikey" -> Json.obj(
+          "readOnly"                -> false,
+          "allowClientIdOnly"       -> false,
+          "throttlingQuota"         -> 100,
+          "dailyQuota"              -> RemainingQuotas.MaxValue,
+          "monthlyQuota"            -> RemainingQuotas.MaxValue,
+          "constrainedServicesOnly" -> false,
+          "tags"                    -> Json.arr(),
+          "metadata"                -> Json.obj(),
+        )
+      )
     )
 
   override def description: Option[String] =
@@ -144,36 +146,38 @@ class CertificateAsApikey extends PreRouting {
     context.request.clientCertificateChain.flatMap(_.headOption) match {
       case None => FastFuture.successful(())
       case Some(cert) => {
-        val conf = context.configFor("CertificateAsApikey")
+        val conf         = context.configFor("CertificateAsApikey")
         val serialNumber = cert.getSerialNumber.toString
-        val subjectDN = cert.getSubjectDN.getName
-        val clientId = Base64.encodeBase64String((subjectDN + "-" + serialNumber).getBytes)
-        env.datastores.apiKeyDataStore.findById(clientId).flatMap {
-          case Some(apikey) => FastFuture.successful(apikey)
-          case None => {
-            val apikey = ApiKey(
-              clientId = clientId,
-              clientSecret = IdGenerator.token(128),
-              clientName = s"$subjectDN ($serialNumber)",
-              authorizedGroup = context.descriptor.groupId,
-              validUntil = Some(new DateTime(cert.getNotAfter)),
-              readOnly = (conf \ "readOnly").asOpt[Boolean].getOrElse(false),
-              allowClientIdOnly = (conf \ "allowClientIdOnly").asOpt[Boolean].getOrElse(false),
-              throttlingQuota = (conf \ "throttlingQuota").asOpt[Long].getOrElse(100),
-              dailyQuota = (conf \ "dailyQuota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
-              monthlyQuota = (conf \ "monthlyQuota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
-              constrainedServicesOnly = (conf \ "constrainedServicesOnly").asOpt[Boolean].getOrElse(false),
-              tags = (conf \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty),
-              metadata = (conf \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty)
-            )
-            apikey.save().map(_ => apikey)
+        val subjectDN    = cert.getSubjectDN.getName
+        val clientId     = Base64.encodeBase64String((subjectDN + "-" + serialNumber).getBytes)
+        env.datastores.apiKeyDataStore
+          .findById(clientId)
+          .flatMap {
+            case Some(apikey) => FastFuture.successful(apikey)
+            case None => {
+              val apikey = ApiKey(
+                clientId = clientId,
+                clientSecret = IdGenerator.token(128),
+                clientName = s"$subjectDN ($serialNumber)",
+                authorizedGroup = context.descriptor.groupId,
+                validUntil = Some(new DateTime(cert.getNotAfter)),
+                readOnly = (conf \ "readOnly").asOpt[Boolean].getOrElse(false),
+                allowClientIdOnly = (conf \ "allowClientIdOnly").asOpt[Boolean].getOrElse(false),
+                throttlingQuota = (conf \ "throttlingQuota").asOpt[Long].getOrElse(100),
+                dailyQuota = (conf \ "dailyQuota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
+                monthlyQuota = (conf \ "monthlyQuota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
+                constrainedServicesOnly = (conf \ "constrainedServicesOnly").asOpt[Boolean].getOrElse(false),
+                tags = (conf \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty),
+                metadata = (conf \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty)
+              )
+              apikey.save().map(_ => apikey)
+            }
           }
-        }.map { apikey =>
-          context.attrs.put(otoroshi.plugins.Keys.ApiKeyKey -> apikey)
-          ()
-        }
+          .map { apikey =>
+            context.attrs.put(otoroshi.plugins.Keys.ApiKeyKey -> apikey)
+            ()
+          }
       }
     }
   }
 }
-

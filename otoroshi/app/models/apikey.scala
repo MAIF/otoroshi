@@ -43,36 +43,36 @@ object RemainingQuotas {
 }
 
 case class ApiKeyRotation(
-   enabled: Boolean = false,
-   rotationEvery: Long = 31 * 24,
-   gracePeriod: Long = 7 * 24,
-   nextSecret: Option[String] = None
+    enabled: Boolean = false,
+    rotationEvery: Long = 31 * 24,
+    gracePeriod: Long = 7 * 24,
+    nextSecret: Option[String] = None
 ) {
   def json: JsValue = ApiKeyRotation.fmt.writes(this)
 }
 
 object ApiKeyRotation {
-  val fmt   = new Format[ApiKeyRotation] {
+  val fmt = new Format[ApiKeyRotation] {
     override def writes(o: ApiKeyRotation): JsValue = Json.obj(
-      "enabled" -> o.enabled,
+      "enabled"       -> o.enabled,
       "rotationEvery" -> o.rotationEvery,
-      "gracePeriod" -> o.gracePeriod,
-      "nextSecret" -> o.nextSecret.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      "gracePeriod"   -> o.gracePeriod,
+      "nextSecret"    -> o.nextSecret.map(JsString.apply).getOrElse(JsNull).as[JsValue],
     )
-    override def reads(json: JsValue): JsResult[ApiKeyRotation] = Try {
-      ApiKeyRotation(
-        enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
-        rotationEvery = (json \ "rotationEvery").asOpt[Long].getOrElse(31 * 24),
-        gracePeriod = (json \ "gracePeriod").asOpt[Long].getOrElse(7 * 24),
-        nextSecret = (json \ "nextSecret").asOpt[String]
-      )
-    } match {
-      case Failure(e) => JsError(e.getMessage)
-      case Success(apkr) => JsSuccess(apkr)
-    }
+    override def reads(json: JsValue): JsResult[ApiKeyRotation] =
+      Try {
+        ApiKeyRotation(
+          enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
+          rotationEvery = (json \ "rotationEvery").asOpt[Long].getOrElse(31 * 24),
+          gracePeriod = (json \ "gracePeriod").asOpt[Long].getOrElse(7 * 24),
+          nextSecret = (json \ "nextSecret").asOpt[String]
+        )
+      } match {
+        case Failure(e)    => JsError(e.getMessage)
+        case Success(apkr) => JsSuccess(apkr)
+      }
   }
 }
-
 
 case class ApiKey(clientId: String = IdGenerator.token(16),
                   clientSecret: String = IdGenerator.token(64),
@@ -94,8 +94,9 @@ case class ApiKey(clientId: String = IdGenerator.token(16),
   def delete()(implicit ec: ExecutionContext, env: Env) = env.datastores.apiKeyDataStore.delete(this)
   def exists()(implicit ec: ExecutionContext, env: Env) = env.datastores.apiKeyDataStore.exists(this)
   def toJson                                            = ApiKey.toJson(this)
-  def isValid(value: String): Boolean                   = enabled && ((value == clientSecret) || (rotation.enabled && rotation.nextSecret.contains(value)))
-  def isInvalid(value: String): Boolean                 = !isValid(value)
+  def isValid(value: String): Boolean =
+    enabled && ((value == clientSecret) || (rotation.enabled && rotation.nextSecret.contains(value)))
+  def isInvalid(value: String): Boolean = !isValid(value)
   def group(implicit ec: ExecutionContext, env: Env): Future[Option[ServiceGroup]] =
     env.datastores.serviceGroupDataStore.findById(authorizedGroup)
   def services(implicit ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] =
@@ -295,43 +296,67 @@ trait ApiKeyDataStore extends BasicStore[ApiKey] {
       env.datastores.rawDataStore.get(key).flatMap {
         case None =>
           val newApk = apiKey.copy(rotation = apiKey.rotation.copy(nextSecret = None))
-          env.datastores.rawDataStore.set(key, ByteString(Json.stringify(Json.obj(
-            "start" -> System.currentTimeMillis()
-          ))), Some((newApk.rotation.rotationEvery * 60 * 60 * 1000) + (5 * 60 * 1000))).flatMap { _ =>
-            newApk.save().map(_ => ())
-          }
+          env.datastores.rawDataStore
+            .set(key,
+                 ByteString(
+                   Json.stringify(
+                     Json.obj(
+                       "start" -> System.currentTimeMillis()
+                     )
+                   )
+                 ),
+                 Some((newApk.rotation.rotationEvery * 60 * 60 * 1000) + (5 * 60 * 1000)))
+            .flatMap { _ =>
+              newApk.save().map(_ => ())
+            }
         case Some(body) => {
-          val json = Json.parse(body.utf8String)
-          val start = new DateTime((json \ "start").as[Long])
-          val end = start.plusHours(apiKey.rotation.rotationEvery.toInt)
-          val startGrace = end.minusHours(apiKey.rotation.gracePeriod.toInt)
-          val now = DateTime.now()
+          val json              = Json.parse(body.utf8String)
+          val start             = new DateTime((json \ "start").as[Long])
+          val end               = start.plusHours(apiKey.rotation.rotationEvery.toInt)
+          val startGrace        = end.minusHours(apiKey.rotation.gracePeriod.toInt)
+          val now               = DateTime.now()
           val beforeGracePeriod = now.isAfter(start) && now.isBefore(startGrace) && now.isBefore(end)
           val inGracePeriod     = now.isAfter(start) && now.isAfter(startGrace) && now.isBefore(end)
           val afterGracePeriod  = now.isAfter(start) && now.isAfter(startGrace) && now.isAfter(end)
           if (beforeGracePeriod) {
             FastFuture.successful(())
           } else if (inGracePeriod) {
-            val newApk = apiKey.copy(rotation = apiKey.rotation.copy(nextSecret = apiKey.rotation.nextSecret.orElse(Some(IdGenerator.token(64)))))
-            Alerts.send(ApiKeySecretWillRotate(
-              `@id` = env.snowflakeGenerator.nextIdStr(),
-              `@env` = env.env,
-              apikey = newApk
-            ))
+            val newApk = apiKey.copy(
+              rotation =
+                apiKey.rotation.copy(nextSecret = apiKey.rotation.nextSecret.orElse(Some(IdGenerator.token(64))))
+            )
+            Alerts.send(
+              ApiKeySecretWillRotate(
+                `@id` = env.snowflakeGenerator.nextIdStr(),
+                `@env` = env.env,
+                apikey = newApk
+              )
+            )
             newApk.save().map(_ => ())
           } else if (afterGracePeriod) {
-            val newApk = apiKey.copy(clientSecret = apiKey.rotation.nextSecret.getOrElse(IdGenerator.token(64)), rotation = apiKey.rotation.copy(nextSecret = None))
-            Alerts.send(ApiKeySecretHasRotated(
-              `@id` = env.snowflakeGenerator.nextIdStr(),
-              `@env` = env.env,
-              oldApikey = apiKey,
-              apikey = newApk
-            ))
-            env.datastores.rawDataStore.set(key, ByteString(Json.stringify(Json.obj(
-              "start" -> System.currentTimeMillis()
-            ))), Some((newApk.rotation.rotationEvery * 60 * 60 * 1000) + (5 * 60 * 1000))).flatMap { _ =>
-              newApk.save().map(_ => ())
-            }
+            val newApk = apiKey.copy(clientSecret = apiKey.rotation.nextSecret.getOrElse(IdGenerator.token(64)),
+                                     rotation = apiKey.rotation.copy(nextSecret = None))
+            Alerts.send(
+              ApiKeySecretHasRotated(
+                `@id` = env.snowflakeGenerator.nextIdStr(),
+                `@env` = env.env,
+                oldApikey = apiKey,
+                apikey = newApk
+              )
+            )
+            env.datastores.rawDataStore
+              .set(key,
+                   ByteString(
+                     Json.stringify(
+                       Json.obj(
+                         "start" -> System.currentTimeMillis()
+                       )
+                     )
+                   ),
+                   Some((newApk.rotation.rotationEvery * 60 * 60 * 1000) + (5 * 60 * 1000)))
+              .flatMap { _ =>
+                newApk.save().map(_ => ())
+              }
           } else {
             FastFuture.successful(())
           }

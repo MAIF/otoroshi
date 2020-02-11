@@ -27,7 +27,7 @@ import otoroshi.tcp.{InMemoryTcpServiceDataStoreDataStore, TcpServiceDataStore}
 import scala.concurrent.{ExecutionContext, Future}
 
 case class RedisMember(host: String, port: Int, password: Option[String]) {
-  def toRedisServer =  RedisServer(
+  def toRedisServer = RedisServer(
     host = host,
     port = port,
     password = password
@@ -38,16 +38,17 @@ object RedisMember {
   def fromString(value: String): Option[RedisMember] = value.trim match {
     case str if str.contains("@") && str.contains(":") =>
       str.split("@").toList match {
-        case password :: rest :: Nil => rest.split(":").toList match {
-          case host :: port :: Nil => Some(RedisMember(host, port.toInt, Some(password)))
-          case _ => None
-        }
+        case password :: rest :: Nil =>
+          rest.split(":").toList match {
+            case host :: port :: Nil => Some(RedisMember(host, port.toInt, Some(password)))
+            case _                   => None
+          }
         case _ => None
       }
     case str if str.contains(":") =>
       str.split(":").toList match {
         case host :: port :: Nil => Some(RedisMember(host, port.toInt, None))
-        case _ => None
+        case _                   => None
       }
     case _ => None
   }
@@ -88,7 +89,10 @@ class RedisCPDataStores(configuration: Configuration,
         )
       })
       .orElse {
-        configuration.getOptional[String]("app.redis.pool.membersStr").map(RedisMember.fromList).map(_.map(_.toRedisServer))
+        configuration
+          .getOptional[String]("app.redis.pool.membersStr")
+          .map(RedisMember.fromList)
+          .map(_.map(_.toRedisServer))
       }
       .getOrElse(Seq.empty[RedisServer])
     val cli: RedisClientPool = RedisClientPool(
@@ -121,7 +125,10 @@ class RedisMCPDataStores(configuration: Configuration,
         )
       })
       .orElse {
-        configuration.getOptional[String]("app.redis.mpool.membersStr").map(RedisMember.fromList).map(_.map(_.toRedisServer))
+        configuration
+          .getOptional[String]("app.redis.mpool.membersStr")
+          .map(RedisMember.fromList)
+          .map(_.map(_.toRedisServer))
       }
       .getOrElse(Seq.empty[RedisServer])
     val cli: RedisClientMutablePool = RedisClientMutablePool(
@@ -172,7 +179,10 @@ class RedisLFDataStores(configuration: Configuration,
         configuration.getOptional[String]("app.redis.slavesStr").map(RedisMember.fromList).map(_.map(_.toRedisServer))
       }
       .orElse {
-        configuration.getOptional[String]("app.redis.lf.slavesStr").map(RedisMember.fromList).map(_.map(_.toRedisServer))
+        configuration
+          .getOptional[String]("app.redis.lf.slavesStr")
+          .map(RedisMember.fromList)
+          .map(_.map(_.toRedisServer))
       }
       .getOrElse(Seq.empty[RedisServer])
     val cli: RedisClientMasterSlaves = RedisClientMasterSlaves(
@@ -205,7 +215,10 @@ class RedisSentinelDataStores(configuration: Configuration,
         )
       })
       .orElse {
-        configuration.getOptional[String]("app.redis.sentinels.membersStr").map(RedisMember.fromList).map(_.map(m => (m.host, m.port)))
+        configuration
+          .getOptional[String]("app.redis.sentinels.membersStr")
+          .map(RedisMember.fromList)
+          .map(_.map(m => (m.host, m.port)))
       }
       .getOrElse(Seq.empty[(String, Int)])
     val master   = configuration.getOptional[String]("app.redis.sentinels.master").get
@@ -245,7 +258,10 @@ class RedisSentinelLFDataStores(configuration: Configuration,
         )
       })
       .orElse {
-        configuration.getOptional[String]("app.redis.sentinels.lf.membersStr").map(RedisMember.fromList).map(_.map(m => (m.host, m.port)))
+        configuration
+          .getOptional[String]("app.redis.sentinels.lf.membersStr")
+          .map(RedisMember.fromList)
+          .map(_.map(m => (m.host, m.port)))
       }
       .getOrElse(Seq.empty[(String, Int)])
     val master = configuration.getOptional[String]("app.redis.sentinels.lf.master").get
@@ -281,7 +297,10 @@ class RedisClusterDataStores(configuration: Configuration,
         )
       })
       .orElse {
-        configuration.getOptional[String]("app.redis.sentinels.membersStr").map(RedisMember.fromList).map(_.map(_.toRedisServer))
+        configuration
+          .getOptional[String]("app.redis.sentinels.membersStr")
+          .map(RedisMember.fromList)
+          .map(_.map(_.toRedisServer))
       }
       .getOrElse(Seq.empty[RedisServer])
     val cli: RedisCluster = RedisCluster(

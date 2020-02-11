@@ -76,7 +76,6 @@ trait RawDataStore {
   def pexpire(key: String, pttl: Long)(implicit ec: ExecutionContext, env: Env): Future[Boolean]
 }
 
-
 trait BasicStore[T] {
   def key(id: String): Key
   def keyStr(id: String): String = key(id).key

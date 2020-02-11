@@ -194,7 +194,9 @@ case class LdapAuthModuleConfig(
       }
       .getOrElse(Seq.empty[String])
     LdapAuthModuleConfig.logger.debug(s"found ${usersInGroup.size} users in group : ${usersInGroup.mkString(", ")}")
-    LdapAuthModuleConfig.logger.debug(s"searching user in ${userBase.map(_ + ",").getOrElse("") + searchBase} with filter ${searchFilter.replace("${username}", username)}")
+    LdapAuthModuleConfig.logger.debug(
+      s"searching user in ${userBase.map(_ + ",").getOrElse("") + searchBase} with filter ${searchFilter.replace("${username}", username)}"
+    )
     val res = ctx.search(userBase.map(_ + ",").getOrElse("") + searchBase,
                          searchFilter.replace("${username}", username),
                          searchControls)

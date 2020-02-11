@@ -625,8 +625,9 @@ class KafkaAccessLog extends RequestTransformer {
                     case ClusterMode.Leader => env.clusterConfig.leader.name
                     case _                  => "none"
                   })
-                )
-              , true)(env, kafkaConfig)
+                ),
+                true
+              )(env, kafkaConfig)
             }
             Right(ctx.otoroshiResponse).future
           }
@@ -751,8 +752,9 @@ class KafkaAccessLog extends RequestTransformer {
                     case ClusterMode.Leader => env.clusterConfig.leader.name
                     case _                  => "none"
                   })
-                )
-              , true)(env, kafkaConfig)
+                ),
+                true
+              )(env, kafkaConfig)
             }
             ctx.otoroshiResult.future
           }

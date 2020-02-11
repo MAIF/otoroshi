@@ -138,7 +138,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
             case Unreachable => "unreachable"
           }),
           "certificates" -> certificates,
-          "scripts" -> scripts
+          "scripts"      -> scripts
         ) ++ cluster
         val err = (payload \ "otoroshi").asOpt[String].exists(_ != "healthy") ||
         (payload \ "datastore").asOpt[String].exists(_ != "healthy") ||
