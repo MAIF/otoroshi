@@ -604,14 +604,14 @@ export class RegisterAdminModal extends Component {
       }
     } else {
       // TODO: test if password
-      if (!this.state.oldPassword) {
-        this.props.ok(this.state);
-        setTimeout(() => {
-          window.newAlert('You did not provide your password', 'Error');
-        }, 500);
-      } else {
+      // if (!this.state.oldPassword) {
+      //   this.props.ok(this.state);
+      //   setTimeout(() => {
+      //     window.newAlert('You did not provide your password', 'Error');
+      //   }, 500);
+      // } else {
         f();
-      }
+      // }
     }
   };
 

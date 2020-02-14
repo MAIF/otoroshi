@@ -136,8 +136,8 @@ case "${1}" in
     build_jdk11 $2
     build_jdk12 $2
     build_jdk13 $2
-    #build_jdk14 $2
-    #build_graal $2
+    build_jdk14 $2
+    build_graal $2
     cleanup
     docker push "maif/otoroshi:$2"
     docker push "maif/otoroshi:$2-jdk8"
@@ -146,8 +146,8 @@ case "${1}" in
     docker push "maif/otoroshi:$2-jdk11"
     docker push "maif/otoroshi:$2-jdk12"
     docker push "maif/otoroshi:$2-jdk13"
-    #docker push "maif/otoroshi:$2-jdk14"
-    #docker push "maif/otoroshi:$2-graal"
+    docker push "maif/otoroshi:$2-jdk14"
+    docker push "maif/otoroshi:$2-graal"
     docker push "maif/otoroshi:latest"
     ;;
   build-and-push-snapshot)
