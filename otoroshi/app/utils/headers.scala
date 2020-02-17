@@ -313,6 +313,10 @@ object HeadersHelper {
           env.Headers.OtoroshiDailyCallsRemaining   -> remainingQuotas.remainingCallsPerDay.toString,
           env.Headers.OtoroshiMonthlyCallsRemaining -> remainingQuotas.remainingCallsPerMonth.toString
         )
+        .appendAllArgsIf(descriptor.sendOtoroshiHeadersBack && apiKey.isDefined && apiKey.get.rotation.enabled && attrs.get(otoroshi.plugins.Keys.ApiKeyRotationKey).isDefined)(
+          "Otoroshi-ApiKey-Rotation-At"   -> attrs.get(otoroshi.plugins.Keys.ApiKeyRotationKey).get.rotationAt.toString(),
+          "Otoroshi-ApiKey-Rotation-Remaining"   -> attrs.get(otoroshi.plugins.Keys.ApiKeyRotationKey).get.remaining.toString
+        )
         .appendIf(descriptor.canary.enabled, env.Headers.OtoroshiTrackerId -> s"${env.sign(canaryId)}::$canaryId")
         .removeAll(corsHeaders.map(_._1))
         .appendAll(corsHeaders)

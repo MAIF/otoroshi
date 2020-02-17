@@ -1,15 +1,16 @@
 package otoroshi.plugins
 
-import models.{ApiKey, PrivateAppsUser, Target}
+import models.{ApiKey, ApiKeyRotationInfo, PrivateAppsUser, Target}
 import org.joda.time.DateTime
 import play.api.libs.json.JsValue
 import play.api.libs.typedmap.TypedKey
 
 object Keys {
-  val ApiKeyKey          = TypedKey[ApiKey]("otoroshi.core.ApiKey")
-  val UserKey            = TypedKey[PrivateAppsUser]("otoroshi.core.UserKey")
-  val GeolocationInfoKey = TypedKey[JsValue]("otoroshi.plugins.GeolocationInfo")
-  val UserAgentInfoKey   = TypedKey[JsValue]("otoroshi.plugins.UserAgentInfo")
+  val ApiKeyKey           = TypedKey[ApiKey]("otoroshi.core.ApiKey")
+  val ApiKeyRotationKey   = TypedKey[ApiKeyRotationInfo]("otoroshi.core.ApiKeyRotationInfo")
+  val UserKey             = TypedKey[PrivateAppsUser]("otoroshi.core.UserKey")
+  val GeolocationInfoKey  = TypedKey[JsValue]("otoroshi.plugins.GeolocationInfo")
+  val UserAgentInfoKey    = TypedKey[JsValue]("otoroshi.plugins.UserAgentInfo")
 
   val RequestTimestampKey = TypedKey[DateTime]("otoroshi.core.RequestTimestamp")
   val RequestStartKey     = TypedKey[Long]("otoroshi.core.RequestStart")

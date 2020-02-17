@@ -2215,8 +2215,10 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                   }
                                                   case Some(key) if key.allowClientIdOnly =>
                                                     key.withinQuotasAndRotation().flatMap {
-                                                      case true => callDownstream(config, Some(key))
-                                                      case false =>
+                                                      case (true, rotationInfos) =>
+                                                        rotationInfos.foreach(i => attrs.put(otoroshi.plugins.Keys.ApiKeyRotationKey -> i))
+                                                        callDownstream(config, Some(key))
+                                                      case (false, _) =>
                                                         Errors.craftResponseResult(
                                                           "You performed too much requests",
                                                           TooManyRequests,
@@ -2292,8 +2294,10 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                   }
                                                   case Some(key) if key.isValid(clientSecret) =>
                                                     key.withinQuotasAndRotation().flatMap {
-                                                      case true => callDownstream(config, Some(key))
-                                                      case false =>
+                                                      case (true, rotationInfos) =>
+                                                        rotationInfos.foreach(i => attrs.put(otoroshi.plugins.Keys.ApiKeyRotationKey -> i))
+                                                        callDownstream(config, Some(key))
+                                                      case (false, _) =>
                                                         Errors.craftResponseResult(
                                                           "You performed too much requests",
                                                           TooManyRequests,
@@ -2422,8 +2426,10 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                             }
                                                             case Success(_) =>
                                                               apiKey.withinQuotasAndRotation().flatMap {
-                                                                case true => callDownstream(config, Some(apiKey))
-                                                                case false =>
+                                                                case (true, rotationInfos) =>
+                                                                  rotationInfos.foreach(i => attrs.put(otoroshi.plugins.Keys.ApiKeyRotationKey -> i))
+                                                                  callDownstream(config, Some(apiKey))
+                                                                case (false, _) =>
                                                                   Errors.craftResponseResult(
                                                                     "You performed too much requests",
                                                                     TooManyRequests,
@@ -2563,8 +2569,10 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                       }
                                                       case Some(key) if key.isValid(apiKeySecret) =>
                                                         key.withinQuotasAndRotation().flatMap {
-                                                          case true => callDownstream(config, Some(key))
-                                                          case false =>
+                                                          case (true, rotationInfos) =>
+                                                            rotationInfos.foreach(i => attrs.put(otoroshi.plugins.Keys.ApiKeyRotationKey -> i))
+                                                            callDownstream(config, Some(key))
+                                                          case (false, _) =>
                                                             Errors.craftResponseResult(
                                                               "You performed too much requests",
                                                               TooManyRequests,

@@ -51,6 +51,8 @@ case class ApiKeyRotation(
   def json: JsValue = ApiKeyRotation.fmt.writes(this)
 }
 
+case class ApiKeyRotationInfo(rotationAt: DateTime, remaining: Long)
+
 object ApiKeyRotation {
   val fmt = new Format[ApiKeyRotation] {
     override def writes(o: ApiKeyRotation): JsValue = Json.obj(
@@ -116,11 +118,11 @@ case class ApiKey(clientId: String = IdGenerator.token(16),
     env.datastores.apiKeyDataStore.withinMonthlyQuota(this)
   def withinQuotas()(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
     env.datastores.apiKeyDataStore.withingQuotas(this)
-  def withinQuotasAndRotation()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
+  def withinQuotasAndRotation()(implicit ec: ExecutionContext, env: Env): Future[(Boolean, Option[ApiKeyRotationInfo])] = {
     for {
-      within <- env.datastores.apiKeyDataStore.withingQuotas(this)
-      _      <- env.datastores.apiKeyDataStore.keyRotation(this)
-    } yield within
+      within   <- env.datastores.apiKeyDataStore.withingQuotas(this)
+      rotation <- env.datastores.apiKeyDataStore.keyRotation(this)
+    } yield (within, rotation)
   }
   def metadataJson: JsValue = JsObject(metadata.mapValues(JsString.apply))
   def lightJson: JsObject = Json.obj(
@@ -290,24 +292,43 @@ trait ApiKeyDataStore extends BasicStore[ApiKey] {
   def clearFastLookupByGroup(groupId: String)(implicit ec: ExecutionContext, env: Env): Future[Long]
   def clearFastLookupByService(serviceId: String)(implicit ec: ExecutionContext, env: Env): Future[Long]
 
-  def keyRotation(apiKey: ApiKey)(implicit ec: ExecutionContext, env: Env): Future[Unit] = {
+  // def willBeRotatedAt(apiKey: ApiKey)(implicit ec: ExecutionContext, env: Env): Future[Option[(DateTime, Long)]] = {
+  //   if (apiKey.rotation.enabled) {
+  //     val key = s"${env.storageRoot}:apikeys-rotation:${apiKey.clientId}"
+  //     env.datastores.rawDataStore.get(key).map {
+  //       case None => None
+  //       case Some(body) =>
+  //         val json  = Json.parse(body.utf8String)
+  //         val start = new DateTime((json \ "start").as[Long])
+  //         val end   = start.plusHours(apiKey.rotation.rotationEvery.toInt)
+  //         Some((end, new org.joda.time.Period(DateTime.now(), end).toStandardSeconds.getSeconds * 1000))
+  //     }
+  //   } else {
+  //     FastFuture.successful(None)
+  //   }
+  // }
+
+  def keyRotation(apiKey: ApiKey)(implicit ec: ExecutionContext, env: Env): Future[Option[ApiKeyRotationInfo]] = {
     if (apiKey.rotation.enabled) {
       val key = s"${env.storageRoot}:apikeys-rotation:${apiKey.clientId}"
       env.datastores.rawDataStore.get(key).flatMap {
         case None =>
           val newApk = apiKey.copy(rotation = apiKey.rotation.copy(nextSecret = None))
+          val start = DateTime.now()
+          val end = start.plusHours(apiKey.rotation.rotationEvery.toInt)
+          val res: Option[ApiKeyRotationInfo] = Some(ApiKeyRotationInfo(end, new org.joda.time.Period(DateTime.now(), end).toStandardSeconds.getSeconds * 1000))
           env.datastores.rawDataStore
             .set(key,
                  ByteString(
                    Json.stringify(
                      Json.obj(
-                       "start" -> System.currentTimeMillis()
+                       "start" -> start.toDate.getTime
                      )
                    )
                  ),
                  Some((newApk.rotation.rotationEvery * 60 * 60 * 1000) + (5 * 60 * 1000)))
             .flatMap { _ =>
-              newApk.save().map(_ => ())
+              newApk.save().map(_ => res)
             }
         case Some(body) => {
           val json              = Json.parse(body.utf8String)
@@ -318,8 +339,9 @@ trait ApiKeyDataStore extends BasicStore[ApiKey] {
           val beforeGracePeriod = now.isAfter(start) && now.isBefore(startGrace) && now.isBefore(end)
           val inGracePeriod     = now.isAfter(start) && now.isAfter(startGrace) && now.isBefore(end)
           val afterGracePeriod  = now.isAfter(start) && now.isAfter(startGrace) && now.isAfter(end)
+          val res: Option[ApiKeyRotationInfo] = Some(ApiKeyRotationInfo(end, new org.joda.time.Period(DateTime.now(), end).toStandardSeconds.getSeconds * 1000))
           if (beforeGracePeriod) {
-            FastFuture.successful(())
+            FastFuture.successful(res)
           } else if (inGracePeriod) {
             val newApk = apiKey.copy(
               rotation =
@@ -332,7 +354,7 @@ trait ApiKeyDataStore extends BasicStore[ApiKey] {
                 apikey = newApk
               )
             )
-            newApk.save().map(_ => ())
+            newApk.save().map(_ => res)
           } else if (afterGracePeriod) {
             val newApk = apiKey.copy(clientSecret = apiKey.rotation.nextSecret.getOrElse(IdGenerator.token(64)),
                                      rotation = apiKey.rotation.copy(nextSecret = None))
@@ -355,18 +377,17 @@ trait ApiKeyDataStore extends BasicStore[ApiKey] {
                    ),
                    Some((newApk.rotation.rotationEvery * 60 * 60 * 1000) + (5 * 60 * 1000)))
               .flatMap { _ =>
-                newApk.save().map(_ => ())
+                newApk.save().map(_ => res)
               }
           } else {
-            FastFuture.successful(())
+            FastFuture.successful(res)
           }
         }
       }
     } else {
-      FastFuture.successful(())
+      FastFuture.successful(None)
     }
   }
-
 }
 
 object ApiKeyHelper {
