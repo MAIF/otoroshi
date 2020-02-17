@@ -30,6 +30,38 @@ class HasClientCertValidator extends AccessValidator {
   }
 }
 
+class HasClientCertMatchingApikeyValidator extends AccessValidator {
+
+  override def name: String = "Client Certificate + Api Key only"
+
+  override def description: Option[String] = Some(
+    """Check if a client certificate is present in the request and that the apikey used matches the client certificate.
+      |You can set the client cert. DN in an apikey metadata named `allowed-client-cert-dn`
+      |""".stripMargin)
+
+  def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
+    context.request.clientCertificateChain match {
+      case Some(_) => context.apikey match {
+        case Some(apikey)     => apikey.metadata.get("allowed-client-cert-dn") match {
+          case Some(dn)       => context.request.clientCertificateChain match {
+            case Some(chain)  => chain.headOption match {
+              case Some(cert) => FastFuture.successful(
+                RegexPool(dn).matches(cert.getIssuerDN.getName)
+              )
+              case None       => FastFuture.successful(false)
+            }
+            case None         => FastFuture.successful(false)
+          }
+          case None           => FastFuture.successful(false)
+        }
+        case None             => FastFuture.successful(false)
+      }
+      case _                  => FastFuture.successful(false)
+    }
+  }
+}
+
+
 class HasClientCertMatchingValidator extends AccessValidator {
 
   override def name: String = "Client certificate matching"

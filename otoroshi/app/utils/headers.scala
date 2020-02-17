@@ -290,7 +290,7 @@ object HeadersHelper {
           v => (v._1, HeadersExpressionLanguage(v._2, Some(req), Some(descriptor), apiKey, paUsr, elCtx, attrs, env))
         )
         .filterNot(h => h._2 == "null")
-      
+
       missingOnlyHeadersOut
         .removeAll(headersFromResponse.map(_._1))
         .appendAll(headersFromResponse)
