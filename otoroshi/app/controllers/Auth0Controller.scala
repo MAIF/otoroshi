@@ -193,7 +193,7 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
         .save(Duration(auth.sessionMaxAge, TimeUnit.SECONDS))
         .map { paUser =>
           env.clusterAgent.createSession(paUser)
-          Alerts.send(UserLoggedInAlert(env.snowflakeGenerator.nextIdStr(), env.env, paUser, ctx.from, ctx.ua))
+          Alerts.send(UserLoggedInAlert(env.snowflakeGenerator.nextIdStr(), env.env, paUser, ctx.from, ctx.ua, auth.id))
           ctx.request.session
             .get(s"pa-redirect-after-login-${auth.cookieSuffix(descriptor)}")
             .getOrElse(
@@ -386,7 +386,7 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
               }
               case true => {
                 Alerts
-                  .send(AdminLoggedInAlert(env.snowflakeGenerator.nextIdStr(), env.env, boUser, ctx.from, ctx.ua))
+                  .send(AdminLoggedInAlert(env.snowflakeGenerator.nextIdStr(), env.env, boUser, ctx.from, ctx.ua, auth.id))
               }
             }
             Redirect(

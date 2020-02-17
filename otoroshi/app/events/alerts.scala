@@ -629,6 +629,7 @@ case class AdminLoggedInAlert(`@id`: String,
                               user: BackOfficeUser,
                               from: String,
                               ua: String,
+                              provider: String,
                               `@timestamp`: DateTime = DateTime.now())
     extends AlertEvent {
 
@@ -646,11 +647,12 @@ case class AdminLoggedInAlert(`@id`: String,
     "@serviceId"   -> `@serviceId`,
     "@service"     -> `@service`,
     "@env"         -> `@env`,
-    "alert"        -> "AdminLoggedInAlert",
+    "alert"        -> "sAdminLoggedInAlert",
     "userName"     -> user.name,
     "userEmail"    -> user.email,
     "user"         -> user.profile,
-    "userRandomId" -> user.randomId
+    "userRandomId" -> user.randomId,
+    "provider"     -> provider
   )
 }
 
@@ -659,6 +661,7 @@ case class UserLoggedInAlert(`@id`: String,
                              user: PrivateAppsUser,
                              from: String,
                              ua: String,
+                             provider: String,
                              `@timestamp`: DateTime = DateTime.now())
     extends AlertEvent {
 
@@ -680,7 +683,8 @@ case class UserLoggedInAlert(`@id`: String,
     "userName"     -> user.name,
     "userEmail"    -> user.email,
     "user"         -> user.profile,
-    "userRandomId" -> user.randomId
+    "userRandomId" -> user.randomId,
+    "provider"     -> provider
   )
 }
 
