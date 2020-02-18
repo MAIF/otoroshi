@@ -19,75 +19,66 @@ All the features supported by **Otoroshi** are listed below
     * impacts on access validation, routing, body transformation, apikey extraction
     * listen to internal otoroshi events
     * modules can be written and deployed from the UI
+    * lot of module provided out of the box (see TODO:)
 * Full featured TLS integration
     * @ref:[Dynamic SSL termination](./topics/ssl.md)
     * mTLS support for input and output connections (end-to-end mTLS)
     * extended client certificate validation
-    * TLS certificate automation based on a CA certificate
-    * ACME/Let's Encrypt support
+    * TLS certificate automation (create, renew, etc) based on a CA certificate
+    * ACME/Let's Encrypt support (create, renew)
+    * on-the-fly certificate generation based on a CA certificate without request loss
 * Classic features for reverse proxying
     * expose the same service on multiple domain names (including wildcards)
     * support multiple loadbalancing algorithms
-    * configurable circuit breaker per service
+    * configurable circuit breaker per service, with timeouts per path and verb
     * @ref:[maintenance page per service](./usage/2-services.md)
     * @ref:[build page per service](./usage/2-services.md)
     * @ref:[force HTTPS usage per service](./usage/2-services.md)
     * @ref:[Add current Api key quotas usage in response headers](./usage/3-apikeys.md)
     * @ref:[Add current latencies in response headers](./usage/3-apikeys.md)
+    * headers manipulation
+    * routing headers
+    * custom html error templates
+    * healthcheck per service
+    * sink services
+    * CORS support
+    * GZIP support
+    * filtering on http verb and path
 * Api management features
-    * http verb/path filtering per apikey
+    * throttling / daily quotas / monthly quotas per apikey
+    * apikey authorization based on http verb and path
+    * global throttling
+    * global throttling per ip address
+    * global or per service ip address blacklist / whitelist
+    * automatic apikey secret rotation
 * Authentication modules
     * LDAP
     * In memory (managed by otoroshi)
     * OAuth2/OIDC
     * modules can be used for admin. backoffice login
     * webauthentication support
+    * sessions management from UI
 * JWT token utilities
     * validate incoming JWT tokens
     * transform incoming JWT tokens
+    * chain multiple validators
 * Analytics / Metrics
-    * @ref:[Global live metrics](./setup/index.md) TODO: 
-    * @ref:[Live metrics per service (Rest)](./usage/4-monitor.md#service-live-stats) TODO: 
-    * @ref:[Global metrics and analytics (if used with the Elastic connector)](./usage/7-metrics.md)
+    * rich traffic events for each proxied http request
+    * @ref:[Live metrics per service and globaly](./usage/4-monitor.md)  
+    * @ref:[Global metrics and analytics (requires elastic server)](./usage/7-metrics.md)
+    * @ref:[Traffic events can be sent using webhooks or Kafka topic](./setup/dangerzone.md#analytics-settings)
     * multiple technical metrics exporters (statsd, datadog, prometheus)
 * Audit trail
-    * @ref:[Global audit log on admins actions](./usage/6-audit.md#audit-trail)
-    * @ref:[Global alert log on admins actions](./usage/6-audit.md#alerts)
-    * @ref:[Internal events can be sent outside using webhooks or Kafka topic](./setup/dangerzone.md#analytics-settings)
-    * @ref:[Audit events can be sent outside using webhooks or Kafka topic](./setup/dangerzone.md#analytics-settings)
-    * @ref:[Alerts events can be sent outside using webhooks or Kafka topic](./setup/dangerzone.md#analytics-settings)
-    * @ref:[Alerts can be send to people by email using email provider (Mailgun, mailjet)](./integrations/mailgun.md)
+    * @ref:[Global audit log alert log on admins actions](./usage/6-audit.md)
+    * @ref:[Audit and alerts events can be sent using webhooks or Kafka topic](./setup/dangerzone.md#analytics-settings)
+    * @ref:[Alerts events can be send to people by email using email provider (Mailgun, mailjet)](./integrations/mailgun.md)
+* Extract informations from `User-Agent` headers to enrich traffic events
+* Extract geolocation informations (need external service)  to enrich traffic events
+* Support enterprise http proxies globaly and per service
+* TCP proxy with SNI and TLS passthrought support
+* TCP / UDP tunnelings
+    * add web authentication on top of anything
+    * local tunnel client with CLI or UI
+* @ref:[Canary mode per service](./topics/snow-monkey.md)
 * @ref:[Chaos engineering tools with the Snow Monkey](./topics/snow-monkey.md)
 * @ref:[Advanced CleverCloud integration (create services from CleverCloud apps)](./integrations/clevercloud.md)
-
-
-
-
-
-
-* @ref:[Service is private (Api key access) by default with exclusions](./usage/2-services.md)
-* @ref:[Support routing headers for a service (ie. for service versioning)](./usage/2-services.md)
-* @ref:[Support adding headers for a service request (ie. add Authorization header)](./usage/2-services.md)
-* @ref:[Support custom html errors templates per service](./usage/2-services.md#custom-error-templates)
-* @ref:[Configurable circuit breaker and retries (with backoff) on network errors per service](./usage/2-services.md#service-circuit-breaker)
-* @ref:[Support for canary mode per service](./usage/2-services.md#canary-mode)
-* @ref:[Configurable health check per service](./usage/2-services.md#service-health-check)
-* @ref:[Support IP addresses blacklist per service (with wildcard support)](./usage/2-services.md#service-settings)
-* @ref:[Support IP addresses whitelist per service (with wildcard support)](./usage/2-services.md#service-settings)
-* @ref:[Support mutiple Api keys per service](./usage/3-apikeys.md)
-* @ref:[Support configurable throttling quota per Api key](./usage/3-apikeys.md)
-* @ref:[Support configurable daily quota per Api key](./usage/3-apikeys.md)
-* @ref:[Support configurable monthly quota per Api key](./usage/3-apikeys.md)
-* @ref:[Api keys are authorized for a group of services](./usage/3-apikeys.md)
-* @ref:[Api keys can be passed with custom headers, `Authorization: Basic ` headers, `Authorization: Bearer` or Cookies](./usage/3-apikeys.md)
-* @ref:[Force secured exchanges with exclusions per service](./usage/2-services.md)
-* @ref:[OpenAPI documentation displayed through web UI per service](./usage/2-services.md#service-settings)
-* @ref:[Metrics and analytics per service (if used with the Elastic connector)](./usage/4-monitor.md#service-analytics)
-
-* @ref:[Support global IP addresses blacklist (with wildcard support)](./setup/dangerzone.md#whitelist-blacklist-settings)
-* @ref:[Support global IP addresses whitelist (with wildcard support)](./setup/dangerzone.md#whitelist-blacklist-settings)
-* @ref:[Support global endless responses for IP addresses (128 Gb of 0 for each response)](./setup/dangerzone.md#whitelist-blacklist-settings)
-* @ref:[Support global throttling quota](./setup/dangerzone.md#global-throttling-settings)
-* @ref:[Support global throttling quota per IP address (with wildcard support)](./setup/dangerzone.md#global-throttling-settings)
-* @ref:[Support global max number of concurrent connections](./setup/dangerzone.md#commons-settings)
-* @ref:[Global live metrics](./setup/index.md)
