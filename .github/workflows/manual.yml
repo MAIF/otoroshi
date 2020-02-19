@@ -1,0 +1,34 @@
+name: Build documentation
+
+on:
+  push:
+    paths:
+      - 'manual/**'
+    branches:
+      - master
+    tags:
+      - v**
+  pull_request:
+    paths:
+      - 'manual/**'
+    branches:
+      - master
+
+jobs:
+  build_dev_manual:
+    name: Build developer documentation
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master'
+    steps:
+      - uses: actions/checkout@v2.0.0
+      - name: Generate dev documentation website
+        run: sh ./scripts/doc.sh buildDev
+      - name: Commit files
+        run: |
+          git config --local user.email "otoroshi-github-actions@users.noreply.github.com"
+          git config --local user.name "otoroshi-github-actions"
+          git commit -am "Update dev documentation webssites"
+      - name: Push documentation
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN}}
