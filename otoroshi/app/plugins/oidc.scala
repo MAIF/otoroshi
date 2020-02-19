@@ -1,13 +1,15 @@
 package otoroshi.plugins.oidc
 
+import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
 import env.Env
-import otoroshi.script.{HttpRequest, RequestTransformer, TransformerRequestContext}
+import models.OIDCThirdPartyApiKeyConfig
+import otoroshi.script._
 import play.api.libs.json._
-import play.api.mvc.Result
+import play.api.mvc.{Result, Results}
 import utils.future.Implicits._
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.Try
 
 class OIDCHeaders extends RequestTransformer {
@@ -134,6 +136,56 @@ class OIDCHeaders extends RequestTransformer {
         ).future
       }
       case None => Right(ctx.otoroshiRequest).future
+    }
+  }
+}
+
+class OIDCAccessTokenValidator extends AccessValidator {
+
+  override def name: String = "OIDC access_token validator"
+
+  override def defaultConfig: Option[JsObject] =
+    Some(
+      Json.obj(
+      "OIDCAccessTokenValidator" -> Json.obj(
+          "enabled" -> true
+        )
+      )
+    )
+
+  override def description: Option[String] =
+    Some("""This plugin will use the third party apikey configuration of your service (that must be disabled) and apply it while keeping the apikey mecanism of otoroshi.
+           |Use it to combine apikey validation and OIDC access_token validation.
+           |
+           |This plugin can accept the following configuration
+           |
+           |```json
+           |{
+           |  "OIDCAccessTokenValidator": {
+           |    "enabled": true
+           |  }
+           |}
+           |```
+         """.stripMargin)
+
+  override def canAccess(ctx: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
+    val conf = ctx.configFor("OIDCAccessTokenValidators")
+    val enabled = (conf \ "enabled").asOpt[Boolean].getOrElse(false)
+    if (enabled) {
+      ctx.descriptor.thirdPartyApiKey match {
+        case a: OIDCThirdPartyApiKeyConfig =>
+          val promise = Promise[Boolean]
+          a.copy(enabled = true).handle(ctx.request, ctx.descriptor, env.datastores.globalConfigDataStore.latest(), ctx.attrs) { _ =>
+            promise.trySuccess(true)
+            FastFuture.successful(Results.Ok("--"))
+          }.andThen {
+            case _ if !promise.isCompleted => promise.trySuccess(false)
+          }
+          promise.future
+        case _ => FastFuture.successful(true)
+      }
+    } else {
+      FastFuture.successful(true)
     }
   }
 }
