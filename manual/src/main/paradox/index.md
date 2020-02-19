@@ -44,11 +44,8 @@ now open your browser to <a href="http://otoroshi.oto.tools:8080/" target="_blan
 * @ref:[Using Otoroshi](./usage/index.md)
 * @ref:[Third party Integrations](./integrations/index.md)
 * @ref:[Detailed topics](./topics/index.md)
-* @ref:[Embedding Otoroshi](./embedding.md)
 * @ref:[Admin REST API](./api.md)
-* @ref:[Rust CLI](./cli.md)
 * @ref:[Deploy to production](./deploy/index.md)
-* @ref:[Connectors](./connectors/index.md)
 
 ## Discussion
 
@@ -87,9 +84,6 @@ Otoroshi is Open Source and available under the [Apache 2 License](https://opens
 * [Integrations](integrations/index.md)
 * [Detailed topics](topics/index.md)
 * [Admin REST API](api.md)
-* [Embedding Otoroshi](./embedding.md)
-* [Official Rust CLI](cli.md)
 * [Deploy to production](deploy/index.md)
-* [Connectors](connectors/index.md)
 
 @@@
