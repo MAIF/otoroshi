@@ -81,4 +81,4 @@ All the features supported by **Otoroshi** are listed below
     * local tunnel client with CLI or UI
 * @ref:[Canary mode per service](./topics/snow-monkey.md)
 * @ref:[Chaos engineering tools with the Snow Monkey](./topics/snow-monkey.md)
-* @ref:[Advanced CleverCloud integration (create services from CleverCloud apps)](./integrations/clevercloud.md)
+* @ref:[Advanced CleverCloud integration (create services from CleverCloud apps)](./integrations/clevercloud.md) 
