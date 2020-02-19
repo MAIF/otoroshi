@@ -19,7 +19,7 @@ All the features supported by **Otoroshi** are listed below
     * impacts on access validation, routing, body transformation, apikey extraction
     * listen to internal otoroshi events
     * modules can be written and deployed from the UI
-    * lot of module provided out of the box (see TODO: )
+    * lot of module provided out of the box (see TODO:)
 * Full featured TLS integration
     * @ref:[Dynamic SSL termination](./topics/ssl.md)
     * mTLS support for input and output connections (end-to-end mTLS)
