@@ -27,7 +27,7 @@ jobs:
         run: |
           git config --local user.email "otoroshi-github-actions@users.noreply.github.com"
           git config --local user.name "otoroshi-github-actions"
-          git commit -am "Update dev documentation webssites"
+          git commit -am "Update dev documentation websites"
       - name: Push documentation
         uses: ad-m/github-push-action@master
         with:
