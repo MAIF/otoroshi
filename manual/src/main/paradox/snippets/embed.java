@@ -26,7 +26,7 @@ public class MyApp {
             ),
             ConfigFactory.parseString(String.join("\n", Arrays.asList(
                 "app {",
-                "  storage = \"leveldb\"",
+                "  storage = \"files\"",
                 "  importFrom = \"./my-state.json\"",
                 "  env = \"prod\"",
                 "  adminapi {",
@@ -42,8 +42,8 @@ public class MyApp {
                 "  claim {",
                 "    sharedKey = \"mysecret\"",
                 "  }",
-                "  leveldb {",
-                "    path = \"./leveldb\"",
+                "  filedb {",
+                "    path = \"./filedb/state.ndjson\"",
                 "  }",
                 "}"
             )))

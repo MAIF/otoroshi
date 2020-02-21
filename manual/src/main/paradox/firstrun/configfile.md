@@ -59,18 +59,17 @@ As Otoroshi supports multiple datastores, you'll have to provide some details ab
 
 | name | type | default value  | description |
 | ---- |:----:| -------------- | ----- |
-| `app.storage` | string | "inmemory" | what kind of storage engine you want to use. Possible values are `inmemory`, `leveldb`, `redis`, `cassandra`, `mongo` |
+| `app.storage` | string | "inmemory" | what kind of storage engine you want to use. Possible values are `inmemory`, `file`, `redis`, `cassandra` |
 | `app.importFrom` | string | | a file path or a URL to an Otoroshi export file. If the datastore is empty on startup, this file will be used to import data to the empty DB |
 | `app.importFromHeaders` | array | [] | a list of `:` separated header to use if the `app.importFrom` setting is a URL |
 | `app.initialData` | object |  | object representing Otoroshi internal data as exported from danger zone so you don't need a config file and a data import file |
 | `app.redis.host` | string | "localhost" | the host of the redis server |
 | `app.redis.port` | number | 6379 | the port of the redis server |
 | `app.redis.slaves` | array | [] | the redis slaves lists |
-| `app.leveldb.path` | string | "./leveldb" | the path where levelDB files will be written |
+| `app.filedb.path` | string | "./filefb" | the path where filedb files will be written |
 | `app.cassandra.hosts` | string | "127.0.0.1" | the host of the cassandra server |
 | `app.cassandra.host` | string | "127.0.0.1" | the list of cassandra hosts |
 | `app.cassandra.port` | number | 9042 | the port of the cassandra servers |
-| `app.mongo.uri` | string | "mongodb://localhost:27017/default" | the mongo URI following Mongo semantic https://docs.mongodb.com/manual/reference/connection-string/ |
 
 ## Headers configuration
 
@@ -135,7 +134,7 @@ include "application.conf"
 http.port = 8080
 
 app {
-  storage = "leveldb"
+  storage = "file"
   importFrom = "./my-state.json"
   env = "prod"
   domain = "oto.tools"
@@ -171,8 +170,8 @@ app {
   claim {
     sharedKey = "mysecret"
   }
-  leveldb {
-    path = "./leveldb"
+  filedb {
+    path = "./filedb/state.ndjson"
   }
 }
 

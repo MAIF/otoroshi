@@ -17,7 +17,7 @@ All the features supported by **Otoroshi** are listed below
     * Redis
     * In memory
     * Cassandra (experimental support)
-    * FileDb (not suitable for production usage)	
+    * filedb (not suitable for production usage)	
 * Pluggable modules system (plugins) 
     * you can create your own modules to change de behavior of Otoroshi per service or globally
     * impacts on access validation, routing, body transformation, apikey extraction

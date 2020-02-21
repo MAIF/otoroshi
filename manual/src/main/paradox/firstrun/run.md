@@ -42,10 +42,10 @@ You can use a volume to provide configuration like :
 docker run -p "8080:8080" -v "$(pwd):/usr/app/otoroshi/conf" maif/otoroshi
 ```
 
-You can also use a volume if you choose to use `leveldb` datastore like :
+You can also use a volume if you choose to use `filedb` datastore like :
 
 ```sh
-docker run -p "8080:8080" -v "$(pwd)/leveldb:/usr/app/otoroshi/leveldb" maif/otoroshi -Dapp.storage=leveldb
+docker run -p "8080:8080" -v "$(pwd)/filedb:/usr/app/otoroshi/filedb" maif/otoroshi -Dapp.storage=file
 ```
 
 You can also use a volume if you choose to use exports files :

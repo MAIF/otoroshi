@@ -1038,7 +1038,7 @@ export class DangerZonePage extends Component {
     'scripts.enabled': {
       type: 'bool',
       props: {
-        label: 'Global scripts enabled',
+        label: 'Global plugins enabled',
         help: '...',
       },
     },

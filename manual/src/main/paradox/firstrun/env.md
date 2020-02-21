@@ -32,8 +32,7 @@ app.redis.password = ${?REDIS_PASSWORD}
 app.redis.windowSize = ${?REDIS_WINDOW_SIZE}
 app.redis.useScan =  ${?REDIS_USE_SCAN}
 app.inmemory.windowSize = ${?INMEMORY_WINDOW_SIZE}
-app.leveldb.windowSize = ${?LEVELDB_WINDOW_SIZE}
-app.leveldb.path = ${?LEVELDB_PATH}
+
 app.cassandra.windowSize = ${?CASSANDRA_WINDOW_SIZE}
 app.cassandra.hosts = ${?CASSANDRA_HOSTS}
 app.cassandra.host = ${?CASSANDRA_HOST}
@@ -43,7 +42,6 @@ app.elastic.user = ${?ELASTIC_USER}
 app.elastic.password = ${?ELASTIC_PASSWORD}
 app.elastic.index = ${?ELASTIC_INDEX}
 app.elastic.type = ${?ELASTIC_TYPE}
-app.mongo.uri = ${?MONGO_URI}
 http.port = ${?PORT}
 https.port = ${?HTTPS_PORT}
 http2.enabled = ${?HTTP2_ENABLED}
