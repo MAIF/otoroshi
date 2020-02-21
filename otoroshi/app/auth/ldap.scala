@@ -228,7 +228,9 @@ case class LdapAuthModuleConfig(
             )
           )
         } recover {
-          case _ => None
+          case e =>
+            LdapAuthModuleConfig.logger.error(s"bind failed", e)
+            None
         } get
       } else {
         LdapAuthModuleConfig.logger.debug(s"user not found in group")
