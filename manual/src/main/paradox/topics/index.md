@@ -8,7 +8,7 @@ In this sections, you will find informations about various topics supported by O
 * [JWT Tokens verification](./jwt-verifications.md)
 * [SSL/TLS termination with Otoroshi](./ssl.md)
 * [Mutual TLS with Otoroshi](./mtls.md)
-* [Otoroshi Clustering](./clustering.md)
+* [Otoroshi clustering](./clustering.md)
 * [Otoroshi plugins](./plugins.md)
 * [Otoroshi monitoring](./monitoring.md)
 
