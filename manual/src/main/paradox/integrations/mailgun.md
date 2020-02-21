@@ -13,3 +13,7 @@ Then, expand the `Alert settings` section and add email addresses separated by c
 @@@ div { .centered-img }
 <img src="../img/danger-zone-6-alerts.png" />
 @@@
+
+# Mailjet
+
+Otoroshi also supports Mailjet. Just select `Mailjet` in `Mailer settings type` and fill the requested fields.

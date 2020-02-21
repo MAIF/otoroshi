@@ -43,5 +43,5 @@ Fill the form, default values for topic names are :
 * `otoroshi-audits`
 
 @@@ warning
-If you use trustore/keystore to access your kafka instances, the paths should be absolute and refers to host paths.
+If you use trustore/keystore to access your kafka instances, the paths should be absolute and refers to host paths. You can also choose a client certificate from otoroshi for client authentication.
 @@@

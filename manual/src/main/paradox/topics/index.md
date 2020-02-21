@@ -5,12 +5,11 @@ In this sections, you will find informations about various topics supported by O
 @@@ index
 
 * [Chaos engineering with the Snow Monkey](./snow-monkey.md)
-* [Service mesh](./service-mesh.md)
 * [JWT Tokens verification](./jwt-verifications.md)
 * [SSL/TLS termination with Otoroshi](./ssl.md)
 * [Mutual TLS with Otoroshi](./mtls.md)
 * [Otoroshi Clustering](./clustering.md)
-* [Requests transformation](./req-transformers.md)
+* [Otoroshi plugins](./plugins.md)
 * [Otoroshi monitoring](./monitoring.md)
 
 @@@
