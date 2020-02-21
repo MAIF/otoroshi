@@ -308,7 +308,8 @@ class AnalyticsSpec(name: String, configurationSpec: => Configuration)
       remainingQuotas = RemainingQuotas(),
       viz = None,
       geolocationInfo = None,
-      userAgentInfo = None
+      userAgentInfo = None,
+      extraAnalyticsData = None
     )
   }
 
