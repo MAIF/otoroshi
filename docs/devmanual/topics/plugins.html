@@ -220,142 +220,24 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="small-12 large-9 column" id="docs">
 <h1><a href="#otoroshi-plugins" name="otoroshi-plugins" class="anchor"><span class="anchor-link"></span></a>Otoroshi plugins</h1><div class="callout warning "><div class="callout-title">Warning</div>
 <p>This section is under rewrite. The following content is deprecated</p></div>
-<p>When everything has failed and you absolutely need a feature in Otoroshi to make your use case work, there is a solution. Request transformer is an experimental feature hidden behind a feature flag that allow you to code how Otoroshi should behave when receiving and rounting an http request. With request transformers, you can change request / response headers and request / response body to way you want.</p><div class="callout note "><div class="callout-title">Experimental Feature</div>
-<p>Request transformers is an experimental feature. It can change until it becomess an official feature</p></div><div class="callout warning "><div class="callout-title">Use at your own risk</div>
-<p>Request transformers is a <strong>very</strong> powerful feature that allow you to do almost everything you want. But like any powerful feature, it comes with a price. The fact that you are responsible for how the request is transformed makes you responsible for all issues introduced by the transformer. If you block the current thread, introduce big latency, generate uncatched exceptions, etc. it&rsquo;s <strong>your fault</strong>. You have to ensure that your code is fast, non blocking, safe, etc. In any case, Otoroshi developers will not responsible for issues caused by a request transformer.</p>
-<p>And always remember this quote from <del>uncle Ben</del> Winston Churchill:</p>
-<p style="font-style: italic; text-align: right">"Where there is great power there is great responsibility"</p></div>
-<h2><a href="#enabling-request-transformers" name="enabling-request-transformers" class="anchor"><span class="anchor-link"></span></a>Enabling request transformers</h2>
-<p>First you have to enable Otoroshi request transformers with the <code>-Dotoroshi.scripts.enabled=true</code> flag, or using env. variable <code>OTOROSHI_SCRIPTS_ENABLED=true</code>.</p>
-<h2><a href="#anatomy-of-a-transformer" name="anatomy-of-a-transformer" class="anchor"><span class="anchor-link"></span></a>Anatomy of a transformer</h2>
-<p>A request transformer is a piece of Scala code than can handle the complete lifecycle of an http request made on Otoroshi</p>
-<pre class="prettyprint"><code class="language-scala">case class HttpRequest(url: String, method: String, headers: Map[String, String], query: Map[String, String], cookies: Seq[WSCookie] = Seq.empty[WSCookie]) {
-  lazy val host: String = headers.getOrElse(&quot;Host&quot;, &quot;&quot;)
-  lazy val uri: Uri = Uri(url)
-  lazy val scheme: String = uri.scheme
-  lazy val authority: Uri.Authority = uri.authority
-  lazy val fragment: Option[String] = uri.fragment
-  lazy val path: String = uri.path.toString()
-  lazy val queryString: Option[String] = uri.rawQueryString
-  lazy val relativeUri: String = uri.toRelative.toString()
-}
-case class HttpResponse(status: Int, headers: Map[String, String], cookies: Seq[WSCookie] = Seq.empty[WSCookie])
-
-trait RequestTransformer {
-
-  /**
-   * See RequestTransformer.transformRequest
-   */
-  def transformRequestSync(
-    snowflake: String, // a cluster unique request id
-    rawRequest: HttpRequest, // the http request as received by Otoroshi
-    otoroshiRequest: HttpRequest, // the http request modified by Otoroshi, ready to be sent to the target service
-    desc: ServiceDescriptor, // the service description for the request 
-    apiKey: Option[ApiKey] = None, // the api key used, if one
-    user: Option[PrivateAppsUser] = None // the user, if one
-  )(implicit 
-      env: Env, // the otoroshi environnment
-      ec: ExecutionContext, // the threadpool for the request to perform async actions
-      mat: Materializer // the akka materializer to work with streams
-  ): Either[Result, HttpRequest] = {
-    Right(otoroshiRequest)
-  }
-
-  /**
-   * Transform the request forwarded from Otoroshi to the target service
-   */
-  def transformRequest(
-    snowflake: String, // a cluster unique request id
-    rawRequest: HttpRequest, // the http request as received by Otoroshi
-    otoroshiRequest: HttpRequest, // the http request modified by Otoroshi, ready to be sent to the target service
-    desc: ServiceDescriptor, // the service description for the request 
-    apiKey: Option[ApiKey] = None, // the api key used, if one
-    user: Option[PrivateAppsUser] = None // the user, if one
-  )(implicit 
-      env: Env, // the otoroshi environnment
-      ec: ExecutionContext, // the threadpool for the request to perform async actions
-      mat: Materializer // the akka materializer to work with streams
-    ): Future[Either[Result, HttpRequest]] = { // return a future of Either. On the left side, an http error if there was en err. On the Right side, the transformed http request
-    FastFuture.successful(transformRequestSync(snowflake, rawRequest, otoroshiRequest, desc, apiKey, user)(env, ec, mat))
-  }
-
-  /**
-   * See RequestTransformer.transformResponse
-   */
-  def transformResponseSync(
-    snowflake: String, // a cluster unique request id
-    rawResponse: HttpResponse, // the http response as received by Otoroshi from the target service
-    otoroshiResponse: HttpResponse, // the http response modified by Otoroshi, ready to be sent back to the client
-    desc: ServiceDescriptor, // the service description for the request 
-    apiKey: Option[ApiKey] = None, // the api key used, if one
-    user: Option[PrivateAppsUser] = None // the user, if one
-  )(implicit 
-      env: Env,  // the otoroshi environnment
-      ec: ExecutionContext, // the threadpool for the request to perform async actions
-      mat: Materializer // the akka materializer to work with streams
-  ): Either[Result, HttpResponse] = {
-    Right(otoroshiResponse)
-  }
-
-  /**
-   * Transform the response from the target to the client
-   */ 
-  def transformResponse(
-    snowflake: String, // a cluster unique request id
-    rawResponse: HttpResponse, // the http response as received by Otoroshi from the target service
-    otoroshiResponse: HttpResponse, // the http response modified by Otoroshi, ready to be sent back to the client
-    desc: ServiceDescriptor, // the service description for the request 
-    apiKey: Option[ApiKey] = None, // the api key used, if one
-    user: Option[PrivateAppsUser] = None // the user, if one
-  )(implicit 
-      env: Env, // the otoroshi environnment
-      ec: ExecutionContext, // the threadpool for the request to perform async actions
-      mat: Materializer // the akka materializer to work with streams
-  ): Future[Either[Result, HttpResponse]] = { // return a future of Either. On the left side, an http error if there was en err. On the Right side, the transformed http response
-    FastFuture.successful(transformResponseSync(snowflake, rawResponse, otoroshiResponse, desc, apiKey, user)(env, ec, mat))
-  }
-
-  /**
-   * Transform the request body forwarded from Otoroshi to the target service
-   * It uses akka-stream (see https://doc.akka.io/docs/akka/2.5/index.html)
-   */
-  def transformRequestBody(
-    snowflake: String, // a cluster unique request id
-    body: Source[ByteString, _], // the body of the request, a stream of byte array
-    rawRequest: HttpRequest, // the http request as received by Otoroshi
-    otoroshiRequest: HttpRequest, // the http request modified by Otoroshi, ready to be sent to the target service
-    desc: ServiceDescriptor, // the service description for the request 
-    apiKey: Option[ApiKey] = None, // the api key used, if one
-    user: Option[PrivateAppsUser] = None // the user, if one
-  )(implicit 
-      env: Env, // the otoroshi environnment
-      ec: ExecutionContext, // the threadpool for the request to perform async actions
-      mat: Materializer // the akka materializer to work with streams
-  ): Source[ByteString, _] = { // return a stream of byte array
-    body
-  }
-
-  /**
-   * Transform the response body forwarded from target to the client. 
-   * It uses akka-stream (see https://doc.akka.io/docs/akka/2.5/index.html)
-   */
-  def transformResponseBody(
-    snowflake: String, // a cluster unique request id
-    body: Source[ByteString, _], // the body of the response, a stream of byte array
-    rawResponse: HttpResponse, // the http response as received by Otoroshi from the target service
-    otoroshiResponse: HttpResponse, // the http response modified by Otoroshi, ready to be sent back to the client
-    desc: ServiceDescriptor, // the service description for the request 
-    apiKey: Option[ApiKey] = None, // the api key used, if one
-    user: Option[PrivateAppsUser] = None // the user, if one
-  )(implicit 
-      env: Env, // the otoroshi environnment
-      ec: ExecutionContext, // the threadpool for the request to perform async actions
-      mat: Materializer // the akka materializer to work with streams
-  ): Source[ByteString, _] = {
-    body
-  }
-}
-</code></pre>
+<p>When everything has failed and you absolutely need a feature in Otoroshi to make your use case work, there is a solution. Plugins is the feature in Otoroshi that allow you to code how Otoroshi should behave when receiving, validating and routing an http request. With request plugin, you can change request / response headers and request / response body the way you want, provide your own apikey, etc.</p>
+<h2><a href="#plugin-types" name="plugin-types" class="anchor"><span class="anchor-link"></span></a>Plugin types</h2>
+<p>there are many plugin types</p>
+<ul>
+  <li><code>request sinks</code> plugins: used when no services are matched in otoroshi. Can reply with any content</li>
+  <li><code>pre-routes</code> plugins: used to extract values (like custom apikeys) and provide them to other plugins or otoroshi engine</li>
+  <li><code>access validation</code> plugins: used to validate if a request can pass or not based on whatever you want</li>
+  <li><code>request transformer</code> plugins: used to transform request, responses and their body. Can be used to return arbitrary content</li>
+  <li><code>event listener</code> plugins: any plugin type can listen to otoroshi internal events and react to them</li>
+</ul>
+<h2><a href="#code-and-signatures" name="code-and-signatures" class="anchor"><span class="anchor-link"></span></a>Code and signatures</h2>
+<ul>
+  <li><a href="https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/script/requestsink.scala#L11-L16">https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/script/requestsink.scala#L11-L16</a></li>
+  <li><a href="https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/script/routing.scala#L60-L63">https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/script/routing.scala#L60-L63</a></li>
+  <li><a href="https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/script/accessvalidator.scala#L63-L82">https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/script/accessvalidator.scala#L63-L82</a></li>
+  <li><a href="https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/script/script.scala#L314-L455">https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/script/script.scala#L314-L455</a></li>
+  <li><a href="https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/script/eventlistener.scala#L27-L48">https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/script/eventlistener.scala#L27-L48</a></li>
+</ul>
 <p>for more information about APIs you can use</p>
 <ul>
   <li><a href="https://www.playframework.com/documentation/2.6.x/api/scala/index.html#package">https://www.playframework.com/documentation/2.6.x/api/scala/index.html#package</a></li>
@@ -365,10 +247,12 @@ trait RequestTransformer {
   <li><a href="https://doc.akka.io/api/akka/current/akka/stream/index.html">https://doc.akka.io/api/akka/current/akka/stream/index.html</a></li>
   <li><a href="https://doc.akka.io/api/akka/current/akka/stream/scaladsl/Source.html">https://doc.akka.io/api/akka/current/akka/stream/scaladsl/Source.html</a></li>
 </ul>
-<h2><a href="#writing-a-transformer-from-otoroshi-ui" name="writing-a-transformer-from-otoroshi-ui" class="anchor"><span class="anchor-link"></span></a>Writing a transformer from Otoroshi UI</h2>
-<p>Log into Otoroshi and go to <code>Settings (cog icon) / Scripts</code>. Here you can create multiple request transformer scripts and associate it with service descriptor later.</p><div class="centered-img">
+<h2><a href="#plugin-examples" name="plugin-examples" class="anchor"><span class="anchor-link"></span></a>Plugin examples</h2>
+<p>A lot of plugins comes with otoroshi, you can find it on <a href="https://github.com/MAIF/otoroshi/tree/master/otoroshi/app/plugins">github</a></p>
+<h2><a href="#writing-a-plugin-from-otoroshi-ui" name="writing-a-plugin-from-otoroshi-ui" class="anchor"><span class="anchor-link"></span></a>Writing a plugin from Otoroshi UI</h2>
+<p>Log into Otoroshi and go to <code>Settings (cog icon) / Plugins</code>. Here you can create multiple request transformer scripts and associate it with service descriptor later.</p><div class="centered-img">
 <img src="../img/scripts-1.png" /></div>
-<p>when you write an instance of a transformer in the Otoroshi UI, do the following</p>
+<p>when you write for instance a transformer in the Otoroshi UI, do the following</p>
 <pre class="prettyprint"><code class="language-scala">import akka.stream.Materializer
 import env.Env
 import models.{ApiKey, PrivateAppsUser, ServiceDescriptor}
@@ -493,9 +377,10 @@ class BodyLengthLimiter extends RequestTransformer {
 <ul>
   <li><a href="../topics/plugins.html#otoroshi-plugins" class="header">Otoroshi plugins</a>
   <ul>
-    <li><a href="../topics/plugins.html#enabling-request-transformers" class="header">Enabling request transformers</a></li>
-    <li><a href="../topics/plugins.html#anatomy-of-a-transformer" class="header">Anatomy of a transformer</a></li>
-    <li><a href="../topics/plugins.html#writing-a-transformer-from-otoroshi-ui" class="header">Writing a transformer from Otoroshi UI</a></li>
+    <li><a href="../topics/plugins.html#plugin-types" class="header">Plugin types</a></li>
+    <li><a href="../topics/plugins.html#code-and-signatures" class="header">Code and signatures</a></li>
+    <li><a href="../topics/plugins.html#plugin-examples" class="header">Plugin examples</a></li>
+    <li><a href="../topics/plugins.html#writing-a-plugin-from-otoroshi-ui" class="header">Writing a plugin from Otoroshi UI</a></li>
     <li><a href="../topics/plugins.html#providing-a-transformer-from-java-classpath" class="header">Providing a transformer from Java classpath</a></li>
     <li><a href="../topics/plugins.html#getting-custom-configuration-from-the-otoroshi-config-file" class="header">Getting custom configuration from the Otoroshi config. file</a></li>
     <li><a href="../topics/plugins.html#using-a-library-that-is-not-embedded-in-otoroshi" class="header">Using a library that is not embedded in Otoroshi</a></li>
