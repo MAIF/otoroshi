@@ -19,6 +19,7 @@ build () {
   touch $LOCATION/manual/src/main/paradox/snippets/reference.conf
   touch $LOCATION/manual/src/main/paradox/snippets/reference-env.conf
   cat $LOCATION/otoroshi/conf/application.conf >> $LOCATION/manual/src/main/paradox/snippets/reference.conf
+  echo "\n" >> $LOCATION/manual/src/main/paradox/snippets/reference.conf
   cat $LOCATION/otoroshi/conf/base.conf >> $LOCATION/manual/src/main/paradox/snippets/reference.conf
   node config.js
   sbt ';clean;paradox'
@@ -38,6 +39,7 @@ buildDev () {
   touch $LOCATION/manual/src/main/paradox/snippets/reference.conf
   touch $LOCATION/manual/src/main/paradox/snippets/reference-env.conf
   cat $LOCATION/otoroshi/conf/application.conf >> $LOCATION/manual/src/main/paradox/snippets/reference.conf
+  echo "\n" >> $LOCATION/manual/src/main/paradox/snippets/reference.conf
   cat $LOCATION/otoroshi/conf/base.conf >> $LOCATION/manual/src/main/paradox/snippets/reference.conf
   node config.js
   sbt ';clean;paradox'
