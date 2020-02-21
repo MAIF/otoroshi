@@ -73,7 +73,6 @@
   </ul></li>
   <li><a href="../integrations/index.html" class="page">Third party Integrations</a>
   <ul>
-    <li><a href="../integrations/auth0.html" class="page">Auth0</a></li>
     <li><a href="../integrations/analytics.html" class="page">Analytics</a></li>
     <li><a href="../integrations/mailgun.html" class="page">Mailgun</a></li>
     <li><a href="../integrations/statsd.html" class="page">StatsD / Datadog</a></li>
@@ -82,12 +81,11 @@
   <li><a href="../topics/index.html" class="page">Detailed topics</a>
   <ul>
     <li><a href="../topics/snow-monkey.html" class="page">Chaos engineering with the Snow Monkey</a></li>
-    <li><a href="../topics/service-mesh.html" class="page">Service mesh with Otoroshi</a></li>
     <li><a href="../topics/jwt-verifications.html" class="page">JWT Tokens verification</a></li>
     <li><a href="../topics/ssl.html" class="page">SSL/TLS termination with Otoroshi</a></li>
     <li><a href="../topics/mtls.html" class="page">Mutual TLS with Otoroshi</a></li>
     <li><a href="../topics/clustering.html" class="page">Otoroshi clustering</a></li>
-    <li><a href="../topics/req-transformers.html" class="page">Request transformers</a></li>
+    <li><a href="../topics/plugins.html" class="page">Request transformers</a></li>
     <li><a href="../topics/monitoring.html" class="page">Monitoring Otoroshi</a></li>
   </ul></li>
   <li><a href="../api.html" class="page">Admin REST API</a></li>
@@ -174,7 +172,6 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   </ul></li>
   <li><a href="../integrations/index.html" class="page">Third party Integrations</a>
   <ul>
-    <li><a href="../integrations/auth0.html" class="page">Auth0</a></li>
     <li><a href="../integrations/analytics.html" class="page">Analytics</a></li>
     <li><a href="../integrations/mailgun.html" class="page">Mailgun</a></li>
     <li><a href="../integrations/statsd.html" class="page">StatsD / Datadog</a></li>
@@ -183,12 +180,11 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><a href="../topics/index.html" class="page">Detailed topics</a>
   <ul>
     <li><a href="../topics/snow-monkey.html" class="page">Chaos engineering with the Snow Monkey</a></li>
-    <li><a href="../topics/service-mesh.html" class="page">Service mesh with Otoroshi</a></li>
     <li><a href="../topics/jwt-verifications.html" class="page">JWT Tokens verification</a></li>
     <li><a href="../topics/ssl.html" class="page">SSL/TLS termination with Otoroshi</a></li>
     <li><a href="../topics/mtls.html" class="page">Mutual TLS with Otoroshi</a></li>
     <li><a href="../topics/clustering.html" class="page">Otoroshi clustering</a></li>
-    <li><a href="../topics/req-transformers.html" class="page">Request transformers</a></li>
+    <li><a href="../topics/plugins.html" class="page">Request transformers</a></li>
     <li><a href="../topics/monitoring.html" class="page">Monitoring Otoroshi</a></li>
   </ul></li>
   <li><a href="../api.html" class="page">Admin REST API</a></li>
@@ -264,13 +260,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>Otoroshi is capable of sending internal metrics to a StatsD agent. Just put the host and port of you StatsD agent in the <code>Danger Zone</code> to collect these metrics. If you using <a href="https://www.datadoghq.com">Datadog</a>, don&rsquo;t forget to check the dedicated button :)</p><div class="centered-img">
 <img src="../img/danger-zone-7-statsd.png" /></div>
 <p>For more information about StatsD integration and what it does, just go to the <a href="../integrations/statsd.html">detailed chapter</a></p>
-<h2><a href="#auth0-settings" name="auth0-settings" class="anchor"><span class="anchor-link"></span></a>Auth0 settings</h2>
-<p>It is possible to configure Otoroshi to allow admin users to log in through Auth0. Otoroshi also provides a feature called <code>Private apps.</code> that allows you to force login to an Auth0 domain before accessing an app. You can create an Auth0 client (<a href="https://manage.auth0.com/#/clients">https://manage.auth0.com/#/clients</a>) for each of those features (admin users login and private apps login) and customize it with any rule you want (don&rsquo;t forget allowed callbacks, like <code>http://otoroshi.oto.tools:8080/backoffice/auth0/callback</code> and <code>http://privateapps.oto.tools:8080/backoffice/auth0/callback</code>).</p>
-<p>Once you&rsquo;re done, go to the settings of each client (<a href="https://manage.auth0.com/#/clients/xxxxxxxxxxxxxxxx/settings">https://manage.auth0.com/#/clients/xxxxxxxxxxxxxxxx/settings</a>) to get the information needed for the <code>Danger Zone</code>.</p><div class="centered-img">
-<img src="../img/auth0-settings.png" /></div><div class="centered-img">
-<img src="../img/danger-zone-8-auth0.png" /></div>
-<p>For more information about Auth0 integration and what it does, just go to the <a href="../integrations/auth0.html">detailed chapter</a></p>
-<h2><a href="#mailgun-settings" name="mailgun-settings" class="anchor"><span class="anchor-link"></span></a>Mailgun settings</h2>
+<h2><a href="#mailer-settings" name="mailer-settings" class="anchor"><span class="anchor-link"></span></a>Mailer settings</h2>
 <p>If you want to send emails for every alert generated by Otoroshi, you need to configure your Mailgun credentials in the <code>Danger Zone</code>. These parameters are provided in you Mailgun domain dashboard (i.e. <a href="https://app.mailgun.com/app/domains/my.domain.oto.tools">https://app.mailgun.com/app/domains/my.domain.oto.tools</a>) in the information section.</p><div class="centered-img">
 <img src="../img/danger-zone-9-mailgun.png" /></div>
 <p>For more information about Mailgun integration and what it does, just go to the <a href="../integrations/mailgun.html">detailed chapter</a></p>
@@ -302,8 +292,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../setup/dangerzone.html#kafka-settings" class="header">Kafka settings</a></li>
     <li><a href="../setup/dangerzone.html#alerts-settings" class="header">Alerts settings</a></li>
     <li><a href="../setup/dangerzone.html#statsd-settings" class="header">StatsD settings</a></li>
-    <li><a href="../setup/dangerzone.html#auth0-settings" class="header">Auth0 settings</a></li>
-    <li><a href="../setup/dangerzone.html#mailgun-settings" class="header">Mailgun settings</a></li>
+    <li><a href="../setup/dangerzone.html#mailer-settings" class="header">Mailer settings</a></li>
     <li><a href="../setup/dangerzone.html#clevercloud-settings" class="header">CleverCloud settings</a></li>
     <li><a href="../setup/dangerzone.html#import-exports-and-panic-mode" class="header">Import / exports and panic mode</a></li>
   </ul></li>
