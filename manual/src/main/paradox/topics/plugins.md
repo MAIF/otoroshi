@@ -1,4 +1,4 @@
-# Request transformers
+# Otoroshi plugins
 
 @@@ warning
 This section is under rewrite. The following content is deprecated
