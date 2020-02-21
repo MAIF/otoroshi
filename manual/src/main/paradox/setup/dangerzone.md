@@ -1,5 +1,9 @@
 # Configure the Danger zone
 
+@@@ warning
+This section is under rewrite. The following content is deprecated and UI may have changed
+@@@
+
 Now that you have an actual admin account, go to `setting (cog icon) / Danger Zone` in order to configure your Otoroshi instance.
 
 @@@ div { .centered-img }
