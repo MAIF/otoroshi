@@ -739,7 +739,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
 
   def createService() = ApiAction.async(parse.json) { ctx =>
     val rawBody = ctx.request.body.as[JsObject]
-    env.datastores.globalConfigDataStore..findById("global").map(_.get).flatMap { globalConfig =>
+    env.datastores.globalConfigDataStore.findById("global").map(_.get).flatMap { globalConfig =>
       val body: JsObject = ((rawBody \ "id").asOpt[String] match {
         case None    => rawBody ++ Json.obj("id" -> IdGenerator.token(64))
         case Some(b) => rawBody
