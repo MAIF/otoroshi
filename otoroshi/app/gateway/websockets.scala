@@ -839,7 +839,9 @@ class WebSocketHandler()(implicit env: Env) {
                                                 userAgentInfo =
                                                   attrs.get[JsValue](otoroshi.plugins.Keys.UserAgentInfoKey),
                                                 geolocationInfo =
-                                                  attrs.get[JsValue](otoroshi.plugins.Keys.GeolocationInfoKey)
+                                                  attrs.get[JsValue](otoroshi.plugins.Keys.GeolocationInfoKey),
+                                                extraAnalyticsData =
+                                                  attrs.get[JsValue](otoroshi.plugins.Keys.ExtraAnalyticsDataKey)
                                               )
                                               evt.toAnalytics()
                                               if (descriptor.logAnalyticsOnServer) {

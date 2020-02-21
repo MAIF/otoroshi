@@ -11,6 +11,7 @@ object Keys {
   val UserKey             = TypedKey[PrivateAppsUser]("otoroshi.core.UserKey")
   val GeolocationInfoKey  = TypedKey[JsValue]("otoroshi.plugins.GeolocationInfo")
   val UserAgentInfoKey    = TypedKey[JsValue]("otoroshi.plugins.UserAgentInfo")
+  val ExtraAnalyticsDataKey = TypedKey[JsValue]("otoroshi.plugins.ExtraAnalyticsData")
 
   val RequestTimestampKey = TypedKey[DateTime]("otoroshi.core.RequestTimestamp")
   val RequestStartKey     = TypedKey[Long]("otoroshi.core.RequestStart")

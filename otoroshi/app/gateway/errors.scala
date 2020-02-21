@@ -91,7 +91,8 @@ object Errors {
             viz = Some(viz),
             err = true,
             userAgentInfo = attrs.get[JsValue](otoroshi.plugins.Keys.UserAgentInfoKey),
-            geolocationInfo = attrs.get[JsValue](otoroshi.plugins.Keys.GeolocationInfoKey)
+            geolocationInfo = attrs.get[JsValue](otoroshi.plugins.Keys.GeolocationInfoKey),
+            extraAnalyticsData = attrs.get[JsValue](otoroshi.plugins.Keys.ExtraAnalyticsDataKey)
           ).toAnalytics()(env)
         }
         case None => {
@@ -139,7 +140,8 @@ object Errors {
             viz = None,
             err = true,
             userAgentInfo = attrs.get[JsValue](otoroshi.plugins.Keys.UserAgentInfoKey),
-            geolocationInfo = attrs.get[JsValue](otoroshi.plugins.Keys.GeolocationInfoKey)
+            geolocationInfo = attrs.get[JsValue](otoroshi.plugins.Keys.GeolocationInfoKey),
+            extraAnalyticsData = attrs.get[JsValue](otoroshi.plugins.Keys.ExtraAnalyticsDataKey)
           ).toAnalytics()(env)
         }
       }
