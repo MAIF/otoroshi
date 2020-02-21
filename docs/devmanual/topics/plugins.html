@@ -2,7 +2,7 @@
 <html class="no-js" lang="en">
 
 <head>
-<title>Request transformers · Otoroshi</title>
+<title>Otoroshi plugins · Otoroshi</title>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <meta name="description" content='otoroshi-manual'/>
@@ -85,7 +85,7 @@
     <li><a href="../topics/ssl.html" class="page">SSL/TLS termination with Otoroshi</a></li>
     <li><a href="../topics/mtls.html" class="page">Mutual TLS with Otoroshi</a></li>
     <li><a href="../topics/clustering.html" class="page">Otoroshi clustering</a></li>
-    <li><a href="../topics/plugins.html" class="active page">Request transformers</a></li>
+    <li><a href="../topics/plugins.html" class="active page">Otoroshi plugins</a></li>
     <li><a href="../topics/monitoring.html" class="page">Monitoring Otoroshi</a></li>
   </ul></li>
   <li><a href="../api.html" class="page">Admin REST API</a></li>
@@ -184,7 +184,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="../topics/ssl.html" class="page">SSL/TLS termination with Otoroshi</a></li>
     <li><a href="../topics/mtls.html" class="page">Mutual TLS with Otoroshi</a></li>
     <li><a href="../topics/clustering.html" class="page">Otoroshi clustering</a></li>
-    <li><a href="../topics/plugins.html" class="active page">Request transformers</a></li>
+    <li><a href="../topics/plugins.html" class="active page">Otoroshi plugins</a></li>
     <li><a href="../topics/monitoring.html" class="page">Monitoring Otoroshi</a></li>
   </ul></li>
   <li><a href="../api.html" class="page">Admin REST API</a></li>
@@ -210,7 +210,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <ul>
   <li><a href="../index.html">Otoroshi</a></li>
   <li><a href="../topics/index.html">Detailed topics</a></li>
-  <li>Request transformers</li>
+  <li>Otoroshi plugins</li>
 </ul>
 </div>
 </div>
@@ -218,8 +218,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
-<h1><a href="#request-transformers" name="request-transformers" class="anchor"><span class="anchor-link"></span></a>Request transformers</h1><div class="callout warning "><div class="callout-title">Warning</div>
-<p>This section is under construction. The following content is deprecated</p></div>
+<h1><a href="#otoroshi-plugins" name="otoroshi-plugins" class="anchor"><span class="anchor-link"></span></a>Otoroshi plugins</h1><div class="callout warning "><div class="callout-title">Warning</div>
+<p>This section is under rewrite. The following content is deprecated</p></div>
 <p>When everything has failed and you absolutely need a feature in Otoroshi to make your use case work, there is a solution. Request transformer is an experimental feature hidden behind a feature flag that allow you to code how Otoroshi should behave when receiving and rounting an http request. With request transformers, you can change request / response headers and request / response body to way you want.</p><div class="callout note "><div class="callout-title">Experimental Feature</div>
 <p>Request transformers is an experimental feature. It can change until it becomess an official feature</p></div><div class="callout warning "><div class="callout-title">Use at your own risk</div>
 <p>Request transformers is a <strong>very</strong> powerful feature that allow you to do almost everything you want. But like any powerful feature, it comes with a price. The fact that you are responsible for how the request is transformed makes you responsible for all issues introduced by the transformer. If you block the current thread, introduce big latency, generate uncatched exceptions, etc. it&rsquo;s <strong>your fault</strong>. You have to ensure that your code is fast, non blocking, safe, etc. In any case, Otoroshi developers will not responsible for issues caused by a request transformer.</p>
@@ -491,7 +491,7 @@ class BodyLengthLimiter extends RequestTransformer {
 <div class="nav-title">On this page:</div>
 <div class="nav-toc">
 <ul>
-  <li><a href="../topics/plugins.html#request-transformers" class="header">Request transformers</a>
+  <li><a href="../topics/plugins.html#otoroshi-plugins" class="header">Otoroshi plugins</a>
   <ul>
     <li><a href="../topics/plugins.html#enabling-request-transformers" class="header">Enabling request transformers</a></li>
     <li><a href="../topics/plugins.html#anatomy-of-a-transformer" class="header">Anatomy of a transformer</a></li>
