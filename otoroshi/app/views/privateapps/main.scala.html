@@ -14,6 +14,7 @@
         <link href="@routes.Assets.versioned("fonts/font-awesome/css/fontawesome.min.css")" rel="stylesheet">
         <link href="@routes.Assets.versioned("fonts/raleway/raleway.css")" rel="stylesheet">
         @moreStyles
+        @_env.providerCssUrlHtml
     </head>
     <body>
         <div class="container">
@@ -36,5 +37,6 @@
         </div>
         <script type="text/javascript" src="@routes.Assets.versioned("javascripts/jquery.js")"></script>
         @moreScripts
+        @_env.providerJsUrlHtml
     </body>
 </html>

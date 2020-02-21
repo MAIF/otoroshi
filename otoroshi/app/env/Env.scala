@@ -43,6 +43,7 @@ import utils.http._
 import otoroshi.tcp.{TcpProxy, TcpService}
 import otoroshi.script.AccessValidatorRef
 import otoroshi.ssl.pki.BouncyCastlePki
+import play.twirl.api.Html
 import storage.file.FileDbDataStores
 import storage.http.HttpDbDataStores
 
@@ -197,6 +198,16 @@ class Env(val configuration: Configuration,
 
   lazy val providerDashboardUrl: Option[String] =
     configuration.getOptional[String]("otoroshi.provider.dashboardUrl")
+
+  lazy val providerJsUrl: Option[String] =
+    configuration.getOptional[String]("otoroshi.provider.jsUrl")
+
+  lazy val providerCssUrl: Option[String] =
+    configuration.getOptional[String]("otoroshi.provider.cssUrl")
+
+  lazy val providerJsUrlHtml: Html = providerJsUrl.map(url => Html(s"""<script type="text/javascript" src="$url"></script>""")).getOrElse(Html(""))
+
+  lazy val providerCssUrlHtml: Html = providerCssUrl.map(url => Html(s"""<link href="$url" rel="stylesheet">""")).getOrElse(Html(""))
 
   lazy val providerDashboardSecret: String =
     configuration.getOptional[String]("otoroshi.provider.secret").getOrElse("secret")
