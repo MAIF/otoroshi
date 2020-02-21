@@ -1272,27 +1272,6 @@ export class ServicePage extends Component {
                 onChange={e => this.changeTheValue('matchingRoot', e)}
               />
             )}
-            {!this.state.freeDomain && (
-              <>
-                <div style={{ borderBottom: '1px solid #424242', marginBottom: 10 }}></div>
-                <ArrayInput
-                  label="Possible hostnames"
-                  placeholder="www.oto.tools"
-                  value={this.state.service.hosts}
-                  help="All the possible hostnames for your service"
-                  onChange={e => this.changeTheValue('hosts', e)}
-                  disabled={!!(this.state.env && this.state.env.staticExposedDomain)}
-                />
-                <ArrayInput
-                  label="Possible matching paths"
-                  placeholder="/"
-                  value={this.state.service.paths}
-                  help="All the possible matching paths for your service"
-                  onChange={e => this.changeTheValue('paths', e)}
-                />
-                <div style={{ borderBottom: '1px solid #424242', marginBottom: 10 }}></div>
-              </>
-            )}
             <div className="form-group">
               <label className="col-xs-12 col-sm-2 control-label" />
               <div className="col-sm-10">
@@ -1383,12 +1362,33 @@ export class ServicePage extends Component {
                 onChange={e => this.changeTheValue('issueCertCA', e)}
               />
             )}
+            {/*!this.state.freeDomain && (*/}
+              <>
+                <div style={{ borderBottom: '1px solid #424242', marginBottom: 10 }}></div>
+                <ArrayInput
+                  label="Possible hostnames"
+                  placeholder="www.oto.tools"
+                  value={this.state.service.hosts}
+                  help="All the possible hostnames for your service"
+                  onChange={e => this.changeTheValue('hosts', e)}
+                  disabled={!!(this.state.env && this.state.env.staticExposedDomain)}
+                />
+                <ArrayInput
+                  label="Possible matching paths"
+                  placeholder="/"
+                  value={this.state.service.paths}
+                  help="All the possible matching paths for your service"
+                  onChange={e => this.changeTheValue('paths', e)}
+                />
+                {/*<div style={{ borderBottom: '1px solid #424242', marginBottom: 10 }}></div>*/}
+              </>
+            {/*})}*/}
           </Collapse>
           <Collapse
             notVisible={this.state.service.tcpUdpTunneling}
             collapsed={this.state.allCollapsed}
             initCollapsed={
-              !this.state.service.redirection ? this.state.service.redirection.enabled : false
+              !this.state.service.redirection ? this.state.service.redirection.enabled : true
             }
             label="Redirection">
             <BooleanInput
@@ -2269,7 +2269,7 @@ export class ServicePage extends Component {
               </Suspense>
             </div>
           </Collapse>
-          <Collapse
+          {/*<Collapse
             notVisible={this.state.service.redirection.enabled}
             collapsed={this.state.allCollapsed}
             initCollapsed={true}
@@ -2326,7 +2326,7 @@ export class ServicePage extends Component {
                 </a>
               </div>
             </div>
-          </Collapse>
+          </Collapse>*/}
           <Collapse
             notVisible={
               this.state.service.redirection.enabled || this.state.service.tcpUdpTunneling

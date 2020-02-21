@@ -192,12 +192,12 @@ export class Scripts extends Component {
           <label className="col-xs-12 col-sm-2 control-label" />
           <div className="col-sm-10">
             {this.props.refs.length === 0 && (
-              <a href={`/bo/dashboard/scripts/add`} className="btn btn-sm btn-primary">
-                <i className="glyphicon glyphicon-plus" /> Create a new script.
+              <a href={`/bo/dashboard/plugins/add`} className="btn btn-sm btn-primary">
+                <i className="glyphicon glyphicon-plus" /> Create a new plugin.
               </a>
             )}
-            <a href={`/bo/dashboard/scripts`} className="btn btn-sm btn-primary">
-              <i className="glyphicon glyphicon-link" /> all scripts.
+            <a href={`/bo/dashboard/plugins`} className="btn btn-sm btn-primary">
+              <i className="glyphicon glyphicon-link" /> all plugins.
             </a>
           </div>
         </div>

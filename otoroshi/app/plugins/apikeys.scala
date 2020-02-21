@@ -61,7 +61,7 @@ class HasAllowedApiKeyValidator extends AccessValidator {
       |```
     """.stripMargin)
 
-  def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
+  override def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
     context.apikey match {
       case Some(apiKey) => {
         val config = (context.config \ "HasAllowedApiKeyValidator")
@@ -101,7 +101,7 @@ class ApiKeyAllowedOnThisServiceValidator extends AccessValidator {
     """.stripMargin
     )
 
-  def canAccess(ctx: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
+  override def canAccess(ctx: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
     ctx.apikey match {
       case Some(apiKey) => {
         val serviceIds = apiKey.tags.map(tag => tag.replace("allowed-on-", ""))

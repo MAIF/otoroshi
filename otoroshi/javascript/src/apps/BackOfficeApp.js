@@ -374,15 +374,15 @@ class BackOfficeAppContainer extends Component {
                           component={props => this.decorate(AuthModuleConfigsPage, props)}
                         />
                         <Route
-                          path="/scripts/:taction/:titem"
+                          path="/plugins/:taction/:titem"
                           component={props => this.decorate(ScriptsPage, props)}
                         />
                         <Route
-                          path="/scripts/:taction"
+                          path="/plugins/:taction"
                           component={props => this.decorate(ScriptsPage, props)}
                         />
                         <Route
-                          path="/scripts"
+                          path="/plugins"
                           component={props => this.decorate(ScriptsPage, props)}
                         />
                         <Route

@@ -52,7 +52,7 @@ class InstanceQuotas extends AccessValidator {
                                                     |```
                                                   """.stripMargin)
 
-  def canAccess(ctx: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
+  override def canAccess(ctx: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
     val config = ctx.configFor("InstanceQuotas")
     if (ctx.descriptor.id == env.backOfficeServiceId) {
       if (ctx.request.method.toLowerCase == "POST".toLowerCase || ctx.request.method.toLowerCase == "PUT".toLowerCase || ctx.request.method.toLowerCase == "PATCH".toLowerCase) {
@@ -237,7 +237,7 @@ class ServiceQuotas extends AccessValidator {
       .fast
       .map(_.map(_.utf8String.toLong).getOrElse(0L) < qconf.monthlyQuota)
 
-  def canAccess(ctx: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
+  override def canAccess(ctx: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
     val config = ctx.configFor("ServiceQuotas")
     val qconf = ServiceQuotasConfig(
       throttlingQuota = (config \ "throttlingQuota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),

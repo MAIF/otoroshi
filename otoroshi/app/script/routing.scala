@@ -1,14 +1,27 @@
 package otoroshi.script
 
 import akka.http.scaladsl.util.FastFuture
+import akka.util.ByteString
 import env.Env
 import models.ServiceDescriptor
+import otoroshi.script.CompilingPreRouting.funit
 import play.api.libs.json._
-import play.api.mvc.RequestHeader
+import play.api.mvc.{RequestHeader, Result}
+import play.twirl.api.Html
 import utils.TypedMap
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
+import scala.util.control.NoStackTrace
+
+case class PreRoutingError(body: ByteString, code: Int = 500, contentType: String) extends RuntimeException("PreRoutingError") with NoStackTrace
+case class PreRoutingErrorWithResult(result: Result) extends RuntimeException("PreRoutingErrorWithResult") with NoStackTrace
+
+object PreRoutingError {
+  def fromString(body: String, code: Int = 500, contentType: String = "text/plain"): PreRoutingError = new PreRoutingError(ByteString(body), code, contentType)
+  def fromJson(body: JsValue, code: Int = 500, contentType: String = "application/json"): PreRoutingError = new PreRoutingError(ByteString(Json.stringify(body)), code, contentType)
+  def fromHtml(body: Html, code: Int = 500, contentType: String = "text/html"): PreRoutingError = new PreRoutingError(ByteString(body.body), code, contentType)
+}
 
 case class PreRoutingRef(enabled: Boolean = false,
                          excludedPatterns: Seq[String] = Seq.empty[String],
@@ -81,4 +94,8 @@ object DefaultPreRouting extends PreRouting {
 
 object CompilingPreRouting extends PreRouting {
   override def preRoute(context: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = funit
+}
+
+class FailingPreRoute extends PreRouting {
+  override def preRoute(context: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = Future.failed(PreRoutingError.fromString("Fuuuuu !"))
 }

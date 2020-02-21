@@ -78,7 +78,7 @@ trait AccessValidator extends StartableAndStoppable with NamedPlugin with Intern
           .map(Denied.apply)
     }
   }
-  def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean]
+  def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = FastFuture.successful(true)
 }
 
 case class AccessContext(
@@ -94,13 +94,13 @@ case class AccessContext(
 ) extends ContextWithConfig
 
 object DefaultValidator extends AccessValidator {
-  def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
+  override def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
     FastFuture.successful(true)
   }
 }
 
 object CompilingValidator extends AccessValidator {
-  def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
+  override def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
     FastFuture.successful(false)
   }
 }

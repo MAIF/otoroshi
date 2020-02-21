@@ -182,10 +182,10 @@ export class TopBar extends Component {
         }
         if (this.state.env.scriptingEnabled === true) {
           options.push({
-            action: () => (window.location.href = '/bo/dashboard/scripts'),
+            action: () => (window.location.href = '/bo/dashboard/plugins'),
             env: <span className="fa fa-book-dead" />,
-            label: 'Scripts',
-            value: 'scripts',
+            label: 'Plugins',
+            value: 'plugins',
           });
         }
         if (this.state.env.providerDashboardUrl) {
@@ -527,8 +527,8 @@ export class TopBar extends Component {
                       <span className="fas fa-gavel" /> Validation authorities
                     </a>
                     {this.state.env.scriptingEnabled === true && (
-                      <a href="/bo/dashboard/scripts">
-                        <span className="fas fa-book-dead" /> Scripts & validators
+                      <a href="/bo/dashboard/plugins">
+                        <span className="fas fa-book-dead" /> Plugins
                       </a>
                     )}
                   </li>

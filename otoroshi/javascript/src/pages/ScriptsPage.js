@@ -21,19 +21,14 @@ class MyTransformer extends RequestTransformer {
 
   val logger = Logger("my-transformer")
 
-  override def transformRequestSync(
-    snowflake: String,
-    rawRequest: HttpRequest,
-    otoroshiRequest: HttpRequest,
-    desc: ServiceDescriptor,
-    apiKey: Option[ApiKey],
-    user: Option[PrivateAppsUser]
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, HttpRequest] = {
-    logger.info(s"Request incoming with id: $snowflake")
+  def transformRequestWithCtx(
+    ctx: TransformerRequestContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
+    logger.info(s"Request incoming with id: \${ctx.snowflake}")
     // Here add a new header to the request between otoroshi and the target
-    Right(otoroshiRequest.copy(
-      headers = otoroshiRequest.headers + ("Hello" -> "World")
-    ))
+    Right(ctx.otoroshiRequest.copy(
+      headers = ctx.otoroshiRequest.headers + ("Hello" -> "World")
+    )).future
   }
 }
 
@@ -103,6 +98,7 @@ class CustomValidator extends AccessValidator {
     }
   }
 }
+
 new CustomValidator()
 `;
 
@@ -119,6 +115,7 @@ class CustomPreRouting extends PreRouting {
     FastFuture.successful(())
   }
 }
+
 new CustomPreRouting()
 `;
 
@@ -136,6 +133,7 @@ class CustomRequestSink extends RequestSink {
     Results.Ok(Json.obj("message" -> "hello world!"))
   )
 }
+
 new CustomRequestSink()
 `;
 
@@ -152,7 +150,7 @@ class CustomListener extends OtoroshiEventListener {
   }
 }
 
-new CustomListener
+new CustomListener()
 `;
 
 class CompilationTools extends Component {
@@ -306,11 +304,12 @@ class ScriptTypeSelector extends Component {
           }
         }}
         possibleValues={[
-          { label: 'Request transformer', value: 'transformer' },
-          { label: 'Nano app', value: 'app' },
-          { label: 'Access Validator', value: 'validator' },
+          { label: 'Request sink', value: 'sink' },
           { label: 'Pre routing', value: 'preroute' },
+          { label: 'Access Validator', value: 'validator' },
+          { label: 'Request transformer', value: 'transformer' },
           { label: 'Event listener', value: 'listener' },
+          { label: 'Nano app', value: 'app' },
         ]}
       />
     );
@@ -329,11 +328,11 @@ export class ScriptsPage extends Component {
     id: { type: 'string', disabled: true, props: { label: 'Id', placeholder: '---' } },
     name: {
       type: 'string',
-      props: { label: 'Script name', placeholder: 'My Awesome Script' },
+      props: { label: 'Plugin name', placeholder: 'My Awesome Plugin' },
     },
     desc: {
       type: 'string',
-      props: { label: 'Script description', placeholder: 'Description of the Script' },
+      props: { label: 'Plugin description', placeholder: 'Description of the plugin' },
     },
     type: {
       type: ScriptTypeSelector,
@@ -341,8 +340,8 @@ export class ScriptsPage extends Component {
     code: {
       type: 'code',
       props: {
-        label: 'Script code',
-        placeholder: 'Code the Script',
+        label: 'Plugin code',
+        placeholder: 'Code the plugin',
         mode: 'scala',
         annotations: () => this.state.annotations,
         saveAndCompile: () => {
@@ -374,26 +373,26 @@ export class ScriptsPage extends Component {
     { title: 'Description', noMobile: true, content: item => item.desc },
   ];
 
-  formFlow = ['warning', 'id', 'name', 'desc', 'type', 'compilation', 'code'];
+  formFlow = ['id', 'name', 'desc', 'type', 'compilation', 'code'];
 
   componentDidMount() {
-    this.props.setTitle(`All Scripts`);
+    this.props.setTitle(`All Plugins`);
   }
 
   render() {
     return (
       <Table
         parentProps={this.props}
-        selfUrl="scripts"
-        defaultTitle="All Scripts"
+        selfUrl="plugins"
+        defaultTitle="All Plugins"
         injectTable={t => (this.table = t)}
         defaultValue={() => ({
           id: faker.random.alphaNumeric(64),
-          name: 'My Script',
-          desc: 'A script',
+          name: 'My plugin',
+          desc: 'A plugin',
           code: basicTransformer,
         })}
-        itemName="script"
+        itemName="plugin"
         formSchema={this.formSchema}
         formFlow={this.formFlow}
         columns={this.columns}
@@ -403,9 +402,9 @@ export class ScriptsPage extends Component {
         deleteItem={BackOfficeServices.deleteScript}
         createItem={BackOfficeServices.createScript}
         navigateTo={item => {
-          window.location = `/bo/dashboard/scripts/edit/${item.id}`;
+          window.location = `/bo/dashboard/plugins/edit/${item.id}`;
         }}
-        itemUrl={i => `/bo/dashboard/scripts/edit/${item.id}`}
+        itemUrl={i => `/bo/dashboard/plugins/edit/${item.id}`}
         showActions={true}
         showLink={true}
         rowNavigation={true}

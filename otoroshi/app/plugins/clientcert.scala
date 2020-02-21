@@ -22,7 +22,7 @@ class HasClientCertValidator extends AccessValidator {
 
   override def description: Option[String] = Some("Check if a client certificate is present in the request")
 
-  def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
+  override def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
     context.request.clientCertificateChain match {
       case Some(_) => FastFuture.successful(true)
       case _       => FastFuture.successful(false)
@@ -39,7 +39,7 @@ class HasClientCertMatchingApikeyValidator extends AccessValidator {
       |You can set the client cert. DN in an apikey metadata named `allowed-client-cert-dn`
       |""".stripMargin)
 
-  def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
+  override def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
     context.request.clientCertificateChain match {
       case Some(_) => context.apikey match {
         case Some(apikey)     => apikey.metadata.get("allowed-client-cert-dn") match {
@@ -97,7 +97,7 @@ class HasClientCertMatchingValidator extends AccessValidator {
       |```
     """.stripMargin)
 
-  def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
+  override def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
     context.request.clientCertificateChain match {
       case Some(certs) => {
         val config = (context.config \ "HasClientCertMatchingValidator")
@@ -271,7 +271,7 @@ class HasClientCertMatchingHttpValidator extends AccessValidator {
       }
   }
 
-  def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
+  override def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
     context.request.clientCertificateChain match {
       case Some(certs) => {
         val config: JsValue = (context.config \ "HasClientCertMatchingHttpValidator")

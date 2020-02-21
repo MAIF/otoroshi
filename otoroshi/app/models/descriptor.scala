@@ -2326,6 +2326,17 @@ case class ServiceDescriptor(
               .run()(env.otoroshiMaterializer)
           }
           .flatMap(_ => f)
+          .recoverWith {
+            case PreRoutingError(body, code, ctype) => FastFuture.successful(Results.Status(code)(body).as(ctype))
+            case PreRoutingErrorWithResult(result) => FastFuture.successful(result)
+            case e => Errors.craftResponseResult(
+              message = e.getMessage,
+              status = Results.Status(500),
+              req = req,
+              maybeDescriptor = Some(this),
+              attrs = attrs
+            )
+          }
       } else {
         f
       }
@@ -2337,6 +2348,10 @@ case class ServiceDescriptor(
   def preRouteWS(snowflake: String, req: RequestHeader, attrs: TypedMap)(
       f: => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
+
+    import utils.future.Implicits._
+    type WSFlow = Flow[PlayWSMessage, PlayWSMessage, _]
+
     val gScripts = env.datastores.globalConfigDataStore.latestSafe
       .filter(_.scripts.enabled)
       .map(_.scripts)
@@ -2378,6 +2393,17 @@ case class ServiceDescriptor(
               .run()(env.otoroshiMaterializer)
           }
           .flatMap(_ => f)
+          .recoverWith {
+            case PreRoutingError(body, code, ctype) => FastFuture.successful(Results.Status(code)(body).as(ctype)).asLeft[WSFlow]
+            case PreRoutingErrorWithResult(result) => FastFuture.successful(result).asLeft[WSFlow]
+            case e => Errors.craftResponseResult(
+              message = e.getMessage,
+              status = Results.Status(500),
+              req = req,
+              maybeDescriptor = Some(this),
+              attrs = attrs
+            ).asLeft[WSFlow]
+          }
       } else {
         f
       }
