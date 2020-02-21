@@ -126,7 +126,7 @@ See https://github.com/MAIF/otoroshi/blob/master/otoroshi/conf/base.conf and htt
 
 if you want to configure https on your Otoroshi server, just read [PlayFramework documentation about it](https://www.playframework.com/documentation/2.6.x/ConfiguringHttps)
 
-## Example of configuration file
+## Example of a custom. configuration file
 
 ```conf
 include "application.conf"
