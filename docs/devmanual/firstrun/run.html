@@ -241,8 +241,8 @@ cd otoroshi-vx.x.x
 <p>You can use a volume to provide configuration like :</p>
 <pre class="prettyprint"><code class="language-sh">docker run -p &quot;8080:8080&quot; -v &quot;$(pwd):/usr/app/otoroshi/conf&quot; maif/otoroshi
 </code></pre>
-<p>You can also use a volume if you choose to use <code>leveldb</code> datastore like :</p>
-<pre class="prettyprint"><code class="language-sh">docker run -p &quot;8080:8080&quot; -v &quot;$(pwd)/leveldb:/usr/app/otoroshi/leveldb&quot; maif/otoroshi -Dapp.storage=leveldb
+<p>You can also use a volume if you choose to use <code>filedb</code> datastore like :</p>
+<pre class="prettyprint"><code class="language-sh">docker run -p &quot;8080:8080&quot; -v &quot;$(pwd)/filedb:/usr/app/otoroshi/filedb&quot; maif/otoroshi -Dapp.storage=file
 </code></pre>
 <p>You can also use a volume if you choose to use exports files :</p>
 <pre class="prettyprint"><code class="language-sh">docker run -p &quot;8080:8080&quot; -v &quot;$(pwd):/usr/app/otoroshi/imports&quot; maif/otoroshi -Dapp.importFrom=/usr/app/otoroshi/imports/export.json

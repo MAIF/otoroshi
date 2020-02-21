@@ -226,13 +226,12 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li>in memory</li>
   <li>redis</li>
   <li>cassandra (experimental support)</li>
-  <li>mongodb (experimental support)</li>
-  <li>levelDB (not suitable for production usage)</li>
+  <li>filedb (not suitable for production usage)</li>
 </ul>
-<p>The <strong>levelDB</strong> datastore is pretty handy for testing purposes, but is not supposed to be used in production mode.</p>
+<p>The <strong>filedb</strong> datastore is pretty handy for testing purposes, but is not supposed to be used in production mode.</p>
 <p>The <strong>in-memory</strong> datastore is kind of interesting&hellip; It can be used for testing purposes, but it is also a good candidate for production because of its fastness. But in that case, you need to provide a way to feed the deployed in-memory instances after the initial boot. In a future release (i.e. not yet :D), we will provide a master/workers slave based on Otoroshi in memory instances and kafka (see <a href="https://github.com/MAIF/otoroshi/issues/8">https://github.com/MAIF/otoroshi/issues/8</a> for more details about the feature).</p>
 <p>The <strong>redis</strong> datastore is quite nice when you want to easily deploy several Otoroshi instances.</p>
-<p>If you need a datastore more scalable than redis, then you can use the <strong>cassandra</strong> datastore or the <strong>mongodb</strong> datastore.</p>
+<p>If you need a datastore more scalable than redis, then you can use the <strong>cassandra</strong> datastore.</p>
 <p>We plan to add more datastores support in the future :)</p><div class="centered-img">
 <img src="../img/datastores.png" /></div>
 <div class="nav-next">

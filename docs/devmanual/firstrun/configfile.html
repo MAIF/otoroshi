@@ -397,7 +397,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
       <td><code>app.storage</code> </td>
       <td align="center">string </td>
       <td>&ldquo;inmemory&rdquo; </td>
-      <td>what kind of storage engine you want to use. Possible values are <code>inmemory</code>, <code>leveldb</code>, <code>redis</code>, <code>cassandra</code>, <code>mongo</code> </td>
+      <td>what kind of storage engine you want to use. Possible values are <code>inmemory</code>, <code>file</code>, <code>redis</code>, <code>cassandra</code> </td>
     </tr>
     <tr>
       <td><code>app.importFrom</code> </td>
@@ -436,10 +436,10 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
       <td>the redis slaves lists </td>
     </tr>
     <tr>
-      <td><code>app.leveldb.path</code> </td>
+      <td><code>app.filedb.path</code> </td>
       <td align="center">string </td>
-      <td>&ldquo;./leveldb&rdquo; </td>
-      <td>the path where levelDB files will be written </td>
+      <td>&ldquo;./filefb&rdquo; </td>
+      <td>the path where filedb files will be written </td>
     </tr>
     <tr>
       <td><code>app.cassandra.hosts</code> </td>
@@ -458,12 +458,6 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
       <td align="center">number </td>
       <td>9042 </td>
       <td>the port of the cassandra servers </td>
-    </tr>
-    <tr>
-      <td><code>app.mongo.uri</code> </td>
-      <td align="center">string </td>
-      <td>&ldquo;<a href="mongodb://localhost:27017/default">mongodb://localhost:27017/default</a>&rdquo; </td>
-      <td>the mongo URI following Mongo semantic <a href="https://docs.mongodb.com/manual/reference/connection-string/">https://docs.mongodb.com/manual/reference/connection-string/</a> </td>
     </tr>
   </tbody>
 </table>
@@ -714,7 +708,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 http.port = 8080
 
 app {
-  storage = &quot;leveldb&quot;
+  storage = &quot;file&quot;
   importFrom = &quot;./my-state.json&quot;
   env = &quot;prod&quot;
   domain = &quot;oto.tools&quot;
@@ -750,8 +744,8 @@ app {
   claim {
     sharedKey = &quot;mysecret&quot;
   }
-  leveldb {
-    path = &quot;./leveldb&quot;
+  filedb {
+    path = &quot;./filedb/state.ndjson&quot;
   }
 }
 

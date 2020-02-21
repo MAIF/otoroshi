@@ -48,7 +48,7 @@ object MyApp extends App {
     ),
     ConfigFactory.parseString(s"""
       |app {
-      |  storage = "leveldb"
+      |  storage = "file"
       |  importFrom = "./my-state.json"
       |  env = "prod"
       |  adminapi {
@@ -64,8 +64,8 @@ object MyApp extends App {
       |  claim {
       |    sharedKey = "mysecret"
       |  }
-      |  leveldb {
-      |    path = "./leveldb"
+      |  filedb {
+      |    path = "./file"
       |  }
       |}
       """.stripMargin)
