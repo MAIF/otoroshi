@@ -14,7 +14,7 @@ there are many plugin types
 * `pre-routes` plugins: used to extract values (like custom apikeys) and provide them to other plugins or otoroshi engine
 * `access validation` plugins: used to validate if a request can pass or not based on whatever you want
 * `request transformer` plugins: used to transform request, responses and their body. Can be used to return arbitrary content
-* `event listener` plugins: any plugin type can listen to otoroshi internal events and react to them
+* `event listener` plugins: any plugin type can listen to otoroshi internal events and react to thems
 
 
 ## Code and signatures

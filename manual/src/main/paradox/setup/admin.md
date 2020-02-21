@@ -1,5 +1,9 @@
 # Manage admin users
 
+@@@ warning
+This section is under rewrite. The following content is deprecated and UI may have changed
+@@@
+
 ## Create admin user after the first run
 
 Click on the `Create an admin user` warning popup, or go to `settings (cog icon) / Admins`.

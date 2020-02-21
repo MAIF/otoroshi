@@ -421,7 +421,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
     GlobalConfig.fromJsonSafe(ctx.request.body) match {
       case JsError(e) => FastFuture.successful(BadRequest(Json.obj("error" -> "Bad GlobalConfig format")))
       case JsSuccess(ak, _) => {
-        env.datastores.globalConfigDataStore.singleton().flatMap { conf =>
+        env.datastores.globalConfigDataStore.findById("global").map(_.get).flatMap { conf =>
           val admEvt = AdminApiEvent(
             env.snowflakeGenerator.nextIdStr(),
             env.env,
@@ -452,7 +452,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
 
   def patchGlobalConfig() = ApiAction.async(parse.json) { ctx =>
     val user = ctx.user.getOrElse(ctx.apiKey.toJson)
-    env.datastores.globalConfigDataStore.singleton().flatMap { conf =>
+    env.datastores.globalConfigDataStore.findById("global").map(_.get).flatMap { conf =>
       val currentConfigJson = conf.toJson
       val patch             = JsonPatch(ctx.request.body)
       val newConfigJson     = patch(currentConfigJson)
@@ -739,7 +739,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
 
   def createService() = ApiAction.async(parse.json) { ctx =>
     val rawBody = ctx.request.body.as[JsObject]
-    env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
+    env.datastores.globalConfigDataStore..findById("global").map(_.get).flatMap { globalConfig =>
       val body: JsObject = ((rawBody \ "id").asOpt[String] match {
         case None    => rawBody ++ Json.obj("id" -> IdGenerator.token(64))
         case Some(b) => rawBody
@@ -2349,7 +2349,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
   }
 
   def patchSnowMonkey() = ApiAction.async(parse.json) { ctx =>
-    env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
+    env.datastores.globalConfigDataStore.findById("global").map(_.get).flatMap { globalConfig =>
       val currentSnowMonkeyConfigJson = globalConfig.snowMonkeyConfig.asJson
       val patch                       = JsonPatch(ctx.request.body)
       val newSnowMonkeyConfigJson     = patch(currentSnowMonkeyConfigJson)
