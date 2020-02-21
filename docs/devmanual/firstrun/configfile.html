@@ -702,7 +702,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <h2><a href="#more-config-options" name="more-config-options" class="anchor"><span class="anchor-link"></span></a>More config. options</h2>
 <p>See <a href="https://github.com/MAIF/otoroshi/blob/master/otoroshi/conf/base.conf">https://github.com/MAIF/otoroshi/blob/master/otoroshi/conf/base.conf</a> and <a href="https://github.com/MAIF/otoroshi/blob/master/otoroshi/conf/application.conf">https://github.com/MAIF/otoroshi/blob/master/otoroshi/conf/application.conf</a></p>
 <p>if you want to configure https on your Otoroshi server, just read <a href="https://www.playframework.com/documentation/2.6.x/ConfiguringHttps">PlayFramework documentation about it</a></p>
-<h2><a href="#example-of-configuration-file" name="example-of-configuration-file" class="anchor"><span class="anchor-link"></span></a>Example of configuration file</h2>
+<h2><a href="#example-of-a-custom-configuration-file" name="example-of-a-custom-configuration-file" class="anchor"><span class="anchor-link"></span></a>Example of a custom. configuration file</h2>
 <pre class="prettyprint"><code class="language-conf">include &quot;application.conf&quot;
 
 http.port = 8080
@@ -760,9 +760,7 @@ play.http {
 }
 </code></pre>
 <h2><a href="#reference-configuration" name="reference-configuration" class="anchor"><span class="anchor-link"></span></a>Reference configuration</h2>
-<pre class="prettyprint"><code class="language-conf">include &quot;base.conf&quot;
-
-app {
+<pre class="prettyprint"><code class="language-conf"><br/>app {
   storage = &quot;inmemory&quot;
   storage = ${?APP_STORAGE}
   storageRoot = &quot;otoroshi&quot;
@@ -1345,7 +1343,9 @@ otoroshi {
     title = &quot;Provider&#39;s dashboard&quot;
     title = ${?OTOROSHI_PROVIDER_TITLE}
   }
-}http.port = 8080
+}
+
+http.port = 8080
 http.port = ${?PORT}
 play.server.http.port = ${http.port}
 play.server.http.port = ${?PORT}
@@ -1569,7 +1569,7 @@ akka {
     <li><a href="../firstrun/configfile.html#headers-configuration" class="header">Headers configuration</a></li>
     <li><a href="../firstrun/configfile.html#play-specific-configuration" class="header">Play specific configuration</a></li>
     <li><a href="../firstrun/configfile.html#more-config-options" class="header">More config. options</a></li>
-    <li><a href="../firstrun/configfile.html#example-of-configuration-file" class="header">Example of configuration file</a></li>
+    <li><a href="../firstrun/configfile.html#example-of-a-custom-configuration-file" class="header">Example of a custom. configuration file</a></li>
     <li><a href="../firstrun/configfile.html#reference-configuration" class="header">Reference configuration</a></li>
   </ul></li>
 </ul>
