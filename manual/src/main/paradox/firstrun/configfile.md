@@ -185,3 +185,7 @@ play.http {
   }
 }
 ```
+
+## Reference configuration
+
+@@snip [reference.conf](../snippets/reference.conf) 
