@@ -1246,9 +1246,9 @@ class WebSocketHandler()(implicit env: Env) {
                                         .orElse(
                                           req.headers.get("Authorization").filter(_.startsWith("Basic ")).map(_.replace("Basic ", ""))
                                         )
-                                        .orElse(
-                                          req.headers.get("Authorization").filter(_.startsWith("Bearer ")).map(_.replace("Bearer ", ""))
-                                        )
+                                        // .orElse(
+                                        //   req.headers.get("Authorization").filter(_.startsWith("Bearer ")).map(_.replace("Bearer ", ""))
+                                        // )
                                         .flatMap(e => Try(decodeBase64(e)).toOption)
                                         .orElse(
                                           req.queryString
