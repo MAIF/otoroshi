@@ -35,24 +35,29 @@ case class RedisMember(host: String, port: Int, password: Option[String]) {
 }
 
 object RedisMember {
-  def fromString(value: String): Option[RedisMember] = value.trim match {
-    case str if str.contains("@") && str.contains(":") =>
-      str.split("@").toList match {
-        case password :: rest :: Nil =>
-          rest.split(":").toList match {
-            case host :: port :: Nil => Some(RedisMember(host, port.toInt, Some(password)))
-            case _                   => None
-          }
-        case _ => None
-      }
-    case str if str.contains(":") =>
-      str.split(":").toList match {
-        case host :: port :: Nil => Some(RedisMember(host, port.toInt, None))
-        case _                   => None
-      }
-    case _ => None
+  def fromString(value: String): Option[RedisMember] = {
+    value.trim match {
+      case str if str.contains("@") && str.contains(":") =>
+        str.split("@").toList match {
+          case password :: rest :: Nil =>
+            rest.split(":").toList match {
+              case host :: port :: Nil => Some(RedisMember(host, port.toInt, Some(password)))
+              case _                   => None
+            }
+          case _ => None
+        }
+      case str if str.contains(":") =>
+        str.split(":").toList match {
+          case host :: port :: Nil => Some(RedisMember(host, port.toInt, None))
+          case _                   => None
+        }
+      case _ => 
+        None
+    }
   }
-  def fromList(value: String): Seq[RedisMember] = value.split(",").map(_.trim).flatMap(fromString)
+  def fromList(value: String): Seq[RedisMember] = {
+    value.split(",").map(_.trim).flatMap(fromString)
+  }
 }
 
 class RedisCPStore(redis: RedisClientPool, env: Env, ec: ExecutionContext) extends RedisCommandsStore(redis, env, ec)
@@ -88,6 +93,7 @@ class RedisCPDataStores(configuration: Configuration,
           password = config.getOptional[String]("password")
         )
       })
+      .filter(_.nonEmpty)
       .orElse {
         configuration
           .getOptional[String]("app.redis.pool.membersStr")
@@ -124,6 +130,7 @@ class RedisMCPDataStores(configuration: Configuration,
           password = config.getOptional[String]("password")
         )
       })
+      .filter(_.nonEmpty)
       .orElse {
         configuration
           .getOptional[String]("app.redis.mpool.membersStr")
@@ -175,6 +182,7 @@ class RedisLFDataStores(configuration: Configuration,
           password = config.getOptional[String]("password")
         )
       })
+      .filter(_.nonEmpty)
       .orElse {
         configuration.getOptional[String]("app.redis.slavesStr").map(RedisMember.fromList).map(_.map(_.toRedisServer))
       }
@@ -214,6 +222,7 @@ class RedisSentinelDataStores(configuration: Configuration,
           config.getOptional[Int]("port").getOrElse(6379)
         )
       })
+      .filter(_.nonEmpty)
       .orElse {
         configuration
           .getOptional[String]("app.redis.sentinels.membersStr")
@@ -257,6 +266,7 @@ class RedisSentinelLFDataStores(configuration: Configuration,
           config.getOptional[Int]("port").getOrElse(6379)
         )
       })
+      .filter(_.nonEmpty)
       .orElse {
         configuration
           .getOptional[String]("app.redis.sentinels.lf.membersStr")
@@ -296,6 +306,7 @@ class RedisClusterDataStores(configuration: Configuration,
           password = config.getOptional[String]("password")
         )
       })
+      .filter(_.nonEmpty)
       .orElse {
         configuration
           .getOptional[String]("app.redis.sentinels.membersStr")

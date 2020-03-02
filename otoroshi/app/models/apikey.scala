@@ -431,9 +431,11 @@ object ApiKeyHelper {
           .getOrElse(env.Headers.OtoroshiAuthorization)
       )
       .orElse(
-        req.headers.get("Authorization").filter(_.startsWith("Basic "))
+        req.headers.get("Authorization").filter(_.startsWith("Basic ")).map(_.replace("Basic ", ""))
       )
-      .map(_.replace("Basic ", ""))
+      .orElse(
+        req.headers.get("Authorization").filter(_.startsWith("Bearer ")).map(_.replace("Bearer ", ""))
+      )
       .flatMap(e => Try(decodeBase64(e)).toOption)
       .orElse(
         req.queryString
@@ -462,6 +464,9 @@ object ApiKeyHelper {
       .get(
         descriptor.apiKeyConstraints.clientIdAuth.headerName
           .getOrElse(env.Headers.OtoroshiSimpleApiKeyClientId)
+      )
+      .orElse(
+        req.headers.get("Authorization").filter(_.startsWith("Bearer ")).map(_.replace("Bearer ", ""))
       )
       .orElse(
         req.queryString
@@ -626,9 +631,11 @@ object ApiKeyHelper {
           .getOrElse(env.Headers.OtoroshiAuthorization)
       )
       .orElse(
-        req.headers.get("Authorization").filter(_.startsWith("Basic "))
+        req.headers.get("Authorization").filter(_.startsWith("Basic ")).map(_.replace("Basic ", ""))
       )
-      .map(_.replace("Basic ", ""))
+      .orElse(
+        req.headers.get("Authorization").filter(_.startsWith("Bearer ")).map(_.replace("Bearer ", ""))
+      )
       .flatMap(e => Try(decodeBase64(e)).toOption)
       .orElse(
         req.queryString
@@ -657,6 +664,9 @@ object ApiKeyHelper {
       .get(
         descriptor.apiKeyConstraints.clientIdAuth.headerName
           .getOrElse(env.Headers.OtoroshiSimpleApiKeyClientId)
+      )
+      .orElse(
+        req.headers.get("Authorization").filter(_.startsWith("Bearer ")).map(_.replace("Bearer ", ""))
       )
       .orElse(
         req.queryString
