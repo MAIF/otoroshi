@@ -1,4 +1,4 @@
-# Features 
+# Developing Otoroshi 
 
 If you want to play with Otoroshis code, here are some tips
 
@@ -82,3 +82,18 @@ sbt ';clean;compile;dist;assembly'
 
 the otoroshi build is waiting for you in `<repo>/otoroshi/target/scala-2.12/otoroshi.jar` or `<repo>/otoroshi/target/universal/otoroshi-1.x.x.zip`
 
+## Build the documentation
+
+from the root of your repository run
+
+```sh
+sh ./scripts/doc.sh all
+```
+
+## Format the sources
+
+from the root of your repository run
+
+```sh
+sh ./scripts/fmt.sh
+```
