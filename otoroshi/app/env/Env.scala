@@ -46,6 +46,7 @@ import otoroshi.ssl.pki.BouncyCastlePki
 import play.twirl.api.Html
 import storage.file.FileDbDataStores
 import storage.http.HttpDbDataStores
+import storage.redis.lettuce.LettuceDataStores
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future, Promise}
@@ -567,6 +568,8 @@ class Env(val configuration: Configuration,
         new CassandraDataStores(false, configuration, environment, lifecycle, this)
       case "mongo" if clusterConfig.mode == ClusterMode.Leader =>
         new MongoDataStores(configuration, environment, lifecycle, this)
+      case "lettuce" if clusterConfig.mode == ClusterMode.Leader =>
+        new LettuceDataStores(configuration, environment, lifecycle, this)
       case "redis"             => new RedisDataStores(configuration, environment, lifecycle, this)
       case "inmemory"          => new InMemoryDataStores(configuration, environment, lifecycle, this)
       case "leveldb"           => new LevelDbDataStores(configuration, environment, lifecycle, this)
@@ -581,6 +584,7 @@ class Env(val configuration: Configuration,
       case "redis-lf"          => new RedisLFDataStores(configuration, environment, lifecycle, this)
       case "redis-sentinel"    => new RedisSentinelDataStores(configuration, environment, lifecycle, this)
       case "redis-sentinel-lf" => new RedisSentinelLFDataStores(configuration, environment, lifecycle, this)
+      case "lettuce"           => new LettuceDataStores(configuration, environment, lifecycle, this)
       case e                   => throw new RuntimeException(s"Bad storage value from conf: $e")
     }
   }
