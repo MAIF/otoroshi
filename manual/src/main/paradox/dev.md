@@ -62,7 +62,7 @@ you can now access your otoroshi instance at `http://otoroshi.oto.tools:9999`
 to run otoroshi test just go to `<repo>/otoroshi` and run the main test suite with
 
 ```sh
-sbt `testOnly OtoroshiTests`
+sbt 'testOnly OtoroshiTests'
 ```
 
 ## Create a release
