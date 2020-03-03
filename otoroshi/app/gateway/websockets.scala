@@ -1244,11 +1244,9 @@ class WebSocketHandler()(implicit env: Env) {
                                             .getOrElse(env.Headers.OtoroshiAuthorization)
                                         )
                                         .orElse(
-                                          req.headers.get("Authorization").filter(_.startsWith("Basic ")).map(_.replace("Basic ", ""))
+                                          req.headers.get("Authorization").filter(_.startsWith("Basic "))
                                         )
-                                        // .orElse(
-                                        //   req.headers.get("Authorization").filter(_.startsWith("Bearer ")).map(_.replace("Bearer ", ""))
-                                        // )
+                                        .map(_.replace("Basic ", ""))
                                         .flatMap(e => Try(decodeBase64(e)).toOption)
                                         .orElse(
                                           req.queryString
@@ -1277,9 +1275,6 @@ class WebSocketHandler()(implicit env: Env) {
                                         .get(
                                           descriptor.apiKeyConstraints.clientIdAuth.headerName
                                             .getOrElse(env.Headers.OtoroshiSimpleApiKeyClientId)
-                                        )
-                                        .orElse(
-                                          req.headers.get("Authorization").filter(_.startsWith("Bearer ")).map(_.replace("Bearer ", ""))
                                         )
                                         .orElse(
                                           req.queryString
