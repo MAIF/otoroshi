@@ -37,7 +37,7 @@
 <ul>
   <li><a href="about.html" class="page">About Otoroshi</a></li>
   <li><a href="archi.html" class="page">Architecture</a></li>
-  <li><a href="features.html" class="active page">Features</a></li>
+  <li><a href="features.html" class="page">Features</a></li>
   <li><a href="quickstart.html" class="page">Try Otoroshi in 5 minutes</a></li>
   <li><a href="getotoroshi/index.html" class="page">Get Otoroshi</a>
   <ul>
@@ -96,7 +96,7 @@
     <li><a href="deploy/other.html" class="page">Others</a></li>
     <li><a href="deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
   </ul></li>
-  <li><a href="dev.html" class="page">Features</a></li>
+  <li><a href="dev.html" class="active page">Features</a></li>
 </ul>
 </div>
 
@@ -137,7 +137,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <ul>
   <li><a href="about.html" class="page">About Otoroshi</a></li>
   <li><a href="archi.html" class="page">Architecture</a></li>
-  <li><a href="features.html" class="active page">Features</a></li>
+  <li><a href="features.html" class="page">Features</a></li>
   <li><a href="quickstart.html" class="page">Try Otoroshi in 5 minutes</a></li>
   <li><a href="getotoroshi/index.html" class="page">Get Otoroshi</a>
   <ul>
@@ -196,7 +196,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="deploy/other.html" class="page">Others</a></li>
     <li><a href="deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
   </ul></li>
-  <li><a href="dev.html" class="page">Features</a></li>
+  <li><a href="dev.html" class="active page">Features</a></li>
 </ul>
 </div>
 
@@ -219,126 +219,73 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
-<h1><a href="#features" name="features" class="anchor"><span class="anchor-link"></span></a>Features</h1><div class="callout warning "><div class="callout-title">Warning</div>
-<p>This section is under construction</p></div>
-<p>All the features supported by <strong>Otoroshi</strong> are listed below</p>
+<h1><a href="#features" name="features" class="anchor"><span class="anchor-link"></span></a>Features</h1>
+<p>If you want to play with Otoroshis code, here are some tips</p>
+<h2><a href="#the-tools" name="the-tools" class="anchor"><span class="anchor-link"></span></a>The tools</h2>
+<p>You will need</p>
 <ul>
-  <li>Dynamic changes at runtime without full reload</li>
-  <li>Can proxy any HTTP/HTTP2 server (websockets and streamed responses included)</li>
-  <li>Full featured admin Rest Api to control Otoroshi the way you want. Included, Swagger descriptor</li>
-  <li>Gorgeous React Web UI</li>
-  <li>Full end-to-end streaming of HTTP requests and responses</li>
-  <li>Completely non blocking and async internals</li>
-  <li><a href="getotoroshi/fromdocker.html">Official Docker image</a></li>
-  <li><a href="firstrun/datastore.html">Multi backend datastore support</a>
-    <ul>
-      <li>Redis</li>
-      <li>In memory</li>
-      <li>Cassandra (experimental support)</li>
-      <li>filedb (not suitable for production usage)</li>
-    </ul>
-  </li>
-  <li>Pluggable modules system (plugins)
-    <ul>
-      <li>you can create your own modules to change de behavior of Otoroshi per service or globally</li>
-      <li>impacts on access validation, routing, body transformation, apikey extraction</li>
-      <li>listen to internal otoroshi events</li>
-      <li>modules can be written and deployed from the UI</li>
-      <li>lot of module provided out of the box (see TODO:)</li>
-    </ul>
-  </li>
-  <li>Full featured TLS integration
-    <ul>
-      <li><a href="topics/ssl.html">Dynamic SSL termination</a></li>
-      <li>mTLS support for input and output connections (end-to-end mTLS)</li>
-      <li>extended client certificate validation</li>
-      <li>TLS certificate automation (create, renew, etc) based on a CA certificate</li>
-      <li>ACME/Let&rsquo;s Encrypt support (create, renew)</li>
-      <li>on-the-fly certificate generation based on a CA certificate without request loss</li>
-    </ul>
-  </li>
-  <li>Classic features for reverse proxying
-    <ul>
-      <li>expose the same service on multiple domain names (including wildcards)</li>
-      <li>support multiple loadbalancing algorithms</li>
-      <li>configurable circuit breaker per service, with timeouts per path and verb</li>
-      <li><a href="usage/2-services.html">maintenance page per service</a></li>
-      <li><a href="usage/2-services.html">build page per service</a></li>
-      <li><a href="usage/2-services.html">force HTTPS usage per service</a></li>
-      <li><a href="usage/3-apikeys.html">Add current Api key quotas usage in response headers</a></li>
-      <li><a href="usage/3-apikeys.html">Add current latencies in response headers</a></li>
-      <li>headers manipulation</li>
-      <li>routing headers</li>
-      <li>custom html error templates</li>
-      <li>healthcheck per service</li>
-      <li>sink services</li>
-      <li>CORS support</li>
-      <li>GZIP support</li>
-      <li>filtering on http verb and path</li>
-    </ul>
-  </li>
-  <li>Api management features
-    <ul>
-      <li>throttling / daily quotas / monthly quotas per apikey</li>
-      <li>apikey authorization based on http verb and path</li>
-      <li>global throttling</li>
-      <li>global throttling per ip address</li>
-      <li>global or per service ip address blacklist / whitelist</li>
-      <li>automatic apikey secret rotation</li>
-    </ul>
-  </li>
-  <li>Authentication modules
-    <ul>
-      <li>LDAP</li>
-      <li>In memory (managed by otoroshi)</li>
-      <li>OAuth2/OIDC</li>
-      <li>modules can be used for admin. backoffice login</li>
-      <li>webauthentication support</li>
-      <li>sessions management from UI</li>
-    </ul>
-  </li>
-  <li>JWT token utilities
-    <ul>
-      <li>validate incoming JWT tokens</li>
-      <li>transform incoming JWT tokens</li>
-      <li>chain multiple validators</li>
-    </ul>
-  </li>
-  <li>Analytics / Metrics
-    <ul>
-      <li>rich traffic events for each proxied http request</li>
-      <li><a href="usage/4-monitor.html">Live metrics per service and globaly</a></li>
-      <li><a href="usage/7-metrics.html">Global metrics and analytics (requires elastic server)</a></li>
-      <li><a href="setup/dangerzone.html#analytics-settings">Traffic events can be sent using webhooks or Kafka topic</a></li>
-      <li>multiple technical metrics exporters (statsd, datadog, prometheus)</li>
-    </ul>
-  </li>
-  <li>Audit trail
-    <ul>
-      <li><a href="usage/6-audit.html">Global audit log alert log on admins actions</a></li>
-      <li><a href="setup/dangerzone.html#analytics-settings">Audit and alerts events can be sent using webhooks or Kafka topic</a></li>
-      <li><a href="integrations/mailgun.html">Alerts events can be send to people by email using email provider (Mailgun, mailjet)</a></li>
-    </ul>
-  </li>
-  <li>Extract informations from <code>User-Agent</code> headers to enrich traffic events</li>
-  <li>Extract geolocation informations (need external service) to enrich traffic events</li>
-  <li>Support enterprise http proxies globaly and per service</li>
-  <li>TCP proxy with SNI and TLS passthrought support</li>
-  <li>TCP / UDP tunnelings
-    <ul>
-      <li>add web authentication on top of anything</li>
-      <li>local tunnel client with CLI or UI</li>
-    </ul>
-  </li>
-  <li><a href="topics/snow-monkey.html">Canary mode per service</a></li>
-  <li><a href="topics/snow-monkey.html">Chaos engineering tools with the Snow Monkey</a></li>
-  <li><a href="integrations/clevercloud.html">Advanced CleverCloud integration (create services from CleverCloud apps)</a></li>
+  <li>git</li>
+  <li>JDK 11</li>
+  <li>SBT 1.3.x</li>
+  <li>Node 13 + yarn 1.x</li>
 </ul>
-<div class="nav-next">
-<p><strong>Next:</strong> <a href="quickstart.html">Try Otoroshi in 5 minutes</a></p>
-</div>
+<h2><a href="#clone-the-repository" name="clone-the-repository" class="anchor"><span class="anchor-link"></span></a>Clone the repository</h2>
+<pre class="prettyprint"><code class="language-sh">git clone https://github.com/MAIF/otoroshi.git
+</code></pre>
+<p>or fork otoroshi and clone your own repository.</p>
+<h2><a href="#run-otoroshi-in-dev-mode" name="run-otoroshi-in-dev-mode" class="anchor"><span class="anchor-link"></span></a>Run otoroshi in dev mode</h2>
+<p>to run otoroshi in dev mode, you&rsquo;ll need to run two separate process to serve the javascript UI and the server part.</p>
+<h3><a href="#javascript-side" name="javascript-side" class="anchor"><span class="anchor-link"></span></a>Javascript side</h3>
+<p>just go to <code>&lt;repo&gt;/otoroshi/javascript</code> and install the dependencies with</p>
+<pre class="prettyprint"><code class="language-sh">yarn install
+# or
+npm install
+</code></pre>
+<p>then run the dev server with</p>
+<pre class="prettyprint"><code class="language-sh">yarn start
+# or
+npm run start
+</code></pre>
+<h3><a href="#server-side" name="server-side" class="anchor"><span class="anchor-link"></span></a>Server side</h3>
+<p>just go to <code>&lt;repo&gt;/otoroshi</code> and run the sbt console with </p>
+<pre class="prettyprint"><code class="language-sh">sbt
+</code></pre>
+<p>then in the sbt console run the following command</p>
+<pre class="prettyprint"><code class="language-sh">~run -Dapp.storage=file -Dapp.liveJs=true -Dhttps.port=9998 -D-Dapp.privateapps.port=9999 -Dapp.adminPassword=password -Dapp.domain=oto.tools -Dplay.server.https.engineProvider=ssl.DynamicSSLEngineProvider -Dapp.events.maxSize=0
+</code></pre>
+<p>you can now access your otoroshi instance at <code>http://otoroshi.oto.tools:9999</code></p>
+<h2><a href="#test-otoroshi" name="test-otoroshi" class="anchor"><span class="anchor-link"></span></a>Test otoroshi</h2>
+<p>to run otoroshi test just go to <code>&lt;repo&gt;/otoroshi</code> and run the main test suite with</p>
+<pre class="prettyprint"><code class="language-sh">sbt `testOnly OtoroshiTests`
+</code></pre>
+<h2><a href="#create-a-release" name="create-a-release" class="anchor"><span class="anchor-link"></span></a>Create a release</h2>
+<p>just go to <code>&lt;repo&gt;/otoroshi/javascript</code> and then build the UI</p>
+<pre class="prettyprint"><code class="language-sh">yarn install
+yarn build
+</code></pre>
+<p>then go to <code>&lt;repo&gt;/otoroshi</code> and build the otoroshi distribution</p>
+<pre class="prettyprint"><code class="language-sh">sbt &#39;;clean;compile;dist;assembly&#39;
+</code></pre>
+<p>the otoroshi build is waiting for you in <code>&lt;repo&gt;/otoroshi/target/scala-2.12/otoroshi.jar</code> or <code>&lt;repo&gt;/otoroshi/target/universal/otoroshi-1.x.x.zip</code></p>
 </div>
 <div class="large-3 show-for-large column" data-sticky-container>
+<nav class="sidebar sticky" data-sticky data-anchor="docs" data-sticky-on="large">
+<div class="page-nav">
+<div class="nav-title">On this page:</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="dev.html#features" class="header">Features</a>
+  <ul>
+    <li><a href="dev.html#the-tools" class="header">The tools</a></li>
+    <li><a href="dev.html#clone-the-repository" class="header">Clone the repository</a></li>
+    <li><a href="dev.html#run-otoroshi-in-dev-mode" class="header">Run otoroshi in dev mode</a></li>
+    <li><a href="dev.html#test-otoroshi" class="header">Test otoroshi</a></li>
+    <li><a href="dev.html#create-a-release" class="header">Create a release</a></li>
+  </ul></li>
+</ul>
+</div>
+</div>
+</nav>
 </div>
 </div>
 
