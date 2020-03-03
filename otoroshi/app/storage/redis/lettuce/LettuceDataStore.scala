@@ -54,13 +54,15 @@ class LettuceDataStores(configuration: Configuration, environment: Environment, 
   lazy val redisConnection = configuration.getOptional[String]("app.redis.lettuce.connection").getOrElse("default")
   lazy val redisReadFrom = configuration.getOptional[String]("app.redis.lettuce.readFrom").getOrElse("MASTER_PREFERRED")
   lazy val readFrom = ReadFrom.valueOf(redisReadFrom)
-  lazy val redisUris: Seq[String] = configuration.getOptional[Seq[String]]("app.redis.lettuce.uris").filter(_.nonEmpty).orElse(
+  lazy val redisUris: Seq[String] = configuration.getOptional[Seq[String]]("app.redis.lettuce.uris").filter(_.nonEmpty).map(_.map(_.trim)).orElse(
     configuration.getOptional[String]("app.redis.lettuce.urisStr").map(_.split(",").map(_.trim).toSeq)
+  ).filter(_.nonEmpty).orElse(
+    configuration.getOptional[String]("app.redis.lettuce.uri").map(v => Seq(v.trim))
   ).getOrElse(Seq.empty[String])
   lazy val nodesRaw = redisUris.map(v => RedisURI.create(v))
   lazy val nodes = nodesRaw.asJava
   lazy val resources = {
-    // TODO: customize
+    // TODO: customize from config
     ClientResources.builder().build()
   }
 
