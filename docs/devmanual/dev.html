@@ -2,7 +2,7 @@
 <html class="no-js" lang="en">
 
 <head>
-<title>Features · Otoroshi</title>
+<title>Developing Otoroshi · Otoroshi</title>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <meta name="description" content='otoroshi-manual'/>
@@ -96,7 +96,7 @@
     <li><a href="deploy/other.html" class="page">Others</a></li>
     <li><a href="deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
   </ul></li>
-  <li><a href="dev.html" class="active page">Features</a></li>
+  <li><a href="dev.html" class="active page">Developing Otoroshi</a></li>
 </ul>
 </div>
 
@@ -196,7 +196,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     <li><a href="deploy/other.html" class="page">Others</a></li>
     <li><a href="deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
   </ul></li>
-  <li><a href="dev.html" class="active page">Features</a></li>
+  <li><a href="dev.html" class="active page">Developing Otoroshi</a></li>
 </ul>
 </div>
 
@@ -211,7 +211,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="nav-breadcrumbs">
 <ul>
   <li><a href="index.html">Otoroshi</a></li>
-  <li>Features</li>
+  <li>Developing Otoroshi</li>
 </ul>
 </div>
 </div>
@@ -219,7 +219,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
-<h1><a href="#features" name="features" class="anchor"><span class="anchor-link"></span></a>Features</h1>
+<h1><a href="#developing-otoroshi" name="developing-otoroshi" class="anchor"><span class="anchor-link"></span></a>Developing Otoroshi</h1>
 <p>If you want to play with Otoroshis code, here are some tips</p>
 <h2><a href="#the-tools" name="the-tools" class="anchor"><span class="anchor-link"></span></a>The tools</h2>
 <p>You will need</p>
@@ -267,6 +267,14 @@ yarn build
 <pre class="prettyprint"><code class="language-sh">sbt &#39;;clean;compile;dist;assembly&#39;
 </code></pre>
 <p>the otoroshi build is waiting for you in <code>&lt;repo&gt;/otoroshi/target/scala-2.12/otoroshi.jar</code> or <code>&lt;repo&gt;/otoroshi/target/universal/otoroshi-1.x.x.zip</code></p>
+<h2><a href="#build-the-documentation" name="build-the-documentation" class="anchor"><span class="anchor-link"></span></a>Build the documentation</h2>
+<p>from the root of your repository run</p>
+<pre class="prettyprint"><code class="language-sh">sh ./scripts/doc.sh all
+</code></pre>
+<h2><a href="#format-the-sources" name="format-the-sources" class="anchor"><span class="anchor-link"></span></a>Format the sources</h2>
+<p>from the root of your repository run</p>
+<pre class="prettyprint"><code class="language-sh">sh ./scripts/fmt.sh
+</code></pre>
 </div>
 <div class="large-3 show-for-large column" data-sticky-container>
 <nav class="sidebar sticky" data-sticky data-anchor="docs" data-sticky-on="large">
@@ -274,13 +282,15 @@ yarn build
 <div class="nav-title">On this page:</div>
 <div class="nav-toc">
 <ul>
-  <li><a href="dev.html#features" class="header">Features</a>
+  <li><a href="dev.html#developing-otoroshi" class="header">Developing Otoroshi</a>
   <ul>
     <li><a href="dev.html#the-tools" class="header">The tools</a></li>
     <li><a href="dev.html#clone-the-repository" class="header">Clone the repository</a></li>
     <li><a href="dev.html#run-otoroshi-in-dev-mode" class="header">Run otoroshi in dev mode</a></li>
     <li><a href="dev.html#test-otoroshi" class="header">Test otoroshi</a></li>
     <li><a href="dev.html#create-a-release" class="header">Create a release</a></li>
+    <li><a href="dev.html#build-the-documentation" class="header">Build the documentation</a></li>
+    <li><a href="dev.html#format-the-sources" class="header">Format the sources</a></li>
   </ul></li>
 </ul>
 </div>
