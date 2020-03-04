@@ -2169,7 +2169,7 @@ case class ServiceDescriptor(
     }
   }
 
-  def generateInfoToken(apiKey: Option[ApiKey], paUsr: Option[PrivateAppsUser], requestHeader: Option[RequestHeader])(
+  def generateInfoToken(apiKey: Option[ApiKey], paUsr: Option[PrivateAppsUser], requestHeader: Option[RequestHeader], issuer: Option[String] = None, sub: Option[String] = None)(
       implicit env: Env
   ): OtoroshiClaim = {
     val clientCertChain = requestHeader
@@ -2202,12 +2202,12 @@ case class ServiceDescriptor(
     secComInfoTokenVersion match {
       case SecComInfoTokenVersion.Legacy => {
         OtoroshiClaim(
-          iss = env.Headers.OtoroshiIssuer,
-          sub = paUsr
+          iss = issuer.getOrElse(env.Headers.OtoroshiIssuer),
+          sub = sub.getOrElse(paUsr
             .filter(_ => this.privateApp)
             .map(k => s"pa:${k.email}")
             .orElse(apiKey.map(k => s"apikey:${k.clientId}"))
-            .getOrElse("--"),
+            .getOrElse("--")),
           aud = this.name,
           exp = DateTime.now().plusSeconds(this.secComTtl.toSeconds.toInt).toDate.getTime,
           iat = DateTime.now().toDate.getTime,
@@ -2244,12 +2244,12 @@ case class ServiceDescriptor(
       }
       case SecComInfoTokenVersion.Latest => {
         OtoroshiClaim(
-          iss = env.Headers.OtoroshiIssuer,
-          sub = paUsr
+          iss = issuer.getOrElse(env.Headers.OtoroshiIssuer),
+          sub = sub.getOrElse(paUsr
             .filter(_ => this.privateApp)
             .map(k => k.email)
             .orElse(apiKey.map(k => k.clientName))
-            .getOrElse("public"),
+            .getOrElse("public")),
           aud = this.name,
           exp = DateTime.now().plusSeconds(this.secComTtl.toSeconds.toInt).toDate.getTime,
           iat = DateTime.now().toDate.getTime,

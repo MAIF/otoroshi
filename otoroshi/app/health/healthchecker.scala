@@ -7,7 +7,7 @@ import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.{Keep, Sink, Source}
 import env.Env
 import events.HealthCheckEvent
-import models.{ServiceDescriptor, Target}
+import models.{SecComVersion, ServiceDescriptor, Target}
 import org.joda.time.DateTime
 import play.api.Logger
 import security.{IdGenerator, OtoroshiClaim}
@@ -36,21 +36,37 @@ class HealthCheckerActor()(implicit env: Env) extends Actor {
   def checkTarget(desc: ServiceDescriptor, target: Target): Future[Unit] = {
     val url = s"${target.scheme}://${target.host}${desc.healthCheck.url}"
     val start = System.currentTimeMillis()
-    val state = IdGenerator.extendedToken(128)
+    val stateValue = IdGenerator.extendedToken(128)
+    val state = desc.secComVersion match {
+      case SecComVersion.V1 => stateValue
+      case SecComVersion.V2 =>
+        val jti = IdGenerator.uuid
+        OtoroshiClaim(
+          iss = env.Headers.OtoroshiIssuer,
+          sub = env.Headers.OtoroshiIssuer,
+          aud = desc.name,
+          exp = DateTime
+            .now()
+            .plusSeconds(desc.secComTtl.toSeconds.toInt)
+            .toDate
+            .getTime,
+          iat = DateTime.now().toDate.getTime,
+          jti = jti
+        ).withClaim("state", stateValue).serialize(desc.secComSettings)
+    }
     val value = env.snowflakeGenerator.nextIdStr()
-    val claim = OtoroshiClaim(
-      iss = env.Headers.OtoroshiIssuer,
-      sub = "HealthChecker",
-      aud = desc.name,
-      exp = DateTime.now().plusSeconds(30).toDate.getTime,
-      iat = DateTime.now().toDate.getTime,
-      jti = IdGenerator.uuid
-    ).serialize(desc.secComSettings)(env) // TODO: handle protocol v2
+    val claim = desc.generateInfoToken(
+      None,
+      None,
+      None,
+      Some(env.Headers.OtoroshiIssuer),
+      Some("HealthChecker")
+    ).serialize(desc.secComSettings)(env)
     env.MtlsWs
       .url(url, target.mtlsConfig)
       .withRequestTimeout(Duration(30, TimeUnit.SECONDS))
       .withHttpHeaders(
-        env.Headers.OtoroshiState -> state, // TODO: handle new version
+        env.Headers.OtoroshiState -> state,
         env.Headers.OtoroshiClaim -> claim,
         env.Headers.OtoroshiHealthCheckLogicTest -> value
       )
