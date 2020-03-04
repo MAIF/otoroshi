@@ -16,7 +16,7 @@ import events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
 import gateway.{InMemoryRequestsDataStore, RequestsDataStore}
 import io.lettuce.core.cluster.RedisClusterClient
 import io.lettuce.core.masterreplica.{MasterReplica, StatefulRedisMasterReplicaConnection}
-import io.lettuce.core.resource.ClientResources
+import io.lettuce.core.resource.{ClientResources, DefaultClientResources}
 import io.lettuce.core.{AbstractRedisClient, ReadFrom, RedisClient, RedisURI}
 import models._
 import otoroshi.script.{InMemoryScriptDataStore, ScriptDataStore}
@@ -62,11 +62,13 @@ class LettuceDataStores(configuration: Configuration, environment: Environment, 
   lazy val nodesRaw = redisUris.map(v => RedisURI.create(v))
   lazy val nodes = nodesRaw.asJava
   lazy val resources = {
-    // TODO: customize from config
-    // computationThreadPoolSize
-    // ioThreadPoolSize
-    // reconnectDelay
-    ClientResources.builder().build()
+    val default = DefaultClientResources.builder().build()
+    val computationThreadPoolSize = configuration.getOptional[Int]("app.redis.lettuce.computationThreadPoolSize").getOrElse(default.computationThreadPoolSize())
+    val ioThreadPoolSize = configuration.getOptional[Int]("app.redis.lettuce.ioThreadPoolSize").getOrElse(default.ioThreadPoolSize())
+    ClientResources.builder()
+      .computationThreadPoolSize(computationThreadPoolSize)
+      .ioThreadPoolSize(ioThreadPoolSize)
+      .build()
   }
 
   lazy val redis: LettuceRedis = {
