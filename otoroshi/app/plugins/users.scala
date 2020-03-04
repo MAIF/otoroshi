@@ -1,11 +1,8 @@
 package otoroshi.plugins.users
 
 import akka.http.scaladsl.util.FastFuture
-import com.jayway.jsonpath.JsonPath
 import env.Env
-import net.minidev.json.JSONArray
-
-import scala.util.{Failure, Success, Try}
+import otoroshi.plugins.JsonPathUtils
 import otoroshi.script.{AccessContext, AccessValidator}
 import play.api.Logger
 import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
@@ -52,18 +49,6 @@ class HasAllowedUsersValidator extends AccessValidator {
       |```
     """.stripMargin)
 
-  def matchWith(payload: JsValue, what: String): String => Boolean = {
-    query: String => {
-      Try(JsonPath.parse(Json.stringify(payload)).read[JSONArray](query)) match {
-        case Failure(err) =>
-          logger.error(s"error while matching query '$query' against $what: $err")
-          false
-        case Success(res) =>
-          res.size() > 0
-      }
-    }
-  }
-
   override def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
     context.user match {
       case Some(user) => {
@@ -90,8 +75,8 @@ class HasAllowedUsersValidator extends AccessValidator {
           allowedUsernames.contains(user.name) ||
           allowedEmails.contains(user.email) ||
           allowedEmailDomains.exists(domain => user.email.endsWith(domain)) ||
-          (metadataMatch.exists(matchWith(userMetaRaw, "user metadata")) && !metadataNotMatch.exists(matchWith(userMetaRaw, "user metadata"))) ||
-          (profileMatch.exists(matchWith(user.profile, "user profile")) && !profileNotMatch.exists(matchWith(user.profile, "user profile")))
+          (metadataMatch.exists(JsonPathUtils.matchWith(userMetaRaw, "user metadata")) && !metadataNotMatch.exists(JsonPathUtils.matchWith(userMetaRaw, "user metadata"))) ||
+          (profileMatch.exists(JsonPathUtils.matchWith(user.profile, "user profile")) && !profileNotMatch.exists(JsonPathUtils.matchWith(user.profile, "user profile")))
         ) {
           FastFuture.successful(true)
         } else {

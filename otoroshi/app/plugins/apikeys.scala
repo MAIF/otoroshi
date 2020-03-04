@@ -5,6 +5,7 @@ import env.Env
 import models.{ApiKey, RemainingQuotas}
 import org.apache.commons.codec.binary.Base64
 import org.joda.time.DateTime
+import otoroshi.plugins.JsonPathUtils
 import otoroshi.script.{AccessContext, AccessValidator, PreRouting, PreRoutingContext}
 import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
 import security.IdGenerator
@@ -33,6 +34,14 @@ class HasAllowedApiKeyValidator extends AccessValidator {
       |  "metadata": {
       |    "type": "object",
       |    "props": { "label": "Allowed metadata" }
+      |  },
+      |  "apikeyMatch": {
+      |    "type": "array",
+      |    "props": { "label": "Apikey matching", "placeholder": "JSON Path query" }
+      |  },
+      |  "apikeyNotMatch": {
+      |    "type": "array",
+      |    "props": { "label": "Apikey not matching", "placeholder": "JSON Path query" }
       |  }
       |}""".stripMargin).as[JsObject]
     )
@@ -44,6 +53,8 @@ class HasAllowedApiKeyValidator extends AccessValidator {
           "clientIds" -> Json.arr(),
           "tags"      -> Json.arr(),
           "metadata"  -> Json.obj(),
+          "apikeyMatch" -> Json.obj(),
+          "apikeyNotMatch" -> Json.obj(),
         )
       )
     )
@@ -55,7 +66,9 @@ class HasAllowedApiKeyValidator extends AccessValidator {
       |  "HasAllowedApiKeyValidator": {
       |    "clientIds": [],  // list of allowed client ids,
       |    "tags": [],       // list of allowed tags
-      |    "metadata": {}    // allowed metadata
+      |    "metadata": {}    // allowed metadata,
+      |    "apikeyMatch": [],    // json path expressions to match against apikey. passes if one match
+      |    "apikeyNotMatch": [], // json path expressions to match against apikey. passes if none match
       |  }
       |}
       |```
@@ -72,8 +85,17 @@ class HasAllowedApiKeyValidator extends AccessValidator {
           (config \ "clientIds").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
         val allowedTags      = (config \ "tags").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
         val allowedMetadatas = (config \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty[String, String])
-        if (allowedClientIds.contains(apiKey.clientId) || allowedTags.exists(tag => apiKey.tags.contains(tag)) || allowedMetadatas
-              .exists(meta => apiKey.metadata.get(meta._1).contains(meta._2))) {
+        val apikeyMatch =
+          (config \ "apikeyMatch").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
+        val apikeyNotMatch =
+          (config \ "apikeyNotMatch").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
+        lazy val apikeyJson = apiKey.toJson
+        if (
+          allowedClientIds.contains(apiKey.clientId) ||
+          allowedTags.exists(tag => apiKey.tags.contains(tag)) ||
+          allowedMetadatas.exists(meta => apiKey.metadata.get(meta._1).contains(meta._2)) ||
+          (apikeyMatch.exists(JsonPathUtils.matchWith(apikeyJson, "apikey")) && !apikeyNotMatch.exists(JsonPathUtils.matchWith(apikeyJson, "apikey")))
+        ) {
           FastFuture.successful(true)
         } else {
           FastFuture.successful(false)
