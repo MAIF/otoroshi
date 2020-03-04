@@ -22,7 +22,7 @@ import models._
 import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
-import otoroshi.script.{ScriptCompiler, ScriptManager}
+import otoroshi.script.{AccessValidatorRef, JobManager, ScriptCompiler, ScriptManager}
 import play.api._
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.json.{JsNull, JsObject, JsValue, Json}
@@ -41,7 +41,6 @@ import storage.redis.next._
 import utils.{HasMetrics, Metrics}
 import utils.http._
 import otoroshi.tcp.{TcpProxy, TcpService}
-import otoroshi.script.AccessValidatorRef
 import otoroshi.ssl.pki.BouncyCastlePki
 import play.twirl.api.Html
 import storage.file.FileDbDataStores
@@ -597,6 +596,8 @@ class Env(val configuration: Configuration,
 
   if (useCache) logger.warn(s"Datastores will use cache to speed up operations")
 
+  val jobManager = new JobManager(this)
+
   val servers = TcpService.runServers(this)
 
   datastores.before(configuration, environment, lifecycle)
@@ -609,6 +610,7 @@ class Env(val configuration: Configuration,
     healthCheckerActor ! PoisonPill
     analyticsActor ! PoisonPill
     alertsActor ! PoisonPill
+    jobManager.stop()
     scriptManager.stop()
     clusterAgent.stop()
     clusterLeaderAgent.stop()
@@ -892,6 +894,10 @@ class Env(val configuration: Configuration,
         }
       }
       ()
+  }(otoroshiExecutionContext)
+
+  timeout(1000.millis).andThen {
+    case _ => jobManager.start()
   }(otoroshiExecutionContext)
 
   timeout(5000.millis).andThen {

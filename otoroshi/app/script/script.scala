@@ -64,6 +64,10 @@ object EventListenerType extends PluginType {
   def name: String = "listener"
 }
 
+object JobType extends PluginType {
+  def name: String = "job"
+}
+
 trait StartableAndStoppable {
   val funit: Future[Unit]           = FastFuture.successful(())
   def start(env: Env): Future[Unit] = FastFuture.successful(())
