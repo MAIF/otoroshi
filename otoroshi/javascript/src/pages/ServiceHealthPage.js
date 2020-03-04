@@ -16,6 +16,7 @@ export class ServiceHealthPage extends Component {
     RED: '#d50200',
     YELLOW: '#ff8900',
     GREEN: '#95cf3d',
+    BLACK: '#000000',
   };
 
   columns = [
@@ -43,6 +44,22 @@ export class ServiceHealthPage extends Component {
     { title: 'Error', content: item => (item.error ? item.error : '') },
   ];
 
+  updateEvts = (evts) => {
+    this.setState({ evts });
+    if (evts.length > 0) {
+      const color = evts[0].health ? this.colors[evts[0].health] : 'grey';
+      this.title = (
+        <span>
+          Service health is <i className="glyphicon glyphicon-heart" style={{ color }} />
+        </span>
+      );
+      this.props.setTitle(this.title);
+    } else {
+      this.title = 'No HealthCheck available yet';
+      this.props.setTitle(this.title);
+    }
+  }
+
   componentDidMount() {
     BackOfficeServices.fetchService(this.props.params.lineId, this.props.params.serviceId).then(
       service => {
@@ -50,19 +67,7 @@ export class ServiceHealthPage extends Component {
           if (service.healthCheck.enabled) {
             this.setState({ health: true });
             BackOfficeServices.fetchHealthCheckEvents(service.id).then(evts => {
-              this.setState({ evts });
-              if (evts.length > 0) {
-                const color = evts[0].health ? this.colors[evts[0].health] : 'grey';
-                this.title = (
-                  <span>
-                    Service health is <i className="glyphicon glyphicon-heart" style={{ color }} />
-                  </span>
-                );
-                this.props.setTitle(this.title);
-              } else {
-                this.title = 'No HealthCheck available yet';
-                this.props.setTitle(this.title);
-              }
+              this.updateEvts(evts);
             });
           } else {
             this.title = 'No HealthCheck available yet';
@@ -88,14 +93,25 @@ export class ServiceHealthPage extends Component {
     return BackOfficeServices.fetchHealthCheckEvents(this.state.service.id);
   };
 
+  onUpdate = (evts) => {
+    this.updateEvts(evts);
+  }
+
   render() {
     if (!this.state.service) return null;
     const evts = this.state.evts;
     const series = [
       {
+        name: '1xx',
+        data: evts
+          .filter(e => e.status < 100)
+          .map(e => [e['@timestamp'], e.duration])
+          .reverse(),
+      },
+      {
         name: '2xx',
         data: evts
-          .filter(e => e.status < 300)
+          .filter(e => e.status > 199 && e.status < 300)
           .map(e => [e['@timestamp'], e.duration])
           .reverse(),
       },
@@ -121,6 +137,7 @@ export class ServiceHealthPage extends Component {
           .reverse(),
       },
     ];
+
     return (
       <div className="contentHealth">
         <Histogram series={series} title="HealthChecks responses duration (ms.)" unit="millis." />
@@ -138,6 +155,7 @@ export class ServiceHealthPage extends Component {
             showActions={false}
             showLink={false}
             extractKey={item => item['@id']}
+            onUpdate={this.onUpdate}
           />
         )}
       </div>

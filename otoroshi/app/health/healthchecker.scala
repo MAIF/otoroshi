@@ -100,12 +100,12 @@ class HealthCheckerActor()(implicit env: Env) extends Actor {
             status = 0,
             logicCheck = false,
             error = Some(error.getMessage),
-            health = Some("RED")
+            health = Some("BLACK")
           )
           hce.toAnalytics()
           hce.pushToRedis()
           env.datastores.globalConfigDataStore.singleton().map { config =>
-            env.metrics.markString(s"services.${desc.id}.health", hce.health.getOrElse("RED"))
+            env.metrics.markString(s"services.${desc.id}.health", hce.health.getOrElse("BLACK"))
           }
         }
       }

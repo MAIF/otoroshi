@@ -47,10 +47,11 @@ export class Histogram extends Component {
 
     // console.log(this.props.title, this.props.series);
 
-    if (this.props.series && this.props.series[0]) {
+    if (this.props.series && this.props.series.map(s => s.data.length).filter(v => v > 0).length > 0) {
       seriesName = this.props.series.map(s => s.name);
       const values = [];
-      const size = this.props.series[0].data.length;
+      const sizes = this.props.series.map(s => s.data.length);
+      const size = Math.max(...sizes);
       for (let i = 0; i < size; i++) {
         let finalItem = {};
         this.props.series.forEach(serie => {

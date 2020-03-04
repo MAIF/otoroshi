@@ -130,7 +130,11 @@ export class Table extends Component {
     this.setState({ loading: true });
     return this.props.fetchItems().then(
       rawItems => {
-        this.setState({ items: rawItems, loading: false });
+        this.setState({ items: rawItems, loading: false }, () => {
+          if (this.props.onUpdate) {
+            this.props.onUpdate(rawItems);
+          }
+        });
       },
       () => this.setState({ loading: false })
     );
