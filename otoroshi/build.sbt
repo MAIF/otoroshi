@@ -49,6 +49,7 @@ libraryDependencies ++= Seq(
   "org.shredzone.acme4j"   % "acme4j-utils"          % "2.8",
   "org.shredzone.acme4j"   % "acme4j"                % "2.7",
   "io.lettuce"             % "lettuce-core"          % "5.2.2.RELEASE",
+  "com.jayway.jsonpath"    % "json-path"             % "2.4.0",
   "org.scalatestplus.play" %% "scalatestplus-play"   % "3.1.2" % Test,
   "com.datastax.cassandra" % "cassandra-driver-core" % "3.7.2" classifier "shaded" excludeAll (
     ExclusionRule(organization = "io.netty"),

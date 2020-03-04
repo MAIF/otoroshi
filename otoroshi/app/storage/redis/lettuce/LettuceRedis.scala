@@ -148,7 +148,7 @@ class LettuceRedisCluster(actorSystem: ActorSystem, client: RedisClusterClient) 
 
   lazy val redis = client.connect(new ByteStringRedisCodec()).async()
 
-  lazy val logger = Logger("otoroshi-lettuce-redis")
+  lazy val logger = Logger("otoroshi-lettuce-redis-cluster")
 
   def typ(key: String): Future[String] = redis.`type`(key).toScala
 
@@ -158,7 +158,9 @@ class LettuceRedisCluster(actorSystem: ActorSystem, client: RedisClusterClient) 
     case _ => Unreachable
   }
 
-  override def stop(): Unit = redis.shutdown(true)
+  override def stop(): Unit = {
+    redis.shutdown(true)
+  }
 
   override def flushall(): Future[Boolean] = redis.flushall().toScala.map {
     case "OK" => true

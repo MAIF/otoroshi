@@ -17,7 +17,7 @@ import gateway.{InMemoryRequestsDataStore, RequestsDataStore}
 import io.lettuce.core.cluster.RedisClusterClient
 import io.lettuce.core.masterreplica.{MasterReplica, StatefulRedisMasterReplicaConnection}
 import io.lettuce.core.resource.ClientResources
-import io.lettuce.core.{ReadFrom, RedisClient, RedisURI}
+import io.lettuce.core.{AbstractRedisClient, ReadFrom, RedisClient, RedisURI}
 import models._
 import otoroshi.script.{InMemoryScriptDataStore, ScriptDataStore}
 import otoroshi.tcp.{InMemoryTcpServiceDataStoreDataStore, TcpServiceDataStore}
@@ -29,7 +29,6 @@ import storage._
 import storage.inmemory._
 
 import scala.concurrent.{ExecutionContext, Future}
-
 import collection.JavaConverters._
 
 class LettuceDataStores(configuration: Configuration, environment: Environment, lifecycle: ApplicationLifecycle, env: Env) extends DataStores {
@@ -47,6 +46,7 @@ class LettuceDataStores(configuration: Configuration, environment: Environment, 
         .getOrElse(ConfigFactory.empty)
     )
 
+  val clientRef = new AtomicReference[AbstractRedisClient]()
   val connectionRef = new AtomicReference[StatefulRedisMasterReplicaConnection[String, ByteString]]()
 
   lazy val redisDispatcher = redisActorSystem.dispatcher
@@ -63,37 +63,44 @@ class LettuceDataStores(configuration: Configuration, environment: Environment, 
   lazy val nodes = nodesRaw.asJava
   lazy val resources = {
     // TODO: customize from config
+    // computationThreadPoolSize
+    // ioThreadPoolSize
+    // reconnectDelay
     ClientResources.builder().build()
   }
 
   lazy val redis: LettuceRedis = {
+
+    def standardConnection() = {
+      val client = RedisClient.create(resources, nodesRaw.head)
+      clientRef.set(client)
+      new LettuceRedisStandaloneAndSentinels(redisActorSystem, client)
+    }
+
     redisConnection match {
-      case _ if redisUris.isEmpty => throw new RuntimeException(s"No redis URIs to connect with")
-      case "default" if redisUris.size == 1 => {
-        new LettuceRedisStandaloneAndSentinels(redisActorSystem, RedisClient.create(resources,nodesRaw.head))
-      }
+      case _ if redisUris.isEmpty => throw new RuntimeException(s"No redis URIs to connect with ...")
+      case "default" if redisUris.size == 1 => standardConnection()
+      case "standalone" => standardConnection()
+      case "sentinels" => standardConnection()
       case "default" if redisUris.size > 1  => {
         val redisClient = RedisClient.create(resources)
         val connection = MasterReplica.connect(redisClient, new ByteStringRedisCodec(), nodes)
         connection.setReadFrom(readFrom)
+        clientRef.set(redisClient)
         connectionRef.set(connection)
         new LettuceRedisStandaloneAndSentinels(redisActorSystem, redisClient)
-      }
-      case "standalone" => {
-        new LettuceRedisStandaloneAndSentinels(redisActorSystem, RedisClient.create(resources,nodesRaw.head))
       }
       case "master-replicas" => {
         val redisClient = RedisClient.create(resources)
         val connection = MasterReplica.connect(redisClient, new ByteStringRedisCodec(), nodes)
         connection.setReadFrom(readFrom)
+        clientRef.set(redisClient)
         connectionRef.set(connection)
         new LettuceRedisStandaloneAndSentinels(redisActorSystem, redisClient)
       }
-      case "sentinels" => {
-        new LettuceRedisStandaloneAndSentinels(redisActorSystem, RedisClient.create(resources, nodesRaw.head))
-      }
       case "cluster" => {
         val redisClient = RedisClusterClient.create(resources, nodes)
+        clientRef.set(redisClient)
         new LettuceRedisCluster(redisActorSystem, redisClient)
       }
       case _ => throw new RuntimeException(s"Bad redis connection type '$redisConnection'")
@@ -115,6 +122,7 @@ class LettuceDataStores(configuration: Configuration, environment: Environment, 
     _serviceDescriptorDataStore.stopCleanup()
     _certificateDataStore.stopSync()
     Option(connectionRef.get()).foreach(_.close())
+    Option(clientRef.get()).foreach(_.shutdown())
     redisActorSystem.terminate()
     FastFuture.successful(())
   }
