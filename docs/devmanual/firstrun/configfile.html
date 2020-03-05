@@ -951,6 +951,16 @@ play.http {
       members = []
       membersStr = ${?REDIS_CLUSTER_MEMBERS}
     }
+
+    lettuce {
+      connection = &quot;default&quot;
+      connection = ${?REDIS_LETTUCE_CONNECTION}
+      uri =  ${?REDIS_LETTUCE_URI}
+      uris = []
+      urisStr = ${?REDIS_LETTUCE_URIS}
+      readFrom = &quot;MASTER_PREFERRED&quot;
+      readFrom = ${?REDIS_LETTUCE_READ_FROMs}
+    }
   }
   inmemory {
     windowSize = 99
