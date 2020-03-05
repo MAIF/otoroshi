@@ -1883,6 +1883,10 @@ case class ServiceDescriptor(
       "${config.app.claim.sharedKey}",
       false
     ),
+    secComUseSameAlgo: Boolean = true,
+    secComAlgoChallengeOtoToBack: AlgoSettings = HSAlgoSettings(512, "secret", false),
+    secComAlgoChallengeBackToOto: AlgoSettings = HSAlgoSettings(512, "secret", false),
+    secComAlgoInfoToken: AlgoSettings = HSAlgoSettings(512, "secret", false),
     ////////////
     securityExcludedPatterns: Seq[String] = Seq.empty[String],
     publicPatterns: Seq[String] = Seq.empty[String],
@@ -1920,6 +1924,10 @@ case class ServiceDescriptor(
     issueCert: Boolean = false,
     issueCertCA: Option[String] = None,
 ) {
+
+  def algoChallengeFromOtoToBack: AlgoSettings = if (secComUseSameAlgo) secComSettings else secComAlgoChallengeOtoToBack
+  def algoChallengeFromBackToOto: AlgoSettings = if (secComUseSameAlgo) secComSettings else secComAlgoChallengeBackToOto
+  def algoInfoFromOtoToBack:      AlgoSettings = if (secComUseSameAlgo) secComSettings else secComAlgoInfoToken
 
   lazy val toHost: String = subdomain match {
     case s if s.isEmpty                  => s"$env.$domain"
@@ -2503,6 +2511,18 @@ object ServiceDescriptor {
           secComSettings = AlgoSettings
             .fromJson((json \ "secComSettings").asOpt[JsValue].getOrElse(JsNull))
             .getOrElse(HSAlgoSettings(512, "${config.app.claim.sharedKey}", false)),
+
+          secComUseSameAlgo = (json \ "secComUseSameAlgo").asOpt[Boolean].getOrElse(true),
+          secComAlgoChallengeOtoToBack = AlgoSettings
+            .fromJson((json \ "secComAlgoChallengeOtoToBack").asOpt[JsValue].getOrElse(JsNull))
+            .getOrElse(HSAlgoSettings(512, "secret", false)),
+          secComAlgoChallengeBackToOto = AlgoSettings
+            .fromJson((json \ "secComAlgoChallengeBackToOto").asOpt[JsValue].getOrElse(JsNull))
+            .getOrElse(HSAlgoSettings(512, "secret", false)),
+          secComAlgoInfoToken = AlgoSettings
+            .fromJson((json \ "secComAlgoInfoToken").asOpt[JsValue].getOrElse(JsNull))
+            .getOrElse(HSAlgoSettings(512, "secret", false)),
+
           authConfigRef = (json \ "authConfigRef").asOpt[String].filterNot(_.trim.isEmpty),
           clientValidatorRef = (json \ "clientValidatorRef").asOpt[String].filterNot(_.trim.isEmpty),
           transformerRefs = (json \ "transformerRefs")
@@ -2605,6 +2625,10 @@ object ServiceDescriptor {
       "chaosConfig"                -> sd.chaosConfig.asJson,
       "jwtVerifier"                -> sd.jwtVerifier.asJson,
       "secComSettings"             -> sd.secComSettings.asJson,
+      "secComUseSameAlgo"          -> sd.secComUseSameAlgo,
+      "secComAlgoChallengeOtoToBack" -> sd.secComAlgoChallengeOtoToBack.asJson,
+      "secComAlgoChallengeBackToOto" -> sd.secComAlgoChallengeBackToOto.asJson,
+      "secComAlgoInfoToken"        -> sd.secComAlgoInfoToken.asJson,
       "cors"                       -> sd.cors.asJson,
       "redirection"                -> sd.redirection.toJson,
       "authConfigRef"              -> sd.authConfigRef,

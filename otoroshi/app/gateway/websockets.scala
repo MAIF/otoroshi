@@ -636,7 +636,7 @@ class WebSocketHandler()(implicit env: Env) {
                                               .getTime,
                                             iat = DateTime.now().toDate.getTime,
                                             jti = IdGenerator.uuid
-                                          ).withClaim("state", stateValue).serialize(descriptor.secComSettings)
+                                          ).withClaim("state", stateValue).serialize(descriptor.algoChallengeFromOtoToBack)
                                       }
                                       val rawUri      = req.relativeUri.substring(1)
                                       val uriParts    = rawUri.split("/").toSeq

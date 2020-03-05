@@ -1696,11 +1696,52 @@ export class ServicePage extends Component {
               help="URI patterns excluded from the otoroshi exchange protocol"
               onChange={arr => this.changeTheValue('secComExcludedPatterns', arr)}
             />
-            <AlgoSettings
+            <BooleanInput
+              label="Use same algo."
+              value={this.state.service.secComUseSameAlgo}
+              help="When enabled, all JWT token in this section will use the same signing algorithm"
+              onChange={v => this.changeTheValue('secComUseSameAlgo', v)}
+            />
+            {this.state.service.secComUseSameAlgo && <AlgoSettings
               algo={this.state.service.secComSettings}
               path="secComSettings"
               changeTheValue={this.changeTheValue}
-            />
+            />} 
+            {!this.state.service.secComUseSameAlgo && (<>
+              <hr style={{ borderTop: '1px solid #595959' }} />
+              <div className="form-group">
+                <label className="col-xs-12 col-sm-2 control-label">Otoroshi to backend</label>
+                <div className="col-sm-10">
+                  <AlgoSettings
+                    algo={this.state.service.secComAlgoChallengeOtoToBack}
+                    path="secComAlgoChallengeOtoToBack"
+                    changeTheValue={this.changeTheValue}
+                  />
+                </div>
+              </div>
+              <hr style={{ borderTop: '1px solid #595959' }} />
+              <div className="form-group">
+                <label className="col-xs-12 col-sm-2 control-label">Backend to otoroshi</label>
+                <div className="col-sm-10">
+                  <AlgoSettings
+                    algo={this.state.service.secComAlgoChallengeBackToOto}
+                    path="secComAlgoChallengeBackToOto"
+                    changeTheValue={this.changeTheValue}
+                  />
+                </div>
+              </div>
+              <hr style={{ borderTop: '1px solid #595959' }} />
+              <div className="form-group">
+                <label className="col-xs-12 col-sm-2 control-label">Info. token</label>
+                <div className="col-sm-10">
+                  <AlgoSettings
+                    algo={this.state.service.secComAlgoInfoToken}
+                    path="secComAlgoInfoToken"
+                    changeTheValue={this.changeTheValue}
+                  />
+                </div>
+              </div>
+            </>)}
           </Collapse>
           <Collapse
             notVisible={this.state.service.redirection.enabled}

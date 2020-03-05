@@ -196,7 +196,7 @@ object HeadersHelper {
         //   )
         // )
         .appendIf(descriptor.enforceSecureCommunication && descriptor.sendInfoToken,
-                  claimRequestHeaderName -> claim.serialize(descriptor.secComSettings)(env))
+                  claimRequestHeaderName -> claim.serialize(descriptor.algoInfoFromOtoToBack)(env))
         .appendIf(descriptor.enforceSecureCommunication && descriptor.sendStateChallenge,
                   stateRequestHeaderName -> stateToken)
         .appendOpt(req.headers.get("Content-Length"),
@@ -222,7 +222,7 @@ object HeadersHelper {
     val doIt = descriptor.enforceSecureCommunication && descriptor.sendInfoToken
     headers.toSeq
       .removeIf(claimRequestHeaderName, doIt)
-      .appendIf(doIt, claimRequestHeaderName -> claim.serialize(descriptor.secComSettings)(env))
+      .appendIf(doIt, claimRequestHeaderName -> claim.serialize(descriptor.algoInfoFromOtoToBack)(env))
   }
 
   @inline
@@ -477,7 +477,7 @@ object HeadersHelper {
         env.Headers.OtoroshiRequestTimestamp -> requestTimestamp
       ) ++ (if (descriptor.enforceSecureCommunication && descriptor.sendInfoToken) {
               Map(
-                claimRequestHeaderName -> claim.serialize(descriptor.secComSettings)(env)
+                claimRequestHeaderName -> claim.serialize(descriptor.algoInfoFromOtoToBack)(env)
               )
             } else {
               Map.empty[String, String]

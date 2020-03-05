@@ -52,7 +52,7 @@ class HealthCheckerActor()(implicit env: Env) extends Actor {
             .getTime,
           iat = DateTime.now().toDate.getTime,
           jti = jti
-        ).withClaim("state", stateValue).serialize(desc.secComSettings)
+        ).withClaim("state", stateValue).serialize(desc.algoChallengeFromOtoToBack)
     }
     val value = env.snowflakeGenerator.nextIdStr()
     val claim = desc.generateInfoToken(
@@ -61,7 +61,7 @@ class HealthCheckerActor()(implicit env: Env) extends Actor {
       None,
       Some(env.Headers.OtoroshiIssuer),
       Some("HealthChecker")
-    ).serialize(desc.secComSettings)(env)
+    ).serialize(desc.algoInfoFromOtoToBack)(env)
     env.MtlsWs
       .url(url, target.mtlsConfig)
       .withRequestTimeout(Duration(30, TimeUnit.SECONDS))

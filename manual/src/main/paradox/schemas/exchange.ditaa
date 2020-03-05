@@ -4,7 +4,7 @@
  |         +-------------------------------------->|                        +---------------------------->|          |
  |         | Otoroshi–Client–Secret; xxxxxxxxxxxxx |                        | Otoroshi–Request–Id; 123456 |          |
  |         |                                       |                        | Otoroshi–Proxied–Host; host |          |
- |         |                                       |                        | Otoroshi-Claim; claim       |          |
+ |         |                                       |                        | Otoroshi-Claim; jwt         |          |
  |         |                                       |                        |                             |          |
  | browser | Otoroshi–Proxy–Latency; 42            |        Otoroshi        |                             | Backend  |
  |  cDDD   | Otoroshi–Upstream–Latency; 42         |                        |                             |          |

@@ -46,13 +46,27 @@ In the URL patterns section, you will be able to choose, URL by URL which is pri
 
 ### Otoroshi exchange protocol
 
-If you enable secure communication for a given service, you will have to add a filter on the target application that will take the `Otoroshi-State` header and return it in a header named `Otoroshi-State-Resp`. Otoroshi is also sending a `JWT token`in a header named `Otoroshi-Claim` that the target app can validate.
+#### V1 challenge
+
+If you enable secure communication for a given service with `V1 - simple values exchange` activated, you will have to add a filter on the target application that will take the `Otoroshi-State` header and return it in a header named `Otoroshi-State-Resp`. 
 
 @@@ div { .centered-img }
 <img src="../img/exchange.png" />
 @@@
 
-The `Otoroshi-Claim` is a JWT token containing some informations about the service that is called and the client if available. 
+#### V2 challenge
+
+If you enable secure communication for a given service with `V2 - signed JWT token exhange` activated, you will have to add a filter on the target application that will take the `Otoroshi-State` header value containing a JWT token, verify it's content signature then extract a claim named `state` and return a new JWT token in a header named `Otoroshi-State-Resp` with the `state` value in a claim named `state-resp`. By default, the signature algorithm iss HMAC+SHA512 but can you can choose your own.
+
+@@@ div { .centered-img }
+<img src="../img/exchange-v2.png" />
+@@@
+
+#### Info. token
+
+Otoroshi is also sending a JWT token in a header named `Otoroshi-Claim` that the target app can validate too.
+
+The `Otoroshi-Claim` is a JWT token containing some informations about the service that is called and the client if available. You can choose between a legacy version of the token and a new one that iss more clear and structured.
 
 By default, the otoroshi jwt token is signed with the `app.claim.sharedKey` config property (or using the `$CLAIM_SHAREDKEY` env. variable) and uses the `HMAC512` signing algorythm. But it is possible to customize how the token is signed from the service descriptor page in the `Otoroshi exchange protocol` section. 
 

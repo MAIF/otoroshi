@@ -833,7 +833,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
         descriptor.secComVersion match {
           case SecComVersion.V1 => stateValue == resp
           case SecComVersion.V2 =>
-            descriptor.secComSettings.asAlgorithm(models.OutputMode)(env) match {
+            descriptor.algoChallengeFromBackToOto.asAlgorithm(models.OutputMode)(env) match {
               case None => false
               case Some(algo) => {
                 Try {
@@ -1324,7 +1324,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                     .getTime,
                                                   iat = DateTime.now().toDate.getTime,
                                                   jti = jti
-                                                ).withClaim("state", stateValue).serialize(descriptor.secComSettings)
+                                                ).withClaim("state", stateValue).serialize(descriptor.algoChallengeFromOtoToBack)
                                             }
                                             val rawUri      = req.relativeUri.substring(1)
                                             val uriParts    = rawUri.split("/").toSeq
@@ -1756,7 +1756,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                             "url"           -> url,
                                                             "state"         -> stateValue,
                                                             "reveivedState" -> JsString(stateResp.getOrElse("--")),
-                                                            "claim"         -> claim.serialize(descriptor.secComSettings)(env),
+                                                            "claim"         -> claim.serialize(descriptor.algoInfoFromOtoToBack)(env),
                                                             "method"        -> req.method,
                                                             "query"         -> req.rawQueryString,
                                                             "status"        -> resp.status,
