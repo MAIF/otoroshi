@@ -5,6 +5,7 @@ import java.nio.charset.StandardCharsets
 
 import akka.actor.ActorSystem
 import akka.util.ByteString
+import env.Env
 import io.lettuce.core.cluster.RedisClusterClient
 import io.lettuce.core.codec.RedisCodec
 import io.lettuce.core.{RedisClient, SetArgs}
@@ -137,6 +138,14 @@ class LettuceRedisStandaloneAndSentinels(actorSystem: ActorSystem, client: Redis
   override def scard(key: String): Future[Long] = redis.scard(key).toScala.map(_.longValue())
 
   override def rawGet(key: String): Future[Option[Any]] = redis.get(key).toScala.map(Option.apply)
+
+  override def setnxBS(key: String, value: ByteString, ttl: Option[Long])(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
+    val args = SetArgs.Builder.nx()
+    redis.set(key, value, ttl.map(v => args.px(v)).getOrElse(args)).toScala.map {
+      case "OK" => true
+      case _ => false
+    }
+  }
 }
 
 class LettuceRedisCluster(actorSystem: ActorSystem, client: RedisClusterClient) extends LettuceRedis {
@@ -246,4 +255,12 @@ class LettuceRedisCluster(actorSystem: ActorSystem, client: RedisClusterClient) 
   override def scard(key: String): Future[Long] = redis.scard(key).toScala.map(_.longValue())
 
   override def rawGet(key: String): Future[Option[Any]] = redis.get(key).toScala.map(Option.apply)
+
+  override def setnxBS(key: String, value: ByteString, ttl: Option[Long])(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
+    val args = SetArgs.Builder.nx()
+    redis.set(key, value, ttl.map(v => args.px(v)).getOrElse(args)).toScala.map {
+      case "OK" => true
+      case _ => false
+    }
+  }
 }

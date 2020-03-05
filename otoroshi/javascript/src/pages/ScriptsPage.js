@@ -153,6 +153,30 @@ class CustomListener extends OtoroshiEventListener {
 new CustomListener()
 `;
 
+const basicJob = `
+import env.Env
+import otoroshi.script._
+
+import scala.concurrent.duration._
+import scala.concurrent.{ExecutionContext, Future}
+
+class CustomJob extends Job {
+
+  def uniqueId: JobId = JobId("foo.bar.JobId")
+  
+  override def kind: JobKind = JobKind.ScheduledEvery
+  override def starting: JobStarting = JobStarting.Automatically
+  override def instantiation: JobInstantiation = JobInstantiation.OneInstancePerOtoroshiInstance
+  override def initialDelay: Option[FiniteDuration] = Some(0.millisecond)
+  override def interval: Option[FiniteDuration] = Some(10.minutes)
+
+  override def jobStart(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = Job.funit
+  override def jobStop(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = Job.funit
+  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = Job.funit
+}
+
+new CustomJob()
+`;
 class CompilationTools extends Component {
   state = {
     compiling: false,
@@ -302,6 +326,14 @@ class ScriptTypeSelector extends Component {
               code: basicListener,
             });
           }
+          if (t === 'job') {
+            this.setState({ type: 'job' });
+            this.props.rawOnChange({
+              ...this.props.rawValue,
+              type: 'job',
+              code: basicJob,
+            });
+          }
         }}
         possibleValues={[
           { label: 'Request sink', value: 'sink' },
@@ -309,6 +341,7 @@ class ScriptTypeSelector extends Component {
           { label: 'Access Validator', value: 'validator' },
           { label: 'Request transformer', value: 'transformer' },
           { label: 'Event listener', value: 'listener' },
+          { label: 'Job', value: 'job' },
           { label: 'Nano app', value: 'app' },
         ]}
       />

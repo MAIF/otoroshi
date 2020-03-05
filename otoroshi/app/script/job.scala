@@ -1,16 +1,30 @@
 package otoroshi.script
 
-import akka.http.scaladsl.util.FastFuture
-import env.Env
-import play.api.libs.json.JsValue
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 
-import scala.concurrent.duration.FiniteDuration
+import akka.actor.{ActorSystem, Cancellable, Scheduler}
+import akka.http.scaladsl.util.FastFuture
+import akka.util.ByteString
+import com.cronutils.model.CronType
+import com.cronutils.model.definition.CronDefinitionBuilder
+import com.cronutils.model.time.ExecutionTime
+import env.Env
+import models.GlobalConfig
+import play.api.Logger
+import play.api.libs.json.{JsValue, Json}
+import security.IdGenerator
+import utils.TypedMap
+
+import scala.collection.concurrent.TrieMap
+import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
 sealed trait JobKind
 object JobKind {
   case object ScheduledOnce extends JobKind
   case object ScheduledEvery extends JobKind
+  case object Cron extends JobKind
   case object Autonomous extends JobKind
 }
 
@@ -28,35 +42,362 @@ object JobInstantiation {
   case object OneInstancePerOtoroshiCluster extends JobInstantiation
 }
 
-case class JobContext(snowflake: String, index: Int, config: JsValue, globalConfig: JsValue) extends ContextWithConfig
+case class JobContext(
+  snowflake: String,
+  attrs: TypedMap,
+  globalConfig: JsValue,
+  actorSystem: ActorSystem,
+  scheduler: Scheduler
+) extends ContextWithConfig {
+  final def config: JsValue = Json.obj()
+  final override def index: Int = 0
+}
 
-trait Job extends NamedPlugin with StartableAndStoppable with InternalEventListener {
+case class JobId(id: String)
 
-  override def pluginType: PluginType = JobType
+trait Job extends NamedPlugin with StartableAndStoppable with InternalEventListener { self =>
 
-  def kind: JobKind
-  def starting: JobStarting
-  def instantiation: JobInstantiation
+  final override def pluginType: PluginType = JobType
 
-  def initialDelay: Option[FiniteDuration] = None
+  def uniqueId: JobId
+  def kind: JobKind = JobKind.Autonomous
+  def starting: JobStarting = JobStarting.Automatically
+  def instantiation: JobInstantiation = JobInstantiation.OneInstancePerOtoroshiInstance
+  def initialDelay: Option[FiniteDuration] = Some(FiniteDuration(0, TimeUnit.MILLISECONDS))
   def interval: Option[FiniteDuration] = None
+  def cronExpression: Option[String] = None
 
   def jobStart(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = Job.funit
   def jobStop(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = Job.funit
   def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = Job.funit
+
+  final override def start(env: Env): Future[Unit] = {
+    env.jobManager.registerJob(this)
+    Job.funit
+  }
+
+  final override def stop(env: Env): Future[Unit]  = {
+    env.jobManager.unregisterJob(this)
+    Job.funit
+  }
+
+  final private[script] def underlyingId: String = {
+    // TODO: handle the case for scripts
+    s"cp:${self.getClass.getName}"
+  }
 }
 
 object Job {
   val funit = FastFuture.successful(())
 }
 
+case class RegisteredJobContext(
+   job: Job,
+   env: Env,
+   actorSystem: ActorSystem,
+   ranOnce: AtomicBoolean,
+   started: AtomicBoolean,
+   stopped: AtomicBoolean,
+   runId: AtomicReference[String],
+   ref: AtomicReference[Option[Cancellable]]
+) {
+
+  private implicit val ec = actorSystem.dispatcher
+  private implicit val ev = env
+
+  private lazy val attrs = TypedMap.empty
+  private val randomLock = new AtomicReference[String](IdGenerator.token)
+
+  def runStartHook(): Unit = {
+    ranOnce.compareAndSet(false, true)
+    if (started.compareAndSet(false, true)) {
+      job.jobStart(JobContext(
+        snowflake = runId.get(),
+        attrs = attrs,
+        globalConfig = env.datastores.globalConfigDataStore.latestSafe.map(_.scripts.jobConfig).getOrElse(Json.obj()),
+        actorSystem = actorSystem,
+        scheduler = actorSystem.scheduler
+      ))(env, actorSystem.dispatcher)
+    }
+  }
+
+  def runStopHook(): Unit = {
+    if (stopped.compareAndSet(false, true)) {
+      job.jobStop(JobContext(
+        snowflake = runId.get(),
+        attrs = attrs,
+        globalConfig = env.datastores.globalConfigDataStore.latestSafe.map(_.scripts.jobConfig).getOrElse(Json.obj()),
+        actorSystem = actorSystem,
+        scheduler = actorSystem.scheduler
+      ))(env, actorSystem.dispatcher)
+    }
+  }
+
+  def stop(config: GlobalConfig, env: Env): Unit = {
+    runId.set(env.snowflakeGenerator.nextIdStr())
+    runStopHook()
+    Option(ref.get()).flatten.foreach(_.cancel())
+  }
+
+  def run(): Unit = {
+    runId.set(env.snowflakeGenerator.nextIdStr())
+    runStartHook()
+    val ctx = JobContext(
+      snowflake = runId.get(),
+      attrs = attrs,
+      globalConfig = env.datastores.globalConfigDataStore.latestSafe.map(_.scripts.jobConfig).getOrElse(Json.obj()),
+      actorSystem = actorSystem,
+      scheduler = actorSystem.scheduler
+    )
+    job.kind match {
+      case JobKind.Autonomous if !ranOnce.get() => {
+        ref.set(Some(actorSystem.scheduler.scheduleOnce(job.initialDelay.getOrElse(0.millisecond)) {
+          try {
+            job.jobRun(ctx).andThen {
+              case _ =>
+                ref.set(None)
+                runStopHook()
+                releaseLock()
+            }
+          } catch {
+            case e: Throwable =>
+              ref.set(None)
+              runStopHook()
+              releaseLock()
+          }
+        }))
+      }
+      case JobKind.ScheduledOnce if !ranOnce.get() => {
+        ref.set(Some(actorSystem.scheduler.scheduleOnce(job.initialDelay.getOrElse(0.millisecond)) {
+          try {
+            job.jobRun(ctx).andThen {
+              case _ =>
+                ref.set(None)
+                runStopHook()
+                releaseLock()
+            }
+          } catch {
+            case e: Throwable =>
+              ref.set(None)
+              runStopHook()
+              releaseLock()
+          }
+        }))
+      }
+      case JobKind.ScheduledEvery if !ranOnce.get() => {
+        ref.set(Some(actorSystem.scheduler.scheduleOnce(job.initialDelay.getOrElse(0.millisecond)) {
+          try {
+            job.jobRun(ctx).andThen {
+              case _ =>
+                ref.set(None)
+                releaseLock()
+            }
+          } catch {
+            case e: Throwable =>
+              ref.set(None)
+              releaseLock()
+          }
+        }))
+      }
+      case JobKind.ScheduledEvery => {
+        job.interval match {
+          case None => ()
+          case Some(interval) => {
+            ref.set(Some(actorSystem.scheduler.scheduleOnce(interval) {
+              try {
+                job.jobRun(ctx).andThen {
+                  case _ =>
+                    ref.set(None)
+                    releaseLock()
+                }
+              } catch {
+                case e: Throwable =>
+                  ref.set(None)
+                  releaseLock()
+              }
+            }))
+          }
+        }
+      }
+      case JobKind.Cron => {
+        job.cronExpression match {
+          case None => ()
+          case Some(expression) => {
+
+            import java.time.ZonedDateTime
+
+            import com.cronutils.parser.CronParser
+
+            val now = ZonedDateTime.now
+            val parser = new CronParser(CronDefinitionBuilder.instanceDefinitionFor(CronType.QUARTZ))
+            val cron = parser.parse(expression)
+            val executionTime = ExecutionTime.forCron(cron)
+            val duration = executionTime.timeToNextExecution(now)
+            if (duration.isPresent) {
+              ref.set(Some(actorSystem.scheduler.scheduleOnce(duration.get().toMillis.milliseconds) {
+                try {
+                  job.jobRun(ctx).andThen {
+                    case _ =>
+                      ref.set(None)
+                      releaseLock()
+                  }
+                } catch {
+                  case e: Throwable =>
+                    ref.set(None)
+                    releaseLock()
+                }
+              }))
+            } else {
+              ()
+            }
+          }
+        }
+      }
+      case _ => () // nothing to do here
+    }
+  }
+
+  // TODO: Awful, find a better solution
+  def acquireClusterWideLock(f: => Unit): Unit = {
+    val key = s"${env.storageRoot}:locks:jobs:${job.uniqueId.id}"
+    env.datastores.rawDataStore.setnx(key, ByteString(randomLock.get()), None).map {
+      case true => env.datastores.rawDataStore.get(key).map {
+        case None => ()
+        case Some(value) if value.utf8String != randomLock.get() => ()
+        case Some(value) if value.utf8String == randomLock.get() => f
+      }
+      case false => ()
+    }
+  }
+
+  // TODO: Awful, find a better solutions
+  def releaseLock(): Unit = {
+    val key = s"${env.storageRoot}:locks:jobs:${job.uniqueId.id}"
+    env.datastores.rawDataStore.del(Seq(key)).andThen {
+      case _ => randomLock.set(IdGenerator.token)
+    }
+  }
+
+  def tryToRunOnCurrentInstance(f: => Unit): Unit = {
+    job.instantiation match {
+      case JobInstantiation.OneInstancePerOtoroshiInstance => f
+      case JobInstantiation.OneInstancePerOtoroshiWorkerInstance if env.clusterConfig.mode.isWorker => f
+      case JobInstantiation.OneInstancePerOtoroshiLeaderInstance if env.clusterConfig.mode.isLeader => f
+      case JobInstantiation.OneInstancePerOtoroshiCluster if env.clusterConfig.mode.isLeader  => acquireClusterWideLock(f)
+      case _ => ()
+    }
+  }
+
+  def startNext(): Unit = tryToRunOnCurrentInstance {
+    job.kind match {
+      case JobKind.Autonomous if !ranOnce.get() => run()
+      case JobKind.ScheduledOnce if !ranOnce.get() => run()
+      case JobKind.ScheduledEvery => run()
+      case JobKind.Cron => run()
+      case _ => () // nothing to do here
+    }
+  }
+
+  def startIfPossible(config: GlobalConfig, env: Env): Unit = {
+    Option(ref.get()).flatten match {
+      case Some(_) => () // nothing to do, waiting for next round
+      case None => {
+        job.starting match {
+          case JobStarting.Automatically => startNext()
+          case JobStarting.FromConfiguration => {
+            if (config.scripts.enabled) {
+              if (config.scripts.jobRefs.contains(job.underlyingId)) {
+                startNext()
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
 class JobManager(env: Env) {
 
-  def start(): Unit = {
+  private val logger = Logger("otoroshi-job-manager")
+  private val jobActorSystem = ActorSystem("jobs-system")
+  private val jobScheduler = jobActorSystem.scheduler
+  private implicit val jobExecutor = jobActorSystem.dispatcher
+  private val registeredJobs = new TrieMap[JobId, RegisteredJobContext]()
+  private val scanRef = new AtomicReference[Cancellable]()
+  private implicit val ev = env
 
+  private def scanRegisteredJobs(): Unit = {
+    env.datastores.globalConfigDataStore.singleton().map { config =>
+      registeredJobs.foreach {
+        case (id, ctx) => ctx.startIfPossible(config, env)
+      }
+    }
+  }
+
+  private def stopAllJobs(): Unit = {
+    env.datastores.globalConfigDataStore.singleton().map { config =>
+      registeredJobs.foreach {
+        case (id, ctx) => ctx.stop(config, env)
+      }
+    }
+  }
+
+  def start(): Unit = {
+    logger.info("Starting job manager")
+    env.scriptManager.jobNames.map(name => env.scriptManager.getAnyScript[Job]("cp:" + name)) // starting auto registering for cp jobs
+    // TODO: here try to set the internal id or something
+    jobScheduler.schedule(1.second, 1.second)(scanRegisteredJobs())(jobExecutor)
   }
 
   def stop(): Unit = {
+    logger.info("Stopping job manager")
+    Option(scanRef.get()).foreach(_.cancel())
+    stopAllJobs()
+    registeredJobs.clear()
+    jobActorSystem.terminate()
+  }
 
+  def registerJob(job: Job): Unit = {
+    logger.info(s"Registering job '${job.name}' with id '${job.uniqueId}' of kind ${job.kind} starting ${job.starting} with ${job.instantiation} (${job.initialDelay} / ${job.interval} - ${job.cronExpression})")
+    registeredJobs.putIfAbsent(job.uniqueId, RegisteredJobContext(
+      job = job,
+      env = env,
+      actorSystem = jobActorSystem,
+      ranOnce = new AtomicBoolean(false),
+      started = new AtomicBoolean(false),
+      stopped = new AtomicBoolean(false),
+      runId = new AtomicReference[String](env.snowflakeGenerator.nextIdStr()),
+      ref = new AtomicReference[Option[Cancellable]](None)
+    ))
+  }
+
+  def unregisterJob(job: Job): Unit = {
+    logger.info(s"Unregistering job '${job.name}' with id '${job.uniqueId}'")
+    env.datastores.globalConfigDataStore.singleton().map { config =>
+      registeredJobs.get(job.uniqueId).foreach(_.stop(config, env))
+      registeredJobs.remove(job.uniqueId)
+    }
+  }
+}
+
+object DefaultJob extends Job {
+  override def uniqueId: JobId = JobId("otoroshi.script.default.DefaultJob")
+}
+
+object CompilingJob extends Job {
+  override def uniqueId: JobId = JobId("otoroshi.script.default.CompilingJob")
+}
+
+class TestJob extends Job {
+
+  override def uniqueId: JobId                  = JobId("otoroshi.script.test.TestJob")
+  override def starting: JobStarting            = JobStarting.FromConfiguration
+  override def kind:     JobKind                = JobKind.ScheduledEvery
+  override def interval: Option[FiniteDuration] = Some(2.seconds)
+
+  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    println(s"Hello from job from $uniqueId - $underlyingId")
+    Job.funit
   }
 }

@@ -69,6 +69,7 @@ trait RawDataStore {
   def get(key: String)(implicit ec: ExecutionContext, env: Env): Future[Option[ByteString]]
   def mget(keys: Seq[String])(implicit ec: ExecutionContext, env: Env): Future[Seq[Option[ByteString]]]
   def set(key: String, value: ByteString, ttl: Option[Long])(implicit ec: ExecutionContext, env: Env): Future[Boolean]
+  def setnx(key: String, value: ByteString, ttl: Option[Long])(implicit ec: ExecutionContext, env: Env): Future[Boolean]
   def del(keys: Seq[String])(implicit ec: ExecutionContext, env: Env): Future[Long]
   def incr(key: String)(implicit ec: ExecutionContext, env: Env): Future[Long] = incrby(key, 1L)
   def incrby(key: String, incr: Long)(implicit ec: ExecutionContext, env: Env): Future[Long]
@@ -122,6 +123,13 @@ trait RedisLike {
           value: String,
           exSeconds: Option[Long] = None,
           pxMilliseconds: Option[Long] = None): Future[Boolean]
+  def setnxBS(key: String, value: ByteString, ttl: Option[Long])(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
+    // no comment !!!
+    exists(key).flatMap {
+      case true => FastFuture.successful(false)
+      case false => setBS(key, value, None, ttl)
+    }
+  }
   def setBS(key: String,
             value: ByteString,
             exSeconds: Option[Long] = None,
@@ -453,5 +461,10 @@ class RedisLikeWrapper(redis: RedisLike, env: Env) extends RedisLike {
   override def scard(key: String): Future[Long] = {
     env.metrics.counter("redis.ops").inc()
     redis.scard(key)
+  }
+
+  override def setnxBS(key: String, value: ByteString, ttl: Option[Long])(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
+    env.metrics.counter("redis.ops").inc()
+    redis.setnxBS(key, value, ttl)
   }
 }

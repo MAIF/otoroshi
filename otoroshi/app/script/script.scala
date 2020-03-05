@@ -620,7 +620,7 @@ class ScriptManager(env: Env) {
 
   private val listeningCpScripts = new AtomicReference[Seq[InternalEventListener]](Seq.empty)
 
-  lazy val (transformersNames, validatorsNames, preRouteNames, reqSinkNames, listenerNames) = Try {
+  lazy val (transformersNames, validatorsNames, preRouteNames, reqSinkNames, listenerNames, jobNames) = Try {
     import io.github.classgraph.{ClassGraph, ClassInfoList, ScanResult}
 
     import collection.JavaConverters._
@@ -642,6 +642,8 @@ class ScriptManager(env: Env) {
         c.getName == "otoroshi.script.DefaultPreRouting$" ||
         c.getName == "otoroshi.script.DefaultRequestSink$" ||
         c.getName == "otoroshi.script.DefaultOtoroshiEventListener$" ||
+        c.getName == "otoroshi.script.DefaultJob$" ||
+        c.getName == "otoroshi.script.CompilingJob$" ||
         c.getName == "otoroshi.script.NanoApp" ||
         c.getName == "otoroshi.script.NanoApp$"
 
@@ -664,13 +666,18 @@ class ScriptManager(env: Env) {
         .filterNot(predicate)
         .map(_.getName)
 
-      (requestTransformers, validators, preRoutes, reqSinks, listenerNames)
+      val jobNames: Seq[String] = (scanResult.getSubclasses(classOf[Job].getName).asScala ++
+        scanResult.getClassesImplementing(classOf[Job].getName).asScala)
+        .filterNot(predicate)
+        .map(_.getName)
+
+      (requestTransformers, validators, preRoutes, reqSinks, listenerNames, jobNames)
     } catch {
       case e: Throwable =>
         e.printStackTrace()
-        (Seq.empty[String], Seq.empty[String], Seq.empty[String], Seq.empty[String], Seq.empty[String])
+        (Seq.empty[String], Seq.empty[String], Seq.empty[String], Seq.empty[String], Seq.empty[String], Seq.empty[String])
     } finally if (scanResult != null) scanResult.close()
-  } getOrElse (Seq.empty[String], Seq.empty[String], Seq.empty[String], Seq.empty[String], Seq.empty[String])
+  } getOrElse (Seq.empty[String], Seq.empty[String], Seq.empty[String], Seq.empty[String], Seq.empty[String], Seq.empty[String])
 
   def start(): ScriptManager = {
     if (env.scriptingEnabled) {
@@ -1150,6 +1157,7 @@ object Script {
           case "validator"   => AccessValidatorType
           case "preroute"    => PreRoutingType
           case "sink"        => RequestSinkType
+          case "job"         => JobType
           case _             => TransformerType
         }
         Script(
@@ -1235,6 +1243,7 @@ class ScriptApiController(ApiAction: ApiAction, cc: ControllerComponents)(
       val preRouteNames     = env.scriptManager.preRouteNames
       val reqSinkNames      = env.scriptManager.reqSinkNames
       val listenerNames     = env.scriptManager.listenerNames
+      val jobNames          = env.scriptManager.jobNames
 
       val typ = ctx.request.getQueryString("type")
       val cpTransformers = typ match {
@@ -1261,6 +1270,11 @@ class ScriptApiController(ApiAction: ApiAction, cc: ControllerComponents)(
       val cpListenerNames = typ match {
         case None             => listenerNames
         case Some("listener") => listenerNames
+        case _                => Seq.empty
+      }
+      val cpJobNames = typ match {
+        case None             => jobNames
+        case Some("job")      => jobNames
         case _                => Seq.empty
       }
       def extractInfos(c: String): JsValue = {
@@ -1290,6 +1304,7 @@ class ScriptApiController(ApiAction: ApiAction, cc: ControllerComponents)(
               case Some("preroute") if script.`type` == PreRoutingType       => true
               case Some("sink") if script.`type` == RequestSinkType          => true
               case Some("listener") if script.`type` == EventListenerType    => true
+              case Some("job") if script.`type` == JobType                   => true
               case _                                                         => false
             }
           }

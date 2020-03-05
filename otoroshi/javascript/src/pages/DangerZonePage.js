@@ -1509,6 +1509,8 @@ class GlobalScripts extends Component {
       preRouteConfig: {},
       sinkRefs: [],
       sinkConfig: {},
+      jobRefs: [],
+      jobConfig: {},
     };
     return (
       <>
@@ -1518,6 +1520,24 @@ class GlobalScripts extends Component {
           help="Global scripts enabled"
           onChange={v => this.changeTheValue('enabled', v)}
         />
+        <Scripts
+          label="Jobs"
+          refs={config.jobRefs}
+          type="job"
+          onChange={e => this.changeTheValue('jobRefs', e)}
+          config={config.jobConfig}
+          onChangeConfig={e => this.changeTheValue('jobConfig', e)}
+        />
+        <div className="form-group">
+          <Suspense fallback={<div>loading ...</div>}>
+            <CodeInput
+              label="Jobs configuration"
+              mode="json"
+              value={JSON.stringify(config.jobConfig, null, 2)}
+              onChange={e => this.changeTheValue('jobConfig', JSON.parse(e))}
+            />
+          </Suspense>
+        </div>
         <Scripts
           label="Request sinks"
           refs={config.sinkRefs}

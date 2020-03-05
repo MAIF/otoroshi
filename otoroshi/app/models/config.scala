@@ -164,6 +164,8 @@ case class GlobalScripts(
     preRouteConfig: JsValue = Json.obj(),
     sinkRefs: Seq[String] = Seq.empty,
     sinkConfig: JsValue = Json.obj(),
+    jobRefs: Seq[String] = Seq.empty,
+    jobConfig: JsValue = Json.obj(),
 ) {
   def json: JsValue = GlobalScripts.format.writes(this)
 }
@@ -180,6 +182,8 @@ object GlobalScripts {
       "preRouteConfig"     -> o.preRouteConfig,
       "sinkRefs"           -> JsArray(o.sinkRefs.map(JsString.apply)),
       "sinkConfig"         -> o.sinkConfig,
+      "jobRefs"            -> JsArray(o.jobRefs.map(JsString.apply)),
+      "jobConfig"          -> o.jobConfig,
     )
     override def reads(json: JsValue): JsResult[GlobalScripts] =
       Try {
@@ -193,7 +197,9 @@ object GlobalScripts {
             preRouteConfig = (json \ "preRouteConfig").asOpt[JsValue].getOrElse(Json.obj()),
             preRouteRefs = (json \ "preRouteRefs").asOpt[Seq[String]].getOrElse(Seq.empty),
             sinkConfig = (json \ "sinkConfig").asOpt[JsValue].getOrElse(Json.obj()),
-            sinkRefs = (json \ "sinkRefs").asOpt[Seq[String]].getOrElse(Seq.empty)
+            sinkRefs = (json \ "sinkRefs").asOpt[Seq[String]].getOrElse(Seq.empty),
+            jobConfig = (json \ "jobConfig").asOpt[JsValue].getOrElse(Json.obj()),
+            jobRefs = (json \ "jobRefs").asOpt[Seq[String]].getOrElse(Seq.empty)
           )
         )
       } recover {

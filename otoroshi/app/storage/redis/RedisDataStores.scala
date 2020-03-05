@@ -317,4 +317,12 @@ class RedisRawDataStore(redis: RedisClientMasterSlaves) extends RawDataStore {
 
   override def pexpire(key: String, pttl: Long)(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
     redis.pexpire(key, pttl)
+
+  override def setnx(key: String, value: ByteString, ttl: Option[Long])(implicit ec: ExecutionContext, env: Env): Future[Boolean] = redis.setnx(key, value).flatMap {
+    case false => FastFuture.successful(false)
+    case true => ttl match {
+      case None => FastFuture.successful(true)
+      case Some(v) => redis.pexpire(key, v).map(_ => true)
+    }
+  }
 }

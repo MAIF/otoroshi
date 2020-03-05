@@ -686,4 +686,12 @@ class RedisCommandsStore(redis: RedisCommands, env: Env, executionContext: Execu
   override def scard(key: String): Future[Long] = redis.scard(key)
 
   override def rawGet(key: String): Future[Option[Any]] = redis.get(key)
+
+  override def setnxBS(key: String, value: ByteString, ttl: Option[Long])(implicit ec: ExecutionContext, env: Env): Future[Boolean] = redis.setnx(key, value).flatMap {
+    case false => FastFuture.successful(false)
+    case true => ttl match {
+      case None => FastFuture.successful(true)
+      case Some(v) => redis.pexpire(key, v).map(_ => true)
+    }
+  }
 }
