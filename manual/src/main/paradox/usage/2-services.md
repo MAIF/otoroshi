@@ -59,7 +59,7 @@ If you enable secure communication for a given service with `V1 - simple values 
 If you enable secure communication for a given service with `V2 - signed JWT token exhange` activated, you will have to add a filter on the target application that will take the `Otoroshi-State` header value containing a JWT token, verify it's content signature then extract a claim named `state` and return a new JWT token in a header named `Otoroshi-State-Resp` with the `state` value in a claim named `state-resp`. By default, the signature algorithm iss HMAC+SHA512 but can you can choose your own.
 
 @@@ div { .centered-img }
-<img src="../img/exchange-v2.png" />
+<img src="../img/exchange-2.png" />
 @@@
 
 #### Info. token
