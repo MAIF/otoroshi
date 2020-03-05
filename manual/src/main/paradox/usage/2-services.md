@@ -56,7 +56,7 @@ If you enable secure communication for a given service with `V1 - simple values 
 
 #### V2 challenge
 
-If you enable secure communication for a given service with `V2 - signed JWT token exhange` activated, you will have to add a filter on the target application that will take the `Otoroshi-State` header value containing a JWT token, verify it's content signature then extract a claim named `state` and return a new JWT token in a header named `Otoroshi-State-Resp` with the `state` value in a claim named `state-resp`. By default, the signature algorithm iss HMAC+SHA512 but can you can choose your own.
+If you enable secure communication for a given service with `V2 - signed JWT token exhange` activated, you will have to add a filter on the target application that will take the `Otoroshi-State` header value containing a JWT token, verify it's content signature then extract a claim named `state` and return a new JWT token in a header named `Otoroshi-State-Resp` with the `state` value in a claim named `state-resp`. By default, the signature algorithm is HMAC+SHA512 but can you can choose your own. The sent and returned JWT tokens have short TTL to avoid being replayed. You must be validate the tokens TTL.
 
 @@@ div { .centered-img }
 <img src="../img/exchange-2.png" />
