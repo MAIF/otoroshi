@@ -1018,6 +1018,12 @@ export class LdapModuleConfig extends Component {
           help="..."
           onChange={v => changeTheValue(path + '.basicAuth', v)}
         />
+        <BooleanInput
+          label="Allow empty password"
+          value={settings.allowEmptyPassword}
+          help="..."
+          onChange={v => changeTheValue(path + '.allowEmptyPassword', v)}
+        />
         <TextInput
           label="LDAP Server URL"
           value={settings.serverUrl}
@@ -1137,6 +1143,7 @@ export class AuthModuleConfig extends Component {
                 emailField: 'mail',
                 metadataField: null,
                 sessionMaxAge: 86400,
+                allowEmptyPassword: false,
                 extraMetadata: {},
               });
               break;

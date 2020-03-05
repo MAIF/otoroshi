@@ -76,6 +76,7 @@ object LdapAuthModuleConfig extends FromJson[AuthModuleConfig] {
           desc = (json \ "desc").asOpt[String].getOrElse("--"),
           sessionMaxAge = (json \ "sessionMaxAge").asOpt[Int].getOrElse(86400),
           basicAuth = (json \ "basicAuth").asOpt[Boolean].getOrElse(false),
+          allowEmptyPassword = (json \ "allowEmptyPassword").asOpt[Boolean].getOrElse(false),
           serverUrl = (json \ "serverUrl").as[String],
           searchBase = (json \ "searchBase").as[String],
           userBase = (json \ "userBase").asOpt[String].filterNot(_.trim.isEmpty),
@@ -102,6 +103,7 @@ case class LdapAuthModuleConfig(
     desc: String,
     sessionMaxAge: Int = 86400,
     basicAuth: Boolean = false,
+    allowEmptyPassword: Boolean = false,
     serverUrl: String,
     searchBase: String,
     userBase: Option[String] = None,
@@ -119,21 +121,22 @@ case class LdapAuthModuleConfig(
   override def authModule(config: GlobalConfig): AuthModule = LdapAuthModule(this)
 
   override def asJson = Json.obj(
-    "type"          -> "ldap",
-    "id"            -> this.id,
-    "name"          -> this.name,
-    "desc"          -> this.desc,
-    "basicAuth"     -> this.basicAuth,
+    "type" -> "ldap",
+    "id" -> this.id,
+    "name" -> this.name,
+    "desc" -> this.desc,
+    "basicAuth" -> this.basicAuth,
+    "allowEmptyPassword" -> this.allowEmptyPassword,
     "sessionMaxAge" -> this.sessionMaxAge,
-    "serverUrl"     -> this.serverUrl,
-    "searchBase"    -> this.searchBase,
-    "userBase"      -> this.userBase.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-    "groupFilter"   -> this.groupFilter.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-    "searchFilter"  -> this.searchFilter,
+    "serverUrl" -> this.serverUrl,
+    "searchBase" -> this.searchBase,
+    "userBase" -> this.userBase.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+    "groupFilter" -> this.groupFilter.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+    "searchFilter" -> this.searchFilter,
     "adminUsername" -> this.adminUsername.map(JsString.apply).getOrElse(JsNull).as[JsValue],
     "adminPassword" -> this.adminPassword.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-    "nameField"     -> this.nameField,
-    "emailField"    -> this.emailField,
+    "nameField" -> this.nameField,
+    "emailField" -> this.emailField,
     "metadataField" -> this.metadataField.map(JsString.apply).getOrElse(JsNull).as[JsValue],
     "extraMetadata" -> this.extraMetadata
   )
@@ -162,87 +165,96 @@ case class LdapAuthModuleConfig(
     import javax.naming.ldap._
     import collection.JavaConverters._
 
-    val env = new util.Hashtable[String, AnyRef]
-    env.put(Context.SECURITY_AUTHENTICATION, "simple")
-    adminUsername.foreach(u => env.put(Context.SECURITY_PRINCIPAL, u))
-    adminPassword.foreach(p => env.put(Context.SECURITY_CREDENTIALS, p))
-    env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory")
-    env.put(Context.PROVIDER_URL, serverUrl)
+    if (!allowEmptyPassword && password.trim.isEmpty) {
+      LdapAuthModuleConfig.logger.error("Empty user password are not allowed for this LDAP auth. module")
+      None
+    } else if (!allowEmptyPassword && adminPassword.exists(_.trim.isEmpty)) {
+      LdapAuthModuleConfig.logger.error("Empty admin password are not allowed for this LDAP auth. module")
+      None
+    } else {
 
-    val ctx = new InitialLdapContext(env, Array.empty[Control])
+      val env = new util.Hashtable[String, AnyRef]
+      env.put(Context.SECURITY_AUTHENTICATION, "simple")
+      adminUsername.foreach(u => env.put(Context.SECURITY_PRINCIPAL, u))
+      adminPassword.foreach(p => env.put(Context.SECURITY_CREDENTIALS, p))
+      env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory")
+      env.put(Context.PROVIDER_URL, serverUrl)
 
-    val searchControls = new SearchControls()
-    searchControls.setSearchScope(SearchControls.SUBTREE_SCOPE)
+      val ctx = new InitialLdapContext(env, Array.empty[Control])
 
-    LdapAuthModuleConfig.logger.debug(s"bind user for ${username}")
+      val searchControls = new SearchControls()
+      searchControls.setSearchScope(SearchControls.SUBTREE_SCOPE)
 
-    val usersInGroup: Seq[String] = groupFilter
-      .map { filter =>
-        LdapAuthModuleConfig.logger.debug(s"searching `$searchBase` with filter `$filter` ")
-        val groupSearch = ctx.search(searchBase, filter, searchControls)
-        val uids = if (groupSearch.hasMore) {
-          val item  = groupSearch.next()
-          val attrs = item.getAttributes
-          attrs.getAll.asScala.toSeq.filter(a => a.getID == "uniqueMember" || a.getID == "member").flatMap { attr =>
-            attr.getAll.asScala.toSeq.map(_.toString)
+      LdapAuthModuleConfig.logger.debug(s"bind user for ${username}")
+
+      val usersInGroup: Seq[String] = groupFilter
+        .map { filter =>
+          LdapAuthModuleConfig.logger.debug(s"searching `$searchBase` with filter `$filter` ")
+          val groupSearch = ctx.search(searchBase, filter, searchControls)
+          val uids = if (groupSearch.hasMore) {
+            val item = groupSearch.next()
+            val attrs = item.getAttributes
+            attrs.getAll.asScala.toSeq.filter(a => a.getID == "uniqueMember" || a.getID == "member").flatMap { attr =>
+              attr.getAll.asScala.toSeq.map(_.toString)
+            }
+          } else {
+            Seq.empty[String]
           }
-        } else {
-          Seq.empty[String]
+          groupSearch.close()
+          uids
         }
-        groupSearch.close()
-        uids
-      }
-      .getOrElse(Seq.empty[String])
-    LdapAuthModuleConfig.logger.debug(s"found ${usersInGroup.size} users in group : ${usersInGroup.mkString(", ")}")
-    LdapAuthModuleConfig.logger.debug(
-      s"searching user in ${userBase.map(_ + ",").getOrElse("") + searchBase} with filter ${searchFilter.replace("${username}", username)}"
-    )
-    val res = ctx.search(userBase.map(_ + ",").getOrElse("") + searchBase,
-                         searchFilter.replace("${username}", username),
-                         searchControls)
-    val boundUser: Option[LdapAuthUser] = if (res.hasMore) {
-      val item = res.next()
-      val dn   = item.getNameInNamespace
-      LdapAuthModuleConfig.logger.debug(s"found user with dn `$dn`")
-      if (groupFilter.map(_ => usersInGroup.contains(dn)).getOrElse(true)) {
-        LdapAuthModuleConfig.logger.debug(s"user found in group")
-        val attrs = item.getAttributes
-        val env2  = new util.Hashtable[String, AnyRef]
-        env2.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory")
-        env2.put(Context.PROVIDER_URL, serverUrl)
-        env2.put(Context.SECURITY_AUTHENTICATION, "simple")
-        env2.put(Context.SECURITY_PRINCIPAL, dn)
-        env2.put(Context.SECURITY_CREDENTIALS, password)
-        scala.util.Try {
-          val ctx2 = new InitialDirContext(env2)
-          ctx2.close()
-          Some(
-            LdapAuthUser(
-              name = attrs.get(nameField).toString.split(":").last.trim,
-              email = attrs.get(emailField).toString.split(":").last.trim,
-              metadata = extraMetadata.deepMerge(
-                metadataField
-                  .map(m => Json.parse(attrs.get(m).toString.split(":").last.trim).as[JsObject])
-                  .getOrElse(Json.obj())
+        .getOrElse(Seq.empty[String])
+      LdapAuthModuleConfig.logger.debug(s"found ${usersInGroup.size} users in group : ${usersInGroup.mkString(", ")}")
+      LdapAuthModuleConfig.logger.debug(
+        s"searching user in ${userBase.map(_ + ",").getOrElse("") + searchBase} with filter ${searchFilter.replace("${username}", username)}"
+      )
+      val res = ctx.search(userBase.map(_ + ",").getOrElse("") + searchBase,
+        searchFilter.replace("${username}", username),
+        searchControls)
+      val boundUser: Option[LdapAuthUser] = if (res.hasMore) {
+        val item = res.next()
+        val dn = item.getNameInNamespace
+        LdapAuthModuleConfig.logger.debug(s"found user with dn `$dn`")
+        if (groupFilter.map(_ => usersInGroup.contains(dn)).getOrElse(true)) {
+          LdapAuthModuleConfig.logger.debug(s"user found in group")
+          val attrs = item.getAttributes
+          val env2 = new util.Hashtable[String, AnyRef]
+          env2.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory")
+          env2.put(Context.PROVIDER_URL, serverUrl)
+          env2.put(Context.SECURITY_AUTHENTICATION, "simple")
+          env2.put(Context.SECURITY_PRINCIPAL, dn)
+          env2.put(Context.SECURITY_CREDENTIALS, password)
+          scala.util.Try {
+            val ctx2 = new InitialDirContext(env2)
+            ctx2.close()
+            Some(
+              LdapAuthUser(
+                name = attrs.get(nameField).toString.split(":").last.trim,
+                email = attrs.get(emailField).toString.split(":").last.trim,
+                metadata = extraMetadata.deepMerge(
+                  metadataField
+                    .map(m => Json.parse(attrs.get(m).toString.split(":").last.trim).as[JsObject])
+                    .getOrElse(Json.obj())
+                )
               )
             )
-          )
-        } recover {
-          case e =>
-            LdapAuthModuleConfig.logger.error(s"bind failed", e)
-            None
-        } get
+          } recover {
+            case e =>
+              LdapAuthModuleConfig.logger.error(s"bind failed", e)
+              None
+          } get
+        } else {
+          LdapAuthModuleConfig.logger.debug(s"user not found in group")
+          None
+        }
       } else {
-        LdapAuthModuleConfig.logger.debug(s"user not found in group")
+        LdapAuthModuleConfig.logger.debug(s"no user found")
         None
       }
-    } else {
-      LdapAuthModuleConfig.logger.debug(s"no user found")
-      None
+      res.close()
+      ctx.close()
+      boundUser
     }
-    res.close()
-    ctx.close()
-    boundUser
   }
 }
 

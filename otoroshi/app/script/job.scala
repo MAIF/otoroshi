@@ -374,7 +374,7 @@ class JobManager(env: Env) {
   }
 
   def registerJob(job: Job): Unit = {
-    logger.info(s"Registering job '${job.name}' with id '${job.uniqueId}' of kind ${job.kind} starting ${job.starting} with ${job.instantiation} (${job.initialDelay} / ${job.interval} - ${job.cronExpression})")
+    logger.debug(s"Registering job '${job.name}' with id '${job.uniqueId}' of kind ${job.kind} starting ${job.starting} with ${job.instantiation} (${job.initialDelay} / ${job.interval} - ${job.cronExpression})")
     registeredJobs.putIfAbsent(job.uniqueId, RegisteredJobContext(
       job = job,
       env = env,
@@ -388,7 +388,7 @@ class JobManager(env: Env) {
   }
 
   def unregisterJob(job: Job): Unit = {
-    logger.info(s"Unregistering job '${job.name}' with id '${job.uniqueId}'")
+    logger.debug(s"Unregistering job '${job.name}' with id '${job.uniqueId}'")
     env.datastores.globalConfigDataStore.singleton().map { config =>
       registeredJobs.get(job.uniqueId).foreach(_.stop(config, env))
       registeredJobs.remove(job.uniqueId)
