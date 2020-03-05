@@ -404,6 +404,7 @@ object CompilingJob extends Job {
   override def uniqueId: JobId = JobId("otoroshi.script.default.CompilingJob")
 }
 
+/*
 class TestEveryJob extends Job {
 
   override def uniqueId: JobId                  = JobId("otoroshi.script.test.TestEveryJob")
@@ -479,3 +480,4 @@ class TestOnceJob extends Job {
     Job.funit
   }
 }
+*/
