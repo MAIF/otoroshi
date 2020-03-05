@@ -66,7 +66,7 @@ If you enable secure communication for a given service with `V2 - signed JWT tok
 
 Otoroshi is also sending a JWT token in a header named `Otoroshi-Claim` that the target app can validate too.
 
-The `Otoroshi-Claim` is a JWT token containing some informations about the service that is called and the client if available. You can choose between a legacy version of the token and a new one that iss more clear and structured.
+The `Otoroshi-Claim` is a JWT token containing some informations about the service that is called and the client if available. You can choose between a legacy version of the token and a new one that is more clear and structured.
 
 By default, the otoroshi jwt token is signed with the `app.claim.sharedKey` config property (or using the `$CLAIM_SHAREDKEY` env. variable) and uses the `HMAC512` signing algorythm. But it is possible to customize how the token is signed from the service descriptor page in the `Otoroshi exchange protocol` section. 
 
