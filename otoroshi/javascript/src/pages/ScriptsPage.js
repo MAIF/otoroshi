@@ -164,8 +164,8 @@ class CustomJob extends Job {
 
   def uniqueId: JobId = JobId("foo.bar.JobId")
   
-  override def kind: JobKind = JobKind.ScheduledEvery
-  override def starting: JobStarting = JobStarting.Automatically
+  override def kind: JobKind = JobKind.ScheduledOnces
+  override def starting: JobStarting = JobStarting.FromConfiguration
   override def instantiation: JobInstantiation = JobInstantiation.OneInstancePerOtoroshiInstance
   override def initialDelay: Option[FiniteDuration] = Some(0.millisecond)
   override def interval: Option[FiniteDuration] = Some(10.minutes)

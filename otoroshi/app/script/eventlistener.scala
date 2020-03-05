@@ -32,7 +32,7 @@ trait InternalEventListener {
 
   @inline def onEvent(evt: OtoroshiEvent)(implicit env: Env): Unit = ()
 
-  private[script] def startEvent(env: Env): Unit = {
+  private[script] def startEvent(pluginId: String, env: Env): Unit = {
     if (listening) {
       val actor = env.analyticsActorSystem.actorOf(InternalEventListenerActor.props(this, env))
       ref.set(actor)

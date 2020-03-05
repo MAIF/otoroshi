@@ -70,7 +70,8 @@ object JobType extends PluginType {
 
 trait StartableAndStoppable {
   val funit: Future[Unit]           = FastFuture.successful(())
-  def start(env: Env): Future[Unit] = FastFuture.successful(())
+  def startWithPluginId(pluginId: String, env: Env): Future[Unit] = start(env)
+  def start(env: Env): Future[Unit]  = FastFuture.successful(())
   def stop(env: Env): Future[Unit]  = FastFuture.successful(())
 }
 
@@ -757,8 +758,8 @@ class ScriptManager(env: Env) {
               }
             }
             Try {
-              trans.asInstanceOf[StartableAndStoppable].start(env)
-              trans.asInstanceOf[InternalEventListener].startEvent(env)
+              trans.asInstanceOf[StartableAndStoppable].startWithPluginId(script.id, env)
+              trans.asInstanceOf[InternalEventListener].startEvent(script.id, env)
             }
             cache.put(script.id, (script.hash, script.`type`, trans))
             compiling.remove(script.id)
@@ -819,8 +820,8 @@ class ScriptManager(env: Env) {
               val typ = tr.asInstanceOf[NamedPlugin].pluginType
               cpCache.put(ref, (typ, tr))
               Try {
-                tr.asInstanceOf[StartableAndStoppable].start(env)
-                tr.asInstanceOf[InternalEventListener].startEvent(env)
+                tr.asInstanceOf[StartableAndStoppable].startWithPluginId(r, env)
+                tr.asInstanceOf[InternalEventListener].startEvent(r, env)
               }
             case Failure(e) =>
               e.printStackTrace()
@@ -1313,7 +1314,8 @@ class ScriptApiController(ApiAction: ApiAction, cc: ControllerComponents)(
         cpValidators.map(extractInfos) ++
         cpPreRoutes.map(extractInfos) ++
         cpRequestSinks.map(extractInfos) ++
-        cpListenerNames.map(extractInfos)
+        cpListenerNames.map(extractInfos) ++
+        cpJobNames.map(extractInfos)
         Ok(JsArray(allClasses))
       }
     }
