@@ -74,13 +74,17 @@ trait Job extends NamedPlugin with StartableAndStoppable with InternalEventListe
   def jobStop(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = Job.funit
   def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = Job.funit
 
+  private def header: String = s"[${uniqueId.id} / ${System.getenv("INSTANCE_NUMBER")}] -"
+
   final override def startWithPluginId(pluginId: String, env: Env): Future[Unit] = {
+    JobManager.logger.debug(s"$header plugin started")
     refId.set(pluginId)
     env.jobManager.registerJob(this)
     Job.funit
   }
 
   final override def stop(env: Env): Future[Unit]  = {
+    JobManager.logger.debug(s"$header plugin stopped")
     env.jobManager.unregisterJob(this)
     Job.funit
   }
@@ -111,8 +115,11 @@ case class RegisteredJobContext(
   private lazy val attrs = TypedMap.empty
   private val randomLock = new AtomicReference[String](IdGenerator.token)
 
+  private def header: String = s"[${job.uniqueId.id} / ${System.getenv("INSTANCE_NUMBER")}] -"
+
   def runStartHook(): Unit = {
     if (started.compareAndSet(false, true)) {
+      JobManager.logger.debug(s"$header running start hook")
       job.jobStart(JobContext(
         snowflake = runId.get(),
         attrs = attrs,
@@ -125,6 +132,7 @@ case class RegisteredJobContext(
 
   def runStopHook(): Unit = {
     if (stopped.compareAndSet(false, true)) {
+      JobManager.logger.debug(s"$header running stop hook")
       job.jobStop(JobContext(
         snowflake = runId.get(),
         attrs = attrs,
@@ -136,6 +144,7 @@ case class RegisteredJobContext(
   }
 
   def stop(config: GlobalConfig, env: Env): Unit = {
+    JobManager.logger.debug(s"$header stopping job context")
     runId.set(env.snowflakeGenerator.nextIdStr())
     runStopHook()
     Option(ref.get()).flatten.foreach(_.cancel())
@@ -143,6 +152,7 @@ case class RegisteredJobContext(
   }
 
   def run(): Unit = {
+    JobManager.logger.debug(s"$header running the job")
     runId.set(env.snowflakeGenerator.nextIdStr())
     runStartHook()
     val ctx = JobContext(
@@ -273,19 +283,27 @@ case class RegisteredJobContext(
 
   // TODO: Awful, find a better solution
   def acquireClusterWideLock(f: => Unit): Unit = {
+    JobManager.logger.debug(s"$header acquiring cluster wide lock ...")
     val key = s"${env.storageRoot}:locks:jobs:${job.uniqueId.id}"
     env.datastores.rawDataStore.setnx(key, ByteString(randomLock.get()), None).map {
       case true => env.datastores.rawDataStore.get(key).map {
-        case None => ()
-        case Some(value) if value.utf8String != randomLock.get() => ()
+        case None =>
+          JobManager.logger.debug(s"$header failed to acquire lock - 1")
+          ()
+        case Some(value) if value.utf8String != randomLock.get() =>
+          JobManager.logger.debug(s"$header failed to acquire lock - 2")
+          ()
         case Some(value) if value.utf8String == randomLock.get() => f
       }
-      case false => ()
+      case false =>
+        JobManager.logger.debug(s"$header failed to acquire lock - 3")
+        ()
     }
   }
 
   // TODO: Awful, find a better solutions
   def releaseLock(): Unit = {
+    JobManager.logger.debug(s"$header releasing cluster wide lock")
     val key = s"${env.storageRoot}:locks:jobs:${job.uniqueId.id}"
     env.datastores.rawDataStore.del(Seq(key)).andThen {
       case _ => randomLock.set(IdGenerator.token)
@@ -332,9 +350,12 @@ case class RegisteredJobContext(
   }
 }
 
+object JobManager {
+  val logger = Logger("otoroshi-job-manager")
+}
+
 class JobManager(env: Env) {
 
-  private val logger = Logger("otoroshi-job-manager")
   private val jobActorSystem = ActorSystem("jobs-system")
   private val jobScheduler = jobActorSystem.scheduler
   private val registeredJobs = new TrieMap[JobId, RegisteredJobContext]()
@@ -360,13 +381,13 @@ class JobManager(env: Env) {
   }
 
   def start(): Unit = {
-    logger.info("Starting job manager")
+    JobManager.logger.info("Starting job manager")
     env.scriptManager.jobNames.map(name => env.scriptManager.getAnyScript[Job]("cp:" + name)) // starting auto registering for cp jobs
     jobScheduler.schedule(1.second, 1.second)(scanRegisteredJobs())(jobExecutor)
   }
 
   def stop(): Unit = {
-    logger.info("Stopping job manager")
+    JobManager.logger.info("Stopping job manager")
     Option(scanRef.get()).foreach(_.cancel())
     stopAllJobs()
     registeredJobs.clear()
@@ -374,7 +395,7 @@ class JobManager(env: Env) {
   }
 
   def registerJob(job: Job): Unit = {
-    logger.debug(s"Registering job '${job.name}' with id '${job.uniqueId}' of kind ${job.kind} starting ${job.starting} with ${job.instantiation} (${job.initialDelay} / ${job.interval} - ${job.cronExpression})")
+    JobManager.logger.debug(s"Registering job '${job.name}' with id '${job.uniqueId}' of kind ${job.kind} starting ${job.starting} with ${job.instantiation} (${job.initialDelay} / ${job.interval} - ${job.cronExpression})")
     registeredJobs.putIfAbsent(job.uniqueId, RegisteredJobContext(
       job = job,
       env = env,
@@ -388,7 +409,7 @@ class JobManager(env: Env) {
   }
 
   def unregisterJob(job: Job): Unit = {
-    logger.debug(s"Unregistering job '${job.name}' with id '${job.uniqueId}'")
+    JobManager.logger.debug(s"Unregistering job '${job.name}' with id '${job.uniqueId}'")
     env.datastores.globalConfigDataStore.singleton().map { config =>
       registeredJobs.get(job.uniqueId).foreach(_.stop(config, env))
       registeredJobs.remove(job.uniqueId)

@@ -156,15 +156,18 @@ new CustomListener()
 const basicJob = `
 import env.Env
 import otoroshi.script._
+import play.api._
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
 class CustomJob extends Job {
 
+  val logger = Logger("foo.bar.JobId")
+
   def uniqueId: JobId = JobId("foo.bar.JobId")
   
-  override def kind: JobKind = JobKind.ScheduledOnces
+  override def kind: JobKind = JobKind.ScheduledOnce
   override def starting: JobStarting = JobStarting.FromConfiguration
   override def instantiation: JobInstantiation = JobInstantiation.OneInstancePerOtoroshiInstance
   override def initialDelay: Option[FiniteDuration] = Some(0.millisecond)
@@ -172,7 +175,10 @@ class CustomJob extends Job {
 
   override def jobStart(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = Job.funit
   override def jobStop(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = Job.funit
-  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = Job.funit
+  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    logger.info("Hello from job")
+    Job.funit
+  }
 }
 
 new CustomJob()
