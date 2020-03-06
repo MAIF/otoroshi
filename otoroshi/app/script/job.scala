@@ -20,6 +20,7 @@ import utils.TypedMap
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Random
 
 sealed trait JobKind
 object JobKind {
@@ -328,7 +329,9 @@ case class RegisteredJobContext(
           ()
         case None =>
           // if (env.jobManager.hasNoLockFor(job.uniqueId)) {
-            internalsetLock()
+            actorSystem.scheduler.scheduleOnce(Random.nextInt(1000).millisecond) {
+              internalsetLock()
+            }
           // } else {
           //   f
           // }
