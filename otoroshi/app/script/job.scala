@@ -419,7 +419,11 @@ class JobManager(env: Env) {
 
   private def updateLocks(): Unit = {
     registeredLocks.foreach {
-      case (id, (key, value)) => env.datastores.rawDataStore.set(key, ByteString(value), Some(20 * 1000))
+      case (id, (key, value)) =>
+        env.datastores.rawDataStore.get(key).map {
+          case Some(v) if v.utf8String == value => env.datastores.rawDataStore.set(key, ByteString(value), Some(20 * 1000))
+          case _ => ()
+        }
     }
   }
 
