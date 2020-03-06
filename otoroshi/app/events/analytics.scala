@@ -192,6 +192,7 @@ trait AnalyticEvent extends OtoroshiEvent {
         jsonObject ++ Json.obj(
           "user-agent-details" -> uaDetails,
           "origin-details"     -> originDetails,
+          "instance-number"    -> _env.number,
           "instance-name"      -> _env.name,
           "instance-zone"      -> _env.zone,
           "instance-region"    -> _env.region,

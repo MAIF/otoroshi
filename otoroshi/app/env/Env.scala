@@ -327,6 +327,7 @@ class Env(val configuration: Configuration,
     configuration.getOptional[String]("otoroshi.sessions.secret").map(_.padTo(16, "0").mkString("").take(16)).get
   lazy val sharedKey: String     = configuration.getOptional[String]("app.claim.sharedKey").get
   lazy val env: String           = configuration.getOptional[String]("app.env").getOrElse("prod")
+  lazy val number: Int           = configuration.getOptional[Int]("app.instance.number").getOrElse(0)
   lazy val name: String          = configuration.getOptional[String]("app.instance.name").getOrElse("otoroshi")
   lazy val rack: String          = configuration.getOptional[String]("app.instance.rack").getOrElse("local")
   lazy val infraProvider: String = configuration.getOptional[String]("app.instance.provider").getOrElse("local")

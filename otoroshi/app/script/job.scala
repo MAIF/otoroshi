@@ -11,9 +11,10 @@ import com.cronutils.model.CronType
 import com.cronutils.model.definition.CronDefinitionBuilder
 import com.cronutils.model.time.ExecutionTime
 import env.Env
+import events.{JobRunEvent, JobStartedEvent, JobStoppedEvent}
 import models.GlobalConfig
 import play.api.Logger
-import play.api.libs.json.{JsValue, Json}
+import play.api.libs.json._
 import security.IdGenerator
 import utils.TypedMap
 
@@ -73,31 +74,36 @@ trait Job extends NamedPlugin with StartableAndStoppable with InternalEventListe
   def cronExpression: Option[String] = None
 
   private[script] def jobStartHook(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    JobStartedEvent(env.snowflakeGenerator.nextIdStr(), env.env, this).toAnalytics()
     jobStart(ctx)(env, ec)
   }
 
-  def jobStart(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = Job.funit
-
   private[script] def jobStopHook(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    JobStoppedEvent(env.snowflakeGenerator.nextIdStr(), env.env, this).toAnalytics()
     promise.trySuccess(())
     jobStop(ctx)(env, ec)
   }
+  
+  private[script] def jobRunHook(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    JobRunEvent(env.snowflakeGenerator.nextIdStr(), env.env, this).toAnalytics()
+    jobRun(ctx)(env, ec)
+  }
 
+  def jobStart(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = Job.funit
   def jobStop(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = Job.funit
-
   def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = Job.funit
 
-  private def header: String = s"[${uniqueId.id} / ${System.getenv("INSTANCE_NUMBER")}] -"
+  private def header(env: Env): String = s"[${uniqueId.id} / ${env.number}] -"
 
   final override def startWithPluginId(pluginId: String, env: Env): Future[Unit] = {
-    JobManager.logger.debug(s"$header plugin started")
+    JobManager.logger.debug(s"${header(env)} plugin started")
     refId.set(pluginId)
     env.jobManager.registerJob(this)
     Job.funit
   }
 
   final override def stop(env: Env): Future[Unit]  = {
-    JobManager.logger.debug(s"$header plugin stopped")
+    JobManager.logger.debug(s"${header(env)} plugin stopped")
     env.jobManager.unregisterJob(this)
     Job.funit
   }
@@ -114,6 +120,18 @@ trait Job extends NamedPlugin with StartableAndStoppable with InternalEventListe
       case _ => manager.unregisterJob(this)
     }(manager.jobExecutor)
   }
+
+  final def auditJson(implicit env: Env): JsValue = Json.obj(
+    "uniqueId" -> uniqueId.id,
+    "name" -> name,
+    "kind" -> kind.toString,
+    "starting" -> starting.toString,
+    "instantiation" -> instantiation.toString,
+    "initialDelay" -> initialDelay.map(v => BigDecimal(v.toMillis)).map(JsNumber.apply).getOrElse(JsNull).as[JsValue],
+    "interval" -> interval.map(v => BigDecimal(v.toMillis)).map(JsNumber.apply).getOrElse(JsNull).as[JsValue],
+    "cronExpression" -> cronExpression.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+    "config" -> env.datastores.globalConfigDataStore.latestSafe.map(_.scripts.jobConfig).getOrElse(Json.obj()).as[JsValue]
+  )
 }
 
 object Job {
@@ -141,7 +159,7 @@ case class RegisteredJobContext(
     ref
   }
 
-  private def header: String = s"[${job.uniqueId.id} / ${System.getenv("INSTANCE_NUMBER")}] -"
+  private def header: String = s"[${job.uniqueId.id} / ${env.number}] -"
 
   def runStartHook(): Unit = {
     if (started.compareAndSet(false, true)) {
@@ -195,7 +213,7 @@ case class RegisteredJobContext(
         ref.set(Some(actorSystem.scheduler.scheduleOnce(job.initialDelay.getOrElse(0.millisecond)) {
           try {
             if (!stopped.get()) {
-              job.jobRun(ctx).andThen {
+              job.jobRunHook(ctx).andThen {
                 case _ =>
                   ref.set(None)
                   // runStopHook()
@@ -214,7 +232,7 @@ case class RegisteredJobContext(
         ref.set(Some(actorSystem.scheduler.scheduleOnce(job.initialDelay.getOrElse(0.millisecond)) {
           try {
             if (!stopped.get()) {
-              job.jobRun(ctx).andThen {
+              job.jobRunHook(ctx).andThen {
                 case _ =>
                   ref.set(None)
                   runStopHook()
@@ -233,7 +251,7 @@ case class RegisteredJobContext(
         ref.set(Some(actorSystem.scheduler.scheduleOnce(job.initialDelay.getOrElse(0.millisecond)) {
           try {
             if (!stopped.get()) {
-              job.jobRun(ctx).andThen {
+              job.jobRunHook(ctx).andThen {
                 case _ =>
                   ref.set(None)
                   // releaseLock()
@@ -253,7 +271,7 @@ case class RegisteredJobContext(
             ref.set(Some(actorSystem.scheduler.scheduleOnce(interval) {
               try {
                 if (!stopped.get()) {
-                  job.jobRun(ctx).andThen {
+                  job.jobRunHook(ctx).andThen {
                     case _ =>
                       ref.set(None)
                       // releaseLock()
@@ -286,7 +304,7 @@ case class RegisteredJobContext(
               ref.set(Some(actorSystem.scheduler.scheduleOnce(duration.get().toMillis.milliseconds) {
                 if (!stopped.get()) {
                   try {
-                    job.jobRun(ctx).andThen {
+                    job.jobRunHook(ctx).andThen {
                       case _ =>
                         ref.set(None)
                         // releaseLock()

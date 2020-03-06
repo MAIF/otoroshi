@@ -4,6 +4,7 @@ import akka.util.ByteString
 import env.Env
 import models._
 import org.joda.time.DateTime
+import otoroshi.script.Job
 import play.api.libs.json._
 import ssl.Cert
 
@@ -203,6 +204,73 @@ case class MaxConcurrentRequestReachedEvent(`@id`: String,
     "current"    -> current
   )
 }
+
+case class JobStartedEvent(`@id`: String, `@env`: String,  job: Job, `@timestamp`: DateTime = DateTime.now())
+  extends AuditEvent {
+
+  override def `@service`: String   = "Otoroshi"
+  override def `@serviceId`: String = "--"
+
+  override def fromOrigin: Option[String]    = None
+  override def fromUserAgent: Option[String] = None
+
+  override def toJson(implicit _env: Env): JsValue = Json.obj(
+    "@id"        -> `@id`,
+    "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
+    "@type"      -> `@type`,
+    "@product"   -> _env.eventsName,
+    "@serviceId" -> `@serviceId`,
+    "@service"   -> `@service`,
+    "@env"       -> `@env`,
+    "audit"      -> "JobStartedEvent",
+    "job"        -> job.auditJson(_env)
+  )
+}
+
+case class JobStoppedEvent(`@id`: String, `@env`: String,  job: Job, `@timestamp`: DateTime = DateTime.now())
+  extends AuditEvent {
+
+  override def `@service`: String   = "Otoroshi"
+  override def `@serviceId`: String = "--"
+
+  override def fromOrigin: Option[String]    = None
+  override def fromUserAgent: Option[String] = None
+
+  override def toJson(implicit _env: Env): JsValue = Json.obj(
+    "@id"        -> `@id`,
+    "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
+    "@type"      -> `@type`,
+    "@product"   -> _env.eventsName,
+    "@serviceId" -> `@serviceId`,
+    "@service"   -> `@service`,
+    "@env"       -> `@env`,
+    "audit"      -> "JobStoppedEvent",
+    "job"        -> job.auditJson(_env)
+  )
+}
+
+case class JobRunEvent(`@id`: String, `@env`: String,  job: Job, `@timestamp`: DateTime = DateTime.now())
+  extends AuditEvent {
+
+  override def `@service`: String   = "Otoroshi"
+  override def `@serviceId`: String = "--"
+
+  override def fromOrigin: Option[String]    = None
+  override def fromUserAgent: Option[String] = None
+
+  override def toJson(implicit _env: Env): JsValue = Json.obj(
+    "@id"        -> `@id`,
+    "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
+    "@type"      -> `@type`,
+    "@product"   -> _env.eventsName,
+    "@serviceId" -> `@serviceId`,
+    "@service"   -> `@service`,
+    "@env"       -> `@env`,
+    "audit"      -> "JobRunEvent",
+    "job"        -> job.auditJson(_env)
+  )
+}
+
 
 object Audit {
   def send[A <: AuditEvent](audit: A)(implicit env: Env): Unit = {
