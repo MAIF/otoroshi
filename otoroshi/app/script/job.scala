@@ -288,7 +288,7 @@ case class RegisteredJobContext(
   }
 
   // TODO: Awful, find a better solution
-  def acquireClusterWideLock(f: => Unit): Unit = {
+  def acquireClusterWideLock(func: => Unit): Unit = {
     // if (env.jobManager.hasNoLockFor(job.uniqueId)) {
 
       JobManager.logger.debug(s"$header acquiring cluster wide lock ...")
@@ -309,7 +309,7 @@ case class RegisteredJobContext(
               case Some(value) if value.utf8String == randomLock.get() =>
                 JobManager.logger.debug(s"$header successfully acquired lock")
                 env.jobManager.registerLock(job.uniqueId, randomLock.get())
-                f
+                func
             }
           case false =>
             JobManager.logger.debug(s"$header failed to acquire lock - 3")
@@ -322,14 +322,15 @@ case class RegisteredJobContext(
         case Some(v) if v.utf8String == randomLock.get() =>
           JobManager.logger.debug(s"$header already acquired lock")
           env.jobManager.registerLock(job.uniqueId, randomLock.get())
-          f
+          func
         case Some(v) if v.utf8String != randomLock.get() =>
           JobManager.logger.debug(s"$header failed to acquire lock - 0")
           env.jobManager.unregisterLock(job.uniqueId)
           ()
         case None =>
           // if (env.jobManager.hasNoLockFor(job.uniqueId)) {
-            actorSystem.scheduler.scheduleOnce(Random.nextInt(1000).millisecond) {
+          JobManager.logger.debug(s"$header no lock found, setnx")
+          actorSystem.scheduler.scheduleOnce(Random.nextInt(1000).millisecond) {
               internalsetLock()
             }
           // } else {
@@ -407,11 +408,13 @@ class JobManager(env: Env) {
   private implicit val ev = env
 
   private[script] def registerLock(jobId: JobId, value: String): Unit = {
+    JobManager.logger.debug(s"[${jobId.id} / ${System.getenv("INSTANCE_NUMBER")}] - registerLock")
     val key = s"${env.storageRoot}:locks:jobs:${jobId.id}"
     registeredLocks.putIfAbsent(jobId, (key, value))
   }
 
   private[script] def unregisterLock(jobId: JobId): Unit = {
+    JobManager.logger.debug(s"[${jobId.id} / ${System.getenv("INSTANCE_NUMBER")}] - unregisterLock")
     val key = s"${env.storageRoot}:locks:jobs:${jobId.id}"
     registeredLocks.remove(jobId)
     env.datastores.rawDataStore.del(Seq(key))
