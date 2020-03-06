@@ -154,7 +154,7 @@ case class RegisteredJobContext(
     runStopHook()
     Option(ref.get()).flatten.foreach(_.cancel())
     ref.set(None)
-    env.jobManager.unregisterLock(job.uniqueId)
+    env.jobManager.unregisterLock(job.uniqueId, randomLock.get())
   }
 
   def run(): Unit = {
@@ -300,11 +300,11 @@ case class RegisteredJobContext(
             env.datastores.rawDataStore.get(key).map {
               case None =>
                 JobManager.logger.debug(s"$header failed to acquire lock - 1")
-                env.jobManager.unregisterLock(job.uniqueId)
+                env.jobManager.unregisterLock(job.uniqueId, randomLock.get())
                 ()
               case Some(value) if value.utf8String != randomLock.get() =>
                 JobManager.logger.debug(s"$header failed to acquire lock - 2")
-                env.jobManager.unregisterLock(job.uniqueId)
+                env.jobManager.unregisterLock(job.uniqueId, randomLock.get())
                 ()
               case Some(value) if value.utf8String == randomLock.get() =>
                 JobManager.logger.debug(s"$header successfully acquired lock")
@@ -313,7 +313,7 @@ case class RegisteredJobContext(
             }
           case false =>
             JobManager.logger.debug(s"$header failed to acquire lock - 3")
-            env.jobManager.unregisterLock(job.uniqueId)
+            env.jobManager.unregisterLock(job.uniqueId, randomLock.get())
             ()
         }
       }
@@ -325,14 +325,14 @@ case class RegisteredJobContext(
           func
         case Some(v) if v.utf8String != randomLock.get() =>
           JobManager.logger.debug(s"$header failed to acquire lock - 0")
-          env.jobManager.unregisterLock(job.uniqueId)
+          env.jobManager.unregisterLock(job.uniqueId, randomLock.get())
           ()
         case None =>
           // if (env.jobManager.hasNoLockFor(job.uniqueId)) {
           JobManager.logger.debug(s"$header no lock found, setnx")
           actorSystem.scheduler.scheduleOnce(Random.nextInt(1000).millisecond) {
-              internalsetLock()
-            }
+            internalsetLock()
+          }
           // } else {
           //   f
           // }
@@ -413,11 +413,15 @@ class JobManager(env: Env) {
     registeredLocks.putIfAbsent(jobId, (key, value))
   }
 
-  private[script] def unregisterLock(jobId: JobId): Unit = {
+  private[script] def unregisterLock(jobId: JobId, value: String): Unit = {
     JobManager.logger.debug(s"[${jobId.id} / ${System.getenv("INSTANCE_NUMBER")}] - unregisterLock")
     val key = s"${env.storageRoot}:locks:jobs:${jobId.id}"
     registeredLocks.remove(jobId)
-    env.datastores.rawDataStore.del(Seq(key))
+    env.datastores.rawDataStore.get(key).map {
+      case Some(v) if v.utf8String == value => env.datastores.rawDataStore.del(Seq(key))
+      case _ => ()
+    }
+
   }
 
   private[script] def hasNoLockFor(jobId: JobId): Boolean = {
