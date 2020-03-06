@@ -271,6 +271,28 @@ case class JobRunEvent(`@id`: String, `@env`: String,  job: Job, `@timestamp`: D
   )
 }
 
+case class JobErrorEvent(`@id`: String, `@env`: String,  job: Job, err: Throwable, `@timestamp`: DateTime = DateTime.now())
+  extends AuditEvent {
+
+  override def `@service`: String   = "Otoroshi"
+  override def `@serviceId`: String = "--"
+
+  override def fromOrigin: Option[String]    = None
+  override def fromUserAgent: Option[String] = None
+
+  override def toJson(implicit _env: Env): JsValue = Json.obj(
+    "@id"        -> `@id`,
+    "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
+    "@type"      -> `@type`,
+    "@product"   -> _env.eventsName,
+    "@serviceId" -> `@serviceId`,
+    "@service"   -> `@service`,
+    "@env"       -> `@env`,
+    "audit"      -> "JobErrorEvent",
+    "job"        -> job.auditJson(_env),
+    "err"        -> err.getMessage,
+  )
+}
 
 object Audit {
   def send[A <: AuditEvent](audit: A)(implicit env: Env): Unit = {

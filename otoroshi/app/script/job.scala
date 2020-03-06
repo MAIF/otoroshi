@@ -11,7 +11,7 @@ import com.cronutils.model.CronType
 import com.cronutils.model.definition.CronDefinitionBuilder
 import com.cronutils.model.time.ExecutionTime
 import env.Env
-import events.{JobRunEvent, JobStartedEvent, JobStoppedEvent}
+import events.{JobErrorEvent, JobRunEvent, JobStartedEvent, JobStoppedEvent}
 import models.GlobalConfig
 import play.api.Logger
 import play.api.libs.json._
@@ -21,7 +21,7 @@ import utils.TypedMap
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future, Promise}
-import scala.util.Random
+import scala.util.{Failure, Random}
 
 sealed trait JobKind
 object JobKind {
@@ -83,10 +83,19 @@ trait Job extends NamedPlugin with StartableAndStoppable with InternalEventListe
     promise.trySuccess(())
     jobStop(ctx)(env, ec)
   }
-  
+
   private[script] def jobRunHook(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     JobRunEvent(env.snowflakeGenerator.nextIdStr(), env.env, this).toAnalytics()
-    jobRun(ctx)(env, ec)
+    try {
+      jobRun(ctx)(env, ec).andThen {
+        case Failure(e) =>
+          JobErrorEvent(env.snowflakeGenerator.nextIdStr(), env.env, this, e)
+      }
+    } catch {
+      case e: Throwable =>
+        JobErrorEvent(env.snowflakeGenerator.nextIdStr(), env.env, this, e)
+        FastFuture.failed(e)
+    }
   }
 
   def jobStart(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = Job.funit
