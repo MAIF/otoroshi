@@ -5,6 +5,7 @@ import env.Env
 import events._
 import models.{RemainingQuotas, ServiceDescriptor}
 import org.joda.time.DateTime
+import otoroshi.el.TargetExpressionLanguage
 import otoroshi.script.Implicits._
 import otoroshi.script.{HttpResponse, TransformerErrorContext}
 import play.api.libs.json.{JsValue, Json}
@@ -48,6 +49,29 @@ object Errors {
             fromLbl = fromLbl,
             fromTo = s"$fromLbl###${descriptor.name}"
           )
+          val _target = attrs.get(otoroshi.plugins.Keys.RequestTargetKey).getOrElse(descriptor.target)
+          val scheme =
+            if (descriptor.redirectToLocal) descriptor.localScheme else _target.scheme
+          val host = TargetExpressionLanguage(if (descriptor.redirectToLocal)
+            descriptor.localHost
+          else _target.host,
+            Some(req),
+            Some(descriptor),
+            attrs.get(otoroshi.plugins.Keys.ApiKeyKey),
+            attrs.get(otoroshi.plugins.Keys.UserKey),
+            attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
+            attrs,
+            env)
+          val rawUri      = req.relativeUri.substring(1)
+          val uri: String = descriptor.maybeStrippedUri(req, rawUri)
+          val url = TargetExpressionLanguage(s"$scheme://$host${descriptor.root}$uri",
+            Some(req),
+            Some(descriptor),
+            attrs.get(otoroshi.plugins.Keys.ApiKeyKey),
+            attrs.get(otoroshi.plugins.Keys.UserKey),
+            attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
+            attrs,
+            env)
           GatewayEvent(
             `@id` = errorId,
             reqId = env.snowflakeGenerator.nextIdStr(),
@@ -61,8 +85,8 @@ object Errors {
               uri = req.relativeUri
             ),
             target = Location(
-              scheme = descriptor.target.scheme,
-              host = descriptor.target.host,
+              scheme = _target.scheme,
+              host = _target.host,
               uri = req.relativeUri
             ),
             duration = duration,
@@ -70,7 +94,7 @@ object Errors {
             cbDuration = cbDuration,
             overheadWoCb = overhead - cbDuration,
             callAttempts = callAttempts,
-            url = s"${descriptor.target.scheme}://${descriptor.target.host}${descriptor.root}${req.relativeUri}",
+            url = url,
             method = req.method,
             from = req.theIpAddress,
             env = descriptor.env,
@@ -90,6 +114,7 @@ object Errors {
             responseChunked = false,
             viz = Some(viz),
             err = true,
+            gwError = Some(message),
             userAgentInfo = attrs.get[JsValue](otoroshi.plugins.Keys.UserAgentInfoKey),
             geolocationInfo = attrs.get[JsValue](otoroshi.plugins.Keys.GeolocationInfoKey),
             extraAnalyticsData = attrs.get[JsValue](otoroshi.plugins.Keys.ExtraAnalyticsDataKey)
@@ -139,6 +164,7 @@ object Errors {
             responseChunked = false,
             viz = None,
             err = true,
+            gwError = Some(message),
             userAgentInfo = attrs.get[JsValue](otoroshi.plugins.Keys.UserAgentInfoKey),
             geolocationInfo = attrs.get[JsValue](otoroshi.plugins.Keys.GeolocationInfoKey),
             extraAnalyticsData = attrs.get[JsValue](otoroshi.plugins.Keys.ExtraAnalyticsDataKey)

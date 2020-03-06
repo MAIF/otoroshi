@@ -18,4 +18,5 @@ object Keys {
   val RequestWebsocketKey   = TypedKey[Boolean]("otoroshi.core.RequestWebsocket")
   val RequestTargetKey      = TypedKey[Target]("otoroshi.core.RequestTarget")
   val SnowFlakeKey          = TypedKey[String]("otoroshi.core.SnowFlake")
+  val ElCtxKey              = TypedKey[Map[String, String]]("otoroshi.core.ElCtx")
 }

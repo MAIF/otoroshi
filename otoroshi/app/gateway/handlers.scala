@@ -926,6 +926,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
       "requestTimestamp" -> requestTimestamp
     )
 
+    attrs.put(otoroshi.plugins.Keys.ElCtxKey -> elCtx)
+
     val currentHandledRequests = env.datastores.requestsDataStore.incrementHandledRequests()
     // val currentProcessedRequests = env.datastores.requestsDataStore.incrementProcessedRequests()
     val globalConfig = env.datastores.globalConfigDataStore.latest()
