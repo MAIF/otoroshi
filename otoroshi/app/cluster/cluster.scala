@@ -62,6 +62,7 @@ object Cluster {
 trait ClusterMode {
   def name: String
   def clusterActive: Boolean
+  def isOff: Boolean
   def isWorker: Boolean
   def isLeader: Boolean
 }
@@ -70,18 +71,21 @@ object ClusterMode {
   case object Off extends ClusterMode {
     def name: String           = "Off"
     def clusterActive: Boolean = false
+    def isOff: Boolean         = true
     def isWorker: Boolean      = false
     def isLeader: Boolean      = false
   }
   case object Leader extends ClusterMode {
     def name: String           = "Leader"
     def clusterActive: Boolean = true
+    def isOff: Boolean         = false
     def isWorker: Boolean      = false
     def isLeader: Boolean      = true
   }
   case object Worker extends ClusterMode {
     def name: String           = "Worker"
     def clusterActive: Boolean = true
+    def isOff: Boolean         = false
     def isWorker: Boolean      = true
     def isLeader: Boolean      = false
   }
