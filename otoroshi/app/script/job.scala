@@ -149,6 +149,7 @@ case class RegisteredJobContext(
     runStopHook()
     Option(ref.get()).flatten.foreach(_.cancel())
     ref.set(None)
+    env.jobManager.unregisterLock(job.uniqueId)
   }
 
   def run(): Unit = {
@@ -171,14 +172,14 @@ case class RegisteredJobContext(
                 case _ =>
                   ref.set(None)
                   // runStopHook()
-                  releaseLock()
+                  // releaseLock()
               }
             }
           } catch {
             case e: Throwable =>
               ref.set(None)
               // runStopHook()
-              releaseLock()
+              // releaseLock()
           }
         }))
       }
@@ -190,14 +191,14 @@ case class RegisteredJobContext(
                 case _ =>
                   ref.set(None)
                   runStopHook()
-                  releaseLock()
+                  // releaseLock()
               }
             }
           } catch {
             case e: Throwable =>
               ref.set(None)
               runStopHook()
-              releaseLock()
+              // releaseLock()
           }
         }))
       }
@@ -208,13 +209,13 @@ case class RegisteredJobContext(
               job.jobRun(ctx).andThen {
                 case _ =>
                   ref.set(None)
-                  releaseLock()
+                  // releaseLock()
               }
             }
           } catch {
             case e: Throwable =>
               ref.set(None)
-              releaseLock()
+              // releaseLock()
           }
         }))
       }
@@ -228,13 +229,13 @@ case class RegisteredJobContext(
                   job.jobRun(ctx).andThen {
                     case _ =>
                       ref.set(None)
-                      releaseLock()
+                      // releaseLock()
                   }
                 }
               } catch {
                 case e: Throwable =>
                   ref.set(None)
-                  releaseLock()
+                  // releaseLock()
               }
             }))
           }
@@ -261,12 +262,12 @@ case class RegisteredJobContext(
                     job.jobRun(ctx).andThen {
                       case _ =>
                         ref.set(None)
-                        releaseLock()
+                        // releaseLock()
                     }
                   } catch {
                     case e: Throwable =>
                       ref.set(None)
-                      releaseLock()
+                      // releaseLock()
                   }
                 }
               }))
@@ -283,32 +284,39 @@ case class RegisteredJobContext(
 
   // TODO: Awful, find a better solution
   def acquireClusterWideLock(f: => Unit): Unit = {
-    JobManager.logger.debug(s"$header acquiring cluster wide lock ...")
-    val key = s"${env.storageRoot}:locks:jobs:${job.uniqueId.id}"
-    env.datastores.rawDataStore.setnx(key, ByteString(randomLock.get()), None).map {
-      case true => env.datastores.rawDataStore.get(key).map {
-        case None =>
-          JobManager.logger.debug(s"$header failed to acquire lock - 1")
+    if (env.jobManager.hasNoLockFor(job.uniqueId)) {
+      JobManager.logger.debug(s"$header acquiring cluster wide lock ...")
+      val key = s"${env.storageRoot}:locks:jobs:${job.uniqueId.id}"
+      env.datastores.rawDataStore.setnx(key, ByteString(randomLock.get()), None).map {
+        case true => env.datastores.rawDataStore.get(key).map {
+          case None =>
+            JobManager.logger.debug(s"$header failed to acquire lock - 1")
+            ()
+          case Some(value) if value.utf8String != randomLock.get() =>
+            JobManager.logger.debug(s"$header failed to acquire lock - 2")
+            ()
+          case Some(value) if value.utf8String == randomLock.get() =>
+            JobManager.logger.debug(s"$header successfully acquired lock")
+            env.jobManager.registerLock(job.uniqueId)
+            f
+        }
+        case false =>
+          JobManager.logger.debug(s"$header failed to acquire lock - 3")
           ()
-        case Some(value) if value.utf8String != randomLock.get() =>
-          JobManager.logger.debug(s"$header failed to acquire lock - 2")
-          ()
-        case Some(value) if value.utf8String == randomLock.get() => f
       }
-      case false =>
-        JobManager.logger.debug(s"$header failed to acquire lock - 3")
-        ()
+    } else {
+      ()
     }
   }
 
   // TODO: Awful, find a better solutions
-  def releaseLock(): Unit = {
-    JobManager.logger.debug(s"$header releasing cluster wide lock")
-    val key = s"${env.storageRoot}:locks:jobs:${job.uniqueId.id}"
-    env.datastores.rawDataStore.del(Seq(key)).andThen {
-      case _ => randomLock.set(IdGenerator.token)
-    }
-  }
+  // def releaseLock(): Unit = {
+  //   JobManager.logger.debug(s"$header releasing cluster wide lock")
+  //   val key = s"${env.storageRoot}:locks:jobs:${job.uniqueId.id}"
+  //   env.datastores.rawDataStore.del(Seq(key)).andThen {
+  //     case _ => randomLock.set(IdGenerator.token)
+  //   }
+  // }
 
   def tryToRunOnCurrentInstance(f: => Unit): Unit = {
     job.instantiation match {
@@ -359,10 +367,33 @@ class JobManager(env: Env) {
   private val jobActorSystem = ActorSystem("jobs-system")
   private val jobScheduler = jobActorSystem.scheduler
   private val registeredJobs = new TrieMap[JobId, RegisteredJobContext]()
+  private val registeredLocks = new TrieMap[JobId, String]()
   private val scanRef = new AtomicReference[Cancellable]()
+  private val lockRef = new AtomicReference[Cancellable]()
 
   private implicit val jobExecutor = jobActorSystem.dispatcher
   private implicit val ev = env
+
+  private[script] def registerLock(jobId: JobId): Unit = {
+    val key = s"${env.storageRoot}:locks:jobs:${jobId.id}"
+    registeredLocks.putIfAbsent(jobId, key)
+  }
+
+  private[script] def unregisterLock(jobId: JobId): Unit = {
+    val key = s"${env.storageRoot}:locks:jobs:${jobId.id}"
+    registeredLocks.remove(jobId)
+    env.datastores.rawDataStore.del(Seq(key))
+  }
+
+  private[script] def hasNoLockFor(jobId: JobId): Boolean = {
+    registeredLocks.get(jobId).isEmpty
+  }
+
+  private def updateLocks(): Unit = {
+    registeredLocks.foreach {
+      case (id, key) => env.datastores.rawDataStore.pexpire(key, 20 * 1000)
+    }
+  }
 
   private def scanRegisteredJobs(): Unit = {
     env.datastores.globalConfigDataStore.singleton().map { config =>
@@ -383,12 +414,14 @@ class JobManager(env: Env) {
   def start(): Unit = {
     JobManager.logger.info("Starting job manager")
     env.scriptManager.jobNames.map(name => env.scriptManager.getAnyScript[Job]("cp:" + name)) // starting auto registering for cp jobs
-    jobScheduler.schedule(1.second, 1.second)(scanRegisteredJobs())(jobExecutor)
+    scanRef.set(jobScheduler.schedule(1.second, 1.second)(scanRegisteredJobs())(jobExecutor))
+    lockRef.set(jobScheduler.schedule(1.second, 10.second)(updateLocks())(jobExecutor))
   }
 
   def stop(): Unit = {
     JobManager.logger.info("Stopping job manager")
     Option(scanRef.get()).foreach(_.cancel())
+    Option(lockRef.get()).foreach(_.cancel())
     stopAllJobs()
     registeredJobs.clear()
     jobActorSystem.terminate()
