@@ -113,7 +113,11 @@ case class RegisteredJobContext(
   private implicit val ev = env
 
   private lazy val attrs = TypedMap.empty
-  private val randomLock = new AtomicReference[String](IdGenerator.token)
+  private lazy val randomLock = {
+    val ref = new AtomicReference[String](IdGenerator.token(128))
+    JobManager.logger.debug(s"$header random lock value is '${ref.get()}'")
+    ref
+  }
 
   private def header: String = s"[${job.uniqueId.id} / ${System.getenv("INSTANCE_NUMBER")}] -"
 
@@ -302,7 +306,7 @@ case class RegisteredJobContext(
               ()
             case Some(value) if value.utf8String == randomLock.get() =>
               JobManager.logger.debug(s"$header successfully acquired lock")
-              env.jobManager.registerLock(job.uniqueId)
+              env.jobManager.registerLock(job.uniqueId, randomLock.get())
               f
           }
           case false =>
@@ -315,7 +319,7 @@ case class RegisteredJobContext(
       env.datastores.rawDataStore.get(key).map {
         case Some(v) if v.utf8String == randomLock.get() =>
           JobManager.logger.debug(s"$header already acquired lock")
-          env.jobManager.registerLock(job.uniqueId)
+          env.jobManager.registerLock(job.uniqueId, randomLock.get())
           f
         case Some(v) if v.utf8String != randomLock.get() =>
           JobManager.logger.debug(s"$header failed to acquire lock - 0")
@@ -386,16 +390,16 @@ class JobManager(env: Env) {
   private val jobActorSystem = ActorSystem("jobs-system")
   private val jobScheduler = jobActorSystem.scheduler
   private val registeredJobs = new TrieMap[JobId, RegisteredJobContext]()
-  private val registeredLocks = new TrieMap[JobId, String]()
+  private val registeredLocks = new TrieMap[JobId, (String, String)]()
   private val scanRef = new AtomicReference[Cancellable]()
   private val lockRef = new AtomicReference[Cancellable]()
 
   private implicit val jobExecutor = jobActorSystem.dispatcher
   private implicit val ev = env
 
-  private[script] def registerLock(jobId: JobId): Unit = {
+  private[script] def registerLock(jobId: JobId, value: String): Unit = {
     val key = s"${env.storageRoot}:locks:jobs:${jobId.id}"
-    registeredLocks.putIfAbsent(jobId, key)
+    registeredLocks.putIfAbsent(jobId, (key, value))
   }
 
   private[script] def unregisterLock(jobId: JobId): Unit = {
@@ -405,12 +409,12 @@ class JobManager(env: Env) {
   }
 
   private[script] def hasNoLockFor(jobId: JobId): Boolean = {
-    registeredLocks.get(jobId).isEmpty
+    !registeredLocks.contains(jobId)
   }
 
   private def updateLocks(): Unit = {
     registeredLocks.foreach {
-      case (id, key) => env.datastores.rawDataStore.pexpire(key, 20 * 1000)
+      case (id, (key, value)) => env.datastores.rawDataStore.set(key, ByteString(value), Some(20 * 1000))
     }
   }
 
