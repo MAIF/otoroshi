@@ -287,7 +287,7 @@ case class RegisteredJobContext(
     if (env.jobManager.hasNoLockFor(job.uniqueId)) {
       JobManager.logger.debug(s"$header acquiring cluster wide lock ...")
       val key = s"${env.storageRoot}:locks:jobs:${job.uniqueId.id}"
-      env.datastores.rawDataStore.setnx(key, ByteString(randomLock.get()), None).map {
+      env.datastores.rawDataStore.setnx(key, ByteString(randomLock.get()), Some(20 * 1000)).map {
         case true => env.datastores.rawDataStore.get(key).map {
           case None =>
             JobManager.logger.debug(s"$header failed to acquire lock - 1")
@@ -415,7 +415,7 @@ class JobManager(env: Env) {
     JobManager.logger.info("Starting job manager")
     env.scriptManager.jobNames.map(name => env.scriptManager.getAnyScript[Job]("cp:" + name)) // starting auto registering for cp jobs
     scanRef.set(jobScheduler.schedule(1.second, 1.second)(scanRegisteredJobs())(jobExecutor))
-    lockRef.set(jobScheduler.schedule(1.second, 10.second)(updateLocks())(jobExecutor))
+    lockRef.set(jobScheduler.schedule(1.second, 10.seconds)(updateLocks())(jobExecutor))
   }
 
   def stop(): Unit = {
