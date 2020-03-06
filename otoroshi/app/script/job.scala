@@ -285,24 +285,43 @@ case class RegisteredJobContext(
   // TODO: Awful, find a better solution
   def acquireClusterWideLock(f: => Unit): Unit = {
     if (env.jobManager.hasNoLockFor(job.uniqueId)) {
+
       JobManager.logger.debug(s"$header acquiring cluster wide lock ...")
       val key = s"${env.storageRoot}:locks:jobs:${job.uniqueId.id}"
-      env.datastores.rawDataStore.setnx(key, ByteString(randomLock.get()), Some(20 * 1000)).map {
-        case true => env.datastores.rawDataStore.get(key).map {
-          case None =>
-            JobManager.logger.debug(s"$header failed to acquire lock - 1")
+
+      def setLock() = {
+        env.datastores.rawDataStore.setnx(key, ByteString(randomLock.get()), Some(20 * 1000)).map {
+          case true => env.datastores.rawDataStore.get(key).map {
+            case None =>
+              JobManager.logger.debug(s"$header failed to acquire lock - 1")
+              env.jobManager.unregisterLock(job.uniqueId)
+              ()
+            case Some(value) if value.utf8String != randomLock.get() =>
+              JobManager.logger.debug(s"$header failed to acquire lock - 2")
+              env.jobManager.unregisterLock(job.uniqueId)
+              ()
+            case Some(value) if value.utf8String == randomLock.get() =>
+              JobManager.logger.debug(s"$header successfully acquired lock")
+              env.jobManager.registerLock(job.uniqueId)
+              f
+          }
+          case false =>
+            JobManager.logger.debug(s"$header failed to acquire lock - 3")
+            env.jobManager.unregisterLock(job.uniqueId)
             ()
-          case Some(value) if value.utf8String != randomLock.get() =>
-            JobManager.logger.debug(s"$header failed to acquire lock - 2")
-            ()
-          case Some(value) if value.utf8String == randomLock.get() =>
-            JobManager.logger.debug(s"$header successfully acquired lock")
-            env.jobManager.registerLock(job.uniqueId)
-            f
         }
-        case false =>
-          JobManager.logger.debug(s"$header failed to acquire lock - 3")
+      }
+
+      env.datastores.rawDataStore.get(key).map {
+        case Some(v) if v.utf8String == randomLock.get() =>
+          JobManager.logger.debug(s"$header already acquired lock")
+          env.jobManager.registerLock(job.uniqueId)
+          f
+        case Some(v) if v.utf8String != randomLock.get() =>
+          JobManager.logger.debug(s"$header failed to acquire lock - 0")
+          env.jobManager.unregisterLock(job.uniqueId)
           ()
+        case None => setLock()
       }
     } else {
       f
