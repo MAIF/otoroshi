@@ -19,7 +19,7 @@ import utils.TypedMap
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.Random
 
 sealed trait JobKind
@@ -60,6 +60,7 @@ case class JobId(id: String)
 trait Job extends NamedPlugin with StartableAndStoppable with InternalEventListener { self =>
 
   private val refId = new AtomicReference[String](s"cp:${self.getClass.getName}")
+  private val promise = Promise[Unit]
 
   final override def pluginType: PluginType = JobType
 
@@ -71,8 +72,19 @@ trait Job extends NamedPlugin with StartableAndStoppable with InternalEventListe
   def interval: Option[FiniteDuration] = None
   def cronExpression: Option[String] = None
 
+  private[script] def jobStartHook(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    jobStart(ctx)(env, ec)
+  }
+
   def jobStart(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = Job.funit
+
+  private[script] def jobStopHook(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    promise.trySuccess(())
+    jobStop(ctx)(env, ec)
+  }
+
   def jobStop(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = Job.funit
+
   def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = Job.funit
 
   private def header: String = s"[${uniqueId.id} / ${System.getenv("INSTANCE_NUMBER")}] -"
@@ -92,6 +104,15 @@ trait Job extends NamedPlugin with StartableAndStoppable with InternalEventListe
 
   final private[script] def underlyingId: String = {
     Option(refId.get()).getOrElse(s"cp:${self.getClass.getName}")
+  }
+
+  final def launchNow()(implicit env: Env): Future[Unit] = {
+    val manager = env.jobManager
+    manager.registerJob(this)
+    manager.startIfPossible(this)
+    promise.future.andThen {
+      case _ => manager.unregisterJob(this)
+    }(manager.jobExecutor)
   }
 }
 
@@ -125,7 +146,7 @@ case class RegisteredJobContext(
   def runStartHook(): Unit = {
     if (started.compareAndSet(false, true)) {
       JobManager.logger.debug(s"$header running start hook")
-      job.jobStart(JobContext(
+      job.jobStartHook(JobContext(
         snowflake = runId.get(),
         attrs = attrs,
         globalConfig = env.datastores.globalConfigDataStore.latestSafe.map(_.scripts.jobConfig).getOrElse(Json.obj()),
@@ -138,7 +159,7 @@ case class RegisteredJobContext(
   def runStopHook(): Unit = {
     if (stopped.compareAndSet(false, true)) {
       JobManager.logger.debug(s"$header running stop hook")
-      job.jobStop(JobContext(
+      job.jobStopHook(JobContext(
         snowflake = runId.get(),
         attrs = attrs,
         globalConfig = env.datastores.globalConfigDataStore.latestSafe.map(_.scripts.jobConfig).getOrElse(Json.obj()),
@@ -397,14 +418,14 @@ object JobManager {
 
 class JobManager(env: Env) {
 
-  private val jobActorSystem = ActorSystem("jobs-system")
-  private val jobScheduler = jobActorSystem.scheduler
+  private[script] val jobActorSystem = ActorSystem("jobs-system")
+  private[script] val jobScheduler = jobActorSystem.scheduler
   private val registeredJobs = new TrieMap[JobId, RegisteredJobContext]()
   private val registeredLocks = new TrieMap[JobId, (String, String)]()
   private val scanRef = new AtomicReference[Cancellable]()
   private val lockRef = new AtomicReference[Cancellable]()
 
-  private implicit val jobExecutor = jobActorSystem.dispatcher
+  private[script] implicit val jobExecutor = jobActorSystem.dispatcher
   private implicit val ev = env
 
   private[script] def registerLock(jobId: JobId, value: String): Unit = {
@@ -439,6 +460,12 @@ class JobManager(env: Env) {
     }
   }
 
+  private[script] def startIfPossible(job: Job): Unit = {
+    env.datastores.globalConfigDataStore.singleton().map { config =>
+      registeredJobs.get(job.uniqueId).foreach(_.startIfPossible(config, env))
+    }
+  }
+
   private def stopAllJobs(): Unit = {
     env.datastores.globalConfigDataStore.singleton().map { config =>
       registeredJobs.foreach {
@@ -463,9 +490,9 @@ class JobManager(env: Env) {
     jobActorSystem.terminate()
   }
 
-  def registerJob(job: Job): Unit = {
+  def registerJob(job: Job): RegisteredJobContext = {
     JobManager.logger.debug(s"Registering job '${job.name}' with id '${job.uniqueId}' of kind ${job.kind} starting ${job.starting} with ${job.instantiation} (${job.initialDelay} / ${job.interval} - ${job.cronExpression})")
-    registeredJobs.putIfAbsent(job.uniqueId, RegisteredJobContext(
+    val ctx = RegisteredJobContext(
       job = job,
       env = env,
       actorSystem = jobActorSystem,
@@ -474,7 +501,9 @@ class JobManager(env: Env) {
       stopped = new AtomicBoolean(false),
       runId = new AtomicReference[String](env.snowflakeGenerator.nextIdStr()),
       ref = new AtomicReference[Option[Cancellable]](None)
-    ))
+    )
+    registeredJobs.putIfAbsent(job.uniqueId, ctx)
+    ctx
   }
 
   def unregisterJob(job: Job): Unit = {
