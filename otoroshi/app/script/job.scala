@@ -294,7 +294,7 @@ case class RegisteredJobContext(
       val key = s"${env.storageRoot}:locks:jobs:${job.uniqueId.id}"
 
       def setLock() = {
-        env.datastores.rawDataStore.setnx(key, ByteString(randomLock.get()), Some(20 * 1000)).map {
+        env.datastores.rawDataStore.setnx(key, ByteString(randomLock.get()), Some(30 * 1000)).map {
           case true => env.datastores.rawDataStore.get(key).map {
             case None =>
               JobManager.logger.debug(s"$header failed to acquire lock - 1")
@@ -421,7 +421,7 @@ class JobManager(env: Env) {
     registeredLocks.foreach {
       case (id, (key, value)) =>
         env.datastores.rawDataStore.get(key).map {
-          case Some(v) if v.utf8String == value => env.datastores.rawDataStore.set(key, ByteString(value), Some(20 * 1000))
+          case Some(v) if v.utf8String == value => env.datastores.rawDataStore.set(key, ByteString(value), Some(30 * 1000))
           case _ => ()
         }
     }
