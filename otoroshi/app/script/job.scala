@@ -305,7 +305,7 @@ case class RegisteredJobContext(
           ()
       }
     } else {
-      ()
+      f
     }
   }
 
