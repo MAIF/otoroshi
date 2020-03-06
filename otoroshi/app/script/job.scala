@@ -154,7 +154,7 @@ case class RegisteredJobContext(
     runStopHook()
     Option(ref.get()).flatten.foreach(_.cancel())
     ref.set(None)
-    env.jobManager.unregisterLock(job.uniqueId, randomLock.get())
+    env.jobManager.unregisterLock(job.uniqueId, randomLock.get(), true)
   }
 
   def run(): Unit = {
@@ -289,7 +289,7 @@ case class RegisteredJobContext(
 
   // TODO: Awful, find a better solution
   def acquireClusterWideLock(func: => Unit): Unit = {
-    // if (env.jobManager.hasNoLockFor(job.uniqueId)) {
+    if (env.jobManager.hasNoLockFor(job.uniqueId)) {
 
       JobManager.logger.debug(s"$header acquiring cluster wide lock ...")
       val key = s"${env.storageRoot}:locks:jobs:${job.uniqueId.id}"
@@ -300,11 +300,11 @@ case class RegisteredJobContext(
             env.datastores.rawDataStore.get(key).map {
               case None =>
                 JobManager.logger.debug(s"$header failed to acquire lock - 1")
-                env.jobManager.unregisterLock(job.uniqueId, randomLock.get())
+                env.jobManager.unregisterLock(job.uniqueId, randomLock.get(), false)
                 ()
               case Some(value) if value.utf8String != randomLock.get() =>
                 JobManager.logger.debug(s"$header failed to acquire lock - 2")
-                env.jobManager.unregisterLock(job.uniqueId, randomLock.get())
+                env.jobManager.unregisterLock(job.uniqueId, randomLock.get(), false)
                 ()
               case Some(value) if value.utf8String == randomLock.get() =>
                 JobManager.logger.debug(s"$header successfully acquired lock")
@@ -313,7 +313,7 @@ case class RegisteredJobContext(
             }
           case false =>
             JobManager.logger.debug(s"$header failed to acquire lock - 3")
-            env.jobManager.unregisterLock(job.uniqueId, randomLock.get())
+            env.jobManager.unregisterLock(job.uniqueId, randomLock.get(), false)
             ()
         }
       }
@@ -325,7 +325,7 @@ case class RegisteredJobContext(
           func
         case Some(v) if v.utf8String != randomLock.get() =>
           JobManager.logger.debug(s"$header failed to acquire lock - 0")
-          env.jobManager.unregisterLock(job.uniqueId, randomLock.get())
+          env.jobManager.unregisterLock(job.uniqueId, randomLock.get(), false)
           ()
         case None =>
           // if (env.jobManager.hasNoLockFor(job.uniqueId)) {
@@ -337,9 +337,9 @@ case class RegisteredJobContext(
           //   f
           // }
       }
-    // } else {
-    //   f
-    // }
+    } else {
+      func
+    }
   }
 
   // TODO: Awful, find a better solutions
@@ -408,20 +408,19 @@ class JobManager(env: Env) {
   private implicit val ev = env
 
   private[script] def registerLock(jobId: JobId, value: String): Unit = {
-    JobManager.logger.debug(s"[${jobId.id} / ${System.getenv("INSTANCE_NUMBER")}] - registerLock")
     val key = s"${env.storageRoot}:locks:jobs:${jobId.id}"
     registeredLocks.putIfAbsent(jobId, (key, value))
   }
 
-  private[script] def unregisterLock(jobId: JobId, value: String): Unit = {
-    JobManager.logger.debug(s"[${jobId.id} / ${System.getenv("INSTANCE_NUMBER")}] - unregisterLock")
+  private[script] def unregisterLock(jobId: JobId, value: String, deleteFromDb: Boolean): Unit = {
     val key = s"${env.storageRoot}:locks:jobs:${jobId.id}"
     registeredLocks.remove(jobId)
-    env.datastores.rawDataStore.get(key).map {
-      case Some(v) if v.utf8String == value => env.datastores.rawDataStore.del(Seq(key))
-      case _ => ()
+    if (deleteFromDb) {
+      env.datastores.rawDataStore.get(key).map {
+        case Some(v) if v.utf8String == value => env.datastores.rawDataStore.del(Seq(key))
+        case _ => ()
+      }
     }
-
   }
 
   private[script] def hasNoLockFor(jobId: JobId): Boolean = {
