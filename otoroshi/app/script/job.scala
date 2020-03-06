@@ -114,7 +114,7 @@ case class RegisteredJobContext(
 
   private lazy val attrs = TypedMap.empty
   private lazy val randomLock = {
-    val ref = new AtomicReference[String](IdGenerator.token(128))
+    val ref = new AtomicReference[String](IdGenerator.token(16))
     JobManager.logger.debug(s"$header random lock value is '${ref.get()}'")
     ref
   }
@@ -293,22 +293,23 @@ case class RegisteredJobContext(
       JobManager.logger.debug(s"$header acquiring cluster wide lock ...")
       val key = s"${env.storageRoot}:locks:jobs:${job.uniqueId.id}"
 
-      def setLock() = {
+      def internalsetLock() = {
         env.datastores.rawDataStore.setnx(key, ByteString(randomLock.get()), Some(30 * 1000)).map {
-          case true => env.datastores.rawDataStore.get(key).map {
-            case None =>
-              JobManager.logger.debug(s"$header failed to acquire lock - 1")
-              env.jobManager.unregisterLock(job.uniqueId)
-              ()
-            case Some(value) if value.utf8String != randomLock.get() =>
-              JobManager.logger.debug(s"$header failed to acquire lock - 2")
-              env.jobManager.unregisterLock(job.uniqueId)
-              ()
-            case Some(value) if value.utf8String == randomLock.get() =>
-              JobManager.logger.debug(s"$header successfully acquired lock")
-              env.jobManager.registerLock(job.uniqueId, randomLock.get())
-              f
-          }
+          case true =>
+            env.datastores.rawDataStore.get(key).map {
+              case None =>
+                JobManager.logger.debug(s"$header failed to acquire lock - 1")
+                env.jobManager.unregisterLock(job.uniqueId)
+                ()
+              case Some(value) if value.utf8String != randomLock.get() =>
+                JobManager.logger.debug(s"$header failed to acquire lock - 2")
+                env.jobManager.unregisterLock(job.uniqueId)
+                ()
+              case Some(value) if value.utf8String == randomLock.get() =>
+                JobManager.logger.debug(s"$header successfully acquired lock")
+                env.jobManager.registerLock(job.uniqueId, randomLock.get())
+                f
+            }
           case false =>
             JobManager.logger.debug(s"$header failed to acquire lock - 3")
             env.jobManager.unregisterLock(job.uniqueId)
@@ -326,11 +327,11 @@ case class RegisteredJobContext(
           env.jobManager.unregisterLock(job.uniqueId)
           ()
         case None =>
-          if (env.jobManager.hasNoLockFor(job.uniqueId)) {
-            setLock()
-          } else {
-            f
-          }
+          // if (env.jobManager.hasNoLockFor(job.uniqueId)) {
+            internalsetLock()
+          // } else {
+          //   f
+          // }
       }
     // } else {
     //   f
