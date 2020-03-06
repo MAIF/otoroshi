@@ -288,7 +288,7 @@ case class RegisteredJobContext(
 
   // TODO: Awful, find a better solution
   def acquireClusterWideLock(f: => Unit): Unit = {
-    if (env.jobManager.hasNoLockFor(job.uniqueId)) {
+    // if (env.jobManager.hasNoLockFor(job.uniqueId)) {
 
       JobManager.logger.debug(s"$header acquiring cluster wide lock ...")
       val key = s"${env.storageRoot}:locks:jobs:${job.uniqueId.id}"
@@ -325,11 +325,16 @@ case class RegisteredJobContext(
           JobManager.logger.debug(s"$header failed to acquire lock - 0")
           env.jobManager.unregisterLock(job.uniqueId)
           ()
-        case None => setLock()
+        case None =>
+          if (env.jobManager.hasNoLockFor(job.uniqueId)) {
+            setLock()
+          } else {
+            f
+          }
       }
-    } else {
-      f
-    }
+    // } else {
+    //   f
+    // }
   }
 
   // TODO: Awful, find a better solutions
