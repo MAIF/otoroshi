@@ -1,9 +1,5 @@
 # Try Otoroshi in 5 minutes
 
-@@@ warning
-This section is under construction
-@@@
-
 what you will need :
 
 * JDK 11
