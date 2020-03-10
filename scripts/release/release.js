@@ -31,7 +31,6 @@ const files = [
   { file: './demos/service-mesh/docker-compose.yml' },
   { file: './docker/build/build.sh' },
   { file: './manual/build.sbt' },
-  { file: './manual/src/main/paradox/cli.md' },
   { file: './manual/src/main/paradox/code/swagger.json' },
   { file: './manual/src/main/paradox/getotoroshi/frombinaries.md' },
   { file: './manual/src/main/paradox/getotoroshi/fromdocker.md' },
