@@ -2767,7 +2767,7 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
   }
 
   @inline
-  def sortServices(services: Seq[ServiceDescriptor], query: ServiceDescriptorQuery, requestHeader: RequestHeader)(
+  def sortServices(services: Seq[ServiceDescriptor], query: ServiceDescriptorQuery, requestHeader: RequestHeader, attrs: TypedMap)(
       implicit ec: ExecutionContext,
       env: Env
   ): Future[Seq[ServiceDescriptor]] = {
@@ -2872,7 +2872,7 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
     val filtered = sersWithMatchingRoot ++ sersWithoutMatchingRoot
     FastFuture
       .sequence(filtered.map { sr =>
-        matchApiKeyRouting(sr, requestHeader).map(m => (sr, m))
+        matchApiKeyRouting(sr, requestHeader, attrs).map(m => (sr, m))
       })
       .map { s =>
         val allSers = s.filter(_._2).map(_._1)
@@ -2889,7 +2889,7 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
   }
 
   @inline
-  def matchApiKeyRouting(sr: ServiceDescriptor, requestHeader: RequestHeader)(implicit ec: ExecutionContext,
+  def matchApiKeyRouting(sr: ServiceDescriptor, requestHeader: RequestHeader, attrs: TypedMap)(implicit ec: ExecutionContext,
                                                                               env: Env): Future[Boolean] = {
 
     lazy val shouldSearchForAndApiKey =
@@ -2912,7 +2912,7 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
     if (shouldNotSearchForAnApiKey) {
       FastFuture.successful(true)
     } else {
-      ApiKeyHelper.extractApiKey(requestHeader, sr).map {
+      ApiKeyHelper.extractApiKey(requestHeader, sr, attrs).map {
         case None         => true
         case Some(apiKey) => apiKey.matchRouting(sr)
       }
@@ -2920,7 +2920,7 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
   }
 
   @inline
-  def rawFind(query: ServiceDescriptorQuery, requestHeader: RequestHeader)(implicit ec: ExecutionContext,
+  def rawFind(query: ServiceDescriptorQuery, requestHeader: RequestHeader, attrs: TypedMap)(implicit ec: ExecutionContext,
                                                                            env: Env): Future[Seq[ServiceDescriptor]] = {
     ServiceDescriptorDataStore.logger.debug("Full scan of services, should not pass here anymore ...")
     findAll().flatMap { descriptors =>
@@ -2938,12 +2938,12 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
         }
       }
       query.addServices(validDescriptors)
-      sortServices(validDescriptors, query, requestHeader)
+      sortServices(validDescriptors, query, requestHeader, attrs)
     }
   }
 
   // TODO : prefill ServiceDescriptorQuery lookup set when crud service descriptors
-  def find(query: ServiceDescriptorQuery, requestHeader: RequestHeader)(implicit ec: ExecutionContext,
+  def find(query: ServiceDescriptorQuery, requestHeader: RequestHeader, attrs: TypedMap)(implicit ec: ExecutionContext,
                                                                         env: Env): Future[Option[ServiceDescriptor]] = {
     val start = System.currentTimeMillis()
     query.exists().flatMap {
@@ -2957,13 +2957,13 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
               // fast lookup should not store empty results, so ...
               ServiceDescriptorDataStore.logger
                 .warn(s"FastLookup false positive for ${query.toHost}, doing a fullscan instead ...")
-              rawFind(query, requestHeader)
+              rawFind(query, requestHeader, attrs)
             }
-            case services => sortServices(services, query, requestHeader)
+            case services => sortServices(services, query, requestHeader, attrs)
           }
       }
       case false => {
-        rawFind(query, requestHeader)
+        rawFind(query, requestHeader, attrs)
       }
     } map { filteredDescriptors =>
       filteredDescriptors.headOption

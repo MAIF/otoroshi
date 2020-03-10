@@ -6,7 +6,7 @@ import models.{ApiKey, RemainingQuotas}
 import org.apache.commons.codec.binary.Base64
 import org.joda.time.DateTime
 import otoroshi.plugins.JsonPathUtils
-import otoroshi.script.{AccessContext, AccessValidator, PreRouting, PreRoutingContext}
+import otoroshi.script._
 import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
 import security.IdGenerator
 
@@ -202,5 +202,18 @@ class CertificateAsApikey extends PreRouting {
           }
       }
     }
+  }
+}
+
+class DumbApiKey extends PreRouting {
+  override def preRoute(ctx: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    println("fooooo")
+    ctx.request.getQueryString("apikey") match {
+      case Some("foo") =>
+        val apiKey = env.datastores.apiKeyDataStore.initiateNewApiKey(ctx.descriptor.groupId)
+        ctx.attrs.put(otoroshi.plugins.Keys.ApiKeyKey -> apiKey)
+      case _ =>
+    }
+    Job.funit
   }
 }

@@ -356,7 +356,7 @@ class WebSocketHandler()(implicit env: Env) {
           val uriParts = req.relativeUri.split("/").toSeq
 
           env.datastores.serviceDescriptorDataStore
-            .find(ServiceDescriptorQuery(subdomain, serviceEnv, domain, req.relativeUri, req.headers.toSimpleMap), req)
+            .find(ServiceDescriptorQuery(subdomain, serviceEnv, domain, req.relativeUri, req.headers.toSimpleMap), req, attrs)
             .flatMap {
               case None =>
                 Errors
@@ -1285,7 +1285,76 @@ class WebSocketHandler()(implicit env: Env) {
                                             )
                                             .flatMap(_.lastOption)
                                         )
-                                      if (authBySimpleApiKeyClientId.isDefined && descriptor.apiKeyConstraints.clientIdAuth.enabled) {
+
+                                      val preExtractedApiKey = attrs.get(otoroshi.plugins.Keys.ApiKeyKey)
+                                      if (preExtractedApiKey.isDefined) {
+                                        preExtractedApiKey match {
+                                          case None =>
+                                            Errors.craftResponseResult(
+                                              "Invalid API key",
+                                              Unauthorized,
+                                              req,
+                                              Some(descriptor),
+                                              Some("errors.invalid.api.key"),
+                                              attrs = attrs
+                                            ).asLeft[WSFlow]
+                                          case Some(key) if key.isInvalid(key.clientSecret) => {
+                                            Alerts.send(
+                                              RevokedApiKeyUsageAlert(env.snowflakeGenerator.nextIdStr(),
+                                                DateTime.now(),
+                                                env.env,
+                                                req,
+                                                key,
+                                                descriptor,
+                                                env)
+                                            )
+                                            Errors.craftResponseResult(
+                                              "Bad API key",
+                                              BadGateway,
+                                              req,
+                                              Some(descriptor),
+                                              Some("errors.bad.api.key"),
+                                              attrs = attrs
+                                            ).asLeft[WSFlow]
+                                          }
+                                          case Some(key) if !key.matchRouting(descriptor) => {
+                                            Errors.craftResponseResult(
+                                              "Invalid API key",
+                                              Unauthorized,
+                                              req,
+                                              Some(descriptor),
+                                              Some("errors.bad.api.key"),
+                                              attrs = attrs
+                                            ).asLeft[WSFlow]
+                                          }
+                                          case Some(key)
+                                            if key.restrictions
+                                              .handleRestrictions(descriptor, Some(key), req, attrs)
+                                              ._1 => {
+                                            key.restrictions
+                                              .handleRestrictions(descriptor, Some(key), req, attrs)
+                                              ._2.asLeft[WSFlow]
+                                          }
+                                          case Some(key) if key.isValid(key.clientSecret) =>
+                                            key.withinQuotasAndRotation().flatMap {
+                                              case (true, rotationInfos) =>
+                                                rotationInfos.foreach(
+                                                  i =>
+                                                    attrs.put(otoroshi.plugins.Keys.ApiKeyRotationKey -> i)
+                                                )
+                                                callDownstream(config, Some(key))
+                                              case (false, _) =>
+                                                Errors.craftResponseResult(
+                                                  "You performed too much requests",
+                                                  TooManyRequests,
+                                                  req,
+                                                  Some(descriptor),
+                                                  Some("errors.too.much.requests"),
+                                                  attrs = attrs
+                                                ).asLeft[WSFlow]
+                                            }
+                                        }
+                                      } else if (authBySimpleApiKeyClientId.isDefined && descriptor.apiKeyConstraints.clientIdAuth.enabled) {
                                         val clientId = authBySimpleApiKeyClientId.get
                                         env.datastores.apiKeyDataStore
                                           .findAuthorizeKeyFor(clientId, descriptor.id)
@@ -1864,7 +1933,7 @@ class WebSocketHandler()(implicit env: Env) {
                                             } else {
                                               if (descriptor.isUriPublic(req.path)) {
                                                 if (env.detectApiKeySooner && descriptor.detectApiKeySooner && ApiKeyHelper
-                                                      .detectApiKey(req, descriptor)) {
+                                                      .detectApiKey(req, descriptor, attrs)) {
                                                   passWithApiKey(globalConfig)
                                                 } else {
                                                   callDownstream(globalConfig)

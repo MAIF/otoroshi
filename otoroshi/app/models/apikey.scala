@@ -6,13 +6,16 @@ import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.google.common.base.Charsets
 import env.Env
-import events.{Alerts, ApiKeySecretHasRotated, ApiKeySecretWillRotate}
+import events.{Alerts, ApiKeySecretHasRotated, ApiKeySecretWillRotate, RevokedApiKeyUsageAlert}
+import gateway.Errors
 import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.json._
-import play.api.mvc.RequestHeader
+import play.api.mvc.Results.{BadGateway, TooManyRequests, Unauthorized}
+import play.api.mvc.{RequestHeader, Result}
 import security.{IdGenerator, OtoroshiClaim}
 import storage.BasicStore
+import utils.TypedMap
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -401,7 +404,7 @@ object ApiKeyHelper {
 
   def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), Charsets.UTF_8)
 
-  def extractApiKey(req: RequestHeader, descriptor: ServiceDescriptor)(implicit ec: ExecutionContext,
+  def extractApiKey(req: RequestHeader, descriptor: ServiceDescriptor, attrs: TypedMap)(implicit ec: ExecutionContext,
                                                                        env: Env): Future[Option[ApiKey]] = {
 
     val authByJwtToken = req.headers
@@ -476,7 +479,11 @@ object ApiKeyHelper {
           )
           .flatMap(_.lastOption)
       )
-    if (authBySimpleApiKeyClientId.isDefined && descriptor.apiKeyConstraints.clientIdAuth.enabled) {
+
+    val preExtractedApiKey = attrs.get(otoroshi.plugins.Keys.ApiKeyKey)
+    if (preExtractedApiKey.isDefined) {
+      FastFuture.successful(preExtractedApiKey)
+    } else if (authBySimpleApiKeyClientId.isDefined && descriptor.apiKeyConstraints.clientIdAuth.enabled) {
       val clientId = authBySimpleApiKeyClientId.get
       env.datastores.apiKeyDataStore
         .findAuthorizeKeyFor(clientId, descriptor.id)
@@ -597,7 +604,7 @@ object ApiKeyHelper {
     }
   }
 
-  def detectApiKey(req: RequestHeader, descriptor: ServiceDescriptor)(implicit env: Env): Boolean = {
+  def detectApiKey(req: RequestHeader, descriptor: ServiceDescriptor, attrs: TypedMap)(implicit env: Env): Boolean = {
 
     val authByJwtToken = req.headers
       .get(
@@ -671,7 +678,10 @@ object ApiKeyHelper {
           )
           .flatMap(_.lastOption)
       )
-    if (authBySimpleApiKeyClientId.isDefined && descriptor.apiKeyConstraints.clientIdAuth.enabled) {
+    val preExtractedApiKey = attrs.get(otoroshi.plugins.Keys.ApiKeyKey)
+    if (preExtractedApiKey.isDefined) {
+      true
+    } else if (authBySimpleApiKeyClientId.isDefined && descriptor.apiKeyConstraints.clientIdAuth.enabled) {
       true
     } else if (authByCustomHeaders.isDefined && descriptor.apiKeyConstraints.customHeadersAuth.enabled) {
       true
