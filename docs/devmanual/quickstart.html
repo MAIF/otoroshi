@@ -307,7 +307,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 }&#39; | jq
 </code></pre>
 <p>but if you try to use it, you will have something like :</p>
-<pre class="prettyprint"><code class="language-sh">curl http://cats.oto.tools:8080 | jq
+<pre class="prettyprint"><code class="language-sh">$ curl http://cats.oto.tools:8080 | jq
 {
   &quot;Otoroshi-Error&quot;: &quot;No ApiKey provided&quot;
 }
@@ -324,7 +324,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 }&#39; | jqs
 </code></pre>
 <p>and try again</p>
-<pre class="prettyprint"><code class="language-sh">curl http://cats.oto.tools:8080 -u apikey1:secret | jq
+<pre class="prettyprint"><code class="language-sh">$ curl http://cats.oto.tools:8080 -u apikey1:secret | jq
 {
   &quot;file&quot;: &quot;https://purr.objects-us-east-1.dream.io/i/vICG4.gif&quot;
 }
