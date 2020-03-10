@@ -913,7 +913,29 @@ class RunningServers(env: Env) {
   }
 }
 
-sealed trait TcpServiceDataStore extends BasicStore[TcpService]
+sealed trait TcpServiceDataStore extends BasicStore[TcpService] {
+  def template: TcpService = TcpService(
+    id = IdGenerator.token,
+    enabled = true,
+    tls = TlsMode.Disabled,
+    sni = SniSettings(false, false),
+    clientAuth = ClientAuth.None,
+    port = 4200,
+    rules = Seq(
+      TcpRule(
+        domain = "*",
+        targets = Seq(
+          TcpTarget(
+            "42.42.42.42",
+            None,
+            4200,
+            false
+          )
+        )
+      )
+    )
+  )
+}
 
 class InMemoryTcpServiceDataStoreDataStore(redisCli: RedisLike, env: Env)
     extends TcpServiceDataStore

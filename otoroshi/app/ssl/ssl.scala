@@ -507,6 +507,19 @@ object Cert {
 
 trait CertificateDataStore extends BasicStore[Cert] {
 
+  def template(implicit ec: ExecutionContext, env: Env): Future[Cert] = {
+    env.pki
+      .genSelfSignedCert(
+        GenCsrQuery(
+          hosts = Seq("www.oto.tools"),
+          subject = Some("C=FR, OU=Foo, O=Bar")
+        )
+      )
+      .map { c =>
+        c.toOption.get.toCert
+      }
+  }
+
   def renewCertificates()(implicit ec: ExecutionContext, env: Env, mat: Materializer): Future[Unit] = {
 
     def willBeInvalidSoon(cert: Cert): Boolean = {

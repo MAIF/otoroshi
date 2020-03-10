@@ -651,4 +651,5 @@ trait GlobalConfigDataStore extends BasicStore[GlobalConfig] {
   def allEnv()(implicit ec: ExecutionContext, env: Env): Future[Set[String]]
   def quotasValidationFor(from: String)(implicit ec: ExecutionContext, env: Env): Future[(Boolean, Long, Option[Long])]
   def migrate()(implicit ec: ExecutionContext, env: Env): Future[Unit]
+  def template: GlobalConfig = GlobalConfig()
 }

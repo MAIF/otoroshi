@@ -1189,7 +1189,49 @@ object Script {
   def fromJsonSafe(value: JsValue): Either[Seq[(JsPath, Seq[JsonValidationError])], Script] = _fmt.reads(value).asEither
 }
 
-trait ScriptDataStore extends BasicStore[Script]
+trait ScriptDataStore extends BasicStore[Script] {
+  def template: Script = Script(
+    id = IdGenerator.token,
+    name = "New request transformer",
+    desc = "New request transformer",
+    code = """import akka.stream.Materializer
+             |import env.Env
+             |import models.{ApiKey, PrivateAppsUser, ServiceDescriptor}
+             |import otoroshi.script._
+             |import play.api.Logger
+             |import play.api.mvc.{Result, Results}
+             |import scala.util._
+             |import scala.concurrent.{ExecutionContext, Future}
+             |
+             |/**
+             | * Your own request transformer
+             | */
+             |class MyTransformer extends RequestTransformer {
+             |
+             |  val logger = Logger("my-transformer")
+             |
+             |  override def transformRequestSync(
+             |    snowflake: String,
+             |    rawRequest: HttpRequest,
+             |    otoroshiRequest: HttpRequest,
+             |    desc: ServiceDescriptor,
+             |    apiKey: Option[ApiKey],
+             |    user: Option[PrivateAppsUser]
+             |  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, HttpRequest] = {
+             |    logger.info(s"Request incoming with id: $snowflake")
+             |    // Here add a new header to the request between otoroshi and the target
+             |    Right(otoroshiRequest.copy(
+             |      headers = otoroshiRequest.headers + ("Hello" -> "World")
+             |    ))
+             |  }
+             |}
+             |
+             |// don't forget to return an instance of the transformer to make it work
+             |new MyTransformer()
+           """.stripMargin,
+    `type` = TransformerType
+  )
+}
 
 class InMemoryScriptDataStore(redisCli: RedisLike, _env: Env) extends ScriptDataStore with RedisLikeStore[Script] {
   override def fmt: Format[Script]                     = Script._fmt

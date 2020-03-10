@@ -118,6 +118,13 @@ GET     /api/new/service                                      controllers.Templa
 GET     /api/new/tcp/service                                  controllers.TemplatesController.initiateTcpService()
 GET     /api/new/group                                        controllers.TemplatesController.initiateServiceGroup()
 
+
+# Create entity from template
+POST    /api/:entity/_template                                controllers.TemplatesController.createFromTemplate(entity)
+POST    /api/tcp/services                                     controllers.TemplatesController.createFromTemplate(entity = "tcp/services")
+POST    /api/admins/simple                                    controllers.TemplatesController.createFromTemplate(entity = "admins/simple")
+POST    /api/admins/webauthn                                  controllers.TemplatesController.createFromTemplate(entity = "admins/webauthn")
+
 ## ApiKeys
 GET     /api/services/:serviceId/apikeys/:clientId/quotas     controllers.ApiController.apiKeyQuotas(serviceId, clientId)
 DELETE  /api/services/:serviceId/apikeys/:clientId/quotas     controllers.ApiController.resetApiKeyQuotas(serviceId, clientId)

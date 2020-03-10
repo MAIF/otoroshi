@@ -1469,4 +1469,10 @@ object Implicits {
   }
 }
 
-trait GlobalJwtVerifierDataStore extends BasicStore[GlobalJwtVerifier]
+trait GlobalJwtVerifierDataStore extends BasicStore[GlobalJwtVerifier] {
+  def template: GlobalJwtVerifier = GlobalJwtVerifier(
+    id = IdGenerator.token,
+    name = "New jwt verifier",
+    desc = "New jwt verifier"
+  )
+}

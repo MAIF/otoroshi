@@ -6,6 +6,7 @@ import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.ws.WSProxyServer
 import play.api.mvc.{AnyContent, Request, RequestHeader, Result}
+import security.IdGenerator
 import storage.BasicStore
 import utils.http.MtlsConfig
 
@@ -104,4 +105,44 @@ trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {
 
   def setUserForToken(token: String, user: JsValue)(implicit ec: ExecutionContext): Future[Unit]
   def getUserForToken(token: String)(implicit ec: ExecutionContext): Future[Option[JsValue]]
+
+  def template(modType: Option[String]): AuthModuleConfig = {
+    modType match {
+      case Some("oauth2") =>
+        GenericOauth2ModuleConfig(
+          id = IdGenerator.token,
+          name = "New auth. module",
+          desc = "New auth. module"
+        )
+      case Some("oauth2-global") =>
+        GenericOauth2ModuleConfig(
+          id = IdGenerator.token,
+          name = "New auth. module",
+          desc = "New auth. module"
+        )
+      case Some("basic") =>
+        BasicAuthModuleConfig(
+          id = IdGenerator.token,
+          name = "New auth. module",
+          desc = "New auth. module"
+        )
+      case Some("ldap") =>
+        LdapAuthModuleConfig(
+          id = IdGenerator.token,
+          name = "New auth. module",
+          desc = "New auth. module",
+          serverUrl = "ldap://ldap.forumsys.com:389",
+          searchBase = "dc=example,dc=com",
+          searchFilter = "(uid=${username})",
+          adminUsername = Some("cn=read-only-admin,dc=example,dc=com"),
+          adminPassword = Some("password")
+        )
+      case _ =>
+        BasicAuthModuleConfig(
+          id = IdGenerator.token,
+          name = "New auth. module",
+          desc = "New auth. module"
+        )
+    }
+  }
 }

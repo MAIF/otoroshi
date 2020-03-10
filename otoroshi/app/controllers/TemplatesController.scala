@@ -2,18 +2,19 @@ package controllers
 
 import actions.ApiAction
 import akka.http.scaladsl.util.FastFuture
-import auth.{BasicAuthModuleConfig, GenericOauth2ModuleConfig, LdapAuthModuleConfig}
+import auth.AuthModuleConfig
 import env.Env
-import models.{GlobalConfig, GlobalJwtVerifier}
+import models._
 import org.mindrot.jbcrypt.BCrypt
-import otoroshi.script.{Script, TransformerType}
-import otoroshi.ssl.pki.models.GenCsrQuery
+import otoroshi.script.Script
 import otoroshi.tcp._
 import play.api.Logger
-import play.api.libs.json.{JsNull, JsObject, JsValue, Json}
-import play.api.mvc.{AbstractController, ControllerComponents, RequestHeader}
+import play.api.libs.json._
+import play.api.mvc.{AbstractController, ControllerComponents, RequestHeader, Result}
 import security.IdGenerator
-import ssl.ClientAuth
+import ssl.Cert
+
+import scala.concurrent.Future
 
 class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env: Env)
     extends AbstractController(cc) {
@@ -62,161 +63,38 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
   def initiateTcpService() = ApiAction { ctx =>
     Ok(
       process(
-        TcpService(
-          id = IdGenerator.token,
-          enabled = true,
-          tls = TlsMode.Disabled,
-          sni = SniSettings(false, false),
-          clientAuth = ClientAuth.None,
-          port = 4200,
-          rules = Seq(
-            TcpRule(
-              domain = "*",
-              targets = Seq(
-                TcpTarget(
-                  "42.42.42.42",
-                  None,
-                  4200,
-                  false
-                )
-              )
-            )
-          )
-        ).json,
+        env.datastores.tcpServiceDataStore.template.json,
         ctx.request
       )
     )
   }
 
   def initiateCertificate() = ApiAction.async { ctx =>
-    env.pki
-      .genSelfSignedCert(
-        GenCsrQuery(
-          hosts = Seq("www.oto.tools"),
-          subject = Some("C=FR, OU=Foo, O=Bar")
-        )
-      )
-      .map { c =>
-        Ok(process(c.toOption.get.toCert.toJson, ctx.request))
-      }
+    env.datastores.certificatesDataStore.template.map { cert =>
+      Ok(process(cert.toJson,  ctx.request))
+    }
   }
 
   def initiateGlobalConfig() = ApiAction { ctx =>
-    Ok(process(GlobalConfig().toJson, ctx.request))
+    Ok(process(env.datastores.globalConfigDataStore.template.toJson, ctx.request))
   }
 
   def initiateJwtVerifier() = ApiAction { ctx =>
     Ok(
-      process(GlobalJwtVerifier(
-                id = IdGenerator.token,
-                name = "New jwt verifier",
-                desc = "New jwt verifier"
-              ).asJson,
-              ctx.request)
+      process(env.datastores.globalJwtVerifierDataStore.template.asJson, ctx.request)
     )
   }
 
   def initiateAuthModule() = ApiAction { ctx =>
-    ctx.request.getQueryString("mod-type") match {
-      case Some("oauth2") =>
-        Ok(
-          process(GenericOauth2ModuleConfig(
-                    id = IdGenerator.token,
-                    name = "New auth. module",
-                    desc = "New auth. module"
-                  ).asJson,
-                  ctx.request)
-        )
-      case Some("oauth2-global") =>
-        Ok(
-          process(GenericOauth2ModuleConfig(
-                    id = IdGenerator.token,
-                    name = "New auth. module",
-                    desc = "New auth. module"
-                  ).asJson,
-                  ctx.request)
-        )
-      case Some("basic") =>
-        Ok(
-          process(BasicAuthModuleConfig(
-                    id = IdGenerator.token,
-                    name = "New auth. module",
-                    desc = "New auth. module"
-                  ).asJson,
-                  ctx.request)
-        )
-      case Some("ldap") =>
-        Ok(
-          process(
-            LdapAuthModuleConfig(
-              id = IdGenerator.token,
-              name = "New auth. module",
-              desc = "New auth. module",
-              serverUrl = "ldap://ldap.forumsys.com:389",
-              searchBase = "dc=example,dc=com",
-              searchFilter = "(uid=${username})",
-              adminUsername = Some("cn=read-only-admin,dc=example,dc=com"),
-              adminPassword = Some("password")
-            ).asJson,
-            ctx.request
-          )
-        )
-      case _ =>
-        Ok(
-          process(BasicAuthModuleConfig(
-                    id = IdGenerator.token,
-                    name = "New auth. module",
-                    desc = "New auth. module"
-                  ).asJson,
-                  ctx.request)
-        )
-    }
+    Ok(
+      process(env.datastores.authConfigsDataStore.template(ctx.request.getQueryString("mod-type")).asJson, ctx.request)
+    )
   }
 
   def initiateScript() = ApiAction { ctx =>
     Ok(
       process(
-        Script(
-          id = IdGenerator.token,
-          name = "New request transformer",
-          desc = "New request transformer",
-          code = """import akka.stream.Materializer
-          |import env.Env
-          |import models.{ApiKey, PrivateAppsUser, ServiceDescriptor}
-          |import otoroshi.script._
-          |import play.api.Logger
-          |import play.api.mvc.{Result, Results}
-          |import scala.util._
-          |import scala.concurrent.{ExecutionContext, Future}
-          |
-          |/**
-          | * Your own request transformer
-          | */
-          |class MyTransformer extends RequestTransformer {
-          |
-          |  val logger = Logger("my-transformer")
-          |
-          |  override def transformRequestSync(
-          |    snowflake: String,
-          |    rawRequest: HttpRequest,
-          |    otoroshiRequest: HttpRequest,
-          |    desc: ServiceDescriptor,
-          |    apiKey: Option[ApiKey],
-          |    user: Option[PrivateAppsUser]
-          |  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, HttpRequest] = {
-          |    logger.info(s"Request incoming with id: $snowflake")
-          |    // Here add a new header to the request between otoroshi and the target
-          |    Right(otoroshiRequest.copy(
-          |      headers = otoroshiRequest.headers + ("Hello" -> "World")
-          |    ))
-          |  }
-          |}
-          |
-          |// don't forget to return an instance of the transformer to make it work
-          |new MyTransformer()
-        """.stripMargin,
-          `type` = TransformerType
-        ).toJson,
+        env.datastores.scriptDataStore.template.toJson,
         ctx.request
       )
     )
@@ -254,4 +132,27 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
     )
   }
 
+  private def patchTemplate[T](entity: => JsValue, patch: JsValue, format: Format[T], save: T => Future[Boolean]): Future[Result] = {
+    val merged = entity.as[JsObject].deepMerge(patch.as[JsObject])
+    format.reads(merged) match {
+      case JsError(e) => FastFuture.successful(BadRequest(Json.obj("error" -> s"bad entity $e")))
+      case JsSuccess(entity, _) => save(entity).map(_ => Created(format.writes(entity)))
+    }
+  }
+
+  def createFromTemplate(entity: String) = ApiAction.async(parse.json) { ctx =>
+    val patch = ctx.request.body
+    entity.toLowerCase() match {
+      case "services"     => patchTemplate[ServiceDescriptor](env.datastores.serviceDescriptorDataStore.initiateNewDescriptor().copy(subdomain = IdGenerator.token(32).toLowerCase(), domain = s"${IdGenerator.token(32).toLowerCase()}.${IdGenerator.token(8).toLowerCase()}").toJson, patch, ServiceDescriptor._fmt, _.save())
+      case "groups"       => patchTemplate[ServiceGroup](env.datastores.serviceGroupDataStore.initiateNewGroup().toJson, patch, ServiceGroup._fmt, _.save())
+      case "apikeys"      => patchTemplate[ApiKey](env.datastores.apiKeyDataStore.initiateNewApiKey("default").toJson, patch, ApiKey._fmt, _.save())
+      case "certificates" => env.datastores.certificatesDataStore.template.flatMap(cert => patchTemplate[Cert](cert.toJson, patch, Cert._fmt, _.save()))
+      case "globalconfig" => patchTemplate[GlobalConfig](env.datastores.globalConfigDataStore.template.toJson, patch, GlobalConfig._fmt, _.save())
+      case "verifiers"    => patchTemplate[GlobalJwtVerifier](env.datastores.globalJwtVerifierDataStore.template.asJson, patch, GlobalJwtVerifier._fmt, _.save())
+      case "auths"        => patchTemplate[AuthModuleConfig](env.datastores.authConfigsDataStore.template(ctx.request.getQueryString("mod-type")).asJson, patch, AuthModuleConfig._fmt, _.save())
+      case "scripts"      => patchTemplate[Script](env.datastores.scriptDataStore.template.toJson, patch, Script._fmt, _.save())
+      case "tcp/services" => patchTemplate[TcpService](env.datastores.tcpServiceDataStore.template.json, patch, TcpService.fmt, _.save())
+      case _              => FastFuture.successful(NotFound(Json.obj("error" -> "entity not found")))
+    }
+  }
 }

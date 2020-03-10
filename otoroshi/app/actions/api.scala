@@ -79,16 +79,18 @@ class ApiAction(val parser: BodyParser[AnyContent])(implicit env: Env)
                           case Failure(err) => error(s"Server error : $err", Some(err))
                         }
                       }
-                      case _ => error(s"You're not authorized - ${request.method} ${request.uri}")
+                      case _ => error(s"You're not authorized1 - ${request.method} ${request.uri}")
                     }
                   } recoverWith {
-                  case e => error(s"You're not authorized - ${request.method} ${request.uri}")
+                  case e =>
+                    e.printStackTrace()
+                    error(s"You're not authorized2 - ${request.method} ${request.uri}")
                 }
               }
-              case _ => error(s"You're not authorized - ${request.method} ${request.uri}")
+              case _ => error(s"You're not authorized3 - ${request.method} ${request.uri}")
             }
           }
-          case _ => error(s"You're not authorized - ${request.method} ${request.uri}")
+          case _ => error(s"You're not authorized4 - ${request.method} ${request.uri}")
         }
       }
       case _ => error(s"Not found")
