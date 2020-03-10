@@ -4,27 +4,21 @@ LABEL maintainer "MAIF <oss@maif.fr>"
 
 RUN groupadd -g 999 otoroshi && useradd -r -u 999 -g otoroshi otoroshi
 
-RUN mkdir -p /otoroshi
+RUN mkdir -p /usr/app/otoroshi
 
-WORKDIR /otoroshi
+WORKDIR /usr/app
 
-COPY ./otoroshi.jar /otoroshi
-COPY ./entrypoint-graal.sh /otoroshi
+COPY ./otoroshi /usr/app/otoroshi
+COPY ./entrypoint.sh /usr/app/
 
-RUN mkdir /otoroshi/conf \
-  && mkdir /otoroshi/filedb \
-  && mkdir /otoroshi/imports
+RUN chown -R otoroshi:otoroshi /usr/app/otoroshi
 
-RUN chown -R otoroshi:otoroshi /otoroshi
+VOLUME /usr/app/otoroshi/imports
+VOLUME /usr/app/otoroshi/filedb
+VOLUME /usr/app/otoroshi/conf
+VOLUME /usr/app/otoroshi
 
-VOLUME /otoroshi/imports
-VOLUME /otoroshi/filedb
-VOLUME /otoroshi/conf
-VOLUME /otoroshi
-
-# RUN native-image -H:+ReportUnsupportedElementsAtRuntime --verbose --delay-class-initialization-to-runtime=play.api.Play$ -jar otoroshi.jar 
-
-ENTRYPOINT ["./entrypoint-graal.sh"]
+ENTRYPOINT ["./entrypoint.sh"]
 
 USER otoroshi
 
@@ -33,3 +27,5 @@ EXPOSE 8080
 STOPSIGNAL SIGINT
 
 CMD [""]
+
+# RUN native-image -H:+ReportUnsupportedElementsAtRuntime --verbose --delay-class-initialization-to-runtime=play.api.Play$ -jar otoroshi.jar 
