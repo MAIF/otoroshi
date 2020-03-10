@@ -127,7 +127,7 @@ curl -X POST -H 'Content-Type: application/json' \
 but if you try to use it, you will have something like :
 
 ```sh
-curl http://cats.oto.tools:8080 | jq
+$ curl http://cats.oto.tools:8080 | jq
 {
   "Otoroshi-Error": "No ApiKey provided"
 }
@@ -150,7 +150,7 @@ curl -X POST -H 'Content-Type: application/json' \
 and try again
 
 ```sh
-curl http://cats.oto.tools:8080 -u apikey1:secret | jq
+$ curl http://cats.oto.tools:8080 -u apikey1:secret | jq
 {
   "file": "https://purr.objects-us-east-1.dream.io/i/vICG4.gif"
 }
