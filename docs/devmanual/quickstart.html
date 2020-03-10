@@ -221,16 +221,21 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="small-12 large-9 column" id="docs">
 <h1><a href="#try-otoroshi-in-5-minutes" name="try-otoroshi-in-5-minutes" class="anchor"><span class="anchor-link"></span></a>Try Otoroshi in 5 minutes</h1><div class="callout warning "><div class="callout-title">Warning</div>
 <p>This section is under construction</p></div>
-<h2><a href="#tools" name="tools" class="anchor"><span class="anchor-link"></span></a>Tools</h2>
-<p>here you will need </p>
+<p>what you will need :</p>
 <ul>
   <li>JDK 11</li>
   <li>curl</li>
   <li>jq</li>
   <li>a web browser ;)</li>
+  <li>5 minutes of free time</li>
 </ul>
+<h2><a href="#the-elevator-pitch" name="the-elevator-pitch" class="anchor"><span class="anchor-link"></span></a>The elevator pitch</h2>
+<p>Otoroshi is an awesome reverse proxy built with Scala that handles all the calls to and between your microservices without service locator and lets you change configuration dynamically at runtime.</p>
 <h2><a href="#download-otoroshi" name="download-otoroshi" class="anchor"><span class="anchor-link"></span></a>Download otoroshi</h2>
 <pre class="prettyprint"><code class="language-sh">curl -L -o otoroshi.jar &#39;https://github.com/MAIF/otoroshi/releases/download/v1.4.21-dev/otoroshi.jar&#39;
+</code></pre>
+<p>If you don’t/can’t have these tools on your machine, you can start a sandboxed environment using here with the following command</p>
+<pre class="prettyprint"><code class="language-sh">docker run -p &quot;8080:8080&quot; -it maif/otoroshi bash
 </code></pre>
 <h2><a href="#start-otoroshi" name="start-otoroshi" class="anchor"><span class="anchor-link"></span></a>Start otoroshi</h2>
 <p>to start otoroshi, just run the following command </p>
@@ -291,6 +296,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <h2><a href="#create-a-service-to-proxy-an-api" name="create-a-service-to-proxy-an-api" class="anchor"><span class="anchor-link"></span></a>Create a service to proxy an api</h2>
 <p>now will we proxy the api at <code>https://aws.random.cat/meow</code> that returns random cat pictures and make it use apikeys.</p>
 <pre class="prettyprint"><code class="language-sh">$ curl https://aws.random.cat/meow | jq
+
 {
   &quot;file&quot;: &quot;https://purr.objects-us-east-1.dream.io/i/20161003_163413.jpg&quot;
 }
@@ -300,6 +306,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   http://otoroshi-api.oto.tools:8080/api/services/_template \
   -u quickstart:secret \
   -d &#39;{
+  &quot;id&quot;: &quot;cats-api&quot;,
   &quot;name&quot;: &quot;cats-api&quot;, 
   &quot;hosts&quot;: [&quot;cats.oto.tools&quot;], 
   &quot;targets&quot;: [{ &quot;host&quot;: &quot;aws.random.cat&quot;, &quot;scheme&quot;: &quot;https&quot; }],
@@ -308,11 +315,12 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 </code></pre>
 <p>but if you try to use it, you will have something like :</p>
 <pre class="prettyprint"><code class="language-sh">$ curl http://cats.oto.tools:8080 | jq
+
 {
   &quot;Otoroshi-Error&quot;: &quot;No ApiKey provided&quot;
 }
 </code></pre>
-<p>that&rsquo;s because the api is not public and needs apikeys to access it. So let&rsquo;s create apikeys</p>
+<p>that&rsquo;s because the api is not public and needs apikeys to access it. So let&rsquo;s create an apikey</p>
 <pre class="prettyprint"><code class="language-sh">curl -X POST -H &#39;Content-Type: application/json&#39; \
   http://otoroshi-api.oto.tools:8080/api/apikeys/_template \
   -u quickstart:secret \
@@ -321,13 +329,85 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   &quot;clientSecret&quot;: &quot;secret&quot;,
   &quot;clientName&quot;: &quot;quickstart-apikey-1&quot;,
   &quot;authorizedGroup&quot;: &quot;default&quot;
-}&#39; | jqs
+}&#39; | jq
 </code></pre>
 <p>and try again</p>
 <pre class="prettyprint"><code class="language-sh">$ curl http://cats.oto.tools:8080 -u apikey1:secret | jq
+
 {
   &quot;file&quot;: &quot;https://purr.objects-us-east-1.dream.io/i/vICG4.gif&quot;
 }
+</code></pre>
+<p>now let&rsquo;s try to play with quotas. First, we need to know what is the current state of the apikey quotas by enabling otoroshi headers about consumptions</p>
+<pre class="prettyprint"><code class="language-sh">curl -X PATCH -H &#39;Content-Type: application/json&#39; \
+  http://otoroshi-api.oto.tools:8080/api/services/cats-api \
+  -u quickstart:secret \
+  -d &#39;[
+  { &quot;op&quot;: &quot;replace&quot;, &quot;path&quot;: &quot;/sendOtoroshiHeadersBack&quot;, &quot;value&quot;: true }
+]&#39; | jq
+</code></pre>
+<p>and retry the call with </p>
+<pre class="prettyprint"><code class="language-sh">$ curl http://cats.oto.tools:8080 -u apikey1:secret --include
+
+HTTP/1.1 200 OK
+Date: Tue, 10 Mar 2020 12:56:08 GMT
+Server: Apache
+Expires: Mon, 26 Jul 1997 05:00:00 GMT
+Cache-Control: no-cache, must-revalidate
+Otoroshi-Request-Id: 1237361356529729796
+Otoroshi-Proxy-Latency: 79
+Otoroshi-Upstream-Latency: 416
+Otoroshi-Request-Timestamp: 2020-03-10T13:55:11.195+01:00
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Methods: GET
+Otoroshi-Daily-Calls-Remaining: 9999998
+Otoroshi-Monthly-Calls-Remaining: 9999998
+Content-Type: application/json
+Content-Length: 71
+
+{&quot;file&quot;:&quot;https:\/\/purr.objects-us-east-1.dream.io\/i\/beerandcat.jpg&quot;}
+</code></pre>
+<p>now let&rsquo;s try to allow only 10 request per day on the apikey</p>
+<pre class="prettyprint"><code class="language-sh">curl -X PATCH -H &#39;Content-Type: application/json&#39; \
+  http://otoroshi-api.oto.tools:8080/api/services/cats-api/apikeys/apikey1 \
+  -u quickstart:secret \
+  -d &#39;[
+  { &quot;op&quot;: &quot;replace&quot;, &quot;path&quot;: &quot;/dailyQuota&quot;, &quot;value&quot;: 10 }
+]&#39; | jq
+</code></pre>
+<p>then try to call you api again</p>
+<pre class="prettyprint"><code class="language-sh">curl http://cats.oto.tools:9999 -u apikey1:secret --include
+
+HTTP/1.1 200 OK
+Date: Tue, 10 Mar 2020 13:00:01 GMT
+Server: Apache
+Expires: Mon, 26 Jul 1997 05:00:00 GMT
+Cache-Control: no-cache, must-revalidate
+Otoroshi-Request-Id: 1237362334930829633
+Otoroshi-Proxy-Latency: 71
+Otoroshi-Upstream-Latency: 92
+Otoroshi-Request-Timestamp: 2020-03-10T13:59:04.456+01:00
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Methods: GET
+Otoroshi-Daily-Calls-Remaining: 7
+Otoroshi-Monthly-Calls-Remaining: 9999997
+Content-Type: application/json
+Content-Length: 66
+
+{&quot;file&quot;:&quot;https:\/\/purr.objects-us-east-1.dream.io\/i\/C1XNK.jpg&quot;}
+</code></pre>
+<p>eventually you will get something like</p>
+<pre class="prettyprint"><code class="language-sh">$ curl http://cats.oto.tools:8080 -u apikey1:secret --include
+
+HTTP/1.1 429 Too Many Requests
+Otoroshi-Error: true
+Otoroshi-Error-Msg: You performed too much requests
+Otoroshi-State-Resp: --
+Date: Tue, 10 Mar 2020 12:59:11 GMT
+Content-Type: application/json
+Content-Length: 52
+
+{&quot;Otoroshi-Error&quot;:&quot;You performed too much requests&quot;}
 </code></pre>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="getotoroshi/index.html">Get Otoroshi</a></p>
@@ -341,7 +421,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <ul>
   <li><a href="quickstart.html#try-otoroshi-in-5-minutes" class="header">Try Otoroshi in 5 minutes</a>
   <ul>
-    <li><a href="quickstart.html#tools" class="header">Tools</a></li>
+    <li><a href="quickstart.html#the-elevator-pitch" class="header">The elevator pitch</a></li>
     <li><a href="quickstart.html#download-otoroshi" class="header">Download otoroshi</a></li>
     <li><a href="quickstart.html#start-otoroshi" class="header">Start otoroshi</a></li>
     <li><a href="quickstart.html#log-into-the-admin-ui" class="header">Log into the admin UI</a></li>
