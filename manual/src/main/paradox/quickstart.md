@@ -4,19 +4,28 @@
 This section is under construction
 @@@
 
-## Tools
-
-here you will need 
+what you will need :
 
 * JDK 11
 * curl
 * jq
 * a web browser ;)
+* 5 minutes of free time
+
+## The elevator pitch
+
+Otoroshi is an awesome reverse proxy built with Scala that handles all the calls to and between your microservices without service locator and lets you change configuration dynamically at runtime.
 
 ## Download otoroshi
 
 ```sh
 curl -L -o otoroshi.jar 'https://github.com/MAIF/otoroshi/releases/download/v1.4.21-dev/otoroshi.jar'
+```
+
+If you don’t/can’t have these tools on your machine, you can start a sandboxed environment using here with the following command
+
+```sh
+docker run -p "8080:8080" -it maif/otoroshi bash
 ```
 
 ## Start otoroshi
