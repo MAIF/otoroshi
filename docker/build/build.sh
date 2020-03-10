@@ -155,6 +155,7 @@ case "${1}" in
     build_graal $2
     cleanup
     docker push "maif/otoroshi:$2-graal"
+    ;;
   build-and-push-snapshot)
     NBR=`date +%s`
     echo "Will build version 1.4.22-dev-$NBR"
