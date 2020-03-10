@@ -411,6 +411,7 @@ async function releaseOtoroshi(from, to, next, last, location, dryRun) {
     await ensureStep('CHANGE_TO_DEV_VERSION', releaseFile, () => changeVersion(location, to, next, ['./readme.md']));
     await ensureStep('PUSH_TO_GITHUB', releaseFile, async () => {
       await runSystemCommand('git', ['commit', '-am', `Update version to ${next}`], location);
+      await runSystemCommand('git', ['pull', '--rebase', 'origin', 'master'], location);
       await runSystemCommand('git', ['push', 'origin', 'master'], location);
       await runSystemCommand('git', ['push', '--tags'], location);
       console.log("Release done !");
