@@ -20,7 +20,7 @@ curl -L -o otoroshi.jar 'https://github.com/MAIF/otoroshi/releases/download/v1.4
 If you don’t/can’t have these tools on your machine, you can start a sandboxed environment using here with the following command
 
 ```sh
-docker run -p "8080:8080" -it maif/otoroshi
+docker run -p "8080:8080" maif/otoroshi
 ```
 
 ## Start otoroshi
