@@ -221,11 +221,137 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="small-12 large-9 column" id="docs">
 <h1><a href="#try-otoroshi-in-5-minutes" name="try-otoroshi-in-5-minutes" class="anchor"><span class="anchor-link"></span></a>Try Otoroshi in 5 minutes</h1><div class="callout warning "><div class="callout-title">Warning</div>
 <p>This section is under construction</p></div>
+<h2><a href="#tools" name="tools" class="anchor"><span class="anchor-link"></span></a>Tools</h2>
+<p>here you will need </p>
+<ul>
+  <li>JDK 11</li>
+  <li>curl</li>
+  <li>jq</li>
+  <li>a web browser ;)</li>
+</ul>
+<h2><a href="#download-otoroshi" name="download-otoroshi" class="anchor"><span class="anchor-link"></span></a>Download otoroshi</h2>
+<pre class="prettyprint"><code class="language-sh">curl -L -o otoroshi.jar &#39;https://github.com/MAIF/otoroshi/releases/download/v1.4.21-dev/otoroshi.jar&#39;
+</code></pre>
+<h2><a href="#start-otoroshi" name="start-otoroshi" class="anchor"><span class="anchor-link"></span></a>Start otoroshi</h2>
+<p>to start otoroshi, just run the following command </p>
+<pre class="prettyprint"><code class="language-sh">java -jar otoroshi.jar
+</code></pre>
+<p>this will start an in-memory otoroshi instance with a generated password that will be printed in the logs. You can set the password with the following flags</p>
+<pre class="prettyprint"><code class="language-sh">java -Dapp.adminLogin=admin@foo.bar -Dapp.adminPassword=password -jar otoroshi.jar
+</code></pre>
+<p>if you want to have otoroshi content persisted between launch without having to setup a datastore, just usse the following flag</p>
+<pre class="prettyprint"><code class="language-sh">java -Dapp.storage=file -jar otoroshi.jar
+</code></pre>
+<p>as the result, you will see something like</p>
+<pre class="prettyprint"><code class="language-log">$ java -jar otoroshi.jar
+[info] otoroshi-env - Otoroshi version 1.4.21-dev
+[info] otoroshi-env - Admin API exposed on http://otoroshi-api.oto.tools:8080
+[info] otoroshi-env - Admin UI  exposed on http://otoroshi.oto.tools:8080
+[warn] otoroshi-env - Scripting is enabled on this Otoroshi instance !
+[info] otoroshi-in-memory-datastores - Now using InMemory DataStores
+[info] otoroshi-env - The main datastore seems to be empty, registering some basic services
+[info] otoroshi-env - You can log into the Otoroshi admin console with the following credentials: admin@otoroshi.io / xol1Kwjzqe9OXjqDxxPPbPb9p0BPjhCO
+[info] play.api.Play - Application started (Prod)
+[info] otoroshi-script-manager - Compiling and starting scripts ...
+[info] otoroshi-script-manager - Finding and starting plugins ...
+[info] otoroshi-script-manager - Compiling and starting scripts done in 18 ms.
+[info] p.c.s.AkkaHttpServer - Listening for HTTP on /0:0:0:0:0:0:0:0:8080
+[info] p.c.s.AkkaHttpServer - Listening for HTTPS on /0:0:0:0:0:0:0:0:8443
+[info] otoroshi-script-manager - Finding and starting plugins done in 4681 ms.
+[info] otoroshi-env - Generating CA certificate for Otoroshi self signed certificates ...
+[info] otoroshi-env - Generating a self signed SSL certificate for https://*.oto.tools ...
+</code></pre>
+<h2><a href="#log-into-the-admin-ui" name="log-into-the-admin-ui" class="anchor"><span class="anchor-link"></span></a>Log into the admin UI</h2>
+<p>just go to <a href="http://otoroshi.oto.tools:8080">http://otoroshi.oto.tools:8080</a> and log in with the credentials printed in the logs</p>
+<h2><a href="#create-you-first-service" name="create-you-first-service" class="anchor"><span class="anchor-link"></span></a>Create you first service</h2>
+<p>to create your first service you can either do it using the admin UI or using the admin API. Let&rsquo;s use the admin API.</p>
+<p>By default, otoroshi registers an admin apikey with <code>admin-api-apikey-id:admin-api-apikey-secret</code> value (those values can be tuned at first startup). Of course you can create your own with</p>
+<pre class="prettyprint"><code class="language-sh">curl -X POST -H &#39;Content-Type: application/json&#39; \
+  http://otoroshi-api.oto.tools:8080/api/apikeys/_template \
+  -u admin-api-apikey-id:admin-api-apikey-secret \
+  -d &#39;{
+  &quot;clientId&quot;: &quot;quickstart&quot;,
+  &quot;clientSecret&quot;: &quot;secret&quot;,
+  &quot;clientName&quot;: &quot;quickstart-apikey&quot;,
+  &quot;authorizedGroup&quot;: &quot;admin-api-group&quot;
+}&#39; | jq
+</code></pre>
+<p>now let create a new service to proxy <code>https://maif.gitub.io</code> on domain <code>maif.oto.tools</code>. This service will be public and will not require an apikey to pass</p>
+<pre class="prettyprint"><code class="language-sh">curl -X POST -H &#39;Content-Type: application/json&#39; \
+  http://otoroshi-api.oto.tools:8080/api/services/_template \
+  -u quickstart:secret \
+  -d &#39;{
+  &quot;name&quot;: &quot;quickstart-service&quot;, 
+  &quot;hosts&quot;: [&quot;maif.oto.tools&quot;], 
+  &quot;targets&quot;: [{ &quot;host&quot;: &quot;maif.github.io&quot;, &quot;scheme&quot;: &quot;https&quot; }], 
+  &quot;publicPatterns&quot;: [&quot;/.*&quot;]
+}&#39; | jq
+</code></pre>
+<p>now just go to <code>http://maif.oto.tools:8080</code> to check if it works</p>
+<h2><a href="#create-a-service-to-proxy-an-api" name="create-a-service-to-proxy-an-api" class="anchor"><span class="anchor-link"></span></a>Create a service to proxy an api</h2>
+<p>now will we proxy the api at <code>https://aws.random.cat/meow</code> that returns random cat pictures and make it use apikeys.</p>
+<pre class="prettyprint"><code class="language-sh">$ curl https://aws.random.cat/meow | jq
+{
+  &quot;file&quot;: &quot;https://purr.objects-us-east-1.dream.io/i/20161003_163413.jpg&quot;
+}
+</code></pre>
+<p>First let&rsquo;s create the service </p>
+<pre class="prettyprint"><code class="language-sh">curl -X POST -H &#39;Content-Type: application/json&#39; \
+  http://otoroshi-api.oto.tools:8080/api/services/_template \
+  -u quickstart:secret \
+  -d &#39;{
+  &quot;name&quot;: &quot;cats-api&quot;, 
+  &quot;hosts&quot;: [&quot;cats.oto.tools&quot;], 
+  &quot;targets&quot;: [{ &quot;host&quot;: &quot;aws.random.cat&quot;, &quot;scheme&quot;: &quot;https&quot; }],
+  &quot;root&quot;: &quot;/meow&quot;,
+}&#39; | jq
+</code></pre>
+<p>but if you try to use it, you will have something like :</p>
+<pre class="prettyprint"><code class="language-sh">curl http://cats.oto.tools:8080 | jq
+{
+  &quot;Otoroshi-Error&quot;: &quot;No ApiKey provided&quot;
+}
+</code></pre>
+<p>that&rsquo;s because the api is not public and needs apikeys to access it. So let&rsquo;s create apikeys</p>
+<pre class="prettyprint"><code class="language-sh">curl -X POST -H &#39;Content-Type: application/json&#39; \
+  http://otoroshi-api.oto.tools:8080/api/apikeys/_template \
+  -u quickstart:secret \
+  -d &#39;{
+  &quot;clientId&quot;: &quot;apikey1&quot;,
+  &quot;clientSecret&quot;: &quot;secret&quot;,
+  &quot;clientName&quot;: &quot;quickstart-apikey-1&quot;,
+  &quot;authorizedGroup&quot;: &quot;default&quot;
+}&#39; | jqs
+</code></pre>
+<p>and try again</p>
+<pre class="prettyprint"><code class="language-sh">curl http://cats.oto.tools:8080 -u apikey1:secret | jq
+{
+  &quot;file&quot;: &quot;https://purr.objects-us-east-1.dream.io/i/vICG4.gif&quot;
+}
+</code></pre>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="getotoroshi/index.html">Get Otoroshi</a></p>
 </div>
 </div>
 <div class="large-3 show-for-large column" data-sticky-container>
+<nav class="sidebar sticky" data-sticky data-anchor="docs" data-sticky-on="large">
+<div class="page-nav">
+<div class="nav-title">On this page:</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="quickstart.html#try-otoroshi-in-5-minutes" class="header">Try Otoroshi in 5 minutes</a>
+  <ul>
+    <li><a href="quickstart.html#tools" class="header">Tools</a></li>
+    <li><a href="quickstart.html#download-otoroshi" class="header">Download otoroshi</a></li>
+    <li><a href="quickstart.html#start-otoroshi" class="header">Start otoroshi</a></li>
+    <li><a href="quickstart.html#log-into-the-admin-ui" class="header">Log into the admin UI</a></li>
+    <li><a href="quickstart.html#create-you-first-service" class="header">Create you first service</a></li>
+    <li><a href="quickstart.html#create-a-service-to-proxy-an-api" class="header">Create a service to proxy an api</a></li>
+  </ul></li>
+</ul>
+</div>
+</div>
+</nav>
 </div>
 </div>
 
