@@ -105,6 +105,7 @@ now will we proxy the api at `https://aws.random.cat/meow` that returns random c
 
 ```sh
 $ curl https://aws.random.cat/meow | jq
+
 {
   "file": "https://purr.objects-us-east-1.dream.io/i/20161003_163413.jpg"
 }
@@ -117,6 +118,7 @@ curl -X POST -H 'Content-Type: application/json' \
   http://otoroshi-api.oto.tools:8080/api/services/_template \
   -u quickstart:secret \
   -d '{
+  "id": "cats-api",
   "name": "cats-api", 
   "hosts": ["cats.oto.tools"], 
   "targets": [{ "host": "aws.random.cat", "scheme": "https" }],
@@ -128,12 +130,13 @@ but if you try to use it, you will have something like :
 
 ```sh
 $ curl http://cats.oto.tools:8080 | jq
+
 {
   "Otoroshi-Error": "No ApiKey provided"
 }
 ```
 
-that's because the api is not public and needs apikeys to access it. So let's create apikeys
+that's because the api is not public and needs apikeys to access it. So let's create an apikey
 
 ```sh
 curl -X POST -H 'Content-Type: application/json' \
@@ -144,14 +147,101 @@ curl -X POST -H 'Content-Type: application/json' \
   "clientSecret": "secret",
   "clientName": "quickstart-apikey-1",
   "authorizedGroup": "default"
-}' | jqs
+}' | jq
 ```  
 
 and try again
 
 ```sh
 $ curl http://cats.oto.tools:8080 -u apikey1:secret | jq
+
 {
   "file": "https://purr.objects-us-east-1.dream.io/i/vICG4.gif"
 }
+```
+
+now let's try to play with quotas. First, we need to know what is the current state of the apikey quotas by enabling otoroshi headers about consumptions
+
+```sh
+curl -X PATCH -H 'Content-Type: application/json' \
+  http://otoroshi-api.oto.tools:8080/api/services/cats-api \
+  -u quickstart:secret \
+  -d '[
+  { "op": "replace", "path": "/sendOtoroshiHeadersBack", "value": true }
+]' | jq
+```
+
+and retry the call with 
+
+```sh
+$ curl http://cats.oto.tools:8080 -u apikey1:secret --include
+
+HTTP/1.1 200 OK
+Date: Tue, 10 Mar 2020 12:56:08 GMT
+Server: Apache
+Expires: Mon, 26 Jul 1997 05:00:00 GMT
+Cache-Control: no-cache, must-revalidate
+Otoroshi-Request-Id: 1237361356529729796
+Otoroshi-Proxy-Latency: 79
+Otoroshi-Upstream-Latency: 416
+Otoroshi-Request-Timestamp: 2020-03-10T13:55:11.195+01:00
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Methods: GET
+Otoroshi-Daily-Calls-Remaining: 9999998
+Otoroshi-Monthly-Calls-Remaining: 9999998
+Content-Type: application/json
+Content-Length: 71
+
+{"file":"https:\/\/purr.objects-us-east-1.dream.io\/i\/beerandcat.jpg"}
+```
+
+now let's try to allow only 10 request per day on the apikey
+
+```sh
+curl -X PATCH -H 'Content-Type: application/json' \
+  http://otoroshi-api.oto.tools:8080/api/services/cats-api/apikeys/apikey1 \
+  -u quickstart:secret \
+  -d '[
+  { "op": "replace", "path": "/dailyQuota", "value": 10 }
+]' | jq
+```
+
+then try to call you api again
+
+```sh
+curl http://cats.oto.tools:9999 -u apikey1:secret --include
+
+HTTP/1.1 200 OK
+Date: Tue, 10 Mar 2020 13:00:01 GMT
+Server: Apache
+Expires: Mon, 26 Jul 1997 05:00:00 GMT
+Cache-Control: no-cache, must-revalidate
+Otoroshi-Request-Id: 1237362334930829633
+Otoroshi-Proxy-Latency: 71
+Otoroshi-Upstream-Latency: 92
+Otoroshi-Request-Timestamp: 2020-03-10T13:59:04.456+01:00
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Methods: GET
+Otoroshi-Daily-Calls-Remaining: 7
+Otoroshi-Monthly-Calls-Remaining: 9999997
+Content-Type: application/json
+Content-Length: 66
+
+{"file":"https:\/\/purr.objects-us-east-1.dream.io\/i\/C1XNK.jpg"}
+```
+
+eventually you will get something like
+
+```sh
+$ curl http://cats.oto.tools:8080 -u apikey1:secret --include
+
+HTTP/1.1 429 Too Many Requests
+Otoroshi-Error: true
+Otoroshi-Error-Msg: You performed too much requests
+Otoroshi-State-Resp: --
+Date: Tue, 10 Mar 2020 12:59:11 GMT
+Content-Type: application/json
+Content-Length: 52
+
+{"Otoroshi-Error":"You performed too much requests"}
 ```
