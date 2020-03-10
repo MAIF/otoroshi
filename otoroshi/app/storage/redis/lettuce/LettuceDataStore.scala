@@ -31,7 +31,11 @@ import storage.inmemory._
 import scala.concurrent.{ExecutionContext, Future}
 import collection.JavaConverters._
 
-class LettuceDataStores(configuration: Configuration, environment: Environment, lifecycle: ApplicationLifecycle, env: Env) extends DataStores {
+class LettuceDataStores(configuration: Configuration,
+                        environment: Environment,
+                        lifecycle: ApplicationLifecycle,
+                        env: Env)
+    extends DataStores {
 
   lazy val logger = Logger("otoroshi-redis-lettuce-datastores")
 
@@ -46,26 +50,37 @@ class LettuceDataStores(configuration: Configuration, environment: Environment, 
         .getOrElse(ConfigFactory.empty)
     )
 
-  val clientRef = new AtomicReference[AbstractRedisClient]()
+  val clientRef     = new AtomicReference[AbstractRedisClient]()
   val connectionRef = new AtomicReference[StatefulRedisMasterReplicaConnection[String, ByteString]]()
 
   lazy val redisDispatcher = redisActorSystem.dispatcher
 
   lazy val redisConnection = configuration.getOptional[String]("app.redis.lettuce.connection").getOrElse("default")
-  lazy val redisReadFrom = configuration.getOptional[String]("app.redis.lettuce.readFrom").getOrElse("MASTER_PREFERRED")
-  lazy val readFrom = ReadFrom.valueOf(redisReadFrom)
-  lazy val redisUris: Seq[String] = configuration.getOptional[Seq[String]]("app.redis.lettuce.uris").filter(_.nonEmpty).map(_.map(_.trim)).orElse(
-    configuration.getOptional[String]("app.redis.lettuce.urisStr").map(_.split(",").map(_.trim).toSeq)
-  ).filter(_.nonEmpty).orElse(
-    configuration.getOptional[String]("app.redis.lettuce.uri").map(v => Seq(v.trim))
-  ).getOrElse(Seq.empty[String])
+  lazy val redisReadFrom   = configuration.getOptional[String]("app.redis.lettuce.readFrom").getOrElse("MASTER_PREFERRED")
+  lazy val readFrom        = ReadFrom.valueOf(redisReadFrom)
+  lazy val redisUris: Seq[String] = configuration
+    .getOptional[Seq[String]]("app.redis.lettuce.uris")
+    .filter(_.nonEmpty)
+    .map(_.map(_.trim))
+    .orElse(
+      configuration.getOptional[String]("app.redis.lettuce.urisStr").map(_.split(",").map(_.trim).toSeq)
+    )
+    .filter(_.nonEmpty)
+    .orElse(
+      configuration.getOptional[String]("app.redis.lettuce.uri").map(v => Seq(v.trim))
+    )
+    .getOrElse(Seq.empty[String])
   lazy val nodesRaw = redisUris.map(v => RedisURI.create(v))
-  lazy val nodes = nodesRaw.asJava
+  lazy val nodes    = nodesRaw.asJava
   lazy val resources = {
     val default = DefaultClientResources.builder().build()
-    val computationThreadPoolSize = configuration.getOptional[Int]("app.redis.lettuce.computationThreadPoolSize").getOrElse(default.computationThreadPoolSize())
-    val ioThreadPoolSize = configuration.getOptional[Int]("app.redis.lettuce.ioThreadPoolSize").getOrElse(default.ioThreadPoolSize())
-    ClientResources.builder()
+    val computationThreadPoolSize = configuration
+      .getOptional[Int]("app.redis.lettuce.computationThreadPoolSize")
+      .getOrElse(default.computationThreadPoolSize())
+    val ioThreadPoolSize =
+      configuration.getOptional[Int]("app.redis.lettuce.ioThreadPoolSize").getOrElse(default.ioThreadPoolSize())
+    ClientResources
+      .builder()
       .computationThreadPoolSize(computationThreadPoolSize)
       .ioThreadPoolSize(ioThreadPoolSize)
       .build()
@@ -80,13 +95,13 @@ class LettuceDataStores(configuration: Configuration, environment: Environment, 
     }
 
     redisConnection match {
-      case _ if redisUris.isEmpty => throw new RuntimeException(s"No redis URIs to connect with ...")
+      case _ if redisUris.isEmpty           => throw new RuntimeException(s"No redis URIs to connect with ...")
       case "default" if redisUris.size == 1 => standardConnection()
-      case "standalone" => standardConnection()
-      case "sentinels" => standardConnection()
-      case "default" if redisUris.size > 1  => {
+      case "standalone"                     => standardConnection()
+      case "sentinels"                      => standardConnection()
+      case "default" if redisUris.size > 1 => {
         val redisClient = RedisClient.create(resources)
-        val connection = MasterReplica.connect(redisClient, new ByteStringRedisCodec(), nodes)
+        val connection  = MasterReplica.connect(redisClient, new ByteStringRedisCodec(), nodes)
         connection.setReadFrom(readFrom)
         clientRef.set(redisClient)
         connectionRef.set(connection)
@@ -94,7 +109,7 @@ class LettuceDataStores(configuration: Configuration, environment: Environment, 
       }
       case "master-replicas" => {
         val redisClient = RedisClient.create(resources)
-        val connection = MasterReplica.connect(redisClient, new ByteStringRedisCodec(), nodes)
+        val connection  = MasterReplica.connect(redisClient, new ByteStringRedisCodec(), nodes)
         connection.setReadFrom(readFrom)
         clientRef.set(redisClient)
         connectionRef.set(connection)
@@ -170,32 +185,32 @@ class LettuceDataStores(configuration: Configuration, environment: Environment, 
   private lazy val _webAuthnRegistrationsDataStore                            = new WebAuthnRegistrationsDataStore()
   override def webAuthnRegistrationsDataStore: WebAuthnRegistrationsDataStore = _webAuthnRegistrationsDataStore
 
-  override def privateAppsUserDataStore: PrivateAppsUserDataStore               = _privateAppsUserDataStore
-  override def backOfficeUserDataStore: BackOfficeUserDataStore                 = _backOfficeUserDataStore
-  override def serviceGroupDataStore: ServiceGroupDataStore                     = _serviceGroupDataStore
-  override def globalConfigDataStore: GlobalConfigDataStore                     = _globalConfigDataStore
-  override def apiKeyDataStore: ApiKeyDataStore                                 = _apiKeyDataStore
-  override def serviceDescriptorDataStore: ServiceDescriptorDataStore           = _serviceDescriptorDataStore
-  override def u2FAdminDataStore: U2FAdminDataStore                             = _u2FAdminDataStore
-  override def simpleAdminDataStore: SimpleAdminDataStore                       = _simpleAdminDataStore
-  override def alertDataStore: AlertDataStore                                   = _alertDataStore
-  override def auditDataStore: AuditDataStore                                   = _auditDataStore
-  override def healthCheckDataStore: HealthCheckDataStore                       = _healthCheckDataStore
-  override def errorTemplateDataStore: ErrorTemplateDataStore                   = _errorTemplateDataStore
-  override def requestsDataStore: RequestsDataStore                             = _requestsDataStore
-  override def canaryDataStore: CanaryDataStore                                 = _canaryDataStore
-  override def chaosDataStore: ChaosDataStore                                   = _chaosDataStore
-  override def globalJwtVerifierDataStore: GlobalJwtVerifierDataStore           = _jwtVerifDataStore
-  override def authConfigsDataStore: AuthConfigsDataStore                       = _authConfigsDataStore
-  override def certificatesDataStore: CertificateDataStore                      = _certificateDataStore
+  override def privateAppsUserDataStore: PrivateAppsUserDataStore     = _privateAppsUserDataStore
+  override def backOfficeUserDataStore: BackOfficeUserDataStore       = _backOfficeUserDataStore
+  override def serviceGroupDataStore: ServiceGroupDataStore           = _serviceGroupDataStore
+  override def globalConfigDataStore: GlobalConfigDataStore           = _globalConfigDataStore
+  override def apiKeyDataStore: ApiKeyDataStore                       = _apiKeyDataStore
+  override def serviceDescriptorDataStore: ServiceDescriptorDataStore = _serviceDescriptorDataStore
+  override def u2FAdminDataStore: U2FAdminDataStore                   = _u2FAdminDataStore
+  override def simpleAdminDataStore: SimpleAdminDataStore             = _simpleAdminDataStore
+  override def alertDataStore: AlertDataStore                         = _alertDataStore
+  override def auditDataStore: AuditDataStore                         = _auditDataStore
+  override def healthCheckDataStore: HealthCheckDataStore             = _healthCheckDataStore
+  override def errorTemplateDataStore: ErrorTemplateDataStore         = _errorTemplateDataStore
+  override def requestsDataStore: RequestsDataStore                   = _requestsDataStore
+  override def canaryDataStore: CanaryDataStore                       = _canaryDataStore
+  override def chaosDataStore: ChaosDataStore                         = _chaosDataStore
+  override def globalJwtVerifierDataStore: GlobalJwtVerifierDataStore = _jwtVerifDataStore
+  override def authConfigsDataStore: AuthConfigsDataStore             = _authConfigsDataStore
+  override def certificatesDataStore: CertificateDataStore            = _certificateDataStore
   override def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] = {
     redis.info().map(_ => Healthy).recover {
       case _ => Unreachable
     }
   }
   override def rawExport(
-                          group: Int
-                        )(implicit ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = {
+      group: Int
+  )(implicit ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = {
     Source
       .fromFuture(
         redis.keys(s"${env.storageRoot}:*")
@@ -209,17 +224,17 @@ class LettuceDataStores(configuration: Configuration, environment: Environment, 
             keys
               .filterNot { key =>
                 key == s"${env.storageRoot}:cluster:" ||
-                  key == s"${env.storageRoot}:events:audit" ||
-                  key == s"${env.storageRoot}:events:alerts" ||
-                  key.startsWith(s"${env.storageRoot}:users:backoffice") ||
-                  key.startsWith(s"${env.storageRoot}:admins:") ||
-                  key.startsWith(s"${env.storageRoot}:u2f:users:") ||
-                  key.startsWith(s"${env.storageRoot}:deschealthcheck:") ||
-                  key.startsWith(s"${env.storageRoot}:scall:stats:") ||
-                  key.startsWith(s"${env.storageRoot}:scalldur:stats:") ||
-                  key.startsWith(s"${env.storageRoot}:scallover:stats:") ||
-                  (key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:in")) ||
-                  (key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:out"))
+                key == s"${env.storageRoot}:events:audit" ||
+                key == s"${env.storageRoot}:events:alerts" ||
+                key.startsWith(s"${env.storageRoot}:users:backoffice") ||
+                key.startsWith(s"${env.storageRoot}:admins:") ||
+                key.startsWith(s"${env.storageRoot}:u2f:users:") ||
+                key.startsWith(s"${env.storageRoot}:deschealthcheck:") ||
+                key.startsWith(s"${env.storageRoot}:scall:stats:") ||
+                key.startsWith(s"${env.storageRoot}:scalldur:stats:") ||
+                key.startsWith(s"${env.storageRoot}:scallover:stats:") ||
+                (key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:in")) ||
+                (key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:out"))
               }
               .map { key =>
                 for {
@@ -231,9 +246,9 @@ class LettuceDataStores(configuration: Configuration, environment: Environment, 
                     case JsNull => JsNull
                     case _ =>
                       Json.obj("k" -> key,
-                        "v" -> value,
-                        "t" -> (if (ttl == -1) -1 else (System.currentTimeMillis() + ttl)),
-                        "w" -> w)
+                               "v" -> value,
+                               "t" -> (if (ttl == -1) -1 else (System.currentTimeMillis() + ttl)),
+                               "w" -> w)
                   }
               }
           )
@@ -268,9 +283,9 @@ class LettuceDataStores(configuration: Configuration, environment: Environment, 
                     case JsNull => JsNull
                     case _ =>
                       Json.obj("k" -> key,
-                        "v" -> value,
-                        "t" -> (if (ttl == -1) -1 else (System.currentTimeMillis() + ttl)),
-                        "w" -> w)
+                               "v" -> value,
+                               "t" -> (if (ttl == -1) -1 else (System.currentTimeMillis() + ttl)),
+                               "w" -> w)
                   }
               }
               .runWith(Sink.seq)

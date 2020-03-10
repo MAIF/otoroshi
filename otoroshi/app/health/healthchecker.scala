@@ -34,8 +34,8 @@ class HealthCheckerActor()(implicit env: Env) extends Actor {
   lazy val logger = Logger("otoroshi-health-checker")
 
   def checkTarget(desc: ServiceDescriptor, target: Target): Future[Unit] = {
-    val url = s"${target.scheme}://${target.host}${desc.healthCheck.url}"
-    val start = System.currentTimeMillis()
+    val url        = s"${target.scheme}://${target.host}${desc.healthCheck.url}"
+    val start      = System.currentTimeMillis()
     val stateValue = IdGenerator.extendedToken(128)
     val state = desc.secComVersion match {
       case SecComVersion.V1 => stateValue
@@ -55,19 +55,21 @@ class HealthCheckerActor()(implicit env: Env) extends Actor {
         ).withClaim("state", stateValue).serialize(desc.algoChallengeFromOtoToBack)
     }
     val value = env.snowflakeGenerator.nextIdStr()
-    val claim = desc.generateInfoToken(
-      None,
-      None,
-      None,
-      Some(env.Headers.OtoroshiIssuer),
-      Some("HealthChecker")
-    ).serialize(desc.algoInfoFromOtoToBack)(env)
+    val claim = desc
+      .generateInfoToken(
+        None,
+        None,
+        None,
+        Some(env.Headers.OtoroshiIssuer),
+        Some("HealthChecker")
+      )
+      .serialize(desc.algoInfoFromOtoToBack)(env)
     env.MtlsWs
       .url(url, target.mtlsConfig)
       .withRequestTimeout(Duration(30, TimeUnit.SECONDS))
       .withHttpHeaders(
-        env.Headers.OtoroshiState -> state,
-        env.Headers.OtoroshiClaim -> claim,
+        env.Headers.OtoroshiState                -> state,
+        env.Headers.OtoroshiClaim                -> claim,
         env.Headers.OtoroshiHealthCheckLogicTest -> value
       )
       .withMaybeProxyServer(
@@ -90,9 +92,9 @@ class HealthCheckerActor()(implicit env: Env) extends Actor {
             logicCheck = checkDone,
             error = None,
             health = (res.status, checkDone) match {
-              case (a, true) if a > 199 && a < 500 => Some("GREEN")
+              case (a, true) if a > 199 && a < 500  => Some("GREEN")
               case (a, false) if a > 199 && a < 500 => Some("YELLOW")
-              case _ => Some("RED")
+              case _                                => Some("RED")
             }
           )
           hce.toAnalytics()
@@ -130,7 +132,6 @@ class HealthCheckerActor()(implicit env: Env) extends Actor {
         case e => ()
       }
   }
-
 
   def checkService(desc: ServiceDescriptor): Future[Unit] = {
     desc.exists().flatMap {

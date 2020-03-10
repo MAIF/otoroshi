@@ -71,7 +71,7 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
 
   def initiateCertificate() = ApiAction.async { ctx =>
     env.datastores.certificatesDataStore.template.map { cert =>
-      Ok(process(cert.toJson,  ctx.request))
+      Ok(process(cert.toJson, ctx.request))
     }
   }
 
@@ -132,10 +132,13 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
     )
   }
 
-  private def patchTemplate[T](entity: => JsValue, patch: JsValue, format: Format[T], save: T => Future[Boolean]): Future[Result] = {
+  private def patchTemplate[T](entity: => JsValue,
+                               patch: JsValue,
+                               format: Format[T],
+                               save: T => Future[Boolean]): Future[Result] = {
     val merged = entity.as[JsObject].deepMerge(patch.as[JsObject])
     format.reads(merged) match {
-      case JsError(e) => FastFuture.successful(BadRequest(Json.obj("error" -> s"bad entity $e")))
+      case JsError(e)           => FastFuture.successful(BadRequest(Json.obj("error" -> s"bad entity $e")))
       case JsSuccess(entity, _) => save(entity).map(_ => Created(format.writes(entity)))
     }
   }
@@ -143,16 +146,52 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
   def createFromTemplate(entity: String) = ApiAction.async(parse.json) { ctx =>
     val patch = ctx.request.body
     entity.toLowerCase() match {
-      case "services"     => patchTemplate[ServiceDescriptor](env.datastores.serviceDescriptorDataStore.initiateNewDescriptor().copy(subdomain = IdGenerator.token(32).toLowerCase(), domain = s"${IdGenerator.token(32).toLowerCase()}.${IdGenerator.token(8).toLowerCase()}").toJson, patch, ServiceDescriptor._fmt, _.save())
-      case "groups"       => patchTemplate[ServiceGroup](env.datastores.serviceGroupDataStore.initiateNewGroup().toJson, patch, ServiceGroup._fmt, _.save())
-      case "apikeys"      => patchTemplate[ApiKey](env.datastores.apiKeyDataStore.initiateNewApiKey("default").toJson, patch, ApiKey._fmt, _.save())
-      case "certificates" => env.datastores.certificatesDataStore.template.flatMap(cert => patchTemplate[Cert](cert.toJson, patch, Cert._fmt, _.save()))
-      case "globalconfig" => patchTemplate[GlobalConfig](env.datastores.globalConfigDataStore.template.toJson, patch, GlobalConfig._fmt, _.save())
-      case "verifiers"    => patchTemplate[GlobalJwtVerifier](env.datastores.globalJwtVerifierDataStore.template.asJson, patch, GlobalJwtVerifier._fmt, _.save())
-      case "auths"        => patchTemplate[AuthModuleConfig](env.datastores.authConfigsDataStore.template(ctx.request.getQueryString("mod-type")).asJson, patch, AuthModuleConfig._fmt, _.save())
-      case "scripts"      => patchTemplate[Script](env.datastores.scriptDataStore.template.toJson, patch, Script._fmt, _.save())
-      case "tcp/services" => patchTemplate[TcpService](env.datastores.tcpServiceDataStore.template.json, patch, TcpService.fmt, _.save())
-      case _              => FastFuture.successful(NotFound(Json.obj("error" -> "entity not found")))
+      case "services" =>
+        patchTemplate[ServiceDescriptor](
+          env.datastores.serviceDescriptorDataStore
+            .initiateNewDescriptor()
+            .copy(subdomain = IdGenerator.token(32).toLowerCase(),
+                  domain = s"${IdGenerator.token(32).toLowerCase()}.${IdGenerator.token(8).toLowerCase()}")
+            .toJson,
+          patch,
+          ServiceDescriptor._fmt,
+          _.save()
+        )
+      case "groups" =>
+        patchTemplate[ServiceGroup](env.datastores.serviceGroupDataStore.initiateNewGroup().toJson,
+                                    patch,
+                                    ServiceGroup._fmt,
+                                    _.save())
+      case "apikeys" =>
+        patchTemplate[ApiKey](env.datastores.apiKeyDataStore.initiateNewApiKey("default").toJson,
+                              patch,
+                              ApiKey._fmt,
+                              _.save())
+      case "certificates" =>
+        env.datastores.certificatesDataStore.template
+          .flatMap(cert => patchTemplate[Cert](cert.toJson, patch, Cert._fmt, _.save()))
+      case "globalconfig" =>
+        patchTemplate[GlobalConfig](env.datastores.globalConfigDataStore.template.toJson,
+                                    patch,
+                                    GlobalConfig._fmt,
+                                    _.save())
+      case "verifiers" =>
+        patchTemplate[GlobalJwtVerifier](env.datastores.globalJwtVerifierDataStore.template.asJson,
+                                         patch,
+                                         GlobalJwtVerifier._fmt,
+                                         _.save())
+      case "auths" =>
+        patchTemplate[AuthModuleConfig](
+          env.datastores.authConfigsDataStore.template(ctx.request.getQueryString("mod-type")).asJson,
+          patch,
+          AuthModuleConfig._fmt,
+          _.save()
+        )
+      case "scripts" =>
+        patchTemplate[Script](env.datastores.scriptDataStore.template.toJson, patch, Script._fmt, _.save())
+      case "tcp/services" =>
+        patchTemplate[TcpService](env.datastores.tcpServiceDataStore.template.json, patch, TcpService.fmt, _.save())
+      case _ => FastFuture.successful(NotFound(Json.obj("error" -> "entity not found")))
     }
   }
 }

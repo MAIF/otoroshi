@@ -636,7 +636,8 @@ class WebSocketHandler()(implicit env: Env) {
                                               .getTime,
                                             iat = DateTime.now().toDate.getTime,
                                             jti = IdGenerator.uuid
-                                          ).withClaim("state", stateValue).serialize(descriptor.algoChallengeFromOtoToBack)
+                                          ).withClaim("state", stateValue)
+                                            .serialize(descriptor.algoChallengeFromOtoToBack)
                                       }
                                       val rawUri      = req.relativeUri.substring(1)
                                       val uriParts    = rawUri.split("/").toSeq
@@ -1336,7 +1337,9 @@ class WebSocketHandler()(implicit env: Env) {
                                             case Some(key) if key.allowClientIdOnly =>
                                               key.withinQuotasAndRotation().flatMap {
                                                 case (true, rotationInfos) =>
-                                                  rotationInfos.foreach(i => attrs.put(otoroshi.plugins.Keys.ApiKeyRotationKey -> i))
+                                                  rotationInfos.foreach(
+                                                    i => attrs.put(otoroshi.plugins.Keys.ApiKeyRotationKey -> i)
+                                                  )
                                                   callDownstream(config, Some(key))
                                                 case (false, _) =>
                                                   Errors
@@ -1408,7 +1411,9 @@ class WebSocketHandler()(implicit env: Env) {
                                             case Some(key) if key.isValid(clientSecret) =>
                                               key.withinQuotasAndRotation().flatMap {
                                                 case (true, rotationInfos) =>
-                                                  rotationInfos.foreach(i => attrs.put(otoroshi.plugins.Keys.ApiKeyRotationKey -> i))
+                                                  rotationInfos.foreach(
+                                                    i => attrs.put(otoroshi.plugins.Keys.ApiKeyRotationKey -> i)
+                                                  )
                                                   callDownstream(config, Some(key))
                                                 case (false, _) =>
                                                   Errors
@@ -1522,7 +1527,10 @@ class WebSocketHandler()(implicit env: Env) {
                                                       case Success(_) =>
                                                         apiKey.withinQuotasAndRotation().flatMap {
                                                           case (true, rotationInfos) =>
-                                                            rotationInfos.foreach(i => attrs.put(otoroshi.plugins.Keys.ApiKeyRotationKey -> i))
+                                                            rotationInfos.foreach(
+                                                              i =>
+                                                                attrs.put(otoroshi.plugins.Keys.ApiKeyRotationKey -> i)
+                                                            )
                                                             callDownstream(config, Some(apiKey))
                                                           case (false, _) =>
                                                             Errors
@@ -1644,7 +1652,9 @@ class WebSocketHandler()(implicit env: Env) {
                                                 case Some(key) if key.isValid(apiKeySecret) =>
                                                   key.withinQuotasAndRotation().flatMap {
                                                     case (true, rotationInfos) =>
-                                                      rotationInfos.foreach(i => attrs.put(otoroshi.plugins.Keys.ApiKeyRotationKey -> i))
+                                                      rotationInfos.foreach(
+                                                        i => attrs.put(otoroshi.plugins.Keys.ApiKeyRotationKey -> i)
+                                                      )
                                                       callDownstream(config, Some(key))
                                                     case (false, _) =>
                                                       Errors

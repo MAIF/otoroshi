@@ -67,8 +67,14 @@ class ErrorHandler()(implicit env: Env) extends HttpErrorHandler {
       env.datastores.serviceDescriptorDataStore.updateMetricsOnError(config)
     }
     val snowflake = env.snowflakeGenerator.nextIdStr()
-    val attrs = TypedMap.empty
-    RequestSink.maybeSinkRequest(snowflake, request, attrs, RequestOrigin.ErrorHandler, statusCode, message,
+    val attrs     = TypedMap.empty
+    RequestSink.maybeSinkRequest(
+      snowflake,
+      request,
+      attrs,
+      RequestOrigin.ErrorHandler,
+      statusCode,
+      message,
       Errors.craftResponseResult(
         s"Client Error: an error occurred on ${request.relativeUri} ($statusCode)",
         Status(statusCode),
@@ -93,15 +99,20 @@ class ErrorHandler()(implicit env: Env) extends HttpErrorHandler {
       env.datastores.serviceDescriptorDataStore.updateMetricsOnError(config)
     }
     val snowflake = env.snowflakeGenerator.nextIdStr()
-    val attrs = TypedMap.empty
-    RequestSink.maybeSinkRequest(snowflake, request, attrs, RequestOrigin.ErrorHandler, 500, Option(exception).flatMap(e => Option(e.getMessage)).getOrElse("An error occurred ..."),
+    val attrs     = TypedMap.empty
+    RequestSink.maybeSinkRequest(
+      snowflake,
+      request,
+      attrs,
+      RequestOrigin.ErrorHandler,
+      500,
+      Option(exception).flatMap(e => Option(e.getMessage)).getOrElse("An error occurred ..."),
       Errors.craftResponseResult("An error occurred ...",
-        InternalServerError,
-        request,
-        None,
-        Some("errors.server.error"),
-        attrs = TypedMap.empty
-      )
+                                 InternalServerError,
+                                 request,
+                                 None,
+                                 Some("errors.server.error"),
+                                 attrs = TypedMap.empty)
     )
   }
 }
@@ -953,7 +964,13 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                  None,
                                                  Some("errors.service.not.found.invalid.host"),
                                                  attrs = attrs)
-            RequestSink.maybeSinkRequest(snowflake, req, attrs, RequestOrigin.ReverseProxy, 404, s"Service not found: invalid host", err)
+            RequestSink.maybeSinkRequest(snowflake,
+                                         req,
+                                         attrs,
+                                         RequestOrigin.ReverseProxy,
+                                         404,
+                                         s"Service not found: invalid host",
+                                         err)
 
           case Some(ServiceLocation(domain, serviceEnv, subdomain)) => {
             val uriParts = req.relativeUri.split("/").toSeq
@@ -973,7 +990,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                          None,
                                          Some("errors.service.not.found"),
                                          attrs = attrs)
-                  RequestSink.maybeSinkRequest(snowflake, req, attrs, RequestOrigin.ReverseProxy, 404, s"Service not found", err)
+                  RequestSink
+                    .maybeSinkRequest(snowflake, req, attrs, RequestOrigin.ReverseProxy, 404, s"Service not found", err)
                 case Some(desc) if !desc.enabled =>
                   val err = Errors
                     .craftResponseResult(s"Service unavailable",
@@ -982,7 +1000,13 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                          None,
                                          Some("errors.service.unavailable"),
                                          attrs = attrs)
-                  RequestSink.maybeSinkRequest(snowflake, req, attrs, RequestOrigin.ReverseProxy, 503, "Service unavailable", err)
+                  RequestSink.maybeSinkRequest(snowflake,
+                                               req,
+                                               attrs,
+                                               RequestOrigin.ReverseProxy,
+                                               503,
+                                               "Service unavailable",
+                                               err)
                 case Some(rawDesc) if rawDesc.redirection.enabled && rawDesc.redirection.hasValidCode => {
                   // TODO: event here
                   FastFuture.successful(
@@ -1309,7 +1333,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                     .getTime,
                                                   iat = DateTime.now().toDate.getTime,
                                                   jti = jti
-                                                ).withClaim("state", stateValue).serialize(descriptor.algoChallengeFromOtoToBack)
+                                                ).withClaim("state", stateValue)
+                                                  .serialize(descriptor.algoChallengeFromOtoToBack)
                                             }
                                             val rawUri      = req.relativeUri.substring(1)
                                             val uriParts    = rawUri.split("/").toSeq
@@ -1741,10 +1766,11 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                             "url"           -> url,
                                                             "state"         -> stateValue,
                                                             "reveivedState" -> JsString(stateResp.getOrElse("--")),
-                                                            "claim"         -> claim.serialize(descriptor.algoInfoFromOtoToBack)(env),
-                                                            "method"        -> req.method,
-                                                            "query"         -> req.rawQueryString,
-                                                            "status"        -> resp.status,
+                                                            "claim" -> claim
+                                                              .serialize(descriptor.algoInfoFromOtoToBack)(env),
+                                                            "method" -> req.method,
+                                                            "query"  -> req.rawQueryString,
+                                                            "status" -> resp.status,
                                                             "headersIn" -> JsArray(
                                                               req.headers.toSimpleMap
                                                                 .map(t => Json.obj("name" -> t._1, "value" -> t._2))
@@ -2203,7 +2229,9 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                   case Some(key) if key.allowClientIdOnly =>
                                                     key.withinQuotasAndRotation().flatMap {
                                                       case (true, rotationInfos) =>
-                                                        rotationInfos.foreach(i => attrs.put(otoroshi.plugins.Keys.ApiKeyRotationKey -> i))
+                                                        rotationInfos.foreach(
+                                                          i => attrs.put(otoroshi.plugins.Keys.ApiKeyRotationKey -> i)
+                                                        )
                                                         callDownstream(config, Some(key))
                                                       case (false, _) =>
                                                         Errors.craftResponseResult(
@@ -2282,7 +2310,9 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                   case Some(key) if key.isValid(clientSecret) =>
                                                     key.withinQuotasAndRotation().flatMap {
                                                       case (true, rotationInfos) =>
-                                                        rotationInfos.foreach(i => attrs.put(otoroshi.plugins.Keys.ApiKeyRotationKey -> i))
+                                                        rotationInfos.foreach(
+                                                          i => attrs.put(otoroshi.plugins.Keys.ApiKeyRotationKey -> i)
+                                                        )
                                                         callDownstream(config, Some(key))
                                                       case (false, _) =>
                                                         Errors.craftResponseResult(
@@ -2414,7 +2444,12 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                             case Success(_) =>
                                                               apiKey.withinQuotasAndRotation().flatMap {
                                                                 case (true, rotationInfos) =>
-                                                                  rotationInfos.foreach(i => attrs.put(otoroshi.plugins.Keys.ApiKeyRotationKey -> i))
+                                                                  rotationInfos.foreach(
+                                                                    i =>
+                                                                      attrs.put(
+                                                                        otoroshi.plugins.Keys.ApiKeyRotationKey -> i
+                                                                    )
+                                                                  )
                                                                   callDownstream(config, Some(apiKey))
                                                                 case (false, _) =>
                                                                   Errors.craftResponseResult(
@@ -2557,7 +2592,10 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                       case Some(key) if key.isValid(apiKeySecret) =>
                                                         key.withinQuotasAndRotation().flatMap {
                                                           case (true, rotationInfos) =>
-                                                            rotationInfos.foreach(i => attrs.put(otoroshi.plugins.Keys.ApiKeyRotationKey -> i))
+                                                            rotationInfos.foreach(
+                                                              i =>
+                                                                attrs.put(otoroshi.plugins.Keys.ApiKeyRotationKey -> i)
+                                                            )
                                                             callDownstream(config, Some(key))
                                                           case (false, _) =>
                                                             Errors.craftResponseResult(

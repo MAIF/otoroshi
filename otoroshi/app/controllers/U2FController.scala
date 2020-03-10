@@ -90,7 +90,14 @@ class U2FController(BackOfficeAction: BackOfficeAction,
                   }
                   case true => {
                     Alerts
-                      .send(AdminLoggedInAlert(env.snowflakeGenerator.nextIdStr(), env.env, boUser, ctx.from, ctx.ua, "local"))
+                      .send(
+                        AdminLoggedInAlert(env.snowflakeGenerator.nextIdStr(),
+                                           env.env,
+                                           boUser,
+                                           ctx.from,
+                                           ctx.ua,
+                                           "local")
+                      )
                   }
                 }
                 Ok(Json.obj("username" -> username)).addingToSession("bousr" -> boUser.randomId)
@@ -279,7 +286,12 @@ class U2FController(BackOfficeAction: BackOfficeAction,
                         }
                         case true => {
                           Alerts.send(
-                            AdminLoggedInAlert(env.snowflakeGenerator.nextIdStr(), env.env, boUser, ctx.from, ctx.ua, "local")
+                            AdminLoggedInAlert(env.snowflakeGenerator.nextIdStr(),
+                                               env.env,
+                                               boUser,
+                                               ctx.from,
+                                               ctx.ua,
+                                               "local")
                           )
                         }
                       }

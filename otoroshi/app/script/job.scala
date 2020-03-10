@@ -25,24 +25,24 @@ import scala.util.{Failure, Random}
 
 sealed trait JobKind
 object JobKind {
-  case object ScheduledOnce extends JobKind
+  case object ScheduledOnce  extends JobKind
   case object ScheduledEvery extends JobKind
-  case object Cron extends JobKind
-  case object Autonomous extends JobKind
+  case object Cron           extends JobKind
+  case object Autonomous     extends JobKind
 }
 
 sealed trait JobStarting
 object JobStarting {
-  case object Automatically extends JobStarting
+  case object Automatically     extends JobStarting
   case object FromConfiguration extends JobStarting
 }
 
 sealed trait JobInstantiation
 object JobInstantiation {
-  case object OneInstancePerOtoroshiInstance extends JobInstantiation
+  case object OneInstancePerOtoroshiInstance       extends JobInstantiation
   case object OneInstancePerOtoroshiWorkerInstance extends JobInstantiation
   case object OneInstancePerOtoroshiLeaderInstance extends JobInstantiation
-  case object OneInstancePerOtoroshiCluster extends JobInstantiation
+  case object OneInstancePerOtoroshiCluster        extends JobInstantiation
 }
 
 sealed trait JobVisibility
@@ -52,13 +52,13 @@ object JobVisibility {
 }
 
 case class JobContext(
-  snowflake: String,
-  attrs: TypedMap,
-  globalConfig: JsValue,
-  actorSystem: ActorSystem,
-  scheduler: Scheduler
+    snowflake: String,
+    attrs: TypedMap,
+    globalConfig: JsValue,
+    actorSystem: ActorSystem,
+    scheduler: Scheduler
 ) extends ContextWithConfig {
-  final def config: JsValue = Json.obj()
+  final def config: JsValue     = Json.obj()
   final override def index: Int = 0
 }
 
@@ -66,19 +66,19 @@ case class JobId(id: String)
 
 trait Job extends NamedPlugin with StartableAndStoppable with InternalEventListener { self =>
 
-  private val refId = new AtomicReference[String](s"cp:${self.getClass.getName}")
+  private val refId   = new AtomicReference[String](s"cp:${self.getClass.getName}")
   private val promise = Promise[Unit]
 
   final override def pluginType: PluginType = JobType
 
   def uniqueId: JobId
-  def visibility: JobVisibility = JobVisibility.UserLand
-  def kind: JobKind = JobKind.Autonomous
-  def starting: JobStarting = JobStarting.Automatically
-  def instantiation: JobInstantiation = JobInstantiation.OneInstancePerOtoroshiInstance
+  def visibility: JobVisibility            = JobVisibility.UserLand
+  def kind: JobKind                        = JobKind.Autonomous
+  def starting: JobStarting                = JobStarting.Automatically
+  def instantiation: JobInstantiation      = JobInstantiation.OneInstancePerOtoroshiInstance
   def initialDelay: Option[FiniteDuration] = Some(FiniteDuration(0, TimeUnit.MILLISECONDS))
-  def interval: Option[FiniteDuration] = None
-  def cronExpression: Option[String] = None
+  def interval: Option[FiniteDuration]     = None
+  def cronExpression: Option[String]       = None
 
   private[script] def jobStartHook(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     JobStartedEvent(env.snowflakeGenerator.nextIdStr(), env.env, this).toAnalytics()
@@ -106,8 +106,8 @@ trait Job extends NamedPlugin with StartableAndStoppable with InternalEventListe
   }
 
   def jobStart(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = Job.funit
-  def jobStop(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = Job.funit
-  def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = Job.funit
+  def jobStop(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit]  = Job.funit
+  def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit]   = Job.funit
 
   private def header(env: Env): String = s"[${uniqueId.id} / ${env.number}] -"
 
@@ -118,7 +118,7 @@ trait Job extends NamedPlugin with StartableAndStoppable with InternalEventListe
     Job.funit
   }
 
-  final override def stop(env: Env): Future[Unit]  = {
+  final override def stop(env: Env): Future[Unit] = {
     JobManager.logger.debug(s"${header(env)} plugin stopped")
     env.jobManager.unregisterJob(this)
     Job.funit
@@ -138,15 +138,18 @@ trait Job extends NamedPlugin with StartableAndStoppable with InternalEventListe
   }
 
   final def auditJson(implicit env: Env): JsValue = Json.obj(
-    "uniqueId" -> uniqueId.id,
-    "name" -> name,
-    "kind" -> kind.toString,
-    "starting" -> starting.toString,
-    "instantiation" -> instantiation.toString,
-    "initialDelay" -> initialDelay.map(v => BigDecimal(v.toMillis)).map(JsNumber.apply).getOrElse(JsNull).as[JsValue],
-    "interval" -> interval.map(v => BigDecimal(v.toMillis)).map(JsNumber.apply).getOrElse(JsNull).as[JsValue],
+    "uniqueId"       -> uniqueId.id,
+    "name"           -> name,
+    "kind"           -> kind.toString,
+    "starting"       -> starting.toString,
+    "instantiation"  -> instantiation.toString,
+    "initialDelay"   -> initialDelay.map(v => BigDecimal(v.toMillis)).map(JsNumber.apply).getOrElse(JsNull).as[JsValue],
+    "interval"       -> interval.map(v => BigDecimal(v.toMillis)).map(JsNumber.apply).getOrElse(JsNull).as[JsValue],
     "cronExpression" -> cronExpression.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-    "config" -> env.datastores.globalConfigDataStore.latestSafe.map(_.scripts.jobConfig).getOrElse(Json.obj()).as[JsValue]
+    "config" -> env.datastores.globalConfigDataStore.latestSafe
+      .map(_.scripts.jobConfig)
+      .getOrElse(Json.obj())
+      .as[JsValue]
   )
 }
 
@@ -155,14 +158,14 @@ object Job {
 }
 
 case class RegisteredJobContext(
-   job: Job,
-   env: Env,
-   actorSystem: ActorSystem,
-   ranOnce: AtomicBoolean,
-   started: AtomicBoolean,
-   stopped: AtomicBoolean,
-   runId: AtomicReference[String],
-   ref: AtomicReference[Option[Cancellable]]
+    job: Job,
+    env: Env,
+    actorSystem: ActorSystem,
+    ranOnce: AtomicBoolean,
+    started: AtomicBoolean,
+    stopped: AtomicBoolean,
+    runId: AtomicReference[String],
+    ref: AtomicReference[Option[Cancellable]]
 ) {
 
   private implicit val ec = actorSystem.dispatcher
@@ -180,26 +183,30 @@ case class RegisteredJobContext(
   def runStartHook(): Unit = {
     if (started.compareAndSet(false, true)) {
       JobManager.logger.debug(s"$header running start hook")
-      job.jobStartHook(JobContext(
-        snowflake = runId.get(),
-        attrs = attrs,
-        globalConfig = env.datastores.globalConfigDataStore.latestSafe.map(_.scripts.jobConfig).getOrElse(Json.obj()),
-        actorSystem = actorSystem,
-        scheduler = actorSystem.scheduler
-      ))(env, actorSystem.dispatcher)
+      job.jobStartHook(
+        JobContext(
+          snowflake = runId.get(),
+          attrs = attrs,
+          globalConfig = env.datastores.globalConfigDataStore.latestSafe.map(_.scripts.jobConfig).getOrElse(Json.obj()),
+          actorSystem = actorSystem,
+          scheduler = actorSystem.scheduler
+        )
+      )(env, actorSystem.dispatcher)
     }
   }
 
   def runStopHook(): Unit = {
     if (stopped.compareAndSet(false, true)) {
       JobManager.logger.debug(s"$header running stop hook")
-      job.jobStopHook(JobContext(
-        snowflake = runId.get(),
-        attrs = attrs,
-        globalConfig = env.datastores.globalConfigDataStore.latestSafe.map(_.scripts.jobConfig).getOrElse(Json.obj()),
-        actorSystem = actorSystem,
-        scheduler = actorSystem.scheduler
-      ))(env, actorSystem.dispatcher)
+      job.jobStopHook(
+        JobContext(
+          snowflake = runId.get(),
+          attrs = attrs,
+          globalConfig = env.datastores.globalConfigDataStore.latestSafe.map(_.scripts.jobConfig).getOrElse(Json.obj()),
+          actorSystem = actorSystem,
+          scheduler = actorSystem.scheduler
+        )
+      )(env, actorSystem.dispatcher)
     }
   }
 
@@ -232,15 +239,15 @@ case class RegisteredJobContext(
               job.jobRunHook(ctx).andThen {
                 case _ =>
                   ref.set(None)
-                  // runStopHook()
-                  // releaseLock()
+                // runStopHook()
+                // releaseLock()
               }
             }
           } catch {
             case e: Throwable =>
               ref.set(None)
-              // runStopHook()
-              // releaseLock()
+            // runStopHook()
+            // releaseLock()
           }
         }))
       }
@@ -252,14 +259,14 @@ case class RegisteredJobContext(
                 case _ =>
                   ref.set(None)
                   runStopHook()
-                  // releaseLock()
+                // releaseLock()
               }
             }
           } catch {
             case e: Throwable =>
               ref.set(None)
               runStopHook()
-              // releaseLock()
+            // releaseLock()
           }
         }))
       }
@@ -270,13 +277,13 @@ case class RegisteredJobContext(
               job.jobRunHook(ctx).andThen {
                 case _ =>
                   ref.set(None)
-                  // releaseLock()
+                // releaseLock()
               }
             }
           } catch {
             case e: Throwable =>
               ref.set(None)
-              // releaseLock()
+            // releaseLock()
           }
         }))
       }
@@ -290,13 +297,13 @@ case class RegisteredJobContext(
                   job.jobRunHook(ctx).andThen {
                     case _ =>
                       ref.set(None)
-                      // releaseLock()
+                    // releaseLock()
                   }
                 }
               } catch {
                 case e: Throwable =>
                   ref.set(None)
-                  // releaseLock()
+                // releaseLock()
               }
             }))
           }
@@ -311,11 +318,11 @@ case class RegisteredJobContext(
 
             import com.cronutils.parser.CronParser
 
-            val now = ZonedDateTime.now
-            val parser = new CronParser(CronDefinitionBuilder.instanceDefinitionFor(CronType.QUARTZ))
-            val cron = parser.parse(expression)
+            val now           = ZonedDateTime.now
+            val parser        = new CronParser(CronDefinitionBuilder.instanceDefinitionFor(CronType.QUARTZ))
+            val cron          = parser.parse(expression)
             val executionTime = ExecutionTime.forCron(cron)
-            val duration = executionTime.timeToNextExecution(now)
+            val duration      = executionTime.timeToNextExecution(now)
             if (duration.isPresent) {
               ref.set(Some(actorSystem.scheduler.scheduleOnce(duration.get().toMillis.milliseconds) {
                 if (!stopped.get()) {
@@ -323,12 +330,12 @@ case class RegisteredJobContext(
                     job.jobRunHook(ctx).andThen {
                       case _ =>
                         ref.set(None)
-                        // releaseLock()
+                      // releaseLock()
                     }
                   } catch {
                     case e: Throwable =>
                       ref.set(None)
-                      // releaseLock()
+                    // releaseLock()
                   }
                 }
               }))
@@ -400,30 +407,32 @@ case class RegisteredJobContext(
     val key = s"${env.storageRoot}:locks:jobs:${job.uniqueId.id}"
     env.datastores.rawDataStore.get(key).map {
       case Some(v) if v.utf8String == randomLock.get() => env.datastores.rawDataStore.del(Seq(key))
-      case _ => ()
+      case _                                           => ()
     }
   }
 
   def tryToRunOnCurrentInstance(f: => Unit): Unit = {
     job.instantiation match {
-      case JobInstantiation.OneInstancePerOtoroshiInstance => f
-      case JobInstantiation.OneInstancePerOtoroshiWorkerInstance if env.clusterConfig.mode.isOff => f
-      case JobInstantiation.OneInstancePerOtoroshiLeaderInstance if env.clusterConfig.mode.isOff => f
+      case JobInstantiation.OneInstancePerOtoroshiInstance                                          => f
+      case JobInstantiation.OneInstancePerOtoroshiWorkerInstance if env.clusterConfig.mode.isOff    => f
+      case JobInstantiation.OneInstancePerOtoroshiLeaderInstance if env.clusterConfig.mode.isOff    => f
       case JobInstantiation.OneInstancePerOtoroshiWorkerInstance if env.clusterConfig.mode.isWorker => f
       case JobInstantiation.OneInstancePerOtoroshiLeaderInstance if env.clusterConfig.mode.isLeader => f
-      case JobInstantiation.OneInstancePerOtoroshiCluster if env.clusterConfig.mode == ClusterMode.Off  => acquireClusterWideLock(f)
-      case JobInstantiation.OneInstancePerOtoroshiCluster if env.clusterConfig.mode.isLeader  => acquireClusterWideLock(f)
+      case JobInstantiation.OneInstancePerOtoroshiCluster if env.clusterConfig.mode == ClusterMode.Off =>
+        acquireClusterWideLock(f)
+      case JobInstantiation.OneInstancePerOtoroshiCluster if env.clusterConfig.mode.isLeader =>
+        acquireClusterWideLock(f)
       case _ => ()
     }
   }
 
   def startNext(): Unit = tryToRunOnCurrentInstance {
     job.kind match {
-      case JobKind.Autonomous if !ranOnce.get() => run()
+      case JobKind.Autonomous if !ranOnce.get()    => run()
       case JobKind.ScheduledOnce if !ranOnce.get() => run()
-      case JobKind.ScheduledEvery => run()
-      case JobKind.Cron => run()
-      case _ => () // nothing to do here
+      case JobKind.ScheduledEvery                  => run()
+      case JobKind.Cron                            => run()
+      case _                                       => () // nothing to do here
     }
   }
 
@@ -453,14 +462,14 @@ object JobManager {
 class JobManager(env: Env) {
 
   private[script] val jobActorSystem = ActorSystem("jobs-system")
-  private[script] val jobScheduler = jobActorSystem.scheduler
-  private val registeredJobs = new TrieMap[JobId, RegisteredJobContext]()
-  private val registeredLocks = new TrieMap[JobId, (String, String)]()
-  private val scanRef = new AtomicReference[Cancellable]()
-  private val lockRef = new AtomicReference[Cancellable]()
+  private[script] val jobScheduler   = jobActorSystem.scheduler
+  private val registeredJobs         = new TrieMap[JobId, RegisteredJobContext]()
+  private val registeredLocks        = new TrieMap[JobId, (String, String)]()
+  private val scanRef                = new AtomicReference[Cancellable]()
+  private val lockRef                = new AtomicReference[Cancellable]()
 
   private[script] implicit val jobExecutor = jobActorSystem.dispatcher
-  private implicit val ev = env
+  private implicit val ev                  = env
 
   private[script] def registerLock(jobId: JobId, value: String): Unit = {
     val key = s"${env.storageRoot}:locks:jobs:${jobId.id}"
@@ -480,7 +489,8 @@ class JobManager(env: Env) {
     registeredLocks.foreach {
       case (id, (key, value)) =>
         env.datastores.rawDataStore.get(key).map {
-          case Some(v) if v.utf8String == value => env.datastores.rawDataStore.set(key, ByteString(value), Some(30 * 1000))
+          case Some(v) if v.utf8String == value =>
+            env.datastores.rawDataStore.set(key, ByteString(value), Some(30 * 1000))
           case _ => ()
         }
     }
@@ -510,7 +520,8 @@ class JobManager(env: Env) {
 
   def start(): Unit = {
     JobManager.logger.info("Starting job manager")
-    env.scriptManager.jobNames.map(name => env.scriptManager.getAnyScript[Job]("cp:" + name)) // starting auto registering for cp jobs
+    env.scriptManager.jobNames
+      .map(name => env.scriptManager.getAnyScript[Job]("cp:" + name)) // starting auto registering for cp jobs
     scanRef.set(jobScheduler.schedule(1.second, 1.second)(scanRegisteredJobs())(jobExecutor))
     lockRef.set(jobScheduler.schedule(1.second, 10.seconds)(updateLocks())(jobExecutor))
   }
@@ -525,7 +536,9 @@ class JobManager(env: Env) {
   }
 
   def registerJob(job: Job): RegisteredJobContext = {
-    JobManager.logger.debug(s"Registering job '${job.name}' with id '${job.uniqueId}' of kind ${job.kind} starting ${job.starting} with ${job.instantiation} (${job.initialDelay} / ${job.interval} - ${job.cronExpression})")
+    JobManager.logger.debug(
+      s"Registering job '${job.name}' with id '${job.uniqueId}' of kind ${job.kind} starting ${job.starting} with ${job.instantiation} (${job.initialDelay} / ${job.interval} - ${job.cronExpression})"
+    )
     val ctx = RegisteredJobContext(
       job = job,
       env = env,
@@ -633,4 +646,4 @@ class TestOnceJob extends Job {
     Job.funit
   }
 }
-*/
+ */

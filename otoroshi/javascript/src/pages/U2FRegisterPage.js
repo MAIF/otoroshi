@@ -610,7 +610,7 @@ export class RegisterAdminModal extends Component {
       //     window.newAlert('You did not provide your password', 'Error');
       //   }, 500);
       // } else {
-        f();
+      f();
       // }
     }
   };

@@ -118,7 +118,8 @@ case class ApiKey(clientId: String = IdGenerator.token(16),
     env.datastores.apiKeyDataStore.withinMonthlyQuota(this)
   def withinQuotas()(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
     env.datastores.apiKeyDataStore.withingQuotas(this)
-  def withinQuotasAndRotation()(implicit ec: ExecutionContext, env: Env): Future[(Boolean, Option[ApiKeyRotationInfo])] = {
+  def withinQuotasAndRotation()(implicit ec: ExecutionContext,
+                                env: Env): Future[(Boolean, Option[ApiKeyRotationInfo])] = {
     for {
       within   <- env.datastores.apiKeyDataStore.withingQuotas(this)
       rotation <- env.datastores.apiKeyDataStore.keyRotation(this)
@@ -314,9 +315,11 @@ trait ApiKeyDataStore extends BasicStore[ApiKey] {
       env.datastores.rawDataStore.get(key).flatMap {
         case None =>
           val newApk = apiKey.copy(rotation = apiKey.rotation.copy(nextSecret = None))
-          val start = DateTime.now()
-          val end = start.plusHours(apiKey.rotation.rotationEvery.toInt)
-          val res: Option[ApiKeyRotationInfo] = Some(ApiKeyRotationInfo(end, new org.joda.time.Period(DateTime.now(), end).toStandardSeconds.getSeconds * 1000))
+          val start  = DateTime.now()
+          val end    = start.plusHours(apiKey.rotation.rotationEvery.toInt)
+          val res: Option[ApiKeyRotationInfo] = Some(
+            ApiKeyRotationInfo(end, new org.joda.time.Period(DateTime.now(), end).toStandardSeconds.getSeconds * 1000)
+          )
           env.datastores.rawDataStore
             .set(key,
                  ByteString(
@@ -339,7 +342,9 @@ trait ApiKeyDataStore extends BasicStore[ApiKey] {
           val beforeGracePeriod = now.isAfter(start) && now.isBefore(startGrace) && now.isBefore(end)
           val inGracePeriod     = now.isAfter(start) && now.isAfter(startGrace) && now.isBefore(end)
           val afterGracePeriod  = now.isAfter(start) && now.isAfter(startGrace) && now.isAfter(end)
-          val res: Option[ApiKeyRotationInfo] = Some(ApiKeyRotationInfo(end, new org.joda.time.Period(DateTime.now(), end).toStandardSeconds.getSeconds * 1000))
+          val res: Option[ApiKeyRotationInfo] = Some(
+            ApiKeyRotationInfo(end, new org.joda.time.Period(DateTime.now(), end).toStandardSeconds.getSeconds * 1000)
+          )
           if (beforeGracePeriod) {
             FastFuture.successful(res)
           } else if (inGracePeriod) {

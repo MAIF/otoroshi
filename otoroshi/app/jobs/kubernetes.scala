@@ -1,5 +1,3 @@
 package otoroshi.jobs
 
-object KubernetesIngressController {
-
-}
+object KubernetesIngressController {}

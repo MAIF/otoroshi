@@ -386,7 +386,9 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
               }
               case true => {
                 Alerts
-                  .send(AdminLoggedInAlert(env.snowflakeGenerator.nextIdStr(), env.env, boUser, ctx.from, ctx.ua, auth.id))
+                  .send(
+                    AdminLoggedInAlert(env.snowflakeGenerator.nextIdStr(), env.env, boUser, ctx.from, ctx.ua, auth.id)
+                  )
               }
             }
             Redirect(

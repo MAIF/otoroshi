@@ -52,26 +52,30 @@ object Errors {
           val _target = attrs.get(otoroshi.plugins.Keys.RequestTargetKey).getOrElse(descriptor.target)
           val scheme =
             if (descriptor.redirectToLocal) descriptor.localScheme else _target.scheme
-          val host = TargetExpressionLanguage(if (descriptor.redirectToLocal)
-            descriptor.localHost
-          else _target.host,
+          val host = TargetExpressionLanguage(
+            if (descriptor.redirectToLocal)
+              descriptor.localHost
+            else _target.host,
             Some(req),
             Some(descriptor),
             attrs.get(otoroshi.plugins.Keys.ApiKeyKey),
             attrs.get(otoroshi.plugins.Keys.UserKey),
             attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
             attrs,
-            env)
+            env
+          )
           val rawUri      = req.relativeUri.substring(1)
           val uri: String = descriptor.maybeStrippedUri(req, rawUri)
-          val url = TargetExpressionLanguage(s"$scheme://$host${descriptor.root}$uri",
+          val url = TargetExpressionLanguage(
+            s"$scheme://$host${descriptor.root}$uri",
             Some(req),
             Some(descriptor),
             attrs.get(otoroshi.plugins.Keys.ApiKeyKey),
             attrs.get(otoroshi.plugins.Keys.UserKey),
             attrs.get(otoroshi.plugins.Keys.ElCtxKey).getOrElse(Map.empty),
             attrs,
-            env)
+            env
+          )
           GatewayEvent(
             `@id` = errorId,
             reqId = env.snowflakeGenerator.nextIdStr(),

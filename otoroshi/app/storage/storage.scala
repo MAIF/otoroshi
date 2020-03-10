@@ -123,10 +123,11 @@ trait RedisLike {
           value: String,
           exSeconds: Option[Long] = None,
           pxMilliseconds: Option[Long] = None): Future[Boolean]
-  def setnxBS(key: String, value: ByteString, ttl: Option[Long])(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
+  def setnxBS(key: String, value: ByteString, ttl: Option[Long])(implicit ec: ExecutionContext,
+                                                                 env: Env): Future[Boolean] = {
     // no comment !!!
     exists(key).flatMap {
-      case true => FastFuture.successful(false)
+      case true  => FastFuture.successful(false)
       case false => setBS(key, value, None, ttl)
     }
   }
@@ -463,7 +464,8 @@ class RedisLikeWrapper(redis: RedisLike, env: Env) extends RedisLike {
     redis.scard(key)
   }
 
-  override def setnxBS(key: String, value: ByteString, ttl: Option[Long])(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
+  override def setnxBS(key: String, value: ByteString, ttl: Option[Long])(implicit ec: ExecutionContext,
+                                                                          env: Env): Future[Boolean] = {
     env.metrics.counter("redis.ops").inc()
     redis.setnxBS(key, value, ttl)
   }

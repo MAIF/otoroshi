@@ -44,7 +44,7 @@ export class ServiceHealthPage extends Component {
     { title: 'Error', content: item => (item.error ? item.error : '') },
   ];
 
-  updateEvts = (evts) => {
+  updateEvts = evts => {
     this.setState({ evts });
     if (evts.length > 0) {
       const color = evts[0].health ? this.colors[evts[0].health] : 'grey';
@@ -58,7 +58,7 @@ export class ServiceHealthPage extends Component {
       this.title = 'No HealthCheck available yet';
       this.props.setTitle(this.title);
     }
-  }
+  };
 
   componentDidMount() {
     BackOfficeServices.fetchService(this.props.params.lineId, this.props.params.serviceId).then(
@@ -93,9 +93,9 @@ export class ServiceHealthPage extends Component {
     return BackOfficeServices.fetchHealthCheckEvents(this.state.service.id);
   };
 
-  onUpdate = (evts) => {
+  onUpdate = evts => {
     this.updateEvts(evts);
-  }
+  };
 
   render() {
     if (!this.state.service) return null;

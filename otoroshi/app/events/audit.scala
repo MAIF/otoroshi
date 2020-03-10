@@ -205,8 +205,8 @@ case class MaxConcurrentRequestReachedEvent(`@id`: String,
   )
 }
 
-case class JobStartedEvent(`@id`: String, `@env`: String,  job: Job, `@timestamp`: DateTime = DateTime.now())
-  extends AuditEvent {
+case class JobStartedEvent(`@id`: String, `@env`: String, job: Job, `@timestamp`: DateTime = DateTime.now())
+    extends AuditEvent {
 
   override def `@service`: String   = "Otoroshi"
   override def `@serviceId`: String = "--"
@@ -227,8 +227,8 @@ case class JobStartedEvent(`@id`: String, `@env`: String,  job: Job, `@timestamp
   )
 }
 
-case class JobStoppedEvent(`@id`: String, `@env`: String,  job: Job, `@timestamp`: DateTime = DateTime.now())
-  extends AuditEvent {
+case class JobStoppedEvent(`@id`: String, `@env`: String, job: Job, `@timestamp`: DateTime = DateTime.now())
+    extends AuditEvent {
 
   override def `@service`: String   = "Otoroshi"
   override def `@serviceId`: String = "--"
@@ -249,8 +249,8 @@ case class JobStoppedEvent(`@id`: String, `@env`: String,  job: Job, `@timestamp
   )
 }
 
-case class JobRunEvent(`@id`: String, `@env`: String,  job: Job, `@timestamp`: DateTime = DateTime.now())
-  extends AuditEvent {
+case class JobRunEvent(`@id`: String, `@env`: String, job: Job, `@timestamp`: DateTime = DateTime.now())
+    extends AuditEvent {
 
   override def `@service`: String   = "Otoroshi"
   override def `@serviceId`: String = "--"
@@ -271,8 +271,12 @@ case class JobRunEvent(`@id`: String, `@env`: String,  job: Job, `@timestamp`: D
   )
 }
 
-case class JobErrorEvent(`@id`: String, `@env`: String,  job: Job, err: Throwable, `@timestamp`: DateTime = DateTime.now())
-  extends AuditEvent {
+case class JobErrorEvent(`@id`: String,
+                         `@env`: String,
+                         job: Job,
+                         err: Throwable,
+                         `@timestamp`: DateTime = DateTime.now())
+    extends AuditEvent {
 
   override def `@service`: String   = "Otoroshi"
   override def `@serviceId`: String = "--"
