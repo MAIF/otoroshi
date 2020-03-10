@@ -125,7 +125,7 @@ case "${1}" in
     build_jdk12 $2
     build_jdk13 $2
     #build_jdk14 $2
-    #build_graal $2
+    build_graal $2
     cleanup
     ;;
   push-all)

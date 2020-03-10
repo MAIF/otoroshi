@@ -1278,6 +1278,13 @@ class ScriptApiController(ApiAction: ApiAction, cc: ControllerComponents)(
         case Some("job")      => jobNames
         case _                => Seq.empty
       }
+      def extractInfosFromJob(c: String): JsValue = {
+        env.scriptManager.getAnyScript[Job](s"cp:$c") match {
+          case Left(_) => extractInfos(c)
+          case Right(instance) if instance.visibility == JobVisibility.UserLand => extractInfos(c)
+          case Right(instance) if instance.visibility == JobVisibility.Internal => JsNull
+        }
+      }
       def extractInfos(c: String): JsValue = {
         env.scriptManager.getAnyScript[NamedPlugin](s"cp:$c") match {
           case Left(_) => Json.obj("id" -> s"cp:$c", "name" -> c, "description" -> JsNull)
@@ -1315,7 +1322,10 @@ class ScriptApiController(ApiAction: ApiAction, cc: ControllerComponents)(
         cpPreRoutes.map(extractInfos) ++
         cpRequestSinks.map(extractInfos) ++
         cpListenerNames.map(extractInfos) ++
-        cpJobNames.map(extractInfos)
+        cpJobNames.map(extractInfosFromJob).filter {
+          case JsNull => false
+          case _ => true
+        }
         Ok(JsArray(allClasses))
       }
     }

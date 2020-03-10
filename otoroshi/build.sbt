@@ -51,6 +51,8 @@ libraryDependencies ++= Seq(
   "io.lettuce"               % "lettuce-core"              % "5.2.2.RELEASE",
   "com.jayway.jsonpath"      % "json-path"                 % "2.4.0",
   "com.cronutils"            % "cron-utils"                % "9.0.2",
+  //"io.kubernetes"            % "client-java"               % "7.0.0",
+  //"io.kubernetes"            % "client-java-extended"      % "7.0.0",
   "org.scalatestplus.play"   %% "scalatestplus-play"       % "3.1.2" % Test,
   "com.datastax.cassandra"   % "cassandra-driver-core"     % "3.7.2" classifier "shaded" excludeAll (
     ExclusionRule(organization = "io.netty"),

@@ -55,7 +55,7 @@ class ErrorHandler()(implicit env: Env) extends HttpErrorHandler {
 
   lazy val logger = Logger("otoroshi-error-handler")
 
-  def onClientError(request: RequestHeader, statusCode: Int, mess: String) = {
+  def onClientError(request: RequestHeader, statusCode: Int, mess: String): Future[Result] = {
     val message       = Option(mess).filterNot(_.trim.isEmpty).getOrElse("An error occurred")
     val remoteAddress = request.theIpAddress
     logger.error(
@@ -66,17 +66,21 @@ class ErrorHandler()(implicit env: Env) extends HttpErrorHandler {
     env.datastores.globalConfigDataStore.singleton().map { config =>
       env.datastores.serviceDescriptorDataStore.updateMetricsOnError(config)
     }
-    Errors.craftResponseResult(
-      s"Client Error: an error occurred on ${request.relativeUri} ($statusCode)",
-      Status(statusCode),
-      request,
-      None,
-      Some("errors.client.error"),
-      attrs = TypedMap.empty
+    val snowflake = env.snowflakeGenerator.nextIdStr()
+    val attrs = TypedMap.empty
+    RequestSink.maybeSinkRequest(snowflake, request, attrs, RequestOrigin.ErrorHandler, statusCode, message,
+      Errors.craftResponseResult(
+        s"Client Error: an error occurred on ${request.relativeUri} ($statusCode)",
+        Status(statusCode),
+        request,
+        None,
+        Some("errors.client.error"),
+        attrs = TypedMap.empty
+      )
     )
   }
 
-  def onServerError(request: RequestHeader, exception: Throwable) = {
+  def onServerError(request: RequestHeader, exception: Throwable): Future[Result] = {
     // exception.printStackTrace()
     val remoteAddress = request.theIpAddress
     logger.error(
@@ -88,12 +92,17 @@ class ErrorHandler()(implicit env: Env) extends HttpErrorHandler {
     env.datastores.globalConfigDataStore.singleton().map { config =>
       env.datastores.serviceDescriptorDataStore.updateMetricsOnError(config)
     }
-    Errors.craftResponseResult("An error occurred ...",
-                               InternalServerError,
-                               request,
-                               None,
-                               Some("errors.server.error"),
-                               attrs = TypedMap.empty)
+    val snowflake = env.snowflakeGenerator.nextIdStr()
+    val attrs = TypedMap.empty
+    RequestSink.maybeSinkRequest(snowflake, request, attrs, RequestOrigin.ErrorHandler, 500, Option(exception).flatMap(e => Option(e.getMessage)).getOrElse("An error occurred ..."),
+      Errors.craftResponseResult("An error occurred ...",
+        InternalServerError,
+        request,
+        None,
+        Some("errors.server.error"),
+        attrs = TypedMap.empty
+      )
+    )
   }
 }
 
@@ -867,32 +876,6 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
     }
   }
 
-  def maybeSinkRequest(snowflake: String,
-                       req: RequestHeader,
-                       attrs: utils.TypedMap,
-                       err: Future[Result]): Future[Result] =
-    env.metrics.withTimerAsync("otoroshi.core.proxy.request-sink") {
-      env.datastores.globalConfigDataStore.singleton().flatMap {
-        case config if !config.scripts.enabled         => err
-        case config if config.scripts.sinkRefs.isEmpty => err
-        case config =>
-          val ctx = RequestSinkContext(
-            snowflake = snowflake,
-            index = -1,
-            request = req,
-            config = config.scripts.sinkConfig,
-            attrs = attrs
-          )
-          val rss = config.scripts.sinkRefs.map(r => env.scriptManager.getAnyScript[RequestSink](r)).collect {
-            case Right(rs) => rs
-          }
-          rss.find(_.matches(ctx)) match {
-            case None     => err
-            case Some(rs) => rs.handle(ctx)
-          }
-      }
-    }
-
   def forwardCall() = actionBuilder.async(sourceBodyParser) { req =>
     // TODO : add metrics + JMX
     // val meterIn             = Metrics.metrics.meter("GatewayDataIn")
@@ -970,7 +953,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                  None,
                                                  Some("errors.service.not.found.invalid.host"),
                                                  attrs = attrs)
-            maybeSinkRequest(snowflake, req, attrs, err)
+            RequestSink.maybeSinkRequest(snowflake, req, attrs, RequestOrigin.ReverseProxy, 404, s"Service not found: invalid host", err)
 
           case Some(ServiceLocation(domain, serviceEnv, subdomain)) => {
             val uriParts = req.relativeUri.split("/").toSeq
@@ -990,7 +973,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                          None,
                                          Some("errors.service.not.found"),
                                          attrs = attrs)
-                  maybeSinkRequest(snowflake, req, attrs, err)
+                  RequestSink.maybeSinkRequest(snowflake, req, attrs, RequestOrigin.ReverseProxy, 404, s"Service not found", err)
                 case Some(desc) if !desc.enabled =>
                   val err = Errors
                     .craftResponseResult(s"Service unavailable",
@@ -999,7 +982,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                          None,
                                          Some("errors.service.unavailable"),
                                          attrs = attrs)
-                  maybeSinkRequest(snowflake, req, attrs, err)
+                  RequestSink.maybeSinkRequest(snowflake, req, attrs, RequestOrigin.ReverseProxy, 503, "Service unavailable", err)
                 case Some(rawDesc) if rawDesc.redirection.enabled && rawDesc.redirection.hasValidCode => {
                   // TODO: event here
                   FastFuture.successful(

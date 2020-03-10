@@ -15,12 +15,56 @@ trait RequestSink extends StartableAndStoppable with NamedPlugin with InternalEv
     FastFuture.successful(Results.NotImplemented(Json.obj("error" -> "not implemented yet")))
 }
 
+object RequestSink {
+
+  def maybeSinkRequest(snowflake: String,
+                       req: RequestHeader,
+                       attrs: utils.TypedMap,
+                       origin: RequestOrigin,
+                       status: Int,
+                       message: String,
+                       err: => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] =
+    env.metrics.withTimerAsync("otoroshi.core.proxy.request-sink") {
+      env.datastores.globalConfigDataStore.singleton().flatMap {
+        case config if !config.scripts.enabled         => err
+        case config if config.scripts.sinkRefs.isEmpty => err
+        case config =>
+          val ctx = RequestSinkContext(
+            snowflake = snowflake,
+            index = -1,
+            request = req,
+            config = config.scripts.sinkConfig,
+            attrs = attrs,
+            status = status,
+            message = message,
+            origin = origin
+          )
+          val rss = config.scripts.sinkRefs.map(r => env.scriptManager.getAnyScript[RequestSink](r)).collect {
+            case Right(rs) => rs
+          }
+          rss.find(_.matches(ctx)) match {
+            case None     => err
+            case Some(rs) => rs.handle(ctx)
+          }
+      }
+    }
+}
+
+sealed trait RequestOrigin
+object RequestOrigin {
+  case object ErrorHandler extends RequestOrigin
+  case object ReverseProxy extends RequestOrigin
+}
+
 case class RequestSinkContext(
     snowflake: String,
     index: Int,
     request: RequestHeader,
     config: JsValue,
     attrs: TypedMap,
+    origin: RequestOrigin,
+    status: Int,
+    message: String,
 ) extends ContextWithConfig {
 
   private def conf[A](prefix: String = "config-"): Option[JsValue] = {

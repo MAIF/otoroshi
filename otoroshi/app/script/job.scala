@@ -45,6 +45,12 @@ object JobInstantiation {
   case object OneInstancePerOtoroshiCluster extends JobInstantiation
 }
 
+sealed trait JobVisibility
+object JobVisibility {
+  case object Internal extends JobVisibility
+  case object UserLand extends JobVisibility
+}
+
 case class JobContext(
   snowflake: String,
   attrs: TypedMap,
@@ -66,6 +72,7 @@ trait Job extends NamedPlugin with StartableAndStoppable with InternalEventListe
   final override def pluginType: PluginType = JobType
 
   def uniqueId: JobId
+  def visibility: JobVisibility = JobVisibility.UserLand
   def kind: JobKind = JobKind.Autonomous
   def starting: JobStarting = JobStarting.Automatically
   def instantiation: JobInstantiation = JobInstantiation.OneInstancePerOtoroshiInstance
