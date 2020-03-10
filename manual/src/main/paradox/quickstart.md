@@ -127,7 +127,7 @@ curl -X POST -H 'Content-Type: application/json' \
   "name": "cats-api", 
   "hosts": ["cats.oto.tools"], 
   "targets": [{ "host": "aws.random.cat", "scheme": "https" }],
-  "root": "/meow",
+  "root": "/meow"
 }' | jq
 ```
 
@@ -214,7 +214,7 @@ curl -X PATCH -H 'Content-Type: application/json' \
 then try to call you api again
 
 ```sh
-curl http://cats.oto.tools:9999 -u apikey1:secret --include
+$ curl http://cats.oto.tools:8080 -u apikey1:secret --include
 
 HTTP/1.1 200 OK
 Date: Tue, 10 Mar 2020 13:00:01 GMT

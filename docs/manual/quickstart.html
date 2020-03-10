@@ -309,7 +309,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   &quot;name&quot;: &quot;cats-api&quot;, 
   &quot;hosts&quot;: [&quot;cats.oto.tools&quot;], 
   &quot;targets&quot;: [{ &quot;host&quot;: &quot;aws.random.cat&quot;, &quot;scheme&quot;: &quot;https&quot; }],
-  &quot;root&quot;: &quot;/meow&quot;,
+  &quot;root&quot;: &quot;/meow&quot;
 }&#39; | jq
 </code></pre>
 <p>but if you try to use it, you will have something like :</p>
@@ -375,7 +375,7 @@ Content-Length: 71
 ]&#39; | jq
 </code></pre>
 <p>then try to call you api again</p>
-<pre class="prettyprint"><code class="language-sh">curl http://cats.oto.tools:9999 -u apikey1:secret --include
+<pre class="prettyprint"><code class="language-sh">$ curl http://cats.oto.tools:8080 -u apikey1:secret --include
 
 HTTP/1.1 200 OK
 Date: Tue, 10 Mar 2020 13:00:01 GMT
