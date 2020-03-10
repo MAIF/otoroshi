@@ -205,9 +205,11 @@ class Env(val configuration: Configuration,
   lazy val providerCssUrl: Option[String] =
     configuration.getOptional[String]("otoroshi.provider.cssUrl")
 
-  lazy val providerJsUrlHtml: Html = providerJsUrl.map(url => Html(s"""<script type="text/javascript" src="$url"></script>""")).getOrElse(Html(""))
+  lazy val providerJsUrlHtml: Html =
+    providerJsUrl.map(url => Html(s"""<script type="text/javascript" src="$url"></script>""")).getOrElse(Html(""))
 
-  lazy val providerCssUrlHtml: Html = providerCssUrl.map(url => Html(s"""<link href="$url" rel="stylesheet">""")).getOrElse(Html(""))
+  lazy val providerCssUrlHtml: Html =
+    providerCssUrl.map(url => Html(s"""<link href="$url" rel="stylesheet">""")).getOrElse(Html(""))
 
   lazy val providerDashboardSecret: String =
     configuration.getOptional[String]("otoroshi.provider.secret").getOrElse("secret")

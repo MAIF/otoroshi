@@ -13,10 +13,10 @@ object Keys {
   val UserAgentInfoKey      = TypedKey[JsValue]("otoroshi.plugins.UserAgentInfo")
   val ExtraAnalyticsDataKey = TypedKey[JsValue]("otoroshi.plugins.ExtraAnalyticsData")
 
-  val RequestTimestampKey   = TypedKey[DateTime]("otoroshi.core.RequestTimestamp")
-  val RequestStartKey       = TypedKey[Long]("otoroshi.core.RequestStart")
-  val RequestWebsocketKey   = TypedKey[Boolean]("otoroshi.core.RequestWebsocket")
-  val RequestTargetKey      = TypedKey[Target]("otoroshi.core.RequestTarget")
-  val SnowFlakeKey          = TypedKey[String]("otoroshi.core.SnowFlake")
-  val ElCtxKey              = TypedKey[Map[String, String]]("otoroshi.core.ElCtx")
+  val RequestTimestampKey = TypedKey[DateTime]("otoroshi.core.RequestTimestamp")
+  val RequestStartKey     = TypedKey[Long]("otoroshi.core.RequestStart")
+  val RequestWebsocketKey = TypedKey[Boolean]("otoroshi.core.RequestWebsocket")
+  val RequestTargetKey    = TypedKey[Target]("otoroshi.core.RequestTarget")
+  val SnowFlakeKey        = TypedKey[String]("otoroshi.core.SnowFlake")
+  val ElCtxKey            = TypedKey[Map[String, String]]("otoroshi.core.ElCtx")
 }

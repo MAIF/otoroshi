@@ -19,18 +19,19 @@ class HasAllowedUsersValidator extends AccessValidator {
     Some(
       Json.obj(
         "HasAllowedUsersValidator" -> Json.obj(
-          "usernames"    -> Json.arr(),
-          "emails"       -> Json.arr(),
-          "emailDomains" -> Json.arr(),
-          "metadataMatch" -> Json.arr(),
+          "usernames"        -> Json.arr(),
+          "emails"           -> Json.arr(),
+          "emailDomains"     -> Json.arr(),
+          "metadataMatch"    -> Json.arr(),
           "metadataNotMatch" -> Json.arr(),
-          "profileMatch"  -> Json.arr(),
+          "profileMatch"     -> Json.arr(),
           "profileNotMatch"  -> Json.arr()
         )
       )
     )
 
-  override def description: Option[String] = Some("""This plugin only let allowed users pass
+  override def description: Option[String] =
+    Some("""This plugin only let allowed users pass
       |
       |This plugin can accept the following configuration
       |
@@ -71,13 +72,15 @@ class HasAllowedUsersValidator extends AccessValidator {
         val profileNotMatch =
           (config \ "profileNotMatch").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
         val userMetaRaw = user.otoroshiData.getOrElse(Json.obj())
-        if (
-          allowedUsernames.contains(user.name) ||
-          allowedEmails.contains(user.email) ||
-          allowedEmailDomains.exists(domain => user.email.endsWith(domain)) ||
-          (metadataMatch.exists(JsonPathUtils.matchWith(userMetaRaw, "user metadata")) && !metadataNotMatch.exists(JsonPathUtils.matchWith(userMetaRaw, "user metadata"))) ||
-          (profileMatch.exists(JsonPathUtils.matchWith(user.profile, "user profile")) && !profileNotMatch.exists(JsonPathUtils.matchWith(user.profile, "user profile")))
-        ) {
+        if (allowedUsernames.contains(user.name) ||
+            allowedEmails.contains(user.email) ||
+            allowedEmailDomains.exists(domain => user.email.endsWith(domain)) ||
+            (metadataMatch.exists(JsonPathUtils.matchWith(userMetaRaw, "user metadata")) && !metadataNotMatch.exists(
+              JsonPathUtils.matchWith(userMetaRaw, "user metadata")
+            )) ||
+            (profileMatch.exists(JsonPathUtils.matchWith(user.profile, "user profile")) && !profileNotMatch.exists(
+              JsonPathUtils.matchWith(user.profile, "user profile")
+            ))) {
           FastFuture.successful(true)
         } else {
           FastFuture.successful(false)

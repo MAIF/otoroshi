@@ -121,24 +121,24 @@ case class LdapAuthModuleConfig(
   override def authModule(config: GlobalConfig): AuthModule = LdapAuthModule(this)
 
   override def asJson = Json.obj(
-    "type" -> "ldap",
-    "id" -> this.id,
-    "name" -> this.name,
-    "desc" -> this.desc,
-    "basicAuth" -> this.basicAuth,
+    "type"               -> "ldap",
+    "id"                 -> this.id,
+    "name"               -> this.name,
+    "desc"               -> this.desc,
+    "basicAuth"          -> this.basicAuth,
     "allowEmptyPassword" -> this.allowEmptyPassword,
-    "sessionMaxAge" -> this.sessionMaxAge,
-    "serverUrl" -> this.serverUrl,
-    "searchBase" -> this.searchBase,
-    "userBase" -> this.userBase.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-    "groupFilter" -> this.groupFilter.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-    "searchFilter" -> this.searchFilter,
-    "adminUsername" -> this.adminUsername.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-    "adminPassword" -> this.adminPassword.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-    "nameField" -> this.nameField,
-    "emailField" -> this.emailField,
-    "metadataField" -> this.metadataField.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-    "extraMetadata" -> this.extraMetadata
+    "sessionMaxAge"      -> this.sessionMaxAge,
+    "serverUrl"          -> this.serverUrl,
+    "searchBase"         -> this.searchBase,
+    "userBase"           -> this.userBase.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+    "groupFilter"        -> this.groupFilter.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+    "searchFilter"       -> this.searchFilter,
+    "adminUsername"      -> this.adminUsername.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+    "adminPassword"      -> this.adminPassword.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+    "nameField"          -> this.nameField,
+    "emailField"         -> this.emailField,
+    "metadataField"      -> this.metadataField.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+    "extraMetadata"      -> this.extraMetadata
   )
 
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.authConfigsDataStore.set(this)
@@ -192,7 +192,7 @@ case class LdapAuthModuleConfig(
           LdapAuthModuleConfig.logger.debug(s"searching `$searchBase` with filter `$filter` ")
           val groupSearch = ctx.search(searchBase, filter, searchControls)
           val uids = if (groupSearch.hasMore) {
-            val item = groupSearch.next()
+            val item  = groupSearch.next()
             val attrs = item.getAttributes
             attrs.getAll.asScala.toSeq.filter(a => a.getID == "uniqueMember" || a.getID == "member").flatMap { attr =>
               attr.getAll.asScala.toSeq.map(_.toString)
@@ -209,16 +209,16 @@ case class LdapAuthModuleConfig(
         s"searching user in ${userBase.map(_ + ",").getOrElse("") + searchBase} with filter ${searchFilter.replace("${username}", username)}"
       )
       val res = ctx.search(userBase.map(_ + ",").getOrElse("") + searchBase,
-        searchFilter.replace("${username}", username),
-        searchControls)
+                           searchFilter.replace("${username}", username),
+                           searchControls)
       val boundUser: Option[LdapAuthUser] = if (res.hasMore) {
         val item = res.next()
-        val dn = item.getNameInNamespace
+        val dn   = item.getNameInNamespace
         LdapAuthModuleConfig.logger.debug(s"found user with dn `$dn`")
         if (groupFilter.map(_ => usersInGroup.contains(dn)).getOrElse(true)) {
           LdapAuthModuleConfig.logger.debug(s"user found in group")
           val attrs = item.getAttributes
-          val env2 = new util.Hashtable[String, AnyRef]
+          val env2  = new util.Hashtable[String, AnyRef]
           env2.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory")
           env2.put(Context.PROVIDER_URL, serverUrl)
           env2.put(Context.SECURITY_AUTHENTICATION, "simple")

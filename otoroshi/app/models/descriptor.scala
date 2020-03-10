@@ -1927,7 +1927,7 @@ case class ServiceDescriptor(
 
   def algoChallengeFromOtoToBack: AlgoSettings = if (secComUseSameAlgo) secComSettings else secComAlgoChallengeOtoToBack
   def algoChallengeFromBackToOto: AlgoSettings = if (secComUseSameAlgo) secComSettings else secComAlgoChallengeBackToOto
-  def algoInfoFromOtoToBack:      AlgoSettings = if (secComUseSameAlgo) secComSettings else secComAlgoInfoToken
+  def algoInfoFromOtoToBack: AlgoSettings      = if (secComUseSameAlgo) secComSettings else secComAlgoInfoToken
 
   lazy val toHost: String = subdomain match {
     case s if s.isEmpty                  => s"$env.$domain"
@@ -2177,7 +2177,11 @@ case class ServiceDescriptor(
     }
   }
 
-  def generateInfoToken(apiKey: Option[ApiKey], paUsr: Option[PrivateAppsUser], requestHeader: Option[RequestHeader], issuer: Option[String] = None, sub: Option[String] = None)(
+  def generateInfoToken(apiKey: Option[ApiKey],
+                        paUsr: Option[PrivateAppsUser],
+                        requestHeader: Option[RequestHeader],
+                        issuer: Option[String] = None,
+                        sub: Option[String] = None)(
       implicit env: Env
   ): OtoroshiClaim = {
     val clientCertChain = requestHeader
@@ -2211,11 +2215,13 @@ case class ServiceDescriptor(
       case SecComInfoTokenVersion.Legacy => {
         OtoroshiClaim(
           iss = issuer.getOrElse(env.Headers.OtoroshiIssuer),
-          sub = sub.getOrElse(paUsr
-            .filter(_ => this.privateApp)
-            .map(k => s"pa:${k.email}")
-            .orElse(apiKey.map(k => s"apikey:${k.clientId}"))
-            .getOrElse("--")),
+          sub = sub.getOrElse(
+            paUsr
+              .filter(_ => this.privateApp)
+              .map(k => s"pa:${k.email}")
+              .orElse(apiKey.map(k => s"apikey:${k.clientId}"))
+              .getOrElse("--")
+          ),
           aud = this.name,
           exp = DateTime.now().plusSeconds(this.secComTtl.toSeconds.toInt).toDate.getTime,
           iat = DateTime.now().toDate.getTime,
@@ -2253,11 +2259,13 @@ case class ServiceDescriptor(
       case SecComInfoTokenVersion.Latest => {
         OtoroshiClaim(
           iss = issuer.getOrElse(env.Headers.OtoroshiIssuer),
-          sub = sub.getOrElse(paUsr
-            .filter(_ => this.privateApp)
-            .map(k => k.email)
-            .orElse(apiKey.map(k => k.clientName))
-            .getOrElse("public")),
+          sub = sub.getOrElse(
+            paUsr
+              .filter(_ => this.privateApp)
+              .map(k => k.email)
+              .orElse(apiKey.map(k => k.clientName))
+              .getOrElse("public")
+          ),
           aud = this.name,
           exp = DateTime.now().plusSeconds(this.secComTtl.toSeconds.toInt).toDate.getTime,
           iat = DateTime.now().toDate.getTime,
@@ -2336,14 +2344,15 @@ case class ServiceDescriptor(
           .flatMap(_ => f)
           .recoverWith {
             case PreRoutingError(body, code, ctype) => FastFuture.successful(Results.Status(code)(body).as(ctype))
-            case PreRoutingErrorWithResult(result) => FastFuture.successful(result)
-            case e => Errors.craftResponseResult(
-              message = e.getMessage,
-              status = Results.Status(500),
-              req = req,
-              maybeDescriptor = Some(this),
-              attrs = attrs
-            )
+            case PreRoutingErrorWithResult(result)  => FastFuture.successful(result)
+            case e =>
+              Errors.craftResponseResult(
+                message = e.getMessage,
+                status = Results.Status(500),
+                req = req,
+                maybeDescriptor = Some(this),
+                attrs = attrs
+              )
           }
       } else {
         f
@@ -2402,15 +2411,19 @@ case class ServiceDescriptor(
           }
           .flatMap(_ => f)
           .recoverWith {
-            case PreRoutingError(body, code, ctype) => FastFuture.successful(Results.Status(code)(body).as(ctype)).asLeft[WSFlow]
+            case PreRoutingError(body, code, ctype) =>
+              FastFuture.successful(Results.Status(code)(body).as(ctype)).asLeft[WSFlow]
             case PreRoutingErrorWithResult(result) => FastFuture.successful(result).asLeft[WSFlow]
-            case e => Errors.craftResponseResult(
-              message = e.getMessage,
-              status = Results.Status(500),
-              req = req,
-              maybeDescriptor = Some(this),
-              attrs = attrs
-            ).asLeft[WSFlow]
+            case e =>
+              Errors
+                .craftResponseResult(
+                  message = e.getMessage,
+                  status = Results.Status(500),
+                  req = req,
+                  maybeDescriptor = Some(this),
+                  attrs = attrs
+                )
+                .asLeft[WSFlow]
           }
       } else {
         f
@@ -2511,7 +2524,6 @@ object ServiceDescriptor {
           secComSettings = AlgoSettings
             .fromJson((json \ "secComSettings").asOpt[JsValue].getOrElse(JsNull))
             .getOrElse(HSAlgoSettings(512, "${config.app.claim.sharedKey}", false)),
-
           secComUseSameAlgo = (json \ "secComUseSameAlgo").asOpt[Boolean].getOrElse(true),
           secComAlgoChallengeOtoToBack = AlgoSettings
             .fromJson((json \ "secComAlgoChallengeOtoToBack").asOpt[JsValue].getOrElse(JsNull))
@@ -2522,7 +2534,6 @@ object ServiceDescriptor {
           secComAlgoInfoToken = AlgoSettings
             .fromJson((json \ "secComAlgoInfoToken").asOpt[JsValue].getOrElse(JsNull))
             .getOrElse(HSAlgoSettings(512, "secret", false)),
-
           authConfigRef = (json \ "authConfigRef").asOpt[String].filterNot(_.trim.isEmpty),
           clientValidatorRef = (json \ "clientValidatorRef").asOpt[String].filterNot(_.trim.isEmpty),
           transformerRefs = (json \ "transformerRefs")
@@ -2564,87 +2575,87 @@ object ServiceDescriptor {
       } get
 
     override def writes(sd: ServiceDescriptor): JsValue = Json.obj(
-      "id"                         -> sd.id,
-      "groupId"                    -> sd.groupId,
-      "name"                       -> sd.name,
-      "env"                        -> sd.env,
-      "domain"                     -> sd.domain,
-      "subdomain"                  -> sd.subdomain,
-      "targetsLoadBalancing"       -> sd.targetsLoadBalancing.toJson,
-      "targets"                    -> JsArray(sd.targets.map(_.toJson)),
-      "root"                       -> sd.root,
-      "matchingRoot"               -> sd.matchingRoot,
-      "stripPath"                  -> sd.stripPath,
-      "localHost"                  -> sd.localHost,
-      "localScheme"                -> sd.localScheme,
-      "redirectToLocal"            -> sd.redirectToLocal,
-      "enabled"                    -> sd.enabled,
-      "userFacing"                 -> sd.userFacing,
-      "privateApp"                 -> sd.privateApp,
-      "forceHttps"                 -> sd.forceHttps,
-      "logAnalyticsOnServer"       -> sd.logAnalyticsOnServer,
-      "useAkkaHttpClient"          -> sd.useAkkaHttpClient,
-      "useNewWSClient"             -> sd.useNewWSClient,
-      "tcpUdpTunneling"            -> sd.tcpUdpTunneling,
-      "detectApiKeySooner"         -> sd.detectApiKeySooner,
-      "maintenanceMode"            -> sd.maintenanceMode,
-      "buildMode"                  -> sd.buildMode,
-      "strictlyPrivate"            -> sd.strictlyPrivate,
-      "enforceSecureCommunication" -> sd.enforceSecureCommunication,
-      "sendInfoToken"              -> sd.sendInfoToken,
-      "sendStateChallenge"         -> sd.sendStateChallenge,
-      "sendOtoroshiHeadersBack"    -> sd.sendOtoroshiHeadersBack,
-      "readOnly"                   -> sd.readOnly,
-      "xForwardedHeaders"          -> sd.xForwardedHeaders,
-      "overrideHost"               -> sd.overrideHost,
-      "allowHttp10"                -> sd.allowHttp10,
-      "letsEncrypt"                -> sd.letsEncrypt,
-      "secComHeaders"              -> sd.secComHeaders.json,
-      "secComTtl"                  -> sd.secComTtl.toMillis,
-      "secComVersion"              -> sd.secComVersion.json,
-      "secComInfoTokenVersion"     -> sd.secComInfoTokenVersion.json,
-      "secComExcludedPatterns"     -> JsArray(sd.secComExcludedPatterns.map(JsString.apply)),
-      "securityExcludedPatterns"   -> JsArray(sd.securityExcludedPatterns.map(JsString.apply)),
-      "publicPatterns"             -> JsArray(sd.publicPatterns.map(JsString.apply)),
-      "privatePatterns"            -> JsArray(sd.privatePatterns.map(JsString.apply)),
-      "additionalHeaders"          -> JsObject(sd.additionalHeaders.mapValues(JsString.apply)),
-      "additionalHeadersOut"       -> JsObject(sd.additionalHeadersOut.mapValues(JsString.apply)),
-      "missingOnlyHeadersIn"       -> JsObject(sd.missingOnlyHeadersIn.mapValues(JsString.apply)),
-      "missingOnlyHeadersOut"      -> JsObject(sd.missingOnlyHeadersOut.mapValues(JsString.apply)),
-      "removeHeadersIn"            -> JsArray(sd.removeHeadersIn.map(JsString.apply)),
-      "removeHeadersOut"           -> JsArray(sd.removeHeadersOut.map(JsString.apply)),
-      "headersVerification"        -> JsObject(sd.headersVerification.mapValues(JsString.apply)),
-      "matchingHeaders"            -> JsObject(sd.matchingHeaders.mapValues(JsString.apply)),
-      "ipFiltering"                -> sd.ipFiltering.toJson,
-      "api"                        -> sd.api.toJson,
-      "healthCheck"                -> sd.healthCheck.toJson,
-      "clientConfig"               -> sd.clientConfig.toJson,
-      "canary"                     -> sd.canary.toJson,
-      "gzip"                       -> sd.gzip.asJson,
-      "metadata"                   -> JsObject(sd.metadata.filter(_._1.nonEmpty).mapValues(JsString.apply)),
-      "chaosConfig"                -> sd.chaosConfig.asJson,
-      "jwtVerifier"                -> sd.jwtVerifier.asJson,
-      "secComSettings"             -> sd.secComSettings.asJson,
-      "secComUseSameAlgo"          -> sd.secComUseSameAlgo,
+      "id"                           -> sd.id,
+      "groupId"                      -> sd.groupId,
+      "name"                         -> sd.name,
+      "env"                          -> sd.env,
+      "domain"                       -> sd.domain,
+      "subdomain"                    -> sd.subdomain,
+      "targetsLoadBalancing"         -> sd.targetsLoadBalancing.toJson,
+      "targets"                      -> JsArray(sd.targets.map(_.toJson)),
+      "root"                         -> sd.root,
+      "matchingRoot"                 -> sd.matchingRoot,
+      "stripPath"                    -> sd.stripPath,
+      "localHost"                    -> sd.localHost,
+      "localScheme"                  -> sd.localScheme,
+      "redirectToLocal"              -> sd.redirectToLocal,
+      "enabled"                      -> sd.enabled,
+      "userFacing"                   -> sd.userFacing,
+      "privateApp"                   -> sd.privateApp,
+      "forceHttps"                   -> sd.forceHttps,
+      "logAnalyticsOnServer"         -> sd.logAnalyticsOnServer,
+      "useAkkaHttpClient"            -> sd.useAkkaHttpClient,
+      "useNewWSClient"               -> sd.useNewWSClient,
+      "tcpUdpTunneling"              -> sd.tcpUdpTunneling,
+      "detectApiKeySooner"           -> sd.detectApiKeySooner,
+      "maintenanceMode"              -> sd.maintenanceMode,
+      "buildMode"                    -> sd.buildMode,
+      "strictlyPrivate"              -> sd.strictlyPrivate,
+      "enforceSecureCommunication"   -> sd.enforceSecureCommunication,
+      "sendInfoToken"                -> sd.sendInfoToken,
+      "sendStateChallenge"           -> sd.sendStateChallenge,
+      "sendOtoroshiHeadersBack"      -> sd.sendOtoroshiHeadersBack,
+      "readOnly"                     -> sd.readOnly,
+      "xForwardedHeaders"            -> sd.xForwardedHeaders,
+      "overrideHost"                 -> sd.overrideHost,
+      "allowHttp10"                  -> sd.allowHttp10,
+      "letsEncrypt"                  -> sd.letsEncrypt,
+      "secComHeaders"                -> sd.secComHeaders.json,
+      "secComTtl"                    -> sd.secComTtl.toMillis,
+      "secComVersion"                -> sd.secComVersion.json,
+      "secComInfoTokenVersion"       -> sd.secComInfoTokenVersion.json,
+      "secComExcludedPatterns"       -> JsArray(sd.secComExcludedPatterns.map(JsString.apply)),
+      "securityExcludedPatterns"     -> JsArray(sd.securityExcludedPatterns.map(JsString.apply)),
+      "publicPatterns"               -> JsArray(sd.publicPatterns.map(JsString.apply)),
+      "privatePatterns"              -> JsArray(sd.privatePatterns.map(JsString.apply)),
+      "additionalHeaders"            -> JsObject(sd.additionalHeaders.mapValues(JsString.apply)),
+      "additionalHeadersOut"         -> JsObject(sd.additionalHeadersOut.mapValues(JsString.apply)),
+      "missingOnlyHeadersIn"         -> JsObject(sd.missingOnlyHeadersIn.mapValues(JsString.apply)),
+      "missingOnlyHeadersOut"        -> JsObject(sd.missingOnlyHeadersOut.mapValues(JsString.apply)),
+      "removeHeadersIn"              -> JsArray(sd.removeHeadersIn.map(JsString.apply)),
+      "removeHeadersOut"             -> JsArray(sd.removeHeadersOut.map(JsString.apply)),
+      "headersVerification"          -> JsObject(sd.headersVerification.mapValues(JsString.apply)),
+      "matchingHeaders"              -> JsObject(sd.matchingHeaders.mapValues(JsString.apply)),
+      "ipFiltering"                  -> sd.ipFiltering.toJson,
+      "api"                          -> sd.api.toJson,
+      "healthCheck"                  -> sd.healthCheck.toJson,
+      "clientConfig"                 -> sd.clientConfig.toJson,
+      "canary"                       -> sd.canary.toJson,
+      "gzip"                         -> sd.gzip.asJson,
+      "metadata"                     -> JsObject(sd.metadata.filter(_._1.nonEmpty).mapValues(JsString.apply)),
+      "chaosConfig"                  -> sd.chaosConfig.asJson,
+      "jwtVerifier"                  -> sd.jwtVerifier.asJson,
+      "secComSettings"               -> sd.secComSettings.asJson,
+      "secComUseSameAlgo"            -> sd.secComUseSameAlgo,
       "secComAlgoChallengeOtoToBack" -> sd.secComAlgoChallengeOtoToBack.asJson,
       "secComAlgoChallengeBackToOto" -> sd.secComAlgoChallengeBackToOto.asJson,
-      "secComAlgoInfoToken"        -> sd.secComAlgoInfoToken.asJson,
-      "cors"                       -> sd.cors.asJson,
-      "redirection"                -> sd.redirection.toJson,
-      "authConfigRef"              -> sd.authConfigRef,
-      "clientValidatorRef"         -> sd.clientValidatorRef,
-      "transformerRef"             -> sd.transformerRefs.headOption.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-      "transformerRefs"            -> sd.transformerRefs,
-      "transformerConfig"          -> sd.transformerConfig,
-      "thirdPartyApiKey"           -> sd.thirdPartyApiKey.toJson,
-      "apiKeyConstraints"          -> sd.apiKeyConstraints.json,
-      "restrictions"               -> sd.restrictions.json,
-      "accessValidator"            -> sd.accessValidator.json,
-      "preRouting"                 -> sd.preRouting.json,
-      "hosts"                      -> JsArray(sd.hosts.map(JsString.apply)),
-      "paths"                      -> JsArray(sd.paths.map(JsString.apply)),
-      "issueCert"                  -> sd.issueCert,
-      "issueCertCA"                -> sd.issueCertCA.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      "secComAlgoInfoToken"          -> sd.secComAlgoInfoToken.asJson,
+      "cors"                         -> sd.cors.asJson,
+      "redirection"                  -> sd.redirection.toJson,
+      "authConfigRef"                -> sd.authConfigRef,
+      "clientValidatorRef"           -> sd.clientValidatorRef,
+      "transformerRef"               -> sd.transformerRefs.headOption.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      "transformerRefs"              -> sd.transformerRefs,
+      "transformerConfig"            -> sd.transformerConfig,
+      "thirdPartyApiKey"             -> sd.thirdPartyApiKey.toJson,
+      "apiKeyConstraints"            -> sd.apiKeyConstraints.json,
+      "restrictions"                 -> sd.restrictions.json,
+      "accessValidator"              -> sd.accessValidator.json,
+      "preRouting"                   -> sd.preRouting.json,
+      "hosts"                        -> JsArray(sd.hosts.map(JsString.apply)),
+      "paths"                        -> JsArray(sd.paths.map(JsString.apply)),
+      "issueCert"                    -> sd.issueCert,
+      "issueCertCA"                  -> sd.issueCertCA.map(JsString.apply).getOrElse(JsNull).as[JsValue],
     )
   }
   def toJson(value: ServiceDescriptor): JsValue = _fmt.writes(value)

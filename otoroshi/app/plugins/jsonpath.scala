@@ -11,8 +11,8 @@ object JsonPathUtils {
 
   private val logger = Logger("otoroshi-plugins-jsonpath-helper")
 
-  def matchWith(payload: JsValue, what: String): String => Boolean = {
-    query: String => {
+  def matchWith(payload: JsValue, what: String): String => Boolean = { query: String =>
+    {
       Try(JsonPath.parse(Json.stringify(payload)).read[JSONArray](query)) match {
         case Failure(err) =>
           logger.error(s"error while matching query '$query' against $what: $err")

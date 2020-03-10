@@ -59,7 +59,8 @@ object HeadersHelperImplicits {
     @inline
     def appendAllArgsIf(f: => Boolean)(other: (String, String)*): Seq[(String, String)] = if (f) seq ++ other else seq
     @inline
-    def lazyAppendAllArgsIf(f: => Boolean)(other: => Seq[(String, String)]): Seq[(String, String)] = if (f) seq ++ other else seq
+    def lazyAppendAllArgsIf(f: => Boolean)(other: => Seq[(String, String)]): Seq[(String, String)] =
+      if (f) seq ++ other else seq
 
     def debug(name: String): Seq[(String, String)] = {
       println(name, seq.mkString("\n"))
@@ -315,10 +316,24 @@ object HeadersHelper {
           env.Headers.OtoroshiDailyCallsRemaining   -> remainingQuotas.remainingCallsPerDay.toString,
           env.Headers.OtoroshiMonthlyCallsRemaining -> remainingQuotas.remainingCallsPerMonth.toString
         )
-        .lazyAppendAllArgsIf(descriptor.sendOtoroshiHeadersBack && apiKey.isDefined && apiKey.get.rotation.enabled && attrs.get(otoroshi.plugins.Keys.ApiKeyRotationKey).isDefined)(Seq(
-          "Otoroshi-ApiKey-Rotation-At"   -> attrs.get(otoroshi.plugins.Keys.ApiKeyRotationKey).get.rotationAt.toString(),
-          "Otoroshi-ApiKey-Rotation-Remaining"   -> attrs.get(otoroshi.plugins.Keys.ApiKeyRotationKey).get.remaining.toString
-        ))
+        .lazyAppendAllArgsIf(
+          descriptor.sendOtoroshiHeadersBack && apiKey.isDefined && apiKey.get.rotation.enabled && attrs
+            .get(otoroshi.plugins.Keys.ApiKeyRotationKey)
+            .isDefined
+        )(
+          Seq(
+            "Otoroshi-ApiKey-Rotation-At" -> attrs
+              .get(otoroshi.plugins.Keys.ApiKeyRotationKey)
+              .get
+              .rotationAt
+              .toString(),
+            "Otoroshi-ApiKey-Rotation-Remaining" -> attrs
+              .get(otoroshi.plugins.Keys.ApiKeyRotationKey)
+              .get
+              .remaining
+              .toString
+          )
+        )
         .appendIf(descriptor.canary.enabled, env.Headers.OtoroshiTrackerId -> s"${env.sign(canaryId)}::$canaryId")
         .removeAll(corsHeaders.map(_._1))
         .appendAll(corsHeaders)

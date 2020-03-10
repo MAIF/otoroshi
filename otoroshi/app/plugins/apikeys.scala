@@ -50,16 +50,17 @@ class HasAllowedApiKeyValidator extends AccessValidator {
     Some(
       Json.obj(
         configRoot.get -> Json.obj(
-          "clientIds" -> Json.arr(),
-          "tags"      -> Json.arr(),
-          "metadata"  -> Json.obj(),
-          "apikeyMatch" -> Json.obj(),
+          "clientIds"      -> Json.arr(),
+          "tags"           -> Json.arr(),
+          "metadata"       -> Json.obj(),
+          "apikeyMatch"    -> Json.obj(),
           "apikeyNotMatch" -> Json.obj(),
         )
       )
     )
 
-  override def description: Option[String] = Some("""Validation based on apikeys
+  override def description: Option[String] =
+    Some("""Validation based on apikeys
       |
       |```json
       |{
@@ -90,12 +91,12 @@ class HasAllowedApiKeyValidator extends AccessValidator {
         val apikeyNotMatch =
           (config \ "apikeyNotMatch").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
         lazy val apikeyJson = apiKey.toJson
-        if (
-          allowedClientIds.contains(apiKey.clientId) ||
-          allowedTags.exists(tag => apiKey.tags.contains(tag)) ||
-          allowedMetadatas.exists(meta => apiKey.metadata.get(meta._1).contains(meta._2)) ||
-          (apikeyMatch.exists(JsonPathUtils.matchWith(apikeyJson, "apikey")) && !apikeyNotMatch.exists(JsonPathUtils.matchWith(apikeyJson, "apikey")))
-        ) {
+        if (allowedClientIds.contains(apiKey.clientId) ||
+            allowedTags.exists(tag => apiKey.tags.contains(tag)) ||
+            allowedMetadatas.exists(meta => apiKey.metadata.get(meta._1).contains(meta._2)) ||
+            (apikeyMatch.exists(JsonPathUtils.matchWith(apikeyJson, "apikey")) && !apikeyNotMatch.exists(
+              JsonPathUtils.matchWith(apikeyJson, "apikey")
+            ))) {
           FastFuture.successful(true)
         } else {
           FastFuture.successful(false)

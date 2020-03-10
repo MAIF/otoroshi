@@ -69,10 +69,10 @@ object JobType extends PluginType {
 }
 
 trait StartableAndStoppable {
-  val funit: Future[Unit]           = FastFuture.successful(())
+  val funit: Future[Unit]                                         = FastFuture.successful(())
   def startWithPluginId(pluginId: String, env: Env): Future[Unit] = start(env)
-  def start(env: Env): Future[Unit]  = FastFuture.successful(())
-  def stop(env: Env): Future[Unit]  = FastFuture.successful(())
+  def start(env: Env): Future[Unit]                               = FastFuture.successful(())
+  def stop(env: Env): Future[Unit]                                = FastFuture.successful(())
 }
 
 trait NamedPlugin { self =>
@@ -668,7 +668,7 @@ class ScriptManager(env: Env) {
         .map(_.getName)
 
       val jobNames: Seq[String] = (scanResult.getSubclasses(classOf[Job].getName).asScala ++
-        scanResult.getClassesImplementing(classOf[Job].getName).asScala)
+      scanResult.getClassesImplementing(classOf[Job].getName).asScala)
         .filterNot(predicate)
         .map(_.getName)
 
@@ -676,9 +676,15 @@ class ScriptManager(env: Env) {
     } catch {
       case e: Throwable =>
         e.printStackTrace()
-        (Seq.empty[String], Seq.empty[String], Seq.empty[String], Seq.empty[String], Seq.empty[String], Seq.empty[String])
+        (Seq.empty[String],
+         Seq.empty[String],
+         Seq.empty[String],
+         Seq.empty[String],
+         Seq.empty[String],
+         Seq.empty[String])
     } finally if (scanResult != null) scanResult.close()
-  } getOrElse (Seq.empty[String], Seq.empty[String], Seq.empty[String], Seq.empty[String], Seq.empty[String], Seq.empty[String])
+  } getOrElse (Seq.empty[String], Seq.empty[String], Seq.empty[String], Seq.empty[String], Seq.empty[String], Seq
+    .empty[String])
 
   def start(): ScriptManager = {
     if (env.scriptingEnabled) {
@@ -1316,13 +1322,13 @@ class ScriptApiController(ApiAction: ApiAction, cc: ControllerComponents)(
         case _                => Seq.empty
       }
       val cpJobNames = typ match {
-        case None             => jobNames
-        case Some("job")      => jobNames
-        case _                => Seq.empty
+        case None        => jobNames
+        case Some("job") => jobNames
+        case _           => Seq.empty
       }
       def extractInfosFromJob(c: String): JsValue = {
         env.scriptManager.getAnyScript[Job](s"cp:$c") match {
-          case Left(_) => extractInfos(c)
+          case Left(_)                                                          => extractInfos(c)
           case Right(instance) if instance.visibility == JobVisibility.UserLand => extractInfos(c)
           case Right(instance) if instance.visibility == JobVisibility.Internal => JsNull
         }
@@ -1366,7 +1372,7 @@ class ScriptApiController(ApiAction: ApiAction, cc: ControllerComponents)(
         cpListenerNames.map(extractInfos) ++
         cpJobNames.map(extractInfosFromJob).filter {
           case JsNull => false
-          case _ => true
+          case _      => true
         }
         Ok(JsArray(allClasses))
       }
