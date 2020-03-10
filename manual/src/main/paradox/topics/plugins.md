@@ -15,7 +15,7 @@ there are many plugin types
 * `access validation` plugins: used to validate if a request can pass or not based on whatever you want
 * `request transformer` plugins: used to transform request, responses and their body. Can be used to return arbitrary content
 * `event listener` plugins: any plugin type can listen to otoroshi internal events and react to thems
-
+* `job` plugins: tasks taht can run automatically once, on be scheduled with a cron expression or every defined interval
 
 ## Code and signatures
 
@@ -24,6 +24,8 @@ there are many plugin types
 * https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/script/accessvalidator.scala#L63-L82
 * https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/script/script.scala#L314-L455
 * https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/script/eventlistener.scala#L27-L48
+* https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/script/job.scala#L74-L81
+* https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/script/job.scala#L108-L110
 
 
 for more information about APIs you can use
@@ -105,7 +107,7 @@ sbt package
 and add the jar file to the Otoroshi classpath
 
 ```sh
-java -Dotoroshi.scripts.enabled=true -cp "/path/to/transformer.jar:$/path/to/otoroshi.jar" play.core.server.ProdServerStart
+java -cp "/path/to/transformer.jar:$/path/to/otoroshi.jar" play.core.server.ProdServerStart
 ```
 
 then, in your service descriptor, you can chose your transformer in the list. If you want to do it from the API, you have to defined the transformerRef using `cp:` prefix like 
@@ -160,28 +162,14 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class BodyLengthLimiter extends RequestTransformer {
 
-  override def transformResponseBody(
-    snowflake: String,
-    body: Source[ByteString, _],
-    rawResponse: HttpResponse,
-    otoroshiResponse: HttpResponse,
-    desc: ServiceDescriptor,
-    apiKey: Option[ApiKey],
-    user: Option[PrivateAppsUser])(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
+  override def def transformResponseWithCtx(ctx: TransformerResponseContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
     val max = env.configuration.getOptional[Long]("my-transformer.maxResponseBodySize").getOrElse(Long.MaxValue)
-    body.limitWeighted(max)(_.size)
+    ctx.body.limitWeighted(max)(_.size)
   }
 
-  override def transformRequestBody(
-    snowflake: String,
-    body: Source[ByteString, _],
-    rawRequest: HttpRequest,
-    otoroshiRequest: HttpRequest,
-    desc: ServiceDescriptor,
-    apiKey: Option[ApiKey],
-    user: Option[PrivateAppsUser])(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
+  override def transformRequestWithCtx(ctx: TransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
     val max = env.configuration.getOptional[Long]("my-transformer.maxRequestBodySize").getOrElse(Long.MaxValue)
-    body.limitWeighted(max)(_.size)
+    ctx.body.limitWeighted(max)(_.size)
   }
 }
 ```
@@ -191,7 +179,11 @@ class BodyLengthLimiter extends RequestTransformer {
 Just use the `classpath` option when running Otoroshi
 
 ```sh
-java -Dotoroshi.scripts.enabled=true -cp "/path/to/library.jar:$/path/to/otoroshi.jar" play.core.server.ProdServerStart
+java -cp "/path/to/library.jar:$/path/to/otoroshi.jar" play.core.server.ProdServerStart
 ```
 
 Be carefull as your library can conflict with other libraries used by Otoroshi and affect its stability
+
+## Enabling plugins
+
+plugins can be enabled per service from the service settings page or globally from the danger zone in the plugins section.
