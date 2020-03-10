@@ -231,6 +231,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><code>access validation</code> plugins: used to validate if a request can pass or not based on whatever you want</li>
   <li><code>request transformer</code> plugins: used to transform request, responses and their body. Can be used to return arbitrary content</li>
   <li><code>event listener</code> plugins: any plugin type can listen to otoroshi internal events and react to thems</li>
+  <li><code>job</code> plugins: tasks taht can run automatically once, on be scheduled with a cron expression or every defined interval</li>
 </ul>
 <h2><a href="#code-and-signatures" name="code-and-signatures" class="anchor"><span class="anchor-link"></span></a>Code and signatures</h2>
 <ul>
@@ -239,6 +240,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><a href="https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/script/accessvalidator.scala#L63-L82">https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/script/accessvalidator.scala#L63-L82</a></li>
   <li><a href="https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/script/script.scala#L314-L455">https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/script/script.scala#L314-L455</a></li>
   <li><a href="https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/script/eventlistener.scala#L27-L48">https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/script/eventlistener.scala#L27-L48</a></li>
+  <li><a href="https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/script/job.scala#L74-L81">https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/script/job.scala#L74-L81</a></li>
+  <li><a href="https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/script/job.scala#L108-L110">https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/script/job.scala#L108-L110</a></li>
 </ul>
 <p>for more information about APIs you can use</p>
 <ul>
@@ -295,7 +298,7 @@ new MyTransformer()
 <pre><code>sbt package
 </code></pre>
 <p>and add the jar file to the Otoroshi classpath</p>
-<pre class="prettyprint"><code class="language-sh">java -Dotoroshi.scripts.enabled=true -cp &quot;/path/to/transformer.jar:$/path/to/otoroshi.jar&quot; play.core.server.ProdServerStart
+<pre class="prettyprint"><code class="language-sh">java -cp &quot;/path/to/transformer.jar:$/path/to/otoroshi.jar&quot; play.core.server.ProdServerStart
 </code></pre>
 <p>then, in your service descriptor, you can chose your transformer in the list. If you want to do it from the API, you have to defined the transformerRef using <code>cp:</code> prefix like </p>
 <pre class="prettyprint"><code class="language-json">{
@@ -337,36 +340,24 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class BodyLengthLimiter extends RequestTransformer {
 
-  override def transformResponseBody(
-    snowflake: String,
-    body: Source[ByteString, _],
-    rawResponse: HttpResponse,
-    otoroshiResponse: HttpResponse,
-    desc: ServiceDescriptor,
-    apiKey: Option[ApiKey],
-    user: Option[PrivateAppsUser])(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
+  override def def transformResponseWithCtx(ctx: TransformerResponseContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
     val max = env.configuration.getOptional[Long](&quot;my-transformer.maxResponseBodySize&quot;).getOrElse(Long.MaxValue)
-    body.limitWeighted(max)(_.size)
+    ctx.body.limitWeighted(max)(_.size)
   }
 
-  override def transformRequestBody(
-    snowflake: String,
-    body: Source[ByteString, _],
-    rawRequest: HttpRequest,
-    otoroshiRequest: HttpRequest,
-    desc: ServiceDescriptor,
-    apiKey: Option[ApiKey],
-    user: Option[PrivateAppsUser])(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
+  override def transformRequestWithCtx(ctx: TransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
     val max = env.configuration.getOptional[Long](&quot;my-transformer.maxRequestBodySize&quot;).getOrElse(Long.MaxValue)
-    body.limitWeighted(max)(_.size)
+    ctx.body.limitWeighted(max)(_.size)
   }
 }
 </code></pre>
 <h2><a href="#using-a-library-that-is-not-embedded-in-otoroshi" name="using-a-library-that-is-not-embedded-in-otoroshi" class="anchor"><span class="anchor-link"></span></a>Using a library that is not embedded in Otoroshi</h2>
 <p>Just use the <code>classpath</code> option when running Otoroshi</p>
-<pre class="prettyprint"><code class="language-sh">java -Dotoroshi.scripts.enabled=true -cp &quot;/path/to/library.jar:$/path/to/otoroshi.jar&quot; play.core.server.ProdServerStart
+<pre class="prettyprint"><code class="language-sh">java -cp &quot;/path/to/library.jar:$/path/to/otoroshi.jar&quot; play.core.server.ProdServerStart
 </code></pre>
 <p>Be carefull as your library can conflict with other libraries used by Otoroshi and affect its stability</p>
+<h2><a href="#enabling-plugins" name="enabling-plugins" class="anchor"><span class="anchor-link"></span></a>Enabling plugins</h2>
+<p>plugins can be enabled per service from the service settings page or globally from the danger zone in the plugins section.</p>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="../topics/monitoring.html">Monitoring Otoroshi</a></p>
 </div>
@@ -386,6 +377,7 @@ class BodyLengthLimiter extends RequestTransformer {
     <li><a href="../topics/plugins.html#providing-a-transformer-from-java-classpath" class="header">Providing a transformer from Java classpath</a></li>
     <li><a href="../topics/plugins.html#getting-custom-configuration-from-the-otoroshi-config-file" class="header">Getting custom configuration from the Otoroshi config. file</a></li>
     <li><a href="../topics/plugins.html#using-a-library-that-is-not-embedded-in-otoroshi" class="header">Using a library that is not embedded in Otoroshi</a></li>
+    <li><a href="../topics/plugins.html#enabling-plugins" class="header">Enabling plugins</a></li>
   </ul></li>
 </ul>
 </div>
