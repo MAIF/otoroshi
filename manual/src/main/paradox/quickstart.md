@@ -9,7 +9,6 @@ what you will need :
 * JDK 11
 * curl
 * jq
-* a web browser ;)
 * 5 minutes of free time
 
 ## The elevator pitch
@@ -52,6 +51,7 @@ as the result, you will see something like
 
 ```log
 $ java -jar otoroshi.jar
+
 [info] otoroshi-env - Otoroshi version 1.4.21-dev
 [info] otoroshi-env - Admin API exposed on http://otoroshi-api.oto.tools:8080
 [info] otoroshi-env - Admin UI  exposed on http://otoroshi.oto.tools:8080

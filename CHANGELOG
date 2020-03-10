@@ -4,6 +4,33 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.21] - 2020-03-10
+
+https://github.com/MAIF/otoroshi/milestone/28?closed=1
+https://github.com/MAIF/otoroshi/compare/v1.4.20...v1.4.21
+https://github.com/MAIF/otoroshi/releases/tag/v1.4.21
+
+### Added
+
+- Add provider JS url to hook into UI (#440)
+- Now preRoutes can cancel a request if necessary (#444)
+- Plugins can enrich analytics events (#446)
+- Experiments with Lettuce driver for redis (#448)
+- Add plugins that can be background jobs (#449)
+- Add some kind of scheduler to have distributed unique jobs that run only on one cluster member at a time (#450)
+- Use JSON path to validate user profile and meta (#451)
+- Old LDAP version : bypass authentification without password (#452)
+
+### Changed
+
+- cosmetic changes concerning plugins in UI (#441)
+- cosmetic changes to the service page (#442)
+
+### Fixed
+
+- Add request sinks in the plugin form (#443)
+- Healthcheck to removed services (#447)
+
 ## [1.4.20] - 2020-02-11
 
 https://github.com/MAIF/otoroshi/milestone/27?closed=1
