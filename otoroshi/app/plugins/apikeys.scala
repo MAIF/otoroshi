@@ -204,16 +204,3 @@ class CertificateAsApikey extends PreRouting {
     }
   }
 }
-
-class DumbApiKey extends PreRouting {
-  override def preRoute(ctx: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
-    println("fooooo")
-    ctx.request.getQueryString("apikey") match {
-      case Some("foo") =>
-        val apiKey = env.datastores.apiKeyDataStore.initiateNewApiKey(ctx.descriptor.groupId)
-        ctx.attrs.put(otoroshi.plugins.Keys.ApiKeyKey -> apiKey)
-      case _ =>
-    }
-    Job.funit
-  }
-}

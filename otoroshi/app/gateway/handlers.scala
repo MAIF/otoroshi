@@ -450,7 +450,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
               }
               case Some(descriptor) if descriptor.privateApp && descriptor.id != env.backOfficeDescriptor.id => {
                 withAuthConfig(descriptor, req, attrs) { auth =>
-                  isPrivateAppsSessionValid(req, descriptor).flatMap {
+                  isPrivateAppsSessionValid(req, descriptor, attrs).flatMap {
                     case None =>
                       Errors.craftResponseResult(s"Invalid session",
                                                  Unauthorized,
@@ -597,32 +597,35 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
     )
   }
 
-  def isPrivateAppsSessionValid(req: RequestHeader, desc: ServiceDescriptor): Future[Option[PrivateAppsUser]] = {
-    desc.authConfigRef match {
-      case Some(ref) =>
-        env.datastores.authConfigsDataStore.findById(ref).flatMap {
-          case None => FastFuture.successful(None)
-          case Some(auth) => {
-            val expected = "oto-papps-" + auth.cookieSuffix(desc)
-            req.cookies
-              .get(expected)
-              .flatMap { cookie =>
-                env.extractPrivateSessionId(cookie)
+  def isPrivateAppsSessionValid(req: RequestHeader, desc: ServiceDescriptor, attrs: TypedMap): Future[Option[PrivateAppsUser]] = {
+    attrs.get(otoroshi.plugins.Keys.UserKey) match {
+      case Some(preExistingUser) => FastFuture.successful(Some(preExistingUser))
+      case _ => desc.authConfigRef match {
+        case Some(ref) =>
+          env.datastores.authConfigsDataStore.findById(ref).flatMap {
+            case None => FastFuture.successful(None)
+            case Some(auth) => {
+              val expected = "oto-papps-" + auth.cookieSuffix(desc)
+              req.cookies
+                .get(expected)
+                .flatMap { cookie =>
+                  env.extractPrivateSessionId(cookie)
+                }
+                .orElse(
+                  req.getQueryString("pappsToken").flatMap(value => env.extractPrivateSessionIdFromString(value))
+                )
+                .orElse(
+                  req.headers.get("Otoroshi-Token").flatMap(value => env.extractPrivateSessionIdFromString(value))
+                )
+                .map { id =>
+                  env.datastores.privateAppsUserDataStore.findById(id)
+                } getOrElse {
+                FastFuture.successful(None)
               }
-              .orElse(
-                req.getQueryString("pappsToken").flatMap(value => env.extractPrivateSessionIdFromString(value))
-              )
-              .orElse(
-                req.headers.get("Otoroshi-Token").flatMap(value => env.extractPrivateSessionIdFromString(value))
-              )
-              .map { id =>
-                env.datastores.privateAppsUserDataStore.findById(id)
-              } getOrElse {
-              FastFuture.successful(None)
             }
           }
-        }
-      case None => FastFuture.successful(None)
+        case None => FastFuture.successful(None)
+      }
     }
   }
 
@@ -630,7 +633,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
       f: => Future[Result]
   ): Future[Result] = {
     if (desc.isPrivate) {
-      isPrivateAppsSessionValid(req, desc).flatMap {
+      isPrivateAppsSessionValid(req, desc, attrs).flatMap {
         case None => f
         case Some(user) => {
           if (desc.tcpUdpTunneling) {
@@ -2082,6 +2085,32 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                           }
                                         }
 
+                                        def errorResult(status: Results.Status, message: String, code: String) = {
+                                          Errors.craftResponseResult(
+                                            message,
+                                            status,
+                                            req,
+                                            Some(descriptor),
+                                            Some(code),
+                                            duration = System.currentTimeMillis - start,
+                                            overhead = (System
+                                              .currentTimeMillis() - secondStart) + firstOverhead,
+                                            attrs = attrs
+                                          )
+                                        }
+
+                                        def sendRevokedApiKeyAlert(key: ApiKey) = {
+                                          Alerts.send(
+                                            RevokedApiKeyUsageAlert(env.snowflakeGenerator.nextIdStr(),
+                                              DateTime.now(),
+                                              env.env,
+                                              req,
+                                              key,
+                                              descriptor,
+                                              env)
+                                          )
+                                        }
+
                                         def passWithApiKey(config: GlobalConfig): Future[Result] = {
                                           if (descriptor.thirdPartyApiKey.enabled) {
                                             descriptor.thirdPartyApiKey.handle(req, descriptor, config, attrs) { key =>
@@ -2164,52 +2193,13 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                             val preExtractedApiKey = attrs.get(otoroshi.plugins.Keys.ApiKeyKey)
                                             if (preExtractedApiKey.isDefined) {
                                               preExtractedApiKey match {
-                                                case None =>
-                                                  Errors.craftResponseResult(
-                                                    "Invalid API key",
-                                                    Unauthorized,
-                                                    req,
-                                                    Some(descriptor),
-                                                    Some("errors.invalid.api.key"),
-                                                    duration = System.currentTimeMillis - start,
-                                                    overhead = (System
-                                                      .currentTimeMillis() - secondStart) + firstOverhead,
-                                                    attrs = attrs
-                                                  )
+                                                case None => errorResult(Unauthorized,"Invalid API key", "errors.invalid.api.key")
                                                 case Some(key) if key.isInvalid(key.clientSecret) => {
-                                                  Alerts.send(
-                                                    RevokedApiKeyUsageAlert(env.snowflakeGenerator.nextIdStr(),
-                                                      DateTime.now(),
-                                                      env.env,
-                                                      req,
-                                                      key,
-                                                      descriptor,
-                                                      env)
-                                                  )
-                                                  Errors.craftResponseResult(
-                                                    "Bad API key",
-                                                    BadGateway,
-                                                    req,
-                                                    Some(descriptor),
-                                                    Some("errors.bad.api.key"),
-                                                    duration = System.currentTimeMillis - start,
-                                                    overhead = (System
-                                                      .currentTimeMillis() - secondStart) + firstOverhead,
-                                                    attrs = attrs
-                                                  )
+                                                  sendRevokedApiKeyAlert(key)
+                                                  errorResult(BadGateway, "Bad API key", "errors.bad.api.key")
                                                 }
                                                 case Some(key) if !key.matchRouting(descriptor) => {
-                                                  Errors.craftResponseResult(
-                                                    "Invalid API key",
-                                                    Unauthorized,
-                                                    req,
-                                                    Some(descriptor),
-                                                    Some("errors.bad.api.key"),
-                                                    duration = System.currentTimeMillis - start,
-                                                    overhead = (System
-                                                      .currentTimeMillis() - secondStart) + firstOverhead,
-                                                    attrs = attrs
-                                                  )
+                                                  errorResult(Unauthorized, "Invalid API key", "errors.bad.api.key")
                                                 }
                                                 case Some(key)
                                                   if key.restrictions
@@ -2222,23 +2212,11 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                 case Some(key) if key.isValid(key.clientSecret) =>
                                                   key.withinQuotasAndRotation().flatMap {
                                                     case (true, rotationInfos) =>
-                                                      rotationInfos.foreach(
-                                                        i =>
-                                                          attrs.put(otoroshi.plugins.Keys.ApiKeyRotationKey -> i)
-                                                      )
+                                                      rotationInfos.foreach { i =>
+                                                        attrs.put(otoroshi.plugins.Keys.ApiKeyRotationKey -> i)
+                                                      }
                                                       callDownstream(config, Some(key))
-                                                    case (false, _) =>
-                                                      Errors.craftResponseResult(
-                                                        "You performed too much requests",
-                                                        TooManyRequests,
-                                                        req,
-                                                        Some(descriptor),
-                                                        Some("errors.too.much.requests"),
-                                                        duration = System.currentTimeMillis - start,
-                                                        overhead = (System
-                                                          .currentTimeMillis() - secondStart) + firstOverhead,
-                                                        attrs = attrs
-                                                      )
+                                                    case (false, _) => errorResult(TooManyRequests, "You performed too much requests", "errors.too.much.requests")
                                                   }
                                               }
                                             } else if (authBySimpleApiKeyClientId.isDefined && descriptor.apiKeyConstraints.clientIdAuth.enabled) {
@@ -2247,57 +2225,15 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                 .findAuthorizeKeyFor(clientId, descriptor.id)
                                                 .flatMap {
                                                   case None =>
-                                                    Errors.craftResponseResult(
-                                                      "Invalid API key",
-                                                      Unauthorized,
-                                                      req,
-                                                      Some(descriptor),
-                                                      Some("errors.invalid.api.key"),
-                                                      duration = System.currentTimeMillis - start,
-                                                      overhead = (System
-                                                        .currentTimeMillis() - secondStart) + firstOverhead,
-                                                      attrs = attrs
-                                                    )
-                                                  case Some(key) if !key.allowClientIdOnly => {
-                                                    Errors.craftResponseResult(
-                                                      "Bad API key",
-                                                      BadRequest,
-                                                      req,
-                                                      Some(descriptor),
-                                                      Some("errors.bad.api.key"),
-                                                      duration = System.currentTimeMillis - start,
-                                                      overhead = (System
-                                                        .currentTimeMillis() - secondStart) + firstOverhead,
-                                                      attrs = attrs
-                                                    )
-                                                  }
-                                                  case Some(key) if !key.matchRouting(descriptor) => {
-                                                    Errors.craftResponseResult(
-                                                      "Invalid API key",
-                                                      Unauthorized,
-                                                      req,
-                                                      Some(descriptor),
-                                                      Some("errors.bad.api.key"),
-                                                      duration = System.currentTimeMillis - start,
-                                                      overhead = (System
-                                                        .currentTimeMillis() - secondStart) + firstOverhead,
-                                                      attrs = attrs
-                                                    )
-                                                  }
+                                                    errorResult(Unauthorized, "Invalid API key", "errors.invalid.api.key")
+                                                  case Some(key) if !key.allowClientIdOnly =>
+                                                    errorResult(BadRequest, "Bad API key", "errors.bad.api.key")
+                                                  case Some(key) if !key.matchRouting(descriptor) =>
+                                                    errorResult(Unauthorized, "Invalid API key", "errors.bad.api.key")
                                                   case Some(key)
                                                       if key.restrictions.enabled && key.restrictions
                                                         .isNotFound(req.method, req.theDomain, req.relativeUri) => {
-                                                    Errors.craftResponseResult(
-                                                      "Not Found",
-                                                      NotFound,
-                                                      req,
-                                                      Some(descriptor),
-                                                      Some("errors.not.found"),
-                                                      duration = System.currentTimeMillis - start,
-                                                      overhead = (System
-                                                        .currentTimeMillis() - secondStart) + firstOverhead,
-                                                      attrs = attrs
-                                                    )
+                                                    errorResult(NotFound, "Not Found", "errors.not.found")
                                                   }
                                                   case Some(key)
                                                       if key.restrictions
@@ -2310,22 +2246,12 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                   case Some(key) if key.allowClientIdOnly =>
                                                     key.withinQuotasAndRotation().flatMap {
                                                       case (true, rotationInfos) =>
-                                                        rotationInfos.foreach(
-                                                          i => attrs.put(otoroshi.plugins.Keys.ApiKeyRotationKey -> i)
-                                                        )
+                                                        rotationInfos.foreach { i =>
+                                                          attrs.put(otoroshi.plugins.Keys.ApiKeyRotationKey -> i)
+                                                        }
                                                         callDownstream(config, Some(key))
                                                       case (false, _) =>
-                                                        Errors.craftResponseResult(
-                                                          "You performed too much requests",
-                                                          TooManyRequests,
-                                                          req,
-                                                          Some(descriptor),
-                                                          Some("errors.too.much.requests"),
-                                                          duration = System.currentTimeMillis - start,
-                                                          overhead = (System
-                                                            .currentTimeMillis() - secondStart) + firstOverhead,
-                                                          attrs = attrs
-                                                        )
+                                                        errorResult(TooManyRequests, "You performed too much requests", "errors.too.much.requests")
                                                     }
                                                 }
                                             } else if (authByCustomHeaders.isDefined && descriptor.apiKeyConstraints.customHeadersAuth.enabled) {
@@ -2334,52 +2260,13 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                 .findAuthorizeKeyFor(clientId, descriptor.id)
                                                 .flatMap {
                                                   case None =>
-                                                    Errors.craftResponseResult(
-                                                      "Invalid API key",
-                                                      Unauthorized,
-                                                      req,
-                                                      Some(descriptor),
-                                                      Some("errors.invalid.api.key"),
-                                                      duration = System.currentTimeMillis - start,
-                                                      overhead = (System
-                                                        .currentTimeMillis() - secondStart) + firstOverhead,
-                                                      attrs = attrs
-                                                    )
+                                                    errorResult(Unauthorized, "Invalid API key","errors.invalid.api.key")
                                                   case Some(key) if key.isInvalid(clientSecret) => {
-                                                    Alerts.send(
-                                                      RevokedApiKeyUsageAlert(env.snowflakeGenerator.nextIdStr(),
-                                                                              DateTime.now(),
-                                                                              env.env,
-                                                                              req,
-                                                                              key,
-                                                                              descriptor,
-                                                                              env)
-                                                    )
-                                                    Errors.craftResponseResult(
-                                                      "Bad API key",
-                                                      BadRequest,
-                                                      req,
-                                                      Some(descriptor),
-                                                      Some("errors.bad.api.key"),
-                                                      duration = System.currentTimeMillis - start,
-                                                      overhead = (System
-                                                        .currentTimeMillis() - secondStart) + firstOverhead,
-                                                      attrs = attrs
-                                                    )
+                                                    sendRevokedApiKeyAlert(key)
+                                                    errorResult(BadRequest, "Bad API key", "errors.bad.api.key")
                                                   }
-                                                  case Some(key) if !key.matchRouting(descriptor) => {
-                                                    Errors.craftResponseResult(
-                                                      "Bad API key",
-                                                      Unauthorized,
-                                                      req,
-                                                      Some(descriptor),
-                                                      Some("errors.bad.api.key"),
-                                                      duration = System.currentTimeMillis - start,
-                                                      overhead = (System
-                                                        .currentTimeMillis() - secondStart) + firstOverhead,
-                                                      attrs = attrs
-                                                    )
-                                                  }
+                                                  case Some(key) if !key.matchRouting(descriptor) =>
+                                                    errorResult(Unauthorized, "Bad API key", "errors.bad.api.key")
                                                   case Some(key)
                                                       if key.restrictions
                                                         .handleRestrictions(descriptor, Some(key), req, attrs)
@@ -2391,22 +2278,12 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                   case Some(key) if key.isValid(clientSecret) =>
                                                     key.withinQuotasAndRotation().flatMap {
                                                       case (true, rotationInfos) =>
-                                                        rotationInfos.foreach(
-                                                          i => attrs.put(otoroshi.plugins.Keys.ApiKeyRotationKey -> i)
-                                                        )
+                                                        rotationInfos.foreach { i =>
+                                                          attrs.put(otoroshi.plugins.Keys.ApiKeyRotationKey -> i)
+                                                        }
                                                         callDownstream(config, Some(key))
                                                       case (false, _) =>
-                                                        Errors.craftResponseResult(
-                                                          "You performed too much requests",
-                                                          TooManyRequests,
-                                                          req,
-                                                          Some(descriptor),
-                                                          Some("errors.too.much.requests"),
-                                                          duration = System.currentTimeMillis - start,
-                                                          overhead = (System
-                                                            .currentTimeMillis() - secondStart) + firstOverhead,
-                                                          attrs = attrs
-                                                        )
+                                                        errorResult(TooManyRequests, "You performed too much requests", "errors.too.much.requests")
                                                     }
                                                 }
                                             } else if (authByJwtToken.isDefined && descriptor.apiKeyConstraints.jwtAuth.enabled) {
@@ -2460,11 +2337,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                               val xsrfTokenHeader = req.headers.get("X-XSRF-TOKEN")
                                                               if (!xsrfToken.isNull && xsrfTokenHeader.isDefined) {
                                                                 xsrfToken.asString() == xsrfTokenHeader.get
-                                                              } else if (!xsrfToken.isNull && xsrfTokenHeader.isEmpty) {
-                                                                false
-                                                              } else {
-                                                                true
-                                                              }
+                                                              } else !(!xsrfToken.isNull && xsrfTokenHeader.isEmpty)
                                                             }
                                                             .filter { _ =>
                                                               desc.apiKeyConstraints.jwtAuth.maxJwtLifespanSecs.map {
@@ -2472,11 +2345,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                                   if (exp.isEmpty || iat.isEmpty) {
                                                                     false
                                                                   } else {
-                                                                    if ((exp.get - iat.get) <= maxJwtLifespanSecs) {
-                                                                      true
-                                                                    } else {
-                                                                      false
-                                                                    }
+                                                                    (exp.get - iat.get) <= maxJwtLifespanSecs
                                                                   }
                                                               } getOrElse {
                                                                 true
@@ -2495,19 +2364,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                                 true
                                                               }
                                                             } match {
-                                                            case Success(_) if !apiKey.matchRouting(descriptor) => {
-                                                              Errors.craftResponseResult(
-                                                                "Invalid API key",
-                                                                Unauthorized,
-                                                                req,
-                                                                Some(descriptor),
-                                                                Some("errors.bad.api.key"),
-                                                                duration = System.currentTimeMillis - start,
-                                                                overhead = (System
-                                                                  .currentTimeMillis() - secondStart) + firstOverhead,
-                                                                attrs = attrs
-                                                              )
-                                                            }
+                                                            case Success(_) if !apiKey.matchRouting(descriptor) =>
+                                                              errorResult(Unauthorized, "Invalid API key", "errors.bad.api.key")
                                                             case Success(_)
                                                                 if apiKey.restrictions
                                                                   .handleRestrictions(descriptor,
@@ -2525,87 +2383,26 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                             case Success(_) =>
                                                               apiKey.withinQuotasAndRotation().flatMap {
                                                                 case (true, rotationInfos) =>
-                                                                  rotationInfos.foreach(
-                                                                    i =>
-                                                                      attrs.put(
-                                                                        otoroshi.plugins.Keys.ApiKeyRotationKey -> i
-                                                                    )
-                                                                  )
+                                                                  rotationInfos.foreach { i =>
+                                                                    attrs.put(otoroshi.plugins.Keys.ApiKeyRotationKey -> i)
+                                                                  }
                                                                   callDownstream(config, Some(apiKey))
                                                                 case (false, _) =>
-                                                                  Errors.craftResponseResult(
-                                                                    "You performed too much requests",
-                                                                    TooManyRequests,
-                                                                    req,
-                                                                    Some(descriptor),
-                                                                    Some("errors.too.much.requests"),
-                                                                    duration = System.currentTimeMillis - start,
-                                                                    overhead = (System
-                                                                      .currentTimeMillis() - secondStart) + firstOverhead,
-                                                                    attrs = attrs
-                                                                  )
+                                                                  errorResult(TooManyRequests, "You performed too much requests", "errors.too.much.requests")
                                                               }
                                                             case Failure(e) => {
-                                                              Alerts.send(
-                                                                RevokedApiKeyUsageAlert(env.snowflakeGenerator
-                                                                                          .nextIdStr(),
-                                                                                        DateTime.now(),
-                                                                                        env.env,
-                                                                                        req,
-                                                                                        apiKey,
-                                                                                        descriptor,
-                                                                                        env)
-                                                              )
-                                                              Errors.craftResponseResult(
-                                                                s"Bad API key",
-                                                                BadRequest,
-                                                                req,
-                                                                Some(descriptor),
-                                                                Some("errors.bad.api.key"),
-                                                                duration = System.currentTimeMillis - start,
-                                                                overhead = (System
-                                                                  .currentTimeMillis() - secondStart) + firstOverhead,
-                                                                attrs = attrs
-                                                              )
+                                                              sendRevokedApiKeyAlert(apiKey)
+                                                              errorResult(BadRequest, s"Bad API key", "errors.bad.api.key")
                                                             }
                                                           }
                                                         }
                                                         case None =>
-                                                          Errors.craftResponseResult(
-                                                            "Invalid ApiKey provided",
-                                                            Unauthorized,
-                                                            req,
-                                                            Some(descriptor),
-                                                            Some("errors.invalid.api.key"),
-                                                            duration = System.currentTimeMillis - start,
-                                                            overhead = (System
-                                                              .currentTimeMillis() - secondStart) + firstOverhead,
-                                                            attrs = attrs
-                                                          )
+                                                          errorResult(Unauthorized, "Invalid ApiKey provided", "errors.invalid.api.key")
                                                       }
                                                   case None =>
-                                                    Errors.craftResponseResult(
-                                                      "Invalid ApiKey provided",
-                                                      Unauthorized,
-                                                      req,
-                                                      Some(descriptor),
-                                                      Some("errors.invalid.api.key"),
-                                                      duration = System.currentTimeMillis - start,
-                                                      overhead = (System
-                                                        .currentTimeMillis() - secondStart) + firstOverhead,
-                                                      attrs = attrs
-                                                    )
+                                                    errorResult(Unauthorized, "Invalid ApiKey provided", "errors.invalid.api.key")
                                                 }
-                                              } getOrElse Errors.craftResponseResult(
-                                                s"Invalid ApiKey provided",
-                                                Unauthorized,
-                                                req,
-                                                Some(descriptor),
-                                                Some("errors.invalid.api.key"),
-                                                duration = System.currentTimeMillis - start,
-                                                overhead = (System.currentTimeMillis() - secondStart) + firstOverhead,
-                                                attrs = attrs
-                                              )
+                                              } getOrElse errorResult(Unauthorized, s"Invalid ApiKey provided", "errors.invalid.api.key")
                                             } else if (authBasic.isDefined && descriptor.apiKeyConstraints.basicAuth.enabled) {
                                               val auth   = authBasic.get
                                               val id     = auth.split(":").headOption.map(_.trim)
@@ -2616,52 +2413,13 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                     .findAuthorizeKeyFor(apiKeyClientId, descriptor.id)
                                                     .flatMap {
                                                       case None =>
-                                                        Errors.craftResponseResult(
-                                                          "Invalid API key",
-                                                          Unauthorized,
-                                                          req,
-                                                          Some(descriptor),
-                                                          Some("errors.invalid.api.key"),
-                                                          duration = System.currentTimeMillis - start,
-                                                          overhead = (System
-                                                            .currentTimeMillis() - secondStart) + firstOverhead,
-                                                          attrs = attrs
-                                                        )
+                                                        errorResult(Unauthorized, "Invalid API key", "errors.invalid.api.key")
                                                       case Some(key) if key.isInvalid(apiKeySecret) => {
-                                                        Alerts.send(
-                                                          RevokedApiKeyUsageAlert(env.snowflakeGenerator.nextIdStr(),
-                                                                                  DateTime.now(),
-                                                                                  env.env,
-                                                                                  req,
-                                                                                  key,
-                                                                                  descriptor,
-                                                                                  env)
-                                                        )
-                                                        Errors.craftResponseResult(
-                                                          "Bad API key",
-                                                          BadGateway,
-                                                          req,
-                                                          Some(descriptor),
-                                                          Some("errors.bad.api.key"),
-                                                          duration = System.currentTimeMillis - start,
-                                                          overhead = (System
-                                                            .currentTimeMillis() - secondStart) + firstOverhead,
-                                                          attrs = attrs
-                                                        )
+                                                        sendRevokedApiKeyAlert(key)
+                                                        errorResult(BadGateway, "Bad API key", "errors.bad.api.key")
                                                       }
-                                                      case Some(key) if !key.matchRouting(descriptor) => {
-                                                        Errors.craftResponseResult(
-                                                          "Invalid API key",
-                                                          Unauthorized,
-                                                          req,
-                                                          Some(descriptor),
-                                                          Some("errors.bad.api.key"),
-                                                          duration = System.currentTimeMillis - start,
-                                                          overhead = (System
-                                                            .currentTimeMillis() - secondStart) + firstOverhead,
-                                                          attrs = attrs
-                                                        )
-                                                      }
+                                                      case Some(key) if !key.matchRouting(descriptor) =>
+                                                        errorResult(Unauthorized, "Invalid API key", "errors.bad.api.key")
                                                       case Some(key)
                                                           if key.restrictions
                                                             .handleRestrictions(descriptor, Some(key), req, attrs)
@@ -2673,56 +2431,26 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                       case Some(key) if key.isValid(apiKeySecret) =>
                                                         key.withinQuotasAndRotation().flatMap {
                                                           case (true, rotationInfos) =>
-                                                            rotationInfos.foreach(
-                                                              i =>
-                                                                attrs.put(otoroshi.plugins.Keys.ApiKeyRotationKey -> i)
-                                                            )
+                                                            rotationInfos.foreach { i =>
+                                                              attrs.put(otoroshi.plugins.Keys.ApiKeyRotationKey -> i)
+                                                            }
                                                             callDownstream(config, Some(key))
                                                           case (false, _) =>
-                                                            Errors.craftResponseResult(
-                                                              "You performed too much requests",
-                                                              TooManyRequests,
-                                                              req,
-                                                              Some(descriptor),
-                                                              Some("errors.too.much.requests"),
-                                                              duration = System.currentTimeMillis - start,
-                                                              overhead = (System
-                                                                .currentTimeMillis() - secondStart) + firstOverhead,
-                                                              attrs = attrs
-                                                            )
+                                                            errorResult(TooManyRequests, "You performed too much requests", "errors.too.much.requests")
                                                         }
                                                     }
                                                 }
                                                 case _ =>
-                                                  Errors.craftResponseResult(
-                                                    "No ApiKey provided",
-                                                    BadRequest,
-                                                    req,
-                                                    Some(descriptor),
-                                                    Some("errors.no.api.key"),
-                                                    duration = System.currentTimeMillis - start,
-                                                    overhead = (System
-                                                      .currentTimeMillis() - secondStart) + firstOverhead,
-                                                    attrs = attrs
-                                                  )
+                                                  errorResult(BadRequest, "No ApiKey provided", "errors.no.api.key")
                                               }
                                             } else {
-                                              Errors.craftResponseResult(
-                                                "No ApiKey provided",
-                                                BadRequest,
-                                                req,
-                                                Some(descriptor),
-                                                Some("errors.no.api.key"),
-                                                duration = System.currentTimeMillis - start,
-                                                overhead = (System.currentTimeMillis() - secondStart) + firstOverhead,
-                                                attrs = attrs
-                                              )
+                                              errorResult(BadRequest, "No ApiKey provided", "errors.no.api.key")
                                             }
                                           }
                                         }
 
                                         def passWithAuth0(config: GlobalConfig): Future[Result] = {
-                                          isPrivateAppsSessionValid(req, descriptor).flatMap {
+                                          isPrivateAppsSessionValid(req, descriptor, attrs).flatMap {
                                             case Some(paUsr) =>
                                               callDownstream(config, None, Some(paUsr))
                                             case None => {
@@ -2737,31 +2465,11 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                               logger.trace("should redirect to " + redirectTo)
                                               descriptor.authConfigRef match {
                                                 case None =>
-                                                  Errors.craftResponseResult(
-                                                    "Auth. config. ref not found on the descriptor",
-                                                    InternalServerError,
-                                                    req,
-                                                    Some(descriptor),
-                                                    Some("errors.auth.config.ref.not.found"),
-                                                    duration = System.currentTimeMillis - start,
-                                                    overhead = (System
-                                                      .currentTimeMillis() - secondStart) + firstOverhead,
-                                                    attrs = attrs
-                                                  )
+                                                  errorResult(InternalServerError, "Auth. config. ref not found on the descriptor", "errors.auth.config.ref.not.found")
                                                 case Some(ref) => {
                                                   env.datastores.authConfigsDataStore.findById(ref).flatMap {
                                                     case None =>
-                                                      Errors.craftResponseResult(
-                                                        "Auth. config. not found on the descriptor",
-                                                        InternalServerError,
-                                                        req,
-                                                        Some(descriptor),
-                                                        Some("errors.auth.config.not.found"),
-                                                        duration = System.currentTimeMillis - start,
-                                                        overhead = (System
-                                                          .currentTimeMillis() - secondStart) + firstOverhead,
-                                                        attrs = attrs
-                                                      )
+                                                      errorResult(InternalServerError, "Auth. config. not found on the descriptor", "errors.auth.config.not.found")
                                                     case Some(auth) => {
                                                       FastFuture
                                                         .successful(
@@ -2807,16 +2515,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                           val (restrictionsNotPassing, restrictionsResponse) =
                                             descriptor.restrictions.handleRestrictions(descriptor, None, req, attrs)
                                           if (secCalls > (quota * 10L)) {
-                                            Errors.craftResponseResult(
-                                              "[IP] You performed too much requests",
-                                              TooManyRequests,
-                                              req,
-                                              Some(descriptor),
-                                              Some("errors.too.much.requests"),
-                                              duration = System.currentTimeMillis - start,
-                                              overhead = (System.currentTimeMillis() - secondStart) + firstOverhead,
-                                              attrs = attrs
-                                            )
+                                            errorResult(TooManyRequests, "[IP] You performed too much requests", "errors.too.much.requests")
                                           } else {
                                             if (!isSecured && desc.forceHttps) {
                                               val theDomain = req.theDomain
@@ -2827,68 +2526,23 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                               //FastFuture.successful(Redirect(s"${env.rootScheme}$theDomain${req.relativeUri}"))
                                               FastFuture.successful(Redirect(s"https://$theDomain${req.relativeUri}"))
                                             } else if (!within) {
-                                              Errors.craftResponseResult(
-                                                "[GLOBAL] You performed too much requests",
-                                                TooManyRequests,
-                                                req,
-                                                Some(descriptor),
-                                                Some("errors.too.much.requests"),
-                                                duration = System.currentTimeMillis - start,
-                                                overhead = (System.currentTimeMillis() - secondStart) + firstOverhead,
-                                                attrs = attrs
-                                              )
+                                              errorResult(TooManyRequests, "[GLOBAL] You performed too much requests", "errors.too.much.requests")
                                             } else if (globalConfig.ipFiltering.notMatchesWhitelist(remoteAddress)) {
                                               /*else if (globalConfig.ipFiltering.whitelist.nonEmpty && !globalConfig.ipFiltering.whitelist
                                                    .exists(ip => utils.RegexPool(ip).matches(remoteAddress))) {*/
-                                              Errors.craftResponseResult(
-                                                "Your IP address is not allowed",
-                                                Forbidden,
-                                                req,
-                                                Some(descriptor),
-                                                Some("errors.ip.address.not.allowed"),
-                                                duration = System.currentTimeMillis - start,
-                                                overhead = (System.currentTimeMillis() - secondStart) + firstOverhead,
-                                                attrs = attrs
-                                              ) // global whitelist
+                                              errorResult(Forbidden, "Your IP address is not allowed", "errors.ip.address.not.allowed") // global whitelist
                                             } else if (globalConfig.ipFiltering.matchesBlacklist(remoteAddress)) {
                                               /*else if (globalConfig.ipFiltering.blacklist.nonEmpty && globalConfig.ipFiltering.blacklist
                                                      .exists(ip => utils.RegexPool(ip).matches(remoteAddress))) {*/
-                                              Errors.craftResponseResult(
-                                                "Your IP address is not allowed",
-                                                Forbidden,
-                                                req,
-                                                Some(descriptor),
-                                                Some("errors.ip.address.not.allowed"),
-                                                duration = System.currentTimeMillis - start,
-                                                overhead = (System.currentTimeMillis() - secondStart) + firstOverhead,
-                                                attrs = attrs
-                                              ) // global blacklist
+                                              errorResult(Forbidden, "Your IP address is not allowed", "errors.ip.address.not.allowed") // global blacklist
                                             } else if (descriptor.ipFiltering.notMatchesWhitelist(remoteAddress)) {
                                               /*else if (descriptor.ipFiltering.whitelist.nonEmpty && !descriptor.ipFiltering.whitelist
                                                    .exists(ip => utils.RegexPool(ip).matches(remoteAddress))) {*/
-                                              Errors.craftResponseResult(
-                                                "Your IP address is not allowed",
-                                                Forbidden,
-                                                req,
-                                                Some(descriptor),
-                                                Some("errors.ip.address.not.allowed"),
-                                                duration = System.currentTimeMillis - start,
-                                                overhead = (System.currentTimeMillis() - secondStart) + firstOverhead,
-                                                attrs = attrs
-                                              ) // service whitelist
+                                              errorResult(Forbidden, "Your IP address is not allowed", "errors.ip.address.not.allowed") // service whitelist
                                             } else if (descriptor.ipFiltering.matchesBlacklist(remoteAddress)) {
                                               /*else if (descriptor.ipFiltering.blacklist.nonEmpty && descriptor.ipFiltering.blacklist
                                                    .exists(ip => utils.RegexPool(ip).matches(remoteAddress))) {*/
-                                              Errors.craftResponseResult(
-                                                "Your IP address is not allowed",
-                                                Forbidden,
-                                                req,
-                                                Some(descriptor),
-                                                Some("errors.ip.address.not.allowed"),
-                                                duration = System.currentTimeMillis - start,
-                                                overhead = (System.currentTimeMillis() - secondStart) + firstOverhead,
-                                                attrs = attrs
-                                              ) // service blacklist
+                                              errorResult(Forbidden, "Your IP address is not allowed", "errors.ip.address.not.allowed") // service blacklist
                                             } else if (globalConfig.matchesEndlessIpAddresses(remoteAddress)) {
                                               /*else if (globalConfig.endlessIpAddresses.nonEmpty && globalConfig.endlessIpAddresses
                                                    .exists(ip => RegexPool(ip).matches(remoteAddress))) {*/
@@ -2915,42 +2569,15 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                   )
                                               )
                                             } else if (descriptor.maintenanceMode) {
-                                              Errors.craftResponseResult(
-                                                "Service in maintenance mode",
-                                                ServiceUnavailable,
-                                                req,
-                                                Some(descriptor),
-                                                Some("errors.service.in.maintenance"),
-                                                duration = System.currentTimeMillis - start,
-                                                overhead = (System.currentTimeMillis() - secondStart) + firstOverhead,
-                                                attrs = attrs
-                                              )
+                                              errorResult(ServiceUnavailable, "Service in maintenance mode", "errors.service.in.maintenance")
                                             } else if (descriptor.buildMode) {
-                                              Errors.craftResponseResult(
-                                                "Service under construction",
-                                                ServiceUnavailable,
-                                                req,
-                                                Some(descriptor),
-                                                Some("errors.service.under.construction"),
-                                                duration = System.currentTimeMillis - start,
-                                                overhead = (System.currentTimeMillis() - secondStart) + firstOverhead,
-                                                attrs = attrs
-                                              )
+                                              errorResult(ServiceUnavailable, "Service under construction", "errors.service.under.construction")
                                             } else if (descriptor.cors.enabled && req.method == "OPTIONS" && req.headers
                                                          .get("Access-Control-Request-Method")
                                                          .isDefined && descriptor.cors.shouldApplyCors(req.path)) {
                                               // handle cors preflight request
                                               if (descriptor.cors.enabled && descriptor.cors.shouldNotPass(req)) {
-                                                Errors.craftResponseResult(
-                                                  "Cors error",
-                                                  BadRequest,
-                                                  req,
-                                                  Some(descriptor),
-                                                  Some("errors.cors.error"),
-                                                  duration = System.currentTimeMillis - start,
-                                                  overhead = (System.currentTimeMillis() - secondStart) + firstOverhead,
-                                                  attrs = attrs
-                                                )
+                                                errorResult(BadRequest, "Cors error", "errors.cors.error")
                                               } else {
                                                 FastFuture.successful(
                                                   Results
@@ -2966,7 +2593,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                 if (descriptor.isUriPublic(req.path)) {
                                                   passWithAuth0(globalConfig)
                                                 } else {
-                                                  isPrivateAppsSessionValid(req, descriptor).fast.flatMap {
+                                                  isPrivateAppsSessionValid(req, descriptor, attrs).fast.flatMap {
                                                     case Some(_) if descriptor.strictlyPrivate =>
                                                       passWithApiKey(globalConfig)
                                                     case Some(user) => passWithAuth0(globalConfig)
@@ -2987,17 +2614,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                               }
                                             } else {
                                               // fail fast
-                                              Errors.craftResponseResult(
-                                                "The service seems to be down :( come back later",
-                                                Forbidden,
-                                                req,
-                                                Some(descriptor),
-                                                Some("errors.service.down"),
-                                                duration = System.currentTimeMillis - start,
-                                                overhead = (System.currentTimeMillis() - secondStart) + firstOverhead,
-                                                attrs = attrs
-                                              )
-
+                                              errorResult(Forbidden, "The service seems to be down :( come back later", "errors.service.down")
                                             }
                                           }
                                         }
