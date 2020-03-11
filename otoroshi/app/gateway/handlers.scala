@@ -12,7 +12,7 @@ import akka.http.scaladsl.model.{HttpRequest, HttpResponse}
 import akka.http.scaladsl.util.FastFuture
 import akka.http.scaladsl.util.FastFuture._
 import akka.stream.Materializer
-import akka.stream.scaladsl.{Concat, Merge, Sink, Source}
+import akka.stream.scaladsl.{Concat, Flow, Merge, Sink, Source}
 import akka.util.ByteString
 import auth.AuthModuleConfig
 import com.auth0.jwt.JWT
@@ -21,6 +21,7 @@ import com.google.common.base.Charsets
 import controllers.routes
 import env.{Env, SidecarConfig}
 import events._
+import models.PrivateAppsUserHelper.PassWithAuthContext
 import models._
 import utils._
 import org.joda.time.DateTime
@@ -450,7 +451,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
               }
               case Some(descriptor) if descriptor.privateApp && descriptor.id != env.backOfficeDescriptor.id => {
                 withAuthConfig(descriptor, req, attrs) { auth =>
-                  isPrivateAppsSessionValid(req, descriptor, attrs).flatMap {
+                  PrivateAppsUserHelper.isPrivateAppsSessionValid(req, descriptor, attrs).flatMap {
                     case None =>
                       Errors.craftResponseResult(s"Invalid session",
                                                  Unauthorized,
@@ -597,7 +598,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
     )
   }
 
-  def isPrivateAppsSessionValid(req: RequestHeader, desc: ServiceDescriptor, attrs: TypedMap): Future[Option[PrivateAppsUser]] = {
+  /*def isPrivateAppsSessionValid(req: RequestHeader, desc: ServiceDescriptor, attrs: TypedMap): Future[Option[PrivateAppsUser]] = {
     attrs.get(otoroshi.plugins.Keys.UserKey) match {
       case Some(preExistingUser) => FastFuture.successful(Some(preExistingUser))
       case _ => desc.authConfigRef match {
@@ -627,13 +628,13 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
         case None => FastFuture.successful(None)
       }
     }
-  }
+  }*/
 
   def passWithTcpUdpTunneling(req: RequestHeader, desc: ServiceDescriptor, attrs: TypedMap)(
       f: => Future[Result]
   ): Future[Result] = {
     if (desc.isPrivate) {
-      isPrivateAppsSessionValid(req, desc, attrs).flatMap {
+      PrivateAppsUserHelper.isPrivateAppsSessionValid(req, desc, attrs).flatMap {
         case None => f
         case Some(user) => {
           if (desc.tcpUdpTunneling) {
@@ -2112,6 +2113,17 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                         }
 
                                         def passWithApiKey(config: GlobalConfig): Future[Result] = {
+                                          ApiKeyHelper.passWithApiKey(
+                                            ApiKeyHelper.PassWithApiKeyContext(req, descriptor, attrs, config),
+                                            (c, oapk, ousr) => callDownstream(c, oapk, ousr).map(v => Right(v)),
+                                            (s, mess, cod) => errorResult(s, mess, cod).map(v => Left(v))
+                                          ).map {
+                                            case Left(res) => res
+                                            case Right(res) => res
+                                          }
+                                        }
+
+                                        /*def oldPassWithApiKey(config: GlobalConfig): Future[Result] = {
                                           if (descriptor.thirdPartyApiKey.enabled) {
                                             descriptor.thirdPartyApiKey.handle(req, descriptor, config, attrs) { key =>
                                               callDownstream(config, key)
@@ -2447,9 +2459,21 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                               errorResult(BadRequest, "No ApiKey provided", "errors.no.api.key")
                                             }
                                           }
-                                        }
+                                        }*/
 
                                         def passWithAuth0(config: GlobalConfig): Future[Result] = {
+                                          val query = ServiceDescriptorQuery(subdomain, serviceEnv, domain, "/")
+                                          PrivateAppsUserHelper.passWithAuth(
+                                            PrivateAppsUserHelper.PassWithAuthContext(req, query, descriptor, attrs, config, logger),
+                                            (c, oapk, ousr) => callDownstream(c, oapk, ousr).map(v => Right(v)),
+                                            (s, mess, cod) => errorResult(s, mess, cod).map(v => Left(v))
+                                          ).map {
+                                            case Left(res) => res
+                                            case Right(res) => res
+                                          }
+                                        }
+
+                                        /*def oldPassWithAuth0(config: GlobalConfig): Future[Result] = {
                                           isPrivateAppsSessionValid(req, descriptor, attrs).flatMap {
                                             case Some(paUsr) =>
                                               callDownstream(config, None, Some(paUsr))
@@ -2492,7 +2516,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                               }
                                             }
                                           }
-                                        }
+                                        }*/
 
                                         // Algo is :
                                         // if (app.private) {
@@ -2509,6 +2533,9 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                         //   }
                                         // }
 
+
+
+                                        /*
                                         env.datastores.globalConfigDataStore.quotasValidationFor(from).flatMap { r =>
                                           val (within, secCalls, maybeQuota) = r
                                           val quota                          = maybeQuota.getOrElse(globalConfig.perIpThrottlingQuota)
@@ -2593,7 +2620,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                                 if (descriptor.isUriPublic(req.path)) {
                                                   passWithAuth0(globalConfig)
                                                 } else {
-                                                  isPrivateAppsSessionValid(req, descriptor, attrs).fast.flatMap {
+                                                  PrivateAppsUserHelper.isPrivateAppsSessionValid(req, descriptor, attrs).fast.flatMap {
                                                     case Some(_) if descriptor.strictlyPrivate =>
                                                       passWithApiKey(globalConfig)
                                                     case Some(user) => passWithAuth0(globalConfig)
@@ -2617,6 +2644,17 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                               errorResult(Forbidden, "The service seems to be down :( come back later", "errors.service.down")
                                             }
                                           }
+                                        }
+                                        */
+
+                                        val query = ServiceDescriptorQuery(subdomain, serviceEnv, domain, "/")
+                                        ReverseProxyHelper.handleRequest(
+                                          ReverseProxyHelper.HandleRequestContext(req, query, descriptor, isUp, attrs, globalConfig, logger),
+                                          (c, oapk, ousr) => callDownstream(c, oapk, ousr).map(v => Right(v)),
+                                          (s, mess, cod) => errorResult(s, mess, cod).map(v => Left(v))
+                                        ).map {
+                                          case Left(res) => res
+                                          case Right(res) => res
                                         }
                                       }
                                   }
@@ -2664,4 +2702,162 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
   }
 
   def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), Charsets.UTF_8)
+}
+
+
+object ReverseProxyHelper {
+
+  case class HandleRequestContext(req: RequestHeader, query: ServiceDescriptorQuery, descriptor: ServiceDescriptor, isUp: Boolean, attrs: TypedMap, globalConfig: GlobalConfig, logger: Logger)
+
+  def handleRequest[T](
+    ctx: HandleRequestContext,
+    callDownstream: (GlobalConfig, Option[ApiKey], Option[PrivateAppsUser]) => Future[Either[Result, T]],
+    errorResult: (Results.Status, String, String) => Future[Either[Result, T]]
+  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, T]] = {
+
+    // Algo is :
+    // if (app.private) {
+    //   if (uri.isPublic) {
+    //      AUTH0
+    //   } else {
+    //      APIKEY
+    //   }
+    // } else {
+    //   if (uri.isPublic) {
+    //     PASSTHROUGH without gateway auth
+    //   } else {
+    //     APIKEY
+    //   }
+    // }
+
+    val HandleRequestContext(req, query, descriptor, isUp, attrs, globalConfig, logger) = ctx
+    val isSecured = req.theSecured
+    val remoteAddress = req.theIpAddress
+
+    def passWithApiKey(config: GlobalConfig): Future[Either[Result, T]] = {
+      ApiKeyHelper.passWithApiKey(
+        ApiKeyHelper.PassWithApiKeyContext(req, descriptor, attrs, config),
+        callDownstream,
+        errorResult
+      )
+    }
+
+    def passWithAuth0(config: GlobalConfig): Future[Either[Result, T]] = {
+      PrivateAppsUserHelper.passWithAuth(
+        PrivateAppsUserHelper.PassWithAuthContext(req, query, descriptor, attrs, config, logger),
+        callDownstream,
+        errorResult
+      )
+    }
+
+    env.datastores.globalConfigDataStore.quotasValidationFor(remoteAddress).flatMap { r =>
+      val (within, secCalls, maybeQuota) = r
+      val quota                          = maybeQuota.getOrElse(globalConfig.perIpThrottlingQuota)
+      val (restrictionsNotPassing, restrictionsResponse) =
+        descriptor.restrictions.handleRestrictions(descriptor, None, req, attrs)
+      if (secCalls > (quota * 10L)) {
+        errorResult(TooManyRequests, "[IP] You performed too much requests", "errors.too.much.requests")
+      } else {
+        if (!isSecured && descriptor.forceHttps) {
+          val theDomain = req.theDomain
+          val protocol  = req.theProtocol
+          logger.trace(
+            s"redirects prod service from ${protocol}://$theDomain${req.relativeUri} to https://$theDomain${req.relativeUri}"
+          )
+          //FastFuture.successful(Redirect(s"${env.rootScheme}$theDomain${req.relativeUri}"))
+          FastFuture.successful(Redirect(s"https://$theDomain${req.relativeUri}")).map(Left.apply)
+        } else if (!within) {
+          errorResult(TooManyRequests, "[GLOBAL] You performed too much requests", "errors.too.much.requests")
+        } else if (globalConfig.ipFiltering.notMatchesWhitelist(remoteAddress)) {
+          /*else if (globalConfig.ipFiltering.whitelist.nonEmpty && !globalConfig.ipFiltering.whitelist
+               .exists(ip => utils.RegexPool(ip).matches(remoteAddress))) {*/
+          errorResult(Forbidden, "Your IP address is not allowed", "errors.ip.address.not.allowed") // global whitelist
+        } else if (globalConfig.ipFiltering.matchesBlacklist(remoteAddress)) {
+          /*else if (globalConfig.ipFiltering.blacklist.nonEmpty && globalConfig.ipFiltering.blacklist
+                 .exists(ip => utils.RegexPool(ip).matches(remoteAddress))) {*/
+          errorResult(Forbidden, "Your IP address is not allowed", "errors.ip.address.not.allowed") // global blacklist
+        } else if (descriptor.ipFiltering.notMatchesWhitelist(remoteAddress)) {
+          /*else if (descriptor.ipFiltering.whitelist.nonEmpty && !descriptor.ipFiltering.whitelist
+               .exists(ip => utils.RegexPool(ip).matches(remoteAddress))) {*/
+          errorResult(Forbidden, "Your IP address is not allowed", "errors.ip.address.not.allowed") // service whitelist
+        } else if (descriptor.ipFiltering.matchesBlacklist(remoteAddress)) {
+          /*else if (descriptor.ipFiltering.blacklist.nonEmpty && descriptor.ipFiltering.blacklist
+               .exists(ip => utils.RegexPool(ip).matches(remoteAddress))) {*/
+          errorResult(Forbidden, "Your IP address is not allowed", "errors.ip.address.not.allowed") // service blacklist
+        } else if (globalConfig.matchesEndlessIpAddresses(remoteAddress)) {
+          /*else if (globalConfig.endlessIpAddresses.nonEmpty && globalConfig.endlessIpAddresses
+               .exists(ip => RegexPool(ip).matches(remoteAddress))) {*/
+          val gigas: Long = 128L * 1024L * 1024L * 1024L
+          val middleFingers = ByteString.fromString(
+            "\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95"
+          )
+          val zeros =
+            ByteString.fromInts(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+              0)
+          val characters: ByteString =
+            if (!globalConfig.middleFingers) middleFingers else zeros
+          val expected: Long = (gigas / characters.size) + 1L
+          FastFuture.successful(
+            Status(200)
+              .sendEntity(
+                HttpEntity.Streamed(
+                  Source
+                    .repeat(characters)
+                    .take(expected), // 128 Go of zeros or middle fingers
+                  None,
+                  Some("application/octet-stream")
+                )
+              )
+          ).map(Left.apply)
+        } else if (descriptor.maintenanceMode) {
+          errorResult(ServiceUnavailable, "Service in maintenance mode", "errors.service.in.maintenance")
+        } else if (descriptor.buildMode) {
+          errorResult(ServiceUnavailable, "Service under construction", "errors.service.under.construction")
+        } else if (descriptor.cors.enabled && req.method == "OPTIONS" && req.headers
+          .get("Access-Control-Request-Method")
+          .isDefined && descriptor.cors.shouldApplyCors(req.path)) {
+          // handle cors preflight request
+          if (descriptor.cors.enabled && descriptor.cors.shouldNotPass(req)) {
+            errorResult(BadRequest, "Cors error", "errors.cors.error")
+          } else {
+            FastFuture.successful(
+              Results
+                .Ok(ByteString.empty)
+                .withHeaders(descriptor.cors.asHeaders(req): _*)
+            ).map(Left.apply)
+          }
+        } else if (restrictionsNotPassing) {
+          restrictionsResponse.map(Left.apply)
+        } else if (isUp) {
+          if (descriptor.isPrivate && descriptor.authConfigRef.isDefined && !descriptor
+            .isExcludedFromSecurity(req.path)) {
+            if (descriptor.isUriPublic(req.path)) {
+              passWithAuth0(globalConfig)
+            } else {
+              PrivateAppsUserHelper.isPrivateAppsSessionValid(req, descriptor, attrs).fast.flatMap {
+                case Some(_) if descriptor.strictlyPrivate =>
+                  passWithApiKey(globalConfig)
+                case Some(user) => passWithAuth0(globalConfig)
+                case None       => passWithApiKey(globalConfig)
+              }
+            }
+          } else {
+            if (descriptor.isUriPublic(req.path)) {
+              if (env.detectApiKeySooner && descriptor.detectApiKeySooner && ApiKeyHelper
+                .detectApiKey(req, descriptor, attrs)) {
+                passWithApiKey(globalConfig)
+              } else {
+                callDownstream(globalConfig, None, None)
+              }
+            } else {
+              passWithApiKey(globalConfig)
+            }
+          }
+        } else {
+          // fail fast
+          errorResult(Forbidden, "The service seems to be down :( come back later", "errors.service.down")
+        }
+      }
+    }
+  }
 }

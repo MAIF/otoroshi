@@ -102,7 +102,7 @@ class WebSocketHandler()(implicit env: Env) {
 
   def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), Charsets.UTF_8)
 
-  def isPrivateAppsSessionValid(req: RequestHeader, desc: ServiceDescriptor): Future[Option[PrivateAppsUser]] = {
+  /*def isPrivateAppsSessionValid(req: RequestHeader, desc: ServiceDescriptor): Future[Option[PrivateAppsUser]] = {
     desc.authConfigRef match {
       case Some(ref) =>
         env.datastores.authConfigsDataStore.findById(ref).flatMap {
@@ -129,7 +129,7 @@ class WebSocketHandler()(implicit env: Env) {
         }
       case None => FastFuture.successful(None)
     }
-  }
+  }*/
 
   def splitToCanary(desc: ServiceDescriptor, trackingId: String, reqNumber: Int, config: GlobalConfig)(
       implicit env: Env
@@ -1205,7 +1205,40 @@ class WebSocketHandler()(implicit env: Env) {
                                         }
                                     }
 
-                                  def passWithApiKey(
+
+                                  def errorResult(status: Results.Status, message: String, code: String): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]= {
+                                    Errors.craftResponseResult(
+                                      message,
+                                      status,
+                                      req,
+                                      Some(descriptor),
+                                      Some(code),
+                                      duration = System.currentTimeMillis - start,
+                                      attrs = attrs
+                                    ).asLeft[WSFlow]
+                                  }
+
+                                  def sendRevokedApiKeyAlert(key: ApiKey) = {
+                                    Alerts.send(
+                                      RevokedApiKeyUsageAlert(env.snowflakeGenerator.nextIdStr(),
+                                        DateTime.now(),
+                                        env.env,
+                                        req,
+                                        key,
+                                        descriptor,
+                                        env)
+                                    )
+                                  }
+
+                                  def passWithApiKey(config: GlobalConfig): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
+                                    ApiKeyHelper.passWithApiKey(
+                                      ApiKeyHelper.PassWithApiKeyContext(req, descriptor, attrs, config),
+                                      callDownstream,
+                                      errorResult
+                                    )
+                                  }
+
+                                  /*def oldPassWithApiKey(
                                       config: GlobalConfig
                                   ): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
                                     if (descriptor.thirdPartyApiKey.enabled) {
@@ -1758,11 +1791,20 @@ class WebSocketHandler()(implicit env: Env) {
                                           .asLeft[WSFlow]
                                       }
                                     }
+                                  }*/
+
+                                  def passWithAuth0(config: GlobalConfig): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
+                                    val query = ServiceDescriptorQuery(subdomain, serviceEnv, domain, "/")
+                                    PrivateAppsUserHelper.passWithAuth(
+                                      PrivateAppsUserHelper.PassWithAuthContext(req, query, descriptor, attrs, config, logger),
+                                      callDownstream,
+                                      errorResult
+                                    )
                                   }
 
-                                  def passWithAuth0(
+                                  /*def oldPassWithAuth0(
                                       config: GlobalConfig
-                                  ): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] =
+                                  ): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
                                     isPrivateAppsSessionValid(req, descriptor).flatMap {
                                       case Some(paUsr) => callDownstream(config, None, Some(paUsr))
                                       case None => {
@@ -1778,8 +1820,9 @@ class WebSocketHandler()(implicit env: Env) {
                                         FastFuture.successful(Left(Results.Redirect(redirectTo)))
                                       }
                                     }
+                                  }*/
 
-                                  globalConfig.withinThrottlingQuota().map(within => (globalConfig, within)) flatMap {
+                                  /*globalConfig.withinThrottlingQuota().map(within => (globalConfig, within)) flatMap {
                                     tuple =>
                                       val (globalConfig, within) = tuple
                                       env.datastores.globalConfigDataStore
@@ -1923,7 +1966,7 @@ class WebSocketHandler()(implicit env: Env) {
                                               if (descriptor.isUriPublic(req.path)) {
                                                 passWithAuth0(globalConfig)
                                               } else {
-                                                isPrivateAppsSessionValid(req, descriptor).flatMap {
+                                                PrivateAppsUserHelper.isPrivateAppsSessionValid(req, descriptor, attrs).flatMap {
                                                   case Some(_) if descriptor.strictlyPrivate =>
                                                     passWithApiKey(globalConfig)
                                                   case Some(user) => passWithAuth0(globalConfig)
@@ -1955,7 +1998,14 @@ class WebSocketHandler()(implicit env: Env) {
                                           }
                                         }
                                       }
-                                  }
+                                  }*/
+
+                                  val query = ServiceDescriptorQuery(subdomain, serviceEnv, domain, "/")
+                                  ReverseProxyHelper.handleRequest(
+                                    ReverseProxyHelper.HandleRequestContext(req, query, descriptor, isUp, attrs, globalConfig, logger),
+                                    callDownstream,
+                                    errorResult
+                                  )
                                 }
                             }
                           }

@@ -1,6 +1,7 @@
 package models
 
 import akka.http.scaladsl.util.FastFuture
+import akka.stream.scaladsl.Flow
 import akka.util.ByteString
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
@@ -11,8 +12,8 @@ import gateway.Errors
 import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.json._
-import play.api.mvc.Results.{BadGateway, TooManyRequests, Unauthorized}
-import play.api.mvc.{RequestHeader, Result}
+import play.api.mvc.Results.{BadGateway, BadRequest, NotFound, TooManyRequests, Unauthorized}
+import play.api.mvc.{RequestHeader, Result, Results}
 import security.{IdGenerator, OtoroshiClaim}
 import storage.BasicStore
 import utils.TypedMap
@@ -691,6 +692,365 @@ object ApiKeyHelper {
       true
     } else {
       false
+    }
+  }
+
+  case class PassWithApiKeyContext(req: RequestHeader, descriptor: ServiceDescriptor, attrs: TypedMap, config: GlobalConfig)
+
+  def passWithApiKey[T](
+    ctx: PassWithApiKeyContext,
+    callDownstream: (GlobalConfig, Option[ApiKey], Option[PrivateAppsUser]) => Future[Either[Result, T]],
+    errorResult: (Results.Status, String, String) => Future[Either[Result, T]]
+  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, T]] = {
+
+    val PassWithApiKeyContext(req, descriptor, attrs, config) = ctx
+
+    def sendRevokedApiKeyAlert(key: ApiKey) = {
+      Alerts.send(
+        RevokedApiKeyUsageAlert(env.snowflakeGenerator.nextIdStr(),
+          DateTime.now(),
+          env.env,
+          req,
+          key,
+          descriptor,
+          env)
+      )
+    }
+
+    if (descriptor.thirdPartyApiKey.enabled) {
+      descriptor.thirdPartyApiKey.handleGen[T](req, descriptor, config, attrs) { key =>
+        callDownstream(config, key, None)
+      }
+    } else {
+      val authByJwtToken = req.headers
+        .get(
+          descriptor.apiKeyConstraints.jwtAuth.headerName
+            .getOrElse(env.Headers.OtoroshiBearer)
+        )
+        .orElse(
+          req.headers.get("Authorization").filter(_.startsWith("Bearer "))
+        )
+        .map(_.replace("Bearer ", ""))
+        .orElse(
+          req.queryString
+            .get(
+              descriptor.apiKeyConstraints.jwtAuth.queryName
+                .getOrElse(env.Headers.OtoroshiBearerAuthorization)
+            )
+            .flatMap(_.lastOption)
+        )
+        .orElse(
+          req.cookies
+            .get(
+              descriptor.apiKeyConstraints.jwtAuth.cookieName
+                .getOrElse(env.Headers.OtoroshiJWTAuthorization)
+            )
+            .map(_.value)
+        )
+        .filter(_.split("\\.").length == 3)
+      val authBasic = req.headers
+        .get(
+          descriptor.apiKeyConstraints.basicAuth.headerName
+            .getOrElse(env.Headers.OtoroshiAuthorization)
+        )
+        .orElse(
+          req.headers.get("Authorization").filter(_.startsWith("Basic "))
+        )
+        .map(_.replace("Basic ", ""))
+        .flatMap(e => Try(decodeBase64(e)).toOption)
+        .orElse(
+          req.queryString
+            .get(
+              descriptor.apiKeyConstraints.basicAuth.queryName
+                .getOrElse(env.Headers.OtoroshiBasicAuthorization)
+            )
+            .flatMap(_.lastOption)
+            .flatMap(e => Try(decodeBase64(e)).toOption)
+        )
+      val authByCustomHeaders = req.headers
+        .get(
+          descriptor.apiKeyConstraints.customHeadersAuth.clientIdHeaderName
+            .getOrElse(env.Headers.OtoroshiClientId)
+        )
+        .flatMap(
+          id =>
+            req.headers
+              .get(
+                descriptor.apiKeyConstraints.customHeadersAuth.clientSecretHeaderName
+                  .getOrElse(env.Headers.OtoroshiClientSecret)
+              )
+              .map(s => (id, s))
+        )
+      val authBySimpleApiKeyClientId = req.headers
+        .get(
+          descriptor.apiKeyConstraints.clientIdAuth.headerName
+            .getOrElse(env.Headers.OtoroshiSimpleApiKeyClientId)
+        )
+        .orElse(
+          req.queryString
+            .get(
+              descriptor.apiKeyConstraints.clientIdAuth.queryName
+                .getOrElse(env.Headers.OtoroshiSimpleApiKeyClientId)
+            )
+            .flatMap(_.lastOption)
+        )
+
+      val preExtractedApiKey = attrs.get(otoroshi.plugins.Keys.ApiKeyKey)
+      if (preExtractedApiKey.isDefined) {
+        preExtractedApiKey match {
+          case None => errorResult(Unauthorized,"Invalid API key", "errors.invalid.api.key")
+          case Some(key) if key.isInvalid(key.clientSecret) => {
+            sendRevokedApiKeyAlert(key)
+            errorResult(BadGateway, "Bad API key", "errors.bad.api.key")
+          }
+          case Some(key) if !key.matchRouting(descriptor) => {
+            errorResult(Unauthorized, "Invalid API key", "errors.bad.api.key")
+          }
+          case Some(key)
+            if key.restrictions
+              .handleRestrictions(descriptor, Some(key), req, attrs)
+              ._1 => {
+            key.restrictions
+              .handleRestrictions(descriptor, Some(key), req, attrs)
+              ._2.map(v => Left(v))
+          }
+          case Some(key) if key.isValid(key.clientSecret) =>
+            key.withinQuotasAndRotation().flatMap {
+              case (true, rotationInfos) =>
+                rotationInfos.foreach { i =>
+                  attrs.put(otoroshi.plugins.Keys.ApiKeyRotationKey -> i)
+                }
+                callDownstream(config, Some(key), None)
+              case (false, _) => errorResult(TooManyRequests, "You performed too much requests", "errors.too.much.requests")
+            }
+        }
+      } else if (authBySimpleApiKeyClientId.isDefined && descriptor.apiKeyConstraints.clientIdAuth.enabled) {
+        val clientId = authBySimpleApiKeyClientId.get
+        env.datastores.apiKeyDataStore
+          .findAuthorizeKeyFor(clientId, descriptor.id)
+          .flatMap {
+            case None =>
+              errorResult(Unauthorized, "Invalid API key", "errors.invalid.api.key")
+            case Some(key) if !key.allowClientIdOnly =>
+              errorResult(BadRequest, "Bad API key", "errors.bad.api.key")
+            case Some(key) if !key.matchRouting(descriptor) =>
+              errorResult(Unauthorized, "Invalid API key", "errors.bad.api.key")
+            case Some(key)
+              if key.restrictions.enabled && key.restrictions
+                .isNotFound(req.method, req.theDomain, req.relativeUri) => {
+              errorResult(NotFound, "Not Found", "errors.not.found")
+            }
+            case Some(key)
+              if key.restrictions
+                .handleRestrictions(descriptor, Some(key), req, attrs)
+                ._1 => {
+              key.restrictions
+                .handleRestrictions(descriptor, Some(key), req, attrs)
+                ._2.map(v => Left(v))
+            }
+            case Some(key) if key.allowClientIdOnly =>
+              key.withinQuotasAndRotation().flatMap {
+                case (true, rotationInfos) =>
+                  rotationInfos.foreach { i =>
+                    attrs.put(otoroshi.plugins.Keys.ApiKeyRotationKey -> i)
+                  }
+                  callDownstream(config, Some(key), None)
+                case (false, _) =>
+                  errorResult(TooManyRequests, "You performed too much requests", "errors.too.much.requests")
+              }
+          }
+      } else if (authByCustomHeaders.isDefined && descriptor.apiKeyConstraints.customHeadersAuth.enabled) {
+        val (clientId, clientSecret) = authByCustomHeaders.get
+        env.datastores.apiKeyDataStore
+          .findAuthorizeKeyFor(clientId, descriptor.id)
+          .flatMap {
+            case None =>
+              errorResult(Unauthorized, "Invalid API key","errors.invalid.api.key")
+            case Some(key) if key.isInvalid(clientSecret) => {
+              sendRevokedApiKeyAlert(key)
+              errorResult(BadRequest, "Bad API key", "errors.bad.api.key")
+            }
+            case Some(key) if !key.matchRouting(descriptor) =>
+              errorResult(Unauthorized, "Bad API key", "errors.bad.api.key")
+            case Some(key)
+              if key.restrictions
+                .handleRestrictions(descriptor, Some(key), req, attrs)
+                ._1 => {
+              key.restrictions
+                .handleRestrictions(descriptor, Some(key), req, attrs)
+                ._2.map(v => Left(v))
+            }
+            case Some(key) if key.isValid(clientSecret) =>
+              key.withinQuotasAndRotation().flatMap {
+                case (true, rotationInfos) =>
+                  rotationInfos.foreach { i =>
+                    attrs.put(otoroshi.plugins.Keys.ApiKeyRotationKey -> i)
+                  }
+                  callDownstream(config, Some(key), None)
+                case (false, _) =>
+                  errorResult(TooManyRequests, "You performed too much requests", "errors.too.much.requests")
+              }
+          }
+      } else if (authByJwtToken.isDefined && descriptor.apiKeyConstraints.jwtAuth.enabled) {
+        val jwtTokenValue = authByJwtToken.get
+        Try {
+          JWT.decode(jwtTokenValue)
+        } map { jwt =>
+          Option(jwt.getClaim("iss"))
+            .filterNot(_.isNull)
+            .map(_.asString())
+            .orElse(
+              Option(jwt.getClaim("clientId"))
+                .filterNot(_.isNull)
+                .map(_.asString())
+            ) match {
+            case Some(clientId) =>
+              env.datastores.apiKeyDataStore
+                .findAuthorizeKeyFor(clientId, descriptor.id)
+                .flatMap {
+                  case Some(apiKey) => {
+                    val algorithm = Option(jwt.getAlgorithm).map {
+                      case "HS256" => Algorithm.HMAC256(apiKey.clientSecret)
+                      case "HS512" => Algorithm.HMAC512(apiKey.clientSecret)
+                    } getOrElse Algorithm.HMAC512(apiKey.clientSecret)
+                    val exp =
+                      Option(jwt.getClaim("exp"))
+                        .filterNot(_.isNull)
+                        .map(_.asLong())
+                    val iat =
+                      Option(jwt.getClaim("iat"))
+                        .filterNot(_.isNull)
+                        .map(_.asLong())
+                    val httpPath = Option(jwt.getClaim("httpPath"))
+                      .filterNot(_.isNull)
+                      .map(_.asString())
+                    val httpVerb = Option(jwt.getClaim("httpVerb"))
+                      .filterNot(_.isNull)
+                      .map(_.asString())
+                    val httpHost = Option(jwt.getClaim("httpHost"))
+                      .filterNot(_.isNull)
+                      .map(_.asString())
+                    val verifier =
+                      JWT
+                        .require(algorithm)
+                        .withIssuer(clientId)
+                        .acceptLeeway(10) // TODO: customize ???
+                        .build
+                    Try(verifier.verify(jwtTokenValue))
+                      .filter { token =>
+                        val xsrfToken       = token.getClaim("xsrfToken")
+                        val xsrfTokenHeader = req.headers.get("X-XSRF-TOKEN")
+                        if (!xsrfToken.isNull && xsrfTokenHeader.isDefined) {
+                          xsrfToken.asString() == xsrfTokenHeader.get
+                        } else !(!xsrfToken.isNull && xsrfTokenHeader.isEmpty)
+                      }
+                      .filter { _ =>
+                        descriptor.apiKeyConstraints.jwtAuth.maxJwtLifespanSecs.map {
+                          maxJwtLifespanSecs =>
+                            if (exp.isEmpty || iat.isEmpty) {
+                              false
+                            } else {
+                              (exp.get - iat.get) <= maxJwtLifespanSecs
+                            }
+                        } getOrElse {
+                          true
+                        }
+                      }
+                      .filter { _ =>
+                        if (descriptor.apiKeyConstraints.jwtAuth.includeRequestAttributes) {
+                          val matchPath = httpPath.exists(_ == req.relativeUri)
+                          val matchVerb =
+                            httpVerb
+                              .exists(_.toLowerCase == req.method.toLowerCase)
+                          val matchHost =
+                            httpHost.exists(_.toLowerCase == req.theHost)
+                          matchPath && matchVerb && matchHost
+                        } else {
+                          true
+                        }
+                      } match {
+                      case Success(_) if !apiKey.matchRouting(descriptor) =>
+                        errorResult(Unauthorized, "Invalid API key", "errors.bad.api.key")
+                      case Success(_)
+                        if apiKey.restrictions
+                          .handleRestrictions(descriptor,
+                            Some(apiKey),
+                            req,
+                            attrs)
+                          ._1 => {
+                        apiKey.restrictions
+                          .handleRestrictions(descriptor,
+                            Some(apiKey),
+                            req,
+                            attrs)
+                          ._2.map(v => Left(v))
+                      }
+                      case Success(_) =>
+                        apiKey.withinQuotasAndRotation().flatMap {
+                          case (true, rotationInfos) =>
+                            rotationInfos.foreach { i =>
+                              attrs.put(otoroshi.plugins.Keys.ApiKeyRotationKey -> i)
+                            }
+                            callDownstream(config, Some(apiKey), None)
+                          case (false, _) =>
+                            errorResult(TooManyRequests, "You performed too much requests", "errors.too.much.requests")
+                        }
+                      case Failure(e) => {
+                        sendRevokedApiKeyAlert(apiKey)
+                        errorResult(BadRequest, s"Bad API key", "errors.bad.api.key")
+                      }
+                    }
+                  }
+                  case None =>
+                    errorResult(Unauthorized, "Invalid ApiKey provided", "errors.invalid.api.key")
+                }
+            case None =>
+              errorResult(Unauthorized, "Invalid ApiKey provided", "errors.invalid.api.key")
+          }
+        } getOrElse errorResult(Unauthorized, s"Invalid ApiKey provided", "errors.invalid.api.key")
+      } else if (authBasic.isDefined && descriptor.apiKeyConstraints.basicAuth.enabled) {
+        val auth   = authBasic.get
+        val id     = auth.split(":").headOption.map(_.trim)
+        val secret = auth.split(":").lastOption.map(_.trim)
+        (id, secret) match {
+          case (Some(apiKeyClientId), Some(apiKeySecret)) => {
+            env.datastores.apiKeyDataStore
+              .findAuthorizeKeyFor(apiKeyClientId, descriptor.id)
+              .flatMap {
+                case None =>
+                  errorResult(Unauthorized, "Invalid API key", "errors.invalid.api.key")
+                case Some(key) if key.isInvalid(apiKeySecret) => {
+                  sendRevokedApiKeyAlert(key)
+                  errorResult(BadGateway, "Bad API key", "errors.bad.api.key")
+                }
+                case Some(key) if !key.matchRouting(descriptor) =>
+                  errorResult(Unauthorized, "Invalid API key", "errors.bad.api.key")
+                case Some(key)
+                  if key.restrictions
+                    .handleRestrictions(descriptor, Some(key), req, attrs)
+                    ._1 => {
+                  key.restrictions
+                    .handleRestrictions(descriptor, Some(key), req, attrs)
+                    ._2.map(v => Left(v))
+                }
+                case Some(key) if key.isValid(apiKeySecret) =>
+                  key.withinQuotasAndRotation().flatMap {
+                    case (true, rotationInfos) =>
+                      rotationInfos.foreach { i =>
+                        attrs.put(otoroshi.plugins.Keys.ApiKeyRotationKey -> i)
+                      }
+                      callDownstream(config, Some(key), None)
+                    case (false, _) =>
+                      errorResult(TooManyRequests, "You performed too much requests", "errors.too.much.requests")
+                  }
+              }
+          }
+          case _ =>
+            errorResult(BadRequest, "No ApiKey provided", "errors.no.api.key")
+        }
+      } else {
+        errorResult(BadRequest, "No ApiKey provided", "errors.no.api.key")
+      }
     }
   }
 }

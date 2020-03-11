@@ -889,6 +889,9 @@ sealed trait ThirdPartyApiKeyConfig {
   def handleWS(req: RequestHeader, descriptor: ServiceDescriptor, config: GlobalConfig, attrs: TypedMap)(
       f: Option[ApiKey] => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
+  def handleGen[A](req: RequestHeader, descriptor: ServiceDescriptor, config: GlobalConfig, attrs: TypedMap)(
+    f: Option[ApiKey] => Future[Either[Result, A]]
+  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]]
 }
 
 sealed trait OIDCThirdPartyApiKeyConfigMode {
@@ -976,6 +979,15 @@ case class OIDCThirdPartyApiKeyConfig(
       }
     }
     navTo(json, parts.headOption, tail(parts))
+  }
+
+  def handleGen[A](req: RequestHeader, descriptor: ServiceDescriptor, config: GlobalConfig, attrs: TypedMap)(
+    f: Option[ApiKey] => Future[Either[Result, A]]
+  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
+    handleInternal(req, descriptor, config, attrs)(f).map {
+      case Left(badResult)   => Left[Result, A](badResult)
+      case Right(goodResult) => goodResult
+    }
   }
 
   private def shouldBeVerified(path: String): Boolean =
