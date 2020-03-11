@@ -17,7 +17,7 @@
     "faker": "4.1.0",
     "http-parser-js": "0.5.2",
     "lodash": "4.17.15",
-    "minimist": "1.2.0",
+    "minimist": "1.2.2",
     "moment": "2.24.0",
     "node-fetch": "2.6.0",
     "prettier": "1.18.2",
