@@ -105,14 +105,22 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
         } ++ ctx.request.headers.get("Accept").map { accept =>
           "Accept" -> accept
         } ++ ctx.request.headers.get("X-Content-Type").map(v => "X-Content-Type" -> v)
-        env.Ws // MTLS needed here ???
+        
+        val builder = env.Ws // MTLS needed here ???
           .url(s"$url/$path")
           .withHttpHeaders(headers: _*)
           .withFollowRedirects(false)
           .withMethod(ctx.request.method)
           .withRequestTimeout(1.minute)
           .withQueryStringParameters(ctx.request.queryString.toSeq.map(t => (t._1, t._2.head)): _*)
-          .withBody(if (currentReqHasBody) SourceBody(ctx.request.body) else EmptyBody)
+
+        val builderWithBody = if (currentReqHasBody) {
+          builder.withBody(SourceBody(ctx.request.body))
+        } else {
+          builder
+        }
+
+        builderWithBody
           .stream()
           .fast
           .map { res =>
