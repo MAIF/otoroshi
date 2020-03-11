@@ -285,27 +285,6 @@ class SnowMonkey(implicit env: Env) {
       case Left(r) => r
       case Right(r) => r
     }
-    // if (desc.id == env.backOfficeServiceId) {
-    //   f(
-    //     SnowMonkeyContext(
-    //       Source.empty[ByteString],
-    //       Source.empty[ByteString]
-    //     )
-    //   )
-    // } else if (config.snowMonkeyConfig.enabled && betweenDates(config.snowMonkeyConfig)) {
-    //   introduceSnowMonkeyDefinedChaos(reqNumber, config.snowMonkeyConfig, desc, hasBody)(f)
-    // } else {
-    //   if (desc.chaosConfig.enabled) {
-    //     introduceServiceDefinedChaos(reqNumber, desc, hasBody)(f)
-    //   } else {
-    //     f(
-    //       SnowMonkeyContext(
-    //         Source.empty[ByteString],
-    //         Source.empty[ByteString]
-    //       )
-    //     )
-    //   }
-    // }
   }
 
   def introduceChaosGen[A](reqNumber: Long, config: GlobalConfig, desc: ServiceDescriptor, hasBody: Boolean)(

@@ -1091,84 +1091,10 @@ case class RefJwtVerifier(
                       attrs: TypedMap)(
       f: JwtInjection => Future[Result]
   )(implicit ec: ExecutionContext, env: Env): Future[Result] = {
-
     verifyGen(request, desc, apikey, user, elContext, attrs)(c => f(c).map(Right.apply)).map {
       case Left(r) => r
       case Right(r) => r
     }
-
-    /*implicit val mat = env.otoroshiMaterializer
-    ids match {
-      case s if s.isEmpty => f(JwtInjection())
-      case _ => {
-
-        val promise = Promise[Result]
-        val last = new AtomicReference[Result](
-          Results.InternalServerError(Json.obj("Otoroshi-Error" -> "error.bad.globaljwtverifier.id"))
-        )
-        val queue: scala.collection.mutable.Queue[String] = scala.collection.mutable.Queue(ids: _*)
-
-        def dequeueNext(): Unit = {
-          queue.dequeueFirst(_ => true) match {
-            case None =>
-              Option(last.get()) match {
-                case None =>
-                  promise.tryFailure(new RuntimeException("Should have last result set ..."))
-                case Some(result) =>
-                  promise.trySuccess(result)
-              }
-            case Some(ref) =>
-              env.datastores.globalJwtVerifierDataStore
-                .findById(ref)
-                .flatMap {
-                  case Some(verifier) =>
-                    verifier
-                      .internalVerify(request, desc, apikey, user, elContext, attrs)(f)
-                      .map {
-                        case Left(result) =>
-                          last.set(result)
-                          dequeueNext()
-                        case Right(result) =>
-                          promise.trySuccess(result)
-                      }
-                      .andThen { case Failure(e) => promise.tryFailure(e) }
-                  case None =>
-                    Errors
-                      .craftResponseResult(
-                        "error.bad.globaljwtverifier.id",
-                        Results.InternalServerError,
-                        request,
-                        Some(desc),
-                        None,
-                        attrs = attrs
-                      )
-                      .map { result =>
-                        last.set(result)
-                        dequeueNext()
-                      }
-                      .andThen { case Failure(e) => promise.tryFailure(e) }
-                }
-                .andThen { case Failure(e) => promise.tryFailure(e) }
-          }
-        }
-
-        dequeueNext()
-
-        promise.future
-
-        // env.datastores.globalJwtVerifierDataStore.findById(ref).flatMap {
-        //   case Some(verifier) => verifier.verify(request, desc)(f)
-        //   case None =>
-        //     Errors.craftResponseResult(
-        //       "error.bad.globaljwtverifier.id",
-        //       Results.InternalServerError,
-        //       request,
-        //       Some(desc),
-        //       None
-        //     )
-        // }
-      }
-    }*/
   }
 
   override def verifyWs(request: RequestHeader,
@@ -1179,92 +1105,7 @@ case class RefJwtVerifier(
                         attrs: TypedMap)(
       f: JwtInjection => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
-
     verifyGen(request, desc, apikey, user, elContext, attrs)(f)
-
-    /*implicit val mat = env.otoroshiMaterializer
-    ids match {
-      case s if s.isEmpty => f(JwtInjection())
-      case _ => {
-
-        val promise = Promise[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
-        val last = new AtomicReference[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]](
-          Left(Results.InternalServerError(Json.obj("Otoroshi-Error" -> "error.bad.globaljwtverifier.id")))
-        )
-        val queue: scala.collection.mutable.Queue[String] = scala.collection.mutable.Queue(ids: _*)
-
-        def dequeueNext(): Unit = {
-          queue.dequeueFirst(_ => true) match {
-            case None =>
-              Option(last.get()) match {
-                case None =>
-                  promise.tryFailure(new RuntimeException("Should have last result set ..."))
-                case Some(result) =>
-                  promise.trySuccess(result)
-              }
-            case Some(ref) =>
-              env.datastores.globalJwtVerifierDataStore
-                .findById(ref)
-                .flatMap {
-                  case Some(verifier) =>
-                    verifier
-                      .internalVerify(request, desc, apikey, user, elContext, attrs)(f)
-                      .map {
-                        case Left(result) =>
-                          last.set(Left(result))
-                          dequeueNext()
-                        case Right(result) =>
-                          result match {
-                            case Left(result) =>
-                              last.set(Left(result))
-                              dequeueNext()
-                            case Right(flow) =>
-                              promise.trySuccess(result)
-                          }
-                      }
-                      .andThen { case Failure(e) => promise.tryFailure(e) }
-                  case None =>
-                    Errors
-                      .craftResponseResult(
-                        "error.bad.globaljwtverifier.id",
-                        Results.InternalServerError,
-                        request,
-                        Some(desc),
-                        None,
-                        attrs = attrs
-                      )
-                      .map { result =>
-                        last.set(Left(result))
-                        dequeueNext()
-                      }
-                      .andThen { case Failure(e) => promise.tryFailure(e) }
-                }
-                .andThen { case Failure(e) => promise.tryFailure(e) }
-          }
-        }
-
-        dequeueNext()
-
-        promise.future
-      }
-    }*/
-    // id match {
-    //   case None => f(JwtInjection())
-    //   case Some(ref) =>
-    //     env.datastores.globalJwtVerifierDataStore.findById(ref).flatMap {
-    //       case Some(verifier) => verifier.verifyWs(request, desc)(f)
-    //       case None =>
-    //         Errors
-    //           .craftResponseResult(
-    //             "error.bad.globaljwtverifier.id",
-    //             Results.InternalServerError,
-    //             request,
-    //             Some(desc),
-    //             None
-    //           )
-    //           .map(a => Left(a))
-    //     }
-    // }
   }
 
   override def verifyGen[A](request: RequestHeader,

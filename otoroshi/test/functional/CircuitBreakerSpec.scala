@@ -292,7 +292,6 @@ class CircuitBreakerSpec(name: String, configurationSpec: => Configuration)
       }
 
       val basicTestResponse1 = callServer()
-      //println(basicTestResponse1.body)
 
       basicTestResponse1.status mustBe 504
       basicTestResponse1.body.contains(

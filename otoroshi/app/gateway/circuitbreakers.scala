@@ -204,28 +204,6 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
       case Left(r) => r
       case Right(r) => r
     }
-    // val failure = Timeout
-    //   .timeout(Done, descriptor.clientConfig.extractTimeout(path, _.globalTimeout, _.globalTimeout))
-    //   .flatMap(_ => FastFuture.failed(RequestTimeoutException))
-    // val maybeSuccess = Retry.retry(descriptor.clientConfig.retries,
-    //                                descriptor.clientConfig.retryInitialDelay,
-    //                                descriptor.clientConfig.backoffFactor,
-    //                                descriptor.name + " : " + ctx,
-    //                                counter) { attempts =>
-    //   if (bodyAlreadyConsumed.get) {
-    //     FastFuture.failed(BodyAlreadyConsumedException)
-    //   } else {
-    //     chooseTarget(descriptor, path, reqId, trackingId, requestHeader, attrs) match {
-    //       case Some((target, breaker)) =>
-    //         breaker.withCircuitBreaker {
-    //           logger.debug(s"Try to call target : $target")
-    //           f(target, attempts)
-    //         }
-    //       case None => FastFuture.failed(AllCircuitBreakersOpenException)
-    //     }
-    //   }
-    // }
-    // Future.firstCompletedOf(Seq(maybeSuccess, failure))
   }
 
   def callWS(descriptor: ServiceDescriptor,
@@ -240,22 +218,6 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
       implicit env: Env
   ): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
     callGen(descriptor, reqId, trackingId, path, requestHeader, ServiceDescriptorCircuitBreaker.falseAtomic, ctx, counter, attrs, f)
-    //val failure = Timeout
-    //  .timeout(Done, descriptor.clientConfig.extractTimeout(path, _.globalTimeout, _.globalTimeout))
-    //  .flatMap(_ => FastFuture.failed(RequestTimeoutException))
-    //val maybeSuccess = Retry.retry(descriptor.clientConfig.retries,
-    //                               descriptor.clientConfig.retryInitialDelay,
-    //                               descriptor.clientConfig.backoffFactor,
-    //                               descriptor.name + " : " + ctx,
-    //                               counter) { attempts =>
-    //  chooseTarget(descriptor, path, reqId, trackingId, requestHeader, attrs) match {
-    //    case Some((target, breaker)) =>
-    //      logger.debug(s"Try to call WS target : $target")
-    //      breaker.withCircuitBreaker(f(target, attempts))
-    //    case None => FastFuture.failed(AllCircuitBreakersOpenException)
-    //  }
-    //}
-    //Future.firstCompletedOf(Seq(maybeSuccess, failure))
   }
 
   def callGen[A](descriptor: ServiceDescriptor,
@@ -293,27 +255,6 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
       }
     }
     Future.firstCompletedOf(Seq(maybeSuccess, failure))
-
-    // val failure = Timeout
-    //   .timeout(Done, descriptor.clientConfig.extractTimeout(path, _.globalTimeout, _.globalTimeout))
-    //   .flatMap(_ => FastFuture.failed(RequestTimeoutException))
-    // val maybeSuccess = Retry.retry(descriptor.clientConfig.retries,
-    //   descriptor.clientConfig.retryInitialDelay,
-    //   descriptor.clientConfig.backoffFactor,
-    //   descriptor.name + " : " + ctx,
-    //   counter) { attempts =>
-    //   if (bodyAlreadyConsumed.get) {
-    //     FastFuture.failed(BodyAlreadyConsumedException)
-    //   } else {
-    //     chooseTarget(descriptor, path, reqId, trackingId, requestHeader, attrs) match {
-    //       case Some((target, breaker)) =>
-    //         logger.debug(s"Try to call WS target : $target")
-    //         breaker.withCircuitBreaker(f(target, attempts))
-    //       case None => FastFuture.failed(AllCircuitBreakersOpenException)
-    //     }
-    //   }
-    // }
-    // Future.firstCompletedOf(Seq(maybeSuccess, failure))
   }
 }
 
