@@ -60,20 +60,6 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
     Accumulator.source[ByteString].map(Right.apply)
   }
 
-  def hasBody(request: Request[_]): Boolean =
-    (request.method, request.headers.get("Content-Length")) match {
-      case ("GET", Some(_))    => true
-      case ("GET", None)       => false
-      case ("HEAD", Some(_))   => true
-      case ("HEAD", None)      => false
-      case ("PATCH", _)        => true
-      case ("POST", _)         => true
-      case ("PUT", _)          => true
-      case ("DELETE", Some(_)) => true
-      case ("DELETE", None)    => false
-      case _                   => true
-    }
-
   def proxyAdminApi(path: String) = BackOfficeActionAuth.async(sourceBodyParser) { ctx =>
     env.datastores.apiKeyDataStore.findById(env.backOfficeApiKey.clientId).flatMap {
       case None =>
@@ -88,7 +74,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
         val host                   = env.adminApiExposedHost
         val localUrl               = if (env.adminApiProxyHttps) s"https://127.0.0.1:${env.port}" else s"http://127.0.0.1:${env.port}"
         val url                    = if (env.adminApiProxyUseLocal) localUrl else s"https://${env.adminApiExposedHost}"
-        lazy val currentReqHasBody = hasBody(ctx.request)
+        lazy val currentReqHasBody = ctx.request.theHasBody
         logger.debug(s"Calling ${ctx.request.method} $url/$path with Host = $host")
         val headers = Seq(
           "Host"                           -> host,
@@ -105,14 +91,22 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
         } ++ ctx.request.headers.get("Accept").map { accept =>
           "Accept" -> accept
         } ++ ctx.request.headers.get("X-Content-Type").map(v => "X-Content-Type" -> v)
-        env.Ws // MTLS needed here ???
+
+        val builder = env.Ws // MTLS needed here ???
           .url(s"$url/$path")
           .withHttpHeaders(headers: _*)
           .withFollowRedirects(false)
           .withMethod(ctx.request.method)
           .withRequestTimeout(1.minute)
           .withQueryStringParameters(ctx.request.queryString.toSeq.map(t => (t._1, t._2.head)): _*)
-          .withBody(if (currentReqHasBody) SourceBody(ctx.request.body) else EmptyBody)
+
+        val builderWithBody = if (currentReqHasBody) {
+          builder.withBody(SourceBody(ctx.request.body))
+        } else {
+          builder
+        }
+
+        builderWithBody
           .stream()
           .fast
           .map { res =>
