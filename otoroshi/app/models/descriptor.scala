@@ -2265,7 +2265,7 @@ case class ServiceDescriptor(
   def preRouteWS(snowflake: String, req: RequestHeader, attrs: TypedMap)(
       f: => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
-    preRouteGen[Flow[PlayWSMessage, PlayWSMessage, _]](snowflake, req, attrs)(f)s
+    preRouteGen[Flow[PlayWSMessage, PlayWSMessage, _]](snowflake, req, attrs)(f)
   }
 
   def preRouteGen[A](snowflake: String, req: RequestHeader, attrs: TypedMap)(
