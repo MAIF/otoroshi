@@ -318,50 +318,6 @@ class WebSocketHandler()(implicit env: Env) {
                     remainingQuotas = remainingQuotas,
                     attrs = attrs
                   )
-                /*val _headersOut: Seq[(String, String)] = badResult.header.headers.toSeq
-                  .filterNot(t => descriptor.removeHeadersOut.contains(t._1))
-                  .filterNot(
-                    t =>
-                      (headersOutFiltered :+ stateResponseHeaderName)
-                        .contains(t._1.toLowerCase)
-                  ) ++ (
-                  if (descriptor.sendOtoroshiHeadersBack) {
-                    Seq(
-                      env.Headers.OtoroshiRequestId -> snowflake,
-                      env.Headers.OtoroshiRequestTimestamp -> requestTimestamp,
-                      env.Headers.OtoroshiProxyLatency -> s"$overhead",
-                      env.Headers.OtoroshiUpstreamLatency -> s"0"
-                    )
-                  } else {
-                    Seq.empty[(String, String)]
-                  }
-                  ) ++ Some(canaryId)
-                  .filter(_ => descriptor.canary.enabled)
-                  .map(
-                    _ => env.Headers.OtoroshiTrackerId -> s"${env.sign(canaryId)}::$canaryId"
-                  ) ++ (if (descriptor.sendOtoroshiHeadersBack && apiKey.isDefined) {
-                  Seq(
-                    env.Headers.OtoroshiDailyCallsRemaining -> remainingQuotas.remainingCallsPerDay.toString,
-                    env.Headers.OtoroshiMonthlyCallsRemaining -> remainingQuotas.remainingCallsPerMonth.toString
-                  )
-                } else {
-                  Seq.empty[(String, String)]
-                }) ++ descriptor.cors
-                  .asHeaders(req) ++ descriptor.additionalHeadersOut
-                  .mapValues(
-                    v =>
-                      HeadersExpressionLanguage
-                        .apply(v,
-                          Some(req),
-                          Some(descriptor),
-                          apiKey,
-                          paUsr,
-                          elCtx,
-                          attrs,
-                          env)
-                  )
-                  .filterNot(h => h._2 == "null")
-                  .toSeq*/
 
                 promise.trySuccess(
                   ProxyDone(

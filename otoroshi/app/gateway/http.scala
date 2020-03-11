@@ -143,18 +143,7 @@ class HttpHandler()(implicit env: Env) {
           bs
         })
     }
-    // val requestHeader = ByteString(
-    //   req.method + " " + req.relativeUri + " HTTP/1.1\n" + headersIn
-    //     .map(h => s"${h._1}: ${h._2}")
-    //     .mkString("\n") + "\n"
-    // )
-    // meterIn.mark(requestHeader.length)
-    // counterIn.addAndGet(requestHeader.length)
-    // logger.trace(s"curl -X ${req.method.toUpperCase()} ${headersIn.map(h => s"-H '${h._1}: ${h._2}'").mkString(" ")} '$url?${queryString.map(h => s"${h._1}=${h._2}").mkString("&")}' --include")
-    // debugLogger.trace(
-    //   s"curl -X ${req.method
-    //     .toUpperCase()} ${headersIn.map(h => s"-H '${h._1}: ${h._2}'").mkString(" ")} '$url' --include"
-    // )
+
     val overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
     if (overhead > env.overheadThreshold) {
       HighOverheadAlert(
@@ -386,22 +375,10 @@ class HttpHandler()(implicit env: Env) {
       }
       case Right(httpRequest) => {
         val upstreamStart = System.currentTimeMillis()
+        // Stream IN
         val body =
           if (currentReqHasBody) SourceBody(finalBody)
           else EmptyBody
-
-        // Stream IN
-
-        // env.gatewayClient
-        //   .urlWithProtocol(target.scheme, url)
-        //   //.withRequestTimeout(descriptor.clientConfig.callTimeout.millis)
-        //   .withRequestTimeout(6.hour) // we should monitor leaks
-        //   .withMethod(req.method)
-        //   // .withQueryString(queryString: _*)
-        //   .withHttpHeaders(headersIn: _*)
-        //   .withBody(body)
-        //   .withFollowRedirects(false)
-        //   .stream()
 
         val finalTarget = httpRequest.target.getOrElse(_target)
         attrs.put(otoroshi.plugins.Keys.RequestTargetKey -> finalTarget)
@@ -466,14 +443,11 @@ class HttpHandler()(implicit env: Env) {
               resp.headers.toSeq.flatMap(
                 c => c._2.map(v => (c._1, v))
               ) //.map(tuple => (tuple._1, tuple._2.mkString(","))) //.toSimpleMap // .mapValues(_.head)
-          val rawResponse = otoroshi.script.HttpResponse(
-            status = resp.status,
-            headers = headers.toMap,
-            cookies = resp.cookies
-          )
-            // logger.trace(s"Connection: ${resp.headers.headers.get("Connection").map(_.last)}")
-            // if (env.notDev && !headers.get(stateRespHeaderName).contains(state)) {
-            // val validState = headers.get(stateRespHeaderName).filter(c => env.crypto.verifyString(state, c)).orElse(headers.get(stateRespHeaderName).contains(state)).getOrElse(false)
+            val rawResponse = otoroshi.script.HttpResponse(
+              status = resp.status,
+              headers = headers.toMap,
+              cookies = resp.cookies
+            )
             val stateRespHeaderName = descriptor.secComHeaders.stateResponseName
               .getOrElse(env.Headers.OtoroshiStateResp)
             val stateResp = headers
@@ -501,7 +475,6 @@ class HttpHandler()(implicit env: Env) {
                   attrs = attrs
                 )
               } else if (isUp) {
-                // val body = Await.result(resp.body.runFold(ByteString.empty)((a, b) => a.concat(b)).map(_.utf8String), Duration("10s"))
                 val exchange = Json.stringify(
                   Json.obj(
                     "uri"           -> req.relativeUri,
@@ -608,10 +581,6 @@ class HttpHandler()(implicit env: Env) {
                       .get("Content-Type")
                       .orElse(httpResponse.headers.get("content-type"))
 
-                    // val _contentTypeOpt = resp.headers.get("Content-Type").flatMap(_.lastOption)
-                    // meterOut.mark(responseHeader.length)
-                    // counterOut.addAndGet(responseHeader.length)
-
                     val noContentLengthHeader: Boolean =
                       resp.contentLength.isEmpty
                     val hasChunkedHeader: Boolean = resp
@@ -629,9 +598,7 @@ class HttpHandler()(implicit env: Env) {
                         true
                       case _ => false
                     }
-                    //val hasNoContentLength: Boolean = if (!env.emptyContentLengthIsChunked) false else noContentLengthHeader
-                    //val isChunked = resp.header("Transfer-Encoding")
-                    //  .exists(h => h.toLowerCase().contains("chunked")) || hasNoContentLength
+                    
                     val theStream: Source[ByteString, _] = resp.bodyAsSource
                       .concat(snowMonkeyContext.trailingResponseBodyStream)
                       .alsoTo(Sink.onComplete {
@@ -657,8 +624,6 @@ class HttpHandler()(implicit env: Env) {
                           )
                       })
                       .map { bs =>
-                        // debugLogger.trace(s"chunk on ${req.relativeUri} => ${bs.utf8String}")
-                        // meterOut.mark(bs.length)
                         counterOut.addAndGet(bs.length)
                         bs
                       }

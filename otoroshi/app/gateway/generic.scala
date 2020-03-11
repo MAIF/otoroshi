@@ -268,7 +268,6 @@ object ReverseProxyActionHelper {
   }
 }
 
-
 case class ReverseProxyActionContext(req: RequestHeader, requestBody: Source[ByteString, _], snowMonkey: SnowMonkey, logger: Logger)
 
 case class ActualCallContext(req: RequestHeader,
