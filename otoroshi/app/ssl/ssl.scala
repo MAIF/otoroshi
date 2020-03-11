@@ -2017,6 +2017,20 @@ case class ClientCertificateValidator(
       case Right(goodResult) => goodResult
     }
   }
+
+  def validateClientCertificatesGen[A](req: RequestHeader,
+                                   desc: ServiceDescriptor,
+                                   apikey: Option[ApiKey] = None,
+                                   user: Option[PrivateAppsUser] = None,
+                                   config: GlobalConfig,
+                                   attrs: TypedMap)(
+                                    f: => Future[Either[Result, A]]
+                                  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
+    internalValidateClientCertificates(req, desc, apikey, user, config, attrs)(f).map {
+      case Left(badResult)   => Left[Result, A](badResult)
+      case Right(goodResult) => goodResult
+    }
+  }
 }
 
 class ClientValidatorsController(ApiAction: ApiAction, cc: ControllerComponents)(

@@ -1,42 +1,33 @@
 package gateway
 
 import java.net.URLEncoder
-import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, AtomicLong}
+import java.util.concurrent.atomic.AtomicInteger
 
 import akka.actor.{Actor, Props}
 import akka.http.scaladsl.util.FastFuture
-import akka.http.scaladsl.util.FastFuture._
 import akka.stream.Materializer
-import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
 import auth.AuthModuleConfig
-import com.auth0.jwt.JWT
 import com.google.common.base.Charsets
-import env.{Env, SidecarConfig}
+import env.Env
 import events._
 import models._
-import org.joda.time.DateTime
-import otoroshi.el.{HeadersExpressionLanguage, TargetExpressionLanguage}
-import otoroshi.script.Implicits._
 import otoroshi.script._
 import otoroshi.utils.LetsEncryptHelper
 import play.api.Logger
 import play.api.http.{Status => _, _}
 import play.api.libs.json._
 import play.api.libs.streams.Accumulator
-import play.api.libs.ws.{DefaultWSCookie, EmptyBody, SourceBody}
 import play.api.mvc.Results._
 import play.api.mvc._
 import play.api.routing.Router
-import security.{IdGenerator, OtoroshiClaim}
+import security.OtoroshiClaim
 import ssl.{SSLSessionJavaHelper, X509KeyManagerSnitch}
 import utils.RequestImplicits._
 import utils._
-import utils.http.Implicits._
 
-import scala.concurrent.{ExecutionContext, Future, Promise}
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NoStackTrace
-import scala.util.{Failure, Success, Try}
 
 case class ProxyDone(status: Int, isChunked: Boolean, upstreamLatency: Long, headersOut: Seq[Header])
 
@@ -137,7 +128,9 @@ class AnalyticsQueue(env: Env) extends Actor {
 }
 
 class GatewayRequestHandler(snowMonkey: SnowMonkey,
+                            httpHandler: HttpHandler,
                             webSocketHandler: WebSocketHandler,
+                            reverseProxyAction: ReverseProxyAction,
                             router: Router,
                             errorHandler: HttpErrorHandler,
                             configuration: HttpConfiguration,
@@ -149,7 +142,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
   implicit lazy val scheduler = env.otoroshiScheduler
 
   lazy val logger      = Logger("otoroshi-http-handler")
-  lazy val debugLogger = Logger("otoroshi-http-handler-debug")
+  // lazy val debugLogger = Logger("otoroshi-http-handler-debug")
 
   lazy val analyticsQueue = env.otoroshiActorSystem.actorOf(AnalyticsQueue.props(env))
 
@@ -289,8 +282,10 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
           case env.privateAppsHost                                                 => super.routeRequest(request)
           case _ =>
             request.headers.get("Sec-WebSocket-Version") match {
-              case None    => Some(forwardCall())
-              case Some(_) => Some(webSocketHandler.proxyWebSocket())
+              case None    => Some(httpHandler.forwardCall(actionBuilder, reverseProxyAction, analyticsQueue, snowMonkey, headersInFiltered, headersOutFiltered))
+              case Some(_) => Some(webSocketHandler.forwardCall(reverseProxyAction, snowMonkey, headersInFiltered, headersOutFiltered))
+              // case None    => Some(forwardCall())
+              // case Some(_) => Some(webSocketHandler.proxyWebSocket())
             }
         }
       }
@@ -588,6 +583,32 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
     )
   }
 
+  def forbidden() = actionBuilder { req =>
+    Forbidden(Json.obj("error" -> "forbidden"))
+  }
+
+  def redirectToHttps() = actionBuilder { req =>
+    val domain   = req.theDomain
+    val protocol = req.theProtocol
+    logger.trace(
+      s"redirectToHttps from ${protocol}://$domain${req.relativeUri} to ${env.rootScheme}$domain${req.relativeUri}"
+    )
+    Redirect(s"${env.rootScheme}$domain${req.relativeUri}").withHeaders("otoroshi-redirect-to" -> "https")
+  }
+
+  def redirectToMainDomain() = actionBuilder { req =>
+    val domain: String = env.redirections.foldLeft(req.theDomain)((domain, item) => domain.replace(item, env.domain))
+    val protocol       = req.theProtocol
+    logger.debug(
+      s"redirectToMainDomain from $protocol://${req.theDomain}${req.relativeUri} to $protocol://$domain${req.relativeUri}"
+    )
+    Redirect(s"$protocol://$domain${req.relativeUri}")
+  }
+
+  def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), Charsets.UTF_8)
+
+  /*
+
   def passWithTcpUdpTunneling(req: RequestHeader, desc: ServiceDescriptor, attrs: TypedMap)(
       f: => Future[Result]
   ): Future[Result] = {
@@ -626,28 +647,6 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
         f
       }
     }
-  }
-
-  def forbidden() = actionBuilder { req =>
-    Forbidden(Json.obj("error" -> "forbidden"))
-  }
-
-  def redirectToHttps() = actionBuilder { req =>
-    val domain   = req.theDomain
-    val protocol = req.theProtocol
-    logger.trace(
-      s"redirectToHttps from ${protocol}://$domain${req.relativeUri} to ${env.rootScheme}$domain${req.relativeUri}"
-    )
-    Redirect(s"${env.rootScheme}$domain${req.relativeUri}").withHeaders("otoroshi-redirect-to" -> "https")
-  }
-
-  def redirectToMainDomain() = actionBuilder { req =>
-    val domain: String = env.redirections.foldLeft(req.theDomain)((domain, item) => domain.replace(item, env.domain))
-    val protocol       = req.theProtocol
-    logger.debug(
-      s"redirectToMainDomain from $protocol://${req.theDomain}${req.relativeUri} to $protocol://$domain${req.relativeUri}"
-    )
-    Redirect(s"$protocol://$domain${req.relativeUri}")
   }
 
   def splitToCanary(desc: ServiceDescriptor, trackingId: String, reqNumber: Int, config: GlobalConfig)(
@@ -1337,10 +1336,10 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                             // meterIn.mark(requestHeader.length)
                                             // counterIn.addAndGet(requestHeader.length)
                                             // logger.trace(s"curl -X ${req.method.toUpperCase()} ${headersIn.map(h => s"-H '${h._1}: ${h._2}'").mkString(" ")} '$url?${queryString.map(h => s"${h._1}=${h._2}").mkString("&")}' --include")
-                                            debugLogger.trace(
-                                              s"curl -X ${req.method
-                                                .toUpperCase()} ${headersIn.map(h => s"-H '${h._1}: ${h._2}'").mkString(" ")} '$url' --include"
-                                            )
+                                            // debugLogger.trace(
+                                            //   s"curl -X ${req.method
+                                            //     .toUpperCase()} ${headersIn.map(h => s"-H '${h._1}: ${h._2}'").mkString(" ")} '$url' --include"
+                                            // )
                                             val overhead = (System.currentTimeMillis() - secondStart) + firstOverhead
                                             if (overhead > env.overheadThreshold) {
                                               HighOverheadAlert(
@@ -2069,164 +2068,5 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
           env.metrics.markLong(s"${env.snowflakeSeed}.concurrent-requests", requests)
       }(env.otoroshiExecutionContext)
   }
-
-  def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), Charsets.UTF_8)
-}
-
-
-object ReverseProxyHelper {
-
-  case class HandleRequestContext(req: RequestHeader, query: ServiceDescriptorQuery, descriptor: ServiceDescriptor, isUp: Boolean, attrs: TypedMap, globalConfig: GlobalConfig, logger: Logger)
-
-  def handleRequest[T](
-    ctx: HandleRequestContext,
-    callDownstream: (GlobalConfig, Option[ApiKey], Option[PrivateAppsUser]) => Future[Either[Result, T]],
-    errorResult: (Results.Status, String, String) => Future[Either[Result, T]]
-  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, T]] = {
-
-    // Algo is :
-    // if (app.private) {
-    //   if (uri.isPublic) {
-    //      AUTH0
-    //   } else {
-    //      APIKEY
-    //   }
-    // } else {
-    //   if (uri.isPublic) {
-    //     PASSTHROUGH without gateway auth
-    //   } else {
-    //     APIKEY
-    //   }
-    // }
-
-    val HandleRequestContext(req, query, descriptor, isUp, attrs, globalConfig, logger) = ctx
-    val isSecured = req.theSecured
-    val remoteAddress = req.theIpAddress
-
-    def passWithApiKey(config: GlobalConfig): Future[Either[Result, T]] = {
-      ApiKeyHelper.passWithApiKey(
-        ApiKeyHelper.PassWithApiKeyContext(req, descriptor, attrs, config),
-        callDownstream,
-        errorResult
-      )
-    }
-
-    def passWithAuth0(config: GlobalConfig): Future[Either[Result, T]] = {
-      PrivateAppsUserHelper.passWithAuth(
-        PrivateAppsUserHelper.PassWithAuthContext(req, query, descriptor, attrs, config, logger),
-        callDownstream,
-        errorResult
-      )
-    }
-
-    env.datastores.globalConfigDataStore.quotasValidationFor(remoteAddress).flatMap { r =>
-      val (within, secCalls, maybeQuota) = r
-      val quota                          = maybeQuota.getOrElse(globalConfig.perIpThrottlingQuota)
-      val (restrictionsNotPassing, restrictionsResponse) =
-        descriptor.restrictions.handleRestrictions(descriptor, None, req, attrs)
-      if (secCalls > (quota * 10L)) {
-        errorResult(TooManyRequests, "[IP] You performed too much requests", "errors.too.much.requests")
-      } else {
-        if (!isSecured && descriptor.forceHttps) {
-          val theDomain = req.theDomain
-          val protocol  = req.theProtocol
-          logger.trace(
-            s"redirects prod service from ${protocol}://$theDomain${req.relativeUri} to https://$theDomain${req.relativeUri}"
-          )
-          //FastFuture.successful(Redirect(s"${env.rootScheme}$theDomain${req.relativeUri}"))
-          FastFuture.successful(Redirect(s"https://$theDomain${req.relativeUri}")).map(Left.apply)
-        } else if (!within) {
-          errorResult(TooManyRequests, "[GLOBAL] You performed too much requests", "errors.too.much.requests")
-        } else if (globalConfig.ipFiltering.notMatchesWhitelist(remoteAddress)) {
-          /*else if (globalConfig.ipFiltering.whitelist.nonEmpty && !globalConfig.ipFiltering.whitelist
-               .exists(ip => utils.RegexPool(ip).matches(remoteAddress))) {*/
-          errorResult(Forbidden, "Your IP address is not allowed", "errors.ip.address.not.allowed") // global whitelist
-        } else if (globalConfig.ipFiltering.matchesBlacklist(remoteAddress)) {
-          /*else if (globalConfig.ipFiltering.blacklist.nonEmpty && globalConfig.ipFiltering.blacklist
-                 .exists(ip => utils.RegexPool(ip).matches(remoteAddress))) {*/
-          errorResult(Forbidden, "Your IP address is not allowed", "errors.ip.address.not.allowed") // global blacklist
-        } else if (descriptor.ipFiltering.notMatchesWhitelist(remoteAddress)) {
-          /*else if (descriptor.ipFiltering.whitelist.nonEmpty && !descriptor.ipFiltering.whitelist
-               .exists(ip => utils.RegexPool(ip).matches(remoteAddress))) {*/
-          errorResult(Forbidden, "Your IP address is not allowed", "errors.ip.address.not.allowed") // service whitelist
-        } else if (descriptor.ipFiltering.matchesBlacklist(remoteAddress)) {
-          /*else if (descriptor.ipFiltering.blacklist.nonEmpty && descriptor.ipFiltering.blacklist
-               .exists(ip => utils.RegexPool(ip).matches(remoteAddress))) {*/
-          errorResult(Forbidden, "Your IP address is not allowed", "errors.ip.address.not.allowed") // service blacklist
-        } else if (globalConfig.matchesEndlessIpAddresses(remoteAddress)) {
-          /*else if (globalConfig.endlessIpAddresses.nonEmpty && globalConfig.endlessIpAddresses
-               .exists(ip => RegexPool(ip).matches(remoteAddress))) {*/
-          val gigas: Long = 128L * 1024L * 1024L * 1024L
-          val middleFingers = ByteString.fromString(
-            "\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95"
-          )
-          val zeros =
-            ByteString.fromInts(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-              0)
-          val characters: ByteString =
-            if (!globalConfig.middleFingers) middleFingers else zeros
-          val expected: Long = (gigas / characters.size) + 1L
-          FastFuture.successful(
-            Status(200)
-              .sendEntity(
-                HttpEntity.Streamed(
-                  Source
-                    .repeat(characters)
-                    .take(expected), // 128 Go of zeros or middle fingers
-                  None,
-                  Some("application/octet-stream")
-                )
-              )
-          ).map(Left.apply)
-        } else if (descriptor.maintenanceMode) {
-          errorResult(ServiceUnavailable, "Service in maintenance mode", "errors.service.in.maintenance")
-        } else if (descriptor.buildMode) {
-          errorResult(ServiceUnavailable, "Service under construction", "errors.service.under.construction")
-        } else if (descriptor.cors.enabled && req.method == "OPTIONS" && req.headers
-          .get("Access-Control-Request-Method")
-          .isDefined && descriptor.cors.shouldApplyCors(req.path)) {
-          // handle cors preflight request
-          if (descriptor.cors.enabled && descriptor.cors.shouldNotPass(req)) {
-            errorResult(BadRequest, "Cors error", "errors.cors.error")
-          } else {
-            FastFuture.successful(
-              Results
-                .Ok(ByteString.empty)
-                .withHeaders(descriptor.cors.asHeaders(req): _*)
-            ).map(Left.apply)
-          }
-        } else if (restrictionsNotPassing) {
-          restrictionsResponse.map(Left.apply)
-        } else if (isUp) {
-          if (descriptor.isPrivate && descriptor.authConfigRef.isDefined && !descriptor
-            .isExcludedFromSecurity(req.path)) {
-            if (descriptor.isUriPublic(req.path)) {
-              passWithAuth0(globalConfig)
-            } else {
-              PrivateAppsUserHelper.isPrivateAppsSessionValid(req, descriptor, attrs).fast.flatMap {
-                case Some(_) if descriptor.strictlyPrivate =>
-                  passWithApiKey(globalConfig)
-                case Some(user) => passWithAuth0(globalConfig)
-                case None       => passWithApiKey(globalConfig)
-              }
-            }
-          } else {
-            if (descriptor.isUriPublic(req.path)) {
-              if (env.detectApiKeySooner && descriptor.detectApiKeySooner && ApiKeyHelper
-                .detectApiKey(req, descriptor, attrs)) {
-                passWithApiKey(globalConfig)
-              } else {
-                callDownstream(globalConfig, None, None)
-              }
-            } else {
-              passWithApiKey(globalConfig)
-            }
-          }
-        } else {
-          // fail fast
-          errorResult(Forbidden, "The service seems to be down :( come back later", "errors.service.down")
-        }
-      }
-    }
-  }
+  */
 }

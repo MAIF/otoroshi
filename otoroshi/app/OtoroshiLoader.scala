@@ -44,6 +44,8 @@ package object modules {
 
     implicit lazy val env: Env = wire[Env]
 
+    lazy val reverseProxyAction: ReverseProxyAction = wire[ReverseProxyAction]
+    lazy val httpHandler: HttpHandler = wire[HttpHandler]
     lazy val webSocketHandler: WebSocketHandler = wire[WebSocketHandler]
     lazy val filters                            = new DefaultHttpFilters(httpFilters: _*)
 

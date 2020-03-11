@@ -75,6 +75,8 @@ class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfi
 
   lazy val filters = new DefaultHttpFilters()
 
+  lazy val reverseProxyAction: ReverseProxyAction = wire[ReverseProxyAction]
+  lazy val httpHandler: HttpHandler = wire[HttpHandler]
   lazy val webSocketHandler: WebSocketHandler = wire[WebSocketHandler]
 
   override lazy val httpRequestHandler: HttpRequestHandler = wire[GatewayRequestHandler]

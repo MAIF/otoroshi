@@ -461,7 +461,7 @@ trait OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
       .url(s"http://localhost:${customPort.getOrElse(port)}/api/services/${service.id}")
       .withHttpHeaders(
         "Host"         -> "otoroshi-api.oto.tools",
-        "Content-Type" -> "application/json"
+        // "Content-Type" -> "application/json"
       )
       .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
       .delete()

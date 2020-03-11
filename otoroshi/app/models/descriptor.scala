@@ -2028,8 +2028,12 @@ case class ServiceDescriptor(
       config: GlobalConfig,
       attrs: TypedMap
   )(f: => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
+    validateClientCertificatesGen(snowflake, req, apikey, user, config, attrs)(f.map(Right.apply)).map {
+      case Left(r) => r
+      case Right(r) => r
+    }
 
-    val gScripts = env.datastores.globalConfigDataStore.latestSafe
+    /*val gScripts = env.datastores.globalConfigDataStore.latestSafe
       .filter(_.scripts.enabled)
       .map(_.scripts)
       .getOrElse(GlobalScripts())
@@ -2099,7 +2103,7 @@ case class ServiceDescriptor(
             )
         }
       } getOrElse f
-    }
+    }*/
   }
 
   import play.api.http.websocket.{Message => PlayWSMessage}
@@ -2112,8 +2116,9 @@ case class ServiceDescriptor(
                                    attrs: TypedMap)(
       f: => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
+    validateClientCertificatesGen(snowflake, req, apikey, user, config, attrs)(f)
 
-    val gScripts = env.datastores.globalConfigDataStore.latestSafe
+    /*val gScripts = env.datastores.globalConfigDataStore.latestSafe
       .filter(_.scripts.enabled)
       .map(_.scripts)
       .getOrElse(GlobalScripts())
@@ -2173,6 +2178,91 @@ case class ServiceDescriptor(
       clientValidatorRef.map { ref =>
         env.datastores.clientCertificateValidationDataStore.findById(ref).flatMap {
           case Some(validator) => validator.wsValidateClientCertificates(req, this, apikey, user, config, attrs)(f)
+          case None =>
+            Errors
+              .craftResponseResult(
+                "Validator not found",
+                Results.InternalServerError,
+                req,
+                None,
+                None,
+                attrs = attrs
+              )
+              .map(Left.apply)
+        }
+      } getOrElse f
+    }*/
+  }
+
+  def validateClientCertificatesGen[A](snowflake: String,
+                                   req: RequestHeader,
+                                   apikey: Option[ApiKey] = None,
+                                   user: Option[PrivateAppsUser] = None,
+                                   config: GlobalConfig,
+                                   attrs: TypedMap)(
+                                    f: => Future[Either[Result, A]]
+                                  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
+
+    val gScripts = env.datastores.globalConfigDataStore.latestSafe
+      .filter(_.scripts.enabled)
+      .map(_.scripts)
+      .getOrElse(GlobalScripts())
+
+    if ((gScripts.enabled && gScripts.validatorRefs.nonEmpty) || (accessValidator.enabled && accessValidator.refs.nonEmpty)) {
+      val lScripts: Seq[String] = Some(accessValidator)
+        .filter(
+          pr =>
+            pr.enabled && (pr.excludedPatterns.isEmpty || pr.excludedPatterns
+              .exists(p => utils.RegexPool.regex(p).matches(req.path)))
+        )
+        .map(_.refs)
+        .getOrElse(Seq.empty)
+      val refs = gScripts.validatorRefs ++ lScripts
+      if (refs.nonEmpty) {
+        env.metrics
+          .withTimerAsync("otoroshi.core.proxy.validate-access") {
+            Source(refs.toList.zipWithIndex)
+              .mapAsync(1) {
+                case (ref, index) =>
+                  val validator = env.scriptManager.getAnyScript[AccessValidator](ref) match {
+                    case Left("compiling") => CompilingValidator
+                    case Left(_)           => DefaultValidator
+                    case Right(validator)  => validator
+                  }
+                  validator.access(
+                    AccessContext(
+                      snowflake = snowflake,
+                      index = index,
+                      request = req,
+                      descriptor = this,
+                      user = user,
+                      apikey = apikey,
+                      attrs = attrs,
+                      globalConfig = gScripts.validatorConfig,
+                      config = accessValidator.config
+                    )
+                  )
+              }
+              .takeWhile(a =>
+                a match {
+                  case Allowed   => true
+                  case Denied(_) => false
+                },
+                true)
+              .toMat(Sink.last)(Keep.right)
+              .run()(env.otoroshiMaterializer)
+          }
+          .flatMap {
+            case Allowed        => f
+            case Denied(result) => FastFuture.successful(Left(result))
+          }
+      } else {
+        f
+      }
+    } else {
+      clientValidatorRef.map { ref =>
+        env.datastores.clientCertificateValidationDataStore.findById(ref).flatMap {
+          case Some(validator) => validator.validateClientCertificatesGen[A](req, this, apikey, user, config, attrs)(f)
           case None =>
             Errors
               .craftResponseResult(
@@ -2313,7 +2403,11 @@ case class ServiceDescriptor(
       req: RequestHeader,
       attrs: TypedMap
   )(f: => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
-    val gScripts = env.datastores.globalConfigDataStore.latestSafe
+    preRouteGen(snowflake, req, attrs)(f.map(Right.apply)).map {
+      case Left(r) => r
+      case Right(r) => r
+    }
+    /*val gScripts = env.datastores.globalConfigDataStore.latestSafe
       .filter(_.scripts.enabled)
       .map(_.scripts)
       .getOrElse(GlobalScripts())
@@ -2371,13 +2465,14 @@ case class ServiceDescriptor(
       }
     } else {
       f
-    }
+    }*/
   }
 
   def preRouteWS(snowflake: String, req: RequestHeader, attrs: TypedMap)(
       f: => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
-
+    preRouteGen[Flow[PlayWSMessage, PlayWSMessage, _]](snowflake, req, attrs)(f)
+    /*
     import utils.future.Implicits._
     type WSFlow = Flow[PlayWSMessage, PlayWSMessage, _]
 
@@ -2436,6 +2531,76 @@ case class ServiceDescriptor(
                   attrs = attrs
                 )
                 .asLeft[WSFlow]
+          }
+      } else {
+        f
+      }
+    } else {
+      f
+    }*/
+  }
+
+  def preRouteGen[A](snowflake: String, req: RequestHeader, attrs: TypedMap)(
+    f: => Future[Either[Result, A]]
+  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
+
+    import utils.future.Implicits._
+
+    val gScripts = env.datastores.globalConfigDataStore.latestSafe
+      .filter(_.scripts.enabled)
+      .map(_.scripts)
+      .getOrElse(GlobalScripts())
+    if ((gScripts.enabled && gScripts.preRouteRefs.nonEmpty) || (preRouting.enabled && preRouting.refs.nonEmpty)) {
+      val lScripts: Seq[String] = Some(preRouting)
+        .filter(
+          pr =>
+            pr.enabled && (pr.excludedPatterns.isEmpty || pr.excludedPatterns
+              .exists(p => utils.RegexPool.regex(p).matches(req.path)))
+        )
+        .map(_.refs)
+        .getOrElse(Seq.empty)
+      val refs = gScripts.preRouteRefs ++ lScripts
+      if (refs.nonEmpty) {
+        env.metrics
+          .withTimerAsync("otoroshi.core.proxy.pre-routing") {
+            Source(refs.toList.zipWithIndex)
+              .mapAsync(1) {
+                case (ref, index) =>
+                  val route = env.scriptManager.getAnyScript[PreRouting](ref) match {
+                    case Left("compiling") => CompilingPreRouting
+                    case Left(_)           => DefaultPreRouting
+                    case Right(r)          => r
+                  }
+                  route.preRoute(
+                    PreRoutingContext(
+                      snowflake = snowflake,
+                      index = index,
+                      request = req,
+                      descriptor = this,
+                      attrs = attrs,
+                      globalConfig = gScripts.preRouteConfig,
+                      config = preRouting.config
+                    )
+                  )
+              }
+              .toMat(Sink.last)(Keep.right)
+              .run()(env.otoroshiMaterializer)
+          }
+          .flatMap(_ => f)
+          .recoverWith {
+            case PreRoutingError(body, code, ctype) =>
+              FastFuture.successful(Results.Status(code)(body).as(ctype)).map(Left.apply)
+            case PreRoutingErrorWithResult(result) => FastFuture.successful(result).map(Left.apply)
+            case e =>
+              Errors
+                .craftResponseResult(
+                  message = e.getMessage,
+                  status = Results.Status(500),
+                  req = req,
+                  maybeDescriptor = Some(this),
+                  attrs = attrs
+                )
+                .map(Left.apply)
           }
       } else {
         f

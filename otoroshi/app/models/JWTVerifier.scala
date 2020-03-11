@@ -779,6 +779,20 @@ sealed trait JwtVerifier extends AsJson {
     }
   }
 
+  def verifyGen[A](request: RequestHeader,
+               desc: ServiceDescriptor,
+               apikey: Option[ApiKey],
+               user: Option[PrivateAppsUser],
+               elContext: Map[String, String],
+               attrs: TypedMap)(
+                f: JwtInjection => Future[Either[Result, A]]
+              )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
+    internalVerify(request, desc, apikey, user, elContext, attrs)(f).map {
+      case Left(badResult)   => Left[Result, A](badResult)
+      case Right(goodResult) => goodResult
+    }
+  }
+
   def verify(request: RequestHeader,
              desc: ServiceDescriptor,
              apikey: Option[ApiKey],
@@ -1077,7 +1091,13 @@ case class RefJwtVerifier(
                       attrs: TypedMap)(
       f: JwtInjection => Future[Result]
   )(implicit ec: ExecutionContext, env: Env): Future[Result] = {
-    implicit val mat = env.otoroshiMaterializer
+
+    verifyGen(request, desc, apikey, user, elContext, attrs)(c => f(c).map(Right.apply)).map {
+      case Left(r) => r
+      case Right(r) => r
+    }
+
+    /*implicit val mat = env.otoroshiMaterializer
     ids match {
       case s if s.isEmpty => f(JwtInjection())
       case _ => {
@@ -1148,7 +1168,7 @@ case class RefJwtVerifier(
         //     )
         // }
       }
-    }
+    }*/
   }
 
   override def verifyWs(request: RequestHeader,
@@ -1159,7 +1179,10 @@ case class RefJwtVerifier(
                         attrs: TypedMap)(
       f: JwtInjection => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
-    implicit val mat = env.otoroshiMaterializer
+
+    verifyGen(request, desc, apikey, user, elContext, attrs)(f)
+
+    /*implicit val mat = env.otoroshiMaterializer
     ids match {
       case s if s.isEmpty => f(JwtInjection())
       case _ => {
@@ -1224,7 +1247,7 @@ case class RefJwtVerifier(
 
         promise.future
       }
-    }
+    }*/
     // id match {
     //   case None => f(JwtInjection())
     //   case Some(ref) =>
@@ -1242,6 +1265,82 @@ case class RefJwtVerifier(
     //           .map(a => Left(a))
     //     }
     // }
+  }
+
+  override def verifyGen[A](request: RequestHeader,
+                   desc: ServiceDescriptor,
+                   apikey: Option[ApiKey],
+                   user: Option[PrivateAppsUser],
+                   elContext: Map[String, String],
+                   attrs: TypedMap)(
+                    f: JwtInjection => Future[Either[Result, A]]
+                  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
+    implicit val mat = env.otoroshiMaterializer
+    ids match {
+      case s if s.isEmpty => f(JwtInjection())
+      case _ => {
+
+        val promise = Promise[Either[Result, A]]
+        val last = new AtomicReference[Either[Result, A]](
+          Left(Results.InternalServerError(Json.obj("Otoroshi-Error" -> "error.bad.globaljwtverifier.id")))
+        )
+        val queue: scala.collection.mutable.Queue[String] = scala.collection.mutable.Queue(ids: _*)
+
+        def dequeueNext(): Unit = {
+          queue.dequeueFirst(_ => true) match {
+            case None =>
+              Option(last.get()) match {
+                case None =>
+                  promise.tryFailure(new RuntimeException("Should have last result set ..."))
+                case Some(result) =>
+                  promise.trySuccess(result)
+              }
+            case Some(ref) =>
+              env.datastores.globalJwtVerifierDataStore
+                .findById(ref)
+                .flatMap {
+                  case Some(verifier) =>
+                    verifier
+                      .internalVerify(request, desc, apikey, user, elContext, attrs)(f)
+                      .map {
+                        case Left(result) =>
+                          last.set(Left(result))
+                          dequeueNext()
+                        case Right(result) =>
+                          result match {
+                            case Left(result) =>
+                              last.set(Left(result))
+                              dequeueNext()
+                            case Right(flow) =>
+                              promise.trySuccess(result)
+                          }
+                      }
+                      .andThen { case Failure(e) => promise.tryFailure(e) }
+                  case None =>
+                    Errors
+                      .craftResponseResult(
+                        "error.bad.globaljwtverifier.id",
+                        Results.InternalServerError,
+                        request,
+                        Some(desc),
+                        None,
+                        attrs = attrs
+                      )
+                      .map { result =>
+                        last.set(Left(result))
+                        dequeueNext()
+                      }
+                      .andThen { case Failure(e) => promise.tryFailure(e) }
+                }
+                .andThen { case Failure(e) => promise.tryFailure(e) }
+          }
+        }
+
+        dequeueNext()
+
+        promise.future
+      }
+    }
   }
 
   override def shouldBeVerified(path: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
