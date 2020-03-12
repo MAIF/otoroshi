@@ -14,7 +14,7 @@ import play.api.http.{DefaultHttpFilters, HttpErrorHandler, HttpRequestHandler}
 import play.api.inject.Injector
 import play.api.libs.ws.WSClient
 import play.api.libs.ws.ahc.AhcWSComponents
-import play.api.mvc.{ControllerComponents, DefaultControllerComponents}
+import play.api.mvc.{ControllerComponents, DefaultControllerComponents, EssentialFilter}
 import play.api.routing.Router
 import play.api.{BuiltInComponents, Configuration, LoggerConfigurator}
 import play.core.server.{AkkaHttpServerComponents, ServerConfig}
@@ -51,9 +51,16 @@ class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfi
       """.stripMargin
       }
       .getOrElse("")
-    Configuration(ConfigFactory.load()).withFallback(Configuration(_configuration)).withFallback(Configuration(
+
+    // Configuration(ConfigFactory.load()) ++ Configuration(_configuration) ++ Configuration(
+    //   ConfigFactory.parseString(httpConfig + sslConfig)
+    // )
+
+    val c = Configuration(
       ConfigFactory.parseString(httpConfig + sslConfig)
-    ))
+    ).withFallback(Configuration(_configuration)).withFallback(Configuration(ConfigFactory.load()))
+    println(c.getOptional[Seq[String]]("play.filters.enabled"))
+    c
   }
 
   LoggerConfigurator(environment.classLoader).foreach {
@@ -73,7 +80,9 @@ class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfi
 
   implicit lazy val env: Env = wire[Env]
 
-  lazy val filters = new DefaultHttpFilters()
+  override lazy val httpFilters: Seq[EssentialFilter] = Seq()
+
+  lazy val filters = new DefaultHttpFilters(httpFilters: _*)
 
   lazy val reverseProxyAction: ReverseProxyAction = wire[ReverseProxyAction]
   lazy val httpHandler: HttpHandler = wire[HttpHandler]
