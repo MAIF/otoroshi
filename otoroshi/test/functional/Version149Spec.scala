@@ -964,7 +964,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
         ),
         publicPatterns = Seq("/.*"),
         forceHttps = false,
-        useAkkaHttpClient = false,
+        useAkkaHttpClient = true,
         enforceSecureCommunication = false,
         targetsLoadBalancing = RoundRobin,
         clientConfig = ClientConfig(

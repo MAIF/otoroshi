@@ -20,13 +20,12 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.play.components.{OneServerPerSuiteWithComponents, OneServerPerTestWithComponents}
 import org.slf4j.LoggerFactory
 import play.api.ApplicationLoader.Context
-import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
-import play.api.libs.ws.{WSAuthScheme, WSClient, WSResponse}
+import play.api.libs.json._
+import play.api.libs.ws._
 import play.api.{BuiltInComponents, Configuration, Logger}
 
 import scala.concurrent.duration._
-import scala.concurrent.{Await, ExecutionContext, Future, Promise}
-import scala.util.control.NoStackTrace
+import scala.concurrent.{Await, Future, Promise}
 import scala.util.{Random, Try}
 
 trait AddConfiguration {

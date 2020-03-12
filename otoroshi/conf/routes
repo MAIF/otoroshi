@@ -120,10 +120,10 @@ GET     /api/new/group                                        controllers.Templa
 
 
 # Create entity from template
+POST    /api/tcp/services/_template                           controllers.TemplatesController.createFromTemplate(entity = "tcp/services")
+POST    /api/admins/simple/_template                          controllers.TemplatesController.createFromTemplate(entity = "admins/simple")
+POST    /api/admins/webauthn/_template                        controllers.TemplatesController.createFromTemplate(entity = "admins/webauthn")
 POST    /api/:entity/_template                                controllers.TemplatesController.createFromTemplate(entity)
-POST    /api/tcp/services                                     controllers.TemplatesController.createFromTemplate(entity = "tcp/services")
-POST    /api/admins/simple                                    controllers.TemplatesController.createFromTemplate(entity = "admins/simple")
-POST    /api/admins/webauthn                                  controllers.TemplatesController.createFromTemplate(entity = "admins/webauthn")
 
 ## ApiKeys
 GET     /api/services/:serviceId/apikeys/:clientId/quotas     controllers.ApiController.apiKeyQuotas(serviceId, clientId)
