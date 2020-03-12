@@ -4,7 +4,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.util.FastFuture
-import akka.stream.ActorMaterializer
+import akka.stream.{ActorMaterializer, Materializer}
 import akka.stream.scaladsl.{Sink, Source}
 import env.Env
 import events._
@@ -126,7 +126,7 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env) extends A
   private def urlFromPath(path: String): String = s"${config.clusterUri}$path"
   private val index: String                     = config.index.getOrElse("otoroshi-events")
   private val `type`: String                    = config.`type`.getOrElse("event")
-  private implicit val mat                      = ActorMaterializer()(system)
+  private implicit val mat                      = Materializer(system)
 
   private def url(url: String): WSRequest = {
     val builder =
@@ -266,7 +266,7 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
   private val `type`: String                    = config.`type`.getOrElse("type")
   private val index: String                     = config.index.getOrElse("otoroshi-events")
   private val searchUri                         = urlFromPath(s"/$index*/_search")
-  private implicit val mat                      = ActorMaterializer()(system)
+  private implicit val mat                      = Materializer(system)
 
   private def indexUri: String = {
     val df = ISODateTimeFormat.date().print(DateTime.now())

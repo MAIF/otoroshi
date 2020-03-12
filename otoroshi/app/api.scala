@@ -51,9 +51,9 @@ class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfi
       """.stripMargin
       }
       .getOrElse("")
-    Configuration(ConfigFactory.load()) ++ Configuration(_configuration) ++ Configuration(
+    Configuration(ConfigFactory.load()).withFallback(Configuration(_configuration)).withFallback(Configuration(
       ConfigFactory.parseString(httpConfig + sslConfig)
-    )
+    ))
   }
 
   LoggerConfigurator(environment.classLoader).foreach {

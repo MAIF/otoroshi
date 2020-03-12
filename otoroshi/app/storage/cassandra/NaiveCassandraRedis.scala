@@ -12,6 +12,7 @@ import com.datastax.shaded.netty.util.concurrent.DefaultThreadFactory
 import com.google.common.util.concurrent.ThreadFactoryBuilder
 import play.api.{Configuration, Logger}
 import storage.{DataStoreHealth, Healthy, RedisLike, Unreachable}
+import utils.SchedulerHelper
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.Try
@@ -269,7 +270,7 @@ class CassandraRedisNaive(actorSystem: ActorSystem, configuration: Configuration
   val session = cluster.connect()
 
   // aweful stuff here !
-  private val cancel = actorSystem.scheduler.schedule(0.millis, 1.second) {
+  private val cancel = actorSystem.scheduler.scheduleAtFixedRate(0.millis, 1.second)(SchedulerHelper.runnable {
     val time = System.currentTimeMillis()
     session.executeAsync("SELECT key, value from otoroshi.expirations;").asFuture.map { rs =>
       rs.asScala.foreach { row =>
@@ -285,7 +286,7 @@ class CassandraRedisNaive(actorSystem: ActorSystem, configuration: Configuration
         }
       }
     }
-  }
+  })
 
   override def start(): Unit = {
     CassandraRedis.logger.info("Creating database keyspace and tables if not exists ...")

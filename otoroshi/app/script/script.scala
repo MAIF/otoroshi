@@ -7,7 +7,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 
 import actions.ApiAction
-import akka.Done
+import akka.{Done, NotUsed}
 import akka.actor.{Actor, ActorRef, Cancellable, Props}
 import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.util.FastFuture
@@ -505,7 +505,7 @@ trait NanoApp extends RequestTransformer {
     awaitingRequests.get(ctx.snowflake).map { promise =>
       val consumed = new AtomicBoolean(false)
       val bodySource: Source[ByteString, _] = Source
-        .fromFuture(promise.future)
+        .future(promise.future)
         .flatMapConcat(s => s)
         .alsoTo(Sink.onComplete {
           case _ => consumed.set(true)
@@ -689,7 +689,7 @@ class ScriptManager(env: Env) {
   def start(): ScriptManager = {
     if (env.scriptingEnabled) {
       updateRef.set(
-        env.otoroshiScheduler.schedule(1.second, 10.second)(updateScriptCache(firstScan.compareAndSet(false, true)))(
+        env.otoroshiScheduler.scheduleAtFixedRate(1.second, 10.second)(utils.SchedulerHelper.runnable(updateScriptCache(firstScan.compareAndSet(false, true))))(
           env.otoroshiExecutionContext
         )
       )
@@ -1084,7 +1084,7 @@ object Implicits {
               .getOrElse(GlobalScripts(transformersConfig = Json.obj()))
             val refs = gScripts.transformersRefs ++ desc.transformerRefs
             if (refs.nonEmpty) {
-              Source.fromFutureSource(Source(refs.toList.zipWithIndex).runFold(context.body) {
+              Source.futureSource(Source(refs.toList.zipWithIndex).runFold(context.body) {
                 case (body, (ref, index)) =>
                   env.scriptManager
                     .getScript(ref)
@@ -1114,7 +1114,7 @@ object Implicits {
               .getOrElse(GlobalScripts(transformersConfig = Json.obj()))
             val refs = gScripts.transformersRefs ++ desc.transformerRefs
             if (refs.nonEmpty) {
-              Source.fromFutureSource(Source(refs.toList.zipWithIndex).runFold(context.body) {
+              Source.futureSource(Source(refs.toList.zipWithIndex).runFold(context.body) {
                 case (body, (ref, index)) =>
                   env.scriptManager
                     .getScript(ref)

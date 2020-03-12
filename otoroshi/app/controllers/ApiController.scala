@@ -344,11 +344,11 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
         Ok.chunked(
             Source
               .tick(FiniteDuration(0, TimeUnit.MILLISECONDS), FiniteDuration(millis, TimeUnit.MILLISECONDS), NotUsed)
-              .flatMapConcat(_ => Source.fromFuture(fetch()))
+              .flatMapConcat(_ => Source.future(fetch()))
               .map(json => s"data: ${Json.stringify(json)}\n\n")
           )
           .as("text/event-stream")
-      case None => Ok.chunked(Source.single(1).flatMapConcat(_ => Source.fromFuture(fetch()))).as("application/json")
+      case None => Ok.chunked(Source.single(1).flatMapConcat(_ => Source.future(fetch()))).as("application/json")
     }
   }
 

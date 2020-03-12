@@ -43,15 +43,15 @@ class RedisCertificateDataStore(redisCli: RedisClientMasterSlaves, _env: Env)
     implicit val env = _env
     importInitialCerts(logger)
     cancelRenewRef.set(
-      _env.otoroshiActorSystem.scheduler.schedule(60.seconds, 1.hour + ((Math.random() * 10) + 1).minutes) {
+      _env.otoroshiActorSystem.scheduler.scheduleAtFixedRate(60.seconds, 1.hour + ((Math.random() * 10) + 1).minutes)(utils.SchedulerHelper.runnable {
         _env.datastores.certificatesDataStore.renewCertificates()
-      }
+      })
     )
-    cancelCreateRef.set(_env.otoroshiActorSystem.scheduler.schedule(60.seconds, 2.minutes) {
+    cancelCreateRef.set(_env.otoroshiActorSystem.scheduler.scheduleAtFixedRate(60.seconds, 2.minutes)(utils.SchedulerHelper.runnable {
       LetsEncryptHelper.createFromServices()
       Cert.createFromServices()
-    })
-    cancelRef.set(_env.otoroshiActorSystem.scheduler.schedule(2.seconds, 2.seconds) {
+    }))
+    cancelRef.set(_env.otoroshiActorSystem.scheduler.scheduleAtFixedRate(2.seconds, 2.seconds)(utils.SchedulerHelper.runnable {
       for {
         certs <- findAll()
         last  <- redisCli.get(lastUpdatedKey).map(_.map(_.utf8String).getOrElse("0"))
@@ -61,7 +61,7 @@ class RedisCertificateDataStore(redisCli: RedisClientMasterSlaves, _env: Env)
           DynamicSSLEngineProvider.setCertificates(certs, env)
         }
       }
-    })
+    }))
   }
 
   def stopSync(): Unit = {

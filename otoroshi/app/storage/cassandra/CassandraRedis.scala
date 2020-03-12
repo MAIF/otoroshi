@@ -14,6 +14,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 
 import com.datastax.driver.core.policies._
+import utils.SchedulerHelper
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.{ExecutionContext, Future, Promise}
@@ -404,7 +405,7 @@ class CassandraRedis(actorSystem: ActorSystem, configuration: Configuration) ext
     _session.execute("CREATE TABLE IF NOT EXISTS otoroshi.counters ( key text, cvalue counter, PRIMARY KEY (key) );")
     _session.execute("CREATE TABLE IF NOT EXISTS otoroshi.expirations ( key text, value bigint, PRIMARY KEY (key) );")
 
-    cancel.set(actorSystem.scheduler.schedule(1.second, 5.seconds) {
+    cancel.set(actorSystem.scheduler.scheduleAtFixedRate(1.second, 5.seconds)(SchedulerHelper.runnable {
       val time = System.currentTimeMillis()
       executeAsync("SELECT key, value from otoroshi.expirations;").map { rs =>
         rs.asScala.foreach { row =>
@@ -416,7 +417,7 @@ class CassandraRedis(actorSystem: ActorSystem, configuration: Configuration) ext
           }
         }
       }
-    })
+    }))
     CassandraRedis.logger.info("Keyspace and table creation done !")
     // reporter.start(20, TimeUnit.SECONDS)
   }

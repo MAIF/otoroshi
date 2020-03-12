@@ -27,7 +27,7 @@ class LevelDbRedis(actorSystem: ActorSystem, dbPath: String) extends RedisLike {
   private val expirations = new ConcurrentHashMap[String, Long]()
   private val patterns    = new ConcurrentHashMap[String, Pattern]()
 
-  private val cancel = actorSystem.scheduler.schedule(0.millis, 10.millis) {
+  private val cancel = actorSystem.scheduler.scheduleAtFixedRate(0.millis, 10.millis)(utils.SchedulerHelper.runnable {
     val time = System.currentTimeMillis()
     expirations.entrySet().asScala.foreach { entry =>
       if (entry.getValue < time) {
@@ -37,7 +37,7 @@ class LevelDbRedis(actorSystem: ActorSystem, dbPath: String) extends RedisLike {
     }
 
     ()
-  }
+  })
 
   private def getAllKeys(): Seq[String] = {
     var keys     = Seq.empty[String]

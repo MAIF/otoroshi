@@ -12,6 +12,7 @@ import play.api.libs.json.{JsObject, JsValue}
 import reactivemongo.api.collections.bson.BSONCollection
 import reactivemongo.api.indexes.{Index, IndexType}
 import reactivemongo.api.{Cursor, DefaultDB, MongoConnection}
+import utils.SchedulerHelper
 import reactivemongo.bson.DefaultBSONHandlers._
 import reactivemongo.bson._
 import storage.{DataStoreHealth, Healthy, RedisLike}
@@ -38,7 +39,7 @@ class MongoRedis(actorSystem: ActorSystem, connection: MongoConnection, dbName: 
                     "expireAfterSeconds" -> 0
                   ))
           )
-      _ = Logger.info("Mongo indexes created !")
+      _ = logger.info("Mongo indexes created !")
     } yield ()
   }
 
@@ -74,9 +75,9 @@ class MongoRedis(actorSystem: ActorSystem, connection: MongoConnection, dbName: 
     }
   }
 
-  val cancel = actorSystem.scheduler.schedule(0.millis, 1000.millis) {
+  val cancel = actorSystem.scheduler.scheduleAtFixedRate(0.millis, 1000.millis)(SchedulerHelper.runnable {
     deleteExpiredItems()
-  }
+  })
 
   override def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] = FastFuture.successful(Healthy)
 

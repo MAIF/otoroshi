@@ -9,7 +9,7 @@ import akka.NotUsed
 import akka.actor.{ActorSystem, Cancellable}
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.{Sink, Source}
-import akka.stream.{ActorMaterializer, Materializer}
+import akka.stream.Materializer
 import akka.util.ByteString
 import auth.AuthConfigsDataStore
 import cluster._
@@ -50,7 +50,7 @@ class FileDbDataStores(configuration: Configuration,
         .map(_.underlying)
         .getOrElse(ConfigFactory.empty)
     )
-  private val materializer = ActorMaterializer.create(actorSystem)
+  private val materializer = Materializer(actorSystem)
   private val redis        = new SwappableInMemoryRedis(env, actorSystem)
   private val cancelRef    = new AtomicReference[Cancellable]()
   private val lastHash     = new AtomicReference[Int](0)
@@ -67,9 +67,9 @@ class FileDbDataStores(configuration: Configuration,
       file.createNewFile()
     }
     readStateFromDisk(Files.readAllLines(file.toPath).asScala.toSeq)
-    cancelRef.set(actorSystem.scheduler.schedule(1.second, 5.seconds) {
+    cancelRef.set(actorSystem.scheduler.scheduleAtFixedRate(1.second, 5.seconds)(utils.SchedulerHelper.runnable {
       Await.result(writeStateToDisk()(actorSystem.dispatcher, materializer), 10.seconds)
-    }(actorSystem.dispatcher))
+    })(actorSystem.dispatcher))
     redis.start()
     _serviceDescriptorDataStore.startCleanup(env)
     _certificateDataStore.startSync()
@@ -212,7 +212,7 @@ class FileDbDataStores(configuration: Configuration,
       group: Int
   )(implicit ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = {
     Source
-      .fromFuture(
+      .future(
         redis.keys(s"${env.storageRoot}:*")
       )
       .mapConcat(_.toList)
@@ -268,7 +268,7 @@ class FileDbDataStores(configuration: Configuration,
 
     FastFuture.successful(
       Source
-        .fromFuture(redis.keys(s"${env.storageRoot}:*"))
+        .future(redis.keys(s"${env.storageRoot}:*"))
         .mapConcat(_.toList)
         .grouped(10)
         .mapAsync(1) {
@@ -344,7 +344,7 @@ class FileDbDataStores(configuration: Configuration,
       group: Int
   )(implicit ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = {
     Source
-      .fromFuture(
+      .future(
         redis.keys(s"${env.storageRoot}:*")
       )
       .mapConcat(_.toList)

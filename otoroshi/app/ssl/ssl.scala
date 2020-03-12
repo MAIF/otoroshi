@@ -1227,30 +1227,8 @@ object DynamicSSLEngineProvider {
   }
 
   def base64Decode(base64: String): Array[Byte] = Base64.getMimeDecoder.decode(base64.getBytes(US_ASCII))
-}
 
-class OtoroshiHostnameVerifier() extends HostnameVerifier {
-  override def verify(s: String, sslSession: SSLSession): Boolean = {
-    true
-  }
-}
-
-class DynamicSSLEngineProvider(appProvider: ApplicationProvider) extends SSLEngineProvider {
-
-  lazy val cipherSuites =
-    appProvider.get.get.configuration.getOptional[Seq[String]]("otoroshi.ssl.cipherSuites").filterNot(_.isEmpty)
-  lazy val protocols =
-    appProvider.get.get.configuration.getOptional[Seq[String]]("otoroshi.ssl.protocols").filterNot(_.isEmpty)
-  lazy val clientAuth = {
-    val auth = appProvider.get.get.configuration
-      .getOptional[String]("otoroshi.ssl.fromOutside.clientAuth")
-      .flatMap(ClientAuth.apply)
-      .getOrElse(ClientAuth.None)
-    DynamicSSLEngineProvider.logger.debug(s"Otoroshi client auth: ${auth}")
-    auth
-  }
-
-  override def createSSLEngine(): SSLEngine = {
+  def createSSLEngine(clientAuth: ClientAuth, cipherSuites: Option[Seq[String]], protocols: Option[Seq[String]]): SSLEngine = {
     val context: SSLContext = DynamicSSLEngineProvider.currentContext.get()
     DynamicSSLEngineProvider.logger.debug(s"Create SSLEngine from: $context")
     val rawEngine              = context.createSSLEngine()
@@ -1291,6 +1269,75 @@ class DynamicSSLEngineProvider(appProvider: ApplicationProvider) extends SSLEngi
     engine.setSSLParameters(sslParameters)
     engine
   }
+}
+
+/*class OtoroshiHostnameVerifier() extends HostnameVerifier {
+  override def verify(s: String, sslSession: SSLSession): Boolean = {
+    true
+  }
+}*/
+
+class DynamicSSLEngineProvider(appProvider: ApplicationProvider) extends SSLEngineProvider {
+
+  lazy val cipherSuites =
+    appProvider.get.get.configuration.getOptional[Seq[String]]("otoroshi.ssl.cipherSuites").filterNot(_.isEmpty)
+  lazy val protocols =
+    appProvider.get.get.configuration.getOptional[Seq[String]]("otoroshi.ssl.protocols").filterNot(_.isEmpty)
+  lazy val clientAuth = {
+    val auth = appProvider.get.get.configuration
+      .getOptional[String]("otoroshi.ssl.fromOutside.clientAuth")
+      .flatMap(ClientAuth.apply)
+      .getOrElse(ClientAuth.None)
+    DynamicSSLEngineProvider.logger.debug(s"Otoroshi client auth: ${auth}")
+    auth
+  }
+
+  override def createSSLEngine(): SSLEngine = {
+    DynamicSSLEngineProvider.createSSLEngine(clientAuth, cipherSuites, protocols)
+  }
+  /*
+    val context: SSLContext = DynamicSSLEngineProvider.currentContext.get()
+    DynamicSSLEngineProvider.logger.debug(s"Create SSLEngine from: $context")
+    val rawEngine              = context.createSSLEngine()
+    val rawEnabledCipherSuites = rawEngine.getEnabledCipherSuites.toSeq
+    val rawEnabledProtocols    = rawEngine.getEnabledProtocols.toSeq
+    cipherSuites.foreach(s => rawEngine.setEnabledCipherSuites(s.toArray))
+    protocols.foreach(p => rawEngine.setEnabledProtocols(p.toArray))
+    val engine        = new CustomSSLEngine(rawEngine)
+    val sslParameters = new SSLParameters
+    val matchers      = new java.util.ArrayList[SNIMatcher]()
+
+    clientAuth match {
+      case ClientAuth.Want =>
+        engine.setWantClientAuth(true)
+        sslParameters.setWantClientAuth(true)
+      case ClientAuth.Need =>
+        engine.setNeedClientAuth(true)
+        sslParameters.setNeedClientAuth(true)
+      case _ =>
+    }
+
+    matchers.add(new SNIMatcher(0) {
+      override def matches(sniServerName: SNIServerName): Boolean = {
+        sniServerName match {
+          case hn: SNIHostName =>
+            val hostName = hn.getAsciiName
+            DynamicSSLEngineProvider.logger.debug(s"createSSLEngine - for $hostName")
+            engine.setEngineHostName(hostName)
+          case _ =>
+            DynamicSSLEngineProvider.logger.debug(s"Not a hostname :( $sniServerName")
+        }
+        true
+      }
+    })
+    sslParameters.setSNIMatchers(matchers)
+    cipherSuites.orElse(Some(rawEnabledCipherSuites)).foreach(s => sslParameters.setCipherSuites(s.toArray))
+    protocols.orElse(Some(rawEnabledProtocols)).foreach(p => sslParameters.setProtocols(p.toArray))
+    engine.setSSLParameters(sslParameters)
+    engine
+  }*/
+
+  override def sslContext(): SSLContext = DynamicSSLEngineProvider.currentContext.get()
 }
 
 object noCATrustManager extends X509TrustManager {

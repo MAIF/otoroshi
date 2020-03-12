@@ -14,6 +14,7 @@ import events._
 import models._
 import otoroshi.script._
 import otoroshi.utils.LetsEncryptHelper
+import play.api.ApplicationLoader.DevContext
 import play.api.Logger
 import play.api.http.{Status => _, _}
 import play.api.libs.json._
@@ -21,6 +22,7 @@ import play.api.libs.streams.Accumulator
 import play.api.mvc.Results._
 import play.api.mvc._
 import play.api.routing.Router
+import play.core.WebCommands
 import security.OtoroshiClaim
 import ssl.{SSLSessionJavaHelper, X509KeyManagerSnitch}
 import utils.RequestImplicits._
@@ -134,9 +136,11 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                             router: Router,
                             errorHandler: HttpErrorHandler,
                             configuration: HttpConfiguration,
-                            filters: HttpFilters,
+                            filters: Seq[EssentialFilter],
+                            webCommands: WebCommands,
+                            optDevContext: Option[DevContext],
                             actionBuilder: ActionBuilder[Request, AnyContent])(implicit env: Env, mat: Materializer)
-    extends DefaultHttpRequestHandler(router, errorHandler, configuration, filters) {
+    extends DefaultHttpRequestHandler(webCommands, optDevContext, router, errorHandler, configuration, filters) {
 
   implicit lazy val ec        = env.otoroshiExecutionContext
   implicit lazy val scheduler = env.otoroshiScheduler

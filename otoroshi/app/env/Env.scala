@@ -9,7 +9,7 @@ import java.util.concurrent.atomic.AtomicReference
 import akka.actor.{ActorSystem, PoisonPill, Scheduler}
 import akka.http.scaladsl.util.FastFuture
 import akka.http.scaladsl.util.FastFuture._
-import akka.stream.ActorMaterializer
+import akka.stream.Materializer
 import auth.AuthModuleConfig
 import ch.qos.logback.classic.{Level, LoggerContext}
 import cluster.{ClusterAgent, _}
@@ -117,7 +117,7 @@ class Env(val configuration: Configuration,
   )
   val otoroshiExecutionContext: ExecutionContext = otoroshiActorSystem.dispatcher
   val otoroshiScheduler: Scheduler               = otoroshiActorSystem.scheduler
-  val otoroshiMaterializer: ActorMaterializer    = ActorMaterializer.create(otoroshiActorSystem)
+  val otoroshiMaterializer: Materializer         = Materializer(otoroshiActorSystem)
 
   val analyticsPressureEnabled: Boolean =
     configuration.getOptional[Boolean]("otoroshi.analytics.pressure.enabled").getOrElse(false)
@@ -136,8 +136,8 @@ class Env(val configuration: Configuration,
     if (analyticsPressureEnabled) analyticsActorSystem.dispatcher else otoroshiExecutionContext
   val analyticsScheduler: Scheduler =
     if (analyticsPressureEnabled) analyticsActorSystem.scheduler else otoroshiScheduler
-  val analyticsMaterializer: ActorMaterializer =
-    if (analyticsPressureEnabled) ActorMaterializer.create(analyticsActorSystem) else otoroshiMaterializer
+  val analyticsMaterializer: Materializer =
+    if (analyticsPressureEnabled) Materializer(analyticsActorSystem) else otoroshiMaterializer
 
   def timeout(duration: FiniteDuration): Future[Unit] = {
     val promise = Promise[Unit]
@@ -853,7 +853,7 @@ class Env(val configuration: Configuration,
         }
 
       if (checkForUpdates) {
-        otoroshiActorSystem.scheduler.schedule(5.second, 24.hours) {
+        otoroshiActorSystem.scheduler.scheduleAtFixedRate(5.second, 24.hours)(utils.SchedulerHelper.runnable {
           datastores.globalConfigDataStore
             .singleton()(otoroshiExecutionContext, this)
             .map { globalConfig =>
@@ -894,7 +894,7 @@ class Env(val configuration: Configuration,
             .andThen {
               case Failure(e) => e.printStackTrace()
             }
-        }
+        })
       }
       ()
   }(otoroshiExecutionContext)

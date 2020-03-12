@@ -46,7 +46,7 @@ class SwappableInMemoryRedis(env: Env, actorSystem: ActorSystem) extends RedisLi
   @inline private def store: ConcurrentHashMap[String, Any]        = _storeHolder.get().store
   @inline private def expirations: ConcurrentHashMap[String, Long] = _storeHolder.get().expirations
 
-  private val cancel = actorSystem.scheduler.schedule(0.millis, 100.millis) {
+  private val cancel = actorSystem.scheduler.scheduleAtFixedRate(0.millis, 100.millis)(utils.SchedulerHelper.runnable {
     try {
       val time = System.currentTimeMillis()
       expirations.entrySet().asScala.foreach { entry =>
@@ -59,7 +59,7 @@ class SwappableInMemoryRedis(env: Env, actorSystem: ActorSystem) extends RedisLi
       case e: Throwable => SwappableInMemoryRedis.logger.error(s"Error while applying expiration", e)
     }
     ()
-  }
+  })
 
   def swap(memory: Memory): Unit = {
     val oldSize = store.keySet.size

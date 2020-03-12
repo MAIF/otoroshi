@@ -586,7 +586,7 @@ object WebSocketProxyActor {
       implicit env: Env,
       ec: ExecutionContext,
       mat: Materializer
-  ): Flow[PlayWSMessage, PlayWSMessage, Future[Option[NotUsed]]] = {
+  ): Flow[PlayWSMessage, PlayWSMessage, Future[NotUsed]] = {
     val avoid = Seq("Upgrade", "Connection", "Sec-WebSocket-Version", "Sec-WebSocket-Extensions", "Sec-WebSocket-Key")
     val _headers = headers.toList.filterNot(t => avoid.contains(t._1)).flatMap {
       case (key, value) if key.toLowerCase == "cookie" =>
@@ -644,7 +644,7 @@ object WebSocketProxyActor {
           .withConnectingTimeout(descriptor.clientConfig.connectionTimeout.millis)
       }
     )
-    Flow.lazyInitAsync[PlayWSMessage, PlayWSMessage, NotUsed] { () =>
+    Flow.lazyFutureFlow[PlayWSMessage, PlayWSMessage, NotUsed] { () =>
       connected.flatMap { r =>
         logger.trace(
           s"[WEBSOCKET] connected to target ${r.response.status} :: ${r.response.headers.map(h => h.toString()).mkString(", ")}"

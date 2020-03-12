@@ -1020,26 +1020,26 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
     if (config.mode == ClusterMode.Leader) {
       Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Starting cluster leader agent")
       membershipRef.set(
-        env.otoroshiScheduler.schedule(1.second, 30.seconds)(
+        env.otoroshiScheduler.scheduleAtFixedRate(1.second, 30.seconds)(utils.SchedulerHelper.runnable(
           try {
             renewMemberShip()
           } catch {
             case e: Throwable =>
               Cluster.logger.error(s"Error while renewing leader membership of ${env.clusterConfig.leader.name}", e)
           }
-        )
+        ))
       )
       if (env.clusterConfig.autoUpdateState) {
         Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Starting cluster state auto update")
         stateUpdaterRef.set(
-          env.otoroshiScheduler.schedule(1.second, env.clusterConfig.leader.cacheStateFor.millis)(
+          env.otoroshiScheduler.scheduleAtFixedRate(1.second, env.clusterConfig.leader.cacheStateFor.millis)(utils.SchedulerHelper.runnable(
             try {
               cacheState()
             } catch {
               case e: Throwable =>
                 Cluster.logger.error(s"Error while renewing leader membership of ${env.clusterConfig.leader.name}", e)
             }
-          )
+          ))
         )
       }
     }
@@ -1484,14 +1484,14 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
     if (config.mode == ClusterMode.Worker) {
       Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Starting cluster agent")
       pollRef.set(
-        env.otoroshiScheduler.schedule(1.second, config.worker.state.pollEvery.millis)(
+        env.otoroshiScheduler.scheduleAtFixedRate(1.second, config.worker.state.pollEvery.millis)(utils.SchedulerHelper.runnable(
           pollState()
-        )
+        ))
       )
       pushRef.set(
-        env.otoroshiScheduler.schedule(1.second, config.worker.quotas.pushEvery.millis)(
+        env.otoroshiScheduler.scheduleAtFixedRate(1.second, config.worker.quotas.pushEvery.millis)(utils.SchedulerHelper.runnable(
           pushQuotas()
-        )
+        ))
       )
     }
   }
@@ -1511,7 +1511,7 @@ class SwappableInMemoryDataStores(configuration: Configuration,
 
   import scala.concurrent.duration._
   import scala.util.hashing.MurmurHash3
-  import akka.stream.{ActorMaterializer, Materializer}
+  import akka.stream.Materializer
 
   lazy val redisStatsItems: Int  = configuration.get[Option[Int]]("app.inmemory.windowSize").getOrElse(99)
   lazy val experimental: Boolean = configuration.get[Option[Boolean]]("app.inmemory.experimental").getOrElse(false)
@@ -1523,7 +1523,7 @@ class SwappableInMemoryDataStores(configuration: Configuration,
         .map(_.underlying)
         .getOrElse(ConfigFactory.empty)
     )
-  private val materializer = ActorMaterializer.create(actorSystem)
+  private val materializer = Materializer(actorSystem)
   lazy val redis           = new SwappableInMemoryRedis(env, actorSystem)
 
   override def before(configuration: Configuration,
@@ -1539,9 +1539,9 @@ class SwappableInMemoryDataStores(configuration: Configuration,
         file.createNewFile()
       }
       readStateFromDisk(java.nio.file.Files.readAllLines(file.toPath).asScala.toSeq)
-      cancelRef.set(actorSystem.scheduler.schedule(1.second, 5.seconds) {
+      cancelRef.set(actorSystem.scheduler.scheduleAtFixedRate(1.second, 5.seconds)(utils.SchedulerHelper.runnable(
         Await.result(writeStateToDisk(dbPath)(actorSystem.dispatcher, materializer), 10.seconds)
-      }(actorSystem.dispatcher))
+      ))(actorSystem.dispatcher))
     }
     redis.start()
     _serviceDescriptorDataStore.startCleanup(env)
@@ -1695,7 +1695,7 @@ class SwappableInMemoryDataStores(configuration: Configuration,
       group: Int
   )(implicit ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = {
     Source
-      .fromFuture(
+      .future(
         redis.keys(s"${env.storageRoot}:*")
       )
       .mapConcat(_.toList)
@@ -1751,7 +1751,7 @@ class SwappableInMemoryDataStores(configuration: Configuration,
 
     FastFuture.successful(
       Source
-        .fromFuture(redis.keys(s"${env.storageRoot}:*"))
+        .future(redis.keys(s"${env.storageRoot}:*"))
         .mapConcat(_.toList)
         .grouped(10)
         .mapAsync(1) {
@@ -1827,7 +1827,7 @@ class SwappableInMemoryDataStores(configuration: Configuration,
       group: Int
   )(implicit ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = {
     Source
-      .fromFuture(
+      .future(
         redis.keys(s"${env.storageRoot}:*")
       )
       .mapConcat(_.toList)

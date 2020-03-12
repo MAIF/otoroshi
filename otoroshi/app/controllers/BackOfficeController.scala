@@ -114,7 +114,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
             Status(res.status)
               .sendEntity(
                 HttpEntity.Streamed(
-                  Source.lazily(() => res.bodyAsSource),
+                  Source.lazySource(() => res.bodyAsSource),
                   res.headers.get("Content-Length").flatMap(_.lastOption).map(_.toInt),
                   res.headers.get("Content-Type").flatMap(_.headOption)
                 )

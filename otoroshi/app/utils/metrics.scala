@@ -293,9 +293,9 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) extends Time
 
   private val update: Option[Cancellable] = {
     Some(env.metricsEnabled).filter(_ == true).map { _ =>
-      val cancellable = env.otoroshiScheduler.schedule(
+      val cancellable = env.otoroshiScheduler.scheduleAtFixedRate(
         FiniteDuration(5, TimeUnit.SECONDS),
-        env.metricsEvery,
+        env.metricsEvery)(
         new Runnable {
           override def run(): Unit = updateMetrics()
         }

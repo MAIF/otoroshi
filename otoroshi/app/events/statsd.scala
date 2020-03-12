@@ -227,9 +227,9 @@ class StatsDReporter(registry: MetricRegistry, env: Env) extends Reporter with C
   def start(): StatsDReporter = {
     cancellable.set(
       Some(
-        env.analyticsScheduler.schedule(
+        env.analyticsScheduler.scheduleAtFixedRate(
           FiniteDuration(5, TimeUnit.SECONDS),
-          env.metricsEvery,
+          env.metricsEvery)(
           new Runnable {
             override def run(): Unit = sendToStatsD()
           }
