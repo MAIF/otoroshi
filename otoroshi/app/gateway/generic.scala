@@ -227,42 +227,61 @@ object ReverseProxyActionHelper {
     }
   }
 
-  def passWithTcpUdpTunneling[A](req: RequestHeader, desc: ServiceDescriptor, attrs: TypedMap)(
+  def passWithTcpUdpTunneling[A](req: RequestHeader, desc: ServiceDescriptor, attrs: TypedMap, ws: Boolean)(
     f: => Future[Either[Result, A]]
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
-    if (desc.isPrivate) {
-      PrivateAppsUserHelper.isPrivateAppsSessionValid(req, desc, attrs).flatMap {
-        case None => f
-        case Some(user) => {
-          if (desc.tcpUdpTunneling) {
-            req.getQueryString("redirect") match {
-              case Some("urn:ietf:wg:oauth:2.0:oob") =>
-                FastFuture.successful(Ok(views.html.otoroshi.token(env.signPrivateSessionId(user.randomId), env))).map(Left.apply)
-              case _ =>
-                Errors
-                  .craftResponseResult(s"Resource not found",
-                    NotFound,
-                    req,
-                    None,
-                    Some("errors.resource.not.found"),
-                    attrs = attrs).map(Left.apply)
-            }
-          } else {
-            f
-          }
-        }
-      }
-    } else {
+    if (ws) { 
       if (desc.tcpUdpTunneling) {
-        Errors
-          .craftResponseResult(s"Resource not found",
-            NotFound,
-            req,
-            None,
-            Some("errors.resource.not.found"),
-            attrs = attrs).map(Left.apply)
+        if (req.relativeUri.startsWith("/.well-known/otoroshi/tunnel")) {
+          f
+        } else {
+          Errors
+            .craftResponseResult(s"Resource not found",
+                                NotFound,
+                                req,
+                                None,
+                                Some("errors.resource.not.found"),
+                                attrs = attrs)
+            .map(Left.apply)
+        }
       } else {
         f
+      }
+    } else {
+      if (desc.isPrivate) {
+        PrivateAppsUserHelper.isPrivateAppsSessionValid(req, desc, attrs).flatMap {
+          case None => f
+          case Some(user) => {
+            if (desc.tcpUdpTunneling) {
+              req.getQueryString("redirect") match {
+                case Some("urn:ietf:wg:oauth:2.0:oob") =>
+                  FastFuture.successful(Ok(views.html.otoroshi.token(env.signPrivateSessionId(user.randomId), env))).map(Left.apply)
+                case _ =>
+                  Errors
+                    .craftResponseResult(s"Resource not found",
+                      NotFound,
+                      req,
+                      None,
+                      Some("errors.resource.not.found"),
+                      attrs = attrs).map(Left.apply)
+              }
+            } else {
+              f
+            }
+          }
+        }
+      } else {
+        if (desc.tcpUdpTunneling) {
+          Errors
+            .craftResponseResult(s"Resource not found",
+              NotFound,
+              req,
+              None,
+              Some("errors.resource.not.found"),
+              attrs = attrs).map(Left.apply)
+        } else {
+          f
+        }
       }
     }
   }
@@ -322,6 +341,7 @@ class ReverseProxyAction(env: Env) {
 
   def async[A](
     ctx: ReverseProxyActionContext,
+    ws: Boolean,
     _actuallyCallDownstream: ActualCallContext => Future[Either[Result, A]]
   )(implicit ec: ExecutionContext, mat: Materializer, scheduler: Scheduler, env: Env): Future[Either[Result, A]] = {
 
@@ -469,7 +489,7 @@ class ReverseProxyAction(env: Env) {
                       )
                       .flatMap { _ =>
                         rawDesc.preRouteGen[A](snowflake, req, attrs) {
-                          ReverseProxyActionHelper.passWithTcpUdpTunneling(req, rawDesc, attrs) {
+                          ReverseProxyActionHelper.passWithTcpUdpTunneling(req, rawDesc, attrs, ws) {
                             ReverseProxyActionHelper.passWithHeadersVerification(rawDesc, req, None, None, elCtx, attrs) {
                               ReverseProxyActionHelper.passWithReadOnly(rawDesc.readOnly, req, attrs) {
                                 ReverseProxyActionHelper.applySidecar(rawDesc, remoteAddress, req, attrs, logger) { desc =>

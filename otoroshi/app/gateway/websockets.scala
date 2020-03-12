@@ -49,8 +49,10 @@ class WebSocketHandler()(implicit env: Env) {
 
   lazy val logger = Logger("otoroshi-websocket-handler")
 
-  def forwardCall(reverseProxyAction: ReverseProxyAction, snowMonkey: SnowMonkey, headersInFiltered: Seq[String], headersOutFiltered: Seq[String]) = WebSocket.acceptOrResult[PlayWSMessage, PlayWSMessage] { req =>
-    reverseProxyAction.async[WSFlow](ReverseProxyActionContext(req, Source.empty, snowMonkey, logger), c => actuallyCallDownstream(c, headersInFiltered, headersOutFiltered))
+  def forwardCall(reverseProxyAction: ReverseProxyAction, snowMonkey: SnowMonkey, headersInFiltered: Seq[String], headersOutFiltered: Seq[String]) = {
+    WebSocket.acceptOrResult[PlayWSMessage, PlayWSMessage] { req =>
+      reverseProxyAction.async[WSFlow](ReverseProxyActionContext(req, Source.empty, snowMonkey, logger), true, c => actuallyCallDownstream(c, headersInFiltered, headersOutFiltered))
+    }
   }
 
   def actuallyCallDownstream(ctx: ActualCallContext, headersInFiltered: Seq[String], headersOutFiltered: Seq[String]): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
