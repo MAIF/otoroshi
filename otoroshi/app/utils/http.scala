@@ -878,6 +878,7 @@ case class AkkaWsClientRequest(
               .withIdleTimeout(idleTimeout)
               .withConnectionSettings(
                 a.connectionSettings
+                  .withTransport(httpsProxyTransport)
                   .withConnectingTimeout(connectionTimeout)
                   .withIdleTimeout(idleTimeout)
               )
@@ -889,6 +890,7 @@ case class AkkaWsClientRequest(
           .withIdleTimeout(idleTimeout)
           .withConnectionSettings(
             a.connectionSettings
+              .withTransport(ManualResolveTransport.http)
               .withConnectingTimeout(connectionTimeout)
               .withIdleTimeout(idleTimeout)
           )
