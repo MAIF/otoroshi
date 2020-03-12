@@ -1295,49 +1295,40 @@ class DynamicSSLEngineProvider(appProvider: ApplicationProvider) extends SSLEngi
   override def createSSLEngine(): SSLEngine = {
     DynamicSSLEngineProvider.createSSLEngine(clientAuth, cipherSuites, protocols)
   }
-  /*
-    val context: SSLContext = DynamicSSLEngineProvider.currentContext.get()
-    DynamicSSLEngineProvider.logger.debug(s"Create SSLEngine from: $context")
-    val rawEngine              = context.createSSLEngine()
-    val rawEnabledCipherSuites = rawEngine.getEnabledCipherSuites.toSeq
-    val rawEnabledProtocols    = rawEngine.getEnabledProtocols.toSeq
-    cipherSuites.foreach(s => rawEngine.setEnabledCipherSuites(s.toArray))
-    protocols.foreach(p => rawEngine.setEnabledProtocols(p.toArray))
-    val engine        = new CustomSSLEngine(rawEngine)
-    val sslParameters = new SSLParameters
-    val matchers      = new java.util.ArrayList[SNIMatcher]()
 
-    clientAuth match {
-      case ClientAuth.Want =>
-        engine.setWantClientAuth(true)
-        sslParameters.setWantClientAuth(true)
-      case ClientAuth.Need =>
-        engine.setNeedClientAuth(true)
-        sslParameters.setNeedClientAuth(true)
-      case _ =>
+  private def setupSslContext(): SSLContext = {
+    new SSLContext(
+      new SSLContextSpi() {
+        override def engineCreateSSLEngine(): SSLEngine                  = createSSLEngine()
+        override def engineCreateSSLEngine(s: String, i: Int): SSLEngine = engineCreateSSLEngine()
+        override def engineInit(keyManagers: Array[KeyManager], trustManagers: Array[TrustManager], secureRandom: SecureRandom): Unit = ()
+        override def engineGetClientSessionContext(): SSLSessionContext = DynamicSSLEngineProvider.current.getClientSessionContext
+        override def engineGetServerSessionContext(): SSLSessionContext = DynamicSSLEngineProvider.current.getServerSessionContext
+        override def engineGetSocketFactory(): SSLSocketFactory =
+          DynamicSSLEngineProvider.current.asInstanceOf[SSLSocketFactory]
+        override def engineGetServerSocketFactory(): SSLServerSocketFactory =
+          DynamicSSLEngineProvider.current.asInstanceOf[SSLServerSocketFactory]
+      },
+      new Provider(
+        "Otoroshi SSlEngineProvider delegate",
+        1d,
+        "A provider that delegates callss to otoroshi dynamic one"
+      ) {},
+      "Otoroshi SSLEngineProvider delegate"
+    ) {}
+  }
+
+  override def sslContext(): SSLContext = setupSslContext()
+}
+
+object SSLContextImplicit {
+  implicit class BetterSSLContext(val ctx: SSLContext) extends AnyVal {
+    def createSSLEngine(): SSLEngine = {
+      println("used here !!!!")
+      ctx.createSSLEngine()
     }
-
-    matchers.add(new SNIMatcher(0) {
-      override def matches(sniServerName: SNIServerName): Boolean = {
-        sniServerName match {
-          case hn: SNIHostName =>
-            val hostName = hn.getAsciiName
-            DynamicSSLEngineProvider.logger.debug(s"createSSLEngine - for $hostName")
-            engine.setEngineHostName(hostName)
-          case _ =>
-            DynamicSSLEngineProvider.logger.debug(s"Not a hostname :( $sniServerName")
-        }
-        true
-      }
-    })
-    sslParameters.setSNIMatchers(matchers)
-    cipherSuites.orElse(Some(rawEnabledCipherSuites)).foreach(s => sslParameters.setCipherSuites(s.toArray))
-    protocols.orElse(Some(rawEnabledProtocols)).foreach(p => sslParameters.setProtocols(p.toArray))
-    engine.setSSLParameters(sslParameters)
-    engine
-  }*/
-
-  override def sslContext(): SSLContext = DynamicSSLEngineProvider.currentContext.get()
+    def foo(): Unit = ()
+  }
 }
 
 object noCATrustManager extends X509TrustManager {
