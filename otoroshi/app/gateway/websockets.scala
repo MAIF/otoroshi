@@ -837,11 +837,3 @@ class WebSocketProxyActor(url: String,
     case e => logger.error(s"[WEBSOCKET] Bad message type: $e")
   }
 }
-
-object Tests {
-
-  val source: Source[(Int, String, utils.Datagram), NotUsed] = ???
-
-  val flow: Flow[utils.Datagram, utils.Datagram, NotUsed] = ???
-
-}

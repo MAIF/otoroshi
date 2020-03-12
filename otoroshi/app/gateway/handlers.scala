@@ -284,8 +284,6 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
             request.headers.get("Sec-WebSocket-Version") match {
               case None    => Some(httpHandler.forwardCall(actionBuilder, reverseProxyAction, analyticsQueue, snowMonkey, headersInFiltered, headersOutFiltered))
               case Some(_) => Some(webSocketHandler.forwardCall(reverseProxyAction, snowMonkey, headersInFiltered, headersOutFiltered))
-              // case None    => Some(forwardCall())
-              // case Some(_) => Some(webSocketHandler.proxyWebSocket())
             }
         }
       }
