@@ -94,6 +94,7 @@ assemblyMergeStrategy in assembly := {
   case PathList(ps @ _*) if ps.contains("reference-overrides.conf")   => MergeStrategy.concat
   case PathList(ps @ _*) if ps.contains("module-info.class")          => MergeStrategy.first // ???
   case PathList(ps @ _*) if ps.contains("ModuleUtil.class")           => MergeStrategy.first // ???
+  case PathList(ps @ _*) if ps.contains("reflection-config.json")     => MergeStrategy.first // ???
   case PathList("javax", xs @ _*)                                     => MergeStrategy.first
   case x =>
     val oldStrategy = (assemblyMergeStrategy in assembly).value
