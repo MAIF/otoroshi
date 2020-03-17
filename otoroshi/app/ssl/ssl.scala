@@ -1305,9 +1305,9 @@ class DynamicSSLEngineProvider(appProvider: ApplicationProvider) extends SSLEngi
         override def engineGetClientSessionContext(): SSLSessionContext = DynamicSSLEngineProvider.current.getClientSessionContext
         override def engineGetServerSessionContext(): SSLSessionContext = DynamicSSLEngineProvider.current.getServerSessionContext
         override def engineGetSocketFactory(): SSLSocketFactory =
-          DynamicSSLEngineProvider.current.asInstanceOf[SSLSocketFactory]
+          DynamicSSLEngineProvider.current.getSocketFactory
         override def engineGetServerSocketFactory(): SSLServerSocketFactory =
-          DynamicSSLEngineProvider.current.asInstanceOf[SSLServerSocketFactory]
+          DynamicSSLEngineProvider.current.getServerSocketFactory
       },
       new Provider(
         "Otoroshi SSlEngineProvider delegate",

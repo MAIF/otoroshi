@@ -24,7 +24,7 @@ class WebsocketSpec(name: String, configurationSpec: => Configuration)
     with OtoroshiSpecHelper
     with IntegrationPatience {
 
-  lazy val serviceHost = "canary.oto.tools"
+  lazy val serviceHost = "websocket.oto.tools"
   lazy val ws          = otoroshiComponents.wsClient
 
   override def getConfiguration(configuration: Configuration) = configuration ++ configurationSpec ++ Configuration(
@@ -38,7 +38,7 @@ class WebsocketSpec(name: String, configurationSpec: => Configuration)
       .resolve()
   )
 
-  s"[$name] Otoroshi Canary Mode" should {
+  s"[$name] Otoroshi" should {
 
     "warm up" in {
       getOtoroshiServices().futureValue // WARM UP
