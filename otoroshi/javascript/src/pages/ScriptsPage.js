@@ -13,6 +13,7 @@ import play.api.Logger
 import play.api.mvc.{Result, Results}
 import scala.util._
 import scala.concurrent.{ExecutionContext, Future}
+import utils.future.Implicits._
 
 /**
  * Your own request transformer
@@ -21,7 +22,7 @@ class MyTransformer extends RequestTransformer {
 
   val logger = Logger("my-transformer")
 
-  def transformRequestWithCtx(
+  override def transformRequestWithCtx(
     ctx: TransformerRequestContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     logger.info(s"Request incoming with id: \${ctx.snowflake}")
@@ -83,6 +84,7 @@ new MyApp()
 `;
 
 const basicValidator = `
+import akka.http.scaladsl.util._
 import akka.stream.scaladsl._
 import env.Env
 import otoroshi.script._
@@ -91,7 +93,7 @@ import play.api.libs.json._
 import scala.concurrent.{ExecutionContext, Future}
 
 class CustomValidator extends AccessValidator {
-  def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
+  override def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
     context.request.clientCertificateChain match {
       case Some(_) => FastFuture.successful(true)
       case _ => FastFuture.successful(false)
@@ -103,6 +105,7 @@ new CustomValidator()
 `;
 
 const basicPreRoute = `
+import akka.http.scaladsl.util._
 import akka.stream.scaladsl._
 import env.Env
 import otoroshi.script._
@@ -111,7 +114,7 @@ import play.api.libs.json._
 import scala.concurrent.{ExecutionContext, Future}
 
 class CustomPreRouting extends PreRouting {
-  def preRoute(context: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  override def preRoute(context: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     FastFuture.successful(())
   }
 }
@@ -126,10 +129,11 @@ import otoroshi.script._
 import utils.future.Implicits._
 import play.api.libs.json._
 import scala.concurrent.{ExecutionContext, Future}
+import play.api.mvc._
 
 class CustomRequestSink extends RequestSink {
-  def matches(context: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Boolean = true
-  def handle(context: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Future[Result] = FastFuture.successful(
+  override def matches(context: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Boolean = true
+  override def handle(context: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Future[Result] = FastFuture.successful(
     Results.Ok(Json.obj("message" -> "hello world!"))
   )
 }
@@ -183,6 +187,7 @@ class CustomJob extends Job {
 
 new CustomJob()
 `;
+
 class CompilationTools extends Component {
   state = {
     compiling: false,

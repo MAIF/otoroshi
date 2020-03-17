@@ -1,7 +1,7 @@
 name := """otoroshi"""
 organization := "fr.maif.otoroshi"
 version := "1.4.23-dev"
-scalaVersion := "2.12.10"
+scalaVersion := "2.12.11" // not 2.12.10 because of https://github.com/scala/bug/issues/11754 and https://github.com/scala/scala/pull/8447
 
 lazy val root = (project in file("."))
   .enablePlugins(PlayScala, PlayAkkaHttp2Support)
@@ -36,6 +36,7 @@ libraryDependencies ++= Seq(
   "com.nimbusds"             % "nimbus-jose-jwt"           % "6.0",
   "com.risksense"            %% "ipaddr"                   % "1.0.2",
   "com.yubico"               % "webauthn-server-core"      % "1.4.0",
+  "org.scala-lang"           % "scala-compiler"            % "2.12.11",
   // "org.bouncycastle"      % "bcpg-jdk15on"              % "1.62",
   "com.maxmind.geoip2" % "geoip2"        % "2.12.0",
   "com.blueconic"      % "browscap-java" % "1.2.11",
