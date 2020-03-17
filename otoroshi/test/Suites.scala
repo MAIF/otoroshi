@@ -106,7 +106,7 @@ object OtoroshiTests {
         new SnowMonkeySpec(name, Configurations.LevelDBConfiguration),
         new Version149Spec(name, Configurations.LevelDBConfiguration),
         new Version1410Spec(name, Configurations.LevelDBConfiguration),
-        new Version1413Spec(name, Configurations.LevelDBConfiguration)
+        new Version1413Spec(name, Configurations.LevelDBConfiguration),
         new WebsocketSpec(name, Configurations.LevelDBConfiguration)
       )
     } else {
@@ -126,7 +126,7 @@ object OtoroshiTests {
         new SnowMonkeySpec(name, config),
         new Version149Spec(name, config),
         new Version1410Spec(name, config),
-        new Version1413Spec(name, config)
+        new Version1413Spec(name, config),
         new WebsocketSpec(name, config)
       )
     }
