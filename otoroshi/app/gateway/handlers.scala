@@ -377,8 +377,6 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
   }
 
   def myProfile() = actionBuilder.async { req =>
-
-
     implicit val request = req
 
     val attrs = utils.TypedMap.empty
@@ -395,7 +393,9 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
         }
         case Some(ServiceLocation(domain, serviceEnv, subdomain)) => {
           env.datastores.serviceDescriptorDataStore
-            .find(ServiceDescriptorQuery(subdomain, serviceEnv, domain, req.relativeUri, req.headers.toSimpleMap), req, attrs)
+            .find(ServiceDescriptorQuery(subdomain, serviceEnv, domain, req.relativeUri, req.headers.toSimpleMap),
+                  req,
+                  attrs)
             .flatMap {
               case None => {
                 Errors.craftResponseResult(s"Service not found",
@@ -469,8 +469,6 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
   }
 
   def removePrivateAppsCookies() = actionBuilder.async { req =>
-
-
     implicit val request = req
 
     val attrs = TypedMap.empty
@@ -487,7 +485,9 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
         }
         case Some(ServiceLocation(domain, serviceEnv, subdomain)) => {
           env.datastores.serviceDescriptorDataStore
-            .find(ServiceDescriptorQuery(subdomain, serviceEnv, domain, req.relativeUri, req.headers.toSimpleMap), req, attrs)
+            .find(ServiceDescriptorQuery(subdomain, serviceEnv, domain, req.relativeUri, req.headers.toSimpleMap),
+                  req,
+                  attrs)
             .flatMap {
               case None => {
                 Errors.craftResponseResult(s"Service not found",
@@ -939,7 +939,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
 
             env.datastores.serviceDescriptorDataStore
               .find(ServiceDescriptorQuery(subdomain, serviceEnv, domain, req.relativeUri, req.headers.toSimpleMap),
-                    req, attrs)
+                    req,
+                    attrs)
               .fast
               .flatMap {
                 case None =>
@@ -2024,14 +2025,22 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                                         }
 
                                         val query = ServiceDescriptorQuery(subdomain, serviceEnv, domain, "/")
-                                        ReverseProxyHelper.handleRequest(
-                                          ReverseProxyHelper.HandleRequestContext(req, query, descriptor, isUp, attrs, globalConfig, logger),
-                                          (c, oapk, ousr) => callDownstream(c, oapk, ousr).map(v => Right(v)),
-                                          (s, mess, cod) => errorResult(s, mess, cod).map(v => Left(v))
-                                        ).map {
-                                          case Left(res) => res
-                                          case Right(res) => res
-                                        }
+                                        ReverseProxyHelper
+                                          .handleRequest(
+                                            ReverseProxyHelper.HandleRequestContext(req,
+                                                                                    query,
+                                                                                    descriptor,
+                                                                                    isUp,
+                                                                                    attrs,
+                                                                                    globalConfig,
+                                                                                    logger),
+                                            (c, oapk, ousr) => callDownstream(c, oapk, ousr).map(v => Right(v)),
+                                            (s, mess, cod) => errorResult(s, mess, cod).map(v => Left(v))
+                                          )
+                                          .map {
+                                            case Left(res)  => res
+                                            case Right(res) => res
+                                          }
                                       }
                                   }
                                 }
@@ -2073,15 +2082,20 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
   def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), Charsets.UTF_8)
 }
 
-
 object ReverseProxyHelper {
 
-  case class HandleRequestContext(req: RequestHeader, query: ServiceDescriptorQuery, descriptor: ServiceDescriptor, isUp: Boolean, attrs: TypedMap, globalConfig: GlobalConfig, logger: Logger)
+  case class HandleRequestContext(req: RequestHeader,
+                                  query: ServiceDescriptorQuery,
+                                  descriptor: ServiceDescriptor,
+                                  isUp: Boolean,
+                                  attrs: TypedMap,
+                                  globalConfig: GlobalConfig,
+                                  logger: Logger)
 
   def handleRequest[T](
-    ctx: HandleRequestContext,
-    callDownstream: (GlobalConfig, Option[ApiKey], Option[PrivateAppsUser]) => Future[Either[Result, T]],
-    errorResult: (Results.Status, String, String) => Future[Either[Result, T]]
+      ctx: HandleRequestContext,
+      callDownstream: (GlobalConfig, Option[ApiKey], Option[PrivateAppsUser]) => Future[Either[Result, T]],
+      errorResult: (Results.Status, String, String) => Future[Either[Result, T]]
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, T]] = {
 
     // Algo is :
@@ -2100,8 +2114,8 @@ object ReverseProxyHelper {
     // }
 
     val HandleRequestContext(req, query, descriptor, isUp, attrs, globalConfig, logger) = ctx
-    val isSecured = req.theSecured
-    val remoteAddress = req.theIpAddress
+    val isSecured                                                                       = req.theSecured
+    val remoteAddress                                                                   = req.theIpAddress
 
     def passWithApiKey(config: GlobalConfig): Future[Either[Result, T]] = {
       ApiKeyHelper.passWithApiKey(
@@ -2161,45 +2175,48 @@ object ReverseProxyHelper {
             "\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95\uD83D\uDD95"
           )
           val zeros =
-            ByteString.fromInts(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-              0)
+            ByteString.fromInts(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
           val characters: ByteString =
             if (!globalConfig.middleFingers) middleFingers else zeros
           val expected: Long = (gigas / characters.size) + 1L
-          FastFuture.successful(
-            Status(200)
-              .sendEntity(
-                HttpEntity.Streamed(
-                  Source
-                    .repeat(characters)
-                    .take(expected), // 128 Go of zeros or middle fingers
-                  None,
-                  Some("application/octet-stream")
+          FastFuture
+            .successful(
+              Status(200)
+                .sendEntity(
+                  HttpEntity.Streamed(
+                    Source
+                      .repeat(characters)
+                      .take(expected), // 128 Go of zeros or middle fingers
+                    None,
+                    Some("application/octet-stream")
+                  )
                 )
-              )
-          ).map(Left.apply)
+            )
+            .map(Left.apply)
         } else if (descriptor.maintenanceMode) {
           errorResult(ServiceUnavailable, "Service in maintenance mode", "errors.service.in.maintenance")
         } else if (descriptor.buildMode) {
           errorResult(ServiceUnavailable, "Service under construction", "errors.service.under.construction")
         } else if (descriptor.cors.enabled && req.method == "OPTIONS" && req.headers
-          .get("Access-Control-Request-Method")
-          .isDefined && descriptor.cors.shouldApplyCors(req.path)) {
+                     .get("Access-Control-Request-Method")
+                     .isDefined && descriptor.cors.shouldApplyCors(req.path)) {
           // handle cors preflight request
           if (descriptor.cors.enabled && descriptor.cors.shouldNotPass(req)) {
             errorResult(BadRequest, "Cors error", "errors.cors.error")
           } else {
-            FastFuture.successful(
-              Results
-                .Ok(ByteString.empty)
-                .withHeaders(descriptor.cors.asHeaders(req): _*)
-            ).map(Left.apply)
+            FastFuture
+              .successful(
+                Results
+                  .Ok(ByteString.empty)
+                  .withHeaders(descriptor.cors.asHeaders(req): _*)
+              )
+              .map(Left.apply)
           }
         } else if (restrictionsNotPassing) {
           restrictionsResponse.map(Left.apply)
         } else if (isUp) {
           if (descriptor.isPrivate && descriptor.authConfigRef.isDefined && !descriptor
-            .isExcludedFromSecurity(req.path)) {
+                .isExcludedFromSecurity(req.path)) {
             if (descriptor.isUriPublic(req.path)) {
               passWithAuth0(globalConfig)
             } else {
@@ -2213,7 +2230,7 @@ object ReverseProxyHelper {
           } else {
             if (descriptor.isUriPublic(req.path)) {
               if (env.detectApiKeySooner && descriptor.detectApiKeySooner && ApiKeyHelper
-                .detectApiKey(req, descriptor, attrs)) {
+                    .detectApiKey(req, descriptor, attrs)) {
                 passWithApiKey(globalConfig)
               } else {
                 callDownstream(globalConfig, None, None)

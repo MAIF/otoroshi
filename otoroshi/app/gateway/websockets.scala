@@ -23,7 +23,14 @@ import otoroshi.el.{HeadersExpressionLanguage, TargetExpressionLanguage}
 import otoroshi.script.Implicits._
 import otoroshi.script.{AfterRequestContext, BeforeRequestContext, TransformerRequestContext}
 import play.api.Logger
-import play.api.http.websocket.{CloseMessage, PingMessage, PongMessage, BinaryMessage => PlayWSBinaryMessage, Message => PlayWSMessage, TextMessage => PlayWSTextMessage}
+import play.api.http.websocket.{
+  CloseMessage,
+  PingMessage,
+  PongMessage,
+  BinaryMessage => PlayWSBinaryMessage,
+  Message => PlayWSMessage,
+  TextMessage => PlayWSTextMessage
+}
 import play.api.libs.json.{JsValue, Json}
 import play.api.libs.streams.ActorFlow
 import play.api.libs.ws.DefaultWSCookie
@@ -308,7 +315,9 @@ class WebSocketHandler()(implicit env: Env) {
           val uriParts = req.relativeUri.split("/").toSeq
 
           env.datastores.serviceDescriptorDataStore
-            .find(ServiceDescriptorQuery(subdomain, serviceEnv, domain, req.relativeUri, req.headers.toSimpleMap), req, attrs)
+            .find(ServiceDescriptorQuery(subdomain, serviceEnv, domain, req.relativeUri, req.headers.toSimpleMap),
+                  req,
+                  attrs)
             .flatMap {
               case None =>
                 Errors
@@ -1114,22 +1123,25 @@ class WebSocketHandler()(implicit env: Env) {
                                         }
                                     }
 
-
-                                  def errorResult(status: Results.Status, message: String, code: String): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]= {
-                                    Errors.craftResponseResult(
-                                      message,
-                                      status,
-                                      req,
-                                      Some(descriptor),
-                                      Some(code),
-                                      duration = System.currentTimeMillis - start,
-                                      attrs = attrs
-                                    ).asLeft[WSFlow]
+                                  def errorResult(status: Results.Status, message: String, code: String)
+                                    : Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
+                                    Errors
+                                      .craftResponseResult(
+                                        message,
+                                        status,
+                                        req,
+                                        Some(descriptor),
+                                        Some(code),
+                                        duration = System.currentTimeMillis - start,
+                                        attrs = attrs
+                                      )
+                                      .asLeft[WSFlow]
                                   }
 
                                   val query = ServiceDescriptorQuery(subdomain, serviceEnv, domain, "/")
                                   ReverseProxyHelper.handleRequest(
-                                    ReverseProxyHelper.HandleRequestContext(req, query, descriptor, isUp, attrs, globalConfig, logger),
+                                    ReverseProxyHelper
+                                      .HandleRequestContext(req, query, descriptor, isUp, attrs, globalConfig, logger),
                                     callDownstream,
                                     errorResult
                                   )
