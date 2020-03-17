@@ -1321,16 +1321,6 @@ class DynamicSSLEngineProvider(appProvider: ApplicationProvider) extends SSLEngi
   override def sslContext(): SSLContext = setupSslContext()
 }
 
-object SSLContextImplicit {
-  implicit class BetterSSLContext(val ctx: SSLContext) extends AnyVal {
-    def createSSLEngine(): SSLEngine = {
-      println("used here !!!!")
-      ctx.createSSLEngine()
-    }
-    def foo(): Unit = ()
-  }
-}
-
 object noCATrustManager extends X509TrustManager {
   val nullArray                                                                     = Array[X509Certificate]()
   def checkClientTrusted(x509Certificates: Array[X509Certificate], s: String): Unit = {}
