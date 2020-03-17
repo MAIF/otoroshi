@@ -97,44 +97,53 @@ object PrivateAppsUserHelper {
 
   import utils.RequestImplicits._
 
-  case class PassWithAuthContext(req: RequestHeader, query: ServiceDescriptorQuery, descriptor: ServiceDescriptor, attrs: TypedMap, config: GlobalConfig, logger: Logger)
+  case class PassWithAuthContext(req: RequestHeader,
+                                 query: ServiceDescriptorQuery,
+                                 descriptor: ServiceDescriptor,
+                                 attrs: TypedMap,
+                                 config: GlobalConfig,
+                                 logger: Logger)
 
-  def isPrivateAppsSessionValid(req: RequestHeader, desc: ServiceDescriptor, attrs: TypedMap)(implicit executionContext: ExecutionContext, env: Env): Future[Option[PrivateAppsUser]] = {
+  def isPrivateAppsSessionValid(req: RequestHeader, desc: ServiceDescriptor, attrs: TypedMap)(
+      implicit executionContext: ExecutionContext,
+      env: Env
+  ): Future[Option[PrivateAppsUser]] = {
     attrs.get(otoroshi.plugins.Keys.UserKey) match {
       case Some(preExistingUser) => FastFuture.successful(Some(preExistingUser))
-      case _ => desc.authConfigRef match {
-        case Some(ref) =>
-          env.datastores.authConfigsDataStore.findById(ref).flatMap {
-            case None => FastFuture.successful(None)
-            case Some(auth) => {
-              val expected = "oto-papps-" + auth.cookieSuffix(desc)
-              req.cookies
-                .get(expected)
-                .flatMap { cookie =>
-                  env.extractPrivateSessionId(cookie)
+      case _ =>
+        desc.authConfigRef match {
+          case Some(ref) =>
+            env.datastores.authConfigsDataStore.findById(ref).flatMap {
+              case None => FastFuture.successful(None)
+              case Some(auth) => {
+                val expected = "oto-papps-" + auth.cookieSuffix(desc)
+                req.cookies
+                  .get(expected)
+                  .flatMap { cookie =>
+                    env.extractPrivateSessionId(cookie)
+                  }
+                  .orElse(
+                    req.getQueryString("pappsToken").flatMap(value => env.extractPrivateSessionIdFromString(value))
+                  )
+                  .orElse(
+                    req.headers.get("Otoroshi-Token").flatMap(value => env.extractPrivateSessionIdFromString(value))
+                  )
+                  .map { id =>
+                    env.datastores.privateAppsUserDataStore.findById(id)
+                  } getOrElse {
+                  FastFuture.successful(None)
                 }
-                .orElse(
-                  req.getQueryString("pappsToken").flatMap(value => env.extractPrivateSessionIdFromString(value))
-                )
-                .orElse(
-                  req.headers.get("Otoroshi-Token").flatMap(value => env.extractPrivateSessionIdFromString(value))
-                )
-                .map { id =>
-                  env.datastores.privateAppsUserDataStore.findById(id)
-                } getOrElse {
-                FastFuture.successful(None)
               }
             }
-          }
-        case None => FastFuture.successful(None)
-      }
+          case None => FastFuture.successful(None)
+        }
     }
   }
 
   def passWithAuth[T](
-    ctx: PassWithAuthContext,
-    callDownstream: (GlobalConfig, Option[ApiKey], Option[PrivateAppsUser]) => Future[Either[Result, T]],
-    errorResult: (Results.Status, String, String) => Future[Either[Result, T]]
+      ctx: PassWithAuthContext,
+      callDownstream: (GlobalConfig, Option[ApiKey], Option[PrivateAppsUser]) => Future[Either[Result, T]],
+      errorResult: (Results.Status, String, String) => Future[Either[Result, T]]
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, T]] = {
 
     val PassWithAuthContext(req, query, descriptor, attrs, config, logger) = ctx
@@ -154,23 +163,29 @@ object PrivateAppsUserHelper {
         logger.trace("should redirect to " + redirectTo)
         descriptor.authConfigRef match {
           case None =>
-            errorResult(InternalServerError, "Auth. config. ref not found on the descriptor", "errors.auth.config.ref.not.found")
+            errorResult(InternalServerError,
+                        "Auth. config. ref not found on the descriptor",
+                        "errors.auth.config.ref.not.found")
           case Some(ref) => {
             env.datastores.authConfigsDataStore.findById(ref).flatMap {
               case None =>
-                errorResult(InternalServerError, "Auth. config. not found on the descriptor", "errors.auth.config.not.found")
+                errorResult(InternalServerError,
+                            "Auth. config. not found on the descriptor",
+                            "errors.auth.config.not.found")
               case Some(auth) => {
                 FastFuture
                   .successful(
-                    Left(Results
-                      .Redirect(redirectTo)
-                      .discardingCookies(
-                        env.removePrivateSessionCookies(
-                          query.toHost,
-                          descriptor,
-                          auth
-                        ): _*
-                      ))
+                    Left(
+                      Results
+                        .Redirect(redirectTo)
+                        .discardingCookies(
+                          env.removePrivateSessionCookies(
+                            query.toHost,
+                            descriptor,
+                            auth
+                          ): _*
+                        )
+                    )
                   )
               }
             }

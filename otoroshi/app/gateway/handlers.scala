@@ -374,8 +374,6 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
   }
 
   def myProfile() = actionBuilder.async { req =>
-
-
     implicit val request = req
 
     val attrs = utils.TypedMap.empty
@@ -392,7 +390,9 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
         }
         case Some(ServiceLocation(domain, serviceEnv, subdomain)) => {
           env.datastores.serviceDescriptorDataStore
-            .find(ServiceDescriptorQuery(subdomain, serviceEnv, domain, req.relativeUri, req.headers.toSimpleMap), req, attrs)
+            .find(ServiceDescriptorQuery(subdomain, serviceEnv, domain, req.relativeUri, req.headers.toSimpleMap),
+                  req,
+                  attrs)
             .flatMap {
               case None => {
                 Errors.craftResponseResult(s"Service not found",
@@ -466,8 +466,6 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
   }
 
   def removePrivateAppsCookies() = actionBuilder.async { req =>
-
-
     implicit val request = req
 
     val attrs = TypedMap.empty
@@ -484,7 +482,9 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
         }
         case Some(ServiceLocation(domain, serviceEnv, subdomain)) => {
           env.datastores.serviceDescriptorDataStore
-            .find(ServiceDescriptorQuery(subdomain, serviceEnv, domain, req.relativeUri, req.headers.toSimpleMap), req, attrs)
+            .find(ServiceDescriptorQuery(subdomain, serviceEnv, domain, req.relativeUri, req.headers.toSimpleMap),
+                  req,
+                  attrs)
             .flatMap {
               case None => {
                 Errors.craftResponseResult(s"Service not found",

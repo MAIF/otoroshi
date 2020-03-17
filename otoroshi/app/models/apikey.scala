@@ -405,8 +405,9 @@ object ApiKeyHelper {
 
   def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), Charsets.UTF_8)
 
-  def extractApiKey(req: RequestHeader, descriptor: ServiceDescriptor, attrs: TypedMap)(implicit ec: ExecutionContext,
-                                                                       env: Env): Future[Option[ApiKey]] = {
+  def extractApiKey(req: RequestHeader,
+                    descriptor: ServiceDescriptor,
+                    attrs: TypedMap)(implicit ec: ExecutionContext, env: Env): Future[Option[ApiKey]] = {
 
     val authByJwtToken = req.headers
       .get(
@@ -695,25 +696,22 @@ object ApiKeyHelper {
     }
   }
 
-  case class PassWithApiKeyContext(req: RequestHeader, descriptor: ServiceDescriptor, attrs: TypedMap, config: GlobalConfig)
+  case class PassWithApiKeyContext(req: RequestHeader,
+                                   descriptor: ServiceDescriptor,
+                                   attrs: TypedMap,
+                                   config: GlobalConfig)
 
   def passWithApiKey[T](
-    ctx: PassWithApiKeyContext,
-    callDownstream: (GlobalConfig, Option[ApiKey], Option[PrivateAppsUser]) => Future[Either[Result, T]],
-    errorResult: (Results.Status, String, String) => Future[Either[Result, T]]
+      ctx: PassWithApiKeyContext,
+      callDownstream: (GlobalConfig, Option[ApiKey], Option[PrivateAppsUser]) => Future[Either[Result, T]],
+      errorResult: (Results.Status, String, String) => Future[Either[Result, T]]
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, T]] = {
 
     val PassWithApiKeyContext(req, descriptor, attrs, config) = ctx
 
     def sendRevokedApiKeyAlert(key: ApiKey) = {
       Alerts.send(
-        RevokedApiKeyUsageAlert(env.snowflakeGenerator.nextIdStr(),
-          DateTime.now(),
-          env.env,
-          req,
-          key,
-          descriptor,
-          env)
+        RevokedApiKeyUsageAlert(env.snowflakeGenerator.nextIdStr(), DateTime.now(), env.env, req, key, descriptor, env)
       )
     }
 
@@ -798,7 +796,7 @@ object ApiKeyHelper {
       val preExtractedApiKey = attrs.get(otoroshi.plugins.Keys.ApiKeyKey)
       if (preExtractedApiKey.isDefined) {
         preExtractedApiKey match {
-          case None => errorResult(Unauthorized,"Invalid API key", "errors.invalid.api.key")
+          case None => errorResult(Unauthorized, "Invalid API key", "errors.invalid.api.key")
           case Some(key) if key.isInvalid(key.clientSecret) => {
             sendRevokedApiKeyAlert(key)
             errorResult(BadGateway, "Bad API key", "errors.bad.api.key")
@@ -807,12 +805,13 @@ object ApiKeyHelper {
             errorResult(Unauthorized, "Invalid API key", "errors.bad.api.key")
           }
           case Some(key)
-            if key.restrictions
-              .handleRestrictions(descriptor, Some(key), req, attrs)
-              ._1 => {
+              if key.restrictions
+                .handleRestrictions(descriptor, Some(key), req, attrs)
+                ._1 => {
             key.restrictions
               .handleRestrictions(descriptor, Some(key), req, attrs)
-              ._2.map(v => Left(v))
+              ._2
+              .map(v => Left(v))
           }
           case Some(key) if key.isValid(key.clientSecret) =>
             key.withinQuotasAndRotation().flatMap {
@@ -821,7 +820,8 @@ object ApiKeyHelper {
                   attrs.put(otoroshi.plugins.Keys.ApiKeyRotationKey -> i)
                 }
                 callDownstream(config, Some(key), None)
-              case (false, _) => errorResult(TooManyRequests, "You performed too much requests", "errors.too.much.requests")
+              case (false, _) =>
+                errorResult(TooManyRequests, "You performed too much requests", "errors.too.much.requests")
             }
         }
       } else if (authBySimpleApiKeyClientId.isDefined && descriptor.apiKeyConstraints.clientIdAuth.enabled) {
@@ -836,17 +836,18 @@ object ApiKeyHelper {
             case Some(key) if !key.matchRouting(descriptor) =>
               errorResult(Unauthorized, "Invalid API key", "errors.bad.api.key")
             case Some(key)
-              if key.restrictions.enabled && key.restrictions
-                .isNotFound(req.method, req.theDomain, req.relativeUri) => {
+                if key.restrictions.enabled && key.restrictions
+                  .isNotFound(req.method, req.theDomain, req.relativeUri) => {
               errorResult(NotFound, "Not Found", "errors.not.found")
             }
             case Some(key)
-              if key.restrictions
-                .handleRestrictions(descriptor, Some(key), req, attrs)
-                ._1 => {
+                if key.restrictions
+                  .handleRestrictions(descriptor, Some(key), req, attrs)
+                  ._1 => {
               key.restrictions
                 .handleRestrictions(descriptor, Some(key), req, attrs)
-                ._2.map(v => Left(v))
+                ._2
+                .map(v => Left(v))
             }
             case Some(key) if key.allowClientIdOnly =>
               key.withinQuotasAndRotation().flatMap {
@@ -865,7 +866,7 @@ object ApiKeyHelper {
           .findAuthorizeKeyFor(clientId, descriptor.id)
           .flatMap {
             case None =>
-              errorResult(Unauthorized, "Invalid API key","errors.invalid.api.key")
+              errorResult(Unauthorized, "Invalid API key", "errors.invalid.api.key")
             case Some(key) if key.isInvalid(clientSecret) => {
               sendRevokedApiKeyAlert(key)
               errorResult(BadRequest, "Bad API key", "errors.bad.api.key")
@@ -873,12 +874,13 @@ object ApiKeyHelper {
             case Some(key) if !key.matchRouting(descriptor) =>
               errorResult(Unauthorized, "Bad API key", "errors.bad.api.key")
             case Some(key)
-              if key.restrictions
-                .handleRestrictions(descriptor, Some(key), req, attrs)
-                ._1 => {
+                if key.restrictions
+                  .handleRestrictions(descriptor, Some(key), req, attrs)
+                  ._1 => {
               key.restrictions
                 .handleRestrictions(descriptor, Some(key), req, attrs)
-                ._2.map(v => Left(v))
+                ._2
+                .map(v => Left(v))
             }
             case Some(key) if key.isValid(clientSecret) =>
               key.withinQuotasAndRotation().flatMap {
@@ -945,13 +947,12 @@ object ApiKeyHelper {
                         } else !(!xsrfToken.isNull && xsrfTokenHeader.isEmpty)
                       }
                       .filter { _ =>
-                        descriptor.apiKeyConstraints.jwtAuth.maxJwtLifespanSecs.map {
-                          maxJwtLifespanSecs =>
-                            if (exp.isEmpty || iat.isEmpty) {
-                              false
-                            } else {
-                              (exp.get - iat.get) <= maxJwtLifespanSecs
-                            }
+                        descriptor.apiKeyConstraints.jwtAuth.maxJwtLifespanSecs.map { maxJwtLifespanSecs =>
+                          if (exp.isEmpty || iat.isEmpty) {
+                            false
+                          } else {
+                            (exp.get - iat.get) <= maxJwtLifespanSecs
+                          }
                         } getOrElse {
                           true
                         }
@@ -972,18 +973,13 @@ object ApiKeyHelper {
                       case Success(_) if !apiKey.matchRouting(descriptor) =>
                         errorResult(Unauthorized, "Invalid API key", "errors.bad.api.key")
                       case Success(_)
-                        if apiKey.restrictions
-                          .handleRestrictions(descriptor,
-                            Some(apiKey),
-                            req,
-                            attrs)
-                          ._1 => {
+                          if apiKey.restrictions
+                            .handleRestrictions(descriptor, Some(apiKey), req, attrs)
+                            ._1 => {
                         apiKey.restrictions
-                          .handleRestrictions(descriptor,
-                            Some(apiKey),
-                            req,
-                            attrs)
-                          ._2.map(v => Left(v))
+                          .handleRestrictions(descriptor, Some(apiKey), req, attrs)
+                          ._2
+                          .map(v => Left(v))
                       }
                       case Success(_) =>
                         apiKey.withinQuotasAndRotation().flatMap {
@@ -1026,12 +1022,13 @@ object ApiKeyHelper {
                 case Some(key) if !key.matchRouting(descriptor) =>
                   errorResult(Unauthorized, "Invalid API key", "errors.bad.api.key")
                 case Some(key)
-                  if key.restrictions
-                    .handleRestrictions(descriptor, Some(key), req, attrs)
-                    ._1 => {
+                    if key.restrictions
+                      .handleRestrictions(descriptor, Some(key), req, attrs)
+                      ._1 => {
                   key.restrictions
                     .handleRestrictions(descriptor, Some(key), req, attrs)
-                    ._2.map(v => Left(v))
+                    ._2
+                    .map(v => Left(v))
                 }
                 case Some(key) if key.isValid(apiKeySecret) =>
                   key.withinQuotasAndRotation().flatMap {

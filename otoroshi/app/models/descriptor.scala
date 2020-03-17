@@ -890,7 +890,7 @@ sealed trait ThirdPartyApiKeyConfig {
       f: Option[ApiKey] => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
   def handleGen[A](req: RequestHeader, descriptor: ServiceDescriptor, config: GlobalConfig, attrs: TypedMap)(
-    f: Option[ApiKey] => Future[Either[Result, A]]
+      f: Option[ApiKey] => Future[Either[Result, A]]
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]]
 }
 
@@ -982,7 +982,7 @@ case class OIDCThirdPartyApiKeyConfig(
   }
 
   def handleGen[A](req: RequestHeader, descriptor: ServiceDescriptor, config: GlobalConfig, attrs: TypedMap)(
-    f: Option[ApiKey] => Future[Either[Result, A]]
+      f: Option[ApiKey] => Future[Either[Result, A]]
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
     handleInternal(req, descriptor, config, attrs)(f).map {
       case Left(badResult)   => Left[Result, A](badResult)
@@ -2672,7 +2672,10 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
   }
 
   @inline
-  def sortServices(services: Seq[ServiceDescriptor], query: ServiceDescriptorQuery, requestHeader: RequestHeader, attrs: TypedMap)(
+  def sortServices(services: Seq[ServiceDescriptor],
+                   query: ServiceDescriptorQuery,
+                   requestHeader: RequestHeader,
+                   attrs: TypedMap)(
       implicit ec: ExecutionContext,
       env: Env
   ): Future[Seq[ServiceDescriptor]] = {
@@ -2794,8 +2797,9 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
   }
 
   @inline
-  def matchApiKeyRouting(sr: ServiceDescriptor, requestHeader: RequestHeader, attrs: TypedMap)(implicit ec: ExecutionContext,
-                                                                              env: Env): Future[Boolean] = {
+  def matchApiKeyRouting(sr: ServiceDescriptor,
+                         requestHeader: RequestHeader,
+                         attrs: TypedMap)(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
 
     lazy val shouldSearchForAndApiKey =
       if (sr.isPrivate && sr.authConfigRef.isDefined && !sr.isExcludedFromSecurity(requestHeader.path)) {
@@ -2825,8 +2829,9 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
   }
 
   @inline
-  def rawFind(query: ServiceDescriptorQuery, requestHeader: RequestHeader, attrs: TypedMap)(implicit ec: ExecutionContext,
-                                                                           env: Env): Future[Seq[ServiceDescriptor]] = {
+  def rawFind(query: ServiceDescriptorQuery,
+              requestHeader: RequestHeader,
+              attrs: TypedMap)(implicit ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] = {
     ServiceDescriptorDataStore.logger.debug("Full scan of services, should not pass here anymore ...")
     findAll().flatMap { descriptors =>
       val validDescriptors = descriptors.filter { sr =>
@@ -2848,8 +2853,9 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
   }
 
   // TODO : prefill ServiceDescriptorQuery lookup set when crud service descriptors
-  def find(query: ServiceDescriptorQuery, requestHeader: RequestHeader, attrs: TypedMap)(implicit ec: ExecutionContext,
-                                                                        env: Env): Future[Option[ServiceDescriptor]] = {
+  def find(query: ServiceDescriptorQuery,
+           requestHeader: RequestHeader,
+           attrs: TypedMap)(implicit ec: ExecutionContext, env: Env): Future[Option[ServiceDescriptor]] = {
     val start = System.currentTimeMillis()
     query.exists().flatMap {
       case true => {
