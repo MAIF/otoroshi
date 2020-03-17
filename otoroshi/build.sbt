@@ -1,12 +1,7 @@
 name := """otoroshi"""
 organization := "fr.maif.otoroshi"
-<<<<<<< HEAD
-version := "1.4.22-dev"
-scalaVersion := "2.12.10"
-=======
 version := "1.4.23-dev"
-scalaVersion := "2.12.8"
->>>>>>> master
+scalaVersion := "2.12.10"
 
 lazy val root = (project in file("."))
   .enablePlugins(PlayScala, PlayAkkaHttp2Support)
@@ -73,7 +68,7 @@ scalacOptions ++= Seq(
   "-language:postfixOps"
 )
 
-resolvers += "bintray" at "http://jcenter.bintray.com"
+resolvers += "bintray" at "https://jcenter.bintray.com"
 
 PlayKeys.devSettings := Seq("play.server.http.port" -> "9999")
 
