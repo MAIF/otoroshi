@@ -535,6 +535,7 @@ class Env(val configuration: Configuration,
   }
 
   logger.info(s"Otoroshi version ${otoroshiVersion}")
+  logger.info(s"Scala version ${scala.util.Properties.versionNumberString}")
   logger.info(s"Admin API exposed on http://$adminApiExposedHost:$port")
   logger.info(s"Admin UI  exposed on http://$backOfficeHost:$port")
 
