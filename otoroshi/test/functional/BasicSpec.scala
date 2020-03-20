@@ -30,12 +30,6 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
     Configuration(
       ConfigFactory
         .parseString("{}")
-    /*s"""
-                        |{
-                        |  http.port=$port
-                        |  play.server.http.port=$port
-                        |}
-       """.stripMargin)*/
         .resolve()
     ).withFallback(configurationSpec).withFallback(configuration)
   }

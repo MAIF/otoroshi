@@ -26,8 +26,6 @@ class ApiKeysSpec(name: String, configurationSpec: => Configuration)
     ConfigFactory
       .parseString(s"""
                       |{
-                      |  http.port=$port
-                      |  play.server.http.port=$port
                       |}
        """.stripMargin)
       .resolve()

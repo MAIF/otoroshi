@@ -418,6 +418,9 @@ trait OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
       .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
       .post(Json.stringify(service.toJson))
       .map { resp =>
+        if (resp.status != 200) {
+          println("createOtoroshiService", resp.status, resp.body)
+        }
         (resp.json, resp.status)
       }
   }

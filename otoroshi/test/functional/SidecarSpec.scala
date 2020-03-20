@@ -35,8 +35,6 @@ class SidecarSpec(name: String, configurationSpec: => Configuration)
     ConfigFactory
       .parseString(s"""
                       |{
-                      |  http.port=$port
-                      |  play.server.http.port=$port
                       |  app.sidecar.serviceId = "sidecar-service1-test"
                       |  app.sidecar.target = "http://127.0.0.1:$fakePort"
                       |  app.sidecar.from = "127.0.0.1"

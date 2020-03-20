@@ -103,8 +103,6 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration)
     ConfigFactory
       .parseString(s"""
                       |{
-                      |  http.port=$port
-                      |  play.server.http.port=$port
                       |}
        """.stripMargin)
       .resolve()
@@ -550,8 +548,6 @@ class JWTVerificationRefSpec(name: String, configurationSpec: => Configuration)
     ConfigFactory
       .parseString(s"""
                       |{
-                      |  http.port=$port
-                      |  play.server.http.port=$port
                       |}
        """.stripMargin)
       .resolve()

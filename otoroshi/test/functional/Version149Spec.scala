@@ -35,8 +35,6 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
     ConfigFactory
       .parseString(s"""
            |{
-           |  http.port=$port
-           |  play.server.http.port=$port
            |  app.instance.region=eu-west-1
            |  app.instance.zone=dc1
            |}

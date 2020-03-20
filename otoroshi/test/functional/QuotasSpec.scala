@@ -26,8 +26,6 @@ class QuotasSpec(name: String, configurationSpec: => Configuration)
     ConfigFactory
       .parseString(s"""
                       |{
-                      |  http.port=$port
-                      |  play.server.http.port=$port
                       |  throttlingWindow = 2
                       |}
        """.stripMargin)
