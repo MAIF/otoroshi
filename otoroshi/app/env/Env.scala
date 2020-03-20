@@ -66,7 +66,8 @@ class Env(val configuration: Configuration,
           wsClient: WSClient,
           val circuitBeakersHolder: CircuitBreakersHolder,
           getHttpPort: => Option[Int],
-          getHttpsPort: => Option[Int])
+          getHttpsPort: => Option[Int],
+          testing: Boolean)
     extends HasMetrics {
 
   val logger = Logger("otoroshi-env")
@@ -538,8 +539,10 @@ class Env(val configuration: Configuration,
 
   logger.info(s"Otoroshi version ${otoroshiVersion}")
   // logger.info(s"Scala version ${scala.util.Properties.versionNumberString} / ${scala.tools.nsc.Properties.versionNumberString}")
-  logger.info(s"Admin API exposed on http://$adminApiExposedHost:$port")
-  logger.info(s"Admin UI  exposed on http://$backOfficeHost:$port")
+  if (!testing) {
+    logger.info(s"Admin API exposed on http://$adminApiExposedHost:$port")
+    logger.info(s"Admin UI  exposed on http://$backOfficeHost:$port")
+  }
 
   lazy val datastores: DataStores = {
     configuration.getOptional[String]("app.storage").getOrElse("redis") match {

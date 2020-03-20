@@ -26,13 +26,13 @@ class OtoroshiLoader extends ApplicationLoader {
     LoggerConfigurator(context.environment.classLoader).foreach {
       _.configure(context.environment, context.initialConfiguration, Map.empty)
     }
-    new OtoroshiComponentsInstances(context, None, None).application
+    new OtoroshiComponentsInstances(context, None, None, false).application
   }
 }
 
 package object modules {
 
-  class OtoroshiComponentsInstances(context: Context, getHttpPort: => Option[Int], getHttpsPort: => Option[Int])
+  class OtoroshiComponentsInstances(context: Context, getHttpPort: => Option[Int], getHttpsPort: => Option[Int], testing: Boolean)
       extends BuiltInComponentsFromContext(context)
       with AssetsComponents
       with HttpFiltersComponents
@@ -51,7 +51,8 @@ package object modules {
       wsClient = wsClient,
       circuitBeakersHolder = circuitBreakersHolder,
       getHttpPort = getHttpPort,
-      getHttpsPort = getHttpsPort
+      getHttpsPort = getHttpsPort,
+      testing = testing
     )
 
     lazy val reverseProxyAction: ReverseProxyAction = wire[ReverseProxyAction]

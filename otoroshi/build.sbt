@@ -47,7 +47,7 @@ libraryDependencies ++= Seq(
   "com.jayway.jsonpath"      % "json-path"                 % "2.4.0",
   "com.cronutils"            % "cron-utils"                % "9.0.2",
   "commons-lang"             % "commons-lang"              % "2.6",
-  "org.scalatestplus.play"   %% "scalatestplus-play"       % "5.0.0" % Test,
+  "org.scalatestplus.play"   %% "scalatestplus-play"       % "5.0.0s" % Test,
   // need to be updated, but later
   "org.scala-lang"           %  "scala-compiler"            % "2.12.11",
   "org.scala-lang"           %  "scala-library"             % "2.12.11",

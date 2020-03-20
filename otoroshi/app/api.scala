@@ -85,7 +85,8 @@ class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfi
     wsClient = wsClient,
     circuitBeakersHolder = circuitBreakersHolder,
     getHttpPort = None,
-    getHttpsPort = None
+    getHttpsPort = None,
+    testing = false
   )
 
   override lazy val httpFilters: Seq[EssentialFilter] = Seq()

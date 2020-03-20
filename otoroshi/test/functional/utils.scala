@@ -34,7 +34,7 @@ trait AddConfiguration {
 }
 
 class OtoroshiTestComponentsInstances(context: Context, conf: Configuration => Configuration, getHttpPort: => Option[Int], getHttpsPort: => Option[Int])
-    extends OtoroshiComponentsInstances(context, getHttpPort, getHttpsPort) {
+    extends OtoroshiComponentsInstances(context, getHttpPort, getHttpsPort, true) {
   override def configuration = conf(super.configuration)
 }
 
@@ -55,42 +55,21 @@ trait OneServerPerSuiteWithMyComponents
     otoroshiComponents.application
   }
 
-  private lazy val first = new AtomicBoolean(false)
-  private lazy val done = new AtomicBoolean(false)
   private lazy val theConfig = new AtomicReference[Configuration]()
-  private lazy val ctr = new AtomicInteger(1)
 
   final override def getConfiguration(configuration: Configuration) = {
-    println("getConfiguration")
-    // val count = ctr.incrementAndGet()
-    // if (count < 2 || theConfig.get() != null) { // !first.get()) {
-    //   if (!done.get()) {
-    //     first.compareAndSet(false, true)
-    //   }
-    //   println("getConfiguration 1")
-    //   if (theConfig.get() == null) {
-    //     theConfig.set(getTestConfiguration(configuration))
-    //   }
-    //   theConfig.get()
-    // } else {
-    //   println("getConfiguration 2")
-    //   new Throwable().printStackTrace()
-    //   first.compareAndSet(true, false)
-    //   done.compareAndSet(false, true)
-    //   configuration
-    // }
     if (theConfig.get() == null) {
       theConfig.set(getTestConfiguration(configuration))
-      theConfig.set(theConfig.get().withFallback(Configuration(
-        ConfigFactory
-          .parseString(s"""
-                         {
-                           http.port=$port
-                           play.server.http.port=$port
-                         }
-                       """)
-          .resolve()
-      )))
+      // theConfig.set(theConfig.get().withFallback(Configuration(
+      //   ConfigFactory
+      //     .parseString(s"""
+      //                    {
+      //                      http.port=$port
+      //                      play.server.http.port=$port
+      //                    }
+      //                  """)
+      //     .resolve()
+      // )))
     }
     theConfig.get()
   }
