@@ -14,13 +14,9 @@ import play.api.libs.json.Json
 import scala.concurrent.duration._
 
 class SnowMonkeySpec(name: String, configurationSpec: => Configuration)
-    extends PlaySpec
-    with OneServerPerSuiteWithMyComponents
-    with OtoroshiSpecHelper
-    with IntegrationPatience {
+    extends OtoroshiSpec {
 
   lazy val serviceHost = "monkey.oto.tools"
-  lazy val ws          = otoroshiComponents.wsClient
   implicit val mat     = otoroshiComponents.materializer
 
   override def getTestConfiguration(configuration: Configuration) = Configuration(
@@ -35,6 +31,7 @@ class SnowMonkeySpec(name: String, configurationSpec: => Configuration)
   s"[$name] Otoroshi Snow Monkey" should {
 
     "warm up" in {
+      startOtoroshi()
       getOtoroshiServices().futureValue // WARM UP
     }
 
@@ -245,6 +242,10 @@ class SnowMonkeySpec(name: String, configurationSpec: => Configuration)
       ).futureValue
       stopSnowMonkey().futureValue
       deleteOtoroshiService(initialDescriptor).futureValue
+    }
+
+    "shutdown" in {
+      stopAll()
     }
   }
 }

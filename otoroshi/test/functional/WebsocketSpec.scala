@@ -19,13 +19,9 @@ import scala.concurrent.Future
 import scala.concurrent.duration._
 
 class WebsocketSpec(name: String, configurationSpec: => Configuration)
-  extends PlaySpec
-    with OneServerPerSuiteWithMyComponents
-    with OtoroshiSpecHelper
-    with IntegrationPatience {
+  extends OtoroshiSpec {
 
   lazy val serviceHost = "websocket.oto.tools"
-  lazy val ws          = otoroshiComponents.wsClient
 
   override def getTestConfiguration(configuration: Configuration) = Configuration(
     ConfigFactory
@@ -39,6 +35,7 @@ class WebsocketSpec(name: String, configurationSpec: => Configuration)
   s"[$name] Otoroshi" should {
 
     "warm up" in {
+      startOtoroshi()
       getOtoroshiServices().futureValue // WARM UP
     }
 
@@ -110,6 +107,10 @@ class WebsocketSpec(name: String, configurationSpec: => Configuration)
       deleteOtoroshiService(service)
 
       system.terminate()
+    }
+
+    "shutdown" in {
+      stopAll()
     }
   }
 }

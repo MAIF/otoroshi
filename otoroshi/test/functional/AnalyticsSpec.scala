@@ -18,15 +18,11 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
 class AnalyticsSpec(name: String, configurationSpec: => Configuration)
-    extends PlaySpec
-    with OneServerPerSuiteWithMyComponents
-    with OtoroshiSpecHelper
-    with IntegrationPatience {
+    extends OtoroshiSpec {
 
   implicit val system = ActorSystem("otoroshi-test")
 
   lazy val serviceHost  = "api.oto.tools"
-  lazy val ws: WSClient = otoroshiComponents.wsClient
   lazy val elasticUrl   = "http://127.0.0.1:9200"
   lazy val analytics = new ElasticWritesAnalytics(
     ElasticAnalyticsConfig(
@@ -175,6 +171,10 @@ class AnalyticsSpec(name: String, configurationSpec: => Configuration)
       }
     }
 
+    "warm up" in {
+      startOtoroshi()
+    }
+
     "Global stats API" in {
       // runTest(None, 54)
     }
@@ -211,6 +211,10 @@ class AnalyticsSpec(name: String, configurationSpec: => Configuration)
         status2 mustBe 200
         resp2.as[Seq[JsValue]].length mustBe 0
       }
+    }
+
+    "shutdown" in {
+      stopAll()
     }
   }
 

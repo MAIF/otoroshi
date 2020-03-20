@@ -13,13 +13,9 @@ import play.api.libs.json.Json
 import scala.concurrent.duration._
 
 class AlertAndAnalyticsSpec(name: String, configurationSpec: => Configuration)
-    extends PlaySpec
-    with OneServerPerSuiteWithMyComponents
-    with OtoroshiSpecHelper
-    with IntegrationPatience {
+    extends OtoroshiSpec {
 
   lazy val serviceHost = "analytics.oto.tools"
-  lazy val ws          = otoroshiComponents.wsClient
   implicit val system  = ActorSystem("otoroshi-test")
 
   override def getTestConfiguration(configuration: Configuration) = Configuration(
@@ -35,6 +31,7 @@ class AlertAndAnalyticsSpec(name: String, configurationSpec: => Configuration)
   s"[$name] Otoroshi Alerts and Analytics module" should {
 
     "warm up" in {
+      startOtoroshi()
       getOtoroshiServices().futureValue // WARM UP
     }
 
@@ -123,6 +120,10 @@ class AlertAndAnalyticsSpec(name: String, configurationSpec: => Configuration)
 
     "stop servers" in {
       system.terminate()
+    }
+
+    "shutdown" in {
+      stopAll()
     }
   }
 }

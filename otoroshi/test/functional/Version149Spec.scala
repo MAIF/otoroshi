@@ -20,12 +20,8 @@ import scala.math.BigDecimal.RoundingMode
 import scala.util.Try
 
 class Version149Spec(name: String, configurationSpec: => Configuration)
-    extends PlaySpec
-    with OneServerPerSuiteWithMyComponents
-    with OtoroshiSpecHelper
-    with IntegrationPatience {
+    extends OtoroshiSpec {
 
-  implicit lazy val ws = otoroshiComponents.wsClient
   implicit val system  = ActorSystem("otoroshi-test")
   implicit val env     = otoroshiComponents.env
 
@@ -43,6 +39,8 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
   ).withFallback(configurationSpec).withFallback(configuration)
 
   s"[$name] Otoroshi service descriptors" should {
+
+    startOtoroshi()
 
     "warm up" in {
       getOtoroshiServices().futureValue // WARM UP
@@ -2164,5 +2162,9 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
       deleteOtoroshiApiKey(apikey2).futureValue
       stopServers()
     }
+  }
+
+  "shutdown" in {
+    stopAll()
   }
 }

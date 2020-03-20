@@ -12,13 +12,9 @@ import play.api.Configuration
 import scala.concurrent.duration._
 
 class CircuitBreakerSpec(name: String, configurationSpec: => Configuration)
-    extends PlaySpec
-    with OneServerPerSuiteWithMyComponents
-    with OtoroshiSpecHelper
-    with IntegrationPatience {
+    extends OtoroshiSpec {
 
   lazy val serviceHost = "cb.oto.tools"
-  lazy val ws          = otoroshiComponents.wsClient
   implicit val system  = ActorSystem("otoroshi-test")
 
   override def getTestConfiguration(configuration: Configuration) = Configuration(
@@ -53,6 +49,7 @@ class CircuitBreakerSpec(name: String, configurationSpec: => Configuration)
     }).await()
 
     "warm up" in {
+      startOtoroshi()
       getOtoroshiServices().futureValue // WARM UP
     }
 
@@ -304,6 +301,10 @@ class CircuitBreakerSpec(name: String, configurationSpec: => Configuration)
       basicTestServer2.stop()
       basicTestServer3.stop()
       system.terminate()
+    }
+
+    "shutdown" in {
+      stopAll()
     }
   }
 }

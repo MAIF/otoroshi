@@ -15,14 +15,10 @@ import play.api.libs.json.Json
 import play.core.server.ServerConfig
 
 class ProgrammaticApiSpec(name: String, configurationSpec: => Configuration)
-    extends PlaySpec
-    with OneServerPerSuiteWithMyComponents
-    with OtoroshiSpecHelper
-    with IntegrationPatience {
+    extends OtoroshiSpec {
 
   lazy val serviceHost  = "basictest.oto.tools"
   lazy val serviceHost2 = "basictest2.oto.tools"
-  lazy val ws           = otoroshiComponents.wsClient
 
   override def getTestConfiguration(configuration: Configuration) = Configuration(
     ConfigFactory

@@ -24,7 +24,7 @@ libraryDependencies ++= Seq(
   "io.dropwizard.metrics"    % "metrics-json"              % metricsVersion, // Apache 2.0
   "io.prometheus"            % "simpleclient_common"       % "0.8.1", // Apache 2.0
   "io.prometheus"            % "simpleclient_dropwizard"   % "0.8.1", // Apache 2.0
-  "com.auth0"                % "java-jwt"                  % "3.10.1",
+  "com.auth0"                % "java-jwt"                  % "3.4.0",
   "de.svenkubiak"            % "jBCrypt"                   % "0.4.1",
   "com.propensive"           %% "kaleidoscope"             % "0.1.0",
   "io.github.classgraph"     % "classgraph"                % "4.8.65",
@@ -47,7 +47,7 @@ libraryDependencies ++= Seq(
   "com.jayway.jsonpath"      % "json-path"                 % "2.4.0",
   "com.cronutils"            % "cron-utils"                % "9.0.2",
   "commons-lang"             % "commons-lang"              % "2.6",
-  "org.scalatestplus.play"   %% "scalatestplus-play"       % "5.0.0s" % Test,
+  "org.scalatestplus.play"   %% "scalatestplus-play"       % "5.0.0" % Test,
   // need to be updated, but later
   "org.scala-lang"           %  "scala-compiler"            % "2.12.11",
   "org.scala-lang"           %  "scala-library"             % "2.12.11",

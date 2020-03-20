@@ -91,13 +91,9 @@ object Implicit {
 }
 
 class JWTVerificationSpec(name: String, configurationSpec: => Configuration)
-    extends PlaySpec
-    with OneServerPerSuiteWithMyComponents
-    with OtoroshiSpecHelper
-    with IntegrationPatience {
+    extends OtoroshiSpec {
 
   lazy val serviceHost = "jwt.oto.tools"
-  lazy val ws          = otoroshiComponents.wsClient
 
   override def getTestConfiguration(configuration: Configuration) = Configuration(
     ConfigFactory
@@ -111,6 +107,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration)
   s"[$name] Otoroshi JWT Verifier" should {
 
     "warm up" in {
+      startOtoroshi()
       getOtoroshiServices().futureValue // WARM UP
     }
 
@@ -532,17 +529,17 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration)
 
       basicTestServer1.stop()
     }
+
+    "shutdown" in {
+      stopAll()
+    }
   }
 }
 
 class JWTVerificationRefSpec(name: String, configurationSpec: => Configuration)
-    extends PlaySpec
-    with OneServerPerSuiteWithMyComponents
-    with OtoroshiSpecHelper
-    with IntegrationPatience {
+    extends OtoroshiSpec {
 
   lazy val serviceHost = "jwtref.oto.tools"
-  lazy val ws          = otoroshiComponents.wsClient
 
   override def getTestConfiguration(configuration: Configuration) = Configuration(
     ConfigFactory
@@ -556,6 +553,7 @@ class JWTVerificationRefSpec(name: String, configurationSpec: => Configuration)
   s"[$name] Otoroshi JWT Verifier Ref" should {
 
     "warm up" in {
+      startOtoroshi()
       getOtoroshiServices().futureValue // WARM UP
     }
 
@@ -699,6 +697,10 @@ class JWTVerificationRefSpec(name: String, configurationSpec: => Configuration)
 
       basicTestServer1.stop()
 
+    }
+
+    "shutdown" in {
+      stopAll()
     }
   }
 }

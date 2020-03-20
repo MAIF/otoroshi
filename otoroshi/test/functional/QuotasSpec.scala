@@ -13,13 +13,9 @@ import play.api.Configuration
 import scala.concurrent.duration._
 
 class QuotasSpec(name: String, configurationSpec: => Configuration)
-    extends PlaySpec
-    with OneServerPerSuiteWithMyComponents
-    with OtoroshiSpecHelper
-    with IntegrationPatience {
+    extends OtoroshiSpec {
 
   lazy val serviceHost = "quotas.oto.tools"
-  lazy val ws          = otoroshiComponents.wsClient
   implicit val system  = ActorSystem("otoroshi-test")
 
   override def getTestConfiguration(configuration: Configuration) = Configuration(
@@ -87,6 +83,7 @@ class QuotasSpec(name: String, configurationSpec: => Configuration)
     val basicAuthMonthly    = Base64.getUrlEncoder.encodeToString(s"1-apikey-monthly:1234".getBytes)
 
     "warm up" in {
+      startOtoroshi()
       getOtoroshiServices().futureValue // WARM UP
       createOtoroshiService(service).futureValue
       createOtoroshiApiKey(apiKeyLowThrottlingQuota).futureValue
@@ -171,6 +168,10 @@ class QuotasSpec(name: String, configurationSpec: => Configuration)
     "stop servers" in {
       server.stop()
       system.terminate()
+    }
+
+    "shutdown" in {
+      stopAll()
     }
   }
 }

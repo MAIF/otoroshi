@@ -13,13 +13,9 @@ import org.scalatestplus.play.PlaySpec
 import play.api.Configuration
 
 class ApiKeysSpec(name: String, configurationSpec: => Configuration)
-    extends PlaySpec
-    with OneServerPerSuiteWithMyComponents
-    with OtoroshiSpecHelper
-    with IntegrationPatience {
+    extends OtoroshiSpec {
 
   lazy val serviceHost = "auth.oto.tools"
-  lazy val ws          = otoroshiComponents.wsClient
   implicit val system  = ActorSystem("otoroshi-test")
 
   override def getTestConfiguration(configuration: Configuration) = Configuration(
@@ -132,6 +128,7 @@ class ApiKeysSpec(name: String, configurationSpec: => Configuration)
       .sign(algorithm)
 
     "warm up" in {
+      startOtoroshi()
       getOtoroshiServices().futureValue // WARM UP
       createOtoroshiApiKey(apiKey).futureValue
       createOtoroshiApiKey(apiKey2).futureValue
@@ -408,6 +405,10 @@ class ApiKeysSpec(name: String, configurationSpec: => Configuration)
     "stop servers" in {
       basicTestServer1.stop()
       system.terminate()
+    }
+
+    "shutdown" in {
+      stopAll()
     }
   }
 }

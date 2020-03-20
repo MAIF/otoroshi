@@ -1,14 +1,119 @@
-package functional
+import java.util.concurrent.atomic.AtomicInteger
 
+import akka.actor.ActorSystem
+import akka.http.scaladsl.Http
+import akka.http.scaladsl.model.headers.Host
+import akka.http.scaladsl.model.ws.{Message, TextMessage, WebSocketRequest}
+import akka.stream.Materializer
+import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
+import akka.{Done, NotUsed}
 import com.typesafe.config.ConfigFactory
+import functional.OtoroshiSpec
 import models._
-import org.scalatest.concurrent.IntegrationPatience
-import org.scalatestplus.play.PlaySpec
 import play.api.Configuration
-import play.api.libs.json.{JsArray, JsSuccess, Json, Reads}
+import play.api.libs.json.{Json, Reads}
 
-class AdminApiSpec(name: String, configurationSpec: => Configuration)
-    extends OtoroshiSpec {
+import scala.concurrent.Future
+import scala.concurrent.duration._
+
+class ExperimentalSpec1(val name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
+
+  lazy val serviceHost = "websocket.oto.tools"
+
+  override def getTestConfiguration(configuration: Configuration) = Configuration(
+    ConfigFactory
+      .parseString(s"""
+                      |{
+                      |}
+       """.stripMargin)
+      .resolve()
+  ).withFallback(configurationSpec).withFallback(configuration)
+
+  s"[$name] Otoroshi" should {
+
+    implicit val system = ActorSystem("otoroshi-test")
+    implicit val mat    = Materializer(system)
+    implicit val http   = Http()(system)
+
+    "warm up" in {
+      startOtoroshi()
+      getOtoroshiServices().futureValue // WARM UP
+    }
+
+    "support websockets" in {
+
+      val service = ServiceDescriptor(
+        id = "ws-test",
+        name = "ws-test",
+        env = "prod",
+        subdomain = "ws",
+        domain = "oto.tools",
+        targets = Seq(
+          Target(
+            host = s"echo.websocket.org",
+            scheme = "https"
+          )
+        ),
+        forceHttps = false,
+        enforceSecureCommunication = false,
+        publicPatterns = Seq("/.*")
+      )
+
+      val clientCounter = new AtomicInteger(0)
+
+      createOtoroshiService(service).futureValue
+
+      val printSink: Sink[Message, Future[Done]] = Sink.foreach { message =>
+        clientCounter.incrementAndGet()
+        println("client received: " + message.asScala.asTextMessage.getStrictText)
+      }
+
+      val names = List(
+        TextMessage("mathieu"),
+        TextMessage("alex"),
+        TextMessage("chris"),
+        TextMessage("francois"),
+        TextMessage("aurelie"),
+        TextMessage("loic"),
+        TextMessage("pierre"),
+        TextMessage("emmanuel"),
+        TextMessage("frederic")
+      )
+
+      val nameSource: Source[Message, NotUsed] =
+        Source
+          .future(awaitF(1.second).map(_ => TextMessage("yo")))
+          .concat(
+            Source.tick(1.second, 300.millis, ()).take(names.size).zipWith(Source(names))((_, b) => b)
+          )
+
+      http.singleWebSocketRequest(
+        WebSocketRequest(s"ws://127.0.0.1:$port")
+          .copy(extraHeaders = List(Host("ws.oto.tools"))),
+        Flow
+          .fromSinkAndSourceMat(printSink, nameSource)(Keep.both)
+          .alsoTo(Sink.onComplete { _ =>
+            println(s"[WEBSOCKET] client flow stopped")
+          })
+      )
+
+      awaitF(10.seconds).futureValue
+
+      clientCounter.get mustBe 9
+
+      deleteOtoroshiService(service)
+    }
+
+    "stop otoroshi" in {
+      system.terminate()
+      stopAll()
+    }
+  }
+}
+
+
+class ExperimentalSpec2(name: String, configurationSpec: => Configuration)
+  extends OtoroshiSpec {
 
   lazy val serviceHost = "api.oto.tools"
 
@@ -66,25 +171,25 @@ class AdminApiSpec(name: String, configurationSpec: => Configuration)
       enabled = true,
       metadata = Map.empty,
       chaosConfig = ChaosConfig._fmt.reads(Json.parse("""{
-          |  "enabled" : false,
-          |  "largeRequestFaultConfig" : {
-          |    "ratio" : 0.2,
-          |    "additionalRequestSize" : 0
-          |  },
-          |  "largeResponseFaultConfig" : {
-          |    "ratio" : 0.2,
-          |    "additionalResponseSize" : 0
-          |  },
-          |  "latencyInjectionFaultConfig" : {
-          |    "ratio" : 0.2,
-          |    "from" : 0,
-          |    "to" : 0
-          |  },
-          |  "badResponsesFaultConfig" : {
-          |    "ratio" : 0.2,
-          |    "responses" : [ ]
-          |  }
-          |}""".stripMargin)).get
+                                                        |  "enabled" : false,
+                                                        |  "largeRequestFaultConfig" : {
+                                                        |    "ratio" : 0.2,
+                                                        |    "additionalRequestSize" : 0
+                                                        |  },
+                                                        |  "largeResponseFaultConfig" : {
+                                                        |    "ratio" : 0.2,
+                                                        |    "additionalResponseSize" : 0
+                                                        |  },
+                                                        |  "latencyInjectionFaultConfig" : {
+                                                        |    "ratio" : 0.2,
+                                                        |    "from" : 0,
+                                                        |    "to" : 0
+                                                        |  },
+                                                        |  "badResponsesFaultConfig" : {
+                                                        |    "ratio" : 0.2,
+                                                        |    "responses" : [ ]
+                                                        |  }
+                                                        |}""".stripMargin)).get
     )
 
     "warm up" in {
@@ -118,8 +223,8 @@ class AdminApiSpec(name: String, configurationSpec: => Configuration)
         val (_, status3) =
           otoroshiApiCall("POST", s"/api/groups/${testGroup.id}/apikeys", Some(testApiKey.toJson)).futureValue
         val (_, status4) = otoroshiApiCall("POST",
-                                           s"/api/services/${testServiceDescriptor.id}/apikeys",
-                                           Some(testApiKey2.toJson)).futureValue
+          s"/api/services/${testServiceDescriptor.id}/apikeys",
+          Some(testApiKey2.toJson)).futureValue
 
         status1 mustBe 200
         status2 mustBe 200
@@ -219,14 +324,14 @@ class AdminApiSpec(name: String, configurationSpec: => Configuration)
         status1 mustBe 200
         ServiceDescriptor.fromJsons(res1).name mustBe testServiceDescriptor.name
         otoroshiApiCall("PUT",
-                        s"/api/services/${testServiceDescriptor.id}",
-                        Some(testServiceDescriptor.copy(name = "foo").toJson)).futureValue
+          s"/api/services/${testServiceDescriptor.id}",
+          Some(testServiceDescriptor.copy(name = "foo").toJson)).futureValue
         val (res2, status2) = otoroshiApiCall("GET", s"/api/services/${testServiceDescriptor.id}").futureValue
         status2 mustBe 200
         ServiceDescriptor.fromJsons(res2).name mustBe "foo"
         otoroshiApiCall("PATCH",
-                        s"/api/services/${testServiceDescriptor.id}",
-                        Some(Json.arr(Json.obj("op" -> "replace", "path" -> "/name", "value" -> "bar")))).futureValue
+          s"/api/services/${testServiceDescriptor.id}",
+          Some(Json.arr(Json.obj("op" -> "replace", "path" -> "/name", "value" -> "bar")))).futureValue
         val (res3, status3) = otoroshiApiCall("GET", s"/api/services/${testServiceDescriptor.id}").futureValue
         status3 mustBe 200
         ServiceDescriptor.fromJsons(res3).name mustBe "bar"
@@ -240,8 +345,8 @@ class AdminApiSpec(name: String, configurationSpec: => Configuration)
         status1 mustBe 200
         ApiKey.fromJsons(res1).clientName mustBe testApiKey.clientName
         otoroshiApiCall("PUT",
-                        s"/api/services/${testServiceDescriptor.id}/apikeys/${testApiKey.clientId}",
-                        Some(testApiKey.copy(clientName = "foo").toJson)).futureValue
+          s"/api/services/${testServiceDescriptor.id}/apikeys/${testApiKey.clientId}",
+          Some(testApiKey.copy(clientName = "foo").toJson)).futureValue
         val (res2, status2) = otoroshiApiCall(
           "GET",
           s"/api/services/${testServiceDescriptor.id}/apikeys/${testApiKey.clientId}"
@@ -267,8 +372,8 @@ class AdminApiSpec(name: String, configurationSpec: => Configuration)
         status1 mustBe 200
         ApiKey.fromJsons(res1).clientName mustBe testApiKey2.clientName
         otoroshiApiCall("PUT",
-                        s"/api/groups/${testGroup.id}/apikeys/${testApiKey2.clientId}",
-                        Some(testApiKey2.copy(clientName = "foo").toJson)).futureValue
+          s"/api/groups/${testGroup.id}/apikeys/${testApiKey2.clientId}",
+          Some(testApiKey2.copy(clientName = "foo").toJson)).futureValue
         val (res2, status2) =
           otoroshiApiCall("GET", s"/api/groups/${testGroup.id}/apikeys/${testApiKey2.clientId}").futureValue
         status2 mustBe 200
@@ -307,7 +412,6 @@ class AdminApiSpec(name: String, configurationSpec: => Configuration)
         status4 mustBe 404
       }
     }
-
 
     "shutdown" in {
       stopAll()

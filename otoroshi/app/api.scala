@@ -56,11 +56,9 @@ class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfi
     //   ConfigFactory.parseString(httpConfig + sslConfig)
     // )
 
-    val c = Configuration(
+    Configuration(
       ConfigFactory.parseString(httpConfig + sslConfig)
     ).withFallback(Configuration(_configuration)).withFallback(Configuration(ConfigFactory.load()))
-    println(c.getOptional[Seq[String]]("play.filters.enabled"))
-    c
   }
 
   LoggerConfigurator(environment.classLoader).foreach {

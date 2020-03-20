@@ -23,12 +23,8 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 class Version1413Spec(name: String, configurationSpec: => Configuration)
-    extends PlaySpec
-    with OneServerPerSuiteWithMyComponents
-    with OtoroshiSpecHelper
-    with IntegrationPatience {
+    extends OtoroshiSpec {
 
-  implicit lazy val ws = otoroshiComponents.wsClient
   implicit val system  = ActorSystem("otoroshi-test")
   implicit val env     = otoroshiComponents.env
 
@@ -44,6 +40,7 @@ class Version1413Spec(name: String, configurationSpec: => Configuration)
   s"[$name] Otoroshi service descriptors" should {
 
     "warm up" in {
+      startOtoroshi()
       getOtoroshiServices().futureValue // WARM UP
     }
 
@@ -503,6 +500,10 @@ class Version1413Spec(name: String, configurationSpec: => Configuration)
       deleteOtoroshiService(service2).futureValue
 
       stopServers()
+    }
+
+    "shutdown" in {
+      stopAll()
     }
   }
 }

@@ -18,13 +18,9 @@ import security.IdGenerator
 import scala.util.{Failure, Try}
 
 class BasicSpec(name: String, configurationSpec: => Configuration)
-    extends PlaySpec
-    with OneServerPerSuiteWithMyComponents
-    with OtoroshiSpecHelper
-    with IntegrationPatience {
+    extends OtoroshiSpec {
 
   lazy val serviceHost = "basictest.oto.tools"
-  lazy val ws          = otoroshiComponents.wsClient
 
   override def getTestConfiguration(configuration: Configuration) = {
     Configuration(
@@ -61,6 +57,7 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
     )
 
     "warm up" in {
+      startOtoroshi()
       getOtoroshiServices().andThen {
         case Failure(e) => e.printStackTrace()
       }.futureValue // WARM UP
@@ -1271,6 +1268,10 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
     "stop servers" in {
       deleteOtoroshiService(initialDescriptor).futureValue
       basicTestServer.stop()
+    }
+
+    "shutdown" in {
+      stopAll()
     }
   }
 }
