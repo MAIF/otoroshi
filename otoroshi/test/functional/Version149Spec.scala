@@ -38,9 +38,9 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
       .resolve()
   ).withFallback(configurationSpec).withFallback(configuration)
 
-  s"[$name] Otoroshi service descriptors" should {
+  startOtoroshi()
 
-    startOtoroshi()
+  s"[$name] Otoroshi service descriptors" should {
 
     "warm up" in {
       getOtoroshiServices().futureValue // WARM UP

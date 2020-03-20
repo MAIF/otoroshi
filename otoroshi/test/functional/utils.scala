@@ -806,7 +806,8 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
       address = "0.0.0.0",
       port = Some(httpPort),
       rootDir = Files.createTempDirectory("otoroshi-test-helper").toFile
-    )
+    ),
+    getTestConfiguration(Configuration.empty).underlying
   ).startAndStopOnShutdown()
 
   private var _servers: Set[TargetService] = Set.empty
