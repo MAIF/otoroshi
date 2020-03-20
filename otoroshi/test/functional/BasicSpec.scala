@@ -1,7 +1,7 @@
 package functional
 
 import java.util.Date
-import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
 
 import akka.http.scaladsl.model.headers.RawHeader
 import com.auth0.jwt.JWT
@@ -26,16 +26,19 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
   lazy val serviceHost = "basictest.oto.tools"
   lazy val ws          = otoroshiComponents.wsClient
 
-  override def getConfiguration(configuration: Configuration) = configuration ++ configurationSpec ++ Configuration(
-    ConfigFactory
-      .parseString(s"""
-         |{
-         |  http.port=$port
-         |  play.server.http.port=$port
-         |}
-       """.stripMargin)
-      .resolve()
-  )
+  override def getTestConfiguration(configuration: Configuration) = {
+    Configuration(
+      ConfigFactory
+        .parseString("{}")
+    /*s"""
+                        |{
+                        |  http.port=$port
+                        |  play.server.http.port=$port
+                        |}
+       """.stripMargin)*/
+        .resolve()
+    ).withFallback(configurationSpec).withFallback(configuration)
+  }
 
   s"[$name] Otoroshi" should {
 

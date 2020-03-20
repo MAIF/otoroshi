@@ -16,7 +16,7 @@ class AdminApiSpec(name: String, configurationSpec: => Configuration)
   lazy val serviceHost = "api.oto.tools"
   lazy val ws          = otoroshiComponents.wsClient
 
-  override def getConfiguration(configuration: Configuration) = configuration ++ configurationSpec ++ Configuration(
+  override def getTestConfiguration(configuration: Configuration) = Configuration(
     ConfigFactory
       .parseString(s"""
                       |{
@@ -25,7 +25,7 @@ class AdminApiSpec(name: String, configurationSpec: => Configuration)
                       |}
        """.stripMargin)
       .resolve()
-  )
+  ).withFallback(configurationSpec).withFallback(configuration)
 
   s"[$name] Otoroshi admin API" should {
 

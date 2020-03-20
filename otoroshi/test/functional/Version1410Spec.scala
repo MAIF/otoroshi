@@ -31,7 +31,7 @@ class Version1410Spec(name: String, configurationSpec: => Configuration)
 
   import scala.concurrent.duration._
 
-  override def getConfiguration(configuration: Configuration) = configuration ++ configurationSpec ++ Configuration(
+  override def getTestConfiguration(configuration: Configuration) = Configuration(
     ConfigFactory
       .parseString(s"""
                       |{
@@ -40,7 +40,7 @@ class Version1410Spec(name: String, configurationSpec: => Configuration)
                       |}
        """.stripMargin)
       .resolve()
-  )
+  ).withFallback(configurationSpec).withFallback(configuration)
 
   s"[$name] Otoroshi service descriptors" should {
 

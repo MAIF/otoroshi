@@ -64,7 +64,9 @@ class Env(val configuration: Configuration,
           val environment: Environment,
           val lifecycle: ApplicationLifecycle,
           wsClient: WSClient,
-          val circuitBeakersHolder: CircuitBreakersHolder)
+          val circuitBeakersHolder: CircuitBreakersHolder,
+          getHttpPort: => Option[Int],
+          getHttpsPort: => Option[Int])
     extends HasMetrics {
 
   val logger = Logger("otoroshi-env")
@@ -624,17 +626,19 @@ class Env(val configuration: Configuration,
     // FastFuture.successful(())
   })
 
-  lazy val port =
+  lazy val port = getHttpPort.getOrElse(
     configuration
       .getOptional[Int]("play.server.http.port")
       .orElse(configuration.getOptional[Int]("http.port"))
       .getOrElse(9999)
+  )
 
-  lazy val httpsPort =
+  lazy val httpsPort = getHttpsPort.getOrElse(
     configuration
       .getOptional[Int]("play.server.https.port")
       .orElse(configuration.getOptional[Int]("https.port"))
       .getOrElse(9998)
+  )
 
   lazy val defaultConfig = GlobalConfig(
     perIpThrottlingQuota = 500,

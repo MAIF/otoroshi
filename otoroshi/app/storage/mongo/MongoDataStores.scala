@@ -61,6 +61,7 @@ class MongoDataStores(configuration: Configuration, environment: Environment, li
 
   override def before(configuration: Configuration, environment: Environment, lifecycle: ApplicationLifecycle) = {
     logger.info(s"Now using Mongo DataStores dbName:$dbName, uri:$parsedUri")
+    logger.warn(s"Mongo DataStores is deprecated and will be removed in a future release")
     redis.start()
     if (configuration.getOptional[Boolean]("app.mongo.testMode").getOrElse(false)) {
       logger.warn("Flushing DB as in test mode")

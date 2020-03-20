@@ -151,5 +151,5 @@ class OtoroshiTests extends Suites(OtoroshiTests.getSuites(): _*) with BeforeAnd
 
 class DevOtoroshiTests
     extends Suites(
-      new WebsocketSpec("DEV", Configurations.InMemoryConfiguration),
+      new BasicSpec("DEV", Configurations.InMemoryConfiguration),
     )

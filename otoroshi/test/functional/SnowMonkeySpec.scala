@@ -23,7 +23,7 @@ class SnowMonkeySpec(name: String, configurationSpec: => Configuration)
   lazy val ws          = otoroshiComponents.wsClient
   implicit val mat     = otoroshiComponents.materializer
 
-  override def getConfiguration(configuration: Configuration) = configuration ++ configurationSpec ++ Configuration(
+  override def getTestConfiguration(configuration: Configuration) = Configuration(
     ConfigFactory
       .parseString(s"""
                       |{
@@ -32,7 +32,7 @@ class SnowMonkeySpec(name: String, configurationSpec: => Configuration)
                       |}
        """.stripMargin)
       .resolve()
-  )
+  ).withFallback(configurationSpec).withFallback(configuration)
 
   s"[$name] Otoroshi Snow Monkey" should {
 

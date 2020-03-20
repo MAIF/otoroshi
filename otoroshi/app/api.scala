@@ -78,7 +78,15 @@ class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfi
 
   lazy val circuitBreakersHolder: CircuitBreakersHolder = wire[CircuitBreakersHolder]
 
-  implicit lazy val env: Env = wire[Env]
+  implicit lazy val env: Env = new Env(
+    configuration = configuration,
+    environment = environment,
+    lifecycle = applicationLifecycle,
+    wsClient = wsClient,
+    circuitBeakersHolder = circuitBreakersHolder,
+    getHttpPort = None,
+    getHttpsPort = None
+  )
 
   override lazy val httpFilters: Seq[EssentialFilter] = Seq()
 

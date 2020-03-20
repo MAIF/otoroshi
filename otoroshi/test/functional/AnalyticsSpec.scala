@@ -39,7 +39,7 @@ class AnalyticsSpec(name: String, configurationSpec: => Configuration)
     otoroshiComponents.env
   )
 
-  override def getConfiguration(configuration: Configuration) = configuration ++ configurationSpec ++ Configuration(
+  override def getTestConfiguration(configuration: Configuration) = Configuration(
     ConfigFactory
       .parseString(s"""
                       |{
@@ -49,7 +49,7 @@ class AnalyticsSpec(name: String, configurationSpec: => Configuration)
                       |}
        """.stripMargin)
       .resolve()
-  )
+  ).withFallback(configurationSpec).withFallback(configuration)
 
   s"Analytics API" should {
 

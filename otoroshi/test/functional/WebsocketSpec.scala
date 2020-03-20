@@ -7,7 +7,7 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.headers.Host
 import akka.http.scaladsl.model.ws.{Message, TextMessage, WebSocketRequest}
-import akka.stream.ActorMaterializer
+import akka.stream.{ActorMaterializer, Materializer}
 import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
 import com.typesafe.config.ConfigFactory
 import models.{ServiceDescriptor, Target}
@@ -27,7 +27,7 @@ class WebsocketSpec(name: String, configurationSpec: => Configuration)
   lazy val serviceHost = "websocket.oto.tools"
   lazy val ws          = otoroshiComponents.wsClient
 
-  override def getConfiguration(configuration: Configuration) = configuration ++ configurationSpec ++ Configuration(
+  override def getTestConfiguration(configuration: Configuration) = Configuration(
     ConfigFactory
       .parseString(s"""
                       |{
@@ -36,7 +36,7 @@ class WebsocketSpec(name: String, configurationSpec: => Configuration)
                       |}
        """.stripMargin)
       .resolve()
-  )
+  ).withFallback(configurationSpec).withFallback(configuration)
 
   s"[$name] Otoroshi" should {
 
@@ -47,7 +47,7 @@ class WebsocketSpec(name: String, configurationSpec: => Configuration)
     "support websockets" in {
 
       implicit val system = ActorSystem("otoroshi-test")
-      implicit val mat    = ActorMaterializer.create(system)
+      implicit val mat    = Materializer(system)
       implicit val http   = Http()(system)
 
       val service = ServiceDescriptor(

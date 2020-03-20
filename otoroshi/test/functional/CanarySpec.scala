@@ -17,7 +17,7 @@ class CanarySpec(name: String, configurationSpec: => Configuration)
   lazy val serviceHost = "canary.oto.tools"
   lazy val ws          = otoroshiComponents.wsClient
 
-  override def getConfiguration(configuration: Configuration) = configuration ++ configurationSpec ++ Configuration(
+  override def getTestConfiguration(configuration: Configuration) = Configuration(
     ConfigFactory
       .parseString(s"""
                       |{
@@ -26,7 +26,7 @@ class CanarySpec(name: String, configurationSpec: => Configuration)
                       |}
        """.stripMargin)
       .resolve()
-  )
+  ).withFallback(configurationSpec).withFallback(configuration)
 
   s"[$name] Otoroshi Canary Mode" should {
 

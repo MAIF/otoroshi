@@ -99,7 +99,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration)
   lazy val serviceHost = "jwt.oto.tools"
   lazy val ws          = otoroshiComponents.wsClient
 
-  override def getConfiguration(configuration: Configuration) = configuration ++ configurationSpec ++ Configuration(
+  override def getTestConfiguration(configuration: Configuration) = Configuration(
     ConfigFactory
       .parseString(s"""
                       |{
@@ -108,7 +108,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration)
                       |}
        """.stripMargin)
       .resolve()
-  )
+  ).withFallback(configurationSpec).withFallback(configuration)
 
   s"[$name] Otoroshi JWT Verifier" should {
 
@@ -546,7 +546,7 @@ class JWTVerificationRefSpec(name: String, configurationSpec: => Configuration)
   lazy val serviceHost = "jwtref.oto.tools"
   lazy val ws          = otoroshiComponents.wsClient
 
-  override def getConfiguration(configuration: Configuration) = configuration ++ configurationSpec ++ Configuration(
+  override def getTestConfiguration(configuration: Configuration) = Configuration(
     ConfigFactory
       .parseString(s"""
                       |{
@@ -555,7 +555,7 @@ class JWTVerificationRefSpec(name: String, configurationSpec: => Configuration)
                       |}
        """.stripMargin)
       .resolve()
-  )
+  ).withFallback(configurationSpec).withFallback(configuration)
 
   s"[$name] Otoroshi JWT Verifier Ref" should {
 

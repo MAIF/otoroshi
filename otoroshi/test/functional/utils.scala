@@ -2,7 +2,7 @@ package functional
 
 import java.net.ServerSocket
 import java.util.Optional
-import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, AtomicReference}
 
 import akka.NotUsed
 import akka.actor.ActorSystem
@@ -10,9 +10,10 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.ws.{Message, TextMessage, UpgradeToWebSocket}
 import akka.http.scaladsl.util.FastFuture
-import akka.stream.ActorMaterializer
+import akka.stream.{ActorMaterializer, Materializer}
 import akka.stream.scaladsl.{Flow, Source}
 import akka.util.ByteString
+import com.typesafe.config.ConfigFactory
 import models._
 import modules.OtoroshiComponentsInstances
 import org.scalatest.TestSuite
@@ -22,7 +23,7 @@ import org.slf4j.LoggerFactory
 import play.api.ApplicationLoader.Context
 import play.api.libs.json._
 import play.api.libs.ws._
-import play.api.{BuiltInComponents, Configuration, Logger}
+import play.api.{Application, BuiltInComponents, Configuration, Logger}
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future, Promise}
@@ -32,8 +33,8 @@ trait AddConfiguration {
   def getConfiguration(configuration: Configuration): Configuration
 }
 
-class OtoroshiTestComponentsInstances(context: Context, conf: Configuration => Configuration)
-    extends OtoroshiComponentsInstances(context) {
+class OtoroshiTestComponentsInstances(context: Context, conf: Configuration => Configuration, getHttpPort: => Option[Int], getHttpsPort: => Option[Int])
+    extends OtoroshiComponentsInstances(context, getHttpPort, getHttpsPort) {
   override def configuration = conf(super.configuration)
 }
 
@@ -42,20 +43,66 @@ trait OneServerPerSuiteWithMyComponents
     with ScalaFutures
     with AddConfiguration { this: TestSuite =>
 
-  val otoroshiComponents = {
-    val components = new OtoroshiTestComponentsInstances(context, getConfiguration)
-    println(s"Using env ${components.env}") // WARNING: important to keep, needed to switch env between suites
-    components
+  lazy val otoroshiComponents = {
+    val cpts = new OtoroshiTestComponentsInstances(context, getConfiguration, Some(port), Some(port + 1))
+    println(s"Using env ${cpts.env}") // WARNING: important to keep, needed to switch env between suites
+    cpts
   }
 
   override def components: BuiltInComponents = otoroshiComponents
+
+  override def fakeApplication(): Application = {
+    otoroshiComponents.application
+  }
+
+  private lazy val first = new AtomicBoolean(false)
+  private lazy val done = new AtomicBoolean(false)
+  private lazy val theConfig = new AtomicReference[Configuration]()
+  private lazy val ctr = new AtomicInteger(1)
+
+  final override def getConfiguration(configuration: Configuration) = {
+    println("getConfiguration")
+    // val count = ctr.incrementAndGet()
+    // if (count < 2 || theConfig.get() != null) { // !first.get()) {
+    //   if (!done.get()) {
+    //     first.compareAndSet(false, true)
+    //   }
+    //   println("getConfiguration 1")
+    //   if (theConfig.get() == null) {
+    //     theConfig.set(getTestConfiguration(configuration))
+    //   }
+    //   theConfig.get()
+    // } else {
+    //   println("getConfiguration 2")
+    //   new Throwable().printStackTrace()
+    //   first.compareAndSet(true, false)
+    //   done.compareAndSet(false, true)
+    //   configuration
+    // }
+    if (theConfig.get() == null) {
+      theConfig.set(getTestConfiguration(configuration))
+      theConfig.set(theConfig.get().withFallback(Configuration(
+        ConfigFactory
+          .parseString(s"""
+                         {
+                           http.port=$port
+                           play.server.http.port=$port
+                         }
+                       """)
+          .resolve()
+      )))
+    }
+    theConfig.get()
+  }
+
+  def getTestConfiguration(configuration: Configuration): Configuration
 }
 
 trait OneServerPerTestWithMyComponents extends OneServerPerTestWithComponents with ScalaFutures with AddConfiguration {
   this: TestSuite =>
 
   val otoroshiComponents = {
-    val components = new OtoroshiTestComponentsInstances(context, getConfiguration)
+    val components = new OtoroshiTestComponentsInstances(context, getConfiguration, Some(port), Some(port + 1))
     println(s"Using env ${components.env}") // WARNING: important to keep, needed to switch env between suites
     components
   }
@@ -96,7 +143,7 @@ trait OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
             val tail = body.tail
             Source
               .single(ByteString(head))
-              .concat(Source.fromFuture(awaitF(streamDelay)(otoroshiComponents.actorSystem).map(_ => ByteString(tail))))
+              .concat(Source.future(awaitF(streamDelay)(otoroshiComponents.actorSystem).map(_ => ByteString(tail))))
           } else {
             Source(List(ByteString(body)))
           }
@@ -139,7 +186,7 @@ trait OtoroshiSpecHelper { suite: OneServerPerSuiteWithMyComponents =>
             val tail = body.tail
             Source
               .single(ByteString(head))
-              .concat(Source.fromFuture(awaitF(streamDelay)(otoroshiComponents.actorSystem).map(_ => ByteString(tail))))
+              .concat(Source.future(awaitF(streamDelay)(otoroshiComponents.actorSystem).map(_ => ByteString(tail))))
           } else {
             Source(List(ByteString(body)))
           }
@@ -529,7 +576,7 @@ class TargetService(val port: Int,
 
   implicit val system = ActorSystem()
   implicit val ec     = system.dispatcher
-  implicit val mat    = ActorMaterializer.create(system)
+  implicit val mat    = Materializer(system)
   implicit val http   = Http(system)
 
   val logger = LoggerFactory.getLogger("otoroshi-test")
@@ -628,7 +675,7 @@ class SimpleTargetService(host: Option[String], path: String, contentType: Strin
 
   implicit val system = ActorSystem()
   implicit val ec     = system.dispatcher
-  implicit val mat    = ActorMaterializer.create(system)
+  implicit val mat    = Materializer(system)
   implicit val http   = Http(system)
 
   val logger = LoggerFactory.getLogger("otoroshi-test")
@@ -667,7 +714,7 @@ class AlertServer(counter: AtomicInteger) {
 
   implicit val system = ActorSystem()
   implicit val ec     = system.dispatcher
-  implicit val mat    = ActorMaterializer.create(system)
+  implicit val mat    = Materializer(system)
   implicit val http   = Http(system)
 
   val logger = LoggerFactory.getLogger("otoroshi-test")
@@ -703,7 +750,7 @@ class AnalyticsServer(counter: AtomicInteger) {
 
   implicit val system = ActorSystem()
   implicit val ec     = system.dispatcher
-  implicit val mat    = ActorMaterializer.create(system)
+  implicit val mat    = Materializer(system)
   implicit val http   = Http(system)
 
   val logger = LoggerFactory.getLogger("otoroshi-test")
@@ -741,7 +788,7 @@ class WebsocketServer(counter: AtomicInteger) {
 
   implicit val system = ActorSystem()
   implicit val ec     = system.dispatcher
-  implicit val mat    = ActorMaterializer.create(system)
+  implicit val mat    = Materializer(system)
   implicit val http   = Http(system)
 
   val logger = LoggerFactory.getLogger("otoroshi-test")
@@ -838,7 +885,7 @@ class BodySizeService() {
 
   implicit val system = ActorSystem()
   implicit val ec     = system.dispatcher
-  implicit val mat    = ActorMaterializer.create(system)
+  implicit val mat    = Materializer(system)
   implicit val http   = Http(system)
 
   val logger = LoggerFactory.getLogger("otoroshi-test")

@@ -50,6 +50,7 @@ class LevelDbDataStores(configuration: Configuration,
                       environment: Environment,
                       lifecycle: ApplicationLifecycle): Future[Unit] = {
     logger.info("Now using LevelDB DataStores")
+    logger.warn(s"LevelDB DataStores is deprecated and will be removed in a future release")
     redis.start()
     _serviceDescriptorDataStore.startCleanup(env)
     _certificateDataStore.startSync()

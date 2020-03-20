@@ -17,6 +17,8 @@ import router.Routes
 import ssl.ClientValidatorsController
 import utils.Metrics
 import otoroshi.tcp.TcpServiceApiController
+import play.api.inject.ApplicationLifecycle
+import play.api.libs.ws.WSClient
 
 class OtoroshiLoader extends ApplicationLoader {
 
@@ -24,13 +26,13 @@ class OtoroshiLoader extends ApplicationLoader {
     LoggerConfigurator(context.environment.classLoader).foreach {
       _.configure(context.environment, context.initialConfiguration, Map.empty)
     }
-    new OtoroshiComponentsInstances(context).application
+    new OtoroshiComponentsInstances(context, None, None).application
   }
 }
 
 package object modules {
 
-  class OtoroshiComponentsInstances(context: Context)
+  class OtoroshiComponentsInstances(context: Context, getHttpPort: => Option[Int], getHttpsPort: => Option[Int])
       extends BuiltInComponentsFromContext(context)
       with AssetsComponents
       with HttpFiltersComponents
@@ -42,7 +44,15 @@ package object modules {
 
     lazy val circuitBreakersHolder: CircuitBreakersHolder = wire[CircuitBreakersHolder]
 
-    implicit lazy val env: Env = wire[Env]
+    implicit lazy val env: Env = new Env(
+      configuration = configuration,
+      environment = environment,
+      lifecycle = applicationLifecycle,
+      wsClient = wsClient,
+      circuitBeakersHolder = circuitBreakersHolder,
+      getHttpPort = getHttpPort,
+      getHttpsPort = getHttpsPort
+    )
 
     lazy val reverseProxyAction: ReverseProxyAction = wire[ReverseProxyAction]
     lazy val httpHandler: HttpHandler = wire[HttpHandler]

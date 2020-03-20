@@ -1,25 +1,22 @@
 package storage.mongo
 
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicBoolean
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.util.FastFuture
 import akka.util.ByteString
-import org.joda.time.{DateTime, DateTimeZone}
+import org.joda.time.DateTime
 import play.api.Logger
-import play.api.libs.json.{JsObject, JsValue}
-import reactivemongo.api.collections.bson.BSONCollection
+import reactivemongo.api.bson.collection.BSONCollection
 import reactivemongo.api.indexes.{Index, IndexType}
 import reactivemongo.api.{Cursor, DefaultDB, MongoConnection}
 import utils.SchedulerHelper
-import reactivemongo.bson.DefaultBSONHandlers._
 import reactivemongo.bson._
 import storage.{DataStoreHealth, Healthy, RedisLike}
 
-import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
-import scala.util.{Failure, Success, Try}
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Failure
 
 class MongoRedis(actorSystem: ActorSystem, connection: MongoConnection, dbName: String) extends RedisLike {
 
@@ -32,13 +29,58 @@ class MongoRedis(actorSystem: ActorSystem, connection: MongoConnection, dbName: 
     for {
       coll <- database.map(_.collection[BSONCollection]("values"))
       _    <- coll.create().recover { case _ => () }
-      _    <- coll.indexesManager.ensure(Index(Seq("key" -> IndexType.Ascending), unique = true))
+      _    <- coll.indexesManager.ensure(Index(reactivemongo.api.bson.collection.BSONSerializationPack)(
+        key = Seq("key" -> IndexType.Ascending),
+        name = Some("key_idx"),
+        unique = true,
+        background = false,
+        sparse = false,
+        dropDups = false,
+        expireAfterSeconds = None,
+        storageEngine = None,
+        weights = None,
+        defaultLanguage = None,
+        languageOverride = None,
+        textIndexVersion = None,
+        sphereIndexVersion = None,
+        bits = None,
+        min = None,
+        max = None,
+        bucketSize = None,
+        collation = None,
+        wildcardProjection = None,
+        version = None,
+        partialFilter = None,
+        options = BSONDocument.empty
+      ))
       _ <- coll.indexesManager.ensure(
-            Index(Seq("ttl" -> IndexType.Ascending),
-                  options = BSONDocument(
-                    "expireAfterSeconds" -> 0
-                  ))
+        Index(reactivemongo.api.bson.collection.BSONSerializationPack)(
+          key = Seq("ttl" -> IndexType.Ascending),
+          name = Some("ttl_idx"),
+          unique = true,
+          background = false,
+          sparse = false,
+          dropDups = false,
+          expireAfterSeconds = None,
+          storageEngine = None,
+          weights = None,
+          defaultLanguage = None,
+          languageOverride = None,
+          textIndexVersion = None,
+          sphereIndexVersion = None,
+          bits = None,
+          min = None,
+          max = None,
+          bucketSize = None,
+          collation = None,
+          wildcardProjection = None,
+          version = None,
+          partialFilter = None,
+          options = BSONDocument(
+            "expireAfterSeconds" -> 0
           )
+        )
+      )
       _ = logger.info("Mongo indexes created !")
     } yield ()
   }
@@ -54,7 +96,7 @@ class MongoRedis(actorSystem: ActorSystem, connection: MongoConnection, dbName: 
         c =>
           f(c).andThen {
             case Failure(e) => logger.error("Error in DB query", e)
-        }
+          }
       )
   }
 
@@ -221,7 +263,7 @@ class MongoRedis(actorSystem: ActorSystem, connection: MongoConnection, dbName: 
         BSONDocument("key" -> key),
         BSONDocument(
           "$unset" -> BSONDocument(
-            fields.map(field => s"value.$field" -> "")
+            fields.map(field => s"value.$field" -> BSONString(""))
           )
         ),
         upsert = true,
