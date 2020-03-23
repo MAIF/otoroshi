@@ -52,10 +52,13 @@ libraryDependencies ++= Seq(
   "org.scala-lang"           %  "scala-compiler"            % "2.12.11",
   "org.scala-lang"           %  "scala-library"             % "2.12.11",
   "org.gnieh"                %% "diffson-play-json"         % "2.2.6" excludeAll (ExclusionRule(organization = "com.typesafe.akka")),
-  "com.datastax.cassandra"   %  "cassandra-driver-core"     % "3.8.0" classifier "shaded" excludeAll (
-    ExclusionRule(organization = "io.netty"),
-    ExclusionRule(organization = "com.typesafe.akka")
-  ),
+
+  "com.datastax.oss"         % "java-driver-core"           % "4.5.1",
+
+  // "com.datastax.cassandra"   %  "cassandra-driver-core"     % "4.0.0" classifier "shaded" excludeAll (
+  //   ExclusionRule(organization = "io.netty"),
+  //   ExclusionRule(organization = "com.typesafe.akka")
+  // ),
   // do not update because the feature is deprecated and will be removed
   "com.yubico"               %  "u2flib-server-core"        % "0.16.0",
   "com.yubico"               %  "u2flib-server-attestation" % "0.16.0",

@@ -44,17 +44,12 @@ class CassandraDataStores(naive: Boolean,
         .getOrElse(ConfigFactory.empty)
     )
 
-  lazy val redis: RedisLike with RawGetRedis =
-    if (naive)
-      new CassandraRedisNaive(
-        actorSystem,
-        configuration
-      )
-    else
-      new CassandraRedis(
-        actorSystem,
-        configuration
-      )
+  lazy val mat = Materializer(actorSystem)
+
+  lazy val redis: RedisLike with RawGetRedis = new NewCassandraRedis(
+    actorSystem,
+    configuration
+  )(actorSystem.dispatcher, mat, env)
 
   override def before(configuration: Configuration,
                       environment: Environment,
