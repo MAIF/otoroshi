@@ -151,5 +151,6 @@ class OtoroshiTests extends Suites(OtoroshiTests.getSuites(): _*) with BeforeAnd
 
 class DevOtoroshiTests
     extends Suites(
-      new Version149Spec("DEV", Configurations.InMemoryConfiguration),
+      new JWTVerificationSpec("DEV", Configurations.InMemoryConfiguration),
+      new JWTVerificationRefSpec("DEV", Configurations.InMemoryConfiguration),
     )

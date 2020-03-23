@@ -10,6 +10,7 @@ import akka.stream.scaladsl.Flow
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.auth0.jwt.exceptions.InvalidClaimException
+import com.auth0.jwt.impl.PublicClaims
 import com.auth0.jwt.interfaces.{DecodedJWT, Verification}
 import com.nimbusds.jose.jwk.{ECKey, JWK, KeyType, RSAKey}
 import env.Env
@@ -615,7 +616,13 @@ case class VerificationSettings(fields: Map[String, String] = Map.empty, arrayFi
       JWT
         .require(algorithm)
         .acceptLeeway(10)
-    )((a, b) => a.withClaim(b._1, b._2))
+    ) {
+      case (a, b) if b._1 == PublicClaims.AUDIENCE => a.withAudience(b._2)
+      case (a, b) if b._1 == PublicClaims.ISSUER => a.withIssuer(b._2)
+      case (a, b) if b._1 == PublicClaims.JWT_ID => a.withJWTId( b._2)
+      case (a, b) if b._1 == PublicClaims.SUBJECT => a.withSubject(b._2)
+      case (a, b) => a.withClaim(b._1, b._2)
+    }
     arrayFields.foldLeft(verification)((a, b) => {
       if (b._2.contains(",")) {
         val values = b._2.split(",").map(_.trim)
@@ -760,7 +767,7 @@ sealed trait JwtVerifier extends AsJson {
     val header         = ApacheBase64.encodeBase64URLSafeString(Json.stringify(headerJson).getBytes(StandardCharsets.UTF_8))
     val payload        = ApacheBase64.encodeBase64URLSafeString(Json.stringify(token).getBytes(StandardCharsets.UTF_8))
     val content        = String.format("%s.%s", header, payload)
-    val signatureBytes = algorithm.sign(content.getBytes(StandardCharsets.UTF_8))
+    val signatureBytes = algorithm.sign(header.getBytes(StandardCharsets.UTF_8), payload.getBytes(StandardCharsets.UTF_8))
     val signature      = ApacheBase64.encodeBase64URLSafeString(signatureBytes)
     s"$content.$signature"
   }

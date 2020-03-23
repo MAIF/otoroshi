@@ -24,7 +24,7 @@ libraryDependencies ++= Seq(
   "io.dropwizard.metrics"    % "metrics-json"              % metricsVersion, // Apache 2.0
   "io.prometheus"            % "simpleclient_common"       % "0.8.1", // Apache 2.0
   "io.prometheus"            % "simpleclient_dropwizard"   % "0.8.1", // Apache 2.0
-  "com.auth0"                % "java-jwt"                  % "3.4.0",
+  "com.auth0"                % "java-jwt"                  % "3.10.1",
   "de.svenkubiak"            % "jBCrypt"                   % "0.4.1",
   "com.propensive"           %% "kaleidoscope"             % "0.1.0",
   "io.github.classgraph"     % "classgraph"                % "4.8.65",
@@ -59,7 +59,7 @@ libraryDependencies ++= Seq(
   // do not update because the feature is deprecated and will be removed
   "com.yubico"               %  "u2flib-server-core"        % "0.16.0",
   "com.yubico"               %  "u2flib-server-attestation" % "0.16.0",
-  "org.reactivemongo"        %% "reactivemongo"             % "0.20.3", //"0.13.0",
+  "org.reactivemongo"        %% "reactivemongo"             % "0.20.3",
   "org.iq80.leveldb"         %  "leveldb"                   % "0.12",
   //"io.kubernetes"            % "client-java"               % "7.0.0",
   //"io.kubernetes"            % "client-java-extended"      % "7.0.0",
