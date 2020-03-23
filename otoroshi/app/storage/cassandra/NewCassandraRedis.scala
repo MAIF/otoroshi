@@ -77,20 +77,6 @@ class NewCassandraRedis(actorSystem: ActorSystem, configuration: Configuration)(
 
   private val metrics = new MetricRegistry()
 
-  // private val reporter: ConsoleReporter = ConsoleReporter
-  //   .forRegistry(metrics)
-  //   .convertRatesTo(TimeUnit.SECONDS)
-  //   .convertDurationsTo(TimeUnit.MILLISECONDS)
-  //   .build
-  // private val cassandraContactPoints: Seq[String] = configuration
-  //   .getOptional[String]("app.cassandra.hosts")
-  //   .map(_.split(",").toSeq)
-  //   .orElse(
-  //     configuration.getOptional[String]("app.cassandra.host").map(e => Seq(e))
-  //   )
-  //   .getOrElse(Seq("127.0.0.1"))
-  // private val cassandraPort: Int            = configuration.getOptional[Int]("app.cassandra.port").getOrElse(9042)
-
   private val patterns = new ConcurrentHashMap[String, Pattern]()
 
   private val cassandraDurableWrites: String =

@@ -12,6 +12,7 @@ import reactivemongo.api.indexes.{Index, IndexType}
 import reactivemongo.api.{Cursor, DefaultDB, MongoConnection}
 import utils.SchedulerHelper
 import reactivemongo.bson._
+import reactivemongo.api.bson.compat._
 import storage.{DataStoreHealth, Healthy, RedisLike}
 
 import scala.concurrent.duration._
@@ -109,7 +110,7 @@ class MongoRedis(actorSystem: ActorSystem, connection: MongoConnection, dbName: 
               "$lte" -> BSONDateTime(System.currentTimeMillis()) //DateTime.now(DateTimeZone.UTC).getMillis)
             )
           ),
-          writeConcern = reactivemongo.api.commands.WriteConcern.Acknowledged
+          writeConcern =reactivemongo.api.commands.WriteConcern.Acknowledged
         )
         .map { wr =>
           logger.debug(s"Delete ${wr.n} items ...")

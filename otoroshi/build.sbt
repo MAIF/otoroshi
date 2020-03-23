@@ -47,18 +47,12 @@ libraryDependencies ++= Seq(
   "com.jayway.jsonpath"      % "json-path"                 % "2.4.0",
   "com.cronutils"            % "cron-utils"                % "9.0.2",
   "commons-lang"             % "commons-lang"              % "2.6",
+  "com.datastax.oss"         % "java-driver-core-shaded"   % "4.5.1",
   "org.scalatestplus.play"   %% "scalatestplus-play"       % "5.0.0" % Test,
   // need to be updated, but later
   "org.scala-lang"           %  "scala-compiler"            % "2.12.11",
   "org.scala-lang"           %  "scala-library"             % "2.12.11",
   "org.gnieh"                %% "diffson-play-json"         % "2.2.6" excludeAll (ExclusionRule(organization = "com.typesafe.akka")),
-
-  "com.datastax.oss"         % "java-driver-core"           % "4.5.1",
-
-  // "com.datastax.cassandra"   %  "cassandra-driver-core"     % "4.0.0" classifier "shaded" excludeAll (
-  //   ExclusionRule(organization = "io.netty"),
-  //   ExclusionRule(organization = "com.typesafe.akka")
-  // ),
   // do not update because the feature is deprecated and will be removed
   "com.yubico"               %  "u2flib-server-core"        % "0.16.0",
   "com.yubico"               %  "u2flib-server-attestation" % "0.16.0",
