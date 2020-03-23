@@ -38,7 +38,7 @@ libraryDependencies ++= Seq(
   "com.blueconic"            % "browscap-java"             % "1.2.15",
   "javax.xml.bind"           % "jaxb-api"                  % "2.3.1", // https://stackoverflow.com/questions/48204141/replacements-for-deprecated-jpms-modules-with-java-ee-apis/48204154#48204154
   "com.sun.xml.bind"         % "jaxb-core"                 % "2.3.0.1",
-  "com.sun.xml.bind"         % "jaxb-impl"                 % "2.3.2",
+  //"com.sun.xml.bind"         % "jaxb-impl"                 % "2.3.2",
   "com.github.blemale"       %% "scaffeine"                % "3.1.0",
   "org.shredzone.acme4j"     % "acme4j-client"             % "2.8",
   "org.shredzone.acme4j"     % "acme4j-utils"              % "2.8",
@@ -97,6 +97,7 @@ assemblyMergeStrategy in assembly := {
   case PathList(ps @ _*) if ps.contains("module-info.class")          => MergeStrategy.first // ???
   case PathList(ps @ _*) if ps.contains("ModuleUtil.class")           => MergeStrategy.first // ???
   case PathList(ps @ _*) if ps.contains("reflection-config.json")     => MergeStrategy.first // ???
+  case PathList(ps @ _*) if ps.contains("metadata.json")              => MergeStrategy.first // ??? hope webauthn comes first
   case PathList("javax", xs @ _*)                                     => MergeStrategy.first
   case x =>
     val oldStrategy = (assemblyMergeStrategy in assembly).value
