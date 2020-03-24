@@ -47,7 +47,8 @@ libraryDependencies ++= Seq(
   "com.jayway.jsonpath"      % "json-path"                 % "2.4.0",
   "com.cronutils"            % "cron-utils"                % "9.0.2",
   "commons-lang"             % "commons-lang"              % "2.6",
-  "com.datastax.oss"         % "java-driver-core-shaded"   % "4.5.1",
+  // "com.datastax.oss"         % "java-driver-core-shaded"   % "4.5.1",
+  "com.datastax.oss"         % "java-driver-core"   % "4.5.1",
   "org.scalatestplus.play"   %% "scalatestplus-play"       % "5.0.0" % Test,
   // need to be updated, but later
   "org.scala-lang"           %  "scala-compiler"            % "2.12.11",

@@ -41,16 +41,18 @@ object CassImplicits {
     import scala.compat.java8.FutureConverters._
 
     def list()(implicit mat: Materializer): Future[Seq[Row]] = {
-      Source(rsf.currentPage().asScala.toList)
-        .concat(
-          Source.repeat(())
-            .takeWhile(_ => rsf.hasMorePages, true)
-            .mapAsync(1) { _ =>
-              rsf.fetchNextPage().toScala
-            }
-            .flatMapConcat(it => Source(it.currentPage().asScala.toList)) // use it instead of rsf ?
-        )
-        .runFold(Seq.empty[Row])(_ :+ _)
+      val base = Source(rsf.currentPage().asScala.toList)
+      if (rsf.hasMorePages) {
+        val more = Source.repeat(())
+          .takeWhile(_ => rsf.hasMorePages, true)
+          .mapAsync(1) { _ =>
+            rsf.fetchNextPage().toScala
+          }
+          .flatMapConcat(it => Source(it.currentPage().asScala.toList)) // TODO: use it instead of rsf ?
+        base.concat(more).runFold(Seq.empty[Row])(_ :+ _)
+      } else {
+        base.runFold(Seq.empty[Row])(_ :+ _)
+      }
     }
   }
 
@@ -96,10 +98,12 @@ class NewCassandraRedis(actorSystem: ActorSystem, configuration: Configuration)(
   private val sessionBuilder = {
     val loader = new DefaultDriverConfigLoader(() => {
         ConfigFactory.invalidateCaches()
-        val config = ConfigFactory.defaultOverrides
-          .withFallback(configuration.getOptional[Configuration]("app.cassandra").map(_.underlying).getOrElse(Configuration.empty.underlying))
-          .withFallback(ConfigFactory.defaultReference()).resolve
-        config.getConfig(DefaultDriverConfigLoader.DEFAULT_ROOT_PATH)
+        val config = configuration.getOptional[Configuration]("app.cassandra")
+          .map(_.underlying)
+          .getOrElse(Configuration.empty.underlying)
+          .withFallback(ConfigFactory.defaultReference())
+          .resolve()
+        config
     })
     CqlSession.builder()
       .withConfigLoader(loader)

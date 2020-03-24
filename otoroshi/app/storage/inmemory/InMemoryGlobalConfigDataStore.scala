@@ -20,7 +20,7 @@ import utils.JsonImplicits._
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
-import scala.util.Success
+import scala.util.{Failure, Success}
 
 class InMemoryGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
     extends GlobalConfigDataStore
@@ -84,8 +84,9 @@ class InMemoryGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
     }
   }
 
-  override def isOtoroshiEmpty()(implicit ec: ExecutionContext): Future[Boolean] =
+  override def isOtoroshiEmpty()(implicit ec: ExecutionContext): Future[Boolean] = {
     redisCli.keys(key("global").key).map(_.isEmpty)
+  }
 
   private val throttlingQuotasCache = new java.util.concurrent.atomic.AtomicLong(0L)
 
