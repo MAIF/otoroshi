@@ -7,7 +7,11 @@ lazy val root = (project in file("."))
   .enablePlugins(PlayScala, PlayAkkaHttp2Support)
   .disablePlugins(PlayFilters)
 
-lazy val scalaLangVersion = "2.12.11" // 2.13.1
+lazy val scalaLangVersion = "2.12.11"
+// lazy val scalaLangVersion = "2.13.1"
+// https://github.com/gphat/censorinus/issues/34
+// https://github.com/propensive/kaleidoscope/issues/24
+// https://github.com/risksense/ipaddr/issues/11
 lazy val metricsVersion = "4.1.5"
 lazy val acme4jVersion = "2.9"
 
