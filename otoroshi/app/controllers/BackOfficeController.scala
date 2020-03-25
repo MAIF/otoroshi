@@ -1,14 +1,12 @@
 package controllers
 
-import java.security.cert.X509Certificate
-import java.security.{KeyPair, KeyPairGenerator}
 import java.util.Base64
 import java.util.concurrent.TimeUnit
 
 import actions.{BackOfficeAction, BackOfficeActionAuth}
 import akka.http.scaladsl.util.FastFuture
 import akka.http.scaladsl.util.FastFuture._
-import akka.stream.scaladsl.{FileIO, Sink, Source}
+import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
 import auth.GenericOauth2ModuleConfig
 import ch.qos.logback.classic.{Level, LoggerContext}
@@ -20,17 +18,14 @@ import models._
 import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
-import otoroshi.ssl.pki.BouncyCastlePki
-import otoroshi.ssl.pki.models.{GenCertResponse, GenCsrQuery, GenKeyPairQuery}
-import otoroshi.utils.LetsEncryptHelper
+import otoroshi.ssl.pki.models.{GenCertResponse, GenCsrQuery}
 import play.api.Logger
 import play.api.http.HttpEntity
 import play.api.libs.json._
 import play.api.libs.streams.Accumulator
-import play.api.libs.ws.{EmptyBody, SourceBody}
+import play.api.libs.ws.SourceBody
 import play.api.mvc._
 import security._
-import ssl.FakeKeyStore.KeystoreSettings
 import ssl._
 import utils.LocalCache
 import utils.RequestImplicits._
@@ -1099,5 +1094,4 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
       } get
     }
   }
-
 }

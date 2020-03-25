@@ -1,7 +1,7 @@
 package storage.cassandra
 
-import java.util.concurrent.{TimeUnit, _}
 import java.util.concurrent.atomic.AtomicReference
+import java.util.concurrent.{TimeUnit, _}
 import java.util.regex.Pattern
 
 import akka.actor.{ActorSystem, Cancellable}
@@ -11,7 +11,7 @@ import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import com.codahale.metrics._
 import com.datastax.oss.driver.api.core.CqlSession
-import com.datastax.oss.driver.api.core.cql.{AsyncResultSet, PreparedStatement, Row}
+import com.datastax.oss.driver.api.core.cql.{AsyncResultSet, Row}
 import com.datastax.oss.driver.internal.core.config.typesafe.DefaultDriverConfigLoader
 import com.typesafe.config.ConfigFactory
 import env.Env
@@ -19,11 +19,10 @@ import play.api.{Configuration, Logger}
 import storage.{DataStoreHealth, Healthy, RedisLike, Unreachable}
 import utils.SchedulerHelper
 
-import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Try
 import scala.util.control.NoStackTrace
+import scala.util.{Failure, Success, Try}
 
 trait RawGetRedis {
   def rawGet(key: String): Future[Option[(String, Long, Any)]]
@@ -41,14 +40,18 @@ object CassImplicits {
     import scala.compat.java8.FutureConverters._
 
     def list()(implicit mat: Materializer): Future[Seq[Row]] = {
-      val base = Source(rsf.currentPage().asScala.toList)
-      if (rsf.hasMorePages) {
+      val ref = new AtomicReference[AsyncResultSet](rsf)
+      val base = Source(ref.get().currentPage().asScala.toList)
+      if (ref.get().hasMorePages) {
         val more = Source.repeat(())
-          .takeWhile(_ => rsf.hasMorePages, true)
+          .takeWhile(_ => ref.get().hasMorePages, true)
           .mapAsync(1) { _ =>
-            rsf.fetchNextPage().toScala
+            ref.get().fetchNextPage().toScala
           }
-          .flatMapConcat(it => Source(it.currentPage().asScala.toList)) // TODO: use it instead of rsf ?
+          .flatMapConcat { it =>
+            ref.set(it)
+            Source(it.currentPage().asScala.toList)
+          }
         base.concat(more).runFold(Seq.empty[Row])(_ :+ _)
       } else {
         base.runFold(Seq.empty[Row])(_ :+ _)
@@ -71,7 +74,6 @@ object NewCassandraRedis {
 class NewCassandraRedis(actorSystem: ActorSystem, configuration: Configuration)(implicit ec: ExecutionContext, mat: Materializer, env: Env) extends RedisLike with RawGetRedis {
 
   import CassImplicits._
-  import actorSystem.dispatcher
 
   import collection.JavaConverters._
   import scala.compat.java8.FutureConverters._
@@ -88,7 +90,7 @@ class NewCassandraRedis(actorSystem: ActorSystem, configuration: Configuration)(
   private val cassandraReplicationOptions: String =
     configuration.getOptional[String]("app.cassandra.replicationOptions").getOrElse("'dc0': 1")
   private val cassandraReplicationFactor: Int =
-    configuration.getOptional[Int]("app.cassandra.replicationFactor").getOrElse(0)
+    configuration.getOptional[Int]("app.cassandra.replicationFactor").getOrElse(1)
 
 
   private val maybeUsername: Option[String] = configuration.getOptional[String]("app.cassandra.username")
@@ -105,6 +107,10 @@ class NewCassandraRedis(actorSystem: ActorSystem, configuration: Configuration)(
           .resolve()
         config
     })
+    //val loader2 =
+    //  DriverConfigLoader.programmaticBuilder()
+    //    .withDuration(DefaultDriverOption.REQUEST_TIMEOUT, java.time.Duration.ofSeconds(10))
+    //    .build()
     CqlSession.builder()
       .withConfigLoader(loader)
   }
@@ -130,7 +136,7 @@ class NewCassandraRedis(actorSystem: ActorSystem, configuration: Configuration)(
         s"CREATE KEYSPACE IF NOT EXISTS otoroshi WITH replication = {'class':'SimpleStrategy', 'replication_factor':$cassandraReplicationFactor} AND DURABLE_WRITES = $cassandraDurableWrites;"
       )
     }
-    _session.execute("USE otoroshi")
+    _session.execute("USE otoroshi") // TODO: as it's set in config, use it ?
     _session.execute(
       "CREATE TABLE IF NOT EXISTS otoroshi.values ( key text, type text, ttlv text, value text, lvalue list<text>, svalue set<text>, mvalue map<text, text>, PRIMARY KEY (key) );"
     )
@@ -158,10 +164,10 @@ class NewCassandraRedis(actorSystem: ActorSystem, configuration: Configuration)(
     _session.close()
   }
 
-  private case object CassandraSessionClosed extends RuntimeException("Casssandra session closed") with NoStackTrace
+  private case object CassandraSessionClosed extends RuntimeException("Cassandra session closed") with NoStackTrace
 
-  private val blockAsync         = false
-  private val preparedStatements = new TrieMap[String, PreparedStatement]()
+  //private val blockAsync         = false
+  //private val preparedStatements = new TrieMap[String, PreparedStatement]()
   private def executeAsync(query: String, params: Map[String, Any] = Map.empty): Future[AsyncResultSet] = {
     if (_session.isClosed) {
       FastFuture.failed(CassandraSessionClosed)
@@ -173,16 +179,16 @@ class NewCassandraRedis(actorSystem: ActorSystem, configuration: Configuration)(
         val rsf = if (params.isEmpty) {
           _session.executeAsync(query).toScala
         } else {
-          val preparedStatement = preparedStatements.getOrElseUpdate(query, _session.prepare(query))
-          val bound             = preparedStatement.bind()
+          val preparedStatement = _session.prepare(query) // preparedStatements.getOrElseUpdate(query, _session.prepare(query))
+          var bound             = preparedStatement.bind()
           params.foreach { tuple =>
             val key = tuple._1
             tuple._2 match {
-              case value: String  => bound.setString(key, value)
-              case value: Int     => bound.setInt(key, value)
-              case value: Boolean => bound.setBoolean(key, value)
-              case value: Long    => bound.setLong(key, value)
-              case value: Double  => bound.setDouble(key, value)
+              case value: String  => bound = bound.setString(key, value)
+              case value: Int     => bound = bound.setInt(key, value)
+              case value: Boolean => bound = bound.setBoolean(key, value)
+              case value: Long    => bound = bound.setLong(key, value)
+              case value: Double  => bound = bound.setDouble(key, value)
               case value =>
                 NewCassandraRedis.logger.warn(s"Unknown type for parameter '${key}' of type ${value.getClass.getName}")
             }
@@ -190,7 +196,7 @@ class NewCassandraRedis(actorSystem: ActorSystem, configuration: Configuration)(
           _session.executeAsync(bound).toScala
         }
         rsf.andThen {
-          case _ =>
+          case r =>
             timer.close()
             timerOp.close()
         }
