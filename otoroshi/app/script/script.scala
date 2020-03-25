@@ -1259,7 +1259,6 @@ class ScriptApiController(ApiAction: ApiAction, cc: ControllerComponents)(
     implicit env: Env
 ) extends AbstractController(cc) {
 
-  import gnieh.diffson.playJson._
   import utils.future.Implicits._
 
   implicit lazy val ec  = env.otoroshiExecutionContext
@@ -1450,8 +1449,7 @@ class ScriptApiController(ApiAction: ApiAction, cc: ControllerComponents)(
           ).asFuture
         case Some(initialScript) => {
           val currentJson = initialScript.toJson
-          val patch       = JsonPatch(ctx.request.body)
-          val newScript   = patch(currentJson)
+          val newScript   = utils.JsonPatchHelpers.patchJson(ctx.request.body, currentJson)
           Script.fromJsonSafe(newScript) match {
             case Left(_) => BadRequest(Json.obj("error" -> "Bad Script format")).asFuture
             case Right(newScript) => {

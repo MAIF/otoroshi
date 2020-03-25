@@ -2065,7 +2065,6 @@ class ClientValidatorsController(ApiAction: ApiAction, cc: ControllerComponents)
     implicit env: Env
 ) extends AbstractController(cc) {
 
-  import gnieh.diffson.playJson._
   import utils.future.Implicits._
 
   implicit lazy val ec  = env.otoroshiExecutionContext
@@ -2121,8 +2120,7 @@ class ClientValidatorsController(ApiAction: ApiAction, cc: ControllerComponents)
         ).asFuture
       case Some(verifier) => {
         val currentJson = verifier.asJson
-        val patch       = JsonPatch(ctx.request.body)
-        val newVerifier = patch(currentJson)
+        val newVerifier = utils.JsonPatchHelpers.patchJson(ctx.request.body, currentJson)
         ClientCertificateValidator.fromJson(newVerifier) match {
           case Left(_) => BadRequest(Json.obj("error" -> "Bad ClientValidator format")).asFuture
           case Right(newVerifier) => {

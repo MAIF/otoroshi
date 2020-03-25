@@ -959,7 +959,6 @@ class TcpServiceApiController(ApiAction: ApiAction, cc: ControllerComponents)(
     implicit env: Env
 ) extends AbstractController(cc) {
 
-  import gnieh.diffson.playJson._
   import utils.future.Implicits._
 
   implicit lazy val ec  = env.otoroshiExecutionContext
@@ -1021,8 +1020,7 @@ class TcpServiceApiController(ApiAction: ApiAction, cc: ControllerComponents)(
         ).asFuture
       case Some(initialTcpService) => {
         val currentJson   = initialTcpService.json
-        val patch         = JsonPatch(ctx.request.body)
-        val newTcpService = patch(currentJson)
+        val newTcpService = utils.JsonPatchHelpers.patchJson(ctx.request.body, currentJson)
         TcpService.fromJsonSafe(newTcpService) match {
           case Left(_) => BadRequest(Json.obj("error" -> "Bad TcpService format")).asFuture
           case Right(newTcpService) => {

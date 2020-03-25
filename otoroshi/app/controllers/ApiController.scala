@@ -5,7 +5,8 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 
 import javax.management.{Attribute, ObjectName}
-import gnieh.diffson.playJson._
+
+import scala.util.Try
 import actions.{ApiAction, UnAuthApiAction}
 import akka.NotUsed
 import akka.http.scaladsl.util.FastFuture
@@ -28,6 +29,7 @@ import ssl.{Cert, DynamicSSLEngineProvider}
 import storage.{Healthy, Unhealthy, Unreachable}
 import utils.Metrics
 import utils.future.Implicits._
+import utils.JsonPatchHelpers._
 
 import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
@@ -454,8 +456,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
     val user = ctx.user.getOrElse(ctx.apiKey.toJson)
     env.datastores.globalConfigDataStore.findById("global").map(_.get).flatMap { conf =>
       val currentConfigJson = conf.toJson
-      val patch             = JsonPatch(ctx.request.body)
-      val newConfigJson     = patch(currentConfigJson)
+      val newConfigJson     = patchJson(ctx.request.body, currentConfigJson)
       GlobalConfig.fromJsonSafe(newConfigJson) match {
         case JsError(e) => FastFuture.successful(BadRequest(Json.obj("error" -> "Bad GlobalConfig format")))
         case JsSuccess(ak, _) => {
@@ -567,8 +568,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
       case None => NotFound(Json.obj("error" -> s"ServiceGroup with clienId '$serviceGroupId' not found")).asFuture
       case Some(group) => {
         val currentGroupJson = group.toJson
-        val patch            = JsonPatch(ctx.request.body)
-        val newGroupJson     = patch(currentGroupJson)
+        val newGroupJson     = patchJson(ctx.request.body, currentGroupJson)
         ServiceGroup.fromJsonSafe(newGroupJson) match {
           case JsError(e) => BadRequest(Json.obj("error" -> "Bad ServiceGroup format")).asFuture
           case JsSuccess(newGroup, _) if newGroup.id != serviceGroupId =>
@@ -837,8 +837,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
       case None => NotFound(Json.obj("error" -> s"ServiceDescriptor with id '$serviceId' not found")).asFuture
       case Some(desc) => {
         val currentDescJson = desc.toJson
-        val patch           = JsonPatch(body)
-        val newDescJson     = patch(currentDescJson)
+        val newDescJson     = patchJson(body, currentDescJson)
         ServiceDescriptor.fromJsonSafe(newDescJson) match {
           case JsError(e) => BadRequest(Json.obj("error" -> "Bad ServiceDescriptor format")).asFuture
           case JsSuccess(newDesc, _) if newDesc.id != serviceId =>
@@ -1043,8 +1042,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
           Json.obj("serviceId" -> serviceId, "patch" -> body)
         )
         val actualTargets = JsArray(desc.targets.map(t => JsString(s"${t.scheme}://${t.host}")))
-        val patch         = JsonPatch(body)
-        val newTargets = patch(actualTargets)
+        val newTargets = patchJson(body, actualTargets)
           .as[JsArray]
           .value
           .map(_.as[String])
@@ -1512,8 +1510,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
             ).asFuture
           case Some(apiKey) if apiKey.authorizedGroup == desc.groupId => {
             val currentApiKeyJson = apiKey.toJson
-            val patch             = JsonPatch(ctx.request.body)
-            val newApiKeyJson     = patch(currentApiKeyJson)
+            val newApiKeyJson     = patchJson(ctx.request.body, currentApiKeyJson)
             ApiKey.fromJsonSafe(newApiKeyJson) match {
               case JsError(e) => BadRequest(Json.obj("error" -> "Bad ApiKey format")).asFuture
               case JsSuccess(newApiKey, _) if newApiKey.clientId != clientId =>
@@ -1605,8 +1602,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
             NotFound(Json.obj("error" -> s"ApiKey with clienId '$clientId' not found for group with id: '$groupId'")).asFuture
           case Some(apiKey) if apiKey.authorizedGroup == group.id => {
             val currentApiKeyJson = apiKey.toJson
-            val patch             = JsonPatch(ctx.request.body)
-            val newApiKeyJson     = patch(currentApiKeyJson)
+            val newApiKeyJson     = patchJson(ctx.request.body, currentApiKeyJson)
             ApiKey.fromJsonSafe(newApiKeyJson) match {
               case JsError(e) => BadRequest(Json.obj("error" -> "Bad ApiKey format")).asFuture
               case JsSuccess(newApiKey, _) if newApiKey.clientId != clientId =>
@@ -2351,8 +2347,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
   def patchSnowMonkey() = ApiAction.async(parse.json) { ctx =>
     env.datastores.globalConfigDataStore.findById("global").map(_.get).flatMap { globalConfig =>
       val currentSnowMonkeyConfigJson = globalConfig.snowMonkeyConfig.asJson
-      val patch                       = JsonPatch(ctx.request.body)
-      val newSnowMonkeyConfigJson     = patch(currentSnowMonkeyConfigJson)
+      val newSnowMonkeyConfigJson     = patchJson(ctx.request.body, currentSnowMonkeyConfigJson)
       SnowMonkeyConfig.fromJsonSafe(newSnowMonkeyConfigJson) match {
         case JsError(e) => BadRequest(Json.obj("error" -> "Bad SnowMonkeyConfig format")).asFuture
         case JsSuccess(newSnowMonkeyConfig, _) => {
@@ -2460,8 +2455,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
         ).asFuture
       case Some(verifier) => {
         val currentJson = verifier.asJson
-        val patch       = JsonPatch(ctx.request.body)
-        val newVerifier = patch(currentJson)
+        val newVerifier = patchJson(ctx.request.body, currentJson)
         GlobalJwtVerifier.fromJson(newVerifier) match {
           case Left(e) => BadRequest(Json.obj("error" -> "Bad GlobalJwtVerifier format")).asFuture
           case Right(newVerifier) => {
@@ -2528,8 +2522,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
         ).asFuture
       case Some(verifier) => {
         val currentJson     = verifier.asJson
-        val patch           = JsonPatch(ctx.request.body)
-        val patchedVerifier = patch(currentJson)
+        val patchedVerifier = patchJson(ctx.request.body, currentJson)
         AuthModuleConfig._fmt.reads(patchedVerifier) match {
           case JsError(e) => BadRequest(Json.obj("error" -> "Bad GlobalAuthModule format")).asFuture
           case JsSuccess(newVerifier, _) => {
@@ -2662,8 +2655,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
       case None => NotFound(Json.obj("error" -> s"Certificate with clienId '$CertId' not found")).asFuture
       case Some(group) => {
         val currentGroupJson = group.toJson
-        val patch            = JsonPatch(ctx.request.body)
-        val newGroupJson     = patch(currentGroupJson)
+        val newGroupJson     = patchJson(ctx.request.body, currentGroupJson)
         Cert.fromJsonSafe(newGroupJson) match {
           case JsError(e) => BadRequest(Json.obj("error" -> "Bad Certificate format")).asFuture
           case JsSuccess(newGroup, _) if newGroup.id != CertId =>

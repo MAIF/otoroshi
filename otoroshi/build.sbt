@@ -1,13 +1,15 @@
 name := """otoroshi"""
 organization := "fr.maif.otoroshi"
 version := "1.4.23-dev"
-scalaVersion := "2.12.11"
+scalaVersion := scalaLangVersion
 
 lazy val root = (project in file("."))
   .enablePlugins(PlayScala, PlayAkkaHttp2Support)
   .disablePlugins(PlayFilters)
 
+lazy val scalaLangVersion = "2.12.11" // 2.13.1
 lazy val metricsVersion = "4.1.5"
+lazy val acme4jVersion = "2.9"
 
 libraryDependencies ++= Seq(
   ws,
@@ -39,28 +41,29 @@ libraryDependencies ++= Seq(
   "javax.xml.bind"           % "jaxb-api"                  % "2.3.1", // https://stackoverflow.com/questions/48204141/replacements-for-deprecated-jpms-modules-with-java-ee-apis/48204154#48204154
   "com.sun.xml.bind"         % "jaxb-core"                 % "2.3.0.1",
   //"com.sun.xml.bind"         % "jaxb-impl"                 % "2.3.2",
-  "com.github.blemale"       %% "scaffeine"                % "3.1.0",
-  "org.shredzone.acme4j"     % "acme4j-client"             % "2.8",
-  "org.shredzone.acme4j"     % "acme4j-utils"              % "2.8",
-  "org.shredzone.acme4j"     % "acme4j"                    % "2.8",
+  "com.github.blemale"       %% "scaffeine"                % "4.0.0",
+  "org.shredzone.acme4j"     % "acme4j-client"             % acme4jVersion,
+  "org.shredzone.acme4j"     % "acme4j-utils"              % acme4jVersion,
+  "org.shredzone.acme4j"     % "acme4j"                    % acme4jVersion,
   "io.lettuce"               % "lettuce-core"              % "5.2.2.RELEASE",
   "com.jayway.jsonpath"      % "json-path"                 % "2.4.0",
   "com.cronutils"            % "cron-utils"                % "9.0.2",
   "commons-lang"             % "commons-lang"              % "2.6",
-  // "com.datastax.oss"         % "java-driver-core-shaded"   % "4.5.1",
-  "com.datastax.oss"         % "java-driver-core"   % "4.5.1",
-  "org.scalatestplus.play"   %% "scalatestplus-play"       % "5.0.0" % Test,
+  "com.datastax.oss"         % "java-driver-core"          % "4.5.1",
+  "org.scala-lang"           %  "scala-compiler"           % scalaLangVersion,
+  "org.scala-lang"           %  "scala-library"            % scalaLangVersion,
+  //"io.kubernetes"            % "client-java"             % "7.0.0",
+  //"io.kubernetes"            % "client-java-extended"    % "7.0.0",
+  // tests
+  "org.scalatestplus.play"   %% "scalatestplus-play"        % "5.0.0" % Test,
   // need to be updated, but later
-  "org.scala-lang"           %  "scala-compiler"            % "2.12.11",
-  "org.scala-lang"           %  "scala-library"             % "2.12.11",
-  "org.gnieh"                %% "diffson-play-json"         % "2.2.6" excludeAll (ExclusionRule(organization = "com.typesafe.akka")),
+  "org.gnieh"                %% "diffson-play-json"         % "4.0.2" excludeAll (ExclusionRule(organization = "com.typesafe.akka")),
   // do not update because the feature is deprecated and will be removed
   "com.yubico"               %  "u2flib-server-core"        % "0.16.0",
   "com.yubico"               %  "u2flib-server-attestation" % "0.16.0",
   "org.reactivemongo"        %% "reactivemongo"             % "0.20.3",
   "org.iq80.leveldb"         %  "leveldb"                   % "0.12",
-  //"io.kubernetes"            % "client-java"               % "7.0.0",
-  //"io.kubernetes"            % "client-java-extended"      % "7.0.0",
+
 )
 
 scalacOptions ++= Seq(
