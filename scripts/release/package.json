@@ -6,7 +6,7 @@
     "@rauschma/stringio": "1.4.0",
     "fs-extra": "8.1.0",
     "lodash": "4.17.15",
-    "minimist": "1.2.0",
+    "minimist": "1.2.2",
     "moment": "2.24.0",
     "node-cmd": "3.0.0",
     "node-fetch": "2.6.0"
