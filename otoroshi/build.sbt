@@ -14,59 +14,63 @@ lazy val scalaLangVersion = "2.12.11"
 // https://github.com/risksense/ipaddr/issues/11
 lazy val metricsVersion = "4.1.5"
 lazy val acme4jVersion = "2.9"
+lazy val prometheusVersion = "0.8.1"
+lazy val playJsonVersion = "2.8.1"
+lazy val webAuthnVersion = "1.6.1"
+lazy val kubernetesVersion = "7.0.0"
 
 libraryDependencies ++= Seq(
   ws,
   filters,
-  "com.softwaremill.macwire" %% "macros"                   % "2.3.3" % "provided",
-  "com.typesafe.play"        %% "play-json"                % "2.8.1",
-  "com.typesafe.play"        %% "play-json-joda"           % "2.8.1",
-  "com.github.etaty"         %% "rediscala"                % "1.9.0",
-  "com.github.gphat"         %% "censorinus"               % "2.1.15",
-  "com.typesafe.akka"        %% "akka-stream-kafka"        % "2.0.2",
-  "io.dropwizard.metrics"    % "metrics-core"              % metricsVersion, // Apache 2.0
-  "io.dropwizard.metrics"    % "metrics-jvm"               % metricsVersion, // Apache 2.0
-  "io.dropwizard.metrics"    % "metrics-jmx"               % metricsVersion, // Apache 2.0
-  "io.dropwizard.metrics"    % "metrics-json"              % metricsVersion, // Apache 2.0
-  "io.prometheus"            % "simpleclient_common"       % "0.8.1", // Apache 2.0
-  "io.prometheus"            % "simpleclient_dropwizard"   % "0.8.1", // Apache 2.0
-  "com.auth0"                % "java-jwt"                  % "3.10.1",
-  "de.svenkubiak"            % "jBCrypt"                   % "0.4.1",
-  "com.propensive"           %% "kaleidoscope"             % "0.1.0",
-  "io.github.classgraph"     % "classgraph"                % "4.8.65",
-  "com.auth0"                % "jwks-rsa"                  % "0.11.0", // https://github.com/auth0/jwks-rsa-java
-  "com.nimbusds"             % "nimbus-jose-jwt"           % "8.10",
-  "com.risksense"            %% "ipaddr"                   % "1.0.2",
-  "com.yubico"               % "webauthn-server-core"      % "1.6.1",
-  "com.yubico"               % "webauthn-server-attestation" % "1.6.1",
-  "com.yubico"               % "yubico-util"               % "1.6.1",
-  "com.maxmind.geoip2"       % "geoip2"                    % "2.13.1",
-  "com.blueconic"            % "browscap-java"             % "1.2.15",
-  "javax.xml.bind"           % "jaxb-api"                  % "2.3.1", // https://stackoverflow.com/questions/48204141/replacements-for-deprecated-jpms-modules-with-java-ee-apis/48204154#48204154
-  "com.sun.xml.bind"         % "jaxb-core"                 % "2.3.0.1",
-  //"com.sun.xml.bind"         % "jaxb-impl"                 % "2.3.2",
-  "com.github.blemale"       %% "scaffeine"                % "4.0.0",
-  "org.shredzone.acme4j"     % "acme4j-client"             % acme4jVersion,
-  "org.shredzone.acme4j"     % "acme4j-utils"              % acme4jVersion,
-  "org.shredzone.acme4j"     % "acme4j"                    % acme4jVersion,
-  "io.lettuce"               % "lettuce-core"              % "5.2.2.RELEASE",
-  "com.jayway.jsonpath"      % "json-path"                 % "2.4.0",
-  "com.cronutils"            % "cron-utils"                % "9.0.2",
-  "commons-lang"             % "commons-lang"              % "2.6",
-  "com.datastax.oss"         % "java-driver-core"          % "4.5.1",
-  "org.scala-lang"           %  "scala-compiler"           % scalaLangVersion,
-  "org.scala-lang"           %  "scala-library"            % scalaLangVersion,
-  //"io.kubernetes"            % "client-java"             % "7.0.0",
-  //"io.kubernetes"            % "client-java-extended"    % "7.0.0",
+  "com.softwaremill.macwire" %% "macros"                     % "2.3.3" % "provided",
+  "com.typesafe.play"        %% "play-json"                  % playJsonVersion,
+  "com.typesafe.play"        %% "play-json-joda"             % playJsonVersion,
+  "com.github.etaty"         %% "rediscala"                  % "1.9.0",
+  "com.github.gphat"         %% "censorinus"                 % "2.1.15",
+  "com.typesafe.akka"        %% "akka-stream-kafka"          % "2.0.2",
+  "io.dropwizard.metrics"    % "metrics-core"                % metricsVersion, // Apache 2.0
+  "io.dropwizard.metrics"    % "metrics-jvm"                 % metricsVersion, // Apache 2.0
+  "io.dropwizard.metrics"    % "metrics-jmx"                 % metricsVersion, // Apache 2.0
+  "io.dropwizard.metrics"    % "metrics-json"                % metricsVersion, // Apache 2.0
+  "io.prometheus"            % "simpleclient_common"         % prometheusVersion, // Apache 2.0
+  "io.prometheus"            % "simpleclient_dropwizard"     % prometheusVersion, // Apache 2.0
+  "com.auth0"                % "java-jwt"                    % "3.10.1",
+  "com.auth0"                % "jwks-rsa"                    % "0.11.0", // https://github.com/auth0/jwks-rsa-java
+  "com.nimbusds"             % "nimbus-jose-jwt"             % "8.10",
+  "de.svenkubiak"            % "jBCrypt"                     % "0.4.1",
+  "com.propensive"           %% "kaleidoscope"               % "0.1.0",
+  "io.github.classgraph"     % "classgraph"                  % "4.8.65",
+  "com.risksense"            %% "ipaddr"                     % "1.0.2",
+  "com.yubico"               % "webauthn-server-core"        % webAuthnVersion,
+  "com.yubico"               % "webauthn-server-attestation" % webAuthnVersion,
+  "com.yubico"               % "yubico-util"                 % webAuthnVersion,
+  "com.maxmind.geoip2"       % "geoip2"                      % "2.13.1",
+  "com.blueconic"            % "browscap-java"               % "1.2.15",
+  "javax.xml.bind"           % "jaxb-api"                    % "2.3.1", // https://stackoverflow.com/questions/48204141/replacements-for-deprecated-jpms-modules-with-java-ee-apis/48204154#48204154
+  "com.sun.xml.bind"         % "jaxb-core"                   % "2.3.0.1",
+  //"com.sun.xml.bind"         % "jaxb-impl"                   % "2.3.2",
+  "com.github.blemale"       %% "scaffeine"                  % "4.0.0",
+  "org.shredzone.acme4j"     % "acme4j-client"               % acme4jVersion,
+  "org.shredzone.acme4j"     % "acme4j-utils"                % acme4jVersion,
+  "org.shredzone.acme4j"     % "acme4j"                      % acme4jVersion,
+  "io.lettuce"               % "lettuce-core"                % "5.2.2.RELEASE",
+  "com.jayway.jsonpath"      % "json-path"                   % "2.4.0",
+  "com.cronutils"            % "cron-utils"                  % "9.0.2",
+  "commons-lang"             % "commons-lang"                % "2.6",
+  "com.datastax.oss"         % "java-driver-core"            % "4.5.1",
+  "org.scala-lang"           %  "scala-compiler"             % scalaLangVersion,
+  "org.scala-lang"           %  "scala-library"              % scalaLangVersion,
+  //"io.kubernetes"            % "client-java"               % kubernetesVersion,
+  //"io.kubernetes"            % "client-java-extended"      % kubernetesVersion,
   // tests
-  "org.scalatestplus.play"   %% "scalatestplus-play"        % "5.0.0" % Test,
+  "org.scalatestplus.play"   %% "scalatestplus-play"         % "5.0.0" % Test,
   // need to be updated, but later
-  "org.gnieh"                %% "diffson-play-json"         % "4.0.2" excludeAll (ExclusionRule(organization = "com.typesafe.akka")),
+  "org.gnieh"                %% "diffson-play-json"          % "4.0.2" excludeAll (ExclusionRule(organization = "com.typesafe.akka")),
   // do not update because the feature is deprecated and will be removed
-  "com.yubico"               %  "u2flib-server-core"        % "0.16.0",
-  "com.yubico"               %  "u2flib-server-attestation" % "0.16.0",
-  "org.reactivemongo"        %% "reactivemongo"             % "0.20.3",
-  "org.iq80.leveldb"         %  "leveldb"                   % "0.12",
+  "com.yubico"               %  "u2flib-server-core"         % "0.16.0",
+  "com.yubico"               %  "u2flib-server-attestation"  % "0.16.0",
+  "org.reactivemongo"        %% "reactivemongo"              % "0.20.3",
+  "org.iq80.leveldb"         %  "leveldb"                    % "0.12",
 
 )
 
