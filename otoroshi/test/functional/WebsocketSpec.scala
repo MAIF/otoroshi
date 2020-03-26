@@ -1,51 +1,48 @@
 package functional
 
-import java.util.Base64
 import java.util.concurrent.atomic.AtomicInteger
 
 import akka.{Done, NotUsed}
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.model.headers.{Host, RawHeader}
+import akka.http.scaladsl.model.headers.Host
 import akka.http.scaladsl.model.ws.{Message, TextMessage, WebSocketRequest}
-import akka.stream.ActorMaterializer
+import akka.stream.{ActorMaterializer, Materializer}
 import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
-import akka.util.ByteString
 import com.typesafe.config.ConfigFactory
-import models.{ApiKey, ServiceDescriptor, Target}
+import models.{ServiceDescriptor, Target}
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatestplus.play.PlaySpec
-import otoroshi.api.Otoroshi
 import play.api.Configuration
-import play.core.server.ServerConfig
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
 class WebsocketSpec(name: String, configurationSpec: => Configuration)
-    extends PlaySpec
-    with OneServerPerSuiteWithMyComponents
-    with OtoroshiSpecHelper
-    with IntegrationPatience {
+  extends OtoroshiSpec {
 
-  override def getConfiguration(configuration: Configuration) = configuration ++ configurationSpec ++ Configuration(
+  lazy val serviceHost = "websocket.oto.tools"
+
+  override def getTestConfiguration(configuration: Configuration) = Configuration(
     ConfigFactory
       .parseString(s"""
                       |{
-                      |  http.port=$port
-                      |  play.server.http.port=$port
                       |}
        """.stripMargin)
       .resolve()
-  )
+  ).withFallback(configurationSpec).withFallback(configuration)
 
   s"[$name] Otoroshi" should {
+
+    "warm up" in {
+      startOtoroshi()
+      getOtoroshiServices().futureValue // WARM UP
+    }
 
     "support websockets" in {
 
       implicit val system = ActorSystem("otoroshi-test")
-      implicit val mat    = ActorMaterializer.create(system)
+      implicit val mat    = Materializer(system)
       implicit val http   = Http()(system)
 
       val service = ServiceDescriptor(
@@ -57,7 +54,7 @@ class WebsocketSpec(name: String, configurationSpec: => Configuration)
         targets = Seq(
           Target(
             host = s"echo.websocket.org",
-            scheme = "http"
+            scheme = "https"
           )
         ),
         forceHttps = false,
@@ -67,41 +64,30 @@ class WebsocketSpec(name: String, configurationSpec: => Configuration)
 
       val clientCounter = new AtomicInteger(0)
 
-      val otoroshi = Otoroshi(
-        ServerConfig(
-          address = "0.0.0.0",
-          port = Some(8888)
-        )
-      ).startAndStopOnShutdown()
-
-      implicit val env = otoroshi.env
-
-      getOtoroshiServices(Some(8888), otoroshi.ws).futureValue // WARM UP
-
-      createOtoroshiService(service, Some(8888), otoroshi.ws).futureValue
+      createOtoroshiService(service).futureValue
 
       val printSink: Sink[Message, Future[Done]] = Sink.foreach { message =>
         clientCounter.incrementAndGet()
         println("client received: " + message.asScala.asTextMessage.getStrictText)
       }
 
+      val names = List(
+        TextMessage("mathieu"),
+        TextMessage("alex"),
+        TextMessage("chris"),
+        TextMessage("francois"),
+        TextMessage("aurelie"),
+        TextMessage("loic"),
+        TextMessage("pierre"),
+        TextMessage("emmanuel"),
+        TextMessage("frederic")
+      )
+
       val nameSource: Source[Message, NotUsed] =
         Source
-          .fromFuture(awaitF(1.second).map(_ => TextMessage("yo")))
+          .future(awaitF(1.second).map(_ => TextMessage("yo")))
           .concat(
-            Source(
-              List(
-                TextMessage("mathieu"),
-                TextMessage("alex"),
-                TextMessage("chris"),
-                TextMessage("francois"),
-                TextMessage("aurelie"),
-                TextMessage("loic"),
-                TextMessage("pierre"),
-                TextMessage("emmanuel"),
-                TextMessage("frederic")
-              )
-            )
+            Source.tick(1.second, 300.millis, ()).take(names.size).zipWith(Source(names))((_, b) => b)
           )
 
       http.singleWebSocketRequest(
@@ -114,12 +100,18 @@ class WebsocketSpec(name: String, configurationSpec: => Configuration)
           })
       )
 
-      awaitF(2.seconds).futureValue
+      awaitF(10.seconds).futureValue
 
       clientCounter.get mustBe 9
 
-      otoroshi.stop()
+      deleteOtoroshiService(service)
+
       system.terminate()
+    }
+
+    "shutdown" in {
+      stopAll()
     }
   }
 }
+

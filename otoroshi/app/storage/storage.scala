@@ -294,7 +294,7 @@ trait RedisLikeStore[T] extends BasicStore[T] {
     }
     val position = (page - 1) * pageSize
     Source
-      .fromFuture(
+      .future(
         redisLike.keys(key("*").key)
       )
       .mapConcat(_.toList)

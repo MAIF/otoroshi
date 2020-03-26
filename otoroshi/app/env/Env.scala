@@ -9,7 +9,7 @@ import java.util.concurrent.atomic.AtomicReference
 import akka.actor.{ActorSystem, PoisonPill, Scheduler}
 import akka.http.scaladsl.util.FastFuture
 import akka.http.scaladsl.util.FastFuture._
-import akka.stream.ActorMaterializer
+import akka.stream.Materializer
 import auth.AuthModuleConfig
 import ch.qos.logback.classic.{Level, LoggerContext}
 import cluster.{ClusterAgent, _}
@@ -64,7 +64,10 @@ class Env(val configuration: Configuration,
           val environment: Environment,
           val lifecycle: ApplicationLifecycle,
           wsClient: WSClient,
-          val circuitBeakersHolder: CircuitBreakersHolder)
+          val circuitBeakersHolder: CircuitBreakersHolder,
+          getHttpPort: => Option[Int],
+          getHttpsPort: => Option[Int],
+          testing: Boolean)
     extends HasMetrics {
 
   val logger = Logger("otoroshi-env")
@@ -117,7 +120,7 @@ class Env(val configuration: Configuration,
   )
   val otoroshiExecutionContext: ExecutionContext = otoroshiActorSystem.dispatcher
   val otoroshiScheduler: Scheduler               = otoroshiActorSystem.scheduler
-  val otoroshiMaterializer: ActorMaterializer    = ActorMaterializer.create(otoroshiActorSystem)
+  val otoroshiMaterializer: Materializer         = Materializer(otoroshiActorSystem)
 
   val analyticsPressureEnabled: Boolean =
     configuration.getOptional[Boolean]("otoroshi.analytics.pressure.enabled").getOrElse(false)
@@ -136,8 +139,8 @@ class Env(val configuration: Configuration,
     if (analyticsPressureEnabled) analyticsActorSystem.dispatcher else otoroshiExecutionContext
   val analyticsScheduler: Scheduler =
     if (analyticsPressureEnabled) analyticsActorSystem.scheduler else otoroshiScheduler
-  val analyticsMaterializer: ActorMaterializer =
-    if (analyticsPressureEnabled) ActorMaterializer.create(analyticsActorSystem) else otoroshiMaterializer
+  val analyticsMaterializer: Materializer =
+    if (analyticsPressureEnabled) Materializer(analyticsActorSystem) else otoroshiMaterializer
 
   def timeout(duration: FiniteDuration): Future[Unit] = {
     val promise = Promise[Unit]
@@ -535,8 +538,11 @@ class Env(val configuration: Configuration,
   }
 
   logger.info(s"Otoroshi version ${otoroshiVersion}")
-  logger.info(s"Admin API exposed on http://$adminApiExposedHost:$port")
-  logger.info(s"Admin UI  exposed on http://$backOfficeHost:$port")
+  // logger.info(s"Scala version ${scala.util.Properties.versionNumberString} / ${scala.tools.nsc.Properties.versionNumberString}")
+  if (!testing) {
+    logger.info(s"Admin API exposed on http://$adminApiExposedHost:$port")
+    logger.info(s"Admin UI  exposed on http://$backOfficeHost:$port")
+  }
 
   lazy val datastores: DataStores = {
     configuration.getOptional[String]("app.storage").getOrElse("redis") match {
@@ -623,17 +629,19 @@ class Env(val configuration: Configuration,
     // FastFuture.successful(())
   })
 
-  lazy val port =
+  lazy val port = getHttpPort.getOrElse(
     configuration
       .getOptional[Int]("play.server.http.port")
       .orElse(configuration.getOptional[Int]("http.port"))
       .getOrElse(9999)
+  )
 
-  lazy val httpsPort =
+  lazy val httpsPort = getHttpsPort.getOrElse(
     configuration
       .getOptional[Int]("play.server.https.port")
       .orElse(configuration.getOptional[Int]("https.port"))
       .getOrElse(9998)
+  )
 
   lazy val defaultConfig = GlobalConfig(
     perIpThrottlingQuota = 500,
@@ -853,7 +861,7 @@ class Env(val configuration: Configuration,
         }
 
       if (checkForUpdates) {
-        otoroshiActorSystem.scheduler.schedule(5.second, 24.hours) {
+        otoroshiActorSystem.scheduler.scheduleAtFixedRate(5.second, 24.hours)(utils.SchedulerHelper.runnable {
           datastores.globalConfigDataStore
             .singleton()(otoroshiExecutionContext, this)
             .map { globalConfig =>
@@ -894,7 +902,7 @@ class Env(val configuration: Configuration,
             .andThen {
               case Failure(e) => e.printStackTrace()
             }
-        }
+        })
       }
       ()
   }(otoroshiExecutionContext)

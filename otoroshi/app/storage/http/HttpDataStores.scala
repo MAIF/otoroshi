@@ -7,7 +7,7 @@ import akka.NotUsed
 import akka.actor.{ActorSystem, Cancellable}
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.{Framing, Keep, Sink, Source}
-import akka.stream.{ActorMaterializer, Materializer}
+import akka.stream.Materializer
 import akka.util.ByteString
 import auth.AuthConfigsDataStore
 import cluster._
@@ -56,7 +56,7 @@ class HttpDbDataStores(configuration: Configuration,
         .map(_.underlying)
         .getOrElse(ConfigFactory.empty)
     )
-  private val materializer = ActorMaterializer.create(actorSystem)
+  private val materializer = Materializer(actorSystem)
   private val redis        = new SwappableInMemoryRedis(env, actorSystem)
   private val cancelRef    = new AtomicReference[Cancellable]()
   private val lastHash     = new AtomicReference[Int](0)
@@ -258,7 +258,7 @@ class HttpDbDataStores(configuration: Configuration,
       group: Int
   )(implicit ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = {
     Source
-      .fromFuture(
+      .future(
         redis.keys(s"${env.storageRoot}:*")
       )
       .mapConcat(_.toList)
@@ -310,7 +310,7 @@ class HttpDbDataStores(configuration: Configuration,
       group: Int
   )(implicit ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = {
     Source
-      .fromFuture(
+      .future(
         redis.keys(s"${env.storageRoot}:*")
       )
       .mapConcat(_.toList)
@@ -352,7 +352,7 @@ class HttpDbDataStores(configuration: Configuration,
 
     FastFuture.successful(
       Source
-        .fromFuture(redis.keys(s"${env.storageRoot}:*"))
+        .future(redis.keys(s"${env.storageRoot}:*"))
         .mapConcat(_.toList)
         .grouped(10)
         .mapAsync(1) {

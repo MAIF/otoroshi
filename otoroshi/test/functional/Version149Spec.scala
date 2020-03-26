@@ -20,29 +20,25 @@ import scala.math.BigDecimal.RoundingMode
 import scala.util.Try
 
 class Version149Spec(name: String, configurationSpec: => Configuration)
-    extends PlaySpec
-    with OneServerPerSuiteWithMyComponents
-    with OtoroshiSpecHelper
-    with IntegrationPatience {
+    extends OtoroshiSpec {
 
-  implicit lazy val ws = otoroshiComponents.wsClient
   implicit val system  = ActorSystem("otoroshi-test")
   implicit val env     = otoroshiComponents.env
 
   import scala.concurrent.duration._
 
-  override def getConfiguration(configuration: Configuration) = configuration ++ configurationSpec ++ Configuration(
+  override def getTestConfiguration(configuration: Configuration) = Configuration(
     ConfigFactory
       .parseString(s"""
            |{
-           |  http.port=$port
-           |  play.server.http.port=$port
            |  app.instance.region=eu-west-1
            |  app.instance.zone=dc1
            |}
        """.stripMargin)
       .resolve()
-  )
+  ).withFallback(configurationSpec).withFallback(configuration)
+
+  startOtoroshi()
 
   s"[$name] Otoroshi service descriptors" should {
 
@@ -964,7 +960,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
         ),
         publicPatterns = Seq("/.*"),
         forceHttps = false,
-        useAkkaHttpClient = false,
+        useAkkaHttpClient = true,
         enforceSecureCommunication = false,
         targetsLoadBalancing = RoundRobin,
         clientConfig = ClientConfig(
@@ -2166,5 +2162,9 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
       deleteOtoroshiApiKey(apikey2).futureValue
       stopServers()
     }
+  }
+
+  "shutdown" in {
+    stopAll()
   }
 }

@@ -127,7 +127,7 @@ class InMemoryDataStores(configuration: Configuration,
       group: Int
   )(implicit ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = {
     Source
-      .fromFuture(
+      .future(
         redis.keys(s"${env.storageRoot}:*")
       )
       .mapConcat(_.toList)
@@ -183,7 +183,7 @@ class InMemoryDataStores(configuration: Configuration,
 
     FastFuture.successful(
       Source
-        .fromFuture(redis.keys(s"${env.storageRoot}:*"))
+        .future(redis.keys(s"${env.storageRoot}:*"))
         .mapConcat(_.toList)
         .grouped(10)
         .mapAsync(1) {

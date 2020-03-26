@@ -1,7 +1,7 @@
 package functional
 
 import java.util.Date
-import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
 
 import akka.http.scaladsl.model.headers.RawHeader
 import com.auth0.jwt.JWT
@@ -18,24 +18,17 @@ import security.IdGenerator
 import scala.util.{Failure, Try}
 
 class BasicSpec(name: String, configurationSpec: => Configuration)
-    extends PlaySpec
-    with OneServerPerSuiteWithMyComponents
-    with OtoroshiSpecHelper
-    with IntegrationPatience {
+    extends OtoroshiSpec {
 
   lazy val serviceHost = "basictest.oto.tools"
-  lazy val ws          = otoroshiComponents.wsClient
 
-  override def getConfiguration(configuration: Configuration) = configuration ++ configurationSpec ++ Configuration(
-    ConfigFactory
-      .parseString(s"""
-         |{
-         |  http.port=$port
-         |  play.server.http.port=$port
-         |}
-       """.stripMargin)
-      .resolve()
-  )
+  override def getTestConfiguration(configuration: Configuration) = {
+    Configuration(
+      ConfigFactory
+        .parseString("{}")
+        .resolve()
+    ).withFallback(configurationSpec).withFallback(configuration)
+  }
 
   s"[$name] Otoroshi" should {
 
@@ -64,6 +57,7 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
     )
 
     "warm up" in {
+      startOtoroshi()
       getOtoroshiServices().andThen {
         case Failure(e) => e.printStackTrace()
       }.futureValue // WARM UP
@@ -1274,6 +1268,10 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
     "stop servers" in {
       deleteOtoroshiService(initialDescriptor).futureValue
       basicTestServer.stop()
+    }
+
+    "shutdown" in {
+      stopAll()
     }
   }
 }

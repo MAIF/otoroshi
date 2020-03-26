@@ -5,7 +5,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 import akka.http.scaladsl.model.Uri
 import env.Env
-import play.api.mvc.RequestHeader
+import play.api.mvc.{Request, RequestHeader}
 import ssl.PemHeaders
 
 import scala.util.Try
@@ -105,5 +105,20 @@ object RequestImplicits {
     }
     @inline
     def clientCertChainPemString: String = clientCertChainPem.mkString("\n")
+
+    @inline
+    def theHasBody: Boolean =
+      (requestHeader.method, requestHeader.headers.get("Content-Length")) match {
+        case ("GET", Some(_))    => true
+        case ("GET", None)       => false
+        case ("HEAD", Some(_))   => true
+        case ("HEAD", None)      => false
+        case ("PATCH", _)        => true
+        case ("POST", _)         => true
+        case ("PUT", _)          => true
+        case ("DELETE", Some(_)) => true
+        case ("DELETE", None)    => false
+        case _                   => true
+      }
   }
 }

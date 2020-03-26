@@ -14,7 +14,7 @@ import play.api.http.{DefaultHttpFilters, HttpErrorHandler, HttpRequestHandler}
 import play.api.inject.Injector
 import play.api.libs.ws.WSClient
 import play.api.libs.ws.ahc.AhcWSComponents
-import play.api.mvc.{ControllerComponents, DefaultControllerComponents}
+import play.api.mvc.{ControllerComponents, DefaultControllerComponents, EssentialFilter}
 import play.api.routing.Router
 import play.api.{BuiltInComponents, Configuration, LoggerConfigurator}
 import play.core.server.{AkkaHttpServerComponents, ServerConfig}
@@ -51,9 +51,14 @@ class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfi
       """.stripMargin
       }
       .getOrElse("")
-    Configuration(ConfigFactory.load()) ++ Configuration(_configuration) ++ Configuration(
+
+    // Configuration(ConfigFactory.load()) ++ Configuration(_configuration) ++ Configuration(
+    //   ConfigFactory.parseString(httpConfig + sslConfig)
+    // )
+
+    Configuration(
       ConfigFactory.parseString(httpConfig + sslConfig)
-    )
+    ).withFallback(Configuration(_configuration)).withFallback(Configuration(ConfigFactory.load()))
   }
 
   LoggerConfigurator(environment.classLoader).foreach {
@@ -71,10 +76,23 @@ class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfi
 
   lazy val circuitBreakersHolder: CircuitBreakersHolder = wire[CircuitBreakersHolder]
 
-  implicit lazy val env: Env = wire[Env]
+  implicit lazy val env: Env = new Env(
+    configuration = configuration,
+    environment = environment,
+    lifecycle = applicationLifecycle,
+    wsClient = wsClient,
+    circuitBeakersHolder = circuitBreakersHolder,
+    getHttpPort = None,
+    getHttpsPort = None,
+    testing = false
+  )
 
-  lazy val filters = new DefaultHttpFilters()
+  override lazy val httpFilters: Seq[EssentialFilter] = Seq()
 
+  lazy val filters = new DefaultHttpFilters(httpFilters: _*)
+
+  lazy val reverseProxyAction: ReverseProxyAction = wire[ReverseProxyAction]
+  lazy val httpHandler: HttpHandler = wire[HttpHandler]
   lazy val webSocketHandler: WebSocketHandler = wire[WebSocketHandler]
 
   override lazy val httpRequestHandler: HttpRequestHandler = wire[GatewayRequestHandler]

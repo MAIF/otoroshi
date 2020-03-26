@@ -11,7 +11,7 @@ import akka.pattern.{CircuitBreaker => AkkaCircuitBreaker}
 import akka.stream.scaladsl.Flow
 import env.Env
 import events._
-import models.{ServiceDescriptor, Target}
+import models.{ApiKey, GlobalConfig, ServiceDescriptor, Target}
 import play.api.Logger
 import play.api.http.websocket.{Message => PlayWSMessage}
 import play.api.mvc.{RequestHeader, Result}
@@ -19,7 +19,7 @@ import utils.TypedMap
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration._
-import scala.concurrent.{duration, ExecutionContext, Future, Promise}
+import scala.concurrent.{ExecutionContext, Future, Promise, duration}
 import scala.util.control.NoStackTrace
 import scala.util.{Failure, Success}
 
@@ -101,6 +101,10 @@ case object RequestTimeoutException      extends RuntimeException("Global reques
 case object AllCircuitBreakersOpenException
     extends RuntimeException("All targets circuit breakers are open")
     with NoStackTrace
+
+object ServiceDescriptorCircuitBreaker {
+  val falseAtomic = new AtomicBoolean(false)
+}
 
 class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler: Scheduler, env: Env) {
 
@@ -196,6 +200,39 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
            f: (Target, Int) => Future[Result])(
       implicit env: Env
   ): Future[Result] = {
+    callGen(descriptor, reqId, trackingId, path, requestHeader, bodyAlreadyConsumed, ctx, counter, attrs, (t, c) => f(t, c).map(v => Right(v))).map {
+      case Left(r) => r
+      case Right(r) => r
+    }
+  }
+
+  def callWS(descriptor: ServiceDescriptor,
+             reqId: String,
+             trackingId: String,
+             path: String,
+             requestHeader: RequestHeader,
+             ctx: String,
+             counter: AtomicInteger,
+             attrs: TypedMap,
+             f: (Target, Int) => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]])(
+      implicit env: Env
+  ): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
+    callGen(descriptor, reqId, trackingId, path, requestHeader, ServiceDescriptorCircuitBreaker.falseAtomic, ctx, counter, attrs, f)
+  }
+
+  def callGen[A](descriptor: ServiceDescriptor,
+     reqId: String,
+     trackingId: String,
+     path: String,
+     requestHeader: RequestHeader,
+     bodyAlreadyConsumed: AtomicBoolean,
+     ctx: String,
+     counter: AtomicInteger,
+     attrs: TypedMap,
+     f: (Target, Int) => Future[Either[Result, A]])(
+      implicit env: Env
+    ): Future[Either[Result, A]] = {
+
     val failure = Timeout
       .timeout(Done, descriptor.clientConfig.extractTimeout(path, _.globalTimeout, _.globalTimeout))
       .flatMap(_ => FastFuture.failed(RequestTimeoutException))
@@ -216,36 +253,6 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
           case None => FastFuture.failed(AllCircuitBreakersOpenException)
         }
       }
-    }
-    Future.firstCompletedOf(Seq(maybeSuccess, failure))
-  }
-
-  def callWS(descriptor: ServiceDescriptor,
-             reqId: String,
-             trackingId: String,
-             path: String,
-             requestHeader: RequestHeader,
-             ctx: String,
-             counter: AtomicInteger,
-             attrs: TypedMap,
-             f: (Target, Int) => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]])(
-      implicit env: Env
-  ): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
-    val failure = Timeout
-      .timeout(Done, descriptor.clientConfig.extractTimeout(path, _.globalTimeout, _.globalTimeout))
-      .flatMap(_ => FastFuture.failed(RequestTimeoutException))
-    val maybeSuccess = Retry.retry(descriptor.clientConfig.retries,
-                                   descriptor.clientConfig.retryInitialDelay,
-                                   descriptor.clientConfig.backoffFactor,
-                                   descriptor.name + " : " + ctx,
-                                   counter) { attempts =>
-      chooseTarget(descriptor, path, reqId, trackingId, requestHeader, attrs) match {
-        case Some((target, breaker)) =>
-          logger.debug(s"Try to call WS target : $target")
-          breaker.withCircuitBreaker(f(target, attempts))
-        case None => FastFuture.failed(AllCircuitBreakersOpenException)
-      }
-
     }
     Future.firstCompletedOf(Seq(maybeSuccess, failure))
   }

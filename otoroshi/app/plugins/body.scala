@@ -251,7 +251,7 @@ class BodyLogger extends RequestTransformer {
     ref.get() match {
       case null =>
         Source
-          .fromFuture(env.datastores.rawDataStore.keys(pattern))
+          .future(env.datastores.rawDataStore.keys(pattern))
           .flatMapConcat(keys => Source(keys.toList))
           .mapAsync(1)(key => env.datastores.rawDataStore.pttl(key).map(ttl => (key, ttl)))
           .map {
@@ -268,7 +268,7 @@ class BodyLogger extends RequestTransformer {
           .run()
       case redis =>
         Source
-          .fromFuture(redis._1.keys(pattern))
+          .future(redis._1.keys(pattern))
           .flatMapConcat(keys => Source(keys.toList))
           .mapAsync(1)(key => redis._1.pttl(key).map(ttl => (key, ttl)))
           .map {

@@ -6,7 +6,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 
 import akka.http.scaladsl.util.FastFuture
-import akka.stream.Materializer
+import akka.stream.{IOResult, Materializer}
 import akka.stream.scaladsl.FileIO
 import com.maxmind.geoip2.DatabaseReader
 import env.Env
@@ -319,6 +319,10 @@ object MaxMindGeolocationHelper {
   }
   def dbInitializationDoneGet(path: String): Boolean = dbs.get(path).exists(_._3.get())
 
+  private def wasSuccessful(io: IOResult): Boolean = {
+    io.wasSuccessful
+  }
+
   private def initDbFromFilePath(file: String)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     Future {
       val cityDbFile = new File(file)
@@ -350,10 +354,10 @@ object MaxMindGeolocationHelper {
           dbInitializationDoneSet(url)
         case resp => {
           resp.bodyAsSource.runWith(FileIO.toPath(file))(env.otoroshiMaterializer).map {
-            case res if !res.wasSuccessful =>
+            case res if !wasSuccessful(res) =>
               logger.error("Geolocation db initialization from URL failed, status was not 200")
               dbInitializationDoneSet(url)
-            case res if res.wasSuccessful =>
+            case res if wasSuccessful(res) =>
               val cityDbFile = file.toFile
               val cityDb     = new DatabaseReader.Builder(cityDbFile).build()
               dbRefSet(url, cityDb)
@@ -380,10 +384,10 @@ object MaxMindGeolocationHelper {
           dbInitializationDoneSet(rawUrl)
         case resp => {
           resp.bodyAsSource.runWith(FileIO.toPath(file))(env.otoroshiMaterializer).map {
-            case res if !res.wasSuccessful =>
+            case res if !wasSuccessful(res) =>
               logger.error("Geolocation db initialization from zip file URL failed, could not write file on disk")
               dbInitializationDoneSet(rawUrl)
-            case res if res.wasSuccessful =>
+            case res if wasSuccessful(res) =>
               Try {
                 val builder = new ProcessBuilder
                 builder.command(
@@ -438,10 +442,10 @@ s                     |mv *.mmdb geolite.mmdb
           dbInitializationDoneSet(rawUrl)
         case resp => {
           resp.bodyAsSource.runWith(FileIO.toPath(file))(env.otoroshiMaterializer).map {
-            case res if !res.wasSuccessful =>
+            case res if !wasSuccessful(res) =>
               logger.error("Geolocation db initialization from tar.gz file URL failed, could not write file on disk")
               dbInitializationDoneSet(rawUrl)
-            case res if res.wasSuccessful =>
+            case res if wasSuccessful(res) =>
               Try {
                 val builder = new ProcessBuilder
                 builder.command(

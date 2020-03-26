@@ -9,28 +9,23 @@ import org.scalatestplus.play.PlaySpec
 import play.api.Configuration
 
 class CanarySpec(name: String, configurationSpec: => Configuration)
-    extends PlaySpec
-    with OneServerPerSuiteWithMyComponents
-    with OtoroshiSpecHelper
-    with IntegrationPatience {
+    extends OtoroshiSpec {
 
   lazy val serviceHost = "canary.oto.tools"
-  lazy val ws          = otoroshiComponents.wsClient
 
-  override def getConfiguration(configuration: Configuration) = configuration ++ configurationSpec ++ Configuration(
+  override def getTestConfiguration(configuration: Configuration) = Configuration(
     ConfigFactory
       .parseString(s"""
                       |{
-                      |  http.port=$port
-                      |  play.server.http.port=$port
                       |}
        """.stripMargin)
       .resolve()
-  )
+  ).withFallback(configurationSpec).withFallback(configuration)
 
   s"[$name] Otoroshi Canary Mode" should {
 
     "warm up" in {
+      startOtoroshi()
       getOtoroshiServices().futureValue // WARM UP
     }
 
@@ -196,6 +191,10 @@ class CanarySpec(name: String, configurationSpec: => Configuration)
 
       basicTestServer1.stop()
       basicTestServer2.stop()
+    }
+
+    "shutdown" in {
+      stopAll()
     }
   }
 }

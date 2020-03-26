@@ -91,28 +91,23 @@ object Implicit {
 }
 
 class JWTVerificationSpec(name: String, configurationSpec: => Configuration)
-    extends PlaySpec
-    with OneServerPerSuiteWithMyComponents
-    with OtoroshiSpecHelper
-    with IntegrationPatience {
+    extends OtoroshiSpec {
 
   lazy val serviceHost = "jwt.oto.tools"
-  lazy val ws          = otoroshiComponents.wsClient
 
-  override def getConfiguration(configuration: Configuration) = configuration ++ configurationSpec ++ Configuration(
+  override def getTestConfiguration(configuration: Configuration) = Configuration(
     ConfigFactory
       .parseString(s"""
                       |{
-                      |  http.port=$port
-                      |  play.server.http.port=$port
                       |}
        """.stripMargin)
       .resolve()
-  )
+  ).withFallback(configurationSpec).withFallback(configuration)
 
   s"[$name] Otoroshi JWT Verifier" should {
 
     "warm up" in {
+      startOtoroshi()
       getOtoroshiServices().futureValue // WARM UP
     }
 
@@ -216,6 +211,9 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration)
       val (status3, body3) = callServerWithBadJWT2()
       status0 mustBe 400
       body0.contains("error.expected.token.not.found") mustBe true
+
+      println(status1, body1)
+
       status1 mustBe 200
       body1.contains("hello world 1") mustBe true
       status2 mustBe 400
@@ -534,32 +532,31 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration)
 
       basicTestServer1.stop()
     }
+
+    "shutdown" in {
+      stopAll()
+    }
   }
 }
 
 class JWTVerificationRefSpec(name: String, configurationSpec: => Configuration)
-    extends PlaySpec
-    with OneServerPerSuiteWithMyComponents
-    with OtoroshiSpecHelper
-    with IntegrationPatience {
+    extends OtoroshiSpec {
 
   lazy val serviceHost = "jwtref.oto.tools"
-  lazy val ws          = otoroshiComponents.wsClient
 
-  override def getConfiguration(configuration: Configuration) = configuration ++ configurationSpec ++ Configuration(
+  override def getTestConfiguration(configuration: Configuration) = Configuration(
     ConfigFactory
       .parseString(s"""
                       |{
-                      |  http.port=$port
-                      |  play.server.http.port=$port
                       |}
        """.stripMargin)
       .resolve()
-  )
+  ).withFallback(configurationSpec).withFallback(configuration)
 
   s"[$name] Otoroshi JWT Verifier Ref" should {
 
     "warm up" in {
+      startOtoroshi()
       getOtoroshiServices().futureValue // WARM UP
     }
 
@@ -703,6 +700,10 @@ class JWTVerificationRefSpec(name: String, configurationSpec: => Configuration)
 
       basicTestServer1.stop()
 
+    }
+
+    "shutdown" in {
+      stopAll()
     }
   }
 }

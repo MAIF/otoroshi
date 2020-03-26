@@ -10,7 +10,7 @@ import akka.http.scaladsl.settings.ServerSettings
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.TLSProtocol.NegotiateNewSession
 import akka.stream.scaladsl.{Flow, Keep, Sink, Source, Tcp}
-import akka.stream.{ActorMaterializer, IgnoreComplete}
+import akka.stream.{IgnoreComplete, Materializer}
 import akka.util.ByteString
 import akka.{AwesomeIncomingConnection, Done, TcpUtils}
 import env.Env
@@ -254,7 +254,7 @@ object TcpService {
                       debugger: String => Sink[ByteString, Future[Done]])(cb: (Long, Long) => Unit)(
       implicit ec: ExecutionContext,
       actorSystem: ActorSystem,
-      materializer: ActorMaterializer,
+      materializer: Materializer,
       env: Env
   ): Future[TcpEvent] = {
     val dataIn    = new AtomicLong(0L)
@@ -277,9 +277,8 @@ object TcpService {
                                           target.port)
                   case None => new InetSocketAddress(target.host, target.port)
                 }
-                Tcp().outgoingTlsConnection(remoteAddress,
-                                            DynamicSSLEngineProvider.current,
-                                            NegotiateNewSession.withDefaults)
+                Tcp().outgoingConnectionWithTls(remoteAddress,
+                  () => DynamicSSLEngineProvider.createSSLEngine(ClientAuth.None, None, None))
               }
               case false => {
                 val remoteAddress = target.ip match {
@@ -404,7 +403,7 @@ object TcpService {
                    debugger: String => Sink[ByteString, Future[Done]])(cb: (Long, Long) => Unit)(
       implicit ec: ExecutionContext,
       actorSystem: ActorSystem,
-      materializer: ActorMaterializer,
+      materializer: Materializer,
       env: Env
   ): Future[TcpEvent] = {
     val dataIn    = new AtomicLong(0L)
@@ -414,7 +413,7 @@ object TcpService {
     TcpService.findByPort(incoming.localAddress.getPort).flatMap {
       case Some(service) if service.enabled && service.sni.enabled => {
         try {
-          val fullLayer: Flow[ByteString, ByteString, Future[_]] = Flow.lazyInitAsync { () =>
+          val fullLayer: Flow[ByteString, ByteString, Future[_]] = Flow.lazyFutureFlow { () =>
             incoming.domain.map { sniDomain =>
               ref.set(sniDomain + ":" + port)
               log.info(s"domain: $sniDomain, local: ${incoming.localAddress}, remote: ${incoming.remoteAddress}")
@@ -433,9 +432,8 @@ object TcpService {
                                                 target.port)
                         case None => new InetSocketAddress(target.host, target.port)
                       }
-                      Tcp().outgoingTlsConnection(remoteAddress,
-                                                  DynamicSSLEngineProvider.current,
-                                                  NegotiateNewSession.withDefaults)
+                      Tcp().outgoingConnectionWithTls(remoteAddress,
+                        () => DynamicSSLEngineProvider.createSSLEngine(ClientAuth.None, None, None))
                     }
                     case false => {
                       val remoteAddress = target.ip match {
@@ -620,17 +618,17 @@ class TcpEngineProvider {
 }
 
 object TcpProxy {
-  def apply(tcp: TcpService)(implicit system: ActorSystem, mat: ActorMaterializer): TcpProxy =
+  def apply(tcp: TcpService)(implicit system: ActorSystem, mat: Materializer): TcpProxy =
     new TcpProxy(tcp.interface, tcp.port, tcp.tls, tcp.sni.enabled, tcp.clientAuth, false)(system, mat)
   def apply(interface: String, port: Int, tls: TlsMode, sni: Boolean, clientAuth: ClientAuth, debug: Boolean = false)(
       implicit system: ActorSystem,
-      mat: ActorMaterializer
+      mat: Materializer
   ): TcpProxy = new TcpProxy(interface, port, tls, sni, clientAuth, debug)(system, mat)
 }
 
 class TcpProxy(interface: String, port: Int, tls: TlsMode, sni: Boolean, clientAuth: ClientAuth, debug: Boolean = false)(
     implicit system: ActorSystem,
-    mat: ActorMaterializer
+    mat: Materializer
 ) {
 
   private val log         = Logger("otoroshi-tcp-proxy")
@@ -891,9 +889,9 @@ class RunningServers(env: Env) {
 
   def start(): RunningServers = {
     if (running.compareAndSet(false, true)) {
-      ref.set(system.scheduler.schedule(1.second, 10.seconds) {
+      ref.set(system.scheduler.scheduleAtFixedRate(1.second, 10.seconds)(utils.SchedulerHelper.runnable(
         updateRunningServers()
-      })
+      )))
     }
     this
   }
@@ -961,7 +959,6 @@ class TcpServiceApiController(ApiAction: ApiAction, cc: ControllerComponents)(
     implicit env: Env
 ) extends AbstractController(cc) {
 
-  import gnieh.diffson.playJson._
   import utils.future.Implicits._
 
   implicit lazy val ec  = env.otoroshiExecutionContext
@@ -1023,8 +1020,7 @@ class TcpServiceApiController(ApiAction: ApiAction, cc: ControllerComponents)(
         ).asFuture
       case Some(initialTcpService) => {
         val currentJson   = initialTcpService.json
-        val patch         = JsonPatch(ctx.request.body)
-        val newTcpService = patch(currentJson)
+        val newTcpService = utils.JsonPatchHelpers.patchJson(ctx.request.body, currentJson)
         TcpService.fromJsonSafe(newTcpService) match {
           case Left(_) => BadRequest(Json.obj("error" -> "Bad TcpService format")).asFuture
           case Right(newTcpService) => {

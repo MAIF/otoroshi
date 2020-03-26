@@ -82,8 +82,7 @@ private[utils] final class UdpBindLogic(localAddress: InetSocketAddress, boundPr
     new InHandler {
       override def onPush() = {
         val msg: Datagram = grab(in)
-        // println("send", msg.remote)
-        println("sent: " + msg.data.utf8String)
+        // println("sent: " + msg.data.utf8String)
         listener ! Udp.Send(msg.data, msg.remote)
         pull(in)
       }

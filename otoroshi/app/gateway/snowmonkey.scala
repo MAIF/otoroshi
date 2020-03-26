@@ -67,9 +67,9 @@ class SnowMonkey(implicit env: Env) {
     left <= percentage
   }
 
-  private def applyChaosConfig(reqNumber: Long, config: ChaosConfig, hasBody: Boolean)(
-      f: SnowMonkeyContext => Future[Result]
-  )(implicit ec: ExecutionContext): Future[Result] = {
+  private def applyChaosConfig[A](reqNumber: Long, config: ChaosConfig, hasBody: Boolean)(
+      f: SnowMonkeyContext => Future[Either[Result, A]]
+  )(implicit ec: ExecutionContext): Future[Either[Result, A]] = {
     config.latencyInjectionFaultConfig
       .filter(c => inRatio(c.ratio, reqNumber))
       .map { conf =>
@@ -116,18 +116,20 @@ class SnowMonkey(implicit env: Env) {
                     .filterNot(_._1.toLowerCase() == "content-type"): _*
                 )
                 .as(response.headers.getOrElse("Content-Type", "text/plain"))
-            )
+            ).map(Left.apply)
           }
           .getOrElse {
             // pass here
             f(context)
-              .map { response =>
-                response.withHeaders("SnowMonkey-Latency" -> latency.toString)
+              .map {
+                case Left(response) => Left(response.withHeaders("SnowMonkey-Latency" -> latency.toString))
+                case Right(response: Result) => Left(response.withHeaders("SnowMonkey-Latency" -> latency.toString))
+                case Right(response) => Right(response)
               }
               .recover {
                 case e =>
                   e.printStackTrace()
-                  Results.InternalServerError(Json.obj("error" -> e.getMessage))
+                 Left(Results.InternalServerError(Json.obj("error" -> e.getMessage)))
               }
           }
       }
@@ -246,21 +248,21 @@ class SnowMonkey(implicit env: Env) {
     time.isAfter(config.startTime) && time.isBefore(config.stopTime)
   }
 
-  private def introduceServiceDefinedChaos(reqNumber: Long, desc: ServiceDescriptor, hasBody: Boolean)(
-      f: SnowMonkeyContext => Future[Result]
-  )(implicit ec: ExecutionContext): Future[Result] = {
+  private def introduceServiceDefinedChaos[A](reqNumber: Long, desc: ServiceDescriptor, hasBody: Boolean)(
+      f: SnowMonkeyContext => Future[Either[Result, A]]
+  )(implicit ec: ExecutionContext): Future[Either[Result, A]] = {
     applyChaosConfig(reqNumber, desc.chaosConfig, hasBody)(f)
   }
 
   private def notUserFacing(descriptor: ServiceDescriptor): Boolean =
     !descriptor.userFacing // && !descriptor.publicPatterns.contains("/.*")
 
-  private def introduceSnowMonkeyDefinedChaos(reqNumber: Long,
+  private def introduceSnowMonkeyDefinedChaos[A](reqNumber: Long,
                                               config: SnowMonkeyConfig,
                                               desc: ServiceDescriptor,
                                               hasBody: Boolean)(
-      f: SnowMonkeyContext => Future[Result]
-  )(implicit ec: ExecutionContext): Future[Result] = {
+      f: SnowMonkeyContext => Future[Either[Result, A]]
+  )(implicit ec: ExecutionContext): Future[Either[Result, A]] = {
     isOutage(desc, config).flatMap {
       case true if !config.dryRun && config.includeUserFacingDescriptors =>
         applyChaosConfig(reqNumber, config.chaosConfig, hasBody)(f)
@@ -279,6 +281,15 @@ class SnowMonkey(implicit env: Env) {
   def introduceChaos(reqNumber: Long, config: GlobalConfig, desc: ServiceDescriptor, hasBody: Boolean)(
       f: SnowMonkeyContext => Future[Result]
   )(implicit ec: ExecutionContext): Future[Result] = {
+    introduceChaosGen(reqNumber, config, desc, hasBody)(m => f(m).map(Right.apply)).map {
+      case Left(r) => r
+      case Right(r) => r
+    }
+  }
+
+  def introduceChaosGen[A](reqNumber: Long, config: GlobalConfig, desc: ServiceDescriptor, hasBody: Boolean)(
+    f: SnowMonkeyContext => Future[Either[Result, A]]
+  )(implicit ec: ExecutionContext): Future[Either[Result, A]] = {
     if (desc.id == env.backOfficeServiceId) {
       f(
         SnowMonkeyContext(

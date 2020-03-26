@@ -39,12 +39,12 @@ object TcpUtils {
       port: Int,
       createSSLEngine: () => SSLEngine,
       backlog: Int = 100,
-      options: immutable.Traversable[SocketOption] = Nil,
+      options: immutable.Seq[SocketOption] = Nil,
       idleTimeout: Duration = Duration.Inf,
       verifySession: SSLSession => Try[Unit],
       closing: TLSClosing = IgnoreComplete
   )(implicit system: ActorSystem): Source[IncomingConnection, Future[ServerBinding]] = {
-    Tcp().bindTlsWithSSLEngine(
+    Tcp().bindWithTls(
       interface = interface,
       port = port,
       createSSLEngine = createSSLEngine,
@@ -52,7 +52,7 @@ object TcpUtils {
       options = options,
       idleTimeout = idleTimeout,
       verifySession = verifySession,
-      closing = closing,
+      closing = closing
     )
   }
 

@@ -1,14 +1,12 @@
 package controllers
 
-import java.security.cert.X509Certificate
-import java.security.{KeyPair, KeyPairGenerator}
 import java.util.Base64
 import java.util.concurrent.TimeUnit
 
 import actions.{BackOfficeAction, BackOfficeActionAuth}
 import akka.http.scaladsl.util.FastFuture
 import akka.http.scaladsl.util.FastFuture._
-import akka.stream.scaladsl.{FileIO, Sink, Source}
+import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
 import auth.GenericOauth2ModuleConfig
 import ch.qos.logback.classic.{Level, LoggerContext}
@@ -20,17 +18,14 @@ import models._
 import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
-import otoroshi.ssl.pki.BouncyCastlePki
-import otoroshi.ssl.pki.models.{GenCertResponse, GenCsrQuery, GenKeyPairQuery}
-import otoroshi.utils.LetsEncryptHelper
+import otoroshi.ssl.pki.models.{GenCertResponse, GenCsrQuery}
 import play.api.Logger
 import play.api.http.HttpEntity
 import play.api.libs.json._
 import play.api.libs.streams.Accumulator
-import play.api.libs.ws.{EmptyBody, SourceBody}
+import play.api.libs.ws.SourceBody
 import play.api.mvc._
 import security._
-import ssl.FakeKeyStore.KeystoreSettings
 import ssl._
 import utils.LocalCache
 import utils.RequestImplicits._
@@ -60,20 +55,6 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
     Accumulator.source[ByteString].map(Right.apply)
   }
 
-  def hasBody(request: Request[_]): Boolean =
-    (request.method, request.headers.get("Content-Length")) match {
-      case ("GET", Some(_))    => true
-      case ("GET", None)       => false
-      case ("HEAD", Some(_))   => true
-      case ("HEAD", None)      => false
-      case ("PATCH", _)        => true
-      case ("POST", _)         => true
-      case ("PUT", _)          => true
-      case ("DELETE", Some(_)) => true
-      case ("DELETE", None)    => false
-      case _                   => true
-    }
-
   def proxyAdminApi(path: String) = BackOfficeActionAuth.async(sourceBodyParser) { ctx =>
     env.datastores.apiKeyDataStore.findById(env.backOfficeApiKey.clientId).flatMap {
       case None =>
@@ -88,7 +69,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
         val host                   = env.adminApiExposedHost
         val localUrl               = if (env.adminApiProxyHttps) s"https://127.0.0.1:${env.port}" else s"http://127.0.0.1:${env.port}"
         val url                    = if (env.adminApiProxyUseLocal) localUrl else s"https://${env.adminApiExposedHost}"
-        lazy val currentReqHasBody = hasBody(ctx.request)
+        lazy val currentReqHasBody = ctx.request.theHasBody
         logger.debug(s"Calling ${ctx.request.method} $url/$path with Host = $host")
         val headers = Seq(
           "Host"                           -> host,
@@ -128,7 +109,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
             Status(res.status)
               .sendEntity(
                 HttpEntity.Streamed(
-                  Source.lazily(() => res.bodyAsSource),
+                  Source.lazySource(() => res.bodyAsSource),
                   res.headers.get("Content-Length").flatMap(_.lastOption).map(_.toInt),
                   res.headers.get("Content-Type").flatMap(_.headOption)
                 )
@@ -1113,5 +1094,4 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
       } get
     }
   }
-
 }

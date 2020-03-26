@@ -183,7 +183,7 @@ trait RedisStore[T] extends BasicStore[T] {
   ): Source[T, NotUsed] = {
     val position = (page - 1) * pageSize
     Source
-      .fromFuture(
+      .future(
         findKeys(key("*").key)
       )
       .mapConcat(_.toList)

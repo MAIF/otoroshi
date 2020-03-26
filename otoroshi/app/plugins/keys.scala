@@ -1,5 +1,7 @@
 package otoroshi.plugins
 
+import java.util.concurrent.atomic.AtomicLong
+
 import models.{ApiKey, ApiKeyRotationInfo, PrivateAppsUser, Target}
 import org.joda.time.DateTime
 import play.api.libs.json.JsValue
@@ -16,6 +18,9 @@ object Keys {
   val RequestTimestampKey = TypedKey[DateTime]("otoroshi.core.RequestTimestamp")
   val RequestStartKey     = TypedKey[Long]("otoroshi.core.RequestStart")
   val RequestWebsocketKey = TypedKey[Boolean]("otoroshi.core.RequestWebsocket")
+  val RequestCounterIn    = TypedKey[AtomicLong]("otoroshi.core.RequestCounterIn")
+  val RequestCounterOut   = TypedKey[AtomicLong]("otoroshi.core.RequestCounterOut")
+  val RequestCanaryId     = TypedKey[String]("otoroshi.core.RequestCanaryId")
   val RequestTargetKey    = TypedKey[Target]("otoroshi.core.RequestTarget")
   val SnowFlakeKey        = TypedKey[String]("otoroshi.core.SnowFlake")
   val ElCtxKey            = TypedKey[Map[String, String]]("otoroshi.core.ElCtx")

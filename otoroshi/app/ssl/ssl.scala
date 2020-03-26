@@ -1227,30 +1227,8 @@ object DynamicSSLEngineProvider {
   }
 
   def base64Decode(base64: String): Array[Byte] = Base64.getMimeDecoder.decode(base64.getBytes(US_ASCII))
-}
 
-class OtoroshiHostnameVerifier() extends HostnameVerifier {
-  override def verify(s: String, sslSession: SSLSession): Boolean = {
-    true
-  }
-}
-
-class DynamicSSLEngineProvider(appProvider: ApplicationProvider) extends SSLEngineProvider {
-
-  lazy val cipherSuites =
-    appProvider.get.get.configuration.getOptional[Seq[String]]("otoroshi.ssl.cipherSuites").filterNot(_.isEmpty)
-  lazy val protocols =
-    appProvider.get.get.configuration.getOptional[Seq[String]]("otoroshi.ssl.protocols").filterNot(_.isEmpty)
-  lazy val clientAuth = {
-    val auth = appProvider.get.get.configuration
-      .getOptional[String]("otoroshi.ssl.fromOutside.clientAuth")
-      .flatMap(ClientAuth.apply)
-      .getOrElse(ClientAuth.None)
-    DynamicSSLEngineProvider.logger.debug(s"Otoroshi client auth: ${auth}")
-    auth
-  }
-
-  override def createSSLEngine(): SSLEngine = {
+  def createSSLEngine(clientAuth: ClientAuth, cipherSuites: Option[Seq[String]], protocols: Option[Seq[String]]): SSLEngine = {
     val context: SSLContext = DynamicSSLEngineProvider.currentContext.get()
     DynamicSSLEngineProvider.logger.debug(s"Create SSLEngine from: $context")
     val rawEngine              = context.createSSLEngine()
@@ -1291,6 +1269,56 @@ class DynamicSSLEngineProvider(appProvider: ApplicationProvider) extends SSLEngi
     engine.setSSLParameters(sslParameters)
     engine
   }
+}
+
+/*class OtoroshiHostnameVerifier() extends HostnameVerifier {
+  override def verify(s: String, sslSession: SSLSession): Boolean = {
+    true
+  }
+}*/
+
+class DynamicSSLEngineProvider(appProvider: ApplicationProvider) extends SSLEngineProvider {
+
+  lazy val cipherSuites =
+    appProvider.get.get.configuration.getOptional[Seq[String]]("otoroshi.ssl.cipherSuites").filterNot(_.isEmpty)
+  lazy val protocols =
+    appProvider.get.get.configuration.getOptional[Seq[String]]("otoroshi.ssl.protocols").filterNot(_.isEmpty)
+  lazy val clientAuth = {
+    val auth = appProvider.get.get.configuration
+      .getOptional[String]("otoroshi.ssl.fromOutside.clientAuth")
+      .flatMap(ClientAuth.apply)
+      .getOrElse(ClientAuth.None)
+    DynamicSSLEngineProvider.logger.debug(s"Otoroshi client auth: ${auth}")
+    auth
+  }
+
+  override def createSSLEngine(): SSLEngine = {
+    DynamicSSLEngineProvider.createSSLEngine(clientAuth, cipherSuites, protocols)
+  }
+
+  private def setupSslContext(): SSLContext = {
+    new SSLContext(
+      new SSLContextSpi() {
+        override def engineCreateSSLEngine(): SSLEngine                  = createSSLEngine()
+        override def engineCreateSSLEngine(s: String, i: Int): SSLEngine = engineCreateSSLEngine()
+        override def engineInit(keyManagers: Array[KeyManager], trustManagers: Array[TrustManager], secureRandom: SecureRandom): Unit = ()
+        override def engineGetClientSessionContext(): SSLSessionContext = DynamicSSLEngineProvider.current.getClientSessionContext
+        override def engineGetServerSessionContext(): SSLSessionContext = DynamicSSLEngineProvider.current.getServerSessionContext
+        override def engineGetSocketFactory(): SSLSocketFactory =
+          DynamicSSLEngineProvider.current.getSocketFactory
+        override def engineGetServerSocketFactory(): SSLServerSocketFactory =
+          DynamicSSLEngineProvider.current.getServerSocketFactory
+      },
+      new Provider(
+        "Otoroshi SSlEngineProvider delegate",
+        1d,
+        "A provider that delegates callss to otoroshi dynamic one"
+      ) {},
+      "Otoroshi SSLEngineProvider delegate"
+    ) {}
+  }
+
+  override def sslContext(): SSLContext = setupSslContext()
 }
 
 object noCATrustManager extends X509TrustManager {
@@ -2017,13 +2045,26 @@ case class ClientCertificateValidator(
       case Right(goodResult) => goodResult
     }
   }
+
+  def validateClientCertificatesGen[A](req: RequestHeader,
+                                   desc: ServiceDescriptor,
+                                   apikey: Option[ApiKey] = None,
+                                   user: Option[PrivateAppsUser] = None,
+                                   config: GlobalConfig,
+                                   attrs: TypedMap)(
+                                    f: => Future[Either[Result, A]]
+                                  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
+    internalValidateClientCertificates(req, desc, apikey, user, config, attrs)(f).map {
+      case Left(badResult)   => Left[Result, A](badResult)
+      case Right(goodResult) => goodResult
+    }
+  }
 }
 
 class ClientValidatorsController(ApiAction: ApiAction, cc: ControllerComponents)(
     implicit env: Env
 ) extends AbstractController(cc) {
 
-  import gnieh.diffson.playJson._
   import utils.future.Implicits._
 
   implicit lazy val ec  = env.otoroshiExecutionContext
@@ -2079,8 +2120,7 @@ class ClientValidatorsController(ApiAction: ApiAction, cc: ControllerComponents)
         ).asFuture
       case Some(verifier) => {
         val currentJson = verifier.asJson
-        val patch       = JsonPatch(ctx.request.body)
-        val newVerifier = patch(currentJson)
+        val newVerifier = utils.JsonPatchHelpers.patchJson(ctx.request.body, currentJson)
         ClientCertificateValidator.fromJson(newVerifier) match {
           case Left(_) => BadRequest(Json.obj("error" -> "Bad ClientValidator format")).asFuture
           case Right(newVerifier) => {

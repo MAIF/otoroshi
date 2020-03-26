@@ -14,13 +14,9 @@ import play.api.Configuration
 import play.api.libs.ws.WSResponse
 
 class SidecarSpec(name: String, configurationSpec: => Configuration)
-    extends PlaySpec
-    with OneServerPerSuiteWithMyComponents
-    with OtoroshiSpecHelper
-    with IntegrationPatience {
+    extends OtoroshiSpec {
 
   lazy val serviceHost = "sidecar.oto.tools"
-  lazy val ws          = otoroshiComponents.wsClient
   implicit val system  = ActorSystem("otoroshi-test")
   lazy val fakePort    = TargetService.freePort
 
@@ -31,12 +27,10 @@ class SidecarSpec(name: String, configurationSpec: => Configuration)
     resp
   }
 
-  override def getConfiguration(configuration: Configuration) = configuration ++ configurationSpec ++ Configuration(
+  override def getTestConfiguration(configuration: Configuration) = Configuration(
     ConfigFactory
       .parseString(s"""
                       |{
-                      |  http.port=$port
-                      |  play.server.http.port=$port
                       |  app.sidecar.serviceId = "sidecar-service1-test"
                       |  app.sidecar.target = "http://127.0.0.1:$fakePort"
                       |  app.sidecar.from = "127.0.0.1"
@@ -45,7 +39,7 @@ class SidecarSpec(name: String, configurationSpec: => Configuration)
                       |}
        """.stripMargin)
       .resolve()
-  )
+  ).withFallback(configurationSpec).withFallback(configuration)
 
   s"[$name] Otoroshi Sidecar" should {
 
@@ -106,6 +100,7 @@ class SidecarSpec(name: String, configurationSpec: => Configuration)
     )
 
     "warm up" in {
+      startOtoroshi()
       getOtoroshiServices().futureValue // WARM UP
       createOtoroshiApiKey(apiKey).futureValue
     }
@@ -192,6 +187,10 @@ class SidecarSpec(name: String, configurationSpec: => Configuration)
       basicTestServer1.stop()
       basicTestServer2.stop()
       system.terminate()
+    }
+
+    "shutdown" in {
+      stopAll()
     }
   }
 }

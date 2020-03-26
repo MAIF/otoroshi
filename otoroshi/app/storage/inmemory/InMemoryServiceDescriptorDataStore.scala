@@ -72,9 +72,9 @@ class InMemoryServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int,
 
   def startCleanup(env: Env): Unit = {
     updateRef.set(
-      env.otoroshiScheduler.schedule(10.seconds, 5.minutes)(
+      env.otoroshiScheduler.scheduleAtFixedRate(10.seconds, 5.minutes)(utils.SchedulerHelper.runnable(
         cleanupFastLookups()(env.otoroshiExecutionContext, env.otoroshiMaterializer, env)
-      )(env.otoroshiExecutionContext)
+      ))(env.otoroshiExecutionContext)
     )
   }
 

@@ -522,8 +522,8 @@ class JobManager(env: Env) {
     JobManager.logger.info("Starting job manager")
     env.scriptManager.jobNames
       .map(name => env.scriptManager.getAnyScript[Job]("cp:" + name)) // starting auto registering for cp jobs
-    scanRef.set(jobScheduler.schedule(1.second, 1.second)(scanRegisteredJobs())(jobExecutor))
-    lockRef.set(jobScheduler.schedule(1.second, 10.seconds)(updateLocks())(jobExecutor))
+    scanRef.set(jobScheduler.scheduleAtFixedRate(1.second, 1.second)(utils.SchedulerHelper.runnable(scanRegisteredJobs()))(jobExecutor))
+    lockRef.set(jobScheduler.scheduleAtFixedRate(1.second, 10.seconds)(utils.SchedulerHelper.runnable(updateLocks()))(jobExecutor))
   }
 
   def stop(): Unit = {

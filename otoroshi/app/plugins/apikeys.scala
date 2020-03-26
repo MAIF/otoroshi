@@ -173,6 +173,8 @@ class CertificateAsApikey extends PreRouting {
         val serialNumber = cert.getSerialNumber.toString
         val subjectDN    = cert.getSubjectDN.getName
         val clientId     = Base64.encodeBase64String((subjectDN + "-" + serialNumber).getBytes)
+        // TODO: validate CA DN based on config array
+        // TODO: validate CA serial based on config array
         env.datastores.apiKeyDataStore
           .findById(clientId)
           .flatMap {
@@ -193,6 +195,7 @@ class CertificateAsApikey extends PreRouting {
                 tags = (conf \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty),
                 metadata = (conf \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty)
               )
+              // TODO: make it work in otoroshi cluster ....
               apikey.save().map(_ => apikey)
             }
           }

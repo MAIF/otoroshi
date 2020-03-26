@@ -5,6 +5,16 @@ import akka.http.scaladsl.util.FastFuture
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
 
+object SchedulerHelper {
+  def runnable(f: => Any): Runnable = {
+    new Runnable {
+      override def run(): Unit = {
+        f
+      }
+    }
+  }
+}
+
 package object future {
 
   object Implicits {

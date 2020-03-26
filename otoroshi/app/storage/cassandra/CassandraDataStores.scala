@@ -44,17 +44,12 @@ class CassandraDataStores(naive: Boolean,
         .getOrElse(ConfigFactory.empty)
     )
 
-  lazy val redis: RedisLike with RawGetRedis =
-    if (naive)
-      new CassandraRedisNaive(
-        actorSystem,
-        configuration
-      )
-    else
-      new CassandraRedis(
-        actorSystem,
-        configuration
-      )
+  lazy val mat = Materializer(actorSystem)
+
+  lazy val redis: RedisLike with RawGetRedis = new NewCassandraRedis(
+    actorSystem,
+    configuration
+  )(actorSystem.dispatcher, mat, env)
 
   override def before(configuration: Configuration,
                       environment: Environment,
@@ -140,7 +135,7 @@ class CassandraDataStores(naive: Boolean,
       group: Int
   )(implicit ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = {
     Source
-      .fromFuture(
+      .future(
         redis.keys(s"${env.storageRoot}:*")
       )
       .mapConcat(_.toList)
@@ -197,7 +192,7 @@ class CassandraDataStores(naive: Boolean,
 
     FastFuture.successful(
       Source
-        .fromFuture(redis.keys(s"${env.storageRoot}:*"))
+        .future(redis.keys(s"${env.storageRoot}:*"))
         .mapConcat(_.toList)
         .grouped(10)
         .mapAsync(1) {

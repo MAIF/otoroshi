@@ -22,7 +22,7 @@ import akka.util.ByteString
 import com.github.blemale.scaffeine.{Cache, LoadingCache, Scaffeine}
 import com.google.common.base.Charsets
 import com.typesafe.sslconfig.akka.AkkaSSLConfig
-import com.typesafe.sslconfig.ssl.{DefaultHostnameVerifier, SSLConfigSettings}
+import com.typesafe.sslconfig.ssl.{DefaultHostnameVerifier, NoopHostnameVerifier, SSLConfigSettings}
 import com.typesafe.sslconfig.util.LoggerFactory
 import env.Env
 import javax.net.ssl.{HostnameVerifier, SSLContext, SSLSession}
@@ -434,7 +434,7 @@ class CustomLooseHostnameVerifier(mkLogger: LoggerFactory) extends HostnameVerif
 
   private val logger = mkLogger(getClass)
 
-  private val defaultHostnameVerifier = new DefaultHostnameVerifier(mkLogger)
+  private val defaultHostnameVerifier = new NoopHostnameVerifier // new DefaultHostnameVerifier(mkLogger)
 
   override def verify(hostname: String, sslSession: SSLSession): Boolean = {
     if (hostname.contains("&")) {
@@ -464,7 +464,7 @@ class CustomHostnameVerifier(mkLogger: LoggerFactory) extends HostnameVerifier {
 
   private val logger = mkLogger(getClass)
 
-  private val defaultHostnameVerifier = new DefaultHostnameVerifier(mkLogger)
+  private val defaultHostnameVerifier = new NoopHostnameVerifier //new DefaultHostnameVerifier(mkLogger)
 
   override def verify(hostname: String, sslSession: SSLSession): Boolean = {
     if (hostname.contains("&")) {
@@ -703,6 +703,7 @@ case class AkkWsClientStreamedResponse(httpResponse: HttpResponse,
   def cookie(name: String): Option[WSCookie] = _cookies.find(_.name == name)
   override def xml: Elem                     = _bodyAsXml
   override def json: JsValue                 = _bodyAsJson
+  override def uri: URI = new URI(underlyingUrl)
 }
 
 case class AkkWsClientRawResponse(httpResponse: HttpResponse, underlyingUrl: String, rawbody: ByteString)
@@ -744,6 +745,7 @@ case class AkkWsClientRawResponse(httpResponse: HttpResponse, underlyingUrl: Str
   override def body[T: BodyReadable]: T =
     throw new RuntimeException("Not supported on this WSClient !!! (RawResponse.body)")
   def cookie(name: String): Option[WSCookie] = _cookies.find(_.name == name)
+  override def uri: URI = new URI(underlyingUrl)
 }
 
 object CaseInsensitiveOrdered extends Ordering[String] {
@@ -793,7 +795,7 @@ case class AkkaWsClientRequest(
     _method: HttpMethod = HttpMethods.GET,
     body: WSBody = EmptyBody,
     headers: Map[String, Seq[String]] = Map.empty[String, Seq[String]],
-    requestTimeout: Option[Int] = None,
+    requestTimeout: Option[Duration] = None,
     proxy: Option[WSProxyServer] = None,
     clientConfig: ClientConfig = ClientConfig(),
     env: Env
@@ -876,6 +878,7 @@ case class AkkaWsClientRequest(
               .withIdleTimeout(idleTimeout)
               .withConnectionSettings(
                 a.connectionSettings
+                  .withTransport(httpsProxyTransport)
                   .withConnectingTimeout(connectionTimeout)
                   .withIdleTimeout(idleTimeout)
               )
@@ -887,6 +890,7 @@ case class AkkaWsClientRequest(
           .withIdleTimeout(idleTimeout)
           .withConnectionSettings(
             a.connectionSettings
+              .withTransport(ManualResolveTransport.http)
               .withConnectingTimeout(connectionTimeout)
               .withIdleTimeout(idleTimeout)
           )
@@ -915,7 +919,7 @@ case class AkkaWsClientRequest(
     )
   }
 
-  def withRequestTimeout(timeout: Duration): Self = copy(requestTimeout = Some(timeout.toMillis.toInt))
+  def withRequestTimeout(timeout: Duration): Self = copy(requestTimeout = Some(timeout))
 
   override def withBody[T](body: T)(implicit evidence$1: BodyWritable[T]): WSRequest =
     copy(body = evidence$1.transform(body))
@@ -943,9 +947,7 @@ case class AkkaWsClientRequest(
         AkkWsClientStreamedResponse(resp,
                                     rawUrl,
                                     client.mat,
-                                    requestTimeout
-                                      .map(v => FiniteDuration(v, TimeUnit.MILLISECONDS))
-                                      .getOrElse(FiniteDuration(365, TimeUnit.DAYS))) // yeah that's infinity ...
+                                    requestTimeout.map(v => FiniteDuration(v.toMillis, TimeUnit.MILLISECONDS)).getOrElse(FiniteDuration(365, TimeUnit.DAYS))) // yeah that's infinity ...
       }(client.ec)
   }
 
@@ -1155,6 +1157,8 @@ case class AkkaWsClientRequest(
     throw new RuntimeException("Not supported on this WSClient !!! (Request.withRequestFilter)")
   override def withVirtualHost(vh: String): WSRequest =
     throw new RuntimeException("Not supported on this WSClient !!! (Request.withVirtualHost)")
+
+  override def withUrl(url: String): WSRequest = copy(rawUrl = url)
 }
 
 object Implicits {

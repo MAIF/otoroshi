@@ -21,7 +21,7 @@ class InMemoryRedis(actorSystem: ActorSystem) extends RedisLike {
   private val store       = new ConcurrentHashMap[String, Any]()
   private val expirations = new ConcurrentHashMap[String, Long]()
 
-  private val cancel = actorSystem.scheduler.schedule(0.millis, 10.millis) {
+  private val cancel = actorSystem.scheduler.scheduleAtFixedRate(0.millis, 10.millis)(utils.SchedulerHelper.runnable {
     val time = System.currentTimeMillis()
     expirations.entrySet().asScala.foreach { entry =>
       if (entry.getValue < time) {
@@ -30,7 +30,7 @@ class InMemoryRedis(actorSystem: ActorSystem) extends RedisLike {
       }
     }
     ()
-  }
+  })
 
   override def stop(): Unit =
     cancel.cancel()

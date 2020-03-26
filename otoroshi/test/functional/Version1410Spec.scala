@@ -20,31 +20,26 @@ import scala.math.BigDecimal.RoundingMode
 import scala.util.Try
 
 class Version1410Spec(name: String, configurationSpec: => Configuration)
-    extends PlaySpec
-    with OneServerPerSuiteWithMyComponents
-    with OtoroshiSpecHelper
-    with IntegrationPatience {
+    extends OtoroshiSpec {
 
-  implicit lazy val ws = otoroshiComponents.wsClient
   implicit val system  = ActorSystem("otoroshi-test")
   implicit val env     = otoroshiComponents.env
 
   import scala.concurrent.duration._
 
-  override def getConfiguration(configuration: Configuration) = configuration ++ configurationSpec ++ Configuration(
+  override def getTestConfiguration(configuration: Configuration) = Configuration(
     ConfigFactory
       .parseString(s"""
                       |{
-                      |  http.port=$port
-                      |  play.server.http.port=$port
                       |}
        """.stripMargin)
       .resolve()
-  )
+  ).withFallback(configurationSpec).withFallback(configuration)
 
   s"[$name] Otoroshi service descriptors" should {
 
     "warm up" in {
+      startOtoroshi()
       getOtoroshiServices().futureValue // WARM UP
     }
 
@@ -179,5 +174,9 @@ class Version1410Spec(name: String, configurationSpec: => Configuration)
     deleteOtoroshiApiKey(invalidApiKey).futureValue
 
     stopServers()
+  }
+
+  "shutdown" in {
+    stopAll()
   }
 }

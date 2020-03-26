@@ -4,7 +4,7 @@ import scala.concurrent.{Await, Future, Promise}
 import scala.util.{Failure, Success, Try}
 import scala.util.control.NonFatal
 import org.apache.kafka.clients.CommonClientConfigs
-import org.apache.kafka.clients.producer.{Callback, KafkaProducer, ProducerRecord, RecordMetadata}
+import org.apache.kafka.clients.producer._
 import org.apache.kafka.common.serialization.{ByteArraySerializer, StringSerializer}
 import akka.Done
 import akka.actor.{Actor, ActorSystem, Props}
@@ -193,7 +193,7 @@ class KafkaEventProducer(_env: env.Env, config: KafkaConfig, topicFunction: Kafk
   logger.debug(s"Initializing kafka event store on topic ${topic}")
 
   private lazy val producerSettings                             = KafkaSettings.producerSettings(_env, config)
-  private lazy val producer: KafkaProducer[Array[Byte], String] = producerSettings.createKafkaProducer
+  private lazy val producer: Producer[Array[Byte], String]      = producerSettings.createKafkaProducer
 
   def publish(event: JsValue): Future[Done] = {
     val promise = Promise[RecordMetadata]
