@@ -9,9 +9,9 @@ lazy val root = (project in file("."))
 
 lazy val scalaLangVersion = "2.12.11"
 // lazy val scalaLangVersion = "2.13.1"
-// https://github.com/gphat/censorinus/issues/34
-// https://github.com/propensive/kaleidoscope/issues/24
-// https://github.com/risksense/ipaddr/issues/11
+// * https://github.com/gphat/censorinus/issues/34
+// * https://github.com/propensive/kaleidoscope/issues/24
+// * https://github.com/risksense/ipaddr/issues/11
 lazy val metricsVersion = "4.1.5"
 lazy val acme4jVersion = "2.9"
 lazy val prometheusVersion = "0.8.1"
@@ -28,10 +28,10 @@ libraryDependencies ++= Seq(
   "com.github.etaty"         %% "rediscala"                  % "1.9.0",
   "com.github.gphat"         %% "censorinus"                 % "2.1.15",
   "com.typesafe.akka"        %% "akka-stream-kafka"          % "2.0.2",
-  "io.dropwizard.metrics"    % "metrics-core"                % metricsVersion, // Apache 2.0
-  "io.dropwizard.metrics"    % "metrics-jvm"                 % metricsVersion, // Apache 2.0
-  "io.dropwizard.metrics"    % "metrics-jmx"                 % metricsVersion, // Apache 2.0
-  "io.dropwizard.metrics"    % "metrics-json"                % metricsVersion, // Apache 2.0
+  "io.dropwizard.metrics"    % "metrics-core"                % metricsVersion,    // Apache 2.0
+  "io.dropwizard.metrics"    % "metrics-jvm"                 % metricsVersion,    // Apache 2.0
+  "io.dropwizard.metrics"    % "metrics-jmx"                 % metricsVersion,    // Apache 2.0
+  "io.dropwizard.metrics"    % "metrics-json"                % metricsVersion,    // Apache 2.0
   "io.prometheus"            % "simpleclient_common"         % prometheusVersion, // Apache 2.0
   "io.prometheus"            % "simpleclient_dropwizard"     % prometheusVersion, // Apache 2.0
   "com.auth0"                % "java-jwt"                    % "3.10.1",
@@ -58,14 +58,15 @@ libraryDependencies ++= Seq(
   "com.cronutils"            % "cron-utils"                  % "9.0.2",
   "commons-lang"             % "commons-lang"                % "2.6",
   "com.datastax.oss"         % "java-driver-core"            % "4.5.1",
+  "org.gnieh"                %% "diffson-play-json"          % "4.0.2" excludeAll ExclusionRule(organization = "com.typesafe.akka"),
   "org.scala-lang"           %  "scala-compiler"             % scalaLangVersion,
   "org.scala-lang"           %  "scala-library"              % scalaLangVersion,
   //"io.kubernetes"            % "client-java"               % kubernetesVersion,
   //"io.kubernetes"            % "client-java-extended"      % kubernetesVersion,
+
   // tests
   "org.scalatestplus.play"   %% "scalatestplus-play"         % "5.0.0" % Test,
-  // need to be updated, but later
-  "org.gnieh"                %% "diffson-play-json"          % "4.0.2" excludeAll (ExclusionRule(organization = "com.typesafe.akka")),
+
   // do not update because the feature is deprecated and will be removed
   "com.yubico"               %  "u2flib-server-core"         % "0.16.0",
   "com.yubico"               %  "u2flib-server-attestation"  % "0.16.0",
