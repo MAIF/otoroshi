@@ -574,7 +574,7 @@ export function panicMode() {
 }
 
 export function fetchAdmins() {
-  return fetch(`/bo/u2f/admins`, {
+  return fetch(`/bo/simple/admins`, {
     method: 'GET',
     credentials: 'include',
     headers: {
@@ -582,8 +582,8 @@ export function fetchAdmins() {
     },
   })
     .then(r => r.json())
-    .then(_u2fAdmins => {
-      return fetch(`/bo/simple/admins`, {
+    .then(_admins => {
+      return fetch(`/bo/webauthn/admins`, {
         method: 'GET',
         credentials: 'include',
         headers: {
@@ -591,21 +591,10 @@ export function fetchAdmins() {
         },
       })
         .then(r => r.json())
-        .then(_admins => {
-          return fetch(`/bo/webauthn/admins`, {
-            method: 'GET',
-            credentials: 'include',
-            headers: {
-              Accept: 'application/json',
-            },
-          })
-            .then(r => r.json())
-            .then(_webauthnadmins => {
-              const admins = _admins.map(admin => ({ ...admin, type: 'SIMPLE' }));
-              const u2fAdmins = _u2fAdmins.map(admin => ({ ...admin, type: 'U2F' }));
-              const webauthnadmins = _webauthnadmins.map(admin => ({ ...admin, type: 'WEBAUTHN' }));
-              return [...u2fAdmins, ...webauthnadmins, ...admins];
-            });
+        .then(_webauthnadmins => {
+          const admins = _admins.map(admin => ({ ...admin, type: 'SIMPLE' }));
+          const webauthnadmins = _webauthnadmins.map(admin => ({ ...admin, type: 'WEBAUTHN' }));
+          return [...webauthnadmins, ...admins];
         });
     });
 }
@@ -613,14 +602,6 @@ export function fetchAdmins() {
 export function discardAdmin(username, id, type) {
   if (type === 'SIMPLE') {
     return fetch(`/bo/simple/admins/${username}`, {
-      method: 'DELETE',
-      credentials: 'include',
-      headers: {
-        Accept: 'application/json',
-      },
-    }).then(r => r.json());
-  } else if (type === 'U2F') {
-    return fetch(`/bo/u2f/admins/${username}/${id}`, {
       method: 'DELETE',
       credentials: 'include',
       headers: {

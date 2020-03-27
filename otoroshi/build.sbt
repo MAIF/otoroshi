@@ -72,8 +72,6 @@ libraryDependencies ++= Seq(
   "org.scalatestplus.play"   %% "scalatestplus-play"         % "5.0.0" % Test,
 
   // do not update because the feature is deprecated and will be removed
-  "com.yubico"               %  "u2flib-server-core"         % "0.16.0",
-  "com.yubico"               %  "u2flib-server-attestation"  % "0.16.0",
   "org.reactivemongo"        %% "reactivemongo"              % "0.20.3",
   "org.iq80.leveldb"         %  "leveldb"                    % "0.12",
 

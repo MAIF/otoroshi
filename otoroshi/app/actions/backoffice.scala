@@ -298,16 +298,6 @@ class AdminClearanceChecker()(implicit env: Env) {
           case "/robot.txt"              => f
           case "/error"                  => f
           case "/auth0error"             => f
-          case "/bo/u2f/register/start" =>
-            FastFuture.successful(Results.Unauthorized(Json.obj("error" -> "unauthorized")))
-          case "/bo/u2f/register/finish" =>
-            FastFuture.successful(Results.Unauthorized(Json.obj("error" -> "unauthorized")))
-          case "/bo/u2f/login/start" => FastFuture.successful(Results.Unauthorized(Json.obj("error" -> "unauthorized")))
-          case "/bo/u2f/login/finish" =>
-            FastFuture.successful(Results.Unauthorized(Json.obj("error" -> "unauthorized")))
-          case "/bo/u2f/admins" => FastFuture.successful(Results.Unauthorized(Json.obj("error" -> "unauthorized")))
-          case r"/bo/u2f/admins/[^/]+/[^/]+" =>
-            FastFuture.successful(Results.Unauthorized(Json.obj("error" -> "unauthorized")))
           case uri if uri.startsWith("/backoffice/auth0/")  => f
           case uri if uri.startsWith("/privateapps/auth0/") => f
           case "/bo/simple/login"                           => f

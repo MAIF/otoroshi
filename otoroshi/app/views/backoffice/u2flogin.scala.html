@@ -3,7 +3,6 @@
 @(_env: Env)
 
 @authScript = {
-    <script src="@routes.Assets.versioned("javascripts/u2f-api.js")"></script>
     @if(_env.liveJs) {
         <script src="//localhost:3040/assets/javascripts/bundle/backoffice.js" type="text/javascript"></script>
     } else {

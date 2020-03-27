@@ -11,14 +11,6 @@ import akka.http.scaladsl.util.FastFuture
 import com.fasterxml.jackson.annotation.JsonInclude.Include
 import com.fasterxml.jackson.databind.{ObjectMapper, SerializationFeature}
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module
-import com.yubico.u2f.U2F
-import com.yubico.u2f.attestation.MetadataService
-import com.yubico.u2f.data.messages.{
-  AuthenticateRequestData,
-  AuthenticateResponse,
-  RegisterRequestData,
-  RegisterResponse
-}
 import com.yubico.webauthn._
 import com.yubico.webauthn.data._
 import env.Env
@@ -31,7 +23,6 @@ import play.api.mvc._
 import security.IdGenerator
 import utils.future.Implicits._
 
-import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 import scala.util.{Failure, Success, Try}
 
@@ -43,9 +34,6 @@ class U2FController(BackOfficeAction: BackOfficeAction,
   implicit lazy val ec = env.otoroshiExecutionContext
 
   lazy val logger = Logger("otoroshi-u2f-controller")
-
-  private val u2f             = U2F.withoutAppIdValidation() // new U2F()
-  private val metadataService = new MetadataService()
 
   private val base64Encoder = java.util.Base64.getUrlEncoder
   private val base64Decoder = java.util.Base64.getUrlDecoder
@@ -150,191 +138,6 @@ class U2FController(BackOfficeAction: BackOfficeAction,
         ctx.from,
         ctx.ua,
         Json.obj("username" -> username)
-      )
-      Audit.send(event)
-      Alerts.send(U2FAdminDeletedAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user, event, ctx.from, ctx.ua))
-      Ok(Json.obj("done" -> true))
-    }
-  }
-
-  /////////// U2F admins ///////////////////////////////////////////////////////////////////////////////////////////////
-
-  def u2fRegisterStart() = BackOfficeActionAuth.async(parse.json) { ctx =>
-    val appId = s"${env.rootScheme}${env.backOfficeHost}"
-    (ctx.request.body \ "username").asOpt[String] match {
-      case Some(u) => {
-        import collection.JavaConverters._
-        env.datastores.u2FAdminDataStore.getUserRegistration(u).flatMap { it =>
-          val registerRequestData = u2f.startRegistration(appId, it.map(_._1).asJava)
-          logger.debug(s"registerRequestData ${Json.prettyPrint(Json.parse(registerRequestData.toJson))}")
-          env.datastores.u2FAdminDataStore
-            .addRequest(registerRequestData.getRequestId, registerRequestData.toJson)
-            .map {
-              case true  => Ok(Json.obj("username"               -> u, "data" -> Json.parse(registerRequestData.toJson)))
-              case false => InternalServerError(Json.obj("error" -> "error while persisting"))
-            }
-        }
-      }
-      case None => FastFuture.successful(BadRequest(Json.obj("error" -> "no username provided")))
-    }
-  }
-
-  def u2fRegisterFinish() = BackOfficeActionAuth.async(parse.json) { ctx =>
-    import collection.JavaConverters._
-    val usernameOpt = (ctx.request.body \ "username").asOpt[String]
-    val passwordOpt = (ctx.request.body \ "password").asOpt[String]
-    val labelOpt    = (ctx.request.body \ "label").asOpt[String]
-    val responseOpt = (ctx.request.body \ "tokenResponse").asOpt[JsObject]
-    (usernameOpt, passwordOpt, labelOpt, responseOpt) match {
-      case (Some(username), Some(password), Some(label), Some(response)) => {
-        val registerResponse = RegisterResponse.fromJson(Json.stringify(response))
-        env.datastores.u2FAdminDataStore.getRequest(registerResponse.getRequestId).flatMap {
-          case None => FastFuture.successful(NotFound(Json.obj("error" -> "Unknown request")))
-          case Some(data) => {
-            val registerRequestData = RegisterRequestData.fromJson(data)
-            val registration        = u2f.finishRegistration(registerRequestData, registerResponse)
-            val attestation         = metadataService.getAttestation(registration.getAttestationCertificate)
-            env.datastores.u2FAdminDataStore.deleteRequest(registerResponse.getRequestId).flatMap { _ =>
-              val saltedPassword = BCrypt.hashpw(password, BCrypt.gensalt())
-              env.datastores.u2FAdminDataStore.registerUser(username, saltedPassword, label, registration).map { _ =>
-                val jsonAttestation = Json.obj(
-                  "isTrusted"          -> attestation.isTrusted,
-                  "metadataIdentifier" -> attestation.getMetadataIdentifier,
-                  "vendorProperties"   -> JsObject(attestation.getVendorProperties.asScala.mapValues(JsString.apply)),
-                  "deviceProperties"   -> JsObject(attestation.getDeviceProperties.asScala.mapValues(JsString.apply)),
-                  "transports"         -> JsArray(attestation.getTransports.asScala.toSeq.map(t => JsString(t.name()))),
-                  "registration"       -> Json.parse(registration.toJsonWithAttestationCert)
-                )
-                logger.debug(s"$username => ${Json.prettyPrint(jsonAttestation)}")
-                Ok(
-                  Json.obj(
-                    "username"    -> username,
-                    "attestation" -> jsonAttestation
-                  )
-                )
-              }
-            }
-          }
-        }
-      }
-      case _ => FastFuture.successful(BadRequest(Json.obj("error" -> "no username or token provided")))
-    }
-  }
-
-  def u2fAuthenticationStart() = BackOfficeAction.async(parse.json) { ctx =>
-    val appId = s"${env.rootScheme}${env.backOfficeHost}"
-    (ctx.request.body \ "username").asOpt[String] match {
-      case Some(u) => {
-        import collection.JavaConverters._
-        env.datastores.u2FAdminDataStore.getUserRegistration(u).flatMap { it =>
-          val authenticateRequestData = u2f.startAuthentication(appId, it.map(_._1).asJava)
-          logger.debug(s"authenticateRequestData ${Json.prettyPrint(Json.parse(authenticateRequestData.toJson))}")
-          env.datastores.u2FAdminDataStore
-            .addRequest(authenticateRequestData.getRequestId, authenticateRequestData.toJson)
-            .map {
-              case true  => Ok(Json.obj("username"               -> u, "data" -> Json.parse(authenticateRequestData.toJson)))
-              case false => InternalServerError(Json.obj("error" -> "error while persisting"))
-            }
-        }
-      }
-      case None => FastFuture.successful(BadRequest(Json.obj("error" -> "no username provided")))
-    }
-  }
-
-  def u2fAuthenticationFinish() = BackOfficeAction.async(parse.json) { ctx =>
-    implicit val req = ctx.request
-    import collection.JavaConverters._
-    val usernameOpt = (ctx.request.body \ "username").asOpt[String]
-    val passwordOpt = (ctx.request.body \ "password").asOpt[String]
-    val responseOpt = (ctx.request.body \ "tokenResponse").asOpt[JsObject]
-    (usernameOpt, passwordOpt, responseOpt) match {
-      case (Some(username), Some(pass), Some(response)) => {
-        val authenticateResponse = AuthenticateResponse.fromJson(Json.stringify(response))
-        env.datastores.u2FAdminDataStore.getRequest(authenticateResponse.getRequestId).flatMap {
-          case None => FastFuture.successful(NotFound(Json.obj("error" -> "Unknown request")))
-          case Some(data) => {
-            env.datastores.u2FAdminDataStore.getUserRegistration(username).flatMap { it =>
-              val authenticateRequest = AuthenticateRequestData.fromJson(data)
-              val registration =
-                u2f.finishAuthentication(authenticateRequest, authenticateResponse, it.map(_._1).asJava)
-              env.datastores.u2FAdminDataStore.deleteRequest(authenticateRequest.getRequestId).flatMap { _ =>
-                val keyHandle       = registration.getKeyHandle
-                val user            = it.filter(_._1.getKeyHandle == keyHandle).head._2
-                val password        = (user \ "password").as[String]
-                val label           = (user \ "label").as[String]
-                val authorizedGroup = (user \ "authorizedGroup").asOpt[String]
-                if (BCrypt.checkpw(pass, password)) {
-                  env.datastores.u2FAdminDataStore.registerUser(username, password, label, registration).flatMap { _ =>
-                    logger.debug(s"Login successful for user '$username'")
-                    BackOfficeUser(
-                      IdGenerator.token(64),
-                      username,
-                      username,
-                      Json.obj(
-                        "name"  -> label,
-                        "email" -> username
-                      ),
-                      authorizedGroup,
-                      false
-                    ).save(Duration(env.backOfficeSessionExp, TimeUnit.MILLISECONDS)).map { boUser =>
-                      env.datastores.u2FAdminDataStore.hasAlreadyLoggedIn(username).map {
-                        case false => {
-                          env.datastores.u2FAdminDataStore.alreadyLoggedIn(username)
-                          Alerts.send(
-                            AdminFirstLogin(env.snowflakeGenerator.nextIdStr(), env.env, boUser, ctx.from, ctx.ua)
-                          )
-                        }
-                        case true => {
-                          Alerts.send(
-                            AdminLoggedInAlert(env.snowflakeGenerator.nextIdStr(),
-                                               env.env,
-                                               boUser,
-                                               ctx.from,
-                                               ctx.ua,
-                                               "local")
-                          )
-                        }
-                      }
-                      Ok(
-                        Json.obj(
-                          "username" -> username
-                        )
-                      ).addingToSession("bousr" -> boUser.randomId)
-                    }
-                  }
-                } else {
-                  FastFuture.successful(Unauthorized(Json.obj("error" -> "Not Authorized")))
-                }
-              }
-            }
-          }
-        }
-      }
-      case _ => FastFuture.successful(BadRequest(Json.obj("error" -> "no username or token provided")))
-    }
-  }
-
-  def u2fAdmins() = BackOfficeActionAuth.async { ctx =>
-    val paginationPage: Int = ctx.request.queryString.get("page").flatMap(_.headOption).map(_.toInt).getOrElse(1)
-    val paginationPageSize: Int =
-      ctx.request.queryString.get("pageSize").flatMap(_.headOption).map(_.toInt).getOrElse(Int.MaxValue)
-    val paginationPosition = (paginationPage - 1) * paginationPageSize
-    env.datastores.u2FAdminDataStore.findAll() map { users =>
-      Ok(JsArray(users.drop(paginationPosition).take(paginationPageSize)))
-    }
-  }
-
-  def deleteU2FAdmin(username: String, id: String) = BackOfficeActionAuth.async { ctx =>
-    env.datastores.u2FAdminDataStore.deleteUser(username, id).map { d =>
-      val event = BackOfficeEvent(
-        env.snowflakeGenerator.nextIdStr(),
-        env.env,
-        ctx.user,
-        "DELETE_U2F_ADMIN",
-        s"Admin deleted an U2F Admin",
-        ctx.from,
-        ctx.ua,
-        Json.obj("username" -> username, "id" -> id)
       )
       Audit.send(event)
       Alerts.send(U2FAdminDeletedAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user, event, ctx.from, ctx.ua))
@@ -607,9 +410,9 @@ class U2FController(BackOfficeAction: BackOfficeAction,
                           authorizedGroup,
                           false
                         ).save(Duration(env.backOfficeSessionExp, TimeUnit.MILLISECONDS)).map { boUser =>
-                          env.datastores.u2FAdminDataStore.hasAlreadyLoggedIn(username).map {
+                          env.datastores.webAuthnAdminDataStore.hasAlreadyLoggedIn(username).map {
                             case false => {
-                              env.datastores.u2FAdminDataStore.alreadyLoggedIn(username)
+                              env.datastores.webAuthnAdminDataStore.alreadyLoggedIn(username)
                               Alerts.send(
                                 AdminFirstLogin(env.snowflakeGenerator.nextIdStr(), env.env, boUser, ctx.from, ctx.ua)
                               )
@@ -648,7 +451,6 @@ class U2FController(BackOfficeAction: BackOfficeAction,
 class LocalCredentialRepository(users: Seq[JsValue], jsonMapper: ObjectMapper, base64Decoder: java.util.Base64.Decoder)
     extends CredentialRepository {
 
-  import scala.concurrent.duration._
   import collection.JavaConverters._
 
   override def getCredentialIdsForUsername(username: String): util.Set[PublicKeyCredentialDescriptor] = {

@@ -43,6 +43,12 @@ class WebAuthnAdminDataStore() {
 
   def key(id: String)(implicit env: Env): String = s"${env.storageRoot}:webauthn:admins:$id"
 
+  def hasAlreadyLoggedIn(email: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
+    env.datastores.rawDataStore.sismember(s"${env.storageRoot}:users:alreadyloggedin", ByteString(email))
+
+  def alreadyLoggedIn(email: String)(implicit ec: ExecutionContext, env: Env): Future[Long] =
+    env.datastores.rawDataStore.sadd(s"${env.storageRoot}:users:alreadyloggedin", Seq(ByteString(email)))
+
   def findByUsername(username: String)(implicit ec: ExecutionContext, env: Env): Future[Option[JsValue]] =
     env.datastores.rawDataStore.get(key(username)).map(_.map(v => Json.parse(v.utf8String)))
 
@@ -90,5 +96,13 @@ class WebAuthnAdminDataStore() {
       ),
       None
     )
+  }
+
+  def save(payload: JsValue)(
+    implicit ec: ExecutionContext,
+    env: Env
+  ): Future[Boolean] = {
+    val username = (payload \ "username").as[String]
+    env.datastores.rawDataStore.set(key(username), ByteString(Json.stringify(payload)), None)
   }
 }

@@ -38,7 +38,6 @@ trait DataStores {
   def globalConfigDataStore: GlobalConfigDataStore
   def apiKeyDataStore: ApiKeyDataStore
   def serviceDescriptorDataStore: ServiceDescriptorDataStore
-  def u2FAdminDataStore: U2FAdminDataStore
   def simpleAdminDataStore: SimpleAdminDataStore
   def alertDataStore: AlertDataStore
   def auditDataStore: AuditDataStore
@@ -75,6 +74,9 @@ trait RawDataStore {
   def incrby(key: String, incr: Long)(implicit ec: ExecutionContext, env: Env): Future[Long]
   def keys(pattern: String)(implicit ec: ExecutionContext, env: Env): Future[Seq[String]]
   def pexpire(key: String, pttl: Long)(implicit ec: ExecutionContext, env: Env): Future[Boolean]
+  def sadd(key: String, members: Seq[ByteString]): Future[Long]
+  def sismember(key: String, member: ByteString): Future[Boolean]
+  def smembers(key: String): Future[Seq[ByteString]]
 }
 
 trait BasicStore[T] {

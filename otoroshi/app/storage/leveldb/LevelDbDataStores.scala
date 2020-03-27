@@ -73,7 +73,6 @@ class LevelDbDataStores(configuration: Configuration,
   private lazy val _globalConfigDataStore       = new InMemoryGlobalConfigDataStore(redis, env)
   private lazy val _apiKeyDataStore             = new InMemoryApiKeyDataStore(redis, env)
   private lazy val _serviceDescriptorDataStore  = new InMemoryServiceDescriptorDataStore(redis, redisStatsItems, env)
-  private lazy val _u2FAdminDataStore           = new InMemoryU2FAdminDataStore(redis)
   private lazy val _simpleAdminDataStore        = new InMemorySimpleAdminDataStore(redis, env)
   private lazy val _alertDataStore              = new InMemoryAlertDataStore(redis)
   private lazy val _auditDataStore              = new InMemoryAuditDataStore(redis)
@@ -114,7 +113,6 @@ class LevelDbDataStores(configuration: Configuration,
   override def globalConfigDataStore: GlobalConfigDataStore                     = _globalConfigDataStore
   override def apiKeyDataStore: ApiKeyDataStore                                 = _apiKeyDataStore
   override def serviceDescriptorDataStore: ServiceDescriptorDataStore           = _serviceDescriptorDataStore
-  override def u2FAdminDataStore: U2FAdminDataStore                             = _u2FAdminDataStore
   override def simpleAdminDataStore: SimpleAdminDataStore                       = _simpleAdminDataStore
   override def alertDataStore: AlertDataStore                                   = _alertDataStore
   override def auditDataStore: AuditDataStore                                   = _auditDataStore
@@ -148,6 +146,8 @@ class LevelDbDataStores(configuration: Configuration,
                 key.startsWith(s"${env.storageRoot}:users:backoffice") ||
                 key.startsWith(s"${env.storageRoot}:admins:") ||
                 key.startsWith(s"${env.storageRoot}:u2f:users:") ||
+                key.startsWith(s"${env.storageRoot}:users:") ||
+                key.startsWith(s"${env.storageRoot}:webauthn:admins:") ||
                 key.startsWith(s"${env.storageRoot}:deschealthcheck:") ||
                 key.startsWith(s"${env.storageRoot}:scall:stats:") ||
                 key.startsWith(s"${env.storageRoot}:scalldur:stats:") ||

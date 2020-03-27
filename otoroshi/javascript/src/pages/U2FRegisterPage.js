@@ -140,12 +140,10 @@ export class U2FRegisterPage extends Component {
     },
     {
       title: 'Type',
-      content: item => item.type && item.type === 'U2F',
+      content: item => item.type && item.type === 'WEBAUTHN',
       notFilterable: true,
       cell: (v, item) => {
-        if (item.type && item.type === 'U2F') {
-          return <i className="fas fa-key" />;
-        } else if (item.type && item.type === 'WEBAUTHN') {
+        if (item.type && item.type === 'WEBAUTHN') {
           return <i className="fas fa-key" />;
         } else {
           return <i className="far fa-user" />;
@@ -205,197 +203,6 @@ export class U2FRegisterPage extends Component {
   handleErrorWithMessage = message => () => {
     this.setState({ error: message });
   };
-
-  /*
-  registerU2F = e => {
-    if (e && e.preventDefault) {
-      e.preventDefault();
-    }
-    const username = this.state.email;
-    const password = this.state.password;
-    const passwordcheck = this.state.passwordcheck;
-    const label = this.state.label;
-    if (password !== passwordcheck) {
-      return window.newAlert('Password does not match !!!', 'Password error');
-    }
-    fetch(`/bo/u2f/register/start`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        username,
-      }),
-    })
-      .then(r => r.json(), this.handleError)
-      .then(payload => {
-        const username = payload.username;
-        const request = payload.data;
-        this.setState({
-          message: 'Initializing registration, now touch your blinking U2F device ...',
-        });
-        u2f.register(request.registerRequests, request.authenticateRequests, data => {
-          console.log(data);
-          if (data.errorCode) {
-            this.setState({ error: `U2F failed with error ${data.errorCode}` });
-          } else {
-            this.setState({ message: 'Finishing registration ...' });
-            fetch(`/bo/u2f/register/finish`, {
-              method: 'POST',
-              credentials: 'include',
-              headers: {
-                Accept: 'application/json',
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                username: username,
-                password,
-                label,
-                tokenResponse: data,
-              }),
-            })
-              .then(r => r.json(), this.handleError)
-              .then(data => {
-                console.log(data);
-                this.setState({
-                  error: null,
-                  email: '',
-                  label: '',
-                  password: '',
-                  passwordcheck: '',
-                  message: `Registration done for '${data.username}'`,
-                });
-                if (this.table) this.table.update();
-              }, this.handleError);
-          }
-        });
-      }, this.handleError);
-  };
-
-  simpleRegister = e => {
-    if (e && e.preventDefault) {
-      e.preventDefault();
-    }
-    const username = this.state.email;
-    const password = this.state.password;
-    const passwordcheck = this.state.passwordcheck;
-    const label = this.state.label;
-    if (password !== passwordcheck) {
-      return window.newAlert('Password does not match !!!', 'Password error');
-    }
-    fetch(`/bo/simple/admins`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        username,
-        password,
-        label,
-      }),
-    })
-      .then(r => r.json(), this.handleError)
-      .then(data => {
-        if (this.table) this.table.update();
-        this.setState({
-          error: null,
-          email: '',
-          label: '',
-          password: '',
-          passwordcheck: '',
-          message: `Registration done for '${data.username}'`,
-        });
-      }, this.handleError);
-  };
-
-  registerWebAuthn = e => {
-    if (e && e.preventDefault) {
-      e.preventDefault();
-    }
-
-    const username = this.state.email;
-    const password = this.state.password;
-    const passwordcheck = this.state.passwordcheck;
-    const label = this.state.label;
-
-    if (password !== passwordcheck) {
-      return window.newAlert('Password does not match !!!', 'Password error');
-    }
-
-    return fetch('/bo/webauthn/register/start', {
-      method: 'POST',
-      credentials: 'include',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        username,
-        password,
-        label,
-        origin: window.location.origin,
-      }),
-    })
-      .then(r => r.json())
-      .then(resp => {
-        const requestId = resp.requestId;
-        const publicKeyCredentialCreationOptions = resp.request;
-        const handle = publicKeyCredentialCreationOptions.user.id + '';
-        publicKeyCredentialCreationOptions.challenge = base64url.decode(
-          publicKeyCredentialCreationOptions.challenge
-        );
-        publicKeyCredentialCreationOptions.user.id = base64url.decode(
-          publicKeyCredentialCreationOptions.user.id
-        );
-        return navigator.credentials
-          .create(
-            {
-              publicKey: publicKeyCredentialCreationOptions,
-            },
-            this.handleErrorWithMessage('Webauthn error')
-          )
-          .then(credentials => {
-            const json = responseToObject(credentials);
-            return fetch('/bo/webauthn/register/finish', {
-              method: 'POST',
-              credentials: 'include',
-              headers: {
-                Accept: 'application/json',
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                requestId,
-                webauthn: json,
-                otoroshi: {
-                  origin: window.location.origin,
-                  username,
-                  password,
-                  label,
-                  handle,
-                },
-              }),
-            })
-              .then(r => r.json())
-              .then(resp => {
-                if (this.table) this.table.update();
-                this.setState({
-                  error: null,
-                  email: '',
-                  label: '',
-                  password: '',
-                  passwordcheck: '',
-                  message: `Registration done for '${username}'`,
-                });
-              });
-          }, this.handleErrorWithMessage('Webauthn error'))
-          .catch(this.handleError);
-      });
-  };
-  */
 
   discardAdmin = (e, username, id, table, type) => {
     if (e && e.preventDefault) e.preventDefault();
@@ -510,13 +317,6 @@ export class U2FRegisterPage extends Component {
               <button type="button" className="btn btn-success" onClick={this.simpleRegister}>
                 Register Admin
               </button>
-              {/*<button
-                type="button"
-                className="btn btn-success hide"
-                style={{ marginLeft: 10 }}
-                onClick={this.registerU2F}>
-                Register FIDO U2F Admin
-              </button>*/}
               <button
                 type="button"
                 className="btn btn-success"

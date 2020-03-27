@@ -6,26 +6,15 @@ GET     /auth0error                                           controllers.AuthCo
 GET     /health                                               controllers.ApiController.health()
 GET     /metrics                                              controllers.ApiController.processMetrics()
 
-# U2F URLs
-POST    /bo/u2f/register/start                                controllers.U2FController.u2fRegisterStart()
-POST    /bo/u2f/register/finish                               controllers.U2FController.u2fRegisterFinish()
-POST    /bo/u2f/login/start                                   controllers.U2FController.u2fAuthenticationStart()
-POST    /bo/u2f/login/finish                                  controllers.U2FController.u2fAuthenticationFinish()
-GET     /bo/u2f/admins                                        controllers.U2FController.u2fAdmins()
-DELETE  /bo/u2f/admins/:username/:id                          controllers.U2FController.deleteU2FAdmin(username, id)
-
 # WebAuthn URLs
-
 POST    /bo/webauthn/register/start                           controllers.U2FController.webAuthnRegistrationStart()
 POST    /bo/webauthn/register/finish                          controllers.U2FController.webAuthnRegistrationFinish()
 POST    /bo/webauthn/login/start                              controllers.U2FController.webAuthnLoginStart()
 POST    /bo/webauthn/login/finish                             controllers.U2FController.webAuthnLoginFinish()
-
 GET     /bo/webauthn/admins                                   controllers.U2FController.webAuthnAdmins()
 DELETE  /bo/webauthn/admins/:username/:id                     controllers.U2FController.webAuthnDeleteAdmin(username, id)
 
 # Simple Login URLs
-
 GET     /bo/simple/admins                                     controllers.U2FController.simpleAdmins()
 POST    /bo/simple/admins                                     controllers.U2FController.registerSimpleAdmin()
 GET     /bo/simple/login                                      controllers.U2FController.loginPage()

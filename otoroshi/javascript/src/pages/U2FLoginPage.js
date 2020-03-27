@@ -126,76 +126,7 @@ export class U2FLoginPage extends Component {
       throw err;
     };
   };
-
-  login = e => {
-    if (e && e.preventDefault) {
-      e.preventDefault();
-    }
-    const username = this.state.email;
-    const password = this.state.password;
-    this.setState({ message: null });
-    fetch(`/bo/u2f/login/start`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        username,
-      }),
-    })
-      .then(r => {
-        if (r.ok) {
-          return r.json();
-        } else {
-          throw new Error('Bad Request ...');
-        }
-      }, this.handleError('Login error, sorry ...'))
-      .then(payload => {
-        const username = payload.username;
-        const request = payload.data;
-        this.setState({ message: 'now touch your blinking U2F device ...' });
-        u2f.sign(request.authenticateRequests, data => {
-          console.log(data);
-          if (data.errorCode) {
-            this.setState({ error: `Login error, sorry ... ${data.errorCode}` });
-          } else {
-            this.setState({ message: 'Finishing login ...' });
-            fetch(`/bo/u2f/login/finish`, {
-              method: 'POST',
-              credentials: 'include',
-              headers: {
-                Accept: 'application/json',
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                username: username,
-                password,
-                tokenResponse: data,
-              }),
-            })
-              .then(r => {
-                if (r.ok) {
-                  return r.json();
-                } else {
-                  throw new Error('Bad Request ...');
-                }
-              }, this.handleError('Authentication error, sorry ...'))
-              .then(data => {
-                console.log(data);
-                this.setState(
-                  { error: null, email: '', password: '', message: `Login successfully` },
-                  () => {
-                    window.location.href = '/bo/dashboard';
-                  }
-                );
-              }, this.handleError('Login error, sorry ...'));
-          }
-        });
-      }, this.handleError('Login error, sorry ...'));
-  };
-
+  
   simpleLogin = e => {
     if (e && e.preventDefault) {
       e.preventDefault();
@@ -339,13 +270,6 @@ export class U2FLoginPage extends Component {
                 style={{ marginLeft: 0 }}
                 onClick={this.simpleLogin}>
                 Login
-              </button>
-              <button
-                type="button"
-                className="btn hide"
-                style={{ marginLeft: 10 }}
-                onClick={this.login}>
-                Login with FIDO U2F
               </button>
               <button
                 type="button"

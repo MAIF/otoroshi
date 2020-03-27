@@ -94,7 +94,6 @@ class RedisDataStores(configuration: Configuration, environment: Environment, li
   private lazy val _globalConfigDataStore      = new RedisGlobalConfigDataStore(redis, env)
   private lazy val _apiKeyDataStore            = new RedisApiKeyDataStore(redis, env)
   private lazy val _serviceDescriptorDataStore = new RedisServiceDescriptorDataStore(redis, redisStatsItems, env)
-  private lazy val _u2FAdminDataStore          = new RedisU2FAdminDataStore(redis)
   private lazy val _simpleAdminDataStore       = new RedisSimpleAdminDataStore(redis)
   private lazy val _alertDataStore             = new RedisAlertDataStore(redis)
   private lazy val _auditDataStore             = new RedisAuditDataStore(redis)
@@ -135,7 +134,6 @@ class RedisDataStores(configuration: Configuration, environment: Environment, li
   override def globalConfigDataStore: GlobalConfigDataStore           = _globalConfigDataStore
   override def apiKeyDataStore: ApiKeyDataStore                       = _apiKeyDataStore
   override def serviceDescriptorDataStore: ServiceDescriptorDataStore = _serviceDescriptorDataStore
-  override def u2FAdminDataStore: U2FAdminDataStore                   = _u2FAdminDataStore
   override def simpleAdminDataStore: SimpleAdminDataStore             = _simpleAdminDataStore
   override def alertDataStore: AlertDataStore                         = _alertDataStore
   override def auditDataStore: AuditDataStore                         = _auditDataStore
@@ -173,6 +171,8 @@ class RedisDataStores(configuration: Configuration, environment: Environment, li
                 key.startsWith(s"${env.storageRoot}:users:backoffice") ||
                 key.startsWith(s"${env.storageRoot}:admins:") ||
                 key.startsWith(s"${env.storageRoot}:u2f:users:") ||
+                key.startsWith(s"${env.storageRoot}:users:") ||
+                key.startsWith(s"${env.storageRoot}:webauthn:admins:") ||
                 key.startsWith(s"${env.storageRoot}:deschealthcheck:") ||
                 key.startsWith(s"${env.storageRoot}:scall:stats:") ||
                 key.startsWith(s"${env.storageRoot}:scalldur:stats:") ||
@@ -321,4 +321,10 @@ class RedisRawDataStore(redis: RedisClientMasterSlaves) extends RawDataStore {
   override def setnx(key: String, value: ByteString, ttl: Option[Long])(implicit ec: ExecutionContext,
                                                                         env: Env): Future[Boolean] =
     redis.set(key, value, pxMilliseconds = ttl, NX = true)
+
+  override def sadd(key: String, members: Seq[ByteString]): Future[Long] = redis.sadd(key, members:_*)
+
+  override def sismember(key: String, member: ByteString): Future[Boolean] = redis.sismember(key, member)
+
+  override def smembers(key: String): Future[Seq[ByteString]] = redis.smembers(key)
 }

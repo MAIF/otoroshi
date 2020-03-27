@@ -225,13 +225,7 @@ class InMemoryGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
             .flatMap(keys => if (keys.nonEmpty) redisCli.del(keys: _*) else FastFuture.successful(0L))
       _ <- config.save()
       _ <- Future.sequence(
-            admins.value.map(
-              v =>
-                redisCli.set(
-                  s"${env.storageRoot}:u2f:users:${(v \ "randomId").asOpt[String].getOrElse((v \ "username").as[String])}",
-                  Json.stringify(v)
-              )
-            )
+            admins.value.map(v => env.datastores.webAuthnAdminDataStore.save(v))
           )
       _ <- Future.sequence(
             simpleAdmins.value.map(
@@ -270,7 +264,7 @@ class InMemoryGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
       calls            <- env.datastores.serviceDescriptorDataStore.globalCalls()
       dataIn           <- env.datastores.serviceDescriptorDataStore.globalDataIn()
       dataOut          <- env.datastores.serviceDescriptorDataStore.globalDataOut()
-      admins           <- env.datastores.u2FAdminDataStore.findAll()
+      admins           <- env.datastores.webAuthnAdminDataStore.findAll()
       simpleAdmins     <- env.datastores.simpleAdminDataStore.findAll()
       jwtVerifiers     <- env.datastores.globalJwtVerifierDataStore.findAll()
       authConfigs      <- env.datastores.authConfigsDataStore.findAll()
