@@ -334,6 +334,7 @@ class Env(val configuration: Configuration,
   lazy val env: String           = configuration.getOptional[String]("app.env").getOrElse("prod")
   lazy val number: Int           = configuration.getOptional[Int]("app.instance.number").getOrElse(0)
   lazy val name: String          = configuration.getOptional[String]("app.instance.name").getOrElse("otoroshi")
+  lazy val title: String         = configuration.getOptional[String]("app.instance.title").getOrElse("Otoroshi")
   lazy val rack: String          = configuration.getOptional[String]("app.instance.rack").getOrElse("local")
   lazy val infraProvider: String = configuration.getOptional[String]("app.instance.provider").getOrElse("local")
   lazy val dataCenter: String    = configuration.getOptional[String]("app.instance.dc").getOrElse("local")
@@ -647,7 +648,7 @@ class Env(val configuration: Configuration,
     perIpThrottlingQuota = 500,
     throttlingQuota = 100000,
     maxLogsSize = configuration.getOptional[Int]("app.events.maxSize").getOrElse(100),
-    otoroshiId = configuration.getOptional[String]("otoroshi.instanceId").getOrElse(IdGenerator.uuid),
+    otoroshiId = configuration.getOptional[String]("otoroshi.instance.instanceId").getOrElse(IdGenerator.uuid),
   )
 
   lazy val backOfficeGroup = ServiceGroup(

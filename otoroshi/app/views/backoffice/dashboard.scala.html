@@ -6,6 +6,7 @@
 @moreScripts = {
     <script src="@routes.Assets.versioned("javascripts/d3.v3.min.js")"></script>
     <script type="text/javascript">
+        window.__title = '@_env.title';
         window.__isDev = @_env.liveJs;
         window.__env = '@_env.env';
         window.__userid = '@user.email';
@@ -16,6 +17,6 @@
     </script>
 }
 
-@main("Otoroshi", user, _env, moreScripts = moreScripts) {
+@main(_env.title, user, _env, moreScripts = moreScripts) {
     <div id="app"></div>
 }

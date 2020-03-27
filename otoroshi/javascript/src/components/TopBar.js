@@ -445,7 +445,7 @@ export class TopBar extends Component {
                 <span>Menu</span>
               </button>
               <a className="navbar-brand" href="/bo/dashboard" style={{ display: 'flex' }}>
-                <span>おとろし</span> &nbsp; Otoroshi
+                <span>おとろし</span> &nbsp; {window.__title || 'Otoroshi'}
               </a>
             </div>
             <ul className="nav navbar-nav navbar-right">
