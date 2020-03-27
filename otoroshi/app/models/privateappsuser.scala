@@ -1,8 +1,8 @@
 package models
 
 import akka.http.scaladsl.util.FastFuture
+import auth.{AuthModuleConfig, GenericOauth2Module}
 import env.Env
-import models.ApiKeyHelper.PassWithApiKeyContext
 import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.json._
@@ -12,9 +12,10 @@ import storage.BasicStore
 import utils.JsonImplicits._
 import utils.TypedMap
 
+import scala.concurrent.duration._
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Try
+import scala.util.{Success, Try}
 
 case class PrivateAppsUser(randomId: String,
                            name: String,
@@ -22,9 +23,11 @@ case class PrivateAppsUser(randomId: String,
                            profile: JsValue,
                            token: JsValue = Json.obj(),
                            realm: String,
+                           authConfigId: String,
                            otoroshiData: Option[JsValue],
                            createdAt: DateTime = DateTime.now(),
-                           expiredAt: DateTime = DateTime.now()) {
+                           expiredAt: DateTime = DateTime.now(),
+                           lastRefresh: DateTime = DateTime.now()) extends RefreshableUser {
 
   def picture: Option[String]             = (profile \ "picture").asOpt[String]
   def field(name: String): Option[String] = (profile \ name).asOpt[String]
@@ -45,6 +48,19 @@ case class PrivateAppsUser(randomId: String,
     "profile"  -> profile,
     "metadata" -> otoroshiData
   )
+
+  def withAuthModuleConfig[A](f: AuthModuleConfig => A)(implicit ec: ExecutionContext, env: Env): Unit = {
+    env.datastores.authConfigsDataStore.findById(authConfigId).map {
+      case None => ()
+      case Some(auth) => f(auth)
+    }
+  }
+  override def updateToken(tok: JsValue)(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
+    env.datastores.privateAppsUserDataStore.set(copy(
+      token = tok,
+      lastRefresh = DateTime.now()
+    ), Some((expiredAt.toDate.getTime - System.currentTimeMillis()).millis))
+  }
 }
 
 object PrivateAppsUser {
@@ -65,12 +81,14 @@ object PrivateAppsUser {
             randomId = (json \ "randomId").as[String],
             name = (json \ "name").as[String],
             email = (json \ "email").as[String],
+            authConfigId = (json \ "authConfigId").asOpt[String].getOrElse("none"),
             profile = (json \ "profile").as[JsValue],
             token = (json \ "token").asOpt[JsValue].getOrElse(Json.obj()),
             realm = (json \ "realm").asOpt[String].getOrElse("none"),
             otoroshiData = (json \ "otoroshiData").asOpt[JsValue],
             createdAt = new DateTime((json \ "createdAt").as[Long]),
-            expiredAt = new DateTime((json \ "expiredAt").as[Long])
+            expiredAt = new DateTime((json \ "expiredAt").as[Long]),
+            lastRefresh = new DateTime((json \ "lastRefresh").as[Long])
           )
         )
       } recover {
@@ -81,12 +99,14 @@ object PrivateAppsUser {
       "randomId"     -> o.randomId,
       "name"         -> o.name,
       "email"        -> o.email,
+      "authConfigId" -> o.authConfigId,
       "profile"      -> o.profile,
       "token"        -> o.token,
       "realm"        -> o.realm,
       "otoroshiData" -> o.otoroshiData,
       "createdAt"    -> o.createdAt.toDate.getTime,
       "expiredAt"    -> o.expiredAt.toDate.getTime,
+      "lastRefresh"  -> o.lastRefresh.toDate.getTime,
     )
   }
 }
@@ -129,10 +149,12 @@ object PrivateAppsUserHelper {
                     req.headers.get("Otoroshi-Token").flatMap(value => env.extractPrivateSessionIdFromString(value))
                   )
                   .map { id =>
-                    env.datastores.privateAppsUserDataStore.findById(id)
+                    env.datastores.privateAppsUserDataStore.findById(id).andThen {
+                      case Success(Some(user)) => GenericOauth2Module.handleTokenRefresh(auth, user)
+                    }
                   } getOrElse {
-                  FastFuture.successful(None)
-                }
+                    FastFuture.successful(None)
+                  }
               }
             }
           case None => FastFuture.successful(None)

@@ -14,7 +14,8 @@ import play.api.mvc.{AnyContent, Request, RequestHeader, Result}
 import security.IdGenerator
 import storage.BasicStore
 import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
-import play.api.libs.ws.WSProxyServer
+import org.joda.time.DateTime
+import play.api.libs.ws.{WSProxyServer, WSResponse}
 import utils.http.MtlsConfig
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -58,6 +59,7 @@ object GenericOauth2ModuleConfig extends FromJson[AuthModuleConfig] {
           apiKeyTagsField = (json \ "apiKeyTagsField").asOpt[String].getOrElse("apkTags"),
           scope = (json \ "scope").asOpt[String].getOrElse("openid profile email name"),
           claims = (json \ "claims").asOpt[String].getOrElse("email name"),
+          refreshTokens = (json \ "refreshTokens").asOpt[Boolean].getOrElse(false),
           useJson = (json \ "useJson").asOpt[Boolean].getOrElse(false),
           useCookie = (json \ "useCookie").asOpt[Boolean].getOrElse(false),
           readProfileFromToken = (json \ "readProfileFromToken").asOpt[Boolean].getOrElse(false),
@@ -106,7 +108,8 @@ case class GenericOauth2ModuleConfig(
     oidConfig: Option[String] = None,
     proxy: Option[WSProxyServer] = None,
     extraMetadata: JsObject = Json.obj(),
-    mtlsConfig: MtlsConfig = MtlsConfig()
+    mtlsConfig: MtlsConfig = MtlsConfig(),
+    refreshTokens: Boolean = false,
 ) extends OAuth2ModuleConfig {
   def `type`: String                                        = "oauth2"
   override def authModule(config: GlobalConfig): AuthModule = GenericOauth2Module(this)
@@ -140,7 +143,8 @@ case class GenericOauth2ModuleConfig(
     "oidConfig"            -> this.oidConfig.map(JsString.apply).getOrElse(JsNull).as[JsValue],
     "mtlsConfig"           -> this.mtlsConfig.json,
     "proxy"                -> WSProxyServerJson.maybeProxyToJson(this.proxy),
-    "extraMetadata"        -> this.extraMetadata
+    "extraMetadata"        -> this.extraMetadata,
+    "refreshTokens"        -> this.refreshTokens
   )
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.authConfigsDataStore.set(this)
   override def cookieSuffix(desc: ServiceDescriptor)                   = s"global-oauth-$id"
@@ -224,6 +228,106 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
       .asFuture
   }
 
+  def getToken(code: String, clientId: String, clientSecret: Option[String], redirectUri: String, config: GlobalConfig)(implicit env: Env, ec: ExecutionContext): Future[JsValue] = {
+    val builder =
+      env.MtlsWs
+        .url(authConfig.tokenUrl, authConfig.mtlsConfig)
+        .withMaybeProxyServer(authConfig.proxy.orElse(config.proxies.auth))
+    val future1 = if (authConfig.useJson) {
+      builder.post(
+        Json.obj(
+          "code"         -> code,
+          "grant_type"   -> "authorization_code",
+          "client_id"    -> clientId,
+          "redirect_uri" -> redirectUri
+        ) ++ clientSecret.map(s => Json.obj("client_secret" -> s)).getOrElse(Json.obj())
+      )
+    } else {
+      builder.post(
+        Map(
+          "code"         -> code,
+          "grant_type"   -> "authorization_code",
+          "client_id"    -> clientId,
+          "redirect_uri" -> redirectUri
+        ) ++ clientSecret.toSeq.map(s => ("client_secret" -> s))
+      )(writeableOf_urlEncodedSimpleForm)
+    }
+    // TODO: check status code
+    future1.map(_.json)
+  }
+
+  def refreshTheToken(refreshToken: String, clientId: String, clientSecret: Option[String], redirectUri: String, config: GlobalConfig)(implicit env: Env, ec: ExecutionContext): Future[JsValue] = {
+    val builder =
+      env.MtlsWs
+        .url(authConfig.tokenUrl, authConfig.mtlsConfig)
+        .withMaybeProxyServer(authConfig.proxy.orElse(config.proxies.auth))
+    val future1 = if (authConfig.useJson) {
+      builder.post(
+        Json.obj(
+          "refresh_token"         -> refreshToken,
+          "grant_type"   -> "refresh_token",
+          "client_id"    -> clientId,
+          "redirect_uri" -> redirectUri
+        ) ++ clientSecret.map(s => Json.obj("client_secret" -> s)).getOrElse(Json.obj())
+      )
+    } else {
+      builder.post(
+        Map(
+          "refresh_token"         -> refreshToken,
+          "grant_type"   -> "refresh_token",
+          "client_id"    -> clientId,
+          "redirect_uri" -> redirectUri
+        ) ++ clientSecret.toSeq.map(s => ("client_secret" -> s))
+      )(writeableOf_urlEncodedSimpleForm)
+    }
+    // TODO: check status code
+    future1.map(_.json)
+  }
+
+  def getUserInfoRaw(accessToken: String, config: GlobalConfig)(implicit env: Env, ec: ExecutionContext): Future[WSResponse] = {
+    val builder2 = env.MtlsWs
+      .url(authConfig.userInfoUrl, authConfig.mtlsConfig)
+      .withMaybeProxyServer(authConfig.proxy.orElse(config.proxies.auth))
+    val future2 = if (authConfig.useJson) {
+      builder2.post(
+        Json.obj(
+          "access_token" -> accessToken
+        )
+      )
+    } else {
+      builder2.post(
+        Map(
+          "access_token" -> accessToken
+        )
+      )(writeableOf_urlEncodedSimpleForm)
+    }
+    future2
+  }
+
+  def getUserInfo(accessToken: String, config: GlobalConfig)(implicit env: Env, ec: ExecutionContext): Future[JsValue] = {
+    getUserInfoRaw(accessToken, config).map(_.json)
+  }
+
+  def readProfileFromToken(accessToken: String)(implicit env: Env, ec: ExecutionContext): Future[JsValue] = {
+    val algoSettings = authConfig.jwtVerifier.get
+    val tokenHeader =
+      Try(Json.parse(ApacheBase64.decodeBase64(accessToken.split("\\.")(0)))).getOrElse(Json.obj())
+    val tokenBody =
+      Try(Json.parse(ApacheBase64.decodeBase64(accessToken.split("\\.")(1)))).getOrElse(Json.obj())
+    val kid = (tokenHeader \ "kid").asOpt[String]
+    val alg = (tokenHeader \ "alg").asOpt[String].getOrElse("RS256")
+    algoSettings.asAlgorithmF(InputMode(alg, kid)).flatMap {
+      case Some(algo) => {
+        Try(JWT.require(algo).acceptLeeway(10).build().verify(accessToken)).map { _ =>
+          FastFuture.successful(tokenBody)
+        } recoverWith {
+          case e => Success(FastFuture.failed(e))
+        } get
+      }
+      case None => FastFuture.failed(new RuntimeException("Bad algorithm"))
+    }
+  }
+
   override def paCallback(request: Request[AnyContent], config: GlobalConfig, descriptor: ServiceDescriptor)(
       implicit ec: ExecutionContext,
       env: Env
@@ -238,84 +342,22 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
         request.getQueryString("code") match {
           case None => Left("No code :(").asFuture
           case Some(code) => {
-            val builder =
-              env.MtlsWs
-                .url(authConfig.tokenUrl, authConfig.mtlsConfig)
-                .withMaybeProxyServer(authConfig.proxy.orElse(config.proxies.auth))
-            val future1 = if (authConfig.useJson) {
-              builder.post(
-                Json.obj(
-                  "code"         -> code,
-                  "grant_type"   -> "authorization_code",
-                  "client_id"    -> clientId,
-                  "redirect_uri" -> redirectUri
-                ) ++ clientSecret.map(s => Json.obj("client_secret" -> s)).getOrElse(Json.obj())
-              )
-            } else {
-              builder.post(
-                Map(
-                  "code"         -> code,
-                  "grant_type"   -> "authorization_code",
-                  "client_id"    -> clientId,
-                  "redirect_uri" -> redirectUri
-                ) ++ clientSecret.toSeq.map(s => ("client_secret" -> s))
-              )(writeableOf_urlEncodedSimpleForm)
-            }
-            future1
-              .flatMap { resp =>
-                // TODO: check status code
-                val rawToken: JsValue = resp.json
-                val accessToken       = (rawToken \ authConfig.accessTokenField).as[String]
-                if (authConfig.readProfileFromToken && authConfig.jwtVerifier.isDefined) {
-                  // println(accessToken)
-                  val algoSettings = authConfig.jwtVerifier.get
-                  val tokenHeader =
-                    Try(Json.parse(ApacheBase64.decodeBase64(accessToken.split("\\.")(0)))).getOrElse(Json.obj())
-                  val tokenBody =
-                    Try(Json.parse(ApacheBase64.decodeBase64(accessToken.split("\\.")(1)))).getOrElse(Json.obj())
-                  val kid = (tokenHeader \ "kid").asOpt[String]
-                  val alg = (tokenHeader \ "alg").asOpt[String].getOrElse("RS256")
-                  algoSettings.asAlgorithmF(InputMode(alg, kid)).flatMap {
-                    case Some(algo) => {
-                      Try(JWT.require(algo).acceptLeeway(10).build().verify(accessToken)).map { _ =>
-                        FastFuture.successful((tokenBody, rawToken))
-                      } recoverWith {
-                        case e => Success(FastFuture.failed(e))
-                      } get
-                    }
-                    case None => FastFuture.failed(new RuntimeException("Bad algorithm"))
-                  }
+            getToken(code, clientId, clientSecret, redirectUri, config)
+              .flatMap { rawToken =>
+                val accessToken = (rawToken \ authConfig.accessTokenField).as[String]
+                val f = if (authConfig.readProfileFromToken && authConfig.jwtVerifier.isDefined) {
+                  readProfileFromToken(accessToken)
                 } else {
-                  val builder2 = env.MtlsWs
-                    .url(authConfig.userInfoUrl, authConfig.mtlsConfig)
-                    .withMaybeProxyServer(authConfig.proxy.orElse(config.proxies.auth))
-                  val future2 = if (authConfig.useJson) {
-                    builder2.post(
-                      Json.obj(
-                        "access_token" -> accessToken
-                      )
-                    )
-                  } else {
-                    builder2.post(
-                      Map(
-                        "access_token" -> accessToken
-                      )
-                    )(writeableOf_urlEncodedSimpleForm)
-                  }
-                  // TODO: check status code
-                  future2.map(h => (h.json, rawToken))
+                  getUserInfo(accessToken, config)
                 }
+                f.map(r => (r, rawToken))
               }
               .map { tuple =>
                 val (user, rawToken) = tuple
                 val meta: Option[JsObject] = PrivateAppsUser
                   .select(user, authConfig.otoroshiDataField)
                   .asOpt[String]
-                  .map(
-                    s =>
-                      Json
-                        .parse(s)
-                  )
+                  .map(s => Json.parse(s))
                   .orElse(
                     Option(PrivateAppsUser.select(user, authConfig.otoroshiDataField))
                   )
@@ -330,6 +372,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
                     email = (user \ authConfig.emailField).asOpt[String].getOrElse("no.name@oto.tools"),
                     profile = user,
                     token = rawToken,
+                    authConfigId = authConfig.id,
                     realm = authConfig.cookieSuffix(descriptor),
                     otoroshiData = Some(authConfig.extraMetadata.deepMerge(meta.getOrElse(Json.obj())))
                   )
@@ -354,73 +397,18 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
         request.getQueryString("code") match {
           case None => Left("No code :(").asFuture
           case Some(code) => {
-            val builder =
-              env.MtlsWs
-                .url(authConfig.tokenUrl, authConfig.mtlsConfig)
-                .withMaybeProxyServer(authConfig.proxy.orElse(config.proxies.auth))
-            val future1 = if (authConfig.useJson) {
-              builder.post(
-                Json.obj(
-                  "code"         -> code,
-                  "grant_type"   -> "authorization_code",
-                  "client_id"    -> clientId,
-                  "redirect_uri" -> redirectUri
-                ) ++ clientSecret.map(s => Json.obj("client_secret" -> s)).getOrElse(Json.obj())
-              )
-            } else {
-              builder.post(
-                Map(
-                  "code"         -> code,
-                  "grant_type"   -> "authorization_code",
-                  "client_id"    -> clientId,
-                  "redirect_uri" -> redirectUri
-                ) ++ clientSecret.toSeq.map(s => ("client_secret" -> s))
-              )(writeableOf_urlEncodedSimpleForm)
-            }
-            future1
-              .flatMap { resp =>
-                // TODO: check status code
-                val accessToken = (resp.json \ authConfig.accessTokenField).as[String]
-                if (authConfig.readProfileFromToken && authConfig.jwtVerifier.isDefined) {
-                  val algoSettings = authConfig.jwtVerifier.get
-                  val tokenHeader =
-                    Try(Json.parse(ApacheBase64.decodeBase64(accessToken.split("\\.")(0)))).getOrElse(Json.obj())
-                  val tokenBody =
-                    Try(Json.parse(ApacheBase64.decodeBase64(accessToken.split("\\.")(1)))).getOrElse(Json.obj())
-                  val kid = (tokenHeader \ "kid").asOpt[String]
-                  val alg = (tokenHeader \ "alg").asOpt[String].getOrElse("RS256")
-                  algoSettings.asAlgorithmF(InputMode(alg, kid)).flatMap {
-                    case Some(algo) => {
-                      Try(JWT.require(algo).acceptLeeway(10).build().verify(accessToken)).map { _ =>
-                        FastFuture.successful(tokenBody)
-                      } recoverWith {
-                        case e => Success(FastFuture.failed(e))
-                      } get
-                    }
-                    case None => FastFuture.failed(new RuntimeException("Bad algorithm"))
-                  }
+            getToken(code, clientId, clientSecret, redirectUri, config)
+              .flatMap { rawToken =>
+                val accessToken = (rawToken \ authConfig.accessTokenField).as[String]
+                val f = if (authConfig.readProfileFromToken && authConfig.jwtVerifier.isDefined) {
+                  readProfileFromToken(accessToken)
                 } else {
-                  val builder2 = env.MtlsWs
-                    .url(authConfig.userInfoUrl, authConfig.mtlsConfig)
-                    .withMaybeProxyServer(authConfig.proxy.orElse(config.proxies.auth))
-                  val future2 = if (authConfig.useJson) {
-                    builder2.post(
-                      Json.obj(
-                        "access_token" -> accessToken
-                      )
-                    )
-                  } else {
-                    builder2.post(
-                      Map(
-                        "access_token" -> accessToken
-                      )
-                    )(writeableOf_urlEncodedSimpleForm)
-                  }
-                  // TODO: check status code
-                  future2.map(_.json)
+                  getUserInfo(accessToken, config)
                 }
+                f.map(r => (r, rawToken))
               }
-              .map { user =>
+              .map { tuple =>
+                val (user, rawToken) = tuple
                 Right(
                   BackOfficeUser(
                     randomId = IdGenerator.token(64),
@@ -430,6 +418,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
                       .getOrElse("No Name"),
                     email = (user \ authConfig.emailField).asOpt[String].getOrElse("no.name@oto.tools"),
                     profile = user,
+                    authConfigId = authConfig.id,
                     authorizedGroup = None,
                     simpleLogin = false
                   )
@@ -438,6 +427,74 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
           }
         }
       }
+    }
+  }
+
+  private def isAccessTokenAValidJwtToken(accessToken: String)(f: Option[Boolean] => Future[Unit])(implicit executionContext: ExecutionContext, env: Env): Future[Unit] = {
+    Try {
+      val algoSettings = authConfig.jwtVerifier.get
+      val tokenHeader =
+        Try(Json.parse(ApacheBase64.decodeBase64(accessToken.split("\\.")(0)))).getOrElse(Json.obj())
+      val kid = (tokenHeader \ "kid").asOpt[String]
+      val alg = (tokenHeader \ "alg").asOpt[String].getOrElse("RS256")
+      algoSettings.asAlgorithmF(InputMode(alg, kid)).map {
+        case Some(algo) => {
+          Try(JWT.require(algo).acceptLeeway(10).build().verify(accessToken)).map { _ =>
+            Some(true)
+          } match {
+            case Failure(e) => Some(false)
+            case Success(opt) => opt
+          }
+        }
+        case None => Some(false)
+      }
+    } match {
+      case Failure(e) => f(None)
+      case Success(fopt) => fopt.flatMap(v => f(v))
+    }
+  }
+
+  private def renewToken(refreshToken: String, user: RefreshableUser)(implicit executionContext: ExecutionContext, env: Env): Future[Unit] = {
+    refreshTheToken(refreshToken, authConfig.clientId, Option(authConfig.clientSecret).map(_.trim).filterNot(_.isEmpty), authConfig.callbackUrl, env.datastores.globalConfigDataStore.latest()).map { res =>
+      val rtok = (res \ "refresh_token").asOpt[String].getOrElse(refreshToken)
+      val token = res.as[JsObject] ++ Json.obj("refresh_token" -> rtok)
+      user.updateToken(token)
+    }
+  }
+
+  // https://auth0.com/docs/tokens/guides/get-refresh-tokens
+  // https://auth0.com/docs/tokens/guides/use-refresh-tokens
+  // https://auth0.com/docs/tokens/concepts/refresh-tokens
+  def handleTokenRefresh(auth: OAuth2ModuleConfig, user: RefreshableUser)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    if (auth.refreshTokens) {
+      (user.token \ "refresh_token").asOpt[String] match { // TODO: config 10 min
+        case Some(refreshToken) if user.lastRefresh.plusMinutes(10).isBefore(DateTime.now()) => (user.token \ auth.accessTokenField).asOpt[String] match {
+          case Some(accessToken) => isAccessTokenAValidJwtToken(accessToken) {
+            case Some(true) => FastFuture.successful(())
+            case Some(false) => renewToken(refreshToken, user)
+            case _ => getUserInfoRaw(accessToken, env.datastores.globalConfigDataStore.latest()).flatMap {
+              case r if r.status != 200 => renewToken(refreshToken, user)
+              case r => FastFuture.successful(())
+            }
+          }
+          case None => FastFuture.successful(())
+        }
+        case _ => FastFuture.successful(())
+      }
+    } else {
+      FastFuture.successful(())
+    }
+  }
+}
+
+object GenericOauth2Module {
+  def handleTokenRefresh(auth: AuthModuleConfig, user: RefreshableUser)(implicit ec: ExecutionContext, env: Env): Future[Unit] = {
+    auth match {
+      case a: OAuth2ModuleConfig => a.authModule(env.datastores.globalConfigDataStore.latest()) match {
+        case m: GenericOauth2Module => m.handleTokenRefresh(a, user)
+        case _ => FastFuture.successful(())
+      }
+      case _ => FastFuture.successful(())
     }
   }
 }

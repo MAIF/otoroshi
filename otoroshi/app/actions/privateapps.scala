@@ -2,6 +2,7 @@ package actions
 
 import akka.http.scaladsl.util.FastFuture
 import akka.http.scaladsl.util.FastFuture._
+import auth.GenericOauth2Module
 import cluster.ClusterMode
 import env.Env
 import models.PrivateAppsUser
@@ -34,7 +35,9 @@ class PrivateAppsAction(val parser: BodyParser[AnyContent])(implicit env: Env)
           cookieOpt.flatMap(env.extractPrivateSessionId).map { id =>
             // request.cookies.get("oto-papps").flatMap(env.extractPrivateSessionId).map { id =>
             env.datastores.privateAppsUserDataStore.findById(id).flatMap {
-              case Some(user) => block(PrivateAppsActionContext(request, Some(user), globalConfig))
+              case Some(user) =>
+                user.withAuthModuleConfig(a => GenericOauth2Module.handleTokenRefresh(a, user))
+                block(PrivateAppsActionContext(request, Some(user), globalConfig))
               case None if env.clusterConfig.mode == ClusterMode.Worker => {
                 env.clusterAgent.isSessionValid(id).flatMap {
                   case Some(user) => block(PrivateAppsActionContext(request, Some(user), globalConfig))

@@ -86,6 +86,7 @@ trait OAuth2ModuleConfig extends AuthModuleConfig {
   def useJson: Boolean
   def useCookie: Boolean
   def readProfileFromToken: Boolean
+  def refreshTokens: Boolean
   def jwtVerifier: Option[AlgoSettings]
   def nameField: String
   def emailField: String

@@ -62,15 +62,19 @@ class U2FController(BackOfficeAction: BackOfficeAction,
             val authorizedGroup = (user \ "authorizedGroup").asOpt[String]
             if (BCrypt.checkpw(pass, password)) {
               logger.debug(s"Login successful for simple admin '$username'")
-              BackOfficeUser(IdGenerator.token(64),
-                             username,
-                             username,
-                             Json.obj(
-                               "name"  -> label,
-                               "email" -> username
-                             ),
-                             authorizedGroup,
-                             true).save(Duration(env.backOfficeSessionExp, TimeUnit.MILLISECONDS)).map { boUser =>
+              BackOfficeUser(
+                randomId = IdGenerator.token(64),
+                name = username,
+                email = username,
+                profile = Json.obj(
+                  "name"  -> label,
+                  "email" -> username
+                ),
+                token = Json.obj(),
+                authorizedGroup = authorizedGroup,
+                authConfigId = "none",
+                simpleLogin = true
+              ).save(Duration(env.backOfficeSessionExp, TimeUnit.MILLISECONDS)).map { boUser =>
                 env.datastores.simpleAdminDataStore.hasAlreadyLoggedIn(username).map {
                   case false => {
                     env.datastores.simpleAdminDataStore.alreadyLoggedIn(username)
@@ -400,15 +404,17 @@ class U2FController(BackOfficeAction: BackOfficeAction,
                       case Success(result) if result.isSuccess => {
                         logger.debug(s"Login successful for user '$username'")
                         BackOfficeUser(
-                          IdGenerator.token(64),
-                          username,
-                          username,
-                          Json.obj(
+                          randomId = IdGenerator.token(64),
+                          name = username,
+                          email = username,
+                          profile = Json.obj(
                             "name"  -> label,
                             "email" -> username
                           ),
-                          authorizedGroup,
-                          false
+                          token = Json.obj(),
+                          authorizedGroup = authorizedGroup,
+                          authConfigId = "none",
+                          simpleLogin = false
                         ).save(Duration(env.backOfficeSessionExp, TimeUnit.MILLISECONDS)).map { boUser =>
                           env.datastores.webAuthnAdminDataStore.hasAlreadyLoggedIn(username).map {
                             case false => {

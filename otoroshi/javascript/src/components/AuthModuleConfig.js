@@ -145,6 +145,7 @@ export class Oauth2ModuleConfig extends Component {
     callbackUrl: 'http://privateapps.oto.tools:8080/privateapps/generic/callback',
     accessTokenField: 'access_token',
     scope: 'openid profile email name',
+    refreshTokens: false,
     useJson: false,
     readProfileFromToken: false,
     jwtVerifier: {
@@ -312,6 +313,12 @@ export class Oauth2ModuleConfig extends Component {
           value={settings.useJson}
           help="..."
           onChange={v => changeTheValue(path + '.useJson', v)}
+        />
+        <BooleanInput
+          label="Refresh tokens"
+          value={settings.refreshTokens}
+          help="Automatically refresh access token using the refresh token if available"
+          onChange={v => changeTheValue(path + '.refreshTokens', v)}
         />
         <BooleanInput
           label="Read profile from token"
@@ -1246,6 +1253,7 @@ export class AuthModuleConfig extends Component {
                 accessTokenField: 'access_token',
                 scope: 'openid profile email name',
                 sessionMaxAge: 86400,
+                refreshTokens: false,
                 useJson: false,
                 readProfileFromToken: false,
                 jwtVerifier: {

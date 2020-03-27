@@ -23,7 +23,8 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
     email = "fake.user@otoroshi.io",
     profile = Json.obj(),
     authorizedGroup = None,
-    simpleLogin = false
+    simpleLogin = false,
+    authConfigId = "none"
   )
 
   def sessions() = ApiAction.async { ctx =>

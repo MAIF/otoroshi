@@ -4,6 +4,7 @@ import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.model.Uri.Path
 import akka.http.scaladsl.util.FastFuture
 import akka.util.ByteString
+import auth.GenericOauth2Module
 import env.Env
 import gateway.Errors
 import events.{Alerts, BlackListedBackOfficeUserAlert}
@@ -17,6 +18,7 @@ import utils.RequestImplicits._
 import utils.TypedMap
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Success
 
 case class BackOfficeActionContext[A](request: Request[A], user: Option[BackOfficeUser]) {
   def connected: Boolean              = user.isDefined
@@ -103,6 +105,9 @@ class BackOfficeActionAuth(val parser: BodyParser[AnyContent])(implicit env: Env
                   }
                   case false =>
                     checker.check(req, user) {
+                      user.withAuthModuleConfig { auth =>
+                        GenericOauth2Module.handleTokenRefresh(auth, user)
+                      }
                       block(BackOfficeActionContextAuth(request, user))
                     }
                 }

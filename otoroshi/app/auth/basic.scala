@@ -180,7 +180,8 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
             email = user.email,
             profile = user.asJson,
             realm = authConfig.cookieSuffix(descriptor),
-            otoroshiData = Some(user.metadata)
+            otoroshiData = Some(user.metadata),
+            authConfigId = authConfig.id
           )
         )
       case None => Left(s"You're not authorized here")
@@ -199,7 +200,8 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
             email = user.email,
             profile = user.asJson,
             authorizedGroup = None,
-            simpleLogin = false
+            simpleLogin = false,
+            authConfigId = authConfig.id
           )
         )
       case None => Left(s"You're not authorized here")
@@ -298,7 +300,8 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
                           email = user.email,
                           profile = user.asJson,
                           realm = authConfig.cookieSuffix(descriptor),
-                          otoroshiData = Some(user.metadata)
+                          otoroshiData = Some(user.metadata),
+                          authConfigId = authConfig.id
                         )
                       )
                     case None => Left(s"You're not authorized here")
