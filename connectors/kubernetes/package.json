@@ -16,7 +16,7 @@
     "lodash": "4.17.15",
     "moment": "2.24.0",
     "node-fetch": "2.6.0",
-    "prettier": "1.18.2",
-    "uuid": "3.3.3"
+    "prettier": "2.0.2",
+    "uuid": "7.0.2"
   }
 }
