@@ -8,7 +8,7 @@ import akka.http.scaladsl.util.FastFuture
 import akka.http.scaladsl.util.FastFuture._
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
-import auth.GenericOauth2ModuleConfig
+import auth.{GenericOauth2ModuleConfig, LdapAuthModuleConfig}
 import ch.qos.logback.classic.{Level, LoggerContext}
 import com.google.common.base.Charsets
 import com.nimbusds.jose.jwk.KeyType
@@ -1092,6 +1092,45 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
           e.printStackTrace()
           BadRequest(Json.obj("error" -> s"Bad certificate : $e"))
       } get
+    }
+  }
+
+  def checkExistingLdapConnection(id: String) = BackOfficeActionAuth.async { ctx =>
+    env.datastores.authConfigsDataStore.findById(id).flatMap {
+      case None => FastFuture.successful(NotFound(Json.obj("error" -> "auth. config. not found !")))
+      case Some(module: LdapAuthModuleConfig) => {
+        module.checkConnection().map {
+          case (works, error) if works => Ok(Json.obj("works" -> works))
+          case (works, error) => Ok(Json.obj("works" -> works, "error" -> error))
+        }
+      }
+      case Some(_) => FastFuture.successful(BadRequest(Json.obj("error" -> "auth. config. not LDAP !")))
+    }
+  }
+
+  def checkLdapConnection() = BackOfficeActionAuth.async(parse.json) { ctx =>
+    if ((ctx.request.body \ "user").isDefined) {
+      val username = (ctx.request.body \ "user" \ "username").as[String]
+      val password = (ctx.request.body \ "user" \ "password").as[String]
+      LdapAuthModuleConfig.fromJson((ctx.request.body \ "config").as[JsValue]) match {
+        case Left(e) => FastFuture.successful(BadRequest(Json.obj("error" -> "bad auth. module. config")))
+        case Right(module) => {
+          module.bindUser(username, password) match {
+            case Left(err) => FastFuture.successful(Ok(Json.obj("works" -> false, "error" -> err)))
+            case Right(_) => FastFuture.successful(Ok(Json.obj("works" -> true)))
+          }
+        }
+      }
+    } else {
+      LdapAuthModuleConfig.fromJson(ctx.request.body) match {
+        case Left(e) => FastFuture.successful(BadRequest(Json.obj("error" -> "bad auth. module. config")))
+        case Right(module) => {
+          module.checkConnection().map {
+            case (works, error) if works => Ok(Json.obj("works" -> works))
+            case (works, error) => Ok(Json.obj("works" -> works, "error" -> error))
+          }
+        }
+      }
     }
   }
 }

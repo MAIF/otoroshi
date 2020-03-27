@@ -62,8 +62,10 @@ POST    /bo/api/certificates/_importP12                       controllers.BackOf
 POST    /bo/api/certificates/_createCertificate               controllers.BackOfficeController.createCertificate()
 POST    /bo/api/certificates/_createCSR                       controllers.BackOfficeController.createCsr()
 
+POST    /bo/api/auth/:id/_check                               controllers.BackOfficeController.checkExistingLdapConnection(id)
+POST    /bo/api/auth/_check                                   controllers.BackOfficeController.checkLdapConnection()
 
-POST    /bo/api/oidc/_fetchConfig                            controllers.BackOfficeController.fetchOpenIdConfiguration()
+POST    /bo/api/oidc/_fetchConfig                             controllers.BackOfficeController.fetchOpenIdConfiguration()
 
 # Admin API proxy
 GET     /bo/api/proxy/*path                                   controllers.BackOfficeController.proxyAdminApi(path)

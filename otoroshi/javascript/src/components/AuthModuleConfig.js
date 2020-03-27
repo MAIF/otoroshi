@@ -670,7 +670,7 @@ export class User extends Component {
             onClick={e => {
               const password = faker.random.alphaNumeric(16);
               this.props.hashPassword(this.props.user.email, password);
-              window.newAlert(`The generated password is: ${password}`, 'Generated passssord');
+              window.newAlert(`The generated password is: ${password}`, 'Generated password');
             }}
             style={{ marginRight: 0 }}>
             <i className="glyphicon glyphicon-repeat" />
@@ -977,6 +977,30 @@ export class LdapModuleConfig extends Component {
     }
   };
 
+  check = () => {
+    const settings = this.props.value || this.props.settings;
+    fetch(`/bo/api/auth/_check`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify(settings)
+    }).then(r => r.json()).then(r => {
+      if (r.works) {
+        window.newAlert('It Works !')
+      } else {
+        window.newAlert(`Error while checking connection: ${r.error}`)
+      }
+    });
+  }
+
+  checkUser = () => {
+    const settings = this.props.value || this.props.settings;
+    window.newAlert(<LdapUserLoginTest config={settings} />, `Testing user login`);
+  }
+
   render() {
     const settings = this.props.value || this.props.settings;
     const path = this.props.path || '';
@@ -1066,6 +1090,13 @@ export class LdapModuleConfig extends Component {
           help="if one"
           onChange={v => changeTheValue(path + '.adminPassword', v)}
         />
+        <div className="form-group">
+          <label className="col-xs-12 col-sm-2 control-label"></label>
+          <div className="col-sm-10" style={{ display: 'flex' }}>
+            <button type="button" className="btn btn-success" onClick={this.check}>Test admin. connection</button>
+            <button type="button" className="btn btn-success" onClick={this.checkUser}>Test user connection</button>
+          </div>
+        </div>
         <TextInput
           label="Name field name"
           value={settings.nameField}
@@ -1100,6 +1131,58 @@ export class LdapModuleConfig extends Component {
           />
         </Suspense>
       </div>
+    );
+  }
+}
+
+class LdapUserLoginTest extends Component {
+
+  state = { message: null, error: null, username: '', password: '' };
+
+  check = () => {
+    this.setState({ message: null, error: null });
+    const config = this.props.config;
+    fetch(`/bo/api/auth/_check`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify({ config, user: { username: this.state.username, password: this.state.password } })
+    }).then(r => r.json()).then(r => {
+      if (r.works) {
+        this.setState({ message: 'It Works !' });
+      } else {
+        this.setState({ error: `Error while checking connection: ${r.error}` })
+      }
+    });
+  }
+
+  render() {
+    return (
+      <form className="form-horizontal">
+        <div className="form-group">
+          <label className="col-sm-2">Username</label>
+          <div className="col-sm-10">
+            <input type="email" value={this.state.username} onChange={e => this.setState({ username: e.target.value })} className="form-control" placeholder="Username" />
+          </div>
+        </div>
+        <div className="form-group">
+          <label className="col-sm-2">Password</label>
+          <div className="col-sm-10">
+            <input type="password" value={this.state.password} onChange={e => this.setState({ password: e.target.value })} className="form-control" placeholder="Password" />
+          </div>
+        </div>
+        <div className="form-group">
+          <label className="col-sm-2"></label>
+          <div className="col-sm-10">
+            <button type="button" className="btn btn-success" onClick={this.check}>Test login</button>
+            <span className="label label-success">{this.state.message}</span>
+            <span className="label label-danger">{this.state.error}</span>
+          </div>
+        </div>        
+      </form>
     );
   }
 }

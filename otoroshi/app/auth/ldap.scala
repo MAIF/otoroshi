@@ -1,9 +1,13 @@
 package auth
 
+import java.util
+
 import akka.http.scaladsl.util.FastFuture
 import com.google.common.base.Charsets
 import controllers.routes
 import env.Env
+import javax.naming.Context
+import javax.naming.directory.InitialDirContext
 import models._
 import play.api.Logger
 import play.api.libs.json._
@@ -11,7 +15,7 @@ import play.api.mvc._
 import security.{IdGenerator, OtoroshiClaim}
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Try
+import scala.util.{Failure, Success, Try}
 
 case class LdapAuthUser(
     name: String,
@@ -67,7 +71,7 @@ object LdapAuthModuleConfig extends FromJson[AuthModuleConfig] {
     override def writes(o: LdapAuthModuleConfig) = o.asJson
   }
 
-  override def fromJson(json: JsValue): Either[Throwable, AuthModuleConfig] =
+  override def fromJson(json: JsValue): Either[Throwable, LdapAuthModuleConfig] =
     Try {
       Right(
         LdapAuthModuleConfig(
@@ -156,7 +160,7 @@ case class LdapAuthModuleConfig(
     val nameField = "cn"
     val emailField = "mail"
    */
-  def bindUser(username: String, password: String): Option[LdapAuthUser] = {
+  def bindUser(username: String, password: String): Either[String, LdapAuthUser] = {
 
     import java.util
 
@@ -167,10 +171,10 @@ case class LdapAuthModuleConfig(
 
     if (!allowEmptyPassword && password.trim.isEmpty) {
       LdapAuthModuleConfig.logger.error("Empty user password are not allowed for this LDAP auth. module")
-      None
+      Left("Empty user password are not allowed for this LDAP auth. module")
     } else if (!allowEmptyPassword && adminPassword.exists(_.trim.isEmpty)) {
       LdapAuthModuleConfig.logger.error("Empty admin password are not allowed for this LDAP auth. module")
-      None
+      Left("Empty admin password are not allowed for this LDAP auth. module")
     } else {
 
       val env = new util.Hashtable[String, AnyRef]
@@ -211,7 +215,7 @@ case class LdapAuthModuleConfig(
       val res = ctx.search(userBase.map(_ + ",").getOrElse("") + searchBase,
                            searchFilter.replace("${username}", username),
                            searchControls)
-      val boundUser: Option[LdapAuthUser] = if (res.hasMore) {
+      val boundUser: Either[String, LdapAuthUser] = if (res.hasMore) {
         val item = res.next()
         val dn   = item.getNameInNamespace
         LdapAuthModuleConfig.logger.debug(s"found user with dn `$dn`")
@@ -227,7 +231,7 @@ case class LdapAuthModuleConfig(
           scala.util.Try {
             val ctx2 = new InitialDirContext(env2)
             ctx2.close()
-            Some(
+            Right(
               LdapAuthUser(
                 name = attrs.get(nameField).toString.split(":").last.trim,
                 email = attrs.get(emailField).toString.split(":").last.trim,
@@ -241,19 +245,35 @@ case class LdapAuthModuleConfig(
           } recover {
             case e =>
               LdapAuthModuleConfig.logger.error(s"bind failed", e)
-              None
+              Left(s"bind failed ${e.getMessage}")
           } get
         } else {
           LdapAuthModuleConfig.logger.debug(s"user not found in group")
-          None
+          Left(s"user not found in group")
         }
       } else {
         LdapAuthModuleConfig.logger.debug(s"no user found")
-        None
+        Left(s"no user found")
       }
       res.close()
       ctx.close()
       boundUser
+    }
+  }
+
+  def checkConnection(): Future[(Boolean, String)] = FastFuture.successful {
+    val env  = new util.Hashtable[String, AnyRef]
+    env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory")
+    env.put(Context.PROVIDER_URL, serverUrl)
+    env.put(Context.SECURITY_AUTHENTICATION, "simple")
+    adminUsername.foreach(u => env.put(Context.SECURITY_PRINCIPAL, u))
+    adminPassword.foreach(p => env.put(Context.SECURITY_CREDENTIALS, p))
+    scala.util.Try {
+      val ctx2 = new InitialDirContext(env)
+      ctx2.close()
+    } match {
+      case Success(_) => (true, "--")
+      case Failure(e) => (false, e.getMessage)
     }
   }
 }
@@ -273,7 +293,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
   }
 
   def bindUser(username: String, password: String, descriptor: ServiceDescriptor): Either[String, PrivateAppsUser] = {
-    authConfig.bindUser(username, password) match {
+    authConfig.bindUser(username, password).toOption match {
       case Some(user) =>
         Right(
           PrivateAppsUser(
@@ -290,7 +310,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
   }
 
   def bindAdminUser(username: String, password: String): Either[String, BackOfficeUser] = {
-    authConfig.bindUser(username, password) match {
+    authConfig.bindUser(username, password).toOption match {
       case Some(user) =>
         Right(
           BackOfficeUser(
