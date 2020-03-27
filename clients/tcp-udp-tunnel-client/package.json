@@ -14,19 +14,19 @@
   "dependencies": {
     "colors": "1.4.0",
     "faker": "4.1.0",
-    "https-proxy-agent": "3.0.1",
-    "inquirer": "7.0.0",
+    "https-proxy-agent": "5.0.0",
+    "inquirer": "7.1.0",
     "lodash": "4.17.15",
-    "minimist": "1.2.2",
+    "minimist": "1.2.5",
     "moment": "2.24.0",
     "node-fetch": "2.6.0",
-    "open": "7.0.0",
+    "open": "7.0.3",
     "readline-sync": "1.4.10",
-    "ws": "7.2.0"
+    "ws": "7.2.3"
   },
   "devDependencies": {
-    "nodemon": "1.19.4",
-    "pkg": "4.4.0"
+    "nodemon": "2.0.2",
+    "pkg": "4.4.4"
   },
   "pkg": {
     "assets": [],
