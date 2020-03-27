@@ -43,7 +43,6 @@ const files = [
   { file: './otoroshi/build.sbt', replace: (from, to, source) => source.replace(`version := "${from}"`, `version := "${to}"`) },
   { file: './readme.md' },
   { file: './scripts/upload.sh' },
-  { file: './scripts/wrk.sh' },
 ];
 
 async function echoReadable(readable) {
