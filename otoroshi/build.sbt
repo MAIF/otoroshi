@@ -64,6 +64,10 @@ libraryDependencies ++= Seq(
   //"io.kubernetes"            % "client-java"               % kubernetesVersion,
   //"io.kubernetes"            % "client-java-extended"      % kubernetesVersion,
 
+  // fix multiple CVEs
+  "com.fasterxml.jackson.core" % "jackson-databind"          % "2.10.3",
+  "org.yaml"                   % "snakeyaml"                 % "1.26",
+  
   // tests
   "org.scalatestplus.play"   %% "scalatestplus-play"         % "5.0.0" % Test,
 
