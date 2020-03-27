@@ -16,6 +16,7 @@ target
 /leveldb-old
 /.ensime
 /.bloop
+/.metals
 /otoroshi.jks
 /root-dir
 /app-2.12

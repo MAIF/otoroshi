@@ -1,7 +1,7 @@
 name := """otoroshi-manual"""
 organization := "fr.maif"
 version := "1.4.23-dev"
-scalaVersion := "2.12.10"
+scalaVersion := "2.13.1"
 
 lazy val docs = (project in file("."))
   .enablePlugins(ParadoxPlugin)
