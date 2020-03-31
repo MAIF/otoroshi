@@ -474,7 +474,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
             case Some(false) => renewToken(refreshToken, user)
             case _ => getUserInfoRaw(accessToken, env.datastores.globalConfigDataStore.latest()).flatMap {
               case r if r.status != 200 => renewToken(refreshToken, user)
-              case r => FastFuture.successful(())
+              case _s => FastFuture.successful(())
             }
           }
           case None => FastFuture.successful(())

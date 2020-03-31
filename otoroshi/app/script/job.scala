@@ -33,6 +33,7 @@ object JobKind {
 
 sealed trait JobStarting
 object JobStarting {
+  case object Never             extends JobStarting
   case object Automatically     extends JobStarting
   case object FromConfiguration extends JobStarting
 }
@@ -441,6 +442,7 @@ case class RegisteredJobContext(
       case Some(_) => () // nothing to do, waiting for next round
       case None => {
         job.starting match {
+          case JobStarting.Never => ()
           case JobStarting.Automatically => startNext()
           case JobStarting.FromConfiguration => {
             if (config.scripts.enabled) {
