@@ -289,7 +289,7 @@ class ClientCredentialFlow extends RequestTransformer {
 
   override def transformRequestWithCtx(ctx: TransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     (ctx.rawRequest.method.toLowerCase(), ctx.rawRequest.path) match {
-      case ("get", "/oauth/token") => {
+      case ("post", "/oauth/token") => {
 
         val conf = ctx.configFor("ClientCredentialFlow")
         val useJwtToken = (conf \ "jwtToken").asOpt[Boolean].getOrElse(true)
@@ -319,7 +319,11 @@ class ClientCredentialFlow extends RequestTransformer {
                     .withClaim("clientId", apiKey.clientId)
                     .sign(Algorithm.HMAC512(apiKey.clientSecret))
                   FastFuture.successful(
-                    Left(Results.Ok(Json.obj("access_token" -> accessToken)))
+                    Left(Results.Ok(Json.obj(
+                      "access_token" -> accessToken,
+                      "token_type" -> "bearer",
+                      "expires_in" -> expiration.toSeconds
+                    )))
                   )
                 }
                 case Some(apiKey) if apiKey.clientSecret == clientSecret && !useJwtToken=> {
@@ -351,9 +355,23 @@ class ClientCredentialFlow extends RequestTransformer {
                   body.get("client_secret")
                 ) match {
                   case (Some(gtype), Some(clientId), Some(clientSecret)) => handleTokenRequest(ClientCredentialFlowBody(gtype, clientId, clientSecret))
-                  case _ => FastFuture.successful(
-                    Left(Results.BadRequest(Json.obj("error" -> s"bad body for ${ctx.snowflake}")))
-                  )
+                  case _ => ctx.request.headers
+                    .get("Authorization")
+                    .filter(_.startsWith("Basic "))
+                    .map(_.replace("Basic ", ""))
+                    .map(v => org.apache.commons.codec.binary.Base64.decodeBase64(v))
+                    .map(v => new String(v))
+                    .filter(_.contains(":"))
+                    .map(_.split(":").toSeq)
+                    .map(v => (v.head, v.last))
+                    .map {
+                      case (clientId, clientSecret) => handleTokenRequest(ClientCredentialFlowBody(body.getOrElse("grant_type", "--"), clientId, clientSecret))
+                    }
+                    .getOrElse {
+                      FastFuture.successful(
+                        Left(Results.BadRequest(Json.obj("error" -> s"bad body for ${ctx.snowflake}")))
+                      )
+                    }
                 }
               }
               case Some(ctype) if ctype.toLowerCase().contains("application/json") => {
@@ -364,9 +382,23 @@ class ClientCredentialFlow extends RequestTransformer {
                   (json \ "client_secret").asOpt[String],
                 ) match {
                   case (Some(gtype), Some(clientId), Some(clientSecret)) => handleTokenRequest(ClientCredentialFlowBody(gtype, clientId, clientSecret))
-                  case _ => FastFuture.successful(
-                    Left(Results.BadRequest(Json.obj("error" -> s"bad body for ${ctx.snowflake}")))
-                  )
+                  case _ => ctx.request.headers
+                    .get("Authorization")
+                    .filter(_.startsWith("Basic "))
+                    .map(_.replace("Basic ", ""))
+                    .map(v => org.apache.commons.codec.binary.Base64.decodeBase64(v))
+                    .map(v => new String(v))
+                    .filter(_.contains(":"))
+                    .map(_.split(":").toSeq)
+                    .map(v => (v.head, v.last))
+                    .map {
+                      case (clientId, clientSecret) => handleTokenRequest(ClientCredentialFlowBody((json \ "grant_type").asOpt[String].getOrElse("--"), clientId, clientSecret))
+                    }
+                    .getOrElse {
+                      FastFuture.successful(
+                        Left(Results.BadRequest(Json.obj("error" -> s"bad body for ${ctx.snowflake}")))
+                      )
+                    }
                 }
               }
               case _ => FastFuture.successful(
