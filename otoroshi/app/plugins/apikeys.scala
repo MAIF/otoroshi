@@ -1,6 +1,13 @@
 package otoroshi.plugins.apikeys
 
+import java.util.concurrent.atomic.AtomicBoolean
+
 import akka.http.scaladsl.util.FastFuture
+import akka.stream.Materializer
+import akka.stream.scaladsl.{Sink, Source}
+import akka.util.ByteString
+import com.auth0.jwt.JWT
+import com.auth0.jwt.algorithms.Algorithm
 import env.Env
 import models.{ApiKey, RemainingQuotas}
 import org.apache.commons.codec.binary.Base64
@@ -8,9 +15,13 @@ import org.joda.time.DateTime
 import otoroshi.plugins.JsonPathUtils
 import otoroshi.script._
 import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
+import play.api.mvc.{Result, Results}
+import play.core.parsers.FormUrlEncodedParser
 import security.IdGenerator
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.collection.concurrent.TrieMap
+import scala.concurrent.duration._
+import scala.concurrent.{ExecutionContext, Future, Promise}
 
 class HasAllowedApiKeyValidator extends AccessValidator {
 
@@ -205,5 +216,179 @@ class CertificateAsApikey extends PreRouting {
           }
       }
     }
+  }
+}
+
+case class ClientCredentialFlowBody(grantType: String, clientId: String, clientSecret: String)
+
+class ClientCredentialFlowExtractor extends PreRouting {
+
+  override def name: String = "Client Credential Flow ApiKey extractor"
+
+  override def description: Option[String] =
+    Some(
+      s"""This plugin can extract an apikey from an opaque access_token generate by the `ClientCredentialFlow` plugin""".stripMargin
+    )
+
+  override def preRoute(ctx: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    ctx.request.headers.get("Authorization") match {
+      case Some(auth) if auth.startsWith("Bearer ") => {
+        val token = auth.replace("Bearer ", "")
+        env.datastores.rawDataStore.get(s"${env.storageRoot}:plugins:client-credentials-flow:tokens:$token").flatMap {
+          case Some(clientId) => env.datastores.apiKeyDataStore.findById(clientId.utf8String).map {
+            case Some(apikey) => {
+              ctx.attrs.put(otoroshi.plugins.Keys.ApiKeyKey -> apikey)
+              FastFuture.successful(())
+            }
+            case _ => FastFuture.successful(())
+          }
+          case _ => FastFuture.successful(())
+        }
+      }
+      case _ => FastFuture.successful(())
+    }
+  }
+}
+
+class ClientCredentialFlow extends RequestTransformer {
+
+  override def name: String = "Client Credential Flow"
+
+  override def defaultConfig: Option[JsObject] =
+    Some(
+      Json.obj(
+        "ClientCredentialFlow" -> Json.obj(
+          "expiration"   -> 1.hour.toMillis,
+          "jwtToken"     -> true
+        )
+      )
+    )
+
+  override def description: Option[String] =
+    Some(
+      s"""This plugin enable an oauth token endpoint (`/oauth/token`) to create an access token token given a client id and secret.
+         |If you don't want to have access_tokens as JWT tokens, don't forget to use `ClientCredentialFlowExtractor` pre-routing plugin.
+         |
+         |```json
+         |${Json.prettyPrint(defaultConfig.get)}
+         |```
+      """.stripMargin
+    )
+
+  private val awaitingRequests = new TrieMap[String, Promise[Source[ByteString, _]]]()
+
+  override def beforeRequest(ctx: BeforeRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
+    awaitingRequests.putIfAbsent(ctx.snowflake, Promise[Source[ByteString, _]])
+    funit
+  }
+
+  override def afterRequest(ctx: AfterRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
+    awaitingRequests.remove(ctx.snowflake)
+    funit
+  }
+
+  override def transformRequestWithCtx(ctx: TransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
+    (ctx.rawRequest.method.toLowerCase(), ctx.rawRequest.path) match {
+      case ("get", "/oauth/token") => {
+
+        val conf = ctx.configFor("ClientCredentialFlow")
+        val useJwtToken = (conf \ "jwtToken").asOpt[Boolean].getOrElse(true)
+        val expiration = (conf \ "expiration").asOpt[Long].map(_.millis).getOrElse(1.hour)
+
+        awaitingRequests.get(ctx.snowflake).map { promise =>
+
+          val consumed = new AtomicBoolean(false)
+
+          val bodySource: Source[ByteString, _] = Source
+            .future(promise.future)
+            .flatMapConcat(s => s)
+            .alsoTo(Sink.onComplete {
+              case _ => consumed.set(true)
+            })
+
+          def handleTokenRequest(ccfb: ClientCredentialFlowBody): Future[Either[Result, HttpRequest]] = ccfb match {
+            case ClientCredentialFlowBody("client_credentials", clientId, clientSecret) => {
+              env.datastores.apiKeyDataStore.findAuthorizeKeyFor(clientId, ctx.descriptor.id).flatMap {
+                case Some(apiKey) if apiKey.clientSecret == clientSecret && useJwtToken=> {
+                  val accessToken = JWT.create()
+                    .withExpiresAt(DateTime.now().plusMillis(expiration.toMillis.toInt).toDate)
+                    .withIssuedAt(DateTime.now().toDate)
+                    .withNotBefore(DateTime.now().toDate)
+                    .withIssuer("Otoroshi")
+                    .withSubject(apiKey.clientId)
+                    .withClaim("clientId", apiKey.clientId)
+                    .sign(Algorithm.HMAC512(apiKey.clientSecret))
+                  FastFuture.successful(
+                    Left(Results.Ok(Json.obj("access_token" -> accessToken)))
+                  )
+                }
+                case Some(apiKey) if apiKey.clientSecret == clientSecret && !useJwtToken=> {
+                  val randomToken = IdGenerator.token(64)
+                  env.datastores.rawDataStore.set(s"${env.storageRoot}:plugins:client-credentials-flow:tokens:$randomToken", ByteString(apiKey.clientSecret), Some(expiration.toMillis)).map { _ =>
+                    Left(Results.Ok(Json.obj("access_token" -> randomToken)))
+                  }
+                }
+                case _ => FastFuture.successful(
+                  Left(Results.BadRequest(Json.obj("error" -> s"bad client_id or client_secret for ${ctx.snowflake}")))
+                )
+              }
+            }
+            case _ => FastFuture.successful(
+              Left(Results.BadRequest(Json.obj("error" -> s"bad grant_type for ${ctx.snowflake}")))
+            )
+          }
+
+          bodySource.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
+            ctx.request.headers.get("Content-Type") match {
+              case Some(ctype) if ctype.toLowerCase().contains("application/x-www-form-urlencoded") => {
+
+                val charset          = ctx.request.charset.getOrElse("UTF-8")
+                val urlEncodedString = bodyRaw.utf8String
+                val body = FormUrlEncodedParser.parse(urlEncodedString, charset).mapValues(_.head)
+                (
+                  body.get("grant_type"),
+                  body.get("client_id"),
+                  body.get("client_secret")
+                ) match {
+                  case (Some(gtype), Some(clientId), Some(clientSecret)) => handleTokenRequest(ClientCredentialFlowBody(gtype, clientId, clientSecret))
+                  case _ => FastFuture.successful(
+                    Left(Results.BadRequest(Json.obj("error" -> s"bad body for ${ctx.snowflake}")))
+                  )
+                }
+              }
+              case Some(ctype) if ctype.toLowerCase().contains("application/json") => {
+                val json = Json.parse(bodyRaw.utf8String)
+                (
+                  (json \ "grant_type").asOpt[String],
+                  (json \ "client_id").asOpt[String],
+                  (json \ "client_secret").asOpt[String],
+                ) match {
+                  case (Some(gtype), Some(clientId), Some(clientSecret)) => handleTokenRequest(ClientCredentialFlowBody(gtype, clientId, clientSecret))
+                  case _ => FastFuture.successful(
+                    Left(Results.BadRequest(Json.obj("error" -> s"bad body for ${ctx.snowflake}")))
+                  )
+                }
+              }
+              case _ => FastFuture.successful(
+                Left(Results.BadRequest(Json.obj("error" -> s"bad body for ${ctx.snowflake}")))
+              )
+            }
+          } andThen {
+            case _ =>
+              if (!consumed.get()) bodySource.runWith(Sink.ignore)
+          }
+        } getOrElse {
+          FastFuture.successful(
+            Left(Results.BadRequest(Json.obj("error" -> s"no body promise found for ${ctx.snowflake}")))
+          )
+        }
+      }
+      case _ => FastFuture.successful(Right(ctx.otoroshiRequest))
+    }
+  }
+
+  override def transformRequestBodyWithCtx(ctx: TransformerRequestBodyContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
+    awaitingRequests.get(ctx.snowflake).map(_.trySuccess(ctx.body))
+    ctx.body
   }
 }
