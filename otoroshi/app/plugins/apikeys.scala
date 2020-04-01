@@ -328,7 +328,12 @@ class ClientCredentialFlow extends RequestTransformer {
                     .withSubject("Otoroshi")
                     .sign(Algorithm.HMAC512(apiKey.clientSecret))
                   // no refresh token possible because of https://tools.ietf.org/html/rfc6749#section-4.4.3
-                  val pass = scope.map(s => apiKey.metadata.get("scope").exists(_.split(" ").toSeq.intersect(s.split(" ").toSeq).nonEmpty)).getOrElse(true)
+
+                  val pass = scope.forall { s =>
+                    val scopes = s.split(" ").toSeq
+                    val scopeInter = apiKey.metadata.get("scope").exists(_.split(" ").toSeq.intersect(scopes).nonEmpty)
+                    scopeInter && apiKey.metadata.get("scope").map(_.split(" ").toSeq.intersect(scopes).size).getOrElse(scopes.size) == scopes.size
+                  }
                   if (pass) {
                     val scopeObj = scope.orElse(apiKey.metadata.get("scope")).map(v => Json.obj("scope" -> v)).getOrElse(Json.obj())
                     Results.Ok(Json.obj(
@@ -343,7 +348,11 @@ class ClientCredentialFlow extends RequestTransformer {
                 case Some(apiKey) if apiKey.clientSecret == clientSecret && !useJwtToken=> {
                   val randomToken = IdGenerator.token(64)
                   env.datastores.rawDataStore.set(s"${env.storageRoot}:plugins:client-credentials-flow:access-tokens:$randomToken", ByteString(apiKey.clientSecret), Some(expiration.toMillis)).map { _ =>
-                    val pass = scope.map(s => apiKey.metadata.get("scope").exists(_.split(" ").toSeq.intersect(s.split(" ").toSeq).nonEmpty)).getOrElse(true)
+                    val pass = scope.forall { s =>
+                      val scopes = s.split(" ").toSeq
+                      val scopeInter = apiKey.metadata.get("scope").exists(_.split(" ").toSeq.intersect(scopes).nonEmpty)
+                      scopeInter && apiKey.metadata.get("scope").map(_.split(" ").toSeq.intersect(scopes).size).getOrElse(scopes.size) == scopes.size
+                    }
                     if (pass) {
                       val scopeObj = scope.orElse(apiKey.metadata.get("scope")).map(v => Json.obj("scope" -> v)).getOrElse(Json.obj())
                       Results.Ok(Json.obj(
