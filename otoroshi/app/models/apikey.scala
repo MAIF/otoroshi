@@ -898,11 +898,11 @@ object ApiKeyHelper {
         Try {
           JWT.decode(jwtTokenValue)
         } map { jwt =>
-          Option(jwt.getClaim("iss"))
+          Option(jwt.getClaim("clientId"))
             .filterNot(_.isNull)
             .map(_.asString())
             .orElse(
-              Option(jwt.getClaim("clientId"))
+              Option(jwt.getClaim("iss"))
                 .filterNot(_.isNull)
                 .map(_.asString())
             ) match {

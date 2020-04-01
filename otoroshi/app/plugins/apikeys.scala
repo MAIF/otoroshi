@@ -219,7 +219,7 @@ class CertificateAsApikey extends PreRouting {
   }
 }
 
-case class ClientCredentialFlowBody(grantType: String, clientId: String, clientSecret: String)
+case class ClientCredentialFlowBody(grantType: String, clientId: String, clientSecret: String, scope: String)
 
 class ClientCredentialFlowExtractor extends PreRouting {
 
@@ -234,7 +234,7 @@ class ClientCredentialFlowExtractor extends PreRouting {
     ctx.request.headers.get("Authorization") match {
       case Some(auth) if auth.startsWith("Bearer ") => {
         val token = auth.replace("Bearer ", "")
-        env.datastores.rawDataStore.get(s"${env.storageRoot}:plugins:client-credentials-flow:tokens:$token").flatMap {
+        env.datastores.rawDataStore.get(s"${env.storageRoot}:plugins:client-credentials-flow:access-tokens:$token").flatMap {
           case Some(clientId) => env.datastores.apiKeyDataStore.findById(clientId.utf8String).map {
             case Some(apikey) => {
               ctx.attrs.put(otoroshi.plugins.Keys.ApiKeyKey -> apikey)
@@ -252,6 +252,8 @@ class ClientCredentialFlowExtractor extends PreRouting {
 
 class ClientCredentialFlow extends RequestTransformer {
 
+  import otoroshi.utils.syntax.implicits._
+
   override def name: String = "Client Credential Flow"
 
   override def defaultConfig: Option[JsObject] =
@@ -266,8 +268,9 @@ class ClientCredentialFlow extends RequestTransformer {
 
   override def description: Option[String] =
     Some(
-      s"""This plugin enable an oauth token endpoint (`/oauth/token`) to create an access token token given a client id and secret.
+      s"""This plugin enabless the oauth client credentials flow on a service and add an endpoint (`/oauth/token`) to create an access_token given a client id and secret.
          |If you don't want to have access_tokens as JWT tokens, don't forget to use `ClientCredentialFlowExtractor` pre-routing plugin.
+         |Don't forget to authorize access to `/oauth/token` in service settings (public paths)
          |
          |```json
          |${Json.prettyPrint(defaultConfig.get)}
@@ -307,39 +310,39 @@ class ClientCredentialFlow extends RequestTransformer {
             })
 
           def handleTokenRequest(ccfb: ClientCredentialFlowBody): Future[Either[Result, HttpRequest]] = ccfb match {
-            case ClientCredentialFlowBody("client_credentials", clientId, clientSecret) => {
+            case ClientCredentialFlowBody("client_credentials", clientId, clientSecret, scope) => {
               env.datastores.apiKeyDataStore.findAuthorizeKeyFor(clientId, ctx.descriptor.id).flatMap {
                 case Some(apiKey) if apiKey.clientSecret == clientSecret && useJwtToken=> {
                   val accessToken = JWT.create()
                     .withExpiresAt(DateTime.now().plusMillis(expiration.toMillis.toInt).toDate)
                     .withIssuedAt(DateTime.now().toDate)
                     .withNotBefore(DateTime.now().toDate)
-                    .withIssuer("Otoroshi")
-                    .withSubject(apiKey.clientId)
-                    .withClaim("clientId", apiKey.clientId)
+                    .withIssuer(apiKey.clientId)
+                    .withSubject("Otoroshi")
                     .sign(Algorithm.HMAC512(apiKey.clientSecret))
-                  FastFuture.successful(
-                    Left(Results.Ok(Json.obj(
-                      "access_token" -> accessToken,
-                      "token_type" -> "bearer",
-                      "expires_in" -> expiration.toSeconds
-                    )))
-                  )
+                  // no refresh token possible because of https://tools.ietf.org/html/rfc6749#section-4.4.3
+                  Results.Ok(Json.obj(
+                    "access_token" -> accessToken,
+                    "token_type" -> "Bearer",
+                    "expires_in" -> expiration.toSeconds,
+                    "scope" -> scope
+                  )).leftf
                 }
                 case Some(apiKey) if apiKey.clientSecret == clientSecret && !useJwtToken=> {
                   val randomToken = IdGenerator.token(64)
-                  env.datastores.rawDataStore.set(s"${env.storageRoot}:plugins:client-credentials-flow:tokens:$randomToken", ByteString(apiKey.clientSecret), Some(expiration.toMillis)).map { _ =>
-                    Left(Results.Ok(Json.obj("access_token" -> randomToken)))
+                  env.datastores.rawDataStore.set(s"${env.storageRoot}:plugins:client-credentials-flow:access-tokens:$randomToken", ByteString(apiKey.clientSecret), Some(expiration.toMillis)).map { _ =>
+                    Results.Ok(Json.obj(
+                      "access_token" -> randomToken,
+                      "token_type" -> "Bearer",
+                      "expires_in" -> expiration.toSeconds,
+                      "scope" -> ccfb.scope
+                    )).left
                   }
                 }
-                case _ => FastFuture.successful(
-                  Left(Results.BadRequest(Json.obj("error" -> s"bad client_id or client_secret for ${ctx.snowflake}")))
-                )
+                case _ => Results.BadRequest(Json.obj("error" -> s"bad client_id or client_secret for ${ctx.snowflake}")).leftf
               }
             }
-            case _ => FastFuture.successful(
-              Left(Results.BadRequest(Json.obj("error" -> s"bad grant_type for ${ctx.snowflake}")))
-            )
+            case _ => Results.BadRequest(Json.obj("error" -> s"bad grant_type for ${ctx.snowflake}")).leftf
           }
 
           bodySource.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
@@ -352,9 +355,10 @@ class ClientCredentialFlow extends RequestTransformer {
                 (
                   body.get("grant_type"),
                   body.get("client_id"),
-                  body.get("client_secret")
+                  body.get("client_secret"),
+                  body.get("scope"),
                 ) match {
-                  case (Some(gtype), Some(clientId), Some(clientSecret)) => handleTokenRequest(ClientCredentialFlowBody(gtype, clientId, clientSecret))
+                  case (Some(gtype), Some(clientId), Some(clientSecret), scope) => handleTokenRequest(ClientCredentialFlowBody(gtype, clientId, clientSecret, scope.getOrElse("all")))
                   case _ => ctx.request.headers
                     .get("Authorization")
                     .filter(_.startsWith("Basic "))
@@ -365,12 +369,10 @@ class ClientCredentialFlow extends RequestTransformer {
                     .map(_.split(":").toSeq)
                     .map(v => (v.head, v.last))
                     .map {
-                      case (clientId, clientSecret) => handleTokenRequest(ClientCredentialFlowBody(body.getOrElse("grant_type", "--"), clientId, clientSecret))
+                      case (clientId, clientSecret) => handleTokenRequest(ClientCredentialFlowBody(body.getOrElse("grant_type", "--"), clientId, clientSecret, "all"))
                     }
                     .getOrElse {
-                      FastFuture.successful(
-                        Left(Results.BadRequest(Json.obj("error" -> s"bad body for ${ctx.snowflake}")))
-                      )
+                      Results.BadRequest(Json.obj("error" -> s"bad body for ${ctx.snowflake}")).leftf
                     }
                 }
               }
@@ -380,8 +382,9 @@ class ClientCredentialFlow extends RequestTransformer {
                   (json \ "grant_type").asOpt[String],
                   (json \ "client_id").asOpt[String],
                   (json \ "client_secret").asOpt[String],
+                  (json \ "scope").asOpt[String],
                 ) match {
-                  case (Some(gtype), Some(clientId), Some(clientSecret)) => handleTokenRequest(ClientCredentialFlowBody(gtype, clientId, clientSecret))
+                  case (Some(gtype), Some(clientId), Some(clientSecret), scope) => handleTokenRequest(ClientCredentialFlowBody(gtype, clientId, clientSecret, scope.getOrElse("all")))
                   case _ => ctx.request.headers
                     .get("Authorization")
                     .filter(_.startsWith("Basic "))
@@ -392,30 +395,24 @@ class ClientCredentialFlow extends RequestTransformer {
                     .map(_.split(":").toSeq)
                     .map(v => (v.head, v.last))
                     .map {
-                      case (clientId, clientSecret) => handleTokenRequest(ClientCredentialFlowBody((json \ "grant_type").asOpt[String].getOrElse("--"), clientId, clientSecret))
+                      case (clientId, clientSecret) => handleTokenRequest(ClientCredentialFlowBody((json \ "grant_type").asOpt[String].getOrElse("--"), clientId, clientSecret, "all"))
                     }
                     .getOrElse {
-                      FastFuture.successful(
-                        Left(Results.BadRequest(Json.obj("error" -> s"bad body for ${ctx.snowflake}")))
-                      )
+                      Results.BadRequest(Json.obj("error" -> s"bad body for ${ctx.snowflake}")).leftf
                     }
                 }
               }
-              case _ => FastFuture.successful(
-                Left(Results.BadRequest(Json.obj("error" -> s"bad body for ${ctx.snowflake}")))
-              )
+              case _ => Results.BadRequest(Json.obj("error" -> s"bad body for ${ctx.snowflake}")).leftf
             }
           } andThen {
             case _ =>
               if (!consumed.get()) bodySource.runWith(Sink.ignore)
           }
         } getOrElse {
-          FastFuture.successful(
-            Left(Results.BadRequest(Json.obj("error" -> s"no body promise found for ${ctx.snowflake}")))
-          )
+          Results.BadRequest(Json.obj("error" -> s"no body promise found for ${ctx.snowflake}")).leftf
         }
       }
-      case _ => FastFuture.successful(Right(ctx.otoroshiRequest))
+      case _ => ctx.otoroshiRequest.rightf
     }
   }
 
