@@ -276,6 +276,8 @@ class ClientCredentialFlow extends RequestTransformer {
       Json.obj(
         "ClientCredentialFlow" -> Json.obj(
           "expiration"   -> 1.hour.toMillis,
+          "supportRevoke" -> true,
+          "supportIntrospect" -> true,
           "restrictToCurrentGroup" -> true,
           "jwtToken"     -> true,
           "rootPath" -> "/.well-known/otoroshi/oauth"
@@ -311,6 +313,8 @@ class ClientCredentialFlow extends RequestTransformer {
     val conf = ctx.configFor("ClientCredentialFlow")
     val useJwtToken = (conf \ "jwtToken").asOpt[Boolean].getOrElse(true)
     val restrictToCurrentGroup = (conf \ "restrictToCurrentGroup").asOpt[Boolean].getOrElse(true)
+    val supportRevoke = (conf \ "supportRevoke").asOpt[Boolean].getOrElse(false)
+    val supportIntrospect = (conf \ "supportIntrospect").asOpt[Boolean].getOrElse(false)
     val expiration = (conf \ "expiration").asOpt[Long].map(_.millis).getOrElse(1.hour)
     val rootPath = (conf \ "rootPath").asOpt[String].getOrElse("/.well-known/otoroshi/oauth")
 
@@ -378,7 +382,7 @@ class ClientCredentialFlow extends RequestTransformer {
     }
 
     (ctx.rawRequest.method.toLowerCase(), ctx.rawRequest.path) match {
-      case ("post", path) if path == s"$rootPath/token/revoke" && useJwtToken => handleBody { body =>
+      case ("post", path) if supportRevoke && path == s"$rootPath/token/revoke" && useJwtToken => handleBody { body =>
         (
           body.get("token"),
           body.get("revoke")
@@ -399,7 +403,7 @@ class ClientCredentialFlow extends RequestTransformer {
             Results.Unauthorized(Json.obj("error" -> "access_denied", "error_description" -> s"Unauthorized")).leftf
         }
       }
-      case ("post", path) if path == s"$rootPath/token/revoke" && !useJwtToken => handleBody { body =>
+      case ("post", path) if supportRevoke && path == s"$rootPath/token/revoke" && !useJwtToken => handleBody { body =>
         (
           body.get("token"),
           body.get("revoke")
@@ -419,7 +423,7 @@ class ClientCredentialFlow extends RequestTransformer {
             Results.Unauthorized(Json.obj("error" -> "access_denied", "error_description" -> s"Unauthorized")).leftf
         }
       }
-      case ("post", path) if path == s"$rootPath/token/introspect" && useJwtToken => handleBody { body =>
+      case ("post", path) if supportIntrospect && path == s"$rootPath/token/introspect" && useJwtToken => handleBody { body =>
         body.get("token") match {
           case Some(token) => {
             val decoded = JWT.decode(token)
@@ -446,7 +450,7 @@ class ClientCredentialFlow extends RequestTransformer {
             Results.Unauthorized(Json.obj("error" -> "access_denied", "error_description" -> s"Unauthorized")).leftf
         }
       }
-      case ("post", path) if path == s"$rootPath/token/introspect" && !useJwtToken => handleBody { body =>
+      case ("post", path) if supportIntrospect && path == s"$rootPath/token/introspect" && !useJwtToken => handleBody { body =>
         body.get("token") match {
           case Some(token) => {
             val possibleApiKey: Future[Option[ApiKey]] = env.datastores.rawDataStore.get(s"${env.storageRoot}:plugins:client-credentials-flow:access-tokens:$token").flatMap {
@@ -611,6 +615,7 @@ class ClientCredentialFlow extends RequestTransformer {
           Results.Unauthorized(Json.obj("error" -> "access_denied", "error_description" -> s"Unauthorized")).leftf
         }
       }
+      case _ if !supportRevoke => ctx.otoroshiRequest.rightf
       case _ => {
 
         val req = ctx.request
