@@ -565,6 +565,9 @@ class AkkWsClient(config: WSClientConfig, env: Env)(implicit system: ActorSystem
       trustedCerts: Seq[Cert],
       customizer: ConnectionPoolSettings => ConnectionPoolSettings
   ): Future[HttpResponse] = {
+    // TODO: fix warning with
+    // https://github.com/akka/akka/blob/master/akka-stream/src/main/scala/com/typesafe/sslconfig/akka/AkkaSSLConfig.scala#L83-L109
+    // https://github.com/lightbend/ssl-config/blob/master/ssl-config-core/src/main/scala/com/typesafe/sslconfig/ssl/SSLContextBuilder.scala#L99-L127
     clientCerts match {
       case certs if (clientCerts ++ trustedCerts).isEmpty => {
         val currentSslContext = DynamicSSLEngineProvider.current
