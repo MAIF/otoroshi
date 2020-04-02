@@ -8,13 +8,14 @@ import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
+import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import env.Env
 import models.{ApiKey, RemainingQuotas}
 import org.apache.commons.codec.binary.Base64
 import org.joda.time.DateTime
 import otoroshi.plugins.JsonPathUtils
 import otoroshi.script._
-import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
+import play.api.libs.json._
 import play.api.mvc.{Result, Results}
 import play.core.parsers.FormUrlEncodedParser
 import security.IdGenerator
@@ -22,6 +23,7 @@ import security.IdGenerator
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future, Promise}
+import scala.util.{Failure, Success, Try}
 
 class HasAllowedApiKeyValidator extends AccessValidator {
 
@@ -237,8 +239,15 @@ class ClientCredentialFlowExtractor extends PreRouting {
         env.datastores.rawDataStore.get(s"${env.storageRoot}:plugins:client-credentials-flow:access-tokens:$token").flatMap {
           case Some(clientId) => env.datastores.apiKeyDataStore.findById(clientId.utf8String).map {
             case Some(apikey) => {
-              ctx.attrs.put(otoroshi.plugins.Keys.ApiKeyKey -> apikey)
-              FastFuture.successful(())
+              env.datastores.rawDataStore.get(s"${env.storageRoot}:plugins:client-credentials-flow:revoked-tokens:$token")
+                .map(_.map(_.utf8String.toBoolean).getOrElse(false))
+                  .flatMap {
+                    case true =>
+                      FastFuture.successful(())
+                    case false =>
+                      ctx.attrs.put(otoroshi.plugins.Keys.ApiKeyKey -> apikey)
+                      FastFuture.successful(())
+                  }
             }
             case _ => FastFuture.successful(())
           }
@@ -253,6 +262,12 @@ class ClientCredentialFlowExtractor extends PreRouting {
 class ClientCredentialFlow extends RequestTransformer {
 
   import otoroshi.utils.syntax.implicits._
+
+  private val revokedCache: Cache[String, Boolean] = Scaffeine()
+    .recordStats()
+    .expireAfterWrite(1.hour)
+    .maximumSize(1000)
+    .build()
 
   override def name: String = "Client Credential Flow"
 
@@ -298,7 +313,158 @@ class ClientCredentialFlow extends RequestTransformer {
     val restrictToCurrentGroup = (conf \ "restrictToCurrentGroup").asOpt[Boolean].getOrElse(true)
     val expiration = (conf \ "expiration").asOpt[Long].map(_.millis).getOrElse(1.hour)
     val rootPath = (conf \ "rootPath").asOpt[String].getOrElse("/.well-known/otoroshi/oauth")
+
+    def handleBody[A](f: Map[String, String] => Future[Either[Result, HttpRequest]]): Future[Either[Result, HttpRequest]] = {
+      awaitingRequests.get(ctx.snowflake).map { promise =>
+
+        val consumed = new AtomicBoolean(false)
+
+        val bodySource: Source[ByteString, _] = Source
+          .future(promise.future)
+          .flatMapConcat(s => s)
+          .alsoTo(Sink.onComplete {
+            case _ => consumed.set(true)
+          })
+
+        bodySource.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
+          ctx.request.headers.get("Content-Type") match {
+            case Some(ctype) if ctype.toLowerCase().contains("application/x-www-form-urlencoded") => {
+
+              val charset          = ctx.request.charset.getOrElse("UTF-8")
+              val urlEncodedString = bodyRaw.utf8String
+              val body = FormUrlEncodedParser.parse(urlEncodedString, charset).mapValues(_.head)
+              val map: Map[String, String] = body ++ ctx.request.headers
+                .get("Authorization")
+                .filter(_.startsWith("Basic "))
+                .map(_.replace("Basic ", ""))
+                .map(v => org.apache.commons.codec.binary.Base64.decodeBase64(v))
+                .map(v => new String(v))
+                .filter(_.contains(":"))
+                .map(_.split(":").toSeq)
+                .map(v => Map("client_id" -> v.head, "client_secret" -> v.last))
+                .getOrElse(Map.empty[String, String])
+              f(map)
+            }
+            case Some(ctype) if ctype.toLowerCase().contains("application/json") => {
+              val json = Json.parse(bodyRaw.utf8String).as[JsObject]
+              val map: Map[String, String] = json.value.toSeq.collect {
+                case (key, JsString(v))  => (key, v)
+                case (key, JsNumber(v))  => (key, v.toString())
+                case (key, JsBoolean(v)) => (key, v.toString)
+              }.toMap ++ ctx.request.headers
+                .get("Authorization")
+                .filter(_.startsWith("Basic "))
+                .map(_.replace("Basic ", ""))
+                .map(v => org.apache.commons.codec.binary.Base64.decodeBase64(v))
+                .map(v => new String(v))
+                .filter(_.contains(":"))
+                .map(_.split(":").toSeq)
+                .map(v => Map("client_id" -> v.head, "client_secret" -> v.last))
+                .getOrElse(Map.empty[String, String])
+              f(map)
+            }
+            case _ =>
+              // bad content type
+              Results.Unauthorized(Json.obj("error" -> "access_denied", "error_description" -> s"Unauthorized")).leftf
+          }
+        } andThen {
+          case _ =>
+            if (!consumed.get()) bodySource.runWith(Sink.ignore)
+        }
+      } getOrElse {
+        // no body
+        Results.Unauthorized(Json.obj("error" -> "access_denied", "error_description" -> s"Unauthorized")).leftf
+      }
+    }
+
     (ctx.rawRequest.method.toLowerCase(), ctx.rawRequest.path) match {
+      case ("post", path) if path == s"$rootPath/token/revoke" && useJwtToken => handleBody { body =>
+        (
+          body.get("token"),
+          body.get("revoke")
+        ) match {
+          case (Some(token), revokeRaw) => {
+            val revoke = revokeRaw.map(_.toBoolean).getOrElse(true)
+            val decoded = JWT.decode(token)
+            Try(decoded.getId).toOption match {
+              case None => Results.Ok("").leftf
+              case Some(jti) if revoke => env.datastores.rawDataStore.set(s"${env.storageRoot}:plugins:client-credentials-flow:revoked-tokens:$jti", token.byteString, None)
+                  .map(_ => Results.Ok("").left)
+              case Some(jti) if !revoke => env.datastores.rawDataStore.del(Seq(s"${env.storageRoot}:plugins:client-credentials-flow:revoked-tokens:$jti"))
+                .map(_ => Results.Ok("").left)
+            }
+          }
+          case _ =>
+            // bad body
+            Results.Unauthorized(Json.obj("error" -> "access_denied", "error_description" -> s"Unauthorized")).leftf
+        }
+      }
+      case ("post", path) if path == s"$rootPath/token/revoke" && !useJwtToken => handleBody { body =>
+        (
+          body.get("token"),
+          body.get("revoke")
+        ) match {
+          case (Some(token), revokeRaw) => {
+            val revoke = revokeRaw.map(_.toBoolean).getOrElse(true)
+            if (revoke) {
+              env.datastores.rawDataStore.set(s"${env.storageRoot}:plugins:client-credentials-flow:revoked-tokens:$token", token.byteString, None)
+                .map(_ => Results.Ok("").left)
+            } else {
+              env.datastores.rawDataStore.del(Seq(s"${env.storageRoot}:plugins:client-credentials-flow:revoked-tokens:$token"))
+                .map(_ => Results.Ok("").left)
+            }
+          }
+          case _ =>
+            // bad body
+            Results.Unauthorized(Json.obj("error" -> "access_denied", "error_description" -> s"Unauthorized")).leftf
+        }
+      }
+      case ("post", path) if path == s"$rootPath/token/introspect" && useJwtToken => handleBody { body =>
+        body.get("token") match {
+          case Some(token) => {
+            val decoded = JWT.decode(token)
+            val clientId = Try(decoded.getClaim("clientId").asString()).orElse(Try(decoded.getIssuer())).getOrElse("--")
+            val possibleApiKey = if (restrictToCurrentGroup) {
+              env.datastores.apiKeyDataStore.findAuthorizeKeyFor(clientId, ctx.descriptor.id)
+            } else {
+              env.datastores.apiKeyDataStore.findById(clientId)
+            }
+            possibleApiKey.flatMap {
+              case Some(apiKey) => {
+                Try(JWT.require(Algorithm.HMAC512(apiKey.clientSecret)).acceptLeeway(10).build().verify(token)) match {
+                  case Failure(e) => Results.Unauthorized(Json.obj("error" -> "access_denied", "error_description" -> s"Unauthorized")).leftf
+                  case Success(_) => Results.Ok(apiKey.lightJson ++ Json.obj("access_type" -> "apikey")).leftf
+                }
+              }
+              case None =>
+                // apikey not found
+                Results.Unauthorized(Json.obj("error" -> "access_denied", "error_description" -> s"Unauthorized")).leftf
+            }
+          }
+          case _ =>
+            // bad body
+            Results.Unauthorized(Json.obj("error" -> "access_denied", "error_description" -> s"Unauthorized")).leftf
+        }
+      }
+      case ("post", path) if path == s"$rootPath/token/introspect" && !useJwtToken => handleBody { body =>
+        body.get("token") match {
+          case Some(token) => {
+            val possibleApiKey: Future[Option[ApiKey]] = env.datastores.rawDataStore.get(s"${env.storageRoot}:plugins:client-credentials-flow:access-tokens:$token").flatMap {
+              case Some(clientId) => env.datastores.apiKeyDataStore.findById(clientId.utf8String)
+              case _ => None.future
+            }
+            possibleApiKey.flatMap {
+              case Some(apiKey) => Results.Ok(apiKey.lightJson ++ Json.obj("access_type" -> "apikey")).leftf
+              case None =>
+                // apikey not found
+                Results.Unauthorized(Json.obj("error" -> "access_denied", "error_description" -> s"Unauthorized")).leftf
+            }
+          }
+          case _ =>
+            // bad body
+            Results.Unauthorized(Json.obj("error" -> "access_denied", "error_description" -> s"Unauthorized")).leftf
+        }
+      }
       case ("post", path) if path == s"$rootPath/token" => {
 
         awaitingRequests.get(ctx.snowflake).map { promise =>
@@ -320,12 +486,14 @@ class ClientCredentialFlow extends RequestTransformer {
                 env.datastores.apiKeyDataStore.findById(clientId)
               possibleApiKey.flatMap {
                 case Some(apiKey) if apiKey.clientSecret == clientSecret && useJwtToken=> {
+
                   val accessToken = JWT.create()
+                    .withJWTId(IdGenerator.uuid)
                     .withExpiresAt(DateTime.now().plusMillis(expiration.toMillis.toInt).toDate)
                     .withIssuedAt(DateTime.now().toDate)
                     .withNotBefore(DateTime.now().toDate)
                     .withIssuer(apiKey.clientId)
-                    .withSubject("Otoroshi")
+                    .withAudience("Otoroshi")
                     .sign(Algorithm.HMAC512(apiKey.clientSecret))
                   // no refresh token possible because of https://tools.ietf.org/html/rfc6749#section-4.4.3
 
@@ -398,6 +566,7 @@ class ClientCredentialFlow extends RequestTransformer {
                       case (clientId, clientSecret) => handleTokenRequest(ClientCredentialFlowBody(body.getOrElse("grant_type", "--"), clientId, clientSecret, None))
                     }
                     .getOrElse {
+                      // bad credentials
                       Results.Unauthorized(Json.obj("error" -> "access_denied", "error_description" -> s"Unauthorized")).leftf
                     }
                 }
@@ -424,21 +593,103 @@ class ClientCredentialFlow extends RequestTransformer {
                       case (clientId, clientSecret) => handleTokenRequest(ClientCredentialFlowBody((json \ "grant_type").asOpt[String].getOrElse("--"), clientId, clientSecret, None))
                     }
                     .getOrElse {
+                      // bad credentials
                       Results.Unauthorized(Json.obj("error" -> "access_denied", "error_description" -> s"Unauthorized")).leftf
                     }
                 }
               }
-              case _ => Results.Unauthorized(Json.obj("error" -> "access_denied", "error_description" -> s"Unauthorized")).leftf
+              case _ =>
+                // bad content type
+                Results.Unauthorized(Json.obj("error" -> "access_denied", "error_description" -> s"Unauthorized")).leftf
             }
           } andThen {
             case _ =>
               if (!consumed.get()) bodySource.runWith(Sink.ignore)
           }
         } getOrElse {
+          // no body
           Results.Unauthorized(Json.obj("error" -> "access_denied", "error_description" -> s"Unauthorized")).leftf
         }
       }
-      case _ => ctx.otoroshiRequest.rightf
+      case _ => {
+
+        val req = ctx.request
+        val descriptor = ctx.descriptor
+        val authByJwtToken = ctx.request.headers
+          .get(
+            descriptor.apiKeyConstraints.jwtAuth.headerName
+              .getOrElse(env.Headers.OtoroshiBearer)
+          )
+          .orElse(
+            req.headers.get("Authorization").filter(_.startsWith("Bearer "))
+          )
+          .map(_.replace("Bearer ", ""))
+          .orElse(
+            req.queryString
+              .get(
+                descriptor.apiKeyConstraints.jwtAuth.queryName
+                  .getOrElse(env.Headers.OtoroshiBearerAuthorization)
+              )
+              .flatMap(_.lastOption)
+          )
+          .orElse(
+            req.cookies
+              .get(
+                descriptor.apiKeyConstraints.jwtAuth.cookieName
+                  .getOrElse(env.Headers.OtoroshiJWTAuthorization)
+              )
+              .map(_.value)
+          )
+          // .filter(_.split("\\.").length == 3)
+        authByJwtToken match {
+          case None =>
+            // no token, weird, should not happen
+            Results.Unauthorized(Json.obj("error" -> "access_denied", "error_description" -> s"Unauthorized")).leftf
+          case Some(token) if useJwtToken => {
+            val decoded = JWT.decode(token)
+            Try(decoded.getId).toOption match {
+              case None =>
+                // no jti, weird
+                Results.Unauthorized(Json.obj("error" -> "access_denied", "error_description" -> s"Unauthorized")).leftf
+              case Some(jti) =>
+                revokedCache
+                  .getIfPresent(jti)
+                  .map(_.future)
+                  .getOrElse(
+                    env.datastores.rawDataStore.get(s"${env.storageRoot}:plugins:client-credentials-flow:revoked-tokens:$jti")
+                      .map(_.map(_.utf8String.toBoolean).getOrElse(false))
+                      .andThen {
+                        case Success(b) => revokedCache.put(jti, b)
+                      }
+                  ).flatMap {
+                  case true =>
+                    // revoked token
+                    Results.Unauthorized(Json.obj("error" -> "access_denied", "error_description" -> s"Unauthorized")).leftf
+                  case false =>
+                    ctx.otoroshiRequest.rightf
+                }
+            }
+          }
+          case Some(token) if !useJwtToken => {
+            revokedCache
+              .getIfPresent(token)
+              .map(_.future)
+              .getOrElse(
+                env.datastores.rawDataStore.get(s"${env.storageRoot}:plugins:client-credentials-flow:revoked-tokens:$token")
+                  .map(_.map(_.utf8String.toBoolean).getOrElse(false))
+                  .andThen {
+                    case Success(b) => revokedCache.put(token, b)
+                  }
+              ).flatMap {
+              case true =>
+                // revoked token
+                Results.Unauthorized(Json.obj("error" -> "access_denied", "error_description" -> s"Unauthorized")).leftf
+              case false =>
+                ctx.otoroshiRequest.rightf
+            }
+          }
+        }
+      }
     }
   }
 
