@@ -5,7 +5,7 @@ import java.util.Collections
 import java.util.concurrent.atomic.AtomicReference
 
 import com.typesafe.config.Config
-import com.typesafe.sslconfig.ssl.{Ciphers, ConfigSSLContextBuilder, DefaultKeyManagerFactoryWrapper, DefaultTrustManagerFactoryWrapper, KeyManagerFactoryWrapper, Protocols, SSLConfigFactory, SSLConfigSettings, TrustManagerFactoryWrapper}
+import com.typesafe.sslconfig.ssl._
 import com.typesafe.sslconfig.util.{LoggerFactory, NoDepsLogger}
 import javax.net.ssl._
 import play.api.Logger
@@ -13,33 +13,24 @@ import play.api.Logger
 case class ConfigAndHash(config: Config, hash: String)
 case class SSLConfigAndHash(config: SSLConfigSettings, hash: String)
 
-class PlayLoggerFactory extends LoggerFactory {
-
-  override def apply(clazz: Class[_]): NoDepsLogger = new PlayLoggerFactoryLogger
-
-  override def apply(name: String): NoDepsLogger = new PlayLoggerFactoryLogger
+class PlayLoggerFactory(logger: Logger) extends LoggerFactory {
+  override def apply(clazz: Class[_]): NoDepsLogger = new PlayLoggerFactoryLogger(logger)
+  override def apply(name: String): NoDepsLogger = new PlayLoggerFactoryLogger(logger)
 }
 
-class PlayLoggerFactoryLogger extends NoDepsLogger {
-
-  val logger = Logger("otoroshi-dyn-ssl")
-
+class PlayLoggerFactoryLogger(logger: Logger) extends NoDepsLogger {
   override def isDebugEnabled: Boolean = logger.isDebugEnabled
-
   override def debug(msg: String): Unit = logger.debug(msg)
-
   override def info(msg: String): Unit = logger.info(msg)
-
   override def warn(msg: String): Unit = logger.warn(msg)
-
   override def error(msg: String): Unit = logger.error(msg)
-
   override def error(msg: String, throwable: Throwable): Unit = logger.error(msg, throwable)
 }
 
 object DynamicSSLContext {
 
-  val mkLogger = new PlayLoggerFactory
+  private val logger = Logger("otoroshi-dynamic-sslcontext")
+  private val mkLogger = new PlayLoggerFactory(logger)
 
   def fromConfig(config: => ConfigAndHash): SSLContext = fromSSLConfig {
     val ConfigAndHash(cfg, hash) = config
@@ -47,7 +38,6 @@ object DynamicSSLContext {
   }
 
   def fromSSLConfig(config: => SSLConfigAndHash): SSLContext = {
-
     val sslContext = new SSLContext(
       new SSLContextSpi() {
 
@@ -162,12 +152,9 @@ object DynamicSSLContext {
         override def engineGetSocketFactory(): SSLSocketFactory = getCtx().getSocketFactory
         override def engineGetServerSocketFactory(): SSLServerSocketFactory = getCtx().getServerSocketFactory
       },
-      new Provider("foo",1d,"foo") {},
-      "foo"
+      new Provider("Otoroshi dynamic SSLContext",1d,"A dynamic SSLContext that can be reconfigured on the fly") {},
+      "Otoroshi dynamic SSLContext"
     ) {}
     sslContext
   }
-
-
 }
-
