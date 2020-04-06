@@ -17,15 +17,15 @@ import events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
 import gateway.{InMemoryRequestsDataStore, RequestsDataStore}
 import models._
 import otoroshi.script.{InMemoryScriptDataStore, ScriptDataStore}
-import otoroshi.storage.{DataStoreHealth, DataStores, RawDataStore}
 import otoroshi.storage.stores._
+import otoroshi.storage.{DataStoreHealth, DataStores, RawDataStore}
 import otoroshi.tcp.{InMemoryTcpServiceDataStoreDataStore, TcpServiceDataStore}
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.json._
 import play.api.libs.ws.SourceBody
 import play.api.{Configuration, Environment, Logger}
 import ssl.{CertificateDataStore, ClientCertificateValidationDataStore, InMemoryClientCertificateValidationDataStore}
-import otoroshi.storage.drivers.cluster.{Memory, SwappableInMemoryRedis}
+import storage.drivers.inmemory.{Memory, SwappableInMemoryRedis}
 import storage.stores.InMemoryRawDataStore
 import utils.http.Implicits._
 

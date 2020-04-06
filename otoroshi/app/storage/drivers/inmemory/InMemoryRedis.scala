@@ -10,6 +10,7 @@ import otoroshi.storage.{DataStoreHealth, Healthy, RedisLike}
 
 import scala.concurrent.{ExecutionContext, Future}
 
+@deprecated(message = "Use SwappableInMemoryRedis instead", since = "1.5.0")
 class InMemoryRedis(actorSystem: ActorSystem) extends RedisLike {
 
   import actorSystem.dispatcher

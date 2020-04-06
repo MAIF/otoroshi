@@ -26,7 +26,7 @@ import models._
 import org.joda.time.DateTime
 import otoroshi.script.{InMemoryScriptDataStore, ScriptDataStore}
 import otoroshi.storage._
-import otoroshi.storage.drivers.cluster.{Memory, SwappableInMemoryRedis}
+import otoroshi.storage.drivers.inmemory._
 import otoroshi.storage.stores._
 import otoroshi.tcp.{InMemoryTcpServiceDataStoreDataStore, TcpServiceDataStore}
 import play.api.http.HttpEntity
@@ -39,6 +39,7 @@ import play.api.{Configuration, Environment, Logger}
 import redis.RedisClientMasterSlaves
 import security.IdGenerator
 import ssl._
+import storage.drivers.inmemory.{Memory, SwappableInMemoryRedis}
 import storage.stores.InMemoryRawDataStore
 import utils.http.Implicits._
 import utils.http.MtlsConfig

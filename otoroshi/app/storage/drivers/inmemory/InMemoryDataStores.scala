@@ -14,13 +14,13 @@ import events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
 import gateway.{InMemoryRequestsDataStore, RequestsDataStore}
 import models._
 import otoroshi.script.{InMemoryScriptDataStore, ScriptDataStore}
-import otoroshi.storage.drivers.inmemory.InMemoryRedis
 import otoroshi.storage.{DataStoreHealth, DataStores, RawDataStore}
 import otoroshi.tcp.{InMemoryTcpServiceDataStoreDataStore, TcpServiceDataStore}
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.json._
 import play.api.{Configuration, Environment, Logger}
 import ssl.{CertificateDataStore, ClientCertificateValidationDataStore, InMemoryClientCertificateValidationDataStore}
+import storage.drivers.inmemory.SwappableInMemoryRedis
 import storage.stores.InMemoryRawDataStore
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -34,7 +34,7 @@ class InMemoryDataStores(configuration: Configuration,
   lazy val logger = Logger("otoroshi-datastores")
 
   lazy val redisStatsItems: Int  = configuration.get[Option[Int]]("app.inmemory.windowSize").getOrElse(99)
-  lazy val experimental: Boolean = configuration.get[Option[Boolean]]("app.inmemory.experimental").getOrElse(false)
+
   lazy val actorSystem =
     ActorSystem(
       "otoroshi-inmemory-system",
@@ -43,7 +43,7 @@ class InMemoryDataStores(configuration: Configuration,
         .map(_.underlying)
         .getOrElse(ConfigFactory.empty)
     )
-  lazy val redis = new InMemoryRedis(actorSystem)
+  lazy val redis = new SwappableInMemoryRedis(env, actorSystem)
 
   override def before(configuration: Configuration,
                       environment: Environment,

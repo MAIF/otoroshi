@@ -20,7 +20,6 @@ import events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
 import gateway.{InMemoryRequestsDataStore, RequestsDataStore}
 import models._
 import otoroshi.script.{InMemoryScriptDataStore, ScriptDataStore}
-import otoroshi.storage.drivers.cluster.{Memory, SwappableInMemoryRedis}
 import otoroshi.storage.stores._
 import otoroshi.storage.{DataStoreHealth, DataStores, RawDataStore}
 import otoroshi.tcp.{InMemoryTcpServiceDataStoreDataStore, TcpServiceDataStore}
@@ -28,6 +27,7 @@ import play.api.inject.ApplicationLifecycle
 import play.api.libs.json._
 import play.api.{Configuration, Environment, Logger}
 import ssl.{CertificateDataStore, ClientCertificateValidationDataStore, InMemoryClientCertificateValidationDataStore}
+import storage.drivers.inmemory.{Memory, SwappableInMemoryRedis}
 import storage.stores.InMemoryRawDataStore
 
 import scala.concurrent.duration._
