@@ -560,13 +560,13 @@ class Env(val configuration: Configuration,
       case "redis" if clusterConfig.mode == ClusterMode.Leader =>
         new RedisSentinelLFDataStores(configuration, environment, lifecycle, this)
       case "inmemory" if clusterConfig.mode == ClusterMode.Leader =>
-        new InMemoryDataStores(configuration, environment, lifecycle, this)
+        new InMemoryDataStores(configuration, environment, lifecycle, PersistenceKind.NoopPersistenceKind, this)
       case "leveldb" if clusterConfig.mode == ClusterMode.Leader =>
         new LevelDbDataStores(configuration, environment, lifecycle, this)
       case "file" if clusterConfig.mode == ClusterMode.Leader =>
-        new FileDbDataStores(configuration, environment, lifecycle, this)
+        new InMemoryDataStores(configuration, environment, lifecycle, PersistenceKind.FilePersistenceKind, this)
       case "http" if clusterConfig.mode == ClusterMode.Leader =>
-        new HttpDbDataStores(configuration, environment, lifecycle, this)
+        new InMemoryDataStores(configuration, environment, lifecycle, PersistenceKind.HttpPersistenceKind, this)
       case "cassandra-naive" if clusterConfig.mode == ClusterMode.Leader =>
         new CassandraDataStores(true, configuration, environment, lifecycle, this)
       case "cassandra" if clusterConfig.mode == ClusterMode.Leader =>
@@ -576,10 +576,10 @@ class Env(val configuration: Configuration,
       case "lettuce" if clusterConfig.mode == ClusterMode.Leader =>
         new LettuceDataStores(configuration, environment, lifecycle, this)
       case "redis"             => new RedisSentinelLFDataStores(configuration, environment, lifecycle, this)
-      case "inmemory"          => new InMemoryDataStores(configuration, environment, lifecycle, this)
+      case "inmemory"          => new InMemoryDataStores(configuration, environment, lifecycle, PersistenceKind.NoopPersistenceKind, this)
       case "leveldb"           => new LevelDbDataStores(configuration, environment, lifecycle, this)
-      case "file"              => new FileDbDataStores(configuration, environment, lifecycle, this)
-      case "http"              => new HttpDbDataStores(configuration, environment, lifecycle, this)
+      case "file"              => new InMemoryDataStores(configuration, environment, lifecycle, PersistenceKind.FilePersistenceKind, this)
+      case "http"              => new InMemoryDataStores(configuration, environment, lifecycle, PersistenceKind.HttpPersistenceKind, this)
       case "cassandra-naive"   => new CassandraDataStores(true, configuration, environment, lifecycle, this)
       case "cassandra"         => new CassandraDataStores(false, configuration, environment, lifecycle, this)
       case "mongo"             => new MongoDataStores(configuration, environment, lifecycle, this)

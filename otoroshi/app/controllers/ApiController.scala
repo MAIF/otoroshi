@@ -2138,7 +2138,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
   def fullExport() = ApiAction.async { ctx =>
     ctx.request.accepts("application/x-ndjson") match {
       case true => {
-        env.datastores.fullNdJsonExport().map { source =>
+        env.datastores.fullNdJsonExport(100, 1, 4).map { source =>
           val event = AdminApiEvent(
             env.snowflakeGenerator.nextIdStr(),
             env.env,

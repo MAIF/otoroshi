@@ -177,7 +177,7 @@ class LevelDbDataStores(configuration: Configuration,
       .mapConcat(_.toList)
   }
 
-  override def fullNdJsonExport(): Future[Source[JsValue, _]] = {
+  override def fullNdJsonExport(group: Int, groupWorkers: Int, keyWorkers: Int): Future[Source[JsValue, _]] = {
 
     implicit val ev  = env
     implicit val ecc = env.otoroshiExecutionContext

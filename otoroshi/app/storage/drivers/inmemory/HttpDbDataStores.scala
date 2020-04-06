@@ -32,7 +32,7 @@ import utils.http.Implicits._
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
-// experimental
+@deprecated(message = "Use InMemoryDataStores instead", since = "1.5.0")
 class HttpDbDataStores(configuration: Configuration,
                        environment: Environment,
                        lifecycle: ApplicationLifecycle,
@@ -345,7 +345,7 @@ class HttpDbDataStores(configuration: Configuration,
       .mapConcat(_.toList)
   }
 
-  override def fullNdJsonExport(): Future[Source[JsValue, _]] = {
+  override def fullNdJsonExport(group: Int, groupWorkers: Int, keyWorkers: Int): Future[Source[JsValue, _]] = {
 
     implicit val ev  = env
     implicit val ecc = env.otoroshiExecutionContext

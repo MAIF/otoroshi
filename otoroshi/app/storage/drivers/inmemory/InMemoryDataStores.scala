@@ -1,4 +1,4 @@
-package otoroshi.storage.stores
+package otoroshi.storage.drivers.inmemory
 
 import akka.NotUsed
 import akka.actor.ActorSystem
@@ -14,6 +14,7 @@ import events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
 import gateway.{InMemoryRequestsDataStore, RequestsDataStore}
 import models._
 import otoroshi.script.{KvScriptDataStore, ScriptDataStore}
+import otoroshi.storage.stores._
 import otoroshi.storage.{DataStoreHealth, DataStores, RawDataStore}
 import otoroshi.tcp.{KvTcpServiceDataStoreDataStore, TcpServiceDataStore}
 import play.api.inject.ApplicationLifecycle
@@ -28,6 +29,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class InMemoryDataStores(configuration: Configuration,
                          environment: Environment,
                          lifecycle: ApplicationLifecycle,
+                         persistenceKind: PersistenceKind,
                          env: Env)
     extends DataStores {
 
@@ -43,16 +45,26 @@ class InMemoryDataStores(configuration: Configuration,
         .map(_.underlying)
         .getOrElse(ConfigFactory.empty)
     )
+  val materializer = Materializer(actorSystem)
   lazy val redis = new SwappableInMemoryRedis(env, actorSystem)
+
+  lazy val persistence = persistenceKind match {
+    case PersistenceKind.HttpPersistenceKind => new HttpPersistence(this, env)
+    case PersistenceKind.FilePersistenceKind => new FilePersistence(this, env)
+    case _                                   => new NoopPersistence(this, env)
+  }
 
   override def before(configuration: Configuration,
                       environment: Environment,
                       lifecycle: ApplicationLifecycle): Future[Unit] = {
-    logger.info("Now using InMemory DataStores")
-    redis.start()
-    _serviceDescriptorDataStore.startCleanup(env)
-    _certificateDataStore.startSync()
-    FastFuture.successful(())
+    // logger.info("Now using InMemory DataStores")
+    logger.info(persistence.message)
+    persistence.onStart().flatMap { _ =>
+      redis.start()
+      _serviceDescriptorDataStore.startCleanup(env)
+      _certificateDataStore.startSync()
+      FastFuture.successful(())
+    }(actorSystem.dispatcher)
   }
 
   override def after(configuration: Configuration,
@@ -61,8 +73,10 @@ class InMemoryDataStores(configuration: Configuration,
     _certificateDataStore.stopSync()
     _serviceDescriptorDataStore.stopCleanup()
     redis.stop()
-    actorSystem.terminate()
-    FastFuture.successful(())
+    persistence.onStop().flatMap { _ =>
+      actorSystem.terminate()
+      FastFuture.successful(())
+    }(actorSystem.dispatcher)
   }
 
   private lazy val _privateAppsUserDataStore   = new KvPrivateAppsUserDataStore(redis, env)
@@ -177,7 +191,7 @@ class InMemoryDataStores(configuration: Configuration,
       .mapConcat(_.toList)
   }
 
-  override def fullNdJsonExport(): Future[Source[JsValue, _]] = {
+  override def fullNdJsonExport(group: Int, groupWorkers: Int, keyWorkers: Int): Future[Source[JsValue, _]] = {
 
     implicit val ev  = env
     implicit val ecc = env.otoroshiExecutionContext

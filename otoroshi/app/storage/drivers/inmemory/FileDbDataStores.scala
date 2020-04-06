@@ -34,6 +34,7 @@ import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.hashing.MurmurHash3
 
+@deprecated(message = "Use InMemoryDataStores instead", since = "1.5.0")
 class FileDbDataStores(configuration: Configuration,
                        environment: Environment,
                        lifecycle: ApplicationLifecycle,
@@ -261,7 +262,7 @@ class FileDbDataStores(configuration: Configuration,
       .mapConcat(_.toList)
   }
 
-  override def fullNdJsonExport(): Future[Source[JsValue, _]] = {
+  override def fullNdJsonExport(group: Int, groupWorkers: Int, keyWorkers: Int): Future[Source[JsValue, _]] = {
 
     implicit val ev  = env
     implicit val ecc = env.otoroshiExecutionContext

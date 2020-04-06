@@ -59,7 +59,7 @@ trait DataStores {
   def webAuthnRegistrationsDataStore: WebAuthnRegistrationsDataStore
   ////
   def fullNdJsonImport(export: Source[JsValue, _]): Future[Unit]
-  def fullNdJsonExport(): Future[Source[JsValue, _]]
+  def fullNdJsonExport(group: Int, groupWorkers: Int, keyWorkers: Int): Future[Source[JsValue, _]]
 }
 
 trait RawDataStore {
