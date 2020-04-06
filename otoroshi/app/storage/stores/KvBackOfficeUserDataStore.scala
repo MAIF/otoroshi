@@ -10,7 +10,7 @@ import otoroshi.storage.{RedisLike, RedisLikeStore}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class InMemoryBackOfficeUserDataStore(redisCli: RedisLike, _env: Env)
+class KvBackOfficeUserDataStore(redisCli: RedisLike, _env: Env)
     extends BackOfficeUserDataStore
     with RedisLikeStore[BackOfficeUser] {
 

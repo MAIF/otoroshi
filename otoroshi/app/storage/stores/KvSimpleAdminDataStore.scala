@@ -14,7 +14,7 @@ import play.api.Logger
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class InMemorySimpleAdminDataStore(redisCli: RedisLike, _env: Env) extends SimpleAdminDataStore {
+class KvSimpleAdminDataStore(redisCli: RedisLike, _env: Env) extends SimpleAdminDataStore {
 
   lazy val logger = Logger("otoroshi-simple-admin-datastore")
 

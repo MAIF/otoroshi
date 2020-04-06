@@ -8,7 +8,7 @@ import otoroshi.storage.RedisLike
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class InMemoryHealthCheckDataStore(redisCli: RedisLike, _env: Env) extends HealthCheckDataStore {
+class KvHealthCheckDataStore(redisCli: RedisLike, _env: Env) extends HealthCheckDataStore {
 
   val collectionSize = 30
 

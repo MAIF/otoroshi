@@ -5,7 +5,7 @@ import models._
 import play.api.libs.json.Format
 import otoroshi.storage.{RedisLike, RedisLikeStore}
 
-class InMemoryErrorTemplateDataStore(redisCli: RedisLike, _env: Env)
+class KvErrorTemplateDataStore(redisCli: RedisLike, _env: Env)
     extends ErrorTemplateDataStore
     with RedisLikeStore[ErrorTemplate] {
   override def redisLike(implicit env: Env): RedisLike = redisCli

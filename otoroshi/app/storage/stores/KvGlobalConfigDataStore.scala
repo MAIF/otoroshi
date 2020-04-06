@@ -22,7 +22,7 @@ import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
-class InMemoryGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
+class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
     extends GlobalConfigDataStore
     with RedisLikeStore[GlobalConfig] {
 

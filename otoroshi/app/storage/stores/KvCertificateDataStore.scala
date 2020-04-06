@@ -14,7 +14,7 @@ import ssl.{Cert, CertificateDataStore, DynamicSSLEngineProvider}
 import scala.concurrent.duration.{Duration, _}
 import scala.concurrent.{ExecutionContext, Future}
 
-class InMemoryCertificateDataStore(redisCli: RedisLike, _env: Env)
+class KvCertificateDataStore(redisCli: RedisLike, _env: Env)
     extends CertificateDataStore
     with RedisLikeStore[Cert] {
 

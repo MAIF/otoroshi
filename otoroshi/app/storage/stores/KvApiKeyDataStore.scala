@@ -12,7 +12,7 @@ import otoroshi.storage.{RedisLike, RedisLikeStore}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Success
 
-class InMemoryApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyDataStore with RedisLikeStore[ApiKey] {
+class KvApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyDataStore with RedisLikeStore[ApiKey] {
 
   lazy val logger = Logger("otoroshi-apikey-datastore")
 

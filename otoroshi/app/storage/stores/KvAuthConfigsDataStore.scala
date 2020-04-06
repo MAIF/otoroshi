@@ -10,7 +10,7 @@ import otoroshi.storage.{RedisLike, RedisLikeStore}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
 
-class InMemoryAuthConfigsDataStore(redisCli: RedisLike, _env: Env)
+class KvAuthConfigsDataStore(redisCli: RedisLike, _env: Env)
     extends AuthConfigsDataStore
     with RedisLikeStore[AuthModuleConfig] {
 

@@ -5,7 +5,7 @@ import models._
 import play.api.libs.json.Format
 import otoroshi.storage.{RedisLike, RedisLikeStore}
 
-class InMemoryGlobalJwtVerifierDataStore(redisCli: RedisLike, _env: Env)
+class KvGlobalJwtVerifierDataStore(redisCli: RedisLike, _env: Env)
     extends GlobalJwtVerifierDataStore
     with RedisLikeStore[GlobalJwtVerifier] {
 

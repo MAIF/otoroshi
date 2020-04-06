@@ -6,22 +6,22 @@ import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Sink, Source}
 import auth.AuthConfigsDataStore
-import cluster.{ClusterStateDataStore, InMemoryClusterStateDataStore}
+import cluster.{ClusterStateDataStore, KvClusterStateDataStore}
 import com.typesafe.config.ConfigFactory
 import env.Env
 import events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
 import gateway.{InMemoryRequestsDataStore, RequestsDataStore}
 import models._
-import otoroshi.script.{InMemoryScriptDataStore, ScriptDataStore}
+import otoroshi.script.{KvScriptDataStore, ScriptDataStore}
 import otoroshi.storage.{DataStoreHealth, DataStores, RawDataStore, RedisLike}
 import otoroshi.storage.stores._
-import otoroshi.tcp.{InMemoryTcpServiceDataStoreDataStore, TcpServiceDataStore}
+import otoroshi.tcp.{KvTcpServiceDataStoreDataStore, TcpServiceDataStore}
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.json._
 import play.api.{Configuration, Environment, Logger}
 import reactivemongo.api.{MongoConnection, MongoDriver}
-import ssl.{CertificateDataStore, ClientCertificateValidationDataStore, InMemoryClientCertificateValidationDataStore}
-import storage.stores.InMemoryRawDataStore
+import ssl.{CertificateDataStore, ClientCertificateValidationDataStore, KvClientCertificateValidationDataStore}
+import storage.stores.KvRawDataStore
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -94,38 +94,38 @@ class MongoDataStores(configuration: Configuration, environment: Environment, li
     FastFuture.successful(())
   }
 
-  private lazy val _privateAppsUserDataStore    = new InMemoryPrivateAppsUserDataStore(redis, env)
-  private lazy val _backOfficeUserDataStore     = new InMemoryBackOfficeUserDataStore(redis, env)
-  private lazy val _serviceGroupDataStore       = new InMemoryServiceGroupDataStore(redis, env)
-  private lazy val _globalConfigDataStore       = new InMemoryGlobalConfigDataStore(redis, env)
-  private lazy val _apiKeyDataStore             = new InMemoryApiKeyDataStoreWrapper(redis, env)
-  private lazy val _serviceDescriptorDataStore  = new InMemoryServiceDescriptorDataStoreWrapper(redis, statsItems, env)
-  private lazy val _simpleAdminDataStore        = new InMemorySimpleAdminDataStore(redis, env)
-  private lazy val _alertDataStore              = new InMemoryAlertDataStore(redis)
-  private lazy val _auditDataStore              = new InMemoryAuditDataStore(redis)
-  private lazy val _healthCheckDataStore        = new InMemoryHealthCheckDataStore(redis, env)
-  private lazy val _errorTemplateDataStore      = new InMemoryErrorTemplateDataStore(redis, env)
+  private lazy val _privateAppsUserDataStore    = new KvPrivateAppsUserDataStore(redis, env)
+  private lazy val _backOfficeUserDataStore     = new KvBackOfficeUserDataStore(redis, env)
+  private lazy val _serviceGroupDataStore       = new KvServiceGroupDataStore(redis, env)
+  private lazy val _globalConfigDataStore       = new KvGlobalConfigDataStore(redis, env)
+  private lazy val _apiKeyDataStore             = new KvApiKeyDataStoreWrapper(redis, env)
+  private lazy val _serviceDescriptorDataStore  = new KvServiceDescriptorDataStoreWrapper(redis, statsItems, env)
+  private lazy val _simpleAdminDataStore        = new KvSimpleAdminDataStore(redis, env)
+  private lazy val _alertDataStore              = new KvAlertDataStore(redis)
+  private lazy val _auditDataStore              = new KvAuditDataStore(redis)
+  private lazy val _healthCheckDataStore        = new KvHealthCheckDataStore(redis, env)
+  private lazy val _errorTemplateDataStore      = new KvErrorTemplateDataStore(redis, env)
   private lazy val _requestsDataStore           = new InMemoryRequestsDataStore()
-  private lazy val _canaryDataStore             = new InMemoryCanaryDataStore(redis, env)
-  private lazy val _chaosDataStore              = new InMemoryChaosDataStore(redis, env)
-  private lazy val _jwtVerifDataStore           = new InMemoryGlobalJwtVerifierDataStore(redis, env)
-  private lazy val _globalOAuth2ConfigDataStore = new InMemoryAuthConfigsDataStore(redis, env)
-  private lazy val _certificateDataStore        = new InMemoryCertificateDataStore(redis, env)
+  private lazy val _canaryDataStore             = new KvCanaryDataStore(redis, env)
+  private lazy val _chaosDataStore              = new KvChaosDataStore(redis, env)
+  private lazy val _jwtVerifDataStore           = new KvGlobalJwtVerifierDataStore(redis, env)
+  private lazy val _globalOAuth2ConfigDataStore = new KvAuthConfigsDataStore(redis, env)
+  private lazy val _certificateDataStore        = new KvCertificateDataStore(redis, env)
 
-  private lazy val _clusterStateDataStore                   = new InMemoryClusterStateDataStore(redis, env)
+  private lazy val _clusterStateDataStore                   = new KvClusterStateDataStore(redis, env)
   override def clusterStateDataStore: ClusterStateDataStore = _clusterStateDataStore
 
-  private lazy val _clientCertificateValidationDataStore = new InMemoryClientCertificateValidationDataStore(redis, env)
+  private lazy val _clientCertificateValidationDataStore = new KvClientCertificateValidationDataStore(redis, env)
   override def clientCertificateValidationDataStore: ClientCertificateValidationDataStore =
     _clientCertificateValidationDataStore
 
-  private lazy val _scriptDataStore             = new InMemoryScriptDataStore(redis, env)
+  private lazy val _scriptDataStore             = new KvScriptDataStore(redis, env)
   override def scriptDataStore: ScriptDataStore = _scriptDataStore
 
-  private lazy val _tcpServiceDataStore                 = new InMemoryTcpServiceDataStoreDataStore(redis, env)
+  private lazy val _tcpServiceDataStore                 = new KvTcpServiceDataStoreDataStore(redis, env)
   override def tcpServiceDataStore: TcpServiceDataStore = _tcpServiceDataStore
 
-  private lazy val _rawDataStore          = new InMemoryRawDataStore(redis)
+  private lazy val _rawDataStore          = new KvRawDataStore(redis)
   override def rawDataStore: RawDataStore = _rawDataStore
 
   private lazy val _webAuthnAdminDataStore                    = new WebAuthnAdminDataStore()
@@ -308,7 +308,7 @@ class MongoDataStores(configuration: Configuration, environment: Environment, li
   }
 }
 
-class InMemoryApiKeyDataStoreWrapper(redisCli: RedisLike, _env: Env) extends InMemoryApiKeyDataStore(redisCli, _env) {
+class KvApiKeyDataStoreWrapper(redisCli: RedisLike, _env: Env) extends KvApiKeyDataStore(redisCli, _env) {
 
   private val customFmt = new Format[ApiKey] {
     override def reads(json: JsValue): JsResult[ApiKey] = {
@@ -323,8 +323,8 @@ class InMemoryApiKeyDataStoreWrapper(redisCli: RedisLike, _env: Env) extends InM
   override def fmt: Format[ApiKey] = customFmt
 }
 
-class InMemoryServiceDescriptorDataStoreWrapper(redisCli: RedisLike, maxQueueSize: Int, _env: Env)
-    extends InMemoryServiceDescriptorDataStore(redisCli, maxQueueSize, _env) {
+class KvServiceDescriptorDataStoreWrapper(redisCli: RedisLike, maxQueueSize: Int, _env: Env)
+    extends KvServiceDescriptorDataStore(redisCli, maxQueueSize, _env) {
 
   private val customFmt = new Format[ServiceDescriptor] {
     override def reads(json: JsValue): JsResult[ServiceDescriptor] = {

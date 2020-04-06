@@ -6,7 +6,7 @@ import play.api.libs.json.{Format, Json}
 import utils.JsonImplicits._
 import otoroshi.storage.{RedisLike, RedisLikeStore}
 
-class InMemoryPrivateAppsUserDataStore(redisCli: RedisLike, _env: Env)
+class KvPrivateAppsUserDataStore(redisCli: RedisLike, _env: Env)
     extends PrivateAppsUserDataStore
     with RedisLikeStore[PrivateAppsUser] {
   private val _fmt                                       = Json.format[PrivateAppsUser]

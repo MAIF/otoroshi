@@ -19,7 +19,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
 import scala.util.Success
 
-class InMemoryServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int, _env: Env)
+class KvServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int, _env: Env)
     extends ServiceDescriptorDataStore
     with RedisLikeStore[ServiceDescriptor] {
 

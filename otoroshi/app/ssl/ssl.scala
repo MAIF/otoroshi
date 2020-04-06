@@ -1711,7 +1711,7 @@ sealed trait ClientCertificateValidationDataStore extends BasicStore[ClientCerti
   def removeValidation(key: String)(implicit ec: ExecutionContext, env: Env): Future[Long]
 }
 
-class InMemoryClientCertificateValidationDataStore(redisCli: RedisLike, env: Env)
+class KvClientCertificateValidationDataStore(redisCli: RedisLike, env: Env)
     extends ClientCertificateValidationDataStore
     with RedisLikeStore[ClientCertificateValidator] {
 

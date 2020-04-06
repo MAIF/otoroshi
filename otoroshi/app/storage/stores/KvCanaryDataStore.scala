@@ -9,7 +9,7 @@ import play.api.Logger
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class InMemoryCanaryDataStore(redisCli: RedisLike, _env: Env) extends CanaryDataStore {
+class KvCanaryDataStore(redisCli: RedisLike, _env: Env) extends CanaryDataStore {
 
   lazy val logger = Logger("otoroshi-datastore")
 

@@ -10,7 +10,7 @@ import otoroshi.storage.RedisLike
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
-class InMemoryChaosDataStore(redisCli: RedisLike, _env: Env) extends ChaosDataStore {
+class KvChaosDataStore(redisCli: RedisLike, _env: Env) extends ChaosDataStore {
 
   override def serviceAlreadyOutage(serviceId: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
     redisCli.get(s"${env.storageRoot}:outage:bydesc:until:$serviceId").map(_.isDefined)

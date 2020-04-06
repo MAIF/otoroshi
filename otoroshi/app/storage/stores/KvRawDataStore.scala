@@ -6,7 +6,7 @@ import otoroshi.storage.{RawDataStore, RedisLike}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class InMemoryRawDataStore(redis: RedisLike) extends RawDataStore {
+class KvRawDataStore(redis: RedisLike) extends RawDataStore {
 
   override def exists(key: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean] = redis.exists(key)
 

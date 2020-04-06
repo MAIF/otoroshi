@@ -934,7 +934,7 @@ sealed trait TcpServiceDataStore extends BasicStore[TcpService] {
   )
 }
 
-class InMemoryTcpServiceDataStoreDataStore(redisCli: RedisLike, env: Env)
+class KvTcpServiceDataStoreDataStore(redisCli: RedisLike, env: Env)
     extends TcpServiceDataStore
     with RedisLikeStore[TcpService] {
 

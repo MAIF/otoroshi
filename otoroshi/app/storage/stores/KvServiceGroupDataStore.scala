@@ -5,7 +5,7 @@ import models.{Key, ServiceGroup, ServiceGroupDataStore}
 import play.api.libs.json.Format
 import otoroshi.storage.{RedisLike, RedisLikeStore}
 
-class InMemoryServiceGroupDataStore(redisCli: RedisLike, _env: Env)
+class KvServiceGroupDataStore(redisCli: RedisLike, _env: Env)
     extends ServiceGroupDataStore
     with RedisLikeStore[ServiceGroup] {
   override def redisLike(implicit env: Env): RedisLike = redisCli

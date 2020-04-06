@@ -1238,7 +1238,7 @@ trait ScriptDataStore extends BasicStore[Script] {
   )
 }
 
-class InMemoryScriptDataStore(redisCli: RedisLike, _env: Env) extends ScriptDataStore with RedisLikeStore[Script] {
+class KvScriptDataStore(redisCli: RedisLike, _env: Env) extends ScriptDataStore with RedisLikeStore[Script] {
   override def fmt: Format[Script]                     = Script._fmt
   override def redisLike(implicit env: Env): RedisLike = redisCli
   override def key(id: String): Key                    = Key(s"${_env.storageRoot}:scripts:$id")
