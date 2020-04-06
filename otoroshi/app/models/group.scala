@@ -4,7 +4,7 @@ import env.Env
 import play.api.Logger
 import play.api.libs.json.{JsResult, JsValue, Json}
 import security.IdGenerator
-import storage.BasicStore
+import otoroshi.storage.BasicStore
 
 import scala.concurrent.{ExecutionContext, Future}
 

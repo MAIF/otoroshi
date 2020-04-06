@@ -26,7 +26,7 @@ import play.api.libs.streams.Accumulator
 import play.api.mvc._
 import security.IdGenerator
 import ssl.{Cert, DynamicSSLEngineProvider}
-import storage.{Healthy, Unhealthy, Unreachable}
+import otoroshi.storage.{Healthy, Unhealthy, Unreachable}
 import utils.Metrics
 import utils.future.Implicits._
 import utils.JsonPatchHelpers._

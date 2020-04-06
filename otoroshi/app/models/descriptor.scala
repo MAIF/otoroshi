@@ -25,7 +25,7 @@ import play.api.mvc.Results.{NotFound, TooManyRequests}
 import play.api.mvc.{RequestHeader, Result, Results}
 import otoroshi.script._
 import security.{IdGenerator, OtoroshiClaim}
-import storage.BasicStore
+import otoroshi.storage.BasicStore
 import utils.{GzipConfig, RegexPool, ReplaceAllWith, TypedMap}
 
 import scala.collection.concurrent.TrieMap

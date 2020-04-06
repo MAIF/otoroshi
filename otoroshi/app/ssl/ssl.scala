@@ -45,8 +45,7 @@ import play.core.ApplicationProvider
 import play.server.api.SSLEngineProvider
 import redis.RedisClientMasterSlaves
 import security.IdGenerator
-import storage.redis.RedisStore
-import storage.{BasicStore, RedisLike, RedisLikeStore}
+import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import sun.security.util.ObjectIdentifier
 import sun.security.x509._
 import utils.{FakeHasMetrics, HasMetrics, RegexPool, TypedMap}
@@ -1726,23 +1725,6 @@ class InMemoryClientCertificateValidationDataStore(redisCli: RedisLike, env: Env
 
   override def fmt: Format[ClientCertificateValidator]              = ClientCertificateValidator.fmt
   override def redisLike(implicit env: Env): RedisLike              = redisCli
-  override def key(id: String): models.Key                          = models.Key(s"${env.storageRoot}:certificates:validators:$id")
-  override def extractId(value: ClientCertificateValidator): String = value.id
-}
-
-class RedisClientCertificateValidationDataStore(redisCli: RedisClientMasterSlaves, env: Env)
-    extends ClientCertificateValidationDataStore
-    with RedisStore[ClientCertificateValidator] {
-  def dsKey(k: String)(implicit env: Env): String = s"${env.storageRoot}:certificates:clients:$k"
-  override def getValidation(key: String)(implicit ec: ExecutionContext, env: Env): Future[Option[Boolean]] =
-    redisCli.get(dsKey(key)).map(_.map(_.utf8String.toBoolean))
-  override def setValidation(key: String, value: Boolean, ttl: Long)(implicit ec: ExecutionContext,
-                                                                     env: Env): Future[Boolean] =
-    redisCli.set(dsKey(key), value.toString, pxMilliseconds = Some(ttl))
-  def removeValidation(key: String)(implicit ec: ExecutionContext, env: Env): Future[Long] = redisCli.del(dsKey(key))
-
-  override def _redis(implicit env: Env): RedisClientMasterSlaves   = redisCli
-  override def fmt: Format[ClientCertificateValidator]              = ClientCertificateValidator.fmt
   override def key(id: String): models.Key                          = models.Key(s"${env.storageRoot}:certificates:validators:$id")
   override def extractId(value: ClientCertificateValidator): String = value.id
 }

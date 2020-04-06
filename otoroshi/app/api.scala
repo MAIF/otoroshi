@@ -21,7 +21,7 @@ import play.core.server.{AkkaHttpServerComponents, ServerConfig}
 import play.filters.HttpFiltersComponents
 import router.Routes
 import ssl.ClientValidatorsController
-import storage.DataStores
+import otoroshi.storage.DataStores
 import utils.Metrics
 import otoroshi.tcp.TcpServiceApiController
 

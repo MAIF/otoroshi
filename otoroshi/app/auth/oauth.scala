@@ -12,7 +12,7 @@ import play.api.libs.json._
 import play.api.mvc.Results.Redirect
 import play.api.mvc.{AnyContent, Request, RequestHeader, Result}
 import security.IdGenerator
-import storage.BasicStore
+import otoroshi.storage.BasicStore
 import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
 import org.joda.time.DateTime
 import play.api.libs.ws.{WSProxyServer, WSResponse}

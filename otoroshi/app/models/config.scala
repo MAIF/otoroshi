@@ -16,7 +16,7 @@ import otoroshi.utils.LetsEncryptSettings
 import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.ws.WSProxyServer
-import storage.BasicStore
+import otoroshi.storage.BasicStore
 import security.{Auth0Config, IdGenerator}
 import utils.{CleverCloudClient, MailerSettings, MailgunSettings}
 import utils.CleverCloudClient.{CleverSettings, UserTokens}

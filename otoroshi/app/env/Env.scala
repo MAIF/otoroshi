@@ -2,18 +2,16 @@ package env
 
 import java.lang.management.ManagementFactory
 import java.rmi.registry.LocateRegistry
-import java.security.KeyPairGenerator
-import java.util.concurrent.{Executors, TimeUnit}
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 
 import akka.actor.{ActorSystem, PoisonPill, Scheduler}
-import akka.http.scaladsl.util.FastFuture
 import akka.http.scaladsl.util.FastFuture._
 import akka.stream.Materializer
 import auth.AuthModuleConfig
 import ch.qos.logback.classic.{Level, LoggerContext}
 import cluster.{ClusterAgent, _}
-import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions}
+import com.typesafe.config.{ConfigFactory, ConfigRenderOptions}
 import events._
 import gateway.CircuitBreakersHolder
 import health.{HealthCheckerActor, StartHealthCheck}
@@ -23,29 +21,27 @@ import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
 import otoroshi.script.{AccessValidatorRef, JobManager, ScriptCompiler, ScriptManager}
+import otoroshi.ssl.pki.BouncyCastlePki
+import otoroshi.tcp.TcpService
 import play.api._
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.json.{JsNull, JsObject, JsValue, Json}
 import play.api.libs.ws._
 import play.api.libs.ws.ahc._
-import security.{ClaimCrypto, IdGenerator}
-import ssl.FakeKeyStore.KeystoreSettings
-import ssl.{Cert, DynamicSSLEngineProvider, FakeKeyStore}
-import storage.DataStores
-import storage.cassandra.CassandraDataStores
-import storage.inmemory.InMemoryDataStores
-import storage.leveldb.LevelDbDataStores
-import storage.mongo.MongoDataStores
-import storage.redis.RedisDataStores
-import storage.redis.next._
-import utils.{HasMetrics, Metrics}
-import utils.http._
-import otoroshi.tcp.{TcpProxy, TcpService}
-import otoroshi.ssl.pki.BouncyCastlePki
 import play.twirl.api.Html
-import storage.file.FileDbDataStores
-import storage.http.HttpDbDataStores
-import storage.redis.lettuce.LettuceDataStores
+import security.{ClaimCrypto, IdGenerator}
+import ssl.{Cert, DynamicSSLEngineProvider, FakeKeyStore}
+import otoroshi.storage.DataStores
+import otoroshi.storage.drivers.cassandra._
+import otoroshi.storage.drivers.file._
+import otoroshi.storage.drivers.inmemory._
+import otoroshi.storage.drivers.lettuce._
+import otoroshi.storage.drivers.leveldb._
+import otoroshi.storage.drivers.mongo._
+import otoroshi.storage.drivers.rediscala._
+import otoroshi.storage.stores._
+import utils.http._
+import utils.{HasMetrics, Metrics}
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future, Promise}
@@ -562,7 +558,7 @@ class Env(val configuration: Configuration,
       case "redis-sentinel-lf" if clusterConfig.mode == ClusterMode.Leader =>
         new RedisSentinelLFDataStores(configuration, environment, lifecycle, this)
       case "redis" if clusterConfig.mode == ClusterMode.Leader =>
-        new RedisDataStores(configuration, environment, lifecycle, this)
+        new RedisSentinelLFDataStores(configuration, environment, lifecycle, this)
       case "inmemory" if clusterConfig.mode == ClusterMode.Leader =>
         new InMemoryDataStores(configuration, environment, lifecycle, this)
       case "leveldb" if clusterConfig.mode == ClusterMode.Leader =>
@@ -579,7 +575,7 @@ class Env(val configuration: Configuration,
         new MongoDataStores(configuration, environment, lifecycle, this)
       case "lettuce" if clusterConfig.mode == ClusterMode.Leader =>
         new LettuceDataStores(configuration, environment, lifecycle, this)
-      case "redis"             => new RedisDataStores(configuration, environment, lifecycle, this)
+      case "redis"             => new RedisSentinelLFDataStores(configuration, environment, lifecycle, this)
       case "inmemory"          => new InMemoryDataStores(configuration, environment, lifecycle, this)
       case "leveldb"           => new LevelDbDataStores(configuration, environment, lifecycle, this)
       case "file"              => new FileDbDataStores(configuration, environment, lifecycle, this)

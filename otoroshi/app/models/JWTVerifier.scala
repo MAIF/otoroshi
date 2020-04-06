@@ -24,7 +24,7 @@ import play.api.libs.ws.WSProxyServer
 import play.api.mvc.{RequestHeader, Result, Results}
 import security.IdGenerator
 import ssl.PemUtils
-import storage.BasicStore
+import otoroshi.storage.BasicStore
 import utils.TypedMap
 import utils.http.MtlsConfig
 

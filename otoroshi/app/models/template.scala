@@ -5,7 +5,7 @@ import java.util.Base64
 import env.Env
 import play.api.Logger
 import play.api.libs.json.{JsResult, JsValue, Json}
-import storage.BasicStore
+import otoroshi.storage.BasicStore
 
 import scala.concurrent.ExecutionContext
 

@@ -24,8 +24,7 @@ import play.api.mvc.{AbstractController, ControllerComponents}
 import redis.RedisClientMasterSlaves
 import security.IdGenerator
 import ssl.{ClientAuth, CustomSSLEngine, DynamicSSLEngineProvider}
-import storage.redis.RedisStore
-import storage.{BasicStore, RedisLike, RedisLikeStore}
+import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import utils.RegexPool
 
 import scala.concurrent.duration.Duration
@@ -943,16 +942,6 @@ class InMemoryTcpServiceDataStoreDataStore(redisCli: RedisLike, env: Env)
   override def redisLike(implicit env: Env): RedisLike = redisCli
   override def key(id: String): models.Key             = models.Key(s"${env.storageRoot}:tcp:services:$id")
   override def extractId(value: TcpService): String    = value.id
-}
-
-class RedisTcpServiceDataStoreDataStore(redisCli: RedisClientMasterSlaves, env: Env)
-    extends TcpServiceDataStore
-    with RedisStore[TcpService] {
-
-  override def _redis(implicit env: Env): RedisClientMasterSlaves = redisCli
-  override def fmt: Format[TcpService]                            = TcpService.fmt
-  override def key(id: String): models.Key                        = models.Key(s"${env.storageRoot}:tcp:services:$id")
-  override def extractId(value: TcpService): String               = value.id
 }
 
 class TcpServiceApiController(ApiAction: ApiAction, cc: ControllerComponents)(

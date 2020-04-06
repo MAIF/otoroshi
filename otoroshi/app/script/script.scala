@@ -27,8 +27,7 @@ import play.api.libs.ws.{DefaultWSCookie, WSCookie}
 import play.api.mvc._
 import redis.RedisClientMasterSlaves
 import security.{IdGenerator, OtoroshiClaim}
-import storage.redis.RedisStore
-import storage.{BasicStore, RedisLike, RedisLikeStore}
+import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import utils.TypedMap
 
 import scala.collection.concurrent.TrieMap
@@ -1244,15 +1243,6 @@ class InMemoryScriptDataStore(redisCli: RedisLike, _env: Env) extends ScriptData
   override def redisLike(implicit env: Env): RedisLike = redisCli
   override def key(id: String): Key                    = Key(s"${_env.storageRoot}:scripts:$id")
   override def extractId(value: Script): String        = value.id
-}
-
-class RedisScriptDataStore(redisCli: RedisClientMasterSlaves, _env: Env)
-    extends ScriptDataStore
-    with RedisStore[Script] {
-  override def fmt: Format[Script]                                = Script._fmt
-  override def _redis(implicit env: Env): RedisClientMasterSlaves = redisCli
-  override def key(id: String): Key                               = Key(s"${_env.storageRoot}:scripts:$id")
-  override def extractId(value: Script): String                   = value.id
 }
 
 class ScriptApiController(ApiAction: ApiAction, cc: ControllerComponents)(
