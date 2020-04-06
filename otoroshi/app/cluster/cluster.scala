@@ -1518,7 +1518,7 @@ class SwappableInMemoryDataStores(configuration: Configuration,
   lazy val experimental: Boolean = configuration.get[Option[Boolean]]("app.inmemory.experimental").getOrElse(false)
   lazy val actorSystem =
     ActorSystem(
-      "otoroshi-inmemory-system",
+      "otoroshi-swapinmemory-system",
       configuration
         .getOptional[Configuration]("app.actorsystems.datastore")
         .map(_.underlying)
