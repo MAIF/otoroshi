@@ -558,7 +558,7 @@ class Env(val configuration: Configuration,
       case "redis-sentinel-lf" if clusterConfig.mode == ClusterMode.Leader =>
         new RedisSentinelLFDataStores(configuration, environment, lifecycle, this)
       case "redis" if clusterConfig.mode == ClusterMode.Leader =>
-        new RedisSentinelLFDataStores(configuration, environment, lifecycle, this)
+        new RedisLFDataStores(configuration, environment, lifecycle, this)
       case "inmemory" if clusterConfig.mode == ClusterMode.Leader =>
         new InMemoryDataStores(configuration, environment, lifecycle, PersistenceKind.NoopPersistenceKind, this)
       case "leveldb" if clusterConfig.mode == ClusterMode.Leader =>
@@ -575,7 +575,7 @@ class Env(val configuration: Configuration,
         new MongoDataStores(configuration, environment, lifecycle, this)
       case "lettuce" if clusterConfig.mode == ClusterMode.Leader =>
         new LettuceDataStores(configuration, environment, lifecycle, this)
-      case "redis"             => new RedisSentinelLFDataStores(configuration, environment, lifecycle, this)
+      case "redis"             => new RedisLFDataStores(configuration, environment, lifecycle, this)
       case "inmemory"          => new InMemoryDataStores(configuration, environment, lifecycle, PersistenceKind.NoopPersistenceKind, this)
       case "leveldb"           => new LevelDbDataStores(configuration, environment, lifecycle, this)
       case "file"              => new InMemoryDataStores(configuration, environment, lifecycle, PersistenceKind.FilePersistenceKind, this)
