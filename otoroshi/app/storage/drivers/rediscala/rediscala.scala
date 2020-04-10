@@ -61,23 +61,30 @@ object RedisMember {
   }
 }
 
+@deprecated(message = "Use lettuce instead", since = "1.5.0")
 class RedisCPStore(redis: RedisClientPool, env: Env, ec: ExecutionContext) extends RedisCommandsStore(redis, env, ec)
 
+@deprecated(message = "Use lettuce instead", since = "1.5.0")
 class RedisMCPStore(redis: RedisClientMutablePool, env: Env, ec: ExecutionContext)
     extends RedisCommandsStore(redis, env, ec)
 
+@deprecated(message = "Use lettuce instead", since = "1.5.0")
 class RedisClusterStore(redis: RedisCluster, env: Env, ec: ExecutionContext)
     extends RedisCommandsStore(redis, env, ec, true)
 
+@deprecated(message = "Use lettuce instead", since = "1.5.0")
 class RedisLFStore(redis: RedisClientMasterSlaves, env: Env, ec: ExecutionContext)
     extends RedisCommandsStore(redis, env, ec)
 
+@deprecated(message = "Use lettuce instead", since = "1.5.0")
 class RedisSentinelStore(redis: SentinelMonitoredRedisClient, env: Env, ec: ExecutionContext)
     extends RedisCommandsStore(redis, env, ec)
 
+@deprecated(message = "Use lettuce instead", since = "1.5.0")
 class RedisSentinelLFStore(redis: SentinelMonitoredRedisClientMasterSlaves, env: Env, ec: ExecutionContext)
     extends RedisCommandsStore(redis, env, ec)
 
+@deprecated(message = "Use lettuce instead", since = "1.5.0")
 class RedisCPDataStores(configuration: Configuration,
                         environment: Environment,
                         lifecycle: ApplicationLifecycle,
@@ -115,6 +122,7 @@ class RedisCPDataStores(configuration: Configuration,
   override def typeOfKey(key: String): Future[String] = redisCli.`type`(key)
 }
 
+@deprecated(message = "Use lettuce instead", since = "1.5.0")
 class RedisMCPDataStores(configuration: Configuration,
                          environment: Environment,
                          lifecycle: ApplicationLifecycle,
@@ -152,6 +160,7 @@ class RedisMCPDataStores(configuration: Configuration,
   override def typeOfKey(key: String): Future[String] = redisCli.`type`(key)
 }
 
+@deprecated(message = "Use lettuce instead", since = "1.5.0")
 class RedisLFDataStores(configuration: Configuration,
                         environment: Environment,
                         lifecycle: ApplicationLifecycle,
@@ -208,6 +217,7 @@ class RedisLFDataStores(configuration: Configuration,
   override def typeOfKey(key: String): Future[String] = redisCli.`type`(key)
 }
 
+@deprecated(message = "Use lettuce instead", since = "1.5.0")
 class RedisSentinelDataStores(configuration: Configuration,
                               environment: Environment,
                               lifecycle: ApplicationLifecycle,
@@ -252,6 +262,7 @@ class RedisSentinelDataStores(configuration: Configuration,
   override def typeOfKey(key: String): Future[String] = redisCli.`type`(key)
 }
 
+@deprecated(message = "Use lettuce instead", since = "1.5.0")
 class RedisSentinelLFDataStores(configuration: Configuration,
                                 environment: Environment,
                                 lifecycle: ApplicationLifecycle,
@@ -290,6 +301,7 @@ class RedisSentinelLFDataStores(configuration: Configuration,
   override def typeOfKey(key: String): Future[String] = redisCli.`type`(key)
 }
 
+@deprecated(message = "Use lettuce instead", since = "1.5.0")
 class RedisClusterDataStores(configuration: Configuration,
                              environment: Environment,
                              lifecycle: ApplicationLifecycle,
@@ -330,6 +342,7 @@ class RedisClusterDataStores(configuration: Configuration,
   override def typeOfKey(key: String): Future[String] = redisCluster.`type`(key)
 }
 
+@deprecated(message = "Use lettuce instead", since = "1.5.0")
 abstract class AbstractRedisDataStores(configuration: Configuration,
                                        environment: Environment,
                                        lifecycle: ApplicationLifecycle,
@@ -579,6 +592,7 @@ abstract class AbstractRedisDataStores(configuration: Configuration,
   }
 }
 
+@deprecated(message = "Use lettuce instead", since = "1.5.0")
 class RedisCommandsStore(redis: RedisCommands, env: Env, executionContext: ExecutionContext, cluster: Boolean = false)
     extends RedisLike {
 

@@ -19,6 +19,7 @@ import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Failure
 
+@deprecated(message = "Use another datastore instead", since = "1.5.0")
 class MongoRedis(actorSystem: ActorSystem, connection: MongoConnection, dbName: String) extends RedisLike {
 
   import actorSystem.dispatcher

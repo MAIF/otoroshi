@@ -25,6 +25,7 @@ import storage.stores.KvRawDataStore
 
 import scala.concurrent.{ExecutionContext, Future}
 
+@deprecated(message = "Use FileDb instead", since = "1.5.0")
 class LevelDbDataStores(configuration: Configuration,
                         environment: Environment,
                         lifecycle: ApplicationLifecycle,

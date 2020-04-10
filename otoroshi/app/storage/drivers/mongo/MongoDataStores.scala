@@ -27,6 +27,7 @@ import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.Failure
 
+@deprecated(message = "Use another datastore instead", since = "1.5.0")
 class MongoDataStores(configuration: Configuration, environment: Environment, lifecycle: ApplicationLifecycle, env: Env)
     extends DataStores {
 
@@ -308,6 +309,7 @@ class MongoDataStores(configuration: Configuration, environment: Environment, li
   }
 }
 
+@deprecated(message = "Use another datastore instead", since = "1.5.0")
 class KvApiKeyDataStoreWrapper(redisCli: RedisLike, _env: Env) extends KvApiKeyDataStore(redisCli, _env) {
 
   private val customFmt = new Format[ApiKey] {
@@ -323,6 +325,7 @@ class KvApiKeyDataStoreWrapper(redisCli: RedisLike, _env: Env) extends KvApiKeyD
   override def fmt: Format[ApiKey] = customFmt
 }
 
+@deprecated(message = "Use another datastore instead", since = "1.5.0")
 class KvServiceDescriptorDataStoreWrapper(redisCli: RedisLike, maxQueueSize: Int, _env: Env)
     extends KvServiceDescriptorDataStore(redisCli, maxQueueSize, _env) {
 

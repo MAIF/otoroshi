@@ -13,6 +13,7 @@ import otoroshi.storage.{DataStoreHealth, Healthy, RedisLike}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
+@deprecated(message = "Use FileDb instead", since = "1.5.0")
 class LevelDbRedis(actorSystem: ActorSystem, dbPath: String) extends RedisLike {
 
   import actorSystem.dispatcher
