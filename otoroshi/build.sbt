@@ -9,7 +9,6 @@ lazy val root = (project in file("."))
 
 lazy val scalaLangVersion = "2.12.11"
 // lazy val scalaLangVersion = "2.13.1"
-// * https://github.com/gphat/censorinus/issues/34
 // * https://github.com/propensive/kaleidoscope/issues/24
 // * https://github.com/risksense/ipaddr/issues/11
 lazy val metricsVersion = "4.1.5"
@@ -26,7 +25,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.play"        %% "play-json"                  % playJsonVersion,
   "com.typesafe.play"        %% "play-json-joda"             % playJsonVersion,
   "com.github.etaty"         %% "rediscala"                  % "1.9.0",
-  "com.github.gphat"         %% "censorinus"                 % "2.1.15",
+  "com.github.gphat"         %% "censorinus"                 % "2.1.16",
   "com.typesafe.akka"        %% "akka-stream-kafka"          % "2.0.2",
   "io.dropwizard.metrics"    % "metrics-core"                % metricsVersion,    // Apache 2.0
   "io.dropwizard.metrics"    % "metrics-jvm"                 % metricsVersion,    // Apache 2.0
