@@ -26,7 +26,7 @@ import play.api.libs.streams.Accumulator
 import play.api.mvc._
 import security.IdGenerator
 import ssl.{Cert, DynamicSSLEngineProvider}
-import storage.{Healthy, Unhealthy, Unreachable}
+import otoroshi.storage.{Healthy, Unhealthy, Unreachable}
 import utils.Metrics
 import utils.future.Implicits._
 import utils.JsonPatchHelpers._
@@ -2138,7 +2138,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
   def fullExport() = ApiAction.async { ctx =>
     ctx.request.accepts("application/x-ndjson") match {
       case true => {
-        env.datastores.fullNdJsonExport().map { source =>
+        env.datastores.fullNdJsonExport(100, 1, 4).map { source =>
           val event = AdminApiEvent(
             env.snowflakeGenerator.nextIdStr(),
             env.env,

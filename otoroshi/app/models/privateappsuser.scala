@@ -8,7 +8,7 @@ import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc.Results.InternalServerError
 import play.api.mvc.{RequestHeader, Result, Results}
-import storage.BasicStore
+import otoroshi.storage.BasicStore
 import utils.JsonImplicits._
 import utils.TypedMap
 

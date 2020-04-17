@@ -45,8 +45,7 @@ import play.core.ApplicationProvider
 import play.server.api.SSLEngineProvider
 import redis.RedisClientMasterSlaves
 import security.IdGenerator
-import storage.redis.RedisStore
-import storage.{BasicStore, RedisLike, RedisLikeStore}
+import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import sun.security.util.ObjectIdentifier
 import sun.security.x509._
 import utils.{FakeHasMetrics, HasMetrics, RegexPool, TypedMap}
@@ -1712,7 +1711,7 @@ sealed trait ClientCertificateValidationDataStore extends BasicStore[ClientCerti
   def removeValidation(key: String)(implicit ec: ExecutionContext, env: Env): Future[Long]
 }
 
-class InMemoryClientCertificateValidationDataStore(redisCli: RedisLike, env: Env)
+class KvClientCertificateValidationDataStore(redisCli: RedisLike, env: Env)
     extends ClientCertificateValidationDataStore
     with RedisLikeStore[ClientCertificateValidator] {
 
@@ -1726,23 +1725,6 @@ class InMemoryClientCertificateValidationDataStore(redisCli: RedisLike, env: Env
 
   override def fmt: Format[ClientCertificateValidator]              = ClientCertificateValidator.fmt
   override def redisLike(implicit env: Env): RedisLike              = redisCli
-  override def key(id: String): models.Key                          = models.Key(s"${env.storageRoot}:certificates:validators:$id")
-  override def extractId(value: ClientCertificateValidator): String = value.id
-}
-
-class RedisClientCertificateValidationDataStore(redisCli: RedisClientMasterSlaves, env: Env)
-    extends ClientCertificateValidationDataStore
-    with RedisStore[ClientCertificateValidator] {
-  def dsKey(k: String)(implicit env: Env): String = s"${env.storageRoot}:certificates:clients:$k"
-  override def getValidation(key: String)(implicit ec: ExecutionContext, env: Env): Future[Option[Boolean]] =
-    redisCli.get(dsKey(key)).map(_.map(_.utf8String.toBoolean))
-  override def setValidation(key: String, value: Boolean, ttl: Long)(implicit ec: ExecutionContext,
-                                                                     env: Env): Future[Boolean] =
-    redisCli.set(dsKey(key), value.toString, pxMilliseconds = Some(ttl))
-  def removeValidation(key: String)(implicit ec: ExecutionContext, env: Env): Future[Long] = redisCli.del(dsKey(key))
-
-  override def _redis(implicit env: Env): RedisClientMasterSlaves   = redisCli
-  override def fmt: Format[ClientCertificateValidator]              = ClientCertificateValidator.fmt
   override def key(id: String): models.Key                          = models.Key(s"${env.storageRoot}:certificates:validators:$id")
   override def extractId(value: ClientCertificateValidator): String = value.id
 }
@@ -2217,6 +2199,23 @@ object SSLImplicits {
     def maybeDomain: Option[String] = domains.headOption
     def domain: String              = domains.headOption.getOrElse(cert.getSubjectDN.getName)
     def domains: Seq[String]        = (rawDomain ++ altNames).toSeq
+    def asJson: JsObject = Json.obj(
+      "subjectDN"    -> cert.getSubjectDN.getName,
+      "issuerDN"     -> cert.getIssuerDN.getName,
+      "notAfter"     -> cert.getNotAfter.getTime,
+      "notBefore"    -> cert.getNotBefore.getTime,
+      "serialNumber" -> cert.getSerialNumber.toString(16),
+      "subjectCN" -> Option(cert.getSubjectDN.getName)
+        .flatMap(_.split(",").toSeq.map(_.trim).find(_.startsWith("CN=")))
+        .map(_.replace("CN=", ""))
+        .getOrElse(cert.getSubjectDN.getName)
+        .asInstanceOf[String],
+      "issuerCN" -> Option(cert.getIssuerDN.getName)
+        .flatMap(_.split(",").toSeq.map(_.trim).find(_.startsWith("CN=")))
+        .map(_.replace("CN=", ""))
+        .getOrElse(cert.getIssuerDN.getName)
+        .asInstanceOf[String]
+    )
   }
   implicit class EnhancedKey(val key: java.security.Key) extends AnyVal {
     def asPublicKeyPem: String =

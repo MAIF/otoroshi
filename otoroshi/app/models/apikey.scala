@@ -15,7 +15,7 @@ import play.api.libs.json._
 import play.api.mvc.Results.{BadGateway, BadRequest, NotFound, TooManyRequests, Unauthorized}
 import play.api.mvc.{RequestHeader, Result, Results}
 import security.{IdGenerator, OtoroshiClaim}
-import storage.BasicStore
+import otoroshi.storage.BasicStore
 import utils.TypedMap
 
 import scala.concurrent.{ExecutionContext, Future}

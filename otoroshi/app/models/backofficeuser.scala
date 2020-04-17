@@ -5,7 +5,7 @@ import auth.AuthModuleConfig
 import env.Env
 import org.joda.time.DateTime
 import play.api.libs.json._
-import storage.BasicStore
+import otoroshi.storage.BasicStore
 
 import scala.concurrent.duration._
 import scala.concurrent.duration.Duration

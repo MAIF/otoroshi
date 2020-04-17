@@ -1,4 +1,4 @@
-package storage
+package otoroshi.storage
 
 import akka.util.ByteString
 import env.Env
@@ -15,9 +15,9 @@ import akka.http.scaladsl.util.FastFuture
 import auth.AuthConfigsDataStore
 import cluster.ClusterStateDataStore
 import otoroshi.script.ScriptDataStore
+import otoroshi.storage.stores._
 import ssl.{CertificateDataStore, ClientCertificateValidationDataStore}
 import otoroshi.tcp.TcpServiceDataStore
-import storage.inmemory.{WebAuthnAdminDataStore, WebAuthnRegistrationsDataStore}
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future}
@@ -59,7 +59,7 @@ trait DataStores {
   def webAuthnRegistrationsDataStore: WebAuthnRegistrationsDataStore
   ////
   def fullNdJsonImport(export: Source[JsValue, _]): Future[Unit]
-  def fullNdJsonExport(): Future[Source[JsValue, _]]
+  def fullNdJsonExport(group: Int, groupWorkers: Int, keyWorkers: Int): Future[Source[JsValue, _]]
 }
 
 trait RawDataStore {

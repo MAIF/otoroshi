@@ -25,7 +25,7 @@ import play.api.mvc.Results.{NotFound, TooManyRequests}
 import play.api.mvc.{RequestHeader, Result, Results}
 import otoroshi.script._
 import security.{IdGenerator, OtoroshiClaim}
-import storage.BasicStore
+import otoroshi.storage.BasicStore
 import utils.{GzipConfig, RegexPool, ReplaceAllWith, TypedMap}
 
 import scala.collection.concurrent.TrieMap
@@ -2139,31 +2139,13 @@ case class ServiceDescriptor(
                         sub: Option[String] = None)(
       implicit env: Env
   ): OtoroshiClaim = {
+    import ssl.SSLImplicits._
     val clientCertChain = requestHeader
       .flatMap(_.clientCertificateChain)
       .map(
         chain =>
           JsArray(
-            chain.map(
-              c =>
-                Json.obj(
-                  "subjectDN"    -> c.getSubjectDN.getName,
-                  "issuerDN"     -> c.getIssuerDN.getName,
-                  "notAfter"     -> c.getNotAfter.getTime,
-                  "notBefore"    -> c.getNotBefore.getTime,
-                  "serialNumber" -> c.getSerialNumber.toString(16),
-                  "subjectCN" -> Option(c.getSubjectDN.getName)
-                    .flatMap(_.split(",").toSeq.map(_.trim).find(_.startsWith("CN=")))
-                    .map(_.replace("CN=", ""))
-                    .getOrElse(c.getSubjectDN.getName)
-                    .asInstanceOf[String],
-                  "issuerCN" -> Option(c.getIssuerDN.getName)
-                    .flatMap(_.split(",").toSeq.map(_.trim).find(_.startsWith("CN=")))
-                    .map(_.replace("CN=", ""))
-                    .getOrElse(c.getIssuerDN.getName)
-                    .asInstanceOf[String]
-              )
-            )
+            chain.map(c => c.asJson)
         )
       )
     secComInfoTokenVersion match {

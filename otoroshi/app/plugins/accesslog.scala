@@ -112,7 +112,7 @@ class AccessLog extends RequestTransformer {
       |
       |Log format is the following:
       |
-      |`"$service" $clientAddress - "$userId" [$timestamp] "$host $method $path $protocol" "$status $statusTxt" $size $snowflake "$to" "$referrer" "$userAgent" $http $duration $errorMsg`
+      |`"$service" $clientAddress - "$userId" [$timestamp] "$host $method $path $protocol" "$status $statusTxt" $size $snowflake "$to" "$referer" "$userAgent" $http $duration $errorMsg`
       |
       |The plugin accepts the following configuration
       |
@@ -179,13 +179,13 @@ class AccessLog extends RequestTransformer {
         .get("Content-Length")
         .orElse(ctx.rawResponse.headers.get("content-length"))
         .getOrElse("-")
-      val referrer =
-        ctx.rawResponse.headers.get("Referrer").orElse(ctx.rawResponse.headers.get("Referrer")).getOrElse("-")
+      val referer =
+       ctx.request.headers.get("Referer").orElse(ctx.request.headers.get("referer")).getOrElse("-")
       val userAgent = ctx.request.headers.get("User-Agent").orElse(ctx.request.headers.get("user-agent")).getOrElse("-")
       val service   = ctx.descriptor.name
       val host      = ctx.request.theHost
       logger.info(
-        s""""$service" $ipAddress - "$userId" [$timestamp] "$host $method $path $protocol" "$status $statusTxt" $size $snowflake "$to" "$referrer" "$userAgent" $http ${duration}ms "-""""
+        s""""$service" $ipAddress - "$userId" [$timestamp] "$host $method $path $protocol" "$status $statusTxt" $size $snowflake "$to" "$referer" "$userAgent" $http ${duration}ms "-""""
       )
     }
     Right(ctx.otoroshiResponse).future
@@ -240,13 +240,13 @@ class AccessLog extends RequestTransformer {
         .get("Content-Length")
         .orElse(ctx.otoroshiResponse.headers.get("content-length"))
         .getOrElse("-")
-      val referrer =
-        ctx.otoroshiResponse.headers.get("Referrer").orElse(ctx.otoroshiResponse.headers.get("Referrer")).getOrElse("-")
+      val referer =
+        ctx.request.headers.get("Referer").orElse(ctx.request.headers.get("referer")).getOrElse("-")
       val userAgent = ctx.request.headers.get("User-Agent").orElse(ctx.request.headers.get("user-agent")).getOrElse("-")
       val service   = ctx.descriptor.name
       val host      = ctx.request.theHost
       logger.info(
-        s""""$service" $ipAddress - "$userId" [$timestamp] "$host $method $path $protocol" "$status $statusTxt" $size $snowflake "$to" "$referrer" "$userAgent" $http ${duration}ms "${ctx.message}" """
+        s""""$service" $ipAddress - "$userId" [$timestamp] "$host $method $path $protocol" "$status $statusTxt" $size $snowflake "$to" "$referer" "$userAgent" $http ${duration}ms "${ctx.message}" """
       )
     }
     ctx.otoroshiResult.future
@@ -339,8 +339,8 @@ class AccessLogJson extends RequestTransformer {
         .get("Content-Length")
         .orElse(ctx.rawResponse.headers.get("content-length"))
         .getOrElse("-")
-      val referrer =
-        ctx.rawResponse.headers.get("Referrer").orElse(ctx.rawResponse.headers.get("Referrer")).getOrElse("-")
+      val referer =
+       ctx.request.headers.get("Referer").orElse(ctx.request.headers.get("referer")).getOrElse("-")
       val userAgent = ctx.request.headers.get("User-Agent").orElse(ctx.request.headers.get("user-agent")).getOrElse("-")
       val service   = ctx.descriptor.name
       val host      = ctx.request.theHost
@@ -363,7 +363,7 @@ class AccessLogJson extends RequestTransformer {
             "http"       -> http,
             "protocol"   -> protocol,
             "size"       -> size,
-            "referrer"   -> referrer,
+            "referer"    -> referer,
             "user-agent" -> userAgent,
             "service"    -> service,
             "host"       -> host,
@@ -426,8 +426,8 @@ class AccessLogJson extends RequestTransformer {
         .get("Content-Length")
         .orElse(ctx.otoroshiResponse.headers.get("content-length"))
         .getOrElse("-")
-      val referrer =
-        ctx.otoroshiResponse.headers.get("Referrer").orElse(ctx.otoroshiResponse.headers.get("Referrer")).getOrElse("-")
+      val referer =
+        ctx.request.headers.get("Referer").orElse(ctx.request.headers.get("referer")).getOrElse("-")
       val userAgent = ctx.request.headers.get("User-Agent").orElse(ctx.request.headers.get("user-agent")).getOrElse("-")
       val service   = ctx.descriptor.name
       val host      = ctx.request.theHost
@@ -450,7 +450,7 @@ class AccessLogJson extends RequestTransformer {
             "http"       -> http,
             "protocol"   -> protocol,
             "size"       -> size,
-            "referrer"   -> referrer,
+            "referer"    -> referer,
             "user-agent" -> userAgent,
             "service"    -> service,
             "host"       -> host,
@@ -573,8 +573,8 @@ class KafkaAccessLog extends RequestTransformer {
                 .get("Content-Length")
                 .orElse(ctx.rawResponse.headers.get("content-length"))
                 .getOrElse("-")
-              val referrer =
-                ctx.rawResponse.headers.get("Referrer").orElse(ctx.rawResponse.headers.get("Referrer")).getOrElse("-")
+              val referer =
+                ctx.request.headers.get("Referer").orElse(ctx.request.headers.get("referer")).getOrElse("-")
               val userAgent =
                 ctx.request.headers.get("User-Agent").orElse(ctx.request.headers.get("user-agent")).getOrElse("-")
               val service                   = ctx.descriptor.name
@@ -604,7 +604,7 @@ class KafkaAccessLog extends RequestTransformer {
                   "http"               -> http,
                   "protocol"           -> protocol,
                   "size"               -> size,
-                  "referrer"           -> referrer,
+                  "referer"            -> referer,
                   "user-agent"         -> userAgent,
                   "service"            -> service,
                   "host"               -> host,
@@ -700,9 +700,9 @@ class KafkaAccessLog extends RequestTransformer {
                 .get("Content-Length")
                 .orElse(ctx.otoroshiResponse.headers.get("content-length"))
                 .getOrElse("-")
-              val referrer = ctx.otoroshiResponse.headers
-                .get("Referrer")
-                .orElse(ctx.otoroshiResponse.headers.get("Referrer"))
+              val referer = ctx.request.headers
+                .get("Referer")
+                .orElse(ctx.request.headers.get("referer"))
                 .getOrElse("-")
               val userAgent =
                 ctx.request.headers.get("User-Agent").orElse(ctx.request.headers.get("user-agent")).getOrElse("-")
@@ -731,7 +731,7 @@ class KafkaAccessLog extends RequestTransformer {
                   "http"               -> http,
                   "protocol"           -> protocol,
                   "size"               -> size,
-                  "referrer"           -> referrer,
+                  "referer"            -> referer,
                   "user-agent"         -> userAgent,
                   "service"            -> service,
                   "host"               -> host,

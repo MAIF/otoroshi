@@ -586,7 +586,7 @@ class AkkWsClient(config: WSClientConfig, env: Env)(implicit system: ActorSystem
                              pool)
       }
       case certs if (clientCerts ++ trustedCerts).nonEmpty => {
-        logger.info(s"Calling ${request.uri} with mTLS context of ${certs.size} certificates")
+        logger.debug(s"Calling ${request.uri} with mTLS context of ${certs.size} certificates")
         val sslContext = env.metrics.withTimer("otoroshi.core.tls.http-client.single-context-fetch") {
           val cacheKey = certs.sortWith((c1, c2) => c1.id.compareTo(c2.id) > 0).map(_.cacheKey).mkString("-")
           singleSslContextCache.getOrElse(
@@ -636,7 +636,7 @@ class AkkWsClient(config: WSClientConfig, env: Env)(implicit system: ActorSystem
         )(mat)
       }
       case certs if (clientCerts ++ trustedCerts).nonEmpty => {
-        logger.info(s"Calling ws ${request.uri} with mTLS context of ${certs.size} certificates")
+        logger.debug(s"Calling ws ${request.uri} with mTLS context of ${certs.size} certificates")
         val sslContext = env.metrics.withTimer("otoroshi.core.tls.http-client.single-context-fetch") {
           val cacheKey = certs.sortWith((c1, c2) => c1.id.compareTo(c2.id) > 0).map(_.cacheKey).mkString("-")
           singleSslContextCache.getOrElse(

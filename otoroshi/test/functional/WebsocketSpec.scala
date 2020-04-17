@@ -68,7 +68,7 @@ class WebsocketSpec(name: String, configurationSpec: => Configuration)
 
       val printSink: Sink[Message, Future[Done]] = Sink.foreach { message =>
         clientCounter.incrementAndGet()
-        println("client received: " + message.asScala.asTextMessage.getStrictText)
+        // println("client received: " + message.asScala.asTextMessage.getStrictText)
       }
 
       val names = List(
