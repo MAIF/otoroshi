@@ -1358,7 +1358,7 @@ class ScriptApiController(ApiAction: ApiAction, cc: ControllerComponents)(
             case (c, Left(_)) => Json.obj("id" -> c.id, "name" -> c.name, "description" -> c.desc)
             case (c, Right(instance)) => Json.obj(
               "id"    -> c.id,
-              "name"          -> Option(c.name).map(_.trim).filter(_.nonEmpty).getOrElse(instance.name),
+              "name"          -> JsString(Option(c.name).map(_.trim).filter(_.nonEmpty).getOrElse(instance.name)),
               "description"   -> Option(c.desc).map(_.trim).filter(_.nonEmpty).orElse(instance.description).map(JsString.apply).getOrElse(JsNull).as[JsValue],
               "defaultConfig" -> instance.defaultConfig.getOrElse(JsNull).as[JsValue],
               "configRoot"    -> instance.configRoot.map(JsString.apply).getOrElse(JsNull).as[JsValue],
