@@ -2199,6 +2199,23 @@ object SSLImplicits {
     def maybeDomain: Option[String] = domains.headOption
     def domain: String              = domains.headOption.getOrElse(cert.getSubjectDN.getName)
     def domains: Seq[String]        = (rawDomain ++ altNames).toSeq
+    def asJson: JsObject = Json.obj(
+      "subjectDN"    -> cert.getSubjectDN.getName,
+      "issuerDN"     -> cert.getIssuerDN.getName,
+      "notAfter"     -> cert.getNotAfter.getTime,
+      "notBefore"    -> cert.getNotBefore.getTime,
+      "serialNumber" -> cert.getSerialNumber.toString(16),
+      "subjectCN" -> Option(cert.getSubjectDN.getName)
+        .flatMap(_.split(",").toSeq.map(_.trim).find(_.startsWith("CN=")))
+        .map(_.replace("CN=", ""))
+        .getOrElse(cert.getSubjectDN.getName)
+        .asInstanceOf[String],
+      "issuerCN" -> Option(cert.getIssuerDN.getName)
+        .flatMap(_.split(",").toSeq.map(_.trim).find(_.startsWith("CN=")))
+        .map(_.replace("CN=", ""))
+        .getOrElse(cert.getIssuerDN.getName)
+        .asInstanceOf[String]
+    )
   }
   implicit class EnhancedKey(val key: java.security.Key) extends AnyVal {
     def asPublicKeyPem: String =

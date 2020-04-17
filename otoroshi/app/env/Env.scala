@@ -10,7 +10,7 @@ import akka.http.scaladsl.util.FastFuture._
 import akka.stream.Materializer
 import auth.AuthModuleConfig
 import ch.qos.logback.classic.{Level, LoggerContext}
-import cluster.{ClusterAgent, _}
+import cluster._
 import com.typesafe.config.{ConfigFactory, ConfigRenderOptions}
 import events._
 import gateway.CircuitBreakersHolder
@@ -22,6 +22,13 @@ import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
 import otoroshi.script.{AccessValidatorRef, JobManager, ScriptCompiler, ScriptManager}
 import otoroshi.ssl.pki.BouncyCastlePki
+import otoroshi.storage.DataStores
+import otoroshi.storage.drivers.cassandra._
+import otoroshi.storage.drivers.inmemory._
+import otoroshi.storage.drivers.lettuce._
+import otoroshi.storage.drivers.leveldb._
+import otoroshi.storage.drivers.mongo._
+import otoroshi.storage.drivers.rediscala._
 import otoroshi.tcp.TcpService
 import play.api._
 import play.api.inject.ApplicationLifecycle
@@ -31,15 +38,6 @@ import play.api.libs.ws.ahc._
 import play.twirl.api.Html
 import security.{ClaimCrypto, IdGenerator}
 import ssl.{Cert, DynamicSSLEngineProvider, FakeKeyStore}
-import otoroshi.storage.DataStores
-import otoroshi.storage.drivers.cassandra._
-import otoroshi.storage.drivers.file._
-import otoroshi.storage.drivers.inmemory._
-import otoroshi.storage.drivers.lettuce._
-import otoroshi.storage.drivers.leveldb._
-import otoroshi.storage.drivers.mongo._
-import otoroshi.storage.drivers.rediscala._
-import otoroshi.storage.stores._
 import utils.http._
 import utils.{HasMetrics, Metrics}
 
