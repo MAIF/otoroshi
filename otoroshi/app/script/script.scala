@@ -1353,7 +1353,19 @@ class ScriptApiController(ApiAction: ApiAction, cc: ControllerComponents)(
               case _                                                         => false
             }
           }
-          .map(c => Json.obj("id" -> c.id, "name" -> c.name, "description" -> c.desc)) ++
+          .map(c => (c, env.scriptManager.getAnyScript[NamedPlugin](c.id)))
+          .map {
+            case (c, Left(_)) => Json.obj("id" -> c.id, "name" -> c.name, "description" -> c.desc)
+            case (c, Right(instance)) => Json.obj(
+              "id"    -> c.id,
+              "name"          -> Option(c.name).map(_.trim).filter(_.nonEmpty).orElse(instance.name).map(JsString.apply).getOrElse(JsNull).as[JsValue],
+              "description"   -> Option(c.desc).map(_.trim).filter(_.nonEmpty).orElse(instance.description).map(JsString.apply).getOrElse(JsNull).as[JsValue],
+              "defaultConfig" -> instance.defaultConfig.getOrElse(JsNull).as[JsValue],
+              "configRoot"    -> instance.configRoot.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+              "configSchema"  -> instance.configSchema.getOrElse(JsNull).as[JsValue],
+              "configFlow"    -> JsArray(instance.configFlow.map(JsString.apply))
+            )
+          } ++
         cpTransformers.map(extractInfos) ++
         cpValidators.map(extractInfos) ++
         cpPreRoutes.map(extractInfos) ++
