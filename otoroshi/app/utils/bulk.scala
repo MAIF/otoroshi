@@ -60,7 +60,7 @@ case class GenericAlert(`@id`: String,
   )
 }
 
-trait ControllerHelper[Entity, Error] {
+trait EntityHelper[Entity, Error] {
   def readId(json: JsValue): Either[String, String] = {
     (json \ "id").asOpt[String] match {
       case Some(id) => Right(id)
@@ -76,22 +76,18 @@ trait ControllerHelper[Entity, Error] {
   def deleteEntityOps(id: String)(implicit env: Env, ec: ExecutionContext):     Future[Either[ApiError[Error], NoEntityAndContext[Entity]]]
 }
 
-abstract class BulkController[Entity, Error](ApiAction: ApiAction, cc: ControllerComponents)(implicit env: Env) extends AbstractController(cc) with ControllerHelper[Entity, Error] {
+trait BulkHelper[Entity, Error] extends EntityHelper[Entity, Error] {
 
-  implicit private val ec  = env.otoroshiExecutionContext
-  implicit private val mat = env.otoroshiMaterializer
+  import Results._
 
-  private val logger = Logger("otoroshi-bulk-controller")
-
-  private val sourceBodyParser = BodyParser("BulkController BodyParser") { _ =>
-    Accumulator.source[ByteString].map(Right.apply)
-  }
-
-  def bulkCreateAction() = ApiAction.async(sourceBodyParser) { ctx =>
-    bulkCreate(ctx)
-  }
+  def env: Env
 
   def bulkCreate(ctx: ApiActionContext[Source[ByteString, _]]): Future[Result] = {
+
+    implicit val implEnv = env
+    implicit val implEc = env.otoroshiExecutionContext
+    implicit val implMat = env.otoroshiMaterializer
+
     ctx.request.headers.get("Content-Type") match {
       case Some("application/x-ndjson") => {
         val grouping = ctx.request.getQueryString("_group").map(_.toInt).filter(_ < 10).getOrElse(1)
@@ -145,8 +141,12 @@ abstract class BulkController[Entity, Error](ApiAction: ApiAction, cc: Controlle
     }
   }
 
-  def bulkUpdateAction() = ApiAction.async(sourceBodyParser) { ctx => bulkUpdate(ctx) }
   def bulkUpdate(ctx: ApiActionContext[Source[ByteString, _]]): Future[Result] = {
+
+    implicit val implEnv = env
+    implicit val implEc = env.otoroshiExecutionContext
+    implicit val implMat = env.otoroshiMaterializer
+
     ctx.request.headers.get("Content-Type") match {
       case Some("application/x-ndjson") => {
         val grouping = ctx.request.getQueryString("_group").map(_.toInt).filter(_ < 10).getOrElse(1)
@@ -200,8 +200,12 @@ abstract class BulkController[Entity, Error](ApiAction: ApiAction, cc: Controlle
     }
   }
 
-  def bulkPatchAction() = ApiAction.async(sourceBodyParser) { ctx => bulkPatch(ctx) }
   def bulkPatch(ctx: ApiActionContext[Source[ByteString, _]]): Future[Result] = {
+
+    implicit val implEnv = env
+    implicit val implEc = env.otoroshiExecutionContext
+    implicit val implMat = env.otoroshiMaterializer
+
     ctx.request.headers.get("Content-Type") match {
       case Some("application/x-ndjson") => {
         val grouping = ctx.request.getQueryString("_group").map(_.toInt).filter(_ < 10).getOrElse(1)
@@ -270,8 +274,12 @@ abstract class BulkController[Entity, Error](ApiAction: ApiAction, cc: Controlle
     }
   }
 
-  def bulkDeleteAction() = ApiAction.async(sourceBodyParser) { ctx => bulkDelete(ctx) }
   def bulkDelete(ctx: ApiActionContext[Source[ByteString, _]]): Future[Result] = {
+
+    implicit val implEnv = env
+    implicit val implEc = env.otoroshiExecutionContext
+    implicit val implMat = env.otoroshiMaterializer
+
     ctx.request.headers.get("Content-Type") match {
       case Some("application/x-ndjson") => {
         val grouping = ctx.request.getQueryString("_group").map(_.toInt).filter(_ < 10).getOrElse(1)
@@ -326,18 +334,31 @@ abstract class BulkController[Entity, Error](ApiAction: ApiAction, cc: Controlle
   }
 }
 
-abstract class CrudController[Entity, Error](ApiAction: ApiAction, cc: ControllerComponents)(implicit env: Env) extends AbstractController(cc) with ControllerHelper[Entity, Error] {
+trait BulkControllerHelper[Entity, Error] extends BulkHelper[Entity, Error] {
 
-  implicit private val ec  = env.otoroshiExecutionContext
-  implicit private val mat = env.otoroshiMaterializer
-
-  private val logger = Logger("otoroshi-crud-controller")
-
-  def createAction() = ApiAction.async(parse.json) { ctx =>
-    create(ctx)
+  private val sourceBodyParser = BodyParser("BulkController BodyParser") { _ =>
+    Accumulator.source[ByteString].map(Right.apply)(env.otoroshiExecutionContext)
   }
 
+  def ApiAction: ApiAction
+  def bulkUpdateAction() = ApiAction.async(sourceBodyParser) { ctx => bulkUpdate(ctx) }
+  def bulkCreateAction() = ApiAction.async(sourceBodyParser) { ctx => bulkCreate(ctx) }
+  def bulkPatchAction() = ApiAction.async(sourceBodyParser) { ctx => bulkPatch(ctx) }
+  def bulkDeleteAction() = ApiAction.async(sourceBodyParser) { ctx => bulkDelete(ctx) }
+}
+
+trait CrudHelper[Entity, Error] extends EntityHelper[Entity, Error] {
+
+  import Results._
+
+  def env: Env
+
   def create(ctx: ApiActionContext[JsValue]): Future[Result] = {
+
+    implicit val implEnv = env
+    implicit val implEc = env.otoroshiExecutionContext
+    implicit val implMat = env.otoroshiMaterializer
+
     val body: JsObject = (ctx.request.body \ "id").asOpt[String] match {
       case None    => ctx.request.body.as[JsObject] ++ Json.obj("id" -> IdGenerator.token(64))
       case Some(b) => ctx.request.body.as[JsObject]
@@ -374,11 +395,12 @@ abstract class CrudController[Entity, Error](ApiAction: ApiAction, cc: Controlle
     }
   }
 
-  def findAllEntitiesAction() = ApiAction.async { ctx =>
-    findAllEntities(ctx)
-  }
-
   def findAllEntities(ctx: ApiActionContext[AnyContent]): Future[Result] = {
+
+    implicit val implEnv = env
+    implicit val implEc = env.otoroshiExecutionContext
+    implicit val implMat = env.otoroshiMaterializer
+
     val paginationPage: Int = ctx.request.queryString
       .get("page")
       .flatMap(_.headOption)
@@ -412,11 +434,12 @@ abstract class CrudController[Entity, Error](ApiAction: ApiAction, cc: Controlle
     }
   }
 
-  def findEntityByIdAction(id: String) = ApiAction.async { ctx =>
-    findEntityById(id, ctx)
-  }
-
   def findEntityById(id: String, ctx: ApiActionContext[AnyContent]): Future[Result] = {
+
+    implicit val implEnv = env
+    implicit val implEc = env.otoroshiExecutionContext
+    implicit val implMat = env.otoroshiMaterializer
+
     findByIdOps(id).map {
       case Left(error) => Status(error.status)(Json.obj("error" -> "find_error", "error_description" -> error.bodyAsJson))
       case Right(OptionalEntityAndContext(entity, action, message, metadata, alert)) => entity match {
@@ -440,11 +463,12 @@ abstract class CrudController[Entity, Error](ApiAction: ApiAction, cc: Controlle
     }
   }
 
-  def updateEntityAction(id: String) = ApiAction.async(parse.json) { ctx =>
-    updateEntity(id, ctx)
-  }
-
   def updateEntity(id: String, ctx: ApiActionContext[JsValue]): Future[Result] = {
+
+    implicit val implEnv = env
+    implicit val implEc = env.otoroshiExecutionContext
+    implicit val implMat = env.otoroshiMaterializer
+
     readEntity(ctx.request.body) match {
       case Left(error) =>
         BadRequest(Json.obj("error" -> "bad_entity", "error_description" -> error, "entity" -> ctx.request.body)).future
@@ -480,11 +504,12 @@ abstract class CrudController[Entity, Error](ApiAction: ApiAction, cc: Controlle
     }
   }
 
-  def patchEntityAction(id: String) = ApiAction.async(parse.json) { ctx =>
-    patchEntity(id, ctx)
-  }
-
   def patchEntity(id: String, ctx: ApiActionContext[JsValue]): Future[Result] = {
+
+    implicit val implEnv = env
+    implicit val implEc = env.otoroshiExecutionContext
+    implicit val implMat = env.otoroshiMaterializer
+
     findByIdOps(id).flatMap {
       case Left(error) => NotFound(Json.obj("error" -> "not_found", "error_description" -> "Entity not found")).future
       case Right(OptionalEntityAndContext(option, _, _, _, _)) => option match {
@@ -529,16 +554,12 @@ abstract class CrudController[Entity, Error](ApiAction: ApiAction, cc: Controlle
     }
   }
 
-  def deleteEntityAction(id: String) = ApiAction.async { ctx =>
-    deleteEntities(Seq(id), ctx)
-  }
-
-  def deleteEntitiesAction() = ApiAction.async(parse.json) { ctx =>
-    val ids = (ctx.request.body \ "ids").as[JsArray].value.map(_.as[String])
-    deleteEntities(ids, ctx)
-  }
-
   def deleteEntities(ids: Seq[String], ctx: ApiActionContext[_]): Future[Result] = {
+
+    implicit val implEnv = env
+    implicit val implEc = env.otoroshiExecutionContext
+    implicit val implMat = env.otoroshiMaterializer
+
     Source(ids.toList).mapAsync(1) { id =>
       deleteEntityOps(id).map {
         case Left(error) =>
@@ -587,3 +608,43 @@ abstract class CrudController[Entity, Error](ApiAction: ApiAction, cc: Controlle
     }
   }
 }
+
+trait CrudControllerHelper[Entity, Error] extends CrudHelper[Entity, Error] {
+
+  private val sourceBodyParser = BodyParser("BulkController BodyParser") { _ =>
+    Accumulator.source[ByteString].map(Right.apply)(env.otoroshiExecutionContext)
+  }
+
+  def cc: ControllerComponents
+  def ApiAction: ApiAction
+
+  def createAction() = ApiAction.async(cc.parsers.json) { ctx =>
+    create(ctx)
+  }
+
+  def findAllEntitiesAction() = ApiAction.async { ctx =>
+    findAllEntities(ctx)
+  }
+
+  def findEntityByIdAction(id: String) = ApiAction.async { ctx =>
+    findEntityById(id, ctx)
+  }
+
+  def updateEntityAction(id: String) = ApiAction.async(cc.parsers.json) { ctx =>
+    updateEntity(id, ctx)
+  }
+
+  def patchEntityAction(id: String) = ApiAction.async(cc.parsers.json) { ctx =>
+    patchEntity(id, ctx)
+  }
+
+  def deleteEntityAction(id: String) = ApiAction.async { ctx =>
+    deleteEntities(Seq(id), ctx)
+  }
+
+  def deleteEntitiesAction() = ApiAction.async(cc.parsers.json) { ctx =>
+    val ids = (ctx.request.body \ "ids").as[JsArray].value.map(_.as[String])
+    deleteEntities(ids, ctx)
+  }
+}
+
