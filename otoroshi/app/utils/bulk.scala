@@ -1,6 +1,6 @@
 package utils
 
-import actions.ApiAction
+import actions.{ApiAction, ApiActionContext}
 import akka.stream.scaladsl.{Framing, Source}
 import akka.util.ByteString
 import env.Env
@@ -11,7 +11,7 @@ import play.api.Logger
 import play.api.http.HttpEntity
 import play.api.libs.json._
 import play.api.libs.streams.Accumulator
-import play.api.mvc.{AbstractController, BodyParser, ControllerComponents, RequestHeader}
+import play.api.mvc._
 import security.IdGenerator
 import utils.JsonPatchHelpers.patchJson
 
@@ -87,7 +87,11 @@ abstract class BulkController[Entity, Error](ApiAction: ApiAction, cc: Controlle
     Accumulator.source[ByteString].map(Right.apply)
   }
 
-  def bulkCreate() = ApiAction.async(sourceBodyParser) { ctx =>
+  def bulkCreateAction() = ApiAction.async(sourceBodyParser) { ctx =>
+    bulkCreate(ctx)
+  }
+
+  def bulkCreate(ctx: ApiActionContext[Source[ByteString, _]]): Future[Result] = {
     ctx.request.headers.get("Content-Type") match {
       case Some("application/x-ndjson") => {
         val grouping = ctx.request.getQueryString("_group").map(_.toInt).filter(_ < 10).getOrElse(1)
@@ -141,7 +145,8 @@ abstract class BulkController[Entity, Error](ApiAction: ApiAction, cc: Controlle
     }
   }
 
-  def bulkUpdate() = ApiAction.async(sourceBodyParser) { ctx =>
+  def bulkUpdateAction() = ApiAction.async(sourceBodyParser) { ctx => bulkUpdate(ctx) }
+  def bulkUpdate(ctx: ApiActionContext[Source[ByteString, _]]): Future[Result] = {
     ctx.request.headers.get("Content-Type") match {
       case Some("application/x-ndjson") => {
         val grouping = ctx.request.getQueryString("_group").map(_.toInt).filter(_ < 10).getOrElse(1)
@@ -195,7 +200,8 @@ abstract class BulkController[Entity, Error](ApiAction: ApiAction, cc: Controlle
     }
   }
 
-  def bulkPatch() = ApiAction.async(sourceBodyParser) { ctx =>
+  def bulkPatchAction() = ApiAction.async(sourceBodyParser) { ctx => bulkPatch(ctx) }
+  def bulkPatch(ctx: ApiActionContext[Source[ByteString, _]]): Future[Result] = {
     ctx.request.headers.get("Content-Type") match {
       case Some("application/x-ndjson") => {
         val grouping = ctx.request.getQueryString("_group").map(_.toInt).filter(_ < 10).getOrElse(1)
@@ -264,7 +270,8 @@ abstract class BulkController[Entity, Error](ApiAction: ApiAction, cc: Controlle
     }
   }
 
-  def bulkDelete() = ApiAction.async(sourceBodyParser) { ctx =>
+  def bulkDeleteAction() = ApiAction.async(sourceBodyParser) { ctx => bulkDelete(ctx) }
+  def bulkDelete(ctx: ApiActionContext[Source[ByteString, _]]): Future[Result] = {
     ctx.request.headers.get("Content-Type") match {
       case Some("application/x-ndjson") => {
         val grouping = ctx.request.getQueryString("_group").map(_.toInt).filter(_ < 10).getOrElse(1)
@@ -326,7 +333,11 @@ abstract class CrudController[Entity, Error](ApiAction: ApiAction, cc: Controlle
 
   private val logger = Logger("otoroshi-crud-controller")
 
-  def create() = ApiAction.async(parse.json) { ctx =>
+  def createAction() = ApiAction.async(parse.json) { ctx =>
+    create(ctx)
+  }
+
+  def create(ctx: ApiActionContext[JsValue]): Future[Result] = {
     val body: JsObject = (ctx.request.body \ "id").asOpt[String] match {
       case None    => ctx.request.body.as[JsObject] ++ Json.obj("id" -> IdGenerator.token(64))
       case Some(b) => ctx.request.body.as[JsObject]
@@ -363,7 +374,11 @@ abstract class CrudController[Entity, Error](ApiAction: ApiAction, cc: Controlle
     }
   }
 
-  def findAllEntities() = ApiAction.async { ctx =>
+  def findAllEntitiesAction() = ApiAction.async { ctx =>
+    findAllEntities(ctx)
+  }
+
+  def findAllEntities(ctx: ApiActionContext[AnyContent]): Future[Result] = {
     val paginationPage: Int = ctx.request.queryString
       .get("page")
       .flatMap(_.headOption)
@@ -397,7 +412,11 @@ abstract class CrudController[Entity, Error](ApiAction: ApiAction, cc: Controlle
     }
   }
 
-  def findEntityById(id: String) = ApiAction.async { ctx =>
+  def findEntityByIdAction(id: String) = ApiAction.async { ctx =>
+    findEntityById(id, ctx)
+  }
+
+  def findEntityById(id: String, ctx: ApiActionContext[AnyContent]): Future[Result] = {
     findByIdOps(id).map {
       case Left(error) => Status(error.status)(Json.obj("error" -> "find_error", "error_description" -> error.bodyAsJson))
       case Right(OptionalEntityAndContext(entity, action, message, metadata, alert)) => entity match {
@@ -421,7 +440,11 @@ abstract class CrudController[Entity, Error](ApiAction: ApiAction, cc: Controlle
     }
   }
 
-  def updateEntity(id: String) = ApiAction.async(parse.json) { ctx =>
+  def updateEntityAction(id: String) = ApiAction.async(parse.json) { ctx =>
+    updateEntity(id, ctx)
+  }
+
+  def updateEntity(id: String, ctx: ApiActionContext[JsValue]): Future[Result] = {
     readEntity(ctx.request.body) match {
       case Left(error) =>
         BadRequest(Json.obj("error" -> "bad_entity", "error_description" -> error, "entity" -> ctx.request.body)).future
@@ -457,7 +480,11 @@ abstract class CrudController[Entity, Error](ApiAction: ApiAction, cc: Controlle
     }
   }
 
-  def patchEntity(id: String) = ApiAction.async(parse.json) { ctx =>
+  def patchEntityAction(id: String) = ApiAction.async(parse.json) { ctx =>
+    patchEntity(id, ctx)
+  }
+
+  def patchEntity(id: String, ctx: ApiActionContext[JsValue]): Future[Result] = {
     findByIdOps(id).flatMap {
       case Left(error) => NotFound(Json.obj("error" -> "not_found", "error_description" -> "Entity not found")).future
       case Right(OptionalEntityAndContext(option, _, _, _, _)) => option match {
@@ -502,10 +529,20 @@ abstract class CrudController[Entity, Error](ApiAction: ApiAction, cc: Controlle
     }
   }
 
-  def deleteEntity(id: String) = ApiAction.async(parse.json) { ctx =>
+  def deleteEntityAction(id: String) = ApiAction.async { ctx =>
+    deleteEntities(Seq(id), ctx)
+  }
+
+  def deleteEntitiesAction() = ApiAction.async(parse.json) { ctx =>
+    val ids = (ctx.request.body \ "ids").as[JsArray].value.map(_.as[String])
+    deleteEntities(ids, ctx)
+  }
+
+  def deleteEntities(ids: Seq[String], ctx: ApiActionContext[_]): Future[Result] = {
+    Source(ids.toList).mapAsync(1) { id =>
       deleteEntityOps(id).map {
         case Left(error) =>
-          Status(error.status)(Json.obj( "error" -> "delete_error", "error_description" -> error.bodyAsJson))
+          (id, Some(error))
         case Right(NoEntityAndContext(action, message, meta, alert)) =>
           val event: AdminApiEvent = AdminApiEvent(
             env.snowflakeGenerator.nextIdStr(),
@@ -528,7 +565,25 @@ abstract class CrudController[Entity, Error](ApiAction: ApiAction, cc: Controlle
               ctx.from,
               ctx.ua)
           )
-          Ok(Json.obj("deleted" -> true))
+          (id, None)
       }
+    }.runFold(Seq.empty[(String, Option[ApiError[Error]])]) {
+      case (seq, (id, done)) => seq :+ (id, done)
+    }.map { seq =>
+      if (seq.size == 1) {
+        val (id, done) = seq.head
+        if (done.isEmpty) {
+          Ok(Json.obj("deleted" -> true))
+        } else {
+          val error = done.get
+          Status(error.status)(Json.obj( "error" -> "delete_error", "error_description" -> error.bodyAsJson))
+        }
+      } else {
+        Ok(JsArray(seq.map {
+          case (id, Some(error)) => Json.obj("id" -> id, "error" -> "delete_error", "error_description" -> error.bodyAsJson)
+          case (id, _) => Json.obj("id" -> id, "deleted" -> true)
+        }))
+      }
+    }
   }
 }
