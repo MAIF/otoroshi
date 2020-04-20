@@ -1659,3 +1659,190 @@ object TestRegex {
   val matches = pattern.matcher("FifouFifou1!").matches()
   println(matches)
 }
+
+case class ApiTesterResult(create: Boolean, createBulk: Boolean, findAll: Boolean, findById: Boolean, update: Boolean, updateBulk: Boolean, patch: Boolean, patchBulk: Boolean, delete: Boolean, deleteBulk: Boolean) {
+  def works: Boolean = create && createBulk && findAll && findById && update && updateBulk && patch && patchBulk && delete && deleteBulk
+}
+
+trait ApiTester[Entity] {
+
+  import otoroshi.utils.syntax.implicits._
+
+  private val logger = Logger("otoroshi-api-tester")
+
+  def entityName: String
+  def singleEntity(): Entity
+  def bulkEntities(): Seq[Entity]
+  def route(): String
+  def readEntityFromJson(json: JsValue): Entity
+  def writeEntityToJson(entity: Entity): JsValue
+  def updateEntity(entity: Entity): Entity
+  def patchEntity(entity: Entity): (Entity, JsArray)
+  def extractId(entity: Entity): String
+  def ws: WSClient
+  def port: Int
+
+  def beforeTest()(implicit ec: ExecutionContext): Future[Unit] = FastFuture.successful(())
+  def afterTest()(implicit ec: ExecutionContext): Future[Unit] = FastFuture.successful(())
+
+  private def testCreateEntity(entity: Entity)(implicit ec: ExecutionContext): Future[Boolean] = {
+    val path = route()
+    ws
+      .url(s"http://otoroshi-api.oto.tools:$port$path")
+      .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+      .withHttpHeaders("Content-Type" -> "application/json")
+      .withFollowRedirects(false)
+      .withMethod("POST")
+      .withBody(ByteString(Json.stringify(writeEntityToJson(entity))))
+      .execute()
+      .flatMap { resp =>
+        if (resp.status == 200 || resp.status == 201) {
+          testFindById(entity, "testCreateEntity".some)
+        } else {
+          logger.error(s"[$entityName] testCreateEntity: bad status code: ${resp.status}, expected 201 or 200")
+          logger.error(s"[$entityName] testCreateEntity: ${resp.body}")
+          false.future
+        }
+      }
+  }
+  private def testUpdateEntity(entity: Entity, updatedEntity: Entity)(implicit ec: ExecutionContext): Future[Boolean] = {
+    testFindById(entity, "testUpdateEntity pre".some).flatMap {
+      case false => false.future
+      case true => {
+        val path = route() + "/" + extractId(entity)
+        ws
+          .url(s"http://otoroshi-api.oto.tools:$port$path")
+          .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+          .withHttpHeaders("Content-Type" -> "application/json")
+          .withFollowRedirects(false)
+          .withMethod("PUT")
+          .withBody(ByteString(Json.stringify(writeEntityToJson(updatedEntity))))
+          .execute()
+          .flatMap { resp =>
+            if (resp.status == 200) {
+              testFindById(updatedEntity, "testUpdateEntity".some)
+            } else {
+              logger.error(s"[$entityName] testUpdateEntity: bad status code: ${resp.status}, expected 200")
+              false.future
+            }
+          }
+      }
+    }
+  }
+  private def testPatchEntity(entity: Entity, updatedEntity: (Entity, JsArray))(implicit ec: ExecutionContext): Future[Boolean] = {
+    testFindById(entity, "testPatchEntity pre".some).flatMap {
+      case false => false.future
+      case true => {
+        val path = route() + "/" + extractId(entity)
+        ws
+          .url(s"http://otoroshi-api.oto.tools:$port$path")
+          .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+          .withHttpHeaders("Content-Type" -> "application/json")
+          .withFollowRedirects(false)
+          .withMethod("PATCH")
+          .withBody(ByteString(Json.stringify(updatedEntity._2)))
+          .execute()
+          .flatMap { resp =>
+            if (resp.status == 200 || resp.status == 201) {
+              testFindById(updatedEntity._1, "testPatchEntity".some)
+            } else {
+              logger.error(s"[$entityName] testPatchEntity: bad status code: ${resp.status}, expected 200")
+              false.future
+            }
+          }
+      }
+    }
+  }
+  private def testDeleteEntity(entity: Entity)(implicit ec: ExecutionContext): Future[Boolean] = {
+    testFindById(entity, "testDeleteEntity pre".some).flatMap {
+      case false => false.future
+      case true => {
+        val path = route() + "/" + extractId(entity)
+        ws
+          .url(s"http://otoroshi-api.oto.tools:$port$path")
+          .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+          .withFollowRedirects(false)
+          .withMethod("DELETE")
+          .execute()
+          .flatMap { resp =>
+            if (resp.status == 200 || resp.status == 201) {
+              testFindById(entity, "testDeleteEntity".some).map(v => !v)
+            } else {
+              logger.error(s"[$entityName] testDeleteEntity: bad status code: ${resp.status}, expected 200")
+              false.future
+            }
+          }
+      }
+    }
+  }
+
+  private def testFindAll(entities: Seq[Entity])(implicit ec: ExecutionContext): Future[Boolean] = {
+    val path = route()
+    ws
+      .url(s"http://otoroshi-api.oto.tools:$port$path")
+      .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+      .withFollowRedirects(false)
+      .withMethod("GET")
+      .execute()
+      .map { resp =>
+        if (resp.status == 200) {
+          val arr = resp.json.as[JsArray].value
+          if (arr.isEmpty) logger.info(s"[$entityName] testFindAll: empty collection")
+          val retEntities = arr.map(readEntityFromJson)
+          // logger.info(s"$retEntities - $entities")
+          entities.forall(e => retEntities.contains(e))
+        } else {
+          logger.error(s"[$entityName] testFindAll: bad status code: ${resp.status}, expected 200")
+          false
+        }
+      }
+  }
+
+  private def testFindById(entity: Entity, ctx: Option[String])(implicit ec: ExecutionContext): Future[Boolean] = {
+    val path = route() + "/" + extractId(entity)
+    ws
+      .url(s"http://otoroshi-api.oto.tools:$port$path")
+      .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+      .withFollowRedirects(false)
+      .withMethod("GET")
+      .execute()
+      .map { resp =>
+        if (resp.status == 200) {
+          val retEntity = readEntityFromJson(resp.json)
+          val eq = retEntity == entity
+          if (!eq) logger.info(s"[$entityName] ${ctx.getOrElse("testFindById")}: $retEntity found, expected $entity")
+          eq
+        } else {
+          logger.error(s"[$entityName] testFindById: bad status code: ${resp.status}, expected 200")
+          false
+        }
+      }
+  }
+
+  private def testCreateEntities()(implicit ec: ExecutionContext): Future[Boolean] = true.future
+  private def testPatchEntities()(implicit ec: ExecutionContext): Future[Boolean] = true.future
+  private def testUpdateEntities()(implicit ec: ExecutionContext): Future[Boolean] = true.future
+  private def testDeleteEntities()(implicit ec: ExecutionContext): Future[Boolean] = true.future
+
+  def testApi(implicit ec: ExecutionContext): Future[ApiTesterResult] = {
+
+    for {
+      _ <- beforeTest()
+      entity = singleEntity()
+      updatedEntity = updateEntity(entity)
+      patchedEntity = patchEntity(entity)
+      create <- testCreateEntity(entity)
+      findAll <- testFindAll(Seq(entity))
+      findById <- testFindById(entity, None)
+      update <- testUpdateEntity(entity, updatedEntity)
+      patch <- testPatchEntity(updatedEntity, patchedEntity)
+      delete <- testDeleteEntity(patchedEntity._1)
+
+      createBulk <- testCreateEntities()
+      updateBulk <- testUpdateEntities()
+      patchBulk <- testPatchEntities()
+      deleteBulk <- testDeleteEntities()
+      _ <- afterTest()
+    } yield ApiTesterResult(create, createBulk, findAll, findById, update, updateBulk, patch, patchBulk, delete, deleteBulk)
+  }
+}

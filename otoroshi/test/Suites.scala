@@ -107,7 +107,8 @@ object OtoroshiTests {
         new Version149Spec(name, Configurations.LevelDBConfiguration),
         new Version1410Spec(name, Configurations.LevelDBConfiguration),
         new Version1413Spec(name, Configurations.LevelDBConfiguration),
-        new WebsocketSpec(name, Configurations.LevelDBConfiguration)
+        new WebsocketSpec(name, Configurations.LevelDBConfiguration),
+        new Version150Spec(name, config)
       )
     } else {
       Seq(
@@ -127,7 +128,8 @@ object OtoroshiTests {
         new Version149Spec(name, config),
         new Version1410Spec(name, config),
         new Version1413Spec(name, config),
-        new WebsocketSpec(name, config)
+        new WebsocketSpec(name, config),
+        new Version150Spec(name, config)
       )
     }
     Option(System.getenv("TEST_ANALYTICS")) match {
@@ -151,6 +153,5 @@ class OtoroshiTests extends Suites(OtoroshiTests.getSuites(): _*) with BeforeAnd
 
 class DevOtoroshiTests
     extends Suites(
-      new JWTVerificationSpec("DEV", Configurations.InMemoryConfiguration),
-      new JWTVerificationRefSpec("DEV", Configurations.InMemoryConfiguration),
+      new Version150Spec("DEV", Configurations.InMemoryConfiguration),
     )
