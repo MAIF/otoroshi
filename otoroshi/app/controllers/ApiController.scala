@@ -489,7 +489,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+/*
   def createGroup() = ApiAction.async(parse.json) { ctx =>
     val body: JsObject = (ctx.request.body \ "id").asOpt[String] match {
       case None    => ctx.request.body.as[JsObject] ++ Json.obj("id" -> IdGenerator.token(64))
@@ -734,7 +734,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
       }
     }
   }
-
+*/
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   def createService() = ApiAction.async(parse.json) { ctx =>

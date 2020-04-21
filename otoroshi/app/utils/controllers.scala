@@ -411,7 +411,12 @@ trait CrudHelper[Entity, Error] extends EntityHelper[Entity, Error] {
         .flatMap(_.headOption)
         .map(_.toInt)
         .getOrElse(Int.MaxValue)
+
     val paginationPosition = (paginationPage - 1) * paginationPageSize
+
+    val filters = ctx.request.queryString.mapValues(_.last).filterNot(a => a._1 == "page" || a._1 == "pageSize")
+    val hasFilters = filters.nonEmpty
+
     findAllOps(ctx.request).map {
       case Left(error) => Status(error.status)(Json.obj("error" -> "find_error", "error_description" -> error.bodyAsJson))
       case Right(SeqEntityAndContext(entities, action, message, metadata, _)) => {
@@ -428,7 +433,21 @@ trait CrudHelper[Entity, Error] extends EntityHelper[Entity, Error] {
             metadata
           )
         )
-        Ok(JsArray(entities.drop(paginationPosition).take(paginationPageSize).map(writeEntity)))
+        val jsonElements = entities.drop(paginationPosition).take(paginationPageSize).map(writeEntity)
+        if (hasFilters) {
+          Ok(JsArray(jsonElements.filter { elem =>
+            filters.forall {
+              case (key, value) => (elem \ key).as[JsValue] match {
+                case JsString(v) => v == value
+                case JsBoolean(v) => v == value.toBoolean
+                case JsNumber(v) => v.toDouble == value.toDouble
+                case _ => false
+              }
+            }
+          }))
+        } else {
+          Ok(JsArray(jsonElements))
+        }
       }
     }
   }
