@@ -479,7 +479,7 @@ class ApikeyServiceApiSpec(name: String, configurationSpec: => Configuration)
     }
   }
 
-  override def singleEntity(): ApiKey = env.datastores.apiKeyDataStore.initiateNewApiKey("admin-api-service")
+  override def singleEntity(): ApiKey = env.datastores.apiKeyDataStore.initiateNewApiKey("admin-api-group")
   override def entityName: String = "ApiKey"
   override def bulkEntities(): Seq[ApiKey] = Seq.empty
   override def route(): String = "/api/services/admin-api-service/apikeys"
