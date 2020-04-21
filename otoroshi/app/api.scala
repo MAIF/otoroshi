@@ -123,6 +123,7 @@ class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfi
   lazy val templatesController       = wire[TemplatesController]
 
   lazy val serviceGroupController    = wire[ServiceGroupController]
+  lazy val jwtVerifierController     = wire[JwtVerifierController]
 
   override lazy val assets: Assets = wire[Assets]
 

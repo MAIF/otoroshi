@@ -2404,7 +2404,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+/*
   def findAllGlobalJwtVerifiers() = ApiAction.async { ctx =>
     env.datastores.globalJwtVerifierDataStore.findAll().map(all => Ok(JsArray(all.map(_.asJson))))
   }
@@ -2469,7 +2469,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
   def deleteGlobalJwtVerifier(id: String) = ApiAction.async { ctx =>
     env.datastores.globalJwtVerifierDataStore.delete(id).map(_ => Ok(Json.obj("deleted" -> true)))
   }
-
+*/
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   def findAllGlobalAuthModules() = ApiAction.async { ctx =>
