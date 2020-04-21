@@ -1682,19 +1682,27 @@ trait ApiTester[Entity] {
   def ws: WSClient
   def port: Int
 
+  def testingBulk: Boolean = true
+
   def beforeTest()(implicit ec: ExecutionContext): Future[Unit] = FastFuture.successful(())
   def afterTest()(implicit ec: ExecutionContext): Future[Unit] = FastFuture.successful(())
 
-  private def assertBodyJson(expected: JsValue, result: JsValue, name: String): Unit = {
+  private def assertBodyJson(expected: JsValue, result: JsValue, name: String): Boolean = {
     if (result != expected) {
-      logger.error(s"[$entityName] $name: expected body not match")
+      logger.error(s"[$entityName] $name: expected body does not match - ${Json.stringify(expected)} / ${Json.stringify(result)}")
+      false
+    } else {
+      true
     }
   }
 
-  private def assertBody(expected: Entity, result: JsValue, name: String): Unit = {
+  private def assertBody(expected: Entity, result: JsValue, name: String): Boolean = {
     val resEntity = readEntityFromJson(result)
     if (resEntity != expected) {
-      logger.error(s"[$entityName] $name: expected entity not match")
+      logger.error(s"[$entityName] $name: expected entity does not match")
+      false
+    } else {
+      true
     }
   }
 
@@ -1710,8 +1718,11 @@ trait ApiTester[Entity] {
       .execute()
       .flatMap { resp =>
         if (resp.status == 200 || resp.status == 201) {
-          assertBody(entity, resp.json, "testCreateEntity")
-          testFindById(entity, "testCreateEntity".some)
+          if (assertBody(entity, resp.json, "testCreateEntity")) {
+            testFindById(entity, "testCreateEntity".some)
+          } else {
+            false.future
+          }
         } else {
           logger.error(s"[$entityName] testCreateEntity: bad status code: ${resp.status}, expected 201 or 200")
           logger.error(s"[$entityName] testCreateEntity: ${resp.body}")
@@ -1734,8 +1745,11 @@ trait ApiTester[Entity] {
           .execute()
           .flatMap { resp =>
             if (resp.status == 200) {
-              assertBody(updatedEntity, resp.json, "testUpdateEntity")
-              testFindById(updatedEntity, "testUpdateEntity".some)
+              if (assertBody(updatedEntity, resp.json, "testUpdateEntity")) {
+                testFindById(updatedEntity, "testUpdateEntity".some)
+              } else {
+                false.future
+              }
             } else {
               logger.error(s"[$entityName] testUpdateEntity: bad status code: ${resp.status}, expected 200")
               false.future
@@ -1759,8 +1773,11 @@ trait ApiTester[Entity] {
           .execute()
           .flatMap { resp =>
             if (resp.status == 200 || resp.status == 201) {
-              assertBody(updatedEntity._1, resp.json, "testPatchEntity")
-              testFindById(updatedEntity._1, "testPatchEntity".some)
+              if (assertBody(updatedEntity._1, resp.json, "testPatchEntity")) {
+                testFindById(updatedEntity._1, "testPatchEntity".some)
+              } else {
+                false.future
+              }
             } else {
               logger.error(s"[$entityName] testPatchEntity: bad status code: ${resp.status}, expected 200")
               false.future
@@ -1782,8 +1799,11 @@ trait ApiTester[Entity] {
           .execute()
           .flatMap { resp =>
             if (resp.status == 200 || resp.status == 201) {
-              assertBodyJson(Json.obj("deleted" -> true), resp.json, "testDeleteEntity")
-              testFindById(entity, "testDeleteEntity".some).map(v => !v)
+              if (assertBodyJson(Json.obj("deleted" -> true), resp.json, "testDeleteEntity")) {
+                testFindById(entity, "testDeleteEntity".some).map(v => !v)
+              } else {
+                false.future
+              }
             } else {
               logger.error(s"[$entityName] testDeleteEntity: bad status code: ${resp.status}, expected 200")
               false.future
@@ -1856,10 +1876,10 @@ trait ApiTester[Entity] {
       patch <- testPatchEntity(updatedEntity, patchedEntity)
       delete <- testDeleteEntity(patchedEntity._1)
 
-      createBulk <- testCreateEntities()
-      updateBulk <- testUpdateEntities()
-      patchBulk <- testPatchEntities()
-      deleteBulk <- testDeleteEntities()
+      createBulk <- if (testingBulk) testCreateEntities() else true.future
+      updateBulk <- if (testingBulk) testUpdateEntities() else true.future
+      patchBulk <-  if (testingBulk) testPatchEntities()  else true.future
+      deleteBulk <- if (testingBulk) testDeleteEntities() else true.future
 
       _ <- afterTest()
     } yield ApiTesterResult(create, createBulk, findAll, findById, update, updateBulk, patch, patchBulk, delete, deleteBulk)

@@ -1709,6 +1709,18 @@ sealed trait ClientCertificateValidationDataStore extends BasicStore[ClientCerti
   def getValidation(key: String)(implicit ec: ExecutionContext, env: Env): Future[Option[Boolean]]
   def setValidation(key: String, value: Boolean, ttl: Long)(implicit ec: ExecutionContext, env: Env): Future[Boolean]
   def removeValidation(key: String)(implicit ec: ExecutionContext, env: Env): Future[Long]
+  def template: ClientCertificateValidator = {
+    ClientCertificateValidator(
+      id = IdGenerator.token,
+      name = "validator",
+      description = "A client certificate validator",
+      url = "https://validator.oto.tools:8443",
+      host = "validator.oto.tools",
+      noCache = false,
+      alwaysValid = false,
+      proxy = None
+    )
+  }
 }
 
 class KvClientCertificateValidationDataStore(redisCli: RedisLike, env: Env)
@@ -2114,7 +2126,7 @@ class ClientValidatorsController(ApiAction: ApiAction, cc: ControllerComponents)
   }
 
   def deleteClientValidator(id: String) = ApiAction.async { ctx =>
-    env.datastores.clientCertificateValidationDataStore.delete(id).map(_ => Ok(Json.obj("done" -> true)))
+    env.datastores.clientCertificateValidationDataStore.delete(id).map(_ => Ok(Json.obj("deleted" -> true)))
   }
 
 }

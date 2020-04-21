@@ -108,7 +108,16 @@ object OtoroshiTests {
         new Version1410Spec(name, Configurations.LevelDBConfiguration),
         new Version1413Spec(name, Configurations.LevelDBConfiguration),
         new WebsocketSpec(name, Configurations.LevelDBConfiguration),
-        new Version150Spec(name, config)
+        new ServiceGroupApiSpec(name, config),
+        new TcpServiceApiSpec(name, config),
+        new ScriptApiSpec(name, config),
+        new AuthModuleConfigApiSpec(name, config),
+        new ClientValidatorApiSpec(name, config),
+        new JWTVerifierApiSpec(name, config),
+        new CertificateApiSpec(name, config),
+        new ServicesApiSpec(name, config),
+        new ApikeyGroupApiSpec(name, config),
+        new ApikeyServiceApiSpec(name, config),
       )
     } else {
       Seq(
@@ -129,7 +138,16 @@ object OtoroshiTests {
         new Version1410Spec(name, config),
         new Version1413Spec(name, config),
         new WebsocketSpec(name, config),
-        new Version150Spec(name, config)
+        new ServiceGroupApiSpec(name, config),
+        new TcpServiceApiSpec(name, config),
+        new ScriptApiSpec(name, config),
+        new AuthModuleConfigApiSpec(name, config),
+        new ClientValidatorApiSpec(name, config),
+        new JWTVerifierApiSpec(name, config),
+        new CertificateApiSpec(name, config),
+        new ServicesApiSpec(name, config),
+        new ApikeyGroupApiSpec(name, config),
+        new ApikeyServiceApiSpec(name, config),
       )
     }
     Option(System.getenv("TEST_ANALYTICS")) match {
@@ -153,5 +171,14 @@ class OtoroshiTests extends Suites(OtoroshiTests.getSuites(): _*) with BeforeAnd
 
 class DevOtoroshiTests
     extends Suites(
-      new Version150Spec("DEV", Configurations.InMemoryConfiguration),
+      // new ServiceGroupApiSpec("DEV", Configurations.InMemoryConfiguration),
+      // new TcpServiceApiSpec("DEV", Configurations.InMemoryConfiguration),
+      // new ScriptApiSpec("DEV", Configurations.InMemoryConfiguration),
+      // new AuthModuleConfigApiSpec("DEV", Configurations.InMemoryConfiguration),
+      // new ClientValidatorApiSpec("DEV", Configurations.InMemoryConfiguration),
+      // new JWTVerifierApiSpec("DEV", Configurations.InMemoryConfiguration),
+      // new CertificateApiSpec("DEV", Configurations.InMemoryConfiguration),
+      // new ApikeyGroupApiSpec("DEV", Configurations.InMemoryConfiguration),
+      new ApikeyServiceApiSpec("DEV", Configurations.InMemoryConfiguration),
+      // new ServicesApiSpec("DEV", Configurations.InMemoryConfiguration),
     )

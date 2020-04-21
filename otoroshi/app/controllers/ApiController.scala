@@ -2467,7 +2467,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
   }
 
   def deleteGlobalJwtVerifier(id: String) = ApiAction.async { ctx =>
-    env.datastores.globalJwtVerifierDataStore.delete(id).map(_ => Ok(Json.obj("done" -> true)))
+    env.datastores.globalJwtVerifierDataStore.delete(id).map(_ => Ok(Json.obj("deleted" -> true)))
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -2534,7 +2534,7 @@ class ApiController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: 
   }
 
   def deleteGlobalAuthModule(id: String) = ApiAction.async { ctx =>
-    env.datastores.authConfigsDataStore.delete(id).map(_ => Ok(Json.obj("done" -> true)))
+    env.datastores.authConfigsDataStore.delete(id).map(_ => Ok(Json.obj("deleted" -> true)))
   }
 
   def startRegistration(id: String) = ApiAction.async { ctx =>

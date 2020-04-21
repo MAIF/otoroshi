@@ -2564,6 +2564,8 @@ object ServiceDescriptorDataStore {
 
 trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
 
+  def template()(implicit env: Env): ServiceDescriptor = initiateNewDescriptor()
+
   def initiateNewDescriptor()(implicit env: Env): ServiceDescriptor = {
     val (subdomain, envir, domain) = env.staticExposedDomain.map { v =>
       ServiceLocation.fullQuery(v, env.datastores.globalConfigDataStore.latest()(env.otoroshiExecutionContext, env)) match {

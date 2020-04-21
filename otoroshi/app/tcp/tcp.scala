@@ -1024,7 +1024,7 @@ class TcpServiceApiController(ApiAction: ApiAction, cc: ControllerComponents)(
 
   def deleteTcpService(id: String) = ApiAction.async { ctx =>
     env.datastores.tcpServiceDataStore.delete(id).map { _ =>
-      Ok(Json.obj("done" -> true))
+      Ok(Json.obj("deleted" -> true))
     }
   }
 }

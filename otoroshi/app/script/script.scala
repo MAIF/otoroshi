@@ -1470,7 +1470,7 @@ class ScriptApiController(ApiAction: ApiAction, cc: ControllerComponents)(
     OnlyIfScriptingEnabled {
       env.datastores.scriptDataStore.delete(id).map { _ =>
         env.scriptManager.removeScript(id)
-        Ok(Json.obj("done" -> true))
+        Ok(Json.obj("deleted" -> true))
       }
     }
   }
