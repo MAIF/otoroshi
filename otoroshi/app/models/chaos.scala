@@ -50,9 +50,13 @@ object LargeRequestFaultConfig {
     override def reads(json: JsValue): JsResult[LargeRequestFaultConfig] =
       Try {
         JsSuccess(
+          //LargeRequestFaultConfig(
+          //  ratio = (json \ "ratio").asOpt[Double].getOrElse(0.2),
+          //  additionalRequestSize = (json \ "additionalRequestSize").asOpt[Int].getOrElse(0)
+          //)
           LargeRequestFaultConfig(
-            ratio = (json \ "ratio").asOpt[Double].getOrElse(0.2),
-            additionalRequestSize = (json \ "additionalRequestSize").asOpt[Int].getOrElse(0)
+            ratio = (json \ "ratio").as[Double],
+            additionalRequestSize = (json \ "additionalRequestSize").as[Int]
           )
         )
       } recover {
@@ -72,9 +76,13 @@ object LargeResponseFaultConfig {
     override def reads(json: JsValue): JsResult[LargeResponseFaultConfig] =
       Try {
         JsSuccess(
+          // LargeResponseFaultConfig(
+          //   ratio = (json \ "ratio").asOpt[Double].getOrElse(0.2),
+          //   additionalResponseSize = (json \ "additionalResponseSize").asOpt[Int].getOrElse(0)
+          // )
           LargeResponseFaultConfig(
-            ratio = (json \ "ratio").asOpt[Double].getOrElse(0.2),
-            additionalResponseSize = (json \ "additionalResponseSize").asOpt[Int].getOrElse(0)
+            ratio = (json \ "ratio").as[Double],
+            additionalResponseSize = (json \ "additionalResponseSize").as[Int]
           )
         )
       } recover {
@@ -94,11 +102,17 @@ object LatencyInjectionFaultConfig {
     override def reads(json: JsValue): JsResult[LatencyInjectionFaultConfig] =
       Try {
         JsSuccess(
+          // LatencyInjectionFaultConfig(
+          //   ratio = (json \ "ratio").asOpt[Double].getOrElse(0.2),
+          //   from =
+          //     (json \ "from").asOpt(SnowMonkeyConfig.durationFmt).getOrElse(FiniteDuration(0, TimeUnit.MILLISECONDS)),
+          //   to = (json \ "to").asOpt(SnowMonkeyConfig.durationFmt).getOrElse(FiniteDuration(0, TimeUnit.MILLISECONDS))
+          // )
           LatencyInjectionFaultConfig(
-            ratio = (json \ "ratio").asOpt[Double].getOrElse(0.2),
+            ratio = (json \ "ratio").as[Double],
             from =
-              (json \ "from").asOpt(SnowMonkeyConfig.durationFmt).getOrElse(FiniteDuration(0, TimeUnit.MILLISECONDS)),
-            to = (json \ "to").asOpt(SnowMonkeyConfig.durationFmt).getOrElse(FiniteDuration(0, TimeUnit.MILLISECONDS))
+              (json \ "from").as(SnowMonkeyConfig.durationFmt),
+            to = (json \ "to").as(SnowMonkeyConfig.durationFmt)
           )
         )
       } recover {
@@ -119,9 +133,13 @@ object BadResponsesFaultConfig {
     override def reads(json: JsValue): JsResult[BadResponsesFaultConfig] =
       Try {
         JsSuccess(
+          // BadResponsesFaultConfig(
+          //   ratio = (json \ "ratio").asOpt[Double].getOrElse(0.2),
+          //   responses = (json \ "responses").asOpt(Reads.seq(BadResponse.fmt)).getOrElse(Seq.empty)
+          // )
           BadResponsesFaultConfig(
-            ratio = (json \ "ratio").asOpt[Double].getOrElse(0.2),
-            responses = (json \ "responses").asOpt(Reads.seq(BadResponse.fmt)).getOrElse(Seq.empty)
+            ratio = (json \ "ratio").as[Double],
+            responses = (json \ "responses").as(Reads.seq(BadResponse.fmt))
           )
         )
       } recover {
@@ -148,6 +166,8 @@ object ChaosConfig {
   val _fmt: Format[ChaosConfig] = new Format[ChaosConfig] {
     override def reads(json: JsValue): JsResult[ChaosConfig] = {
       Try {
+        // new Throwable().printStackTrace()
+        // println("reads: " + Json.prettyPrint(json))
         ChaosConfig(
           enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
           largeRequestFaultConfig =
@@ -167,13 +187,16 @@ object ChaosConfig {
           JsError(t.getMessage)
       } get
     }
-    override def writes(o: ChaosConfig): JsValue = Json.obj(
-      "enabled"                     -> o.enabled,
-      "largeRequestFaultConfig"     -> o.largeRequestFaultConfig.map(_.asJson).getOrElse(JsNull).as[JsValue],
-      "largeResponseFaultConfig"    -> o.largeResponseFaultConfig.map(_.asJson).getOrElse(JsNull).as[JsValue],
-      "latencyInjectionFaultConfig" -> o.latencyInjectionFaultConfig.map(_.asJson).getOrElse(JsNull).as[JsValue],
-      "badResponsesFaultConfig"     -> o.badResponsesFaultConfig.map(_.asJson).getOrElse(JsNull).as[JsValue],
-    )
+    override def writes(o: ChaosConfig): JsValue = {
+      // println("write " + o)
+      Json.obj(
+        "enabled"                     -> o.enabled,
+        "largeRequestFaultConfig"     -> o.largeRequestFaultConfig.map(_.asJson).getOrElse(JsNull).as[JsValue],
+        "largeResponseFaultConfig"    -> o.largeResponseFaultConfig.map(_.asJson).getOrElse(JsNull).as[JsValue],
+        "latencyInjectionFaultConfig" -> o.latencyInjectionFaultConfig.map(_.asJson).getOrElse(JsNull).as[JsValue],
+        "badResponsesFaultConfig"     -> o.badResponsesFaultConfig.map(_.asJson).getOrElse(JsNull).as[JsValue],
+      )
+    }
   }
 }
 

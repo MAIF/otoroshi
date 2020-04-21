@@ -1697,6 +1697,7 @@ trait ApiTester[Entity] {
   }
 
   private def assertBody(expected: Entity, result: JsValue, name: String): Boolean = {
+    //if (result != writeEntityToJson(expected)) {
     val resEntity = readEntityFromJson(result)
     if (resEntity != expected) {
       logger.error(s"[$entityName] $name: expected entity does not match")
