@@ -2,6 +2,7 @@ import actions._
 import cluster.ClusterController
 import com.softwaremill.macwire._
 import controllers._
+import controllers.adminapi._
 import env.Env
 import gateway._
 import modules._

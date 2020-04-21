@@ -7,6 +7,7 @@ import cluster.ClusterController
 import com.softwaremill.macwire.wire
 import com.typesafe.config.{Config, ConfigFactory}
 import controllers._
+import controllers.adminapi._
 import env._
 import gateway._
 import otoroshi.script.ScriptApiController
