@@ -1685,6 +1685,19 @@ trait ApiTester[Entity] {
   def beforeTest()(implicit ec: ExecutionContext): Future[Unit] = FastFuture.successful(())
   def afterTest()(implicit ec: ExecutionContext): Future[Unit] = FastFuture.successful(())
 
+  private def assertBodyJson(expected: JsValue, result: JsValue, name: String): Unit = {
+    if (result != expected) {
+      logger.error(s"[$entityName] $name: expected body not match")
+    }
+  }
+
+  private def assertBody(expected: Entity, result: JsValue, name: String): Unit = {
+    val resEntity = readEntityFromJson(result)
+    if (resEntity != expected) {
+      logger.error(s"[$entityName] $name: expected entity not match")
+    }
+  }
+
   private def testCreateEntity(entity: Entity)(implicit ec: ExecutionContext): Future[Boolean] = {
     val path = route()
     ws
@@ -1697,6 +1710,7 @@ trait ApiTester[Entity] {
       .execute()
       .flatMap { resp =>
         if (resp.status == 200 || resp.status == 201) {
+          assertBody(entity, resp.json, "testCreateEntity")
           testFindById(entity, "testCreateEntity".some)
         } else {
           logger.error(s"[$entityName] testCreateEntity: bad status code: ${resp.status}, expected 201 or 200")
@@ -1720,6 +1734,7 @@ trait ApiTester[Entity] {
           .execute()
           .flatMap { resp =>
             if (resp.status == 200) {
+              assertBody(updatedEntity, resp.json, "testUpdateEntity")
               testFindById(updatedEntity, "testUpdateEntity".some)
             } else {
               logger.error(s"[$entityName] testUpdateEntity: bad status code: ${resp.status}, expected 200")
@@ -1744,6 +1759,7 @@ trait ApiTester[Entity] {
           .execute()
           .flatMap { resp =>
             if (resp.status == 200 || resp.status == 201) {
+              assertBody(updatedEntity._1, resp.json, "testPatchEntity")
               testFindById(updatedEntity._1, "testPatchEntity".some)
             } else {
               logger.error(s"[$entityName] testPatchEntity: bad status code: ${resp.status}, expected 200")
@@ -1766,6 +1782,7 @@ trait ApiTester[Entity] {
           .execute()
           .flatMap { resp =>
             if (resp.status == 200 || resp.status == 201) {
+              assertBodyJson(Json.obj("deleted" -> true), resp.json, "testDeleteEntity")
               testFindById(entity, "testDeleteEntity".some).map(v => !v)
             } else {
               logger.error(s"[$entityName] testDeleteEntity: bad status code: ${resp.status}, expected 200")
@@ -1828,6 +1845,7 @@ trait ApiTester[Entity] {
 
     for {
       _ <- beforeTest()
+
       entity = singleEntity()
       updatedEntity = updateEntity(entity)
       patchedEntity = patchEntity(entity)
@@ -1842,6 +1860,7 @@ trait ApiTester[Entity] {
       updateBulk <- testUpdateEntities()
       patchBulk <- testPatchEntities()
       deleteBulk <- testDeleteEntities()
+
       _ <- afterTest()
     } yield ApiTesterResult(create, createBulk, findAll, findById, update, updateBulk, patch, patchBulk, delete, deleteBulk)
   }
