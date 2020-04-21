@@ -179,6 +179,6 @@ class DevOtoroshiTests
       // new JWTVerifierApiSpec("DEV", Configurations.InMemoryConfiguration),
       // new CertificateApiSpec("DEV", Configurations.InMemoryConfiguration),
       // new ApikeyGroupApiSpec("DEV", Configurations.InMemoryConfiguration),
-      new ApikeyServiceApiSpec("DEV", Configurations.InMemoryConfiguration),
-      // new ServicesApiSpec("DEV", Configurations.InMemoryConfiguration),
+      // new ApikeyServiceApiSpec("DEV", Configurations.InMemoryConfiguration),
+      new ServicesApiSpec("DEV", Configurations.InMemoryConfiguration),
     )
