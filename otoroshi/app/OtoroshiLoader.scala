@@ -85,6 +85,8 @@ package object modules {
     lazy val usersController           = wire[UsersController]
     lazy val templatesController       = wire[TemplatesController]
 
+    lazy val serviceGroupController    = wire[ServiceGroupController]
+
     override lazy val assets: Assets = wire[Assets]
     lazy val router: Router = {
       // add the prefix string in local scope for the Routes constructor

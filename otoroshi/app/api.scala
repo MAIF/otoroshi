@@ -122,6 +122,8 @@ class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfi
   lazy val usersController           = wire[UsersController]
   lazy val templatesController       = wire[TemplatesController]
 
+  lazy val serviceGroupController    = wire[ServiceGroupController]
+
   override lazy val assets: Assets = wire[Assets]
 
   lazy val router: Router = {
