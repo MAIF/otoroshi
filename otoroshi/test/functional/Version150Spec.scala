@@ -385,11 +385,7 @@ class ServicesApiSpec(name: String, configurationSpec: => Configuration)
     }
   }
 
-  override def singleEntity(): ServiceDescriptor = {
-    val a = env.datastores.serviceDescriptorDataStore.template()(env)
-    println(a.chaosConfig)
-    a
-  }
+  override def singleEntity(): ServiceDescriptor = env.datastores.serviceDescriptorDataStore.template()(env)
   override def entityName: String = "ServiceDescriptor"
   override def bulkEntities(): Seq[ServiceDescriptor] = Seq.empty
   override def route(): String = "/api/services"

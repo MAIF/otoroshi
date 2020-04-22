@@ -166,8 +166,6 @@ object ChaosConfig {
   val _fmt: Format[ChaosConfig] = new Format[ChaosConfig] {
     override def reads(json: JsValue): JsResult[ChaosConfig] = {
       Try {
-        // new Throwable().printStackTrace()
-        // println("reads: " + Json.prettyPrint(json))
         ChaosConfig(
           enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
           largeRequestFaultConfig =
@@ -188,7 +186,6 @@ object ChaosConfig {
       } get
     }
     override def writes(o: ChaosConfig): JsValue = {
-      // println("write " + o)
       Json.obj(
         "enabled"                     -> o.enabled,
         "largeRequestFaultConfig"     -> o.largeRequestFaultConfig.map(_.asJson).getOrElse(JsNull).as[JsValue],
