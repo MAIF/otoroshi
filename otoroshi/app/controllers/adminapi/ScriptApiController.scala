@@ -7,14 +7,13 @@ import otoroshi.script._
 import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.streams.Accumulator
-import play.api.mvc.{AbstractController, BodyParser, ControllerComponents, Result}
-import security.IdGenerator
+import play.api.mvc._
+import utils._
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
-class ScriptApiController(ApiAction: ApiAction, cc: ControllerComponents)(
-  implicit env: Env
-) extends AbstractController(cc) {
+class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents)(implicit val env: Env)
+  extends AbstractController(cc) with BulkControllerHelper[Script, JsValue] with CrudControllerHelper[Script, JsValue] {
 
   import utils.future.Implicits._
 
@@ -31,12 +30,6 @@ class ScriptApiController(ApiAction: ApiAction, cc: ControllerComponents)(
     env.scriptingEnabled match {
       case true  => f
       case false => InternalServerError(Json.obj("error" -> "Scripting not enabled !")).asFuture
-    }
-  }
-
-  def findAllScripts() = ApiAction.async { ctx =>
-    OnlyIfScriptingEnabled {
-      env.datastores.scriptDataStore.findAll().map(all => Ok(JsArray(all.map(_.toJson))))
     }
   }
 
@@ -147,6 +140,116 @@ class ScriptApiController(ApiAction: ApiAction, cc: ControllerComponents)(
     }
   }
 
+  def compileScript() = ApiAction.async(sourceBodyParser) { ctx =>
+    OnlyIfScriptingEnabled {
+      ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { body =>
+        val code = Json.parse(body.utf8String).\("code").as[String]
+        env.scriptCompiler.compile(code).map {
+          case Left(err) => Ok(Json.obj("done" -> true, "error" -> err))
+          case Right(_)  => Ok(Json.obj("done" -> true))
+        }
+      }
+    }
+  }
+
+  override def readEntity(json: JsValue): Either[String, Script] = Script._fmt.reads(json).asEither match {
+    case Left(e) => Left(e.toString())
+    case Right(r) => Right(r)
+  }
+
+  override def writeEntity(entity: Script): JsValue = Script._fmt.writes(entity)
+
+  override def findByIdOps(id: String)(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], OptionalEntityAndContext[Script]]] = {
+    env.datastores.scriptDataStore.findById(id).map { opt =>
+      Right(OptionalEntityAndContext(
+        entity = opt,
+        action = "ACCESS_SCRIPT",
+        message = "User accessed a script",
+        metadata = Json.obj("ScriptId" -> id),
+        alert = "ScriptAccessed"
+      ))
+    }
+  }
+
+  override def findAllOps(req: RequestHeader)(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], SeqEntityAndContext[Script]]] = {
+    env.datastores.scriptDataStore.findAll().map { seq =>
+      Right(SeqEntityAndContext(
+        entity = seq,
+        action = "ACCESS_ALL_SCRIPTS",
+        message = "User accessed all scripts",
+        metadata = Json.obj(),
+        alert = "ScriptsAccessed"
+      ))
+    }
+  }
+
+  override def createEntityOps(entity: Script)(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[Script]]] = {
+    env.datastores.scriptDataStore.set(entity).map {
+      case true => {
+        Right(EntityAndContext(
+          entity = entity,
+          action = "CREATE_SCRIPT",
+          message = "User created a script",
+          metadata = entity.toJson.as[JsObject],
+          alert = "ScriptCreatedAlert"
+        ))
+      }
+      case false => {
+        Left(JsonApiError(
+          500,
+          Json.obj("error" -> "Script not stored ...")
+        ))
+      }
+    }
+  }
+
+  override def updateEntityOps(entity: Script)(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[Script]]] = {
+    env.datastores.scriptDataStore.set(entity).map {
+      case true => {
+        Right(EntityAndContext(
+          entity = entity,
+          action = "UPDATE_SCRIPT",
+          message = "User updated a script",
+          metadata = entity.toJson.as[JsObject],
+          alert = "ScriptUpdatedAlert"
+        ))
+      }
+      case false => {
+        Left(JsonApiError(
+          500,
+          Json.obj("error" -> "Script not stored ...")
+        ))
+      }
+    }
+  }
+
+  override def deleteEntityOps(id: String)(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], NoEntityAndContext[Script]]] = {
+    env.datastores.scriptDataStore.delete(id).map {
+      case true => {
+        Right(NoEntityAndContext(
+          action = "DELETE_SCRIPT",
+          message = "User deleted a Script",
+          metadata = Json.obj("ScriptId" -> id),
+          alert = "ScriptDeletedAlert"
+        ))
+      }
+      case false => {
+        Left(JsonApiError(
+          500,
+          Json.obj("error" -> "Script not deleted ...")
+        ))
+      }
+    }
+  }
+
+  /*
+
+  def findAllScripts() = ApiAction.async { ctx =>
+    OnlyIfScriptingEnabled {
+      env.datastores.scriptDataStore.findAll().map(all => Ok(JsArray(all.map(_.toJson))))
+    }
+  }
+
   def findScriptById(id: String) = ApiAction.async { ctx =>
     OnlyIfScriptingEnabled {
       env.datastores.scriptDataStore.findById(id).map {
@@ -159,17 +262,7 @@ class ScriptApiController(ApiAction: ApiAction, cc: ControllerComponents)(
     }
   }
 
-  def compileScript() = ApiAction.async(sourceBodyParser) { ctx =>
-    OnlyIfScriptingEnabled {
-      ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { body =>
-        val code = Json.parse(body.utf8String).\("code").as[String]
-        env.scriptCompiler.compile(code).map {
-          case Left(err) => Ok(Json.obj("done" -> true, "error" -> err))
-          case Right(_)  => Ok(Json.obj("done" -> true))
-        }
-      }
-    }
-  }
+
 
   def createScript() = ApiAction.async(parse.json) { ctx =>
     OnlyIfScriptingEnabled {
@@ -241,4 +334,5 @@ class ScriptApiController(ApiAction: ApiAction, cc: ControllerComponents)(
       }
     }
   }
+  */
 }

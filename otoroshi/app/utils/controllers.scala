@@ -394,6 +394,8 @@ trait CrudHelper[Entity, Error] extends EntityHelper[Entity, Error] {
     }
   }
 
+  def filterPrefix: Option[String] = "filter.".some
+
   def findAllEntities(ctx: ApiActionContext[AnyContent]): Future[Result] = {
 
     implicit val implEnv = env
@@ -413,8 +415,11 @@ trait CrudHelper[Entity, Error] extends EntityHelper[Entity, Error] {
         .getOrElse(Int.MaxValue)
 
     val paginationPosition = (paginationPage - 1) * paginationPageSize
-
-    val filters = ctx.request.queryString.mapValues(_.last).filterNot(a => a._1 == "page" || a._1 == "pageSize")
+    val prefix = filterPrefix
+    val filters = ctx.request.queryString.mapValues(_.last).collect {
+      case v if prefix.isEmpty => v
+      case v if prefix.isDefined && v._1.startsWith(prefix.get) => (v._1.replace(prefix.get, ""), v._2)
+    }.filterNot(a => a._1 == "page" || a._1 == "pageSize")
     val hasFilters = filters.nonEmpty
 
     findAllOps(ctx.request).map {
