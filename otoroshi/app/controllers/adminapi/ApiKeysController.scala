@@ -794,4 +794,6 @@ class ApiKeysController(val ApiAction: ApiAction, val cc: ControllerComponents)(
       }
     }
   }
+
+  override def extractId(entity: ApiKey): String = entity.clientId
 }

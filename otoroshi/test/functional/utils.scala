@@ -12,9 +12,10 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.ws.{Message, TextMessage, UpgradeToWebSocket}
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
-import akka.stream.scaladsl.{Flow, Source}
+import akka.stream.scaladsl.{Flow, Framing, Sink, Source}
 import akka.util.ByteString
 import com.typesafe.config.ConfigFactory
+import env.Env
 import models._
 import modules.OtoroshiComponentsInstances
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
@@ -31,7 +32,7 @@ import play.core.server.ServerConfig
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future, Promise}
-import scala.util.{Random, Try}
+import scala.util.{Random, Success, Try}
 
 trait AddConfiguration {
   def getConfiguration(configuration: Configuration): Configuration
@@ -1672,7 +1673,11 @@ trait ApiTester[Entity] {
 
   def entityName: String
   def singleEntity(): Entity
-  def bulkEntities(): Seq[Entity]
+  def bulkEntities(): Seq[Entity] = Seq(
+    singleEntity(),
+    singleEntity(),
+    singleEntity(),
+  )
   def route(): String
   def readEntityFromJson(json: JsValue): Entity
   def writeEntityToJson(entity: Entity): JsValue
@@ -1680,6 +1685,7 @@ trait ApiTester[Entity] {
   def patchEntity(entity: Entity): (Entity, JsArray)
   def extractId(entity: Entity): String
   def ws: WSClient
+  def env: Env
   def port: Int
 
   def testingBulk: Boolean = true
@@ -1704,6 +1710,34 @@ trait ApiTester[Entity] {
       false
     } else {
       true
+    }
+  }
+
+  private def assertBodyHasAllIds(entities: Seq[Entity], checker: Int => Boolean, body: Source[ByteString, _], name: String): Boolean = {
+    implicit val ec = env.otoroshiExecutionContext
+    implicit val mat = env.otoroshiMaterializer
+    val indexedEntities = entities.map(v => (extractId(v), v)).toMap
+    val indexedResultEntities = Await.result(
+      body
+        .map {v =>
+          println(v.utf8String)
+          v
+        }
+        .via(Framing.delimiter(ByteString("\n"), Int.MaxValue, true))
+        .filter(_.utf8String.trim.nonEmpty)
+        .map(bs => Try(Json.parse(bs.utf8String)))
+        .collect { case Success(e) => e }
+        .map(v => ((v \ "id").as[String], (v \ "status").as[Int]))
+        .runWith(Sink.seq)
+        .map(_.toMap),
+      30.seconds
+    )
+    indexedEntities.forall {
+      case (k, v) =>
+        indexedResultEntities.get(k) match {
+          case Some(i) => checker(i)
+          case None => false
+        }
     }
   }
 
@@ -1813,8 +1847,7 @@ trait ApiTester[Entity] {
       }
     }
   }
-
-  private def testFindAll(entities: Seq[Entity])(implicit ec: ExecutionContext): Future[Boolean] = {
+  private def testFindAll(entities: Seq[Entity], ctx: Option[String])(implicit ec: ExecutionContext): Future[Boolean] = {
     val path = route()
     ws
       .url(s"http://otoroshi-api.oto.tools:$port$path")
@@ -1825,17 +1858,16 @@ trait ApiTester[Entity] {
       .map { resp =>
         if (resp.status == 200) {
           val arr = resp.json.as[JsArray].value
-          if (arr.isEmpty) logger.info(s"[$entityName] testFindAll: empty collection")
+          if (arr.isEmpty) logger.info(s"[$entityName] ${ctx.getOrElse("testFindAll")}: empty collection")
           val retEntities = arr.map(readEntityFromJson)
           // logger.info(s"$retEntities - $entities")
           entities.forall(e => retEntities.contains(e))
         } else {
-          logger.error(s"[$entityName] testFindAll: bad status code: ${resp.status}, expected 200")
+          logger.error(s"[$entityName] ${ctx.getOrElse("testFindAll")}: bad status code: ${resp.status}, expected 200")
           false
         }
       }
   }
-
   private def testFindById(entity: Entity, ctx: Option[String])(implicit ec: ExecutionContext): Future[Boolean] = {
     val path = route() + "/" + extractId(entity)
     ws
@@ -1851,38 +1883,152 @@ trait ApiTester[Entity] {
           if (!eq) logger.info(s"[$entityName] ${ctx.getOrElse("testFindById")}: $retEntity found, expected $entity")
           eq
         } else {
-          logger.error(s"[$entityName] testFindById: bad status code: ${resp.status}, expected 200")
+          logger.error(s"[$entityName] ${ctx.getOrElse("testFindById")}: bad status code: ${resp.status}, expected 200")
           false
         }
       }
   }
 
-  private def testCreateEntities()(implicit ec: ExecutionContext): Future[Boolean] = true.future
-  private def testPatchEntities()(implicit ec: ExecutionContext): Future[Boolean] = true.future
-  private def testUpdateEntities()(implicit ec: ExecutionContext): Future[Boolean] = true.future
-  private def testDeleteEntities()(implicit ec: ExecutionContext): Future[Boolean] = true.future
+  private def testCreateEntities(entities: Seq[Entity])(implicit ec: ExecutionContext): Future[Boolean] = {
+    val path = route() + "/_bulk"
+    ws
+      .url(s"http://otoroshi-api.oto.tools:$port$path")
+      .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+      .withHttpHeaders("Content-Type" -> "application/x-ndjson")
+      .withFollowRedirects(false)
+      .withMethod("POST")
+      .withBody(SourceBody(Source(entities.toList).map(v => ByteString(Json.stringify(writeEntityToJson(v)) + "\n"))))
+      .execute()
+      .flatMap { resp =>
+        if (resp.status == 200 || resp.status == 201) {
+          if (assertBodyHasAllIds(entities, s => s == 200 || s == 201, resp.bodyAsSource, "testCreateEntities")) {
+            testFindAll(entities, "testCreateEntities".some)
+          } else {
+            false.future
+          }
+        } else {
+          logger.error(s"[$entityName] testCreateEntities: bad status code: ${resp.status}, expected 201 or 200")
+          false.future
+        }
+      }
+  }
+  private def testPatchEntities(entities: Seq[Entity], updatedEntities: Seq[(Entity, JsArray)])(implicit ec: ExecutionContext): Future[Boolean] = {
+    testFindAll(entities, "testPatchEntities pre".some).flatMap {
+      case false => false.future
+      case true => {
+        val path = route() + "/_bulk"
+        ws
+          .url(s"http://otoroshi-api.oto.tools:$port$path")
+          .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+          .withHttpHeaders("Content-Type" -> "application/x-ndjson")
+          .withFollowRedirects(false)
+          .withMethod("PATCH")
+          .withBody(SourceBody(Source(updatedEntities.toList).map(v => ByteString(Json.stringify(Json.obj("id" -> extractId(v._1), "patch" -> v._2)) + "\n"))))
+          .execute()
+          .flatMap { resp =>
+            if (resp.status == 200) {
+              if (assertBodyHasAllIds(updatedEntities.map(_._1), s => s == 200 || s == 201, resp.bodyAsSource, "testPatchEntities")) {
+                testFindAll(updatedEntities.map(_._1), "testPatchEntities".some)
+              } else {
+                false.future
+              }
+            } else {
+              logger.error(s"[$entityName] testPatchEntities: bad status code: ${resp.status}, expected 200")
+              false.future
+            }
+          }
+      }
+    }
+  }
+  private def testUpdateEntities(entities: Seq[Entity], updatedEntities: Seq[Entity])(implicit ec: ExecutionContext): Future[Boolean] = {
+    testFindAll(entities, "testUpdateEntities pre".some).flatMap {
+      case false => false.future
+      case true => {
+        val path = route() + "/_bulk"
+        ws
+          .url(s"http://otoroshi-api.oto.tools:$port$path")
+          .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+          .withHttpHeaders("Content-Type" -> "application/x-ndjson")
+          .withFollowRedirects(false)
+          .withMethod("PUT")
+          .withBody(SourceBody(Source(updatedEntities.toList).map(v => ByteString(Json.stringify(writeEntityToJson(v)) + "\n"))))
+          .execute()
+          .flatMap { resp =>
+            if (resp.status == 200) {
+              if (assertBodyHasAllIds(updatedEntities, s => s == 200 || s == 201, resp.bodyAsSource, "testUpdateEntities")) {
+                testFindAll(updatedEntities, "testPatchEntities".some)
+              } else {
+                false.future
+              }
+            } else {
+              logger.error(s"[$entityName] testUpdateEntities: bad status code: ${resp.status}, expected 200")
+              false.future
+            }
+          }
+      }
+    }
+  }
+  private def testDeleteEntities(entities: Seq[Entity])(implicit ec: ExecutionContext): Future[Boolean] = {
+    testFindAll(entities, "testDeleteEntities pre".some).flatMap {
+      case false => false.future
+      case true => {
+        val path = route() + "/_bulk"
+        ws
+          .url(s"http://otoroshi-api.oto.tools:$port$path")
+          .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+          .withHttpHeaders("Content-Type" -> "application/x-ndjson")
+          .withFollowRedirects(false)
+          .withMethod("DELETE")
+          .withBody(SourceBody(Source(entities.toList).map(v => ByteString(Json.stringify(Json.obj("id" -> extractId(v))) + "\n"))))
+          .execute()
+          .flatMap { resp =>
+            if (resp.status == 200) {
+              if (assertBodyHasAllIds(entities, s => s == 200 || s == 201, resp.bodyAsSource, "testDeleteEntities")) {
+                testFindAll(entities, "testDeleteEntities".some).map(v => !v)
+                true.future
+              } else {
+                false.future
+              }
+            } else {
+              logger.error(s"[$entityName] testDeleteEntities: bad status code: ${resp.status}, expected 200")
+              logger.error(s"[$entityName] testDeleteEntities: ${resp.body}")
+
+              false.future
+            }
+          }
+      }
+    }
+  }
 
   def testApi(implicit ec: ExecutionContext): Future[ApiTesterResult] = {
 
     for {
+
       _ <- beforeTest()
 
-      entity = singleEntity()
+      entity        = singleEntity()
       updatedEntity = updateEntity(entity)
       patchedEntity = patchEntity(entity)
-      create <- testCreateEntity(entity)
-      findAll <- testFindAll(Seq(entity))
-      findById <- testFindById(entity, None)
-      update <- testUpdateEntity(entity, updatedEntity)
-      patch <- testPatchEntity(updatedEntity, patchedEntity)
-      delete <- testDeleteEntity(patchedEntity._1)
+      create        <- testCreateEntity(entity)
+      findAll       <- testFindAll(Seq(entity), None)
+      findById      <- testFindById(entity, None)
+      update        <- testUpdateEntity(entity, updatedEntity)
+      patch         <- testPatchEntity(updatedEntity, patchedEntity)
+      delete        <- testDeleteEntity(patchedEntity._1)
 
-      createBulk <- if (testingBulk) testCreateEntities() else true.future
-      updateBulk <- if (testingBulk) testUpdateEntities() else true.future
-      patchBulk <-  if (testingBulk) testPatchEntities()  else true.future
-      deleteBulk <- if (testingBulk) testDeleteEntities() else true.future
+      entities        = bulkEntities()
+      updatedEntities = entities.map(entity => updateEntity(entity))
+      patchedEntities = entities.map(entity => patchEntity(entity))
+      createBulk    <- if (testingBulk) testCreateEntities(entities) else true.future
+      findAll2      <- if (testingBulk) testFindAll(entities, None) else true.future
+      updateBulk    <- if (testingBulk) testUpdateEntities(entities, updatedEntities) else true.future
+      patchBulk     <- if (testingBulk) testPatchEntities(updatedEntities, patchedEntities)  else true.future
+      deleteBulk    <- if (testingBulk) testDeleteEntities(patchedEntities.map(_._1)) else true.future
 
       _ <- afterTest()
-    } yield ApiTesterResult(create, createBulk, findAll, findById, update, updateBulk, patch, patchBulk, delete, deleteBulk)
+
+    } yield {
+      ApiTesterResult(create, createBulk, findAll && findAll2, findById, update, updateBulk, patch, patchBulk, delete, deleteBulk).debugPrintln
+    }
   }
 }

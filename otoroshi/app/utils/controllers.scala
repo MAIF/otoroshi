@@ -15,6 +15,7 @@ import security.IdGenerator
 import utils.JsonPatchHelpers.patchJson
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Success, Try}
 
 trait ApiError[Error] {
   def status: Int
@@ -106,6 +107,7 @@ trait EntityHelper[Entity, Error] {
       case None => Left("Id not found !")
     }
   }
+  def extractId(entity: Entity): String
   def readEntity(json: JsValue): Either[String, Entity]
   def writeEntity(entity: Entity): JsValue
   def findByIdOps(id: String)(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[Error], OptionalEntityAndContext[Entity]]]
@@ -131,8 +133,9 @@ trait BulkHelper[Entity, Error] extends EntityHelper[Entity, Error] {
       case Some("application/x-ndjson") => {
         val grouping = ctx.request.getQueryString("_group").map(_.toInt).filter(_ < 10).getOrElse(1)
         val src = ctx.request.body
-          .via(Framing.delimiter(ByteString("\n"), Int.MaxValue, false))
-          .map(bs => Json.parse(bs.utf8String))
+          .via(Framing.delimiter(ByteString("\n"), Int.MaxValue, true))
+          .map(bs => Try(Json.parse(bs.utf8String)))
+          .collect { case Success(e) => e }
           .map(e => readEntity(e) match {
             case Left(err) => Left((err, e))
             case Right(entity) => Right(("--", entity))
@@ -143,7 +146,7 @@ trait BulkHelper[Entity, Error] extends EntityHelper[Entity, Error] {
             case Right((_, entity)) => {
               createEntityOps(entity).map {
                 case Left(error) =>
-                  Json.obj("status" -> error.status, "error" -> "creation_error", "error_description" -> error.bodyAsJson).stringify.byteString
+                  Json.obj("status" -> error.status, "error" -> "creation_error", "error_description" -> error.bodyAsJson, "id" -> extractId(entity)).stringify.byteString
                 case Right(EntityAndContext(_, action, message, meta, alert)) =>
                   val event: AdminApiEvent = AdminApiEvent(
                     env.snowflakeGenerator.nextIdStr(),
@@ -166,7 +169,7 @@ trait BulkHelper[Entity, Error] extends EntityHelper[Entity, Error] {
                       ctx.from,
                       ctx.ua)
                   )
-                  Json.obj("status" -> 201, "created" -> true).stringify.byteString
+                  Json.obj("status" -> 201, "created" -> true, "id" -> extractId(entity)).stringify.byteString
               }
             }
           }
@@ -190,8 +193,9 @@ trait BulkHelper[Entity, Error] extends EntityHelper[Entity, Error] {
       case Some("application/x-ndjson") => {
         val grouping = ctx.request.getQueryString("_group").map(_.toInt).filter(_ < 10).getOrElse(1)
         val src = ctx.request.body
-          .via(Framing.delimiter(ByteString("\n"), Int.MaxValue, false))
-          .map(bs => Json.parse(bs.utf8String))
+          .via(Framing.delimiter(ByteString("\n"), Int.MaxValue, true))
+          .map(bs => Try(Json.parse(bs.utf8String)))
+          .collect { case Success(e) => e }
           .map(e => readEntity(e) match {
             case Left(err) => Left((err, e))
             case Right(entity) => Right(("--", entity))
@@ -202,7 +206,7 @@ trait BulkHelper[Entity, Error] extends EntityHelper[Entity, Error] {
             case Right((_, entity)) => {
               updateEntityOps(entity).map {
                 case Left(error) =>
-                  Json.obj("status" -> error.status, "error" -> "update_error", "error_description" -> error.bodyAsJson).stringify.byteString
+                  Json.obj("status" -> error.status, "error" -> "update_error", "error_description" -> error.bodyAsJson, "id" -> extractId(entity)).stringify.byteString
                 case Right(EntityAndContext(_, action, message, meta, alert)) =>
                   val event: AdminApiEvent = AdminApiEvent(
                     env.snowflakeGenerator.nextIdStr(),
@@ -225,7 +229,7 @@ trait BulkHelper[Entity, Error] extends EntityHelper[Entity, Error] {
                       ctx.from,
                       ctx.ua)
                   )
-                  Json.obj("status" -> 200, "updated" -> true).stringify.byteString
+                  Json.obj("status" -> 200, "updated" -> true, "id" -> extractId(entity)).stringify.byteString
               }
             }
           }
@@ -249,8 +253,9 @@ trait BulkHelper[Entity, Error] extends EntityHelper[Entity, Error] {
       case Some("application/x-ndjson") => {
         val grouping = ctx.request.getQueryString("_group").map(_.toInt).filter(_ < 10).getOrElse(1)
         val src: Source[ByteString, _] = ctx.request.body
-          .via(Framing.delimiter(ByteString("\n"), Int.MaxValue, false))
-          .map(bs => Json.parse(bs.utf8String))
+          .via(Framing.delimiter(ByteString("\n"), Int.MaxValue, true))
+          .map(bs => Try(Json.parse(bs.utf8String)))
+          .collect { case Success(e) => e }
           .map(e => readId(e) match {
             case Left(err) => Left((err, e))
             case Right(id) => Right((id, (e \ "patch").as[JsValue]))
@@ -260,18 +265,18 @@ trait BulkHelper[Entity, Error] extends EntityHelper[Entity, Error] {
               Json.obj("status" -> 400, "error" -> "bad_entity", "error_description" -> error, "entity" -> json).stringify.byteString.future
             case Right((id, patch)) => {
               findByIdOps(id).flatMap {
-                case Left(error) => Json.obj("status" -> 404, "error" -> "not_found", "error_description" -> "Entity not found").stringify.byteString.future
+                case Left(error) => Json.obj("status" -> 404, "error" -> "not_found", "error_description" -> "Entity not found", "id" -> id).stringify.byteString.future
                 case Right(OptionalEntityAndContext(option, _, _, _, _)) => option match {
-                  case None => Json.obj("status" -> 404, "error" -> "not_found", "error_description" -> "Entity not found").stringify.byteString.future
+                  case None => Json.obj("status" -> 404, "error" -> "not_found", "error_description" -> "Entity not found", "id" -> id).stringify.byteString.future
                   case Some(entity) => {
                     val currentJson = writeEntity(entity)
                     val newJson     = patchJson(patch, currentJson)
                     readEntity(newJson) match {
-                      case Left(e) => Json.obj("status" -> 400, "error" -> "bad_entity", "error_description" -> e).stringify.byteString.future
+                      case Left(e) => Json.obj("status" -> 400, "error" -> "bad_entity", "error_description" -> e, "id" -> extractId(entity)).stringify.byteString.future
                       case Right(newEntity) => {
                         updateEntityOps(newEntity).map {
                           case Left(error) =>
-                            Json.obj("status" -> error.status, "error" -> "update_error", "error_description" -> error.bodyAsJson).stringify.byteString
+                            Json.obj("status" -> error.status, "error" -> "update_error", "error_description" -> error.bodyAsJson, "id" -> extractId(entity)).stringify.byteString
                           case Right(EntityAndContext(_, action, message, meta, alert)) =>
                             val event: AdminApiEvent = AdminApiEvent(
                               env.snowflakeGenerator.nextIdStr(),
@@ -294,7 +299,7 @@ trait BulkHelper[Entity, Error] extends EntityHelper[Entity, Error] {
                                 ctx.from,
                                 ctx.ua)
                             )
-                            Json.obj("status" -> 200, "updated" -> true).stringify.byteString
+                            Json.obj("status" -> 200, "updated" -> true, "id" -> extractId(entity)).stringify.byteString
                         }
                       }
                     }
@@ -323,8 +328,9 @@ trait BulkHelper[Entity, Error] extends EntityHelper[Entity, Error] {
       case Some("application/x-ndjson") => {
         val grouping = ctx.request.getQueryString("_group").map(_.toInt).filter(_ < 10).getOrElse(1)
         val src = ctx.request.body
-          .via(Framing.delimiter(ByteString("\n"), Int.MaxValue, false))
-          .map(bs => Json.parse(bs.utf8String))
+          .via(Framing.delimiter(ByteString("\n"), Int.MaxValue, true))
+          .map(bs => Try(Json.parse(bs.utf8String)))
+          .collect { case Success(e) => e }
           .map(e => readId(e) match {
             case Left(err) => Left((err, e))
             case Right(entity) => Right(("--", entity))
@@ -335,7 +341,7 @@ trait BulkHelper[Entity, Error] extends EntityHelper[Entity, Error] {
             case Right((_, id)) => {
               deleteEntityOps(id).map {
                 case Left(error) =>
-                  Json.obj("status" -> error.status, "error" -> "delete_error", "error_description" -> error.bodyAsJson).stringify.byteString
+                  Json.obj("status" -> error.status, "error" -> "delete_error", "error_description" -> error.bodyAsJson, "id" -> id).stringify.byteString
                 case Right(NoEntityAndContext(action, message, meta, alert)) =>
                   val event: AdminApiEvent = AdminApiEvent(
                     env.snowflakeGenerator.nextIdStr(),
@@ -358,7 +364,7 @@ trait BulkHelper[Entity, Error] extends EntityHelper[Entity, Error] {
                       ctx.from,
                       ctx.ua)
                   )
-                  Json.obj("status" -> 200, "deleted" -> true).stringify.byteString
+                  Json.obj("status" -> 200, "deleted" -> true, "id" -> id).stringify.byteString
               }
             }
           }

@@ -26,6 +26,8 @@ class CertificatesController(val ApiAction: ApiAction, val cc: ControllerCompone
     }
   }
 
+  override def extractId(entity: Cert): String = entity.id
+
   override def readEntity(json: JsValue): Either[String, Cert] = Cert._fmt.reads(json).asEither match {
     case Left(e) => Left(e.toString())
     case Right(r) => Right(r)

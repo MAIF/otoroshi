@@ -21,6 +21,8 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
 
   lazy val logger = Logger("otoroshi-services-api")
 
+  override def extractId(entity: ServiceDescriptor): String = entity.id
+
   override def readEntity(json: JsValue): Either[String, ServiceDescriptor] = ServiceDescriptor._fmt.reads(json).asEither match {
     case Left(e) => Left(e.toString())
     case Right(r) => Right(r)

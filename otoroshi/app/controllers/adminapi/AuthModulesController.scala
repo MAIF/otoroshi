@@ -3,6 +3,7 @@ package controllers.adminapi
 import actions.ApiAction
 import auth.{AuthModuleConfig, BasicAuthModule}
 import env.Env
+import models.ApiKey
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json._
@@ -18,6 +19,8 @@ class AuthModulesController(val ApiAction: ApiAction, val cc: ControllerComponen
   implicit lazy val mat = env.otoroshiMaterializer
 
   lazy val logger = Logger("otoroshi-auth-modules-api")
+
+  override def extractId(entity: AuthModuleConfig): String = entity.id
 
   override def readEntity(json: JsValue): Either[String, AuthModuleConfig] = AuthModuleConfig._fmt.reads(json).asEither match {
     case Left(e) => Left(e.toString())

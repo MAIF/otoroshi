@@ -15,6 +15,8 @@ class JwtVerifierController(val ApiAction: ApiAction, val cc: ControllerComponen
   implicit val ec  = env.otoroshiExecutionContext
   implicit val mat = env.otoroshiMaterializer
 
+  override def extractId(entity: GlobalJwtVerifier): String = entity.id
+
   override def readEntity(json: JsValue): Either[String, GlobalJwtVerifier] = GlobalJwtVerifier._fmt.reads(json).asEither match {
     case Left(e) => Left(e.toString())
     case Right(r) => Right(r)

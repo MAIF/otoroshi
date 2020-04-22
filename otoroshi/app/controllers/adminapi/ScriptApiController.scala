@@ -152,6 +152,8 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
     }
   }
 
+  override def extractId(entity: Script): String = entity.id
+
   override def readEntity(json: JsValue): Either[String, Script] = Script._fmt.reads(json).asEither match {
     case Left(e) => Left(e.toString())
     case Right(r) => Right(r)

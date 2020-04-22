@@ -15,6 +15,8 @@ class ClientValidatorsController(val ApiAction: ApiAction, val cc: ControllerCom
   implicit lazy val ec  = env.otoroshiExecutionContext
   implicit lazy val mat = env.otoroshiMaterializer
 
+  override def extractId(entity: ClientCertificateValidator): String = entity.id
+
   override def readEntity(json: JsValue): Either[String, ClientCertificateValidator] = ClientCertificateValidator.fmt.reads(json).asEither match {
     case Left(e) => Left(e.toString())
     case Right(r) => Right(r)

@@ -17,6 +17,8 @@ class ServiceGroupController(val ApiAction: ApiAction, val cc: ControllerCompone
   implicit val ec  = env.otoroshiExecutionContext
   implicit val mat = env.otoroshiMaterializer
 
+  override def extractId(entity: ServiceGroup): String = entity.id
+
   override def readEntity(json: JsValue): Either[String, ServiceGroup] = ServiceGroup._fmt.reads(json).asEither match {
     case Left(e) => Left(e.toString())
     case Right(r) => Right(r)

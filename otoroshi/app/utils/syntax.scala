@@ -3,6 +3,7 @@ package otoroshi.utils.syntax
 import akka.http.scaladsl.util.FastFuture
 import akka.util.ByteString
 import com.github.blemale.scaffeine.Cache
+import play.api.Logger
 import play.api.libs.json._
 import utils.{Regex, RegexPool}
 
@@ -21,6 +22,18 @@ object implicits {
     def somef: Future[Option[A]] = FastFuture.successful(Some(obj))
     def leftf[B]: Future[Either[A, B]] = FastFuture.successful(Left(obj))
     def rightf[B]: Future[Either[B, A]] = FastFuture.successful(Right(obj))
+    def debug(f: A => Any): A = {
+      f(obj)
+      obj
+    }
+    def debugPrintln: A = {
+      println(obj)
+      obj
+    }
+    def debugLogger(logger: Logger): A = {
+      logger.debug(s"$obj")
+      obj
+    }
   }
   implicit class BetterString(private val obj: String) extends AnyVal {
     import otoroshi.utils.string.Implicits._
