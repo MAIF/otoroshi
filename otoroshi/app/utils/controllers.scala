@@ -174,7 +174,7 @@ trait BulkHelper[Entity, Error] extends EntityHelper[Entity, Error] {
             }
           }
         Ok.sendEntity(HttpEntity.Streamed.apply(
-          data = src,
+          data = src.intersperse(ByteString.empty, ByteString("\n"), ByteString.empty),
           contentLength = None,
           contentType = Some("application/x-ndjson")
         )).future
@@ -234,7 +234,7 @@ trait BulkHelper[Entity, Error] extends EntityHelper[Entity, Error] {
             }
           }
         Ok.sendEntity(HttpEntity.Streamed.apply(
-          data = src,
+          data = src.intersperse(ByteString.empty, ByteString("\n"), ByteString.empty),
           contentLength = None,
           contentType = Some("application/x-ndjson")
         )).future
@@ -324,56 +324,59 @@ trait BulkHelper[Entity, Error] extends EntityHelper[Entity, Error] {
     implicit val implEc = env.otoroshiExecutionContext
     implicit val implMat = env.otoroshiMaterializer
 
-    ctx.request.headers.get("Content-Type") match {
-      case Some("application/x-ndjson") => {
-        val grouping = ctx.request.getQueryString("_group").map(_.toInt).filter(_ < 10).getOrElse(1)
-        val src = ctx.request.body
-          .via(Framing.delimiter(ByteString("\n"), Int.MaxValue, true))
-          .map(bs => Try(Json.parse(bs.utf8String)))
-          .collect { case Success(e) => e }
-          .map(e => readId(e) match {
-            case Left(err) => Left((err, e))
-            case Right(entity) => Right(("--", entity))
-          })
-          .mapAsync(grouping) {
-            case Left((error, json)) =>
-              Json.obj("status" -> 400, "error" -> "bad_entity", "error_description" -> error, "entity" -> json).stringify.byteString.future
-            case Right((_, id)) => {
-              deleteEntityOps(id).map {
-                case Left(error) =>
-                  Json.obj("status" -> error.status, "error" -> "delete_error", "error_description" -> error.bodyAsJson, "id" -> id).stringify.byteString
-                case Right(NoEntityAndContext(action, message, meta, alert)) =>
-                  val event: AdminApiEvent = AdminApiEvent(
-                    env.snowflakeGenerator.nextIdStr(),
+    def actualDelete() = {
+      val grouping = ctx.request.getQueryString("_group").map(_.toInt).filter(_ < 10).getOrElse(1)
+      val src = ctx.request.body
+        .via(Framing.delimiter(ByteString("\n"), Int.MaxValue, true))
+        .map(bs => Try(Json.parse(bs.utf8String)))
+        .collect { case Success(e) => e }
+        .map(e => readId(e) match {
+          case Left(err) => Left((err, e))
+          case Right(entity) => Right(("--", entity))
+        })
+        .mapAsync(grouping) {
+          case Left((error, json)) =>
+            Json.obj("status" -> 400, "error" -> "bad_entity", "error_description" -> error, "entity" -> json).stringify.byteString.future
+          case Right((_, id)) => {
+            deleteEntityOps(id).map {
+              case Left(error) =>
+                Json.obj("status" -> error.status, "error" -> "delete_error", "error_description" -> error.bodyAsJson, "id" -> id).stringify.byteString
+              case Right(NoEntityAndContext(action, message, meta, alert)) =>
+                val event: AdminApiEvent = AdminApiEvent(
+                  env.snowflakeGenerator.nextIdStr(),
+                  env.env,
+                  Some(ctx.apiKey),
+                  ctx.user,
+                  action,
+                  message,
+                  ctx.from,
+                  ctx.ua,
+                  meta
+                )
+                Audit.send(event)
+                Alerts.send(
+                  GenericAlert(env.snowflakeGenerator.nextIdStr(),
                     env.env,
-                    Some(ctx.apiKey),
-                    ctx.user,
-                    action,
-                    message,
+                    ctx.user.getOrElse(ctx.apiKey.toJson),
+                    alert,
+                    event,
                     ctx.from,
-                    ctx.ua,
-                    meta
-                  )
-                  Audit.send(event)
-                  Alerts.send(
-                    GenericAlert(env.snowflakeGenerator.nextIdStr(),
-                      env.env,
-                      ctx.user.getOrElse(ctx.apiKey.toJson),
-                      alert,
-                      event,
-                      ctx.from,
-                      ctx.ua)
-                  )
-                  Json.obj("status" -> 200, "deleted" -> true, "id" -> id).stringify.byteString
-              }
+                    ctx.ua)
+                )
+                Json.obj("status" -> 200, "deleted" -> true, "id" -> id).stringify.byteString
             }
           }
-        Ok.sendEntity(HttpEntity.Streamed.apply(
-          data = src,
-          contentLength = None,
-          contentType = Some("application/x-ndjson")
-        )).future
-      }
+        }
+      Ok.sendEntity(HttpEntity.Streamed.apply(
+        data = src.intersperse(ByteString.empty, ByteString("\n"), ByteString.empty),
+        contentLength = None,
+        contentType = Some("application/x-ndjson")
+      )).future
+    }
+
+    (ctx.request.headers.get("Content-Type"), ctx.request.headers.get("X-Content-Type")) match {
+      case (Some("application/x-ndjson"), _) => actualDelete()
+      case (_, Some("application/x-ndjson")) => actualDelete()
       case _ => BadRequest(Json.obj("error" -> "bad_content_type", "error_description" -> "Unsupported content type")).future
     }
   }

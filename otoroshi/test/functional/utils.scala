@@ -1719,10 +1719,6 @@ trait ApiTester[Entity] {
     val indexedEntities = entities.map(v => (extractId(v), v)).toMap
     val indexedResultEntities = Await.result(
       body
-        .map {v =>
-          println(v.utf8String)
-          v
-        }
         .via(Framing.delimiter(ByteString("\n"), Int.MaxValue, true))
         .filter(_.utf8String.trim.nonEmpty)
         .map(bs => Try(Json.parse(bs.utf8String)))
@@ -1914,7 +1910,8 @@ trait ApiTester[Entity] {
   }
   private def testPatchEntities(entities: Seq[Entity], updatedEntities: Seq[(Entity, JsArray)])(implicit ec: ExecutionContext): Future[Boolean] = {
     testFindAll(entities, "testPatchEntities pre".some).flatMap {
-      case false => false.future
+      case false =>
+        false.future
       case true => {
         val path = route() + "/_bulk"
         ws
@@ -1942,7 +1939,8 @@ trait ApiTester[Entity] {
   }
   private def testUpdateEntities(entities: Seq[Entity], updatedEntities: Seq[Entity])(implicit ec: ExecutionContext): Future[Boolean] = {
     testFindAll(entities, "testUpdateEntities pre".some).flatMap {
-      case false => false.future
+      case false =>
+        false.future
       case true => {
         val path = route() + "/_bulk"
         ws
@@ -1976,23 +1974,20 @@ trait ApiTester[Entity] {
         ws
           .url(s"http://otoroshi-api.oto.tools:$port$path")
           .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
-          .withHttpHeaders("Content-Type" -> "application/x-ndjson")
           .withFollowRedirects(false)
           .withMethod("DELETE")
-          .withBody(SourceBody(Source(entities.toList).map(v => ByteString(Json.stringify(Json.obj("id" -> extractId(v))) + "\n"))))
+          .withBody(entities.map(v => Json.stringify(Json.obj("id" -> extractId(v)))).mkString("\n")) // weird ahc behavior, overrides content type. source doesnt work too
+          .withHttpHeaders("Content-Type" -> "application/x-ndjson", "X-Content-Type" -> "application/x-ndjson")
           .execute()
           .flatMap { resp =>
             if (resp.status == 200) {
               if (assertBodyHasAllIds(entities, s => s == 200 || s == 201, resp.bodyAsSource, "testDeleteEntities")) {
                 testFindAll(entities, "testDeleteEntities".some).map(v => !v)
-                true.future
               } else {
                 false.future
               }
             } else {
               logger.error(s"[$entityName] testDeleteEntities: bad status code: ${resp.status}, expected 200")
-              logger.error(s"[$entityName] testDeleteEntities: ${resp.body}")
-
               false.future
             }
           }
@@ -2028,7 +2023,7 @@ trait ApiTester[Entity] {
       _ <- afterTest()
 
     } yield {
-      ApiTesterResult(create, createBulk, findAll && findAll2, findById, update, updateBulk, patch, patchBulk, delete, deleteBulk).debugPrintln
+      ApiTesterResult(create, createBulk, findAll && findAll2, findById, update, updateBulk, patch, patchBulk, delete, deleteBulk)
     }
   }
 }

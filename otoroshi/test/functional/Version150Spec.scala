@@ -55,7 +55,6 @@ class ServiceGroupApiSpec(name: String, configurationSpec: => Configuration)
     name = "test-group",
     description = "group for test"
   )
-
   override def entityName: String = "ServiceGroup"
   override def route(): String = "/api/groups"
   override def readEntityFromJson(json: JsValue): ServiceGroup = ServiceGroup._fmt.reads(json).get
