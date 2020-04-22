@@ -155,12 +155,22 @@ GET     /api/services/:serviceId/events                       controllers.admina
 GET     /api/services/:serviceId/health                       controllers.adminapi.ServicesController.serviceHealth(serviceId)
 GET     /api/services/:serviceId/canary                       controllers.adminapi.CanaryController.serviceCanaryMembers(serviceId)
 DELETE  /api/services/:serviceId/canary                       controllers.adminapi.CanaryController.resetServiceCanaryMembers(serviceId)
-GET     /api/services/:serviceId                              controllers.adminapi.ServicesController.service(serviceId)
-PUT     /api/services/:serviceId                              controllers.adminapi.ServicesController.updateService(serviceId)
-PATCH   /api/services/:serviceId                              controllers.adminapi.ServicesController.patchService(serviceId)
-DELETE  /api/services/:serviceId                              controllers.adminapi.ServicesController.deleteService(serviceId)
-GET     /api/services                                         controllers.adminapi.ServicesController.allServices()
-POST    /api/services                                         controllers.adminapi.ServicesController.createService()
+# GET     /api/services/:serviceId                              controllers.adminapi.ServicesController.service(serviceId)
+# PUT     /api/services/:serviceId                              controllers.adminapi.ServicesController.updateService(serviceId)
+# PATCH   /api/services/:serviceId                              controllers.adminapi.ServicesController.patchService(serviceId)
+# DELETE  /api/services/:serviceId                              controllers.adminapi.ServicesController.deleteService(serviceId)
+# GET     /api/services                                         controllers.adminapi.ServicesController.allServices()
+# POST    /api/services                                         controllers.adminapi.ServicesController.createService()
+POST    /api/services/_bulk                                   controllers.adminapi.ServicesController.bulkCreateAction()
+PUT     /api/services/_bulk                                   controllers.adminapi.ServicesController.bulkUpdateAction()
+PATCH   /api/services/_bulk                                   controllers.adminapi.ServicesController.bulkPatchAction()
+DELETE  /api/services/_bulk                                   controllers.adminapi.ServicesController.bulkDeleteAction()
+GET     /api/services/:serviceGroupId                         controllers.adminapi.ServicesController.findEntityByIdAction(serviceGroupId)
+DELETE  /api/services/:serviceGroupId                         controllers.adminapi.ServicesController.deleteEntityAction(serviceGroupId)
+PUT     /api/services/:serviceGroupId                         controllers.adminapi.ServicesController.updateEntityAction(serviceGroupId)
+PATCH   /api/services/:serviceGroupId                         controllers.adminapi.ServicesController.patchEntityAction(serviceGroupId)
+GET     /api/services                                         controllers.adminapi.ServicesController.findAllEntitiesAction()
+POST    /api/services                                         controllers.adminapi.ServicesController.createAction()
 
 ## ServiceGroup
 GET     /api/groups/_template                                 controllers.adminapi.TemplatesController.initiateServiceGroup()
@@ -347,23 +357,28 @@ GET     /api/events                                           controllers.admina
 GET     /api/admin-sessions                                   controllers.adminapi.UsersController.sessions()
 DELETE  /api/admin-sessions/:id                               controllers.adminapi.UsersController.discardSession(id)
 DELETE  /api/admin-sessions                                   controllers.adminapi.UsersController.discardAllSessions()
+# TODO: BULK
 
 GET     /api/apps-sessions                                    controllers.adminapi.UsersController.privateAppsSessions()
 DELETE  /api/apps-sessions/:id                                controllers.adminapi.UsersController.discardPrivateAppsSession(id)
 DELETE  /api/apps-sessions                                    controllers.adminapi.UsersController.discardAllPrivateAppsSessions()
+# TODO: BULK
 
 GET     /api/audit/events                                     controllers.adminapi.EventsController.auditEvents()
 GET     /api/alert/events                                     controllers.adminapi.EventsController.alertEvents()
+# TODO: PAGINATE
 
 GET     /api/admins/simple/_template                          controllers.adminapi.TemplatesController.initiateSimpleAdmin()
 POST    /api/admins/simple                                    controllers.adminapi.UsersController.registerSimpleAdmin()
 GET     /api/admins/simple                                    controllers.adminapi.UsersController.simpleAdmins()
 DELETE  /api/admins/simple/:username                          controllers.adminapi.UsersController.deleteAdmin(username)
+# TODO: BULK
 
 GET     /api/admins/webauthn/_template                        controllers.adminapi.TemplatesController.initiateWebauthnAdmin()
 GET     /api/admins/webauthn                                  controllers.adminapi.UsersController.webAuthnAdmins()
 POST    /api/admins/webauthn                                  controllers.adminapi.UsersController.registerWebAuthnAdmin()
 DELETE  /api/admins/webauthn/:username/:id                    controllers.adminapi.UsersController.webAuthnDeleteAdmin(username, id)
+# TODO: BULK
 
 GET     /api/swagger.json                                     controllers.SwaggerController.swagger()
 GET     /api/swagger/ui                                       controllers.SwaggerController.swaggerUi()
