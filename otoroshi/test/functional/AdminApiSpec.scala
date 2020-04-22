@@ -121,7 +121,7 @@ class AdminApiSpec(name: String, configurationSpec: => Configuration)
                                            s"/api/services/${testServiceDescriptor.id}/apikeys",
                                            Some(testApiKey2.toJson)).futureValue
 
-        status1 mustBe 200
+        status1 mustBe 201
         status2 mustBe 200
         status3 mustBe 200
         status4 mustBe 200

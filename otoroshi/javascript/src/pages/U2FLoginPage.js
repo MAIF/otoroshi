@@ -177,7 +177,7 @@ export class U2FLoginPage extends Component {
       }),
     })
       .then(r => {
-        if (r.status === 200) {
+        if (r.status === 200 || r.status == 201) {
           return r.json();
         } else {
           throw new Error('Login and/or password error, sorry ...');
