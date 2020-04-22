@@ -6,7 +6,7 @@ import akka.stream.Materializer
 import com.softwaremill.macwire.wire
 import com.typesafe.config.{Config, ConfigFactory}
 import controllers._
-import controllers.adminapi._
+import controllers.adminapi.{ApiKeysFromGroupController, _}
 import env._
 import gateway._
 import otoroshi.storage.DataStores
@@ -123,16 +123,18 @@ class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfi
   lazy val eventsController          = wire[EventsController]
   lazy val statsController           = wire[StatsController]
 
-  lazy val servicesController        = wire[ServicesController]
-  lazy val serviceGroupController    = wire[ServiceGroupController]
-  lazy val apiKeysController         = wire[ApiKeysController]
-  lazy val jwtVerifierController     = wire[JwtVerifierController]
-  lazy val authModulesController     = wire[AuthModulesController]
-  lazy val importExportController    = wire[ImportExportController]
-  lazy val snowMonkeyController      = wire[SnowMonkeyController]
-  lazy val canaryController          = wire[CanaryController]
-  lazy val certificatesController    = wire[CertificatesController]
-  lazy val globalConfigController    = wire[GlobalConfigController]
+  lazy val servicesController           = wire[ServicesController]
+  lazy val serviceGroupController       = wire[ServiceGroupController]
+  lazy val apiKeysController            = wire[ApiKeysController]
+  lazy val ApiKeysFromGroupController   = wire[ApiKeysFromGroupController]
+  lazy val ApiKeysFromServiceController = wire[ApiKeysFromServiceController]
+  lazy val jwtVerifierController        = wire[JwtVerifierController]
+  lazy val authModulesController        = wire[AuthModulesController]
+  lazy val importExportController       = wire[ImportExportController]
+  lazy val snowMonkeyController         = wire[SnowMonkeyController]
+  lazy val canaryController             = wire[CanaryController]
+  lazy val certificatesController       = wire[CertificatesController]
+  lazy val globalConfigController       = wire[GlobalConfigController]
 
   override lazy val assets: Assets = wire[Assets]
 

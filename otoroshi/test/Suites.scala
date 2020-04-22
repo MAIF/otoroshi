@@ -118,6 +118,7 @@ object OtoroshiTests {
         new ServicesApiSpec(name, config),
         new ApikeyGroupApiSpec(name, config),
         new ApikeyServiceApiSpec(name, config),
+        new ApikeyApiSpec(name, config),
       )
     } else {
       Seq(
@@ -148,6 +149,7 @@ object OtoroshiTests {
         new ServicesApiSpec(name, config),
         new ApikeyGroupApiSpec(name, config),
         new ApikeyServiceApiSpec(name, config),
+        new ApikeyApiSpec(name, config),
       )
     }
     Option(System.getenv("TEST_ANALYTICS")) match {
@@ -180,5 +182,6 @@ class DevOtoroshiTests
       new CertificateApiSpec("DEV", Configurations.InMemoryConfiguration),
       new ApikeyGroupApiSpec("DEV", Configurations.InMemoryConfiguration),
       new ApikeyServiceApiSpec("DEV", Configurations.InMemoryConfiguration),
+      new ApikeyApiSpec("DEV", Configurations.InMemoryConfiguration),
       new ServicesApiSpec("DEV", Configurations.InMemoryConfiguration),
     )

@@ -59,6 +59,46 @@ case class GenericAlert(`@id`: String,
   )
 }
 
+trait AdminApiHelper {
+  def sendAudit(action: String, message: String, meta: JsObject, ctx: ApiActionContext[_])(implicit env: Env): Unit = {
+    val event: AdminApiEvent = AdminApiEvent(
+      env.snowflakeGenerator.nextIdStr(),
+      env.env,
+      Some(ctx.apiKey),
+      ctx.user,
+      action,
+      message,
+      ctx.from,
+      ctx.ua,
+      meta
+    )
+    Audit.send(event)
+  }
+  def sendAuditAndAlert(action: String, message: String, alert: String, meta: JsObject, ctx: ApiActionContext[_])(implicit env: Env): Unit = {
+    val event: AdminApiEvent = AdminApiEvent(
+      env.snowflakeGenerator.nextIdStr(),
+      env.env,
+      Some(ctx.apiKey),
+      ctx.user,
+      action,
+      message,
+      ctx.from,
+      ctx.ua,
+      meta
+    )
+    Audit.send(event)
+    Alerts.send(
+      GenericAlert(env.snowflakeGenerator.nextIdStr(),
+        env.env,
+        ctx.user.getOrElse(ctx.apiKey.toJson),
+        alert,
+        event,
+        ctx.from,
+        ctx.ua)
+    )
+  }
+}
+
 trait EntityHelper[Entity, Error] {
   def readId(json: JsValue): Either[String, String] = {
     (json \ "id").asOpt[String] match {

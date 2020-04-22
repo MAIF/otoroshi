@@ -490,3 +490,50 @@ class ApikeyServiceApiSpec(name: String, configurationSpec: => Configuration)
   override def extractId(entity: ApiKey): String = entity.clientId
   override def testingBulk: Boolean = false
 }
+
+class ApikeyApiSpec(name: String, configurationSpec: => Configuration)
+  extends OtoroshiSpec with ApiTester[ApiKey] {
+
+  implicit val system  = ActorSystem("otoroshi-test")
+  implicit val env     = otoroshiComponents.env
+
+  import system.dispatcher
+
+  override def getTestConfiguration(configuration: Configuration) = Configuration(
+    ConfigFactory
+      .parseString(s"""
+                      |{
+                      |  otoroshi.cache.enabled = false
+                      |  otoroshi.cache.ttl = 1
+                      |}
+       """.stripMargin)
+      .resolve()
+  ).withFallback(configurationSpec).withFallback(configuration)
+
+  startOtoroshi()
+
+  s"[$name] Otoroshi Apikey API" should {
+    "warm up" in {
+      getOtoroshiServices().futureValue // WARM UP
+    }
+    "works" in {
+      val result = testApi.futureValue
+      result.works mustBe true
+    }
+    "shutdown" in {
+      stopAll()
+      system.terminate()
+    }
+  }
+
+  override def singleEntity(): ApiKey = env.datastores.apiKeyDataStore.initiateNewApiKey("default")
+  override def entityName: String = "ApiKey"
+  override def bulkEntities(): Seq[ApiKey] = Seq.empty
+  override def route(): String = "/api/apikeys"
+  override def readEntityFromJson(json: JsValue): ApiKey = ApiKey._fmt.reads(json).get
+  override def writeEntityToJson(entity: ApiKey): JsValue = ApiKey._fmt.writes(entity)
+  override def updateEntity(entity: ApiKey): ApiKey = entity.copy(clientName = entity.clientName + " - updated")
+  override def patchEntity(entity: ApiKey): (ApiKey, JsArray) = (entity.copy(clientName = entity.clientName + " - patched"), Json.arr(Json.obj("op" -> "replace", "path" -> "/clientName", "value" -> (entity.clientName + " - patched"))))
+  override def extractId(entity: ApiKey): String = entity.clientId
+  override def testingBulk: Boolean = false
+}
