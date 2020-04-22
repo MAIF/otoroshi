@@ -1,4 +1,4 @@
-package controllers
+package controllers.adminapi
 
 import actions.ApiAction
 import akka.http.scaladsl.util.FastFuture
@@ -168,48 +168,6 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
       }
     } recover {
       case _ => Ok(Json.obj("done" -> false))
-    }
-  }
-
-  def auditEvents() = ApiAction.async { ctx =>
-    val paginationPage: Int = ctx.request.queryString.get("page").flatMap(_.headOption).map(_.toInt).getOrElse(1)
-    val paginationPageSize: Int =
-      ctx.request.queryString.get("pageSize").flatMap(_.headOption).map(_.toInt).getOrElse(Int.MaxValue)
-    val paginationPosition = (paginationPage - 1) * paginationPageSize
-    env.datastores.auditDataStore.findAllRaw().map { elems =>
-      val filtered = elems.drop(paginationPosition).take(paginationPageSize)
-      Ok.chunked(
-          Source
-            .single(ByteString("["))
-            .concat(
-              Source
-                .apply(scala.collection.immutable.Iterable.empty[ByteString] ++ filtered)
-                .intersperse(ByteString(","))
-            )
-            .concat(Source.single(ByteString("]")))
-        )
-        .as("application/json")
-    }
-  }
-
-  def alertEvents() = ApiAction.async { ctx =>
-    val paginationPage: Int = ctx.request.queryString.get("page").flatMap(_.headOption).map(_.toInt).getOrElse(1)
-    val paginationPageSize: Int =
-      ctx.request.queryString.get("pageSize").flatMap(_.headOption).map(_.toInt).getOrElse(Int.MaxValue)
-    val paginationPosition = (paginationPage - 1) * paginationPageSize
-    env.datastores.alertDataStore.findAllRaw().map { elems =>
-      val filtered = elems.drop(paginationPosition).take(paginationPageSize)
-      Ok.chunked(
-          Source
-            .single(ByteString("["))
-            .concat(
-              Source
-                .apply(scala.collection.immutable.Iterable.empty[ByteString] ++ filtered)
-                .intersperse(ByteString(","))
-            )
-            .concat(Source.single(ByteString("]")))
-        )
-        .as("application/json")
     }
   }
 

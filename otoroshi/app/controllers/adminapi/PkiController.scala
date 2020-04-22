@@ -1,4 +1,4 @@
-package controllers
+package controllers.adminapi
 
 import actions.ApiAction
 import akka.http.scaladsl.util.FastFuture

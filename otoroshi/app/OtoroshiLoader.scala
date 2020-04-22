@@ -1,12 +1,10 @@
 import actions._
-import cluster.ClusterController
 import com.softwaremill.macwire._
 import controllers._
 import controllers.adminapi._
 import env.Env
 import gateway._
 import modules._
-import otoroshi.script.ScriptApiController
 import play.api.ApplicationLoader.Context
 import play.api._
 import play.api.http.{DefaultHttpFilters, HttpErrorHandler, HttpRequestHandler}
@@ -15,11 +13,6 @@ import play.api.mvc.EssentialFilter
 import play.api.routing.Router
 import play.filters.HttpFiltersComponents
 import router.Routes
-import ssl.ClientValidatorsController
-import utils.Metrics
-import otoroshi.tcp.TcpServiceApiController
-import play.api.inject.ApplicationLifecycle
-import play.api.libs.ws.WSClient
 
 class OtoroshiLoader extends ApplicationLoader {
 
@@ -86,8 +79,20 @@ package object modules {
     lazy val usersController           = wire[UsersController]
     lazy val templatesController       = wire[TemplatesController]
 
+    lazy val healthController          = wire[HealthController]
+    lazy val eventsController          = wire[EventsController]
+    lazy val statsController           = wire[StatsController]
+
+    lazy val servicesController        = wire[ServicesController]
     lazy val serviceGroupController    = wire[ServiceGroupController]
+    lazy val apiKeysController         = wire[ApiKeysController]
     lazy val jwtVerifierController     = wire[JwtVerifierController]
+    lazy val authModulesController     = wire[AuthModulesController]
+    lazy val importExportController    = wire[ImportExportController]
+    lazy val snowMonkeyController      = wire[SnowMonkeyController]
+    lazy val canaryController          = wire[CanaryController]
+    lazy val certificatesController    = wire[CertificatesController]
+    lazy val globalConfigController    = wire[GlobalConfigController]
 
     override lazy val assets: Assets = wire[Assets]
     lazy val router: Router = {

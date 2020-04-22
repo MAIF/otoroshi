@@ -1,14 +1,15 @@
-package controllers
-import actions.{ApiAction, UnAuthApiAction}
+package controllers.adminapi
+
+import actions.ApiAction
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
 import env.Env
 import events._
 import org.joda.time.DateTime
+import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.mvc.{AbstractController, ControllerComponents, RequestHeader}
-import utils.future.Implicits._
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -31,7 +32,7 @@ case class Part(fieldName: String, f: () => Future[Option[JsValue]]) {
   }
 }
 
-class AnalyticsController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: ControllerComponents)(
+class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(
     implicit env: Env
 ) extends AbstractController(cc) {
 
@@ -60,7 +61,7 @@ class AnalyticsController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction
     val paginationPosition = (paginationPage - 1) * paginationPageSize
     env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
       env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
-        case None => NotFound(Json.obj("error" -> s"Service with id: '$serviceId' not found")).asFuture
+        case None => NotFound(Json.obj("error" -> s"Service with id: '$serviceId' not found")).future
         case Some(desc) => {
 
           val analyticsService = new AnalyticsReadsServiceImpl(globalConfig, env)
@@ -266,7 +267,7 @@ class AnalyticsController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction
 
       env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
         env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
-          case None => NotFound(Json.obj("error" -> s"Service with id: '$serviceId' not found")).asFuture
+          case None => NotFound(Json.obj("error" -> s"Service with id: '$serviceId' not found")).future
           case Some(desc) => {
 
             val analyticsService = new AnalyticsReadsServiceImpl(globalConfig, env)
@@ -323,7 +324,7 @@ class AnalyticsController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction
           case _ => FastFuture.successful(None)
         }
         futureFilterable.flatMap {
-          case None => NotFound(Json.obj("error" -> s"Service with id: '$entityId' not found")).asFuture
+          case None => NotFound(Json.obj("error" -> s"Service with id: '$entityId' not found")).future
           case Some(filterable) => {
 
             val analyticsService = new AnalyticsReadsServiceImpl(globalConfig, env)
@@ -378,7 +379,7 @@ class AnalyticsController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction
           case _ => FastFuture.successful(None)
         }
         futureFilterable.flatMap {
-          case None => NotFound(Json.obj("error" -> s"Entity: '$entityId' not found")).asFuture
+          case None => NotFound(Json.obj("error" -> s"Entity: '$entityId' not found")).future
           case Some(filterable) => {
 
             val analyticsService = new AnalyticsReadsServiceImpl(globalConfig, env)
@@ -436,7 +437,7 @@ class AnalyticsController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction
         }
       }
     } getOrElse {
-      NotFound(Json.obj("error" -> s"No entity found")).asFuture
+      NotFound(Json.obj("error" -> s"No entity found")).future
     }
   }
 }

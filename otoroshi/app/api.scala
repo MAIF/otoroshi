@@ -3,14 +3,13 @@ package otoroshi.api
 import actions._
 import akka.actor.ActorSystem
 import akka.stream.Materializer
-import cluster.ClusterController
 import com.softwaremill.macwire.wire
 import com.typesafe.config.{Config, ConfigFactory}
 import controllers._
 import controllers.adminapi._
 import env._
 import gateway._
-import otoroshi.script.ScriptApiController
+import otoroshi.storage.DataStores
 import play.api.http.{DefaultHttpFilters, HttpErrorHandler, HttpRequestHandler}
 import play.api.inject.Injector
 import play.api.libs.ws.WSClient
@@ -21,10 +20,7 @@ import play.api.{BuiltInComponents, Configuration, LoggerConfigurator}
 import play.core.server.{AkkaHttpServerComponents, ServerConfig}
 import play.filters.HttpFiltersComponents
 import router.Routes
-import ssl.ClientValidatorsController
-import otoroshi.storage.DataStores
 import utils.Metrics
-import otoroshi.tcp.TcpServiceApiController
 
 import scala.concurrent.ExecutionContext
 
@@ -123,8 +119,20 @@ class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfi
   lazy val usersController           = wire[UsersController]
   lazy val templatesController       = wire[TemplatesController]
 
+  lazy val healthController          = wire[HealthController]
+  lazy val eventsController          = wire[EventsController]
+  lazy val statsController           = wire[StatsController]
+
+  lazy val servicesController        = wire[ServicesController]
   lazy val serviceGroupController    = wire[ServiceGroupController]
+  lazy val apiKeysController         = wire[ApiKeysController]
   lazy val jwtVerifierController     = wire[JwtVerifierController]
+  lazy val authModulesController     = wire[AuthModulesController]
+  lazy val importExportController    = wire[ImportExportController]
+  lazy val snowMonkeyController      = wire[SnowMonkeyController]
+  lazy val canaryController          = wire[CanaryController]
+  lazy val certificatesController    = wire[CertificatesController]
+  lazy val globalConfigController    = wire[GlobalConfigController]
 
   override lazy val assets: Assets = wire[Assets]
 
