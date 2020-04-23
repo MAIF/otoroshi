@@ -97,7 +97,7 @@ class ProgrammaticApiSpec(name: String, configurationSpec: => Configuration)
       // create service using rest api
       val (_, status) = createOtoroshiService(initialDescriptor, Some(8888), otoroshi.ws).futureValue
 
-      status mustBe 200
+      status mustBe 201
 
       {
         val basicTestResponse1 = otoroshi.ws

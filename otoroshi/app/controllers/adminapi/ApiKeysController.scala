@@ -166,7 +166,7 @@ class ApiKeysFromServiceController(val ApiAction: ApiAction, val cc: ControllerC
                     env.datastores.apiKeyDataStore.addFastLookupByService(serviceId, apiKey).map { _ =>
                       env.datastores.apiKeyDataStore.findAll()
                     }
-                    Ok(apiKey.toJson)
+                    Created(apiKey.toJson)
                   }
                 }
             }
@@ -524,7 +524,7 @@ class ApiKeysFromGroupController(val ApiAction: ApiAction, val cc: ControllerCom
                 env.datastores.apiKeyDataStore.addFastLookupByGroup(groupId, apiKey).map { _ =>
                   env.datastores.apiKeyDataStore.findAll()
                 }
-                Ok(apiKey.toJson)
+                Created(apiKey.toJson)
               }
             }
         }

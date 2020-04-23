@@ -72,7 +72,7 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
 
       val (_, creationStatus) = createOtoroshiService(initialDescriptor).futureValue
 
-      creationStatus mustBe 200
+      creationStatus mustBe 201
 
       val basicTestResponse1 = ws
         .url(s"http://127.0.0.1:$port/api")

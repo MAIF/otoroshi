@@ -122,9 +122,9 @@ class AdminApiSpec(name: String, configurationSpec: => Configuration)
                                            Some(testApiKey2.toJson)).futureValue
 
         status1 mustBe 201
-        status2 mustBe 200
-        status3 mustBe 200
-        status4 mustBe 200
+        status2 mustBe 201
+        status3 mustBe 201
+        status4 mustBe 201
       }
       {
         val (res1, status1) = otoroshiApiCall("GET", "/api/groups").futureValue
