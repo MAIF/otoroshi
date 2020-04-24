@@ -29,6 +29,8 @@ import scala.util.{Failure, Success, Try}
 
 case class LetsEncryptSettings(enabled: Boolean = false,
                                server: String = "acme://letsencrypt.org",
+                               emails: Seq[String],
+                               contacts: Seq[String],
                                publicKey: String = "",
                                privateKey: String = "") {
 
@@ -70,6 +72,8 @@ object LetsEncryptSettings {
         LetsEncryptSettings(
           enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
           server = (json \ "server").asOpt[String].getOrElse("acme://letsencrypt.org/staging"),
+          emails = (json \ "emails").asOpt[Seq[String]].map(_.map(_.trim).filter(_.nonEmpty)).filter(_.nonEmpty).getOrElse(Seq.empty),
+          contacts = (json \ "contacts").asOpt[Seq[String]].map(_.map(_.trim).filter(_.nonEmpty)).filter(_.nonEmpty).getOrElse(Seq.empty),
           publicKey = (json \ "publicKey").asOpt[String].getOrElse(""),
           privateKey = (json \ "privateKey").asOpt[String].getOrElse("")
         )
@@ -81,6 +85,8 @@ object LetsEncryptSettings {
     override def writes(o: LetsEncryptSettings): JsValue = Json.obj(
       "enabled"    -> o.enabled,
       "server"     -> o.server,
+      "emails"     -> JsArray(o.emails.map(JsString.apply)),
+      "contacts"     -> JsArray(o.emails.map(JsString.apply)),
       "publicKey"  -> o.publicKey,
       "privateKey" -> o.privateKey,
     )
@@ -114,9 +120,11 @@ object LetsEncryptHelper {
           config.copy(letsEncryptSettings = newSettings).save().map(_ => kp)
         case Some(kp) => FastFuture.successful(kp)
       }).flatMap { userKeyPair =>
-        val account = new AccountBuilder()
+        val _account = new AccountBuilder()
           .agreeToTermsOfService()
           .useKeyPair(userKeyPair)
+
+        val account = (letsEncryptSettings.emails.map(e => s"mailto:$e") ++ letsEncryptSettings.contacts).foldLeft(_account)((a, e) => a.addContact(e))
           .create(session)
 
         logger.debug(s"ordering lets encrypt certificate for $domain")

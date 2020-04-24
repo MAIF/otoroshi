@@ -797,6 +797,18 @@ export class DangerZonePage extends Component {
         label: 'Server URL',
       },
     },
+    'letsEncryptSettings.emails': {
+      type: 'array',
+      props: {
+        label: 'Email addresses',
+      },
+    },
+    'letsEncryptSettings.contacts': {
+      type: 'array',
+      props: {
+        label: 'Contact URLs',
+      },
+    },
     'letsEncryptSettings.publicKey': {
       type: 'text',
       props: {
@@ -1156,6 +1168,8 @@ export class DangerZonePage extends Component {
     ">>>Let's encrypt settings",
     'letsEncryptSettings.enabled',
     'letsEncryptSettings.server',
+    'letsEncryptSettings.emails',
+    'letsEncryptSettings.contacts',
     'letsEncryptSettings.publicKey',
     'letsEncryptSettings.privateKey',
     '>>>Mailer settings',
