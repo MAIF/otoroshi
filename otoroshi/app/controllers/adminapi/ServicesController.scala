@@ -1,6 +1,6 @@
 package controllers.adminapi
 
-import actions.ApiAction
+import actions.{ApiAction, ApiActionContext}
 import env.Env
 import events._
 import models.{ErrorTemplate, ServiceDescriptor, ServiceDescriptorQuery, Target}
@@ -10,11 +10,13 @@ import play.api.libs.json._
 import play.api.mvc.{AbstractController, ControllerComponents, RequestHeader}
 import utils.JsonPatchHelpers.patchJson
 import utils._
+import otoroshi.utils.syntax.implicits._
+import play.api.mvc.Results.Status
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)(implicit val env: Env)
-  extends AbstractController(cc) with BulkControllerHelper[ServiceDescriptor, JsValue] with CrudControllerHelper[ServiceDescriptor, JsValue] {
+  extends AbstractController(cc) with BulkControllerHelper[ServiceDescriptor, JsValue] with CrudControllerHelper[ServiceDescriptor, JsValue] with AdminApiHelper {
 
   implicit lazy val ec = env.otoroshiExecutionContext
   implicit lazy val mat = env.otoroshiMaterializer
@@ -114,66 +116,81 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
   }
 
   def allLines() = ApiAction.async { ctx =>
-    Audit.send(
-      AdminApiEvent(
-        env.snowflakeGenerator.nextIdStr(),
-        env.env,
-        Some(ctx.apiKey),
-        ctx.user,
-        "ACCESS_ALL_LINES",
-        "User accessed all lines",
-        ctx.from,
-        ctx.ua
-      )
-    )
-    env.datastores.globalConfigDataStore.allEnv().map {
-      case lines => Ok(JsArray(lines.toSeq.map(l => JsString(l))))
+    val options = SendAuditAndAlert("ACCESS_ALL_LINES", s"User accessed all lines", None, Json.obj(), ctx)
+    fetchWithPaginationAndFilteringAsResult(ctx, "filter.".some, (e: String) => JsString(e), options) {
+      env.datastores.globalConfigDataStore.allEnv().map(_.toSeq).fright[JsonApiError]
     }
+    // Audit.send(
+    //   AdminApiEvent(
+    //     env.snowflakeGenerator.nextIdStr(),
+    //     env.env,
+    //     Some(ctx.apiKey),
+    //     ctx.user,
+    //     "ACCESS_ALL_LINES",
+    //     "User accessed all lines",
+    //     ctx.from,
+    //     ctx.ua
+    //   )
+    // )
+    // env.datastores.globalConfigDataStore.allEnv().map {
+    //   case lines => Ok(JsArray(lines.toSeq.map(l => JsString(l))))
+    // }
   }
 
   def servicesForALine(line: String) = ApiAction.async { ctx =>
-    val paginationPage: Int = ctx.request.queryString.get("page").flatMap(_.headOption).map(_.toInt).getOrElse(1)
-    val paginationPageSize: Int =
-      ctx.request.queryString.get("pageSize").flatMap(_.headOption).map(_.toInt).getOrElse(Int.MaxValue)
-    val paginationPosition = (paginationPage - 1) * paginationPageSize
-    Audit.send(
-      AdminApiEvent(
-        env.snowflakeGenerator.nextIdStr(),
-        env.env,
-        Some(ctx.apiKey),
-        ctx.user,
-        "ACCESS_SERVICES_FOR_LINES",
-        s"User accessed service list for line $line",
-        ctx.from,
-        ctx.ua,
-        Json.obj("line" -> line)
-      )
-    )
-    env.datastores.serviceDescriptorDataStore.findByEnv(line).map {
-      case descriptors => Ok(JsArray(descriptors.drop(paginationPosition).take(paginationPageSize).map(_.toJson)))
+    val options = SendAuditAndAlert("ACCESS_SERVICES_FOR_LINES", s"User accessed service list for line $line", None, Json.obj("line" -> line), ctx)
+    fetchWithPaginationAndFilteringAsResult(ctx, "filter.".some, (e: ServiceDescriptor) => e.toJson, options) {
+      env.datastores.serviceDescriptorDataStore.findByEnv(line).fright[JsonApiError]
     }
+    // val paginationPage: Int = ctx.request.queryString.get("page").flatMap(_.headOption).map(_.toInt).getOrElse(1)
+    // val paginationPageSize: Int =
+    //   ctx.request.queryString.get("pageSize").flatMap(_.headOption).map(_.toInt).getOrElse(Int.MaxValue)
+    // val paginationPosition = (paginationPage - 1) * paginationPageSize
+    // Audit.send(
+    //   AdminApiEvent(
+    //     env.snowflakeGenerator.nextIdStr(),
+    //     env.env,
+    //     Some(ctx.apiKey),
+    //     ctx.user,
+    //     "ACCESS_SERVICES_FOR_LINES",
+    //     s"User accessed service list for line $line",
+    //     ctx.from,
+    //     ctx.ua,
+    //     Json.obj("line" -> line)
+    //   )
+    // )
+    // env.datastores.serviceDescriptorDataStore.findByEnv(line).map {
+    //   case descriptors => Ok(JsArray(descriptors.drop(paginationPosition).take(paginationPageSize).map(_.toJson)))
+    // }
   }
 
   def serviceTargets(serviceId: String) = ApiAction.async { ctx =>
-    env.datastores.serviceDescriptorDataStore.findById(serviceId).map {
-      case None => NotFound(Json.obj("error" -> s"Service with id: '$serviceId' not found"))
-      case Some(desc) => {
-        Audit.send(
-          AdminApiEvent(
-            env.snowflakeGenerator.nextIdStr(),
-            env.env,
-            Some(ctx.apiKey),
-            ctx.user,
-            "ACCESS_SERVICE_TARGETS",
-            s"User accessed a service targets",
-            ctx.from,
-            ctx.ua,
-            Json.obj("serviceId" -> serviceId)
-          )
-        )
-        Ok(JsArray(desc.targets.map(t => JsString(s"${t.scheme}://${t.host}"))))
+    val options = SendAuditAndAlert("ACCESS_SERVICE_TARGETS", "User accessed a service targets", None, Json.obj("serviceId" -> serviceId), ctx)
+    fetchWithPaginationAndFilteringAsResult(ctx, "filter.".some, (e: String) => JsString(e), options) {
+      env.datastores.serviceDescriptorDataStore.findById(serviceId).map {
+        case None => JsonApiError(404, JsString(s"Service with id: '$serviceId' not found")).left[Seq[String]]
+        case Some(desc) => desc.targets.map(t => s"${t.scheme}://${t.host}").right[JsonApiError]
       }
     }
+    // env.datastores.serviceDescriptorDataStore.findById(serviceId).map {
+    //   case None => NotFound(Json.obj("error" -> s"Service with id: '$serviceId' not found"))
+    //   case Some(desc) => {
+    //     Audit.send(
+    //       AdminApiEvent(
+    //         env.snowflakeGenerator.nextIdStr(),
+    //         env.env,
+    //         Some(ctx.apiKey),
+    //         ctx.user,
+    //         "ACCESS_SERVICE_TARGETS",
+    //         s"User accessed a service targets",
+    //         ctx.from,
+    //         ctx.ua,
+    //         Json.obj("serviceId" -> serviceId)
+    //       )
+    //     )
+    //     Ok(JsArray(desc.targets.map(t => JsString(s"${t.scheme}://${t.host}"))))
+    //   }
+    // }
   }
 
   def updateServiceTargets(serviceId: String) = ApiAction.async(parse.json) { ctx =>
@@ -350,31 +367,38 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
   }
 
   def serviceHealth(serviceId: String) = ApiAction.async { ctx =>
-    val paginationPage: Int = ctx.request.queryString.get("page").flatMap(_.headOption).map(_.toInt).getOrElse(1)
-    val paginationPageSize: Int =
-      ctx.request.queryString.get("pageSize").flatMap(_.headOption).map(_.toInt).getOrElse(Int.MaxValue)
-    val paginationPosition = (paginationPage - 1) * paginationPageSize
-    env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
-      case None => NotFound(Json.obj("error" -> s"Service with id: '$serviceId' not found")).asFuture
-      case Some(desc) => {
-        Audit.send(
-          AdminApiEvent(
-            env.snowflakeGenerator.nextIdStr(),
-            env.env,
-            Some(ctx.apiKey),
-            ctx.user,
-            "ACCESS_SERVICE_HEALTH",
-            s"User accessed a service descriptor helth",
-            ctx.from,
-            ctx.ua,
-            Json.obj("serviceId" -> serviceId)
-          )
-        )
-        env.datastores.healthCheckDataStore
-          .findAll(desc)
-          .map(evts => Ok(JsArray(evts.drop(paginationPosition).take(paginationPageSize).map(_.toJson)))) // .map(_.toEnrichedJson))))
+    val options = SendAuditAndAlert("ACCESS_SERVICE_HEALTH", "User accessed a service descriptor health", None, Json.obj("serviceId" -> serviceId), ctx)
+    fetchWithPaginationAndFilteringAsResult(ctx, "filter.".some, (e: HealthCheckEvent) => e.toJson, options) {
+      env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
+        case None => JsonApiError(404, JsString(s"Service with id: '$serviceId' not found")).leftf[Seq[HealthCheckEvent]]
+        case Some(desc) => env.datastores.healthCheckDataStore.findAll(desc).fright[JsonApiError]
       }
     }
+    // val paginationPage: Int = ctx.request.queryString.get("page").flatMap(_.headOption).map(_.toInt).getOrElse(1)
+    // val paginationPageSize: Int =
+    //   ctx.request.queryString.get("pageSize").flatMap(_.headOption).map(_.toInt).getOrElse(Int.MaxValue)
+    // val paginationPosition = (paginationPage - 1) * paginationPageSize
+    // env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
+    //   case None => NotFound(Json.obj("error" -> s"Service with id: '$serviceId' not found")).asFuture
+    //   case Some(desc) => {
+    //     Audit.send(
+    //       AdminApiEvent(
+    //         env.snowflakeGenerator.nextIdStr(),
+    //         env.env,
+    //         Some(ctx.apiKey),
+    //         ctx.user,
+    //         "ACCESS_SERVICE_HEALTH",
+    //         s"User accessed a service descriptor helth",
+    //         ctx.from,
+    //         ctx.ua,
+    //         Json.obj("serviceId" -> serviceId)
+    //       )
+    //     )
+    //     env.datastores.healthCheckDataStore
+    //       .findAll(desc)
+    //       .map(evts => Ok(JsArray(evts.drop(paginationPosition).take(paginationPageSize).map(_.toJson)))) // .map(_.toEnrichedJson))))
+    //   }
+    // }
   }
 
   def serviceTemplate(serviceId: String) = ApiAction.async { ctx =>
@@ -484,8 +508,7 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
     }
   }
 
-  /*
-
+  /*s
 
   def createService() = ApiAction.async(parse.json) { ctx =>
     val rawBody = ctx.request.body.as[JsObject]

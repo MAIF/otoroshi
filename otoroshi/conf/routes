@@ -367,14 +367,13 @@ GET     /api/events                                           controllers.admina
 GET     /api/admin-sessions                                   controllers.adminapi.UsersController.sessions()
 DELETE  /api/admin-sessions/:id                               controllers.adminapi.UsersController.discardSession(id)
 DELETE  /api/admin-sessions                                   controllers.adminapi.UsersController.discardAllSessions()
-# TODO: BULK
 
 GET     /api/apps-sessions                                    controllers.adminapi.UsersController.privateAppsSessions()
 DELETE  /api/apps-sessions/:id                                controllers.adminapi.UsersController.discardPrivateAppsSession(id)
 DELETE  /api/apps-sessions                                    controllers.adminapi.UsersController.discardAllPrivateAppsSessions()
-# TODO: BULK
 
 GET     /api/audit/events                                     controllers.adminapi.EventsController.auditEvents()
+# TODO: PAGINATE
 GET     /api/alert/events                                     controllers.adminapi.EventsController.alertEvents()
 # TODO: PAGINATE
 
@@ -382,13 +381,11 @@ GET     /api/admins/simple/_template                          controllers.admina
 POST    /api/admins/simple                                    controllers.adminapi.UsersController.registerSimpleAdmin()
 GET     /api/admins/simple                                    controllers.adminapi.UsersController.simpleAdmins()
 DELETE  /api/admins/simple/:username                          controllers.adminapi.UsersController.deleteAdmin(username)
-# TODO: BULK
 
 GET     /api/admins/webauthn/_template                        controllers.adminapi.TemplatesController.initiateWebauthnAdmin()
 GET     /api/admins/webauthn                                  controllers.adminapi.UsersController.webAuthnAdmins()
 POST    /api/admins/webauthn                                  controllers.adminapi.UsersController.registerWebAuthnAdmin()
 DELETE  /api/admins/webauthn/:username/:id                    controllers.adminapi.UsersController.webAuthnDeleteAdmin(username, id)
-# TODO: BULK
 
 GET     /api/swagger.json                                     controllers.SwaggerController.swagger()
 GET     /api/swagger/ui                                       controllers.SwaggerController.swaggerUi()

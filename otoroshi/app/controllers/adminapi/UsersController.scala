@@ -2,18 +2,18 @@ package controllers.adminapi
 
 import actions.ApiAction
 import akka.http.scaladsl.util.FastFuture
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
 import env.Env
 import events._
-import models.BackOfficeUser
+import models.{BackOfficeUser, PrivateAppsUser}
 import org.mindrot.jbcrypt.BCrypt
-import play.api.libs.json.{JsArray, JsValue, Json}
+import otoroshi.utils.syntax.implicits._
+import play.api.libs.json.{JsValue, Json}
 import play.api.mvc._
 import security.IdGenerator
+import utils.{AdminApiHelper, JsonApiError, SendAuditAndAlert}
 
 class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env: Env)
-    extends AbstractController(cc) {
+    extends AbstractController(cc) with AdminApiHelper {
 
   implicit lazy val ec = env.otoroshiExecutionContext
 
@@ -28,13 +28,17 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
   )
 
   def sessions() = ApiAction.async { ctx =>
-    val paginationPage: Int = ctx.request.queryString.get("page").flatMap(_.headOption).map(_.toInt).getOrElse(1)
-    val paginationPageSize: Int =
-      ctx.request.queryString.get("pageSize").flatMap(_.headOption).map(_.toInt).getOrElse(Int.MaxValue)
-    val paginationPosition = (paginationPage - 1) * paginationPageSize
-    env.datastores.backOfficeUserDataStore.sessions() map { sessions =>
-      Ok(JsArray(sessions.drop(paginationPosition).take(paginationPageSize)))
+    val options = SendAuditAndAlert("ACCESS_ADMIN_SESSIONS", s"User accessed admin session", None, Json.obj(), ctx)
+    fetchWithPaginationAndFilteringAsResult(ctx, "filter.".some, (e: BackOfficeUser) => e.toJson, options) {
+      env.datastores.backOfficeUserDataStore.findAll().fright[JsonApiError]
     }
+    // val paginationPage: Int = ctx.request.queryString.get("page").flatMap(_.headOption).map(_.toInt).getOrElse(1)
+    // val paginationPageSize: Int =
+    //   ctx.request.queryString.get("pageSize").flatMap(_.headOption).map(_.toInt).getOrElse(Int.MaxValue)
+    // val paginationPosition = (paginationPage - 1) * paginationPageSize
+    // env.datastores.backOfficeUserDataStore.sessions() map { sessions =>
+    //   Ok(JsArray(sessions.drop(paginationPosition).take(paginationPageSize)))
+    // }
   }
 
   def discardSession(id: String) = ApiAction.async { ctx =>
@@ -100,13 +104,17 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
   }
 
   def privateAppsSessions() = ApiAction.async { ctx =>
-    val paginationPage: Int = ctx.request.queryString.get("page").flatMap(_.headOption).map(_.toInt).getOrElse(1)
-    val paginationPageSize: Int =
-      ctx.request.queryString.get("pageSize").flatMap(_.headOption).map(_.toInt).getOrElse(Int.MaxValue)
-    val paginationPosition = (paginationPage - 1) * paginationPageSize
-    env.datastores.privateAppsUserDataStore.findAll() map { sessions =>
-      Ok(JsArray(sessions.drop(paginationPosition).take(paginationPageSize).map(_.toJson)))
+    val options = SendAuditAndAlert("ACCESS_PRIVATE_APPS_SESSIONS", s"User accessed private apps session", None, Json.obj(), ctx)
+    fetchWithPaginationAndFilteringAsResult(ctx, "filter.".some, (e: PrivateAppsUser) => e.toJson, options) {
+      env.datastores.privateAppsUserDataStore.findAll().fright[JsonApiError]
     }
+    // val paginationPage: Int = ctx.request.queryString.get("page").flatMap(_.headOption).map(_.toInt).getOrElse(1)
+    // val paginationPageSize: Int =
+    //   ctx.request.queryString.get("pageSize").flatMap(_.headOption).map(_.toInt).getOrElse(Int.MaxValue)
+    // val paginationPosition = (paginationPage - 1) * paginationPageSize
+    // env.datastores.privateAppsUserDataStore.findAll() map { sessions =>
+    //   Ok(JsArray(sessions.drop(paginationPosition).take(paginationPageSize).map(_.toJson)))
+    // }
   }
 
   def discardPrivateAppsSession(id: String) = ApiAction.async { ctx =>
@@ -188,13 +196,17 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
   }
 
   def simpleAdmins = ApiAction.async { ctx =>
-    val paginationPage: Int = ctx.request.queryString.get("page").flatMap(_.headOption).map(_.toInt).getOrElse(1)
-    val paginationPageSize: Int =
-      ctx.request.queryString.get("pageSize").flatMap(_.headOption).map(_.toInt).getOrElse(Int.MaxValue)
-    val paginationPosition = (paginationPage - 1) * paginationPageSize
-    env.datastores.simpleAdminDataStore.findAll() map { users =>
-      Ok(JsArray(users.drop(paginationPosition).take(paginationPageSize)))
+    val options = SendAuditAndAlert("ACCESS_SIMPLE_ADMINS", s"User accessed simple admins", None, Json.obj(), ctx)
+    fetchWithPaginationAndFilteringAsResult(ctx, "filter.".some, (e: JsValue) => e, options) {
+      env.datastores.simpleAdminDataStore.findAll().fright[JsonApiError]
     }
+    // val paginationPage: Int = ctx.request.queryString.get("page").flatMap(_.headOption).map(_.toInt).getOrElse(1)
+    // val paginationPageSize: Int =
+    //   ctx.request.queryString.get("pageSize").flatMap(_.headOption).map(_.toInt).getOrElse(Int.MaxValue)
+    // val paginationPosition = (paginationPage - 1) * paginationPageSize
+    // env.datastores.simpleAdminDataStore.findAll() map { users =>
+    //   Ok(JsArray(users.drop(paginationPosition).take(paginationPageSize)))
+    // }
   }
 
   def deleteAdmin(username: String) = ApiAction.async { ctx =>
@@ -219,13 +231,17 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
   }
 
   def webAuthnAdmins() = ApiAction.async { ctx =>
-    val paginationPage: Int = ctx.request.queryString.get("page").flatMap(_.headOption).map(_.toInt).getOrElse(1)
-    val paginationPageSize: Int =
-      ctx.request.queryString.get("pageSize").flatMap(_.headOption).map(_.toInt).getOrElse(Int.MaxValue)
-    val paginationPosition = (paginationPage - 1) * paginationPageSize
-    env.datastores.webAuthnAdminDataStore.findAll() map { users =>
-      Ok(JsArray(users.drop(paginationPosition).take(paginationPageSize)))
+    val options = SendAuditAndAlert("ACCESS_WEBAUTHN_ADMINS", s"User accessed webauthn admins", None, Json.obj(), ctx)
+    fetchWithPaginationAndFilteringAsResult(ctx, "filter.".some, (e: JsValue) => e, options) {
+      env.datastores.webAuthnAdminDataStore.findAll().fright[JsonApiError]
     }
+    // val paginationPage: Int = ctx.request.queryString.get("page").flatMap(_.headOption).map(_.toInt).getOrElse(1)
+    // val paginationPageSize: Int =
+    //   ctx.request.queryString.get("pageSize").flatMap(_.headOption).map(_.toInt).getOrElse(Int.MaxValue)
+    // val paginationPosition = (paginationPage - 1) * paginationPageSize
+    // env.datastores.webAuthnAdminDataStore.findAll() map { users =>
+    //   Ok(JsArray(users.drop(paginationPosition).take(paginationPageSize)))
+    // }
   }
 
   def registerWebAuthnAdmin() = ApiAction.async(parse.json) { ctx =>

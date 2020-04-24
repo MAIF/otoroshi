@@ -10,6 +10,7 @@ import otoroshi.utils.syntax.implicits._
 import play.api.http.HttpEntity
 import play.api.libs.json._
 import play.api.libs.streams.Accumulator
+import play.api.mvc.Results.{BadRequest, Ok}
 import play.api.mvc._
 import security.IdGenerator
 import utils.JsonPatchHelpers.patchJson
@@ -60,22 +61,17 @@ case class GenericAlert(`@id`: String,
   )
 }
 
+case class SendAuditAndAlert(action: String, message: String, alert: Option[String], meta: JsObject, ctx: ApiActionContext[_])
+
 trait AdminApiHelper {
   def sendAudit(action: String, message: String, meta: JsObject, ctx: ApiActionContext[_])(implicit env: Env): Unit = {
-    val event: AdminApiEvent = AdminApiEvent(
-      env.snowflakeGenerator.nextIdStr(),
-      env.env,
-      Some(ctx.apiKey),
-      ctx.user,
-      action,
-      message,
-      ctx.from,
-      ctx.ua,
-      meta
-    )
-    Audit.send(event)
+    sendAuditAndAlert(SendAuditAndAlert(action, message, None, meta, ctx))(env)
   }
   def sendAuditAndAlert(action: String, message: String, alert: String, meta: JsObject, ctx: ApiActionContext[_])(implicit env: Env): Unit = {
+    sendAuditAndAlert(SendAuditAndAlert(action, message, alert.some, meta, ctx))(env)
+  }
+  def sendAuditAndAlert(options: SendAuditAndAlert)(implicit env: Env): Unit = {
+    val SendAuditAndAlert(action, message, alertOpt, meta, ctx) = options
     val event: AdminApiEvent = AdminApiEvent(
       env.snowflakeGenerator.nextIdStr(),
       env.env,
@@ -88,15 +84,78 @@ trait AdminApiHelper {
       meta
     )
     Audit.send(event)
-    Alerts.send(
-      GenericAlert(env.snowflakeGenerator.nextIdStr(),
-        env.env,
-        ctx.user.getOrElse(ctx.apiKey.toJson),
-        alert,
-        event,
-        ctx.from,
-        ctx.ua)
-    )
+    alertOpt.foreach { alert =>
+      Alerts.send(
+        GenericAlert(env.snowflakeGenerator.nextIdStr(),
+          env.env,
+          ctx.user.getOrElse(ctx.apiKey.toJson),
+          alert,
+          event,
+          ctx.from,
+          ctx.ua)
+      )
+    }
+  }
+  def fetchWithPaginationAndFiltering[Entity, Error](ctx: ApiActionContext[_], filterPrefix: Option[String], writeEntity: Entity => JsValue, audit: SendAuditAndAlert)(findAllOps: => Future[Either[ApiError[Error], Seq[Entity]]])(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[Error], Seq[Entity]]] = {
+
+    val paginationPage: Int = ctx.request.queryString
+      .get("page")
+      .flatMap(_.headOption)
+      .map(_.toInt)
+      .getOrElse(1)
+    val paginationPageSize: Int =
+      ctx.request.queryString
+        .get("pageSize")
+        .flatMap(_.headOption)
+        .map(_.toInt)
+        .getOrElse(Int.MaxValue)
+
+    val paginationPosition = (paginationPage - 1) * paginationPageSize
+    val prefix = filterPrefix
+    val filters = ctx.request.queryString.mapValues(_.last).collect {
+      case v if prefix.isEmpty => v
+      case v if prefix.isDefined && v._1.startsWith(prefix.get) => (v._1.replace(prefix.get, ""), v._2)
+    }.filterNot(a => a._1 == "page" || a._1 == "pageSize")
+    val hasFilters = filters.nonEmpty
+
+    findAllOps.map {
+      case Left(error) => error.left
+      case Right(entities) => {
+        sendAuditAndAlert(audit)
+        val jsonElements = entities.slice(paginationPosition, paginationPosition + paginationPageSize).map(e => (e, writeEntity(e)))
+        if (hasFilters) {
+          jsonElements.filter {
+            case (_, elem) =>
+              filters.forall {
+                case (key, value) => (elem \ key).as[JsValue] match {
+                  case JsString(v) => v == value
+                  case JsBoolean(v) => v == value.toBoolean
+                  case JsNumber(v) => v.toDouble == value.toDouble
+                  case _ => false
+                }
+              }
+          }.map(_._1).right
+        } else {
+          entities.right
+        }
+      }
+    }
+  }
+  def fetchWithPaginationAndFilteringAsResult[Entity, Error](ctx: ApiActionContext[_], filterPrefix: Option[String], writeEntity: Entity => JsValue, audit: SendAuditAndAlert)(findAllOps: => Future[Either[ApiError[Error], Seq[Entity]]])(implicit env: Env, ec: ExecutionContext): Future[Result] = {
+    fetchWithPaginationAndFiltering[Entity, Error](ctx, filterPrefix, writeEntity, audit)(findAllOps).map {
+      case Left(error) => Results.Status(error.status)(Json.obj("error" -> "fetch_error", "error_description" -> error.bodyAsJson))
+      case Right(finalItems) => {
+        if (ctx.request.accepts("application/x-ndjson")) {
+          Ok.sendEntity(HttpEntity.Streamed(
+            data = Source(finalItems.map(writeEntity).map(e => e.stringify.byteString).toList),
+            contentLength = None,
+            contentType = "application/x-ndjson".some
+          ))
+        } else {
+          Ok(JsArray(finalItems.map(writeEntity)))
+        }
+      }
+    }
   }
 }
 
@@ -110,8 +169,8 @@ trait EntityHelper[Entity, Error] {
   def extractId(entity: Entity): String
   def readEntity(json: JsValue): Either[String, Entity]
   def writeEntity(entity: Entity): JsValue
-  def findByIdOps(id: String)(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[Error], OptionalEntityAndContext[Entity]]]
-  def findAllOps(req: RequestHeader)(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[Error], SeqEntityAndContext[Entity]]]
+  def findByIdOps(id: String)(implicit env: Env, ec: ExecutionContext):         Future[Either[ApiError[Error], OptionalEntityAndContext[Entity]]]
+  def findAllOps(req: RequestHeader)(implicit env: Env, ec: ExecutionContext):  Future[Either[ApiError[Error], SeqEntityAndContext[Entity]]]
   def createEntityOps(entity: Entity)(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[Error], EntityAndContext[Entity]]]
   def updateEntityOps(entity: Entity)(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[Error], EntityAndContext[Entity]]]
   def deleteEntityOps(id: String)(implicit env: Env, ec: ExecutionContext):     Future[Either[ApiError[Error], NoEntityAndContext[Entity]]]
@@ -472,7 +531,7 @@ trait CrudHelper[Entity, Error] extends EntityHelper[Entity, Error] {
     val hasFilters = filters.nonEmpty
 
     findAllOps(ctx.request).map {
-      case Left(error) => Status(error.status)(Json.obj("error" -> "find_error", "error_description" -> error.bodyAsJson))
+      case Left(error) => Status(error.status)(Json.obj("error" -> "fetch_error", "error_description" -> error.bodyAsJson))
       case Right(SeqEntityAndContext(entities, action, message, metadata, _)) => {
         Audit.send(
           AdminApiEvent(
@@ -487,9 +546,9 @@ trait CrudHelper[Entity, Error] extends EntityHelper[Entity, Error] {
             metadata
           )
         )
-        val jsonElements = entities.drop(paginationPosition).take(paginationPageSize).map(writeEntity)
-        if (hasFilters) {
-          Ok(JsArray(jsonElements.filter { elem =>
+        val jsonElements: Seq[JsValue] = entities.drop(paginationPosition).take(paginationPageSize).map(writeEntity)
+        val finalItems = if (hasFilters) {
+          val items: Seq[JsValue] = jsonElements.filter { elem =>
             filters.forall {
               case (key, value) => (elem \ key).as[JsValue] match {
                 case JsString(v) => v == value
@@ -498,9 +557,19 @@ trait CrudHelper[Entity, Error] extends EntityHelper[Entity, Error] {
                 case _ => false
               }
             }
-          }))
+          }
+          items
         } else {
-          Ok(JsArray(jsonElements))
+          jsonElements
+        }
+        if (ctx.request.accepts("application/x-ndjson")) {
+          Ok.sendEntity(HttpEntity.Streamed(
+            data = Source(finalItems.toList.map(e => e.stringify.byteString)),
+            contentLength = None,
+            contentType = "application/x-ndjson".some
+          ))
+        } else {
+          Ok(JsArray(finalItems))
         }
       }
     }
