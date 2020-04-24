@@ -164,9 +164,38 @@ case class HttpRequest(url: String,
   lazy val path: String                = uri.path.toString()
   lazy val queryString: Option[String] = uri.rawQueryString
   lazy val relativeUri: String         = uri.toRelative.toString()
+  def json: JsValue = Json.obj(
+    "url" -> url,
+    "method" -> method,
+    "headers" -> headers,
+    "version" -> version,
+    "cookies" -> JsArray(cookies.map(c => Json.obj(
+      "name" -> c.name,
+      "value" -> c.value,
+      "domain" -> c.domain.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      "path" -> c.path.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      "maxAge" -> c.maxAge.map(v => JsNumber(BigDecimal(v))).getOrElse(JsNull).as[JsValue],
+      "secure" -> c.secure,
+      "httpOnly" -> c.httpOnly,
+    )))
+  )
 }
 
-case class HttpResponse(status: Int, headers: Map[String, String], cookies: Seq[WSCookie] = Seq.empty[WSCookie])
+case class HttpResponse(status: Int, headers: Map[String, String], cookies: Seq[WSCookie] = Seq.empty[WSCookie]) {
+  def json: JsValue = Json.obj(
+    "status" -> status,
+    "headers" -> headers,
+    "cookies" -> JsArray(cookies.map(c => Json.obj(
+      "name" -> c.name,
+      "value" -> c.value,
+      "domain" -> c.domain.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      "path" -> c.path.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      "maxAge" -> c.maxAge.map(v => JsNumber(BigDecimal(v))).getOrElse(JsNull).as[JsValue],
+      "secure" -> c.secure,
+      "httpOnly" -> c.httpOnly,
+    )))
+  )
+}
 
 trait ContextWithConfig {
   def index: Int

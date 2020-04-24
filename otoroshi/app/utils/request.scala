@@ -37,6 +37,10 @@ object RequestImplicits {
       }
     }
     @inline
+    def theUrl(implicit env: Env): String = {
+      s"${theProtocol}://${theHost}${relativeUri}"
+    }
+    @inline
     def theProtocol(implicit env: Env): String = {
       if (env.trustXForwarded) {
         requestHeader.headers

@@ -29,8 +29,8 @@ import scala.util.{Failure, Success, Try}
 
 case class LetsEncryptSettings(enabled: Boolean = false,
                                server: String = "acme://letsencrypt.org",
-                               emails: Seq[String],
-                               contacts: Seq[String],
+                               emails: Seq[String] = Seq.empty,
+                               contacts: Seq[String] = Seq.empty,
                                publicKey: String = "",
                                privateKey: String = "") {
 
