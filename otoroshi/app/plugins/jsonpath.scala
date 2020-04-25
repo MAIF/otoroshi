@@ -22,4 +22,14 @@ object JsonPathUtils {
       }
     }
   }
+
+  def getAt[T](payload: String, path: String): Option[T] = {
+    Try(JsonPath.parse(payload).read[T](path)) match {
+      case Failure(err) =>
+        logger.error(s"error while matching query '$path' against '$payload': $err")
+        None
+      case Success(res) =>
+        Option(res)
+    }
+  }
 }

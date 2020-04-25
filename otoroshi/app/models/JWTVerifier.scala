@@ -32,6 +32,7 @@ import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{Await, ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
+import otoroshi.utils.syntax.implicits._
 
 trait AsJson {
   def asJson: JsValue
@@ -42,6 +43,7 @@ trait FromJson[A] {
 }
 
 case class JwtInjection(
+    decodedToken: Option[DecodedJWT] = None,
     additionalHeaders: Map[String, String] = Map.empty,
     removeHeaders: Seq[String] = Seq.empty,
     additionalCookies: Map[String, String] = Map.empty,
@@ -61,7 +63,7 @@ object JwtInjection extends FromJson[JwtInjection] {
 
 sealed trait JwtTokenLocation extends AsJson {
   def token(request: RequestHeader): Option[String]
-  def asJwtInjection(newToken: String): JwtInjection
+  def asJwtInjection(originalToken: DecodedJWT, newToken: String): JwtInjection
 }
 object JwtTokenLocation extends FromJson[JwtTokenLocation] {
   override def fromJson(json: JsValue): Either[Throwable, JwtTokenLocation] =
@@ -89,7 +91,7 @@ object InQueryParam extends FromJson[InQueryParam] {
 }
 case class InQueryParam(name: String) extends JwtTokenLocation {
   def token(request: RequestHeader): Option[String]  = request.getQueryString(name)
-  def asJwtInjection(newToken: String): JwtInjection = JwtInjection()
+  def asJwtInjection(originalToken: DecodedJWT, newToken: String): JwtInjection = JwtInjection()
   override def asJson                                = Json.obj("type" -> "InQueryParam", "name" -> this.name)
 }
 object InHeader extends FromJson[InHeader] {
@@ -111,8 +113,8 @@ case class InHeader(name: String, remove: String = "") extends JwtTokenLocation 
       h.replaceAll(remove, "")
     }
   }
-  def asJwtInjection(newToken: String): JwtInjection =
-    JwtInjection(additionalHeaders = Map(name -> (remove + newToken)))
+  def asJwtInjection(originalToken: DecodedJWT, newToken: String): JwtInjection =
+    JwtInjection(originalToken.some, additionalHeaders = Map(name -> (remove + newToken)))
   override def asJson = Json.obj("type" -> "InHeader", "name" -> this.name, "remove" -> this.remove)
 }
 object InCookie extends FromJson[InCookie] {
@@ -129,7 +131,7 @@ object InCookie extends FromJson[InCookie] {
 }
 case class InCookie(name: String) extends JwtTokenLocation {
   def token(request: RequestHeader): Option[String]  = request.cookies.get(name).map(_.value)
-  def asJwtInjection(newToken: String): JwtInjection = JwtInjection(additionalCookies = Map(name -> newToken))
+  def asJwtInjection(originalToken: DecodedJWT, newToken: String): JwtInjection = JwtInjection(originalToken.some, additionalCookies = Map(name -> newToken))
   override def asJson                                = Json.obj("type" -> "InCookie", "name" -> this.name)
 }
 
@@ -863,7 +865,8 @@ sealed trait JwtVerifier extends AsJson {
                   )
                   .as[JsObject]
                 val signedToken = sign(interpolatedToken, outputAlgorithm)
-                f(source.asJwtInjection(signedToken)).right[Result]
+                val decodedToken = JWT.decode(signedToken)
+                f(source.asJwtInjection(decodedToken,  signedToken)).right[Result]
               }
             }
           }
@@ -940,8 +943,8 @@ sealed trait JwtVerifier extends AsJson {
                       )
                       .left[A]
                   }
-                  case s @ DefaultToken(false, _, _) => f(JwtInjection()).right[Result]
-                  case s @ PassThrough(_)            => f(JwtInjection()).right[Result]
+                  case s @ DefaultToken(false, _, _) => f(JwtInjection(decodedToken.some)).right[Result]
+                  case s @ PassThrough(_)            => f(JwtInjection(decodedToken.some)).right[Result]
                   case s @ Sign(_, aSettings) =>
                     aSettings.asAlgorithmF(OutputMode) flatMap {
                       case None =>
@@ -958,7 +961,7 @@ sealed trait JwtVerifier extends AsJson {
                       case Some(outputAlgorithm) => {
                         val newToken = sign(Json.parse(ApacheBase64.decodeBase64(decodedToken.getPayload)).as[JsObject],
                                             outputAlgorithm)
-                        f(source.asJwtInjection(newToken)).right[Result]
+                        f(source.asJwtInjection(decodedToken, newToken)).right[Result]
                       }
                     }
                   case s @ Transform(_, tSettings, aSettings) =>
@@ -1021,15 +1024,15 @@ sealed trait JwtVerifier extends AsJson {
                         )
                         val newToken = sign(newJsonToken, outputAlgorithm)
                         source match {
-                          case _: InQueryParam => f(tSettings.location.asJwtInjection(newToken)).right[Result]
+                          case _: InQueryParam => f(tSettings.location.asJwtInjection(decodedToken, newToken)).right[Result]
                           case InHeader(n, _) =>
-                            val inj = tSettings.location.asJwtInjection(newToken)
+                            val inj = tSettings.location.asJwtInjection(decodedToken, newToken)
                             tSettings.location match {
                               case InHeader(nn, _) if nn == n => f(inj).right[Result]
                               case _                          => f(inj.copy(removeHeaders = Seq(n))).right[Result]
                             }
                           case InCookie(n) =>
-                            f(tSettings.location.asJwtInjection(newToken).copy(removeCookies = Seq(n))).right[Result]
+                            f(tSettings.location.asJwtInjection(decodedToken, newToken).copy(removeCookies = Seq(n))).right[Result]
                         }
                       }
                     }

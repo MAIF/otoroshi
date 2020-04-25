@@ -13,7 +13,7 @@ import org.joda.time.DateTime
 import otoroshi.script._
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
-import play.api.libs.ws.{EmptyBody, InMemoryBody, SourceBody, WSRequest, WSResponse}
+import play.api.libs.ws.{EmptyBody, InMemoryBody, WSRequest, WSResponse}
 import play.api.mvc.{RequestHeader, Result}
 import utils.RequestImplicits._
 import utils.http.Implicits._
