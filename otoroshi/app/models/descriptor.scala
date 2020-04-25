@@ -1899,7 +1899,7 @@ case class ServiceDescriptor(
     secComAlgoChallengeOtoToBack: AlgoSettings = HSAlgoSettings(512, "secret", false),
     secComAlgoChallengeBackToOto: AlgoSettings = HSAlgoSettings(512, "secret", false),
     secComAlgoInfoToken: AlgoSettings = HSAlgoSettings(512, "secret", false),
-    ////////////
+    ///////////////////////////////////////////////////////////
     securityExcludedPatterns: Seq[String] = Seq.empty[String],
     publicPatterns: Seq[String] = Seq.empty[String],
     privatePatterns: Seq[String] = Seq.empty[String],
@@ -1923,14 +1923,16 @@ case class ServiceDescriptor(
     cors: CorsSettings = CorsSettings(false),
     redirection: RedirectionSettings = RedirectionSettings(false),
     clientValidatorRef: Option[String] = None,
+    ///////////////////////////////////////////////////////////
     transformerRefs: Seq[String] = Seq.empty,
     transformerConfig: JsValue = Json.obj(),
+    accessValidator: AccessValidatorRef = AccessValidatorRef(),
+    preRouting: PreRoutingRef = PreRoutingRef(),
+    ///////////////////////////////////////////////////////////
     gzip: GzipConfig = GzipConfig(),
     thirdPartyApiKey: ThirdPartyApiKeyConfig = OIDCThirdPartyApiKeyConfig(false, None),
     apiKeyConstraints: ApiKeyConstraints = ApiKeyConstraints(),
     restrictions: Restrictions = Restrictions(),
-    accessValidator: AccessValidatorRef = AccessValidatorRef(),
-    preRouting: PreRoutingRef = PreRoutingRef(),
     hosts: Seq[String] = Seq.empty[String],
     paths: Seq[String] = Seq.empty[String],
     issueCert: Boolean = false,

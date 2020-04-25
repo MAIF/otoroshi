@@ -8,7 +8,7 @@ lazy val root = (project in file("."))
   .disablePlugins(PlayFilters)
 
 lazy val scalaLangVersion = "2.12.11"
-// lazy val scalaLangVersion = "2.13.1"
+// lazy val scalaLangVersion = "2.13.2"
 // * https://github.com/propensive/kaleidoscope/issues/24
 // * https://github.com/risksense/ipaddr/issues/11
 lazy val metricsVersion = "4.1.5"
