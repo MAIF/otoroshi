@@ -57,10 +57,15 @@ class JwtUserExtractor extends PreRouting {
       """.stripMargin
     )
 
+  private val registeredClaims = Seq(
+    "iss", "sub", "aud", "exp", "nbf", "iat", "jti"
+  )
+
   override def preRoute(ctx: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     val config = ctx.configFor("JwtUserExtractor")
     val jwtVerifierId = (config \ "verifier").as[String]
     val strict = (config \ "strict").asOpt[Boolean].getOrElse(true)
+    val strip = (config \ "strip").asOpt[Boolean].getOrElse(false)
     val namePath = (config \ "namePath").asOpt[String].getOrElse("name")
     val emailPath = (config \ "emailPath").asOpt[String].getOrElse("email")
     val metaPath = (config \ "metaPath").asOpt[String]
@@ -77,12 +82,16 @@ class JwtUserExtractor extends PreRouting {
             case Some(token) => {
               val jsonToken = new String(OtoroshiClaim.decoder.decode(token.getPayload))
               val parsedJsonToken = Json.parse(jsonToken).as[JsObject]
+              val strippedJsonToken = JsObject(parsedJsonToken.value.filter {
+                case (key, _) if registeredClaims.contains(key) => false
+                case _ => true
+              })
               val meta: Option[JsValue] = metaPath.flatMap(path => Try(JsonPathUtils.getAt[net.minidev.json.JSONObject](jsonToken, path)).toOption.flatten).map(o => Json.parse(o.toJSONString))
               val user: PrivateAppsUser = PrivateAppsUser(
                 randomId = IdGenerator.uuid,
                 name = JsonPathUtils.getAt[String](jsonToken, namePath).getOrElse("--"),
                 email = JsonPathUtils.getAt[String](jsonToken, emailPath).getOrElse("--"),
-                profile = parsedJsonToken,
+                profile = if (strip) strippedJsonToken else parsedJsonToken,
                 token = Json.obj("jwt" -> token.getToken, "payload" -> parsedJsonToken),
                 realm = s"JwtUserExtractor@${ctx.descriptor.id}",
                 authConfigId = s"JwtUserExtractor@${ctx.descriptor.id}",
