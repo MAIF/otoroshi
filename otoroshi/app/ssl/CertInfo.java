@@ -21,7 +21,7 @@ public class CertInfo {
                 return Collections.emptyList();
             for (List item : altNames) {
                 Integer type = (Integer) item.get(0);
-                if (type == 0 || type == 2) {
+                if (type == 0 || type == 2 || type == 7) {
                     try {
                         ASN1InputStream decoder=null;
                         if(item.toArray()[1] instanceof byte[])
@@ -39,7 +39,7 @@ public class CertInfo {
                         log.underlyingLogger().error("Error decoding subjectAltName" + e.getLocalizedMessage(),e);
                     }
                 } else {
-                    log.underlyingLogger().warn("SubjectAltName of invalid type found: " + certificate);
+                    log.underlyingLogger().warn("SubjectAltName of invalid type found (" + certificate.getSubjectDN().getName() + ": " + type + "): ");// + certificate);
                 }
             }
         }

@@ -8,7 +8,7 @@ import java.nio.charset.StandardCharsets
 import java.nio.charset.StandardCharsets.US_ASCII
 import java.security._
 import java.security.cert._
-import java.security.spec.PKCS8EncodedKeySpec
+import java.security.spec.{KeySpec, PKCS8EncodedKeySpec}
 import java.util.concurrent.{Executors, TimeUnit}
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 import java.util.regex.Pattern.CASE_INSENSITIVE
@@ -33,7 +33,10 @@ import models._
 import org.apache.commons.codec.binary.Hex
 import org.apache.commons.codec.digest.DigestUtils
 import org.bouncycastle.asn1.x509.{ExtendedKeyUsage, KeyPurposeId}
+import org.bouncycastle.openssl.jcajce.{JcaPEMKeyConverter, JcePEMDecryptorProviderBuilder}
+import org.bouncycastle.openssl.{PEMEncryptedKeyPair, PEMKeyPair, PEMParser}
 import org.bouncycastle.pkcs.PKCS10CertificationRequest
+import org.bouncycastle.util.io.pem.PemReader
 import org.joda.time.{DateTime, Interval}
 import otoroshi.ssl.pki.models.{GenCertResponse, GenCsrQuery, GenKeyPairQuery}
 import otoroshi.utils.LetsEncryptHelper
@@ -282,12 +285,13 @@ case class Cert(
     Try {
       val keyStore: KeyStore = KeyStore.getInstance("JKS")
       keyStore.load(null, null)
-      DynamicSSLEngineProvider.readPrivateKey(this.id, this.privateKey, this.password, false).toOption.exists {
-        encodedKeySpec: PKCS8EncodedKeySpec =>
-          val key: PrivateKey = Try(KeyFactory.getInstance("RSA"))
-            .orElse(Try(KeyFactory.getInstance("DSA")))
-            .map(_.generatePrivate(encodedKeySpec))
-            .get
+      DynamicSSLEngineProvider.readPrivateKeyUniversal(this.id, this.privateKey, this.password, false).toOption.exists {
+        key: PrivateKey =>
+          // val key: PrivateKey = DynamicSSLEngineProvider.readPrivateKey(encodedKeySpec) /*Try(KeyFactory.getInstance("RSA")).map(_.generatePrivate(encodedKeySpec))
+          //   .orElse(Try(KeyFactory.getInstance("EC")).map(_.generatePrivate(encodedKeySpec)))
+          //   .orElse(Try(KeyFactory.getInstance("DSA")).map(_.generatePrivate(encodedKeySpec)))
+          //   .orElse(Try(KeyFactory.getInstance("DiffieHellman")).map(_.generatePrivate(encodedKeySpec)))
+          //   .get*/
           val certificateChain: Seq[X509Certificate] =
             DynamicSSLEngineProvider.readCertificateChain(this.id, this.chain, false)
           if (certificateChain.isEmpty) {
@@ -303,16 +307,16 @@ case class Cert(
       }
     } recover {
       case e =>
-        DynamicSSLEngineProvider.logger.error("Error while checking certificate validity", e)
+        DynamicSSLEngineProvider.logger.error(s"Error while checking certificate validity (${name})", e)
         false
     } getOrElse false
   }
   lazy val cryptoKeyPair: KeyPair = {
-    val privkeySpec = DynamicSSLEngineProvider.readPrivateKey(id, privateKey, None).right.get
-    val privkey: PrivateKey = Try(KeyFactory.getInstance("RSA"))
-      .orElse(Try(KeyFactory.getInstance("DSA")))
-      .map(_.generatePrivate(privkeySpec))
-      .get
+    val privkey = DynamicSSLEngineProvider.readPrivateKeyUniversal(id, privateKey, None).right.get
+    //val privkey: PrivateKey = DynamicSSLEngineProvider.readPrivateKey(privkeySpec) /*Try(KeyFactory.getInstance("RSA"))
+    //  .orElse(Try(KeyFactory.getInstance("DSA")))
+    //  .map(_.generatePrivate(privkeySpec))
+    //  .get
     val pubkey: PublicKey = certificate.get.getPublicKey
     new KeyPair(pubkey, privkey)
   }
@@ -344,6 +348,19 @@ object Cert {
   val OtoroshiCA = "otoroshi-ca"
 
   lazy val logger = Logger("otoroshi-cert")
+
+  def apply(name: String, cert: String, privateKey: String): Cert = {
+    Cert(
+      id = IdGenerator.token(32),
+      name = name,
+      description = name,
+      chain = cert,
+      privateKey = privateKey,
+      caRef = None,
+      autoRenew = false,
+      client = false
+    ).enrich()
+  }
 
   def apply(cert: X509Certificate, keyPair: KeyPair, caRef: Option[String], client: Boolean): Cert = {
     val c = Cert(
@@ -585,6 +602,7 @@ trait CertificateDataStore extends BasicStore[Cert] {
     conf.getOptional[String](path).flatMap { cacert =>
       if ((cacert.contains(PemHeaders.BeginCertificate) && cacert.contains(PemHeaders.EndCertificate)) ||
           (cacert.contains(PemHeaders.BeginPrivateKey) && cacert.contains(PemHeaders.EndPrivateKey)) ||
+          (cacert.contains(PemHeaders.BeginPrivateECKey) && cacert.contains(PemHeaders.EndPrivateECKey)) ||
           (cacert.contains(PemHeaders.BeginPrivateRSAKey) && cacert.contains(PemHeaders.EndPrivateRSAKey))) {
         Some(cacert)
       } else {
@@ -593,6 +611,7 @@ trait CertificateDataStore extends BasicStore[Cert] {
           val content = new String(java.nio.file.Files.readAllBytes(file.toPath))
           if ((content.contains(PemHeaders.BeginCertificate) && content.contains(PemHeaders.EndCertificate)) ||
               (content.contains(PemHeaders.BeginPrivateKey) && content.contains(PemHeaders.EndPrivateKey)) ||
+              (content.contains(PemHeaders.BeginPrivateECKey) && content.contains(PemHeaders.EndPrivateECKey)) ||
               (content.contains(PemHeaders.BeginPrivateRSAKey) && content.contains(PemHeaders.EndPrivateRSAKey))) {
             Some(content)
           } else {
@@ -1110,48 +1129,50 @@ object DynamicSSLEngineProvider {
       }
       case cert => {
         cert.certificate.foreach { certificate =>
-          readPrivateKey(cert.domain, cert.privateKey, cert.password).foreach { encodedKeySpec: PKCS8EncodedKeySpec =>
-            val key: PrivateKey = Try(KeyFactory.getInstance("RSA"))
-              .orElse(Try(KeyFactory.getInstance("DSA")))
-              .map(_.generatePrivate(encodedKeySpec))
-              .get
-            val certificateChain: Seq[X509Certificate] = readCertificateChain(cert.domain, cert.chain)
-            if (certificateChain.isEmpty) {
-              logger.error(s"[${cert.id}] Certificate file does not contain any certificates :(")
-            } else {
-              logger.debug(s"Adding entry for ${cert.domain} with chain of ${certificateChain.size}")
-              val domain = Try {
-                certificateChain.head.maybeDomain.getOrElse(cert.domain)
-              }.toOption.getOrElse(cert.domain)
-              keyStore.setKeyEntry(
-                if (cert.client) "client-cert-" + certificate.getSerialNumber.toString(16) else domain,
-                key,
-                cert.password.getOrElse("").toCharArray,
-                certificateChain.toArray[java.security.cert.Certificate]
-              )
+          Try {
+            readPrivateKeyUniversal(cert.domain, cert.privateKey, cert.password).foreach { key: PrivateKey =>
+              // val key: PrivateKey = readPrivateKey(encodedKeySpec)
+              val certificateChain: Seq[X509Certificate] = readCertificateChain(cert.domain, cert.chain)
+              if (certificateChain.isEmpty) {
+                logger.error(s"[${cert.id}] Certificate file does not contain any certificates :(")
+              } else {
+                logger.debug(s"Adding entry for ${cert.domain} with chain of ${certificateChain.size}")
+                val domain = Try {
+                  certificateChain.head.maybeDomain.getOrElse(cert.domain)
+                }.toOption.getOrElse(cert.domain)
+                keyStore.setKeyEntry(
+                  if (cert.client) "client-cert-" + certificate.getSerialNumber.toString(16) else domain,
+                  key,
+                  cert.password.getOrElse("").toCharArray,
+                  certificateChain.toArray[java.security.cert.Certificate]
+                )
 
-              // Handle SANs
-              if (!cert.client) {
-                cert.sans
-                  .filter(name => !keyStore.containsAlias(name))
-                  .foreach(
-                    name =>
-                      keyStore.setKeyEntry(
-                        name,
-                        key,
-                        cert.password.getOrElse("").toCharArray,
-                        certificateChain.toArray[java.security.cert.Certificate]
+                // Handle SANs
+                if (!cert.client) {
+                  cert.sans
+                    .filter(name => !keyStore.containsAlias(name))
+                    .foreach(
+                      name =>
+                        keyStore.setKeyEntry(
+                          name,
+                          key,
+                          cert.password.getOrElse("").toCharArray,
+                          certificateChain.toArray[java.security.cert.Certificate]
+                      )
                     )
-                  )
-              }
+                }
 
-              certificateChain.tail.foreach { cert =>
-                val id = "ca-" + cert.getSerialNumber.toString(16)
-                if (!keyStore.containsAlias(id)) {
-                  keyStore.setCertificateEntry(id, cert)
+                certificateChain.tail.foreach { cert =>
+                  val id = "ca-" + cert.getSerialNumber.toString(16)
+                  if (!keyStore.containsAlias(id)) {
+                    keyStore.setCertificateEntry(id, cert)
+                  }
                 }
               }
             }
+          } match {
+            case Failure(e) => logger.error(s"Error while handling certificate: ${cert.name}: " + e.getMessage)
+            case Success(e) =>
           }
         }
       }
@@ -1189,10 +1210,18 @@ object DynamicSSLEngineProvider {
     certificates
   }
 
-  def readPrivateKey(id: String,
+  def _readPrivateKey(encodedKeySpec: KeySpec): PrivateKey = {
+    Try(KeyFactory.getInstance("RSA").generatePrivate(encodedKeySpec))
+      .orElse(Try(KeyFactory.getInstance("EC").generatePrivate(encodedKeySpec)))
+      .orElse(Try(KeyFactory.getInstance("DSA").generatePrivate(encodedKeySpec)))
+      //.orElse(Try(KeyFactory.getInstance("DiffieHellman")).map(_.generatePrivate(encodedKeySpec)))
+      .get
+  }
+
+  def _readPrivateKeySpec(id: String,
                      content: String,
                      keyPassword: Option[String],
-                     log: Boolean = true): Either[KeyStoreError, PKCS8EncodedKeySpec] = {
+                     log: Boolean = true): Either[KeyStoreError, KeySpec] = {
     if (log) logger.debug(s"Reading private key for $id")
     val matcher: Matcher = PRIVATE_KEY_PATTERN.matcher(content)
     if (!matcher.find) {
@@ -1212,6 +1241,40 @@ object DynamicSSLEngineProvider {
         .getOrElse {
           Right(new PKCS8EncodedKeySpec(encodedKey))
         }
+    }
+  }
+
+  def readPrivateKeyUniversal(id: String,
+                         content: String,
+                         keyPassword: Option[String],
+                         log: Boolean = true): Either[KeyStoreError, PrivateKey] = {
+    if (log) logger.debug(s"Reading private key for $id")
+    val matcher: Matcher = PRIVATE_KEY_PATTERN.matcher(content)
+    if (!matcher.find) {
+      logger.debug(s"[$id] Found no private key :(")
+      Left(s"[$id] Found no private key")
+    } else {
+      import otoroshi.utils.syntax.implicits._
+      Try {
+        // val reader = new PemReader(new StringReader(privateKey))
+        val parser = new PEMParser(new StringReader(content))
+        val converter = new JcaPEMKeyConverter().setProvider("BC")
+        parser.readObject() match {
+          case ckp: PEMEncryptedKeyPair if keyPassword.isEmpty => None
+          case ckp: PEMEncryptedKeyPair if keyPassword.isDefined =>
+            val decProv = new JcePEMDecryptorProviderBuilder().build(keyPassword.get.toCharArray)
+            val kp = converter.getKeyPair(ckp.decryptKeyPair(decProv))
+            kp.getPrivate.some
+          case ukp: PEMKeyPair =>
+            val kp = converter.getKeyPair(ukp)
+            kp.getPrivate.some
+          case _ => None
+        }
+      } match {
+        case Failure(e) => Left(s"[$id] error while reading private key: ${e.getMessage}")
+        case Success(None) => Left(s"[$id] no valid key found")
+        case Success(Some(key)) => Right(key)
+      }
     }
   }
 
@@ -1410,7 +1473,9 @@ object PemHeaders {
   val BeginPrivateKey         = "-----BEGIN PRIVATE KEY-----"
   val EndPrivateKey           = "-----END PRIVATE KEY-----"
   val BeginPrivateRSAKey      = "-----BEGIN RSA PRIVATE KEY-----"
+  val BeginPrivateECKey      = "-----BEGIN EC PRIVATE KEY-----"
   val EndPrivateRSAKey        = "-----END RSA PRIVATE KEY-----"
+  val EndPrivateECKey        = "-----END EC PRIVATE KEY-----"
   val BeginCertificateRequest = "-----BEGIN CERTIFICATE REQUEST-----"
   val EndCertificateRequest   = "-----END CERTIFICATE REQUEST-----"
 }

@@ -1,16 +1,18 @@
 package otoroshi.plugins.jobs.kubernetes
 
 import akka.http.scaladsl.model.Uri
+import akka.stream.scaladsl.{Sink, Source}
 import env.Env
-import models.{ClientConfig, Target}
+import models.{ClientConfig, ServiceDescriptor, Target}
 import org.joda.time.DateTime
 import otoroshi.script._
 import otoroshi.utils.syntax.implicits._
+import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.ws.WSRequest
 import play.api.mvc.{Result, Results}
-import security.OtoroshiClaim
-import ssl.Cert
+import security.{IdGenerator, OtoroshiClaim}
+import ssl.{Cert, DynamicSSLEngineProvider, PemHeaders}
 import utils.{TypedMap, UrlSanitizer}
 import utils.http.MtlsConfig
 import utils.RequestImplicits._
@@ -19,20 +21,22 @@ import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-object KubernetesIngressControllerJob {
-  def theConfig(ctx: ContextWithConfig)(implicit env: Env, ec: ExecutionContext): KubernetesIngressControllerConfig = {
-    println(ctx.config.prettify)
+object KubernetesConfig {
+  def theConfig(ctx: ContextWithConfig)(implicit env: Env, ec: ExecutionContext): KubernetesConfig = {
     val conf = ctx.configForOpt("KubernetesConfig").orElse((env.datastores.globalConfigDataStore.latest().scripts.jobConfig \ "KubernetesConfig").asOpt[JsValue]).getOrElse(Json.obj())
-    KubernetesIngressControllerConfig(
+    KubernetesConfig(
       enabled = (conf \ "enabled").as[Boolean],
-      kubernetesApiUrl = (conf \ "endpoint").asOpt[String].getOrElse("https://kube.cluster.dev"),
-      kubernetesApiToken = (conf \ "token").asOpt[String].getOrElse("xxx"),
-      namespaces = (conf \ "namespaces").asOpt[Seq[String]].getOrElse(Seq("*"))
+      endpoint = (conf \ "endpoint").asOpt[String].getOrElse("https://kube.cluster.dev"),
+      token = (conf \ "token").asOpt[String].getOrElse("xxx"),
+      namespaces = (conf \ "namespaces").asOpt[Seq[String]].getOrElse(Seq("*")),
+      labels = (conf \ "labels").asOpt[Map[String, String]].getOrElse(Map.empty),
+      ingressClass = (conf \ "ingressClass").asOpt[String],
+      defaultGroup = (conf \ "defaultGroup").asOpt[String].getOrElse("default")
     )
   }
 }
 
-case class KubernetesIngressControllerConfig(enabled: Boolean, kubernetesApiUrl: String, kubernetesApiToken: String, namespaces: Seq[String])
+case class KubernetesConfig(enabled: Boolean, endpoint: String, token: String, namespaces: Seq[String], labels: Map[String, String], ingressClass: Option[String], defaultGroup: String)
 
 // https://kubernetes.io/fr/docs/concepts/services-networking/ingress/
 class KubernetesIngressControllerJob extends Job {
@@ -80,13 +84,17 @@ class KubernetesIngressControllerJob extends Job {
   override def jobStop(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = super.jobStop(ctx)
 
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
-    val conf = KubernetesIngressControllerJob.theConfig(ctx)
+    val conf = KubernetesConfig.theConfig(ctx)
     if (conf.enabled) {
       KubernetesIngressSyncJob.syncIngresses(conf, ctx.attrs)
     } else {
       ().future
     }
   }
+}
+
+case class OtoAnnotationConfig() {
+  def apply(desc: ServiceDescriptor): ServiceDescriptor = desc
 }
 
 class KubernetesIngressControllerTrigger extends RequestSink {
@@ -103,33 +111,114 @@ class KubernetesIngressControllerTrigger extends RequestSink {
   }
 
   override def handle(ctx: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Future[Result] = {
-    println("handle")
-    val conf = KubernetesIngressControllerJob.theConfig(ctx)
-    KubernetesIngressSyncJob.syncIngresses(conf, ctx.attrs).map { s_ =>
+    val conf = KubernetesConfig.theConfig(ctx)
+    KubernetesIngressSyncJob.syncIngresses(conf, ctx.attrs).map { _ =>
       Results.Ok(Json.obj("done" -> true))
     }
   }
 }
 
 object KubernetesIngressSyncJob {
-  def syncIngresses(conf: KubernetesIngressControllerConfig, attrs: TypedMap)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
-    println("syncIngresses")
+
+  val logger = Logger("otoroshi-plugins-kubernetes-ingress-sync")
+
+  def importCerts(client: KubernetesClient)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    client.fetchCerts().flatMap { certs =>
+      Future.sequence(certs.map { cert =>
+        cert.cert match {
+          case None => ().future
+          case Some(found) => {
+            val certId = s"kubernetes_secrets_${cert.namespace}_${cert.name}" // TODO: add cluster id ????
+            val newCert = found.copy(id = certId).enrich()
+            env.datastores.certificatesDataStore.findById(certId).flatMap {
+              case None =>
+                logger.info(s"importing cert. ${cert.namespace} - ${cert.name}")
+                newCert.save().map(_ => ())
+              case Some(existingCert) if existingCert.contentHash == newCert.contentHash => ().future
+              case Some(existingCert) if existingCert.contentHash != newCert.contentHash =>
+                logger.info(s"updating cert. ${cert.namespace} - ${cert.name}")
+                newCert.save().map(_ => ())
+            }
+          }
+        }
+      }).map(_ => ())
+    }
+  }
+
+  private def shouldProcessIngress(ingressClass: Option[String], ingressClassAnnotation: Option[String]): Boolean = {
+    println(ingressClass, ingressClassAnnotation)
+    ingressClass match {
+      case None if ingressClassAnnotation.isEmpty => true
+      case None => ingressClassAnnotation == "otoroshi".some
+      case Some(v) if ingressClassAnnotation.isDefined => v == ingressClassAnnotation.get
+      case Some(v) if ingressClassAnnotation.isEmpty => true
+      case _ => true
+    }
+  }
+
+  private def parseConfig(annotations: Map[String, String]): OtoAnnotationConfig = {
+    OtoAnnotationConfig() // TODO: manage it
+    /*
+      stripPath =,
+      privateApp =,
+      forceHttps =,
+      maintenanceMode =,
+      buildMode =,
+      sendOtoroshiHeadersBack =,
+      readOnly =,
+      xForwardedHeaders =,
+      overrideHost =,
+      allowHttp10 =,
+
+        publicPatterns =,
+        privatePatterns =,
+        additionalHeaders =,
+        additionalHeadersOut =,
+        missingOnlyHeadersIn =,
+        missingOnlyHeadersOut =,
+        removeHeadersIn =,
+        removeHeadersOut =,
+        headersVerification =,
+        matchingHeaders =,
+         healthCheck =,
+        clientConfig =,
+                      targetsLoadBalancing =,
+
+      */
+  }
+
+  def syncIngresses(conf: KubernetesConfig, attrs: TypedMap)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    implicit val mat = env.otoroshiMaterializer
+    logger.info("Starting kubernetes sync.")
     val client = new KubernetesClient(conf, env)
-    println("fetch")
-    client.fetchDeployments().map { pods =>
-      // println(pods.filter(_.name.startsWith("otoroshi")).map(_.pretty).mkString("\n"))
-      client.fetchServices().map { services =>
-        // println(services.filter(_.name.startsWith("otoroshi")).map(_.pretty).mkString("\n"))
-        client.fetchIngress().map { ingresses =>
-          println(s"${ingresses.size} ingresses")
-          println(ingresses.map(_.name).mkString(", "))
-          println(ingresses.filter(_.name.startsWith("otoroshi")).map(v => Try(v.ingress.toString)).collect {
-            case Success(i) => i
-          }.mkString("\n"))
+    importCerts(client).flatMap { _ =>
+      client.fetchIngress().flatMap { ingresses =>
+        Source(ingresses.toList)
+            .mapAsync(1) { ingressRaw =>
+              if (shouldProcessIngress(conf.ingressClass, ingressRaw.ingressClazz)) {
+                println(1)
+                val otoroshiConfig = parseConfig(ingressRaw.annotations)
+                if (ingressRaw.isValid()) {
+                  println(2)
+                  // TODO: handle case where ingress has a default backend
+                  ingressRaw.updateIngressStatus(client).flatMap { _ =>
+                    println(3)
+                    ingressRaw.asDescriptors(conf, otoroshiConfig).flatMap { descs =>
+                      println(4)
+                      Future.sequence(descs.map(_.save()))
+                    }
+                  }
+                } else {
+                  println(5)
+                  ().future
+                }
+              } else {
+                println(6)
+                ().future
+              }
+            }.runWith(Sink.ignore).map(_ => ())
         }
       }
-    }
-    ().future
   }
 }
 
@@ -141,21 +230,70 @@ object KubernetesCertSyncJob {
 trait KubernetesEntity {
   def raw: JsValue
   def pretty: String = raw.prettify
+  lazy val uid: String = (raw \ "metadata" \ "uid").as[String]
   lazy val name: String = (raw \ "metadata" \ "name").as[String]
   lazy val namespace: String = (raw \ "metadata" \ "namespace").as[String]
+  lazy val labels: Map[String, String] = (raw \ "metadata" \ "labels").asOpt[Map[String, String]].getOrElse(Map.empty)
+  lazy val annotations: Map[String, String] = (raw \ "metadata" \ "annotations").asOpt[Map[String, String]].getOrElse(Map.empty)
 }
 case class KubernetesService(raw: JsValue) extends KubernetesEntity
+case class KubernetesEndpoint(raw: JsValue) extends KubernetesEntity
 case class KubernetesIngress(raw: JsValue) extends KubernetesEntity {
+  lazy val ingressClazz: Option[String] = annotations.get("kubernetes.io/ingress.class")
   lazy val ingress: IngressSupport.NetworkingV1beta1IngressItem = {
     // println(raw.prettify)
     IngressSupport.NetworkingV1beta1IngressItem.reader.reads(raw).get
   }
+  def isValid(): Boolean = true // TODO:
+  def updateIngressStatus(client: KubernetesClient): Future[Unit] = ().future // TODO:
+  def asDescriptors(conf: KubernetesConfig, otoConfig: OtoAnnotationConfig)(implicit env: Env, ec: ExecutionContext): Future[Seq[ServiceDescriptor]] = {
+    Future.sequence(
+      ingress.spec.rules.flatMap { rule =>
+        rule.http.paths.map { path =>
+          val id = "kubernetes_service_" + namespace + "_" + name + "_" + rule.host.getOrElse("wildcard") + "_" + path.path.getOrElse("-")
+          println(id)
+          env.datastores.serviceDescriptorDataStore.findById(id).map {
+            case None => env.datastores.serviceDescriptorDataStore.initiateNewDescriptor()
+            case Some(desc) => desc
+          }.map { desc =>
+            desc.copy(
+              id = id,
+              groupId = conf.defaultGroup,
+              name = "kubernetes - " + name + " - " + rule.host.getOrElse("*") + " - " + path.path.getOrElse("/"),
+              env = "prod",
+              domain = "internal.kube.cluster",
+              subdomain = id,
+              targets = Seq(Target("www.google.fr", "https")),
+              root = path.path.getOrElse("/"),
+              matchingRoot = path.path,
+              metadata = Map.empty,
+              hosts = Seq(rule.host.getOrElse("*")),
+              paths = path.path.toSeq
+            )
+          }.map { desc =>
+            otoConfig.apply(desc)
+          }
+        }
+      }
+    )
+  }
 }
 case class KubernetesDeployments(raw: JsValue) extends KubernetesEntity
 case class KubernetesCertSecret(raw: JsValue) extends KubernetesEntity {
-  // tls.crt: base64 encoded cert
-  // tls.key: base64 encoded key
-  def cert: Cert = ???
+  lazy val data: JsValue = (raw \ "data").as[JsValue]
+  def cert: Option[Cert] = {
+    val crt = (data \ "tls.crt").asOpt[String]
+    val key = (data \ "tls.key").asOpt[String]
+    (crt, key) match {
+      case (Some(crtData), Some(keyData)) =>
+        Cert(
+          "kubernetes - " + name,
+          new String(DynamicSSLEngineProvider.base64Decode(crtData)),
+          new String(DynamicSSLEngineProvider.base64Decode(keyData))
+        ).some
+      case _ => None
+    }
+  }
 }
 case class KubernetesSecret(raw: JsValue) extends KubernetesEntity {
   lazy val theType: String = (raw \ "type").as[String]
@@ -164,12 +302,12 @@ case class KubernetesSecret(raw: JsValue) extends KubernetesEntity {
   def cert: KubernetesCertSecret = KubernetesCertSecret(raw)
 }
 
-class KubernetesClient(config: KubernetesIngressControllerConfig, env: Env) {
+class KubernetesClient(config: KubernetesConfig, env: Env) {
 
   implicit val ec = env.otoroshiExecutionContext
 
   private def client(url: String): WSRequest = {
-    val uri = Uri(UrlSanitizer.sanitize(config.kubernetesApiUrl + url).replace("/namespaces/*", ""))
+    val uri = Uri(UrlSanitizer.sanitize(config.endpoint + url).replace("/namespaces/*", ""))
     env.Ws.akkaUrlWithTarget(
       uri.toString(),
       Target(
@@ -183,8 +321,15 @@ class KubernetesClient(config: KubernetesIngressControllerConfig, env: Env) {
       ),
       ClientConfig()
     ).withHttpHeaders(
-      "Authorization" -> s"Bearer ${config.kubernetesApiToken}"
+      "Authorization" -> s"Bearer ${config.token}"
     )
+  }
+  private def filterLabels[A <: KubernetesEntity](items: Seq[A]): Seq[A] = {
+    if (config.labels.isEmpty) {
+      items
+    } else {
+      items.filter(i => config.labels.forall(t => i.labels.get(t._1) == t._2.some))
+    }
   }
   def fetchServices(): Future[Seq[KubernetesService]] = {
     Future.sequence(config.namespaces.map { namespace =>
@@ -192,9 +337,21 @@ class KubernetesClient(config: KubernetesIngressControllerConfig, env: Env) {
       cli.addHttpHeaders(
         "Accept" -> "application/json"
       ).get().map { resp =>
-        (resp.json \ "items").as[JsArray].value.map { item =>
+        filterLabels((resp.json \ "items").as[JsArray].value.map { item =>
           KubernetesService(item)
-        }
+        })
+      }
+    }).map(_.flatten)
+  }
+  def fetchEndpoints(): Future[Seq[KubernetesEndpoint]] = {
+    Future.sequence(config.namespaces.map { namespace =>
+      val cli: WSRequest = client(s"/api/v1/namespaces/$namespace/endpoints")
+      cli.addHttpHeaders(
+        "Accept" -> "application/json"
+      ).get().map { resp =>
+        filterLabels((resp.json \ "items").as[JsArray].value.map { item =>
+          KubernetesEndpoint(item)
+        })
       }
     }).map(_.flatten)
   }
@@ -204,9 +361,9 @@ class KubernetesClient(config: KubernetesIngressControllerConfig, env: Env) {
       cli.addHttpHeaders(
         "Accept" -> "application/json"
       ).get().map { resp =>
-        (resp.json \ "items").as[JsArray].value.map { item =>
+        filterLabels((resp.json \ "items").as[JsArray].value.map { item =>
           KubernetesIngress(item)
-        }
+        })
       }
     }).map(_.flatten)
   }
@@ -216,9 +373,9 @@ class KubernetesClient(config: KubernetesIngressControllerConfig, env: Env) {
       cli.addHttpHeaders(
         "Accept" -> "application/json"
       ).get().map { resp =>
-        (resp.json \ "items").as[JsArray].value.map { item =>
+        filterLabels((resp.json \ "items").as[JsArray].value.map { item =>
           KubernetesDeployments(item)
-        }
+        })
       }
     }).map(_.flatten)
   }
@@ -231,9 +388,9 @@ class KubernetesClient(config: KubernetesIngressControllerConfig, env: Env) {
       cli.addHttpHeaders(
         "Accept" -> "application/json"
       ).get().map { resp =>
-        (resp.json \ "items").as[JsArray].value.map { item =>
+        filterLabels((resp.json \ "items").as[JsArray].value.map { item =>
           KubernetesSecret(item)
-        }
+        })
       }
     }).map(_.flatten)
   }
