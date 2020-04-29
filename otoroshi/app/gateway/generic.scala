@@ -68,6 +68,7 @@ object ReverseProxyActionHelper {
     def chooseRemoteAddress(config: SidecarConfig) =
       if (config.strict) req.headers.get("Remote-Address").map(add => add.split(":")(0)).getOrElse(remoteAddress)
       else remoteAddress
+    // TODO: enabled mtls, etc ...
     env.sidecarConfig match {
       case _ if service.id == env.backOfficeDescriptor.id => f(service)
       // when outside container wants to access oustide services through otoroshi
@@ -103,6 +104,7 @@ object ReverseProxyActionHelper {
               )
             )
           case None =>
+            // TODO: auto find ?
             Errors.craftResponseResult(
               "sidecar.bad.apikey.clientid",
               Results.InternalServerError,

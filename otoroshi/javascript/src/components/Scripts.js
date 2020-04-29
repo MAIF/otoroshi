@@ -93,6 +93,9 @@ class PluginsDescription extends Component {
   };
 
   render() {
+    if (!this.props.refs) {
+      return null;
+    }
     return (
       <>
         {this.props.refs
@@ -191,7 +194,7 @@ export class Scripts extends Component {
         <div className="form-group">
           <label className="col-xs-12 col-sm-2 control-label" />
           <div className="col-sm-10">
-            {this.props.refs.length === 0 && (
+            {this.props.refs && this.props.refs.length === 0 && (
               <a href={`/bo/dashboard/plugins/add`} className="btn btn-sm btn-primary">
                 <i className="glyphicon glyphicon-plus" /> Create a new plugin.
               </a>

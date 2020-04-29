@@ -204,7 +204,9 @@ trait ContextWithConfig {
   def configExists(name: String): Boolean =
     (config \ name).asOpt[JsValue].orElse((globalConfig \ name).asOpt[JsValue]).isDefined
   def configFor(name: String): JsValue =
-    (config \ name).asOpt[JsValue].orElse((globalConfig \ name).asOpt[JsValue]).getOrElse(Json.obj())
+    configForOpt(name).getOrElse(Json.obj())
+  def configForOpt(name: String): Option[JsValue] =
+    (config \ name).asOpt[JsValue].orElse((globalConfig \ name).asOpt[JsValue])
   private def conf[A](prefix: String = "config-"): Option[JsValue] = {
     config match {
       case json: JsArray  => Option(json.value(index)).orElse((config \ s"$prefix$index").asOpt[JsValue])
