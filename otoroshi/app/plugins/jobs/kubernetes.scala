@@ -11,11 +11,11 @@ import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.ws.WSRequest
 import play.api.mvc.{Result, Results}
-import security.{IdGenerator, OtoroshiClaim}
-import ssl.{Cert, DynamicSSLEngineProvider, PemHeaders}
-import utils.{TypedMap, UrlSanitizer}
-import utils.http.MtlsConfig
+import security.OtoroshiClaim
+import ssl.{Cert, DynamicSSLEngineProvider}
 import utils.RequestImplicits._
+import utils.http.MtlsConfig
+import utils.{TypedMap, UrlSanitizer}
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
@@ -26,6 +26,7 @@ object KubernetesConfig {
     val conf = ctx.configForOpt("KubernetesConfig").orElse((env.datastores.globalConfigDataStore.latest().scripts.jobConfig \ "KubernetesConfig").asOpt[JsValue]).getOrElse(Json.obj())
     KubernetesConfig(
       enabled = (conf \ "enabled").as[Boolean],
+      allIngress = (conf \ "allIngress").asOpt[Boolean].getOrElse(true),
       endpoint = (conf \ "endpoint").asOpt[String].getOrElse("https://kube.cluster.dev"),
       token = (conf \ "token").asOpt[String].getOrElse("xxx"),
       namespaces = (conf \ "namespaces").asOpt[Seq[String]].getOrElse(Seq("*")),
@@ -36,7 +37,7 @@ object KubernetesConfig {
   }
 }
 
-case class KubernetesConfig(enabled: Boolean, endpoint: String, token: String, namespaces: Seq[String], labels: Map[String, String], ingressClass: Option[String], defaultGroup: String)
+case class KubernetesConfig(enabled: Boolean, endpoint: String, token: String, namespaces: Seq[String], labels: Map[String, String], allIngress: Boolean, ingressClass: Option[String], defaultGroup: String)
 
 // https://kubernetes.io/fr/docs/concepts/services-networking/ingress/
 class KubernetesIngressControllerJob extends Job {
@@ -122,33 +123,10 @@ object KubernetesIngressSyncJob {
 
   val logger = Logger("otoroshi-plugins-kubernetes-ingress-sync")
 
-  def importCerts(client: KubernetesClient)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
-    client.fetchCerts().flatMap { certs =>
-      Future.sequence(certs.map { cert =>
-        cert.cert match {
-          case None => ().future
-          case Some(found) => {
-            val certId = s"kubernetes_secrets_${cert.namespace}_${cert.name}" // TODO: add cluster id ????
-            val newCert = found.copy(id = certId).enrich()
-            env.datastores.certificatesDataStore.findById(certId).flatMap {
-              case None =>
-                logger.info(s"importing cert. ${cert.namespace} - ${cert.name}")
-                newCert.save().map(_ => ())
-              case Some(existingCert) if existingCert.contentHash == newCert.contentHash => ().future
-              case Some(existingCert) if existingCert.contentHash != newCert.contentHash =>
-                logger.info(s"updating cert. ${cert.namespace} - ${cert.name}")
-                newCert.save().map(_ => ())
-            }
-          }
-        }
-      }).map(_ => ())
-    }
-  }
-
-  private def shouldProcessIngress(ingressClass: Option[String], ingressClassAnnotation: Option[String]): Boolean = {
+  private def shouldProcessIngress(ingressClass: Option[String], ingressClassAnnotation: Option[String], conf: KubernetesConfig): Boolean = {
     println(ingressClass, ingressClassAnnotation)
     ingressClass match {
-      case None if ingressClassAnnotation.isEmpty => true
+      case None if ingressClassAnnotation.isEmpty && conf.allIngress => true
       case None => ingressClassAnnotation == "otoroshi".some
       case Some(v) if ingressClassAnnotation.isDefined => v == ingressClassAnnotation.get
       case Some(v) if ingressClassAnnotation.isEmpty => true
@@ -157,7 +135,8 @@ object KubernetesIngressSyncJob {
   }
 
   private def parseConfig(annotations: Map[String, String]): OtoAnnotationConfig = {
-    OtoAnnotationConfig() // TODO: manage it
+    OtoAnnotationConfig() // TODO: manage
+    // TODO: Add lamost all, scripts, etc...
     /*
       stripPath =,
       privateApp =,
@@ -191,21 +170,33 @@ object KubernetesIngressSyncJob {
     implicit val mat = env.otoroshiMaterializer
     logger.info("Starting kubernetes sync.")
     val client = new KubernetesClient(conf, env)
-    importCerts(client).flatMap { _ =>
+    var certsToImport = scala.collection.mutable.Seq.empty[KubernetesCertSecret]
+    client.fetchCerts().flatMap { certs =>
       client.fetchIngress().flatMap { ingresses =>
         Source(ingresses.toList)
             .mapAsync(1) { ingressRaw =>
-              if (shouldProcessIngress(conf.ingressClass, ingressRaw.ingressClazz)) {
+              if (shouldProcessIngress(conf.ingressClass, ingressRaw.ingressClazz, conf)) {
                 println(1)
                 val otoroshiConfig = parseConfig(ingressRaw.annotations)
                 if (ingressRaw.isValid()) {
                   println(2)
-                  // TODO: handle case where ingress has a default backend
-                  ingressRaw.updateIngressStatus(client).flatMap { _ =>
-                    println(3)
-                    ingressRaw.asDescriptors(conf, otoroshiConfig).flatMap { descs =>
-                      println(4)
-                      Future.sequence(descs.map(_.save()))
+                  val certNames = ingressRaw.ingress.spec.tls.map(_.secretName).map(_.toLowerCase)
+                  certsToImport :+ certs.filter(c => certNames.contains(c.name.toLowerCase()))
+                  ingressRaw.ingress.spec.backend match {
+                    case Some(backend) => {
+                      backend.asDescriptor(ingressRaw.namespace, conf, otoroshiConfig).flatMap {
+                        case None => ().future
+                        case Some(desc) => desc.save()
+                      }
+                    }
+                    case None => {
+                      ingressRaw.updateIngressStatus(client).flatMap { _ =>
+                        println(3)
+                        ingressRaw.asDescriptors(conf, otoroshiConfig).flatMap { descs =>
+                          println(4)
+                          Future.sequence(descs.map(_.save()))
+                        }
+                      }
                     }
                   }
                 } else {
@@ -217,14 +208,46 @@ object KubernetesIngressSyncJob {
                 ().future
               }
             }.runWith(Sink.ignore).map(_ => ())
+        }.flatMap { _ =>
+          KubernetesCertSyncJob.importCerts(certsToImport)
         }
       }
   }
 }
 
 object KubernetesCertSyncJob {
+
+  val logger = Logger("otoroshi-plugins-kubernetes-cert-sync")
+
   def syncOtoroshiCertsToKubernetesSecrets(): Future[Unit] = ???
-  def syncKubernetesSecretsToOtoroshiCerts(): Future[Unit] = ???
+
+  def importCerts(certs: Seq[KubernetesCertSecret])(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    Future.sequence(certs.map { cert =>
+      cert.cert match {
+        case None => ().future
+        case Some(found) => {
+          // TODO: normalize
+          val certId = s"kubernetes_secrets_${cert.namespace}_${cert.name}" // TODO: add cluster id ????
+          val newCert = found.copy(id = certId).enrich()
+          env.datastores.certificatesDataStore.findById(certId).flatMap {
+            case None =>
+              logger.info(s"importing cert. ${cert.namespace} - ${cert.name}")
+              newCert.save().map(_ => ())
+            case Some(existingCert) if existingCert.contentHash == newCert.contentHash => ().future
+            case Some(existingCert) if existingCert.contentHash != newCert.contentHash =>
+              logger.info(s"updating cert. ${cert.namespace} - ${cert.name}")
+              newCert.save().map(_ => ())
+          }
+        }
+      }
+    }).map(_ => ())
+  }
+
+  def syncKubernetesSecretsToOtoroshiCerts(client: KubernetesClient)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    client.fetchCerts().flatMap { certs =>
+      importCerts(certs)
+    }
+  }
 }
 
 trait KubernetesEntity {
@@ -241,7 +264,6 @@ case class KubernetesEndpoint(raw: JsValue) extends KubernetesEntity
 case class KubernetesIngress(raw: JsValue) extends KubernetesEntity {
   lazy val ingressClazz: Option[String] = annotations.get("kubernetes.io/ingress.class")
   lazy val ingress: IngressSupport.NetworkingV1beta1IngressItem = {
-    // println(raw.prettify)
     IngressSupport.NetworkingV1beta1IngressItem.reader.reads(raw).get
   }
   def isValid(): Boolean = true // TODO:
@@ -250,6 +272,7 @@ case class KubernetesIngress(raw: JsValue) extends KubernetesEntity {
     Future.sequence(
       ingress.spec.rules.flatMap { rule =>
         rule.http.paths.map { path =>
+          // TODO: normalize
           val id = "kubernetes_service_" + namespace + "_" + name + "_" + rule.host.getOrElse("wildcard") + "_" + path.path.getOrElse("-")
           println(id)
           env.datastores.serviceDescriptorDataStore.findById(id).map {
@@ -263,7 +286,7 @@ case class KubernetesIngress(raw: JsValue) extends KubernetesEntity {
               env = "prod",
               domain = "internal.kube.cluster",
               subdomain = id,
-              targets = Seq(Target("www.google.fr", "https")),
+              targets = Seq(Target("www.google.fr", "https")), // TODO: real targets
               root = path.path.getOrElse("/"),
               matchingRoot = path.path,
               metadata = Map.empty,
@@ -412,7 +435,11 @@ object IngressSupport {
   }
 
   case class IntOrString(value: Option[Int], nameRef: Option[String]) {
-    def actualValue(): Int = ??? // TODO:
+    def actualValue(): Int = (value, nameRef) match {
+      case (Some(v), _) => v
+      case (_, Some(v)) => v.toInt
+      case _ => 8080 // yeah !
+    }
   }
 
   object NetworkingV1beta1Ingress {
@@ -465,7 +492,32 @@ object IngressSupport {
     }
   }
 
-  case class NetworkingV1beta1IngressBackend(serviceName: String, servicePort: IntOrString)
+  case class NetworkingV1beta1IngressBackend(serviceName: String, servicePort: IntOrString) {
+    def asDescriptor(namespace: String, conf: KubernetesConfig, otoConfig: OtoAnnotationConfig)(implicit env: Env, ec: ExecutionContext): Future[Option[ServiceDescriptor]] = {
+      val id = "kubernetes_service_" + namespace + "_" + "default-backend" // TODO: normalize
+      env.datastores.serviceDescriptorDataStore.findById(id).map {
+        case None => env.datastores.serviceDescriptorDataStore.initiateNewDescriptor()
+        case Some(desc) => desc
+      }.map { desc =>
+        desc.copy(
+          id = id,
+          groupId = conf.defaultGroup,
+          name = "kubernetes - " + "default-backend",
+          env = "prod",
+          domain = "internal.kube.cluster",
+          subdomain = id,
+          targets = Seq(Target("www.google.fr", "https")), // TODO: real targets
+          root = "/",
+          matchingRoot = None,
+          metadata = Map.empty,
+          hosts = Seq.empty,
+          paths = Seq.empty
+        )
+      }.map { desc =>
+        otoConfig.apply(desc).some
+      }
+    }
+  }
 
   object NetworkingV1beta1IngressRule {
     val reader = new Reads[NetworkingV1beta1IngressRule] {
