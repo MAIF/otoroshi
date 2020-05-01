@@ -5,7 +5,9 @@
   "scripts": {
     "start": "electron .",
     "dist-mac": "electron-packager . otoroshi-tunneling-client --overwrite --out=./dist --platform=darwin",
-    "dist": "electron-packager . otoroshi-tunneling-client --overwrite --out=./dist --platform=darwin,linux"
+    "dist": "electron-packager . otoroshi-tunneling-client --overwrite --out=./dist --platform=darwin,linux",
+    "snyk-protect": "snyk protect",
+    "prepare": "yarn run snyk-protect"
   },
   "dependencies": {
     "colors": "1.4.0",
@@ -15,10 +17,12 @@
     "lodash": "4.17.15",
     "moment": "2.24.0",
     "node-fetch": "2.6.0",
-    "ws": "7.2.3"
+    "ws": "7.2.3",
+    "snyk": "^1.316.1"
   },
   "devDependencies": {
     "electron": "8.2.0",
     "electron-packager": "14.2.1"
-  }
+  },
+  "snyk": true
 }
