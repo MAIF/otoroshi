@@ -1572,6 +1572,11 @@ object SecComVersion {
     case 2 => Some(V2)
     case _ => None
   }
+  def apply(version: String): Option[SecComVersion] = version match {
+    case "V1" => Some(V1)
+    case "V2" => Some(V2)
+    case _ => None
+  }
 }
 
 sealed trait SecComInfoTokenVersion {

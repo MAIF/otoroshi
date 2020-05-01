@@ -38,6 +38,7 @@ object implicits {
   implicit class BetterString(private val obj: String) extends AnyVal {
     import otoroshi.utils.string.Implicits._
     def slugify: String = obj.slug
+    def slugifyWithSlash: String = obj.slug2
     def wildcard: Regex = RegexPool.apply(obj)
     def regex: Regex = RegexPool.regex(obj)
     def byteString: ByteString = ByteString(obj)

@@ -91,6 +91,7 @@ trait BasicStore[T] {
   def findByKey(id: Key)(implicit ec: ExecutionContext, env: Env): Future[Option[T]] = findById(id.key)
   def findById(id: String)(implicit ec: ExecutionContext, env: Env): Future[Option[T]]
   def deleteByKey(id: Key)(implicit ec: ExecutionContext, env: Env): Future[Boolean] = delete(id.key)
+  def deleteByIds(ids: Seq[String])(implicit ec: ExecutionContext, env: Env): Future[Boolean]
   def delete(id: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean]
   def delete(value: T)(implicit ec: ExecutionContext, env: Env): Future[Boolean]
   def deleteAll()(implicit ec: ExecutionContext, env: Env): Future[Long]
