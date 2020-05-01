@@ -25,6 +25,13 @@ import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
+// TODO: less interval for job
+// TODO: lock to avoid double jobs
+// TODO: watch res to trigger sync
+// TODO: remove allIngress and use ingressClass with *
+// TODO: compare certs for import and export with contentHash
+// TODO: CRD for all oto entities ?
+
 object KubernetesConfig {
   import collection.JavaConverters._
   def theConfig(ctx: ContextWithConfig)(implicit env: Env, ec: ExecutionContext): KubernetesConfig = {
@@ -925,7 +932,7 @@ object IngressSupport {
     }
   }
 
-  case class NetworkingV1beta1IngressItem(/*metadata: V1ObjectMeta, */spec: NetworkingV1beta1IngressSpec, status: NetworkingV1beta1IngressStatus)
+  case class NetworkingV1beta1IngressItem(spec: NetworkingV1beta1IngressSpec, status: NetworkingV1beta1IngressStatus)
 
   object NetworkingV1beta1IngressBackend {
     val reader = new Reads[NetworkingV1beta1IngressBackend] {
@@ -1154,4 +1161,3 @@ object IngressSupport {
   case class V1LoadBalancerIngress(hostname: Option[String], ip: Option[String])
 
 }
-
