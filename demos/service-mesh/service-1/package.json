@@ -4,11 +4,15 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "snyk-protect": "snyk protect",
+    "prepare": "yarn run snyk-protect"
   },
   "dependencies": {
     "express": "4.17.1",
     "lodash": "4.17.15",
-    "node-fetch": "2.6.0"
-  }
+    "node-fetch": "2.6.0",
+    "snyk": "^1.316.2"
+  },
+  "snyk": true
 }
