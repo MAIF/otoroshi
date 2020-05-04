@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otoroshi-deployment
+spec:
+  selector:
+    matchLabels:
+      run: otoroshi-deployment
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        run: otoroshi-deployment
+    spec:
+      containers:
+      - image: maif/otoroshi:1.4.22s-jdk11
+        imagePullPolicy: IfNotPresent
+        name: otoroshi
+        ports:
+          - containerPort: 8080
+            name: "http"
+          - containerPort: 8443
+            name: "https"
+        env:
+          - name: OTOROSHI_INITIAL_ADMIN_PASSWORD
+            value: password
+          - name: REDIS_LF_HOST
+            value: redis-master-cluster-ip-service
+          - name: REDIS_LF_MEMBERS
+            value: redis-slave-cluster-ip-service
+          - name: REDIS_HOST
+            value: redis-master-cluster-ip-service
+          - name: APP_STORAGE
+            value: redis-lf
+          - name: APP_DOMAIN
+            value: kuber.netes
