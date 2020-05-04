@@ -84,8 +84,8 @@ object KubernetesConfig {
       ingressEndpointHostname = (conf \ "ingressEndpointHostname").asOpt[String],
       ingressEndpointIp = (conf \ "ingressEndpointIp").asOpt[String],
       ingressEndpointPublishedService = (conf \ "ingressEndpointPublishedServices").asOpt[String],
-      syncIngresses = (conf \ "syncIngresses").asOpt[Boolean].getOrElse(true),
-      syncCRDs = (conf \ "syncCRDs").asOpt[Boolean].getOrElse(false)
+      ingresses = (conf \ "ingresses").asOpt[Boolean].getOrElse(true),
+      crds = (conf \ "crds").asOpt[Boolean].getOrElse(false)
     )
   }
   def defaultConfig: JsObject = {
@@ -103,7 +103,9 @@ object KubernetesConfig {
         "defaultGroup" -> "default",
         "ingressEndpointHostname" -> JsNull,
         "ingressEndpointIp" -> JsNull,
-        "ingressEndpointPublishedService" -> JsNull
+        "ingressEndpointPublishedService" -> JsNull,
+        "ingresses" -> true,
+        "crds" -> false
       )
     )
   }
@@ -111,8 +113,8 @@ object KubernetesConfig {
 
 case class KubernetesConfig(
   enabled: Boolean,
-  syncCRDs: Boolean,
-  syncIngresses: Boolean,
+  crds: Boolean,
+  ingresses: Boolean,
   endpoint: String,
   token: String,
   caCert: Option[String],
@@ -167,12 +169,12 @@ class KubernetesIngressControllerJob extends Job {
     val conf = KubernetesConfig.theConfig(ctx)
     if (conf.enabled) {
       logger.info("Running kubernetes ingresses sync ...")
-      val a = if (conf.syncIngresses) {
+      val a = if (conf.ingresses) {
         KubernetesIngressSyncJob.syncIngresses(conf, ctx.attrs)
       } else {
         ().future
       }
-      val b = if (conf.syncCRDs) {
+      val b = if (conf.crds) {
         KubernetesCRDsJob.syncCRDs(conf, ctx.attrs)
       } else {
         ().future
@@ -309,10 +311,10 @@ class KubernetesIngressControllerTrigger extends RequestSink {
       Option(ref.get()).foreach(_.stop())
       // ref.set(new KubernetesSupport.OfficialSDKKubernetesController(conf).start())
     }
-    if (conf.syncCRDs) {
+    if (conf.crds) {
       KubernetesCRDsJob.syncCRDs(conf, ctx.attrs)
     }
-    if (conf.syncIngresses) {
+    if (conf.ingresses) {
       KubernetesIngressSyncJob.syncIngresses(conf, ctx.attrs).map { _ =>
         Results.Ok(Json.obj("done" -> true))
       }
@@ -617,6 +619,20 @@ object KubernetesCRDsJob {
   private val running = new AtomicBoolean(false)
   private val shouldRunNext = new AtomicBoolean(false)
 
+  def compareAndSave[T](entities: Seq[OtoResHolder[T]])(all: => Seq[T], id: T => String, save: T => Future[Boolean]): Seq[(T, () => Future[Boolean])] = {
+    val existing = all.map(v => (id(v), v)).toMap
+    val kube = entities.map(_.typed).map(v => (id(v), v))
+    kube.filter {
+      case (key, value) => existing.get(key) match {
+        case None                                          => true
+        case Some(existingValue) if value == existingValue => false
+        case Some(existingValue) if value != existingValue => true
+      }
+    } map {
+      case (_, value) => (value, () => save(value))
+    }
+  }
+
   def syncCRDs(conf: KubernetesConfig, attrs: TypedMap)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     implicit val mat = env.otoroshiMaterializer
     val client = new KubernetesClient(conf, env)
@@ -639,30 +655,49 @@ object KubernetesCRDsJob {
           scripts <- client.crdsFetchScripts()
           tcpServices <- client.crdsFetchTcpServices()
           simpleAdmins <- client.crdsFetchSimpleAdmins()
+
+          otoserviceGroups <- env.datastores.serviceGroupDataStore.findAll()
+          otoserviceDescriptors <- env.datastores.serviceDescriptorDataStore.findAll()
+          otoapiKeys <- env.datastores.apiKeyDataStore.findAll()
+          otocertificates <- env.datastores.certificatesDataStore.findAll()
+          otoglobalConfigs <- env.datastores.globalConfigDataStore.findAll()
+          otojwtVerifiers <- env.datastores.globalJwtVerifierDataStore.findAll()
+          otoauthModules <- env.datastores.authConfigsDataStore.findAll()
+          otoscripts <- env.datastores.scriptDataStore.findAll()
+          ototcpServices <- env.datastores.tcpServiceDataStore.findAll()
+          otosimpleAdmins <- env.datastores.simpleAdminDataStore.findAll()
         } yield {
           if (globalConfigs.size > 1) {
             Future.failed(new RuntimeException("There can only be one GlobalConfig entity !"))
           } else {
             val entities = (
-              globalConfigs.map(v => (v, () => v.save())) ++
-              simpleAdmins.map(v => (v, () => env.datastores.simpleAdminDataStore.registerUser(v))) ++ // TODO: useful ?
-              serviceGroups.map(v => (v, () => v.save())) ++
-              certificates.map(v => (v, () => v.save())) ++
-              jwtVerifiers.map(v => (v, () => env.datastores.globalJwtVerifierDataStore.set(v.asInstanceOf[GlobalJwtVerifier]))) ++
-              authModules.map(v => (v, () => v.save())) ++
-              scripts.map(v => (v, () => v.save())) ++
-              tcpServices.map(v => (v, () => v.save())) ++
-              serviceDescriptors.map(v => (v, () => v.save())) ++
-              apiKeys.map(v => (v, () => v.save()))
+              compareAndSave(globalConfigs)(otoglobalConfigs, _ => "global", _.save()) ++
+              compareAndSave(simpleAdmins)(otosimpleAdmins, v => (v \ "username").as[String], v => env.datastores.simpleAdminDataStore.registerUser(v)) ++ // useful ?
+              compareAndSave(serviceGroups)(otoserviceGroups, _.id, _.save()) ++
+              compareAndSave(certificates)(otocertificates, _.id, _.save()) ++
+              compareAndSave(jwtVerifiers)(otojwtVerifiers, _.asGlobal.id, _.asGlobal.save()) ++
+              compareAndSave(authModules)(otoauthModules, _.id, _.save()) ++
+              compareAndSave(scripts)(otoscripts, _.id, _.save()) ++
+              compareAndSave(tcpServices)(ototcpServices, _.id, _.save()) ++
+              compareAndSave(serviceDescriptors)(otoserviceDescriptors, _.id, _.save()) ++
+              compareAndSave(apiKeys)(otoapiKeys, _.clientId, _.save())
               // TODO: handle csrs
             ).toList
-            logger.info(s"will now sync ${entities.size} entities !")
+            logger.info(s"Will now sync ${entities.size} entities !")
             Source(entities).mapAsync(1) { entity =>
               entity._2().recover { case _ => false }.andThen {
                 case Failure(e) => logger.error(s"failed to save resource ${entity._1}", e)
                 case Success(_) =>
               }
             }.runWith(Sink.ignore)
+            env.datastores.serviceGroupDataStore.deleteByIds(otoserviceGroups.filter(_.id.startsWith("kubernetes-crd-import")).filterNot(s => serviceGroups.exists(ss => s.id == s"kubernetes-crd-import-${ss.namespace}-${ss.name}".slugifyWithSlash)).map(_.id))
+            env.datastores.serviceDescriptorDataStore.deleteByIds(otoserviceDescriptors.filter(_.id.startsWith("kubernetes-crd-import")).filterNot(s => serviceDescriptors.exists(ss => s.metadata.get("kubernetes-path") == s"${ss.namespace}/${ss.name}".some)).map(_.id))
+            env.datastores.apiKeyDataStore.deleteByIds(otoapiKeys.filter(a => a.metadata.get("kubernetes-path").isDefined).filterNot(s => apiKeys.exists(ss => s.metadata.get("kubernetes-path") == s"${ss.namespace}/${ss.name}".some)).map(_.clientId))
+            env.datastores.certificatesDataStore.deleteByIds(otocertificates.filter(_.id.startsWith("kubernetes-crd-import")).filterNot(s => certificates.exists(ss => s.id == s"kubernetes-crd-import-${ss.namespace}-${ss.name}".slugifyWithSlash)).map(_.id))
+            env.datastores.globalJwtVerifierDataStore.deleteByIds(otojwtVerifiers.filter(_.id.startsWith("kubernetes-crd-import")).filterNot(s => jwtVerifiers.exists(ss => s.id == s"kubernetes-crd-import-${ss.namespace}-${ss.name}".slugifyWithSlash)).map(_.id))
+            env.datastores.authConfigsDataStore.deleteByIds(otoauthModules.filter(_.id.startsWith("kubernetes-crd-import")).filterNot(s => authModules.exists(ss => s.id == s"kubernetes-crd-import-${ss.namespace}-${ss.name}".slugifyWithSlash)).map(_.id))
+            env.datastores.scriptDataStore.deleteByIds(otoscripts.filter(_.id.startsWith("kubernetes-crd-import")).filterNot(s => scripts.exists(ss => s.id == s"kubernetes-crd-import-${ss.namespace}-${ss.name}".slugifyWithSlash)).map(_.id))
+            env.datastores.tcpServiceDataStore.deleteByIds(ototcpServices.filter(_.id.startsWith("kubernetes-crd-import")).filterNot(s => tcpServices.exists(ss => s.id == s"kubernetes-crd-import-${ss.namespace}-${ss.name}".slugifyWithSlash)).map(_.id))
           }
         }
       }.flatMap { _ =>
@@ -674,7 +709,6 @@ object KubernetesCRDsJob {
         }
       }.andThen {
         case e =>
-          println(e)
           running.set(false)
       }
     } else {
@@ -915,6 +949,8 @@ case class KubernetesSecret(raw: JsValue) extends KubernetesEntity {
   def cert: KubernetesCertSecret = KubernetesCertSecret(raw)
 }
 
+case class OtoResHolder[T](raw: JsValue, typed: T) extends KubernetesEntity
+
 class KubernetesClient(val config: KubernetesConfig, env: Env) {
 
   implicit val ec = env.otoroshiExecutionContext
@@ -1073,7 +1109,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
     }).map(_.flatten)
   }
 
-  private def fetchOtoroshiResources[T](pluralName: String, reader: Reads[T]): Future[Seq[T]] = {
+  private def fetchOtoroshiResources[T](pluralName: String, reader: Reads[T], customize: (JsValue, KubernetesOtoroshiResource) => JsValue = (a, b) => a): Future[Seq[OtoResHolder[T]]] = {
     Future.sequence(config.namespaces.map { namespace =>
       val cli: WSRequest = client(s"/apis/proxy.otoroshi.io/v1alpha1/namespaces/$namespace/$pluralName")
       cli.addHttpHeaders(
@@ -1082,9 +1118,11 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
         Try {
           if (resp.status == 200) {
             filterLabels((resp.json \ "items").as[JsArray].value.map(v => KubernetesOtoroshiResource(v))).map { item =>
-              reader.reads((item.raw \ "spec").as[JsValue])
+              val spec = (item.raw \ "spec").as[JsValue]
+              val customSpec = customize(spec, item)
+              (reader.reads(customSpec), item.raw)
             }.collect {
-              case JsSuccess(item, _) => item
+              case (JsSuccess(item, _), raw) => OtoResHolder(raw, item)
             }
           } else {
             Seq.empty
@@ -1097,17 +1135,63 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
     }).map(_.flatten)
   }
 
-  def crdsFetchServiceGroups(): Future[Seq[ServiceGroup]] = fetchOtoroshiResources[ServiceGroup]("service-groups", ServiceGroup._fmt)
-  def crdsFetchServiceDescriptors(): Future[Seq[ServiceDescriptor]] = fetchOtoroshiResources[ServiceDescriptor]("service-descriptors", ServiceDescriptor._fmt)
-  def crdsFetchApiKeys(): Future[Seq[ApiKey]] = fetchOtoroshiResources[ApiKey]("apikeys", ApiKey._fmt)
-  def crdsFetchCertificates(): Future[Seq[Cert]] = fetchOtoroshiResources[Cert]("certificates", Cert._fmt)
-  def crdsFetchCsr(): Future[Seq[JsValue]] = fetchOtoroshiResources[JsValue]("csrs", v => JsSuccess(v))
-  def crdsFetchGlobalConfig(): Future[Seq[GlobalConfig]] = fetchOtoroshiResources[GlobalConfig]("global-configs", GlobalConfig._fmt)
-  def crdsFetchJwtVerifiers(): Future[Seq[JwtVerifier]] = fetchOtoroshiResources[JwtVerifier]("jwt-verifiers", JwtVerifier.fmt)
-  def crdsFetchAuthModules(): Future[Seq[AuthModuleConfig]] = fetchOtoroshiResources[AuthModuleConfig]("auth-modules", AuthModuleConfig._fmt)
-  def crdsFetchScripts(): Future[Seq[Script]] = fetchOtoroshiResources[Script]("scripts", Script._fmt)
-  def crdsFetchTcpServices(): Future[Seq[TcpService]] = fetchOtoroshiResources[TcpService]("tcp-services", TcpService.fmt)
-  def crdsFetchSimpleAdmins(): Future[Seq[JsValue]] = fetchOtoroshiResources[JsValue]("admins", v => JsSuccess(v))
+  private def customizeIdAndName(spec: JsValue, res: KubernetesOtoroshiResource): JsValue = {
+    val name = (spec \ "name").asOpt[String]
+    val inter = name match {
+      case None => spec.as[JsObject] ++ Json.obj("name" -> res.name)
+      case Some(_) => spec
+    }
+    inter.as[JsObject] ++ Json.obj("id" -> s"kubernetes-crd-import-${res.namespace}-${res.name}".slugifyWithSlash)
+  }
+
+  private def customizeIdNameAndMeta(spec: JsValue, res: KubernetesOtoroshiResource): JsValue = {
+    val name = (spec \ "name").asOpt[String]
+    val inter = name match {
+      case None => spec.as[JsObject] ++ Json.obj("name" -> res.name)
+      case Some(_) => spec
+    }
+    val inter2 = inter.as[JsObject] ++ Json.obj("id" -> s"kubernetes-crd-import-${res.namespace}-${res.name}".slugifyWithSlash)
+    val meta = (inter2 \ "metadata").asOpt[JsObject].getOrElse(Json.obj()) ++ Json.obj(
+      "otoroshi-service-provider" -> "kubernetes",
+      "kubernetes-name" -> res.name,
+      "kubernetes-namespace" -> res.namespace,
+      "kubernetes-path" -> s"${res.namespace}/${res.name}",
+      "kubernetes-uid" -> res.uid
+    )
+    inter2.as[JsObject] ++ Json.obj(
+      "metadata" -> meta
+    )
+  }
+
+  private def customizeClientName(spec: JsValue, res: KubernetesOtoroshiResource): JsValue = {
+    val name = (spec \ "clientName").asOpt[String]
+    val inter = name match {
+      case None => spec.as[JsObject] ++ Json.obj("clientName" -> res.name)
+      case Some(_) => spec
+    }
+    val meta = (inter \ "metadata").asOpt[JsObject].getOrElse(Json.obj()) ++ Json.obj(
+      "otoroshi-service-provider" -> "kubernetes",
+      "kubernetes-name" -> res.name,
+      "kubernetes-namespace" -> res.namespace,
+      "kubernetes-path" -> s"${res.namespace}/${res.name}",
+      "kubernetes-uid" -> res.uid
+    )
+    inter.as[JsObject] ++ Json.obj(
+      "metadata" -> meta
+    )
+  }
+
+  def crdsFetchServiceGroups(): Future[Seq[OtoResHolder[ServiceGroup]]] = fetchOtoroshiResources[ServiceGroup]("service-groups", ServiceGroup._fmt, customizeIdAndName)
+  def crdsFetchServiceDescriptors(): Future[Seq[OtoResHolder[ServiceDescriptor]]] = fetchOtoroshiResources[ServiceDescriptor]("service-descriptors", ServiceDescriptor._fmt, customizeIdNameAndMeta)
+  def crdsFetchApiKeys(): Future[Seq[OtoResHolder[ApiKey]]] = fetchOtoroshiResources[ApiKey]("apikeys", ApiKey._fmt, customizeClientName)
+  def crdsFetchCertificates(): Future[Seq[OtoResHolder[Cert]]] = fetchOtoroshiResources[Cert]("certificates", Cert._fmt, customizeIdAndName)
+  def crdsFetchCsr(): Future[Seq[OtoResHolder[JsValue]]] = fetchOtoroshiResources[JsValue]("csrs", v => JsSuccess(v))
+  def crdsFetchGlobalConfig(): Future[Seq[OtoResHolder[GlobalConfig]]] = fetchOtoroshiResources[GlobalConfig]("global-configs", GlobalConfig._fmt)
+  def crdsFetchJwtVerifiers(): Future[Seq[OtoResHolder[JwtVerifier]]] = fetchOtoroshiResources[JwtVerifier]("jwt-verifiers", JwtVerifier.fmt, customizeIdAndName)
+  def crdsFetchAuthModules(): Future[Seq[OtoResHolder[AuthModuleConfig]]] = fetchOtoroshiResources[AuthModuleConfig]("auth-modules", AuthModuleConfig._fmt, customizeIdAndName)
+  def crdsFetchScripts(): Future[Seq[OtoResHolder[Script]]] = fetchOtoroshiResources[Script]("scripts", Script._fmt, customizeIdAndName)
+  def crdsFetchTcpServices(): Future[Seq[OtoResHolder[TcpService]]] = fetchOtoroshiResources[TcpService]("tcp-services", TcpService.fmt, customizeIdAndName)
+  def crdsFetchSimpleAdmins(): Future[Seq[OtoResHolder[JsValue]]] = fetchOtoroshiResources[JsValue]("admins", v => JsSuccess(v))
 }
 
 object IngressSupport {

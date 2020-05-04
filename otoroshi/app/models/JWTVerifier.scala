@@ -763,6 +763,7 @@ sealed trait JwtVerifier extends AsJson {
   def source: JwtTokenLocation
   def algoSettings: AlgoSettings
   def strategy: VerifierStrategy
+  def asGlobal: GlobalJwtVerifier = this.asInstanceOf[GlobalJwtVerifier]
 
   private def sign(token: JsObject, algorithm: Algorithm): String = {
     val headerJson     = Json.obj("alg" -> algorithm.getName, "typ" -> "JWT")
