@@ -284,6 +284,19 @@ class Env(val configuration: Configuration,
         .getOptional[Configuration]("otoroshi.scripts.static.sinkConfig")
         .map(c => Json.parse(c.underlying.root().render(ConfigRenderOptions.concise())))
         .orElse(configuration.getOptional[String]("otoroshi.scripts.static.sinkConfigStr").map(Json.parse))
+        .getOrElse(Json.obj()),
+      jobRefs = configuration
+        .getOptional[Seq[String]]("otoroshi.scripts.static.jobsRefs")
+        .orElse(
+          configuration
+            .getOptional[String]("otoroshi.scripts.static.jobsRefsStr")
+            .map(_.split(",").map(_.trim).toSeq)
+        )
+        .getOrElse(Seq.empty[String]),
+      jobConfig = configuration
+        .getOptional[Configuration]("otoroshi.scripts.static.jobsConfig")
+        .map(c => Json.parse(c.underlying.root().render(ConfigRenderOptions.concise())))
+        .orElse(configuration.getOptional[String]("otoroshi.scripts.static.jobsConfigStr").map(Json.parse))
         .getOrElse(Json.obj())
     )
   }
