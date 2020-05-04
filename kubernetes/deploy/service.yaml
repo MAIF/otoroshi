@@ -7,13 +7,13 @@ spec:
   selector:
     name: otoroshi-deployment
   ports:
-  - port: 8080
+  - port: 80
     name: "http"
     targetPort: "http"
-    nodePort: 80
-  - port: 8443
+    nodePort: 42080
+  - port: 443
     name: "https"
     targetPort: "https"
-    nodePort: 443
+    nodePort: 42443
   #loadBalancerSourceRanges:
   #externalIPs:
