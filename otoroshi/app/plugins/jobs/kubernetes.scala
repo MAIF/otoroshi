@@ -1,11 +1,30 @@
 package otoroshi.plugins.jobs.kubernetes
 
 import java.io.File
-import java.nio.file.{Files, Path}
+import java.lang
+import java.nio.file.Files
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
+import java.util.concurrent.{Executors, TimeUnit}
+import java.util.function.Supplier
 
 import akka.http.scaladsl.model.Uri
 import akka.stream.scaladsl.{Sink, Source}
+import com.google.common.base.CaseFormat
 import env.Env
+import io.kubernetes.client.extended.controller.builder.ControllerBuilder
+import io.kubernetes.client.extended.controller.reconciler.{Reconciler, Request}
+import io.kubernetes.client.extended.controller.{ControllerWatch, LeaderElectingController}
+import io.kubernetes.client.extended.event.EventType
+import io.kubernetes.client.extended.event.legacy.{EventRecorder, LegacyEventBroadcaster}
+import io.kubernetes.client.extended.leaderelection.resourcelock.EndpointsLock
+import io.kubernetes.client.extended.leaderelection.{LeaderElectionConfig, LeaderElector}
+import io.kubernetes.client.extended.workqueue.WorkQueue
+import io.kubernetes.client.informer.{SharedIndexInformer, SharedInformerFactory}
+import io.kubernetes.client.informer.cache.Lister
+import io.kubernetes.client.openapi.apis.{CoreV1Api, NetworkingV1beta1Api}
+import io.kubernetes.client.openapi.models._
+import io.kubernetes.client.util.credentials.AccessTokenAuthentication
+import io.kubernetes.client.util.{CallGeneratorParams, ClientBuilder}
 import models._
 import org.joda.time.DateTime
 import otoroshi.plugins.jobs.kubernetes.IngressSupport.IntOrString
@@ -25,13 +44,18 @@ import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-// TODO: less interval for job
-// TODO: lock to avoid double jobs
 // TODO: watch res to trigger sync
-// TODO: remove allIngress and use ingressClass with *
-// TODO: compare certs for import and export with contentHash
 // TODO: CRD for all oto entities ?
 
+// https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/
+// https://github.com/containous/traefik-helm-chart/tree/master/traefik/crds
+// https://github.com/containous/traefik/blob/v1.7.24/examples/k8s/traefik-deployment.yaml
+// https://docs.traefik.io/v1.7/configuration/backends/kubernetes/
+// https://github.com/helm/charts/blob/master/stable/traefik/values.yaml
+// https://docs.traefik.io/v1.7/user-guide/kubernetes/#deploy-traefik-using-helm-chart
+// https://kubernetes.io/fr/docs/concepts/services-networking/ingress/
+// https://kubernetes.io/fr/docs/concepts/services-networking/service/
+// https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.17/#servicespec-v1-core
 object KubernetesConfig {
   import collection.JavaConverters._
   def theConfig(ctx: ContextWithConfig)(implicit env: Env, ec: ExecutionContext): KubernetesConfig = {
@@ -39,7 +63,6 @@ object KubernetesConfig {
     // TODO: read $KUBECONFIG
     KubernetesConfig(
       enabled = (conf \ "enabled").as[Boolean],
-      allIngress = (conf \ "allIngress").asOpt[Boolean].getOrElse(false),
       trust = (conf \ "trust").asOpt[Boolean].getOrElse(false),
       endpoint = (conf \ "endpoint").asOpt[String].getOrElse {
         val host = sys.env("KUBERNETES_SERVICE_HOST")
@@ -47,18 +70,18 @@ object KubernetesConfig {
         s"https://$host:$port"
       },
       token = (conf \ "token").asOpt[String].getOrElse(
-        Files.readAllLines(new File("/var/run/secrets/kubernetes.io/serviceaccount/token").toPath).asScala.mkString("\n")
+        Files.readAllLines(new File("/var/run/secrets/kubernetes.io/serviceaccount/token").toPath).asScala.mkString("\n").trim()
       ),
       caCert = (conf \ "cert").asOpt[String]
         .orElse((conf \ "certPath").asOpt[String].map { path =>
-          Files.readAllLines(new File(path).toPath).asScala.mkString("\n")
+          Files.readAllLines(new File(path).toPath).asScala.mkString("\n").trim()
         })
         .orElse(
-          new File("/var/run/secrets/kubernetes.io/serviceaccount/ca.crt").some.filter(_.exists()).map(f => Files.readAllLines(f.toPath).asScala.mkString("\n"))
+          new File("/var/run/secrets/kubernetes.io/serviceaccount/ca.crt").some.filter(_.exists()).map(f => Files.readAllLines(f.toPath).asScala.mkString("\n").trim())
         ),
       namespaces = (conf \ "namespaces").asOpt[Seq[String]].filter(_.nonEmpty).getOrElse(Seq("*")),
       labels = (conf \ "labels").asOpt[Map[String, String]].getOrElse(Map.empty),
-      ingressClass = (conf \ "ingressClass").asOpt[String],
+      ingressClass = (conf \ "ingressClass").asOpt[String].getOrElse("otoroshi"), // can be *
       defaultGroup = (conf \ "defaultGroup").asOpt[String].getOrElse("default"),
       ingressEndpointHostname = (conf \ "ingressEndpointHostname").asOpt[String],
       ingressEndpointIp = (conf \ "ingressEndpointIp").asOpt[String],
@@ -94,8 +117,7 @@ case class KubernetesConfig(
   trust: Boolean,
   namespaces: Seq[String],
   labels: Map[String, String],
-  allIngress: Boolean,
-  ingressClass: Option[String],
+  ingressClass: String,
   defaultGroup: String,
   ingressEndpointHostname: Option[String],
   ingressEndpointIp: Option[String],
@@ -180,7 +202,7 @@ class KubernetesToOtoroshiCertSyncJob extends Job {
 
   override def initialDelay: Option[FiniteDuration] = 10.seconds.some
 
-  override def interval: Option[FiniteDuration] = 1.minute.some
+  override def interval: Option[FiniteDuration] = 10.seconds.some
 
   override def jobStart(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = super.jobStart(ctx)
 
@@ -228,7 +250,7 @@ class OtoroshiToKubernetesCertSyncJob extends Job {
 
   override def initialDelay: Option[FiniteDuration] = 10.seconds.some
 
-  override def interval: Option[FiniteDuration] = 1.minute.some
+  override def interval: Option[FiniteDuration] = 10.seconds.some
 
   override def jobStart(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = super.jobStart(ctx)
 
@@ -246,6 +268,41 @@ class OtoroshiToKubernetesCertSyncJob extends Job {
   }
 }
 
+// TODO: remove for release
+class KubernetesIngressControllerTrigger extends RequestSink {
+
+  import KubernetesSupport._
+
+  private val ref = new AtomicReference[OfficialSDKKubernetesController]()
+
+  override def stop(env: Env): Future[Unit] = {
+    Option(ref.get()).foreach(_.stop())
+    ().future
+  }
+
+  override def name: String = "KubernetesIngressControllerTrigger"
+
+  override def description: Option[String] = "KubernetesIngressControllerTrigger".some
+
+  override def defaultConfig: Option[JsObject] = None
+
+  override def matches(ctx: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Boolean = {
+    ctx.request.theDomain.toLowerCase().equals("kubernetes-ingress-controller.oto.tools") &&
+      ctx.request.relativeUri.startsWith("/.well-known/otoroshi/plugins/kubernetes/ingress-controller/trigger")
+  }
+
+  override def handle(ctx: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Future[Result] = {
+    val conf = KubernetesConfig.theConfig(ctx)
+    // ctx.request.getQueryString("official").filter(_ == "true").foreach { _ =>
+    //   Option(ref.get()).foreach(_.stop())
+    //   ref.set(new OsfficialSDKKubernetesController(conf).start())
+    // }
+    KubernetesIngressSyncJob.syncIngresses(conf, ctx.attrs).map { _ =>
+      Results.Ok(Json.obj("done" -> true))
+    }
+  }
+}
+
 case class OtoAnnotationConfig(annotations: Map[String, String]) {
   def asSeqString(value: String): Seq[String] = value.split(",").map(_.trim)
   def asMapString(value: String): Map[String, String] = value.split(",").map(_.trim).map { v =>
@@ -259,7 +316,7 @@ case class OtoAnnotationConfig(annotations: Map[String, String]) {
     }.map {
       case (key, value) => (key.replace("otoroshi.ingress.kubernetes.io/", ""), value)
     }.foldLeft(desc) {
-      case (d, (key, value)) => key match {
+      case (d, (key, value)) => toCamelCase(key) match {
         case "raw" => {
           val raw = Json.parse(value).as[JsObject]
           val current = desc.toJson.as[JsObject]
@@ -304,30 +361,12 @@ case class OtoAnnotationConfig(annotations: Map[String, String]) {
         case "tcpUdpTunneling" => d.copy(tcpUdpTunneling = value.toBoolean)
         case "detectApiKeySooner" => d.copy(detectApiKeySooner = value.toBoolean)
         case "letsEncrypt" => d.copy(letsEncrypt = value.toBoolean)
-        case "enforceSecureCommunication" => d.copy(enforceSecureCommunication = value.toBoolean)
-        case "sendInfoToken" => d.copy(sendInfoToken = value.toBoolean)
-        case "sendStateChallenge" => d.copy(sendStateChallenge = value.toBoolean)
-        case "secComHeaders.claimRequestName" => d.copy(secComHeaders = d.secComHeaders.copy(claimRequestName = value.some))
-        case "secComHeaders.stateRequestName" => d.copy(secComHeaders = d.secComHeaders.copy(stateRequestName = value.some))
-        case "secComHeaders.stateResponseName" => d.copy(secComHeaders = d.secComHeaders.copy(stateResponseName = value.some))
-        case "secComTtl" => d.copy(secComTtl = value.toInt.millis)
-        case "secComVersion" => d.copy(secComVersion = SecComVersion.apply(value).getOrElse(SecComVersion.V2))
-        case "secComInfoTokenVersion" => d.copy(secComInfoTokenVersion = SecComInfoTokenVersion.apply(value).getOrElse(SecComInfoTokenVersion.Latest))
-        case "secComExcludedPatterns" => d.copy(secComExcludedPatterns = asSeqString(value))
-        case "secComSettings.size" => d.copy(secComSettings = d.secComSettings.asInstanceOf[HSAlgoSettings].copy(size = value.toInt))
-        case "secComSettings.secret" => d.copy(secComSettings = d.secComSettings.asInstanceOf[HSAlgoSettings].copy(secret = value))
-        case "secComSettings.base64" => d.copy(secComSettings = d.secComSettings.asInstanceOf[HSAlgoSettings].copy(base64 = value.toBoolean))
-        case "secComUseSameAlgo" => d.copy(secComUseSameAlgo = value.toBoolean)
-        case "secComAlgoChallengeOtoToBack.size" => d.copy(secComAlgoChallengeOtoToBack = d.secComAlgoChallengeOtoToBack.asInstanceOf[HSAlgoSettings].copy(size = value.toInt))
-        case "secComAlgoChallengeOtoToBack.secret" => d.copy(secComAlgoChallengeOtoToBack = d.secComAlgoChallengeOtoToBack.asInstanceOf[HSAlgoSettings].copy(secret = value))
-        case "secComAlgoChallengeOtoToBack.base64" => d.copy(secComAlgoChallengeOtoToBack = d.secComAlgoChallengeOtoToBack.asInstanceOf[HSAlgoSettings].copy(base64 = value.toBoolean))
-        case "secComAlgoChallengeBackToOto.size" => d.copy(secComAlgoChallengeBackToOto = d.secComAlgoChallengeBackToOto.asInstanceOf[HSAlgoSettings].copy(size = value.toInt))
-        case "secComAlgoChallengeBackToOto.secret" => d.copy(secComAlgoChallengeBackToOto = d.secComAlgoChallengeBackToOto.asInstanceOf[HSAlgoSettings].copy(secret = value))
-        case "secComAlgoChallengeBackToOto.base64" => d.copy(secComAlgoChallengeBackToOto = d.secComAlgoChallengeBackToOto.asInstanceOf[HSAlgoSettings].copy(base64 = value.toBoolean))
-        case "secComAlgoInfoToken.size" => d.copy(secComAlgoInfoToken = d.secComAlgoInfoToken.asInstanceOf[HSAlgoSettings].copy(size = value.toInt))
-        case "secComAlgoInfoToken.secret" => d.copy(secComAlgoInfoToken = d.secComAlgoInfoToken.asInstanceOf[HSAlgoSettings].copy(secret = value))
-        case "secComAlgoInfoToken.base64" => d.copy(secComAlgoInfoToken = d.secComAlgoInfoToken.asInstanceOf[HSAlgoSettings].copy(base64 = value.toBoolean))
-        case "securityExcludedPatterns" => d.copy(securityExcludedPatterns = asSeqString(value))
+
+        case _ if key.startsWith("secCom") || key == "enforceSecureCommunication"
+                                           || key == "sendInfoToken"
+                                           || key == "sendStateChallenge"
+                                           || key == "securityExcludedPatterns" => securityOptions(key, value, d)
+
         case "publicPatterns" => d.copy(publicPatterns = asSeqString(value))
         case "privatePatterns" => d.copy(privatePatterns = asSeqString(value))
         case "additionalHeaders" => d.copy(additionalHeaders = asMapString(value))
@@ -344,17 +383,9 @@ case class OtoAnnotationConfig(annotations: Map[String, String]) {
         case "api.openApiDescriptorUrl" => d.copy(api = d.api.copy(openApiDescriptorUrl = value.some))
         case "healthCheck.enabled" => d.copy(healthCheck = d.healthCheck.copy(enabled = value.toBoolean))
         case "healthCheck.url" => d.copy(healthCheck = d.healthCheck.copy(url = value))
-        case "clientConfig.useCircuitBreaker" => d.copy(clientConfig = d.clientConfig.copy(useCircuitBreaker = value.toBoolean))
-        case "clientConfig.retries" => d.copy(clientConfig = d.clientConfig.copy(retries = value.toInt))
-        case "clientConfig.maxErrors" => d.copy(clientConfig = d.clientConfig.copy(maxErrors = value.toInt))
-        case "clientConfig.retryInitialDelay" => d.copy(clientConfig = d.clientConfig.copy(retryInitialDelay = value.toLong))
-        case "clientConfig.backoffFactor" => d.copy(clientConfig = d.clientConfig.copy(backoffFactor = value.toLong))
-        case "clientConfig.connectionTimeout" => d.copy(clientConfig = d.clientConfig.copy(connectionTimeout = value.toLong))
-        case "clientConfig.idleTimeout" => d.copy(clientConfig = d.clientConfig.copy(idleTimeout = value.toLong))
-        case "clientConfig.callAndStreamTimeout" => d.copy(clientConfig = d.clientConfig.copy(callAndStreamTimeout = value.toLong))
-        case "clientConfig.callTimeout" => d.copy(clientConfig = d.clientConfig.copy(callTimeout = value.toLong))
-        case "clientConfig.globalTimeout" => d.copy(clientConfig = d.clientConfig.copy(globalTimeout = value.toLong))
-        case "clientConfig.sampleInterval" => d.copy(clientConfig = d.clientConfig.copy(sampleInterval = value.toLong))
+        case _ if key.startsWith("clientConfig.") => clientConfigOptions(key, value, d)
+        case _ if key.startsWith("cors.") => corsConfigOptions(key, value, d)
+        case _ if key.startsWith("gzip.") => gzipConfigOptions(key, value, d)
         // case "canary" =>
         // case "metadata" =>
         // case "chaosConfig" =>
@@ -362,14 +393,6 @@ case class OtoAnnotationConfig(annotations: Map[String, String]) {
         case "jwtVerifier.enabled" => d.copy(jwtVerifier = d.jwtVerifier.asInstanceOf[RefJwtVerifier].copy(enabled = value.toBoolean))
         case "jwtVerifier.excludedPatterns" => d.copy(jwtVerifier = d.jwtVerifier.asInstanceOf[RefJwtVerifier].copy(excludedPatterns = asSeqString(value)))
         case "authConfigRef" => d.copy(authConfigRef = value.some)
-        case "cors.enabled" => d.copy(cors = d.cors.copy(enabled = value.toBoolean))
-        case "cors.allowOrigin" => d.copy(cors = d.cors.copy(allowOrigin = value))
-        case "cors.exposeHeaders" => d.copy(cors = d.cors.copy(exposeHeaders = asSeqString(value)))
-        case "cors.allowHeaders" => d.copy(cors = d.cors.copy(allowHeaders = asSeqString(value)))
-        case "cors.allowMethods" => d.copy(cors = d.cors.copy(allowMethods = asSeqString(value)))
-        case "cors.excludedPatterns" => d.copy(cors = d.cors.copy(excludedPatterns = asSeqString(value)))
-        case "cors.maxAge" => d.copy(cors = d.cors.copy(maxAge = value.toInt.millis.some))
-        case "cors.allowCredentials" => d.copy(cors = d.cors.copy(allowCredentials = value.toBoolean))
         case "redirection.enabled" => d.copy(redirection = d.redirection.copy(enabled = value.toBoolean))
         case "redirection.code" => d.copy(redirection = d.redirection.copy(code = value.toInt))
         case "redirection.to" => d.copy(redirection = d.redirection.copy(to = value))
@@ -384,59 +407,100 @@ case class OtoAnnotationConfig(annotations: Map[String, String]) {
         case "preRouting.excludedPatterns" => d.copy(preRouting = d.preRouting.copy(excludedPatterns = asSeqString(value)))
         case "preRouting.refs" => d.copy(preRouting = d.preRouting.copy(refs = asSeqString(value)))
         case "preRouting.config" => d.copy(preRouting = d.preRouting.copy(config = Json.parse(value)))
-        case "gzip.enabled" => d.copy(gzip = d.gzip.copy(enabled = value.toBoolean))
-        case "gzip.excludedPatterns" => d.copy(gzip = d.gzip.copy(excludedPatterns = asSeqString(value)))
-        case "gzip.whiteList" => d.copy(gzip = d.gzip.copy(whiteList = asSeqString(value)))
-        case "gzip.blackList" => d.copy(gzip = d.gzip.copy(blackList = asSeqString(value)))
-        case "gzip.bufferSize" => d.copy(gzip = d.gzip.copy(bufferSize = value.toInt))
-        case "gzip.chunkedThreshold" => d.copy(gzip = d.gzip.copy(chunkedThreshold = value.toInt))
-        case "gzip.compressionLevel" => d.copy(gzip = d.gzip.copy(compressionLevel = value.toInt))
         // case "thirdPartyApiKey" =>
         // case "apiKeyConstraints" =>
         // case "restrictions" =>
-        case "hosts" => d.copy(hosts = asSeqString(value))
-        case "paths" => d.copy(paths = asSeqString(value))
+        // case "hosts" => d.copy(hosts = asSeqString(value))
+        // case "paths" => d.copy(paths = asSeqString(value))
         case "issueCert" => d.copy(issueCert = value.toBoolean)
         case "issueCertCA" => d.copy(issueCertCA = value.some)
         case _ => d
       }
     }
   }
-}
 
-// TODO: remove for release
-class KubernetesIngressControllerTrigger extends RequestSink {
-
-  override def name: String = "KubernetesIngressControllerTrigger"
-
-  override def description: Option[String] = "KubernetesIngressControllerTrigger".some
-
-  override def defaultConfig: Option[JsObject] = None
-
-  override def matches(ctx: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Boolean = {
-    ctx.request.theDomain.toLowerCase().equals("kubernetes-ingress-controller.oto.tools") &&
-      ctx.request.relativeUri.equals("/.well-known/otoroshi/plugins/kubernetes/ingress-controller/trigger")
+  private def toCamelCase(key: String): String = {
+    CaseFormat.LOWER_HYPHEN.to(CaseFormat.LOWER_CAMEL, key)
   }
 
-  override def handle(ctx: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Future[Result] = {
-    val conf = KubernetesConfig.theConfig(ctx)
-    KubernetesIngressSyncJob.syncIngresses(conf, ctx.attrs).map { _ =>
-      Results.Ok(Json.obj("done" -> true))
-    }
+  private def gzipConfigOptions(key: String, value: String, d: ServiceDescriptor): ServiceDescriptor = key match {
+    case "gzip.enabled" => d.copy(gzip = d.gzip.copy(enabled = value.toBoolean))
+    case "gzip.excludedPatterns" => d.copy(gzip = d.gzip.copy(excludedPatterns = asSeqString(value)))
+    case "gzip.whiteList" => d.copy(gzip = d.gzip.copy(whiteList = asSeqString(value)))
+    case "gzip.blackList" => d.copy(gzip = d.gzip.copy(blackList = asSeqString(value)))
+    case "gzip.bufferSize" => d.copy(gzip = d.gzip.copy(bufferSize = value.toInt))
+    case "gzip.chunkedThreshold" => d.copy(gzip = d.gzip.copy(chunkedThreshold = value.toInt))
+    case "gzip.compressionLevel" => d.copy(gzip = d.gzip.copy(compressionLevel = value.toInt))
+  }
+
+  private def corsConfigOptions(key: String, value: String, d: ServiceDescriptor): ServiceDescriptor = key match {
+    case "cors.enabled" => d.copy(cors = d.cors.copy(enabled = value.toBoolean))
+    case "cors.allowOrigin" => d.copy(cors = d.cors.copy(allowOrigin = value))
+    case "cors.exposeHeaders" => d.copy(cors = d.cors.copy(exposeHeaders = asSeqString(value)))
+    case "cors.allowHeaders" => d.copy(cors = d.cors.copy(allowHeaders = asSeqString(value)))
+    case "cors.allowMethods" => d.copy(cors = d.cors.copy(allowMethods = asSeqString(value)))
+    case "cors.excludedPatterns" => d.copy(cors = d.cors.copy(excludedPatterns = asSeqString(value)))
+    case "cors.maxAge" => d.copy(cors = d.cors.copy(maxAge = value.toInt.millis.some))
+    case "cors.allowCredentials" => d.copy(cors = d.cors.copy(allowCredentials = value.toBoolean))
+    case _ => d
+  }
+
+  private def clientConfigOptions(key: String, value: String, d: ServiceDescriptor): ServiceDescriptor = key match {
+    case "clientConfig.useCircuitBreaker" => d.copy(clientConfig = d.clientConfig.copy(useCircuitBreaker = value.toBoolean))
+    case "clientConfig.retries" => d.copy(clientConfig = d.clientConfig.copy(retries = value.toInt))
+    case "clientConfig.maxErrors" => d.copy(clientConfig = d.clientConfig.copy(maxErrors = value.toInt))
+    case "clientConfig.retryInitialDelay" => d.copy(clientConfig = d.clientConfig.copy(retryInitialDelay = value.toLong))
+    case "clientConfig.backoffFactor" => d.copy(clientConfig = d.clientConfig.copy(backoffFactor = value.toLong))
+    case "clientConfig.connectionTimeout" => d.copy(clientConfig = d.clientConfig.copy(connectionTimeout = value.toLong))
+    case "clientConfig.idleTimeout" => d.copy(clientConfig = d.clientConfig.copy(idleTimeout = value.toLong))
+    case "clientConfig.callAndStreamTimeout" => d.copy(clientConfig = d.clientConfig.copy(callAndStreamTimeout = value.toLong))
+    case "clientConfig.callTimeout" => d.copy(clientConfig = d.clientConfig.copy(callTimeout = value.toLong))
+    case "clientConfig.globalTimeout" => d.copy(clientConfig = d.clientConfig.copy(globalTimeout = value.toLong))
+    case "clientConfig.sampleInterval" => d.copy(clientConfig = d.clientConfig.copy(sampleInterval = value.toLong))
+    case _ => d
+  }
+
+  private def securityOptions(key: String, value: String, d: ServiceDescriptor): ServiceDescriptor = key match {
+    case "enforceSecureCommunication" => d.copy(enforceSecureCommunication = value.toBoolean)
+    case "sendInfoToken" => d.copy(sendInfoToken = value.toBoolean)
+    case "sendStateChallenge" => d.copy(sendStateChallenge = value.toBoolean)
+    case "secComHeaders.claimRequestName" => d.copy(secComHeaders = d.secComHeaders.copy(claimRequestName = value.some))
+    case "secComHeaders.stateRequestName" => d.copy(secComHeaders = d.secComHeaders.copy(stateRequestName = value.some))
+    case "secComHeaders.stateResponseName" => d.copy(secComHeaders = d.secComHeaders.copy(stateResponseName = value.some))
+    case "secComTtl" => d.copy(secComTtl = value.toInt.millis)
+    case "secComVersion" => d.copy(secComVersion = SecComVersion.apply(value).getOrElse(SecComVersion.V2))
+    case "secComInfoTokenVersion" => d.copy(secComInfoTokenVersion = SecComInfoTokenVersion.apply(value).getOrElse(SecComInfoTokenVersion.Latest))
+    case "secComExcludedPatterns" => d.copy(secComExcludedPatterns = asSeqString(value))
+    case "secComSettings.size" => d.copy(secComSettings = d.secComSettings.asInstanceOf[HSAlgoSettings].copy(size = value.toInt))
+    case "secComSettings.secret" => d.copy(secComSettings = d.secComSettings.asInstanceOf[HSAlgoSettings].copy(secret = value))
+    case "secComSettings.base64" => d.copy(secComSettings = d.secComSettings.asInstanceOf[HSAlgoSettings].copy(base64 = value.toBoolean))
+    case "secComUseSameAlgo" => d.copy(secComUseSameAlgo = value.toBoolean)
+    case "secComAlgoChallengeOtoToBack.size" => d.copy(secComAlgoChallengeOtoToBack = d.secComAlgoChallengeOtoToBack.asInstanceOf[HSAlgoSettings].copy(size = value.toInt))
+    case "secComAlgoChallengeOtoToBack.secret" => d.copy(secComAlgoChallengeOtoToBack = d.secComAlgoChallengeOtoToBack.asInstanceOf[HSAlgoSettings].copy(secret = value))
+    case "secComAlgoChallengeOtoToBack.base64" => d.copy(secComAlgoChallengeOtoToBack = d.secComAlgoChallengeOtoToBack.asInstanceOf[HSAlgoSettings].copy(base64 = value.toBoolean))
+    case "secComAlgoChallengeBackToOto.size" => d.copy(secComAlgoChallengeBackToOto = d.secComAlgoChallengeBackToOto.asInstanceOf[HSAlgoSettings].copy(size = value.toInt))
+    case "secComAlgoChallengeBackToOto.secret" => d.copy(secComAlgoChallengeBackToOto = d.secComAlgoChallengeBackToOto.asInstanceOf[HSAlgoSettings].copy(secret = value))
+    case "secComAlgoChallengeBackToOto.base64" => d.copy(secComAlgoChallengeBackToOto = d.secComAlgoChallengeBackToOto.asInstanceOf[HSAlgoSettings].copy(base64 = value.toBoolean))
+    case "secComAlgoInfoToken.size" => d.copy(secComAlgoInfoToken = d.secComAlgoInfoToken.asInstanceOf[HSAlgoSettings].copy(size = value.toInt))
+    case "secComAlgoInfoToken.secret" => d.copy(secComAlgoInfoToken = d.secComAlgoInfoToken.asInstanceOf[HSAlgoSettings].copy(secret = value))
+    case "secComAlgoInfoToken.base64" => d.copy(secComAlgoInfoToken = d.secComAlgoInfoToken.asInstanceOf[HSAlgoSettings].copy(base64 = value.toBoolean))
+    case "securityExcludedPatterns" => d.copy(securityExcludedPatterns = asSeqString(value))
+    case _ => d
   }
 }
 
 object KubernetesIngressSyncJob {
 
-  val logger = Logger("otoroshi-plugins-kubernetes-ingress-sync")
+  private val logger = Logger("otoroshi-plugins-kubernetes-ingress-sync")
+  private val running = new AtomicBoolean(false)
+  private val shouldRunNext = new AtomicBoolean(false)
 
-  private def shouldProcessIngress(ingressClass: Option[String], ingressClassAnnotation: Option[String], conf: KubernetesConfig): Boolean = {
-    ingressClass match {
-      case None if ingressClassAnnotation.isEmpty && conf.allIngress => true
-      case None => ingressClassAnnotation == "otoroshi".some
-      case Some(v) if ingressClassAnnotation.isDefined => v == ingressClassAnnotation.get
-      case Some(v) if ingressClassAnnotation.isEmpty => true
-      case _ => true
+  private def shouldProcessIngress(ingressClass: String, ingressClassAnnotation: Option[String], conf: KubernetesConfig): Boolean = {
+    ingressClassAnnotation match {
+      case None if ingressClass == "*" => true
+      case Some("otoroshi") => true
+      case Some(annotation) => annotation == ingressClass
+      case _ => false
     }
   }
 
@@ -447,10 +511,12 @@ object KubernetesIngressSyncJob {
   def syncIngresses(conf: KubernetesConfig, attrs: TypedMap)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     implicit val mat = env.otoroshiMaterializer
     val client = new KubernetesClient(conf, env)
-    client.fetchCerts().flatMap { certs =>
-      client.fetchIngressesAndFilterLabels().flatMap { ingresses =>
-        Source(ingresses.toList)
-          .mapAsync(1) { ingressRaw =>
+    if (running.compareAndSet(false, true)) {
+      shouldRunNext.set(false)
+      client.fetchCerts().flatMap { certs =>
+        client.fetchIngressesAndFilterLabels().flatMap { ingresses =>
+          Source(ingresses.toList)
+            .mapAsync(1) { ingressRaw =>
               if (shouldProcessIngress(conf.ingressClass, ingressRaw.ingressClazz, conf)) {
                 val otoroshiConfig = parseConfig(ingressRaw.annotations)
                 if (ingressRaw.isValid()) {
@@ -481,22 +547,47 @@ object KubernetesIngressSyncJob {
               }
             }.runWith(Sink.ignore).map(_ => ()).flatMap { _ =>
 
-          val existingInKube = ingresses.map(k => (k.namespace, k.name))
+            val existingInKube = ingresses.flatMap { ingress =>
+              ingress.ingress.spec.rules.flatMap { rule =>
+                val host = rule.host.getOrElse("*")
+                rule.http.paths.map { path =>
+                  val root = path.path.getOrElse("/")
+                  s"${ingress.namespace}-${ingress.name}-$host-$root".slugifyWithSlash
+                }
+              }
+            }
 
-          env.datastores.serviceDescriptorDataStore.findAll().flatMap { services =>
-            val toDelete = services.filter { service =>
-              service.metadata.get("otoroshi-service-provider").contains("kubernetes")
-            }.map { service =>
-              (service.metadata.get("kubernetes-namespace").get, service.metadata.get("kubernetes-name").get, service.id)
-            }.filterNot {
-              case (namespace, name, id) => existingInKube.contains((namespace, name))
-            }.map(_._3)
-            env.datastores.serviceDescriptorDataStore.deleteByIds(toDelete).map { _ =>
-              ().future
+            env.datastores.serviceDescriptorDataStore.findAll().flatMap { services =>
+              val toDelete = services.filter { service =>
+                service.metadata.get("otoroshi-service-provider").contains("kubernetes")
+              }.map { service =>
+                (service.metadata.getOrElse("kubernetes-ingress-id", "--"), service.id, service.name)
+              }.filterNot {
+                case (ingressId, _, _) => existingInKube.contains(ingressId)
+              }
+              logger.info(s"Deleting services: ${toDelete.map(_._3).mkString(", ")}")
+              env.datastores.serviceDescriptorDataStore.deleteByIds(toDelete.map(_._2)).andThen {
+                case Failure(e) => e.printStackTrace()
+              }.map { _ =>
+                ()
+              }
             }
           }
         }
+      }.flatMap { _ =>
+        if (shouldRunNext.get()) {
+          shouldRunNext.set(false)
+          syncIngresses(conf, attrs)
+        } else {
+          ().future
+        }
+      }.andThen {
+        case _ => running.set(false)
       }
+    } else {
+      logger.info("Job already running, scheduling after ")
+      shouldRunNext.set(true)
+      ().future
     }
   }
 }
@@ -508,6 +599,11 @@ object KubernetesCertSyncJob {
   def syncOtoroshiCertsToKubernetesSecrets(client: KubernetesClient): Future[Unit] = ().future // TODO: implements
 
   def importCerts(certs: Seq[KubernetesCertSecret])(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+
+    val hashs = DynamicSSLEngineProvider.certificates.map {
+      case (_, value) => (value.contentHash, value)
+    }
+
     Future.sequence(certs.map { cert =>
       cert.cert match {
         case None => ().future
@@ -516,12 +612,20 @@ object KubernetesCertSyncJob {
           val newCert = found.copy(id = certId).enrich()
           env.datastores.certificatesDataStore.findById(certId).flatMap {
             case None =>
-              logger.info(s"importing cert. ${cert.namespace} - ${cert.name}")
-              newCert.save().map(_ => ())
+              hashs.get(newCert.contentHash) match {
+                case None =>
+                  logger.info(s"importing cert. ${cert.namespace} - ${cert.name}")
+                  newCert.save().map(_ => ())
+                case Some(_) => ().future
+              }
             case Some(existingCert) if existingCert.contentHash == newCert.contentHash => ().future
             case Some(existingCert) if existingCert.contentHash != newCert.contentHash =>
-              logger.info(s"updating cert. ${cert.namespace} - ${cert.name}")
-              newCert.save().map(_ => ())
+              hashs.get(newCert.contentHash) match {
+                case None =>
+                  logger.info(s"updating cert. ${cert.namespace} - ${cert.name}")
+                  newCert.save().map(_ => ())
+                case Some(_) => ().future
+              }
           }
         }
       }
@@ -647,6 +751,7 @@ object KubernetesIngress {
                             "updated-at" -> DateTime.now().toString,
                             "kubernetes-name" -> name,
                             "kubernetes-namespace" -> namespace,
+                            "kubernetes-ingress-id" -> s"$namespace-$name-${rule.host.getOrElse("*")}-${path.path.getOrElse("/")}".slugifyWithSlash,
                             "kubernetes-uid" -> uid
                           )
                         )
@@ -1160,4 +1265,120 @@ object IngressSupport {
 
   case class V1LoadBalancerIngress(hostname: Option[String], ip: Option[String])
 
+}
+
+object KubernetesSupport {
+
+  class OfficialSDKKubernetesController(config: KubernetesConfig) {
+
+    private val ref = new AtomicReference[LeaderElectingController]()
+    private val tp = Executors.newFixedThreadPool(2)
+
+    def start(): OfficialSDKKubernetesController = {
+
+      val timeoutMillis = 20000
+      val apiClient = new ClientBuilder()
+        .setVerifyingSsl(!config.trust)
+        .setAuthentication(new AccessTokenAuthentication(config.token))
+        .setBasePath(config.endpoint)
+        .setCertificateAuthority(config.caCert.map(c => c.getBytes).orNull)
+        .build()
+      val httpClient = apiClient.getHttpClient.newBuilder
+        .writeTimeout(timeoutMillis, TimeUnit.MILLISECONDS)
+        .connectTimeout(timeoutMillis, TimeUnit.MILLISECONDS)
+        .callTimeout(timeoutMillis, TimeUnit.MILLISECONDS)
+        .readTimeout(timeoutMillis, TimeUnit.MILLISECONDS)
+        .build
+      apiClient.setHttpClient(httpClient)
+      val coreV1Api = new CoreV1Api(apiClient)
+      val netApi = new NetworkingV1beta1Api(apiClient)
+
+
+      // instantiating an informer-factory, and there should be only one informer-factory globally.
+      val informerFactory = new SharedInformerFactory
+      val nodeInformer = informerFactory.sharedIndexInformerFor(
+        (params: CallGeneratorParams) => {
+          coreV1Api.listNodeCall(null,null,null,null,null,null, params.resourceVersion, params.timeoutSeconds, params.watch,null)
+        },
+        classOf[V1Node],
+        classOf[V1NodeList]
+      )
+
+      informerFactory.sharedIndexInformerFor(
+        (params: CallGeneratorParams) => {
+          netApi.listIngressForAllNamespacesCall(null,null,null,null,null,null, params.resourceVersion, params.timeoutSeconds, params.watch,null)
+        },
+        classOf[NetworkingV1beta1Ingress],
+        classOf[NetworkingV1beta1IngressList]
+      )
+
+      informerFactory.startAllRegisteredInformers()
+
+      val eventBroadcaster = new LegacyEventBroadcaster(coreV1Api)
+
+      val nodeReconciler =
+        new NodePrintingReconciler(
+          nodeInformer,
+          eventBroadcaster.newRecorder(
+            new V1EventSource().host("localhost").component("node-printer")))
+
+      val controller = ControllerBuilder.defaultBuilder(informerFactory)
+        .watch[V1Node](new java.util.function.Function[WorkQueue[Request], ControllerWatch[V1Node]] {
+          override def apply(workQueue: WorkQueue[Request]): ControllerWatch[V1Node] = {
+            ControllerBuilder
+              .controllerWatchBuilder(classOf[V1Node], workQueue)
+              .withWorkQueueKeyFunc(node => new Request(node.getMetadata().getName())) // optional, default to
+              .build()
+          }
+        })
+        .withReconciler(nodeReconciler) // required, set the actual reconciler
+        .withName("node-printing-controller") // optional, set name for controller
+        .withWorkerCount(4) // optional, set worker thread count
+        .withReadyFunc(new Supplier[lang.Boolean] {
+          override def get(): lang.Boolean = nodeInformer.hasSynced() // optional, only starts controller when the cache has synced up
+        })
+        .build()
+
+      val controllerManager = ControllerBuilder.controllerManagerBuilder(informerFactory)
+        .addController(controller)
+        .build()
+
+      val leaderElectingController =
+        new LeaderElectingController(
+          new LeaderElector(
+            new LeaderElectionConfig(
+              new EndpointsLock("kube-system", "leader-election", "otoroshi-controller", apiClient),
+              java.time.Duration.ofMillis(10000),
+              java.time.Duration.ofMillis(8000),
+              java.time.Duration.ofMillis(5000))),
+          controllerManager)
+
+      ref.set(leaderElectingController)
+      tp.submit(new Runnable {
+        override def run(): Unit = leaderElectingController.run()
+      })
+      this
+    }
+
+    def stop(): OfficialSDKKubernetesController  = {
+      Option(ref.get()).foreach(_.shutdown())
+      this
+    }
+  }
+
+  class NodePrintingReconciler(nodeInformer: SharedIndexInformer[V1Node] , recorder: EventRecorder) extends Reconciler {
+
+    import io.kubernetes.client.extended.event.legacy.EventRecorder
+
+    private val nodeLister = new Lister(nodeInformer.getIndexer())
+    private val eventRecorder: EventRecorder = recorder
+
+    def reconcile(request: Request): io.kubernetes.client.extended.controller.reconciler.Result = {
+      println(s"${request.getName} / ${request.getNamespace}")
+      val node: V1Node = this.nodeLister.get(request.getName)
+      System.out.println("triggered reconciling " + node.getMetadata.getName)
+      this.eventRecorder.event(node, EventType.Normal, "Print Node", "Successfully printed %s", node.getMetadata.getName)
+      new io.kubernetes.client.extended.controller.reconciler.Result(false)
+    }
+  }
 }

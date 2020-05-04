@@ -16,7 +16,7 @@ lazy val acme4jVersion = "2.9"
 lazy val prometheusVersion = "0.8.1"
 lazy val playJsonVersion = "2.8.1"
 lazy val webAuthnVersion = "1.6.1"
-lazy val kubernetesVersion = "7.0.0"
+lazy val kubernetesVersion = "8.0.0"
 
 libraryDependencies ++= Seq(
   ws,
@@ -60,8 +60,8 @@ libraryDependencies ++= Seq(
   "org.gnieh"                %% "diffson-play-json"          % "4.0.2" excludeAll ExclusionRule(organization = "com.typesafe.akka"),
   "org.scala-lang"           %  "scala-compiler"             % scalaLangVersion,
   "org.scala-lang"           %  "scala-library"              % scalaLangVersion,
-  //"io.kubernetes"            % "client-java"               % kubernetesVersion,
-  //"io.kubernetes"            % "client-java-extended"      % kubernetesVersion,
+  "io.kubernetes"            % "client-java"                 % kubernetesVersion,
+  "io.kubernetes"            % "client-java-extended"        % kubernetesVersion,
 
   // fix multiple CVEs
   "com.fasterxml.jackson.core" % "jackson-databind"          % "2.10.3",
