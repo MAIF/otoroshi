@@ -59,6 +59,25 @@ class KvSimpleAdminDataStore(redisCli: RedisLike, _env: Env) extends SimpleAdmin
     )
   }
 
+  override def registerUser(user: JsValue)(
+    implicit ec: ExecutionContext,
+    env: Env
+  ): Future[Boolean] = {
+    redisCli.set(
+      key((user \ "username").as[String]),
+      Json.stringify(
+        Json.obj(
+          "username" -> (user \ "username").as[String],
+          "password"        -> (user \ "password").as[String],
+          "label"           -> (user \ "label").as[String],
+          "authorizedGroup" -> JsNull,
+          "createdAt"       -> (user \ "createdAt").as[Long],
+          "type"            -> "SIMPLE"
+        )
+      )
+    )
+  }
+
   override def hasAlreadyLoggedIn(username: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
     redisCli.sismember(s"${env.storageRoot}:users:alreadyloggedin", username)
 

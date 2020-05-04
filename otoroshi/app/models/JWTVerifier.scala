@@ -1325,6 +1325,14 @@ object GlobalJwtVerifier extends FromJson[GlobalJwtVerifier] {
 
 object JwtVerifier extends FromJson[JwtVerifier] {
 
+  val fmt = new Format[JwtVerifier] {
+    override def writes(o: JwtVerifier): JsValue = o.asJson
+    override def reads(json: JsValue): JsResult[JwtVerifier] = fromJson(json) match {
+      case Left(e) => JsError(e.getMessage)
+      case Right(j) => JsSuccess(j)
+    }
+  }
+
   override def fromJson(json: JsValue): Either[Throwable, JwtVerifier] = {
     Try {
       (json \ "type").as[String] match {

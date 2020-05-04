@@ -1,0 +1,143 @@
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: service-groups.proxy.otoroshi.io
+spec:
+  group: proxy.otoroshi.io
+  version: v1alpha1
+  names:
+    kind: ServiceGroup
+    plural: service-groups
+    singular: service-group
+  scope: Namespaced
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: service-descriptors.proxy.otoroshi.io
+spec:
+  group: proxy.otoroshi.io
+  version: v1alpha1
+  names:
+    kind: ServiceDescriptor
+    plural: service-descriptors
+    singular: service-descriptor
+  scope: Namespaced
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: apikeys.proxy.otoroshi.io
+spec:
+  group: proxy.otoroshi.io
+  version: v1alpha1
+  names:
+    kind: ApiKey
+    plural: apikeys
+    singular: apikey
+  scope: Namespaced
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: certificates.proxy.otoroshi.io
+spec:
+  group: proxy.otoroshi.io
+  version: v1alpha1
+  names:
+    kind: Certificate
+    plural: certificates
+    singular: certificate
+  scope: Namespaced
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: csrs.proxy.otoroshi.io
+spec:
+  group: proxy.otoroshi.io
+  version: v1alpha1
+  names:
+    kind: CSR
+    plural: csrs
+    singular: csr
+  scope: Namespaced
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: global-configs.proxy.otoroshi.io
+spec:
+  group: proxy.otoroshi.io
+  version: v1alpha1
+  names:
+    kind: GlobalConfig
+    plural: global-configs
+    singular: global-config
+  scope: Namespaced
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: jwt-verifiers.proxy.otoroshi.io
+spec:
+  group: proxy.otoroshi.io
+  version: v1alpha1
+  names:
+    kind: JwtVerifier
+    plural: jwt-verifiers
+    singular: jwt-verifier
+  scope: Namespaced
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: auth-modules.proxy.otoroshi.io
+spec:
+  group: proxy.otoroshi.io
+  version: v1alpha1
+  names:
+    kind: AuthModule
+    plural: auth-modules
+    singular: auth-module
+  scope: Namespaced
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: scripts.proxy.otoroshi.io
+spec:
+  group: proxy.otoroshi.io
+  version: v1alpha1
+  names:
+    kind: Script
+    plural: scripts
+    singular: script
+  scope: Namespaced
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: tcp-services.proxy.otoroshi.io
+spec:
+  group: proxy.otoroshi.io
+  version: v1alpha1
+  names:
+    kind: TcpService
+    plural: tcp-services
+    singular: tcp-service
+  scope: Namespaced
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: admins.proxy.otoroshi.io
+spec:
+  group: proxy.otoroshi.io
+  version: v1alpha1
+  names:
+    kind: Admin
+    plural: admins
+    singular: admin
+  scope: Namespaced

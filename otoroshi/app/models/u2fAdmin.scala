@@ -13,6 +13,7 @@ trait SimpleAdminDataStore {
       implicit ec: ExecutionContext,
       env: Env
   ): Future[Boolean]
+  def registerUser(user: JsValue)(implicit ec: ExecutionContext, env: Env): Future[Boolean]
   def hasAlreadyLoggedIn(email: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean]
   def alreadyLoggedIn(email: String)(implicit ec: ExecutionContext, env: Env): Future[Long]
 }

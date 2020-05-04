@@ -1,34 +1,32 @@
 package otoroshi.plugins.jobs.kubernetes
 
 import java.io.File
-import java.lang
 import java.nio.file.Files
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 import java.util.concurrent.{Executors, TimeUnit}
-import java.util.function.Supplier
 
 import akka.http.scaladsl.model.Uri
 import akka.stream.scaladsl.{Sink, Source}
+import auth.AuthModuleConfig
 import com.google.common.base.CaseFormat
 import env.Env
 import io.kubernetes.client.extended.controller.builder.ControllerBuilder
 import io.kubernetes.client.extended.controller.reconciler.{Reconciler, Request}
-import io.kubernetes.client.extended.controller.{ControllerWatch, LeaderElectingController}
-import io.kubernetes.client.extended.event.EventType
-import io.kubernetes.client.extended.event.legacy.{EventRecorder, LegacyEventBroadcaster}
+import io.kubernetes.client.extended.controller.{Controller, LeaderElectingController, reconciler}
 import io.kubernetes.client.extended.leaderelection.resourcelock.EndpointsLock
 import io.kubernetes.client.extended.leaderelection.{LeaderElectionConfig, LeaderElector}
 import io.kubernetes.client.extended.workqueue.WorkQueue
-import io.kubernetes.client.informer.{SharedIndexInformer, SharedInformerFactory}
-import io.kubernetes.client.informer.cache.Lister
+import io.kubernetes.client.informer.SharedInformerFactory
 import io.kubernetes.client.openapi.apis.{CoreV1Api, NetworkingV1beta1Api}
 import io.kubernetes.client.openapi.models._
 import io.kubernetes.client.util.credentials.AccessTokenAuthentication
 import io.kubernetes.client.util.{CallGeneratorParams, ClientBuilder}
 import models._
+import okhttp3.Call
 import org.joda.time.DateTime
 import otoroshi.plugins.jobs.kubernetes.IngressSupport.IntOrString
 import otoroshi.script._
+import otoroshi.tcp.TcpService
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json._
@@ -42,10 +40,10 @@ import utils.{TypedMap, UrlSanitizer}
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
+import scala.reflect.ClassTag
 import scala.util.{Failure, Success, Try}
 
 // TODO: watch res to trigger sync
-// TODO: CRD for all oto entities ?
 
 // https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/
 // https://github.com/containous/traefik-helm-chart/tree/master/traefik/crds
@@ -60,7 +58,7 @@ object KubernetesConfig {
   import collection.JavaConverters._
   def theConfig(ctx: ContextWithConfig)(implicit env: Env, ec: ExecutionContext): KubernetesConfig = {
     val conf = ctx.configForOpt("KubernetesConfig").orElse((env.datastores.globalConfigDataStore.latest().scripts.jobConfig \ "KubernetesConfig").asOpt[JsValue]).getOrElse(Json.obj())
-    // TODO: read $KUBECONFIG
+    // TODO: read $KUBECONFIG file
     KubernetesConfig(
       enabled = (conf \ "enabled").as[Boolean],
       trust = (conf \ "trust").asOpt[Boolean].getOrElse(false),
@@ -85,7 +83,9 @@ object KubernetesConfig {
       defaultGroup = (conf \ "defaultGroup").asOpt[String].getOrElse("default"),
       ingressEndpointHostname = (conf \ "ingressEndpointHostname").asOpt[String],
       ingressEndpointIp = (conf \ "ingressEndpointIp").asOpt[String],
-      ingressEndpointPublishedService = (conf \ "ingressEndpointPublishedServices").asOpt[String]
+      ingressEndpointPublishedService = (conf \ "ingressEndpointPublishedServices").asOpt[String],
+      syncIngresses = (conf \ "syncIngresses").asOpt[Boolean].getOrElse(true),
+      syncCRDs = (conf \ "syncCRDs").asOpt[Boolean].getOrElse(false)
     )
   }
   def defaultConfig: JsObject = {
@@ -111,6 +111,8 @@ object KubernetesConfig {
 
 case class KubernetesConfig(
   enabled: Boolean,
+  syncCRDs: Boolean,
+  syncIngresses: Boolean,
   endpoint: String,
   token: String,
   caCert: Option[String],
@@ -165,7 +167,17 @@ class KubernetesIngressControllerJob extends Job {
     val conf = KubernetesConfig.theConfig(ctx)
     if (conf.enabled) {
       logger.info("Running kubernetes ingresses sync ...")
-      KubernetesIngressSyncJob.syncIngresses(conf, ctx.attrs)
+      val a = if (conf.syncIngresses) {
+        KubernetesIngressSyncJob.syncIngresses(conf, ctx.attrs)
+      } else {
+        ().future
+      }
+      val b = if (conf.syncCRDs) {
+        KubernetesCRDsJob.syncCRDs(conf, ctx.attrs)
+      } else {
+        ().future
+      }
+      a.flatMap(_ => b)
     } else {
       ().future
     }
@@ -293,12 +305,19 @@ class KubernetesIngressControllerTrigger extends RequestSink {
 
   override def handle(ctx: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Future[Result] = {
     val conf = KubernetesConfig.theConfig(ctx)
-    // ctx.request.getQueryString("official").filter(_ == "true").foreach { _ =>
-    //   Option(ref.get()).foreach(_.stop())
-    //   ref.set(new OsfficialSDKKubernetesController(conf).start())
-    // }
-    KubernetesIngressSyncJob.syncIngresses(conf, ctx.attrs).map { _ =>
-      Results.Ok(Json.obj("done" -> true))
+    ctx.request.getQueryString("official").filter(_ == "true").foreach { _ =>
+      Option(ref.get()).foreach(_.stop())
+      // ref.set(new KubernetesSupport.OfficialSDKKubernetesController(conf).start())
+    }
+    if (conf.syncCRDs) {
+      KubernetesCRDsJob.syncCRDs(conf, ctx.attrs)
+    }
+    if (conf.syncIngresses) {
+      KubernetesIngressSyncJob.syncIngresses(conf, ctx.attrs).map { _ =>
+        Results.Ok(Json.obj("done" -> true))
+      }
+    } else {
+      Results.Ok(Json.obj("done" -> false)).future
     }
   }
 }
@@ -592,6 +611,80 @@ object KubernetesIngressSyncJob {
   }
 }
 
+object KubernetesCRDsJob {
+
+  private val logger = Logger("otoroshi-plugins-kubernetes-crds-sync")
+  private val running = new AtomicBoolean(false)
+  private val shouldRunNext = new AtomicBoolean(false)
+
+  def syncCRDs(conf: KubernetesConfig, attrs: TypedMap)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    implicit val mat = env.otoroshiMaterializer
+    val client = new KubernetesClient(conf, env)
+    if (running.compareAndSet(false, true)) {
+      shouldRunNext.set(false)
+      logger.info("sync crd")
+      KubernetesCertSyncJob.syncKubernetesSecretsToOtoroshiCerts(client).flatMap { _ =>
+        // TODO: support ssecret name for
+        // - apikey secret
+        // - certificate payload
+        for {
+          serviceGroups <- client.crdsFetchServiceGroups()
+          serviceDescriptors <- client.crdsFetchServiceDescriptors()
+          apiKeys <- client.crdsFetchApiKeys()
+          certificates <- client.crdsFetchCertificates()
+          csrs <- client.crdsFetchCsr()
+          globalConfigs <- client.crdsFetchGlobalConfig()
+          jwtVerifiers <- client.crdsFetchJwtVerifiers()
+          authModules <- client.crdsFetchAuthModules()
+          scripts <- client.crdsFetchScripts()
+          tcpServices <- client.crdsFetchTcpServices()
+          simpleAdmins <- client.crdsFetchSimpleAdmins()
+        } yield {
+          if (globalConfigs.size > 1) {
+            Future.failed(new RuntimeException("There can only be one GlobalConfig entity !"))
+          } else {
+            val entities = (
+              globalConfigs.map(v => (v, () => v.save())) ++
+              simpleAdmins.map(v => (v, () => env.datastores.simpleAdminDataStore.registerUser(v))) ++ // TODO: useful ?
+              serviceGroups.map(v => (v, () => v.save())) ++
+              certificates.map(v => (v, () => v.save())) ++
+              jwtVerifiers.map(v => (v, () => env.datastores.globalJwtVerifierDataStore.set(v.asInstanceOf[GlobalJwtVerifier]))) ++
+              authModules.map(v => (v, () => v.save())) ++
+              scripts.map(v => (v, () => v.save())) ++
+              tcpServices.map(v => (v, () => v.save())) ++
+              serviceDescriptors.map(v => (v, () => v.save())) ++
+              apiKeys.map(v => (v, () => v.save()))
+              // TODO: handle csrs
+            ).toList
+            logger.info(s"will now sync ${entities.size} entities !")
+            Source(entities).mapAsync(1) { entity =>
+              entity._2().recover { case _ => false }.andThen {
+                case Failure(e) => logger.error(s"failed to save resource ${entity._1}", e)
+                case Success(_) =>
+              }
+            }.runWith(Sink.ignore)
+          }
+        }
+      }.flatMap { _ =>
+        if (shouldRunNext.get()) {
+          shouldRunNext.set(false)
+          syncCRDs(conf, attrs)
+        } else {
+          ().future
+        }
+      }.andThen {
+        case e =>
+          println(e)
+          running.set(false)
+      }
+    } else {
+      logger.info("Job already running, scheduling after ")
+      shouldRunNext.set(true)
+      ().future
+    }
+  }
+}
+
 object KubernetesCertSyncJob {
 
   val logger = Logger("otoroshi-plugins-kubernetes-cert-sync")
@@ -650,6 +743,7 @@ trait KubernetesEntity {
 }
 case class KubernetesService(raw: JsValue) extends KubernetesEntity
 case class KubernetesEndpoint(raw: JsValue) extends KubernetesEntity
+case class KubernetesOtoroshiResource(raw: JsValue) extends KubernetesEntity
 
 object KubernetesIngress {
   def asDescriptors(obj: KubernetesIngress)(conf: KubernetesConfig, otoConfig: OtoAnnotationConfig, client: KubernetesClient, logger: Logger)(implicit env: Env, ec: ExecutionContext): Future[Seq[ServiceDescriptor]] = {
@@ -978,6 +1072,42 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       }
     }).map(_.flatten)
   }
+
+  private def fetchOtoroshiResources[T](pluralName: String, reader: Reads[T]): Future[Seq[T]] = {
+    Future.sequence(config.namespaces.map { namespace =>
+      val cli: WSRequest = client(s"/apis/proxy.otoroshi.io/v1alpha1/namespaces/$namespace/$pluralName")
+      cli.addHttpHeaders(
+        "Accept" -> "application/json"
+      ).get().map { resp =>
+        Try {
+          if (resp.status == 200) {
+            filterLabels((resp.json \ "items").as[JsArray].value.map(v => KubernetesOtoroshiResource(v))).map { item =>
+              reader.reads((item.raw \ "spec").as[JsValue])
+            }.collect {
+              case JsSuccess(item, _) => item
+            }
+          } else {
+            Seq.empty
+          }
+        } match {
+          case Success(r) => r
+          case Failure(e) => Seq.empty
+        }
+      }
+    }).map(_.flatten)
+  }
+
+  def crdsFetchServiceGroups(): Future[Seq[ServiceGroup]] = fetchOtoroshiResources[ServiceGroup]("service-groups", ServiceGroup._fmt)
+  def crdsFetchServiceDescriptors(): Future[Seq[ServiceDescriptor]] = fetchOtoroshiResources[ServiceDescriptor]("service-descriptors", ServiceDescriptor._fmt)
+  def crdsFetchApiKeys(): Future[Seq[ApiKey]] = fetchOtoroshiResources[ApiKey]("apikeys", ApiKey._fmt)
+  def crdsFetchCertificates(): Future[Seq[Cert]] = fetchOtoroshiResources[Cert]("certificates", Cert._fmt)
+  def crdsFetchCsr(): Future[Seq[JsValue]] = fetchOtoroshiResources[JsValue]("csrs", v => JsSuccess(v))
+  def crdsFetchGlobalConfig(): Future[Seq[GlobalConfig]] = fetchOtoroshiResources[GlobalConfig]("global-configs", GlobalConfig._fmt)
+  def crdsFetchJwtVerifiers(): Future[Seq[JwtVerifier]] = fetchOtoroshiResources[JwtVerifier]("jwt-verifiers", JwtVerifier.fmt)
+  def crdsFetchAuthModules(): Future[Seq[AuthModuleConfig]] = fetchOtoroshiResources[AuthModuleConfig]("auth-modules", AuthModuleConfig._fmt)
+  def crdsFetchScripts(): Future[Seq[Script]] = fetchOtoroshiResources[Script]("scripts", Script._fmt)
+  def crdsFetchTcpServices(): Future[Seq[TcpService]] = fetchOtoroshiResources[TcpService]("tcp-services", TcpService.fmt)
+  def crdsFetchSimpleAdmins(): Future[Seq[JsValue]] = fetchOtoroshiResources[JsValue]("admins", v => JsSuccess(v))
 }
 
 object IngressSupport {
@@ -1274,9 +1404,35 @@ object KubernetesSupport {
     private val ref = new AtomicReference[LeaderElectingController]()
     private val tp = Executors.newFixedThreadPool(2)
 
+    def buildController[T, L](name: String, informerFactory: SharedInformerFactory)(f: CallGeneratorParams => Call)(implicit c1: ClassTag[T], c2: ClassTag[L]): Controller = {
+      val informer = informerFactory.sharedIndexInformerFor(
+        (params: CallGeneratorParams) => f(params),
+        c1.runtimeClass,
+        c2.runtimeClass
+      )
+      val controller = ControllerBuilder.defaultBuilder(informerFactory)
+          .watch[V1Service]((workQueue: WorkQueue[Request]) => {
+          ControllerBuilder
+            .controllerWatchBuilder(classOf[V1Service], workQueue)
+            .withWorkQueueKeyFunc(node => new Request(node.getMetadata.getNamespace, node.getMetadata.getName))
+            .build()
+        })
+        .withReconciler(new Reconciler {
+          override def reconcile(request: Request): reconciler.Result = {
+            val service = informer.getIndexer.getByKey(s"${request.getNamespace}/${request.getName}")
+            println(s"$name - ${request.getName} / ${request.getNamespace} / ${service == null}")
+            new io.kubernetes.client.extended.controller.reconciler.Result(false)
+          }
+        }) // required, set the actual reconciler
+        .withName(name)
+        .withWorkerCount(4) // optional, set worker thread count
+        .withReadyFunc(() => true)//nodeInformer.hasSynced())
+        .build()
+      controller
+    }
+
     def start(): OfficialSDKKubernetesController = {
 
-      val timeoutMillis = 20000
       val apiClient = new ClientBuilder()
         .setVerifyingSsl(!config.trust)
         .setAuthentication(new AccessTokenAuthentication(config.token))
@@ -1284,70 +1440,32 @@ object KubernetesSupport {
         .setCertificateAuthority(config.caCert.map(c => c.getBytes).orNull)
         .build()
       val httpClient = apiClient.getHttpClient.newBuilder
-        .writeTimeout(timeoutMillis, TimeUnit.MILLISECONDS)
-        .connectTimeout(timeoutMillis, TimeUnit.MILLISECONDS)
-        .callTimeout(timeoutMillis, TimeUnit.MILLISECONDS)
-        .readTimeout(timeoutMillis, TimeUnit.MILLISECONDS)
+        .readTimeout(0, TimeUnit.SECONDS)
         .build
       apiClient.setHttpClient(httpClient)
       val coreV1Api = new CoreV1Api(apiClient)
       val netApi = new NetworkingV1beta1Api(apiClient)
-
-
-      // instantiating an informer-factory, and there should be only one informer-factory globally.
       val informerFactory = new SharedInformerFactory
-      val nodeInformer = informerFactory.sharedIndexInformerFor(
-        (params: CallGeneratorParams) => {
-          coreV1Api.listNodeCall(null,null,null,null,null,null, params.resourceVersion, params.timeoutSeconds, params.watch,null)
-        },
-        classOf[V1Node],
-        classOf[V1NodeList]
-      )
-
-      informerFactory.sharedIndexInformerFor(
-        (params: CallGeneratorParams) => {
-          netApi.listIngressForAllNamespacesCall(null,null,null,null,null,null, params.resourceVersion, params.timeoutSeconds, params.watch,null)
-        },
-        classOf[NetworkingV1beta1Ingress],
-        classOf[NetworkingV1beta1IngressList]
-      )
-
-      informerFactory.startAllRegisteredInformers()
-
-      val eventBroadcaster = new LegacyEventBroadcaster(coreV1Api)
-
-      val nodeReconciler =
-        new NodePrintingReconciler(
-          nodeInformer,
-          eventBroadcaster.newRecorder(
-            new V1EventSource().host("localhost").component("node-printer")))
-
-      val controller = ControllerBuilder.defaultBuilder(informerFactory)
-        .watch[V1Node](new java.util.function.Function[WorkQueue[Request], ControllerWatch[V1Node]] {
-          override def apply(workQueue: WorkQueue[Request]): ControllerWatch[V1Node] = {
-            ControllerBuilder
-              .controllerWatchBuilder(classOf[V1Node], workQueue)
-              .withWorkQueueKeyFunc(node => new Request(node.getMetadata().getName())) // optional, default to
-              .build()
-          }
-        })
-        .withReconciler(nodeReconciler) // required, set the actual reconciler
-        .withName("node-printing-controller") // optional, set name for controller
-        .withWorkerCount(4) // optional, set worker thread count
-        .withReadyFunc(new Supplier[lang.Boolean] {
-          override def get(): lang.Boolean = nodeInformer.hasSynced() // optional, only starts controller when the cache has synced up
-        })
-        .build()
 
       val controllerManager = ControllerBuilder.controllerManagerBuilder(informerFactory)
-        .addController(controller)
+        .addController(buildController[V1Service, V1ServiceList]("otoroshi-controller-services", informerFactory) { params =>
+          coreV1Api.listServiceAccountForAllNamespacesCall(null,null,null,null,null,null, params.resourceVersion, params.timeoutSeconds, params.watch,null)
+        })
+        .addController(buildController[V1Endpoints, V1EndpointsList]("otoroshi-controller-endpoints", informerFactory) { params =>
+          coreV1Api.listEndpointsForAllNamespacesCall(null,null,null,null,null,null, params.resourceVersion, params.timeoutSeconds, params.watch,null)
+        })
+        .addController(buildController[NetworkingV1beta1Ingress, NetworkingV1beta1IngressList]("otoroshi-controller-ingresses", informerFactory) { params =>
+          netApi.listIngressForAllNamespacesCall(null,null,null,null,null,null, params.resourceVersion, params.timeoutSeconds, params.watch,null)
+        })
         .build()
+
+      informerFactory.startAllRegisteredInformers()
 
       val leaderElectingController =
         new LeaderElectingController(
           new LeaderElector(
             new LeaderElectionConfig(
-              new EndpointsLock("kube-system", "leader-election", "otoroshi-controller", apiClient),
+              new EndpointsLock("kube-system", "leader-election", "otoroshi-controllers", apiClient),
               java.time.Duration.ofMillis(10000),
               java.time.Duration.ofMillis(8000),
               java.time.Duration.ofMillis(5000))),
@@ -1363,22 +1481,6 @@ object KubernetesSupport {
     def stop(): OfficialSDKKubernetesController  = {
       Option(ref.get()).foreach(_.shutdown())
       this
-    }
-  }
-
-  class NodePrintingReconciler(nodeInformer: SharedIndexInformer[V1Node] , recorder: EventRecorder) extends Reconciler {
-
-    import io.kubernetes.client.extended.event.legacy.EventRecorder
-
-    private val nodeLister = new Lister(nodeInformer.getIndexer())
-    private val eventRecorder: EventRecorder = recorder
-
-    def reconcile(request: Request): io.kubernetes.client.extended.controller.reconciler.Result = {
-      println(s"${request.getName} / ${request.getNamespace}")
-      val node: V1Node = this.nodeLister.get(request.getName)
-      System.out.println("triggered reconciling " + node.getMetadata.getName)
-      this.eventRecorder.event(node, EventType.Normal, "Print Node", "Successfully printed %s", node.getMetadata.getName)
-      new io.kubernetes.client.extended.controller.reconciler.Result(false)
     }
   }
 }
