@@ -285,15 +285,6 @@ class OtoroshiToKubernetesCertSyncJob extends Job {
 // TODO: remove for release
 class KubernetesIngressControllerTrigger extends RequestSink {
 
-  import KubernetesSupport._
-
-  private val ref = new AtomicReference[OfficialSDKKubernetesController]()
-
-  override def stop(env: Env): Future[Unit] = {
-    Option(ref.get()).foreach(_.stop())
-    ().future
-  }
-
   override def name: String = "KubernetesIngressControllerTrigger"
 
   override def description: Option[String] = "KubernetesIngressControllerTrigger".some
@@ -307,10 +298,6 @@ class KubernetesIngressControllerTrigger extends RequestSink {
 
   override def handle(ctx: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Future[Result] = {
     val conf = KubernetesConfig.theConfig(ctx)
-    ctx.request.getQueryString("official").filter(_ == "true").foreach { _ =>
-      Option(ref.get()).foreach(_.stop())
-      // ref.set(new KubernetesSupport.OfficialSDKKubernetesController(conf).start())
-    }
     if (conf.crds) {
       KubernetesCRDsJob.syncCRDs(conf, ctx.attrs)
     }
@@ -640,7 +627,7 @@ object KubernetesCRDsJob {
       shouldRunNext.set(false)
       logger.info("sync crd")
       KubernetesCertSyncJob.syncKubernetesSecretsToOtoroshiCerts(client).flatMap { _ =>
-        // TODO: support ssecret name for
+        // TODO: support secret name for
         // - apikey secret
         // - certificate payload
         for {

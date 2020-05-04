@@ -7,30 +7,67 @@ spec:
     matchLabels:
       run: otoroshi-deployment
   replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
   template:
     metadata:
       labels:
         run: otoroshi-deployment
     spec:
+      serviceAccountName: otoroshi-admin-user
+      terminationGracePeriodSeconds: 60
+      hostNetwork: false
       containers:
-      - image: maif/otoroshi:1.4.22s-jdk11
+      - image: maif/otoroshi:1.4.22-jdk11
         imagePullPolicy: IfNotPresent
         name: otoroshi
         ports:
           - containerPort: 8080
             name: "http"
+            protocol: TCP
           - containerPort: 8443
             name: "https"
+            protocol: TCP
         env:
           - name: OTOROSHI_INITIAL_ADMIN_PASSWORD
             value: password
-          - name: REDIS_LF_HOST
-            value: redis-master-cluster-ip-service
-          - name: REDIS_LF_MEMBERS
-            value: redis-slave-cluster-ip-service
-          - name: REDIS_HOST
-            value: redis-master-cluster-ip-service
           - name: APP_STORAGE
-            value: redis-lf
+            value: inmemory
           - name: APP_DOMAIN
             value: kuber.netes
+          # - name: REDIS_LF_HOST
+          #   value: redis-master-cluster-ip-service
+          # - name: REDIS_LF_MEMBERS
+          #   value: redis-slave-cluster-ip-service
+          # - name: REDIS_HOST
+          #   value: redis-master-cluster-ip-service
+          # - name: APP_STORAGE
+          #   value: redis-lf
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          failureThreshold: 1
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 2
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          failureThreshold: 3
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 2
+        resources:
+          # requests:
+          #   cpu: "100m"
+          #   memory: "50Mi"
+          # limits:
+          #   cpu: "4G"
+          #   memory: "4Gi"
