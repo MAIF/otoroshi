@@ -1,21 +1,20 @@
 package otoroshi.plugins.jobs.kubernetes
 
-import java.util.concurrent.{Executors, TimeUnit}
 import java.util.concurrent.atomic.AtomicReference
+import java.util.concurrent.{Executors, TimeUnit}
 
 import io.kubernetes.client.extended.controller.builder.ControllerBuilder
-import io.kubernetes.client.extended.controller.{Controller, LeaderElectingController, reconciler}
 import io.kubernetes.client.extended.controller.reconciler.{Reconciler, Request}
-import io.kubernetes.client.extended.leaderelection.{LeaderElectionConfig, LeaderElector}
+import io.kubernetes.client.extended.controller.{Controller, LeaderElectingController, reconciler}
 import io.kubernetes.client.extended.leaderelection.resourcelock.EndpointsLock
+import io.kubernetes.client.extended.leaderelection.{LeaderElectionConfig, LeaderElector}
 import io.kubernetes.client.extended.workqueue.WorkQueue
 import io.kubernetes.client.informer.SharedInformerFactory
 import io.kubernetes.client.openapi.apis.{CoreV1Api, NetworkingV1beta1Api}
 import io.kubernetes.client.openapi.models._
-import io.kubernetes.client.util.{CallGeneratorParams, ClientBuilder}
 import io.kubernetes.client.util.credentials.AccessTokenAuthentication
+import io.kubernetes.client.util.{CallGeneratorParams, ClientBuilder}
 import okhttp3.Call
-import otoroshi.utils.syntax.implicits._
 
 import scala.reflect.ClassTag
 

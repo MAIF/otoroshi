@@ -6,7 +6,6 @@ import java.nio.file.Files
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import env.Env
-import org.yaml.snakeyaml.Yaml
 import otoroshi.script._
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._

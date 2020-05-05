@@ -2,13 +2,13 @@ package otoroshi.plugins.jobs.kubernetes
 
 import env.Env
 import otoroshi.script._
+import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json.{JsObject, Json}
 import ssl.DynamicSSLEngineProvider
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
-import otoroshi.utils.syntax.implicits._
 
 object KubernetesCertSyncJob {
 

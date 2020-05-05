@@ -1,13 +1,3 @@
-package otoroshi.plugins.jobs.kubernetes
-
-// TODO: watch res to trigger sync
-// TODO: review crds filter by provider, match on kube-path
-// TODO: Ajouter openapi aux crd
-// TODO: Customizers spécifique par type
-// TODO: Csr dans la ressource cert placée en meta + caDN, génération à la volée, matchs sur le hash de la config csr
-// TODO: Doc
-// TODO: Tester un deploy en vrai pour une démo
-
 // https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/
 // https://github.com/containous/traefik-helm-chart/tree/master/traefik/crds
 // https://github.com/containous/traefik/blob/v1.7.24/examples/k8s/traefik-deployment.yaml

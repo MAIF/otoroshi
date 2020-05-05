@@ -3,11 +3,8 @@ package otoroshi.plugins.jobs.kubernetes
 import java.util.Base64
 
 import akka.http.scaladsl.model.Uri
-import auth.AuthModuleConfig
 import env.Env
 import models._
-import otoroshi.script.Script
-import otoroshi.tcp.TcpService
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
 import play.api.libs.ws.WSRequest
@@ -18,6 +15,7 @@ import utils.http.MtlsConfig
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 
+// TODO: watch res to trigger sync
 class KubernetesClient(val config: KubernetesConfig, env: Env) {
 
   implicit val ec = env.otoroshiExecutionContext

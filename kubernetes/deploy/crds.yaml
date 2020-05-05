@@ -38,9 +38,9 @@ spec:
       properties:
         spec:
           type: object
-          required: ["groupId", "targets", "authorizedGroup"]
+          required: ["group", "targets", "hosts"]
           properties:
-            - groupId:
+            - group:
               type: string
             - name:
               type: string
