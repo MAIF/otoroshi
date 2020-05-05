@@ -9,6 +9,7 @@ trait SimpleAdminDataStore {
   def findByUsername(username: String)(implicit ec: ExecutionContext, env: Env): Future[Option[JsValue]]
   def findAll()(implicit ec: ExecutionContext, env: Env): Future[Seq[JsValue]]
   def deleteUser(username: String)(implicit ec: ExecutionContext, env: Env): Future[Long]
+  def deleteUsers(usernames: Seq[String])(implicit ec: ExecutionContext, env: Env): Future[Long]
   def registerUser(username: String, password: String, label: String, authorizedGroup: Option[String], metadata: Map[String, String] = Map.empty)(
       implicit ec: ExecutionContext,
       env: Env

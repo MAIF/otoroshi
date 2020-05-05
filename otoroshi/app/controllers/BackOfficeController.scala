@@ -497,7 +497,8 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
               desc = desc,
               clientId = clientId,
               clientSecret = clientSecret,
-              oidConfig = None
+              oidConfig = None,
+              metadata = Map.empty
             ).asJson
           )
         )
@@ -513,7 +514,8 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
                   id = id,
                   name = name,
                   desc = desc,
-                  oidConfig = Some(url)
+                  oidConfig = Some(url),
+                  metadata = Map.empty
                 )
                 val body         = Json.parse(resp.body)
                 val issuer       = (body \ "issuer").asOpt[String].getOrElse("http://localhost:8082/")
@@ -579,7 +581,8 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
                     desc = desc,
                     clientId = clientId,
                     clientSecret = clientSecret,
-                    oidConfig = Some(url)
+                    oidConfig = Some(url),
+                    metadata = Map.empty
                   ).asJson
                 )
               }
@@ -592,7 +595,8 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
                   desc = desc,
                   clientId = clientId,
                   clientSecret = clientSecret,
-                  oidConfig = Some(url)
+                  oidConfig = Some(url),
+                  metadata = Map.empty
                 ).asJson
               )
             }

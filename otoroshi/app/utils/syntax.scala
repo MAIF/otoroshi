@@ -34,6 +34,7 @@ object implicits {
       logger.debug(s"$obj")
       obj
     }
+    def applyOn[B](f: A => B): B = f(obj)
   }
   implicit class BetterString(private val obj: String) extends AnyVal {
     import otoroshi.utils.string.Implicits._

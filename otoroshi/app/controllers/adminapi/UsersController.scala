@@ -24,7 +24,8 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
     profile = Json.obj(),
     authorizedGroup = None,
     simpleLogin = false,
-    authConfigId = "none"
+    authConfigId = "none",
+    metadata = Map.empty
   )
 
   def sessions() = ApiAction.async { ctx =>

@@ -660,7 +660,8 @@ class Env(val configuration: Configuration,
 
   lazy val backOfficeGroup = ServiceGroup(
     id = backOfficeGroupId,
-    name = "Otoroshi Admin Api group"
+    name = "Otoroshi Admin Api group",
+    metadata = Map.empty
   )
 
   lazy val backOfficeApiKey = ApiKey(
@@ -829,7 +830,7 @@ class Env(val configuration: Configuration,
                     }(ec)
                 }
                 case _ => {
-                  val defaultGroup = ServiceGroup("default", "default-group", "The default service group")
+                  val defaultGroup = ServiceGroup("default", "default-group", "The default service group", Map.empty)
                   val defaultGroupApiKey = ApiKey("9HFCzZIPUQQvfxkq",
                                                   "lmwAGwqtJJM7nOMGKwSAdOjC3CZExfYC7qXd4aPmmseaShkEccAnmpULvgnrt6tp",
                                                   "default-apikey",

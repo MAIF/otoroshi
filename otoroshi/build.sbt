@@ -66,8 +66,9 @@ libraryDependencies ++= Seq(
   // fix multiple CVEs
   "com.fasterxml.jackson.core" % "jackson-databind"          % "2.10.3",
   "org.yaml"                   % "snakeyaml"                 % "1.26",
-  
-  // tests
+  "com.fasterxml.jackson.dataformat" % "jackson-dataformat-yaml" % "2.10.3",
+
+// tests
   "org.scalatestplus.play"   %% "scalatestplus-play"         % "5.0.0" % Test,
 
   // do not update because the feature is deprecated and will be removed

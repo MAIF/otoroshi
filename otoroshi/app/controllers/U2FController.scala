@@ -73,7 +73,8 @@ class U2FController(BackOfficeAction: BackOfficeAction,
                 token = Json.obj(),
                 authorizedGroup = authorizedGroup,
                 authConfigId = "none",
-                simpleLogin = true
+                simpleLogin = true,
+                metadata = Map.empty
               ).save(Duration(env.backOfficeSessionExp, TimeUnit.MILLISECONDS)).map { boUser =>
                 env.datastores.simpleAdminDataStore.hasAlreadyLoggedIn(username).map {
                   case false => {
@@ -414,7 +415,8 @@ class U2FController(BackOfficeAction: BackOfficeAction,
                           token = Json.obj(),
                           authorizedGroup = authorizedGroup,
                           authConfigId = "none",
-                          simpleLogin = false
+                          simpleLogin = false,
+                          metadata = Map.empty
                         ).save(Duration(env.backOfficeSessionExp, TimeUnit.MILLISECONDS)).map { boUser =>
                           env.datastores.webAuthnAdminDataStore.hasAlreadyLoggedIn(username).map {
                             case false => {
