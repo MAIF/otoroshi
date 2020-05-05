@@ -8,7 +8,7 @@ Starting at version 1.5.0, Otoroshi provides a native Kubernetes support. Multip
 
 ## Deploy otoroshi on your kubernetes cluster
 
-If you want to deploy otoroshi into your kubernetes cluster, you can download the deployment descriptors from https://github.com/MAIF/otoroshi/tree/master/kubernetes and use kustomize to create your own overlay. 
+If you want to deploy otoroshi into your kubernetes cluster, you can download the deployment descriptors from https://github.com/MAIF/otoroshi/tree/master/kubernetes and use kustomize to create your own overlay. The base descriptors are available at https://github.com/MAIF/otoroshi/tree/master/kubernetes/base
 
 Then deploy it with `kubectl apply -k ./overlays/myoverlay`. 
 
