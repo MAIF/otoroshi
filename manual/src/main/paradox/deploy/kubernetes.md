@@ -142,7 +142,7 @@ It is of course possible to use multiple ingress controller at the same time (ht
 }
 ```
 
-### Supported nnotations
+### Supported annotations
 
 if you need to customize the service descriptor behind an ingress rule, you can use some annotations. If you need better customisation, just go to the CRDs part. The following annotations are supported :
 
@@ -255,6 +255,8 @@ if you need to customize the service descriptor behind an ingress rule, you can 
 - `otoroshi.ingress.kubernetes.io/secComAlgoInfoToken.secret`
 - `otoroshi.ingress.kubernetes.io/secComAlgoInfoToken.base64`
 - `otoroshi.ingress.kubernetes.io/securityExcludedPatterns`
+
+for more informations about it, just go to https://maif.github.io/otoroshi/swagger-ui/index.html
 
 ## Otoroshi CRDs
 
@@ -395,7 +397,7 @@ spec:
     - /health
   additionalHeaders:
     x-foo: bar
-  # here you can specify everything supported by otoroshi like jwt-verifiers, auth config, etc ...
+# here you can specify everything supported by otoroshi like jwt-verifiers, auth config, etc ... for more informations about it, just go to https://maif.github.io/otoroshi/swagger-ui/index.html
 ```
 
 now with this descriptor deployed, you can access your app with a command like 
