@@ -339,7 +339,7 @@ spec:
   }
 }
 </code></pre>
-<h3><a href="#supported-nnotations" name="supported-nnotations" class="anchor"><span class="anchor-link"></span></a>Supported nnotations</h3>
+<h3><a href="#supported-annotations" name="supported-annotations" class="anchor"><span class="anchor-link"></span></a>Supported annotations</h3>
 <p>if you need to customize the service descriptor behind an ingress rule, you can use some annotations. If you need better customisation, just go to the CRDs part. The following annotations are supported :</p>
 <ul>
   <li><code>otoroshi.ingress.kubernetes.io/group</code></li>
@@ -452,6 +452,7 @@ spec:
   <li><code>otoroshi.ingress.kubernetes.io/secComAlgoInfoToken.base64</code></li>
   <li><code>otoroshi.ingress.kubernetes.io/securityExcludedPatterns</code></li>
 </ul>
+<p>for more informations about it, just go to <a href="https://maif.github.io/otoroshi/swagger-ui/index.html">https://maif.github.io/otoroshi/swagger-ui/index.html</a></p>
 <h2><a href="#otoroshi-crds" name="otoroshi-crds" class="anchor"><span class="anchor-link"></span></a>Otoroshi CRDs</h2>
 <p>Otoroshi provides some Custom Resource Definitions for kubernetes in order to manager Otoroshi related entities in kubernetes</p>
 <ul>
@@ -582,7 +583,7 @@ spec:
     - /health
   additionalHeaders:
     x-foo: bar
-  # here you can specify everything supported by otoroshi like jwt-verifiers, auth config, etc ...
+# here you can specify everything supported by otoroshi like jwt-verifiers, auth config, etc ... for more informations about it, just go to https://maif.github.io/otoroshi/swagger-ui/index.html
 </code></pre>
 <p>now with this descriptor deployed, you can access your app with a command like </p>
 <pre class="prettyprint"><code class="language-sh">curl -X GET https://httpapp.foo.bar/api/hello -u client1:secret1
