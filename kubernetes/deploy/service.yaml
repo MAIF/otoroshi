@@ -10,10 +10,10 @@ spec:
   - port: 80
     name: "http"
     targetPort: "http"
-    nodePort: 30080
+    # nodePort: 30080
   - port: 443
     name: "https"
     targetPort: "https"
-    nodePort: 30443
+    # nodePort: 30443
   #loadBalancerSourceRanges:
   #externalIPs:

@@ -148,7 +148,9 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
               preRouteRefs = staticGlobalScripts.preRouteRefs ++ c.scripts.preRouteRefs,
               preRouteConfig = staticGlobalScripts.preRouteConfig.as[JsObject] ++ c.scripts.preRouteConfig.as[JsObject],
               sinkRefs = staticGlobalScripts.sinkRefs ++ c.scripts.sinkRefs,
-              sinkConfig = staticGlobalScripts.sinkConfig.as[JsObject] ++ c.scripts.sinkConfig.as[JsObject]
+              sinkConfig = staticGlobalScripts.sinkConfig.as[JsObject] ++ c.scripts.sinkConfig.as[JsObject],
+              jobRefs = staticGlobalScripts.jobRefs ++ c.scripts.jobRefs,
+              jobConfig = staticGlobalScripts.jobConfig.as[JsObject] ++ c.scripts.jobConfig.as[JsObject]
             )
           )
         })
