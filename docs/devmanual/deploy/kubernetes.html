@@ -455,20 +455,21 @@ spec:
 <h2><a href="#otoroshi-crds" name="otoroshi-crds" class="anchor"><span class="anchor-link"></span></a>Otoroshi CRDs</h2>
 <p>Otoroshi provides some Custom Resource Definitions for kubernetes in order to manager Otoroshi related entities in kubernetes</p>
 <ul>
-  <li>service-groups</li>
-  <li>service-descriptors</li>
-  <li>apikeys</li>
-  <li>certificates</li>
-  <li>global-configs</li>
-  <li>jwt-verifiers</li>
-  <li>auth-modules</li>
-  <li>scripts</li>
-  <li>tcp-services</li>
-  <li>admins</li>
+  <li><code>service-groups</code></li>
+  <li><code>service-descriptors</code></li>
+  <li><code>apikeys</code></li>
+  <li><code>certificates</code></li>
+  <li><code>global-configs</code></li>
+  <li><code>jwt-verifiers</code></li>
+  <li><code>auth-modules</code></li>
+  <li><code>scripts</code></li>
+  <li><code>tcp-services</code></li>
+  <li><code>admins</code></li>
 </ul>
 <p>using CRDs, you will be able to deploy and manager those entities from kubectl or the kubernetes api like</p>
 <pre class="prettyprint"><code class="language-sh">sudo kubectl get apikeys --all-namespaces
 sudo kubectl get service-descriptors --all-namespaces
+curl -X GET -H &#39;Authorization: Bearer eyJhbGciOiJSUzI....F463SrpOehQRaQ&#39; -H &#39;Accept: application/json&#39; -k https://127.0.0.1:6443/apis/proxy.otoroshi.io/v1alpha1/apikeys | jq
 </code></pre>
 <p>To configure it, just go to the danger zone, and in <code>Global scripts</code> add the job named <code>Kubernetes Otoroshi CRDs Controller</code>. Then add the following configuration for the job (with your own tweak of course)</p>
 <pre class="prettyprint"><code class="language-json">{
