@@ -275,7 +275,6 @@ trait ApiKeyDataStore extends BasicStore[ApiKey] {
       clientSecret = IdGenerator.token(64),
       clientName = "client-name-apikey",
       authorizedGroup = groupId,
-      validUntil = None
     )
   def remainingQuotas(apiKey: ApiKey)(implicit ec: ExecutionContext, env: Env): Future[RemainingQuotas]
   def resetQuotas(apiKey: ApiKey)(implicit ec: ExecutionContext, env: Env): Future[RemainingQuotas]

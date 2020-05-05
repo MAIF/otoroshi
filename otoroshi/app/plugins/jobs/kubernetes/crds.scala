@@ -2,100 +2,179 @@ package otoroshi.plugins.jobs.kubernetes
 
 import java.util.concurrent.atomic.AtomicBoolean
 
+import akka.http.scaladsl.model.Uri
 import akka.stream.scaladsl.{Sink, Source}
 import auth.AuthModuleConfig
 import env.Env
 import models._
 import otoroshi.script.Script
+import otoroshi.ssl.pki.models.GenCsrQuery
 import otoroshi.tcp.TcpService
+import otoroshi.utils.syntax.implicits._
 import play.api.Logger
+import play.api.libs.json._
+import ssl.{Cert, DynamicSSLEngineProvider}
 import utils.TypedMap
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.duration._
+import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.{Failure, Success}
-import otoroshi.utils.syntax.implicits._
-import play.api.libs.json.{JsObject, JsSuccess, JsValue, Json}
-import ssl.Cert
 
-class ClientSupport(client: KubernetesClient) {
+class ClientSupport(client: KubernetesClient)(implicit ec: ExecutionContext, env: Env) {
 
   private def customizeIdAndName(spec: JsValue, res: KubernetesOtoroshiResource): JsValue = {
-    val name = (spec \ "name").asOpt[String]
-    val inter = name match {
-      case None => spec.as[JsObject] ++ Json.obj("name" -> res.name)
-      case Some(_) => spec
-    }
-    val inter2 = inter.as[JsObject] ++ Json.obj("id" -> s"kubernetes-crd-import-${res.namespace}-${res.name}".slugifyWithSlash)
-    val meta = (inter2 \ "metadata").asOpt[JsObject].getOrElse(Json.obj()) ++ Json.obj(
-      "otoroshi-provider" -> "kubernetes-crds",
-      "kubernetes-name" -> res.name,
-      "kubernetes-namespace" -> res.namespace,
-      "kubernetes-path" -> res.path,
-      "kubernetes-uid" -> res.uid
-    )
-    inter2.as[JsObject] ++ Json.obj(
-      "metadata" -> meta
+    spec.applyOn(s =>
+      (s \ "name").asOpt[String] match {
+        case None => s.as[JsObject] ++ Json.obj("name" -> res.name)
+        case Some(_) => s
+      }
+    ).applyOn(s =>
+      (s \ "description").asOpt[String] match {
+        case None => s.as[JsObject] ++ Json.obj("description" -> "--")
+        case Some(_) => s
+      }
+    ).applyOn(s =>
+      s.as[JsObject] ++ Json.obj(
+        "metadata" -> ((s \ "metadata").asOpt[JsObject].getOrElse(Json.obj()) ++ Json.obj(
+          "otoroshi-provider" -> "kubernetes-crds",
+          "kubernetes-name" -> res.name,
+          "kubernetes-namespace" -> res.namespace,
+          "kubernetes-path" -> res.path,
+          "kubernetes-uid" -> res.uid
+        ))
+      )
+    ).applyOn(s =>
+      s.as[JsObject] ++ Json.obj("id" -> s"kubernetes-crd-import-${res.namespace}-${res.name}".slugifyWithSlash)
     )
   }
 
   private def customizeServiceDescriptor(spec: JsValue, res: KubernetesOtoroshiResource): JsValue = {
-    // TODO: simpler target with url
-    // TODO: prefill domain and subdomain
-    val name = (spec \ "name").asOpt[String]
-    val inter = name match {
-      case None => spec.as[JsObject] ++ Json.obj("name" -> res.name)
-      case Some(_) => spec
+    customizeIdAndName(spec, res).applyOn { s =>
+      (s \ "env").asOpt[String] match {
+        case Some(_) => s
+        case None => s.as[JsObject] ++ Json.obj("env" -> "prod")
+      }
+    }.applyOn { s =>
+      (s \ "domain").asOpt[String] match {
+        case Some(_) => s
+        case None => s.as[JsObject] ++ Json.obj("domain" -> env.domain)
+      }
+    }.applyOn { s =>
+      (s \ "subdomain").asOpt[String] match {
+        case Some(_) => s
+        case None => s.as[JsObject] ++ Json.obj("subdomain" -> (s \ "id").as[String])
+      }
+    }.applyOn { s =>
+      (s \ "targets").asOpt[JsArray] match {
+        case Some(targets) => {
+          if (targets.value.isEmpty) {
+            s
+          } else {
+            s.as[JsObject] ++ Json.obj("targets" -> JsArray(targets.value.map(item => item.applyOn(target =>
+              (target \ "url").asOpt[String] match {
+                case None => target
+                case Some(tv) =>
+                  val uri = Uri(tv)
+                  target.as[JsObject] ++ Json.obj(
+                    "host" -> uri.authority.host.toString(),
+                    "scheme" -> uri.scheme
+                  )
+              }
+            ))))
+          }
+        }
+        case None => s.as[JsObject] ++ Json.obj("targets" -> Json.arr())
+      }
     }
-    val inter2 = inter.as[JsObject] ++ Json.obj("id" -> s"kubernetes-crd-import-${res.namespace}-${res.name}".slugifyWithSlash)
-    val meta = (inter2 \ "metadata").asOpt[JsObject].getOrElse(Json.obj()) ++ Json.obj(
-      "otoroshi-provider" -> "kubernetes-crds",
-      "kubernetes-name" -> res.name,
-      "kubernetes-namespace" -> res.namespace,
-      "kubernetes-path" -> res.path,
-      "kubernetes-uid" -> res.uid
-    )
-    inter2.as[JsObject] ++ Json.obj(
-      "metadata" -> meta
-    )
   }
 
   private def customizeApikey(spec: JsValue, res: KubernetesOtoroshiResource): JsValue = {
-    val name = (spec \ "clientName").asOpt[String]
-    val inter = name match {
-      case None => spec.as[JsObject] ++ Json.obj("clientName" -> res.name)
-      case Some(_) => spec
-    }
-    val meta = (inter \ "metadata").asOpt[JsObject].getOrElse(Json.obj()) ++ Json.obj(
-      "otoroshi-provider" -> "kubernetes-crds",
-      "kubernetes-name" -> res.name,
-      "kubernetes-namespace" -> res.namespace,
-      "kubernetes-path" -> res.path,
-      "kubernetes-uid" -> res.uid
-    )
-    inter.as[JsObject] ++ Json.obj(
-      "metadata" -> meta
+    spec.applyOn(s =>
+      (s \ "clientName").asOpt[String] match {
+        case None => s.as[JsObject] ++ Json.obj("clientName" -> res.name)
+        case Some(_) => s
+      }
+    ).applyOn(s =>
+      (s \ "group").asOpt[String] match {
+        case None => s
+        case Some(v) => s.as[JsObject] - "group" ++ Json.obj("authorizedGroup" -> v)
+      }
+    ).applyOn(s =>
+      (s \ "authorizedGroup").asOpt[String] match {
+        case None => s.as[JsObject] ++ Json.obj("authorizedGroup" -> "default")
+        case Some(v) => s
+      }
+    ).applyOn(s =>
+      s.as[JsObject] ++ Json.obj(
+        "metadata" -> ((s \ "metadata").asOpt[JsObject].getOrElse(Json.obj()) ++ Json.obj(
+          "otoroshi-provider" -> "kubernetes-crds",
+          "kubernetes-name" -> res.name,
+          "kubernetes-namespace" -> res.namespace,
+          "kubernetes-path" -> res.path,
+          "kubernetes-uid" -> res.uid
+        ))
+      )
     )
   }
 
   private def customizeCert(spec: JsValue, res: KubernetesOtoroshiResource): JsValue = {
-    val name = (spec \ "name").asOpt[String]
-    val inter = name match {
-      case None => spec.as[JsObject] ++ Json.obj("name" -> res.name)
-      case Some(_) => spec
+    spec.applyOn(s =>
+      (s \ "name").asOpt[String] match {
+        case None => s.as[JsObject] ++ Json.obj("name" -> res.name)
+        case Some(_) => s
+      }
+    ).applyOn(s =>
+      (s \ "description").asOpt[String] match {
+        case None => s.as[JsObject] ++ Json.obj("description" -> "--")
+        case Some(_) => s
+      }
+    ).applyOn(s =>
+      s.as[JsObject] ++ Json.obj(
+        "entityMetadata" -> ((s \ "entityMetadata").asOpt[JsObject].getOrElse(Json.obj()) ++ Json.obj(
+          "otoroshi-provider" -> "kubernetes-crds",
+          "kubernetes-name" -> res.name,
+          "kubernetes-namespace" -> res.namespace,
+          "kubernetes-path" -> res.path,
+          "kubernetes-uid" -> res.uid
+        ))
+      )
+    ).applyOn(s =>
+      s.as[JsObject] ++ Json.obj("id" -> s"kubernetes-crd-import-${res.namespace}-${res.name}".slugifyWithSlash)
+    ).applyOn { s =>
+      (s \ "csr").asOpt[JsValue] match {
+        case None => s
+        case Some(csrJson) => {
+          val caOpt = (csrJson \ "caDN").asOpt[String] match {
+            case None => None
+            case Some(dn) =>
+              DynamicSSLEngineProvider.certificates.find {
+                case (_, cert) => cert.certificate.map(_.getIssuerDN.getName).contains(dn)
+              }
+          }
+          GenCsrQuery.fromJson(csrJson) match {
+            case Left(_) => s
+            case Right(csr) => {
+              (caOpt match {
+                case None => Await.result(env.pki.genSelfSignedCert(csr), 1.second)
+                case Some(ca) => Await.result(env.pki.genCert(csr, ca._2.certificate.get, ca._2.cryptoKeyPair.getPrivate), 1.second)
+              }) match {
+                case Left(_) => s
+                case Right(cert) =>
+                  val c = cert.toCert
+                  s.as[JsObject] ++ Json.obj(
+                    "caRef" -> caOpt.map(_._2.id).map(JsString.apply).getOrElse(JsNull).as[JsValue],
+                    "chain" -> c.chain,
+                    "privateKey" -> c.privateKey,
+                    "entityMetadata" -> ((s \ "entityMetadata").asOpt[JsObject].getOrElse(Json.obj()) ++ Json.obj(
+                      "csr" -> csrJson.stringify
+                    ))
+                  )
+              }
+            }
+          }
+        }
+      }
     }
-    val inter2 = inter.as[JsObject] ++ Json.obj("id" -> s"kubernetes-crd-import-${res.namespace}-${res.name}".slugifyWithSlash)
-    val meta = (inter2 \ "entityMetadata").asOpt[JsObject].getOrElse(Json.obj()) ++ Json.obj(
-      "otoroshi-provider" -> "kubernetes-crds",
-      "kubernetes-name" -> res.name,
-      "kubernetes-namespace" -> res.namespace,
-      "kubernetes-path" -> res.path,
-      "kubernetes-uid" -> res.uid
-    )
-    inter2.as[JsObject] ++ Json.obj(
-      "entityMetadata" -> meta
-    )
-    // TODO: handle csr query in source
-    // TODO: find cert by dn
   }
 
   def crdsFetchServiceGroups(): Future[Seq[OtoResHolder[ServiceGroup]]] = client.fetchOtoroshiResources[ServiceGroup]("service-groups", ServiceGroup._fmt, customizeIdAndName)
@@ -171,7 +250,7 @@ object KubernetesCRDsJob {
               compareAndSave(globalConfigs)(otoglobalConfigs, _ => "global", _.save()) ++
                 compareAndSave(simpleAdmins)(otosimpleAdmins, v => (v \ "username").as[String], v => env.datastores.simpleAdminDataStore.registerUser(v)) ++ // useful ?
                 compareAndSave(serviceGroups)(otoserviceGroups, _.id, _.save()) ++
-                compareAndSave(certificates)(otocertificates, _.id, _.save()) ++
+                compareAndSave(certificates)(otocertificates, _.id, _.save()) ++ // TODO: match also on csr
                 compareAndSave(jwtVerifiers)(otojwtVerifiers, _.asGlobal.id, _.asGlobal.save()) ++
                 compareAndSave(authModules)(otoauthModules, _.id, _.save()) ++
                 compareAndSave(scripts)(otoscripts, _.id, _.save()) ++
@@ -186,7 +265,6 @@ object KubernetesCRDsJob {
                 case Success(_) =>
               }
             }.runWith(Sink.ignore)
-            // TODO: cleanup here based on meta
 
             otoserviceGroups
               .filter(sg => sg.metadata.get("otoroshi-provider").contains("kubernetes-crds"))
