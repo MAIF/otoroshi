@@ -6,7 +6,7 @@ spec:
   selector:
     matchLabels:
       run: otoroshi-deployment
-  replicas: 2
+  replicas: 1
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -21,7 +21,7 @@ spec:
       terminationGracePeriodSeconds: 60
       hostNetwork: false
       containers:
-      - image: maif/otoroshi:1.4.22-jdk11
+      - image: maif/otoroshi:1.5.0-jdk11
         imagePullPolicy: IfNotPresent
         name: otoroshi
         ports:

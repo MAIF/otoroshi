@@ -1,0 +1,18 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otoroshi-deployment
+spec:
+  replicas: 2
+  template:
+    spec:
+      containers:
+      - env:
+        - name: REDIS_LF_HOST
+          value: redis-master-cluster-ip-service
+        - name: REDIS_LF_MEMBERS
+          value: redis-slave-cluster-ip-service
+        - name: REDIS_HOST
+          value: redis-master-cluster-ip-service
+        - name: APP_STORAGE
+          value: redis-lf

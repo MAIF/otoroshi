@@ -15,7 +15,6 @@ import play.api.libs.json._
 import play.api.mvc.{Result, Results}
 import utils.RequestImplicits._
 import utils.TypedMap
-import otoroshi.utils.syntax.implicits._
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
@@ -61,17 +60,11 @@ class KubernetesIngressControllerJob extends Job {
     val conf = KubernetesConfig.theConfig(ctx)
     if (conf.enabled) {
       logger.info("Running kubernetes ingresses sync ...")
-      val a = if (conf.ingresses) {
+      if (conf.ingresses) {
         KubernetesIngressSyncJob.syncIngresses(conf, ctx.attrs)
       } else {
         ().future
       }
-      val b = if (conf.crds) {
-        KubernetesCRDsJob.syncCRDs(conf, ctx.attrs)
-      } else {
-        ().future
-      }
-      a.flatMap(_ => b)
     } else {
       ().future
     }

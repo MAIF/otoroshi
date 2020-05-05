@@ -7,7 +7,7 @@ import akka.stream.scaladsl.{Sink, Source}
 import auth.AuthModuleConfig
 import env.Env
 import models._
-import otoroshi.script.Script
+import otoroshi.script._
 import otoroshi.ssl.pki.models.GenCsrQuery
 import otoroshi.tcp.TcpService
 import otoroshi.utils.syntax.implicits._
@@ -19,6 +19,56 @@ import utils.TypedMap
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.{Failure, Success}
+
+class KubernetesOtoroshiCRDsControllerJob extends Job {
+
+  private val logger = Logger("otoroshi-plugins-kubernetes-crds-controller-job")
+
+  override def uniqueId: JobId = JobId("io.otoroshi.plugins.jobs.kubernetes.KubernetesOtoroshiCRDsControllerJob")
+
+  override def name: String = "Kubernetes Otoroshi CRDs Controller"
+
+  override def defaultConfig: Option[JsObject] = KubernetesConfig.defaultConfig.some
+
+  override def description: Option[String] =
+    Some(
+      s"""This plugin enables Otoroshi CRDs Controller
+         |
+         |```json
+         |${Json.prettyPrint(defaultConfig.get)}
+         |```
+      """.stripMargin
+    )
+
+  override def visibility: JobVisibility = JobVisibility.UserLand
+
+  override def kind: JobKind = JobKind.ScheduledEvery
+
+  override def starting: JobStarting = JobStarting.FromConfiguration
+
+  override def instantiation: JobInstantiation = JobInstantiation.OneInstancePerOtoroshiCluster
+
+  override def initialDelay: Option[FiniteDuration] = 2.seconds.some
+
+  override def interval: Option[FiniteDuration] = 5.seconds.some
+
+  override def jobStart(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = super.jobStart(ctx)
+
+  override def jobStop(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = super.jobStop(ctx)
+
+  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    val conf = KubernetesConfig.theConfig(ctx)
+    if (conf.enabled) {
+      if (conf.crds) {
+        KubernetesCRDsJob.syncCRDs(conf, ctx.attrs)
+      } else {
+        ().future
+      }
+    } else {
+      ().future
+    }
+  }
+}
 
 class ClientSupport(client: KubernetesClient)(implicit ec: ExecutionContext, env: Env) {
 
