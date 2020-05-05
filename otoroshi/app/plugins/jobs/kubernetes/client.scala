@@ -1,5 +1,7 @@
 package otoroshi.plugins.jobs.kubernetes
 
+import java.util.Base64
+
 import akka.http.scaladsl.model.Uri
 import auth.AuthModuleConfig
 import env.Env
@@ -47,9 +49,17 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
         )
       ),
       ClientConfig()
-    ).withHttpHeaders(
-      "Authorization" -> s"Bearer ${config.token}"
-    )
+    ).applyOn(req => config.token match {
+      case None => req
+      case Some(token) => req.withHttpHeaders(
+        "Authorization" -> s"Bearer ${token}"
+      )
+    }).applyOn(req => config.userPassword match {
+      case None => req
+      case Some(token) => req.withHttpHeaders(
+        "Authorization" -> s"Basic ${Base64.getEncoder.encodeToString(token.getBytes)}"
+      )
+    })
   }
   private def filterLabels[A <: KubernetesEntity](items: Seq[A]): Seq[A] = {
     // TODO: handle kubernetes label expressions

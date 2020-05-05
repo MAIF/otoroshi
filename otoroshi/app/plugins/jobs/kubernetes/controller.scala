@@ -57,7 +57,7 @@ object KubernetesSupport {
 
       val apiClient = new ClientBuilder()
         .setVerifyingSsl(!config.trust)
-        .setAuthentication(new AccessTokenAuthentication(config.token))
+        .setAuthentication(new AccessTokenAuthentication(config.token.gets))
         .setBasePath(config.endpoint)
         .setCertificateAuthority(config.caCert.map(c => c.getBytes).orNull)
         .build()
