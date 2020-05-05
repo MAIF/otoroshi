@@ -27,7 +27,8 @@ case class PrivateAppsUser(randomId: String,
                            otoroshiData: Option[JsValue],
                            createdAt: DateTime = DateTime.now(),
                            expiredAt: DateTime = DateTime.now(),
-                           lastRefresh: DateTime = DateTime.now()) extends RefreshableUser {
+                           lastRefresh: DateTime = DateTime.now(),
+                           metadata: Map[String, String]) extends RefreshableUser {
 
   def picture: Option[String]             = (profile \ "picture").asOpt[String]
   def field(name: String): Option[String] = (profile \ name).asOpt[String]
@@ -88,7 +89,8 @@ object PrivateAppsUser {
             otoroshiData = (json \ "otoroshiData").asOpt[JsValue],
             createdAt = new DateTime((json \ "createdAt").as[Long]),
             expiredAt = new DateTime((json \ "expiredAt").as[Long]),
-            lastRefresh = new DateTime((json \ "lastRefresh").as[Long])
+            lastRefresh = new DateTime((json \ "lastRefresh").as[Long]),
+            metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
           )
         )
       } recover {
@@ -107,6 +109,7 @@ object PrivateAppsUser {
       "createdAt"    -> o.createdAt.toDate.getTime,
       "expiredAt"    -> o.expiredAt.toDate.getTime,
       "lastRefresh"  -> o.lastRefresh.toDate.getTime,
+      "metadata"     -> o.metadata
     )
   }
 }

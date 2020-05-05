@@ -120,7 +120,8 @@ object BasicAuthModuleConfig extends FromJson[AuthModuleConfig] {
           sessionMaxAge = (json \ "sessionMaxAge").asOpt[Int].getOrElse(86400),
           basicAuth = (json \ "basicAuth").asOpt[Boolean].getOrElse(false),
           webauthn = (json \ "webauthn").asOpt[Boolean].getOrElse(false),
-          users = (json \ "users").asOpt(Reads.seq(BasicAuthUser.fmt)).getOrElse(Seq.empty[BasicAuthUser])
+          users = (json \ "users").asOpt(Reads.seq(BasicAuthUser.fmt)).getOrElse(Seq.empty[BasicAuthUser]),
+          metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
         )
       )
     } recover {
@@ -135,7 +136,8 @@ case class BasicAuthModuleConfig(
     users: Seq[BasicAuthUser] = Seq.empty[BasicAuthUser],
     sessionMaxAge: Int = 86400,
     basicAuth: Boolean = false,
-    webauthn: Boolean = false
+    webauthn: Boolean = false,
+    metadata: Map[String, String]
 ) extends AuthModuleConfig {
   def `type`: String                                        = "basic"
   override def authModule(config: GlobalConfig): AuthModule = BasicAuthModule(this)
@@ -147,6 +149,7 @@ case class BasicAuthModuleConfig(
     "basicAuth"     -> this.basicAuth,
     "webauthn"      -> this.webauthn,
     "sessionMaxAge" -> this.sessionMaxAge,
+    "metadata"      -> this.metadata,
     "users"         -> Writes.seq(BasicAuthUser.fmt).writes(this.users)
   )
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.authConfigsDataStore.set(this)
@@ -181,7 +184,8 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
             profile = user.asJson,
             realm = authConfig.cookieSuffix(descriptor),
             otoroshiData = Some(user.metadata),
-            authConfigId = authConfig.id
+            authConfigId = authConfig.id,
+            metadata = Map.empty
           )
         )
       case None => Left(s"You're not authorized here")
@@ -201,7 +205,8 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
             profile = user.asJson,
             authorizedGroup = None,
             simpleLogin = false,
-            authConfigId = authConfig.id
+            authConfigId = authConfig.id,
+            metadata = Map.empty
           )
         )
       case None => Left(s"You're not authorized here")
@@ -301,7 +306,8 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
                           profile = user.asJson,
                           realm = authConfig.cookieSuffix(descriptor),
                           otoroshiData = Some(user.metadata),
-                          authConfigId = authConfig.id
+                          authConfigId = authConfig.id,
+                          metadata = Map.empty
                         )
                       )
                     case None => Left(s"You're not authorized here")

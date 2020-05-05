@@ -42,6 +42,7 @@ trait AuthModuleConfig extends AsJson {
   def authModule(config: GlobalConfig): AuthModule
   def cookieSuffix(desc: ServiceDescriptor): String
   def sessionMaxAge: Int
+  def metadata: Map[String, String]
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean]
 }
 
@@ -113,19 +114,22 @@ trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {
         GenericOauth2ModuleConfig(
           id = IdGenerator.token,
           name = "New auth. module",
-          desc = "New auth. module"
+          desc = "New auth. module",
+          metadata = Map.empty
         )
       case Some("oauth2-global") =>
         GenericOauth2ModuleConfig(
           id = IdGenerator.token,
           name = "New auth. module",
-          desc = "New auth. module"
+          desc = "New auth. module",
+          metadata = Map.empty
         )
       case Some("basic") =>
         BasicAuthModuleConfig(
           id = IdGenerator.token,
           name = "New auth. module",
-          desc = "New auth. module"
+          desc = "New auth. module",
+          metadata = Map.empty
         )
       case Some("ldap") =>
         LdapAuthModuleConfig(
@@ -136,13 +140,15 @@ trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {
           searchBase = "dc=example,dc=com",
           searchFilter = "(uid=${username})",
           adminUsername = Some("cn=read-only-admin,dc=example,dc=com"),
-          adminPassword = Some("password")
+          adminPassword = Some("password"),
+          metadata = Map.empty
         )
       case _ =>
         BasicAuthModuleConfig(
           id = IdGenerator.token,
           name = "New auth. module",
-          desc = "New auth. module"
+          desc = "New auth. module",
+          metadata = Map.empty
         )
     }
   }

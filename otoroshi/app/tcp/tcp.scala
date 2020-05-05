@@ -72,6 +72,7 @@ case class TcpService(
     port: Int,
     interface: String = "0.0.0.0",
     rules: Seq[TcpRule],
+    metadata: Map[String, String]
     // clientValidatorRef: Option[String]
     // clientConfig: ClientConfig
     // ipFiltering: IpFiltering
@@ -211,7 +212,8 @@ object TcpService {
             tls = (json \ "tls").asOpt[String].flatMap(TlsMode.apply).getOrElse(TlsMode.Disabled),
             sni = (json \ "sni").asOpt(SniSettings.fmt).getOrElse(SniSettings(false, false)),
             clientAuth = (json \ "clientAuth").asOpt[String].flatMap(ClientAuth.apply).getOrElse(ClientAuth.None),
-            rules = (json \ "rules").asOpt(Reads.seq(TcpRule.fmt)).getOrElse(Seq.empty)
+            rules = (json \ "rules").asOpt(Reads.seq(TcpRule.fmt)).getOrElse(Seq.empty),
+            metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty)
           )
         )
       } recover {
@@ -228,6 +230,7 @@ object TcpService {
       "port"       -> o.port,
       "interface"  -> o.interface,
       "rules"      -> JsArray(o.rules.map(_.json)),
+      "metadata"   -> o.metadata
     )
   }
 
@@ -918,6 +921,7 @@ sealed trait TcpServiceDataStore extends BasicStore[TcpService] {
     sni = SniSettings(false, false),
     clientAuth = ClientAuth.None,
     port = 4200,
+    metadata = Map.empty,
     rules = Seq(
       TcpRule(
         domain = "*",

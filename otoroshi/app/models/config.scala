@@ -367,7 +367,8 @@ case class GlobalConfig(
     scripts: GlobalScripts = GlobalScripts(),
     geolocationSettings: GeolocationSettings = NoneGeolocationSettings,
     userAgentSettings: UserAgentSettings = UserAgentSettings(false),
-    autoCert: AutoCert = AutoCert()
+    autoCert: AutoCert = AutoCert(),
+    metadata: Map[String, String] = Map.empty
 ) {
   def save()(implicit ec: ExecutionContext, env: Env)   = env.datastores.globalConfigDataStore.set(this)
   def delete()(implicit ec: ExecutionContext, env: Env) = env.datastores.globalConfigDataStore.delete(this)
@@ -487,6 +488,7 @@ object GlobalConfig {
         "geolocationSettings"     -> o.geolocationSettings.json,
         "userAgentSettings"       -> o.userAgentSettings.json,
         "autoCert"                -> o.autoCert.json,
+        "metadata"                -> o.metadata
       )
     }
     override def reads(json: JsValue): JsResult[GlobalConfig] =
@@ -614,6 +616,7 @@ object GlobalConfig {
           autoCert = AutoCert.format
             .reads((json \ "autoCert").asOpt[JsValue].getOrElse(JsNull))
             .getOrElse(AutoCert()),
+          metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty)
         )
       } map {
         case sd => JsSuccess(sd)

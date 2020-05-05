@@ -32,6 +32,46 @@ metadata:
 spec:
   group: proxy.otoroshi.io
   version: v1alpha1
+  validation:
+    openAPIV3Schema:
+      type: object
+      properties:
+        spec:
+          type: object
+          required: ["clientId", "clientSecret", "authorizedGroup"]
+          properties:
+            clientId:
+              type: string
+            clientSecret:
+              type: string
+            clientName:
+              type: string
+            authorizedGroup:
+              type: string
+            enabled:
+              type: boolean
+            readOnly:
+              type: boolean
+            allowClientIdOnly:
+              type: boolean
+            throttlingQuota:
+              type: integer
+              format: int64
+            dailyQuota:
+              type: integer
+              format: int64
+            monthlyQuota:
+              type: integer
+              format: int64
+            constrainedServicesOnly:
+              type: boolean
+            validUntil:
+              type: integer
+              format: int64
+            tags:
+              type: array
+            metadata:
+              type: object
   names:
     kind: ApiKey
     plural: apikeys

@@ -48,7 +48,12 @@ class WebAuthnAdminDataStore() {
     env.datastores.rawDataStore.sadd(s"${env.storageRoot}:users:alreadyloggedin", Seq(ByteString(email)))
 
   def findByUsername(username: String)(implicit ec: ExecutionContext, env: Env): Future[Option[JsValue]] =
-    env.datastores.rawDataStore.get(key(username)).map(_.map(v => Json.parse(v.utf8String)))
+    env.datastores.rawDataStore.get(key(username)).map(_.map(v => Json.parse(v.utf8String)).map { user =>
+      (user \ "metadata").asOpt[Map[String, String]] match {
+        case None => user.as[JsObject] ++ Json.obj("metadata" -> Json.obj())
+        case Some(_) => user
+      }
+    })
 
   def findAll()(implicit ec: ExecutionContext, env: Env): Future[Seq[JsValue]] =
     env.datastores.rawDataStore
@@ -58,7 +63,12 @@ class WebAuthnAdminDataStore() {
           if (keys.isEmpty) FastFuture.successful(Seq.empty[Option[ByteString]])
           else env.datastores.rawDataStore.mget(keys)
       )
-      .map(seq => seq.filter(_.isDefined).map(_.get).map(v => Json.parse(v.utf8String)))
+      .map(seq => seq.filter(_.isDefined).map(_.get).map(v => Json.parse(v.utf8String)).map { user =>
+        (user \ "metadata").asOpt[Map[String, String]] match {
+          case None => user.as[JsObject] ++ Json.obj("metadata" -> Json.obj())
+          case Some(_) => user
+        }
+      })
 
   def deleteUser(username: String)(implicit ec: ExecutionContext, env: Env): Future[Long] =
     env.datastores.rawDataStore.del(Seq(key(username)))
@@ -68,7 +78,7 @@ class WebAuthnAdminDataStore() {
                    label: String,
                    authorizedGroup: Option[String],
                    credential: JsValue,
-                   handle: String)(
+                   handle: String, metadata: Map[String, String] = Map.empty)(
       implicit ec: ExecutionContext,
       env: Env
   ): Future[Boolean] = {
@@ -88,7 +98,8 @@ class WebAuthnAdminDataStore() {
             "createdAt"       -> DateTime.now(),
             "credential"      -> credential,
             "handle"          -> handle,
-            "type"            -> "WEBAUTHN"
+            "type"            -> "WEBAUTHN",
+            "metadata"        -> metadata
           )
         )
       ),

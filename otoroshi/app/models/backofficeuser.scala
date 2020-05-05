@@ -28,7 +28,9 @@ case class BackOfficeUser(randomId: String,
                           simpleLogin: Boolean,
                           createdAt: DateTime = DateTime.now(),
                           expiredAt: DateTime = DateTime.now(),
-                          lastRefresh: DateTime = DateTime.now()) extends RefreshableUser {
+                          lastRefresh: DateTime = DateTime.now(),
+                          metadata: Map[String, String]
+                         ) extends RefreshableUser {
 
   def save(duration: Duration)(implicit ec: ExecutionContext, env: Env): Future[BackOfficeUser] = {
     val withDuration = this.copy(expiredAt = expiredAt.plusMillis(duration.toMillis.toInt))
@@ -74,6 +76,7 @@ object BackOfficeUser {
             createdAt = (json \ "createdAt").asOpt[Long].map(l => new DateTime(l)).getOrElse(DateTime.now()),
             expiredAt = (json \ "expiredAt").asOpt[Long].map(l => new DateTime(l)).getOrElse(DateTime.now()),
             lastRefresh = (json \ "lastRefresh").asOpt[Long].map(l => new DateTime(l)).getOrElse(DateTime.now()),
+            metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
           )
         )
       } recover {
@@ -92,6 +95,7 @@ object BackOfficeUser {
       "createdAt"       -> o.createdAt.getMillis,
       "expiredAt"       -> o.expiredAt.getMillis,
       "lastRefresh"     -> o.lastRefresh.getMillis,
+      "metadata"        -> o.metadata
     )
   }
 }

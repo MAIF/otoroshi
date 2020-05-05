@@ -1252,7 +1252,8 @@ case class GlobalJwtVerifier(
     strict: Boolean = true,
     source: JwtTokenLocation = InHeader("X-JWT-Token"),
     algoSettings: AlgoSettings = HSAlgoSettings(512, "secret", false),
-    strategy: VerifierStrategy = PassThrough(VerificationSettings(Map("iss" -> "The Issuer")))
+    strategy: VerifierStrategy = PassThrough(VerificationSettings(Map("iss" -> "The Issuer"))),
+    metadata: Map[String, String]
 ) extends JwtVerifier
     with AsJson {
 
@@ -1264,7 +1265,8 @@ case class GlobalJwtVerifier(
     "strict"       -> this.strict,
     "source"       -> this.source.asJson,
     "algoSettings" -> this.algoSettings.asJson,
-    "strategy"     -> this.strategy.asJson
+    "strategy"     -> this.strategy.asJson,
+    "metadata"     -> this.metadata
   )
 
   override def isRef = false
@@ -1314,6 +1316,7 @@ object GlobalJwtVerifier extends FromJson[GlobalJwtVerifier] {
           name = (json \ "name").as[String],
           desc = (json \ "desc").asOpt[String].getOrElse("--"),
           strict = (json \ "strict").asOpt[Boolean].getOrElse(false),
+          metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
           source = source,
           algoSettings = algoSettings,
           strategy = strategy
@@ -1432,6 +1435,7 @@ trait GlobalJwtVerifierDataStore extends BasicStore[GlobalJwtVerifier] {
   def template: GlobalJwtVerifier = GlobalJwtVerifier(
     id = IdGenerator.token,
     name = "New jwt verifier",
-    desc = "New jwt verifier"
+    desc = "New jwt verifier",
+    metadata = Map.empty
   )
 }

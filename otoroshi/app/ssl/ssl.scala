@@ -110,7 +110,8 @@ case class Cert(
     subject: String = "--",
     from: DateTime = DateTime.now(),
     to: DateTime = DateTime.now(),
-    sans: Seq[String] = Seq.empty
+    sans: Seq[String] = Seq.empty,
+    entityMetadata: Map[String, String] = Map.empty
 ) {
 
   lazy val certType = {
@@ -428,7 +429,9 @@ object Cert {
       "client"      -> cert.client,
       "keypair"     -> cert.keypair,
       "sans"        -> JsArray(cert.sans.map(JsString.apply)),
-      "certType"    -> cert.certType
+      "certType"    -> cert.certType,
+      "entityMetadata" -> cert.entityMetadata
+
     )
     override def reads(json: JsValue): JsResult[Cert] =
       Try {
@@ -453,7 +456,8 @@ object Cert {
           letsEncrypt = (json \ "letsEncrypt").asOpt[Boolean].getOrElse(false),
           subject = (json \ "subject").asOpt[String].getOrElse("--"),
           from = (json \ "from").asOpt[Long].map(v => new DateTime(v)).getOrElse(DateTime.now()),
-          to = (json \ "to").asOpt[Long].map(v => new DateTime(v)).getOrElse(DateTime.now())
+          to = (json \ "to").asOpt[Long].map(v => new DateTime(v)).getOrElse(DateTime.now()),
+          entityMetadata = (json \ "entityMetadata").asOpt[Map[String, String]].getOrElse(Map.empty),
         )
       } map {
         case sd => JsSuccess(sd)

@@ -91,7 +91,8 @@ object LdapAuthModuleConfig extends FromJson[AuthModuleConfig] {
           nameField = (json \ "nameField").as[String],
           emailField = (json \ "emailField").as[String],
           metadataField = (json \ "metadataField").asOpt[String].filterNot(_.trim.isEmpty),
-          extraMetadata = (json \ "extraMetadata").asOpt[JsObject].getOrElse(Json.obj())
+          extraMetadata = (json \ "extraMetadata").asOpt[JsObject].getOrElse(Json.obj()),
+          metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
         )
       )
     } recover {
@@ -119,6 +120,7 @@ case class LdapAuthModuleConfig(
     emailField: String = "mail",
     metadataField: Option[String] = None,
     extraMetadata: JsObject = Json.obj(),
+    metadata: Map[String, String]
 ) extends AuthModuleConfig {
   def `type`: String = "ldap"
 
@@ -142,7 +144,8 @@ case class LdapAuthModuleConfig(
     "nameField"          -> this.nameField,
     "emailField"         -> this.emailField,
     "metadataField"      -> this.metadataField.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-    "extraMetadata"      -> this.extraMetadata
+    "extraMetadata"      -> this.extraMetadata,
+    "metadata"           -> this.metadata
   )
 
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.authConfigsDataStore.set(this)
@@ -303,7 +306,8 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
             profile = user.asJson,
             realm = authConfig.cookieSuffix(descriptor),
             otoroshiData = Some(user.metadata),
-            authConfigId = authConfig.id
+            authConfigId = authConfig.id,
+            metadata = Map.empty
           )
         )
       case None => Left(s"You're not authorized here")
@@ -321,7 +325,8 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
             profile = user.asJson,
             authorizedGroup = None,
             simpleLogin = false,
-            authConfigId = authConfig.id
+            authConfigId = authConfig.id,
+            metadata = Map.empty
           )
         )
       case None => Left(s"You're not authorized here")

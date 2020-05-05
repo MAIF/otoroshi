@@ -1164,7 +1164,7 @@ object Implicits {
   }
 }
 
-case class Script(id: String, name: String, desc: String, code: String, `type`: PluginType) {
+case class Script(id: String, name: String, desc: String, code: String, `type`: PluginType, metadata: Map[String, String]) {
   def save()(implicit ec: ExecutionContext, env: Env)   = env.datastores.scriptDataStore.set(this)
   def delete()(implicit ec: ExecutionContext, env: Env) = env.datastores.scriptDataStore.delete(this)
   def exists()(implicit ec: ExecutionContext, env: Env) = env.datastores.scriptDataStore.exists(this)
@@ -1184,7 +1184,8 @@ object Script {
       "name" -> apk.name,
       "desc" -> apk.desc,
       "code" -> apk.code,
-      "type" -> apk.`type`.name
+      "type" -> apk.`type`.name,
+      "metadata" -> apk.metadata
     )
     override def reads(json: JsValue): JsResult[Script] =
       Try {
@@ -1202,6 +1203,7 @@ object Script {
           name = (json \ "name").as[String],
           desc = (json \ "desc").as[String],
           code = (json \ "code").as[String],
+          metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
           `type` = scriptType
         )
       } map {
@@ -1265,7 +1267,8 @@ trait ScriptDataStore extends BasicStore[Script] {
              |// don't forget to return an instance of the transformer to make it work
              |new MyTransformer()
            """.stripMargin,
-    `type` = TransformerType
+    `type` = TransformerType,
+    metadata = Map.empty
   )
 }
 

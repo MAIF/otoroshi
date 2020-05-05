@@ -21,7 +21,12 @@ class KvSimpleAdminDataStore(redisCli: RedisLike, _env: Env) extends SimpleAdmin
   def key(id: String): String = s"${_env.storageRoot}:admins:$id"
 
   override def findByUsername(username: String)(implicit ec: ExecutionContext, env: Env): Future[Option[JsValue]] =
-    redisCli.get(key(username)).map(_.map(v => Json.parse(v.utf8String)))
+    redisCli.get(key(username)).map(_.map(v => Json.parse(v.utf8String)).map { user =>
+      (user \ "metadata").asOpt[Map[String, String]] match {
+        case None => user.as[JsObject] ++ Json.obj("metadata" -> Json.obj())
+        case Some(_) => user
+      }
+    })
 
   override def findAll()(implicit ec: ExecutionContext, env: Env): Future[Seq[JsValue]] =
     redisCli
@@ -31,12 +36,17 @@ class KvSimpleAdminDataStore(redisCli: RedisLike, _env: Env) extends SimpleAdmin
           if (keys.isEmpty) FastFuture.successful(Seq.empty[Option[ByteString]])
           else redisCli.mget(keys: _*)
       )
-      .map(seq => seq.filter(_.isDefined).map(_.get).map(v => Json.parse(v.utf8String)))
+      .map(seq => seq.filter(_.isDefined).map(_.get).map(v => Json.parse(v.utf8String)).map { user =>
+        (user \ "metadata").asOpt[Map[String, String]] match {
+          case None => user.as[JsObject] ++ Json.obj("metadata" -> Json.obj())
+          case Some(_) => user
+        }
+      })
 
   override def deleteUser(username: String)(implicit ec: ExecutionContext, env: Env): Future[Long] =
     redisCli.del(key(username))
 
-  override def registerUser(username: String, password: String, label: String, authorizedGroup: Option[String])(
+  override def registerUser(username: String, password: String, label: String, authorizedGroup: Option[String], metadata: Map[String, String] = Map.empty)(
       implicit ec: ExecutionContext,
       env: Env
   ): Future[Boolean] = {
@@ -53,7 +63,8 @@ class KvSimpleAdminDataStore(redisCli: RedisLike, _env: Env) extends SimpleAdmin
           "label"           -> label,
           "authorizedGroup" -> group,
           "createdAt"       -> DateTime.now(),
-          "type"            -> "SIMPLE"
+          "type"            -> "SIMPLE",
+          "metadata"        -> metadata
         )
       )
     )
@@ -72,7 +83,8 @@ class KvSimpleAdminDataStore(redisCli: RedisLike, _env: Env) extends SimpleAdmin
           "label"           -> (user \ "label").as[String],
           "authorizedGroup" -> JsNull,
           "createdAt"       -> (user \ "createdAt").as[Long],
-          "type"            -> "SIMPLE"
+          "type"            -> "SIMPLE",
+          "metadata"        -> (user \ "metadata").as[Map[String, String]]
         )
       )
     )

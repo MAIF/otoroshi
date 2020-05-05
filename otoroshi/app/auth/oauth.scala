@@ -71,7 +71,8 @@ object GenericOauth2ModuleConfig extends FromJson[AuthModuleConfig] {
           oidConfig = (json \ "oidConfig").asOpt[String],
           proxy = (json \ "proxy").asOpt[JsValue].flatMap(p => WSProxyServerJson.proxyFromJson(p)),
           extraMetadata = (json \ "extraMetadata").asOpt[JsObject].getOrElse(Json.obj()),
-          mtlsConfig = MtlsConfig.read((json \ "mtlsConfig").asOpt[JsValue])
+          mtlsConfig = MtlsConfig.read((json \ "mtlsConfig").asOpt[JsValue]),
+          metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
         )
       )
     } recover {
@@ -110,6 +111,7 @@ case class GenericOauth2ModuleConfig(
     extraMetadata: JsObject = Json.obj(),
     mtlsConfig: MtlsConfig = MtlsConfig(),
     refreshTokens: Boolean = false,
+    metadata: Map[String, String]
 ) extends OAuth2ModuleConfig {
   def `type`: String                                        = "oauth2"
   override def authModule(config: GlobalConfig): AuthModule = GenericOauth2Module(this)
@@ -144,6 +146,7 @@ case class GenericOauth2ModuleConfig(
     "mtlsConfig"           -> this.mtlsConfig.json,
     "proxy"                -> WSProxyServerJson.maybeProxyToJson(this.proxy),
     "extraMetadata"        -> this.extraMetadata,
+    "metadata"             -> this.metadata,
     "refreshTokens"        -> this.refreshTokens
   )
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.authConfigsDataStore.set(this)
@@ -374,7 +377,8 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
                     token = rawToken,
                     authConfigId = authConfig.id,
                     realm = authConfig.cookieSuffix(descriptor),
-                    otoroshiData = Some(authConfig.extraMetadata.deepMerge(meta.getOrElse(Json.obj())))
+                    otoroshiData = Some(authConfig.extraMetadata.deepMerge(meta.getOrElse(Json.obj()))),
+                    metadata = Map.empty
                   )
                 )
               }
@@ -420,7 +424,8 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
                     profile = user,
                     authConfigId = authConfig.id,
                     authorizedGroup = None,
-                    simpleLogin = false
+                    simpleLogin = false,
+                    metadata = Map.empty
                   )
                 )
               }
