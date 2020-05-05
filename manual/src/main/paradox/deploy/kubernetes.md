@@ -260,22 +260,23 @@ if you need to customize the service descriptor behind an ingress rule, you can 
 
 Otoroshi provides some Custom Resource Definitions for kubernetes in order to manager Otoroshi related entities in kubernetes
 
-- service-groups
-- service-descriptors
-- apikeys
-- certificates
-- global-configs
-- jwt-verifiers
-- auth-modules
-- scripts
-- tcp-services
-- admins
+- `service-groups`
+- `service-descriptors`
+- `apikeys`
+- `certificates`
+- `global-configs`
+- `jwt-verifiers`
+- `auth-modules`
+- `scripts`
+- `tcp-services`
+- `admins`
 
 using CRDs, you will be able to deploy and manager those entities from kubectl or the kubernetes api like
 
 ```sh
 sudo kubectl get apikeys --all-namespaces
 sudo kubectl get service-descriptors --all-namespaces
+curl -X GET -H 'Authorization: Bearer eyJhbGciOiJSUzI....F463SrpOehQRaQ' -H 'Accept: application/json' -k https://127.0.0.1:6443/apis/proxy.otoroshi.io/v1alpha1/apikeys | jq
 ```
 
 To configure it, just go to the danger zone, and in `Global scripts` add the job named `Kubernetes Otoroshi CRDs Controller`. Then add the following configuration for the job (with your own tweak of course)
