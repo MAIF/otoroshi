@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+
+<head>
+<title>Kubernetes Integration · Otoroshi</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="description" content='otoroshi-manual'/>
+<link href="https://fonts.googleapis.com/css?family=Roboto:100normal,100italic,300normal,300italic,400normal,400italic,500normal,500italic,700normal,700italic,900normal,900italicc" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="../lib/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../js/page.js"></script>
+<script type="text/javascript" src="../js/groups.js"></script>
+<link rel="stylesheet" type="text/css" href="../lib/normalize.css/normalize.css"/>
+<link rel="stylesheet" type="text/css" href="../lib/foundation/dist/foundation.min.css"/>
+<link rel="stylesheet" type="text/css" href="../css/page.css"/>
+
+<!--
+<link rel="shortcut icon" href="../images/favicon.ico" />
+-->
+</head>
+
+<body>
+<div class="off-canvas-wrapper">
+<div class="off-canvas-wrapper-inner" data-off-canvas-wrapper>
+
+<div class="off-canvas position-left" id="off-canvas-menu" data-off-canvas>
+<nav class="off-canvas-nav">
+<div class="nav-home">
+<a href="../index.html" >
+<span class="home-icon">⌂</span>Otoroshi
+</a>
+<div class="version-number">
+1.4.23-dev
+</div>
+</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../about.html" class="page">About Otoroshi</a></li>
+  <li><a href="../archi.html" class="page">Architecture</a></li>
+  <li><a href="../features.html" class="page">Features</a></li>
+  <li><a href="../quickstart.html" class="page">Try Otoroshi in 5 minutes</a></li>
+  <li><a href="../getotoroshi/index.html" class="page">Get Otoroshi</a>
+  <ul>
+    <li><a href="../getotoroshi/fromsources.html" class="page">From sources</a></li>
+    <li><a href="../getotoroshi/frombinaries.html" class="page">From binaries</a></li>
+    <li><a href="../getotoroshi/fromdocker.html" class="page">From docker</a></li>
+  </ul></li>
+  <li><a href="../firstrun/index.html" class="page">First run</a>
+  <ul>
+    <li><a href="../firstrun/datastore.html" class="page">Choose your datastore</a></li>
+    <li><a href="../firstrun/configfile.html" class="page">Config. with files</a></li>
+    <li><a href="../firstrun/env.html" class="page">Config. with ENVs</a></li>
+    <li><a href="../firstrun/initialstate.html" class="page">Import initial state</a></li>
+    <li><a href="../firstrun/host.html" class="page">Setup your hosts</a></li>
+    <li><a href="../firstrun/run.html" class="page">Run Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../setup/index.html" class="page">Setup Otoroshi</a>
+  <ul>
+    <li><a href="../setup/admin.html" class="page">Manage admin users</a></li>
+    <li><a href="../setup/dangerzone.html" class="page">Configure the Danger zone</a></li>
+  </ul></li>
+  <li><a href="../usage/index.html" class="page">Using Otoroshi</a>
+  <ul>
+    <li><a href="../usage/1-groups.html" class="page">Managing service groups</a></li>
+    <li><a href="../usage/2-services.html" class="page">Managing services</a></li>
+    <li><a href="../usage/3-apikeys.html" class="page">Managing API keys</a></li>
+    <li><a href="../usage/4-monitor.html" class="page">Monitoring services</a></li>
+    <li><a href="../usage/5-sessions.html" class="page">Managing sessions</a></li>
+    <li><a href="../usage/6-audit.html" class="page">Auditing Otoroshi</a></li>
+    <li><a href="../usage/7-metrics.html" class="page">Otoroshi global metrics</a></li>
+    <li><a href="../usage/8-importsexports.html" class="page">Import and export</a></li>
+    <li><a href="../usage/9-auth.html" class="page">Authentication</a></li>
+  </ul></li>
+  <li><a href="../integrations/index.html" class="page">Third party Integrations</a>
+  <ul>
+    <li><a href="../integrations/analytics.html" class="page">Analytics</a></li>
+    <li><a href="../integrations/mailgun.html" class="page">Mailgun</a></li>
+    <li><a href="../integrations/statsd.html" class="page">StatsD / Datadog</a></li>
+    <li><a href="../integrations/clevercloud.html" class="page">Clever Cloud</a></li>
+  </ul></li>
+  <li><a href="../topics/index.html" class="page">Detailed topics</a>
+  <ul>
+    <li><a href="../topics/snow-monkey.html" class="page">Chaos engineering with the Snow Monkey</a></li>
+    <li><a href="../topics/jwt-verifications.html" class="page">JWT Tokens verification</a></li>
+    <li><a href="../topics/ssl.html" class="page">SSL/TLS termination with Otoroshi</a></li>
+    <li><a href="../topics/mtls.html" class="page">Mutual TLS with Otoroshi</a></li>
+    <li><a href="../topics/clustering.html" class="page">Otoroshi clustering</a></li>
+    <li><a href="../topics/plugins.html" class="page">Otoroshi plugins</a></li>
+    <li><a href="../topics/monitoring.html" class="page">Monitoring Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../api.html" class="page">Admin REST API</a></li>
+  <li><a href="../deploy/index.html" class="page">Deploy to production</a>
+  <ul>
+    <li><a href="../deploy/kubernetes.html" class="active page">Kubernetes Integration</a></li>
+    <li><a href="../deploy/clevercloud.html" class="page">Clever Cloud</a></li>
+    <li><a href="../deploy/aws-beanstalk.html" class="page">AWS - Elastic Beanstalk</a></li>
+    <li><a href="../deploy/other.html" class="page">Others</a></li>
+    <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
+</ul>
+</div>
+
+</nav>
+</div>
+
+<div class="off-canvas-content" data-off-canvas-content>
+
+<header class="site-header expanded row">
+<div class="small-12 column">
+<a href="#" class="off-canvas-toggle hide-for-medium" data-toggle="off-canvas-menu"><svg class="svg-icon svg-icon-menu" version="1.1" id="Menu" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 20 20" enable-background="new 0 0 20 20" xml:space="preserve"> <path class="svg-icon-menu-path" fill="#53CDEC" d="M16.4,9H3.6C3.048,9,3,9.447,3,10c0,0.553,0.048,1,0.6,1H16.4c0.552,0,0.6-0.447,0.6-1C17,9.447,16.952,9,16.4,9z M16.4,13
+H3.6C3.048,13,3,13.447,3,14c0,0.553,0.048,1,0.6,1H16.4c0.552,0,0.6-0.447,0.6-1C17,13.447,16.952,13,16.4,13z M3.6,7H16.4
+C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.048,7,3.6,7z"/></svg>
+</a>
+<div class="title-wrapper">
+<div class="title-logo"></div>
+<div class="title"><a href="../index.html">Otoroshi</a></div>
+</div>
+<!--
+<a href="https://www.example.com" class="logo show-for-medium">logo</a>
+-->
+</div>
+</header>
+
+<div class="expanded row">
+
+<div class="medium-3 large-2 show-for-medium column">
+<nav class="site-nav">
+<div class="nav-home">
+<a href="../index.html" >
+<span class="home-icon">⌂</span>Otoroshi
+</a>
+<div class="version-number">
+1.4.23-dev
+</div>
+</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../about.html" class="page">About Otoroshi</a></li>
+  <li><a href="../archi.html" class="page">Architecture</a></li>
+  <li><a href="../features.html" class="page">Features</a></li>
+  <li><a href="../quickstart.html" class="page">Try Otoroshi in 5 minutes</a></li>
+  <li><a href="../getotoroshi/index.html" class="page">Get Otoroshi</a>
+  <ul>
+    <li><a href="../getotoroshi/fromsources.html" class="page">From sources</a></li>
+    <li><a href="../getotoroshi/frombinaries.html" class="page">From binaries</a></li>
+    <li><a href="../getotoroshi/fromdocker.html" class="page">From docker</a></li>
+  </ul></li>
+  <li><a href="../firstrun/index.html" class="page">First run</a>
+  <ul>
+    <li><a href="../firstrun/datastore.html" class="page">Choose your datastore</a></li>
+    <li><a href="../firstrun/configfile.html" class="page">Config. with files</a></li>
+    <li><a href="../firstrun/env.html" class="page">Config. with ENVs</a></li>
+    <li><a href="../firstrun/initialstate.html" class="page">Import initial state</a></li>
+    <li><a href="../firstrun/host.html" class="page">Setup your hosts</a></li>
+    <li><a href="../firstrun/run.html" class="page">Run Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../setup/index.html" class="page">Setup Otoroshi</a>
+  <ul>
+    <li><a href="../setup/admin.html" class="page">Manage admin users</a></li>
+    <li><a href="../setup/dangerzone.html" class="page">Configure the Danger zone</a></li>
+  </ul></li>
+  <li><a href="../usage/index.html" class="page">Using Otoroshi</a>
+  <ul>
+    <li><a href="../usage/1-groups.html" class="page">Managing service groups</a></li>
+    <li><a href="../usage/2-services.html" class="page">Managing services</a></li>
+    <li><a href="../usage/3-apikeys.html" class="page">Managing API keys</a></li>
+    <li><a href="../usage/4-monitor.html" class="page">Monitoring services</a></li>
+    <li><a href="../usage/5-sessions.html" class="page">Managing sessions</a></li>
+    <li><a href="../usage/6-audit.html" class="page">Auditing Otoroshi</a></li>
+    <li><a href="../usage/7-metrics.html" class="page">Otoroshi global metrics</a></li>
+    <li><a href="../usage/8-importsexports.html" class="page">Import and export</a></li>
+    <li><a href="../usage/9-auth.html" class="page">Authentication</a></li>
+  </ul></li>
+  <li><a href="../integrations/index.html" class="page">Third party Integrations</a>
+  <ul>
+    <li><a href="../integrations/analytics.html" class="page">Analytics</a></li>
+    <li><a href="../integrations/mailgun.html" class="page">Mailgun</a></li>
+    <li><a href="../integrations/statsd.html" class="page">StatsD / Datadog</a></li>
+    <li><a href="../integrations/clevercloud.html" class="page">Clever Cloud</a></li>
+  </ul></li>
+  <li><a href="../topics/index.html" class="page">Detailed topics</a>
+  <ul>
+    <li><a href="../topics/snow-monkey.html" class="page">Chaos engineering with the Snow Monkey</a></li>
+    <li><a href="../topics/jwt-verifications.html" class="page">JWT Tokens verification</a></li>
+    <li><a href="../topics/ssl.html" class="page">SSL/TLS termination with Otoroshi</a></li>
+    <li><a href="../topics/mtls.html" class="page">Mutual TLS with Otoroshi</a></li>
+    <li><a href="../topics/clustering.html" class="page">Otoroshi clustering</a></li>
+    <li><a href="../topics/plugins.html" class="page">Otoroshi plugins</a></li>
+    <li><a href="../topics/monitoring.html" class="page">Monitoring Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../api.html" class="page">Admin REST API</a></li>
+  <li><a href="../deploy/index.html" class="page">Deploy to production</a>
+  <ul>
+    <li><a href="../deploy/kubernetes.html" class="active page">Kubernetes Integration</a></li>
+    <li><a href="../deploy/clevercloud.html" class="page">Clever Cloud</a></li>
+    <li><a href="../deploy/aws-beanstalk.html" class="page">AWS - Elastic Beanstalk</a></li>
+    <li><a href="../deploy/other.html" class="page">Others</a></li>
+    <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
+</ul>
+</div>
+
+</nav>
+</div>
+
+<div class="small-12 medium-9 large-10 column">
+<section class="site-content">
+
+<div class="page-header row">
+<div class="medium-12 show-for-medium column">
+<div class="nav-breadcrumbs">
+<ul>
+  <li><a href="../index.html">Otoroshi</a></li>
+  <li><a href="../deploy/index.html">Deploy to production</a></li>
+  <li>Kubernetes Integration</li>
+</ul>
+</div>
+</div>
+</div>
+
+<div class="page-content row">
+<div class="small-12 large-9 column" id="docs">
+<h1><a href="#kubernetes-integration" name="kubernetes-integration" class="anchor"><span class="anchor-link"></span></a>Kubernetes Integration</h1>
+<p>Starting at version 1.5.0, Otoroshi provides a native Kubernetes support. Multiple jobs are provided in order to</p>
+<ul>
+  <li>sync kubernetes secrets of type <code>kubernetes.io/tls</code> to otoroshi certificates</li>
+  <li>act as a standard ingress controller</li>
+  <li>provide Custom Resource Definitions (CRDs) in order to manage Otoroshi entities from Kubernetes</li>
+</ul>
+<h2><a href="#deploy-otoroshi-on-your-kubernetes-cluster" name="deploy-otoroshi-on-your-kubernetes-cluster" class="anchor"><span class="anchor-link"></span></a>Deploy otoroshi on your kubernetes cluster</h2>
+<p>If you want to deploy otoroshi into your kubernetes cluster, you can download the deployment descriptors from <a href="https://github.com/MAIF/otoroshi/tree/master/kubernetes">https://github.com/MAIF/otoroshi/tree/master/kubernetes</a> and use kustomize to create your own overlay. </p>
+<p>Then deploy it with <code>kubectl apply -k ./overlays/myoverlay</code>. </p>
+<p>You can also create a <code>kustomization.yaml</code> file with a remote base</p>
+<pre class="prettyprint"><code class="language-yaml">bases:
+- github.com/MAIF/otoroshi/kubernetes/overlays/prod/?ref=v1.5.0
+</code></pre>
+<p>and apply it</p>
+<p>An Helm chart will be available as soon as possible</p>
+<h2><a href="#otoroshi-as-an-ingress-controller" name="otoroshi-as-an-ingress-controller" class="anchor"><span class="anchor-link"></span></a>Otoroshi as an Ingress Controller</h2>
+<p>If you want to use Otoroshi as an <a href="https://kubernetes.io/fr/docs/concepts/services-networking/ingress/">Ingress Controller</a>, just go to the danger zone, and in <code>Global scripts</code> add the job named <code>Kubernetes Ingress Controller</code>.</p>
+<p>Then add the following configuration for the job (with your own tweak of course)</p>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;KubernetesConfig&quot;: {
+    &quot;enabled&quot;: true,
+    &quot;endpoint&quot;: &quot;https://127.0.0.1:6443&quot;,
+    &quot;token&quot;: &quot;eyJhbGciOiJSUzI....F463SrpOehQRaQ&quot;,
+    &quot;namespaces&quot;: [
+      &quot;*&quot;
+    ]
+  }
+}
+</code></pre>
+<p>the configuration can have the following values </p>
+<pre class="prettyprint"><code class="language-javascript">{
+  &quot;KubernetesConfig&quot;: {
+    &quot;enabled&quot;: true, // enable the job
+    &quot;endpoint&quot;: &quot;https://127.0.0.1:6443&quot;, // the endpoint to talk to the kubernetes api, optional
+    &quot;token&quot;: &quot;xxxx&quot;, // the bearer token to talk to the kubernetes api, optional
+    &quot;userPassword&quot;: &quot;usser:password&quot;, // the user password tuple to talk to the kubernetes api, optional
+    &quot;caCert&quot;: &quot;/etc/ca.cert&quot;, // the ca cert file path to talk to the kubernetes api, optional
+    &quot;trust&quot;: false, // trust any cert to talk to the kubernetes api, optional
+    &quot;namespaces&quot;: [&quot;*&quot;], // the watched namespaces
+    &quot;labels&quot;: [&quot;label&quot;], // the watched namespaces
+    &quot;ingressClass&quot;: &quot;otoroshi&quot;, // the watched kubernetes.io/ingress.class annotation, can be *
+    &quot;defaultGroup&quot;: &quot;default&quot;, // the group to put services in otoroshi
+    &quot;ingresses&quot;: true, // sync ingresses
+    &quot;crds&quot;: false // sync crds
+  }
+}
+</code></pre>
+<p>now you can deploy your first service ;)</p>
+<h3><a href="#deploy-an-ingress-route" name="deploy-an-ingress-route" class="anchor"><span class="anchor-link"></span></a>Deploy an ingress route</h3>
+<p>now let&rsquo;s say you want to deploy an http service and route to the outside world through otoroshi</p>
+<pre class="prettyprint"><code class="language-yaml">---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: http-app-deployment
+spec:
+  selector:
+    matchLabels:
+      run: http-app-deployment
+  replicas: 3
+  template:
+    metadata:
+      labels:
+        run: http-app-deployment
+    spec:
+      containers:
+      - image: kennethreitz/httpbin
+        imagePullPolicy: IfNotPresent
+        name: otoroshi
+        ports:
+          - containerPort: 80
+            name: &quot;http&quot;
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: http-app-service
+spec:
+  ports:
+    - port: 8080
+      targetPort: http
+      name: http
+  selector:
+    run: http-app-deployment
+---
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: http-app-ingress
+  annotations:
+    kubernetes.io/ingress.class: otoroshi
+spec:
+  tls:
+  - hosts:
+    - httpapp.foo.bar
+    secretName: http-app-cert
+  rules:
+  - host: httpapp.foo.bar
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: http-app-service
+          servicePort: 8080
+</code></pre>
+<p>once deployed, otoroshi will sync with kubernetes and create the corresponding service to route your app</p>
+<h3><a href="#use-multiple-ingress-controllers" name="use-multiple-ingress-controllers" class="anchor"><span class="anchor-link"></span></a>Use multiple ingress controllers</h3>
+<p>It is of course possible to use multiple ingress controller at the same time (<a href="https://kubernetes.io/docs/concepts/services-networking/ingress-controllers/#using-multiple-ingress-controllers">https://kubernetes.io/docs/concepts/services-networking/ingress-controllers/#using-multiple-ingress-controllers</a>) using the annotation <code>kubernetes.io/ingress.class</code>. By default, otoroshi reacts to the class <code>otoroshi</code>, but you can make it the default ingress controller with the following config</p>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;KubernetesConfig&quot;: {
+    ...
+    &quot;ingressClass&quot;: &quot;*&quot;,
+    ...
+  }
+}
+</code></pre>
+<h3><a href="#supported-nnotations" name="supported-nnotations" class="anchor"><span class="anchor-link"></span></a>Supported nnotations</h3>
+<p>if you need to customize the service descriptor behind an ingress rule, you can use some annotations. If you need better customisation, just go to the CRDs part. The following annotations are supported :</p>
+<ul>
+  <li><code>otoroshi.ingress.kubernetes.io/group</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/groupId</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/name</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/targetsLoadBalancing</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/stripPath</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/enabled</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/userFacing</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/privateApp</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/forceHttps</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/maintenanceMode</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/buildMode</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/strictlyPrivate</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/sendOtoroshiHeadersBack</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/readOnly</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/xForwardedHeaders</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/overrideHost</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/allowHttp10</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/logAnalyticsOnServer</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/useAkkaHttpClient</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/useNewWSClient</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/tcpUdpTunneling</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/detectApiKeySooner</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/letsEncrypt</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/publicPatterns</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/privatePatterns</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/additionalHeaders</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/additionalHeadersOut</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/missingOnlyHeadersIn</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/missingOnlyHeadersOut</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/removeHeadersIn</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/removeHeadersOut</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/headersVerification</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/matchingHeaders</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/ipFiltering.whitelist</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/ipFiltering.blacklist</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/api.exposeApi</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/api.openApiDescriptorUrl</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/healthCheck.enabled</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/healthCheck.url</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/jwtVerifier.ids</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/jwtVerifier.enabled</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/jwtVerifier.excludedPatterns</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/authConfigRef</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/redirection.enabled</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/redirection.code</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/redirection.to</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/clientValidatorRef</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/transformerRefs</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/transformerConfig</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/accessValidator.enabled</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/accessValidator.excludedPatterns</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/accessValidator.refs</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/accessValidator.config</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/preRouting.enabled</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/preRouting.excludedPatterns</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/preRouting.refs</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/preRouting.config</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/issueCert</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/issueCertCA</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/gzip.enabled</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/gzip.excludedPatterns</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/gzip.whiteList</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/gzip.blackList</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/gzip.bufferSize</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/gzip.chunkedThreshold</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/gzip.compressionLevel</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/cors.enabled</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/cors.allowOrigin</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/cors.exposeHeaders</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/cors.allowHeaders</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/cors.allowMethods</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/cors.excludedPatterns</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/cors.maxAge</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/cors.allowCredentials</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/clientConfig.useCircuitBreaker</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/clientConfig.retries</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/clientConfig.maxErrors</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/clientConfig.retryInitialDelay</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/clientConfig.backoffFactor</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/clientConfig.connectionTimeout</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/clientConfig.idleTimeout</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/clientConfig.callAndStreamTimeout</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/clientConfig.callTimeout</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/clientConfig.globalTimeout</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/clientConfig.sampleInterval</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/enforceSecureCommunication</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/sendInfoToken</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/sendStateChallenge</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/secComHeaders.claimRequestName</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/secComHeaders.stateRequestName</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/secComHeaders.stateResponseName</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/secComTtl</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/secComVersion</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/secComInfoTokenVersion</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/secComExcludedPatterns</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/secComSettings.size</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/secComSettings.secret</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/secComSettings.base64</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/secComUseSameAlgo</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/secComAlgoChallengeOtoToBack.size</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/secComAlgoChallengeOtoToBack.secret</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/secComAlgoChallengeOtoToBack.base64</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/secComAlgoChallengeBackToOto.size</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/secComAlgoChallengeBackToOto.secret</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/secComAlgoChallengeBackToOto.base64</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/secComAlgoInfoToken.size</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/secComAlgoInfoToken.secret</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/secComAlgoInfoToken.base64</code></li>
+  <li><code>otoroshi.ingress.kubernetes.io/securityExcludedPatterns</code></li>
+</ul>
+<h2><a href="#otoroshi-crds" name="otoroshi-crds" class="anchor"><span class="anchor-link"></span></a>Otoroshi CRDs</h2>
+<p>Otoroshi provides some Custom Resource Definitions for kubernetes in order to manager Otoroshi related entities in kubernetes</p>
+<ul>
+  <li>service-groups</li>
+  <li>service-descriptors</li>
+  <li>apikeys</li>
+  <li>certificates</li>
+  <li>global-configs</li>
+  <li>jwt-verifiers</li>
+  <li>auth-modules</li>
+  <li>scripts</li>
+  <li>tcp-services</li>
+  <li>admins</li>
+</ul>
+<p>using CRDs, you will be able to deploy and manager those entities from kubectl or the kubernetes api like</p>
+<pre class="prettyprint"><code class="language-sh">sudo kubectl get apikeys --all-namespaces
+sudo kubectl get service-descriptors --all-namespaces
+</code></pre>
+<p>To configure it, just go to the danger zone, and in <code>Global scripts</code> add the job named <code>Kubernetes Otoroshi CRDs Controller</code>. Then add the following configuration for the job (with your own tweak of course)</p>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;KubernetesConfig&quot;: {
+    &quot;enabled&quot;: true,
+    &quot;crds&quot;: true,
+    &quot;endpoint&quot;: &quot;https://127.0.0.1:6443&quot;,
+    &quot;token&quot;: &quot;eyJhbGciOiJSUzI....F463SrpOehQRaQ&quot;,
+    &quot;namespaces&quot;: [
+      &quot;*&quot;
+    ]
+  }
+}
+</code></pre>
+<p>then you can deploy the previous example with better configuration level</p>
+<pre class="prettyprint"><code class="language-yaml">---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: http-app-deployment
+spec:
+  selector:
+    matchLabels:
+      run: http-app-deployment
+  replicas: 3
+  template:
+    metadata:
+      labels:
+        run: http-app-deployment
+    spec:
+      containers:
+      - image: kennethreitz/httpbin
+        imagePullPolicy: IfNotPresent
+        name: otoroshi
+        ports:
+          - containerPort: 80
+            name: &quot;http&quot;
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: http-app-service
+spec:
+  ports:
+    - port: 8080
+      targetPort: http
+      name: http
+  selector:
+    run: http-app-deployment
+---
+apiVersion: proxy.otoroshi.io/v1alpha1
+kind: ServiceGroup
+metadata:
+  name: http-app-group
+spec:
+  description: a group to hold services about the http-app
+---
+apiVersion: proxy.otoroshi.io/v1alpha1
+kind: ApiKey
+metadata:
+  name: http-app-apikey-1
+spec:
+  clientId: client1
+  # secretName will be supported soon
+  clientSecret: secret1
+  group: http-app-group
+---
+apiVersion: proxy.otoroshi.io/v1alpha1
+kind: Certificate
+metadata:
+  name: http-app-certificate
+spec:
+  description: certificate for the http-app
+  autoRenew: true
+  csr:
+    caDN: O=EvilCorp, L=San Francisco, ST=California, C=US
+    hosts: 
+      - httpapp.foo.bar
+    key:
+      algo: rsa
+      size: 2048
+    subject: OU=httpapp, O=EvilCorp, L=San Francisco, ST=California, C=US
+    client: false
+    ca: false
+    duration: 31536000000
+    signatureAlg: SHA256WithRSAEncryption
+    digestAlg: SHA-256
+---
+apiVersion: proxy.otoroshi.io/v1alpha1
+kind: ServiceDescriptor
+metadata:
+  name: http-app-service-descriptor
+spec:
+  description: the service descriptor for the http app
+  group: http-app-group
+  forceHttps: true
+  hosts:
+    - httpapp.foo.bar
+  matchingRoot: /
+  targets:
+  - url: http://http-app-service:8080
+  sendOtoroshiHeadersBack: true
+  xForwardedHeaders: true
+  overrideHost: true
+  allowHttp10: false
+  publicPatterns:
+    - /health
+  additionalHeaders:
+    x-foo: bar
+  # here you can specify everything supported by otoroshi like jwt-verifiers, auth config, etc ...
+</code></pre>
+<p>now with this descriptor deployed, you can access your app with a command like </p>
+<pre class="prettyprint"><code class="language-sh">curl -X GET https://httpapp.foo.bar/api/hello -u client1:secret1
+</code></pre>
+<div class="nav-next">
+<p><strong>Next:</strong> <a href="../deploy/clevercloud.html">Clever Cloud</a></p>
+</div>
+</div>
+<div class="large-3 show-for-large column" data-sticky-container>
+<nav class="sidebar sticky" data-sticky data-anchor="docs" data-sticky-on="large">
+<div class="page-nav">
+<div class="nav-title">On this page:</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../deploy/kubernetes.html#kubernetes-integration" class="header">Kubernetes Integration</a>
+  <ul>
+    <li><a href="../deploy/kubernetes.html#deploy-otoroshi-on-your-kubernetes-cluster" class="header">Deploy otoroshi on your kubernetes cluster</a></li>
+    <li><a href="../deploy/kubernetes.html#otoroshi-as-an-ingress-controller" class="header">Otoroshi as an Ingress Controller</a></li>
+    <li><a href="../deploy/kubernetes.html#otoroshi-crds" class="header">Otoroshi CRDs</a></li>
+  </ul></li>
+</ul>
+</div>
+</div>
+</nav>
+</div>
+</div>
+
+</section>
+</div>
+
+</div>
+
+<footer class="site-footer">
+
+<section class="site-footer-nav">
+<div class="expanded row">
+<div class="small-12 large-offset-2 large-10 column">
+<div class="row site-footer-content">
+
+<div class="small-12 medium-4 large-3 text-center column">
+<div class="nav-links">
+<ul>
+<!-- <li><a href="https://www.example.com/products/">Products</a> -->
+</ul>
+</div>
+</div>
+
+</div>
+</div>
+</div>
+</section>
+
+<section class="site-footer-base">
+<div class="expanded row">
+<div class="small-12 large-offset-2 large-10 column">
+<div class="row site-footer-content">
+
+<div class="small-12 text-center large-9 column">
+
+<!--
+<div class="copyright">
+<span class="text">&copy; 2020</span>
+<a href="https://www.example.com" class="logo">logo</a>
+</div>
+-->
+</div>
+
+</div>
+</div>
+</div>
+</section>
+</footer>
+
+</div>
+</div>
+</div>
+</body>
+
+<script type="text/javascript" src="../lib/foundation/dist/foundation.min.js"></script>
+<script type="text/javascript">jQuery(document).foundation();</script>
+<script type="text/javascript" src="../js/magellan.js"></script>
+
+<style type="text/css">@import "../lib/prettify/prettify.css";</style>
+<script type="text/javascript" src="../lib/prettify/prettify.js"></script>
+<script type="text/javascript" src="../lib/prettify/lang-scala.js"></script>
+<script type="text/javascript">jQuery(function(){window.prettyPrint && prettyPrint()});</script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/elasticlunr/0.9.5/elasticlunr.js"></script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-112498312-1"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+
+gtag('config', 'UA-112498312-1');
+</script>
+</html>
+
+
+
+
