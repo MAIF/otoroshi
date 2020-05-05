@@ -276,7 +276,10 @@ using CRDs, you will be able to deploy and manager those entities from kubectl o
 ```sh
 sudo kubectl get apikeys --all-namespaces
 sudo kubectl get service-descriptors --all-namespaces
-curl -X GET -H 'Authorization: Bearer eyJhbGciOiJSUzI....F463SrpOehQRaQ' -H 'Accept: application/json' -k https://127.0.0.1:6443/apis/proxy.otoroshi.io/v1alpha1/apikeys | jq
+curl -X GET \
+  -H 'Authorization: Bearer eyJhbGciOiJSUzI....F463SrpOehQRaQ' \
+  -H 'Accept: application/json' -k \
+  https://127.0.0.1:6443/apis/proxy.otoroshi.io/v1alpha1/apikeys | jq
 ```
 
 To configure it, just go to the danger zone, and in `Global scripts` add the job named `Kubernetes Otoroshi CRDs Controller`. Then add the following configuration for the job (with your own tweak of course)
