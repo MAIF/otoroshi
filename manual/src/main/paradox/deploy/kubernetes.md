@@ -79,7 +79,7 @@ spec:
   selector:
     matchLabels:
       run: http-app-deployment
-  replicas: 3
+  replicas: 1
   template:
     metadata:
       labels:
@@ -310,7 +310,7 @@ spec:
   selector:
     matchLabels:
       run: http-app-deployment
-  replicas: 3
+  replicas: 1
   template:
     metadata:
       labels:
