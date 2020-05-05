@@ -60,7 +60,6 @@ rules:
       - service-descriptors
       - apikeys
       - certificates
-      - csrs
       - global-configs
       - jwt-verifiers
       - auth-modules

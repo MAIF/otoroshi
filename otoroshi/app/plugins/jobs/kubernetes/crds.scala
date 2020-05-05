@@ -34,6 +34,11 @@ class ClientSupport(client: KubernetesClient)(implicit ec: ExecutionContext, env
         case Some(_) => s
       }
     ).applyOn(s =>
+      (s \ "desc").asOpt[String] match {
+        case None => s.as[JsObject] ++ Json.obj("desc" -> "--")
+        case Some(_) => s
+      }
+    ).applyOn(s =>
       s.as[JsObject] ++ Json.obj(
         "metadata" -> ((s \ "metadata").asOpt[JsObject].getOrElse(Json.obj()) ++ Json.obj(
           "otoroshi-provider" -> "kubernetes-crds",
@@ -85,7 +90,12 @@ class ClientSupport(client: KubernetesClient)(implicit ec: ExecutionContext, env
         }
         case None => s.as[JsObject] ++ Json.obj("targets" -> Json.arr())
       }
-    }
+    }.applyOn(s =>
+      (s \ "groupId").asOpt[String] match {
+        case None => s
+        case Some(v) => s.as[JsObject] - "group" ++ Json.obj("groupId" -> v)
+      }
+    )
   }
 
   private def customizeApikey(spec: JsValue, res: KubernetesOtoroshiResource): JsValue = {
