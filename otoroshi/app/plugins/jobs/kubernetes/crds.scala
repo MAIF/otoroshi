@@ -197,7 +197,7 @@ class ClientSupport(client: KubernetesClient, logger: Logger)(implicit ec: Execu
     )
   }
 
-  private def customizeCert(spec: JsValue, res: KubernetesOtoroshiResource): JsValue = {
+  private def customizeCert(spec: JsValue, res: KubernetesOtoroshiResource, certs: Seq[Cert]): JsValue = {
     spec.applyOn(s =>
       (s \ "name").asOpt[String] match {
         case None => s.as[JsObject] ++ Json.obj("name" -> res.name)
@@ -259,9 +259,19 @@ class ClientSupport(client: KubernetesClient, logger: Logger)(implicit ec: Execu
   }
 
   def crdsFetchServiceGroups(): Future[Seq[OtoResHolder[ServiceGroup]]] = client.fetchOtoroshiResources[ServiceGroup]("service-groups", ServiceGroup._fmt, customizeIdAndName)
-  def crdsFetchServiceDescriptors(): Future[Seq[OtoResHolder[ServiceDescriptor]]] =  client.fetchOtoroshiResources[ServiceDescriptor]("service-descriptors", ServiceDescriptor._fmt, customizeServiceDescriptor)
+  def crdsFetchServiceDescriptors(): Future[Seq[OtoResHolder[ServiceDescriptor]]] = {
+    client.fetchServices().flatMap { services =>
+      client.fetchEndpoints().flatMap { endpoints =>
+        client.fetchOtoroshiResources[ServiceDescriptor]("service-descriptors", ServiceDescriptor._fmt, (a, b) => customizeServiceDescriptor(a, b, services, endpoints))
+      }
+    }
+  }
   def crdsFetchApiKeys(): Future[Seq[OtoResHolder[ApiKey]]] = client.fetchOtoroshiResources[ApiKey]("apikeys", ApiKey._fmt, customizeApikey)
-  def crdsFetchCertificates(): Future[Seq[OtoResHolder[Cert]]] = client.fetchOtoroshiResources[Cert]("certificates", Cert._fmt, customizeCert)
+  def crdsFetchCertificates(): Future[Seq[OtoResHolder[Cert]]] = {
+    env.datastores.certificatesDataStore.findAll().flatMap { certs =>
+      client.fetchOtoroshiResources[Cert]("certificates", Cert._fmt, (a, b) => customizeCert(a, b, certs))
+    }
+  }
   def crdsFetchGlobalConfig(): Future[Seq[OtoResHolder[GlobalConfig]]] = client.fetchOtoroshiResources[GlobalConfig]("global-configs", GlobalConfig._fmt)
   def crdsFetchJwtVerifiers(): Future[Seq[OtoResHolder[JwtVerifier]]] = client.fetchOtoroshiResources[JwtVerifier]("jwt-verifiers", JwtVerifier.fmt, customizeIdAndName)
   def crdsFetchAuthModules(): Future[Seq[OtoResHolder[AuthModuleConfig]]] = client.fetchOtoroshiResources[AuthModuleConfig]("auth-modules", AuthModuleConfig._fmt, customizeIdAndName)
@@ -300,7 +310,7 @@ object KubernetesCRDsJob {
         // TODO: support secret name for
         // - apikey secret
         // - certificate payload
-        val clientSupport = new ClientSupport(client)
+        val clientSupport = new ClientSupport(client, logger)
         for {
           serviceGroups <- clientSupport.crdsFetchServiceGroups()
           serviceDescriptors <- clientSupport.crdsFetchServiceDescriptors()
