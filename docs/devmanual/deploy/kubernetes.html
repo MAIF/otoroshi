@@ -270,7 +270,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   }
 }
 </code></pre>
-<p>now you can deploy your first service ;)</p>
+<p>If <code>endpoint</code> is not defined, Otoroshi will try to get it from <code>$KUBERNETES_SERVICE_HOST</code> and <code>$KUBERNETES_SERVICE_PORT</code>. If <code>token</code> is not defined, Otoroshi will try to get it from the file at <code>/var/run/secrets/kubernetes.io/serviceaccount/token</code>. If <code>caCert</code> is not defined, Otoroshi will try to get it from the file at <code>/var/run/secrets/kubernetes.io/serviceaccount/ca.crt</code>. If <code>$KUBECONFIG</code> is defined, <code>endpoint</code>, <code>token</code> and <code>caCert</code> will be read from the current context of the file referenced by it.</p>
+<p>Now you can deploy your first service ;)</p>
 <h3><a href="#deploy-an-ingress-route" name="deploy-an-ingress-route" class="anchor"><span class="anchor-link"></span></a>Deploy an ingress route</h3>
 <p>now let&rsquo;s say you want to deploy an http service and route to the outside world through otoroshi</p>
 <pre class="prettyprint"><code class="language-yaml">---
@@ -328,7 +329,9 @@ spec:
           serviceName: http-app-service
           servicePort: 8080
 </code></pre>
-<p>once deployed, otoroshi will sync with kubernetes and create the corresponding service to route your app</p>
+<p>once deployed, otoroshi will sync with kubernetes and create the corresponding service to route your app. You will be able to access your app with</p>
+<pre class="prettyprint"><code class="language-sh">curl -X GET https://httpapp.foo.bar/get
+</code></pre>
 <h3><a href="#use-multiple-ingress-controllers" name="use-multiple-ingress-controllers" class="anchor"><span class="anchor-link"></span></a>Use multiple ingress controllers</h3>
 <p>It is of course possible to use multiple ingress controller at the same time (<a href="https://kubernetes.io/docs/concepts/services-networking/ingress-controllers/#using-multiple-ingress-controllers">https://kubernetes.io/docs/concepts/services-networking/ingress-controllers/#using-multiple-ingress-controllers</a>) using the annotation <code>kubernetes.io/ingress.class</code>. By default, otoroshi reacts to the class <code>otoroshi</code>, but you can make it the default ingress controller with the following config</p>
 <pre class="prettyprint"><code class="language-json">{
@@ -453,6 +456,36 @@ spec:
   <li><code>otoroshi.ingress.kubernetes.io/securityExcludedPatterns</code></li>
 </ul>
 <p>for more informations about it, just go to <a href="https://maif.github.io/otoroshi/swagger-ui/index.html">https://maif.github.io/otoroshi/swagger-ui/index.html</a></p>
+<p>with the previous example, the ingress does not define any apikey, so the route is public. If you want to enable apikeys on it, you can deploy the following descriptor</p>
+<pre class="prettyprint"><code class="language-yaml">apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: http-app-ingress
+  annotations:
+    kubernetes.io/ingress.class: otoroshi
+    otoroshi.ingress.kubernetes.io/group: http-app-group
+    otoroshi.ingress.kubernetes.io/forceHttps: &#39;true&#39;
+    otoroshi.ingress.kubernetes.io/sendOtoroshiHeadersBack: &#39;true&#39;
+    otoroshi.ingress.kubernetes.io/overrideHost: &#39;true&#39;
+    otoroshi.ingress.kubernetes.io/allowHttp10: &#39;false&#39;
+    otoroshi.ingress.kubernetes.io/publicPatterns: &#39;&#39;
+spec:
+  tls:
+  - hosts:
+    - httpapp.foo.bar
+    secretName: http-app-cert
+  rules:
+  - host: httpapp.foo.bar
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: http-app-service
+          servicePort: 8080
+</code></pre>
+<p>now you can use an existing apikey in the <code>http-app-group</code> to access your app</p>
+<pre class="prettyprint"><code class="language-sh">curl -X GET https://httpapp.foo.bar/get -u existing-apikey-1:secret-1
+</code></pre>
 <h2><a href="#otoroshi-crds" name="otoroshi-crds" class="anchor"><span class="anchor-link"></span></a>Otoroshi CRDs</h2>
 <p>Otoroshi provides some Custom Resource Definitions for kubernetes in order to manager Otoroshi related entities in kubernetes</p>
 <ul>
@@ -536,9 +569,9 @@ kind: ApiKey
 metadata:
   name: http-app-apikey-1
 spec:
-  clientId: client1
+  clientId: apikey-1
   # secretName will be supported soon
-  clientSecret: secret1
+  clientSecret: secret-1
   group: http-app-group
 ---
 apiVersion: proxy.otoroshi.io/v1alpha1
@@ -551,7 +584,7 @@ spec:
   csr:
     caDN: O=EvilCorp, L=San Francisco, ST=California, C=US
     hosts: 
-      - httpapp.foo.bar
+    - httpapp.foo.bar
     key:
       algo: rsa
       size: 2048
@@ -571,7 +604,7 @@ spec:
   group: http-app-group
   forceHttps: true
   hosts:
-    - httpapp.foo.bar
+  - httpapp.foo.bar
   matchingRoot: /
   targets:
   - url: http://http-app-service:8080
@@ -586,7 +619,7 @@ spec:
 # here you can specify everything supported by otoroshi like jwt-verifiers, auth config, etc ... for more informations about it, just go to https://maif.github.io/otoroshi/swagger-ui/index.html
 </code></pre>
 <p>now with this descriptor deployed, you can access your app with a command like </p>
-<pre class="prettyprint"><code class="language-sh">curl -X GET https://httpapp.foo.bar/api/hello -u client1:secret1
+<pre class="prettyprint"><code class="language-sh">curl -X GET https://httpapp.foo.bar/get -u apikey-1:secret-1
 </code></pre>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="../deploy/clevercloud.html">Clever Cloud</a></p>
