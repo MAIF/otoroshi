@@ -50,7 +50,13 @@ object KubernetesConfig {
           trust = (conf \ "trust").asOpt[Boolean].getOrElse(false),
           endpoint = (json \ "clusters").as[JsArray].value.find(v => (v \ "name").as[String] == currentContextCluster).map { defaultUser =>
             (defaultUser \ "cluster" \ "server").as[String]
-          }.getOrElse("http://localhost:6443"),
+          }.getOrElse(
+            (conf \ "endpoint").asOpt[String].getOrElse {
+              val host = sys.env("KUBERNETES_SERVICE_HOST")
+              val port = sys.env("KUBERNETES_SERVICE_PORT")
+              s"https://$host:$port"
+            }
+          ),
           token = None,
           userPassword = (json \ "users").as[JsArray].value.find(v => (v \ "name").as[String] == currentContextUser).map { defaultUser =>
             val username = (defaultUser \ "user" \ "username").as[String]

@@ -397,6 +397,7 @@ object KubernetesIngressToDescriptor {
     val ingress = obj.ingress
     asDescriptors(uid, name, namespace, ingress, conf, otoConfig, client, logger)(env, ec)
   }
+
   def asDescriptors(uid: String, name: String, namespace: String, ingress: IngressSupport.NetworkingV1beta1IngressItem, conf: KubernetesConfig, otoConfig: OtoAnnotationConfig, client: KubernetesClient, logger: Logger)(implicit env: Env, ec: ExecutionContext): Future[Seq[ServiceDescriptor]] = {
     implicit val mat = env.otoroshiMaterializer
     Source(ingress.spec.rules.flatMap(r => r.http.paths.map(p => (r, p))).toList)
@@ -509,6 +510,75 @@ object KubernetesIngressToDescriptor {
           }
         }
       }.runWith(Sink.seq).map(_.flatten)
+  }
+
+  def serviceToTargetsSync(kubeService: KubernetesService, kubeEndpointOpt: Option[KubernetesEndpoint], port: IntOrString, client: KubernetesClient, logger: Logger): Seq[Target] = {
+      val serviceType = (kubeService.raw \ "spec" \ "type").as[String]
+      val maybePortSpec: Option[JsValue] = (kubeService.raw \ "spec" \ "ports").as[JsArray].value.find { value =>
+        port match {
+          case IntOrString(Some(v), _) => (value \ "port").asOpt[Int].contains(v)
+          case IntOrString(_, Some(v)) => (value \ "port").asOpt[String].contains(v)
+          case _ => false
+        }
+      }
+      maybePortSpec match {
+        case None =>
+          logger.info(s"Service port not found")
+          Seq.empty
+        case Some(portSpec) => {
+          val portName = (portSpec \ "name").as[String]
+          val portValue = (portSpec \ "port").as[Int]
+          val protocol = if (portValue == 443 || portName == "https") "https" else "http"
+          serviceType match {
+            case "ExternalName" =>
+              val serviceExternalName = (kubeService.raw \ "spec" \ "externalName").as[String]
+              Seq(Target(s"$serviceExternalName:$portValue", protocol))
+            case _ => kubeEndpointOpt match {
+              case None => serviceType match {
+                case "ClusterIP" =>
+                  val serviceIp = (kubeService.raw \ "spec" \ "clusterIP").as[String]
+                  Seq(Target(s"$serviceIp:$portValue", protocol))
+                case "NodePort" =>
+                  val serviceIp = (kubeService.raw \ "spec" \ "clusterIP").as[String]
+                  Seq(Target(s"$serviceIp:$portValue", protocol))
+                case "LoadBalancer" =>
+                  val serviceIp = (kubeService.raw \ "spec" \ "clusterIP").as[String]
+                  Seq(Target(s"$serviceIp:$portValue", protocol))
+                case _ => Seq.empty
+              }
+              case Some(kubeEndpoint) => {
+                val subsets = (kubeEndpoint.raw \ "subsets").as[JsArray].value
+                if (subsets.isEmpty) {
+                  Seq.empty
+                } else {
+                  subsets.flatMap { subset =>
+                    val endpointPort: Int = (subset \ "ports").as[JsArray].value.find { port =>
+                      (port \ "name").as[String] == portName
+                    }.map(v => (v \ "port").as[Int]).getOrElse(80)
+                    val endpointProtocol = if (endpointPort == 443 || portName == "https") "https" else "http"
+                    val addresses = (subset \ "addresses").asOpt[JsArray].map(_.value).getOrElse(Seq.empty)
+                    addresses.map { address =>
+                      val serviceIp = (address \ "ip").as[String]
+                      Target(s"$serviceIp:$endpointPort", endpointProtocol)
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+  }
+
+  def serviceToTargets(namespace: String, name: String, port: IntOrString, client: KubernetesClient, logger: Logger): Future[Seq[Target]] = {
+    client.fetchService(namespace, name).flatMap {
+      case None =>
+        logger.info(s"Service $name not found on namespace $namespace")
+        Seq.empty.future
+      case Some(kubeService) => client.fetchEndpoint(namespace, name).map { kubeEndpointOpt =>
+        serviceToTargetsSync(kubeService, kubeEndpointOpt, port, client, logger)
+      }
+    }
   }
 }
 

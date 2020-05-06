@@ -7,6 +7,7 @@ import akka.stream.scaladsl.{Sink, Source}
 import auth.AuthModuleConfig
 import env.Env
 import models._
+import otoroshi.plugins.jobs.kubernetes.IngressSupport.IntOrString
 import otoroshi.script._
 import otoroshi.ssl.pki.models.GenCsrQuery
 import otoroshi.tcp.TcpService
@@ -70,7 +71,7 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
   }
 }
 
-class ClientSupport(client: KubernetesClient)(implicit ec: ExecutionContext, env: Env) {
+class ClientSupport(client: KubernetesClient, logger: Logger)(implicit ec: ExecutionContext, env: Env) {
 
   private def customizeIdAndName(spec: JsValue, res: KubernetesOtoroshiResource): JsValue = {
     spec.applyOn(s =>
@@ -103,7 +104,7 @@ class ClientSupport(client: KubernetesClient)(implicit ec: ExecutionContext, env
     )
   }
 
-  private def customizeServiceDescriptor(spec: JsValue, res: KubernetesOtoroshiResource): JsValue = {
+  private def customizeServiceDescriptor(spec: JsValue, res: KubernetesOtoroshiResource, services: Seq[KubernetesService], endpoints: Seq[KubernetesEndpoint]): JsValue = {
     customizeIdAndName(spec, res).applyOn { s =>
       (s \ "env").asOpt[String] match {
         case Some(_) => s
@@ -126,7 +127,7 @@ class ClientSupport(client: KubernetesClient)(implicit ec: ExecutionContext, env
             s
           } else {
             s.as[JsObject] ++ Json.obj("targets" -> JsArray(targets.value.map(item => item.applyOn(target =>
-              (target \ "url").asOpt[String] match {
+              ((target \ "url").asOpt[String] match {
                 case None => target
                 case Some(tv) =>
                   val uri = Uri(tv)
@@ -134,6 +135,25 @@ class ClientSupport(client: KubernetesClient)(implicit ec: ExecutionContext, env
                     "host" -> uri.authority.host.toString(),
                     "scheme" -> uri.scheme
                   )
+              }).applyOn { targetJson =>
+                val serviceName = (target \ "serviceName").asOpt[String]
+                val servicePort = (target \ "servicePort").asOpt[JsValue]
+                (serviceName, servicePort) match {
+                  case (Some(sn), Some(sp)) => {
+                    val service = services.find(s => s.path == res.path)
+                    val endpoint = endpoints.find(s => s.path == res.path)
+                    (service, endpoint) match {
+                      case (Some(s), p) => {
+                        val port = IntOrString(sp.asOpt[Int], sp.asOpt[String])
+                        val targets = KubernetesIngressToDescriptor.serviceToTargetsSync(s, p, port, client, logger)
+                        JsArray(targets.map(_.toJson))
+                      }
+                      case _ => targetJson
+                    }
+                  }
+                  case _ => targetJson
+                }
+                targetJson
               }
             ))))
           }
@@ -201,6 +221,7 @@ class ClientSupport(client: KubernetesClient)(implicit ec: ExecutionContext, env
     ).applyOn(s =>
       s.as[JsObject] ++ Json.obj("id" -> s"kubernetes-crd-import-${res.namespace}-${res.name}".slugifyWithSlash)
     ).applyOn { s =>
+      // TODO: do not regenerate, check existance
       (s \ "csr").asOpt[JsValue] match {
         case None => s
         case Some(csrJson) => {
