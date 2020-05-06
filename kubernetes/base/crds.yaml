@@ -40,97 +40,97 @@ spec:
           type: object
           required: ["group", "targets", "hosts"]
           properties:
-            - group:
+            group:
               type: string
-            - name:
+            name:
               type: string
-            - env:
+            env:
               type: string
-            - domain:
+            domain:
               type: string
-            - subdomain:
+            subdomain:
               type: string
-            - targets:
+            targets:
               type: array
-            - root:
+            root:
               type: string
-            - matchingRoot:
+            matchingRoot:
               type: string
-            - stripPath:
+            stripPath:
               type: boolean
-            - enabled:
+            enabled:
               type: boolean
-            - userFacing:
+            userFacing:
               type: boolean
-            - privateApp:
+            privateApp:
               type: boolean
-            - forceHttps:
+            forceHttps:
               type: boolean
-            - maintenanceMode:
+            maintenanceMode:
               type: boolean
-            - buildMode:
+            buildMode:
               type: boolean
-            - strictlyPrivate:
+            strictlyPrivate:
               type: boolean
-            - sendOtoroshiHeadersBack:
+            sendOtoroshiHeadersBack:
               type: boolean
-            - readOnly:
+            readOnly:
               type: boolean
-            - xForwardedHeaders:
+            xForwardedHeaders:
               type: boolean
-            - overrideHost:
+            overrideHost:
               type: boolean
-            - allowHttp10:
+            allowHttp10:
               type: boolean
-            - logAnalyticsOnServer:
+            logAnalyticsOnServer:
               type: boolean
-            - useAkkaHttpClient:
+            useAkkaHttpClient:
               type: boolean
-            - useNewWSClient:
+            useNewWSClient:
               type: boolean
-            - tcpUdpTunneling:
+            tcpUdpTunneling:
               type: boolean
-            - detectApiKeySooner:
+            detectApiKeySooner:
               type: boolean
-            - letsEncrypt:
+            letsEncrypt:
               type: boolean
-            - enforceSecureCommunication:
+            enforceSecureCommunication:
               type: boolean
-            - sendInfoToken:
+            sendInfoToken:
               type: boolean
-            - sendStateChallenge:
+            sendStateChallenge:
               type: boolean
-            - securityExcludedPatterns:
+            securityExcludedPatterns:
               type: array
-            - publicPatterns:
+            publicPatterns:
               type: array
-            - privatePatterns:
+            privatePatterns:
               type: array
-            - additionalHeaders:
+            additionalHeaders:
               type: object
-            - additionalHeadersOut:
+            additionalHeadersOut:
               type: object
-            - missingOnlyHeadersIn:
+            missingOnlyHeadersIn:
               type: object
-            - missingOnlyHeadersOut:
+            missingOnlyHeadersOut:
               type: object
-            - removeHeadersIn:
+            removeHeadersIn:
               type: array
-            - removeHeadersOut:
+            removeHeadersOut:
               type: array
-            - headersVerification:
+            headersVerification:
               type: object
-            - matchingHeaders:
+            matchingHeaders:
               type: object
-            - metadata:
+            metadata:
               type: object
-            - hosts:
+            hosts:
               type: array
-            - paths:
+            paths:
               type: array
-            - issueCert:
+            issueCert:
               type: boolean
-            - issueCertCA:
+            issueCertCA:
               type: string
   names:
     kind: ServiceDescriptor
@@ -206,23 +206,23 @@ spec:
           type: object
           required: ["csr"]
           properties:
-            - name:
+            name:
               type: string
-            - description:
+            description:
               type: string
-            - selfSigned:
+            selfSigned:
               type: boolean
-            - ca:
+            ca:
               type: boolean
-            - autoRenew:
+            autoRenew:
               type: boolean
-            - letsEncrypt:
+            letsEncrypt:
               type: boolean
-            - client:
+            client:
               type: boolean
-            - entityMetadata:
+            entityMetadata:
               type: object
-            - csr:
+            csr:
               type: object
   names:
     kind: Certificate

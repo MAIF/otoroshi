@@ -7,6 +7,7 @@ import akka.stream.scaladsl.{Sink, Source}
 import auth.AuthModuleConfig
 import env.Env
 import models._
+import org.apache.commons.codec.binary.Base64
 import otoroshi.plugins.jobs.kubernetes.IngressSupport.IntOrString
 import otoroshi.script._
 import otoroshi.ssl.pki.models.GenCsrQuery
@@ -168,7 +169,7 @@ class ClientSupport(client: KubernetesClient, logger: Logger)(implicit ec: Execu
     )
   }
 
-  private def customizeApikey(spec: JsValue, res: KubernetesOtoroshiResource): JsValue = {
+  private def customizeApikey(spec: JsValue, res: KubernetesOtoroshiResource, secrets: Seq[KubernetesSecret]): JsValue = {
     spec.applyOn(s =>
       (s \ "clientName").asOpt[String] match {
         case None => s.as[JsObject] ++ Json.obj("clientName" -> res.name)
@@ -185,6 +186,20 @@ class ClientSupport(client: KubernetesClient, logger: Logger)(implicit ec: Execu
         case Some(v) => s
       }
     ).applyOn(s =>
+      (s \ "secretName").asOpt[String] match {
+        case None => s
+        case Some(v) if v.contains("/") =>
+          secrets.find(_.path == v) match {
+            case None => s.as[JsObject] ++ Json.obj("clientSecret" -> "secret-not-found")
+            case Some(secret) => s.as[JsObject] ++ Json.obj("clientSecret" -> (secret.raw \ "data" \ "secret").as[String].applyOn(s => new String(Base64.decodeBase64(s))))
+          }
+        case Some(v) if !v.contains("/") =>
+          secrets.find(_.name == v) match {
+            case None => s.as[JsObject] ++ Json.obj("clientSecret" -> "secret-not-found")
+            case Some(secret) => s.as[JsObject] ++ Json.obj("clientSecret" -> (secret.raw \ "data" \ "secret").as[String].applyOn(s => new String(Base64.decodeBase64(s))))
+          }
+      }
+    ).applyOn(s =>
       s.as[JsObject] ++ Json.obj(
         "metadata" -> ((s \ "metadata").asOpt[JsObject].getOrElse(Json.obj()) ++ Json.obj(
           "otoroshi-provider" -> "kubernetes-crds",
@@ -197,7 +212,15 @@ class ClientSupport(client: KubernetesClient, logger: Logger)(implicit ec: Execu
     )
   }
 
+  private def foundACertWithSameIdAndCsr(id: String, csrJson: JsValue, caOpt: Option[Cert], certs: Seq[Cert]): Option[Cert] = {
+    certs.find(c => c.id == id)
+      .filter(_.entityMetadata.get("otoroshi-provider").contains("kubernetes-crds"))
+      .filter(_.entityMetadata.get("csr").contains(csrJson.stringify))
+      .filter(c => caOpt.map(_.id) == c.caRef)
+  }
+
   private def customizeCert(spec: JsValue, res: KubernetesOtoroshiResource, certs: Seq[Cert]): JsValue = {
+    val id = s"kubernetes-crd-import-${res.namespace}-${res.name}".slugifyWithSlash
     spec.applyOn(s =>
       (s \ "name").asOpt[String] match {
         case None => s.as[JsObject] ++ Json.obj("name" -> res.name)
@@ -210,7 +233,7 @@ class ClientSupport(client: KubernetesClient, logger: Logger)(implicit ec: Execu
       }
     ).applyOn(s =>
       s.as[JsObject] ++ Json.obj(
-        "entityMetadata" -> ((s \ "entityMetadata").asOpt[JsObject].getOrElse(Json.obj()) ++ Json.obj(
+        "metadata" -> ((s \ "metadata").asOpt[JsObject].getOrElse(Json.obj()) ++ Json.obj(
           "otoroshi-provider" -> "kubernetes-crds",
           "kubernetes-name" -> res.name,
           "kubernetes-namespace" -> res.namespace,
@@ -219,9 +242,8 @@ class ClientSupport(client: KubernetesClient, logger: Logger)(implicit ec: Execu
         ))
       )
     ).applyOn(s =>
-      s.as[JsObject] ++ Json.obj("id" -> s"kubernetes-crd-import-${res.namespace}-${res.name}".slugifyWithSlash)
+      s.as[JsObject] ++ Json.obj("id" -> id)
     ).applyOn { s =>
-      // TODO: do not regenerate, check existance
       (s \ "csr").asOpt[JsValue] match {
         case None => s
         case Some(csrJson) => {
@@ -232,24 +254,40 @@ class ClientSupport(client: KubernetesClient, logger: Logger)(implicit ec: Execu
                 case (_, cert) => cert.certificate.map(_.getIssuerDN.getName).contains(dn)
               }
           }
-          GenCsrQuery.fromJson(csrJson) match {
-            case Left(_) => s
-            case Right(csr) => {
-              (caOpt match {
-                case None => Await.result(env.pki.genSelfSignedCert(csr), 1.second)
-                case Some(ca) => Await.result(env.pki.genCert(csr, ca._2.certificate.get, ca._2.cryptoKeyPair.getPrivate), 1.second)
-              }) match {
-                case Left(_) => s
-                case Right(cert) =>
-                  val c = cert.toCert
-                  s.as[JsObject] ++ Json.obj(
-                    "caRef" -> caOpt.map(_._2.id).map(JsString.apply).getOrElse(JsNull).as[JsValue],
-                    "chain" -> c.chain,
-                    "privateKey" -> c.privateKey,
-                    "entityMetadata" -> ((s \ "entityMetadata").asOpt[JsObject].getOrElse(Json.obj()) ++ Json.obj(
-                      "csr" -> csrJson.stringify
-                    ))
-                  )
+          val maybeCert = foundACertWithSameIdAndCsr(id, csrJson, caOpt.map(_._2), certs)
+          if (maybeCert.isDefined) {
+            val c = maybeCert.get
+            s.as[JsObject] ++ Json.obj(
+              "caRef" -> caOpt.map(_._2.id).map(JsString.apply).getOrElse(JsNull).as[JsValue],
+              "domain" -> c.domain,
+              "chain" -> c.chain,
+              "privateKey" -> c.privateKey,
+              "metadata" -> ((s \ "metadata").asOpt[JsObject].getOrElse(Json.obj()) ++ Json.obj(
+                "csr" -> csrJson.stringify
+              ))
+            )
+          } else {
+            GenCsrQuery.fromJson(csrJson) match {
+              case Left(_) => s
+              case Right(csr) => {
+                (caOpt match {
+                  case None => Await.result(env.pki.genSelfSignedCert(csr), 1.second)
+                  case Some(ca) => Await.result(env.pki.genCert(csr, ca._2.certificate.get, ca._2.cryptoKeyPair.getPrivate), 1.second)
+                }) match {
+                  case Left(_) => s
+                  case Right(cert) =>
+                    println("generated a cert ! ")
+                    val c = cert.toCert
+                    s.as[JsObject] ++ Json.obj(
+                      "caRef" -> caOpt.map(_._2.id).map(JsString.apply).getOrElse(JsNull).as[JsValue],
+                      "domain" -> c.domain,
+                      "chain" -> c.chain,
+                      "privateKey" -> c.privateKey,
+                      "metadata" -> ((s \ "metadata").asOpt[JsObject].getOrElse(Json.obj()) ++ Json.obj(
+                        "csr" -> csrJson.stringify
+                      ))
+                    )
+                }
               }
             }
           }
@@ -266,7 +304,12 @@ class ClientSupport(client: KubernetesClient, logger: Logger)(implicit ec: Execu
       }
     }
   }
-  def crdsFetchApiKeys(): Future[Seq[OtoResHolder[ApiKey]]] = client.fetchOtoroshiResources[ApiKey]("apikeys", ApiKey._fmt, customizeApikey)
+  def crdsFetchApiKeys(): Future[Seq[OtoResHolder[ApiKey]]] = {
+    client.fetchSecrets().flatMap { secrets =>
+      val otoApikeySecretss = secrets.filter(_.theType == "otoroshi.io/apikey-secret")
+      client.fetchOtoroshiResources[ApiKey]("apikeys", ApiKey._fmt, (a, b) => customizeApikey(a, b, otoApikeySecretss))
+    }
+  }
   def crdsFetchCertificates(): Future[Seq[OtoResHolder[Cert]]] = {
     env.datastores.certificatesDataStore.findAll().flatMap { certs =>
       client.fetchOtoroshiResources[Cert]("certificates", Cert._fmt, (a, b) => customizeCert(a, b, certs))
@@ -307,9 +350,6 @@ object KubernetesCRDsJob {
       shouldRunNext.set(false)
       logger.info("Sync. otoroshi CRDs")
       KubernetesCertSyncJob.syncKubernetesSecretsToOtoroshiCerts(client).flatMap { _ =>
-        // TODO: support secret name for
-        // - apikey secret
-        // - certificate payload
         val clientSupport = new ClientSupport(client, logger)
         for {
           serviceGroups <- clientSupport.crdsFetchServiceGroups()
@@ -341,7 +381,7 @@ object KubernetesCRDsJob {
               compareAndSave(globalConfigs)(otoglobalConfigs, _ => "global", _.save()) ++
                 compareAndSave(simpleAdmins)(otosimpleAdmins, v => (v \ "username").as[String], v => env.datastores.simpleAdminDataStore.registerUser(v)) ++ // useful ?
                 compareAndSave(serviceGroups)(otoserviceGroups, _.id, _.save()) ++
-                compareAndSave(certificates)(otocertificates, _.id, _.save()) ++ // TODO: match also on csr
+                compareAndSave(certificates)(otocertificates, _.id, _.save()) ++
                 compareAndSave(jwtVerifiers)(otojwtVerifiers, _.asGlobal.id, _.asGlobal.save()) ++
                 compareAndSave(authModules)(otoauthModules, _.id, _.save()) ++
                 compareAndSave(scripts)(otoscripts, _.id, _.save()) ++

@@ -17,6 +17,7 @@ lazy val prometheusVersion = "0.8.1"
 lazy val playJsonVersion = "2.8.1"
 lazy val webAuthnVersion = "1.6.1"
 lazy val kubernetesVersion = "8.0.0"
+lazy val bouncyCastleVersion = "1.65"
 
 libraryDependencies ++= Seq(
   ws,
@@ -62,6 +63,9 @@ libraryDependencies ++= Seq(
   "org.scala-lang"           %  "scala-library"              % scalaLangVersion,
   "io.kubernetes"            % "client-java"                 % kubernetesVersion,
   "io.kubernetes"            % "client-java-extended"        % kubernetesVersion,
+  "org.bouncycastle"         % "bcpkix-jdk15on"              % bouncyCastleVersion,
+  "org.bouncycastle"         % "bcprov-ext-jdk15on"          % bouncyCastleVersion,
+  "org.bouncycastle"         % "bcprov-jdk15on"              % bouncyCastleVersion,
 
   // fix multiple CVEs
   "com.fasterxml.jackson.core" % "jackson-databind"          % "2.10.3",

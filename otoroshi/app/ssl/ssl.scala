@@ -430,7 +430,7 @@ object Cert {
       "keypair"     -> cert.keypair,
       "sans"        -> JsArray(cert.sans.map(JsString.apply)),
       "certType"    -> cert.certType,
-      "entityMetadata" -> cert.entityMetadata
+      "metadata"    -> cert.entityMetadata
 
     )
     override def reads(json: JsValue): JsResult[Cert] =
@@ -457,7 +457,7 @@ object Cert {
           subject = (json \ "subject").asOpt[String].getOrElse("--"),
           from = (json \ "from").asOpt[Long].map(v => new DateTime(v)).getOrElse(DateTime.now()),
           to = (json \ "to").asOpt[Long].map(v => new DateTime(v)).getOrElse(DateTime.now()),
-          entityMetadata = (json \ "entityMetadata").asOpt[Map[String, String]].getOrElse(Map.empty),
+          entityMetadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
         )
       } map {
         case sd => JsSuccess(sd)
@@ -1214,12 +1214,12 @@ object DynamicSSLEngineProvider {
     certificates
   }
 
-  def _readPrivateKey(encodedKeySpec: KeySpec): PrivateKey = {
+  def _readPrivateKey(encodedKeySpec: KeySpec): Try[PrivateKey] = {
     Try(KeyFactory.getInstance("RSA").generatePrivate(encodedKeySpec))
       .orElse(Try(KeyFactory.getInstance("EC").generatePrivate(encodedKeySpec)))
       .orElse(Try(KeyFactory.getInstance("DSA").generatePrivate(encodedKeySpec)))
       //.orElse(Try(KeyFactory.getInstance("DiffieHellman")).map(_.generatePrivate(encodedKeySpec)))
-      .get
+      //.get
   }
 
   def _readPrivateKeySpec(id: String,
@@ -1275,8 +1275,18 @@ object DynamicSSLEngineProvider {
           case _ => None
         }
       } match {
-        case Failure(e) => Left(s"[$id] error while reading private key: ${e.getMessage}")
-        case Success(None) => Left(s"[$id] no valid key found")
+        case Failure(e) =>
+          // Left(s"[$id] error while reading private key: ${e.getMessage}".debugPrintln)
+          _readPrivateKeySpec(id, content, keyPassword, log).flatMap(ks => _readPrivateKey(ks).toEither match {
+            case Left(r) => Left(r.getMessage)
+            case Right(r) => Right(r)
+          })
+        case Success(None) =>
+          // Left(s"[$id] no valid key found".debugPrintln)
+          _readPrivateKeySpec(id, content, keyPassword, log).flatMap(ks => _readPrivateKey(ks).toEither match {
+            case Left(r) => Left(r.getMessage)
+            case Right(r) => Right(r)
+          })
         case Success(Some(key)) => Right(key)
       }
     }

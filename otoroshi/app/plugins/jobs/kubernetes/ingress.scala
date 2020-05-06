@@ -90,13 +90,13 @@ class KubernetesIngressControllerTrigger extends RequestSink {
     if (conf.crds) {
       KubernetesCRDsJob.syncCRDs(conf, ctx.attrs)
     }
-    if (conf.ingresses) {
-      KubernetesIngressSyncJob.syncIngresses(conf, ctx.attrs).map { _ =>
-        Results.Ok(Json.obj("done" -> true))
-      }
-    } else {
+    //if (conf.ingresses) {
+    //  KubernetesIngressSyncJob.syncIngresses(conf, ctx.attrs).map { _ =>
+    //    Results.Ok(Json.obj("done" -> true))
+    //  }
+    //} else {
       Results.Ok(Json.obj("done" -> false)).future
-    }
+    //}
   }
 }
 
@@ -570,7 +570,7 @@ object KubernetesIngressToDescriptor {
       }
   }
 
-  def serviceToTargets(namespace: String, name: String, port: IntOrString, client: KubernetesClient, logger: Logger): Future[Seq[Target]] = {
+  def serviceToTargets(namespace: String, name: String, port: IntOrString, client: KubernetesClient, logger: Logger)(implicit ec: ExecutionContext, env: Env): Future[Seq[Target]] = {
     client.fetchService(namespace, name).flatMap {
       case None =>
         logger.info(s"Service $name not found on namespace $namespace")

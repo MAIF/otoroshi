@@ -14,8 +14,6 @@ object KubernetesCertSyncJob {
 
   val logger = Logger("otoroshi-plugins-kubernetes-cert-sync")
 
-  def syncOtoroshiCertsToKubernetesSecrets(client: KubernetesClient): Future[Unit] = ().future // TODO: implements
-
   def importCerts(certs: Seq[KubernetesCertSecret])(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
 
     val hashs = DynamicSSLEngineProvider.certificates.map {
@@ -124,54 +122,6 @@ class KubernetesToOtoroshiCertSyncJob extends Job {
     if (conf.enabled) {
       logger.info("Running kubernetes to otoroshi certs. sync ...")
       KubernetesCertSyncJob.syncKubernetesSecretsToOtoroshiCerts(client)
-    } else {
-      ().future
-    }
-  }
-}
-
-class OtoroshiToKubernetesCertSyncJob extends Job {
-
-  private val logger = Logger("otoroshi-plugins-otoroshi-to-kubernetes-certs-job")
-
-  override def uniqueId: JobId = JobId("io.otoroshi.plugins.jobs.kubernetes.OtoroshiToKubernetesCertSyncJob")
-
-  override def name: String = "Otoroshi to Kubernetes certs. synchronizer"
-
-  override def defaultConfig: Option[JsObject] = KubernetesConfig.defaultConfig.some
-
-  override def description: Option[String] =
-    Some(
-      s"""This plugin syncs. Otoroshi Certs to Kubernetes TLS secrets
-         |
-         |```json
-         |${Json.prettyPrint(defaultConfig.get)}
-         |```
-      """.stripMargin
-    )
-
-  override def visibility: JobVisibility = JobVisibility.UserLand
-
-  override def kind: JobKind = JobKind.ScheduledEvery
-
-  override def starting: JobStarting = JobStarting.FromConfiguration
-
-  override def instantiation: JobInstantiation = JobInstantiation.OneInstancePerOtoroshiCluster
-
-  override def initialDelay: Option[FiniteDuration] = 10.seconds.some
-
-  override def interval: Option[FiniteDuration] = 10.seconds.some
-
-  override def jobStart(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = super.jobStart(ctx)
-
-  override def jobStop(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = super.jobStop(ctx)
-
-  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
-    val conf = KubernetesConfig.theConfig(ctx)
-    val client = new KubernetesClient(conf, env)
-    if (conf.enabled) {
-      logger.info("Running otoroshi to kubernetes certs. sync ...")
-      KubernetesCertSyncJob.syncOtoroshiCertsToKubernetesSecrets(client)
     } else {
       ().future
     }

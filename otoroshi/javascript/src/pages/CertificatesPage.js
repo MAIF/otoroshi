@@ -338,6 +338,10 @@ export class CertificatesPage extends Component {
       disabled: true,
       props: { label: 'Certificate domain', placeholder: 'www.oto.tools' },
     },
+    metadata: {
+      type: 'object',
+      props: { label: 'Certificate metadata' },
+    },
     commands: {
       type: Commands,
       props: {
@@ -476,6 +480,7 @@ export class CertificatesPage extends Component {
     'chain',
     'privateKey',
     'infos',
+    'metadata',
   ];
 
   componentDidMount() {
