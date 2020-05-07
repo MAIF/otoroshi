@@ -7,7 +7,6 @@ import akka.stream.scaladsl.{Sink, Source}
 import auth.AuthModuleConfig
 import env.Env
 import models._
-import org.apache.commons.codec.binary.Base64
 import otoroshi.plugins.jobs.kubernetes.IngressSupport.IntOrString
 import otoroshi.script._
 import otoroshi.ssl.pki.models.GenCsrQuery
@@ -170,7 +169,7 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
     )
   }
 
-  private def customizeApiKey(spec: JsValue, res: KubernetesOtoroshiResource, secrets: Seq[KubernetesSecret], registerApkToExport: (String, String, ApiKey) => ()): JsValue = {
+  private def customizeApiKey(spec: JsValue, res: KubernetesOtoroshiResource, secrets: Seq[KubernetesSecret], registerApkToExport: Function3[String, String, ApiKey, Unit]): JsValue = {
     spec.applyOn(s =>
       (s \ "clientName").asOpt[String] match {
         case None => s.as[JsObject] ++ Json.obj("clientName" -> res.name)
@@ -206,7 +205,7 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
           val namespace :: name :: Nil = v.split("/").toList
           val clientId = IdGenerator.token(64)
           val clientSecret = IdGenerator.token(128)
-          registerApkToExport(namespace, name, clientId, clientSecret)
+          registerApkToExport(namespace, name, ApiKey(clientId, clientSecret, clientName = name, authorizedGroup = "default"))
           s.as[JsObject] ++ Json.obj(
             "clientId" -> clientId,
             "clientSecret" -> clientSecret
@@ -214,7 +213,7 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
         case Some(v) if shouldExport && !v.contains("/") =>
           val clientId = IdGenerator.token(64)
           val clientSecret = IdGenerator.token(128)
-          registerApkToExport(res.namespace, v, clientId, clientSecret)
+          registerApkToExport(res.namespace, v, ApiKey(clientId, clientSecret, clientName = v, authorizedGroup = "default"))
           s.as[JsObject] ++ Json.obj(
             "clientId" -> clientId,
             "clientSecret" -> clientSecret
@@ -258,7 +257,7 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
       .headOption
   }
 
-  private def customizeCert(spec: JsValue, res: KubernetesOtoroshiResource, certs: Seq[Cert], registerCertToExport: (String, String, Cert) => ()): JsValue = {
+  private def customizeCert(spec: JsValue, res: KubernetesOtoroshiResource, certs: Seq[Cert], registerCertToExport: Function3[String, String, Cert, Unit]): JsValue = {
     val id = s"kubernetes-crd-import-${res.namespace}-${res.name}".slugifyWithSlash
     spec.applyOn(s =>
       (s \ "name").asOpt[String] match {
@@ -284,7 +283,7 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
       s.as[JsObject] ++ Json.obj("id" -> id)
     ).applyOn { s =>
       val shouldExport = (s \ "exportSecret").asOpt[Boolean].getOrElse(false)
-      val secretName = (s \ "exportSecret").asOpt[String].getOrElse(res.name + "-secret")
+      val secretName = (s \ "secretName").asOpt[String].getOrElse(res.name + "-secret")
       (s \ "csr").asOpt[JsValue] match {
         case None => s
         case Some(csrJson) => {
@@ -342,11 +341,11 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
   def crdsFetchServiceDescriptors(services: Seq[KubernetesService], endpoints: Seq[KubernetesEndpoint]): Future[Seq[OtoResHolder[ServiceDescriptor]]] = {
     client.fetchOtoroshiResources[ServiceDescriptor]("service-descriptors", ServiceDescriptor._fmt, (a, b) => customizeServiceDescriptor(a, b, services, endpoints))
   }
-  def crdsFetchApiKeys(secrets: Seq[KubernetesSecret], registerApkToExport: (String, String, ApiKey) => ()): Future[Seq[OtoResHolder[ApiKey]]] = {
+  def crdsFetchApiKeys(secrets: Seq[KubernetesSecret], registerApkToExport: Function3[String, String, ApiKey, Unit]): Future[Seq[OtoResHolder[ApiKey]]] = {
     val otoApikeySecrets = secrets.filter(_.theType == "otoroshi.io/apikey-secret")
     client.fetchOtoroshiResources[ApiKey]("apikeys", ApiKey._fmt, (a, b) => customizeApiKey(a, b, otoApikeySecrets, registerApkToExport))
   }
-  def crdsFetchCertificates(certs: Seq[Cert], registerCertToExport: (String, String, Cert) => ()): Future[Seq[OtoResHolder[Cert]]] = {
+  def crdsFetchCertificates(certs: Seq[Cert], registerCertToExport: Function3[String, String, Cert, Unit]): Future[Seq[OtoResHolder[Cert]]] = {
     client.fetchOtoroshiResources[Cert]("certificates", Cert._fmt, (a, b) => customizeCert(a, b, certs, registerCertToExport))
   }
   def crdsFetchGlobalConfig(): Future[Seq[OtoResHolder[GlobalConfig]]] = client.fetchOtoroshiResources[GlobalConfig]("global-configs", GlobalConfig._fmt)
@@ -400,7 +399,7 @@ object KubernetesCRDsJob {
     }
   }
 
-  def context(conf: KubernetesConfig, attrs: TypedMap, clientSupport: ClientSupport, registerApkToExport: (String, String, ApiKey) => (), registerCertToExport: (String, String, Cert) => ())(implicit env: Env, ec: ExecutionContext): Future[CRDContext] = {
+  def context(conf: KubernetesConfig, attrs: TypedMap, clientSupport: ClientSupport, registerApkToExport: Function3[String, String, ApiKey, Unit], registerCertToExport: Function3[String, String, Cert, Unit])(implicit env: Env, ec: ExecutionContext): Future[CRDContext] = {
     for {
 
       otoserviceGroups <- env.datastores.serviceGroupDataStore.findAll()
@@ -595,6 +594,7 @@ object KubernetesCRDsJob {
 
   def exportApiKeys(conf: KubernetesConfig, attrs: TypedMap, clientSupport: ClientSupport, ctx: CRDContext, apikeys: Seq[(String, String, ApiKey)])(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     logger.info(s"will export ${apikeys.size} apikeys as secrets")
+    implicit val mat = env.otoroshiMaterializer
     Source(apikeys.toList)
       .mapAsync(1) {
         case (namespace, name, apikey) => clientSupport.client.fetchSecret(namespace, name).flatMap {
@@ -614,6 +614,7 @@ object KubernetesCRDsJob {
 
   def exportCerts(conf: KubernetesConfig, attrs: TypedMap, clientSupport: ClientSupport, ctx: CRDContext, certs: Seq[(String, String, Cert)])(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     logger.info(s"will export ${certs.size} certificates as secrets")
+    implicit val mat = env.otoroshiMaterializer
     Source(certs.toList)
       .mapAsync(1) {
         case (namespace, name, cert) => clientSupport.client.fetchSecret(namespace, name).flatMap {
