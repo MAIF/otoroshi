@@ -1,8 +1,12 @@
 package otoroshi.utils.syntax
 
+import java.nio.charset.StandardCharsets
+
 import akka.http.scaladsl.util.FastFuture
 import akka.util.ByteString
 import com.github.blemale.scaffeine.Cache
+import org.apache.commons.codec.binary.Base64
+import org.apache.commons.io.Charsets
 import play.api.Logger
 import play.api.libs.json._
 import utils.{Regex, RegexPool}
@@ -44,6 +48,8 @@ object implicits {
     def regex: Regex = RegexPool.regex(obj)
     def byteString: ByteString = ByteString(obj)
     def json: JsValue = JsString(obj)
+    def base64: String = Base64.encodeBase64String(obj.getBytes(StandardCharsets.UTF_8))
+    def fromBase64: String = new String(Base64.decodeBase64(obj), StandardCharsets.UTF_8)
   }
   implicit class BetterBoolean(private val obj: Boolean) extends AnyVal {
     def json: JsValue = JsBoolean(obj)

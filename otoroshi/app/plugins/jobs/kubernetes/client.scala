@@ -91,6 +91,18 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       }
     }
   }
+  def fetchSecret(namespace: String, name: String): Future[Option[KubernetesSecret]] = {
+    val cli: WSRequest = client(s"/api/v1/namespaces/$namespace/services/$name", false)
+    cli.addHttpHeaders(
+      "Accept" -> "application/json"
+    ).get().map { resp =>
+      if (resp.status == 200) {
+        KubernetesSecret(resp.json).some
+      } else {
+        None
+      }
+    }
+  }
   def fetchEndpoints(): Future[Seq[KubernetesEndpoint]] = {
     Future.sequence(config.namespaces.map { namespace =>
       val cli: WSRequest = client(s"/api/v1/namespaces/$namespace/endpoints")
@@ -206,5 +218,84 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
         }
       }
     }).map(_.flatten)
+  }
+
+  def createSecret(namespace: String, name: String, typ: String, data: JsValue): Future[Option[KubernetesSecret]] = {
+    val cli: WSRequest = client(s"/api/v1/namespaces/$namespace/secrets", false)
+    cli.addHttpHeaders(
+      "Accept" -> "application/json",
+      "Content-Type" -> "application/json"
+    ).post(Json.obj(
+      "apiVersion" -> "v1",
+      "kind" -> "Secret",
+      "metadata" -> Json.obj(
+        "name" -> name
+        // TODO: add otoroshi label on it ???
+      ),
+      "type" -> typ,
+      "data" -> data
+     )
+    ).map { resp =>
+      Try {
+        if (resp.status == 200 || resp.status == 201) {
+          KubernetesSecret(resp.json).some
+        } else {
+          None
+        }
+      } match {
+        case Success(r) => r
+        case Failure(e) => None
+      }
+    }
+  }
+
+  def updateSecret(namespace: String, name: String, typ: String, data: JsObject): Future[Option[KubernetesSecret]] = {
+    val cli: WSRequest = client(s"/api/v1/namespaces/$namespace/secrets/$name", false)
+    cli.addHttpHeaders(
+      "Accept" -> "application/json",
+      "Content-Type" -> "application/json"
+    ).put(Json.obj(
+      "apiVersion" -> "v1",
+      "kind" -> "Secret",
+      "metadata" -> Json.obj(
+        "name" -> name
+        // TODO: add otoroshi label on it ???
+      ),
+      "type" -> typ,
+      "data" -> data
+    )
+    ).map { resp =>
+      Try {
+        if (resp.status == 200 || resp.status == 201) {
+          KubernetesSecret(resp.json).some
+        } else {
+          None
+        }
+      } match {
+        case Success(r) => r
+        case Failure(e) => None
+      }
+    }
+  }
+
+  def patchSecret(namespace: String, name: String, typ: String, data: JsObject): Future[Option[KubernetesSecret]] = {
+    val cli: WSRequest = client(s"/api/v1/namespaces/$namespace/secrets/$name", false)
+    cli.addHttpHeaders(
+      "Accept" -> "application/json",
+      "Content-Type" -> "application/json"
+    ).patch(Json.obj(
+    "data" -> data
+    )).map { resp =>
+      Try {
+        if (resp.status == 200 || resp.status == 201) {
+          KubernetesSecret(resp.json).some
+        } else {
+          None
+        }
+      } match {
+        case Success(r) => r
+        case Failure(e) => None
+      }
+    }
   }
 }

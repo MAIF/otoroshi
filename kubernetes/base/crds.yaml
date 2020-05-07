@@ -151,8 +151,11 @@ spec:
       properties:
         spec:
           type: object
-          required: ["clientId", "clientSecret", "authorizedGroup"]
           properties:
+            secretName: 
+              type: string
+            exportSecret:
+              type: boolean
             clientId:
               type: string
             clientSecret:
@@ -160,6 +163,8 @@ spec:
             clientName:
               type: string
             authorizedGroup:
+              type: string
+            group:
               type: string
             enabled:
               type: boolean
@@ -210,6 +215,10 @@ spec:
               type: string
             description:
               type: string
+            secretName: 
+              type: string
+            exportSecret:
+              type: boolean
             selfSigned:
               type: boolean
             ca:
