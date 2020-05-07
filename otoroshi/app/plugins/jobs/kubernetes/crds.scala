@@ -211,8 +211,8 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
             "clientSecret" -> clientSecret
           )
         case Some(v) if shouldExport && !v.contains("/") =>
-          val clientId = secrets.find(_.path == v).map(s => (s.raw \ "data" \ "clientId").as[String].applyOn(_.fromBase64)).getOrElse(IdGenerator.token(64))
-          val clientSecret = secrets.find(_.path == v).map(s => (s.raw \ "data" \ "clientSecret").as[String].applyOn(_.fromBase64)).getOrElse(IdGenerator.token(128))
+          val clientId = secrets.find(_.name == v).map(s => (s.raw \ "data" \ "clientId").as[String].applyOn(_.fromBase64)).getOrElse(IdGenerator.token(64))
+          val clientSecret = secrets.find(_.name == v).map(s => (s.raw \ "data" \ "clientSecret").as[String].applyOn(_.fromBase64)).getOrElse(IdGenerator.token(128))
           registerApkToExport(res.namespace, v, ApiKey(clientId, clientSecret, clientName = v, authorizedGroup = "default"))
           s.as[JsObject] ++ Json.obj(
             "clientId" -> clientId,
