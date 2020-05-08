@@ -4,6 +4,7 @@ import {
   TextInput,
   NumberInput,
   SelectInput,
+  ObjectInput,
   BooleanInput,
   PasswordInput,
   ArrayInput,
@@ -1195,6 +1196,16 @@ class LdapUserLoginTest extends Component {
 }
 
 export class AuthModuleConfig extends Component {
+  changeTheValue = (name, value) => {
+    if (this.props.onChange) {
+      const clone = _.cloneDeep(this.props.value || this.props.settings);
+      const path = name.startsWith('.') ? name.substr(1) : name;
+      const newObj = deepSet(clone, path, value);
+      this.props.onChange(newObj);
+    } else {
+      this.props.changeTheValue(name, value);
+    }
+  };
   render() {
     const settings = this.props.value || this.props.settings;
     const selector = (
@@ -1282,6 +1293,12 @@ export class AuthModuleConfig extends Component {
         <div>
           {selector}
           <Oauth2ModuleConfig {...this.props} />
+          <Separator title="Module metadata" />
+          <ObjectInput
+            label="Metadata"
+            value={settings.metadata}
+            onChange={v => changeTheValue(path + '.metadata', v)}
+          />
         </div>
       );
     } else if (settings.type === 'basic') {
@@ -1289,6 +1306,12 @@ export class AuthModuleConfig extends Component {
         <div>
           {selector}
           <BasicModuleConfig {...this.props} />
+          <Separator title="Module metadata" />
+          <ObjectInput
+            label="Metadata"
+            value={settings.metadata}
+            onChange={v => changeTheValue(path + '.metadata', v)}
+          />
         </div>
       );
     } else if (settings.type === 'ldap') {
@@ -1296,6 +1319,12 @@ export class AuthModuleConfig extends Component {
         <div>
           {selector}
           <LdapModuleConfig {...this.props} />
+          <Separator title="Module metadata" />
+          <ObjectInput
+            label="Metadata"
+            value={settings.metadata}
+            onChange={v => changeTheValue(path + '.metadata', v)}
+          />
         </div>
       );
     } else {

@@ -15,6 +15,10 @@ export class GroupsPage extends Component {
       type: 'string',
       props: { label: 'Group description', placeholder: 'Description of the group' },
     },
+    metadata: {
+      type: 'object',
+      props: { label: 'Group metadata' },
+    },
   };
 
   columns = [
@@ -50,7 +54,7 @@ export class GroupsPage extends Component {
     },
   ];
 
-  formFlow = ['id', 'name', 'description'];
+  formFlow = ['id', 'name', 'description', 'metadata'];
 
   state = { env: null };
 

@@ -710,6 +710,12 @@ export class JwtVerifier extends Component {
             }
           />,
         ]}
+        <Separator title="Verifier metadata" />
+        <ObjectInput
+          label="Metadata"
+          value={verifier.metadata}
+          onChange={v => changeTheValue(path + '.metadata', v)}
+        />
       </div>
     );
   }

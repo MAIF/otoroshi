@@ -381,6 +381,10 @@ export class ScriptsPage extends Component {
     type: {
       type: ScriptTypeSelector,
     },
+    metadata: {
+      type: 'object',
+      props: { label: 'Script metadata' },
+    },
     code: {
       type: 'code',
       props: {
@@ -417,7 +421,7 @@ export class ScriptsPage extends Component {
     { title: 'Description', noMobile: true, content: item => item.desc },
   ];
 
-  formFlow = ['id', 'name', 'desc', 'type', 'compilation', 'code'];
+  formFlow = ['id', 'name', 'desc', 'type', 'compilation', 'code', 'metadata'];
 
   componentDidMount() {
     this.props.setTitle(`All Plugins`);

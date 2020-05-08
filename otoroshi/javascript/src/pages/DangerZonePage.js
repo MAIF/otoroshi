@@ -1110,6 +1110,10 @@ export class DangerZonePage extends Component {
         }),
       },
     },
+    metadata: {
+      type: 'object',
+      props: { label: 'Metadata' },
+    },
   };
 
   formFlow = [
@@ -1211,6 +1215,8 @@ export class DangerZonePage extends Component {
     'autoCert.caRef',
     'autoCert.allowed',
     'autoCert.notAllowed',
+    '>>>Global metadata',
+    'metadata'
   ];
 
   syncSchema = {
