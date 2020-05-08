@@ -47,7 +47,6 @@ the configuration can have the following values
 ```javascript
 {
   "KubernetesConfig": {
-    "enabled": true, // enable the job
     "endpoint": "https://127.0.0.1:6443", // the endpoint to talk to the kubernetes api, optional
     "token": "xxxx", // the bearer token to talk to the kubernetes api, optional
     "userPassword": "usser:password", // the user password tuple to talk to the kubernetes api, optional
@@ -329,6 +328,10 @@ curl -X GET \
   https://127.0.0.1:6443/apis/proxy.otoroshi.io/v1alpha1/apikeys | jq
 ```
 
+@@@ warning
+when using Otoroshi CRDs, Kubernetes becomes the single source of truth for the synced entities. It means that any value in the descriptors deployed will overrides the one in Otoroshi datastore each time it's synced. So be careful if you use the Otoroshi UI or the API, some changes in configuration may be overriden by CRDs sync job.
+@@@
+
 To configure it, just go to the danger zone, and in `Global scripts` add the job named `Kubernetes Otoroshi CRDs Controller`. Then add the following configuration for the job (with your own tweak of course)
 
 ```json
@@ -370,6 +373,17 @@ spec:
         ports:
           - containerPort: 80
             name: "http"
+        volumeMounts:
+        - name: apikey-volume
+          # here you will be able to read apikey from files 
+          # - /var/run/secrets/kubernetes.io/apikeys/clientId
+          # - /var/run/secrets/kubernetes.io/apikeys/clientSecret
+          mountPath: "/var/run/secrets/kubernetes.io/apikeys"
+          readOnly: true
+      volumes:
+      - name: apikey-volume
+        secret:
+          secretName: secret-1
 ---
 apiVersion: v1
 kind: Service
@@ -395,7 +409,8 @@ kind: ApiKey
 metadata:
   name: http-app-apikey-1
 spec:
-  exportSecret: true # a secret name secret-1 will be created by otoroshi and can be used by containers
+  # a secret name secret-1 will be created by otoroshi and can be used by containers
+  exportSecret: true 
   secretName: secret-1
   group: http-app-group
 ---
@@ -406,7 +421,8 @@ metadata:
 spec:
   description: certificate for the http-app
   autoRenew: true
-  exportSecret: true # a secret name cert-1 will be created by otoroshi and can be used by containers
+  # a secret name cert-1 will be created by otoroshi and can be used by containers
+  exportSecret: true 
   secretName: cert-1
   csr:
     caDN: O=EvilCorp, L=San Francisco, ST=California, C=US
@@ -449,5 +465,5 @@ spec:
 now with this descriptor deployed, you can access your app with a command like 
 
 ```sh
-curl -X GET https://httpapp.foo.bar/get -u apikey-1:secret-1
+curl -X GET https://httpapp.foo.bar/get -u content-of-secret-1-clientId:content-of-secret-1-clientSecret
 ```
