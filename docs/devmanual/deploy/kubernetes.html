@@ -255,7 +255,6 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <p>the configuration can have the following values </p>
 <pre class="prettyprint"><code class="language-javascript">{
   &quot;KubernetesConfig&quot;: {
-    &quot;enabled&quot;: true, // enable the job
     &quot;endpoint&quot;: &quot;https://127.0.0.1:6443&quot;, // the endpoint to talk to the kubernetes api, optional
     &quot;token&quot;: &quot;xxxx&quot;, // the bearer token to talk to the kubernetes api, optional
     &quot;userPassword&quot;: &quot;usser:password&quot;, // the user password tuple to talk to the kubernetes api, optional
@@ -507,7 +506,8 @@ curl -X GET \
   -H &#39;Authorization: Bearer eyJhbGciOiJSUzI....F463SrpOehQRaQ&#39; \
   -H &#39;Accept: application/json&#39; -k \
   https://127.0.0.1:6443/apis/proxy.otoroshi.io/v1alpha1/apikeys | jq
-</code></pre>
+</code></pre><div class="callout warning "><div class="callout-title">Warning</div>
+<p>when using Otoroshi CRDs, Kubernetes becomes the single source of truth for the synced entities. It means that any value in the descriptors deployed will overrides the one in Otoroshi datastore each time it&rsquo;s synced. So be careful if you use the Otoroshi UI or the API, some changes in configuration may be overriden by CRDs sync job.</p></div>
 <p>To configure it, just go to the danger zone, and in <code>Global scripts</code> add the job named <code>Kubernetes Otoroshi CRDs Controller</code>. Then add the following configuration for the job (with your own tweak of course)</p>
 <pre class="prettyprint"><code class="language-json">{
   &quot;KubernetesConfig&quot;: {
@@ -544,6 +544,17 @@ spec:
         ports:
           - containerPort: 80
             name: &quot;http&quot;
+        volumeMounts:
+        - name: apikey-volume
+          # here you will be able to read apikey from files 
+          # - /var/run/secrets/kubernetes.io/apikeys/clientId
+          # - /var/run/secrets/kubernetes.io/apikeys/clientSecret
+          mountPath: &quot;/var/run/secrets/kubernetes.io/apikeys&quot;
+          readOnly: true
+      volumes:
+      - name: apikey-volume
+        secret:
+          secretName: secret-1
 ---
 apiVersion: v1
 kind: Service
@@ -569,7 +580,8 @@ kind: ApiKey
 metadata:
   name: http-app-apikey-1
 spec:
-  exportSecret: true # a secret name secret-1 will be created by otoroshi and can be used by containers
+  # a secret name secret-1 will be created by otoroshi and can be used by containers
+  exportSecret: true 
   secretName: secret-1
   group: http-app-group
 ---
@@ -580,7 +592,8 @@ metadata:
 spec:
   description: certificate for the http-app
   autoRenew: true
-  exportSecret: true # a secret name cert-1 will be created by otoroshi and can be used by containers
+  # a secret name cert-1 will be created by otoroshi and can be used by containers
+  exportSecret: true 
   secretName: cert-1
   csr:
     caDN: O=EvilCorp, L=San Francisco, ST=California, C=US
@@ -620,7 +633,7 @@ spec:
 # here you can specify everything supported by otoroshi like jwt-verifiers, auth config, etc ... for more informations about it, just go to https://maif.github.io/otoroshi/swagger-ui/index.html
 </code></pre>
 <p>now with this descriptor deployed, you can access your app with a command like </p>
-<pre class="prettyprint"><code class="language-sh">curl -X GET https://httpapp.foo.bar/get -u apikey-1:secret-1
+<pre class="prettyprint"><code class="language-sh">curl -X GET https://httpapp.foo.bar/get -u content-of-secret-1-clientId:content-of-secret-1-clientSecret
 </code></pre>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="../deploy/clevercloud.html">Clever Cloud</a></p>
