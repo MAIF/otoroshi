@@ -6,8 +6,8 @@ import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 import akka.stream.scaladsl.{Sink, Source}
 import com.google.common.base.CaseFormat
 import env.Env
-import io.kubernetes.client.extended.leaderelection.{LeaderElectionConfig, LeaderElector}
 import io.kubernetes.client.extended.leaderelection.resourcelock.EndpointsLock
+import io.kubernetes.client.extended.leaderelection.{LeaderElectionConfig, LeaderElector}
 import io.kubernetes.client.openapi.ApiClient
 import io.kubernetes.client.util.ClientBuilder
 import io.kubernetes.client.util.credentials.AccessTokenAuthentication
@@ -17,7 +17,6 @@ import otoroshi.plugins.jobs.kubernetes.IngressSupport.IntOrString
 import otoroshi.script._
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
-import play.api.http.HttpEntity
 import play.api.libs.json._
 import play.api.mvc.{Result, Results}
 import utils.RequestImplicits._
@@ -32,6 +31,7 @@ class KubernetesIngressControllerJob extends Job {
   private val shouldRun = new AtomicBoolean(false)
   private val apiClientRef = new AtomicReference[ApiClient]()
   private val threadPool = Executors.newFixedThreadPool(1)
+  private val stopCommand = new AtomicBoolean(false)
 
   private val logger = Logger("otoroshi-plugins-kubernetes-ingress-controller-job")
 
@@ -59,11 +59,12 @@ class KubernetesIngressControllerJob extends Job {
 
   override def instantiation: JobInstantiation = JobInstantiation.OneInstancePerOtoroshiCluster
 
-  override def initialDelay: Option[FiniteDuration] = 2.seconds.some
+  override def initialDelay: Option[FiniteDuration] = 5.seconds.some
 
-  override def interval: Option[FiniteDuration] = 30.seconds.some
+  override def interval: Option[FiniteDuration] = 60.seconds.some
 
   override def jobStart(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    stopCommand.set(false)
     val config = KubernetesConfig.theConfig(ctx)
     if (config.kubeLeader) {
       val apiClient = new ClientBuilder()
@@ -95,11 +96,19 @@ class KubernetesIngressControllerJob extends Job {
         }
       })
     }
+    implicit val mat = env.otoroshiMaterializer
+    val conf = KubernetesConfig.theConfig(ctx)
+    val client = new KubernetesClient(conf, env)
+    val source =
+      client.watchKubeResources(conf.namespaces, Seq("secrets", "services", "endpoints"), 30, stopCommand)
+        .merge(client.watchNetResources(conf.namespaces, Seq("ingresses"), 30, stopCommand))
+    source.throttle(1, 5.seconds).runWith(Sink.foreach(_ => KubernetesIngressSyncJob.syncIngresses(conf, ctx.attrs)))
     ().future
   }
 
   override def jobStop(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     // Option(apiClientRef.get()).foreach(_.) // nothing to stop stuff here ...
+    stopCommand.set(true)
     threadPool.shutdown()
     shouldRun.set(false)
     ().future
@@ -107,21 +116,17 @@ class KubernetesIngressControllerJob extends Job {
 
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     val conf = KubernetesConfig.theConfig(ctx)
-    if (conf.enabled) {
-      if (conf.ingresses) {
-        if (conf.kubeLeader) {
-          if (shouldRun.get()) {
-            logger.info("Running kubernetes ingresses sync ...")
-            KubernetesIngressSyncJob.syncIngresses(conf, ctx.attrs)
-          } else {
-            ().future
-          }
-        } else {
+    if (conf.ingresses) {
+      if (conf.kubeLeader) {
+        if (shouldRun.get()) {
           logger.info("Running kubernetes ingresses sync ...")
           KubernetesIngressSyncJob.syncIngresses(conf, ctx.attrs)
+        } else {
+          ().future
         }
       } else {
-        ().future
+        logger.info("Running kubernetes ingresses sync ...")
+        KubernetesIngressSyncJob.syncIngresses(conf, ctx.attrs)
       }
     } else {
       ().future
@@ -157,21 +162,6 @@ class KubernetesIngressControllerTrigger extends RequestSink {
     if (conf.ingresses) {
       KubernetesIngressSyncJob.syncIngresses(conf, ctx.attrs)
     }
-
-    val source = client.watchOtoResource("default", "apikeys", 30, new AtomicBoolean(false))
-
-    implicit val mat = env.otoroshiMaterializer
-
-    source
-      .alsoTo(Sink.onComplete {
-        case Success(_) =>
-          println("finish with success")
-        case Failure(e) =>
-          println("finish with error")
-          e.printStackTrace()
-      })
-      .runWith(Sink.foreach(bs => println("batch")))
-
     Results.Ok(Json.obj("done" -> true)).future
   }
 }

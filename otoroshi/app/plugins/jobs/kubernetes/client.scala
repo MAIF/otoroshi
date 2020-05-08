@@ -305,23 +305,33 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
     }
   }
 
-  def watchOtoResource(namespace: String, resource: String, timeout: Int, stop: AtomicBoolean, labelSelector: Option[String] = None):Source[Seq[ByteString], _] = {
-    watchApi(namespace, resource, "proxy.otoroshi.io/v1alpha1", timeout, stop, labelSelector)
+  def watchOtoResources(namespaces: Seq[String], resources: Seq[String], timeout: Int, stop: AtomicBoolean, labelSelector: Option[String] = None):Source[Seq[ByteString], _] = {
+    watchResources(namespaces, resources, "proxy.otoroshi.io/v1alpha1", timeout, stop, labelSelector)
   }
 
-  def watchNetResource(namespace: String, resource: String, timeout: Int, stop: AtomicBoolean, labelSelector: Option[String] = None):Source[Seq[ByteString], _] = {
-    watchApi(namespace, resource, "networking.k8s.io/v1beta1", timeout, stop, labelSelector)
+  def watchNetResources(namespaces: Seq[String], resources: Seq[String], timeout: Int, stop: AtomicBoolean, labelSelector: Option[String] = None):Source[Seq[ByteString], _] = {
+    watchResources(namespaces, resources, "networking.k8s.io/v1beta1", timeout, stop, labelSelector)
   }
 
-  def watchKubeResource(namespace: String, resource: String, timeout: Int, stop: AtomicBoolean, labelSelector: Option[String] = None):Source[Seq[ByteString], _] = {
-    watchApi(namespace, resource, "v1", timeout, stop, labelSelector)
+  def watchKubeResources(namespaces: Seq[String], resources: Seq[String], timeout: Int, stop: AtomicBoolean, labelSelector: Option[String] = None):Source[Seq[ByteString], _] = {
+    watchResources(namespaces, resources, "v1", timeout, stop, labelSelector)
   }
 
-  def watchApi(namespace: String, resource: String, api: String, timeout: Int, stop: AtomicBoolean, labelSelector: Option[String] = None): Source[Seq[ByteString], _] = {
-    val pattern = Pattern.compile(""""resourceVersion"="([0-9]*)"""")
+  def watchResources(namespaces: Seq[String], resources: Seq[String], api: String, timeout: Int, stop: AtomicBoolean, labelSelector: Option[String] = None): Source[Seq[ByteString], _] = {
+    if (namespaces.contains("*")) {
+      resources.map(r => watchResource("*", r, api, timeout, stop, labelSelector)).foldLeft(Source.empty[Seq[ByteString]])((s1, s2) => s1.merge(s2))
+    } else {
+      resources.flatMap(r => namespaces.map(n => watchResource(n, r, api, timeout, stop, labelSelector))).foldLeft(Source.empty[Seq[ByteString]])((s1, s2) => s1.merge(s2))
+    }
+  }
+
+  def watchResource(namespace: String, resource: String, api: String, timeout: Int, stop: AtomicBoolean, labelSelector: Option[String] = None): Source[Seq[ByteString], _] = {
+    // val pattern = Pattern.compile(""""resourceVersion"="([0-9]*)"""")
+    println(s"watchResource $namespace $resource $api")
     val last = new AtomicReference[String]("0")
     Source.repeat(())
       .flatMapConcat { _ =>
+        //println("run from " + last.get())
         val lbl = labelSelector.map(s => s"&labelSelector=$s").getOrElse("")
         val cli: WSRequest = client(s"/apis/$api/namespaces/$namespace/$resource?watch=true&resourceVersion=${last.get()}&timeoutSeconds=$timeout$lbl")
         val f: Future[Source[Seq[ByteString], _]] = cli.addHttpHeaders(
@@ -330,17 +340,16 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
           resp.bodyAsSource
             // .alsoTo(Sink.foreach(v => println(v.utf8String)))
             .via(Framing.delimiter("\n".byteString, Int.MaxValue, true))
+            .map { line =>
+              val json = Json.parse(line.utf8String)
+              // val name = (json \ "object" \ "metadata" \ "name").asOpt[String]
+              // val namespace = (json \ "object" \ "metadata" \ "namespace").asOpt[String]
+              val resourceVersion = (json \ "object" \ "metadata" \ "resourceVersion").asOpt[String]
+              // println(s"processing $namespace / $name - $resourceVersion")
+              resourceVersion.foreach(v => last.set(v))
+              line
+            }
             .groupedWithin(1000, 2.seconds)
-            .alsoTo(Sink.foreach { v =>
-              val payload = v.map(_.utf8String).mkString("")
-              // println(payload)
-              val m = pattern.matcher(payload)
-              while(m.find()) {
-                last.set(m.toMatchResult.group())
-              }
-              ()
-            })
-
         }
         Source.future(f).flatMapConcat(v => v)
       }

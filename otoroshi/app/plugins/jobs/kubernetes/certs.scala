@@ -1,5 +1,8 @@
 package otoroshi.plugins.jobs.kubernetes
 
+import java.util.concurrent.atomic.AtomicBoolean
+
+import akka.stream.scaladsl.Sink
 import env.Env
 import otoroshi.script._
 import otoroshi.utils.syntax.implicits._
@@ -12,7 +15,9 @@ import scala.concurrent.{ExecutionContext, Future}
 
 object KubernetesCertSyncJob {
 
-  val logger = Logger("otoroshi-plugins-kubernetes-cert-sync")
+  private val logger = Logger("otoroshi-plugins-kubernetes-cert-sync")
+  private val running = new AtomicBoolean(false)
+  private val shouldRunNext = new AtomicBoolean(false)
 
   def importCerts(certs: Seq[KubernetesCertSecret])(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
 
@@ -72,10 +77,27 @@ object KubernetesCertSyncJob {
   }
 
   def syncKubernetesSecretsToOtoroshiCerts(client: KubernetesClient)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
-    client.fetchCertsAndFilterLabels().flatMap { certs =>
-      importCerts(certs).flatMap { _ =>
-        deleteOutOfSyncCerts(certs)
+    if (running.compareAndSet(false, true)) {
+      shouldRunNext.set(false)
+      client.fetchCertsAndFilterLabels().flatMap { certs =>
+        importCerts(certs).flatMap { _ =>
+          deleteOutOfSyncCerts(certs)
+        }
+      }.flatMap { _ =>
+        if (shouldRunNext.get()) {
+          shouldRunNext.set(false)
+          syncKubernetesSecretsToOtoroshiCerts(client)
+        } else {
+          ().future
+        }
+      }.andThen {
+        case e =>
+          running.set(false)
       }
+    } else {
+      logger.info("Job already running, scheduling after ")
+      shouldRunNext.set(true)
+      ().future
     }
   }
 }
@@ -83,6 +105,7 @@ object KubernetesCertSyncJob {
 class KubernetesToOtoroshiCertSyncJob extends Job {
 
   private val logger = Logger("otoroshi-plugins-kubernetes-to-otoroshi-certs-job")
+  private val stopCommand = new AtomicBoolean(false)
 
   override def uniqueId: JobId = JobId("io.otoroshi.plugins.jobs.kubernetes.KubernetesToOtoroshiCertSyncJob")
 
@@ -108,23 +131,30 @@ class KubernetesToOtoroshiCertSyncJob extends Job {
 
   override def instantiation: JobInstantiation = JobInstantiation.OneInstancePerOtoroshiCluster
 
-  override def initialDelay: Option[FiniteDuration] = 10.seconds.some
+  override def initialDelay: Option[FiniteDuration] = 5.seconds.some
 
-  override def interval: Option[FiniteDuration] = 10.seconds.some
+  override def interval: Option[FiniteDuration] = 60.seconds.some
 
-  override def jobStart(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = super.jobStart(ctx)
+  override def jobStart(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    stopCommand.set(false)
+    implicit val mat = env.otoroshiMaterializer
+    val conf = KubernetesConfig.theConfig(ctx)
+    val client = new KubernetesClient(conf, env)
+    val source =  client.watchKubeResources(conf.namespaces, Seq("secrets", "endpoints"), 30, stopCommand)
+    source.throttle(1, 5.seconds).runWith(Sink.foreach(_ => KubernetesCertSyncJob.syncKubernetesSecretsToOtoroshiCerts(client)))
+    ().future
+  }
 
-  override def jobStop(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = super.jobStop(ctx)
+  override def jobStop(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    stopCommand.set(true)
+    ().future
+  }
 
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     val conf = KubernetesConfig.theConfig(ctx)
     val client = new KubernetesClient(conf, env)
-    if (conf.enabled) {
-      logger.info("Running kubernetes to otoroshi certs. sync ...")
-      KubernetesCertSyncJob.syncKubernetesSecretsToOtoroshiCerts(client)
-    } else {
-      ().future
-    }
+    logger.info("Running kubernetes to otoroshi certs. sync ...")
+    KubernetesCertSyncJob.syncKubernetesSecretsToOtoroshiCerts(client)
   }
 }
 

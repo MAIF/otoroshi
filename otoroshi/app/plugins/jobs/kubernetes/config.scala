@@ -14,7 +14,6 @@ import scala.concurrent.ExecutionContext
 import scala.util.Try
 
 case class KubernetesConfig(
-  enabled: Boolean,
   crds: Boolean,
   ingresses: Boolean,
   kubeLeader: Boolean,
@@ -50,7 +49,6 @@ object KubernetesConfig {
         val currentContextUser = (json \ "contexts").as[JsArray].value.find(v => (v \ "name").as[String] == currentContextName).get.\("context").\("user").as[String]
         val currentContextCluster = (json \ "contexts").as[JsArray].value.find(v => (v \ "name").as[String] == currentContextName).get.\("context").\("cluster").as[String]
         KubernetesConfig(
-          enabled = (conf \ "enabled").as[Boolean],
           trust = (conf \ "trust").asOpt[Boolean].getOrElse(false),
           endpoint = (json \ "clusters").as[JsArray].value.find(v => (v \ "name").as[String] == currentContextCluster).map { defaultUser =>
             (defaultUser \ "cluster" \ "server").as[String]
@@ -87,7 +85,6 @@ object KubernetesConfig {
       }
       case None => {
         KubernetesConfig(
-          enabled = (conf \ "enabled").as[Boolean],
           trust = (conf \ "trust").asOpt[Boolean].getOrElse(false),
           endpoint = (conf \ "endpoint").asOpt[String].getOrElse {
             val host = sys.env("KUBERNETES_SERVICE_HOST")

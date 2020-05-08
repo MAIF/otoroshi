@@ -33,6 +33,7 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
   private val shouldRun = new AtomicBoolean(false)
   private val apiClientRef = new AtomicReference[ApiClient]()
   private val threadPool = Executors.newFixedThreadPool(1)
+  private val stopCommand = new AtomicBoolean(false)
 
   override def uniqueId: JobId = JobId("io.otoroshi.plugins.jobs.kubernetes.KubernetesOtoroshiCRDsControllerJob")
 
@@ -60,9 +61,10 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
 
   override def initialDelay: Option[FiniteDuration] = 5.seconds.some
 
-  override def interval: Option[FiniteDuration] = 30.seconds.some
+  override def interval: Option[FiniteDuration] = 60.seconds.some
 
   override def jobStart(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    stopCommand.set(false)
     val config = KubernetesConfig.theConfig(ctx)
     if (config.kubeLeader) {
       val apiClient = new ClientBuilder()
@@ -94,11 +96,32 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
         }
       })
     }
+
+    implicit val mat = env.otoroshiMaterializer
+    val conf = KubernetesConfig.theConfig(ctx)
+    val client = new KubernetesClient(conf, env)
+    val source = client.watchOtoResources(conf.namespaces, Seq(
+      "secrets",
+      "service-groups",
+      "service-descriptors",
+      "apikeys",
+      "certificates",
+      "global-configs",
+      "jwt-verifiers",
+      "auth-modules",
+      "scripts",
+      "tcp-services",
+      "admins",
+    ), 30, stopCommand).merge(
+      client.watchKubeResources(conf.namespaces, Seq("secrets", "endpoints"), 30, stopCommand)
+    )
+    source.throttle(1, 5.seconds).runWith(Sink.foreach(_ => KubernetesCRDsJob.syncCRDs(conf, ctx.attrs)))
     ().future
   }
 
   override def jobStop(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     // Option(apiClientRef.get()).foreach(_.) // nothing to stop stuff here ...
+    stopCommand.set(true)
     threadPool.shutdown()
     shouldRun.set(false)
     ().future
@@ -106,19 +129,15 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
 
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     val conf = KubernetesConfig.theConfig(ctx)
-    if (conf.enabled) {
-      if (conf.crds) {
-        if (conf.kubeLeader) {
-          if (shouldRun.get()) {
-            KubernetesCRDsJob.syncCRDs(conf, ctx.attrs)
-          } else {
-            ().future
-          }
-        } else {
+    if (conf.crds) {
+      if (conf.kubeLeader) {
+        if (shouldRun.get()) {
           KubernetesCRDsJob.syncCRDs(conf, ctx.attrs)
+        } else {
+          ().future
         }
       } else {
-        ().future
+        KubernetesCRDsJob.syncCRDs(conf, ctx.attrs)
       }
     } else {
       ().future
