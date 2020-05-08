@@ -1,11 +1,17 @@
 package otoroshi.plugins.jobs.kubernetes
 
+import java.util.concurrent.Executors
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 
 import akka.http.scaladsl.model.Uri
 import akka.stream.scaladsl.{Sink, Source}
 import auth.AuthModuleConfig
 import env.Env
+import io.kubernetes.client.extended.leaderelection.resourcelock.EndpointsLock
+import io.kubernetes.client.extended.leaderelection.{LeaderElectionConfig, LeaderElector}
+import io.kubernetes.client.openapi.ApiClient
+import io.kubernetes.client.util.ClientBuilder
+import io.kubernetes.client.util.credentials.AccessTokenAuthentication
 import models._
 import otoroshi.plugins.jobs.kubernetes.IngressSupport.IntOrString
 import otoroshi.script._
@@ -24,7 +30,9 @@ import scala.util.{Failure, Success}
 
 class KubernetesOtoroshiCRDsControllerJob extends Job {
 
-  private val logger = Logger("otoroshi-plugins-kubernetes-crds-controller-job")
+  private val shouldRun = new AtomicBoolean(false)
+  private val apiClientRef = new AtomicReference[ApiClient]()
+  private val threadPool = Executors.newFixedThreadPool(1)
 
   override def uniqueId: JobId = JobId("io.otoroshi.plugins.jobs.kubernetes.KubernetesOtoroshiCRDsControllerJob")
 
@@ -50,19 +58,65 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
 
   override def instantiation: JobInstantiation = JobInstantiation.OneInstancePerOtoroshiCluster
 
-  override def initialDelay: Option[FiniteDuration] = 2.seconds.some
+  override def initialDelay: Option[FiniteDuration] = 5.seconds.some
 
-  override def interval: Option[FiniteDuration] = 5.seconds.some
+  override def interval: Option[FiniteDuration] = 30.seconds.some
 
-  override def jobStart(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = super.jobStart(ctx)
+  override def jobStart(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    val config = KubernetesConfig.theConfig(ctx)
+    if (config.kubeLeader) {
+      val apiClient = new ClientBuilder()
+        .setVerifyingSsl(!config.trust)
+        .setAuthentication(new AccessTokenAuthentication(config.token.get))
+        .setBasePath(config.endpoint)
+        .setCertificateAuthority(config.caCert.map(c => c.getBytes).orNull)
+        .build()
+      apiClientRef.set(apiClient)
+      val leaderElector = new LeaderElector(
+        new LeaderElectionConfig(
+          new EndpointsLock(
+            "kube-system",
+            "leader-election",
+            "otoroshi-crds-controller",
+            apiClient
+          ),
+          java.time.Duration.ofMillis(10000),
+          java.time.Duration.ofMillis(8000),
+          java.time.Duration.ofMillis(5000)
+        )
+      )
+      threadPool.submit(new Runnable {
+        override def run(): Unit = {
+          leaderElector.run(
+            () => shouldRun.set(true),
+            () => shouldRun.set(false)
+          )
+        }
+      })
+    }
+    ().future
+  }
 
-  override def jobStop(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = super.jobStop(ctx)
+  override def jobStop(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    // Option(apiClientRef.get()).foreach(_.) // nothing to stop stuff here ...
+    threadPool.shutdown()
+    shouldRun.set(false)
+    ().future
+  }
 
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     val conf = KubernetesConfig.theConfig(ctx)
     if (conf.enabled) {
       if (conf.crds) {
-        KubernetesCRDsJob.syncCRDs(conf, ctx.attrs)
+        if (conf.kubeLeader) {
+          if (shouldRun.get()) {
+            KubernetesCRDsJob.syncCRDs(conf, ctx.attrs)
+          } else {
+            ().future
+          }
+        } else {
+          KubernetesCRDsJob.syncCRDs(conf, ctx.attrs)
+        }
       } else {
         ().future
       }
@@ -105,7 +159,9 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
     )
   }
 
-  private def customizeServiceDescriptor(spec: JsValue, res: KubernetesOtoroshiResource, services: Seq[KubernetesService], endpoints: Seq[KubernetesEndpoint]): JsValue = {
+  private def customizeServiceDescriptor(_spec: JsValue, res: KubernetesOtoroshiResource, services: Seq[KubernetesService], endpoints: Seq[KubernetesEndpoint], otoServices: Seq[ServiceDescriptor]): JsValue = {
+    val opt = otoServices.filter(_.metadata.get("otoroshi-provider").contains("kubernetes-crds")).find(_.metadata.get("kubernetes-path").contains(res.path))
+    val spec = opt.map(_.toJson.as[JsObject].deepMerge(_spec.as[JsObject])).getOrElse(_spec)
     customizeIdAndName(spec, res).applyOn { s =>
       (s \ "env").asOpt[String] match {
         case Some(_) => s
@@ -169,7 +225,9 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
     )
   }
 
-  private def customizeApiKey(spec: JsValue, res: KubernetesOtoroshiResource, secrets: Seq[KubernetesSecret], registerApkToExport: Function3[String, String, ApiKey, Unit]): JsValue = {
+  private def customizeApiKey(_spec: JsValue, res: KubernetesOtoroshiResource, secrets: Seq[KubernetesSecret], apikeys: Seq[ApiKey], registerApkToExport: Function3[String, String, ApiKey, Unit]): JsValue = {
+    val apiKeyOpt: Option[ApiKey] = apikeys.filter(_.metadata.get("otoroshi-provider").contains("kubernetes-crds")).find(_.metadata.get("kubernetes-path").contains(res.path))
+    val spec = apiKeyOpt.map(_.toJson.as[JsObject].deepMerge(_spec.as[JsObject])).getOrElse(_spec)
     spec.applyOn(s =>
       (s \ "clientName").asOpt[String] match {
         case None => s.as[JsObject] ++ Json.obj("clientName" -> res.name)
@@ -201,39 +259,57 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
             }
           )
         }
-        case Some(v) if shouldExport && v.contains("/") =>
-          val namespace :: name :: Nil = v.split("/").toList
-          val clientId = secrets.find(_.path == v).map(s => (s.raw \ "data" \ "clientId").as[String].applyOn(_.fromBase64)).getOrElse(IdGenerator.token(64))
-          val clientSecret = secrets.find(_.path == v).map(s => (s.raw \ "data" \ "clientSecret").as[String].applyOn(_.fromBase64)).getOrElse(IdGenerator.token(128))
-          registerApkToExport(namespace, name, ApiKey(clientId, clientSecret, clientName = name, authorizedGroup = "default"))
+        case Some(v) => {
+          val parts = v.split("/").toList.map(_.trim)
+          val name = if (parts.size == 2) parts.last else v
+          val namespace = if (parts.size == 2) parts.head else res.namespace
+          val path = s"$namespace/$name"
+          val apiKeyOpt: Option[ApiKey] = apikeys.filter(_.metadata.get("otoroshi-provider").contains("kubernetes-crds")).find(_.metadata.get("kubernetes-path").contains(res.path))
+          val secretOpt = secrets.find(_.path == path)
+          val possibleClientSecret = if (shouldExport) IdGenerator.token(128) else "secret-not-found"
+          val clientId = apiKeyOpt.map(_.clientId).getOrElse(secretOpt.map(s => (s.raw \ "data" \ "clientId").as[String].applyOn(_.fromBase64)).getOrElse(IdGenerator.token(64)))
+          val clientSecret = apiKeyOpt.map(_.clientSecret).getOrElse(secretOpt.map(s => (s.raw \ "data" \ "clientSecret").as[String].applyOn(_.fromBase64)).getOrElse(possibleClientSecret))
+          if (shouldExport) {
+            registerApkToExport(namespace, name, ApiKey(clientId, clientSecret, clientName = name, authorizedGroup = "default"))
+          }
           s.as[JsObject] ++ Json.obj(
             "clientId" -> clientId,
             "clientSecret" -> clientSecret
           )
-        case Some(v) if shouldExport && !v.contains("/") =>
-          val clientId = secrets.find(_.name == v).map(s => (s.raw \ "data" \ "clientId").as[String].applyOn(_.fromBase64)).getOrElse(IdGenerator.token(64))
-          val clientSecret = secrets.find(_.name == v).map(s => (s.raw \ "data" \ "clientSecret").as[String].applyOn(_.fromBase64)).getOrElse(IdGenerator.token(128))
-          registerApkToExport(res.namespace, v, ApiKey(clientId, clientSecret, clientName = v, authorizedGroup = "default"))
-          s.as[JsObject] ++ Json.obj(
-            "clientId" -> clientId,
-            "clientSecret" -> clientSecret
-          )
-        case Some(v) if v.contains("/") =>
-          secrets.find(_.path == v) match {
-            case None => s.as[JsObject] ++ Json.obj("clientSecret" -> "secret-not-found")
-            case Some(secret) => s.as[JsObject] ++ Json.obj(
-              "clientId" -> (secret.raw \ "data" \ "clientId").as[String].applyOn(_.fromBase64),
-                "clientSecret" -> (secret.raw \ "data" \ "clientSecret").as[String].applyOn(_.fromBase64)
-            )
-          }
-        case Some(v) if !v.contains("/") =>
-          secrets.find(_.name == v) match {
-            case None => s.as[JsObject] ++ Json.obj("clientSecret" -> "secret-not-found")
-            case Some(secret) => s.as[JsObject] ++ Json.obj(
-              "clientId" -> (secret.raw \ "data" \ "clientId").as[String].applyOn(_.fromBase64),
-              "clientSecret" -> (secret.raw \ "data" \ "secret").as[String].applyOn(_.fromBase64)
-            )
-          }
+        }
+        // case Some(v) if shouldExport && v.contains("/") =>
+        //   val namespace :: name :: Nil = v.split("/").toList
+        //   val clientId = secrets.find(_.path == v).map(s => (s.raw \ "data" \ "clientId").as[String].applyOn(_.fromBase64)).getOrElse(IdGenerator.token(64))
+        //   val clientSecret = secrets.find(_.path == v).map(s => (s.raw \ "data" \ "clientSecret").as[String].applyOn(_.fromBase64)).getOrElse(IdGenerator.token(128))
+        //   registerApkToExport(namespace, name, ApiKey(clientId, clientSecret, clientName = name, authorizedGroup = "default"))
+        //   s.as[JsObject] ++ Json.obj(
+        //     "clientId" -> clientId,
+        //     "clientSecret" -> clientSecret
+        //   )
+        // case Some(v) if shouldExport && !v.contains("/") =>
+        //   val clientId = secrets.find(_.name == v).map(s => (s.raw \ "data" \ "clientId").as[String].applyOn(_.fromBase64)).getOrElse(IdGenerator.token(64))
+        //   val clientSecret = secrets.find(_.name == v).map(s => (s.raw \ "data" \ "clientSecret").as[String].applyOn(_.fromBase64)).getOrElse(IdGenerator.token(128))
+        //   registerApkToExport(res.namespace, v, ApiKey(clientId, clientSecret, clientName = v, authorizedGroup = "default"))
+        //   s.as[JsObject] ++ Json.obj(
+        //     "clientId" -> clientId,
+        //     "clientSecret" -> clientSecret
+        //   )
+        // case Some(v) if v.contains("/") =>
+        //   secrets.find(_.path == v) match {
+        //     case None => s.as[JsObject] ++ Json.obj("clientSecret" -> "secret-not-found")
+        //     case Some(secret) => s.as[JsObject] ++ Json.obj(
+        //       "clientId" -> (secret.raw \ "data" \ "clientId").as[String].applyOn(_.fromBase64),
+        //         "clientSecret" -> (secret.raw \ "data" \ "clientSecret").as[String].applyOn(_.fromBase64)
+        //     )
+        //   }
+        // case Some(v) if !v.contains("/") =>
+        //   secrets.find(_.name == v) match {
+        //     case None => s.as[JsObject] ++ Json.obj("clientSecret" -> "secret-not-found")
+        //     case Some(secret) => s.as[JsObject] ++ Json.obj(
+        //       "clientId" -> (secret.raw \ "data" \ "clientId").as[String].applyOn(_.fromBase64),
+        //       "clientSecret" -> (secret.raw \ "data" \ "secret").as[String].applyOn(_.fromBase64)
+        //     )
+        //   }
       }
     }.applyOn(s =>
       s.as[JsObject] ++ Json.obj(
@@ -257,7 +333,9 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
       .headOption
   }
 
-  private def customizeCert(spec: JsValue, res: KubernetesOtoroshiResource, certs: Seq[Cert], registerCertToExport: Function3[String, String, Cert, Unit]): JsValue = {
+  private def customizeCert(_spec: JsValue, res: KubernetesOtoroshiResource, certs: Seq[Cert], registerCertToExport: Function3[String, String, Cert, Unit]): JsValue = {
+    val opt = certs.filter(_.entityMetadata.get("otoroshi-provider").contains("kubernetes-crds")).find(_.entityMetadata.get("kubernetes-path").contains(res.path))
+    val spec = opt.map(_.toJson.as[JsObject].deepMerge(_spec.as[JsObject])).getOrElse(_spec)
     val id = s"kubernetes-crd-import-${res.namespace}-${res.name}".slugifyWithSlash
     spec.applyOn(s =>
       (s \ "name").asOpt[String] match {
@@ -337,22 +415,56 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
     }
   }
 
-  def crdsFetchServiceGroups(): Future[Seq[OtoResHolder[ServiceGroup]]] = client.fetchOtoroshiResources[ServiceGroup]("service-groups", ServiceGroup._fmt, customizeIdAndName)
-  def crdsFetchServiceDescriptors(services: Seq[KubernetesService], endpoints: Seq[KubernetesEndpoint]): Future[Seq[OtoResHolder[ServiceDescriptor]]] = {
-    client.fetchOtoroshiResources[ServiceDescriptor]("service-descriptors", ServiceDescriptor._fmt, (a, b) => customizeServiceDescriptor(a, b, services, endpoints))
+  private def customizeServiceGroup(_spec: JsValue, res: KubernetesOtoroshiResource, entities: Seq[ServiceGroup]): JsValue = {
+    val opt = entities.filter(_.metadata.get("otoroshi-provider").contains("kubernetes-crds")).find(_.metadata.get("kubernetes-path").contains(res.path))
+    val spec = opt.map(_.toJson.as[JsObject].deepMerge(_spec.as[JsObject])).getOrElse(_spec)
+    customizeIdAndName(spec, res)
   }
-  def crdsFetchApiKeys(secrets: Seq[KubernetesSecret], registerApkToExport: Function3[String, String, ApiKey, Unit]): Future[Seq[OtoResHolder[ApiKey]]] = {
+
+  private def customizeJwtVerifier(_spec: JsValue, res: KubernetesOtoroshiResource, entities: Seq[GlobalJwtVerifier]): JsValue = {
+    val opt = entities.filter(_.metadata.get("otoroshi-provider").contains("kubernetes-crds")).find(_.metadata.get("kubernetes-path").contains(res.path))
+    val spec = opt.map(_.asJson.as[JsObject].deepMerge(_spec.as[JsObject])).getOrElse(_spec)
+    customizeIdAndName(spec, res)
+  }
+
+  private def customizeAuthModule(_spec: JsValue, res: KubernetesOtoroshiResource, entities: Seq[AuthModuleConfig]): JsValue = {
+    val opt = entities.filter(_.metadata.get("otoroshi-provider").contains("kubernetes-crds")).find(_.metadata.get("kubernetes-path").contains(res.path))
+    val spec = opt.map(_.asJson.as[JsObject].deepMerge(_spec.as[JsObject])).getOrElse(_spec)
+    customizeIdAndName(spec, res)
+  }
+
+  private def customizeScripts(_spec: JsValue, res: KubernetesOtoroshiResource, entities: Seq[Script]): JsValue = {
+    val opt = entities.filter(_.metadata.get("otoroshi-provider").contains("kubernetes-crds")).find(_.metadata.get("kubernetes-path").contains(res.path))
+    val spec = opt.map(_.toJson.as[JsObject].deepMerge(_spec.as[JsObject])).getOrElse(_spec)
+    customizeIdAndName(spec, res)
+  }
+
+  private def customizeTcpService(_spec: JsValue, res: KubernetesOtoroshiResource, entities: Seq[TcpService]): JsValue = {
+    val opt = entities.filter(_.metadata.get("otoroshi-provider").contains("kubernetes-crds")).find(_.metadata.get("kubernetes-path").contains(res.path))
+    val spec = opt.map(_.json.as[JsObject].deepMerge(_spec.as[JsObject])).getOrElse(_spec)
+    customizeIdAndName(spec, res)
+  }
+
+  private def customizeGlobalConfig(_spec: JsValue, res: KubernetesOtoroshiResource, entity: GlobalConfig): JsValue = {
+    entity.toJson.as[JsObject].deepMerge(_spec.as[JsObject])
+  }
+
+  def crdsFetchServiceGroups(groups: Seq[ServiceGroup]): Future[Seq[OtoResHolder[ServiceGroup]]] = client.fetchOtoroshiResources[ServiceGroup]("service-groups", ServiceGroup._fmt, (a, b) => customizeServiceGroup(a, b, groups))
+  def crdsFetchServiceDescriptors(services: Seq[KubernetesService], endpoints: Seq[KubernetesEndpoint], otoServices: Seq[ServiceDescriptor]): Future[Seq[OtoResHolder[ServiceDescriptor]]] = {
+    client.fetchOtoroshiResources[ServiceDescriptor]("service-descriptors", ServiceDescriptor._fmt, (a, b) => customizeServiceDescriptor(a, b, services, endpoints, otoServices))
+  }
+  def crdsFetchApiKeys(secrets: Seq[KubernetesSecret], apikeys: Seq[ApiKey], registerApkToExport: Function3[String, String, ApiKey, Unit]): Future[Seq[OtoResHolder[ApiKey]]] = {
     val otoApikeySecrets = secrets.filter(_.theType == "otoroshi.io/apikey-secret")
-    client.fetchOtoroshiResources[ApiKey]("apikeys", ApiKey._fmt, (a, b) => customizeApiKey(a, b, otoApikeySecrets, registerApkToExport))
+    client.fetchOtoroshiResources[ApiKey]("apikeys", ApiKey._fmt, (a, b) => customizeApiKey(a, b, otoApikeySecrets, apikeys, registerApkToExport))
   }
   def crdsFetchCertificates(certs: Seq[Cert], registerCertToExport: Function3[String, String, Cert, Unit]): Future[Seq[OtoResHolder[Cert]]] = {
     client.fetchOtoroshiResources[Cert]("certificates", Cert._fmt, (a, b) => customizeCert(a, b, certs, registerCertToExport))
   }
-  def crdsFetchGlobalConfig(): Future[Seq[OtoResHolder[GlobalConfig]]] = client.fetchOtoroshiResources[GlobalConfig]("global-configs", GlobalConfig._fmt)
-  def crdsFetchJwtVerifiers(): Future[Seq[OtoResHolder[JwtVerifier]]] = client.fetchOtoroshiResources[JwtVerifier]("jwt-verifiers", JwtVerifier.fmt, customizeIdAndName)
-  def crdsFetchAuthModules(): Future[Seq[OtoResHolder[AuthModuleConfig]]] = client.fetchOtoroshiResources[AuthModuleConfig]("auth-modules", AuthModuleConfig._fmt, customizeIdAndName)
-  def crdsFetchScripts(): Future[Seq[OtoResHolder[Script]]] = client.fetchOtoroshiResources[Script]("scripts", Script._fmt, customizeIdAndName)
-  def crdsFetchTcpServices(): Future[Seq[OtoResHolder[TcpService]]] = client.fetchOtoroshiResources[TcpService]("tcp-services", TcpService.fmt, customizeIdAndName)
+  def crdsFetchGlobalConfig(config: GlobalConfig): Future[Seq[OtoResHolder[GlobalConfig]]] = client.fetchOtoroshiResources[GlobalConfig]("global-configs", GlobalConfig._fmt, (a, b) => customizeGlobalConfig(a, b, config))
+  def crdsFetchJwtVerifiers(verifiers: Seq[GlobalJwtVerifier]): Future[Seq[OtoResHolder[JwtVerifier]]] = client.fetchOtoroshiResources[JwtVerifier]("jwt-verifiers", JwtVerifier.fmt, (a, b) => customizeJwtVerifier(a, b, verifiers))
+  def crdsFetchAuthModules(modules: Seq[AuthModuleConfig]): Future[Seq[OtoResHolder[AuthModuleConfig]]] = client.fetchOtoroshiResources[AuthModuleConfig]("auth-modules", AuthModuleConfig._fmt, (a, b) => customizeAuthModule(a, b, modules))
+  def crdsFetchScripts(scripts: Seq[Script]): Future[Seq[OtoResHolder[Script]]] = client.fetchOtoroshiResources[Script]("scripts", Script._fmt, (a, b) => customizeScripts(a, b, scripts))
+  def crdsFetchTcpServices(services: Seq[TcpService]): Future[Seq[OtoResHolder[TcpService]]] = client.fetchOtoroshiResources[TcpService]("tcp-services", TcpService.fmt, (a, b) => customizeTcpService(a, b, services))
   def crdsFetchSimpleAdmins(): Future[Seq[OtoResHolder[JsValue]]] = client.fetchOtoroshiResources[JsValue]("admins", v => JsSuccess(v))
 }
 
@@ -416,15 +528,15 @@ object KubernetesCRDsJob {
       services <- clientSupport.client.fetchServices()
       endpoints <- clientSupport.client.fetchEndpoints()
       secrets <- clientSupport.client.fetchSecrets()
-      serviceGroups <- clientSupport.crdsFetchServiceGroups()
-      serviceDescriptors <- clientSupport.crdsFetchServiceDescriptors(services, endpoints)
-      apiKeys <- clientSupport.crdsFetchApiKeys(secrets, registerApkToExport)
+      serviceGroups <- clientSupport.crdsFetchServiceGroups(otoserviceGroups)
+      serviceDescriptors <- clientSupport.crdsFetchServiceDescriptors(services, endpoints, otoserviceDescriptors)
+      apiKeys <- clientSupport.crdsFetchApiKeys(secrets, otoapiKeys, registerApkToExport)
       certificates <- clientSupport.crdsFetchCertificates(otocertificates, registerCertToExport)
-      globalConfigs <- clientSupport.crdsFetchGlobalConfig()
-      jwtVerifiers <- clientSupport.crdsFetchJwtVerifiers()
-      authModules <- clientSupport.crdsFetchAuthModules()
-      scripts <- clientSupport.crdsFetchScripts()
-      tcpServices <- clientSupport.crdsFetchTcpServices()
+      globalConfigs <- clientSupport.crdsFetchGlobalConfig(otoglobalConfigs.head)
+      jwtVerifiers <- clientSupport.crdsFetchJwtVerifiers(otojwtVerifiers)
+      authModules <- clientSupport.crdsFetchAuthModules(otoauthModules)
+      scripts <- clientSupport.crdsFetchScripts(otoscripts)
+      tcpServices <- clientSupport.crdsFetchTcpServices(ototcpServices)
       simpleAdmins <- clientSupport.crdsFetchSimpleAdmins()
 
     } yield {
@@ -599,11 +711,13 @@ object KubernetesCRDsJob {
       .mapAsync(1) {
         case (namespace, name, apikey) => clientSupport.client.fetchSecret(namespace, name).flatMap {
           case None =>
+            println(s"create $namespace/$name with ${apikey.clientId} and ${apikey.clientSecret}")
             clientSupport.client.createSecret(namespace, name, "otoroshi.io/apikey-secret", Json.obj("clientId" -> apikey.clientId.base64, "clientSecret" -> apikey.clientSecret.base64))
           case Some(secret) =>
             val clientId = (secret.raw \ "data" \ "clientId").as[String].applyOn(s => s.fromBase64)
             val clientSecret = (secret.raw \ "data" \ "clientSecret").as[String].applyOn(s => s.fromBase64)
             if ((clientId != apikey.clientId) || (clientSecret != apikey.clientSecret)) {
+              println(s"updating $namespace/$name  with ${apikey.clientId} and ${apikey.clientSecret}")
               clientSupport.client.updateSecret(namespace, name, "otoroshi.io/apikey-secret", Json.obj("clientId" -> apikey.clientId.base64, "clientSecret" -> apikey.clientSecret.base64))
             } else {
               ().future

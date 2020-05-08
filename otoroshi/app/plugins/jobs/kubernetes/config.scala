@@ -17,6 +17,7 @@ case class KubernetesConfig(
   enabled: Boolean,
   crds: Boolean,
   ingresses: Boolean,
+  kubeLeader: Boolean,
   endpoint: String,
   token: Option[String],
   userPassword: Option[String],
@@ -28,7 +29,10 @@ case class KubernetesConfig(
   defaultGroup: String,
   ingressEndpointHostname: Option[String],
   ingressEndpointIp: Option[String],
-  ingressEndpointPublishedService: Option[String]
+  ingressEndpointPublishedService: Option[String],
+  triggerKey: Option[String],
+  triggerHost: Option[String],
+  triggerPath: Option[String],
 )
 
 object KubernetesConfig {
@@ -74,7 +78,11 @@ object KubernetesConfig {
           ingressEndpointIp = (conf \ "ingressEndpointIp").asOpt[String],
           ingressEndpointPublishedService = (conf \ "ingressEndpointPublishedServices").asOpt[String],
           ingresses = (conf \ "ingresses").asOpt[Boolean].getOrElse(true),
-          crds = (conf \ "crds").asOpt[Boolean].getOrElse(false)
+          crds = (conf \ "crds").asOpt[Boolean].getOrElse(true),
+          kubeLeader = (conf \ "kubeLeader").asOpt[Boolean].getOrElse(false),
+          triggerKey = (conf \ "triggerKey").asOpt[String],
+          triggerHost = (conf \ "triggerHost").asOpt[String],
+          triggerPath = (conf \ "triggerPath").asOpt[String]
         )
       }
       case None => {
@@ -105,7 +113,11 @@ object KubernetesConfig {
           ingressEndpointIp = (conf \ "ingressEndpointIp").asOpt[String],
           ingressEndpointPublishedService = (conf \ "ingressEndpointPublishedServices").asOpt[String],
           ingresses = (conf \ "ingresses").asOpt[Boolean].getOrElse(true),
-          crds = (conf \ "crds").asOpt[Boolean].getOrElse(false)
+          crds = (conf \ "crds").asOpt[Boolean].getOrElse(true),
+          kubeLeader = (conf \ "kubeLeader").asOpt[Boolean].getOrElse(false),
+          triggerKey = (conf \ "triggerKey").asOpt[String],
+          triggerHost = (conf \ "triggerHost").asOpt[String],
+          triggerPath = (conf \ "triggerPath").asOpt[String]
         )
       }
     }
@@ -127,7 +139,8 @@ object KubernetesConfig {
         "ingressEndpointIp" -> JsNull,
         "ingressEndpointPublishedService" -> JsNull,
         "ingresses" -> true,
-        "crds" -> false
+        "crds" -> true,
+        "kubeLeader" -> false
       )
     )
   }

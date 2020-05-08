@@ -950,7 +950,7 @@ case class AkkaWsClientRequest(
         AkkWsClientStreamedResponse(resp,
                                     rawUrl,
                                     client.mat,
-                                    requestTimeout.map(v => FiniteDuration(v.toMillis, TimeUnit.MILLISECONDS)).getOrElse(FiniteDuration(365, TimeUnit.DAYS))) // yeah that's infinity ...
+                                    requestTimeout.map(v => FiniteDuration(v.toMillis, TimeUnit.MILLISECONDS)).getOrElse(FiniteDuration(30, TimeUnit.DAYS))) // yeah that's infinity ...
       }(client.ec)
   }
 

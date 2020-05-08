@@ -1,8 +1,13 @@
 package otoroshi.plugins.jobs.kubernetes
 
 import java.util.Base64
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong, AtomicReference}
+import java.util.regex.Pattern
 
+import akka.{Done, NotUsed}
 import akka.http.scaladsl.model.Uri
+import akka.stream.scaladsl.{Framing, Sink, Source}
+import akka.util.ByteString
 import env.Env
 import models._
 import otoroshi.utils.syntax.implicits._
@@ -13,6 +18,7 @@ import utils.UrlSanitizer
 import utils.http.MtlsConfig
 
 import scala.concurrent.Future
+import scala.concurrent.duration._
 import scala.util.{Failure, Success, Try}
 
 // TODO: watch res to trigger sync
@@ -92,7 +98,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
     }
   }
   def fetchSecret(namespace: String, name: String): Future[Option[KubernetesSecret]] = {
-    val cli: WSRequest = client(s"/api/v1/namespaces/$namespace/services/$name", false)
+    val cli: WSRequest = client(s"/api/v1/namespaces/$namespace/secrets/$name", false)
     cli.addHttpHeaders(
       "Accept" -> "application/json"
     ).get().map { resp =>
@@ -297,5 +303,47 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
         case Failure(e) => None
       }
     }
+  }
+
+  def watchOtoResource(namespace: String, resource: String, timeout: Int, stop: AtomicBoolean, labelSelector: Option[String] = None):Source[Seq[ByteString], _] = {
+    watchApi(namespace, resource, "proxy.otoroshi.io/v1alpha1", timeout, stop, labelSelector)
+  }
+
+  def watchNetResource(namespace: String, resource: String, timeout: Int, stop: AtomicBoolean, labelSelector: Option[String] = None):Source[Seq[ByteString], _] = {
+    watchApi(namespace, resource, "networking.k8s.io/v1beta1", timeout, stop, labelSelector)
+  }
+
+  def watchKubeResource(namespace: String, resource: String, timeout: Int, stop: AtomicBoolean, labelSelector: Option[String] = None):Source[Seq[ByteString], _] = {
+    watchApi(namespace, resource, "v1", timeout, stop, labelSelector)
+  }
+
+  def watchApi(namespace: String, resource: String, api: String, timeout: Int, stop: AtomicBoolean, labelSelector: Option[String] = None): Source[Seq[ByteString], _] = {
+    val pattern = Pattern.compile(""""resourceVersion"="([0-9]*)"""")
+    val last = new AtomicReference[String]("0")
+    Source.repeat(())
+      .flatMapConcat { _ =>
+        val lbl = labelSelector.map(s => s"&labelSelector=$s").getOrElse("")
+        val cli: WSRequest = client(s"/apis/$api/namespaces/$namespace/$resource?watch=true&resourceVersion=${last.get()}&timeoutSeconds=$timeout$lbl")
+        val f: Future[Source[Seq[ByteString], _]] = cli.addHttpHeaders(
+          "Accept" -> "application/json"
+        ).withMethod("GET").stream().map { resp =>
+          resp.bodyAsSource
+            // .alsoTo(Sink.foreach(v => println(v.utf8String)))
+            .via(Framing.delimiter("\n".byteString, Int.MaxValue, true))
+            .groupedWithin(1000, 2.seconds)
+            .alsoTo(Sink.foreach { v =>
+              val payload = v.map(_.utf8String).mkString("")
+              // println(payload)
+              val m = pattern.matcher(payload)
+              while(m.find()) {
+                last.set(m.toMatchResult.group())
+              }
+              ()
+            })
+
+        }
+        Source.future(f).flatMapConcat(v => v)
+      }
+      .takeWhile(_ => !stop.get())
   }
 }

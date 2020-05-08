@@ -1,16 +1,23 @@
 package otoroshi.plugins.jobs.kubernetes
 
-import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.Executors
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 
 import akka.stream.scaladsl.{Sink, Source}
 import com.google.common.base.CaseFormat
 import env.Env
+import io.kubernetes.client.extended.leaderelection.{LeaderElectionConfig, LeaderElector}
+import io.kubernetes.client.extended.leaderelection.resourcelock.EndpointsLock
+import io.kubernetes.client.openapi.ApiClient
+import io.kubernetes.client.util.ClientBuilder
+import io.kubernetes.client.util.credentials.AccessTokenAuthentication
 import models._
 import org.joda.time.DateTime
 import otoroshi.plugins.jobs.kubernetes.IngressSupport.IntOrString
 import otoroshi.script._
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
+import play.api.http.HttpEntity
 import play.api.libs.json._
 import play.api.mvc.{Result, Results}
 import utils.RequestImplicits._
@@ -21,6 +28,10 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 class KubernetesIngressControllerJob extends Job {
+
+  private val shouldRun = new AtomicBoolean(false)
+  private val apiClientRef = new AtomicReference[ApiClient]()
+  private val threadPool = Executors.newFixedThreadPool(1)
 
   private val logger = Logger("otoroshi-plugins-kubernetes-ingress-controller-job")
 
@@ -50,18 +61,65 @@ class KubernetesIngressControllerJob extends Job {
 
   override def initialDelay: Option[FiniteDuration] = 2.seconds.some
 
-  override def interval: Option[FiniteDuration] = 5.seconds.some
+  override def interval: Option[FiniteDuration] = 30.seconds.some
 
-  override def jobStart(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = super.jobStart(ctx)
+  override def jobStart(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    val config = KubernetesConfig.theConfig(ctx)
+    if (config.kubeLeader) {
+      val apiClient = new ClientBuilder()
+        .setVerifyingSsl(!config.trust)
+        .setAuthentication(new AccessTokenAuthentication(config.token.get))
+        .setBasePath(config.endpoint)
+        .setCertificateAuthority(config.caCert.map(c => c.getBytes).orNull)
+        .build()
+      apiClientRef.set(apiClient)
+      val leaderElector = new LeaderElector(
+        new LeaderElectionConfig(
+          new EndpointsLock(
+            "kube-system",
+            "leader-election",
+            "otoroshi-crds-controller",
+            apiClient
+          ),
+          java.time.Duration.ofMillis(10000),
+          java.time.Duration.ofMillis(8000),
+          java.time.Duration.ofMillis(5000)
+        )
+      )
+      threadPool.submit(new Runnable {
+        override def run(): Unit = {
+          leaderElector.run(
+            () => shouldRun.set(true),
+            () => shouldRun.set(false)
+          )
+        }
+      })
+    }
+    ().future
+  }
 
-  override def jobStop(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = super.jobStop(ctx)
+  override def jobStop(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    // Option(apiClientRef.get()).foreach(_.) // nothing to stop stuff here ...
+    threadPool.shutdown()
+    shouldRun.set(false)
+    ().future
+  }
 
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     val conf = KubernetesConfig.theConfig(ctx)
     if (conf.enabled) {
-      logger.info("Running kubernetes ingresses sync ...")
       if (conf.ingresses) {
-        KubernetesIngressSyncJob.syncIngresses(conf, ctx.attrs)
+        if (conf.kubeLeader) {
+          if (shouldRun.get()) {
+            logger.info("Running kubernetes ingresses sync ...")
+            KubernetesIngressSyncJob.syncIngresses(conf, ctx.attrs)
+          } else {
+            ().future
+          }
+        } else {
+          logger.info("Running kubernetes ingresses sync ...")
+          KubernetesIngressSyncJob.syncIngresses(conf, ctx.attrs)
+        }
       } else {
         ().future
       }
@@ -71,32 +129,50 @@ class KubernetesIngressControllerJob extends Job {
   }
 }
 
-// TODO: remove for release
 class KubernetesIngressControllerTrigger extends RequestSink {
 
   override def name: String = "KubernetesIngressControllerTrigger"
 
-  override def description: Option[String] = "KubernetesIngressControllerTrigger".some
+  override def description: Option[String] = "Allow to trigger kubernetes controller jobs".some
 
   override def defaultConfig: Option[JsObject] = None
 
   override def matches(ctx: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Boolean = {
-    ctx.request.theDomain.toLowerCase().equals("kubernetes-ingress-controller.oto.tools") &&
-      ctx.request.relativeUri.startsWith("/.well-known/otoroshi/plugins/kubernetes/ingress-controller/trigger")
+    val conf = KubernetesConfig.theConfig(ctx)
+    val host = conf.triggerHost.getOrElse("kubernetes-controllers.oto.tools")
+    val path = conf.triggerPath.getOrElse("/.well-known/otoroshi/plugins/kubernetes/controllers/trigger")
+    val keyMatch = conf.triggerKey match {
+      case None => true
+      case Some(key) => ctx.request.getQueryString("key").contains(key)
+    }
+    ctx.request.theDomain.toLowerCase().equals(host) && ctx.request.relativeUri.startsWith(path) && keyMatch
   }
 
   override def handle(ctx: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Future[Result] = {
     val conf = KubernetesConfig.theConfig(ctx)
+    val client = new KubernetesClient(conf, env)
     if (conf.crds) {
       KubernetesCRDsJob.syncCRDs(conf, ctx.attrs)
     }
-    //if (conf.ingresses) {
-    //  KubernetesIngressSyncJob.syncIngresses(conf, ctx.attrs).map { _ =>
-    //    Results.Ok(Json.obj("done" -> true))
-    //  }
-    //} else {
-      Results.Ok(Json.obj("done" -> false)).future
-    //}
+    if (conf.ingresses) {
+      KubernetesIngressSyncJob.syncIngresses(conf, ctx.attrs)
+    }
+
+    val source = client.watchOtoResource("default", "apikeys", 30, new AtomicBoolean(false))
+
+    implicit val mat = env.otoroshiMaterializer
+
+    source
+      .alsoTo(Sink.onComplete {
+        case Success(_) =>
+          println("finish with success")
+        case Failure(e) =>
+          println("finish with error")
+          e.printStackTrace()
+      })
+      .runWith(Sink.foreach(bs => println("batch")))
+
+    Results.Ok(Json.obj("done" -> true)).future
   }
 }
 

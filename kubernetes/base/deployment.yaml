@@ -41,7 +41,7 @@ spec:
           - name: OTOROSHI_SCRIPTS_STATIC_JOBS_REFS
             value: cp:otoroshi.plugins.jobs.kubernetes
           - name: OTOROSHI_SCRIPTS_STATIC_JOBS_CONFIG
-            value: '{"KubernetesConfig": {"enabled": true,"trust": true,"ingressClass": "*","crds": true,"namespaces": ["*"]}}'
+            value: '{"KubernetesConfig":{"enabled":true,"trust":true,"ingressClass":"otoroshi","crds":true,"namespaces":["*"]}}'
           # - name: REDIS_LF_HOST
           #   value: redis-master-cluster-ip-service
           # - name: REDIS_LF_MEMBERS
