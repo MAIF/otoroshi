@@ -569,9 +569,8 @@ kind: ApiKey
 metadata:
   name: http-app-apikey-1
 spec:
-  clientId: apikey-1
-  # secretName will be supported soon
-  clientSecret: secret-1
+  exportSecret: true # a secret name secret-1 will be created by otoroshi and can be used by containers
+  secretName: secret-1
   group: http-app-group
 ---
 apiVersion: proxy.otoroshi.io/v1alpha1
@@ -581,6 +580,8 @@ metadata:
 spec:
   description: certificate for the http-app
   autoRenew: true
+  exportSecret: true # a secret name cert-1 will be created by otoroshi and can be used by containers
+  secretName: cert-1
   csr:
     caDN: O=EvilCorp, L=San Francisco, ST=California, C=US
     hosts: 
