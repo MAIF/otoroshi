@@ -23,7 +23,7 @@ and apply it
 
 An Helm chart will be available as soon as possible
 
-## Otoroshi as an Ingress Controller
+## Use Otoroshi as an Ingress Controller
 
 If you want to use Otoroshi as an [Ingress Controller](https://kubernetes.io/fr/docs/concepts/services-networking/ingress/), just go to the danger zone, and in `Global scripts` add the job named `Kubernetes Ingress Controller`.
 
@@ -49,7 +49,7 @@ the configuration can have the following values
   "KubernetesConfig": {
     "endpoint": "https://127.0.0.1:6443", // the endpoint to talk to the kubernetes api, optional
     "token": "xxxx", // the bearer token to talk to the kubernetes api, optional
-    "userPassword": "usser:password", // the user password tuple to talk to the kubernetes api, optional
+    "userPassword": "user:password", // the user password tuple to talk to the kubernetes api, optional
     "caCert": "/etc/ca.cert", // the ca cert file path to talk to the kubernetes api, optional
     "trust": false, // trust any cert to talk to the kubernetes api, optional
     "namespaces": ["*"], // the watched namespaces
@@ -302,7 +302,7 @@ now you can use an existing apikey in the `http-app-group` to access your app
 curl -X GET https://httpapp.foo.bar/get -u existing-apikey-1:secret-1
 ```
 
-## Otoroshi CRDs
+## Use Otoroshi CRDs for a better/full integration
 
 Otoroshi provides some Custom Resource Definitions for kubernetes in order to manager Otoroshi related entities in kubernetes
 
@@ -351,6 +351,7 @@ To configure it, just go to the danger zone, and in `Global scripts` add the job
 then you can deploy the previous example with better configuration level, and using mtls, apikeys, etc
 
 Let say the app looks like :
+
 ```js
 const fs = require('fs'); 
 const https = require('https'); 
@@ -365,7 +366,7 @@ const cert = '-----BEGIN CERTIFICATE-----\n' + crt.shift()
 const ca = crt.join('-----BEGIN CERTIFICATE-----\n')
 
 function callApi2() {
-  return new Promise(success => {
+  return new Promise((success, failure) => {
     const options = { 
       hostname: 'httpapp2.foo.bar', 
       port: 433, 
@@ -382,8 +383,11 @@ function callApi2() {
       res.on('data', (d) => { 
         data = data + d.toString('utf8');
       }); 
-      res.on('end', (d) => { 
-        success(JSON.parse(data))
+      res.on('end', () => { 
+        success({ body: JSON.parse(data), res });
+      }); 
+      res.on('error', (e) => { 
+        failure(e);
       }); 
     }); 
     req.end();
@@ -400,7 +404,7 @@ const options = {
 https.createServer(options, (req, res) => { 
   res.writeHead(200, {'Content-Type': 'application/json'});
   callApi2().then(resp => {
-    res.write(JSON.stringify{ ("message": `Hello to ${req.socket.getPeerCertificate().subject.CN}`, api2: resp })); 
+    res.write(JSON.stringify{ ("message": `Hello to ${req.socket.getPeerCertificate().subject.CN}`, api2: resp.body })); 
   });
 }).listen(433);
 ```
