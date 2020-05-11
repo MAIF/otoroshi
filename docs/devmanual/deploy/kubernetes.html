@@ -238,7 +238,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 </code></pre>
 <p>and apply it</p>
 <p>An Helm chart will be available as soon as possible</p>
-<h2><a href="#otoroshi-as-an-ingress-controller" name="otoroshi-as-an-ingress-controller" class="anchor"><span class="anchor-link"></span></a>Otoroshi as an Ingress Controller</h2>
+<h2><a href="#use-otoroshi-as-an-ingress-controller" name="use-otoroshi-as-an-ingress-controller" class="anchor"><span class="anchor-link"></span></a>Use Otoroshi as an Ingress Controller</h2>
 <p>If you want to use Otoroshi as an <a href="https://kubernetes.io/fr/docs/concepts/services-networking/ingress/">Ingress Controller</a>, just go to the danger zone, and in <code>Global scripts</code> add the job named <code>Kubernetes Ingress Controller</code>.</p>
 <p>Then add the following configuration for the job (with your own tweak of course)</p>
 <pre class="prettyprint"><code class="language-json">{
@@ -257,7 +257,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   &quot;KubernetesConfig&quot;: {
     &quot;endpoint&quot;: &quot;https://127.0.0.1:6443&quot;, // the endpoint to talk to the kubernetes api, optional
     &quot;token&quot;: &quot;xxxx&quot;, // the bearer token to talk to the kubernetes api, optional
-    &quot;userPassword&quot;: &quot;usser:password&quot;, // the user password tuple to talk to the kubernetes api, optional
+    &quot;userPassword&quot;: &quot;user:password&quot;, // the user password tuple to talk to the kubernetes api, optional
     &quot;caCert&quot;: &quot;/etc/ca.cert&quot;, // the ca cert file path to talk to the kubernetes api, optional
     &quot;trust&quot;: false, // trust any cert to talk to the kubernetes api, optional
     &quot;namespaces&quot;: [&quot;*&quot;], // the watched namespaces
@@ -485,7 +485,7 @@ spec:
 <p>now you can use an existing apikey in the <code>http-app-group</code> to access your app</p>
 <pre class="prettyprint"><code class="language-sh">curl -X GET https://httpapp.foo.bar/get -u existing-apikey-1:secret-1
 </code></pre>
-<h2><a href="#otoroshi-crds" name="otoroshi-crds" class="anchor"><span class="anchor-link"></span></a>Otoroshi CRDs</h2>
+<h2><a href="#use-otoroshi-crds-for-a-better-full-integration" name="use-otoroshi-crds-for-a-better-full-integration" class="anchor"><span class="anchor-link"></span></a>Use Otoroshi CRDs for a better/full integration</h2>
 <p>Otoroshi provides some Custom Resource Definitions for kubernetes in order to manager Otoroshi related entities in kubernetes</p>
 <ul>
   <li><code>service-groups</code></li>
@@ -536,7 +536,7 @@ const cert = &#39;-----BEGIN CERTIFICATE-----\n&#39; + crt.shift()
 const ca = crt.join(&#39;-----BEGIN CERTIFICATE-----\n&#39;)
 
 function callApi2() {
-  return new Promise(success =&gt; {
+  return new Promise((success, failure) =&gt; {
     const options = { 
       hostname: &#39;httpapp2.foo.bar&#39;, 
       port: 433, 
@@ -553,8 +553,11 @@ function callApi2() {
       res.on(&#39;data&#39;, (d) =&gt; { 
         data = data + d.toString(&#39;utf8&#39;);
       }); 
-      res.on(&#39;end&#39;, (d) =&gt; { 
-        success(JSON.parse(data))
+      res.on(&#39;end&#39;, () =&gt; { 
+        success({ body: JSON.parse(data), res });
+      }); 
+      res.on(&#39;error&#39;, (e) =&gt; { 
+        failure(e);
       }); 
     }); 
     req.end();
@@ -571,7 +574,7 @@ const options = {
 https.createServer(options, (req, res) =&gt; { 
   res.writeHead(200, {&#39;Content-Type&#39;: &#39;application/json&#39;});
   callApi2().then(resp =&gt; {
-    res.write(JSON.stringify{ (&quot;message&quot;: `Hello to ${req.socket.getPeerCertificate().subject.CN}`, api2: resp })); 
+    res.write(JSON.stringify{ (&quot;message&quot;: `Hello to ${req.socket.getPeerCertificate().subject.CN}`, api2: resp.body })); 
   });
 }).listen(433);
 </code></pre>
@@ -777,8 +780,8 @@ curl -X GET https://httpapp.foo.bar/get -u &quot;$CLIENT_ID:$CLIENT_SECRET&quot;
   <li><a href="../deploy/kubernetes.html#kubernetes-integration" class="header">Kubernetes Integration</a>
   <ul>
     <li><a href="../deploy/kubernetes.html#deploy-otoroshi-on-your-kubernetes-cluster" class="header">Deploy otoroshi on your kubernetes cluster</a></li>
-    <li><a href="../deploy/kubernetes.html#otoroshi-as-an-ingress-controller" class="header">Otoroshi as an Ingress Controller</a></li>
-    <li><a href="../deploy/kubernetes.html#otoroshi-crds" class="header">Otoroshi CRDs</a></li>
+    <li><a href="../deploy/kubernetes.html#use-otoroshi-as-an-ingress-controller" class="header">Use Otoroshi as an Ingress Controller</a></li>
+    <li><a href="../deploy/kubernetes.html#use-otoroshi-crds-for-a-better-full-integration" class="header">Use Otoroshi CRDs for a better/full integration</a></li>
   </ul></li>
 </ul>
 </div>
