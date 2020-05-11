@@ -53,7 +53,8 @@ case class KubernetesIngress(raw: JsValue) extends KubernetesEntity {
   }
 }
 
-case class KubernetesDeployments(raw: JsValue) extends KubernetesEntity
+case class KubernetesPod(raw: JsValue) extends KubernetesEntity
+case class KubernetesDeployment(raw: JsValue) extends KubernetesEntity
 
 case class KubernetesCertSecret(raw: JsValue) extends KubernetesEntity {
   lazy val data: JsValue = (raw \ "data").as[JsValue]

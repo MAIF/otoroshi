@@ -17,6 +17,7 @@ case class KubernetesConfig(
   crds: Boolean,
   ingresses: Boolean,
   kubeLeader: Boolean,
+  restartDependantDeployments: Boolean,
   endpoint: String,
   token: Option[String],
   userPassword: Option[String],
@@ -78,6 +79,7 @@ object KubernetesConfig {
           ingresses = (conf \ "ingresses").asOpt[Boolean].getOrElse(true),
           crds = (conf \ "crds").asOpt[Boolean].getOrElse(true),
           kubeLeader = (conf \ "kubeLeader").asOpt[Boolean].getOrElse(false),
+          restartDependantDeployments = (conf \ "restartDependantDeployments").asOpt[Boolean].getOrElse(true),
           triggerKey = (conf \ "triggerKey").asOpt[String],
           triggerHost = (conf \ "triggerHost").asOpt[String],
           triggerPath = (conf \ "triggerPath").asOpt[String]
@@ -112,6 +114,7 @@ object KubernetesConfig {
           ingresses = (conf \ "ingresses").asOpt[Boolean].getOrElse(true),
           crds = (conf \ "crds").asOpt[Boolean].getOrElse(true),
           kubeLeader = (conf \ "kubeLeader").asOpt[Boolean].getOrElse(false),
+          restartDependantDeployments = (conf \ "restartDependantDeployments").asOpt[Boolean].getOrElse(true),
           triggerKey = (conf \ "triggerKey").asOpt[String],
           triggerHost = (conf \ "triggerHost").asOpt[String],
           triggerPath = (conf \ "triggerPath").asOpt[String]
@@ -137,7 +140,8 @@ object KubernetesConfig {
         "ingressEndpointPublishedService" -> JsNull,
         "ingresses" -> true,
         "crds" -> true,
-        "kubeLeader" -> false
+        "kubeLeader" -> false,
+        "restartDependantDeployments" -> true
       )
     )
   }

@@ -157,14 +157,26 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       }
     }).map(_.flatten)
   }
-  def fetchDeployments(): Future[Seq[KubernetesDeployments]] = {
+  def fetchDeployments(): Future[Seq[KubernetesDeployment]] = {
+    Future.sequence(config.namespaces.map { namespace =>
+      val cli: WSRequest = client(s"/api/v1/namespaces/$namespace/deployments")
+      cli.addHttpHeaders(
+        "Accept" -> "application/json"
+      ).get().map { resp =>
+        (resp.json \ "items").as[JsArray].value.map { item =>
+          KubernetesDeployment(item)
+        }
+      }
+    }).map(_.flatten)
+  }
+  def fetchPods(): Future[Seq[KubernetesPod]] = {
     Future.sequence(config.namespaces.map { namespace =>
       val cli: WSRequest = client(s"/api/v1/namespaces/$namespace/pods")
       cli.addHttpHeaders(
         "Accept" -> "application/json"
       ).get().map { resp =>
         (resp.json \ "items").as[JsArray].value.map { item =>
-          KubernetesDeployments(item)
+          KubernetesPod(item)
         }
       }
     }).map(_.flatten)
@@ -295,6 +307,25 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       Try {
         if (resp.status == 200 || resp.status == 201) {
           KubernetesSecret(resp.json).some
+        } else {
+          None
+        }
+      } match {
+        case Success(r) => r
+        case Failure(e) => None
+      }
+    }
+  }
+
+  def patchDeployment(namespace: String, name: String, body: JsValue): Future[Option[KubernetesDeployment]] = {
+    val cli: WSRequest = client(s"/api/v1/namespaces/$namespace/deployments/$name", false)
+    cli.addHttpHeaders(
+      "Accept" -> "application/json",
+      "Content-Type" -> "application/json"
+    ).patch(body).map { resp =>
+      Try {
+        if (resp.status == 200 || resp.status == 201) {
+          KubernetesDeployment(resp.json).some
         } else {
           None
         }

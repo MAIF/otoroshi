@@ -13,6 +13,7 @@ import io.kubernetes.client.openapi.ApiClient
 import io.kubernetes.client.util.ClientBuilder
 import io.kubernetes.client.util.credentials.AccessTokenAuthentication
 import models._
+import org.joda.time.DateTime
 import otoroshi.plugins.jobs.kubernetes.IngressSupport.IntOrString
 import otoroshi.script._
 import otoroshi.ssl.pki.models.GenCsrQuery
@@ -384,7 +385,7 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
       (s \ "csr").asOpt[JsValue] match {
         case None => s
         case Some(csrJson) => {
-          val caOpt = (csrJson \ "caDN").asOpt[String] match {
+          val caOpt = (csrJson \ "issuer").asOpt[String] match {
             case None => None
             case Some(dn) =>
               DynamicSSLEngineProvider.certificates.find {
@@ -723,7 +724,7 @@ object KubernetesCRDsJob {
     } yield ()
   }
 
-  def exportApiKeys(conf: KubernetesConfig, attrs: TypedMap, clientSupport: ClientSupport, ctx: CRDContext, apikeys: Seq[(String, String, ApiKey)])(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  def exportApiKeys(conf: KubernetesConfig, attrs: TypedMap, clientSupport: ClientSupport, ctx: CRDContext, apikeys: Seq[(String, String, ApiKey)], updatedSecrets: AtomicReference[Seq[(String, String)]])(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     logger.info(s"will export ${apikeys.size} apikeys as secrets")
     implicit val mat = env.otoroshiMaterializer
     Source(apikeys.toList)
@@ -731,12 +732,14 @@ object KubernetesCRDsJob {
         case (namespace, name, apikey) => clientSupport.client.fetchSecret(namespace, name).flatMap {
           case None =>
             println(s"create $namespace/$name with ${apikey.clientId} and ${apikey.clientSecret}")
+            updatedSecrets.updateAndGet(seq => seq :+ (namespace, name))
             clientSupport.client.createSecret(namespace, name, "otoroshi.io/apikey-secret", Json.obj("clientId" -> apikey.clientId.base64, "clientSecret" -> apikey.clientSecret.base64))
           case Some(secret) =>
             val clientId = (secret.raw \ "data" \ "clientId").as[String].applyOn(s => s.fromBase64)
             val clientSecret = (secret.raw \ "data" \ "clientSecret").as[String].applyOn(s => s.fromBase64)
             if ((clientId != apikey.clientId) || (clientSecret != apikey.clientSecret)) {
               println(s"updating $namespace/$name  with ${apikey.clientId} and ${apikey.clientSecret}")
+              updatedSecrets.updateAndGet(seq => seq :+ (namespace, name))
               clientSupport.client.updateSecret(namespace, name, "otoroshi.io/apikey-secret", Json.obj("clientId" -> apikey.clientId.base64, "clientSecret" -> apikey.clientSecret.base64))
             } else {
               ().future
@@ -745,18 +748,20 @@ object KubernetesCRDsJob {
         }.runWith(Sink.ignore).map(_ => ())
   }
 
-  def exportCerts(conf: KubernetesConfig, attrs: TypedMap, clientSupport: ClientSupport, ctx: CRDContext, certs: Seq[(String, String, Cert)])(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  def exportCerts(conf: KubernetesConfig, attrs: TypedMap, clientSupport: ClientSupport, ctx: CRDContext, certs: Seq[(String, String, Cert)], updatedSecrets: AtomicReference[Seq[(String, String)]])(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     logger.info(s"will export ${certs.size} certificates as secrets")
     implicit val mat = env.otoroshiMaterializer
     Source(certs.toList)
       .mapAsync(1) {
         case (namespace, name, cert) => clientSupport.client.fetchSecret(namespace, name).flatMap {
           case None =>
+            updatedSecrets.updateAndGet(seq => seq :+ (namespace, name))
             clientSupport.client.createSecret(namespace, name, "kubernetes.io/tls", Json.obj("tls.crt" -> cert.chain.base64, "tls.key" -> cert.privateKey.base64))
           case Some(secret) =>
             val chain = (secret.raw \ "data" \ "clientId").as[String].applyOn(s => s.fromBase64)
             val privateKey = (secret.raw \ "data" \ "clientSecret").as[String].applyOn(s => s.fromBase64)
             if ((chain != cert.chain) || (privateKey != cert.privateKey)) {
+              updatedSecrets.updateAndGet(seq => seq :+ (namespace, name))
               clientSupport.client.updateSecret(namespace, name, "kubernetes.io/tls", Json.obj("tls.crt" -> cert.chain.base64, "tls.key" -> cert.privateKey.base64))
             } else {
               ().future
@@ -764,6 +769,46 @@ object KubernetesCRDsJob {
         }
       }.runWith(Sink.ignore).map(_ => ())
     ().future
+  }
+
+
+  def restartDependantDeployments(conf: KubernetesConfig, attrs: TypedMap, clientSupport: ClientSupport, ctx: CRDContext, _updatedSecrets: Seq[(String, String)])(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    if (conf.restartDependantDeployments) {
+      implicit val mat = env.otoroshiMaterializer
+      clientSupport.client.fetchDeployments().flatMap { deployments =>
+        Source(deployments.toList)
+          .mapAsync(1) { deployment =>
+            val deploymentNamespace = deployment.namespace
+            val templateNamespace = (deployment.raw \ "spec" \ "template" \ "metadata" \ "namespace").asOpt[String].getOrElse(deploymentNamespace)
+            val volumeSecrets = (deployment.raw \ "spec" \ "template" \ "spec" \ "volumes").asOpt[JsArray].map(_.value).getOrElse(Seq.empty[JsValue])
+              .filter(item => (item \ "secret").isDefined)
+              .map(item => (item \ "secret" \ "secretName").as[String])
+            val updatedSecrets = _updatedSecrets.map { case (ns, n) => s"$ns/$n" }
+            Source(volumeSecrets.toList)
+              .mapAsync(1) { secretName =>
+                if (updatedSecrets.contains(s"$templateNamespace/$secretName")) {
+                  clientSupport.client.patchDeployment(deployment.namespace, deployment.name, Json.obj(
+                    "apiVersion" -> "apps/v1",
+                    "kind" -> "Deployment",
+                    "spec" -> Json.obj(
+                      "template" -> Json.obj(
+                        "meta" -> Json.obj(
+                          "annotations" -> Json.obj(
+                            "crds.otoroshi.io/restartedAt" -> DateTime.now().toString()
+                          )
+                        )
+                      )
+                    )
+                  ))
+                } else {
+                  ().future
+                }
+              }.runWith(Sink.ignore).map(_ => ())
+          }.runWith(Sink.ignore).map(_ => ())
+      }
+    } else {
+      ().future
+    }
   }
 
   def syncCRDs(conf: KubernetesConfig, attrs: TypedMap)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
@@ -775,12 +820,14 @@ object KubernetesCRDsJob {
         val clientSupport = new ClientSupport(client, logger)
         val apiKeysToExport = new AtomicReference[Seq[(String, String, ApiKey)]](Seq.empty)
         val certsToExport = new AtomicReference[Seq[(String, String, Cert)]](Seq.empty)
+        val updatedSecrets = new AtomicReference[Seq[(String, String)]](Seq.empty)
         for {
           ctx <- context(conf, attrs, clientSupport, (ns, n, apk) => apiKeysToExport.getAndUpdate(s => s :+ (ns, n, apk)), (ns, n, cert) => certsToExport.getAndUpdate(c => c :+ (ns, n, cert)))
           _ <- importCRDEntities(conf, attrs, clientSupport, ctx)
           _ <- deleteOutDatedEntities(conf, attrs, ctx)
-          _ <- exportApiKeys(conf, attrs, clientSupport, ctx, apiKeysToExport.get())
-          _ <- exportCerts(conf, attrs, clientSupport, ctx, certsToExport.get())
+          _ <- exportApiKeys(conf, attrs, clientSupport, ctx, apiKeysToExport.get(), updatedSecrets)
+          _ <- exportCerts(conf, attrs, clientSupport, ctx, certsToExport.get(), updatedSecrets)
+          - <- restartDependantDeployments(conf, attrs, clientSupport, ctx, updatedSecrets.get())
         } yield ()
       }.flatMap { _ =>
         if (shouldRunNext.get()) {
