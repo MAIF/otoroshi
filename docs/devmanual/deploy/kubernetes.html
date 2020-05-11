@@ -265,7 +265,20 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     &quot;ingressClass&quot;: &quot;otoroshi&quot;, // the watched kubernetes.io/ingress.class annotation, can be *
     &quot;defaultGroup&quot;: &quot;default&quot;, // the group to put services in otoroshi
     &quot;ingresses&quot;: true, // sync ingresses
-    &quot;crds&quot;: false // sync crds
+    &quot;crds&quot;: false, // sync crds
+    &quot;kubeLeader&quot;: false, // delegate leader election to kubernetes, to know where the sync job should run
+    &quot;restartDependantDeployments&quot;: true, // when a secret/cert changes from otoroshi sync, restart dependant deployments
+    &quot;templates&quot;: {
+      &quot;service-group&quot;: {},
+      &quot;service-descriptor&quot;: {},
+      &quot;apikeys&quot;: {},
+      &quot;global-config&quot;: {},
+      &quot;jwt-verifier&quot;: {},
+      &quot;tcp-service&quot;: {},
+      &quot;certificate&quot;: {},
+      &quot;auth-module&quot;: {},
+      &quot;script&quot;: {},
+    }
   }
 }
 </code></pre>
