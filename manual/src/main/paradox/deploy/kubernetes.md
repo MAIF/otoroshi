@@ -348,7 +348,62 @@ To configure it, just go to the danger zone, and in `Global scripts` add the job
 }
 ```
 
-then you can deploy the previous example with better configuration level
+then you can deploy the previous example with better configuration level, and using mtls, apikeys, etc
+
+Let say the app looks like :
+```js
+const fs = require('fs'); 
+const https = require('https'); 
+
+const clientId = fs.readFileSync('/var/run/secrets/kubernetes.io/apikeys/clientId').toString('utf8')
+const clientSecret = fs.readFileSync('/var/run/secrets/kubernetes.io/apikeys/clientSecret').toString('utf8')
+const crt = fs.readFileSync('/var/run/secrets/kubernetes.io/certs/tls.crt')
+  .toString('utf8')
+  .split('-----BEGIN CERTIFICATE-----\n')
+  .filter(s => s.trim() !== '');
+const cert = '-----BEGIN CERTIFICATE-----\n' + crt.shift()
+const ca = crt.join('-----BEGIN CERTIFICATE-----\n')
+
+function callApi2() {
+  return new Promise(success => {
+    const options = { 
+      hostname: 'httpapp2.foo.bar', 
+      port: 433, 
+      path: '/', 
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Otoroshi-Client-Id': clientId,
+        'Otoroshi-Client-Secret': clientSecret,
+      }
+    }; 
+    let data = '';
+    const req = https.request(options, (res) => { 
+      res.on('data', (d) => { 
+        data = data + d.toString('utf8');
+      }); 
+      res.on('end', (d) => { 
+        success(JSON.parse(data))
+      }); 
+    }); 
+    req.end();
+  })
+}
+
+const options = { 
+  key: fs.readFileSync('/var/run/secrets/kubernetes.io/certs/tls.key'), 
+  cert: cert, 
+  ca: ca, 
+  requestCert: true, 
+  rejectUnauthorized: true
+}; 
+https.createServer(options, (req, res) => { 
+  res.writeHead(200, {'Content-Type': 'application/json'});
+  callApi2().then(resp => {
+    res.write(JSON.stringify{ ("message": `Hello to ${req.socket.getPeerCertificate().subject.CN}`, api2: resp })); 
+  });
+}).listen(433);
+```
 
 ```yaml
 ---
@@ -367,12 +422,12 @@ spec:
         run: http-app-deployment
     spec:
       containers:
-      - image: kennethreitz/httpbin
+      - image: foo/http-app
         imagePullPolicy: IfNotPresent
         name: otoroshi
         ports:
-          - containerPort: 80
-            name: "http"
+          - containerPort: 443
+            name: "https"
         volumeMounts:
         - name: apikey-volume
           # here you will be able to read apikey from files 
@@ -380,10 +435,22 @@ spec:
           # - /var/run/secrets/kubernetes.io/apikeys/clientSecret
           mountPath: "/var/run/secrets/kubernetes.io/apikeys"
           readOnly: true
+        volumeMounts:
+        - name: cert-volume
+          # here you will be able to read app cert from files 
+          # - /var/run/secrets/kubernetes.io/certs/tls.crt
+          # - /var/run/secrets/kubernetes.io/certs/tls.key
+          mountPath: "/var/run/secrets/kubernetes.io/certs"
+          readOnly: true
       volumes:
       - name: apikey-volume
         secret:
-          secretName: secret-1
+          # here we reference the secret name from apikey http-app-2-apikey-1
+          secretName: secret-2
+      - name: cert-volume
+        secret:
+          # here we reference the secret name from cert http-app-certificate-backend
+          secretName: http-app-certificate-backend-secret
 ---
 apiVersion: v1
 kind: Service
@@ -391,9 +458,9 @@ metadata:
   name: http-app-service
 spec:
   ports:
-    - port: 8080
-      targetPort: http
-      name: http
+    - port: 8443
+      targetPort: httpss
+      name: https
   selector:
     run: http-app-deployment
 ---
@@ -408,6 +475,7 @@ apiVersion: proxy.otoroshi.io/v1alpha1
 kind: ApiKey
 metadata:
   name: http-app-apikey-1
+# this apikey can be used to access the app
 spec:
   # a secret name secret-1 will be created by otoroshi and can be used by containers
   exportSecret: true 
@@ -415,15 +483,23 @@ spec:
   group: http-app-group
 ---
 apiVersion: proxy.otoroshi.io/v1alpha1
+kind: ApiKey
+metadata:
+  name: http-app-2-apikey-1
+# this apikey can be used to access another app in a different group
+spec:
+  # a secret name secret-1 will be created by otoroshi and can be used by containers
+  exportSecret: true 
+  secretName: secret-2
+  group: http-app-2-group
+---
+apiVersion: proxy.otoroshi.io/v1alpha1
 kind: Certificate
 metadata:
-  name: http-app-certificate
+  name: http-app-certificate-frontend
 spec:
-  description: certificate for the http-app
+  description: certificate for the http-app on otorshi frontend
   autoRenew: true
-  # a secret name cert-1 will be created by otoroshi and can be used by containers
-  exportSecret: true 
-  secretName: cert-1
   csr:
     issuer: O=EvilCorp, L=San Francisco, ST=California, C=US
     hosts: 
@@ -431,7 +507,52 @@ spec:
     key:
       algo: rsa
       size: 2048
-    subject: OU=httpapp, O=EvilCorp, L=San Francisco, ST=California, C=US
+    subject: OU=httpapp-front, O=EvilCorp, L=San Francisco, ST=California, C=US
+    client: false
+    ca: false
+    duration: 31536000000
+    signatureAlg: SHA256WithRSAEncryption
+    digestAlg: SHA-256
+---
+apiVersion: proxy.otoroshi.io/v1alpha1
+kind: Certificate
+metadata:
+  name: http-app-certificate-backend
+spec:
+  description: certificate for the http-app deployed on pods
+  autoRenew: true
+  # a secret name http-app-certificate-backend-secret will be created by otoroshi and can be used by containers
+  exportSecret: true 
+  secretName: http-app-certificate-backend-secret
+  csr:
+    issuer: O=EvilCorp, L=San Francisco, ST=California, C=US
+    hosts: 
+    - httpapp.foo.bar
+    key:
+      algo: rsa
+      size: 2048
+    subject: OU=httpapp-back, O=EvilCorp, L=San Francisco, ST=California, C=US
+    client: false
+    ca: false
+    duration: 31536000000
+    signatureAlg: SHA256WithRSAEncryption
+    digestAlg: SHA-256
+---
+apiVersion: proxy.otoroshi.io/v1alpha1
+kind: Certificate
+metadata:
+  name: http-app-certificate-client
+spec:
+  description: certificate for the http-app
+  autoRenew: true
+  csr:
+    issuer: O=EvilCorp, L=San Francisco, ST=California, C=US
+    hosts: 
+    - httpapp.foo.bar
+    key:
+      algo: rsa
+      size: 2048
+    subject: OU=httpapp-client, O=EvilCorp, L=San Francisco, ST=California, C=US
     client: false
     ca: false
     duration: 31536000000
@@ -450,7 +571,15 @@ spec:
   - httpapp.foo.bar
   matchingRoot: /
   targets:
-  - url: http://http-app-service:8080
+  - url: https://http-app-service:8443
+    mtlsConfig:
+      mtls: true
+      certs: 
+        # reference the DN for the client cert
+        - OU=httpapp-client, O=EvilCorp, L=San Francisco, ST=California, C=US
+      trustedCerts: 
+        # reference the DN for the CA cert
+        - O=EvilCorp, L=San Francisco, ST=California, C=US
   sendOtoroshiHeadersBack: true
   xForwardedHeaders: true
   overrideHost: true
@@ -465,5 +594,7 @@ spec:
 now with this descriptor deployed, you can access your app with a command like 
 
 ```sh
-curl -X GET https://httpapp.foo.bar/get -u content-of-secret-1-clientId:content-of-secret-1-clientSecret
+CLIENT_ID=`kubectl get secret secret-1 -o jsonpath="{.data.clientId}" | base64 --decode`
+CLIENT_SECRET=`kubectl get secret secret-1 -o jsonpath="{.data.clientSecret}" | base64 --decode`
+curl -X GET https://httpapp.foo.bar/get -u "$CLIENT_ID:$CLIENT_SECRET"
 ```
