@@ -625,7 +625,7 @@ curl -X GET https://httpapp.foo.bar/get -u "$CLIENT_ID:$CLIENT_SECRET"
 
 ## Access a service from inside the k8s cluster
 
-You can access any service referenced in otoroshi through otoroshi from inside the kubernetes cluster by using the internal otoroshi service name and the host header like :
+You can access any service referenced in otoroshi, through otoroshin from inside the kubernetes cluster by using the internal otoroshi service (if you use a template based on https://github.com/MAIF/otoroshi/tree/master/kubernetes/base) name and the host header with the service domain like :
 
 ```sh
 CLIENT_ID="xxx"
