@@ -526,8 +526,11 @@ curl -X GET \
 <pre class="prettyprint"><code class="language-js">const fs = require(&#39;fs&#39;); 
 const https = require(&#39;https&#39;); 
 
+// here we read the apikey to access http-app-2 from files mounted from secrets
 const clientId = fs.readFileSync(&#39;/var/run/secrets/kubernetes.io/apikeys/clientId&#39;).toString(&#39;utf8&#39;)
 const clientSecret = fs.readFileSync(&#39;/var/run/secrets/kubernetes.io/apikeys/clientSecret&#39;).toString(&#39;utf8&#39;)
+
+// here we read the certificate for the app
 const crt = fs.readFileSync(&#39;/var/run/secrets/kubernetes.io/certs/tls.crt&#39;)
   .toString(&#39;utf8&#39;)
   .split(&#39;-----BEGIN CERTIFICATE-----\n&#39;)
@@ -568,6 +571,7 @@ const options = {
   key: fs.readFileSync(&#39;/var/run/secrets/kubernetes.io/certs/tls.key&#39;), 
   cert: cert, 
   ca: ca, 
+  // we want mtls behavior
   requestCert: true, 
   rejectUnauthorized: true
 }; 
@@ -578,6 +582,7 @@ https.createServer(options, (req, res) =&gt; {
   });
 }).listen(433);
 </code></pre>
+<p>then, the descriptors will be :</p>
 <pre class="prettyprint"><code class="language-yaml">---
 apiVersion: apps/v1
 kind: Deployment
@@ -745,6 +750,7 @@ spec:
   targets:
   - url: https://http-app-service:8443
     mtlsConfig:
+      # use mtls to contact the backend
       mtls: true
       certs: 
         # reference the DN for the client cert
