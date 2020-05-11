@@ -131,7 +131,6 @@ object KubernetesConfig {
   def defaultConfig: JsObject = {
     Json.obj(
       "KubernetesConfig" -> Json.obj(
-        "enabled" -> true,
         "endpoint" -> "https://kube.cluster.dev",
         "token" -> "xxx",
         "userPassword" -> "user:password",
@@ -148,7 +147,17 @@ object KubernetesConfig {
         "crds" -> true,
         "kubeLeader" -> false,
         "restartDependantDeployments" -> true,
-        "templates" -> Json.obj()
+        "templates" -> Json.obj(
+          "service-group" -> Json.obj(),
+          "service-descriptor" -> Json.obj(),
+          "apikeys" -> Json.obj(),
+          "global-config" -> Json.obj(),
+          "jwt-verifier" -> Json.obj(),
+          "tcp-service" -> Json.obj(),
+          "certificate" -> Json.obj(),
+          "auth-module" -> Json.obj(),
+          "script" -> Json.obj(),
+        )
       )
     )
   }

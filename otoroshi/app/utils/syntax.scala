@@ -40,6 +40,9 @@ object implicits {
     }
     def applyOn[B](f: A => B): B = f(obj)
   }
+  implicit class RegexOps(sc: StringContext) {
+    def rr = new scala.util.matching.Regex(sc.parts.mkString)
+  }
   implicit class BetterString(private val obj: String) extends AnyVal {
     import otoroshi.utils.string.Implicits._
     def slugify: String = obj.slug

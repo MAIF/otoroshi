@@ -57,7 +57,20 @@ the configuration can have the following values
     "ingressClass": "otoroshi", // the watched kubernetes.io/ingress.class annotation, can be *
     "defaultGroup": "default", // the group to put services in otoroshi
     "ingresses": true, // sync ingresses
-    "crds": false // sync crds
+    "crds": false, // sync crds
+    "kubeLeader": false, // delegate leader election to kubernetes, to know where the sync job should run
+    "restartDependantDeployments": true, // when a secret/cert changes from otoroshi sync, restart dependant deployments
+    "templates": {
+      "service-group": {},
+      "service-descriptor": {},
+      "apikeys": {},
+      "global-config": {},
+      "jwt-verifier": {},
+      "tcp-service": {},
+      "certificate": {},
+      "auth-module": {},
+      "script": {},
+    }
   }
 }
 ```
