@@ -39,6 +39,9 @@ object KubernetesConfig {
   import collection.JavaConverters._
   def theConfig(ctx: ContextWithConfig)(implicit env: Env, ec: ExecutionContext): KubernetesConfig = {
     val conf = ctx.configForOpt("KubernetesConfig").orElse((env.datastores.globalConfigDataStore.latest().scripts.jobConfig \ "KubernetesConfig").asOpt[JsValue]).getOrElse(Json.obj())
+    theConfig(conf)
+  }
+  def theConfig(conf: JsValue)(implicit env: Env, ec: ExecutionContext): KubernetesConfig = {
     sys.env.get("KUBECONFIG") match {
       case Some(configPath) => {
         val configContent = Files.readAllLines(new File(configPath).toPath).asScala.mkString("\n").trim()

@@ -76,7 +76,7 @@ object KubernetesCertSyncJob {
     }
   }
 
-  def syncKubernetesSecretsToOtoroshiCerts(client: KubernetesClient)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  def syncKubernetesSecretsToOtoroshiCerts(client: KubernetesClient)(implicit env: Env, ec: ExecutionContext): Future[Unit] = env.metrics.withTimerAsync("otoroshi.plugins.kubernetes.certs.sync") {
     if (running.compareAndSet(false, true)) {
       shouldRunNext.set(false)
       client.fetchCertsAndFilterLabels().flatMap { certs =>

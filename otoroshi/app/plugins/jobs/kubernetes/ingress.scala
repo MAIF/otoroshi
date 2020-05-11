@@ -4,6 +4,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 
 import akka.stream.scaladsl.{Sink, Source}
+import cluster.ClusterMode
 import com.google.common.base.CaseFormat
 import env.Env
 import io.kubernetes.client.extended.leaderelection.resourcelock.EndpointsLock
@@ -19,6 +20,7 @@ import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc.{Result, Results}
+import ssl.DynamicSSLEngineProvider
 import utils.RequestImplicits._
 import utils.TypedMap
 
@@ -57,7 +59,21 @@ class KubernetesIngressControllerJob extends Job {
 
   override def starting: JobStarting = JobStarting.FromConfiguration
 
-  override def instantiation: JobInstantiation = JobInstantiation.OneInstancePerOtoroshiCluster
+  override def instantiation: JobInstantiation = {
+    Option(DynamicSSLEngineProvider.getCurrentEnv())
+      .flatMap(env => env.datastores.globalConfigDataStore.latestSafe.map(c => (env, c)))
+      .map { case (env, c) => (env, KubernetesConfig.theConfig((c.scripts.jobConfig \ "KubernetesConfig").as[JsValue])(env, env.otoroshiExecutionContext)) }
+      .map {
+        case (env, cfg) =>
+          env.clusterConfig.mode match {
+            case ClusterMode.Off if !cfg.kubeLeader => JobInstantiation.OneInstancePerOtoroshiCluster
+            case ClusterMode.Off if cfg.kubeLeader => JobInstantiation.OneInstancePerOtoroshiInstance
+            case _ if cfg.kubeLeader => JobInstantiation.OneInstancePerOtoroshiLeaderInstance
+            case _ => JobInstantiation.OneInstancePerOtoroshiCluster
+          }
+      }
+      .getOrElse(JobInstantiation.OneInstancePerOtoroshiCluster)
+  }
 
   override def initialDelay: Option[FiniteDuration] = 5.seconds.some
 
@@ -371,7 +387,7 @@ object KubernetesIngressSyncJob {
     OtoAnnotationConfig(annotations)
   }
 
-  def syncIngresses(conf: KubernetesConfig, attrs: TypedMap)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  def syncIngresses(conf: KubernetesConfig, attrs: TypedMap)(implicit env: Env, ec: ExecutionContext): Future[Unit] = env.metrics.withTimerAsync("otoroshi.plugins.kubernetes.ingresses.sync")  {
     implicit val mat = env.otoroshiMaterializer
     val client = new KubernetesClient(conf, env)
     if (running.compareAndSet(false, true)) {
