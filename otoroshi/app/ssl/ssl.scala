@@ -23,7 +23,7 @@ import akka.util.ByteString
 import com.google.common.hash.Hashing
 import com.typesafe.sslconfig.ssl.SSLConfigSettings
 import env.Env
-import events.{Alerts, CertRenewalAlert}
+import events.{Alerts, CertExpiredAlert, CertRenewalAlert}
 import gateway.Errors
 import javax.crypto.Cipher.DECRYPT_MODE
 import javax.crypto.spec.PBEKeySpec
@@ -52,6 +52,7 @@ import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import sun.security.util.ObjectIdentifier
 import sun.security.x509._
 import utils.{FakeHasMetrics, HasMetrics, RegexPool, TypedMap}
+import otoroshi.utils.syntax.implicits._
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.FiniteDuration
@@ -557,7 +558,9 @@ trait CertificateDataStore extends BasicStore[Cert] {
         .filter(willBeInvalidSoon)
       Source(renewableCas.toList)
         .mapAsync(1) {
-          case c => c.renew().flatMap(c => c.save().map(_ => c))
+          case c => c.renew()
+            .flatMap(d => c.copy(id = IdGenerator.token, name = "[UNTIL EXPIRATION] " + c.name).save().map(_ => d))
+            .flatMap(c => c.save().map(_ => c))
         }
         .map { c =>
           Alerts.send(
@@ -572,18 +575,42 @@ trait CertificateDataStore extends BasicStore[Cert] {
         .map(_ => ())
     }
 
-    def renewSelfSignedCertificates(certificates: Seq[Cert]): Future[Unit] = {
+    def renewNonCaCertificates(certificates: Seq[Cert]): Future[Unit] = {
       val renewableCertificates = certificates
         .filter(_.autoRenew)
         .filterNot(_.ca)
         .filter(willBeInvalidSoon)
       Source(renewableCertificates.toList)
         .mapAsync(1) {
-          case c => c.renew().flatMap(c => c.save().map(_ => c))
+          case c => c.renew()
+            .flatMap(d => c.copy(id = IdGenerator.token, name = "[UNTIL EXPIRATION] " + c.name).save().map(_ => d))
+            .flatMap(c => c.save().map(_ => c))
         }
         .map { c =>
           Alerts.send(
             CertRenewalAlert(
+              env.snowflakeGenerator.nextIdStr(),
+              env.env,
+              c
+            )
+          )
+        }
+        .runWith(Sink.ignore)
+        .map(_ => ())
+    }
+
+    def markExpiredCertsAsExpired(certificates: Seq[Cert]): Future[Unit] = {
+      val expiredCertificates = certificates
+        .filter { cert =>
+          cert.from.isBefore(org.joda.time.DateTime.now()) && cert.to.isAfter(org.joda.time.DateTime.now())
+        }
+      Source(expiredCertificates.toList)
+        .mapAsync(1) {
+          case c => c.copy(name = "[EXPIRED] " + c.name).applyOn(d => d.save().map(_ => d))
+        }
+        .map { c =>
+          Alerts.send(
+            CertExpiredAlert(
               env.snowflakeGenerator.nextIdStr(),
               env.env,
               c
@@ -595,10 +622,12 @@ trait CertificateDataStore extends BasicStore[Cert] {
     }
 
     for {
-      certificates  <- findAll()
-      _             <- renewCAs(certificates)
-      ncertificates <- findAll()
-      _             <- renewSelfSignedCertificates(ncertificates)
+      certificates   <- findAll()
+      _              <- renewCAs(certificates)
+      ncertificates  <- findAll()
+      _              <- renewNonCaCertificates(ncertificates)
+      nncertificates <- findAll()
+      _              <- markExpiredCertsAsExpired(nncertificates)
     } yield ()
   }
 

@@ -47,6 +47,34 @@ case class MtlsConfig(certs: Seq[String] = Seq.empty,
                       mtls: Boolean = false,
                       loose: Boolean = false,
                       trustAll: Boolean = false) {
+  lazy val actualCerts: Seq[Cert] = {
+    certs.flatMap { id =>
+      DynamicSSLEngineProvider.certificates.get(id) match {
+        case a @ Some(_) => a
+        case None => DynamicSSLEngineProvider.certificates.values.toSeq.filter { cert =>
+          cert.certificate.exists(_.getSubjectDN.getName == id)
+        } filter { cert =>
+          cert.from.isBefore(org.joda.time.DateTime.now()) && cert.to.isAfter(org.joda.time.DateTime.now())
+        } sortWith { (c1, c2) =>
+          c1.to.compareTo(c2.to) > 0
+        } headOption
+      }
+    }
+  }
+  lazy val actualTrustedCerts: Seq[Cert] = {
+    trustedCerts.flatMap { id =>
+      DynamicSSLEngineProvider.certificates.get(id) match {
+        case a @ Some(_) => a
+        case None => DynamicSSLEngineProvider.certificates.values.toSeq.filter { cert =>
+          cert.certificate.exists(_.getSubjectDN.getName == id)
+        } filter { cert =>
+          cert.from.isBefore(org.joda.time.DateTime.now()) && cert.to.isAfter(org.joda.time.DateTime.now())
+        } sortWith { (c1, c2) =>
+          c1.to.compareTo(c2.to) > 0
+        } headOption
+      }
+    }
+  }
   def json: JsValue = MtlsConfig.format.writes(this)
   def toJKS(implicit env: Env): (java.io.File, java.io.File, String) = {
     val password      = IdGenerator.token
@@ -157,13 +185,13 @@ class WsClientChooser(standardClient: WSClient,
     val certs: Seq[Cert] = targetOpt
       .filter(_.mtlsConfig.mtls)
       .toSeq
-      .flatMap(_.mtlsConfig.certs)
-      .flatMap(DynamicSSLEngineProvider.certificates.get)
+      .flatMap(_.mtlsConfig.actualCerts)
+      //.flatMap(DynamicSSLEngineProvider.certificates.get)
     val trustedCerts: Seq[Cert] = targetOpt
       .filter(_.mtlsConfig.mtls)
       .toSeq
-      .flatMap(_.mtlsConfig.trustedCerts)
-      .flatMap(DynamicSSLEngineProvider.certificates.get)
+      .flatMap(_.mtlsConfig.actualTrustedCerts)
+      // .flatMap(DynamicSSLEngineProvider.certificates.get)
     akkaClient.executeWsRequest(
       request,
       targetOpt.exists(_.mtlsConfig.loose),
@@ -933,13 +961,13 @@ case class AkkaWsClientRequest(
     val certs: Seq[Cert] = targetOpt
       .filter(_.mtlsConfig.mtls)
       .toSeq
-      .flatMap(_.mtlsConfig.certs)
-      .flatMap(DynamicSSLEngineProvider.certificates.get)
+      .flatMap(_.mtlsConfig.actualCerts)
+      //.flatMap(DynamicSSLEngineProvider.certificates.get)
     val trustedCerts: Seq[Cert] = targetOpt
       .filter(_.mtlsConfig.mtls)
       .toSeq
-      .flatMap(_.mtlsConfig.trustedCerts)
-      .flatMap(DynamicSSLEngineProvider.certificates.get)
+      .flatMap(_.mtlsConfig.actualTrustedCerts)
+      //.flatMap(DynamicSSLEngineProvider.certificates.get)
     val trustAll: Boolean = targetOpt
       .filter(_.mtlsConfig.mtls)
       .exists(_.mtlsConfig.trustAll)
@@ -962,13 +990,13 @@ case class AkkaWsClientRequest(
     val certs: Seq[Cert] = targetOpt
       .filter(_.mtlsConfig.mtls)
       .toSeq
-      .flatMap(_.mtlsConfig.certs)
-      .flatMap(DynamicSSLEngineProvider.certificates.get)
+      .flatMap(_.mtlsConfig.actualCerts)
+      //.flatMap(DynamicSSLEngineProvider.certificates.get)
     val trustedCerts: Seq[Cert] = targetOpt
       .filter(_.mtlsConfig.mtls)
       .toSeq
-      .flatMap(_.mtlsConfig.trustedCerts)
-      .flatMap(DynamicSSLEngineProvider.certificates.get)
+      .flatMap(_.mtlsConfig.actualTrustedCerts)
+      //.flatMap(DynamicSSLEngineProvider.certificates.get)
     val trustAll: Boolean = targetOpt
       .filter(_.mtlsConfig.mtls)
       .exists(_.mtlsConfig.trustAll)
