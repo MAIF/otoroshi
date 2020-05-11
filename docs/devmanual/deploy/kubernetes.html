@@ -787,7 +787,7 @@ CLIENT_SECRET=`kubectl get secret secret-1 -o jsonpath=&quot;{.data.clientSecret
 curl -X GET https://httpapp.foo.bar/get -u &quot;$CLIENT_ID:$CLIENT_SECRET&quot;
 </code></pre>
 <h2><a href="#access-a-service-from-inside-the-k8s-cluster" name="access-a-service-from-inside-the-k8s-cluster" class="anchor"><span class="anchor-link"></span></a>Access a service from inside the k8s cluster</h2>
-<p>You can access any service referenced in otoroshi through otoroshi from inside the kubernetes cluster by using the internal otoroshi service name and the host header like :</p>
+<p>You can access any service referenced in otoroshi, through otoroshin from inside the kubernetes cluster by using the internal otoroshi service (if you use a template based on <a href="https://github.com/MAIF/otoroshi/tree/master/kubernetes/base">https://github.com/MAIF/otoroshi/tree/master/kubernetes/base</a>) name and the host header with the service domain like :</p>
 <pre class="prettyprint"><code class="language-sh">CLIENT_ID=&quot;xxx&quot;
 CLIENT_SECRET=&quot;xxx&quot;
 curl -X GET -H &#39;Host: httpapp.foo.bar&#39; https://otoroshi-internal-service:8443/get -u &quot;$CLIENT_ID:$CLIENT_SECRET&quot;
