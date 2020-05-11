@@ -356,8 +356,11 @@ Let say the app looks like :
 const fs = require('fs'); 
 const https = require('https'); 
 
+// here we read the apikey to access http-app-2 from files mounted from secrets
 const clientId = fs.readFileSync('/var/run/secrets/kubernetes.io/apikeys/clientId').toString('utf8')
 const clientSecret = fs.readFileSync('/var/run/secrets/kubernetes.io/apikeys/clientSecret').toString('utf8')
+
+// here we read the certificate for the app
 const crt = fs.readFileSync('/var/run/secrets/kubernetes.io/certs/tls.crt')
   .toString('utf8')
   .split('-----BEGIN CERTIFICATE-----\n')
@@ -398,6 +401,7 @@ const options = {
   key: fs.readFileSync('/var/run/secrets/kubernetes.io/certs/tls.key'), 
   cert: cert, 
   ca: ca, 
+  // we want mtls behavior
   requestCert: true, 
   rejectUnauthorized: true
 }; 
@@ -408,6 +412,8 @@ https.createServer(options, (req, res) => {
   });
 }).listen(433);
 ```
+
+then, the descriptors will be :
 
 ```yaml
 ---
@@ -577,6 +583,7 @@ spec:
   targets:
   - url: https://http-app-service:8443
     mtlsConfig:
+      # use mtls to contact the backend
       mtls: true
       certs: 
         # reference the DN for the client cert
