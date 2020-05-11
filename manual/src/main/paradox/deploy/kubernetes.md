@@ -622,3 +622,13 @@ CLIENT_ID=`kubectl get secret secret-1 -o jsonpath="{.data.clientId}" | base64 -
 CLIENT_SECRET=`kubectl get secret secret-1 -o jsonpath="{.data.clientSecret}" | base64 --decode`
 curl -X GET https://httpapp.foo.bar/get -u "$CLIENT_ID:$CLIENT_SECRET"
 ```
+
+## Access service from inside the cluster
+
+You can access any service through otoroshi from inside the kubernetes cluster by using the internal otoroshi service name and the host header
+
+```sh
+CLIENT_ID="xxx"
+CLIENT_SECRET="xxx"
+curl -X GET -H 'Host: httpapp.foo.bar' https://otoroshi-internal-service:8443/get -u "$CLIENT_ID:$CLIENT_SECRET"
+```

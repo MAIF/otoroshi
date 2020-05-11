@@ -1,3 +1,19 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: otoroshi-internal-service
+spec:
+  selector:
+    name: otoroshi-deployment
+  ports:
+  - port: 8080
+    name: "http"
+    targetPort: "http"
+  - port: 8443
+    name: "https"
+    targetPort: "https"
+---
 apiVersion: v1
 kind: Service
 metadata:
@@ -17,3 +33,25 @@ spec:
     # nodePort: 30443
   #loadBalancerSourceRanges:
   #externalIPs:
+---
+apiVersion: proxy.otoroshi.io/v1alpha1
+kind: Certificate
+metadata:
+  name: otoroshi-internal-service-certificate
+spec:
+  description: certificate for the http-app deployed on pods
+  autoRenew: true
+  csr:
+    # add the relevant issuer DN here
+    # issuer: OU=Otoroshi Certificates, O=Otoroshi, C=FR
+    hosts: 
+    - otoroshi-internal-service
+    key:
+      algo: rsa
+      size: 2048
+    subject: uid=otoroshi-internal-service-cert, O=Otoroshi, C=FR
+    client: false
+    ca: false
+    duration: 31536000000
+    signatureAlg: SHA256WithRSAEncryption
+    digestAlg: SHA-256
