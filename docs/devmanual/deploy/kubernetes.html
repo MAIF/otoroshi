@@ -786,8 +786,8 @@ spec:
 CLIENT_SECRET=`kubectl get secret secret-1 -o jsonpath=&quot;{.data.clientSecret}&quot; | base64 --decode`
 curl -X GET https://httpapp.foo.bar/get -u &quot;$CLIENT_ID:$CLIENT_SECRET&quot;
 </code></pre>
-<h2><a href="#access-service-from-inside-the-cluster" name="access-service-from-inside-the-cluster" class="anchor"><span class="anchor-link"></span></a>Access service from inside the cluster</h2>
-<p>You can access any service through otoroshi from inside the kubernetes cluster by using the internal otoroshi service name and the host header</p>
+<h2><a href="#access-a-service-from-inside-the-k8s-cluster" name="access-a-service-from-inside-the-k8s-cluster" class="anchor"><span class="anchor-link"></span></a>Access a service from inside the k8s cluster</h2>
+<p>You can access any service referenced in otoroshi through otoroshi from inside the kubernetes cluster by using the internal otoroshi service name and the host header like :</p>
 <pre class="prettyprint"><code class="language-sh">CLIENT_ID=&quot;xxx&quot;
 CLIENT_SECRET=&quot;xxx&quot;
 curl -X GET -H &#39;Host: httpapp.foo.bar&#39; https://otoroshi-internal-service:8443/get -u &quot;$CLIENT_ID:$CLIENT_SECRET&quot;
@@ -807,7 +807,7 @@ curl -X GET -H &#39;Host: httpapp.foo.bar&#39; https://otoroshi-internal-service
     <li><a href="../deploy/kubernetes.html#deploy-otoroshi-on-your-kubernetes-cluster" class="header">Deploy otoroshi on your kubernetes cluster</a></li>
     <li><a href="../deploy/kubernetes.html#use-otoroshi-as-an-ingress-controller" class="header">Use Otoroshi as an Ingress Controller</a></li>
     <li><a href="../deploy/kubernetes.html#use-otoroshi-crds-for-a-better-full-integration" class="header">Use Otoroshi CRDs for a better/full integration</a></li>
-    <li><a href="../deploy/kubernetes.html#access-service-from-inside-the-cluster" class="header">Access service from inside the cluster</a></li>
+    <li><a href="../deploy/kubernetes.html#access-a-service-from-inside-the-k8s-cluster" class="header">Access a service from inside the k8s cluster</a></li>
   </ul></li>
 </ul>
 </div>
