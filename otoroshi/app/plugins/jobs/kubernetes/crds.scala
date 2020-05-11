@@ -196,7 +196,8 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
 
   private def customizeServiceDescriptor(_spec: JsValue, res: KubernetesOtoroshiResource, services: Seq[KubernetesService], endpoints: Seq[KubernetesEndpoint], otoServices: Seq[ServiceDescriptor]): JsValue = {
     val opt = otoServices.filter(_.metadata.get("otoroshi-provider").contains("kubernetes-crds")).find(_.metadata.get("kubernetes-path").contains(res.path))
-    val spec = opt.map(_.toJson.as[JsObject].deepMerge(_spec.as[JsObject])).getOrElse(_spec)
+    val template = (client.config.templates \ "service-descriptor").asOpt[JsObject].getOrElse(Json.obj())
+    val spec = template.deepMerge(opt.map(_.toJson.as[JsObject].deepMerge(_spec.as[JsObject])).getOrElse(_spec).as[JsObject])
     customizeIdAndName(spec, res).applyOn { s =>
       (s \ "env").asOpt[String] match {
         case Some(_) => s
@@ -262,7 +263,8 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
 
   private def customizeApiKey(_spec: JsValue, res: KubernetesOtoroshiResource, secrets: Seq[KubernetesSecret], apikeys: Seq[ApiKey], registerApkToExport: Function3[String, String, ApiKey, Unit]): JsValue = {
     val apiKeyOpt: Option[ApiKey] = apikeys.filter(_.metadata.get("otoroshi-provider").contains("kubernetes-crds")).find(_.metadata.get("kubernetes-path").contains(res.path))
-    val spec = apiKeyOpt.map(_.toJson.as[JsObject].deepMerge(_spec.as[JsObject])).getOrElse(_spec)
+    val template = (client.config.templates \ "apikey").asOpt[JsObject].getOrElse(Json.obj())
+    val spec = template.deepMerge(apiKeyOpt.map(_.toJson.as[JsObject].deepMerge(_spec.as[JsObject])).getOrElse(_spec).as[JsObject])
     spec.applyOn(s =>
       (s \ "clientName").asOpt[String] match {
         case None => s.as[JsObject] ++ Json.obj("clientName" -> res.name)
@@ -370,7 +372,8 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
 
   private def customizeCert(_spec: JsValue, res: KubernetesOtoroshiResource, certs: Seq[Cert], registerCertToExport: Function3[String, String, Cert, Unit]): JsValue = {
     val opt = certs.filter(_.entityMetadata.get("otoroshi-provider").contains("kubernetes-crds")).find(_.entityMetadata.get("kubernetes-path").contains(res.path))
-    val spec = opt.map(_.toJson.as[JsObject].deepMerge(_spec.as[JsObject])).getOrElse(_spec)
+    val template = (client.config.templates \ "certificate").asOpt[JsObject].getOrElse(Json.obj())
+    val spec = template.deepMerge(opt.map(_.toJson.as[JsObject].deepMerge(_spec.as[JsObject])).getOrElse(_spec).as[JsObject])
     val id = s"kubernetes-crd-import-${res.namespace}-${res.name}".slugifyWithSlash
     spec.applyOn(s =>
       (s \ "name").asOpt[String] match {
@@ -452,36 +455,42 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
 
   private def customizeServiceGroup(_spec: JsValue, res: KubernetesOtoroshiResource, entities: Seq[ServiceGroup]): JsValue = {
     val opt = entities.filter(_.metadata.get("otoroshi-provider").contains("kubernetes-crds")).find(_.metadata.get("kubernetes-path").contains(res.path))
-    val spec = opt.map(_.toJson.as[JsObject].deepMerge(_spec.as[JsObject])).getOrElse(_spec)
+    val template = (client.config.templates \ "service-group").asOpt[JsObject].getOrElse(Json.obj())
+    val spec = template.deepMerge(opt.map(_.toJson.as[JsObject].deepMerge(_spec.as[JsObject])).getOrElse(_spec).as[JsObject])
     customizeIdAndName(spec, res)
   }
 
   private def customizeJwtVerifier(_spec: JsValue, res: KubernetesOtoroshiResource, entities: Seq[GlobalJwtVerifier]): JsValue = {
     val opt = entities.filter(_.metadata.get("otoroshi-provider").contains("kubernetes-crds")).find(_.metadata.get("kubernetes-path").contains(res.path))
-    val spec = opt.map(_.asJson.as[JsObject].deepMerge(_spec.as[JsObject])).getOrElse(_spec)
+    val template = (client.config.templates \ "jwt-verifier").asOpt[JsObject].getOrElse(Json.obj())
+    val spec = template.deepMerge(opt.map(_.asJson.as[JsObject].deepMerge(_spec.as[JsObject])).getOrElse(_spec).as[JsObject])
     customizeIdAndName(spec, res)
   }
 
   private def customizeAuthModule(_spec: JsValue, res: KubernetesOtoroshiResource, entities: Seq[AuthModuleConfig]): JsValue = {
     val opt = entities.filter(_.metadata.get("otoroshi-provider").contains("kubernetes-crds")).find(_.metadata.get("kubernetes-path").contains(res.path))
-    val spec = opt.map(_.asJson.as[JsObject].deepMerge(_spec.as[JsObject])).getOrElse(_spec)
+    val template = (client.config.templates \ "auth-module").asOpt[JsObject].getOrElse(Json.obj())
+    val spec = template.deepMerge(opt.map(_.asJson.as[JsObject].deepMerge(_spec.as[JsObject])).getOrElse(_spec).as[JsObject])
     customizeIdAndName(spec, res)
   }
 
   private def customizeScripts(_spec: JsValue, res: KubernetesOtoroshiResource, entities: Seq[Script]): JsValue = {
     val opt = entities.filter(_.metadata.get("otoroshi-provider").contains("kubernetes-crds")).find(_.metadata.get("kubernetes-path").contains(res.path))
-    val spec = opt.map(_.toJson.as[JsObject].deepMerge(_spec.as[JsObject])).getOrElse(_spec)
+    val template = (client.config.templates \ "script").asOpt[JsObject].getOrElse(Json.obj())
+    val spec = template.deepMerge(opt.map(_.toJson.as[JsObject].deepMerge(_spec.as[JsObject])).getOrElse(_spec).as[JsObject])
     customizeIdAndName(spec, res)
   }
 
   private def customizeTcpService(_spec: JsValue, res: KubernetesOtoroshiResource, entities: Seq[TcpService]): JsValue = {
     val opt = entities.filter(_.metadata.get("otoroshi-provider").contains("kubernetes-crds")).find(_.metadata.get("kubernetes-path").contains(res.path))
-    val spec = opt.map(_.json.as[JsObject].deepMerge(_spec.as[JsObject])).getOrElse(_spec)
+    val template = (client.config.templates \ "tcp-service").asOpt[JsObject].getOrElse(Json.obj())
+    val spec = template.deepMerge(opt.map(_.json.as[JsObject].deepMerge(_spec.as[JsObject])).getOrElse(_spec).as[JsObject])
     customizeIdAndName(spec, res)
   }
 
   private def customizeGlobalConfig(_spec: JsValue, res: KubernetesOtoroshiResource, entity: GlobalConfig): JsValue = {
-    entity.toJson.as[JsObject].deepMerge(_spec.as[JsObject])
+    val template = (client.config.templates \ "global-config").asOpt[JsObject].getOrElse(Json.obj())
+    template.deepMerge(entity.toJson.as[JsObject].deepMerge(_spec.as[JsObject]))
   }
 
   def crdsFetchServiceGroups(groups: Seq[ServiceGroup]): Future[Seq[OtoResHolder[ServiceGroup]]] = client.fetchOtoroshiResources[ServiceGroup]("service-groups", ServiceGroup._fmt, (a, b) => customizeServiceGroup(a, b, groups))

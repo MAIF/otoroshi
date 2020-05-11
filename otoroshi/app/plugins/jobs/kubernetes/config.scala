@@ -33,6 +33,7 @@ case class KubernetesConfig(
   triggerKey: Option[String],
   triggerHost: Option[String],
   triggerPath: Option[String],
+  templates: JsObject
 )
 
 object KubernetesConfig {
@@ -85,7 +86,8 @@ object KubernetesConfig {
           restartDependantDeployments = (conf \ "restartDependantDeployments").asOpt[Boolean].getOrElse(true),
           triggerKey = (conf \ "triggerKey").asOpt[String],
           triggerHost = (conf \ "triggerHost").asOpt[String],
-          triggerPath = (conf \ "triggerPath").asOpt[String]
+          triggerPath = (conf \ "triggerPath").asOpt[String],
+          templates = (conf \ "templates").asOpt[JsObject].getOrElse(Json.obj())
         )
       }
       case None => {
@@ -120,7 +122,8 @@ object KubernetesConfig {
           restartDependantDeployments = (conf \ "restartDependantDeployments").asOpt[Boolean].getOrElse(true),
           triggerKey = (conf \ "triggerKey").asOpt[String],
           triggerHost = (conf \ "triggerHost").asOpt[String],
-          triggerPath = (conf \ "triggerPath").asOpt[String]
+          triggerPath = (conf \ "triggerPath").asOpt[String],
+          templates = (conf \ "templates").asOpt[JsObject].getOrElse(Json.obj())
         )
       }
     }
@@ -144,7 +147,8 @@ object KubernetesConfig {
         "ingresses" -> true,
         "crds" -> true,
         "kubeLeader" -> false,
-        "restartDependantDeployments" -> true
+        "restartDependantDeployments" -> true,
+        "templates" -> Json.obj()
       )
     )
   }
