@@ -521,7 +521,60 @@ curl -X GET \
   }
 }
 </code></pre>
-<p>then you can deploy the previous example with better configuration level</p>
+<p>then you can deploy the previous example with better configuration level, and using mtls, apikeys, etc</p>
+<p>Let say the app looks like :</p>
+<pre class="prettyprint"><code class="language-js">const fs = require(&#39;fs&#39;); 
+const https = require(&#39;https&#39;); 
+
+const clientId = fs.readFileSync(&#39;/var/run/secrets/kubernetes.io/apikeys/clientId&#39;).toString(&#39;utf8&#39;)
+const clientSecret = fs.readFileSync(&#39;/var/run/secrets/kubernetes.io/apikeys/clientSecret&#39;).toString(&#39;utf8&#39;)
+const crt = fs.readFileSync(&#39;/var/run/secrets/kubernetes.io/certs/tls.crt&#39;)
+  .toString(&#39;utf8&#39;)
+  .split(&#39;-----BEGIN CERTIFICATE-----\n&#39;)
+  .filter(s =&gt; s.trim() !== &#39;&#39;);
+const cert = &#39;-----BEGIN CERTIFICATE-----\n&#39; + crt.shift()
+const ca = crt.join(&#39;-----BEGIN CERTIFICATE-----\n&#39;)
+
+function callApi2() {
+  return new Promise(success =&gt; {
+    const options = { 
+      hostname: &#39;httpapp2.foo.bar&#39;, 
+      port: 433, 
+      path: &#39;/&#39;, 
+      method: &#39;GET&#39;,
+      headers: {
+        &#39;Accept&#39;: &#39;application/json&#39;,
+        &#39;Otoroshi-Client-Id&#39;: clientId,
+        &#39;Otoroshi-Client-Secret&#39;: clientSecret,
+      }
+    }; 
+    let data = &#39;&#39;;
+    const req = https.request(options, (res) =&gt; { 
+      res.on(&#39;data&#39;, (d) =&gt; { 
+        data = data + d.toString(&#39;utf8&#39;);
+      }); 
+      res.on(&#39;end&#39;, (d) =&gt; { 
+        success(JSON.parse(data))
+      }); 
+    }); 
+    req.end();
+  })
+}
+
+const options = { 
+  key: fs.readFileSync(&#39;/var/run/secrets/kubernetes.io/certs/tls.key&#39;), 
+  cert: cert, 
+  ca: ca, 
+  requestCert: true, 
+  rejectUnauthorized: true
+}; 
+https.createServer(options, (req, res) =&gt; { 
+  res.writeHead(200, {&#39;Content-Type&#39;: &#39;application/json&#39;});
+  callApi2().then(resp =&gt; {
+    res.write(JSON.stringify{ (&quot;message&quot;: `Hello to ${req.socket.getPeerCertificate().subject.CN}`, api2: resp })); 
+  });
+}).listen(433);
+</code></pre>
 <pre class="prettyprint"><code class="language-yaml">---
 apiVersion: apps/v1
 kind: Deployment
@@ -538,12 +591,12 @@ spec:
         run: http-app-deployment
     spec:
       containers:
-      - image: kennethreitz/httpbin
+      - image: foo/http-app
         imagePullPolicy: IfNotPresent
         name: otoroshi
         ports:
-          - containerPort: 80
-            name: &quot;http&quot;
+          - containerPort: 443
+            name: &quot;https&quot;
         volumeMounts:
         - name: apikey-volume
           # here you will be able to read apikey from files 
@@ -551,10 +604,22 @@ spec:
           # - /var/run/secrets/kubernetes.io/apikeys/clientSecret
           mountPath: &quot;/var/run/secrets/kubernetes.io/apikeys&quot;
           readOnly: true
+        volumeMounts:
+        - name: cert-volume
+          # here you will be able to read app cert from files 
+          # - /var/run/secrets/kubernetes.io/certs/tls.crt
+          # - /var/run/secrets/kubernetes.io/certs/tls.key
+          mountPath: &quot;/var/run/secrets/kubernetes.io/certs&quot;
+          readOnly: true
       volumes:
       - name: apikey-volume
         secret:
-          secretName: secret-1
+          # here we reference the secret name from apikey http-app-2-apikey-1
+          secretName: secret-2
+      - name: cert-volume
+        secret:
+          # here we reference the secret name from cert http-app-certificate-backend
+          secretName: http-app-certificate-backend-secret
 ---
 apiVersion: v1
 kind: Service
@@ -562,9 +627,9 @@ metadata:
   name: http-app-service
 spec:
   ports:
-    - port: 8080
-      targetPort: http
-      name: http
+    - port: 8443
+      targetPort: httpss
+      name: https
   selector:
     run: http-app-deployment
 ---
@@ -579,6 +644,7 @@ apiVersion: proxy.otoroshi.io/v1alpha1
 kind: ApiKey
 metadata:
   name: http-app-apikey-1
+# this apikey can be used to access the app
 spec:
   # a secret name secret-1 will be created by otoroshi and can be used by containers
   exportSecret: true 
@@ -586,15 +652,23 @@ spec:
   group: http-app-group
 ---
 apiVersion: proxy.otoroshi.io/v1alpha1
+kind: ApiKey
+metadata:
+  name: http-app-2-apikey-1
+# this apikey can be used to access another app in a different group
+spec:
+  # a secret name secret-1 will be created by otoroshi and can be used by containers
+  exportSecret: true 
+  secretName: secret-2
+  group: http-app-2-group
+---
+apiVersion: proxy.otoroshi.io/v1alpha1
 kind: Certificate
 metadata:
-  name: http-app-certificate
+  name: http-app-certificate-frontend
 spec:
-  description: certificate for the http-app
+  description: certificate for the http-app on otorshi frontend
   autoRenew: true
-  # a secret name cert-1 will be created by otoroshi and can be used by containers
-  exportSecret: true 
-  secretName: cert-1
   csr:
     issuer: O=EvilCorp, L=San Francisco, ST=California, C=US
     hosts: 
@@ -602,7 +676,52 @@ spec:
     key:
       algo: rsa
       size: 2048
-    subject: OU=httpapp, O=EvilCorp, L=San Francisco, ST=California, C=US
+    subject: OU=httpapp-front, O=EvilCorp, L=San Francisco, ST=California, C=US
+    client: false
+    ca: false
+    duration: 31536000000
+    signatureAlg: SHA256WithRSAEncryption
+    digestAlg: SHA-256
+---
+apiVersion: proxy.otoroshi.io/v1alpha1
+kind: Certificate
+metadata:
+  name: http-app-certificate-backend
+spec:
+  description: certificate for the http-app deployed on pods
+  autoRenew: true
+  # a secret name http-app-certificate-backend-secret will be created by otoroshi and can be used by containers
+  exportSecret: true 
+  secretName: http-app-certificate-backend-secret
+  csr:
+    issuer: O=EvilCorp, L=San Francisco, ST=California, C=US
+    hosts: 
+    - httpapp.foo.bar
+    key:
+      algo: rsa
+      size: 2048
+    subject: OU=httpapp-back, O=EvilCorp, L=San Francisco, ST=California, C=US
+    client: false
+    ca: false
+    duration: 31536000000
+    signatureAlg: SHA256WithRSAEncryption
+    digestAlg: SHA-256
+---
+apiVersion: proxy.otoroshi.io/v1alpha1
+kind: Certificate
+metadata:
+  name: http-app-certificate-client
+spec:
+  description: certificate for the http-app
+  autoRenew: true
+  csr:
+    issuer: O=EvilCorp, L=San Francisco, ST=California, C=US
+    hosts: 
+    - httpapp.foo.bar
+    key:
+      algo: rsa
+      size: 2048
+    subject: OU=httpapp-client, O=EvilCorp, L=San Francisco, ST=California, C=US
     client: false
     ca: false
     duration: 31536000000
@@ -621,7 +740,15 @@ spec:
   - httpapp.foo.bar
   matchingRoot: /
   targets:
-  - url: http://http-app-service:8080
+  - url: https://http-app-service:8443
+    mtlsConfig:
+      mtls: true
+      certs: 
+        # reference the DN for the client cert
+        - OU=httpapp-client, O=EvilCorp, L=San Francisco, ST=California, C=US
+      trustedCerts: 
+        # reference the DN for the CA cert
+        - O=EvilCorp, L=San Francisco, ST=California, C=US
   sendOtoroshiHeadersBack: true
   xForwardedHeaders: true
   overrideHost: true
@@ -633,7 +760,9 @@ spec:
 # here you can specify everything supported by otoroshi like jwt-verifiers, auth config, etc ... for more informations about it, just go to https://maif.github.io/otoroshi/swagger-ui/index.html
 </code></pre>
 <p>now with this descriptor deployed, you can access your app with a command like </p>
-<pre class="prettyprint"><code class="language-sh">curl -X GET https://httpapp.foo.bar/get -u content-of-secret-1-clientId:content-of-secret-1-clientSecret
+<pre class="prettyprint"><code class="language-sh">CLIENT_ID=`kubectl get secret secret-1 -o jsonpath=&quot;{.data.clientId}&quot; | base64 --decode`
+CLIENT_SECRET=`kubectl get secret secret-1 -o jsonpath=&quot;{.data.clientSecret}&quot; | base64 --decode`
+curl -X GET https://httpapp.foo.bar/get -u &quot;$CLIENT_ID:$CLIENT_SECRET&quot;
 </code></pre>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="../deploy/clevercloud.html">Clever Cloud</a></p>
