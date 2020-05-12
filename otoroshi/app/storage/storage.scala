@@ -14,6 +14,7 @@ import akka.NotUsed
 import akka.http.scaladsl.util.FastFuture
 import auth.AuthConfigsDataStore
 import cluster.ClusterStateDataStore
+import otoroshi.models.{SimpleAdminDataStore, WebAuthnAdminDataStore}
 import otoroshi.script.ScriptDataStore
 import otoroshi.storage.stores._
 import ssl.{CertificateDataStore, ClientCertificateValidationDataStore}

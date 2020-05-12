@@ -5,9 +5,11 @@ import akka.http.scaladsl.util.FastFuture
 import env.Env
 import events._
 import models.{BackOfficeUser, PrivateAppsUser}
+import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
+import otoroshi.models._
 import otoroshi.utils.syntax.implicits._
-import play.api.libs.json.{JsValue, Json}
+import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
 import play.api.mvc._
 import security.IdGenerator
 import utils.{AdminApiHelper, JsonApiError, SendAuditAndAlert}
@@ -22,10 +24,11 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
     name = "fake user",
     email = "fake.user@otoroshi.io",
     profile = Json.obj(),
-    authorizedGroup = None,
     simpleLogin = false,
     authConfigId = "none",
-    metadata = Map.empty
+    metadata = Map.empty,
+    teams = Seq(TeamId("*", true, true)),
+    tenants = Seq(TenantId("*", true, true))
   )
 
   def sessions() = ApiAction.async { ctx =>
@@ -184,11 +187,20 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
     val usernameOpt        = (ctx.request.body \ "username").asOpt[String]
     val passwordOpt        = (ctx.request.body \ "password").asOpt[String]
     val labelOpt           = (ctx.request.body \ "label").asOpt[String]
-    val authorizedGroupOpt = (ctx.request.body \ "authorizedGroup").asOpt[String]
-    (usernameOpt, passwordOpt, labelOpt, authorizedGroupOpt) match {
-      case (Some(username), Some(password), Some(label), authorizedGroup) => {
+    (usernameOpt, passwordOpt, labelOpt) match {
+      case (Some(username), Some(password), Some(label)) => {
         val saltedPassword = BCrypt.hashpw(password, BCrypt.gensalt())
-        env.datastores.simpleAdminDataStore.registerUser(username, saltedPassword, label, authorizedGroup).map { _ =>
+        // env.datastores.simpleAdminDataStore.registerUser(username, saltedPassword, label, authorizedGroup).map { _ =>
+        env.datastores.simpleAdminDataStore.registerUser(SimpleOtoroshiAdmin(
+          username = username,
+          password = saltedPassword,
+          label = label,
+          createdAt =  (ctx.request.body \ "teams").asOpt[Long].map(v => new DateTime(v)).getOrElse(DateTime.now()),
+          typ = OtoroshiAdminType.SimpleAdmin,
+          metadata = (ctx.request.body \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
+          teams = (ctx.request.body \ "teams").asOpt[JsArray].map(a => a.value.map(v => TeamId(v.as[String]))).getOrElse(Seq.empty),
+          tenants = (ctx.request.body \ "tenants").asOpt[JsArray].map(a => a.value.map(v => TenantId(v.as[String]))).getOrElse(Seq.empty)
+        )).map { _ =>
           Ok(Json.obj("username" -> username))
         }
       }
@@ -199,7 +211,7 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
   def simpleAdmins = ApiAction.async { ctx =>
     val options = SendAuditAndAlert("ACCESS_SIMPLE_ADMINS", s"User accessed simple admins", None, Json.obj(), ctx)
     fetchWithPaginationAndFilteringAsResult(ctx, "filter.".some, (e: JsValue) => e, options) {
-      env.datastores.simpleAdminDataStore.findAll().fright[JsonApiError]
+      env.datastores.simpleAdminDataStore.findAll().map(_.map(_.json)).fright[JsonApiError]
     }
     // val paginationPage: Int = ctx.request.queryString.get("page").flatMap(_.headOption).map(_.toInt).getOrElse(1)
     // val paginationPageSize: Int =
@@ -234,7 +246,7 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
   def webAuthnAdmins() = ApiAction.async { ctx =>
     val options = SendAuditAndAlert("ACCESS_WEBAUTHN_ADMINS", s"User accessed webauthn admins", None, Json.obj(), ctx)
     fetchWithPaginationAndFilteringAsResult(ctx, "filter.".some, (e: JsValue) => e, options) {
-      env.datastores.webAuthnAdminDataStore.findAll().fright[JsonApiError]
+      env.datastores.webAuthnAdminDataStore.findAll().map(_.map(_.json)).fright[JsonApiError]
     }
     // val paginationPage: Int = ctx.request.queryString.get("page").flatMap(_.headOption).map(_.toInt).getOrElse(1)
     // val paginationPageSize: Int =
@@ -249,19 +261,24 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
     val usernameOpt        = (ctx.request.body \ "username").asOpt[String]
     val passwordOpt        = (ctx.request.body \ "password").asOpt[String]
     val labelOpt           = (ctx.request.body \ "label").asOpt[String]
-    val authorizedGroupOpt = (ctx.request.body \ "authorizedGroup").asOpt[String]
     val credentialOpt      = (ctx.request.body \ "credential").asOpt[JsValue]
     val handleOpt          = (ctx.request.body \ "handle").asOpt[String]
-    (usernameOpt, passwordOpt, labelOpt, authorizedGroupOpt, handleOpt) match {
-      case (Some(username), Some(password), Some(label), _, Some(handle)) => {
+    (usernameOpt, passwordOpt, labelOpt, handleOpt) match {
+      case (Some(username), Some(password), Some(label), Some(handle)) => {
         val saltedPassword = BCrypt.hashpw(password, BCrypt.gensalt())
         env.datastores.webAuthnAdminDataStore
-          .registerUser(username,
-                        saltedPassword,
-                        label,
-                        authorizedGroupOpt,
-                        credentialOpt.getOrElse(Json.obj()),
-                        handle)
+          .registerUser(WebAuthnOtoroshiAdmin(
+            username = username,
+            password = saltedPassword,
+            label = label,
+            handle = handle,
+            credentials = credentialOpt.map(v => Map((v \ "keyId" \ "id").as[String] -> v)).getOrElse(Map.empty),
+            createdAt =  (ctx.request.body \ "teams").asOpt[Long].map(v => new DateTime(v)).getOrElse(DateTime.now()),
+            typ = OtoroshiAdminType.WebAuthnAdmin,
+            metadata = (ctx.request.body \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
+            teams = (ctx.request.body \ "teams").asOpt[JsArray].map(a => a.value.map(v => TeamId(v.as[String]))).getOrElse(Seq.empty),
+            tenants = (ctx.request.body \ "tenants").asOpt[JsArray].map(a => a.value.map(v => TenantId(v.as[String]))).getOrElse(Seq.empty)
+          ))
           .map { _ =>
             Ok(Json.obj("username" -> username))
           }

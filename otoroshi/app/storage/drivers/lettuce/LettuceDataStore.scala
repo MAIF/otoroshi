@@ -19,6 +19,7 @@ import io.lettuce.core.masterreplica.{MasterReplica, StatefulRedisMasterReplicaC
 import io.lettuce.core.resource.{ClientResources, DefaultClientResources}
 import io.lettuce.core.{AbstractRedisClient, ReadFrom, RedisClient, RedisURI}
 import models._
+import otoroshi.models.{SimpleAdminDataStore, WebAuthnAdminDataStore}
 import otoroshi.script.{KvScriptDataStore, ScriptDataStore}
 import otoroshi.storage._
 import otoroshi.storage.stores._
@@ -179,7 +180,7 @@ class LettuceDataStores(configuration: Configuration,
   private lazy val _rawDataStore          = new KvRawDataStore(redis)
   override def rawDataStore: RawDataStore = _rawDataStore
 
-  private lazy val _webAuthnAdminDataStore                    = new WebAuthnAdminDataStore()
+  private lazy val _webAuthnAdminDataStore                    = new KvWebAuthnAdminDataStore()
   override def webAuthnAdminDataStore: WebAuthnAdminDataStore = _webAuthnAdminDataStore
 
   private lazy val _webAuthnRegistrationsDataStore                            = new WebAuthnRegistrationsDataStore()

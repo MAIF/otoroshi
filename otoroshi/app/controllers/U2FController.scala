@@ -16,12 +16,14 @@ import com.yubico.webauthn.data._
 import env.Env
 import events._
 import models.BackOfficeUser
+import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
+import otoroshi.models._
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc._
 import security.IdGenerator
-import utils.future.Implicits._
+import otoroshi.utils.syntax.implicits._
 
 import scala.concurrent.duration.Duration
 import scala.util.{Failure, Success, Try}
@@ -57,9 +59,8 @@ class U2FController(BackOfficeAction: BackOfficeAction,
       case (Some(username), Some(pass)) => {
         env.datastores.simpleAdminDataStore.findByUsername(username).flatMap {
           case Some(user) => {
-            val password        = (user \ "password").as[String]
-            val label           = (user \ "label").as[String]
-            val authorizedGroup = (user \ "authorizedGroup").asOpt[String]
+            val password        = user.password
+            val label           = user.label
             if (BCrypt.checkpw(pass, password)) {
               logger.debug(s"Login successful for simple admin '$username'")
               BackOfficeUser(
@@ -71,10 +72,11 @@ class U2FController(BackOfficeAction: BackOfficeAction,
                   "email" -> username
                 ),
                 token = Json.obj(),
-                authorizedGroup = authorizedGroup,
                 authConfigId = "none",
                 simpleLogin = true,
-                metadata = Map.empty
+                metadata = Map.empty,
+                teams = user.teams,
+                tenants = user.tenants
               ).save(Duration(env.backOfficeSessionExp, TimeUnit.MILLISECONDS)).map { boUser =>
                 env.datastores.simpleAdminDataStore.hasAlreadyLoggedIn(username).map {
                   case false => {
@@ -96,13 +98,13 @@ class U2FController(BackOfficeAction: BackOfficeAction,
                 Ok(Json.obj("username" -> username)).addingToSession("bousr" -> boUser.randomId)
               }
             } else {
-              Unauthorized(Json.obj("error" -> "not authorized")).asFuture
+              Unauthorized(Json.obj("error" -> "not authorized")).future
             }
           }
-          case None => Unauthorized(Json.obj("error" -> "not authorized")).asFuture
+          case None => Unauthorized(Json.obj("error" -> "not authorized")).future
         }
       }
-      case _ => Unauthorized(Json.obj("error" -> "not authorized")).asFuture
+      case _ => Unauthorized(Json.obj("error" -> "not authorized")).future
     }
   }
 
@@ -110,11 +112,22 @@ class U2FController(BackOfficeAction: BackOfficeAction,
     val usernameOpt        = (ctx.request.body \ "username").asOpt[String]
     val passwordOpt        = (ctx.request.body \ "password").asOpt[String]
     val labelOpt           = (ctx.request.body \ "label").asOpt[String]
-    val authorizedGroupOpt = (ctx.request.body \ "authorizedGroup").asOpt[String]
-    (usernameOpt, passwordOpt, labelOpt, authorizedGroupOpt) match {
-      case (Some(username), Some(password), Some(label), authorizedGroup) => {
+    val teams              = (ctx.request.body \ "teams").asOpt[JsArray].map(a => a.value.map(v => TeamId(v.as[String]))).getOrElse(Seq.empty)
+    val tenants            = (ctx.request.body \ "tenants").asOpt[JsArray].map(a => a.value.map(v => TenantId(v.as[String]))).getOrElse(Seq.empty)
+    (usernameOpt, passwordOpt, labelOpt) match {
+      case (Some(username), Some(password), Some(label)) => {
         val saltedPassword = BCrypt.hashpw(password, BCrypt.gensalt())
-        env.datastores.simpleAdminDataStore.registerUser(username, saltedPassword, label, authorizedGroup).map { _ =>
+        //env.datastores.simpleAdminDataStore.registerUser(username, saltedPassword, label, authorizedGroup).map { _ =>
+        env.datastores.simpleAdminDataStore.registerUser(SimpleOtoroshiAdmin(
+          username = username,
+          password = saltedPassword,
+          label = label,
+          createdAt = DateTime.now(),
+          typ = OtoroshiAdminType.SimpleAdmin,
+          metadata = Map.empty,
+          teams = teams,
+          tenants = tenants
+        )).map { _ =>
           Ok(Json.obj("username" -> username))
         }
       }
@@ -128,7 +141,7 @@ class U2FController(BackOfficeAction: BackOfficeAction,
       ctx.request.queryString.get("pageSize").flatMap(_.headOption).map(_.toInt).getOrElse(Int.MaxValue)
     val paginationPosition = (paginationPage - 1) * paginationPageSize
     env.datastores.simpleAdminDataStore.findAll() map { users =>
-      Ok(JsArray(users.drop(paginationPosition).take(paginationPageSize)))
+      Ok(JsArray(users.drop(paginationPosition).take(paginationPageSize).map(_.json)))
     }
   }
 
@@ -158,7 +171,7 @@ class U2FController(BackOfficeAction: BackOfficeAction,
       ctx.request.queryString.get("pageSize").flatMap(_.headOption).map(_.toInt).getOrElse(Int.MaxValue)
     val paginationPosition = (paginationPage - 1) * paginationPageSize
     env.datastores.webAuthnAdminDataStore.findAll() map { users =>
-      Ok(JsArray(users.drop(paginationPosition).take(paginationPageSize)))
+      Ok(JsArray(users.drop(paginationPosition).take(paginationPageSize).map(_.json)))
     }
   }
 
@@ -279,11 +292,24 @@ class U2FController(BackOfficeAction: BackOfficeAction,
               val username           = (otoroshi \ "username").as[String]
               val password           = (otoroshi \ "password").as[String]
               val label              = (otoroshi \ "label").as[String]
-              val authorizedGroupOpt = (otoroshi \ "authorizedGroup").asOpt[String]
+              val teams              = (otoroshi \ "teams").asOpt[JsArray].map(a => a.value.map(v => TeamId(v.as[String]))).getOrElse(Seq.empty)
+              val tenants            = (otoroshi \ "tenants").asOpt[JsArray].map(a => a.value.map(v => TenantId(v.as[String]))).getOrElse(Seq.empty)
               val saltedPassword     = BCrypt.hashpw(password, BCrypt.gensalt())
               val credential         = Json.parse(jsonMapper.writeValueAsString(result))
               env.datastores.webAuthnAdminDataStore
-                .registerUser(username, saltedPassword, label, authorizedGroupOpt, credential, handle)
+                //.registerUser(username, saltedPassword, label, authorizedGroupOpt, credential, handle)
+                .registerUser(WebAuthnOtoroshiAdmin(
+                  username = username,
+                  password = saltedPassword,
+                  label = label,
+                  handle = handle,
+                  credentials = Map((credential \ "keyId" \ "id").as[String] -> credential),
+                  createdAt = DateTime.now(),
+                  typ = OtoroshiAdminType.WebAuthnAdmin,
+                  metadata = Map.empty,
+                  teams = teams,
+                  tenants = tenants
+                ))
                 .map { _ =>
                   Ok(Json.obj("username" -> username))
                 }
@@ -309,8 +335,8 @@ class U2FController(BackOfficeAction: BackOfficeAction,
     (usernameOpt, passwordOpt) match {
       case (Some(username), Some(password)) => {
         env.datastores.webAuthnAdminDataStore.findAll().flatMap { users =>
-          users.find(u => (u \ "username").as[String] == username) match {
-            case Some(user) if BCrypt.checkpw(password, (user \ "password").as[String]) => {
+          users.find(u => u.username == username) match {
+            case Some(user) if BCrypt.checkpw(password, user.password) => {
 
               val rpIdentity: RelyingPartyIdentity =
                 RelyingPartyIdentity.builder.id(reqOriginDomain).name("Otoroshi").build
@@ -368,7 +394,7 @@ class U2FController(BackOfficeAction: BackOfficeAction,
     (usernameOpt, passwordOpt) match {
       case (Some(username), Some(pass)) => {
         env.datastores.webAuthnAdminDataStore.findAll().flatMap { users =>
-          users.find(u => (u \ "username").as[String] == username) match {
+          users.find(u => u.username == username) match {
             case None => FastFuture.successful(BadRequest(Json.obj("error" -> "Bad user")))
             case Some(user) => {
               env.datastores.webAuthnRegistrationsDataStore.getRegistrationRequest(reqId).flatMap {
@@ -376,9 +402,8 @@ class U2FController(BackOfficeAction: BackOfficeAction,
                 case Some(rawRequest) => {
                   val request = jsonMapper.readValue(Json.stringify((rawRequest \ "request").as[JsValue]),
                                                      classOf[AssertionRequest])
-                  val password        = (user \ "password").as[String]
-                  val label           = (user \ "label").as[String]
-                  val authorizedGroup = (user \ "authorizedGroup").asOpt[String]
+                  val password        = user.password
+                  val label           = user.label
 
                   if (BCrypt.checkpw(pass, password)) {
                     val rpIdentity: RelyingPartyIdentity =
@@ -413,10 +438,11 @@ class U2FController(BackOfficeAction: BackOfficeAction,
                             "email" -> username
                           ),
                           token = Json.obj(),
-                          authorizedGroup = authorizedGroup,
                           authConfigId = "none",
                           simpleLogin = false,
-                          metadata = Map.empty
+                          metadata = Map.empty,
+                          teams = user.teams,
+                          tenants = user.tenants
                         ).save(Duration(env.backOfficeSessionExp, TimeUnit.MILLISECONDS)).map { boUser =>
                           env.datastores.webAuthnAdminDataStore.hasAlreadyLoggedIn(username).map {
                             case false => {
@@ -456,21 +482,19 @@ class U2FController(BackOfficeAction: BackOfficeAction,
   }
 }
 
-class LocalCredentialRepository(users: Seq[JsValue], jsonMapper: ObjectMapper, base64Decoder: java.util.Base64.Decoder)
+class LocalCredentialRepository(users: Seq[WebAuthnOtoroshiAdmin], jsonMapper: ObjectMapper, base64Decoder: java.util.Base64.Decoder)
     extends CredentialRepository {
 
   import collection.JavaConverters._
 
   override def getCredentialIdsForUsername(username: String): util.Set[PublicKeyCredentialDescriptor] = {
     users
-      .filter { user =>
-        val _username = (user \ "username").as[String]
-        _username == username
-      }
-      .map { user =>
-        val credential = Json.stringify((user \ "credential").as[JsValue])
-        val regResult  = jsonMapper.readValue(credential, classOf[RegistrationResult])
-        regResult.getKeyId
+      .filter(_.username == username)
+      .flatMap { user =>
+        user.credentials.values.map { credential =>
+          val regResult  = jsonMapper.readValue(credential.stringify, classOf[RegistrationResult])
+          regResult.getKeyId
+        }
       }
       .toSet
       .asJava
@@ -478,11 +502,9 @@ class LocalCredentialRepository(users: Seq[JsValue], jsonMapper: ObjectMapper, b
 
   override def getUserHandleForUsername(username: String): Optional[ByteArray] = {
     users
-      .find { user =>
-        (user \ "username").as[String] == username
-      }
+      .find(_.username == username)
       .map { user =>
-        new ByteArray(base64Decoder.decode((user \ "handle").as[String]))
+        new ByteArray(base64Decoder.decode(user.handle))
       } match {
       case None    => Optional.empty()
       case Some(r) => Optional.of(r)
@@ -492,36 +514,37 @@ class LocalCredentialRepository(users: Seq[JsValue], jsonMapper: ObjectMapper, b
   override def getUsernameForUserHandle(userHandle: ByteArray): Optional[String] = {
     users
       .find { user =>
-        val handle = new ByteArray(base64Decoder.decode((user \ "handle").as[String]))
+        val handle = new ByteArray(base64Decoder.decode(user.handle))
         handle.equals(userHandle)
       }
-      .map { user =>
-        (user \ "username").as[String]
-      } match {
-      case None    => Optional.empty()
-      case Some(r) => Optional.of(r)
-    }
+      .map(_.username) match {
+        case None    => Optional.empty()
+        case Some(r) => Optional.of(r)
+      }
   }
 
   override def lookup(credentialId: ByteArray, userHandle: ByteArray): Optional[RegisteredCredential] = {
     users
-      .find { user =>
-        val credential = Json.stringify((user \ "credential").as[JsValue])
-        val regResult  = jsonMapper.readValue(credential, classOf[RegistrationResult])
-        val handle     = new ByteArray(base64Decoder.decode((user \ "handle").as[String]))
-        regResult.getKeyId.getId.equals(credentialId) && handle.equals(userHandle)
+      .flatMap { user =>
+        user.credentials.map {
+          case (id, reg) =>
+            val handle  = new ByteArray(base64Decoder.decode(user.handle))
+            val regResult  = jsonMapper.readValue(reg.stringify, classOf[RegistrationResult])
+            (handle, regResult.getKeyId.getId, regResult)
+        }.toSeq
       }
-      .map { user =>
-        val credential = Json.stringify((user \ "credential").as[JsValue])
-        val regResult  = jsonMapper.readValue(credential, classOf[RegistrationResult])
-        val handle     = new ByteArray(base64Decoder.decode((user \ "handle").as[String]))
-        RegisteredCredential
-          .builder()
-          .credentialId(regResult.getKeyId.getId)
-          .userHandle(handle)
-          .publicKeyCose(regResult.getPublicKeyCose)
-          .signatureCount(0L)
-          .build()
+      .find {
+        case (handle, id, reg) => handle.equals(userHandle) && credentialId.equals(id)
+      }
+      .map {
+        case (handle, id, regResult) =>
+          RegisteredCredential
+            .builder()
+            .credentialId(regResult.getKeyId.getId)
+            .userHandle(handle)
+            .publicKeyCose(regResult.getPublicKeyCose)
+            .signatureCount(0L)
+            .build()
       } match {
       case None    => Optional.empty()
       case Some(r) => Optional.of(r)
@@ -530,22 +553,26 @@ class LocalCredentialRepository(users: Seq[JsValue], jsonMapper: ObjectMapper, b
 
   override def lookupAll(credentialId: ByteArray): util.Set[RegisteredCredential] = {
     users
-      .filter { user =>
-        val credential = Json.stringify((user \ "credential").as[JsValue])
-        val regResult  = jsonMapper.readValue(credential, classOf[RegistrationResult])
-        regResult.getKeyId.getId.equals(credentialId)
+      .flatMap { user =>
+        user.credentials.map {
+          case (id, reg) =>
+            val handle  = new ByteArray(base64Decoder.decode(user.handle))
+            val regResult  = jsonMapper.readValue(reg.stringify, classOf[RegistrationResult])
+            (handle, regResult.getKeyId.getId, regResult)
+        }.toSeq
       }
-      .map { user =>
-        val credential = Json.stringify((user \ "credential").as[JsValue])
-        val regResult  = jsonMapper.readValue(credential, classOf[RegistrationResult])
-        val handle     = new ByteArray(base64Decoder.decode((user \ "handle").as[String]))
-        RegisteredCredential
-          .builder()
-          .credentialId(regResult.getKeyId.getId)
-          .userHandle(handle)
-          .publicKeyCose(regResult.getPublicKeyCose)
-          .signatureCount(0L)
-          .build()
+      .filter {
+        case (handle, id, reg) => credentialId.equals(id)
+      }
+      .map {
+        case (handle, id, regResult) =>
+          RegisteredCredential
+            .builder()
+            .credentialId(regResult.getKeyId.getId)
+            .userHandle(handle)
+            .publicKeyCose(regResult.getPublicKeyCose)
+            .signatureCount(0L)
+            .build()
       }
       .toSet
       .asJava

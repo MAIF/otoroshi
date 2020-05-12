@@ -15,6 +15,7 @@ import io.kubernetes.client.util.ClientBuilder
 import io.kubernetes.client.util.credentials.AccessTokenAuthentication
 import models._
 import org.joda.time.DateTime
+import otoroshi.models.SimpleOtoroshiAdmin
 import otoroshi.plugins.jobs.kubernetes.IngressSupport.IntOrString
 import otoroshi.script._
 import otoroshi.ssl.pki.models.GenCsrQuery
@@ -488,6 +489,13 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
     customizeIdAndName(spec, res)
   }
 
+  private def customizeAdmin(_spec: JsValue, res: KubernetesOtoroshiResource, entities: Seq[SimpleOtoroshiAdmin]): JsValue = {
+    val opt = entities.filter(_.metadata.get("otoroshi-provider").contains("kubernetes-crds")).find(_.metadata.get("kubernetes-path").contains(res.path))
+    val template = (client.config.templates \ "admin").asOpt[JsObject].getOrElse(Json.obj())
+    val spec = template.deepMerge(opt.map(_.json.as[JsObject].deepMerge(_spec.as[JsObject])).getOrElse(_spec).as[JsObject])
+    customizeIdAndName(spec, res)
+  }
+
   private def customizeGlobalConfig(_spec: JsValue, res: KubernetesOtoroshiResource, entity: GlobalConfig): JsValue = {
     val template = (client.config.templates \ "global-config").asOpt[JsObject].getOrElse(Json.obj())
     template.deepMerge(entity.toJson.as[JsObject].deepMerge(_spec.as[JsObject]))
@@ -509,7 +517,7 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
   def crdsFetchAuthModules(modules: Seq[AuthModuleConfig]): Future[Seq[OtoResHolder[AuthModuleConfig]]] = client.fetchOtoroshiResources[AuthModuleConfig]("auth-modules", AuthModuleConfig._fmt, (a, b) => customizeAuthModule(a, b, modules))
   def crdsFetchScripts(scripts: Seq[Script]): Future[Seq[OtoResHolder[Script]]] = client.fetchOtoroshiResources[Script]("scripts", Script._fmt, (a, b) => customizeScripts(a, b, scripts))
   def crdsFetchTcpServices(services: Seq[TcpService]): Future[Seq[OtoResHolder[TcpService]]] = client.fetchOtoroshiResources[TcpService]("tcp-services", TcpService.fmt, (a, b) => customizeTcpService(a, b, services))
-  def crdsFetchSimpleAdmins(): Future[Seq[OtoResHolder[JsValue]]] = client.fetchOtoroshiResources[JsValue]("admins", v => JsSuccess(v))
+  def crdsFetchSimpleAdmins(admins: Seq[SimpleOtoroshiAdmin]): Future[Seq[OtoResHolder[SimpleOtoroshiAdmin]]] = client.fetchOtoroshiResources[SimpleOtoroshiAdmin]("admins", v => SimpleOtoroshiAdmin.reads(v), (a, b) => customizeAdmin(a, b, admins))
 }
 
 case class CRDContext(
@@ -522,7 +530,7 @@ case class CRDContext(
   authModules: Seq[OtoResHolder[AuthModuleConfig]],
   scripts: Seq[OtoResHolder[Script]],
   tcpServices: Seq[OtoResHolder[TcpService]],
-  simpleAdmins: Seq[OtoResHolder[JsValue]],
+  simpleAdmins: Seq[OtoResHolder[SimpleOtoroshiAdmin]],
   otoserviceGroups: Seq[ServiceGroup],
   otoserviceDescriptors: Seq[ServiceDescriptor],
   otoapiKeys: Seq[ApiKey],
@@ -532,7 +540,7 @@ case class CRDContext(
   otoauthModules: Seq[AuthModuleConfig],
   otoscripts: Seq[Script],
   ototcpServices: Seq[TcpService],
-  otosimpleAdmins: Seq[JsValue],
+  otosimpleAdmins: Seq[SimpleOtoroshiAdmin],
 )
 
 object KubernetesCRDsJob {
@@ -581,7 +589,7 @@ object KubernetesCRDsJob {
       authModules <- clientSupport.crdsFetchAuthModules(otoauthModules)
       scripts <- clientSupport.crdsFetchScripts(otoscripts)
       tcpServices <- clientSupport.crdsFetchTcpServices(ototcpServices)
-      simpleAdmins <- clientSupport.crdsFetchSimpleAdmins()
+      simpleAdmins <- clientSupport.crdsFetchSimpleAdmins(otosimpleAdmins)
 
     } yield {
       CRDContext(
@@ -638,7 +646,7 @@ object KubernetesCRDsJob {
     } else {
       val entities = (
         compareAndSave(globalConfigs)(otoglobalConfigs, _ => "global", _.save()) ++
-          compareAndSave(simpleAdmins)(otosimpleAdmins, v => (v \ "username").as[String], v => env.datastores.simpleAdminDataStore.registerUser(v)) ++ // useful ?
+          compareAndSave(simpleAdmins)(otosimpleAdmins, v => v.username, v => env.datastores.simpleAdminDataStore.registerUser(v)) ++
           compareAndSave(serviceGroups)(otoserviceGroups, _.id, _.save()) ++
           compareAndSave(certificates)(otocertificates, _.id, _.save()) ++
           compareAndSave(jwtVerifiers)(otojwtVerifiers, _.asGlobal.id, _.asGlobal.save()) ++
@@ -736,14 +744,14 @@ object KubernetesCRDsJob {
       .filter(sg => sg.metadata.get("otoroshi-provider").contains("kubernetes-crds"))
       .filterNot(sg => tcpServices.exists(ssg => sg.metadata.get("kubernetes-path").contains(ssg.path)))
       .map(_.id)
-      .debug(seq => logger.info(s"Will delete ${seq.size} out of date script entities"))
+      .debug(seq => logger.info(s"Will delete ${seq.size} out of date tcp-service entities"))
       .applyOn(env.datastores.tcpServiceDataStore.deleteByIds)
 
     _ <- otosimpleAdmins
-      .filter(sg => (sg \ "metadata" \ "otoroshi-provider").asOpt[String].contains("kubernetes-crds"))
-      .filterNot(sg => simpleAdmins.exists(ssg => (sg \ "metadata" \ "kubernetes-path").asOpt[String].contains(ssg.path)))
-      .map(sg => (sg \ "username").as[String])
-      .debug(seq => logger.info(s"Will delete ${seq.size} out of date script entities"))
+      .filter(sg => sg.metadata.get("otoroshi-provider").contains("kubernetes-crds"))
+      .filterNot(sg => simpleAdmins.exists(ssg => sg.metadata.get("kubernetes-path").contains(ssg.path)))
+      .map(_.username)
+      .debug(seq => logger.info(s"Will delete ${seq.size} out of date admin entities"))
       .applyOn(env.datastores.simpleAdminDataStore.deleteUsers)
     } yield ()
   }

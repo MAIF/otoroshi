@@ -152,7 +152,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
       env.datastores.simpleAdminDataStore.findAll().map { users =>
         val changePassword = users.filter { user =>
           //(user \ "password").as[String] == hash &&
-          (user \ "username").as[String] == "admin@otoroshi.io"
+          user.username == "admin@otoroshi.io"
         }.nonEmpty
         Ok(
           Json.obj(
