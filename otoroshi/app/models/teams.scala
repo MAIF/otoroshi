@@ -1,6 +1,7 @@
 package otoroshi.models
 
 import akka.http.scaladsl.model.HttpMethods
+import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import env.Env
@@ -14,22 +15,19 @@ import play.api.libs.ws.WSResponse
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-object TeamId {
-  def apply(raw: String): TeamId = {
+object TeamAccess {
+  def apply(raw: String): TeamAccess = {
     if (raw.contains(":")) {
       val parts = raw.toLowerCase.split(":")
       val canRead = parts.last.contains("r")
       val canWrite = parts.last.contains("w")
-      TeamId(parts.head, canRead, canRead && canWrite)
+      TeamAccess(parts.head, canRead, canRead && canWrite)
     } else {
-      TeamId(raw, true, true)
+      TeamAccess(raw, true, true)
     }
   }
 }
-case class TeamId(value: String, canRead: Boolean, canWrite: Boolean) {
-  lazy val toRaw: String = {
-    s"$value:${if (canRead) "r" else ""}${if (canRead && canWrite) "w" else ""}"
-  }
+case class TeamId(value: String) {
   def canBeWrittenBy(user: BackOfficeUser): Boolean = {
     user.teams.exists(v => v.canWrite && (v.value.toLowerCase.trim == "*" || v.value.toLowerCase.trim == value.toLowerCase.trim))
   }
@@ -38,27 +36,37 @@ case class TeamId(value: String, canRead: Boolean, canWrite: Boolean) {
   }
 }
 
-object TenantId {
-  def apply(raw: String): TenantId = {
+case class TeamAccess(value: String, canRead: Boolean, canWrite: Boolean) {
+  lazy val toRaw: String = {
+    s"$value:${if (canRead) "r" else ""}${if (canRead && canWrite) "w" else ""}"
+  }
+}
+
+object TenantAccess {
+  def apply(raw: String): TenantAccess = {
     if (raw.contains(":")) {
       val parts = raw.toLowerCase.split(":")
       val canRead = parts.last.contains("r")
       val canWrite = parts.last.contains("w")
-      TenantId(parts.head, canRead, canRead && canWrite)
+      TenantAccess(parts.head, canRead, canRead && canWrite)
     } else {
-      TenantId(raw, true, true)
+      TenantAccess(raw, true, true)
     }
   }
 }
-case class TenantId(value: String, canRead: Boolean, canWrite: Boolean) {
-  lazy val toRaw: String = {
-    s"$value:${if (canRead) "r" else ""}${if (canRead && canWrite) "w" else ""}"
-  }
+
+case class TenantId(value: String) {
   def canBeWrittenBy(user: BackOfficeUser): Boolean = {
     user.tenants.exists(v => v.canWrite && (v.value.toLowerCase.trim == "*" || v.value.toLowerCase.trim == value.toLowerCase.trim))
   }
   def canBeReadBy(user: BackOfficeUser): Boolean = {
     user.tenants.exists(v => v.canRead && (v.value.toLowerCase.trim == "*" || v.value.toLowerCase.trim == value.toLowerCase.trim))
+  }
+}
+
+case class TenantAccess(value: String, canRead: Boolean, canWrite: Boolean) {
+  lazy val toRaw: String = {
+    s"$value:${if (canRead) "r" else ""}${if (canRead && canWrite) "w" else ""}"
   }
 }
 
@@ -98,7 +106,7 @@ object TenantAndTeamHelper {
     }
   }
 
-  def checkUserRights(request: RequestHeader, user: BackOfficeUser)(f: Future[WSResponse])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
+  def checkUserRights(request: RequestHeader, user: BackOfficeUser)(f: Future[Result])(implicit ec: ExecutionContext, mat: Materializer, env: Env): Future[Result] = {
 
     import play.api.mvc.Results._
     import kaleidoscope._
@@ -107,7 +115,7 @@ object TenantAndTeamHelper {
     val isWrite = !isRead
     val userIsAdmin = TenantAndTeamHelper.isSuperAdmin(user)
     request match {
-      case req if isWrite && req.path.endsWith("/_bulk") && !userIsAdmin => Unauthorized(Json.obj("error" -> "unauthorized")).future
+      case req if isWrite && req.path.startsWith("/bo/api/proxy/api/") && req.path.endsWith("/_bulk") && !userIsAdmin => Unauthorized(Json.obj("error" -> "unauthorized")).future
       case req if req.path.startsWith("/bo/api/proxy/api/apps-sessions") && !userIsAdmin => Unauthorized(Json.obj("error" -> "unauthorized")).future
       case req if req.path.startsWith("/bo/api/proxy/api/admin-sessions") && !userIsAdmin => Unauthorized(Json.obj("error" -> "unauthorized")).future
       case req if req.path.startsWith("/bo/api/proxy/api/admins/simple") && !userIsAdmin => Unauthorized(Json.obj("error" -> "unauthorized")).future
@@ -215,33 +223,17 @@ object TenantAndTeamHelper {
         ???
       }
       case _ => f.flatMap { res =>
-        val ctype = res.headers.get("Content-Type").flatMap(_.headOption).getOrElse("application/json")
         if (TenantAndTeamHelper.isSuperAdmin(user)) {
-          Status(res.status)
-            .sendEntity(
-              HttpEntity.Streamed(
-                Source.lazySource(() => res.bodyAsSource),
-                res.headers.get("Content-Length").flatMap(_.lastOption).map(_.toInt),
-                res.headers.get("Content-Type").flatMap(_.headOption)
-              )
-            )
-            .withHeaders(
-              res.headers
-                .mapValues(_.head)
-                .toSeq
-                .filter(_._1 != "Content-Type")
-                .filter(_._1 != "Content-Length")
-                .filter(_._1 != "Transfer-Encoding"): _*
-            )
-            .as(ctype).future
+          res.future
         } else {
 
+          val ctype = res.header.headers.getOrElse("Content-Type", "application/json")
+
           def sendResult(result: ByteString, status: Option[Int] = None): Result = {
-            Status(status.getOrElse(res.status))
+            Status(status.getOrElse(res.header.status))
               .apply(result)
               .withHeaders(
-                res.headers
-                  .mapValues(_.head)
+                res.header.headers
                   .toSeq
                   .filter(_._1 != "Content-Type")
                   .filter(_._1 != "Content-Length")
@@ -250,7 +242,7 @@ object TenantAndTeamHelper {
               .as(ctype)
           }
 
-          res.bodyAsSource.runFold(ByteString.empty)(_ ++ _).map { bodyRaw =>
+          res.body.dataStream.runFold(ByteString.empty)(_ ++ _).map { bodyRaw =>
             val bodyStr = bodyRaw.utf8String
             Try(Json.parse(bodyStr)) match {
               case Failure(e) => sendResult(bodyRaw)

@@ -33,6 +33,7 @@ import utils.LocalCache
 import utils.RequestImplicits._
 import utils.http.MtlsConfig
 import otoroshi.utils.syntax.implicits._
+import play.api.mvc.Results.Status
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -69,9 +70,6 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
           )
         )
       case Some(apikey) => {
-
-        import kaleidoscope._
-
         TenantAndTeamHelper.checkUserRights(ctx.request, ctx.user) {
           val host = env.adminApiExposedHost
           val localUrl = if (env.adminApiProxyHttps) s"https://127.0.0.1:${env.port}" else s"http://127.0.0.1:${env.port}"
@@ -87,6 +85,12 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
             env.Headers.OtoroshiClientSecret -> apikey.clientSecret,
             env.Headers.OtoroshiAdminProfile -> Base64.getUrlEncoder.encodeToString(
               Json.stringify(ctx.user.profile).getBytes(Charsets.UTF_8)
+            ),
+            "Otoroshi-Access" -> Base64.getUrlEncoder.encodeToString(
+              Json.stringify(Json.obj(
+                "teams" -> JsArray(ctx.user.teams.map(_.toRaw.json)),
+                "tenants" -> JsArray(ctx.user.tenants.map(_.toRaw.json))
+              )).getBytes(Charsets.UTF_8)
             )
           ) ++ ctx.request.headers.get("Content-Type").filter(_ => currentReqHasBody).map { ctype =>
             "Content-Type" -> ctype
@@ -111,6 +115,26 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
           builderWithBody
             .stream()
             .fast
+            .flatMap { res =>
+              val ctype = res.headers.get("Content-Type").flatMap(_.headOption).getOrElse("application/json")
+              Status(res.status)
+                .sendEntity(
+                  HttpEntity.Streamed(
+                    Source.lazySource(() => res.bodyAsSource),
+                    res.headers.get("Content-Length").flatMap(_.lastOption).map(_.toInt),
+                    res.headers.get("Content-Type").flatMap(_.headOption)
+                  )
+                )
+                .withHeaders(
+                  res.headers
+                    .mapValues(_.head)
+                    .toSeq
+                    .filter(_._1 != "Content-Type")
+                    .filter(_._1 != "Content-Length")
+                    .filter(_._1 != "Transfer-Encoding"): _*
+                )
+                .as(ctype).future
+            }
         }
       }
     }

@@ -20,7 +20,7 @@ import models._
 import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
-import otoroshi.models.{OtoroshiAdminType, SimpleOtoroshiAdmin, TeamId, TenantId}
+import otoroshi.models.{OtoroshiAdminType, SimpleOtoroshiAdmin, TeamAccess, TenantAccess}
 import otoroshi.script.{AccessValidatorRef, JobManager, ScriptCompiler, ScriptManager}
 import otoroshi.ssl.pki.BouncyCastlePki
 import otoroshi.storage.DataStores
@@ -855,8 +855,8 @@ class Env(val configuration: Configuration,
                             createdAt = DateTime.now(),
                             typ = OtoroshiAdminType.SimpleAdmin,
                             metadata = Map.empty,
-                            teams = Seq(TeamId("*")),
-                            tenants = Seq(TenantId("*"))
+                            teams = Seq(TeamAccess("*")),
+                            tenants = Seq(TenantAccess("*"))
                           ))(
                             ec,
                             this

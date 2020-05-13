@@ -112,8 +112,8 @@ class U2FController(BackOfficeAction: BackOfficeAction,
     val usernameOpt        = (ctx.request.body \ "username").asOpt[String]
     val passwordOpt        = (ctx.request.body \ "password").asOpt[String]
     val labelOpt           = (ctx.request.body \ "label").asOpt[String]
-    val teams              = (ctx.request.body \ "teams").asOpt[JsArray].map(a => a.value.map(v => TeamId(v.as[String]))).getOrElse(Seq.empty)
-    val tenants            = (ctx.request.body \ "tenants").asOpt[JsArray].map(a => a.value.map(v => TenantId(v.as[String]))).getOrElse(Seq.empty)
+    val teams              = (ctx.request.body \ "teams").asOpt[JsArray].map(a => a.value.map(v => TeamAccess(v.as[String]))).getOrElse(Seq.empty)
+    val tenants            = (ctx.request.body \ "tenants").asOpt[JsArray].map(a => a.value.map(v => TenantAccess(v.as[String]))).getOrElse(Seq.empty)
     (usernameOpt, passwordOpt, labelOpt) match {
       case (Some(username), Some(password), Some(label)) => {
         val saltedPassword = BCrypt.hashpw(password, BCrypt.gensalt())
@@ -292,8 +292,8 @@ class U2FController(BackOfficeAction: BackOfficeAction,
               val username           = (otoroshi \ "username").as[String]
               val password           = (otoroshi \ "password").as[String]
               val label              = (otoroshi \ "label").as[String]
-              val teams              = (otoroshi \ "teams").asOpt[JsArray].map(a => a.value.map(v => TeamId(v.as[String]))).getOrElse(Seq.empty)
-              val tenants            = (otoroshi \ "tenants").asOpt[JsArray].map(a => a.value.map(v => TenantId(v.as[String]))).getOrElse(Seq.empty)
+              val teams              = (otoroshi \ "teams").asOpt[JsArray].map(a => a.value.map(v => TeamAccess(v.as[String]))).getOrElse(Seq.empty)
+              val tenants            = (otoroshi \ "tenants").asOpt[JsArray].map(a => a.value.map(v => TenantAccess(v.as[String]))).getOrElse(Seq.empty)
               val saltedPassword     = BCrypt.hashpw(password, BCrypt.gensalt())
               val credential         = Json.parse(jsonMapper.writeValueAsString(result))
               env.datastores.webAuthnAdminDataStore

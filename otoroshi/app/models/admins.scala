@@ -39,19 +39,19 @@ trait OtoroshiAdmin {
   def typ: OtoroshiAdminType
   def metadata: Map[String, String]
   def json: JsValue
-  def teams: Seq[TeamId]
-  def tenants: Seq[TenantId]
+  def teams: Seq[TeamAccess]
+  def tenants: Seq[TenantAccess]
 }
 
 case class SimpleOtoroshiAdmin(
-  username: String,
-  password: String,
-  label: String,
-  createdAt: DateTime,
-  typ: OtoroshiAdminType,
-  metadata: Map[String, String],
-  teams: Seq[TeamId],
-  tenants: Seq[TenantId]
+                                username: String,
+                                password: String,
+                                label: String,
+                                createdAt: DateTime,
+                                typ: OtoroshiAdminType,
+                                metadata: Map[String, String],
+                                teams: Seq[TeamAccess],
+                                tenants: Seq[TenantAccess]
 ) extends OtoroshiAdmin {
   def json: JsValue = Json.obj(
     "username" -> username,
@@ -75,8 +75,8 @@ object SimpleOtoroshiAdmin {
         createdAt = (json \ "createdAt").asOpt[Long].map(l => new DateTime(l)).getOrElse(DateTime.now()),
         typ = (json \ "typ").asOpt[JsValue].flatMap(OtoroshiAdminType.fromJson).getOrElse(OtoroshiAdminType.SimpleAdmin),
         metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-        teams = (json \ "teams").asOpt[JsArray].map(a => a.value.map(v => TeamId(v.as[String]))).getOrElse(Seq(TeamId("*"))),
-        tenants = (json \ "tenants").asOpt[JsArray].map(a => a.value.map(v => TenantId(v.as[String]))).getOrElse(Seq(TenantId("*")))
+        teams = (json \ "teams").asOpt[JsArray].map(a => a.value.map(v => TeamAccess(v.as[String]))).getOrElse(Seq(TeamAccess("*"))),
+        tenants = (json \ "tenants").asOpt[JsArray].map(a => a.value.map(v => TenantAccess(v.as[String]))).getOrElse(Seq(TenantAccess("*")))
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -86,16 +86,16 @@ object SimpleOtoroshiAdmin {
 }
 
 case class WebAuthnOtoroshiAdmin(
-  username: String,
-  password: String,
-  label: String,
-  handle: String,
-  credentials: Map[String, JsValue],
-  createdAt: DateTime,
-  typ: OtoroshiAdminType,
-  metadata: Map[String, String],
-  teams: Seq[TeamId],
-  tenants: Seq[TenantId]
+                                  username: String,
+                                  password: String,
+                                  label: String,
+                                  handle: String,
+                                  credentials: Map[String, JsValue],
+                                  createdAt: DateTime,
+                                  typ: OtoroshiAdminType,
+                                  metadata: Map[String, String],
+                                  teams: Seq[TeamAccess],
+                                  tenants: Seq[TenantAccess]
 ) extends OtoroshiAdmin {
   def json: JsValue = Json.obj(
     "username" -> username,
@@ -125,8 +125,8 @@ object WebAuthnOtoroshiAdmin {
         createdAt = (json \ "createdAt").asOpt[Long].map(l => new DateTime(l)).getOrElse(DateTime.now()),
         typ = (json \ "typ").asOpt[JsValue].flatMap(OtoroshiAdminType.fromJson).getOrElse(OtoroshiAdminType.WebAuthnAdmin),
         metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-        teams = (json \ "teams").asOpt[JsArray].map(a => a.value.map(v => TeamId(v.as[String]))).getOrElse(Seq(TeamId("*"))),
-        tenants = (json \ "tenants").asOpt[JsArray].map(a => a.value.map(v => TenantId(v.as[String]))).getOrElse(Seq(TenantId("*")))
+        teams = (json \ "teams").asOpt[JsArray].map(a => a.value.map(v => TeamAccess(v.as[String]))).getOrElse(Seq(TeamAccess("*"))),
+        tenants = (json \ "tenants").asOpt[JsArray].map(a => a.value.map(v => TenantAccess(v.as[String]))).getOrElse(Seq(TenantAccess("*")))
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
