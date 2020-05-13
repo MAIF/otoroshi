@@ -438,11 +438,6 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
     }
 
     val users = authConfig.users.filter(_.webauthn.isDefined).map { usr =>
-      //Json.obj(
-      //  "handle"     -> usr.webauthn.get.handle,
-      //  "credential" -> usr.webauthn.get.registration,
-      //  "username"   -> usr.email
-      //)
       WebAuthnOtoroshiAdmin(
         username = usr.email,
         password = "foo",
@@ -510,11 +505,6 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
     }
 
     val users = authConfig.users.filter(_.webauthn.isDefined).map { usr =>
-      // Json.obj(
-      //   "handle"     -> usr.webauthn.get.handle,
-      //   "credential" -> usr.webauthn.get.registration,
-      //   "username"   -> usr.email
-      // )
       WebAuthnOtoroshiAdmin(
         username = usr.email,
         password = "foo",
@@ -586,11 +576,6 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
     }
 
     val users = authConfig.users.filter(_.webauthn.isDefined).map { usr =>
-      //Json.obj(
-      //  "handle"     -> usr.webauthn.get.handle,
-      //  "credential" -> usr.webauthn.get.registration,
-      //  "username"   -> usr.email
-      //)
       WebAuthnOtoroshiAdmin(
         username = usr.email,
         password = "foo",
@@ -677,11 +662,6 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
     }
 
     val users = authConfig.users.filter(_.webauthn.isDefined).map { usr =>
-      // Json.obj(
-      //   "handle"     -> usr.webauthn.get.handle,
-      //   "credential" -> usr.webauthn.get.registration,
-      //   "username"   -> usr.email
-      // )
       WebAuthnOtoroshiAdmin(
         username = usr.email,
         password = "foo",
@@ -766,11 +746,6 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
     }
 
     val users = authConfig.users.filter(_.webauthn.isDefined).map { usr =>
-      //Json.obj(
-      //  "handle"     -> usr.webauthn.get.handle,
-      //  "credential" -> usr.webauthn.get.registration,
-      //  "username"   -> usr.email
-      //)
       WebAuthnOtoroshiAdmin(
         username = usr.email,
         password = "foo",
@@ -840,11 +815,6 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
     }
 
     val users = authConfig.users.filter(_.webauthn.isDefined).map { usr =>
-      // Json.obj(
-      //   "handle"     -> usr.webauthn.get.handle,
-      //   "credential" -> usr.webauthn.get.registration,
-      //   "username"   -> usr.email
-      // )
       WebAuthnOtoroshiAdmin(
         username = usr.email,
         password = "foo",
