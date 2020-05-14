@@ -803,7 +803,6 @@ object KubernetesCRDsJob {
     ().future
   }
 
-
   def restartDependantDeployments(conf: KubernetesConfig, attrs: TypedMap, clientSupport: ClientSupport, ctx: CRDContext, _updatedSecrets: Seq[(String, String)])(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     if (conf.restartDependantDeployments) {
       implicit val mat = env.otoroshiMaterializer

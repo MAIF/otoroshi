@@ -62,11 +62,11 @@ case class KubernetesCertSecret(raw: JsValue) extends KubernetesEntity {
     val crt = (data \ "tls.crt").asOpt[String]
     val key = (data \ "tls.key").asOpt[String]
     (crt, key) match {
-      case (Some(crtData), Some(keyData)) =>
+      case (Some(crtData), keyDataOpt) =>
         Cert(
           "kubernetes - " + name,
           new String(DynamicSSLEngineProvider.base64Decode(crtData)),
-          new String(DynamicSSLEngineProvider.base64Decode(keyData))
+          new String(DynamicSSLEngineProvider.base64Decode(keyDataOpt.getOrElse("")))
         ).some
       case _ => None
     }

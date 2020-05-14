@@ -99,7 +99,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
           } ++ ctx.request.headers.get("X-Content-Type").map(v => "X-Content-Type" -> v)
 
           val builder = env.Ws // MTLS needed here ???
-            .url(s"$url/$path")
+            .akkaUrl(s"$url/$path")
             .withHttpHeaders(headers: _*)
             .withFollowRedirects(false)
             .withMethod(ctx.request.method)

@@ -703,7 +703,8 @@ class Env(val configuration: Configuration,
     accessValidator = AccessValidatorRef(),
     missingOnlyHeadersIn = Map.empty,
     missingOnlyHeadersOut = Map.empty,
-    stripPath = true
+    stripPath = true,
+    useAkkaHttpClient = true
   )
 
   lazy val otoroshiVersion     = "1.4.23-dev"

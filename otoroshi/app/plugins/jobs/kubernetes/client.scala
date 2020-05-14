@@ -25,6 +25,7 @@ import scala.util.{Failure, Success, Try}
 class KubernetesClient(val config: KubernetesConfig, env: Env) {
 
   implicit val ec = env.otoroshiExecutionContext
+  implicit val mat = env.otoroshiMaterializer
 
   config.caCert.foreach { cert =>
     val caCert = Cert.apply("kubernetes-ca-cert", cert, "").copy(id = "kubernetes-ca-cert")
@@ -35,6 +36,12 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       case Some((k, c)) if c.contentHash == caCert.contentHash  => ()
       case Some((k, c)) if c.contentHash != caCert.contentHash  => caCert.enrich().save()(ec, env)
     }
+  }
+
+  private def asyncSequence[T](seq: Seq[() => Future[T]], par: Int = 1): Future[Seq[T]] = {
+    Source(seq.toList)
+      .mapAsync(par) { f => f() }
+      .runWith(Sink.seq[T])
   }
 
   private def client(url: String, wildcard: Boolean = true): WSRequest = {
@@ -74,9 +81,9 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
     }
   }
   def fetchServices(): Future[Seq[KubernetesService]] = {
-    Future.sequence(config.namespaces.map { namespace =>
+    asyncSequence(config.namespaces.map { namespace =>
       val cli: WSRequest = client(s"/api/v1/namespaces/$namespace/services")
-      cli.addHttpHeaders(
+      () => cli.addHttpHeaders(
         "Accept" -> "application/json"
       ).get().map { resp =>
         (resp.json \ "items").as[JsArray].value.map { item =>
@@ -358,7 +365,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
 
   def watchResource(namespace: String, resource: String, api: String, timeout: Int, stop: AtomicBoolean, labelSelector: Option[String] = None): Source[Seq[ByteString], _] = {
     // val pattern = Pattern.compile(""""resourceVersion"="([0-9]*)"""")
-    println(s"watchResource $namespace $resource $api")
+    // println(s"watchResource $namespace $resource $api")
     val last = new AtomicReference[String]("0")
     Source.repeat(())
       .flatMapConcat { _ =>

@@ -579,11 +579,13 @@ trait CertificateDataStore extends BasicStore[Cert] {
       val renewableCertificates = certificates
         .filter(_.autoRenew)
         .filterNot(_.ca)
-        .filter(willBeInvalidSoon)
+        .filter(willBeInvalidSoon) // TODO: fix
       Source(renewableCertificates.toList)
         .mapAsync(1) {
           case c => c.renew()
-            .flatMap(d => c.copy(id = IdGenerator.token, name = "[UNTIL EXPIRATION] " + c.name).save().map(_ => d))
+            .flatMap {
+              d => c.copy(id = IdGenerator.token, name = "[UNTIL EXPIRATION] " + c.name).save().map(_ => d)
+            }
             .flatMap(c => c.save().map(_ => c))
         }
         .map { c =>
@@ -601,12 +603,13 @@ trait CertificateDataStore extends BasicStore[Cert] {
 
     def markExpiredCertsAsExpired(certificates: Seq[Cert]): Future[Unit] = {
       val expiredCertificates = certificates
-        .filter { cert =>
+        .filterNot { cert =>
           cert.from.isBefore(org.joda.time.DateTime.now()) && cert.to.isAfter(org.joda.time.DateTime.now())
         }
       Source(expiredCertificates.toList)
         .mapAsync(1) {
-          case c => c.copy(name = "[EXPIRED] " + c.name).applyOn(d => d.save().map(_ => d))
+          case c if c.name.startsWith("[EXPIRED] ")=> c.applyOn(d => d.save().map(_ => d))
+          case c if !c.name.startsWith("[EXPIRED] ")=> c.copy(name = "[EXPIRED] " + c.name).applyOn(d => d.save().map(_ => d))
         }
         .map { c =>
           Alerts.send(
