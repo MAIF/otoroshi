@@ -42,7 +42,7 @@ spec:
   description: certificate for the http-app deployed on pods
   autoRenew: true
   csr:
-    # add the relevant issuer DN here
+    # add the relevant issuer DN here to avoid trust issues
     # issuer: OU=Otoroshi Certificates, O=Otoroshi, C=FR
     hosts: 
     - otoroshi-internal-service
