@@ -4,6 +4,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 import akka.stream.scaladsl.Sink
 import env.Env
+import otoroshi.plugins.jobs.kubernetes.KubernetesCRDsJob.{logger, running, shouldRunNext}
 import otoroshi.script._
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
@@ -76,17 +77,26 @@ object KubernetesCertSyncJob {
     }
   }
 
-  def syncKubernetesSecretsToOtoroshiCerts(client: KubernetesClient)(implicit env: Env, ec: ExecutionContext): Future[Unit] = env.metrics.withTimerAsync("otoroshi.plugins.kubernetes.certs.sync") {
-    if (running.compareAndSet(false, true)) {
+  def syncKubernetesSecretsToOtoroshiCerts(client: KubernetesClient, jobRunning: => Boolean)(implicit env: Env, ec: ExecutionContext): Future[Unit] = env.metrics.withTimerAsync("otoroshi.plugins.kubernetes.certs.sync") {
+    if (!jobRunning) {
       shouldRunNext.set(false)
+      running.set(false)
+    }
+    if (jobRunning && running.compareAndSet(false, true)) {
+      shouldRunNext.set(false)
+      logger.info("fetching certs")
       client.fetchCertsAndFilterLabels().flatMap { certs =>
+        logger.info("importing new certs")
         importCerts(certs).flatMap { _ =>
+          logger.info("deleting outdated certs")
           deleteOutOfSyncCerts(certs)
         }
       }.flatMap { _ =>
+        logger.info("certs sync done !")
         if (shouldRunNext.get()) {
           shouldRunNext.set(false)
-          syncKubernetesSecretsToOtoroshiCerts(client)
+          logger.info("restart job right now because sync was asked during sync ")
+          syncKubernetesSecretsToOtoroshiCerts(client, jobRunning)
         } else {
           ().future
         }
@@ -141,7 +151,7 @@ class KubernetesToOtoroshiCertSyncJob extends Job {
     val conf = KubernetesConfig.theConfig(ctx)
     val client = new KubernetesClient(conf, env)
     val source =  client.watchKubeResources(conf.namespaces, Seq("secrets", "endpoints"), 30, stopCommand)
-    source.throttle(1, 5.seconds).runWith(Sink.foreach(_ => KubernetesCertSyncJob.syncKubernetesSecretsToOtoroshiCerts(client)))
+    source.throttle(1, 5.seconds).runWith(Sink.foreach(_ => KubernetesCertSyncJob.syncKubernetesSecretsToOtoroshiCerts(client, !stopCommand.get())))
     ().future
   }
 
@@ -154,7 +164,7 @@ class KubernetesToOtoroshiCertSyncJob extends Job {
     val conf = KubernetesConfig.theConfig(ctx)
     val client = new KubernetesClient(conf, env)
     logger.info("Running kubernetes to otoroshi certs. sync ...")
-    KubernetesCertSyncJob.syncKubernetesSecretsToOtoroshiCerts(client)
+    KubernetesCertSyncJob.syncKubernetesSecretsToOtoroshiCerts(client, !stopCommand.get())
   }
 }
 

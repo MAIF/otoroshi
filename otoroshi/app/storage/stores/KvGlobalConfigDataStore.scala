@@ -133,7 +133,7 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
 
   override def findById(id: String)(implicit ec: ExecutionContext, env: Env): Future[Option[GlobalConfig]] = {
     val staticGlobalScripts: GlobalScripts = env.staticGlobalScripts
-    if (env.staticExposedDomainEnabled && staticGlobalScripts.enabled) {
+    if (/*env.staticExposedDomainEnabled && */staticGlobalScripts.enabled) {
       super
         .findById(id)(ec, env)
         .map(_.map { c =>

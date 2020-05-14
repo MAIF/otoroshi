@@ -33,6 +33,7 @@ import scala.util.{Failure, Success}
 
 class KubernetesOtoroshiCRDsControllerJob extends Job {
 
+  private val logger = Logger("otoroshi-plugins-kubernetes-crds-controller-job")
   private val shouldRun = new AtomicBoolean(false)
   private val apiClientRef = new AtomicReference[ApiClient]()
   private val threadPool = Executors.newFixedThreadPool(1)
@@ -81,6 +82,7 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
   override def interval: Option[FiniteDuration] = 60.seconds.some
 
   override def jobStart(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    logger.info("start")
     stopCommand.set(false)
     val config = KubernetesConfig.theConfig(ctx)
     if (config.kubeLeader) {
@@ -118,7 +120,6 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
     val conf = KubernetesConfig.theConfig(ctx)
     val client = new KubernetesClient(conf, env)
     val source = client.watchOtoResources(conf.namespaces, Seq(
-      "secrets",
       "service-groups",
       "service-descriptors",
       "apikeys",
@@ -128,16 +129,17 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
       "auth-modules",
       "scripts",
       "tcp-services",
-      "admins",
+      "admins"
     ), 30, stopCommand).merge(
       client.watchKubeResources(conf.namespaces, Seq("secrets", "endpoints"), 30, stopCommand)
     )
-    source.throttle(1, 5.seconds).runWith(Sink.foreach(_ => KubernetesCRDsJob.syncCRDs(conf, ctx.attrs)))
+    source.throttle(1, 5.seconds).runWith(Sink.foreach(_ => KubernetesCRDsJob.syncCRDs(conf, ctx.attrs, !stopCommand.get())))
     ().future
   }
 
   override def jobStop(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     // Option(apiClientRef.get()).foreach(_.) // nothing to stop stuff here ...
+    logger.info("stop")
     stopCommand.set(true)
     threadPool.shutdown()
     shouldRun.set(false)
@@ -145,16 +147,17 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
   }
 
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    logger.info("run")
     val conf = KubernetesConfig.theConfig(ctx)
     if (conf.crds) {
       if (conf.kubeLeader) {
         if (shouldRun.get()) {
-          KubernetesCRDsJob.syncCRDs(conf, ctx.attrs)
+          KubernetesCRDsJob.syncCRDs(conf, ctx.attrs, !stopCommand.get())
         } else {
           ().future
         }
       } else {
-        KubernetesCRDsJob.syncCRDs(conf, ctx.attrs)
+        KubernetesCRDsJob.syncCRDs(conf, ctx.attrs, !stopCommand.get())
       }
     } else {
       ().future
@@ -853,33 +856,47 @@ object KubernetesCRDsJob {
     }
   }
 
-  def syncCRDs(conf: KubernetesConfig, attrs: TypedMap)(implicit env: Env, ec: ExecutionContext): Future[Unit] = env.metrics.withTimerAsync("otoroshi.plugins.kubernetes.crds.sync") {
+  def syncCRDs(conf: KubernetesConfig, attrs: TypedMap, jobRunning: => Boolean)(implicit env: Env, ec: ExecutionContext): Future[Unit] = env.metrics.withTimerAsync("otoroshi.plugins.kubernetes.crds.sync") {
     val client = new KubernetesClient(conf, env)
-    if (running.compareAndSet(false, true)) {
+    if (!jobRunning) {
       shouldRunNext.set(false)
-      logger.info("Sync. otoroshi CRDs")
-      KubernetesCertSyncJob.syncKubernetesSecretsToOtoroshiCerts(client).flatMap { _ =>
+      running.set(false)
+    }
+    if (jobRunning && conf.crds && running.compareAndSet(false, true)) {
+      shouldRunNext.set(false)
+      logger.info(s"Sync. otoroshi CRDs at ${DateTime.now()}")
+      KubernetesCertSyncJob.syncKubernetesSecretsToOtoroshiCerts(client, jobRunning).flatMap { _ =>
         val clientSupport = new ClientSupport(client, logger)
         val apiKeysToExport = new AtomicReference[Seq[(String, String, ApiKey)]](Seq.empty)
         val certsToExport = new AtomicReference[Seq[(String, String, Cert)]](Seq.empty)
         val updatedSecrets = new AtomicReference[Seq[(String, String)]](Seq.empty)
         for {
+          _ <- ().future
+          _ = logger.info("starting sync !")
           ctx <- context(conf, attrs, clientSupport, (ns, n, apk) => apiKeysToExport.getAndUpdate(s => s :+ (ns, n, apk)), (ns, n, cert) => certsToExport.getAndUpdate(c => c :+ (ns, n, cert)))
+          _ = logger.info("importing CRDs entities")
           _ <- importCRDEntities(conf, attrs, clientSupport, ctx)
+          _ = logger.info("deleting outdated entities")
           _ <- deleteOutDatedEntities(conf, attrs, ctx)
+          _ = logger.info("exporting apikeys as secrets")
           _ <- exportApiKeys(conf, attrs, clientSupport, ctx, apiKeysToExport.get(), updatedSecrets)
+          _ = logger.info("exporting certs as secrets")
           _ <- exportCerts(conf, attrs, clientSupport, ctx, certsToExport.get(), updatedSecrets)
-          - <- restartDependantDeployments(conf, attrs, clientSupport, ctx, updatedSecrets.get())
+          _ = logger.info("restarting dependant deployments")
+          _ <- restartDependantDeployments(conf, attrs, clientSupport, ctx, updatedSecrets.get())
+          _ = logger.info("sync done !")
         } yield ()
       }.flatMap { _ =>
         if (shouldRunNext.get()) {
           shouldRunNext.set(false)
-          syncCRDs(conf, attrs)
+          logger.info("restart job right now because sync was asked during sync ")
+          syncCRDs(conf, attrs, jobRunning)
         } else {
           ().future
         }
       }.andThen {
         case e =>
+          println("end: " + e)
           running.set(false)
       }
     } else {

@@ -173,7 +173,10 @@ class KubernetesIngressControllerTrigger extends RequestSink {
     val conf = KubernetesConfig.theConfig(ctx)
     val client = new KubernetesClient(conf, env)
     if (conf.crds) {
-      KubernetesCRDsJob.syncCRDs(conf, ctx.attrs)
+      val trigger = new AtomicBoolean(true)
+      KubernetesCRDsJob.syncCRDs(conf, ctx.attrs, trigger.get()).andThen {
+        case _ => trigger.set(false)
+      }
     }
     if (conf.ingresses) {
       KubernetesIngressSyncJob.syncIngresses(conf, ctx.attrs)
