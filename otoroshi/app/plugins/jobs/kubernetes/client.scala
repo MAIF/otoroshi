@@ -375,19 +375,23 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
         val f: Future[Source[Seq[ByteString], _]] = cli.addHttpHeaders(
           "Accept" -> "application/json"
         ).withMethod("GET").stream().map { resp =>
-          resp.bodyAsSource
-            // .alsoTo(Sink.foreach(v => println(v.utf8String)))
-            .via(Framing.delimiter("\n".byteString, Int.MaxValue, true))
-            .map { line =>
-              val json = Json.parse(line.utf8String)
-              // val name = (json \ "object" \ "metadata" \ "name").asOpt[String]
-              // val namespace = (json \ "object" \ "metadata" \ "namespace").asOpt[String]
-              val resourceVersion = (json \ "object" \ "metadata" \ "resourceVersion").asOpt[String]
-              // println(s"processing $namespace / $name - $resourceVersion")
-              resourceVersion.foreach(v => last.set(v))
-              line
-            }
-            .groupedWithin(1000, 2.seconds)
+          if (resp.status == 200) {
+            resp.bodyAsSource
+              // .alsoTo(Sink.foreach(v => println(v.utf8String)))
+              .via(Framing.delimiter("\n".byteString, Int.MaxValue, true))
+              .map { line =>
+                val json = Json.parse(line.utf8String)
+                // val name = (json \ "object" \ "metadata" \ "name").asOpt[String]
+                // val namespace = (json \ "object" \ "metadata" \ "namespace").asOpt[String]
+                val resourceVersion = (json \ "object" \ "metadata" \ "resourceVersion").asOpt[String]
+                // println(s"processing $namespace / $name - $resourceVersion")
+                resourceVersion.foreach(v => last.set(v))
+                line
+              }
+              .groupedWithin(1000, 2.seconds)
+          } else {
+            Source.empty
+          }
         }
         Source.future(f).flatMapConcat(v => v)
       }
