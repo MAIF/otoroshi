@@ -556,6 +556,7 @@ trait CertificateDataStore extends BasicStore[Cert] {
         .filter(_.autoRenew)
         .filter(cert => cert.ca)
         .filter(willBeInvalidSoon)
+        .filterNot(c => c.name.startsWith("[UNTIL EXPIRATION] "))
       Source(renewableCas.toList)
         .mapAsync(1) {
           case c => c.renew()
@@ -580,12 +581,11 @@ trait CertificateDataStore extends BasicStore[Cert] {
         .filter(_.autoRenew)
         .filterNot(_.ca)
         .filter(willBeInvalidSoon) // TODO: fix
+        .filterNot(c => c.name.startsWith("[UNTIL EXPIRATION] "))
       Source(renewableCertificates.toList)
         .mapAsync(1) {
           case c => c.renew()
-            .flatMap {
-              d => c.copy(id = IdGenerator.token, name = "[UNTIL EXPIRATION] " + c.name).save().map(_ => d)
-            }
+            .flatMap(d => c.copy(id = IdGenerator.token, name = "[UNTIL EXPIRATION] " + c.name).save().map(_ => d))
             .flatMap(c => c.save().map(_ => c))
         }
         .map { c =>
