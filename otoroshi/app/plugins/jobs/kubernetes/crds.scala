@@ -814,8 +814,20 @@ object KubernetesCRDsJob {
             val volumeSecrets = (deployment.raw \ "spec" \ "template" \ "spec" \ "volumes").asOpt[JsArray].map(_.value).getOrElse(Seq.empty[JsValue])
               .filter(item => (item \ "secret").isDefined)
               .map(item => (item \ "secret" \ "secretName").as[String])
+
+            val envSecrets: Seq[String] = (deployment.raw \ "spec" \ "template" \ "spec" \ "containers").asOpt[JsArray].map(_.value).getOrElse(Seq.empty[JsValue])
+              .filter { item =>
+                val envs = (item \ "env").asOpt[JsArray].map(_.value).getOrElse(Seq.empty)
+                envs.exists(v => (v \ "valueFrom" \ "secretKeyRef").isDefined)
+              }
+              .flatMap { item =>
+                val envs = (item \ "env").asOpt[JsArray].map(_.value).getOrElse(Seq.empty)
+                envs.map(v => (v \ "valueFrom" \ "secretKeyRef" \ "name").as[String])
+              }.distinct
+
             val updatedSecrets = _updatedSecrets.map { case (ns, n) => s"$ns/$n" }.toSet
-            volumeSecrets.find(sn => updatedSecrets.contains(s"$templateNamespace/$sn")) match {
+
+            (volumeSecrets ++ envSecrets).find(sn => updatedSecrets.contains(s"$templateNamespace/$sn")) match {
               case None => ().future
               case Some(_) => {
                 logger.info(s"Restarting deployment ${deployment.namespace}/${deployment.name}")
