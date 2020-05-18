@@ -229,7 +229,7 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
                 case Some(tv) =>
                   val uri = Uri(tv)
                   target.as[JsObject] ++ Json.obj(
-                    "host" -> uri.authority.host.toString(),
+                    "host" -> (uri.authority.host.toString() + ":" + uri.effectivePort),
                     "scheme" -> uri.scheme
                   )
               }).applyOn { targetJson =>

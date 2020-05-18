@@ -623,6 +623,10 @@ CLIENT_SECRET=`kubectl get secret secret-1 -o jsonpath="{.data.clientSecret}" | 
 curl -X GET https://httpapp.foo.bar/get -u "$CLIENT_ID:$CLIENT_SECRET"
 ```
 
+## Expose Otoroshi to outside world
+
+If you deploy Otoroshi on a kubernetes cluster, the Otoroshi service is deployed as a loadbalancer. You'll need to declare in your DNS settings any name that can be routed by otoroshi going to the loadbalancer endpoint of your kubernetes distribution.
+
 ## Access a service from inside the k8s cluster
 
 You can access any service referenced in otoroshi, through otoroshin from inside the kubernetes cluster by using the internal otoroshi service (if you use a template based on https://github.com/MAIF/otoroshi/tree/master/kubernetes/base) name and the host header with the service domain like :
