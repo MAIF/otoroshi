@@ -258,7 +258,7 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
         case None => s.as[JsObject] ++ Json.obj("targets" -> Json.arr())
       }
     }.applyOn(s =>
-      (s \ "groupId").asOpt[String] match {
+      (s \ "group").asOpt[String] match {
         case None => s
         case Some(v) => s.as[JsObject] - "group" ++ Json.obj("groupId" -> v)
       }
@@ -896,7 +896,6 @@ object KubernetesCRDsJob {
         }
       }.andThen {
         case e =>
-          println("end: " + e)
           running.set(false)
       }
     } else {

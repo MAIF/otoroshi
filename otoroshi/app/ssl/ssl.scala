@@ -197,6 +197,8 @@ case class Cert(
     val current = this.enrich()
     env.datastores.certificatesDataStore.set(current)
   }
+  def notExpired: Boolean = from.isBefore(org.joda.time.DateTime.now()) && to.isAfter(org.joda.time.DateTime.now())
+  def expired: Boolean = !notExpired
   def enrich() = {
     val meta = this.metadata.get
     this.copy(

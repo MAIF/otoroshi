@@ -4,7 +4,6 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 import akka.stream.scaladsl.Sink
 import env.Env
-import otoroshi.plugins.jobs.kubernetes.KubernetesCRDsJob.{logger, running, shouldRunNext}
 import otoroshi.script._
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
@@ -35,6 +34,7 @@ object KubernetesCertSyncJob {
           env.datastores.certificatesDataStore.findById(certId).flatMap {
             case None =>
               hashs.get(newCert.contentHash) match {
+                case None if newCert.expired => ().future
                 case None =>
                   logger.info(s"importing cert. ${cert.namespace} - ${cert.name}")
                   newCert.copy(entityMetadata = newCert.entityMetadata ++ Map(
@@ -49,6 +49,7 @@ object KubernetesCertSyncJob {
             case Some(existingCert) if existingCert.contentHash == newCert.contentHash => ().future
             case Some(existingCert) if existingCert.contentHash != newCert.contentHash =>
               hashs.get(newCert.contentHash) match {
+                case None if newCert.expired => ().future
                 case None =>
                   logger.info(s"updating cert. ${cert.namespace} - ${cert.name}")
                   newCert.copy(entityMetadata = newCert.entityMetadata ++ Map(
