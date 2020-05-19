@@ -9,6 +9,7 @@ import com.typesafe.config.ConfigRenderOptions
 import env.Env
 import models._
 import org.joda.time.DateTime
+import otoroshi.models.{SimpleOtoroshiAdmin, WebAuthnOtoroshiAdmin}
 import otoroshi.script.Script
 import otoroshi.tcp.TcpService
 import play.api.Logger
@@ -132,7 +133,7 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
 
   override def findById(id: String)(implicit ec: ExecutionContext, env: Env): Future[Option[GlobalConfig]] = {
     val staticGlobalScripts: GlobalScripts = env.staticGlobalScripts
-    if (env.staticExposedDomainEnabled && staticGlobalScripts.enabled) {
+    if (/*env.staticExposedDomainEnabled && */staticGlobalScripts.enabled) {
       super
         .findById(id)(ec, env)
         .map(_.map { c =>
@@ -227,12 +228,10 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
             .flatMap(keys => if (keys.nonEmpty) redisCli.del(keys: _*) else FastFuture.successful(0L))
       _ <- config.save()
       _ <- Future.sequence(
-            admins.value.map(v => env.datastores.webAuthnAdminDataStore.save(v))
+            admins.value.map(v => env.datastores.webAuthnAdminDataStore.registerUser(WebAuthnOtoroshiAdmin.reads(v).get))
           )
       _ <- Future.sequence(
-            simpleAdmins.value.map(
-              v => redisCli.set(s"${env.storageRoot}:admins:${(v \ "username").as[String]}", Json.stringify(v))
-            )
+            simpleAdmins.value.map(v => env.datastores.simpleAdminDataStore.registerUser(SimpleOtoroshiAdmin.reads(v).get))
           )
       _ <- Future.sequence(serviceGroups.value.map(ServiceGroup.fromJsons).map(_.save()))
       _ <- Future.sequence(apiKeys.value.map(ApiKey.fromJsons).map(_.save()))
@@ -286,8 +285,8 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
         ),
         "config" -> config.toJson,
         // "appConfig"          -> appConfig,
-        "admins"             -> JsArray(admins),
-        "simpleAdmins"       -> JsArray(simpleAdmins),
+        "admins"             -> JsArray(admins.map(_.json)),
+        "simpleAdmins"       -> JsArray(simpleAdmins.map(_.json)),
         "serviceGroups"      -> JsArray(groups.map(_.toJson)),
         "apiKeys"            -> JsArray(apikeys.map(_.toJson)),
         "serviceDescriptors" -> JsArray(descs.map(_.toJson)),

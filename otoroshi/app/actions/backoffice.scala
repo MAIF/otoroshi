@@ -3,22 +3,17 @@ package actions
 import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.model.Uri.Path
 import akka.http.scaladsl.util.FastFuture
-import akka.util.ByteString
 import auth.GenericOauth2Module
 import env.Env
-import gateway.Errors
 import events.{Alerts, BlackListedBackOfficeUserAlert}
+import gateway.Errors
 import models.BackOfficeUser
-import play.api.Logger
-import play.api.http.HttpEntity
-import play.api.libs.json.{JsArray, JsValue, Json}
-import play.api.mvc._
 import play.api.mvc.Results.Status
+import play.api.mvc._
 import utils.RequestImplicits._
 import utils.TypedMap
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Success
 
 case class BackOfficeActionContext[A](request: Request[A], user: Option[BackOfficeUser]) {
   def connected: Boolean              = user.isDefined
@@ -71,7 +66,7 @@ class BackOfficeActionAuth(val parser: BodyParser[AnyContent])(implicit env: Env
 
   implicit lazy val ec = env.otoroshiExecutionContext
 
-  val checker = new AdminClearanceChecker()(env)
+  // val checker = new AdminClearanceChecker()(env)
 
   override def invokeBlock[A](request: Request[A],
                               block: (BackOfficeActionContextAuth[A]) => Future[Result]): Future[Result] = {
@@ -104,12 +99,12 @@ class BackOfficeActionAuth(val parser: BodyParser[AnyContent])(implicit env: Env
                     )
                   }
                   case false =>
-                    checker.check(req, user) {
+                    //checker.check(req, user) {
                       user.withAuthModuleConfig { auth =>
                         GenericOauth2Module.handleTokenRefresh(auth, user)
                       }
                       block(BackOfficeActionContextAuth(request, user))
-                    }
+                    //}
                 }
               }
               case None =>
@@ -171,6 +166,7 @@ class BackOfficeActionAuth(val parser: BodyParser[AnyContent])(implicit env: Env
  *
  * PLEASE BE INDULGENT THE FOLLOWING CODE :)
  */
+/*
 class AdminClearanceChecker()(implicit env: Env) {
 
   import kaleidoscope._
@@ -319,3 +315,4 @@ class AdminClearanceChecker()(implicit env: Env) {
     }
   }
 }
+*/

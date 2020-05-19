@@ -25,6 +25,7 @@ import scala.util.{Failure, Success, Try}
 class KubernetesClient(val config: KubernetesConfig, env: Env) {
 
   implicit val ec = env.otoroshiExecutionContext
+  implicit val mat = env.otoroshiMaterializer
 
   config.caCert.foreach { cert =>
     val caCert = Cert.apply("kubernetes-ca-cert", cert, "").copy(id = "kubernetes-ca-cert")
@@ -35,6 +36,12 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       case Some((k, c)) if c.contentHash == caCert.contentHash  => ()
       case Some((k, c)) if c.contentHash != caCert.contentHash  => caCert.enrich().save()(ec, env)
     }
+  }
+
+  private def asyncSequence[T](seq: Seq[() => Future[T]], par: Int = 1): Future[Seq[T]] = {
+    Source(seq.toList)
+      .mapAsync(par) { f => f() }
+      .runWith(Sink.seq[T])
   }
 
   private def client(url: String, wildcard: Boolean = true): WSRequest = {
@@ -52,7 +59,11 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
           trustedCerts = config.caCert.map(_ => Seq("kubernetes-ca-cert")).getOrElse(Seq.empty)
         )
       ),
-      ClientConfig()
+      ClientConfig(
+        connectionTimeout = 5000,
+        idleTimeout = 30000,
+        callAndStreamTimeout = 30000
+      )
     ).applyOn(req => config.token match {
       case None => req
       case Some(token) => req.withHttpHeaders(
@@ -74,9 +85,9 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
     }
   }
   def fetchServices(): Future[Seq[KubernetesService]] = {
-    Future.sequence(config.namespaces.map { namespace =>
+    asyncSequence(config.namespaces.map { namespace =>
       val cli: WSRequest = client(s"/api/v1/namespaces/$namespace/services")
-      cli.addHttpHeaders(
+      () => cli.addHttpHeaders(
         "Accept" -> "application/json"
       ).get().map { resp =>
         (resp.json \ "items").as[JsArray].value.map { item =>
@@ -110,9 +121,9 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
     }
   }
   def fetchEndpoints(): Future[Seq[KubernetesEndpoint]] = {
-    Future.sequence(config.namespaces.map { namespace =>
+    asyncSequence(config.namespaces.map { namespace =>
       val cli: WSRequest = client(s"/api/v1/namespaces/$namespace/endpoints")
-      cli.addHttpHeaders(
+      () => cli.addHttpHeaders(
         "Accept" -> "application/json"
       ).get().map { resp =>
         (resp.json \ "items").as[JsArray].value.map { item =>
@@ -134,9 +145,9 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
     }
   }
   def fetchIngressesAndFilterLabels(): Future[Seq[KubernetesIngress]] = {
-    Future.sequence(config.namespaces.map { namespace =>
+    asyncSequence(config.namespaces.map { namespace =>
       val cli: WSRequest = client(s"/apis/networking.k8s.io/v1beta1/namespaces/$namespace/ingresses")
-      cli.addHttpHeaders(
+      () => cli.addHttpHeaders(
         "Accept" -> "application/json"
       ).get().map { resp =>
         filterLabels((resp.json \ "items").as[JsArray].value.map { item =>
@@ -146,9 +157,9 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
     }).map(_.flatten)
   }
   def fetchIngresses(): Future[Seq[KubernetesIngress]] = {
-    Future.sequence(config.namespaces.map { namespace =>
+    asyncSequence(config.namespaces.map { namespace =>
       val cli: WSRequest = client(s"/apis/networking.k8s.io/v1beta1/namespaces/$namespace/ingresses")
-      cli.addHttpHeaders(
+      () => cli.addHttpHeaders(
         "Accept" -> "application/json"
       ).get().map { resp =>
         (resp.json \ "items").as[JsArray].value.map { item =>
@@ -158,9 +169,9 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
     }).map(_.flatten)
   }
   def fetchDeployments(): Future[Seq[KubernetesDeployment]] = {
-    Future.sequence(config.namespaces.map { namespace =>
+    asyncSequence(config.namespaces.map { namespace =>
       val cli: WSRequest = client(s"/api/v1/namespaces/$namespace/deployments")
-      cli.addHttpHeaders(
+      () => cli.addHttpHeaders(
         "Accept" -> "application/json"
       ).get().map { resp =>
         (resp.json \ "items").as[JsArray].value.map { item =>
@@ -170,9 +181,9 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
     }).map(_.flatten)
   }
   def fetchPods(): Future[Seq[KubernetesPod]] = {
-    Future.sequence(config.namespaces.map { namespace =>
+    asyncSequence(config.namespaces.map { namespace =>
       val cli: WSRequest = client(s"/api/v1/namespaces/$namespace/pods")
-      cli.addHttpHeaders(
+      () => cli.addHttpHeaders(
         "Accept" -> "application/json"
       ).get().map { resp =>
         (resp.json \ "items").as[JsArray].value.map { item =>
@@ -188,9 +199,9 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
     fetchSecretsAndFilterLabels().map(secrets => secrets.filter(_.theType == "kubernetes.io/tls").map(_.cert))
   }
   def fetchSecrets(): Future[Seq[KubernetesSecret]] = {
-    Future.sequence(config.namespaces.map { namespace =>
+    asyncSequence(config.namespaces.map { namespace =>
       val cli: WSRequest = client(s"/api/v1/namespaces/$namespace/secrets")
-      cli.addHttpHeaders(
+      () => cli.addHttpHeaders(
         "Accept" -> "application/json"
       ).get().map { resp =>
         (resp.json \ "items").as[JsArray].value.map { item =>
@@ -200,9 +211,9 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
     }).map(_.flatten)
   }
   def fetchSecretsAndFilterLabels(): Future[Seq[KubernetesSecret]] = {
-    Future.sequence(config.namespaces.map { namespace =>
+    asyncSequence(config.namespaces.map { namespace =>
       val cli: WSRequest = client(s"/api/v1/namespaces/$namespace/secrets")
-      cli.addHttpHeaders(
+      () => cli.addHttpHeaders(
         "Accept" -> "application/json"
       ).get().map { resp =>
         filterLabels((resp.json \ "items").as[JsArray].value.map { item =>
@@ -213,9 +224,9 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
   }
 
   def fetchOtoroshiResources[T](pluralName: String, reader: Reads[T], customize: (JsValue, KubernetesOtoroshiResource) => JsValue = (a, b) => a): Future[Seq[OtoResHolder[T]]] = {
-    Future.sequence(config.namespaces.map { namespace =>
+    asyncSequence(config.namespaces.map { namespace =>
       val cli: WSRequest = client(s"/apis/proxy.otoroshi.io/v1alpha1/namespaces/$namespace/$pluralName")
-      cli.addHttpHeaders(
+      () => cli.addHttpHeaders(
         "Accept" -> "application/json"
       ).get().map { resp =>
         Try {
@@ -358,7 +369,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
 
   def watchResource(namespace: String, resource: String, api: String, timeout: Int, stop: AtomicBoolean, labelSelector: Option[String] = None): Source[Seq[ByteString], _] = {
     // val pattern = Pattern.compile(""""resourceVersion"="([0-9]*)"""")
-    println(s"watchResource $namespace $resource $api")
+    // println(s"watchResource $namespace $resource $api")
     val last = new AtomicReference[String]("0")
     Source.repeat(())
       .flatMapConcat { _ =>
@@ -368,19 +379,23 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
         val f: Future[Source[Seq[ByteString], _]] = cli.addHttpHeaders(
           "Accept" -> "application/json"
         ).withMethod("GET").stream().map { resp =>
-          resp.bodyAsSource
-            // .alsoTo(Sink.foreach(v => println(v.utf8String)))
-            .via(Framing.delimiter("\n".byteString, Int.MaxValue, true))
-            .map { line =>
-              val json = Json.parse(line.utf8String)
-              // val name = (json \ "object" \ "metadata" \ "name").asOpt[String]
-              // val namespace = (json \ "object" \ "metadata" \ "namespace").asOpt[String]
-              val resourceVersion = (json \ "object" \ "metadata" \ "resourceVersion").asOpt[String]
-              // println(s"processing $namespace / $name - $resourceVersion")
-              resourceVersion.foreach(v => last.set(v))
-              line
-            }
-            .groupedWithin(1000, 2.seconds)
+          if (resp.status == 200) {
+            resp.bodyAsSource
+              // .alsoTo(Sink.foreach(v => println(v.utf8String)))
+              .via(Framing.delimiter("\n".byteString, Int.MaxValue, true))
+              .map { line =>
+                val json = Json.parse(line.utf8String)
+                // val name = (json \ "object" \ "metadata" \ "name").asOpt[String]
+                // val namespace = (json \ "object" \ "metadata" \ "namespace").asOpt[String]
+                val resourceVersion = (json \ "object" \ "metadata" \ "resourceVersion").asOpt[String]
+                // println(s"processing $namespace / $name - $resourceVersion")
+                resourceVersion.foreach(v => last.set(v))
+                line
+              }
+              .groupedWithin(1000, 2.seconds)
+          } else {
+            Source.empty
+          }
         }
         Source.future(f).flatMapConcat(v => v)
       }

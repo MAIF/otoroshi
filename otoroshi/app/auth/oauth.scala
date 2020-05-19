@@ -423,9 +423,10 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
                     email = (user \ authConfig.emailField).asOpt[String].getOrElse("no.name@oto.tools"),
                     profile = user,
                     authConfigId = authConfig.id,
-                    authorizedGroup = None,
                     simpleLogin = false,
-                    metadata = Map.empty
+                    metadata = Map.empty,
+                    teams = Seq.empty,
+                    tenants = Seq.empty // TODO: tale tenant from auth module
                   )
                 )
               }

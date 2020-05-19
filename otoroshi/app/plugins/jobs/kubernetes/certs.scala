@@ -34,6 +34,7 @@ object KubernetesCertSyncJob {
           env.datastores.certificatesDataStore.findById(certId).flatMap {
             case None =>
               hashs.get(newCert.contentHash) match {
+                case None if newCert.expired => ().future
                 case None =>
                   logger.info(s"importing cert. ${cert.namespace} - ${cert.name}")
                   newCert.copy(entityMetadata = newCert.entityMetadata ++ Map(
@@ -48,6 +49,7 @@ object KubernetesCertSyncJob {
             case Some(existingCert) if existingCert.contentHash == newCert.contentHash => ().future
             case Some(existingCert) if existingCert.contentHash != newCert.contentHash =>
               hashs.get(newCert.contentHash) match {
+                case None if newCert.expired => ().future
                 case None =>
                   logger.info(s"updating cert. ${cert.namespace} - ${cert.name}")
                   newCert.copy(entityMetadata = newCert.entityMetadata ++ Map(
@@ -76,17 +78,26 @@ object KubernetesCertSyncJob {
     }
   }
 
-  def syncKubernetesSecretsToOtoroshiCerts(client: KubernetesClient)(implicit env: Env, ec: ExecutionContext): Future[Unit] = env.metrics.withTimerAsync("otoroshi.plugins.kubernetes.certs.sync") {
-    if (running.compareAndSet(false, true)) {
+  def syncKubernetesSecretsToOtoroshiCerts(client: KubernetesClient, jobRunning: => Boolean)(implicit env: Env, ec: ExecutionContext): Future[Unit] = env.metrics.withTimerAsync("otoroshi.plugins.kubernetes.certs.sync") {
+    if (!jobRunning) {
       shouldRunNext.set(false)
+      running.set(false)
+    }
+    if (jobRunning && running.compareAndSet(false, true)) {
+      shouldRunNext.set(false)
+      logger.info("fetching certs")
       client.fetchCertsAndFilterLabels().flatMap { certs =>
+        logger.info("importing new certs")
         importCerts(certs).flatMap { _ =>
+          logger.info("deleting outdated certs")
           deleteOutOfSyncCerts(certs)
         }
       }.flatMap { _ =>
+        logger.info("certs sync done !")
         if (shouldRunNext.get()) {
           shouldRunNext.set(false)
-          syncKubernetesSecretsToOtoroshiCerts(client)
+          logger.info("restart job right now because sync was asked during sync ")
+          syncKubernetesSecretsToOtoroshiCerts(client, jobRunning)
         } else {
           ().future
         }
@@ -137,11 +148,14 @@ class KubernetesToOtoroshiCertSyncJob extends Job {
 
   override def jobStart(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     stopCommand.set(false)
-    implicit val mat = env.otoroshiMaterializer
-    val conf = KubernetesConfig.theConfig(ctx)
-    val client = new KubernetesClient(conf, env)
-    val source =  client.watchKubeResources(conf.namespaces, Seq("secrets", "endpoints"), 30, stopCommand)
-    source.throttle(1, 5.seconds).runWith(Sink.foreach(_ => KubernetesCertSyncJob.syncKubernetesSecretsToOtoroshiCerts(client)))
+    val config = KubernetesConfig.theConfig(ctx)
+    if (config.watch) {
+      implicit val mat = env.otoroshiMaterializer
+      val conf = KubernetesConfig.theConfig(ctx)
+      val client = new KubernetesClient(conf, env)
+      val source = client.watchKubeResources(conf.namespaces, Seq("secrets", "endpoints"), 30, stopCommand)
+      source.throttle(1, 5.seconds).runWith(Sink.foreach(_ => KubernetesCertSyncJob.syncKubernetesSecretsToOtoroshiCerts(client, !stopCommand.get())))
+    }
     ().future
   }
 
@@ -154,7 +168,7 @@ class KubernetesToOtoroshiCertSyncJob extends Job {
     val conf = KubernetesConfig.theConfig(ctx)
     val client = new KubernetesClient(conf, env)
     logger.info("Running kubernetes to otoroshi certs. sync ...")
-    KubernetesCertSyncJob.syncKubernetesSecretsToOtoroshiCerts(client)
+    KubernetesCertSyncJob.syncKubernetesSecretsToOtoroshiCerts(client, !stopCommand.get())
   }
 }
 

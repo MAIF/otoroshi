@@ -24,6 +24,7 @@ import gateway.{InMemoryRequestsDataStore, RequestsDataStore, Retry}
 import javax.management.{Attribute, ObjectName}
 import models._
 import org.joda.time.DateTime
+import otoroshi.models.{SimpleAdminDataStore, WebAuthnAdminDataStore}
 import otoroshi.script.{KvScriptDataStore, ScriptDataStore}
 import otoroshi.storage._
 import otoroshi.storage.drivers.inmemory._
@@ -1277,7 +1278,7 @@ class SwappableInMemoryDataStores(configuration: Configuration,
   private lazy val _rawDataStore          = new KvRawDataStore(redis)
   override def rawDataStore: RawDataStore = _rawDataStore
 
-  private lazy val _webAuthnAdminDataStore                    = new WebAuthnAdminDataStore()
+  private lazy val _webAuthnAdminDataStore                    = new KvWebAuthnAdminDataStore()
   override def webAuthnAdminDataStore: WebAuthnAdminDataStore = _webAuthnAdminDataStore
 
   private lazy val _webAuthnRegistrationsDataStore                            = new WebAuthnRegistrationsDataStore()

@@ -20,6 +20,7 @@ import models._
 import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
+import otoroshi.models.{OtoroshiAdminType, SimpleOtoroshiAdmin, TeamAccess, TenantAccess}
 import otoroshi.script.{AccessValidatorRef, JobManager, ScriptCompiler, ScriptManager}
 import otoroshi.ssl.pki.BouncyCastlePki
 import otoroshi.storage.DataStores
@@ -702,7 +703,8 @@ class Env(val configuration: Configuration,
     accessValidator = AccessValidatorRef(),
     missingOnlyHeadersIn = Map.empty,
     missingOnlyHeadersOut = Map.empty,
-    stripPath = true
+    stripPath = true,
+    useAkkaHttpClient = true
   )
 
   lazy val otoroshiVersion     = "1.4.23-dev"
@@ -847,7 +849,16 @@ class Env(val configuration: Configuration,
                     _ <- backOfficeApiKey.save()(ec, this)
                     _ <- defaultGroupApiKey.save()(ec, this)
                     _ <- datastores.simpleAdminDataStore
-                          .registerUser(login, BCrypt.hashpw(password, BCrypt.gensalt()), "Otoroshi Admin", None)(
+                          .registerUser(SimpleOtoroshiAdmin(
+                            username = login,
+                            password = BCrypt.hashpw(password, BCrypt.gensalt()),
+                            label = "Otoroshi Admin",
+                            createdAt = DateTime.now(),
+                            typ = OtoroshiAdminType.SimpleAdmin,
+                            metadata = Map.empty,
+                            teams = Seq(TeamAccess("*")),
+                            tenants = Seq(TenantAccess("*"))
+                          ))(
                             ec,
                             this
                           )

@@ -13,6 +13,7 @@ import javax.management.{Attribute, ObjectName}
 import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc.{AbstractController, ControllerComponents}
+import otoroshi.utils.syntax.implicits._
 
 import scala.concurrent.duration.FiniteDuration
 
@@ -25,11 +26,33 @@ class StatsController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
   lazy val logger = Logger("otoroshi-stats-api")
 
   private def avgDouble(value: Double, extractor: StatsView => Double, stats: Seq[StatsView]): Double = {
-    stats.map(extractor).:+(value).fold(0.0)(_ + _) / (stats.size + 1)
+    (if (value == Double.NaN || value == Double.NegativeInfinity || value == Double.PositiveInfinity) {
+      0.0
+    } else {
+      stats.map(extractor).:+(value).fold(0.0)(_ + _) / (stats.size + 1)
+    }).applyOn {
+      case Double.NaN => 0.0
+      case Double.NegativeInfinity => 0.0
+      case Double.PositiveInfinity => 0.0
+      case v if v.toString == "NaN" => 0.0
+      case v if v.toString == "Infinity" => 0.0
+      case v => v
+    }
   }
 
   private def sumDouble(value: Double, extractor: StatsView => Double, stats: Seq[StatsView]): Double = {
-    stats.map(extractor).:+(value).fold(0.0)(_ + _)
+    if (value == Double.NaN || value == Double.NegativeInfinity || value == Double.PositiveInfinity) {
+      0.0
+    } else {
+      stats.map(extractor).:+(value).fold(0.0)(_ + _)
+    }.applyOn {
+      case Double.NaN => 0.0
+      case Double.NegativeInfinity => 0.0
+      case Double.PositiveInfinity => 0.0
+      case v if v.toString == "NaN" => 0.0
+      case v if v.toString == "Infinity" => 0.0
+      case v => v
+    }
   }
 
   def globalLiveStats() = ApiAction.async { ctx =>
@@ -157,20 +180,21 @@ class StatsController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
           dataOutRate               <- env.datastores.serviceDescriptorDataStore.dataOutPerSecFor("global")
           concurrentHandledRequests <- env.datastores.requestsDataStore.asyncGetHandledRequests()
           membersStats              <- env.datastores.clusterStateDataStore.getMembers().map(_.map(_.statsView))
-        } yield
+        } yield {
           Json.obj(
-            "calls"       -> calls,
-            "dataIn"      -> dataIn,
-            "dataOut"     -> dataOut,
-            "rate"        -> sumDouble(rate, _.rate, membersStats),
-            "duration"    -> avgDouble(duration, _.duration, membersStats),
-            "overhead"    -> avgDouble(overhead, _.overhead, membersStats),
-            "dataInRate"  -> sumDouble(dataInRate, _.dataInRate, membersStats),
+            "calls" -> calls,
+            "dataIn" -> dataIn,
+            "dataOut" -> dataOut,
+            "rate" -> sumDouble(rate, _.rate, membersStats),
+            "duration" -> avgDouble(duration, _.duration, membersStats),
+            "overhead" -> avgDouble(overhead, _.overhead, membersStats),
+            "dataInRate" -> sumDouble(dataInRate, _.dataInRate, membersStats),
             "dataOutRate" -> sumDouble(dataOutRate, _.dataOutRate, membersStats),
             "concurrentHandledRequests" -> sumDouble(concurrentHandledRequests.toDouble,
               _.concurrentHandledRequests.toDouble,
               membersStats).toLong
           )
+        }
       case serviceId =>
         for {
           calls                     <- env.datastores.serviceDescriptorDataStore.calls(serviceId)

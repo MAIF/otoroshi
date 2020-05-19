@@ -4,9 +4,11 @@ import akka.http.scaladsl.util.FastFuture
 import akka.util.ByteString
 import env.Env
 import org.joda.time.DateTime
+import otoroshi.models._
 import play.api.Logger
 import play.api.libs.json._
 import utils.JsonImplicits._
+import otoroshi.utils.syntax.implicits._
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
@@ -35,7 +37,7 @@ class WebAuthnRegistrationsDataStore() {
   }
 }
 
-class WebAuthnAdminDataStore() {
+class KvWebAuthnAdminDataStore extends WebAuthnAdminDataStore {
 
   lazy val logger = Logger("otoroshi-webauthn-admin-datastore")
 
@@ -47,15 +49,12 @@ class WebAuthnAdminDataStore() {
   def alreadyLoggedIn(email: String)(implicit ec: ExecutionContext, env: Env): Future[Long] =
     env.datastores.rawDataStore.sadd(s"${env.storageRoot}:users:alreadyloggedin", Seq(ByteString(email)))
 
-  def findByUsername(username: String)(implicit ec: ExecutionContext, env: Env): Future[Option[JsValue]] =
-    env.datastores.rawDataStore.get(key(username)).map(_.map(v => Json.parse(v.utf8String)).map { user =>
-      (user \ "metadata").asOpt[Map[String, String]] match {
-        case None => user.as[JsObject] ++ Json.obj("metadata" -> Json.obj())
-        case Some(_) => user
-      }
+  def findByUsername(username: String)(implicit ec: ExecutionContext, env: Env): Future[Option[WebAuthnOtoroshiAdmin]] =
+    env.datastores.rawDataStore.get(key(username)).map(_.map(v => Json.parse(v.utf8String)).flatMap { user =>
+      WebAuthnOtoroshiAdmin.reads(user).asOpt
     })
 
-  def findAll()(implicit ec: ExecutionContext, env: Env): Future[Seq[JsValue]] =
+  def findAll()(implicit ec: ExecutionContext, env: Env): Future[Seq[WebAuthnOtoroshiAdmin]] =
     env.datastores.rawDataStore
       .keys(key("*"))
       .flatMap(
@@ -63,55 +62,27 @@ class WebAuthnAdminDataStore() {
           if (keys.isEmpty) FastFuture.successful(Seq.empty[Option[ByteString]])
           else env.datastores.rawDataStore.mget(keys)
       )
-      .map(seq => seq.filter(_.isDefined).map(_.get).map(v => Json.parse(v.utf8String)).map { user =>
-        (user \ "metadata").asOpt[Map[String, String]] match {
-          case None => user.as[JsObject] ++ Json.obj("metadata" -> Json.obj())
-          case Some(_) => user
-        }
+      .map(seq => seq.filter(_.isDefined).map(_.get).map(v => Json.parse(v.utf8String)).flatMap { user =>
+        WebAuthnOtoroshiAdmin.reads(user).asOpt
       })
 
   def deleteUser(username: String)(implicit ec: ExecutionContext, env: Env): Future[Long] =
     env.datastores.rawDataStore.del(Seq(key(username)))
 
-  def registerUser(username: String,
-                   password: String,
-                   label: String,
-                   authorizedGroup: Option[String],
-                   credential: JsValue,
-                   handle: String, metadata: Map[String, String] = Map.empty)(
-      implicit ec: ExecutionContext,
-      env: Env
-  ): Future[Boolean] = {
-    val group: JsValue = authorizedGroup match {
-      case Some(g) => JsString(g)
-      case None    => JsNull
-    }
-    env.datastores.rawDataStore.set(
-      key(username),
-      ByteString(
-        Json.stringify(
-          Json.obj(
-            "username"        -> username,
-            "password"        -> password,
-            "label"           -> label,
-            "authorizedGroup" -> group,
-            "createdAt"       -> DateTime.now(),
-            "credential"      -> credential,
-            "handle"          -> handle,
-            "type"            -> "WEBAUTHN",
-            "metadata"        -> metadata
-          )
-        )
-      ),
-      None
-    )
-  }
-
-  def save(payload: JsValue)(
+  def save(payload: WebAuthnOtoroshiAdmin)(
     implicit ec: ExecutionContext,
     env: Env
   ): Future[Boolean] = {
-    val username = (payload \ "username").as[String]
-    env.datastores.rawDataStore.set(key(username), ByteString(Json.stringify(payload)), None)
+    env.datastores.rawDataStore.set(key(payload.username), payload.json.stringify.byteString, None)
   }
+
+  override def deleteUsers(usernames: Seq[String])(implicit ec: ExecutionContext, env: Env): Future[Long] = {
+    if (usernames.isEmpty) {
+      FastFuture.successful(0L)
+    } else {
+      env.datastores.rawDataStore.del(usernames.map(key))
+    }
+  }
+
+  override def registerUser(user: WebAuthnOtoroshiAdmin)(implicit ec: ExecutionContext, env: Env): Future[Boolean] = save(user)
 }

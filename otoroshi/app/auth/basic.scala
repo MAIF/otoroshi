@@ -12,11 +12,13 @@ import com.fasterxml.jackson.datatype.jdk8.Jdk8Module
 import com.google.common.base.Charsets
 import com.yubico.webauthn._
 import com.yubico.webauthn.data._
-import controllers.{routes, LocalCredentialRepository}
+import controllers.{LocalCredentialRepository, routes}
 import env.Env
 import events.{AdminFirstLogin, AdminLoggedInAlert, Alerts}
 import models._
+import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
+import otoroshi.models.{OtoroshiAdminType, WebAuthnOtoroshiAdmin}
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc._
@@ -203,10 +205,11 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
             name = user.name,
             email = user.email,
             profile = user.asJson,
-            authorizedGroup = None,
             simpleLogin = false,
             authConfigId = authConfig.id,
-            metadata = Map.empty
+            metadata = Map.empty,
+            teams = Seq.empty,
+            tenants = Seq.empty // TODO: tale tenant from auth module
           )
         )
       case None => Left(s"You're not authorized here")
@@ -435,10 +438,17 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
     }
 
     val users = authConfig.users.filter(_.webauthn.isDefined).map { usr =>
-      Json.obj(
-        "handle"     -> usr.webauthn.get.handle,
-        "credential" -> usr.webauthn.get.registration,
-        "username"   -> usr.email
+      WebAuthnOtoroshiAdmin(
+        username = usr.email,
+        password = "foo",
+        label = "foo",
+        handle = usr.webauthn.get.handle,
+        credentials = Map("" -> usr.webauthn.get.registration),
+        createdAt = DateTime.now(),
+        typ = OtoroshiAdminType.WebAuthnAdmin,
+        metadata = Map.empty,
+        teams = Seq.empty,
+        tenants = Seq.empty
       )
     }
 
@@ -495,10 +505,17 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
     }
 
     val users = authConfig.users.filter(_.webauthn.isDefined).map { usr =>
-      Json.obj(
-        "handle"     -> usr.webauthn.get.handle,
-        "credential" -> usr.webauthn.get.registration,
-        "username"   -> usr.email
+      WebAuthnOtoroshiAdmin(
+        username = usr.email,
+        password = "foo",
+        label = "foo",
+        handle = usr.webauthn.get.handle,
+        credentials = Map("" -> usr.webauthn.get.registration),
+        createdAt = DateTime.now(),
+        typ = OtoroshiAdminType.WebAuthnAdmin,
+        metadata = Map.empty,
+        teams = Seq.empty,
+        tenants = Seq.empty
       )
     }
 
@@ -559,10 +576,17 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
     }
 
     val users = authConfig.users.filter(_.webauthn.isDefined).map { usr =>
-      Json.obj(
-        "handle"     -> usr.webauthn.get.handle,
-        "credential" -> usr.webauthn.get.registration,
-        "username"   -> usr.email
+      WebAuthnOtoroshiAdmin(
+        username = usr.email,
+        password = "foo",
+        label = "foo",
+        handle = usr.webauthn.get.handle,
+        credentials = Map("" -> usr.webauthn.get.registration),
+        createdAt = DateTime.now(),
+        typ = OtoroshiAdminType.WebAuthnAdmin,
+        metadata = Map.empty,
+        teams = Seq.empty,
+        tenants = Seq.empty
       )
     }
 
@@ -570,7 +594,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
     val passwordOpt = (otoroshi \ "password").asOpt[String]
     (usernameOpt, passwordOpt) match {
       case (Some(username), Some(pass)) => {
-        users.find(u => (u \ "username").as[String] == username) match {
+        users.find(u => u.username == username) match {
           case None => FastFuture.successful(Left("Bad user"))
           case Some(user) => {
             env.datastores.webAuthnRegistrationsDataStore.getRegistrationRequest(reqId).flatMap {
@@ -638,10 +662,17 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
     }
 
     val users = authConfig.users.filter(_.webauthn.isDefined).map { usr =>
-      Json.obj(
-        "handle"     -> usr.webauthn.get.handle,
-        "credential" -> usr.webauthn.get.registration,
-        "username"   -> usr.email
+      WebAuthnOtoroshiAdmin(
+        username = usr.email,
+        password = "foo",
+        label = "foo",
+        handle = usr.webauthn.get.handle,
+        credentials = Map("" -> usr.webauthn.get.registration),
+        createdAt = DateTime.now(),
+        typ = OtoroshiAdminType.WebAuthnAdmin,
+        metadata = Map.empty,
+        teams = Seq.empty,
+        tenants = Seq.empty
       )
     }
 
@@ -649,7 +680,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
     val passwordOpt = (otoroshi \ "password").asOpt[String]
     (usernameOpt, passwordOpt) match {
       case (Some(username), Some(pass)) => {
-        users.find(u => (u \ "username").as[String] == username) match {
+        users.find(u => u.username == username) match {
           case None => FastFuture.successful(Left("Bad user"))
           case Some(user) => {
             env.datastores.webAuthnRegistrationsDataStore.getRegistrationRequest(reqId).flatMap {
@@ -715,10 +746,17 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
     }
 
     val users = authConfig.users.filter(_.webauthn.isDefined).map { usr =>
-      Json.obj(
-        "handle"     -> usr.webauthn.get.handle,
-        "credential" -> usr.webauthn.get.registration,
-        "username"   -> usr.email
+      WebAuthnOtoroshiAdmin(
+        username = usr.email,
+        password = "foo",
+        label = "foo",
+        handle = usr.webauthn.get.handle,
+        credentials = Map("" -> usr.webauthn.get.registration),
+        createdAt = DateTime.now(),
+        typ = OtoroshiAdminType.WebAuthnAdmin,
+        metadata = Map.empty,
+        teams = Seq.empty,
+        tenants = Seq.empty
       )
     }
 
@@ -777,10 +815,17 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
     }
 
     val users = authConfig.users.filter(_.webauthn.isDefined).map { usr =>
-      Json.obj(
-        "handle"     -> usr.webauthn.get.handle,
-        "credential" -> usr.webauthn.get.registration,
-        "username"   -> usr.email
+      WebAuthnOtoroshiAdmin(
+        username = usr.email,
+        password = "foo",
+        label = "foo",
+        handle = usr.webauthn.get.handle,
+        credentials = Map("" -> usr.webauthn.get.registration),
+        createdAt = DateTime.now(),
+        typ = OtoroshiAdminType.WebAuthnAdmin,
+        metadata = Map.empty,
+        teams = Seq.empty,
+        tenants = Seq.empty
       )
     }
 

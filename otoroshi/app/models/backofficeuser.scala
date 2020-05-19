@@ -4,8 +4,10 @@ import akka.http.scaladsl.util.FastFuture._
 import auth.AuthModuleConfig
 import env.Env
 import org.joda.time.DateTime
+import otoroshi.models.{TeamAccess, TenantAccess}
 import play.api.libs.json._
 import otoroshi.storage.BasicStore
+import otoroshi.utils.syntax.implicits._
 
 import scala.concurrent.duration._
 import scala.concurrent.duration.Duration
@@ -23,13 +25,14 @@ case class BackOfficeUser(randomId: String,
                           email: String,
                           profile: JsValue,
                           token: JsValue = Json.obj(),
-                          authorizedGroup: Option[String],
                           authConfigId: String,
                           simpleLogin: Boolean,
                           createdAt: DateTime = DateTime.now(),
                           expiredAt: DateTime = DateTime.now(),
                           lastRefresh: DateTime = DateTime.now(),
-                          metadata: Map[String, String]
+                          metadata: Map[String, String],
+                          teams: Seq[TeamAccess],
+                          tenants: Seq[TenantAccess]
                          ) extends RefreshableUser {
 
   def save(duration: Duration)(implicit ec: ExecutionContext, env: Env): Future[BackOfficeUser] = {
@@ -71,12 +74,13 @@ object BackOfficeUser {
             authConfigId = (json \ "authConfigId").asOpt[String].getOrElse("none"),
             profile = (json \ "profile").asOpt[JsValue].getOrElse(Json.obj()),
             token = (json \ "token").asOpt[JsValue].getOrElse(Json.obj()),
-            authorizedGroup = (json \ "authorizedGroup").asOpt[String],
             simpleLogin = (json \ "simpleLogin").asOpt[Boolean].getOrElse(true),
             createdAt = (json \ "createdAt").asOpt[Long].map(l => new DateTime(l)).getOrElse(DateTime.now()),
             expiredAt = (json \ "expiredAt").asOpt[Long].map(l => new DateTime(l)).getOrElse(DateTime.now()),
             lastRefresh = (json \ "lastRefresh").asOpt[Long].map(l => new DateTime(l)).getOrElse(DateTime.now()),
             metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
+            teams = (json \ "teams").asOpt[JsArray].map(a => a.value.map(v => TeamAccess(v.as[String]))).getOrElse(Seq.empty),
+            tenants = (json \ "tenants").asOpt[JsArray].map(a => a.value.map(v => TenantAccess(v.as[String]))).getOrElse(Seq.empty)
           )
         )
       } recover {
@@ -90,12 +94,13 @@ object BackOfficeUser {
       "authConfigId"    -> o.authConfigId,
       "profile"         -> o.profile,
       "token"           -> o.token,
-      "authorizedGroup" -> o.authorizedGroup.map(JsString.apply).getOrElse(JsNull).as[JsValue],
       "simpleLogin"     -> o.simpleLogin,
       "createdAt"       -> o.createdAt.getMillis,
       "expiredAt"       -> o.expiredAt.getMillis,
       "lastRefresh"     -> o.lastRefresh.getMillis,
-      "metadata"        -> o.metadata
+      "metadata"        -> o.metadata,
+      "teams"           -> JsArray(o.teams.map(_.toRaw.json)),
+      "tenants"         -> JsArray(o.tenants.map(_.toRaw.json)),
     )
   }
 }

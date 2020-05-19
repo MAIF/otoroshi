@@ -10,7 +10,7 @@ import java.security._
 import java.security.cert._
 import java.security.spec.{KeySpec, PKCS8EncodedKeySpec}
 import java.util.concurrent.{Executors, TimeUnit}
-import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong, AtomicReference}
 import java.util.regex.Pattern.CASE_INSENSITIVE
 import java.util.regex.{Matcher, Pattern}
 import java.util.{Base64, Date}
@@ -197,6 +197,8 @@ case class Cert(
     val current = this.enrich()
     env.datastores.certificatesDataStore.set(current)
   }
+  def notExpired: Boolean = from.isBefore(org.joda.time.DateTime.now()) && to.isAfter(org.joda.time.DateTime.now())
+  def expired: Boolean = !notExpired
   def enrich() = {
     val meta = this.metadata.get
     this.copy(
@@ -556,6 +558,7 @@ trait CertificateDataStore extends BasicStore[Cert] {
         .filter(_.autoRenew)
         .filter(cert => cert.ca)
         .filter(willBeInvalidSoon)
+        .filterNot(c => c.name.startsWith("[UNTIL EXPIRATION] "))
       Source(renewableCas.toList)
         .mapAsync(1) {
           case c => c.renew()
@@ -579,7 +582,8 @@ trait CertificateDataStore extends BasicStore[Cert] {
       val renewableCertificates = certificates
         .filter(_.autoRenew)
         .filterNot(_.ca)
-        .filter(willBeInvalidSoon)
+        .filter(willBeInvalidSoon) // TODO: fix
+        .filterNot(c => c.name.startsWith("[UNTIL EXPIRATION] "))
       Source(renewableCertificates.toList)
         .mapAsync(1) {
           case c => c.renew()
@@ -601,12 +605,13 @@ trait CertificateDataStore extends BasicStore[Cert] {
 
     def markExpiredCertsAsExpired(certificates: Seq[Cert]): Future[Unit] = {
       val expiredCertificates = certificates
-        .filter { cert =>
+        .filterNot { cert =>
           cert.from.isBefore(org.joda.time.DateTime.now()) && cert.to.isAfter(org.joda.time.DateTime.now())
         }
       Source(expiredCertificates.toList)
         .mapAsync(1) {
-          case c => c.copy(name = "[EXPIRED] " + c.name).applyOn(d => d.save().map(_ => d))
+          case c if c.name.startsWith("[EXPIRED] ")=> c.applyOn(d => d.save().map(_ => d))
+          case c if !c.name.startsWith("[EXPIRED] ")=> c.copy(name = "[EXPIRED] " + c.name).applyOn(d => d.save().map(_ => d))
         }
         .map { c =>
           Alerts.send(
@@ -850,6 +855,11 @@ trait CertificateDataStore extends BasicStore[Cert] {
 }
 
 object DynamicSSLEngineProvider {
+
+  import org.bouncycastle.jce.provider.BouncyCastleProvider
+  import java.security.Security
+
+  Security.addProvider(new BouncyCastleProvider())
 
   type KeyStoreError = String
 
@@ -1157,7 +1167,9 @@ object DynamicSSLEngineProvider {
           // Handle SANs, not sure it's actually needed
           cert.sans
             .filter(name => !keyStore.containsAlias(name))
-            .foreach(name => keyStore.setCertificateEntry(name, certificate))
+            .foreach(name => {
+              keyStore.setCertificateEntry(name, certificate)
+            })
         }
       }
       case cert => {
@@ -1184,15 +1196,14 @@ object DynamicSSLEngineProvider {
                 if (!cert.client) {
                   cert.sans
                     .filter(name => !keyStore.containsAlias(name))
-                    .foreach(
-                      name =>
-                        keyStore.setKeyEntry(
+                    .foreach { name =>
+                      keyStore.setKeyEntry(
                           name,
                           key,
                           cert.password.getOrElse("").toCharArray,
                           certificateChain.toArray[java.security.cert.Certificate]
-                      )
-                    )
+                        )
+                    }
                 }
 
                 certificateChain.tail.foreach { cert =>

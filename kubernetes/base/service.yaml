@@ -31,8 +31,11 @@ spec:
     name: "https"
     targetPort: "https"
     # nodePort: 30443
-  #loadBalancerSourceRanges:
-  #externalIPs:
+  # externalTrafficPolicy: Cluster
+  # loadBalancerIP: "1.2.3.4"
+  # clusterIP: "2.3.4.5"
+  # loadBalancerSourceRanges: []
+  # externalIPs: []
 ---
 apiVersion: proxy.otoroshi.io/v1alpha1
 kind: Certificate
@@ -42,7 +45,7 @@ spec:
   description: certificate for the http-app deployed on pods
   autoRenew: true
   csr:
-    # add the relevant issuer DN here
+    # add the relevant issuer DN here to avoid trust issues
     # issuer: OU=Otoroshi Certificates, O=Otoroshi, C=FR
     hosts: 
     - otoroshi-internal-service

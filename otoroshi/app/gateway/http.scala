@@ -611,10 +611,12 @@ class HttpHandler()(implicit env: Env) {
                               headersOut.map(Header.apply))
                           )
                         case Failure(e) =>
-                          logger.error(
-                            s"error while transfering stream for ${req.theProtocol}://${req.theHost}${req.relativeUri}",
-                            e
-                          )
+                          if (!(req.relativeUri.startsWith("/api/live/global") && e.getMessage == "Connection reset by peer")) {
+                            logger.error(
+                              s"error while transfering stream for ${req.theProtocol}://${req.theHost}${req.relativeUri}",
+                              e
+                            )
+                          }
                           resp.ignore()
                           promise.trySuccess(
                             ProxyDone(httpResponse.status,

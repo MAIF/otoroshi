@@ -132,6 +132,10 @@ export class Form extends Component {
           return <Separator title={name.replace('-- ', '')} />;
         }
       }
+      if (!this.props.schema[name]) {
+        console.log('unable to find "', name, '" in', this.props.schema);
+        return null;
+      }
       const { display, type, disabled, props = {} } = this.props.schema[name];
       // console.log('generate', name, 'of type', type, 'from', this.props.schema);
       let component = null;
