@@ -10,7 +10,7 @@ import java.security._
 import java.security.cert._
 import java.security.spec.{KeySpec, PKCS8EncodedKeySpec}
 import java.util.concurrent.{Executors, TimeUnit}
-import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong, AtomicReference}
 import java.util.regex.Pattern.CASE_INSENSITIVE
 import java.util.regex.{Matcher, Pattern}
 import java.util.{Base64, Date}
@@ -856,6 +856,11 @@ trait CertificateDataStore extends BasicStore[Cert] {
 
 object DynamicSSLEngineProvider {
 
+  import org.bouncycastle.jce.provider.BouncyCastleProvider
+  import java.security.Security
+
+  Security.addProvider(new BouncyCastleProvider())
+
   type KeyStoreError = String
 
   private val EMPTY_PASSWORD: Array[Char] = Array.emptyCharArray
@@ -1162,7 +1167,9 @@ object DynamicSSLEngineProvider {
           // Handle SANs, not sure it's actually needed
           cert.sans
             .filter(name => !keyStore.containsAlias(name))
-            .foreach(name => keyStore.setCertificateEntry(name, certificate))
+            .foreach(name => {
+              keyStore.setCertificateEntry(name, certificate)
+            })
         }
       }
       case cert => {
@@ -1189,15 +1196,14 @@ object DynamicSSLEngineProvider {
                 if (!cert.client) {
                   cert.sans
                     .filter(name => !keyStore.containsAlias(name))
-                    .foreach(
-                      name =>
-                        keyStore.setKeyEntry(
+                    .foreach { name =>
+                      keyStore.setKeyEntry(
                           name,
                           key,
                           cert.password.getOrElse("").toCharArray,
                           certificateChain.toArray[java.security.cert.Certificate]
-                      )
-                    )
+                        )
+                    }
                 }
 
                 certificateChain.tail.foreach { cert =>
