@@ -211,7 +211,11 @@ trait RedisLikeStore[T] extends BasicStore[T] {
   }
 
   def deleteByIds(ids: Seq[String])(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
-    redisLike.del(ids.map(v => keyStr(v)): _*).map(_ > 0)
+    if (ids.isEmpty) {
+      FastFuture.successful(true)
+    } else {
+      redisLike.del(ids.map(v => keyStr(v)): _*).map(_ > 0)
+    }
   }
 
   def findAll(force: Boolean = false)(implicit ec: ExecutionContext, env: Env): Future[Seq[T]] = {

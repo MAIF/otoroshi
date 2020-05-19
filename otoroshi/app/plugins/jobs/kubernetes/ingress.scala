@@ -112,13 +112,15 @@ class KubernetesIngressControllerJob extends Job {
         }
       })
     }
-    implicit val mat = env.otoroshiMaterializer
-    val conf = KubernetesConfig.theConfig(ctx)
-    val client = new KubernetesClient(conf, env)
-    val source =
-      client.watchKubeResources(conf.namespaces, Seq("secrets", "services", "endpoints"), 30, stopCommand)
-        .merge(client.watchNetResources(conf.namespaces, Seq("ingresses"), 30, stopCommand))
-    source.throttle(1, 5.seconds).runWith(Sink.foreach(_ => KubernetesIngressSyncJob.syncIngresses(conf, ctx.attrs)))
+    if (config.watch) {
+      implicit val mat = env.otoroshiMaterializer
+      val conf = KubernetesConfig.theConfig(ctx)
+      val client = new KubernetesClient(conf, env)
+      val source =
+        client.watchKubeResources(conf.namespaces, Seq("secrets", "services", "endpoints"), 30, stopCommand)
+          .merge(client.watchNetResources(conf.namespaces, Seq("ingresses"), 30, stopCommand))
+      source.throttle(1, 5.seconds).runWith(Sink.foreach(_ => KubernetesIngressSyncJob.syncIngresses(conf, ctx.attrs)))
+    }
     ().future
   }
 
@@ -395,8 +397,11 @@ object KubernetesIngressSyncJob {
     val client = new KubernetesClient(conf, env)
     if (running.compareAndSet(false, true)) {
       shouldRunNext.set(false)
+      logger.info("sync certs ...")
       client.fetchCerts().flatMap { certs =>
+        logger.info("fetch ingresses")
         client.fetchIngressesAndFilterLabels().flatMap { ingresses =>
+          logger.info("update ingresses")
           Source(ingresses.toList)
             .mapAsync(1) { ingressRaw =>
               if (shouldProcessIngress(conf.ingressClass, ingressRaw.ingressClazz, conf)) {
@@ -457,14 +462,20 @@ object KubernetesIngressSyncJob {
           }
         }
       }.flatMap { _ =>
+        logger.info("sync done !")
         if (shouldRunNext.get()) {
           shouldRunNext.set(false)
+          logger.info("restart job right now because sync was asked during sync ")
           syncIngresses(conf, attrs)
         } else {
           ().future
         }
       }.andThen {
-        case _ => running.set(false)
+        case Failure(e) =>
+          logger.error(s"Job failed with ${e.getMessage}", e)
+          running.set(false)
+        case Success(_) =>
+          running.set(false)
       }
     } else {
       logger.info("Job already running, scheduling after ")

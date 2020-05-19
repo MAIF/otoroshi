@@ -116,24 +116,26 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
       })
     }
 
-    implicit val mat = env.otoroshiMaterializer
-    val conf = KubernetesConfig.theConfig(ctx)
-    val client = new KubernetesClient(conf, env)
-    val source = client.watchOtoResources(conf.namespaces, Seq(
-      "service-groups",
-      "service-descriptors",
-      "apikeys",
-      "certificates",
-      "global-configs",
-      "jwt-verifiers",
-      "auth-modules",
-      "scripts",
-      "tcp-services",
-      "admins"
-    ), 30, stopCommand).merge(
-      client.watchKubeResources(conf.namespaces, Seq("secrets", "endpoints"), 30, stopCommand)
-    )
-    source.throttle(1, 5.seconds).runWith(Sink.foreach(_ => KubernetesCRDsJob.syncCRDs(conf, ctx.attrs, !stopCommand.get())))
+    if (config.watch) {
+      implicit val mat = env.otoroshiMaterializer
+      val conf = KubernetesConfig.theConfig(ctx)
+      val client = new KubernetesClient(conf, env)
+      val source = client.watchOtoResources(conf.namespaces, Seq(
+        "service-groups",
+        "service-descriptors",
+        "apikeys",
+        "certificates",
+        "global-configs",
+        "jwt-verifiers",
+        "auth-modules",
+        "scripts",
+        "tcp-services",
+        "admins"
+      ), 30, stopCommand).merge(
+        client.watchKubeResources(conf.namespaces, Seq("secrets", "endpoints"), 30, stopCommand)
+      )
+      source.throttle(1, 5.seconds).runWith(Sink.foreach(_ => KubernetesCRDsJob.syncCRDs(conf, ctx.attrs, !stopCommand.get())))
+    }
     ().future
   }
 
@@ -895,7 +897,10 @@ object KubernetesCRDsJob {
           ().future
         }
       }.andThen {
-        case e =>
+        case Failure(e) =>
+          logger.error(s"Job failed with ${e.getMessage}", e)
+          running.set(false)
+        case Success(_) =>
           running.set(false)
       }
     } else {

@@ -42,7 +42,11 @@ class KvSimpleAdminDataStore(redisCli: RedisLike, _env: Env) extends SimpleAdmin
     redisCli.del(key(username))
 
   def deleteUsers(usernames: Seq[String])(implicit ec: ExecutionContext, env: Env): Future[Long] = {
-    redisCli.del(usernames.map(v => key(v)): _*)
+    if (usernames.isEmpty) {
+      FastFuture.successful(0L)
+    } else {
+      redisCli.del(usernames.map(v => key(v)): _*)
+    }
   }
 
   override def registerUser(user: SimpleOtoroshiAdmin)(

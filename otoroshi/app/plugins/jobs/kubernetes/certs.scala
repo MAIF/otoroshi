@@ -148,11 +148,14 @@ class KubernetesToOtoroshiCertSyncJob extends Job {
 
   override def jobStart(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     stopCommand.set(false)
-    implicit val mat = env.otoroshiMaterializer
-    val conf = KubernetesConfig.theConfig(ctx)
-    val client = new KubernetesClient(conf, env)
-    val source =  client.watchKubeResources(conf.namespaces, Seq("secrets", "endpoints"), 30, stopCommand)
-    source.throttle(1, 5.seconds).runWith(Sink.foreach(_ => KubernetesCertSyncJob.syncKubernetesSecretsToOtoroshiCerts(client, !stopCommand.get())))
+    val config = KubernetesConfig.theConfig(ctx)
+    if (config.watch) {
+      implicit val mat = env.otoroshiMaterializer
+      val conf = KubernetesConfig.theConfig(ctx)
+      val client = new KubernetesClient(conf, env)
+      val source = client.watchKubeResources(conf.namespaces, Seq("secrets", "endpoints"), 30, stopCommand)
+      source.throttle(1, 5.seconds).runWith(Sink.foreach(_ => KubernetesCertSyncJob.syncKubernetesSecretsToOtoroshiCerts(client, !stopCommand.get())))
+    }
     ().future
   }
 

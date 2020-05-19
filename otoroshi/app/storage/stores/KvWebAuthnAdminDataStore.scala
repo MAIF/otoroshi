@@ -76,7 +76,13 @@ class KvWebAuthnAdminDataStore extends WebAuthnAdminDataStore {
     env.datastores.rawDataStore.set(key(payload.username), payload.json.stringify.byteString, None)
   }
 
-  override def deleteUsers(usernames: Seq[String])(implicit ec: ExecutionContext, env: Env): Future[Long] = env.datastores.rawDataStore.del(usernames.map(key))
+  override def deleteUsers(usernames: Seq[String])(implicit ec: ExecutionContext, env: Env): Future[Long] = {
+    if (usernames.isEmpty) {
+      FastFuture.successful(0L)
+    } else {
+      env.datastores.rawDataStore.del(usernames.map(key))
+    }
+  }
 
   override def registerUser(user: WebAuthnOtoroshiAdmin)(implicit ec: ExecutionContext, env: Env): Future[Boolean] = save(user)
 }
