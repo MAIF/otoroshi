@@ -796,9 +796,9 @@ curl -X GET -H &#39;Host: httpapp.foo.bar&#39; https://otoroshi-internal-service
 </code></pre>
 <h2><a href="#daikoku-integration" name="daikoku-integration" class="anchor"><span class="anchor-link"></span></a>Daikoku integration</h2>
 <p>It is possible to easily integrate daikoku generated apikeys without any human interaction with the actual apikey secret. To do that, create a plan in Daikoku and setup the integration mode to <code>Automatic</code></p><div class="centered-img">
-<img src="../img/kubernetess-daikoku-integration-enabled.png" /></div>
+<img src="../img/kubernetes-daikoku-integration-enabled.png" /></div>
 <p>then when a user subscribe for an apikey, he will only see an integration token</p><div class="centered-img">
-<img src="../img/kubernetess-daikoku-integration-token.png" /></div>
+<img src="../img/kubernetes-daikoku-integration-token.png" /></div>
 <p>then just create an ApiKey manifest with this token and your good to go</p>
 <pre class="prettyprint"><code class="language-yaml">apiVersion: proxy.otoroshi.io/v1alpha1
 kind: ApiKey
