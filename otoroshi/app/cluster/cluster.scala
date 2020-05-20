@@ -150,7 +150,9 @@ object ClusterConfig {
       autoUpdateState = configuration.getOptional[Boolean]("autoUpdateState").getOrElse(false),
       mtlsConfig = MtlsConfig(
         certs = configuration.getOptional[Seq[String]]("mtls.certs").getOrElse(Seq.empty),
+        trustedCerts = configuration.getOptional[Seq[String]]("mtls.trustedCerts").getOrElse(Seq.empty),
         loose = configuration.getOptional[Boolean]("mtls.loose").getOrElse(false),
+        trustAll = configuration.getOptional[Boolean]("mtls.trustAll").getOrElse(false),
         mtls = configuration.getOptional[Boolean]("mtls.enabled").getOrElse(false)
       ),
       proxy = configuration.getOptional[String]("proxy.host").map { host =>
