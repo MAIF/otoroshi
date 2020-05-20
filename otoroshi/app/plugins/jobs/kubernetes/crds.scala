@@ -268,109 +268,124 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
   }
 
   private def customizeApiKey(_spec: JsValue, res: KubernetesOtoroshiResource, secrets: Seq[KubernetesSecret], apikeys: Seq[ApiKey], registerApkToExport: Function3[String, String, ApiKey, Unit]): JsValue = {
-    val apiKeyOpt: Option[ApiKey] = (_spec \ "daikokuToken").asOpt[String] match {
-      case None => apikeys.filter(_.metadata.get("otoroshi-provider").contains("kubernetes-crds")).find(_.metadata.get("kubernetes-path").contains(res.path))
-      case Some(daikokuIntegrationToken) =>
-        // we don't add the token in the meta so we will always find the key registered by daikoku
-        // TODO: fail if not found ?
-        apikeys.find(_.metadata.get("daikoku_integration_token") == daikokuIntegrationToken.some)
-    }
-    val template = (client.config.templates \ "apikey").asOpt[JsObject].getOrElse(Json.obj())
-    val spec = template.deepMerge(apiKeyOpt.map(_.toJson.as[JsObject].deepMerge(_spec.as[JsObject])).getOrElse(_spec).as[JsObject])
-    spec.applyOn(s =>
-      (s \ "clientName").asOpt[String] match {
-        case None => s.as[JsObject] ++ Json.obj("clientName" -> res.name)
-        case Some(_) => s
-      }
-    ).applyOn(s =>
-      (s \ "group").asOpt[String] match {
-        case None => s
-        case Some(v) => s.as[JsObject] - "group" ++ Json.obj("authorizedGroup" -> v)
-      }
-    ).applyOn(s =>
-      (s \ "authorizedGroup").asOpt[String] match {
-        case None => s.as[JsObject] ++ Json.obj("authorizedGroup" -> "default")
-        case Some(v) => s
-      }
-    ).applyOn { s =>
-      val shouldExport = (s \ "exportSecret").asOpt[Boolean].getOrElse(false)
-      (s \ "secretName").asOpt[String] match {
-        case None => {
-          s.applyOn(js =>
-            (s \ "clientId").asOpt[String] match {
-              case None => s.as[JsObject] ++ Json.obj("clientId" -> IdGenerator.token(64))
-              case Some(v) => s
-            }
-          ).applyOn(js =>
-            (s \ "clientSecret").asOpt[String] match {
-              case None => s.as[JsObject] ++ Json.obj("clientSecret" -> IdGenerator.token(128))
-              case Some(v) => s
-            }
-          )
-        }
-        case Some(v) => {
-          val parts = v.split("/").toList.map(_.trim)
-          val name = if (parts.size == 2) parts.last else v
-          val namespace = if (parts.size == 2) parts.head else res.namespace
-          val path = s"$namespace/$name"
-          val apiKeyOpt: Option[ApiKey] = apikeys.filter(_.metadata.get("otoroshi-provider").contains("kubernetes-crds")).find(_.metadata.get("kubernetes-path").contains(res.path))
-          val secretOpt = secrets.find(_.path == path)
-          val possibleClientSecret = if (shouldExport) IdGenerator.token(128) else "secret-not-found"
-          val clientId = apiKeyOpt.map(_.clientId).getOrElse(secretOpt.map(s => (s.raw \ "data" \ "clientId").as[String].applyOn(_.fromBase64)).getOrElse(IdGenerator.token(64)))
-          val clientSecret = apiKeyOpt.map(_.clientSecret).getOrElse(secretOpt.map(s => (s.raw \ "data" \ "clientSecret").as[String].applyOn(_.fromBase64)).getOrElse(possibleClientSecret))
-          if (shouldExport) {
-            registerApkToExport(namespace, name, ApiKey(clientId, clientSecret, clientName = name, authorizedGroup = "default"))
+    val dkToken = (_spec \ "daikokuToken").asOpt[String]
+    val dkApkOpt :Option[ApiKey] = dkToken.flatMap(t => apikeys.find(_.metadata.get("daikoku_integration_token") == t.some))
+    dkApkOpt match {
+      case None => Json.obj()
+      case Some(_) => {
+        val apiKeyOpt: Option[ApiKey] = dkApkOpt.orElse(
+          apikeys.filter(_.metadata.get("otoroshi-provider").contains("kubernetes-crds")).find(_.metadata.get("kubernetes-path").contains(res.path))
+        )
+        // val apiKeyOpt: Option[ApiKey] = (_spec \ "daikokuToken").asOpt[String] match {
+        //   case None => apikeys.filter(_.metadata.get("otoroshi-provider").contains("kubernetes-crds")).find(_.metadata.get("kubernetes-path").contains(res.path))
+        //   case Some(daikokuIntegrationToken) =>
+        //     // we don't add the token in the meta so we will always find the key registered by daikoku
+        //     // TODO: fail if not found ?
+        //     apikeys.find(_.metadata.get("daikoku_integration_token") == daikokuIntegrationToken.some)
+        // }
+        val template = (client.config.templates \ "apikey").asOpt[JsObject].getOrElse(Json.obj())
+        val spec = template.deepMerge(apiKeyOpt.map(_.toJson.as[JsObject].deepMerge(_spec.as[JsObject])).getOrElse(_spec).as[JsObject])
+        spec.applyOn(s =>
+          (s \ "clientName").asOpt[String] match {
+            case None => s.as[JsObject] ++ Json.obj("clientName" -> res.name)
+            case Some(_) => s
           }
+        ).applyOn(s =>
+          (s \ "group").asOpt[String] match {
+            case None => s
+            case Some(v) => s.as[JsObject] - "group" ++ Json.obj("authorizedGroup" -> v)
+          }
+        ).applyOn(s =>
+          (s \ "authorizedGroup").asOpt[String] match {
+            case None => s.as[JsObject] ++ Json.obj("authorizedGroup" -> "default")
+            case Some(v) => s
+          }
+        ).applyOn { s =>
+          dkApkOpt match {
+            case None => s
+            case Some(apk) => s.as[JsObject] ++ Json.obj("authorizedGroup" -> apk.authorizedGroup)
+          }
+        }.applyOn { s =>
+          val shouldExport = (s \ "exportSecret").asOpt[Boolean].getOrElse(false)
+          (s \ "secretName").asOpt[String] match {
+            case None => {
+              s.applyOn(js =>
+                (s \ "clientId").asOpt[String] match {
+                  case None => s.as[JsObject] ++ Json.obj("clientId" -> IdGenerator.token(64))
+                  case Some(v) => s
+                }
+              ).applyOn(js =>
+                (s \ "clientSecret").asOpt[String] match {
+                  case None => s.as[JsObject] ++ Json.obj("clientSecret" -> IdGenerator.token(128))
+                  case Some(v) => s
+                }
+              )
+            }
+            case Some(v) => {
+              val parts = v.split("/").toList.map(_.trim)
+              val name = if (parts.size == 2) parts.last else v
+              val namespace = if (parts.size == 2) parts.head else res.namespace
+              val path = s"$namespace/$name"
+              val apiKeyOpt: Option[ApiKey] = apikeys.filter(_.metadata.get("otoroshi-provider").contains("kubernetes-crds")).find(_.metadata.get("kubernetes-path").contains(res.path))
+              val secretOpt = secrets.find(_.path == path)
+              val possibleClientSecret = if (shouldExport) IdGenerator.token(128) else "secret-not-found"
+              val clientId = apiKeyOpt.map(_.clientId).getOrElse(secretOpt.map(s => (s.raw \ "data" \ "clientId").as[String].applyOn(_.fromBase64)).getOrElse(IdGenerator.token(64)))
+              val clientSecret = apiKeyOpt.map(_.clientSecret).getOrElse(secretOpt.map(s => (s.raw \ "data" \ "clientSecret").as[String].applyOn(_.fromBase64)).getOrElse(possibleClientSecret))
+              if (shouldExport) {
+                registerApkToExport(namespace, name, ApiKey(clientId, clientSecret, clientName = name, authorizedGroup = "default"))
+              }
+              s.as[JsObject] ++ Json.obj(
+                "clientId" -> clientId,
+                "clientSecret" -> clientSecret
+              )
+            }
+            // case Some(v) if shouldExport && v.contains("/") =>
+            //   val namespace :: name :: Nil = v.split("/").toList
+            //   val clientId = secrets.find(_.path == v).map(s => (s.raw \ "data" \ "clientId").as[String].applyOn(_.fromBase64)).getOrElse(IdGenerator.token(64))
+            //   val clientSecret = secrets.find(_.path == v).map(s => (s.raw \ "data" \ "clientSecret").as[String].applyOn(_.fromBase64)).getOrElse(IdGenerator.token(128))
+            //   registerApkToExport(namespace, name, ApiKey(clientId, clientSecret, clientName = name, authorizedGroup = "default"))
+            //   s.as[JsObject] ++ Json.obj(
+            //     "clientId" -> clientId,
+            //     "clientSecret" -> clientSecret
+            //   )
+            // case Some(v) if shouldExport && !v.contains("/") =>
+            //   val clientId = secrets.find(_.name == v).map(s => (s.raw \ "data" \ "clientId").as[String].applyOn(_.fromBase64)).getOrElse(IdGenerator.token(64))
+            //   val clientSecret = secrets.find(_.name == v).map(s => (s.raw \ "data" \ "clientSecret").as[String].applyOn(_.fromBase64)).getOrElse(IdGenerator.token(128))
+            //   registerApkToExport(res.namespace, v, ApiKey(clientId, clientSecret, clientName = v, authorizedGroup = "default"))
+            //   s.as[JsObject] ++ Json.obj(
+            //     "clientId" -> clientId,
+            //     "clientSecret" -> clientSecret
+            //   )
+            // case Some(v) if v.contains("/") =>
+            //   secrets.find(_.path == v) match {
+            //     case None => s.as[JsObject] ++ Json.obj("clientSecret" -> "secret-not-found")
+            //     case Some(secret) => s.as[JsObject] ++ Json.obj(
+            //       "clientId" -> (secret.raw \ "data" \ "clientId").as[String].applyOn(_.fromBase64),
+            //         "clientSecret" -> (secret.raw \ "data" \ "clientSecret").as[String].applyOn(_.fromBase64)
+            //     )
+            //   }
+            // case Some(v) if !v.contains("/") =>
+            //   secrets.find(_.name == v) match {
+            //     case None => s.as[JsObject] ++ Json.obj("clientSecret" -> "secret-not-found")
+            //     case Some(secret) => s.as[JsObject] ++ Json.obj(
+            //       "clientId" -> (secret.raw \ "data" \ "clientId").as[String].applyOn(_.fromBase64),
+            //       "clientSecret" -> (secret.raw \ "data" \ "secret").as[String].applyOn(_.fromBase64)
+            //     )
+            //   }
+          }
+        }.applyOn(s =>
           s.as[JsObject] ++ Json.obj(
-            "clientId" -> clientId,
-            "clientSecret" -> clientSecret
+            "metadata" -> ((s \ "metadata").asOpt[JsObject].getOrElse(Json.obj()) ++ Json.obj(
+              "otoroshi-provider" -> "kubernetes-crds",
+              "kubernetes-name" -> res.name,
+              "kubernetes-namespace" -> res.namespace,
+              "kubernetes-path" -> res.path,
+              "kubernetes-uid" -> res.uid
+            ))
           )
-        }
-        // case Some(v) if shouldExport && v.contains("/") =>
-        //   val namespace :: name :: Nil = v.split("/").toList
-        //   val clientId = secrets.find(_.path == v).map(s => (s.raw \ "data" \ "clientId").as[String].applyOn(_.fromBase64)).getOrElse(IdGenerator.token(64))
-        //   val clientSecret = secrets.find(_.path == v).map(s => (s.raw \ "data" \ "clientSecret").as[String].applyOn(_.fromBase64)).getOrElse(IdGenerator.token(128))
-        //   registerApkToExport(namespace, name, ApiKey(clientId, clientSecret, clientName = name, authorizedGroup = "default"))
-        //   s.as[JsObject] ++ Json.obj(
-        //     "clientId" -> clientId,
-        //     "clientSecret" -> clientSecret
-        //   )
-        // case Some(v) if shouldExport && !v.contains("/") =>
-        //   val clientId = secrets.find(_.name == v).map(s => (s.raw \ "data" \ "clientId").as[String].applyOn(_.fromBase64)).getOrElse(IdGenerator.token(64))
-        //   val clientSecret = secrets.find(_.name == v).map(s => (s.raw \ "data" \ "clientSecret").as[String].applyOn(_.fromBase64)).getOrElse(IdGenerator.token(128))
-        //   registerApkToExport(res.namespace, v, ApiKey(clientId, clientSecret, clientName = v, authorizedGroup = "default"))
-        //   s.as[JsObject] ++ Json.obj(
-        //     "clientId" -> clientId,
-        //     "clientSecret" -> clientSecret
-        //   )
-        // case Some(v) if v.contains("/") =>
-        //   secrets.find(_.path == v) match {
-        //     case None => s.as[JsObject] ++ Json.obj("clientSecret" -> "secret-not-found")
-        //     case Some(secret) => s.as[JsObject] ++ Json.obj(
-        //       "clientId" -> (secret.raw \ "data" \ "clientId").as[String].applyOn(_.fromBase64),
-        //         "clientSecret" -> (secret.raw \ "data" \ "clientSecret").as[String].applyOn(_.fromBase64)
-        //     )
-        //   }
-        // case Some(v) if !v.contains("/") =>
-        //   secrets.find(_.name == v) match {
-        //     case None => s.as[JsObject] ++ Json.obj("clientSecret" -> "secret-not-found")
-        //     case Some(secret) => s.as[JsObject] ++ Json.obj(
-        //       "clientId" -> (secret.raw \ "data" \ "clientId").as[String].applyOn(_.fromBase64),
-        //       "clientSecret" -> (secret.raw \ "data" \ "secret").as[String].applyOn(_.fromBase64)
-        //     )
-        //   }
+        )
       }
-    }.applyOn(s =>
-      s.as[JsObject] ++ Json.obj(
-        "metadata" -> ((s \ "metadata").asOpt[JsObject].getOrElse(Json.obj()) ++ Json.obj(
-          "otoroshi-provider" -> "kubernetes-crds",
-          "kubernetes-name" -> res.name,
-          "kubernetes-namespace" -> res.namespace,
-          "kubernetes-path" -> res.path,
-          "kubernetes-uid" -> res.uid
-        ))
-      )
-    )
+    }
   }
 
   private def foundACertWithSameIdAndCsr(id: String, csrJson: JsValue, caOpt: Option[Cert], certs: Seq[Cert]): Option[Cert] = {

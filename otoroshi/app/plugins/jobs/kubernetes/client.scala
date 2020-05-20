@@ -166,6 +166,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
             KubernetesIngress(item)
           })
         } else {
+          logger.error(s"bad http status while fetching ingresses: ${resp.status}")
           Seq.empty
         }
       }
@@ -182,6 +183,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
             KubernetesIngress(item)
           }
         } else {
+          logger.error(s"bad http status while fetching ingresses: ${resp.status}")
           Seq.empty
         }
       }
