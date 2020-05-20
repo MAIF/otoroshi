@@ -11,6 +11,7 @@ import akka.util.ByteString
 import env.Env
 import models._
 import otoroshi.utils.syntax.implicits._
+import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.ws.WSRequest
 import ssl.{Cert, DynamicSSLEngineProvider}
@@ -23,6 +24,8 @@ import scala.util.{Failure, Success, Try}
 
 // TODO: watch res to trigger sync
 class KubernetesClient(val config: KubernetesConfig, env: Env) {
+
+  private val logger = Logger("otoroshi-plugins-kubernetes-client")
 
   implicit val ec = env.otoroshiExecutionContext
   implicit val mat = env.otoroshiMaterializer
@@ -90,8 +93,12 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       () => cli.addHttpHeaders(
         "Accept" -> "application/json"
       ).get().map { resp =>
-        (resp.json \ "items").as[JsArray].value.map { item =>
-          KubernetesService(item)
+        if (resp.status == 200) {
+          (resp.json \ "items").as[JsArray].value.map { item =>
+            KubernetesService(item)
+          }
+        } else {
+          Seq.empty
         }
       }
     }).map(_.flatten)
@@ -126,8 +133,12 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       () => cli.addHttpHeaders(
         "Accept" -> "application/json"
       ).get().map { resp =>
-        (resp.json \ "items").as[JsArray].value.map { item =>
-          KubernetesEndpoint(item)
+        if (resp.status == 200) {
+          (resp.json \ "items").as[JsArray].value.map { item =>
+            KubernetesEndpoint(item)
+          }
+        } else {
+          Seq.empty
         }
       }
     }).map(_.flatten)
@@ -150,9 +161,13 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       () => cli.addHttpHeaders(
         "Accept" -> "application/json"
       ).get().map { resp =>
-        filterLabels((resp.json \ "items").as[JsArray].value.map { item =>
-          KubernetesIngress(item)
-        })
+        if (resp.status == 200) {
+          filterLabels((resp.json \ "items").as[JsArray].value.map { item =>
+            KubernetesIngress(item)
+          })
+        } else {
+          Seq.empty
+        }
       }
     }).map(_.flatten)
   }
@@ -162,8 +177,12 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       () => cli.addHttpHeaders(
         "Accept" -> "application/json"
       ).get().map { resp =>
-        (resp.json \ "items").as[JsArray].value.map { item =>
-          KubernetesIngress(item)
+        if (resp.status == 200) {
+          (resp.json \ "items").as[JsArray].value.map { item =>
+            KubernetesIngress(item)
+          }
+        } else {
+          Seq.empty
         }
       }
     }).map(_.flatten)
@@ -174,8 +193,12 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       () => cli.addHttpHeaders(
         "Accept" -> "application/json"
       ).get().map { resp =>
-        (resp.json \ "items").as[JsArray].value.map { item =>
-          KubernetesDeployment(item)
+        if (resp.status == 200) {
+          (resp.json \ "items").as[JsArray].value.map { item =>
+            KubernetesDeployment(item)
+          }
+        } else {
+          Seq.empty
         }
       }
     }).map(_.flatten)
@@ -186,8 +209,12 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       () => cli.addHttpHeaders(
         "Accept" -> "application/json"
       ).get().map { resp =>
-        (resp.json \ "items").as[JsArray].value.map { item =>
-          KubernetesPod(item)
+        if (resp.status == 200) {
+          (resp.json \ "items").as[JsArray].value.map { item =>
+            KubernetesPod(item)
+          }
+        } else {
+          Seq.empty
         }
       }
     }).map(_.flatten)
@@ -204,8 +231,12 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       () => cli.addHttpHeaders(
         "Accept" -> "application/json"
       ).get().map { resp =>
-        (resp.json \ "items").as[JsArray].value.map { item =>
-          KubernetesSecret(item)
+        if (resp.status == 200) {
+          (resp.json \ "items").as[JsArray].value.map { item =>
+            KubernetesSecret(item)
+          }
+        } else {
+          Seq.empty
         }
       }
     }).map(_.flatten)
@@ -216,9 +247,13 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       () => cli.addHttpHeaders(
         "Accept" -> "application/json"
       ).get().map { resp =>
-        filterLabels((resp.json \ "items").as[JsArray].value.map { item =>
-          KubernetesSecret(item)
-        })
+        if (resp.status == 200) {
+          filterLabels((resp.json \ "items").as[JsArray].value.map { item =>
+            KubernetesSecret(item)
+          })
+        } else {
+          Seq.empty
+        }
       }
     }).map(_.flatten)
   }
@@ -234,9 +269,13 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
             filterLabels((resp.json \ "items").as[JsArray].value.map(v => KubernetesOtoroshiResource(v))).map { item =>
               val spec = (item.raw \ "spec").as[JsValue]
               val customSpec = customize(spec, item)
-              (reader.reads(customSpec), item.raw)
+              Try((reader.reads(customSpec), item.raw)).debug {
+                case Success(_) => ()
+                case Failure(e) =>
+                  logger.error(s"error while reading entity of type $pluralName", e)
+              }
             }.collect {
-              case (JsSuccess(item, _), raw) => OtoResHolder(raw, item)
+              case Success((JsSuccess(item, _), raw)) => OtoResHolder(raw, item)
             }
           } else {
             Seq.empty

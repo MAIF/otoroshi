@@ -270,7 +270,10 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
   private def customizeApiKey(_spec: JsValue, res: KubernetesOtoroshiResource, secrets: Seq[KubernetesSecret], apikeys: Seq[ApiKey], registerApkToExport: Function3[String, String, ApiKey, Unit]): JsValue = {
     val apiKeyOpt: Option[ApiKey] = (_spec \ "daikokuToken").asOpt[String] match {
       case None => apikeys.filter(_.metadata.get("otoroshi-provider").contains("kubernetes-crds")).find(_.metadata.get("kubernetes-path").contains(res.path))
-      case Some(daikokuIntegrationToken) => apikeys.find(_.metadata.get("daikoku_integration_token") == daikokuIntegrationToken.some)
+      case Some(daikokuIntegrationToken) =>
+        // we don't add the token in the meta so we will always find the key registered by daikoku
+        // TODO: fail if not found ?
+        apikeys.find(_.metadata.get("daikoku_integration_token") == daikokuIntegrationToken.some)
     }
     val template = (client.config.templates \ "apikey").asOpt[JsObject].getOrElse(Json.obj())
     val spec = template.deepMerge(apiKeyOpt.map(_.toJson.as[JsObject].deepMerge(_spec.as[JsObject])).getOrElse(_spec).as[JsObject])

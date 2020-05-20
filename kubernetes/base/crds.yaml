@@ -152,6 +152,8 @@ spec:
         spec:
           type: object
           properties:
+            daikokuToken:
+              type: string
             secretName: 
               type: string
             exportSecret:
