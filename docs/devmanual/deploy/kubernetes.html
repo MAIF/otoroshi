@@ -794,6 +794,21 @@ curl -X GET https://httpapp.foo.bar/get -u &quot;$CLIENT_ID:$CLIENT_SECRET&quot;
 CLIENT_SECRET=&quot;xxx&quot;
 curl -X GET -H &#39;Host: httpapp.foo.bar&#39; https://otoroshi-internal-service:8443/get -u &quot;$CLIENT_ID:$CLIENT_SECRET&quot;
 </code></pre>
+<h2><a href="#daikoku-integration" name="daikoku-integration" class="anchor"><span class="anchor-link"></span></a>Daikoku integration</h2>
+<p>It is possible to easily integrate daikoku generated apikeys without any human interaction with the actual apikey secret. To do that, create a plan in Daikoku and setup the integration mode to <code>Automatic</code></p><div class="centered-img">
+<img src="../img/kubernetess-daikoku-integration-enabled.png" /></div>
+<p>then when a user subscribe for an apikey, he will only see an integration token</p><div class="centered-img">
+<img src="../img/kubernetess-daikoku-integration-token.png" /></div>
+<p>then just create an ApiKey manifest with this token and your good to go</p>
+<pre class="prettyprint"><code class="language-yaml">apiVersion: proxy.otoroshi.io/v1alpha1
+kind: ApiKey
+metadata:
+  name: http-app-2-apikey-3
+spec:
+  exportSecret: true 
+  secretName: secret-3
+  daikokuToken: RShQrvINByiuieiaCBwIZfGFgdPu7tIJEN5gdV8N8YeH4RI9ErPYJzkuFyAkZ2xy
+</code></pre>
 <div class="nav-next">
 <p><strong>Next:</strong> <a href="../deploy/clevercloud.html">Clever Cloud</a></p>
 </div>
@@ -811,6 +826,7 @@ curl -X GET -H &#39;Host: httpapp.foo.bar&#39; https://otoroshi-internal-service
     <li><a href="../deploy/kubernetes.html#use-otoroshi-crds-for-a-better-full-integration" class="header">Use Otoroshi CRDs for a better/full integration</a></li>
     <li><a href="../deploy/kubernetes.html#expose-otoroshi-to-outside-world" class="header">Expose Otoroshi to outside world</a></li>
     <li><a href="../deploy/kubernetes.html#access-a-service-from-inside-the-k8s-cluster" class="header">Access a service from inside the k8s cluster</a></li>
+    <li><a href="../deploy/kubernetes.html#daikoku-integration" class="header">Daikoku integration</a></li>
   </ul></li>
 </ul>
 </div>
