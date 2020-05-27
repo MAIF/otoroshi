@@ -32,7 +32,7 @@ import security.{IdGenerator, OtoroshiClaim}
 import utils.RequestImplicits._
 import utils._
 import utils.future.Implicits._
-import utils.http.WSProxyServerUtils
+import utils.http.{ManualResolveTransport, WSProxyServerUtils}
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future, Promise}
@@ -634,14 +634,21 @@ object WebSocketProxyActor {
             }
             case _ => ClientTransport.httpsProxy(proxyAddress)
           }
-          // TODO: use proxy transport when akka http will be updated
           a: ClientConnectionSettings =>
-            // a.withTransport(httpsProxyTransport)
-            a.withIdleTimeout(descriptor.clientConfig.idleTimeout.millis)
+            a.withTransport(httpsProxyTransport)
+              .withIdleTimeout(descriptor.clientConfig.idleTimeout.millis)
               .withConnectingTimeout(descriptor.clientConfig.connectionTimeout.millis)
         } getOrElse { a: ClientConnectionSettings =>
-        a.withIdleTimeout(descriptor.clientConfig.idleTimeout.millis)
-          .withConnectingTimeout(descriptor.clientConfig.connectionTimeout.millis)
+
+        val maybeIpAddress = target.ipAddress.map(addr => InetSocketAddress.createUnresolved(addr, target.thePort))
+        if (env.manualDnsResolve && maybeIpAddress.isDefined) {
+          a.withTransport(ManualResolveTransport.resolveTo(maybeIpAddress.get))
+            .withIdleTimeout(descriptor.clientConfig.idleTimeout.millis)
+            .withConnectingTimeout(descriptor.clientConfig.connectionTimeout.millis)
+        } else {
+          a.withIdleTimeout(descriptor.clientConfig.idleTimeout.millis)
+            .withConnectingTimeout(descriptor.clientConfig.connectionTimeout.millis)
+        }
       }
     )
     Flow.lazyFutureFlow[PlayWSMessage, PlayWSMessage, NotUsed] { () =>

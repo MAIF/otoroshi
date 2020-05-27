@@ -457,6 +457,7 @@ object AkkWsClient {
   }
 }
 
+/*
 // huge workaround for https://github.com/akka/akka-http/issues/92,  can be disabled by setting otoroshi.options.manualDnsResolve to false
 class CustomLooseHostnameVerifier(mkLogger: LoggerFactory) extends HostnameVerifier {
 
@@ -506,6 +507,7 @@ class CustomHostnameVerifier(mkLogger: LoggerFactory) extends HostnameVerifier {
     }
   }
 }
+*/
 
 object SSLConfigSettingsCustomizer {
   implicit class BetterSSLConfigSettings(val sslc: SSLConfigSettings) extends AnyVal {
@@ -541,8 +543,8 @@ class AkkWsClient(config: WSClientConfig, env: Env)(implicit system: ActorSystem
   private[utils] val wsClientConfig: WSClientConfig = config
   private[utils] val akkaSSLConfig: AkkaSSLConfig = AkkaSSLConfig(system).withSettings(
     config.ssl
-    // huge workaround for https://github.com/akka/akka-http/issues/92,  can be disabled by setting otoroshi.options.manualDnsResolve to false
-      .callIf(env.manualDnsResolve, _.withHostnameVerifierClass(classOf[CustomHostnameVerifier]))
+      // huge workaround for https://github.com/akka/akka-http/issues/92,  can be disabled by setting otoroshi.options.manualDnsResolve to false
+      // .callIf(env.manualDnsResolve, _.withHostnameVerifierClass(classOf[CustomHostnameVerifier]))
       .withSslParametersConfig(
         config.ssl.sslParametersConfig
           .withClientAuth(com.typesafe.sslconfig.ssl.ClientAuth.need) // TODO: do we really need that ?
@@ -551,8 +553,8 @@ class AkkWsClient(config: WSClientConfig, env: Env)(implicit system: ActorSystem
   )
   private[utils] val akkaSSLLooseConfig: AkkaSSLConfig = AkkaSSLConfig(system).withSettings(
     config.ssl
-    // huge workaround for https://github.com/akka/akka-http/issues/92,  can be disabled by setting otoroshi.options.manualDnsResolve to false
-      .callIf(env.manualDnsResolve, _.withHostnameVerifierClass(classOf[CustomLooseHostnameVerifier]))
+      // huge workaround for https://github.com/akka/akka-http/issues/92,  can be disabled by setting otoroshi.options.manualDnsResolve to false
+      //.callIf(env.manualDnsResolve, _.withHostnameVerifierClass(classOf[CustomLooseHostnameVerifier]))
       .withLoose(config.ssl.loose.withAcceptAnyCertificate(true).withDisableHostnameVerification(true))
       .withSslParametersConfig(
         config.ssl.sslParametersConfig
@@ -849,7 +851,7 @@ case class AkkaWsClientRequest(
             u.copy(
               authority = u.authority.copy(
                 port = target.thePort,
-                host = akka.http.scaladsl.model.Uri.Host(s"${ipAddress}&${u.authority.host.address()}")
+                // host = akka.http.scaladsl.model.Uri.Host(s"${ipAddress}&${u.authority.host.address()}")
               )
             )
           }
@@ -915,13 +917,17 @@ case class AkkaWsClientRequest(
               )
           }
       } getOrElse { a: ConnectionPoolSettings =>
-      if (env.manualDnsResolve) {
-        // huge workaround for https://github.com/akka/akka-http/issues/92,  can be disabled by setting otoroshi.options.manualDnsResolve to false
-        a.withTransport(ManualResolveTransport.http)
+      val maybeIpAddress = targetOpt match {
+        case None => None
+        case Some(target) =>
+          target.ipAddress.map(addr => InetSocketAddress.createUnresolved(addr, target.thePort))
+      }
+      if (env.manualDnsResolve && maybeIpAddress.isDefined) {
+        a.withTransport(ManualResolveTransport.resolveTo(maybeIpAddress.get))
           .withIdleTimeout(idleTimeout)
           .withConnectionSettings(
             a.connectionSettings
-              .withTransport(ManualResolveTransport.http)
+              .withTransport(ManualResolveTransport.resolveTo(maybeIpAddress.get))
               .withConnectingTimeout(connectionTimeout)
               .withIdleTimeout(idleTimeout)
           )
@@ -1268,10 +1274,16 @@ object Implicits {
 
 object ManualResolveTransport {
 
+  def resolveTo(address: InetSocketAddress): ClientTransport = {
+    new ClientTransport {
+      override def connectTo(host: String, port: Int, settings: ClientConnectionSettings)(implicit system: ActorSystem): Flow[ByteString, ByteString, Future[Http.OutgoingConnection]] =
+        ClientTransport.TCP.connectTo(address.getHostString, address.getPort, settings)
+    }
+  }
+
   // huge workaround for https://github.com/akka/akka-http/issues/92,  can be disabled by setting otoroshi.options.manualDnsResolve to false
-
-  lazy val http: ClientTransport = ManualResolveTransport()
-
+  // lazy val http: ClientTransport = ManualResolveTransport()
+  /*
   private case class ManualResolveTransport() extends ClientTransport {
     def connectTo(host: String, port: Int, settings: ClientConnectionSettings)(
         implicit system: ActorSystem
@@ -1297,7 +1309,7 @@ object ManualResolveTransport {
           _.map(tcpConn ⇒ OutgoingConnection(tcpConn.localAddress, tcpConn.remoteAddress))(system.dispatcher)
         )
     }
-  }
+  }*/
 
   //private case class ManualResolveTransport(ipAddress: String) extends ClientTransport {
   //  def connectTo(host: String, port: Int, settings: ClientConnectionSettings)(implicit system: ActorSystem): Flow[ByteString, ByteString, Future[OutgoingConnection]] =
