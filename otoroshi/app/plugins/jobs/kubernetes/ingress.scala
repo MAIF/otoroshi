@@ -508,6 +508,7 @@ object KubernetesIngressToDescriptor {
 
                 val id = ("kubernetes-service-" + namespace + "-" + name + "-" + rule.host.getOrElse("wildcard") + path.path.filterNot(_ == "/").map(v => "-" + v).getOrElse("")).slugifyWithSlash
 
+                val serviceName = kubeService.name
                 val serviceType = (kubeService.raw \ "spec" \ "type").as[String]
                 val maybePortSpec: Option[JsValue] = (kubeService.raw \ "spec" \ "ports").as[JsArray].value.find { value =>
                   path.backend.servicePort match {
@@ -532,13 +533,13 @@ object KubernetesIngressToDescriptor {
                         case None => serviceType match {
                           case "ClusterIP" =>
                             val serviceIp = (kubeService.raw \ "spec" \ "clusterIP").as[String]
-                            Seq(Target(s"$serviceIp:$portValue", protocol))
+                            Seq(Target(s"$serviceName:$portValue", protocol, ipAddress = Some(serviceIp)))
                           case "NodePort" =>
-                            val serviceIp = (kubeService.raw \ "spec" \ "clusterIP").as[String]
-                            Seq(Target(s"$serviceIp:$portValue", protocol))
+                            val serviceIp = (kubeService.raw \ "spec" \ "clusterIP").as[String] // TODO: does it actually work ?
+                            Seq(Target(s"$serviceName:$portValue", protocol, ipAddress = Some(serviceIp)))
                           case "LoadBalancer" =>
-                            val serviceIp = (kubeService.raw \ "spec" \ "clusterIP").as[String]
-                            Seq(Target(s"$serviceIp:$portValue", protocol))
+                            val serviceIp = (kubeService.raw \ "spec" \ "clusterIP").as[String] // TODO: does it actually work ?
+                            Seq(Target(s"$serviceName:$portValue", protocol, ipAddress = Some(serviceIp)))
                           case _ => Seq.empty
                         }
                         case Some(kubeEndpoint) => {
@@ -554,7 +555,7 @@ object KubernetesIngressToDescriptor {
                               val addresses = (subset \ "addresses").asOpt[JsArray].map(_.value).getOrElse(Seq.empty)
                               addresses.map { address =>
                                 val serviceIp = (address \ "ip").as[String]
-                                Target(s"$serviceIp:$endpointPort", endpointProtocol)
+                                Target(s"$serviceName:$endpointPort", endpointProtocol, ipAddress = Some(serviceIp))
                               }
                             }
                           }
@@ -580,6 +581,7 @@ object KubernetesIngressToDescriptor {
                           hosts = Seq(rule.host.getOrElse("*")),
                           paths = path.path.toSeq,
                           publicPatterns = Seq("/.*"),
+                          useAkkaHttpClient = true,
                           metadata = Map(
                             "otoroshi-provider" -> "kubernetes-ingress",
                             "created-at" -> creationDate,
@@ -610,6 +612,7 @@ object KubernetesIngressToDescriptor {
 
   def serviceToTargetsSync(kubeService: KubernetesService, kubeEndpointOpt: Option[KubernetesEndpoint], port: IntOrString, client: KubernetesClient, logger: Logger): Seq[Target] = {
       val serviceType = (kubeService.raw \ "spec" \ "type").as[String]
+      val serviceName = kubeService.name
       val maybePortSpec: Option[JsValue] = (kubeService.raw \ "spec" \ "ports").as[JsArray].value.find { value =>
         port match {
           case IntOrString(Some(v), _) => (value \ "port").asOpt[Int].contains(v)
@@ -633,13 +636,13 @@ object KubernetesIngressToDescriptor {
               case None => serviceType match {
                 case "ClusterIP" =>
                   val serviceIp = (kubeService.raw \ "spec" \ "clusterIP").as[String]
-                  Seq(Target(s"$serviceIp:$portValue", protocol))
+                  Seq(Target(s"$serviceName:$portValue", protocol, ipAddress = Some(serviceIp)))
                 case "NodePort" =>
-                  val serviceIp = (kubeService.raw \ "spec" \ "clusterIP").as[String]
-                  Seq(Target(s"$serviceIp:$portValue", protocol))
+                  val serviceIp = (kubeService.raw \ "spec" \ "clusterIP").as[String] // TODO: does it actually work ?
+                  Seq(Target(s"$serviceName:$portValue", protocol, ipAddress = Some(serviceIp)))
                 case "LoadBalancer" =>
-                  val serviceIp = (kubeService.raw \ "spec" \ "clusterIP").as[String]
-                  Seq(Target(s"$serviceIp:$portValue", protocol))
+                  val serviceIp = (kubeService.raw \ "spec" \ "clusterIP").as[String] // TODO: does it actually work ?
+                  Seq(Target(s"$serviceName:$portValue", protocol, ipAddress = Some(serviceIp)))
                 case _ => Seq.empty
               }
               case Some(kubeEndpoint) => {
@@ -655,7 +658,7 @@ object KubernetesIngressToDescriptor {
                     val addresses = (subset \ "addresses").asOpt[JsArray].map(_.value).getOrElse(Seq.empty)
                     addresses.map { address =>
                       val serviceIp = (address \ "ip").as[String]
-                      Target(s"$serviceIp:$endpointPort", endpointProtocol)
+                      Target(s"$serviceName:$endpointPort", endpointProtocol, ipAddress = Some(serviceIp))
                     }
                   }
                 }

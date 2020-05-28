@@ -264,7 +264,7 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
         case None => s
         case Some(v) => s.as[JsObject] - "group" ++ Json.obj("groupId" -> v)
       }
-    )
+    ).applyOn(s => s.as[JsObject] ++ Json.obj("useAkkaHttpClient" -> true))
   }
 
   private def customizeApiKey(_spec: JsValue, res: KubernetesOtoroshiResource, secrets: Seq[KubernetesSecret], apikeys: Seq[ApiKey], registerApkToExport: Function3[String, String, ApiKey, Unit]): JsValue = {
