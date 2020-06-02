@@ -20,6 +20,7 @@ import events.{AnalyticEvent, AnalyticsActor, OtoroshiEvent}
 import io.github.classgraph.ClassInfo
 import javax.script._
 import models._
+import otoroshi.models.{TeamAccess, TeamId, TenantAccess, TenantAndTeamsSupport, TenantId}
 import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.streams.Accumulator
@@ -1164,7 +1165,7 @@ object Implicits {
   }
 }
 
-case class Script(id: String, name: String, desc: String, code: String, `type`: PluginType, metadata: Map[String, String]) {
+case class Script(id: String, name: String, desc: String, code: String, `type`: PluginType, metadata: Map[String, String], tenant: TenantId,  teams: Seq[TeamId]) extends TenantAndTeamsSupport {
   def save()(implicit ec: ExecutionContext, env: Env)   = env.datastores.scriptDataStore.set(this)
   def delete()(implicit ec: ExecutionContext, env: Env) = env.datastores.scriptDataStore.delete(this)
   def exists()(implicit ec: ExecutionContext, env: Env) = env.datastores.scriptDataStore.exists(this)
@@ -1185,7 +1186,9 @@ object Script {
       "desc" -> apk.desc,
       "code" -> apk.code,
       "type" -> apk.`type`.name,
-      "metadata" -> apk.metadata
+      "metadata" -> apk.metadata,
+      "tenant" -> apk.tenant.value,
+      "teams" -> JsArray(apk.teams.map(v => JsString(v.value)))
     )
     override def reads(json: JsValue): JsResult[Script] =
       Try {
@@ -1204,7 +1207,9 @@ object Script {
           desc = (json \ "desc").as[String],
           code = (json \ "code").as[String],
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-          `type` = scriptType
+          `type` = scriptType,
+          teams = (json \ "teams").asOpt[JsArray].map(a => a.value.map(v => TeamId(v.as[String]))).getOrElse(Seq(TeamId.default)),
+          tenant = (json \ "tenant").asOpt[String].map(a => TenantId(a)).getOrElse(TenantId.default)
         )
       } map {
         case sd => JsSuccess(sd)
@@ -1268,7 +1273,9 @@ trait ScriptDataStore extends BasicStore[Script] {
              |new MyTransformer()
            """.stripMargin,
     `type` = TransformerType,
-    metadata = Map.empty
+    metadata = Map.empty,
+    tenant = TenantId.default,
+    teams = Seq(TeamId.default)
   )
 }
 

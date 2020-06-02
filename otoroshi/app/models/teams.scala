@@ -5,6 +5,7 @@ import akka.stream.Materializer
 import akka.util.ByteString
 import env.Env
 import models.BackOfficeUser
+import otoroshi.models.RightsChecker.SuperAdminOnly
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json.{JsArray, JsObject, Json}
 import play.api.mvc.{RequestHeader, Result}
@@ -23,6 +24,9 @@ object TeamAccess {
       TeamAccess(raw, true, true)
     }
   }
+}
+object TeamId {
+  val default: TeamId = TeamId("default")
 }
 case class TeamId(value: String) {
   def canBeWrittenBy(user: BackOfficeUser): Boolean = {
@@ -51,7 +55,9 @@ object TenantAccess {
     }
   }
 }
-
+object TenantId {
+  val default: TenantId = TenantId("default")
+}
 case class TenantId(value: String) {
   def canBeWrittenBy(user: BackOfficeUser): Boolean = {
     user.tenants.exists(v => v.canWrite && (v.value.toLowerCase.trim == "*" || v.value.toLowerCase.trim == value.toLowerCase.trim))
@@ -90,6 +96,46 @@ object RightsChecker {
       }
     }
   }
+  case class AllowedTenantAndTeamRead(tenant: TenantId, teams: Seq[TeamId]) extends RightsChecker {
+    def canPerform(user: BackOfficeUser, currentTenant: Option[String]): Boolean = {
+      if (SuperAdminOnly.canPerform(user, None)) {
+        true
+      } else {
+        TenantAndTeamHelper.canReadTenant(user, tenant.value) &&
+          TenantAndTeamHelper.canReadTeamsId(user, teams)
+      }
+    }
+  }
+  case class AllowedTenantAndTeamWrite(tenant: TenantId, teams: Seq[TeamId]) extends RightsChecker {
+    def canPerform(user: BackOfficeUser, currentTenant: Option[String]): Boolean = {
+      if (SuperAdminOnly.canPerform(user, None)) {
+        true
+      } else {
+        TenantAndTeamHelper.canWriteTenant(user, tenant.value) &&
+          TenantAndTeamHelper.canWriteTeamsId(user, teams)
+      }
+    }
+  }
+  case class AllowedTenantAndTeamReadWrite(tenant: TenantId, teams: Seq[TeamId]) extends RightsChecker {
+    def canPerform(user: BackOfficeUser, currentTenant: Option[String]): Boolean = {
+      if (SuperAdminOnly.canPerform(user, None)) {
+        true
+      } else {
+        TenantAndTeamHelper.canReadTenant(user, tenant.value) &&
+          TenantAndTeamHelper.canReadTeamsId(user, teams) &&
+          TenantAndTeamHelper.canWriteTenant(user, tenant.value) &&
+          TenantAndTeamHelper.canWriteTeamsId(user, teams)
+      }
+    }
+  }
+}
+
+trait TenantAndTeamsSupport {
+  def tenant: TenantId
+  def teams: Seq[TeamId]
+  def toReadChecker: RightsChecker = RightsChecker.AllowedTenantAndTeamRead(tenant, teams)
+  def toWriteChecker: RightsChecker = RightsChecker.AllowedTenantAndTeamWrite(tenant, teams)
+  def toReadWriteChecker: RightsChecker = RightsChecker.AllowedTenantAndTeamReadWrite(tenant, teams)
 }
 
 object TenantAndTeamHelper {
@@ -117,8 +163,17 @@ object TenantAndTeamHelper {
   def canReadTeam(user: BackOfficeUser, team: String): Boolean = {
     TeamId(team).canBeReadBy(user)
   }
+  def canReadTeams(user: BackOfficeUser, teams: Seq[String]): Boolean = {
+    teams.map(TeamId.apply).exists(_.canBeReadBy(user))
+  }
+  def canReadTeamsId(user: BackOfficeUser, teams: Seq[TeamId]): Boolean = {
+    teams.exists(_.canBeReadBy(user))
+  }
   def canWriteTeam(user: BackOfficeUser, team: String): Boolean = {
     TeamId(team).canBeWrittenBy(user)
+  }
+  def canWriteTeamsId(user: BackOfficeUser, teams: Seq[TeamId]): Boolean = {
+    teams.exists(_.canBeWrittenBy(user))
   }
   def canRead(user: BackOfficeUser, _tenant: Option[String], _teams: Option[Seq[String]]): Boolean = {
     val teams = _teams.getOrElse(Seq.empty[String]).map(v => TeamId(v))

@@ -3,6 +3,7 @@ package controllers.adminapi
 import actions.ApiAction
 import akka.util.ByteString
 import env.Env
+import otoroshi.models.RightsChecker
 import otoroshi.script._
 import play.api.Logger
 import play.api.libs.json._
@@ -99,6 +100,7 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
       }
       env.datastores.scriptDataStore.findAll().map { all =>
         val allClasses = all
+          .filter(script => ctx.canUserRead(script))
           .filter { script =>
             typ match {
               case None                                                      => true
@@ -141,12 +143,14 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
   }
 
   def compileScript() = ApiAction.async(sourceBodyParser) { ctx =>
-    OnlyIfScriptingEnabled {
-      ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { body =>
-        val code = Json.parse(body.utf8String).\("code").as[String]
-        env.scriptCompiler.compile(code).map {
-          case Left(err) => Ok(Json.obj("done" -> true, "error" -> err))
-          case Right(_)  => Ok(Json.obj("done" -> true))
+    ctx.checkRights(RightsChecker.Anyone) {
+      OnlyIfScriptingEnabled {
+        ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { body =>
+          val code = Json.parse(body.utf8String).\("code").as[String]
+          env.scriptCompiler.compile(code).map {
+            case Left(err) => Ok(Json.obj("done" -> true, "error" -> err))
+            case Right(_) => Ok(Json.obj("done" -> true))
+          }
         }
       }
     }
@@ -337,4 +341,6 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
     }
   }
   */
+  
+  override def buildError(status: Int, message: String): ApiError[JsValue] = JsonApiError(status, JsString(message))
 }

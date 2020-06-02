@@ -6,6 +6,7 @@ import akka.util.ByteString
 import env.Env
 import events._
 import org.joda.time.DateTime
+import otoroshi.models.TenantAndTeamsSupport
 import otoroshi.utils.syntax.implicits._
 import play.api.http.HttpEntity
 import play.api.libs.json._
@@ -159,7 +160,7 @@ trait AdminApiHelper {
   }
 }
 
-trait EntityHelper[Entity, Error] {
+trait EntityHelper[Entity <: TenantAndTeamsSupport, Error] {
   def readId(json: JsValue): Either[String, String] = {
     (json \ "id").asOpt[String] match {
       case Some(id) => Right(id)
@@ -174,9 +175,13 @@ trait EntityHelper[Entity, Error] {
   def createEntityOps(entity: Entity)(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[Error], EntityAndContext[Entity]]]
   def updateEntityOps(entity: Entity)(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[Error], EntityAndContext[Entity]]]
   def deleteEntityOps(id: String)(implicit env: Env, ec: ExecutionContext):     Future[Either[ApiError[Error], NoEntityAndContext[Entity]]]
+  def canRead[A](ctx: ApiActionContext[A])(entity: Entity)(implicit env: Env): Boolean = ctx.canUserRead(entity)
+  def canWrite[A](ctx: ApiActionContext[A])(entity: Entity)(implicit env: Env): Boolean = ctx.canUserWrite(entity)
+  def canReadWrite[A](ctx: ApiActionContext[A])(entity: Entity)(implicit env: Env): Boolean = ctx.canUserRead(entity) && ctx.canUserWrite(entity)
+  def buildError(status: Int, message: String): ApiError[Error]
 }
 
-trait BulkHelper[Entity, Error] extends EntityHelper[Entity, Error] {
+trait BulkHelper[Entity <: TenantAndTeamsSupport, Error] extends EntityHelper[Entity, Error] {
 
   import Results._
 
@@ -199,6 +204,10 @@ trait BulkHelper[Entity, Error] extends EntityHelper[Entity, Error] {
             case Left(err) => Left((err, e))
             case Right(entity) => Right(("--", entity))
           })
+          .filter {
+            case Left(_) => true
+            case Right((_, entity)) => canWrite(ctx)(entity)
+          }
           .mapAsync(grouping) {
             case Left((error, json)) =>
               Json.obj("status" -> 400, "error" -> "bad_entity", "error_description" -> error, "entity" -> json).stringify.byteString.future
@@ -259,6 +268,10 @@ trait BulkHelper[Entity, Error] extends EntityHelper[Entity, Error] {
             case Left(err) => Left((err, e))
             case Right(entity) => Right(("--", entity))
           })
+          .filter {
+            case Left(_) => true
+            case Right((_, entity)) => canWrite(ctx)(entity)
+          }
           .mapAsync(grouping) {
             case Left((error, json)) =>
               Json.obj("status" -> 400, "error" -> "bad_entity", "error_description" -> error, "entity" -> json).stringify.byteString.future
@@ -327,6 +340,7 @@ trait BulkHelper[Entity, Error] extends EntityHelper[Entity, Error] {
                 case Left(error) => Json.obj("status" -> 404, "error" -> "not_found", "error_description" -> "Entity not found", "id" -> id).stringify.byteString.future
                 case Right(OptionalEntityAndContext(option, _, _, _, _)) => option match {
                   case None => Json.obj("status" -> 404, "error" -> "not_found", "error_description" -> "Entity not found", "id" -> id).stringify.byteString.future
+                  case Some(entity) if !canWrite(ctx)(entity) => ByteString.empty.future
                   case Some(entity) => {
                     val currentJson = writeEntity(entity)
                     val newJson     = patchJson(patch, currentJson)
@@ -368,7 +382,7 @@ trait BulkHelper[Entity, Error] extends EntityHelper[Entity, Error] {
             }
           }
         Ok.sendEntity(HttpEntity.Streamed.apply(
-          data = src.intersperse(ByteString.empty, ByteString("\n"), ByteString.empty),
+          data = src.filterNot(_.isEmpty).intersperse(ByteString.empty, ByteString("\n"), ByteString.empty),
           contentLength = None,
           contentType = Some("application/x-ndjson")
         )).future
@@ -397,37 +411,42 @@ trait BulkHelper[Entity, Error] extends EntityHelper[Entity, Error] {
           case Left((error, json)) =>
             Json.obj("status" -> 400, "error" -> "bad_entity", "error_description" -> error, "entity" -> json).stringify.byteString.future
           case Right((_, id)) => {
-            deleteEntityOps(id).map {
-              case Left(error) =>
-                Json.obj("status" -> error.status, "error" -> "delete_error", "error_description" -> error.bodyAsJson, "id" -> id).stringify.byteString
-              case Right(NoEntityAndContext(action, message, meta, alert)) =>
-                val event: AdminApiEvent = AdminApiEvent(
-                  env.snowflakeGenerator.nextIdStr(),
-                  env.env,
-                  Some(ctx.apiKey),
-                  ctx.user,
-                  action,
-                  message,
-                  ctx.from,
-                  ctx.ua,
-                  meta
-                )
-                Audit.send(event)
-                Alerts.send(
-                  GenericAlert(env.snowflakeGenerator.nextIdStr(),
+            findByIdOps(id).flatMap {
+              case Left(err) => Json.obj("status" -> err.status, "error" -> "not_found", "error_description" -> err.bodyAsJson).stringify.byteString.future
+              case Right(optent) if optent.entity.isEmpty => Json.obj("status" -> 404, "error" -> "not_found", "error_description" -> "Entity does not exists").stringify.byteString.future
+              case Right(optent) if optent.entity.isDefined && !canWrite(ctx)(optent.entity.get) => ByteString.empty.future
+              case Right(optent) if optent.entity.isDefined && canWrite(ctx)(optent.entity.get) => deleteEntityOps(id).map {
+                case Left(error) =>
+                  Json.obj("status" -> error.status, "error" -> "delete_error", "error_description" -> error.bodyAsJson, "id" -> id).stringify.byteString
+                case Right(NoEntityAndContext(action, message, meta, alert)) =>
+                  val event: AdminApiEvent = AdminApiEvent(
+                    env.snowflakeGenerator.nextIdStr(),
                     env.env,
-                    ctx.user.getOrElse(ctx.apiKey.toJson),
-                    alert,
-                    event,
+                    Some(ctx.apiKey),
+                    ctx.user,
+                    action,
+                    message,
                     ctx.from,
-                    ctx.ua)
-                )
-                Json.obj("status" -> 200, "deleted" -> true, "id" -> id).stringify.byteString
+                    ctx.ua,
+                    meta
+                  )
+                  Audit.send(event)
+                  Alerts.send(
+                    GenericAlert(env.snowflakeGenerator.nextIdStr(),
+                      env.env,
+                      ctx.user.getOrElse(ctx.apiKey.toJson),
+                      alert,
+                      event,
+                      ctx.from,
+                      ctx.ua)
+                  )
+                  Json.obj("status" -> 200, "deleted" -> true, "id" -> id).stringify.byteString
+              }
             }
           }
         }
       Ok.sendEntity(HttpEntity.Streamed.apply(
-        data = src.intersperse(ByteString.empty, ByteString("\n"), ByteString.empty),
+        data = src.filterNot(_.isEmpty).intersperse(ByteString.empty, ByteString("\n"), ByteString.empty),
         contentLength = None,
         contentType = Some("application/x-ndjson")
       )).future
@@ -441,7 +460,7 @@ trait BulkHelper[Entity, Error] extends EntityHelper[Entity, Error] {
   }
 }
 
-trait BulkControllerHelper[Entity, Error] extends BulkHelper[Entity, Error] {
+trait BulkControllerHelper[Entity <: TenantAndTeamsSupport, Error] extends BulkHelper[Entity, Error] {
 
   private val sourceBodyParser = BodyParser("BulkController BodyParser") { _ =>
     Accumulator.source[ByteString].map(Right.apply)(env.otoroshiExecutionContext)
@@ -454,7 +473,7 @@ trait BulkControllerHelper[Entity, Error] extends BulkHelper[Entity, Error] {
   def bulkDeleteAction() = ApiAction.async(sourceBodyParser) { ctx => bulkDelete(ctx) }
 }
 
-trait CrudHelper[Entity, Error] extends EntityHelper[Entity, Error] {
+trait CrudHelper[Entity <: TenantAndTeamsSupport, Error] extends EntityHelper[Entity, Error] {
 
   import Results._
 
@@ -472,6 +491,7 @@ trait CrudHelper[Entity, Error] extends EntityHelper[Entity, Error] {
     }
     readEntity(body) match {
       case Left(e) => BadRequest(Json.obj("error" -> "bad_format", "error_description" -> "Bad entity format")).future
+      case Right(entity) if !canWrite(ctx)(entity) => Unauthorized(Json.obj("error" -> "unauthorized", "error_description" -> "You're not allowed to do this !")).future
       case Right(entity) =>
         createEntityOps(entity).map {
           case Left(error) => Status(error.status)(Json.obj("error" -> "creation_error", "error_description" -> error.bodyAsJson))
@@ -613,6 +633,7 @@ trait CrudHelper[Entity, Error] extends EntityHelper[Entity, Error] {
     readEntity(ctx.request.body) match {
       case Left(error) =>
         BadRequest(Json.obj("error" -> "bad_entity", "error_description" -> error, "entity" -> ctx.request.body)).future
+      case Right(entity) if !canWrite(ctx)(entity) => Unauthorized(Json.obj("error" -> "unauthorized", "error_description" -> "You're not allowed to do this !")).future
       case Right(entity) => {
         updateEntityOps(entity).map {
           case Left(error) =>
@@ -655,6 +676,7 @@ trait CrudHelper[Entity, Error] extends EntityHelper[Entity, Error] {
       case Left(error) => NotFound(Json.obj("error" -> "not_found", "error_description" -> "Entity not found")).future
       case Right(OptionalEntityAndContext(option, _, _, _, _)) => option match {
         case None => NotFound(Json.obj("error" -> "not_found", "error_description" -> "Entity not found")).future
+        case Some(entity) if !canWrite(ctx)(entity) => Unauthorized(Json.obj("error" -> "unauthorized", "error_description" -> "You're not allowed to do this !")).future
         case Some(entity) => {
           val currentJson = writeEntity(entity)
           val newJson     = patchJson(ctx.request.body, currentJson)
@@ -702,32 +724,37 @@ trait CrudHelper[Entity, Error] extends EntityHelper[Entity, Error] {
     implicit val implMat = env.otoroshiMaterializer
 
     Source(ids.toList).mapAsync(1) { id =>
-      deleteEntityOps(id).map {
-        case Left(error) =>
-          (id, Some(error))
-        case Right(NoEntityAndContext(action, message, meta, alert)) =>
-          val event: AdminApiEvent = AdminApiEvent(
-            env.snowflakeGenerator.nextIdStr(),
-            env.env,
-            Some(ctx.apiKey),
-            ctx.user,
-            action,
-            message,
-            ctx.from,
-            ctx.ua,
-            meta
-          )
-          Audit.send(event)
-          Alerts.send(
-            GenericAlert(env.snowflakeGenerator.nextIdStr(),
+      findByIdOps(id).flatMap {
+        case Left(err) => (id, Some(err)).future
+        case Right(optent) if optent.entity.isEmpty => (id, buildError(404, "Entity not found").some).future
+        case Right(optent) if optent.entity.isDefined && !canWrite(ctx)(optent.entity.get) => (id, buildError(401, "You're not allowed").some).future
+        case Right(optent) if optent.entity.isDefined && canWrite(ctx)(optent.entity.get) => deleteEntityOps(id).map {
+          case Left(error) =>
+            (id, Some(error))
+          case Right(NoEntityAndContext(action, message, meta, alert)) =>
+            val event: AdminApiEvent = AdminApiEvent(
+              env.snowflakeGenerator.nextIdStr(),
               env.env,
-              ctx.user.getOrElse(ctx.apiKey.toJson),
-              alert,
-              event,
+              Some(ctx.apiKey),
+              ctx.user,
+              action,
+              message,
               ctx.from,
-              ctx.ua)
-          )
-          (id, None)
+              ctx.ua,
+              meta
+            )
+            Audit.send(event)
+            Alerts.send(
+              GenericAlert(env.snowflakeGenerator.nextIdStr(),
+                env.env,
+                ctx.user.getOrElse(ctx.apiKey.toJson),
+                alert,
+                event,
+                ctx.from,
+                ctx.ua)
+            )
+            (id, None)
+        }
       }
     }.runFold(Seq.empty[(String, Option[ApiError[Error]])]) {
       case (seq, (id, done)) => seq :+ (id, done)
@@ -750,7 +777,7 @@ trait CrudHelper[Entity, Error] extends EntityHelper[Entity, Error] {
   }
 }
 
-trait CrudControllerHelper[Entity, Error] extends CrudHelper[Entity, Error] {
+trait CrudControllerHelper[Entity <: TenantAndTeamsSupport, Error] extends CrudHelper[Entity, Error] {
 
   private val sourceBodyParser = BodyParser("BulkController BodyParser") { _ =>
     Accumulator.source[ByteString].map(Right.apply)(env.otoroshiExecutionContext)
