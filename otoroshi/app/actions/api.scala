@@ -56,7 +56,7 @@ case class ApiActionContext[A](apiKey: ApiKey, request: Request[A]) {
     }
   }
 
-  private def backOfficeUser(implicit env: Env): Either[String, Option[BackOfficeUser]] = {
+  def backOfficeUser(implicit env: Env): Either[String, Option[BackOfficeUser]] = {
     if (env.bypassUserRightsCheck) {
       Right(None)
     } else {

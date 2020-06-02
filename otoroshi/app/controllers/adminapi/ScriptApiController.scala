@@ -1,6 +1,6 @@
 package controllers.adminapi
 
-import actions.ApiAction
+import actions.{ApiAction, ApiActionContext}
 import akka.util.ByteString
 import env.Env
 import otoroshi.models.RightsChecker
@@ -341,6 +341,15 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
     }
   }
   */
-  
+  override def canWrite[A](ctx: ApiActionContext[A])(entity: Script)(implicit env: Env): Boolean = ctx.backOfficeUser match {
+    case Left(_) => false
+    case Right(None) => true
+    case Right(Some(user)) => RightsChecker.SuperAdminOnly.canPerform(user, None)
+  }
+  override def canReadWrite[A](ctx: ApiActionContext[A])(entity: Script)(implicit env: Env): Boolean = ctx.backOfficeUser match {
+    case Left(_) => false
+    case Right(None) => true
+    case Right(Some(user)) => RightsChecker.SuperAdminOnly.canPerform(user, None)
+  }
   override def buildError(status: Int, message: String): ApiError[JsValue] = JsonApiError(status, JsString(message))
 }
