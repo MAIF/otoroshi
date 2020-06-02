@@ -9,6 +9,7 @@ import env.Env
 import javax.naming.Context
 import javax.naming.directory.InitialDirContext
 import models._
+import otoroshi.models.{TeamId, TenantId}
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc._
@@ -93,6 +94,8 @@ object LdapAuthModuleConfig extends FromJson[AuthModuleConfig] {
           metadataField = (json \ "metadataField").asOpt[String].filterNot(_.trim.isEmpty),
           extraMetadata = (json \ "extraMetadata").asOpt[JsObject].getOrElse(Json.obj()),
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
+          teams = (json \ "teams").asOpt[JsArray].map(a => a.value.map(v => TeamId(v.as[String]))).getOrElse(Seq(TeamId.default)),
+          tenant = (json \ "tenant").asOpt[String].map(a => TenantId(a)).getOrElse(TenantId.default)
         )
       )
     } recover {
@@ -120,7 +123,9 @@ case class LdapAuthModuleConfig(
     emailField: String = "mail",
     metadataField: Option[String] = None,
     extraMetadata: JsObject = Json.obj(),
-    metadata: Map[String, String]
+    metadata: Map[String, String],
+    tenant: TenantId,
+    teams: Seq[TeamId]
 ) extends AuthModuleConfig {
   def `type`: String = "ldap"
 
@@ -145,7 +150,9 @@ case class LdapAuthModuleConfig(
     "emailField"         -> this.emailField,
     "metadataField"      -> this.metadataField.map(JsString.apply).getOrElse(JsNull).as[JsValue],
     "extraMetadata"      -> this.extraMetadata,
-    "metadata"           -> this.metadata
+    "metadata"           -> this.metadata,
+    "tenant" -> this.tenant.value,
+    "teams" -> JsArray(this.teams.map(v => JsString(v.value)))
   )
 
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.authConfigsDataStore.set(this)

@@ -18,5 +18,4 @@ class ApiController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env
   val sourceBodyParser = BodyParser("ApiController BodyParser") { _ =>
     Accumulator.source[ByteString].map(Right.apply)
   }
-
 }

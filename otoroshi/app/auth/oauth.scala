@@ -15,6 +15,7 @@ import security.IdGenerator
 import otoroshi.storage.BasicStore
 import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
 import org.joda.time.DateTime
+import otoroshi.models.{TeamId, TenantId}
 import play.api.libs.ws.{WSProxyServer, WSResponse}
 import utils.http.MtlsConfig
 
@@ -73,6 +74,8 @@ object GenericOauth2ModuleConfig extends FromJson[AuthModuleConfig] {
           extraMetadata = (json \ "extraMetadata").asOpt[JsObject].getOrElse(Json.obj()),
           mtlsConfig = MtlsConfig.read((json \ "mtlsConfig").asOpt[JsValue]),
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
+          teams = (json \ "teams").asOpt[JsArray].map(a => a.value.map(v => TeamId(v.as[String]))).getOrElse(Seq(TeamId.default)),
+          tenant = (json \ "tenant").asOpt[String].map(a => TenantId(a)).getOrElse(TenantId.default)
         )
       )
     } recover {
@@ -111,7 +114,9 @@ case class GenericOauth2ModuleConfig(
     extraMetadata: JsObject = Json.obj(),
     mtlsConfig: MtlsConfig = MtlsConfig(),
     refreshTokens: Boolean = false,
-    metadata: Map[String, String]
+    metadata: Map[String, String],
+    tenant: TenantId,
+    teams: Seq[TeamId]
 ) extends OAuth2ModuleConfig {
   def `type`: String                                        = "oauth2"
   override def authModule(config: GlobalConfig): AuthModule = GenericOauth2Module(this)
@@ -147,7 +152,9 @@ case class GenericOauth2ModuleConfig(
     "proxy"                -> WSProxyServerJson.maybeProxyToJson(this.proxy),
     "extraMetadata"        -> this.extraMetadata,
     "metadata"             -> this.metadata,
-    "refreshTokens"        -> this.refreshTokens
+    "refreshTokens"        -> this.refreshTokens,
+    "tenant" -> this.tenant.value,
+    "teams" -> JsArray(this.teams.map(v => JsString(v.value)))
   )
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.authConfigsDataStore.set(this)
   override def cookieSuffix(desc: ServiceDescriptor)                   = s"global-oauth-$id"

@@ -20,7 +20,7 @@ import models._
 import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
-import otoroshi.models.{OtoroshiAdminType, SimpleOtoroshiAdmin, TeamAccess, TenantAccess}
+import otoroshi.models.{OtoroshiAdminType, SimpleOtoroshiAdmin, TeamAccess, TeamId, TenantAccess, TenantId}
 import otoroshi.script.{AccessValidatorRef, JobManager, ScriptCompiler, ScriptManager}
 import otoroshi.ssl.pki.BouncyCastlePki
 import otoroshi.storage.DataStores
@@ -665,7 +665,9 @@ class Env(val configuration: Configuration,
   lazy val backOfficeGroup = ServiceGroup(
     id = backOfficeGroupId,
     name = "Otoroshi Admin Api group",
-    metadata = Map.empty
+    metadata = Map.empty,
+    tenant = TenantId.default,
+    teams = Seq(TeamId.default)
   )
 
   lazy val backOfficeApiKey = ApiKey(
@@ -835,7 +837,7 @@ class Env(val configuration: Configuration,
                     }(ec)
                 }
                 case _ => {
-                  val defaultGroup = ServiceGroup("default", "default-group", "The default service group", Map.empty)
+                  val defaultGroup = ServiceGroup("default", "default-group", "The default service group", Map.empty, tenant = TenantId.default, teams = Seq(TeamId.default))
                   val defaultGroupApiKey = ApiKey("9HFCzZIPUQQvfxkq",
                                                   "lmwAGwqtJJM7nOMGKwSAdOjC3CZExfYC7qXd4aPmmseaShkEccAnmpULvgnrt6tp",
                                                   "default-apikey",

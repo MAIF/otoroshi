@@ -1,6 +1,7 @@
 package actions
 
 import java.util.Base64
+import java.util.concurrent.atomic.AtomicReference
 
 import akka.http.scaladsl.util.FastFuture
 import com.auth0.jwt.JWT
@@ -56,45 +57,53 @@ case class ApiActionContext[A](apiKey: ApiKey, request: Request[A]) {
     }
   }
 
+  private val bouRef = new AtomicReference[Either[String, Option[BackOfficeUser]]]()
+
   def backOfficeUser(implicit env: Env): Either[String, Option[BackOfficeUser]] = {
-    if (env.bypassUserRightsCheck) {
-      Right(None)
-    } else {
-      request.headers.get("Otoroshi-BackOffice-User") match {
-        case None =>
-          val tenantAccess = apiKey.metadata.get("otoroshi-tenants-access")
-          val teamAccess = apiKey.metadata.get("otoroshi-teams-access")
-          (tenantAccess, teamAccess) match {
-            case (None, None) => Right(None)
-            case (Some(tenants), Some(teams)) =>
-              val user = BackOfficeUser(
-                randomId = IdGenerator.token,
-                name = apiKey.clientName,
-                email = apiKey.clientId,
-                profile = Json.obj(),
-                authConfigId = "apikey",
-                simpleLogin = false,
-                metadata = Map.empty,
-                teams = teams.split(",").map(_.trim).map(TeamAccess.apply),
-                tenants = tenants.split(",").map(_.trim).map(TenantAccess.apply),
-              )
-              Right(user.some)
-            case _ => Left("You're not authorized here (invalid setup) ! ")
-          }
-        case Some(userJwt) =>
-          Try(JWT.require(Algorithm.HMAC512(apiKey.clientSecret)).build().verify(userJwt)) match {
-            case Failure(e) =>
-              Left("You're not authorized here !")
-            case Success(decoded) => {
-              Option(decoded.getClaim("user"))
-                .flatMap(c => Try(c.asString()).toOption)
-                .flatMap(u => Try(Json.parse(u)).toOption)
-                .flatMap(u => BackOfficeUser.fmt.reads(u).asOpt) match {
-                case None => Left("You're not authorized here !")
-                case Some(user) => Right(user.some)
+    Option(bouRef.get()).getOrElse {
+      (
+        if (env.bypassUserRightsCheck) {
+          Right(None)
+        } else {
+          request.headers.get("Otoroshi-BackOffice-User") match {
+            case None =>
+              val tenantAccess = apiKey.metadata.get("otoroshi-tenants-access")
+              val teamAccess = apiKey.metadata.get("otoroshi-teams-access")
+              (tenantAccess, teamAccess) match {
+                case (None, None) => Right(None)
+                case (Some(tenants), Some(teams)) =>
+                  val user = BackOfficeUser(
+                    randomId = IdGenerator.token,
+                    name = apiKey.clientName,
+                    email = apiKey.clientId,
+                    profile = Json.obj(),
+                    authConfigId = "apikey",
+                    simpleLogin = false,
+                    metadata = Map.empty,
+                    teams = teams.split(",").map(_.trim).map(TeamAccess.apply),
+                    tenants = tenants.split(",").map(_.trim).map(TenantAccess.apply),
+                  )
+                  Right(user.some)
+                case _ => Left("You're not authorized here (invalid setup) ! ")
               }
-            }
+            case Some(userJwt) =>
+              Try(JWT.require(Algorithm.HMAC512(apiKey.clientSecret)).build().verify(userJwt)) match {
+                case Failure(e) =>
+                  Left("You're not authorized here !")
+                case Success(decoded) => {
+                  Option(decoded.getClaim("user"))
+                    .flatMap(c => Try(c.asString()).toOption)
+                    .flatMap(u => Try(Json.parse(u)).toOption)
+                    .flatMap(u => BackOfficeUser.fmt.reads(u).asOpt) match {
+                    case None => Left("You're not authorized here !")
+                    case Some(user) => Right(user.some)
+                  }
+                }
+              }
           }
+        }
+      ).debug { either =>
+        bouRef.set(either)
       }
     }
   }

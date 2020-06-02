@@ -4,7 +4,7 @@ import actions.ApiAction
 import env.Env
 import otoroshi.tcp.TcpService
 import play.api.Logger
-import play.api.libs.json.{JsObject, JsValue, Json}
+import play.api.libs.json.{JsObject, JsString, JsValue, Json}
 import play.api.mvc.{AbstractController, ControllerComponents, RequestHeader}
 import utils._
 
@@ -184,5 +184,6 @@ class TcpServiceApiController(val ApiAction: ApiAction, val cc: ControllerCompon
     }
   }
   */
+  override def buildError(status: Int, message: String): ApiError[JsValue] = JsonApiError(status, JsString(message))
 }
 

@@ -22,6 +22,7 @@ class CertificatesController(val ApiAction: ApiAction, val cc: ControllerCompone
   def renewCert(id: String) = ApiAction.async { ctx =>
     env.datastores.certificatesDataStore.findById(id).map(_.map(_.enrich())).flatMap {
       case None       => FastFuture.successful(NotFound(Json.obj("error" -> s"No Certificate found")))
+      case Some(cert) if !ctx.canUserWrite(cert) => FastFuture.successful(Unauthorized(Json.obj("error" -> s"You can't access this certificate")))
       case Some(cert) => cert.renew().map(c => Ok(c.toJson))
     }
   }
@@ -34,6 +35,8 @@ class CertificatesController(val ApiAction: ApiAction, val cc: ControllerCompone
   }
 
   override def writeEntity(entity: Cert): JsValue = Cert._fmt.writes(entity)
+
+  override def buildError(status: Int, message: String): ApiError[JsValue] = JsonApiError(status, JsString(message))
 
   override def findByIdOps(id: String)(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], OptionalEntityAndContext[Cert]]] = {
     env.datastores.certificatesDataStore.findById(id).map { opt =>

@@ -2,6 +2,7 @@ package auth
 
 import env.Env
 import models._
+import otoroshi.models.{TeamId, TenantAndTeamsSupport, TenantId}
 import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.ws.WSProxyServer
@@ -34,7 +35,7 @@ trait AuthModule {
                                                                      env: Env): Future[Either[String, BackOfficeUser]]
 }
 
-trait AuthModuleConfig extends AsJson {
+trait AuthModuleConfig extends AsJson with TenantAndTeamsSupport {
   def `type`: String
   def id: String
   def name: String
@@ -115,21 +116,27 @@ trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {
           id = IdGenerator.token,
           name = "New auth. module",
           desc = "New auth. module",
-          metadata = Map.empty
+          metadata = Map.empty,
+          tenant = TenantId.default,
+          teams = Seq(TeamId.default)
         )
       case Some("oauth2-global") =>
         GenericOauth2ModuleConfig(
           id = IdGenerator.token,
           name = "New auth. module",
           desc = "New auth. module",
-          metadata = Map.empty
+          metadata = Map.empty,
+          tenant = TenantId.default,
+          teams = Seq(TeamId.default)
         )
       case Some("basic") =>
         BasicAuthModuleConfig(
           id = IdGenerator.token,
           name = "New auth. module",
           desc = "New auth. module",
-          metadata = Map.empty
+          metadata = Map.empty,
+          tenant = TenantId.default,
+          teams = Seq(TeamId.default)
         )
       case Some("ldap") =>
         LdapAuthModuleConfig(
@@ -141,14 +148,18 @@ trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {
           searchFilter = "(uid=${username})",
           adminUsername = Some("cn=read-only-admin,dc=example,dc=com"),
           adminPassword = Some("password"),
-          metadata = Map.empty
+          metadata = Map.empty,
+          tenant = TenantId.default,
+          teams = Seq(TeamId.default)
         )
       case _ =>
         BasicAuthModuleConfig(
           id = IdGenerator.token,
           name = "New auth. module",
           desc = "New auth. module",
-          metadata = Map.empty
+          metadata = Map.empty,
+          tenant = TenantId.default,
+          teams = Seq(TeamId.default)
         )
     }
   }

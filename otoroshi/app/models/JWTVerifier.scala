@@ -17,6 +17,7 @@ import env.Env
 import gateway.Errors
 import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
 import otoroshi.el.{GlobalExpressionLanguage, JwtExpressionLanguage}
+import otoroshi.models.{TeamId, TenantAndTeamsSupport, TenantId}
 import play.api.Logger
 import play.api.http.websocket.{Message => PlayWSMessage}
 import play.api.libs.json._
@@ -1253,9 +1254,10 @@ case class GlobalJwtVerifier(
     source: JwtTokenLocation = InHeader("X-JWT-Token"),
     algoSettings: AlgoSettings = HSAlgoSettings(512, "secret", false),
     strategy: VerifierStrategy = PassThrough(VerificationSettings(Map("iss" -> "The Issuer"))),
-    metadata: Map[String, String]
+    metadata: Map[String, String],
+    tenant: TenantId,  teams: Seq[TeamId]
 ) extends JwtVerifier
-    with AsJson {
+    with AsJson with TenantAndTeamsSupport {
 
   def asJson: JsValue = Json.obj(
     "type"         -> "global",
@@ -1266,7 +1268,9 @@ case class GlobalJwtVerifier(
     "source"       -> this.source.asJson,
     "algoSettings" -> this.algoSettings.asJson,
     "strategy"     -> this.strategy.asJson,
-    "metadata"     -> this.metadata
+    "metadata"     -> this.metadata,
+    "tenant" -> this.tenant.value,
+    "teams" -> JsArray(this.teams.map(v => JsString(v.value)))
   )
 
   override def isRef = false
@@ -1319,7 +1323,9 @@ object GlobalJwtVerifier extends FromJson[GlobalJwtVerifier] {
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
           source = source,
           algoSettings = algoSettings,
-          strategy = strategy
+          strategy = strategy,
+          teams = (json \ "teams").asOpt[JsArray].map(a => a.value.map(v => TeamId(v.as[String]))).getOrElse(Seq(TeamId.default)),
+          tenant = (json \ "tenant").asOpt[String].map(a => TenantId(a)).getOrElse(TenantId.default)
         )
       }
     } recover {
@@ -1436,6 +1442,8 @@ trait GlobalJwtVerifierDataStore extends BasicStore[GlobalJwtVerifier] {
     id = IdGenerator.token,
     name = "New jwt verifier",
     desc = "New jwt verifier",
-    metadata = Map.empty
+    metadata = Map.empty,
+    tenant = TenantId.default,
+    teams = Seq(TeamId.default)
   )
 }

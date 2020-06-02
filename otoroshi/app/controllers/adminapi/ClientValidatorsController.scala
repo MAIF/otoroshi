@@ -2,7 +2,7 @@ package controllers.adminapi
 
 import actions.ApiAction
 import env.Env
-import play.api.libs.json.{JsObject, JsValue, Json}
+import play.api.libs.json.{JsObject, JsString, JsValue, Json}
 import play.api.mvc.{AbstractController, ControllerComponents, RequestHeader}
 import ssl.ClientCertificateValidator
 import utils._
@@ -23,6 +23,8 @@ class ClientValidatorsController(val ApiAction: ApiAction, val cc: ControllerCom
   }
 
   override def writeEntity(entity: ClientCertificateValidator): JsValue = ClientCertificateValidator.fmt.writes(entity)
+
+  override def buildError(status: Int, message: String): ApiError[JsValue] = JsonApiError(status, JsString(message))
 
   override def findByIdOps(id: String)(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], OptionalEntityAndContext[ClientCertificateValidator]]] = {
     env.datastores.clientCertificateValidationDataStore.findById(id).map { opt =>

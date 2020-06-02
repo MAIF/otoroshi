@@ -3,6 +3,7 @@ package controllers.adminapi
 import actions.{ApiAction, UnAuthApiAction}
 import akka.util.ByteString
 import env.Env
+import otoroshi.models.RightsChecker
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json.Json
@@ -18,9 +19,11 @@ class EventsController(ApiAction: ApiAction, cc: ControllerComponents)(implicit 
   lazy val logger = Logger("otoroshi-events-api")
 
   def auditEvents() = ApiAction.async { ctx =>
-    val options = SendAuditAndAlert("ACCESS_AUDIT_EVENTS", s"User accessed audit events", None, Json.obj(), ctx)
-    fetchWithPaginationAndFilteringAsResult(ctx, "filter.".some, (e: ByteString) => Json.parse(e.utf8String), options) {
-      env.datastores.auditDataStore.findAllRaw().fright[JsonApiError]
+    ctx.checkRights(RightsChecker.SuperAdminOnly) {
+      val options = SendAuditAndAlert("ACCESS_AUDIT_EVENTS", s"User accessed audit events", None, Json.obj(), ctx)
+      fetchWithPaginationAndFilteringAsResult(ctx, "filter.".some, (e: ByteString) => Json.parse(e.utf8String), options) {
+        env.datastores.auditDataStore.findAllRaw().fright[JsonApiError]
+      }
     }
     // val paginationPage: Int = ctx.request.queryString.get("page").flatMap(_.headOption).map(_.toInt).getOrElse(1)
     // val paginationPageSize: Int =
@@ -43,9 +46,11 @@ class EventsController(ApiAction: ApiAction, cc: ControllerComponents)(implicit 
   }
 
   def alertEvents() = ApiAction.async { ctx =>
-    val options = SendAuditAndAlert("ACCESS_ALERT_EVENTS", s"User accessed alert events", None, Json.obj(), ctx)
-    fetchWithPaginationAndFilteringAsResult(ctx, "filter.".some, (e: ByteString) => Json.parse(e.utf8String), options) {
-      env.datastores.alertDataStore.findAllRaw().fright[JsonApiError]
+    ctx.checkRights(RightsChecker.SuperAdminOnly) {
+      val options = SendAuditAndAlert("ACCESS_ALERT_EVENTS", s"User accessed alert events", None, Json.obj(), ctx)
+      fetchWithPaginationAndFilteringAsResult(ctx, "filter.".some, (e: ByteString) => Json.parse(e.utf8String), options) {
+        env.datastores.alertDataStore.findAllRaw().fright[JsonApiError]
+      }
     }
     // val paginationPage: Int = ctx.request.queryString.get("page").flatMap(_.headOption).map(_.toInt).getOrElse(1)
     // val paginationPageSize: Int =

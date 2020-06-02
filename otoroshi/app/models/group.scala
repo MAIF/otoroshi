@@ -1,6 +1,7 @@
 package models
 
 import env.Env
+import otoroshi.models.{TeamId, TenantAndTeamsSupport, TenantId}
 import play.api.Logger
 import play.api.libs.json._
 import security.IdGenerator
@@ -9,7 +10,7 @@ import otoroshi.storage.BasicStore
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-case class ServiceGroup(id: String = IdGenerator.token(64), name: String, description: String = "No description", metadata: Map[String, String]) {
+case class ServiceGroup(id: String = IdGenerator.token(64), name: String, description: String = "No description", metadata: Map[String, String], tenant: TenantId,  teams: Seq[TeamId]) extends TenantAndTeamsSupport {
   def services(implicit ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] =
     env.datastores.serviceDescriptorDataStore.findByGroup(id)
   def save()(implicit ec: ExecutionContext, env: Env)   = env.datastores.serviceGroupDataStore.set(this)
@@ -28,7 +29,9 @@ object ServiceGroup {
         id = (json \ "id").as[String],
         name = (json \ "name").as[String],
         description = (json \ "description").asOpt[String].getOrElse(""),
-        metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty)
+        metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
+        teams = (json \ "teams").asOpt[JsArray].map(a => a.value.map(v => TeamId(v.as[String]))).getOrElse(Seq(TeamId.default)),
+        tenant = (json \ "tenant").asOpt[String].map(a => TenantId(a)).getOrElse(TenantId.default)
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -38,7 +41,9 @@ object ServiceGroup {
       "id" -> o.id,
       "name" -> o.name,
       "description" -> o.description,
-      "metadata" -> o.metadata
+      "metadata" -> o.metadata,
+      "tenant" -> o.tenant.value,
+      "teams" -> JsArray(o.teams.map(v => JsString(v.value)))
     )
   }
   def toJson(value: ServiceGroup): JsValue = _fmt.writes(value)
@@ -59,6 +64,8 @@ trait ServiceGroupDataStore extends BasicStore[ServiceGroup] {
     id = IdGenerator.token(64),
     name = "product-group",
     description = "group for product",
-    metadata = Map.empty
+    metadata = Map.empty,
+    tenant = TenantId.default,
+    teams = Seq(TeamId.default)
   )
 }

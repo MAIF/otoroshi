@@ -18,7 +18,7 @@ import events.{AdminFirstLogin, AdminLoggedInAlert, Alerts}
 import models._
 import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
-import otoroshi.models.{OtoroshiAdminType, WebAuthnOtoroshiAdmin}
+import otoroshi.models.{OtoroshiAdminType, TeamId, TenantId, WebAuthnOtoroshiAdmin}
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc._
@@ -124,6 +124,8 @@ object BasicAuthModuleConfig extends FromJson[AuthModuleConfig] {
           webauthn = (json \ "webauthn").asOpt[Boolean].getOrElse(false),
           users = (json \ "users").asOpt(Reads.seq(BasicAuthUser.fmt)).getOrElse(Seq.empty[BasicAuthUser]),
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
+          teams = (json \ "teams").asOpt[JsArray].map(a => a.value.map(v => TeamId(v.as[String]))).getOrElse(Seq(TeamId.default)),
+          tenant = (json \ "tenant").asOpt[String].map(a => TenantId(a)).getOrElse(TenantId.default)
         )
       )
     } recover {
@@ -139,7 +141,9 @@ case class BasicAuthModuleConfig(
     sessionMaxAge: Int = 86400,
     basicAuth: Boolean = false,
     webauthn: Boolean = false,
-    metadata: Map[String, String]
+    metadata: Map[String, String],
+    tenant: TenantId,
+    teams: Seq[TeamId]
 ) extends AuthModuleConfig {
   def `type`: String                                        = "basic"
   override def authModule(config: GlobalConfig): AuthModule = BasicAuthModule(this)
@@ -152,7 +156,9 @@ case class BasicAuthModuleConfig(
     "webauthn"      -> this.webauthn,
     "sessionMaxAge" -> this.sessionMaxAge,
     "metadata"      -> this.metadata,
-    "users"         -> Writes.seq(BasicAuthUser.fmt).writes(this.users)
+    "users"         -> Writes.seq(BasicAuthUser.fmt).writes(this.users),
+    "tenant" -> this.tenant.value,
+    "teams" -> JsArray(this.teams.map(v => JsString(v.value)))
   )
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.authConfigsDataStore.set(this)
   override def cookieSuffix(desc: ServiceDescriptor)                   = s"basic-auth-$id"

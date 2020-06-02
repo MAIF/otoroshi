@@ -29,6 +29,8 @@ class AuthModulesController(val ApiAction: ApiAction, val cc: ControllerComponen
 
   override def writeEntity(entity: AuthModuleConfig): JsValue = AuthModuleConfig._fmt.writes(entity)
 
+  override def buildError(status: Int, message: String): ApiError[JsValue] = JsonApiError(status, JsString(message))
+
   override def findByIdOps(id: String)(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], OptionalEntityAndContext[AuthModuleConfig]]] = {
     env.datastores.authConfigsDataStore.findById(id).map { opt =>
       Right(OptionalEntityAndContext(
@@ -114,6 +116,7 @@ class AuthModulesController(val ApiAction: ApiAction, val cc: ControllerComponen
 
   def startRegistration(id: String) = ApiAction.async { ctx =>
     env.datastores.authConfigsDataStore.findById(id).flatMap {
+      case Some(auth) if !ctx.canUserWrite(auth) => Unauthorized(Json.obj("error" -> s"You can't access this module")).future
       case Some(auth) => {
         auth.authModule(env.datastores.globalConfigDataStore.latest()) match {
           case bam: BasicAuthModule if bam.authConfig.webauthn =>
@@ -133,6 +136,7 @@ class AuthModulesController(val ApiAction: ApiAction, val cc: ControllerComponen
 
   def finishRegistration(id: String) = ApiAction.async { ctx =>
     env.datastores.authConfigsDataStore.findById(id).flatMap {
+      case Some(auth) if !ctx.canUserWrite(auth) => Unauthorized(Json.obj("error" -> s"You can't access this module")).future
       case Some(auth) => {
         auth.authModule(env.datastores.globalConfigDataStore.latest()) match {
           case bam: BasicAuthModule if bam.authConfig.webauthn =>

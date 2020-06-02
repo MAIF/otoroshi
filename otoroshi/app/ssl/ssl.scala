@@ -38,6 +38,7 @@ import org.bouncycastle.openssl.{PEMEncryptedKeyPair, PEMKeyPair, PEMParser}
 import org.bouncycastle.pkcs.PKCS10CertificationRequest
 import org.bouncycastle.util.io.pem.PemReader
 import org.joda.time.{DateTime, Interval}
+import otoroshi.models.{TeamId, TenantAndTeamsSupport, TenantId}
 import otoroshi.ssl.pki.models.{GenCertResponse, GenCsrQuery, GenKeyPairQuery}
 import otoroshi.utils.LetsEncryptHelper
 import play.api.libs.json._
@@ -112,8 +113,10 @@ case class Cert(
     from: DateTime = DateTime.now(),
     to: DateTime = DateTime.now(),
     sans: Seq[String] = Seq.empty,
-    entityMetadata: Map[String, String] = Map.empty
-) {
+    entityMetadata: Map[String, String] = Map.empty,
+    tenant: TenantId,
+    teams: Seq[TeamId]
+) extends TenantAndTeamsSupport {
 
   lazy val certType = {
     if (client) "client"
@@ -362,7 +365,9 @@ object Cert {
       privateKey = privateKey,
       caRef = None,
       autoRenew = false,
-      client = false
+      client = false,
+      tenant = TenantId.default,
+      teams = Seq(TeamId.default)
     ).enrich()
   }
 
@@ -376,6 +381,8 @@ object Cert {
       caRef = caRef,
       autoRenew = false,
       client = client,
+      tenant = TenantId.default,
+      teams = Seq(TeamId.default)
     ).enrich()
     c.copy(name = c.domain, description = s"Certificate for ${c.subject}")
   }
@@ -389,7 +396,9 @@ object Cert {
       privateKey = keyPair.getPrivate.asPem,
       caRef = Some(ca.id),
       autoRenew = false,
-      client = client
+      client = client,
+      tenant = TenantId.default,
+      teams = Seq(TeamId.default)
     ).enrich()
     c.copy(name = c.domain, description = s"Certificate for ${c.subject}")
   }
@@ -407,7 +416,9 @@ object Cert {
       // s"${PemHeaders.BeginPrivateKey}\n${Base64.getEncoder.encodeToString(keyPair.getPrivate.getEncoded)}\n${PemHeaders.EndPrivateKey}",
       caRef = None,
       autoRenew = false,
-      client = client
+      client = client,
+      tenant = TenantId.default,
+      teams = Seq(TeamId.default)
     ).enrich()
     c.copy(name = c.domain, description = s"Certificate for ${c.subject}")
   }
@@ -433,7 +444,9 @@ object Cert {
       "keypair"     -> cert.keypair,
       "sans"        -> JsArray(cert.sans.map(JsString.apply)),
       "certType"    -> cert.certType,
-      "metadata"    -> cert.entityMetadata
+      "metadata"    -> cert.entityMetadata,
+      "tenant" -> cert.tenant.value,
+      "teams" -> JsArray(cert.teams.map(v => JsString(v.value)))
 
     )
     override def reads(json: JsValue): JsResult[Cert] =
@@ -461,6 +474,8 @@ object Cert {
           from = (json \ "from").asOpt[Long].map(v => new DateTime(v)).getOrElse(DateTime.now()),
           to = (json \ "to").asOpt[Long].map(v => new DateTime(v)).getOrElse(DateTime.now()),
           entityMetadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
+          teams = (json \ "teams").asOpt[JsArray].map(a => a.value.map(v => TeamId(v.as[String]))).getOrElse(Seq(TeamId.default)),
+          tenant = (json \ "tenant").asOpt[String].map(a => TenantId(a)).getOrElse(TenantId.default)
         )
       } map {
         case sd => JsSuccess(sd)
@@ -680,7 +695,9 @@ trait CertificateDataStore extends BasicStore[Cert] {
         privateKey = "",
         caRef = None,
         ca = true,
-        client = false
+        client = false,
+        tenant = TenantId.default,
+        teams = Seq(TeamId.default)
       ).enrich()
       val cert = _cert.copy(name = _cert.domain, description = s"Certificate for ${_cert.subject}")
       findAll().map { certs =>
@@ -709,7 +726,9 @@ trait CertificateDataStore extends BasicStore[Cert] {
         chain = certContent,
         privateKey = keyContent,
         caRef = None,
-        client = false
+        client = false,
+        tenant = TenantId.default,
+        teams = Seq(TeamId.default)
       ).enrich()
       val cert = _cert.copy(name = _cert.domain, description = s"Certificate for ${_cert.subject}")
       findAll().map { certs =>
@@ -1587,7 +1606,9 @@ object FakeKeyStore {
       privateKey = keyPair.getPrivate.asPem,
       caRef = None,
       autoRenew = false,
-      client = false
+      client = false,
+      tenant = TenantId.default,
+      teams = Seq(TeamId.default)
     )
   }
 
@@ -1837,7 +1858,9 @@ sealed trait ClientCertificateValidationDataStore extends BasicStore[ClientCerti
       host = "validator.oto.tools",
       noCache = false,
       alwaysValid = false,
-      proxy = None
+      proxy = None,
+      tenant = TenantId.default,
+      teams = Seq(TeamId.default)
     )
   }
 }
@@ -1888,7 +1911,9 @@ object ClientCertificateValidator {
             noCache = (json \ "noCache").asOpt[Boolean].getOrElse(false),
             alwaysValid = (json \ "alwaysValid").asOpt[Boolean].getOrElse(false),
             headers = (json \ "headers").asOpt[Map[String, String]].getOrElse(Map.empty),
-            proxy = (json \ "proxy").asOpt[JsValue].flatMap(p => WSProxyServerJson.proxyFromJson(p))
+            proxy = (json \ "proxy").asOpt[JsValue].flatMap(p => WSProxyServerJson.proxyFromJson(p)),
+            teams = (json \ "teams").asOpt[JsArray].map(a => a.value.map(v => TeamId(v.as[String]))).getOrElse(Seq(TeamId.default)),
+            tenant = (json \ "tenant").asOpt[String].map(a => TenantId(a)).getOrElse(TenantId.default)
           )
         )
       } recover {
@@ -1909,7 +1934,9 @@ object ClientCertificateValidator {
       "noCache"     -> o.noCache,
       "alwaysValid" -> o.alwaysValid,
       "headers"     -> o.headers,
-      "proxy"       -> WSProxyServerJson.maybeProxyToJson(o.proxy)
+      "proxy"       -> WSProxyServerJson.maybeProxyToJson(o.proxy),
+      "tenant" -> o.tenant.value,
+      "teams" -> JsArray(o.teams.map(v => JsString(v.value)))
     )
   }
 
@@ -1941,8 +1968,10 @@ case class ClientCertificateValidator(
     noCache: Boolean,
     alwaysValid: Boolean,
     headers: Map[String, String] = Map.empty,
-    proxy: Option[WSProxyServer]
-) {
+    proxy: Option[WSProxyServer],
+    tenant: TenantId,
+    teams: Seq[TeamId]
+) extends TenantAndTeamsSupport {
 
   import utils.http.Implicits._
 

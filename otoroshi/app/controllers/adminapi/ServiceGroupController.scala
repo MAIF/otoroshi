@@ -26,6 +26,8 @@ class ServiceGroupController(val ApiAction: ApiAction, val cc: ControllerCompone
 
   override def writeEntity(entity: ServiceGroup): JsValue = ServiceGroup._fmt.writes(entity)
 
+  override def buildError(status: Int, message: String): ApiError[JsValue] = JsonApiError(status, JsString(message))
+
   override def findByIdOps(id: String)(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], OptionalEntityAndContext[ServiceGroup]]] = {
     env.datastores.serviceGroupDataStore.findById(id).map { opt =>
       Right(OptionalEntityAndContext(
@@ -116,6 +118,7 @@ class ServiceGroupController(val ApiAction: ApiAction, val cc: ControllerCompone
     val paginationPosition = (paginationPage - 1) * paginationPageSize
     env.datastores.serviceGroupDataStore.findById(serviceGroupId).flatMap {
       case None => NotFound(Json.obj("error" -> s"ServiceGroup with id: '$serviceGroupId' not found")).future
+      case Some(group) if !ctx.canUserRead(group) => Unauthorized(Json.obj("error" -> s"ServiceGroup with id: '$serviceGroupId' cannot be read")).future
       case Some(group) => {
         Audit.send(
           AdminApiEvent(
@@ -130,8 +133,9 @@ class ServiceGroupController(val ApiAction: ApiAction, val cc: ControllerCompone
             Json.obj("serviceGroupId" -> serviceGroupId)
           )
         )
-        group.services
-          .map(services => Ok(JsArray(services.drop(paginationPosition).take(paginationPageSize).map(_.toJson))))
+        group.services.map { services =>
+          Ok(JsArray(services.drop(paginationPosition).take(paginationPageSize).filter(s => ctx.canUserRead(s)).map(_.toJson)))
+        }
       }
     }
   }

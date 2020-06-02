@@ -24,6 +24,8 @@ class JwtVerifierController(val ApiAction: ApiAction, val cc: ControllerComponen
 
   override def writeEntity(entity: GlobalJwtVerifier): JsValue = GlobalJwtVerifier._fmt.writes(entity)
 
+  override def buildError(status: Int, message: String): ApiError[JsValue] = JsonApiError(status, JsString(message))
+
   override def findByIdOps(id: String)(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], OptionalEntityAndContext[GlobalJwtVerifier]]] = {
     env.datastores.globalJwtVerifierDataStore.findById(id).map { opt =>
       Right(OptionalEntityAndContext(
