@@ -27,35 +27,38 @@ case class ApiActionContext[A](apiKey: ApiKey, request: Request[A]) {
   def from(implicit env: Env): String = request.theIpAddress
   def ua: String                      = request.theUserAgent
   def checkRights(rc: RightsChecker)(f: Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
-    request.headers.get("Otoroshi-BackOffice-User") match {
-      case None =>
-        val tenantAccess = apiKey.metadata.get("otoroshi-tenants-access")
-        val teamAccess = apiKey.metadata.get("otoroshi-teams-access")
-        (tenantAccess, teamAccess) match {
-          case (None, None) => f // standard api usage
-          case (Some(tenants), Some(teams)) =>
-            val user = BackOfficeUser(
-              randomId = IdGenerator.token,
-              name = apiKey.clientName,
-              email = apiKey.clientId,
-              profile = Json.obj(),
-              authConfigId = "apikey",
-              simpleLogin  = false,
-              metadata = Map.empty,
-              teams = teams.split(",").map(_.trim).map(TeamAccess.apply),
-              tenants = tenants.split(",").map(_.trim).map(TenantAccess.apply),
-            )
-            rc.canPerform(user, None) match {
-              case false => Results.Unauthorized(Json.obj("error" -> "You're not authorized here !")).future
-              case true => f
-            }
-          case _ => Results.Unauthorized(Json.obj("error" -> "You're not authorized here (invalid setup) ! ")).future
-        }
-      case Some(userJwt) =>
-        Try(JWT.require(Algorithm.HMAC512(apiKey.clientSecret)).build().verify(userJwt)) match {
-          case Failure(e) =>
-            Results.Unauthorized(Json.obj("error" -> "You're not authorized here !")).future
-          case Success(decoded) => {
+    if (env.bypassUserRightsCheck) {
+      f
+    } else {
+      request.headers.get("Otoroshi-BackOffice-User") match {
+        case None =>
+          val tenantAccess = apiKey.metadata.get("otoroshi-tenants-access")
+          val teamAccess = apiKey.metadata.get("otoroshi-teams-access")
+          (tenantAccess, teamAccess) match {
+            case (None, None) => f // standard api usage
+            case (Some(tenants), Some(teams)) =>
+              val user = BackOfficeUser(
+                randomId = IdGenerator.token,
+                name = apiKey.clientName,
+                email = apiKey.clientId,
+                profile = Json.obj(),
+                authConfigId = "apikey",
+                simpleLogin = false,
+                metadata = Map.empty,
+                teams = teams.split(",").map(_.trim).map(TeamAccess.apply),
+                tenants = tenants.split(",").map(_.trim).map(TenantAccess.apply),
+              )
+              rc.canPerform(user, None) match {
+                case false => Results.Unauthorized(Json.obj("error" -> "You're not authorized here !")).future
+                case true => f
+              }
+            case _ => Results.Unauthorized(Json.obj("error" -> "You're not authorized here (invalid setup) ! ")).future
+          }
+        case Some(userJwt) =>
+          Try(JWT.require(Algorithm.HMAC512(apiKey.clientSecret)).build().verify(userJwt)) match {
+            case Failure(e) =>
+              Results.Unauthorized(Json.obj("error" -> "You're not authorized here !")).future
+            case Success(decoded) => {
               val tenant = Option(decoded.getClaim("tenant"))
                 .flatMap(c => Try(c.asString()).toOption)
               Option(decoded.getClaim("user"))
@@ -67,9 +70,10 @@ case class ApiActionContext[A](apiKey: ApiKey, request: Request[A]) {
                   case false => Results.Unauthorized(Json.obj("error" -> "You're not authorized here !")).future
                   case true => f
                 }
+              }
             }
           }
-        }
+      }
     }
   }
 }

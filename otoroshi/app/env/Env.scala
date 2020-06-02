@@ -183,6 +183,9 @@ class Env(val configuration: Configuration,
   lazy val clusterAgent: ClusterAgent             = ClusterAgent(clusterConfig, this)
   lazy val clusterLeaderAgent: ClusterLeaderAgent = ClusterLeaderAgent(clusterConfig, this)
 
+  lazy val bypassUserRightsCheck: Boolean =
+    configuration.getOptional[Boolean]("otoroshi.bypassUserRightsCheck").getOrElse(false)
+
   lazy val globalMaintenanceMode: Boolean =
     configuration.getOptional[Boolean]("otoroshi.maintenanceMode").getOrElse(false)
 
