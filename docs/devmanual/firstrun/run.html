@@ -237,7 +237,7 @@ cd otoroshi-vx.x.x
 <pre class="prettyprint"><code class="language-sh">docker run -p &quot;8080:8080&quot; maif/otoroshi
 </code></pre>
 <p>You can also pass useful args like :</p>
-<pre><code>docker run -p &quot;8080:8080&quot; otoroshi -Dconfig.file=/usr/app/otoroshi/conf/otoroshi.conf -Dlogger.file=/usr/app/otoroshi/conf/otoroshi.xml
+<pre class="prettyprint"><code class="language-sh">docker run -p &quot;8080:8080&quot; maif/otoroshi -Dconfig.file=/usr/app/otoroshi/conf/otoroshi.conf -Dlogger.file=/usr/app/otoroshi/conf/otoroshi.xml
 </code></pre>
 <p>If you want to provide your own config file, you can read <a href="configfile.html">the documentation about config files</a>.</p>
 <p>You can also provide some ENV variable using the <code>--env</code> flag to customize your Otoroshi instance.</p>
