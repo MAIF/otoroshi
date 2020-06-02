@@ -47,7 +47,7 @@ Go to `settings (cog icon) / Admins`.
 Enter informations about the new admin you want to create.
 
 @@@ div { .centered-img }
-<img src="../img/create-admin.png" />
+<img src="../img/create-admin-u2f.png" />
 @@@
 
 Click on `Register FIDO U2F Admin`.

@@ -26,8 +26,8 @@ docker run -p "8080:8080" maif/otoroshi
 
 You can also pass useful args like :
 
-```
-docker run -p "8080:8080" otoroshi -Dconfig.file=/usr/app/otoroshi/conf/otoroshi.conf -Dlogger.file=/usr/app/otoroshi/conf/otoroshi.xml
+```sh
+docker run -p "8080:8080" maif/otoroshi -Dconfig.file=/usr/app/otoroshi/conf/otoroshi.conf -Dlogger.file=/usr/app/otoroshi/conf/otoroshi.xml
 ```
 
 If you want to provide your own config file, you can read @ref:[the documentation about config files](../firstrun/configfile.md).
