@@ -115,8 +115,8 @@ case class GenericOauth2ModuleConfig(
     mtlsConfig: MtlsConfig = MtlsConfig(),
     refreshTokens: Boolean = false,
     metadata: Map[String, String],
-    tenant: TenantId,
-    teams: Seq[TeamId]
+    tenant: TenantId = TenantId.default,
+    teams: Seq[TeamId] = Seq(TeamId.default)
 ) extends OAuth2ModuleConfig {
   def `type`: String                                        = "oauth2"
   override def authModule(config: GlobalConfig): AuthModule = GenericOauth2Module(this)

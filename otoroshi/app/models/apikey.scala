@@ -10,6 +10,7 @@ import env.Env
 import events.{Alerts, ApiKeySecretHasRotated, ApiKeySecretWillRotate, RevokedApiKeyUsageAlert}
 import gateway.Errors
 import org.joda.time.DateTime
+import otoroshi.models.{TeamId, TenantAndTeamsSupport, TenantId}
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc.Results.{BadGateway, BadRequest, NotFound, TooManyRequests, Unauthorized}
@@ -95,7 +96,9 @@ case class ApiKey(clientId: String = IdGenerator.token(16),
                   validUntil: Option[DateTime] = None,
                   rotation: ApiKeyRotation = ApiKeyRotation(),
                   tags: Seq[String] = Seq.empty[String],
-                  metadata: Map[String, String] = Map.empty[String, String]) {
+                  metadata: Map[String, String] = Map.empty[String, String],
+                  tenant: TenantId = TenantId.default,
+                  teams: Seq[TeamId] = Seq(TeamId.default)) extends TenantAndTeamsSupport {
   def save()(implicit ec: ExecutionContext, env: Env)   = env.datastores.apiKeyDataStore.set(this)
   def delete()(implicit ec: ExecutionContext, env: Env) = env.datastores.apiKeyDataStore.delete(this)
   def exists()(implicit ec: ExecutionContext, env: Env) = env.datastores.apiKeyDataStore.exists(this)
@@ -211,7 +214,9 @@ object ApiKey {
         "rotation"                -> apk.rotation.json,
         "validUntil"              -> apk.validUntil.map(v => JsNumber(v.toDate.getTime)).getOrElse(JsNull).as[JsValue],
         "tags"                    -> JsArray(apk.tags.map(JsString.apply)),
-        "metadata"                -> JsObject(apk.metadata.filter(_._1.nonEmpty).mapValues(JsString.apply))
+        "metadata"                -> JsObject(apk.metadata.filter(_._1.nonEmpty).mapValues(JsString.apply)),
+        "tenant" -> apk.tenant.value,
+        "teams" -> JsArray(apk.teams.map(v => JsString(v.value)))
       )
     }
     override def reads(json: JsValue): JsResult[ApiKey] =
@@ -245,7 +250,9 @@ object ApiKey {
           metadata = (json \ "metadata")
             .asOpt[Map[String, String]]
             .map(m => m.filter(_._1.nonEmpty))
-            .getOrElse(Map.empty[String, String])
+            .getOrElse(Map.empty[String, String]),
+          teams = (json \ "teams").asOpt[JsArray].map(a => a.value.map(v => TeamId(v.as[String]))).getOrElse(Seq(TeamId.default)),
+          tenant = (json \ "tenant").asOpt[String].map(a => TenantId(a)).getOrElse(TenantId.default)
         )
       } map {
         case sd => JsSuccess(sd)

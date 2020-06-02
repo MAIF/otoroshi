@@ -18,6 +18,7 @@ import events.{DataInOut, Location, TcpEvent}
 import javax.net.ssl._
 import models.IpFiltering
 import org.joda.time.DateTime
+import otoroshi.models.{TeamId, TenantAndTeamsSupport, TenantId}
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc.{AbstractController, ControllerComponents}
@@ -72,13 +73,15 @@ case class TcpService(
     port: Int,
     interface: String = "0.0.0.0",
     rules: Seq[TcpRule],
-    metadata: Map[String, String]
+    metadata: Map[String, String],
+    tenant: TenantId = TenantId.default,
+    teams: Seq[TeamId] = Seq(TeamId.default)
     // clientValidatorRef: Option[String]
     // clientConfig: ClientConfig
     // ipFiltering: IpFiltering
     // healthCheck
     // snowMonkey
-) {
+) extends TenantAndTeamsSupport {
   def json: JsValue                                   = TcpService.fmt.writes(this)
   def save()(implicit ec: ExecutionContext, env: Env) = env.datastores.tcpServiceDataStore.set(this)
 }
@@ -213,7 +216,9 @@ object TcpService {
             sni = (json \ "sni").asOpt(SniSettings.fmt).getOrElse(SniSettings(false, false)),
             clientAuth = (json \ "clientAuth").asOpt[String].flatMap(ClientAuth.apply).getOrElse(ClientAuth.None),
             rules = (json \ "rules").asOpt(Reads.seq(TcpRule.fmt)).getOrElse(Seq.empty),
-            metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty)
+            metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
+            teams = (json \ "teams").asOpt[JsArray].map(a => a.value.map(v => TeamId(v.as[String]))).getOrElse(Seq(TeamId.default)),
+            tenant = (json \ "tenant").asOpt[String].map(a => TenantId(a)).getOrElse(TenantId.default)
           )
         )
       } recover {
@@ -230,7 +235,9 @@ object TcpService {
       "port"       -> o.port,
       "interface"  -> o.interface,
       "rules"      -> JsArray(o.rules.map(_.json)),
-      "metadata"   -> o.metadata
+      "metadata"   -> o.metadata,
+      "tenant" -> o.tenant.value,
+      "teams" -> JsArray(o.teams.map(v => JsString(v.value)))
     )
   }
 

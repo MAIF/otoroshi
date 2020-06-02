@@ -640,6 +640,8 @@ class ApiKeysController(val ApiAction: ApiAction, val cc: ControllerComponents)(
 
   override def writeEntity(entity: ApiKey): JsValue = ApiKey._fmt.writes(entity)
 
+  override def buildError(status: Int, message: String): ApiError[JsValue] = JsonApiError(status, JsString(message))
+
   override def findByIdOps(id: String)(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], OptionalEntityAndContext[ApiKey]]] = {
     env.datastores.apiKeyDataStore.findById(id).map { opt =>
       Right(OptionalEntityAndContext(

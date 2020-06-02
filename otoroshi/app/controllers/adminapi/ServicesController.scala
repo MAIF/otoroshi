@@ -32,6 +32,8 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
 
   override def writeEntity(entity: ServiceDescriptor): JsValue = ServiceDescriptor._fmt.writes(entity)
 
+  override def buildError(status: Int, message: String): ApiError[JsValue] = JsonApiError(status, JsString(message))
+
   override def findByIdOps(id: String)(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], OptionalEntityAndContext[ServiceDescriptor]]] = {
     env.datastores.serviceDescriptorDataStore.findById(id).map { opt =>
       Right(OptionalEntityAndContext(

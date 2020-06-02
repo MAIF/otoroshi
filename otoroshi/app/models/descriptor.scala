@@ -16,6 +16,7 @@ import env.Env
 import gateway.Errors
 import org.joda.time.DateTime
 import otoroshi.el.RedirectionExpressionLanguage
+import otoroshi.models.{TeamId, TenantAndTeamsSupport, TenantId}
 import play.api.Logger
 import play.api.http.websocket.{Message => PlayWSMessage}
 import play.api.libs.json._
@@ -1942,7 +1943,9 @@ case class ServiceDescriptor(
     paths: Seq[String] = Seq.empty[String],
     issueCert: Boolean = false,
     issueCertCA: Option[String] = None,
-) {
+    tenant: TenantId = TenantId.default,
+    teams: Seq[TeamId] = Seq(TeamId.default)
+) extends TenantAndTeamsSupport {
 
   def algoChallengeFromOtoToBack: AlgoSettings = if (secComUseSameAlgo) secComSettings else secComAlgoChallengeOtoToBack
   def algoChallengeFromBackToOto: AlgoSettings = if (secComUseSameAlgo) secComSettings else secComAlgoChallengeBackToOto
@@ -2463,6 +2466,8 @@ object ServiceDescriptor {
           paths = (json \ "paths").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
           issueCert = (json \ "issueCert").asOpt[Boolean].getOrElse(false),
           issueCertCA = (json \ "issueCertCA").asOpt[String],
+          teams = (json \ "teams").asOpt[JsArray].map(a => a.value.map(v => TeamId(v.as[String]))).getOrElse(Seq(TeamId.default)),
+          tenant = (json \ "tenant").asOpt[String].map(a => TenantId(a)).getOrElse(TenantId.default)
         )
       } map {
         case sd => JsSuccess(sd)
@@ -2554,6 +2559,8 @@ object ServiceDescriptor {
       "paths"                        -> JsArray(sd.paths.map(JsString.apply)),
       "issueCert"                    -> sd.issueCert,
       "issueCertCA"                  -> sd.issueCertCA.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      "tenant" -> sd.tenant.value,
+      "teams" -> JsArray(sd.teams.map(v => JsString(v.value)))
     )
   }
   def toJson(value: ServiceDescriptor): JsValue = _fmt.writes(value)

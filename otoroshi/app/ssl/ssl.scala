@@ -114,8 +114,8 @@ case class Cert(
     to: DateTime = DateTime.now(),
     sans: Seq[String] = Seq.empty,
     entityMetadata: Map[String, String] = Map.empty,
-    tenant: TenantId,
-    teams: Seq[TeamId]
+    tenant: TenantId = TenantId.default,
+    teams: Seq[TeamId] = Seq(TeamId.default)
 ) extends TenantAndTeamsSupport {
 
   lazy val certType = {
