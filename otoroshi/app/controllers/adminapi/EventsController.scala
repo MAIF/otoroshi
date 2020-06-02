@@ -9,7 +9,7 @@ import play.api.libs.json.Json
 import play.api.mvc.{AbstractController, ControllerComponents}
 import utils.{AdminApiHelper, JsonApiError, SendAuditAndAlert}
 
-class EventsController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: ControllerComponents)(implicit env: Env)
+class EventsController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env: Env)
   extends AbstractController(cc) with AdminApiHelper {
 
   implicit lazy val ec  = env.otoroshiExecutionContext

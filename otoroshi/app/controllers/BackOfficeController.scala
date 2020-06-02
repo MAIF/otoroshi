@@ -11,6 +11,8 @@ import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
 import auth.{GenericOauth2ModuleConfig, LdapAuthModuleConfig}
 import ch.qos.logback.classic.{Level, LoggerContext}
+import com.auth0.jwt.JWT
+import com.auth0.jwt.algorithms.Algorithm
 import com.google.common.base.Charsets
 import com.nimbusds.jose.jwk.KeyType
 import env.Env
@@ -70,72 +72,74 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
           )
         )
       case Some(apikey) => {
-        TenantAndTeamHelper.checkUserRights(ctx.request, ctx.user) {
-          val host = env.adminApiExposedHost
-          val localUrl = if (env.adminApiProxyHttps) s"https://127.0.0.1:${env.port}" else s"http://127.0.0.1:${env.port}"
-          val url = if (env.adminApiProxyUseLocal) localUrl else s"https://${env.adminApiExposedHost}"
-          lazy val currentReqHasBody = ctx.request.theHasBody
-          logger.debug(s"Calling ${ctx.request.method} $url/$path with Host = $host")
-          val headers = Seq(
-            "Host" -> host,
-            "X-Forwarded-For" -> ctx.request.theIpAddress,
-            env.Headers.OtoroshiVizFromLabel -> "Otoroshi Admin UI",
-            env.Headers.OtoroshiVizFrom -> "otoroshi-admin-ui",
-            env.Headers.OtoroshiClientId -> apikey.clientId,
-            env.Headers.OtoroshiClientSecret -> apikey.clientSecret,
-            env.Headers.OtoroshiAdminProfile -> Base64.getUrlEncoder.encodeToString(
-              Json.stringify(ctx.user.profile).getBytes(Charsets.UTF_8)
-            ),
-            "Otoroshi-Access" -> Base64.getUrlEncoder.encodeToString(
-              Json.stringify(Json.obj(
-                "teams" -> JsArray(ctx.user.teams.map(_.toRaw.json)),
-                "tenants" -> JsArray(ctx.user.tenants.map(_.toRaw.json))
-              )).getBytes(Charsets.UTF_8)
-            )
-          ) ++ ctx.request.headers.get("Content-Type").filter(_ => currentReqHasBody).map { ctype =>
-            "Content-Type" -> ctype
-          } ++ ctx.request.headers.get("Accept").map { accept =>
-            "Accept" -> accept
-          } ++ ctx.request.headers.get("X-Content-Type").map(v => "X-Content-Type" -> v)
+        val host = env.adminApiExposedHost
+        val localUrl = if (env.adminApiProxyHttps) s"https://127.0.0.1:${env.port}" else s"http://127.0.0.1:${env.port}"
+        val url = if (env.adminApiProxyUseLocal) localUrl else s"https://${env.adminApiExposedHost}"
+        lazy val currentReqHasBody = ctx.request.theHasBody
+        logger.debug(s"Calling ${ctx.request.method} $url/$path with Host = $host")
+        val headers = Seq(
+          "Host" -> host,
+          "X-Forwarded-For" -> ctx.request.theIpAddress,
+          env.Headers.OtoroshiVizFromLabel -> "Otoroshi Admin UI",
+          env.Headers.OtoroshiVizFrom -> "otoroshi-admin-ui",
+          env.Headers.OtoroshiClientId -> apikey.clientId,
+          env.Headers.OtoroshiClientSecret -> apikey.clientSecret,
+          env.Headers.OtoroshiAdminProfile -> Base64.getUrlEncoder.encodeToString(
+            Json.stringify(ctx.user.profile).getBytes(Charsets.UTF_8)
+          ),
+          "Otoroshi-BackOffice-User" -> JWT.create()
+            .withClaim("user", Json.stringify(ctx.user.toJson))
+            .withClaim("tenant", "default") // TODO: will be dynamic then
+            .sign(Algorithm.HMAC512(apikey.clientSecret)),
+          "Otoroshi-Access" -> Base64.getUrlEncoder.encodeToString(
+            Json.stringify(Json.obj(
+              "teams" -> JsArray(ctx.user.teams.map(_.toRaw.json)),
+              "tenants" -> JsArray(ctx.user.tenants.map(_.toRaw.json))
+            )).getBytes(Charsets.UTF_8)
+          )
+        ) ++ ctx.request.headers.get("Content-Type").filter(_ => currentReqHasBody).map { ctype =>
+          "Content-Type" -> ctype
+        } ++ ctx.request.headers.get("Accept").map { accept =>
+          "Accept" -> accept
+        } ++ ctx.request.headers.get("X-Content-Type").map(v => "X-Content-Type" -> v)
 
-          val builder = env.Ws // MTLS needed here ???
-            .akkaUrl(s"$url/$path")
-            .withHttpHeaders(headers: _*)
-            .withFollowRedirects(false)
-            .withMethod(ctx.request.method)
-            .withRequestTimeout(1.minute)
-            .withQueryStringParameters(ctx.request.queryString.toSeq.map(t => (t._1, t._2.head)): _*)
+        val builder = env.Ws // MTLS needed here ???
+          .akkaUrl(s"$url/$path")
+          .withHttpHeaders(headers: _*)
+          .withFollowRedirects(false)
+          .withMethod(ctx.request.method)
+          .withRequestTimeout(1.minute)
+          .withQueryStringParameters(ctx.request.queryString.toSeq.map(t => (t._1, t._2.head)): _*)
 
-          val builderWithBody = if (currentReqHasBody) {
-            builder.withBody(SourceBody(ctx.request.body))
-          } else {
-            builder
-          }
-
-          builderWithBody
-            .stream()
-            .fast
-            .flatMap { res =>
-              val ctype = res.headers.get("Content-Type").flatMap(_.headOption).getOrElse("application/json")
-              Status(res.status)
-                .sendEntity(
-                  HttpEntity.Streamed(
-                    Source.lazySource(() => res.bodyAsSource),
-                    res.headers.get("Content-Length").flatMap(_.lastOption).map(_.toInt),
-                    res.headers.get("Content-Type").flatMap(_.headOption)
-                  )
-                )
-                .withHeaders(
-                  res.headers
-                    .mapValues(_.head)
-                    .toSeq
-                    .filter(_._1 != "Content-Type")
-                    .filter(_._1 != "Content-Length")
-                    .filter(_._1 != "Transfer-Encoding"): _*
-                )
-                .as(ctype).future
-            }
+        val builderWithBody = if (currentReqHasBody) {
+          builder.withBody(SourceBody(ctx.request.body))
+        } else {
+          builder
         }
+
+        builderWithBody
+          .stream()
+          .fast
+          .flatMap { res =>
+            val ctype = res.headers.get("Content-Type").flatMap(_.headOption).getOrElse("application/json")
+            Status(res.status)
+              .sendEntity(
+                HttpEntity.Streamed(
+                  Source.lazySource(() => res.bodyAsSource),
+                  res.headers.get("Content-Length").flatMap(_.lastOption).map(_.toInt),
+                  res.headers.get("Content-Type").flatMap(_.headOption)
+                )
+              )
+              .withHeaders(
+                res.headers
+                  .mapValues(_.head)
+                  .toSeq
+                  .filter(_._1 != "Content-Type")
+                  .filter(_._1 != "Content-Length")
+                  .filter(_._1 != "Transfer-Encoding"): _*
+              )
+              .as(ctype).future
+          }
       }
     }
   }

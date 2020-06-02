@@ -2,15 +2,12 @@ package otoroshi.models
 
 import akka.http.scaladsl.model.HttpMethods
 import akka.stream.Materializer
-import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import env.Env
 import models.BackOfficeUser
+import otoroshi.utils.syntax.implicits._
 import play.api.libs.json.{JsArray, JsObject, Json}
 import play.api.mvc.{RequestHeader, Result}
-import otoroshi.utils.syntax.implicits._
-import play.api.http.HttpEntity
-import play.api.libs.ws.WSResponse
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -70,6 +67,31 @@ case class TenantAccess(value: String, canRead: Boolean, canWrite: Boolean) {
   }
 }
 
+sealed trait RightsChecker {
+  def canPerform(user: BackOfficeUser, currentTenant: Option[String]): Boolean
+}
+
+object RightsChecker {
+  case object Anyone extends RightsChecker {
+    def canPerform(user: BackOfficeUser, currentTenant: Option[String]): Boolean = true
+  }
+  case object SuperAdminOnly extends RightsChecker {
+    def canPerform(user: BackOfficeUser, currentTenant: Option[String]): Boolean = TenantAndTeamHelper.isSuperAdmin(user)
+  }
+  case object TenantAdmin extends RightsChecker {
+    def canPerform(user: BackOfficeUser, currentTenant: Option[String]): Boolean = {
+      if (SuperAdminOnly.canPerform(user, currentTenant)) {
+        true
+      } else {
+        currentTenant match {
+          case None => false
+          case Some(tenant) => TenantAndTeamHelper.canReadTenant(user, tenant) && TenantAndTeamHelper.canWriteTenant(user, tenant)
+        }
+      }
+    }
+  }
+}
+
 object TenantAndTeamHelper {
   def canReadAtAll(user: BackOfficeUser): Boolean = {
     user.teams.exists(_.canRead) && user.tenants.exists(_.canRead)
@@ -77,14 +99,26 @@ object TenantAndTeamHelper {
   def canWriteAtAll(user: BackOfficeUser): Boolean = {
     user.teams.exists(_.canWrite) && user.tenants.exists(_.canWrite)
   }
-  def isTenantAdmin(user: BackOfficeUser): Boolean = {
+  def isAllTenantAdmin(user: BackOfficeUser): Boolean = {
     user.tenants.find(_.value.trim == "*").exists(v => v.canRead && v.canWrite)
   }
-  def isTeamAdmin(user: BackOfficeUser): Boolean = {
+  def isAllTeamAdmin(user: BackOfficeUser): Boolean = {
     user.teams.find(_.value.trim == "*").exists(v => v.canRead && v.canWrite)
   }
   def isSuperAdmin(user: BackOfficeUser): Boolean = {
-    isTenantAdmin(user) && isTeamAdmin(user)
+    isAllTenantAdmin(user) && isAllTeamAdmin(user)
+  }
+  def canReadTenant(user: BackOfficeUser, tenant: String): Boolean = {
+    TenantId(tenant).canBeReadBy(user)
+  }
+  def canWriteTenant(user: BackOfficeUser, tenant: String): Boolean = {
+    TenantId(tenant).canBeWrittenBy(user)
+  }
+  def canReadTeam(user: BackOfficeUser, team: String): Boolean = {
+    TeamId(team).canBeReadBy(user)
+  }
+  def canWriteTeam(user: BackOfficeUser, team: String): Boolean = {
+    TeamId(team).canBeWrittenBy(user)
   }
   def canRead(user: BackOfficeUser, _tenant: Option[String], _teams: Option[Seq[String]]): Boolean = {
     val teams = _teams.getOrElse(Seq.empty[String]).map(v => TeamId(v))
@@ -108,8 +142,8 @@ object TenantAndTeamHelper {
 
   def checkUserRights(request: RequestHeader, user: BackOfficeUser)(f: Future[Result])(implicit ec: ExecutionContext, mat: Materializer, env: Env): Future[Result] = {
 
-    import play.api.mvc.Results._
     import kaleidoscope._
+    import play.api.mvc.Results._
 
     val isRead = request.method == HttpMethods.GET.name() || request.method == HttpMethods.HEAD.name() || request.method == HttpMethods.OPTIONS.name()
     val isWrite = !isRead

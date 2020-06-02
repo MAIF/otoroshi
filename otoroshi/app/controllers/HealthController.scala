@@ -10,7 +10,7 @@ import play.api.libs.json.{JsObject, JsString, JsValue, Json}
 import play.api.mvc.{AbstractController, ControllerComponents, Result}
 import ssl.DynamicSSLEngineProvider
 
-class HealthController(ApiAction: ApiAction, UnAuthApiAction: UnAuthApiAction, cc: ControllerComponents)(implicit env: Env)
+class HealthController(cc: ControllerComponents)(implicit env: Env)
   extends AbstractController(cc) {
 
   implicit lazy val ec  = env.otoroshiExecutionContext
