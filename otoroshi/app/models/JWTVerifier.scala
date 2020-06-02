@@ -1254,8 +1254,9 @@ case class GlobalJwtVerifier(
     source: JwtTokenLocation = InHeader("X-JWT-Token"),
     algoSettings: AlgoSettings = HSAlgoSettings(512, "secret", false),
     strategy: VerifierStrategy = PassThrough(VerificationSettings(Map("iss" -> "The Issuer"))),
-    metadata: Map[String, String],
-    tenant: TenantId,  teams: Seq[TeamId]
+    metadata: Map[String, String] = Map.empty,
+    tenant: TenantId = TenantId.default,
+    teams: Seq[TeamId] = Seq(TeamId.default)
 ) extends JwtVerifier
     with AsJson with TenantAndTeamsSupport {
 

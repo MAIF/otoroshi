@@ -10,7 +10,10 @@ import otoroshi.storage.BasicStore
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-case class ServiceGroup(id: String = IdGenerator.token(64), name: String, description: String = "No description", metadata: Map[String, String], tenant: TenantId,  teams: Seq[TeamId]) extends TenantAndTeamsSupport {
+case class ServiceGroup(id: String = IdGenerator.token(64), name: String, description: String = "No description",
+                        metadata: Map[String, String] = Map.empty,
+                        tenant: TenantId = TenantId.default,
+                        teams: Seq[TeamId] = Seq(TeamId.default)) extends TenantAndTeamsSupport {
   def services(implicit ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] =
     env.datastores.serviceDescriptorDataStore.findByGroup(id)
   def save()(implicit ec: ExecutionContext, env: Env)   = env.datastores.serviceGroupDataStore.set(this)
