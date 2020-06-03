@@ -294,7 +294,7 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
               label = label,
               handle = handle,
               credentials = credentialOpt.map(v => Map((v \ "keyId" \ "id").as[String] -> v)).getOrElse(Map.empty),
-              createdAt = (ctx.request.body \ "teams").asOpt[Long].map(v => new DateTime(v)).getOrElse(DateTime.now()),
+              createdAt = DateTime.now(),
               typ = OtoroshiAdminType.WebAuthnAdmin,
               metadata = (ctx.request.body \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
               teams = (ctx.request.body \ "teams").asOpt[JsArray].map(a => a.value.map(v => TeamAccess(v.as[String]))).getOrElse(Seq.empty),
