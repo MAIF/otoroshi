@@ -44,8 +44,8 @@ case class ServiceDescriptorQuery(subdomain: String,
   def asKey(implicit _env: Env): String = s"${_env.storageRoot}:desclookup:$line:$domain:$subdomain:$root"
 
   def toHost: String = subdomain match {
-    case s if s.isEmpty                   => s"$line.$domain"
     case s if s.isEmpty && line == "prod" => s"$domain"
+    case s if s.isEmpty                   => s"$line.$domain"
     case s if line == "prod"              => s"$subdomain.$domain"
     case s                                => s"$subdomain.$line.$domain"
   }
