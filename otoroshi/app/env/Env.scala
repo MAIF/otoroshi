@@ -372,6 +372,8 @@ class Env(val configuration: Configuration,
     configuration.getOptional[String]("app.adminapi.targetSubdomain").getOrElse("otoroshi-admin-internal-api")
   lazy val adminApiExposedSubDomain: String =
     configuration.getOptional[String]("app.adminapi.exposedSubdomain").getOrElse("otoroshi-api")
+  lazy val adminApiAdditionalExposedDomain: Option[String] =
+    configuration.getOptional[String]("app.adminapi.additionalExposedDomain")
   lazy val backOfficeSubDomain: String =
     configuration.getOptional[String]("app.backoffice.subdomain").getOrElse("otoroshi")
   lazy val privateAppsSubDomain: String =
@@ -684,6 +686,7 @@ class Env(val configuration: Configuration,
     name = "otoroshi-admin-api",
     env = "prod",
     subdomain = adminApiExposedSubDomain,
+    hosts = adminApiAdditionalExposedDomain.toSeq,
     domain = domain,
     targets = Seq(
       Target(
