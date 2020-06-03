@@ -138,9 +138,11 @@ object MtlsConfig {
 class MtlsWs(chooser: WsClientChooser) {
   @inline
   def url(url: String, config: MtlsConfig): WSRequest = config match {
-    case MtlsConfig(seq, seq2, _, _, _) if (seq ++ seq2).isEmpty         => chooser.url(url)
-    case MtlsConfig(seq, seq2, false, _, _) if (seq ++ seq2).nonEmpty    => chooser.url(url)
-    case m @ MtlsConfig(seq, seq2, true, _, _) if (seq ++ seq2).nonEmpty => chooser.urlWithCert(url, Some(m))
+    case MtlsConfig(_, _, false, _, _)   => chooser.url(url)
+    case m@MtlsConfig(_, _, true, _, _)  => chooser.urlWithCert(url, Some(m))
+    // case MtlsConfig(seq, seq2, _, _, _) if (seq ++ seq2).isEmpty         => chooser.url(url)
+    // case MtlsConfig(seq, seq2, false, _, _) if (seq ++ seq2).nonEmpty    => chooser.url(url)
+    // case m @ MtlsConfig(seq, seq2, true, _, _) if (seq ++ seq2).nonEmpty => chooser.urlWithCert(url, Some(m))
   }
 }
 
