@@ -32,7 +32,7 @@ import play.core.server.ServerConfig
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future, Promise}
-import scala.util.{Random, Success, Try}
+import scala.util.{Failure, Random, Success, Try}
 
 trait AddConfiguration {
   def getConfiguration(configuration: Configuration): Configuration
@@ -2025,5 +2025,7 @@ trait ApiTester[Entity] {
     } yield {
       ApiTesterResult(create, createBulk, findAll && findAll2, findById, update, updateBulk, patch, patchBulk, delete, deleteBulk)
     }
+  }.andThen {
+    case Failure(e) => e.printStackTrace()
   }
 }

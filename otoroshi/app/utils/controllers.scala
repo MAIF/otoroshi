@@ -146,7 +146,9 @@ trait AdminApiHelper {
     fetchWithPaginationAndFiltering[Entity, Error](ctx, filterPrefix, writeEntity, audit)(findAllOps).map {
       case Left(error) => Results.Status(error.status)(Json.obj("error" -> "fetch_error", "error_description" -> error.bodyAsJson))
       case Right(finalItems) => {
-        if (ctx.request.accepts("application/x-ndjson")) {
+        if (ctx.request.accepts("application/json")) {
+          Ok(JsArray(finalItems.map(writeEntity)))
+        } else if (ctx.request.accepts("application/x-ndjson")) {
           Ok.sendEntity(HttpEntity.Streamed(
             data = Source(finalItems.map(writeEntity).map(e => e.stringify.byteString).toList),
             contentLength = None,
@@ -582,7 +584,9 @@ trait CrudHelper[Entity <: TenantAndTeamsSupport, Error] extends EntityHelper[En
         } else {
           jsonElements
         }
-        if (ctx.request.accepts("application/x-ndjson")) {
+        if (ctx.request.accepts("application/json")) {
+          Ok(JsArray(finalItems))
+        } else if (ctx.request.accepts("application/x-ndjson")) {
           Ok.sendEntity(HttpEntity.Streamed(
             data = Source(finalItems.toList.map(e => e.stringify.byteString)),
             contentLength = None,
