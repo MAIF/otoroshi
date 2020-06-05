@@ -50,6 +50,7 @@ You will find the JS bundle at `otoroshi/public/javascripts/bundle/bundle.js`.
 Go to the `otoroshi` folder and run :
 
 ```sh
+export SBT_OPTS="-Xmx2G -Xss6M"
 sbt ';clean;compile;dist;assembly'
 ```
 

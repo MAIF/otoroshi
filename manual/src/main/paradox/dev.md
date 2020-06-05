@@ -43,7 +43,13 @@ npm run start
 
 ### Server side
 
-just go to `<repo>/otoroshi` and run the sbt console with 
+setup SBT opts with
+
+```sh
+export SBT_OPTS="-Xmx2G -Xss6M"
+```
+
+then just go to `<repo>/otoroshi` and run the sbt console with 
 
 ```sh
 sbt
