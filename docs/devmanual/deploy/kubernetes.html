@@ -762,6 +762,9 @@ spec:
   matchingRoot: /
   targets:
   - url: https://http-app-service:8443
+    # alternatively, you can use serviceName and servicePort to use pods ip addresses
+    # serviceName: http-app-service
+    # servicePort: https
     mtlsConfig:
       # use mtls to contact the backend
       mtls: true

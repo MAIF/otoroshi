@@ -878,6 +878,7 @@ play.http {
     targetSubdomain = ${?ADMIN_API_TARGET_SUBDOMAIN}
     exposedSubdomain = &quot;otoroshi-api&quot;
     exposedSubdomain = ${?ADMIN_API_EXPOSED_SUBDOMAIN}
+    additionalExposedDomain = ${?ADMIN_API_ADDITIONAL_EXPOSED_DOMAIN}
     defaultValues {
       backOfficeGroupId = &quot;admin-api-group&quot;
       backOfficeGroupId = ${?ADMIN_API_GROUP}
@@ -1406,6 +1407,8 @@ otoroshi {
   maintenanceMode = false
   maintenanceMode = ${?OTOROSHI_MAINTENANCE_MODE_ENABLED}
   options {
+    bypassUserRightsCheck = false
+    bypassUserRightsCheck = ${?OTOROSHI_OPTIONS_BYPASSUSERRIGHTSCHECK}
     emptyContentLengthIsChunked = true
     emptyContentLengthIsChunked = ${?OTOROSHI_OPTIONS_EMPTYCONTENTLENGTHISCHUNKED}
     detectApiKeySooner = true
