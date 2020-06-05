@@ -249,7 +249,10 @@ npm install
 npm run start
 </code></pre>
 <h3><a href="#server-side" name="server-side" class="anchor"><span class="anchor-link"></span></a>Server side</h3>
-<p>just go to <code>&lt;repo&gt;/otoroshi</code> and run the sbt console with </p>
+<p>setup SBT opts with</p>
+<pre class="prettyprint"><code class="language-sh">export SBT_OPTS=&quot;-Xmx2G -Xss6M&quot;
+</code></pre>
+<p>then just go to <code>&lt;repo&gt;/otoroshi</code> and run the sbt console with </p>
 <pre class="prettyprint"><code class="language-sh">sbt
 </code></pre>
 <p>then in the sbt console run the following command</p>
