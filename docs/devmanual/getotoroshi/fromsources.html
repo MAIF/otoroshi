@@ -252,7 +252,8 @@ yarn build
 <p>You will find the JS bundle at <code>otoroshi/public/javascripts/bundle/bundle.js</code>.</p>
 <h2><a href="#build-the-otoroshi-server" name="build-the-otoroshi-server" class="anchor"><span class="anchor-link"></span></a>Build the Otoroshi server</h2>
 <p>Go to the <code>otoroshi</code> folder and run :</p>
-<pre class="prettyprint"><code class="language-sh">sbt &#39;;clean;compile;dist;assembly&#39;
+<pre class="prettyprint"><code class="language-sh">export SBT_OPTS=&quot;-Xmx2G -Xss6M&quot;
+sbt &#39;;clean;compile;dist;assembly&#39;
 </code></pre>
 <p>You will find your Otoroshi package at <code>otoroshi/target/scala-2.12/otoroshi</code> or <code>otoroshi/target/universal/</code>.</p>
 <div class="nav-next">
