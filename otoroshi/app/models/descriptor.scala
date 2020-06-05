@@ -2024,8 +2024,8 @@ case class ServiceDescriptor(
   def theScheme: String     = if (forceHttps) "https://" else "http://"
   def theLine: String       = if (env == "prod") "" else s".$env"
   def theDomain             = if (s"$subdomain$theLine".isEmpty) domain else s".$subdomain$theLine"
-  def exposedDomain: String = s"$theScheme://$subdomain$theLine$theDomain"
-  lazy val _domain: String  = s"$subdomain$theLine$theDomain"
+  def exposedDomain: String = s"$theScheme://$subdomain$theLine.$domain"
+  lazy val _domain: String  = s"$subdomain$theLine.$domain"
 
   def validateClientCertificates(
       snowflake: String,
