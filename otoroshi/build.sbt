@@ -111,6 +111,9 @@ assemblyJarName in assembly := "otoroshi.jar"
 fullClasspath in assembly += Attributed.blank(PlayKeys.playPackageAssets.value)
 assemblyMergeStrategy in assembly := {
   case PathList("org", "apache", "commons", "logging", xs @ _*)       => MergeStrategy.first
+  case PathList("org", "apache", "commons", "lang", xs @ _*)          => MergeStrategy.first
+  case PathList("org", "apache", "commons", "collections", xs @ _*)   => MergeStrategy.first
+  case PathList("io", "sundr", xs @ _*)                               => MergeStrategy.first
   case PathList(ps @ _*) if ps.last == "io.netty.versions.properties" => MergeStrategy.first
   case PathList(ps @ _*) if ps.contains("reference-overrides.conf")   => MergeStrategy.concat
   case PathList(ps @ _*) if ps.contains("module-info.class")          => MergeStrategy.first // ???
