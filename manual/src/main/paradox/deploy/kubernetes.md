@@ -550,7 +550,7 @@ spec:
   csr:
     issuer: CN=Otoroshi Root
     hosts: 
-    - httpapp.foo.bar
+    - http-app-service
     key:
       algo: rsa
       size: 2048
@@ -570,8 +570,6 @@ spec:
   autoRenew: true
   csr:
     issuer: CN=Otoroshi Root
-    hosts: 
-    - httpapp.foo.bar
     key:
       algo: rsa
       size: 2048
