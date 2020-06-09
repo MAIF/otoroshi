@@ -524,13 +524,13 @@ spec:
   description: certificate for the http-app on otorshi frontend
   autoRenew: true
   csr:
-    issuer: O=EvilCorp, L=San Francisco, ST=California, C=US
+    issuer: CN=Otoroshi Root
     hosts: 
     - httpapp.foo.bar
     key:
       algo: rsa
       size: 2048
-    subject: OU=httpapp-front, O=EvilCorp, L=San Francisco, ST=California, C=US
+    subject: UID=httpapp-front, O=OtoroshiApps
     client: false
     ca: false
     duration: 31536000000
@@ -548,13 +548,13 @@ spec:
   exportSecret: true 
   secretName: http-app-certificate-backend-secret
   csr:
-    issuer: O=EvilCorp, L=San Francisco, ST=California, C=US
+    issuer: CN=Otoroshi Root
     hosts: 
     - httpapp.foo.bar
     key:
       algo: rsa
       size: 2048
-    subject: OU=httpapp-back, O=EvilCorp, L=San Francisco, ST=California, C=US
+    subject: UID=httpapp-back, O=OtoroshiApps
     client: false
     ca: false
     duration: 31536000000
@@ -569,13 +569,13 @@ spec:
   description: certificate for the http-app
   autoRenew: true
   csr:
-    issuer: O=EvilCorp, L=San Francisco, ST=California, C=US
+    issuer: CN=Otoroshi Root
     hosts: 
     - httpapp.foo.bar
     key:
       algo: rsa
       size: 2048
-    subject: OU=httpapp-client, O=EvilCorp, L=San Francisco, ST=California, C=US
+    subject: UID=httpapp-client, O=OtoroshiApps
     client: false
     ca: false
     duration: 31536000000
@@ -603,10 +603,10 @@ spec:
       mtls: true
       certs: 
         # reference the DN for the client cert
-        - OU=httpapp-client, O=EvilCorp, L=San Francisco, ST=California, C=US
+        - UID=httpapp-client, O=OtoroshiApps
       trustedCerts: 
         # reference the DN for the CA cert
-        - O=EvilCorp, L=San Francisco, ST=California, C=US
+        - CN=Otoroshi Root
   sendOtoroshiHeadersBack: true
   xForwardedHeaders: true
   overrideHost: true
