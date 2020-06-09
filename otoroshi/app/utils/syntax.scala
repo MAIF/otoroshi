@@ -16,6 +16,9 @@ import scala.util.{Failure, Success, Try}
 
 object implicits {
   implicit class BetterSyntax[A](private val obj: A) extends AnyVal {
+    def seq: Seq[A] = Seq(obj)
+    def set: Set[A] = Set(obj)
+    def list: List[A] = List(obj)
     def some: Option[A] = Some(obj)
     def option: Option[A] = Some(obj)
     def left[B]: Either[A, B] = Left(obj)
@@ -69,6 +72,15 @@ object implicits {
   implicit class BetterJsValue(private val obj: JsValue) extends AnyVal {
     def stringify: String = Json.stringify(obj)
     def prettify: String = Json.prettyPrint(obj)
+    def select(name: String): JsLookupResult = (obj \ name)
+    def select(index: Int): JsLookupResult = (obj \ index)
+  }
+  implicit class BetterJsReadable(private val obj: JsReadable) extends AnyVal {
+    def asString: String = obj.as[String]
+    def asInt: Int = obj.as[Int]
+    def asDouble: Double = obj.as[Double]
+    def asLong: Long = obj.as[Long]
+    def asBoolean: Boolean = obj.as[Boolean]
   }
   implicit class BetterFuture[A](private val obj: Future[A]) extends AnyVal {
     def fleft[B](implicit ec: ExecutionContext): Future[Either[A, B]] = obj.map(v => Left(v))
