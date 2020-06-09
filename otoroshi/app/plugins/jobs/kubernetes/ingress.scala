@@ -117,7 +117,7 @@ class KubernetesIngressControllerJob extends Job {
       val conf = KubernetesConfig.theConfig(ctx)
       val client = new KubernetesClient(conf, env)
       val source =
-        client.watchKubeResources(conf.namespaces, Seq("secrets", "services", "endpoints"), 30, stopCommand)
+        client.watchKubeResources(conf.namespaces, Seq("secrets", "services", "pods", "endpoints"), 30, stopCommand)
           .merge(client.watchNetResources(conf.namespaces, Seq("ingresses"), 30, stopCommand))
       source.throttle(1, 5.seconds).runWith(Sink.foreach(_ => KubernetesIngressSyncJob.syncIngresses(conf, ctx.attrs)))
     }

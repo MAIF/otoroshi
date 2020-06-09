@@ -132,7 +132,7 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
         "tcp-services",
         "admins"
       ), 30, stopCommand).merge(
-        client.watchKubeResources(conf.namespaces, Seq("secrets", "endpoints"), 30, stopCommand)
+        client.watchKubeResources(conf.namespaces, Seq("secrets", "services", "pods", "endpoints"), 30, stopCommand)
       )
       source.throttle(1, 5.seconds).runWith(Sink.foreach(_ => KubernetesCRDsJob.syncCRDs(conf, ctx.attrs, !stopCommand.get())))
     }
