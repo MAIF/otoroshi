@@ -213,7 +213,14 @@ export class U2FRegisterPage extends Component {
           BackOfficeServices.discardAdmin(username, id, type).then(() => {
             setTimeout(() => {
               table.update();
-              //window.location.href = '/bo/dashboard/admins';
+              if (username === window.__userid) {
+                // force logout
+                fetch('/backoffice/auth0/logout', {
+                  credentials: 'include'
+                }).then(() => {
+                  window.location.href = '/bo/dashboard/admins';
+                });
+              }
             }, 1000);
           });
         }
