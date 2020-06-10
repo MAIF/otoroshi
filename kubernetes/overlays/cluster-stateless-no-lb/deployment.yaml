@@ -34,11 +34,11 @@ spec:
         name: otoroshi-leader
         ports:
           - containerPort: 8080
-            hostPort: 30180
+            hostPort: 41080
             name: "http"
             protocol: TCP
           - containerPort: 8443
-            hostPort: 30143
+            hostPort: 41443
             name: "https"
             protocol: TCP
         env:
@@ -130,11 +130,11 @@ spec:
         name: otoroshi-worker
         ports:
           - containerPort: 8080
-            hostPort: 30280
+            hostPort: 42080
             name: "http"
             protocol: TCP
           - containerPort: 8443
-            hostPort: 30243
+            hostPort: 42443
             name: "https"
             protocol: TCP
         env:
