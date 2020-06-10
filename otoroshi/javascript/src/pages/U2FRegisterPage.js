@@ -258,8 +258,8 @@ export class U2FRegisterPage extends Component {
       <div>
         {this.props.env && this.props.env.changePassword && (
           <div class="alert alert-danger" role="alert">
-            You are using the default admin account with the default password. You should create a
-            new admin account.
+            You are using the default admin account. You should create a
+            new admin account and delete the default one.
           </div>
         )}
         <form className="form-horizontal hide">

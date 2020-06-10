@@ -471,7 +471,7 @@ export class TopBar extends Component {
                       className="badge"
                       data-toggle="tooltip"
                       data-placement="bottom"
-                      title="You are using the default admin account with the default (very unsecured) password. You should create a new admin account quickly."
+                      title="You are using the default admin account. You should create a new admin account quickly and delete the default one."
                       style={{ backgroundColor: '#c9302c', marginBottom: 5 }}>
                       <i className="glyphicon glyphicon-alert" />
                     </span>
