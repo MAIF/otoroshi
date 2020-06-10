@@ -1029,7 +1029,8 @@ class Env(val configuration: Configuration,
           maxAge = Some(sessionMaxAge),
           path = "/",
           domain = Some(sessionDomain),
-          httpOnly = false
+          httpOnly = true,
+          secure = exposedRootSchemeIsHttps
         )
       )
     } else {
@@ -1040,7 +1041,8 @@ class Env(val configuration: Configuration,
           maxAge = Some(sessionMaxAge),
           path = "/",
           domain = Some(host),
-          httpOnly = false
+          httpOnly = true,
+          secure = exposedRootSchemeIsHttps
         ),
         play.api.mvc.Cookie(
           name = "oto-papps-" + suffix,
@@ -1048,7 +1050,8 @@ class Env(val configuration: Configuration,
           maxAge = Some(sessionMaxAge),
           path = "/",
           domain = Some(sessionDomain),
-          httpOnly = false
+          httpOnly = true,
+          secure = exposedRootSchemeIsHttps
         )
       )
     }
