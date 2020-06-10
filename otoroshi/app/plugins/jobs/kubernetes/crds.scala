@@ -201,7 +201,7 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
   }
 
   private def customizeServiceDescriptor(_spec: JsValue, res: KubernetesOtoroshiResource, services: Seq[KubernetesService], endpoints: Seq[KubernetesEndpoint], otoServices: Seq[ServiceDescriptor]): JsValue = {
-    val opt = otoServices.filter(_.metadata.get("otoroshi-provider").contains("kubernetes-crds")).find(_.metadata.get("kubernetes-path").contains(res.path))
+    val opt: Option[ServiceDescriptor] = otoServices.filter(_.metadata.get("otoroshi-provider").contains("kubernetes-crds")).find(_.metadata.get("kubernetes-path").contains(res.path))
     val template = (client.config.templates \ "service-descriptor").asOpt[JsObject].getOrElse(Json.obj())
     val spec = template.deepMerge(opt.map(_.toJson.as[JsObject].deepMerge(_spec.as[JsObject])).getOrElse(_spec).as[JsObject])
     customizeIdAndName(spec, res).applyOn { s =>
@@ -264,7 +264,12 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
         case None => s
         case Some(v) => s.as[JsObject] - "group" ++ Json.obj("groupId" -> v)
       }
-    ).applyOn(s => s.as[JsObject] ++ Json.obj("useAkkaHttpClient" -> true))
+    ).applyOn(s => s.as[JsObject] ++ Json.obj("useAkkaHttpClient" -> true)).applyOn { s =>
+      opt match {
+        case None => s.as[JsObject] - "enabled" ++ Json.obj("enabled" -> true)
+        case Some(serv) => s.as[JsObject] - "enabled" ++ Json.obj("enabled" -> serv.enabled)
+      }
+    }
   }
 
   private def customizeApiKey(_spec: JsValue, res: KubernetesOtoroshiResource, secrets: Seq[KubernetesSecret], apikeys: Seq[ApiKey], registerApkToExport: Function3[String, String, ApiKey, Unit]): JsValue = {
@@ -383,7 +388,12 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
               "kubernetes-uid" -> res.uid
             ))
           )
-        )
+        ).applyOn { s =>
+          apiKeyOpt match {
+            case None => s.as[JsObject] - "enabled" ++ Json.obj("enabled" -> true)
+            case Some(apk) => s.as[JsObject] - "enabled" ++ Json.obj("enabled" -> apk.enabled)
+          }
+        }
       }
     }
   }
@@ -491,7 +501,12 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
     val opt = entities.filter(_.metadata.get("otoroshi-provider").contains("kubernetes-crds")).find(_.metadata.get("kubernetes-path").contains(res.path))
     val template = (client.config.templates \ "jwt-verifier").asOpt[JsObject].getOrElse(Json.obj())
     val spec = template.deepMerge(opt.map(_.asJson.as[JsObject].deepMerge(_spec.as[JsObject])).getOrElse(_spec).as[JsObject])
-    customizeIdAndName(spec, res)
+    customizeIdAndName(spec, res).applyOn { s =>
+      opt match {
+        case None => s.as[JsObject] - "enabled" ++ Json.obj("enabled" -> true)
+        case Some(ent) => s.as[JsObject] - "enabled" ++ Json.obj("enabled" -> ent.enabled)
+      }
+    }
   }
 
   private def customizeAuthModule(_spec: JsValue, res: KubernetesOtoroshiResource, entities: Seq[AuthModuleConfig]): JsValue = {
@@ -512,7 +527,12 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
     val opt = entities.filter(_.metadata.get("otoroshi-provider").contains("kubernetes-crds")).find(_.metadata.get("kubernetes-path").contains(res.path))
     val template = (client.config.templates \ "tcp-service").asOpt[JsObject].getOrElse(Json.obj())
     val spec = template.deepMerge(opt.map(_.json.as[JsObject].deepMerge(_spec.as[JsObject])).getOrElse(_spec).as[JsObject])
-    customizeIdAndName(spec, res)
+    customizeIdAndName(spec, res).applyOn { s =>
+      opt match {
+        case None => s.as[JsObject] - "enabled" ++ Json.obj("enabled" -> true)
+        case Some(ent) => s.as[JsObject] - "enabled" ++ Json.obj("enabled" -> ent.enabled)
+      }
+    }
   }
 
   private def customizeAdmin(_spec: JsValue, res: KubernetesOtoroshiResource, entities: Seq[SimpleOtoroshiAdmin]): JsValue = {
