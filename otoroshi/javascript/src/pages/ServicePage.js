@@ -2613,10 +2613,10 @@ export class ServicePage extends Component {
                 <button
                   type="button"
                   style={{ marginBottom: 5 }}
-                  onClick={e => this.addSecurityHeader('X-Frame-Option', 'DENY')}
-                  disabled={this.computeIfButtonDisabled('X-Frame-Option')}
+                  onClick={e => this.addSecurityHeader('X-Frame-Options', 'DENY')}
+                  disabled={this.computeIfButtonDisabled('X-Frame-Options')}
                   className="btn btn-xs btn-success">
-                  X-Frame-Option
+                  X-Frame-Options
                 </button>
                 <button
                   type="button"
