@@ -223,11 +223,11 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
 <h1><a href="#kubernetes-integration" name="kubernetes-integration" class="anchor"><span class="anchor-link"></span></a>Kubernetes Integration</h1>
-<p>Starting at version 1.5.0, Otoroshi provides a native Kubernetes support. Multiple jobs are provided in order to</p>
+<p>Starting at version 1.5.0, Otoroshi provides a native Kubernetes support. Multiple jobs (kubernetes controllers) are provided in order to</p>
 <ul>
   <li>sync kubernetes secrets of type <code>kubernetes.io/tls</code> to otoroshi certificates</li>
-  <li>act as a standard ingress controller</li>
-  <li>provide Custom Resource Definitions (CRDs) in order to manage Otoroshi entities from Kubernetes</li>
+  <li>act as a standard ingress controller (supporting <code>Ingress</code> objects)</li>
+  <li>provide Custom Resource Definitions (CRDs) in order to manage Otoroshi entities from Kubernetes and act as some kind of ingress controller with its own resources</li>
 </ul>
 <h2><a href="#deploy-otoroshi-on-your-kubernetes-cluster" name="deploy-otoroshi-on-your-kubernetes-cluster" class="anchor"><span class="anchor-link"></span></a>Deploy otoroshi on your kubernetes cluster</h2>
 <p>If you want to deploy otoroshi into your kubernetes cluster, you can download the deployment descriptors from <a href="https://github.com/MAIF/otoroshi/tree/master/kubernetes">https://github.com/MAIF/otoroshi/tree/master/kubernetes</a> and use kustomize to create your own overlay. The base descriptors are available at <a href="https://github.com/MAIF/otoroshi/tree/master/kubernetes/base">https://github.com/MAIF/otoroshi/tree/master/kubernetes/base</a></p>
@@ -238,6 +238,86 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 </code></pre>
 <p>and apply it</p>
 <p>An Helm chart will be available as soon as possible</p>
+<h3><a href="#deploy-otoroshi-on-your-baremetal-kubernetes-cluster" name="deploy-otoroshi-on-your-baremetal-kubernetes-cluster" class="anchor"><span class="anchor-link"></span></a>Deploy otoroshi on your baremetal kubernetes cluster</h3>
+<p>Baremetal cluster don&rsquo;t come with support for external loadbalancers. So you will have to provide this feature in order to route TCP traffic from outside into Otoroshi containers running inside kubernetes. You&rsquo;ll have to expose the following domain name through your own external load balancer (nginx, haproxy, otoroshi ;) ), and do the needed DNS setup accordingly</p>
+<ul>
+  <li><code>otoroshi.your.domain</code> going to kubernetes service <code>otoroshi-service</code> (or <code>otoroshi-leader-service</code> if in cluster mode)</li>
+  <li><code>otoroshi-api.your.domain</code> going to kubernetes service <code>otoroshi-service</code> (or <code>otoroshi-leader-service</code> if in cluster mode)</li>
+  <li><code>privateapps.your.domain</code> going to kubernetes service <code>otoroshi-service</code> (or <code>otoroshi-leader-service</code> if in cluster mode)</li>
+  <li><code>anything.you.want</code> going to kubernetes service <code>otoroshi-service</code> (or <code>otoroshi-worker-service</code> if in cluster mode)</li>
+</ul>
+<p>to expose otoroshi to the outside world, you can use either</p>
+<ul>
+  <li><code>nodePort</code></li>
+  <li><code>DaemonSet</code> deployement with <code>hostPort</code></li>
+</ul>
+<p>then just install <a href="https://www.nginx.com/">NGINX</a> or <a href="http://www.haproxy.org/">HAProxy</a> instances that will proxy your TCP calls (L4) to the kubernetes nodes from ports 80 and 443 to the ports chosen as <code>nodePort</code> or <code>hostPort</code>. Here are some example for configuring nginx or haproxy</p>
+<dl>
+  <dt>NGINX L4</dt>
+  <dd>
+  <pre class="prettyprint"><code class="language-conf">stream {
+
+  upstream back_http_nodes {
+    zone back_http_nodes 64k;
+    server 192.168.1.40:8080 max_fails=1;
+    server 192.168.1.41:8080 max_fails=1;
+    server 192.168.1.42:8080 max_fails=1;
+  }
+
+  upstream back_https_nodes {
+    zone back_https_nodes 64k;
+    server 192.168.1.40:8443 max_fails=1;
+    server 192.168.1.41:8443 max_fails=1;
+    server 192.168.1.42:8443 max_fails=1;
+  }
+
+  server {
+    listen     80;
+    proxy_pass back_http_nodes;
+    health_check;
+  }
+
+  server {
+    listen     443;
+    proxy_pass back_https_nodes;
+    health_check;
+  }
+  
+}
+</code></pre></dd>
+  <dt>HA Proxy L4</dt>
+  <dd>
+  <pre class="prettyprint"><code class="language-conf">frontend front_nodes_http
+    bind *:80
+    mode tcp
+    default_backend back_http_nodes
+    timeout client          1m
+
+frontend front_nodes_https
+    bind *:443
+    mode tcp
+    default_backend back_https_nodes
+    timeout client          1m
+
+backend back_http_nodes
+    mode tcp
+    balance roundrobin
+    server node1 192.168.1.40:8080
+    server node2 192.168.1.41:8080
+    server node3 192.168.1.42:8080
+    timeout connect        10s
+    timeout server          1m
+
+backend back_https_nodes
+    mode tcp
+    balance roundrobin
+    server node1 192.168.1.40:8443
+    server node2 192.168.1.41:8443
+    server node3 192.168.1.42:8443
+    timeout connect        10s
+    timeout server          1m</code></pre></dd>
+</dl>
+<p>You can also use projects like <a href="https://metallb.universe.tf/">MetalLB</a> that provide <code>LoadBalancer</code> services to baremetal clusters</p>
 <h2><a href="#use-otoroshi-as-an-ingress-controller" name="use-otoroshi-as-an-ingress-controller" class="anchor"><span class="anchor-link"></span></a>Use Otoroshi as an Ingress Controller</h2>
 <p>If you want to use Otoroshi as an <a href="https://kubernetes.io/fr/docs/concepts/services-networking/ingress/">Ingress Controller</a>, just go to the danger zone, and in <code>Global scripts</code> add the job named <code>Kubernetes Ingress Controller</code>.</p>
 <p>Then add the following configuration for the job (with your own tweak of course)</p>
