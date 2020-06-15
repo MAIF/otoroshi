@@ -317,7 +317,8 @@ backend back_https_nodes
     timeout connect        10s
     timeout server          1m</code></pre></dd>
 </dl>
-<p>You can also use projects like <a href="https://metallb.universe.tf/">MetalLB</a> that provide <code>LoadBalancer</code> services to baremetal clusters</p>
+<p>You can also use projects like <a href="https://metallb.universe.tf/">MetalLB</a> that provide <code>LoadBalancer</code> services to baremetal clusters</p><div class="callout warning "><div class="callout-title">Warning</div>
+<p>We don&rsquo;t recommand running Otoroshi behind an existing ingress controller (or something like that) as you will not be able to use features like TCP proxying, TLS, mTLS, etc. Also, this additional layer of reverse proxy will increase call latencies.</p></div>
 <h2><a href="#use-otoroshi-as-an-ingress-controller" name="use-otoroshi-as-an-ingress-controller" class="anchor"><span class="anchor-link"></span></a>Use Otoroshi as an Ingress Controller</h2>
 <p>If you want to use Otoroshi as an <a href="https://kubernetes.io/fr/docs/concepts/services-networking/ingress/">Ingress Controller</a>, just go to the danger zone, and in <code>Global scripts</code> add the job named <code>Kubernetes Ingress Controller</code>.</p>
 <p>Then add the following configuration for the job (with your own tweak of course)</p>
