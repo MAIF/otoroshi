@@ -47,6 +47,10 @@ HA Proxy L4
 
 You can also use projects like [MetalLB](https://metallb.universe.tf/) that provide `LoadBalancer` services to baremetal clusters
 
+@@@ warning
+We don't recommand running Otoroshi behind an existing ingress controller (or something like that) as you will not be able to use features like TCP proxying, TLS, mTLS, etc. Also, this additional layer of reverse proxy will increase call latencies.
+@@@
+
 ## Use Otoroshi as an Ingress Controller
 
 If you want to use Otoroshi as an [Ingress Controller](https://kubernetes.io/fr/docs/concepts/services-networking/ingress/), just go to the danger zone, and in `Global scripts` add the job named `Kubernetes Ingress Controller`.
