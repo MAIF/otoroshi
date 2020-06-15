@@ -1,10 +1,10 @@
 # Kubernetes Integration
 
-Starting at version 1.5.0, Otoroshi provides a native Kubernetes support. Multiple jobs are provided in order to
+Starting at version 1.5.0, Otoroshi provides a native Kubernetes support. Multiple jobs (kubernetes controllers) are provided in order to
 
 - sync kubernetes secrets of type `kubernetes.io/tls` to otoroshi certificates
-- act as a standard ingress controller
-- provide Custom Resource Definitions (CRDs) in order to manage Otoroshi entities from Kubernetes
+- act as a standard ingress controller (supporting `Ingress` objects)
+- provide Custom Resource Definitions (CRDs) in order to manage Otoroshi entities from Kubernetes and act as some kind of ingress controller with its own resources
 
 ## Deploy otoroshi on your kubernetes cluster
 
@@ -22,6 +22,30 @@ bases:
 and apply it
 
 An Helm chart will be available as soon as possible
+
+### Deploy otoroshi on your baremetal kubernetes cluster
+
+Baremetal cluster don't come with support for external loadbalancers. So you will have to provide this feature in order to route TCP traffic from outside into Otoroshi containers running inside kubernetes. You'll have to expose the following domain name through your own external load balancer (nginx, haproxy, otoroshi ;) ), and do the needed DNS setup accordingly
+
+- `otoroshi.your.domain` going to kubernetes service `otoroshi-service` (or `otoroshi-leader-service` if in cluster mode)
+- `otoroshi-api.your.domain` going to kubernetes service  `otoroshi-service` (or `otoroshi-leader-service` if in cluster mode)
+- `privateapps.your.domain` going to kubernetes service  `otoroshi-service` (or `otoroshi-leader-service` if in cluster mode)
+- `anything.you.want` going to kubernetes service  `otoroshi-service` (or `otoroshi-worker-service` if in cluster mode)
+
+to expose otoroshi to the outside world, you can use either
+
+- `nodePort`
+- `DaemonSet` deployement with `hostPort`
+
+then just install [NGINX](https://www.nginx.com/) or [HAProxy](http://www.haproxy.org/) instances that will proxy your TCP calls (L4) to the kubernetes nodes from ports 80 and 443 to the ports chosen as `nodePort` or `hostPort`. Here are some example for configuring nginx or haproxy
+
+NGINX L4
+:   @@snip [nginx-tcp.conf](../snippets/nginx-tcp.conf) 
+
+HA Proxy L4
+:   @@snip [haproxy-tcp.conf](../snippets/haproxy-tcp.conf) 
+
+You can also use projects like [MetalLB](https://metallb.universe.tf/) that provide `LoadBalancer` services to baremetal clusters
 
 ## Use Otoroshi as an Ingress Controller
 
