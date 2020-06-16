@@ -1,10 +1,10 @@
 # Kubernetes Integration
 
-Starting at version 1.5.0, Otoroshi provides a native Kubernetes support. Multiple otoroshi jobs (kubernetes controllers) are provided in order to
+Starting at version 1.5.0, Otoroshi provides a native Kubernetes support. Multiple otoroshi jobs (that are actually kubernetes controllers) are provided in order to
 
 - sync kubernetes secrets of type `kubernetes.io/tls` to otoroshi certificates
 - act as a standard ingress controller (supporting `Ingress` objects)
-- provide Custom Resource Definitions (CRDs) in order to manage Otoroshi entities from Kubernetes and act as some kind of ingress controller with its own resources
+- provide Custom Resource Definitions (CRDs) to manage Otoroshi entities from Kubernetes and act as an ingress controller with its own resources
 
 ## Installing otoroshi on your kubernetes cluster
 
