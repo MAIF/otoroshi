@@ -26,7 +26,7 @@ case class KubernetesConfig(
   caCert: Option[String],
   namespaces: Seq[String],
   labels: Map[String, String],
-  ingressClass: String,
+  ingressClasses: Seq[String],
   defaultGroup: String,
   ingressEndpointHostname: Option[String],
   ingressEndpointIp: Option[String],
@@ -76,7 +76,7 @@ object KubernetesConfig {
           },
           namespaces = (conf \ "namespaces").asOpt[Seq[String]].filter(_.nonEmpty).getOrElse(Seq("*")),
           labels = (conf \ "labels").asOpt[Map[String, String]].getOrElse(Map.empty),
-          ingressClass = (conf \ "ingressClass").asOpt[String].getOrElse("otoroshi"), // can be *
+          ingressClasses = (conf \ "ingressClasses").asOpt[Seq[String]].orElse((conf \ "ingressClass").asOpt[String].map(v => Seq(v))).getOrElse(Seq("otoroshi")), // can be *
           defaultGroup = (conf \ "defaultGroup").asOpt[String].getOrElse("default"),
           ingressEndpointHostname = (conf \ "ingressEndpointHostname").asOpt[String],
           ingressEndpointIp = (conf \ "ingressEndpointIp").asOpt[String],
@@ -113,7 +113,7 @@ object KubernetesConfig {
             ),
           namespaces = (conf \ "namespaces").asOpt[Seq[String]].filter(_.nonEmpty).getOrElse(Seq("*")),
           labels = (conf \ "labels").asOpt[Map[String, String]].getOrElse(Map.empty),
-          ingressClass = (conf \ "ingressClass").asOpt[String].getOrElse("otoroshi"), // can be *
+          ingressClasses = (conf \ "ingressClasses").asOpt[Seq[String]].orElse((conf \ "ingressClass").asOpt[String].map(v => Seq(v))).getOrElse(Seq("otoroshi")), // can be *
           defaultGroup = (conf \ "defaultGroup").asOpt[String].getOrElse("default"),
           ingressEndpointHostname = (conf \ "ingressEndpointHostname").asOpt[String],
           ingressEndpointIp = (conf \ "ingressEndpointIp").asOpt[String],
@@ -141,7 +141,7 @@ object KubernetesConfig {
         "trust" -> false,
         "namespaces" -> Json.arr("*"),
         "labels" -> JsArray(),
-        "ingressClass" -> "otoroshi",
+        "ingressClasses" -> Json.arr("otoroshi"),
         "defaultGroup" -> "default",
         "ingresses" -> true,
         "crds" -> true,

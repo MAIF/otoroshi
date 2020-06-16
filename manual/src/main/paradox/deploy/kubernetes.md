@@ -424,7 +424,7 @@ curl -X GET https://httpapp.foo.bar/get -u existing-apikey-1:secret-1
 
 ## Use Otoroshi CRDs as Ingress controller for a better/full integration
 
-Otoroshi provides some Custom Resource Definitions for kubernetes in order to manager Otoroshi related entities in kubernetes
+Otoroshi provides some Custom Resource Definitions for kubernetes in order to manage Otoroshi related entities in kubernetes
 
 - `service-groups`
 - `service-descriptors`
@@ -448,9 +448,28 @@ curl -X GET \
   https://127.0.0.1:6443/apis/proxy.otoroshi.io/v1alpha1/apikeys | jq
 ```
 
+You can see this as better `Ingress` resources. Like any `Ingress` resource can define which controller it uses (using the `kubernetes.io/ingress.class` annotation), you can chose another kind of resource instead of `Ingress`. With Otoroshi CRDs you can even define resources like `Certificate`, `Apikey`, `AuthModules`, `JwtVerifier`, etc. It will help you to use all the power of Otoroshi while using the deployment model of kubernetes.
+ 
 @@@ warning
 when using Otoroshi CRDs, Kubernetes becomes the single source of truth for the synced entities. It means that any value in the descriptors deployed will overrides the one in Otoroshi datastore each time it's synced. So be careful if you use the Otoroshi UI or the API, some changes in configuration may be overriden by CRDs sync job.
 @@@
+
+### Resources examples
+
+group.yaml
+:   @@snip [group.yaml](../snippets/crds/group.yaml) 
+
+apikey.yaml
+:   @@snip [apikey.yaml](../snippets/crds/apikey.yaml) 
+
+service-descriptor.yaml
+:   @@snip [service-descriptor.yaml](../snippets/crds/service-descriptor.yaml) 
+
+certificate.yaml
+:   @@snip [certificate.yaml](../snippets/crds/certificate.yaml) 
+
+
+### Configuration
 
 To configure it, just go to the danger zone, and in `Global scripts` add the job named `Kubernetes Otoroshi CRDs Controller`. Then add the following configuration for the job (with your own tweak of course)
 
@@ -467,6 +486,41 @@ To configure it, just go to the danger zone, and in `Global scripts` add the job
   }
 }
 ```
+
+
+you can find a more complete example of the configuration object [here](https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/plugins/jobs/kubernetes/config.scala#L134-L163)
+
+### Note about `apikeys` and `certificates` resources
+
+Apikeys and Certificates are a little bit different than the other resources. They have ability to be defined without their secret part, but with an export setting so otoroshi will generate the secret parts and export the apikey or the certificate to kubernetes secret. Then any app will be able to mount them as volumes (see the full example below)
+
+In those resources you can define 
+
+```yaml
+exportSecret: true 
+secretName: the-secret-name
+```
+
+and omit `clientSecret` for apikey or `publicKey`, `privateKey` for certificates. For certificate you will have to provide a `csr` for the certificate in order to generate it
+
+```yaml
+csr:
+  issuer: CN=Otoroshi Root
+  hosts: 
+  - httpapp.foo.bar
+  - httpapps.foo.bar
+  key:
+    algo: rsa
+    size: 2048
+  subject: UID=httpapp-front, O=OtoroshiApps
+  client: false
+  ca: false
+  duration: 31536000000
+  signatureAlg: SHA256WithRSAEncryption
+  digestAlg: SHA-256
+```
+
+### Example
 
 then you can deploy the previous example with better configuration level, and using mtls, apikeys, etc
 

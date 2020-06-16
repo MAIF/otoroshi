@@ -1,0 +1,6 @@
+apiVersion: proxy.otoroshi.io/v1alpha1
+kind: ServiceGroup
+metadata:
+  name: http-app-group
+spec:
+  description: a group to hold services about the http-app

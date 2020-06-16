@@ -22,7 +22,7 @@ import play.api.libs.json._
 import play.api.mvc.{Result, Results}
 import ssl.DynamicSSLEngineProvider
 import utils.RequestImplicits._
-import utils.TypedMap
+import utils.{RegexPool, TypedMap}
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
@@ -379,11 +379,11 @@ object KubernetesIngressSyncJob {
   private val running = new AtomicBoolean(false)
   private val shouldRunNext = new AtomicBoolean(false)
 
-  private def shouldProcessIngress(ingressClass: String, ingressClassAnnotation: Option[String], conf: KubernetesConfig): Boolean = {
+  private def shouldProcessIngress(ingressClasses: Seq[String], ingressClassAnnotation: Option[String], conf: KubernetesConfig): Boolean = {
     ingressClassAnnotation match {
-      case None if ingressClass == "*" => true
+      case None if ingressClasses.contains("*") => true
       case Some("otoroshi") => true
-      case Some(annotation) => annotation == ingressClass
+      case Some(annotation) => ingressClasses.exists(c => RegexPool(c).matches(annotation))
       case _ => false
     }
   }
@@ -404,7 +404,7 @@ object KubernetesIngressSyncJob {
           logger.info("update ingresses")
           Source(ingresses.toList)
             .mapAsync(1) { ingressRaw =>
-              if (shouldProcessIngress(conf.ingressClass, ingressRaw.ingressClazz, conf)) {
+              if (shouldProcessIngress(conf.ingressClasses, ingressRaw.ingressClazz, conf)) {
                 val otoroshiConfig = parseConfig(ingressRaw.annotations)
                 if (ingressRaw.isValid()) {
                   val certNames = ingressRaw.ingress.spec.tls.map(_.secretName).map(_.toLowerCase)
