@@ -31,14 +31,14 @@ rules:
       - get
       - list
       - watch
-  # - apiGroups:
-  #     - ""
-  #   resources:
-  #     - secrets
-  #   verbs:
-  #     - update
-  #     - create
-  #     - delete
+  - apiGroups:
+      - ""
+    resources:
+      - secrets
+    verbs:
+      - update
+      - create
+      - delete
   - apiGroups:
       - extensions
     resources:
