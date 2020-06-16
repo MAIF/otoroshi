@@ -15,6 +15,7 @@ trait KubernetesEntity {
   def pretty: String = raw.prettify
   lazy val uid: String = (raw \ "metadata" \ "uid").as[String]
   lazy val name: String = (raw \ "metadata" \ "name").as[String]
+  lazy val metaId: Option[String] = (raw \ "metadata" \ "io.otoroshi/id").asOpt[String]
   lazy val namespace: String = (raw \ "metadata" \ "namespace").as[String]
   lazy val path: String = s"$namespace/$name"
   lazy val labels: Map[String, String] = (raw \ "metadata" \ "labels").asOpt[Map[String, String]].getOrElse(Map.empty)

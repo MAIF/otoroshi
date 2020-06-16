@@ -196,9 +196,9 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
         ))
       )
     ).applyOn(s =>
-      (s \ "id").asOpt[String] match {
+      res.metaId match {
         case None => s.as[JsObject] ++ Json.obj("id" -> s"kubernetes-crd-import-${res.namespace}-${res.name}".slugifyWithSlash)
-        case Some(_) => s
+        case Some(id) => s.as[JsObject] ++ Json.obj("id" -> id)
       }
     )
   }
@@ -436,9 +436,9 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
         ))
       )
     ).applyOn(s =>
-      (s \ "id").asOpt[String] match {
+      res.metaId match {
         case None => s.as[JsObject] ++ Json.obj("id" -> id)
-        case Some(_) => s
+        case Some(_id) => s.as[JsObject] ++ Json.obj("id" -> _id)
       }
     ).applyOn { s =>
       val shouldExport = (s \ "exportSecret").asOpt[Boolean].getOrElse(false)

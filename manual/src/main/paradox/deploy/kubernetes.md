@@ -526,7 +526,7 @@ csr:
   digestAlg: SHA-256
 ```
 
-### Example
+### Full example
 
 then you can deploy the previous example with better configuration level, and using mtls, apikeys, etc
 
