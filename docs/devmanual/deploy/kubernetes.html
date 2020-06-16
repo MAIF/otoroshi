@@ -2735,8 +2735,8 @@ spec:
 kind: JwtVerifier
 metadata:
   name: http-app-verifier
+  io.otoroshi/id: http-app-verifier
 spec:
-  id: verifier2
   desc: verify that the jwt token in header jwt is ok
   strict: true
   source:
@@ -2760,9 +2760,9 @@ spec:
 kind: AuthModule
 metadata:
   name: http-app-auth
+  io.otoroshi/id: http-app-auth
 spec:
   type: oauth2
-  id: http-app-auth
   desc: Keycloak mTLS
   sessionMaxAge: 86400
   clientId: otoroshi
@@ -2849,7 +2849,7 @@ secretName: the-secret-name
   signatureAlg: SHA256WithRSAEncryption
   digestAlg: SHA-256
 </code></pre>
-<h3><a href="#example" name="example" class="anchor"><span class="anchor-link"></span></a>Example</h3>
+<h3><a href="#full-example" name="full-example" class="anchor"><span class="anchor-link"></span></a>Full example</h3>
 <p>then you can deploy the previous example with better configuration level, and using mtls, apikeys, etc</p>
 <p>Let say the app looks like :</p>
 <pre class="prettyprint"><code class="language-js">const fs = require(&#39;fs&#39;); 

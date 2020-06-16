@@ -2,9 +2,9 @@ apiVersion: proxy.otoroshi.io/v1alpha1
 kind: AuthModule
 metadata:
   name: http-app-auth
+  io.otoroshi/id: http-app-auth
 spec:
   type: oauth2
-  id: http-app-auth
   desc: Keycloak mTLS
   sessionMaxAge: 86400
   clientId: otoroshi
