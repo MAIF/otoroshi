@@ -161,13 +161,13 @@ the configuration can have the following values
     "trust": false, // trust any cert to talk to the kubernetes api, optional
     "namespaces": ["*"], // the watched namespaces
     "labels": ["label"], // the watched namespaces
-    "ingressClass": "otoroshi", // the watched kubernetes.io/ingress.class annotation, can be *
+    "ingressClasses": ["otoroshi"], // the watched kubernetes.io/ingress.class annotations, can be *
     "defaultGroup": "default", // the group to put services in otoroshi
     "ingresses": true, // sync ingresses
     "crds": false, // sync crds
     "kubeLeader": false, // delegate leader election to kubernetes, to know where the sync job should run
     "restartDependantDeployments": true, // when a secret/cert changes from otoroshi sync, restart dependant deployments
-    "templates": {
+    "templates": { // template for entities that will be merged with kubernetes entities
       "service-group": {},
       "service-descriptor": {},
       "apikeys": {},
@@ -493,6 +493,43 @@ To configure it, just go to the danger zone, and in `Global scripts` add the job
 }
 ```
 
+the configuration can have the following values 
+
+```javascript
+{
+  "KubernetesConfig": {
+    "endpoint": "https://127.0.0.1:6443", // the endpoint to talk to the kubernetes api, optional
+    "token": "xxxx", // the bearer token to talk to the kubernetes api, optional
+    "userPassword": "user:password", // the user password tuple to talk to the kubernetes api, optional
+    "caCert": "/etc/ca.cert", // the ca cert file path to talk to the kubernetes api, optional
+    "trust": false, // trust any cert to talk to the kubernetes api, optional
+    "namespaces": ["*"], // the watched namespaces
+    "labels": ["label"], // the watched namespaces
+    "ingressClasses": ["otoroshi"], // the watched kubernetes.io/ingress.class annotations, can be *
+    "defaultGroup": "default", // the group to put services in otoroshi
+    "ingresses": false, // sync ingresses
+    "crds": true, // sync crds
+    "kubeLeader": false, // delegate leader election to kubernetes, to know where the sync job should run
+    "restartDependantDeployments": true, // when a secret/cert changes from otoroshi sync, restart dependant deployments
+    "templates": { // template for entities that will be merged with kubernetes entities
+      "service-group": {},
+      "service-descriptor": {},
+      "apikeys": {},
+      "global-config": {},
+      "jwt-verifier": {},
+      "tcp-service": {},
+      "certificate": {},
+      "auth-module": {},
+      "script": {},
+    }
+  }
+}
+```
+
+If `endpoint` is not defined, Otoroshi will try to get it from `$KUBERNETES_SERVICE_HOST` and `$KUBERNETES_SERVICE_PORT`.
+If `token` is not defined, Otoroshi will try to get it from the file at `/var/run/secrets/kubernetes.io/serviceaccount/token`.
+If `caCert` is not defined, Otoroshi will try to get it from the file at `/var/run/secrets/kubernetes.io/serviceaccount/ca.crt`.
+If `$KUBECONFIG` is defined, `endpoint`, `token` and `caCert` will be read from the current context of the file referenced by it.
 
 you can find a more complete example of the configuration object [here](https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/plugins/jobs/kubernetes/config.scala#L134-L163)
 
@@ -793,7 +830,11 @@ curl -X GET https://httpapp.foo.bar/get -u "$CLIENT_ID:$CLIENT_SECRET"
 
 ## Expose Otoroshi to outside world
 
-If you deploy Otoroshi on a kubernetes cluster, the Otoroshi service is deployed as a loadbalancer. You'll need to declare in your DNS settings any name that can be routed by otoroshi going to the loadbalancer endpoint of your kubernetes distribution.
+If you deploy Otoroshi on a kubernetes cluster, the Otoroshi service is deployed as a loadbalancer (service type: `LoadBalancer`). You'll need to declare in your DNS settings any name that can be routed by otoroshi going to the loadbalancer endpoint (CNAME or ip addresses) of your kubernetes distribution. If you use a managed kubernetes cluster from a cloud provider, it will work seamlessly as they will provide external loadbalancers out of the box. However, if you use a bare metal kubernetes cluster, id doesn't come with support for external loadbalancers (service of type `LoadBalancer`). So you will have to provide this feature in order to route external TCP traffic to Otoroshi containers running inside the kubernetes cluster. You can use projects like [MetalLB](https://metallb.universe.tf/) that provide software `LoadBalancer` services to bare metal clusters or you can use and customize examples in the installation section.
+
+@@@ warning
+We don't recommand running Otoroshi behind an existing ingress controller (or something like that) as you will not be able to use features like TCP proxying, TLS, mTLS, etc. Also, this additional layer of reverse proxy will increase call latencies.
+@@@
 
 ## Access a service from inside the k8s cluster
 
