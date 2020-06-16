@@ -1,6 +1,6 @@
-# Simple deployment
+# Cluster deployment
 
-here we only deploy 2 replicas of the same otoroshi instance using redis. 
+here we only deploy 2 replicas of the otoroshi leader instance using redis and 2 replicas of otoroshi worker instances
 
 It uses a service of type `LoadBalancer` so it's intended to run in a kubernetes cluster where external loadbalancer are supported
 

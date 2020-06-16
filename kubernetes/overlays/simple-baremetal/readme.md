@@ -2,7 +2,7 @@
 
 here we only deploy 2 replicas of the same otoroshi instance using redis. 
 
-The otoroshi instance are exposed as `nodePort` or `hostPort` so you'll have to add a loadbalancer in front of your kubernetes nodes to route external traffic (TCP) to your otoroshi instances. You'll also have to configure your DNS to route otoroshi domain names to the loadbalancer itself
+The otoroshi instance are exposed as `nodePort` so you'll have to add a loadbalancer in front of your kubernetes nodes to route external traffic (TCP) to your otoroshi instances. You'll also have to configure your DNS to route otoroshi domain names to the loadbalancer itself
 
 ## NGINX config. example
 

@@ -1,0 +1,6 @@
+resources:
+  - ../../base
+  - deployment.yaml
+patchesStrategicMerge:
+  - deployment.yaml
+namePrefix: cluster-
