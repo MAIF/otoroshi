@@ -25,7 +25,7 @@ Below, you will find example of deployment. Do not hesitate to adapt them to you
 
 ### Note on bare metal kubernetes cluster installation
 
-Baremetal cluster don't come with support for external loadbalancers. So you will have to provide this feature in order to route TCP traffic from outside into Otoroshi containers running inside kubernetes. You can also use projects like [MetalLB](https://metallb.universe.tf/) that provide `LoadBalancer` services to baremetal clusters or you can use examples below.
+Bare metal kubernetes clusters don't come with support for external loadbalancers (service of type `LoadBalancer`). So you will have to provide this feature in order to route external TCP traffic to Otoroshi containers running inside the kubernetes cluster. You can use projects like [MetalLB](https://metallb.universe.tf/) that provide software `LoadBalancer` services to bare metal clusters or you can use and customize examples below.
 
 @@@ warning
 We don't recommand running Otoroshi behind an existing ingress controller (or something like that) as you will not be able to use features like TCP proxying, TLS, mTLS, etc. Also, this additional layer of reverse proxy will increase call latencies.
