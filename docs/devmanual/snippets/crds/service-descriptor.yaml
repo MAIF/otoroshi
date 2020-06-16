@@ -10,7 +10,7 @@ spec:
   - httpapp.foo.bar
   matchingRoot: /
   targets:
-  - url: https://http-app-service:8443
+  - url: 'https://http-app-service:8443'
     # you can also use serviceName and servicePort to use pods ip addresses. Can be used without or in combination with url
     # serviceName: http-app-service
     # servicePort: https
