@@ -102,16 +102,9 @@ spec:
   - port: 80
     name: "http"
     targetPort: "http"
-    # nodePort: 31080
   - port: 443
     name: "https"
     targetPort: "https"
-    # nodePort: 31443
-  # externalTrafficPolicy: Cluster
-  # loadBalancerIP: "1.2.3.4"
-  # clusterIP: "2.3.4.5"
-  # loadBalancerSourceRanges: []
-  # externalIPs: []
 ---
 apiVersion: proxy.otoroshi.io/v1alpha1
 kind: Certificate

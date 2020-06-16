@@ -1,16 +1,14 @@
 # Kubernetes Integration
 
-Starting at version 1.5.0, Otoroshi provides a native Kubernetes support. Multiple jobs (kubernetes controllers) are provided in order to
+Starting at version 1.5.0, Otoroshi provides a native Kubernetes support. Multiple otoroshi jobs (kubernetes controllers) are provided in order to
 
 - sync kubernetes secrets of type `kubernetes.io/tls` to otoroshi certificates
 - act as a standard ingress controller (supporting `Ingress` objects)
 - provide Custom Resource Definitions (CRDs) in order to manage Otoroshi entities from Kubernetes and act as some kind of ingress controller with its own resources
 
-## Deploy otoroshi on your kubernetes cluster
+## Installing otoroshi on your kubernetes cluster
 
-If you want to deploy otoroshi into your kubernetes cluster, you can download the deployment descriptors from https://github.com/MAIF/otoroshi/tree/master/kubernetes and use kustomize to create your own overlay. The base descriptors are available at https://github.com/MAIF/otoroshi/tree/master/kubernetes/base
-
-Then deploy it with `kubectl apply -k ./overlays/myoverlay`. 
+If you want to deploy otoroshi into your kubernetes cluster, you can download the deployment descriptors from https://github.com/MAIF/otoroshi/tree/master/kubernetes and use kustomize to create your own overlay.
 
 You can also create a `kustomization.yaml` file with a remote base
 
@@ -19,39 +17,120 @@ bases:
 - github.com/MAIF/otoroshi/kubernetes/overlays/prod/?ref=v1.5.0
 ```
 
-and apply it
+Then deploy it with `kubectl apply -k ./overlays/myoverlay`. 
 
-An Helm chart will be available as soon as possible
+Helm charts will be available as soon as possible
 
-### Deploy otoroshi on your baremetal kubernetes cluster
+Below, you will find example of deployment. Do not hesitate to adapt them to your needs
 
-Baremetal cluster don't come with support for external loadbalancers. So you will have to provide this feature in order to route TCP traffic from outside into Otoroshi containers running inside kubernetes. You'll have to expose the following domain name through your own external load balancer (nginx, haproxy, otoroshi ;) ), and do the needed DNS setup accordingly
+### Note on bare metal kubernetes cluster installation
 
-- `otoroshi.your.domain` going to kubernetes service `otoroshi-service` (or `otoroshi-leader-service` if in cluster mode)
-- `otoroshi-api.your.domain` going to kubernetes service  `otoroshi-service` (or `otoroshi-leader-service` if in cluster mode)
-- `privateapps.your.domain` going to kubernetes service  `otoroshi-service` (or `otoroshi-leader-service` if in cluster mode)
-- `anything.you.want` going to kubernetes service  `otoroshi-service` (or `otoroshi-worker-service` if in cluster mode)
-
-to expose otoroshi to the outside world, you can use either
-
-- `nodePort`
-- `DaemonSet` deployement with `hostPort`
-
-then just install [NGINX](https://www.nginx.com/) or [HAProxy](http://www.haproxy.org/) instances that will proxy your TCP calls (L4) to the kubernetes nodes from ports 80 and 443 to the ports chosen as `nodePort` or `hostPort`. Here are some example for configuring nginx or haproxy
-
-NGINX L4
-:   @@snip [nginx-tcp.conf](../snippets/nginx-tcp.conf) 
-
-HA Proxy L4
-:   @@snip [haproxy-tcp.conf](../snippets/haproxy-tcp.conf) 
-
-You can also use projects like [MetalLB](https://metallb.universe.tf/) that provide `LoadBalancer` services to baremetal clusters
+Baremetal cluster don't come with support for external loadbalancers. So you will have to provide this feature in order to route TCP traffic from outside into Otoroshi containers running inside kubernetes. You can also use projects like [MetalLB](https://metallb.universe.tf/) that provide `LoadBalancer` services to baremetal clusters or you can use examples below.
 
 @@@ warning
 We don't recommand running Otoroshi behind an existing ingress controller (or something like that) as you will not be able to use features like TCP proxying, TLS, mTLS, etc. Also, this additional layer of reverse proxy will increase call latencies.
 @@@
 
-## Use Otoroshi as an Ingress Controller
+### Common manifests
+
+the following manifests are always needed. They create otoroshi CRDs, tokens, role, etc. Redis deployment is not mandatory, it's just an example. You can use your own existing setup.
+
+rbac.yaml
+:   @@snip [rbac.yaml](../snippets/kubernetes/base/rbac.yaml) 
+
+crds.yaml
+:   @@snip [crds.yaml](../snippets/kubernetes/base/crds.yaml) 
+
+redis.yaml
+:   @@snip [redis.yaml](../snippets/kubernetes/base/redis.yaml) 
+
+
+### Deploy a simple otoroshi instanciation on a cloud provider managed kubernetes cluster
+
+Here we have 2 replicas connected to the same redis instance. Nothing fancy. We use a service of type `LoadBalancer` to expose otoroshi to the rest of the world. You have to setup your DNS to bind otoroshi domain names to the `LoadBalancer` external `CNAME` (see the example below)
+
+deployment.yaml
+:   @@snip [deployment.yaml](../snippets/kubernetes/overlays/simple/deployment.yaml) 
+
+dns.example
+:   @@snip [dns.example](../snippets/kubernetes/overlays/simple/dns.example) 
+
+### Deploy a simple otoroshi instanciation on a bare metal kubernetes cluster
+
+Here we have 2 replicas connected to the same redis instance. Nothing fancy. The otoroshi instance are exposed as `nodePort` so you'll have to add a loadbalancer in front of your kubernetes nodes to route external traffic (TCP) to your otoroshi instances. You have to setup your DNS to bind otoroshi domain names to your loadbalancer (see the example below). 
+
+deployment.yaml
+:   @@snip [deployment.yaml](../snippets/kubernetes/overlays/simple-baremetal/deployment.yaml) 
+
+haproxy.example
+:   @@snip [haproxy.example](../snippets/kubernetes/overlays/simple-baremetal/haproxy.example) 
+
+nginx.example
+:   @@snip [nginx.example](../snippets/kubernetes/overlays/simple-baremetal/nginx.example) 
+
+dns.example
+:   @@snip [dns.example](../snippets/kubernetes/overlays/simple-baremetal/dns.example) 
+
+
+### Deploy a simple otoroshi instanciation on a bare metal kubernetes cluster using a DaemonSet
+
+Here we have one otoroshi instance on each kubernetes node (with the `otoroshi-kind: instance` label) with redis persistance. The otoroshi instances are exposed as `hostPort` so you'll have to add a loadbalancer in front of your kubernetes nodes to route external traffic (TCP) to your otoroshi instances. You have to setup your DNS to bind otoroshi domain names to your loadbalancer (see the example below). 
+
+deployment.yaml
+:   @@snip [deployment.yaml](../snippets/kubernetes/overlays/simple-baremetal-daemonset/deployment.yaml) 
+
+haproxy.example
+:   @@snip [haproxy.example](../snippets/kubernetes/overlays/simple-baremetal-daemonset/haproxy.example) 
+
+nginx.example
+:   @@snip [nginx.example](../snippets/kubernetes/overlays/simple-baremetal-daemonset/nginx.example) 
+
+dns.example
+:   @@snip [dns.example](../snippets/kubernetes/overlays/simple-baremetal-daemonset/dns.example) 
+
+### Deploy an otoroshi cluster on a cloud provider managed kubernetes cluster
+
+Here we have 2 replicas of an otoroshi leader connected to a redis instance and 2 replicas of an otoroshi worker connected to the leader. We use a service of type `LoadBalancer` to expose otoroshi leader/worker to the rest of the world. You have to setup your DNS to bind otoroshi domain names to the `LoadBalancer` external `CNAME` (see the example below)
+
+deployment.yaml
+:   @@snip [deployment.yaml](../snippets/kubernetes/overlays/cluster/deployment.yaml) 
+
+dns.example
+:   @@snip [dns.example](../snippets/kubernetes/overlays/cluster/dns.example) 
+
+### Deploy an otoroshi cluster on a bare metal kubernetes cluster
+
+Here we have 2 replicas of otoroshi leader connected to the same redis instance and 2 replicas for otoroshi worker. The otoroshi instances are exposed as `nodePort` so you'll have to add a loadbalancer in front of your kubernetes nodes to route external traffic (TCP) to your otoroshi instances. You have to setup your DNS to bind otoroshi domain names to your loadbalancer (see the example below). 
+
+deployment.yaml
+:   @@snip [deployment.yaml](../snippets/kubernetes/overlays/cluster-baremetal/deployment.yaml) 
+
+nginx.example
+:   @@snip [nginx.example](../snippets/kubernetes/overlays/cluster-baremetal/nginx.example) 
+
+dns.example
+:   @@snip [dns.example](../snippets/kubernetes/overlays/cluster-baremetal/dns.example) 
+
+dns.example
+:   @@snip [dns.example](../snippets/kubernetes/overlays/cluster-baremetal/dns.example) 
+
+### Deploy an otoroshi cluster on a bare metal kubernetes cluster using DaemonSet
+
+Here we have 1 otoroshi leader instance on each kubernetes node (with the `otoroshi-kind: leader` label) connected to the same redis instance and 1 otoroshi worker instance on each kubernetes node (with the `otoroshi-kind: worker` label). The otoroshi instances are exposed as `nodePort` so you'll have to add a loadbalancer in front of your kubernetes nodes to route external traffic (TCP) to your otoroshi instances. You have to setup your DNS to bind otoroshi domain names to your loadbalancer (see the example below). 
+
+deployment.yaml
+:   @@snip [deployment.yaml](../snippets/kubernetes/overlays/cluster-baremetal-daemonset/deployment.yaml) 
+
+nginx.example
+:   @@snip [nginx.example](../snippets/kubernetes/overlays/cluster-baremetal-daemonset/nginx.example) 
+
+dns.example
+:   @@snip [dns.example](../snippets/kubernetes/overlays/cluster-baremetal-daemonset/dns.example) 
+
+dns.example
+:   @@snip [dns.example](../snippets/kubernetes/overlays/cluster-baremetal-daemonset/dns.example) 
+
+## Using Otoroshi as an Ingress Controller
 
 If you want to use Otoroshi as an [Ingress Controller](https://kubernetes.io/fr/docs/concepts/services-networking/ingress/), just go to the danger zone, and in `Global scripts` add the job named `Kubernetes Ingress Controller`.
 
@@ -343,7 +422,7 @@ now you can use an existing apikey in the `http-app-group` to access your app
 curl -X GET https://httpapp.foo.bar/get -u existing-apikey-1:secret-1
 ```
 
-## Use Otoroshi CRDs for a better/full integration
+## Use Otoroshi CRDs as Ingress controller for a better/full integration
 
 Otoroshi provides some Custom Resource Definitions for kubernetes in order to manager Otoroshi related entities in kubernetes
 

@@ -9,10 +9,11 @@ You'll also have to configure your DNS to route otoroshi domain names to the loa
 ## DNS config. example
 
 ```
-otoroshi.your.otoroshi.domain      IN CNAME generated.cname.of.your.cluster.loadbalancer
-otoroshi-api.your.otoroshi.domain  IN CNAME generated.cname.of.your.cluster.loadbalancer
-privateapps.your.otoroshi.domain   IN CNAME generated.cname.of.your.cluster.loadbalancer
-api1.another.domain                IN CNAME generated.cname.of.your.cluster.loadbalancer
-api2.another.domain                IN CNAME generated.cname.of.your.cluster.loadbalancer
-*.api.the.api.domain               IN CNAME generated.cname.of.your.cluster.loadbalancer
+otoroshi.your.otoroshi.domain      IN CNAME generated.cname.for.leader.of.your.cluster.loadbalancer
+otoroshi-api.your.otoroshi.domain  IN CNAME generated.cname.for.leader.of.your.cluster.loadbalancer
+privateapps.your.otoroshi.domain   IN CNAME generated.cname.for.leader.of.your.cluster.loadbalancer
+
+api1.another.domain                IN CNAME generated.cname.for.worker.of.your.cluster.loadbalancer
+api2.another.domain                IN CNAME generated.cname.for.worker.of.your.cluster.loadbalancer
+*.api.the.api.domain               IN CNAME generated.cname.for.worker.of.your.cluster.loadbalancer
 ```

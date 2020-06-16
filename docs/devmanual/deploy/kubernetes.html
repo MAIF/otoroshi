@@ -223,71 +223,873 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
 <h1><a href="#kubernetes-integration" name="kubernetes-integration" class="anchor"><span class="anchor-link"></span></a>Kubernetes Integration</h1>
-<p>Starting at version 1.5.0, Otoroshi provides a native Kubernetes support. Multiple jobs (kubernetes controllers) are provided in order to</p>
+<p>Starting at version 1.5.0, Otoroshi provides a native Kubernetes support. Multiple otoroshi jobs (kubernetes controllers) are provided in order to</p>
 <ul>
   <li>sync kubernetes secrets of type <code>kubernetes.io/tls</code> to otoroshi certificates</li>
   <li>act as a standard ingress controller (supporting <code>Ingress</code> objects)</li>
   <li>provide Custom Resource Definitions (CRDs) in order to manage Otoroshi entities from Kubernetes and act as some kind of ingress controller with its own resources</li>
 </ul>
 <h2><a href="#deploy-otoroshi-on-your-kubernetes-cluster" name="deploy-otoroshi-on-your-kubernetes-cluster" class="anchor"><span class="anchor-link"></span></a>Deploy otoroshi on your kubernetes cluster</h2>
-<p>If you want to deploy otoroshi into your kubernetes cluster, you can download the deployment descriptors from <a href="https://github.com/MAIF/otoroshi/tree/master/kubernetes">https://github.com/MAIF/otoroshi/tree/master/kubernetes</a> and use kustomize to create your own overlay. The base descriptors are available at <a href="https://github.com/MAIF/otoroshi/tree/master/kubernetes/base">https://github.com/MAIF/otoroshi/tree/master/kubernetes/base</a></p>
-<p>Then deploy it with <code>kubectl apply -k ./overlays/myoverlay</code>. </p>
+<p>If you want to deploy otoroshi into your kubernetes cluster, you can download the deployment descriptors from <a href="https://github.com/MAIF/otoroshi/tree/master/kubernetes">https://github.com/MAIF/otoroshi/tree/master/kubernetes</a> and use kustomize to create your own overlay.</p>
 <p>You can also create a <code>kustomization.yaml</code> file with a remote base</p>
 <pre class="prettyprint"><code class="language-yaml">bases:
 - github.com/MAIF/otoroshi/kubernetes/overlays/prod/?ref=v1.5.0
 </code></pre>
-<p>and apply it</p>
-<p>An Helm chart will be available as soon as possible</p>
-<h3><a href="#deploy-otoroshi-on-your-baremetal-kubernetes-cluster" name="deploy-otoroshi-on-your-baremetal-kubernetes-cluster" class="anchor"><span class="anchor-link"></span></a>Deploy otoroshi on your baremetal kubernetes cluster</h3>
-<p>Baremetal cluster don&rsquo;t come with support for external loadbalancers. So you will have to provide this feature in order to route TCP traffic from outside into Otoroshi containers running inside kubernetes. You&rsquo;ll have to expose the following domain name through your own external load balancer (nginx, haproxy, otoroshi ;) ), and do the needed DNS setup accordingly</p>
-<ul>
-  <li><code>otoroshi.your.domain</code> going to kubernetes service <code>otoroshi-service</code> (or <code>otoroshi-leader-service</code> if in cluster mode)</li>
-  <li><code>otoroshi-api.your.domain</code> going to kubernetes service <code>otoroshi-service</code> (or <code>otoroshi-leader-service</code> if in cluster mode)</li>
-  <li><code>privateapps.your.domain</code> going to kubernetes service <code>otoroshi-service</code> (or <code>otoroshi-leader-service</code> if in cluster mode)</li>
-  <li><code>anything.you.want</code> going to kubernetes service <code>otoroshi-service</code> (or <code>otoroshi-worker-service</code> if in cluster mode)</li>
-</ul>
-<p>to expose otoroshi to the outside world, you can use either</p>
-<ul>
-  <li><code>nodePort</code></li>
-  <li><code>DaemonSet</code> deployement with <code>hostPort</code></li>
-</ul>
-<p>then just install <a href="https://www.nginx.com/">NGINX</a> or <a href="http://www.haproxy.org/">HAProxy</a> instances that will proxy your TCP calls (L4) to the kubernetes nodes from ports 80 and 443 to the ports chosen as <code>nodePort</code> or <code>hostPort</code>. Here are some example for configuring nginx or haproxy</p>
+<p>Then deploy it with <code>kubectl apply -k ./overlays/myoverlay</code>. </p>
+<p>Helm charts will be available as soon as possible</p>
+<p>Below, you will find example of deployment. Do not hesitate to adapt them to your needs</p>
+<h3><a href="#note-on-baremetal-cluster-installation" name="note-on-baremetal-cluster-installation" class="anchor"><span class="anchor-link"></span></a>Note on baremetal cluster installation</h3>
+<p>Baremetal cluster don&rsquo;t come with support for external loadbalancers. So you will have to provide this feature in order to route TCP traffic from outside into Otoroshi containers running inside kubernetes. You can also use projects like <a href="https://metallb.universe.tf/">MetalLB</a> that provide <code>LoadBalancer</code> services to baremetal clusters or you can use examples below.</p><div class="callout warning "><div class="callout-title">Warning</div>
+<p>We don&rsquo;t recommand running Otoroshi behind an existing ingress controller (or something like that) as you will not be able to use features like TCP proxying, TLS, mTLS, etc. Also, this additional layer of reverse proxy will increase call latencies.</p></div>
+<h3><a href="#common-manifests" name="common-manifests" class="anchor"><span class="anchor-link"></span></a>Common manifests</h3>
+<p>the following manifests are always needed. They create otoroshi CRDs, tokens, role, etc. Redis deployment is not mandatory, it&rsquo;s just an example. You can use your own existing setup.</p>
 <dl>
-  <dt>NGINX L4</dt>
+  <dt>rbac.yaml
+  </dt>
   <dd>
-  <pre class="prettyprint"><code class="language-conf">stream {
-
-  upstream back_http_nodes {
-    zone back_http_nodes 64k;
-    server 192.168.1.40:8080 max_fails=1;
-    server 192.168.1.41:8080 max_fails=1;
-    server 192.168.1.42:8080 max_fails=1;
-  }
-
-  upstream back_https_nodes {
-    zone back_https_nodes 64k;
-    server 192.168.1.40:8443 max_fails=1;
-    server 192.168.1.41:8443 max_fails=1;
-    server 192.168.1.42:8443 max_fails=1;
-  }
-
-  server {
-    listen     80;
-    proxy_pass back_http_nodes;
-    health_check;
-  }
-
-  server {
-    listen     443;
-    proxy_pass back_https_nodes;
-    health_check;
-  }
-  
-}
-</code></pre></dd>
-  <dt>HA Proxy L4</dt>
+  <pre class="prettyprint"><code class="language-yaml">---
+kind: ServiceAccount
+apiVersion: v1
+metadata:
+  name: otoroshi-admin-user
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: otoroshi-admin-user
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: otoroshi-admin-user
+subjects:
+- kind: ServiceAccount
+  name: otoroshi-admin-user
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: otoroshi-admin-user
+rules:
+  - apiGroups:
+      - &quot;&quot;
+    resources:
+      - services
+      - endpoints
+      - secrets
+    verbs:
+      - get
+      - list
+      - watch
+  # - apiGroups:
+  #     - &quot;&quot;
+  #   resources:
+  #     - secrets
+  #   verbs:
+  #     - update
+  #     - create
+  #     - delete
+  - apiGroups:
+      - extensions
+    resources:
+      - ingresses
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - extensions
+    resources:
+      - ingresses/status
+    verbs:
+      - update
+  - apiGroups:
+      - proxy.otoroshi.io
+    resources:
+      - service-groups
+      - service-descriptors
+      - apikeys
+      - certificates
+      - global-configs
+      - jwt-verifiers
+      - auth-modules
+      - scripts
+      - tcp-services
+      - admins
+    verbs:
+      - get
+      - list
+      - watch</code></pre></dd>
+  <dt>crds.yaml
+  </dt>
   <dd>
-  <pre class="prettyprint"><code class="language-conf">frontend front_nodes_http
+  <pre class="prettyprint"><code class="language-yaml">---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: service-groups.proxy.otoroshi.io
+spec:
+  group: proxy.otoroshi.io
+  version: v1alpha1
+  validation:
+    openAPIV3Schema:
+      type: object
+      properties:
+        spec:
+          type: object
+          properties:
+            name:
+              type: string
+            description:
+              type: string
+            metadata:
+              type: object
+  names:
+    kind: ServiceGroup
+    plural: service-groups
+    singular: service-group
+  scope: Namespaced
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: service-descriptors.proxy.otoroshi.io
+spec:
+  group: proxy.otoroshi.io
+  version: v1alpha1
+  validation:
+    openAPIV3Schema:
+      type: object
+      properties:
+        spec:
+          type: object
+          required: [&quot;targets&quot;, &quot;hosts&quot;]
+          properties:
+            group:
+              type: string
+            name:
+              type: string
+            env:
+              type: string
+            domain:
+              type: string
+            subdomain:
+              type: string
+            targets:
+              type: array
+            root:
+              type: string
+            matchingRoot:
+              type: string
+            stripPath:
+              type: boolean
+            enabled:
+              type: boolean
+            userFacing:
+              type: boolean
+            privateApp:
+              type: boolean
+            forceHttps:
+              type: boolean
+            maintenanceMode:
+              type: boolean
+            buildMode:
+              type: boolean
+            strictlyPrivate:
+              type: boolean
+            sendOtoroshiHeadersBack:
+              type: boolean
+            readOnly:
+              type: boolean
+            xForwardedHeaders:
+              type: boolean
+            overrideHost:
+              type: boolean
+            allowHttp10:
+              type: boolean
+            logAnalyticsOnServer:
+              type: boolean
+            useAkkaHttpClient:
+              type: boolean
+            useNewWSClient:
+              type: boolean
+            tcpUdpTunneling:
+              type: boolean
+            detectApiKeySooner:
+              type: boolean
+            letsEncrypt:
+              type: boolean
+            enforceSecureCommunication:
+              type: boolean
+            sendInfoToken:
+              type: boolean
+            sendStateChallenge:
+              type: boolean
+            securityExcludedPatterns:
+              type: array
+            publicPatterns:
+              type: array
+            privatePatterns:
+              type: array
+            additionalHeaders:
+              type: object
+            additionalHeadersOut:
+              type: object
+            missingOnlyHeadersIn:
+              type: object
+            missingOnlyHeadersOut:
+              type: object
+            removeHeadersIn:
+              type: array
+            removeHeadersOut:
+              type: array
+            headersVerification:
+              type: object
+            matchingHeaders:
+              type: object
+            metadata:
+              type: object
+            hosts:
+              type: array
+            paths:
+              type: array
+            issueCert:
+              type: boolean
+            issueCertCA:
+              type: string
+  names:
+    kind: ServiceDescriptor
+    plural: service-descriptors
+    singular: service-descriptor
+  scope: Namespaced
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: apikeys.proxy.otoroshi.io
+spec:
+  group: proxy.otoroshi.io
+  version: v1alpha1
+  validation:
+    openAPIV3Schema:
+      type: object
+      properties:
+        spec:
+          type: object
+          properties:
+            daikokuToken:
+              type: string
+            secretName: 
+              type: string
+            exportSecret:
+              type: boolean
+            clientId:
+              type: string
+            clientSecret:
+              type: string
+            clientName:
+              type: string
+            authorizedGroup:
+              type: string
+            group:
+              type: string
+            enabled:
+              type: boolean
+            readOnly:
+              type: boolean
+            allowClientIdOnly:
+              type: boolean
+            throttlingQuota:
+              type: integer
+              format: int64
+            dailyQuota:
+              type: integer
+              format: int64
+            monthlyQuota:
+              type: integer
+              format: int64
+            constrainedServicesOnly:
+              type: boolean
+            validUntil:
+              type: integer
+              format: int64
+            tags:
+              type: array
+            metadata:
+              type: object
+  names:
+    kind: ApiKey
+    plural: apikeys
+    singular: apikey
+  scope: Namespaced
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: certificates.proxy.otoroshi.io
+spec:
+  group: proxy.otoroshi.io
+  version: v1alpha1
+  validation:
+    openAPIV3Schema:
+      type: object
+      properties:
+        spec:
+          type: object
+          required: [&quot;csr&quot;]
+          properties:
+            name:
+              type: string
+            description:
+              type: string
+            secretName: 
+              type: string
+            exportSecret:
+              type: boolean
+            selfSigned:
+              type: boolean
+            ca:
+              type: boolean
+            autoRenew:
+              type: boolean
+            letsEncrypt:
+              type: boolean
+            client:
+              type: boolean
+            entityMetadata:
+              type: object
+            csr:
+              type: object
+  names:
+    kind: Certificate
+    plural: certificates
+    singular: certificate
+  scope: Namespaced
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: global-configs.proxy.otoroshi.io
+spec:
+  group: proxy.otoroshi.io
+  version: v1alpha1
+  names:
+    kind: GlobalConfig
+    plural: global-configs
+    singular: global-config
+  scope: Namespaced
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: jwt-verifiers.proxy.otoroshi.io
+spec:
+  group: proxy.otoroshi.io
+  version: v1alpha1
+  names:
+    kind: JwtVerifier
+    plural: jwt-verifiers
+    singular: jwt-verifier
+  scope: Namespaced
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: auth-modules.proxy.otoroshi.io
+spec:
+  group: proxy.otoroshi.io
+  version: v1alpha1
+  names:
+    kind: AuthModule
+    plural: auth-modules
+    singular: auth-module
+  scope: Namespaced
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: scripts.proxy.otoroshi.io
+spec:
+  group: proxy.otoroshi.io
+  version: v1alpha1
+  validation:
+    openAPIV3Schema:
+      type: object
+      properties:
+        spec:
+          type: object
+          required: [&quot;code&quot;, &quot;type&quot;]
+          properties:
+            name:
+              type: string
+            desc:
+              type: string
+            code:
+              type: string
+            type:
+              type: string
+            metadata:
+              type: object
+  names:
+    kind: Script
+    plural: scripts
+    singular: script
+  scope: Namespaced
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: tcp-services.proxy.otoroshi.io
+spec:
+  group: proxy.otoroshi.io
+  version: v1alpha1
+  names:
+    kind: TcpService
+    plural: tcp-services
+    singular: tcp-service
+  scope: Namespaced
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: admins.proxy.otoroshi.io
+spec:
+  group: proxy.otoroshi.io
+  version: v1alpha1
+  names:
+    kind: Admin
+    plural: admins
+    singular: admin
+  scope: Namespaced</code></pre></dd>
+  <dt>redis.yaml
+  </dt>
+  <dd>
+  <pre class="prettyprint"><code class="language-yaml">apiVersion: v1
+kind: Service
+metadata:
+  name: redis-leader-service
+spec:
+  ports:
+    - port: 6379
+      name: redis
+  selector:
+    run: redis-leader-deployment
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-follower-service
+spec:
+  ports:
+    - port: 6379
+      name: redis
+  selector:
+    run: redis-follower-deployment
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis-leader-deployment
+spec:
+  selector:
+    matchLabels:
+      run: redis-leader-deployment
+  serviceName: redis-leader-service
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        run: redis-leader-deployment
+    spec:
+      containers:
+        - name: redis-leader-container
+          image: redis
+          imagePullPolicy: Always
+          command: [&quot;redis-server&quot;, &quot;--appendonly&quot;, &quot;yes&quot;]
+          ports:
+            - containerPort: 6379
+              name: redis
+          volumeMounts:
+          - name: redis-leader-storage
+            mountPath: /data
+            readOnly: false
+          readinessProbe:
+            exec:
+              command:
+              - sh
+              - -c
+              - &quot;redis-cli -h $(hostname) ping&quot;
+            initialDelaySeconds: 15
+            timeoutSeconds: 5
+          livenessProbe:
+            exec:
+              command:
+              - sh
+              - -c
+              - &quot;redis-cli -h $(hostname) ping&quot;
+            initialDelaySeconds: 20
+            periodSeconds: 3
+  volumeClaimTemplates:
+  - metadata:
+      name: redis-leader-storage
+      labels:
+        name: redis-leader-storage
+      annotations:
+        volume.alpha.kubernetes.io/storage-class: anything
+    spec:
+      accessModes: [ &quot;ReadWriteOnce&quot; ]
+      resources:
+        requests:
+          storage: 100Mi
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis-follower-deployment
+spec:
+  selector:
+    matchLabels:
+      run: redis-follower-deployment
+  serviceName: redis-follower-service
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        run: redis-follower-deployment
+    spec:
+      containers:
+        - name: redis-follower-container
+          image: redis
+          imagePullPolicy: Always
+          command: [&quot;redis-server&quot;, &quot;--appendonly&quot;, &quot;yes&quot;, &quot;--slaveof&quot;, &quot;redis-leader-service&quot;, &quot;6379&quot;]
+          ports:
+            - containerPort: 6379
+              name: redis
+          volumeMounts:
+          - name: redis-follower-storage
+            mountPath: /data
+            readOnly: false
+          readinessProbe:
+            exec:
+              command:
+              - sh
+              - -c
+              - &quot;redis-cli -h $(hostname) ping&quot;
+            initialDelaySeconds: 15
+            timeoutSeconds: 5
+          livenessProbe:
+            exec:
+              command:
+              - sh
+              - -c
+              - &quot;redis-cli -h $(hostname) ping&quot;
+            initialDelaySeconds: 20
+            periodSeconds: 3
+  volumeClaimTemplates:
+  - metadata:
+      name: redis-follower-storage
+      labels:
+        name: redis-follower-storage
+      annotations:
+        volume.alpha.kubernetes.io/storage-class: anything
+    spec:
+      accessModes: [ &quot;ReadWriteOnce&quot; ]
+      resources:
+        requests:
+          storage: 100Mi</code></pre></dd>
+</dl>
+<h3><a href="#deploy-a-simple-otoroshi-instanciation-on-a-cloud-provider-managed-kubernetes-cluster" name="deploy-a-simple-otoroshi-instanciation-on-a-cloud-provider-managed-kubernetes-cluster" class="anchor"><span class="anchor-link"></span></a>Deploy a simple otoroshi instanciation on a cloud provider managed kubernetes cluster</h3>
+<p>Here we have 2 replicas connected to the same redis instance. Nothing fancy. We use a service of type <code>LoadBalancer</code> to expose otoroshi to the rest of the world. You have to setup your DNS to bind otoroshi domain names to the <code>LoadBalancer</code> external <code>CNAME</code> (see the example below)</p>
+<dl>
+  <dt>deployment.yaml
+  </dt>
+  <dd>
+  <pre class="prettyprint"><code class="language-yaml">apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otoroshi-deployment
+spec:
+  selector:
+    matchLabels:
+      run: otoroshi-deployment
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        run: otoroshi-deployment
+    spec:
+      serviceAccountName: otoroshi-admin-user
+      terminationGracePeriodSeconds: 60
+      hostNetwork: false
+      containers:
+      - image: maif/otoroshi:1.5.0-jdk11
+        imagePullPolicy: IfNotPresent
+        name: otoroshi
+        ports:
+          - containerPort: 8080
+            name: &quot;http&quot;
+            protocol: TCP
+          - containerPort: 8443
+            name: &quot;https&quot;
+            protocol: TCP
+        env:
+          - name: APP_STORAGE_ROOT
+            value: otoroshi
+          - name: OTOROSHI_INITIAL_ADMIN_PASSWORD
+            value: ${password}
+          - name: APP_DOMAIN
+            value: ${domain}
+          - name: APP_STORAGE
+            value: lettuce
+          - name: REDIS_URL
+            value: ${redisUrl}
+            # value: redis://redis-leader-service:6379/0
+          - name: ADMIN_API_CLIENT_ID
+            value: ${clientId}
+          - name: ADMIN_API_CLIENT_SECRET
+            value: ${clientSecret}
+          - name: ADMIN_API_ADDITIONAL_EXPOSED_DOMAIN
+            value: otoroshi-api-service.${namespace}.svc.cluster.local
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          failureThreshold: 1
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 2
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          failureThreshold: 3
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 2
+        resources:
+          # requests:
+          #   cpu: &quot;100m&quot;
+          #   memory: &quot;50Mi&quot;
+          # limits:
+          #   cpu: &quot;4G&quot;
+          #   memory: &quot;4Gi&quot;
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: otoroshi-service
+spec:
+  selector:
+    run: otoroshi-deployment
+  ports:
+  - port: 8080
+    name: &quot;http&quot;
+    targetPort: &quot;http&quot;
+  - port: 8443
+    name: &quot;https&quot;
+    targetPort: &quot;https&quot;
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: otoroshi-external-service
+spec:
+  type: LoadBalancer
+  selector:
+    run: otoroshi-deployment
+  ports:
+  - port: 80
+    name: &quot;http&quot;
+    targetPort: &quot;http&quot;
+  - port: 443
+    name: &quot;https&quot;
+    targetPort: &quot;https&quot;
+---
+apiVersion: proxy.otoroshi.io/v1alpha1
+kind: Certificate
+metadata:
+  name: otoroshi-service-certificate
+spec:
+  description: certificate for otoroshi-service
+  autoRenew: true
+  csr:
+    issuer: CN=Otoroshi Root
+    hosts: 
+    - otoroshi-service
+    - otoroshi-service.${namespace}.svc.cluster.local
+    - otoroshi-api-service.${namespace}.svc.cluster.local
+    - otoroshi.${domain}
+    - otoroshi-api.${domain}
+    - privateapps.${domain}
+    key:
+      algo: rsa
+      size: 2048
+    subject: uid=otoroshi-service-cert, O=Otoroshi
+    client: false
+    ca: false
+    duration: 31536000000
+    signatureAlg: SHA256WithRSAEncryption
+    digestAlg: SHA-256</code></pre></dd>
+  <dt>dns.example
+  </dt>
+  <dd>
+  <pre class="prettyprint"><code class="language-example">otoroshi.your.otoroshi.domain      IN CNAME generated.cname.of.your.cluster.loadbalancer
+otoroshi-api.your.otoroshi.domain  IN CNAME generated.cname.of.your.cluster.loadbalancer
+privateapps.your.otoroshi.domain   IN CNAME generated.cname.of.your.cluster.loadbalancer
+api1.another.domain                IN CNAME generated.cname.of.your.cluster.loadbalancer
+api2.another.domain                IN CNAME generated.cname.of.your.cluster.loadbalancer
+*.api.the.api.domain               IN CNAME generated.cname.of.your.cluster.loadbalancer</code></pre></dd>
+</dl>
+<h3><a href="#deploy-a-simple-otoroshi-instanciation-on-a-baremetal-kubernetes-cluster" name="deploy-a-simple-otoroshi-instanciation-on-a-baremetal-kubernetes-cluster" class="anchor"><span class="anchor-link"></span></a>Deploy a simple otoroshi instanciation on a baremetal kubernetes cluster</h3>
+<p>Here we have 2 replicas connected to the same redis instance. Nothing fancy. The otoroshi instance are exposed as <code>nodePort</code> so you&rsquo;ll have to add a loadbalancer in front of your kubernetes nodes to route external traffic (TCP) to your otoroshi instances. You have to setup your DNS to bind otoroshi domain names to your loadbalancer (see the example below). </p>
+<dl>
+  <dt>deployment.yaml
+  </dt>
+  <dd>
+  <pre class="prettyprint"><code class="language-yaml">apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otoroshi-deployment
+spec:
+  selector:
+    matchLabels:
+      run: otoroshi-deployment
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        run: otoroshi-deployment
+    spec:
+      serviceAccountName: otoroshi-admin-user
+      terminationGracePeriodSeconds: 60
+      hostNetwork: false
+      containers:
+      - image: maif/otoroshi:1.5.0-jdk11
+        imagePullPolicy: IfNotPresent
+        name: otoroshi
+        ports:
+          - containerPort: 8080
+            name: &quot;http&quot;
+            protocol: TCP
+          - containerPort: 8443
+            name: &quot;https&quot;
+            protocol: TCP
+        env:
+          - name: APP_STORAGE_ROOT
+            value: otoroshi
+          - name: OTOROSHI_INITIAL_ADMIN_PASSWORD
+            value: ${password}
+          - name: APP_DOMAIN
+            value: ${domain}
+          - name: APP_STORAGE
+            value: lettuce
+          - name: REDIS_URL
+            value: ${redisUrl}
+            # value: redis://redis-leader-service:6379/0
+          - name: ADMIN_API_CLIENT_ID
+            value: ${clientId}
+          - name: ADMIN_API_CLIENT_SECRET
+            value: ${clientSecret}
+          - name: ADMIN_API_ADDITIONAL_EXPOSED_DOMAIN
+            value: otoroshi-api-service.${namespace}.svc.cluster.local
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          failureThreshold: 1
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 2
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          failureThreshold: 3
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 2
+        resources:
+          # requests:
+          #   cpu: &quot;100m&quot;
+          #   memory: &quot;50Mi&quot;
+          # limits:
+          #   cpu: &quot;4G&quot;
+          #   memory: &quot;4Gi&quot;
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: otoroshi-service
+spec:
+  selector:
+    run: otoroshi-deployment
+  ports:
+  - port: 8080
+    name: &quot;http&quot;
+    targetPort: &quot;http&quot;
+  - port: 8443
+    name: &quot;https&quot;
+    targetPort: &quot;https&quot;
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: otoroshi-external-service
+spec:
+  selector:
+    run: otoroshi-deployment
+  ports:
+  - port: 80
+    name: &quot;http&quot;
+    targetPort: &quot;http&quot;
+    nodePort: 31080
+  - port: 443
+    name: &quot;https&quot;
+    targetPort: &quot;https&quot;
+    nodePort: 31443
+---
+apiVersion: proxy.otoroshi.io/v1alpha1
+kind: Certificate
+metadata:
+  name: otoroshi-service-certificate
+spec:
+  description: certificate for otoroshi-service
+  autoRenew: true
+  csr:
+    issuer: CN=Otoroshi Root
+    hosts: 
+    - otoroshi-service
+    - otoroshi-service.${namespace}.svc.cluster.local
+    - otoroshi-api-service.${namespace}.svc.cluster.local
+    - otoroshi.${domain}
+    - otoroshi-api.${domain}
+    - privateapps.${domain}
+    key:
+      algo: rsa
+      size: 2048
+    subject: uid=otoroshi-service-cert, O=Otoroshi
+    client: false
+    ca: false
+    duration: 31536000000
+    signatureAlg: SHA256WithRSAEncryption
+    digestAlg: SHA-256</code></pre></dd>
+  <dt>haproxy.example
+  </dt>
+  <dd>
+  <pre class="prettyprint"><code class="language-example">frontend front_nodes_http
     bind *:80
     mode tcp
     default_backend back_http_nodes
@@ -302,23 +1104,1259 @@ frontend front_nodes_https
 backend back_http_nodes
     mode tcp
     balance roundrobin
-    server node1 192.168.1.40:8080
-    server node2 192.168.1.41:8080
-    server node3 192.168.1.42:8080
+    server kubernetes-node1 10.2.2.40:31080
+    server kubernetes-node2 10.2.2.41:31080
+    server kubernetes-node3 10.2.2.42:31080
     timeout connect        10s
     timeout server          1m
 
 backend back_https_nodes
     mode tcp
     balance roundrobin
-    server node1 192.168.1.40:8443
-    server node2 192.168.1.41:8443
-    server node3 192.168.1.42:8443
+    server kubernetes-node1 10.2.2.40:31443
+    server kubernetes-node2 10.2.2.41:31443
+    server kubernetes-node3 10.2.2.42:31443
     timeout connect        10s
     timeout server          1m</code></pre></dd>
+  <dt>nginx.example
+  </dt>
+  <dd>
+  <pre class="prettyprint"><code class="language-example">stream {
+
+  upstream back_http_nodes {
+    zone back_http_nodes 64k;
+    server 10.2.2.40:31080 max_fails=1;
+    server 10.2.2.41:31080 max_fails=1;
+    server 10.2.2.42:31080 max_fails=1;
+  }
+
+  upstream back_https_nodes {
+    zone back_https_nodes 64k;
+    server 10.2.2.40:31443 max_fails=1;
+    server 10.2.2.41:31443 max_fails=1;
+    server 10.2.2.42:31443 max_fails=1;
+  }
+
+  server {
+    listen     80;
+    proxy_pass back_http_nodes;
+    health_check;
+  }
+
+  server {
+    listen     443;
+    proxy_pass back_https_nodes;
+    health_check;
+  }
+  
+}</code></pre></dd>
+  <dt>dns.example
+  </dt>
+  <dd>
+  <pre class="prettyprint"><code class="language-example"># if your loadbalancer is at ip address 10.2.2.50
+
+otoroshi.your.otoroshi.domain      IN A 10.2.2.50
+otoroshi-api.your.otoroshi.domain  IN A 10.2.2.50
+privateapps.your.otoroshi.domain   IN A 10.2.2.50
+api1.another.domain                IN A 10.2.2.50
+api2.another.domain                IN A 10.2.2.50
+*.api.the.api.domain               IN A 10.2.2.50</code></pre></dd>
 </dl>
-<p>You can also use projects like <a href="https://metallb.universe.tf/">MetalLB</a> that provide <code>LoadBalancer</code> services to baremetal clusters</p><div class="callout warning "><div class="callout-title">Warning</div>
-<p>We don&rsquo;t recommand running Otoroshi behind an existing ingress controller (or something like that) as you will not be able to use features like TCP proxying, TLS, mTLS, etc. Also, this additional layer of reverse proxy will increase call latencies.</p></div>
+<h3><a href="#deploy-a-simple-otoroshi-instanciation-on-a-baremetal-kubernetes-cluster-using-a-daemonset" name="deploy-a-simple-otoroshi-instanciation-on-a-baremetal-kubernetes-cluster-using-a-daemonset" class="anchor"><span class="anchor-link"></span></a>Deploy a simple otoroshi instanciation on a baremetal kubernetes cluster using a DaemonSet</h3>
+<p>Here we have one otoroshi instance on each kubernetes node (with the <code>otoroshi-kind: instance</code> label) with redis persistance. The otoroshi instances are exposed as <code>hostPort</code> so you&rsquo;ll have to add a loadbalancer in front of your kubernetes nodes to route external traffic (TCP) to your otoroshi instances. You have to setup your DNS to bind otoroshi domain names to your loadbalancer (see the example below). </p>
+<dl>
+  <dt>deployment.yaml
+  </dt>
+  <dd>
+  <pre class="prettyprint"><code class="language-yaml">apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: otoroshi-deployment
+spec:
+  selector:
+    matchLabels:
+      run: otoroshi-deployment
+  template:
+    metadata:
+      labels:
+        run: otoroshi-deployment
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: otoroshi-kind
+                operator: In
+                values:
+                - instance
+      tolerations:
+      - key: node-role.kubernetes.io/master
+        effect: NoSchedule
+      serviceAccountName: otoroshi-admin-user
+      terminationGracePeriodSeconds: 60
+      restartPolicy: Always
+      hostNetwork: false
+      containers:
+      - image: maif/otoroshi:1.5.0-jdk11
+        imagePullPolicy: IfNotPresent
+        name: otoroshi
+        ports:
+          - containerPort: 8080
+            hostPort: 41080
+            name: &quot;http&quot;
+            protocol: TCP
+          - containerPort: 8443
+            hostPort: 41443
+            name: &quot;https&quot;
+            protocol: TCP
+        env:
+          - name: APP_STORAGE_ROOT
+            value: otoroshi
+          - name: OTOROSHI_INITIAL_ADMIN_PASSWORD
+            value: ${password}
+          - name: APP_DOMAIN
+            value: ${domain}
+          - name: APP_STORAGE
+            value: lettuce
+          - name: REDIS_URL
+            value: ${redisUrl}
+            # value: redis://redis-leader-service:6379/0
+          - name: ADMIN_API_CLIENT_ID
+            value: ${clientId}
+          - name: ADMIN_API_CLIENT_SECRET
+            value: ${clientSecret}
+          - name: ADMIN_API_ADDITIONAL_EXPOSED_DOMAIN
+            value: otoroshi-api-service.${namespace}.svc.cluster.local
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          failureThreshold: 1
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 2
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          failureThreshold: 3
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 2
+        resources:
+          # requests:
+          #   cpu: &quot;100m&quot;
+          #   memory: &quot;50Mi&quot;
+          # limits:
+          #   cpu: &quot;4G&quot;
+          #   memory: &quot;4Gi&quot;
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: otoroshi-service
+spec:
+  selector:
+    run: otoroshi-deployment
+  ports:
+  - port: 8080
+    name: &quot;http&quot;
+    targetPort: &quot;http&quot;
+  - port: 8443
+    name: &quot;https&quot;
+    targetPort: &quot;https&quot;
+---
+apiVersion: proxy.otoroshi.io/v1alpha1
+kind: Certificate
+metadata:
+  name: otoroshi-service-certificate
+spec:
+  description: certificate for otoroshi-service
+  autoRenew: true
+  csr:
+    issuer: CN=Otoroshi Root
+    hosts: 
+    - otoroshi-service
+    - otoroshi-service.${namespace}.svc.cluster.local
+    - otoroshi-api-service.${namespace}.svc.cluster.local
+    - otoroshi.${domain}
+    - otoroshi-api.${domain}
+    - privateapps.${domain}
+    key:
+      algo: rsa
+      size: 2048
+    subject: uid=otoroshi-service-cert, O=Otoroshi
+    client: false
+    ca: false
+    duration: 31536000000
+    signatureAlg: SHA256WithRSAEncryption
+    digestAlg: SHA-256</code></pre></dd>
+  <dt>haproxy.example
+  </dt>
+  <dd>
+  <pre class="prettyprint"><code class="language-example">frontend front_nodes_http
+    bind *:80
+    mode tcp
+    default_backend back_http_nodes
+    timeout client          1m
+
+frontend front_nodes_https
+    bind *:443
+    mode tcp
+    default_backend back_https_nodes
+    timeout client          1m
+
+backend back_http_nodes
+    mode tcp
+    balance roundrobin
+    server kubernetes-node1 10.2.2.40:41080
+    server kubernetes-node2 10.2.2.41:41080
+    server kubernetes-node3 10.2.2.42:41080
+    timeout connect        10s
+    timeout server          1m
+
+backend back_https_nodes
+    mode tcp
+    balance roundrobin
+    server kubernetes-node1 10.2.2.40:41443
+    server kubernetes-node2 10.2.2.41:41443
+    server kubernetes-node3 10.2.2.42:41443
+    timeout connect        10s
+    timeout server          1m</code></pre></dd>
+  <dt>nginx.example
+  </dt>
+  <dd>
+  <pre class="prettyprint"><code class="language-example">stream {
+
+  upstream back_http_nodes {
+    zone back_http_nodes 64k;
+    server 10.2.2.40:41080 max_fails=1;
+    server 10.2.2.41:41080 max_fails=1;
+    server 10.2.2.42:41080 max_fails=1;
+  }
+
+  upstream back_https_nodes {
+    zone back_https_nodes 64k;
+    server 10.2.2.40:41443 max_fails=1;
+    server 10.2.2.41:41443 max_fails=1;
+    server 10.2.2.42:41443 max_fails=1;
+  }
+
+  server {
+    listen     80;
+    proxy_pass back_http_nodes;
+    health_check;
+  }
+
+  server {
+    listen     443;
+    proxy_pass back_https_nodes;
+    health_check;
+  }
+  
+}</code></pre></dd>
+  <dt>dns.example
+  </dt>
+  <dd>
+  <pre class="prettyprint"><code class="language-example"># if your loadbalancer is at ip address 10.2.2.50
+
+otoroshi.your.otoroshi.domain      IN A 10.2.2.50
+otoroshi-api.your.otoroshi.domain  IN A 10.2.2.50
+privateapps.your.otoroshi.domain   IN A 10.2.2.50
+api1.another.domain                IN A 10.2.2.50
+api2.another.domain                IN A 10.2.2.50
+*.api.the.api.domain               IN A 10.2.2.50</code></pre></dd>
+</dl>
+<h3><a href="#deploy-an-otoroshi-cluster-on-a-cloud-provider-managed-kubernetes-cluster" name="deploy-an-otoroshi-cluster-on-a-cloud-provider-managed-kubernetes-cluster" class="anchor"><span class="anchor-link"></span></a>Deploy an otoroshi cluster on a cloud provider managed kubernetes cluster</h3>
+<p>Here we have 2 replicas of an otoroshi leader connected to a redis instance and 2 replicas of an otoroshi worker connected to the leader. We use a service of type <code>LoadBalancer</code> to expose otoroshi leader/worker to the rest of the world. You have to setup your DNS to bind otoroshi domain names to the <code>LoadBalancer</code> external <code>CNAME</code> (see the example below)</p>
+<dl>
+  <dt>deployment.yaml
+  </dt>
+  <dd>
+  <pre class="prettyprint"><code class="language-yaml">---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otoroshi-leader-deployment
+spec:
+  selector:
+    matchLabels:
+      run: otoroshi-leader-deployment
+  template:
+    metadata:
+      labels:
+        run: otoroshi-leader-deployment
+    replicas: 2
+    strategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxUnavailable: 1
+        maxSurge: 1
+    spec:
+      serviceAccountName: otoroshi-admin-user
+      terminationGracePeriodSeconds: 60
+      hostNetwork: false
+      restartPolicy: Always
+      containers:
+      - image: maif/otoroshi:1.5.0-jdk11
+        imagePullPolicy: IfNotPresent
+        name: otoroshi-leader
+        ports:
+          - containerPort: 8080
+            name: &quot;http&quot;
+            protocol: TCP
+          - containerPort: 8443
+            name: &quot;https&quot;
+            protocol: TCP
+        env:
+          - name: APP_STORAGE_ROOT
+            value: otoroshi
+          - name: OTOROSHI_INITIAL_ADMIN_PASSWORD
+            value: ${password}
+          - name: APP_DOMAIN
+            value: ${domain}
+          - name: APP_STORAGE
+            value: lettuce
+          - name: REDIS_URL
+            value: ${redisUrl}
+            # value: redis://redis-leader-service:6379/0
+          - name: CLUSTER_MODE
+            value: Leader
+          - name: CLUSTER_AUTO_UPDATE_STATE
+            value: &#39;true&#39;
+          - name: CLUSTER_MTLS_ENABLED
+            value: &#39;true&#39;
+          - name: CLUSTER_MTLS_LOOSE
+            value: &#39;true&#39;
+          - name: CLUSTER_MTLS_TRUST_ALL
+            value: &#39;true&#39;
+          - name: CLUSTER_LEADER_URL
+            value: https://otoroshi-leader-api-service.${namespace}.svc.cluster.local:8443
+          - name: CLUSTER_LEADER_HOST
+            value: otoroshi-leader-api-service.${namespace}.svc.cluster.local
+          - name: ADMIN_API_ADDITIONAL_EXPOSED_DOMAIN
+            value: otoroshi-leader-api-service.${namespace}.svc.cluster.local
+          - name: ADMIN_API_CLIENT_ID
+            value: ${clientId}
+          - name: CLUSTER_LEADER_CLIENT_ID
+            value: ${clientId}
+          - name: ADMIN_API_CLIENT_SECRET
+            value: ${clientSecret}
+          - name: CLUSTER_LEADER_CLIENT_SECRET
+            value: ${clientSecret}
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          failureThreshold: 1
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 2
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          failureThreshold: 3
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 2
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otoroshi-worker-deployment
+spec:
+  selector:
+    matchLabels:
+      run: otoroshi-worker-deployment
+  template:
+    metadata:
+      labels:
+        run: otoroshi-worker-deployment
+    replicas: 2
+    strategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxUnavailable: 1
+        maxSurge: 1
+    spec:
+      serviceAccountName: otoroshi-admin-user
+      terminationGracePeriodSeconds: 60
+      hostNetwork: false
+      restartPolicy: Always   
+      containers:
+      - image: maif/otoroshi:1.5.0-jdk11
+        imagePullPolicy: IfNotPresent
+        name: otoroshi-worker
+        ports:
+          - containerPort: 8080
+            name: &quot;http&quot;
+            protocol: TCP
+          - containerPort: 8443
+            name: &quot;https&quot;
+            protocol: TCP
+        env:
+          - name: APP_STORAGE_ROOT
+            value: otoroshi
+          - name: OTOROSHI_INITIAL_ADMIN_PASSWORD
+            value: ${password}
+          - name: APP_DOMAIN
+            value: ${domain}
+          - name: CLUSTER_MODE
+            value: Worker
+          - name: CLUSTER_AUTO_UPDATE_STATE
+            value: &#39;true&#39;
+          - name: CLUSTER_MTLS_ENABLED
+            value: &#39;true&#39;
+          - name: CLUSTER_MTLS_LOOSE
+            value: &#39;true&#39;
+          - name: CLUSTER_MTLS_TRUST_ALL
+            value: &#39;true&#39;
+          - name: CLUSTER_LEADER_URL
+            value: https://otoroshi-leader-api-service.${namespace}.svc.cluster.local:8443
+          - name: CLUSTER_LEADER_HOST
+            value: otoroshi-leader-api-service.${namespace}.svc.cluster.local
+          - name: ADMIN_API_ADDITIONAL_EXPOSED_DOMAIN
+            value: otoroshi-leader-api-service.${namespace}.svc.cluster.local
+          - name: ADMIN_API_CLIENT_ID
+            value: ${clientId}
+          - name: CLUSTER_LEADER_CLIENT_ID
+            value: ${clientId}
+          - name: ADMIN_API_CLIENT_SECRET
+            value: ${clientSecret}
+          - name: CLUSTER_LEADER_CLIENT_SECRET
+            value: ${clientSecret}
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          failureThreshold: 1
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 2
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          failureThreshold: 3
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 2
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: otoroshi-leader-api-service
+spec:
+  selector:
+    run: otoroshi-leader-deployment
+  ports:
+  - port: 8080
+    name: &quot;http&quot;
+    targetPort: &quot;http&quot;
+  - port: 8443
+    name: &quot;https&quot;
+    targetPort: &quot;https&quot;
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: otoroshi-leader-service
+spec:
+  selector:
+    run: otoroshi-leader-deployment
+  ports:
+  - port: 8080
+    name: &quot;http&quot;
+    targetPort: &quot;http&quot;
+  - port: 8443
+    name: &quot;https&quot;
+    targetPort: &quot;https&quot;
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: otoroshi-worker-service
+spec:
+  selector:
+    run: otoroshi-worker-deployment
+  ports:
+  - port: 8080
+    name: &quot;http&quot;
+    targetPort: &quot;http&quot;
+  - port: 8443
+    name: &quot;https&quot;
+    targetPort: &quot;https&quot;
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: otoroshi-leader-external-service
+spec:
+  type: LoadBalancer
+  selector:
+    run: otoroshi-leader-deployment
+  ports:
+  - port: 80
+    name: &quot;http&quot;
+    targetPort: &quot;http&quot;
+  - port: 443
+    name: &quot;https&quot;
+    targetPort: &quot;https&quot;
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: otoroshi-worker-external-service
+spec:
+  type: LoadBalancer
+  selector:
+    run: otoroshi-worker-deployment
+  ports:
+  - port: 80
+    name: &quot;http&quot;
+    targetPort: &quot;http&quot;
+  - port: 443
+    name: &quot;https&quot;
+    targetPort: &quot;https&quot;
+---
+apiVersion: proxy.otoroshi.io/v1alpha1
+kind: Certificate
+metadata:
+  name: otoroshi-service-certificate
+spec:
+  description: certificate for otoroshi-service
+  autoRenew: true
+  csr:
+    issuer: CN=Otoroshi Root
+    hosts: 
+    - otoroshi-service
+    - otoroshi-service.${namespace}.svc.cluster.local
+    - otoroshi-api-service.${namespace}.svc.cluster.local
+    - otoroshi.${domain}
+    - otoroshi-api.${domain}
+    - privateapps.${domain}
+    key:
+      algo: rsa
+      size: 2048
+    subject: uid=otoroshi-service-cert, O=Otoroshi
+    client: false
+    ca: false
+    duration: 31536000000
+    signatureAlg: SHA256WithRSAEncryption
+    digestAlg: SHA-256</code></pre></dd>
+  <dt>dns.example
+  </dt>
+  <dd>
+  <pre class="prettyprint"><code class="language-example">otoroshi.your.otoroshi.domain      IN CNAME generated.cname.for.leader.of.your.cluster.loadbalancer
+otoroshi-api.your.otoroshi.domain  IN CNAME generated.cname.for.leader.of.your.cluster.loadbalancer
+privateapps.your.otoroshi.domain   IN CNAME generated.cname.for.leader.of.your.cluster.loadbalancer
+
+api1.another.domain                IN CNAME generated.cname.for.worker.of.your.cluster.loadbalancer
+api2.another.domain                IN CNAME generated.cname.for.worker.of.your.cluster.loadbalancer
+*.api.the.api.domain               IN CNAME generated.cname.for.worker.of.your.cluster.loadbalancer</code></pre></dd>
+</dl>
+<h3><a href="#deploy-an-otoroshi-cluster-on-a-baremetal-kubernetes-cluster" name="deploy-an-otoroshi-cluster-on-a-baremetal-kubernetes-cluster" class="anchor"><span class="anchor-link"></span></a>Deploy an otoroshi cluster on a baremetal kubernetes cluster</h3>
+<p>Here we have 2 replicas of otoroshi leader connected to the same redis instance and 2 replicas for otoroshi worker. The otoroshi instances are exposed as <code>nodePort</code> so you&rsquo;ll have to add a loadbalancer in front of your kubernetes nodes to route external traffic (TCP) to your otoroshi instances. You have to setup your DNS to bind otoroshi domain names to your loadbalancer (see the example below). </p>
+<dl>
+  <dt>deployment.yaml
+  </dt>
+  <dd>
+  <pre class="prettyprint"><code class="language-yaml">---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otoroshi-leader-deployment
+spec:
+  selector:
+    matchLabels:
+      run: otoroshi-leader-deployment
+  template:
+    metadata:
+      labels:
+        run: otoroshi-leader-deployment
+    replicas: 2
+    strategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxUnavailable: 1
+        maxSurge: 1
+    spec:
+      serviceAccountName: otoroshi-admin-user
+      terminationGracePeriodSeconds: 60
+      hostNetwork: false
+      restartPolicy: Always
+      containers:
+      - image: maif/otoroshi:1.5.0-jdk11
+        imagePullPolicy: IfNotPresent
+        name: otoroshi-leader
+        ports:
+          - containerPort: 8080
+            name: &quot;http&quot;
+            protocol: TCP
+          - containerPort: 8443
+            name: &quot;https&quot;
+            protocol: TCP
+        env:
+          - name: APP_STORAGE_ROOT
+            value: otoroshi
+          - name: OTOROSHI_INITIAL_ADMIN_PASSWORD
+            value: ${password}
+          - name: APP_DOMAIN
+            value: ${domain}
+          - name: APP_STORAGE
+            value: lettuce
+          - name: REDIS_URL
+            value: ${redisUrl}
+            # value: redis://redis-leader-service:6379/0
+          - name: CLUSTER_MODE
+            value: Leader
+          - name: CLUSTER_AUTO_UPDATE_STATE
+            value: &#39;true&#39;
+          - name: CLUSTER_MTLS_ENABLED
+            value: &#39;true&#39;
+          - name: CLUSTER_MTLS_LOOSE
+            value: &#39;true&#39;
+          - name: CLUSTER_MTLS_TRUST_ALL
+            value: &#39;true&#39;
+          - name: CLUSTER_LEADER_URL
+            value: https://otoroshi-leader-api-service.${namespace}.svc.cluster.local:8443
+          - name: CLUSTER_LEADER_HOST
+            value: otoroshi-leader-api-service.${namespace}.svc.cluster.local
+          - name: ADMIN_API_ADDITIONAL_EXPOSED_DOMAIN
+            value: otoroshi-leader-api-service.${namespace}.svc.cluster.local
+          - name: ADMIN_API_CLIENT_ID
+            value: ${clientId}
+          - name: CLUSTER_LEADER_CLIENT_ID
+            value: ${clientId}
+          - name: ADMIN_API_CLIENT_SECRET
+            value: ${clientSecret}
+          - name: CLUSTER_LEADER_CLIENT_SECRET
+            value: ${clientSecret}
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          failureThreshold: 1
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 2
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          failureThreshold: 3
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 2
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otoroshi-worker-deployment
+spec:
+  selector:
+    matchLabels:
+      run: otoroshi-worker-deployment
+  template:
+    metadata:
+      labels:
+        run: otoroshi-worker-deployment
+    replicas: 2
+    strategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxUnavailable: 1
+        maxSurge: 1
+    spec:
+      serviceAccountName: otoroshi-admin-user
+      terminationGracePeriodSeconds: 60
+      hostNetwork: false
+      restartPolicy: Always   
+      containers:
+      - image: maif/otoroshi:1.5.0-jdk11
+        imagePullPolicy: IfNotPresent
+        name: otoroshi-worker
+        ports:
+          - containerPort: 8080
+            name: &quot;http&quot;
+            protocol: TCP
+          - containerPort: 8443
+            name: &quot;https&quot;
+            protocol: TCP
+        env:
+          - name: APP_STORAGE_ROOT
+            value: otoroshi
+          - name: OTOROSHI_INITIAL_ADMIN_PASSWORD
+            value: ${password}
+          - name: APP_DOMAIN
+            value: ${domain}
+          - name: CLUSTER_MODE
+            value: Worker
+          - name: CLUSTER_AUTO_UPDATE_STATE
+            value: &#39;true&#39;
+          - name: CLUSTER_MTLS_ENABLED
+            value: &#39;true&#39;
+          - name: CLUSTER_MTLS_LOOSE
+            value: &#39;true&#39;
+          - name: CLUSTER_MTLS_TRUST_ALL
+            value: &#39;true&#39;
+          - name: CLUSTER_LEADER_URL
+            value: https://otoroshi-leader-api-service.${namespace}.svc.cluster.local:8443
+          - name: CLUSTER_LEADER_HOST
+            value: otoroshi-leader-api-service.${namespace}.svc.cluster.local
+          - name: ADMIN_API_ADDITIONAL_EXPOSED_DOMAIN
+            value: otoroshi-leader-api-service.${namespace}.svc.cluster.local
+          - name: ADMIN_API_CLIENT_ID
+            value: ${clientId}
+          - name: CLUSTER_LEADER_CLIENT_ID
+            value: ${clientId}
+          - name: ADMIN_API_CLIENT_SECRET
+            value: ${clientSecret}
+          - name: CLUSTER_LEADER_CLIENT_SECRET
+            value: ${clientSecret}
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          failureThreshold: 1
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 2
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          failureThreshold: 3
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 2
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: otoroshi-leader-api-service
+spec:
+  selector:
+    run: otoroshi-leader-deployment
+  ports:
+  - port: 8080
+    name: &quot;http&quot;
+    targetPort: &quot;http&quot;
+  - port: 8443
+    name: &quot;https&quot;
+    targetPort: &quot;https&quot;
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: otoroshi-leader-service
+spec:
+  selector:
+    run: otoroshi-leader-deployment
+  ports:
+  - port: 8080
+    nodePort: 31080
+    name: &quot;http&quot;
+    targetPort: &quot;http&quot;
+  - port: 8443
+    nodePort: 31443
+    name: &quot;https&quot;
+    targetPort: &quot;https&quot;
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: otoroshi-worker-service
+spec:
+  selector:
+    run: otoroshi-worker-deployment
+  ports:
+  - port: 8080
+    nodePort: 32080
+    name: &quot;http&quot;
+    targetPort: &quot;http&quot;
+  - port: 8443
+    nodePort: 32443
+    name: &quot;https&quot;
+    targetPort: &quot;https&quot;
+---
+apiVersion: proxy.otoroshi.io/v1alpha1
+kind: Certificate
+metadata:
+  name: otoroshi-service-certificate
+spec:
+  description: certificate for otoroshi-service
+  autoRenew: true
+  csr:
+    issuer: CN=Otoroshi Root
+    hosts: 
+    - otoroshi-service
+    - otoroshi-service.${namespace}.svc.cluster.local
+    - otoroshi-api-service.${namespace}.svc.cluster.local
+    - otoroshi.${domain}
+    - otoroshi-api.${domain}
+    - privateapps.${domain}
+    key:
+      algo: rsa
+      size: 2048
+    subject: uid=otoroshi-service-cert, O=Otoroshi
+    client: false
+    ca: false
+    duration: 31536000000
+    signatureAlg: SHA256WithRSAEncryption
+    digestAlg: SHA-256</code></pre></dd>
+  <dt>nginx.example
+  </dt>
+  <dd>
+  <pre class="prettyprint"><code class="language-example">stream {
+
+  upstream worker_http_nodes {
+    zone worker_http_nodes 64k;
+    server 10.2.2.40:32080 max_fails=1;
+    server 10.2.2.41:32080 max_fails=1;
+    server 10.2.2.42:32080 max_fails=1;
+  }
+
+  upstream worker_https_nodes {
+    zone worker_https_nodes 64k;
+    server 10.2.2.40:32443 max_fails=1;
+    server 10.2.2.41:32443 max_fails=1;
+    server 10.2.2.42:32443 max_fails=1;
+  }
+
+  upstream leader_http_nodes {
+    zone leader_http_nodes 64k;
+    server 10.2.2.40:31080 max_fails=1;
+    server 10.2.2.41:31080 max_fails=1;
+    server 10.2.2.42:31080 max_fails=1;
+  }
+
+  upstream leader_https_nodes {
+    zone leader_https_nodes 64k;
+    server 10.2.2.40:31443 max_fails=1;
+    server 10.2.2.41:31443 max_fails=1;
+    server 10.2.2.42:31443 max_fails=1;
+  }
+
+  server {
+    listen     80;
+    proxy_pass worker_http_nodes;
+    health_check;
+  }
+
+  server {
+    listen     443;
+    proxy_pass worker_https_nodes;
+    health_check;
+  }
+
+  server {
+    listen     81;
+    proxy_pass leader_http_nodes;
+    health_check;
+  }
+
+  server {
+    listen     444;
+    proxy_pass leader_https_nodes;
+    health_check;
+  }
+  
+}</code></pre></dd>
+  <dt>dns.example
+  </dt>
+  <dd>
+  <pre class="prettyprint"><code class="language-example"># if your loadbalancer is at ip address 10.2.2.50
+
+otoroshi.your.otoroshi.domain      IN A 10.2.2.50
+otoroshi-api.your.otoroshi.domain  IN A 10.2.2.50
+privateapps.your.otoroshi.domain   IN A 10.2.2.50
+api1.another.domain                IN A 10.2.2.50
+api2.another.domain                IN A 10.2.2.50
+*.api.the.api.domain               IN A 10.2.2.50</code></pre></dd>
+  <dt>dns.example
+  </dt>
+  <dd>
+  <pre class="prettyprint"><code class="language-example"># if your loadbalancer is at ip address 10.2.2.50
+
+otoroshi.your.otoroshi.domain      IN A 10.2.2.50
+otoroshi-api.your.otoroshi.domain  IN A 10.2.2.50
+privateapps.your.otoroshi.domain   IN A 10.2.2.50
+api1.another.domain                IN A 10.2.2.50
+api2.another.domain                IN A 10.2.2.50
+*.api.the.api.domain               IN A 10.2.2.50</code></pre></dd>
+</dl>
+<h3><a href="#deploy-an-otoroshi-cluster-on-a-baremetal-kubernetes-cluster-using-daemonset" name="deploy-an-otoroshi-cluster-on-a-baremetal-kubernetes-cluster-using-daemonset" class="anchor"><span class="anchor-link"></span></a>Deploy an otoroshi cluster on a baremetal kubernetes cluster using DaemonSet</h3>
+<p>Here we have 1 otoroshi leader instance on each kubernetes node (with the <code>otoroshi-kind: leader</code> label) connected to the same redis instance and 1 otoroshi worker instance on each kubernetes node (with the <code>otoroshi-kind: worker</code> label). The otoroshi instances are exposed as <code>nodePort</code> so you&rsquo;ll have to add a loadbalancer in front of your kubernetes nodes to route external traffic (TCP) to your otoroshi instances. You have to setup your DNS to bind otoroshi domain names to your loadbalancer (see the example below). </p>
+<dl>
+  <dt>deployment.yaml
+  </dt>
+  <dd>
+  <pre class="prettyprint"><code class="language-yaml">---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: otoroshi-leader-deployment
+spec:
+  selector:
+    matchLabels:
+      run: otoroshi-leader-deployment
+  template:
+    metadata:
+      labels:
+        run: otoroshi-leader-deployment
+    replicas: 2
+    strategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxUnavailable: 1
+        maxSurge: 1
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: otoroshi-kind
+                operator: In
+                values:
+                - instance
+      tolerations:
+      - key: node-role.kubernetes.io/master
+        effect: NoSchedule
+      serviceAccountName: otoroshi-admin-user
+      terminationGracePeriodSeconds: 60
+      hostNetwork: false
+      restartPolicy: Always
+      containers:
+      - image: maif/otoroshi:1.5.0-jdk11
+        imagePullPolicy: IfNotPresent
+        name: otoroshi-leader
+        ports:
+          - containerPort: 8080
+            hostPort: 41080
+            name: &quot;http&quot;
+            protocol: TCP
+          - containerPort: 8443
+            hostPort: 41443
+            name: &quot;https&quot;
+            protocol: TCP
+        env:
+          - name: APP_STORAGE_ROOT
+            value: otoroshi
+          - name: OTOROSHI_INITIAL_ADMIN_PASSWORD
+            value: ${password}
+          - name: APP_DOMAIN
+            value: ${domain}
+          - name: APP_STORAGE
+            value: lettuce
+          - name: REDIS_URL
+            value: ${redisUrl}
+            # value: redis://redis-leader-service:6379/0
+          - name: CLUSTER_MODE
+            value: Leader
+          - name: CLUSTER_AUTO_UPDATE_STATE
+            value: &#39;true&#39;
+          - name: CLUSTER_MTLS_ENABLED
+            value: &#39;true&#39;
+          - name: CLUSTER_MTLS_LOOSE
+            value: &#39;true&#39;
+          - name: CLUSTER_MTLS_TRUST_ALL
+            value: &#39;true&#39;
+          - name: CLUSTER_LEADER_URL
+            value: https://otoroshi-leader-api-service.${namespace}.svc.cluster.local:8443
+          - name: CLUSTER_LEADER_HOST
+            value: otoroshi-leader-api-service.${namespace}.svc.cluster.local
+          - name: ADMIN_API_ADDITIONAL_EXPOSED_DOMAIN
+            value: otoroshi-leader-api-service.${namespace}.svc.cluster.local
+          - name: ADMIN_API_CLIENT_ID
+            value: ${clientId}
+          - name: CLUSTER_LEADER_CLIENT_ID
+            value: ${clientId}
+          - name: ADMIN_API_CLIENT_SECRET
+            value: ${clientSecret}
+          - name: CLUSTER_LEADER_CLIENT_SECRET
+            value: ${clientSecret}
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          failureThreshold: 1
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 2
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          failureThreshold: 3
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 2
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: otoroshi-worker-deployment
+spec:
+  selector:
+    matchLabels:
+      run: otoroshi-worker-deployment
+  template:
+    metadata:
+      labels:
+        run: otoroshi-worker-deployment
+    replicas: 2
+    strategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxUnavailable: 1
+        maxSurge: 1
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: otoroshi-kind
+                operator: In
+                values:
+                - instance
+      tolerations:
+      - key: node-role.kubernetes.io/master
+        effect: NoSchedule
+      serviceAccountName: otoroshi-admin-user
+      terminationGracePeriodSeconds: 60
+      hostNetwork: false
+      restartPolicy: Always   
+      containers:
+      - image: maif/otoroshi:1.5.0-jdk11
+        imagePullPolicy: IfNotPresent
+        name: otoroshi-worker
+        ports:
+          - containerPort: 8080
+            hostPort: 42080
+            name: &quot;http&quot;
+            protocol: TCP
+          - containerPort: 8443
+            hostPort: 42443
+            name: &quot;https&quot;
+            protocol: TCP
+        env:
+          - name: APP_STORAGE_ROOT
+            value: otoroshi
+          - name: OTOROSHI_INITIAL_ADMIN_PASSWORD
+            value: ${password}
+          - name: APP_DOMAIN
+            value: ${domain}
+          - name: CLUSTER_MODE
+            value: Worker
+          - name: CLUSTER_AUTO_UPDATE_STATE
+            value: &#39;true&#39;
+          - name: CLUSTER_MTLS_ENABLED
+            value: &#39;true&#39;
+          - name: CLUSTER_MTLS_LOOSE
+            value: &#39;true&#39;
+          - name: CLUSTER_MTLS_TRUST_ALL
+            value: &#39;true&#39;
+          - name: CLUSTER_LEADER_URL
+            value: https://otoroshi-leader-api-service.${namespace}.svc.cluster.local:8443
+          - name: CLUSTER_LEADER_HOST
+            value: otoroshi-leader-api-service.${namespace}.svc.cluster.local
+          - name: ADMIN_API_ADDITIONAL_EXPOSED_DOMAIN
+            value: otoroshi-leader-api-service.${namespace}.svc.cluster.local
+          - name: ADMIN_API_CLIENT_ID
+            value: ${clientId}
+          - name: CLUSTER_LEADER_CLIENT_ID
+            value: ${clientId}
+          - name: ADMIN_API_CLIENT_SECRET
+            value: ${clientSecret}
+          - name: CLUSTER_LEADER_CLIENT_SECRET
+            value: ${clientSecret}
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          failureThreshold: 1
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 2
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          failureThreshold: 3
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 2
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: otoroshi-leader-api-service
+spec:
+  selector:
+    run: otoroshi-leader-deployment
+  ports:
+  - port: 8080
+    name: &quot;http&quot;
+    targetPort: &quot;http&quot;
+  - port: 8443
+    name: &quot;https&quot;
+    targetPort: &quot;https&quot;
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: otoroshi-leader-service
+spec:
+  selector:
+    run: otoroshi-leader-deployment
+  ports:
+  - port: 8080
+    name: &quot;http&quot;
+    targetPort: &quot;http&quot;
+  - port: 8443
+    name: &quot;https&quot;
+    targetPort: &quot;https&quot;
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: otoroshi-worker-service
+spec:
+  selector:
+    run: otoroshi-worker-deployment
+  ports:
+  - port: 8080
+    name: &quot;http&quot;
+    targetPort: &quot;http&quot;
+  - port: 8443
+    name: &quot;https&quot;
+    targetPort: &quot;https&quot;
+---
+apiVersion: proxy.otoroshi.io/v1alpha1
+kind: Certificate
+metadata:
+  name: otoroshi-service-certificate
+spec:
+  description: certificate for otoroshi-service
+  autoRenew: true
+  csr:
+    issuer: CN=Otoroshi Root
+    hosts: 
+    - otoroshi-service
+    - otoroshi-service.${namespace}.svc.cluster.local
+    - otoroshi-api-service.${namespace}.svc.cluster.local
+    - otoroshi.${domain}
+    - otoroshi-api.${domain}
+    - privateapps.${domain}
+    key:
+      algo: rsa
+      size: 2048
+    subject: uid=otoroshi-service-cert, O=Otoroshi
+    client: false
+    ca: false
+    duration: 31536000000
+    signatureAlg: SHA256WithRSAEncryption
+    digestAlg: SHA-256</code></pre></dd>
+  <dt>nginx.example
+  </dt>
+  <dd>
+  <pre class="prettyprint"><code class="language-example">stream {
+
+  upstream worker_http_nodes {
+    zone worker_http_nodes 64k;
+    server 10.2.2.40:42080 max_fails=1;
+    server 10.2.2.41:42080 max_fails=1;
+    server 10.2.2.42:42080 max_fails=1;
+  }
+
+  upstream worker_https_nodes {
+    zone worker_https_nodes 64k;
+    server 10.2.2.40:42443 max_fails=1;
+    server 10.2.2.41:42443 max_fails=1;
+    server 10.2.2.42:42443 max_fails=1;
+  }
+
+  upstream leader_http_nodes {
+    zone leader_http_nodes 64k;
+    server 10.2.2.40:41080 max_fails=1;
+    server 10.2.2.41:41080 max_fails=1;
+    server 10.2.2.42:41080 max_fails=1;
+  }
+
+  upstream leader_https_nodes {
+    zone leader_https_nodes 64k;
+    server 10.2.2.40:41443 max_fails=1;
+    server 10.2.2.41:41443 max_fails=1;
+    server 10.2.2.42:41443 max_fails=1;
+  }
+
+  server {
+    listen     80;
+    proxy_pass worker_http_nodes;
+    health_check;
+  }
+
+  server {
+    listen     443;
+    proxy_pass worker_https_nodes;
+    health_check;
+  }
+
+  server {
+    listen     81;
+    proxy_pass leader_http_nodes;
+    health_check;
+  }
+
+  server {
+    listen     444;
+    proxy_pass leader_https_nodes;
+    health_check;
+  }
+  
+}</code></pre></dd>
+  <dt>dns.example
+  </dt>
+  <dd>
+  <pre class="prettyprint"><code class="language-example"># if your loadbalancer is at ip address 10.2.2.50
+
+otoroshi.your.otoroshi.domain      IN A 10.2.2.50
+otoroshi-api.your.otoroshi.domain  IN A 10.2.2.50
+privateapps.your.otoroshi.domain   IN A 10.2.2.50
+api1.another.domain                IN A 10.2.2.50
+api2.another.domain                IN A 10.2.2.50
+*.api.the.api.domain               IN A 10.2.2.50</code></pre></dd>
+  <dt>dns.example
+  </dt>
+  <dd>
+  <pre class="prettyprint"><code class="language-example"># if your loadbalancer is at ip address 10.2.2.50
+
+otoroshi.your.otoroshi.domain      IN A 10.2.2.50
+otoroshi-api.your.otoroshi.domain  IN A 10.2.2.50
+privateapps.your.otoroshi.domain   IN A 10.2.2.50
+api1.another.domain                IN A 10.2.2.50
+api2.another.domain                IN A 10.2.2.50
+*.api.the.api.domain               IN A 10.2.2.50</code></pre></dd>
+</dl>
 <h2><a href="#use-otoroshi-as-an-ingress-controller" name="use-otoroshi-as-an-ingress-controller" class="anchor"><span class="anchor-link"></span></a>Use Otoroshi as an Ingress Controller</h2>
 <p>If you want to use Otoroshi as an <a href="https://kubernetes.io/fr/docs/concepts/services-networking/ingress/">Ingress Controller</a>, just go to the danger zone, and in <code>Global scripts</code> add the job named <code>Kubernetes Ingress Controller</code>.</p>
 <p>Then add the following configuration for the job (with your own tweak of course)</p>

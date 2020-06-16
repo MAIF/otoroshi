@@ -11,16 +11,16 @@ stream {
 
   upstream back_http_nodes {
     zone back_http_nodes 64k;
-    server 10.2.2.40:31080 max_fails=1;
-    server 10.2.2.41:31080 max_fails=1;
-    server 10.2.2.42:31080 max_fails=1;
+    server 10.2.2.40:41080 max_fails=1;
+    server 10.2.2.41:41080 max_fails=1;
+    server 10.2.2.42:41080 max_fails=1;
   }
 
   upstream back_https_nodes {
     zone back_https_nodes 64k;
-    server 10.2.2.40:31443 max_fails=1;
-    server 10.2.2.41:31443 max_fails=1;
-    server 10.2.2.42:31443 max_fails=1;
+    server 10.2.2.40:41443 max_fails=1;
+    server 10.2.2.41:41443 max_fails=1;
+    server 10.2.2.42:41443 max_fails=1;
   }
 
   server {
@@ -56,18 +56,18 @@ frontend front_nodes_https
 backend back_http_nodes
     mode tcp
     balance roundrobin
-    server kubernetes-node1 10.2.2.40:31080
-    server kubernetes-node2 10.2.2.41:31080
-    server kubernetes-node3 10.2.2.42:31080
+    server kubernetes-node1 10.2.2.40:41080
+    server kubernetes-node2 10.2.2.41:41080
+    server kubernetes-node3 10.2.2.42:41080
     timeout connect        10s
     timeout server          1m
 
 backend back_https_nodes
     mode tcp
     balance roundrobin
-    server kubernetes-node1 10.2.2.40:31443
-    server kubernetes-node2 10.2.2.41:31443
-    server kubernetes-node3 10.2.2.42:31443
+    server kubernetes-node1 10.2.2.40:41443
+    server kubernetes-node2 10.2.2.41:41443
+    server kubernetes-node3 10.2.2.42:41443
     timeout connect        10s
     timeout server          1m
 ```
