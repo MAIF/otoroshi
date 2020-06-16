@@ -1,0 +1,16 @@
+apiVersion: proxy.otoroshi.io/v1alpha1
+kind: ApiKey
+metadata:
+  name: http-app-2-apikey-1
+# this apikey can be used to access another app in a different group
+spec:
+  # a secret name secret-1 will be created by otoroshi and can be used by containers
+  exportSecret: true 
+  secretName: secret-2
+  group: http-app-2-group
+  metadata:
+    foo: bar
+  rotation: # not mandatory
+    enabled: true
+    rotationEvery: 720 # hours
+    gracePeriod: 168  # hours

@@ -1,0 +1,33 @@
+apiVersion: proxy.otoroshi.io/v1alpha1
+kind: ServiceDescriptor
+metadata:
+  name: http-app-service-descriptor
+spec:
+  description: the service descriptor for the http app
+  group: http-app-group
+  forceHttps: true
+  hosts:
+  - httpapp.foo.bar
+  matchingRoot: /
+  targets:
+  - url: https://http-app-service:8443
+    # you can also use serviceName and servicePort to use pods ip addresses. Can be used without or in combination with url
+    # serviceName: http-app-service
+    # servicePort: https
+    mtlsConfig: # not mandatory
+      # use mtls to contact the backend
+      mtls: true
+      certs: 
+        # reference the DN for the client cert
+        - UID=httpapp-client, O=OtoroshiApps
+      trustedCerts: 
+        # reference the DN for the CA cert
+        - CN=Otoroshi Root
+  sendOtoroshiHeadersBack: true
+  xForwardedHeaders: true
+  overrideHost: true
+  allowHttp10: false
+  publicPatterns:
+    - /health
+  additionalHeaders:
+    x-foo: bar
