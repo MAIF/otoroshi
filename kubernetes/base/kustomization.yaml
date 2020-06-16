@@ -1,5 +1,3 @@
 resources:
 - rbac.yaml
 - crds.yaml
-- deployment.yaml
-- service.yaml
