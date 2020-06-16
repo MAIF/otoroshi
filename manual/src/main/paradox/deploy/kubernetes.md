@@ -468,6 +468,12 @@ service-descriptor.yaml
 certificate.yaml
 :   @@snip [certificate.yaml](../snippets/crds/certificate.yaml) 
 
+jwt.yaml
+:   @@snip [jwt.yaml](../snippets/crds/jwt.yaml) 
+
+auth.yaml
+:   @@snip [auth.yaml](../snippets/crds/auth.yaml) 
+
 
 ### Configuration
 
