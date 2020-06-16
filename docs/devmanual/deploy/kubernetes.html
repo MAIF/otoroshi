@@ -2686,7 +2686,7 @@ spec:
   - httpapp.foo.bar
   matchingRoot: /
   targets:
-  - url: https://http-app-service:8443
+  - url: &#39;https://http-app-service:8443&#39;
     # you can also use serviceName and servicePort to use pods ip addresses. Can be used without or in combination with url
     # serviceName: http-app-service
     # servicePort: https
@@ -2767,12 +2767,12 @@ spec:
   sessionMaxAge: 86400
   clientId: otoroshi
   clientSecret: &#39;&#39;
-  authorizeUrl: https://keycloak.foo.bar/auth/realms/master/protocol/openid-connect/auth
-  tokenUrl: https://keycloak.foo.bar/auth/realms/master/protocol/openid-connect/token
-  userInfoUrl: https://keycloak.foo.bar/auth/realms/master/protocol/openid-connect/userinfo
-  introspectionUrl: https://keycloak.foo.bar/auth/realms/master/protocol/openid-connect/token/introspect
-  loginUrl: https://keycloak.foo.bar/auth/realms/master/protocol/openid-connect/auth
-  logoutUrl: https://keycloak.foo.bar/auth/realms/master/protocol/openid-connect/logout
+  authorizeUrl: &#39;https://keycloak.foo.bar/auth/realms/master/protocol/openid-connect/auth&#39;
+  tokenUrl: &#39;https://keycloak.foo.bar/auth/realms/master/protocol/openid-connect/token&#39;
+  userInfoUrl: &#39;https://keycloak.foo.bar/auth/realms/master/protocol/openid-connect/userinfo&#39;
+  introspectionUrl: &#39;https://keycloak.foo.bar/auth/realms/master/protocol/openid-connect/token/introspect&#39;
+  loginUrl: &#39;https://keycloak.foo.bar/auth/realms/master/protocol/openid-connect/auth&#39;
+  logoutUrl: &#39;https://keycloak.foo.bar/auth/realms/master/protocol/openid-connect/logout&#39;
   scope: openid address email microprofile-jwt offline_access phone profile roles web-origins
   claims: &#39;&#39;
   useCookie: false
@@ -2781,7 +2781,7 @@ spec:
   accessTokenField: access_token
   jwtVerifier:
     type: JWKSAlgoSettings
-    url: http://keycloak.foo.bar/auth/realms/master/protocol/openid-connect/certs
+    url: &#39;http://keycloak.foo.bar/auth/realms/master/protocol/openid-connect/certs&#39;
     timeout: 2000
     headers: {}
     ttl: 3600000
@@ -2798,8 +2798,8 @@ spec:
   apiKeyMetaField: apkMeta
   apiKeyTagsField: apkTags
   otoroshiDataField: app_metadata|otoroshi_data
-  callbackUrl: https://privateapps.oto.tools/privateapps/generic/callback
-  oidConfig: http://keycloak.foo.bar/auth/realms/master/.well-known/openid-configuration
+  callbackUrl: &#39;https://privateapps.oto.tools/privateapps/generic/callback&#39;
+  oidConfig: &#39;http://keycloak.foo.bar/auth/realms/master/.well-known/openid-configuration&#39;
   mtlsConfig:
     certs:
     - UID=httpapp-client, O=OtoroshiApps
