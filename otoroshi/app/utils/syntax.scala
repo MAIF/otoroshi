@@ -1,17 +1,21 @@
 package otoroshi.utils.syntax
 
+import java.io.File
 import java.nio.charset.StandardCharsets
+import java.nio.file.Files
 
 import akka.http.scaladsl.util.FastFuture
 import akka.util.ByteString
 import com.github.blemale.scaffeine.Cache
+import com.typesafe.config.ConfigFactory
 import org.apache.commons.codec.binary.Base64
 import org.apache.commons.io.Charsets
-import play.api.Logger
+import play.api.{ConfigLoader, Configuration, Logger}
 import play.api.libs.json._
 import utils.{Regex, RegexPool}
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
+import scala.reflect.ClassTag
 import scala.util.{Failure, Success, Try}
 
 object implicits {
@@ -124,6 +128,49 @@ object implicits {
         val res = el
         cache.put(key, res)
         res
+      }
+    }
+  }
+  implicit class BetterConfiguration(val configuration: Configuration) extends AnyVal {
+
+    import collection.JavaConverters._
+
+    private def readFromFile[A](path: String, loader: ConfigLoader[A], classTag: ClassTag[A]): Option[A] = {
+      val file = new File(path)
+      if (file.exists()) {
+        Try {
+          val content = Files.readAllLines(file.toPath).asScala.mkString("\n").trim
+          Try {
+            val config = Configuration(ConfigFactory.parseString(s"""value=${content}""".stripMargin))
+            config.getOptional[A]("value")(loader)
+          } match {
+            case Failure(_) =>
+              classTag.runtimeClass.getName match {
+                case "Boolean" => Option(content.toBoolean.asInstanceOf[A])
+                case "Int" => Option(content.toInt.asInstanceOf[A])
+                case "Double" => Option(content.toDouble.asInstanceOf[A])
+                case "Long" => Option(content.toLong.asInstanceOf[A])
+                case "String" => Option(content.asInstanceOf[A])
+                case _ => None
+            }
+            case Success(value) => value
+          }
+        }.get
+      } else {
+        None
+      }
+    }
+
+    def getOptionalWithFileSupport[A](path: String)(implicit loader: ConfigLoader[A], classTag: ClassTag[A]): Option[A] = {
+      configuration.getOptional[A](path)(loader) match {
+        case None => configuration.getOptional[String](path)(ConfigLoader.stringLoader) match {
+          case Some(v) if v.startsWith("file://") => readFromFile[A](v.replace("file://", ""), loader, classTag)
+          case _ => None
+        }
+        case Some(value) => value match {
+          case Some(v: String) if v.startsWith("file://") => readFromFile[A](v.replace("file://", ""), loader, classTag)
+          case v => Some(v)
+        }
       }
     }
   }

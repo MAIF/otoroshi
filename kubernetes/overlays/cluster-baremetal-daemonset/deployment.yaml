@@ -11,7 +11,6 @@ spec:
     metadata:
       labels:
         run: otoroshi-leader-deployment
-    replicas: 2
     strategy:
       type: RollingUpdate
       rollingUpdate:
@@ -26,7 +25,7 @@ spec:
               - key: otoroshi-kind
                 operator: In
                 values:
-                - instance
+                - leader
       tolerations:
       - key: node-role.kubernetes.io/master
         effect: NoSchedule
@@ -129,7 +128,7 @@ spec:
               - key: otoroshi-kind
                 operator: In
                 values:
-                - instance
+                - worker
       tolerations:
       - key: node-role.kubernetes.io/master
         effect: NoSchedule
