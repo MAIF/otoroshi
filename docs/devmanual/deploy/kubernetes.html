@@ -2381,13 +2381,13 @@ api2.another.domain                IN A 10.2.2.50
     &quot;trust&quot;: false, // trust any cert to talk to the kubernetes api, optional
     &quot;namespaces&quot;: [&quot;*&quot;], // the watched namespaces
     &quot;labels&quot;: [&quot;label&quot;], // the watched namespaces
-    &quot;ingressClass&quot;: &quot;otoroshi&quot;, // the watched kubernetes.io/ingress.class annotation, can be *
+    &quot;ingressClasses&quot;: [&quot;otoroshi&quot;], // the watched kubernetes.io/ingress.class annotations, can be *
     &quot;defaultGroup&quot;: &quot;default&quot;, // the group to put services in otoroshi
     &quot;ingresses&quot;: true, // sync ingresses
     &quot;crds&quot;: false, // sync crds
     &quot;kubeLeader&quot;: false, // delegate leader election to kubernetes, to know where the sync job should run
     &quot;restartDependantDeployments&quot;: true, // when a secret/cert changes from otoroshi sync, restart dependant deployments
-    &quot;templates&quot;: {
+    &quot;templates&quot;: { // template for entities that will be merged with kubernetes entities
       &quot;service-group&quot;: {},
       &quot;service-descriptor&quot;: {},
       &quot;apikeys&quot;: {},
@@ -2826,6 +2826,37 @@ spec:
   }
 }
 </code></pre>
+<p>the configuration can have the following values </p>
+<pre class="prettyprint"><code class="language-javascript">{
+  &quot;KubernetesConfig&quot;: {
+    &quot;endpoint&quot;: &quot;https://127.0.0.1:6443&quot;, // the endpoint to talk to the kubernetes api, optional
+    &quot;token&quot;: &quot;xxxx&quot;, // the bearer token to talk to the kubernetes api, optional
+    &quot;userPassword&quot;: &quot;user:password&quot;, // the user password tuple to talk to the kubernetes api, optional
+    &quot;caCert&quot;: &quot;/etc/ca.cert&quot;, // the ca cert file path to talk to the kubernetes api, optional
+    &quot;trust&quot;: false, // trust any cert to talk to the kubernetes api, optional
+    &quot;namespaces&quot;: [&quot;*&quot;], // the watched namespaces
+    &quot;labels&quot;: [&quot;label&quot;], // the watched namespaces
+    &quot;ingressClasses&quot;: [&quot;otoroshi&quot;], // the watched kubernetes.io/ingress.class annotations, can be *
+    &quot;defaultGroup&quot;: &quot;default&quot;, // the group to put services in otoroshi
+    &quot;ingresses&quot;: false, // sync ingresses
+    &quot;crds&quot;: true, // sync crds
+    &quot;kubeLeader&quot;: false, // delegate leader election to kubernetes, to know where the sync job should run
+    &quot;restartDependantDeployments&quot;: true, // when a secret/cert changes from otoroshi sync, restart dependant deployments
+    &quot;templates&quot;: { // template for entities that will be merged with kubernetes entities
+      &quot;service-group&quot;: {},
+      &quot;service-descriptor&quot;: {},
+      &quot;apikeys&quot;: {},
+      &quot;global-config&quot;: {},
+      &quot;jwt-verifier&quot;: {},
+      &quot;tcp-service&quot;: {},
+      &quot;certificate&quot;: {},
+      &quot;auth-module&quot;: {},
+      &quot;script&quot;: {},
+    }
+  }
+}
+</code></pre>
+<p>If <code>endpoint</code> is not defined, Otoroshi will try to get it from <code>$KUBERNETES_SERVICE_HOST</code> and <code>$KUBERNETES_SERVICE_PORT</code>. If <code>token</code> is not defined, Otoroshi will try to get it from the file at <code>/var/run/secrets/kubernetes.io/serviceaccount/token</code>. If <code>caCert</code> is not defined, Otoroshi will try to get it from the file at <code>/var/run/secrets/kubernetes.io/serviceaccount/ca.crt</code>. If <code>$KUBECONFIG</code> is defined, <code>endpoint</code>, <code>token</code> and <code>caCert</code> will be read from the current context of the file referenced by it.</p>
 <p>you can find a more complete example of the configuration object <a href="https://github.com/MAIF/otoroshi/blob/master/otoroshi/app/plugins/jobs/kubernetes/config.scala#L134-L163">here</a></p>
 <h3><a href="#note-about-apikeys-and-certificates-resources" name="note-about-apikeys-and-certificates-resources" class="anchor"><span class="anchor-link"></span></a>Note about <code>apikeys</code> and <code>certificates</code> resources</h3>
 <p>Apikeys and Certificates are a little bit different than the other resources. They have ability to be defined without their secret part, but with an export setting so otoroshi will generate the secret parts and export the apikey or the certificate to kubernetes secret. Then any app will be able to mount them as volumes (see the full example below)</p>
@@ -3104,7 +3135,8 @@ CLIENT_SECRET=`kubectl get secret secret-1 -o jsonpath=&quot;{.data.clientSecret
 curl -X GET https://httpapp.foo.bar/get -u &quot;$CLIENT_ID:$CLIENT_SECRET&quot;
 </code></pre>
 <h2><a href="#expose-otoroshi-to-outside-world" name="expose-otoroshi-to-outside-world" class="anchor"><span class="anchor-link"></span></a>Expose Otoroshi to outside world</h2>
-<p>If you deploy Otoroshi on a kubernetes cluster, the Otoroshi service is deployed as a loadbalancer. You&rsquo;ll need to declare in your DNS settings any name that can be routed by otoroshi going to the loadbalancer endpoint of your kubernetes distribution.</p>
+<p>If you deploy Otoroshi on a kubernetes cluster, the Otoroshi service is deployed as a loadbalancer (service type: <code>LoadBalancer</code>). You&rsquo;ll need to declare in your DNS settings any name that can be routed by otoroshi going to the loadbalancer endpoint (CNAME or ip addresses) of your kubernetes distribution. If you use a managed kubernetes cluster from a cloud provider, it will work seamlessly as they will provide external loadbalancers out of the box. However, if you use a bare metal kubernetes cluster, id doesn&rsquo;t come with support for external loadbalancers (service of type <code>LoadBalancer</code>). So you will have to provide this feature in order to route external TCP traffic to Otoroshi containers running inside the kubernetes cluster. You can use projects like <a href="https://metallb.universe.tf/">MetalLB</a> that provide software <code>LoadBalancer</code> services to bare metal clusters or you can use and customize examples in the installation section.</p><div class="callout warning "><div class="callout-title">Warning</div>
+<p>We don&rsquo;t recommand running Otoroshi behind an existing ingress controller (or something like that) as you will not be able to use features like TCP proxying, TLS, mTLS, etc. Also, this additional layer of reverse proxy will increase call latencies.</p></div>
 <h2><a href="#access-a-service-from-inside-the-k8s-cluster" name="access-a-service-from-inside-the-k8s-cluster" class="anchor"><span class="anchor-link"></span></a>Access a service from inside the k8s cluster</h2>
 <p>You can access any service referenced in otoroshi, through otoroshin from inside the kubernetes cluster by using the internal otoroshi service (if you use a template based on <a href="https://github.com/MAIF/otoroshi/tree/master/kubernetes/base">https://github.com/MAIF/otoroshi/tree/master/kubernetes/base</a>) name and the host header with the service domain like :</p>
 <pre class="prettyprint"><code class="language-sh">CLIENT_ID=&quot;xxx&quot;
