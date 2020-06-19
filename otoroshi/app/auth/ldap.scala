@@ -93,6 +93,7 @@ object LdapAuthModuleConfig extends FromJson[AuthModuleConfig] {
           metadataField = (json \ "metadataField").asOpt[String].filterNot(_.trim.isEmpty),
           extraMetadata = (json \ "extraMetadata").asOpt[JsObject].getOrElse(Json.obj()),
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
+          sessionCookieValues = (json \ "sessionCookieValues").asOpt(SessionCookieValues.fmt).getOrElse(SessionCookieValues())
         )
       )
     } recover {
@@ -103,24 +104,25 @@ object LdapAuthModuleConfig extends FromJson[AuthModuleConfig] {
 }
 
 case class LdapAuthModuleConfig(
-    id: String,
-    name: String,
-    desc: String,
-    sessionMaxAge: Int = 86400,
-    basicAuth: Boolean = false,
-    allowEmptyPassword: Boolean = false,
-    serverUrl: String,
-    searchBase: String,
-    userBase: Option[String] = None,
-    groupFilter: Option[String] = None,
-    searchFilter: String = "(mail=${username})",
-    adminUsername: Option[String] = None,
-    adminPassword: Option[String] = None,
-    nameField: String = "cn",
-    emailField: String = "mail",
-    metadataField: Option[String] = None,
-    extraMetadata: JsObject = Json.obj(),
-    metadata: Map[String, String]
+                                 id: String,
+                                 name: String,
+                                 desc: String,
+                                 sessionMaxAge: Int = 86400,
+                                 basicAuth: Boolean = false,
+                                 allowEmptyPassword: Boolean = false,
+                                 serverUrl: String,
+                                 searchBase: String,
+                                 userBase: Option[String] = None,
+                                 groupFilter: Option[String] = None,
+                                 searchFilter: String = "(mail=${username})",
+                                 adminUsername: Option[String] = None,
+                                 adminPassword: Option[String] = None,
+                                 nameField: String = "cn",
+                                 emailField: String = "mail",
+                                 metadataField: Option[String] = None,
+                                 extraMetadata: JsObject = Json.obj(),
+                                 metadata: Map[String, String],
+                                 sessionCookieValues: SessionCookieValues
 ) extends AuthModuleConfig {
   def `type`: String = "ldap"
 
@@ -128,24 +130,25 @@ case class LdapAuthModuleConfig(
 
   override def asJson = Json.obj(
     "type"               -> "ldap",
-    "id"                 -> this.id,
-    "name"               -> this.name,
-    "desc"               -> this.desc,
-    "basicAuth"          -> this.basicAuth,
-    "allowEmptyPassword" -> this.allowEmptyPassword,
-    "sessionMaxAge"      -> this.sessionMaxAge,
-    "serverUrl"          -> this.serverUrl,
-    "searchBase"         -> this.searchBase,
-    "userBase"           -> this.userBase.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-    "groupFilter"        -> this.groupFilter.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-    "searchFilter"       -> this.searchFilter,
-    "adminUsername"      -> this.adminUsername.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-    "adminPassword"      -> this.adminPassword.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-    "nameField"          -> this.nameField,
-    "emailField"         -> this.emailField,
-    "metadataField"      -> this.metadataField.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-    "extraMetadata"      -> this.extraMetadata,
-    "metadata"           -> this.metadata
+    "id"                  -> this.id,
+    "name"                -> this.name,
+    "desc"                -> this.desc,
+    "basicAuth"           -> this.basicAuth,
+    "allowEmptyPassword"  -> this.allowEmptyPassword,
+    "sessionMaxAge"       -> this.sessionMaxAge,
+    "serverUrl"           -> this.serverUrl,
+    "searchBase"          -> this.searchBase,
+    "userBase"            -> this.userBase.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+    "groupFilter"         -> this.groupFilter.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+    "searchFilter"        -> this.searchFilter,
+    "adminUsername"       -> this.adminUsername.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+    "adminPassword"       -> this.adminPassword.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+    "nameField"           -> this.nameField,
+    "emailField"          -> this.emailField,
+    "metadataField"       -> this.metadataField.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+    "extraMetadata"       -> this.extraMetadata,
+    "metadata"            -> this.metadata,
+    "sessionCookieValues"  -> SessionCookieValues.fmt.writes(this.sessionCookieValues)
   )
 
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.authConfigsDataStore.set(this)

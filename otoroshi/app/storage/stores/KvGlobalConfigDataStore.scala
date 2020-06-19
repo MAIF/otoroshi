@@ -1,27 +1,23 @@
 package otoroshi.storage.stores
 
 import akka.http.scaladsl.util.FastFuture
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Sink, Source}
-import akka.util.ByteString
-import auth.{AuthModuleConfig, GenericOauth2ModuleConfig}
-import com.typesafe.config.ConfigRenderOptions
+import auth.{AuthModuleConfig, GenericOauth2ModuleConfig, SessionCookieValues}
 import env.Env
 import models._
 import org.joda.time.DateTime
 import otoroshi.models.{SimpleOtoroshiAdmin, WebAuthnOtoroshiAdmin}
 import otoroshi.script.Script
+import otoroshi.storage.{RedisLike, RedisLikeStore}
 import otoroshi.tcp.TcpService
 import play.api.Logger
 import play.api.libs.json._
 import security.Auth0Config
 import ssl.{Cert, ClientCertificateValidator}
-import otoroshi.storage.{RedisLike, RedisLikeStore}
 import utils.JsonImplicits._
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
-import scala.util.{Failure, Success}
+import scala.util.Success
 
 class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
     extends GlobalConfigDataStore
@@ -77,11 +73,11 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
         case Success(Some(quota)) if quotasForIpAddressCache.containsKey(ipAddress) =>
           quotasForIpAddressCache.get(ipAddress).set(quota)
       }
-    quotasForIpAddressCache.containsKey(ipAddress) match {
-      case true =>
-        actualCall()
-        FastFuture.successful(Some(quotasForIpAddressCache.get(ipAddress).get))
-      case false => actualCall()
+    if (quotasForIpAddressCache.containsKey(ipAddress)) {
+      actualCall()
+      FastFuture.successful(Some(quotasForIpAddressCache.get(ipAddress).get))
+    } else {
+      actualCall()
     }
   }
 
@@ -353,7 +349,8 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
                               loginUrl = s"https://${c.domain}/authorize",
                               logoutUrl = s"https://${c.domain}/logout",
                               callbackUrl = c.callbackURL,
-                              metadata = Map.empty
+                              metadata = Map.empty,
+                              sessionCookieValues = SessionCookieValues()
                             )
                         )
                       )
@@ -375,7 +372,8 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
                               loginUrl = s"https://${c.domain}/authorize",
                               logoutUrl = s"https://${c.domain}/logout",
                               callbackUrl = c.callbackURL,
-                              metadata = Map.empty
+                              metadata = Map.empty,
+                              sessionCookieValues = SessionCookieValues()
                             )
                         )
                       )
