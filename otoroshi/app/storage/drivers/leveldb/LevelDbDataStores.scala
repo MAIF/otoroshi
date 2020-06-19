@@ -25,6 +25,7 @@ import otoroshi.tcp.{KvTcpServiceDataStoreDataStore, TcpServiceDataStore}
 import storage.stores.KvRawDataStore
 
 import scala.concurrent.{ExecutionContext, Future}
+import otoroshi.utils.syntax.implicits._
 
 @deprecated(message = "Use FileDb instead", since = "1.5.0")
 class LevelDbDataStores(configuration: Configuration,
@@ -37,13 +38,13 @@ class LevelDbDataStores(configuration: Configuration,
 
   logger.debug(s"path at $dbPath")
 
-  lazy val dbPath: String       = configuration.getOptional[String]("app.leveldb.path").getOrElse("./leveldb")
-  lazy val redisStatsItems: Int = configuration.getOptional[Int]("app.leveldb.windowSize").getOrElse(99)
+  lazy val dbPath: String       = configuration.getOptionalWithFileSupport[String]("app.leveldb.path").getOrElse("./leveldb")
+  lazy val redisStatsItems: Int = configuration.getOptionalWithFileSupport[Int]("app.leveldb.windowSize").getOrElse(99)
   lazy val actorSystem =
     ActorSystem(
       "otoroshi-leveldb-system",
       configuration
-        .getOptional[Configuration]("app.actorsystems.datastore")
+        .getOptionalWithFileSupport[Configuration]("app.actorsystems.datastore")
         .map(_.underlying)
         .getOrElse(ConfigFactory.empty)
     )

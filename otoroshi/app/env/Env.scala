@@ -42,6 +42,8 @@ import ssl.{Cert, DynamicSSLEngineProvider, FakeKeyStore}
 import utils.http._
 import utils.{HasMetrics, Metrics}
 
+import otoroshi.utils.syntax.implicits._
+
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.io.Source
@@ -68,8 +70,8 @@ class Env(val configuration: Configuration,
   val logger = Logger("otoroshi-env")
 
   val otoroshiConfig: Configuration = (for {
-    appConfig <- configuration.getOptional[Configuration]("app")
-    otoConfig <- configuration.getOptional[Configuration]("otoroshi")
+    appConfig <- configuration.getOptionalWithFileSupport[Configuration]("app")
+    otoConfig <- configuration.getOptionalWithFileSupport[Configuration]("otoroshi")
   } yield {
     val appConfigJson: JsObject =
       Json.parse(appConfig.underlying.root().render(ConfigRenderOptions.concise())).as[JsObject]
@@ -90,7 +92,7 @@ class Env(val configuration: Configuration,
     DateTime.now().withMonthOfYear(10).withDayOfMonth(31).plusDays(1).withMillisOfDay(1)
 
   private lazy val disableFunnyLogos: Boolean =
-    configuration.getOptional[Boolean]("otoroshi.options.disableFunnyLogos").getOrElse(false)
+    configuration.getOptionalWithFileSupport[Boolean]("otoroshi.options.disableFunnyLogos").getOrElse(false)
 
   def otoroshiLogo: String = {
     val now = DateTime.now()
@@ -108,8 +110,8 @@ class Env(val configuration: Configuration,
   val otoroshiActorSystem: ActorSystem = ActorSystem(
     "otoroshi-actor-system",
     configuration
-      .getOptional[Configuration]("app.actorsystems.otoroshi")
-      .orElse(configuration.getOptional[Configuration]("otoroshi.analytics.actorsystem"))
+      .getOptionalWithFileSupport[Configuration]("app.actorsystems.otoroshi")
+      .orElse(configuration.getOptionalWithFileSupport[Configuration]("otoroshi.analytics.actorsystem"))
       .map(_.underlying)
       .getOrElse(ConfigFactory.empty)
   )
@@ -118,14 +120,14 @@ class Env(val configuration: Configuration,
   val otoroshiMaterializer: Materializer         = Materializer(otoroshiActorSystem)
 
   val analyticsPressureEnabled: Boolean =
-    configuration.getOptional[Boolean]("otoroshi.analytics.pressure.enabled").getOrElse(false)
+    configuration.getOptionalWithFileSupport[Boolean]("otoroshi.analytics.pressure.enabled").getOrElse(false)
 
   val analyticsActorSystem: ActorSystem =
     if (analyticsPressureEnabled)
       ActorSystem(
         "otoroshi-analytics-actor-system",
         configuration
-          .getOptional[Configuration]("app.actorsystems.analytics")
+          .getOptionalWithFileSupport[Configuration]("app.actorsystems.analytics")
           .map(_.underlying)
           .getOrElse(ConfigFactory.empty)
       )
@@ -157,11 +159,11 @@ class Env(val configuration: Configuration,
   }
 
   lazy val sidecarConfig: Option[SidecarConfig] = (
-    configuration.getOptional[String]("app.sidecar.serviceId"),
-    configuration.getOptional[String]("app.sidecar.target"),
-    configuration.getOptional[String]("app.sidecar.from"),
-    configuration.getOptional[String]("app.sidecar.apikey.clientId"),
-    configuration.getOptional[Boolean]("app.sidecar.strict")
+    configuration.getOptionalWithFileSupport[String]("app.sidecar.serviceId"),
+    configuration.getOptionalWithFileSupport[String]("app.sidecar.target"),
+    configuration.getOptionalWithFileSupport[String]("app.sidecar.from"),
+    configuration.getOptionalWithFileSupport[String]("app.sidecar.apikey.clientId"),
+    configuration.getOptionalWithFileSupport[Boolean]("app.sidecar.strict")
   ) match {
     case (Some(serviceId), Some(target), from, clientId, strict) =>
       val conf = SidecarConfig(
@@ -175,36 +177,36 @@ class Env(val configuration: Configuration,
     case a => None
   }
 
-  lazy val maxWebhookSize: Int = configuration.getOptional[Int]("app.webhooks.size").getOrElse(100)
+  lazy val maxWebhookSize: Int = configuration.getOptionalWithFileSupport[Int]("app.webhooks.size").getOrElse(100)
 
   lazy val clusterConfig: ClusterConfig = ClusterConfig(
-    configuration.getOptional[Configuration]("otoroshi.cluster").getOrElse(Configuration.empty)
+    configuration.getOptionalWithFileSupport[Configuration]("otoroshi.cluster").getOrElse(Configuration.empty)
   )
   lazy val clusterAgent: ClusterAgent             = ClusterAgent(clusterConfig, this)
   lazy val clusterLeaderAgent: ClusterLeaderAgent = ClusterLeaderAgent(clusterConfig, this)
 
   lazy val bypassUserRightsCheck: Boolean =
-    configuration.getOptional[Boolean]("otoroshi.bypassUserRightsCheck").getOrElse(false)
+    configuration.getOptionalWithFileSupport[Boolean]("otoroshi.bypassUserRightsCheck").getOrElse(false)
 
   lazy val globalMaintenanceMode: Boolean =
-    configuration.getOptional[Boolean]("otoroshi.maintenanceMode").getOrElse(false)
+    configuration.getOptionalWithFileSupport[Boolean]("otoroshi.maintenanceMode").getOrElse(false)
 
   lazy val metricsEnabled: Boolean =
-    configuration.getOptional[Boolean]("otoroshi.metrics.enabled").getOrElse(true)
+    configuration.getOptionalWithFileSupport[Boolean]("otoroshi.metrics.enabled").getOrElse(true)
 
   lazy val staticExposedDomain: Option[String] =
-    configuration.getOptional[String]("otoroshi.options.staticExposedDomain")
+    configuration.getOptionalWithFileSupport[String]("otoroshi.options.staticExposedDomain")
 
   lazy val staticExposedDomainEnabled: Boolean = staticExposedDomain.isDefined
 
   lazy val providerDashboardUrl: Option[String] =
-    configuration.getOptional[String]("otoroshi.provider.dashboardUrl")
+    configuration.getOptionalWithFileSupport[String]("otoroshi.provider.dashboardUrl")
 
   lazy val providerJsUrl: Option[String] =
-    configuration.getOptional[String]("otoroshi.provider.jsUrl")
+    configuration.getOptionalWithFileSupport[String]("otoroshi.provider.jsUrl")
 
   lazy val providerCssUrl: Option[String] =
-    configuration.getOptional[String]("otoroshi.provider.cssUrl")
+    configuration.getOptionalWithFileSupport[String]("otoroshi.provider.cssUrl")
 
   lazy val providerJsUrlHtml: Html =
     providerJsUrl.map(url => Html(s"""<script type="text/javascript" src="$url"></script>""")).getOrElse(Html(""))
@@ -213,111 +215,111 @@ class Env(val configuration: Configuration,
     providerCssUrl.map(url => Html(s"""<link href="$url" rel="stylesheet">""")).getOrElse(Html(""))
 
   lazy val providerDashboardSecret: String =
-    configuration.getOptional[String]("otoroshi.provider.secret").getOrElse("secret")
+    configuration.getOptionalWithFileSupport[String]("otoroshi.provider.secret").getOrElse("secret")
 
   lazy val providerDashboardTitle: String =
-    configuration.getOptional[String]("otoroshi.provider.title").getOrElse("Provider's dashboard")
+    configuration.getOptionalWithFileSupport[String]("otoroshi.provider.title").getOrElse("Provider's dashboard")
 
   lazy val useEventStreamForScriptEvents: Boolean =
-    configuration.getOptional[Boolean]("otoroshi.options.useEventStreamForScriptEvents").getOrElse(true)
+    configuration.getOptionalWithFileSupport[Boolean]("otoroshi.options.useEventStreamForScriptEvents").getOrElse(true)
 
   lazy val emptyContentLengthIsChunked: Boolean =
-    configuration.getOptional[Boolean]("otoroshi.options.emptyContentLengthIsChunked").getOrElse(false)
+    configuration.getOptionalWithFileSupport[Boolean]("otoroshi.options.emptyContentLengthIsChunked").getOrElse(false)
 
   lazy val detectApiKeySooner: Boolean =
-    configuration.getOptional[Boolean]("otoroshi.options.detectApiKeySooner").getOrElse(false)
+    configuration.getOptionalWithFileSupport[Boolean]("otoroshi.options.detectApiKeySooner").getOrElse(false)
 
   lazy val metricsAccessKey: Option[String] =
-    configuration.getOptional[String]("otoroshi.metrics.accessKey").orElse(healthAccessKey)
+    configuration.getOptionalWithFileSupport[String]("otoroshi.metrics.accessKey").orElse(healthAccessKey)
 
   lazy val metricsEvery: FiniteDuration =
     configuration
-      .getOptional[Long]("otoroshi.metrics.every")
+      .getOptionalWithFileSupport[Long]("otoroshi.metrics.every")
       .map(v => FiniteDuration(v, TimeUnit.MILLISECONDS))
       .getOrElse(FiniteDuration(30, TimeUnit.SECONDS))
 
   lazy val staticGlobalScripts: GlobalScripts = {
     GlobalScripts(
-      enabled = configuration.getOptional[Boolean]("otoroshi.scripts.static.enabled").getOrElse(false),
+      enabled = configuration.getOptionalWithFileSupport[Boolean]("otoroshi.scripts.static.enabled").getOrElse(false),
       transformersRefs = configuration
-        .getOptional[Seq[String]]("otoroshi.scripts.static.transformersRefs")
+        .getOptionalWithFileSupport[Seq[String]]("otoroshi.scripts.static.transformersRefs")
         .orElse(
           configuration
-            .getOptional[String]("otoroshi.scripts.static.transformersRefsStr")
+            .getOptionalWithFileSupport[String]("otoroshi.scripts.static.transformersRefsStr")
             .map(_.split(",").map(_.trim).toSeq)
         )
         .getOrElse(Seq.empty[String]),
       transformersConfig = configuration
-        .getOptional[Configuration]("otoroshi.scripts.static.transformersConfig")
+        .getOptionalWithFileSupport[Configuration]("otoroshi.scripts.static.transformersConfig")
         .map(c => Json.parse(c.underlying.root().render(ConfigRenderOptions.concise())))
-        .orElse(configuration.getOptional[String]("otoroshi.scripts.static.transformersConfigStr").map(Json.parse))
+        .orElse(configuration.getOptionalWithFileSupport[String]("otoroshi.scripts.static.transformersConfigStr").map(Json.parse))
         .getOrElse(Json.obj()),
       validatorRefs = configuration
-        .getOptional[Seq[String]]("otoroshi.scripts.static.validatorRefs")
+        .getOptionalWithFileSupport[Seq[String]]("otoroshi.scripts.static.validatorRefs")
         .orElse(
           configuration
-            .getOptional[String]("otoroshi.scripts.static.validatorRefsStr")
+            .getOptionalWithFileSupport[String]("otoroshi.scripts.static.validatorRefsStr")
             .map(_.split(",").map(_.trim).toSeq)
         )
         .getOrElse(Seq.empty[String]),
       validatorConfig = configuration
-        .getOptional[Configuration]("otoroshi.scripts.static.validatorConfig")
+        .getOptionalWithFileSupport[Configuration]("otoroshi.scripts.static.validatorConfig")
         .map(c => Json.parse(c.underlying.root().render(ConfigRenderOptions.concise())))
-        .orElse(configuration.getOptional[String]("otoroshi.scripts.static.validatorConfigStr").map(Json.parse))
+        .orElse(configuration.getOptionalWithFileSupport[String]("otoroshi.scripts.static.validatorConfigStr").map(Json.parse))
         .getOrElse(Json.obj()),
       preRouteRefs = configuration
-        .getOptional[Seq[String]]("otoroshi.scripts.static.preRouteRefs")
+        .getOptionalWithFileSupport[Seq[String]]("otoroshi.scripts.static.preRouteRefs")
         .orElse(
           configuration
-            .getOptional[String]("otoroshi.scripts.static.preRouteRefsStr")
+            .getOptionalWithFileSupport[String]("otoroshi.scripts.static.preRouteRefsStr")
             .map(_.split(",").map(_.trim).toSeq)
         )
         .getOrElse(Seq.empty[String]),
       preRouteConfig = configuration
-        .getOptional[Configuration]("otoroshi.scripts.static.preRouteConfig")
+        .getOptionalWithFileSupport[Configuration]("otoroshi.scripts.static.preRouteConfig")
         .map(c => Json.parse(c.underlying.root().render(ConfigRenderOptions.concise())))
-        .orElse(configuration.getOptional[String]("otoroshi.scripts.static.preRouteConfigStr").map(Json.parse))
+        .orElse(configuration.getOptionalWithFileSupport[String]("otoroshi.scripts.static.preRouteConfigStr").map(Json.parse))
         .getOrElse(Json.obj()),
       sinkRefs = configuration
-        .getOptional[Seq[String]]("otoroshi.scripts.static.sinkRefs")
+        .getOptionalWithFileSupport[Seq[String]]("otoroshi.scripts.static.sinkRefs")
         .orElse(
-          configuration.getOptional[String]("otoroshi.scripts.static.sinkRefsStr").map(_.split(",").map(_.trim).toSeq)
+          configuration.getOptionalWithFileSupport[String]("otoroshi.scripts.static.sinkRefsStr").map(_.split(",").map(_.trim).toSeq)
         )
         .getOrElse(Seq.empty[String]),
       sinkConfig = configuration
-        .getOptional[Configuration]("otoroshi.scripts.static.sinkConfig")
+        .getOptionalWithFileSupport[Configuration]("otoroshi.scripts.static.sinkConfig")
         .map(c => Json.parse(c.underlying.root().render(ConfigRenderOptions.concise())))
-        .orElse(configuration.getOptional[String]("otoroshi.scripts.static.sinkConfigStr").map(Json.parse))
+        .orElse(configuration.getOptionalWithFileSupport[String]("otoroshi.scripts.static.sinkConfigStr").map(Json.parse))
         .getOrElse(Json.obj()),
       jobRefs = configuration
-        .getOptional[Seq[String]]("otoroshi.scripts.static.jobsRefs")
+        .getOptionalWithFileSupport[Seq[String]]("otoroshi.scripts.static.jobsRefs")
         .orElse(
           configuration
-            .getOptional[String]("otoroshi.scripts.static.jobsRefsStr")
+            .getOptionalWithFileSupport[String]("otoroshi.scripts.static.jobsRefsStr")
             .map(_.split(",").map(_.trim).toSeq)
         )
         .getOrElse(Seq.empty[String]),
       jobConfig = configuration
-        .getOptional[Configuration]("otoroshi.scripts.static.jobsConfig")
+        .getOptionalWithFileSupport[Configuration]("otoroshi.scripts.static.jobsConfig")
         .map(c => Json.parse(c.underlying.root().render(ConfigRenderOptions.concise())))
-        .orElse(configuration.getOptional[String]("otoroshi.scripts.static.jobsConfigStr").map(Json.parse))
+        .orElse(configuration.getOptionalWithFileSupport[String]("otoroshi.scripts.static.jobsConfigStr").map(Json.parse))
         .getOrElse(Json.obj())
     )
   }
 
   lazy val requestTimeout: FiniteDuration =
-    configuration.getOptional[Int]("app.proxy.requestTimeout").map(_.millis).getOrElse(1.hour)
+    configuration.getOptionalWithFileSupport[Int]("app.proxy.requestTimeout").map(_.millis).getOrElse(1.hour)
 
   lazy val trustXForwarded: Boolean =
-    configuration.getOptional[Boolean]("otoroshi.options.trustXForwarded").getOrElse(true)
+    configuration.getOptionalWithFileSupport[Boolean]("otoroshi.options.trustXForwarded").getOrElse(true)
 
   lazy val manualDnsResolve: Boolean =
-    configuration.getOptional[Boolean]("otoroshi.options.manualDnsResolve").getOrElse(true)
+    configuration.getOptionalWithFileSupport[Boolean]("otoroshi.options.manualDnsResolve").getOrElse(true)
   lazy val useOldHeadersComposition: Boolean =
-    configuration.getOptional[Boolean]("otoroshi.options.useOldHeadersComposition").getOrElse(false)
+    configuration.getOptionalWithFileSupport[Boolean]("otoroshi.options.useOldHeadersComposition").getOrElse(false)
   lazy val sendClientChainAsPem: Boolean =
-    configuration.getOptional[Boolean]("otoroshi.options.sendClientChainAsPem").getOrElse(false)
-  lazy val validateRequests: Boolean = configuration.getOptional[Boolean]("otoroshi.requests.validate").getOrElse(true)
+    configuration.getOptionalWithFileSupport[Boolean]("otoroshi.options.sendClientChainAsPem").getOrElse(false)
+  lazy val validateRequests: Boolean = configuration.getOptionalWithFileSupport[Boolean]("otoroshi.requests.validate").getOrElse(true)
   lazy val maxUrlLength: Long =
     Option(configuration.underlying.getBytes("otoroshi.requests.maxUrlLength")).map(_.toLong).getOrElse(4 * 1024L)
   lazy val maxCookieLength: Long =
@@ -328,66 +330,66 @@ class Env(val configuration: Configuration,
   lazy val maxHeaderNameLength: Long =
     Option(configuration.underlying.getBytes("otoroshi.requests.maxHeaderNameLength")).map(_.toLong).getOrElse(128L)
 
-  lazy val healthAccessKey: Option[String] = configuration.getOptional[String]("app.health.accessKey")
-  lazy val overheadThreshold: Double       = configuration.getOptional[Double]("app.overheadThreshold").getOrElse(500.0)
-  lazy val healthLimit: Double             = configuration.getOptional[Double]("app.health.limit").getOrElse(1000.0)
-  lazy val throttlingWindow: Int           = configuration.getOptional[Int]("app.throttlingWindow").getOrElse(10)
-  lazy val analyticsWindow: Int            = configuration.getOptional[Int]("app.analyticsWindow").getOrElse(30)
-  lazy val eventsName: String              = configuration.getOptional[String]("app.eventsName").getOrElse("otoroshi")
-  lazy val storageRoot: String             = configuration.getOptional[String]("app.storageRoot").getOrElse("otoroshi")
-  lazy val useCache: Boolean               = configuration.getOptional[Boolean]("otoroshi.cache.enabled").getOrElse(false)
-  lazy val cacheTtl: Int                   = configuration.getOptional[Int]("otoroshi.cache.ttl").filter(_ >= 2000).getOrElse(2000)
-  lazy val useRedisScan: Boolean           = configuration.getOptional[Boolean]("app.redis.useScan").getOrElse(false)
-  lazy val secret: String                  = configuration.getOptional[String]("play.crypto.secret").get
+  lazy val healthAccessKey: Option[String] = configuration.getOptionalWithFileSupport[String]("app.health.accessKey")
+  lazy val overheadThreshold: Double       = configuration.getOptionalWithFileSupport[Double]("app.overheadThreshold").getOrElse(500.0)
+  lazy val healthLimit: Double             = configuration.getOptionalWithFileSupport[Double]("app.health.limit").getOrElse(1000.0)
+  lazy val throttlingWindow: Int           = configuration.getOptionalWithFileSupport[Int]("app.throttlingWindow").getOrElse(10)
+  lazy val analyticsWindow: Int            = configuration.getOptionalWithFileSupport[Int]("app.analyticsWindow").getOrElse(30)
+  lazy val eventsName: String              = configuration.getOptionalWithFileSupport[String]("app.eventsName").getOrElse("otoroshi")
+  lazy val storageRoot: String             = configuration.getOptionalWithFileSupport[String]("app.storageRoot").getOrElse("otoroshi")
+  lazy val useCache: Boolean               = configuration.getOptionalWithFileSupport[Boolean]("otoroshi.cache.enabled").getOrElse(false)
+  lazy val cacheTtl: Int                   = configuration.getOptionalWithFileSupport[Int]("otoroshi.cache.ttl").filter(_ >= 2000).getOrElse(2000)
+  lazy val useRedisScan: Boolean           = configuration.getOptionalWithFileSupport[Boolean]("app.redis.useScan").getOrElse(false)
+  lazy val secret: String                  = configuration.getOptionalWithFileSupport[String]("play.crypto.secret").get
   lazy val secretSession: String =
-    configuration.getOptional[String]("otoroshi.sessions.secret").map(_.padTo(16, "0").mkString("").take(16)).get
-  lazy val sharedKey: String     = configuration.getOptional[String]("app.claim.sharedKey").get
-  lazy val env: String           = configuration.getOptional[String]("app.env").getOrElse("prod")
-  lazy val number: Int           = configuration.getOptional[Int]("app.instance.number").getOrElse(0)
-  lazy val name: String          = configuration.getOptional[String]("app.instance.name").getOrElse("otoroshi")
-  lazy val title: String         = configuration.getOptional[String]("app.instance.title").getOrElse("Otoroshi")
-  lazy val rack: String          = configuration.getOptional[String]("app.instance.rack").getOrElse("local")
-  lazy val infraProvider: String = configuration.getOptional[String]("app.instance.provider").getOrElse("local")
-  lazy val dataCenter: String    = configuration.getOptional[String]("app.instance.dc").getOrElse("local")
-  lazy val zone: String          = configuration.getOptional[String]("app.instance.zone").getOrElse("local")
-  lazy val region: String        = configuration.getOptional[String]("app.instance.region").getOrElse("local")
+    configuration.getOptionalWithFileSupport[String]("otoroshi.sessions.secret").map(_.padTo(16, "0").mkString("").take(16)).get
+  lazy val sharedKey: String     = configuration.getOptionalWithFileSupport[String]("app.claim.sharedKey").get
+  lazy val env: String           = configuration.getOptionalWithFileSupport[String]("app.env").getOrElse("prod")
+  lazy val number: Int           = configuration.getOptionalWithFileSupport[Int]("app.instance.number").getOrElse(0)
+  lazy val name: String          = configuration.getOptionalWithFileSupport[String]("app.instance.name").getOrElse("otoroshi")
+  lazy val title: String         = configuration.getOptionalWithFileSupport[String]("app.instance.title").getOrElse("Otoroshi")
+  lazy val rack: String          = configuration.getOptionalWithFileSupport[String]("app.instance.rack").getOrElse("local")
+  lazy val infraProvider: String = configuration.getOptionalWithFileSupport[String]("app.instance.provider").getOrElse("local")
+  lazy val dataCenter: String    = configuration.getOptionalWithFileSupport[String]("app.instance.dc").getOrElse("local")
+  lazy val zone: String          = configuration.getOptionalWithFileSupport[String]("app.instance.zone").getOrElse("local")
+  lazy val region: String        = configuration.getOptionalWithFileSupport[String]("app.instance.region").getOrElse("local")
   lazy val liveJs: Boolean = configuration
-    .getOptional[String]("app.env")
+    .getOptionalWithFileSupport[String]("app.env")
     .filter(_ == "dev")
     .map(_ => true)
-    .orElse(configuration.getOptional[Boolean]("app.liveJs"))
+    .orElse(configuration.getOptionalWithFileSupport[Boolean]("app.liveJs"))
     .getOrElse(false)
 
   lazy val exposeAdminApi: Boolean =
     if (clusterConfig.mode.isWorker) false
-    else configuration.getOptional[Boolean]("app.adminapi.exposed").getOrElse(true)
+    else configuration.getOptionalWithFileSupport[Boolean]("app.adminapi.exposed").getOrElse(true)
   lazy val exposeAdminDashboard: Boolean =
     if (clusterConfig.mode.isWorker) false
-    else configuration.getOptional[Boolean]("app.backoffice.exposed").getOrElse(true)
-  lazy val adminApiProxyHttps: Boolean = configuration.getOptional[Boolean]("app.adminapi.proxy.https").getOrElse(false)
+    else configuration.getOptionalWithFileSupport[Boolean]("app.backoffice.exposed").getOrElse(true)
+  lazy val adminApiProxyHttps: Boolean = configuration.getOptionalWithFileSupport[Boolean]("app.adminapi.proxy.https").getOrElse(false)
   lazy val adminApiProxyUseLocal: Boolean =
-    configuration.getOptional[Boolean]("app.adminapi.proxy.local").getOrElse(true)
-  lazy val domain: String = configuration.getOptional[String]("app.domain").getOrElse("oto.tools")
+    configuration.getOptionalWithFileSupport[Boolean]("app.adminapi.proxy.local").getOrElse(true)
+  lazy val domain: String = configuration.getOptionalWithFileSupport[String]("app.domain").getOrElse("oto.tools")
   lazy val adminApiSubDomain: String =
-    configuration.getOptional[String]("app.adminapi.targetSubdomain").getOrElse("otoroshi-admin-internal-api")
+    configuration.getOptionalWithFileSupport[String]("app.adminapi.targetSubdomain").getOrElse("otoroshi-admin-internal-api")
   lazy val adminApiExposedSubDomain: String =
-    configuration.getOptional[String]("app.adminapi.exposedSubdomain").getOrElse("otoroshi-api")
+    configuration.getOptionalWithFileSupport[String]("app.adminapi.exposedSubdomain").getOrElse("otoroshi-api")
   lazy val adminApiAdditionalExposedDomain: Option[String] =
-    configuration.getOptional[String]("app.adminapi.additionalExposedDomain")
+    configuration.getOptionalWithFileSupport[String]("app.adminapi.additionalExposedDomain")
   lazy val backOfficeSubDomain: String =
-    configuration.getOptional[String]("app.backoffice.subdomain").getOrElse("otoroshi")
+    configuration.getOptionalWithFileSupport[String]("app.backoffice.subdomain").getOrElse("otoroshi")
   lazy val privateAppsSubDomain: String =
-    configuration.getOptional[String]("app.privateapps.subdomain").getOrElse("privateapps")
+    configuration.getOptionalWithFileSupport[String]("app.privateapps.subdomain").getOrElse("privateapps")
   lazy val privateAppsPort: Option[Int] =
-    configuration.getOptional[Int]("app.privateapps.port")
-  lazy val retries: Int = configuration.getOptional[Int]("app.retries").getOrElse(5)
+    configuration.getOptionalWithFileSupport[Int]("app.privateapps.port")
+  lazy val retries: Int = configuration.getOptionalWithFileSupport[Int]("app.retries").getOrElse(5)
 
-  lazy val backOfficeServiceId = configuration.getOptional[String]("app.adminapi.defaultValues.backOfficeServiceId").get
-  lazy val backOfficeGroupId   = configuration.getOptional[String]("app.adminapi.defaultValues.backOfficeGroupId").get
+  lazy val backOfficeServiceId = configuration.getOptionalWithFileSupport[String]("app.adminapi.defaultValues.backOfficeServiceId").get
+  lazy val backOfficeGroupId   = configuration.getOptionalWithFileSupport[String]("app.adminapi.defaultValues.backOfficeGroupId").get
   lazy val backOfficeApiKeyClientId =
-    configuration.getOptional[String]("app.adminapi.defaultValues.backOfficeApiKeyClientId").get
+    configuration.getOptionalWithFileSupport[String]("app.adminapi.defaultValues.backOfficeApiKeyClientId").get
   lazy val backOfficeApiKeyClientSecret =
-    configuration.getOptional[String]("app.adminapi.defaultValues.backOfficeApiKeyClientSecret").get
+    configuration.getOptionalWithFileSupport[String]("app.adminapi.defaultValues.backOfficeApiKeyClientSecret").get
 
   def composeMainUrl(subdomain: String): String = s"$subdomain.$domain"
 
@@ -401,16 +403,16 @@ class Env(val configuration: Configuration,
   lazy val gatewayClient = {
     val parser: WSConfigParser = new WSConfigParser(configuration.underlying, environment.classLoader)
     val config: AhcWSClientConfig = new AhcWSClientConfig(wsClientConfig = parser.parse()).copy(
-      keepAlive = configuration.getOptional[Boolean]("app.proxy.keepAlive").getOrElse(true)
+      keepAlive = configuration.getOptionalWithFileSupport[Boolean]("app.proxy.keepAlive").getOrElse(true)
       //setHttpClientCodecMaxChunkSize(1024 * 100)
     )
     val wsClientConfig: WSClientConfig = config.wsClientConfig.copy(
       userAgent = Some("Otoroshi-akka"),
-      compressionEnabled = configuration.getOptional[Boolean]("app.proxy.compressionEnabled").getOrElse(false),
+      compressionEnabled = configuration.getOptionalWithFileSupport[Boolean]("app.proxy.compressionEnabled").getOrElse(false),
       idleTimeout =
-        configuration.getOptional[Int]("app.proxy.idleTimeout").map(_.millis).getOrElse((2 * 60 * 1000).millis),
+        configuration.getOptionalWithFileSupport[Int]("app.proxy.idleTimeout").map(_.millis).getOrElse((2 * 60 * 1000).millis),
       connectionTimeout = configuration
-        .getOptional[Int]("app.proxy.connectionTimeout")
+        .getOptionalWithFileSupport[Int]("app.proxy.connectionTimeout")
         .map(_.millis)
         .getOrElse((2 * 60 * 1000).millis)
     )
@@ -425,11 +427,11 @@ class Env(val configuration: Configuration,
       new AkkWsClient(wsClientConfig, this)(otoroshiActorSystem, otoroshiMaterializer),
       sslconfig => {
         val wsClientConfig: WSClientConfig = config.wsClientConfig.copy(
-          compressionEnabled = configuration.getOptional[Boolean]("app.proxy.compressionEnabled").getOrElse(false),
+          compressionEnabled = configuration.getOptionalWithFileSupport[Boolean]("app.proxy.compressionEnabled").getOrElse(false),
           idleTimeout =
-            configuration.getOptional[Int]("app.proxy.idleTimeout").map(_.millis).getOrElse((2 * 60 * 1000).millis),
+            configuration.getOptionalWithFileSupport[Int]("app.proxy.idleTimeout").map(_.millis).getOrElse((2 * 60 * 1000).millis),
           connectionTimeout = configuration
-            .getOptional[Int]("app.proxy.connectionTimeout")
+            .getOptionalWithFileSupport[Int]("app.proxy.connectionTimeout")
             .map(_.millis)
             .getOrElse((2 * 60 * 1000).millis),
           ssl = sslconfig
@@ -440,7 +442,7 @@ class Env(val configuration: Configuration,
           )
         )(otoroshiMaterializer)
       },
-      configuration.getOptional[Boolean]("app.proxy.useAkkaClient").getOrElse(false),
+      configuration.getOptionalWithFileSupport[Boolean]("app.proxy.useAkkaClient").getOrElse(false),
       this
     )
   }
@@ -448,16 +450,16 @@ class Env(val configuration: Configuration,
   lazy val _internalClient = {
     val parser: WSConfigParser = new WSConfigParser(configuration.underlying, environment.classLoader)
     val config: AhcWSClientConfig = new AhcWSClientConfig(wsClientConfig = parser.parse()).copy(
-      keepAlive = configuration.getOptional[Boolean]("app.proxy.keepAlive").getOrElse(true)
+      keepAlive = configuration.getOptionalWithFileSupport[Boolean]("app.proxy.keepAlive").getOrElse(true)
       //setHttpClientCodecMaxChunkSize(1024 * 100)
     )
     val wsClientConfig: WSClientConfig = config.wsClientConfig.copy(
       userAgent = Some("Otoroshi-akka"),
-      compressionEnabled = configuration.getOptional[Boolean]("app.proxy.compressionEnabled").getOrElse(false),
+      compressionEnabled = configuration.getOptionalWithFileSupport[Boolean]("app.proxy.compressionEnabled").getOrElse(false),
       idleTimeout =
-        configuration.getOptional[Int]("app.proxy.idleTimeout").map(_.millis).getOrElse((2 * 60 * 1000).millis),
+        configuration.getOptionalWithFileSupport[Int]("app.proxy.idleTimeout").map(_.millis).getOrElse((2 * 60 * 1000).millis),
       connectionTimeout = configuration
-        .getOptional[Int]("app.proxy.connectionTimeout")
+        .getOptionalWithFileSupport[Int]("app.proxy.connectionTimeout")
         .map(_.millis)
         .getOrElse((2 * 60 * 1000).millis)
     )
@@ -466,11 +468,11 @@ class Env(val configuration: Configuration,
       new AkkWsClient(wsClientConfig, this)(otoroshiActorSystem, otoroshiMaterializer),
       sslconfig => {
         val wsClientConfig: WSClientConfig = config.wsClientConfig.copy(
-          compressionEnabled = configuration.getOptional[Boolean]("app.proxy.compressionEnabled").getOrElse(false),
+          compressionEnabled = configuration.getOptionalWithFileSupport[Boolean]("app.proxy.compressionEnabled").getOrElse(false),
           idleTimeout =
-            configuration.getOptional[Int]("app.proxy.idleTimeout").map(_.millis).getOrElse((2 * 60 * 1000).millis),
+            configuration.getOptionalWithFileSupport[Int]("app.proxy.idleTimeout").map(_.millis).getOrElse((2 * 60 * 1000).millis),
           connectionTimeout = configuration
-            .getOptional[Int]("app.proxy.connectionTimeout")
+            .getOptionalWithFileSupport[Int]("app.proxy.connectionTimeout")
             .map(_.millis)
             .getOrElse((2 * 60 * 1000).millis),
           ssl = sslconfig
@@ -481,7 +483,7 @@ class Env(val configuration: Configuration,
           )
         )(otoroshiMaterializer)
       },
-      configuration.getOptional[Boolean]("app.proxy.useAkkaClient").getOrElse(false),
+      configuration.getOptionalWithFileSupport[Boolean]("app.proxy.useAkkaClient").getOrElse(false),
       this
     )
   }
@@ -495,9 +497,9 @@ class Env(val configuration: Configuration,
 
   lazy val hash = s"${System.currentTimeMillis()}"
 
-  lazy val backOfficeSessionExp = configuration.getOptional[Long]("app.backoffice.session.exp").get
+  lazy val backOfficeSessionExp = configuration.getOptionalWithFileSupport[Long]("app.backoffice.session.exp").get
 
-  lazy val exposedRootScheme = configuration.getOptional[String]("app.rootScheme").getOrElse("https")
+  lazy val exposedRootScheme = configuration.getOptionalWithFileSupport[String]("app.rootScheme").getOrElse("https")
 
   def rootScheme               = s"${exposedRootScheme}://"
   def exposedRootSchemeIsHttps = exposedRootScheme == "https"
@@ -505,50 +507,50 @@ class Env(val configuration: Configuration,
   lazy val Ws     = _internalClient
   lazy val MtlsWs = utils.http.MtlsWs(_internalClient)
 
-  lazy val snowflakeSeed      = configuration.getOptional[Long]("app.snowflake.seed").get
+  lazy val snowflakeSeed      = configuration.getOptionalWithFileSupport[Long]("app.snowflake.seed").get
   lazy val snowflakeGenerator = IdGenerator(snowflakeSeed)
   lazy val redirections: Seq[String] =
-    configuration.getOptional[Seq[String]]("app.redirections").map(_.toSeq).getOrElse(Seq.empty[String])
+    configuration.getOptionalWithFileSupport[Seq[String]]("app.redirections").map(_.toSeq).getOrElse(Seq.empty[String])
 
   lazy val crypto = ClaimCrypto(sharedKey)
 
   object Headers {
-    lazy val OtoroshiVizFromLabel         = configuration.getOptional[String]("otoroshi.headers.trace.label").get
-    lazy val OtoroshiVizFrom              = configuration.getOptional[String]("otoroshi.headers.trace.from").get
-    lazy val OtoroshiGatewayParentRequest = configuration.getOptional[String]("otoroshi.headers.trace.parent").get
-    lazy val OtoroshiAdminProfile         = configuration.getOptional[String]("otoroshi.headers.request.adminprofile").get
-    lazy val OtoroshiClientId             = configuration.getOptional[String]("otoroshi.headers.request.clientid").get
+    lazy val OtoroshiVizFromLabel         = configuration.getOptionalWithFileSupport[String]("otoroshi.headers.trace.label").get
+    lazy val OtoroshiVizFrom              = configuration.getOptionalWithFileSupport[String]("otoroshi.headers.trace.from").get
+    lazy val OtoroshiGatewayParentRequest = configuration.getOptionalWithFileSupport[String]("otoroshi.headers.trace.parent").get
+    lazy val OtoroshiAdminProfile         = configuration.getOptionalWithFileSupport[String]("otoroshi.headers.request.adminprofile").get
+    lazy val OtoroshiClientId             = configuration.getOptionalWithFileSupport[String]("otoroshi.headers.request.clientid").get
     lazy val OtoroshiSimpleApiKeyClientId =
-      configuration.getOptional[String]("otoroshi.headers.request.simpleapiclientid").get
-    lazy val OtoroshiClientSecret     = configuration.getOptional[String]("otoroshi.headers.request.clientsecret").get
-    lazy val OtoroshiRequestId        = configuration.getOptional[String]("otoroshi.headers.request.id").get
-    lazy val OtoroshiRequestTimestamp = configuration.getOptional[String]("otoroshi.headers.request.timestamp").get
-    lazy val OtoroshiAuthorization    = configuration.getOptional[String]("otoroshi.headers.request.authorization").get
-    lazy val OtoroshiBearer           = configuration.getOptional[String]("otoroshi.headers.request.bearer").get
+      configuration.getOptionalWithFileSupport[String]("otoroshi.headers.request.simpleapiclientid").get
+    lazy val OtoroshiClientSecret     = configuration.getOptionalWithFileSupport[String]("otoroshi.headers.request.clientsecret").get
+    lazy val OtoroshiRequestId        = configuration.getOptionalWithFileSupport[String]("otoroshi.headers.request.id").get
+    lazy val OtoroshiRequestTimestamp = configuration.getOptionalWithFileSupport[String]("otoroshi.headers.request.timestamp").get
+    lazy val OtoroshiAuthorization    = configuration.getOptionalWithFileSupport[String]("otoroshi.headers.request.authorization").get
+    lazy val OtoroshiBearer           = configuration.getOptionalWithFileSupport[String]("otoroshi.headers.request.bearer").get
     lazy val OtoroshiJWTAuthorization =
-      configuration.getOptional[String]("otoroshi.headers.request.jwtAuthorization").get
+      configuration.getOptionalWithFileSupport[String]("otoroshi.headers.request.jwtAuthorization").get
     lazy val OtoroshiBasicAuthorization =
-      configuration.getOptional[String]("otoroshi.headers.request.basicAuthorization").get
+      configuration.getOptionalWithFileSupport[String]("otoroshi.headers.request.basicAuthorization").get
     lazy val OtoroshiBearerAuthorization =
-      configuration.getOptional[String]("otoroshi.headers.request.bearerAuthorization").get
-    lazy val OtoroshiProxiedHost  = configuration.getOptional[String]("otoroshi.headers.response.proxyhost").get
-    lazy val OtoroshiGatewayError = configuration.getOptional[String]("otoroshi.headers.response.error").get
-    lazy val OtoroshiErrorMsg     = configuration.getOptional[String]("otoroshi.headers.response.errormsg").get
-    lazy val OtoroshiProxyLatency = configuration.getOptional[String]("otoroshi.headers.response.proxylatency").get
+      configuration.getOptionalWithFileSupport[String]("otoroshi.headers.request.bearerAuthorization").get
+    lazy val OtoroshiProxiedHost  = configuration.getOptionalWithFileSupport[String]("otoroshi.headers.response.proxyhost").get
+    lazy val OtoroshiGatewayError = configuration.getOptionalWithFileSupport[String]("otoroshi.headers.response.error").get
+    lazy val OtoroshiErrorMsg     = configuration.getOptionalWithFileSupport[String]("otoroshi.headers.response.errormsg").get
+    lazy val OtoroshiProxyLatency = configuration.getOptionalWithFileSupport[String]("otoroshi.headers.response.proxylatency").get
     lazy val OtoroshiUpstreamLatency =
-      configuration.getOptional[String]("otoroshi.headers.response.upstreamlatency").get
-    lazy val OtoroshiDailyCallsRemaining = configuration.getOptional[String]("otoroshi.headers.response.dailyquota").get
+      configuration.getOptionalWithFileSupport[String]("otoroshi.headers.response.upstreamlatency").get
+    lazy val OtoroshiDailyCallsRemaining = configuration.getOptionalWithFileSupport[String]("otoroshi.headers.response.dailyquota").get
     lazy val OtoroshiMonthlyCallsRemaining =
-      configuration.getOptional[String]("otoroshi.headers.response.monthlyquota").get
-    lazy val OtoroshiState                = configuration.getOptional[String]("otoroshi.headers.comm.state").get
-    lazy val OtoroshiStateResp            = configuration.getOptional[String]("otoroshi.headers.comm.stateresp").get
-    lazy val OtoroshiClaim                = configuration.getOptional[String]("otoroshi.headers.comm.claim").get
-    lazy val OtoroshiHealthCheckLogicTest = configuration.getOptional[String]("otoroshi.headers.healthcheck.test").get
+      configuration.getOptionalWithFileSupport[String]("otoroshi.headers.response.monthlyquota").get
+    lazy val OtoroshiState                = configuration.getOptionalWithFileSupport[String]("otoroshi.headers.comm.state").get
+    lazy val OtoroshiStateResp            = configuration.getOptionalWithFileSupport[String]("otoroshi.headers.comm.stateresp").get
+    lazy val OtoroshiClaim                = configuration.getOptionalWithFileSupport[String]("otoroshi.headers.comm.claim").get
+    lazy val OtoroshiHealthCheckLogicTest = configuration.getOptionalWithFileSupport[String]("otoroshi.headers.healthcheck.test").get
     lazy val OtoroshiHealthCheckLogicTestResult =
-      configuration.getOptional[String]("otoroshi.headers.healthcheck.testresult").get
-    lazy val OtoroshiIssuer          = configuration.getOptional[String]("otoroshi.headers.jwt.issuer").get
-    lazy val OtoroshiTrackerId       = configuration.getOptional[String]("otoroshi.headers.canary.tracker").get
-    lazy val OtoroshiClientCertChain = configuration.getOptional[String]("otoroshi.headers.client.cert.chain").get
+      configuration.getOptionalWithFileSupport[String]("otoroshi.headers.healthcheck.testresult").get
+    lazy val OtoroshiIssuer          = configuration.getOptionalWithFileSupport[String]("otoroshi.headers.jwt.issuer").get
+    lazy val OtoroshiTrackerId       = configuration.getOptionalWithFileSupport[String]("otoroshi.headers.canary.tracker").get
+    lazy val OtoroshiClientCertChain = configuration.getOptionalWithFileSupport[String]("otoroshi.headers.client.cert.chain").get
   }
 
   logger.info(s"Otoroshi version ${otoroshiVersion}")
@@ -559,7 +561,7 @@ class Env(val configuration: Configuration,
   }
 
   lazy val datastores: DataStores = {
-    configuration.getOptional[String]("app.storage").getOrElse("redis") match {
+    configuration.getOptionalWithFileSupport[String]("app.storage").getOrElse("redis") match {
       case _ if clusterConfig.mode == ClusterMode.Worker =>
         new SwappableInMemoryDataStores(configuration, environment, lifecycle, this)
       case "redis-pool" if clusterConfig.mode == ClusterMode.Leader =>
@@ -611,7 +613,7 @@ class Env(val configuration: Configuration,
     }
   }
 
-  val scriptingEnabled = configuration.getOptional[Boolean]("otoroshi.scripts.enabled").getOrElse(false)
+  val scriptingEnabled = configuration.getOptionalWithFileSupport[Boolean]("otoroshi.scripts.enabled").getOrElse(false)
   val scriptCompiler   = new ScriptCompiler(this)
   val scriptManager    = new ScriptManager(this).start()
 
@@ -645,23 +647,23 @@ class Env(val configuration: Configuration,
 
   lazy val port = getHttpPort.getOrElse(
     configuration
-      .getOptional[Int]("play.server.http.port")
-      .orElse(configuration.getOptional[Int]("http.port"))
+      .getOptionalWithFileSupport[Int]("play.server.http.port")
+      .orElse(configuration.getOptionalWithFileSupport[Int]("http.port"))
       .getOrElse(9999)
   )
 
   lazy val httpsPort = getHttpsPort.getOrElse(
     configuration
-      .getOptional[Int]("play.server.https.port")
-      .orElse(configuration.getOptional[Int]("https.port"))
+      .getOptionalWithFileSupport[Int]("play.server.https.port")
+      .orElse(configuration.getOptionalWithFileSupport[Int]("https.port"))
       .getOrElse(9998)
   )
 
   lazy val defaultConfig = GlobalConfig(
     perIpThrottlingQuota = 500,
     throttlingQuota = 100000,
-    maxLogsSize = configuration.getOptional[Int]("app.events.maxSize").getOrElse(100),
-    otoroshiId = configuration.getOptional[String]("otoroshi.instance.instanceId").getOrElse(IdGenerator.uuid),
+    maxLogsSize = configuration.getOptionalWithFileSupport[Int]("app.events.maxSize").getOrElse(100),
+    otoroshiId = configuration.getOptionalWithFileSupport[String]("otoroshi.instance.instanceId").getOrElse(IdGenerator.uuid),
   )
 
   lazy val backOfficeGroup = ServiceGroup(
@@ -715,10 +717,10 @@ class Env(val configuration: Configuration,
 
   lazy val otoroshiVersion     = "1.4.23-dev"
   lazy val latestVersionHolder = new AtomicReference[JsValue](JsNull)
-  lazy val checkForUpdates     = configuration.getOptional[Boolean]("app.checkForUpdates").getOrElse(true)
+  lazy val checkForUpdates     = configuration.getOptionalWithFileSupport[Boolean]("app.checkForUpdates").getOrElse(true)
 
-  lazy val jmxEnabled = configuration.getOptional[Boolean]("otoroshi.jmx.enabled").getOrElse(false)
-  lazy val jmxPort    = configuration.getOptional[Int]("otoroshi.jmx.port").getOrElse(16000)
+  lazy val jmxEnabled = configuration.getOptionalWithFileSupport[Boolean]("otoroshi.jmx.enabled").getOrElse(false)
+  lazy val jmxPort    = configuration.getOptionalWithFileSupport[Int]("otoroshi.jmx.port").getOrElse(16000)
 
   if (jmxEnabled) {
     LocateRegistry.createRegistry(jmxPort)
@@ -732,7 +734,7 @@ class Env(val configuration: Configuration,
   private def setupLoggers(): Unit = {
     val loggerContext = LoggerFactory.getILoggerFactory.asInstanceOf[LoggerContext]
     val loggersAndLevel: Seq[(String, String)] = configuration
-      .getOptional[Configuration]("otoroshi.loggers")
+      .getOptionalWithFileSupport[Configuration]("otoroshi.loggers")
       .map { loggers =>
         loggers.entrySet.map {
           case (key, value) => (key, value.unwrapped().asInstanceOf[String])
@@ -771,10 +773,10 @@ class Env(val configuration: Configuration,
         clusterAgent.startF()
       } else {
         DynamicSSLEngineProvider.setCurrentEnv(this)
-        configuration.getOptional[Seq[String]]("otoroshi.ssl.cipherSuites").filterNot(_.isEmpty).foreach { s =>
+        configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.cipherSuites").filterNot(_.isEmpty).foreach { s =>
           DynamicSSLEngineProvider.logger.warn(s"Using custom SSL cipher suites: ${s.mkString(", ")}")
         }
-        configuration.getOptional[Seq[String]]("otoroshi.ssl.protocols").filterNot(_.isEmpty).foreach { p =>
+        configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.protocols").filterNot(_.isEmpty).foreach { p =>
           DynamicSSLEngineProvider.logger.warn(s"Using custom SSL protocols: ${p.mkString(", ")}}")
         }
       }
@@ -787,14 +789,14 @@ class Env(val configuration: Configuration,
           }
           case Success(true) if clusterConfig.mode != ClusterMode.Worker => {
             logger.info(s"The main datastore seems to be empty, registering some basic services")
-            val login    = configuration.getOptional[String]("app.adminLogin").getOrElse("admin@otoroshi.io")
-            val password = configuration.getOptional[String]("app.adminPassword").getOrElse(IdGenerator.token(32))
+            val login    = configuration.getOptionalWithFileSupport[String]("app.adminLogin").getOrElse("admin@otoroshi.io")
+            val password = configuration.getOptionalWithFileSupport[String]("app.adminPassword").getOrElse(IdGenerator.token(32))
             val headers: Seq[(String, String)] = configuration
-              .getOptional[Seq[String]]("app.importFromHeaders")
+              .getOptionalWithFileSupport[Seq[String]]("app.importFromHeaders")
               .map(headers => headers.toSeq.map(h => h.split(":")).map(h => (h(0).trim, h(1).trim)))
               .getOrElse(Seq.empty[(String, String)])
             if (configuration.has("app.importFrom")) {
-              configuration.getOptional[String]("app.importFrom") match {
+              configuration.getOptionalWithFileSupport[String]("app.importFrom") match {
                 case Some(url) if url.startsWith("http://") || url.startsWith("https://") => {
                   logger.info(s"Importing from URL: $url")
                   _internalClient.url(url).withHttpHeaders(headers: _*).get().fast.map { resp =>
@@ -820,7 +822,7 @@ class Env(val configuration: Configuration,
                 }
               }
             } else {
-              configuration.getOptional[play.api.Configuration]("app.initialData") match {
+              configuration.getOptionalWithFileSupport[play.api.Configuration]("app.initialData") match {
                 case Some(obj) => {
                   val importJson = Json
                     .parse(
@@ -975,8 +977,8 @@ class Env(val configuration: Configuration,
 
   /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  lazy val sessionDomain = configuration.getOptional[String]("play.http.session.domain").get
-  lazy val playSecret    = configuration.getOptional[String]("play.http.secret.key").get
+  lazy val sessionDomain = configuration.getOptionalWithFileSupport[String]("play.http.session.domain").get
+  lazy val playSecret    = configuration.getOptionalWithFileSupport[String]("play.http.secret.key").get
 
   def sign(message: String): String =
     scala.util.Try {

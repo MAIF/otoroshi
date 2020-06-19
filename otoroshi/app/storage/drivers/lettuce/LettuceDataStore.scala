@@ -29,6 +29,7 @@ import play.api.libs.json._
 import play.api.{Configuration, Environment, Logger}
 import ssl.{CertificateDataStore, ClientCertificateValidationDataStore, KvClientCertificateValidationDataStore}
 import storage.stores.KvRawDataStore
+import otoroshi.utils.syntax.implicits._
 
 import scala.collection.JavaConverters._
 import scala.concurrent.{ExecutionContext, Future}
@@ -41,13 +42,13 @@ class LettuceDataStores(configuration: Configuration,
 
   lazy val logger = Logger("otoroshi-redis-lettuce-datastores")
 
-  lazy val redisStatsItems: Int = configuration.getOptional[Int]("app.redis.windowSize").getOrElse(99)
+  lazy val redisStatsItems: Int = configuration.getOptionalWithFileSupport[Int]("app.redis.windowSize").getOrElse(99)
 
   lazy val redisActorSystem =
     ActorSystem(
       "otoroshi-redis-lettuce-system",
       configuration
-        .getOptional[Configuration]("app.actorsystems.datastore")
+        .getOptionalWithFileSupport[Configuration]("app.actorsystems.datastore")
         .map(_.underlying)
         .getOrElse(ConfigFactory.empty)
     )
@@ -57,19 +58,19 @@ class LettuceDataStores(configuration: Configuration,
 
   lazy val redisDispatcher = redisActorSystem.dispatcher
 
-  lazy val redisConnection = configuration.getOptional[String]("app.redis.lettuce.connection").getOrElse("default")
-  lazy val redisReadFrom   = configuration.getOptional[String]("app.redis.lettuce.readFrom").getOrElse("MASTER_PREFERRED")
+  lazy val redisConnection = configuration.getOptionalWithFileSupport[String]("app.redis.lettuce.connection").getOrElse("default")
+  lazy val redisReadFrom   = configuration.getOptionalWithFileSupport[String]("app.redis.lettuce.readFrom").getOrElse("MASTER_PREFERRED")
   lazy val readFrom        = ReadFrom.valueOf(redisReadFrom)
   lazy val redisUris: Seq[String] = configuration
-    .getOptional[Seq[String]]("app.redis.lettuce.uris")
+    .getOptionalWithFileSupport[Seq[String]]("app.redis.lettuce.uris")
     .filter(_.nonEmpty)
     .map(_.map(_.trim))
     .orElse(
-      configuration.getOptional[String]("app.redis.lettuce.urisStr").map(_.split(",").map(_.trim).toSeq)
+      configuration.getOptionalWithFileSupport[String]("app.redis.lettuce.urisStr").map(_.split(",").map(_.trim).toSeq)
     )
     .filter(_.nonEmpty)
     .orElse(
-      configuration.getOptional[String]("app.redis.lettuce.uri").map(v => Seq(v.trim))
+      configuration.getOptionalWithFileSupport[String]("app.redis.lettuce.uri").map(v => Seq(v.trim))
     )
     .getOrElse(Seq.empty[String])
   lazy val nodesRaw = redisUris.map(v => RedisURI.create(v))
@@ -77,10 +78,10 @@ class LettuceDataStores(configuration: Configuration,
   lazy val resources = {
     val default = DefaultClientResources.builder().build()
     val computationThreadPoolSize = configuration
-      .getOptional[Int]("app.redis.lettuce.computationThreadPoolSize")
+      .getOptionalWithFileSupport[Int]("app.redis.lettuce.computationThreadPoolSize")
       .getOrElse(default.computationThreadPoolSize())
     val ioThreadPoolSize =
-      configuration.getOptional[Int]("app.redis.lettuce.ioThreadPoolSize").getOrElse(default.ioThreadPoolSize())
+      configuration.getOptionalWithFileSupport[Int]("app.redis.lettuce.ioThreadPoolSize").getOrElse(default.ioThreadPoolSize())
     ClientResources
       .builder()
       .computationThreadPoolSize(computationThreadPoolSize)

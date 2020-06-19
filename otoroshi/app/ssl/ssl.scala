@@ -59,6 +59,7 @@ import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 import scala.concurrent.duration._
+import otoroshi.utils.syntax.implicits._
 
 /**
  * git over http works with otoroshi
@@ -637,7 +638,7 @@ trait CertificateDataStore extends BasicStore[Cert] {
   }
 
   def readCertOrKey(conf: Configuration, path: String, env: Env): Option[String] = {
-    conf.getOptional[String](path).flatMap { cacert =>
+    conf.getOptionalWithFileSupport[String](path).flatMap { cacert =>
       if ((cacert.contains(PemHeaders.BeginCertificate) && cacert.contains(PemHeaders.EndCertificate)) ||
           (cacert.contains(PemHeaders.BeginPrivateKey) && cacert.contains(PemHeaders.EndPrivateKey)) ||
           (cacert.contains(PemHeaders.BeginPrivateECKey) && cacert.contains(PemHeaders.EndPrivateECKey)) ||
@@ -742,7 +743,7 @@ trait CertificateDataStore extends BasicStore[Cert] {
                   "otoroshi.ssl.initialCertKey",
                   logger)(env, ec)
     env.configuration
-      .getOptional[Seq[Configuration]]("otoroshi.ssl.initialCerts")
+      .getOptionalWithFileSupport[Seq[Configuration]]("otoroshi.ssl.initialCerts")
       .getOrElse(Seq.empty[Configuration])
       .foreach { conf =>
         importOneCert(conf, "ca", "cert", "key", logger)(env, ec)
@@ -907,10 +908,10 @@ object DynamicSSLEngineProvider {
       val optEnv = Option(currentEnv.get)
 
       val trustAll: Boolean =
-        optEnv.flatMap(e => e.configuration.getOptional[Boolean]("otoroshi.ssl.trust.all")).getOrElse(false)
+        optEnv.flatMap(e => e.configuration.getOptionalWithFileSupport[Boolean]("otoroshi.ssl.trust.all")).getOrElse(false)
 
       val cacertPath = optEnv
-        .flatMap(e => e.configuration.getOptional[String]("otoroshi.ssl.cacert.path"))
+        .flatMap(e => e.configuration.getOptionalWithFileSupport[String]("otoroshi.ssl.cacert.path"))
         .map(
           path =>
             path
@@ -920,11 +921,11 @@ object DynamicSSLEngineProvider {
         .getOrElse(System.getProperty("java.home") + "/lib/security/cacerts")
 
       val cacertPassword = optEnv
-        .flatMap(e => e.configuration.getOptional[String]("otoroshi.ssl.cacert.password"))
+        .flatMap(e => e.configuration.getOptionalWithFileSupport[String]("otoroshi.ssl.cacert.password"))
         .getOrElse("changeit")
 
       val dumpPath: Option[String] =
-        optEnv.flatMap(e => e.configuration.getOptional[String]("play.server.https.keyStoreDumpPath"))
+        optEnv.flatMap(e => e.configuration.getOptionalWithFileSupport[String]("play.server.https.keyStoreDumpPath"))
 
       logger.debug("Setting up SSL Context ")
       val sslContext: SSLContext = SSLContext.getInstance("TLS")
@@ -941,7 +942,7 @@ object DynamicSSLEngineProvider {
         m => new X509KeyManagerSnitch(m.asInstanceOf[X509KeyManager]).asInstanceOf[KeyManager]
       )
       val tm: Array[TrustManager] =
-      optEnv.flatMap(e => e.configuration.getOptional[Boolean]("play.server.https.trustStore.noCaVerification")).map {
+      optEnv.flatMap(e => e.configuration.getOptionalWithFileSupport[Boolean]("play.server.https.trustStore.noCaVerification")).map {
         case true  => Array[TrustManager](noCATrustManager)
         case false => createTrustStore(keyStore, cacertPath, cacertPassword)
       } getOrElse {
@@ -1001,10 +1002,10 @@ object DynamicSSLEngineProvider {
       val optEnv = Option(currentEnv.get)
 
       val trustAll: Boolean =
-        optEnv.flatMap(e => e.configuration.getOptional[Boolean]("otoroshi.ssl.trust.all")).getOrElse(false)
+        optEnv.flatMap(e => e.configuration.getOptionalWithFileSupport[Boolean]("otoroshi.ssl.trust.all")).getOrElse(false)
 
       val cacertPath = optEnv
-        .flatMap(e => e.configuration.getOptional[String]("otoroshi.ssl.cacert.path"))
+        .flatMap(e => e.configuration.getOptionalWithFileSupport[String]("otoroshi.ssl.cacert.path"))
         .map(
           path =>
             path
@@ -1014,7 +1015,7 @@ object DynamicSSLEngineProvider {
         .getOrElse(System.getProperty("java.home") + "/lib/security/cacerts")
 
       val cacertPassword = optEnv
-        .flatMap(e => e.configuration.getOptional[String]("otoroshi.ssl.cacert.password"))
+        .flatMap(e => e.configuration.getOptionalWithFileSupport[String]("otoroshi.ssl.cacert.password"))
         .getOrElse("changeit")
 
       logger.debug("Setting up SSL Context ")
@@ -1029,7 +1030,7 @@ object DynamicSSLEngineProvider {
         m => new X509KeyManagerSnitch(m.asInstanceOf[X509KeyManager]).asInstanceOf[KeyManager]
       )
       val tm: Array[TrustManager] =
-      optEnv.flatMap(e => e.configuration.getOptional[Boolean]("play.server.https.trustStore.noCaVerification")).map {
+      optEnv.flatMap(e => e.configuration.getOptionalWithFileSupport[Boolean]("play.server.https.trustStore.noCaVerification")).map {
         case true  => Array[TrustManager](noCATrustManager)
         case false => createTrustStore(keyStore, cacertPath, cacertPassword)
       } getOrElse {
@@ -1057,10 +1058,10 @@ object DynamicSSLEngineProvider {
       val trustAll: Boolean =
         if (forceTrustAll) true
         else
-          optEnv.flatMap(e => e.configuration.getOptional[Boolean]("otoroshi.ssl.trust.all")).getOrElse(false)
+          optEnv.flatMap(e => e.configuration.getOptionalWithFileSupport[Boolean]("otoroshi.ssl.trust.all")).getOrElse(false)
 
       val cacertPath = optEnv
-        .flatMap(e => e.configuration.getOptional[String]("otoroshi.ssl.cacert.path"))
+        .flatMap(e => e.configuration.getOptionalWithFileSupport[String]("otoroshi.ssl.cacert.path"))
         .map(
           path =>
             path
@@ -1070,7 +1071,7 @@ object DynamicSSLEngineProvider {
         .getOrElse(System.getProperty("java.home") + "/lib/security/cacerts")
 
       val cacertPassword = optEnv
-        .flatMap(e => e.configuration.getOptional[String]("otoroshi.ssl.cacert.password"))
+        .flatMap(e => e.configuration.getOptionalWithFileSupport[String]("otoroshi.ssl.cacert.password"))
         .getOrElse("changeit")
 
       logger.debug("Setting up SSL Context ")
@@ -1086,7 +1087,7 @@ object DynamicSSLEngineProvider {
 
       val keyStore2: KeyStore = if (trustedCerts.nonEmpty) createKeyStore(trustedCerts) else keyStore1
       val tm: Array[TrustManager] =
-      optEnv.flatMap(e => e.configuration.getOptional[Boolean]("play.server.https.trustStore.noCaVerification")).map {
+      optEnv.flatMap(e => e.configuration.getOptionalWithFileSupport[Boolean]("play.server.https.trustStore.noCaVerification")).map {
         case true  => Array[TrustManager](noCATrustManager)
         case false => createTrustStore(keyStore2, cacertPath, cacertPassword)
       } getOrElse {
@@ -1396,12 +1397,12 @@ object DynamicSSLEngineProvider {
 class DynamicSSLEngineProvider(appProvider: ApplicationProvider) extends SSLEngineProvider {
 
   lazy val cipherSuites =
-    appProvider.get.get.configuration.getOptional[Seq[String]]("otoroshi.ssl.cipherSuites").filterNot(_.isEmpty)
+    appProvider.get.get.configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.cipherSuites").filterNot(_.isEmpty)
   lazy val protocols =
-    appProvider.get.get.configuration.getOptional[Seq[String]]("otoroshi.ssl.protocols").filterNot(_.isEmpty)
+    appProvider.get.get.configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.protocols").filterNot(_.isEmpty)
   lazy val clientAuth = {
     val auth = appProvider.get.get.configuration
-      .getOptional[String]("otoroshi.ssl.fromOutside.clientAuth")
+      .getOptionalWithFileSupport[String]("otoroshi.ssl.fromOutside.clientAuth")
       .flatMap(ClientAuth.apply)
       .getOrElse(ClientAuth.None)
     DynamicSSLEngineProvider.logger.debug(s"Otoroshi client auth: ${auth}")

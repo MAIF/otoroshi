@@ -146,11 +146,16 @@ object implicits {
           } match {
             case Failure(_) =>
               classTag.runtimeClass.getName match {
+                case "boolean" => Option(content.toBoolean.asInstanceOf[A])
                 case "Boolean" => Option(content.toBoolean.asInstanceOf[A])
                 case "Int" => Option(content.toInt.asInstanceOf[A])
+                case "int" => Option(content.toInt.asInstanceOf[A])
                 case "Double" => Option(content.toDouble.asInstanceOf[A])
+                case "double" => Option(content.toDouble.asInstanceOf[A])
                 case "Long" => Option(content.toLong.asInstanceOf[A])
+                case "long" => Option(content.toLong.asInstanceOf[A])
                 case "String" => Option(content.asInstanceOf[A])
+                case "java.lang.String" => Option(content.asInstanceOf[A])
                 case _ => None
             }
             case Success(value) => value

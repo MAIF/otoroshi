@@ -31,6 +31,7 @@ import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success, Try}
+import otoroshi.utils.syntax.implicits._
 
 /**
 - [x] TCP service can be disabled
@@ -576,8 +577,8 @@ object TcpService {
 
 class TcpEngineProvider {
   def createSSLEngine(clientAuth: ClientAuth, env: Env): SSLEngine = {
-    lazy val cipherSuites = env.configuration.getOptional[Seq[String]]("otoroshi.ssl.cipherSuites").filterNot(_.isEmpty)
-    lazy val protocols    = env.configuration.getOptional[Seq[String]]("otoroshi.ssl.protocols").filterNot(_.isEmpty)
+    lazy val cipherSuites = env.configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.cipherSuites").filterNot(_.isEmpty)
+    lazy val protocols    = env.configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.protocols").filterNot(_.isEmpty)
 
     val context: SSLContext = DynamicSSLEngineProvider.current
     DynamicSSLEngineProvider.logger.debug(s"Create SSLEngine from: $context")

@@ -25,6 +25,7 @@ import otoroshi.storage.stores._
 import storage.stores.KvRawDataStore
 
 import scala.concurrent.{ExecutionContext, Future}
+import otoroshi.utils.syntax.implicits._
 
 class CassandraDataStores(naive: Boolean,
                           configuration: Configuration,
@@ -35,13 +36,13 @@ class CassandraDataStores(naive: Boolean,
 
   lazy val logger = Logger("otoroshi-cassandra-datastores")
 
-  lazy val redisStatsItems: Int = configuration.getOptional[Int]("app.cassandra.windowSize").getOrElse(99)
+  lazy val redisStatsItems: Int = configuration.getOptionalWithFileSupport[Int]("app.cassandra.windowSize").getOrElse(99)
 
   lazy val actorSystem =
     ActorSystem(
       "otoroshi-cassandra-system",
       configuration
-        .getOptional[Configuration]("app.actorsystems.datastore")
+        .getOptionalWithFileSupport[Configuration]("app.actorsystems.datastore")
         .map(_.underlying)
         .getOrElse(ConfigFactory.empty)
     )

@@ -23,6 +23,7 @@ import play.api.{Configuration, Environment, Logger}
 import reactivemongo.api.{MongoConnection, MongoDriver}
 import ssl.{CertificateDataStore, ClientCertificateValidationDataStore, KvClientCertificateValidationDataStore}
 import storage.stores.KvRawDataStore
+import otoroshi.utils.syntax.implicits._
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -34,19 +35,19 @@ class MongoDataStores(configuration: Configuration, environment: Environment, li
 
   lazy val logger = Logger("otoroshi-mongo-datastores")
 
-  lazy val uri: String         = configuration.getOptional[String]("app.mongo.uri").get
-  lazy val database: String    = configuration.getOptional[String]("app.mongo.database").getOrElse("default")
-  lazy val strictMode: Boolean = configuration.getOptional[Boolean]("app.mongo.strict").getOrElse(false)
+  lazy val uri: String         = configuration.getOptionalWithFileSupport[String]("app.mongo.uri").get
+  lazy val database: String    = configuration.getOptionalWithFileSupport[String]("app.mongo.database").getOrElse("default")
+  lazy val strictMode: Boolean = configuration.getOptionalWithFileSupport[Boolean]("app.mongo.strict").getOrElse(false)
 
   lazy val parsedUri      = MongoConnection.parseURI(uri).get
   lazy val dbName: String = parsedUri.db.getOrElse(database)
 
-  lazy val statsItems: Int = configuration.getOptional[Int]("app.mongo.windowSize").getOrElse(99)
+  lazy val statsItems: Int = configuration.getOptionalWithFileSupport[Int]("app.mongo.windowSize").getOrElse(99)
 
   lazy val actorSystem = ActorSystem(
     "otoroshi-mongo-system",
     configuration
-      .getOptional[Configuration]("app.actorsystems.datastore")
+      .getOptionalWithFileSupport[Configuration]("app.actorsystems.datastore")
       .map(_.underlying)
       .getOrElse(ConfigFactory.empty)
   )
@@ -60,7 +61,7 @@ class MongoDataStores(configuration: Configuration, environment: Environment, li
     logger.info(s"Now using Mongo DataStores dbName:$dbName, uri:$parsedUri")
     logger.warn(s"Mongo DataStores is deprecated and will be removed in a future release")
     redis.start()
-    if (configuration.getOptional[Boolean]("app.mongo.testMode").getOrElse(false)) {
+    if (configuration.getOptionalWithFileSupport[Boolean]("app.mongo.testMode").getOrElse(false)) {
       logger.warn("Flushing DB as in test mode")
       Await.result(redis.keys(s"${env.storageRoot}:*").flatMap(keys => redis.del(keys: _*))(actorSystem.dispatcher),
                    5.second)

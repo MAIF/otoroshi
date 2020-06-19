@@ -23,6 +23,7 @@ import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NoStackTrace
 import scala.util.{Failure, Success, Try}
+import otoroshi.utils.syntax.implicits._
 
 trait RawGetRedis {
   def rawGet(key: String): Future[Option[(String, Long, Any)]]
@@ -84,23 +85,23 @@ class NewCassandraRedis(actorSystem: ActorSystem, configuration: Configuration)(
   private val patterns = new ConcurrentHashMap[String, Pattern]()
 
   private val cassandraDurableWrites: String =
-    configuration.getOptional[Boolean]("app.cassandra.durableWrites").map(_.toString).getOrElse("true")
+    configuration.getOptionalWithFileSupport[Boolean]("app.cassandra.durableWrites").map(_.toString).getOrElse("true")
   private val cassandraReplicationStrategy: String =
-    configuration.getOptional[String]("app.cassandra.replicationStrategy").getOrElse("none")
+    configuration.getOptionalWithFileSupport[String]("app.cassandra.replicationStrategy").getOrElse("none")
   private val cassandraReplicationOptions: String =
-    configuration.getOptional[String]("app.cassandra.replicationOptions").getOrElse("'dc0': 1")
+    configuration.getOptionalWithFileSupport[String]("app.cassandra.replicationOptions").getOrElse("'dc0': 1")
   private val cassandraReplicationFactor: Int =
-    configuration.getOptional[Int]("app.cassandra.replicationFactor").getOrElse(1)
+    configuration.getOptionalWithFileSupport[Int]("app.cassandra.replicationFactor").getOrElse(1)
 
 
-  private val maybeUsername: Option[String] = configuration.getOptional[String]("app.cassandra.username")
-  private val maybePassword: Option[String] = configuration.getOptional[String]("app.cassandra.password")
-  private val maybeAuthId: Option[String] = configuration.getOptional[String]("app.cassandra.authorizationId")
+  private val maybeUsername: Option[String] = configuration.getOptionalWithFileSupport[String]("app.cassandra.username")
+  private val maybePassword: Option[String] = configuration.getOptionalWithFileSupport[String]("app.cassandra.password")
+  private val maybeAuthId: Option[String] = configuration.getOptionalWithFileSupport[String]("app.cassandra.authorizationId")
 
   private val sessionBuilder = {
     val loader = new DefaultDriverConfigLoader(() => {
         ConfigFactory.invalidateCaches()
-        val config = configuration.getOptional[Configuration]("app.cassandra")
+        val config = configuration.getOptionalWithFileSupport[Configuration]("app.cassandra")
           .map(_.underlying)
           .getOrElse(Configuration.empty.underlying)
           .withFallback(ConfigFactory.defaultReference())

@@ -26,6 +26,7 @@ import storage.drivers.inmemory.SwappableInMemoryRedis
 import storage.stores.KvRawDataStore
 
 import scala.concurrent.{ExecutionContext, Future}
+import otoroshi.utils.syntax.implicits._
 
 class InMemoryDataStores(configuration: Configuration,
                          environment: Environment,
@@ -42,7 +43,7 @@ class InMemoryDataStores(configuration: Configuration,
     ActorSystem(
       "otoroshi-inmemory-system",
       configuration
-        .getOptional[Configuration]("app.actorsystems.datastore")
+        .getOptionalWithFileSupport[Configuration]("app.actorsystems.datastore")
         .map(_.underlying)
         .getOrElse(ConfigFactory.empty)
     )

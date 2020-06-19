@@ -25,6 +25,7 @@ import otoroshi.storage._
 import otoroshi.storage.stores._
 import otoroshi.tcp.{KvTcpServiceDataStoreDataStore, TcpServiceDataStore}
 import storage.stores.KvRawDataStore
+import otoroshi.utils.syntax.implicits._
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -94,18 +95,18 @@ class RedisCPDataStores(configuration: Configuration,
   lazy val redisCli: RedisClientPool = {
     implicit val ec = redisDispatcher
     val members = configuration
-      .getOptional[Seq[Configuration]]("app.redis.pool.members")
+      .getOptionalWithFileSupport[Seq[Configuration]]("app.redis.pool.members")
       .map(_.map { config =>
         RedisServer(
-          host = config.getOptional[String]("host").getOrElse("localhost"),
-          port = config.getOptional[Int]("port").getOrElse(6379),
-          password = config.getOptional[String]("password")
+          host = config.getOptionalWithFileSupport[String]("host").getOrElse("localhost"),
+          port = config.getOptionalWithFileSupport[Int]("port").getOrElse(6379),
+          password = config.getOptionalWithFileSupport[String]("password")
         )
       })
       .filter(_.nonEmpty)
       .orElse {
         configuration
-          .getOptional[String]("app.redis.pool.membersStr")
+          .getOptionalWithFileSupport[String]("app.redis.pool.membersStr")
           .map(RedisMember.fromList)
           .map(_.map(_.toRedisServer))
       }
@@ -132,18 +133,18 @@ class RedisMCPDataStores(configuration: Configuration,
   lazy val redisCli: RedisClientMutablePool = {
     implicit val ec = redisDispatcher
     val members = configuration
-      .getOptional[Seq[Configuration]]("app.redis.mpool.members")
+      .getOptionalWithFileSupport[Seq[Configuration]]("app.redis.mpool.members")
       .map(_.map { config =>
         RedisServer(
-          host = config.getOptional[String]("host").getOrElse("localhost"),
-          port = config.getOptional[Int]("port").getOrElse(6379),
-          password = config.getOptional[String]("password")
+          host = config.getOptionalWithFileSupport[String]("host").getOrElse("localhost"),
+          port = config.getOptionalWithFileSupport[Int]("port").getOrElse(6379),
+          password = config.getOptionalWithFileSupport[String]("password")
         )
       })
       .filter(_.nonEmpty)
       .orElse {
         configuration
-          .getOptional[String]("app.redis.mpool.membersStr")
+          .getOptionalWithFileSupport[String]("app.redis.mpool.membersStr")
           .map(RedisMember.fromList)
           .map(_.map(_.toRedisServer))
       }
@@ -171,35 +172,35 @@ class RedisLFDataStores(configuration: Configuration,
     implicit val ec = redisDispatcher
     val master = RedisServer(
       host = configuration
-        .getOptional[String]("app.redis.host")
-        .orElse(configuration.getOptional[String]("app.redis.lf.master.host"))
+        .getOptionalWithFileSupport[String]("app.redis.host")
+        .orElse(configuration.getOptionalWithFileSupport[String]("app.redis.lf.master.host"))
         .getOrElse("localhost"),
       port = configuration
-        .getOptional[Int]("app.redis.port")
-        .orElse(configuration.getOptional[Int]("app.redis.lf.master.port"))
+        .getOptionalWithFileSupport[Int]("app.redis.port")
+        .orElse(configuration.getOptionalWithFileSupport[Int]("app.redis.lf.master.port"))
         .getOrElse(6379),
       password = configuration
-        .getOptional[String]("app.redis.password")
-        .orElse(configuration.getOptional[String]("app.redis.lf.master.password"))
+        .getOptionalWithFileSupport[String]("app.redis.password")
+        .orElse(configuration.getOptionalWithFileSupport[String]("app.redis.lf.master.password"))
     )
     val slaves = configuration
-      .getOptional[Seq[Configuration]]("app.redis.slaves")
-      .orElse(configuration.getOptional[Seq[Configuration]]("app.redis.lf.slaves"))
+      .getOptionalWithFileSupport[Seq[Configuration]]("app.redis.slaves")
+      .orElse(configuration.getOptionalWithFileSupport[Seq[Configuration]]("app.redis.lf.slaves"))
       .map(_.map { config =>
         // val config = Configuration(cfgobj.toConfig)
         RedisServer(
-          host = config.getOptional[String]("host").getOrElse("localhost"),
-          port = config.getOptional[Int]("port").getOrElse(6379),
-          password = config.getOptional[String]("password")
+          host = config.getOptionalWithFileSupport[String]("host").getOrElse("localhost"),
+          port = config.getOptionalWithFileSupport[Int]("port").getOrElse(6379),
+          password = config.getOptionalWithFileSupport[String]("password")
         )
       })
       .filter(_.nonEmpty)
       .orElse {
-        configuration.getOptional[String]("app.redis.slavesStr").map(RedisMember.fromList).map(_.map(_.toRedisServer))
+        configuration.getOptionalWithFileSupport[String]("app.redis.slavesStr").map(RedisMember.fromList).map(_.map(_.toRedisServer))
       }
       .orElse {
         configuration
-          .getOptional[String]("app.redis.lf.slavesStr")
+          .getOptionalWithFileSupport[String]("app.redis.lf.slavesStr")
           .map(RedisMember.fromList)
           .map(_.map(_.toRedisServer))
       }
@@ -227,25 +228,25 @@ class RedisSentinelDataStores(configuration: Configuration,
   lazy val redisCli: SentinelMonitoredRedisClient = {
     implicit val ec = redisDispatcher
     val members: Seq[(String, Int)] = configuration
-      .getOptional[Seq[Configuration]]("app.redis.sentinels.members")
+      .getOptionalWithFileSupport[Seq[Configuration]]("app.redis.sentinels.members")
       .map(_.map { config =>
         (
-          config.getOptional[String]("host").getOrElse("localhost"),
-          config.getOptional[Int]("port").getOrElse(6379)
+          config.getOptionalWithFileSupport[String]("host").getOrElse("localhost"),
+          config.getOptionalWithFileSupport[Int]("port").getOrElse(6379)
         )
       })
       .filter(_.nonEmpty)
       .orElse {
         configuration
-          .getOptional[String]("app.redis.sentinels.membersStr")
+          .getOptionalWithFileSupport[String]("app.redis.sentinels.membersStr")
           .map(RedisMember.fromList)
           .map(_.map(m => (m.host, m.port)))
       }
       .getOrElse(Seq.empty[(String, Int)])
-    val master   = configuration.getOptional[String]("app.redis.sentinels.master").get
-    val password = configuration.getOptional[String]("app.redis.sentinels.password")
-    val db       = configuration.getOptional[Int]("app.redis.sentinels.db")
-    val name     = configuration.getOptional[String]("app.redis.sentinels.name").getOrElse("SMRedisClient")
+    val master   = configuration.getOptionalWithFileSupport[String]("app.redis.sentinels.master").get
+    val password = configuration.getOptionalWithFileSupport[String]("app.redis.sentinels.password")
+    val db       = configuration.getOptionalWithFileSupport[Int]("app.redis.sentinels.db")
+    val name     = configuration.getOptionalWithFileSupport[String]("app.redis.sentinels.name").getOrElse("SMRedisClient")
     val cli: SentinelMonitoredRedisClient = SentinelMonitoredRedisClient(
       members,
       master,
@@ -272,22 +273,22 @@ class RedisSentinelLFDataStores(configuration: Configuration,
   lazy val redisCli: SentinelMonitoredRedisClientMasterSlaves = {
     implicit val ec = redisDispatcher
     val members: Seq[(String, Int)] = configuration
-      .getOptional[Seq[Configuration]]("app.redis.sentinels.lf.members")
+      .getOptionalWithFileSupport[Seq[Configuration]]("app.redis.sentinels.lf.members")
       .map(_.map { config =>
         (
-          config.getOptional[String]("host").getOrElse("localhost"),
-          config.getOptional[Int]("port").getOrElse(6379)
+          config.getOptionalWithFileSupport[String]("host").getOrElse("localhost"),
+          config.getOptionalWithFileSupport[Int]("port").getOrElse(6379)
         )
       })
       .filter(_.nonEmpty)
       .orElse {
         configuration
-          .getOptional[String]("app.redis.sentinels.lf.membersStr")
+          .getOptionalWithFileSupport[String]("app.redis.sentinels.lf.membersStr")
           .map(RedisMember.fromList)
           .map(_.map(m => (m.host, m.port)))
       }
       .getOrElse(Seq.empty[(String, Int)])
-    val master = configuration.getOptional[String]("app.redis.sentinels.lf.master").get
+    val master = configuration.getOptionalWithFileSupport[String]("app.redis.sentinels.lf.master").get
     val cli: SentinelMonitoredRedisClientMasterSlaves = SentinelMonitoredRedisClientMasterSlaves(
       members,
       master
@@ -312,18 +313,18 @@ class RedisClusterDataStores(configuration: Configuration,
   lazy val redisCluster: RedisCluster = {
     implicit val ec = redisDispatcher
     val members = configuration
-      .getOptional[Seq[Configuration]]("app.redis.cluster.members")
+      .getOptionalWithFileSupport[Seq[Configuration]]("app.redis.cluster.members")
       .map(_.map { config =>
         RedisServer(
-          host = config.getOptional[String]("host").getOrElse("localhost"),
-          port = config.getOptional[Int]("port").getOrElse(6379),
-          password = config.getOptional[String]("password")
+          host = config.getOptionalWithFileSupport[String]("host").getOrElse("localhost"),
+          port = config.getOptionalWithFileSupport[Int]("port").getOrElse(6379),
+          password = config.getOptionalWithFileSupport[String]("password")
         )
       })
       .filter(_.nonEmpty)
       .orElse {
         configuration
-          .getOptional[String]("app.redis.sentinels.membersStr")
+          .getOptionalWithFileSupport[String]("app.redis.sentinels.membersStr")
           .map(RedisMember.fromList)
           .map(_.map(_.toRedisServer))
       }
@@ -358,12 +359,12 @@ abstract class AbstractRedisDataStores(configuration: Configuration,
 
   lazy val logger = Logger(loggerName)
 
-  lazy val redisStatsItems: Int = configuration.getOptional[Int]("app.redis.windowSize").getOrElse(99)
+  lazy val redisStatsItems: Int = configuration.getOptionalWithFileSupport[Int]("app.redis.windowSize").getOrElse(99)
   lazy val redisActorSystem =
     ActorSystem(
       "otoroshi-redis-system",
       configuration
-        .getOptional[Configuration]("app.actorsystems.datastore")
+        .getOptionalWithFileSupport[Configuration]("app.actorsystems.datastore")
         .map(_.underlying)
         .getOrElse(ConfigFactory.empty)
     )

@@ -43,6 +43,7 @@ import ssl._
 import storage.drivers.inmemory.{Memory, SwappableInMemoryRedis}
 import storage.stores.KvRawDataStore
 import utils.http.Implicits._
+import otoroshi.utils.syntax.implicits._
 import utils.http.MtlsConfig
 
 import scala.collection.concurrent.TrieMap
@@ -145,65 +146,65 @@ object ClusterConfig {
   def apply(configuration: Configuration): ClusterConfig = {
     // Cluster.logger.debug(configuration.underlying.root().render(ConfigRenderOptions.concise()))
     ClusterConfig(
-      mode = configuration.getOptional[String]("mode").flatMap(ClusterMode.apply).getOrElse(ClusterMode.Off),
-      compression = configuration.getOptional[Int]("compression").getOrElse(-1),
-      autoUpdateState = configuration.getOptional[Boolean]("autoUpdateState").getOrElse(false),
+      mode = configuration.getOptionalWithFileSupport[String]("mode").flatMap(ClusterMode.apply).getOrElse(ClusterMode.Off),
+      compression = configuration.getOptionalWithFileSupport[Int]("compression").getOrElse(-1),
+      autoUpdateState = configuration.getOptionalWithFileSupport[Boolean]("autoUpdateState").getOrElse(false),
       mtlsConfig = MtlsConfig(
-        certs = configuration.getOptional[Seq[String]]("mtls.certs").getOrElse(Seq.empty),
-        trustedCerts = configuration.getOptional[Seq[String]]("mtls.trustedCerts").getOrElse(Seq.empty),
-        loose = configuration.getOptional[Boolean]("mtls.loose").getOrElse(false),
-        trustAll = configuration.getOptional[Boolean]("mtls.trustAll").getOrElse(false),
-        mtls = configuration.getOptional[Boolean]("mtls.enabled").getOrElse(false)
+        certs = configuration.getOptionalWithFileSupport[Seq[String]]("mtls.certs").getOrElse(Seq.empty),
+        trustedCerts = configuration.getOptionalWithFileSupport[Seq[String]]("mtls.trustedCerts").getOrElse(Seq.empty),
+        loose = configuration.getOptionalWithFileSupport[Boolean]("mtls.loose").getOrElse(false),
+        trustAll = configuration.getOptionalWithFileSupport[Boolean]("mtls.trustAll").getOrElse(false),
+        mtls = configuration.getOptionalWithFileSupport[Boolean]("mtls.enabled").getOrElse(false)
       ),
-      proxy = configuration.getOptional[String]("proxy.host").map { host =>
+      proxy = configuration.getOptionalWithFileSupport[String]("proxy.host").map { host =>
         DefaultWSProxyServer(
           host = host,
-          port = configuration.getOptional[Int]("proxy.port").getOrElse(3129),
-          principal = configuration.getOptional[String]("proxy.principal"),
-          password = configuration.getOptional[String]("proxy.password"),
-          ntlmDomain = configuration.getOptional[String]("proxy.ntlmDomain"),
-          encoding = configuration.getOptional[String]("proxy.encoding"),
+          port = configuration.getOptionalWithFileSupport[Int]("proxy.port").getOrElse(3129),
+          principal = configuration.getOptionalWithFileSupport[String]("proxy.principal"),
+          password = configuration.getOptionalWithFileSupport[String]("proxy.password"),
+          ntlmDomain = configuration.getOptionalWithFileSupport[String]("proxy.ntlmDomain"),
+          encoding = configuration.getOptionalWithFileSupport[String]("proxy.encoding"),
           nonProxyHosts = None
         )
       },
       leader = LeaderConfig(
         name = configuration
-          .getOptional[String]("leader.name")
+          .getOptionalWithFileSupport[String]("leader.name")
           .orElse(Option(System.getenv("INSTANCE_NUMBER")).map(i => s"otoroshi-leader-$i"))
           .getOrElse(s"otoroshi-leader-${IdGenerator.token(16)}"),
         urls = configuration
-          .getOptional[String]("leader.url")
+          .getOptionalWithFileSupport[String]("leader.url")
           .map(s => Seq(s))
           .orElse(
             configuration
-              .getOptional[Seq[String]]("leader.urls")
+              .getOptionalWithFileSupport[Seq[String]]("leader.urls")
               .map(_.toSeq)
           )
           .getOrElse(Seq("http://otoroshi-api.oto.tools:8080")),
-        host = configuration.getOptional[String]("leader.host").getOrElse("otoroshi-api.oto.tools"),
-        clientId = configuration.getOptional[String]("leader.clientId").getOrElse("admin-api-apikey-id"),
-        clientSecret = configuration.getOptional[String]("leader.clientSecret").getOrElse("admin-api-apikey-secret"),
-        groupingBy = configuration.getOptional[Int]("leader.groupingBy").getOrElse(50),
-        cacheStateFor = configuration.getOptional[Long]("leader.cacheStateFor").getOrElse(4000L),
-        stateDumpPath = configuration.getOptional[String]("leader.stateDumpPath")
+        host = configuration.getOptionalWithFileSupport[String]("leader.host").getOrElse("otoroshi-api.oto.tools"),
+        clientId = configuration.getOptionalWithFileSupport[String]("leader.clientId").getOrElse("admin-api-apikey-id"),
+        clientSecret = configuration.getOptionalWithFileSupport[String]("leader.clientSecret").getOrElse("admin-api-apikey-secret"),
+        groupingBy = configuration.getOptionalWithFileSupport[Int]("leader.groupingBy").getOrElse(50),
+        cacheStateFor = configuration.getOptionalWithFileSupport[Long]("leader.cacheStateFor").getOrElse(4000L),
+        stateDumpPath = configuration.getOptionalWithFileSupport[String]("leader.stateDumpPath")
       ),
       worker = WorkerConfig(
         name = configuration
-          .getOptional[String]("worker.name")
+          .getOptionalWithFileSupport[String]("worker.name")
           .orElse(Option(System.getenv("INSTANCE_NUMBER")).map(i => s"otoroshi-worker-$i"))
           .getOrElse(s"otoroshi-worker-${IdGenerator.token(16)}"),
-        retries = configuration.getOptional[Int]("worker.retries").getOrElse(3),
-        timeout = configuration.getOptional[Long]("worker.timeout").getOrElse(2000),
-        dbPath = configuration.getOptional[String]("worker.dbpath"),
+        retries = configuration.getOptionalWithFileSupport[Int]("worker.retries").getOrElse(3),
+        timeout = configuration.getOptionalWithFileSupport[Long]("worker.timeout").getOrElse(2000),
+        dbPath = configuration.getOptionalWithFileSupport[String]("worker.dbpath"),
         state = WorkerStateConfig(
-          timeout = configuration.getOptional[Long]("worker.state.timeout").getOrElse(2000),
-          retries = configuration.getOptional[Int]("worker.state.retries").getOrElse(3),
-          pollEvery = configuration.getOptional[Long]("worker.state.pollEvery").getOrElse(10000L)
+          timeout = configuration.getOptionalWithFileSupport[Long]("worker.state.timeout").getOrElse(2000),
+          retries = configuration.getOptionalWithFileSupport[Int]("worker.state.retries").getOrElse(3),
+          pollEvery = configuration.getOptionalWithFileSupport[Long]("worker.state.pollEvery").getOrElse(10000L)
         ),
         quotas = WorkerQuotasConfig(
-          timeout = configuration.getOptional[Long]("worker.quotas.timeout").getOrElse(2000),
-          retries = configuration.getOptional[Int]("worker.quotas.retries").getOrElse(3),
-          pushEvery = configuration.getOptional[Long]("worker.quotas.pushEvery").getOrElse(2000L)
+          timeout = configuration.getOptionalWithFileSupport[Long]("worker.quotas.timeout").getOrElse(2000),
+          retries = configuration.getOptionalWithFileSupport[Int]("worker.quotas.retries").getOrElse(3),
+          pushEvery = configuration.getOptionalWithFileSupport[Long]("worker.quotas.pushEvery").getOrElse(2000L)
         )
       )
     )
@@ -568,7 +569,7 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
   private val cachedRef = new AtomicReference[ByteString](ByteString.empty)
 
   private lazy val hostAddress: String = env.configuration
-    .getOptional[String]("otoroshi.cluster.selfAddress")
+    .getOptionalWithFileSupport[String]("otoroshi.cluster.selfAddress")
     .getOrElse(InetAddress.getLocalHost().getHostAddress.toString)
 
   def renewMemberShip(): Unit = {
@@ -716,7 +717,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
   private val firstSuccessfulStateFetchDone = new AtomicBoolean(false)
 
   private lazy val hostAddress: String = env.configuration
-    .getOptional[String]("otoroshi.cluster.selfAddress")
+    .getOptionalWithFileSupport[String]("otoroshi.cluster.selfAddress")
     .getOrElse(InetAddress.getLocalHost().getHostAddress.toString)
 
   /////////////
@@ -1134,7 +1135,7 @@ class SwappableInMemoryDataStores(configuration: Configuration,
     ActorSystem(
       "otoroshi-swapinmemory-system",
       configuration
-        .getOptional[Configuration]("app.actorsystems.datastore")
+        .getOptionalWithFileSupport[Configuration]("app.actorsystems.datastore")
         .map(_.underlying)
         .getOrElse(ConfigFactory.empty)
     )

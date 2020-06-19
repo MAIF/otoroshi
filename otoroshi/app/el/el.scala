@@ -11,6 +11,7 @@ import utils.ReplaceAllWith
 import scala.util.Try
 import utils.RequestImplicits._
 import kaleidoscope._
+import otoroshi.utils.syntax.implicits._
 
 object GlobalExpressionLanguage {
 
@@ -98,34 +99,34 @@ object GlobalExpressionLanguage {
 
             case r"config.$field@(.*):$dv@(.*)" =>
               env.configuration
-                .getOptional[String](field)
+                .getOptionalWithFileSupport[String](field)
                 .orElse(
-                  env.configuration.getOptional[Int](field).map(_.toString)
+                  env.configuration.getOptionalWithFileSupport[Int](field).map(_.toString)
                 )
                 .orElse(
-                  env.configuration.getOptional[Double](field).map(_.toString)
+                  env.configuration.getOptionalWithFileSupport[Double](field).map(_.toString)
                 )
                 .orElse(
-                  env.configuration.getOptional[Long](field).map(_.toString)
+                  env.configuration.getOptionalWithFileSupport[Long](field).map(_.toString)
                 )
                 .orElse(
-                  env.configuration.getOptional[Boolean](field).map(_.toString)
+                  env.configuration.getOptionalWithFileSupport[Boolean](field).map(_.toString)
                 )
                 .getOrElse(dv)
             case r"config.$field@(.*)" =>
               env.configuration
-                .getOptional[String](field)
+                .getOptionalWithFileSupport[String](field)
                 .orElse(
-                  env.configuration.getOptional[Int](field).map(_.toString)
+                  env.configuration.getOptionalWithFileSupport[Int](field).map(_.toString)
                 )
                 .orElse(
-                  env.configuration.getOptional[Double](field).map(_.toString)
+                  env.configuration.getOptionalWithFileSupport[Double](field).map(_.toString)
                 )
                 .orElse(
-                  env.configuration.getOptional[Long](field).map(_.toString)
+                  env.configuration.getOptionalWithFileSupport[Long](field).map(_.toString)
                 )
                 .orElse(
-                  env.configuration.getOptional[Boolean](field).map(_.toString)
+                  env.configuration.getOptionalWithFileSupport[Boolean](field).map(_.toString)
                 )
                 .getOrElse(s"no-config-$field")
 

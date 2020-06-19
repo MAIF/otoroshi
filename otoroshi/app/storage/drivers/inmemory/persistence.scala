@@ -21,6 +21,7 @@ import utils.http.Implicits._
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.duration._
 import scala.util.hashing.MurmurHash3
+import otoroshi.utils.syntax.implicits._
 
 sealed trait PersistenceKind
 object PersistenceKind {
@@ -50,7 +51,7 @@ class NoopPersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
 class FilePersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
 
   private val logger         = Logger("otoroshi-file-db-datastores")
-  private val dbPath: String = env.configuration.getOptional[String]("app.filedb.path").getOrElse("./filedb/state.ndjson")
+  private val dbPath: String = env.configuration.getOptionalWithFileSupport[String]("app.filedb.path").getOrElse("./filedb/state.ndjson")
   private val cancelRef      = new AtomicReference[Cancellable]()
   private val lastHash       = new AtomicReference[Int](0)
 
@@ -145,13 +146,13 @@ class HttpPersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
   private val logger = Logger("otoroshi-http-db-datastores")
 
   private val stateUrl: String =
-    env.configuration.getOptional[String]("app.httpdb.url").getOrElse("http://127.0.0.1:8888/worker-0/state.json")
+    env.configuration.getOptionalWithFileSupport[String]("app.httpdb.url").getOrElse("http://127.0.0.1:8888/worker-0/state.json")
   private val stateHeaders: Map[String, String] =
-    env.configuration.getOptional[Map[String, String]]("app.httpdb.headers").getOrElse(Map.empty[String, String])
+    env.configuration.getOptionalWithFileSupport[Map[String, String]]("app.httpdb.headers").getOrElse(Map.empty[String, String])
   private val stateTimeout: FiniteDuration =
-    env.configuration.getOptional[Long]("app.httpdb.timeout").map(_.millis).getOrElse(10.seconds)
+    env.configuration.getOptionalWithFileSupport[Long]("app.httpdb.timeout").map(_.millis).getOrElse(10.seconds)
   private val statePoll: FiniteDuration =
-    env.configuration.getOptional[Long]("app.httpdb.pollEvery").map(_.millis).getOrElse(10.seconds)
+    env.configuration.getOptionalWithFileSupport[Long]("app.httpdb.pollEvery").map(_.millis).getOrElse(10.seconds)
   private val cancelRef    = new AtomicReference[Cancellable]()
   private val lastHash     = new AtomicReference[Int](0)
 
