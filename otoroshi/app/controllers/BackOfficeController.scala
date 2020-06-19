@@ -9,7 +9,7 @@ import akka.http.scaladsl.util.FastFuture
 import akka.http.scaladsl.util.FastFuture._
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
-import auth.{GenericOauth2ModuleConfig, LdapAuthModuleConfig}
+import auth.{GenericOauth2ModuleConfig, LdapAuthModuleConfig, SessionCookieValues}
 import ch.qos.logback.classic.{Level, LoggerContext}
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
@@ -499,11 +499,12 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
 
     import scala.concurrent.duration._
 
-    val id           = (ctx.request.body \ "id").asOpt[String].getOrElse(IdGenerator.token(64))
-    val name         = (ctx.request.body \ "name").asOpt[String].getOrElse("new oauth config")
-    val desc         = (ctx.request.body \ "desc").asOpt[String].getOrElse("new oauth config")
-    val clientId     = (ctx.request.body \ "clientId").asOpt[String].getOrElse("client")
-    val clientSecret = (ctx.request.body \ "clientSecret").asOpt[String].getOrElse("secret")
+    val id                  = (ctx.request.body \ "id").asOpt[String].getOrElse(IdGenerator.token(64))
+    val name                = (ctx.request.body \ "name").asOpt[String].getOrElse("new oauth config")
+    val desc                = (ctx.request.body \ "desc").asOpt[String].getOrElse("new oauth config")
+    val clientId            = (ctx.request.body \ "clientId").asOpt[String].getOrElse("client")
+    val clientSecret        = (ctx.request.body \ "clientSecret").asOpt[String].getOrElse("secret")
+    val sessionCookieValues = (ctx.request.body \ "sessionCookieValues").asOpt(SessionCookieValues.fmt).getOrElse(SessionCookieValues())
     (ctx.request.body \ "url").asOpt[String] match {
       case None =>
         FastFuture.successful(
@@ -515,7 +516,8 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
               clientId = clientId,
               clientSecret = clientSecret,
               oidConfig = None,
-              metadata = Map.empty
+              metadata = Map.empty,
+              sessionCookieValues = sessionCookieValues
             ).asJson
           )
         )
@@ -532,7 +534,8 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
                   name = name,
                   desc = desc,
                   oidConfig = Some(url),
-                  metadata = Map.empty
+                  metadata = Map.empty,
+                  sessionCookieValues = sessionCookieValues
                 )
                 val body         = Json.parse(resp.body)
                 val issuer       = (body \ "issuer").asOpt[String].getOrElse("http://localhost:8082/")
@@ -599,7 +602,8 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
                     clientId = clientId,
                     clientSecret = clientSecret,
                     oidConfig = Some(url),
-                    metadata = Map.empty
+                    metadata = Map.empty,
+                    sessionCookieValues = sessionCookieValues
                   ).asJson
                 )
               }
@@ -613,7 +617,8 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
                   clientId = clientId,
                   clientSecret = clientSecret,
                   oidConfig = Some(url),
-                  metadata = Map.empty
+                  metadata = Map.empty,
+                  sessionCookieValues = sessionCookieValues
                 ).asJson
               )
             }

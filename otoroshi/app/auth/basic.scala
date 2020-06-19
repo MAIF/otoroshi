@@ -2,7 +2,6 @@ package auth
 
 import java.security.SecureRandom
 import java.util.Optional
-import java.util.concurrent.TimeUnit
 
 import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.util.FastFuture
@@ -14,7 +13,6 @@ import com.yubico.webauthn._
 import com.yubico.webauthn.data._
 import controllers.{LocalCredentialRepository, routes}
 import env.Env
-import events.{AdminFirstLogin, AdminLoggedInAlert, Alerts}
 import models._
 import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
@@ -24,7 +22,6 @@ import play.api.libs.json._
 import play.api.mvc._
 import security.{IdGenerator, OtoroshiClaim}
 
-import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
@@ -124,6 +121,7 @@ object BasicAuthModuleConfig extends FromJson[AuthModuleConfig] {
           webauthn = (json \ "webauthn").asOpt[Boolean].getOrElse(false),
           users = (json \ "users").asOpt(Reads.seq(BasicAuthUser.fmt)).getOrElse(Seq.empty[BasicAuthUser]),
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
+          sessionCookieValues = (json \ "sessionCookieValues").asOpt(SessionCookieValues.fmt).getOrElse(SessionCookieValues())
         )
       )
     } recover {
@@ -132,27 +130,29 @@ object BasicAuthModuleConfig extends FromJson[AuthModuleConfig] {
 }
 
 case class BasicAuthModuleConfig(
-    id: String,
-    name: String,
-    desc: String,
-    users: Seq[BasicAuthUser] = Seq.empty[BasicAuthUser],
-    sessionMaxAge: Int = 86400,
-    basicAuth: Boolean = false,
-    webauthn: Boolean = false,
-    metadata: Map[String, String]
+                                  id: String,
+                                  name: String,
+                                  desc: String,
+                                  users: Seq[BasicAuthUser] = Seq.empty[BasicAuthUser],
+                                  sessionMaxAge: Int = 86400,
+                                  basicAuth: Boolean = false,
+                                  webauthn: Boolean = false,
+                                  metadata: Map[String, String],
+                                  sessionCookieValues: SessionCookieValues
 ) extends AuthModuleConfig {
   def `type`: String                                        = "basic"
   override def authModule(config: GlobalConfig): AuthModule = BasicAuthModule(this)
   override def asJson = Json.obj(
     "type"          -> "basic",
-    "id"            -> this.id,
-    "name"          -> this.name,
-    "desc"          -> this.desc,
-    "basicAuth"     -> this.basicAuth,
-    "webauthn"      -> this.webauthn,
-    "sessionMaxAge" -> this.sessionMaxAge,
-    "metadata"      -> this.metadata,
-    "users"         -> Writes.seq(BasicAuthUser.fmt).writes(this.users)
+    "id"                  -> this.id,
+    "name"                -> this.name,
+    "desc"                -> this.desc,
+    "basicAuth"           -> this.basicAuth,
+    "webauthn"            -> this.webauthn,
+    "sessionMaxAge"       -> this.sessionMaxAge,
+    "metadata"            -> this.metadata,
+    "users"               -> Writes.seq(BasicAuthUser.fmt).writes(this.users),
+    "sessionCookieValues"  -> SessionCookieValues.fmt.writes(this.sessionCookieValues)
   )
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.authConfigsDataStore.set(this)
   override def cookieSuffix(desc: ServiceDescriptor)                   = s"basic-auth-$id"

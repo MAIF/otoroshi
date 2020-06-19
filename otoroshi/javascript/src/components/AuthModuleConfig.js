@@ -165,6 +165,10 @@ export class Oauth2ModuleConfig extends Component {
       loose: false,
       certs: [],
     },
+    sessionCookieValues: {
+      httpOnly: true,
+      secure: true
+    }
   };
 
   componentDidCatch(error) {
@@ -295,13 +299,6 @@ export class Oauth2ModuleConfig extends Component {
           value={settings.desc}
           help="..."
           onChange={v => changeTheValue(path + '.desc', v)}
-        />
-        <NumberInput
-          label="Session max. age"
-          value={settings.sessionMaxAge}
-          help="..."
-          suffix="seconds"
-          onChange={v => changeTheValue(path + '.sessionMaxAge', v)}
         />
         <BooleanInput
           label="Use cookie"
@@ -875,14 +872,6 @@ export class BasicModuleConfig extends Component {
           help="..."
           onChange={v => changeTheValue(path + '.desc', v)}
         />
-        <NumberInput
-          label="Session max. age"
-          value={settings.sessionMaxAge}
-          placeholder="86400"
-          help="..."
-          suffix="seconds"
-          onChange={v => changeTheValue(path + '.sessionMaxAge', v)}
-        />
         <BooleanInput
           label="Basic auth."
           value={settings.basicAuth}
@@ -1036,13 +1025,6 @@ export class LdapModuleConfig extends Component {
           value={settings.desc}
           help="..."
           onChange={v => changeTheValue(path + '.desc', v)}
-        />
-        <NumberInput
-          label="Session max. age"
-          value={settings.sessionMaxAge}
-          help="..."
-          suffix="seconds"
-          onChange={v => changeTheValue(path + '.sessionMaxAge', v)}
         />
         <BooleanInput
           label="Basic auth."
@@ -1208,6 +1190,7 @@ export class AuthModuleConfig extends Component {
   };
   render() {
     const settings = this.props.value || this.props.settings;
+    const path = this.props.path || '';
     const selector = (
       <SelectInput
         label="Type"
@@ -1225,9 +1208,13 @@ export class AuthModuleConfig extends Component {
                     name: 'John Doe',
                     email: 'john.doe@oto.tools',
                     password: bcrypt.hashSync('password', bcrypt.genSaltSync(10)),
-                    metadata: {},
+                    metadata: {}
                   },
                 ],
+                sessionCookieValues: {
+                  httpOnly: true,
+                  secure: true
+                }
               });
               break;
             case 'ldap':
@@ -1246,6 +1233,10 @@ export class AuthModuleConfig extends Component {
                 sessionMaxAge: 86400,
                 allowEmptyPassword: false,
                 extraMetadata: {},
+                sessionCookieValues: {
+                  httpOnly: true,
+                  secure: true
+                }
               });
               break;
             case 'oauth2':
@@ -1276,6 +1267,10 @@ export class AuthModuleConfig extends Component {
                 emailField: 'email',
                 otoroshiDataField: 'app_metadata | otoroshi_data',
                 extraMetadata: {},
+                sessionCookieValues: {
+                  httpOnly: true,
+                  secure: true
+                }
               });
               break;
           }
@@ -1297,8 +1292,9 @@ export class AuthModuleConfig extends Component {
           <ObjectInput
             label="Metadata"
             value={settings.metadata}
-            onChange={v => changeTheValue(path + '.metadata', v)}
+            onChange={v => this.changeTheValue(path + '.metadata', v)}
           />
+          <SessionCookieConfig {...this.props} />
         </div>
       );
     } else if (settings.type === 'basic') {
@@ -1310,8 +1306,9 @@ export class AuthModuleConfig extends Component {
           <ObjectInput
             label="Metadata"
             value={settings.metadata}
-            onChange={v => changeTheValue(path + '.metadata', v)}
+            onChange={v => this.changeTheValue(path + '.metadata', v)}
           />
+          <SessionCookieConfig {...this.props} />
         </div>
       );
     } else if (settings.type === 'ldap') {
@@ -1323,12 +1320,54 @@ export class AuthModuleConfig extends Component {
           <ObjectInput
             label="Metadata"
             value={settings.metadata}
-            onChange={v => changeTheValue(path + '.metadata', v)}
+            onChange={v => this.changeTheValue(path + '.metadata', v)}
           />
+          <SessionCookieConfig {...this.props}/>
         </div>
       );
     } else {
       return <h3>Unknown config type ...</h3>;
     }
   }
+}
+
+const SessionCookieConfig = (props) => {
+  const changeTheValue = (name, value) => {
+    if (props.onChange) {
+      const clone = _.cloneDeep(props.value || props.settings);
+      const path = name.startsWith('.') ? name.substr(1) : name;
+      const newObj = deepSet(clone, path, value);
+      console.debug({newObj})
+      props.onChange(newObj);
+    } else {
+      props.changeTheValue(name, value);
+    }
+  };
+  const settings = props.value || props.settings;
+  const path = props.path || '';
+
+  return (
+    <>
+      <Separator title="Session cookie values" />
+      <NumberInput
+        label="Session max. age"
+        value={settings.sessionMaxAge}
+        help="..."
+        suffix="seconds"
+        onChange={v => changeTheValue(path + '.sessionMaxAge', v)}
+      />
+      <BooleanInput
+        label="HttpOnly"
+        value={settings.sessionCookieValues.httpOnly}
+        help="Rewrite session cookie httpOnly to false or true"
+        onChange={v => changeTheValue(path + '.sessionCookieValues.httpOnly', v)}
+      />
+      <BooleanInput
+        label="secure"
+        value={settings.sessionCookieValues.secure}
+        help="Rewrite session cookie secure to false or true"
+        onChange={v => changeTheValue(path + '.sessionCookieValues.secure', v)}
+      />
+    </>
+  )
 }

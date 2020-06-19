@@ -11,6 +11,7 @@ import otoroshi.storage.BasicStore
 import utils.http.MtlsConfig
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Try
 
 trait AuthModule {
 
@@ -34,6 +35,31 @@ trait AuthModule {
                                                                      env: Env): Future[Either[String, BackOfficeUser]]
 }
 
+object SessionCookieValues {
+  def fmt = new Format[SessionCookieValues] {
+    override def writes(o: SessionCookieValues) = Json.obj(
+      "httpOnly" -> o.httpOnly,
+      "secure" -> o.secure
+    )
+
+    override def reads(json: JsValue) =
+      Try {
+        JsSuccess(
+          SessionCookieValues(
+            httpOnly = (json \ "httpOnly").asOpt[Boolean].getOrElse(true),
+            secure = (json \ "secure").asOpt[Boolean].getOrElse(true)
+          )
+        )
+      } recover {
+        case e => JsError(e.getMessage)
+      } get
+  }
+}
+
+case class SessionCookieValues(httpOnly: Boolean = true, secure: Boolean = true) {
+  def asJson: JsValue = SessionCookieValues.fmt.writes(this)
+}
+
 trait AuthModuleConfig extends AsJson {
   def `type`: String
   def id: String
@@ -43,6 +69,7 @@ trait AuthModuleConfig extends AsJson {
   def cookieSuffix(desc: ServiceDescriptor): String
   def sessionMaxAge: Int
   def metadata: Map[String, String]
+  def sessionCookieValues: SessionCookieValues
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean]
 }
 
@@ -115,21 +142,24 @@ trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {
           id = IdGenerator.token,
           name = "New auth. module",
           desc = "New auth. module",
-          metadata = Map.empty
+          metadata = Map.empty,
+          sessionCookieValues = SessionCookieValues()
         )
       case Some("oauth2-global") =>
         GenericOauth2ModuleConfig(
           id = IdGenerator.token,
           name = "New auth. module",
           desc = "New auth. module",
-          metadata = Map.empty
+          metadata = Map.empty,
+          sessionCookieValues = SessionCookieValues()
         )
       case Some("basic") =>
         BasicAuthModuleConfig(
           id = IdGenerator.token,
           name = "New auth. module",
           desc = "New auth. module",
-          metadata = Map.empty
+          metadata = Map.empty,
+          sessionCookieValues = SessionCookieValues()
         )
       case Some("ldap") =>
         LdapAuthModuleConfig(
@@ -141,14 +171,16 @@ trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {
           searchFilter = "(uid=${username})",
           adminUsername = Some("cn=read-only-admin,dc=example,dc=com"),
           adminPassword = Some("password"),
-          metadata = Map.empty
+          metadata = Map.empty,
+          sessionCookieValues = SessionCookieValues()
         )
       case _ =>
         BasicAuthModuleConfig(
           id = IdGenerator.token,
           name = "New auth. module",
           desc = "New auth. module",
-          metadata = Map.empty
+          metadata = Map.empty,
+          sessionCookieValues = SessionCookieValues()
         )
     }
   }
