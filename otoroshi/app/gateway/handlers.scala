@@ -7,7 +7,7 @@ import akka.actor.{Actor, Props}
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
 import akka.util.ByteString
-import auth.AuthModuleConfig
+import auth.{AuthModuleConfig, SessionCookieValues}
 import com.google.common.base.Charsets
 import env.Env
 import events._
@@ -320,17 +320,20 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
     val hostOpt: Option[String]       = req.queryString.get("host").map(_.last)
     val cookiePrefOpt: Option[String] = req.queryString.get("cp").map(_.last)
     val maOpt: Option[Int]            = req.queryString.get("ma").map(_.last).map(_.toInt)
-    (redirectToOpt, sessionIdOpt, hostOpt, cookiePrefOpt, maOpt) match {
-      case (Some("urn:ietf:wg:oauth:2.0:oob"), Some(sessionId), Some(host), Some(cp), ma) =>
+    val httpOnlyOpt: Option[Boolean]  = req.queryString.get("httpOnly").map(_.last).map(_.toBoolean)
+    val secureOpt: Option[Boolean]    = req.queryString.get("secure").map(_.last).map(_.toBoolean)
+    //todo: test hash path
+    (redirectToOpt, sessionIdOpt, hostOpt, cookiePrefOpt, maOpt, httpOnlyOpt, secureOpt) match {
+      case (Some("urn:ietf:wg:oauth:2.0:oob"), Some(sessionId), Some(host), Some(cp), ma, httpOnly, secure) =>
         FastFuture.successful(
           Ok(views.html.otoroshi.token(env.signPrivateSessionId(sessionId), env)).withCookies(
-            env.createPrivateSessionCookiesWithSuffix(host, sessionId, cp, ma.getOrElse(86400)): _*
+            env.createPrivateSessionCookiesWithSuffix(host, sessionId, cp, ma.getOrElse(86400), SessionCookieValues(httpOnly.getOrElse(true), secure.getOrElse(true))): _*
           )
         )
-      case (Some(redirectTo), Some(sessionId), Some(host), Some(cp), ma) =>
+      case (Some(redirectTo), Some(sessionId), Some(host), Some(cp), ma, httpOnly, secure) =>
         FastFuture.successful(
           Redirect(redirectTo).withCookies(
-            env.createPrivateSessionCookiesWithSuffix(host, sessionId, cp, ma.getOrElse(86400)): _*
+            env.createPrivateSessionCookiesWithSuffix(host, sessionId, cp, ma.getOrElse(86400), SessionCookieValues(httpOnly.getOrElse(true), secure.getOrElse(true))): _*
           )
         )
       case _ =>

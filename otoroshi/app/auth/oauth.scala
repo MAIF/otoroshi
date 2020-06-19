@@ -1,21 +1,18 @@
 package auth
 
-import java.net.URLEncoder
-
 import akka.http.scaladsl.util.FastFuture
 import com.auth0.jwt.JWT
 import controllers.routes
 import env.Env
 import models._
+import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
+import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.json._
+import play.api.libs.ws.{WSProxyServer, WSResponse}
 import play.api.mvc.Results.Redirect
 import play.api.mvc.{AnyContent, Request, RequestHeader, Result}
 import security.IdGenerator
-import otoroshi.storage.BasicStore
-import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
-import org.joda.time.DateTime
-import play.api.libs.ws.{WSProxyServer, WSResponse}
 import utils.http.MtlsConfig
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -73,6 +70,7 @@ object GenericOauth2ModuleConfig extends FromJson[AuthModuleConfig] {
           extraMetadata = (json \ "extraMetadata").asOpt[JsObject].getOrElse(Json.obj()),
           mtlsConfig = MtlsConfig.read((json \ "mtlsConfig").asOpt[JsValue]),
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
+          sessionCookieValues = (json \ "sessionCookieValues").asOpt(SessionCookieValues.fmt).getOrElse(SessionCookieValues())
         )
       )
     } recover {
@@ -81,37 +79,38 @@ object GenericOauth2ModuleConfig extends FromJson[AuthModuleConfig] {
 }
 
 case class GenericOauth2ModuleConfig(
-    id: String,
-    name: String,
-    desc: String,
-    sessionMaxAge: Int = 86400,
-    clientId: String = "client",
-    clientSecret: String = "secret",
-    tokenUrl: String = "http://localhost:8082/oauth/token",
-    authorizeUrl: String = "http://localhost:8082/oauth/authorize",
-    userInfoUrl: String = "http://localhost:8082/userinfo",
-    introspectionUrl: String = "http://localhost:8082/token/introspect",
-    loginUrl: String = "http://localhost:8082/login",
-    logoutUrl: String = "http://localhost:8082/logout",
-    scope: String = "openid profile email name",
-    claims: String = "email name",
-    useCookie: Boolean = false,
-    useJson: Boolean = false,
-    readProfileFromToken: Boolean = false,
-    jwtVerifier: Option[AlgoSettings] = None,
-    accessTokenField: String = "access_token",
-    nameField: String = "name",
-    emailField: String = "email",
-    apiKeyMetaField: String = "apkMeta",
-    apiKeyTagsField: String = "apkTags",
-    otoroshiDataField: String = "app_metadata|otoroshi_data",
-    callbackUrl: String = "http://privateapps.oto.tools:8080/privateapps/generic/callback",
-    oidConfig: Option[String] = None,
-    proxy: Option[WSProxyServer] = None,
-    extraMetadata: JsObject = Json.obj(),
-    mtlsConfig: MtlsConfig = MtlsConfig(),
-    refreshTokens: Boolean = false,
-    metadata: Map[String, String]
+                                      id: String,
+                                      name: String,
+                                      desc: String,
+                                      sessionMaxAge: Int = 86400,
+                                      clientId: String = "client",
+                                      clientSecret: String = "secret",
+                                      tokenUrl: String = "http://localhost:8082/oauth/token",
+                                      authorizeUrl: String = "http://localhost:8082/oauth/authorize",
+                                      userInfoUrl: String = "http://localhost:8082/userinfo",
+                                      introspectionUrl: String = "http://localhost:8082/token/introspect",
+                                      loginUrl: String = "http://localhost:8082/login",
+                                      logoutUrl: String = "http://localhost:8082/logout",
+                                      scope: String = "openid profile email name",
+                                      claims: String = "email name",
+                                      useCookie: Boolean = false,
+                                      useJson: Boolean = false,
+                                      readProfileFromToken: Boolean = false,
+                                      jwtVerifier: Option[AlgoSettings] = None,
+                                      accessTokenField: String = "access_token",
+                                      nameField: String = "name",
+                                      emailField: String = "email",
+                                      apiKeyMetaField: String = "apkMeta",
+                                      apiKeyTagsField: String = "apkTags",
+                                      otoroshiDataField: String = "app_metadata|otoroshi_data",
+                                      callbackUrl: String = "http://privateapps.oto.tools:8080/privateapps/generic/callback",
+                                      oidConfig: Option[String] = None,
+                                      proxy: Option[WSProxyServer] = None,
+                                      extraMetadata: JsObject = Json.obj(),
+                                      mtlsConfig: MtlsConfig = MtlsConfig(),
+                                      refreshTokens: Boolean = false,
+                                      metadata: Map[String, String],
+                                      sessionCookieValues: SessionCookieValues
 ) extends OAuth2ModuleConfig {
   def `type`: String                                        = "oauth2"
   override def authModule(config: GlobalConfig): AuthModule = GenericOauth2Module(this)
@@ -147,7 +146,8 @@ case class GenericOauth2ModuleConfig(
     "proxy"                -> WSProxyServerJson.maybeProxyToJson(this.proxy),
     "extraMetadata"        -> this.extraMetadata,
     "metadata"             -> this.metadata,
-    "refreshTokens"        -> this.refreshTokens
+    "refreshTokens"        -> this.refreshTokens,
+    "sessionCookieValues"   -> SessionCookieValues.fmt.writes(this.sessionCookieValues)
   )
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.authConfigsDataStore.set(this)
   override def cookieSuffix(desc: ServiceDescriptor)                   = s"global-oauth-$id"

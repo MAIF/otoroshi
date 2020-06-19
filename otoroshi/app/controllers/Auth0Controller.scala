@@ -115,7 +115,7 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
                               FastFuture.successful(
                                 Redirect(
                                   s"${req.theProtocol}://${req.theHost}/.well-known/otoroshi/login?sessionId=${user.randomId}&redirectTo=urn:ietf:wg:oauth:2.0:oob&host=${req.theHost}&cp=${auth
-                                    .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}"
+                                    .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}"
                                 ).removingFromSession(s"pa-redirect-after-login-${auth.cookieSuffix(descriptor)}",
                                                        "desc")
                                   .withCookies(
@@ -130,10 +130,10 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
                               val setCookiesRedirect = url.getPort match {
                                 case -1 =>
                                   s"$scheme://$host/.well-known/otoroshi/login?sessionId=${user.randomId}&redirectTo=$redirectTo&host=$host&cp=${auth
-                                    .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}"
+                                    .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}"
                                 case port =>
                                   s"$scheme://$host:$port/.well-known/otoroshi/login?sessionId=${user.randomId}&redirectTo=$redirectTo&host=$host&cp=${auth
-                                    .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}"
+                                    .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}"
                               }
                               FastFuture.successful(
                                 Redirect(setCookiesRedirect)
@@ -202,7 +202,7 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
             case "urn:ietf:wg:oauth:2.0:oob" => {
               Redirect(
                 s"${req.theProtocol}://${req.theHost}/.well-known/otoroshi/login?sessionId=${paUser.randomId}&redirectTo=urn:ietf:wg:oauth:2.0:oob&host=${req.theHost}&cp=${auth
-                  .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}"
+                  .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}"
               ).removingFromSession(s"pa-redirect-after-login-${auth.cookieSuffix(descriptor)}", "desc")
                 .withCookies(env.createPrivateSessionCookies(req.theHost, user.randomId, descriptor, auth): _*)
             }
@@ -215,10 +215,10 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
               val setCookiesRedirect = url.getPort match {
                 case -1 =>
                   s"$scheme://$host/.well-known/otoroshi/login?sessionId=${paUser.randomId}&redirectTo=$redirectTo&host=$host&cp=${auth
-                    .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}"
+                    .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}"
                 case port =>
                   s"$scheme://$host:$port/.well-known/otoroshi/login?sessionId=${paUser.randomId}&redirectTo=$redirectTo&host=$host&cp=${auth
-                    .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}"
+                    .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}"
               }
               if (webauthn) {
                 Ok(Json.obj("location" -> setCookiesRedirect))
