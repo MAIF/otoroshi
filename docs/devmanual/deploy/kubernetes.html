@@ -2,7 +2,7 @@
 <html class="no-js" lang="en">
 
 <head>
-<title>Kubernetes Integration · Otoroshi</title>
+<title>Kubernetes · Otoroshi</title>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <meta name="description" content='otoroshi-manual'/>
@@ -91,7 +91,7 @@
   <li><a href="../api.html" class="page">Admin REST API</a></li>
   <li><a href="../deploy/index.html" class="page">Deploy to production</a>
   <ul>
-    <li><a href="../deploy/kubernetes.html" class="active page">Kubernetes Integration</a></li>
+    <li><a href="../deploy/kubernetes.html" class="active page">Kubernetes</a></li>
     <li><a href="../deploy/clevercloud.html" class="page">Clever Cloud</a></li>
     <li><a href="../deploy/aws-beanstalk.html" class="page">AWS - Elastic Beanstalk</a></li>
     <li><a href="../deploy/other.html" class="page">Others</a></li>
@@ -192,7 +192,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><a href="../api.html" class="page">Admin REST API</a></li>
   <li><a href="../deploy/index.html" class="page">Deploy to production</a>
   <ul>
-    <li><a href="../deploy/kubernetes.html" class="active page">Kubernetes Integration</a></li>
+    <li><a href="../deploy/kubernetes.html" class="active page">Kubernetes</a></li>
     <li><a href="../deploy/clevercloud.html" class="page">Clever Cloud</a></li>
     <li><a href="../deploy/aws-beanstalk.html" class="page">AWS - Elastic Beanstalk</a></li>
     <li><a href="../deploy/other.html" class="page">Others</a></li>
@@ -214,7 +214,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <ul>
   <li><a href="../index.html">Otoroshi</a></li>
   <li><a href="../deploy/index.html">Deploy to production</a></li>
-  <li>Kubernetes Integration</li>
+  <li>Kubernetes</li>
 </ul>
 </div>
 </div>
@@ -222,7 +222,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 
 <div class="page-content row">
 <div class="small-12 large-9 column" id="docs">
-<h1><a href="#kubernetes-integration" name="kubernetes-integration" class="anchor"><span class="anchor-link"></span></a>Kubernetes Integration</h1>
+<h1><a href="#kubernetes" name="kubernetes" class="anchor"><span class="anchor-link"></span></a>Kubernetes</h1>
 <p>Starting at version 1.5.0, Otoroshi provides a native Kubernetes support. Multiple otoroshi jobs (that are actually kubernetes controllers) are provided in order to</p>
 <ul>
   <li>sync kubernetes secrets of type <code>kubernetes.io/tls</code> to otoroshi certificates</li>
@@ -311,7 +311,9 @@ spec:
   - name: APP_DOMAIN
     value: &#39;file:///the/path/of/the/secret/file&#39;
 </code></pre>
-<h3><a href="#note-on-bare-metal-kubernetes-cluster-installation" name="note-on-bare-metal-kubernetes-cluster-installation" class="anchor"><span class="anchor-link"></span></a>Note on bare metal kubernetes cluster installation</h3><div class="callout warning "><div class="callout-title">Warning</div>
+<p>you can use the same trick in the config. file itself</p>
+<h3><a href="#note-on-bare-metal-kubernetes-cluster-installation" name="note-on-bare-metal-kubernetes-cluster-installation" class="anchor"><span class="anchor-link"></span></a>Note on bare metal kubernetes cluster installation</h3><div class="callout note "><div class="callout-title">Note</div>
+<p>Bare metal kubernetes clusters don&rsquo;t come with support for external loadbalancers (service of type <code>LoadBalancer</code>). So you will have to provide this feature in order to route external TCP traffic to Otoroshi containers running inside the kubernetes cluster. You can use projects like <a href="https://metallb.universe.tf/">MetalLB</a> that provide software <code>LoadBalancer</code> services to bare metal clusters or you can use and customize examples below.</p></div><div class="callout warning "><div class="callout-title">Warning</div>
 <p>We don&rsquo;t recommand running Otoroshi behind an existing ingress controller (or something like that) as you will not be able to use features like TCP proxying, TLS, mTLS, etc. Also, this additional layer of reverse proxy will increase call latencies.</p></div>
 <h3><a href="#common-manifests" name="common-manifests" class="anchor"><span class="anchor-link"></span></a>Common manifests</h3>
 <p>the following manifests are always needed. They create otoroshi CRDs, tokens, role, etc. Redis deployment is not mandatory, it&rsquo;s just an example. You can use your own existing setup.</p>
@@ -3240,7 +3242,7 @@ spec:
 <div class="nav-title">On this page:</div>
 <div class="nav-toc">
 <ul>
-  <li><a href="../deploy/kubernetes.html#kubernetes-integration" class="header">Kubernetes Integration</a>
+  <li><a href="../deploy/kubernetes.html#kubernetes" class="header">Kubernetes</a>
   <ul>
     <li><a href="../deploy/kubernetes.html#installing-otoroshi-on-your-kubernetes-cluster" class="header">Installing otoroshi on your kubernetes cluster</a></li>
     <li><a href="../deploy/kubernetes.html#using-otoroshi-as-an-ingress-controller" class="header">Using Otoroshi as an Ingress Controller</a></li>
