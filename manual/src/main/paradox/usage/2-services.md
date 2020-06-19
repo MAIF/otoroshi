@@ -27,11 +27,12 @@ You will have a serie of toggle buttons to
 * display contruction page for a service
 * enable otoroshi custom response headers containing request id, latency, etc 
 * force https usage on the exposed service
+* enable read only flag : this service will only be used with `HEAD`, `OPTIONS` and `GET` http verbs. You can also active the same flag on `ApiKey`s to be more specific on who cannot use write http verbs.
 
 Then, you will be able to choose the URL that will be used to reach your new service on Otoroshi.
 
 @@@ div { .centered-img #service-flags }
-<img src="../img/service-flags-2.png" />
+<img src="../img/service-flags.png" />
 @@@
 
 In the `service targets` section, you will be able to choose where the call will be forwarded. You can use multiple targets, in that case, Otoroshi will perform a round robin load balancing between the targets. If the `override Host header` toggle is on, the host header will be changed for the host of the target. For example, if you request `http://www.oto.tools/api` with a target to `http://www-internal.service.local/api`, the target will receive a `Host: www-internal.service.local` instead of `Host: www.oto.tools`.
@@ -138,15 +139,18 @@ In Otoroshi, each service has its own client settings with a circuit breaker and
 
 You can also provide some additionnal information about a given service, like an `Open API` descriptor, some metadata, a list of whitelisted/blacklisted ip addresses, etc.
 
-Here you can also define some headers that will be added to each request to the targets. And you will be able to define headers to route the call only if the defined header is present on the request.
-
 @@@ div { .centered-img #service-meta }
 <img src="../img/new-service-meta.png" />
 @@@
 
-### Read only
+### HTTP Headers
 
-The read only flag on a service descriptor means that this service can only be used with `HEAD`, `OPTIONS` and `GET` http verbs. You can also active the same flag on `ApiKey`s to be more specific on who cannot use write http verbs.
+Here you can define some headers that will be added to each request to client requests or responses. 
+You will also be able to define headers to route the call only if the defined header is present on the request.
+
+@@@ div { .centered-img #service-meta }
+<img src="../img/new-service-headers.png" />
+@@@
 
 ### CORS 
 

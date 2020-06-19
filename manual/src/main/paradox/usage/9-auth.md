@@ -1,6 +1,6 @@
 # Authentication
 
-You can create auth. configuration in Otoroshi. Just go to `settings (cog icon) / Global auth. configs`.
+You can create auth. configuration in Otoroshi. Just go to `settings (cog icon) / Authentication configs`.
 
 ## OAuth 2
 

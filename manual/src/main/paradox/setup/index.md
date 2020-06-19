@@ -4,13 +4,7 @@ Now that Otoroshi is running, you are ready to log into the Otoroshi admin dashb
 
 <a href="http://otoroshi.oto.tools:8080" target="_blank">http://otoroshi.oto.tools:8080</a>
 
-and you will see the following page
- 
-@@@ div { .centered-img }
-<img src="../img/base-page.png" />
-@@@
-
-now click on the login button and you will see the login page
+and you will see the login page
 
 @@@ div { .centered-img }
 <img src="../img/login-page.png" />

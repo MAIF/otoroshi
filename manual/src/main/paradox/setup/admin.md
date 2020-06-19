@@ -18,6 +18,12 @@ You will see the list of registered admin users.
 <img src="../img/first-admins-screen.png" />
 @@@
 
+Click on `Register admin.`
+
+@@@ div { .centered-img }
+<img src="../img/register-admin-button.png" />
+@@@
+
 Now, enter informations about the new admin you want to create.
 
 @@@ div { .centered-img }
@@ -38,10 +44,10 @@ Now, you can discard the generated admin, confirm, then logout, login with the a
 
 ## Create admin user with U2F device login
 
-Go to `settings (cog icon) / Admins`.
+Go to `settings (cog icon) / Admins`, click on `Register Admin`.
 
 @@@ div { .centered-img }
-<img src="../img/first-admins-screen.png" />
+<img src="../img/register-admin-button.png" />
 @@@
 
 Enter informations about the new admin you want to create.
@@ -50,7 +56,7 @@ Enter informations about the new admin you want to create.
 <img src="../img/create-admin-u2f.png" />
 @@@
 
-Click on `Register FIDO U2F Admin`.
+Click on `Register Admin with WebAuthn`.
 
 Otoroshi will  ask you to plug your FIDO U2F device and touch it to complete registration.
 
