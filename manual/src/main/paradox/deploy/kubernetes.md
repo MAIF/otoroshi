@@ -21,11 +21,100 @@ Then deploy it with `kubectl apply -k ./overlays/myoverlay`.
 
 Helm charts will be available as soon as possible
 
-Below, you will find example of deployment. Do not hesitate to adapt them to your needs
+Below, you will find example of deployment. Do not hesitate to adapt them to your needs. Those descriptors have value placeholders that you will need to replace with actual values like 
+
+```yaml
+ env:
+  - name: APP_STORAGE_ROOT
+    value: otoroshi
+  - name: APP_DOMAIN
+    value: ${domain}
+```
+
+you will have to edit it to make it look like
+
+```yaml
+ env:
+  - name: APP_STORAGE_ROOT
+    value: otoroshi
+  - name: APP_DOMAIN
+    value: 'apis.my.domain'
+```
+
+if you don't want to use placeholders and environment variables, you can create a secret containing the configuration file of otoroshi
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: otoroshi-config
+type: Opaque
+stringData:
+  oto.conf: >
+    include "application.conf"
+    app {
+      storage = "redis"
+      domain = "apis.my.domain"
+    }
+```
+
+and mount it in the otoroshi container
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otoroshi-deployment
+spec:
+  selector:
+    matchLabels:
+      run: otoroshi-deployment
+  template:
+    metadata:
+      labels:
+        run: otoroshi-deployment
+    spec:
+      serviceAccountName: otoroshi-admin-user
+      terminationGracePeriodSeconds: 60
+      hostNetwork: false
+      containers:
+      - image: maif/otoroshi:1.5.0-jdk11
+        imagePullPolicy: IfNotPresent
+        name: otoroshi
+        args: ['-Dconfig.file=/usr/app/otoroshi/conf/oto.conf']
+        ports:
+          - containerPort: 8080
+            name: "http"
+            protocol: TCP
+          - containerPort: 8443
+            name: "https"
+            protocol: TCP
+        volumeMounts:
+        - name: otoroshi-config
+          mountPath: "/usr/app/otoroshi/conf"
+          readOnly: true
+      volumes:
+      - name: otoroshi-config
+        secret:
+          secretName: otoroshi-config
+        ...
+```
+
+You can also create several secrets for each placeholder, mount them to the otoroshi container then use their file path as value
+
+```yaml
+ env:
+  - name: APP_STORAGE_ROOT
+    value: otoroshi
+  - name: APP_DOMAIN
+    value: 'file:///the/path/of/the/secret/file'
+```
 
 ### Note on bare metal kubernetes cluster installation
 
+@@@ info
 Bare metal kubernetes clusters don't come with support for external loadbalancers (service of type `LoadBalancer`). So you will have to provide this feature in order to route external TCP traffic to Otoroshi containers running inside the kubernetes cluster. You can use projects like [MetalLB](https://metallb.universe.tf/) that provide software `LoadBalancer` services to bare metal clusters or you can use and customize examples below.
+@@@
 
 @@@ warning
 We don't recommand running Otoroshi behind an existing ingress controller (or something like that) as you will not be able to use features like TCP proxying, TLS, mTLS, etc. Also, this additional layer of reverse proxy will increase call latencies.
