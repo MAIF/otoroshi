@@ -237,9 +237,81 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 </code></pre>
 <p>Then deploy it with <code>kubectl apply -k ./overlays/myoverlay</code>. </p>
 <p>Helm charts will be available as soon as possible</p>
-<p>Below, you will find example of deployment. Do not hesitate to adapt them to your needs</p>
-<h3><a href="#note-on-bare-metal-kubernetes-cluster-installation" name="note-on-bare-metal-kubernetes-cluster-installation" class="anchor"><span class="anchor-link"></span></a>Note on bare metal kubernetes cluster installation</h3>
-<p>Bare metal kubernetes clusters don&rsquo;t come with support for external loadbalancers (service of type <code>LoadBalancer</code>). So you will have to provide this feature in order to route external TCP traffic to Otoroshi containers running inside the kubernetes cluster. You can use projects like <a href="https://metallb.universe.tf/">MetalLB</a> that provide software <code>LoadBalancer</code> services to bare metal clusters or you can use and customize examples below.</p><div class="callout warning "><div class="callout-title">Warning</div>
+<p>Below, you will find example of deployment. Do not hesitate to adapt them to your needs. Those descriptors have value placeholders that you will need to replace with actual values like </p>
+<pre class="prettyprint"><code class="language-yaml"> env:
+  - name: APP_STORAGE_ROOT
+    value: otoroshi
+  - name: APP_DOMAIN
+    value: ${domain}
+</code></pre>
+<p>you will have to edit it to make it look like</p>
+<pre class="prettyprint"><code class="language-yaml"> env:
+  - name: APP_STORAGE_ROOT
+    value: otoroshi
+  - name: APP_DOMAIN
+    value: &#39;apis.my.domain&#39;
+</code></pre>
+<p>if you don&rsquo;t want to use placeholders and environment variables, you can create a secret containing the configuration file of otoroshi</p>
+<pre class="prettyprint"><code class="language-yaml">apiVersion: v1
+kind: Secret
+metadata:
+  name: otoroshi-config
+type: Opaque
+stringData:
+  oto.conf: &gt;
+    include &quot;application.conf&quot;
+    app {
+      storage = &quot;redis&quot;
+      domain = &quot;apis.my.domain&quot;
+    }
+</code></pre>
+<p>and mount it in the otoroshi container</p>
+<pre class="prettyprint"><code class="language-yaml">apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otoroshi-deployment
+spec:
+  selector:
+    matchLabels:
+      run: otoroshi-deployment
+  template:
+    metadata:
+      labels:
+        run: otoroshi-deployment
+    spec:
+      serviceAccountName: otoroshi-admin-user
+      terminationGracePeriodSeconds: 60
+      hostNetwork: false
+      containers:
+      - image: maif/otoroshi:1.5.0-jdk11
+        imagePullPolicy: IfNotPresent
+        name: otoroshi
+        args: [&#39;-Dconfig.file=/usr/app/otoroshi/conf/oto.conf&#39;]
+        ports:
+          - containerPort: 8080
+            name: &quot;http&quot;
+            protocol: TCP
+          - containerPort: 8443
+            name: &quot;https&quot;
+            protocol: TCP
+        volumeMounts:
+        - name: otoroshi-config
+          mountPath: &quot;/usr/app/otoroshi/conf&quot;
+          readOnly: true
+      volumes:
+      - name: otoroshi-config
+        secret:
+          secretName: otoroshi-config
+        ...
+</code></pre>
+<p>You can also create several secrets for each placeholder, mount them to the otoroshi container then use their file path as value</p>
+<pre class="prettyprint"><code class="language-yaml"> env:
+  - name: APP_STORAGE_ROOT
+    value: otoroshi
+  - name: APP_DOMAIN
+    value: &#39;file:///the/path/of/the/secret/file&#39;
+</code></pre>
+<h3><a href="#note-on-bare-metal-kubernetes-cluster-installation" name="note-on-bare-metal-kubernetes-cluster-installation" class="anchor"><span class="anchor-link"></span></a>Note on bare metal kubernetes cluster installation</h3><div class="callout warning "><div class="callout-title">Warning</div>
 <p>We don&rsquo;t recommand running Otoroshi behind an existing ingress controller (or something like that) as you will not be able to use features like TCP proxying, TLS, mTLS, etc. Also, this additional layer of reverse proxy will increase call latencies.</p></div>
 <h3><a href="#common-manifests" name="common-manifests" class="anchor"><span class="anchor-link"></span></a>Common manifests</h3>
 <p>the following manifests are always needed. They create otoroshi CRDs, tokens, role, etc. Redis deployment is not mandatory, it&rsquo;s just an example. You can use your own existing setup.</p>
@@ -276,6 +348,7 @@ rules:
       - services
       - endpoints
       - secrets
+      - pods
     verbs:
       - get
       - list
@@ -2017,7 +2090,6 @@ spec:
     metadata:
       labels:
         run: otoroshi-leader-deployment
-    replicas: 2
     strategy:
       type: RollingUpdate
       rollingUpdate:
@@ -2032,7 +2104,7 @@ spec:
               - key: otoroshi-kind
                 operator: In
                 values:
-                - instance
+                - leader
       tolerations:
       - key: node-role.kubernetes.io/master
         effect: NoSchedule
@@ -2135,7 +2207,7 @@ spec:
               - key: otoroshi-kind
                 operator: In
                 values:
-                - instance
+                - worker
       tolerations:
       - key: node-role.kubernetes.io/master
         effect: NoSchedule
