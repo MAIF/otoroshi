@@ -56,6 +56,7 @@ object SessionCookieValues {
   }
 }
 
+//todo: move max-age here when it won't be a problem
 case class SessionCookieValues(httpOnly: Boolean = true, secure: Boolean = true) {
   def asJson: JsValue = SessionCookieValues.fmt.writes(this)
 }

@@ -8,7 +8,7 @@ import java.util.concurrent.atomic.AtomicReference
 import akka.actor.{ActorSystem, PoisonPill, Scheduler}
 import akka.http.scaladsl.util.FastFuture._
 import akka.stream.Materializer
-import auth.AuthModuleConfig
+import auth.{AuthModuleConfig, SessionCookieValues}
 import ch.qos.logback.classic.{Level, LoggerContext}
 import cluster._
 import com.typesafe.config.{ConfigFactory, ConfigRenderOptions}
@@ -1014,13 +1014,14 @@ class Env(val configuration: Configuration,
                                   id: String,
                                   desc: ServiceDescriptor,
                                   authConfig: AuthModuleConfig): Seq[play.api.mvc.Cookie] = {
-    createPrivateSessionCookiesWithSuffix(host, id, authConfig.cookieSuffix(desc), authConfig.sessionMaxAge)
+    createPrivateSessionCookiesWithSuffix(host, id, authConfig.cookieSuffix(desc), authConfig.sessionMaxAge, authConfig.sessionCookieValues)
   }
 
   def createPrivateSessionCookiesWithSuffix(host: String,
                                             id: String,
                                             suffix: String,
-                                            sessionMaxAge: Int): Seq[play.api.mvc.Cookie] = {
+                                            sessionMaxAge: Int,
+                                            sessionCookieValues: SessionCookieValues): Seq[play.api.mvc.Cookie] = {
     if (host.endsWith(sessionDomain)) {
       Seq(
         play.api.mvc.Cookie(
@@ -1029,8 +1030,8 @@ class Env(val configuration: Configuration,
           maxAge = Some(sessionMaxAge),
           path = "/",
           domain = Some(sessionDomain),
-          httpOnly = true,
-          secure = exposedRootSchemeIsHttps
+          httpOnly = sessionCookieValues.httpOnly,
+          secure = sessionCookieValues.secure
         )
       )
     } else {
@@ -1041,8 +1042,8 @@ class Env(val configuration: Configuration,
           maxAge = Some(sessionMaxAge),
           path = "/",
           domain = Some(host),
-          httpOnly = true,
-          secure = exposedRootSchemeIsHttps
+          httpOnly = sessionCookieValues.httpOnly,
+          secure = sessionCookieValues.secure
         ),
         play.api.mvc.Cookie(
           name = "oto-papps-" + suffix,
@@ -1050,8 +1051,8 @@ class Env(val configuration: Configuration,
           maxAge = Some(sessionMaxAge),
           path = "/",
           domain = Some(sessionDomain),
-          httpOnly = true,
-          secure = exposedRootSchemeIsHttps
+          httpOnly = sessionCookieValues.httpOnly,
+          secure = sessionCookieValues.secure
         )
       )
     }
