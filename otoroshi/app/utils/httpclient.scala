@@ -1074,6 +1074,7 @@ case class AkkaWsClientRequest(
       .filter { h =>
         h.isNot(`Content-Type`.lowercaseName) &&
         h.isNot(`Content-Length`.lowercaseName) &&
+        h.isNot(`Transfer-Encoding`.lowercaseName) &&
         //h.isNot(`User-Agent`.lowercaseName) &&
         !(h.is(Cookie.lowercaseName) && h.value().trim.isEmpty)
       }
