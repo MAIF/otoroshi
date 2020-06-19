@@ -1253,7 +1253,7 @@ case class GlobalJwtVerifier(
     source: JwtTokenLocation = InHeader("X-JWT-Token"),
     algoSettings: AlgoSettings = HSAlgoSettings(512, "secret", false),
     strategy: VerifierStrategy = PassThrough(VerificationSettings(Map("iss" -> "The Issuer"))),
-    metadata: Map[String, String]
+    metadata: Map[String, String] = Map.empty
 ) extends JwtVerifier
     with AsJson {
 
