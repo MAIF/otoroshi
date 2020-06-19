@@ -1267,6 +1267,11 @@ export class AuthModuleConfig extends Component {
                 emailField: 'email',
                 otoroshiDataField: 'app_metadata | otoroshi_data',
                 extraMetadata: {},
+                mtlsConfig: {
+                  mtls: false,
+                  loose: false,
+                  certs: [],
+                },
                 sessionCookieValues: {
                   httpOnly: true,
                   secure: true
@@ -1283,51 +1288,26 @@ export class AuthModuleConfig extends Component {
         help="The type of settings to log into your app."
       />
     );
-    if (settings.type === 'oauth2') {
-      return (
-        <div>
-          {selector}
-          <Oauth2ModuleConfig {...this.props} />
-          <Separator title="Module metadata" />
-          <ObjectInput
-            label="Metadata"
-            value={settings.metadata}
-            onChange={v => this.changeTheValue(path + '.metadata', v)}
-          />
-          <SessionCookieConfig {...this.props} />
-        </div>
-      );
-    } else if (settings.type === 'basic') {
-      return (
-        <div>
-          {selector}
-          <BasicModuleConfig {...this.props} />
-          <Separator title="Module metadata" />
-          <ObjectInput
-            label="Metadata"
-            value={settings.metadata}
-            onChange={v => this.changeTheValue(path + '.metadata', v)}
-          />
-          <SessionCookieConfig {...this.props} />
-        </div>
-      );
-    } else if (settings.type === 'ldap') {
-      return (
-        <div>
-          {selector}
-          <LdapModuleConfig {...this.props} />
-          <Separator title="Module metadata" />
-          <ObjectInput
-            label="Metadata"
-            value={settings.metadata}
-            onChange={v => this.changeTheValue(path + '.metadata', v)}
-          />
-          <SessionCookieConfig {...this.props}/>
-        </div>
-      );
-    } else {
+
+    if (!['oauth2', 'basic', 'ldap'].includes(settings.type)) {
       return <h3>Unknown config type ...</h3>;
     }
+
+    return (
+      <div>
+        {selector}
+        {settings.type === 'oauth2' && <Oauth2ModuleConfig {...this.props} />}
+        {settings.type === 'basic' && <BasicModuleConfig {...this.props} />}
+        {settings.type === 'ldap' && <LdapModuleConfig {...this.props} />}
+        <Separator title="Module metadata" />
+        <ObjectInput
+          label="Metadata"
+          value={settings.metadata}
+          onChange={v => this.changeTheValue(path + '.metadata', v)}
+        />
+        <SessionCookieConfig {...this.props} />
+      </div>
+    )
   }
 }
 
