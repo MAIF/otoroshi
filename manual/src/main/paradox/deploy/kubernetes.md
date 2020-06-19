@@ -1,4 +1,4 @@
-# Kubernetes Integration
+# Kubernetes
 
 Starting at version 1.5.0, Otoroshi provides a native Kubernetes support. Multiple otoroshi jobs (that are actually kubernetes controllers) are provided in order to
 
@@ -110,9 +110,11 @@ You can also create several secrets for each placeholder, mount them to the otor
     value: 'file:///the/path/of/the/secret/file'
 ```
 
+you can use the same trick in the config. file itself
+
 ### Note on bare metal kubernetes cluster installation
 
-@@@ info
+@@@ note
 Bare metal kubernetes clusters don't come with support for external loadbalancers (service of type `LoadBalancer`). So you will have to provide this feature in order to route external TCP traffic to Otoroshi containers running inside the kubernetes cluster. You can use projects like [MetalLB](https://metallb.universe.tf/) that provide software `LoadBalancer` services to bare metal clusters or you can use and customize examples below.
 @@@
 
