@@ -871,7 +871,15 @@ class Env(val configuration: Configuration,
                     simpleAdmins = Seq(admin),
                   )
 
-                  val initialCustomization = configuration.getOptionalWithFileSupport[String]("app.initialCustomization").map(Json.parse).map(_.asObject).getOrElse(Json.obj())
+                  val initialCustomization = configuration
+                    .getOptionalWithFileSupport[String]("app.initialCustomization")
+                    .map(Json.parse).map(_.asObject)
+                    .orElse(
+                      configuration
+                        .getOptionalWithFileSupport[play.api.Configuration]("app.initialCustomization")
+                        .map(v => Json.parse(v.underlying.root().render(ConfigRenderOptions.concise())).asObject)
+                    )
+                    .getOrElse(Json.obj())
 
                   val finalConfig = baseExport.customizeWith(initialCustomization)
 

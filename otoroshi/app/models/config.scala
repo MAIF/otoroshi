@@ -713,7 +713,7 @@ case class OtoroshiExport(
     val cconfig = customization.select("config").asOpt[JsObject].getOrElse(Json.obj())
     val finalConfig = GlobalConfig.fromJsons(config.toJson.asObject.deepMerge(cconfig))
     copy(
-      config = finalConfig.debug(v => println(Json.prettyPrint(v.toJson))),
+      config = finalConfig,
       descs = customizeAndMergeArray[ServiceDescriptor](descs, customization.select("descs").asOpt[JsArray].getOrElse(Json.arr()), ServiceDescriptor._fmt, _.select("id").asString, _.id),
       apikeys = customizeAndMergeArray[ApiKey](apikeys, customization.select("apikeys").asOpt[JsArray].getOrElse(Json.arr()), ApiKey._fmt, _.select("id").asString, _.clientId),
       groups = customizeAndMergeArray[ServiceGroup](groups, customization.select("groups").asOpt[JsArray].getOrElse(Json.arr()), ServiceGroup._fmt, _.select("id").asString, _.id),
@@ -723,7 +723,6 @@ case class OtoroshiExport(
       certificates = customizeAndMergeArray[Cert](certificates, customization.select("certificates").asOpt[JsArray].getOrElse(Json.arr()), Cert._fmt, _.select("id").asString, _.id),
       scripts = customizeAndMergeArray[Script](scripts, customization.select("scripts").asOpt[JsArray].getOrElse(Json.arr()), Script._fmt, _.select("id").asString, _.id),
       tcpServices = customizeAndMergeArray[TcpService](tcpServices, customization.select("tcpServices").asOpt[JsArray].getOrElse(Json.arr()), TcpService.fmt, _.select("id").asString, _.id),
-
       admins = customizeAndMergeArray[WebAuthnOtoroshiAdmin](admins, customization.select("admins").asOpt[JsArray].getOrElse(Json.arr()), WebAuthnOtoroshiAdmin.fmt, _.select("username").asString, _.username),
       simpleAdmins = customizeAndMergeArray[SimpleOtoroshiAdmin](simpleAdmins, customization.select("simpleAdmins").asOpt[JsArray].getOrElse(Json.arr()), SimpleOtoroshiAdmin.fmt, _.select("username").asString, _.username),
     )

@@ -170,8 +170,8 @@ object implicits {
     }
 
     def getOptionalWithFileSupport[A](path: String)(implicit loader: ConfigLoader[A], classTag: ClassTag[A]): Option[A] = {
-      configuration.getOptional[A](path)(loader) match {
-        case None => configuration.getOptional[String](path)(ConfigLoader.stringLoader) match {
+      Try(configuration.getOptional[A](path)(loader)).toOption.flatten match {
+        case None => Try(configuration.getOptional[String](path)(ConfigLoader.stringLoader)).toOption.flatten match {
           case Some(v) if v.startsWith("file://") => readFromFile[A](v.replace("file://", ""), loader, classTag)
           case _ => None
         }
