@@ -85,6 +85,9 @@ object implicits {
     def asDouble: Double = obj.as[Double]
     def asLong: Long = obj.as[Long]
     def asBoolean: Boolean = obj.as[Boolean]
+    def asObject: JsObject = obj.as[JsObject]
+    def asArray: JsArray = obj.as[JsArray]
+    def asValue: JsValue = obj.as[JsValue]
   }
   implicit class BetterFuture[A](private val obj: Future[A]) extends AnyVal {
     def fleft[B](implicit ec: ExecutionContext): Future[Either[A, B]] = obj.map(v => Left(v))

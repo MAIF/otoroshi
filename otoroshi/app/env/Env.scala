@@ -20,8 +20,8 @@ import models._
 import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
-import otoroshi.models.{OtoroshiAdminType, SimpleOtoroshiAdmin, TeamAccess, TenantAccess}
-import otoroshi.script.{AccessValidatorRef, JobManager, ScriptCompiler, ScriptManager}
+import otoroshi.models.{OtoroshiAdminType, SimpleOtoroshiAdmin, TeamAccess, TenantAccess, WebAuthnOtoroshiAdmin}
+import otoroshi.script.{AccessValidatorRef, JobManager, Script, ScriptCompiler, ScriptManager}
 import otoroshi.ssl.pki.BouncyCastlePki
 import otoroshi.storage.DataStores
 import otoroshi.storage.drivers.cassandra._
@@ -33,15 +33,14 @@ import otoroshi.storage.drivers.rediscala._
 import otoroshi.tcp.TcpService
 import play.api._
 import play.api.inject.ApplicationLifecycle
-import play.api.libs.json.{JsNull, JsObject, JsValue, Json}
+import play.api.libs.json.{JsArray, JsNull, JsObject, JsValue, Json}
 import play.api.libs.ws._
 import play.api.libs.ws.ahc._
 import play.twirl.api.Html
 import security.{ClaimCrypto, IdGenerator}
-import ssl.{Cert, DynamicSSLEngineProvider, FakeKeyStore}
+import ssl.{Cert, ClientCertificateValidator, DynamicSSLEngineProvider, FakeKeyStore}
 import utils.http._
 import utils.{HasMetrics, Metrics}
-
 import otoroshi.utils.syntax.implicits._
 
 import scala.concurrent.duration._
@@ -840,37 +839,70 @@ class Env(val configuration: Configuration,
                     }(ec)
                 }
                 case _ => {
+
+
+
+
                   val defaultGroup = ServiceGroup("default", "default-group", "The default service group", Map.empty)
-                  val defaultGroupApiKey = ApiKey("9HFCzZIPUQQvfxkq",
-                                                  "lmwAGwqtJJM7nOMGKwSAdOjC3CZExfYC7qXd4aPmmseaShkEccAnmpULvgnrt6tp",
+                  val defaultGroupApiKey = ApiKey(IdGenerator.token(16),
+                                                  IdGenerator.token(64),
                                                   "default-apikey",
                                                   "default",
                                                   validUntil = None)
+
+                  import utils.JsonImplicits._
+
+                  val admin = SimpleOtoroshiAdmin(
+                    username = login,
+                    password = BCrypt.hashpw(password, BCrypt.gensalt()),
+                    label = "Otoroshi Admin",
+                    createdAt = DateTime.now(),
+                    typ = OtoroshiAdminType.SimpleAdmin,
+                    metadata = Map.empty,
+                    teams = Seq(TeamAccess("*")),
+                    tenants = Seq(TenantAccess("*"))
+                  )
+
+                  val baseExport = OtoroshiExport(
+                    config = defaultConfig,
+                    descs = Seq(backOfficeDescriptor),
+                    apikeys = Seq(backOfficeApiKey, defaultGroupApiKey),
+                    groups = Seq(backOfficeGroup, defaultGroup),
+                    simpleAdmins = Seq(admin),
+                  )
+
+                  val initialCustomization = configuration.getOptionalWithFileSupport[String]("app.initialCustomization").map(Json.parse).map(_.asObject).getOrElse(Json.obj())
+
+                  val finalConfig = baseExport.customizeWith(initialCustomization)
+
                   logger.info(
                     s"You can log into the Otoroshi admin console with the following credentials: $login / $password"
                   )
-                  for {
-                    _ <- defaultConfig.save()(ec, this)
-                    _ <- backOfficeGroup.save()(ec, this)
-                    _ <- defaultGroup.save()(ec, this)
-                    _ <- backOfficeDescriptor.save()(ec, this)
-                    _ <- backOfficeApiKey.save()(ec, this)
-                    _ <- defaultGroupApiKey.save()(ec, this)
-                    _ <- datastores.simpleAdminDataStore
-                          .registerUser(SimpleOtoroshiAdmin(
-                            username = login,
-                            password = BCrypt.hashpw(password, BCrypt.gensalt()),
-                            label = "Otoroshi Admin",
-                            createdAt = DateTime.now(),
-                            typ = OtoroshiAdminType.SimpleAdmin,
-                            metadata = Map.empty,
-                            teams = Seq(TeamAccess("*")),
-                            tenants = Seq(TenantAccess("*"))
-                          ))(
-                            ec,
-                            this
-                          )
-                  } yield ()
+
+                  datastores.globalConfigDataStore.fullImport(finalConfig.json)(ec, this)
+
+                  // for {
+                  //   _ <- defaultConfig.save()(ec, this)
+                  //   _ <- backOfficeGroup.save()(ec, this)
+                  //   _ <- defaultGroup.save()(ec, this)
+                  //   _ <- backOfficeDescriptor.save()(ec, this)
+                  //   _ <- backOfficeApiKey.save()(ec, this)
+                  //   _ <- defaultGroupApiKey.save()(ec, this)
+                  //   _ <- datastores.simpleAdminDataStore
+                  //         .registerUser(SimpleOtoroshiAdmin(
+                  //           username = login,
+                  //           password = BCrypt.hashpw(password, BCrypt.gensalt()),
+                  //           label = "Otoroshi Admin",
+                  //           createdAt = DateTime.now(),
+                  //           typ = OtoroshiAdminType.SimpleAdmin,
+                  //           metadata = Map.empty,
+                  //           teams = Seq(TeamAccess("*")),
+                  //           tenants = Seq(TenantAccess("*"))
+                  //         ))(
+                  //           ec,
+                  //           this
+                  //         )
+                  // } yield ()
                 }
               }
             }

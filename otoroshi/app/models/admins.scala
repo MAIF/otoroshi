@@ -66,6 +66,10 @@ case class SimpleOtoroshiAdmin(
 }
 
 object SimpleOtoroshiAdmin {
+  val fmt: Format[SimpleOtoroshiAdmin] = new Format[SimpleOtoroshiAdmin] {
+    override def writes(o: SimpleOtoroshiAdmin): JsValue = o.json
+    override def reads(json: JsValue): JsResult[SimpleOtoroshiAdmin] = SimpleOtoroshiAdmin.reads(json)
+  }
   def reads(json: JsValue): JsResult[SimpleOtoroshiAdmin] = {
     Try {
       SimpleOtoroshiAdmin(
@@ -112,6 +116,10 @@ case class WebAuthnOtoroshiAdmin(
 }
 
 object WebAuthnOtoroshiAdmin {
+  val fmt: Format[WebAuthnOtoroshiAdmin] = new Format[WebAuthnOtoroshiAdmin] {
+    override def writes(o: WebAuthnOtoroshiAdmin): JsValue = o.json
+    override def reads(json: JsValue): JsResult[WebAuthnOtoroshiAdmin] = WebAuthnOtoroshiAdmin.reads(json)
+  }
   def reads(json: JsValue): JsResult[WebAuthnOtoroshiAdmin] = {
     Try {
       WebAuthnOtoroshiAdmin(

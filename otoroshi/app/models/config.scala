@@ -7,17 +7,23 @@ import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
+import auth.AuthModuleConfig
 import com.risksense.ipaddr.IpNetwork
 import env.Env
 import events._
+import org.joda.time.DateTime
+import otoroshi.models.{SimpleOtoroshiAdmin, WebAuthnOtoroshiAdmin}
 import otoroshi.plugins.geoloc.{IpStackGeolocationHelper, MaxMindGeolocationHelper}
 import otoroshi.plugins.useragent.UserAgentHelper
+import otoroshi.script.Script
 import otoroshi.utils.LetsEncryptSettings
 import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.ws.WSProxyServer
 import otoroshi.storage.BasicStore
+import otoroshi.tcp.TcpService
 import security.{Auth0Config, IdGenerator}
+import ssl.{Cert, ClientCertificateValidator}
 import utils.{CleverCloudClient, MailerSettings, MailgunSettings}
 import utils.CleverCloudClient.{CleverSettings, UserTokens}
 import utils.http.MtlsConfig
@@ -655,4 +661,97 @@ trait GlobalConfigDataStore extends BasicStore[GlobalConfig] {
   def quotasValidationFor(from: String)(implicit ec: ExecutionContext, env: Env): Future[(Boolean, Long, Option[Long])]
   def migrate()(implicit ec: ExecutionContext, env: Env): Future[Unit]
   def template: GlobalConfig = GlobalConfig()
+}
+
+case class OtoroshiExport(
+   config: GlobalConfig,
+   descs: Seq[ServiceDescriptor] = Seq.empty,
+   apikeys: Seq[ApiKey] = Seq.empty,
+   groups: Seq[ServiceGroup] = Seq.empty,
+   tmplts: Seq[ErrorTemplate] = Seq.empty,
+   calls: Long = 0,
+   dataIn: Long = 0,
+   dataOut: Long = 0,
+   admins: Seq[WebAuthnOtoroshiAdmin] = Seq.empty,
+   simpleAdmins: Seq[SimpleOtoroshiAdmin] = Seq.empty,
+   jwtVerifiers: Seq[GlobalJwtVerifier] = Seq.empty,
+   authConfigs: Seq[AuthModuleConfig] = Seq.empty,
+   certificates: Seq[Cert] = Seq.empty,
+   clientValidators: Seq[ClientCertificateValidator] = Seq.empty,
+   scripts: Seq[Script] = Seq.empty,
+   tcpServices: Seq[TcpService] = Seq.empty
+) {
+
+  import utils.JsonImplicits._
+  import otoroshi.utils.syntax.implicits._
+
+  private def customizeAndMergeArray[A](entities: Seq[A], arr: JsArray, fmt: Format[A], extractIdFromJs: JsValue => String, extractIdFromEntity: A => String): Seq[A] = {
+    val arrWithId = arr.value.map { item =>
+      val id = extractIdFromJs(item)
+      (id, item)
+    }
+    val (existing, additional) = arrWithId.partition {
+      case (id, item) => entities.exists(v => extractIdFromEntity(v) == id)
+    }
+    val ex = existing.map {
+      case (id, item) =>
+        val entity = entities.find(v => extractIdFromEntity(v) == id).get
+        val newEntity = fmt.writes(entity).asObject.deepMerge(item.asObject)
+        fmt.reads(newEntity)
+    }.collect {
+      case JsSuccess(s, _) => s
+    }
+    val add = additional.map(t => fmt.reads(t._2)).collect {
+      case JsSuccess(s, _) => s
+    }
+    val eid = existing.map(_._1)
+    val already = entities.filterNot(e => eid.contains(extractIdFromEntity(e)))
+    already ++ ex ++ add
+  }
+
+  def customizeWith(customization: JsObject): OtoroshiExport = {
+    val cconfig = customization.select("config").asOpt[JsObject].getOrElse(Json.obj())
+    val finalConfig = GlobalConfig.fromJsons(config.toJson.asObject.deepMerge(cconfig))
+    copy(
+      config = finalConfig.debug(v => println(Json.prettyPrint(v.toJson))),
+      descs = customizeAndMergeArray[ServiceDescriptor](descs, customization.select("descs").asOpt[JsArray].getOrElse(Json.arr()), ServiceDescriptor._fmt, _.select("id").asString, _.id),
+      apikeys = customizeAndMergeArray[ApiKey](apikeys, customization.select("apikeys").asOpt[JsArray].getOrElse(Json.arr()), ApiKey._fmt, _.select("id").asString, _.clientId),
+      groups = customizeAndMergeArray[ServiceGroup](groups, customization.select("groups").asOpt[JsArray].getOrElse(Json.arr()), ServiceGroup._fmt, _.select("id").asString, _.id),
+      tmplts = customizeAndMergeArray[ErrorTemplate](tmplts, customization.select("tmplts").asOpt[JsArray].getOrElse(Json.arr()), ErrorTemplate.format, _.select("id").asString, _.serviceId),
+      jwtVerifiers = customizeAndMergeArray[GlobalJwtVerifier](jwtVerifiers, customization.select("jwtVerifiers").asOpt[JsArray].getOrElse(Json.arr()), GlobalJwtVerifier._fmt, _.select("id").asString, _.id),
+      authConfigs = customizeAndMergeArray[AuthModuleConfig](authConfigs, customization.select("authConfigs").asOpt[JsArray].getOrElse(Json.arr()), AuthModuleConfig._fmt, _.select("id").asString, _.id),
+      certificates = customizeAndMergeArray[Cert](certificates, customization.select("certificates").asOpt[JsArray].getOrElse(Json.arr()), Cert._fmt, _.select("id").asString, _.id),
+      scripts = customizeAndMergeArray[Script](scripts, customization.select("scripts").asOpt[JsArray].getOrElse(Json.arr()), Script._fmt, _.select("id").asString, _.id),
+      tcpServices = customizeAndMergeArray[TcpService](tcpServices, customization.select("tcpServices").asOpt[JsArray].getOrElse(Json.arr()), TcpService.fmt, _.select("id").asString, _.id),
+
+      admins = customizeAndMergeArray[WebAuthnOtoroshiAdmin](admins, customization.select("admins").asOpt[JsArray].getOrElse(Json.arr()), WebAuthnOtoroshiAdmin.fmt, _.select("username").asString, _.username),
+      simpleAdmins = customizeAndMergeArray[SimpleOtoroshiAdmin](simpleAdmins, customization.select("simpleAdmins").asOpt[JsArray].getOrElse(Json.arr()), SimpleOtoroshiAdmin.fmt, _.select("username").asString, _.username),
+    )
+  }
+
+  def json: JsObject = {
+    Json.obj(
+      "label" -> "Otoroshi export",
+      "dateRaw" -> DateTime.now(),
+      "date" -> DateTime.now().toString("yyyy-MM-dd hh:mm:ss"),
+      "stats" -> Json.obj(
+        "calls" -> calls,
+        "dataIn" -> dataIn,
+        "dataOut" -> dataOut
+      ),
+      "config" -> config.toJson,
+      "admins" -> JsArray(admins.map(_.json)),
+      "simpleAdmins" -> JsArray(simpleAdmins.map(_.json)),
+      "serviceGroups" -> JsArray(groups.map(_.toJson)),
+      "apiKeys" -> JsArray(apikeys.map(_.toJson)),
+      "serviceDescriptors" -> JsArray(descs.map(_.toJson)),
+      "errorTemplates" -> JsArray(tmplts.map(_.toJson)),
+      "jwtVerifiers" -> JsArray(jwtVerifiers.map(_.asJson)),
+      "authConfigs" -> JsArray(authConfigs.map(_.asJson)),
+      "certificates" -> JsArray(certificates.map(_.toJson)),
+      "clientValidators" -> JsArray(clientValidators.map(_.asJson)),
+      "scripts" -> JsArray(scripts.map(_.toJson)),
+      "tcpServices" -> JsArray(tcpServices.map(_.json))
+    )
+  }
 }

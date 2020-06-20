@@ -270,30 +270,24 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
       scripts          <- env.datastores.scriptDataStore.findAll()
       tcpServices      <- env.datastores.tcpServiceDataStore.findAll()
     } yield
-      Json.obj(
-        "label"   -> "Otoroshi export",
-        "dateRaw" -> DateTime.now(),
-        "date"    -> DateTime.now().toString("yyyy-MM-dd hh:mm:ss"),
-        "stats" -> Json.obj(
-          "calls"   -> calls,
-          "dataIn"  -> dataIn,
-          "dataOut" -> dataOut
-        ),
-        "config" -> config.toJson,
-        // "appConfig"          -> appConfig,
-        "admins"             -> JsArray(admins.map(_.json)),
-        "simpleAdmins"       -> JsArray(simpleAdmins.map(_.json)),
-        "serviceGroups"      -> JsArray(groups.map(_.toJson)),
-        "apiKeys"            -> JsArray(apikeys.map(_.toJson)),
-        "serviceDescriptors" -> JsArray(descs.map(_.toJson)),
-        "errorTemplates"     -> JsArray(tmplts.map(_.toJson)),
-        "jwtVerifiers"       -> JsArray(jwtVerifiers.map(_.asJson)),
-        "authConfigs"        -> JsArray(authConfigs.map(_.asJson)),
-        "certificates"       -> JsArray(certificates.map(_.toJson)),
-        "clientValidators"   -> JsArray(clientValidators.map(_.asJson)),
-        "scripts"            -> JsArray(scripts.map(_.toJson)),
-        "tcpServices"        -> JsArray(tcpServices.map(_.json))
-      )
+      OtoroshiExport(
+        config,
+        descs,
+        apikeys,
+        groups,
+        tmplts,
+        calls,
+        dataIn,
+        dataOut,
+        admins,
+        simpleAdmins,
+        jwtVerifiers,
+        authConfigs,
+        certificates,
+        clientValidators,
+        scripts,
+        tcpServices
+      ).json
   }
 
   override def migrate()(implicit ec: ExecutionContext, env: Env): Future[Unit] = {
@@ -393,5 +387,4 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
       }
     }
   }
-
 }
