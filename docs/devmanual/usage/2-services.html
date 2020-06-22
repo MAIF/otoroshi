@@ -242,9 +242,10 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li>display contruction page for a service</li>
   <li>enable otoroshi custom response headers containing request id, latency, etc</li>
   <li>force https usage on the exposed service</li>
+  <li>enable read only flag : this service will only be used with <code>HEAD</code>, <code>OPTIONS</code> and <code>GET</code> http verbs. You can also active the same flag on <code>ApiKey</code>s to be more specific on who cannot use write http verbs.</li>
 </ul>
 <p>Then, you will be able to choose the URL that will be used to reach your new service on Otoroshi.</p><div id="service-flags" class="centered-img">
-<img src="../img/service-flags-2.png" /></div>
+<img src="../img/service-flags.png" /></div>
 <p>In the <code>service targets</code> section, you will be able to choose where the call will be forwarded. You can use multiple targets, in that case, Otoroshi will perform a round robin load balancing between the targets. If the <code>override Host header</code> toggle is on, the host header will be changed for the host of the target. For example, if you request <code>http://www.oto.tools/api</code> with a target to <code>http://www-internal.service.local/api</code>, the target will receive a <code>Host: www-internal.service.local</code> instead of <code>Host: www.oto.tools</code>.</p>
 <p>You can also specify a target root, if you say that the target root is <code>/foo/</code>, then any call to <code>https://my.api.foo</code> will call <code>http://192.168.0.42/foo/</code> and nay call to <code>https://my.api.foo/bar</code> will call <code>http://192.168.0.42/foo/bar</code>.</p>
 <p>In the URL patterns section, you will be able to choose, URL by URL which is private and which is public. By default, all services are private and each call must provide an <code>api key</code>. But sometimes, you need to access a service publicly. In that case, you can provide patterns (regex) to make some or all URL public (for example with the pattern <code>/.*</code>). You also have a <code>private pattern</code> field to restrict public patterns.</p><div id="targets" class="centered-img">
@@ -477,11 +478,11 @@ public class OtoroshiFilter implements Filter {
 <p>In Otoroshi, each service has its own client settings with a circuit breaker and some retry capabilities. In the <code>Client settings</code> section, you will be able to customize the client&rsquo;s behavior.</p><div class="centered-img">
 <img src="../img/new-service-client.png" /></div>
 <h3><a href="#service-settings" name="service-settings" class="anchor"><span class="anchor-link"></span></a>Service settings</h3>
-<p>You can also provide some additionnal information about a given service, like an <code>Open API</code> descriptor, some metadata, a list of whitelisted/blacklisted ip addresses, etc.</p>
-<p>Here you can also define some headers that will be added to each request to the targets. And you will be able to define headers to route the call only if the defined header is present on the request.</p><div id="service-meta" class="centered-img">
+<p>You can also provide some additionnal information about a given service, like an <code>Open API</code> descriptor, some metadata, a list of whitelisted/blacklisted ip addresses, etc.</p><div id="service-meta" class="centered-img">
 <img src="../img/new-service-meta.png" /></div>
-<h3><a href="#read-only" name="read-only" class="anchor"><span class="anchor-link"></span></a>Read only</h3>
-<p>The read only flag on a service descriptor means that this service can only be used with <code>HEAD</code>, <code>OPTIONS</code> and <code>GET</code> http verbs. You can also active the same flag on <code>ApiKey</code>s to be more specific on who cannot use write http verbs.</p>
+<h3><a href="#http-headers" name="http-headers" class="anchor"><span class="anchor-link"></span></a>HTTP Headers</h3>
+<p>Here you can define some headers that will be added to each request to client requests or responses. You will also be able to define headers to route the call only if the defined header is present on the request.</p><div id="service-meta" class="centered-img">
+<img src="../img/new-service-headers.png" /></div>
 <h3><a href="#cors" name="cors" class="anchor"><span class="anchor-link"></span></a>CORS</h3>
 <p>If you enabled this section, CORS will be automatically supported on the current service provider. The pre-flight request will be handled by Otoroshi. You can customize every CORS headers :</p><div class="centered-img">
 <img src="../img/cors.png" /></div>

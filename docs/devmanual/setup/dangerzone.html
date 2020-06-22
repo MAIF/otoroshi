@@ -232,7 +232,11 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   <li><code>No Auth0 login</code> =&gt; allow you to disabled Auth0 login to the Otoroshi admin dashboard</li>
   <li><code>API read only</code> =&gt; disable <code>writes</code> on the Otoroshi admin api</li>
   <li><code>Use HTTP streaming</code> =&gt; use http streaming for each response. It should always be true</li>
+  <li><code>Auto link default</code> =&gt; when no group is specified on a service, it will be assigned to default one</li>
   <li><code>Use circuit breakers</code> =&gt; allow usage of circuit breakers for each service</li>
+  <li><code>Log analytics on servers</code> =&gt; all analytics will be logged on the servers</li>
+  <li><code>Use new http client as the default Http client</code> =&gt; all http call will use the new http client client by default</li>
+  <li><code>Enable live metrics</code> =&gt; enable live metrics in the Otoroshi cluster. Performs a lot of writes in the datastore</li>
   <li><code>Digitus medius</code> =&gt; change the character of endless HTTP responses from <code>0</code> to <code>🖕</code></li>
   <li><code>Limit concurrent requests</code> =&gt; allow you to specify a max number of concurrent requests on an Otoroshi instance to avoid overloading</li>
   <li><code>Max concurrent requests</code> =&gt; max allowed number of concurrent requests on an Otoroshi instance to avoid overloading</li>
@@ -259,7 +263,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <img src="../img/danger-zone-5-kafka.png" /></div>
 <p>For more information about Kafka integration and what it does, just go to the <a href="../integrations/analytics.html">detailed chapter</a></p>
 <h2><a href="#alerts-settings" name="alerts-settings" class="anchor"><span class="anchor-link"></span></a>Alerts settings</h2>
-<p>Each time a dangerous action or something unusual is performed on Otoroshi, it will create an alert and store it. You can be notified for each of these alerts using <code>WebHooks</code> or emails. To do so, just add the <code>WebHook</code> URL and optional headers in the <code>Danger Zone</code> or any email address you want (you can add more than one email address).</p><div class="centered-img">
+<p>Each time a dangerous action or something unusual is performed on Otoroshi, it will create an alert and store it. You can be notified for each of these alerts using <code>WebHooks</code> or emails. To do so, just add the <code>WebHook</code> URL and optional headers in the <code>Danger Zone</code> or any email address you want (you can add more than one email address).</p>
+<p>You can enable mutual authentication via the <code>Use mTLS</code> button and add your certificates. The <code>TLS loose</code> option will block all untrustful ssl configs, the <code>TrustAll</code> option allows any server certificates even the self-signed ones.</p><div class="centered-img">
 <img src="../img/danger-zone-6-alerts.png" /></div>
 <h2><a href="#statsd-settings" name="statsd-settings" class="anchor"><span class="anchor-link"></span></a>StatsD settings</h2>
 <p>Otoroshi is capable of sending internal metrics to a StatsD agent. Just put the host and port of you StatsD agent in the <code>Danger Zone</code> to collect these metrics. If you using <a href="https://www.datadoghq.com">Datadog</a>, don&rsquo;t forget to check the dedicated button :)</p><div class="centered-img">

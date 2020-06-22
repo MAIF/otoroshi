@@ -224,7 +224,8 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
 <div class="small-12 large-9 column" id="docs">
 <h1><a href="#analytics" name="analytics" class="anchor"><span class="anchor-link"></span></a>Analytics</h1>
 <p>Each action and request on Otoroshi creates events that can be sent outside of Otoroshi for further usage. Those events can be sent using a webhook and/or through a Kafka topic.</p>
-<h2><a href="#push-events-to-elasticsearch" name="push-events-to-elasticsearch" class="anchor"><span class="anchor-link"></span></a>Push events to Elasticsearch</h2>
+<h2><a href="#push-events-to-elasticsearch" name="push-events-to-elasticsearch" class="anchor"><span class="anchor-link"></span></a>Push events to Elasticsearch</h2><div class="callout warning "><div class="callout-title">Warning</div>
+<p>Otoroshi supports only Elasticsearch versions under 7.0</p></div>
 <p>You can use elastic search to store otoroshi events. To do this you have to configure the access to elasticsearch from <code>settings (cog icon) / Danger Zone</code> and expand the <code>Analytics: Elastic cluster (write)</code> section.</p><div class="centered-img">
 <img src="../img/push-to-elastic.png" /></div>
 <h2><a href="#read-events-from-elasticsearch" name="read-events-from-elasticsearch" class="anchor"><span class="anchor-link"></span></a>Read events from Elasticsearch</h2>
