@@ -322,9 +322,9 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
     val maOpt: Option[Int]            = req.queryString.get("ma").map(_.last).map(_.toInt)
     val httpOnlyOpt: Option[Boolean]  = req.queryString.get("httpOnly").map(_.last).map(_.toBoolean)
     val secureOpt: Option[Boolean]    = req.queryString.get("secure").map(_.last).map(_.toBoolean)
-    val hashOpt: Option[String]          = req.queryString.get("hash").map(_.last)
+    val hashOpt: Option[String]       = req.queryString.get("hash").map(_.last)
 
-    (redirectToOpt.map(redirect => env.sign(redirect)), hashOpt) match {
+    (hashOpt.map(h => env.sign(req.theUrl.replace(s"&hash=$h", ""))), hashOpt) match {
       case (Some(hashedUrl), Some(hash)) if hashedUrl == hash =>
         (redirectToOpt, sessionIdOpt, hostOpt, cookiePrefOpt, maOpt, httpOnlyOpt, secureOpt) match {
           case (Some("urn:ietf:wg:oauth:2.0:oob"), Some(sessionId), Some(host), Some(cp), ma, httpOnly, secure) =>

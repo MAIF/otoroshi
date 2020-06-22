@@ -112,31 +112,32 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
                             .getQueryString("redirect")
                             .getOrElse(s"${req.theProtocol}://${req.theHost}${req.relativeUri}") match {
                             case "urn:ietf:wg:oauth:2.0:oob" => {
-                              val hash = env.sign("urn:ietf:wg:oauth:2.0:oob")
+                              val redirection = s"${req.theProtocol}://${req.theHost}/.well-known/otoroshi/login?sessionId=${user.randomId}&redirectTo=urn:ietf:wg:oauth:2.0:oob&host=${req.theHost}&cp=${auth
+                                .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}"
+                              val hash = env.sign(redirection)
                               FastFuture.successful(
-                                Redirect(
-                                  s"${req.theProtocol}://${req.theHost}/.well-known/otoroshi/login?sessionId=${user.randomId}&redirectTo=urn:ietf:wg:oauth:2.0:oob&host=${req.theHost}&cp=${auth
-                                    .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}&hash=$hash"
-                                ).removingFromSession(s"pa-redirect-after-login-${auth.cookieSuffix(descriptor)}",
-                                                       "desc")
+                                Redirect(s"$redirection&hash=$hash")
+                                  .removingFromSession(s"pa-redirect-after-login-${auth.cookieSuffix(descriptor)}", "desc")
                                   .withCookies(
                                     env.createPrivateSessionCookies(req.theHost, user.randomId, descriptor, auth): _*
                                   )
                               )
-                              //todo: wtf urn:ietf:wg:oauth:2.0:oob
                             }
                             case redirectTo => {
                               val url    = new java.net.URL(redirectTo)
                               val host   = url.getHost
                               val scheme = url.getProtocol
-                              val hash   = env.sign(url.toString)
                               val setCookiesRedirect = url.getPort match {
                                 case -1 =>
-                                  s"$scheme://$host/.well-known/otoroshi/login?sessionId=${user.randomId}&redirectTo=$redirectTo&host=$host&cp=${auth
-                                    .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}&hash=$hash"
+                                  val redirection = s"$scheme://$host/.well-known/otoroshi/login?sessionId=${user.randomId}&redirectTo=$redirectTo&host=$host&cp=${auth
+                                    .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}"
+                                  val hash = env.sign(redirection)
+                                  s"$redirection&hash=$hash"
                                 case port =>
-                                  s"$scheme://$host:$port/.well-known/otoroshi/login?sessionId=${user.randomId}&redirectTo=$redirectTo&host=$host&cp=${auth
-                                    .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}&hash=$hash"
+                                 val redirection = s"$scheme://$host:$port/.well-known/otoroshi/login?sessionId=${user.randomId}&redirectTo=$redirectTo&host=$host&cp=${auth
+                                    .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}"
+                                  val hash = env.sign(redirection)
+                                  s"$redirection&hash=$hash"
                               }
                               FastFuture.successful(
                                 Redirect(setCookiesRedirect)
@@ -203,10 +204,11 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
               routes.PrivateAppsController.home().absoluteURL(env.exposedRootSchemeIsHttps)
             ) match {
             case "urn:ietf:wg:oauth:2.0:oob" => {
-              val hash = env.sign("urn:ietf:wg:oauth:2.0:oob")
+              val redirection = s"${req.theProtocol}://${req.theHost}/.well-known/otoroshi/login?sessionId=${paUser.randomId}&redirectTo=urn:ietf:wg:oauth:2.0:oob&host=${req.theHost}&cp=${auth
+                .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}"
+              val hash = env.sign(redirection)
               Redirect(
-                s"${req.theProtocol}://${req.theHost}/.well-known/otoroshi/login?sessionId=${paUser.randomId}&redirectTo=urn:ietf:wg:oauth:2.0:oob&host=${req.theHost}&cp=${auth
-                  .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}&hash=$hash"
+                s"$redirection&hash=$hash"
               ).removingFromSession(s"pa-redirect-after-login-${auth.cookieSuffix(descriptor)}", "desc")
                 .withCookies(env.createPrivateSessionCookies(req.theHost, user.randomId, descriptor, auth): _*)
             }
@@ -214,14 +216,17 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
               val url    = new java.net.URL(redirectTo)
               val host   = url.getHost
               val scheme = url.getProtocol
-              val hash   = env.sign(url.toString)
               val setCookiesRedirect = url.getPort match {
                 case -1 =>
-                  s"$scheme://$host/.well-known/otoroshi/login?sessionId=${paUser.randomId}&redirectTo=$redirectTo&host=$host&cp=${auth
-                    .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}&hash=$hash"
+                  val redirection = s"$scheme://$host/.well-known/otoroshi/login?sessionId=${paUser.randomId}&redirectTo=$redirectTo&host=$host&cp=${auth
+                    .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}"
+                  val hash = env.sign(redirection)
+                  s"$redirection&hash=$hash"
                 case port =>
-                  s"$scheme://$host:$port/.well-known/otoroshi/login?sessionId=${paUser.randomId}&redirectTo=$redirectTo&host=$host&cp=${auth
-                    .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}&hash=$hash"
+                  val redirection = s"$scheme://$host:$port/.well-known/otoroshi/login?sessionId=${paUser.randomId}&redirectTo=$redirectTo&host=$host&cp=${auth
+                    .cookieSuffix(descriptor)}&ma=${auth.sessionMaxAge}&httpOnly=${auth.sessionCookieValues.httpOnly}&secure=${auth.sessionCookieValues.secure}"
+                  val hash = env.sign(redirection)
+                  s"$redirection&hash=$hash"
               }
               if (webauthn) {
                 Ok(Json.obj("location" -> setCookiesRedirect))
