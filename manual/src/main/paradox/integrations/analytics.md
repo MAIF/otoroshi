@@ -4,6 +4,10 @@ Each action and request on Otoroshi creates events that can be sent outside of O
 
 ## Push events to Elasticsearch
 
+@@@ warning
+Otoroshi supports only Elasticsearch versions under 7.0
+@@@
+
 You can use elastic search to store otoroshi events. To do this you have to configure the access to elasticsearch from `settings (cog icon) / Danger Zone` and expand the `Analytics: Elastic cluster (write)` section.
 
 @@@ div { .centered-img }

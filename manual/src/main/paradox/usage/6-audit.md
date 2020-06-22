@@ -22,6 +22,12 @@ To see last `app.events.maxSize` alerts on Otoroshi from the UI, go to `settings
 <img src="../img/alerts-log.png" />
 @@@
 
+You can also have a look at the payload sent to the Otoroshi server by clicking the `content` button
+
+@@@ div { .centered-img }
+<img src="../img/alerts-log-content.png" />
+@@@
+
 ## List of possible alerts
 
 ```

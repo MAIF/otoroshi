@@ -32,7 +32,7 @@ Go to the `documentation` folder and run :
 sbt ';clean;paradox'
 ```
 
-The documentation is located at `documentation/target/paradox/site/main/`
+The documentation is located at `manual/target/paradox/site/main/`
 
 ## Build the React UI
 

@@ -17,7 +17,11 @@ This part allows you to configure various things :
 * `No Auth0 login` => allow you to disabled Auth0 login to the Otoroshi admin dashboard
 * `API read only` => disable `writes` on the Otoroshi admin api
 * `Use HTTP streaming` => use http streaming for each response. It should always be true
+* `Auto link default` => when no group is specified on a service, it will be assigned to default one
 * `Use circuit breakers` => allow usage of circuit breakers for each service
+* `Log analytics on servers` => all analytics will be logged on the servers
+* `Use new http client as the default Http client` => all http call will use the new http client client by default
+* `Enable live metrics` => enable live metrics in the Otoroshi cluster. Performs a lot of writes in the datastore
 * `Digitus medius` => change the character of endless HTTP responses from `0` to `🖕`
 * `Limit concurrent requests` => allow you to specify a max number of concurrent requests on an Otoroshi instance to avoid overloading
 * `Max concurrent requests` => max allowed number of concurrent requests on an Otoroshi instance to avoid overloading
@@ -76,6 +80,8 @@ For more information about Kafka integration and what it does, just go to the @r
 ## Alerts settings
 
 Each time a dangerous action or something unusual is performed on Otoroshi, it will create an alert and store it. You can be notified for each of these alerts using `WebHooks` or emails. To do so, just add the `WebHook` URL and optional headers in the `Danger Zone` or any email address you want (you can add more than one email address).
+
+You can enable mutual authentication via the `Use mTLS` button and add your certificates. The `TLS loose` option will block all untrustful ssl configs, the `TrustAll` option allows any server certificates even the self-signed ones.
 
 @@@ div { .centered-img }
 <img src="../img/danger-zone-6-alerts.png" />
