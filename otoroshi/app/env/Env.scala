@@ -880,10 +880,8 @@ class Env(val configuration: Configuration,
                         .map(v => Json.parse(v.underlying.root().render(ConfigRenderOptions.concise())).asObject)
                     )
                     .getOrElse(Json.obj())
-
-                  println(initialCustomization)
-
-                  val finalConfig = baseExport.customizeWith(initialCustomization.debug(v => println(v.stringify)))
+                  
+                  val finalConfig = baseExport.customizeWith(initialCustomization)
 
                   logger.info(
                     s"You can log into the Otoroshi admin console with the following credentials: $login / $password"

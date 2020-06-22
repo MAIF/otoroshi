@@ -925,7 +925,7 @@ If you deploy Otoroshi on a kubernetes cluster, the Otoroshi service is deployed
 
 @@@ warning
 We don't recommand running Otoroshi behind an existing ingress controller (or something like that) as you will not be able to use features like TCP proxying, TLS, mTLS, etc. Also, this additional layer of reverse proxy will increase call latencies.
-@@@
+@@@ 
 
 ## Access a service from inside the k8s cluster
 
