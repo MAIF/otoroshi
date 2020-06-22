@@ -73,6 +73,7 @@
   <logger name="otoroshi-ssl-trust-manager" level="INFO" />
   <logger name="otoroshi-ssl-provider" level="INFO" />
   <logger name="otoroshi-cluster" level="INFO" />
+  <logger name="otoroshi-auth-controller" level="INFO" />
 
   <!-- Off these ones as they are annoying, and anyway we manage configuration ourselves -->
   <logger name="com.avaje.ebean.config.PropertyMapLoader" level="OFF" />
