@@ -563,14 +563,11 @@ class Env(val configuration: Configuration,
 
   if (otoroshiSecret == "VeryLongPasswordThatYouMustToOverwrite") {
     logger.warn("#########################################")
-    logger.warn("#########################################")
     logger.warn("BEWARE OF USING DEFAULT OTOROSHI SECRET !!!")
-    logger.warn("You are using the default value for the main otoroshi secret. It is used to sign various stuff including session cookies. " +
-      "You MUST change its value before deploying to production")
+    logger.warn("You are using the default value for the main otoroshi secret. It is used to sign various stuff including session cookies. ")
+    logger.warn("You MUST change its value before deploying to production")
     logger.warn("You can change configuration by passing otoroshi.secret at runtime (https://maif.github.io/otoroshi/manual/firstrun/configfile.html)")
     logger.warn("You can change if from environment variable with name OTOROSHI_SECRET (https://maif.github.io/otoroshi/manual/firstrun/env.html)")
-    logger.warn("Beware of using default otoroshi secret")
-    logger.warn("#########################################")
     logger.warn("#########################################")
   }
 
