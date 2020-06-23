@@ -58,12 +58,12 @@ Some of the following terms will seem obscure to you, but you will learn their m
 When Otoroshi starts for the first time, its secrets are set by default. 
 
 @@@ warning
-YOU HAVE TO CUSTOMIZE THE FOLLOWING VALUES BEFORE GOING TO PRODUCTION !!
+YOU HAVE TO CUSTOMIZE AT LEAST `otoroshi.secret` BEFORE GOING TO PRODUCTION !!
 @@@
 
 | name | type | default value  | description |
 | ---- |:----:| -------------- | ----- |
-| `otoroshi.secret` | string | 'VeryLongPasswordThatYouMustToOverwrite' | default Otoroshi secret. This value is used by default for other secrets |
+| `otoroshi.secret` | string | 'VerySecretValueThatYouMustOverwrite' | default Otoroshi secret. This value is used by default for other secrets |
 | `otoroshi.sessions.secret` | string | `otoroshi.secret` | Secret used to cipher session ids |
 | `play.http.secret.key` | string | `otoroshi.secret` | the secret used to sign Otoroshi session cookie |
 
