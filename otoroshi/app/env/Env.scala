@@ -561,7 +561,7 @@ class Env(val configuration: Configuration,
     logger.info(s"Admin UI  exposed on http://$backOfficeHost:$port")
   }
 
-  if (otoroshiSecret == "VeryLongPasswordThatYouMustToOverwrite") {
+  if (otoroshiSecret == "verysecretvaluethatyoumustoverwrite") {
     logger.warn("#########################################")
     logger.warn("BEWARE OF USING DEFAULT OTOROSHI SECRET !!!")
     logger.warn("You are using the default value for the main otoroshi secret. It is used to sign various stuff including session cookies. ")
