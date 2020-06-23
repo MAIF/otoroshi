@@ -385,6 +385,39 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
     </tr>
   </tbody>
 </table>
+<h2><a href="#secrets-config" name="secrets-config" class="anchor"><span class="anchor-link"></span></a>Secrets config</h2>
+<p>When Otoroshi starts for the first time, its secrets are set by default. </p><div class="callout warning "><div class="callout-title">Warning</div>
+<p>YOU HAVE TO CUSTOMIZE AT LEAST <code>otoroshi.secret</code> BEFORE GOING TO PRODUCTION !!</p></div>
+<table>
+  <thead>
+    <tr>
+      <th>name </th>
+      <th align="center">type </th>
+      <th>default value </th>
+      <th>description </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>otoroshi.secret</code> </td>
+      <td align="center">string </td>
+      <td>&lsquo;verysecretvaluethatyoumustoverwrite&rsquo; </td>
+      <td>default Otoroshi secret. This value is used by default for other secrets </td>
+    </tr>
+    <tr>
+      <td><code>otoroshi.sessions.secret</code> </td>
+      <td align="center">string </td>
+      <td><code>otoroshi.secret</code> </td>
+      <td>Secret used to cipher session ids </td>
+    </tr>
+    <tr>
+      <td><code>play.http.secret.key</code> </td>
+      <td align="center">string </td>
+      <td><code>otoroshi.secret</code> </td>
+      <td>the secret used to sign Otoroshi session cookie </td>
+    </tr>
+  </tbody>
+</table>
 <h2><a href="#db-configuration" name="db-configuration" class="anchor"><span class="anchor-link"></span></a>DB configuration</h2>
 <p>As Otoroshi supports multiple datastores, you&rsquo;ll have to provide some details about how to connect/configure it.</p>
 <table>
@@ -1414,6 +1447,8 @@ otoroshi {
   instance = ${app.instance}
   maintenanceMode = false
   maintenanceMode = ${?OTOROSHI_MAINTENANCE_MODE_ENABLED}
+  secret = &quot;verysecretvaluethatyoumustoverwrite&quot;
+  secret = ${?OTOROSHI_SECRET}
   options {
     bypassUserRightsCheck = false
     bypassUserRightsCheck = ${?OTOROSHI_OPTIONS_BYPASSUSERRIGHTSCHECK}
@@ -1436,7 +1471,7 @@ otoroshi {
     staticExposedDomain = ${?OTOROSHI_OPTIONS_STATIC_EXPOSED_DOMAIN}
   }
   sessions {
-    secret = &quot;8pqi0nU6p6srkH1rfJpMrNKEPMm4U6aBJd0zr5qAqs235WQRtVHCfTCLEzLW43yM&quot;
+    secret = ${otoroshi.secret}
     secret = ${?OTOROSHI_SESSIONS_SECRET}
   }
   cache {
@@ -1675,7 +1710,7 @@ play.server.https.engineProvider = ssl.DynamicSSLEngineProvider
 # play.server.https.keyStoreDumpPath = &quot;./otoroshi.jks&quot;
 play.server.https.keyStoreDumpPath = ${?HTTPS_KEYSTORE_DUMP_PATH}
 
-play.http.secret.key = &quot;sca4ujJ6NmTOinW60f+F2kPYZL5pzJrZj5gvsLAPPqI=&quot;
+play.http.secret.key = ${otoroshi.secret}
 play.http.secret.key = ${?PLAY_CRYPTO_SECRET}
 
 play.server.http.idleTimeout = 60s
@@ -1885,6 +1920,7 @@ akka {
   <ul>
     <li><a href="../firstrun/configfile.html#common-configuration" class="header">Common configuration</a></li>
     <li><a href="../firstrun/configfile.html#admin-api-configuration" class="header">Admin API configuration</a></li>
+    <li><a href="../firstrun/configfile.html#secrets-config" class="header">Secrets config</a></li>
     <li><a href="../firstrun/configfile.html#db-configuration" class="header">DB configuration</a></li>
     <li><a href="../firstrun/configfile.html#headers-configuration" class="header">Headers configuration</a></li>
     <li><a href="../firstrun/configfile.html#play-specific-configuration" class="header">Play specific configuration</a></li>
