@@ -213,6 +213,8 @@ class Env(val configuration: Configuration,
   lazy val providerCssUrlHtml: Html =
     providerCssUrl.map(url => Html(s"""<link href="$url" rel="stylesheet">""")).getOrElse(Html(""))
 
+  lazy val otoroshiSecret: String = configuration.getOptionalWithFileSupport[String]("otoroshi.secret").get
+
   lazy val providerDashboardSecret: String =
     configuration.getOptionalWithFileSupport[String]("otoroshi.provider.secret").getOrElse("secret")
 
@@ -557,6 +559,16 @@ class Env(val configuration: Configuration,
   if (!testing) {
     logger.info(s"Admin API exposed on http://$adminApiExposedHost:$port")
     logger.info(s"Admin UI  exposed on http://$backOfficeHost:$port")
+  }
+
+  if (otoroshiSecret == "verysecretvaluethatyoumustoverwrite") {
+    logger.warn("#########################################")
+    logger.warn("BEWARE OF USING DEFAULT OTOROSHI SECRET !!!")
+    logger.warn("You are using the default value for the main otoroshi secret. It is used to sign various stuff including session cookies. ")
+    logger.warn("You MUST change its value before deploying to production")
+    logger.warn("You can change configuration by passing otoroshi.secret at runtime (https://maif.github.io/otoroshi/manual/firstrun/configfile.html)")
+    logger.warn("You can change if from environment variable with name OTOROSHI_SECRET (https://maif.github.io/otoroshi/manual/firstrun/env.html)")
+    logger.warn("#########################################")
   }
 
   lazy val datastores: DataStores = {
