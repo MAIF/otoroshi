@@ -322,27 +322,39 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
     val maOpt: Option[Int]            = req.queryString.get("ma").map(_.last).map(_.toInt)
     val httpOnlyOpt: Option[Boolean]  = req.queryString.get("httpOnly").map(_.last).map(_.toBoolean)
     val secureOpt: Option[Boolean]    = req.queryString.get("secure").map(_.last).map(_.toBoolean)
-    //todo: test hash path
-    (redirectToOpt, sessionIdOpt, hostOpt, cookiePrefOpt, maOpt, httpOnlyOpt, secureOpt) match {
-      case (Some("urn:ietf:wg:oauth:2.0:oob"), Some(sessionId), Some(host), Some(cp), ma, httpOnly, secure) =>
-        FastFuture.successful(
-          Ok(views.html.otoroshi.token(env.signPrivateSessionId(sessionId), env)).withCookies(
-            env.createPrivateSessionCookiesWithSuffix(host, sessionId, cp, ma.getOrElse(86400), SessionCookieValues(httpOnly.getOrElse(true), secure.getOrElse(true))): _*
-          )
-        )
-      case (Some(redirectTo), Some(sessionId), Some(host), Some(cp), ma, httpOnly, secure) =>
-        FastFuture.successful(
-          Redirect(redirectTo).withCookies(
-            env.createPrivateSessionCookiesWithSuffix(host, sessionId, cp, ma.getOrElse(86400), SessionCookieValues(httpOnly.getOrElse(true), secure.getOrElse(true))): _*
-          )
-        )
-      case _ =>
-        Errors.craftResponseResult("Missing parameters",
-                                   BadRequest,
-                                   req,
-                                   None,
-                                   Some("errors.missing.parameters"),
-                                   attrs = TypedMap.empty)
+    val hashOpt: Option[String]       = req.queryString.get("hash").map(_.last)
+
+    (hashOpt.map(h => env.sign(req.theUrl.replace(s"&hash=$h", ""))), hashOpt) match {
+      case (Some(hashedUrl), Some(hash)) if hashedUrl == hash =>
+        (redirectToOpt, sessionIdOpt, hostOpt, cookiePrefOpt, maOpt, httpOnlyOpt, secureOpt) match {
+          case (Some("urn:ietf:wg:oauth:2.0:oob"), Some(sessionId), Some(host), Some(cp), ma, httpOnly, secure) =>
+            FastFuture.successful(
+              Ok(views.html.otoroshi.token(env.signPrivateSessionId(sessionId), env)).withCookies(
+                env.createPrivateSessionCookiesWithSuffix(host, sessionId, cp, ma.getOrElse(86400), SessionCookieValues(httpOnly.getOrElse(true), secure.getOrElse(true))): _*
+              )
+            )
+          case (Some(redirectTo), Some(sessionId), Some(host), Some(cp), ma, httpOnly, secure) =>
+            FastFuture.successful(
+              Redirect(redirectTo).withCookies(
+                env.createPrivateSessionCookiesWithSuffix(host, sessionId, cp, ma.getOrElse(86400), SessionCookieValues(httpOnly.getOrElse(true), secure.getOrElse(true))): _*
+              )
+            )
+          case _ =>
+            Errors.craftResponseResult("Missing parameters",
+              BadRequest,
+              req,
+              None,
+              Some("errors.missing.parameters"),
+              attrs = TypedMap.empty)
+        }
+      case (_, _) =>
+        logger.warn(s"Unsecure redirection from privateApps login to ${redirectToOpt.getOrElse("no url")}")
+        Errors.craftResponseResult("Invalid redirection url",
+          BadRequest,
+          req,
+          None,
+          Some("errors.invalid.redirection.url"),
+          attrs = TypedMap.empty)
     }
   }
 
