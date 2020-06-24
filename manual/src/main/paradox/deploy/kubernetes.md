@@ -898,7 +898,7 @@ spec:
         # reference the DN for the client cert
         - UID=httpapp-client, O=OtoroshiApps
       trustedCerts: 
-        # reference the DN for the CA cert
+        # reference the DN for the CA cert 
         - CN=Otoroshi Root
   sendOtoroshiHeadersBack: true
   xForwardedHeaders: true
