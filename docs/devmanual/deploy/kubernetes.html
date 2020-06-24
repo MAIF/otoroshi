@@ -929,6 +929,8 @@ spec:
             value: ${clientSecret}
           - name: ADMIN_API_ADDITIONAL_EXPOSED_DOMAIN
             value: otoroshi-api-service.${namespace}.svc.cluster.local
+          - name: OTOROSHI_SECRET
+            value: ${otoroshiSecret}
           - name: OTOROSHI_INITIAL_CUSTOMIZATION
             value: &gt;
               {\&quot;config\&quot;:{\&quot;scripts\&quot;:{\&quot;enabled\&quot;:true,\&quot;jobRefs\&quot;:[\&quot;cp:otoroshi.plugins.jobs.kubernetes.KubernetesIngressControllerJob\&quot;,\&quot;cp:otoroshi.plugins.jobs.kubernetes.KubernetesOtoroshiCRDsControllerJob\&quot;],\&quot;jobConfig\&quot;:{\&quot;KubernetesConfig\&quot;:{\&quot;trust\&quot;:false,\&quot;namespaces\&quot;:[\&quot;*\&quot;],\&quot;labels\&quot;:[],\&quot;ingressClasses\&quot;:[\&quot;otoroshi\&quot;],\&quot;defaultGroup\&quot;:\&quot;default\&quot;,\&quot;ingresses\&quot;:true,\&quot;crds\&quot;:true,\&quot;kubeLeader\&quot;:false,\&quot;restartDependantDeployments\&quot;:false,\&quot;templates\&quot;:{\&quot;service-group\&quot;:{},\&quot;service-descriptor\&quot;:{},\&quot;apikeys\&quot;:{},\&quot;global-config\&quot;:{},\&quot;jwt-verifier\&quot;:{},\&quot;tcp-service\&quot;:{},\&quot;certificate\&quot;:{},\&quot;auth-module\&quot;:{},\&quot;script\&quot;:{}}}}}}}
@@ -1081,6 +1083,8 @@ spec:
             value: ${clientSecret}
           - name: ADMIN_API_ADDITIONAL_EXPOSED_DOMAIN
             value: otoroshi-api-service.${namespace}.svc.cluster.local
+          - name: OTOROSHI_SECRET
+            value: ${otoroshiSecret}
           - name: OTOROSHI_INITIAL_CUSTOMIZATION
             value: &gt;
               {\&quot;config\&quot;:{\&quot;scripts\&quot;:{\&quot;enabled\&quot;:true,\&quot;jobRefs\&quot;:[\&quot;cp:otoroshi.plugins.jobs.kubernetes.KubernetesIngressControllerJob\&quot;,\&quot;cp:otoroshi.plugins.jobs.kubernetes.KubernetesOtoroshiCRDsControllerJob\&quot;],\&quot;jobConfig\&quot;:{\&quot;KubernetesConfig\&quot;:{\&quot;trust\&quot;:false,\&quot;namespaces\&quot;:[\&quot;*\&quot;],\&quot;labels\&quot;:[],\&quot;ingressClasses\&quot;:[\&quot;otoroshi\&quot;],\&quot;defaultGroup\&quot;:\&quot;default\&quot;,\&quot;ingresses\&quot;:true,\&quot;crds\&quot;:true,\&quot;kubeLeader\&quot;:false,\&quot;restartDependantDeployments\&quot;:false,\&quot;templates\&quot;:{\&quot;service-group\&quot;:{},\&quot;service-descriptor\&quot;:{},\&quot;apikeys\&quot;:{},\&quot;global-config\&quot;:{},\&quot;jwt-verifier\&quot;:{},\&quot;tcp-service\&quot;:{},\&quot;certificate\&quot;:{},\&quot;auth-module\&quot;:{},\&quot;script\&quot;:{}}}}}}}
@@ -1309,6 +1313,8 @@ spec:
             value: ${clientSecret}
           - name: ADMIN_API_ADDITIONAL_EXPOSED_DOMAIN
             value: otoroshi-api-service.${namespace}.svc.cluster.local
+          - name: OTOROSHI_SECRET
+            value: ${otoroshiSecret}
           - name: OTOROSHI_INITIAL_CUSTOMIZATION
             value: &gt;
               {\&quot;config\&quot;:{\&quot;scripts\&quot;:{\&quot;enabled\&quot;:true,\&quot;jobRefs\&quot;:[\&quot;cp:otoroshi.plugins.jobs.kubernetes.KubernetesIngressControllerJob\&quot;,\&quot;cp:otoroshi.plugins.jobs.kubernetes.KubernetesOtoroshiCRDsControllerJob\&quot;],\&quot;jobConfig\&quot;:{\&quot;KubernetesConfig\&quot;:{\&quot;trust\&quot;:false,\&quot;namespaces\&quot;:[\&quot;*\&quot;],\&quot;labels\&quot;:[],\&quot;ingressClasses\&quot;:[\&quot;otoroshi\&quot;],\&quot;defaultGroup\&quot;:\&quot;default\&quot;,\&quot;ingresses\&quot;:true,\&quot;crds\&quot;:true,\&quot;kubeLeader\&quot;:false,\&quot;restartDependantDeployments\&quot;:false,\&quot;templates\&quot;:{\&quot;service-group\&quot;:{},\&quot;service-descriptor\&quot;:{},\&quot;apikeys\&quot;:{},\&quot;global-config\&quot;:{},\&quot;jwt-verifier\&quot;:{},\&quot;tcp-service\&quot;:{},\&quot;certificate\&quot;:{},\&quot;auth-module\&quot;:{},\&quot;script\&quot;:{}}}}}}}
@@ -1531,6 +1537,8 @@ spec:
             value: ${clientSecret}
           - name: CLUSTER_LEADER_CLIENT_SECRET
             value: ${clientSecret}
+          - name: OTOROSHI_SECRET
+            value: ${otoroshiSecret}
           - name: OTOROSHI_INITIAL_CUSTOMIZATION
             value: &gt;
               {\&quot;config\&quot;:{\&quot;scripts\&quot;:{\&quot;enabled\&quot;:true,\&quot;jobRefs\&quot;:[\&quot;cp:otoroshi.plugins.jobs.kubernetes.KubernetesIngressControllerJob\&quot;,\&quot;cp:otoroshi.plugins.jobs.kubernetes.KubernetesOtoroshiCRDsControllerJob\&quot;],\&quot;jobConfig\&quot;:{\&quot;KubernetesConfig\&quot;:{\&quot;trust\&quot;:false,\&quot;namespaces\&quot;:[\&quot;*\&quot;],\&quot;labels\&quot;:[],\&quot;ingressClasses\&quot;:[\&quot;otoroshi\&quot;],\&quot;defaultGroup\&quot;:\&quot;default\&quot;,\&quot;ingresses\&quot;:true,\&quot;crds\&quot;:true,\&quot;kubeLeader\&quot;:false,\&quot;restartDependantDeployments\&quot;:false,\&quot;templates\&quot;:{\&quot;service-group\&quot;:{},\&quot;service-descriptor\&quot;:{},\&quot;apikeys\&quot;:{},\&quot;global-config\&quot;:{},\&quot;jwt-verifier\&quot;:{},\&quot;tcp-service\&quot;:{},\&quot;certificate\&quot;:{},\&quot;auth-module\&quot;:{},\&quot;script\&quot;:{}}}}}}}
@@ -1827,6 +1835,8 @@ spec:
             value: ${clientSecret}
           - name: CLUSTER_LEADER_CLIENT_SECRET
             value: ${clientSecret}
+          - name: OTOROSHI_SECRET
+            value: ${otoroshiSecret}
           - name: OTOROSHI_INITIAL_CUSTOMIZATION
             value: &gt;
               {\&quot;config\&quot;:{\&quot;scripts\&quot;:{\&quot;enabled\&quot;:true,\&quot;jobRefs\&quot;:[\&quot;cp:otoroshi.plugins.jobs.kubernetes.KubernetesIngressControllerJob\&quot;,\&quot;cp:otoroshi.plugins.jobs.kubernetes.KubernetesOtoroshiCRDsControllerJob\&quot;],\&quot;jobConfig\&quot;:{\&quot;KubernetesConfig\&quot;:{\&quot;trust\&quot;:false,\&quot;namespaces\&quot;:[\&quot;*\&quot;],\&quot;labels\&quot;:[],\&quot;ingressClasses\&quot;:[\&quot;otoroshi\&quot;],\&quot;defaultGroup\&quot;:\&quot;default\&quot;,\&quot;ingresses\&quot;:true,\&quot;crds\&quot;:true,\&quot;kubeLeader\&quot;:false,\&quot;restartDependantDeployments\&quot;:false,\&quot;templates\&quot;:{\&quot;service-group\&quot;:{},\&quot;service-descriptor\&quot;:{},\&quot;apikeys\&quot;:{},\&quot;global-config\&quot;:{},\&quot;jwt-verifier\&quot;:{},\&quot;tcp-service\&quot;:{},\&quot;certificate\&quot;:{},\&quot;auth-module\&quot;:{},\&quot;script\&quot;:{}}}}}}}
@@ -2178,6 +2188,8 @@ spec:
             value: ${clientSecret}
           - name: CLUSTER_LEADER_CLIENT_SECRET
             value: ${clientSecret}
+          - name: OTOROSHI_SECRET
+            value: ${otoroshiSecret}
           - name: OTOROSHI_INITIAL_CUSTOMIZATION
             value: &gt;
               {\&quot;config\&quot;:{\&quot;scripts\&quot;:{\&quot;enabled\&quot;:true,\&quot;jobRefs\&quot;:[\&quot;cp:otoroshi.plugins.jobs.kubernetes.KubernetesIngressControllerJob\&quot;,\&quot;cp:otoroshi.plugins.jobs.kubernetes.KubernetesOtoroshiCRDsControllerJob\&quot;],\&quot;jobConfig\&quot;:{\&quot;KubernetesConfig\&quot;:{\&quot;trust\&quot;:false,\&quot;namespaces\&quot;:[\&quot;*\&quot;],\&quot;labels\&quot;:[],\&quot;ingressClasses\&quot;:[\&quot;otoroshi\&quot;],\&quot;defaultGroup\&quot;:\&quot;default\&quot;,\&quot;ingresses\&quot;:true,\&quot;crds\&quot;:true,\&quot;kubeLeader\&quot;:false,\&quot;restartDependantDeployments\&quot;:false,\&quot;templates\&quot;:{\&quot;service-group\&quot;:{},\&quot;service-descriptor\&quot;:{},\&quot;apikeys\&quot;:{},\&quot;global-config\&quot;:{},\&quot;jwt-verifier\&quot;:{},\&quot;tcp-service\&quot;:{},\&quot;certificate\&quot;:{},\&quot;auth-module\&quot;:{},\&quot;script\&quot;:{}}}}}}}
@@ -3209,7 +3221,7 @@ spec:
         # reference the DN for the client cert
         - UID=httpapp-client, O=OtoroshiApps
       trustedCerts: 
-        # reference the DN for the CA cert
+        # reference the DN for the CA cert 
         - CN=Otoroshi Root
   sendOtoroshiHeadersBack: true
   xForwardedHeaders: true
