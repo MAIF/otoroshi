@@ -20,6 +20,23 @@ export class AuthModuleConfigsPage extends Component {
     });
   };
 
+  duplicate = (s, ss, e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    window
+      .newConfirm(`Are you sure you want to duplicate ${s.currentItem.name} ?`)
+      .then(dup => {
+        if (dup) {
+          BackOfficeServices.createNewAuthConfig().then(auth => {
+            const newModule = { ...s.currentItem };
+            newModule.id = auth.id;
+            newModule.name = newModule.name + ' (duplicated)';
+            ss({ currentItem: newModule, showAddForm: true, showEditForm: false });
+            window.history.replaceState({}, '', `/bo/dashboard/auth-configs/add/${newModule.id}`);
+          });
+        }
+      });
+  };
+
   render() {
     return (
       <div>
@@ -54,6 +71,21 @@ export class AuthModuleConfigsPage extends Component {
           firstSort={0}
           extractKey={item => item.id}
           formComponent={AuthModuleConfig}
+          injectToolbar={(s, ss) => {
+            return (
+              <div className="form-group btnsService">
+                <div className="col-xs-12 col-sm-10 displayGroupBtn">
+                  <button
+                    className="btn btn-info"
+                    type="button"    
+                    style={{ marginRight: 20 }}
+                    onClick={e => this.duplicate(s, ss, e)}>
+                  <i className="far fa-copy" aria-hidden="true" />
+                  </button>
+                </div>
+              </div>
+            );
+          }}
         />
       </div>
     );

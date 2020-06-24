@@ -866,6 +866,16 @@ export function createAuthConfig(ak) {
   }).then(r => r.json());
 }
 
+export function createNewAuthConfig() {
+  return fetch(`/bo/api/proxy/api/auths/_template`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then(r => r.json());
+}
+
 export function updateAuthConfig(ak) {
   return fetch(`/bo/api/proxy/api/auths/${ak.id}`, {
     method: 'PUT',

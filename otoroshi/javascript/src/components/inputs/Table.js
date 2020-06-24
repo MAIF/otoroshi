@@ -419,7 +419,8 @@ export class Table extends Component {
         )}
         {this.state.showAddForm && (
           <div className="" role="dialog">
-            {this.props.formComponent && (
+            {this.props.formComponent && [
+              this.props.injectToolbar ? this.props.injectToolbar(this.state, s => this.setState(s)) : null,
               <form className="form-horizontal" style={this.props.style}>
                 {React.createElement(this.props.formComponent, {
                   onChange: currentItem => this.setState({ currentItem }),
@@ -427,7 +428,7 @@ export class Table extends Component {
                   ...(this.props.formPassProps || {}),
                 })}
               </form>
-            )}
+            ]}
             {!this.props.formComponent && (
               <Form
                 value={this.state.currentItem}
@@ -455,7 +456,8 @@ export class Table extends Component {
         )}
         {this.state.showEditForm && (
           <div className="" role="dialog">
-            {this.props.formComponent && (
+            {this.props.formComponent && [
+              this.props.injectToolbar ? this.props.injectToolbar(this.state, s => this.setState(s)) : null,
               <form className="form-horizontal" style={this.props.style}>
                 {React.createElement(this.props.formComponent, {
                   onChange: currentItem => {
@@ -465,7 +467,7 @@ export class Table extends Component {
                   ...(this.props.formPassProps || {}),
                 })}
               </form>
-            )}
+            ]}
             {!this.props.formComponent && (
               <Form
                 value={this.state.currentItem}
