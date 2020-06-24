@@ -262,21 +262,20 @@ class U2FController(BackOfficeAction: BackOfficeAction,
     }
 
     env.datastores.webAuthnAdminDataStore.findAll().flatMap { users =>
-      val rpIdentity: RelyingPartyIdentity = RelyingPartyIdentity.builder.id(reqOriginDomain).name("Otoroshi").build
-      val rp: RelyingParty = RelyingParty.builder
-        .identity(rpIdentity)
-        .credentialRepository(new LocalCredentialRepository(users, jsonMapper, base64Decoder))
-        .origins(Seq(reqOrigin, reqOriginDomain).toSet.asJava)
-        .build
-      val pkc = PublicKeyCredential.parseRegistrationResponseJson(responseJson)
-
       env.datastores.webAuthnRegistrationsDataStore.getRegistrationRequest(reqId).flatMap {
         case None => FastFuture.successful(BadRequest(Json.obj("error" -> "bad request")))
         case Some(rawRequest) => {
-          val request = jsonMapper.readValue(Json.stringify((rawRequest \ "request").as[JsValue]),
-                                             classOf[PublicKeyCredentialCreationOptions])
+          Try {
+            val request = jsonMapper.readValue(Json.stringify((rawRequest \ "request").as[JsValue]),
+                                               classOf[PublicKeyCredentialCreationOptions])
+            val rpIdentity: RelyingPartyIdentity = RelyingPartyIdentity.builder.id(reqOriginDomain).name("Otoroshi").build
+            val rp: RelyingParty = RelyingParty.builder
+              .identity(rpIdentity)
+              .credentialRepository(new LocalCredentialRepository(users, jsonMapper, base64Decoder))
+              .origins(Seq(reqOrigin, reqOriginDomain).toSet.asJava)
+              .build
+            val pkc = PublicKeyCredential.parseRegistrationResponseJson(responseJson)
 
-          Try(
             rp.finishRegistration(
               FinishRegistrationOptions
                 .builder()
@@ -284,10 +283,10 @@ class U2FController(BackOfficeAction: BackOfficeAction,
                 .response(pkc)
                 .build()
             )
-          ) match {
+          } match {
             case Failure(e) =>
               e.printStackTrace()
-              FastFuture.successful(BadRequest(Json.obj("error" -> "bad request")))
+              FastFuture.successful(BadRequest(Json.obj("error" -> "bad request 111")))
             case Success(result) => {
               val username           = (otoroshi \ "username").as[String]
               val password           = (otoroshi \ "password").as[String]
@@ -296,23 +295,40 @@ class U2FController(BackOfficeAction: BackOfficeAction,
               val tenants            = (otoroshi \ "tenants").asOpt[JsArray].map(a => a.value.map(v => TenantAccess(v.as[String]))).getOrElse(Seq.empty)
               val saltedPassword     = BCrypt.hashpw(password, BCrypt.gensalt())
               val credential         = Json.parse(jsonMapper.writeValueAsString(result))
-              env.datastores.webAuthnAdminDataStore
-                //.registerUser(username, saltedPassword, label, authorizedGroupOpt, credential, handle)
-                .registerUser(WebAuthnOtoroshiAdmin(
-                  username = username,
-                  password = saltedPassword,
-                  label = label,
-                  handle = handle,
-                  credentials = Map((credential \ "keyId" \ "id").as[String] -> credential),
-                  createdAt = DateTime.now(),
-                  typ = OtoroshiAdminType.WebAuthnAdmin,
-                  metadata = Map.empty,
-                  teams = teams,
-                  tenants = tenants
-                ))
-                .map { _ =>
-                  Ok(Json.obj("username" -> username))
+
+              env.datastores.webAuthnAdminDataStore.findByUsername(username).flatMap {
+                case None => {
+                  env.datastores.webAuthnAdminDataStore
+                    .registerUser(WebAuthnOtoroshiAdmin(
+                      username = username,
+                      password = saltedPassword,
+                      label = label,
+                      handle = handle,
+                      credentials = Map((credential \ "keyId" \ "id").as[String] -> credential),
+                      createdAt = DateTime.now(),
+                      typ = OtoroshiAdminType.WebAuthnAdmin,
+                      metadata = Map.empty,
+                      teams = teams,
+                      tenants = tenants
+                    ))
+                    .map { _ =>
+                      Ok(Json.obj("username" -> username))
+                    }
                 }
+                case Some(user) if BCrypt.checkpw(password, user.password) => {
+                  // update usrer
+                  env.datastores.webAuthnAdminDataStore
+                    .registerUser(user.copy(
+                      credentials = user.credentials + (
+                        (credential \ "keyId" \ "id").as[String] -> credential
+                      )
+                    ))
+                    .map { _ =>
+                      Ok(Json.obj("username" -> username))
+                    }
+                }
+                case Some(user) => Unauthorized(Json.obj("error" -> "bad credentials")).future
+              }
             }
           }
         }
@@ -406,15 +422,15 @@ class U2FController(BackOfficeAction: BackOfficeAction,
                   val label           = user.label
 
                   if (BCrypt.checkpw(pass, password)) {
-                    val rpIdentity: RelyingPartyIdentity =
-                      RelyingPartyIdentity.builder.id(reqOriginDomain).name("Otoroshi").build
-                    val rp: RelyingParty = RelyingParty.builder
-                      .identity(rpIdentity)
-                      .credentialRepository(new LocalCredentialRepository(users, jsonMapper, base64Decoder))
-                      .origins(Seq(reqOrigin, reqOriginDomain).toSet.asJava)
-                      .build
-                    val pkc = PublicKeyCredential.parseAssertionResponseJson(Json.stringify(webauthn))
-                    Try(
+                    Try {
+                      val rpIdentity: RelyingPartyIdentity =
+                        RelyingPartyIdentity.builder.id(reqOriginDomain).name("Otoroshi").build
+                      val rp: RelyingParty = RelyingParty.builder
+                        .identity(rpIdentity)
+                        .credentialRepository(new LocalCredentialRepository(users, jsonMapper, base64Decoder))
+                        .origins(Seq(reqOrigin, reqOriginDomain).toSet.asJava)
+                        .build
+                      val pkc = PublicKeyCredential.parseAssertionResponseJson(Json.stringify(webauthn))
                       rp.finishAssertion(
                         FinishAssertionOptions
                           .builder()
@@ -422,7 +438,7 @@ class U2FController(BackOfficeAction: BackOfficeAction,
                           .response(pkc)
                           .build()
                       )
-                    ) match {
+                    } match {
                       case Failure(e) =>
                         FastFuture.successful(BadRequest(Json.obj("error" -> "bad request")))
                       case Success(result) if !result.isSuccess =>

@@ -25,7 +25,7 @@ import security.{IdGenerator, OtoroshiClaim}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-case class WebAuthnDetails(handle: String, registration: JsValue) {
+case class WebAuthnDetails(handle: String, credentials: Map[String, JsValue]) {
   def asJson: JsValue = WebAuthnDetails.fmt.writes(this)
 }
 
@@ -33,14 +33,14 @@ object WebAuthnDetails {
   def fmt = new Format[WebAuthnDetails] {
     override def writes(o: WebAuthnDetails) = Json.obj(
       "handle"       -> o.handle,
-      "registration" -> o.registration
+      "credentials" -> o.credentials
     )
     override def reads(json: JsValue) =
       Try {
         JsSuccess(
           WebAuthnDetails(
             handle = (json \ "handle").as[String],
-            registration = (json \ "registration").as[JsValue]
+            credentials = (json \ "credentials").asOpt[Map[String, JsValue]].getOrElse(Map.empty)
           )
         )
       } recover {
@@ -443,7 +443,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
         password = "foo",
         label = "foo",
         handle = usr.webauthn.get.handle,
-        credentials = Map("" -> usr.webauthn.get.registration),
+        credentials =usr.webauthn.get.credentials,
         createdAt = DateTime.now(),
         typ = OtoroshiAdminType.WebAuthnAdmin,
         metadata = Map.empty,
@@ -510,7 +510,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
         password = "foo",
         label = "foo",
         handle = usr.webauthn.get.handle,
-        credentials = Map("" -> usr.webauthn.get.registration),
+        credentials = usr.webauthn.get.credentials,
         createdAt = DateTime.now(),
         typ = OtoroshiAdminType.WebAuthnAdmin,
         metadata = Map.empty,
@@ -581,7 +581,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
         password = "foo",
         label = "foo",
         handle = usr.webauthn.get.handle,
-        credentials = Map("" -> usr.webauthn.get.registration),
+        credentials = usr.webauthn.get.credentials,
         createdAt = DateTime.now(),
         typ = OtoroshiAdminType.WebAuthnAdmin,
         metadata = Map.empty,
@@ -667,7 +667,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
         password = "foo",
         label = "foo",
         handle = usr.webauthn.get.handle,
-        credentials = Map("" -> usr.webauthn.get.registration),
+        credentials = usr.webauthn.get.credentials,
         createdAt = DateTime.now(),
         typ = OtoroshiAdminType.WebAuthnAdmin,
         metadata = Map.empty,
@@ -751,7 +751,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
         password = "foo",
         label = "foo",
         handle = usr.webauthn.get.handle,
-        credentials = Map("" -> usr.webauthn.get.registration),
+        credentials = usr.webauthn.get.credentials,
         createdAt = DateTime.now(),
         typ = OtoroshiAdminType.WebAuthnAdmin,
         metadata = Map.empty,
@@ -820,7 +820,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
         password = "foo",
         label = "foo",
         handle = usr.webauthn.get.handle,
-        credentials = Map("" -> usr.webauthn.get.registration),
+        credentials = usr.webauthn.get.credentials,
         createdAt = DateTime.now(),
         typ = OtoroshiAdminType.WebAuthnAdmin,
         metadata = Map.empty,
@@ -863,14 +863,28 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
             val saltedPassword     = BCrypt.hashpw(password, BCrypt.gensalt())
             val credential         = Json.parse(jsonMapper.writeValueAsString(result))
             val user               = authConfig.users.find(_.email == username).get
-            val newUser = user.copy(
-              webauthn = Some(
-                WebAuthnDetails(
-                  handle = handle,
-                  registration = credential
+            val newUser = user.webauthn match {
+              case None => {
+                user.copy(
+                  webauthn = Some(
+                    WebAuthnDetails(
+                      handle = handle,
+                      credentials = Map((credential \ "keyId" \ "id").as[String] -> credential)
+                    )
+                  )
                 )
-              )
-            )
+              }
+              case Some(wbathn) => {
+                user.copy(
+                  webauthn = Some(
+                    WebAuthnDetails(
+                      handle = wbathn.handle,
+                      credentials = wbathn.credentials + ((credential \ "keyId" \ "id").as[String] -> credential)
+                    )
+                  )
+                )
+              }
+            }
             val conf = authConfig.copy(users = authConfig.users.filterNot(_.email == username) :+ newUser)
             conf.save().map { _ =>
               Right(Json.obj("username" -> username))

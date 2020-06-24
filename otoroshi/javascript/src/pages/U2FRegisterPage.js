@@ -389,8 +389,8 @@ export class RegisterAdminModal extends Component {
     this.setState({ error: err.message });
   };
 
-  handleErrorWithMessage = message => () => {
-    this.setState({ error: message });
+  handleErrorWithMessage = message => (e) => {
+    this.setState({ error: message + ' ' + e.message ? e.message : e });
   };
 
   verifyAndDestroy = f => {
@@ -500,7 +500,7 @@ export class RegisterAdminModal extends Component {
         .then(r => r.json())
         .then(resp => {
           const requestId = resp.requestId;
-          const publicKeyCredentialCreationOptions = resp.request;
+          const publicKeyCredentialCreationOptions = { ...resp.request };
           const handle = publicKeyCredentialCreationOptions.user.id + '';
           publicKeyCredentialCreationOptions.challenge = base64url.decode(
             publicKeyCredentialCreationOptions.challenge
@@ -508,6 +508,9 @@ export class RegisterAdminModal extends Component {
           publicKeyCredentialCreationOptions.user.id = base64url.decode(
             publicKeyCredentialCreationOptions.user.id
           );
+          publicKeyCredentialCreationOptions.excludeCredentials = publicKeyCredentialCreationOptions.excludeCredentials.map(c => {
+            return { ...c, id: base64url.decode(c.id) };
+          });
           return navigator.credentials
             .create(
               {
