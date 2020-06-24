@@ -46,6 +46,8 @@ object implicits {
       obj
     }
     def applyOn[B](f: A => B): B = f(obj)
+    def applyOnIf(predicate: => Boolean)(f: A => A): A = if (predicate) f(obj) else obj
+    def applyOnWitPredicate(predicate: A => Boolean)(f: A => A): A = if (predicate(obj)) f(obj) else obj
   }
   implicit class RegexOps(sc: StringContext) {
     def rr = new scala.util.matching.Regex(sc.parts.mkString)
