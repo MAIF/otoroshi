@@ -290,7 +290,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
     }).map(_.flatten)
   }
 
-  def createSecret(namespace: String, name: String, typ: String, data: JsValue): Future[Option[KubernetesSecret]] = {
+  def createSecret(namespace: String, name: String, typ: String, data: JsValue, kind: String, id: String): Future[Option[KubernetesSecret]] = {
     val cli: WSRequest = client(s"/api/v1/namespaces/$namespace/secrets", false)
     cli.addHttpHeaders(
       "Accept" -> "application/json",
@@ -299,8 +299,11 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       "apiVersion" -> "v1",
       "kind" -> "Secret",
       "metadata" -> Json.obj(
-        "name" -> name
-        // TODO: add otoroshi label on it ???
+        "name" -> name,
+        "annotation" -> Json.obj(
+          "io.otoroshi/kind" -> kind,
+          "io.otoroshi/id" -> id
+        )
       ),
       "type" -> typ,
       "data" -> data
@@ -319,7 +322,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
     }
   }
 
-  def updateSecret(namespace: String, name: String, typ: String, data: JsObject): Future[Option[KubernetesSecret]] = {
+  def updateSecret(namespace: String, name: String, typ: String, data: JsObject, kind: String, id: String): Future[Option[KubernetesSecret]] = {
     val cli: WSRequest = client(s"/api/v1/namespaces/$namespace/secrets/$name", false)
     cli.addHttpHeaders(
       "Accept" -> "application/json",
@@ -328,8 +331,11 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       "apiVersion" -> "v1",
       "kind" -> "Secret",
       "metadata" -> Json.obj(
-        "name" -> name
-        // TODO: add otoroshi label on it ???
+        "name" -> name,
+        "annotation" -> Json.obj(
+          "io.otoroshi/kind" -> kind,
+          "io.otoroshi/id" -> id
+        )
       ),
       "type" -> typ,
       "data" -> data
@@ -365,6 +371,24 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       } match {
         case Success(r) => r
         case Failure(e) => None
+      }
+    }
+  }
+
+  def deleteSecret(namespace: String, name: String): Future[Either[String, Unit]] = {
+    val cli: WSRequest = client(s"/api/v1/namespaces/$namespace/secrets/$name", false)
+    cli.addHttpHeaders(
+      "Accept" -> "application/json",
+    ).delete().map { resp =>
+      Try {
+        if (resp.status == 200) {
+          ().right
+        } else {
+          resp.body.left
+        }
+      } match {
+        case Success(r) => r
+        case Failure(e) => e.getMessage.left
       }
     }
   }

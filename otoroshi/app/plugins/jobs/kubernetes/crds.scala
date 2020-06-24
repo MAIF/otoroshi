@@ -793,16 +793,16 @@ object KubernetesCRDsJob {
       .mapAsync(1) {
         case (namespace, name, apikey) => clientSupport.client.fetchSecret(namespace, name).flatMap {
           case None =>
-            println(s"create $namespace/$name with ${apikey.clientId} and ${apikey.clientSecret}")
+            // println(s"create $namespace/$name with ${apikey.clientId} and ${apikey.clientSecret}")
             updatedSecrets.updateAndGet(seq => seq :+ (namespace, name))
-            clientSupport.client.createSecret(namespace, name, "otoroshi.io/apikey-secret", Json.obj("clientId" -> apikey.clientId.base64, "clientSecret" -> apikey.clientSecret.base64))
+            clientSupport.client.createSecret(namespace, name, "otoroshi.io/apikey-secret", Json.obj("clientId" -> apikey.clientId.base64, "clientSecret" -> apikey.clientSecret.base64), "crd/apikey", apikey.clientId)
           case Some(secret) =>
             val clientId = (secret.raw \ "data" \ "clientId").as[String].applyOn(s => s.fromBase64)
             val clientSecret = (secret.raw \ "data" \ "clientSecret").as[String].applyOn(s => s.fromBase64)
             if ((clientId != apikey.clientId) || (clientSecret != apikey.clientSecret)) {
-              println(s"updating $namespace/$name  with ${apikey.clientId} and ${apikey.clientSecret}")
+              // println(s"updating $namespace/$name  with ${apikey.clientId} and ${apikey.clientSecret}")
               updatedSecrets.updateAndGet(seq => seq :+ (namespace, name))
-              clientSupport.client.updateSecret(namespace, name, "otoroshi.io/apikey-secret", Json.obj("clientId" -> apikey.clientId.base64, "clientSecret" -> apikey.clientSecret.base64))
+              clientSupport.client.updateSecret(namespace, name, "otoroshi.io/apikey-secret", Json.obj("clientId" -> apikey.clientId.base64, "clientSecret" -> apikey.clientSecret.base64), "crd/apikey", apikey.clientId)
             } else {
               ().future
             }
@@ -818,13 +818,13 @@ object KubernetesCRDsJob {
         case (namespace, name, cert) => clientSupport.client.fetchSecret(namespace, name).flatMap {
           case None =>
             updatedSecrets.updateAndGet(seq => seq :+ (namespace, name))
-            clientSupport.client.createSecret(namespace, name, "kubernetes.io/tls", Json.obj("tls.crt" -> cert.chain.base64, "tls.key" -> cert.privateKey.base64))
+            clientSupport.client.createSecret(namespace, name, "kubernetes.io/tls", Json.obj("tls.crt" -> cert.chain.base64, "tls.key" -> cert.privateKey.base64), "crd/cert", cert.id)
           case Some(secret) =>
-            val chain = (secret.raw \ "data" \ "clientId").as[String].applyOn(s => s.fromBase64)
-            val privateKey = (secret.raw \ "data" \ "clientSecret").as[String].applyOn(s => s.fromBase64)
+            val chain = (secret.raw \ "data" \ "tls.crt").as[String].applyOn(s => s.fromBase64)
+            val privateKey = (secret.raw \ "data" \ "tls.key").as[String].applyOn(s => s.fromBase64)
             if ((chain != cert.chain) || (privateKey != cert.privateKey)) {
               updatedSecrets.updateAndGet(seq => seq :+ (namespace, name))
-              clientSupport.client.updateSecret(namespace, name, "kubernetes.io/tls", Json.obj("tls.crt" -> cert.chain.base64, "tls.key" -> cert.privateKey.base64))
+              clientSupport.client.updateSecret(namespace, name, "kubernetes.io/tls", Json.obj("tls.crt" -> cert.chain.base64, "tls.key" -> cert.privateKey.base64), "crd/cert", cert.id)
             } else {
               ().future
             }
@@ -883,6 +883,23 @@ object KubernetesCRDsJob {
     }
   }
 
+  def deleteOutDatedSecrets(conf: KubernetesConfig, attrs: TypedMap, clientSupport: ClientSupport, ctx: CRDContext, updatedSecretsRef: AtomicReference[Seq[(String, String)]])(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    implicit val mat = env.otoroshiMaterializer
+    val lastSecrets = updatedSecretsRef.get().map(t => t._1 + "/" + t._2)
+    clientSupport.client.fetchSecrets().map { allSecretsRaw =>
+      val allSecrets = allSecretsRaw.filter(_.metaId.isDefined).map(_.path)
+      val outOfSync = allSecrets.filterNot(v => lastSecrets.contains(v))
+      Source(outOfSync.toList)
+        .mapAsync(1) { path =>
+          val parts = path.split("/")
+          val namespace = parts.head
+          val name = parts.last
+          clientSupport.client.deleteSecret(namespace, name)
+        }.runWith(Sink.ignore)
+    }
+  }
+
+
   def syncCRDs(conf: KubernetesConfig, attrs: TypedMap, jobRunning: => Boolean)(implicit env: Env, ec: ExecutionContext): Future[Unit] = env.metrics.withTimerAsync("otoroshi.plugins.kubernetes.crds.sync") {
     val client = new KubernetesClient(conf, env)
     if (!jobRunning) {
@@ -909,6 +926,8 @@ object KubernetesCRDsJob {
           _ <- exportApiKeys(conf, attrs, clientSupport, ctx, apiKeysToExport.get(), updatedSecrets)
           _ = logger.info("exporting certs as secrets")
           _ <- exportCerts(conf, attrs, clientSupport, ctx, certsToExport.get(), updatedSecrets)
+          _ = logger.info("deleting unused secrets")
+          _ <- deleteOutDatedSecrets(conf, attrs, clientSupport, ctx, updatedSecrets)
           _ = logger.info("restarting dependant deployments")
           _ <- restartDependantDeployments(conf, attrs, clientSupport, ctx, updatedSecrets.get())
           _ = logger.info("sync done !")
