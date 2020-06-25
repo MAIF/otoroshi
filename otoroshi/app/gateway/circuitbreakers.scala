@@ -11,6 +11,7 @@ import akka.pattern.{CircuitBreaker => AkkaCircuitBreaker}
 import akka.stream.scaladsl.Flow
 import env.Env
 import events._
+import health.HealthCheck
 import models.{ApiKey, GlobalConfig, ServiceDescriptor, Target}
 import play.api.Logger
 import play.api.http.websocket.{Message => PlayWSMessage}
@@ -123,6 +124,7 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
                    attrs: TypedMap): Option[(Target, AkkaCircuitBreaker)] = {
     val targets = descriptor.targets
       .filter(_.predicate.matches(reqId, requestHeader, attrs))
+      .filterNot(t => HealthCheck.badHealth.contains(t.asCleanTarget)) // health check can disable targets
       .filterNot(t => breakers.get(t.host).exists(_.isOpen))
       .flatMap(t => Seq.fill(t.weight)(t))
     // val index = reqCounter.incrementAndGet() % (if (targets.nonEmpty) targets.size else 1)
@@ -186,38 +188,6 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
       val breaker = breakers.apply(target.host)
       Some((target, breaker))
     }
-  }
-
-  def call(descriptor: ServiceDescriptor,
-           reqId: String,
-           trackingId: String,
-           path: String,
-           requestHeader: RequestHeader,
-           bodyAlreadyConsumed: AtomicBoolean,
-           ctx: String,
-           counter: AtomicInteger,
-           attrs: TypedMap,
-           f: (Target, Int) => Future[Result])(
-      implicit env: Env
-  ): Future[Result] = {
-    callGen(descriptor, reqId, trackingId, path, requestHeader, bodyAlreadyConsumed, ctx, counter, attrs, (t, c) => f(t, c).map(v => Right(v))).map {
-      case Left(r) => r
-      case Right(r) => r
-    }
-  }
-
-  def callWS(descriptor: ServiceDescriptor,
-             reqId: String,
-             trackingId: String,
-             path: String,
-             requestHeader: RequestHeader,
-             ctx: String,
-             counter: AtomicInteger,
-             attrs: TypedMap,
-             f: (Target, Int) => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]])(
-      implicit env: Env
-  ): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
-    callGen(descriptor, reqId, trackingId, path, requestHeader, ServiceDescriptorCircuitBreaker.falseAtomic, ctx, counter, attrs, f)
   }
 
   def callGen[A](descriptor: ServiceDescriptor,

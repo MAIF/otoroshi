@@ -151,9 +151,9 @@ class Env(val configuration: Configuration,
     val aa          = otoroshiActorSystem.actorOf(AnalyticsActorSupervizer.props(this))
     val ala         = otoroshiActorSystem.actorOf(AlertsActorSupervizer.props(this))
     val ha          = otoroshiActorSystem.actorOf(HealthCheckerActor.props(this))
-    timeout(FiniteDuration(5, SECONDS)).andThen {
-      case _ if clusterConfig.mode != ClusterMode.Worker => ha ! StartHealthCheck()
-    }
+    // timeout(FiniteDuration(5, SECONDS)).andThen {
+    //   case _ if clusterConfig.mode != ClusterMode.Worker => ha ! StartHealthCheck()
+    // }
     (aa, ala, ha)
   }
 
@@ -175,6 +175,11 @@ class Env(val configuration: Configuration,
       Some(conf)
     case a => None
   }
+
+  lazy val healtCheckWorkers: Int = configuration.getOptionalWithFileSupport[Int]("otoroshi.healthcheck.workers").getOrElse(4)
+  lazy val healtCheckBlockOnRed: Boolean = configuration.getOptionalWithFileSupport[Boolean]("otoroshi.healthcheck.block-on-red").getOrElse(false)
+  lazy val healtCheckTTL: Long = configuration.getOptionalWithFileSupport[Long]("otoroshi.healthcheck.ttl").getOrElse(60 * 1000)
+  lazy val healtCheckTTLOnly: Boolean = configuration.getOptionalWithFileSupport[Boolean]("otoroshi.healthcheck.ttl-only").getOrElse(true)
 
   lazy val maxWebhookSize: Int = configuration.getOptionalWithFileSupport[Int]("app.webhooks.size").getOrElse(100)
 
