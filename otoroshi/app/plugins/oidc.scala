@@ -166,6 +166,7 @@ class OIDCAccessTokenValidator extends AccessValidator {
       Json.obj(
         "OIDCAccessTokenValidator" -> Json.obj(
           "enabled" -> true,
+          "atLeastOne" -> false,
           "config" -> basicConfig.toJson
         )
       )
@@ -182,7 +183,7 @@ class OIDCAccessTokenValidator extends AccessValidator {
            |{
            |  "OIDCAccessTokenValidator": {
            |    "enabled": true,
-           |    "useDescriptorConfig": false,
+           |    "atLeastOne": false,
            |    // config is optional and can be either an object config or an array of objects
            |    "config": ${basicConfig.toJson.prettify}
            |  }
@@ -200,6 +201,7 @@ class OIDCAccessTokenValidator extends AccessValidator {
     val conf    = ctx.configFor("OIDCAccessTokenValidators")
     val enabled = (conf \ "enabled").asOpt[Boolean].getOrElse(false)
     // val useDescriptorConfig = (conf \ "useDescriptorConfig").asOpt[Boolean].getOrElse(false)
+    val atLeastOne = (conf \ "atLeastOne").asOpt[Boolean].getOrElse(false)
     if (enabled) {
 
       val configs: Seq[ThirdPartyApiKeyConfig] = {
@@ -239,7 +241,11 @@ class OIDCAccessTokenValidator extends AccessValidator {
         .mapAsync(1) { config =>
           checkOneConfig(config)
         }.runWith(Sink.seq)(env.otoroshiMaterializer).map { seq =>
-        !seq.contains(false)
+        if (atLeastOne) {
+          seq.contains(true)
+        } else {
+          !seq.contains(false)
+        }
       }
     } else {
       FastFuture.successful(true)
@@ -256,6 +262,7 @@ class OIDCAccessTokenAsApikey extends PreRouting {
       Json.obj(
         "OIDCAccessTokenAsApikey" -> Json.obj(
           "enabled" -> true,
+          "atLeastOne" -> false,
           "config" -> basicConfig.toJson
         )
       )
@@ -271,7 +278,7 @@ class OIDCAccessTokenAsApikey extends PreRouting {
          |{
          |  "OIDCAccessTokenValidator": {
          |    "enabled": true,
-         |    "useDescriptorConfig": false,
+         |    "atLeastOne": false,
          |    // config is optional and can be either an object config or an array of objects
          |    "config": ${basicConfig.toJson.prettify}
          |  }
@@ -288,6 +295,7 @@ class OIDCAccessTokenAsApikey extends PreRouting {
   override def preRoute(ctx: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     val conf    = ctx.configFor("OIDCAccessTokenAsApikey")
     val enabled = (conf \ "enabled").asOpt[Boolean].getOrElse(false)
+    val atLeastOne = (conf \ "atLeastOne").asOpt[Boolean].getOrElse(false)
     if (enabled) {
 
       val configs: Seq[ThirdPartyApiKeyConfig] = {
@@ -309,7 +317,13 @@ class OIDCAccessTokenAsApikey extends PreRouting {
             val latestGlobalConfig = env.datastores.globalConfigDataStore.latest()
             a.copy(enabled = true)
               .handleGen(ctx.request, ctx.descriptor, latestGlobalConfig, ctx.attrs) { apk =>
-                apk.foreach(a => ref.set(a))
+                apk.foreach { key =>
+                  if (atLeastOne) {
+                    ref.compareAndSet(null, key)
+                  } else {
+                    ref.set(key)
+                  }
+                }
                 Results.Ok("--").right.future
               }.map(_ => ())
           case _ => ().future
