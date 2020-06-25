@@ -6,6 +6,7 @@ import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
+import cluster.ClusterAgent
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
@@ -208,7 +209,9 @@ class CertificateAsApikey extends PreRouting {
                 tags = (conf \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty),
                 metadata = (conf \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty)
               )
-              // TODO: make it work in otoroshi cluster ....
+              if (env.clusterConfig.mode.isWorker) {
+                ClusterAgent.clusterSaveApikey(env, apikey)
+              }
               apikey.save().map(_ => apikey)
             }
           }

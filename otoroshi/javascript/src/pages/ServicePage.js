@@ -1973,11 +1973,18 @@ export class ServicePage extends Component {
               onChange={v => this.changeTheValue('apiKeyConstraints.routing.noneMetaIn', v)}
             />
           </Collapse>
-          <Collapse
+          {/*<Collapse
             notVisible={this.state.service.redirection.enabled}
             collapsed={this.state.allCollapsed}
             initCollapsed={true}
             label="Third party Api Keys">
+            <p style={{ textAlign: 'justify' }}>
+              <b style={{ color: '#D5443F' }}>WARNING: </b> Third party Api Keys are
+              deprecated and will be removed in a near future.
+              <br />
+              Please use dedicated <b>Access validator</b> or <b>pre-route</b>instead (see above).
+              <br />
+            </p>
             <SelectInput
               label="Type"
               value={this.state.service.thirdPartyApiKey.type}
@@ -2121,7 +2128,7 @@ export class ServicePage extends Component {
                 />
               </div>
             )}
-          </Collapse>
+          </Collapse>*/}
           <Collapse
             notVisible={this.state.service.redirection.enabled}
             collapsed={this.state.allCollapsed}

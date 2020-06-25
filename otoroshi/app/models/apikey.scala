@@ -714,11 +714,11 @@ object ApiKeyHelper {
       )
     }
 
-    if (descriptor.thirdPartyApiKey.enabled) {
-      descriptor.thirdPartyApiKey.handleGen[T](req, descriptor, config, attrs) { key =>
-        callDownstream(config, key, None)
-      }
-    } else {
+    // if (descriptor.thirdPartyApiKey.enabled) {
+    //   descriptor.thirdPartyApiKey.handleGen[T](req, descriptor, config, attrs) { key =>
+    //     callDownstream(config, key, None)
+    //   }
+    // } else {
       val authByJwtToken = req.headers
         .get(
           descriptor.apiKeyConstraints.jwtAuth.headerName
@@ -1047,6 +1047,6 @@ object ApiKeyHelper {
       } else {
         errorResult(BadRequest, "No ApiKey provided", "errors.no.api.key")
       }
-    }
+    //}
   }
 }

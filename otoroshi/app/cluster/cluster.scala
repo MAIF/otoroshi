@@ -527,6 +527,53 @@ object ClusterAgent {
   val OtoroshiWorkerLocationHeader = "Otoroshi-Worker-Location"
 
   def apply(config: ClusterConfig, env: Env) = new ClusterAgent(config, env)
+
+  private def clusterGetApikey(env: Env, id: String)(implicit executionContext: ExecutionContext): Future[Option[JsValue]] = {
+    val cfg = env.clusterConfig
+    val otoroshiUrl = cfg.leader.urls.head
+    env.MtlsWs
+      .url(otoroshiUrl + s"/api/apikeys/$id", cfg.mtlsConfig)
+      .withHttpHeaders(
+        "Host" -> cfg.leader.host,
+      )
+      .withAuth(cfg.leader.clientId, cfg.leader.clientSecret, WSAuthScheme.BASIC)
+      .withRequestTimeout(Duration(cfg.worker.timeout, TimeUnit.MILLISECONDS))
+      .withMaybeProxyServer(cfg.proxy)
+      .get()
+      .map {
+        case r if r.status == 200 => r.json.some
+        case _ => None
+      }
+  }
+
+  def clusterSaveApikey(env: Env, apikey: ApiKey)(implicit executionContext: ExecutionContext): Future[Unit] = {
+    val cfg = env.clusterConfig
+    val otoroshiUrl = cfg.leader.urls.head
+    clusterGetApikey(env, apikey.clientId).flatMap {
+      case None => {
+        env.MtlsWs
+          .url(otoroshiUrl + s"/api/apikeys", cfg.mtlsConfig)
+          .withHttpHeaders(
+            "Host" -> cfg.leader.host,
+          )
+          .withAuth(cfg.leader.clientId, cfg.leader.clientSecret, WSAuthScheme.BASIC)
+          .withRequestTimeout(Duration(cfg.worker.timeout, TimeUnit.MILLISECONDS))
+          .withMaybeProxyServer(cfg.proxy)
+          .post(apikey.toJson)
+      }
+      case Some(_) => {
+        env.MtlsWs
+          .url(otoroshiUrl + s"/api/apikeys/${apikey.clientId}", cfg.mtlsConfig)
+          .withHttpHeaders(
+            "Host" -> cfg.leader.host,
+          )
+          .withAuth(cfg.leader.clientId, cfg.leader.clientSecret, WSAuthScheme.BASIC)
+          .withRequestTimeout(Duration(cfg.worker.timeout, TimeUnit.MILLISECONDS))
+          .withMaybeProxyServer(cfg.proxy)
+          .put(apikey.toJson)
+      }
+    }.map(_ => ())
+  }
 }
 
 object CpuInfo {
