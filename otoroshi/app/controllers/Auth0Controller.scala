@@ -6,7 +6,7 @@ import java.util.concurrent.TimeUnit
 import actions.{BackOfficeAction, BackOfficeActionAuth, PrivateAppsAction}
 import akka.http.scaladsl.util.FastFuture
 import akka.util.ByteString
-import auth.{AuthModuleConfig, BasicAuthModule, BasicAuthModuleConfig}
+import auth.{AuthModuleConfig, BasicAuthModule, BasicAuthModuleConfig, GenericOauth2ModuleConfig}
 import env.Env
 import events._
 import gateway.Errors
@@ -30,6 +30,23 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
   implicit lazy val ec = env.otoroshiExecutionContext
 
   lazy val logger = Logger("otoroshi-auth-controller")
+
+  def verifyHash(descId: String, auth: AuthModuleConfig, req: RequestHeader)(f: AuthModuleConfig => Future[Result]): Future[Result] = {
+    val hash = req.getQueryString("hash").orElse(req.session.get("hash")).getOrElse("--")
+    val expected = env.sign(s"${auth.id}:::${descId}")
+    if (hash != "--" && hash == expected) {
+      f(auth)
+    } else {
+      Errors.craftResponseResult(
+        "Auth. config. bad signature",
+        Results.BadRequest,
+        req,
+        None,
+        Some("errors.auth.bad.signature"),
+        attrs = TypedMap.empty
+      )
+    }
+  }
 
   def withAuthConfig(descriptor: ServiceDescriptor,
                      req: RequestHeader)(f: AuthModuleConfig => Future[Result]): Future[Result] = {
@@ -250,40 +267,42 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
           case Some(descriptor) if !descriptor.privateApp =>
             NotFound(views.html.otoroshi.error("Private apps are not configured", env)).asFuture
           case Some(descriptor) if descriptor.privateApp && descriptor.id != env.backOfficeDescriptor.id => {
-            withAuthConfig(descriptor, ctx.request) {
-              case auth if auth.`type` == "basic" && auth.asInstanceOf[BasicAuthModuleConfig].webauthn => {
-                val authModule = auth.authModule(ctx.globalConfig).asInstanceOf[BasicAuthModule]
-                req.headers.get("WebAuthn-Login-Step") match {
-                  case Some("start") => {
-                    authModule.webAuthnLoginStart(ctx.request.body.asJson.get, descriptor).map {
-                      case Left(error) => BadRequest(Json.obj("error" -> error))
-                      case Right(reg)  => Ok(reg)
+            withAuthConfig(descriptor, ctx.request) { _auth =>
+              verifyHash(descriptor.id, _auth, ctx.request) {
+                case auth if auth.`type` == "basic" && auth.asInstanceOf[BasicAuthModuleConfig].webauthn => {
+                  val authModule = auth.authModule(ctx.globalConfig).asInstanceOf[BasicAuthModule]
+                  req.headers.get("WebAuthn-Login-Step") match {
+                    case Some("start") => {
+                      authModule.webAuthnLoginStart(ctx.request.body.asJson.get, descriptor).map {
+                        case Left(error) => BadRequest(Json.obj("error" -> error))
+                        case Right(reg) => Ok(reg)
+                      }
                     }
-                  }
-                  case Some("finish") => {
-                    authModule.webAuthnLoginFinish(ctx.request.body.asJson.get, descriptor).flatMap {
-                      case Left(error) => BadRequest(Json.obj("error" -> error)).future
-                      case Right(user) => saveUser(user, auth, descriptor, true)(ctx.request)
+                    case Some("finish") => {
+                      authModule.webAuthnLoginFinish(ctx.request.body.asJson.get, descriptor).flatMap {
+                        case Left(error) => BadRequest(Json.obj("error" -> error)).future
+                        case Right(user) => saveUser(user, auth, descriptor, true)(ctx.request)
+                      }
                     }
+                    case _ =>
+                      BadRequest(
+                        views.html.otoroshi
+                          .error(message = s"Missing step", _env = env, title = "Authorization error")
+                      ).asFuture
                   }
-                  case _ =>
-                    BadRequest(
-                      views.html.otoroshi
-                        .error(message = s"Missing step", _env = env, title = "Authorization error")
-                    ).asFuture
                 }
-              }
-              case auth => {
-                auth.authModule(ctx.globalConfig).paCallback(ctx.request, ctx.globalConfig, descriptor).flatMap {
-                  case Left(error) => {
-                    BadRequest(
-                      views.html.otoroshi
-                        .error(message = s"You're not authorized here: ${error}",
-                               _env = env,
-                               title = "Authorization error")
-                    ).asFuture
+                case auth => {
+                  auth.authModule(ctx.globalConfig).paCallback(ctx.request, ctx.globalConfig, descriptor).flatMap {
+                    case Left(error) => {
+                      BadRequest(
+                        views.html.otoroshi
+                          .error(message = s"You're not authorized here: ${error}",
+                            _env = env,
+                            title = "Authorization error")
+                      ).asFuture
+                    }
+                    case Right(user) => saveUser(user, auth, descriptor, false)(ctx.request)
                   }
-                  case Right(user) => saveUser(user, auth, descriptor, false)(ctx.request)
                 }
               }
             }
@@ -428,7 +447,7 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
                     case None =>
                       FastFuture.successful(NotFound(views.html.otoroshi.error("BackOffice OAuth is not found", env)))
                     case Some(oauth) =>
-                      oauth match {
+                      verifyHash("backoffice", oauth, ctx.request) {
 
                         case auth if auth.`type` == "basic" && auth.asInstanceOf[BasicAuthModuleConfig].webauthn => {
                           val authModule = auth.authModule(config).asInstanceOf[BasicAuthModule]

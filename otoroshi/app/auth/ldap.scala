@@ -342,6 +342,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
                            descriptor: ServiceDescriptor)(implicit ec: ExecutionContext, env: Env): Future[Result] = {
     implicit val req = request
     val redirect     = request.getQueryString("redirect")
+    val hash         = env.sign(s"${authConfig.id}:::${descriptor.id}")
     env.datastores.authConfigsDataStore.generateLoginToken().flatMap { token =>
       if (authConfig.basicAuth) {
 
@@ -365,7 +366,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
                   case Left(_) => Results.Forbidden(views.html.otoroshi.error("Forbidden access", env)).future
                   case Right(user) =>
                     env.datastores.authConfigsDataStore.setUserForToken(token, user.toJson).map { _ =>
-                      Results.Redirect(s"/privateapps/generic/callback?desc=${descriptor.id}&token=$token")
+                      Results.Redirect(s"/privateapps/generic/callback?desc=${descriptor.id}&token=$token&hash=$hash")
                     }
                 }
             }
@@ -374,7 +375,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
       } else {
         Results
           .Ok(
-            views.html.otoroshi.login(s"/privateapps/generic/callback?desc=${descriptor.id}", "POST", token, false, env)
+            views.html.otoroshi.login(s"/privateapps/generic/callback?desc=${descriptor.id}&hash=$hash", "POST", token, false, env)
           )
           .addingToSession(
             s"pa-redirect-after-login-${authConfig.cookieSuffix(descriptor)}" -> redirect.getOrElse(
@@ -432,6 +433,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
                                                                          env: Env): Future[Result] = {
     implicit val req = request
     val redirect     = request.getQueryString("redirect")
+    val hash         = env.sign(s"${authConfig.id}:::backoffice")
     env.datastores.authConfigsDataStore.generateLoginToken().flatMap { token =>
       if (authConfig.basicAuth) {
 
@@ -455,7 +457,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
                   case Left(_) => Results.Forbidden(views.html.otoroshi.error("Forbidden access", env)).future
                   case Right(user) =>
                     env.datastores.authConfigsDataStore.setUserForToken(token, user.toJson).map { _ =>
-                      Results.Redirect(s"/backoffice/auth0/callback?token=$token")
+                      Results.Redirect(s"/backoffice/auth0/callback?token=$token&hash=$hash")
                     }
                 }
             }
@@ -463,7 +465,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
         }
       } else {
         Results
-          .Ok(views.html.otoroshi.login(s"/backoffice/auth0/callback", "POST", token, false, env))
+          .Ok(views.html.otoroshi.login(s"/backoffice/auth0/callback?hash=$hash", "POST", token, false, env))
           .addingToSession(
             "bo-redirect-after-login" -> redirect.getOrElse(
               routes.BackOfficeController.dashboard().absoluteURL(env.exposedRootSchemeIsHttps)

@@ -156,8 +156,8 @@ case class GenericOauth2ModuleConfig(
 case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModule {
 
   import play.api.libs.ws.DefaultBodyWritables._
-  import utils.future.Implicits._
   import utils.http.Implicits._
+  import otoroshi.utils.syntax.implicits._
 
   override def paLoginPage(request: RequestHeader,
                            config: GlobalConfig,
@@ -170,13 +170,19 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
     val scope        = authConfig.scope // "openid profile email name"
     val claims       = Option(authConfig.claims).filterNot(_.isEmpty).map(v => s"claims=$v&").getOrElse("")
     val queryParam   = if (authConfig.useCookie) "" else s"?desc=${descriptor.id}"
-    val redirectUri  = authConfig.callbackUrl + queryParam
+    val hash         = env.sign(s"${authConfig.id}:::${descriptor.id}")
+    val redirectUri  = (authConfig.callbackUrl + queryParam).applyOn {
+      case url if !authConfig.useCookie && url.contains("?") => url + s"&hash=$hash"
+      case url if !authConfig.useCookie && !url.contains("?") => url + s"?hash=$hash"
+      case url => url
+    }
     val loginUrl =
       s"${authConfig.loginUrl}?scope=$scope&${claims}client_id=$clientId&response_type=$responseType&redirect_uri=$redirectUri"
     Redirect(
       loginUrl
     ).addingToSession(
         s"desc" -> descriptor.id,
+        "hash" -> hash,
         s"pa-redirect-after-login-${authConfig.cookieSuffix(descriptor)}" -> redirect.getOrElse(
           routes.PrivateAppsController.home().absoluteURL(env.exposedRootSchemeIsHttps)
         )
@@ -193,14 +199,19 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
     val responseType = "code"
     val scope        = authConfig.scope // "openid profile email name"
     val claims       = Option(authConfig.claims).filterNot(_.isEmpty).map(v => s"claims=$v&").getOrElse("")
-
-    val redirectUri = authConfig.callbackUrl
+    val hash         = env.sign(s"${authConfig.id}:::backoffice")
+    val redirectUri  = authConfig.callbackUrl.applyOn {
+      case url if !authConfig.useCookie && url.contains("?") => url + s"&hash=$hash"
+      case url if !authConfig.useCookie && !url.contains("?") => url + s"?hash=$hash"
+      case url => url
+    }
     val loginUrl =
       s"${authConfig.loginUrl}?scope=$scope&${claims}client_id=$clientId&response_type=$responseType&redirect_uri=$redirectUri"
     Redirect(
       loginUrl
     ).addingToSession(
-        "bo-redirect-after-login" -> redirect.getOrElse(
+      "hash" -> hash,
+      "bo-redirect-after-login" -> redirect.getOrElse(
           routes.BackOfficeController.dashboard().absoluteURL(env.exposedRootSchemeIsHttps)
         )
       )
