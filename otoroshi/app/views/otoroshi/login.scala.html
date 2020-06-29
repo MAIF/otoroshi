@@ -11,7 +11,7 @@
     <script>
         Otoroshi.genericLogin({
             method: '@method',
-            action: '@action',
+            action: '@Html(action)',
             token: '@token',
             webauthn: @webauthn,
             otoroshiLogo: '@(_env.otoroshiLogo)'
