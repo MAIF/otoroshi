@@ -598,7 +598,7 @@ class HttpHandler()(implicit env: Env) {
                         true
                       case _ => false
                     }
-                    
+
                     val theStream: Source[ByteString, _] = resp.bodyAsSource
                       .concat(snowMonkeyContext.trailingResponseBodyStream)
                       .alsoTo(Sink.onComplete {

@@ -119,6 +119,8 @@ class LettuceDataStores(configuration: Configuration,
         new LettuceRedisStandaloneAndSentinels(redisActorSystem, redisClient)
       }
       case "cluster" => {
+        // docker run -p '7000-7050:7000-7050' -e "IP=0.0.0.0" grokzen/redis-cluster:latest
+        // -Dapp.redis.lettuce.connection=cluster -Dapp.redis.lettuce.uris.0=redis://localhost:7000/0 -Dapp.redis.lettuce.uris.1=redis://localhost:7001/0 -Dapp.redis.lettuce.uris.2=redis://localhost:7002/0
         val redisClient = RedisClusterClient.create(resources, nodes)
         clientRef.set(redisClient)
         new LettuceRedisCluster(redisActorSystem, redisClient)
