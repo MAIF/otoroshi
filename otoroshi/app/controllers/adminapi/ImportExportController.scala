@@ -26,7 +26,7 @@ class ImportExportController(ApiAction: ApiAction, cc: ControllerComponents)(imp
 
   def fullExport() = ApiAction.async { ctx =>
     ctx.checkRights(RightsChecker.SuperAdminOnly) {
-      ctx.request.accepts("application/x-ndjson") match {
+      !ctx.request.accepts("application/json") && ctx.request.accepts("application/x-ndjson") match {
         case true => {
           env.datastores.fullNdJsonExport(100, 1, 4).map { source =>
             val event = AdminApiEvent(
