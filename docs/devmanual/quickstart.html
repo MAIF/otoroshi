@@ -279,7 +279,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   &quot;clientId&quot;: &quot;quickstart&quot;,
   &quot;clientSecret&quot;: &quot;secret&quot;,
   &quot;clientName&quot;: &quot;quickstart-apikey&quot;,
-  &quot;authorizedGroup&quot;: &quot;admin-api-group&quot;
+  &quot;authorizedEntities&quot;: [&quot;group_admin-api-group&quot;]
 }&#39; | jq
 </code></pre>
 <p>now let create a new service to proxy <code>https://maif.gitub.io</code> on domain <code>maif.oto.tools</code>. This service will be public and will not require an apikey to pass</p>
@@ -329,7 +329,7 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
   &quot;clientId&quot;: &quot;apikey1&quot;,
   &quot;clientSecret&quot;: &quot;secret&quot;,
   &quot;clientName&quot;: &quot;quickstart-apikey-1&quot;,
-  &quot;authorizedGroup&quot;: &quot;default&quot;
+  &quot;authorizedEntities&quot;: [&quot;group_default&quot;]
 }&#39; | jq
 </code></pre>
 <p>and try again</p>

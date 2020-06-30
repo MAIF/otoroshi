@@ -3461,7 +3461,7 @@
     "ApiKey" : {
       "description" : "An Otoroshi Api Key. An Api Key is defined for a group of services to allow usage of the same Api Key for multiple services.",
       "type" : "object",
-      "required" : [ "clientId", "clientSecret", "clientName", "authorizedGroup", "enabled" ],
+      "required" : [ "clientId", "clientSecret", "clientName", "authorizedEntities", "enabled" ],
       "properties" : {
         "clientId" : {
           "description" : "The unique id of the Api Key. Usually 16 random alpha numerical characters, but can be anything",
@@ -3478,10 +3478,10 @@
           "type" : "string",
           "example" : "a string value"
         },
-        "authorizedGroup" : {
-          "description" : "The group id on which the key is authorized",
-          "type" : "string",
-          "example" : "a string value"
+        "authorizedEntities" : {
+          "description" : "The group/service ids (prefixed by group_ or service_ on which the key is authorized",
+          "type" : "array",
+          "example" : ["group_default"]
         },
         "enabled" : {
           "description" : "Whether or not the key is enabled. If disabled, resources won't be available to calls using this key",
@@ -4086,7 +4086,7 @@
           "items" : {
             "description" : "An Otoroshi Api Key. An Api Key is defined for a group of services to allow usage of the same Api Key for multiple services.",
             "type" : "object",
-            "required" : [ "clientId", "clientSecret", "clientName", "authorizedGroup", "enabled" ],
+            "required" : [ "clientId", "clientSecret", "clientName", "authorizedEntities", "enabled" ],
             "properties" : {
               "clientId" : {
                 "description" : "The unique id of the Api Key. Usually 16 random alpha numerical characters, but can be anything",
@@ -4103,10 +4103,10 @@
                 "type" : "string",
                 "example" : "a string value"
               },
-              "authorizedGroup" : {
-                "description" : "The group id on which the key is authorized",
-                "type" : "string",
-                "example" : "a string value"
+              "authorizedEntities" : {
+                "description" : "The group/service ids (prefixed by group_ or service_ on which the key is authorized",
+                "type" : "array",
+                "example" : ["group_default"]
               },
               "enabled" : {
                 "description" : "Whether or not the key is enabled. If disabled, resources won't be available to calls using this key",

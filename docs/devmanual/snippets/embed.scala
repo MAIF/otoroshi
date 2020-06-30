@@ -32,7 +32,7 @@ object MyApp extends App {
     clientSecret = "1234567890",
     clientName = "test-key",
     enabled = true,
-    authorizedGroup = "embed-group"
+    authorizedEntities = Seq(ServiceGroupIdentitier("embed-group"))
   )
 
   val group = ServiceGroup(
