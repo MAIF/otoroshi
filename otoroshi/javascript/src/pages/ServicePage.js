@@ -1558,7 +1558,7 @@ export class ServicePage extends Component {
                 onChange={e => this.changeTheValue('root', e)}
               />
             )}
-            {!this.state.service.tcpUdpTunneling && (
+            {!this.state.service.tcpUdpTunneling && this.state.service.targets.length > 0 && (
               <LinkDisplay
                 link={`${this.state.service.targets[0].scheme}://${this.state.service.targets[0].host}${this.state.service.root}`}
               />
