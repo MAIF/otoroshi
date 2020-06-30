@@ -205,6 +205,7 @@ export class ServicesPage extends Component {
     }
     this.props.setTitle(this.title);
     BackOfficeServices.env().then(env => this.setState({ env }));
+    this.props.setSidebarContent(null);
   }
 
   nothing() {
