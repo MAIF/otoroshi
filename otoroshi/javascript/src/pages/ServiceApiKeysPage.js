@@ -594,7 +594,10 @@ export class ServiceApiKeysPage extends Component {
         this.props.setTitle(`Service Api Keys`);
         this.setState({ service }, () => {
           this.props.setSidebarContent(this.sidebarContent(service.name));
-          if (this.table) this.table.update()
+          if (this.table) {
+            this.table.readRoute()
+            this.table.update()
+          }
         });
       }
     );
