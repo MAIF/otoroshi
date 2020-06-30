@@ -539,7 +539,7 @@ impl OtoroshiClient {
         id.m_foreach(|id| fields.push(format!(r#""clientId":"{}""#, id)));
         secret.m_foreach(|secret| fields.push(format!(r#""clientSecret":"{}""#, secret)));
         fields.push(format!(r#""clientName":"{}""#, name));
-        fields.push(format!(r#""authorizedGroup":"{}""#, group));
+        fields.push(format!(r#""authorizedEntities":["group_{}"]"#, group));
         fields.push(format!(r#""enabled":{}"#, !not_enabled));
         throttling_quota.m_foreach(|throttling_quota| {
             fields.push(format!(r#""throttlingQuota":{}"#, throttling_quota))

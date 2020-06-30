@@ -169,7 +169,7 @@ function createOtoroshiCleverCloudApiKey() {
       clientId: CLEVERCLOUD_API_KEY_ID,
       clientSecret: CLEVERCLOUD_API_KEY_SECRET,
       clientName: CLEVERCLOUD_API_KEY,
-      authorizedGroup: CLEVERCLOUD_GROUP,
+      authorizedEntities: ['group_' + CLEVERCLOUD_GROUP],
     }),
   })
     .then(r => r.json(), debugError('createOtoroshiCleverCloudApiKey'))

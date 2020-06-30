@@ -7,7 +7,7 @@ import akka.actor.ActorSystem
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.typesafe.config.ConfigFactory
-import models.{ApiKey, ServiceDescriptor, Target}
+import models.{ApiKey, ServiceDescriptor, ServiceGroupIdentifier, Target}
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatestplus.play.PlaySpec
 import play.api.Configuration
@@ -102,13 +102,13 @@ class ApiKeysSpec(name: String, configurationSpec: => Configuration)
       clientId = "apikey-test",
       clientSecret = "1234",
       clientName = "apikey-test",
-      authorizedGroup = "default"
+      authorizedEntities = Seq(ServiceGroupIdentifier("default"))
     )
     val apiKey2 = ApiKey(
       clientId = "apikey-test-2",
       clientSecret = "1234",
       clientName = "apikey-test-2",
-      authorizedGroup = "default",
+      authorizedEntities = Seq(ServiceGroupIdentifier("default")),
       allowClientIdOnly = true
     )
     val basicAuth = Base64.getUrlEncoder.encodeToString(s"apikey-test:1234".getBytes)

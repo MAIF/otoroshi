@@ -79,11 +79,31 @@ object ApiKeyRotation {
       }
   }
 }
+object EntityIdentifier {
+  def apply(prefixedId: String): Option[EntityIdentifier] = {
+    prefixedId match {
+      case id if id.startsWith("group_") => Some(ServiceGroupIdentifier(id.replace("group_", "")))
+      case id if id.startsWith("service_") => Some(ServiceDescriptorIdentifier(id.replace("service_", "")))
+      case _ => None
+    }
+  }
+}
+sealed trait EntityIdentifier {
+  def prefix: String
+  def id: String
+  def json: JsValue = JsString(s"${prefix}_${id}")
+}
+case class ServiceGroupIdentifier(id: String) extends EntityIdentifier {
+  def prefix: String = "group"
+}
+case class ServiceDescriptorIdentifier(id: String) extends EntityIdentifier {
+  def prefix: String = "service"
+}
 
 case class ApiKey(clientId: String = IdGenerator.token(16),
                   clientSecret: String = IdGenerator.token(64),
                   clientName: String,
-                  authorizedGroup: String,
+                  authorizedEntities: Seq[EntityIdentifier],
                   enabled: Boolean = true,
                   readOnly: Boolean = false,
                   allowClientIdOnly: Boolean = false,
@@ -103,13 +123,19 @@ case class ApiKey(clientId: String = IdGenerator.token(16),
   def isValid(value: String): Boolean =
     enabled && ((value == clientSecret) || (rotation.enabled && rotation.nextSecret.contains(value)))
   def isInvalid(value: String): Boolean = !isValid(value)
-  def group(implicit ec: ExecutionContext, env: Env): Future[Option[ServiceGroup]] =
-    env.datastores.serviceGroupDataStore.findById(authorizedGroup)
-  def services(implicit ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] =
-    env.datastores.serviceGroupDataStore.findById(authorizedGroup).flatMap {
-      case Some(group) => group.services
-      case None        => FastFuture.successful(Seq.empty[ServiceDescriptor])
-    }
+  def authorizedOn(identifier: EntityIdentifier): Boolean = authorizedEntities.contains(identifier)
+  def authorizedOnService(id: String): Boolean = authorizedEntities.contains(ServiceDescriptorIdentifier(id))
+  def authorizedOnGroup(id: String): Boolean = authorizedEntities.contains(ServiceGroupIdentifier(id))
+  def services(implicit ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] = {
+    FastFuture.sequence(authorizedEntities.map {
+      case ServiceDescriptorIdentifier(id) => env.datastores.serviceDescriptorDataStore.findById(id).map(_.toSeq)
+      case ServiceGroupIdentifier(id) => env.datastores.serviceGroupDataStore.findById(id).flatMap {
+        case Some(group) => group.services
+        case None        => FastFuture.successful(Seq.empty[ServiceDescriptor])
+      }
+    }).map(_.flatten)
+  }
+
   def updateQuotas()(implicit ec: ExecutionContext, env: Env): Future[RemainingQuotas] =
     env.datastores.apiKeyDataStore.updateQuotas(this)
   def remainingQuotas()(implicit ec: ExecutionContext, env: Env): Future[RemainingQuotas] =
@@ -195,11 +221,16 @@ object ApiKey {
         case Some(date) if date.isBeforeNow => false
         case _                              => apk.enabled
       }
+      val authGroup: JsValue = apk.authorizedEntities.find {
+        case ServiceGroupIdentifier(_) => true
+        case ServiceDescriptorIdentifier(_) => false
+      }.map(_.id).map(JsString.apply).getOrElse(JsNull) // simulate old behavior
       Json.obj(
         "clientId"                -> apk.clientId,
         "clientSecret"            -> apk.clientSecret,
         "clientName"              -> apk.clientName,
-        "authorizedGroup"         -> apk.authorizedGroup,
+        "authorizedGroup"         -> authGroup,
+        "authorizedEntities"      -> JsArray(apk.authorizedEntities.map(_.json)),
         "enabled"                 -> enabled, //apk.enabled,
         "readOnly"                -> apk.readOnly,
         "allowClientIdOnly"       -> apk.allowClientIdOnly,
@@ -226,7 +257,17 @@ object ApiKey {
           clientId = (json \ "clientId").as[String],
           clientSecret = (json \ "clientSecret").as[String],
           clientName = (json \ "clientName").as[String],
-          authorizedGroup = (json \ "authorizedGroup").as[String],
+          authorizedEntities = {
+            val authorizedGroup: Seq[EntityIdentifier] =
+              (json \ "authorizedGroup").asOpt[String].map(ServiceGroupIdentifier.apply).toSeq
+            val authorizedEntities: Seq[EntityIdentifier] =
+              (json \ "authorizedEntities").asOpt[Seq[String]].map { identifiers =>
+              identifiers.map(EntityIdentifier.apply).collect {
+                case Some(id) => id
+              }
+            }.getOrElse(Seq.empty[EntityIdentifier])
+            (authorizedEntities ++ authorizedGroup).distinct
+          },
           enabled = enabled,
           readOnly = (json \ "readOnly").asOpt[Boolean].getOrElse(false),
           allowClientIdOnly = (json \ "allowClientIdOnly").asOpt[Boolean].getOrElse(false),
@@ -274,7 +315,7 @@ trait ApiKeyDataStore extends BasicStore[ApiKey] {
       clientId = IdGenerator.token(16),
       clientSecret = IdGenerator.token(64),
       clientName = "client-name-apikey",
-      authorizedGroup = groupId,
+      authorizedEntities = Seq(ServiceGroupIdentifier(groupId)),
     )
   def remainingQuotas(apiKey: ApiKey)(implicit ec: ExecutionContext, env: Env): Future[RemainingQuotas]
   def resetQuotas(apiKey: ApiKey)(implicit ec: ExecutionContext, env: Env): Future[RemainingQuotas]

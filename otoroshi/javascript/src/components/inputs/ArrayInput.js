@@ -187,6 +187,7 @@ export class ArrayInput extends Component {
                     isLoading={this.state.loading}
                     disabled={this.props.disabled}
                     placeholder={this.props.placeholder}
+                    optionRenderer={this.props.optionRenderer}
                     options={this.state.values}
                     onChange={e => this.changeValue({ target: { value: e.value } }, idx)}
                   />

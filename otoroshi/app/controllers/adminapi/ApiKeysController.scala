@@ -22,17 +22,18 @@ class ApiKeysFromServiceController(val ApiAction: ApiAction, val cc: ControllerC
 
   lazy val logger = Logger("otoroshi-apikeys-fs-api")
 
+  /*
   def apiKeyGroup(serviceId: String, clientId: String) = ApiAction.async { ctx =>
     env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
       case None => NotFound(Json.obj("error" -> s"Service with id: '$serviceId' not found")).asFuture
       case Some(desc) =>
         env.datastores.apiKeyDataStore.findById(clientId).flatMap {
           case None => NotFound(Json.obj("error" -> s"ApiKey with clienId '$clientId' not found")).asFuture
-          case Some(apiKey) if apiKey.authorizedGroup != desc.groupId =>
+          case Some(apiKey) if !apiKey.authorizedOnGroup(desc.groupId) =>
             NotFound(
               Json.obj("error" -> s"ApiKey with clienId '$clientId' not found for service with id: '$serviceId'")
             ).asFuture
-          case Some(apiKey) if apiKey.authorizedGroup == desc.groupId =>
+          case Some(apiKey) if apiKey.authorizedOnGroup(desc.groupId) =>
             apiKey.group.map {
               case None => NotFound(Json.obj("error" -> s"ServiceGroup for ApiKey '$clientId' not found"))
               case Some(group) => {
@@ -56,11 +57,11 @@ class ApiKeysFromServiceController(val ApiAction: ApiAction, val cc: ControllerC
       case Some(desc) =>
         env.datastores.apiKeyDataStore.findById(clientId).flatMap {
           case None => NotFound(Json.obj("error" -> s"ApiKey with clienId '$clientId' not found")).asFuture
-          case Some(apiKey) if apiKey.authorizedGroup != desc.groupId =>
+          case Some(apiKey) if !apiKey.authorizedOnGroup(desc.groupId) =>
             NotFound(
               Json.obj("error" -> s"ApiKey with clienId '$clientId' not found for service with id: '$serviceId'")
             ).asFuture
-          case Some(apiKey) if apiKey.authorizedGroup == desc.groupId =>
+          case Some(apiKey) if apiKey.authorizedOnGroup(desc.groupId) =>
             apiKey.group.flatMap {
               case None => NotFound(Json.obj("error" -> s"ServiceGroup for ApiKey '$clientId' not found")).asFuture
               case Some(group) => {
@@ -81,6 +82,7 @@ class ApiKeysFromServiceController(val ApiAction: ApiAction, val cc: ControllerC
         }
     }
   }
+  */
 
   def apiKeyQuotas(serviceId: String, clientId: String) = ApiAction.async { ctx =>
     env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
@@ -88,11 +90,11 @@ class ApiKeysFromServiceController(val ApiAction: ApiAction, val cc: ControllerC
       case Some(desc) =>
         env.datastores.apiKeyDataStore.findById(clientId).flatMap {
           case None => NotFound(Json.obj("error" -> s"ApiKey with clienId '$clientId' not found")).asFuture
-          case Some(apiKey) if apiKey.authorizedGroup != desc.groupId =>
+          case Some(apiKey) if !apiKey.authorizedOnGroup(desc.groupId) =>
             NotFound(
               Json.obj("error" -> s"ApiKey with clienId '$clientId' not found for service with id: '$serviceId'")
             ).asFuture
-          case Some(apiKey) if apiKey.authorizedGroup == desc.groupId => {
+          case Some(apiKey) if apiKey.authorizedOnGroup(desc.groupId) => {
             sendAudit(
               "ACCESS_SERVICE_APIKEY_QUOTAS",
               s"User accessed an apikey quotas from a service descriptor",
@@ -111,11 +113,11 @@ class ApiKeysFromServiceController(val ApiAction: ApiAction, val cc: ControllerC
       case Some(desc) =>
         env.datastores.apiKeyDataStore.findById(clientId).flatMap {
           case None => NotFound(Json.obj("error" -> s"ApiKey with clienId '$clientId' not found")).asFuture
-          case Some(apiKey) if apiKey.authorizedGroup != desc.groupId =>
+          case Some(apiKey) if !apiKey.authorizedOnGroup(desc.groupId) =>
             NotFound(
               Json.obj("error" -> s"ApiKey with clienId '$clientId' not found for service with id: '$serviceId'")
             ).asFuture
-          case Some(apiKey) if apiKey.authorizedGroup == desc.groupId => {
+          case Some(apiKey) if apiKey.authorizedOnGroup(desc.groupId) => {
             sendAudit(
               "RESET_SERVICE_APIKEY_QUOTAS",
               s"User reset an apikey quotas for a service descriptor",
@@ -142,10 +144,10 @@ class ApiKeysFromServiceController(val ApiAction: ApiAction, val cc: ControllerC
         desc.group.flatMap {
           case None => NotFound(Json.obj("error" -> s"Service group not found")).asFuture
           case Some(group) => {
-            val apiKeyJson = (body \ "authorizedGroup").asOpt[String] match {
-              case None => body ++ Json.obj("authorizedGroup" -> group.id)
-              case Some(groupId) if groupId != group.id => body ++ Json.obj("authorizedGroup" -> group.id)
-              case Some(groupId) if groupId == group.id => body
+            val apiKeyJson = (body \ "authorizedEntities").asOpt[Seq[String]] match {
+              case None => body ++ Json.obj("authorizedEntities" -> Json.arr("group_" + group.id))
+              case Some(groupId) if !groupId.contains(s"group_${group.id}") => body ++ Json.obj("authorizedEntities" -> Seq("group_" + group.id))
+              case Some(groupId) if groupId.contains(s"group_${group.id}") => body
             }
             ApiKey.fromJsonSafe(apiKeyJson) match {
               case JsError(e) => BadRequest(Json.obj("error" -> "Bad ApiKey format")).asFuture
@@ -181,11 +183,11 @@ class ApiKeysFromServiceController(val ApiAction: ApiAction, val cc: ControllerC
       case Some(desc) =>
         env.datastores.apiKeyDataStore.findById(clientId).flatMap {
           case None => NotFound(Json.obj("error" -> s"ApiKey with clienId '$clientId' not found")).asFuture
-          case Some(apiKey) if apiKey.authorizedGroup != desc.groupId =>
+          case Some(apiKey) if !apiKey.authorizedOnGroup(desc.groupId) =>
             NotFound(
               Json.obj("error" -> s"ApiKey with clienId '$clientId' not found for service with id: '$serviceId'")
             ).asFuture
-          case Some(apiKey) if apiKey.authorizedGroup == desc.groupId => {
+          case Some(apiKey) if apiKey.authorizedOnGroup(desc.groupId) => {
             ApiKey.fromJsonSafe(ctx.request.body) match {
               case JsError(e) => BadRequest(Json.obj("error" -> "Bad ApiKey format")).asFuture
               case JsSuccess(newApiKey, _) if newApiKey.clientId != clientId =>
@@ -215,11 +217,11 @@ class ApiKeysFromServiceController(val ApiAction: ApiAction, val cc: ControllerC
       case Some(desc) =>
         env.datastores.apiKeyDataStore.findById(clientId).flatMap {
           case None => NotFound(Json.obj("error" -> s"ApiKey with clienId '$clientId' not found")).asFuture
-          case Some(apiKey) if apiKey.authorizedGroup != desc.groupId =>
+          case Some(apiKey) if !apiKey.authorizedOnGroup(desc.groupId) =>
             NotFound(
               Json.obj("error" -> s"ApiKey with clienId '$clientId' not found for service with id: '$serviceId'")
             ).asFuture
-          case Some(apiKey) if apiKey.authorizedGroup == desc.groupId => {
+          case Some(apiKey) if apiKey.authorizedOnGroup(desc.groupId) => {
             val currentApiKeyJson = apiKey.toJson
             val newApiKeyJson = patchJson(ctx.request.body, currentApiKeyJson)
             ApiKey.fromJsonSafe(newApiKeyJson) match {
@@ -251,11 +253,11 @@ class ApiKeysFromServiceController(val ApiAction: ApiAction, val cc: ControllerC
       case Some(desc) =>
         env.datastores.apiKeyDataStore.findById(clientId).flatMap {
           case None => NotFound(Json.obj("error" -> s"ApiKey with clienId '$clientId' not found")).asFuture
-          case Some(apiKey) if apiKey.authorizedGroup != desc.groupId =>
+          case Some(apiKey) if !apiKey.authorizedOnGroup(desc.groupId) =>
             NotFound(
               Json.obj("error" -> s"ApiKey with clienId '$clientId' not found for service with id: '$serviceId'")
             ).asFuture
-          case Some(apiKey) if apiKey.authorizedGroup == desc.groupId => {
+          case Some(apiKey) if apiKey.authorizedOnGroup(desc.groupId) => {
             sendAuditAndAlert(
               "DELETE_APIKEY",
               s"User deleted an ApiKey",
@@ -297,7 +299,7 @@ class ApiKeysFromServiceController(val ApiAction: ApiAction, val cc: ControllerC
             JsArray(
               apiKeys
                 .filter {
-                  case keys if group.isDefined && keys.authorizedGroup == group.get => true
+                  case keys if group.isDefined && keys.authorizedOnGroup(group.get) => true
                   case keys if clientId.isDefined && keys.clientId == clientId.get => true
                   case keys if name.isDefined && keys.clientName == name.get => true
                   case keys if enabled.isDefined && keys.enabled == enabled.get.toBoolean => true
@@ -337,7 +339,7 @@ class ApiKeysFromServiceController(val ApiAction: ApiAction, val cc: ControllerC
           JsArray(
             keys
               .filter {
-                case keys if group.isDefined && keys.authorizedGroup == group.get => true
+                case keys if group.isDefined && keys.authorizedOnGroup(group.get) => true
                 case keys if clientId.isDefined && keys.clientId == clientId.get => true
                 case keys if name.isDefined && keys.clientName == name.get => true
                 case keys if enabled.isDefined && keys.enabled == enabled.get.toBoolean => true
@@ -358,11 +360,11 @@ class ApiKeysFromServiceController(val ApiAction: ApiAction, val cc: ControllerC
       case Some(desc) =>
         env.datastores.apiKeyDataStore.findById(clientId).map {
           case None => NotFound(Json.obj("error" -> s"ApiKey with clienId '$clientId' not found"))
-          case Some(apiKey) if apiKey.authorizedGroup != desc.groupId =>
+          case Some(apiKey) if !apiKey.authorizedOnGroup(desc.groupId) =>
             NotFound(
               Json.obj("error" -> s"ApiKey with clienId '$clientId' not found for service with id: '$serviceId'")
             )
-          case Some(apiKey) if apiKey.authorizedGroup == desc.groupId => {
+          case Some(apiKey) if apiKey.authorizedOnGroup(desc.groupId) => {
             sendAudit(
               "ACCESS_SERVICE_APIKEY",
               s"User accessed an apikey from a service descriptor",
@@ -390,9 +392,9 @@ class ApiKeysFromGroupController(val ApiAction: ApiAction, val cc: ControllerCom
       case Some(group) =>
         env.datastores.apiKeyDataStore.findById(clientId).flatMap {
           case None => NotFound(Json.obj("error" -> s"ApiKey with clienId '$clientId' not found")).asFuture
-          case Some(apiKey) if apiKey.authorizedGroup != group.id =>
+          case Some(apiKey) if !apiKey.authorizedOnGroup(group.id) =>
             NotFound(Json.obj("error" -> s"ApiKey with clienId '$clientId' not found for group with id: '$groupId'")).asFuture
-          case Some(apiKey) if apiKey.authorizedGroup == group.id => {
+          case Some(apiKey) if apiKey.authorizedOnGroup(group.id) => {
             sendAudit(
               "ACCESS_SERVICE_APIKEY_QUOTAS",
               s"User accessed an apikey quotas from a service descriptor",
@@ -411,9 +413,9 @@ class ApiKeysFromGroupController(val ApiAction: ApiAction, val cc: ControllerCom
       case Some(group) =>
         env.datastores.apiKeyDataStore.findById(clientId).flatMap {
           case None => NotFound(Json.obj("error" -> s"ApiKey with clienId '$clientId' not found")).asFuture
-          case Some(apiKey) if apiKey.authorizedGroup != group.id =>
-            NotFound(Json.obj("error" -> s"ApiKey with clienId '$clientId' not found for group with id: '$groupId'")).asFuture
-          case Some(apiKey) if apiKey.authorizedGroup == group.id => {
+          case Some(apiKey) if !apiKey.authorizedOnGroup(group.id) =>
+            NotFound(Json.obj("error" -> s"ApiKey with clientId '$clientId' not found for group with id: '$groupId'")).asFuture
+          case Some(apiKey) if apiKey.authorizedOnGroup(group.id) => {
             sendAudit(
               "RESET_SERVICE_APIKEY_QUOTAS",
               s"User accessed an apikey quotas from a service descriptor",
@@ -450,7 +452,7 @@ class ApiKeysFromGroupController(val ApiAction: ApiAction, val cc: ControllerCom
             JsArray(
               apiKeys
                 .filter {
-                  case keys if group.isDefined && keys.authorizedGroup == group.get       => true
+                  case keys if group.isDefined && keys.authorizedOnGroup(group.get)       => true
                   case keys if clientId.isDefined && keys.clientId == clientId.get        => true
                   case keys if name.isDefined && keys.clientName == name.get              => true
                   case keys if enabled.isDefined && keys.enabled == enabled.get.toBoolean => true
@@ -474,9 +476,9 @@ class ApiKeysFromGroupController(val ApiAction: ApiAction, val cc: ControllerCom
       case Some(group) =>
         env.datastores.apiKeyDataStore.findById(clientId).map {
           case None => NotFound(Json.obj("error" -> s"ApiKey with clienId '$clientId' not found"))
-          case Some(apiKey) if apiKey.authorizedGroup != group.id =>
+          case Some(apiKey) if !apiKey.authorizedOnGroup(group.id) =>
             NotFound(Json.obj("error" -> s"ApiKey with clienId '$clientId' not found for group with id: '$groupId'"))
-          case Some(apiKey) if apiKey.authorizedGroup == group.id => {
+          case Some(apiKey) if apiKey.authorizedOnGroup(group.id) => {
             sendAudit(
               "ACCESS_SERVICE_APIKEY",
               s"User accessed an apikey from a service descriptor",
@@ -500,10 +502,10 @@ class ApiKeysFromGroupController(val ApiAction: ApiAction, val cc: ControllerCom
     env.datastores.serviceGroupDataStore.findById(groupId).flatMap {
       case None => NotFound(Json.obj("error" -> s"Service group not found")).asFuture
       case Some(group) => {
-        val apiKeyJson = (body \ "authorizedGroup").asOpt[String] match {
-          case None                         => body ++ Json.obj("authorizedGroup" -> group.id)
-          case Some(gid) if gid != group.id => body ++ Json.obj("authorizedGroup" -> group.id)
-          case Some(gid) if gid == group.id => body
+        val apiKeyJson = (body \ "authorizedEntities").asOpt[Seq[String]] match {
+          case None => body ++ Json.obj("authorizedEntities" -> Json.arr("group_" + group.id))
+          case Some(groupId) if !groupId.contains(s"group_${group.id}") => body ++ Json.obj("authorizedEntities" -> Seq("group_" + group.id))
+          case Some(groupId) if groupId.contains(s"group_${group.id}") => body
         }
         ApiKey.fromJsonSafe(apiKeyJson) match {
           case JsError(e) => BadRequest(Json.obj("error" -> "Bad ApiKey format")).asFuture
@@ -538,9 +540,9 @@ class ApiKeysFromGroupController(val ApiAction: ApiAction, val cc: ControllerCom
       case Some(group) =>
         env.datastores.apiKeyDataStore.findById(clientId).flatMap {
           case None => NotFound(Json.obj("error" -> s"ApiKey with clienId '$clientId' not found")).asFuture
-          case Some(apiKey) if apiKey.authorizedGroup != group.id =>
+          case Some(apiKey) if !apiKey.authorizedOnGroup(group.id) =>
             NotFound(Json.obj("error" -> s"ApiKey with clienId '$clientId' not found for group with id: '$groupId'")).asFuture
-          case Some(apiKey) if apiKey.authorizedGroup == group.id => {
+          case Some(apiKey) if apiKey.authorizedOnGroup(group.id) => {
             ApiKey.fromJsonSafe(ctx.request.body) match {
               case JsError(e) => BadRequest(Json.obj("error" -> "Bad ApiKey format")).asFuture
               case JsSuccess(newApiKey, _) if newApiKey.clientId != clientId =>
@@ -570,9 +572,9 @@ class ApiKeysFromGroupController(val ApiAction: ApiAction, val cc: ControllerCom
       case Some(group) =>
         env.datastores.apiKeyDataStore.findById(clientId).flatMap {
           case None => NotFound(Json.obj("error" -> s"ApiKey with clienId '$clientId' not found")).asFuture
-          case Some(apiKey) if apiKey.authorizedGroup != group.id =>
+          case Some(apiKey) if !apiKey.authorizedOnGroup(group.id) =>
             NotFound(Json.obj("error" -> s"ApiKey with clienId '$clientId' not found for group with id: '$groupId'")).asFuture
-          case Some(apiKey) if apiKey.authorizedGroup == group.id => {
+          case Some(apiKey) if apiKey.authorizedOnGroup(group.id) => {
             val currentApiKeyJson = apiKey.toJson
             val newApiKeyJson     = patchJson(ctx.request.body, currentApiKeyJson)
             ApiKey.fromJsonSafe(newApiKeyJson) match {
@@ -604,9 +606,9 @@ class ApiKeysFromGroupController(val ApiAction: ApiAction, val cc: ControllerCom
       case Some(group) =>
         env.datastores.apiKeyDataStore.findById(clientId).flatMap {
           case None => NotFound(Json.obj("error" -> s"ApiKey with clienId '$clientId' not found")).asFuture
-          case Some(apiKey) if apiKey.authorizedGroup != group.id =>
+          case Some(apiKey) if !apiKey.authorizedOnGroup(group.id) =>
             NotFound(Json.obj("error" -> s"ApiKey with clienId '$clientId' not found for group with id: '$groupId'")).asFuture
-          case Some(apiKey) if apiKey.authorizedGroup == group.id => {
+          case Some(apiKey) if apiKey.authorizedOnGroup(group.id) => {
             sendAuditAndAlert(
               "DELETE_APIKEY",
               s"User deleted an ApiKey",
@@ -723,6 +725,7 @@ class ApiKeysController(val ApiAction: ApiAction, val cc: ControllerComponents)(
     }
   }
 
+  /*
   def apiKeyGroup(clientId: String) = ApiAction.async { ctx =>
     env.datastores.apiKeyDataStore.findById(clientId).flatMap {
       case None => NotFound(Json.obj("error" -> s"ApiKey with clienId '$clientId' not found")).asFuture
@@ -764,6 +767,7 @@ class ApiKeysController(val ApiAction: ApiAction, val cc: ControllerComponents)(
         }
     }
   }
+  */
 
   def apiKeyQuotas(clientId: String) = ApiAction.async { ctx =>
     env.datastores.apiKeyDataStore.findById(clientId).flatMap {

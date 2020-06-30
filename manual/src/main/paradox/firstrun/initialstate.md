@@ -56,7 +56,7 @@ It can be a file path or a URL
       "clientId": "admin-api-apikey-id",
       "clientSecret": "admin-api-apikey-secret",
       "clientName": "Otoroshi Backoffice ApiKey",
-      "authorizedGroup": "admin-api-group",
+      "authorizedEntities": ["group_admin-api-group"],
       "enabled": true,
       "throttlingQuota": 10000000,
       "dailyQuota": 10000000,

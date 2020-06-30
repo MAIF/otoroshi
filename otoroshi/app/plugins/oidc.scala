@@ -570,7 +570,7 @@ case class OIDCThirdPartyApiKeyConfig(
                                   clientSecret = IdGenerator.token(128),
                                   clientName =
                                     s"Temporary apikey from ${oidcAuth.name} for $subject on ${descriptor.name}",
-                                  authorizedGroup = descriptor.groupId,
+                                  authorizedEntities = Seq(ServiceGroupIdentifier(descriptor.groupId)),
                                   enabled = false,
                                   readOnly = false,
                                   allowClientIdOnly = true,

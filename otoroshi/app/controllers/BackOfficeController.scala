@@ -1157,4 +1157,21 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
       }
     }
   }
+
+  def fetchGroupsAndServices() = BackOfficeActionAuth.async { ctx =>
+    env.datastores.serviceDescriptorDataStore.findAll().flatMap { services =>
+      env.datastores.serviceGroupDataStore.findAll().map { groups =>
+        val jsonGroups = groups.map(g => Json.obj("label" -> g.name, "value" -> s"group_${g.id}", "kind" -> "group"))
+        val jsonServices = services.map(s => Json.obj("label" -> s.name, "value" -> s"service_${s.id}", "kind" -> "service"))
+        Ok(JsArray(jsonGroups ++ jsonServices))
+      }
+    }
+  }
+
+  def fetchApikeysForGroupAndService(groupId: String, serviceId: String) = BackOfficeActionAuth.async { ctx =>
+    env.datastores.apiKeyDataStore.findAll().map { apikeys =>
+      val filtered = apikeys.filter(apk => apk.authorizedOnGroup(groupId) || apk.authorizedOnService(serviceId))
+      Ok(JsArray(filtered.map(_.toJson)))
+    }
+  }
 }

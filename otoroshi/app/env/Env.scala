@@ -692,7 +692,7 @@ class Env(val configuration: Configuration,
     backOfficeApiKeyClientId,
     backOfficeApiKeyClientSecret,
     "Otoroshi Backoffice ApiKey",
-    backOfficeGroupId,
+    Seq(ServiceGroupIdentifier(backOfficeGroupId)),
     validUntil = None
   )
 
@@ -864,7 +864,7 @@ class Env(val configuration: Configuration,
                   val defaultGroupApiKey = ApiKey(IdGenerator.token(16),
                                                   IdGenerator.token(64),
                                                   "default-apikey",
-                                                  "default",
+                                                  Seq(ServiceGroupIdentifier("default")),
                                                   validUntil = None)
 
                   import utils.JsonImplicits._

@@ -59,10 +59,29 @@ export function DefaultSidebar(props) {
       )}
       <li>
         <h3 style={{ marginTop: 20 }}>
+          <i className="fas fa-key" /> Apikeys
+        </h3>
+      </li>
+      <li key="all-apikeys">
+        <a
+          href={`/bo/dashboard/apikeys`}
+          className={rootClassName('apikeys')}
+          {...createTooltip('List all apikeys declared in Otoroshi')}>
+          {' '}
+          All apikeys
+        </a>
+      </li>
+      <li>
+        <a href={`/bo/dashboard/apikeys/add`} {...createTooltip('Create a new apikey')}>
+          <i className="glyphicon glyphicon-plus" /> Add apikey
+        </a>
+      </li>
+      <li>
+        <h3 style={{ marginTop: 20 }}>
           <i className="fas fa-cubes" /> Tcp Services
         </h3>
       </li>
-      <li key="all">
+      <li key="all-tcp-services">
         <a
           href={`/bo/dashboard/tcp/services`}
           className={rootClassName('tcp-services')}

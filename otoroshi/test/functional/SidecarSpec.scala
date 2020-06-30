@@ -7,7 +7,7 @@ import akka.actor.ActorSystem
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.typesafe.config.ConfigFactory
-import models.{ApiKey, ServiceDescriptor, Target}
+import models.{ApiKey, ServiceDescriptor, ServiceGroupIdentifier, Target}
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatestplus.play.PlaySpec
 import play.api.Configuration
@@ -96,7 +96,7 @@ class SidecarSpec(name: String, configurationSpec: => Configuration)
       clientId = "sidecar-apikey-test",
       clientSecret = "1234",
       clientName = "apikey-test",
-      authorizedGroup = "default"
+      authorizedEntities = Seq(ServiceGroupIdentifier("default"))
     )
 
     "warm up" in {

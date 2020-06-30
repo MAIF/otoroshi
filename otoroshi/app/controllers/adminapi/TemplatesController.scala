@@ -131,8 +131,7 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
         process(Json.obj(
           "username" -> "user@otoroshi.io",
           "password" -> pswd,
-          "label" -> "user@otoroshi.io",
-          "authorizedGroup" -> JsNull
+          "label" -> "user@otoroshi.io"
         ),
           ctx.request)
       ).future
@@ -149,8 +148,7 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
         process(Json.obj(
           "username" -> "user@otoroshi.io",
           "password" -> pswd,
-          "label" -> "user@otoroshi.io",
-          "authorizedGroup" -> JsNull
+          "label" -> "user@otoroshi.io"
         ),
           ctx.request)
       ).future

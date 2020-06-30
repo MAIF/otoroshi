@@ -12,7 +12,7 @@ const apikey = {
   "clientId": "clientId",
   "clientSecret": "clientSecret",
   "clientName": "apikey",
-  "authorizedGroup": "default",
+  "authorizedEntities": ["group_default"],
   "enabled": true,
   "readOnly": false,
   "allowClientIdOnly": false,

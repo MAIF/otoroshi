@@ -136,12 +136,12 @@ class Version1410Spec(name: String, configurationSpec: => Configuration)
     )
     val validApiKey = ApiKey(
       clientName = "apikey1",
-      authorizedGroup = "default",
+      authorizedEntities = Seq(ServiceGroupIdentifier("default")),
       validUntil = Some(DateTime.now().plusDays(1))
     )
     val invalidApiKey = ApiKey(
       clientName = "apikey2",
-      authorizedGroup = "default",
+      authorizedEntities = Seq(ServiceGroupIdentifier("default")),
       validUntil = Some(DateTime.now().minusDays(1))
     )
 

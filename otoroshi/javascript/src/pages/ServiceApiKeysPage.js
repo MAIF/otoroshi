@@ -273,12 +273,9 @@ class DailyRemainingQuotas extends Component {
   }
 }
 
-export class ServiceApiKeysPage extends Component {
-  state = {
-    service: null,
-  };
+const ApiKeysConstants = {
 
-  formSchema = {
+  formSchema: (that) => ({
     remainingQuotas: {
       type: DailyRemainingQuotas,
       props: {
@@ -320,7 +317,7 @@ export class ServiceApiKeysPage extends Component {
       },
     },
     both: { type: Both, props: { label: 'Both' } },
-    curlCommand: { type: CurlCommand, props: { label: 'Curl Command', env: this.props.env } },
+    curlCommand: { type: CurlCommand, props: { label: 'Curl Command', env: that.props.env } },
     basicAuth: { type: BasicAuthToken, props: { label: 'Basic Auth. Header' } },
     clientName: {
       type: 'string',
@@ -330,13 +327,23 @@ export class ServiceApiKeysPage extends Component {
         placeholder: `The name of the client (ie. ${faker.name.firstName()} ${faker.name.lastName()}'s ApiKey)`,
       },
     },
-    authorizedGroup: {
-      type: 'string',
-      disabled: true,
+    authorizedEntities: {
+      type: 'array',
       props: {
-        label: 'Authorized group',
-        placeholder: 'The group of the ApiKey',
-        help: 'The group linked to this API Key',
+        label: '',
+        placeholder: 'The groups/services of the api key',
+        help: 'The groups/services linked to this api key',
+        valuesFrom: '/bo/api/groups-and-services',
+        optionRenderer: p => {
+          return (
+            <div style={{ display: 'flex' }}>
+              <div style={{ width: 60 }}>
+                <span className={`label ${p.kind === 'group' ? 'label-warning' : 'label-success'}`}>{p.kind}</span>
+              </div>
+              <span>{p.label}</span>
+            </div>
+          );
+        }
       },
     },
     enabled: {
@@ -459,14 +466,13 @@ export class ServiceApiKeysPage extends Component {
         label: 'Next client secret',
       },
     },
-  };
-
-  columns = [
+  }),
+  columns: (that) => [
     {
       title: 'Name',
       content: item => item.clientName,
       wrappedCell: (v, item, table) => {
-        if (this.state && this.state.env && this.state.env.adminApikeyId === item.clientId) {
+        if (that.state && that.state.env && that.state.env.adminApikeyId === item.clientId) {
           return (
             <span
               title="This apikey controls the API that drives the UI you're currently using. Without it, Otoroshi UI won't be able to work and anything that uses Otoroshi admin API too. You might not want to delete it"
@@ -503,7 +509,7 @@ export class ServiceApiKeysPage extends Component {
         <SimpleBooleanInput
           value={item.enabled}
           onChange={value => {
-            BackOfficeServices.updateApiKey(this.props.params.serviceId, {
+            BackOfficeServices.updateApiKey(that.props.params.serviceId, {
               ...item,
               enabled: value,
             }).then(() => table.update());
@@ -521,16 +527,15 @@ export class ServiceApiKeysPage extends Component {
           className="btn btn-sm btn-success"
           onClick={e =>
             (window.location = `/bo/dashboard/lines/prod/services/${
-              this.state.service ? this.state.service.id : '-'
+              that.state.service ? that.state.service.id : '-'
             }/apikeys/edit/${item.clientId}/stats`)
           }>
           <i className="glyphicon glyphicon-stats" />
         </button>
       ),
     },
-  ];
-
-  formFlow = [
+  ],
+  formFlow: [
     'clientId',
     'clientSecret',
     'clientName',
@@ -545,8 +550,8 @@ export class ServiceApiKeysPage extends Component {
     '>>> Metadata and tags',
     'tags',
     'metadata',
-    '>>>Service Group settings',
-    'authorizedGroup',
+    '>>>Authorized on',
+    'authorizedEntities',
     '>>>Automatic secret rotation',
     'rotation.enabled',
     'rotation.rotationEvery',
@@ -564,7 +569,13 @@ export class ServiceApiKeysPage extends Component {
     '>>>Quotas consumption',
     'remainingQuotas',
     'resetQuotas',
-  ];
+  ]
+};
+
+export class ServiceApiKeysPage extends Component {
+  state = {
+    service: null,
+  };
 
   sidebarContent(name) {
     return (
@@ -583,13 +594,14 @@ export class ServiceApiKeysPage extends Component {
         this.props.setTitle(`Service Api Keys`);
         this.setState({ service }, () => {
           this.props.setSidebarContent(this.sidebarContent(service.name));
+          if (this.table) this.table.update()
         });
       }
     );
   }
 
   fetchAllApiKeys = () => {
-    return BackOfficeServices.fetchApiKeys(this.props.params.lineId, this.props.params.serviceId);
+    return BackOfficeServices.fetchApiKeysForPage(this.state.service ? this.state.service.groupId : '--', this.props.params.serviceId);
   };
 
   createItem = ak => {
@@ -619,17 +631,18 @@ export class ServiceApiKeysPage extends Component {
           throttlingQuota: 100,
           dailyQuota: 1000000,
           monthlyQuota: 1000000000000000000,
-          authorizedGroup: this.state.service.groupId,
+          authorizedEntities: ["group_" + this.state.service.groupId],
         })}
         itemName="ApiKey"
-        formSchema={this.formSchema}
-        formFlow={this.formFlow}
-        columns={this.columns}
+        formSchema={ApiKeysConstants.formSchema(this)}
+        formFlow={ApiKeysConstants.formFlow}
+        columns={ApiKeysConstants.columns(this)}
         fetchItems={this.fetchAllApiKeys}
         updateItem={this.updateItem}
         deleteItem={this.deleteItem}
         createItem={this.createItem}
         stayAfterSave={true}
+        injectTable={table => (this.table = table)}
         showActions={true}
         displayTrash={item => this.state.env && this.state.env.adminApikeyId === item.clientId}
         showLink={false}
@@ -642,6 +655,77 @@ export class ServiceApiKeysPage extends Component {
         }
         itemUrl={i =>
           `/bo/dashboard/lines/${this.props.params.lineId}/services/${this.props.params.serviceId}/apikeys/edit/${i.clientId}`
+        }
+        extractKey={item => item.clientId}
+      />
+    );
+  }
+}
+
+export class ApiKeysPage extends Component {
+  state = {
+    service: null,
+  };
+
+  componentDidMount() {
+    BackOfficeServices.env().then(env => this.setState({ env }));
+    this.props.setTitle(`All apikeys`);
+  }
+
+  fetchAllApiKeys = () => {
+    return BackOfficeServices.fetchAllApikeys();
+  };
+
+  createItem = ak => {
+    return BackOfficeServices.createStandaloneApiKey(ak);
+  };
+
+  updateItem = ak => {
+    console.log(ak);
+    return BackOfficeServices.updateStandaloneApiKey(ak);
+  };
+
+  deleteItem = ak => {
+    return BackOfficeServices.deleteStandaloneApiKey(ak);
+  };
+
+  render() {
+    return (
+      <Table
+        parentProps={this.props}
+        selfUrl={`apikeys`}
+        defaultTitle="All apikeys"
+        defaultValue={() => ({
+          clientId: faker.random.alphaNumeric(16),
+          clientSecret: faker.random.alphaNumeric(64),
+          clientName: `${faker.name.firstName()} ${faker.name.lastName()}'s api-key`,
+          enabled: true,
+          throttlingQuota: 100,
+          dailyQuota: 1000000,
+          monthlyQuota: 1000000000000000000,
+          authorizedEntities: ["group_default"],
+        })}
+        itemName="Apikey"
+        formSchema={ApiKeysConstants.formSchema(this)}
+        formFlow={ApiKeysConstants.formFlow}
+        columns={ApiKeysConstants.columns(this)}
+        fetchItems={this.fetchAllApiKeys}
+        updateItem={this.updateItem}
+        deleteItem={this.deleteItem}
+        createItem={this.createItem}
+        stayAfterSave={true}
+        showActions={true}
+        displayTrash={item => this.state.env && this.state.env.adminApikeyId === item.clientId}
+        showLink={false}
+        rowNavigation={true}
+        navigateTo={item =>
+          this.props.history.push({
+            pathname: `/apikeys/edit/${item.clientId}`,
+            query: { group: item.id, groupName: item.name },
+          })
+        }
+        itemUrl={i =>
+          `/bo/dashboard/apikeys/edit/${i.clientId}`
         }
         extractKey={item => item.clientId}
       />

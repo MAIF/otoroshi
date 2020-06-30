@@ -41,6 +41,7 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
              //"required"             -> Json.arr(),
              "example"              -> Json.obj("key"  -> "value"),
              "additionalProperties" -> Json.obj("type" -> "string"))
+  def SimpleArrayType   = Json.obj("type" -> "array", "example"  -> Json.arr("a string value"))
   def SimpleStringType   = Json.obj("type" -> "string", "example"  -> "a string value")
   def SimpleDoubleType   = Json.obj("type" -> "integer", "format"  -> "double", "example" -> 42.2)
   def OptionalStringType = Json.obj("type" -> "string", "required" -> false, "example" -> "a string value")
@@ -562,12 +563,12 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
   def ApiKey = Json.obj(
     "description" -> "An Otoroshi Api Key. An Api Key is defined for a group of services to allow usage of the same Api Key for multiple services.",
     "type"        -> "object",
-    "required"    -> Json.arr("clientId", "clientSecret", "clientName", "authorizedGroup", "enabled"),
+    "required"    -> Json.arr("clientId", "clientSecret", "clientName", "authorizedEntities", "enabled"),
     "properties" -> Json.obj(
       "clientId"        -> SimpleStringType ~~> "The unique id of the Api Key. Usually 16 random alpha numerical characters, but can be anything",
       "clientSecret"    -> SimpleStringType ~~> "The secret of the Api Key. Usually 64 random alpha numerical characters, but can be anything",
       "clientName"      -> SimpleStringType ~~> "The name of the api key, for humans ;-)",
-      "authorizedGroup" -> SimpleStringType ~~> "The group id on which the key is authorized",
+      "authorizedEntities" -> SimpleArrayType ~~> "The group/service ids (prefixed by group_ or service_ on which the key is authorized",
       "enabled"         -> SimpleBooleanType ~~> "Whether or not the key is enabled. If disabled, resources won't be available to calls using this key",
       "throttlingQuota" -> SimpleLongType ~~> "Authorized number of calls per second, measured on 10 seconds",
       "dailyQuota"      -> SimpleLongType ~~> "Authorized number of calls per day",

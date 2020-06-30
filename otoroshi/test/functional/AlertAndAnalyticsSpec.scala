@@ -4,7 +4,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 import akka.actor.ActorSystem
 import com.typesafe.config.ConfigFactory
-import models.{ApiKey, Webhook}
+import models.{ApiKey, ServiceGroupIdentifier, Webhook}
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatestplus.play.PlaySpec
 import play.api.Configuration
@@ -44,7 +44,7 @@ class AlertAndAnalyticsSpec(name: String, configurationSpec: => Configuration)
         clientId = "apikey-monthly",
         clientSecret = "1234",
         clientName = "apikey-test",
-        authorizedGroup = "default"
+        authorizedEntities = Seq(ServiceGroupIdentifier("default"))
       )
 
       val config = (for {
@@ -83,7 +83,7 @@ class AlertAndAnalyticsSpec(name: String, configurationSpec: => Configuration)
         clientId = "apikey-monthly",
         clientSecret = "1234",
         clientName = "apikey-test",
-        authorizedGroup = "default"
+        authorizedEntities = Seq(ServiceGroupIdentifier("default"))
       )
 
       val config = (for {

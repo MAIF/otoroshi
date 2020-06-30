@@ -49,6 +49,9 @@ DELETE  /bo/api/services/:id/circuitbreakers                  controllers.BackOf
 
 GET     /bo/api/bodies/:serviceId/:requestId                  controllers.BackOfficeController.fetchBodiesFor(serviceId, requestId)
 
+GET     /bo/api/groups-and-services                           controllers.BackOfficeController.fetchGroupsAndServices()
+GET     /bo/api/apikeys-for/:groupId/:serviceId               controllers.BackOfficeController.fetchApikeysForGroupAndService(groupId, serviceId)
+
 POST    /bo/api/certificates/_data                            controllers.BackOfficeController.certificateData()
 POST    /bo/api/certificates/_valid                           controllers.BackOfficeController.certificateIsValid()
 POST    /bo/api/certificates/_selfSigned                      controllers.BackOfficeController.selfSignedCert()
@@ -131,8 +134,8 @@ POST    /api/apikeys                                          controllers.admina
 
 GET     /api/services/:serviceId/apikeys/:clientId/quotas     controllers.adminapi.ApiKeysFromServiceController.apiKeyQuotas(serviceId, clientId)
 DELETE  /api/services/:serviceId/apikeys/:clientId/quotas     controllers.adminapi.ApiKeysFromServiceController.resetApiKeyQuotas(serviceId, clientId)
-GET     /api/services/:serviceId/apikeys/:clientId/group      controllers.adminapi.ApiKeysFromServiceController.apiKeyGroup(serviceId, clientId)
-PUT     /api/services/:serviceId/apikeys/:clientId/group      controllers.adminapi.ApiKeysFromServiceController.updateApiKeyGroup(serviceId, clientId)
+#GET     /api/services/:serviceId/apikeys/:clientId/group      controllers.adminapi.ApiKeysFromServiceController.apiKeyGroup(serviceId, clientId)
+#PUT     /api/services/:serviceId/apikeys/:clientId/group      controllers.adminapi.ApiKeysFromServiceController.updateApiKeyGroup(serviceId, clientId)
 GET     /api/services/:serviceId/apikeys/:clientId            controllers.adminapi.ApiKeysFromServiceController.apiKey(serviceId, clientId)
 PUT     /api/services/:serviceId/apikeys/:clientId            controllers.adminapi.ApiKeysFromServiceController.updateApiKey(serviceId, clientId)
 PATCH   /api/services/:serviceId/apikeys/:clientId            controllers.adminapi.ApiKeysFromServiceController.patchApiKey(serviceId, clientId)

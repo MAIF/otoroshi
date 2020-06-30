@@ -525,7 +525,7 @@ Typically, a validation authority server is a server with a route on `POST /cert
   "apikey": nullable {
     "clientId": String,
     "clientName": String,
-    "authorizedGroup": String,
+    "authorizedEntities": Seq[String],
     "enabled": Boolean,
     "readOnly": Boolean,
     "allowClientIdOnly": Boolean,

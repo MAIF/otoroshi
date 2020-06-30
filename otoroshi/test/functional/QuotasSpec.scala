@@ -5,7 +5,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 import akka.actor.ActorSystem
 import com.typesafe.config.ConfigFactory
-import models.{ApiKey, ServiceDescriptor, Target}
+import models.{ApiKey, ServiceDescriptor, ServiceGroupIdentifier, Target}
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatestplus.play.PlaySpec
 import play.api.Configuration
@@ -55,7 +55,7 @@ class QuotasSpec(name: String, configurationSpec: => Configuration)
       clientId = "1-apikey-throttling",
       clientSecret = "1234",
       clientName = "apikey-test",
-      authorizedGroup = "default",
+      authorizedEntities = Seq(ServiceGroupIdentifier("default")),
       throttlingQuota = 3
       // dailyQuota = 3
       // monthlyQuota = 3
@@ -64,7 +64,7 @@ class QuotasSpec(name: String, configurationSpec: => Configuration)
       clientId = "1-apikey-daily",
       clientSecret = "1234",
       clientName = "apikey-test",
-      authorizedGroup = "default",
+      authorizedEntities = Seq(ServiceGroupIdentifier("default")),
       // throttlingQuota = 3
       dailyQuota = 3
       // monthlyQuota = 3
@@ -73,7 +73,7 @@ class QuotasSpec(name: String, configurationSpec: => Configuration)
       clientId = "1-apikey-monthly",
       clientSecret = "1234",
       clientName = "apikey-test",
-      authorizedGroup = "default",
+      authorizedEntities = Seq(ServiceGroupIdentifier("default")),
       // throttlingQuota = 3
       // dailyQuota = 3
       monthlyQuota = 3

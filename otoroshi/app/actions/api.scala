@@ -119,7 +119,7 @@ class ApiAction(val parser: BodyParser[AnyContent])(implicit env: Env)
                   .filter(c => request.method.toLowerCase() == "get" || !c.apiReadOnly)
                   .flatMap { _ =>
                     env.datastores.apiKeyDataStore.findById(clientId).flatMap {
-                      case Some(apikey) if apikey.authorizedGroup == env.backOfficeGroup.id => {
+                      case Some(apikey) if apikey.authorizedOnGroup(env.backOfficeGroup.id) || apikey.authorizedOnService(env.backOfficeDescriptor.id) => {
                         block(ApiActionContext(apikey, request)).foldM {
                           case Success(res) =>
                             res

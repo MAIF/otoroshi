@@ -84,7 +84,7 @@ curl -X POST -H 'Content-Type: application/json' \
   "clientId": "quickstart",
   "clientSecret": "secret",
   "clientName": "quickstart-apikey",
-  "authorizedGroup": "admin-api-group"
+  "authorizedEntities": ["group_admin-api-group"]
 }' | jq
 ```
 
@@ -151,7 +151,7 @@ curl -X POST -H 'Content-Type: application/json' \
   "clientId": "apikey1",
   "clientSecret": "secret",
   "clientName": "quickstart-apikey-1",
-  "authorizedGroup": "default"
+  "authorizedEntities": ["group_default"]
 }' | jq
 ```  
 

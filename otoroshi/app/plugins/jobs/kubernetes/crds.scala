@@ -308,17 +308,17 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
         ).applyOn(s =>
           (s \ "group").asOpt[String] match {
             case None => s
-            case Some(v) => s.as[JsObject] - "group" ++ Json.obj("authorizedGroup" -> v)
+            case Some(v) => s.as[JsObject] - "group" ++ Json.obj("authorizedEntities" -> Json.arr("group_" + v))
           }
         ).applyOn(s =>
-          (s \ "authorizedGroup").asOpt[String] match {
-            case None => s.as[JsObject] ++ Json.obj("authorizedGroup" -> "default")
+          (s \ "authorizedEntities").asOpt[String] match {
+            case None => s.as[JsObject] ++ Json.obj("authorizedEntities" -> Json.arr("group_default"))
             case Some(v) => s
           }
         ).applyOn { s =>
           dkApkOpt match {
             case None => s
-            case Some(apk) => s.as[JsObject] ++ Json.obj("authorizedGroup" -> apk.authorizedGroup)
+            case Some(apk) => s.as[JsObject] ++ Json.obj("authorizedEntities" -> JsArray(apk.authorizedEntities.map(_.json)))
           }
         }.applyOn { s =>
           val shouldExport = (s \ "exportSecret").asOpt[Boolean].getOrElse(false)
@@ -347,46 +347,16 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
               val clientId = apiKeyOpt.map(_.clientId).getOrElse(secretOpt.map(s => (s.raw \ "data" \ "clientId").as[String].applyOn(_.fromBase64)).getOrElse(IdGenerator.token(64)))
               val clientSecret = apiKeyOpt.map(_.clientSecret).getOrElse(secretOpt.map(s => (s.raw \ "data" \ "clientSecret").as[String].applyOn(_.fromBase64)).getOrElse(possibleClientSecret))
               if (shouldExport) {
-                registerApkToExport(namespace, name, ApiKey(clientId, clientSecret, clientName = name, authorizedGroup = "default"))
+                registerApkToExport(namespace, name, ApiKey(clientId, clientSecret,
+                  clientName = name,
+                  authorizedEntities = Seq(ServiceGroupIdentifier("default"))
+                ))
               }
               s.as[JsObject] ++ Json.obj(
                 "clientId" -> clientId,
                 "clientSecret" -> clientSecret
               )
             }
-            // case Some(v) if shouldExport && v.contains("/") =>
-            //   val namespace :: name :: Nil = v.split("/").toList
-            //   val clientId = secrets.find(_.path == v).map(s => (s.raw \ "data" \ "clientId").as[String].applyOn(_.fromBase64)).getOrElse(IdGenerator.token(64))
-            //   val clientSecret = secrets.find(_.path == v).map(s => (s.raw \ "data" \ "clientSecret").as[String].applyOn(_.fromBase64)).getOrElse(IdGenerator.token(128))
-            //   registerApkToExport(namespace, name, ApiKey(clientId, clientSecret, clientName = name, authorizedGroup = "default"))
-            //   s.as[JsObject] ++ Json.obj(
-            //     "clientId" -> clientId,
-            //     "clientSecret" -> clientSecret
-            //   )
-            // case Some(v) if shouldExport && !v.contains("/") =>
-            //   val clientId = secrets.find(_.name == v).map(s => (s.raw \ "data" \ "clientId").as[String].applyOn(_.fromBase64)).getOrElse(IdGenerator.token(64))
-            //   val clientSecret = secrets.find(_.name == v).map(s => (s.raw \ "data" \ "clientSecret").as[String].applyOn(_.fromBase64)).getOrElse(IdGenerator.token(128))
-            //   registerApkToExport(res.namespace, v, ApiKey(clientId, clientSecret, clientName = v, authorizedGroup = "default"))
-            //   s.as[JsObject] ++ Json.obj(
-            //     "clientId" -> clientId,
-            //     "clientSecret" -> clientSecret
-            //   )
-            // case Some(v) if v.contains("/") =>
-            //   secrets.find(_.path == v) match {
-            //     case None => s.as[JsObject] ++ Json.obj("clientSecret" -> "secret-not-found")
-            //     case Some(secret) => s.as[JsObject] ++ Json.obj(
-            //       "clientId" -> (secret.raw \ "data" \ "clientId").as[String].applyOn(_.fromBase64),
-            //         "clientSecret" -> (secret.raw \ "data" \ "clientSecret").as[String].applyOn(_.fromBase64)
-            //     )
-            //   }
-            // case Some(v) if !v.contains("/") =>
-            //   secrets.find(_.name == v) match {
-            //     case None => s.as[JsObject] ++ Json.obj("clientSecret" -> "secret-not-found")
-            //     case Some(secret) => s.as[JsObject] ++ Json.obj(
-            //       "clientId" -> (secret.raw \ "data" \ "clientId").as[String].applyOn(_.fromBase64),
-            //       "clientSecret" -> (secret.raw \ "data" \ "secret").as[String].applyOn(_.fromBase64)
-            //     )
-            //   }
           }
         }.applyOn(s =>
           s.as[JsObject] ++ Json.obj(

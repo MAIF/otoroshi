@@ -262,12 +262,12 @@ class Version1413Spec(name: String, configurationSpec: => Configuration)
       )
       val validApiKey = ApiKey(
         clientName = "apikey1",
-        authorizedGroup = "default",
+        authorizedEntities = Seq(ServiceGroupIdentifier("default")),
         tags = Seq("foo", "bar")
       )
       val invalidApiKey = ApiKey(
         clientName = "apikey2",
-        authorizedGroup = "default",
+        authorizedEntities = Seq(ServiceGroupIdentifier("default")),
         tags = Seq("kix")
       )
 

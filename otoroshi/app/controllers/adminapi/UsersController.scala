@@ -203,7 +203,6 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
       (usernameOpt, passwordOpt, labelOpt) match {
         case (Some(username), Some(password), Some(label)) => {
           val saltedPassword = BCrypt.hashpw(password, BCrypt.gensalt())
-          // env.datastores.simpleAdminDataStore.registerUser(username, saltedPassword, label, authorizedGroup).map { _ =>
           env.datastores.simpleAdminDataStore.registerUser(SimpleOtoroshiAdmin(
             username = username,
             password = saltedPassword,

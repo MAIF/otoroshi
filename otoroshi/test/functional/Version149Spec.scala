@@ -159,27 +159,27 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
       )
       val apikey1 = ApiKey(
         clientName = "apikey1",
-        authorizedGroup = "default",
+        authorizedEntities = Seq(ServiceGroupIdentifier("default")),
         tags = Seq("user", "foo")
       )
       val apikey2 = ApiKey(
         clientName = "apikey2",
-        authorizedGroup = "default",
+        authorizedEntities = Seq(ServiceGroupIdentifier("default")),
         tags = Seq("admin", "bar", "foo")
       )
       val apikey3 = ApiKey(
         clientName = "apikey3",
-        authorizedGroup = "default",
+        authorizedEntities = Seq(ServiceGroupIdentifier("default")),
         metadata = Map("level" -> "1")
       )
       val apikey4 = ApiKey(
         clientName = "apikey4",
-        authorizedGroup = "default",
+        authorizedEntities = Seq(ServiceGroupIdentifier("default")),
         metadata = Map("level" -> "2", "root" -> "true")
       )
       val apikey5 = ApiKey(
         clientName = "apikey5",
-        authorizedGroup = "default",
+        authorizedEntities = Seq(ServiceGroupIdentifier("default")),
         tags = Seq("lkj", "leveled", "root")
       )
       createOtoroshiService(service1).futureValue
@@ -302,7 +302,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
       )
       val apikey = ApiKey(
         clientName = "apikey-service3",
-        authorizedGroup = "default"
+        authorizedEntities = Seq(ServiceGroupIdentifier("default"))
       )
       createOtoroshiService(service).futureValue
       createOtoroshiApiKey(apikey).futureValue
@@ -637,7 +637,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
       )
       val apikey1 = ApiKey(
         clientName = "apikey1",
-        authorizedGroup = "default"
+        authorizedEntities = Seq(ServiceGroupIdentifier("default"))
       )
       val (_, port1, counter1, call) = testServer(
         "service-disabled-info.oto.tools",
@@ -1935,11 +1935,11 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
       )
       val apikey1 = ApiKey(
         clientName = "apikey1",
-        authorizedGroup = "default"
+        authorizedEntities = Seq(ServiceGroupIdentifier("default"))
       )
       val apikey2 = ApiKey(
         clientName = "apikey2",
-        authorizedGroup = "default",
+        authorizedEntities = Seq(ServiceGroupIdentifier("default")),
         restrictions = Restrictions(
           enabled = true,
           allowed = Seq(
@@ -2059,11 +2059,11 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
       )
       val apikey1 = ApiKey(
         clientName = "apikey1",
-        authorizedGroup = "default"
+        authorizedEntities = Seq(ServiceGroupIdentifier("default"))
       )
       val apikey2 = ApiKey(
         clientName = "apikey2",
-        authorizedGroup = "default",
+        authorizedEntities = Seq(ServiceGroupIdentifier("default")),
         restrictions = Restrictions(
           enabled = true,
           allowLast = false,

@@ -308,6 +308,27 @@ export function fetchApiKeys(lineId, serviceId) {
   }).then(r => r.json());
 }
 
+export function fetchApiKeysForPage(groupId, serviceId) {
+  return fetch(`/bo/api/apikeys-for/${groupId}/${serviceId}`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then(r => r.json());
+}
+
+
+export function fetchAllApikeys() {
+  return fetch(`/bo/api/proxy/api/apikeys`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then(r => r.json());
+}
+
 export function fetchApiKeyById(serviceId, apkid) {
   return fetch(`/bo/api/proxy/api/services/${serviceId}/apikeys/${apkid}`, {
     method: 'GET',
@@ -342,6 +363,40 @@ export function createApiKey(serviceId, ak) {
 
 export function updateApiKey(serviceId, ak) {
   return fetch(`/bo/api/proxy/api/services/${serviceId}/apikeys/${ak.clientId}`, {
+    method: 'PUT',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(ak),
+  }).then(r => r.json());
+}
+
+export function deleteStandaloneApiKey(ak) {
+  return fetch(`/bo/api/proxy/api/apikeys/${ak.clientId}`, {
+    method: 'DELETE',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then(r => r.json());
+}
+
+export function createStandaloneApiKey(ak) {
+  return fetch(`/bo/api/proxy/api/apikeys`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(ak),
+  }).then(r => r.json());
+}
+
+export function updateStandaloneApiKey(ak) {
+  return fetch(`/bo/api/proxy/api/apikeys/${ak.clientId}`, {
     method: 'PUT',
     credentials: 'include',
     headers: {

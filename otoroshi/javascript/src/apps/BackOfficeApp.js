@@ -5,7 +5,7 @@ import queryString from 'query-string';
 import { ServicePage } from '../pages/ServicePage';
 import { ServiceAnalyticsPage } from '../pages/ServiceAnalyticsPage';
 import { DocumentationPage } from '../pages/DocumentationPage';
-import { ServiceApiKeysPage } from '../pages/ServiceApiKeysPage';
+import { ServiceApiKeysPage, ApiKeysPage } from '../pages/ServiceApiKeysPage';
 import { ServiceHealthPage } from '../pages/ServiceHealthPage';
 import { ServiceEventsPage } from '../pages/ServiceEventsPage';
 import { ServiceLiveStatsPage } from '../pages/ServiceLiveStatsPage';
@@ -224,6 +224,24 @@ class BackOfficeAppContainer extends Component {
                           path="/lines/:lineId/services/:serviceId/apikeys"
                           component={props =>
                             this.decorate(ServiceApiKeysPage, { ...props, env: this.state.env })
+                          }
+                        />
+                        <Route
+                          path="/apikeys/:taction/:titem"
+                          component={props =>
+                            this.decorate(ApiKeysPage, { ...props, env: this.state.env })
+                          }
+                        />
+                        <Route
+                          path="/apikeys/:taction"
+                          component={props =>
+                            this.decorate(ApiKeysPage, { ...props, env: this.state.env })
+                          }
+                        />
+                        <Route
+                          path="/apikeys"
+                          component={props =>
+                            this.decorate(ApiKeysPage, { ...props, env: this.state.env })
                           }
                         />
                         <Route

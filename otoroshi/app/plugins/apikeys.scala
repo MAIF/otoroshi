@@ -11,7 +11,7 @@ import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import env.Env
-import models.{ApiKey, RemainingQuotas}
+import models.{ApiKey, RemainingQuotas, ServiceGroupIdentifier}
 import org.apache.commons.codec.binary.Base64
 import org.joda.time.DateTime
 import otoroshi.plugins.JsonPathUtils
@@ -198,7 +198,7 @@ class CertificateAsApikey extends PreRouting {
                 clientId = clientId,
                 clientSecret = IdGenerator.token(128),
                 clientName = s"$subjectDN ($serialNumber)",
-                authorizedGroup = context.descriptor.groupId,
+                authorizedEntities = Seq(ServiceGroupIdentifier(context.descriptor.groupId)),
                 validUntil = Some(new DateTime(cert.getNotAfter)),
                 readOnly = (conf \ "readOnly").asOpt[Boolean].getOrElse(false),
                 allowClientIdOnly = (conf \ "allowClientIdOnly").asOpt[Boolean].getOrElse(false),

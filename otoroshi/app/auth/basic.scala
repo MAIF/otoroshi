@@ -604,9 +604,6 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
               case Some(rawRequest) => {
                 val request =
                   jsonMapper.readValue(Json.stringify((rawRequest \ "request").as[JsValue]), classOf[AssertionRequest])
-                //val password = (user \ "password").as[String]
-                //val label = (user \ "label").as[String]
-                //val authorizedGroup = (user \ "authorizedGroup").asOpt[String]
 
                 bindUser(username, pass, descriptor) match {
                   case Left(err) => FastFuture.successful(Left(err))
@@ -690,9 +687,6 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
               case Some(rawRequest) => {
                 val request =
                   jsonMapper.readValue(Json.stringify((rawRequest \ "request").as[JsValue]), classOf[AssertionRequest])
-                //val password = (user \ "password").as[String]
-                //val label = (user \ "label").as[String]
-                //val authorizedGroup = (user \ "authorizedGroup").asOpt[String]
 
                 bindAdminUser(username, pass) match {
                   case Left(err) => FastFuture.successful(Left(err))
@@ -861,7 +855,6 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
             val username           = (otoroshi \ "username").as[String]
             val password           = (otoroshi \ "password").as[String]
             val label              = (otoroshi \ "label").as[String]
-            val authorizedGroupOpt = (otoroshi \ "authorizedGroup").asOpt[String]
             val saltedPassword     = BCrypt.hashpw(password, BCrypt.gensalt())
             val credential         = Json.parse(jsonMapper.writeValueAsString(result))
             val user               = authConfig.users.find(_.email == username).get
