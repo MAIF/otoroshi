@@ -407,7 +407,7 @@ class KvServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int, _env:
 
   // TODO : rewrite with less naïve implem
   override def findByGroup(id: String)(implicit ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] =
-    findAll().map(_.filter(_.groupId == id))
+    findAll().map(_.filter(_.groups.contains(id)))
 
   override def count()(implicit ec: ExecutionContext, env: Env): Future[Long] =
     redisCli.keys(key("*").key).map(_.size.toLong)

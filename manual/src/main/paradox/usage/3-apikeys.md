@@ -14,7 +14,7 @@ There are 3 major entities at the core of Otoroshi.
 <img src="../img/models-apikey.png" />
 @@@
 
-An `API key` related to a `service group` to allow you to access any `service descriptor` contained in a `service group`. You can, of course, create multiple `API key` for a given `service group`.
+An `API key` is linked to one or more `service group` and `service descriptor` to allow you to access any `service descriptor` linked or contained in one of the linked `service group`. You can, of course, create multiple `API key` for given `service group`s/`service descriptor`s.
 
 In the Otoroshi admin dashboard, we chose to access `API keys` from `service descriptors` only, but when you access `API keys` for a `service descriptor`, you actually access `API keys` for the `service group` containing the `service descriptor`.
 

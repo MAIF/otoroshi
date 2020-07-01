@@ -34,7 +34,7 @@ const apikey = {
 
 const service = {
   "id": "service",
-  "groupId": "default",
+  "groups": ["default"],
   "name": "mtls",
   "env": "prod",
   "domain": "oto.tools",

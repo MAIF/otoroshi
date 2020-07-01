@@ -700,7 +700,7 @@ class Env(val configuration: Configuration,
 
   lazy val backOfficeDescriptor = ServiceDescriptor(
     id = backOfficeServiceId,
-    groupId = backOfficeGroupId,
+    groups = Seq(backOfficeGroupId),
     name = "otoroshi-admin-api",
     env = "prod",
     subdomain = adminApiExposedSubDomain,

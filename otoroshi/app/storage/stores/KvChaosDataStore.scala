@@ -36,9 +36,9 @@ class KvChaosDataStore(redisCli: RedisLike, _env: Env) extends ChaosDataStore {
     val outageDuration    = (conf.outageDurationFrom.toMillis + new scala.util.Random().nextInt(bound)).millis
     val serviceUntilKey   = s"${env.storageRoot}:outage:bydesc:until:${descriptor.id}" // until end of duration
     val serviceCounterKey = s"${env.storageRoot}:outage:bydesc:counter:${descriptor.id}" // until end of day
-    val groupCounterKey   = s"${env.storageRoot}:outage:bygroup:counter:${descriptor.groupId}" // until end of day
+    val groupCounterKeys   = descriptor.groups.map(g => s"${env.storageRoot}:outage:bygroup:counter:$g") // until end of day
     for {
-      _ <- redisCli.incr(groupCounterKey)
+      _ <- FastFuture.sequence(groupCounterKeys.map(k => redisCli.incr(k)))
       _ <- redisCli.incr(serviceCounterKey)
       _ <- redisCli.set(
             serviceUntilKey,
@@ -54,7 +54,7 @@ class KvChaosDataStore(redisCli: RedisLike, _env: Env) extends ChaosDataStore {
             pxMilliseconds = Some(outageDuration.toMillis)
           )
       _ <- redisCli.pexpire(serviceCounterKey, dayEnd)
-      _ <- redisCli.pexpire(groupCounterKey, dayEnd)
+      _ <- FastFuture.sequence(groupCounterKeys.map(k => redisCli.pexpire(k, dayEnd)))
     } yield outageDuration
   }
 

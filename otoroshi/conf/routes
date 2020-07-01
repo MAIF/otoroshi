@@ -50,7 +50,7 @@ DELETE  /bo/api/services/:id/circuitbreakers                  controllers.BackOf
 GET     /bo/api/bodies/:serviceId/:requestId                  controllers.BackOfficeController.fetchBodiesFor(serviceId, requestId)
 
 GET     /bo/api/groups-and-services                           controllers.BackOfficeController.fetchGroupsAndServices()
-GET     /bo/api/apikeys-for/:groupId/:serviceId               controllers.BackOfficeController.fetchApikeysForGroupAndService(groupId, serviceId)
+GET     /bo/api/apikeys-for/:serviceId                        controllers.BackOfficeController.fetchApikeysForGroupAndService(serviceId)
 
 POST    /bo/api/certificates/_data                            controllers.BackOfficeController.certificateData()
 POST    /bo/api/certificates/_valid                           controllers.BackOfficeController.certificateIsValid()

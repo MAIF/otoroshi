@@ -160,7 +160,7 @@ class ExperimentalSpec2(name: String, configurationSpec: => Configuration)
 
     val testServiceDescriptor = new ServiceDescriptor(
       id = "test-service",
-      groupId = testGroup.id,
+      groups = Seq(testGroup.id),
       name = "test-service",
       env = "prod",
       domain = "oto.tools",
@@ -416,33 +416,6 @@ class ExperimentalSpec2(name: String, configurationSpec: => Configuration)
     "shutdown" in {
       stopAll()
     }
-    /*
 
-    ## ApiKeys
-    GET     /api/services/:serviceId/apikeys/:clientId/quotas
-    DELETE  /api/services/:serviceId/apikeys/:clientId/quotas
-    GET     /api/services/:serviceId/apikeys/:clientId/group
-    PUT     /api/services/:serviceId/apikeys/:clientId/group
-
-    GET     /api/groups/:groupId/apikeys/:clientId/quotas
-    DELETE  /api/groups/:groupId/apikeys/:clientId/quotas
-
-    ## Services
-    GET     /api/services/:serviceId/template
-    PUT     /api/services/:serviceId/template
-    POST    /api/services/:serviceId/template
-    DELETE  /api/services/:serviceId/template
-    GET     /api/services/:serviceId/targets
-    POST    /api/services/:serviceId/targets
-    DELETE  /api/services/:serviceId/targets
-    PATCH   /api/services/:serviceId/targets
-    GET     /api/services/:serviceId/live
-    GET     /api/services/:serviceId/stats
-    GET     /api/services/:serviceId/events
-    GET     /api/services/:serviceId/health
-    GET     /api/services/:serviceId/canary
-    DELETE  /api/services/:serviceId/canary
-
-   */
   }
 }

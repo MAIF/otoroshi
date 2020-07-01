@@ -206,8 +206,9 @@ case class OtoAnnotationConfig(annotations: Map[String, String]) {
           val current = desc.toJson.as[JsObject]
           ServiceDescriptor.fromJsonSafe(current.deepMerge(raw)).get
         }
-        case "group" => d.copy(groupId = value)
-        case "groupId" => d.copy(groupId = value)
+        case "group" => d.copy(groups = Seq(value))
+        case "groupId" => d.copy(groups = Seq(value))
+        case "groups" => d.copy(groups = value.split(",").map(_.trim).toSeq)
         case "name" => d.copy(name = value)
         // case "env" =>
         // case "domain" =>
@@ -570,7 +571,7 @@ object KubernetesIngressToDescriptor {
                         val creationDate: String = if (action == "create") DateTime.now().toString else desc.metadata.getOrElse("created-at", DateTime.now().toString)
                         val newDesc = desc.copy(
                           id = id,
-                          groupId = conf.defaultGroup,
+                          groups = Seq(conf.defaultGroup),
                           name = "kubernetes - " + name + " - " + rule.host.getOrElse("*") + " - " + path.path.getOrElse("/"),
                           env = "prod",
                           domain = "otoroshi.internal.kube.cluster",

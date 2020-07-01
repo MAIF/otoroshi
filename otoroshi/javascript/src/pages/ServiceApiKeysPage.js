@@ -604,7 +604,7 @@ export class ServiceApiKeysPage extends Component {
   }
 
   fetchAllApiKeys = () => {
-    return BackOfficeServices.fetchApiKeysForPage(this.state.service ? this.state.service.groupId : '--', this.props.params.serviceId);
+    return BackOfficeServices.fetchApiKeysForPage(this.props.params.serviceId);
   };
 
   createItem = ak => {
@@ -634,7 +634,7 @@ export class ServiceApiKeysPage extends Component {
           throttlingQuota: 100,
           dailyQuota: 1000000,
           monthlyQuota: 1000000000000000000,
-          authorizedEntities: ["group_" + this.state.service.groupId],
+          authorizedEntities: this.state.service.groups.map(g => "group_" + g),
         })}
         itemName="ApiKey"
         formSchema={ApiKeysConstants.formSchema(this)}

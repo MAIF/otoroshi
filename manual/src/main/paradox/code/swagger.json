@@ -4150,7 +4150,7 @@
           "items" : {
             "description" : "An otoroshi service descriptor. Represent a forward HTTP call on a domain to another location with some optional api management mecanism",
             "type" : "object",
-            "required" : [ "id", "groupId", "name", "env", "domain", "subdomain", "targets", "root", "enabled", "privateApp", "forceHttps", "maintenanceMode", "buildMode", "enforceSecureCommunication" ],
+            "required" : [ "id", "groups", "name", "env", "domain", "subdomain", "targets", "root", "enabled", "privateApp", "forceHttps", "maintenanceMode", "buildMode", "enforceSecureCommunication" ],
             "properties" : {
               "id" : {
                 "format" : "uuid",
@@ -4158,10 +4158,10 @@
                 "type" : "string",
                 "example" : "110e8400-e29b-11d4-a716-446655440000"
               },
-              "groupId" : {
-                "description" : "Each service descriptor is attached to a group. A group can have one or more services. Each API key is linked to a group and allow access to every service in the group",
-                "type" : "string",
-                "example" : "a string value"
+              "groups" : {
+                "description" : "Each service descriptor is attached to groups. A group can have one or more services. Each API key is linked to groups/services and allow access to every service in the groups",
+                "type" : "array",
+                "example" : ["a string value"]
               },
               "name" : {
                 "description" : "The name of your service. Only for debug and human readability purposes",

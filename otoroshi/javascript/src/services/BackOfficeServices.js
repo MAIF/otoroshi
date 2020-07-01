@@ -308,8 +308,8 @@ export function fetchApiKeys(lineId, serviceId) {
   }).then(r => r.json());
 }
 
-export function fetchApiKeysForPage(groupId, serviceId) {
-  return fetch(`/bo/api/apikeys-for/${groupId}/${serviceId}`, {
+export function fetchApiKeysForPage(serviceId) {
+  return fetch(`/bo/api/apikeys-for/${serviceId}`, {
     method: 'GET',
     credentials: 'include',
     headers: {

@@ -164,7 +164,7 @@ class ExternalHttpValidator extends AccessValidator {
       "service" -> Json.obj(
         "id"        -> desc.id,
         "name"      -> desc.name,
-        "groupId"   -> desc.groupId,
+        "groups"    -> desc.groups,
         "domain"    -> desc.domain,
         "env"       -> desc.env,
         "subdomain" -> desc.subdomain,

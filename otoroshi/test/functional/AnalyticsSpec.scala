@@ -301,7 +301,7 @@ class AnalyticsSpec(name: String, configurationSpec: => Configuration)
       responseChunked = false,
       descriptor = Some(
         ServiceDescriptor(id = "123456",
-                          groupId = "test",
+                          groups = Seq("test"),
                           name = "name",
                           env = "prod",
                           domain = "toto.com",
@@ -324,7 +324,7 @@ class AnalyticsSpec(name: String, configurationSpec: => Configuration)
   def serviceDescriptor(serviceId: String) = {
     new ServiceDescriptor(
       id = serviceId,
-      groupId = testGroup.id,
+      groups = Seq(testGroup.id),
       name = "mon-service",
       env = "prod",
       domain = "oto.tools",

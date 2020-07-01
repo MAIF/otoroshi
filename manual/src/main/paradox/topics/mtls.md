@@ -541,7 +541,7 @@ Typically, a validation authority server is a server with a route on `POST /cert
   "service": {
     "id": String,
     "name": String,
-    "groupId": String,
+    "groups": Seq[String],
     "domain": String,
     "env": String,
     "subdomain": String,

@@ -147,43 +147,47 @@ class SnowMonkey(implicit env: Env) {
       FastFuture.successful(true)
     } else {
       val shouldAwait = (conf.stopTime.getMillisOfDay - conf.startTime.getMillisOfDay) / conf.timesPerDay
-      conf.outageStrategy match {
-        case OneServicePerGroup =>
-          env.datastores.chaosDataStore.groupOutages(descriptor.groupId).flatMap {
-            case count
-                if count < conf.timesPerDay
-                && (conf.startTime.getMillisOfDay + ((count + 1) * shouldAwait)) < DateTime.now().getMillisOfDay
-                && (conf.targetGroups.isEmpty || conf.targetGroups.contains(descriptor.groupId))
-                && descriptor.id != env.backOfficeServiceId =>
-              env.datastores.chaosDataStore
-                .registerOutage(descriptor, conf)
-                .andThen {
-                  case Success(duration) =>
-                    val event = SnowMonkeyOutageRegisteredEvent(
+
+      def registerForOneGroup(group: String) = {
+        env.datastores.chaosDataStore.groupOutages(group).flatMap {
+          case count
+            if count < conf.timesPerDay
+              && (conf.startTime.getMillisOfDay + ((count + 1) * shouldAwait)) < DateTime.now().getMillisOfDay
+              && (conf.targetGroups.isEmpty || conf.targetGroups.contains(group))
+              && descriptor.id != env.backOfficeServiceId =>
+            env.datastores.chaosDataStore
+              .registerOutage(descriptor, conf)
+              .andThen {
+                case Success(duration) =>
+                  val event = SnowMonkeyOutageRegisteredEvent(
+                    env.snowflakeGenerator.nextIdStr(),
+                    env.env,
+                    "SNOWMONKEY_OUTAGE_REGISTERED",
+                    s"Snow monkey outage registered",
+                    conf,
+                    descriptor,
+                    conf.dryRun
+                  )
+                  Audit.send(event)
+                  Alerts.send(
+                    SnowMonkeyOutageRegisteredAlert(
                       env.snowflakeGenerator.nextIdStr(),
                       env.env,
-                      "SNOWMONKEY_OUTAGE_REGISTERED",
-                      s"Snow monkey outage registered",
-                      conf,
-                      descriptor,
-                      conf.dryRun
+                      event
                     )
-                    Audit.send(event)
-                    Alerts.send(
-                      SnowMonkeyOutageRegisteredAlert(
-                        env.snowflakeGenerator.nextIdStr(),
-                        env.env,
-                        event
-                      )
-                    )
-                    logger.info(
-                      s"Registering outage on ${descriptor.name} (${descriptor.id}) for ${durationToHumanReadable(duration)} - from ${DateTime
-                        .now()} to ${DateTime.now().plusMillis(duration.toMillis.toInt)}"
-                    )
-                }
-                .map(_ => true)
-            case _ => FastFuture.successful(false)
-          }
+                  )
+                  logger.info(
+                    s"Registering outage on ${descriptor.name} (${descriptor.id}) for ${durationToHumanReadable(duration)} - from ${DateTime
+                      .now()} to ${DateTime.now().plusMillis(duration.toMillis.toInt)}"
+                  )
+              }
+              .map(_ => true)
+          case _ => FastFuture.successful(false)
+        }
+      }
+
+      conf.outageStrategy match {
+        case OneServicePerGroup => FastFuture.sequence(descriptor.groups.map(registerForOneGroup)).map(s => s.foldLeft(true)(_ && _))
         case AllServicesPerGroup => {
           // val start = conf.startTime.toDateTimeToday
           // (1 to conf.timesPerDay).foreach { idx =>
@@ -193,7 +197,7 @@ class SnowMonkey(implicit env: Env) {
             case count
                 if count < conf.timesPerDay
                 && (conf.startTime.getMillisOfDay + ((count + 1) * shouldAwait)) < DateTime.now().getMillisOfDay
-                && (conf.targetGroups.isEmpty || conf.targetGroups.contains(descriptor.groupId))
+                && (conf.targetGroups.isEmpty || conf.targetGroups.exists(g => descriptor.groups.contains(g)))
                 && descriptor.id != env.backOfficeServiceId =>
               env.datastores.chaosDataStore
                 .registerOutage(descriptor, conf)
@@ -235,12 +239,6 @@ class SnowMonkey(implicit env: Env) {
       isCurrentOutage        <- isCurrentOutage(descriptor, config)
       needMoreOutageForToday <- needMoreOutageForToday(isCurrentOutage, descriptor, config)
     } yield isCurrentOutage || needMoreOutageForToday
-    //if ((config.targetGroups.isEmpty || config.targetGroups.contains(descriptor.groupId)) && descriptor.id != env.backOfficeServiceId) {
-    //  isCurrentOutage || needMoreOutageForToday
-    //} else {
-    //  false
-    //}
-    //}
   }
 
   private def betweenDates(config: SnowMonkeyConfig): Boolean = {

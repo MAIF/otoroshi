@@ -365,6 +365,7 @@ It is of course possible to use multiple ingress controller at the same time (ht
 
 if you need to customize the service descriptor behind an ingress rule, you can use some annotations. If you need better customisation, just go to the CRDs part. The following annotations are supported :
 
+- `otoroshi.ingress.kubernetes.io/groups`
 - `otoroshi.ingress.kubernetes.io/group`
 - `otoroshi.ingress.kubernetes.io/groupId`
 - `otoroshi.ingress.kubernetes.io/name`
@@ -786,6 +787,8 @@ apiVersion: proxy.otoroshi.io/v1alpha1
 kind: ServiceGroup
 metadata:
   name: http-app-group
+  annotations:
+    io.otoroshi/id: http-app-group
 spec:
   description: a group to hold services about the http-app
 ---
@@ -798,7 +801,8 @@ spec:
   # a secret name secret-1 will be created by otoroshi and can be used by containers
   exportSecret: true 
   secretName: secret-1
-  group: http-app-group
+  authorizedEntities: 
+  - group_http-app-group
 ---
 apiVersion: proxy.otoroshi.io/v1alpha1
 kind: ApiKey
@@ -809,7 +813,8 @@ spec:
   # a secret name secret-1 will be created by otoroshi and can be used by containers
   exportSecret: true 
   secretName: secret-2
-  group: http-app-2-group
+  authorizedEntities: 
+  - group_http-app-2-group
 ---
 apiVersion: proxy.otoroshi.io/v1alpha1
 kind: Certificate
@@ -881,7 +886,8 @@ metadata:
   name: http-app-service-descriptor
 spec:
   description: the service descriptor for the http app
-  group: http-app-group
+  groups: 
+  - http-app-group
   forceHttps: true
   hosts:
   - httpapp.foo.bar

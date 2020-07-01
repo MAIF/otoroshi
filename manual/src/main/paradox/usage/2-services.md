@@ -14,7 +14,7 @@ There are 3 major entities at the core of Otoroshi
 <img src="../img/models-service.png" />
 @@@
 
-A `service descriptor` is contained in a `service group` and is allowed to be accessed by all the `api key`s authorized on the `service group`.
+A `service descriptor` is contained in one or multiple `service group`s and is allowed to be accessed by all the `api key`s authorized on those `service group`s or apikeys directly authorized on the service itself.
 
 ## Create a service descriptor
 

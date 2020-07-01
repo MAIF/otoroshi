@@ -10,8 +10,9 @@ import cluster.ClusterAgent
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
+import com.google.protobuf.Descriptors.ServiceDescriptor
 import env.Env
-import models.{ApiKey, RemainingQuotas, ServiceGroupIdentifier}
+import models.{ApiKey, RemainingQuotas, ServiceDescriptorIdentifier, ServiceGroupIdentifier}
 import org.apache.commons.codec.binary.Base64
 import org.joda.time.DateTime
 import otoroshi.plugins.JsonPathUtils
@@ -124,7 +125,7 @@ class HasAllowedApiKeyValidator extends AccessValidator {
 
 class ApiKeyAllowedOnThisServiceValidator extends AccessValidator {
 
-  override def name: String = "Allowed apikeys for this service only (service packs)"
+  override def name: String = "[DEPRECATED] Allowed apikeys for this service only (service packs)"
 
   override def description: Option[String] =
     Some(
@@ -198,7 +199,7 @@ class CertificateAsApikey extends PreRouting {
                 clientId = clientId,
                 clientSecret = IdGenerator.token(128),
                 clientName = s"$subjectDN ($serialNumber)",
-                authorizedEntities = Seq(ServiceGroupIdentifier(context.descriptor.groupId)),
+                authorizedEntities = Seq(ServiceDescriptorIdentifier(context.descriptor.id)),
                 validUntil = Some(new DateTime(cert.getNotAfter)),
                 readOnly = (conf \ "readOnly").asOpt[Boolean].getOrElse(false),
                 allowClientIdOnly = (conf \ "allowClientIdOnly").asOpt[Boolean].getOrElse(false),

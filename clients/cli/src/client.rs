@@ -656,7 +656,7 @@ impl OtoroshiClient {
     ) -> String {
         let mut fields: Vec<String> = Vec::new();
         id.m_foreach(|id| fields.push(format!(r#""id":"{}""#, id)));
-        group.m_foreach(|group| fields.push(format!(r#""groupId":"{}""#, group)));
+        group.m_foreach(|group| fields.push(format!(r#""groups":["{}"]"#, group)));
         name.m_foreach(|name| fields.push(format!(r#""name":"{}""#, name)));
         env.m_foreach(|env| fields.push(format!(r#""env":"{}""#, env)));
         domain.m_foreach(|domain| fields.push(format!(r#""domain":"{}""#, domain)));
@@ -892,7 +892,7 @@ impl OtoroshiClient {
         let mut updates: Vec<String> = Vec::new();
         group.m_foreach(|group| {
             updates.push(format!(
-                r#"{{ "op": "replace", "path": "/groupId", "value": "{}" }}"#,
+                r#"{{ "op": "replace", "path": "/groups", "value": ["{}"] }}"#,
                 group
             ))
         });

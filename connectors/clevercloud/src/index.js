@@ -182,7 +182,7 @@ function createOtoroshiCleverCloudApiKey() {
 function createOtoroshiCleverCloudService(id, name, targets) {
   const serviceTemplate = {
     id: `clevercloud-service-${id}`,
-    groupId: CLEVERCLOUD_GROUP,
+    groups: [CLEVERCLOUD_GROUP],
     name: 'clevercloud-' + name,
     env: 'prod',
     domain: SERVICES_DOMAIN,

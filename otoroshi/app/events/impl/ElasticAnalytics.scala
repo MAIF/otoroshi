@@ -838,8 +838,8 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
           "minimum_should_match" -> 1,
           "should" -> (
             Seq(
-              Json.obj("term" -> Json.obj("descriptor.groupId"     -> group.id)),
-              Json.obj("term" -> Json.obj("descriptor.groupId.raw" -> group.id))
+              Json.obj("term" -> Json.obj("descriptor.groups"     -> group.id)),
+              Json.obj("term" -> Json.obj("descriptor.groups.raw" -> group.id))
             ) ++
             additionalShould
           ),

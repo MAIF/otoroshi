@@ -469,7 +469,7 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
     "type"        -> "object",
     "required" -> Json.arr(
       "id",
-      "groupId",
+      "groups",
       "name",
       "env",
       "domain",
@@ -485,7 +485,7 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
     ),
     "properties" -> Json.obj(
       "id"                         -> SimpleUuidType ~~> "A unique random string to identify your service",
-      "groupId"                    -> SimpleStringType ~~> "Each service descriptor is attached to a group. A group can have one or more services. Each API key is linked to a group and allow access to every service in the group",
+      "groups"                     -> SimpleArrayType ~~> "Each service descriptor is attached to groups. A group can have one or more services. Each API key is linked to a group and allow access to every service in the group",
       "name"                       -> SimpleStringType ~~> "The name of your service. Only for debug and human readability purposes",
       "env"                        -> SimpleStringType ~~> "The line on which the service is available. Based on that value, the name of the line will be appended to the subdomain. For line prod, nothing will be appended. For example, if the subdomain is 'foo' and line is 'preprod', then the exposed service will be available at 'foo.preprod.mydomain'",
       "domain"                     -> SimpleStringType ~~> "The domain on which the service is available.",

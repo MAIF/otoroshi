@@ -84,7 +84,7 @@ object EntityIdentifier {
     prefixedId match {
       case id if id.startsWith("group_") => Some(ServiceGroupIdentifier(id.replace("group_", "")))
       case id if id.startsWith("service_") => Some(ServiceDescriptorIdentifier(id.replace("service_", "")))
-      case _ => None
+      case id => Some(ServiceGroupIdentifier(id)) // should be None but could be useful for backward compatibility
     }
   }
 }
@@ -126,6 +126,16 @@ case class ApiKey(clientId: String = IdGenerator.token(16),
   def authorizedOn(identifier: EntityIdentifier): Boolean = authorizedEntities.contains(identifier)
   def authorizedOnService(id: String): Boolean = authorizedEntities.contains(ServiceDescriptorIdentifier(id))
   def authorizedOnGroup(id: String): Boolean = authorizedEntities.contains(ServiceGroupIdentifier(id))
+  def authorizedOnOneGroupFrom(ids: Seq[String]): Boolean = {
+    val identifiers = ids.map(ServiceGroupIdentifier.apply)
+    authorizedEntities.exists(e => identifiers.contains(e))
+  }
+  def authorizedOnServiceOrGroups(service: String, groups: Seq[String]): Boolean = {
+    authorizedOnService(service) || {
+      val identifiers = groups.map(ServiceGroupIdentifier.apply)
+      authorizedEntities.exists(e => identifiers.contains(e))
+    }
+  }
   def services(implicit ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] = {
     FastFuture.sequence(authorizedEntities.map {
       case ServiceDescriptorIdentifier(id) => env.datastores.serviceDescriptorDataStore.findById(id).map(_.toSeq)
@@ -266,7 +276,7 @@ object ApiKey {
                 case Some(id) => id
               }
             }.getOrElse(Seq.empty[EntityIdentifier])
-            (authorizedEntities ++ authorizedGroup).distinct
+            (authorizedGroup ++ authorizedEntities).distinct
           },
           enabled = enabled,
           readOnly = (json \ "readOnly").asOpt[Boolean].getOrElse(false),

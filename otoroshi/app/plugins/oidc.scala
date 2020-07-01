@@ -564,13 +564,13 @@ case class OIDCThirdPartyApiKeyConfig(
                                   }
                                 val _apiKey = ApiKey(
                                   clientId = uniqueApiKey match {
-                                    case true  => s"${descriptor.groupId}-${descriptor.id}-${oidcAuth.id}"
-                                    case false => s"${descriptor.groupId}-${descriptor.id}-${oidcAuth.id}-${subject}"
+                                    case true  => s"${descriptor.id}-${oidcAuth.id}"
+                                    case false => s"${descriptor.id}-${oidcAuth.id}-${subject}"
                                   },
                                   clientSecret = IdGenerator.token(128),
                                   clientName =
                                     s"Temporary apikey from ${oidcAuth.name} for $subject on ${descriptor.name}",
-                                  authorizedEntities = Seq(ServiceGroupIdentifier(descriptor.groupId)),
+                                  authorizedEntities = Seq(ServiceDescriptorIdentifier(descriptor.id)),
                                   enabled = false,
                                   readOnly = false,
                                   allowClientIdOnly = true,

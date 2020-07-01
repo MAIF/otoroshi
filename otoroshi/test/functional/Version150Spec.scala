@@ -3,7 +3,7 @@ package functional
 import akka.actor.ActorSystem
 import auth.{AuthModuleConfig, BasicAuthModuleConfig}
 import com.typesafe.config.ConfigFactory
-import models.{ApiKey, GlobalJwtVerifier, ServiceDescriptor, ServiceGroup}
+import models.{ApiKey, GlobalJwtVerifier, ServiceDescriptor, ServiceDescriptorIdentifier, ServiceGroup}
 import otoroshi.script.Script
 import otoroshi.tcp.TcpService
 import play.api.Configuration
@@ -468,7 +468,7 @@ class ApikeyServiceApiSpec(name: String, configurationSpec: => Configuration)
     }
   }
 
-  override def singleEntity(): ApiKey = env.datastores.apiKeyDataStore.initiateNewApiKey("admin-api-group")
+  override def singleEntity(): ApiKey = env.datastores.apiKeyDataStore.initiateNewApiKey("admin-api-group").copy(authorizedEntities = Seq(ServiceDescriptorIdentifier("admin-api-service")))
   override def entityName: String = "ApiKey"
   override def route(): String = "/api/services/admin-api-service/apikeys"
   override def readEntityFromJson(json: JsValue): ApiKey = ApiKey._fmt.reads(json).get

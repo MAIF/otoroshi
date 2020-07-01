@@ -173,15 +173,5 @@ class OtoroshiTests extends Suites(OtoroshiTests.getSuites(): _*) with BeforeAnd
 
 class DevOtoroshiTests
     extends Suites(
-      new ServiceGroupApiSpec("DEV", Configurations.InMemoryConfiguration),
-      new TcpServiceApiSpec("DEV", Configurations.InMemoryConfiguration),
-      new ScriptApiSpec("DEV", Configurations.InMemoryConfiguration),
-      new AuthModuleConfigApiSpec("DEV", Configurations.InMemoryConfiguration),
-      new ClientValidatorApiSpec("DEV", Configurations.InMemoryConfiguration),
-      new JWTVerifierApiSpec("DEV", Configurations.InMemoryConfiguration),
-      new CertificateApiSpec("DEV", Configurations.InMemoryConfiguration),
-      new ApikeyGroupApiSpec("DEV", Configurations.InMemoryConfiguration),
-      new ApikeyServiceApiSpec("DEV", Configurations.InMemoryConfiguration),
-      new ApikeyApiSpec("DEV", Configurations.InMemoryConfiguration),
-      new ServicesApiSpec("DEV", Configurations.InMemoryConfiguration),
+      new AdminApiSpec("DEV", Configurations.InMemoryConfiguration),
     )

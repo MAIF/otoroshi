@@ -375,7 +375,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
             tcServices <- env.datastores.tcpServiceDataStore.findAll()
           } yield {
             val finalServices = (
-              services.map(s => SearchedService(s.name, s.id, s.groupId, s.env, "http")) ++
+              services.map(s => SearchedService(s.name, s.id, s.groups.headOption.getOrElse("default"), s.env, "http")) ++
               tcServices.map(s => SearchedService(s.name, s.id, "tcp", "prod", "tcp"))
             )
             LocalCache.allServices.put("all", finalServices)
@@ -1168,10 +1168,15 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
     }
   }
 
-  def fetchApikeysForGroupAndService(groupId: String, serviceId: String) = BackOfficeActionAuth.async { ctx =>
-    env.datastores.apiKeyDataStore.findAll().map { apikeys =>
-      val filtered = apikeys.filter(apk => apk.authorizedOnGroup(groupId) || apk.authorizedOnService(serviceId))
-      Ok(JsArray(filtered.map(_.toJson)))
+  def fetchApikeysForGroupAndService(serviceId: String) = BackOfficeActionAuth.async { ctx =>
+    env.datastores.serviceDescriptorDataStore.findById(serviceId) flatMap {
+      case None => FastFuture.successful(NotFound(Json.obj("error" -> "service not found")))
+      case Some(service) => {
+        env.datastores.apiKeyDataStore.findAll().map { apikeys =>
+          val filtered = apikeys.filter(apk => apk.authorizedOnOneGroupFrom(service.groups) || apk.authorizedOnService(service.id))
+          Ok(JsArray(filtered.map(_.toJson)))
+        }
+      }
     }
   }
 }

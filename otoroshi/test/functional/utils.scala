@@ -985,8 +985,8 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
         .withBody(Json.stringify(payload.get))
         .execute()
         .map { response =>
-          if (response.status != 200) {
-            logger.error(response.body)
+          if (response.status != 200 && response.status != 201) {
+            logger.error(response.status + " - " + response.body)
           }
           (response.json, response.status)
         }
@@ -999,8 +999,8 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
         .withMethod(method)
         .execute()
         .map { response =>
-          if (response.status != 200) {
-            logger.error(response.body)
+          if (response.status != 200 && response.status != 201) {
+            logger.error(response.status + " - " + response.body)
           }
           (response.json, response.status)
         }

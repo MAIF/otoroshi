@@ -778,7 +778,7 @@ export class ServicePage extends Component {
           name: groupName,
           description: 'Group named ' + groupName,
         }).then(group => {
-          this.setState({ service: { ...this.state.service, groupId: group.id } });
+          this.setState({ service: { ...this.state.service, groups: [...this.state.service.groups, group.id] } });
         });
       }
     });
@@ -792,7 +792,7 @@ export class ServicePage extends Component {
       name: groupName,
       description: 'Group named ' + groupName,
     }).then(group => {
-      this.setState({ service: { ...this.state.service, groupId: group.id } });
+      this.setState({ service: { ...this.state.service, groups: [...this.state.service.groups, group.id] } });
     });
   };
 
@@ -1072,11 +1072,11 @@ export class ServicePage extends Component {
             onChange={v => this.changeTheValue('id', v)}
             help="A unique random string to identify your service"
           />
-          <SelectInput
-            label="Group"
-            placeholder="Your service group"
-            value={this.state.service.groupId}
-            onChange={v => this.changeTheValue('groupId', v)}
+          <ArrayInput
+            label="Groups"
+            placeholder="Your service groups"
+            value={this.state.service.groups}
+            onChange={v => this.changeTheValue('groups', v)}
             valuesFrom="/bo/api/proxy/api/groups"
             transformer={a => ({ value: a.id, label: a.name })}
             help="Each service descriptor is attached to a group. A group can have one or more services. Each API key is linked to a group and allow access to every service in the group."

@@ -42,7 +42,8 @@ object GlobalExpressionLanguage {
             case "service.subdomain" if service.isDefined => service.get.subdomain
             case "service.tld" if service.isDefined       => service.get.domain
             case "service.env" if service.isDefined       => service.get.env
-            case "service.group" if service.isDefined     => service.get.groupId
+            case r"service.groups\\[$field@(.*):$dv@(.*)\\]" if service.isDefined => Option(service.get.groups(field.toInt)).getOrElse(dv)
+            case r"service.groups\\[$field@(.*)\\]" if service.isDefined => Option(service.get.groups(field.toInt)).getOrElse(s"no-group-$field")
             case "service.id" if service.isDefined        => service.get.id
             case "service.name" if service.isDefined      => service.get.name
             case r"service.metadata.$field@(.*):$dv@(.*)" if service.isDefined =>
