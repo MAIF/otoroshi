@@ -957,7 +957,7 @@ then when a user subscribe for an apikey, he will only see an integration token
 <img src="../img/kubernetes-daikoku-integration-token.png" />
 @@@
 
-then just create an ApiKey manifest with this token and your good to go
+then just create an ApiKey manifest with this token and your good to go 
 
 ```yaml
 apiVersion: proxy.otoroshi.io/v1alpha1
