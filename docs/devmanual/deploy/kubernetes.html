@@ -2580,6 +2580,7 @@ spec:
 <h3><a href="#supported-annotations" name="supported-annotations" class="anchor"><span class="anchor-link"></span></a>Supported annotations</h3>
 <p>if you need to customize the service descriptor behind an ingress rule, you can use some annotations. If you need better customisation, just go to the CRDs part. The following annotations are supported :</p>
 <ul>
+  <li><code>otoroshi.ingress.kubernetes.io/groups</code></li>
   <li><code>otoroshi.ingress.kubernetes.io/group</code></li>
   <li><code>otoroshi.ingress.kubernetes.io/groupId</code></li>
   <li><code>otoroshi.ingress.kubernetes.io/name</code></li>
@@ -2754,6 +2755,8 @@ curl -X GET \
 kind: ServiceGroup
 metadata:
   name: http-app-group
+  annotations:
+    io.otoroshi/id: http-app-group
 spec:
   description: a group to hold services about the http-app</code></pre></dd>
   <dt>apikey.yaml
@@ -2768,7 +2771,8 @@ spec:
   # a secret name secret-1 will be created by otoroshi and can be used by containers
   exportSecret: true 
   secretName: secret-2
-  group: http-app-2-group
+  authorizedEntities: 
+  - http-app-2-group
   metadata:
     foo: bar
   rotation: # not mandatory
@@ -2784,7 +2788,8 @@ metadata:
   name: http-app-service-descriptor
 spec:
   description: the service descriptor for the http app
-  group: http-app-group
+  groups: 
+  - http-app-group
   forceHttps: true
   hosts:
   - httpapp.foo.bar
@@ -3109,6 +3114,8 @@ apiVersion: proxy.otoroshi.io/v1alpha1
 kind: ServiceGroup
 metadata:
   name: http-app-group
+  annotations:
+    io.otoroshi/id: http-app-group
 spec:
   description: a group to hold services about the http-app
 ---
@@ -3121,7 +3128,8 @@ spec:
   # a secret name secret-1 will be created by otoroshi and can be used by containers
   exportSecret: true 
   secretName: secret-1
-  group: http-app-group
+  authorizedEntities: 
+  - group_http-app-group
 ---
 apiVersion: proxy.otoroshi.io/v1alpha1
 kind: ApiKey
@@ -3132,7 +3140,8 @@ spec:
   # a secret name secret-1 will be created by otoroshi and can be used by containers
   exportSecret: true 
   secretName: secret-2
-  group: http-app-2-group
+  authorizedEntities: 
+  - group_http-app-2-group
 ---
 apiVersion: proxy.otoroshi.io/v1alpha1
 kind: Certificate
@@ -3204,7 +3213,8 @@ metadata:
   name: http-app-service-descriptor
 spec:
   description: the service descriptor for the http app
-  group: http-app-group
+  groups: 
+  - http-app-group
   forceHttps: true
   hosts:
   - httpapp.foo.bar
@@ -3252,7 +3262,7 @@ curl -X GET -H &#39;Host: httpapp.foo.bar&#39; https://otoroshi-internal-service
 <img src="../img/kubernetes-daikoku-integration-enabled.png" /></div>
 <p>then when a user subscribe for an apikey, he will only see an integration token</p><div class="centered-img">
 <img src="../img/kubernetes-daikoku-integration-token.png" /></div>
-<p>then just create an ApiKey manifest with this token and your good to go</p>
+<p>then just create an ApiKey manifest with this token and your good to go </p>
 <pre class="prettyprint"><code class="language-yaml">apiVersion: proxy.otoroshi.io/v1alpha1
 kind: ApiKey
 metadata:
