@@ -566,15 +566,43 @@ class Env(val configuration: Configuration,
     logger.info(s"Admin UI  exposed on http://$backOfficeHost:$port")
   }
 
-  if (otoroshiSecret == "verysecretvaluethatyoumustoverwrite") {
-    logger.warn("#########################################")
-    logger.warn("BEWARE OF USING DEFAULT OTOROSHI SECRET !!!")
-    logger.warn("You are using the default value for the main otoroshi secret. It is used to sign various stuff including session cookies. ")
-    logger.warn("You MUST change its value before deploying to production")
-    logger.warn("You can change configuration by passing otoroshi.secret at runtime (https://maif.github.io/otoroshi/manual/firstrun/configfile.html)")
-    logger.warn("You can change if from environment variable with name OTOROSHI_SECRET (https://maif.github.io/otoroshi/manual/firstrun/env.html)")
-    logger.warn("#########################################")
+  def displayDefaultValuesWarning(): Unit = {
+
+    def checkValue(value: String, default: String, path: String, envvar: String, desc: String): Option[String] = {
+      if (value == default) {
+        Some(s"$path (env. var. $envvar): $desc")
+      } else {
+        None
+      }
+    }
+
+    val values = Seq(
+      checkValue(otoroshiSecret, "verysecretvaluethatyoumustoverwrite", "otoroshi.secret", "OTOROSHI_SECRET", "used to sign various stuff including session cookies"),
+      checkValue(backOfficeApiKeyClientSecret, "admin-api-apikey-secret", "otoroshi.admin-api-secret", "OTOROSHI_ADMIN_API_SECRET", "used to access otoroshi admin api"),
+    )
+
+    if (otoroshiSecret == "verysecretvaluethatyoumustoverwrite") {
+      logger.warn("")
+      logger.warn("#########################################")
+      logger.warn("")
+      logger.warn("DEFAULT VALUES USAGE DETECTED !!!")
+      logger.warn("")
+      logger.warn("You are using the default values for the following security involved configs:")
+      logger.warn("")
+      values.collect { case Some(mess) => s" - $mess" }.foreach(m => logger.warn(m))
+      logger.warn("")
+      logger.warn("You MUST change those values before deploying to production")
+      logger.warn("You can change configuration by passing path values with config file or via runtime flags")
+      logger.warn("    https://maif.github.io/otoroshi/manual/firstrun/configfile.html")
+      logger.warn("You can change configuration by passing environment variables")
+      logger.warn("    https://maif.github.io/otoroshi/manual/firstrun/env.html")
+      logger.warn("")
+      logger.warn("#########################################")
+      logger.warn("")
+    }
   }
+
+  displayDefaultValuesWarning()
 
   lazy val datastores: DataStores = {
     configuration.getOptionalWithFileSupport[String]("app.storage").getOrElse("redis") match {
