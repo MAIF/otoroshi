@@ -827,14 +827,7 @@ play.http {
   overheadThreshold = ${?OVERHEAD_THRESHOLD}
   adminLogin = ${?OTOROSHI_INITIAL_ADMIN_LOGIN}
   adminPassword = ${?OTOROSHI_INITIAL_ADMIN_PASSWORD}
-  initialCustomization = &quot;{\&quot;config\&quot;:{\&quot;scripts\&quot;:{\&quot;enabled\&quot;:true,\&quot;jobRefs\&quot;:[\&quot;cp:otoroshi.plugins.jobs.kubernetes.KubernetesIngressControllerJob\&quot;,\&quot;cp:otoroshi.plugins.jobs.kubernetes.KubernetesOtoroshiCRDsControllerJob\&quot;],\&quot;jobConfig\&quot;:{\&quot;KubernetesConfig\&quot;:{\&quot;trust\&quot;:false,\&quot;namespaces\&quot;:[\&quot;*\&quot;],\&quot;labels\&quot;:[],\&quot;ingressClasses\&quot;:[\&quot;otoroshi\&quot;],\&quot;defaultGroup\&quot;:\&quot;default\&quot;,\&quot;ingresses\&quot;:true,\&quot;crds\&quot;:true,\&quot;kubeLeader\&quot;:false,\&quot;restartDependantDeployments\&quot;:false,\&quot;templates\&quot;:{\&quot;service-group\&quot;:{},\&quot;service-descriptor\&quot;:{},\&quot;apikeys\&quot;:{},\&quot;global-config\&quot;:{},\&quot;jwt-verifier\&quot;:{},\&quot;tcp-service\&quot;:{},\&quot;certificate\&quot;:{},\&quot;auth-module\&quot;:{},\&quot;script\&quot;:{}}}}}}}&quot;
   initialCustomization = ${?OTOROSHI_INITIAL_CUSTOMIZATION}
-  #initialCustomization = &quot;{\&quot;config\&quot;:{\&quot;otoroshiId\&quot;:\&quot;foobar\&quot;}}&quot;
-  #initialCustomization {
-  #  config {
-  #    otoroshiId = &quot;foooobar&quot;
-  #  }
-  #}
   instance {
     instanceId = ${?OTOROSHI_INSTANCE_ID}
     number = 0
@@ -926,6 +919,7 @@ play.http {
       backOfficeApiKeyClientId = &quot;admin-api-apikey-id&quot;
       backOfficeApiKeyClientId = ${?ADMIN_API_CLIENT_ID}
       backOfficeApiKeyClientSecret = &quot;admin-api-apikey-secret&quot;
+      backOfficeApiKeyClientSecret = ${?otoroshi.admin-api-secret}
       backOfficeApiKeyClientSecret = ${?ADMIN_API_CLIENT_SECRET}
       backOfficeServiceId = &quot;admin-api-service&quot;
       backOfficeServiceId = ${?ADMIN_API_SERVICE_ID}
@@ -1449,6 +1443,7 @@ otoroshi {
   maintenanceMode = ${?OTOROSHI_MAINTENANCE_MODE_ENABLED}
   secret = &quot;verysecretvaluethatyoumustoverwrite&quot;
   secret = ${?OTOROSHI_SECRET}
+  admin-api-secret = ${?OTOROSHI_ADMIN_API_SECRET}
   options {
     bypassUserRightsCheck = false
     bypassUserRightsCheck = ${?OTOROSHI_OPTIONS_BYPASSUSERRIGHTSCHECK}

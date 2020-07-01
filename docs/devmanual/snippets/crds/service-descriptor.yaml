@@ -4,7 +4,8 @@ metadata:
   name: http-app-service-descriptor
 spec:
   description: the service descriptor for the http app
-  group: http-app-group
+  groups: 
+  - http-app-group
   forceHttps: true
   hosts:
   - httpapp.foo.bar
