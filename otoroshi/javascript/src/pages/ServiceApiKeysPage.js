@@ -330,7 +330,7 @@ const ApiKeysConstants = {
     authorizedEntities: {
       type: 'array',
       props: {
-        label: '',
+        label: 'Authorized on',
         placeholder: 'The groups/services of the api key',
         help: 'The groups/services linked to this api key',
         valuesFrom: '/bo/api/groups-and-services',
@@ -547,11 +547,12 @@ const ApiKeysConstants = {
     'readOnly',
     'allowClientIdOnly',
     'constrainedServicesOnly',
+    //'>>>Authorized on',
+    '---',
+    'authorizedEntities',
     '>>> Metadata and tags',
     'tags',
     'metadata',
-    '>>>Authorized on',
-    'authorizedEntities',
     '>>>Automatic secret rotation',
     'rotation.enabled',
     'rotation.rotationEvery',
