@@ -125,6 +125,8 @@ POST    /api/apikeys/_bulk                                    controllers.admina
 PUT     /api/apikeys/_bulk                                    controllers.adminapi.ApiKeysController.bulkUpdateAction()
 PATCH   /api/apikeys/_bulk                                    controllers.adminapi.ApiKeysController.bulkPatchAction()
 DELETE  /api/apikeys/_bulk                                    controllers.adminapi.ApiKeysController.bulkDeleteAction()
+GET     /api/apikeys/:id/quotas                               controllers.adminapi.ApiKeysController.apiKeyQuotas(id)
+DELETE  /api/apikeys/:id/quotas                               controllers.adminapi.ApiKeysController.resetApiKeyQuotas(id)
 GET     /api/apikeys/:id                                      controllers.adminapi.ApiKeysController.findEntityByIdAction(id)
 DELETE  /api/apikeys/:id                                      controllers.adminapi.ApiKeysController.deleteEntityAction(id)
 PUT     /api/apikeys/:id                                      controllers.adminapi.ApiKeysController.updateEntityAction(id)
