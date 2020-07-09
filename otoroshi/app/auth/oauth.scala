@@ -438,8 +438,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
                     authConfigId = authConfig.id,
                     simpleLogin = false,
                     metadata = Map.empty,
-                    teams = Seq.empty,
-                    tenants = Seq.empty // TODO: tale tenant from auth module
+                    rights = Seq.empty // TODO: tale tenant from auth module
                   )
                 )
               }

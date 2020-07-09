@@ -91,12 +91,6 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
           "Otoroshi-BackOffice-User" -> JWT.create()
             .withClaim("user", Json.stringify(ctx.user.toJson))
             .sign(Algorithm.HMAC512(apikey.clientSecret)),
-          "Otoroshi-Access" -> Base64.getUrlEncoder.encodeToString(
-            Json.stringify(Json.obj(
-              "teams" -> JsArray(ctx.user.teams.map(_.toRaw.json)),
-              "tenants" -> JsArray(ctx.user.tenants.map(_.toRaw.json))
-            )).getBytes(Charsets.UTF_8)
-          )
         ) ++ ctx.request.headers.get("Content-Type").filter(_ => currentReqHasBody).map { ctype =>
           "Content-Type" -> ctype
         } ++ ctx.request.headers.get("Accept").map { accept =>

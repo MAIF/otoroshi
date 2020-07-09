@@ -331,8 +331,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
             simpleLogin = false,
             authConfigId = authConfig.id,
             metadata = Map.empty,
-            teams = Seq.empty,
-            tenants = Seq.empty // TODO: tale tenant from auth module
+            rights = Seq.empty // TODO: tale tenant from auth module
           )
         )
       case None => Left(s"You're not authorized here")

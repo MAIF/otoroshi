@@ -210,8 +210,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
             simpleLogin = false,
             authConfigId = authConfig.id,
             metadata = Map.empty,
-            teams = Seq.empty,
-            tenants = Seq.empty // TODO: tale tenant from auth module
+            rights = Seq.empty // TODO: tale tenant from auth module
           )
         )
       case None => Left(s"You're not authorized here")
@@ -451,8 +450,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
         createdAt = DateTime.now(),
         typ = OtoroshiAdminType.WebAuthnAdmin,
         metadata = Map.empty,
-        teams = Seq.empty,
-        tenants = Seq.empty
+        rights = Seq.empty // TODO: tale tenant from auth module
       )
     }
 
@@ -518,8 +516,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
         createdAt = DateTime.now(),
         typ = OtoroshiAdminType.WebAuthnAdmin,
         metadata = Map.empty,
-        teams = Seq.empty,
-        tenants = Seq.empty
+        rights = Seq.empty // TODO: tale tenant from auth module
       )
     }
 
@@ -589,8 +586,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
         createdAt = DateTime.now(),
         typ = OtoroshiAdminType.WebAuthnAdmin,
         metadata = Map.empty,
-        teams = Seq.empty,
-        tenants = Seq.empty
+        rights = Seq.empty // TODO: tale tenant from auth module
       )
     }
 
@@ -672,8 +668,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
         createdAt = DateTime.now(),
         typ = OtoroshiAdminType.WebAuthnAdmin,
         metadata = Map.empty,
-        teams = Seq.empty,
-        tenants = Seq.empty
+        rights = Seq.empty // TODO: tale tenant from auth module
       )
     }
 
@@ -753,8 +748,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
         createdAt = DateTime.now(),
         typ = OtoroshiAdminType.WebAuthnAdmin,
         metadata = Map.empty,
-        teams = Seq.empty,
-        tenants = Seq.empty
+        rights = Seq.empty // TODO: tale tenant from auth module
       )
     }
 
@@ -822,8 +816,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
         createdAt = DateTime.now(),
         typ = OtoroshiAdminType.WebAuthnAdmin,
         metadata = Map.empty,
-        teams = Seq.empty,
-        tenants = Seq.empty
+        rights = Seq.empty // TODO: tale tenant from auth module
       )
     }
 

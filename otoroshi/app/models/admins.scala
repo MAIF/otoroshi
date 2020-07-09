@@ -39,8 +39,7 @@ trait OtoroshiAdmin {
   def typ: OtoroshiAdminType
   def metadata: Map[String, String]
   def json: JsValue
-  def teams: Seq[TeamAccess]
-  def tenants: Seq[TenantAccess]
+  def rights: Seq[UserRight]
 }
 
 case class SimpleOtoroshiAdmin(
@@ -50,8 +49,7 @@ case class SimpleOtoroshiAdmin(
                                 createdAt: DateTime,
                                 typ: OtoroshiAdminType,
                                 metadata: Map[String, String],
-                                teams: Seq[TeamAccess],
-                                tenants: Seq[TenantAccess]
+                                rights: Seq[UserRight]
 ) extends OtoroshiAdmin {
   def json: JsValue = Json.obj(
     "username" -> username,
@@ -60,8 +58,7 @@ case class SimpleOtoroshiAdmin(
     "createdAt" -> createdAt.getMillis,
     "type" -> typ.json,
     "metadata" -> metadata,
-    "teams" -> JsArray(teams.map(_.toRaw.json)),
-    "tenants" -> JsArray(tenants.map(_.toRaw.json)),
+    "rights" -> JsArray(rights.map(_.json))
   )
 }
 
@@ -79,8 +76,7 @@ object SimpleOtoroshiAdmin {
         createdAt = (json \ "createdAt").asOpt[Long].map(l => new DateTime(l)).getOrElse(DateTime.now()),
         typ = (json \ "typ").asOpt[JsValue].flatMap(OtoroshiAdminType.fromJson).getOrElse(OtoroshiAdminType.SimpleAdmin),
         metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-        teams = (json \ "teams").asOpt[JsArray].map(a => a.value.map(v => TeamAccess(v.as[String]))).getOrElse(Seq(TeamAccess("*"))),
-        tenants = (json \ "tenants").asOpt[JsArray].map(a => a.value.map(v => TenantAccess(v.as[String]))).getOrElse(Seq(TenantAccess("*")))
+        rights = UserRight.readFromObject(json)
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -98,8 +94,7 @@ case class WebAuthnOtoroshiAdmin(
                                   createdAt: DateTime,
                                   typ: OtoroshiAdminType,
                                   metadata: Map[String, String],
-                                  teams: Seq[TeamAccess],
-                                  tenants: Seq[TenantAccess]
+                                  rights: Seq[UserRight]
 ) extends OtoroshiAdmin {
   def json: JsValue = Json.obj(
     "username" -> username,
@@ -110,8 +105,7 @@ case class WebAuthnOtoroshiAdmin(
     "createdAt" -> createdAt.getMillis,
     "type" -> typ.json,
     "metadata" -> metadata,
-    "teams" -> JsArray(teams.map(_.toRaw.json)),
-    "tenants" -> JsArray(tenants.map(_.toRaw.json)),
+    "rights" -> JsArray(rights.map(_.json))
   )
 }
 
@@ -133,8 +127,7 @@ object WebAuthnOtoroshiAdmin {
         createdAt = (json \ "createdAt").asOpt[Long].map(l => new DateTime(l)).getOrElse(DateTime.now()),
         typ = (json \ "typ").asOpt[JsValue].flatMap(OtoroshiAdminType.fromJson).getOrElse(OtoroshiAdminType.WebAuthnAdmin),
         metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-        teams = (json \ "teams").asOpt[JsArray].map(a => a.value.map(v => TeamAccess(v.as[String]))).getOrElse(Seq(TeamAccess("*"))),
-        tenants = (json \ "tenants").asOpt[JsArray].map(a => a.value.map(v => TenantAccess(v.as[String]))).getOrElse(Seq(TenantAccess("*")))
+        rights = UserRight.readFromObject(json)
       )
     } match {
       case Failure(e) => JsError(e.getMessage)

@@ -716,7 +716,7 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
       }
     }
   }
-  
+
   def deleteEntities(ids: Seq[String], ctx: ApiActionContext[_]): Future[Result] = {
 
     implicit val implEnv = env

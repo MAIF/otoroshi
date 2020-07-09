@@ -1,16 +1,46 @@
 package otoroshi.models
 
-import akka.http.scaladsl.model.HttpMethods
-import akka.stream.Materializer
-import akka.util.ByteString
-import env.Env
 import models.BackOfficeUser
 import otoroshi.utils.syntax.implicits._
-import play.api.libs.json.{Format, JsArray, JsError, JsObject, JsResult, JsString, JsSuccess, JsValue, Json}
-import play.api.mvc.{RequestHeader, Result}
+import play.api.libs.json._
+import utils.RegexPool
 
-import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
+
+case class UserRight(tenant: TenantAccess, teams: Seq[TeamAccess]) {
+  def json: JsValue = UserRight.format.writes(this)
+}
+
+object UserRight {
+  val format = new Format[UserRight] {
+    override def writes(o: UserRight): JsValue = Json.obj(
+      "tenant" -> o.tenant.toRaw,
+      "teams" -> JsArray(o.teams.map(t => JsString(t.toRaw)))
+    )
+    override def reads(json: JsValue): JsResult[UserRight] = Try {
+      UserRight(
+        tenant = TenantAccess((json \ "tenant").as[String]),
+        teams = (json \ "teams").as[JsArray].value.map { t =>
+          TeamAccess(t.as[String])
+        }
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(ur) => JsSuccess(ur)
+    }
+  }
+  def readFromObject(json: JsValue): Seq[UserRight] = {
+    val defaultValue = Seq(UserRight(TenantAccess("*"), Seq(TeamAccess("*"))))
+    val rights: Option[Seq[UserRight]] = (json \ "rights").asOpt[JsArray].map { arr =>
+      arr.value.map { ur =>
+        UserRight.format.reads(ur).asOpt
+      }.collect {
+        case Some(ur) => ur
+      }
+    }
+    rights.getOrElse(defaultValue)
+  }
+}
 
 case class EntityLocation(tenant: TenantId = TenantId.default, teams: Seq[TeamId] = Seq(TeamId.default)) {
   def json: JsValue = EntityLocation.format.writes(this)
@@ -43,6 +73,41 @@ trait EntityLocationSupport extends Entity {
   def location: EntityLocation
 }
 
+object TeamId {
+  val default: TeamId = TeamId("default")
+}
+
+object TenantId {
+  val default: TenantId = TenantId("default")
+}
+
+case class TeamId(value: String) {
+  def canBeWrittenBy(user: BackOfficeUser, tenant: TenantId): Boolean = {
+    user.rights.find(_.tenant.matches(tenant)).exists(_.teams.exists(v => v.canWrite && (v.value.toLowerCase.trim == "*" || v.value.toLowerCase.trim == value.toLowerCase.trim)))
+  }
+  def canBeReadBy(user: BackOfficeUser, tenant: TenantId): Boolean = {
+    user.rights.find(_.tenant.matches(tenant)).exists(_.teams.exists(v => v.canRead && (v.value.toLowerCase.trim == "*" || v.value.toLowerCase.trim == value.toLowerCase.trim)))
+  }
+}
+
+case class TenantId(value: String) {
+  def canBeWrittenBy(user: BackOfficeUser): Boolean = {
+    user.rights.find(_.tenant.matches(this)).exists(v => v.tenant.canWrite && (v.tenant.value.toLowerCase.trim == "*" || v.tenant.value.toLowerCase.trim == value.toLowerCase.trim))
+  }
+  def canBeReadBy(user: BackOfficeUser): Boolean = {
+    user.rights.find(_.tenant.matches(this)).exists(v => v.tenant.canRead && (v.tenant.value.toLowerCase.trim == "*" || v.tenant.value.toLowerCase.trim == value.toLowerCase.trim))
+  }
+}
+
+case class TeamAccess(value: String, canRead: Boolean, canWrite: Boolean) {
+  lazy val toRaw: String = {
+    s"$value:${if (canRead) "r" else ""}${if (canRead && canWrite) "w" else ""}"
+  }
+  def matches(team: TeamId): Boolean = {
+    value == "*" || RegexPool(value).matches(team.value)
+  }
+}
+
 object TeamAccess {
   def apply(raw: String): TeamAccess = {
     if (raw.contains(":")) {
@@ -53,29 +118,6 @@ object TeamAccess {
     } else {
       TeamAccess(raw, true, true)
     }
-  }
-}
-
-object TeamId {
-  val default: TeamId = TeamId("default")
-}
-
-object TenantId {
-  val default: TenantId = TenantId("default")
-}
-
-case class TeamId(value: String) {
-  def canBeWrittenBy(user: BackOfficeUser): Boolean = {
-    user.teams.exists(v => v.canWrite && (v.value.toLowerCase.trim == "*" || v.value.toLowerCase.trim == value.toLowerCase.trim))
-  }
-  def canBeReadBy(user: BackOfficeUser): Boolean = {
-    user.teams.exists(v => v.canRead && (v.value.toLowerCase.trim == "*" || v.value.toLowerCase.trim == value.toLowerCase.trim))
-  }
-}
-
-case class TeamAccess(value: String, canRead: Boolean, canWrite: Boolean) {
-  lazy val toRaw: String = {
-    s"$value:${if (canRead) "r" else ""}${if (canRead && canWrite) "w" else ""}"
   }
 }
 
@@ -92,16 +134,10 @@ object TenantAccess {
   }
 }
 
-case class TenantId(value: String) {
-  def canBeWrittenBy(user: BackOfficeUser): Boolean = {
-    user.tenants.exists(v => v.canWrite && (v.value.toLowerCase.trim == "*" || v.value.toLowerCase.trim == value.toLowerCase.trim))
-  }
-  def canBeReadBy(user: BackOfficeUser): Boolean = {
-    user.tenants.exists(v => v.canRead && (v.value.toLowerCase.trim == "*" || v.value.toLowerCase.trim == value.toLowerCase.trim))
-  }
-}
-
 case class TenantAccess(value: String, canRead: Boolean, canWrite: Boolean) {
+  def matches(tenant: TenantId): Boolean = {
+    value == "*" || RegexPool(value).matches(tenant.value)
+  }
   lazy val toRaw: String = {
     s"$value:${if (canRead) "r" else ""}${if (canRead && canWrite) "w" else ""}"
   }
@@ -118,44 +154,36 @@ object RightsChecker {
   case object SuperAdminOnly extends RightsChecker {
     def canPerform(user: BackOfficeUser, currentTenant: TenantId): Boolean = TenantAndTeamHelper.isSuperAdmin(user)
   }
-  // case object TenantAdmin extends RightsChecker {
-  //   def canPerform(user: BackOfficeUser, currentTenant: Option[String]): Boolean = {
-  //     if (SuperAdminOnly.canPerform(user, currentTenant)) {
-  //       true
-  //     } else {
-  //       currentTenant match {
-  //         case None => false
-  //         case Some(tenant) => TenantAndTeamHelper.canReadTenant(user, tenant) && TenantAndTeamHelper.canWriteTenant(user, tenant)
-  //       }
-  //     }
-  //   }
-  // }
+  case object TenantAdmin extends RightsChecker {
+    def canPerform(user: BackOfficeUser, currentTenant: TenantId): Boolean = {
+      if (SuperAdminOnly.canPerform(user, currentTenant)) {
+        true
+      } else {
+        TenantAndTeamHelper.isTenantAdmin(user, currentTenant)
+      }
+    }
+  }
 }
 
 object TenantAndTeamHelper {
-  def canReadTeams(user: BackOfficeUser, teams: Seq[String]): Boolean = {
-    teams.map(TeamId.apply).exists(_.canBeReadBy(user))
+  def canReadTeams(user: BackOfficeUser, teams: Seq[String], tenantId: TenantId): Boolean = {
+    teams.map(TeamId.apply).exists(_.canBeReadBy(user, tenantId))
   }
-  def canReadTeamsId(user: BackOfficeUser, teams: Seq[TeamId]): Boolean = {
-    teams.exists(_.canBeReadBy(user))
+  def canReadTeamsId(user: BackOfficeUser, teams: Seq[TeamId], tenantId: TenantId): Boolean = {
+    teams.exists(_.canBeReadBy(user, tenantId))
   }
-  def canWriteTeamsId(user: BackOfficeUser, teams: Seq[TeamId]): Boolean = {
-    teams.exists(_.canBeWrittenBy(user))
-  }
-  def canReadAtAll(user: BackOfficeUser): Boolean = {
-    user.teams.exists(_.canRead) && user.tenants.exists(_.canRead)
-  }
-  def canWriteAtAll(user: BackOfficeUser): Boolean = {
-    user.teams.exists(_.canWrite) && user.tenants.exists(_.canWrite)
-  }
-  def isAllTenantAdmin(user: BackOfficeUser): Boolean = {
-    user.tenants.find(_.value.trim == "*").exists(v => v.canRead && v.canWrite)
-  }
-  def isAllTeamAdmin(user: BackOfficeUser): Boolean = {
-    user.teams.find(_.value.trim == "*").exists(v => v.canRead && v.canWrite)
+  def canWriteTeamsId(user: BackOfficeUser, teams: Seq[TeamId], tenantId: TenantId): Boolean = {
+    teams.exists(_.canBeWrittenBy(user, tenantId))
   }
   def isSuperAdmin(user: BackOfficeUser): Boolean = {
-    isAllTenantAdmin(user) && isAllTeamAdmin(user)
+    user.rights.exists(ur => ur.tenant.value == "*" && ur.teams.exists(_.value == "*"))
+  }
+  def isTenantAdmin(user: BackOfficeUser, tenant: TenantId): Boolean = {
+    if (isSuperAdmin(user)) {
+      true
+    } else {
+      tenant.canBeReadBy(user) && tenant.canBeWrittenBy(user) && user.rights.exists(ur => ur.tenant.matches(tenant) && ur.teams.exists(_.value == "*"))
+    }
   }
   def canReadTenant(user: BackOfficeUser, tenant: String): Boolean = {
     TenantId(tenant).canBeReadBy(user)
@@ -163,29 +191,19 @@ object TenantAndTeamHelper {
   def canWriteTenant(user: BackOfficeUser, tenant: String): Boolean = {
     TenantId(tenant).canBeWrittenBy(user)
   }
-  def canReadTeam(user: BackOfficeUser, team: String): Boolean = {
-    TeamId(team).canBeReadBy(user)
+  def canReadTeam(user: BackOfficeUser, team: String, tenant: TenantId): Boolean = {
+    TeamId(team).canBeReadBy(user, tenant)
   }
-  def canWriteTeam(user: BackOfficeUser, team: String): Boolean = {
-    TeamId(team).canBeWrittenBy(user)
+  def canWriteTeam(user: BackOfficeUser, team: String, tenant: TenantId): Boolean = {
+    TeamId(team).canBeWrittenBy(user, tenant)
   }
-  def canRead(user: BackOfficeUser, _tenant: Option[String], _teams: Option[Seq[String]]): Boolean = {
+  def canRead(user: BackOfficeUser, tenant: TenantId, _teams: Option[Seq[String]]): Boolean = {
     val teams = _teams.getOrElse(Seq.empty[String]).map(v => TeamId(v))
-    val tenant = _tenant.map(v => TenantId(v))
-    if (tenant.isEmpty) {
-      teams.exists(_.canBeReadBy(user))
-    } else {
-      tenant.exists(_.canBeReadBy(user)) && teams.exists(_.canBeReadBy(user))
-    }
+    tenant.canBeReadBy(user) && teams.exists(_.canBeReadBy(user, tenant))
   }
 
-  def canWrite(user: BackOfficeUser, _tenant: Option[String], _teams: Option[Seq[String]]): Boolean = {
+  def canWrite(user: BackOfficeUser, tenant: TenantId, _teams: Option[Seq[String]]): Boolean = {
     val teams = _teams.getOrElse(Seq.empty[String]).map(v => TeamId(v))
-    val tenant = _tenant.map(v => TenantId(v))
-    if (tenant.isEmpty) {
-      teams.exists(_.canBeWrittenBy(user))
-    } else {
-      tenant.exists(_.canBeWrittenBy(user)) && teams.exists(_.canBeWrittenBy(user))
-    }
+    tenant.canBeWrittenBy(user) && teams.exists(_.canBeWrittenBy(user, tenant))
   }
 }

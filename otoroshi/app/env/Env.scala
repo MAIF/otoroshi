@@ -20,7 +20,7 @@ import models._
 import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
-import otoroshi.models.{OtoroshiAdminType, SimpleOtoroshiAdmin, TeamAccess, TenantAccess, WebAuthnOtoroshiAdmin}
+import otoroshi.models.{OtoroshiAdminType, SimpleOtoroshiAdmin, TeamAccess, TenantAccess, UserRight, WebAuthnOtoroshiAdmin}
 import otoroshi.script.{AccessValidatorRef, JobManager, Script, ScriptCompiler, ScriptManager}
 import otoroshi.ssl.pki.BouncyCastlePki
 import otoroshi.storage.DataStores
@@ -904,8 +904,7 @@ class Env(val configuration: Configuration,
                     createdAt = DateTime.now(),
                     typ = OtoroshiAdminType.SimpleAdmin,
                     metadata = Map.empty,
-                    teams = Seq(TeamAccess("*")),
-                    tenants = Seq(TenantAccess("*"))
+                    rights = Seq(UserRight(TenantAccess("*"), Seq(TeamAccess("*"))))
                   )
 
                   val baseExport = OtoroshiExport(
@@ -933,29 +932,6 @@ class Env(val configuration: Configuration,
                   )
 
                   datastores.globalConfigDataStore.fullImport(finalConfig.json)(ec, this)
-
-                  // for {
-                  //   _ <- defaultConfig.save()(ec, this)
-                  //   _ <- backOfficeGroup.save()(ec, this)
-                  //   _ <- defaultGroup.save()(ec, this)
-                  //   _ <- backOfficeDescriptor.save()(ec, this)
-                  //   _ <- backOfficeApiKey.save()(ec, this)
-                  //   _ <- defaultGroupApiKey.save()(ec, this)
-                  //   _ <- datastores.simpleAdminDataStore
-                  //         .registerUser(SimpleOtoroshiAdmin(
-                  //           username = login,
-                  //           password = BCrypt.hashpw(password, BCrypt.gensalt()),
-                  //           label = "Otoroshi Admin",
-                  //           createdAt = DateTime.now(),
-                  //           typ = OtoroshiAdminType.SimpleAdmin,
-                  //           metadata = Map.empty,
-                  //           teams = Seq(TeamAccess("*")),
-                  //           tenants = Seq(TenantAccess("*"))
-                  //         ))(
-                  //           ec,
-                  //           this
-                  //         )
-                  // } yield ()
                 }
               }
             }

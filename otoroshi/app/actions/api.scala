@@ -10,7 +10,7 @@ import com.google.common.base.Charsets
 import env.Env
 import models.{ApiKey, BackOfficeUser, GlobalConfig}
 import otoroshi.models.RightsChecker.SuperAdminOnly
-import otoroshi.models.{EntityLocationSupport, RightsChecker, TeamAccess, TenantAccess, TenantAndTeamHelper, TenantId}
+import otoroshi.models.{EntityLocationSupport, RightsChecker, TeamAccess, TenantAccess, TenantAndTeamHelper, TenantId, UserRight}
 import play.api.Logger
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc._
@@ -48,8 +48,8 @@ case class ApiActionContext[A](apiKey: ApiKey, request: Request[A]) {
         } else {
           request.headers.get("Otoroshi-BackOffice-User") match {
             case None =>
-              val tenantAccess = apiKey.metadata.get("otoroshi-tenants-access")
-              val teamAccess = apiKey.metadata.get("otoroshi-teams-access")
+              val tenantAccess = apiKey.metadata.get("otoroshi-tenant-access") // TODO: fix me !!! allow multiple tenants
+              val teamAccess = apiKey.metadata.get("otoroshi-teams-access") // TODO: fix me !!!
               (tenantAccess, teamAccess) match {
                 case (None, None) => Right(None)
                 case (Some(tenants), Some(teams)) =>
@@ -61,8 +61,7 @@ case class ApiActionContext[A](apiKey: ApiKey, request: Request[A]) {
                     authConfigId = "apikey",
                     simpleLogin = false,
                     metadata = Map.empty,
-                    teams = teams.split(",").map(_.trim).map(TeamAccess.apply),
-                    tenants = tenants.split(",").map(_.trim).map(TenantAccess.apply),
+                    rights = Seq(UserRight(TenantAccess(tenants), teams.split(",").map(_.trim).map(TeamAccess.apply)))
                   )
                   Right(user.some)
                 case _ => Left("You're not authorized here (invalid setup) ! ")
@@ -99,7 +98,7 @@ case class ApiActionContext[A](apiKey: ApiKey, request: Request[A]) {
         } else {
           currentTenant.value == item.location.tenant.value &&
             TenantAndTeamHelper.canReadTenant(user, item.location.tenant.value) &&
-              TenantAndTeamHelper.canReadTeamsId(user, item.location.teams)
+              TenantAndTeamHelper.canReadTeamsId(user, item.location.teams, currentTenant)
         }
       }
     }
@@ -114,7 +113,7 @@ case class ApiActionContext[A](apiKey: ApiKey, request: Request[A]) {
         } else {
           currentTenant.value == item.location.tenant.value &&
             TenantAndTeamHelper.canWriteTenant(user, item.location.tenant.value) &&
-              TenantAndTeamHelper.canWriteTeamsId(user, item.location.teams)
+              TenantAndTeamHelper.canWriteTeamsId(user, item.location.teams, currentTenant)
         }
       }
     }

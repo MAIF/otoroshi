@@ -27,8 +27,7 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
     simpleLogin = false,
     authConfigId = "none",
     metadata = Map.empty,
-    teams = Seq(TeamAccess("*", true, true)),
-    tenants = Seq(TenantAccess("*", true, true))
+    rights = Seq(UserRight(TenantAccess("*"), Seq(TeamAccess("*"))))
   )
 
   def sessions() = ApiAction.async { ctx =>
@@ -197,8 +196,7 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
           createdAt = DateTime.now(),
           typ = OtoroshiAdminType.SimpleAdmin,
           metadata = (ctx.request.body \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-          teams = (ctx.request.body \ "teams").asOpt[JsArray].map(a => a.value.map(v => TeamAccess(v.as[String]))).getOrElse(Seq.empty),
-          tenants = (ctx.request.body \ "tenants").asOpt[JsArray].map(a => a.value.map(v => TenantAccess(v.as[String]))).getOrElse(Seq.empty)
+          rights = UserRight.readFromObject(ctx.request.body)
         )).map { _ =>
           Ok(Json.obj("username" -> username))
         }
@@ -275,8 +273,7 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
             createdAt = DateTime.now(),
             typ = OtoroshiAdminType.WebAuthnAdmin,
             metadata = (ctx.request.body \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-            teams = (ctx.request.body \ "teams").asOpt[JsArray].map(a => a.value.map(v => TeamAccess(v.as[String]))).getOrElse(Seq.empty),
-            tenants = (ctx.request.body \ "tenants").asOpt[JsArray].map(a => a.value.map(v => TenantAccess(v.as[String]))).getOrElse(Seq.empty)
+            rights = UserRight.readFromObject(ctx.request.body)
           ))
           .map { _ =>
             Ok(Json.obj("username" -> username))
