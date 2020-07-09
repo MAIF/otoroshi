@@ -1,16 +1,18 @@
 package controllers.adminapi
 
 import actions.{ApiAction, ApiActionContext}
+import akka.util.ByteString
 import env.Env
 import events._
 import models.{ErrorTemplate, ServiceDescriptor, ServiceDescriptorQuery, Target}
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json._
-import play.api.mvc.{AbstractController, ControllerComponents, RequestHeader}
+import play.api.mvc.{AbstractController, BodyParser, ControllerComponents, RequestHeader}
 import utils.JsonPatchHelpers.patchJson
 import utils._
 import otoroshi.utils.syntax.implicits._
+import play.api.libs.streams.Accumulator
 import play.api.mvc.Results.Status
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -20,6 +22,10 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
 
   implicit lazy val ec = env.otoroshiExecutionContext
   implicit lazy val mat = env.otoroshiMaterializer
+
+  lazy val sourceBodyParser = BodyParser("ServicesController BodyParser") { _ =>
+    Accumulator.source[ByteString].map(Right.apply)
+  }
 
   lazy val logger = Logger("otoroshi-services-api")
 
@@ -413,69 +419,75 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
     }
   }
 
-  def updateServiceTemplate(serviceId: String) = ApiAction.async(parse.json) { ctx =>
-    val body: JsObject = (ctx.request.body \ "serviceId").asOpt[String] match {
-      case None    => ctx.request.body.as[JsObject] ++ Json.obj("serviceId" -> serviceId)
-      case Some(_) => ctx.request.body.as[JsObject]
-    }
-    env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
-      case None => NotFound(Json.obj("error" -> s"Service with id: '$serviceId' not found")).asFuture
-      case Some(_) => {
-        ErrorTemplate.fromJsonSafe(body) match {
-          case JsError(e) => BadRequest(Json.obj("error" -> "Bad ErrorTemplate format")).asFuture
-          case JsSuccess(errorTemplate, _) =>
-            env.datastores.errorTemplateDataStore.set(errorTemplate).map {
-              case false => InternalServerError(Json.obj("error" -> "ErrorTemplate not stored ..."))
-              case true => {
-                val event: AdminApiEvent = AdminApiEvent(
-                  env.snowflakeGenerator.nextIdStr(),
-                  env.env,
-                  Some(ctx.apiKey),
-                  ctx.user,
-                  "UPDATE_ERROR_TEMPLATE",
-                  s"User updated an error template",
-                  ctx.from,
-                  ctx.ua,
-                  errorTemplate.toJson
-                )
-                Audit.send(event)
-                Ok(errorTemplate.toJson)
+  def updateServiceTemplate(serviceId: String) = ApiAction.async(sourceBodyParser) { ctx =>
+    ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
+      val requestBody = Json.parse(bodyRaw.utf8String)
+      val body: JsObject = (requestBody \ "serviceId").asOpt[String] match {
+        case None => requestBody.as[JsObject] ++ Json.obj("serviceId" -> serviceId)
+        case Some(_) => requestBody.as[JsObject]
+      }
+      env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
+        case None => NotFound(Json.obj("error" -> s"Service with id: '$serviceId' not found")).asFuture
+        case Some(_) => {
+          ErrorTemplate.fromJsonSafe(body) match {
+            case JsError(e) => BadRequest(Json.obj("error" -> "Bad ErrorTemplate format")).asFuture
+            case JsSuccess(errorTemplate, _) =>
+              env.datastores.errorTemplateDataStore.set(errorTemplate).map {
+                case false => InternalServerError(Json.obj("error" -> "ErrorTemplate not stored ..."))
+                case true => {
+                  val event: AdminApiEvent = AdminApiEvent(
+                    env.snowflakeGenerator.nextIdStr(),
+                    env.env,
+                    Some(ctx.apiKey),
+                    ctx.user,
+                    "UPDATE_ERROR_TEMPLATE",
+                    s"User updated an error template",
+                    ctx.from,
+                    ctx.ua,
+                    errorTemplate.toJson
+                  )
+                  Audit.send(event)
+                  Ok(errorTemplate.toJson)
+                }
               }
-            }
+          }
         }
       }
     }
   }
 
-  def createServiceTemplate(serviceId: String) = ApiAction.async(parse.json) { ctx =>
-    val body: JsObject = (ctx.request.body \ "serviceId").asOpt[String] match {
-      case None    => ctx.request.body.as[JsObject] ++ Json.obj("serviceId" -> serviceId)
-      case Some(_) => ctx.request.body.as[JsObject]
-    }
-    env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
-      case None => NotFound(Json.obj("error" -> s"Service with id: '$serviceId' not found")).asFuture
-      case Some(_) => {
-        ErrorTemplate.fromJsonSafe(body) match {
-          case JsError(e) => BadRequest(Json.obj("error" -> s"Bad ErrorTemplate format $e")).asFuture
-          case JsSuccess(errorTemplate, _) =>
-            env.datastores.errorTemplateDataStore.set(errorTemplate).map {
-              case false => InternalServerError(Json.obj("error" -> "ErrorTemplate not stored ..."))
-              case true => {
-                val event: AdminApiEvent = AdminApiEvent(
-                  env.snowflakeGenerator.nextIdStr(),
-                  env.env,
-                  Some(ctx.apiKey),
-                  ctx.user,
-                  "CREATE_ERROR_TEMPLATE",
-                  s"User created an error template",
-                  ctx.from,
-                  ctx.ua,
-                  errorTemplate.toJson
-                )
-                Audit.send(event)
-                Ok(errorTemplate.toJson)
+  def createServiceTemplate(serviceId: String) = ApiAction.async(sourceBodyParser) { ctx =>
+    ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
+      val requestBody = Json.parse(bodyRaw.utf8String)
+      val body: JsObject = (requestBody \ "serviceId").asOpt[String] match {
+        case None => requestBody.as[JsObject] ++ Json.obj("serviceId" -> serviceId)
+        case Some(_) => requestBody.as[JsObject]
+      }
+      env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
+        case None => NotFound(Json.obj("error" -> s"Service with id: '$serviceId' not found")).asFuture
+        case Some(_) => {
+          ErrorTemplate.fromJsonSafe(body) match {
+            case JsError(e) => BadRequest(Json.obj("error" -> s"Bad ErrorTemplate format $e")).asFuture
+            case JsSuccess(errorTemplate, _) =>
+              env.datastores.errorTemplateDataStore.set(errorTemplate).map {
+                case false => InternalServerError(Json.obj("error" -> "ErrorTemplate not stored ..."))
+                case true => {
+                  val event: AdminApiEvent = AdminApiEvent(
+                    env.snowflakeGenerator.nextIdStr(),
+                    env.env,
+                    Some(ctx.apiKey),
+                    ctx.user,
+                    "CREATE_ERROR_TEMPLATE",
+                    s"User created an error template",
+                    ctx.from,
+                    ctx.ua,
+                    errorTemplate.toJson
+                  )
+                  Audit.send(event)
+                  Ok(errorTemplate.toJson)
+                }
               }
-            }
+          }
         }
       }
     }
