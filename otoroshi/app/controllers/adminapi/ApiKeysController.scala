@@ -574,6 +574,8 @@ class ApiKeysController(val ApiAction: ApiAction, val cc: ControllerComponents)(
 
   lazy val logger = Logger("otoroshi-apikeys-api")
 
+  override def buildError(status: Int, message: String): ApiError[JsValue] = JsonApiError(status, play.api.libs.json.JsString(message))
+
   override def readEntity(json: JsValue): Either[String, ApiKey] = ApiKey._fmt.reads(json).asEither match {
     case Left(e) => Left(e.toString())
     case Right(r) => Right(r)

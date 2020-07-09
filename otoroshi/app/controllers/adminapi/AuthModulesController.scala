@@ -20,6 +20,8 @@ class AuthModulesController(val ApiAction: ApiAction, val cc: ControllerComponen
 
   lazy val logger = Logger("otoroshi-auth-modules-api")
 
+  override def buildError(status: Int, message: String): ApiError[JsValue] = JsonApiError(status, play.api.libs.json.JsString(message))
+
   override def extractId(entity: AuthModuleConfig): String = entity.id
 
   override def readEntity(json: JsValue): Either[String, AuthModuleConfig] = AuthModuleConfig._fmt.reads(json).asEither match {

@@ -108,15 +108,15 @@ case class TenantAccess(value: String, canRead: Boolean, canWrite: Boolean) {
 }
 
 sealed trait RightsChecker {
-  def canPerform(user: BackOfficeUser, currentTenant: Option[String]): Boolean
+  def canPerform(user: BackOfficeUser, currentTenant: TenantId): Boolean
 }
 
 object RightsChecker {
   case object Anyone extends RightsChecker {
-    def canPerform(user: BackOfficeUser, currentTenant: Option[String]): Boolean = true
+    def canPerform(user: BackOfficeUser, currentTenant: TenantId): Boolean = true
   }
   case object SuperAdminOnly extends RightsChecker {
-    def canPerform(user: BackOfficeUser, currentTenant: Option[String]): Boolean = TenantAndTeamHelper.isSuperAdmin(user)
+    def canPerform(user: BackOfficeUser, currentTenant: TenantId): Boolean = TenantAndTeamHelper.isSuperAdmin(user)
   }
   // case object TenantAdmin extends RightsChecker {
   //   def canPerform(user: BackOfficeUser, currentTenant: Option[String]): Boolean = {
@@ -133,6 +133,15 @@ object RightsChecker {
 }
 
 object TenantAndTeamHelper {
+  def canReadTeams(user: BackOfficeUser, teams: Seq[String]): Boolean = {
+    teams.map(TeamId.apply).exists(_.canBeReadBy(user))
+  }
+  def canReadTeamsId(user: BackOfficeUser, teams: Seq[TeamId]): Boolean = {
+    teams.exists(_.canBeReadBy(user))
+  }
+  def canWriteTeamsId(user: BackOfficeUser, teams: Seq[TeamId]): Boolean = {
+    teams.exists(_.canBeWrittenBy(user))
+  }
   def canReadAtAll(user: BackOfficeUser): Boolean = {
     user.teams.exists(_.canRead) && user.tenants.exists(_.canRead)
   }

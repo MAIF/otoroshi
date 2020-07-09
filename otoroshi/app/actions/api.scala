@@ -1,6 +1,7 @@
 package actions
 
 import java.util.Base64
+import java.util.concurrent.atomic.AtomicReference
 
 import akka.http.scaladsl.util.FastFuture
 import com.auth0.jwt.JWT
@@ -8,7 +9,8 @@ import com.auth0.jwt.algorithms.Algorithm
 import com.google.common.base.Charsets
 import env.Env
 import models.{ApiKey, BackOfficeUser, GlobalConfig}
-import otoroshi.models.{RightsChecker, TeamAccess, TenantAccess}
+import otoroshi.models.RightsChecker.SuperAdminOnly
+import otoroshi.models.{EntityLocationSupport, RightsChecker, TeamAccess, TenantAccess, TenantAndTeamHelper, TenantId}
 import play.api.Logger
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc._
@@ -26,53 +28,110 @@ case class ApiActionContext[A](apiKey: ApiKey, request: Request[A]) {
       .flatMap(p => Try(Json.parse(new String(Base64.getDecoder.decode(p), Charsets.UTF_8))).toOption)
   def from(implicit env: Env): String = request.theIpAddress
   def ua: String                      = request.theUserAgent
+  def currentTenant: TenantId = {
+    Option(tenantRef.get()).getOrElse {
+      val value = request.headers.get("Otoroshi-Tenant").getOrElse("default")
+      val tenantId = TenantId(value)
+      tenantRef.set(tenantId)
+      tenantId
+    }
+  }
+
+  private val tenantRef = new AtomicReference[TenantId]()
+  private val bouRef = new AtomicReference[Either[String, Option[BackOfficeUser]]]()
+
+  def backOfficeUser(implicit env: Env): Either[String, Option[BackOfficeUser]] = {
+    Option(bouRef.get()).getOrElse {
+      (
+        if (env.bypassUserRightsCheck) {
+          Right(None)
+        } else {
+          request.headers.get("Otoroshi-BackOffice-User") match {
+            case None =>
+              val tenantAccess = apiKey.metadata.get("otoroshi-tenants-access")
+              val teamAccess = apiKey.metadata.get("otoroshi-teams-access")
+              (tenantAccess, teamAccess) match {
+                case (None, None) => Right(None)
+                case (Some(tenants), Some(teams)) =>
+                  val user = BackOfficeUser(
+                    randomId = IdGenerator.token,
+                    name = apiKey.clientName,
+                    email = apiKey.clientId,
+                    profile = Json.obj(),
+                    authConfigId = "apikey",
+                    simpleLogin = false,
+                    metadata = Map.empty,
+                    teams = teams.split(",").map(_.trim).map(TeamAccess.apply),
+                    tenants = tenants.split(",").map(_.trim).map(TenantAccess.apply),
+                  )
+                  Right(user.some)
+                case _ => Left("You're not authorized here (invalid setup) ! ")
+              }
+            case Some(userJwt) =>
+              Try(JWT.require(Algorithm.HMAC512(apiKey.clientSecret)).build().verify(userJwt)) match {
+                case Failure(e) =>
+                  Left("You're not authorized here !")
+                case Success(decoded) => {
+                  Option(decoded.getClaim("user"))
+                    .flatMap(c => Try(c.asString()).toOption)
+                    .flatMap(u => Try(Json.parse(u)).toOption)
+                    .flatMap(u => BackOfficeUser.fmt.reads(u).asOpt) match {
+                    case None => Left("You're not authorized here !")
+                    case Some(user) => Right(user.some)
+                  }
+                }
+              }
+          }
+        }
+        ).debug { either =>
+        bouRef.set(either)
+      }
+    }
+  }
+
+  def canUserRead[T <: EntityLocationSupport](item: T)(implicit env: Env): Boolean = {
+    backOfficeUser match {
+      case Left(_) => false
+      case Right(None) => true
+      case Right(Some(user)) => {
+        if (SuperAdminOnly.canPerform(user, currentTenant)) {
+          true
+        } else {
+          currentTenant.value == item.location.tenant.value &&
+            TenantAndTeamHelper.canReadTenant(user, item.location.tenant.value) &&
+              TenantAndTeamHelper.canReadTeamsId(user, item.location.teams)
+        }
+      }
+    }
+  }
+  def canUserWrite[T <: EntityLocationSupport](item: T)(implicit env: Env): Boolean = {
+    backOfficeUser match {
+      case Left(_) => false
+      case Right(None) => true
+      case Right(Some(user)) => {
+        if (SuperAdminOnly.canPerform(user, currentTenant)) {
+          true
+        } else {
+          currentTenant.value == item.location.tenant.value &&
+            TenantAndTeamHelper.canWriteTenant(user, item.location.tenant.value) &&
+              TenantAndTeamHelper.canWriteTeamsId(user, item.location.teams)
+        }
+      }
+    }
+  }
+
   def checkRights(rc: RightsChecker)(f: Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
     if (env.bypassUserRightsCheck) {
       f
     } else {
-      request.headers.get("Otoroshi-BackOffice-User") match {
-        case None =>
-          val tenantAccess = apiKey.metadata.get("otoroshi-tenants-access")
-          val teamAccess = apiKey.metadata.get("otoroshi-teams-access")
-          (tenantAccess, teamAccess) match {
-            case (None, None) => f // standard api usage
-            case (Some(tenants), Some(teams)) =>
-              val user = BackOfficeUser(
-                randomId = IdGenerator.token,
-                name = apiKey.clientName,
-                email = apiKey.clientId,
-                profile = Json.obj(),
-                authConfigId = "apikey",
-                simpleLogin = false,
-                metadata = Map.empty,
-                teams = teams.split(",").map(_.trim).map(TeamAccess.apply),
-                tenants = tenants.split(",").map(_.trim).map(TenantAccess.apply),
-              )
-              rc.canPerform(user, None) match {
-                case false => Results.Unauthorized(Json.obj("error" -> "You're not authorized here !")).future
-                case true => f
-              }
-            case _ => Results.Unauthorized(Json.obj("error" -> "You're not authorized here (invalid setup) ! ")).future
-          }
-        case Some(userJwt) =>
-          Try(JWT.require(Algorithm.HMAC512(apiKey.clientSecret)).build().verify(userJwt)) match {
-            case Failure(e) =>
-              Results.Unauthorized(Json.obj("error" -> "You're not authorized here !")).future
-            case Success(decoded) => {
-              val tenant = Option(decoded.getClaim("tenant"))
-                .flatMap(c => Try(c.asString()).toOption)
-              Option(decoded.getClaim("user"))
-                .flatMap(c => Try(c.asString()).toOption)
-                .flatMap(u => Try(Json.parse(u)).toOption)
-                .flatMap(u => BackOfficeUser.fmt.reads(u).asOpt) match {
-                case None => Results.Unauthorized(Json.obj("error" -> "You're not authorized here !")).future
-                case Some(user) => rc.canPerform(user, tenant) match {
-                  case false => Results.Unauthorized(Json.obj("error" -> "You're not authorized here !")).future
-                  case true => f
-                }
-              }
-            }
-          }
+      backOfficeUser match {
+        case Left(error) => Results.Unauthorized(Json.obj("error" -> error)).future
+        case Right(None) => f // standard api usage without limitations
+        case Right(Some(user)) => if (rc.canPerform(user, currentTenant)) {
+          f
+        } else {
+          Results.Unauthorized(Json.obj("error" -> "You're not authorized here !")).future
+        }
       }
     }
   }

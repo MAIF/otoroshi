@@ -87,9 +87,9 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
           env.Headers.OtoroshiAdminProfile -> Base64.getUrlEncoder.encodeToString(
             Json.stringify(ctx.user.profile).getBytes(Charsets.UTF_8)
           ),
+          "Otoroshi-Tenant" -> "default", // TODO: will be dynamic then
           "Otoroshi-BackOffice-User" -> JWT.create()
             .withClaim("user", Json.stringify(ctx.user.toJson))
-            .withClaim("tenant", "default") // TODO: will be dynamic then
             .sign(Algorithm.HMAC512(apikey.clientSecret)),
           "Otoroshi-Access" -> Base64.getUrlEncoder.encodeToString(
             Json.stringify(Json.obj(

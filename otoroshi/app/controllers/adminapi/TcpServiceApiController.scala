@@ -18,6 +18,8 @@ class TcpServiceApiController(val ApiAction: ApiAction, val cc: ControllerCompon
 
   val logger = Logger("otoroshi-tcp-service-api")
 
+  override def buildError(status: Int, message: String): ApiError[JsValue] = JsonApiError(status, play.api.libs.json.JsString(message))
+
   override def extractId(entity: TcpService): String = entity.id
 
   override def readEntity(json: JsValue): Either[String, TcpService] = TcpService.fmt.reads(json).asEither match {

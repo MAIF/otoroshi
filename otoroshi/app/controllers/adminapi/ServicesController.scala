@@ -29,6 +29,8 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
 
   lazy val logger = Logger("otoroshi-services-api")
 
+  override def buildError(status: Int, message: String): ApiError[JsValue] = JsonApiError(status, play.api.libs.json.JsString(message))
+
   override def extractId(entity: ServiceDescriptor): String = entity.id
 
   override def readEntity(json: JsValue): Either[String, ServiceDescriptor] = ServiceDescriptor._fmt.reads(json).asEither match {

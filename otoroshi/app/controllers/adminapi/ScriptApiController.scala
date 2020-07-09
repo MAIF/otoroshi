@@ -26,6 +26,8 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
     Accumulator.source[ByteString].map(Right.apply)
   }
 
+  override def buildError(status: Int, message: String): ApiError[JsValue] = JsonApiError(status, play.api.libs.json.JsString(message))
+
   def OnlyIfScriptingEnabled(f: => Future[Result]): Future[Result] = {
     env.scriptingEnabled match {
       case true  => f

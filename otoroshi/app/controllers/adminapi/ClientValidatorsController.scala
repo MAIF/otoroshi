@@ -15,6 +15,8 @@ class ClientValidatorsController(val ApiAction: ApiAction, val cc: ControllerCom
   implicit lazy val ec  = env.otoroshiExecutionContext
   implicit lazy val mat = env.otoroshiMaterializer
 
+  override def buildError(status: Int, message: String): ApiError[JsValue] = JsonApiError(status, play.api.libs.json.JsString(message))
+
   override def extractId(entity: ClientCertificateValidator): String = entity.id
 
   override def readEntity(json: JsValue): Either[String, ClientCertificateValidator] = ClientCertificateValidator.fmt.reads(json).asEither match {

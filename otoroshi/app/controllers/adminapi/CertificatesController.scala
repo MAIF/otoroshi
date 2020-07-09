@@ -19,6 +19,8 @@ class CertificatesController(val ApiAction: ApiAction, val cc: ControllerCompone
 
   lazy val logger = Logger("otoroshi-certificates-api")
 
+  override def buildError(status: Int, message: String): ApiError[JsValue] = JsonApiError(status, play.api.libs.json.JsString(message))
+
   def renewCert(id: String) = ApiAction.async { ctx =>
     env.datastores.certificatesDataStore.findById(id).map(_.map(_.enrich())).flatMap {
       case None       => FastFuture.successful(NotFound(Json.obj("error" -> s"No Certificate found")))

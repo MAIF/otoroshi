@@ -6,6 +6,7 @@ import akka.util.ByteString
 import env.Env
 import events._
 import org.joda.time.DateTime
+import otoroshi.models.EntityLocationSupport
 import otoroshi.utils.syntax.implicits._
 import play.api.http.HttpEntity
 import play.api.libs.json._
@@ -159,7 +160,7 @@ trait AdminApiHelper {
   }
 }
 
-trait EntityHelper[Entity, Error] {
+trait EntityHelper[Entity <: EntityLocationSupport, Error] {
   def readId(json: JsValue): Either[String, String] = {
     (json \ "id").asOpt[String] match {
       case Some(id) => Right(id)
@@ -174,9 +175,13 @@ trait EntityHelper[Entity, Error] {
   def createEntityOps(entity: Entity)(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[Error], EntityAndContext[Entity]]]
   def updateEntityOps(entity: Entity)(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[Error], EntityAndContext[Entity]]]
   def deleteEntityOps(id: String)(implicit env: Env, ec: ExecutionContext):     Future[Either[ApiError[Error], NoEntityAndContext[Entity]]]
+  def canRead[A](ctx: ApiActionContext[A])(entity: Entity)(implicit env: Env): Boolean = ctx.canUserRead(entity)
+  def canWrite[A](ctx: ApiActionContext[A])(entity: Entity)(implicit env: Env): Boolean = ctx.canUserWrite(entity)
+  def canReadWrite[A](ctx: ApiActionContext[A])(entity: Entity)(implicit env: Env): Boolean = ctx.canUserRead(entity) && ctx.canUserWrite(entity)
+  def buildError(status: Int, message: String): ApiError[Error]
 }
 
-trait BulkHelper[Entity, Error] extends EntityHelper[Entity, Error] {
+trait BulkHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[Entity, Error] {
 
   import Results._
 
@@ -441,7 +446,7 @@ trait BulkHelper[Entity, Error] extends EntityHelper[Entity, Error] {
   }
 }
 
-trait BulkControllerHelper[Entity, Error] extends BulkHelper[Entity, Error] {
+trait BulkControllerHelper[Entity <: EntityLocationSupport, Error] extends BulkHelper[Entity, Error] {
 
   private val sourceBodyParser = BodyParser("BulkController BodyParser") { _ =>
     Accumulator.source[ByteString].map(Right.apply)(env.otoroshiExecutionContext)
@@ -454,7 +459,7 @@ trait BulkControllerHelper[Entity, Error] extends BulkHelper[Entity, Error] {
   def bulkDeleteAction() = ApiAction.async(sourceBodyParser) { ctx => bulkDelete(ctx) }
 }
 
-trait CrudHelper[Entity, Error] extends EntityHelper[Entity, Error] {
+trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[Entity, Error] {
 
   import Results._
 
@@ -750,7 +755,7 @@ trait CrudHelper[Entity, Error] extends EntityHelper[Entity, Error] {
   }
 }
 
-trait CrudControllerHelper[Entity, Error] extends CrudHelper[Entity, Error] {
+trait CrudControllerHelper[Entity <: EntityLocationSupport, Error] extends CrudHelper[Entity, Error] {
 
   private val sourceBodyParser = BodyParser("BulkController BodyParser") { _ =>
     Accumulator.source[ByteString].map(Right.apply)(env.otoroshiExecutionContext)

@@ -17,6 +17,8 @@ class ServiceGroupController(val ApiAction: ApiAction, val cc: ControllerCompone
   implicit val ec  = env.otoroshiExecutionContext
   implicit val mat = env.otoroshiMaterializer
 
+  override def buildError(status: Int, message: String): ApiError[JsValue] = JsonApiError(status, play.api.libs.json.JsString(message))
+
   override def extractId(entity: ServiceGroup): String = entity.id
 
   override def readEntity(json: JsValue): Either[String, ServiceGroup] = ServiceGroup._fmt.reads(json).asEither match {
