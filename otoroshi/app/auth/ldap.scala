@@ -75,6 +75,7 @@ object LdapAuthModuleConfig extends FromJson[AuthModuleConfig] {
     Try {
       Right(
         LdapAuthModuleConfig(
+          location = otoroshi.models.EntityLocation.readFromKey(json),
           id = (json \ "id").as[String],
           name = (json \ "name").as[String],
           desc = (json \ "desc").asOpt[String].getOrElse("--"),
@@ -122,13 +123,14 @@ case class LdapAuthModuleConfig(
                                  metadataField: Option[String] = None,
                                  extraMetadata: JsObject = Json.obj(),
                                  metadata: Map[String, String],
-                                 sessionCookieValues: SessionCookieValues
+                                 sessionCookieValues: SessionCookieValues,
+                                 location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation()
 ) extends AuthModuleConfig {
   def `type`: String = "ldap"
 
   override def authModule(config: GlobalConfig): AuthModule = LdapAuthModule(this)
 
-  override def asJson = Json.obj(
+  override def asJson = location.jsonWithKey ++ Json.obj(
     "type"               -> "ldap",
     "id"                  -> this.id,
     "name"                -> this.name,

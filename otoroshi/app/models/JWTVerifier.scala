@@ -1253,11 +1253,15 @@ case class GlobalJwtVerifier(
     source: JwtTokenLocation = InHeader("X-JWT-Token"),
     algoSettings: AlgoSettings = HSAlgoSettings(512, "secret", false),
     strategy: VerifierStrategy = PassThrough(VerificationSettings(Map("iss" -> "The Issuer"))),
-    metadata: Map[String, String] = Map.empty
+    metadata: Map[String, String] = Map.empty,
+    location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation()
 ) extends JwtVerifier
-    with AsJson {
+    with AsJson with otoroshi.models.EntityLocationSupport {
 
-  def asJson: JsValue = Json.obj(
+  def json: JsValue = asJson
+  def internalId: String = id
+
+  def asJson: JsValue = location.jsonWithKey ++ Json.obj(
     "type"         -> "global",
     "id"           -> this.id,
     "name"         -> this.name,
@@ -1312,6 +1316,7 @@ object GlobalJwtVerifier extends FromJson[GlobalJwtVerifier] {
         strategy     <- VerifierStrategy.fromJson((json \ "strategy").as[JsValue])
       } yield {
         GlobalJwtVerifier(
+          location = otoroshi.models.EntityLocation.readFromKey(json),
           id = (json \ "id").as[String],
           name = (json \ "name").as[String],
           desc = (json \ "desc").asOpt[String].getOrElse("--"),

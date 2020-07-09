@@ -36,6 +36,7 @@ object GenericOauth2ModuleConfig extends FromJson[AuthModuleConfig] {
     Try {
       Right(
         GenericOauth2ModuleConfig(
+          location = otoroshi.models.EntityLocation.readFromKey(json),
           id = (json \ "id").as[String],
           name = (json \ "name").as[String],
           desc = (json \ "desc").asOpt[String].getOrElse("--"),
@@ -110,11 +111,12 @@ case class GenericOauth2ModuleConfig(
                                       mtlsConfig: MtlsConfig = MtlsConfig(),
                                       refreshTokens: Boolean = false,
                                       metadata: Map[String, String],
-                                      sessionCookieValues: SessionCookieValues
+                                      sessionCookieValues: SessionCookieValues,
+                                      location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation()
 ) extends OAuth2ModuleConfig {
   def `type`: String                                        = "oauth2"
   override def authModule(config: GlobalConfig): AuthModule = GenericOauth2Module(this)
-  override def asJson = Json.obj(
+  override def asJson = location.jsonWithKey ++ Json.obj(
     "type"                 -> "oauth2",
     "id"                   -> this.id,
     "name"                 -> this.name,

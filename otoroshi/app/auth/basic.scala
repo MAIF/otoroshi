@@ -113,6 +113,7 @@ object BasicAuthModuleConfig extends FromJson[AuthModuleConfig] {
     Try {
       Right(
         BasicAuthModuleConfig(
+          location = otoroshi.models.EntityLocation.readFromKey(json),
           id = (json \ "id").as[String],
           name = (json \ "name").as[String],
           desc = (json \ "desc").asOpt[String].getOrElse("--"),
@@ -138,11 +139,12 @@ case class BasicAuthModuleConfig(
                                   basicAuth: Boolean = false,
                                   webauthn: Boolean = false,
                                   metadata: Map[String, String],
-                                  sessionCookieValues: SessionCookieValues
+                                  sessionCookieValues: SessionCookieValues,
+                                  location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation()
 ) extends AuthModuleConfig {
   def `type`: String                                        = "basic"
   override def authModule(config: GlobalConfig): AuthModule = BasicAuthModule(this)
-  override def asJson = Json.obj(
+  override def asJson = location.jsonWithKey ++ Json.obj(
     "type"          -> "basic",
     "id"                  -> this.id,
     "name"                -> this.name,

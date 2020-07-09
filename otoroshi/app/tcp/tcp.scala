@@ -73,13 +73,15 @@ case class TcpService(
     port: Int,
     interface: String = "0.0.0.0",
     rules: Seq[TcpRule],
-    metadata: Map[String, String]
+    metadata: Map[String, String],
+    location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation()
     // clientValidatorRef: Option[String]
     // clientConfig: ClientConfig
     // ipFiltering: IpFiltering
     // healthCheck
     // snowMonkey
-) {
+) extends otoroshi.models.EntityLocationSupport {
+  def internalId: String = id
   def json: JsValue                                   = TcpService.fmt.writes(this)
   def save()(implicit ec: ExecutionContext, env: Env) = env.datastores.tcpServiceDataStore.set(this)
 }
@@ -205,6 +207,7 @@ object TcpService {
       Try {
         JsSuccess(
           TcpService(
+            location = otoroshi.models.EntityLocation.readFromKey(json),
             id = (json \ "id").as[String],
             name = (json \ "name").as[String],
             port = (json \ "port").as[Int],
@@ -221,7 +224,7 @@ object TcpService {
         case e => JsError(e.getMessage)
       } get
 
-    override def writes(o: TcpService): JsValue = Json.obj(
+    override def writes(o: TcpService): JsValue = o.location.jsonWithKey ++ Json.obj(
       "id"         -> o.id,
       "name"       -> o.name,
       "enabled"    -> o.enabled,

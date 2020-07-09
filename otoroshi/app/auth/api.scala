@@ -61,7 +61,7 @@ case class SessionCookieValues(httpOnly: Boolean = true, secure: Boolean = true)
   def asJson: JsValue = SessionCookieValues.fmt.writes(this)
 }
 
-trait AuthModuleConfig extends AsJson {
+trait AuthModuleConfig extends AsJson with otoroshi.models.EntityLocationSupport {
   def `type`: String
   def id: String
   def name: String
@@ -72,6 +72,8 @@ trait AuthModuleConfig extends AsJson {
   def metadata: Map[String, String]
   def sessionCookieValues: SessionCookieValues
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean]
+  override def internalId: String = id
+  override def json: JsValue = asJson
 }
 
 object AuthModuleConfig {

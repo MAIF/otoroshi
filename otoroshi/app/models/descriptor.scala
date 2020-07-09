@@ -1454,7 +1454,11 @@ case class ServiceDescriptor(
     paths: Seq[String] = Seq.empty[String],
     issueCert: Boolean = false,
     issueCertCA: Option[String] = None,
-) {
+    location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation()
+) extends otoroshi.models.EntityLocationSupport {
+
+  def json: JsValue = toJson
+  def internalId: String = id
 
   def algoChallengeFromOtoToBack: AlgoSettings = if (secComUseSameAlgo) secComSettings else secComAlgoChallengeOtoToBack
   def algoChallengeFromBackToOto: AlgoSettings = if (secComUseSameAlgo) secComSettings else secComAlgoChallengeBackToOto
@@ -1852,6 +1856,7 @@ object ServiceDescriptor {
     override def reads(json: JsValue): JsResult[ServiceDescriptor] =
       Try {
         ServiceDescriptor(
+          location = otoroshi.models.EntityLocation.readFromKey(json),
           id = (json \ "id").as[String],
           // groupId = (json \ "groupId").as[String],
           groups = {
@@ -1992,7 +1997,7 @@ object ServiceDescriptor {
 
     override def writes(sd: ServiceDescriptor): JsValue = {
       val oldGroupId: JsValue = sd.groups.headOption.map(JsString.apply).getOrElse(JsNull) // simulate old behavior
-      Json.obj(
+      sd.location.jsonWithKey ++ Json.obj(
         "id"                           -> sd.id,
         "groupId"                      -> oldGroupId,
         "groups"                       -> JsArray(sd.groups.map(JsString.apply)),

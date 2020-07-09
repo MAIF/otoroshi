@@ -115,7 +115,13 @@ case class ApiKey(clientId: String = IdGenerator.token(16),
                   validUntil: Option[DateTime] = None,
                   rotation: ApiKeyRotation = ApiKeyRotation(),
                   tags: Seq[String] = Seq.empty[String],
-                  metadata: Map[String, String] = Map.empty[String, String]) {
+                  metadata: Map[String, String] = Map.empty[String, String],
+                  location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation()
+             ) extends otoroshi.models.EntityLocationSupport {
+
+  def json: JsValue = toJson
+  def internalId: String = clientId
+
   def save()(implicit ec: ExecutionContext, env: Env)   = env.datastores.apiKeyDataStore.set(this)
   def delete()(implicit ec: ExecutionContext, env: Env) = env.datastores.apiKeyDataStore.delete(this)
   def exists()(implicit ec: ExecutionContext, env: Env) = env.datastores.apiKeyDataStore.exists(this)
@@ -235,7 +241,7 @@ object ApiKey {
         case ServiceGroupIdentifier(_) => true
         case ServiceDescriptorIdentifier(_) => false
       }.map(_.id).map(JsString.apply).getOrElse(JsNull) // simulate old behavior
-      Json.obj(
+      apk.location.jsonWithKey ++ Json.obj(
         "clientId"                -> apk.clientId,
         "clientSecret"            -> apk.clientSecret,
         "clientName"              -> apk.clientName,
@@ -264,6 +270,7 @@ object ApiKey {
           case _                              => rawEnabled
         }
         ApiKey(
+          location = otoroshi.models.EntityLocation.readFromKey(json),
           clientId = (json \ "clientId").as[String],
           clientSecret = (json \ "clientSecret").as[String],
           clientName = (json \ "clientName").as[String],

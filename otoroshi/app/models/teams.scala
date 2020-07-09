@@ -6,11 +6,42 @@ import akka.util.ByteString
 import env.Env
 import models.BackOfficeUser
 import otoroshi.utils.syntax.implicits._
-import play.api.libs.json.{JsArray, JsObject, Json}
+import play.api.libs.json.{Format, JsArray, JsError, JsObject, JsResult, JsString, JsSuccess, JsValue, Json}
 import play.api.mvc.{RequestHeader, Result}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
+
+case class EntityLocation(tenant: TenantId = TenantId.default, teams: Seq[TeamId] = Seq(TeamId.default)) {
+  def json: JsValue = EntityLocation.format.writes(this)
+  def jsonWithKey: JsObject = Json.obj(EntityLocation.keyName -> EntityLocation.format.writes(this))
+}
+
+object EntityLocation {
+  val keyName = "_loc"
+  val format = new Format[EntityLocation] {
+    override def writes(o: EntityLocation): JsValue = Json.obj(
+      "tenant" -> o.tenant.value,
+      "teams" -> JsArray(o.teams.map(t => JsString(t.value))),
+    )
+    override def reads(json: JsValue): JsResult[EntityLocation] = Try {
+      EntityLocation(
+        tenant = json.select("tenant").asOpt[String].map(TenantId.apply).getOrElse(TenantId.default),
+        teams = json.select("teams").asOpt[Seq[String]].map(s => s.map(TeamId.apply)).getOrElse(Seq(TeamId.default)),
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(loc) => JsSuccess(loc)
+    }
+  }
+  def readFromKey(json: JsValue): EntityLocation = {
+    (json \ keyName).asOpt(format).getOrElse(EntityLocation())
+  }
+}
+
+trait EntityLocationSupport extends Entity {
+  def location: EntityLocation
+}
 
 object TeamAccess {
   def apply(raw: String): TeamAccess = {
@@ -24,6 +55,15 @@ object TeamAccess {
     }
   }
 }
+
+object TeamId {
+  val default: TeamId = TeamId("default")
+}
+
+object TenantId {
+  val default: TenantId = TenantId("default")
+}
+
 case class TeamId(value: String) {
   def canBeWrittenBy(user: BackOfficeUser): Boolean = {
     user.teams.exists(v => v.canWrite && (v.value.toLowerCase.trim == "*" || v.value.toLowerCase.trim == value.toLowerCase.trim))
@@ -78,18 +118,18 @@ object RightsChecker {
   case object SuperAdminOnly extends RightsChecker {
     def canPerform(user: BackOfficeUser, currentTenant: Option[String]): Boolean = TenantAndTeamHelper.isSuperAdmin(user)
   }
-  case object TenantAdmin extends RightsChecker {
-    def canPerform(user: BackOfficeUser, currentTenant: Option[String]): Boolean = {
-      if (SuperAdminOnly.canPerform(user, currentTenant)) {
-        true
-      } else {
-        currentTenant match {
-          case None => false
-          case Some(tenant) => TenantAndTeamHelper.canReadTenant(user, tenant) && TenantAndTeamHelper.canWriteTenant(user, tenant)
-        }
-      }
-    }
-  }
+  // case object TenantAdmin extends RightsChecker {
+  //   def canPerform(user: BackOfficeUser, currentTenant: Option[String]): Boolean = {
+  //     if (SuperAdminOnly.canPerform(user, currentTenant)) {
+  //       true
+  //     } else {
+  //       currentTenant match {
+  //         case None => false
+  //         case Some(tenant) => TenantAndTeamHelper.canReadTenant(user, tenant) && TenantAndTeamHelper.canWriteTenant(user, tenant)
+  //       }
+  //     }
+  //   }
+  // }
 }
 
 object TenantAndTeamHelper {

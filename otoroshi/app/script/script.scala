@@ -1164,12 +1164,22 @@ object Implicits {
   }
 }
 
-case class Script(id: String, name: String, desc: String, code: String, `type`: PluginType, metadata: Map[String, String]) {
+case class Script(
+  id: String,
+  name: String,
+  desc: String,
+  code: String,
+  `type`: PluginType,
+  metadata: Map[String, String],
+  location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation()
+) extends otoroshi.models.EntityLocationSupport {
   def save()(implicit ec: ExecutionContext, env: Env)   = env.datastores.scriptDataStore.set(this)
   def delete()(implicit ec: ExecutionContext, env: Env) = env.datastores.scriptDataStore.delete(this)
   def exists()(implicit ec: ExecutionContext, env: Env) = env.datastores.scriptDataStore.exists(this)
   def toJson                                            = Script.toJson(this)
   def hash: String                                      = Hashing.sha256().hashString(code, StandardCharsets.UTF_8).toString
+  def json: JsValue = toJson
+  def internalId: String = id
 }
 
 object Script {
@@ -1179,7 +1189,7 @@ object Script {
   val digest: MessageDigest = MessageDigest.getInstance("SHA-256")
 
   val _fmt: Format[Script] = new Format[Script] {
-    override def writes(apk: Script): JsValue = Json.obj(
+    override def writes(apk: Script): JsValue = apk.location.jsonWithKey ++ Json.obj(
       "id"   -> apk.id,
       "name" -> apk.name,
       "desc" -> apk.desc,
@@ -1199,6 +1209,7 @@ object Script {
           case _             => TransformerType
         }
         Script(
+          location = otoroshi.models.EntityLocation.readFromKey(json),
           id = (json \ "id").as[String],
           name = (json \ "name").as[String],
           desc = (json \ "desc").as[String],

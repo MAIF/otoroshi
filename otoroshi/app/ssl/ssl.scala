@@ -113,8 +113,12 @@ case class Cert(
     from: DateTime = DateTime.now(),
     to: DateTime = DateTime.now(),
     sans: Seq[String] = Seq.empty,
-    entityMetadata: Map[String, String] = Map.empty
-) {
+    entityMetadata: Map[String, String] = Map.empty,
+    location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation()
+) extends otoroshi.models.EntityLocationSupport {
+
+  def json: JsValue = toJson
+  def internalId: String = id
 
   lazy val certType = {
     if (client) "client"
@@ -414,7 +418,7 @@ object Cert {
   }
 
   val _fmt: Format[Cert] = new Format[Cert] {
-    override def writes(cert: Cert): JsValue = Json.obj(
+    override def writes(cert: Cert): JsValue = cert.location.jsonWithKey ++ Json.obj(
       "id"          -> cert.id,
       "domain"      -> cert.domain,
       "name"        -> cert.name,
@@ -440,6 +444,7 @@ object Cert {
     override def reads(json: JsValue): JsResult[Cert] =
       Try {
         Cert(
+          location = otoroshi.models.EntityLocation.readFromKey(json),
           id = (json \ "id").as[String],
           name = (json \ "name").asOpt[String].orElse((json \ "domain").asOpt[String]).getOrElse("none"),
           description = (json \ "description")
@@ -1876,6 +1881,7 @@ object ClientCertificateValidator {
       Try {
         JsSuccess(
           ClientCertificateValidator(
+            location = otoroshi.models.EntityLocation.readFromKey(json),
             id = (json \ "id").as[String],
             name = (json \ "name").as[String],
             description = (json \ "description").asOpt[String].getOrElse("--"),
@@ -1896,7 +1902,7 @@ object ClientCertificateValidator {
         case e => JsError(e.getMessage)
       } get
 
-    override def writes(o: ClientCertificateValidator): JsValue = Json.obj(
+    override def writes(o: ClientCertificateValidator): JsValue = o.location.jsonWithKey ++ Json.obj(
       "id"          -> o.id,
       "name"        -> o.name,
       "description" -> o.description,
@@ -1942,8 +1948,12 @@ case class ClientCertificateValidator(
     noCache: Boolean,
     alwaysValid: Boolean,
     headers: Map[String, String] = Map.empty,
-    proxy: Option[WSProxyServer]
-) {
+    proxy: Option[WSProxyServer],
+    location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation()
+) extends otoroshi.models.EntityLocationSupport {
+
+  def json: JsValue = asJson
+  def internalId: String = id
 
   import utils.http.Implicits._
 
