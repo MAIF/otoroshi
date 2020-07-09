@@ -566,7 +566,7 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
             metadata
           )
         )
-        val jsonElements: Seq[JsValue] = entities.drop(paginationPosition).take(paginationPageSize).map(writeEntity)
+        val jsonElements: Seq[JsValue] = entities.filter(e => canRead(ctx)(e)).drop(paginationPosition).take(paginationPageSize).map(writeEntity)
         val finalItems = if (hasFilters) {
           val items: Seq[JsValue] = jsonElements.filter { elem =>
             filters.forall {
@@ -605,6 +605,7 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
       case Left(error) => Status(error.status)(Json.obj("error" -> "find_error", "error_description" -> error.bodyAsJson))
       case Right(OptionalEntityAndContext(entity, action, message, metadata, alert)) => entity match {
         case None => NotFound(Json.obj("error" -> "not_found", "error_description" -> s"entity not found"))
+        case Some(v) if !canRead(ctx)(v) => Unauthorized(Json.obj("error" -> "unauthorized", "error_description" -> "You're not allowed to do this !"))
         case Some(v) =>
           Audit.send(
             AdminApiEvent(
