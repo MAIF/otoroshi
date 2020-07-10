@@ -12,6 +12,8 @@ case class UserRight(tenant: TenantAccess, teams: Seq[TeamAccess]) {
 }
 
 object UserRight {
+  val superAdmin = UserRight(TenantAccess("*"), Seq(TeamAccess("*")))
+  val superAdminSeq = Seq(superAdmin)
   val format = new Format[UserRight] {
     override def writes(o: UserRight): JsValue = Json.obj(
       "tenant" -> o.tenant.toRaw,
@@ -29,14 +31,17 @@ object UserRight {
       case Success(ur) => JsSuccess(ur)
     }
   }
+  def readFromArray(arr: JsArray): Seq[UserRight] = {
+    arr.value.map { ur =>
+      UserRight.format.reads(ur).asOpt
+    }.collect {
+      case Some(ur) => ur
+    }
+  }
   def readFromObject(json: JsValue): Seq[UserRight] = {
     val defaultValue = Seq(UserRight(TenantAccess("*"), Seq(TeamAccess("*"))))
     val rights: Option[Seq[UserRight]] = (json \ "rights").asOpt[JsArray].map { arr =>
-      arr.value.map { ur =>
-        UserRight.format.reads(ur).asOpt
-      }.collect {
-        case Some(ur) => ur
-      }
+      readFromArray(arr)
     }
     rights.getOrElse(defaultValue)
   }

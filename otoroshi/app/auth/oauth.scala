@@ -7,6 +7,7 @@ import env.Env
 import models._
 import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
 import org.joda.time.DateTime
+import otoroshi.models.{TeamAccess, TenantAccess, UserRight}
 import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.ws.{WSProxyServer, WSResponse}
@@ -71,7 +72,10 @@ object GenericOauth2ModuleConfig extends FromJson[AuthModuleConfig] {
           extraMetadata = (json \ "extraMetadata").asOpt[JsObject].getOrElse(Json.obj()),
           mtlsConfig = MtlsConfig.read((json \ "mtlsConfig").asOpt[JsValue]),
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-          sessionCookieValues = (json \ "sessionCookieValues").asOpt(SessionCookieValues.fmt).getOrElse(SessionCookieValues())
+          sessionCookieValues = (json \ "sessionCookieValues").asOpt(SessionCookieValues.fmt).getOrElse(SessionCookieValues()),
+          superAdmins = (json \ "superAdmins").asOpt[Boolean].getOrElse(false),
+          rightsOverride = (json \ "rightsOverride").asOpt[Map[String, JsArray]].map(_.mapValues(UserRight.readFromArray)).getOrElse(Map.empty),
+          dataOverride = (json \ "dataOverride").asOpt[Map[String, JsObject]].getOrElse(Map.empty)
         )
       )
     } recover {
@@ -112,7 +116,10 @@ case class GenericOauth2ModuleConfig(
                                       refreshTokens: Boolean = false,
                                       metadata: Map[String, String],
                                       sessionCookieValues: SessionCookieValues,
-                                      location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation()
+                                      location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation(),
+                                      superAdmins: Boolean = false,
+                                      rightsOverride: Map[String, Seq[UserRight]] = Map.empty,
+                                      dataOverride: Map[String, JsObject] = Map.empty
 ) extends OAuth2ModuleConfig {
   def `type`: String                                        = "oauth2"
   override def authModule(config: GlobalConfig): AuthModule = GenericOauth2Module(this)
@@ -149,7 +156,10 @@ case class GenericOauth2ModuleConfig(
     "extraMetadata"        -> this.extraMetadata,
     "metadata"             -> this.metadata,
     "refreshTokens"        -> this.refreshTokens,
-    "sessionCookieValues"   -> SessionCookieValues.fmt.writes(this.sessionCookieValues)
+    "sessionCookieValues"  -> SessionCookieValues.fmt.writes(this.sessionCookieValues),
+    "superAdmins"          -> superAdmins,
+    "rightsOverride"       -> JsObject(rightsOverride.mapValues(s => JsArray(s.map(_.json)))),
+    "dataOverride"         -> JsObject(dataOverride),
   )
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.authConfigsDataStore.set(this)
   override def cookieSuffix(desc: ServiceDescriptor)                   = s"global-oauth-$id"
@@ -378,6 +388,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
                     Option(PrivateAppsUser.select(user, authConfig.otoroshiDataField))
                   )
                   .map(_.asOpt[JsObject].getOrElse(Json.obj()))
+                val email = (user \ authConfig.emailField).asOpt[String].getOrElse("no.name@oto.tools")
                 Right(
                   PrivateAppsUser(
                     randomId = IdGenerator.token(64),
@@ -385,12 +396,12 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
                       .asOpt[String]
                       .orElse((user \ "sub").asOpt[String])
                       .getOrElse("No Name"),
-                    email = (user \ authConfig.emailField).asOpt[String].getOrElse("no.name@oto.tools"),
+                    email = email,
                     profile = user,
                     token = rawToken,
                     authConfigId = authConfig.id,
                     realm = authConfig.cookieSuffix(descriptor),
-                    otoroshiData = Some(authConfig.extraMetadata.deepMerge(meta.getOrElse(Json.obj()))),
+                    otoroshiData = authConfig.dataOverride.get(email).map(v => authConfig.extraMetadata.deepMerge(v)).orElse(Some(authConfig.extraMetadata.deepMerge(meta.getOrElse(Json.obj())))),
                     metadata = Map.empty
                   )
                 )
@@ -426,6 +437,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
               }
               .map { tuple =>
                 val (user, rawToken) = tuple
+                val email = (user \ authConfig.emailField).asOpt[String].getOrElse("no.name@oto.tools")
                 Right(
                   BackOfficeUser(
                     randomId = IdGenerator.token(64),
@@ -433,12 +445,21 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
                       .asOpt[String]
                       .orElse((user \ "sub").asOpt[String])
                       .getOrElse("No Name"),
-                    email = (user \ authConfig.emailField).asOpt[String].getOrElse("no.name@oto.tools"),
+                    email = email,
                     profile = user,
                     authConfigId = authConfig.id,
                     simpleLogin = false,
                     metadata = Map.empty,
-                    rights = Seq.empty // TODO: tale tenant from auth module
+                    rights = if (authConfig.superAdmins) UserRight.superAdminSeq else {
+                      authConfig.rightsOverride.getOrElse(email,
+                        Seq(
+                          UserRight(
+                            TenantAccess(authConfig.location.tenant.value),
+                            authConfig.location.teams.map(t => TeamAccess(t.value))
+                          )
+                        )
+                      )
+                    }
                   )
                 )
               }

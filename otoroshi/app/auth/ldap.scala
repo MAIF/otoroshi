@@ -9,6 +9,7 @@ import env.Env
 import javax.naming.Context
 import javax.naming.directory.InitialDirContext
 import models._
+import otoroshi.models.{TeamAccess, TenantAccess, UserRight}
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc._
@@ -94,7 +95,10 @@ object LdapAuthModuleConfig extends FromJson[AuthModuleConfig] {
           metadataField = (json \ "metadataField").asOpt[String].filterNot(_.trim.isEmpty),
           extraMetadata = (json \ "extraMetadata").asOpt[JsObject].getOrElse(Json.obj()),
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-          sessionCookieValues = (json \ "sessionCookieValues").asOpt(SessionCookieValues.fmt).getOrElse(SessionCookieValues())
+          sessionCookieValues = (json \ "sessionCookieValues").asOpt(SessionCookieValues.fmt).getOrElse(SessionCookieValues()),
+          superAdmins = (json \ "superAdmins").asOpt[Boolean].getOrElse(false),
+          rightsOverride = (json \ "rightsOverride").asOpt[Map[String, JsArray]].map(_.mapValues(UserRight.readFromArray)).getOrElse(Map.empty),
+          dataOverride = (json \ "dataOverride").asOpt[Map[String, JsObject]].getOrElse(Map.empty)
         )
       )
     } recover {
@@ -124,7 +128,10 @@ case class LdapAuthModuleConfig(
                                  extraMetadata: JsObject = Json.obj(),
                                  metadata: Map[String, String],
                                  sessionCookieValues: SessionCookieValues,
-                                 location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation()
+                                 location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation(),
+                                 superAdmins: Boolean = false,
+                                 rightsOverride: Map[String, Seq[UserRight]] = Map.empty,
+                                 dataOverride: Map[String, JsObject] = Map.empty
 ) extends AuthModuleConfig {
   def `type`: String = "ldap"
 
@@ -132,25 +139,28 @@ case class LdapAuthModuleConfig(
 
   override def asJson = location.jsonWithKey ++ Json.obj(
     "type"               -> "ldap",
-    "id"                  -> this.id,
-    "name"                -> this.name,
-    "desc"                -> this.desc,
-    "basicAuth"           -> this.basicAuth,
-    "allowEmptyPassword"  -> this.allowEmptyPassword,
-    "sessionMaxAge"       -> this.sessionMaxAge,
-    "serverUrl"           -> this.serverUrl,
-    "searchBase"          -> this.searchBase,
-    "userBase"            -> this.userBase.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-    "groupFilter"         -> this.groupFilter.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-    "searchFilter"        -> this.searchFilter,
-    "adminUsername"       -> this.adminUsername.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-    "adminPassword"       -> this.adminPassword.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-    "nameField"           -> this.nameField,
-    "emailField"          -> this.emailField,
-    "metadataField"       -> this.metadataField.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-    "extraMetadata"       -> this.extraMetadata,
-    "metadata"            -> this.metadata,
-    "sessionCookieValues"  -> SessionCookieValues.fmt.writes(this.sessionCookieValues)
+    "id"                  -> id,
+    "name"                -> name,
+    "desc"                -> desc,
+    "basicAuth"           -> basicAuth,
+    "allowEmptyPassword"  -> allowEmptyPassword,
+    "sessionMaxAge"       -> sessionMaxAge,
+    "serverUrl"           -> serverUrl,
+    "searchBase"          -> searchBase,
+    "userBase"            -> userBase.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+    "groupFilter"         -> groupFilter.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+    "searchFilter"        -> searchFilter,
+    "adminUsername"       -> adminUsername.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+    "adminPassword"       -> adminPassword.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+    "nameField"           -> nameField,
+    "emailField"          -> emailField,
+    "metadataField"       -> metadataField.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+    "extraMetadata"       -> extraMetadata,
+    "metadata"            -> metadata,
+    "sessionCookieValues" -> SessionCookieValues.fmt.writes(this.sessionCookieValues),
+    "superAdmins"         -> superAdmins,
+    "rightsOverride"      -> JsObject(rightsOverride.mapValues(s => JsArray(s.map(_.json)))),
+    "dataOverride"        -> JsObject(dataOverride),
   )
 
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.authConfigsDataStore.set(this)
@@ -310,7 +320,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
             email = user.email,
             profile = user.asJson,
             realm = authConfig.cookieSuffix(descriptor),
-            otoroshiData = Some(user.metadata),
+            otoroshiData = authConfig.dataOverride.get(user.email).map(v => authConfig.extraMetadata.deepMerge(v)).orElse(Some(user.metadata)),
             authConfigId = authConfig.id,
             metadata = Map.empty
           )
@@ -331,7 +341,16 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
             simpleLogin = false,
             authConfigId = authConfig.id,
             metadata = Map.empty,
-            rights = Seq.empty // TODO: tale tenant from auth module
+            rights = if (authConfig.superAdmins) UserRight.superAdminSeq else {
+              authConfig.rightsOverride.getOrElse(user.email,
+                Seq(
+                  UserRight(
+                    TenantAccess(authConfig.location.tenant.value),
+                    authConfig.location.teams.map(t => TeamAccess(t.value))
+                  )
+                )
+              )
+            }
           )
         )
       case None => Left(s"You're not authorized here")

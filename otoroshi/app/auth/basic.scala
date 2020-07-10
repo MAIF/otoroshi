@@ -16,7 +16,8 @@ import env.Env
 import models._
 import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
-import otoroshi.models.{OtoroshiAdminType, WebAuthnOtoroshiAdmin}
+import otoroshi.models.{OtoroshiAdminType, UserRight, WebAuthnOtoroshiAdmin}
+import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc._
@@ -54,7 +55,8 @@ case class BasicAuthUser(
     password: String,
     email: String,
     webauthn: Option[WebAuthnDetails] = None,
-    metadata: JsObject = Json.obj()
+    metadata: JsObject = Json.obj(),
+    rights: Seq[UserRight]
 ) {
   def asJson: JsValue = BasicAuthUser.fmt.writes(this)
 }
@@ -66,7 +68,8 @@ object BasicAuthUser {
       "password" -> o.password,
       "email"    -> o.email,
       "metadata" -> o.metadata,
-      "webauthn" -> o.webauthn.map(_.asJson).getOrElse(JsNull).as[JsValue]
+      "webauthn" -> o.webauthn.map(_.asJson).getOrElse(JsNull).as[JsValue],
+      "rights"   -> JsArray(o.rights.map(_.json))
     )
     override def reads(json: JsValue) =
       Try {
@@ -76,7 +79,8 @@ object BasicAuthUser {
             password = (json \ "password").as[String],
             email = (json \ "email").as[String],
             webauthn = (json \ "webauthn").asOpt(WebAuthnDetails.fmt),
-            metadata = (json \ "metadata").asOpt[JsObject].getOrElse(Json.obj())
+            metadata = (json \ "metadata").asOpt[JsObject].getOrElse(Json.obj()),
+            rights = UserRight.readFromObject(json)
           )
         )
       } recover {
@@ -162,8 +166,6 @@ case class BasicAuthModuleConfig(
 
 case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule {
 
-  import utils.future.Implicits._
-
   def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), Charsets.UTF_8)
 
   def extractUsernamePassword(header: String): Option[(String, String)] = {
@@ -210,7 +212,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
             simpleLogin = false,
             authConfigId = authConfig.id,
             metadata = Map.empty,
-            rights = Seq.empty // TODO: tale tenant from auth module
+            rights = user.rights
           )
         )
       case None => Left(s"You're not authorized here")
@@ -450,7 +452,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
         createdAt = DateTime.now(),
         typ = OtoroshiAdminType.WebAuthnAdmin,
         metadata = Map.empty,
-        rights = Seq.empty // TODO: tale tenant from auth module
+        rights = usr.rights
       )
     }
 
@@ -516,7 +518,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
         createdAt = DateTime.now(),
         typ = OtoroshiAdminType.WebAuthnAdmin,
         metadata = Map.empty,
-        rights = Seq.empty // TODO: tale tenant from auth module
+        rights = usr.rights
       )
     }
 
@@ -586,7 +588,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
         createdAt = DateTime.now(),
         typ = OtoroshiAdminType.WebAuthnAdmin,
         metadata = Map.empty,
-        rights = Seq.empty // TODO: tale tenant from auth module
+        rights = usr.rights
       )
     }
 
@@ -668,7 +670,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
         createdAt = DateTime.now(),
         typ = OtoroshiAdminType.WebAuthnAdmin,
         metadata = Map.empty,
-        rights = Seq.empty // TODO: tale tenant from auth module
+        rights = usr.rights
       )
     }
 
@@ -748,7 +750,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
         createdAt = DateTime.now(),
         typ = OtoroshiAdminType.WebAuthnAdmin,
         metadata = Map.empty,
-        rights = Seq.empty // TODO: tale tenant from auth module
+        rights = usr.rights
       )
     }
 
@@ -816,7 +818,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
         createdAt = DateTime.now(),
         typ = OtoroshiAdminType.WebAuthnAdmin,
         metadata = Map.empty,
-        rights = Seq.empty // TODO: tale tenant from auth module
+        rights = usr.rights
       )
     }
 
