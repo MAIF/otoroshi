@@ -73,7 +73,7 @@ object GenericOauth2ModuleConfig extends FromJson[AuthModuleConfig] {
           mtlsConfig = MtlsConfig.read((json \ "mtlsConfig").asOpt[JsValue]),
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
           sessionCookieValues = (json \ "sessionCookieValues").asOpt(SessionCookieValues.fmt).getOrElse(SessionCookieValues()),
-          superAdmins = (json \ "superAdmins").asOpt[Boolean].getOrElse(false),
+          superAdmins = (json \ "superAdmins").asOpt[Boolean].getOrElse(true), // for backward compatibility reasons
           rightsOverride = (json \ "rightsOverride").asOpt[Map[String, JsArray]].map(_.mapValues(UserRight.readFromArray)).getOrElse(Map.empty),
           dataOverride = (json \ "dataOverride").asOpt[Map[String, JsObject]].getOrElse(Map.empty)
         )

@@ -96,7 +96,7 @@ object LdapAuthModuleConfig extends FromJson[AuthModuleConfig] {
           extraMetadata = (json \ "extraMetadata").asOpt[JsObject].getOrElse(Json.obj()),
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
           sessionCookieValues = (json \ "sessionCookieValues").asOpt(SessionCookieValues.fmt).getOrElse(SessionCookieValues()),
-          superAdmins = (json \ "superAdmins").asOpt[Boolean].getOrElse(false),
+          superAdmins = (json \ "superAdmins").asOpt[Boolean].getOrElse(false), // for backward compatibility reasons
           rightsOverride = (json \ "rightsOverride").asOpt[Map[String, JsArray]].map(_.mapValues(UserRight.readFromArray)).getOrElse(Map.empty),
           dataOverride = (json \ "dataOverride").asOpt[Map[String, JsObject]].getOrElse(Map.empty)
         )
