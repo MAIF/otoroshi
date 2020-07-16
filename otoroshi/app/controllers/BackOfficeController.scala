@@ -913,14 +913,16 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
     ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { body =>
       Try {
         val certs = P12Helper.extractCertificate(body, password)
-        Source(certs.toList)
-          .mapAsync(1) { cert =>
-            cert.enrich().____save()
-          }
-          .runWith(Sink.ignore)
-          .map { _ =>
-            Ok(Json.obj("done" -> true))
-          }
+        val cert = certs.head
+        Ok(cert.enrich().toJson).future
+        // Source(certs.toList)
+        //   .mapAsync(1) { cert =>
+        //     cert.enrich().save()
+        //   }
+        //   .runWith(Sink.ignore)
+        //   .map { _ =>
+        //     Ok(Json.obj("done" -> true))
+        //   }
       } recover {
         case e =>
           e.printStackTrace()

@@ -507,7 +507,7 @@ export class CertificatesPage extends Component {
     window.newPrompt('Certificate DN').then(value => {
       if (value && value.trim() !== '') {
         BackOfficeServices.selfSignedClientCert(value).then(cert => {
-          console.log(cert);
+          // console.log(cert);
           this.props.setTitle(`Create a new certificate`);
           window.history.replaceState({}, '', `/bo/dashboard/certificates/add`);
           this.table.setState({ currentItem: cert, showAddForm: true });
@@ -522,8 +522,11 @@ export class CertificatesPage extends Component {
     data.append('file', input.files[0]);
     return window.newPrompt('Certificate password ?').then(password => {
       if (password) {
-        return BackOfficeServices.importP12(password, input.files[0]).then(() => {
-          this.table.update();
+        return BackOfficeServices.importP12(password, input.files[0]).then(cert => {
+          // this.table.update();
+          this.props.setTitle(`Create a new certificate`);
+          window.history.replaceState({}, '', `/bo/dashboard/certificates/add`);
+          this.table.setState({ currentItem: cert, showAddForm: true });
         });
       }
     });
