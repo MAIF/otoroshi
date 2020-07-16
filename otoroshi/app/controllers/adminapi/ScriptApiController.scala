@@ -3,6 +3,7 @@ package controllers.adminapi
 import actions.ApiAction
 import akka.util.ByteString
 import env.Env
+import otoroshi.models.RightsChecker.Anyone
 import otoroshi.script._
 import play.api.Logger
 import play.api.libs.json._
@@ -101,6 +102,7 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
       }
       env.datastores.scriptDataStore.findAll().map { all =>
         val allClasses = all
+          .filter(ctx.canUserRead)
           .filter { script =>
             typ match {
               case None                                                      => true
@@ -143,12 +145,14 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
   }
 
   def compileScript() = ApiAction.async(sourceBodyParser) { ctx =>
-    OnlyIfScriptingEnabled {
-      ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { body =>
-        val code = Json.parse(body.utf8String).\("code").as[String]
-        env.scriptCompiler.compile(code).map {
-          case Left(err) => Ok(Json.obj("done" -> true, "error" -> err))
-          case Right(_)  => Ok(Json.obj("done" -> true))
+    ctx.checkRights(Anyone) {
+      OnlyIfScriptingEnabled {
+        ctx.request.body.runFold(ByteString.empty)(_ ++ _).flatMap { body =>
+          val code = Json.parse(body.utf8String).\("code").as[String]
+          env.scriptCompiler.compile(code).map {
+            case Left(err) => Ok(Json.obj("done" -> true, "error" -> err))
+            case Right(_) => Ok(Json.obj("done" -> true))
+          }
         }
       }
     }
@@ -245,98 +249,4 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
       }
     }
   }
-
-  /*
-
-  def findAllScripts() = ApiAction.async { ctx =>
-    OnlyIfScriptingEnabled {
-      env.datastores.scriptDataStore.findAll().map(all => Ok(JsArray(all.map(_.toJson))))
-    }
-  }
-
-  def findScriptById(id: String) = ApiAction.async { ctx =>
-    OnlyIfScriptingEnabled {
-      env.datastores.scriptDataStore.findById(id).map {
-        case Some(script) => Ok(script.toJson)
-        case None =>
-          NotFound(
-            Json.obj("error" -> s"Script with id $id not found")
-          )
-      }
-    }
-  }
-
-
-
-  def createScript() = ApiAction.async(parse.json) { ctx =>
-    OnlyIfScriptingEnabled {
-      val id = (ctx.request.body \ "id").asOpt[String]
-      val body = ctx.request.body
-        .as[JsObject] ++ id.map(v => Json.obj("id" -> id)).getOrElse(Json.obj("id" -> IdGenerator.token))
-      Script.fromJsonSafe(body) match {
-        case Left(_) => BadRequest(Json.obj("error" -> "Bad Script format")).asFuture
-        case Right(script) =>
-          env.datastores.scriptDataStore.set(script).map { _ =>
-            env.scriptManager.preCompileScript(script)
-            Ok(script.toJson)
-          }
-      }
-    }
-  }
-
-  def updateScript(id: String) = ApiAction.async(parse.json) { ctx =>
-    OnlyIfScriptingEnabled {
-      env.datastores.scriptDataStore.findById(id).flatMap {
-        case None =>
-          NotFound(
-            Json.obj("error" -> s"Script with id $id not found")
-          ).asFuture
-        case Some(initialScript) => {
-          Script.fromJsonSafe(ctx.request.body) match {
-            case Left(_) => BadRequest(Json.obj("error" -> "Bad Script format")).asFuture
-            case Right(script) => {
-              env.datastores.scriptDataStore.set(script).map { _ =>
-                env.scriptManager.preCompileScript(script)
-                Ok(script.toJson)
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-
-  def patchScript(id: String) = ApiAction.async(parse.json) { ctx =>
-    OnlyIfScriptingEnabled {
-      env.datastores.scriptDataStore.findById(id).flatMap {
-        case None =>
-          NotFound(
-            Json.obj("error" -> s"Script with id $id not found")
-          ).asFuture
-        case Some(initialScript) => {
-          val currentJson = initialScript.toJson
-          val newScript   = utils.JsonPatchHelpers.patchJson(ctx.request.body, currentJson)
-          Script.fromJsonSafe(newScript) match {
-            case Left(_) => BadRequest(Json.obj("error" -> "Bad Script format")).asFuture
-            case Right(newScript) => {
-              env.datastores.scriptDataStore.set(newScript).map { _ =>
-                env.scriptManager.preCompileScript(newScript)
-                Ok(newScript.toJson)
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-
-  def deleteScript(id: String) = ApiAction.async { ctx =>
-    OnlyIfScriptingEnabled {
-      env.datastores.scriptDataStore.delete(id).map { _ =>
-        env.scriptManager.removeScript(id)
-        Ok(Json.obj("deleted" -> true))
-      }
-    }
-  }
-  */
 }

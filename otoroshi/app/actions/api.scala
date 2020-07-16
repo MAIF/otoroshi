@@ -8,6 +8,7 @@ import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.google.common.base.Charsets
 import env.Env
+import gateway.Errors
 import models.{ApiKey, BackOfficeUser}
 import otoroshi.models.RightsChecker.{SuperAdminOnly, TenantAdminOnly}
 import otoroshi.models._
@@ -21,7 +22,14 @@ import utils.RequestImplicits._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
+object ApiActionContext {
+  val unauthorized = Results.Unauthorized(Json.obj("error" -> "You're not authorized here !"))
+  val funauthorized = unauthorized.future
+}
+
 case class ApiActionContext[A](apiKey: ApiKey, request: Request[A]) {
+  lazy val unauthorized = ApiActionContext.unauthorized
+  lazy val funauthorized = ApiActionContext.funauthorized
   def user(implicit env: Env): Option[JsValue] =
     request.headers
       .get(env.Headers.OtoroshiAdminProfile)
@@ -130,6 +138,43 @@ case class ApiActionContext[A](apiKey: ApiKey, request: Request[A]) {
       }
     }
   }
+  /// utils methods
+  def canReadService(id: String)(f: => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
+    env.datastores.serviceDescriptorDataStore.findById(id).flatMap {
+      case Some(service) if canUserRead(service) => f
+      case _ => funauthorized
+    }
+  }
+  def canWriteService(id: String)(f: => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
+    env.datastores.serviceDescriptorDataStore.findById(id).flatMap {
+      case Some(service) if canUserWrite(service) => f
+      case _ => funauthorized
+    }
+  }
+  def canReadApikey(id: String)(f: => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
+    env.datastores.apiKeyDataStore.findById(id).flatMap {
+      case Some(service) if canUserRead(service) => f
+      case _ => funauthorized
+    }
+  }
+  def canWriteApikey(id: String)(f: => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
+    env.datastores.apiKeyDataStore.findById(id).flatMap {
+      case Some(service) if canUserWrite(service) => f
+      case _ => funauthorized
+    }
+  }
+  def canReadGroup(id: String)(f: => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
+    env.datastores.serviceGroupDataStore.findById(id).flatMap {
+      case Some(service) if canUserRead(service) => f
+      case _ => funauthorized
+    }
+  }
+  def canWriteGroup(id: String)(f: => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
+    env.datastores.serviceGroupDataStore.findById(id).flatMap {
+      case Some(service) if canUserWrite(service) => f
+      case _ => funauthorized
+    }
+  }
 }
 
 class ApiAction(val parser: BodyParser[AnyContent])(implicit env: Env)
@@ -186,18 +231,18 @@ class ApiAction(val parser: BodyParser[AnyContent])(implicit env: Env)
                           case Failure(err) => error(s"Server error : $err", Some(err))
                         }
                       }
-                      case _ => error(s"You're not authorized1 - ${request.method} ${request.uri}")
+                      case _ => error(s"You're not authorized - ${request.method} ${request.uri}")
                     }
                   } recoverWith {
                   case e =>
                     e.printStackTrace()
-                    error(s"You're not authorized2 - ${request.method} ${request.uri}")
+                    error(s"You're not authorized - ${request.method} ${request.uri}")
                 }
               }
-              case _ => error(s"You're not authorized3 - ${request.method} ${request.uri}")
+              case _ => error(s"You're not authorized - ${request.method} ${request.uri}")
             }
           }
-          case _ => error(s"You're not authorized4 - ${request.method} ${request.uri}")
+          case _ => error(s"You're not authorized - ${request.method} ${request.uri}")
         }
       }
       case _ => error(s"Not found")

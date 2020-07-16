@@ -128,83 +128,32 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
     fetchWithPaginationAndFilteringAsResult(ctx, "filter.".some, (e: String) => JsString(e), options) {
       env.datastores.globalConfigDataStore.allEnv().map(_.toSeq).fright[JsonApiError]
     }
-    // Audit.send(
-    //   AdminApiEvent(
-    //     env.snowflakeGenerator.nextIdStr(),
-    //     env.env,
-    //     Some(ctx.apiKey),
-    //     ctx.user,
-    //     "ACCESS_ALL_LINES",
-    //     "User accessed all lines",
-    //     ctx.from,
-    //     ctx.ua
-    //   )
-    // )
-    // env.datastores.globalConfigDataStore.allEnv().map {
-    //   case lines => Ok(JsArray(lines.toSeq.map(l => JsString(l))))
-    // }
   }
 
   def servicesForALine(line: String) = ApiAction.async { ctx =>
     val options = SendAuditAndAlert("ACCESS_SERVICES_FOR_LINES", s"User accessed service list for line $line", None, Json.obj("line" -> line), ctx)
     fetchWithPaginationAndFilteringAsResult(ctx, "filter.".some, (e: ServiceDescriptor) => e.toJson, options) {
-      env.datastores.serviceDescriptorDataStore.findByEnv(line).fright[JsonApiError]
+      env.datastores.serviceDescriptorDataStore.findByEnv(line).map(_.filter(ctx.canUserRead)).fright[JsonApiError]
     }
-    // val paginationPage: Int = ctx.request.queryString.get("page").flatMap(_.headOption).map(_.toInt).getOrElse(1)
-    // val paginationPageSize: Int =
-    //   ctx.request.queryString.get("pageSize").flatMap(_.headOption).map(_.toInt).getOrElse(Int.MaxValue)
-    // val paginationPosition = (paginationPage - 1) * paginationPageSize
-    // Audit.send(
-    //   AdminApiEvent(
-    //     env.snowflakeGenerator.nextIdStr(),
-    //     env.env,
-    //     Some(ctx.apiKey),
-    //     ctx.user,
-    //     "ACCESS_SERVICES_FOR_LINES",
-    //     s"User accessed service list for line $line",
-    //     ctx.from,
-    //     ctx.ua,
-    //     Json.obj("line" -> line)
-    //   )
-    // )
-    // env.datastores.serviceDescriptorDataStore.findByEnv(line).map {
-    //   case descriptors => Ok(JsArray(descriptors.drop(paginationPosition).take(paginationPageSize).map(_.toJson)))
-    // }
   }
 
   def serviceTargets(serviceId: String) = ApiAction.async { ctx =>
-    val options = SendAuditAndAlert("ACCESS_SERVICE_TARGETS", "User accessed a service targets", None, Json.obj("serviceId" -> serviceId), ctx)
-    fetchWithPaginationAndFilteringAsResult(ctx, "filter.".some, (e: String) => JsString(e), options) {
-      env.datastores.serviceDescriptorDataStore.findById(serviceId).map {
-        case None => JsonApiError(404, JsString(s"Service with id: '$serviceId' not found")).left[Seq[String]]
-        case Some(desc) => desc.targets.map(t => s"${t.scheme}://${t.host}").right[JsonApiError]
+    ctx.canReadService(serviceId) {
+      val options = SendAuditAndAlert("ACCESS_SERVICE_TARGETS", "User accessed a service targets", None, Json.obj("serviceId" -> serviceId), ctx)
+      fetchWithPaginationAndFilteringAsResult(ctx, "filter.".some, (e: String) => JsString(e), options) {
+        env.datastores.serviceDescriptorDataStore.findById(serviceId).map {
+          case None => JsonApiError(404, JsString(s"Service with id: '$serviceId' not found")).left[Seq[String]]
+          case Some(desc) => desc.targets.map(t => s"${t.scheme}://${t.host}").right[JsonApiError]
+        }
       }
     }
-    // env.datastores.serviceDescriptorDataStore.findById(serviceId).map {
-    //   case None => NotFound(Json.obj("error" -> s"Service with id: '$serviceId' not found"))
-    //   case Some(desc) => {
-    //     Audit.send(
-    //       AdminApiEvent(
-    //         env.snowflakeGenerator.nextIdStr(),
-    //         env.env,
-    //         Some(ctx.apiKey),
-    //         ctx.user,
-    //         "ACCESS_SERVICE_TARGETS",
-    //         s"User accessed a service targets",
-    //         ctx.from,
-    //         ctx.ua,
-    //         Json.obj("serviceId" -> serviceId)
-    //       )
-    //     )
-    //     Ok(JsArray(desc.targets.map(t => JsString(s"${t.scheme}://${t.host}"))))
-    //   }
-    // }
   }
 
   def updateServiceTargets(serviceId: String) = ApiAction.async(parse.json) { ctx =>
     val body = ctx.request.body
     env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
       case None => NotFound(Json.obj("error" -> s"Service with id: '$serviceId' not found")).asFuture
+      case Some(desc) if !ctx.canUserWrite(desc) => ctx.funauthorized
       case Some(desc) => {
         val event = AdminApiEvent(
           env.snowflakeGenerator.nextIdStr(),
@@ -248,6 +197,7 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
     val body = ctx.request.body
     env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
       case None => NotFound(Json.obj("error" -> s"Service with id: '$serviceId' not found")).asFuture
+      case Some(desc) if !ctx.canUserWrite(desc) => ctx.funauthorized
       case Some(desc) => {
         val event = AdminApiEvent(
           env.snowflakeGenerator.nextIdStr(),
@@ -294,6 +244,7 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
     val body = ctx.request.body
     env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
       case None => NotFound(Json.obj("error" -> s"Service with id: '$serviceId' not found")).asFuture
+      case Some(desc) if !ctx.canUserWrite(desc) => ctx.funauthorized
       case Some(desc) => {
         val event = AdminApiEvent(
           env.snowflakeGenerator.nextIdStr(),
@@ -337,81 +288,61 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
   }
 
   def serviceLiveStats(serviceId: String) = ApiAction.async { ctx =>
-    Audit.send(
-      AdminApiEvent(
-        env.snowflakeGenerator.nextIdStr(),
-        env.env,
-        Some(ctx.apiKey),
-        ctx.user,
-        "ACCESS_SERVICE_LIVESTATS",
-        s"User accessed a service descriptor livestats",
-        ctx.from,
-        ctx.ua,
-        Json.obj("serviceId" -> serviceId)
-      )
-    )
-    for {
-      calls       <- env.datastores.serviceDescriptorDataStore.calls(serviceId)
-      dataIn      <- env.datastores.serviceDescriptorDataStore.dataInFor(serviceId)
-      dataOut     <- env.datastores.serviceDescriptorDataStore.dataOutFor(serviceId)
-      rate        <- env.datastores.serviceDescriptorDataStore.callsPerSec(serviceId)
-      duration    <- env.datastores.serviceDescriptorDataStore.callsDuration(serviceId)
-      overhead    <- env.datastores.serviceDescriptorDataStore.callsOverhead(serviceId)
-      dataInRate  <- env.datastores.serviceDescriptorDataStore.dataInPerSecFor(serviceId)
-      dataOutRate <- env.datastores.serviceDescriptorDataStore.dataOutPerSecFor(serviceId)
-    } yield
-      Ok(
-        Json.obj(
-          "calls"       -> calls,
-          "dataIn"      -> dataIn,
-          "dataOut"     -> dataOut,
-          "rate"        -> rate,
-          "duration"    -> duration,
-          "overhead"    -> overhead,
-          "dataInRate"  -> dataInRate,
-          "dataOutRate" -> dataOutRate
+    ctx.canReadService(serviceId) {
+      Audit.send(
+        AdminApiEvent(
+          env.snowflakeGenerator.nextIdStr(),
+          env.env,
+          Some(ctx.apiKey),
+          ctx.user,
+          "ACCESS_SERVICE_LIVESTATS",
+          s"User accessed a service descriptor livestats",
+          ctx.from,
+          ctx.ua,
+          Json.obj("serviceId" -> serviceId)
         )
       )
+      for {
+        calls <- env.datastores.serviceDescriptorDataStore.calls(serviceId)
+        dataIn <- env.datastores.serviceDescriptorDataStore.dataInFor(serviceId)
+        dataOut <- env.datastores.serviceDescriptorDataStore.dataOutFor(serviceId)
+        rate <- env.datastores.serviceDescriptorDataStore.callsPerSec(serviceId)
+        duration <- env.datastores.serviceDescriptorDataStore.callsDuration(serviceId)
+        overhead <- env.datastores.serviceDescriptorDataStore.callsOverhead(serviceId)
+        dataInRate <- env.datastores.serviceDescriptorDataStore.dataInPerSecFor(serviceId)
+        dataOutRate <- env.datastores.serviceDescriptorDataStore.dataOutPerSecFor(serviceId)
+      } yield
+        Ok(
+          Json.obj(
+            "calls" -> calls,
+            "dataIn" -> dataIn,
+            "dataOut" -> dataOut,
+            "rate" -> rate,
+            "duration" -> duration,
+            "overhead" -> overhead,
+            "dataInRate" -> dataInRate,
+            "dataOutRate" -> dataOutRate
+          )
+        )
+    }
   }
 
   def serviceHealth(serviceId: String) = ApiAction.async { ctx =>
-    val options = SendAuditAndAlert("ACCESS_SERVICE_HEALTH", "User accessed a service descriptor health", None, Json.obj("serviceId" -> serviceId), ctx)
-    fetchWithPaginationAndFilteringAsResult(ctx, "filter.".some, (e: HealthCheckEvent) => e.toJson, options) {
-      env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
-        case None => JsonApiError(404, JsString(s"Service with id: '$serviceId' not found")).leftf[Seq[HealthCheckEvent]]
-        case Some(desc) => env.datastores.healthCheckDataStore.findAll(desc).fright[JsonApiError]
+    ctx.canReadService(serviceId) {
+      val options = SendAuditAndAlert("ACCESS_SERVICE_HEALTH", "User accessed a service descriptor health", None, Json.obj("serviceId" -> serviceId), ctx)
+      fetchWithPaginationAndFilteringAsResult(ctx, "filter.".some, (e: HealthCheckEvent) => e.toJson, options) {
+        env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
+          case None => JsonApiError(404, JsString(s"Service with id: '$serviceId' not found")).leftf[Seq[HealthCheckEvent]]
+          case Some(desc) => env.datastores.healthCheckDataStore.findAll(desc).fright[JsonApiError]
+        }
       }
     }
-    // val paginationPage: Int = ctx.request.queryString.get("page").flatMap(_.headOption).map(_.toInt).getOrElse(1)
-    // val paginationPageSize: Int =
-    //   ctx.request.queryString.get("pageSize").flatMap(_.headOption).map(_.toInt).getOrElse(Int.MaxValue)
-    // val paginationPosition = (paginationPage - 1) * paginationPageSize
-    // env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
-    //   case None => NotFound(Json.obj("error" -> s"Service with id: '$serviceId' not found")).asFuture
-    //   case Some(desc) => {
-    //     Audit.send(
-    //       AdminApiEvent(
-    //         env.snowflakeGenerator.nextIdStr(),
-    //         env.env,
-    //         Some(ctx.apiKey),
-    //         ctx.user,
-    //         "ACCESS_SERVICE_HEALTH",
-    //         s"User accessed a service descriptor helth",
-    //         ctx.from,
-    //         ctx.ua,
-    //         Json.obj("serviceId" -> serviceId)
-    //       )
-    //     )
-    //     env.datastores.healthCheckDataStore
-    //       .findAll(desc)
-    //       .map(evts => Ok(JsArray(evts.drop(paginationPosition).take(paginationPageSize).map(_.toJson)))) // .map(_.toEnrichedJson))))
-    //   }
-    // }
   }
 
   def serviceTemplate(serviceId: String) = ApiAction.async { ctx =>
     env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
       case None => NotFound(Json.obj("error" -> s"Service with id: '$serviceId' not found")).asFuture
+      case Some(desc) if !ctx.canUserRead(desc)=> ctx.funauthorized
       case Some(desc) => {
         env.datastores.errorTemplateDataStore.findById(desc.id).map {
           case Some(template) => Ok(template.toJson)
@@ -430,6 +361,7 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
       }
       env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
         case None => NotFound(Json.obj("error" -> s"Service with id: '$serviceId' not found")).asFuture
+        case Some(desc) if !ctx.canUserWrite(desc) => ctx.funauthorized
         case Some(_) => {
           ErrorTemplate.fromJsonSafe(body) match {
             case JsError(e) => BadRequest(Json.obj("error" -> "Bad ErrorTemplate format")).asFuture
@@ -467,6 +399,7 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
       }
       env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
         case None => NotFound(Json.obj("error" -> s"Service with id: '$serviceId' not found")).asFuture
+        case Some(desc) if !ctx.canUserWrite(desc) => ctx.funauthorized
         case Some(_) => {
           ErrorTemplate.fromJsonSafe(body) match {
             case JsError(e) => BadRequest(Json.obj("error" -> s"Bad ErrorTemplate format $e")).asFuture
@@ -498,6 +431,7 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
   def deleteServiceTemplate(serviceId: String) = ApiAction.async { ctx =>
     env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
       case None => NotFound(Json.obj("error" -> s"Service with id: '$serviceId' not found")).asFuture
+      case Some(desc) if !ctx.canUserWrite(desc) => ctx.funauthorized
       case Some(desc) => {
         env.datastores.errorTemplateDataStore.findById(desc.id).flatMap {
           case None => NotFound(Json.obj("error" -> "template not found")).asFuture

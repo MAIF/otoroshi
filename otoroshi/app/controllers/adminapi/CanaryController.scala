@@ -15,19 +15,23 @@ class CanaryController(ApiAction: ApiAction, cc: ControllerComponents)(implicit 
   lazy val logger = Logger("otoroshi-canary-api")
 
   def serviceCanaryMembers(serviceId: String) = ApiAction.async { ctx =>
-    env.datastores.canaryDataStore.canaryCampaign(serviceId).map { campaign =>
-      Ok(
-        Json.obj(
-          "canaryUsers"   -> campaign.canaryUsers,
-          "standardUsers" -> campaign.standardUsers
+    ctx.canReadService(serviceId) {
+      env.datastores.canaryDataStore.canaryCampaign(serviceId).map { campaign =>
+        Ok(
+          Json.obj(
+            "canaryUsers"   -> campaign.canaryUsers,
+            "standardUsers" -> campaign.standardUsers
+          )
         )
-      )
+      }
     }
   }
 
   def resetServiceCanaryMembers(serviceId: String) = ApiAction.async { ctx =>
-    env.datastores.canaryDataStore.destroyCanarySession(serviceId).map { done =>
-      Ok(Json.obj("done" -> done))
+    ctx.canWriteService(serviceId) {
+      env.datastores.canaryDataStore.destroyCanarySession(serviceId).map { done =>
+        Ok(Json.obj("done" -> done))
+      }
     }
   }
 }
