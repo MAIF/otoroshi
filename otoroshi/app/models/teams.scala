@@ -23,8 +23,7 @@ case class UserRights(rights: Seq[UserRight]) {
     } else {
       rights.exists(ur =>
         ur.tenant.value == "*" &&
-          ur.tenant.canRead &&
-          ur.tenant.canWrite &&
+          ur.tenant.canReadWrite &&
           ur.teams.exists(t => t.wildcard && t.canRead && t.canWrite)
       )
     }
@@ -35,8 +34,7 @@ case class UserRights(rights: Seq[UserRight]) {
     } else {
       rights.exists(ur =>
         ur.tenant.matches(tenant) &&
-          ur.tenant.canRead &&
-          ur.tenant.canWrite &&
+          ur.tenant.canReadWrite &&
           ur.teams.exists(t => t.wildcard && t.canRead && t.canWrite)
       )
     }
@@ -45,13 +43,13 @@ case class UserRights(rights: Seq[UserRight]) {
     rights.exists(ur => ur.tenant.matches(tenant) && ur.tenant.canRead)
   }
   def canWriteTenant(tenant: TenantId)(implicit env: Env): Boolean = rootOrTenantAdmin(tenant) {
-    rights.exists(ur => ur.tenant.matches(tenant) && ur.tenant.canRead && ur.tenant.canWrite)
+    rights.exists(ur => ur.tenant.matches(tenant) && ur.tenant.canReadWrite)
   }
   def canReadTeams(tenant: TenantId, teams: Seq[TeamId])(implicit env: Env): Boolean = rootOrTenantAdmin(tenant) {
     canReadTenant(tenant) && teams.exists(ut => rights.exists(ur => ur.teams.exists(t => t.matches(ut) && t.canRead)))
   }
   def canWriteTeams(tenant: TenantId, teams: Seq[TeamId])(implicit env: Env): Boolean = rootOrTenantAdmin(tenant) {
-    canReadTenant(tenant) && teams.exists(ut => rights.exists(ur => ur.teams.exists(t => t.matches(ut) && t.canRead && t.canWrite)))
+    canReadTenant(tenant) && teams.exists(ut => rights.exists(ur => ur.teams.exists(t => t.matches(ut) && t.canReadWrite)))
   }
 }
 
@@ -159,6 +157,7 @@ case class TeamAccess(value: String, canRead: Boolean, canWrite: Boolean) {
     s"$value:${if (canRead) "r" else ""}${if (canRead && canWrite) "w" else ""}"
   }
   lazy val wildcard: Boolean = value == "*"
+  lazy val canReadWrite: Boolean = canRead && canWrite
   def matches(team: TeamId): Boolean = {
     value == "*" || RegexPool(value).matches(team.value)
   }
@@ -198,6 +197,7 @@ case class TenantAccess(value: String, canRead: Boolean, canWrite: Boolean) {
     value == "*" || RegexPool(value).matches(tenant.value)
   }
   lazy val wildcard: Boolean = value == "*"
+  lazy val canReadWrite: Boolean = canRead && canWrite
   lazy val raw: String = {
     s"$value:${if (canRead) "r" else ""}${if (canRead && canWrite) "w" else ""}"
   }
