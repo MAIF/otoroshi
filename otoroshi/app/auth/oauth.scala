@@ -402,7 +402,8 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
                     authConfigId = authConfig.id,
                     realm = authConfig.cookieSuffix(descriptor),
                     otoroshiData = authConfig.dataOverride.get(email).map(v => authConfig.extraMetadata.deepMerge(v)).orElse(Some(authConfig.extraMetadata.deepMerge(meta.getOrElse(Json.obj())))),
-                    metadata = Map.empty
+                    metadata = Map.empty,
+                    location = authConfig.location
                   )
                 )
               }

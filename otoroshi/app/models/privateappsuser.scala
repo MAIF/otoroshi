@@ -28,7 +28,9 @@ case class PrivateAppsUser(randomId: String,
                            createdAt: DateTime = DateTime.now(),
                            expiredAt: DateTime = DateTime.now(),
                            lastRefresh: DateTime = DateTime.now(),
-                           metadata: Map[String, String]) extends RefreshableUser {
+                           metadata: Map[String, String],
+                           location: otoroshi.models.EntityLocation,
+                          ) extends RefreshableUser with otoroshi.models.EntityLocationSupport {
 
   def picture: Option[String]             = (profile \ "picture").asOpt[String]
   def field(name: String): Option[String] = (profile \ name).asOpt[String]
@@ -62,6 +64,9 @@ case class PrivateAppsUser(randomId: String,
       lastRefresh = DateTime.now()
     ), Some((expiredAt.toDate.getTime - System.currentTimeMillis()).millis))
   }
+
+  override def internalId: String = randomId
+  override def json: JsValue = PrivateAppsUser.fmt.writes(this)
 }
 
 object PrivateAppsUser {
@@ -91,13 +96,14 @@ object PrivateAppsUser {
             expiredAt = new DateTime((json \ "expiredAt").as[Long]),
             lastRefresh = new DateTime((json \ "lastRefresh").as[Long]),
             metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
+            location = otoroshi.models.EntityLocation.readFromKey(json),
           )
         )
       } recover {
         case e => JsError(e.getMessage)
       } get
 
-    override def writes(o: PrivateAppsUser) = Json.obj(
+    override def writes(o: PrivateAppsUser) = o.location.jsonWithKey ++ Json.obj(
       "randomId"     -> o.randomId,
       "name"         -> o.name,
       "email"        -> o.email,

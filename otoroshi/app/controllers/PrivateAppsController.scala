@@ -114,8 +114,10 @@ class PrivateAppsController(ApiAction: ApiAction, PrivateAppsAction: PrivateApps
   }
 
   def registerSession(authModuleId: String, username: String) = ApiAction.async { ctx =>
-    registerSessionForUser(authModuleId, username).map {
-      case (cipheredSessionId, host) => Ok(Json.obj("sessionId" -> cipheredSessionId, "host" -> host))
+    ctx.canWriteAuthModule(authModuleId) {
+      registerSessionForUser(authModuleId, username).map {
+        case (cipheredSessionId, host) => Ok(Json.obj("sessionId" -> cipheredSessionId, "host" -> host))
+      }
     }
   }
 

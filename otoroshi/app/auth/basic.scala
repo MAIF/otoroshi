@@ -191,7 +191,8 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
             realm = authConfig.cookieSuffix(descriptor),
             otoroshiData = Some(user.metadata),
             authConfigId = authConfig.id,
-            metadata = Map.empty
+            metadata = Map.empty,
+            location = authConfig.location
           )
         )
       case None => Left(s"You're not authorized here")
@@ -314,7 +315,8 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
                           realm = authConfig.cookieSuffix(descriptor),
                           otoroshiData = Some(user.metadata),
                           authConfigId = authConfig.id,
-                          metadata = Map.empty
+                          metadata = Map.empty,
+                          location = authConfig.location
                         )
                       )
                     case None => Left(s"You're not authorized here")

@@ -8,6 +8,10 @@ import env.Env
 import events.{Alerts, BlackListedBackOfficeUserAlert}
 import gateway.Errors
 import models.BackOfficeUser
+import otoroshi.models.RightsChecker.{SuperAdminOnly, TenantAdminOnly}
+import otoroshi.models.{EntityLocationSupport, RightsChecker, TenantId}
+import otoroshi.utils.syntax.implicits._
+import play.api.libs.json.Json
 import play.api.mvc.Results.Status
 import play.api.mvc._
 import utils.RequestImplicits._
@@ -24,6 +28,42 @@ case class BackOfficeActionContext[A](request: Request[A], user: Option[BackOffi
 case class BackOfficeActionContextAuth[A](request: Request[A], user: BackOfficeUser) {
   def from(implicit env: Env): String = request.theIpAddress
   def ua: String                      = request.theUserAgent
+
+  lazy val currentTenant: TenantId = {
+    val value = request.headers.get("Otoroshi-Tenant").getOrElse("default")
+    TenantId(value)
+  }
+
+  private def rootOrTenantAdmin(user: BackOfficeUser) (f: => Boolean)(implicit env: Env): Boolean = {
+    if (env.bypassUserRightsCheck || SuperAdminOnly.canPerform(user, currentTenant) || TenantAdminOnly.canPerform(user, currentTenant)) {
+      true
+    } else {
+      f
+    }
+  }
+
+  def canUserRead[T <: EntityLocationSupport](item: T)(implicit env: Env): Boolean = {
+    rootOrTenantAdmin(user) {
+      currentTenant.value == item.location.tenant.value && user.rights.canReadTeams(currentTenant, item.location.teams)
+    }
+  }
+  def canUserWrite[T <: EntityLocationSupport](item: T)(implicit env: Env): Boolean = {
+    rootOrTenantAdmin(user) {
+      currentTenant.value == item.location.tenant.value && user.rights.canWriteTeams(currentTenant, item.location.teams)
+    }
+  }
+
+  def checkRights(rc: RightsChecker)(f: Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
+    if (env.bypassUserRightsCheck) {
+      f
+    } else {
+      if (rc.canPerform(user, currentTenant)) {
+        f
+      } else {
+        Results.Unauthorized(Json.obj("error" -> "You're not authorized here !")).future
+      }
+    }
+  }
 }
 
 class BackOfficeAction(val parser: BodyParser[AnyContent])(implicit env: Env)

@@ -175,6 +175,12 @@ case class ApiActionContext[A](apiKey: ApiKey, request: Request[A]) {
       case _ => funauthorized
     }
   }
+  def canWriteAuthModule(id: String)(f: => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
+    env.datastores.authConfigsDataStore.findById(id).flatMap {
+      case Some(mod) if canUserWrite(mod) => f
+      case _ => funauthorized
+    }
+  }
 }
 
 class ApiAction(val parser: BodyParser[AnyContent])(implicit env: Env)

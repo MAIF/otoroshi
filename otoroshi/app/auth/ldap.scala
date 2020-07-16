@@ -322,7 +322,8 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
             realm = authConfig.cookieSuffix(descriptor),
             otoroshiData = authConfig.dataOverride.get(user.email).map(v => authConfig.extraMetadata.deepMerge(v)).orElse(Some(user.metadata)),
             authConfigId = authConfig.id,
-            metadata = Map.empty
+            metadata = Map.empty,
+            location = authConfig.location
           )
         )
       case None => Left(s"You're not authorized here")

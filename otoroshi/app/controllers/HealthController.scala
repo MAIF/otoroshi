@@ -123,7 +123,7 @@ class HealthController(cc: ControllerComponents)(implicit env: Env)
         }
       }
     }
-
+    
     ((req.getQueryString("access_key"), req.getQueryString("X-Access-Key"), env.healthAccessKey) match {
       case (_, _, None)                                  => fetchHealth()
       case (Some(header), _, Some(key)) if header == key => fetchHealth()

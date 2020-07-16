@@ -99,7 +99,8 @@ class JwtUserExtractor extends PreRouting {
                 createdAt = DateTime.now(),
                 expiredAt = DateTime.now().plusHours(1),
                 lastRefresh = DateTime.now(),
-                metadata = Map.empty
+                metadata = Map.empty,
+                location = ctx.descriptor.location
               )
               ctx.attrs.put(otoroshi.plugins.Keys.UserKey -> user)
               Results.Ok(Json.obj()).future
