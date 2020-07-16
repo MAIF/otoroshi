@@ -4,7 +4,6 @@ import java.util.Base64
 import java.util.concurrent.TimeUnit
 
 import actions.{BackOfficeAction, BackOfficeActionAuth}
-import akka.http.scaladsl.model.HttpMethods
 import akka.http.scaladsl.util.FastFuture
 import akka.http.scaladsl.util.FastFuture._
 import akka.stream.scaladsl.{Sink, Source}
@@ -21,25 +20,23 @@ import models._
 import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
-import otoroshi.models.TenantAndTeamHelper
 import otoroshi.ssl.pki.models.{GenCertResponse, GenCsrQuery}
+import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.http.HttpEntity
 import play.api.libs.json._
 import play.api.libs.streams.Accumulator
-import play.api.libs.ws.{SourceBody, WSResponse}
+import play.api.libs.ws.SourceBody
 import play.api.mvc._
 import security._
 import ssl._
 import utils.LocalCache
 import utils.RequestImplicits._
 import utils.http.MtlsConfig
-import otoroshi.utils.syntax.implicits._
-import play.api.mvc.Results.Status
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
-import scala.util.{Failure, Success, Try}
+import scala.util.Try
 
 class BackOfficeController(BackOfficeAction: BackOfficeAction,
                            BackOfficeActionAuth: BackOfficeActionAuth,

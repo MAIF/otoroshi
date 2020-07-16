@@ -27,7 +27,7 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
     simpleLogin = false,
     authConfigId = "none",
     metadata = Map.empty,
-    rights = Seq(UserRight(TenantAccess("*"), Seq(TeamAccess("*"))))
+    rights = UserRights.superAdmin
   )
 
   def sessions() = ApiAction.async { ctx =>
@@ -196,7 +196,7 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
           createdAt = DateTime.now(),
           typ = OtoroshiAdminType.SimpleAdmin,
           metadata = (ctx.request.body \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-          rights = UserRight.readFromObject(ctx.request.body)
+          rights = UserRights.readFromObject(ctx.request.body)
         )).map { _ =>
           Ok(Json.obj("username" -> username))
         }
@@ -273,7 +273,7 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
             createdAt = DateTime.now(),
             typ = OtoroshiAdminType.WebAuthnAdmin,
             metadata = (ctx.request.body \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-            rights = UserRight.readFromObject(ctx.request.body)
+            rights = UserRights.readFromObject(ctx.request.body)
           ))
           .map { _ =>
             Ok(Json.obj("username" -> username))

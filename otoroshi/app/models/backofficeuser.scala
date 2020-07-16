@@ -4,7 +4,7 @@ import akka.http.scaladsl.util.FastFuture._
 import auth.AuthModuleConfig
 import env.Env
 import org.joda.time.DateTime
-import otoroshi.models.{TeamAccess, TenantAccess, UserRight}
+import otoroshi.models.{TeamAccess, TenantAccess, UserRight, UserRights}
 import play.api.libs.json._
 import otoroshi.storage.BasicStore
 import otoroshi.utils.syntax.implicits._
@@ -31,7 +31,7 @@ case class BackOfficeUser(randomId: String,
                           expiredAt: DateTime = DateTime.now(),
                           lastRefresh: DateTime = DateTime.now(),
                           metadata: Map[String, String],
-                          rights: Seq[UserRight]
+                          rights: UserRights
                          ) extends RefreshableUser {
 
   def save(duration: Duration)(implicit ec: ExecutionContext, env: Env): Future[BackOfficeUser] = {
@@ -78,7 +78,7 @@ object BackOfficeUser {
             expiredAt = (json \ "expiredAt").asOpt[Long].map(l => new DateTime(l)).getOrElse(DateTime.now()),
             lastRefresh = (json \ "lastRefresh").asOpt[Long].map(l => new DateTime(l)).getOrElse(DateTime.now()),
             metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-            rights = UserRight.readFromObject(json)
+            rights = UserRights.readFromObject(json)
           )
         )
       } recover {
@@ -97,7 +97,7 @@ object BackOfficeUser {
       "expiredAt"       -> o.expiredAt.getMillis,
       "lastRefresh"     -> o.lastRefresh.getMillis,
       "metadata"        -> o.metadata,
-      "rights"          -> JsArray(o.rights.map(_.json))
+      "rights"          -> o.rights.json
     )
   }
 }

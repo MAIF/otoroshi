@@ -16,7 +16,7 @@ import env.Env
 import models._
 import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
-import otoroshi.models.{OtoroshiAdminType, UserRight, WebAuthnOtoroshiAdmin}
+import otoroshi.models.{OtoroshiAdminType, UserRight, UserRights, WebAuthnOtoroshiAdmin}
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json._
@@ -56,7 +56,7 @@ case class BasicAuthUser(
     email: String,
     webauthn: Option[WebAuthnDetails] = None,
     metadata: JsObject = Json.obj(),
-    rights: Seq[UserRight]
+    rights: UserRights
 ) {
   def asJson: JsValue = BasicAuthUser.fmt.writes(this)
 }
@@ -69,7 +69,7 @@ object BasicAuthUser {
       "email"    -> o.email,
       "metadata" -> o.metadata,
       "webauthn" -> o.webauthn.map(_.asJson).getOrElse(JsNull).as[JsValue],
-      "rights"   -> JsArray(o.rights.map(_.json))
+      "rights"   -> o.rights.json
     )
     override def reads(json: JsValue) =
       Try {
@@ -80,7 +80,7 @@ object BasicAuthUser {
             email = (json \ "email").as[String],
             webauthn = (json \ "webauthn").asOpt(WebAuthnDetails.fmt),
             metadata = (json \ "metadata").asOpt[JsObject].getOrElse(Json.obj()),
-            rights = UserRight.readFromObject(json)
+            rights = UserRights.readFromObject(json)
           )
         )
       } recover {

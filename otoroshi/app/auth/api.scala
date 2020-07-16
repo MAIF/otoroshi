@@ -2,7 +2,7 @@ package auth
 
 import env.Env
 import models._
-import otoroshi.models.UserRight
+import otoroshi.models.{UserRight, UserRights}
 import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.ws.WSProxyServer
@@ -131,7 +131,7 @@ trait OAuth2ModuleConfig extends AuthModuleConfig {
   def extraMetadata: JsObject
   def mtlsConfig: MtlsConfig
   def superAdmins: Boolean
-  def rightsOverride: Map[String, Seq[UserRight]]
+  def rightsOverride: Map[String, UserRights]
   def dataOverride: Map[String, JsObject]
 }
 

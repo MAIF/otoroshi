@@ -8,18 +8,18 @@ import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.google.common.base.Charsets
 import env.Env
-import models.{ApiKey, BackOfficeUser, GlobalConfig}
-import otoroshi.models.RightsChecker.SuperAdminOnly
-import otoroshi.models.{EntityLocationSupport, RightsChecker, TeamAccess, TenantAccess, TenantAndTeamHelper, TenantId, UserRight}
+import models.{ApiKey, BackOfficeUser}
+import otoroshi.models.RightsChecker.{SuperAdminOnly, TenantAdminOnly}
+import otoroshi.models._
+import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc._
 import security.{IdGenerator, OtoroshiClaim}
-import otoroshi.utils.syntax.implicits._
+import utils.RequestImplicits._
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
-import utils.RequestImplicits._
 
 case class ApiActionContext[A](apiKey: ApiKey, request: Request[A]) {
   def user(implicit env: Env): Option[JsValue] =
@@ -61,7 +61,7 @@ case class ApiActionContext[A](apiKey: ApiKey, request: Request[A]) {
                     authConfigId = "apikey",
                     simpleLogin = false,
                     metadata = Map.empty,
-                    rights = Seq(UserRight(TenantAccess(tenants), teams.split(",").map(_.trim).map(TeamAccess.apply)))
+                    rights = UserRights(Seq(UserRight(TenantAccess(tenants), teams.split(",").map(_.trim).map(TeamAccess.apply))))
                   )
                   Right(user.some)
                 case _ => Left("You're not authorized here (invalid setup) ! ")
@@ -88,18 +88,20 @@ case class ApiActionContext[A](apiKey: ApiKey, request: Request[A]) {
     }
   }
 
+  private def rootOrTenantAdmin(user: BackOfficeUser) (f: => Boolean)(implicit env: Env): Boolean = {
+    if (env.bypassUserRightsCheck || SuperAdminOnly.canPerform(user, currentTenant) || TenantAdminOnly.canPerform(user, currentTenant)) {
+      true
+    } else {
+      f
+    }
+  }
+
   def canUserRead[T <: EntityLocationSupport](item: T)(implicit env: Env): Boolean = {
     backOfficeUser match {
       case Left(_) => false
       case Right(None) => true
-      case Right(Some(user)) => {
-        if (SuperAdminOnly.canPerform(user, currentTenant)) {
-          true
-        } else {
-          currentTenant.value == item.location.tenant.value &&
-            TenantAndTeamHelper.canReadTenant(user, item.location.tenant.value) &&
-              TenantAndTeamHelper.canReadTeamsId(user, item.location.teams, currentTenant)
-        }
+      case Right(Some(user)) => rootOrTenantAdmin(user) {
+        currentTenant.value == item.location.tenant.value && user.rights.canReadTeams(currentTenant, item.location.teams)
       }
     }
   }
@@ -107,14 +109,8 @@ case class ApiActionContext[A](apiKey: ApiKey, request: Request[A]) {
     backOfficeUser match {
       case Left(_) => false
       case Right(None) => true
-      case Right(Some(user)) => {
-        if (SuperAdminOnly.canPerform(user, currentTenant)) {
-          true
-        } else {
-          currentTenant.value == item.location.tenant.value &&
-            TenantAndTeamHelper.canWriteTenant(user, item.location.tenant.value) &&
-              TenantAndTeamHelper.canWriteTeamsId(user, item.location.teams, currentTenant)
-        }
+      case Right(Some(user)) => rootOrTenantAdmin(user) {
+        currentTenant.value == item.location.tenant.value && user.rights.canWriteTeams(currentTenant, item.location.teams)
       }
     }
   }

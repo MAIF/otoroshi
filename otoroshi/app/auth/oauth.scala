@@ -7,7 +7,7 @@ import env.Env
 import models._
 import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
 import org.joda.time.DateTime
-import otoroshi.models.{TeamAccess, TenantAccess, UserRight}
+import otoroshi.models.{TeamAccess, TenantAccess, UserRight, UserRights}
 import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.ws.{WSProxyServer, WSResponse}
@@ -74,7 +74,7 @@ object GenericOauth2ModuleConfig extends FromJson[AuthModuleConfig] {
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
           sessionCookieValues = (json \ "sessionCookieValues").asOpt(SessionCookieValues.fmt).getOrElse(SessionCookieValues()),
           superAdmins = (json \ "superAdmins").asOpt[Boolean].getOrElse(true), // for backward compatibility reasons
-          rightsOverride = (json \ "rightsOverride").asOpt[Map[String, JsArray]].map(_.mapValues(UserRight.readFromArray)).getOrElse(Map.empty),
+          rightsOverride = (json \ "rightsOverride").asOpt[Map[String, JsArray]].map(_.mapValues(UserRights.readFromArray)).getOrElse(Map.empty),
           dataOverride = (json \ "dataOverride").asOpt[Map[String, JsObject]].getOrElse(Map.empty)
         )
       )
@@ -118,7 +118,7 @@ case class GenericOauth2ModuleConfig(
                                       sessionCookieValues: SessionCookieValues,
                                       location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation(),
                                       superAdmins: Boolean = false,
-                                      rightsOverride: Map[String, Seq[UserRight]] = Map.empty,
+                                      rightsOverride: Map[String, UserRights] = Map.empty,
                                       dataOverride: Map[String, JsObject] = Map.empty
 ) extends OAuth2ModuleConfig {
   def `type`: String                                        = "oauth2"
@@ -158,7 +158,7 @@ case class GenericOauth2ModuleConfig(
     "refreshTokens"        -> this.refreshTokens,
     "sessionCookieValues"  -> SessionCookieValues.fmt.writes(this.sessionCookieValues),
     "superAdmins"          -> superAdmins,
-    "rightsOverride"       -> JsObject(rightsOverride.mapValues(s => JsArray(s.map(_.json)))),
+    "rightsOverride"       -> JsObject(rightsOverride.mapValues(_.json)),
     "dataOverride"         -> JsObject(dataOverride),
   )
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.authConfigsDataStore.set(this)
@@ -450,14 +450,14 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
                     authConfigId = authConfig.id,
                     simpleLogin = false,
                     metadata = Map.empty,
-                    rights = if (authConfig.superAdmins) UserRight.superAdminSeq else {
+                    rights = if (authConfig.superAdmins) UserRights.superAdmin else {
                       authConfig.rightsOverride.getOrElse(email,
-                        Seq(
+                        UserRights(Seq(
                           UserRight(
                             TenantAccess(authConfig.location.tenant.value),
                             authConfig.location.teams.map(t => TeamAccess(t.value))
                           )
-                        )
+                        ))
                       )
                     }
                   )

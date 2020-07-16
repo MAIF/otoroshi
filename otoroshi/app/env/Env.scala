@@ -20,7 +20,7 @@ import models._
 import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
-import otoroshi.models.{OtoroshiAdminType, SimpleOtoroshiAdmin, TeamAccess, TenantAccess, UserRight, WebAuthnOtoroshiAdmin}
+import otoroshi.models.{OtoroshiAdminType, SimpleOtoroshiAdmin, TeamAccess, TenantAccess, UserRight, UserRights, WebAuthnOtoroshiAdmin}
 import otoroshi.script.{AccessValidatorRef, JobManager, Script, ScriptCompiler, ScriptManager}
 import otoroshi.ssl.pki.BouncyCastlePki
 import otoroshi.storage.DataStores
@@ -904,7 +904,7 @@ class Env(val configuration: Configuration,
                     createdAt = DateTime.now(),
                     typ = OtoroshiAdminType.SimpleAdmin,
                     metadata = Map.empty,
-                    rights = Seq(UserRight(TenantAccess("*"), Seq(TeamAccess("*"))))
+                    rights = UserRights.varargs(UserRight(TenantAccess("*"), Seq(TeamAccess("*"))))
                   )
 
                   val baseExport = OtoroshiExport(

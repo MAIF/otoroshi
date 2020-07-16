@@ -111,7 +111,7 @@ class U2FController(BackOfficeAction: BackOfficeAction,
     val usernameOpt        = (ctx.request.body \ "username").asOpt[String]
     val passwordOpt        = (ctx.request.body \ "password").asOpt[String]
     val labelOpt           = (ctx.request.body \ "label").asOpt[String]
-    val rights              = UserRight.readFromObject(ctx.request.body)
+    val rights              = UserRights.readFromObject(ctx.request.body)
     (usernameOpt, passwordOpt, labelOpt) match {
       case (Some(username), Some(password), Some(label)) => {
         val saltedPassword = BCrypt.hashpw(password, BCrypt.gensalt())
@@ -287,7 +287,7 @@ class U2FController(BackOfficeAction: BackOfficeAction,
               val username           = (otoroshi \ "username").as[String]
               val password           = (otoroshi \ "password").as[String]
               val label              = (otoroshi \ "label").as[String]
-              val rights             = UserRight.readFromObject(otoroshi)
+              val rights             = UserRights.readFromObject(otoroshi)
               val saltedPassword     = BCrypt.hashpw(password, BCrypt.gensalt())
               val credential         = Json.parse(jsonMapper.writeValueAsString(result))
 

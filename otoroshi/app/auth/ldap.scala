@@ -9,7 +9,7 @@ import env.Env
 import javax.naming.Context
 import javax.naming.directory.InitialDirContext
 import models._
-import otoroshi.models.{TeamAccess, TenantAccess, UserRight}
+import otoroshi.models.{TeamAccess, TenantAccess, UserRight, UserRights}
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc._
@@ -97,7 +97,7 @@ object LdapAuthModuleConfig extends FromJson[AuthModuleConfig] {
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
           sessionCookieValues = (json \ "sessionCookieValues").asOpt(SessionCookieValues.fmt).getOrElse(SessionCookieValues()),
           superAdmins = (json \ "superAdmins").asOpt[Boolean].getOrElse(false), // for backward compatibility reasons
-          rightsOverride = (json \ "rightsOverride").asOpt[Map[String, JsArray]].map(_.mapValues(UserRight.readFromArray)).getOrElse(Map.empty),
+          rightsOverride = (json \ "rightsOverride").asOpt[Map[String, JsArray]].map(_.mapValues(UserRights.readFromArray)).getOrElse(Map.empty),
           dataOverride = (json \ "dataOverride").asOpt[Map[String, JsObject]].getOrElse(Map.empty)
         )
       )
@@ -130,7 +130,7 @@ case class LdapAuthModuleConfig(
                                  sessionCookieValues: SessionCookieValues,
                                  location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation(),
                                  superAdmins: Boolean = false,
-                                 rightsOverride: Map[String, Seq[UserRight]] = Map.empty,
+                                 rightsOverride: Map[String, UserRights] = Map.empty,
                                  dataOverride: Map[String, JsObject] = Map.empty
 ) extends AuthModuleConfig {
   def `type`: String = "ldap"
@@ -159,7 +159,7 @@ case class LdapAuthModuleConfig(
     "metadata"            -> metadata,
     "sessionCookieValues" -> SessionCookieValues.fmt.writes(this.sessionCookieValues),
     "superAdmins"         -> superAdmins,
-    "rightsOverride"      -> JsObject(rightsOverride.mapValues(s => JsArray(s.map(_.json)))),
+    "rightsOverride"      -> JsObject(rightsOverride.mapValues(_.json)),
     "dataOverride"        -> JsObject(dataOverride),
   )
 
@@ -341,14 +341,14 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
             simpleLogin = false,
             authConfigId = authConfig.id,
             metadata = Map.empty,
-            rights = if (authConfig.superAdmins) UserRight.superAdminSeq else {
+            rights = if (authConfig.superAdmins) UserRights.superAdmin else {
               authConfig.rightsOverride.getOrElse(user.email,
-                Seq(
+                UserRights(Seq(
                   UserRight(
                     TenantAccess(authConfig.location.tenant.value),
                     authConfig.location.teams.map(t => TeamAccess(t.value))
                   )
-                )
+                ))
               )
             }
           )

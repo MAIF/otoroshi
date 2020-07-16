@@ -39,7 +39,7 @@ trait OtoroshiAdmin {
   def typ: OtoroshiAdminType
   def metadata: Map[String, String]
   def json: JsValue
-  def rights: Seq[UserRight]
+  def rights: UserRights
 }
 
 case class SimpleOtoroshiAdmin(
@@ -49,7 +49,7 @@ case class SimpleOtoroshiAdmin(
                                 createdAt: DateTime,
                                 typ: OtoroshiAdminType,
                                 metadata: Map[String, String],
-                                rights: Seq[UserRight]
+                                rights: UserRights
 ) extends OtoroshiAdmin {
   def json: JsValue = Json.obj(
     "username" -> username,
@@ -58,7 +58,7 @@ case class SimpleOtoroshiAdmin(
     "createdAt" -> createdAt.getMillis,
     "type" -> typ.json,
     "metadata" -> metadata,
-    "rights" -> JsArray(rights.map(_.json))
+    "rights" -> rights.json
   )
 }
 
@@ -76,7 +76,7 @@ object SimpleOtoroshiAdmin {
         createdAt = (json \ "createdAt").asOpt[Long].map(l => new DateTime(l)).getOrElse(DateTime.now()),
         typ = (json \ "typ").asOpt[JsValue].flatMap(OtoroshiAdminType.fromJson).getOrElse(OtoroshiAdminType.SimpleAdmin),
         metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-        rights = UserRight.readFromObject(json)
+        rights = UserRights.readFromObject(json)
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -94,7 +94,7 @@ case class WebAuthnOtoroshiAdmin(
                                   createdAt: DateTime,
                                   typ: OtoroshiAdminType,
                                   metadata: Map[String, String],
-                                  rights: Seq[UserRight]
+                                  rights: UserRights
 ) extends OtoroshiAdmin {
   def json: JsValue = Json.obj(
     "username" -> username,
@@ -105,7 +105,7 @@ case class WebAuthnOtoroshiAdmin(
     "createdAt" -> createdAt.getMillis,
     "type" -> typ.json,
     "metadata" -> metadata,
-    "rights" -> JsArray(rights.map(_.json))
+    "rights" -> rights.json
   )
 }
 
@@ -127,7 +127,7 @@ object WebAuthnOtoroshiAdmin {
         createdAt = (json \ "createdAt").asOpt[Long].map(l => new DateTime(l)).getOrElse(DateTime.now()),
         typ = (json \ "typ").asOpt[JsValue].flatMap(OtoroshiAdminType.fromJson).getOrElse(OtoroshiAdminType.WebAuthnAdmin),
         metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-        rights = UserRight.readFromObject(json)
+        rights = UserRights.readFromObject(json)
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
