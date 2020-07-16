@@ -8,6 +8,7 @@ import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.json.Format
 import otoroshi.storage.{RedisLike, RedisLikeStore}
+import otoroshi.utils.syntax.implicits._
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Success
@@ -205,7 +206,18 @@ class KvApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyDataStore 
   override def findAuthorizeKeyFor(clientId: String, serviceId: String)(implicit ec: ExecutionContext,
                                                                         env: Env): Future[Option[ApiKey]] = {
     findById(clientId).flatMap {
-      case Some(apiKey) => apiKey.services.fast.map(services => services.find(_.id == serviceId).map(_ => apiKey))
+      case opt @ Some(apiKey) if apiKey.authorizedEntities.contains(ServiceDescriptorIdentifier(serviceId)) => opt.future
+      case Some(apiKey) => {
+        // unoptimized
+        // apiKey.services.fast.map(services => services.find(_.id == serviceId).map(_ => apiKey))
+        env.datastores.serviceDescriptorDataStore.findById(serviceId).map {
+          case None => None
+          case Some(service) => {
+            val identifiers = service.groups.map(ServiceGroupIdentifier.apply)
+            identifiers.find(sgi => apiKey.authorizedEntities.contains(sgi)).map(_ => apiKey)
+          }
+        }
+      }
       case None => FastFuture.successful(None)
     }
   }
