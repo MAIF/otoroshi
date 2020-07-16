@@ -3,7 +3,7 @@ package controllers
 import java.util.Base64
 import java.util.concurrent.TimeUnit
 
-import actions.{BackOfficeAction, BackOfficeActionAuth}
+import actions.{ApiActionContext, BackOfficeAction, BackOfficeActionAuth}
 import akka.http.scaladsl.util.FastFuture
 import akka.http.scaladsl.util.FastFuture._
 import akka.stream.scaladsl.{Sink, Source}
@@ -20,6 +20,8 @@ import models._
 import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
+import otoroshi.models.{EntityLocation, EntityLocationSupport}
+import otoroshi.models.RightsChecker.{SuperAdminOnly, TenantAdminOnly}
 import otoroshi.ssl.pki.models.{GenCertResponse, GenCsrQuery}
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
@@ -226,14 +228,16 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
 
   def documentationFrame(lineId: String, serviceId: String) = BackOfficeActionAuth.async { ctx =>
     env.datastores.serviceDescriptorDataStore.findById(serviceId).map {
+      case Some(descriptor) if !ctx.canUserRead(descriptor) => ApiActionContext.unauthorized
       case Some(descriptor) => Ok(views.html.backoffice.documentationframe(descriptor, env))
       case None             => NotFound(Json.obj("error" -> s"Service with id $serviceId not found"))
     }
   }
 
-  def documentationFrameDescriptor(lineId: String, serviceId: String) = BackOfficeActionAuth.async {
+  def documentationFrameDescriptor(lineId: String, serviceId: String) = BackOfficeActionAuth.async { ctx =>
     import scala.concurrent.duration._
     env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
+      case Some(descriptor) if !ctx.canUserRead(descriptor) => ApiActionContext.funauthorized
       case Some(service) if service.api.openApiDescriptorUrl.isDefined => {
         val state = IdGenerator.extendedToken(128)
         val claim = OtoroshiClaim(
@@ -295,7 +299,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
                   val name               = (app \ "name").as[String]
                   val hosts: Seq[String] = (app \ "vhosts").as[JsArray].value.map(vhost => (vhost \ "fqdn").as[String])
                   val preferedHost       = hosts.filterNot(h => h.contains("cleverapps.io")).headOption.getOrElse(hosts.head)
-                  val service            = services.find(s => s.targets.exists(t => hosts.contains(t.host)))
+                  val service            = services.filter(ctx.canUserRead).find(s => s.targets.exists(t => hosts.contains(t.host)))
                   Json.obj(
                     "name"    -> (app \ "name").as[String],
                     "id"      -> id,
@@ -318,30 +322,35 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
   }
 
   def panicMode() = BackOfficeActionAuth.async { ctx =>
-    env.datastores.globalConfigDataStore.singleton().filter(!_.apiReadOnly).flatMap { c =>
-      c.copy(u2fLoginOnly = true, apiReadOnly = true).save()
-    } flatMap { _ =>
-      env.datastores.backOfficeUserDataStore.discardAllSessions()
-    } map { _ =>
-      val event = BackOfficeEvent(
-        env.snowflakeGenerator.nextIdStr(),
-        env.env,
-        ctx.user,
-        "ACTIVATE_PANIC_MODE",
-        s"Admin activated panic mode",
-        ctx.from,
-        ctx.ua,
-        Json.obj()
-      )
-      Audit.send(event)
-      Alerts.send(PanicModeAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user, event, ctx.from, ctx.ua))
-      Ok(Json.obj("done" -> true))
-    } recover {
-      case _ => Ok(Json.obj("done" -> false))
+    ctx.checkRights(SuperAdminOnly) {
+      env.datastores.globalConfigDataStore.singleton().filter(!_.apiReadOnly).flatMap { c =>
+        c.copy(u2fLoginOnly = true, apiReadOnly = true).save()
+      } flatMap { _ =>
+        env.datastores.backOfficeUserDataStore.discardAllSessions()
+      } map { _ =>
+        val event = BackOfficeEvent(
+          env.snowflakeGenerator.nextIdStr(),
+          env.env,
+          ctx.user,
+          "ACTIVATE_PANIC_MODE",
+          s"Admin activated panic mode",
+          ctx.from,
+          ctx.ua,
+          Json.obj()
+        )
+        Audit.send(event)
+        Alerts.send(PanicModeAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user, event, ctx.from, ctx.ua))
+        Ok(Json.obj("done" -> true))
+      } recover {
+        case _ => Ok(Json.obj("done" -> false))
+      }
     }
   }
 
-  case class SearchedService(name: String, id: String, groupId: String, env: String, typ: String)
+  case class SearchedService(name: String, id: String, groupId: String, env: String, typ: String, location: EntityLocation) extends EntityLocationSupport {
+    override def internalId: String = id
+    override def json: JsValue = Json.obj()
+  }
 
   def searchServicesApi() = BackOfficeActionAuth.async(parse.json) { ctx =>
     val query = (ctx.request.body \ "query").asOpt[String].getOrElse("--").toLowerCase()
@@ -366,15 +375,15 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
             tcServices <- env.datastores.tcpServiceDataStore.findAll()
           } yield {
             val finalServices = (
-              services.map(s => SearchedService(s.name, s.id, s.groups.headOption.getOrElse("default"), s.env, "http")) ++
-              tcServices.map(s => SearchedService(s.name, s.id, "tcp", "prod", "tcp"))
+              services.map(s => SearchedService(s.name, s.id, s.groups.headOption.getOrElse("default"), s.env, "http", s.location)) ++
+              tcServices.map(s => SearchedService(s.name, s.id, "tcp", "prod", "tcp", s.location))
             )
             LocalCache.allServices.put("all", finalServices)
             finalServices
           }
       }
     fu.map { services =>
-      val filtered = services.filter { service =>
+      val filtered = services.filter(ctx.canUserRead).filter { service =>
         service.id.toLowerCase() == query || service.name.toLowerCase().contains(query) || service.env
           .toLowerCase()
           .contains(query)
@@ -390,35 +399,41 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
     }
   }
 
-  def changeLogLevel(name: String, newLevel: Option[String]) = BackOfficeActionAuth { ctx =>
-    val loggerContext = LoggerFactory.getILoggerFactory.asInstanceOf[LoggerContext]
-    val _logger       = loggerContext.getLogger(name)
-    val oldLevel      = Option(_logger.getLevel).map(_.levelStr).getOrElse(Level.OFF.levelStr)
-    _logger.setLevel(newLevel.map(v => Level.valueOf(v)).getOrElse(Level.ERROR))
-    Ok(Json.obj("name" -> name, "oldLevel" -> oldLevel, "newLevel" -> _logger.getLevel.levelStr))
+  def changeLogLevel(name: String, newLevel: Option[String]) = BackOfficeActionAuth.async { ctx =>
+    ctx.checkRights(SuperAdminOnly) {
+      val loggerContext = LoggerFactory.getILoggerFactory.asInstanceOf[LoggerContext]
+      val _logger = loggerContext.getLogger(name)
+      val oldLevel = Option(_logger.getLevel).map(_.levelStr).getOrElse(Level.OFF.levelStr)
+      _logger.setLevel(newLevel.map(v => Level.valueOf(v)).getOrElse(Level.ERROR))
+      Ok(Json.obj("name" -> name, "oldLevel" -> oldLevel, "newLevel" -> _logger.getLevel.levelStr)).future
+    }
   }
 
-  def getLogLevel(name: String) = BackOfficeActionAuth { ctx =>
-    val loggerContext = LoggerFactory.getILoggerFactory.asInstanceOf[LoggerContext]
-    val _logger       = loggerContext.getLogger(name)
-    Ok(Json.obj("name" -> name, "level" -> _logger.getLevel.levelStr))
+  def getLogLevel(name: String) = BackOfficeActionAuth.async { ctx =>
+    ctx.checkRights(SuperAdminOnly) {
+      val loggerContext = LoggerFactory.getILoggerFactory.asInstanceOf[LoggerContext]
+      val _logger = loggerContext.getLogger(name)
+      Ok(Json.obj("name" -> name, "level" -> _logger.getLevel.levelStr)).future
+    }
   }
 
-  def getAllLoggers() = BackOfficeActionAuth { ctx =>
-    import collection.JavaConverters._
+  def getAllLoggers() = BackOfficeActionAuth.async { ctx =>
+    ctx.checkRights(SuperAdminOnly) {
+      import collection.JavaConverters._
 
-    val paginationPage: Int = ctx.request.queryString.get("page").flatMap(_.headOption).map(_.toInt).getOrElse(1)
-    val paginationPageSize: Int =
-      ctx.request.queryString.get("pageSize").flatMap(_.headOption).map(_.toInt).getOrElse(Int.MaxValue)
-    val paginationPosition = (paginationPage - 1) * paginationPageSize
+      val paginationPage: Int = ctx.request.queryString.get("page").flatMap(_.headOption).map(_.toInt).getOrElse(1)
+      val paginationPageSize: Int =
+        ctx.request.queryString.get("pageSize").flatMap(_.headOption).map(_.toInt).getOrElse(Int.MaxValue)
+      val paginationPosition = (paginationPage - 1) * paginationPageSize
 
-    val loggerContext = LoggerFactory.getILoggerFactory.asInstanceOf[LoggerContext]
-    val rawLoggers    = loggerContext.getLoggerList.asScala.drop(paginationPosition).take(paginationPageSize)
-    val loggers = JsArray(rawLoggers.map(logger => {
-      val level: String = Option(logger.getLevel).map(_.levelStr).getOrElse("OFF")
-      Json.obj("name" -> logger.getName, "level" -> level)
-    }))
-    Ok(loggers)
+      val loggerContext = LoggerFactory.getILoggerFactory.asInstanceOf[LoggerContext]
+      val rawLoggers = loggerContext.getLoggerList.asScala.drop(paginationPosition).take(paginationPageSize)
+      val loggers = JsArray(rawLoggers.map(logger => {
+        val level: String = Option(logger.getLevel).map(_.levelStr).getOrElse("OFF")
+        Json.obj("name" -> logger.getName, "level" -> level)
+      }))
+      Ok(loggers).future
+    }
   }
 
   case class ServiceRate(rate: Double, name: String, id: String)
@@ -646,125 +661,144 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   def sessions() = BackOfficeActionAuth.async { ctx =>
-    val paginationPage: Int = ctx.request.queryString.get("page").flatMap(_.headOption).map(_.toInt).getOrElse(1)
-    val paginationPageSize: Int =
-      ctx.request.queryString.get("pageSize").flatMap(_.headOption).map(_.toInt).getOrElse(Int.MaxValue)
-    val paginationPosition = (paginationPage - 1) * paginationPageSize
-    env.datastores.backOfficeUserDataStore.sessions() map { sessions =>
-      Ok(JsArray(sessions.drop(paginationPosition).take(paginationPageSize)))
+    ctx.checkRights(SuperAdminOnly) {
+      val paginationPage: Int = ctx.request.queryString.get("page").flatMap(_.headOption).map(_.toInt).getOrElse(1)
+      val paginationPageSize: Int =
+        ctx.request.queryString.get("pageSize").flatMap(_.headOption).map(_.toInt).getOrElse(Int.MaxValue)
+      val paginationPosition = (paginationPage - 1) * paginationPageSize
+      env.datastores.backOfficeUserDataStore.sessions() map { sessions =>
+        Ok(JsArray(sessions.drop(paginationPosition).take(paginationPageSize)))
+      }
     }
   }
 
   def discardSession(id: String) = BackOfficeActionAuth.async { ctx =>
-    env.datastores.globalConfigDataStore.singleton().filter(!_.apiReadOnly).flatMap { _ =>
-      env.datastores.backOfficeUserDataStore.discardSession(id) map { _ =>
-        val event = BackOfficeEvent(
-          env.snowflakeGenerator.nextIdStr(),
-          env.env,
-          ctx.user,
-          "DISCARD_SESSION",
-          s"Admin discarded an Admin session",
-          ctx.from,
-          ctx.ua,
-          Json.obj("sessionId" -> id)
-        )
-        Audit.send(event)
-        Alerts
-          .send(SessionDiscardedAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user, event, ctx.from, ctx.ua))
-        Ok(Json.obj("done" -> true))
+    ctx.checkRights(SuperAdminOnly) {
+      env.datastores.globalConfigDataStore.singleton().filter(!_.apiReadOnly).flatMap { _ =>
+        env.datastores.backOfficeUserDataStore.discardSession(id) map { _ =>
+          val event = BackOfficeEvent(
+            env.snowflakeGenerator.nextIdStr(),
+            env.env,
+            ctx.user,
+            "DISCARD_SESSION",
+            s"Admin discarded an Admin session",
+            ctx.from,
+            ctx.ua,
+            Json.obj("sessionId" -> id)
+          )
+          Audit.send(event)
+          Alerts
+            .send(SessionDiscardedAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user, event, ctx.from, ctx.ua))
+          Ok(Json.obj("done" -> true))
+        }
+      } recover {
+        case _ => Ok(Json.obj("done" -> false))
       }
-    } recover {
-      case _ => Ok(Json.obj("done" -> false))
     }
   }
 
   def discardAllSessions() = BackOfficeActionAuth.async { ctx =>
-    env.datastores.globalConfigDataStore.singleton().filter(!_.apiReadOnly).flatMap { _ =>
-      env.datastores.backOfficeUserDataStore.discardAllSessions() map { _ =>
-        val event = BackOfficeEvent(
-          env.snowflakeGenerator.nextIdStr(),
-          env.env,
-          ctx.user,
-          "DISCARD_SESSIONS",
-          s"Admin discarded Admin sessions",
-          ctx.from,
-          ctx.ua,
-          Json.obj()
-        )
-        Audit.send(event)
-        Alerts
-          .send(SessionsDiscardedAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user, event, ctx.from, ctx.ua))
-        Ok(Json.obj("done" -> true))
+    ctx.checkRights(SuperAdminOnly) {
+      env.datastores.globalConfigDataStore.singleton().filter(!_.apiReadOnly).flatMap { _ =>
+        env.datastores.backOfficeUserDataStore.discardAllSessions() map { _ =>
+          val event = BackOfficeEvent(
+            env.snowflakeGenerator.nextIdStr(),
+            env.env,
+            ctx.user,
+            "DISCARD_SESSIONS",
+            s"Admin discarded Admin sessions",
+            ctx.from,
+            ctx.ua,
+            Json.obj()
+          )
+          Audit.send(event)
+          Alerts
+            .send(SessionsDiscardedAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user, event, ctx.from, ctx.ua))
+          Ok(Json.obj("done" -> true))
+        }
+      } recover {
+        case _ => Ok(Json.obj("done" -> false))
       }
-    } recover {
-      case _ => Ok(Json.obj("done" -> false))
     }
   }
 
   def privateAppsSessions() = BackOfficeActionAuth.async { ctx =>
-    val paginationPage: Int = ctx.request.queryString.get("page").flatMap(_.headOption).map(_.toInt).getOrElse(1)
-    val paginationPageSize: Int =
-      ctx.request.queryString.get("pageSize").flatMap(_.headOption).map(_.toInt).getOrElse(Int.MaxValue)
-    val paginationPosition = (paginationPage - 1) * paginationPageSize
-    env.datastores.privateAppsUserDataStore.findAll() map { sessions =>
-      Ok(JsArray(sessions.drop(paginationPosition).take(paginationPageSize).map(_.toJson)))
+    ctx.checkRights(TenantAdminOnly) {
+      val paginationPage: Int = ctx.request.queryString.get("page").flatMap(_.headOption).map(_.toInt).getOrElse(1)
+      val paginationPageSize: Int =
+        ctx.request.queryString.get("pageSize").flatMap(_.headOption).map(_.toInt).getOrElse(Int.MaxValue)
+      val paginationPosition = (paginationPage - 1) * paginationPageSize
+      env.datastores.privateAppsUserDataStore.findAll() map { sessions =>
+        Ok(JsArray(sessions.filter(ctx.canUserRead).drop(paginationPosition).take(paginationPageSize).map(_.toJson)))
+      }
     }
   }
 
   def discardPrivateAppsSession(id: String) = BackOfficeActionAuth.async { ctx =>
-    env.datastores.globalConfigDataStore.singleton().filter(!_.apiReadOnly).flatMap { _ =>
-      env.datastores.privateAppsUserDataStore.delete(id) map { _ =>
-        val event = BackOfficeEvent(
-          env.snowflakeGenerator.nextIdStr(),
-          env.env,
-          ctx.user,
-          "DISCARD_PRIVATE_APPS_SESSION",
-          s"Admin discarded a private app session",
-          ctx.from,
-          ctx.ua,
-          Json.obj("sessionId" -> id)
-        )
-        Audit.send(event)
-        Alerts
-          .send(SessionDiscardedAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user, event, ctx.from, ctx.ua))
-        Ok(Json.obj("done" -> true))
+    ctx.checkRights(TenantAdminOnly) {
+      env.datastores.globalConfigDataStore.singleton().filter(!_.apiReadOnly).flatMap { _ =>
+        env.datastores.privateAppsUserDataStore.findById(id).flatMap {
+          case None => Results.NotFound(Json.obj("error" -> "Session not found")).future
+          case Some(session) if !ctx.canUserWrite(session) => ApiActionContext.funauthorized
+          case Some(_) => {
+            env.datastores.privateAppsUserDataStore.delete(id) map { _ =>
+              val event = BackOfficeEvent(
+                env.snowflakeGenerator.nextIdStr(),
+                env.env,
+                ctx.user,
+                "DISCARD_PRIVATE_APPS_SESSION",
+                s"Admin discarded a private app session",
+                ctx.from,
+                ctx.ua,
+                Json.obj("sessionId" -> id)
+              )
+              Audit.send(event)
+              Alerts
+                .send(SessionDiscardedAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user, event, ctx.from, ctx.ua))
+              Ok(Json.obj("done" -> true))
+            }
+          } recover {
+            case _ => Ok(Json.obj("done" -> false))
+          }
+        }
       }
-    } recover {
-      case _ => Ok(Json.obj("done" -> false))
     }
   }
 
   def discardAllPrivateAppsSessions() = BackOfficeActionAuth.async { ctx =>
-    env.datastores.globalConfigDataStore.singleton().filter(!_.apiReadOnly).flatMap { _ =>
-      env.datastores.privateAppsUserDataStore.deleteAll() map { _ =>
-        val event = BackOfficeEvent(
-          env.snowflakeGenerator.nextIdStr(),
-          env.env,
-          ctx.user,
-          "DISCARD_PRIVATE_APPS_SESSIONS",
-          s"Admin discarded private apps sessions",
-          ctx.from,
-          ctx.ua,
-          Json.obj()
-        )
-        Audit.send(event)
-        Alerts
-          .send(SessionsDiscardedAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user, event, ctx.from, ctx.ua))
-        Ok(Json.obj("done" -> true))
+    ctx.checkRights(SuperAdminOnly) {
+      env.datastores.globalConfigDataStore.singleton().filter(!_.apiReadOnly).flatMap { _ =>
+        env.datastores.privateAppsUserDataStore.deleteAll() map { _ =>
+          val event = BackOfficeEvent(
+            env.snowflakeGenerator.nextIdStr(),
+            env.env,
+            ctx.user,
+            "DISCARD_PRIVATE_APPS_SESSIONS",
+            s"Admin discarded private apps sessions",
+            ctx.from,
+            ctx.ua,
+            Json.obj()
+          )
+          Audit.send(event)
+          Alerts
+            .send(SessionsDiscardedAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user, event, ctx.from, ctx.ua))
+          Ok(Json.obj("done" -> true))
+        }
+      } recover {
+        case _ => Ok(Json.obj("done" -> false))
       }
-    } recover {
-      case _ => Ok(Json.obj("done" -> false))
     }
   }
 
   def auditEvents() = BackOfficeActionAuth.async { ctx =>
-    val paginationPage: Int = ctx.request.queryString.get("page").flatMap(_.headOption).map(_.toInt).getOrElse(1)
-    val paginationPageSize: Int =
-      ctx.request.queryString.get("pageSize").flatMap(_.headOption).map(_.toInt).getOrElse(Int.MaxValue)
-    val paginationPosition = (paginationPage - 1) * paginationPageSize
-    env.datastores.auditDataStore.findAllRaw().map { elems =>
-      val filtered = elems.drop(paginationPosition).take(paginationPageSize)
-      Ok.chunked(
+    ctx.checkRights(SuperAdminOnly) {
+      val paginationPage: Int = ctx.request.queryString.get("page").flatMap(_.headOption).map(_.toInt).getOrElse(1)
+      val paginationPageSize: Int =
+        ctx.request.queryString.get("pageSize").flatMap(_.headOption).map(_.toInt).getOrElse(Int.MaxValue)
+      val paginationPosition = (paginationPage - 1) * paginationPageSize
+      env.datastores.auditDataStore.findAllRaw().map { elems =>
+        val filtered = elems.drop(paginationPosition).take(paginationPageSize)
+        Ok.chunked(
           Source
             .single(ByteString("["))
             .concat(
@@ -774,18 +808,20 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
             )
             .concat(Source.single(ByteString("]")))
         )
-        .as("application/json")
+          .as("application/json")
+      }
     }
   }
 
   def alertEvents() = BackOfficeActionAuth.async { ctx =>
-    val paginationPage: Int = ctx.request.queryString.get("page").flatMap(_.headOption).map(_.toInt).getOrElse(1)
-    val paginationPageSize: Int =
-      ctx.request.queryString.get("pageSize").flatMap(_.headOption).map(_.toInt).getOrElse(Int.MaxValue)
-    val paginationPosition = (paginationPage - 1) * paginationPageSize
-    env.datastores.alertDataStore.findAllRaw().map { elems =>
-      val filtered = elems.drop(paginationPosition).take(paginationPageSize)
-      Ok.chunked(
+    ctx.checkRights(SuperAdminOnly) {
+      val paginationPage: Int = ctx.request.queryString.get("page").flatMap(_.headOption).map(_.toInt).getOrElse(1)
+      val paginationPageSize: Int =
+        ctx.request.queryString.get("pageSize").flatMap(_.headOption).map(_.toInt).getOrElse(Int.MaxValue)
+      val paginationPosition = (paginationPage - 1) * paginationPageSize
+      env.datastores.alertDataStore.findAllRaw().map { elems =>
+        val filtered = elems.drop(paginationPosition).take(paginationPageSize)
+        Ok.chunked(
           Source
             .single(ByteString("["))
             .concat(
@@ -795,7 +831,8 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
             )
             .concat(Source.single(ByteString("]")))
         )
-        .as("application/json")
+          .as("application/json")
+      }
     }
   }
 
@@ -878,7 +915,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
         val certs = P12Helper.extractCertificate(body, password)
         Source(certs.toList)
           .mapAsync(1) { cert =>
-            cert.enrich().save()
+            cert.enrich().____save()
           }
           .runWith(Sink.ignore)
           .map { _ =>
@@ -988,6 +1025,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
   def renew(id: String) = BackOfficeActionAuth.async { ctx =>
     env.datastores.certificatesDataStore.findById(id).map(_.map(_.enrich())).flatMap {
       case None       => FastFuture.successful(NotFound(Json.obj("error" -> s"No Certificate found")))
+      case Some(cert) if !ctx.canUserWrite(cert) => ApiActionContext.funauthorized
       case Some(cert) => cert.renew().map(c => Ok(c.toJson))
     }
   }
@@ -1113,6 +1151,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
   def checkExistingLdapConnection(id: String) = BackOfficeActionAuth.async { ctx =>
     env.datastores.authConfigsDataStore.findById(id).flatMap {
       case None => FastFuture.successful(NotFound(Json.obj("error" -> "auth. config. not found !")))
+      case Some(module: LdapAuthModuleConfig) if !ctx.canUserRead(module) => ApiActionContext.funauthorized
       case Some(module: LdapAuthModuleConfig) => {
         module.checkConnection().map {
           case (works, error) if works => Ok(Json.obj("works" -> works))
@@ -1139,6 +1178,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
     } else {
       LdapAuthModuleConfig.fromJson(ctx.request.body) match {
         case Left(e) => FastFuture.successful(BadRequest(Json.obj("error" -> "bad auth. module. config")))
+        case Right(module) if !ctx.canUserRead(module) => ApiActionContext.funauthorized
         case Right(module) => {
           module.checkConnection().map {
             case (works, error) if works => Ok(Json.obj("works" -> works))
@@ -1152,8 +1192,8 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
   def fetchGroupsAndServices() = BackOfficeActionAuth.async { ctx =>
     env.datastores.serviceDescriptorDataStore.findAll().flatMap { services =>
       env.datastores.serviceGroupDataStore.findAll().map { groups =>
-        val jsonGroups = groups.map(g => Json.obj("label" -> g.name, "value" -> s"group_${g.id}", "kind" -> "group"))
-        val jsonServices = services.map(s => Json.obj("label" -> s.name, "value" -> s"service_${s.id}", "kind" -> "service"))
+        val jsonGroups = groups.filter(ctx.canUserRead).map(g => Json.obj("label" -> g.name, "value" -> s"group_${g.id}", "kind" -> "group"))
+        val jsonServices = services.filter(ctx.canUserRead).map(s => Json.obj("label" -> s.name, "value" -> s"service_${s.id}", "kind" -> "service"))
         Ok(JsArray(jsonGroups ++ jsonServices))
       }
     }
@@ -1162,9 +1202,10 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
   def fetchApikeysForGroupAndService(serviceId: String) = BackOfficeActionAuth.async { ctx =>
     env.datastores.serviceDescriptorDataStore.findById(serviceId) flatMap {
       case None => FastFuture.successful(NotFound(Json.obj("error" -> "service not found")))
+      case Some(service) if !ctx.canUserRead(service) => ApiActionContext.funauthorized
       case Some(service) => {
         env.datastores.apiKeyDataStore.findAll().map { apikeys =>
-          val filtered = apikeys.filter(apk => apk.authorizedOnOneGroupFrom(service.groups) || apk.authorizedOnService(service.id))
+          val filtered = apikeys.filter(ctx.canUserRead).filter(apk => apk.authorizedOnOneGroupFrom(service.groups) || apk.authorizedOnService(service.id))
           Ok(JsArray(filtered.map(_.toJson)))
         }
       }
