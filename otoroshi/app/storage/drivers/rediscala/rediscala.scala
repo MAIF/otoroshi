@@ -24,7 +24,7 @@ import ssl.{CertificateDataStore, ClientCertificateValidationDataStore, KvClient
 import otoroshi.storage._
 import otoroshi.storage.stores._
 import otoroshi.tcp.{KvTcpServiceDataStoreDataStore, TcpServiceDataStore}
-import storage.stores.KvRawDataStore
+import storage.stores.{KvRawDataStore, TeamDataStore, TenantDataStore}
 import otoroshi.utils.syntax.implicits._
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -428,6 +428,12 @@ abstract class AbstractRedisDataStores(configuration: Configuration,
 
   private lazy val _webAuthnRegistrationsDataStore                            = new WebAuthnRegistrationsDataStore()
   override def webAuthnRegistrationsDataStore: WebAuthnRegistrationsDataStore = _webAuthnRegistrationsDataStore
+
+  private lazy val _tenantDataStore = new TenantDataStore(redis, env)
+  override def tenantDataStore: TenantDataStore = _tenantDataStore
+
+  private lazy val _teamDataStore = new TeamDataStore(redis, env)
+  override def teamDataStore: TeamDataStore = _teamDataStore
 
   override def privateAppsUserDataStore: PrivateAppsUserDataStore     = _privateAppsUserDataStore
   override def backOfficeUserDataStore: BackOfficeUserDataStore       = _backOfficeUserDataStore

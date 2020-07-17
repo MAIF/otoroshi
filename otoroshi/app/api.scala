@@ -135,6 +135,8 @@ class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfi
   lazy val canaryController             = wire[CanaryController]
   lazy val certificatesController       = wire[CertificatesController]
   lazy val globalConfigController       = wire[GlobalConfigController]
+  lazy val teamsController              = wire[TeamsController]
+  lazy val tenantsController            = wire[TenantsController]
 
   override lazy val assets: Assets = wire[Assets]
 

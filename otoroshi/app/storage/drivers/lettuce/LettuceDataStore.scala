@@ -28,7 +28,7 @@ import play.api.inject.ApplicationLifecycle
 import play.api.libs.json._
 import play.api.{Configuration, Environment, Logger}
 import ssl.{CertificateDataStore, ClientCertificateValidationDataStore, KvClientCertificateValidationDataStore}
-import storage.stores.KvRawDataStore
+import storage.stores.{KvRawDataStore, TeamDataStore, TenantDataStore}
 import otoroshi.utils.syntax.implicits._
 
 import scala.collection.JavaConverters._
@@ -188,6 +188,12 @@ class LettuceDataStores(configuration: Configuration,
 
   private lazy val _webAuthnRegistrationsDataStore                            = new WebAuthnRegistrationsDataStore()
   override def webAuthnRegistrationsDataStore: WebAuthnRegistrationsDataStore = _webAuthnRegistrationsDataStore
+
+  private lazy val _tenantDataStore = new TenantDataStore(redis, env)
+  override def tenantDataStore: TenantDataStore = _tenantDataStore
+
+  private lazy val _teamDataStore = new TeamDataStore(redis, env)
+  override def teamDataStore: TeamDataStore = _teamDataStore
 
   override def privateAppsUserDataStore: PrivateAppsUserDataStore     = _privateAppsUserDataStore
   override def backOfficeUserDataStore: BackOfficeUserDataStore       = _backOfficeUserDataStore

@@ -38,6 +38,7 @@ import { Warning } from './ScriptsPage';
 import { Separator } from '../components/Separator';
 import { Restrictions } from '../components/Restrictions';
 import { Scripts } from '../components/Scripts';
+import { Location } from '../components/Location';
 
 function shallowDiffers(a, b) {
   for (let i in a) if (!(i in b)) return true;
@@ -1064,6 +1065,14 @@ export class ServicePage extends Component {
               </button>
             </div>
           </div>
+          <Collapse collapsed={this.state.allCollapsed} initCollapsed={false} label="Location">
+            <Location
+              tenant={this.state.service._loc.tenant || "default"}
+              onChangeTenant={v => this.changeValue("_loc.tenant", v)}
+              teams={this.state.service._loc.teams || ["default"]}
+              onChangeTeams={v => this.changeValue("_loc.teams", v)}
+            />
+          </Collapse>
           <TextInput
             label="Id"
             disabled={!this.state.neverSaved}

@@ -295,6 +295,11 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
         case None => s.as[JsObject] ++ Json.obj("groups" -> Json.arr("default"))
         case Some(_) => s
       }
+    ).applyOn(s =>
+      (s \ "hosts").asOpt[JsArray] match {
+        case None => s.as[JsObject] ++ Json.obj("hosts" -> Json.arr(s"${res.name}.${res.namespace}.otoroshi"))
+        case Some(arr) => s.as[JsObject] ++ Json.obj("hosts" -> (arr ++ Json.arr(s"${res.name}.${res.namespace}.otoroshi")))
+      }
     ).applyOn(s => s.as[JsObject] ++ Json.obj("useAkkaHttpClient" -> true))
   }
 

@@ -20,7 +20,7 @@ import models._
 import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
-import otoroshi.models.{OtoroshiAdminType, SimpleOtoroshiAdmin, TeamAccess, TenantAccess, UserRight, UserRights, WebAuthnOtoroshiAdmin}
+import otoroshi.models.{OtoroshiAdminType, SimpleOtoroshiAdmin, Team, TeamAccess, TeamId, Tenant, TenantAccess, TenantId, UserRight, UserRights, WebAuthnOtoroshiAdmin}
 import otoroshi.script.{AccessValidatorRef, JobManager, Script, ScriptCompiler, ScriptManager}
 import otoroshi.ssl.pki.BouncyCastlePki
 import otoroshi.storage.DataStores
@@ -948,6 +948,28 @@ class Env(val configuration: Configuration,
             case _ =>
           }
         }
+
+      {
+        datastores.tenantDataStore.findById("default")(ec, this).map {
+          case None => datastores.tenantDataStore.set(Tenant(
+            id = TenantId("default"),
+            name = "Default organization",
+            description = "Default organization created for any otoroshi instance",
+            metadata = Map.empty
+          ))(ec, this)
+          case Some(_) =>
+        }
+        datastores.teamDataStore.findById("default")(ec, this).map {
+          case None => datastores.teamDataStore.set(Team(
+            id = TeamId("default"),
+            tenant = TenantId("default"),
+            name = "Default team",
+            description = "Default team created for any otoroshi instance",
+            metadata = Map.empty
+          ))(ec, this)
+          case Some(_) =>
+        }
+      }
 
       if (checkForUpdates) {
         otoroshiActorSystem.scheduler.scheduleAtFixedRate(5.second, 24.hours)(utils.SchedulerHelper.runnable {

@@ -1,28 +1,29 @@
 package otoroshi.storage
 
+import akka.NotUsed
+import akka.http.scaladsl.util.FastFuture
+import akka.stream._
+import akka.stream.scaladsl._
 import akka.util.ByteString
+import auth.AuthConfigsDataStore
+import cluster.ClusterStateDataStore
 import env.Env
 import events._
 import gateway.RequestsDataStore
 import models._
-import play.api.inject.ApplicationLifecycle
-import play.api.libs.json._
-import play.api.{Configuration, Environment, Logger}
-import akka.stream.scaladsl._
-import akka.stream._
-import akka.NotUsed
-import akka.http.scaladsl.util.FastFuture
-import auth.AuthConfigsDataStore
-import cluster.ClusterStateDataStore
 import otoroshi.models.{SimpleAdminDataStore, WebAuthnAdminDataStore}
 import otoroshi.script.ScriptDataStore
 import otoroshi.storage.stores._
-import ssl.{CertificateDataStore, ClientCertificateValidationDataStore}
 import otoroshi.tcp.TcpServiceDataStore
+import play.api.inject.ApplicationLifecycle
+import play.api.libs.json._
+import play.api.{Configuration, Environment, Logger}
+import ssl.{CertificateDataStore, ClientCertificateValidationDataStore}
+import storage.stores.{TeamDataStore, TenantDataStore}
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Success, Try}
+import scala.util.Success
 
 sealed trait DataStoreHealth
 case object Healthy     extends DataStoreHealth
@@ -58,6 +59,8 @@ trait DataStores {
   def rawDataStore: RawDataStore
   def webAuthnAdminDataStore: WebAuthnAdminDataStore
   def webAuthnRegistrationsDataStore: WebAuthnRegistrationsDataStore
+  def tenantDataStore: TenantDataStore
+  def teamDataStore: TeamDataStore
   ////
   def fullNdJsonImport(export: Source[JsValue, _]): Future[Unit]
   def fullNdJsonExport(group: Int, groupWorkers: Int, keyWorkers: Int): Future[Source[JsValue, _]]

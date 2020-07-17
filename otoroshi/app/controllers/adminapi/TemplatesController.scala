@@ -6,7 +6,7 @@ import auth.AuthModuleConfig
 import env.Env
 import models._
 import org.mindrot.jbcrypt.BCrypt
-import otoroshi.models.RightsChecker
+import otoroshi.models.{RightsChecker, Team, TeamId, Tenant, TenantId}
 import otoroshi.script.Script
 import otoroshi.tcp._
 import play.api.Logger
@@ -14,7 +14,6 @@ import play.api.libs.json._
 import play.api.mvc.{AbstractController, ControllerComponents, RequestHeader, Result}
 import security.IdGenerator
 import ssl.Cert
-
 import otoroshi.utils.syntax.implicits._
 
 import scala.concurrent.Future
@@ -33,6 +32,25 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
       .map(t => Json.obj(t._1 -> t._2.head))
       .foldLeft(Json.obj())(_ ++ _)
     json.as[JsObject] ++ over
+  }
+
+  def initiateTenant() = ApiAction.async { ctx =>
+    Ok(Tenant(
+      id = TenantId("new-organization"),
+      name = "New Organization",
+      description = "A organization to do whatever you want",
+      metadata = Map.empty
+    ).json).future
+  }
+
+  def initiateTeam() = ApiAction.async { ctx =>
+    Ok(Team(
+      id = TeamId("new-team"),
+      tenant = TenantId("default"),
+      name = "New Team",
+      description = "A team to do whatever you want",
+      metadata = Map.empty
+    ).json).future
   }
 
   def initiateApiKey(groupId: Option[String]) = ApiAction.async { ctx =>

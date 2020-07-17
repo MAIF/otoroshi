@@ -365,6 +365,32 @@ PATCH   /api/tcp/services/:id                                    controllers.adm
 GET     /api/tcp/services                                        controllers.adminapi.TcpServiceApiController.findAllEntitiesAction()
 POST    /api/tcp/services                                        controllers.adminapi.TcpServiceApiController.createAction()
 
+# tenant API
+GET     /api/tenants/_template                                controllers.adminapi.TemplatesController.initiateTenant()
+POST    /api/tenants/_bulk                                    controllers.adminapi.TenantsController.bulkCreateAction()
+PUT     /api/tenants/_bulk                                    controllers.adminapi.TenantsController.bulkUpdateAction()
+PATCH   /api/tenants/_bulk                                    controllers.adminapi.TenantsController.bulkPatchAction()
+DELETE  /api/tenants/_bulk                                    controllers.adminapi.TenantsController.bulkDeleteAction()
+GET     /api/tenants/:id                                      controllers.adminapi.TenantsController.findEntityByIdAction(id)
+DELETE  /api/tenants/:id                                      controllers.adminapi.TenantsController.deleteEntityAction(id)
+PUT     /api/tenants/:id                                      controllers.adminapi.TenantsController.updateEntityAction(id)
+PATCH   /api/tenants/:id                                      controllers.adminapi.TenantsController.patchEntityAction(id)
+GET     /api/tenants                                          controllers.adminapi.TenantsController.findAllEntitiesAction()
+POST    /api/tenants                                          controllers.adminapi.TenantsController.createAction()
+
+# teams API
+GET     /api/teams/_template                                controllers.adminapi.TemplatesController.initiateTeam()
+POST    /api/teams/_bulk                                    controllers.adminapi.TeamsController.bulkCreateAction()
+PUT     /api/teams/_bulk                                    controllers.adminapi.TeamsController.bulkUpdateAction()
+PATCH   /api/teams/_bulk                                    controllers.adminapi.TeamsController.bulkPatchAction()
+DELETE  /api/teams/_bulk                                    controllers.adminapi.TeamsController.bulkDeleteAction()
+GET     /api/teams/:id                                      controllers.adminapi.TeamsController.findEntityByIdAction(id)
+DELETE  /api/teams/:id                                      controllers.adminapi.TeamsController.deleteEntityAction(id)
+PUT     /api/teams/:id                                      controllers.adminapi.TeamsController.updateEntityAction(id)
+PATCH   /api/teams/:id                                      controllers.adminapi.TeamsController.patchEntityAction(id)
+GET     /api/teams                                          controllers.adminapi.TeamsController.findAllEntitiesAction()
+POST    /api/teams                                          controllers.adminapi.TeamsController.createAction()
+
 GET     /api/stats/global                                     controllers.adminapi.AnalyticsController.globalStats(from: Option[String], to: Option[String])
 GET     /api/stats                                            controllers.adminapi.AnalyticsController.filterableStats(from: Option[String], to: Option[String])
 GET     /api/events                                           controllers.adminapi.AnalyticsController.filterableEvents(from: Option[String], to: Option[String])

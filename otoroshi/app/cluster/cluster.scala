@@ -41,7 +41,7 @@ import redis.RedisClientMasterSlaves
 import security.IdGenerator
 import ssl._
 import storage.drivers.inmemory.{Memory, SwappableInMemoryRedis}
-import storage.stores.KvRawDataStore
+import storage.stores.{KvRawDataStore, TeamDataStore, TenantDataStore}
 import utils.http.Implicits._
 import otoroshi.utils.syntax.implicits._
 import utils.http.MtlsConfig
@@ -1333,6 +1333,12 @@ class SwappableInMemoryDataStores(configuration: Configuration,
 
   private lazy val _webAuthnRegistrationsDataStore                            = new WebAuthnRegistrationsDataStore()
   override def webAuthnRegistrationsDataStore: WebAuthnRegistrationsDataStore = _webAuthnRegistrationsDataStore
+
+  private lazy val _tenantDataStore = new TenantDataStore(redis, env)
+  override def tenantDataStore: TenantDataStore = _tenantDataStore
+
+  private lazy val _teamDataStore = new TeamDataStore(redis, env)
+  override def teamDataStore: TeamDataStore = _teamDataStore
 
   override def privateAppsUserDataStore: PrivateAppsUserDataStore               = _privateAppsUserDataStore
   override def backOfficeUserDataStore: BackOfficeUserDataStore                 = _backOfficeUserDataStore

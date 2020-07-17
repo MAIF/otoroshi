@@ -10,7 +10,7 @@ import {
   LabelInput,
   DateTimeInput,
 } from '.';
-
+import { Location } from '../Location';
 const CodeInput = React.lazy(() => Promise.resolve(require('./CodeInput')));
 
 import _ from 'lodash';
@@ -145,7 +145,19 @@ export class Form extends Component {
         }
       }
       if (type) {
-        if (type === 'array') {
+        if (type === 'location') {
+          component = (
+            <Location
+              disabled={disabled}
+              key={name}
+              {...props}
+              tenant={this.getValue(name + ".tenant", "default")}
+              onChangeTenant={v => this.changeValue(name + ".tenant", v)}
+              teams={this.getValue(name + ".teams", ["default"])}
+              onChangeTeams={v => this.changeValue(name + ".teams", v)}
+            />
+          );
+        } else if (type === 'array') {
           component = (
             <ArrayInput
               disabled={disabled}

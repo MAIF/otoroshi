@@ -366,6 +366,10 @@ export class ScriptsPage extends Component {
   };
 
   formSchema = {
+    _loc: {
+      type: 'location',
+      props: {}
+    },
     warning: {
       type: Warning,
     },
@@ -421,7 +425,7 @@ export class ScriptsPage extends Component {
     { title: 'Description', noMobile: true, content: item => item.desc },
   ];
 
-  formFlow = ['id', 'name', 'desc', 'type', 'compilation', 'code', 'metadata'];
+  formFlow = ['_loc', '---', 'id', 'name', 'desc', 'type', 'compilation', 'code', 'metadata'];
 
   componentDidMount() {
     this.props.setTitle(`All Plugins`);

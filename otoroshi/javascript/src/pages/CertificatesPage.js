@@ -377,6 +377,10 @@ export class CertificatesPage extends Component {
       type: 'bool',
       props: { label: 'Keypair' },
     },
+    _loc: {
+      type: 'location',
+      props: {}
+    },
   };
 
   columns = [
@@ -469,6 +473,8 @@ export class CertificatesPage extends Component {
   ];
 
   formFlow = [
+    '_loc',
+    '---',
     'id',
     'name',
     'description',

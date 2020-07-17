@@ -276,6 +276,10 @@ class DailyRemainingQuotas extends Component {
 const ApiKeysConstants = {
 
   formSchema: (that) => ({
+    _loc: {
+      type: 'location',
+      props: {}
+    },
     remainingQuotas: {
       type: DailyRemainingQuotas,
       props: {
@@ -536,6 +540,9 @@ const ApiKeysConstants = {
     },
   ],
   formFlow: [
+    //'>>>Location',
+    '_loc',
+    '---',
     'clientId',
     'clientSecret',
     'clientName',

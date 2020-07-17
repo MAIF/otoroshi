@@ -140,9 +140,13 @@ case class ApiActionContext[A](apiKey: ApiKey, request: Request[A]) {
   }
   /// utils methods
   def canReadService(id: String)(f: => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
-    env.datastores.serviceDescriptorDataStore.findById(id).flatMap {
-      case Some(service) if canUserRead(service) => f
-      case _ => funauthorized
+    if (id == "global") {
+      f
+    } else {
+      env.datastores.serviceDescriptorDataStore.findById(id).flatMap {
+        case Some(service) if canUserRead(service) => f
+        case _ => funauthorized
+      }
     }
   }
   def canWriteService(id: String)(f: => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = {

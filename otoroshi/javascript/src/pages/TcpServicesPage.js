@@ -251,6 +251,8 @@ export class TcpServicesPage extends Component {
   };
 
   formFlow = [
+    '_loc',
+    '---',
     'id',
     'name',
     'enabled',
@@ -272,6 +274,10 @@ export class TcpServicesPage extends Component {
   ];
 
   formSchema = {
+    _loc: {
+      type: 'location',
+      props: {}
+    },
     id: { type: 'string', disabled: true, props: { label: 'Id', placeholder: '---' } },
     name: {
       type: 'string',

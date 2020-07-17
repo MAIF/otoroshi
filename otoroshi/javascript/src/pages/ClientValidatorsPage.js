@@ -22,6 +22,10 @@ export class ClientValidatorsPage extends Component {
   ];
 
   formSchema = {
+    _loc: {
+      type: 'location',
+      props: {}
+    },
     id: { type: 'string', disabled: true, props: { label: 'Id', placeholder: '---' } },
     name: {
       type: 'string',
@@ -86,6 +90,8 @@ export class ClientValidatorsPage extends Component {
   };
 
   formFlow = [
+    '_loc',
+    '---',
     'id',
     'name',
     'description',

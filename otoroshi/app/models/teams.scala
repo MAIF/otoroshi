@@ -218,3 +218,58 @@ object RightsChecker {
     def canPerform(user: BackOfficeUser, currentTenant: TenantId)(implicit env: Env): Boolean = user.rights.tenantAdmin(currentTenant)
   }
 }
+
+object Tenant {
+  val format = new Format[Tenant] {
+    override def writes(o: Tenant): JsValue = Json.obj(
+      "id" -> o.id.value,
+      "name" -> o.name,
+      "description" -> o.description,
+      "metadata" -> o.metadata
+    )
+    override def reads(json: JsValue): JsResult[Tenant] = Try {
+      Tenant(
+        id = TenantId((json \ "id").as[String]),
+        name = (json \ "name").asOpt[String].getOrElse((json \ "id").as[String]),
+        description = (json \ "description").asOpt[String].getOrElse(""),
+        metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(e) => JsSuccess(e)
+    }
+  }
+}
+case class Tenant(id: TenantId, name: String, description: String, metadata: Map[String, String]) extends EntityLocationSupport {
+  override def internalId: String = id.value
+  override def json: JsValue = Tenant.format.writes(this)
+  override def location: EntityLocation = EntityLocation(id, Seq.empty)
+}
+object Team {
+  val format = new Format[Team] {
+    override def writes(o: Team): JsValue = Json.obj(
+      "id" -> o.id.value,
+      "tenant" -> o.tenant.value,
+      "name" -> o.name,
+      "description" -> o.description,
+      "metadata" -> o.metadata
+    )
+    override def reads(json: JsValue): JsResult[Team] = Try {
+      Team(
+        id = TeamId((json \ "id").as[String]),
+        tenant = TenantId((json \ "tenant").as[String]),
+        name = (json \ "name").asOpt[String].getOrElse((json \ "id").as[String]),
+        description = (json \ "description").asOpt[String].getOrElse(""),
+        metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
+      )
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(e) => JsSuccess(e)
+    }
+  }
+}
+case class Team(id: TeamId, tenant: TenantId, name: String, description: String, metadata: Map[String, String]) extends EntityLocationSupport {
+  override def internalId: String = id.value
+  override def json: JsValue = Team.format.writes(this)
+  override def location: EntityLocation = EntityLocation(tenant, Seq(id))
+}

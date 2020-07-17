@@ -22,7 +22,7 @@ import ssl.{CertificateDataStore, ClientCertificateValidationDataStore, KvClient
 import otoroshi.storage.stores._
 import otoroshi.storage.{DataStoreHealth, DataStores, RawDataStore}
 import otoroshi.tcp.{KvTcpServiceDataStoreDataStore, TcpServiceDataStore}
-import storage.stores.KvRawDataStore
+import storage.stores.{KvRawDataStore, TeamDataStore, TenantDataStore}
 
 import scala.concurrent.{ExecutionContext, Future}
 import otoroshi.utils.syntax.implicits._
@@ -110,6 +110,12 @@ class LevelDbDataStores(configuration: Configuration,
 
   private lazy val _webAuthnRegistrationsDataStore                            = new WebAuthnRegistrationsDataStore()
   override def webAuthnRegistrationsDataStore: WebAuthnRegistrationsDataStore = _webAuthnRegistrationsDataStore
+
+  private lazy val _tenantDataStore = new TenantDataStore(redis, env)
+  override def tenantDataStore: TenantDataStore = _tenantDataStore
+
+  private lazy val _teamDataStore = new TeamDataStore(redis, env)
+  override def teamDataStore: TeamDataStore = _teamDataStore
 
   override def privateAppsUserDataStore: PrivateAppsUserDataStore               = _privateAppsUserDataStore
   override def backOfficeUserDataStore: BackOfficeUserDataStore                 = _backOfficeUserDataStore

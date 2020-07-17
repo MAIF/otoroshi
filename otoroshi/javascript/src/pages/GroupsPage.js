@@ -6,6 +6,10 @@ import faker from 'faker';
 
 export class GroupsPage extends Component {
   formSchema = {
+    _loc: {
+      type: 'location',
+      props: {}
+    },
     id: { type: 'string', disabled: true, props: { label: 'Id', placeholder: '---' } },
     name: {
       type: 'string',
@@ -54,7 +58,7 @@ export class GroupsPage extends Component {
     },
   ];
 
-  formFlow = ['id', 'name', 'description', 'metadata'];
+  formFlow = ['_loc', '---', 'id', 'name', 'description', 'metadata'];
 
   state = { env: null };
 
