@@ -1073,6 +1073,7 @@ export class ServicePage extends Component {
               onChangeTeams={v => this.changeValue("_loc.teams", v)}
             />
           </Collapse>
+          <Separator />
           <TextInput
             label="Id"
             disabled={!this.state.neverSaved}

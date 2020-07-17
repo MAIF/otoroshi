@@ -44,6 +44,8 @@ export function fetchBodiesFor(serviceId, requestId) {
 // should use api proxy
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+window.__otoroshi__env__latest = { currentTenant: 'default', userAdmin: false };
+
 export function env() {
   return fetch('/bo/api/env', {
     method: 'GET',
@@ -51,7 +53,10 @@ export function env() {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then(r => r.json()).then(env => {
+    window.__otoroshi__env__latest = env;
+    return env;
+  });
 }
 
 export function version() {
@@ -1330,6 +1335,145 @@ export function createNewTcpService() {
 
 export function updateTcpService(ak) {
   return fetch(`/bo/api/proxy/api/tcp/services/${ak.id}`, {
+    method: 'PUT',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(ak),
+  }).then(r => r.json());
+}
+
+
+///////////////////////////////
+// Teams
+///////////////////////////////
+
+export function findAllTeams() {
+  return fetch('/bo/api/proxy/api/teams', {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then(r => r.json());
+}
+
+export function findTeamById(id) {
+  return fetch(`/bo/api/proxy/api/teams/${id}`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then(r => r.json());
+}
+
+export function deleteTeam(ak) {
+  return fetch(`/bo/api/proxy/api/teams/${ak.id}`, {
+    method: 'DELETE',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then(r => r.json());
+}
+
+export function createTeam(ak) {
+  return fetch(`/bo/api/proxy/api/teams`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(ak),
+  }).then(r => r.json());
+}
+
+export function createNewTeam() {
+  return fetch(`/bo/api/proxy/api/teams/_template`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then(r => r.json());
+}
+
+export function updateTeam(ak) {
+  return fetch(`/bo/api/proxy/api/teams/${ak.id}`, {
+    method: 'PUT',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(ak),
+  }).then(r => r.json());
+}
+
+
+
+///////////////////////////////
+// Tenants
+///////////////////////////////
+
+export function findAllTenants() {
+  return fetch('/bo/api/proxy/api/tenants', {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then(r => r.json());
+}
+
+export function findTenantById(id) {
+  return fetch(`/bo/api/proxy/api/tenants/${id}`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then(r => r.json());
+}
+
+export function deleteTenant(ak) {
+  return fetch(`/bo/api/proxy/api/tenants/${ak.id}`, {
+    method: 'DELETE',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then(r => r.json());
+}
+
+export function createTenant(ak) {
+  return fetch(`/bo/api/proxy/api/tenants`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(ak),
+  }).then(r => r.json());
+}
+
+export function createNewTenant() {
+  return fetch(`/bo/api/proxy/api/tenants/_template`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then(r => r.json());
+}
+
+export function updateTenant(ak) {
+  return fetch(`/bo/api/proxy/api/tenants/${ak.id}`, {
     method: 'PUT',
     credentials: 'include',
     headers: {

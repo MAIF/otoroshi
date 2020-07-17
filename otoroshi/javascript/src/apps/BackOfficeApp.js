@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import { BrowserRouter as Router, Route, Link, Switch, withRouter } from 'react-router-dom';
 import queryString from 'query-string';
+import Select from 'react-select';
 
 import { ServicePage } from '../pages/ServicePage';
 import { ServiceAnalyticsPage } from '../pages/ServiceAnalyticsPage';
@@ -47,6 +48,8 @@ import { DynamicTitle } from '../components/DynamicTitle';
 import * as BackOfficeServices from '../services/BackOfficeServices';
 
 import { createTooltip } from '../tooltips';
+import { TenantsPage } from '../pages/TenantsPage';
+import { TeamsPage } from '../pages/TeamsPage';
 
 class BackOfficeAppContainer extends Component {
   constructor(props) {
@@ -155,16 +158,20 @@ class BackOfficeAppContainer extends Component {
                     addService={this.addService}
                     env={this.state.env}
                   />
-                  {this.state.env && (
-                    <span onClick={e => (window.location = '/bo/dashboard/snowmonkey')}>
-                      {this.state.env.snowMonkeyRunning &&
-                        window.location.pathname !== '/bo/dashboard/snowmonkey' && (
-                          <div className="screen">
-                            <p>Snow monkey is running...</p>
-                          </div>
-                        )}
-                    </span>
-                  )}
+                  <div className="bottom-sidebar">
+                    {/*<img src="/assets/images/otoroshi-logo-inverse.png" width="16" /> version {window.__currentVersion}*/}
+                    <GlobalTenantSelector />
+                    {this.state.env && (
+                      <span onClick={e => (window.location = '/bo/dashboard/snowmonkey')}>
+                        {this.state.env.snowMonkeyRunning &&
+                          window.location.pathname !== '/bo/dashboard/snowmonkey' && (
+                            <div className="screen">
+                              <p>Snow monkey is running...</p>
+                            </div>
+                          )}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -244,6 +251,42 @@ class BackOfficeAppContainer extends Component {
                             this.decorate(ApiKeysPage, { ...props, env: this.state.env })
                           }
                         />
+                        <Route
+                          path="/organizations/:taction/:titem"
+                          component={props =>
+                            this.decorate(TenantsPage, { ...props, env: this.state.env })
+                          }
+                        />
+                        <Route
+                          path="/organizations/:taction"
+                          component={props =>
+                            this.decorate(TenantsPage, { ...props, env: this.state.env })
+                          }
+                        />
+                        <Route
+                          path="/organizations"
+                          component={props =>
+                            this.decorate(TenantsPage, { ...props, env: this.state.env })
+                          }
+                        />    
+                        <Route
+                          path="/teams/:taction/:titem"
+                          component={props =>
+                            this.decorate(TeamsPage, { ...props, env: this.state.env })
+                          }
+                        />
+                        <Route
+                          path="/teams/:taction"
+                          component={props =>
+                            this.decorate(TeamsPage, { ...props, env: this.state.env })
+                          }
+                        />
+                        <Route
+                          path="/teams"
+                          component={props =>
+                            this.decorate(TeamsPage, { ...props, env: this.state.env })
+                          }
+                        />            
                         <Route
                           path="/lines/:lineId/services/:serviceId"
                           component={props =>
@@ -473,6 +516,44 @@ export class BackOfficeApp extends Component {
       <Router basename="/bo/dashboard">
         <BackOfficeAppContainerWithRouter />
       </Router>
+    );
+  }
+}
+
+class GlobalTenantSelector extends Component {
+
+  state = { tenants: ["default"], loading: false };
+
+  componentDidMount() {
+    BackOfficeServices.env().then(() => this.forceUpdate());
+    this.update();
+  }
+
+  update = () => {
+    this.setState({ loading: true })
+    BackOfficeServices.findAllTenants().then(rtenants => {
+      const tenants = rtenants.map(t => {
+        return {
+          label: t.name,
+          value: t.id,
+        }
+      })
+      this.setState({ tenants, loading: false })
+    });
+  }
+
+  render() {
+    return (
+      <div className="global-tenant-selector">
+        <Select
+          style={{ width: '100%' }}
+          isLoading={this.state.loading}
+          value={window.__otoroshi__env__latest.currentTenant}
+          options={this.state.tenants}
+          onChange={this.onChange}
+          menuPlacement="auto"
+        />  
+      </div>  
     );
   }
 }

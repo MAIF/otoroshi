@@ -15,6 +15,8 @@ const CodeInput = React.lazy(() => Promise.resolve(require('./inputs/CodeInput')
 import { Proxy } from './Proxy';
 import { Separator } from './Separator';
 import { AlgoSettings } from './JwtVerifier';
+import { Collapse } from '../components/inputs/Collapse';
+import { Location } from '../components/Location';
 
 import * as BackOfficeServices from '../services/BackOfficeServices';
 
@@ -1298,6 +1300,15 @@ export class AuthModuleConfig extends Component {
 
     return (
       <div>
+        <Collapse initCollapsed={false} label="Location">
+          <Location
+            tenant={settings._loc.tenant || "default"}
+            onChangeTenant={v => this.changeTheValue("_loc.tenant", v)}
+            teams={settings._loc.teams || ["default"]}
+            onChangeTeams={v => this.changeTheValue("_loc.teams", v)}
+          />
+        </Collapse>
+        <Separator />
         {selector}
         {settings.type === 'oauth2' && <Oauth2ModuleConfig {...this.props} />}
         {settings.type === 'basic' && <BasicModuleConfig {...this.props} />}

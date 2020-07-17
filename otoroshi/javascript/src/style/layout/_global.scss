@@ -136,12 +136,12 @@ h4 {
 
 .screen {
   background-image:linear-gradient(transparent, transparent 3px, #222);
-  position: absolute;
-  left: 0;
-  bottom: 0;
+  // position: absolute;
+  // left: 0;
+  // bottom: 0;
   font-family:'Fira Mono', monospace;
   font-size:20px;
-  overflow:hidden;
+  // overflow:hidden;
   padding: 10px;
   cursor: pointer;
   animation:colorPulse 5s infinite ease-in-out;
@@ -150,6 +150,18 @@ h4 {
 .screen p:last-child:after {
   animation:blink 1s infinite;
   content:"_";
+}
+
+.bottom-sidebar {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  overflow:hidden;
+  width: 100%;
+}
+
+.global-tenant-selector {
+  width: 100%;
 }
 
 @keyframes colorPulse {

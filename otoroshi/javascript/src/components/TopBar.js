@@ -107,6 +107,18 @@ export class TopBar extends Component {
           action: () => (window.location.href = '/bo/dashboard/groups'),
         });
         options.push({
+          label: 'Organizations',
+          value: 'Organizations',
+          env: <i className="glyphicon glyphicon-folder-open" />,
+          action: () => (window.location.href = '/bo/dashboard/organizations'),
+        });
+        options.push({
+          label: 'Teams',
+          value: 'Teams',
+          env: <i className="glyphicon glyphicon-folder-open" />,
+          action: () => (window.location.href = '/bo/dashboard/teams'),
+        });
+        options.push({
           action: () => (window.location.href = '/bo/dashboard/loggers'),
           env: <span className="glyphicon glyphicon-book" />,
           label: 'Loggers level',
@@ -505,12 +517,19 @@ export class TopBar extends Component {
                   </li>
                   <li role="separator" className="divider" />
                   <li>
+                    <a href="/bo/dashboard/organizations">
+                      <span className="glyphicon glyphicon-folder-open" /> Organizations
+                    </a>
+                    <a href="/bo/dashboard/teams">
+                      <span className="glyphicon glyphicon-folder-open" /> Teams
+                    </a>
                     <a href="/bo/dashboard/groups">
-                      <span className="glyphicon glyphicon-folder-open" /> All service groups
+                      <span className="glyphicon glyphicon-folder-open" /> Service groups
                     </a>
-                    <a href="/bo/dashboard/clever">
+
+                    {window.__otoroshi__env__latest.userAdmin && <a href="/bo/dashboard/clever">
                       <span className="glyphicon glyphicon-list-alt" /> Clever apps
-                    </a>
+                    </a>}
                   </li>
                   <li role="separator" className="divider" />
                   <li>
@@ -533,63 +552,67 @@ export class TopBar extends Component {
                     )}
                   </li>
                   <li role="separator" className="divider" />
-                  {this.state.env.clusterRole === 'Leader' && (
+                  {window.__otoroshi__env__latest.userAdmin  && this.state.env.clusterRole === 'Leader' && (
                     <li>
                       <a href="/bo/dashboard/cluster">
                         <span className="fa fa-network-wired" /> Cluster view
                       </a>
                     </li>
                   )}
-                  {this.state.env.clusterRole === 'Leader' && (
+                  {window.__otoroshi__env__latest.userAdmin  && this.state.env.clusterRole === 'Leader' && (
                     <li role="separator" className="divider" />
                   )}
-                  <li>
-                    <a href="/bo/dashboard/stats">
-                      <i className="glyphicon glyphicon-signal" /> Analytics
-                    </a>
-                  </li>
-                  <li>
-                    <a href="/bo/dashboard/events">
-                      <i className="glyphicon glyphicon-list" /> Events log
-                    </a>
-                  </li>
-                  <li className="hide">
-                    <a href="/bo/dashboard/top10">
-                      <span className="glyphicon glyphicon-fire" /> Top 10 services
-                    </a>
-                  </li>
-                  <li className="hide">
-                    <a href="/bo/dashboard/map">
-                      <span className="glyphicon glyphicon-globe" /> Services map
-                    </a>
-                  </li>
-                  <li role="separator" className="divider hide" />
-                  <li className="hide">
-                    <a href="/bo/dashboard/loggers">
-                      <span className="glyphicon glyphicon-book" /> Loggers level
-                    </a>
-                  </li>
-                  <li>
-                    <a href="/bo/dashboard/audit">
-                      <span className="glyphicon glyphicon-list" /> Audit log
-                    </a>
-                  </li>
-                  <li>
-                    <a href="/bo/dashboard/alerts">
-                      <span className="glyphicon glyphicon-list" /> Alerts log
-                    </a>
-                  </li>
-                  <li role="separator" className="divider" />
-                  <li>
-                    <a href="/bo/dashboard/admins">
-                      <span className="glyphicon glyphicon-user" /> Admins
-                    </a>
-                  </li>
-                  <li>
-                    <a href="/bo/dashboard/sessions/admin">
-                      <span className="glyphicon glyphicon-user" /> Admins sessions
-                    </a>
-                  </li>
+                  {window.__otoroshi__env__latest.userAdmin  && (
+                    <>
+                      <li>
+                        <a href="/bo/dashboard/stats">
+                          <i className="glyphicon glyphicon-signal" /> Analytics
+                        </a>
+                      </li>
+                      <li>
+                        <a href="/bo/dashboard/events">
+                          <i className="glyphicon glyphicon-list" /> Events log
+                        </a>
+                      </li>
+                      <li className="hide">
+                        <a href="/bo/dashboard/top10">
+                          <span className="glyphicon glyphicon-fire" /> Top 10 services
+                        </a>
+                      </li>
+                      <li className="hide">
+                        <a href="/bo/dashboard/map">
+                          <span className="glyphicon glyphicon-globe" /> Services map
+                        </a>
+                      </li>
+                      <li role="separator" className="divider hide" />
+                      <li className="hide">
+                        <a href="/bo/dashboard/loggers">
+                          <span className="glyphicon glyphicon-book" /> Loggers level
+                        </a>
+                      </li>
+                      <li>
+                        <a href="/bo/dashboard/audit">
+                          <span className="glyphicon glyphicon-list" /> Audit log
+                        </a>
+                      </li>
+                      <li>
+                        <a href="/bo/dashboard/alerts">
+                          <span className="glyphicon glyphicon-list" /> Alerts log
+                        </a>
+                      </li>
+                      <li role="separator" className="divider" />
+                      <li>
+                        <a href="/bo/dashboard/admins">
+                          <span className="glyphicon glyphicon-user" /> Admins
+                        </a>
+                      </li>
+                      <li>
+                        <a href="/bo/dashboard/sessions/admin">
+                          <span className="glyphicon glyphicon-user" /> Admins sessions
+                        </a>
+                      </li>
+                    </>
+                  )}
                   <li>
                     <a href="/bo/dashboard/sessions/private">
                       <span className="glyphicon glyphicon-lock" /> Priv. apps sessions
@@ -597,7 +620,8 @@ export class TopBar extends Component {
                   </li>
                   <li role="separator" className="divider" />
                   <li>
-                    <a href="/bo/dashboard/snowmonkey">
+                    {window.__otoroshi__env__latest.userAdmin  && (
+                      <a href="/bo/dashboard/snowmonkey">
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         className="monkeyMenu"
@@ -763,9 +787,10 @@ export class TopBar extends Component {
                       </svg>{' '}
                       Snow Monkey
                     </a>
+                    )}
                   </li>
                   <li role="separator" className="divider" />
-                  {this.state.env.providerDashboardUrl && (
+                  {window.__otoroshi__env__latest.userAdmin  && this.state.env.providerDashboardUrl && (
                     <>
                       <li>
                         <a href="/bo/dashboard/provider">
@@ -777,9 +802,9 @@ export class TopBar extends Component {
                     </>
                   )}
                   <li>
-                    <a href="/bo/dashboard/dangerzone">
+                    {window.__otoroshi__env__latest.userAdmin  && <a href="/bo/dashboard/dangerzone">
                       <span className="glyphicon glyphicon-alert" /> Danger Zone
-                    </a>
+                    </a>}
                   </li>
                   <li role="separator" className="divider" />
                   <li>

@@ -20,6 +20,8 @@ import deepSet from 'set-value';
 import _ from 'lodash';
 import { Separator } from './Separator';
 import { Proxy } from './Proxy';
+import { Location } from '../components/Location';
+import { Collapse } from '../components/inputs/Collapse';
 
 export class LocationSettings extends Component {
   state = {
@@ -423,6 +425,19 @@ export class JwtVerifier extends Component {
     const changeTheValue = this.changeTheValue;
     return (
       <div>
+        {verifier.type === 'global' && (
+          <>
+            <Collapse initCollapsed={false} label="Location">
+              <Location
+                tenant={verifier._loc.tenant || "default"}
+                onChangeTenant={v => this.changeTheValue("_loc.tenant", v)}
+                teams={verifier._loc.teams || ["default"]}
+                onChangeTeams={v => this.changeTheValue("_loc.teams", v)}
+              />
+            </Collapse>
+            <Separator />
+          </>
+        )}
         {verifier.type === 'global' && (
           <TextInput
             label="Id"
