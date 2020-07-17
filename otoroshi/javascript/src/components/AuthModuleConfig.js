@@ -24,6 +24,7 @@ import deepSet from 'set-value';
 import _ from 'lodash';
 import faker from 'faker';
 import bcrypt from 'bcryptjs';
+import { JsonObjectAsCodeInput } from './inputs/CodeInput';
 
 function Base64Url() {
   let chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
@@ -162,6 +163,8 @@ export class Oauth2ModuleConfig extends Component {
     apiKeyTagsField: 'apkTags',
     otoroshiDataField: 'app_metadata | otoroshi_data',
     extraMetadata: {},
+    dataOverride: {},
+    rightsOverride: {},
     mtlsConfig: {
       mtls: false,
       loose: false,
@@ -432,6 +435,18 @@ export class Oauth2ModuleConfig extends Component {
             }}
           />
         </Suspense>
+        <JsonObjectAsCodeInput 
+          label="Data override"
+          mode="json"
+          value={settings.dataOverride || {}}
+          onChange={e => this.changeTheValue(path + '.dataOverride', e)}
+        />
+        <JsonObjectAsCodeInput 
+          label="Rights override"
+          mode="json"
+          value={settings.rightsOverride || {}}
+          onChange={e => this.changeTheValue(path + '.rightsOverride', e)}
+        />
         <TextInput
           label="Api key metadata field name"
           value={settings.apiKeyMetaField}
@@ -1125,6 +1140,18 @@ export class LdapModuleConfig extends Component {
             }}
           />
         </Suspense>
+        <JsonObjectAsCodeInput 
+          label="Data override"
+          mode="json"
+          value={settings.dataOverride || {}}
+          onChange={e => this.changeTheValue(path + '.dataOverride', e)}
+        />
+        <JsonObjectAsCodeInput 
+          label="Rights override"
+          mode="json"
+          value={settings.rightsOverride || {}}
+          onChange={e => this.changeTheValue(path + '.rightsOverride', e)}
+        />
       </div>
     );
   }
