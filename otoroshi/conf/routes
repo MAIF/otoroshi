@@ -411,11 +411,13 @@ GET     /api/alert/events                                     controllers.admina
 GET     /api/admins/simple/_template                          controllers.adminapi.TemplatesController.initiateSimpleAdmin()
 POST    /api/admins/simple                                    controllers.adminapi.UsersController.registerSimpleAdmin()
 GET     /api/admins/simple                                    controllers.adminapi.UsersController.simpleAdmins()
+PUT     /api/admins/simple/:username                          controllers.adminapi.UsersController.updateAdmin(username)
 DELETE  /api/admins/simple/:username                          controllers.adminapi.UsersController.deleteAdmin(username)
 
 GET     /api/admins/webauthn/_template                        controllers.adminapi.TemplatesController.initiateWebauthnAdmin()
 GET     /api/admins/webauthn                                  controllers.adminapi.UsersController.webAuthnAdmins()
 POST    /api/admins/webauthn                                  controllers.adminapi.UsersController.registerWebAuthnAdmin()
+PUT     /api/admins/webauthn/:username                        controllers.adminapi.UsersController.updateWebAuthnAdmin(username)
 DELETE  /api/admins/webauthn/:username/:id                    controllers.adminapi.UsersController.webAuthnDeleteAdmin(username, id)
 
 GET     /api/swagger.json                                     controllers.SwaggerController.swagger()

@@ -246,6 +246,34 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
     }
   }
 
+  def updateAdmin(username: String) = ApiAction.async(parse.json) { ctx =>
+    ctx.checkRights(SuperAdminOnly) {
+      env.datastores.simpleAdminDataStore.findByUsername(username).flatMap {
+        case None => NotFound(Json.obj("error" -> "user not found")).future
+        case Some(_) => {
+          val newUser = SimpleOtoroshiAdmin.fmt.reads(ctx.request.body).get.copy(username = username)
+          env.datastores.simpleAdminDataStore.registerUser(newUser).map { _ =>
+            Ok(newUser.json)
+          }
+        }
+      }
+    }
+  }
+
+  def updateWebAuthnAdmin(username: String) = ApiAction.async(parse.json) { ctx =>
+    ctx.checkRights(SuperAdminOnly) {
+      env.datastores.webAuthnAdminDataStore.findByUsername(username).flatMap {
+        case None => NotFound(Json.obj("error" -> "user not found")).future
+        case Some(_) => {
+          val newUser = WebAuthnOtoroshiAdmin.fmt.reads(ctx.request.body).get.copy(username = username)
+          env.datastores.webAuthnAdminDataStore.registerUser(newUser).map { _ =>
+            Ok(newUser.json)
+          }
+        }
+      }
+    }
+  }
+
   def webAuthnAdmins() = ApiAction.async { ctx =>
     ctx.checkRights(SuperAdminOnly) {
       val options = SendAuditAndAlert("ACCESS_WEBAUTHN_ADMINS", s"User accessed webauthn admins", None, Json.obj(), ctx)

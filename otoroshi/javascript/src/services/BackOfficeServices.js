@@ -1483,3 +1483,28 @@ export function updateTenant(ak) {
     body: JSON.stringify(ak),
   }).then(r => r.json());
 }
+
+export function updateSimpleAdmin(user) {
+  return fetch(`/bo/api/proxy/api/admins/simple/${user.username}`, {
+    method: 'PUT',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(user),
+  }).then(r => r.json());
+}
+
+export function updateWebAuthnAdmin(user) {
+  return fetch(`/bo/api/proxy/api/admins/webauthn/${user.username}`, {
+    method: 'PUT',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(user),
+  }).then(r => r.json());
+}
+

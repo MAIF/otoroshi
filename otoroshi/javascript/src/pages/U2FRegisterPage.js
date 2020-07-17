@@ -1,11 +1,13 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import * as BackOfficeServices from '../services/BackOfficeServices';
-import { Table } from '../components/inputs';
+import { Table, Form, TextInput, ArrayInput, SelectInput } from '../components/inputs';
 import { Link } from 'react-router-dom';
 import moment from 'moment';
 import faker from 'faker';
 import bcrypt from 'bcryptjs';
+import { Separator } from '../components/Separator';
+import { JsonObjectAsCodeInput } from '../components/inputs/CodeInput';
 
 function Base64Url() {
   let chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
@@ -160,14 +162,12 @@ export class U2FRegisterPage extends Component {
       cell: (v, item, table) => {
         return (
           <>
-            {item.username === window.__userid && (
-              <button
-                type="button"
-                className="btn btn-success btn-xs"
-                onClick={this.updateCurrentUser}>
-                <i className="glyphicon glyphicon-refresh" /> Update User
-              </button>
-            )}
+            <button
+              type="button"
+              className="btn btn-success btn-xs"
+              onClick={e => this.updateOtherUser(item)}>
+              <i className="glyphicon glyphicon-edit" /> Edit User
+            </button>
             <button
               type="button"
               className="btn btn-danger btn-xs"
@@ -251,6 +251,23 @@ export class U2FRegisterPage extends Component {
           'Update admin',
           (ok, cancel) => (
             <RegisterAdminModal ok={ok} cancel={cancel} user={user} users={admins} mode="update" />
+          ),
+          { style: { width: '100%' } }
+        )
+        .then(form => {
+          if (this.table) this.table.update();
+        });
+    });
+  };
+
+  updateOtherUser = (_user) => {
+    BackOfficeServices.fetchAdmins().then(admins => {
+      const user = admins.filter(a => a.username === _user.username)[0];
+      window
+        .popup(
+          'Update admin',
+          (ok, cancel) => (
+            <AdminEditionModal ok={ok} cancel={cancel} user={user} users={admins} mode="update" />
           ),
           { style: { width: '100%' } }
         )
@@ -374,6 +391,7 @@ export class RegisterAdminModal extends Component {
     mode: this.props.mode || 'create',
     email: this.props.mode === 'update' && this.props.user ? this.props.user.username : '',
     label: this.props.mode === 'update' && this.props.user ? this.props.user.label : '',
+    rights: this.props.mode === 'update' && this.props.user ? this.props.user.rights : [],
     oldPassword: '',
     password: '',
     passwordcheck: '',
@@ -671,5 +689,196 @@ export class RegisterAdminModal extends Component {
         </div>
       </>
     );
+  }
+}
+
+export class AdminEditionModal extends Component {
+  state = {
+    mode: this.props.mode || 'create',
+    user: { ...this.props.user },
+    password1: '',
+    password2: ''
+  };
+
+  onChange = user => {
+    this.setState({ user });
+  };
+
+  handleError = err => {
+    this.setState({ error: err.message });
+  };
+
+  handleErrorWithMessage = message => (e) => {
+    this.setState({ error: message + ' ' + e.message ? e.message : e });
+  };
+
+  schema = {
+    username: {
+      type: 'string',
+      props: {
+        label: "Username"
+      }
+    },
+    label: {
+      type: 'string',
+      props: {
+        label: "Label"
+      }
+    },
+    password: {
+      type: 'string',
+      props: {
+        label: "Password"
+      }
+    },
+    type: {
+      type: 'string',
+      props: {
+        disabled: true,
+        label: "Type"
+      }
+    },
+    createdAt: {
+      type: 'string',
+      props: {
+        disabled: true,
+        label: "Created at"
+      }
+    },
+    metadata: {
+      type: 'object',
+      props: {
+        label: "Metadata"
+      }
+    },
+    _rights: {
+      type: UserRights,
+      props: {
+      }
+    },
+    rights: {
+      type: JsonObjectAsCodeInput,
+      props: {
+        height: '200px'
+      }
+    },
+  }
+
+  flow = [
+    'username',
+    'label',
+    'password',
+    'type',
+    'createdAt',
+    'metadata',
+    'rights'
+  ]
+
+  onChange = (user) => {
+    this.setState({ user });
+  }
+
+  save = (e) => {
+    if (this.state.user.type === 'SIMPLE') {
+      BackOfficeServices.updateSimpleAdmin(this.state.user);
+    }
+    if (this.state.user.type === 'WEBAUTHN') {
+      BackOfficeServices.updateWebAuthnAdmin(this.state.user);
+    }
+    this.props.ok();
+  }
+
+  setPassword = (e) => {
+    if (this.state.password1 && this.state.password2 && this.state.password1 !== '' && this.state.password1 == this.state.password2) {
+      const salted = bcrypt.hashSync(this.state.password1, bcrypt.genSaltSync());
+      this.setState({ password1: '', password2: '', user: { ...this.state.user, password: salted }});
+    }
+  }
+
+  render() {
+    return (
+      <>
+        <div className="modal-body">
+          <Form
+            value={this.state.user}
+            onChange={this.onChange}
+            flow={this.flow}
+            schema={this.schema}
+            style={{ marginTop: 5 }}
+          />
+          <Separator />
+          <div style={{ height: 10 }} />
+          <form className="form-horizontal">
+            <TextInput label="New password" type="password" value={this.state.password1} onChange={e => this.setState({ password1: e })} />
+            <TextInput label="New password again" type="password" value={this.state.password2} onChange={e => this.setState({ password2: e })} />
+            <div className="form-group">
+              <label className="col-xs-12 col-sm-2 control-label"></label>
+              <div className="col-sm-10" style={{ display: 'flex' }}>
+                <button type="button" className="btn btn-success" onClick={this.setPassword}>Change password</button>
+              </div>
+            </div>
+          </form>
+        </div>
+        <div className="modal-footer">
+          <button type="button" className="btn btn-danger" onClick={this.props.cancel}>
+            Cancel
+          </button>
+          <button
+            type="button"
+            className="btn btn-success"
+            style={{ marginLeft: 10 }}
+            onClick={this.save}>
+            Save
+          </button>
+        </div>
+      </>
+    );
+  }
+}
+
+class UserRights extends Component {
+  render() {
+    console.log(this.props)
+    return (
+      <div style={{ outline: '1px solid red' }}>
+        <ArrayInput 
+          label="Rights"
+          value={this.props.rawValue.rights}
+          onChange={e => this.props.changeValue('rights', e)}
+          component={UserRight}
+        />
+      </div>
+    )
+    
+    // this.props.rawValue.rights.map(r => <UserRight right={r} />);
+  }
+}
+
+class UserRight extends Component {
+  render() {
+    return (
+      <div style={{ outline: '1px solid green' }}>
+        <SelectInput 
+          label="Organization"
+          value={this.props.itemValue.tenant ? this.props.itemValue.tenant.split(":")[0] : '*'}
+          onChange={e => console.log(e)}
+          valuesFrom="/bo/api/proxy/api/tenants"
+          transformer={a => ({
+            value: a.id,
+            label: a.name + " - " + a.description,
+          })}
+        />
+        <ArrayInput 
+          label="Teams"
+          value={this.props.itemValue.teams ? this.props.itemValue.teams.map(t => t ? t.split(":")[0] : '*') : []}
+          onChange={e => console.log(e)}
+          valuesFrom="/bo/api/proxy/api/teams"
+          transformer={a => ({
+            value: a.id,
+            label: a.name + " - " + a.description,
+          })}
+        />
+      </div>
+    )
   }
 }

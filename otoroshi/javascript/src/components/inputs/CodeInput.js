@@ -9,6 +9,22 @@ import 'brace/theme/monokai';
 import 'brace/ext/language_tools';
 import 'brace/ext/searchbox';
 
+export class JsonObjectAsCodeInput extends Component {
+  render() {
+    return <CodeInput 
+      {...this.props}
+      value={JSON.stringify(this.props.value, null, 2)}
+      onChange={e => {
+        try {
+          this.props.onChange(JSON.parse(e))
+        } catch(ex) {
+          
+        }
+      }}
+    />
+  }
+}
+
 export default class CodeInput extends Component {
   static Toggle = props => {
     const [display, setDisplay] = useState(true);
