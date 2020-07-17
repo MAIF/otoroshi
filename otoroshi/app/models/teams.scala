@@ -51,6 +51,8 @@ case class UserRights(rights: Seq[UserRight]) {
   def canWriteTeams(tenant: TenantId, teams: Seq[TeamId])(implicit env: Env): Boolean = rootOrTenantAdmin(tenant) {
     canReadTenant(tenant) && teams.exists(ut => rights.exists(ur => ur.teams.exists(t => t.matches(ut) && t.canReadWrite)))
   }
+  def oneAuthorizedTenant: TenantId = rights.headOption.filter(_.tenant.plain).map(_.tenant.asTenantId).getOrElse(TenantId.default)
+  def oneAuthorizedTeam: TeamId = rights.headOption.flatMap(_.teams.headOption).filter(_.plain).map(_.asTeamId).getOrElse(TeamId.default)
 }
 
 object UserRights {
@@ -91,14 +93,14 @@ object UserRight {
   val format = new Format[UserRight] {
     override def writes(o: UserRight): JsValue = Json.obj(
       "tenant" -> o.tenant.raw,
-      "teams" -> JsArray(o.teams.map(t => JsString(t.raw)))
+      "teams" -> JsArray(o.teams.distinct.map(t => JsString(t.raw)))
     )
     override def reads(json: JsValue): JsResult[UserRight] = Try {
       UserRight(
         tenant = TenantAccess((json \ "tenant").as[String]),
         teams = (json \ "teams").as[JsArray].value.map { t =>
           TeamAccess(t.as[String])
-        }
+        }.distinct
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -117,12 +119,12 @@ object EntityLocation {
   val format = new Format[EntityLocation] {
     override def writes(o: EntityLocation): JsValue = Json.obj(
       "tenant" -> o.tenant.value,
-      "teams" -> JsArray(o.teams.map(t => JsString(t.value))),
+      "teams" -> JsArray(o.teams.distinct.map(t => JsString(t.value))),
     )
     override def reads(json: JsValue): JsResult[EntityLocation] = Try {
       EntityLocation(
         tenant = json.select("tenant").asOpt[String].map(TenantId.apply).getOrElse(TenantId.default),
-        teams = json.select("teams").asOpt[Seq[String]].map(s => s.map(TeamId.apply)).getOrElse(Seq(TeamId.default)),
+        teams = json.select("teams").asOpt[Seq[String]].map(s => s.map(TeamId.apply).distinct).getOrElse(Seq(TeamId.default)),
       )
     } match {
       case Failure(e) => JsError(e.getMessage)
@@ -156,6 +158,9 @@ case class TeamAccess(value: String, canRead: Boolean, canWrite: Boolean) {
   lazy val raw: String = {
     s"$value:${if (canRead) "r" else ""}${if (canRead && canWrite) "w" else ""}"
   }
+  lazy val asTeamId: TeamId = TeamId(value)
+  lazy val plain: Boolean = !containsWildcard
+  lazy val containsWildcard: Boolean = value.contains("*")
   lazy val wildcard: Boolean = value == "*"
   lazy val canReadWrite: Boolean = canRead && canWrite
   def matches(team: TeamId): Boolean = {
@@ -196,6 +201,9 @@ case class TenantAccess(value: String, canRead: Boolean, canWrite: Boolean) {
   def matches(tenant: TenantId): Boolean = {
     value == "*" || RegexPool(value).matches(tenant.value)
   }
+  lazy val asTenantId: TenantId = TenantId(value)
+  lazy val plain: Boolean = !containsWildcard
+  lazy val containsWildcard: Boolean = value.contains("*")
   lazy val wildcard: Boolean = value == "*"
   lazy val canReadWrite: Boolean = canRead && canWrite
   lazy val raw: String = {

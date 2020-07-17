@@ -361,7 +361,7 @@ export class Table extends Component {
       <div>
         {!this.state.showEditForm && !this.state.showAddForm && (
           <div>
-            <div className="row" style={{ marginBottom: 10 }}>
+            <div className="row" style={{ marginBottom: 10, marginTop: 2 }}>
               <div className="col-md-12">
                 <button
                   type="button"

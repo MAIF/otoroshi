@@ -542,16 +542,23 @@ class GlobalTenantSelector extends Component {
     });
   }
 
+  onChange = (e) => {
+    window.localStorage.setItem("Otoroshi-Tenant", e.value);
+    setTimeout(() => window.location.reload(), 300)
+  }
+
   render() {
     return (
       <div className="global-tenant-selector">
         <Select
           style={{ width: '100%' }}
           isLoading={this.state.loading}
-          value={window.__otoroshi__env__latest.currentTenant}
+          value={window.localStorage.getItem("Otoroshi-Tenant") || "default"}
           options={this.state.tenants}
           onChange={this.onChange}
           menuPlacement="auto"
+          menuPosition="fixed"
+          isClearable={false}
         />  
       </div>  
     );

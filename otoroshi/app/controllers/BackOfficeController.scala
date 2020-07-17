@@ -66,7 +66,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
         FastFuture.successful(
           NotFound(
             Json.obj(
-              "error" -> "admin sapikey not found !"
+              "error" -> "admin apikey not found !"
             )
           )
         )
@@ -86,7 +86,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
           env.Headers.OtoroshiAdminProfile -> Base64.getUrlEncoder.encodeToString(
             Json.stringify(ctx.user.profile).getBytes(Charsets.UTF_8)
           ),
-          "Otoroshi-Tenant" -> "default", // TODO: will be dynamic then
+          "Otoroshi-Tenant" -> ctx.request.headers.get("Otoroshi-Tenant").getOrElse("default"),
           "Otoroshi-BackOffice-User" -> JWT.create()
             .withClaim("user", Json.stringify(ctx.user.toJson))
             .sign(Algorithm.HMAC512(apikey.clientSecret)),

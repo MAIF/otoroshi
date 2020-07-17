@@ -14,7 +14,7 @@ import otoroshi.models.RightsChecker.{SuperAdminOnly, TenantAdminOnly}
 import otoroshi.models._
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
-import play.api.libs.json.{JsValue, Json}
+import play.api.libs.json.{JsArray, JsValue, Json}
 import play.api.mvc._
 import security.{IdGenerator, OtoroshiClaim}
 import utils.RequestImplicits._
@@ -36,17 +36,14 @@ case class ApiActionContext[A](apiKey: ApiKey, request: Request[A]) {
       .flatMap(p => Try(Json.parse(new String(Base64.getDecoder.decode(p), Charsets.UTF_8))).toOption)
   def from(implicit env: Env): String = request.theIpAddress
   def ua: String                      = request.theUserAgent
-  def currentTenant: TenantId = {
-    Option(tenantRef.get()).getOrElse {
-      val value = request.headers.get("Otoroshi-Tenant").getOrElse("default")
-      val tenantId = TenantId(value)
-      tenantRef.set(tenantId)
-      tenantId
-    }
+  lazy val currentTenant: TenantId = {
+    TenantId(request.headers.get("Otoroshi-Tenant").getOrElse("default"))
   }
 
-  private val tenantRef = new AtomicReference[TenantId]()
   private val bouRef = new AtomicReference[Either[String, Option[BackOfficeUser]]]()
+
+  def oneAuthorizedTenant(implicit env: Env): TenantId = backOfficeUser.toOption.flatten.map(_.rights.oneAuthorizedTenant).getOrElse(TenantId.default)
+  def oneAuthorizedTeam(implicit env: Env): TeamId = backOfficeUser.toOption.flatten.map(_.rights.oneAuthorizedTeam).getOrElse(TeamId.default)
 
   def backOfficeUser(implicit env: Env): Either[String, Option[BackOfficeUser]] = {
     Option(bouRef.get()).getOrElse {
@@ -56,11 +53,10 @@ case class ApiActionContext[A](apiKey: ApiKey, request: Request[A]) {
         } else {
           request.headers.get("Otoroshi-BackOffice-User") match {
             case None =>
-              val tenantAccess = apiKey.metadata.get("otoroshi-tenant-access") // TODO: fix me !!! allow multiple tenants
-              val teamAccess = apiKey.metadata.get("otoroshi-teams-access") // TODO: fix me !!!
-              (tenantAccess, teamAccess) match {
-                case (None, None) => Right(None)
-                case (Some(tenants), Some(teams)) =>
+              val tenantAccess = apiKey.metadata.get("otoroshi-access-rights").map(Json.parse).flatMap(_.asOpt[JsArray]).map(UserRights.readFromArray)
+              tenantAccess match {
+                case None => Right(None)
+                case Some(userRights) =>
                   val user = BackOfficeUser(
                     randomId = IdGenerator.token,
                     name = apiKey.clientName,
@@ -69,7 +65,7 @@ case class ApiActionContext[A](apiKey: ApiKey, request: Request[A]) {
                     authConfigId = "apikey",
                     simpleLogin = false,
                     metadata = Map.empty,
-                    rights = UserRights(Seq(UserRight(TenantAccess(tenants), teams.split(",").map(_.trim).map(TeamAccess.apply))))
+                    rights = userRights
                   )
                   Right(user.some)
                 case _ => Left("You're not authorized here (invalid setup) ! ")
