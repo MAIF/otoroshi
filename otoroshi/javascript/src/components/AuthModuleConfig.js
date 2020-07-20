@@ -329,6 +329,12 @@ export class Oauth2ModuleConfig extends Component {
           help="..."
           onChange={v => changeTheValue(path + '.readProfileFromToken', v)}
         />
+        <BooleanInput
+          label="Super admins only"
+          value={settings.superAdmins}
+          help="All logged in users will have super admins rights"
+          onChange={v => changeTheValue(path + '.superAdmins', v)}
+        />
         <TextInput
           label="Client ID"
           value={settings.clientId}
@@ -1057,6 +1063,12 @@ export class LdapModuleConfig extends Component {
           value={settings.allowEmptyPassword}
           help="..."
           onChange={v => changeTheValue(path + '.allowEmptyPassword', v)}
+        />
+        <BooleanInput
+          label="Super admins only"
+          value={settings.superAdmins}
+          help="All logged in users will have super admins rights"
+          onChange={v => changeTheValue(path + '.superAdmins', v)}
         />
         <TextInput
           label="LDAP Server URL"
