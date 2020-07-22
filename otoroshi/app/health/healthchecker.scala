@@ -48,7 +48,7 @@ object HealthCheck {
           aud = desc.name,
           exp = DateTime
             .now()
-            .plusSeconds(desc.secComTtl.toSeconds.toInt)
+            .plus(desc.secComTtl.toMillis)
             .toDate
             .getTime,
           iat = DateTime.now().toDate.getTime,

@@ -362,7 +362,7 @@ trait ApiKeyDataStore extends BasicStore[ApiKey] {
   //       case Some(body) =>
   //         val json  = Json.parse(body.utf8String)
   //         val start = new DateTime((json \ "start").as[Long])
-  //         val end   = start.plusHours(apiKey.rotation.rotationEvery.toInt)
+  //         val end   = start.plus(apiKey.rotation.rotationEvery * 3600000L)
   //         Some((end, new org.joda.time.Period(DateTime.now(), end).toStandardSeconds.getSeconds * 1000))
   //     }
   //   } else {
@@ -377,7 +377,7 @@ trait ApiKeyDataStore extends BasicStore[ApiKey] {
         case None =>
           val newApk = apiKey.copy(rotation = apiKey.rotation.copy(nextSecret = None))
           val start  = DateTime.now()
-          val end    = start.plusHours(apiKey.rotation.rotationEvery.toInt)
+          val end    = start.plus(apiKey.rotation.rotationEvery * 3600000L)
           val res: Option[ApiKeyRotationInfo] = Some(
             ApiKeyRotationInfo(end, new org.joda.time.Period(DateTime.now(), end).toStandardSeconds.getSeconds * 1000)
           )
@@ -397,8 +397,8 @@ trait ApiKeyDataStore extends BasicStore[ApiKey] {
         case Some(body) => {
           val json              = Json.parse(body.utf8String)
           val start             = new DateTime((json \ "start").as[Long])
-          val end               = start.plusHours(apiKey.rotation.rotationEvery.toInt)
-          val startGrace        = end.minusHours(apiKey.rotation.gracePeriod.toInt)
+          val end               = start.plus(apiKey.rotation.rotationEvery * 3600000L)
+          val startGrace        = end.minus(apiKey.rotation.gracePeriod * 3600000L)
           val now               = DateTime.now()
           val beforeGracePeriod = now.isAfter(start) && now.isBefore(startGrace) && now.isBefore(end)
           val inGracePeriod     = now.isAfter(start) && now.isAfter(startGrace) && now.isBefore(end)

@@ -1682,7 +1682,7 @@ case class ServiceDescriptor(
               .getOrElse("--")
           ),
           aud = this.name,
-          exp = DateTime.now().plusSeconds(this.secComTtl.toSeconds.toInt).toDate.getTime,
+          exp = DateTime.now().plus(this.secComTtl.toMillis).toDate.getTime,
           iat = DateTime.now().toDate.getTime,
           jti = IdGenerator.uuid
         ).withClaim("email", paUsr.map(_.email))
@@ -1726,7 +1726,7 @@ case class ServiceDescriptor(
               .getOrElse("public")
           ),
           aud = this.name,
-          exp = DateTime.now().plusSeconds(this.secComTtl.toSeconds.toInt).toDate.getTime,
+          exp = DateTime.now().plus(this.secComTtl.toMillis).toDate.getTime,
           iat = DateTime.now().toDate.getTime,
           jti = IdGenerator.uuid
         ).withClaim(

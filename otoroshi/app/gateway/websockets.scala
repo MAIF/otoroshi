@@ -77,7 +77,7 @@ class WebSocketHandler()(implicit env: Env) {
             aud = descriptor.name,
             exp = DateTime
               .now()
-              .plusSeconds(descriptor.secComTtl.toSeconds.toInt)
+              .plus(descriptor.secComTtl.toMillis)
               .toDate
               .getTime,
             iat = DateTime.now().toDate.getTime,
