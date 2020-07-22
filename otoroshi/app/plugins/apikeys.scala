@@ -497,7 +497,7 @@ class ClientCredentialFlow extends RequestTransformer {
 
                   val accessToken = JWT.create()
                     .withJWTId(IdGenerator.uuid)
-                    .withExpiresAt(DateTime.now().plusMillis(expiration.toMillis.toInt).toDate)
+                    .withExpiresAt(DateTime.now().plus(expiration.toMillis).toDate)
                     .withIssuedAt(DateTime.now().toDate)
                     .withNotBefore(DateTime.now().toDate)
                     .withIssuer(apiKey.clientId)

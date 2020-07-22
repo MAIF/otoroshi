@@ -46,7 +46,7 @@ class KvChaosDataStore(redisCli: RedisLike, _env: Env) extends ChaosDataStore {
               Json.obj(
                 "descriptorName" -> descriptor.name,
                 "descriptorId"   -> descriptor.id,
-                "until"          -> DateTime.now().plusMillis(outageDuration.toMillis.toInt).toLocalTime.toString,
+                "until"          -> DateTime.now().plus(outageDuration.toMillis).toLocalTime.toString,
                 "duration"       -> outageDuration.toMillis,
                 "startedAt"      -> DateTime.now().toString()
               )

@@ -38,7 +38,7 @@ case class PrivateAppsUser(randomId: String,
 
   def save(duration: Duration)(implicit ec: ExecutionContext, env: Env): Future[PrivateAppsUser] =
     env.datastores.privateAppsUserDataStore
-      .set(this.copy(expiredAt = DateTime.now().plusMillis(duration.toMillis.toInt)), Some(duration))
+      .set(this.copy(expiredAt = DateTime.now().plus(duration.toMillis)), Some(duration))
       .map(_ => this)
 
   def delete()(implicit ec: ExecutionContext, env: Env): Future[Boolean] =

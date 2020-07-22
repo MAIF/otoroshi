@@ -35,7 +35,7 @@ case class BackOfficeUser(randomId: String,
                          ) extends RefreshableUser {
 
   def save(duration: Duration)(implicit ec: ExecutionContext, env: Env): Future[BackOfficeUser] = {
-    val withDuration = this.copy(expiredAt = expiredAt.plusMillis(duration.toMillis.toInt))
+    val withDuration = this.copy(expiredAt = expiredAt.plus(duration.toMillis))
     env.datastores.backOfficeUserDataStore.set(withDuration, Some(duration)).fast.map(_ => withDuration)
   }
 

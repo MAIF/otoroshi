@@ -423,7 +423,7 @@ class MongoRedis(actorSystem: ActorSystem, connection: MongoConnection, dbName: 
   override def expire(key: String, seconds: Int): Future[Boolean] = pexpire(key, seconds * 1000)
 
   override def pexpire(key: String, milliseconds: Long): Future[Boolean] = {
-    val ttl = /*DateTime.now(DateTimeZone.UTC)*/ DateTime.now().plusMillis(milliseconds.toInt).getMillis
+    val ttl = /*DateTime.now(DateTimeZone.UTC)*/ DateTime.now().plus(milliseconds).getMillis
     withValuesCollection { coll =>
       coll
         .findAndUpdate(

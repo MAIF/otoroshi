@@ -178,7 +178,7 @@ class SnowMonkey(implicit env: Env) {
                   )
                   logger.info(
                     s"Registering outage on ${descriptor.name} (${descriptor.id}) for ${durationToHumanReadable(duration)} - from ${DateTime
-                      .now()} to ${DateTime.now().plusMillis(duration.toMillis.toInt)}"
+                      .now()} to ${DateTime.now().plus(duration.toMillis)}"
                   )
               }
               .map(_ => true)
@@ -191,7 +191,7 @@ class SnowMonkey(implicit env: Env) {
         case AllServicesPerGroup => {
           // val start = conf.startTime.toDateTimeToday
           // (1 to conf.timesPerDay).foreach { idx =>
-          //   println(s"[$idx] should outage at " + start.plusMillis(idx * shouldAwait))
+          //   println(s"[$idx] should outage at " + start.plus(idx * shouldAwait))
           // }
           env.datastores.chaosDataStore.serviceOutages(descriptor.id).flatMap {
             case count
@@ -222,7 +222,7 @@ class SnowMonkey(implicit env: Env) {
                     )
                     logger.info(
                       s"Registering outage on ${descriptor.name} (${descriptor.id}) for ${durationToHumanReadable(duration)} - from ${DateTime
-                        .now()} to ${DateTime.now().plusMillis(duration.toMillis.toInt)}"
+                        .now()} to ${DateTime.now().plus(duration.toMillis)}"
                     )
                 }
                 .map(_ => true)
