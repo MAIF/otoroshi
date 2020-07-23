@@ -378,8 +378,9 @@ trait ApiKeyDataStore extends BasicStore[ApiKey] {
           val newApk = apiKey.copy(rotation = apiKey.rotation.copy(nextSecret = None))
           val start  = DateTime.now()
           val end    = start.plus(apiKey.rotation.rotationEvery * 3600000L)
+          val remaining = end.getMillis - DateTime.now().getMillis
           val res: Option[ApiKeyRotationInfo] = Some(
-            ApiKeyRotationInfo(end, new org.joda.time.Period(DateTime.now(), end).toStandardSeconds.getSeconds * 1000)
+            ApiKeyRotationInfo(end, remaining) // new org.joda.time.Period(DateTime.now(), end).toStandardSeconds.getSeconds * 1000)
           )
           env.datastores.rawDataStore
             .set(key,
@@ -403,8 +404,9 @@ trait ApiKeyDataStore extends BasicStore[ApiKey] {
           val beforeGracePeriod = now.isAfter(start) && now.isBefore(startGrace) && now.isBefore(end)
           val inGracePeriod     = now.isAfter(start) && now.isAfter(startGrace) && now.isBefore(end)
           val afterGracePeriod  = now.isAfter(start) && now.isAfter(startGrace) && now.isAfter(end)
+          val remaining = end.getMillis - DateTime.now().getMillis
           val res: Option[ApiKeyRotationInfo] = Some(
-            ApiKeyRotationInfo(end, new org.joda.time.Period(DateTime.now(), end).toStandardSeconds.getSeconds * 1000)
+            ApiKeyRotationInfo(end, remaining) //new org.joda.time.Period(DateTime.now(), end).toStandardSeconds.getSeconds * 1000)
           )
           if (beforeGracePeriod) {
             FastFuture.successful(res)
