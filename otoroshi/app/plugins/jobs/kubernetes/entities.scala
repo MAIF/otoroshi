@@ -9,6 +9,7 @@ import security.OtoroshiClaim
 import ssl.{Cert, DynamicSSLEngineProvider}
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Try
 
 trait KubernetesEntity {
   def raw: JsValue
@@ -60,7 +61,7 @@ case class KubernetesDeployment(raw: JsValue) extends KubernetesEntity
 
 case class KubernetesCertSecret(raw: JsValue) extends KubernetesEntity {
   lazy val data: JsValue = (raw \ "data").as[JsValue]
-  def cert: Option[Cert] = {
+  def cert: Option[Cert] = Try {
     val crt = (data \ "tls.crt").asOpt[String]
     val key = (data \ "tls.key").asOpt[String]
     (crt, key) match {
@@ -72,7 +73,7 @@ case class KubernetesCertSecret(raw: JsValue) extends KubernetesEntity {
         ).some
       case _ => None
     }
-  }
+  }.toOption.flatten
 }
 
 case class KubernetesSecret(raw: JsValue) extends KubernetesEntity {
