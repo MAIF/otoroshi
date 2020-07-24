@@ -542,7 +542,6 @@ const ApiKeysConstants = {
   formFlow: [
     //'>>>Location',
     '_loc',
-    '---',
     'clientId',
     'clientSecret',
     'clientName',

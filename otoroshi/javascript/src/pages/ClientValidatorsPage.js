@@ -91,7 +91,6 @@ export class ClientValidatorsPage extends Component {
 
   formFlow = [
     '_loc',
-    '---',
     'id',
     'name',
     'description',

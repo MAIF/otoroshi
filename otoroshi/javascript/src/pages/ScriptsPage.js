@@ -425,7 +425,7 @@ export class ScriptsPage extends Component {
     { title: 'Description', noMobile: true, content: item => item.desc },
   ];
 
-  formFlow = ['_loc', '---', 'id', 'name', 'desc', 'type', 'compilation', 'code', 'metadata'];
+  formFlow = ['_loc', 'id', 'name', 'desc', 'type', 'compilation', 'code', 'metadata'];
 
   componentDidMount() {
     this.props.setTitle(`All Plugins`);

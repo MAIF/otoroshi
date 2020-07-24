@@ -138,6 +138,7 @@ class BackOfficeAppContainer extends Component {
             <div className="col-sm-2 sidebar" id="sidebar">
               <div className="sidebar-container">
                 <div className="sidebar-content">
+                  <GlobalTenantSelector />
                   <ul className="nav nav-sidebar">
                     <li>
                       <h2>
@@ -160,7 +161,6 @@ class BackOfficeAppContainer extends Component {
                   />
                   <div className="bottom-sidebar">
                     {/*<img src="/assets/images/otoroshi-logo-inverse.png" width="16" /> version {window.__currentVersion}*/}
-                    <GlobalTenantSelector />
                     {this.state.env && (
                       <span onClick={e => (window.location = '/bo/dashboard/snowmonkey')}>
                         {this.state.env.snowMonkeyRunning &&
@@ -548,6 +548,9 @@ class GlobalTenantSelector extends Component {
   }
 
   render() {
+    if (window.__otoroshi__env__latest.bypassUserRightsCheck || window.__otoroshi__env__latest.userAdmin) {
+      return null;
+    }
     return (
       <div className="global-tenant-selector">
         <Select

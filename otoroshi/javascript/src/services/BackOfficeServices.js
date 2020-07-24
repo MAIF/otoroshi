@@ -44,7 +44,7 @@ export function fetchBodiesFor(serviceId, requestId) {
 // should use api proxy
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-window.__otoroshi__env__latest = { currentTenant: 'default', userAdmin: false };
+window.__otoroshi__env__latest = { currentTenant: 'default', userAdmin: true, bypassUserRightsCheck: true };
 
 export function env() {
   return fetch('/bo/api/env', {

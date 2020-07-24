@@ -474,7 +474,6 @@ export class CertificatesPage extends Component {
 
   formFlow = [
     '_loc',
-    '---',
     'id',
     'name',
     'description',

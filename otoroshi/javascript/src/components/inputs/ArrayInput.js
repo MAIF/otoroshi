@@ -160,7 +160,7 @@ export class ArrayInput extends Component {
             {idx > 0 && <label className="col-xs-12 col-sm-2 control-label">&nbsp;</label>}
             <div className="col-sm-10">
               <div className="input-group">
-                {!this.props.valuesFrom && !this.props.component && (
+                {!this.props.possibleValues && !this.props.valuesFrom && !this.props.component && (
                   <div className="input-group" style={{ width: '100%' }}>
                     {this.props.prefix && (
                       <div className="input-group-addon">{this.props.prefix}</div>
@@ -180,7 +180,7 @@ export class ArrayInput extends Component {
                     )}
                   </div>
                 )}
-                {this.props.valuesFrom && !this.props.component && (
+                {this.props.valuesFrom && !this.props.possibleValues && !this.props.component && (
                   <Select
                     name={`selector-${idx}`}
                     value={value}
@@ -189,6 +189,17 @@ export class ArrayInput extends Component {
                     placeholder={this.props.placeholder}
                     optionRenderer={this.props.optionRenderer}
                     options={this.state.values}
+                    onChange={e => this.changeValue({ target: { value: e.value } }, idx)}
+                  />
+                )}
+                {this.props.possibleValues && !this.props.valuesFrom && !this.props.component && (
+                  <Select
+                    name={`selector-${idx}`}
+                    value={value}
+                    disabled={this.props.disabled}
+                    placeholder={this.props.placeholder}
+                    optionRenderer={this.props.optionRenderer}
+                    options={this.props.possibleValues}
                     onChange={e => this.changeValue({ target: { value: e.value } }, idx)}
                   />
                 )}

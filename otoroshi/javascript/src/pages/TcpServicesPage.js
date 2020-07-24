@@ -252,7 +252,6 @@ export class TcpServicesPage extends Component {
 
   formFlow = [
     '_loc',
-    '---',
     'id',
     'name',
     'enabled',

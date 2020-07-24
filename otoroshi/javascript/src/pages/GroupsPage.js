@@ -58,7 +58,7 @@ export class GroupsPage extends Component {
     },
   ];
 
-  formFlow = ['_loc', '---', 'id', 'name', 'description', 'metadata'];
+  formFlow = ['_loc', 'id', 'name', 'description', 'metadata'];
 
   state = { env: null };
 

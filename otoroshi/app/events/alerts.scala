@@ -1144,6 +1144,7 @@ class AlertsActor(implicit env: Env) extends Actor {
     .queue[AlertEvent](5000, OverflowStrategy.dropHead)
     .mapAsync(5)(evt => evt.toEnrichedJson)
     .groupedWithin(25, FiniteDuration(60, TimeUnit.SECONDS))
+    .filter(_.nonEmpty)
     .mapAsync(1) { evts =>
       val titles = evts
         .map { jsonEvt =>

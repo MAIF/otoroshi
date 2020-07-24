@@ -1347,7 +1347,6 @@ export class AuthModuleConfig extends Component {
             onChangeTeams={v => this.changeTheValue("_loc.teams", v)}
           />
         </Collapse>
-        <Separator />
         {selector}
         {settings.type === 'oauth2' && <Oauth2ModuleConfig {...this.props} />}
         {settings.type === 'basic' && <BasicModuleConfig {...this.props} />}

@@ -37,7 +37,8 @@ window._fetch = window.fetch;
 window.fetch = function(...params) {
   const url = params[0];
   const options = params[1];
-  if (params.length == 2 && _.isObject(options)) {
+  const doNotPassTenant = window.__otoroshi__env__latest.userAdmin || window.__otoroshi__env__latest.bypassUserRightsCheck;
+  if (!doNotPassTenant && params.length == 2 && _.isObject(options)) {
     const currentTenant = window.localStorage.getItem("Otoroshi-Tenant") || "default";
     return window._fetch(url, { ...options, headers: { ...options.headers, 'Otoroshi-Tenant': currentTenant }});
   } else {

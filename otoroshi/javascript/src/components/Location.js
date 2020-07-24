@@ -3,30 +3,56 @@ import {
   SelectInput,
   ArrayInput,
 } from './inputs';
+import * as BackOfficeServices from '../services/BackOfficeServices';
+import { Separator } from './Separator';
 
 export class Location extends Component {
+
+  state = { possibleTeams: [] };
+
+  componentDidMount() {
+    const tenant = this.props.tenant || window.localStorage.getItem("Otoroshi-Tenant") || "default";
+    BackOfficeServices.env().then(() => this.forceUpdate());
+    BackOfficeServices.findAllTeams().then(teams => {
+      const possibleTeams = teams.filter(t => t.tenant == tenant);
+      this.setState({ possibleTeams })
+    });
+  }
+  onChangeTenant = (tenant) => {
+    this.props.onChangeTenant(tenant);
+    BackOfficeServices.findAllTeams().then(teams => {
+      const possibleTeams = teams.filter(t => t.tenant == tenant);
+      this.setState({ possibleTeams }, () => {
+        this.props.onChangeTeams(possibleTeams[0] ? [possibleTeams[0]] : ["default"]);
+      })
+    });
+  }
   render() {
+    if (window.__otoroshi__env__latest.bypassUserRightsCheck) {
+      return null;
+    }
     return (
       <>
-        <SelectInput
+        {window.__otoroshi__env__latest.userAdmin && <SelectInput
           label="Organization"
-          value={this.props.tenant}
-          onChange={this.props.onChangeTenant}
+          value={this.props.tenant || window.localStorage.getItem("Otoroshi-Tenant") || "default"}
+          onChange={this.onChangeTenant}
           valuesFrom="/bo/api/proxy/api/tenants"
           transformer={a => ({
             value: a.id,
             label: a.name + " - " + a.description,
           })}
           help="The organization where this entity will belong"
-        />
+        />}
         <ArrayInput 
           label="Teams"
           value={this.props.teams}
           onChange={this.props.onChangeTeams}
-          valuesFrom="/bo/api/proxy/api/teams"
-          transformer={a => ({
-            value: a.id,
-            label: a.name + " - " + a.description,
+          possibleValues={this.state.possibleTeams.map(a => {
+            return {
+              value: a.id,
+              label: a.name + " - " + a.description,
+            }
           })}
           help="The teams where this entity will belong"
         />
@@ -41,6 +67,7 @@ export class Location extends Component {
             </a>
           </div>
         </div>
+        <hr />
       </>
     );
   }

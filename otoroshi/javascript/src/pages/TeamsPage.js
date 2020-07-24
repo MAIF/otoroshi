@@ -58,6 +58,7 @@ export class TeamsPage extends Component {
     tenant: {
       type: 'select',
       props: {
+        label: 'Organization',
         valuesFrom: '/bo/api/proxy/api/tenants',
         transformer: a => ({
           value: a.id,

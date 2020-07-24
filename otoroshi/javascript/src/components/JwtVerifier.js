@@ -435,7 +435,6 @@ export class JwtVerifier extends Component {
                 onChangeTeams={v => this.changeTheValue("_loc.teams", v)}
               />
             </Collapse>
-            <Separator />
           </>
         )}
         {verifier.type === 'global' && (
