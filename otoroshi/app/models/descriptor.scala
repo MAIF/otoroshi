@@ -998,7 +998,10 @@ case class ApiKeyRouteMatcher(
     allTagsIn: Seq[String] = Seq.empty,
     noneMetaIn: Map[String, String] = Map.empty,
     oneMetaIn: Map[String, String] = Map.empty,
-    allMetaIn: Map[String, String] = Map.empty
+    allMetaIn: Map[String, String] = Map.empty,
+    noneMetaKeysIn: Seq[String] = Seq.empty,
+    oneMetaKeyIn: Seq[String] = Seq.empty,
+    allMetaKeysIn: Seq[String] = Seq.empty,
 ) extends {
   def json: JsValue = ApiKeyRouteMatcher.format.writes(this)
 }
@@ -1012,6 +1015,9 @@ object ApiKeyRouteMatcher {
       "noneMetaIn" -> JsObject(o.noneMetaIn.mapValues(JsString.apply)),
       "oneMetaIn"  -> JsObject(o.oneMetaIn.mapValues(JsString.apply)),
       "allMetaIn"  -> JsObject(o.allMetaIn.mapValues(JsString.apply)),
+      "noneMetaKeysIn" -> JsArray(o.noneMetaKeysIn.map(JsString.apply)),
+      "oneMetaKeyIn"  -> JsArray(o.oneMetaKeyIn.map(JsString.apply)),
+      "allMetaKeysIn"  -> JsArray(o.allMetaKeysIn.map(JsString.apply)),
     )
     override def reads(json: JsValue): JsResult[ApiKeyRouteMatcher] =
       Try {
@@ -1023,6 +1029,9 @@ object ApiKeyRouteMatcher {
             noneMetaIn = (json \ "noneMetaIn").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
             oneMetaIn = (json \ "oneMetaIn").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
             allMetaIn = (json \ "allMetaIn").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
+            noneMetaKeysIn = (json \ "noneMetaKeysIn").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+            oneMetaKeyIn = (json \ "oneMetaKeyIn").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+            allMetaKeysIn = (json \ "allMetaKeysIn").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
           )
         )
       } recover {
@@ -1504,7 +1513,10 @@ case class ServiceDescriptor(
   this.apiKeyConstraints.routing.oneTagIn.isEmpty &&
   this.apiKeyConstraints.routing.allTagsIn.isEmpty &&
   this.apiKeyConstraints.routing.noneTagIn.isEmpty &&
-  this.apiKeyConstraints.routing.noneMetaIn.isEmpty
+  this.apiKeyConstraints.routing.noneMetaIn.isEmpty &&
+  this.apiKeyConstraints.routing.oneMetaKeyIn.isEmpty &&
+  this.apiKeyConstraints.routing.allMetaKeysIn.isEmpty &&
+  this.apiKeyConstraints.routing.noneMetaKeysIn.isEmpty
 
   def isUriPublic(uri: String): Boolean =
     !privatePatterns.exists(p => utils.RegexPool.regex(p).matches(uri)) && publicPatterns.exists(
