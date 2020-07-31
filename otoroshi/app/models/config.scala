@@ -31,6 +31,53 @@ import utils.http.MtlsConfig
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
+trait Exporter {
+  def toJson: JsValue
+}
+
+trait DataExporter {
+  val eventsFilters: Seq[String]
+  val config: Exporter
+}
+
+case object DataExporter {
+
+  case class ElasticExporter(eventsFilters: Seq[String], config: ElasticAnalyticsConfig) extends DataExporter
+
+  case class WebhookExporter(eventsFilters: Seq[String], config: Webhook) extends DataExporter
+
+  val format: Format[DataExporter] = new Format[DataExporter] {
+    override def reads(json: JsValue): JsResult[DataExporter] = (json \ "type").as[String] match {
+      case "elastic" => ElasticAnalyticsConfig.format.reads((json \ "config").as[JsObject])
+        .map(config => ElasticExporter(
+          eventsFilters = (json \ "eventsFilters").as[Seq[String]],
+          config = config
+        ))
+      case "webhook" => Webhook.format.reads((json \ "config").as[JsObject])
+        .map(config => WebhookExporter(
+          eventsFilters = (json \ "eventsFilters").as[Seq[String]],
+          config = config
+        ))
+    }
+
+    override def writes(o: DataExporter): JsValue = o match {
+      case e: ElasticExporter => Json.obj(
+        "type" -> "elastic",
+        "eventsFilters" -> JsArray(o.eventsFilters.map(JsString.apply)),
+        "config" -> ElasticAnalyticsConfig.format.writes(e.config).as[JsObject]
+      )
+      case e: WebhookExporter => Json.obj(
+        "type" -> "webhook",
+        "eventsFilters" -> JsArray(o.eventsFilters.map(JsString.apply)),
+        "config" -> Webhook.format.writes(e.config).as[JsObject]
+      )
+    }
+
+  }
+}
+
+
+
 case class ElasticAnalyticsConfig(
     clusterUri: String,
     index: Option[String] = None,
@@ -39,7 +86,7 @@ case class ElasticAnalyticsConfig(
     password: Option[String] = None,
     headers: Map[String, String] = Map.empty[String, String],
     mtlsConfig: MtlsConfig = MtlsConfig.default
-) {
+) extends Exporter {
   def toJson: JsValue = ElasticAnalyticsConfig.format.writes(this)
 }
 
@@ -75,7 +122,7 @@ object ElasticAnalyticsConfig {
 
 case class Webhook(url: String,
                    headers: Map[String, String] = Map.empty[String, String],
-                   mtlsConfig: MtlsConfig = MtlsConfig.default) {
+                   mtlsConfig: MtlsConfig = MtlsConfig.default) extends Exporter {
   def toJson: JsValue = Webhook.format.writes(this)
 }
 
@@ -335,6 +382,7 @@ object AutoCert {
 }
 
 case class GlobalConfig(
+    dataExporters: Seq[DataExporter] = Seq.empty[DataExporter],
     letsEncryptSettings: LetsEncryptSettings = LetsEncryptSettings(),
     lines: Seq[String] = Seq("prod"),
     enableEmbeddedMetrics: Boolean = true,
@@ -457,6 +505,7 @@ object GlobalConfig {
           )
       }
       Json.obj(
+        "dataExporters"     -> JsArray(o.dataExporters.map(DataExporter.format.writes)),
         "letsEncryptSettings"     -> o.letsEncryptSettings.json,
         "lines"                   -> JsArray(o.lines.map(JsString.apply)),
         "maintenanceMode"         -> o.maintenanceMode,
@@ -500,6 +549,7 @@ object GlobalConfig {
     override def reads(json: JsValue): JsResult[GlobalConfig] =
       Try {
         GlobalConfig(
+          dataExporters = (json \ "dataExporters").asOpt[Seq[DataExporter]](Reads.seq(DataExporter.format)).getOrElse(Seq.empty[DataExporter]),
           lines = (json \ "lines").asOpt[Seq[String]].getOrElse(Seq("prod")),
           enableEmbeddedMetrics = (json \ "enableEmbeddedMetrics").asOpt[Boolean].getOrElse(true),
           streamEntityOnly = (json \ "streamEntityOnly").asOpt[Boolean].getOrElse(true),

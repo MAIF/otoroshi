@@ -65,6 +65,12 @@ export class TopBar extends Component {
           value: 'Alerts-Log',
         });
         options.push({
+          action: () => (window.location.href = 'bo/dashboard/data-exporters'),
+          env: <span className="glyphicon glyphicon-send" />,
+          label: 'Data Exporters',
+          value: 'data-exporters'
+        })
+        options.push({
           action: () => (window.location.href = '/bo/dashboard/audit'),
           env: <span className="glyphicon glyphicon-list" />,
           label: 'Audit Log',
@@ -598,6 +604,11 @@ export class TopBar extends Component {
                       <li>
                         <a href="/bo/dashboard/alerts">
                           <span className="glyphicon glyphicon-list" /> Alerts log
+                        </a>
+                      </li>
+                      <li>
+                        <a href="/bo/dashboard/data-exporters">
+                          <span className="glyphicon glyphicon-send" /> Data exporters
                         </a>
                       </li>
                       <li role="separator" className="divider" />
