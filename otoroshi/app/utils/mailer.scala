@@ -3,7 +3,7 @@ package utils
 import akka.http.scaladsl.util.FastFuture
 import akka.http.scaladsl.util.FastFuture._
 import env.Env
-import models.GlobalConfig
+import models.{Exporter, GlobalConfig}
 import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.ws.WSAuthScheme
@@ -18,28 +18,32 @@ case class NoneMailerSettings() extends MailerSettings {
   override def json: JsValue                                    = NoneMailerSettings.format.writes(this)
 }
 
-case class ConsoleMailerSettings() extends MailerSettings {
+case class ConsoleMailerSettings() extends MailerSettings with Exporter {
   override def typ: String                                      = "console"
   override def asMailer(config: GlobalConfig, env: Env): Mailer = new LogMailer()
   override def json: JsValue                                    = ConsoleMailerSettings.format.writes(this)
+  override def toJson: JsValue                                  = ConsoleMailerSettings.format.writes(this)
 }
 
-case class MailjetSettings(apiKeyPublic: String, apiKeyPrivate: String) extends MailerSettings {
+case class MailjetSettings(apiKeyPublic: String, apiKeyPrivate: String) extends MailerSettings with Exporter {
   override def typ: String                                      = "mailjet"
   override def asMailer(config: GlobalConfig, env: Env): Mailer = new MailjetMailer(env, config)
   override def json: JsValue                                    = MailjetSettings.format.writes(this)
+  override def toJson: JsValue                                  = MailjetSettings.format.writes(this)
 }
 
-case class MailgunSettings(eu: Boolean, apiKey: String, domain: String) extends MailerSettings {
+case class MailgunSettings(eu: Boolean, apiKey: String, domain: String) extends MailerSettings with Exporter {
   override def typ: String                                      = "mailgun"
   override def asMailer(config: GlobalConfig, env: Env): Mailer = new MailgunMailer(env, config)
   override def json: JsValue                                    = MailgunSettings.format.writes(this)
+  override def toJson: JsValue                                  = MailgunSettings.format.writes(this)
 }
 
-case class GenericMailerSettings(url: String, headers: Map[String, String]) extends MailerSettings {
+case class GenericMailerSettings(url: String, headers: Map[String, String]) extends MailerSettings with Exporter {
   override def typ: String                                      = "generic"
   override def asMailer(config: GlobalConfig, env: Env): Mailer = new GenericMailer(env, config)
   override def json: JsValue                                    = GenericMailerSettings.format.writes(this)
+  override def toJson: JsValue                                  = GenericMailerSettings.format.writes(this)
 }
 
 trait MailerSettings {

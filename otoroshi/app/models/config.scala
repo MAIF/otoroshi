@@ -1,14 +1,7 @@
 package models
 
-import java.security.KeyPair
-
-import akka.NotUsed
 import akka.http.scaladsl.util.FastFuture
-import akka.stream.Materializer
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
 import auth.AuthModuleConfig
-import com.risksense.ipaddr.IpNetwork
 import env.Env
 import events._
 import org.joda.time.DateTime
@@ -16,17 +9,17 @@ import otoroshi.models.{SimpleOtoroshiAdmin, WebAuthnOtoroshiAdmin}
 import otoroshi.plugins.geoloc.{IpStackGeolocationHelper, MaxMindGeolocationHelper}
 import otoroshi.plugins.useragent.UserAgentHelper
 import otoroshi.script.Script
+import otoroshi.storage.BasicStore
+import otoroshi.tcp.TcpService
 import otoroshi.utils.LetsEncryptSettings
 import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.ws.WSProxyServer
-import otoroshi.storage.BasicStore
-import otoroshi.tcp.TcpService
-import security.{Auth0Config, IdGenerator}
+import security.IdGenerator
 import ssl.{Cert, ClientCertificateValidator}
-import utils.{CleverCloudClient, MailerSettings, MailgunSettings}
 import utils.CleverCloudClient.{CleverSettings, UserTokens}
 import utils.http.MtlsConfig
+import utils.{CleverCloudClient, MailerSettings, MailgunSettings}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -36,25 +29,36 @@ trait Exporter {
 }
 
 trait DataExporter {
+  val id: String
   val eventsFilters: Seq[String]
   val config: Exporter
 }
 
 case object DataExporter {
 
-  case class ElasticExporter(eventsFilters: Seq[String], config: ElasticAnalyticsConfig) extends DataExporter
+  case class ElasticExporter(id: String, eventsFilters: Seq[String], config: ElasticAnalyticsConfig) extends DataExporter
 
-  case class WebhookExporter(eventsFilters: Seq[String], config: Webhook) extends DataExporter
+  case class WebhookExporter(id: String, eventsFilters: Seq[String], config: Webhook) extends DataExporter
+
+  case class KafkaExporter(id: String, eventsFilters: Seq[String], config: KafkaConfig) extends DataExporter
 
   val format: Format[DataExporter] = new Format[DataExporter] {
     override def reads(json: JsValue): JsResult[DataExporter] = (json \ "type").as[String] match {
       case "elastic" => ElasticAnalyticsConfig.format.reads((json \ "config").as[JsObject])
         .map(config => ElasticExporter(
+          id = (json \ "id").as[String],
           eventsFilters = (json \ "eventsFilters").as[Seq[String]],
           config = config
         ))
       case "webhook" => Webhook.format.reads((json \ "config").as[JsObject])
         .map(config => WebhookExporter(
+          id = (json \ "id").as[String],
+          eventsFilters = (json \ "eventsFilters").as[Seq[String]],
+          config = config
+        ))
+      case "kafka" => KafkaConfig.format.reads((json \ "config").as[JsObject])
+        .map(config => KafkaExporter(
+          id = (json \ "id").as[String],
           eventsFilters = (json \ "eventsFilters").as[Seq[String]],
           config = config
         ))
@@ -63,13 +67,21 @@ case object DataExporter {
     override def writes(o: DataExporter): JsValue = o match {
       case e: ElasticExporter => Json.obj(
         "type" -> "elastic",
+        "id" -> o.id,
         "eventsFilters" -> JsArray(o.eventsFilters.map(JsString.apply)),
         "config" -> ElasticAnalyticsConfig.format.writes(e.config).as[JsObject]
       )
       case e: WebhookExporter => Json.obj(
         "type" -> "webhook",
+        "id" -> o.id,
         "eventsFilters" -> JsArray(o.eventsFilters.map(JsString.apply)),
         "config" -> Webhook.format.writes(e.config).as[JsObject]
+      )
+      case e: KafkaExporter => Json.obj(
+        "type" -> "kafka",
+        "id" -> o.id,
+        "eventsFilters" -> JsArray(o.eventsFilters.map(JsString.apply)),
+        "config" -> KafkaConfig.format.writes(e.config).as[JsObject]
       )
     }
 
@@ -732,8 +744,8 @@ case class OtoroshiExport(
    tcpServices: Seq[TcpService] = Seq.empty
 ) {
 
-  import utils.JsonImplicits._
   import otoroshi.utils.syntax.implicits._
+  import utils.JsonImplicits._
 
   private def customizeAndMergeArray[A](entities: Seq[A], arr: JsArray, fmt: Format[A], extractIdFromJs: JsValue => String, extractIdFromEntity: A => String): Seq[A] = {
     val arrWithId = arr.value.map { item =>

@@ -1138,7 +1138,7 @@ class AlertsActor(implicit env: Env) extends Actor {
 
   lazy val logger = Logger("otoroshi-alert-actor")
 
-  lazy val kafkaWrapper = new KafkaWrapper(env.analyticsActorSystem, env, _.alertsTopic)
+  lazy val kafkaWrapper = new KafkaWrapper(env.analyticsActorSystem, env, _.topic)
 
   lazy val emailStream = Source
     .queue[AlertEvent](5000, OverflowStrategy.dropHead)
@@ -1284,7 +1284,7 @@ object Alerts {
   def send[A <: AlertEvent](alert: A)(implicit env: Env): Unit = {
     // logger.trace("Alert " + Json.stringify(alert.toEnrichedJson))
     alert.toAnalytics()
-    env.alertsActor ! alert
+    env.otoroshiEventsActor ! alert
   }
 }
 

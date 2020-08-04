@@ -146,15 +146,9 @@ class Env(val configuration: Configuration,
     promise.future
   }
 
-  val (analyticsActor, alertsActor, healthCheckerActor) = {
+  val otoroshiEventsActor = {
     implicit val ec = otoroshiExecutionContext
-    val aa          = otoroshiActorSystem.actorOf(AnalyticsActorSupervizer.props(this))
-    val ala         = otoroshiActorSystem.actorOf(AlertsActorSupervizer.props(this))
-    val ha          = otoroshiActorSystem.actorOf(HealthCheckerActor.props(this))
-    // timeout(FiniteDuration(5, SECONDS)).andThen {
-    //   case _ if clusterConfig.mode != ClusterMode.Worker => ha ! StartHealthCheck()
-    // }
-    (aa, ala, ha)
+    otoroshiActorSystem.actorOf(OtoroshiEventsActorSupervizer.props(this))
   }
 
   lazy val sidecarConfig: Option[SidecarConfig] = (
@@ -676,9 +670,7 @@ class Env(val configuration: Configuration,
     implicit val ec = otoroshiExecutionContext
     // geoloc.stop()
     // ua.stop()
-    healthCheckerActor ! PoisonPill
-    analyticsActor ! PoisonPill
-    alertsActor ! PoisonPill
+    otoroshiEventsActor ! PoisonPill
     jobManager.stop()
     scriptManager.stop()
     clusterAgent.stop()

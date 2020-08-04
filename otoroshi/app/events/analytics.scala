@@ -3,7 +3,7 @@ package events
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 
-import akka.actor.{Actor, PoisonPill, Props, Terminated}
+import akka.actor.{Actor, ActorRef, PoisonPill, Props, Terminated}
 import akka.http.scaladsl.util.FastFuture
 import akka.http.scaladsl.util.FastFuture._
 import akka.stream.scaladsl.{Keep, Sink, Source}
@@ -19,6 +19,7 @@ import play.api.Logger
 import play.api.libs.json._
 import utils.JsonImplicits._
 
+import scala.collection.mutable
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Success
@@ -26,20 +27,24 @@ import scala.util.Success
 case object SendToAnalytics
 
 object AnalyticsActor {
-  def props(implicit env: Env) = Props(new AnalyticsActor())
+  def props(exporter: DataExporter)(implicit env: Env) = Props(new AnalyticsActor(exporter))
 }
 
-class AnalyticsActor(implicit env: Env) extends Actor {
+class AnalyticsActor(exporter: DataExporter)(implicit env: Env) extends Actor {
 
   implicit lazy val ec = env.analyticsExecutionContext
 
   lazy val logger = Logger("otoroshi-analytics-actor")
 
-  lazy val kafkaWrapperAnalytics = new KafkaWrapper(env.analyticsActorSystem, env, _.analyticsTopic)
-  lazy val kafkaWrapperAudit     = new KafkaWrapper(env.analyticsActorSystem, env, _.auditTopic)
+  lazy val kafkaWrapperAnalytics = new KafkaWrapper(env.analyticsActorSystem, env, _.topic)
+  lazy val kafkaWrapperAudit     = new KafkaWrapper(env.analyticsActorSystem, env, _.topic)
 
   lazy val stream = Source
     .queue[AnalyticEvent](50000, OverflowStrategy.dropHead)
+    .filter(event => exporter.eventsFilters
+        .map(utils.RegexPool(_))
+        .exists(r => r.matches(event.`@type`))
+    )
     .mapAsync(5)(evt => evt.toEnrichedJson)
     .groupedWithin(env.maxWebhookSize, FiniteDuration(env.analyticsWindow, TimeUnit.SECONDS))
     .mapAsync(5) { evts =>
@@ -56,14 +61,13 @@ class AnalyticsActor(implicit env: Env) extends Actor {
             kafkaWrapperAudit.close()
           }
         }
-        Future.traverse(
-          config.analyticsWebhooks.map(c => new WebHookAnalytics(c, config)) ++
-          config.elasticWritesConfigs.map(
-            c => new ElasticWritesAnalytics(c, env)
-          )
-        ) {
-          _.publish(evts)
+
+        val service: AnalyticsWritesService = exporter.config match {
+          case c: ElasticAnalyticsConfig => new ElasticWritesAnalytics(c, env)
+          case c: Webhook => new WebHookAnalytics(c, config)
         }
+
+        service.publish(evts)
       }
     }
 
@@ -95,8 +99,12 @@ class AnalyticsActor(implicit env: Env) extends Actor {
 
 class AnalyticsActorSupervizer(env: Env) extends Actor {
 
-  lazy val childName = "analytics-actor"
   lazy val logger    = Logger("otoroshi-analytics-actor-supervizer")
+
+  implicit val e = env
+  implicit val ec  = env.analyticsExecutionContext
+
+  val namesAndRefs: Map[ActorRef, Tuple2[String, DataExporter]] = Map.empty
 
   // override def supervisorStrategy: SupervisorStrategy =
   //   OneForOneStrategy() {
@@ -107,16 +115,24 @@ class AnalyticsActorSupervizer(env: Env) extends Actor {
   override def receive: Receive = {
     case Terminated(ref) =>
       logger.debug("Restarting analytics actor child")
-      context.watch(context.actorOf(AnalyticsActor.props(env), childName))
-    case evt => context.child(childName).map(_ ! evt)
+      context.watch(context.actorOf(AnalyticsActor.props(namesAndRefs(ref)._2)(env), namesAndRefs(ref)._1))
+    case evt => context.children.map(_ ! evt)
   }
 
-  override def preStart(): Unit =
-    if (context.child(childName).isEmpty) {
-      logger.debug(s"Starting new child $childName")
-      val ref = context.actorOf(AnalyticsActor.props(env), childName)
-      context.watch(ref)
+  override def preStart(): Unit = {
+    env.datastores.globalConfigDataStore.singleton().fast.map { config =>
+      config.dataExporters.foreach(exporter => {
+        val childName = s"analytics-actor-${exporter.id}"
+        if (context.child(childName).isEmpty) {
+          logger.debug(s"Starting new child $childName")
+          val ref = context.actorOf(AnalyticsActor.props(exporter)(env), childName)
+          namesAndRefs + (ref -> (childName -> exporter))
+          context.watch(ref)
+        }
+      })
+
     }
+  }
 
   override def postStop(): Unit =
     context.children.foreach(_ ! PoisonPill)
@@ -211,7 +227,7 @@ trait AnalyticEvent extends OtoroshiEvent {
 
   def toAnalytics()(implicit env: Env): Unit = {
     dispatch()(env)
-    env.analyticsActor ! this
+    env.otoroshiEventsActor ! this
   }
 
   def log()(implicit _env: Env, ec: ExecutionContext): Unit = {

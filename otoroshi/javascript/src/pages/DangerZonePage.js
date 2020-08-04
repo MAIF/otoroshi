@@ -27,76 +27,6 @@ function shallowDiffers(a, b) {
   return false;
 }
 
-class DataExporters extends Component {
-  state = {
-    exporters: Array.isArray(this.props.value) ? this.props.value || [] : []
-  }
-
-  addNext = () => {
-    this.setState({ exporters: [...this.state.exporters, { type: undefined, events: [] }] })
-  }
-
-  remove = (idx) => {
-    const _exporters = [...this.state.exporters]
-    _exporters.splice(idx, 1)
-    this.setState({exporters: _exporters})
-  }
-
-  udpateValue = (idx, prop, value) => {
-    const item = this.state.exporters[idx]
-    const updated = {...item, [prop]: value}
-    const _exporters = [...this.state.exporters]
-    _exporters.splice(idx, 1, updated)
-    this.setState({ exporters: _exporters })
-  }
-
-  render() {
-    if(!this.state.exporters.length) {
-      return (
-        <button
-          type="button"
-          className="btn btn-primary"
-          onClick={this.addNext}>
-          <i className="glyphicon glyphicon-plus-sign" />{' '}
-        </button>
-      )
-    }
-
-    return this.state.exporters.map((exporter, idx) => {
-      return (
-        <div key={idx}>
-          <Select
-            value={exporter.type}
-            onChange={value => this.udpateValue(idx, 'type', value)}
-            options={[{label: 'webhook', value: 'webhook'}, {label: 'Elastic', value: 'elastic'}]}
-          />
-          <Creatable
-            isMulti
-            value={exporter.eventsFilters}
-            onChange={value => this.udpateValue(idx, 'eventsFilters', value)}
-            options={['Analytics', 'alerts', 'Gateway', 'tcp', 'HealthCheck', 'Audit', 'RequestBody', 'ResponseBody'].map(x => ({label: x, value: x}))}
-          />
-          <button
-            type="button"
-            className="btn btn-danger"
-            onClick={() => this.remove(idx)}>
-            <i className="glyphicon glyphicon-trash" />{' '}
-          </button>
-          {idx === this.state.exporters.length - 1 && (
-            <button
-              type="button"
-              className="btn btn-primary"
-              onClick={this.addNext}>
-              <i className="glyphicon glyphicon-plus-sign" />{' '}
-            </button>
-          )}
-        </div>
-      )
-    })
-
-  }
-}
-
 class Geolocation extends Component {
   ipStackFormFlow = ['enabled', 'apikey', 'timeout'];
   maxmindFormFlow = ['enabled', 'path'];
@@ -647,13 +577,6 @@ export class DangerZonePage extends Component {
   ];
 
   formSchema = {
-    'dataExporters': {
-      type: DataExporters,
-      props: {
-        label: 'Exporters',
-        help: 'Array of cutom events exporters'
-      }
-    },
     'ipFiltering.whitelist': {
       type: 'array',
       props: {
@@ -1196,9 +1119,7 @@ export class DangerZonePage extends Component {
   };
 
   formFlow = [
-    '<<<Data exporters',
-    'dataExporters',
-    '>>>Misc. Settings',
+    '<<<Misc. Settings',
     'maintenanceMode',
     'u2fLoginOnly',
     'apiReadOnly',
