@@ -13,6 +13,142 @@ function tryOrTrue(f) {
     return true;
   }
 }
+class Mailer extends Component {
+  genericFormFlow = ['url', 'headers'];
+  mailgunFormFlow = ['eu', 'apiKey', 'domain'];
+  mailjetFormFlow = ['apiKeyPublic', 'apiKeyPrivate'];
+  genericFormSchema = {
+    url: {
+      type: 'string',
+      props: {
+        label: 'Mailer url',
+        placeholder: 'Mailer url',
+      },
+    },
+    headers: {
+      type: 'object',
+      props: {
+        label: 'Headers',
+      },
+    },
+  };
+  mailgunFormSchema = {
+    eu: {
+      type: 'bool',
+      props: {
+        label: 'EU',
+      },
+    },
+    apiKey: {
+      type: 'string',
+      props: {
+        label: 'Mailgun api key',
+        placeholder: 'Mailgun api key',
+      },
+    },
+    domain: {
+      type: 'string',
+      props: {
+        label: 'Mailgun domain',
+        placeholder: 'Mailgun domain',
+      },
+    },
+  };
+  mailjetFormSchema = {
+    apiKeyPublic: {
+      type: 'string',
+      props: {
+        label: 'Public api key',
+        placeholder: 'Public api key',
+      },
+    },
+    apiKeyPrivate: {
+      type: 'string',
+      props: {
+        label: 'Private api key',
+        placeholder: 'Private api key',
+      },
+    },
+  };
+  render() {
+    const settings = this.props.value;
+    const type = settings.type;
+
+    return (
+      <div>
+        <SelectInput
+          label="Type"
+          value={type}
+          onChange={e => {
+            switch (e) {
+              case 'console':
+                this.props.onChange({
+                  type: 'console',
+                });
+                break;
+              case 'generic':
+                this.props.onChange({
+                  type: 'generic',
+                  url: 'https://my.mailer.local/emails/_send',
+                  headers: {},
+                });
+                break;
+              case 'mailgun':
+                this.props.onChange({
+                  type: 'mailgun',
+                  eu: false,
+                  apiKey: '',
+                  domain: '',
+                });
+                break;
+              case 'mailjet':
+                this.props.onChange({
+                  type: 'mailjet',
+                  apiKeyPublic: '',
+                  apiKeyPrivate: '',
+                });
+                break;
+            }
+          }}
+          possibleValues={[
+            { label: 'Console', value: 'console' },
+            { label: 'Generic', value: 'generic' },
+            { label: 'Mailgun', value: 'mailgun' },
+            { label: 'Mailjet', value: 'mailjet' },
+          ]}
+          help="..."
+        />
+        {type === 'generic' && (
+          <Form
+            value={settings}
+            onChange={this.props.onChange}
+            flow={this.genericFormFlow}
+            schema={this.genericFormSchema}
+            style={{ marginTop: 5 }}
+          />
+        )}
+        {type === 'mailgun' && (
+          <Form
+            value={settings}
+            onChange={this.props.onChange}
+            flow={this.mailgunFormFlow}
+            schema={this.mailgunFormSchema}
+            style={{ marginTop: 5 }}
+          />
+        )}
+        {type === 'mailjet' && (
+          <Form
+            value={settings}
+            onChange={this.props.onChange}
+            flow={this.mailjetFormFlow}
+            schema={this.mailjetFormSchema}
+            style={{ marginTop: 5 }}
+          />
+        )}
+      </div>
+    );
+  }
+}
 
 export class DataExportersPage extends Component {
   state = {
@@ -188,7 +324,7 @@ export class NewExporterForm extends Component {
         id: this.props.exporter.id,
         type: this.props.exporter.type,
         eventsFilters: this.props.exporter.eventsFilters,
-        config: this.props.exporter.config
+        config: this.props.exporter.type === 'mailer' ? { mailerSettings: this.props.exporter.config} : this.props.exporter.config
       })
     }
   }
@@ -241,7 +377,7 @@ export class NewExporterForm extends Component {
           <button
             type="button"
             className="btn btn-success"
-            onClick={e => this.props.ok(this.state)}>
+            onClick={e => this.props.ok(this.state.type === 'mailer' ? {...this.state, config: {...this.state.config.mailerSettings}} :  this.state)}>
             Create
           </button>
         </div>
@@ -564,143 +700,21 @@ const possibleExporterConfigFormValues = {
         },
       },
     }
+  },
+  mailer: {
+    default: {
+      mailerSettings: {
+        type: 'console'
+      }
+    },
+    flow: [
+      'mailerSettings'
+    ],
+    schema: {
+      mailerSettings: {
+        type: Mailer
+      }
+    }
   }
 }
 
-class Mailer extends Component {
-  genericFormFlow = ['url', 'headers'];
-  mailgunFormFlow = ['eu', 'apiKey', 'domain'];
-  mailjetFormFlow = ['apiKeyPublic', 'apiKeyPrivate'];
-  genericFormSchema = {
-    url: {
-      type: 'string',
-      props: {
-        label: 'Mailer url',
-        placeholder: 'Mailer url',
-      },
-    },
-    headers: {
-      type: 'object',
-      props: {
-        label: 'Headers',
-      },
-    },
-  };
-  mailgunFormSchema = {
-    eu: {
-      type: 'bool',
-      props: {
-        label: 'EU',
-      },
-    },
-    apiKey: {
-      type: 'string',
-      props: {
-        label: 'Mailgun api key',
-        placeholder: 'Mailgun api key',
-      },
-    },
-    domain: {
-      type: 'string',
-      props: {
-        label: 'Mailgun domain',
-        placeholder: 'Mailgun domain',
-      },
-    },
-  };
-  mailjetFormSchema = {
-    apiKeyPublic: {
-      type: 'string',
-      props: {
-        label: 'Public api key',
-        placeholder: 'Public api key',
-      },
-    },
-    apiKeyPrivate: {
-      type: 'string',
-      props: {
-        label: 'Private api key',
-        placeholder: 'Private api key',
-      },
-    },
-  };
-  render() {
-    const settings = this.props.value;
-    const type = settings.type;
-
-    return (
-      <div>
-        <SelectInput
-          label="Type"
-          value={type}
-          onChange={e => {
-            switch (e) {
-              case 'console':
-                this.props.onChange({
-                  type: 'console',
-                });
-                break;
-              case 'generic':
-                this.props.onChange({
-                  type: 'generic',
-                  url: 'https://my.mailer.local/emails/_send',
-                  headers: {},
-                });
-                break;
-              case 'mailgun':
-                this.props.onChange({
-                  type: 'mailgun',
-                  eu: false,
-                  apiKey: '',
-                  domain: '',
-                });
-                break;
-              case 'mailjet':
-                this.props.onChange({
-                  type: 'mailjet',
-                  apiKeyPublic: '',
-                  apiKeyPrivate: '',
-                });
-                break;
-            }
-          }}
-          possibleValues={[
-            { label: 'None', value: 'none' },
-            { label: 'Console', value: 'console' },
-            { label: 'Generic', value: 'generic' },
-            { label: 'Mailgun', value: 'mailgun' },
-            { label: 'Mailjet', value: 'mailjet' },
-          ]}
-          help="..."
-        />
-        {type === 'generic' && (
-          <Form
-            value={settings}
-            onChange={this.props.onChange}
-            flow={this.genericFormFlow}
-            schema={this.genericFormSchema}
-            style={{ marginTop: 5 }}
-          />
-        )}
-        {type === 'mailgun' && (
-          <Form
-            value={settings}
-            onChange={this.props.onChange}
-            flow={this.mailgunFormFlow}
-            schema={this.mailgunFormSchema}
-            style={{ marginTop: 5 }}
-          />
-        )}
-        {type === 'mailjet' && (
-          <Form
-            value={settings}
-            onChange={this.props.onChange}
-            flow={this.mailjetFormFlow}
-            schema={this.mailjetFormSchema}
-            style={{ marginTop: 5 }}
-          />
-        )}
-      </div>
-    );
-  }
-}

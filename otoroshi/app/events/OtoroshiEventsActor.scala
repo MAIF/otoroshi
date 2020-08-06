@@ -112,7 +112,7 @@ class OtoroshiEventsActor(exporter: DataExporter)(implicit env: Env) extends Act
                  """
             c.asMailer(config, env).send(
               from = EmailLocation("Otoroshi Alerts", s"otoroshi-alerts@${env.domain}"),
-              to = config.alertsEmails.map(e => EmailLocation(e, e)),
+              to = config.alertsEmails.map(e => EmailLocation(e, e)), //todo: maybe define another email adress
               subject = s"Otoroshi Alert - ${evts.size} new alerts",
               html = emailBody
             )

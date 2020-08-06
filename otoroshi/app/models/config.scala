@@ -19,7 +19,7 @@ import security.IdGenerator
 import ssl.{Cert, ClientCertificateValidator}
 import utils.CleverCloudClient.{CleverSettings, UserTokens}
 import utils.http.MtlsConfig
-import utils.{CleverCloudClient, MailerSettings, MailgunSettings}
+import utils.{CleverCloudClient, ConsoleMailerSettings, GenericMailerSettings, MailerSettings, MailgunSettings, MailjetSettings, NoneMailerSettings}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -42,6 +42,12 @@ case object DataExporter {
 
   case class KafkaExporter(id: String, eventsFilters: Seq[String], config: KafkaConfig) extends DataExporter
 
+  case class ConsoleExporter(id: String, eventsFilters: Seq[String], config: ConsoleMailerSettings) extends DataExporter
+  case class GenericMailerExporter(id: String, eventsFilters: Seq[String], config: GenericMailerSettings) extends DataExporter
+  case class MailgunExporter(id: String, eventsFilters: Seq[String], config: MailgunSettings ) extends DataExporter
+  case class MailjetExporter(id: String, eventsFilters: Seq[String], config: MailjetSettings) extends DataExporter
+  case class NoneMailerExporter(id: String, eventsFilters: Seq[String], config: NoneMailerSettings) extends DataExporter
+
   val format: Format[DataExporter] = new Format[DataExporter] {
     override def reads(json: JsValue): JsResult[DataExporter] = (json \ "type").as[String] match {
       case "elastic" => ElasticAnalyticsConfig.format.reads((json \ "config").as[JsObject])
@@ -62,6 +68,34 @@ case object DataExporter {
           eventsFilters = (json \ "eventsFilters").as[Seq[String]],
           config = config
         ))
+      case "mailer" => MailerSettings.format.reads((json \ "config").as[JsObject])
+        .map {
+          case config: ConsoleMailerSettings => ConsoleExporter(
+            id = (json \ "id").as[String],
+            eventsFilters = (json \ "eventsFilters").as[Seq[String]],
+            config = config
+          )
+          case config: GenericMailerSettings => GenericMailerExporter(
+            id = (json \ "id").as[String],
+            eventsFilters = (json \ "eventsFilters").as[Seq[String]],
+            config = config
+          )
+          case config: MailgunSettings => MailgunExporter(
+            id = (json \ "id").as[String],
+            eventsFilters = (json \ "eventsFilters").as[Seq[String]],
+            config = config
+          )
+          case config: MailjetSettings => MailjetExporter(
+            id = (json \ "id").as[String],
+            eventsFilters = (json \ "eventsFilters").as[Seq[String]],
+            config = config
+          )
+          case config: NoneMailerSettings => NoneMailerExporter(
+            id = (json \ "id").as[String],
+            eventsFilters = (json \ "eventsFilters").as[Seq[String]],
+            config = config
+          )
+        }
     }
 
     override def writes(o: DataExporter): JsValue = o match {
@@ -82,6 +116,36 @@ case object DataExporter {
         "id" -> o.id,
         "eventsFilters" -> JsArray(o.eventsFilters.map(JsString.apply)),
         "config" -> KafkaConfig.format.writes(e.config).as[JsObject]
+      )
+      case e: ConsoleExporter => Json.obj(
+        "type" -> "mailer",
+        "id" -> o.id,
+        "eventsFilters" -> JsArray(o.eventsFilters.map(JsString.apply)),
+        "config" -> (ConsoleMailerSettings.format.writes(e.config) ++ Json.obj("type" -> "console"))
+      )
+      case e: GenericMailerExporter => Json.obj(
+        "type" -> "mailer",
+        "id" -> o.id,
+        "eventsFilters" -> JsArray(o.eventsFilters.map(JsString.apply)),
+        "config" -> (GenericMailerSettings.format.writes(e.config) ++ Json.obj("type" -> "generic"))
+      )
+      case e: MailgunExporter => Json.obj(
+        "type" -> "mailer",
+        "id" -> o.id,
+        "eventsFilters" -> JsArray(o.eventsFilters.map(JsString.apply)),
+        "config" -> (MailgunSettings.format.writes(e.config) ++ Json.obj("type" -> "mailgun"))
+      )
+      case e: MailjetExporter => Json.obj(
+        "type" -> "mailer",
+        "id" -> o.id,
+        "eventsFilters" -> JsArray(o.eventsFilters.map(JsString.apply)),
+        "config" -> (MailjetSettings.format.writes(e.config) ++ Json.obj("type" -> "mailjet"))
+      )
+      case e: NoneMailerExporter => Json.obj(
+        "type" -> "mailer",
+        "id" -> o.id,
+        "eventsFilters" -> JsArray(o.eventsFilters.map(JsString.apply)),
+        "config" -> (NoneMailerSettings.format.writes(e.config) ++ Json.obj("type" -> "none"))
       )
     }
 

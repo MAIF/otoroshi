@@ -12,10 +12,11 @@ import utils.http.Implicits._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-case class NoneMailerSettings() extends MailerSettings {
+case class NoneMailerSettings() extends MailerSettings with Exporter {
   override def typ: String                                      = "none"
   override def asMailer(config: GlobalConfig, env: Env): Mailer = new NoneMailer()
   override def json: JsValue                                    = NoneMailerSettings.format.writes(this)
+  override def toJson: JsValue                                  = NoneMailerSettings.format.writes(this)
 }
 
 case class ConsoleMailerSettings() extends MailerSettings with Exporter {
@@ -96,7 +97,7 @@ object MailgunSettings {
         JsSuccess(
           MailgunSettings(
             eu = (json \ "eu").asOpt[Boolean].getOrElse(false),
-            apiKey = (json \ "password").asOpt[String].map(_.trim).get,
+            apiKey = (json \ "apiKey").asOpt[String].map(_.trim).get,
             domain = (json \ "domain").asOpt[String].map(_.trim).get,
           )
         )
