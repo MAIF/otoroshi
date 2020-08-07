@@ -5,7 +5,7 @@ import java.rmi.registry.LocateRegistry
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 
-import akka.actor.{ActorSystem, PoisonPill, Scheduler}
+import akka.actor.{ActorRef, ActorSystem, PoisonPill, Scheduler}
 import akka.http.scaladsl.util.FastFuture._
 import akka.stream.Materializer
 import auth.{AuthModuleConfig, SessionCookieValues}
@@ -146,7 +146,7 @@ class Env(val configuration: Configuration,
     promise.future
   }
 
-  val otoroshiEventsActor = {
+  val otoroshiEventsActor: ActorRef = {
     implicit val ec = otoroshiExecutionContext
     otoroshiActorSystem.actorOf(OtoroshiEventsActorSupervizer.props(this))
   }

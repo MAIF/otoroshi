@@ -4,15 +4,15 @@ import java.util.concurrent.TimeUnit
 
 import akka.actor.{Actor, ActorRef, PoisonPill, Props, Terminated}
 import akka.http.scaladsl.util.FastFuture.EnhancedFuture
-import akka.stream.{OverflowStrategy, QueueOfferResult}
 import akka.stream.scaladsl.{Keep, Sink, Source}
+import akka.stream.{OverflowStrategy, QueueOfferResult}
 import env.Env
 import events.impl.{ElasticWritesAnalytics, WebHookAnalytics}
 import models.{DataExporter, ElasticAnalyticsConfig, Webhook}
 import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.json.Json
-import utils.{ConsoleMailerSettings, EmailLocation, MailerSettings}
+import utils.{EmailLocation, MailerSettings}
 
 import scala.concurrent.duration.FiniteDuration
 import scala.util.Success
@@ -21,6 +21,9 @@ object OtoroshiEventsActorSupervizer {
   def props(implicit env: Env) = Props(new OtoroshiEventsActorSupervizer(env))
 }
 
+case class RemoveExporter(exporter: DataExporter)
+case class AddExporter(exporter: DataExporter)
+
 class OtoroshiEventsActorSupervizer(env: Env) extends Actor {
 
   lazy val logger    = Logger("otoroshi-events-actor-supervizer")
@@ -28,23 +31,47 @@ class OtoroshiEventsActorSupervizer(env: Env) extends Actor {
   implicit val e = env
   implicit val ec  = env.analyticsExecutionContext
 
-  val namesAndRefs: Map[ActorRef, Tuple2[String, DataExporter]] = Map.empty
+  var namesAndRefs: Map[ActorRef, DataExporter] = Map.empty
+
+  def getChildName(exporter: DataExporter) = s"otoroshi-events-actor-${exporter.id}"
 
   override def receive: Receive = {
+    case RemoveExporter(exporter) =>
+      val childName = getChildName(exporter)
+      logger.debug(s"removing child $childName")
+      context.child(childName).foreach(_ ! PoisonPill)
+      namesAndRefs = namesAndRefs.filterNot(_._2 == exporter)
+    case AddExporter(exporter) =>
+      val childName = getChildName(exporter)
+      logger.debug(s"Starting new child $childName")
+      if (context.child(childName).isEmpty) {
+        val ref = context.actorOf(OtoroshiEventsActor.props(exporter)(env), childName)
+        namesAndRefs + (ref -> exporter)
+        context.watch(ref)
+      }
     case Terminated(ref) =>
-      logger.debug(s"Restarting ototoshi events actor child ${namesAndRefs(ref)._1}")
-      context.watch(context.actorOf(AnalyticsActor.props(namesAndRefs(ref)._2)(env), namesAndRefs(ref)._1))
-    case evt => context.children.map(_ ! evt)
+      namesAndRefs.get(ref) match {
+        case Some(dataExporter) =>
+          val childName = getChildName(dataExporter)
+          logger.debug(s"Restarting ototoshi events actor child $childName")
+          context.watch(context.actorOf(OtoroshiEventsActor.props(dataExporter)(env), childName))
+        case None =>
+      }
+    case evt =>
+      context.children.map(_ ! evt)
   }
 
   override def preStart(): Unit = {
+    logger.debug("pre start otoroshi event actor supervizer")
+    //todo: WTF ? it work just with breakpoint ???
     env.datastores.globalConfigDataStore.singleton().fast.map { config =>
+      logger.debug(s"there is, now, ${config.dataExporters.length} exporter")
       config.dataExporters.foreach(exporter => {
-        val childName = s"analytics-actor-${exporter.id}"
+        val childName = getChildName(exporter)
         if (context.child(childName).isEmpty) {
           logger.debug(s"Starting new child $childName")
-          val ref = context.actorOf(AnalyticsActor.props(exporter)(env), childName)
-          namesAndRefs + (ref -> (childName -> exporter))
+          val ref = context.actorOf(OtoroshiEventsActor.props(exporter)(env), childName)
+          namesAndRefs + (ref -> exporter)
           context.watch(ref)
         }
       })
@@ -52,8 +79,9 @@ class OtoroshiEventsActorSupervizer(env: Env) extends Actor {
     }
   }
 
-  override def postStop(): Unit =
+  override def postStop(): Unit = {
     context.children.foreach(_ ! PoisonPill)
+  }
 }
 
 
@@ -75,7 +103,7 @@ class OtoroshiEventsActor(exporter: DataExporter)(implicit env: Env) extends Act
       .exists(r => r.matches(event.`@type`))
     )
     .mapAsync(5)(evt => evt.toEnrichedJson)
-    .groupedWithin(env.maxWebhookSize, FiniteDuration(env.analyticsWindow, TimeUnit.SECONDS)) //todo: maybe change value
+    .groupedWithin(env.maxWebhookSize, FiniteDuration(env.analyticsWindow, TimeUnit.SECONDS)) //todo: maybe change conf prop
     .mapAsync(5) { evts =>
       logger.debug(s"SEND_OTOROSHI_EVENTS_HOOK: will send ${evts.size} evts")
       env.datastores.globalConfigDataStore.singleton().fast.map { config =>
@@ -112,7 +140,7 @@ class OtoroshiEventsActor(exporter: DataExporter)(implicit env: Env) extends Act
                  """
             c.asMailer(config, env).send(
               from = EmailLocation("Otoroshi Alerts", s"otoroshi-alerts@${env.domain}"),
-              to = config.alertsEmails.map(e => EmailLocation(e, e)), //todo: maybe define another email adress
+              to = config.alertsEmails.map(e => EmailLocation(e, e)), //todo: maybe define another email adress (in config screen ???)
               subject = s"Otoroshi Alert - ${evts.size} new alerts",
               html = emailBody
             )

@@ -3,7 +3,7 @@ package controllers.adminapi
 import actions.ApiAction
 import akka.http.scaladsl.util.FastFuture
 import env.Env
-import events.{AdminApiEvent, Alerts, Audit, GlobalConfigModification}
+import events.{AddExporter, AdminApiEvent, Alerts, Audit, GlobalConfigModification, RemoveExporter}
 import models.GlobalConfig
 import otoroshi.models.RightsChecker
 import play.api.Logger
@@ -71,7 +71,18 @@ class GlobalConfigController(ApiAction: ApiAction, cc: ControllerComponents)(imp
                 ctx.from,
                 ctx.ua)
             )
-            ak.save().map(_ => Ok(Json.obj("done" -> true))) // TODO : rework
+            ak.save()
+              .map(_ => {
+                //add or remove freshly created/removed dataExporter
+                val excl = conf.dataExporters.diff(ak.dataExporters) ++ ak.dataExporters.diff(conf.dataExporters)
+                if (excl.nonEmpty) {
+                  conf.dataExporters.diff(ak.dataExporters)
+                    .foreach(exporter => env.otoroshiEventsActor ! RemoveExporter(exporter))
+                  ak.dataExporters.diff(conf.dataExporters)
+                    .foreach(exporter => env.otoroshiEventsActor ! AddExporter(exporter))
+                }
+                Ok(Json.obj("done" -> true)) // TODO : rework
+              })
           }
         }
       }
@@ -109,7 +120,17 @@ class GlobalConfigController(ApiAction: ApiAction, cc: ControllerComponents)(imp
                 ctx.from,
                 ctx.ua)
             )
-            ak.save().map(_ => Ok(Json.obj("done" -> true))) // TODO : rework
+            ak.save()
+              .map(_ => {
+                //add or remove freshly created/removed dataExporter
+                if (!conf.dataExporters.forall(ak.dataExporters.contains(_))) {
+                  conf.dataExporters.filterNot(ak.dataExporters.contains(_))
+                    .foreach(exporter => env.otoroshiEventsActor ! RemoveExporter(exporter))
+                  ak.dataExporters.filterNot(conf.dataExporters.contains(_))
+                    .foreach(exporter => env.otoroshiEventsActor ! AddExporter(exporter))
+                }
+                Ok(Json.obj("done" -> true)) // TODO : rework
+              })
           }
         }
       }
