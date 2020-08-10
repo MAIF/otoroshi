@@ -202,7 +202,7 @@ export class ArrayInput extends Component {
                 {this.state.values.length && this.props.creatable && !this.props.component && (
                   <Creatable
                     name={`selector-${idx}`}
-                    value={value}
+                    value={{label: value, value}}
                     isLoading={this.state.loading}
                     disabled={this.props.disabled}
                     placeholder={this.props.placeholder}

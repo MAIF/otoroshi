@@ -355,7 +355,7 @@ export class NewExporterForm extends Component {
               label="Events filters"
               placeholder="Choose a event type or type a regex"
               value={this.state.eventsFilters}
-              values={["AlertEvent", "GatewayEvent", "TcpEvent", "HealthCheckEvent"]}
+              values={["AlertEvent", "GatewayEvent", "TcpEvent", "HealthCheckEvent", ...this.state.eventsFilters]}
               help="regex to filter otoroshi events to send to the event exporter"
               onChange={e => this.setState({ eventsFilters: e })}
             />
