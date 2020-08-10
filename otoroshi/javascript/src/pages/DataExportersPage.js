@@ -4,7 +4,7 @@ import faker from 'faker';
 import * as BackOfficeServices from '../services/BackOfficeServices';
 import { Table, SelectInput, ArrayInput, Form } from '../components/inputs';
 import { Collapse } from '../components/inputs/Collapse';
-import { Separator } from '../components/Separator';
+import Creatable from 'react-select/lib/Creatable';
 
 function tryOrTrue(f) {
   try {
@@ -335,6 +335,7 @@ export class NewExporterForm extends Component {
   }
 
   render() {
+    const isInvalidForm = !this.state.type || !this.state.eventsFilters.length
     return (
       <>
         <div className="modal-body">
@@ -347,14 +348,15 @@ export class NewExporterForm extends Component {
               disabled={!!(this.state.env && this.state.env.staticExposedDomain)}
               possibleValues={Object.keys(possibleExporterConfigFormValues)}
               value={this.state.type}
-              help="You can export otoroshi events ..."
+              help="The type of event exporter"
             />
             <ArrayInput
-              label="Event filters"
+              creatable
+              label="Events filters"
               placeholder="Choose a event type or type a regex"
               value={this.state.eventsFilters}
-              values={["GatewayEvent", "TcpEvent", "ApiKeySecretWillRotate"]}
-              help="Todo"
+              values={["AlertEvent", "GatewayEvent", "TcpEvent", "HealthCheckEvent"]}
+              help="regex to filter otoroshi events to send to the event exporter"
               onChange={e => this.setState({ eventsFilters: e })}
             />
             {this.state.type && (
@@ -377,7 +379,11 @@ export class NewExporterForm extends Component {
           <button
             type="button"
             className="btn btn-success"
-            onClick={e => this.props.ok(this.state.type === 'mailer' ? {...this.state, config: {...this.state.config.mailerSettings}} :  this.state)}>
+            disabled={isInvalidForm ? 'disabled' : null}
+            onClick={e => {
+              if (!isInvalidForm) {
+                this.props.ok(this.state.type === 'mailer' ? {...this.state, config: {...this.state.config.mailerSettings}} :  this.state)
+            }}}>
             Create
           </button>
         </div>
