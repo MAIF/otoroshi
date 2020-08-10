@@ -244,6 +244,10 @@ export class DataExportersPage extends Component {
       content: item => item.eventsFilters
     },
     {
+      title: 'Event filters Not',
+      content: item => item.eventsFiltersNot
+    },
+    {
       title: 'Actions',
       style: { textAlign: 'right', width: 100 },
       notFilterable: true,
@@ -315,6 +319,7 @@ export class NewExporterForm extends Component {
     id: faker.random.alphaNumeric(64),
     type: undefined,
     eventsFilters: [],
+    eventsFiltersNot: [],
     config: undefined
   };
 
@@ -324,6 +329,7 @@ export class NewExporterForm extends Component {
         id: this.props.exporter.id,
         type: this.props.exporter.type,
         eventsFilters: this.props.exporter.eventsFilters,
+        eventsFiltersNot: this.props.exporter.eventsFiltersNot,
         config: this.props.exporter.type === 'mailer' ? { mailerSettings: this.props.exporter.config} : this.props.exporter.config
       })
     }
@@ -355,9 +361,18 @@ export class NewExporterForm extends Component {
               label="Events filters"
               placeholder="Choose a event type or type a regex"
               value={this.state.eventsFilters}
-              values={["AlertEvent", "GatewayEvent", "TcpEvent", "HealthCheckEvent", ...this.state.eventsFilters]}
+              values={["AlertEvent", "AuditEvent", "GatewayEvent", "TcpEvent", "HealthCheckEvent", ...this.state.eventsFilters]}
               help="regex to filter otoroshi events to send to the event exporter"
               onChange={e => this.setState({ eventsFilters: e })}
+            />
+            <ArrayInput
+              creatable
+              label="Events filters Not"
+              placeholder="Choose a event type or type a regex which you don't want to export"
+              value={this.state.eventsFiltersNot}
+              values={["AlertEvent", "AuditEvent", "GatewayEvent", "TcpEvent", "HealthCheckEvent", ...this.state.eventsFilters]}
+              help="regex to filter otoroshi events to send to the event exporter"
+              onChange={e => this.setState({ eventsFiltersNot: e })}
             />
             {this.state.type && (
               <Collapse collapsed={this.state.allCollapsed} initCollapsed={false} label="Config">

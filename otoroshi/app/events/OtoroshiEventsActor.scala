@@ -12,7 +12,7 @@ import models.{DataExporter, ElasticAnalyticsConfig, Webhook}
 import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.json.Json
-import utils.{EmailLocation, MailerSettings}
+import utils.{EmailLocation, MailerSettings, Regex}
 
 import scala.concurrent.duration.FiniteDuration
 import scala.util.Success
@@ -102,6 +102,10 @@ class OtoroshiEventsActor(exporter: DataExporter)(implicit env: Env) extends Act
       .map(utils.RegexPool(_))
       .exists(r => r.matches(event.`@type`))
     )
+    .filterNot(event => exporter.eventsFiltersNot
+      .map(utils.RegexPool(_))
+      .exists(r => r.matches(event.`@type`))
+    )
     .mapAsync(5)(evt => evt.toEnrichedJson)
     .groupedWithin(env.maxWebhookSize, FiniteDuration(env.analyticsWindow, TimeUnit.SECONDS)) //todo: maybe change conf prop
     .mapAsync(5) { evts =>
@@ -152,7 +156,7 @@ class OtoroshiEventsActor(exporter: DataExporter)(implicit env: Env) extends Act
 
   override def receive: Receive = {
     case ge: AnalyticEvent => {
-      logger.debug("OTOROSHI_EVENTS: Event sent to stream")
+      logger.debug(s"${ge.`@type`}: Event sent to stream")
       val myself = self
       queue.offer(ge).andThen {
         case Success(QueueOfferResult.Enqueued) => logger.debug("OTOROSHI_EVENT: Event enqueued")
@@ -168,8 +172,6 @@ class OtoroshiEventsActor(exporter: DataExporter)(implicit env: Env) extends Act
           logger.error(s"OTOROSHI_EVENTS_ERROR: otoroshiEvents actor error : ${e}")
           context.stop(myself)
       }
-      //todo: on peu logger les analytics ==> y penser
-      env.datastores.globalConfigDataStore.latestSafe.filter(_.logAnalyticsOnServer).foreach(_ => ge.log())
     }
     case _ =>
   }
