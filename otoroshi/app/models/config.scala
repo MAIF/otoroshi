@@ -38,10 +38,9 @@ trait DataExporter {
 case object DataExporter {
 
   case class ElasticExporter(id: String, eventsFilters: Seq[String], eventsFiltersNot: Seq[String], config: ElasticAnalyticsConfig) extends DataExporter
-
   case class WebhookExporter(id: String, eventsFilters: Seq[String], eventsFiltersNot: Seq[String], config: Webhook) extends DataExporter
-
   case class KafkaExporter(id: String, eventsFilters: Seq[String], eventsFiltersNot: Seq[String], config: KafkaConfig) extends DataExporter
+  case class PulsarExporter(id: String, eventsFilters: Seq[String], eventsFiltersNot: Seq[String], config: PulsarConfig) extends DataExporter
 
   case class ConsoleExporter(id: String, eventsFilters: Seq[String], eventsFiltersNot: Seq[String], config: ConsoleMailerSettings) extends DataExporter
   case class GenericMailerExporter(id: String, eventsFilters: Seq[String], eventsFiltersNot: Seq[String], config: GenericMailerSettings) extends DataExporter
@@ -67,6 +66,13 @@ case object DataExporter {
         ))
       case "kafka" => KafkaConfig.format.reads((json \ "config").as[JsObject])
         .map(config => KafkaExporter(
+          id = (json \ "id").as[String],
+          eventsFilters = (json \ "eventsFilters").as[Seq[String]],
+          eventsFiltersNot = (json \ "eventsFiltersNot").as[Seq[String]],
+          config = config
+        ))
+      case "pulsar" => PulsarConfig.format.reads((json \ "config").as[JsObject])
+        .map(config => PulsarExporter(
           id = (json \ "id").as[String],
           eventsFilters = (json \ "eventsFilters").as[Seq[String]],
           eventsFiltersNot = (json \ "eventsFiltersNot").as[Seq[String]],
@@ -128,6 +134,13 @@ case object DataExporter {
         "eventsFilters" -> JsArray(o.eventsFilters.map(JsString.apply)),
         "eventsFiltersNot" -> JsArray(o.eventsFiltersNot.map(JsString.apply)),
         "config" -> KafkaConfig.format.writes(e.config).as[JsObject]
+      )
+      case e: PulsarExporter => Json.obj(
+        "type" -> "pulsar",
+        "id" -> o.id,
+        "eventsFilters" -> JsArray(o.eventsFilters.map(JsString.apply)),
+        "eventsFiltersNot" -> JsArray(o.eventsFiltersNot.map(JsString.apply)),
+        "config" -> PulsarConfig.format.writes(e.config).as[JsObject]
       )
       case e: ConsoleExporter => Json.obj(
         "type" -> "mailer",

@@ -330,7 +330,7 @@ export class NewExporterForm extends Component {
         type: this.props.exporter.type,
         eventsFilters: this.props.exporter.eventsFilters,
         eventsFiltersNot: this.props.exporter.eventsFiltersNot,
-        config: this.props.exporter.type === 'mailer' ? { mailerSettings: this.props.exporter.config} : this.props.exporter.config
+        config: this.props.exporter.type === 'mailer' ? { mailerSettings: this.props.exporter.config } : this.props.exporter.config
       })
     }
   }
@@ -397,8 +397,9 @@ export class NewExporterForm extends Component {
             disabled={isInvalidForm ? 'disabled' : null}
             onClick={e => {
               if (!isInvalidForm) {
-                this.props.ok(this.state.type === 'mailer' ? {...this.state, config: {...this.state.config.mailerSettings}} :  this.state)
-            }}}>
+                this.props.ok(this.state.type === 'mailer' ? { ...this.state, config: { ...this.state.config.mailerSettings } } : this.state)
+              }
+            }}>
             Create
           </button>
         </div>
@@ -592,6 +593,58 @@ const possibleExporterConfigFormValues = {
           }),
         },
       },
+    }
+  },
+  pulsar: {
+    default: {
+      uri: 'pulsar://localhost:6650',
+      tenant: 'public',
+      namespace: 'default',
+      topic: 'otoroshi'
+    },
+    flow: [
+      'uri',
+      'tlsTrustCertsFilePath',
+      'tenant',
+      'namespace',
+      'topic'
+    ],
+    schema: {
+      uri: {
+        type: 'string',
+        props: {
+          label: 'Pulsar URI',
+          help: 'URI of the pulsar server'
+        },
+      },
+      tlsTrustCertsFilePath: {
+        type: 'string',
+        props: {
+          label: 'Pulsar trusted cert. path',
+          help: 'The path to the trusted TLS certificate file'
+        }
+      },
+      tenant: {
+        type: 'string',
+        props: {
+          label: 'Pulsar tenant',
+          help: 'Tenant on the pulsar server',
+        },
+      },
+      namespace: {
+        type: 'string',
+        props: {
+          label: 'Pulsar namespace',
+          help: 'Namespace on the pulsar server',
+        },
+      },
+      topic: {
+        type: 'string',
+        props: {
+          label: 'Pulsar topic',
+          help: 'Topic on the pulsar server',
+        },
+      }
     }
   },
   kafka: {

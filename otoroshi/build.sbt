@@ -66,6 +66,9 @@ libraryDependencies ++= Seq(
   "org.bouncycastle"         % "bcpkix-jdk15on"              % bouncyCastleVersion,
   "org.bouncycastle"         % "bcprov-ext-jdk15on"          % bouncyCastleVersion,
   "org.bouncycastle"         % "bcprov-jdk15on"              % bouncyCastleVersion,
+  "com.sksamuel.pulsar4s"    %% "pulsar4s-play-json"         % "2.6.0",
+  "com.sksamuel.pulsar4s"    %% "pulsar4s-core"              % "2.6.0",
+  "com.sksamuel.pulsar4s"    %% "pulsar4s-akka-streams"      % "2.6.0",
 
   // fix multiple CVEs
   "com.fasterxml.jackson.core" % "jackson-databind"          % "2.10.3",

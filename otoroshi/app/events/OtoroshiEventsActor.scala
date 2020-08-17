@@ -5,14 +5,16 @@ import java.util.concurrent.TimeUnit
 import akka.actor.{Actor, ActorRef, PoisonPill, Props, Terminated}
 import akka.http.scaladsl.util.FastFuture.EnhancedFuture
 import akka.stream.scaladsl.{Keep, Sink, Source}
-import akka.stream.{OverflowStrategy, QueueOfferResult}
+import akka.stream.{Materializer, OverflowStrategy, QueueOfferResult}
+import com.sksamuel.pulsar4s.ProducerMessage
+import com.sksamuel.pulsar4s.akka.streams.sink
 import env.Env
 import events.impl.{ElasticWritesAnalytics, WebHookAnalytics}
 import models.{DataExporter, ElasticAnalyticsConfig, Webhook}
 import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.json.Json
-import utils.{EmailLocation, MailerSettings, Regex}
+import utils.{EmailLocation, MailerSettings}
 
 import scala.concurrent.duration.FiniteDuration
 import scala.util.Success
@@ -66,8 +68,10 @@ class OtoroshiEventsActorSupervizer(env: Env) extends Actor {
     //todo: WTF ? it work just with breakpoint ???
     env.datastores.globalConfigDataStore.singleton().fast.map { config =>
       logger.debug(s"there is, now, ${config.dataExporters.length} exporter")
+      logger.debug(s"${config.dataExporters.length} data exporters")
       config.dataExporters.foreach(exporter => {
         val childName = getChildName(exporter)
+        logger.debug(s"starting $childName")
         if (context.child(childName).isEmpty) {
           logger.debug(s"Starting new child $childName")
           val ref = context.actorOf(OtoroshiEventsActor.props(exporter)(env), childName)
@@ -116,8 +120,15 @@ class OtoroshiEventsActor(exporter: DataExporter)(implicit env: Env) extends Act
           case c: ElasticAnalyticsConfig => new ElasticWritesAnalytics(c, env).publish(evts)
           case c: Webhook => new WebHookAnalytics(c, config).publish(evts)
           case c: KafkaConfig => evts.foreach (evt => kafkaWrapper.publish(evt)(env, c))
+          case c: PulsarConfig =>
+            implicit val _mat: Materializer = env.otoroshiMaterializer
+            val producerFn = () => PulsarSetting.producer(env, c)
+            val pulsarSink = sink(producerFn)
+            Source(evts)
+              .map(evt => ProducerMessage(evt))
+              .runWith(pulsarSink)
+
           case c: MailerSettings =>
-            //todo: rewrites email body
             val titles = evts
               .map { jsonEvt =>
                 val date = new DateTime((jsonEvt \ "@timestamp").as[Long])

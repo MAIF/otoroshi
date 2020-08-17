@@ -187,7 +187,7 @@ export class ArrayInput extends Component {
                     )}
                   </div>
                 )}
-                {this.state.values.length && !this.props.creatable && !this.props.component && (
+                {!!this.state.values.length && !this.props.creatable && !this.props.component && (
                   <Select
                     name={`selector-${idx}`}
                     value={value}
@@ -199,7 +199,7 @@ export class ArrayInput extends Component {
                     onChange={e => this.changeValue({ target: { value: e.value } }, idx)}
                   />
                 )}
-                {this.state.values.length && this.props.creatable && !this.props.component && (
+                {!!this.state.values.length && this.props.creatable && !this.props.component && (
                   <Creatable
                     name={`selector-${idx}`}
                     value={{label: value, value}}
