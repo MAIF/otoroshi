@@ -945,6 +945,17 @@ class Env(val configuration: Configuration,
             case Some(s) if !s.publicPatterns.contains("/metrics") =>
               logger.info("Updating BackOffice service to handle metrics ...")
               s.copy(publicPatterns = s.publicPatterns :+ "/metrics").save()(ec, this)
+            case Some(s) =>
+              logger.info("Updating BackOffice service to handle swagger requests")
+              s.copy(
+                cors = new CorsSettings(
+                  true,
+                  s.cors.allowOrigin + ", http://otoroshi.oto.tools:9999",
+                  s.cors.exposeHeaders,
+                  s.cors.allowHeaders :+ "authorization",
+                  s.cors.allowMethods ++ Seq("GET", "POST", "PUT")
+                )
+              )
             case _ =>
           }
         }
