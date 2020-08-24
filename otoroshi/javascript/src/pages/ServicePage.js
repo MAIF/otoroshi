@@ -1981,6 +1981,24 @@ export class ServicePage extends Component {
               help="Api used should not have one of the following metadata entries"
               onChange={v => this.changeTheValue('apiKeyConstraints.routing.noneMetaIn', v)}
             />
+            <ArrayInput
+              label="One Meta key in"
+              value={this.state.service.apiKeyConstraints.routing.oneMetaKeyIn}
+              help="Api used should have at least one of the following key in metadata"
+              onChange={v => this.changeTheValue('apiKeyConstraints.routing.oneMetaKeyIn', v)}
+            />
+            <ArrayInput
+              label="All Meta key in"
+              value={this.state.service.apiKeyConstraints.routing.allMetaKeysIn}
+              help="Api used should have all of the following keys in metadata"
+              onChange={v => this.changeTheValue('apiKeyConstraints.routing.allMetaKeysIn', v)}
+            />
+            <ArrayInput
+              label="No Meta key in"
+              value={this.state.service.apiKeyConstraints.routing.noneMetaKeysIn}
+              help="Api used should not have one of the following keys in metadata"
+              onChange={v => this.changeTheValue('apiKeyConstraints.routing.noneMetaKeysIn', v)}
+            />
           </Collapse>
           {/*<Collapse
             notVisible={this.state.service.redirection.enabled}
