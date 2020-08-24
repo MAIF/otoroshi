@@ -23,14 +23,13 @@ import scala.util.{Failure, Success}
 object ElasticTemplates {
   val indexTemplate =
     """{
-      |  "template": "$$$INDEX$$$-*",
-      |  "settings": {
-      |    "number_of_shards": 1,
-      |    "index": {
-      |    }
-      |  },
-      |  "mappings": {
-      |    "_default_": {
+      |  "index_patterns" : ["$$$INDEX$$$-*"],
+      |  "template": {
+      |    "settings": {
+      |      "number_of_shards": 1,
+      |      "index": {}
+      |    },
+      |    "mappings": {
       |      "date_detection": false,
       |      "dynamic_templates": [
       |        {
@@ -152,13 +151,13 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env) extends A
       )
       logger.debug(s"Creating otoroshi template with \n${Json.prettyPrint(tpl)}")
       Await.result(
-        url(urlFromPath("/_template/otoroshi-tpl"))
+        url(urlFromPath("/_index_template/otoroshi-tpl"))
           .get()
           .flatMap { resp =>
             resp.status match {
               case 200 =>
                 resp.ignore()
-                val tplCreated = url(urlFromPath("/_template/otoroshi-tpl")).put(tpl)
+                val tplCreated = url(urlFromPath("/_index_template/otoroshi-tpl")).put(tpl)
                 tplCreated.onComplete {
                   case Success(r) if r.status >= 400 =>
                     logger.error(s"Error creating template ${r.status}: ${r.body}")
@@ -175,7 +174,7 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env) extends A
                 tplCreated.map(_ => ())
               case 404 =>
                 resp.ignore()
-                val tplCreated = url(urlFromPath("/_template/otoroshi-tpl")).post(tpl)
+                val tplCreated = url(urlFromPath("/_index_template/otoroshi-tpl")).post(tpl)
                 tplCreated.onComplete {
                   case Success(r) if r.status >= 400 =>
                     logger.error(s"Error creating template ${r.status}: ${r.body}")
@@ -205,7 +204,7 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env) extends A
   private def bulkRequest(source: JsValue): String = {
     val df            = ISODateTimeFormat.date().print(DateTime.now())
     val indexWithDate = s"$index-$df"
-    val indexClause   = Json.stringify(Json.obj("index" -> Json.obj("_index" -> indexWithDate, "_type" -> `type`)))
+    val indexClause   = Json.stringify(Json.obj("index" -> Json.obj("_index" -> indexWithDate)))
     val sourceClause  = Json.stringify(source)
     s"$indexClause\n$sourceClause"
   }
