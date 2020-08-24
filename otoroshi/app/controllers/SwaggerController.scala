@@ -27,7 +27,7 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
   }
 
   def swaggerUi = Action { req =>
-    Ok(views.html.otoroshi.documentationframe(s"${env.exposedRootScheme}://${env.backOfficeHost}/api/swagger.json"))
+    Ok(views.html.otoroshi.documentationframe(s"${env.exposedRootScheme}://${env.backOfficeHost}:${env.port}/api/swagger.json"))
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -2376,7 +2376,7 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
         "description" -> "Find out more about Otoroshi",
         "url"         -> "https://maif.github.io/otoroshi/"
       ),
-      "host"     -> env.adminApiExposedHost,
+      "host"     -> s"${env.adminApiExposedHost}:${env.port}",
       "basePath" -> "/",
       "schemes"  -> Json.arr(env.exposedRootScheme),
       "paths" -> Json.obj(
