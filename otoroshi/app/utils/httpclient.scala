@@ -153,14 +153,14 @@ object MtlsWs {
 object WsClientChooser {
   def apply(standardClient: WSClient,
             akkaClient: AkkWsClient,
-            ahcCreator: SSLConfigSettings => WSClient,
+            // ahcCreator: SSLConfigSettings => WSClient,
             fullAkka: Boolean,
-            env: Env): WsClientChooser = new WsClientChooser(standardClient, akkaClient, ahcCreator, fullAkka, env)
+            env: Env): WsClientChooser = new WsClientChooser(standardClient, akkaClient, /*ahcCreator, */fullAkka, env)
 }
 
 class WsClientChooser(standardClient: WSClient,
                       akkaClient: AkkWsClient,
-                      ahcCreator: SSLConfigSettings => WSClient,
+                      // ahcCreator: SSLConfigSettings => WSClient,
                       fullAkka: Boolean,
                       env: Env)
     extends WSClient {

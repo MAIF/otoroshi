@@ -1,152 +1,252 @@
-package gateway
+package gateway.next
 
-import java.net.URLEncoder
+import java.io.File
+import java.net.{InetSocketAddress, URLEncoder}
+import java.security.{Provider, SecureRandom}
 import java.util.concurrent.atomic.AtomicInteger
 
-import akka.actor.{Actor, Props}
+import akka.actor.ActorSystem
+import akka.http.scaladsl.model._
+import akka.http.scaladsl.settings.ServerSettings
 import akka.http.scaladsl.util.FastFuture
+import akka.http.scaladsl.{ConnectionContext, Http}
 import akka.stream.Materializer
+import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import auth.{AuthModuleConfig, SessionCookieValues}
 import com.google.common.base.Charsets
+import com.typesafe.config.{ConfigFactory, ConfigValueFactory}
 import env.Env
-import events._
+import gateway._
+import javax.net.ssl._
 import models._
-import otoroshi.script._
 import otoroshi.utils.LetsEncryptHelper
-import play.api.ApplicationLoader.DevContext
-import play.api.Logger
-import play.api.http.{Status => _, _}
-import play.api.libs.json._
-import play.api.libs.streams.Accumulator
+import otoroshi.utils.syntax.implicits._
+import play.api.inject.ApplicationLifecycle
+import play.api.libs.json.{JsObject, Json}
+import play.api.libs.ws.ahc.{AhcWSClient, AhcWSClientConfig}
+import play.api.libs.ws.{WSClient, WSClientConfig, WSConfigParser}
 import play.api.mvc.Results._
 import play.api.mvc._
-import play.api.routing.Router
-import play.core.WebCommands
+import play.api.mvc.request.{Cell, RequestAttrKey}
+import play.api.{Configuration, Environment, Logger, Mode}
 import security.OtoroshiClaim
-import ssl.{SSLSessionJavaHelper, X509KeyManagerSnitch}
-import utils.RequestImplicits._
-import utils._
+import ssl.{ClientAuth, DynamicSSLEngineProvider, SSLSessionJavaHelper, X509KeyManagerSnitch}
+import utils.{RegexPool, TypedMap}
 
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.control.NoStackTrace
+import scala.concurrent.Future
+import scala.concurrent.duration._
 
-case class ProxyDone(status: Int, isChunked: Boolean, upstreamLatency: Long, headersOut: Seq[Header])
+class OtoroshiWorker(interface: String, router: OtoroshiRequestHandler, errorHandler: ErrorHandler, env: Env) {
 
-class ErrorHandler()(implicit env: Env) extends HttpErrorHandler {
+  private implicit val system = ActorSystem("otoroshi-worker-next")
+  private implicit val ec = system.dispatcher
+  private implicit val mat = Materializer(system)
+  private val logger = Logger("otoroshi-worker")
 
-  implicit val ec = env.otoroshiExecutionContext
+  private val conversion = play.core.server.otoroshi.PlayUtils.conversion(env.configuration)
+  private val http = Http()
+  private val cipherSuites = env.configuration.getOptional[Seq[String]]("otoroshi.ssl.cipherSuitesJDK11")
+  private val protocols = env.configuration.getOptional[Seq[String]]("otoroshi.ssl.protocolsJDK11")
+  private val clientAuth: ClientAuth = env.configuration
+    .getOptionalWithFileSupport[String]("otoroshi.ssl.fromOutside.clientAuth")
+    .flatMap(ClientAuth.apply)
+    .getOrElse(ClientAuth.None)
 
-  lazy val logger = Logger("otoroshi-error-handler")
+  def fu: HttpResponse = HttpResponse(
+    StatusCodes.BadGateway
+  )
 
-  def onClientError(request: RequestHeader, statusCode: Int, mess: String): Future[Result] = {
-    val message       = Option(mess).filterNot(_.trim.isEmpty).getOrElse("An error occurred")
-    val remoteAddress = request.theIpAddress
-    logger.error(
-      s"Client Error: $message from ${remoteAddress} on ${request.method} ${request.theProtocol}://${request.theHost}${request.relativeUri} ($statusCode) - ${request.headers.toSimpleMap
-        .mkString(";")}"
-    )
-    env.metrics.counter("errors.client").inc()
-    env.datastores.globalConfigDataStore.singleton().map { config =>
-      env.datastores.serviceDescriptorDataStore.updateMetricsOnError(config)
+  private def remoteAddressOfRequest(req: HttpRequest): InetSocketAddress = {
+    req.header[headers.`Remote-Address`] match {
+      case Some(headers.`Remote-Address`(RemoteAddress.IP(ip, Some(port)))) =>
+        new InetSocketAddress(ip, port)
+      case _ => throw new IllegalStateException("`Remote-Address` header was missing")
     }
-    val snowflake = env.snowflakeGenerator.nextIdStr()
-    val attrs     = TypedMap.empty
-    RequestSink.maybeSinkRequest(
-      snowflake,
-      request,
-      attrs,
-      RequestOrigin.ErrorHandler,
-      statusCode,
-      message,
-      Errors.craftResponseResult(
-        s"Client Error: an error occurred on ${request.relativeUri} ($statusCode)",
-        Status(statusCode),
-        request,
-        None,
-        Some("errors.client.error"),
-        attrs = TypedMap.empty
+  }
+
+  private def handle(request: HttpRequest, secure: Boolean): Future[HttpResponse] = {
+    val (rawRequestHeader, rawBody) = conversion.convertRequest(
+      requestId = 0L,
+      remoteAddress = remoteAddressOfRequest(request),
+      secureProtocol = secure,
+      request = request
+    )
+    val requestHeader = rawRequestHeader.withAttrs(play.api.libs.typedmap.TypedMap(
+      RequestAttrKey.Id -> 0,
+      RequestAttrKey.Cookies -> Cell(Cookies.fromCookieHeader(rawRequestHeader.headers.get("Cookie"))),
+      RequestAttrKey.Flash -> Cell(Flash.emptyCookie),
+      RequestAttrKey.Session -> Cell(Session.emptyCookie),
+    ))
+    val body: Source[ByteString, _] = rawBody.fold(Source.single, identity)
+    router.routeRequest(request, requestHeader, secure) match {
+      case None => fu.future
+      case Some(handler) => {
+        handler.apply(requestHeader, body).flatMap { result =>
+          conversion.convertResult(requestHeader, result, request.protocol, errorHandler)
+        }
+      }
+    }
+  }
+
+  private val httpBinding = http.bindAndHandleAsync(
+    handler = r => handle(r, false),
+    interface = interface,
+    port = env.port,
+    connectionContext = ConnectionContext.noEncryption(),
+    settings = ServerSettings(system),
+    parallelism = 0,
+  )
+
+  private val httpsBinding = http.bindAndHandleAsync(
+    handler = r => handle(r, true),
+    interface = interface,
+    port = env.httpsPort,
+    connectionContext = ConnectionContext.https(
+      sslContext = sslContext(),
+      enabledCipherSuites = cipherSuites.map(_.toList),
+      enabledProtocols = protocols.map(_.toList),
+      clientAuth = clientAuth.toAkkaClientAuth.some,
+    ),
+    settings = ServerSettings(system),
+    parallelism = 0,
+  )
+
+  logger.info(s"Otoroshi worker listening on http://0.0.0.0:${env.port} and https://0.0.0.0:${env.httpsPort}")
+
+  private def sslContext(): SSLContext = {
+    new SSLContext(
+      new SSLContextSpi() {
+        override def engineCreateSSLEngine(): SSLEngine                  = DynamicSSLEngineProvider.createSSLEngine(clientAuth, cipherSuites, protocols)
+        override def engineCreateSSLEngine(s: String, i: Int): SSLEngine = engineCreateSSLEngine()
+        override def engineInit(keyManagers: Array[KeyManager], trustManagers: Array[TrustManager], secureRandom: SecureRandom): Unit = ()
+        override def engineGetClientSessionContext(): SSLSessionContext = DynamicSSLEngineProvider.current.getClientSessionContext
+        override def engineGetServerSessionContext(): SSLSessionContext = DynamicSSLEngineProvider.current.getServerSessionContext
+        override def engineGetSocketFactory(): SSLSocketFactory =
+          DynamicSSLEngineProvider.current.getSocketFactory
+        override def engineGetServerSocketFactory(): SSLServerSocketFactory =
+          DynamicSSLEngineProvider.current.getServerSocketFactory
+      },
+      new Provider(
+        "Otoroshi SSlEngineProvider delegate",
+        1d,
+        "A provider that delegates callss to otoroshi dynamic one"
+      ) {},
+      "Otoroshi SSLEngineProvider delegate"
+    ) {}
+  }
+
+  def stop(): Future[Unit] = {
+    for {
+      binding <- httpBinding
+      sbinding <- httpsBinding
+    } yield {
+      binding.terminate(2.seconds)
+      sbinding.terminate(2.seconds)
+    }
+  }
+}
+
+object OtoroshiWorkerTest {
+
+  def main(args: Array[String]): Unit = {
+
+    val system = ActorSystem("foo")
+    val mat = Materializer(system)
+
+    val environment = Environment(new File("."), classOf[OtoroshiWorker].getClassLoader, Mode.Prod)
+    val configuration = Configuration(ConfigFactory.load().withValue("app.storage", ConfigValueFactory.fromAnyRef("file")))
+
+    val lifecycle = new ApplicationLifecycle {
+      override def addStopHook(hook: () => Future[_]): Unit = sys.addShutdownHook { hook() }
+      override def stop(): Future[_] = ().future
+    }
+
+    val circuitBreakersHolder: CircuitBreakersHolder = new CircuitBreakersHolder()
+
+    val wsClient: WSClient = WSClientFactory.ahcClient(configuration, environment.classLoader)(mat)
+
+    val env: Env = new Env(
+      configuration = configuration,
+      environment = environment,
+      lifecycle = lifecycle,
+      wsClient = wsClient,
+      circuitBeakersHolder = circuitBreakersHolder,
+      getHttpPort = None,
+      getHttpsPort = None,
+      testing = false
+    )
+
+    val reverseProxyAction = new ReverseProxyAction(env)
+    val httpHandler = new HttpHandler()(env)
+    val webSocketHandler = new WebSocketHandler()(env)
+    val errorHandler = new ErrorHandler()(env)
+    val snowMonkey = new SnowMonkey()(env)
+    val requestHandler = new OtoroshiRequestHandler(snowMonkey, httpHandler, webSocketHandler, reverseProxyAction)(env, env.otoroshiMaterializer)
+    val worker = new OtoroshiWorker("0.0.0.0", requestHandler, errorHandler, env)
+    sys.addShutdownHook {
+      worker.stop()
+    }
+  }
+}
+
+object WSClientFactory {
+  def ahcClient(env: Env): AhcWSClient = {
+    ahcClient(env.configuration, env.environment.classLoader)(env.otoroshiMaterializer)
+  }
+  def ahcClient(configuration: Configuration, cl: ClassLoader)(implicit mat: Materializer): AhcWSClient = {
+    val parser: WSConfigParser = new WSConfigParser(configuration.underlying, cl)
+    val config: AhcWSClientConfig = new AhcWSClientConfig(wsClientConfig = parser.parse()).copy(
+      keepAlive = configuration.getOptionalWithFileSupport[Boolean]("app.proxy.keepAlive").getOrElse(true)
+      //setHttpClientCodecMaxChunkSize(1024 * 100)
+    )
+    val wsClientConfig: WSClientConfig = config.wsClientConfig.copy(
+      userAgent = Some("Otoroshi-AHC"),
+      compressionEnabled = configuration.getOptionalWithFileSupport[Boolean]("app.proxy.compressionEnabled").getOrElse(false),
+      idleTimeout =
+        configuration.getOptionalWithFileSupport[Int]("app.proxy.idleTimeout").map(_.millis).getOrElse((2 * 60 * 1000).millis),
+      connectionTimeout = configuration
+        .getOptionalWithFileSupport[Int]("app.proxy.connectionTimeout")
+        .map(_.millis)
+        .getOrElse((2 * 60 * 1000).millis)
+    )
+    val ahcClient: AhcWSClient = AhcWSClient(
+      config.copy(
+        wsClientConfig = wsClientConfig
       )
-    )
-  }
-
-  def onServerError(request: RequestHeader, exception: Throwable): Future[Result] = {
-    // exception.printStackTrace()
-    val remoteAddress = request.theIpAddress
-    logger.error(
-      s"Server Error ${exception.getMessage} from ${remoteAddress} on ${request.method} ${request.theProtocol}://${request.theHost}${request.relativeUri} - ${request.headers.toSimpleMap
-        .mkString(";")}",
-      exception
-    )
-    env.metrics.counter("errors.server").inc()
-    env.datastores.globalConfigDataStore.singleton().map { config =>
-      env.datastores.serviceDescriptorDataStore.updateMetricsOnError(config)
+    )(mat)
+    sys.addShutdownHook {
+      ahcClient.close()
     }
-    val snowflake = env.snowflakeGenerator.nextIdStr()
-    val attrs     = TypedMap.empty
-    RequestSink.maybeSinkRequest(
-      snowflake,
-      request,
-      attrs,
-      RequestOrigin.ErrorHandler,
-      500,
-      Option(exception).flatMap(e => Option(e.getMessage)).getOrElse("An error occurred ..."),
-      Errors.craftResponseResult("An error occurred ...",
-                                 InternalServerError,
-                                 request,
-                                 None,
-                                 Some("errors.server.error"),
-                                 attrs = TypedMap.empty)
-    )
+    ahcClient
   }
 }
 
-object SameThreadExecutionContext extends ExecutionContext {
-  override def reportFailure(t: Throwable): Unit =
-    throw new IllegalStateException("exception in SameThreadExecutionContext", t) with NoStackTrace
-  override def execute(runnable: Runnable): Unit = runnable.run()
-}
-
-case class AnalyticsQueueEvent(descriptor: ServiceDescriptor,
-                               callDuration: Long,
-                               callOverhead: Long,
-                               dataIn: Long,
-                               dataOut: Long,
-                               upstreamLatency: Long,
-                               config: models.GlobalConfig)
-
-object AnalyticsQueue {
-  def props(env: Env) = Props(new AnalyticsQueue(env))
-}
-
-class AnalyticsQueue(env: Env) extends Actor {
-  override def receive: Receive = {
-    case AnalyticsQueueEvent(descriptor, duration, overhead, dataIn, dataOut, upstreamLatency, config) => {
-      descriptor
-        .updateMetrics(duration, overhead, dataIn, dataOut, upstreamLatency, config)(context.dispatcher, env)
-      env.datastores.globalConfigDataStore.updateQuotas(config)(context.dispatcher, env)
-    }
+class FakeActionBuilder {
+  def async(f: RequestHeader => Future[Result]): FakeActionBuilder.Handler = {
+    (req, body) => f(req)
+  }
+  def apply(f: RequestHeader => Result): FakeActionBuilder.Handler = {
+    (req, body) => FastFuture.successful(f(req))
   }
 }
 
-class GatewayRequestHandler(snowMonkey: SnowMonkey,
+object FakeActionBuilder {
+  type Handler = (RequestHeader, Source[ByteString, _]) => Future[Result]
+}
+
+class OtoroshiRequestHandler(snowMonkey: SnowMonkey,
                             httpHandler: HttpHandler,
                             webSocketHandler: WebSocketHandler,
-                            reverseProxyAction: ReverseProxyAction,
-                            router: Router,
-                            errorHandler: HttpErrorHandler,
-                            configuration: HttpConfiguration,
-                            filters: Seq[EssentialFilter],
-                            webCommands: WebCommands,
-                            optDevContext: Option[DevContext],
-                            actionBuilder: ActionBuilder[Request, AnyContent])(implicit env: Env, mat: Materializer)
-    extends DefaultHttpRequestHandler(webCommands, optDevContext, router, errorHandler, configuration, filters) {
+                            reverseProxyAction: ReverseProxyAction)(implicit env: Env, mat: Materializer) {
+
+  import FakeActionBuilder.Handler
+  import utils.RequestImplicits._
 
   implicit lazy val ec        = env.otoroshiExecutionContext
   implicit lazy val scheduler = env.otoroshiScheduler
 
   lazy val logger      = Logger("otoroshi-http-handler")
-  // lazy val debugLogger = Logger("otoroshi-http-handler-debug")
 
   lazy val analyticsQueue = env.otoroshiActorSystem.actorOf(AnalyticsQueue.props(env))
 
@@ -155,11 +255,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
   )
   lazy val monitoringPaths = Seq("/health", "/metrics")
 
-  val sourceBodyParser = BodyParser("Gateway BodyParser") { _ =>
-    Accumulator.source[ByteString].map(Right.apply)
-  }
-
   val reqCounter = new AtomicInteger(0)
+  val actionBuilder = new FakeActionBuilder()
 
   val headersInFiltered = Seq(
     env.Headers.OtoroshiState,
@@ -188,9 +285,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
     "Tls-Session-Info",
   ).map(_.toLowerCase)
 
-  // TODO : very dirty ... fix it using Play 2.6 request.hasBody
-  // def hasBody(request: Request[_]): Boolean = request.hasBody
-  def hasBody(request: Request[_]): Boolean =
+  def hasBody(request: Request[_]): Boolean = {
     (request.method, request.headers.get("Content-Length")) match {
       case ("GET", Some(_))    => true
       case ("GET", None)       => false
@@ -203,11 +298,13 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
       case ("DELETE", None)    => false
       case _                   => true
     }
+  }
 
-  def matchRedirection(host: String): Boolean =
+  def matchRedirection(host: String): Boolean = {
     env.redirections.nonEmpty && env.redirections.exists(it => host.contains(it))
+  }
 
-  def badCertReply(request: RequestHeader) = actionBuilder.async { req =>
+  def badCertReply(_request: HttpRequest) = actionBuilder.async { req =>
     Errors.craftResponseResult(
       "No SSL/TLS certificate found for the current domain name. Connection refused !",
       NotFound,
@@ -218,33 +315,28 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
     )
   }
 
-  override def routeRequest(request: RequestHeader): Option[Handler] = {
-    println(request.method, request.host, request.path)
+  def routeRequest(_request: HttpRequest, request: RequestHeader, secure: Boolean): Option[Handler] = {
     val config = env.datastores.globalConfigDataStore.latestSafe
     if (request.theSecured && config.isDefined && config.get.autoCert.enabled) { // && config.get.autoCert.replyNicely) { // to avoid cache effet
       request.headers.get("Tls-Session-Info").flatMap(SSLSessionJavaHelper.computeKey) match {
         case Some(key) => {
           Option(X509KeyManagerSnitch.sslSessions.getIfPresent(key)) match {
             case Some((_, _, chain))
-                if chain.headOption.exists(_.getSubjectDN.getName.contains(SSLSessionJavaHelper.NotAllowed)) =>
-              Some(badCertReply(request))
-            case a => internalRouteRequest(request)
+              if chain.headOption.exists(_.getSubjectDN.getName.contains(SSLSessionJavaHelper.NotAllowed)) =>
+              Some(badCertReply(_request))
+            case a => internalRouteRequest(_request, request, secure)
           }
         }
-        case _ => Some(badCertReply(request)) // TODO: is it accurate ?
+        case _ => Some(badCertReply(_request)) // TODO: is it accurate ?
       }
     } else {
-      internalRouteRequest(request)
+      internalRouteRequest(_request, request, secure)
     }
   }
 
-  def internalRouteRequest(request: RequestHeader): Option[Handler] = {
+  def internalRouteRequest(_request: HttpRequest, request: RequestHeader, secure: Boolean): Option[Handler] = {
     if (env.globalMaintenanceMode) {
-      if (request.relativeUri.contains("__otoroshi_assets")) {
-        super.routeRequest(request)
-      } else {
-        Some(globalMaintenanceMode(TypedMap.empty))
-      }
+      Some(globalMaintenanceMode(TypedMap.empty))
     } else {
       val isSecured    = request.theSecured
       val protocol     = request.theProtocol
@@ -259,8 +351,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
       } else if (env.validateRequests && cookies.exists(_.size > env.maxCookieLength)) {
         Some(tooBig("Cookies should be smaller"))
       } else if (env.validateRequests && headers.exists(
-                   t => t._1.size > env.maxHeaderNameLength || t._2.size > env.maxHeaderValueLength
-                 )) {
+        t => t._1.size > env.maxHeaderNameLength || t._2.size > env.maxHeaderValueLength
+      )) {
         Some(tooBig(s"Headers should be smaller"))
       } else {
         val toHttps    = env.exposedRootSchemeIsHttps
@@ -268,8 +360,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
         val monitoring = monitoringPaths.exists(p => request.relativeUri.startsWith(p))
         host match {
           case str if matchRedirection(str)                                          => Some(redirectToMainDomain())
-          case _ if ipRegex.matches(request.theHost) && monitoring                   => super.routeRequest(request)
-          case _ if request.relativeUri.contains("__otoroshi_assets")                => super.routeRequest(request)
+          case _ if ipRegex.matches(request.theHost) && monitoring                   => ??? // TODO: need to handle it !!!!
           case _ if request.relativeUri.startsWith("/__otoroshi_private_apps_login") => Some(setPrivateAppsCookies())
           case _ if request.relativeUri.startsWith("/__otoroshi_private_apps_logout") =>
             Some(removePrivateAppsCookies())
@@ -281,14 +372,18 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
           case env.privateAppsHost if !isSecured && toHttps                        => Some(redirectToHttps())
           case env.backOfficeHost if monitoring                                    => Some(forbidden())
           case env.privateAppsHost if monitoring                                   => Some(forbidden())
-          case env.adminApiHost if monitoring                                      => super.routeRequest(request)
-          case env.adminApiHost if env.exposeAdminApi                              => super.routeRequest(request)
-          case env.backOfficeHost if env.exposeAdminDashboard                      => super.routeRequest(request)
-          case env.privateAppsHost                                                 => super.routeRequest(request)
+          case env.adminApiHost if monitoring                                      => ??? // TODO: need to handle it !!!!
+          //case env.adminApiHost if env.exposeAdminApi                              => super.routeRequest(request)
+          //case env.backOfficeHost if env.exposeAdminDashboard                      => super.routeRequest(request)
+          //case env.privateAppsHost                                                 => super.routeRequest(request)
           case _ =>
             request.headers.get("Sec-WebSocket-Version") match {
-              case None    => Some(httpHandler.forwardCall(actionBuilder, reverseProxyAction, analyticsQueue, snowMonkey, headersInFiltered, headersOutFiltered))
-              case Some(_) => Some(webSocketHandler.forwardCall(reverseProxyAction, snowMonkey, headersInFiltered, headersOutFiltered))
+              case None =>
+                val act = httpHandler.rawForwardCall(reverseProxyAction, analyticsQueue, snowMonkey, headersInFiltered, headersOutFiltered)
+                Some((req, body) => act(req, body))
+              case Some(_) =>
+                ???
+                // Some(webSocketHandler.forwardCall(reverseProxyAction, snowMonkey, headersInFiltered, headersOutFiltered))
             }
         }
       }
@@ -360,7 +455,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
   }
 
   def withAuthConfig(descriptor: ServiceDescriptor, req: RequestHeader, attrs: TypedMap)(
-      f: AuthModuleConfig => Future[Result]
+    f: AuthModuleConfig => Future[Result]
   ): Future[Result] = {
     descriptor.authConfigRef match {
       case None =>
@@ -398,56 +493,56 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
       ServiceLocation(req.theHost, globalConfig) match {
         case None => {
           Errors.craftResponseResult(s"Service not found",
-                                     NotFound,
-                                     req,
-                                     None,
-                                     Some("errors.service.not.found"),
-                                     attrs = attrs)
+            NotFound,
+            req,
+            None,
+            Some("errors.service.not.found"),
+            attrs = attrs)
         }
         case Some(ServiceLocation(domain, serviceEnv, subdomain)) => {
           env.datastores.serviceDescriptorDataStore
             .find(ServiceDescriptorQuery(subdomain, serviceEnv, domain, req.relativeUri, req.headers.toSimpleMap),
-                  req,
-                  attrs)
+              req,
+              attrs)
             .flatMap {
               case None => {
                 Errors.craftResponseResult(s"Service not found",
-                                           NotFound,
-                                           req,
-                                           None,
-                                           Some("errors.service.not.found"),
-                                           attrs = attrs)
+                  NotFound,
+                  req,
+                  None,
+                  Some("errors.service.not.found"),
+                  attrs = attrs)
               }
               case Some(desc) if !desc.enabled => {
                 Errors.craftResponseResult(s"Service not found",
-                                           NotFound,
-                                           req,
-                                           None,
-                                           Some("errors.service.not.found"),
-                                           attrs = attrs)
+                  NotFound,
+                  req,
+                  None,
+                  Some("errors.service.not.found"),
+                  attrs = attrs)
               }
               // case Some(descriptor) if !descriptor.privateApp => {
               //   Errors.craftResponseResult(s"Service not found", NotFound, req, None, Some("errors.service.not.found"))
               // }
               case Some(descriptor)
-                  if !descriptor.privateApp && descriptor.id != env.backOfficeDescriptor.id && descriptor
-                    .isUriPublic(req.path) => {
+                if !descriptor.privateApp && descriptor.id != env.backOfficeDescriptor.id && descriptor
+                  .isUriPublic(req.path) => {
                 // Public service, no profile but no error either ???
                 FastFuture.successful(Ok(Json.obj("access_type" -> "public")))
               }
               case Some(descriptor)
-                  if !descriptor.privateApp && descriptor.id != env.backOfficeDescriptor.id && !descriptor
-                    .isUriPublic(req.path) => {
+                if !descriptor.privateApp && descriptor.id != env.backOfficeDescriptor.id && !descriptor
+                  .isUriPublic(req.path) => {
                 // ApiKey
                 ApiKeyHelper.extractApiKey(req, descriptor, attrs).flatMap {
                   case None =>
                     Errors
                       .craftResponseResult(s"Invalid API key",
-                                           Unauthorized,
-                                           req,
-                                           None,
-                                           Some("errors.invalid.api.key"),
-                                           attrs = attrs)
+                        Unauthorized,
+                        req,
+                        None,
+                        Some("errors.invalid.api.key"),
+                        attrs = attrs)
                   case Some(apiKey) =>
                     FastFuture.successful(Ok(apiKey.lightJson ++ Json.obj("access_type" -> "apikey")))
                 }
@@ -457,11 +552,11 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                   PrivateAppsUserHelper.isPrivateAppsSessionValid(req, descriptor, attrs).flatMap {
                     case None =>
                       Errors.craftResponseResult(s"Invalid session",
-                                                 Unauthorized,
-                                                 req,
-                                                 None,
-                                                 Some("errors.invalid.session"),
-                                                 attrs = attrs)
+                        Unauthorized,
+                        req,
+                        None,
+                        Some("errors.invalid.session"),
+                        attrs = attrs)
                     case Some(session) =>
                       FastFuture.successful(Ok(session.profile.as[JsObject] ++ Json.obj("access_type" -> "session")))
                   }
@@ -469,11 +564,11 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
               }
               case _ => {
                 Errors.craftResponseResult(s"Unauthorized",
-                                           Unauthorized,
-                                           req,
-                                           None,
-                                           Some("errors.unauthorized"),
-                                           attrs = attrs)
+                  Unauthorized,
+                  req,
+                  None,
+                  Some("errors.unauthorized"),
+                  attrs = attrs)
               }
             }
         }
@@ -490,41 +585,41 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
       ServiceLocation(req.theHost, globalConfig) match {
         case None => {
           Errors.craftResponseResult(s"Service not found for URL ${req.theHost}::${req.relativeUri}",
-                                     NotFound,
-                                     req,
-                                     None,
-                                     Some("errors.service.not.found"),
-                                     attrs = attrs)
+            NotFound,
+            req,
+            None,
+            Some("errors.service.not.found"),
+            attrs = attrs)
         }
         case Some(ServiceLocation(domain, serviceEnv, subdomain)) => {
           env.datastores.serviceDescriptorDataStore
             .find(ServiceDescriptorQuery(subdomain, serviceEnv, domain, req.relativeUri, req.headers.toSimpleMap),
-                  req,
-                  attrs)
+              req,
+              attrs)
             .flatMap {
               case None => {
                 Errors.craftResponseResult(s"Service not found",
-                                           NotFound,
-                                           req,
-                                           None,
-                                           Some("errors.service.not.found"),
-                                           attrs = attrs)
+                  NotFound,
+                  req,
+                  None,
+                  Some("errors.service.not.found"),
+                  attrs = attrs)
               }
               case Some(desc) if !desc.enabled => {
                 Errors.craftResponseResult(s"Service not found",
-                                           NotFound,
-                                           req,
-                                           None,
-                                           Some("errors.service.not.found"),
-                                           attrs = attrs)
+                  NotFound,
+                  req,
+                  None,
+                  Some("errors.service.not.found"),
+                  attrs = attrs)
               }
               case Some(descriptor) if !descriptor.privateApp => {
                 Errors.craftResponseResult(s"Private apps are not configured",
-                                           InternalServerError,
-                                           req,
-                                           None,
-                                           Some("errors.service.auth.not.configured"),
-                                           attrs = attrs)
+                  InternalServerError,
+                  req,
+                  None,
+                  Some("errors.service.auth.not.configured"),
+                  attrs = attrs)
               }
               case Some(descriptor) if descriptor.privateApp && descriptor.id != env.backOfficeDescriptor.id => {
                 withAuthConfig(descriptor, req, attrs) { auth =>
@@ -565,11 +660,11 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
               }
               case _ => {
                 Errors.craftResponseResult(s"Private apps are not configured",
-                                           InternalServerError,
-                                           req,
-                                           None,
-                                           Some("errors.service.auth.not.configured"),
-                                           attrs = attrs)
+                  InternalServerError,
+                  req,
+                  None,
+                  Some("errors.service.auth.not.configured"),
+                  attrs = attrs)
               }
             }
         }
@@ -579,14 +674,14 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
 
   def clusterError(message: String) = actionBuilder.async { req =>
     Errors.craftResponseResult(message,
-                               InternalServerError,
-                               req,
-                               None,
-                               Some("errors.no.cluster.state.yet"),
-                               attrs = TypedMap.empty)
+      InternalServerError,
+      req,
+      None,
+      Some("errors.no.cluster.state.yet"),
+      attrs = TypedMap.empty)
   }
 
-  def tooBig(message: String, status: Status = BadRequest) = actionBuilder.async { req =>
+  def tooBig(message: String, status: Results.Status = BadRequest) = actionBuilder.async { req =>
     Errors.craftResponseResult(message, BadRequest, req, None, Some("errors.entity.too.big"), attrs = TypedMap.empty)
   }
 

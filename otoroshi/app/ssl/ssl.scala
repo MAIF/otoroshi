@@ -17,7 +17,7 @@ import java.util.{Base64, Date}
 
 import actions.ApiAction
 import akka.http.scaladsl.util.FastFuture
-import akka.stream.Materializer
+import akka.stream.{Materializer, TLSClientAuth}
 import akka.stream.scaladsl.{Flow, Sink, Source}
 import akka.util.ByteString
 import com.google.common.hash.Hashing
@@ -67,17 +67,21 @@ import otoroshi.utils.syntax.implicits._
  */
 sealed trait ClientAuth {
   def name: String
+  def toAkkaClientAuth: TLSClientAuth
 }
 object ClientAuth {
 
   case object None extends ClientAuth {
     def name: String = "None"
+    def toAkkaClientAuth: TLSClientAuth = TLSClientAuth.None
   }
   case object Want extends ClientAuth {
     def name: String = "Want"
+    def toAkkaClientAuth: TLSClientAuth = TLSClientAuth.Want
   }
   case object Need extends ClientAuth {
     def name: String = "Need"
+    def toAkkaClientAuth: TLSClientAuth = TLSClientAuth.Need
   }
 
   def values: Seq[ClientAuth] = Seq(None, Want, Need)

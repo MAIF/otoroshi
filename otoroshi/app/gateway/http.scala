@@ -40,6 +40,15 @@ class HttpHandler()(implicit env: Env) {
     Accumulator.source[ByteString].map(Right.apply)
   }
 
+  def rawForwardCall(reverseProxyAction: ReverseProxyAction, analyticsQueue: ActorRef, snowMonkey: SnowMonkey, headersInFiltered: Seq[String], headersOutFiltered: Seq[String]): (RequestHeader, Source[ByteString, _]) => Future[Result] = {
+    (req, body) => {
+      reverseProxyAction.async[Result](ReverseProxyActionContext(req, body, snowMonkey, logger), false, c => actuallyCallDownstream(c, analyticsQueue, headersInFiltered, headersOutFiltered)).map {
+        case Left(r) => r
+        case Right(r) => r
+      }
+    }
+  }
+
   def forwardCall(actionBuilder: ActionBuilder[Request, AnyContent], reverseProxyAction: ReverseProxyAction, analyticsQueue: ActorRef, snowMonkey: SnowMonkey, headersInFiltered: Seq[String], headersOutFiltered: Seq[String]) = actionBuilder.async(sourceBodyParser) { req =>
     reverseProxyAction.async[Result](ReverseProxyActionContext(req, req.body, snowMonkey, logger), false, c => actuallyCallDownstream(c, analyticsQueue, headersInFiltered, headersOutFiltered)).map {
       case Left(r) => r
