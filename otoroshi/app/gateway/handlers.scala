@@ -219,7 +219,6 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
   }
 
   override def routeRequest(request: RequestHeader): Option[Handler] = {
-    println(request.method, request.host, request.path)
     val config = env.datastores.globalConfigDataStore.latestSafe
     if (request.theSecured && config.isDefined && config.get.autoCert.enabled) { // && config.get.autoCert.replyNicely) { // to avoid cache effet
       request.headers.get("Tls-Session-Info").flatMap(SSLSessionJavaHelper.computeKey) match {
