@@ -440,9 +440,10 @@ class Env(val configuration: Configuration,
         metrics.histogram("ahc-total-connections").update(stats.getTotalConnectionCount)
         metrics.histogram("ahc-total-idle-connections").update(stats.getTotalIdleConnectionCount)
         stats.getStatsPerHost.asScala.foreach {
-          case (key, value) =>  metrics.histogram(key + "-ahc-total-active-connections").update(value.getHostActiveConnectionCount)
-          case (key, value) =>  metrics.histogram(key + "-ahc-total-connections").update(value.getHostConnectionCount)
-          case (key, value) =>  metrics.histogram(key + "-ahc-total-idle-connections").update(value.getHostIdleConnectionCount)
+          case (key, value) =>
+            metrics.histogram(key + "-ahc-total-active-connections").update(value.getHostActiveConnectionCount)
+            metrics.histogram(key + "-ahc-total-connections").update(value.getHostConnectionCount)
+            metrics.histogram(key + "-ahc-total-idle-connections").update(value.getHostIdleConnectionCount)
         }
       } match {
         case Success(_) => ()
@@ -482,9 +483,10 @@ class Env(val configuration: Configuration,
         metrics.histogram("ahc-total-connections").update(stats.getTotalConnectionCount)
         metrics.histogram("ahc-total-idle-connections").update(stats.getTotalIdleConnectionCount)
         stats.getStatsPerHost.asScala.foreach {
-          case (key, value) =>  metrics.histogram(key + "-ahc-total-active-connections").update(value.getHostActiveConnectionCount)
-          case (key, value) =>  metrics.histogram(key + "-ahc-total-connections").update(value.getHostConnectionCount)
-          case (key, value) =>  metrics.histogram(key + "-ahc-total-idle-connections").update(value.getHostIdleConnectionCount)
+          case (key, value) =>
+            metrics.histogram(key + "-ahc-total-active-connections").update(value.getHostActiveConnectionCount)
+            metrics.histogram(key + "-ahc-total-connections").update(value.getHostConnectionCount)
+            metrics.histogram(key + "-ahc-total-idle-connections").update(value.getHostIdleConnectionCount)
         }
       } match {
         case Success(_) => ()

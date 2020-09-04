@@ -136,9 +136,14 @@ case class Cert(
   lazy val cacheKey: String    = s"$id###$contentHash"
   lazy val contentHash: String = Hashing.sha256().hashString(s"$chain:$privateKey", StandardCharsets.UTF_8).toString
 
+  lazy val allDomains: Seq[String] = {
+    val enriched = enrich()
+    (Seq(enriched.domain) ++ enriched.sans).filter(_.trim.nonEmpty).filterNot(_ == "--").distinct
+  }
   def signature: Option[String]     = this.metadata.map(v => (v \ "signature").as[String])
   def serialNumber: Option[String]  = this.metadata.map(v => (v \ "serialNumber").as[String])
   def serialNumberLng: Option[Long] = this.metadata.map(v => (v \ "serialNumberLng").as[Long])
+  def matchesDomain(dom: String): Boolean = allDomains.exists(d => RegexPool.apply(d).matches(dom))
 
   def renew(
       _duration: Option[FiniteDuration] = None
@@ -233,7 +238,7 @@ case class Cert(
       .map(_.replace(PemHeaders.EndCertificate, "").trim())
       .map(c => s"${PemHeaders.BeginCertificate}\n$c\n${PemHeaders.EndCertificate}")
   }.toOption.toSeq.flatten
-  lazy val certificates: Seq[X509Certificate] = {
+  lazy val certificates: Seq[X509Certificate] = certificatesChain.toSeq /*{
     val certificateFactory: CertificateFactory = CertificateFactory.getInstance("X.509")
     certificatesRaw
       .map(
@@ -247,7 +252,7 @@ case class Cert(
       .collect {
         case Success(cert) => cert
       }
-  }
+  }*/
 
   lazy val certificatesChain: Array[X509Certificate] = { //certificates.toArray
     Try {
