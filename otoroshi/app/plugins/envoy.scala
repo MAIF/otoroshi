@@ -103,7 +103,7 @@ class EnvoyControlPlane extends RequestTransformer {
   }
 
   def handleListenerDiscovery(body: JsValue)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Result] = {
-    
+
     def service(service: ServiceDescriptor): JsObject = {
       Json.obj(
         "name" -> s"service_${service.id}_${service.name}",
@@ -245,16 +245,6 @@ class EnvoyControlPlane extends RequestTransformer {
       env.datastores.serviceDescriptorDataStore.findAll().map { services =>
 
         val _certs = __certs.sortWith((a, b) => a.id.compareTo(b.id) > 0).map(_.enrich())
-
-        // val issuerCache = _certs.map(c => (c.certificates.head.getSubjectDN.getName, c)).toMap
-        // def enrichWithIssuer(c: Cert): Cert = {
-        //   val issuer = c.certificates.last.getIssuerDN.getName
-        //   issuerCache.get(issuer) match {
-        //     case None => c
-        //     case Some(root) if root.certificates.last.getIssuerDN.getName == issuer => c
-        //     case Some(root) => enrichWithIssuer(c.copy(chain = c.chain + "\n" + root.chain))
-        //   }
-        // }
 
         val certs = _certs
           .filterNot(_.keypair)
