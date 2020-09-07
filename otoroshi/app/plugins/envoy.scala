@@ -2,6 +2,7 @@ package otoroshi.plugins.envoy
 
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
 
+import akka.http.scaladsl.model.Uri
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
@@ -156,6 +157,7 @@ class EnvoyControlPlane extends RequestTransformer {
     }
 
     def serviceToJson(service: ServiceDescriptor): JsObject = {
+      // https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/route/v3/route_components.proto#envoy-v3-api-msg-config-route-v3-route
       Json.obj(
         "name" -> s"service_${service.id}",
         "domains" -> JsArray(service.allHosts.distinct.map(JsString.apply)),
@@ -163,12 +165,63 @@ class EnvoyControlPlane extends RequestTransformer {
           Json.obj(
             "match" -> Json.obj(
               "prefix" -> service.matchingRoot.getOrElse("/").asInstanceOf[String]
-            ),
-            "route" -> Json.obj(
-              "auto_host_rewrite" -> service.overrideHost,
-              "cluster" -> s"target_${service.id}"
             )
-          )
+          ).applyOnIf(service.additionalHeaders.nonEmpty) { obj =>
+            obj ++ Json.obj("request_headers_to_add" -> JsArray(service.additionalHeaders.toSeq.map {
+              case (key, value) => Json.obj("header" -> Json.obj("key" -> key, "value" -> value), "append" -> true)
+            }))
+          }.applyOnIf(service.removeHeadersIn.nonEmpty) { obj =>
+            obj ++ Json.obj("request_headers_to_remove" -> JsArray(service.removeHeadersIn.map(JsString.apply)))
+          }.applyOnIf(service.additionalHeadersOut.nonEmpty) { obj =>
+            obj ++ Json.obj("response_headers_to_add" -> JsArray(service.additionalHeadersOut.toSeq.map {
+              case (key, value) => Json.obj("header" -> Json.obj("key" -> key, "value" -> value), "append" -> true)
+            }))
+          }.applyOnIf(service.removeHeadersOut.nonEmpty) { obj =>
+            obj ++ Json.obj("response_headers_to_remove" -> JsArray(service.removeHeadersOut.map(JsString.apply)))
+          }.applyOnIf(!service.redirection.enabled && !service.buildMode && !service.maintenanceMode) { obj =>
+            obj ++ Json.obj(
+              "route" -> Json.obj(
+                "auto_host_rewrite" -> service.overrideHost,
+                "cluster" -> s"target_${service.id}"
+              )
+            )
+          }.applyOnIf(!service.redirection.enabled && service.buildMode && !service.maintenanceMode) { obj =>
+            obj ++ Json.obj(
+              "direct_response" -> Json.obj(
+                "status" -> 503,
+                "body" -> Json.obj(
+                  "inline_string" -> "<h1>Service under construction</h1>"
+                )
+              )
+            )
+          }.applyOnIf(!service.redirection.enabled && !service.buildMode && service.maintenanceMode) { obj =>
+            obj ++ Json.obj(
+              "direct_response" -> Json.obj(
+                "status" -> 503,
+                "body" -> Json.obj(
+                  "inline_string" -> "<h1>Service in maintenance</h1>"
+                )
+              )
+            )
+          }.applyOnIf(service.redirection.enabled && !service.buildMode && !service.maintenanceMode) { obj =>
+            val uri = Uri(service.redirection.to)
+            obj ++ Json.obj(
+              "redirect" -> Json.obj(
+                "response_code" -> (service.redirection.code match {
+                  case 301 => "MOVED_PERMANENTLY"
+                  case 302 => "FOUND"
+                  case 303 => "SEE_OTHER"
+                  case 307 => "TEMPORARY_REDIRECT"
+                  case 308 => "PERMANENT_REDIRECT"
+                  case _ => "SEE_OTHER"
+                }),
+                "scheme_redirect" -> uri.scheme,
+                "host_redirect" -> uri.authority.host.toString(),
+                "port_redirect" -> uri.authority.port,
+                "path_redirect" -> uri.path.toString(),
+              )
+            )
+          }
         )
       )
     }
@@ -281,7 +334,9 @@ class EnvoyControlPlane extends RequestTransformer {
     }
 
     env.datastores.certificatesDataStore.findAll().flatMap { __certs =>
-      env.datastores.serviceDescriptorDataStore.findAll().map { services =>
+      env.datastores.serviceDescriptorDataStore.findAll().map { _services =>
+
+        val services = _services.filter(_.enabled)
 
         val _certs = __certs.sortWith((a, b) => a.id.compareTo(b.id) > 0).map(_.enrich())
 
