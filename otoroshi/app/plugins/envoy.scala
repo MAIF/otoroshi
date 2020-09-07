@@ -20,8 +20,6 @@ class EnvoyControlPlane extends RequestTransformer {
 
   private val awaitingRequests = new TrieMap[String, Promise[Source[ByteString, _]]]()
 
-  private val counter = new AtomicInteger(-1)
-
   override def name: String = "Envoy Control Plane (experimental)"
 
   override def defaultConfig: Option[JsObject] = Json.obj(
@@ -46,13 +44,23 @@ class EnvoyControlPlane extends RequestTransformer {
     |```
   """.stripMargin.some
 
+  def certificateToJson(certificate: Cert): JsObject = {
+    Json.obj(
+      "certificate_chain" -> Json.obj("inline_string" -> certificate.chain)
+    ).applyOnIf(certificate.privateKey.trim.nonEmpty) { obj =>
+      obj ++ Json.obj("private_key" -> Json.obj("inline_string" -> certificate.privateKey))
+    }.applyOnIf(certificate.password.isDefined) { obj =>
+      obj ++ Json.obj("password" -> Json.obj("inline_string" -> certificate.password.get))
+    }
+  }
+
   def handleClusterDiscovery(body: JsValue)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Result] = {
 
     def serviceToCluster(service: ServiceDescriptor): JsObject = {
       Json.obj(
         "@type" -> "type.googleapis.com/envoy.config.cluster.v3.Cluster",
         "name" -> s"target_${service.id}",
-        "connect_timeout" -> "0.25s", // TODO: tune it according to desc
+        "connect_timeout" -> "10s", // TODO: tune it according to desc
         "type" -> "STRICT_DNS",
         // "dns_lookup_family": "V4_ONLY",
         "lb_policy" -> "ROUND_ROBIN", // TODO: tune it according to desc
@@ -79,14 +87,30 @@ class EnvoyControlPlane extends RequestTransformer {
           )
         )
       ).applyOnIf(service.targets.exists(_.scheme.toLowerCase() == "https")) { obj =>
+
+        val mtls = service.targets.exists(_.mtlsConfig.mtls)
+        val clientCert = service.targets.flatMap(_.mtlsConfig.actualCerts).headOption
+        val trustedCert = service.targets.flatMap(_.mtlsConfig.actualTrustedCerts.filter(_.ca)).headOption
+        val trustAll = service.targets.exists(_.mtlsConfig.trustAll)
         obj ++ Json.obj(
           "transport_socket" -> Json.obj(
             "name" -> "envoy.transport_sockets.tls",
             "typed_config" -> Json.obj(
               // TODO: plug mtls support
               "@type" -> "type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext",
-              "sni" -> service.targets.find(_.scheme.toLowerCase() == "https").map(_.theHost).getOrElse(service.targets.head.theHost).asInstanceOf[String]
-            )
+              "sni" -> service.targets.find(_.scheme.toLowerCase() == "https").map(_.theHost).getOrElse(service.targets.head.theHost).asInstanceOf[String],
+            ).applyOnIf(mtls && clientCert.isDefined) { obj =>
+              obj ++ Json.obj(
+                "common_tls_context" -> Json.obj(
+                  "tls_certificates" -> JsArray(Seq(certificateToJson(clientCert.get)))
+                ),
+                "validation_context" -> Json.obj(
+                  "trust_chain_verification" -> (if (trustAll) "ACCEPT_UNTRUSTED" else "VERIFY_TRUST_CHAIN").asInstanceOf[String]
+                ).applyOnIf(trustedCert.isDefined) { obj =>
+                  obj ++ Json.obj("trusted_ca" -> Json.obj("inline_string" -> trustedCert.get.chain))
+                }
+              )
+            }
           )
         )
       }
@@ -104,9 +128,36 @@ class EnvoyControlPlane extends RequestTransformer {
 
   def handleListenerDiscovery(body: JsValue)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Result] = {
 
-    def service(service: ServiceDescriptor): JsObject = {
+    def extractFilters(service: ServiceDescriptor): JsArray = {
+      var arr = Json.arr();
+      if (service.buildMode) {
+        arr :+ Json.obj(
+          "name" -> "envoy.filters.http.lua",
+          "typed_config" -> Json.obj(
+            "@type" -> "type.googleapis.com/envoy.extensions.filters.http.lua.v3.Lua",
+            "inline_code" ->
+              """function envoy_on_request(request_handle)
+                |  request_handle:respond(
+                |    {[":status"] = "403",
+                |     ["upstream_foo"] = "foo"},
+                |    "nope")
+                |end
+                |function envoy_on_response(response_handle)
+                |  response_handle:respond(
+                |    {[":status"] = "403",
+                |     ["upstream_foo"] = "foo"},
+                |    "nope")
+                |end
+                |""".stripMargin
+          )
+        )
+      }
+      arr
+    }
+
+    def serviceToJson(service: ServiceDescriptor): JsObject = {
       Json.obj(
-        "name" -> s"service_${service.id}_${service.name}",
+        "name" -> s"service_${service.id}",
         "domains" -> JsArray(service.allHosts.distinct.map(JsString.apply)),
         "routes" -> Json.arr(
           Json.obj(
@@ -120,16 +171,6 @@ class EnvoyControlPlane extends RequestTransformer {
           )
         )
       )
-    }
-
-    def certificate(certificate: Cert): JsObject = {
-      Json.obj(
-        "certificate_chain" -> Json.obj("inline_string" -> certificate.chain)
-      ).applyOnIf(certificate.privateKey.trim.nonEmpty) { obj =>
-        obj ++ Json.obj("private_key" -> Json.obj("inline_string" -> certificate.privateKey))
-      }.applyOnIf(certificate.password.isDefined) { obj =>
-        obj ++ Json.obj("password" -> Json.obj("inline_string" -> certificate.password.get))
-      }
     }
 
     def httpsListener(id: String, port: Int, services: Seq[ServiceDescriptor], certificates: Seq[Cert]): JsObject = {
@@ -157,7 +198,7 @@ class EnvoyControlPlane extends RequestTransformer {
                   "route_config" -> Json.obj(
                     "name" -> s"otoroshi",
                     "virtual_hosts" -> JsArray(
-                      servs.map(service)
+                      servs.map(serviceToJson)
                     )
                   ),
                   "http_filters" -> Json.arr(
@@ -174,7 +215,7 @@ class EnvoyControlPlane extends RequestTransformer {
                 "require_client_certificate" -> true, // TODO: plug mtls support
                 "@type" -> "type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext",
                 "common_tls_context" -> Json.obj(
-                  "tls_certificates" -> JsArray(Seq(certificate(cert)))
+                  "tls_certificates" -> JsArray(Seq(certificateToJson(cert)))
                 )
               )
             )
@@ -213,25 +254,23 @@ class EnvoyControlPlane extends RequestTransformer {
             "port_value" -> port
           )
         ),
-        "filter_chains" -> Json.arr(
-          Json.obj(
-            "filters" -> Json.arr(
-              Json.obj(
-                "name" -> "envoy.filters.network.http_connection_manager",
-                "typed_config" -> Json.obj(
-                  "@type" -> "type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager",
-                  "stat_prefix" -> "ingress_http",
-                  "codec_type" -> "AUTO",
-                  "route_config" -> Json.obj(
-                    "name" -> s"otoroshi",
-                    "virtual_hosts" -> JsArray(
-                      services.map(service)
-                    )
-                  ),
-                  "http_filters" -> Json.arr(
-                    Json.obj(
-                      "name" -> "envoy.filters.http.router"
-                    )
+        "filter_chains" -> Json.obj(
+          "filters" -> Json.arr(
+            Json.obj(
+              "name" -> "envoy.filters.network.http_connection_manager",
+              "typed_config" -> Json.obj(
+                "@type" -> "type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager",
+                "stat_prefix" -> "ingress_http",
+                "codec_type" -> "AUTO",
+                "route_config" -> Json.obj(
+                  "name" -> s"otoroshi",
+                  "virtual_hosts" -> JsArray(
+                    services.map(serviceToJson)
+                  )
+                ),
+                "http_filters" -> Json.arr(
+                  Json.obj(
+                    "name" -> "envoy.filters.http.router"
                   )
                 )
               )
@@ -251,7 +290,7 @@ class EnvoyControlPlane extends RequestTransformer {
           .filterNot(_.ca)
           .filterNot(_.privateKey.trim.isEmpty)
 
-        val listeners = Seq(httpListener("http", env.port + 2, services), httpsListener("https", env.httpsPort + 2, services, certs))
+        val listeners = Seq(httpListener("http", 10080/*env.port*/, services), httpsListener("https", 10443/*env.httpsPort*/, services, certs))
         Results.Ok(Json.obj(
           "version_info" -> "1.0",
           "type_url" -> "type.googleapis.com/envoy.config.listener.v3.Listener",
