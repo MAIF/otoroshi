@@ -19,7 +19,7 @@
     "lodash": "4.17.15",
     "minimist": "1.2.5",
     "moment": "2.24.0",
-    "node-fetch": "2.6.0",
+    "node-fetch": "2.6.1",
     "open": "7.0.3",
     "readline-sync": "1.4.10",
     "ws": "7.2.3"
