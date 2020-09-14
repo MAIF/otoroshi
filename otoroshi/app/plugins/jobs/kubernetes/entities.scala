@@ -41,6 +41,7 @@ case class KubernetesIngressClassParameters(raw: JsValue) {
 case class KubernetesIngressClass(raw: JsValue) extends KubernetesEntity {
   lazy val controller: String = (spec \ "controller").as[String]
   lazy val parameters: KubernetesIngressClassParameters = KubernetesIngressClassParameters((spec \ "parameters").as[JsValue])
+  lazy val isDefault: Boolean = annotations.get("ingressclass.kubernetes.io/is-default-class").map(_ == "true").getOrElse(false)
 }
 
 case class KubernetesIngress(raw: JsValue) extends KubernetesEntity {

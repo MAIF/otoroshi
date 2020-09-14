@@ -382,6 +382,15 @@ object KubernetesIngressSyncJob {
 
   private def shouldProcessIngress(ingressClasses: Seq[String], clusterIngressClasses: Seq[KubernetesIngressClass], ingressClassAnnotation: Option[String], ingressClassName: Option[String], conf: KubernetesConfig): Boolean = {
 
+    val defaultIngressController = clusterIngressClasses.find(_.isDefault).map { ic =>
+      ic.controller match {
+        case "otoroshi" => true
+        case "otoroshi.io/ingress-controller" => true
+        case clazz => ingressClasses.exists(c => RegexPool(c).matches(clazz))
+        case _ => false
+      }
+    }
+
     val fromIngressClazz: Option[Boolean] = ingressClassName.flatMap { cn =>
       clusterIngressClasses.find(_.name == cn)
     }.map { ic =>
@@ -390,6 +399,7 @@ object KubernetesIngressSyncJob {
         case "otoroshi.io/ingress-controller" => true
         case clazz => ingressClasses.exists(c => RegexPool(c).matches(clazz))
         case _ if ingressClasses.contains("*") => true
+        case _ if defaultIngressController => true
         case _ => false
       }
     }
