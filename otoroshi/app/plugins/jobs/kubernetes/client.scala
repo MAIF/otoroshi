@@ -198,7 +198,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
         ).get().map { resp =>
           if (resp.status == 200) {
             (resp.json \ "items").as[JsArray].value.map { item =>
-              KubernetesIngress(item)
+              KubernetesIngressClass(item)
             }
           } else {
             logger.error(s"bad http status while fetching ingresses-classes: ${resp.status}")
