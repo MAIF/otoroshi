@@ -189,6 +189,24 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       }
     }).map(_.flatten)
   }
+  def fetchIngressClasses(): Future[Seq[KubernetesIngressClass]] = {
+    asyncSequence(config.namespaces.map { namespace =>
+      val cli: WSRequest = client(s"/apis/networking.k8s.io/v1beta1/namespaces/$namespace/ingressclasses")
+      () =>
+        cli.addHttpHeaders(
+          "Accept" -> "application/json"
+        ).get().map { resp =>
+          if (resp.status == 200) {
+            (resp.json \ "items").as[JsArray].value.map { item =>
+              KubernetesIngress(item)
+            }
+          } else {
+            logger.error(s"bad http status while fetching ingresses-classes: ${resp.status}")
+            Seq.empty
+          }
+        }
+    }).map(_.flatten)
+  }
   def fetchDeployments(): Future[Seq[KubernetesDeployment]] = {
     asyncSequence(config.namespaces.map { namespace =>
       val cli: WSRequest = client(s"/api/v1/namespaces/$namespace/deployments")
