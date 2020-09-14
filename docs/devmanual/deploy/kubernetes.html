@@ -367,6 +367,7 @@ rules:
       - extensions
     resources:
       - ingresses
+      - ingressclasses
     verbs:
       - get
       - list
@@ -2463,7 +2464,7 @@ api2.another.domain                IN A 10.2.2.50
 </dl>
 <h2><a href="#using-otoroshi-as-an-ingress-controller" name="using-otoroshi-as-an-ingress-controller" class="anchor"><span class="anchor-link"></span></a>Using Otoroshi as an Ingress Controller</h2>
 <p>If you want to use Otoroshi as an <a href="https://kubernetes.io/fr/docs/concepts/services-networking/ingress/">Ingress Controller</a>, just go to the danger zone, and in <code>Global scripts</code> add the job named <code>Kubernetes Ingress Controller</code>.</p>
-<p>Then add the following configuration for the job (with your own tweak of course)</p>
+<p>Then add the following configuration for the job (with your own tweaks of course)</p>
 <pre class="prettyprint"><code class="language-json">{
   &quot;KubernetesConfig&quot;: {
     &quot;enabled&quot;: true,
@@ -2566,6 +2567,48 @@ spec:
 </code></pre>
 <p>once deployed, otoroshi will sync with kubernetes and create the corresponding service to route your app. You will be able to access your app with</p>
 <pre class="prettyprint"><code class="language-sh">curl -X GET https://httpapp.foo.bar/get
+</code></pre>
+<h3><a href="#support-for-ingress-classes" name="support-for-ingress-classes" class="anchor"><span class="anchor-link"></span></a>Support for Ingress Classes</h3>
+<p>Since Kubernetes 1.18, you can use <code>IngressClass</code> type of manifest to specify which ingress controller you want to use for a deployment (<a href="https://kubernetes.io/blog/2020/04/02/improvements-to-the-ingress-api-in-kubernetes-1.18/#extended-configuration-with-ingress-classes)">https://kubernetes.io/blog/2020/04/02/improvements-to-the-ingress-api-in-kubernetes-1.18/#extended-configuration-with-ingress-classes)</a>. Otoroshi is fully compatible with this new manifest <code>kind</code>. To use it, configure the Ingress job to match your controller</p>
+<pre class="prettyprint"><code class="language-javascript">{
+  &quot;KubernetesConfig&quot;: {
+    ...
+    &quot;ingressClasses&quot;: [&quot;otoroshi.io/ingress-controller&quot;],
+    ...
+  }
+}
+</code></pre>
+<p>then you have to deploy an <code>IngressClass</code> to declare Otoroshi as an ingress controller</p>
+<pre class="prettyprint"><code class="language-yaml">apiVersion: &quot;networking.k8s.io/v1beta1&quot;
+kind: &quot;IngressClass&quot;
+metadata:
+  name: &quot;otoroshi-ingress-controller&quot;
+spec:
+  controller: &quot;otoroshi.io/ingress-controller&quot;
+  parameters:
+    apiGroup: &quot;proxy.otoroshi.io/v1alpha&quot;
+    kind: &quot;IngressParameters&quot;
+    name: &quot;otoroshi-ingress-controller&quot;
+</code></pre>
+<p>and use it in your <code>Ingress</code></p>
+<pre class="prettyprint"><code class="language-yaml">apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: http-app-ingress
+spec:
+  ingressClassName: otoroshi-ingress-controller
+  tls:
+  - hosts:
+    - httpapp.foo.bar
+    secretName: http-app-cert
+  rules:
+  - host: httpapp.foo.bar
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: http-app-service
+          servicePort: 8080
 </code></pre>
 <h3><a href="#use-multiple-ingress-controllers" name="use-multiple-ingress-controllers" class="anchor"><span class="anchor-link"></span></a>Use multiple ingress controllers</h3>
 <p>It is of course possible to use multiple ingress controller at the same time (<a href="https://kubernetes.io/docs/concepts/services-networking/ingress-controllers/#using-multiple-ingress-controllers">https://kubernetes.io/docs/concepts/services-networking/ingress-controllers/#using-multiple-ingress-controllers</a>) using the annotation <code>kubernetes.io/ingress.class</code>. By default, otoroshi reacts to the class <code>otoroshi</code>, but you can make it the default ingress controller with the following config</p>
