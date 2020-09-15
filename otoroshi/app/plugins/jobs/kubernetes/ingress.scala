@@ -399,7 +399,7 @@ object KubernetesIngressSyncJob {
         case "otoroshi.io/ingress-controller" => true
         case clazz => ingressClasses.exists(c => RegexPool(c).matches(clazz))
         case _ if ingressClasses.contains("*") => true
-        case _ if defaultIngressController => true
+        case _ if defaultIngressController.getOrElse(false) => true
         case _ => false
       }
     }
