@@ -22,6 +22,7 @@ import play.api.mvc._
 import security.{IdGenerator, OtoroshiClaim}
 import utils.RequestImplicits._
 import utils.http.Implicits._
+import utils.http.WSCookieWithSameSite
 import utils.{HeadersHelper, MaxLengthLimiter, UrlSanitizer}
 
 import scala.concurrent.{Future, Promise}
@@ -292,14 +293,15 @@ class HttpHandler()(implicit env: Env) {
     //}
     val wsCookiesIn = req.cookies.toSeq.map(
       c =>
-        DefaultWSCookie(
+        WSCookieWithSameSite(
           name = c.name,
           value = c.value,
           domain = c.domain,
           path = Option(c.path),
           maxAge = c.maxAge.map(_.toLong),
           secure = c.secure,
-          httpOnly = c.httpOnly
+          httpOnly = c.httpOnly,
+          sameSite = c.sameSite
         )
     )
     val rawRequest = otoroshi.script.HttpRequest(
@@ -655,8 +657,19 @@ class HttpHandler()(implicit env: Env) {
                       )
                     )
 
-                    val cookies = httpResponse.cookies.map(
-                      c =>
+                    val cookies = httpResponse.cookies.map {
+                      case c: WSCookieWithSameSite =>
+                        Cookie(
+                          name = c.name,
+                          value = c.value,
+                          maxAge = c.maxAge.map(_.toInt),
+                          path = c.path.getOrElse("/"),
+                          domain = c.domain,
+                          secure = c.secure,
+                          httpOnly = c.httpOnly,
+                          sameSite = c.sameSite
+                        )
+                      case c =>
                         Cookie(
                           name = c.name,
                           value = c.value,
@@ -667,7 +680,7 @@ class HttpHandler()(implicit env: Env) {
                           httpOnly = c.httpOnly,
                           sameSite = None
                         )
-                    )
+                    }
 
                     if (req.version == "HTTP/1.0") {
                       if (descriptor.allowHttp10) {
