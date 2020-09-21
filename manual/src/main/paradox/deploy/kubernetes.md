@@ -225,7 +225,7 @@ dns.example
 
 If you want to use Otoroshi as an [Ingress Controller](https://kubernetes.io/fr/docs/concepts/services-networking/ingress/), just go to the danger zone, and in `Global scripts` add the job named `Kubernetes Ingress Controller`.
 
-Then add the following configuration for the job (with your own tweak of course)
+Then add the following configuration for the job (with your own tweaks of course)
 
 ```json
 {
@@ -345,6 +345,58 @@ once deployed, otoroshi will sync with kubernetes and create the corresponding s
 
 ```sh
 curl -X GET https://httpapp.foo.bar/get
+```
+
+### Support for Ingress Classes
+
+Since Kubernetes 1.18, you can use `IngressClass` type of manifest to specify which ingress controller you want to use for a deployment (https://kubernetes.io/blog/2020/04/02/improvements-to-the-ingress-api-in-kubernetes-1.18/#extended-configuration-with-ingress-classes). Otoroshi is fully compatible with this new manifest `kind`. To use it, configure the Ingress job to match your controller
+
+```javascript
+{
+  "KubernetesConfig": {
+    ...
+    "ingressClasses": ["otoroshi.io/ingress-controller"],
+    ...
+  }
+}
+```
+
+then you have to deploy an `IngressClass` to declare Otoroshi as an ingress controller
+
+```yaml
+apiVersion: "networking.k8s.io/v1beta1"
+kind: "IngressClass"
+metadata:
+  name: "otoroshi-ingress-controller"
+spec:
+  controller: "otoroshi.io/ingress-controller"
+  parameters:
+    apiGroup: "proxy.otoroshi.io/v1alpha"
+    kind: "IngressParameters"
+    name: "otoroshi-ingress-controller"
+```
+
+and use it in your `Ingress`
+
+```yaml
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: http-app-ingress
+spec:
+  ingressClassName: otoroshi-ingress-controller
+  tls:
+  - hosts:
+    - httpapp.foo.bar
+    secretName: http-app-cert
+  rules:
+  - host: httpapp.foo.bar
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: http-app-service
+          servicePort: 8080
 ```
 
 ### Use multiple ingress controllers

@@ -21,7 +21,7 @@ import utils.JsonImplicits._
 
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Success
+import scala.util.{Failure, Success}
 
 case object SendToAnalytics
 
@@ -82,8 +82,10 @@ class AnalyticsActor(implicit env: Env) extends Actor {
           logger.error("SEND_TO_ANALYTICS_ERROR: Queue closed :(")
           context.stop(myself)
         case Success(QueueOfferResult.Failure(t)) =>
-          logger.error("SEND_TO_ANALYTICS_ERROR: Enqueue Failre AnalyticEvent :(", t)
+          logger.error("SEND_TO_ANALYTICS_ERROR: Enqueue Failure AnalyticEvent :(", t)
           context.stop(myself)
+        case Failure(e: akka.stream.StreamDetachedException) if env.liveJs =>
+          // silently ignore in dev
         case e =>
           logger.error(s"SEND_TO_ANALYTICS_ERROR: analytics actor error : ${e}")
           context.stop(myself)

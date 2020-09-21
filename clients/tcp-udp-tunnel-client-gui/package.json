@@ -9,16 +9,16 @@
   },
   "dependencies": {
     "colors": "1.4.0",
-    "faker": "4.1.0",
-    "fs-extra": "9.0.0",
+    "faker": "5.1.0",
+    "fs-extra": "9.0.1",
     "https-proxy-agent": "5.0.0",
-    "lodash": "4.17.15",
-    "moment": "2.24.0",
-    "node-fetch": "2.6.0",
-    "ws": "7.2.3"
+    "lodash": "4.17.20",
+    "moment": "2.28.0",
+    "node-fetch": "2.6.1",
+    "ws": "7.3.1"
   },
   "devDependencies": {
-    "electron": "8.2.0",
-    "electron-packager": "14.2.1"
+    "electron": "10.1.2",
+    "electron-packager": "15.1.0"
   }
 }
