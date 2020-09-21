@@ -54,6 +54,7 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
   def SimpleHostType     = Json.obj("type" -> "string", "format"   -> "hostname", "example" -> "www.google.com")
   def SimpleIpv4Type     = Json.obj("type" -> "string", "format"   -> "ipv4", "example" -> "192.192.192.192")
   def SimpleUriType      = Json.obj("type" -> "string", "format"   -> "uri", "example" -> "http://www.google.com")
+  def SimpleDomainType   = Json.obj("type" -> "string", "format"   -> "domaine-name", "example" -> "*foo.bar")
   def SimpleEmailType    = Json.obj("type" -> "string", "format"   -> "email", "example" -> "admin@otoroshi.io")
   def SimpleUuidType =
     Json.obj("type" -> "string", "format" -> "uuid", "example" -> "110e8400-e29b-11d4-a716-446655440000")
@@ -600,6 +601,70 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
     )
   )
 
+  def Scripts = Json.obj(
+    "description" -> "MTLS Configuration for Kafka",
+    "type"        -> "object",
+    "required"    -> Json.arr("enabled"),
+    "properties" -> Json.obj(
+      "enabled" -> SimpleBooleanType ~~> "global scripts enabled",
+      "transformersRefs" -> ArrayOf(SimpleObjectType) ~~> "transformers plugins refs",
+      "transformersConfig" -> SimpleObjectType ~~> "transformers configuration",
+      "validatorRefs" -> ArrayOf(SimpleObjectType) ~~> "validator plugins refs",
+      "validatorConfig" -> SimpleObjectType ~~> "validator configuration",
+      "preRouteRefs" -> ArrayOf(SimpleObjectType) ~~> "pre-route plugins refs",
+      "preRouteConfig" -> SimpleObjectType ~~> "pre-route configuration",
+      "sinkRefs" -> ArrayOf(SimpleObjectType) ~~> "sink plugins refs",
+      "sinkConfig" -> SimpleObjectType ~~> "sink configuration",
+      "jobRefs" -> ArrayOf(SimpleObjectType) ~~> "job plugins refs",
+      "jobConfig" -> SimpleObjectType ~~> "job configuration",
+    )
+  )
+
+  def MtlsConfig = Json.obj(
+    "description" -> "MTLS Configuration for Kafka",
+    "type"        -> "object",
+    "required"    -> Json.arr("certs", "loose", "mtls", "trustAll", "trustedCerts"),
+    "properties" -> Json.obj(
+      "certs"     -> ArrayOf(SimpleObjectType) ~~> "client certificates",
+      "loose" -> SimpleBooleanType ~~> "Enable loose mode",
+      "mtls"       -> SimpleBooleanType ~~> "Enable mtls",
+      "trustAll"  -> SimpleBooleanType ~~> "Trust all certificates",
+      "trustedCerts"  -> ArrayOf(SimpleObjectType) ~~> "Trusted certificates",
+    )
+  )
+
+  def KafkaConfig = Json.obj(
+    "description" -> "Kafka configuration",
+    "type"        -> "object",
+    "required"    -> Json.arr("alertsTopic", "analyticsTopic", "auditTopic", "keyPass", "keystore", "mtlsConfig",
+      "sendEvents", "servers", "truststore"),
+    "properties" -> Json.obj(
+      "alertsTopic"     -> SimpleStringType ~~> "topic name for alerts",
+      "analyticsTopic"     -> SimpleStringType ~~> "topic name for analytics",
+      "auditTopic"     -> SimpleStringType ~~> "topic name for audit",
+      "keyPass" -> SimpleStringType ~~> "Kafka keyPass",
+      "keystore" -> SimpleStringType ~~> "Kafka keystore",
+      "mtlsConfig" -> Ref("MtlsConfig") ~~> "MTLS Configuration Kafka",
+      "sendEvents" -> SimpleBooleanType ~~> "send Events to kafka",
+      "servers" -> ArrayOf(SimpleIpv4Type) ~~> "Kafka servers",
+      "truststore" -> SimpleStringType ~~> "truststore path on the server"
+    )
+  )
+
+  def LetsEncryptSettings = Json.obj(
+    "description" -> "Kafka configuration",
+    "type"        -> "object",
+    "required"    -> Json.arr("contacts", "emails", "enabled", "privateKey", "publicKey", "server"),
+    "properties" -> Json.obj(
+      "contacts"     -> ArrayOf(SimpleUriType) ~~> "Contact urls",
+      "emails"     -> ArrayOf(SimpleEmailType) ~~> "Emails adresses",
+      "enabled"     -> SimpleBooleanType ~~> "Enables Let's encrypt",
+      "privateKey"     -> SimpleStringType ~~> "Let's encrypt private key",
+      "publicKey"     -> SimpleStringType ~~> "Let's encrypt public key",
+      "server"     -> SimpleUriType ~~> "Let's encrypt server url",
+    )
+  )
+
   def MailerSettings = Json.obj(
     "description" -> "Configuration for mailgun api client",
     "type"        -> "object",
@@ -629,6 +694,19 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
     )
   )
 
+  def AutoCert = Json.obj(
+    "description" -> "Configuration for automatic certificates",
+    "type"        -> "object",
+    "required"    -> Json.arr("allowed", "caRef", "enabled", "notAllowed", "replyNicely"),
+    "properties" -> Json.obj(
+      "allowed"   -> ArrayOf(SimpleDomainType)  ~~> "Enable automatic certificates for https requests",
+      "caRef"         -> SimpleStringType ~~> "CleverCloud consumer token",
+      "enabled"       -> SimpleBooleanType ~~> "Enable automatic certificates for https requests",
+      "notAllowed"    -> ArrayOf(SimpleDomainType)  ~~> "Enable automatic certificates for https requests",
+      "replyNicely"   -> SimpleBooleanType ~~> "Reply nice html page informing that no certificate is available for this"
+    )
+  )
+
   def GlobalConfig = Json.obj(
     "type" -> "object",
     "required" -> Json.arr(
@@ -649,7 +727,10 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
     ),
     "description" -> "The global config object of Otoroshi, used to customize settings of the current Otoroshi instance",
     "properties" -> Json.obj(
+      "letsEncryptSettings"     -> Ref("LetsEncryptSettings") ~~> "Let's encrypt configuration",
       "lines"                   -> ArrayOf(SimpleStringType) ~~> "Possibles lines for Otoroshi",
+      "maintenanceMode"         -> SimpleBooleanType ~~> "Pass every otoroshi service in maintenance mode",
+      "enableEmbeddedMetrics"   -> SimpleBooleanType ~~> "Enable live metrics in the Otoroshi cluster",
       "streamEntityOnly"        -> SimpleBooleanType ~~> "HTTP will be streamed only. Doesn't work with old browsers",
       "autoLinkToDefaultGroup"  -> SimpleBooleanType ~~> "If not defined, every new service descriptor will be added to the default group",
       "limitConcurrentRequests" -> SimpleBooleanType ~~> "If enabled, Otoroshi will reject new request if too much at the same time",
@@ -666,13 +747,26 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       "analyticsWebhooks"       -> ArrayOf(Ref("Webhook")) ~~> "Webhook that will receive all internal Otoroshi events",
       "alertsWebhooks"          -> ArrayOf(Ref("Webhook")) ~~> "Webhook that will receive all Otoroshi alert events",
       "alertsEmails"            -> ArrayOf(SimpleEmailType) ~~> "Email addresses that will receive all Otoroshi alert events",
+      "logAnalyticsOnServer"    -> SimpleBooleanType ~~> "All analytics will be logged on server",
+      "useAkkaHttpClient"       -> SimpleBooleanType ~~> "Use new http client as the default Http clienT",
       "endlessIpAddresses"      -> ArrayOf(SimpleIpv4Type) ~~> "IP addresses for which any request to Otoroshi will respond with 128 Gb of zeros",
+      "statsdConfig"            -> Ref("StatsdConfig") ~~> "configuration for statsd",
+      "maxWebhookSize"          -> SimpleIntType ~~> "Maximum number of events in webhook body",
       "middleFingers"           -> SimpleBooleanType ~~> "Use middle finger emoji as a response character for endless HTTP responses",
       "maxLogsSize"             -> SimpleIntType ~~> "Number of events kept locally",
+      "otoroshiId"              -> SimpleUuidType ~~> "Unique cluster id",
+      "snowMonkeyConfig"        -> Ref("SnowMonkeyConfig") ~~> "SnowMonkey configuration",
+      "scripts"                 -> Ref("Scripts") ~~> "Global scripts",
+      "geolocationSettings"     -> Ref("GeolocationSettings") ~~> "Geolocation configuration",
+      "userAgentSettings"       -> SimpleBooleanType ~~> "Allow user-agent details extraction",
+      "autoCert"                -> Ref("AutoCert") ~~> "Automatic certificates configuration",
       "cleverSettings"          -> Ref("CleverSettings") ~~> "Optional CleverCloud configuration",
+      "kafkaConfig"             -> Ref("KafkaConfig") ~~> "Kafka configuration",
+      "backOfficeAuthRef"       -> SimpleStringType ~~> "Certificate id",
       "mailerSettings"          -> Ref("MailerSettings") ~~> "Optional mailer configuration",
       "backofficeAuth0Config"   -> Ref("Auth0Config") ~~> "Optional configuration for the backoffice Auth0 domain",
-      "privateAppsAuth0Config"  -> Ref("Auth0Config") ~~> "Optional configuration for the private apps Auth0 domain"
+      "privateAppsAuth0Config"  -> Ref("Auth0Config") ~~> "Optional configuration for the private apps Auth0 domain",
+      "metadata"                -> SimpleObjectType ~~> "Global metadata",
     )
   )
 
@@ -853,6 +947,14 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       "authorizedCallsPerMonth" -> SimpleLongType ~~> "The number of authorized calls per month",
       "currentCallsPerMonth"    -> SimpleLongType ~~> "The current number of calls per month",
       "remainingCallsPerMonth"  -> SimpleLongType ~~> "The number of authorized calls per month"
+    )
+  )
+
+  def GeolocationSettings = Json.obj(
+    "type"     -> "object",
+    "required" -> Json.arr("type"),
+    "properties" -> Json.obj(
+      "type" -> "test"
     )
   )
 
@@ -2451,9 +2553,16 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
         "Auth0Config"    -> Auth0Config,
         "Canary"         -> Canary,
         "CleverSettings" -> CleverSettings,
+        "AutoCert"       -> AutoCert,
         "ClientConfig"   -> ClientConfig,
         "Deleted"        -> Deleted,
         "Done"           -> Done,
+        "Scripts"                     -> Scripts,
+        "LetsEncryptSettings"         -> LetsEncryptSettings,
+        "MtlsConfig"                  -> MtlsConfig,
+        "GeolocationSettings"         -> GeolocationSettings,
+        "KafkaConfig"                 -> KafkaConfig,
+        "ElasticConfig"               -> ElasticConfig,
         "Environment" -> Json.obj(
           "type"        -> "string",
           "example"     -> "prod",

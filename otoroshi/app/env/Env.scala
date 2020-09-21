@@ -948,23 +948,30 @@ class Env(val configuration: Configuration,
         }
         .map { _ =>
           datastores.serviceDescriptorDataStore.findById(backOfficeServiceId)(ec, this).map {
-            case Some(s) if !s.publicPatterns.contains("/health") =>
-              logger.info("Updating BackOffice service to handle health check ...")
-              s.copy(publicPatterns = s.publicPatterns :+ "/health").save()(ec, this)
-            case Some(s) if !s.publicPatterns.contains("/metrics") =>
-              logger.info("Updating BackOffice service to handle metrics ...")
-              s.copy(publicPatterns = s.publicPatterns :+ "/metrics").save()(ec, this)
-            case Some(s) =>
+            case Some(service) =>
+              var newService = service
+              if (!newService.publicPatterns.contains("/health")) {
+                logger.info("Updating BackOffice service to handle health check ...")
+                newService = newService.copy(publicPatterns = newService.publicPatterns :+ "/health")
+              }
+              if (!newService.publicPatterns.contains("/metrics")) {
+                logger.info("Updating BackOffice service to handle metrics ...")
+                newService = newService.copy(publicPatterns = newService.publicPatterns :+ "/metrics")
+              }
               logger.info("Updating BackOffice service to handle swagger requests")
-              s.copy(
+              newService = newService.copy(
                 cors = new CorsSettings(
                   true,
-                  s.cors.allowOrigin + ", http://otoroshi.oto.tools:9999",
-                  s.cors.exposeHeaders,
-                  s.cors.allowHeaders :+ "authorization",
-                  s.cors.allowMethods ++ Seq("GET", "POST", "PUT")
+                  if (newService.cors.allowOrigin.contains("http://otoroshi.oto.tools:9999")) newService.cors.allowOrigin
+                  else if (newService.cors.allowOrigin == "") "http://otoroshi.oto.tools:9999"
+                  else ", http://otoroshi.oto.tools:9999",
+                  newService.cors.exposeHeaders,
+                  if (newService.cors.allowHeaders.contains("authorization")) newService.cors.allowHeaders
+                  else newService.cors.allowHeaders :+ "authorization",
+                  Seq("GET", "POST", "PUT", "PATCH", "DELETE")
                 )
               )
+              newService.save()(ec, this)
             case _ =>
           }
         }
