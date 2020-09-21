@@ -13,20 +13,20 @@
   },
   "dependencies": {
     "colors": "1.4.0",
-    "faker": "4.1.0",
+    "faker": "5.1.0",
     "https-proxy-agent": "5.0.0",
-    "inquirer": "7.1.0",
-    "lodash": "4.17.15",
+    "inquirer": "7.3.3",
+    "lodash": "4.17.20",
     "minimist": "1.2.5",
-    "moment": "2.24.0",
-    "node-fetch": "2.6.0",
-    "open": "7.0.3",
+    "moment": "2.28.0",
+    "node-fetch": "2.6.1",
+    "open": "7.2.1",
     "readline-sync": "1.4.10",
-    "ws": "7.2.3"
+    "ws": "7.3.1"
   },
   "devDependencies": {
-    "nodemon": "2.0.2",
-    "pkg": "4.4.4"
+    "nodemon": "2.0.4",
+    "pkg": "4.4.9"
   },
   "pkg": {
     "assets": [],
