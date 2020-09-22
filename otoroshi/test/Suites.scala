@@ -173,5 +173,5 @@ class OtoroshiTests extends Suites(OtoroshiTests.getSuites(): _*) with BeforeAnd
 
 class DevOtoroshiTests
     extends Suites(
-      new AdminApiSpec("DEV", Configurations.InMemoryConfiguration),
+      new TeamsSpec("DEV", Configurations.InMemoryConfiguration),
     )

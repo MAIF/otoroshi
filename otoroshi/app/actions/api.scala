@@ -93,7 +93,7 @@ case class ApiActionContext[A](apiKey: ApiKey, request: Request[A]) {
   }
 
   private def rootOrTenantAdmin(user: BackOfficeUser) (f: => Boolean)(implicit env: Env): Boolean = {
-    if (env.bypassUserRightsCheck || SuperAdminOnly.canPerform(user, currentTenant) || TenantAdminOnly.canPerform(user, currentTenant)) {
+    if (env.bypassUserRightsCheck || SuperAdminOnly.canPerform(user, currentTenant)) { // || TenantAdminOnly.canPerform(user, currentTenant)) {
       true
     } else {
       f
@@ -105,7 +105,7 @@ case class ApiActionContext[A](apiKey: ApiKey, request: Request[A]) {
       case Left(_) => false
       case Right(None) => true
       case Right(Some(user)) => rootOrTenantAdmin(user) {
-        currentTenant.value == item.location.tenant.value && user.rights.canReadTeams(currentTenant, item.location.teams)
+        currentTenant.value == item.location.tenant.value && user.rights.canReadTenant(item.location.tenant) && user.rights.canReadTeams(currentTenant, item.location.teams)
       }
     }
   }
@@ -114,7 +114,7 @@ case class ApiActionContext[A](apiKey: ApiKey, request: Request[A]) {
       case Left(_) => false
       case Right(None) => true
       case Right(Some(user)) => rootOrTenantAdmin(user) {
-        currentTenant.value == item.location.tenant.value && user.rights.canWriteTeams(currentTenant, item.location.teams)
+        currentTenant.value == item.location.tenant.value && user.rights.canWriteTenant(item.location.tenant) && user.rights.canWriteTeams(currentTenant, item.location.teams)
       }
     }
   }
