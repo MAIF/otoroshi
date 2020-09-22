@@ -79,11 +79,12 @@ class DynamicKeyManager(manager: X509KeyManager, env: Env) extends X509ExtendedK
       val matchesAutoCertDomains = env.datastores.globalConfigDataStore.latestSafe.exists(_.autoCert.matches(domain))
       findCertMatching(domain) match {
         case Some(cert) => sessionKey.foreach(key => DynamicKeyManager.sessions.put(key, (engine.getSession, cert.cryptoKeyPair.getPrivate, cert.certificatesChain)))
-        case None if autoCertEnabled && !matchesAutoCertDomains => ()
         case None if autoCertEnabled && !replyNicelyEnabled && !matchesAutoCertDomains => ()
         case None if autoCertEnabled => env.datastores.certificatesDataStore.jautoGenerateCertificateForDomain(domain, env) match {
           case Some(genCert) =>
-            DynamicSSLEngineProvider.addCertificates(Seq(genCert), env)
+            if (!genCert.subject.contains(SSLSessionJavaHelper.NotAllowed)) {
+              DynamicSSLEngineProvider.addCertificates(Seq(genCert), env)
+            }
             DynamicKeyManager.cache.put(domain, genCert)
             sessionKey.foreach(key => DynamicKeyManager.sessions.put(key, (engine.getSession, genCert.cryptoKeyPair.getPrivate, genCert.certificatesChain)))
           case None => ()

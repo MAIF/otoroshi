@@ -2322,7 +2322,13 @@ object SSLSessionJavaHelper {
   }
 
   def computeKey(session: String): Option[String] = {
-    Try(session.split(",")(0).replace("[", "")).toOption
+    Try(session.split(",")(0).replace("[", "")).toOption.map { header =>
+      val idAndAlg = header.replace("Session(", "").replace(")", "")
+      idAndAlg.contains("|") match {
+        case true  => idAndAlg.split('|').toSeq.head
+        case false => idAndAlg
+      }
+    }
   }
 }
 
