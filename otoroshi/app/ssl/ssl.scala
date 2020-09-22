@@ -953,7 +953,7 @@ object DynamicSSLEngineProvider {
       keyManagerFactory.init(keyStore, EMPTY_PASSWORD)
       logger.debug("SSL Context init ...")
       val keyManagers: Array[KeyManager] = keyManagerFactory.getKeyManagers.map(
-        m => new X509KeyManagerSnitch(m.asInstanceOf[X509KeyManager]).asInstanceOf[KeyManager]
+        m => KeyManagerCompatibility.keyManager(m.asInstanceOf[X509KeyManager], optEnv.get) // new X509KeyManagerSnitch(m.asInstanceOf[X509KeyManager]).asInstanceOf[KeyManager]
       )
       val tm: Array[TrustManager] =
       optEnv.flatMap(e => e.configuration.getOptionalWithFileSupport[Boolean]("play.server.https.trustStore.noCaVerification")).map {
@@ -1096,7 +1096,7 @@ object DynamicSSLEngineProvider {
       keyManagerFactory.init(keyStore1, EMPTY_PASSWORD)
       logger.debug("SSL Context init ...")
       val keyManagers: Array[KeyManager] = keyManagerFactory.getKeyManagers.map(
-        m => new X509KeyManagerSnitch(m.asInstanceOf[X509KeyManager]).asInstanceOf[KeyManager]
+        m => KeyManagerCompatibility.keyManager(m.asInstanceOf[X509KeyManager], optEnv.get) // new X509KeyManagerSnitch(m.asInstanceOf[X509KeyManager]).asInstanceOf[KeyManager]
       )
 
       val keyStore2: KeyStore = if (trustedCerts.nonEmpty) createKeyStore(trustedCerts) else keyStore1

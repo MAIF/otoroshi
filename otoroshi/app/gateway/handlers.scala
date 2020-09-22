@@ -24,7 +24,7 @@ import play.api.mvc._
 import play.api.routing.Router
 import play.core.WebCommands
 import security.OtoroshiClaim
-import ssl.{SSLSessionJavaHelper, X509KeyManagerSnitch}
+import ssl.{KeyManagerCompatibility, SSLSessionJavaHelper}
 import utils.RequestImplicits._
 import utils._
 
@@ -223,7 +223,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
     if (request.theSecured && config.isDefined && config.get.autoCert.enabled) { // && config.get.autoCert.replyNicely) { // to avoid cache effet
       request.headers.get("Tls-Session-Info").flatMap(SSLSessionJavaHelper.computeKey) match {
         case Some(key) => {
-          Option(X509KeyManagerSnitch.sslSessions.getIfPresent(key)) match {
+          KeyManagerCompatibility.session(key) match {
             case Some((_, _, chain))
                 if chain.headOption.exists(_.getSubjectDN.getName.contains(SSLSessionJavaHelper.NotAllowed)) =>
               Some(badCertReply(request))

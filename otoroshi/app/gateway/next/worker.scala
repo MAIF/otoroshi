@@ -31,7 +31,7 @@ import play.api.mvc._
 import play.api.mvc.request.{Cell, RequestAttrKey}
 import play.api.{Configuration, Environment, Logger, Mode}
 import security.OtoroshiClaim
-import ssl.{ClientAuth, DynamicSSLEngineProvider, SSLSessionJavaHelper, X509KeyManagerSnitch}
+import ssl.{ClientAuth, DynamicSSLEngineProvider, KeyManagerCompatibility, SSLSessionJavaHelper}
 import utils.{RegexPool, TypedMap}
 
 import scala.concurrent.Future
@@ -320,7 +320,7 @@ class OtoroshiRequestHandler(snowMonkey: SnowMonkey,
     if (request.theSecured && config.isDefined && config.get.autoCert.enabled) { // && config.get.autoCert.replyNicely) { // to avoid cache effet
       request.headers.get("Tls-Session-Info").flatMap(SSLSessionJavaHelper.computeKey) match {
         case Some(key) => {
-          Option(X509KeyManagerSnitch.sslSessions.getIfPresent(key)) match {
+          KeyManagerCompatibility.session(key) match {
             case Some((_, _, chain))
               if chain.headOption.exists(_.getSubjectDN.getName.contains(SSLSessionJavaHelper.NotAllowed)) =>
               Some(badCertReply(_request))
