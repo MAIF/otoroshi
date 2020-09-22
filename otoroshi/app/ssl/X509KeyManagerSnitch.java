@@ -167,12 +167,32 @@ public class X509KeyManagerSnitch extends X509ExtendedKeyManager {
                     }
                 } else {
                     Cert c = cache.getIfPresent(key);
+                    env.Env env = DynamicSSLEngineProvider.getCurrentEnv();
                     if (c != null) {
                         sessionKey.foreach(skey -> {
                             sslSessions.put(skey, Tuple3.apply(ssl.getSession(), c.cryptoKeyPair().getPrivate(), c.certificatesChain()));
                             return Unit$.MODULE$;
                         });
                         return key;
+                    } else if (env != null && env.datastores().globalConfigDataStore().latestSafe().exists(g -> g.autoCert().enabled())) {
+                        info("dyn stuff enabled");
+                        Option<Cert> certOpt = env.datastores().certificatesDataStore().jautoGenerateCertificateForDomain(host, env);
+                        if (certOpt.isDefined()) {
+                            info("got autogen cert " + key);
+                            Cert cert = certOpt.get();
+                            cache.put(key, cert);
+                            if (!cert.subject().contains(SSLSessionJavaHelper.NotAllowed())) {
+                                DynamicSSLEngineProvider.addCertificates(certOpt.toList(), env);
+                            }
+                            sessionKey.foreach(skey -> {
+                                sslSessions.put(skey, Tuple3.apply(ssl.getSession(), cert.cryptoKeyPair().getPrivate(), cert.certificatesChain()));
+                                return Unit$.MODULE$;
+                            });
+                            return key;
+                        } else {
+                            info("no autogen cert");
+                            throw new NoCertificateFoundException(host);
+                        }
                     } else if (host == null) {
                         throw new NoHostnameFoundException();
                     } else if (aliases == null) {

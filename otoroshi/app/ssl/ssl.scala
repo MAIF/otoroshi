@@ -1443,7 +1443,7 @@ class DynamicSSLEngineProvider(appProvider: ApplicationProvider) extends SSLEngi
       new Provider(
         "Otoroshi SSlEngineProvider delegate",
         1d,
-        "A provider that delegates callss to otoroshi dynamic one"
+        "A provider that delegates calls to otoroshi dynamic one"
       ) {},
       "Otoroshi SSLEngineProvider delegate"
     ) {}
