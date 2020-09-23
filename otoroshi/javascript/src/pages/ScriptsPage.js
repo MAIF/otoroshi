@@ -438,7 +438,8 @@ export class ScriptsPage extends Component {
         selfUrl="plugins"
         defaultTitle="All Plugins"
         injectTable={t => (this.table = t)}
-        defaultValue={() => ({
+        defaultValue={BackOfficeServices.createNewScript}
+        _defaultValue={() => ({
           id: faker.random.alphaNumeric(64),
           name: 'My plugin',
           desc: 'A plugin',

@@ -35,7 +35,7 @@ case class BackOfficeActionContextAuth[A](request: Request[A], user: BackOfficeU
   }
 
   private def rootOrTenantAdmin(user: BackOfficeUser) (f: => Boolean)(implicit env: Env): Boolean = {
-    if (env.bypassUserRightsCheck || SuperAdminOnly.canPerform(user, currentTenant) || TenantAdminOnly.canPerform(user, currentTenant)) {
+    if (env.bypassUserRightsCheck || SuperAdminOnly.canPerform(user, currentTenant)) { // || TenantAdminOnly.canPerform(user, currentTenant)) {
       true
     } else {
       f
@@ -44,12 +44,12 @@ case class BackOfficeActionContextAuth[A](request: Request[A], user: BackOfficeU
 
   def canUserRead[T <: EntityLocationSupport](item: T)(implicit env: Env): Boolean = {
     rootOrTenantAdmin(user) {
-      currentTenant.value == item.location.tenant.value && user.rights.canReadTeams(currentTenant, item.location.teams)
+      currentTenant.value == item.location.tenant.value && user.rights.canReadTenant(item.location.tenant) && user.rights.canReadTeams(currentTenant, item.location.teams)
     }
   }
   def canUserWrite[T <: EntityLocationSupport](item: T)(implicit env: Env): Boolean = {
     rootOrTenantAdmin(user) {
-      currentTenant.value == item.location.tenant.value && user.rights.canWriteTeams(currentTenant, item.location.teams)
+      currentTenant.value == item.location.tenant.value && user.rights.canWriteTenant(item.location.tenant) && user.rights.canWriteTeams(currentTenant, item.location.teams)
     }
   }
 

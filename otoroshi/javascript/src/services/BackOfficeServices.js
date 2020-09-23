@@ -1533,3 +1533,23 @@ export function createNewJwtVerifier() {
     },
   }).then(r => r.json());
 }
+
+export function createNewGroup() {
+  return fetch(`/bo/api/proxy/api/groups/_template`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then(r => r.json());
+}
+
+export function createNewScript() {
+  return fetch(`/bo/api/proxy/api/scripts/_template`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then(r => r.json());
+}

@@ -1259,19 +1259,14 @@ trait ScriptDataStore extends BasicStore[Script] {
              |
              |  val logger = Logger("my-transformer")
              |
-             |  override def transformRequestSync(
-             |    snowflake: String,
-             |    rawRequest: HttpRequest,
-             |    otoroshiRequest: HttpRequest,
-             |    desc: ServiceDescriptor,
-             |    apiKey: Option[ApiKey],
-             |    user: Option[PrivateAppsUser]
-             |  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, HttpRequest] = {
-             |    logger.info(s"Request incoming with id: $snowflake")
+             |  override def transformRequestWithCtx(
+             |    ctx: TransformerRequestContext
+             |  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
+             |    logger.info(s"Request incoming with id: ${ctx.snowflake}")
              |    // Here add a new header to the request between otoroshi and the target
-             |    Right(otoroshiRequest.copy(
-             |      headers = otoroshiRequest.headers + ("Hello" -> "World")
-             |    ))
+             |    Right(ctx.otoroshiRequest.copy(
+             |      headers = ctx.otoroshiRequest.headers + ("Hello" -> "World")
+             |    )).future
              |  }
              |}
              |
