@@ -165,6 +165,9 @@ export class PrivateAppsSessionsPage extends Component {
   };
 
   render() {
+    if (!window.__user.tenantAdmin) {
+      return null;
+    }
     return (
       <div>
         <Table

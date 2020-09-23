@@ -88,7 +88,7 @@ class BackOfficeAppContainer extends Component {
       // document.getElementById('toggle-navigation').setAttribute('class', 'navbar-toggle collapsed');
     });
     BackOfficeServices.env().then(env => {
-      console.log(env);
+      // console.log(env);
       this.setState({ env });
     });
     BackOfficeServices.fetchLines().then(lines => {
@@ -532,6 +532,9 @@ class GlobalTenantSelector extends Component {
   update = () => {
     this.setState({ loading: true })
     BackOfficeServices.findAllTenants().then(rtenants => {
+      if (rtenants.length === 1) {
+        window.localStorage.setItem("Otoroshi-Tenant", rtenants[0].id);
+      }
       const tenants = rtenants.map(t => {
         return {
           label: t.name,
@@ -549,6 +552,9 @@ class GlobalTenantSelector extends Component {
 
   render() {
     if (window.__otoroshi__env__latest.bypassUserRightsCheck || window.__otoroshi__env__latest.userAdmin) {
+      return null;
+    }
+    if (this.state.tenants.length < 2) {
       return null;
     }
     return (

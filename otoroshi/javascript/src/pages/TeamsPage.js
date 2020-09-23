@@ -73,6 +73,9 @@ export class TeamsPage extends Component {
   };
 
   render() {
+    if (!window.__user.tenantAdmin) {
+      return null;
+    }
     return (
       <div>
         <Table

@@ -278,6 +278,10 @@ export class U2FRegisterPage extends Component {
   };
 
   render() {
+    // TODO: see if tenant admin can do it too
+    if (!window.__user.superAdmin) {
+      return null;
+    }
     return (
       <div>
         {this.props.env && this.props.env.changePassword && (

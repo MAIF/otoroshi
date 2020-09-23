@@ -141,6 +141,9 @@ export class ClusterPage extends Component {
   };
 
   render() {
+    if (!window.__user.superAdmin) {
+      return null;
+    }
     return (
       <Table
         parentProps={this.props}

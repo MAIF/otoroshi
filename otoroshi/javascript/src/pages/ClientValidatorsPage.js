@@ -119,6 +119,9 @@ export class ClientValidatorsPage extends Component {
   };
 
   render() {
+    if (!window.__user.superAdmin) {
+      return null;
+    }
     return (
       <div>
         <Table

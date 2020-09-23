@@ -8,14 +8,25 @@ import { Separator } from './Separator';
 
 export class Location extends Component {
 
-  state = { possibleTeams: [] };
+  state = { possibleTeams: [], tenant: 'default' };
 
   componentDidMount() {
-    const tenant = this.props.tenant || window.localStorage.getItem("Otoroshi-Tenant") || "default";
+    let tenant = window.localStorage.getItem("Otoroshi-Tenant") || "default";
+    if (window.__user.superAdmin) {
+      tenant = this.props.tenant || window.localStorage.getItem("Otoroshi-Tenant") || "default";
+    }
+    this.setState({ tenant })
+    this.props.onChangeTenant(tenant);
     BackOfficeServices.env().then(() => this.forceUpdate());
     BackOfficeServices.findAllTeams().then(teams => {
-      const possibleTeams = teams.filter(t => t.tenant == tenant);
-      this.setState({ possibleTeams })
+      const possibleTeams = teams.filter(t => t.tenant === tenant);
+      this.setState({ possibleTeams });
+      const availableTeams = possibleTeams.length > 0;
+      const noTeams = !(this.props.teams && this.props.teams.length > 0);
+      const badTeams = (this.props.teams || []).filter(team => possibleTeams.map(pt => pt.id).indexOf(team) > -1).length === 0;
+      if (availableTeams && (noTeams || badTeams)) {
+        this.props.onChangeTeams([possibleTeams[0].id]);
+      }
     });
   }
   onChangeTenant = (tenant) => {
@@ -31,9 +42,12 @@ export class Location extends Component {
     if (window.__otoroshi__env__latest.bypassUserRightsCheck) {
       return null;
     }
+    // if (!(window.__user.superAdmin || window.__user.tenantAdmin)) {
+    //   return null;
+    // }
     return (
       <>
-        {window.__otoroshi__env__latest.userAdmin && <SelectInput
+        {/*window.__otoroshi__env__latest.userAdmin*/window.__user.superAdmin && <SelectInput
           label="Organization"
           value={this.props.tenant || window.localStorage.getItem("Otoroshi-Tenant") || "default"}
           onChange={this.onChangeTenant}
@@ -44,6 +58,7 @@ export class Location extends Component {
           })}
           help="The organization where this entity will belong"
         />}
+        {/* TODO: only show to tenant admins ????? */}
         <ArrayInput 
           label="Teams"
           value={this.props.teams}
@@ -59,12 +74,12 @@ export class Location extends Component {
         <div className="form-group">
           <label className="col-xs-12 col-sm-2 control-label"></label>
           <div className="col-sm-10">
-            <a className="btn btn-xs btn-info pull-right" href="/bo/dashboard/organizations">
+            {window.__user.superAdmin && <a className="btn btn-xs btn-info pull-right" href="/bo/dashboard/organizations">
               <i className="glyphicon glyphicon-edit"></i> Manage organizations
-            </a>
-            <a className="btn btn-xs btn-info pull-right" href="/bo/dashboard/teams">
+            </a>}
+            {window.__user.tenantAdmin && <a className="btn btn-xs btn-info pull-right" href="/bo/dashboard/teams">
               <i className="glyphicon glyphicon-edit"></i> Manage teams
-            </a>
+            </a>}
           </div>
         </div>
         <hr />

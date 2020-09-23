@@ -224,6 +224,9 @@ export class GlobalEventsPage extends Component {
   };
 
   render() {
+    if (!window.__user.superAdmin) {
+      return null;
+    }
     return (
       <div>
         <div className="row" style={{ marginBottom: 30 }}>

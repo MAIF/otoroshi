@@ -100,6 +100,9 @@ export class SessionsPage extends Component {
   };
 
   render() {
+    if (!window.__user.superAdmin) {
+      return null;
+    }
     return (
       <div>
         <Table

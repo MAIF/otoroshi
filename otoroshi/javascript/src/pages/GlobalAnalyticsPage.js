@@ -80,6 +80,9 @@ export class GlobalAnalyticsPage extends Component {
   };
 
   render() {
+    if (!window.__user.superAdmin) {
+      return null;
+    }
     const data = {
       ...{
         hits: { count: 0 },

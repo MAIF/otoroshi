@@ -42,6 +42,12 @@ window.fetch = function(...params) {
     const currentTenant = window.localStorage.getItem("Otoroshi-Tenant") || "default";
     return window._fetch(url, { ...options, headers: { ...options.headers, 'Otoroshi-Tenant': currentTenant }});
   } else {
+    // console.log('do not pass tenant for', url, {
+    //   plength: params.length,
+    //   iso: _.isObject(options),
+    //   userAdmin: window.__otoroshi__env__latest.userAdmin,
+    //   bypassUserRightsCheck: window.__otoroshi__env__latest.bypassUserRightsCheck
+    // });
     return window._fetch(...params);
   }
 }

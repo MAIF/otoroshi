@@ -44,7 +44,7 @@ export function fetchBodiesFor(serviceId, requestId) {
 // should use api proxy
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-window.__otoroshi__env__latest = { currentTenant: 'default', userAdmin: true, bypassUserRightsCheck: true };
+window.__otoroshi__env__latest = { currentTenant: 'default', userAdmin: false, bypassUserRightsCheck: false };
 
 export function env() {
   return fetch('/bo/api/env', {
@@ -55,6 +55,9 @@ export function env() {
     },
   }).then(r => r.json()).then(env => {
     window.__otoroshi__env__latest = env;
+    window.__currentTenant = env.currentTenant;
+    window.__user.superAdmin = env.superAdmin;
+    window.__user.tenantAdmin = env.tenantAdmin;
     return env;
   });
 }

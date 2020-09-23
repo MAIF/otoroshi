@@ -159,6 +159,9 @@ export class SnowMonkeyPage extends Component {
   };
 
   render() {
+    if (!window.__user.superAdmin) {
+      return null;
+    }
     const moreProps = {};
     if (!this.state.changed) {
       moreProps.disabled = true;

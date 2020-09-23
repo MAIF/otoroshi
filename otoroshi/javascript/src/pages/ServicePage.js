@@ -1068,9 +1068,9 @@ export class ServicePage extends Component {
           <Collapse collapsed={this.state.allCollapsed} initCollapsed={false} label="Location">
             <Location
               tenant={this.state.service._loc.tenant || "default"}
-              onChangeTenant={v => this.changeValue("_loc.tenant", v)}
+              onChangeTenant={v => this.changeTheValue("_loc.tenant", v)}
               teams={this.state.service._loc.teams || ["default"]}
-              onChangeTeams={v => this.changeValue("_loc.teams", v)}
+              onChangeTeams={v => this.changeTheValue("_loc.teams", v)}
             />
           </Collapse>
           <TextInput

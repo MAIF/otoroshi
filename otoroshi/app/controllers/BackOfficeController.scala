@@ -178,6 +178,8 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
             "env"                     -> env.env,
             "redirectToDev"           -> false,
             "userAdmin"               -> ctx.user.rights.superAdmin,
+            "superAdmin"              -> ctx.user.rights.superAdmin,
+            "tenantAdmin"             -> ctx.user.rights.tenantAdmin(ctx.currentTenant),
             "currentTenant"           -> ctx.currentTenant.value,
             "bypassUserRightsCheck"   -> env.bypassUserRightsCheck,
             "clientIdHeader"          -> env.Headers.OtoroshiClientId,
@@ -214,14 +216,20 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
   }
 
   def dashboard = BackOfficeActionAuth.async { ctx =>
-    env.datastores.globalConfigDataStore.singleton().map { config =>
-      Ok(views.html.backoffice.dashboard(ctx.user, config, env, env.otoroshiVersion, ctx.currentTenant.value))
+    env.datastores.globalConfigDataStore.singleton().flatMap { config =>
+      env.datastores.tenantDataStore.findAll().map { tenants =>
+        val userTenants = tenants.filter(t => ctx.user.rights.rights.exists(r => r.tenant.canRead && r.tenant.matches(t.id))).map(_.id.value)
+        Ok(views.html.backoffice.dashboard(ctx.user, config, env, env.otoroshiVersion, userTenants))
+      }
     }
   }
 
   def dashboardRoutes(ui: String) = BackOfficeActionAuth.async { ctx =>
-    env.datastores.globalConfigDataStore.singleton().map { config =>
-      Ok(views.html.backoffice.dashboard(ctx.user, config, env, env.otoroshiVersion, ctx.currentTenant.value))
+    env.datastores.globalConfigDataStore.singleton().flatMap { config =>
+      env.datastores.tenantDataStore.findAll().map { tenants =>
+        val userTenants = tenants.filter(t => ctx.user.rights.rights.exists(r => r.tenant.canRead && r.tenant.matches(t.id))).map(_.id.value)
+        Ok(views.html.backoffice.dashboard(ctx.user, config, env, env.otoroshiVersion, userTenants))
+      }
     }
   }
 

@@ -517,12 +517,16 @@ export class TopBar extends Component {
                   </li>
                   <li role="separator" className="divider" />
                   <li>
-                    <a href="/bo/dashboard/organizations">
-                      <span className="glyphicon glyphicon-folder-open" /> Organizations
-                    </a>
-                    <a href="/bo/dashboard/teams">
-                      <span className="glyphicon glyphicon-folder-open" /> Teams
-                    </a>
+                    {window.__otoroshi__env__latest.userAdmin && (
+                      <a href="/bo/dashboard/organizations">
+                        <span className="glyphicon glyphicon-folder-open" /> Organizations
+                      </a>
+                    )}
+                    {window.__user.tenantAdmin && (
+                      <a href="/bo/dashboard/teams">
+                        <span className="glyphicon glyphicon-folder-open" /> Teams
+                      </a>
+                    )}
                     <a href="/bo/dashboard/groups">
                       <span className="glyphicon glyphicon-folder-open" /> Service groups
                     </a>
@@ -614,9 +618,9 @@ export class TopBar extends Component {
                     </>
                   )}
                   <li>
-                    <a href="/bo/dashboard/sessions/private">
+                    {window.__user.tenantAdmin && <a href="/bo/dashboard/sessions/private">
                       <span className="glyphicon glyphicon-lock" /> Priv. apps sessions
-                    </a>
+                    </a>}
                   </li>
                   {window.__otoroshi__env__latest.userAdmin  && (
                     <>

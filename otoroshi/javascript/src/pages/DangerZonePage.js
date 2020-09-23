@@ -1384,6 +1384,9 @@ export class DangerZonePage extends Component {
   };
 
   render() {
+    if (!window.__user.superAdmin) {
+      return null;
+    }
     if (window.__apiReadOnly) return null;
     if (this.state.value === null) return null;
     const propsDisabled = { disabled: true };
