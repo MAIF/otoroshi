@@ -50,6 +50,7 @@ import * as BackOfficeServices from '../services/BackOfficeServices';
 import { createTooltip } from '../tooltips';
 import { TenantsPage } from '../pages/TenantsPage';
 import { TeamsPage } from '../pages/TeamsPage';
+import { Toasts } from '../components/Toasts';
 
 class BackOfficeAppContainer extends Component {
   constructor(props) {
@@ -503,6 +504,7 @@ class BackOfficeAppContainer extends Component {
             </div>
           </div>
         </div>
+        <Toasts />
       </div>
     );
   }
