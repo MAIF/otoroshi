@@ -778,6 +778,7 @@ export class ServicePage extends Component {
           id: faker.random.alphaNumeric(64),
           name: groupName,
           description: 'Group named ' + groupName,
+          _loc: { ...this.state.service._loc },
         }).then(group => {
           this.setState({ service: { ...this.state.service, groups: [...this.state.service.groups, group.id] } });
         });
@@ -792,6 +793,7 @@ export class ServicePage extends Component {
       id: faker.random.alphaNumeric(64),
       name: groupName,
       description: 'Group named ' + groupName,
+      _loc: { ...this.state.service._loc },
     }).then(group => {
       this.setState({ service: { ...this.state.service, groups: [...this.state.service.groups, group.id] } });
     });

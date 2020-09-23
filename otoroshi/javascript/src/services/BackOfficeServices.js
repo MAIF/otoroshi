@@ -544,6 +544,7 @@ export function saveService(service) {
 }
 
 export function updateService(serviceId, service) {
+  delete service.groupId;
   return fetch(`/bo/api/proxy/api/services/${serviceId}`, {
     method: 'PUT',
     credentials: 'include',
