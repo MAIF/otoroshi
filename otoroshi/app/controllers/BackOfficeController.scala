@@ -1205,7 +1205,6 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
   def fetchGroupsAndServices() = BackOfficeActionAuth.async { ctx =>
     env.datastores.serviceDescriptorDataStore.findAll().flatMap { services =>
       env.datastores.serviceGroupDataStore.findAll().map { groups =>
-        println(ctx.user.rights)
         val jsonGroups = groups.filter(ctx.canUserRead).map(g => Json.obj("label" -> g.name, "value" -> s"group_${g.id}", "kind" -> "group"))
         val jsonServices = services.filter(ctx.canUserRead).map(s => Json.obj("label" -> s.name, "value" -> s"service_${s.id}", "kind" -> "service"))
         Ok(JsArray(jsonGroups ++ jsonServices))
