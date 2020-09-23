@@ -467,6 +467,14 @@ class ReverseProxyAction(env: Env) {
                       .withHeaders("Location" -> rawDesc.redirection.formattedTo(req, rawDesc, elCtx, attrs, env))
                   ).map(Left.apply)
                 }
+                case Some(rawDesc) if env.clusterConfig.mode.isWorker && env.clusterConfig.worker.tenants.nonEmpty && !env.clusterConfig.worker.tenants.contains(rawDesc.location.tenant) =>
+                  Errors
+                    .craftResponseResult(s"Service not found",
+                      NotFound,
+                      req,
+                      None,
+                      Some("errors.service.not.found"),
+                      attrs = attrs).map(Left.apply)
                 case Some(rawDesc) => {
                   if (rawDesc.id != env.backOfficeServiceId && globalConfig.maintenanceMode) {
                     Errors.craftResponseResult(

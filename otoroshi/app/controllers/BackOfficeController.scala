@@ -215,13 +215,13 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
 
   def dashboard = BackOfficeActionAuth.async { ctx =>
     env.datastores.globalConfigDataStore.singleton().map { config =>
-      Ok(views.html.backoffice.dashboard(ctx.user, config, env, env.otoroshiVersion))
+      Ok(views.html.backoffice.dashboard(ctx.user, config, env, env.otoroshiVersion, ctx.currentTenant.value))
     }
   }
 
   def dashboardRoutes(ui: String) = BackOfficeActionAuth.async { ctx =>
     env.datastores.globalConfigDataStore.singleton().map { config =>
-      Ok(views.html.backoffice.dashboard(ctx.user, config, env, env.otoroshiVersion))
+      Ok(views.html.backoffice.dashboard(ctx.user, config, env, env.otoroshiVersion, ctx.currentTenant.value))
     }
   }
 

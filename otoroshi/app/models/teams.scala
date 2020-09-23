@@ -28,6 +28,7 @@ case class UserRights(rights: Seq[UserRight]) {
       )
     }
   }
+  def tenantAdminStr(tenant: String)(implicit env: Env): Boolean = tenantAdmin(TenantId(tenant))
   def tenantAdmin(tenant: TenantId)(implicit env: Env): Boolean = {
     if (env.bypassUserRightsCheck || superAdmin) {
       true
