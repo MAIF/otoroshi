@@ -930,8 +930,8 @@ export function createAuthConfig(ak) {
   }).then(r => r.json());
 }
 
-export function createNewAuthConfig() {
-  return fetch(`/bo/api/proxy/api/auths/_template`, {
+export function createNewAuthConfig(kind) {
+  return fetch(`/bo/api/proxy/api/auths/_template?mod-type=${kind}`, {
     method: 'GET',
     credentials: 'include',
     headers: {
@@ -1512,3 +1512,24 @@ export function updateWebAuthnAdmin(user) {
   }).then(r => r.json());
 }
 
+
+
+export function createNewCertificate() {
+  return fetch(`/bo/api/proxy/api/certificates/_template`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then(r => r.json());
+}
+
+export function createNewJwtVerifier() {
+  return fetch(`/bo/api/proxy/api/verifiers/_template`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then(r => r.json());
+}

@@ -666,6 +666,7 @@ export class CertificatesPage extends Component {
         selfUrl="certificates"
         defaultTitle="All SSL/TLS certificates"
         defaultValue={() => ({ id: faker.random.alphaNumeric(64) })}
+        _defaultValue={BackOfficeServices.createNewCertificate}
         itemName="certificate"
         formSchema={this.formSchema}
         formFlow={this.formFlow}
