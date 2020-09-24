@@ -117,7 +117,7 @@ class AuthModulesController(val ApiAction: ApiAction, val cc: ControllerComponen
 
   def startRegistration(id: String) = ApiAction.async { ctx =>
     env.datastores.authConfigsDataStore.findById(id).flatMap {
-      case Some(auth) if !ctx.canUserWrite(auth) => ctx.funauthorized
+      case Some(auth) if !ctx.canUserWrite(auth) => ctx.fforbidden
       case Some(auth) => {
         auth.authModule(env.datastores.globalConfigDataStore.latest()) match {
           case bam: BasicAuthModule if bam.authConfig.webauthn =>
@@ -137,7 +137,7 @@ class AuthModulesController(val ApiAction: ApiAction, val cc: ControllerComponen
 
   def finishRegistration(id: String) = ApiAction.async { ctx =>
     env.datastores.authConfigsDataStore.findById(id).flatMap {
-      case Some(auth) if !ctx.canUserWrite(auth) => ctx.funauthorized
+      case Some(auth) if !ctx.canUserWrite(auth) => ctx.fforbidden
       case Some(auth) => {
         auth.authModule(env.datastores.globalConfigDataStore.latest()) match {
           case bam: BasicAuthModule if bam.authConfig.webauthn =>

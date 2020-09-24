@@ -491,7 +491,7 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
     }
     readEntity(body) match {
       case Left(e) => BadRequest(Json.obj("error" -> "bad_format", "error_description" -> "Bad entity format")).future
-      case Right(entity) if !ctx.canUserWrite(entity) => Unauthorized(Json.obj("error" -> "unauthorized", "error_description" -> "You're not allowed to do this !")).future
+      case Right(entity) if !ctx.canUserWrite(entity) => Forbidden(Json.obj("error" -> "forbidden", "error_description" -> "You're not allowed to do this !")).future
       case Right(entity) =>
         createEntityOps(entity).map {
           case Left(error) => Status(error.status)(Json.obj("error" -> "creation_error", "error_description" -> error.bodyAsJson))
@@ -605,7 +605,7 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
       case Left(error) => Status(error.status)(Json.obj("error" -> "find_error", "error_description" -> error.bodyAsJson))
       case Right(OptionalEntityAndContext(entity, action, message, metadata, alert)) => entity match {
         case None => NotFound(Json.obj("error" -> "not_found", "error_description" -> s"entity not found"))
-        case Some(v) if !ctx.canUserRead(v) => Unauthorized(Json.obj("error" -> "unauthorized", "error_description" -> "You're not allowed to do this !"))
+        case Some(v) if !ctx.canUserRead(v) => Forbidden(Json.obj("error" -> "forbidden", "error_description" -> "You're not allowed to do this !"))
         case Some(v) =>
           Audit.send(
             AdminApiEvent(
@@ -634,7 +634,7 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
     readEntity(ctx.request.body) match {
       case Left(error) =>
         BadRequest(Json.obj("error" -> "bad_entity", "error_description" -> error, "entity" -> ctx.request.body)).future
-      case Right(entity) if !ctx.canUserWrite(entity) => Unauthorized(Json.obj("error" -> "unauthorized", "error_description" -> "You're not allowed to do this !")).future
+      case Right(entity) if !ctx.canUserWrite(entity) => Forbidden(Json.obj("error" -> "forbidden", "error_description" -> "You're not allowed to do this !")).future
       case Right(entity) => {
         updateEntityOps(entity).map {
           case Left(error) =>
@@ -677,7 +677,7 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
       case Left(error) => NotFound(Json.obj("error" -> "not_found", "error_description" -> "Entity not found")).future
       case Right(OptionalEntityAndContext(option, _, _, _, _)) => option match {
         case None => NotFound(Json.obj("error" -> "not_found", "error_description" -> "Entity not found")).future
-        case Some(entity) if !ctx.canUserWrite(entity) => Unauthorized(Json.obj("error" -> "unauthorized", "error_description" -> "You're not allowed to do this !")).future
+        case Some(entity) if !ctx.canUserWrite(entity) => Forbidden(Json.obj("error" -> "forbidden", "error_description" -> "You're not allowed to do this !")).future
         case Some(entity) => {
           val currentJson = writeEntity(entity)
           val newJson     = patchJson(ctx.request.body, currentJson)

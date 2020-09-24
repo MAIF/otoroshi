@@ -279,7 +279,7 @@ export class U2FRegisterPage extends Component {
 
   render() {
     // TODO: see if tenant admin can do it too
-    if (!window.__user.superAdmin) {
+    if (!window.__user.tenantAdmin) {
       return null;
     }
     return (
@@ -766,9 +766,14 @@ export class AdminEditionModal extends Component {
         height: '200px'
       }
     },
+    _loc: {
+      type: 'location',
+      props: {}
+    }
   }
 
   flow = [
+    '_loc',
     'username',
     'label',
     'password',
@@ -851,6 +856,7 @@ class UserRights extends Component {
           onChange={e => this.props.changeValue('rights', e)}
           component={UserRight}
         />
+        {/*<JsonObjectAsCodeInput {...this.props} height="200px" />*/}
       </div>
     )
     

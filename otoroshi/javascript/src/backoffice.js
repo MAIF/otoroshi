@@ -41,7 +41,7 @@ window.fetch = function(...params) {
   if (!doNotPassTenant && params.length == 2 && _.isObject(options)) {
     const currentTenant = window.localStorage.getItem("Otoroshi-Tenant") || "default";
     return window._fetch(url, { ...options, headers: { ...options.headers, 'Otoroshi-Tenant': currentTenant }}).then(r => {
-      if (r.status === 401) {
+      if (r.status === 401 || r.status === 403) {
         if (window.toast) {
           window.toast('Authorization error', "You're not allowed to do that !", 'error');
         }

@@ -351,7 +351,8 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
                   )
                 ))
               )
-            }
+            },
+            location = authConfig.location
           )
         )
       case None => Left(s"You're not authorized here")

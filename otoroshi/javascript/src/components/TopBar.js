@@ -605,6 +605,10 @@ export class TopBar extends Component {
                         </a>
                       </li>
                       <li role="separator" className="divider" />
+                    </>
+                  )}
+                  {window.__user.tenantAdmin && (
+                    <>
                       <li>
                         <a href="/bo/dashboard/admins">
                           <span className="glyphicon glyphicon-user" /> Admins
@@ -615,13 +619,13 @@ export class TopBar extends Component {
                           <span className="glyphicon glyphicon-user" /> Admins sessions
                         </a>
                       </li>
+                      <li>
+                        <a href="/bo/dashboard/sessions/private">
+                          <span className="glyphicon glyphicon-lock" /> Priv. apps sessions
+                        </a>
+                      </li>
                     </>
                   )}
-                  <li>
-                    {window.__user.tenantAdmin && <a href="/bo/dashboard/sessions/private">
-                      <span className="glyphicon glyphicon-lock" /> Priv. apps sessions
-                    </a>}
-                  </li>
                   {window.__otoroshi__env__latest.userAdmin  && (
                     <>
                       <li role="separator" className="divider" />

@@ -4,7 +4,7 @@ import akka.http.scaladsl.util.FastFuture._
 import auth.AuthModuleConfig
 import env.Env
 import org.joda.time.DateTime
-import otoroshi.models.{TeamAccess, TenantAccess, UserRight, UserRights}
+import otoroshi.models.{EntityLocationSupport, TeamAccess, TenantAccess, UserRight, UserRights}
 import play.api.libs.json._
 import otoroshi.storage.BasicStore
 import otoroshi.utils.syntax.implicits._
@@ -31,8 +31,12 @@ case class BackOfficeUser(randomId: String,
                           expiredAt: DateTime = DateTime.now(),
                           lastRefresh: DateTime = DateTime.now(),
                           metadata: Map[String, String],
-                          rights: UserRights
-                         ) extends RefreshableUser {
+                          rights: UserRights,
+                          location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation()
+                         ) extends RefreshableUser with EntityLocationSupport {
+
+  def internalId: String = randomId
+  def json: JsValue = toJson
 
   def save(duration: Duration)(implicit ec: ExecutionContext, env: Env): Future[BackOfficeUser] = {
     val withDuration = this.copy(expiredAt = expiredAt.plus(duration.toMillis))
@@ -67,6 +71,7 @@ object BackOfficeUser {
       Try {
         JsSuccess(
           BackOfficeUser(
+            location = otoroshi.models.EntityLocation.readFromKey(json),
             randomId = (json \ "randomId").as[String],
             name = (json \ "name").as[String],
             email = (json \ "email").as[String],
@@ -85,7 +90,7 @@ object BackOfficeUser {
         case e => JsError(e.getMessage)
       } get
 
-    override def writes(o: BackOfficeUser): JsValue = Json.obj(
+    override def writes(o: BackOfficeUser): JsValue = o.location.jsonWithKey ++ Json.obj(
       "randomId"        -> o.randomId,
       "name"            -> o.name,
       "email"           -> o.email,
@@ -107,6 +112,7 @@ trait BackOfficeUserDataStore extends BasicStore[BackOfficeUser] {
   def hasAlreadyLoggedIn(email: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean]
   def alreadyLoggedIn(email: String)(implicit ec: ExecutionContext, env: Env): Future[Long]
   def sessions()(implicit ec: ExecutionContext, env: Env): Future[Seq[JsValue]]
+  def tsessions()(implicit ec: ExecutionContext, env: Env): Future[Seq[BackOfficeUser]]
   def discardSession(id: String)(implicit ec: ExecutionContext, env: Env): Future[Long]
   def discardAllSessions()(implicit ec: ExecutionContext, env: Env): Future[Long]
 }

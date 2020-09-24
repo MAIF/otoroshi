@@ -146,6 +146,7 @@ case class TeamId(rawValue: String) {
 }
 object TeamId {
   val default: TeamId = TeamId("default")
+  val all: TeamId = TeamId("*")
   def apply(value: String): TeamId = new TeamId(value.toLowerCase.trim)
 }
 
@@ -165,7 +166,7 @@ case class TeamAccess(value: String, canRead: Boolean, canWrite: Boolean) {
   lazy val wildcard: Boolean = value == "*"
   lazy val canReadWrite: Boolean = canRead && canWrite
   def matches(team: TeamId): Boolean = {
-    value == "*" || RegexPool(value).matches(team.value)
+    value == "*" || team == TeamId.all || RegexPool(value).matches(team.value)
   }
 }
 

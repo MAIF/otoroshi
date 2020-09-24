@@ -4,7 +4,7 @@ import akka.http.scaladsl.util.FastFuture
 import akka.util.ByteString
 import env.Env
 import models.{BackOfficeUser, BackOfficeUserDataStore, Key}
-import play.api.libs.json.{Format, JsValue, Json}
+import play.api.libs.json.{Format, JsSuccess, JsValue, Json}
 import utils.JsonImplicits._
 import otoroshi.storage.{RedisLike, RedisLikeStore}
 
@@ -42,6 +42,10 @@ class KvBackOfficeUserDataStore(redisCli: RedisLike, _env: Env)
           .map(_.get)
           .map(v => Json.parse(v.utf8String))
       }
+
+  override def tsessions()(implicit ec: ExecutionContext, env: Env): Future[Seq[BackOfficeUser]] = {
+    sessions().map(ses => ses.map(BackOfficeUser.fmt.reads).collect { case JsSuccess(value, _) => value })
+  }
 
   override def discardSession(id: String)(implicit ec: ExecutionContext, env: Env): Future[Long] =
     redisCli.del(s"${env.storageRoot}:users:backoffice:$id")

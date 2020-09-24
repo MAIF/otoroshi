@@ -18,7 +18,7 @@ import events._
 import models.BackOfficeUser
 import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
-import otoroshi.models.RightsChecker.SuperAdminOnly
+import otoroshi.models.RightsChecker.{SuperAdminOnly, TenantAdminOnly}
 import otoroshi.models._
 import play.api.Logger
 import play.api.libs.json._
@@ -76,7 +76,8 @@ class U2FController(BackOfficeAction: BackOfficeAction,
                 authConfigId = "none",
                 simpleLogin = true,
                 metadata = Map.empty,
-                rights = user.rights
+                rights = user.rights,
+                location = user.location
               ).save(Duration(env.backOfficeSessionExp, TimeUnit.MILLISECONDS)).map { boUser =>
                 env.datastores.simpleAdminDataStore.hasAlreadyLoggedIn(username).map {
                   case false => {
@@ -109,11 +110,11 @@ class U2FController(BackOfficeAction: BackOfficeAction,
   }
 
   def registerSimpleAdmin = BackOfficeActionAuth.async(parse.json) { ctx =>
-    ctx.checkRights(SuperAdminOnly) {
+    ctx.checkRights(TenantAdminOnly) {
       val usernameOpt = (ctx.request.body \ "username").asOpt[String]
       val passwordOpt = (ctx.request.body \ "password").asOpt[String]
       val labelOpt = (ctx.request.body \ "label").asOpt[String]
-      val rights = UserRights.readFromObject(ctx.request.body)
+      val rights = UserRights(Seq(UserRight(TenantAccess(ctx.currentTenant.value), Seq(TeamAccess("*"))))) // UserRights.readFromObject(ctx.request.body)
       (usernameOpt, passwordOpt, labelOpt) match {
         case (Some(username), Some(password), Some(label)) => {
           val saltedPassword = BCrypt.hashpw(password, BCrypt.gensalt())
@@ -125,6 +126,7 @@ class U2FController(BackOfficeAction: BackOfficeAction,
             typ = OtoroshiAdminType.SimpleAdmin,
             metadata = Map.empty,
             rights = rights,
+            location = EntityLocation(ctx.currentTenant, Seq(TeamId.all))  // EntityLocation.readFromKey(ctx.request.body)
           )).map { _ =>
             Ok(Json.obj("username" -> username))
           }
@@ -135,33 +137,39 @@ class U2FController(BackOfficeAction: BackOfficeAction,
   }
 
   def simpleAdmins = BackOfficeActionAuth.async { ctx =>
-    ctx.checkRights(SuperAdminOnly) {
+    ctx.checkRights(TenantAdminOnly) {
       val paginationPage: Int = ctx.request.queryString.get("page").flatMap(_.headOption).map(_.toInt).getOrElse(1)
       val paginationPageSize: Int =
         ctx.request.queryString.get("pageSize").flatMap(_.headOption).map(_.toInt).getOrElse(Int.MaxValue)
       val paginationPosition = (paginationPage - 1) * paginationPageSize
       env.datastores.simpleAdminDataStore.findAll() map { users =>
-        Ok(JsArray(users.drop(paginationPosition).take(paginationPageSize).map(_.json)))
+        Ok(JsArray(users.filter(ctx.canUserRead).drop(paginationPosition).take(paginationPageSize).map(_.json)))
       }
     }
   }
 
   def deleteAdmin(username: String) = BackOfficeActionAuth.async { ctx =>
-    ctx.checkRights(SuperAdminOnly) {
-      env.datastores.simpleAdminDataStore.deleteUser(username).map { d =>
-        val event = BackOfficeEvent(
-          env.snowflakeGenerator.nextIdStr(),
-          env.env,
-          ctx.user,
-          "DELETE_ADMIN",
-          s"Admin deleted an Admin",
-          ctx.from,
-          ctx.ua,
-          Json.obj("username" -> username)
-        )
-        Audit.send(event)
-        Alerts.send(U2FAdminDeletedAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user, event, ctx.from, ctx.ua))
-        Ok(Json.obj("done" -> true))
+    ctx.checkRights(TenantAdminOnly) {
+      env.datastores.simpleAdminDataStore.findByUsername(username).flatMap {
+        case None => NotFound(Json.obj("error" -> "User not found !")).future
+        case Some(user) if !ctx.canUserWrite(user) => ctx.fforbidden
+        case Some(_) => {
+          env.datastores.simpleAdminDataStore.deleteUser(username).map { d =>
+            val event = BackOfficeEvent(
+              env.snowflakeGenerator.nextIdStr(),
+              env.env,
+              ctx.user,
+              "DELETE_ADMIN",
+              s"Admin deleted an Admin",
+              ctx.from,
+              ctx.ua,
+              Json.obj("username" -> username)
+            )
+            Audit.send(event)
+            Alerts.send(U2FAdminDeletedAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user, event, ctx.from, ctx.ua))
+            Ok(Json.obj("done" -> true))
+          }
+        }
       }
     }
   }
@@ -169,40 +177,46 @@ class U2FController(BackOfficeAction: BackOfficeAction,
   /////////// WebAuthn admins ////////////////////////////////////////////////////////////////////////////////////////////
 
   def webAuthnAdmins() = BackOfficeActionAuth.async { ctx =>
-    ctx.checkRights(SuperAdminOnly) {
+    ctx.checkRights(TenantAdminOnly) {
       val paginationPage: Int = ctx.request.queryString.get("page").flatMap(_.headOption).map(_.toInt).getOrElse(1)
       val paginationPageSize: Int =
         ctx.request.queryString.get("pageSize").flatMap(_.headOption).map(_.toInt).getOrElse(Int.MaxValue)
       val paginationPosition = (paginationPage - 1) * paginationPageSize
       env.datastores.webAuthnAdminDataStore.findAll() map { users =>
-        Ok(JsArray(users.drop(paginationPosition).take(paginationPageSize).map(_.json)))
+        Ok(JsArray(users.filter(ctx.canUserRead).drop(paginationPosition).take(paginationPageSize).map(_.json)))
       }
     }
   }
 
   def webAuthnDeleteAdmin(username: String, id: String) = BackOfficeActionAuth.async { ctx =>
-    ctx.checkRights(SuperAdminOnly) {
-      env.datastores.webAuthnAdminDataStore.deleteUser(username).map { d =>
-        val event = BackOfficeEvent(
-          env.snowflakeGenerator.nextIdStr(),
-          env.env,
-          ctx.user,
-          "DELETE_WEBAUTHN_ADMIN",
-          s"Admin deleted a WebAuthn Admin",
-          ctx.from,
-          ctx.ua,
-          Json.obj("username" -> username, "id" -> id)
-        )
-        Audit.send(event)
-        Alerts
-          .send(WebAuthnAdminDeletedAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user, event, ctx.from, ctx.ua))
-        Ok(Json.obj("done" -> true))
+    ctx.checkRights(TenantAdminOnly) {
+      env.datastores.webAuthnAdminDataStore.findByUsername(username).flatMap {
+        case None => NotFound(Json.obj("error" -> "User not found !")).future
+        case Some(user) if !ctx.canUserWrite(user) => ctx.fforbidden
+        case Some(_) => {
+          env.datastores.webAuthnAdminDataStore.deleteUser(username).map { d =>
+            val event = BackOfficeEvent(
+              env.snowflakeGenerator.nextIdStr(),
+              env.env,
+              ctx.user,
+              "DELETE_WEBAUTHN_ADMIN",
+              s"Admin deleted a WebAuthn Admin",
+              ctx.from,
+              ctx.ua,
+              Json.obj("username" -> username, "id" -> id)
+            )
+            Audit.send(event)
+            Alerts
+              .send(WebAuthnAdminDeletedAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user, event, ctx.from, ctx.ua))
+            Ok(Json.obj("done" -> true))
+          }
+        }
       }
     }
   }
 
   def webAuthnRegistrationStart() = BackOfficeActionAuth.async(parse.json) { ctx =>
-    ctx.checkRights(SuperAdminOnly) {
+    ctx.checkRights(TenantAdminOnly) {
       import collection.JavaConverters._
 
       val username = (ctx.request.body \ "username").as[String]
@@ -301,7 +315,7 @@ class U2FController(BackOfficeAction: BackOfficeAction,
                 val username = (otoroshi \ "username").as[String]
                 val password = (otoroshi \ "password").as[String]
                 val label = (otoroshi \ "label").as[String]
-                val rights = UserRights.readFromObject(otoroshi)
+                val rights = UserRights(Seq(UserRight(TenantAccess(ctx.currentTenant.value), Seq(TeamAccess("*"))))) // UserRights.readFromObject(otoroshi)
                 val saltedPassword = BCrypt.hashpw(password, BCrypt.gensalt())
                 val credential = Json.parse(jsonMapper.writeValueAsString(result))
 
@@ -317,7 +331,8 @@ class U2FController(BackOfficeAction: BackOfficeAction,
                         createdAt = DateTime.now(),
                         typ = OtoroshiAdminType.WebAuthnAdmin,
                         metadata = Map.empty,
-                        rights = rights
+                        rights = rights,
+                        location = EntityLocation(ctx.currentTenant, Seq(TeamId.all)) //EntityLocation.readFromKey(ctx.request.body)
                       ))
                       .map { _ =>
                         Ok(Json.obj("username" -> username))
@@ -467,6 +482,7 @@ class U2FController(BackOfficeAction: BackOfficeAction,
                           simpleLogin = false,
                           metadata = Map.empty,
                           rights = user.rights,
+                          location = user.location
                         ).save(Duration(env.backOfficeSessionExp, TimeUnit.MILLISECONDS)).map { boUser =>
                           env.datastores.webAuthnAdminDataStore.hasAlreadyLoggedIn(username).map {
                             case false => {

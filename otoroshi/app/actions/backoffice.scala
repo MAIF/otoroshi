@@ -26,6 +26,10 @@ case class BackOfficeActionContext[A](request: Request[A], user: Option[BackOffi
 }
 
 case class BackOfficeActionContextAuth[A](request: Request[A], user: BackOfficeUser) {
+
+  lazy val forbidden = ApiActionContext.forbidden
+  lazy val fforbidden = ApiActionContext.fforbidden
+
   def from(implicit env: Env): String = request.theIpAddress
   def ua: String                      = request.theUserAgent
 
@@ -60,7 +64,7 @@ case class BackOfficeActionContextAuth[A](request: Request[A], user: BackOfficeU
       if (rc.canPerform(user, currentTenant)) {
         f
       } else {
-        Results.Unauthorized(Json.obj("error" -> "You're not authorized here !")).future
+        Results.Forbidden(Json.obj("error" -> "You're not authorized here !")).future
       }
     }
   }

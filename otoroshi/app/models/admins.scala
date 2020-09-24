@@ -31,7 +31,7 @@ object OtoroshiAdminType {
   }
 }
 
-trait OtoroshiAdmin {
+trait OtoroshiAdmin extends EntityLocationSupport {
   def username: String
   def password: String
   def label: String
@@ -49,9 +49,11 @@ case class SimpleOtoroshiAdmin(
                                 createdAt: DateTime,
                                 typ: OtoroshiAdminType,
                                 metadata: Map[String, String],
-                                rights: UserRights
+                                rights: UserRights,
+                                location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation()
 ) extends OtoroshiAdmin {
-  def json: JsValue = Json.obj(
+  def internalId: String = username
+  def json: JsValue = location.jsonWithKey ++ Json.obj(
     "username" -> username,
     "password" -> password,
     "label" -> label,
@@ -70,6 +72,7 @@ object SimpleOtoroshiAdmin {
   def reads(json: JsValue): JsResult[SimpleOtoroshiAdmin] = {
     Try {
       SimpleOtoroshiAdmin(
+        location = otoroshi.models.EntityLocation.readFromKey(json),
         username = (json \ "username").as[String],
         password = (json \ "password").as[String],
         label = (json \ "label").as[String],
@@ -94,9 +97,11 @@ case class WebAuthnOtoroshiAdmin(
                                   createdAt: DateTime,
                                   typ: OtoroshiAdminType,
                                   metadata: Map[String, String],
-                                  rights: UserRights
+                                  rights: UserRights,
+                                  location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation()
 ) extends OtoroshiAdmin {
-  def json: JsValue = Json.obj(
+  def internalId: String = username
+  def json: JsValue = location.jsonWithKey ++ Json.obj(
     "username" -> username,
     "password" -> password,
     "label" -> label,
@@ -117,6 +122,7 @@ object WebAuthnOtoroshiAdmin {
   def reads(json: JsValue): JsResult[WebAuthnOtoroshiAdmin] = {
     Try {
       WebAuthnOtoroshiAdmin(
+        location = otoroshi.models.EntityLocation.readFromKey(json),
         username = (json \ "username").as[String],
         password = (json \ "password").as[String],
         label = (json \ "label").as[String],

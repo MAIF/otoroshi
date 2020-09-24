@@ -23,13 +23,13 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 object ApiActionContext {
-  val unauthorized = Results.Unauthorized(Json.obj("error" -> "You're not authorized here !"))
-  val funauthorized = unauthorized.future
+  val forbidden = Results.Forbidden(Json.obj("error" -> "You're not authorized here !"))
+  val fforbidden = forbidden.future
 }
 
 case class ApiActionContext[A](apiKey: ApiKey, request: Request[A]) {
-  lazy val unauthorized = ApiActionContext.unauthorized
-  lazy val funauthorized = ApiActionContext.funauthorized
+  lazy val forbidden = ApiActionContext.forbidden
+  lazy val fforbidden = ApiActionContext.fforbidden
   def user(implicit env: Env): Option[JsValue] =
     request.headers
       .get(env.Headers.OtoroshiAdminProfile)
@@ -65,7 +65,8 @@ case class ApiActionContext[A](apiKey: ApiKey, request: Request[A]) {
                     authConfigId = "apikey",
                     simpleLogin = false,
                     metadata = Map.empty,
-                    rights = userRights
+                    rights = userRights,
+                    location = EntityLocation(currentTenant, teams = Seq(TeamId.all))
                   )
                   Right(user.some)
                 case _ => Left("You're not authorized here (invalid setup) ! ")
@@ -124,12 +125,12 @@ case class ApiActionContext[A](apiKey: ApiKey, request: Request[A]) {
       f
     } else {
       backOfficeUser match {
-        case Left(error) => Results.Unauthorized(Json.obj("error" -> error)).future
+        case Left(error) => Results.Forbidden(Json.obj("error" -> error)).future
         case Right(None) => f // standard api usage without limitations
         case Right(Some(user)) => if (rc.canPerform(user, currentTenant)) {
           f
         } else {
-          Results.Unauthorized(Json.obj("error" -> "You're not authorized here !")).future
+          Results.Forbidden(Json.obj("error" -> "You're not authorized here !")).future
         }
       }
     }
@@ -141,44 +142,44 @@ case class ApiActionContext[A](apiKey: ApiKey, request: Request[A]) {
     } else {
       env.datastores.serviceDescriptorDataStore.findById(id).flatMap {
         case Some(service) if canUserRead(service) => f
-        case _ => funauthorized
+        case _ => fforbidden
       }
     }
   }
   def canWriteService(id: String)(f: => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
     env.datastores.serviceDescriptorDataStore.findById(id).flatMap {
       case Some(service) if canUserWrite(service) => f
-      case _ => funauthorized
+      case _ => fforbidden
     }
   }
   def canReadApikey(id: String)(f: => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
     env.datastores.apiKeyDataStore.findById(id).flatMap {
       case Some(service) if canUserRead(service) => f
-      case _ => funauthorized
+      case _ => fforbidden
     }
   }
   def canWriteApikey(id: String)(f: => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
     env.datastores.apiKeyDataStore.findById(id).flatMap {
       case Some(service) if canUserWrite(service) => f
-      case _ => funauthorized
+      case _ => fforbidden
     }
   }
   def canReadGroup(id: String)(f: => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
     env.datastores.serviceGroupDataStore.findById(id).flatMap {
       case Some(service) if canUserRead(service) => f
-      case _ => funauthorized
+      case _ => fforbidden
     }
   }
   def canWriteGroup(id: String)(f: => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
     env.datastores.serviceGroupDataStore.findById(id).flatMap {
       case Some(service) if canUserWrite(service) => f
-      case _ => funauthorized
+      case _ => fforbidden
     }
   }
   def canWriteAuthModule(id: String)(f: => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
     env.datastores.authConfigsDataStore.findById(id).flatMap {
       case Some(mod) if canUserWrite(mod) => f
-      case _ => funauthorized
+      case _ => fforbidden
     }
   }
 }

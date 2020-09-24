@@ -19,20 +19,24 @@ export class Location extends Component {
     this.props.onChangeTenant(tenant);
     BackOfficeServices.env().then(() => this.forceUpdate());
     BackOfficeServices.findAllTeams().then(teams => {
-      const possibleTeams = teams.filter(t => t.tenant === tenant);
-      this.setState({ possibleTeams });
+      const possibleTeams = [ { id: '*', name: 'All', description: 'All teams' }, ...teams.filter(t => t.tenant === tenant) ];
+      this.setState({ possibleTeams: [ ...possibleTeams ] });
       const availableTeams = possibleTeams.length > 0;
       const noTeams = !(this.props.teams && this.props.teams.length > 0);
       const badTeams = (this.props.teams || []).filter(team => possibleTeams.map(pt => pt.id).indexOf(team) > -1).length === 0;
       if (availableTeams && (noTeams || badTeams)) {
-        this.props.onChangeTeams([possibleTeams[0].id]);
+        console.log(possibleTeams)
+        const all = possibleTeams.filter(t => t.id === '*')[0]
+        const first = possibleTeams[0].id;
+        const team = all ? all : first;
+        this.props.onChangeTeams([team]);
       }
     });
   }
   onChangeTenant = (tenant) => {
     this.props.onChangeTenant(tenant);
     BackOfficeServices.findAllTeams().then(teams => {
-      const possibleTeams = teams.filter(t => t.tenant == tenant);
+      const possibleTeams = [ { id: '*', name: 'All', description: 'All teams' }, ...teams.filter(t => t.tenant === tenant) ];
       this.setState({ possibleTeams }, () => {
         this.props.onChangeTeams(possibleTeams[0] ? [possibleTeams[0]] : ["default"]);
       })
