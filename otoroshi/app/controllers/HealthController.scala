@@ -115,9 +115,10 @@ class HealthController(cc: ControllerComponents)(implicit env: Env)
         ) ++ cluster
         val err = (payload \ "otoroshi").asOpt[String].exists(_ != "healthy") ||
           (payload \ "datastore").asOpt[String].exists(_ != "healthy") ||
+          (payload \ "scripts" \ "initial").asOpt[Boolean].exists(v => !v) ||
           (payload \ "cluster").asOpt[String].orElse(Some("healthy")).exists(v => v != "healthy")
         if (err) {
-          InternalServerError(payload)
+          ServiceUnavailable(payload)
         } else {
           Ok(payload)
         }
