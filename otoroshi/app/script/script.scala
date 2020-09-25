@@ -762,8 +762,8 @@ class ScriptManager(env: Env) {
   def state(): Future[ScriptsState] = {
     env.datastores.scriptDataStore.findAll().map { scripts =>
       val allCompiled = !scripts.forall(s => cache.contains(s.id))
-      // val initial     = if (scripts.isEmpty) true else allCompiled
-      ScriptsState(compiling.nonEmpty, _firstCompilationDone.get())
+      val initial     = if (scripts.isEmpty) true else _firstCompilationDone.get()
+      ScriptsState(compiling.nonEmpty, initial)
     }
   }
 
