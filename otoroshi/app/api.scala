@@ -74,7 +74,8 @@ object OtoroshiLoaderHelper {
       logger.info("waiting for TLS initialization ...")
       Source.tick(1.second, 1.second, ())
         .map { _ =>
-          DynamicSSLEngineProvider.isFirstSetupDone
+          DynamicSSLEngineProvider.isFirstSetupDone &&
+            DynamicSSLEngineProvider.getCurrentEnv() != null
         }
         .filter(identity)
         .take(1)

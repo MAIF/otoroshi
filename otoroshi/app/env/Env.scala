@@ -817,6 +817,8 @@ class Env(val configuration: Configuration,
 
       setupLoggers()
 
+      DynamicSSLEngineProvider.setCurrentEnv(this)
+
       clusterAgent.warnAboutHttpLeaderUrls()
       if (clusterConfig.mode == ClusterMode.Leader) {
         logger.info(s"Running Otoroshi Leader agent !")
@@ -825,7 +827,6 @@ class Env(val configuration: Configuration,
         logger.info(s"Running Otoroshi Worker agent !")
         clusterAgent.startF()
       } else {
-        DynamicSSLEngineProvider.setCurrentEnv(this)
         configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.cipherSuites").filterNot(_.isEmpty).foreach { s =>
           DynamicSSLEngineProvider.logger.warn(s"Using custom SSL cipher suites: ${s.mkString(", ")}")
         }
