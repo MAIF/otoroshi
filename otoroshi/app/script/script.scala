@@ -659,8 +659,10 @@ class ScriptManager(env: Env) {
   private val listeningCpScripts = new AtomicReference[Seq[InternalEventListener]](Seq.empty)
 
   private val _firstPluginsSearchDone = new AtomicBoolean(false)
+  private val _firstCompilationDone = new AtomicBoolean(false)
 
   def firstPluginsSearchDone(): Boolean = _firstPluginsSearchDone.get()
+  def firstCompilationDone(): Boolean = _firstCompilationDone.get()
 
   lazy val (transformersNames, validatorsNames, preRouteNames, reqSinkNames, listenerNames, jobNames) = Try {
     import io.github.classgraph.{ClassGraph, ClassInfoList, ScanResult}
@@ -760,8 +762,8 @@ class ScriptManager(env: Env) {
   def state(): Future[ScriptsState] = {
     env.datastores.scriptDataStore.findAll().map { scripts =>
       val allCompiled = !scripts.forall(s => cache.contains(s.id))
-      val initial     = if (scripts.isEmpty) true else allCompiled
-      ScriptsState(compiling.nonEmpty, initial)
+      // val initial     = if (scripts.isEmpty) true else allCompiled
+      ScriptsState(compiling.nonEmpty, _firstCompilationDone.get())
     }
   }
 
@@ -841,6 +843,7 @@ class ScriptManager(env: Env) {
         }
         .andThen {
           case _ if first =>
+            _firstCompilationDone.compareAndSet(false, true)
             logger.info(s"Compiling and starting scripts done in ${System.currentTimeMillis() - start} ms.")
         }
     }
