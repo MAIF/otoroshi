@@ -199,6 +199,7 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
       val usernameOpt = (ctx.request.body \ "username").asOpt[String]
       val passwordOpt = (ctx.request.body \ "password").asOpt[String]
       val labelOpt = (ctx.request.body \ "label").asOpt[String]
+      val rights = UserRights(Seq(UserRight(TenantAccess(ctx.currentTenant.value), Seq(TeamAccess("*"))))) // UserRights.readFromObject(ctx.request.body)
       (usernameOpt, passwordOpt, labelOpt) match {
         case (Some(username), Some(password), Some(label)) => {
           val saltedPassword = BCrypt.hashpw(password, BCrypt.gensalt())
@@ -209,7 +210,7 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
             createdAt = DateTime.now(),
             typ = OtoroshiAdminType.SimpleAdmin,
             metadata = (ctx.request.body \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-            rights = UserRights.readFromObject(ctx.request.body),
+            rights = rights,
             location = EntityLocation(ctx.currentTenant, Seq(TeamId.all))  // EntityLocation.readFromKey(ctx.request.body)
           )).map { _ =>
             Ok(Json.obj("username" -> username))

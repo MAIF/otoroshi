@@ -109,6 +109,7 @@ class U2FController(BackOfficeAction: BackOfficeAction,
     }
   }
 
+  /*
   def registerSimpleAdmin = BackOfficeActionAuth.async(parse.json) { ctx =>
     ctx.checkRights(TenantAdminOnly) {
       val usernameOpt = (ctx.request.body \ "username").asOpt[String]
@@ -173,9 +174,10 @@ class U2FController(BackOfficeAction: BackOfficeAction,
       }
     }
   }
+  */
 
   /////////// WebAuthn admins ////////////////////////////////////////////////////////////////////////////////////////////
-
+  /*
   def webAuthnAdmins() = BackOfficeActionAuth.async { ctx =>
     ctx.checkRights(TenantAdminOnly) {
       val paginationPage: Int = ctx.request.queryString.get("page").flatMap(_.headOption).map(_.toInt).getOrElse(1)
@@ -214,7 +216,7 @@ class U2FController(BackOfficeAction: BackOfficeAction,
       }
     }
   }
-
+  */
   def webAuthnRegistrationStart() = BackOfficeActionAuth.async(parse.json) { ctx =>
     ctx.checkRights(TenantAdminOnly) {
       import collection.JavaConverters._

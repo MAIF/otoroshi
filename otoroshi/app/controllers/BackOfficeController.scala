@@ -670,7 +670,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // TODO: APIs already in admin API, remove it at some point ?
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+  /*
   def sessions() = BackOfficeActionAuth.async { ctx =>
     ctx.checkRights(TenantAdminOnly) {
       val paginationPage: Int = ctx.request.queryString.get("page").flatMap(_.headOption).map(_.toInt).getOrElse(1)
@@ -805,7 +805,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
         case _ => Ok(Json.obj("done" -> false))
       }
     }
-  }
+  }*/
 
   def auditEvents() = BackOfficeActionAuth.async { ctx =>
     ctx.checkRights(SuperAdminOnly) {

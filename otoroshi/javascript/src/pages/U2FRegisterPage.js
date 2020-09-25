@@ -462,7 +462,8 @@ export class RegisterAdminModal extends Component {
       if (password !== passwordcheck) {
         return window.newAlert('Password does not match !!!', 'Password error');
       }
-      fetch(`/bo/simple/admins`, {
+      // fetch(`/bo/simple/admins`, {
+      fetch(`/bo/api/proxy/api/admins/simple`, {
         method: 'POST',
         credentials: 'include',
         headers: {
@@ -807,7 +808,7 @@ export class AdminEditionModal extends Component {
   render() {
     return (
       <>
-        <div className="modal-body">
+        <div className="modal-body" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
           <Form
             value={this.state.user}
             onChange={this.onChange}

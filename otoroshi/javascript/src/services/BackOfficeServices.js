@@ -567,7 +567,8 @@ export function findAllApps() {
 }
 
 export function discardAllSessions() {
-  return fetch(`/bo/api/sessions`, {
+  // return fetch(`/bo/api/sessions`, {
+  return fetch(`/bo/api/proxy/api/admin-sessions`, {
     method: 'DELETE',
     credentials: 'include',
     headers: {
@@ -577,7 +578,8 @@ export function discardAllSessions() {
 }
 
 export function discardSession(id) {
-  return fetch(`/bo/api/sessions/${id}`, {
+  // return fetch(`/bo/api/sessions/${id}`, {
+  return fetch(`/bo/api/proxy/api/admin-sessions/${id}`, {
     method: 'DELETE',
     credentials: 'include',
     headers: {
@@ -587,7 +589,8 @@ export function discardSession(id) {
 }
 
 export function fetchSessions() {
-  return fetch(`/bo/api/sessions`, {
+  // return fetch(`/bo/api/sessions`, {
+  return fetch(`/bo/api/proxy/api/admin-sessions`, {
     method: 'GET',
     credentials: 'include',
     headers: {
@@ -597,7 +600,8 @@ export function fetchSessions() {
 }
 
 export function discardAllPrivateAppsSessions() {
-  return fetch(`/bo/api/papps/sessions`, {
+  // return fetch(`/bo/api/papps/sessions`, {
+  return fetch(`/bo/api/proxy/api/apps-sessions`, {
     method: 'DELETE',
     credentials: 'include',
     headers: {
@@ -607,7 +611,8 @@ export function discardAllPrivateAppsSessions() {
 }
 
 export function discardPrivateAppsSession(id) {
-  return fetch(`/bo/api/papps/sessions/${id}`, {
+  // return fetch(`/bo/api/papps/sessions/${id}`, {
+  return fetch(`/bo/api/proxy/api/apps-sessions/${id}`, {
     method: 'DELETE',
     credentials: 'include',
     headers: {
@@ -617,7 +622,8 @@ export function discardPrivateAppsSession(id) {
 }
 
 export function fetchPrivateAppsSessions() {
-  return fetch(`/bo/api/papps/sessions`, {
+  // return fetch(`/bo/api/papps/sessions`, {
+  return fetch(`/bo/api/proxy/api/apps-sessions`, {
     method: 'GET',
     credentials: 'include',
     headers: {
@@ -638,7 +644,8 @@ export function panicMode() {
 }
 
 export function fetchAdmins() {
-  return fetch(`/bo/simple/admins`, {
+  // return fetch(`/bo/simple/admins`, {
+  return fetch(`/bo/api/proxy/api/admins/simple`, {
     method: 'GET',
     credentials: 'include',
     headers: {
@@ -647,7 +654,8 @@ export function fetchAdmins() {
   })
     .then(r => r.json())
     .then(_admins => {
-      return fetch(`/bo/webauthn/admins`, {
+      // return fetch(`/bo/webauthn/admins`, {
+      return fetch(`/bo/api/proxy/api/admins/webauthn`, {
         method: 'GET',
         credentials: 'include',
         headers: {
@@ -665,7 +673,8 @@ export function fetchAdmins() {
 
 export function discardAdmin(username, id, type) {
   if (type === 'SIMPLE') {
-    return fetch(`/bo/simple/admins/${username}`, {
+    // return fetch(`/bo/simple/admins/${username}`, {
+    return fetch(`/bo/api/proxy/api/admins/simple/${username}`, {
       method: 'DELETE',
       credentials: 'include',
       headers: {
@@ -673,7 +682,8 @@ export function discardAdmin(username, id, type) {
       },
     }).then(r => r.json());
   } else if (type === 'WEBAUTHN') {
-    return fetch(`/bo/webauthn/admins/${username}/${id}`, {
+    //return fetch(`/bo/webauthn/admins/${username}/${id}`, {
+    return fetch(`/bo/api/proxy/api/admins/webauthn/${username}/${id}`, {
       method: 'DELETE',
       credentials: 'include',
       headers: {
