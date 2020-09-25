@@ -635,6 +635,13 @@ class ScriptCompiler(env: Env) {
   }
 }
 
+case class ScriptsState(compiling: Boolean, initialized: Boolean) {
+  def json: JsValue = Json.obj(
+    "compiling" -> compiling,
+    "initialized"   -> initialized
+  )
+}
+
 class ScriptManager(env: Env) {
 
   private implicit val ec   = env.otoroshiExecutionContext
@@ -650,6 +657,10 @@ class ScriptManager(env: Env) {
   private val cpTryCache   = new TrieMap[String, Unit]()
 
   private val listeningCpScripts = new AtomicReference[Seq[InternalEventListener]](Seq.empty)
+
+  private val _firstPluginsSearchDone = new AtomicBoolean(false)
+
+  def firstPluginsSearchDone(): Boolean = _firstPluginsSearchDone.get()
 
   lazy val (transformersNames, validatorsNames, preRouteNames, reqSinkNames, listenerNames, jobNames) = Try {
     import io.github.classgraph.{ClassGraph, ClassInfoList, ScanResult}
@@ -746,14 +757,11 @@ class ScriptManager(env: Env) {
     Option(updateRef.get()).foreach(_.cancel())
   }
 
-  def state(): Future[JsObject] = {
+  def state(): Future[ScriptsState] = {
     env.datastores.scriptDataStore.findAll().map { scripts =>
       val allCompiled = !scripts.forall(s => cache.contains(s.id))
       val initial     = if (scripts.isEmpty) true else allCompiled
-      Json.obj(
-        "compiling" -> compiling.nonEmpty,
-        "initial"   -> initial
-      )
+      ScriptsState(compiling.nonEmpty, initial)
     }
   }
 
@@ -770,6 +778,7 @@ class ScriptManager(env: Env) {
         listeningCpScripts.set(plugins.collect {
           case listener: InternalEventListener if listener.listening => listener
         })
+        _firstPluginsSearchDone.compareAndSet(false, true)
         logger.info(s"Finding and starting plugins done in ${System.currentTimeMillis() - start} ms.")
         ()
       }(cpScriptExec)

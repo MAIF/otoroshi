@@ -82,6 +82,7 @@ class HealthController(cc: ControllerComponents)(implicit env: Env)
         overhead <- env.datastores.serviceDescriptorDataStore.globalCallsOverhead()
         members  <- membersF
       } yield {
+        val workerReady = if (env.clusterConfig.mode == ClusterMode.Worker) !env.clusterAgent.cannotServeRequests() else true
         val cluster = env.clusterConfig.mode match {
           case ClusterMode.Off => Json.obj()
           case ClusterMode.Worker =>
@@ -111,12 +112,15 @@ class HealthController(cc: ControllerComponents)(implicit env: Env)
             case Unreachable => "unreachable"
           }),
           "certificates" -> certificates,
-          "scripts"      -> scripts
+          "scripts"      -> scripts.json,
+          "workerReady"  -> workerReady
         ) ++ cluster
         val err = (payload \ "otoroshi").asOpt[String].exists(_ != "healthy") ||
           (payload \ "datastore").asOpt[String].exists(_ != "healthy") ||
-          (payload \ "scripts" \ "initial").asOpt[Boolean].exists(v => !v) ||
-          (payload \ "cluster").asOpt[String].orElse(Some("healthy")).exists(v => v != "healthy")
+          (payload \ "cluster").asOpt[String].orElse(Some("healthy")).exists(v => v != "healthy") ||
+          !scripts.initialized ||
+          !workerReady ||
+          !DynamicSSLEngineProvider.isFirstSetupDone
         if (err) {
           ServiceUnavailable(payload)
         } else {

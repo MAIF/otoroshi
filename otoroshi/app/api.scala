@@ -3,12 +3,16 @@ package otoroshi.api
 import actions._
 import akka.actor.ActorSystem
 import akka.stream.Materializer
+import akka.stream.scaladsl.{Sink, Source}
+import cluster.ClusterMode
 import com.softwaremill.macwire.wire
 import com.typesafe.config.{Config, ConfigFactory}
 import controllers._
 import controllers.adminapi.{ApiKeysFromGroupController, _}
 import env._
 import gateway._
+import modules.OtoroshiComponentsInstances
+import otoroshi.api.OtoroshiLoaderHelper.EnvContainer
 import otoroshi.storage.DataStores
 import play.api.http.{DefaultHttpFilters, HttpErrorHandler, HttpRequestHandler}
 import play.api.inject.Injector
@@ -16,20 +20,101 @@ import play.api.libs.ws.WSClient
 import play.api.libs.ws.ahc.AhcWSComponents
 import play.api.mvc.{ControllerComponents, DefaultControllerComponents, EssentialFilter}
 import play.api.routing.Router
-import play.api.{BuiltInComponents, Configuration, LoggerConfigurator}
+import play.api.{BuiltInComponents, Configuration, Logger, LoggerConfigurator}
 import play.core.server.{AkkaHttpServerComponents, ServerConfig}
 import play.filters.HttpFiltersComponents
 import router.Routes
+import ssl.DynamicSSLEngineProvider
 import utils.Metrics
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{Await, ExecutionContext, Future}
+
+object OtoroshiLoaderHelper {
+
+  trait EnvContainer {
+    def env: Env
+  }
+
+  private val logger = Logger("otoroshi-loader")
+
+  def waitForReadiness(components: EnvContainer): Unit = {
+
+    import scala.concurrent.duration._
+
+    implicit val ec = components.env.otoroshiExecutionContext
+    implicit val scheduler = components.env.otoroshiScheduler
+    implicit val mat = components.env.otoroshiMaterializer
+
+
+    def waitForFirstClusterFetch(): Future[Unit] = {
+      logger.info("waiting for first cluster fetch ...")
+      Source.tick(1.second, 1.second, ())
+        .map { _ =>
+          if (components.env.clusterConfig.mode == ClusterMode.Worker) !components.env.clusterAgent.cannotServeRequests() else true
+        }
+        .filter(identity)
+        .take(1)
+        .runWith(Sink.head)(mat)
+        .map(_ => ())
+    }
+
+    def waitForPluginSearch(): Future[Unit] = {
+      logger.info("waiting for plugins search and start ...")
+      Source.tick(1.second, 1.second, ())
+        .map { _ =>
+          components.env.scriptManager.firstPluginsSearchDone()
+        }
+        .filter(identity)
+        .take(1)
+        .runWith(Sink.head)(mat)
+        .map(_ => ())
+    }
+
+    def waitForTlsInit(): Future[Unit] = {
+      logger.info("waiting for TLS initialization ...")
+      Source.tick(1.second, 1.second, ())
+        .map { _ =>
+          DynamicSSLEngineProvider.isFirstSetupDone
+        }
+        .filter(identity)
+        .take(1)
+        .runWith(Sink.head)(mat)
+        .map(_ => ())
+    }
+
+    def waitForPluginsCompilation(): Future[Unit] = {
+      logger.info("waiting for scripts initialization ...")
+      Source.tick(1.second, 1.second, ())
+        .mapAsync(1) { _ =>
+          components.env.scriptManager.state()
+        }
+        .map(_.initialized)
+        .filter(identity)
+        .take(1)
+        .runWith(Sink.head)(mat)
+        .map(_ => ())
+    }
+
+    val start = System.currentTimeMillis()
+    logger.info("waiting for subsystems initialization ...")
+    val waiting = for {
+      _ <- waitForFirstClusterFetch()
+      _ <- waitForPluginSearch()
+      _ <- waitForPluginsCompilation()
+      _ <- waitForTlsInit()
+    } yield ()
+    Await.result(waiting, 60.seconds)
+    logger.info(s"subsystems initialization done in ${System.currentTimeMillis() - start} ms.")
+  }
+}
 
 class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfig, _configuration: Config)
     extends AkkaHttpServerComponents
     with BuiltInComponents
     with AssetsComponents
     with AhcWSComponents
-    with HttpFiltersComponents {
+    with HttpFiltersComponents
+    with EnvContainer {
 
   override lazy val configuration: Configuration = {
     val sslConfig = serverConfig.sslPort
@@ -153,11 +238,13 @@ class Otoroshi(serverConfig: ServerConfig, configuration: Config = ConfigFactory
   private lazy val server = components.server
 
   def start(): Otoroshi = {
+    OtoroshiLoaderHelper.waitForReadiness(components)
     server.httpPort.get + 1
     this
   }
 
   def startAndStopOnShutdown(): Otoroshi = {
+    OtoroshiLoaderHelper.waitForReadiness(components)
     server.httpPort.get + 1
     stopOnShutdown()
   }
