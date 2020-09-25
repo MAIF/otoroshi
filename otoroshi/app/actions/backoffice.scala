@@ -48,12 +48,12 @@ case class BackOfficeActionContextAuth[A](request: Request[A], user: BackOfficeU
 
   def canUserRead[T <: EntityLocationSupport](item: T)(implicit env: Env): Boolean = {
     rootOrTenantAdmin(user) {
-      currentTenant.value == item.location.tenant.value && user.rights.canReadTenant(item.location.tenant) && user.rights.canReadTeams(currentTenant, item.location.teams)
+      (currentTenant.value == item.location.tenant.value || item.location.tenant == TenantId.all) && user.rights.canReadTenant(item.location.tenant) && user.rights.canReadTeams(currentTenant, item.location.teams)
     }
   }
   def canUserWrite[T <: EntityLocationSupport](item: T)(implicit env: Env): Boolean = {
     rootOrTenantAdmin(user) {
-      currentTenant.value == item.location.tenant.value && user.rights.canWriteTenant(item.location.tenant) && user.rights.canWriteTeams(currentTenant, item.location.teams)
+      (currentTenant.value == item.location.tenant.value || item.location.tenant == TenantId.all) && user.rights.canWriteTenant(item.location.tenant) && user.rights.canWriteTeams(currentTenant, item.location.teams)
     }
   }
 

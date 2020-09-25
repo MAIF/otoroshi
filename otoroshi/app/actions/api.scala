@@ -106,7 +106,7 @@ case class ApiActionContext[A](apiKey: ApiKey, request: Request[A]) {
       case Left(_) => false
       case Right(None) => true
       case Right(Some(user)) => rootOrTenantAdmin(user) {
-        currentTenant.value == item.location.tenant.value && user.rights.canReadTenant(item.location.tenant) && user.rights.canReadTeams(currentTenant, item.location.teams)
+        (currentTenant.value == item.location.tenant.value || item.location.tenant == TenantId.all) && user.rights.canReadTenant(item.location.tenant) && user.rights.canReadTeams(currentTenant, item.location.teams)
       }
     }
   }
@@ -115,7 +115,7 @@ case class ApiActionContext[A](apiKey: ApiKey, request: Request[A]) {
       case Left(_) => false
       case Right(None) => true
       case Right(Some(user)) => rootOrTenantAdmin(user) {
-        currentTenant.value == item.location.tenant.value && user.rights.canWriteTenant(item.location.tenant) && user.rights.canWriteTeams(currentTenant, item.location.teams)
+        (currentTenant.value == item.location.tenant.value || item.location.tenant == TenantId.all) && user.rights.canWriteTenant(item.location.tenant) && user.rights.canWriteTeams(currentTenant, item.location.teams)
       }
     }
   }

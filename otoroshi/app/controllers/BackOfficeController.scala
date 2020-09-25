@@ -20,7 +20,7 @@ import models._
 import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
-import otoroshi.models.{EntityLocation, EntityLocationSupport}
+import otoroshi.models.{EntityLocation, EntityLocationSupport, TenantId}
 import otoroshi.models.RightsChecker.{SuperAdminOnly, TenantAdminOnly}
 import otoroshi.ssl.pki.models.{GenCertResponse, GenCsrQuery}
 import otoroshi.utils.syntax.implicits._
@@ -218,7 +218,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
   def dashboard = BackOfficeActionAuth.async { ctx =>
     env.datastores.globalConfigDataStore.singleton().flatMap { config =>
       env.datastores.tenantDataStore.findAll().map { tenants =>
-        val userTenants = tenants.filter(t => ctx.user.rights.rights.exists(r => r.tenant.canRead && r.tenant.matches(t.id))).map(_.id.value)
+        val userTenants = tenants.filter(t => ctx.user.rights.rights.exists(r => r.tenant.canRead && r.tenant.matches(t.id))).filterNot(_.id == TenantId.all).map(_.id.value)
         Ok(views.html.backoffice.dashboard(ctx.user, config, env, env.otoroshiVersion, userTenants))
       }
     }
@@ -227,7 +227,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
   def dashboardRoutes(ui: String) = BackOfficeActionAuth.async { ctx =>
     env.datastores.globalConfigDataStore.singleton().flatMap { config =>
       env.datastores.tenantDataStore.findAll().map { tenants =>
-        val userTenants = tenants.filter(t => ctx.user.rights.rights.exists(r => r.tenant.canRead && r.tenant.matches(t.id))).map(_.id.value)
+        val userTenants = tenants.filter(t => ctx.user.rights.rights.exists(r => r.tenant.canRead && r.tenant.matches(t.id))).filterNot(_.id == TenantId.all).map(_.id.value)
         Ok(views.html.backoffice.dashboard(ctx.user, config, env, env.otoroshiVersion, userTenants))
       }
     }

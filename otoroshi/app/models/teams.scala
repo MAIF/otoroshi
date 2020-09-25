@@ -150,9 +150,12 @@ object TeamId {
   def apply(value: String): TeamId = new TeamId(value.toLowerCase.trim)
 }
 
-case class TenantId(value: String)
+case class TenantId(rawValue: String) {
+  lazy val value: String = rawValue.toLowerCase.trim
+}
 object TenantId {
   val default: TenantId = TenantId("default")
+  val all: TenantId = TenantId("*")
   def apply(value: String): TenantId = new TenantId(value.toLowerCase.trim)
 }
 
@@ -201,7 +204,7 @@ object TenantAccess {
 
 case class TenantAccess(value: String, canRead: Boolean, canWrite: Boolean) {
   def matches(tenant: TenantId): Boolean = {
-    value == "*" || RegexPool(value).matches(tenant.value)
+    value == "*" || tenant == TenantId.all || RegexPool(value).matches(tenant.value)
   }
   lazy val asTenantId: TenantId = TenantId(value)
   lazy val plain: Boolean = !containsWildcard

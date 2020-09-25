@@ -8,7 +8,7 @@ import { Separator } from './Separator';
 
 export class Location extends Component {
 
-  state = { possibleTeams: [], tenant: 'default' };
+  state = { possibleTeams: [], possibleTenants: [], tenant: 'default' };
 
   componentDidMount() {
     let tenant = window.localStorage.getItem("Otoroshi-Tenant") || "default";
@@ -18,6 +18,10 @@ export class Location extends Component {
     this.setState({ tenant })
     this.props.onChangeTenant(tenant);
     BackOfficeServices.env().then(() => this.forceUpdate());
+    BackOfficeServices.findAllTenants().then(tenants => {
+      const possibleTenants = [ { id: '*', name: 'All', description: 'All organizations' }, ...tenants ];
+      this.setState({ possibleTenants });
+    });
     BackOfficeServices.findAllTeams().then(teams => {
       const possibleTeams = [ { id: '*', name: 'All', description: 'All teams' }, ...teams.filter(t => t.tenant === tenant) ];
       this.setState({ possibleTeams: [ ...possibleTeams ] });
@@ -55,10 +59,16 @@ export class Location extends Component {
           label="Organization"
           value={this.props.tenant || window.localStorage.getItem("Otoroshi-Tenant") || "default"}
           onChange={this.onChangeTenant}
-          valuesFrom="/bo/api/proxy/api/tenants"
-          transformer={a => ({
+          __valuesFrom="/bo/api/proxy/api/tenants"
+          __transformer={a => ({
             value: a.id,
             label: a.name + " - " + a.description,
+          })}
+          possibleValues={this.state.possibleTenants.map(a => {
+            return {
+              value: a.id,
+              label: a.name + " - " + a.description,
+            }
           })}
           help="The organization where this entity will belong"
         />}
