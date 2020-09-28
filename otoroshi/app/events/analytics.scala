@@ -27,10 +27,10 @@ import scala.util.Success
 case object SendToAnalytics
 
 object AnalyticsActor {
-  def props(exporter: DataExporter)(implicit env: Env) = Props(new AnalyticsActor(exporter))
+  def props(exporter: DataExporterConfig)(implicit env: Env) = Props(new AnalyticsActor(exporter))
 }
 
-class AnalyticsActor(exporter: DataExporter)(implicit env: Env) extends Actor {
+class AnalyticsActor(exporter: DataExporterConfig)(implicit env: Env) extends Actor {
 
   implicit lazy val ec = env.analyticsExecutionContext
 
@@ -104,7 +104,7 @@ class AnalyticsActorSupervizer(env: Env) extends Actor {
   implicit val e = env
   implicit val ec  = env.analyticsExecutionContext
 
-  val namesAndRefs: Map[ActorRef, Tuple2[String, DataExporter]] = Map.empty
+  val namesAndRefs: Map[ActorRef, Tuple2[String, DataExporterConfig]] = Map.empty
 
   // override def supervisorStrategy: SupervisorStrategy =
   //   OneForOneStrategy() {
@@ -120,8 +120,8 @@ class AnalyticsActorSupervizer(env: Env) extends Actor {
   }
 
   override def preStart(): Unit = {
-    env.datastores.globalConfigDataStore.singleton().fast.map { config =>
-      config.dataExporters.foreach(exporter => {
+    env.datastores.dataExporterConfigDataStore.findAll().fast.map { dataExporters =>
+      dataExporters.foreach(exporter => {
         val childName = s"analytics-actor-${exporter.id}"
         if (context.child(childName).isEmpty) {
           logger.debug(s"Starting new child $childName")

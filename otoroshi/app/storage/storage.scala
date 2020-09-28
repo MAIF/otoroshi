@@ -19,7 +19,7 @@ import play.api.inject.ApplicationLifecycle
 import play.api.libs.json._
 import play.api.{Configuration, Environment, Logger}
 import ssl.{CertificateDataStore, ClientCertificateValidationDataStore}
-import storage.stores.{TeamDataStore, TenantDataStore}
+import storage.stores.{DataExporterConfigDataStore, TeamDataStore, TenantDataStore}
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future}
@@ -61,6 +61,7 @@ trait DataStores {
   def webAuthnRegistrationsDataStore: WebAuthnRegistrationsDataStore
   def tenantDataStore: TenantDataStore
   def teamDataStore: TeamDataStore
+  def dataExporterConfigDataStore: DataExporterConfigDataStore
   ////
   def fullNdJsonImport(export: Source[JsValue, _]): Future[Unit]
   def fullNdJsonExport(group: Int, groupWorkers: Int, keyWorkers: Int): Future[Source[JsValue, _]]

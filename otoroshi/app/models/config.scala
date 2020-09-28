@@ -3,6 +3,7 @@ package models
 import akka.http.scaladsl.util.FastFuture
 import auth.AuthModuleConfig
 import env.Env
+import events.Exporters._
 import events._
 import org.joda.time.DateTime
 import otoroshi.models.{SimpleOtoroshiAdmin, WebAuthnOtoroshiAdmin}
@@ -19,170 +20,10 @@ import security.IdGenerator
 import ssl.{Cert, ClientCertificateValidator}
 import utils.CleverCloudClient.{CleverSettings, UserTokens}
 import utils.http.MtlsConfig
-import utils.{CleverCloudClient, ConsoleMailerSettings, GenericMailerSettings, MailerSettings, MailgunSettings, MailjetSettings, NoneMailerSettings}
+import utils._
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
-
-trait Exporter {
-  def toJson: JsValue
-}
-
-trait DataExporter {
-  val id: String
-  val eventsFilters: Seq[String]
-  val eventsFiltersNot: Seq[String]
-  val config: Exporter
-}
-
-case object DataExporter {
-
-  case class ElasticExporter(id: String, eventsFilters: Seq[String], eventsFiltersNot: Seq[String], config: ElasticAnalyticsConfig) extends DataExporter
-  case class WebhookExporter(id: String, eventsFilters: Seq[String], eventsFiltersNot: Seq[String], config: Webhook) extends DataExporter
-  case class KafkaExporter(id: String, eventsFilters: Seq[String], eventsFiltersNot: Seq[String], config: KafkaConfig) extends DataExporter
-  case class PulsarExporter(id: String, eventsFilters: Seq[String], eventsFiltersNot: Seq[String], config: PulsarConfig) extends DataExporter
-
-  case class ConsoleExporter(id: String, eventsFilters: Seq[String], eventsFiltersNot: Seq[String], config: ConsoleMailerSettings) extends DataExporter
-  case class GenericMailerExporter(id: String, eventsFilters: Seq[String], eventsFiltersNot: Seq[String], config: GenericMailerSettings) extends DataExporter
-  case class MailgunExporter(id: String, eventsFilters: Seq[String], eventsFiltersNot: Seq[String], config: MailgunSettings ) extends DataExporter
-  case class MailjetExporter(id: String, eventsFilters: Seq[String], eventsFiltersNot: Seq[String], config: MailjetSettings) extends DataExporter
-  case class NoneMailerExporter(id: String, eventsFilters: Seq[String], eventsFiltersNot: Seq[String], config: NoneMailerSettings) extends DataExporter
-
-  val format: Format[DataExporter] = new Format[DataExporter] {
-    override def reads(json: JsValue): JsResult[DataExporter] = (json \ "type").as[String] match {
-      case "elastic" => ElasticAnalyticsConfig.format.reads((json \ "config").as[JsObject])
-        .map(config => ElasticExporter(
-          id = (json \ "id").as[String],
-          eventsFilters = (json \ "eventsFilters").as[Seq[String]],
-          eventsFiltersNot = (json \ "eventsFiltersNot").as[Seq[String]],
-          config = config
-        ))
-      case "webhook" => Webhook.format.reads((json \ "config").as[JsObject])
-        .map(config => WebhookExporter(
-          id = (json \ "id").as[String],
-          eventsFilters = (json \ "eventsFilters").as[Seq[String]],
-          eventsFiltersNot = (json \ "eventsFiltersNot").as[Seq[String]],
-          config = config
-        ))
-      case "kafka" => KafkaConfig.format.reads((json \ "config").as[JsObject])
-        .map(config => KafkaExporter(
-          id = (json \ "id").as[String],
-          eventsFilters = (json \ "eventsFilters").as[Seq[String]],
-          eventsFiltersNot = (json \ "eventsFiltersNot").as[Seq[String]],
-          config = config
-        ))
-      case "pulsar" => PulsarConfig.format.reads((json \ "config").as[JsObject])
-        .map(config => PulsarExporter(
-          id = (json \ "id").as[String],
-          eventsFilters = (json \ "eventsFilters").as[Seq[String]],
-          eventsFiltersNot = (json \ "eventsFiltersNot").as[Seq[String]],
-          config = config
-        ))
-      case "mailer" => MailerSettings.format.reads((json \ "config").as[JsObject])
-        .map {
-          case config: ConsoleMailerSettings => ConsoleExporter(
-            id = (json \ "id").as[String],
-            eventsFilters = (json \ "eventsFilters").as[Seq[String]],
-            eventsFiltersNot = (json \ "eventsFiltersNot").as[Seq[String]],
-            config = config
-          )
-          case config: GenericMailerSettings => GenericMailerExporter(
-            id = (json \ "id").as[String],
-            eventsFilters = (json \ "eventsFilters").as[Seq[String]],
-            eventsFiltersNot = (json \ "eventsFiltersNot").as[Seq[String]],
-            config = config
-          )
-          case config: MailgunSettings => MailgunExporter(
-            id = (json \ "id").as[String],
-            eventsFilters = (json \ "eventsFilters").as[Seq[String]],
-            eventsFiltersNot = (json \ "eventsFiltersNot").as[Seq[String]],
-            config = config
-          )
-          case config: MailjetSettings => MailjetExporter(
-            id = (json \ "id").as[String],
-            eventsFilters = (json \ "eventsFilters").as[Seq[String]],
-            eventsFiltersNot = (json \ "eventsFiltersNot").as[Seq[String]],
-            config = config
-          )
-          case config: NoneMailerSettings => NoneMailerExporter(
-            id = (json \ "id").as[String],
-            eventsFilters = (json \ "eventsFilters").as[Seq[String]],
-            eventsFiltersNot = (json \ "eventsFiltersNot").as[Seq[String]],
-            config = config
-          )
-        }
-    }
-
-    override def writes(o: DataExporter): JsValue = o match {
-      case e: ElasticExporter => Json.obj(
-        "type" -> "elastic",
-        "id" -> o.id,
-        "eventsFilters" -> JsArray(o.eventsFilters.map(JsString.apply)),
-        "eventsFiltersNot" -> JsArray(o.eventsFiltersNot.map(JsString.apply)),
-        "config" -> ElasticAnalyticsConfig.format.writes(e.config).as[JsObject]
-      )
-      case e: WebhookExporter => Json.obj(
-        "type" -> "webhook",
-        "id" -> o.id,
-        "eventsFilters" -> JsArray(o.eventsFilters.map(JsString.apply)),
-        "eventsFiltersNot" -> JsArray(o.eventsFiltersNot.map(JsString.apply)),
-        "config" -> Webhook.format.writes(e.config).as[JsObject]
-      )
-      case e: KafkaExporter => Json.obj(
-        "type" -> "kafka",
-        "id" -> o.id,
-        "eventsFilters" -> JsArray(o.eventsFilters.map(JsString.apply)),
-        "eventsFiltersNot" -> JsArray(o.eventsFiltersNot.map(JsString.apply)),
-        "config" -> KafkaConfig.format.writes(e.config).as[JsObject]
-      )
-      case e: PulsarExporter => Json.obj(
-        "type" -> "pulsar",
-        "id" -> o.id,
-        "eventsFilters" -> JsArray(o.eventsFilters.map(JsString.apply)),
-        "eventsFiltersNot" -> JsArray(o.eventsFiltersNot.map(JsString.apply)),
-        "config" -> PulsarConfig.format.writes(e.config).as[JsObject]
-      )
-      case e: ConsoleExporter => Json.obj(
-        "type" -> "mailer",
-        "id" -> o.id,
-        "eventsFilters" -> JsArray(o.eventsFilters.map(JsString.apply)),
-        "eventsFiltersNot" -> JsArray(o.eventsFiltersNot.map(JsString.apply)),
-        "config" -> (ConsoleMailerSettings.format.writes(e.config) ++ Json.obj("type" -> "console"))
-      )
-      case e: GenericMailerExporter => Json.obj(
-        "type" -> "mailer",
-        "id" -> o.id,
-        "eventsFilters" -> JsArray(o.eventsFilters.map(JsString.apply)),
-        "eventsFiltersNot" -> JsArray(o.eventsFiltersNot.map(JsString.apply)),
-        "config" -> (GenericMailerSettings.format.writes(e.config) ++ Json.obj("type" -> "generic"))
-      )
-      case e: MailgunExporter => Json.obj(
-        "type" -> "mailer",
-        "id" -> o.id,
-        "eventsFilters" -> JsArray(o.eventsFilters.map(JsString.apply)),
-        "eventsFiltersNot" -> JsArray(o.eventsFiltersNot.map(JsString.apply)),
-        "config" -> (MailgunSettings.format.writes(e.config) ++ Json.obj("type" -> "mailgun"))
-      )
-      case e: MailjetExporter => Json.obj(
-        "type" -> "mailer",
-        "id" -> o.id,
-        "eventsFilters" -> JsArray(o.eventsFilters.map(JsString.apply)),
-        "eventsFiltersNot" -> JsArray(o.eventsFiltersNot.map(JsString.apply)),
-        "config" -> (MailjetSettings.format.writes(e.config) ++ Json.obj("type" -> "mailjet"))
-      )
-      case e: NoneMailerExporter => Json.obj(
-        "type" -> "mailer",
-        "id" -> o.id,
-        "eventsFilters" -> JsArray(o.eventsFilters.map(JsString.apply)),
-        "eventsFiltersNot" -> JsArray(o.eventsFiltersNot.map(JsString.apply)),
-        "config" -> (NoneMailerSettings.format.writes(e.config) ++ Json.obj("type" -> "none"))
-      )
-    }
-
-  }
-}
-
-
 
 case class ElasticAnalyticsConfig(
     clusterUri: String,
@@ -488,47 +329,46 @@ object AutoCert {
 }
 
 case class GlobalConfig(
-    dataExporters: Seq[DataExporter] = Seq.empty[DataExporter],
-    letsEncryptSettings: LetsEncryptSettings = LetsEncryptSettings(),
-    lines: Seq[String] = Seq("prod"),
-    enableEmbeddedMetrics: Boolean = true,
-    streamEntityOnly: Boolean = true,
-    autoLinkToDefaultGroup: Boolean = true,
-    limitConcurrentRequests: Boolean = false, // TODO : true by default
-    maxConcurrentRequests: Long = 1000,
-    maxHttp10ResponseSize: Long = 4 * (1024 * 1024),
-    useCircuitBreakers: Boolean = true,
-    apiReadOnly: Boolean = false,
-    u2fLoginOnly: Boolean = false,
-    maintenanceMode: Boolean = false,
-    ipFiltering: IpFiltering = IpFiltering(),
-    throttlingQuota: Long = BaseQuotas.MaxValue,
-    perIpThrottlingQuota: Long = BaseQuotas.MaxValue,
-    elasticReadsConfig: Option[ElasticAnalyticsConfig] = None,
-    elasticWritesConfigs: Seq[ElasticAnalyticsConfig] = Seq.empty[ElasticAnalyticsConfig],
-    analyticsWebhooks: Seq[Webhook] = Seq.empty[Webhook],
-    logAnalyticsOnServer: Boolean = false,
-    useAkkaHttpClient: Boolean = false,
-    // TODO: logBodies: Boolean,
-    alertsWebhooks: Seq[Webhook] = Seq.empty[Webhook],
-    alertsEmails: Seq[String] = Seq.empty[String],
-    endlessIpAddresses: Seq[String] = Seq.empty[String],
-    kafkaConfig: Option[KafkaConfig] = None,
-    backOfficeAuthRef: Option[String] = None,
-    cleverSettings: Option[CleverCloudSettings] = None,
-    mailerSettings: Option[MailerSettings] = None,
-    statsdConfig: Option[StatsdConfig] = None,
-    maxWebhookSize: Int = 100,
-    middleFingers: Boolean = false,
-    maxLogsSize: Int = 10000,
-    otoroshiId: String = IdGenerator.uuid,
-    snowMonkeyConfig: SnowMonkeyConfig = SnowMonkeyConfig(),
-    proxies: Proxies = Proxies(),
-    scripts: GlobalScripts = GlobalScripts(),
-    geolocationSettings: GeolocationSettings = NoneGeolocationSettings,
-    userAgentSettings: UserAgentSettings = UserAgentSettings(false),
-    autoCert: AutoCert = AutoCert(),
-    metadata: Map[String, String] = Map.empty
+                         letsEncryptSettings: LetsEncryptSettings = LetsEncryptSettings(),
+                         lines: Seq[String] = Seq("prod"),
+                         enableEmbeddedMetrics: Boolean = true,
+                         streamEntityOnly: Boolean = true,
+                         autoLinkToDefaultGroup: Boolean = true,
+                         limitConcurrentRequests: Boolean = false, // TODO : true by default
+                         maxConcurrentRequests: Long = 1000,
+                         maxHttp10ResponseSize: Long = 4 * (1024 * 1024),
+                         useCircuitBreakers: Boolean = true,
+                         apiReadOnly: Boolean = false,
+                         u2fLoginOnly: Boolean = false,
+                         maintenanceMode: Boolean = false,
+                         ipFiltering: IpFiltering = IpFiltering(),
+                         throttlingQuota: Long = BaseQuotas.MaxValue,
+                         perIpThrottlingQuota: Long = BaseQuotas.MaxValue,
+                         elasticReadsConfig: Option[ElasticAnalyticsConfig] = None,
+                         elasticWritesConfigs: Seq[ElasticAnalyticsConfig] = Seq.empty[ElasticAnalyticsConfig],
+                         analyticsWebhooks: Seq[Webhook] = Seq.empty[Webhook],
+                         logAnalyticsOnServer: Boolean = false,
+                         useAkkaHttpClient: Boolean = false,
+                         // TODO: logBodies: Boolean,
+                         alertsWebhooks: Seq[Webhook] = Seq.empty[Webhook],
+                         alertsEmails: Seq[String] = Seq.empty[String],
+                         endlessIpAddresses: Seq[String] = Seq.empty[String],
+                         kafkaConfig: Option[KafkaConfig] = None,
+                         backOfficeAuthRef: Option[String] = None,
+                         cleverSettings: Option[CleverCloudSettings] = None,
+                         mailerSettings: Option[MailerSettings] = None,
+                         statsdConfig: Option[StatsdConfig] = None,
+                         maxWebhookSize: Int = 100,
+                         middleFingers: Boolean = false,
+                         maxLogsSize: Int = 10000,
+                         otoroshiId: String = IdGenerator.uuid,
+                         snowMonkeyConfig: SnowMonkeyConfig = SnowMonkeyConfig(),
+                         proxies: Proxies = Proxies(),
+                         scripts: GlobalScripts = GlobalScripts(),
+                         geolocationSettings: GeolocationSettings = NoneGeolocationSettings,
+                         userAgentSettings: UserAgentSettings = UserAgentSettings(false),
+                         autoCert: AutoCert = AutoCert(),
+                         metadata: Map[String, String] = Map.empty
 ) {
   def save()(implicit ec: ExecutionContext, env: Env)   = env.datastores.globalConfigDataStore.set(this)
   def delete()(implicit ec: ExecutionContext, env: Env) = env.datastores.globalConfigDataStore.delete(this)
@@ -611,7 +451,6 @@ object GlobalConfig {
           )
       }
       Json.obj(
-        "dataExporters"     -> JsArray(o.dataExporters.map(DataExporter.format.writes)),
         "letsEncryptSettings"     -> o.letsEncryptSettings.json,
         "lines"                   -> JsArray(o.lines.map(JsString.apply)),
         "maintenanceMode"         -> o.maintenanceMode,
@@ -655,7 +494,6 @@ object GlobalConfig {
     override def reads(json: JsValue): JsResult[GlobalConfig] =
       Try {
         GlobalConfig(
-          dataExporters = (json \ "dataExporters").asOpt[Seq[DataExporter]](Reads.seq(DataExporter.format)).getOrElse(Seq.empty[DataExporter]),
           lines = (json \ "lines").asOpt[Seq[String]].getOrElse(Seq("prod")),
           enableEmbeddedMetrics = (json \ "enableEmbeddedMetrics").asOpt[Boolean].getOrElse(true),
           streamEntityOnly = (json \ "streamEntityOnly").asOpt[Boolean].getOrElse(true),
