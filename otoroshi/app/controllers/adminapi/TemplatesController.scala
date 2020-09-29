@@ -4,6 +4,7 @@ import actions.ApiAction
 import akka.http.scaladsl.util.FastFuture
 import auth.{AuthModuleConfig, BasicAuthModuleConfig, GenericOauth2ModuleConfig, LdapAuthModuleConfig}
 import env.Env
+import models.DataExporterConfig.{ConsoleExporterConfig, ElasticExporterConfig, KafkaExporterConfig, MailgunExporterConfig, MailjetExporterConfig, NoneMailerExporterConfig, PulsarExporterConfig, WebhookExporterConfig}
 import models._
 import org.mindrot.jbcrypt.BCrypt
 import otoroshi.models.OtoroshiAdminType.WebAuthnAdmin
@@ -182,6 +183,24 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
           )
         ),
           ctx.request)
+      ).future
+    }
+  }
+
+  def initiateDataExporterConfig() = ApiAction.async { ctx =>
+    ctx.checkRights(RightsChecker.Anyone) {
+      val module = env.datastores.dataExporterConfigDataStore.template(ctx.request.getQueryString("type")).applyOn {
+        case c: WebhookExporterConfig     => c.copy(location = c.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam)))
+        case c: ElasticExporterConfig     => c.copy(location = c.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam)))
+        case c: KafkaExporterConfig       => c.copy(location = c.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam)))
+        case c: PulsarExporterConfig      => c.copy(location = c.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam)))
+        case c: MailjetExporterConfig     => c.copy(location = c.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam)))
+        case c: MailgunExporterConfig     => c.copy(location = c.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam)))
+        case c: NoneMailerExporterConfig  => c.copy(location = c.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam)))
+        case c: ConsoleExporterConfig     => c.copy(location = c.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam)))
+      }
+      Ok(
+        process(module.json, ctx.request)
       ).future
     }
   }

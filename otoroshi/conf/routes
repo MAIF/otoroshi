@@ -391,6 +391,19 @@ PATCH   /api/teams/:id                                      controllers.adminapi
 GET     /api/teams                                          controllers.adminapi.TeamsController.findAllEntitiesAction()
 POST    /api/teams                                          controllers.adminapi.TeamsController.createAction()
 
+# data exporter config API
+GET     /api/data-exporter-configs/_template                controllers.adminapi.TemplatesController.initiateDataExporterConfig()
+POST    /api/data-exporter-configs/_bulk                    controllers.adminapi.DataExporterConfigController.bulkCreateAction()
+PUT     /api/data-exporter-configs/_bulk                    controllers.adminapi.DataExporterConfigController.bulkUpdateAction()
+PATCH   /api/data-exporter-configs/_bulk                    controllers.adminapi.DataExporterConfigController.bulkPatchAction()
+DELETE  /api/data-exporter-configs/_bulk                    controllers.adminapi.DataExporterConfigController.bulkDeleteAction()
+GET     /api/data-exporter-configs/:id                      controllers.adminapi.DataExporterConfigController.findEntityByIdAction(id)
+DELETE  /api/data-exporter-configs/:id                      controllers.adminapi.DataExporterConfigController.deleteEntityAction(id)
+PUT     /api/data-exporter-configs/:id                      controllers.adminapi.DataExporterConfigController.updateEntityAction(id)
+PATCH   /api/data-exporter-configs/:id                      controllers.adminapi.DataExporterConfigController.patchEntityAction(id)
+GET     /api/data-exporter-configs                          controllers.adminapi.DataExporterConfigController.findAllEntitiesAction()
+POST    /api/data-exporter-configs                          controllers.adminapi.DataExporterConfigController.createAction()
+
 GET     /api/stats/global                                     controllers.adminapi.AnalyticsController.globalStats(from: Option[String], to: Option[String])
 GET     /api/stats                                            controllers.adminapi.AnalyticsController.filterableStats(from: Option[String], to: Option[String])
 GET     /api/events                                           controllers.adminapi.AnalyticsController.filterableEvents(from: Option[String], to: Option[String])

@@ -57,7 +57,7 @@ class OtoroshiEventsActorSupervizer(env: Env) extends Actor {
         case _ => ()
       }
       exporters.foreach {
-        case config if dataExporters.contains(config.id) =>
+        case config if dataExporters.exists(e => e._1 == config.id && e._2.config().contains(config)) =>
           dataExporters.get(config.id).foreach(_.update(config))
         case config if !dataExporters.contains(config.id) =>
           val exporter = config.exporter()
@@ -79,6 +79,7 @@ object ExportResult {
   case class ExportResultFailure(error: String) extends ExportResult
 }
 trait DataExporter {
+  def config(): Option[DataExporterConfig]
   def accept(event: OtoroshiEvent): Boolean
   def project[A <: OtoroshiEvent](event: A): Future[JsValue]
   def send(events: Seq[JsValue]): Future[ExportResult]

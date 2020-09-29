@@ -1508,3 +1508,69 @@ export function updateWebAuthnAdmin(user) {
   }).then(r => r.json());
 }
 
+///////////////////////////////
+// DATA EXPORTERS
+///////////////////////////////
+export function createNewDataExporterConfig(type) {
+  return fetch(`/bo/api/proxy/api/data-exporter-configs/_template?type=${type}`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then(r => r.json());
+}
+
+export function findAllDataExporterConfigs() {
+  return fetch('/bo/api/proxy/api/data-exporter-configs', {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then(r => r.json());
+}
+
+export function findDataExporterConfigById(id) {
+  return fetch(`/bo/api/proxy/api/data-exporter-configs/${id}`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then(r => r.json());
+}
+
+export function deleteDataExporterConfig(ak) {
+  return fetch(`/bo/api/proxy/api/data-exporter-configs/${ak.id}`, {
+    method: 'DELETE',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then(r => r.json());
+}
+
+export function createDataExporterConfig(ak) {
+  return fetch(`/bo/api/proxy/api/data-exporter-configs`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(ak),
+  }).then(r => r.json());
+}
+
+export function updateDataExporterConfig(ak) {
+  return fetch(`/bo/api/proxy/api/data-exporter-configs/${ak.id}`, {
+    method: 'PUT',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(ak),
+  }).then(r => r.json());
+}

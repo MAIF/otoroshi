@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import faker from 'faker';
 
 import * as BackOfficeServices from '../services/BackOfficeServices';
-import { Table, SelectInput, ArrayInput, Form } from '../components/inputs';
+import { Table, SelectInput, ArrayInput, Form, BooleanInput, TextInput, ObjectInput } from '../components/inputs';
 import { Collapse } from '../components/inputs/Collapse';
 import Creatable from 'react-select/lib/Creatable';
 
@@ -152,14 +152,13 @@ class Mailer extends Component {
 
 export class DataExportersPage extends Component {
   state = {
-    config: {},
     dataExporters: []
   }
 
   componentDidMount() {
     this.props.setTitle(`Data exporters`);
-    BackOfficeServices.getGlobalConfig().then(config =>
-      this.setState({ config, dataExporters: config.dataExporters }, () => this.table.update())
+    BackOfficeServices.findAllDataExporterConfigs().then(dataExporters =>
+      this.setState({ dataExporters }, () => this.table.update())
     );
     this.mountShortcuts();
   }
@@ -179,20 +178,8 @@ export class DataExportersPage extends Component {
   saveShortcut = e => {
     if (e.keyCode === 83 && (e.ctrlKey || e.metaKey)) {
       e.preventDefault();
-      if (this.state.changed) {
-        this.saveGlobalConfig();
-      }
+      //todo: be smart
     }
-  };
-
-  saveGlobalConfig = e => {
-    if (e && e.preventDefault) e.preventDefault();
-
-    const config = { ...this.state.config, dataExporters: this.state.dataExporters }
-    return BackOfficeServices.updateGlobalConfig(config)
-      .then(() => {
-        this.setState({ config });
-      });
   };
 
   addExporter = e => {
@@ -200,32 +187,32 @@ export class DataExportersPage extends Component {
     window.popup('New Exporter', (ok, cancel) => <NewExporterForm ok={ok} cancel={cancel} />, {
       style: { width: '100%', height: '80%', overflow: "scroll" },
     })
-      .then(exporter => {
-        if (exporter) {
-          this.setState({ dataExporters: [...this.state.dataExporters, exporter] },
-            () => this.saveGlobalConfig()
-              .then(() => this.table.update()))
+      .then(config => {
+        if (config) {
+          BackOfficeServices.createDataExporterConfig(config)
+            .then(config => this.setState({ dataExporters: [...this.state.dataExporters, config] },
+              () => this.table.update()))
         }
       })
   };
 
-  updateExporter = (item, table) => {
-    window.popup('Update Exporter', (ok, cancel) => <NewExporterForm ok={ok} cancel={cancel} exporter={item} />, {
+  updateExporter = (config, table) => {
+    window.popup('Update data exporter config', (ok, cancel) => <NewExporterForm ok={ok} cancel={cancel} exporter={config} />, {
       style: { width: '100%', height: '80%', overflow: "scroll" },
     })
-      .then(exporter => this.setState({ dataExporters: [...this.state.dataExporters.filter(e => e.id !== exporter.id), exporter] },
-        () => this.saveGlobalConfig()
-          .then(() => this.table.update())))
+      .then(config => BackOfficeServices.updateDataExporterConfig(config))
+      .then(config => this.setState({ dataExporters: [...this.state.dataExporters.filter(e => e.id !== config.id), config] },
+        () => this.table.update()))
   }
 
-  deleteExporter = (exporter, table) => {
+  deleteExporter = (config, table) => {
     window
-      .newConfirm('Are you sure you want to delete this exporter ?')
+      .newConfirm('Are you sure you want to delete this data exporter config ?')
       .then(confirmed => {
         if (confirmed) {
-          this.setState({ dataExporters: this.state.dataExporters.filter(e => e.id !== exporter.id) },
-            () => this.saveGlobalConfig()
-              .then(() => this.table.update()))
+          BackOfficeServices.deleteDataExporterConfig(config)
+            .then(() => this.setState({ dataExporters: this.state.dataExporters.filter(e => e.id !== config.id) },
+              () => this.table.update()))
         }
       });
   }
@@ -240,28 +227,13 @@ export class DataExportersPage extends Component {
       content: item => item.type,
     },
     {
-      title: 'Event filters',
-      content: item => item.eventsFilters
-    },
-    {
-      title: 'Event filters Not',
-      content: item => item.eventsFiltersNot
-    },
-    {
-      title: 'Actions',
+      title: 'Delete',
       style: { textAlign: 'right', width: 100 },
       notFilterable: true,
       content: item => item.enabled,
       cell: (v, item, table) => {
         return (
           <div>
-            <button
-              type="button"
-              className="btn btn-danger btn-sm"
-              disabled={this.state && this.state.env && this.state.env.adminApiId === item.id}
-              onClick={e => this.updateExporter(item, table)}>
-              <i className="glyphicon glyphicon-edit" />
-            </button>
             <button
               type="button"
               className="btn btn-danger btn-sm"
@@ -291,10 +263,11 @@ export class DataExportersPage extends Component {
           createItem={this.nothing}
           showActions={false}
           showLink={false}
-          rowNavigation={false}
+          rowNavigation={true}
           firstSort={0}
           extractKey={item => item.id}
           injectTable={ref => this.table = ref}
+          navigateTo={exporter => this.updateExporter(exporter, this.table)}
           injectTopBar={() => (
             <>
               <div className="btn-group" style={{ marginRight: 5 }}>
@@ -318,6 +291,9 @@ export class NewExporterForm extends Component {
   state = {
     id: faker.random.alphaNumeric(64),
     type: undefined,
+    name: undefined,
+    metadata: {},
+    enabled: true,
     eventsFilters: [],
     eventsFiltersNot: [],
     config: undefined
@@ -328,6 +304,7 @@ export class NewExporterForm extends Component {
       this.setState({
         id: this.props.exporter.id,
         type: this.props.exporter.type,
+        enabled: this.props.exporter.enabled,
         eventsFilters: this.props.exporter.eventsFilters,
         eventsFiltersNot: this.props.exporter.eventsFiltersNot,
         config: this.props.exporter.type === 'mailer' ? { mailerSettings: this.props.exporter.config } : this.props.exporter.config
@@ -336,8 +313,8 @@ export class NewExporterForm extends Component {
   }
 
   updateType = type => {
-    const config = possibleExporterConfigFormValues[type].default
-    this.setState({ type, config })
+    BackOfficeServices.createNewDataExporterConfig(type)
+      .then(config => this.setState({ type, ...config }))
   }
 
   render() {
@@ -353,8 +330,33 @@ export class NewExporterForm extends Component {
               onChange={e => this.updateType(e)}
               disabled={!!(this.state.env && this.state.env.staticExposedDomain)}
               possibleValues={Object.keys(possibleExporterConfigFormValues)}
-              value={this.state.type}
               help="The type of event exporter"
+            />
+            <BooleanInput 
+              label="Enabled"
+              value={this.state.enabled}
+              onChange={e => this.setState({ enabled: e })}
+              disabled={!!(this.state.env && this.state.env.staticExposedDomain)}
+              help="Enable exporter"
+            />
+            <TextInput
+              label="Name"
+              placeholder="data exporter config name"
+              value={this.state.name}
+              help="The data exporter name"
+              onChange={e => this.setState({name: e})}
+            />
+            <TextInput
+              label="Description"
+              placeholder="data exporter config description"
+              value={this.state.name}
+              help="The data exporter description"
+              onChange={e => this.setState({ desc: e })}
+            />
+            <ObjectInput
+              label="Metadata"
+              value={this.state.metadata}
+              onChange={v => this.setState({metadata: e})}
             />
             <ArrayInput
               creatable
@@ -410,20 +412,6 @@ export class NewExporterForm extends Component {
 
 const possibleExporterConfigFormValues = {
   elastic: {
-    default: {
-      clusterUri: undefined,
-      index: undefined,
-      type: undefined,
-      user: undefined,
-      password: undefined,
-      mtlsConfig: {
-        mtls: false,
-        loose: false,
-        trustAll: false,
-        certs: [],
-        trustedCerts: []
-      }
-    },
     flow: [
       'clusterUri',
       'index',
@@ -510,17 +498,6 @@ const possibleExporterConfigFormValues = {
     }
   },
   webhook: {
-    default: {
-      url: undefined,
-      headers: {},
-      mtlsConfig: {
-        mtls: false,
-        loose: false,
-        trustAll: false,
-        certs: [],
-        trustedCerts: []
-      }
-    },
     flow: [
       'url',
       'headers',
@@ -596,12 +573,6 @@ const possibleExporterConfigFormValues = {
     }
   },
   pulsar: {
-    default: {
-      uri: 'pulsar://localhost:6650',
-      tenant: 'public',
-      namespace: 'default',
-      topic: 'otoroshi'
-    },
     flow: [
       'uri',
       'tlsTrustCertsFilePath',
@@ -776,11 +747,6 @@ const possibleExporterConfigFormValues = {
     }
   },
   mailer: {
-    default: {
-      mailerSettings: {
-        type: 'console'
-      }
-    },
     flow: [
       'mailerSettings'
     ],
