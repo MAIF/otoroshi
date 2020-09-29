@@ -9,7 +9,15 @@ object Match {
     obj.value.size == 1 && obj.keys.forall(_.startsWith("$"))
   }
 
-  private def matchesOperator(operator: JsObject, key: String, source: JsObject): Boolean = {
+  private def singleMatches(dest: JsValue): JsValue => Boolean = {
+    case JsBoolean(v) => dest.asOpt[Boolean].contains(v)
+    case n@JsNumber(_) => dest.asOpt[JsNumber].contains(n)
+    case JsString(v) => dest.asOpt[String].contains(v)
+    case o@JsObject(_) => matches(dest, o)
+    case _ => false
+  }
+
+  private def matchesOperator(operator: JsObject, key: String, source: JsValue): Boolean = {
     operator.value.head match {
       case ("$wildcard", JsString(wildcard)) => source.select(key).asOpt[String].exists(str => RegexPool(wildcard).matches(str))
       case ("$regex", JsString(regex))       => source.select(key).asOpt[String].exists(str => RegexPool.regex(regex).matches(str))
@@ -19,13 +27,13 @@ object Match {
       case ("$gte", JsNumber(num))           => source.select(key).asOpt[JsNumber].exists(nbr => nbr.value >= num)
       case ("$lt", JsNumber(num))            => source.select(key).asOpt[JsNumber].exists(nbr => nbr.value < num)
       case ("$lte", JsNumber(num))           => source.select(key).asOpt[JsNumber].exists(nbr => nbr.value <= num)
-      case ("$and", JsArray(value))          => value.forall(v => matches(source.select(key).asOpt[JsObject].getOrElse(Json.obj()), v.asOpt[JsObject].getOrElse(Json.obj())))
-      case ("$or", JsArray(value))           => value.exists(v => matches(source.select(key).asOpt[JsObject].getOrElse(Json.obj()), v.asOpt[JsObject].getOrElse(Json.obj())))
+      case ("$and", JsArray(value))          => value.forall(singleMatches(source.select(key).as[JsValue]))
+      case ("$or", JsArray(value))           => value.exists(singleMatches(source.select(key).as[JsValue]))
       case _ => false
     }
   }
 
-  def matches(source: JsObject, predicate: JsObject): Boolean = {
+  def matches(source: JsValue, predicate: JsObject): Boolean = {
     predicate.value.forall {
       case (key, JsBoolean(value))                 => source.select(key).asOpt[Boolean].contains(value)
       case (key, num @ JsNumber(_))                => source.select(key).asOpt[JsNumber].contains(num)
@@ -40,7 +48,7 @@ object Match {
 
 object Project {
 
-  def project(source: JsObject, blueprint: JsObject): JsObject = {
+  def project(source: JsValue, blueprint: JsObject): JsObject = {
     var dest = Json.obj()
     blueprint.value.foreach {
       case (key, JsBoolean(true)) => dest = dest ++ Json.obj(key -> source.select(key).asOpt[JsValue].getOrElse(JsNull).as[JsValue])

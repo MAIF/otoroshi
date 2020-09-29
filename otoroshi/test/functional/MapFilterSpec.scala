@@ -1,7 +1,7 @@
 package functional
 
 import org.scalatest.{MustMatchers, OptionValues, WordSpec}
-import play.api.libs.json.{JsObject, Json}
+import play.api.libs.json.{JsNumber, JsObject, Json}
 
 class MapFilterSpec extends WordSpec with MustMatchers with OptionValues {
 
@@ -17,7 +17,7 @@ class MapFilterSpec extends WordSpec with MustMatchers with OptionValues {
       |    "bar": "foo"
       |  }
       |}
-      |""".stripMargin).as[JsObject]
+      |""".stripMargin)
 
   "Match and Project utils" should {
     "match objects" in {
@@ -39,6 +39,8 @@ class MapFilterSpec extends WordSpec with MustMatchers with OptionValues {
       utils.Match.matches(source, Json.obj("inner" -> Json.obj("$and" -> Json.arr(Json.obj("foo" -> "bar"), Json.obj("bar" -> "foo" ))))) mustBe true
       utils.Match.matches(source, Json.obj("inner" -> Json.obj("$and" -> Json.arr(Json.obj("foo" -> "bar"), Json.obj("bar" -> "fooo" ))))) mustBe false
       utils.Match.matches(source, Json.obj("inner" -> Json.obj("$or" -> Json.arr(Json.obj("foo" -> "bar"), Json.obj("bar" -> "fooo" ))))) mustBe true
+      utils.Match.matches(source, Json.obj("status" -> Json.obj("$or" -> Json.arr(JsNumber(200), JsNumber(201))))) mustBe true
+      utils.Match.matches(source, Json.obj("status" -> Json.obj("$or" -> Json.arr(JsNumber(202), JsNumber(201))))) mustBe false
     }
     "project objects" in {
       utils.Project.project(source, Json.obj("foo" -> true, "status" -> true)) mustBe Json.obj("foo" -> "bar", "status" -> 200)
