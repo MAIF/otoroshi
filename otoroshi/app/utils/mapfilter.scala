@@ -40,7 +40,7 @@ object Match {
       case ("$not", o @ JsObject(_))         => !matchesOperator(o, key, source)
       case ("$eq", value: JsValue)           => singleMatches(source.select(key).as[JsValue])(value)
       case ("$ne", value: JsValue)           => !singleMatches(source.select(key).as[JsValue])(value)
-      case ("$exists", JsString(value))      => source.select(key).asOpt[JsValue].nonEmpty
+      case ("$exists", JsString(value))      => source.select(key).asOpt[JsObject].exists(o => o.select(value).asOpt[JsValue].nonEmpty)
       case _ => false
     }
   }
@@ -54,7 +54,6 @@ object Match {
       case (key, o @ JsObject(_)) if isOperator(o) => matchesOperator(o, key, source)
       case (key, o @ JsObject(_))                  => source.select(key).asOpt[JsObject].exists(obj => matches(obj, o))
       case _                                       => false
-      // TODO: support JsArray ? how ?
     }
   }
 }
