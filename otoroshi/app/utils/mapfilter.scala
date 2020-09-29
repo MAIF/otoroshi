@@ -1,7 +1,8 @@
-package utils
+package otoroshi.utils
 
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
+import utils.RegexPool
 
 object Match {
 
@@ -9,11 +10,12 @@ object Match {
     obj.value.size == 1 && obj.keys.forall(_.startsWith("$"))
   }
 
-  private def singleMatches(dest: JsValue): JsValue => Boolean = {
+  private def singleMatches(dest: JsValue, literalMatch: Boolean = false): JsValue => Boolean = {
     case JsBoolean(v) => dest.asOpt[Boolean].contains(v)
-    case n@JsNumber(_) => dest.asOpt[JsNumber].contains(n)
+    case n @ JsNumber(_) => dest.asOpt[JsNumber].contains(n)
     case JsString(v) => dest.asOpt[String].contains(v)
-    case o@JsObject(_) => matches(dest, o)
+    case o @ JsObject(_) if !literalMatch => matches(dest, o)
+    case o @ JsObject(_) if literalMatch => dest.asOpt[JsObject].contains(o)
     case _ => false
   }
 
@@ -29,6 +31,10 @@ object Match {
       case ("$lte", JsNumber(num))           => source.select(key).asOpt[JsNumber].exists(nbr => nbr.value <= num)
       case ("$and", JsArray(value))          => value.forall(singleMatches(source.select(key).as[JsValue]))
       case ("$or", JsArray(value))           => value.exists(singleMatches(source.select(key).as[JsValue]))
+      case ("$nor", JsArray(value))          => !value.exists(singleMatches(source.select(key).as[JsValue]))
+      case ("$in", JsArray(value))           => value.exists(singleMatches(source.select(key).as[JsValue], true))
+      case ("$nin", JsArray(value))          => !value.exists(singleMatches(source.select(key).as[JsValue], true))
+      case ("$size", JsNumber(number))       => source.select(key).asOpt[JsArray].exists(_.value.size == number.intValue())
       case _ => false
     }
   }
