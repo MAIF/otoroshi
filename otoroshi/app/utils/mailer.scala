@@ -78,13 +78,13 @@ object MailerSettings {
   val format = new Format[MailerSettings] {
     override def reads(json: JsValue): JsResult[MailerSettings] =
       (json \ "type").asOpt[String].getOrElse("none") match {
-        case "none"    => NoneMailerSettings.format.reads(json)
-        case "console" => ConsoleMailerSettings.format.reads(json)
-        case "generic" => GenericMailerSettings.format.reads(json)
-        case "mailgun" => MailgunSettings.format.reads(json)
-        case "mailjet" => MailjetSettings.format.reads(json)
+        case "none"     => NoneMailerSettings.format.reads(json)
+        case "console"  => ConsoleMailerSettings.format.reads(json)
+        case "generic"  => GenericMailerSettings.format.reads(json)
+        case "mailgun"  => MailgunSettings.format.reads(json)
+        case "mailjet"  => MailjetSettings.format.reads(json)
         case "sendgrid" => SendgridSettings.format.reads(json)
-        case _         => ConsoleMailerSettings.format.reads(json)
+        case _          => ConsoleMailerSettings.format.reads(json)
       }
     override def writes(o: MailerSettings): JsValue = o.json
   }
