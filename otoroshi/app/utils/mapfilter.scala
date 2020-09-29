@@ -24,7 +24,7 @@ object Match {
       case ("$wildcard", JsString(wildcard)) => source.select(key).asOpt[String].exists(str => RegexPool(wildcard).matches(str))
       case ("$regex", JsString(regex))       => source.select(key).asOpt[String].exists(str => RegexPool.regex(regex).matches(str))
       case ("$between", o @ JsObject(_))     => source.select(key).asOpt[JsNumber].exists(nbr => nbr.value > o.select("min").as[JsNumber].value && nbr.value < o.select("max").as[JsNumber].value)
-      case ("$betweenIncl", o @ JsObject(_)) => source.select(key).asOpt[JsNumber].exists(nbr => nbr.value >= o.select("min").as[JsNumber].value && nbr.value <= o.select("max").as[JsNumber].value)
+      case ("$betweeni", o @ JsObject(_))    => source.select(key).asOpt[JsNumber].exists(nbr => nbr.value >= o.select("min").as[JsNumber].value && nbr.value <= o.select("max").as[JsNumber].value)
       case ("$gt", JsNumber(num))            => source.select(key).asOpt[JsNumber].exists(nbr => nbr.value > num)
       case ("$gte", JsNumber(num))           => source.select(key).asOpt[JsNumber].exists(nbr => nbr.value >= num)
       case ("$lt", JsNumber(num))            => source.select(key).asOpt[JsNumber].exists(nbr => nbr.value < num)
