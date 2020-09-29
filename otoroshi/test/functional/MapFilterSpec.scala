@@ -12,6 +12,7 @@ class MapFilterSpec extends WordSpec with MustMatchers with OptionValues {
       |  "type": "AlertEvent",
       |  "alert": "big-alert",
       |  "status": 200,
+      |  "codes": ["a", "b"],
       |  "inner": {
       |    "foo": "bar",
       |    "bar": "foo"
@@ -41,6 +42,10 @@ class MapFilterSpec extends WordSpec with MustMatchers with OptionValues {
       otoroshi.utils.Match.matches(source, Json.obj("inner"  -> Json.obj("$or" -> Json.arr(Json.obj("foo" -> "bar"), Json.obj("bar" -> "fooo" ))))) mustBe true
       otoroshi.utils.Match.matches(source, Json.obj("status" -> Json.obj("$or" -> Json.arr(JsNumber(200), JsNumber(201))))) mustBe true
       otoroshi.utils.Match.matches(source, Json.obj("status" -> Json.obj("$or" -> Json.arr(JsNumber(202), JsNumber(201))))) mustBe false
+      otoroshi.utils.Match.matches(source, Json.obj("codes" -> Json.arr("a", "b"))) mustBe true
+      otoroshi.utils.Match.matches(source, Json.obj("codes" -> Json.obj("$contains" -> "a"))) mustBe true
+      otoroshi.utils.Match.matches(source, Json.obj("codes" -> Json.obj("$all" -> Json.arr("a", "b")))) mustBe true
+      otoroshi.utils.Match.matches(source, Json.obj("codes" -> Json.obj("$all" -> Json.arr("a", "b", "c")))) mustBe false
     }
     "project objects" in {
       otoroshi.utils.Project.project(source, Json.obj("foo"  -> true, "status" -> true)) mustBe Json.obj("foo" -> "bar", "status" -> 200)

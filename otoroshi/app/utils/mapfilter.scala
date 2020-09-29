@@ -35,6 +35,12 @@ object Match {
       case ("$in", JsArray(value))           => value.exists(singleMatches(source.select(key).as[JsValue], true))
       case ("$nin", JsArray(value))          => !value.exists(singleMatches(source.select(key).as[JsValue], true))
       case ("$size", JsNumber(number))       => source.select(key).asOpt[JsArray].exists(_.value.size == number.intValue())
+      case ("$contains", value: JsValue)     => source.select(key).asOpt[JsArray].exists(arr => arr.value.contains(value))
+      case ("$all", JsArray(value))          => source.select(key).asOpt[JsArray].exists(arr => arr.value.intersect(value).toSet.size == value.size)
+      case ("$not", o @ JsObject(_))         => !matchesOperator(o, key, source)
+      case ("$eq", value: JsValue)           => singleMatches(source.select(key).as[JsValue])(value)
+      case ("$ne", value: JsValue)           => !singleMatches(source.select(key).as[JsValue])(value)
+      case ("$exists", JsString(value))      => source.select(key).asOpt[JsValue].nonEmpty
       case _ => false
     }
   }
@@ -44,6 +50,7 @@ object Match {
       case (key, JsBoolean(value))                 => source.select(key).asOpt[Boolean].contains(value)
       case (key, num @ JsNumber(_))                => source.select(key).asOpt[JsNumber].contains(num)
       case (key, JsString(value))                  => source.select(key).asOpt[String].contains(value)
+      case (key, JsArray(value))                   => source.select(key).asOpt[JsArray].map(_.value).contains(value)
       case (key, o @ JsObject(_)) if isOperator(o) => matchesOperator(o, key, source)
       case (key, o @ JsObject(_))                  => source.select(key).asOpt[JsObject].exists(obj => matches(obj, o))
       case _                                       => false
@@ -58,7 +65,7 @@ object Project {
     var dest = Json.obj()
     blueprint.value.foreach {
       case (key, JsBoolean(true)) => dest = dest ++ Json.obj(key -> source.select(key).asOpt[JsValue].getOrElse(JsNull).as[JsValue])
-      case (key, o @ JsObject(_)) => dest = dest ++ Json.obj(key -> project(source.select(key).asOpt[JsObject].getOrElse(Json.obj()), o))
+      case (key, o @ JsObject(_)) => dest = dest ++ Json.obj(key -> project(source.select(key).as[JsValue], o))
       case _                      => ()
     }
     dest
