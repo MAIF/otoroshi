@@ -36,6 +36,12 @@ case class MailgunSettings(eu: Boolean, apiKey: String, domain: String) extends 
   override def json: JsValue                                    = MailgunSettings.format.writes(this)
 }
 
+case class SendgridSettings(apiKey: String) extends MailerSettings {
+  override def typ: String                                      = "sendgrid"
+  override def asMailer(config: GlobalConfig, env: Env): Mailer = new SendgridMailer(env, config)
+  override def json: JsValue                                    = SendgridSettings.format.writes(this)
+}
+
 case class GenericMailerSettings(url: String, headers: Map[String, String]) extends MailerSettings {
   override def typ: String                                      = "generic"
   override def asMailer(config: GlobalConfig, env: Env): Mailer = new GenericMailer(env, config)
@@ -61,6 +67,10 @@ trait MailerSettings {
     case _: MailjetSettings => Some(this.asInstanceOf[MailjetSettings])
     case _                  => None
   }
+  def sendgridSettings: Option[SendgridSettings] = this match {
+    case _: SendgridSettings => Some(this.asInstanceOf[SendgridSettings])
+    case _                  => None
+  }
   def json: JsValue
 }
 
@@ -73,6 +83,7 @@ object MailerSettings {
         case "generic" => GenericMailerSettings.format.reads(json)
         case "mailgun" => MailgunSettings.format.reads(json)
         case "mailjet" => MailjetSettings.format.reads(json)
+        case "sendgrid" => SendgridSettings.format.reads(json)
         case _         => ConsoleMailerSettings.format.reads(json)
       }
     override def writes(o: MailerSettings): JsValue = o.json
@@ -115,6 +126,25 @@ object MailjetSettings {
           MailjetSettings(
             apiKeyPrivate = (json \ "apiKeyPrivate").asOpt[String].map(_.trim).get,
             apiKeyPublic = (json \ "apiKeyPublic").asOpt[String].map(_.trim).get
+          )
+        )
+      } recover {
+        case e => JsError(e.getMessage)
+      } get
+  }
+}
+
+object SendgridSettings {
+  val format = new Format[SendgridSettings] {
+    override def writes(o: SendgridSettings) = Json.obj(
+      "type"          -> o.typ,
+      "apiKey"  -> o.apiKey
+    )
+    override def reads(json: JsValue) =
+      Try {
+        JsSuccess(
+          SendgridSettings(
+            apiKey = (json \ "apiKey").asOpt[String].map(_.trim).get
           )
         )
       } recover {
@@ -295,6 +325,56 @@ class MailjetMailer(env: Env, config: GlobalConfig) extends Mailer {
         case Success(res) => logger.info("Alert email sent")
         case Failure(e)   => logger.error("Error while sending alert email", e)
       }
+      .fast
+      .map(_ => ())
+  }
+}
+
+class SendgridMailer(env: Env, config: GlobalConfig) extends Mailer {
+
+  lazy val logger = Logger("otoroshi-sendgrid-mailer")
+
+  def send(from: EmailLocation, to: Seq[EmailLocation], subject: String, html: String)(
+    implicit ec: ExecutionContext
+  ): Future[Unit] = {
+    val fu = config.mailerSettings.flatMap(_.sendgridSettings).map { settings =>
+      env.Ws // no need for mtls here
+        .url(s"https://api.sendgrid.com/v3/mail/send")
+        .withHttpHeaders(
+          "Authorization" -> s"Bearer ${settings.apiKey}",
+          "Content-Type" -> "application/json"
+        )
+        .post(Json.obj(
+          "personalizations" -> Json.arr(
+              Json.obj(
+                "to" -> to.map(c =>
+                  Json.obj(
+                    "email" -> c.email,
+                    "name" -> c.name
+                  )
+                ),
+                "subject" -> subject
+            )
+          ),
+          "from" -> Json.obj(
+            "email" -> from.email,
+            "name" -> from.name,
+          ),
+          "content" -> Json.arr(
+            Json.obj(
+              "type" -> "text/html",
+              "value" -> html
+            )
+          )
+        ))
+        .map(_.ignore()(env.otoroshiMaterializer))
+    } getOrElse {
+      FastFuture.successful(())
+    }
+    fu.andThen {
+      case Success(res) => logger.info("Alert email sent")
+      case Failure(e)   => logger.error("Error while sending alert email", e)
+    }
       .fast
       .map(_ => ())
   }
