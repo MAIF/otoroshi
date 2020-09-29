@@ -12,7 +12,7 @@ object Match {
   private def matchesOperator(operator: JsObject, key: String, source: JsObject): Boolean = {
     operator.value.head match {
       case ("$wildcard", JsString(wildcard)) => source.select(key).asOpt[String].exists(str => RegexPool(wildcard).matches(str))
-      case ("$regex", JsString(regex))       => source.select(key).asOpt[String].exists(str => RegexPool(regex).matches(str))
+      case ("$regex", JsString(regex))       => source.select(key).asOpt[String].exists(str => RegexPool.regex(regex).matches(str))
       case ("$between", o @ JsObject(_))     => source.select(key).asOpt[JsNumber].exists(nbr => nbr.value > o.select("min").as[JsNumber].value && nbr.value < o.select("max").as[JsNumber].value)
       case ("$betweenIncl", o @ JsObject(_)) => source.select(key).asOpt[JsNumber].exists(nbr => nbr.value >= o.select("min").as[JsNumber].value && nbr.value <= o.select("max").as[JsNumber].value)
       case ("$gt", JsNumber(num))            => source.select(key).asOpt[JsNumber].exists(nbr => nbr.value > num)
