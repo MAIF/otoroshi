@@ -1,5 +1,6 @@
 package events
 
+import java.io.File
 import java.nio.file.{Files, Paths, StandardOpenOption}
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
@@ -256,7 +257,20 @@ object Exporters {
     override def send(events: Seq[JsValue]): Future[ExportResult] = {
       configSafe[FileAppenderExporterConfig].map { exporterConfig =>
         val contentToAppend = events.map(Json.stringify).mkString("\r\n")
-        Files.write(Paths.get(exporterConfig.config.path), contentToAppend.getBytes(), StandardOpenOption.APPEND)
+        val path = Paths.get(exporterConfig.config.path.replace("{day}", DateTime.now().toString("yyyy-MM-dd")))
+        val file = path.toFile
+        if (!file.exists()) {
+          file.createNewFile()
+        } else {
+          if (file.length() > 200 * 1024) {//(10 * 1024 * 1024)) {
+            val parts = file.getName.split("\\.")
+            val filename = parts.head
+            val ext = parts.last
+            file.renameTo(new File(file.getParent, filename + "." + System.currentTimeMillis() + "." + ext))
+            file.createNewFile()
+          }
+        }
+        Files.write(path, contentToAppend.getBytes(), StandardOpenOption.APPEND)
         FastFuture.successful(ExportResult.ExportResultSuccess)
       } getOrElse {
         FastFuture.successful(ExportResult.ExportResultFailure("Bad config type !"))

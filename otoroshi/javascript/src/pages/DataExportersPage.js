@@ -5,6 +5,7 @@ import * as BackOfficeServices from '../services/BackOfficeServices';
 import { Table, SelectInput, ArrayInput, Form, BooleanInput, TextInput, ObjectInput } from '../components/inputs';
 import { Collapse } from '../components/inputs/Collapse';
 import Creatable from 'react-select/lib/Creatable';
+import { JsonObjectAsCodeInput } from '../components/inputs/CodeInput';
 
 function tryOrTrue(f) {
   try {
@@ -177,64 +178,6 @@ export class DataExportersPage extends Component {
 
   componentDidMount() {
     this.props.setTitle(`Data exporters`);
-    BackOfficeServices.findAllDataExporterConfigs().then(dataExporters =>
-      this.setState({ dataExporters }, () => this.table.update())
-    );
-    this.mountShortcuts();
-  }
-
-  componentWillUnmount() {
-    this.unmountShortcuts();
-  }
-
-  mountShortcuts = () => {
-    document.body.addEventListener('keydown', this.saveShortcut);
-  };
-
-  unmountShortcuts = () => {
-    document.body.removeEventListener('keydown', this.saveShortcut);
-  };
-
-  saveShortcut = e => {
-    if (e.keyCode === 83 && (e.ctrlKey || e.metaKey)) {
-      e.preventDefault();
-      //todo: be smart
-    }
-  };
-
-  addExporter = e => {
-    if (e && e.preventDefault) e.preventDefault();
-    window.popup('New Exporter', (ok, cancel) => <NewExporterForm ok={ok} cancel={cancel} />, {
-      style: { width: '100%', height: '80%', overflow: "scroll" },
-    })
-      .then(config => {
-        if (config) {
-          BackOfficeServices.createDataExporterConfig(config)
-            .then(config => this.setState({ dataExporters: [...this.state.dataExporters, config] },
-              () => this.table.update()))
-        }
-      })
-  };
-
-  updateExporter = (config, table) => {
-    window.popup('Update data exporter config', (ok, cancel) => <NewExporterForm ok={ok} cancel={cancel} exporter={config} />, {
-      style: { width: '100%', height: '80%', overflow: "scroll" },
-    })
-      .then(config => BackOfficeServices.updateDataExporterConfig(config))
-      .then(config => this.setState({ dataExporters: [...this.state.dataExporters.filter(e => e.id !== config.id), config] },
-        () => this.table.update()))
-  }
-
-  deleteExporter = (config, table) => {
-    window
-      .newConfirm('Are you sure you want to delete this data exporter config ?')
-      .then(confirmed => {
-        if (confirmed) {
-          BackOfficeServices.deleteDataExporterConfig(config)
-            .then(() => this.setState({ dataExporters: this.state.dataExporters.filter(e => e.id !== config.id) },
-              () => this.table.update()))
-        }
-      });
   }
 
   nothing() {
@@ -243,28 +186,24 @@ export class DataExportersPage extends Component {
 
   columns = [
     {
-      title: 'type',
+      title: 'Name',
+      content: item => item.name,
+    },
+    {
+      title: 'Type',
+      style: { textAlign: 'center', width: 100 },
       content: item => item.type,
     },
     {
-      title: 'Delete',
-      style: { textAlign: 'right', width: 100 },
-      notFilterable: true,
+      title: 'Enabled',
+      style: { textAlign: 'center', width: 100 },
       content: item => item.enabled,
       cell: (v, item, table) => {
         return (
-          <div>
-            <button
-              type="button"
-              className="btn btn-danger btn-sm"
-              disabled={this.state && this.state.env && this.state.env.adminApiId === item.id}
-              onClick={e => this.deleteExporter(item, table)}>
-              <i className="glyphicon glyphicon-trash" />
-            </button>
-          </div>
+        <span className={`label label-${v ? 'success' : 'default'}`}>{v ? 'yes' : 'no'}</span>
         );
-      },
-    },
+      }
+    }
   ];
 
   render() {
@@ -274,20 +213,21 @@ export class DataExportersPage extends Component {
           parentProps={this.props}
           selfUrl="data-exporters"
           defaultTitle="Data exporters"
-          defaultValue={() => ({})}
+          defaultValue={() => BackOfficeServices.createNewDataExporterConfig('file')}
           itemName="data-exporters"
           columns={this.columns}
-          fetchItems={() => Promise.resolve(this.state.dataExporters)}
-          updateItem={this.nothing}
-          deleteItem={this.nothing}
-          createItem={this.nothing}
-          showActions={false}
-          showLink={false}
+          fetchItems={BackOfficeServices.findAllDataExporterConfigs}
+          updateItem={BackOfficeServices.updateDataExporterConfig}
+          deleteItem={BackOfficeServices.deleteDataExporterConfig}
+          createItem={BackOfficeServices.createDataExporterConfig}
+          formComponent={NewExporterForm}
+          stayAfterSave={true}
+          showActions={true}
+          showLink={true}
           rowNavigation={true}
           firstSort={0}
           extractKey={item => item.id}
           injectTable={ref => this.table = ref}
-          navigateTo={exporter => this.updateExporter(exporter, this.table)}
           injectTopBar={() => (
             <>
               <div className="btn-group" style={{ marginRight: 5 }}>
@@ -308,127 +248,96 @@ export class DataExportersPage extends Component {
 }
 
 export class NewExporterForm extends Component {
-  state = {
-    id: faker.random.alphaNumeric(64),
-    type: undefined,
-    name: undefined,
-    metadata: {},
-    enabled: true,
-    eventsFilters: [],
-    eventsFiltersNot: [],
-    config: undefined
-  };
-
-  componentDidMount() {
-    if (this.props.exporter) {
-      this.setState({
-        id: this.props.exporter.id,
-        type: this.props.exporter.type,
-        enabled: this.props.exporter.enabled,
-        eventsFilters: this.props.exporter.eventsFilters,
-        eventsFiltersNot: this.props.exporter.eventsFiltersNot,
-        config: this.props.exporter.type === 'mailer' ? { mailerSettings: this.props.exporter.config } : this.props.exporter.config
-      })
-    }
-  }
 
   updateType = type => {
     BackOfficeServices.createNewDataExporterConfig(type)
       .then(config => {
-        console.log('updateType', type, config)
-        this.setState({ type, ...config })
+        this.props.onChange({ ...this.props.value, type, ...config })
       })
   }
 
+  data = () => {
+    return this.props.value;
+  }
+
+  dataChange = (obj) => {
+    this.props.onChange({ ...this.props.value, ...obj });
+  }
+
   render() {
-    const isInvalidForm = !this.state.type || !this.state.eventsFilters.length
-    console.log(this.state.config)
+    console.log(this.props.value)
     return (
       <>
-        <div className="modal-body">
-          <form className="form-horizontal">
-            <SelectInput
-              label="Type"
-              placeholder="The type of exporter"
-              value={this.state.type}
-              onChange={e => this.updateType(e)}
-              disabled={!!(this.state.env && this.state.env.staticExposedDomain)}
-              possibleValues={Object.keys(possibleExporterConfigFormValues)}
-              help="The type of event exporter"
-            />
-            <BooleanInput 
-              label="Enabled"
-              value={this.state.enabled}
-              onChange={e => this.setState({ enabled: e })}
-              disabled={!!(this.state.env && this.state.env.staticExposedDomain)}
-              help="Enable exporter"
-            />
-            <TextInput
-              label="Name"
-              placeholder="data exporter config name"
-              value={this.state.name}
-              help="The data exporter name"
-              onChange={e => this.setState({name: e})}
-            />
-            <TextInput
-              label="Description"
-              placeholder="data exporter config description"
-              value={this.state.desc}
-              help="The data exporter description"
-              onChange={e => this.setState({ desc: e })}
-            />
-            <ObjectInput
-              label="Metadata"
-              value={this.state.metadata}
-              onChange={v => this.setState({metadata: e})}
-            />
-            <ArrayInput
-              creatable
-              label="Events filters (TODO)"
-              placeholder="Choose a event type or type a regex"
-              value={this.state.eventsFilters}
-              values={["AlertEvent", "AuditEvent", "GatewayEvent", "TcpEvent", "HealthCheckEvent", ...this.state.eventsFilters]}
-              help="regex to filter otoroshi events to send to the event exporter"
-              onChange={e => this.setState({ eventsFilters: e })}
-            />
-            <ArrayInput
-              creatable
-              label="Events filters Not (TODO)"
-              placeholder="Choose a event type or type a regex which you don't want to export"
-              value={this.state.eventsFiltersNot}
-              values={["AlertEvent", "AuditEvent", "GatewayEvent", "TcpEvent", "HealthCheckEvent", ...this.state.eventsFilters]}
-              help="regex to filter otoroshi events to send to the event exporter"
-              onChange={e => this.setState({ eventsFiltersNot: e })}
-            />
-            {this.state.type && (
-              <Collapse collapsed={this.state.allCollapsed} initCollapsed={false} label="Config">
-                <Form
-                  value={this.state.config}
-                  onChange={config => this.setState({ config })}
-                  flow={possibleExporterConfigFormValues[this.state.type].flow}
-                  schema={possibleExporterConfigFormValues[this.state.type].schema}
-                  style={{ marginTop: 50 }}
-                />
-              </Collapse>)
-            }
-          </form>
-        </div>
-        <div className="modal-footer">
-          <button type="button" className="btn btn-danger" onClick={this.props.cancel}>
-            Cancel
-          </button>
-          <button
-            type="button"
-            className="btn btn-success"
-            disabled={isInvalidForm ? 'disabled' : null}
-            onClick={e => {
-              if (!isInvalidForm) {
-                this.props.ok(this.state.type === 'mailer' ? { ...this.state, config: { ...this.state.config.mailerSettings } } : this.state)
-              }
-            }}>
-            Create
-          </button>
-        </div>
+        <form className="form-horizontal">
+          <SelectInput
+            label="Type"
+            placeholder="The type of exporter"
+            value={this.data().type}
+            onChange={e => this.updateType(e)}
+            possibleValues={Object.keys(possibleExporterConfigFormValues)}
+            help="The type of event exporter"
+          />
+          <BooleanInput 
+            label="Enabled"
+            value={this.data().enabled}
+            onChange={e => this.dataChange({ enabled: e })}
+            help="Enable exporter"
+          />
+          <TextInput
+            label="Name"
+            placeholder="data exporter config name"
+            value={this.data().name}
+            help="The data exporter name"
+            onChange={e => this.dataChange({name: e})}
+          />
+          <TextInput
+            label="Description"
+            placeholder="data exporter config description"
+            value={this.data().desc}
+            help="The data exporter description"
+            onChange={e => this.dataChange({ desc: e })}
+          />
+          <ObjectInput
+            label="Metadata"
+            value={this.data().metadata}
+            onChange={v => this.dataChange({ metadata: e})}
+          />
+          <JsonObjectAsCodeInput
+            label="Filtering"
+            value={this.data().filtering}
+            onChange={e => this.dataChange({ filtering: e })}
+            height="200px"
+          />
+          <JsonObjectAsCodeInput
+            label="Projection"
+            value={this.data().projection}
+            onChange={e => this.dataChange({ projection: e })}
+            height="200px"
+          />
+          {this.data().type && (
+            <Collapse collapsed={this.data().allCollapsed} initCollapsed={false} label="Exporter config">
+              <Form
+                value={() => {
+                  if (this.data().type === 'mailer') {
+                    return { mailerSettings: this.data().config }
+                  } else {
+                    return this.data().config
+                  }
+                }}
+                onChange={config => {
+                  if (this.data().type === 'mailer') {
+                    return this.dataChange({ config: config.mailerSettings })
+                  } else {
+                    return this.dataChange({ config })
+                  }
+                }}
+                flow={possibleExporterConfigFormValues[this.data().type].flow}
+                schema={possibleExporterConfigFormValues[this.data().type].schema}
+                style={{ marginTop: 50 }}
+              />
+            </Collapse>)
+          }
+        </form>
       </>
     );
   }

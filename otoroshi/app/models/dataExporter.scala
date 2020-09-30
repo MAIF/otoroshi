@@ -269,7 +269,7 @@ case object DataExporterConfig {
           include = (json \ "filtering" \ "include").asOpt[Seq[JsObject]].getOrElse(Seq.empty),
           exclude = (json \ "filtering" \ "exclude").asOpt[Seq[JsObject]].getOrElse(Seq.empty),
         ),
-        config = FileExporter((json \ "path").as[String])
+        config = FileExporter((json \ "config" \ "path").as[String])
       ))
       case "mailer" => MailerSettings.format.reads((json \ "config").as[JsObject])
         .map {
