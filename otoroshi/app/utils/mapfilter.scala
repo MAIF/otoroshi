@@ -6,7 +6,7 @@ import utils.RegexPool
 
 object Match {
 
-  private def isOperator(obj: JsObject): Boolean = {
+  private[utils] def isOperator(obj: JsObject): Boolean = {
     obj.value.size == 1 && obj.keys.forall(_.startsWith("$"))
   }
 
@@ -63,8 +63,50 @@ object Project {
   def project(source: JsValue, blueprint: JsObject): JsObject = {
     var dest = Json.obj()
     blueprint.value.foreach {
+      // direct inclusion
       case (key, JsBoolean(true)) => dest = dest ++ Json.obj(key -> source.select(key).asOpt[JsValue].getOrElse(JsNull).as[JsValue])
-      case (key, o @ JsObject(_)) => dest = dest ++ Json.obj(key -> project(source.select(key).as[JsValue], o))
+      // direct inclusion with rename
+      case (key, JsString(newKey)) => dest = dest ++ Json.obj(newKey -> source.select(key).asOpt[JsValue].getOrElse(JsNull).as[JsValue])
+      // with search
+      case (key, o @ JsObject(_)) if Match.isOperator(o) => {
+        o.value.head match {
+          case ("$value", value) => {
+            dest = dest ++ Json.obj(key -> value)
+          }
+          case ("$path", JsString(searchPath)) => {
+            dest = dest ++ Json.obj(key -> source.atPath(searchPath).asOpt[JsValue].getOrElse(JsNull).as[JsValue])
+          }
+          case ("$pathIf", spec: JsObject) => {
+            val path = (spec \ "path").as[String]
+            val predPath = (spec \ "predicate" \ "path").as[String]
+            val predValue = (spec \ "predicate" \ "value").as[JsValue]
+            val atPredPath = source.atPath(predPath)
+            if (atPredPath.isDefined && atPredPath.as[JsValue] == predValue) {
+              dest = dest ++ Json.obj(key -> source.atPath(path).as[JsValue])
+            } else {
+              dest = dest ++ Json.obj(key -> JsNull)
+            }
+          }
+          case ("$header", spec: JsObject) => {
+            val path = (spec \ "path").as[String]
+            val headerName = (spec \ "name").as[String].toLowerCase()
+            val headers = source.atPath(path).as[JsArray]
+            val header = headers.value.find { header =>
+              val name = (header \ "key").as[String].toLowerCase()
+              name == headerName
+            }.map(_.select("value").as[JsString]).getOrElse(JsNull)
+            dest = dest ++ Json.obj(key -> header)
+          }
+          case _ => ()
+        }
+      }
+      case (key, o @ JsObject(_)) => {
+        if (source.select(key).isDefined) {
+          dest = dest ++ Json.obj(key -> project(source.select(key).as[JsValue], o))
+        } else {
+          dest = dest ++ Json.obj(key -> project(source, o))
+        }
+      }
       case _                      => ()
     }
     dest

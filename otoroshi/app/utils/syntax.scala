@@ -97,6 +97,17 @@ object implicits {
     def prettify: String = Json.prettyPrint(obj)
     def select(name: String): JsLookupResult = (obj \ name)
     def select(index: Int): JsLookupResult = (obj \ index)
+    def atPath(path: String): JsLookupResult = {
+      val parts = path.split("\\.").toSeq
+      parts.foldLeft(obj) {
+        case (source: JsObject, part) => (source \ part).as[JsValue]
+        case (source: JsArray, part) => (source \ part.toInt).as[JsValue]
+        case (value, part) => JsNull
+      } match {
+        case JsNull => JsUndefined(s"path '${path}' does not exists")
+        case value => JsDefined(value)
+      }
+    }
   }
   implicit class BetterJsReadable(private val obj: JsReadable) extends AnyVal {
     def asString: String = obj.as[String]
