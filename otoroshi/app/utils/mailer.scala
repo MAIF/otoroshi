@@ -40,16 +40,18 @@ case class MailgunSettings(eu: Boolean, apiKey: String, domain: String) extends 
   override def toJson: JsValue                                  = MailgunSettings.format.writes(this)
 }
 
-case class SendgridSettings(apiKey: String) extends MailerSettings {
+case class SendgridSettings(apiKey: String) extends MailerSettings with Exporter {
   override def typ: String                                      = "sendgrid"
   override def asMailer(config: GlobalConfig, env: Env): Mailer = new SendgridMailer(env, config)
   override def json: JsValue                                    = SendgridSettings.format.writes(this)
+  override def toJson: JsValue                                    = SendgridSettings.format.writes(this)
 }
 
-case class GenericMailerSettings(url: String, headers: Map[String, String]) extends MailerSettings {
+case class GenericMailerSettings(url: String, headers: Map[String, String]) extends MailerSettings with Exporter {
   override def typ: String                                      = "generic"
   override def asMailer(config: GlobalConfig, env: Env): Mailer = new GenericMailer(env, config)
   override def json: JsValue                                    = GenericMailerSettings.format.writes(this)
+  override def toJson: JsValue                                    = GenericMailerSettings.format.writes(this)
 }
 
 trait MailerSettings {

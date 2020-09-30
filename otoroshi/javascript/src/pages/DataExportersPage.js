@@ -334,11 +334,15 @@ export class NewExporterForm extends Component {
 
   updateType = type => {
     BackOfficeServices.createNewDataExporterConfig(type)
-      .then(config => this.setState({ type, ...config }))
+      .then(config => {
+        console.log('updateType', type, config)
+        this.setState({ type, ...config })
+      })
   }
 
   render() {
     const isInvalidForm = !this.state.type || !this.state.eventsFilters.length
+    console.log(this.state.config)
     return (
       <>
         <div className="modal-body">
@@ -369,7 +373,7 @@ export class NewExporterForm extends Component {
             <TextInput
               label="Description"
               placeholder="data exporter config description"
-              value={this.state.name}
+              value={this.state.desc}
               help="The data exporter description"
               onChange={e => this.setState({ desc: e })}
             />
@@ -380,7 +384,7 @@ export class NewExporterForm extends Component {
             />
             <ArrayInput
               creatable
-              label="Events filters"
+              label="Events filters (TODO)"
               placeholder="Choose a event type or type a regex"
               value={this.state.eventsFilters}
               values={["AlertEvent", "AuditEvent", "GatewayEvent", "TcpEvent", "HealthCheckEvent", ...this.state.eventsFilters]}
@@ -389,7 +393,7 @@ export class NewExporterForm extends Component {
             />
             <ArrayInput
               creatable
-              label="Events filters Not"
+              label="Events filters Not (TODO)"
               placeholder="Choose a event type or type a regex which you don't want to export"
               value={this.state.eventsFiltersNot}
               values={["AlertEvent", "AuditEvent", "GatewayEvent", "TcpEvent", "HealthCheckEvent", ...this.state.eventsFilters]}
@@ -775,6 +779,17 @@ const possibleExporterConfigFormValues = {
         type: Mailer
       }
     }
-  }
+  },
+  file: {
+    flow: [
+      'path',
+    ],
+    schema: {
+      path: {
+        type: 'string',
+        props: { label: 'File path', placeholder: 'path for the file' },
+      }
+    }
+  },
 }
 

@@ -41,10 +41,6 @@ class AnalyticsActor(exporter: DataExporterConfig)(implicit env: Env) extends Ac
 
   lazy val stream = Source
     .queue[AnalyticEvent](50000, OverflowStrategy.dropHead)
-    .filter(event => exporter.eventsFilters
-        .map(utils.RegexPool(_))
-        .exists(r => r.matches(event.`@type`))
-    )
     .mapAsync(5)(evt => evt.toEnrichedJson)
     .groupedWithin(env.maxWebhookSize, FiniteDuration(env.analyticsWindow, TimeUnit.SECONDS))
     .filter(_.nonEmpty)
@@ -152,7 +148,8 @@ object AnalyticEvent {
 trait OtoroshiEvent {
   def `@id`: String
   def `@timestamp`: DateTime
-
+  def toJson(implicit _env: Env): JsValue
+  def toEnrichedJson(implicit _env: Env, ec: ExecutionContext): Future[JsValue] = FastFuture.successful(toJson(_env))
   def dispatch()(implicit env: Env): Unit = {
     env.scriptManager.dispatchEvent(this)(env.analyticsExecutionContext)
   }
@@ -169,7 +166,7 @@ trait AnalyticEvent extends OtoroshiEvent {
   def fromUserAgent: Option[String]
 
   def toJson(implicit _env: Env): JsValue
-  def toEnrichedJson(implicit _env: Env, ec: ExecutionContext): Future[JsValue] = {
+  override def toEnrichedJson(implicit _env: Env, ec: ExecutionContext): Future[JsValue] = {
     val jsonObject = toJson(_env).as[JsObject]
     val uaDetails = (jsonObject \ "userAgentInfo").asOpt[JsValue] match {
       case Some(details) => details
