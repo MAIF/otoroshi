@@ -262,7 +262,7 @@ object Exporters {
         if (!file.exists()) {
           file.createNewFile()
         } else {
-          if (file.length() > 200 * 1024) {//(10 * 1024 * 1024)) {
+          if (file.length() > (10 * 1024 * 1024)) { // TODO: from config
             val parts = file.getName.split("\\.")
             val filename = parts.head
             val ext = parts.last
