@@ -303,7 +303,6 @@ object Audit {
     implicit val ec = env.analyticsExecutionContext
     audit.toAnalytics()
     audit.toEnrichedJson.map(e => env.datastores.auditDataStore.push(e))
-    env.otoroshiEventsActor ! audit
   }
 }
 

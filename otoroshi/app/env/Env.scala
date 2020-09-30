@@ -5,7 +5,7 @@ import java.rmi.registry.LocateRegistry
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 
-import akka.actor.{ActorRef, ActorSystem, PoisonPill, Scheduler}
+import akka.actor.{ActorSystem, PoisonPill, Scheduler}
 import akka.http.scaladsl.util.FastFuture._
 import akka.stream.Materializer
 import auth.{AuthModuleConfig, SessionCookieValues}
@@ -146,10 +146,8 @@ class Env(val configuration: Configuration,
     promise.future
   }
 
-  val otoroshiEventsActor: ActorRef = {
-    implicit val ec = otoroshiExecutionContext
-    otoroshiActorSystem.actorOf(OtoroshiEventsActorSupervizer.props(this))
-  }
+  val healthCheckerActor = otoroshiActorSystem.actorOf(HealthCheckerActor.props(this))
+  val otoroshiEventsActor = otoroshiActorSystem.actorOf(OtoroshiEventsActorSupervizer.props(this))
 
   lazy val sidecarConfig: Option[SidecarConfig] = (
     configuration.getOptionalWithFileSupport[String]("app.sidecar.serviceId"),
@@ -670,6 +668,7 @@ class Env(val configuration: Configuration,
     implicit val ec = otoroshiExecutionContext
     // geoloc.stop()
     // ua.stop()
+    healthCheckerActor ! PoisonPill
     otoroshiEventsActor ! PoisonPill
     jobManager.stop()
     scriptManager.stop()
