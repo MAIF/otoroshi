@@ -214,7 +214,7 @@ export class DataExportersPage extends Component {
           selfUrl="data-exporters"
           defaultTitle="Data exporters"
           defaultValue={() => BackOfficeServices.createNewDataExporterConfig('file')}
-          itemName="data-exporters"
+          itemName="data-exporter"
           columns={this.columns}
           fetchItems={BackOfficeServices.findAllDataExporterConfigs}
           updateItem={BackOfficeServices.updateDataExporterConfig}
