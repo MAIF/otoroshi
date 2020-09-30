@@ -17,6 +17,7 @@ class Mailer extends Component {
   genericFormFlow = ['url', 'headers'];
   mailgunFormFlow = ['eu', 'apiKey', 'domain'];
   mailjetFormFlow = ['apiKeyPublic', 'apiKeyPrivate'];
+  sendgridFormFlow = ['apiKey'];
   genericFormSchema = {
     url: {
       type: 'string',
@@ -31,6 +32,15 @@ class Mailer extends Component {
         label: 'Headers',
       },
     },
+  };
+  sendgridSchema = {
+    apiKey: {
+      type: 'string',
+      props: {
+        label: 'Sendgrid api key',
+        placeholder: 'Sendgrid api key',
+      },
+    }
   };
   mailgunFormSchema = {
     eu: {
@@ -115,6 +125,7 @@ class Mailer extends Component {
             { label: 'Generic', value: 'generic' },
             { label: 'Mailgun', value: 'mailgun' },
             { label: 'Mailjet', value: 'mailjet' },
+            { label: 'Sendgrid', value: 'sendgrid' },
           ]}
           help="..."
         />
@@ -142,6 +153,15 @@ class Mailer extends Component {
             onChange={this.props.onChange}
             flow={this.mailjetFormFlow}
             schema={this.mailjetFormSchema}
+            style={{ marginTop: 5 }}
+          />
+        )}
+        {type === 'sendgrid' && (
+          <Form
+            value={settings}
+            onChange={this.props.onChange}
+            flow={this.sendgridFormFlow}
+            schema={this.sendgridFormSchema}
             style={{ marginTop: 5 }}
           />
         )}
