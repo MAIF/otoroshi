@@ -460,7 +460,8 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
                           )
                         ))
                       )
-                    }
+                    },
+                    location = authConfig.location
                   )
                 )
               }

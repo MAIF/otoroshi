@@ -44,7 +44,8 @@ export class AuthModuleConfigsPage extends Component {
           parentProps={this.props}
           selfUrl="auth-configs"
           defaultTitle="All Global auth. configs"
-          defaultValue={() => {
+          defaultValue={BackOfficeServices.createNewAuthConfig}
+          _defaultValue={() => {
             const defv = {
               ...Oauth2ModuleConfig.defaultConfig,
               id: faker.random.alphaNumeric(64),

@@ -27,13 +27,7 @@ export class JwtVerifiersPage extends Component {
           parentProps={this.props}
           selfUrl="jwt-verifiers"
           defaultTitle="All Global Jwt Verifiers"
-          defaultValue={() => ({
-            ...JwtVerifier.defaultVerifier,
-            id: faker.random.alphaNumeric(64),
-            type: 'global',
-            name: 'New Jwt Verifier',
-            desc: 'A new Jwt Verifier',
-          })}
+          defaultValue={BackOfficeServices.createNewJwtVerifier}
           itemName="Jwt Verifier"
           formSchema={this.formSchema}
           formFlow={this.formFlow}

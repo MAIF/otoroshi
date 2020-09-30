@@ -36,6 +36,9 @@ export class ProvidersDashboardPage extends Component {
   };
 
   render() {
+    if (!window.__user.superAdmin) {
+      return null;
+    }
     if (!this.state.env) {
       return null;
     }

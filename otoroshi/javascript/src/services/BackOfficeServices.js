@@ -44,7 +44,7 @@ export function fetchBodiesFor(serviceId, requestId) {
 // should use api proxy
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-window.__otoroshi__env__latest = { currentTenant: 'default', userAdmin: false };
+window.__otoroshi__env__latest = { currentTenant: 'default', userAdmin: false, bypassUserRightsCheck: false };
 
 export function env() {
   return fetch('/bo/api/env', {
@@ -55,6 +55,9 @@ export function env() {
     },
   }).then(r => r.json()).then(env => {
     window.__otoroshi__env__latest = env;
+    window.__currentTenant = env.currentTenant;
+    window.__user.superAdmin = env.superAdmin;
+    window.__user.tenantAdmin = env.tenantAdmin;
     return env;
   });
 }
@@ -541,6 +544,7 @@ export function saveService(service) {
 }
 
 export function updateService(serviceId, service) {
+  delete service.groupId;
   return fetch(`/bo/api/proxy/api/services/${serviceId}`, {
     method: 'PUT',
     credentials: 'include',
@@ -563,7 +567,8 @@ export function findAllApps() {
 }
 
 export function discardAllSessions() {
-  return fetch(`/bo/api/sessions`, {
+  // return fetch(`/bo/api/sessions`, {
+  return fetch(`/bo/api/proxy/api/admin-sessions`, {
     method: 'DELETE',
     credentials: 'include',
     headers: {
@@ -573,7 +578,8 @@ export function discardAllSessions() {
 }
 
 export function discardSession(id) {
-  return fetch(`/bo/api/sessions/${id}`, {
+  // return fetch(`/bo/api/sessions/${id}`, {
+  return fetch(`/bo/api/proxy/api/admin-sessions/${id}`, {
     method: 'DELETE',
     credentials: 'include',
     headers: {
@@ -583,7 +589,8 @@ export function discardSession(id) {
 }
 
 export function fetchSessions() {
-  return fetch(`/bo/api/sessions`, {
+  // return fetch(`/bo/api/sessions`, {
+  return fetch(`/bo/api/proxy/api/admin-sessions`, {
     method: 'GET',
     credentials: 'include',
     headers: {
@@ -593,7 +600,8 @@ export function fetchSessions() {
 }
 
 export function discardAllPrivateAppsSessions() {
-  return fetch(`/bo/api/papps/sessions`, {
+  // return fetch(`/bo/api/papps/sessions`, {
+  return fetch(`/bo/api/proxy/api/apps-sessions`, {
     method: 'DELETE',
     credentials: 'include',
     headers: {
@@ -603,7 +611,8 @@ export function discardAllPrivateAppsSessions() {
 }
 
 export function discardPrivateAppsSession(id) {
-  return fetch(`/bo/api/papps/sessions/${id}`, {
+  // return fetch(`/bo/api/papps/sessions/${id}`, {
+  return fetch(`/bo/api/proxy/api/apps-sessions/${id}`, {
     method: 'DELETE',
     credentials: 'include',
     headers: {
@@ -613,7 +622,8 @@ export function discardPrivateAppsSession(id) {
 }
 
 export function fetchPrivateAppsSessions() {
-  return fetch(`/bo/api/papps/sessions`, {
+  // return fetch(`/bo/api/papps/sessions`, {
+  return fetch(`/bo/api/proxy/api/apps-sessions`, {
     method: 'GET',
     credentials: 'include',
     headers: {
@@ -634,7 +644,8 @@ export function panicMode() {
 }
 
 export function fetchAdmins() {
-  return fetch(`/bo/simple/admins`, {
+  // return fetch(`/bo/simple/admins`, {
+  return fetch(`/bo/api/proxy/api/admins/simple`, {
     method: 'GET',
     credentials: 'include',
     headers: {
@@ -643,7 +654,8 @@ export function fetchAdmins() {
   })
     .then(r => r.json())
     .then(_admins => {
-      return fetch(`/bo/webauthn/admins`, {
+      // return fetch(`/bo/webauthn/admins`, {
+      return fetch(`/bo/api/proxy/api/admins/webauthn`, {
         method: 'GET',
         credentials: 'include',
         headers: {
@@ -661,7 +673,8 @@ export function fetchAdmins() {
 
 export function discardAdmin(username, id, type) {
   if (type === 'SIMPLE') {
-    return fetch(`/bo/simple/admins/${username}`, {
+    // return fetch(`/bo/simple/admins/${username}`, {
+    return fetch(`/bo/api/proxy/api/admins/simple/${username}`, {
       method: 'DELETE',
       credentials: 'include',
       headers: {
@@ -669,7 +682,8 @@ export function discardAdmin(username, id, type) {
       },
     }).then(r => r.json());
   } else if (type === 'WEBAUTHN') {
-    return fetch(`/bo/webauthn/admins/${username}/${id}`, {
+    //return fetch(`/bo/webauthn/admins/${username}/${id}`, {
+    return fetch(`/bo/api/proxy/api/admins/webauthn/${username}/${id}`, {
       method: 'DELETE',
       credentials: 'include',
       headers: {
@@ -926,8 +940,8 @@ export function createAuthConfig(ak) {
   }).then(r => r.json());
 }
 
-export function createNewAuthConfig() {
-  return fetch(`/bo/api/proxy/api/auths/_template`, {
+export function createNewAuthConfig(kind) {
+  return fetch(`/bo/api/proxy/api/auths/_template?mod-type=${kind}`, {
     method: 'GET',
     credentials: 'include',
     headers: {
@@ -1511,6 +1525,7 @@ export function updateWebAuthnAdmin(user) {
 ///////////////////////////////
 // DATA EXPORTERS
 ///////////////////////////////
+
 export function createNewDataExporterConfig(type) {
   return fetch(`/bo/api/proxy/api/data-exporter-configs/_template?type=${type}`, {
     method: 'GET',
@@ -1572,5 +1587,47 @@ export function updateDataExporterConfig(ak) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(ak),
+  }).then(r => r.json());
+}
+
+/////// Templates
+
+export function createNewJwtVerifier() {
+  return fetch(`/bo/api/proxy/api/verifiers/_template`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then(r => r.json());
+}
+
+export function createNewCertificate() {
+  return fetch(`/bo/api/proxy/api/certificates/_template`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then(r => r.json());
+}
+
+export function createNewGroup() {
+  return fetch(`/bo/api/proxy/api/groups/_template`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then(r => r.json());
+}
+
+export function createNewScript() {
+  return fetch(`/bo/api/proxy/api/scripts/_template`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
   }).then(r => r.json());
 }

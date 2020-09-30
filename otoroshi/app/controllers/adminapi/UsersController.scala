@@ -10,7 +10,7 @@ import org.mindrot.jbcrypt.BCrypt
 import otoroshi.models.RightsChecker.{SuperAdminOnly, TenantAdminOnly}
 import otoroshi.models._
 import otoroshi.utils.syntax.implicits._
-import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
+import play.api.libs.json.{JsValue, Json}
 import play.api.mvc._
 import security.IdGenerator
 import utils.{AdminApiHelper, JsonApiError, SendAuditAndAlert}
@@ -28,44 +28,51 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
     simpleLogin = false,
     authConfigId = "none",
     metadata = Map.empty,
-    rights = UserRights.superAdmin
+    rights = UserRights.superAdmin,
+    location = EntityLocation()
   )
 
   def sessions() = ApiAction.async { ctx =>
-    ctx.checkRights(SuperAdminOnly) {
+    ctx.checkRights(TenantAdminOnly) {
       val options = SendAuditAndAlert("ACCESS_ADMIN_SESSIONS", s"User accessed admin session", None, Json.obj(), ctx)
       fetchWithPaginationAndFilteringAsResult(ctx, "filter.".some, (e: BackOfficeUser) => e.toJson, options) {
-        env.datastores.backOfficeUserDataStore.findAll().fright[JsonApiError]
+        env.datastores.backOfficeUserDataStore.findAll().map(_.filter(ctx.canUserRead)).fright[JsonApiError]
       }
     }
   }
 
   def discardSession(id: String) = ApiAction.async { ctx =>
-    ctx.checkRights(SuperAdminOnly) {
+    ctx.checkRights(TenantAdminOnly) {
       env.datastores.globalConfigDataStore.singleton().filter(!_.apiReadOnly).flatMap { _ =>
-        env.datastores.backOfficeUserDataStore.discardSession(id) map { _ =>
-          val event = AdminApiEvent(
-            env.snowflakeGenerator.nextIdStr(),
-            env.env,
-            Some(ctx.apiKey),
-            None,
-            "DISCARD_SESSION",
-            s"Admin discarded an Admin session",
-            ctx.from,
-            ctx.ua,
-            Json.obj("sessionId" -> id)
-          )
-          Audit.send(event)
-          Alerts
-            .send(
-              SessionDiscardedAlert(env.snowflakeGenerator.nextIdStr(),
+        env.datastores.backOfficeUserDataStore.findById(id).flatMap {
+          case None => NotFound(Json.obj("error" -> "Session not found !")).future
+          case Some(session) if !ctx.canUserWrite(session) => ctx.fforbidden
+          case Some(_) => {
+            env.datastores.backOfficeUserDataStore.discardSession(id) map { _ =>
+              val event = AdminApiEvent(
+                env.snowflakeGenerator.nextIdStr(),
                 env.env,
-                fakeBackOfficeUser,
-                event,
+                Some(ctx.apiKey),
+                None,
+                "DISCARD_SESSION",
+                s"Admin discarded an Admin session",
                 ctx.from,
-                ctx.ua)
-            )
-          Ok(Json.obj("done" -> true))
+                ctx.ua,
+                Json.obj("sessionId" -> id)
+              )
+              Audit.send(event)
+              Alerts
+                .send(
+                  SessionDiscardedAlert(env.snowflakeGenerator.nextIdStr(),
+                    env.env,
+                    fakeBackOfficeUser,
+                    event,
+                    ctx.from,
+                    ctx.ua)
+                )
+              Ok(Json.obj("done" -> true))
+            }
+          }
         }
       } recover {
         case _ => Ok(Json.obj("done" -> false))
@@ -120,7 +127,7 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
       env.datastores.globalConfigDataStore.singleton().filter(!_.apiReadOnly).flatMap { _ =>
         env.datastores.privateAppsUserDataStore.findById(id).flatMap {
           case None => Results.NotFound(Json.obj("error" -> "Session not found")).future
-          case Some(session) if !ctx.canUserWrite(session) => ctx.funauthorized
+          case Some(session) if !ctx.canUserWrite(session) => ctx.fforbidden
           case Some(_) => {
             env.datastores.privateAppsUserDataStore.delete(id) map { _ =>
               val event = AdminApiEvent(
@@ -188,10 +195,11 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
   }
 
   def registerSimpleAdmin = ApiAction.async(parse.json) { ctx =>
-    ctx.checkRights(SuperAdminOnly) {
+    ctx.checkRights(TenantAdminOnly) {
       val usernameOpt = (ctx.request.body \ "username").asOpt[String]
       val passwordOpt = (ctx.request.body \ "password").asOpt[String]
       val labelOpt = (ctx.request.body \ "label").asOpt[String]
+      val rights = UserRights(Seq(UserRight(TenantAccess(ctx.currentTenant.value), Seq(TeamAccess("*"))))) // UserRights.readFromObject(ctx.request.body)
       (usernameOpt, passwordOpt, labelOpt) match {
         case (Some(username), Some(password), Some(label)) => {
           val saltedPassword = BCrypt.hashpw(password, BCrypt.gensalt())
@@ -202,7 +210,8 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
             createdAt = DateTime.now(),
             typ = OtoroshiAdminType.SimpleAdmin,
             metadata = (ctx.request.body \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-            rights = UserRights.readFromObject(ctx.request.body)
+            rights = rights,
+            location = EntityLocation(ctx.currentTenant, Seq(TeamId.all))  // EntityLocation.readFromKey(ctx.request.body)
           )).map { _ =>
             Ok(Json.obj("username" -> username))
           }
@@ -213,43 +222,48 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
   }
 
   def simpleAdmins = ApiAction.async { ctx =>
-    ctx.checkRights(SuperAdminOnly) {
-      ctx.checkRights(TenantAdminOnly) {
-        val options = SendAuditAndAlert("ACCESS_SIMPLE_ADMINS", s"User accessed simple admins", None, Json.obj(), ctx)
-        fetchWithPaginationAndFilteringAsResult(ctx, "filter.".some, (e: JsValue) => e, options) {
-          env.datastores.simpleAdminDataStore.findAll().map(_.map(_.json)).fright[JsonApiError]
-        }
+    ctx.checkRights(TenantAdminOnly) {
+      val options = SendAuditAndAlert("ACCESS_SIMPLE_ADMINS", s"User accessed simple admins", None, Json.obj(), ctx)
+      fetchWithPaginationAndFilteringAsResult(ctx, "filter.".some, (e: JsValue) => e, options) {
+        env.datastores.simpleAdminDataStore.findAll().map(_.filter(ctx.canUserRead).map(_.json)).fright[JsonApiError]
       }
     }
   }
 
   def deleteAdmin(username: String) = ApiAction.async { ctx =>
-    ctx.checkRights(SuperAdminOnly) {
-      env.datastores.simpleAdminDataStore.deleteUser(username).map { d =>
-        val event = AdminApiEvent(
-          env.snowflakeGenerator.nextIdStr(),
-          env.env,
-          Some(ctx.apiKey),
-          None,
-          "DELETE_ADMIN",
-          s"Admin deleted an Admin",
-          ctx.from,
-          ctx.ua,
-          Json.obj("username" -> username)
-        )
-        Audit.send(event)
-        Alerts.send(
-          U2FAdminDeletedAlert(env.snowflakeGenerator.nextIdStr(), env.env, fakeBackOfficeUser, event, ctx.from, ctx.ua)
-        )
-        Ok(Json.obj("done" -> true))
+    ctx.checkRights(TenantAdminOnly) {
+      env.datastores.simpleAdminDataStore.findByUsername(username).flatMap {
+        case None => NotFound(Json.obj("error" -> "User not found !")).future
+        case Some(user) if !ctx.canUserWrite(user) => ctx.fforbidden
+        case Some(_) => {
+          env.datastores.simpleAdminDataStore.deleteUser(username).map { d =>
+            val event = AdminApiEvent(
+              env.snowflakeGenerator.nextIdStr(),
+              env.env,
+              Some(ctx.apiKey),
+              None,
+              "DELETE_ADMIN",
+              s"Admin deleted an Admin",
+              ctx.from,
+              ctx.ua,
+              Json.obj("username" -> username)
+            )
+            Audit.send(event)
+            Alerts.send(
+              U2FAdminDeletedAlert(env.snowflakeGenerator.nextIdStr(), env.env, fakeBackOfficeUser, event, ctx.from, ctx.ua)
+            )
+            Ok(Json.obj("done" -> true))
+          }
+        }
       }
     }
   }
 
   def updateAdmin(username: String) = ApiAction.async(parse.json) { ctx =>
-    ctx.checkRights(SuperAdminOnly) {
+    ctx.checkRights(TenantAdminOnly) {
       env.datastores.simpleAdminDataStore.findByUsername(username).flatMap {
         case None => NotFound(Json.obj("error" -> "user not found")).future
+        case Some(user) if !ctx.canUserWrite(user) => ctx.fforbidden
         case Some(_) => {
           val newUser = SimpleOtoroshiAdmin.fmt.reads(ctx.request.body).get.copy(username = username)
           env.datastores.simpleAdminDataStore.registerUser(newUser).map { _ =>
@@ -261,9 +275,10 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
   }
 
   def updateWebAuthnAdmin(username: String) = ApiAction.async(parse.json) { ctx =>
-    ctx.checkRights(SuperAdminOnly) {
+    ctx.checkRights(TenantAdminOnly) {
       env.datastores.webAuthnAdminDataStore.findByUsername(username).flatMap {
         case None => NotFound(Json.obj("error" -> "user not found")).future
+        case Some(user) if !ctx.canUserWrite(user) => ctx.fforbidden
         case Some(_) => {
           val newUser = WebAuthnOtoroshiAdmin.fmt.reads(ctx.request.body).get.copy(username = username)
           env.datastores.webAuthnAdminDataStore.registerUser(newUser).map { _ =>
@@ -275,16 +290,16 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
   }
 
   def webAuthnAdmins() = ApiAction.async { ctx =>
-    ctx.checkRights(SuperAdminOnly) {
+    ctx.checkRights(TenantAdminOnly) {
       val options = SendAuditAndAlert("ACCESS_WEBAUTHN_ADMINS", s"User accessed webauthn admins", None, Json.obj(), ctx)
       fetchWithPaginationAndFilteringAsResult(ctx, "filter.".some, (e: JsValue) => e, options) {
-        env.datastores.webAuthnAdminDataStore.findAll().map(_.map(_.json)).fright[JsonApiError]
+        env.datastores.webAuthnAdminDataStore.findAll().map(_.filter(ctx.canUserRead).map(_.json)).fright[JsonApiError]
       }
     }
   }
 
   def registerWebAuthnAdmin() = ApiAction.async(parse.json) { ctx =>
-    ctx.checkRights(SuperAdminOnly) {
+    ctx.checkRights(TenantAdminOnly) {
       val usernameOpt = (ctx.request.body \ "username").asOpt[String]
       val passwordOpt = (ctx.request.body \ "password").asOpt[String]
       val labelOpt = (ctx.request.body \ "label").asOpt[String]
@@ -303,7 +318,8 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
               createdAt = DateTime.now(),
               typ = OtoroshiAdminType.WebAuthnAdmin,
               metadata = (ctx.request.body \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-              rights = UserRights.readFromObject(ctx.request.body)
+              rights = UserRights.readFromObject(ctx.request.body),
+              location = EntityLocation(ctx.currentTenant, Seq(TeamId.all))  // EntityLocation.readFromKey(ctx.request.body)
             ))
             .map { _ =>
               Ok(Json.obj("username" -> username))
@@ -315,30 +331,36 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
   }
 
   def webAuthnDeleteAdmin(username: String, id: String) = ApiAction.async { ctx =>
-    ctx.checkRights(SuperAdminOnly) {
-      env.datastores.webAuthnAdminDataStore.deleteUser(username).map { d =>
-        val event = AdminApiEvent(
-          env.snowflakeGenerator.nextIdStr(),
-          env.env,
-          Some(ctx.apiKey),
-          None,
-          "DELETE_WEBAUTHN_ADMIN",
-          s"Admin deleted a WebAuthn Admin",
-          ctx.from,
-          ctx.ua,
-          Json.obj("username" -> username, "id" -> id)
-        )
-        Audit.send(event)
-        Alerts
-          .send(
-            WebAuthnAdminDeletedAlert(env.snowflakeGenerator.nextIdStr(),
+    ctx.checkRights(TenantAdminOnly) {
+      env.datastores.webAuthnAdminDataStore.findByUsername(username).flatMap {
+        case None => NotFound(Json.obj("error" -> "User not found !")).future
+        case Some(user) if !ctx.canUserWrite(user) => ctx.fforbidden
+        case Some(_) => {
+          env.datastores.webAuthnAdminDataStore.deleteUser(username).map { d =>
+            val event = AdminApiEvent(
+              env.snowflakeGenerator.nextIdStr(),
               env.env,
-              fakeBackOfficeUser,
-              event,
+              Some(ctx.apiKey),
+              None,
+              "DELETE_WEBAUTHN_ADMIN",
+              s"Admin deleted a WebAuthn Admin",
               ctx.from,
-              ctx.ua)
-          )
-        Ok(Json.obj("done" -> true))
+              ctx.ua,
+              Json.obj("username" -> username, "id" -> id)
+            )
+            Audit.send(event)
+            Alerts
+              .send(
+                WebAuthnAdminDeletedAlert(env.snowflakeGenerator.nextIdStr(),
+                  env.env,
+                  fakeBackOfficeUser,
+                  event,
+                  ctx.from,
+                  ctx.ua)
+              )
+            Ok(Json.obj("done" -> true))
+          }
+        }
       }
     }
   }

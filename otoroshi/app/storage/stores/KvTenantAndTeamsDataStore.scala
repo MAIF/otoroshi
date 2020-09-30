@@ -23,7 +23,7 @@ class TeamDataStore(redisCli: RedisLike, env: Env) extends RedisLikeStore[Team] 
   override def fmt: Format[Team] = Team.format
   override def redisLike(implicit env: Env): RedisLike = redisCli
   override def key(id: String): Key = Key(s"${env.storageRoot}:teams:$id")
-  override def extractId(value: Team): String = value.id.value
+  override def extractId(value: Team): String = s"${value.tenant.value}:${value.id.value}"
   def template(tenant: TenantId) = Team(
     id = TeamId("new-team"),
     tenant = tenant,

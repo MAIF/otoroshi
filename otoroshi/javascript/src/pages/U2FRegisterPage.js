@@ -278,6 +278,10 @@ export class U2FRegisterPage extends Component {
   };
 
   render() {
+    // TODO: see if tenant admin can do it too
+    if (!window.__user.tenantAdmin) {
+      return null;
+    }
     return (
       <div>
         {this.props.env && this.props.env.changePassword && (
@@ -458,7 +462,8 @@ export class RegisterAdminModal extends Component {
       if (password !== passwordcheck) {
         return window.newAlert('Password does not match !!!', 'Password error');
       }
-      fetch(`/bo/simple/admins`, {
+      // fetch(`/bo/simple/admins`, {
+      fetch(`/bo/api/proxy/api/admins/simple`, {
         method: 'POST',
         credentials: 'include',
         headers: {
@@ -762,9 +767,14 @@ export class AdminEditionModal extends Component {
         height: '200px'
       }
     },
+    _loc: {
+      type: 'location',
+      props: {}
+    }
   }
 
   flow = [
+    '_loc',
     'username',
     'label',
     'password',
@@ -798,7 +808,7 @@ export class AdminEditionModal extends Component {
   render() {
     return (
       <>
-        <div className="modal-body">
+        <div className="modal-body" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
           <Form
             value={this.state.user}
             onChange={this.onChange}
@@ -847,6 +857,7 @@ class UserRights extends Component {
           onChange={e => this.props.changeValue('rights', e)}
           component={UserRight}
         />
+        {/*<JsonObjectAsCodeInput {...this.props} height="200px" />*/}
       </div>
     )
     

@@ -502,9 +502,9 @@ object CompilingRequestTransformer extends RequestTransformer {
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, HttpRequest] = {
     val accept = rawRequest.headers.get("Accept").getOrElse("text/html").split(",").toSeq.map(_.trim)
     if (accept.contains("text/html")) { // in a browser
-      Left(Results.InternalServerError("<h3>not ready yet ...</h3>").as("text/html"))
+      Left(Results.ServiceUnavailable("<h3>not ready yet, plugin is loading ...</h3>").as("text/html"))
     } else {
-      Left(Results.InternalServerError(Json.obj("error" -> "not ready yet ...")))
+      Left(Results.ServiceUnavailable(Json.obj("error" -> "not ready yet, plugin is loading ...")))
     }
   }
 }
@@ -635,6 +635,13 @@ class ScriptCompiler(env: Env) {
   }
 }
 
+case class ScriptsState(compiling: Boolean, initialized: Boolean) {
+  def json: JsValue = Json.obj(
+    "compiling" -> compiling,
+    "initialized"   -> initialized
+  )
+}
+
 class ScriptManager(env: Env) {
 
   private implicit val ec   = env.otoroshiExecutionContext
@@ -650,6 +657,12 @@ class ScriptManager(env: Env) {
   private val cpTryCache   = new TrieMap[String, Unit]()
 
   private val listeningCpScripts = new AtomicReference[Seq[InternalEventListener]](Seq.empty)
+
+  private val _firstPluginsSearchDone = new AtomicBoolean(false)
+  private val _firstCompilationDone = new AtomicBoolean(false)
+
+  def firstPluginsSearchDone(): Boolean = _firstPluginsSearchDone.get()
+  def firstCompilationDone(): Boolean = _firstCompilationDone.get()
 
   lazy val (transformersNames, validatorsNames, preRouteNames, reqSinkNames, listenerNames, jobNames) = Try {
     import io.github.classgraph.{ClassGraph, ClassInfoList, ScanResult}
@@ -746,14 +759,11 @@ class ScriptManager(env: Env) {
     Option(updateRef.get()).foreach(_.cancel())
   }
 
-  def state(): Future[JsObject] = {
+  def state(): Future[ScriptsState] = {
     env.datastores.scriptDataStore.findAll().map { scripts =>
       val allCompiled = !scripts.forall(s => cache.contains(s.id))
-      val initial     = if (scripts.isEmpty) true else allCompiled
-      Json.obj(
-        "compiling" -> compiling.nonEmpty,
-        "initial"   -> initial
-      )
+      val initial     = if (scripts.isEmpty) true else _firstCompilationDone.get()
+      ScriptsState(compiling.nonEmpty, initial)
     }
   }
 
@@ -770,6 +780,7 @@ class ScriptManager(env: Env) {
         listeningCpScripts.set(plugins.collect {
           case listener: InternalEventListener if listener.listening => listener
         })
+        _firstPluginsSearchDone.compareAndSet(false, true)
         logger.info(s"Finding and starting plugins done in ${System.currentTimeMillis() - start} ms.")
         ()
       }(cpScriptExec)
@@ -832,6 +843,7 @@ class ScriptManager(env: Env) {
         }
         .andThen {
           case _ if first =>
+            _firstCompilationDone.compareAndSet(false, true)
             logger.info(s"Compiling and starting scripts done in ${System.currentTimeMillis() - start} ms.")
         }
     }
@@ -1259,19 +1271,14 @@ trait ScriptDataStore extends BasicStore[Script] {
              |
              |  val logger = Logger("my-transformer")
              |
-             |  override def transformRequestSync(
-             |    snowflake: String,
-             |    rawRequest: HttpRequest,
-             |    otoroshiRequest: HttpRequest,
-             |    desc: ServiceDescriptor,
-             |    apiKey: Option[ApiKey],
-             |    user: Option[PrivateAppsUser]
-             |  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, HttpRequest] = {
-             |    logger.info(s"Request incoming with id: $snowflake")
+             |  override def transformRequestWithCtx(
+             |    ctx: TransformerRequestContext
+             |  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
+             |    logger.info(s"Request incoming with id: ${ctx.snowflake}")
              |    // Here add a new header to the request between otoroshi and the target
-             |    Right(otoroshiRequest.copy(
-             |      headers = otoroshiRequest.headers + ("Hello" -> "World")
-             |    ))
+             |    Right(ctx.otoroshiRequest.copy(
+             |      headers = ctx.otoroshiRequest.headers + ("Hello" -> "World")
+             |    )).future
              |  }
              |}
              |

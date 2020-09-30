@@ -14,6 +14,12 @@ or
 ./bin/otoroshi -Dhttp.port=8080 
 ```
 
+if you want to define your own config file and use it on an otoroshi instance, use the following flag
+
+```sh
+java -Dconfig.file=/path/to/otoroshi.conf -jar otoroshi.jar
+``` 
+
 ## Common configuration
 
 | name | type | default value  | description |

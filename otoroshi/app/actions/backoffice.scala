@@ -26,6 +26,10 @@ case class BackOfficeActionContext[A](request: Request[A], user: Option[BackOffi
 }
 
 case class BackOfficeActionContextAuth[A](request: Request[A], user: BackOfficeUser) {
+
+  lazy val forbidden = ApiActionContext.forbidden
+  lazy val fforbidden = ApiActionContext.fforbidden
+
   def from(implicit env: Env): String = request.theIpAddress
   def ua: String                      = request.theUserAgent
 
@@ -35,7 +39,7 @@ case class BackOfficeActionContextAuth[A](request: Request[A], user: BackOfficeU
   }
 
   private def rootOrTenantAdmin(user: BackOfficeUser) (f: => Boolean)(implicit env: Env): Boolean = {
-    if (env.bypassUserRightsCheck || SuperAdminOnly.canPerform(user, currentTenant) || TenantAdminOnly.canPerform(user, currentTenant)) {
+    if (env.bypassUserRightsCheck || SuperAdminOnly.canPerform(user, currentTenant)) { // || TenantAdminOnly.canPerform(user, currentTenant)) {
       true
     } else {
       f
@@ -44,12 +48,12 @@ case class BackOfficeActionContextAuth[A](request: Request[A], user: BackOfficeU
 
   def canUserRead[T <: EntityLocationSupport](item: T)(implicit env: Env): Boolean = {
     rootOrTenantAdmin(user) {
-      currentTenant.value == item.location.tenant.value && user.rights.canReadTeams(currentTenant, item.location.teams)
+      (currentTenant.value == item.location.tenant.value || item.location.tenant == TenantId.all) && user.rights.canReadTenant(item.location.tenant) && user.rights.canReadTeams(currentTenant, item.location.teams)
     }
   }
   def canUserWrite[T <: EntityLocationSupport](item: T)(implicit env: Env): Boolean = {
     rootOrTenantAdmin(user) {
-      currentTenant.value == item.location.tenant.value && user.rights.canWriteTeams(currentTenant, item.location.teams)
+      (currentTenant.value == item.location.tenant.value || item.location.tenant == TenantId.all) && user.rights.canWriteTenant(item.location.tenant) && user.rights.canWriteTeams(currentTenant, item.location.teams)
     }
   }
 
@@ -60,7 +64,7 @@ case class BackOfficeActionContextAuth[A](request: Request[A], user: BackOfficeU
       if (rc.canPerform(user, currentTenant)) {
         f
       } else {
-        Results.Unauthorized(Json.obj("error" -> "You're not authorized here !")).future
+        Results.Forbidden(Json.obj("error" -> "You're not authorized here !")).future
       }
     }
   }

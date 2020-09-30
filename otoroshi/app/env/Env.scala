@@ -5,7 +5,7 @@ import java.rmi.registry.LocateRegistry
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 
-import akka.actor.{ActorSystem, PoisonPill, Scheduler}
+import akka.actor.{ActorSystem, Cancellable, PoisonPill, Scheduler}
 import akka.http.scaladsl.util.FastFuture._
 import akka.stream.Materializer
 import auth.{AuthModuleConfig, SessionCookieValues}
@@ -20,7 +20,7 @@ import models._
 import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
-import otoroshi.models.{OtoroshiAdminType, SimpleOtoroshiAdmin, Team, TeamAccess, TeamId, Tenant, TenantAccess, TenantId, UserRight, UserRights, WebAuthnOtoroshiAdmin}
+import otoroshi.models.{EntityLocation, OtoroshiAdminType, SimpleOtoroshiAdmin, Team, TeamAccess, TeamId, Tenant, TenantAccess, TenantId, UserRight, UserRights, WebAuthnOtoroshiAdmin}
 import otoroshi.script.{AccessValidatorRef, JobManager, Script, ScriptCompiler, ScriptManager}
 import otoroshi.ssl.pki.BouncyCastlePki
 import otoroshi.storage.DataStores
@@ -42,6 +42,7 @@ import ssl.{Cert, ClientCertificateValidator, DynamicSSLEngineProvider, FakeKeyS
 import utils.http._
 import utils.{HasMetrics, Metrics}
 import otoroshi.utils.syntax.implicits._
+import play.shaded.ahc.org.asynchttpclient.{AsyncHttpClient, DefaultAsyncHttpClient}
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future, Promise}
@@ -398,6 +399,9 @@ class Env(val configuration: Configuration,
 
   lazy val procNbr = Runtime.getRuntime.availableProcessors()
 
+  lazy val ahcStats = new AtomicReference[Cancellable]()
+  lazy val internalAhcStats = new AtomicReference[Cancellable]()
+
   lazy val gatewayClient = {
     val parser: WSConfigParser = new WSConfigParser(configuration.underlying, environment.classLoader)
     val config: AhcWSClientConfig = new AhcWSClientConfig(wsClientConfig = parser.parse()).copy(
@@ -420,26 +424,28 @@ class Env(val configuration: Configuration,
       )
     )(otoroshiMaterializer)
 
+    import collection.JavaConverters._
+    ahcStats.set(otoroshiActorSystem.scheduler.scheduleWithFixedDelay(1.second, 1.second) { () =>
+      scala.util.Try {
+        val stats = ahcClient.underlying[DefaultAsyncHttpClient].getClientStats
+        metrics.histogram("ahc-total-active-connections").update(stats.getTotalActiveConnectionCount)
+        metrics.histogram("ahc-total-connections").update(stats.getTotalConnectionCount)
+        metrics.histogram("ahc-total-idle-connections").update(stats.getTotalIdleConnectionCount)
+        stats.getStatsPerHost.asScala.foreach {
+          case (key, value) =>
+            metrics.histogram(key + "-ahc-total-active-connections").update(value.getHostActiveConnectionCount)
+            metrics.histogram(key + "-ahc-total-connections").update(value.getHostConnectionCount)
+            metrics.histogram(key + "-ahc-total-idle-connections").update(value.getHostIdleConnectionCount)
+        }
+      } match {
+        case Success(_) => ()
+        case Failure(e) => logger.error("error while publishing ahc stats", e)
+      }
+    }(otoroshiExecutionContext))
+
     WsClientChooser(
       ahcClient,
       new AkkWsClient(wsClientConfig, this)(otoroshiActorSystem, otoroshiMaterializer),
-      sslconfig => {
-        val wsClientConfig: WSClientConfig = config.wsClientConfig.copy(
-          compressionEnabled = configuration.getOptionalWithFileSupport[Boolean]("app.proxy.compressionEnabled").getOrElse(false),
-          idleTimeout =
-            configuration.getOptionalWithFileSupport[Int]("app.proxy.idleTimeout").map(_.millis).getOrElse((2 * 60 * 1000).millis),
-          connectionTimeout = configuration
-            .getOptionalWithFileSupport[Int]("app.proxy.connectionTimeout")
-            .map(_.millis)
-            .getOrElse((2 * 60 * 1000).millis),
-          ssl = sslconfig
-        )
-        AhcWSClient(
-          config.copy(
-            wsClientConfig = wsClientConfig
-          )
-        )(otoroshiMaterializer)
-      },
       configuration.getOptionalWithFileSupport[Boolean]("app.proxy.useAkkaClient").getOrElse(false),
       this
     )
@@ -461,26 +467,27 @@ class Env(val configuration: Configuration,
         .map(_.millis)
         .getOrElse((2 * 60 * 1000).millis)
     )
+    import collection.JavaConverters._
+    internalAhcStats.set(otoroshiActorSystem.scheduler.scheduleWithFixedDelay(1.second, 1.second) { () =>
+      scala.util.Try {
+        val stats = wsClient.underlying[DefaultAsyncHttpClient].getClientStats
+        metrics.histogram("ahc-total-active-connections").update(stats.getTotalActiveConnectionCount)
+        metrics.histogram("ahc-total-connections").update(stats.getTotalConnectionCount)
+        metrics.histogram("ahc-total-idle-connections").update(stats.getTotalIdleConnectionCount)
+        stats.getStatsPerHost.asScala.foreach {
+          case (key, value) =>
+            metrics.histogram(key + "-ahc-total-active-connections").update(value.getHostActiveConnectionCount)
+            metrics.histogram(key + "-ahc-total-connections").update(value.getHostConnectionCount)
+            metrics.histogram(key + "-ahc-total-idle-connections").update(value.getHostIdleConnectionCount)
+        }
+      } match {
+        case Success(_) => ()
+        case Failure(e) => logger.error("error while publishing ahc stats", e)
+      }
+    }(otoroshiExecutionContext))
     WsClientChooser(
       wsClient,
       new AkkWsClient(wsClientConfig, this)(otoroshiActorSystem, otoroshiMaterializer),
-      sslconfig => {
-        val wsClientConfig: WSClientConfig = config.wsClientConfig.copy(
-          compressionEnabled = configuration.getOptionalWithFileSupport[Boolean]("app.proxy.compressionEnabled").getOrElse(false),
-          idleTimeout =
-            configuration.getOptionalWithFileSupport[Int]("app.proxy.idleTimeout").map(_.millis).getOrElse((2 * 60 * 1000).millis),
-          connectionTimeout = configuration
-            .getOptionalWithFileSupport[Int]("app.proxy.connectionTimeout")
-            .map(_.millis)
-            .getOrElse((2 * 60 * 1000).millis),
-          ssl = sslconfig
-        )
-        AhcWSClient(
-          config.copy(
-            wsClientConfig = wsClientConfig
-          )
-        )(otoroshiMaterializer)
-      },
       configuration.getOptionalWithFileSupport[Boolean]("app.proxy.useAkkaClient").getOrElse(false),
       this
     )
@@ -670,6 +677,8 @@ class Env(val configuration: Configuration,
     // ua.stop()
     healthCheckerActor ! PoisonPill
     otoroshiEventsActor ! PoisonPill
+    Option(ahcStats.get()).foreach(_.cancel())
+    Option(internalAhcStats.get()).foreach(_.cancel())
     jobManager.stop()
     scriptManager.stop()
     clusterAgent.stop()
@@ -799,6 +808,8 @@ class Env(val configuration: Configuration,
 
       setupLoggers()
 
+      DynamicSSLEngineProvider.setCurrentEnv(this)
+
       clusterAgent.warnAboutHttpLeaderUrls()
       if (clusterConfig.mode == ClusterMode.Leader) {
         logger.info(s"Running Otoroshi Leader agent !")
@@ -807,7 +818,6 @@ class Env(val configuration: Configuration,
         logger.info(s"Running Otoroshi Worker agent !")
         clusterAgent.startF()
       } else {
-        DynamicSSLEngineProvider.setCurrentEnv(this)
         configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.cipherSuites").filterNot(_.isEmpty).foreach { s =>
           DynamicSSLEngineProvider.logger.warn(s"Using custom SSL cipher suites: ${s.mkString(", ")}")
         }
@@ -895,7 +905,8 @@ class Env(val configuration: Configuration,
                     createdAt = DateTime.now(),
                     typ = OtoroshiAdminType.SimpleAdmin,
                     metadata = Map.empty,
-                    rights = UserRights.varargs(UserRight(TenantAccess("*"), Seq(TeamAccess("*"))))
+                    rights = UserRights.varargs(UserRight(TenantAccess("*"), Seq(TeamAccess("*")))),
+                    location = EntityLocation()
                   )
 
                   val baseExport = OtoroshiExport(

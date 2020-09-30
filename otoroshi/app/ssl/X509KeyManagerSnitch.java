@@ -29,7 +29,7 @@ public class X509KeyManagerSnitch extends X509ExtendedKeyManager {
 
     private X509KeyManager manager;
 
-    public static Cache<String, Tuple3<SSLSession, PrivateKey, X509Certificate[]>> sslSessions = Caffeine.newBuilder()
+    public static Cache<String, Tuple3<SSLSession, PrivateKey, X509Certificate[]>> _sslSessions = Caffeine.newBuilder()
             .maximumSize(1000)
             .expireAfterWrite(5, TimeUnit.SECONDS)
             .build();
@@ -130,7 +130,7 @@ public class X509KeyManagerSnitch extends X509ExtendedKeyManager {
                         String first = theFirstMatching.orElse(theFirst.get());
                         debug("chooseEngineServerAlias: " + host + " - " + theFirst + " - " + first);
                         sessionKey.foreach(skey -> {
-                            sslSessions.put(skey, Tuple3.apply(ssl.getSession(), manager.getPrivateKey(first), manager.getCertificateChain(first)));
+                            _sslSessions.put(skey, Tuple3.apply(ssl.getSession(), manager.getPrivateKey(first), manager.getCertificateChain(first)));
                             return Unit$.MODULE$;
                         });
                         return first;
@@ -138,7 +138,7 @@ public class X509KeyManagerSnitch extends X509ExtendedKeyManager {
                         Cert c = cache.getIfPresent(key);
                         if (c != null) {
                             sessionKey.foreach(skey -> {
-                                sslSessions.put(skey, Tuple3.apply(ssl.getSession(), c.cryptoKeyPair().getPrivate(), c.certificatesChain()));
+                                _sslSessions.put(skey, Tuple3.apply(ssl.getSession(), c.cryptoKeyPair().getPrivate(), c.certificatesChain()));
                                 return Unit$.MODULE$;
                             });
                             return key;
@@ -153,7 +153,7 @@ public class X509KeyManagerSnitch extends X509ExtendedKeyManager {
                                         DynamicSSLEngineProvider.addCertificates(certOpt.toList(), env);
                                     }
                                     sessionKey.foreach(skey -> {
-                                        sslSessions.put(skey, Tuple3.apply(ssl.getSession(), cert.cryptoKeyPair().getPrivate(), cert.certificatesChain()));
+                                        _sslSessions.put(skey, Tuple3.apply(ssl.getSession(), cert.cryptoKeyPair().getPrivate(), cert.certificatesChain()));
                                         return Unit$.MODULE$;
                                     });
                                     return key;
@@ -167,12 +167,32 @@ public class X509KeyManagerSnitch extends X509ExtendedKeyManager {
                     }
                 } else {
                     Cert c = cache.getIfPresent(key);
+                    env.Env env = DynamicSSLEngineProvider.getCurrentEnv();
                     if (c != null) {
                         sessionKey.foreach(skey -> {
-                            sslSessions.put(skey, Tuple3.apply(ssl.getSession(), c.cryptoKeyPair().getPrivate(), c.certificatesChain()));
+                            _sslSessions.put(skey, Tuple3.apply(ssl.getSession(), c.cryptoKeyPair().getPrivate(), c.certificatesChain()));
                             return Unit$.MODULE$;
                         });
                         return key;
+                    } else if (env != null && env.datastores().globalConfigDataStore().latestSafe().exists(g -> g.autoCert().enabled())) {
+                        info("dyn stuff enabled");
+                        Option<Cert> certOpt = env.datastores().certificatesDataStore().jautoGenerateCertificateForDomain(host, env);
+                        if (certOpt.isDefined()) {
+                            info("got autogen cert " + key);
+                            Cert cert = certOpt.get();
+                            cache.put(key, cert);
+                            if (!cert.subject().contains(SSLSessionJavaHelper.NotAllowed())) {
+                                DynamicSSLEngineProvider.addCertificates(certOpt.toList(), env);
+                            }
+                            sessionKey.foreach(skey -> {
+                                _sslSessions.put(skey, Tuple3.apply(ssl.getSession(), cert.cryptoKeyPair().getPrivate(), cert.certificatesChain()));
+                                return Unit$.MODULE$;
+                            });
+                            return key;
+                        } else {
+                            info("no autogen cert");
+                            throw new NoCertificateFoundException(host);
+                        }
                     } else if (host == null) {
                         throw new NoHostnameFoundException();
                     } else if (aliases == null) {

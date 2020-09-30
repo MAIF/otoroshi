@@ -73,7 +73,14 @@ class LettuceDataStores(configuration: Configuration,
       configuration.getOptionalWithFileSupport[String]("app.redis.lettuce.uri").map(v => Seq(v.trim))
     )
     .getOrElse(Seq.empty[String])
-  lazy val nodesRaw = redisUris.map(v => RedisURI.create(v))
+  lazy val startTLS = configuration.getOptionalWithFileSupport[Boolean]("app.redis.lettuce.startTLS").getOrElse(false)
+  lazy val verifyPeers = configuration.getOptionalWithFileSupport[Boolean]("app.redis.lettuce.verifyPeers").getOrElse(true)
+  lazy val nodesRaw = redisUris.map { v =>
+    val uri = RedisURI.create(v)
+    uri.setStartTls(startTLS)
+    uri.setVerifyPeer(verifyPeers)
+    uri
+  }
   lazy val nodes    = nodesRaw.asJava
   lazy val resources = {
     val default = DefaultClientResources.builder().build()

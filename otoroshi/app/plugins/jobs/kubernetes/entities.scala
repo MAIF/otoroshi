@@ -4,15 +4,18 @@ import env.Env
 import models.ServiceDescriptor
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
-import play.api.libs.json.JsValue
+import play.api.libs.json.{JsObject, JsValue, Json}
 import security.OtoroshiClaim
 import ssl.{Cert, DynamicSSLEngineProvider}
+import otoroshi.utils.syntax.implicits._
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Try
 
 trait KubernetesEntity {
   def raw: JsValue
   def pretty: String = raw.prettify
+  lazy val spec: JsObject = (raw \ "spec").asOpt[JsObject].getOrElse(Json.obj())
   lazy val uid: String = (raw \ "metadata" \ "uid").as[String]
   lazy val name: String = (raw \ "metadata" \ "name").as[String]
   lazy val metaKind: Option[String] = annotations.get("io.otoroshi/kind")
@@ -29,8 +32,21 @@ case class KubernetesEndpoint(raw: JsValue) extends KubernetesEntity
 
 case class KubernetesOtoroshiResource(raw: JsValue) extends KubernetesEntity
 
+case class KubernetesIngressClassParameters(raw: JsValue) {
+  lazy val apiGroup: String = (raw \ "apiGroup").as[String]
+  lazy val kind: String = (raw \ "kind").as[String]
+  lazy val name: String = (raw \ "name").as[String]
+}
+
+case class KubernetesIngressClass(raw: JsValue) extends KubernetesEntity {
+  lazy val controller: String = (spec \ "controller").as[String]
+  lazy val parameters: KubernetesIngressClassParameters = KubernetesIngressClassParameters((spec \ "parameters").as[JsValue])
+  lazy val isDefault: Boolean = annotations.get("ingressclass.kubernetes.io/is-default-class").map(_ == "true").getOrElse(false)
+}
+
 case class KubernetesIngress(raw: JsValue) extends KubernetesEntity {
-  lazy val ingressClazz: Option[String] = annotations.get("kubernetes.io/ingress.class")
+  lazy val ingressClazz: Option[String] = annotations.get("kubernetes.io/ingress.class").orElse(spec.select("ingressClassName").asOpt[String])
+  lazy val ingressClassName: Option[String] = spec.select("ingressClassName").asOpt[String]
   lazy val ingress: IngressSupport.NetworkingV1beta1IngressItem = {
     IngressSupport.NetworkingV1beta1IngressItem.reader.reads(raw).get
   }
@@ -60,7 +76,7 @@ case class KubernetesDeployment(raw: JsValue) extends KubernetesEntity
 
 case class KubernetesCertSecret(raw: JsValue) extends KubernetesEntity {
   lazy val data: JsValue = (raw \ "data").as[JsValue]
-  def cert: Option[Cert] = {
+  def cert: Option[Cert] = Try {
     val crt = (data \ "tls.crt").asOpt[String]
     val key = (data \ "tls.key").asOpt[String]
     (crt, key) match {
@@ -72,7 +88,7 @@ case class KubernetesCertSecret(raw: JsValue) extends KubernetesEntity {
         ).some
       case _ => None
     }
-  }
+  }.toOption.flatten
 }
 
 case class KubernetesSecret(raw: JsValue) extends KubernetesEntity {

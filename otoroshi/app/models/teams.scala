@@ -28,6 +28,7 @@ case class UserRights(rights: Seq[UserRight]) {
       )
     }
   }
+  def tenantAdminStr(tenant: String)(implicit env: Env): Boolean = tenantAdmin(TenantId(tenant))
   def tenantAdmin(tenant: TenantId)(implicit env: Env): Boolean = {
     if (env.bypassUserRightsCheck || superAdmin) {
       true
@@ -145,12 +146,16 @@ case class TeamId(rawValue: String) {
 }
 object TeamId {
   val default: TeamId = TeamId("default")
+  val all: TeamId = TeamId("*")
   def apply(value: String): TeamId = new TeamId(value.toLowerCase.trim)
 }
 
-case class TenantId(value: String)
+case class TenantId(rawValue: String) {
+  lazy val value: String = rawValue.toLowerCase.trim
+}
 object TenantId {
   val default: TenantId = TenantId("default")
+  val all: TenantId = TenantId("*")
   def apply(value: String): TenantId = new TenantId(value.toLowerCase.trim)
 }
 
@@ -164,7 +169,7 @@ case class TeamAccess(value: String, canRead: Boolean, canWrite: Boolean) {
   lazy val wildcard: Boolean = value == "*"
   lazy val canReadWrite: Boolean = canRead && canWrite
   def matches(team: TeamId): Boolean = {
-    value == "*" || RegexPool(value).matches(team.value)
+    value == "*" || team == TeamId.all || RegexPool(value).matches(team.value)
   }
 }
 
@@ -199,7 +204,7 @@ object TenantAccess {
 
 case class TenantAccess(value: String, canRead: Boolean, canWrite: Boolean) {
   def matches(tenant: TenantId): Boolean = {
-    value == "*" || RegexPool(value).matches(tenant.value)
+    value == "*" || tenant == TenantId.all || RegexPool(value).matches(tenant.value)
   }
   lazy val asTenantId: TenantId = TenantId(value)
   lazy val plain: Boolean = !containsWildcard

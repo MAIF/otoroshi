@@ -32,7 +32,7 @@ import security.{IdGenerator, OtoroshiClaim}
 import utils.RequestImplicits._
 import utils._
 import utils.future.Implicits._
-import utils.http.{ManualResolveTransport, WSProxyServerUtils}
+import utils.http.{ManualResolveTransport, WSCookieWithSameSite, WSProxyServerUtils}
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future, Promise}
@@ -253,14 +253,15 @@ class WebSocketHandler()(implicit env: Env) {
 
       val wsCookiesIn = req.cookies.toSeq.map(
         c =>
-          DefaultWSCookie(
+          WSCookieWithSameSite(
             name = c.name,
             value = c.value,
             domain = c.domain,
             path = Option(c.path),
             maxAge = c.maxAge.map(_.toLong),
             secure = c.secure,
-            httpOnly = c.httpOnly
+            httpOnly = c.httpOnly,
+            sameSite = c.sameSite
           )
       )
       val rawRequest = otoroshi.script.HttpRequest(

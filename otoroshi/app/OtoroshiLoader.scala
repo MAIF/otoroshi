@@ -1,10 +1,14 @@
 import actions._
+import akka.stream.scaladsl.{Sink, Source}
+import cluster.ClusterMode
 import com.softwaremill.macwire._
 import controllers._
 import controllers.adminapi._
 import env.Env
 import gateway._
 import modules._
+import otoroshi.api.OtoroshiLoaderHelper
+import otoroshi.api.OtoroshiLoaderHelper.EnvContainer
 import play.api.ApplicationLoader.Context
 import play.api._
 import play.api.http.{DefaultHttpFilters, HttpErrorHandler, HttpRequestHandler}
@@ -13,6 +17,9 @@ import play.api.mvc.EssentialFilter
 import play.api.routing.Router
 import play.filters.HttpFiltersComponents
 import router.Routes
+import ssl.DynamicSSLEngineProvider
+
+import scala.concurrent.{Await, Future}
 
 class OtoroshiLoader extends ApplicationLoader {
 
@@ -20,7 +27,9 @@ class OtoroshiLoader extends ApplicationLoader {
     LoggerConfigurator(context.environment.classLoader).foreach {
       _.configure(context.environment, context.initialConfiguration, Map.empty)
     }
-    new OtoroshiComponentsInstances(context, None, None, false).application
+    val components = new OtoroshiComponentsInstances(context, None, None, false)
+    OtoroshiLoaderHelper.waitForReadiness(components)
+    components.application
   }
 }
 
@@ -30,7 +39,8 @@ package object modules {
       extends BuiltInComponentsFromContext(context)
       with AssetsComponents
       with HttpFiltersComponents
-      with AhcWSComponents {
+      with AhcWSComponents
+      with EnvContainer{
 
     // lazy val gzipFilterConfig                           = GzipFilterConfig.fromConfiguration(configuration)
     // lazy val gzipFilter                                 = wire[GzipFilter]

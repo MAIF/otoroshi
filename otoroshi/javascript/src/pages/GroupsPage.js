@@ -58,7 +58,7 @@ export class GroupsPage extends Component {
     },
   ];
 
-  formFlow = ['_loc', '---', 'id', 'name', 'description', 'metadata'];
+  formFlow = ['_loc', 'id', 'name', 'description', 'metadata'];
 
   state = { env: null };
 
@@ -73,7 +73,7 @@ export class GroupsPage extends Component {
         parentProps={this.props}
         selfUrl="groups"
         defaultTitle="All service groups"
-        defaultValue={() => ({ id: faker.random.alphaNumeric(64) })}
+        defaultValue={BackOfficeServices.createNewGroup}
         itemName="group"
         formSchema={this.formSchema}
         formFlow={this.formFlow}

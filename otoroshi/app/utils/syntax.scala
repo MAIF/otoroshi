@@ -47,7 +47,24 @@ object implicits {
     }
     def applyOn[B](f: A => B): B = f(obj)
     def applyOnIf(predicate: => Boolean)(f: A => A): A = if (predicate) f(obj) else obj
-    def applyOnWitPredicate(predicate: A => Boolean)(f: A => A): A = if (predicate(obj)) f(obj) else obj
+    def applyOnWithPredicate(predicate: A => Boolean)(f: A => A): A = if (predicate(obj)) f(obj) else obj
+
+    def seffectOn(f: A => Unit): A = {
+      f(obj)
+      obj
+    }
+    def seffectOnIf(predicate: => Boolean)(f: A => Unit): A = {
+      if (predicate) {
+        f(obj)
+        obj
+      } else obj
+    }
+    def seffectOnWithPredicate(predicate: A => Boolean)(f: A => Unit): A = {
+      if (predicate(obj)) {
+        f(obj)
+        obj
+      } else obj
+    }
   }
   implicit class RegexOps(sc: StringContext) {
     def rr = new scala.util.matching.Regex(sc.parts.mkString)
@@ -80,6 +97,17 @@ object implicits {
     def prettify: String = Json.prettyPrint(obj)
     def select(name: String): JsLookupResult = (obj \ name)
     def select(index: Int): JsLookupResult = (obj \ index)
+    def atPath(path: String): JsLookupResult = {
+      val parts = path.split("\\.").toSeq
+      parts.foldLeft(obj) {
+        case (source: JsObject, part) => (source \ part).as[JsValue]
+        case (source: JsArray, part) => (source \ part.toInt).as[JsValue]
+        case (value, part) => JsNull
+      } match {
+        case JsNull => JsUndefined(s"path '${path}' does not exists")
+        case value => JsDefined(value)
+      }
+    }
   }
   implicit class BetterJsReadable(private val obj: JsReadable) extends AnyVal {
     def asString: String = obj.as[String]

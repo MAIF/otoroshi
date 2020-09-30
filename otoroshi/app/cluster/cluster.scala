@@ -24,7 +24,7 @@ import gateway.{InMemoryRequestsDataStore, RequestsDataStore, Retry}
 import javax.management.{Attribute, ObjectName}
 import models._
 import org.joda.time.DateTime
-import otoroshi.models.{SimpleAdminDataStore, WebAuthnAdminDataStore}
+import otoroshi.models.{SimpleAdminDataStore, TenantId, WebAuthnAdminDataStore}
 import otoroshi.script.{KvScriptDataStore, ScriptDataStore}
 import otoroshi.storage._
 import otoroshi.storage.drivers.inmemory._
@@ -115,6 +115,7 @@ case class WorkerConfig(
     dbPath: Option[String] = None,
     state: WorkerStateConfig = WorkerStateConfig(),
     quotas: WorkerQuotasConfig = WorkerQuotasConfig(),
+    tenants: Seq[TenantId] = Seq.empty
     //initialCacert: Option[String] = None
 )
 case class LeaderConfig(
@@ -205,7 +206,11 @@ object ClusterConfig {
           timeout = configuration.getOptionalWithFileSupport[Long]("worker.quotas.timeout").getOrElse(2000),
           retries = configuration.getOptionalWithFileSupport[Int]("worker.quotas.retries").getOrElse(3),
           pushEvery = configuration.getOptionalWithFileSupport[Long]("worker.quotas.pushEvery").getOrElse(2000L)
-        )
+        ),
+        tenants = configuration.getOptionalWithFileSupport[Seq[String]]("worker.tenants")
+          .orElse(configuration.getOptionalWithFileSupport[String]("worker.tenantsStr").map(_.split(",").toSeq.map(_.trim)))
+          .map(_.map(TenantId.apply))
+          .getOrElse(Seq.empty)
       )
     )
   }

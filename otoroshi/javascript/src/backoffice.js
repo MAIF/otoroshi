@@ -37,10 +37,26 @@ window._fetch = window.fetch;
 window.fetch = function(...params) {
   const url = params[0];
   const options = params[1];
-  if (params.length == 2 && _.isObject(options)) {
+  const doNotPassTenant = window.__otoroshi__env__latest.userAdmin || window.__otoroshi__env__latest.bypassUserRightsCheck;
+  if (!doNotPassTenant && params.length == 2 && _.isObject(options)) {
     const currentTenant = window.localStorage.getItem("Otoroshi-Tenant") || "default";
-    return window._fetch(url, { ...options, headers: { ...options.headers, 'Otoroshi-Tenant': currentTenant }});
+    return window._fetch(url, { ...options, headers: { ...options.headers, 'Otoroshi-Tenant': currentTenant }}).then(r => {
+      if (r.status === 401 || r.status === 403) {
+        if (window.toast) {
+          window.toast('Authorization error', "You're not allowed to do that !", 'error');
+        }
+        throw new Error("You're not allowed to do that !");
+      } else {
+        return r;
+      }
+    });
   } else {
+    // console.log('do not pass tenant for', url, {
+    //   plength: params.length,
+    //   iso: _.isObject(options),
+    //   userAdmin: window.__otoroshi__env__latest.userAdmin,
+    //   bypassUserRightsCheck: window.__otoroshi__env__latest.bypassUserRightsCheck
+    // });
     return window._fetch(...params);
   }
 }

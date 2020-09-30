@@ -15,13 +15,15 @@ import play.api.libs.json.Json.JsValueWrapper
 import play.api.libs.json._
 import play.api.libs.ws.{WSClient, WSRequest}
 import play.api.{Environment, Logger}
+import otoroshi.utils.syntax.implicits._
 
 import scala.concurrent.duration.DurationLong
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
+
 object ElasticTemplates {
-  val indexTemplate =
+  val indexTemplate_v6 =
     """{
       |  "template": "$$$INDEX$$$-*",
       |  "settings": {
@@ -94,23 +96,102 @@ object ElasticTemplates {
       |  }
       |}
     """.stripMargin
+
+  val indexTemplate_v7 =
+    """{
+      |  "index_patterns" : ["$$$INDEX$$$-*"],
+      |  "template": {
+      |    "settings": {
+      |      "number_of_shards": 1,
+      |      "index": {}
+      |    },
+      |    "mappings": {
+      |      "date_detection": false,
+      |      "dynamic_templates": [
+      |        {
+      |          "string_template": {
+      |            "match": "*",
+      |            "mapping": {
+      |              "type": "text",
+      |              "fielddata": true
+      |            },
+      |            "match_mapping_type": "string"
+      |          }
+      |        }
+      |      ],
+      |      "properties": {
+      |        "@id": {
+      |          "type": "keyword"
+      |        },
+      |        "@timestamp": {
+      |          "type": "date"
+      |        },
+      |        "@created": {
+      |          "type": "date"
+      |        },
+      |        "@product": {
+      |          "type": "keyword"
+      |        },
+      |        "@type": {
+      |          "type": "keyword"
+      |        },
+      |        "@service": {
+      |          "type": "keyword"
+      |        },
+      |        "@serviceId": {
+      |          "type": "keyword"
+      |        },
+      |        "@env": {
+      |          "type": "keyword"
+      |        },
+      |        "headers": {
+      |          "properties": {
+      |            "key": {
+      |              "type": "keyword"
+      |            },
+      |            "value": {
+      |              "type": "keyword"
+      |            }
+      |          }
+      |        },
+      |        "headersOut": {
+      |          "properties": {
+      |            "key": {
+      |              "type": "keyword"
+      |            },
+      |            "value": {
+      |              "type": "keyword"
+      |            }
+      |          }
+      |        }
+      |      }
+      |    }
+      |  }
+      |}
+    """.stripMargin
 }
 
 object ElasticWritesAnalytics {
 
   import collection.JavaConverters._
 
-  val clusterInitializedCache = new ConcurrentHashMap[String, Boolean]()
+  val clusterInitializedCache = new ConcurrentHashMap[String, (Boolean, ElasticVersion)]()
 
   def toKey(config: ElasticAnalyticsConfig): String = s"${config.clusterUri}/${config.index}/${config.`type`}"
 
-  def initialized(config: ElasticAnalyticsConfig): Unit = {
-    clusterInitializedCache.putIfAbsent(toKey(config), true)
+  def initialized(config: ElasticAnalyticsConfig, version: ElasticVersion): Unit = {
+    clusterInitializedCache.putIfAbsent(toKey(config), (true, version))
   }
 
-  def isInitialized(config: ElasticAnalyticsConfig): Boolean = {
-    clusterInitializedCache.asScala.getOrElse(toKey(config), false)
+  def isInitialized(config: ElasticAnalyticsConfig): (Boolean, ElasticVersion) = {
+    clusterInitializedCache.asScala.getOrElse(toKey(config), (false, ElasticVersion.UnderSeven))
   }
+}
+
+sealed trait ElasticVersion
+object ElasticVersion {
+  case object UnderSeven extends ElasticVersion
+  case object AboveSeven extends ElasticVersion
 }
 
 class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env) extends AnalyticsWritesService {
@@ -140,61 +221,78 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env) extends A
       .addHttpHeaders(config.headers.toSeq: _*)
   }
 
+  private def getElasticVersion()(implicit ec: ExecutionContext): Future[ElasticVersion] = {
+    url(urlFromPath(""))
+      .get()
+      .map(_.json)
+      .map(json => (json \ "version" \ "number").asOpt[String].getOrElse("6.x"))
+      .map(v => v.split("\\.").headOption.map(_.toInt).getOrElse(6))
+      .map {
+        case v if v <= 6 => ElasticVersion.UnderSeven
+        case v if v > 6 => ElasticVersion.AboveSeven
+      }
+  }
+
   override def init(): Unit = {
-    if (ElasticWritesAnalytics.isInitialized(config)) {
+    if (ElasticWritesAnalytics.isInitialized(config)._1) {
       ()
     } else {
       implicit val ec: ExecutionContext = executionContext
-      val strTpl                        = ElasticTemplates.indexTemplate
-      val tpl: JsValue                  = Json.parse(strTpl.replace("$$$INDEX$$$", index))
       logger.info(
         s"Creating Otoroshi template for $index on es cluster at ${config.clusterUri}/${config.index}/${config.`type`}"
       )
-      logger.debug(s"Creating otoroshi template with \n${Json.prettyPrint(tpl)}")
       Await.result(
-        url(urlFromPath("/_template/otoroshi-tpl"))
-          .get()
-          .flatMap { resp =>
-            resp.status match {
-              case 200 =>
-                resp.ignore()
-                val tplCreated = url(urlFromPath("/_template/otoroshi-tpl")).put(tpl)
-                tplCreated.onComplete {
-                  case Success(r) if r.status >= 400 =>
-                    logger.error(s"Error creating template ${r.status}: ${r.body}")
-                  case Failure(e) =>
-                    logger.error("Error creating template", e)
-                  case Success(r) =>
-                    r.ignore()
-                    logger.debug("Otoroshi template created")
-                    ElasticWritesAnalytics.initialized(config)
-                  case _ =>
-                    logger.debug("Otoroshi template created")
-                    ElasticWritesAnalytics.initialized(config)
-                }
-                tplCreated.map(_ => ())
-              case 404 =>
-                resp.ignore()
-                val tplCreated = url(urlFromPath("/_template/otoroshi-tpl")).post(tpl)
-                tplCreated.onComplete {
-                  case Success(r) if r.status >= 400 =>
-                    logger.error(s"Error creating template ${r.status}: ${r.body}")
-                  case Failure(e) =>
-                    logger.error("Error creating template", e)
-                  case Success(r) =>
-                    r.ignore()
-                    logger.debug("Otoroshi template created")
-                    ElasticWritesAnalytics.initialized(config)
-                  case _ =>
-                    logger.debug("Otoroshi template created")
-                    ElasticWritesAnalytics.initialized(config)
-                }
-                tplCreated.map(_ => ())
-              case _ =>
-                logger.error(s"Error creating template ${resp.status}: ${resp.body}")
-                FastFuture.successful(())
+        getElasticVersion().flatMap { version =>
+          val strTpl = version match {
+            case ElasticVersion.UnderSeven => ElasticTemplates.indexTemplate_v6
+            case ElasticVersion.AboveSeven => ElasticTemplates.indexTemplate_v7
+          }
+          val tpl: JsValue = Json.parse(strTpl.replace("$$$INDEX$$$", index))
+          logger.debug(s"Creating otoroshi template with \n${Json.prettyPrint(tpl)}")
+          url(urlFromPath("/_index_template/otoroshi-tpl"))
+            .get()
+            .flatMap { resp =>
+              resp.status match {
+                case 200 =>
+                  resp.ignore()
+                  val tplCreated = url(urlFromPath("/_index_template/otoroshi-tpl")).put(tpl)
+                  tplCreated.onComplete {
+                    case Success(r) if r.status >= 400 =>
+                      logger.error(s"Error creating template ${r.status}: ${r.body}")
+                    case Failure(e) =>
+                      logger.error("Error creating template", e)
+                    case Success(r) =>
+                      r.ignore()
+                      logger.debug("Otoroshi template created")
+                      ElasticWritesAnalytics.initialized(config, version)
+                    case _ =>
+                      logger.debug("Otoroshi template created")
+                      ElasticWritesAnalytics.initialized(config, version)
+                  }
+                  tplCreated.map(_ => ())
+                case 404 =>
+                  resp.ignore()
+                  val tplCreated = url(urlFromPath("/_index_template/otoroshi-tpl")).post(tpl)
+                  tplCreated.onComplete {
+                    case Success(r) if r.status >= 400 =>
+                      logger.error(s"Error creating template ${r.status}: ${r.body}")
+                    case Failure(e) =>
+                      logger.error("Error creating template", e)
+                    case Success(r) =>
+                      r.ignore()
+                      logger.debug("Otoroshi template created")
+                      ElasticWritesAnalytics.initialized(config, version)
+                    case _ =>
+                      logger.debug("Otoroshi template created")
+                      ElasticWritesAnalytics.initialized(config, version)
+                  }
+                  tplCreated.map(_ => ())
+                case _ =>
+                  logger.error(s"Error creating template ${resp.status}: ${resp.body}")
+                  FastFuture.successful(())
+              }
             }
-          },
+        },
         5.second
       )
     }
@@ -203,9 +301,10 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env) extends A
   init()
 
   private def bulkRequest(source: JsValue): String = {
+    val version: ElasticVersion = ElasticWritesAnalytics.isInitialized(config)._2
     val df            = ISODateTimeFormat.date().print(DateTime.now())
     val indexWithDate = s"$index-$df"
-    val indexClause   = Json.stringify(Json.obj("index" -> Json.obj("_index" -> indexWithDate, "_type" -> `type`)))
+    val indexClause   = Json.stringify(Json.obj("index" -> Json.obj("_index" -> indexWithDate).applyOnIf(version == ElasticVersion.UnderSeven)(_ ++ Json.obj("_type" -> `type`))))
     val sourceClause  = Json.stringify(source)
     s"$indexClause\n$sourceClause"
   }
@@ -285,8 +384,8 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
   }
 
   override def fetchHits(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(
-      implicit env: Env,
-      ec: ExecutionContext
+    implicit env: Env,
+    ec: ExecutionContext
   ): Future[Option[JsValue]] = {
     query(
       Json.obj(
@@ -296,10 +395,10 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
         )
       )
     ).map { resp =>
-        Json.obj(
-          "count" -> (resp \ "hits" \ "total").asOpt[Int]
-        )
-      }
+      Json.obj(
+        "count" -> (resp \ "hits" \ "total").asOpt[Int]
+      )
+    }
       .map(Some.apply)
   }
 
@@ -310,9 +409,9 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
                       page: Int,
                       size: Int,
                       order: String = "desc")(
-      implicit env: Env,
-      ec: ExecutionContext
-  ): Future[Option[JsValue]] = {
+                       implicit env: Env,
+                       ec: ExecutionContext
+                     ): Future[Option[JsValue]] = {
     val pageFrom = (page - 1) * size
     query(
       Json.obj(
@@ -338,49 +437,49 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
         )
       )
     ).map { res =>
-        val events: Seq[JsValue] = (res \ "hits" \ "hits").as[Seq[JsValue]].map { j =>
-          (j \ "_source").as[JsValue]
-        }
-        Json.obj(
-          "events" -> events
-        )
+      val events: Seq[JsValue] = (res \ "hits" \ "hits").as[Seq[JsValue]].map { j =>
+        (j \ "_source").as[JsValue]
       }
+      Json.obj(
+        "events" -> events
+      )
+    }
       .map(Some.apply)
   }
 
   override def fetchDataIn(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(
-      implicit env: Env,
-      ec: ExecutionContext
+    implicit env: Env,
+    ec: ExecutionContext
   ): Future[Option[JsValue]] =
     sum("data.dataIn", filterable, from, to).map(Some.apply)
 
   override def fetchDataOut(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(
-      implicit env: Env,
-      ec: ExecutionContext
+    implicit env: Env,
+    ec: ExecutionContext
   ): Future[Option[JsValue]] =
     sum("data.dataOut", filterable, from, to).map(Some.apply)
 
   override def fetchAvgDuration(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(
-      implicit env: Env,
-      ec: ExecutionContext
+    implicit env: Env,
+    ec: ExecutionContext
   ): Future[Option[JsValue]] =
     avg("duration", filterable, from, to).map(Some.apply)
 
   override def fetchAvgOverhead(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(
-      implicit env: Env,
-      ec: ExecutionContext
+    implicit env: Env,
+    ec: ExecutionContext
   ): Future[Option[JsValue]] =
     avg("overhead", filterable, from, to).map(Some.apply)
 
   override def fetchStatusesPiechart(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(
-      implicit env: Env,
-      ec: ExecutionContext
+    implicit env: Env,
+    ec: ExecutionContext
   ): Future[Option[JsValue]] =
     piechart("status", filterable, from, to).map(Some.apply)
 
   override def fetchStatusesHistogram(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(
-      implicit env: Env,
-      ec: ExecutionContext
+    implicit env: Env,
+    ec: ExecutionContext
   ): Future[Option[JsValue]] =
     query(
       Json.obj(
@@ -413,122 +512,122 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
         )
       )
     ).map { res =>
-        val buckets: JsObject = (res \ "aggregations" \ "codes" \ "buckets").asOpt[JsObject].getOrElse(Json.obj())
-        val series = buckets.value
-          .map {
-            case (k, v) =>
-              Json.obj(
-                "name"  -> k,
-                "count" -> (v \ "doc_count").asOpt[Int],
-                "data" -> (v \ "codesOverTime" \ "buckets")
-                  .asOpt[Seq[JsValue]]
-                  .map(_.flatMap { j =>
-                    for {
-                      k <- (j \ "key").asOpt[JsValue]
-                      v <- (j \ "doc_count").asOpt[Int]
-                    } yield Json.arr(k, v)
-                  })
-              )
-          }
-        Json.obj(
-          "chart"  -> Json.obj("type" -> "areaspline"),
-          "series" -> series
-        )
-      }
+      val buckets: JsObject = (res \ "aggregations" \ "codes" \ "buckets").asOpt[JsObject].getOrElse(Json.obj())
+      val series = buckets.value
+        .map {
+          case (k, v) =>
+            Json.obj(
+              "name"  -> k,
+              "count" -> (v \ "doc_count").asOpt[Int],
+              "data" -> (v \ "codesOverTime" \ "buckets")
+                .asOpt[Seq[JsValue]]
+                .map(_.flatMap { j =>
+                  for {
+                    k <- (j \ "key").asOpt[JsValue]
+                    v <- (j \ "doc_count").asOpt[Int]
+                  } yield Json.arr(k, v)
+                })
+            )
+        }
+      Json.obj(
+        "chart"  -> Json.obj("type" -> "areaspline"),
+        "series" -> series
+      )
+    }
       .map(Some.apply)
 
   override def fetchDataInStatsHistogram(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(
-      implicit env: Env,
-      ec: ExecutionContext
+    implicit env: Env,
+    ec: ExecutionContext
   ): Future[Option[JsValue]] =
     statsHistogram("data.dataIn", filterable, from, to).map(Some.apply)
 
   override def fetchDataOutStatsHistogram(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(
-      implicit env: Env,
-      ec: ExecutionContext
+    implicit env: Env,
+    ec: ExecutionContext
   ): Future[Option[JsValue]] =
     statsHistogram("data.dataOut", filterable, from, to).map(Some.apply)
 
   override def fetchDurationStatsHistogram(filterable: Option[Filterable],
                                            from: Option[DateTime],
                                            to: Option[DateTime])(
-      implicit env: Env,
-      ec: ExecutionContext
-  ): Future[Option[JsValue]] =
+                                            implicit env: Env,
+                                            ec: ExecutionContext
+                                          ): Future[Option[JsValue]] =
     statsHistogram("duration", filterable, from, to).map(Some.apply)
 
   override def fetchDurationPercentilesHistogram(filterable: Option[Filterable],
                                                  from: Option[DateTime],
                                                  to: Option[DateTime])(
-      implicit env: Env,
-      ec: ExecutionContext
-  ): Future[Option[JsValue]] =
+                                                  implicit env: Env,
+                                                  ec: ExecutionContext
+                                                ): Future[Option[JsValue]] =
     percentilesHistogram("duration", filterable, from, to).map(Some.apply)
 
   override def fetchOverheadPercentilesHistogram(filterable: Option[Filterable],
                                                  from: Option[DateTime],
                                                  to: Option[DateTime])(
-      implicit env: Env,
-      ec: ExecutionContext
-  ): Future[Option[JsValue]] =
+                                                  implicit env: Env,
+                                                  ec: ExecutionContext
+                                                ): Future[Option[JsValue]] =
     percentilesHistogram("overhead", filterable, from, to).map(Some.apply)
 
   override def fetchProductPiechart(filterable: Option[Filterable],
                                     from: Option[DateTime],
                                     to: Option[DateTime],
                                     size: Int)(
-      implicit env: Env,
-      ec: ExecutionContext
-  ): Future[Option[JsValue]] =
+                                     implicit env: Env,
+                                     ec: ExecutionContext
+                                   ): Future[Option[JsValue]] =
     piechart("@product", filterable, from, to).map(Some.apply)
 
   override def fetchApiKeyPiechart(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(
-      implicit env: Env,
-      ec: ExecutionContext
+    implicit env: Env,
+    ec: ExecutionContext
   ): Future[Option[JsValue]] =
     piechart("identity.label.raw",
-             filterable,
-             from,
-             to,
-             additionalFilters = Seq(
-               Json.obj(
-                 "term" -> Json.obj(
-                   "identity.identityType.raw" -> "APIKEY"
-                 )
-               )
-             )).map(Some.apply)
+      filterable,
+      from,
+      to,
+      additionalFilters = Seq(
+        Json.obj(
+          "term" -> Json.obj(
+            "identity.identityType.raw" -> "APIKEY"
+          )
+        )
+      )).map(Some.apply)
 
   override def fetchUserPiechart(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(
-      implicit env: Env,
-      ec: ExecutionContext
+    implicit env: Env,
+    ec: ExecutionContext
   ): Future[Option[JsValue]] =
     piechart("identity.label.raw",
-             filterable,
-             from,
-             to,
-             additionalFilters = Seq(
-               Json.obj(
-                 "term" -> Json.obj(
-                   "identity.identityType.raw" -> "PRIVATEAPP"
-                 )
-               )
-             )).map(Some.apply)
+      filterable,
+      from,
+      to,
+      additionalFilters = Seq(
+        Json.obj(
+          "term" -> Json.obj(
+            "identity.identityType.raw" -> "PRIVATEAPP"
+          )
+        )
+      )).map(Some.apply)
 
   override def fetchServicePiechart(filterable: Option[Filterable],
                                     from: Option[DateTime],
                                     to: Option[DateTime],
                                     size: Int)(
-      implicit env: Env,
-      ec: ExecutionContext
-  ): Future[Option[JsValue]] =
+                                     implicit env: Env,
+                                     ec: ExecutionContext
+                                   ): Future[Option[JsValue]] =
     piechart("@service", filterable, from, to).map(Some.apply)
 
   override def fetchOverheadStatsHistogram(filterable: Option[Filterable],
                                            from: Option[DateTime],
                                            to: Option[DateTime])(
-      implicit env: Env,
-      ec: ExecutionContext
-  ): Future[Option[JsValue]] =
+                                            implicit env: Env,
+                                            ec: ExecutionContext
+                                          ): Future[Option[JsValue]] =
     statsHistogram("overhead", filterable, from, to).map(Some.apply)
 
   private def query(query: JsObject)(implicit ec: ExecutionContext): Future[JsValue] = {
@@ -689,16 +788,16 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
                   filterable: Option[Filterable],
                   mayBeFrom: Option[DateTime],
                   mayBeTo: Option[DateTime])(
-      implicit ec: ExecutionContext
-  ): Future[JsObject] = {
+                   implicit ec: ExecutionContext
+                 ): Future[JsObject] = {
     aggregation("sum", field, filterable, mayBeFrom, mayBeTo)
   }
   private def avg(field: String,
                   filterable: Option[Filterable],
                   mayBeFrom: Option[DateTime],
                   mayBeTo: Option[DateTime])(
-      implicit ec: ExecutionContext
-  ): Future[JsObject] = {
+                   implicit ec: ExecutionContext
+                 ): Future[JsObject] = {
     aggregation("avg", field, filterable, mayBeFrom, mayBeTo)
   }
 
@@ -734,9 +833,9 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
                to: Option[DateTime],
                size: Int = 200,
                additionalFilters: Seq[JsObject] = Seq.empty)(
-      implicit env: Env,
-      ec: ExecutionContext
-  ): Future[JsValue] = {
+                implicit env: Env,
+                ec: ExecutionContext
+              ): Future[JsValue] = {
     query(
       Json.obj(
         "size" -> 0,
@@ -828,9 +927,9 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
         Json.obj(
           "must" -> (
             dateFilters(mayBeFrom, mayBeTo) ++
-            gatewayEventFilters ++
-            additionalMust
-          )
+              gatewayEventFilters ++
+              additionalMust
+            )
         )
       }
       case Some(ServiceGroupFilterable(group)) => {
@@ -841,13 +940,13 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
               Json.obj("term" -> Json.obj("descriptor.groups"     -> group.id)),
               Json.obj("term" -> Json.obj("descriptor.groups.raw" -> group.id))
             ) ++
-            additionalShould
-          ),
+              additionalShould
+            ),
           "must" -> (
             dateFilters(mayBeFrom, mayBeTo) ++
-            gatewayEventFilters ++
-            additionalMust
-          )
+              gatewayEventFilters ++
+              additionalMust
+            )
         )
       }
       case Some(ApiKeyFilterable(apiKey)) => {
@@ -859,13 +958,13 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
               Json.obj("term" -> Json.obj("identity.identity"     -> apiKey.clientId)),
               Json.obj("term" -> Json.obj("identity.identity.raw" -> apiKey.clientId))
             ) ++
-            additionalShould
-          ),
+              additionalShould
+            ),
           "must" -> (
             dateFilters(mayBeFrom, mayBeTo) ++
-            gatewayEventFilters ++
-            additionalMust
-          )
+              gatewayEventFilters ++
+              additionalMust
+            )
         )
       }
       case Some(ServiceDescriptorFilterable(service)) => {
@@ -876,13 +975,13 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
               Json.obj("term" -> Json.obj("@serviceId"     -> service.id)),
               Json.obj("term" -> Json.obj("@serviceId.raw" -> service.id))
             ) ++
-            additionalShould
-          ),
+              additionalShould
+            ),
           "must" -> (
             dateFilters(mayBeFrom, mayBeTo) ++
-            gatewayEventFilters ++
-            additionalMust
-          )
+              gatewayEventFilters ++
+              additionalMust
+            )
         )
       }
     }

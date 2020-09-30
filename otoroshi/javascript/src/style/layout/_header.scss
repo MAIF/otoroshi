@@ -36,6 +36,8 @@
     .dropdown-menu {
       margin-top: -1px;
       background-color: $fondBody;
+      overflow-y: auto;
+      max-height: calc(100vh - 53px);
     }
 
     > a:focus,

@@ -30,7 +30,7 @@ import models.{ClientConfig, Target}
 import org.apache.commons.codec.binary.Base64
 import play.api.libs.json._
 import play.api.libs.ws._
-import play.api.mvc.MultipartFormData
+import play.api.mvc.{MultipartFormData}
 import play.api.Logger
 import play.shaded.ahc.org.asynchttpclient.util.Assertions
 import security.IdGenerator
@@ -153,14 +153,14 @@ object MtlsWs {
 object WsClientChooser {
   def apply(standardClient: WSClient,
             akkaClient: AkkWsClient,
-            ahcCreator: SSLConfigSettings => WSClient,
+            // ahcCreator: SSLConfigSettings => WSClient,
             fullAkka: Boolean,
-            env: Env): WsClientChooser = new WsClientChooser(standardClient, akkaClient, ahcCreator, fullAkka, env)
+            env: Env): WsClientChooser = new WsClientChooser(standardClient, akkaClient, /*ahcCreator, */fullAkka, env)
 }
 
 class WsClientChooser(standardClient: WSClient,
                       akkaClient: AkkWsClient,
-                      ahcCreator: SSLConfigSettings => WSClient,
+                      // ahcCreator: SSLConfigSettings => WSClient,
                       fullAkka: Boolean,
                       env: Env)
     extends WSClient {
@@ -446,18 +446,29 @@ object AkkWsClient {
         case c: `Set-Cookie` => c.cookie
       }
       .map { c =>
-        DefaultWSCookie(
+        WSCookieWithSameSite(
           name = c.name,
           value = c.value,
           domain = c.domain,
           path = c.path,
           maxAge = c.maxAge,
           secure = c.secure,
-          httpOnly = c.httpOnly
+          httpOnly = c.httpOnly,
+          sameSite = c.`extension`.filter(_.startsWith("SameSite=")).map(_.replace("SameSite=", "")).flatMap(play.api.mvc.Cookie.SameSite.parse)
         )
       }
   }
 }
+
+case class WSCookieWithSameSite(
+  name: String,
+  value: String,
+  domain: Option[String] = None,
+  path: Option[String] = None,
+  maxAge: Option[Long] = None,
+  secure: Boolean = false,
+  httpOnly: Boolean = false,
+  sameSite: Option[play.api.mvc.Cookie.SameSite] = None) extends WSCookie
 
 /*
 // huge workaround for https://github.com/akka/akka-http/issues/92,  can be disabled by setting otoroshi.options.manualDnsResolve to false

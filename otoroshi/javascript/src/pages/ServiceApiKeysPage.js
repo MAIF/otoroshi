@@ -542,7 +542,6 @@ const ApiKeysConstants = {
   formFlow: [
     //'>>>Location',
     '_loc',
-    '---',
     'clientId',
     'clientSecret',
     'clientName',
@@ -714,7 +713,7 @@ export class ApiKeysPage extends Component {
           throttlingQuota: 100,
           dailyQuota: 1000000,
           monthlyQuota: 1000000000000000000,
-          authorizedEntities: ["group_default"],
+          authorizedEntities: [],
         })}
         itemName="Apikey"
         formSchema={ApiKeysConstants.formSchema(this)}

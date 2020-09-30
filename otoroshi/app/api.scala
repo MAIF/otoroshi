@@ -2,13 +2,18 @@ package otoroshi.api
 
 import actions._
 import akka.actor.ActorSystem
+import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
+import akka.stream.scaladsl.{Sink, Source}
+import cluster.ClusterMode
 import com.softwaremill.macwire.wire
 import com.typesafe.config.{Config, ConfigFactory}
 import controllers._
 import controllers.adminapi.{ApiKeysFromGroupController, _}
 import env._
 import gateway._
+import modules.OtoroshiComponentsInstances
+import otoroshi.api.OtoroshiLoaderHelper.EnvContainer
 import otoroshi.storage.DataStores
 import play.api.http.{DefaultHttpFilters, HttpErrorHandler, HttpRequestHandler}
 import play.api.inject.Injector
@@ -16,20 +21,154 @@ import play.api.libs.ws.WSClient
 import play.api.libs.ws.ahc.AhcWSComponents
 import play.api.mvc.{ControllerComponents, DefaultControllerComponents, EssentialFilter}
 import play.api.routing.Router
-import play.api.{BuiltInComponents, Configuration, LoggerConfigurator}
+import play.api.{BuiltInComponents, Configuration, Logger, LoggerConfigurator}
 import play.core.server.{AkkaHttpServerComponents, ServerConfig}
 import play.filters.HttpFiltersComponents
 import router.Routes
+import ssl.DynamicSSLEngineProvider
 import utils.Metrics
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{Await, ExecutionContext, Future, Promise}
+import scala.concurrent.duration._
+
+object OtoroshiLoaderHelper {
+
+  trait EnvContainer {
+    def env: Env
+  }
+
+  private val logger = Logger("otoroshi-loader")
+
+  def waitForReadiness(components: EnvContainer): Unit = {
+
+    import scala.concurrent.duration._
+
+    implicit val ec = components.env.otoroshiExecutionContext
+    implicit val scheduler = components.env.otoroshiScheduler
+    implicit val mat = components.env.otoroshiMaterializer
+
+    val globalWait = components.env.configuration.getOptional[Boolean]("app.boot.globalWait").getOrElse(true)
+    val waitForTlsInitEnabled = components.env.configuration.getOptional[Boolean]("app.boot.waitForTlsInit").getOrElse(true)
+    val waitForPluginsSearch = components.env.configuration.getOptional[Boolean]("app.boot.waitForPluginsSearch").getOrElse(true)
+    val waitForScriptsCompilation = components.env.configuration.getOptional[Boolean]("app.boot.waitForScriptsCompilation").getOrElse(true)
+    val waitForFirstClusterFetchEnabled = components.env.configuration.getOptional[Boolean]("app.boot.waitForFirstClusterFetch").getOrElse(true)
+
+    val globalWaitTimeout: Long = components.env.configuration.getOptional[Long]("app.boot.waitTimeout").getOrElse(60000)
+    val waitForPluginsSearchTimeout: Long = components.env.configuration.getOptional[Long]("app.boot.waitForPluginsSearchTimeout").getOrElse(20000)
+    val waitForScriptsCompilationTimeout: Long = components.env.configuration.getOptional[Long]("app.boot.waitForScriptsCompilationTimeout").getOrElse(30000)
+    val waitForTlsInitTimeout: Long = components.env.configuration.getOptional[Long]("app.boot.waitForTlsInitTimeout").getOrElse(10000)
+    val waitForFirstClusterFetchTimeout: Long = components.env.configuration.getOptional[Long]("app.boot.waitForFirstClusterFetchTimeout").getOrElse(10000)
+
+    def timeout(duration: FiniteDuration): Future[Unit] = {
+      val promise = Promise[Unit]
+      scheduler.scheduleOnce(duration) {
+        promise.trySuccess(())
+      }
+      promise.future
+    }
+
+    def waitForFirstClusterFetch(): Future[Unit] = {
+      if (waitForFirstClusterFetchEnabled) {
+        logger.info("waiting for first cluster fetch ...")
+        Future.firstCompletedOf(Seq(
+          timeout(waitForFirstClusterFetchTimeout.millis),
+          Source.tick(1.second, 1.second, ())
+            .map { _ =>
+              if (components.env.clusterConfig.mode == ClusterMode.Worker) !components.env.clusterAgent.cannotServeRequests() else true
+            }
+            .filter(identity)
+            .take(1)
+            .runWith(Sink.head)(mat)
+            .map(_ => ())
+        ))
+      } else {
+        FastFuture.successful(())
+      }
+    }
+
+    def waitForPluginSearch(): Future[Unit] = {
+      if (waitForPluginsSearch) {
+        logger.info("waiting for plugins search and start ...")
+        Future.firstCompletedOf(Seq(
+          timeout(waitForPluginsSearchTimeout.millis),
+          Source.tick(1.second, 1.second, ())
+            .map { _ =>
+              components.env.scriptManager.firstPluginsSearchDone()
+            }
+            .filter(identity)
+            .take(1)
+            .runWith(Sink.head)(mat)
+            .map(_ => ())
+        ))
+      } else {
+        FastFuture.successful(())
+      }
+    }
+
+    def waitForTlsInit(): Future[Unit] = {
+      if (waitForTlsInitEnabled) {
+        logger.info("waiting for TLS initialization ...")
+        Future.firstCompletedOf(Seq(
+          timeout(waitForTlsInitTimeout.millis),
+          Source.tick(1.second, 1.second, ())
+            .map { _ =>
+              DynamicSSLEngineProvider.isFirstSetupDone &&
+                DynamicSSLEngineProvider.getCurrentEnv() != null
+            }
+            .filter(identity)
+            .take(1)
+            .runWith(Sink.head)(mat)
+            .map(_ => ())
+        ))
+      } else {
+        FastFuture.successful(())
+      }
+    }
+
+    def waitForPluginsCompilation(): Future[Unit] = {
+      if (waitForScriptsCompilation) {
+        logger.info("waiting for scripts initialization ...")
+        Future.firstCompletedOf(Seq(
+          timeout(waitForScriptsCompilationTimeout.millis),
+          Source.tick(1.second, 1.second, ())
+            .mapAsync(1) { _ =>
+              components.env.scriptManager.state()
+            }
+            .map(_.initialized)
+            .filter(identity)
+            .take(1)
+            .runWith(Sink.head)(mat)
+            .map(_ => ())
+        ))
+      } else {
+        FastFuture.successful(())
+      }
+    }
+
+    if (globalWait) {
+      val start = System.currentTimeMillis()
+      logger.info("waiting for subsystems initialization ...")
+      val waiting = for {
+        _ <- waitForFirstClusterFetch()
+        _ <- waitForTlsInit()
+        _ <- waitForPluginSearch()
+        _ <- waitForPluginsCompilation()
+      } yield ()
+      Await.result(waiting, globalWaitTimeout.millis)
+      logger.info(s"subsystems initialization done in ${System.currentTimeMillis() - start} ms.")
+    } else {
+      ()
+    }
+  }
+}
 
 class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfig, _configuration: Config)
     extends AkkaHttpServerComponents
     with BuiltInComponents
     with AssetsComponents
     with AhcWSComponents
-    with HttpFiltersComponents {
+    with HttpFiltersComponents
+    with EnvContainer {
 
   override lazy val configuration: Configuration = {
     val sslConfig = serverConfig.sslPort
@@ -154,11 +293,13 @@ class Otoroshi(serverConfig: ServerConfig, configuration: Config = ConfigFactory
   private lazy val server = components.server
 
   def start(): Otoroshi = {
+    OtoroshiLoaderHelper.waitForReadiness(components)
     server.httpPort.get + 1
     this
   }
 
   def startAndStopOnShutdown(): Otoroshi = {
+    OtoroshiLoaderHelper.waitForReadiness(components)
     server.httpPort.get + 1
     stopOnShutdown()
   }

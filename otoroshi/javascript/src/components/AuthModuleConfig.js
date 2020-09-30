@@ -1240,7 +1240,10 @@ export class AuthModuleConfig extends Component {
         label="Type"
         value={settings.type}
         onChange={e => {
-          switch (e) {
+          BackOfficeServices.createNewAuthConfig(e).then(templ => {
+            this.props.onChange(templ);
+          });
+          /*switch (e) {
             case 'basic':
               this.props.onChange({
                 id: faker.random.alphaNumeric(64),
@@ -1322,7 +1325,7 @@ export class AuthModuleConfig extends Component {
                 }
               });
               break;
-          }
+          }*/
         }}
         possibleValues={[
           { label: 'OAuth2 / OIDC provider', value: 'oauth2' },
@@ -1347,7 +1350,6 @@ export class AuthModuleConfig extends Component {
             onChangeTeams={v => this.changeTheValue("_loc.teams", v)}
           />
         </Collapse>
-        <Separator />
         {selector}
         {settings.type === 'oauth2' && <Oauth2ModuleConfig {...this.props} />}
         {settings.type === 'basic' && <BasicModuleConfig {...this.props} />}

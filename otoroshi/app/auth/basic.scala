@@ -213,7 +213,8 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
             simpleLogin = false,
             authConfigId = authConfig.id,
             metadata = Map.empty,
-            rights = user.rights
+            rights = user.rights,
+            location = authConfig.location
           )
         )
       case None => Left(s"You're not authorized here")
@@ -454,7 +455,8 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
         createdAt = DateTime.now(),
         typ = OtoroshiAdminType.WebAuthnAdmin,
         metadata = Map.empty,
-        rights = usr.rights
+        rights = usr.rights,
+        location = authConfig.location
       )
     }
 
@@ -520,7 +522,8 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
         createdAt = DateTime.now(),
         typ = OtoroshiAdminType.WebAuthnAdmin,
         metadata = Map.empty,
-        rights = usr.rights
+        rights = usr.rights,
+        location = authConfig.location
       )
     }
 
@@ -590,7 +593,8 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
         createdAt = DateTime.now(),
         typ = OtoroshiAdminType.WebAuthnAdmin,
         metadata = Map.empty,
-        rights = usr.rights
+        rights = usr.rights,
+        location = authConfig.location
       )
     }
 
@@ -672,7 +676,8 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
         createdAt = DateTime.now(),
         typ = OtoroshiAdminType.WebAuthnAdmin,
         metadata = Map.empty,
-        rights = usr.rights
+        rights = usr.rights,
+        location = authConfig.location
       )
     }
 
@@ -752,7 +757,8 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
         createdAt = DateTime.now(),
         typ = OtoroshiAdminType.WebAuthnAdmin,
         metadata = Map.empty,
-        rights = usr.rights
+        rights = usr.rights,
+        location = authConfig.location
       )
     }
 
@@ -820,7 +826,8 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
         createdAt = DateTime.now(),
         typ = OtoroshiAdminType.WebAuthnAdmin,
         metadata = Map.empty,
-        rights = usr.rights
+        rights = usr.rights,
+        location = authConfig.location
       )
     }
 

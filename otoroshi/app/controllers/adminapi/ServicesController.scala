@@ -153,7 +153,7 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
     val body = ctx.request.body
     env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
       case None => NotFound(Json.obj("error" -> s"Service with id: '$serviceId' not found")).asFuture
-      case Some(desc) if !ctx.canUserWrite(desc) => ctx.funauthorized
+      case Some(desc) if !ctx.canUserWrite(desc) => ctx.fforbidden
       case Some(desc) => {
         val event = AdminApiEvent(
           env.snowflakeGenerator.nextIdStr(),
@@ -197,7 +197,7 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
     val body = ctx.request.body
     env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
       case None => NotFound(Json.obj("error" -> s"Service with id: '$serviceId' not found")).asFuture
-      case Some(desc) if !ctx.canUserWrite(desc) => ctx.funauthorized
+      case Some(desc) if !ctx.canUserWrite(desc) => ctx.fforbidden
       case Some(desc) => {
         val event = AdminApiEvent(
           env.snowflakeGenerator.nextIdStr(),
@@ -244,7 +244,7 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
     val body = ctx.request.body
     env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
       case None => NotFound(Json.obj("error" -> s"Service with id: '$serviceId' not found")).asFuture
-      case Some(desc) if !ctx.canUserWrite(desc) => ctx.funauthorized
+      case Some(desc) if !ctx.canUserWrite(desc) => ctx.fforbidden
       case Some(desc) => {
         val event = AdminApiEvent(
           env.snowflakeGenerator.nextIdStr(),
@@ -342,7 +342,7 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
   def serviceTemplate(serviceId: String) = ApiAction.async { ctx =>
     env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
       case None => NotFound(Json.obj("error" -> s"Service with id: '$serviceId' not found")).asFuture
-      case Some(desc) if !ctx.canUserRead(desc)=> ctx.funauthorized
+      case Some(desc) if !ctx.canUserRead(desc)=> ctx.fforbidden
       case Some(desc) => {
         env.datastores.errorTemplateDataStore.findById(desc.id).map {
           case Some(template) => Ok(template.toJson)
@@ -361,7 +361,7 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
       }
       env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
         case None => NotFound(Json.obj("error" -> s"Service with id: '$serviceId' not found")).asFuture
-        case Some(desc) if !ctx.canUserWrite(desc) => ctx.funauthorized
+        case Some(desc) if !ctx.canUserWrite(desc) => ctx.fforbidden
         case Some(_) => {
           ErrorTemplate.fromJsonSafe(body) match {
             case JsError(e) => BadRequest(Json.obj("error" -> "Bad ErrorTemplate format")).asFuture
@@ -399,7 +399,7 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
       }
       env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
         case None => NotFound(Json.obj("error" -> s"Service with id: '$serviceId' not found")).asFuture
-        case Some(desc) if !ctx.canUserWrite(desc) => ctx.funauthorized
+        case Some(desc) if !ctx.canUserWrite(desc) => ctx.fforbidden
         case Some(_) => {
           ErrorTemplate.fromJsonSafe(body) match {
             case JsError(e) => BadRequest(Json.obj("error" -> s"Bad ErrorTemplate format $e")).asFuture
@@ -431,7 +431,7 @@ class ServicesController(val ApiAction: ApiAction, val cc: ControllerComponents)
   def deleteServiceTemplate(serviceId: String) = ApiAction.async { ctx =>
     env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
       case None => NotFound(Json.obj("error" -> s"Service with id: '$serviceId' not found")).asFuture
-      case Some(desc) if !ctx.canUserWrite(desc) => ctx.funauthorized
+      case Some(desc) if !ctx.canUserWrite(desc) => ctx.fforbidden
       case Some(desc) => {
         env.datastores.errorTemplateDataStore.findById(desc.id).flatMap {
           case None => NotFound(Json.obj("error" -> "template not found")).asFuture

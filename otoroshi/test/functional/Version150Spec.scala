@@ -1,19 +1,27 @@
 package functional
 
+import java.util.Base64
+
 import akka.actor.ActorSystem
 import auth.{AuthModuleConfig, BasicAuthModuleConfig}
+import com.auth0.jwt.JWT
+import com.auth0.jwt.algorithms.Algorithm
+import com.google.common.base.Charsets
 import com.typesafe.config.ConfigFactory
-import models.{ApiKey, GlobalJwtVerifier, ServiceDescriptor, ServiceDescriptorIdentifier, ServiceGroup}
-import otoroshi.script.Script
+import models.{ApiKey, BackOfficeUser, GlobalJwtVerifier, ServiceDescriptor, ServiceDescriptorIdentifier, ServiceGroup, Target}
+import otoroshi.models.{TeamAccess, TeamId, TenantAccess, TenantId, UserRight, UserRights}
+import otoroshi.script.{AccessValidatorRef, Script}
 import otoroshi.tcp.TcpService
 import play.api.Configuration
 import play.api.libs.json.{JsArray, JsValue, Json}
 import security.IdGenerator
 import otoroshi.utils.syntax.implicits._
+import play.api.libs.ws.WSAuthScheme
 import ssl.{Cert, ClientCertificateValidator}
+import utils.http.MtlsConfig
 
 import scala.concurrent.duration._
-import scala.concurrent.Await
+import scala.concurrent.{Await, Future}
 
 class ServiceGroupApiSpec(name: String, configurationSpec: => Configuration)
   extends OtoroshiSpec with ApiTester[ServiceGroup] {
@@ -523,4 +531,161 @@ class ApikeyApiSpec(name: String, configurationSpec: => Configuration)
   override def patchEntity(entity: ApiKey): (ApiKey, JsArray) = (entity.copy(clientName = entity.clientName + " - patched"), Json.arr(Json.obj("op" -> "replace", "path" -> "/clientName", "value" -> (entity.clientName + " - patched"))))
   override def extractId(entity: ApiKey): String = entity.clientId
   override def testingBulk: Boolean = true
+}
+
+class TeamsSpec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
+
+  override def getTestConfiguration(configuration: Configuration) = Configuration(
+    ConfigFactory
+      .parseString(s"""
+                      |{
+                      |  otoroshi.cache.enabled = false
+                      |  otoroshi.cache.ttl = 1
+                      |}
+       """.stripMargin)
+      .resolve()
+  ).withFallback(configurationSpec).withFallback(configuration)
+
+  val adminUser = BackOfficeUser(
+    randomId = "admin@otoroshi.io",
+    name = "admin@otoroshi.io",
+    email = "admin@otoroshi.io",
+    profile = Json.obj(),
+    authConfigId = "basic",
+    simpleLogin = true,
+    metadata = Map.empty,
+    rights = UserRights(Seq(
+      UserRight(
+        TenantAccess("*"),
+        Seq(TeamAccess("*"))
+      )
+    ))
+  )
+  val tenantAdminUser = BackOfficeUser(
+    randomId = "tenantadmin@otoroshi.io",
+    name = "tenantadmin@otoroshi.io",
+    email = "tenantadmin@otoroshi.io",
+    profile = Json.obj(),
+    authConfigId = "basic",
+    simpleLogin = true,
+    metadata = Map.empty,
+    rights = UserRights(Seq(
+      UserRight(
+        TenantAccess("test-teams"),
+        Seq(TeamAccess("*"))
+      )
+    ))
+  )
+
+  val team1User = BackOfficeUser(
+    randomId = "team1@otoroshi.io",
+    name = "team1@otoroshi.io",
+    email = "team1@otoroshi.io",
+    profile = Json.obj(),
+    authConfigId = "basic",
+    simpleLogin = true,
+    metadata = Map.empty,
+    rights = UserRights(Seq(
+      UserRight(
+        TenantAccess("test-teams"),
+        Seq(TeamAccess("team1"))
+      )
+    ))
+  )
+  val team2User = BackOfficeUser(
+    randomId = "team2@otoroshi.io",
+    name = "team2@otoroshi.io",
+    email = "team2@otoroshi.io",
+    profile = Json.obj(),
+    authConfigId = "basic",
+    simpleLogin = true,
+    metadata = Map.empty,
+    rights = UserRights(Seq(
+      UserRight(
+        TenantAccess("test-teams"),
+        Seq(TeamAccess("team2"))
+      )
+    ))
+  )
+  val team1and2User = BackOfficeUser(
+    randomId = "team1and2@otoroshi.io",
+    name = "team1and2@otoroshi.io",
+    email = "team1and2@otoroshi.io",
+    profile = Json.obj(),
+    authConfigId = "basic",
+    simpleLogin = true,
+    metadata = Map.empty,
+    rights = UserRights(Seq(
+      UserRight(
+        TenantAccess("test-teams"),
+        Seq(TeamAccess("team1"), TeamAccess("team2"))
+      )
+    ))
+  )
+
+  def service(team: String): ServiceDescriptor = {
+    ServiceDescriptor(
+      id = IdGenerator.token(64),
+      name = IdGenerator.token(64),
+      groups = Seq("default"),
+      env = "prod",
+      domain = "oto.tools",
+      subdomain = IdGenerator.token(64),
+      targets = Seq(
+        Target(
+          host = "changeme.cleverapps.io",
+          mtlsConfig = MtlsConfig()
+        )
+      ),
+      location = otoroshi.models.EntityLocation(
+        tenant = TenantId("test-teams"),
+        teams = Seq(TeamId(team))
+      )
+    )
+  }
+
+  startOtoroshi()
+
+  def call(method: String, path: String, tenant: TenantId, user: BackOfficeUser): Future[JsValue] = {
+    ws.url(s"http://localhost:${port}${path}")
+      .withHttpHeaders(
+        "Host"   -> "otoroshi-api.oto.tools",
+        "Accept" -> "application/json",
+        "Otoroshi-Admin-Profile" -> Base64.getUrlEncoder.encodeToString(
+          Json.stringify(user.profile).getBytes(Charsets.UTF_8)
+        ),
+        "Otoroshi-Tenant" -> tenant.value,
+        "Otoroshi-BackOffice-User" -> JWT.create()
+          .withClaim("user", Json.stringify(user.toJson))
+          .sign(Algorithm.HMAC512("admin-api-apikey-secret")),
+      )
+      .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+      .withMethod(method)
+      .execute()
+      .map(_.json)
+  }
+
+  s"[$name] Otoroshi Teams filtering" should {
+    "warm up" in {
+      getOtoroshiServices().futureValue // WARM UP
+    }
+    "register services in different teams" in {
+      val service1 = service("team0")
+      val service2 = service("team1")
+      val service3 = service("team2")
+      createOtoroshiService(service1).futureValue
+      createOtoroshiService(service2).futureValue
+      createOtoroshiService(service3).futureValue
+    }
+    "check services number with different users" in {
+      call("GET", "/api/services", TenantId("test-teams"), adminUser).futureValue.as[JsArray].value.size mustBe 4
+      call("GET", "/api/services", TenantId("test-teams"), tenantAdminUser).futureValue.as[JsArray].value.size mustBe 3
+      call("GET", "/api/services", TenantId("test-teams"), team1User).futureValue.as[JsArray].value.size mustBe 1
+      call("GET", "/api/services", TenantId("test-teams"), team2User).futureValue.as[JsArray].value.size mustBe 1
+      call("GET", "/api/services", TenantId("test-teams"), team1and2User).futureValue.as[JsArray].value.size mustBe 2
+    }
+    "shutdown" in {
+      stopAll()
+    }
+  }
 }

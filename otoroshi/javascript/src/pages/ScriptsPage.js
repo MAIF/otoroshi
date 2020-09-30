@@ -425,7 +425,7 @@ export class ScriptsPage extends Component {
     { title: 'Description', noMobile: true, content: item => item.desc },
   ];
 
-  formFlow = ['_loc', '---', 'id', 'name', 'desc', 'type', 'compilation', 'code', 'metadata'];
+  formFlow = ['_loc', 'id', 'name', 'desc', 'type', 'compilation', 'code', 'metadata'];
 
   componentDidMount() {
     this.props.setTitle(`All Plugins`);
@@ -438,7 +438,8 @@ export class ScriptsPage extends Component {
         selfUrl="plugins"
         defaultTitle="All Plugins"
         injectTable={t => (this.table = t)}
-        defaultValue={() => ({
+        defaultValue={BackOfficeServices.createNewScript}
+        _defaultValue={() => ({
           id: faker.random.alphaNumeric(64),
           name: 'My plugin',
           desc: 'A plugin',

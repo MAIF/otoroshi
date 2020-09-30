@@ -118,7 +118,7 @@ class ServiceGroupController(val ApiAction: ApiAction, val cc: ControllerCompone
     val paginationPosition = (paginationPage - 1) * paginationPageSize
     env.datastores.serviceGroupDataStore.findById(serviceGroupId).flatMap {
       case None => NotFound(Json.obj("error" -> s"ServiceGroup with id: '$serviceGroupId' not found")).future
-      case Some(group) if !ctx.canUserRead(group) => ctx.funauthorized
+      case Some(group) if !ctx.canUserRead(group) => ctx.fforbidden
       case Some(group) => {
         Audit.send(
           AdminApiEvent(

@@ -165,6 +165,9 @@ export class PrivateAppsSessionsPage extends Component {
   };
 
   render() {
+    if (!window.__user.tenantAdmin) {
+      return null;
+    }
     return (
       <div>
         <Table
@@ -179,14 +182,14 @@ export class PrivateAppsSessionsPage extends Component {
           showLink={false}
           extractKey={item => item.randomId}
           injectTopBar={() => [
-            <button
+            window.__user.superAdmin ? <button
               key="discard-all"
               type="button"
               className="btn btn-danger"
               style={{ marginLeft: 15 }}
               onClick={this.discardSessions}>
               <i className="glyphicon glyphicon-fire" /> Discard all sessions
-            </button>,
+            </button> : null,
             <button
               key="discard-old"
               type="button"

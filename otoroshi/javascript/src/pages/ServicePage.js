@@ -778,6 +778,7 @@ export class ServicePage extends Component {
           id: faker.random.alphaNumeric(64),
           name: groupName,
           description: 'Group named ' + groupName,
+          _loc: { ...this.state.service._loc },
         }).then(group => {
           this.setState({ service: { ...this.state.service, groups: [...this.state.service.groups, group.id] } });
         });
@@ -792,6 +793,7 @@ export class ServicePage extends Component {
       id: faker.random.alphaNumeric(64),
       name: groupName,
       description: 'Group named ' + groupName,
+      _loc: { ...this.state.service._loc },
     }).then(group => {
       this.setState({ service: { ...this.state.service, groups: [...this.state.service.groups, group.id] } });
     });
@@ -1068,12 +1070,11 @@ export class ServicePage extends Component {
           <Collapse collapsed={this.state.allCollapsed} initCollapsed={false} label="Location">
             <Location
               tenant={this.state.service._loc.tenant || "default"}
-              onChangeTenant={v => this.changeValue("_loc.tenant", v)}
+              onChangeTenant={v => this.changeTheValue("_loc.tenant", v)}
               teams={this.state.service._loc.teams || ["default"]}
-              onChangeTeams={v => this.changeValue("_loc.teams", v)}
+              onChangeTeams={v => this.changeTheValue("_loc.teams", v)}
             />
           </Collapse>
-          <Separator />
           <TextInput
             label="Id"
             disabled={!this.state.neverSaved}
@@ -1981,6 +1982,24 @@ export class ServicePage extends Component {
               value={this.state.service.apiKeyConstraints.routing.noneMetaIn}
               help="Api used should not have one of the following metadata entries"
               onChange={v => this.changeTheValue('apiKeyConstraints.routing.noneMetaIn', v)}
+            />
+            <ArrayInput
+              label="One Meta key in"
+              value={this.state.service.apiKeyConstraints.routing.oneMetaKeyIn}
+              help="Api used should have at least one of the following key in metadata"
+              onChange={v => this.changeTheValue('apiKeyConstraints.routing.oneMetaKeyIn', v)}
+            />
+            <ArrayInput
+              label="All Meta key in"
+              value={this.state.service.apiKeyConstraints.routing.allMetaKeysIn}
+              help="Api used should have all of the following keys in metadata"
+              onChange={v => this.changeTheValue('apiKeyConstraints.routing.allMetaKeysIn', v)}
+            />
+            <ArrayInput
+              label="No Meta key in"
+              value={this.state.service.apiKeyConstraints.routing.noneMetaKeysIn}
+              help="Api used should not have one of the following keys in metadata"
+              onChange={v => this.changeTheValue('apiKeyConstraints.routing.noneMetaKeysIn', v)}
             />
           </Collapse>
           {/*<Collapse

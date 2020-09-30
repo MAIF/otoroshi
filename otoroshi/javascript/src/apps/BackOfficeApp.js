@@ -51,6 +51,7 @@ import * as BackOfficeServices from '../services/BackOfficeServices';
 import { createTooltip } from '../tooltips';
 import { TenantsPage } from '../pages/TenantsPage';
 import { TeamsPage } from '../pages/TeamsPage';
+import { Toasts } from '../components/Toasts';
 
 class BackOfficeAppContainer extends Component {
   constructor(props) {
@@ -89,7 +90,7 @@ class BackOfficeAppContainer extends Component {
       // document.getElementById('toggle-navigation').setAttribute('class', 'navbar-toggle collapsed');
     });
     BackOfficeServices.env().then(env => {
-      console.log(env);
+      // console.log(env);
       this.setState({ env });
     });
     BackOfficeServices.fetchLines().then(lines => {
@@ -139,6 +140,7 @@ class BackOfficeAppContainer extends Component {
             <div className="col-sm-2 sidebar" id="sidebar">
               <div className="sidebar-container">
                 <div className="sidebar-content">
+                  <GlobalTenantSelector />
                   <ul className="nav nav-sidebar">
                     <li>
                       <h2>
@@ -161,7 +163,6 @@ class BackOfficeAppContainer extends Component {
                   />
                   <div className="bottom-sidebar">
                     {/*<img src="/assets/images/otoroshi-logo-inverse.png" width="16" /> version {window.__currentVersion}*/}
-                    <GlobalTenantSelector />
                     {this.state.env && (
                       <span onClick={e => (window.location = '/bo/dashboard/snowmonkey')}>
                         {this.state.env.snowMonkeyRunning &&
@@ -508,6 +509,7 @@ class BackOfficeAppContainer extends Component {
             </div>
           </div>
         </div>
+        <Toasts />
       </div>
     );
   }
@@ -537,6 +539,9 @@ class GlobalTenantSelector extends Component {
   update = () => {
     this.setState({ loading: true })
     BackOfficeServices.findAllTenants().then(rtenants => {
+      if (rtenants.length === 1) {
+        window.localStorage.setItem("Otoroshi-Tenant", rtenants[0].id);
+      }
       const tenants = rtenants.map(t => {
         return {
           label: t.name,
@@ -553,6 +558,12 @@ class GlobalTenantSelector extends Component {
   }
 
   render() {
+    if (window.__otoroshi__env__latest.bypassUserRightsCheck || window.__otoroshi__env__latest.userAdmin) {
+      return null;
+    }
+    if (this.state.tenants.length < 2) {
+      return null;
+    }
     return (
       <div className="global-tenant-selector">
         <Select

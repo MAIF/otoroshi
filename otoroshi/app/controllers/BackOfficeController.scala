@@ -20,7 +20,7 @@ import models._
 import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
-import otoroshi.models.{EntityLocation, EntityLocationSupport}
+import otoroshi.models.{EntityLocation, EntityLocationSupport, TenantId}
 import otoroshi.models.RightsChecker.{SuperAdminOnly, TenantAdminOnly}
 import otoroshi.ssl.pki.models.{GenCertResponse, GenCsrQuery}
 import otoroshi.utils.syntax.implicits._
@@ -178,7 +178,10 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
             "env"                     -> env.env,
             "redirectToDev"           -> false,
             "userAdmin"               -> ctx.user.rights.superAdmin,
+            "superAdmin"              -> ctx.user.rights.superAdmin,
+            "tenantAdmin"             -> ctx.user.rights.tenantAdmin(ctx.currentTenant),
             "currentTenant"           -> ctx.currentTenant.value,
+            "bypassUserRightsCheck"   -> env.bypassUserRightsCheck,
             "clientIdHeader"          -> env.Headers.OtoroshiClientId,
             "clientSecretHeader"      -> env.Headers.OtoroshiClientSecret,
             "version"                 -> env.latestVersionHolder.get(),
@@ -213,14 +216,20 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
   }
 
   def dashboard = BackOfficeActionAuth.async { ctx =>
-    env.datastores.globalConfigDataStore.singleton().map { config =>
-      Ok(views.html.backoffice.dashboard(ctx.user, config, env, env.otoroshiVersion))
+    env.datastores.globalConfigDataStore.singleton().flatMap { config =>
+      env.datastores.tenantDataStore.findAll().map { tenants =>
+        val userTenants = tenants.filter(t => ctx.user.rights.rights.exists(r => r.tenant.canRead && r.tenant.matches(t.id))).filterNot(_.id == TenantId.all).map(_.id.value)
+        Ok(views.html.backoffice.dashboard(ctx.user, config, env, env.otoroshiVersion, userTenants))
+      }
     }
   }
 
   def dashboardRoutes(ui: String) = BackOfficeActionAuth.async { ctx =>
-    env.datastores.globalConfigDataStore.singleton().map { config =>
-      Ok(views.html.backoffice.dashboard(ctx.user, config, env, env.otoroshiVersion))
+    env.datastores.globalConfigDataStore.singleton().flatMap { config =>
+      env.datastores.tenantDataStore.findAll().map { tenants =>
+        val userTenants = tenants.filter(t => ctx.user.rights.rights.exists(r => r.tenant.canRead && r.tenant.matches(t.id))).filterNot(_.id == TenantId.all).map(_.id.value)
+        Ok(views.html.backoffice.dashboard(ctx.user, config, env, env.otoroshiVersion, userTenants))
+      }
     }
   }
 
@@ -230,7 +239,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
 
   def documentationFrame(lineId: String, serviceId: String) = BackOfficeActionAuth.async { ctx =>
     env.datastores.serviceDescriptorDataStore.findById(serviceId).map {
-      case Some(descriptor) if !ctx.canUserRead(descriptor) => ApiActionContext.unauthorized
+      case Some(descriptor) if !ctx.canUserRead(descriptor) => ApiActionContext.forbidden
       case Some(descriptor) => Ok(views.html.backoffice.documentationframe(descriptor, env))
       case None             => NotFound(Json.obj("error" -> s"Service with id $serviceId not found"))
     }
@@ -239,7 +248,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
   def documentationFrameDescriptor(lineId: String, serviceId: String) = BackOfficeActionAuth.async { ctx =>
     import scala.concurrent.duration._
     env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
-      case Some(descriptor) if !ctx.canUserRead(descriptor) => ApiActionContext.funauthorized
+      case Some(descriptor) if !ctx.canUserRead(descriptor) => ApiActionContext.fforbidden
       case Some(service) if service.api.openApiDescriptorUrl.isDefined => {
         val state = IdGenerator.extendedToken(128)
         val claim = OtoroshiClaim(
@@ -661,15 +670,15 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // TODO: APIs already in admin API, remove it at some point ?
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+  /*
   def sessions() = BackOfficeActionAuth.async { ctx =>
-    ctx.checkRights(SuperAdminOnly) {
+    ctx.checkRights(TenantAdminOnly) {
       val paginationPage: Int = ctx.request.queryString.get("page").flatMap(_.headOption).map(_.toInt).getOrElse(1)
       val paginationPageSize: Int =
         ctx.request.queryString.get("pageSize").flatMap(_.headOption).map(_.toInt).getOrElse(Int.MaxValue)
       val paginationPosition = (paginationPage - 1) * paginationPageSize
-      env.datastores.backOfficeUserDataStore.sessions() map { sessions =>
-        Ok(JsArray(sessions.drop(paginationPosition).take(paginationPageSize)))
+      env.datastores.backOfficeUserDataStore.tsessions() map { sessions =>
+        Ok(JsArray(sessions.filter(ctx.canUserRead).drop(paginationPosition).take(paginationPageSize).map(_.json)))
       }
     }
   }
@@ -677,21 +686,27 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
   def discardSession(id: String) = BackOfficeActionAuth.async { ctx =>
     ctx.checkRights(SuperAdminOnly) {
       env.datastores.globalConfigDataStore.singleton().filter(!_.apiReadOnly).flatMap { _ =>
-        env.datastores.backOfficeUserDataStore.discardSession(id) map { _ =>
-          val event = BackOfficeEvent(
-            env.snowflakeGenerator.nextIdStr(),
-            env.env,
-            ctx.user,
-            "DISCARD_SESSION",
-            s"Admin discarded an Admin session",
-            ctx.from,
-            ctx.ua,
-            Json.obj("sessionId" -> id)
-          )
-          Audit.send(event)
-          Alerts
-            .send(SessionDiscardedAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user, event, ctx.from, ctx.ua))
-          Ok(Json.obj("done" -> true))
+        env.datastores.backOfficeUserDataStore.findById(id).flatMap {
+          case None => Results.NotFound(Json.obj("error" -> "Session not found")).future
+          case Some(session) if !ctx.canUserWrite(session) => ApiActionContext.fforbidden
+          case Some(_) => {
+            env.datastores.backOfficeUserDataStore.discardSession(id) map { _ =>
+              val event = BackOfficeEvent(
+                env.snowflakeGenerator.nextIdStr(),
+                env.env,
+                ctx.user,
+                "DISCARD_SESSION",
+                s"Admin discarded an Admin session",
+                ctx.from,
+                ctx.ua,
+                Json.obj("sessionId" -> id)
+              )
+              Audit.send(event)
+              Alerts
+                .send(SessionDiscardedAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user, event, ctx.from, ctx.ua))
+              Ok(Json.obj("done" -> true))
+            }
+          }
         }
       } recover {
         case _ => Ok(Json.obj("done" -> false))
@@ -741,7 +756,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
       env.datastores.globalConfigDataStore.singleton().filter(!_.apiReadOnly).flatMap { _ =>
         env.datastores.privateAppsUserDataStore.findById(id).flatMap {
           case None => Results.NotFound(Json.obj("error" -> "Session not found")).future
-          case Some(session) if !ctx.canUserWrite(session) => ApiActionContext.funauthorized
+          case Some(session) if !ctx.canUserWrite(session) => ApiActionContext.fforbidden
           case Some(_) => {
             env.datastores.privateAppsUserDataStore.delete(id) map { _ =>
               val event = BackOfficeEvent(
@@ -790,7 +805,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
         case _ => Ok(Json.obj("done" -> false))
       }
     }
-  }
+  }*/
 
   def auditEvents() = BackOfficeActionAuth.async { ctx =>
     ctx.checkRights(SuperAdminOnly) {
@@ -1029,7 +1044,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
   def renew(id: String) = BackOfficeActionAuth.async { ctx =>
     env.datastores.certificatesDataStore.findById(id).map(_.map(_.enrich())).flatMap {
       case None       => FastFuture.successful(NotFound(Json.obj("error" -> s"No Certificate found")))
-      case Some(cert) if !ctx.canUserWrite(cert) => ApiActionContext.funauthorized
+      case Some(cert) if !ctx.canUserWrite(cert) => ApiActionContext.fforbidden
       case Some(cert) => cert.renew().map(c => Ok(c.toJson))
     }
   }
@@ -1155,7 +1170,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
   def checkExistingLdapConnection(id: String) = BackOfficeActionAuth.async { ctx =>
     env.datastores.authConfigsDataStore.findById(id).flatMap {
       case None => FastFuture.successful(NotFound(Json.obj("error" -> "auth. config. not found !")))
-      case Some(module: LdapAuthModuleConfig) if !ctx.canUserRead(module) => ApiActionContext.funauthorized
+      case Some(module: LdapAuthModuleConfig) if !ctx.canUserRead(module) => ApiActionContext.fforbidden
       case Some(module: LdapAuthModuleConfig) => {
         module.checkConnection().map {
           case (works, error) if works => Ok(Json.obj("works" -> works))
@@ -1182,7 +1197,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
     } else {
       LdapAuthModuleConfig.fromJson(ctx.request.body) match {
         case Left(e) => FastFuture.successful(BadRequest(Json.obj("error" -> "bad auth. module. config")))
-        case Right(module) if !ctx.canUserRead(module) => ApiActionContext.funauthorized
+        case Right(module) if !ctx.canUserRead(module) => ApiActionContext.fforbidden
         case Right(module) => {
           module.checkConnection().map {
             case (works, error) if works => Ok(Json.obj("works" -> works))
@@ -1206,7 +1221,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
   def fetchApikeysForGroupAndService(serviceId: String) = BackOfficeActionAuth.async { ctx =>
     env.datastores.serviceDescriptorDataStore.findById(serviceId) flatMap {
       case None => FastFuture.successful(NotFound(Json.obj("error" -> "service not found")))
-      case Some(service) if !ctx.canUserRead(service) => ApiActionContext.funauthorized
+      case Some(service) if !ctx.canUserRead(service) => ApiActionContext.fforbidden
       case Some(service) => {
         env.datastores.apiKeyDataStore.findAll().map { apikeys =>
           val filtered = apikeys.filter(ctx.canUserRead).filter(apk => apk.authorizedOnOneGroupFrom(service.groups) || apk.authorizedOnService(service.id))

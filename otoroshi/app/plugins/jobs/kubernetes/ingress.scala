@@ -380,12 +380,36 @@ object KubernetesIngressSyncJob {
   private val running = new AtomicBoolean(false)
   private val shouldRunNext = new AtomicBoolean(false)
 
-  private def shouldProcessIngress(ingressClasses: Seq[String], ingressClassAnnotation: Option[String], conf: KubernetesConfig): Boolean = {
-    ingressClassAnnotation match {
-      case None if ingressClasses.contains("*") => true
-      case Some("otoroshi") => true
-      case Some(annotation) => ingressClasses.exists(c => RegexPool(c).matches(annotation))
-      case _ => false
+  private def shouldProcessIngress(ingressClasses: Seq[String], clusterIngressClasses: Seq[KubernetesIngressClass], ingressClassAnnotation: Option[String], ingressClassName: Option[String], conf: KubernetesConfig): Boolean = {
+
+    val defaultIngressController = clusterIngressClasses.find(_.isDefault).map { ic =>
+      ic.controller match {
+        case "otoroshi" => true
+        case "otoroshi.io/ingress-controller" => true
+        case clazz => ingressClasses.exists(c => RegexPool(c).matches(clazz))
+      }
+    }
+
+    val fromIngressClazz: Option[Boolean] = ingressClassName.flatMap { cn =>
+      clusterIngressClasses.find(_.name == cn)
+    }.map { ic =>
+      ic.controller match {
+        case "otoroshi" => true
+        case "otoroshi.io/ingress-controller" => true
+        case _ if ingressClasses.contains("*") => true
+        case _ if defaultIngressController.getOrElse(false) => true
+        case clazz => ingressClasses.exists(c => RegexPool(c).matches(clazz))
+      }
+    }
+
+    fromIngressClazz match {
+      case Some(value) => value
+      case None => ingressClassAnnotation match {
+        case None if ingressClasses.contains("*") => true
+        case Some("otoroshi") => true
+        case Some(annotation) => ingressClasses.exists(c => RegexPool(c).matches(annotation))
+        case _ => false
+      }
     }
   }
 
@@ -400,64 +424,66 @@ object KubernetesIngressSyncJob {
       shouldRunNext.set(false)
       logger.info("sync certs ...")
       client.fetchCerts().flatMap { certs =>
-        logger.info("fetch ingresses")
-        client.fetchIngressesAndFilterLabels().flatMap { ingresses =>
-          logger.info("update ingresses")
-          Source(ingresses.toList)
-            .mapAsync(1) { ingressRaw =>
-              if (shouldProcessIngress(conf.ingressClasses, ingressRaw.ingressClazz, conf)) {
-                val otoroshiConfig = parseConfig(ingressRaw.annotations)
-                if (ingressRaw.isValid()) {
-                  val certNames = ingressRaw.ingress.spec.tls.map(_.secretName).map(_.toLowerCase)
-                  val certsToImport = certs.filter(c => certNames.contains(c.name.toLowerCase()))
-                  (ingressRaw.ingress.spec.backend match {
-                    case Some(backend) => {
-                      backend.asDescriptor(ingressRaw.namespace, conf, otoroshiConfig, client, logger).flatMap {
-                        case None => ().future
-                        case Some(desc) => desc.save()
-                      }
-                    }
-                    case None => {
-                      ingressRaw.updateIngressStatus(client).flatMap { _ =>
-                        ingressRaw.asDescriptors(conf, otoroshiConfig, client, logger).flatMap { descs =>
-                          Future.sequence(descs.map(_.save()))
+        client.fetchIngressClasses().flatMap { clusterIngressClasses =>
+          logger.info("fetch ingresses")
+          client.fetchIngressesAndFilterLabels().flatMap { ingresses =>
+            logger.info("update ingresses")
+            Source(ingresses.toList)
+              .mapAsync(1) { ingressRaw =>
+                if (shouldProcessIngress(conf.ingressClasses, clusterIngressClasses, ingressRaw.ingressClazz, ingressRaw.ingressClassName, conf)) {
+                  val otoroshiConfig = parseConfig(ingressRaw.annotations)
+                  if (ingressRaw.isValid()) {
+                    val certNames = ingressRaw.ingress.spec.tls.map(_.secretName).map(_.toLowerCase)
+                    val certsToImport = certs.filter(c => certNames.contains(c.name.toLowerCase()))
+                    (ingressRaw.ingress.spec.backend match {
+                      case Some(backend) => {
+                        backend.asDescriptor(ingressRaw.namespace, conf, otoroshiConfig, client, logger).flatMap {
+                          case None => ().future
+                          case Some(desc) => desc.save()
                         }
                       }
+                      case None => {
+                        ingressRaw.updateIngressStatus(client).flatMap { _ =>
+                          ingressRaw.asDescriptors(conf, otoroshiConfig, client, logger).flatMap { descs =>
+                            Future.sequence(descs.map(_.save()))
+                          }
+                        }
+                      }
+                    }) andThen {
+                      case _ => KubernetesCertSyncJob.importCerts(certsToImport)
                     }
-                  }) andThen {
-                    case _ => KubernetesCertSyncJob.importCerts(certsToImport)
+                  } else {
+                    ().future
                   }
                 } else {
                   ().future
                 }
-              } else {
-                ().future
-              }
-            }.runWith(Sink.ignore).map(_ => ()).flatMap { _ =>
+              }.runWith(Sink.ignore).map(_ => ()).flatMap { _ =>
 
-            val existingInKube = ingresses.flatMap { ingress =>
-              ingress.ingress.spec.rules.flatMap { rule =>
-                val host = rule.host.getOrElse("*")
-                rule.http.paths.map { path =>
-                  val root = path.path.getOrElse("/")
-                  s"${ingress.namespace}-${ingress.name}-$host-$root".slugifyWithSlash
+              val existingInKube = ingresses.flatMap { ingress =>
+                ingress.ingress.spec.rules.flatMap { rule =>
+                  val host = rule.host.getOrElse("*")
+                  rule.http.paths.map { path =>
+                    val root = path.path.getOrElse("/")
+                    s"${ingress.namespace}-${ingress.name}-$host-$root".slugifyWithSlash
+                  }
                 }
               }
-            }
 
-            env.datastores.serviceDescriptorDataStore.findAll().flatMap { services =>
-              val toDelete = services.filter { service =>
-                service.metadata.get("otoroshi-provider").contains("kubernetes-ingress")
-              }.map { service =>
-                (service.metadata.getOrElse("kubernetes-ingress-id", "--"), service.id, service.name)
-              }.filterNot {
-                case (ingressId, _, _) => existingInKube.contains(ingressId)
-              }
-              logger.info(s"Deleting services: ${toDelete.map(_._3).mkString(", ")}")
-              env.datastores.serviceDescriptorDataStore.deleteByIds(toDelete.map(_._2)).andThen {
-                case Failure(e) => e.printStackTrace()
-              }.map { _ =>
-                ()
+              env.datastores.serviceDescriptorDataStore.findAll().flatMap { services =>
+                val toDelete = services.filter { service =>
+                  service.metadata.get("otoroshi-provider").contains("kubernetes-ingress")
+                }.map { service =>
+                  (service.metadata.getOrElse("kubernetes-ingress-id", "--"), service.id, service.name)
+                }.filterNot {
+                  case (ingressId, _, _) => existingInKube.contains(ingressId)
+                }
+                logger.info(s"Deleting services: ${toDelete.map(_._3).mkString(", ")}")
+                env.datastores.serviceDescriptorDataStore.deleteByIds(toDelete.map(_._2)).andThen {
+                  case Failure(e) => e.printStackTrace()
+                }.map { _ =>
+                  ()
+                }
               }
             }
           }

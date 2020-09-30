@@ -300,6 +300,10 @@ case class AutoCert(enabled: Boolean = false,
                     notAllowed: Seq[String] = Seq.empty,
                     replyNicely: Boolean = false) {
   def json: JsValue = AutoCert.format.writes(this)
+  def matches(domain: String): Boolean = {
+    !notAllowed.exists(p => utils.RegexPool.apply(p).matches(domain)) &&
+      allowed.exists(p => utils.RegexPool.apply(p).matches(domain))
+  }
 }
 
 object AutoCert {
