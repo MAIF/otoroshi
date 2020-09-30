@@ -265,7 +265,6 @@ export class NewExporterForm extends Component {
   }
 
   render() {
-    console.log(this.props.value)
     return (
       <>
         <form className="form-horizontal">
