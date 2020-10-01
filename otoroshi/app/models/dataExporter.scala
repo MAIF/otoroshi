@@ -253,13 +253,8 @@ class DataExporterConfigMigrationJob extends Job {
           alertMailerExporter.fold(Seq.empty[DataExporterConfig])(e => Seq(e))
         configs
     }
-      .flatMap(configs => {
-        Source(configs.toList)
-          .mapAsync(1)(ex => {
-            env.datastores.dataExporterConfigDataStore.set(ex)
-          })
-          .runWith(Sink.ignore)
-          .map(_ => ())
+      .map(configs => {
+        configs.foreach(c => env.datastores.dataExporterConfigDataStore.set(c))
       })
   }
 }
