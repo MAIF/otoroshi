@@ -5,11 +5,12 @@ import java.nio.file.{Files, Paths, StandardOpenOption}
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 
+import akka.Done
 import akka.actor.{Actor, Props}
 import akka.http.scaladsl.util.FastFuture
 import akka.http.scaladsl.util.FastFuture.EnhancedFuture
-import akka.stream.scaladsl.{Keep, Sink, Source}
-import akka.stream.{OverflowStrategy, QueueOfferResult}
+import akka.stream.scaladsl.{Keep, Sink, Source, SourceQueueWithComplete}
+import akka.stream.{OverflowStrategy, QueueOfferResult, scaladsl}
 import env.Env
 import events.DataExporter.DefaultDataExporter
 import events.impl.{ElasticWritesAnalytics, WebHookAnalytics}
@@ -21,7 +22,7 @@ import utils.{EmailLocation, MailerSettings}
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Success, Try}
 
 object OtoroshiEventsActorSupervizer {
@@ -54,7 +55,7 @@ class OtoroshiEventsActorSupervizer(env: Env) extends Actor {
     env.datastores.dataExporterConfigDataStore.findAll().fast.map { exporters =>
       dataExporters.foreach {
         case (key, _) if exporters.exists(_.id == key) =>
-          dataExporters.remove(key).foreach(_.stop())
+          dataExporters.remove(key).foreach(_.stopExporter())
         case _ => ()
       }
       exporters.foreach {
@@ -62,7 +63,7 @@ class OtoroshiEventsActorSupervizer(env: Env) extends Actor {
           dataExporters.get(config.id).foreach(_.update(config))
         case config if !dataExporters.contains(config.id) =>
           val exporter = config.exporter()
-          exporter.start()
+          exporter.startExporter()
           dataExporters.put(config.id, exporter)
       }
       lastUpdate.set(System.currentTimeMillis())
@@ -88,6 +89,8 @@ sealed trait DataExporter {
   def send(events: Seq[JsValue]): Future[ExportResult]
   def publish(event: OtoroshiEvent): Unit
   def update(config: DataExporterConfig): Future[Unit]
+  def startExporter(): Future[Unit]
+  def stopExporter(): Future[Unit]
   def start(): Future[Unit] = FastFuture.successful(())
   def stop(): Future[Unit] = FastFuture.successful(())
 }
@@ -102,17 +105,61 @@ object DataExporter {
 
     lazy val logger = Logger("otoroshi-data-exporter")
 
-    lazy val stream = Source
-      .queue[OtoroshiEvent](configUnsafe.bufferSize, OverflowStrategy.dropHead)
-      .filter(_ => configOpt.exists(_.enabled))
-      .mapAsync(configUnsafe.jsonWorkers)(event => event.toEnrichedJson)
-      .filter(event => accept(event))
-      .map(event => project(event))
-      .groupedWithin(configUnsafe.groupSize, configUnsafe.groupDuration)
-      .filterNot(_.isEmpty)
-      .mapAsync(configUnsafe.sendWorkers)(events => send(events))
+    private val internalQueue = new AtomicReference[(Source[ExportResult, SourceQueueWithComplete[OtoroshiEvent]], SourceQueueWithComplete[OtoroshiEvent], Future[Done])]()
 
-    lazy val (queue, done) = stream.toMat(Sink.ignore)(Keep.both).run()(env.analyticsMaterializer)
+    def setupQueue(): (Source[ExportResult, SourceQueueWithComplete[OtoroshiEvent]], SourceQueueWithComplete[OtoroshiEvent], Future[Done]) = {
+      val stream = Source
+        .queue[OtoroshiEvent](configUnsafe.bufferSize, OverflowStrategy.dropHead)
+        .filter(_ => configOpt.exists(_.enabled))
+        .mapAsync(configUnsafe.jsonWorkers)(event => event.toEnrichedJson)
+        .filter(event => accept(event))
+        .map(event => project(event))
+        .groupedWithin(configUnsafe.groupSize, configUnsafe.groupDuration)
+        .filterNot(_.isEmpty)
+        .mapAsync(configUnsafe.sendWorkers)(events => send(events))
+
+      val (queue, done) = stream.toMat(Sink.ignore)(Keep.both).run()(env.analyticsMaterializer)
+
+      (stream, queue, done)
+    }
+
+    def withQueue[A](f: SourceQueueWithComplete[OtoroshiEvent] => A): Unit = {
+      Option(internalQueue.get()).foreach(t => f(t._2))
+    }
+
+    //lazy val stream: Source[ExportResult, SourceQueueWithComplete[OtoroshiEvent]] = Source
+    //  .queue[OtoroshiEvent](configUnsafe.bufferSize, OverflowStrategy.dropHead)
+    //  .filter(_ => configOpt.exists(_.enabled))
+    //  .mapAsync(configUnsafe.jsonWorkers)(event => event.toEnrichedJson)
+    //  .filter(event => accept(event))
+    //  .map(event => project(event))
+    //  .groupedWithin(configUnsafe.groupSize, configUnsafe.groupDuration)
+    //  .filterNot(_.isEmpty)
+    //  .mapAsync(configUnsafe.sendWorkers)(events => send(events))
+
+    //lazy val (queue, done) = stream.toMat(Sink.ignore)(Keep.both).run()(env.analyticsMaterializer)
+
+    override def startExporter(): Future[Unit] = {
+      val newQueue = setupQueue()
+      val endOfOldQueue = Promise[Unit]
+      Option(internalQueue.get()) match {
+        case None => endOfOldQueue.trySuccess(())
+        case Some((_, queue, _)) => {
+          queue.watchCompletion().map { _ =>
+            endOfOldQueue.trySuccess(())
+          }
+          queue.complete()
+        }
+      }
+      endOfOldQueue.future.flatMap { _ =>
+        internalQueue.set(newQueue)
+        start()
+      }
+    }
+
+    override def stopExporter(): Future[Unit] = {
+      stop()
+    }
 
     def exporter[T <: Exporter]: Option[T] = Try(ref.get()).map(_.config.asInstanceOf[T]).toOption
     def configUnsafe: DataExporterConfig = ref.get()
@@ -137,19 +184,21 @@ object DataExporter {
     }
     def publish(event: OtoroshiEvent): Unit = {
       if (configOpt.exists(_.enabled)) {
-        queue.offer(event).andThen {
-          case Success(QueueOfferResult.Enqueued) => logger.debug("OTOROSHI_EVENT: Event enqueued")
-          case Success(QueueOfferResult.Dropped) =>
-            logger.error("OTOROSHI_EVENTS_ERROR: Enqueue Dropped otoroshiEvents :(")
-          case Success(QueueOfferResult.QueueClosed) =>
-            logger.error("OTOROSHI_EVENTS_ERROR: Queue closed :(")
+        withQueue { queue =>
+          queue.offer(event).andThen {
+            case Success(QueueOfferResult.Enqueued) => logger.debug("OTOROSHI_EVENT: Event enqueued")
+            case Success(QueueOfferResult.Dropped) =>
+              logger.error("OTOROSHI_EVENTS_ERROR: Enqueue Dropped otoroshiEvents :(")
+            case Success(QueueOfferResult.QueueClosed) =>
+              logger.error("OTOROSHI_EVENTS_ERROR: Queue closed :(")
             // TODO:
-          case Success(QueueOfferResult.Failure(t)) =>
-            logger.error("OTOROSHI_EVENTS_ERROR: Enqueue Failure otoroshiEvents :(", t)
+            case Success(QueueOfferResult.Failure(t)) =>
+              logger.error("OTOROSHI_EVENTS_ERROR: Enqueue Failure otoroshiEvents :(", t)
             // TODO:
-          case e =>
-            logger.error(s"OTOROSHI_EVENTS_ERROR: otoroshiEvents actor error : ${e}")
+            case e =>
+              logger.error(s"OTOROSHI_EVENTS_ERROR: otoroshiEvents actor error : ${e}")
             // TODO:
+          }
         }
       } else {
         ()
