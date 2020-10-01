@@ -203,7 +203,7 @@ class HttpPersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
           resp.ignore()
           FastFuture.successful(())
         case resp if resp.status == 200 =>
-          val source = resp.bodyAsSource.via(Framing.delimiter(ByteString("\n"), 1000000, false))
+          val source = resp.bodyAsSource.via(Framing.delimiter(ByteString("\n"), 32 * 1024 * 1024, false))
           source
             .runForeach { raw =>
               val item  = Json.parse(raw.utf8String)

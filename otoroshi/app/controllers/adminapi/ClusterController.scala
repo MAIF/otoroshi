@@ -181,7 +181,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
         case Worker => {
           ctx.request.body
             .via(env.clusterConfig.gunzip())
-            .via(Framing.delimiter(ByteString("\n"), 1024 * 1024))
+            .via(Framing.delimiter(ByteString("\n"), 32 * 1024 * 1024))
             .mapAsync(4) { item =>
               val jsItem = Json.parse(item.utf8String)
               (jsItem \ "typ").asOpt[String] match {
@@ -233,7 +233,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
                 bs
               })
               .via(env.clusterConfig.gunzip())
-              .via(Framing.delimiter(ByteString("\n"), 1024 * 1024))
+              .via(Framing.delimiter(ByteString("\n"), 32 * 1024 * 1024))
               .mapAsync(4) { item =>
                 val jsItem = Json.parse(item.utf8String)
                 (jsItem \ "typ").asOpt[String] match {
@@ -357,6 +357,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
                       ByteString(Json.stringify(item) + "\n")
                     }
                     .via(env.clusterConfig.gzip())
+                    // .alsoTo(Sink.fold(ByteString.empty)(_ ++ _))
                     .alsoTo(Sink.foreach(bs => stateCache = stateCache ++ bs))
                     .alsoTo(Sink.onComplete {
                       case Success(_) =>
@@ -401,7 +402,8 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
               HttpEntity.Streamed(Source.single(env.clusterLeaderAgent.cachedState), None, Some("application/x-ndjson"))
             )
               .withHeaders(
-                "X-Data-From" -> s"${env.clusterLeaderAgent.cachedTimestamp}"
+                "X-Data-From" -> s"${env.clusterLeaderAgent.cachedTimestamp}",
+                "X-Data-Auto" -> "true"
               ).future
           } else if (cachedValue == null) {
             sendAndCache().future

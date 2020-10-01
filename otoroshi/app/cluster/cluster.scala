@@ -725,16 +725,32 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
   private def cacheState(): Unit = {
     if (caching.compareAndSet(false, true)) {
       val start      = System.currentTimeMillis()
-      var stateCache = ByteString.empty
+      // var stateCache = ByteString.empty
       env.datastores
         .rawExport(env.clusterConfig.leader.groupingBy)
         .map { item =>
           ByteString(Json.stringify(item) + "\n")
         }
         .via(env.clusterConfig.gzip())
-        .alsoTo(Sink.foreach(bs => stateCache = stateCache ++ bs))
-        .alsoTo(Sink.onComplete {
-          case Success(_) =>
+        // .alsoTo(Sink.fold(ByteString.empty)(_ ++ _))
+        // .alsoTo(Sink.foreach(bs => stateCache = stateCache ++ bs))
+        // .alsoTo(Sink.onComplete {
+        //   case Success(_) =>
+        //     cachedRef.set(stateCache)
+        //     cachedAt.set(System.currentTimeMillis())
+        //     caching.compareAndSet(true, false)
+        //     env.datastores.clusterStateDataStore.updateDataOut(stateCache.size)
+        //     env.clusterConfig.leader.stateDumpPath
+        //       .foreach(path => Future(Files.write(stateCache.toArray, new File(path))))
+        //     Cluster.logger.debug(
+        //       s"[${env.clusterConfig.mode.name}] Auto-cache updated in ${System.currentTimeMillis() - start} ms."
+        //     )
+        //   case Failure(e) =>
+        //     Cluster.logger.error(s"[${env.clusterConfig.mode.name}] Stream error while exporting raw state", e)
+        // })
+        //.runWith(Sink.ignore)
+        .runWith(Sink.fold(ByteString.empty)(_ ++ _)).andThen {
+          case Success(stateCache) => {
             cachedRef.set(stateCache)
             cachedAt.set(System.currentTimeMillis())
             caching.compareAndSet(true, false)
@@ -744,10 +760,9 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
             Cluster.logger.debug(
               s"[${env.clusterConfig.mode.name}] Auto-cache updated in ${System.currentTimeMillis() - start} ms."
             )
-          case Failure(e) =>
-            Cluster.logger.error(s"[${env.clusterConfig.mode.name}] Stream error while exporting raw state", e)
-        })
-        .runWith(Sink.ignore)
+          }
+          case Failure(err) => Cluster.logger.error(s"[${env.clusterConfig.mode.name}] Stream error while exporting raw state", err)
+        }
     }
   }
 }
@@ -941,7 +956,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
                 val expirations = new ConcurrentHashMap[String, Long]()
                 resp.bodyAsSource
                   .via(env.clusterConfig.gunzip())
-                  .via(Framing.delimiter(ByteString("\n"), 1024 * 1024))
+                  .via(Framing.delimiter(ByteString("\n"), 32 * 1024 * 1024))
                   .runWith(Sink.foreach { bs =>
                     val item  = Json.parse(bs.utf8String)
                     val key   = (item \ "k").as[String]
