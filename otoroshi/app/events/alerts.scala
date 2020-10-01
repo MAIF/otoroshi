@@ -1285,7 +1285,6 @@ object Alerts {
   def send[A <: AlertEvent](alert: A)(implicit env: Env): Unit = {
     // logger.trace("Alert " + Json.stringify(alert.toEnrichedJson))
     alert.toAnalytics()
-    env.otoroshiEventsActor ! alert
   }
 }
 
