@@ -26,6 +26,7 @@ import scala.util.{Failure, Success}
 
 case object SendToAnalytics
 
+/*
 object AnalyticsActor {
   def props(exporter: DataExporterConfig)(implicit env: Env) = Props(new AnalyticsActor(exporter))
 }
@@ -140,6 +141,7 @@ class AnalyticsActorSupervizer(env: Env) extends Actor {
 object AnalyticsActorSupervizer {
   def props(implicit env: Env) = Props(new AnalyticsActorSupervizer(env))
 }
+*/
 
 object AnalyticEvent {
   lazy val logger = Logger("otoroshi-analytics-event")

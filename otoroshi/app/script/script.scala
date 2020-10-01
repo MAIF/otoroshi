@@ -16,7 +16,7 @@ import akka.stream.scaladsl.{Keep, Sink, Source}
 import akka.util.ByteString
 import com.google.common.hash.Hashing
 import env.Env
-import events.{AnalyticEvent, AnalyticsActor, OtoroshiEvent}
+import events.{AnalyticEvent, OtoroshiEvent}
 import io.github.classgraph.ClassInfo
 import javax.script._
 import models._
