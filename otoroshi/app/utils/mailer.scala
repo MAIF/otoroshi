@@ -229,10 +229,14 @@ object EmailLocation {
   val format = new Format[EmailLocation] {
     override def writes(o: EmailLocation): JsValue = Json.obj("name" -> o.name, "email" -> o.email)
     override def reads(json: JsValue): JsResult[EmailLocation] = Try {
-      EmailLocation(
-        name = (json \ "name").as[String],
-        email = (json \ "email").as[String],
-      )
+      json match {
+        case JsString(value) => EmailLocation(value, value)
+        case JsObject(_) => EmailLocation(
+          name = (json \ "name").as[String],
+          email = (json \ "email").as[String],
+        )
+        case _ => throw new RuntimeException("Bad json type")
+      }
     } match {
       case Success(value) => JsSuccess(value)
       case Failure(value) => JsError(value.getMessage)

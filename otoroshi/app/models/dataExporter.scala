@@ -8,6 +8,7 @@ import play.api.libs.json._
 import utils._
 
 import scala.concurrent.ExecutionContext
+import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.util.{Failure, Success, Try}
 
 trait Exporter {
@@ -21,22 +22,31 @@ object Exporter {
 
 case class DataExporterConfigFiltering(include: Seq[JsObject] = Seq.empty, exclude: Seq[JsObject] = Seq.empty)
 
-case class FileSettings(path: String) extends Exporter {
+case class FileSettings(path: String, maxFileSize: Int = 10 * 1024 * 1024) extends Exporter {
   override def toJson: JsValue = Json.obj(
-    "path" -> path
+    "path" -> path,
+    "maxFileSize" -> maxFileSize
   )
 }
 
 object DataExporterConfig {
+
+  import scala.concurrent.duration._
+
   val format = new Format[DataExporterConfig] {
     override def writes(o: DataExporterConfig): JsValue = {
-      Json.obj(
+      o.location.jsonWithKey ++ Json.obj(
         "type" -> o.typ.name,
         "enabled" -> o.enabled,
         "id" -> o.id,
         "name" -> o.name,
         "desc" -> o.desc,
         "metadata" -> o.metadata,
+        "bufferSize" -> o.bufferSize,
+        "jsonWorkers" -> o.jsonWorkers,
+        "sendWorkers" -> o.sendWorkers,
+        "groupSize" -> o.groupSize,
+        "groupDuration" -> o.groupDuration.toMillis,
         "projection" -> o.projection,
         "filtering" -> Json.obj(
           "include" -> JsArray(o.filtering.include),
@@ -54,6 +64,11 @@ object DataExporterConfig {
         name = (json \ "name").as[String],
         desc = (json \ "desc").asOpt[String].getOrElse("--"),
         metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
+        bufferSize = (json \ "bufferSize").asOpt[Int].getOrElse(5000),
+        jsonWorkers = (json \ "jsonWorkers").asOpt[Int].getOrElse(1),
+        sendWorkers = (json \ "sendWorkers").asOpt[Int].getOrElse(5),
+        groupSize = (json \ "groupSize").asOpt[Int].getOrElse(100),
+        groupDuration = (json \ "groupDuration").asOpt[Int].map(_.millis).getOrElse(30.seconds),
         projection = (json \ "projection").asOpt[JsObject].getOrElse(Json.obj()),
         filtering = DataExporterConfigFiltering(
           include = (json \ "filtering" \ "include").asOpt[Seq[JsObject]].getOrElse(Seq.empty),
@@ -104,6 +119,11 @@ case class DataExporterConfig(enabled: Boolean,
                               desc: String,
                               metadata: Map[String, String],
                               location: EntityLocation = EntityLocation(),
+                              bufferSize: Int = 5000,
+                              jsonWorkers: Int = 1,
+                              sendWorkers: Int = 5,
+                              groupSize: Int = 100,
+                              groupDuration: FiniteDuration = 30.seconds,
                               filtering: DataExporterConfigFiltering,
                               projection: JsObject,
                               config: Exporter) extends EntityLocationSupport {

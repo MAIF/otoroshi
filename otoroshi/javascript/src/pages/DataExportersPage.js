@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import faker from 'faker';
 
 import * as BackOfficeServices from '../services/BackOfficeServices';
-import { Table, SelectInput, ArrayInput, Form, BooleanInput, TextInput, ObjectInput } from '../components/inputs';
+import { Table, SelectInput, ArrayInput, Form, BooleanInput, TextInput, ObjectInput, NumberInput } from '../components/inputs';
 import { Collapse } from '../components/inputs/Collapse';
 import Creatable from 'react-select/lib/Creatable';
 import { JsonObjectAsCodeInput } from '../components/inputs/CodeInput';
@@ -37,7 +37,7 @@ class Mailer extends Component {
       type: 'array',
       props: {
         label: 'Email addresses',
-        placeholder: 'Email address to receive alerts',
+        placeholder: 'Email address to receive events',
         help: 'Every email address will be notified with a summary of Otoroshi events',
       }
     }
@@ -54,7 +54,7 @@ class Mailer extends Component {
       type: 'array',
       props: {
         label: 'Email addresses',
-        placeholder: 'Email address to receive alerts',
+        placeholder: 'Email address to receive events',
         help: 'Every email address will be notified with a summary of Otoroshi events',
       }
     }
@@ -84,7 +84,7 @@ class Mailer extends Component {
       type: 'array',
       props: {
         label: 'Email addresses',
-        placeholder: 'Email address to receive alerts',
+        placeholder: 'Email address to receive events',
         help: 'Every email address will be notified with a summary of Otoroshi events',
       }
     }
@@ -108,7 +108,7 @@ class Mailer extends Component {
       type: 'array',
       props: {
         label: 'Email addresses',
-        placeholder: 'Email address to receive alerts',
+        placeholder: 'Email address to receive events',
         help: 'Every email address will be notified with a summary of Otoroshi events',
       }
     }
@@ -320,18 +320,27 @@ export class NewExporterForm extends Component {
             value={this.data().metadata}
             onChange={v => this.dataChange({ metadata: e})}
           />
-          <JsonObjectAsCodeInput
-            label="Filtering"
-            value={this.data().filtering}
-            onChange={e => this.dataChange({ filtering: e })}
-            height="200px"
-          />
-          <JsonObjectAsCodeInput
-            label="Projection"
-            value={this.data().projection}
-            onChange={e => this.dataChange({ projection: e })}
-            height="200px"
-          />
+          <Collapse initCollapsed={true} label="Filtering and projection">
+            <JsonObjectAsCodeInput
+              label="Filtering"
+              value={this.data().filtering}
+              onChange={e => this.dataChange({ filtering: e })}
+              height="200px"
+            />
+            <JsonObjectAsCodeInput
+              label="Projection"
+              value={this.data().projection}
+              onChange={e => this.dataChange({ projection: e })}
+              height="200px"
+            />
+          </Collapse>
+          <Collapse initCollapsed={true} label="Queue details">
+            <NumberInput label="Buffer Size" value={this.data().bufferSize} onChange={v => this.dataChange({ bufferSize: v })} />
+            <NumberInput label="JSON conversion workers" value={this.data().jsonWorkers} onChange={v => this.dataChange({ jsonWorkers: v })} />
+            <NumberInput label="Send workers" value={this.data().sendWorkers} onChange={v => this.dataChange({ sendWorkers: v })} />
+            <NumberInput label="Group size" value={this.data().groupSize} onChange={v => this.dataChange({ groupSize: v })} />
+            <NumberInput label="Group duration" value={this.data().groupDuration} onChange={v => this.dataChange({ groupDuration: v })} />
+          </Collapse>
           {this.data().type && (
             <Collapse collapsed={this.data().allCollapsed} initCollapsed={false} label="Exporter config">
               <Form
@@ -710,11 +719,16 @@ const possibleExporterConfigFormValues = {
   file: {
     flow: [
       'path',
+      'maxFileSize'
     ],
     schema: {
       path: {
         type: 'string',
         props: { label: 'File path', placeholder: 'path for the file' },
+      },
+      maxFileSize: {
+        type: 'number',
+        props: { label: 'Max file size', placeholder: 'Max size in bytes for a file', suffix: 'bytes' },
       }
     }
   },

@@ -103,13 +103,13 @@ object DataExporter {
     lazy val logger = Logger("otoroshi-data-exporter")
 
     lazy val stream = Source
-      .queue[OtoroshiEvent](50000, OverflowStrategy.dropHead) // TODO: from config
+      .queue[OtoroshiEvent](configUnsafe.bufferSize, OverflowStrategy.dropHead)
       .filter(_ => configOpt.exists(_.enabled))
-      .mapAsync(1)(event => event.toEnrichedJson)  // TODO: from config
+      .mapAsync(configUnsafe.jsonWorkers)(event => event.toEnrichedJson)
       .filter(event => accept(event))
       .map(event => project(event))
-      .groupedWithin(env.maxWebhookSize, FiniteDuration(env.analyticsWindow, TimeUnit.SECONDS)) // TODO: from config
-      .mapAsync(5)(events => send(events))  // TODO: from config
+      .groupedWithin(configUnsafe.groupSize, configUnsafe.groupDuration)
+      .mapAsync(configUnsafe.sendWorkers)(events => send(events))
 
     lazy val (queue, done) = stream.toMat(Sink.ignore)(Keep.both).run()(env.analyticsMaterializer)
 
@@ -236,7 +236,7 @@ object Exporters {
                  """
         gms.asMailer(globalConfig, env).send(
           from = EmailLocation("Otoroshi Alerts", s"otoroshi-alerts@${env.domain}"),
-          to = globalConfig.alertsEmails.map(e => EmailLocation(e, e)), //todo: maybe define another email adress (in config screen ???)
+          to = gms.to,
           subject = s"Otoroshi Alert - ${events.size} new alerts",
           html = emailBody
         )
@@ -260,7 +260,7 @@ object Exporters {
         if (!file.exists()) {
           file.createNewFile()
         } else {
-          if (file.length() > (10 * 1024 * 1024)) { // TODO: from config
+          if (file.length() > exporterConfig.maxFileSize) {
             val parts = file.getName.split("\\.")
             val filename = parts.head
             val ext = parts.last
