@@ -10,7 +10,6 @@ import utils._
 import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success, Try}
 
-
 trait Exporter {
   def toJson: JsValue
 }

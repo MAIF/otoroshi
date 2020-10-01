@@ -114,7 +114,8 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
           filtering = DataExporterConfigFiltering(),
           config = GenericMailerSettings(
             url = "http://localhost:8080",
-            headers = Map.empty
+            headers = Map.empty,
+            to = Seq.empty
           )
         )
       case Some("mailgun") =>
@@ -131,7 +132,8 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
           config = MailgunSettings(
             eu = true,
             apiKey = "key",
-            domain = "domain"
+            domain = "domain",
+            to = Seq.empty
           )
         )
       case Some("mailjet") =>
@@ -147,7 +149,8 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
           filtering = DataExporterConfigFiltering(),
           config = MailjetSettings(
             apiKeyPublic = "key-public",
-            apiKeyPrivate = "key-private"
+            apiKeyPrivate = "key-private",
+            to = Seq.empty
           )
         )
       case Some("none-mailer") =>
@@ -174,7 +177,10 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
           location = EntityLocation(),
           projection = Json.obj(),
           filtering = DataExporterConfigFiltering(),
-          config = SendgridSettings("apikey")
+          config = SendgridSettings(
+            apiKey = "apikey",
+            to = Seq.empty
+          )
         )
       case Some("file") =>
         DataExporterConfig(

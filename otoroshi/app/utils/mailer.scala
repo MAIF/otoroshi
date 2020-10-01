@@ -17,6 +17,7 @@ case class NoneMailerSettings() extends MailerSettings with Exporter {
   override def asMailer(config: GlobalConfig, env: Env): Mailer = new NoneMailer()
   override def json: JsValue                                    = NoneMailerSettings.format.writes(this)
   override def toJson: JsValue                                  = NoneMailerSettings.format.writes(this)
+  override def to: Seq[EmailLocation] = Seq.empty
 }
 
 case class ConsoleMailerSettings() extends MailerSettings with Exporter {
@@ -24,30 +25,31 @@ case class ConsoleMailerSettings() extends MailerSettings with Exporter {
   override def asMailer(config: GlobalConfig, env: Env): Mailer = new LogMailer()
   override def json: JsValue                                    = ConsoleMailerSettings.format.writes(this)
   override def toJson: JsValue                                  = ConsoleMailerSettings.format.writes(this)
+  override def to: Seq[EmailLocation] = Seq.empty
 }
 
-case class MailjetSettings(apiKeyPublic: String, apiKeyPrivate: String) extends MailerSettings with Exporter {
+case class MailjetSettings(apiKeyPublic: String, apiKeyPrivate: String, to: Seq[EmailLocation]) extends MailerSettings with Exporter {
   override def typ: String                                      = "mailjet"
   override def asMailer(config: GlobalConfig, env: Env): Mailer = new MailjetMailer(env, config)
   override def json: JsValue                                    = MailjetSettings.format.writes(this)
   override def toJson: JsValue                                  = MailjetSettings.format.writes(this)
 }
 
-case class MailgunSettings(eu: Boolean, apiKey: String, domain: String) extends MailerSettings with Exporter {
+case class MailgunSettings(eu: Boolean, apiKey: String, domain: String, to: Seq[EmailLocation]) extends MailerSettings with Exporter {
   override def typ: String                                      = "mailgun"
   override def asMailer(config: GlobalConfig, env: Env): Mailer = new MailgunMailer(env, config)
   override def json: JsValue                                    = MailgunSettings.format.writes(this)
   override def toJson: JsValue                                  = MailgunSettings.format.writes(this)
 }
 
-case class SendgridSettings(apiKey: String) extends MailerSettings with Exporter {
+case class SendgridSettings(apiKey: String, to: Seq[EmailLocation]) extends MailerSettings with Exporter {
   override def typ: String                                      = "sendgrid"
   override def asMailer(config: GlobalConfig, env: Env): Mailer = new SendgridMailer(env, config)
   override def json: JsValue                                    = SendgridSettings.format.writes(this)
   override def toJson: JsValue                                    = SendgridSettings.format.writes(this)
 }
 
-case class GenericMailerSettings(url: String, headers: Map[String, String]) extends MailerSettings with Exporter {
+case class GenericMailerSettings(url: String, headers: Map[String, String], to: Seq[EmailLocation]) extends MailerSettings with Exporter {
   override def typ: String                                      = "generic"
   override def asMailer(config: GlobalConfig, env: Env): Mailer = new GenericMailer(env, config)
   override def json: JsValue                                    = GenericMailerSettings.format.writes(this)
@@ -56,6 +58,7 @@ case class GenericMailerSettings(url: String, headers: Map[String, String]) exte
 
 trait MailerSettings extends Exporter {
   def typ: String
+  def to: Seq[EmailLocation]
   def asMailer(config: GlobalConfig, env: Env): Mailer
   def genericSettings: Option[GenericMailerSettings] = this match {
     case _: GenericMailerSettings => Some(this.asInstanceOf[GenericMailerSettings])
@@ -103,7 +106,8 @@ object MailgunSettings {
       "type"   -> o.typ,
       "eu"     -> o.eu,
       "apiKey" -> o.apiKey,
-      "domain" -> o.domain
+      "domain" -> o.domain,
+      "to" -> JsArray(o.to.map(_.json))
     )
     override def reads(json: JsValue) =
       Try {
@@ -112,6 +116,7 @@ object MailgunSettings {
             eu = (json \ "eu").asOpt[Boolean].getOrElse(false),
             apiKey = (json \ "apiKey").asOpt[String].map(_.trim).get,
             domain = (json \ "domain").asOpt[String].map(_.trim).get,
+            to = (json \ "to").asOpt[Seq[JsValue]].map(_.map(v => EmailLocation.format.reads(v)).collect { case JsSuccess(v, _) => v }).getOrElse(Seq.empty)
           )
         )
       } recover {
@@ -125,14 +130,16 @@ object MailjetSettings {
     override def writes(o: MailjetSettings) = Json.obj(
       "type"          -> o.typ,
       "apiKeyPublic"  -> o.apiKeyPublic,
-      "apiKeyPrivate" -> o.apiKeyPrivate
+      "apiKeyPrivate" -> o.apiKeyPrivate,
+      "to" -> JsArray(o.to.map(_.json))
     )
     override def reads(json: JsValue) =
       Try {
         JsSuccess(
           MailjetSettings(
             apiKeyPrivate = (json \ "apiKeyPrivate").asOpt[String].map(_.trim).get,
-            apiKeyPublic = (json \ "apiKeyPublic").asOpt[String].map(_.trim).get
+            apiKeyPublic = (json \ "apiKeyPublic").asOpt[String].map(_.trim).get,
+            to = (json \ "to").asOpt[Seq[JsValue]].map(_.map(v => EmailLocation.format.reads(v)).collect { case JsSuccess(v, _) => v }).getOrElse(Seq.empty)
           )
         )
       } recover {
@@ -145,13 +152,15 @@ object SendgridSettings {
   val format = new Format[SendgridSettings] {
     override def writes(o: SendgridSettings) = Json.obj(
       "type"          -> o.typ,
-      "apiKey"  -> o.apiKey
+      "apiKey"  -> o.apiKey,
+      "to" -> JsArray(o.to.map(_.json))
     )
     override def reads(json: JsValue) =
       Try {
         JsSuccess(
           SendgridSettings(
-            apiKey = (json \ "apiKey").asOpt[String].map(_.trim).get
+            apiKey = (json \ "apiKey").asOpt[String].map(_.trim).get,
+            to = (json \ "to").asOpt[Seq[JsValue]].map(_.map(v => EmailLocation.format.reads(v)).collect { case JsSuccess(v, _) => v }).getOrElse(Seq.empty)
           )
         )
       } recover {
@@ -165,14 +174,16 @@ object GenericMailerSettings {
     override def writes(o: GenericMailerSettings) = Json.obj(
       "type"    -> o.typ,
       "url"     -> o.url,
-      "headers" -> o.headers
+      "headers" -> o.headers,
+      "to" -> JsArray(o.to.map(_.json))
     )
     override def reads(json: JsValue) =
       Try {
         JsSuccess(
           GenericMailerSettings(
             url = (json \ "url").asOpt[String].map(_.trim).get,
-            headers = (json \ "headers").asOpt[Map[String, String]].getOrElse(Map.empty[String, String])
+            headers = (json \ "headers").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
+            to = (json \ "to").asOpt[Seq[JsValue]].map(_.map(v => EmailLocation.format.reads(v)).collect { case JsSuccess(v, _) => v }).getOrElse(Seq.empty)
           )
         )
       } recover {
@@ -211,6 +222,22 @@ object NoneMailerSettings {
 
 case class EmailLocation(name: String, email: String) {
   def toEmailString: String = s"$name <$email>"
+  def json: JsValue = EmailLocation.format.writes(this)
+}
+
+object EmailLocation {
+  val format = new Format[EmailLocation] {
+    override def writes(o: EmailLocation): JsValue = Json.obj("name" -> o.name, "email" -> o.email)
+    override def reads(json: JsValue): JsResult[EmailLocation] = Try {
+      EmailLocation(
+        name = (json \ "name").as[String],
+        email = (json \ "email").as[String],
+      )
+    } match {
+      case Success(value) => JsSuccess(value)
+      case Failure(value) => JsError(value.getMessage)
+    }
+  }
 }
 
 trait Mailer {

@@ -579,17 +579,6 @@ object GlobalConfig {
           backOfficeAuthRef = (json \ "backOfficeAuthRef").asOpt[String],
           mailerSettings = (json \ "mailerSettings").asOpt[JsValue].flatMap { config =>
             MailerSettings.format.reads(config).asOpt
-          } orElse {
-            (json \ "mailGunSettings").asOpt[JsValue].flatMap { config =>
-              (
-                (config \ "eu").asOpt[Boolean].getOrElse(false),
-                (config \ "apiKey").asOpt[String].filter(_.nonEmpty),
-                (config \ "domain").asOpt[String].filter(_.nonEmpty)
-              ) match {
-                case (eu, Some(apiKey), Some(domain)) => Some(MailgunSettings(eu, apiKey, domain))
-                case _                                => None
-              }
-            }
           },
           cleverSettings = (json \ "cleverSettings").asOpt[JsValue].flatMap { config =>
             (

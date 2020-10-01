@@ -15,10 +15,10 @@ function tryOrTrue(f) {
   }
 }
 class Mailer extends Component {
-  genericFormFlow = ['url', 'headers'];
-  mailgunFormFlow = ['eu', 'apiKey', 'domain'];
-  mailjetFormFlow = ['apiKeyPublic', 'apiKeyPrivate'];
-  sendgridFormFlow = ['apiKey'];
+  genericFormFlow = ['url', 'headers', 'to'];
+  mailgunFormFlow = ['eu', 'apiKey', 'domain', 'to'];
+  mailjetFormFlow = ['apiKeyPublic', 'apiKeyPrivate', 'to'];
+  sendgridFormFlow = ['apiKey', 'to'];
   genericFormSchema = {
     url: {
       type: 'string',
@@ -33,6 +33,14 @@ class Mailer extends Component {
         label: 'Headers',
       },
     },
+    to: {
+      type: 'array',
+      props: {
+        label: 'Email addresses',
+        placeholder: 'Email address to receive alerts',
+        help: 'Every email address will be notified with a summary of Otoroshi events',
+      }
+    }
   };
   sendgridSchema = {
     apiKey: {
@@ -41,6 +49,14 @@ class Mailer extends Component {
         label: 'Sendgrid api key',
         placeholder: 'Sendgrid api key',
       },
+    },
+    to: {
+      type: 'array',
+      props: {
+        label: 'Email addresses',
+        placeholder: 'Email address to receive alerts',
+        help: 'Every email address will be notified with a summary of Otoroshi events',
+      }
     }
   };
   mailgunFormSchema = {
@@ -64,6 +80,14 @@ class Mailer extends Component {
         placeholder: 'Mailgun domain',
       },
     },
+    to: {
+      type: 'array',
+      props: {
+        label: 'Email addresses',
+        placeholder: 'Email address to receive alerts',
+        help: 'Every email address will be notified with a summary of Otoroshi events',
+      }
+    }
   };
   mailjetFormSchema = {
     apiKeyPublic: {
@@ -80,6 +104,14 @@ class Mailer extends Component {
         placeholder: 'Private api key',
       },
     },
+    to: {
+      type: 'array',
+      props: {
+        label: 'Email addresses',
+        placeholder: 'Email address to receive alerts',
+        help: 'Every email address will be notified with a summary of Otoroshi events',
+      }
+    }
   };
   render() {
     const settings = this.props.value;
