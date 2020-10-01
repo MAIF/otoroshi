@@ -215,10 +215,6 @@ class DataExporterConfigMigrationJob extends Job {
 
   override def instantiation: JobInstantiation = JobInstantiation.OneInstancePerOtoroshiCluster
 
-  override def initialDelay: Option[FiniteDuration] = 10.seconds.some
-
-  override def interval: Option[FiniteDuration] = 10.seconds.some
-
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     implicit val mat = env.otoroshiMaterializer
 
