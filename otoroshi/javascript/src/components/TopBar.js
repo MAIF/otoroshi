@@ -572,44 +572,48 @@ export class TopBar extends Component {
                   {window.__otoroshi__env__latest.userAdmin  && this.state.env.clusterRole === 'Leader' && (
                     <li role="separator" className="divider" />
                   )}
-                  {window.__otoroshi__env__latest.userAdmin  && (
+                  {(window.__otoroshi__env__latest.userAdmin || window.__user.tenantAdmin) && (
                     <>
-                      <li>
-                        <a href="/bo/dashboard/stats">
-                          <i className="glyphicon glyphicon-signal" /> Analytics
-                        </a>
-                      </li>
-                      <li>
-                        <a href="/bo/dashboard/events">
-                          <i className="glyphicon glyphicon-list" /> Events log
-                        </a>
-                      </li>
-                      <li className="hide">
-                        <a href="/bo/dashboard/top10">
-                          <span className="glyphicon glyphicon-fire" /> Top 10 services
-                        </a>
-                      </li>
-                      <li className="hide">
-                        <a href="/bo/dashboard/map">
-                          <span className="glyphicon glyphicon-globe" /> Services map
-                        </a>
-                      </li>
-                      <li role="separator" className="divider hide" />
-                      <li className="hide">
-                        <a href="/bo/dashboard/loggers">
-                          <span className="glyphicon glyphicon-book" /> Loggers level
-                        </a>
-                      </li>
-                      <li>
-                        <a href="/bo/dashboard/audit">
-                          <span className="glyphicon glyphicon-list" /> Audit log
-                        </a>
-                      </li>
-                      <li>
-                        <a href="/bo/dashboard/alerts">
-                          <span className="glyphicon glyphicon-list" /> Alerts log
-                        </a>
-                      </li>
+                      {window.__otoroshi__env__latest.userAdmin && (
+                        <>
+                          <li>
+                            <a href="/bo/dashboard/stats">
+                              <i className="glyphicon glyphicon-signal" /> Analytics
+                            </a>
+                          </li>
+                          <li>
+                            <a href="/bo/dashboard/events">
+                              <i className="glyphicon glyphicon-list" /> Events log
+                            </a>
+                          </li>
+                          <li className="hide">
+                            <a href="/bo/dashboard/top10">
+                              <span className="glyphicon glyphicon-fire" /> Top 10 services
+                            </a>
+                          </li>
+                          <li className="hide">
+                            <a href="/bo/dashboard/map">
+                              <span className="glyphicon glyphicon-globe" /> Services map
+                            </a>
+                          </li>
+                          <li role="separator" className="divider hide" />
+                          <li className="hide">
+                            <a href="/bo/dashboard/loggers">
+                              <span className="glyphicon glyphicon-book" /> Loggers level
+                            </a>
+                          </li>
+                          <li>
+                            <a href="/bo/dashboard/audit">
+                              <span className="glyphicon glyphicon-list" /> Audit log
+                            </a>
+                          </li>
+                          <li>
+                            <a href="/bo/dashboard/alerts">
+                              <span className="glyphicon glyphicon-list" /> Alerts log
+                            </a>
+                          </li>
+                        </>
+                      )}
                       <li>
                         <a href="/bo/dashboard/data-exporters">
                           <span className="glyphicon glyphicon-send" /> Data exporters
