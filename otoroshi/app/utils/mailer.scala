@@ -194,7 +194,9 @@ object GenericMailerSettings {
 
 object ConsoleMailerSettings {
   val format = new Format[ConsoleMailerSettings] {
-    override def writes(o: ConsoleMailerSettings) = Json.obj()
+    override def writes(o: ConsoleMailerSettings) = Json.obj(
+      "type" -> o.typ
+    )
     override def reads(json: JsValue) =
       Try {
         JsSuccess(
@@ -208,7 +210,9 @@ object ConsoleMailerSettings {
 
 object NoneMailerSettings {
   val format = new Format[NoneMailerSettings] {
-    override def writes(o: NoneMailerSettings) = Json.obj()
+    override def writes(o: NoneMailerSettings) = Json.obj(
+      "type" -> o.typ
+    )
     override def reads(json: JsValue) =
       Try {
         JsSuccess(

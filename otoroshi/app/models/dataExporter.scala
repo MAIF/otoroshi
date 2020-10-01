@@ -1,24 +1,35 @@
 package models
 
+import akka.stream.scaladsl.{Sink, Source}
 import env.Env
-import events.Exporters._
+import events.Exporters.{WebhookExporter, _}
 import events.{DataExporter, KafkaConfig, PulsarConfig}
+import models.DataExporterConfig._
 import otoroshi.models.{EntityLocation, EntityLocationSupport}
+import otoroshi.script._
+import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json._
+import security.IdGenerator
 import utils._
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.util.{Failure, Success, Try}
+import scala.concurrent.duration._
+import scala.concurrent.{ExecutionContext, Future}
+
 
 trait Exporter {
   def toJson: JsValue
 }
+
 object Exporter {
+
   case object NoneExporter extends Exporter {
     def toJson: JsValue = JsNull
   }
+
 }
 
 case class DataExporterConfigFiltering(include: Seq[JsObject] = Seq.empty, exclude: Seq[JsObject] = Seq.empty)
@@ -106,14 +117,37 @@ object DataExporterConfig {
 sealed trait DataExporterConfigType {
   def name: String
 }
+
 object DataExporterConfigType {
-  case object Kafka extends DataExporterConfigType { def name: String = "kafka" }
-  case object Pulsar extends DataExporterConfigType { def name: String = "pulsar" }
-  case object Elastic extends DataExporterConfigType { def name: String = "elastic" }
-  case object Webhook extends DataExporterConfigType { def name: String = "webhook" }
-  case object File extends DataExporterConfigType { def name: String = "file" }
-  case object Mailer extends DataExporterConfigType { def name: String = "mailer" }
-  case object None extends DataExporterConfigType { def name: String = "none" }
+
+  case object Kafka extends DataExporterConfigType {
+    def name: String = "kafka"
+  }
+
+  case object Pulsar extends DataExporterConfigType {
+    def name: String = "pulsar"
+  }
+
+  case object Elastic extends DataExporterConfigType {
+    def name: String = "elastic"
+  }
+
+  case object Webhook extends DataExporterConfigType {
+    def name: String = "webhook"
+  }
+
+  case object File extends DataExporterConfigType {
+    def name: String = "file"
+  }
+
+  case object Mailer extends DataExporterConfigType {
+    def name: String = "mailer"
+  }
+
+  case object None extends DataExporterConfigType {
+    def name: String = "none"
+  }
+
   def parse(str: String): DataExporterConfigType = str.toLowerCase() match {
     case "kafka" => Kafka
     case "pulsar" => Pulsar
@@ -142,6 +176,7 @@ case class DataExporterConfig(enabled: Boolean,
                               config: Exporter) extends EntityLocationSupport {
 
   override def json: JsValue = DataExporterConfig.format.writes(this)
+
   override def internalId: String = id
 
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
@@ -163,6 +198,73 @@ case class DataExporterConfig(enabled: Boolean,
       case c: GenericMailerSettings => new GenericMailerExporter(this)
       case _ => throw new RuntimeException("unsupported exporter type")
     }
+  }
+}
+
+class DataExporterConfigMigrationJob extends Job {
+
+  override def uniqueId: JobId = JobId("io.otoroshi.core.models.DataExporterConfigMigrationJob")
+
+  override def name: String = "Otoroshi data exporter config migration job"
+
+  override def visibility: JobVisibility = JobVisibility.Internal
+
+  override def kind: JobKind = JobKind.ScheduledOnce
+
+  override def starting: JobStarting = JobStarting.Automatically
+
+  override def instantiation: JobInstantiation = JobInstantiation.OneInstancePerOtoroshiCluster
+
+  override def initialDelay: Option[FiniteDuration] = 10.seconds.some
+
+  override def interval: Option[FiniteDuration] = 10.seconds.some
+
+  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    implicit val mat = env.otoroshiMaterializer
+
+    val alertDataExporterConfigFiltering = DataExporterConfigFiltering(
+      include = Seq(Json.obj("type" -> Json.obj("$regex" -> "Alert*")))
+    )
+    val analyticsDataExporterConfigFiltering = DataExporterConfigFiltering(
+      include = Seq(Json.obj("type" -> Json.obj("$regex" -> "*Event")))
+    )
+    def toDataExporterConfig(ex: Exporter, typ: DataExporterConfigType,  filter: DataExporterConfigFiltering): DataExporterConfig =
+      DataExporterConfig(
+        enabled = true,
+        id = IdGenerator.token,
+        name = "--",
+        desc = "--",
+        metadata = Map.empty,
+        location = EntityLocation(),
+        filtering = filter,
+        projection = Json.obj(),
+        typ = typ,
+        config = ex
+      )
+
+    env.datastores.globalConfigDataStore.findById("global").map {
+      case Some(globalConfig) =>
+        val analyticsWebhooksExporters = globalConfig.analyticsWebhooks.map(c => toDataExporterConfig(c, DataExporterConfigType.Webhook, analyticsDataExporterConfigFiltering))
+        val alertsWebhooksExporters: Seq[DataExporterConfig] = globalConfig.alertsWebhooks.map(c => toDataExporterConfig(c, DataExporterConfigType.Webhook, alertDataExporterConfigFiltering))
+        val analyticsElasticExporters: Seq[DataExporterConfig] = globalConfig.elasticWritesConfigs.map(c => toDataExporterConfig(c, DataExporterConfigType.Elastic, analyticsDataExporterConfigFiltering))
+        val kafkaExporter: Option[DataExporterConfig] = globalConfig.kafkaConfig.map(c => toDataExporterConfig(c, DataExporterConfigType.Kafka, analyticsDataExporterConfigFiltering))
+        val alertMailerExporter: Option[DataExporterConfig] = globalConfig.mailerSettings.map(c => toDataExporterConfig(c, DataExporterConfigType.Mailer, alertDataExporterConfigFiltering))
+
+        val configs: Seq[DataExporterConfig] = analyticsWebhooksExporters ++
+          alertsWebhooksExporters ++
+          analyticsElasticExporters ++
+          kafkaExporter.fold(Seq.empty[DataExporterConfig])(e => Seq(e)) ++
+          alertMailerExporter.fold(Seq.empty[DataExporterConfig])(e => Seq(e))
+        configs
+    }
+      .flatMap(configs => {
+        Source(configs.toList)
+          .mapAsync(1)(ex => {
+            env.datastores.dataExporterConfigDataStore.set(ex)
+          })
+          .runWith(Sink.ignore)
+          .map(_ => ())
+      })
   }
 }
 

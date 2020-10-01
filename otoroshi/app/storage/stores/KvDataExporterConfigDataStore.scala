@@ -90,12 +90,12 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
             servers = Seq("http://localhost:9092")
           )
         )
-      case Some("console") =>
+      case Some("mailer") =>
         DataExporterConfig(
           typ = DataExporterConfigType.Mailer,
           id = IdGenerator.token,
-          name = "New console exporter config",
-          desc = "New console exporter config",
+          name = "New mailer exporter config",
+          desc = "New mailer exporter config",
           metadata = Map.empty,
           enabled = false,
           location = EntityLocation(),
@@ -104,95 +104,6 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
           groupDuration = 60.seconds,
           filtering = DataExporterConfigFiltering(),
           config = ConsoleMailerSettings()
-        )
-      case Some("generic-mailer") =>
-        DataExporterConfig(
-          typ = DataExporterConfigType.Mailer,
-          id = IdGenerator.token,
-          name = "New generic mailer exporter config",
-          desc = "New generic mailer exporter config",
-          metadata = Map.empty,
-          enabled = false,
-          location = EntityLocation(),
-          groupSize = 25,
-          groupDuration = 60.seconds,
-          projection = Json.obj(),
-          filtering = DataExporterConfigFiltering(),
-          config = GenericMailerSettings(
-            url = "http://localhost:8080",
-            headers = Map.empty,
-            to = Seq.empty
-          )
-        )
-      case Some("mailgun") =>
-        DataExporterConfig(
-          typ = DataExporterConfigType.Mailer,
-          id = IdGenerator.token,
-          name = "New mailgun exporter config",
-          desc = "New mailgun exporter config",
-          metadata = Map.empty,
-          enabled = false,
-          location = EntityLocation(),
-          groupSize = 25,
-          groupDuration = 60.seconds,
-          projection = Json.obj(),
-          filtering = DataExporterConfigFiltering(),
-          config = MailgunSettings(
-            eu = true,
-            apiKey = "key",
-            domain = "domain",
-            to = Seq.empty
-          )
-        )
-      case Some("mailjet") =>
-        DataExporterConfig(
-          typ = DataExporterConfigType.Mailer,
-          id = IdGenerator.token,
-          name = "New mailjet exporter config",
-          desc = "New mailjet exporter config",
-          metadata = Map.empty,
-          enabled = false,
-          location = EntityLocation(),
-          groupSize = 25,
-          groupDuration = 60.seconds,
-          projection = Json.obj(),
-          filtering = DataExporterConfigFiltering(),
-          config = MailjetSettings(
-            apiKeyPublic = "key-public",
-            apiKeyPrivate = "key-private",
-            to = Seq.empty
-          )
-        )
-      case Some("none-mailer") =>
-        DataExporterConfig(
-          typ = DataExporterConfigType.Mailer,
-          id = IdGenerator.token,
-          name = "New none mailer exporter config",
-          desc = "New none mailer exporter config",
-          metadata = Map.empty,
-          enabled = false,
-          location = EntityLocation(),
-          projection = Json.obj(),
-          filtering = DataExporterConfigFiltering(),
-          config = NoneMailerSettings()
-        )
-      case Some("sendgrid") =>
-        DataExporterConfig(
-          typ = DataExporterConfigType.Mailer,
-          id = IdGenerator.token,
-          name = "New sendgrid mailer exporter config",
-          desc = "New sendgrid mailer exporter config",
-          metadata = Map.empty,
-          enabled = false,
-          location = EntityLocation(),
-          groupSize = 25,
-          groupDuration = 60.seconds,
-          projection = Json.obj(),
-          filtering = DataExporterConfigFiltering(),
-          config = SendgridSettings(
-            apiKey = "apikey",
-            to = Seq.empty
-          )
         )
       case Some("file") =>
         DataExporterConfig(
