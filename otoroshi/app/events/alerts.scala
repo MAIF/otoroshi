@@ -1122,7 +1122,7 @@ case class ApiKeyDeletedAlert(`@id`: String,
     "audit"         -> audit.toJson
   )
 }
-
+/*
 object AlertsActor {
   def props(implicit env: Env) = Props(new AlertsActor())
 }
@@ -1276,7 +1276,7 @@ class AlertsActorSupervizer(env: Env) extends Actor {
 
 object AlertsActorSupervizer {
   def props(implicit env: Env) = Props(new AlertsActorSupervizer(env))
-}
+}*/
 
 object Alerts {
 

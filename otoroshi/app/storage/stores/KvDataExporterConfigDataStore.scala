@@ -11,6 +11,8 @@ import security.IdGenerator
 import utils.{ConsoleMailerSettings, GenericMailerSettings, MailgunSettings, MailjetSettings, NoneMailerSettings, SendgridSettings}
 import utils.http.MtlsConfig
 
+import scala.concurrent.duration.DurationInt
+
 class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLikeStore[DataExporterConfig] {
   override def fmt: Format[DataExporterConfig] = DataExporterConfig.format
 
@@ -98,6 +100,8 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
           enabled = false,
           location = EntityLocation(),
           projection = Json.obj(),
+          groupSize = 25,
+          groupDuration = 60.seconds,
           filtering = DataExporterConfigFiltering(),
           config = ConsoleMailerSettings()
         )
@@ -110,6 +114,8 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
           metadata = Map.empty,
           enabled = false,
           location = EntityLocation(),
+          groupSize = 25,
+          groupDuration = 60.seconds,
           projection = Json.obj(),
           filtering = DataExporterConfigFiltering(),
           config = GenericMailerSettings(
@@ -127,6 +133,8 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
           metadata = Map.empty,
           enabled = false,
           location = EntityLocation(),
+          groupSize = 25,
+          groupDuration = 60.seconds,
           projection = Json.obj(),
           filtering = DataExporterConfigFiltering(),
           config = MailgunSettings(
@@ -145,6 +153,8 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
           metadata = Map.empty,
           enabled = false,
           location = EntityLocation(),
+          groupSize = 25,
+          groupDuration = 60.seconds,
           projection = Json.obj(),
           filtering = DataExporterConfigFiltering(),
           config = MailjetSettings(
@@ -175,6 +185,8 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
           metadata = Map.empty,
           enabled = false,
           location = EntityLocation(),
+          groupSize = 25,
+          groupDuration = 60.seconds,
           projection = Json.obj(),
           filtering = DataExporterConfigFiltering(),
           config = SendgridSettings(
@@ -190,6 +202,7 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
           desc = "New file exporter config",
           metadata = Map.empty,
           enabled = false,
+          sendWorkers = 1,
           location = EntityLocation(),
           projection = Json.obj(),
           filtering = DataExporterConfigFiltering(),

@@ -109,6 +109,7 @@ object DataExporter {
       .filter(event => accept(event))
       .map(event => project(event))
       .groupedWithin(configUnsafe.groupSize, configUnsafe.groupDuration)
+      .filterNot(_.isEmpty)
       .mapAsync(configUnsafe.sendWorkers)(events => send(events))
 
     lazy val (queue, done) = stream.toMat(Sink.ignore)(Keep.both).run()(env.analyticsMaterializer)
