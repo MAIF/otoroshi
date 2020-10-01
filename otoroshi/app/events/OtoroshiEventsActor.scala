@@ -48,25 +48,28 @@ class OtoroshiEventsActorSupervizer(env: Env) extends Actor {
       if ((lastUpdate.get() + 10000) < System.currentTimeMillis()) { // TODO: from config
         updateExporters() // TODO: move to a job ????
       }
-    case _ => // TODO: fuuuuu
+    case _ => 
   }
 
   def updateExporters(): Future[Unit] = {
     env.datastores.dataExporterConfigDataStore.findAll().fast.map { exporters =>
-      dataExporters.foreach {
-        case (key, _) if exporters.exists(_.id == key) =>
-          dataExporters.remove(key).foreach(_.stopExporter())
-        case _ => ()
-      }
-      exporters.foreach {
-        case config if dataExporters.exists(e => e._1 == config.id && e._2.configOpt.contains(config)) =>
-          dataExporters.get(config.id).foreach(_.update(config))
-        case config if !dataExporters.contains(config.id) =>
-          val exporter = config.exporter()
-          exporter.startExporter()
-          dataExporters.put(config.id, exporter)
-      }
-      lastUpdate.set(System.currentTimeMillis())
+      for {
+        _ <- Future.sequence(dataExporters.map {
+          case (key, _) if exporters.exists(_.id == key) =>
+            dataExporters.remove(key).map(_.stopExporter()).getOrElse(FastFuture.successful(()))
+          case _ => FastFuture.successful(())
+        })
+        _ <- Future.sequence(exporters.map {
+          case config if dataExporters.exists(e => e._1 == config.id && e._2.configOpt.contains(config)) =>
+            dataExporters.get(config.id).map(_.update(config)).getOrElse(FastFuture.successful(()))
+          case config if !dataExporters.contains(config.id) =>
+            val exporter = config.exporter()
+            dataExporters.put(config.id, exporter)
+            exporter.startExporter()
+          case _ => FastFuture.successful(())
+        })
+        _ = lastUpdate.set(System.currentTimeMillis())
+      } yield ()
     }
   }
 
