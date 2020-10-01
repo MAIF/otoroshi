@@ -4,10 +4,11 @@ import env.Env
 import events.Exporters._
 import events.{DataExporter, KafkaConfig, PulsarConfig}
 import otoroshi.models.{EntityLocation, EntityLocationSupport}
+import play.api.Logger
 import play.api.libs.json._
 import utils._
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.util.{Failure, Success, Try}
 
@@ -32,6 +33,18 @@ case class FileSettings(path: String, maxFileSize: Int = 10 * 1024 * 1024) exten
 object DataExporterConfig {
 
   import scala.concurrent.duration._
+
+  private val log = Logger("otoroshi-data-exporter-config")
+
+  def fromJsons(value: JsValue): DataExporterConfig =
+    try {
+      format.reads(value).get
+    } catch {
+      case e: Throwable => {
+        log.error(s"Try to deserialize ${Json.prettyPrint(value)}")
+        throw e
+      }
+    }
 
   val format = new Format[DataExporterConfig] {
     override def writes(o: DataExporterConfig): JsValue = {
@@ -130,6 +143,10 @@ case class DataExporterConfig(enabled: Boolean,
 
   override def json: JsValue = DataExporterConfig.format.writes(this)
   override def internalId: String = id
+
+  def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
+    env.datastores.dataExporterConfigDataStore.set(this)
+  }
 
   def exporter()(implicit ec: ExecutionContext, env: Env): DataExporter = {
     config match {

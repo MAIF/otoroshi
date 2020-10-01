@@ -666,7 +666,8 @@ case class OtoroshiExport(
    certificates: Seq[Cert] = Seq.empty,
    clientValidators: Seq[ClientCertificateValidator] = Seq.empty,
    scripts: Seq[Script] = Seq.empty,
-   tcpServices: Seq[TcpService] = Seq.empty
+   tcpServices: Seq[TcpService] = Seq.empty,
+   dataExporters: Seq[DataExporterConfig] = Seq.empty
 ) {
 
   import otoroshi.utils.syntax.implicits._
