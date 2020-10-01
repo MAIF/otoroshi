@@ -223,24 +223,11 @@ export class DataExportersPage extends Component {
           formComponent={NewExporterForm}
           stayAfterSave={true}
           showActions={true}
-          showLink={true}
+          showLink={false}
           rowNavigation={true}
           firstSort={0}
           extractKey={item => item.id}
           injectTable={ref => this.table = ref}
-          injectTopBar={() => (
-            <>
-              <div className="btn-group" style={{ marginRight: 5 }}>
-                <button
-                  type="button"
-                  onClick={this.addExporter}
-                  style={{ marginRight: 0 }}
-                  className="btn btn-primary">
-                  <i className="glyphicon glyphicon-plus-sign" /> Create new exporter
-                </button>
-              </div>
-            </>
-          )}
         />
       </div>
     )
