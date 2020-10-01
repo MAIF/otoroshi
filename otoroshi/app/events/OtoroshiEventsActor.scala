@@ -48,7 +48,7 @@ class OtoroshiEventsActorSupervizer(env: Env) extends Actor {
       if ((lastUpdate.get() + 10000) < System.currentTimeMillis()) { // TODO: from config
         updateExporters() // TODO: move to a job ????
       }
-    case _ => 
+    case _ =>
   }
 
   def updateExporters(): Future[Unit] = {
