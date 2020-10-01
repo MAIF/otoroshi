@@ -4,19 +4,17 @@ import actions.ApiAction
 import akka.http.scaladsl.util.FastFuture
 import auth.{AuthModuleConfig, BasicAuthModuleConfig, GenericOauth2ModuleConfig, LdapAuthModuleConfig}
 import env.Env
-import models.DataExporterConfig.{ConsoleExporterConfig, ElasticExporterConfig, FileAppenderExporterConfig, KafkaExporterConfig, MailgunExporterConfig, MailjetExporterConfig, NoneMailerExporterConfig, PulsarExporterConfig, WebhookExporterConfig}
 import models._
 import org.mindrot.jbcrypt.BCrypt
-import otoroshi.models.OtoroshiAdminType.WebAuthnAdmin
-import otoroshi.models.{RightsChecker, SimpleOtoroshiAdmin, Team, TeamId, Tenant, TenantId}
+import otoroshi.models.RightsChecker
 import otoroshi.script.Script
 import otoroshi.tcp._
+import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc.{AbstractController, ControllerComponents, RequestHeader, Result}
 import security.IdGenerator
 import ssl.Cert
-import otoroshi.utils.syntax.implicits._
 
 import scala.concurrent.Future
 
@@ -189,16 +187,8 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
 
   def initiateDataExporterConfig() = ApiAction.async { ctx =>
     ctx.checkRights(RightsChecker.Anyone) {
-      val module = env.datastores.dataExporterConfigDataStore.template(ctx.request.getQueryString("type")).applyOn {
-        case c: WebhookExporterConfig      => c.copy(location = c.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam)))
-        case c: ElasticExporterConfig      => c.copy(location = c.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam)))
-        case c: KafkaExporterConfig        => c.copy(location = c.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam)))
-        case c: PulsarExporterConfig       => c.copy(location = c.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam)))
-        case c: MailjetExporterConfig      => c.copy(location = c.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam)))
-        case c: MailgunExporterConfig      => c.copy(location = c.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam)))
-        case c: NoneMailerExporterConfig   => c.copy(location = c.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam)))
-        case c: ConsoleExporterConfig      => c.copy(location = c.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam)))
-        case c: FileAppenderExporterConfig => c.copy(location = c.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam)))
+      val module = env.datastores.dataExporterConfigDataStore.template(ctx.request.getQueryString("type")).applyOn { c =>
+        c.copy(location = c.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam)))
       }
       Ok(
         process(module.json, ctx.request)

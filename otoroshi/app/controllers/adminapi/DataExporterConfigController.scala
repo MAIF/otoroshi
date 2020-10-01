@@ -60,7 +60,7 @@ class DataExporterConfigController(val ApiAction: ApiAction, val cc: ControllerC
           entity = entity,
           action = "CREATE_DATA_EXPORTER_CONFIG",
           message = "User created a data exporter config",
-          metadata = DataExporterConfig.format.writes(entity).as[JsObject],
+          metadata = entity.json.as[JsObject],
           alert = "DataExporterConfigCreatedAlert"
         ))
       }
@@ -80,7 +80,7 @@ class DataExporterConfigController(val ApiAction: ApiAction, val cc: ControllerC
           entity = entity,
           action = "UPDATE_DATA_EXPORTER_CONFIG",
           message = "User updated a data exporter config",
-          metadata = DataExporterConfig.format.writes(entity).as[JsObject],
+          metadata = entity.json.as[JsObject],
           alert = "DataExporterConfigUpdatedAlert"
         ))
       }

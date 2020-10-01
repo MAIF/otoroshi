@@ -54,7 +54,7 @@ case class GenericMailerSettings(url: String, headers: Map[String, String]) exte
   override def toJson: JsValue                                    = GenericMailerSettings.format.writes(this)
 }
 
-trait MailerSettings {
+trait MailerSettings extends Exporter {
   def typ: String
   def asMailer(config: GlobalConfig, env: Env): Mailer
   def genericSettings: Option[GenericMailerSettings] = this match {
@@ -78,6 +78,7 @@ trait MailerSettings {
     case _                  => None
   }
   def json: JsValue
+  def toJson: JsValue
 }
 
 object MailerSettings {

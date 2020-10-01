@@ -13,17 +13,15 @@ import akka.stream.{OverflowStrategy, QueueOfferResult}
 import env.Env
 import events.DataExporter.DefaultDataExporter
 import events.impl.{ElasticWritesAnalytics, WebHookAnalytics}
-import models.{DataExporterConfig, GlobalConfig}
-import models.DataExporterConfig.{ElasticExporterConfig, FileAppenderExporterConfig, GenericMailerExporterConfig, KafkaExporterConfig, PulsarExporterConfig, WebhookExporterConfig}
+import models._
 import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.json.{JsValue, Json}
-import utils.{EmailLocation, GenericMailerSettings}
+import utils.{EmailLocation, MailerSettings}
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
-import scala.reflect.ClassTag
 import scala.util.{Success, Try}
 
 object OtoroshiEventsActorSupervizer {
@@ -76,13 +74,13 @@ class OtoroshiEventsActorSupervizer(env: Env) extends Actor {
   }
 }
 
-trait ExportResult
+sealed trait ExportResult
 object ExportResult {
   case object ExportResultSuccess extends ExportResult
   case class ExportResultFailure(error: String) extends ExportResult
 }
-trait DataExporter {
-  def configSafe[T <: DataExporterConfig]: Option[T]
+sealed trait DataExporter {
+  def exporter[T <: Exporter]: Option[T]
   def configUnsafe: DataExporterConfig
   def configOpt: Option[DataExporterConfig]
   def accept(event: JsValue): Boolean
@@ -115,7 +113,7 @@ object DataExporter {
 
     lazy val (queue, done) = stream.toMat(Sink.ignore)(Keep.both).run()(env.analyticsMaterializer)
 
-    def configSafe[T <: DataExporterConfig]: Option[T] = Try(ref.get()).map(_.asInstanceOf[T]).toOption
+    def exporter[T <: Exporter]: Option[T] = Try(ref.get()).map(_.config.asInstanceOf[T]).toOption
     def configUnsafe: DataExporterConfig = ref.get()
     def configOpt: Option[DataExporterConfig] = Option(ref.get())
     def update(config: DataExporterConfig): Future[Unit] = {
@@ -126,8 +124,8 @@ object DataExporter {
       } yield ()
     }
     def accept(event: JsValue): Boolean = {
-      configUnsafe.filtering.include.forall(i => otoroshi.utils.Match.matches(event, i)) &&
-        configUnsafe.filtering.exclude.forall(i => !otoroshi.utils.Match.matches(event, i))
+      configUnsafe.filtering.include.exists(i => otoroshi.utils.Match.matches(event, i)) &&
+        configUnsafe.filtering.exclude.exists(i => !otoroshi.utils.Match.matches(event, i))
     }
     def project(event: JsValue): JsValue = {
       if (configUnsafe.projection.value.isEmpty) {
@@ -163,8 +161,8 @@ object Exporters {
 
   class ElasticExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env) extends DefaultDataExporter(config)(ec, env) {
     override def send(events: Seq[JsValue]): Future[ExportResult] = {
-      configSafe[ElasticExporterConfig].map { eec =>
-        new ElasticWritesAnalytics(eec.config, env).publish(events).map(_ => ExportResult.ExportResultSuccess)
+      exporter[ElasticAnalyticsConfig].map { eec =>
+        new ElasticWritesAnalytics(eec, env).publish(events).map(_ => ExportResult.ExportResultSuccess)
       } getOrElse {
         FastFuture.successful(ExportResult.ExportResultFailure("Bad config type !"))
       }
@@ -173,8 +171,8 @@ object Exporters {
   class WebhookExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env) extends DefaultDataExporter(config)(ec, env) {
     override def send(events: Seq[JsValue]): Future[ExportResult] = {
       env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
-        configSafe[WebhookExporterConfig].map { eec =>
-          new WebHookAnalytics(eec.config, globalConfig).publish(events).map(_ => ExportResult.ExportResultSuccess)
+        exporter[Webhook].map { eec =>
+          new WebHookAnalytics(eec, globalConfig).publish(events).map(_ => ExportResult.ExportResultSuccess)
         } getOrElse {
           FastFuture.successful(ExportResult.ExportResultFailure("Bad config type !"))
         }
@@ -184,7 +182,7 @@ object Exporters {
   class KafkaExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env) extends DefaultDataExporter(config)(ec, env) {
     override def send(events: Seq[JsValue]): Future[ExportResult] = {
       env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
-        configSafe[KafkaExporterConfig].map { eec =>
+        exporter[KafkaConfig].map { eec =>
           ??? // TODO
         } getOrElse {
           FastFuture.successful(ExportResult.ExportResultFailure("Bad config type !"))
@@ -195,7 +193,7 @@ object Exporters {
   class PulsarExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env) extends DefaultDataExporter(config)(ec, env) {
     override def send(events: Seq[JsValue]): Future[ExportResult] = {
       env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
-        configSafe[PulsarExporterConfig].map { eec =>
+        exporter[PulsarConfig].map { eec =>
           ??? // TODO
         } getOrElse {
           FastFuture.successful(ExportResult.ExportResultFailure("Bad config type !"))
@@ -211,7 +209,7 @@ object Exporters {
   }
   class GenericMailerExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env) extends DefaultDataExporter(config)(ec, env) {
     override def send(events: Seq[JsValue]): Future[ExportResult] = {
-      def sendEmail(gms: GenericMailerSettings, globalConfig: GlobalConfig): Future[Unit] = {
+      def sendEmail(gms: MailerSettings, globalConfig: GlobalConfig): Future[Unit] = {
         val titles = events
           .map { jsonEvt =>
             val date = new DateTime((jsonEvt \ "@timestamp").as[Long])
@@ -244,8 +242,8 @@ object Exporters {
         )
       }
       env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
-        configSafe[GenericMailerExporterConfig].map { eec =>
-          sendEmail(eec.config, globalConfig).map(_ => ExportResult.ExportResultSuccess)
+        exporter[MailerSettings].map { eec =>
+          sendEmail(eec, globalConfig).map(_ => ExportResult.ExportResultSuccess)
         } getOrElse {
           FastFuture.successful(ExportResult.ExportResultFailure("Bad config type !"))
         }
@@ -255,9 +253,9 @@ object Exporters {
 
   class FileAppenderExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env) extends DefaultDataExporter(config)(ec, env) {
     override def send(events: Seq[JsValue]): Future[ExportResult] = {
-      configSafe[FileAppenderExporterConfig].map { exporterConfig =>
+      exporter[FileSettings].map { exporterConfig =>
         val contentToAppend = events.map(Json.stringify).mkString("\r\n")
-        val path = Paths.get(exporterConfig.config.path.replace("{day}", DateTime.now().toString("yyyy-MM-dd")))
+        val path = Paths.get(exporterConfig.path.replace("{day}", DateTime.now().toString("yyyy-MM-dd")))
         val file = path.toFile
         if (!file.exists()) {
           file.createNewFile()
