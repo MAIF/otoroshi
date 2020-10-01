@@ -311,136 +311,6 @@ export class DangerZonePage extends Component {
     syncingError: null,
   };
 
-  alertWebhooksFormSchema = {
-    url: {
-      type: 'string',
-      props: { label: 'Alerts hook URL', placeholder: 'URL of the webhook target' },
-    },
-    headers: {
-      type: 'object',
-      props: {
-        label: 'Hook Headers',
-        placeholderKey: 'Name of the header',
-        placeholderValue: 'Value of the header',
-      },
-    },
-    'mtlsConfig.mtls': {
-      type: 'bool',
-      props: { label: 'Use mTLS' },
-    },
-    'mtlsConfig.loose': {
-      type: 'bool',
-      props: { label: 'TLS loose' },
-    },
-    'mtlsConfig.trustAll': {
-      type: 'bool',
-      props: { label: 'TrustAll' },
-    },
-    'mtlsConfig.certs': {
-      type: 'array',
-      props: {
-        label: 'Client certificates',
-        placeholder: 'Choose a client certificate',
-        valuesFrom: '/bo/api/proxy/api/certificates',
-        transformer: a => ({
-          value: a.id,
-          label: (
-            <span>
-              <span className="label label-success" style={{ minWidth: 63 }}>
-                {a.certType}
-              </span>{' '}
-              {a.name} - {a.description}
-            </span>
-          ),
-        }),
-      },
-    },
-    'mtlsConfig.trustedCerts': {
-      type: 'array',
-      props: {
-        label: 'Trusted certificates',
-        placeholder: 'Choose a trusted certificate',
-        valuesFrom: '/bo/api/proxy/api/certificates',
-        transformer: a => ({
-          value: a.id,
-          label: (
-            <span>
-              <span className="label label-success" style={{ minWidth: 63 }}>
-                {a.certType}
-              </span>{' '}
-              {a.name} - {a.description}
-            </span>
-          ),
-        }),
-      },
-    },
-  };
-
-  analyticsWebhooksFormSchema = {
-    url: {
-      type: 'string',
-      props: { label: 'Analytics webhook URL', placeholder: 'URL of the webhook target' },
-    },
-    headers: {
-      type: 'object',
-      props: {
-        label: 'Webhook Headers',
-        placeholderKey: 'Name of the header',
-        placeholderValue: 'Value of the header',
-      },
-    },
-    'mtlsConfig.mtls': {
-      type: 'bool',
-      props: { label: 'Use mTLS' },
-    },
-    'mtlsConfig.loose': {
-      type: 'bool',
-      props: { label: 'TLS loose' },
-    },
-    'mtlsConfig.trustAll': {
-      type: 'bool',
-      props: { label: 'TrustAll' },
-    },
-    'mtlsConfig.certs': {
-      type: 'array',
-      props: {
-        label: 'Client certificates',
-        placeholder: 'Choose a client certificate',
-        valuesFrom: '/bo/api/proxy/api/certificates',
-        transformer: a => ({
-          value: a.id,
-          label: (
-            <span>
-              <span className="label label-success" style={{ minWidth: 63 }}>
-                {a.certType}
-              </span>{' '}
-              {a.name} - {a.description}
-            </span>
-          ),
-        }),
-      },
-    },
-    'mtlsConfig.trustedCerts': {
-      type: 'array',
-      props: {
-        label: 'Trusted certificates',
-        placeholder: 'Choose a trusted certificate',
-        valuesFrom: '/bo/api/proxy/api/certificates',
-        transformer: a => ({
-          value: a.id,
-          label: (
-            <span>
-              <span className="label label-success" style={{ minWidth: 63 }}>
-                {a.certType}
-              </span>{' '}
-              {a.name} - {a.description}
-            </span>
-          ),
-        }),
-      },
-    },
-  };
-
   elasticConfigFormFlow = [
     'clusterUri',
     'index',
@@ -639,34 +509,11 @@ export class DangerZonePage extends Component {
       type: Form,
       props: { flow: this.webhooksFormFlow, schema: this.analyticsEventsUrlFromSchema },
     },
-    analyticsWebhook: {
-      type: Form,
-      props: { flow: this.webhooksFormFlow, schema: this.analyticsWebhooksFormSchema },
-    },
-    alertsWebhook: {
-      type: Form,
-      props: { flow: this.webhooksFormFlow, schema: this.alertWebhooksFormSchema },
-    },
     elasticReadsConfig: {
       type: Form,
       props: {
         flow: this.elasticConfigFormFlow,
         schema: this.elasticConfigFormSchema,
-      },
-    },
-    elasticWritesConfig: {
-      type: Form,
-      props: {
-        flow: this.elasticConfigFormFlow,
-        schema: this.elasticConfigFormSchema,
-      },
-    },
-    alertsEmails: {
-      type: 'array',
-      props: {
-        label: 'Alert emails',
-        placeholder: 'Email address to receive alerts',
-        help: 'Every email address will be notified with a summary of Otoroshi alerts',
       },
     },
     lines: {
@@ -906,128 +753,6 @@ export class DangerZonePage extends Component {
         placeholder: 'CleverCloud orga. Id',
       },
     },
-    'kafkaConfig.servers': {
-      type: 'array',
-      props: {
-        label: 'Kafka Servers',
-        placeholder: '127.0.0.1:9092',
-        help: 'The list of servers to contact to connect the Kafka client with the Kafka cluster',
-      },
-    },
-    'kafkaConfig.keyPass': {
-      type: 'string',
-      display: v => tryOrTrue(() => !v.kafkaConfig.mtlsConfig.mtls),
-      props: {
-        label: 'Kafka keypass',
-        placeholder: 'secret',
-        type: 'password',
-        help: 'The keystore password if you use a keystore/truststore to connect to Kafka cluster',
-      },
-    },
-    'kafkaConfig.keystore': {
-      type: 'string',
-      display: v => tryOrTrue(() => !v.kafkaConfig.mtlsConfig.mtls),
-      props: {
-        label: 'Kafka keystore path',
-        placeholder: '/home/bas/client.keystore.jks',
-        help:
-          'The keystore path on the server if you use a keystore/truststore to connect to Kafka cluster',
-      },
-    },
-    'kafkaConfig.truststore': {
-      type: 'string',
-      display: v => tryOrTrue(() => !v.kafkaConfig.mtlsConfig.mtls),
-      props: {
-        label: 'Kafka truststore path',
-        placeholder: '/home/bas/client.truststore.jks',
-        help:
-          'The truststore path on the server if you use a keystore/truststore to connect to Kafka cluster',
-      },
-    },
-    'kafkaConfig.mtlsConfig.mtls': {
-      type: 'bool',
-      props: {
-        label: 'Use client certs.',
-        help: 'Use client certs. from Otoroshi datastore',
-      },
-    },
-    'kafkaConfig.mtlsConfig.trustAll': {
-      type: 'bool',
-      display: v => tryOrTrue(() => v.kafkaConfig.mtlsConfig.mtls),
-      props: { label: 'TrustAll' },
-    },
-    'kafkaConfig.mtlsConfig.certs': {
-      type: 'array',
-      display: v => tryOrTrue(() => v.kafkaConfig.mtlsConfig.mtls),
-      props: {
-        label: 'Client certificates',
-        placeholder: 'Choose a client certificate',
-        valuesFrom: '/bo/api/proxy/api/certificates',
-        transformer: a => ({
-          value: a.id,
-          label: (
-            <span>
-              <span className="label label-success" style={{ minWidth: 63 }}>
-                {a.certType}
-              </span>{' '}
-              {a.name} - {a.description}
-            </span>
-          ),
-        }),
-      },
-    },
-    'kafkaConfig.mtlsConfig.trustedCerts': {
-      type: 'array',
-      display: v =>
-        tryOrTrue(() => v.kafkaConfig.mtlsConfig.mtls && !v.kafkaConfig.mtlsConfig.trustAll),
-      props: {
-        label: 'Trusted certificates',
-        placeholder: 'Choose a trusted certificate',
-        valuesFrom: '/bo/api/proxy/api/certificates',
-        transformer: a => ({
-          value: a.id,
-          label: (
-            <span>
-              <span className="label label-success" style={{ minWidth: 63 }}>
-                {a.certType}
-              </span>{' '}
-              {a.name} - {a.description}
-            </span>
-          ),
-        }),
-      },
-    },
-    'kafkaConfig.sendEvents': {
-      type: 'bool',
-      props: {
-        label: 'Send events to Kafka topics',
-        help: 'Enable or disable if events are actually sent to Kafka',
-      },
-    },
-    'kafkaConfig.alertsTopic': {
-      type: 'string',
-      props: {
-        label: 'Kafka alerts topic',
-        placeholder: 'otoroshi-alerts',
-        help: 'The topic on which Otoroshi alerts will be sent',
-      },
-    },
-    'kafkaConfig.analyticsTopic': {
-      type: 'string',
-      props: {
-        label: 'Kafka analytics topic',
-        placeholder: 'otoroshi-analytics',
-        help: 'The topic on which Otoroshi analytics will be sent',
-      },
-    },
-    'kafkaConfig.auditTopic': {
-      type: 'string',
-      props: {
-        label: 'Kafka audits topic',
-        placeholder: 'otoroshi-audits',
-        help: 'The topic on which Otoroshi audits will be sent',
-      },
-    },
     'statsdConfig.datadog': {
       type: 'bool',
       props: {
@@ -1056,16 +781,12 @@ export class DangerZonePage extends Component {
       type: BackOfficeAuthButtons,
       props: {},
     },
-    'proxies.alertEmails': { type: Proxy, props: { showNonProxyHosts: true } },
-    'proxies.alertWebhooks': { type: Proxy, props: { showNonProxyHosts: true } },
-    'proxies.eventsWebhooks': { type: Proxy, props: { showNonProxyHosts: true } },
     'proxies.clevercloud': { type: Proxy, props: { showNonProxyHosts: true } },
     'proxies.services': { type: Proxy, props: { showNonProxyHosts: true } },
     'proxies.auth': { type: Proxy, props: { showNonProxyHosts: true } },
     'proxies.authority': { type: Proxy, props: { showNonProxyHosts: true } },
     'proxies.jwk': { type: Proxy, props: { showNonProxyHosts: true } },
     'proxies.elastic': { type: Proxy, props: { showNonProxyHosts: true } },
-    mailerSettings: { type: Mailer },
     geolocationSettings: { type: Geolocation },
     'userAgentSettings.enabled': {
       type: 'bool',
@@ -1168,28 +889,8 @@ export class DangerZonePage extends Component {
     '>>>Quotas settings',
     'throttlingQuota',
     'perIpThrottlingQuota',
-    '>>>Analytics: Webhooks',
-    'analyticsWebhook',
-    '>>>Analytics: Elastic cluster (write)',
-    'elasticWritesConfig',
     '>>>Analytics: Elastic dashboard datasource (read)',
     'elasticReadsConfig',
-    '>>>Analytics: Kafka',
-    'kafkaConfig.servers',
-    'kafkaConfig.mtlsConfig.mtls',
-    'kafkaConfig.keyPass',
-    'kafkaConfig.keystore',
-    'kafkaConfig.truststore',
-    'kafkaConfig.mtlsConfig.trustAll',
-    'kafkaConfig.mtlsConfig.certs',
-    'kafkaConfig.mtlsConfig.trustedCerts',
-    'kafkaConfig.sendEvents',
-    'kafkaConfig.alertsTopic',
-    'kafkaConfig.analyticsTopic',
-    'kafkaConfig.auditTopic',
-    '>>>Alerts settings',
-    'alertsWebhook',
-    'alertsEmails',
     '>>>Statsd settings',
     'statsdConfig.datadog',
     'statsdConfig.host',
@@ -1204,8 +905,6 @@ export class DangerZonePage extends Component {
     'letsEncryptSettings.contacts',
     'letsEncryptSettings.publicKey',
     'letsEncryptSettings.privateKey',
-    '>>>Mailer settings',
-    'mailerSettings',
     '>>>CleverCloud settings',
     'cleverSettings.consumerKey',
     'cleverSettings.consumerSecret',
@@ -1215,13 +914,7 @@ export class DangerZonePage extends Component {
     '>>>Global scripts',
     'scripts',
     '>>>Proxies',
-    '-- Proxy for alert emails (mailgun)',
-    'proxies.alertEmails',
-    '-- Proxy for alert webhooks',
-    'proxies.alertWebhooks',
-    '-- Proxy for event webhooks',
-    'proxies.eventsWebhooks',
-    '-- Proxy for Celver-Cloud API access',
+    '-- Proxy for Clever-Cloud API access',
     'proxies.clevercloud',
     '-- Proxy for services access',
     'proxies.services',
@@ -1295,27 +988,8 @@ export class DangerZonePage extends Component {
   };
 
   updateState = raw => {
-    const value = {
-      ...raw,
-      analyticsWebhooks: [raw.analyticsWebhook],
-      elasticWritesConfigs: [raw.elasticWritesConfig],
-      alertsWebhooks: [raw.alertsWebhook],
-    };
-    delete value.analyticsWebhook;
-    delete value.elasticWritesConfig;
-    delete value.alertsWebhook;
+    const value = {...raw};
     this.setState({ value, changed: shallowDiffers(this.state.originalValue, value) });
-  };
-
-  getValue = () => {
-    const value = { ...this.state.value };
-    value.analyticsWebhook = (value.analyticsWebhooks || [])[0];
-    value.elasticWritesConfig = (value.elasticWritesConfigs || [])[0];
-    value.alertsWebhook = (value.alertsWebhooks || [])[0];
-    delete value.alertsWebhooks;
-    delete value.elasticWritesConfigs;
-    delete value.analyticsWebhooks;
-    return value;
   };
 
   sync = () => {
@@ -1440,7 +1114,7 @@ export class DangerZonePage extends Component {
           </div>
         </div>
         <Form
-          value={this.getValue()}
+          value={this.state.value}
           onChange={this.updateState}
           flow={this.formFlow}
           schema={this.formSchema}
