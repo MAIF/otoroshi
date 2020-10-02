@@ -33,10 +33,10 @@ case class StartExporters()
 
 class OtoroshiEventsActorSupervizer(env: Env) extends Actor {
 
-  lazy val logger    = Logger("otoroshi-events-actor-supervizer")
+  lazy val logger = Logger("otoroshi-events-actor-supervizer")
 
   implicit val e = env
-  implicit val ec  = env.analyticsExecutionContext
+  implicit val ec = env.analyticsExecutionContext
 
   val dataExporters: TrieMap[String, DataExporter] = new TrieMap[String, DataExporter]()
   val lastUpdate = new AtomicReference[Long](0L)
@@ -79,28 +79,44 @@ class OtoroshiEventsActorSupervizer(env: Env) extends Actor {
 }
 
 sealed trait ExportResult
+
 object ExportResult {
+
   case object ExportResultSuccess extends ExportResult
+
   case class ExportResultFailure(error: String) extends ExportResult
+
 }
+
 sealed trait DataExporter {
   def exporter[T <: Exporter]: Option[T]
+
   def configUnsafe: DataExporterConfig
+
   def configOpt: Option[DataExporterConfig]
+
   def accept(event: JsValue): Boolean
+
   def project(event: JsValue): JsValue
+
   def send(events: Seq[JsValue]): Future[ExportResult]
+
   def publish(event: OtoroshiEvent): Unit
+
   def update(config: DataExporterConfig): Future[Unit]
+
   def startExporter(): Future[Unit]
+
   def stopExporter(): Future[Unit]
+
   def start(): Future[Unit] = FastFuture.successful(())
+
   def stop(): Future[Unit] = FastFuture.successful(())
 }
 
 object DataExporter {
 
-  abstract class DefaultDataExporter(originalConfig: DataExporterConfig)(implicit ec: ExecutionContext, env:Env) extends DataExporter {
+  abstract class DefaultDataExporter(originalConfig: DataExporterConfig)(implicit ec: ExecutionContext, env: Env) extends DataExporter {
 
     lazy val ref = new AtomicReference[DataExporterConfig](originalConfig)
 
@@ -165,8 +181,11 @@ object DataExporter {
     }
 
     def exporter[T <: Exporter]: Option[T] = Try(ref.get()).map(_.config.asInstanceOf[T]).toOption
+
     def configUnsafe: DataExporterConfig = ref.get()
+
     def configOpt: Option[DataExporterConfig] = Option(ref.get())
+
     def update(config: DataExporterConfig): Future[Unit] = {
       for {
         _ <- stop()
@@ -174,10 +193,12 @@ object DataExporter {
         _ <- start()
       } yield ()
     }
+
     def accept(event: JsValue): Boolean = {
       configUnsafe.filtering.include.exists(i => otoroshi.utils.Match.matches(event, i)) &&
         configUnsafe.filtering.exclude.exists(i => !otoroshi.utils.Match.matches(event, i))
     }
+
     def project(event: JsValue): JsValue = {
       if (configUnsafe.projection.value.isEmpty) {
         event
@@ -185,6 +206,7 @@ object DataExporter {
         otoroshi.utils.Project.project(event, configUnsafe.projection)
       }
     }
+
     def publish(event: OtoroshiEvent): Unit = {
       if (configOpt.exists(_.enabled)) {
         withQueue { queue =>
@@ -208,6 +230,7 @@ object DataExporter {
       }
     }
   }
+
 }
 
 object Exporters {
@@ -221,6 +244,7 @@ object Exporters {
       }
     }
   }
+
   class WebhookExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env) extends DefaultDataExporter(config)(ec, env) {
     override def send(events: Seq[JsValue]): Future[ExportResult] = {
       env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
@@ -232,41 +256,53 @@ object Exporters {
       }
     }
   }
+
   class KafkaExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env) extends DefaultDataExporter(config)(ec, env) {
     override def send(events: Seq[JsValue]): Future[ExportResult] = {
       env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
         exporter[KafkaConfig].map { eec =>
-          ??? // TODO
+          lazy val kafkaWrapper = new KafkaWrapper(env.analyticsActorSystem, env, c => c.topic)
+
+          Source(events.toList)
+            .mapAsync(10)(evt => kafkaWrapper.publish(evt)(env, eec))
+            .runWith(Sink.ignore)(env.analyticsMaterializer)
+            .map(_ => ExportResult.ExportResultSuccess)
         } getOrElse {
           FastFuture.successful(ExportResult.ExportResultFailure("Bad config type !"))
         }
       }
     }
   }
+
   class PulsarExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env) extends DefaultDataExporter(config)(ec, env) {
     override def send(events: Seq[JsValue]): Future[ExportResult] = {
-      env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
-        exporter[PulsarConfig].map { eec =>
-          ??? // TODO
-        } getOrElse {
-          FastFuture.successful(ExportResult.ExportResultFailure("Bad config type !"))
-        }
+      exporter[PulsarConfig].map { eec =>
+        lazy val pulsarProducer = PulsarSetting.producer(env, eec)
+
+        Source(events.toList)
+          .mapAsync(10)(evt => pulsarProducer.sendAsync(evt))
+          .runWith(Sink.ignore)(env.analyticsMaterializer)
+          .map(_ => ExportResult.ExportResultSuccess)
+      } getOrElse {
+        FastFuture.successful(ExportResult.ExportResultFailure("Bad config type !"))
       }
     }
   }
+
   class ConsoleExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env) extends DefaultDataExporter(config)(ec, env) {
     override def send(events: Seq[JsValue]): Future[ExportResult] = {
       events.foreach(e => logger.info(Json.stringify(e)))
       FastFuture.successful(ExportResult.ExportResultSuccess)
     }
   }
+
   class GenericMailerExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env) extends DefaultDataExporter(config)(ec, env) {
     override def send(events: Seq[JsValue]): Future[ExportResult] = {
       def sendEmail(gms: MailerSettings, globalConfig: GlobalConfig): Future[Unit] = {
         val titles = events
           .map { jsonEvt =>
             val date = new DateTime((jsonEvt \ "@timestamp").as[Long])
-            val id   = (jsonEvt \ "@id").as[String]
+            val id = (jsonEvt \ "@id").as[String]
             s"""<li><a href="#$id">""" + (jsonEvt \ "alert")
               .asOpt[String]
               .getOrElse("Unkown alert") + s" - ${date.toString()}</a></li>"
@@ -275,9 +311,9 @@ object Exporters {
 
         val email = events
           .map { jsonEvt =>
-            val alert   = (jsonEvt \ "alert").asOpt[String].getOrElse("Unkown alert")
-            val date    = new DateTime((jsonEvt \ "@timestamp").as[Long])
-            val id      = (jsonEvt \ "@id").as[String]
+            val alert = (jsonEvt \ "alert").asOpt[String].getOrElse("Unkown alert")
+            val date = new DateTime((jsonEvt \ "@timestamp").as[Long])
+            val id = (jsonEvt \ "@id").as[String]
             s"""<h3 id="$id">$alert - ${date.toString()}</h3><pre>${Json.prettyPrint(jsonEvt)}</pre><br/>"""
           }
           .mkString("\n")
@@ -294,6 +330,7 @@ object Exporters {
           html = emailBody
         )
       }
+
       env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
         exporter[MailerSettings].map { eec =>
           sendEmail(eec, globalConfig).map(_ => ExportResult.ExportResultSuccess)
@@ -328,113 +365,5 @@ object Exporters {
       }
     }
   }
+
 }
-
-/*
-class OtoroshiEventsActor(exporter: DataExporterConfig)(implicit env: Env) extends Actor {
-
-  implicit lazy val ec = env.analyticsExecutionContext
-  lazy val kafkaWrapper = new KafkaWrapper(env.analyticsActorSystem, env, _.topic)
-
-  lazy val logger = Logger("otoroshi-events-actor")
-
-  lazy val stream = Source
-    .queue[AnalyticEvent](50000, OverflowStrategy.dropHead)
-    .filter(_ => exporter.enabled)
-    .filter(e => exporter.exporter().accept(e))
-    // .filter(event => exporter.eventsFilters
-    //   .map(utils.RegexPool(_))
-    //   .exists(r => r.matches(event.`@type`))
-    // )
-    // .filterNot(event => exporter.eventsFiltersNot
-    //   .map(utils.RegexPool(_))
-    //   .exists(r => r.matches(event.`@type`))
-    // )
-    // .mapAsync(5)(evt => evt.toEnrichedJson)
-    .mapAsync(1)(e => exporter.exporter().project(e))
-    .groupedWithin(env.maxWebhookSize, FiniteDuration(env.analyticsWindow, TimeUnit.SECONDS)) //todo: maybe change conf prop
-    .mapAsync(5)(e => exporter.exporter().publish(e))
-
-
-
-
-
-    /*
-    .mapAsync(5) { evts =>
-      logger.debug(s"SEND_OTOROSHI_EVENTS_HOOK: will send ${evts.size} evts")
-      env.datastores.globalConfigDataStore.singleton().fast.map { config =>
-
-        exporter.config match {
-          case c: ElasticAnalyticsConfig => new ElasticWritesAnalytics(c, env).publish(evts)
-          case c: Webhook => new WebHookAnalytics(c, config).publish(evts)
-          case c: KafkaConfig => evts.foreach (evt => kafkaWrapper.publish(evt)(env, c))
-          case c: PulsarConfig =>
-            implicit val _mat: Materializer = env.otoroshiMaterializer
-            val producerFn = () => PulsarSetting.producer(env, c)
-            val pulsarSink = sink(producerFn)
-            Source(evts)
-              .map(evt => ProducerMessage(evt))
-              .runWith(pulsarSink)
-
-          case c: MailerSettings =>
-            val titles = evts
-              .map { jsonEvt =>
-                val date = new DateTime((jsonEvt \ "@timestamp").as[Long])
-                val id   = (jsonEvt \ "@id").as[String]
-                s"""<li><a href="#$id">""" + (jsonEvt \ "alert")
-                  .asOpt[String]
-                  .getOrElse("Unkown alert") + s" - ${date.toString()}</a></li>"
-              }
-              .mkString("<ul>", "\n", "</ul>")
-
-            val email = evts
-              .map { jsonEvt =>
-                val alert   = (jsonEvt \ "alert").asOpt[String].getOrElse("Unkown alert")
-                val date    = new DateTime((jsonEvt \ "@timestamp").as[Long])
-                val id      = (jsonEvt \ "@id").as[String]
-                s"""<h3 id="$id">$alert - ${date.toString()}</h3><pre>${Json.prettyPrint(jsonEvt)}</pre><br/>"""
-              }
-              .mkString("\n")
-
-            val emailBody =
-              s"""<p>${evts.size} new events occured on Otoroshi, you can visualize it on the <a href="${env.rootScheme}${env.backOfficeHost}/">Otoroshi Dashboard</a></p>
-                 |$titles
-                 |$email
-                 """
-            c.asMailer(config, env).send(
-              from = EmailLocation("Otoroshi Alerts", s"otoroshi-alerts@${env.domain}"),
-              to = config.alertsEmails.map(e => EmailLocation(e, e)), //todo: maybe define another email adress (in config screen ???)
-              subject = s"Otoroshi Alert - ${evts.size} new alerts",
-              html = emailBody
-            )
-        }
-      }
-    }
-
-     */
-
-  lazy val (queue, done) = stream.toMat(Sink.ignore)(Keep.both).run()(env.analyticsMaterializer)
-
-  override def receive: Receive = {
-    case ge: AnalyticEvent => {
-      logger.debug(s"${ge.`@type`}: Event sent to stream")
-      val myself = self
-      queue.offer(ge).andThen {
-        case Success(QueueOfferResult.Enqueued) => logger.debug("OTOROSHI_EVENT: Event enqueued")
-        case Success(QueueOfferResult.Dropped) =>
-          logger.error("OTOROSHI_EVENTS_ERROR: Enqueue Dropped otoroshiEvents :(")
-        case Success(QueueOfferResult.QueueClosed) =>
-          logger.error("OTOROSHI_EVENTS_ERROR: Queue closed :(")
-          context.stop(myself)
-        case Success(QueueOfferResult.Failure(t)) =>
-          logger.error("OTOROSHI_EVENTS_ERROR: Enqueue Failure otoroshiEvents :(", t)
-          context.stop(myself)
-        case e =>
-          logger.error(s"OTOROSHI_EVENTS_ERROR: otoroshiEvents actor error : ${e}")
-          context.stop(myself)
-      }
-    }
-    case _ =>
-  }
-}
-*/

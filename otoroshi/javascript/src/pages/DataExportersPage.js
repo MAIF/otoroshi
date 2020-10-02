@@ -535,10 +535,13 @@ const possibleExporterConfigFormValues = {
   pulsar: {
     flow: [
       'uri',
-      'tlsTrustCertsFilePath',
+      'mtlsConfig.mtls',
+      'mtlsConfig.trustAll',
+      'mtlsConfig.certs',
+      'mtlsConfig.trustedCerts',
       'tenant',
       'namespace',
-      'topic'
+      'topic',
     ],
     schema: {
       uri: {
@@ -575,30 +578,69 @@ const possibleExporterConfigFormValues = {
           label: 'Pulsar topic',
           help: 'Topic on the pulsar server',
         },
-      }
+      },
+      'mtlsConfig.mtls': {
+        type: 'bool',
+        props: {
+          label: 'Use client certs.',
+          help: 'Use client certs. from Otoroshi datastore',
+        },
+      },
+      'mtlsConfig.trustAll': {
+        type: 'bool',
+        display: v => tryOrTrue(() => v.mtlsConfig.mtls),
+        props: { label: 'TrustAll' },
+      },
+      'mtlsConfig.certs': {
+        type: 'array',
+        display: v => tryOrTrue(() => v.mtlsConfig.mtls),
+        props: {
+          label: 'Client certificates',
+          placeholder: 'Choose a client certificate',
+          valuesFrom: '/bo/api/proxy/api/certificates',
+          transformer: a => ({
+            value: a.id,
+            label: (
+              <span>
+                <span className="label label-success" style={{ minWidth: 63 }}>
+                  {a.certType}
+                </span>{' '}
+                {a.name} - {a.description}
+              </span>
+            ),
+          }),
+        },
+      },
+      'mtlsConfig.trustedCerts': {
+        type: 'array',
+        display: v =>
+          tryOrTrue(() => v.mtlsConfig.mtls && !v.mtlsConfig.trustAll),
+        props: {
+          label: 'Trusted certificates',
+          placeholder: 'Choose a trusted certificate',
+          valuesFrom: '/bo/api/proxy/api/certificates',
+          transformer: a => ({
+            value: a.id,
+            label: (
+              <span>
+                <span className="label label-success" style={{ minWidth: 63 }}>
+                  {a.certType}
+                </span>{' '}
+                {a.name} - {a.description}
+              </span>
+            ),
+          }),
+        },
+      },
     }
   },
   kafka: {
-    default: {
-      servers: [],
-      mtlsConfig: {
-        mtls: false,
-        loose: false,
-        trustAll: false,
-        certs: [],
-        trustedCerts: []
-      },
-      keystore: undefined,
-      truststore: undefined,
-      keyPass: undefined,
-      topic: undefined,
-    },
     flow: [
       'servers',
-      'mtlsConfig.mtls',
       'keyPass',
       'keystore',
       'truststore',
+      'mtlsConfig.mtls',
       'mtlsConfig.trustAll',
       'mtlsConfig.certs',
       'mtlsConfig.trustedCerts',

@@ -1,10 +1,14 @@
 package events
 
-import com.sksamuel.pulsar4s.{Consumer, ConsumerConfig, Producer, ProducerConfig, PulsarClient, PulsarClientConfig, Subscription, Topic}
+import java.util.concurrent.TimeUnit
+
+import com.sksamuel.pulsar4s.{Consumer, ConsumerConfig, DefaultPulsarClient, Producer, ProducerConfig, PulsarClient, PulsarClientConfig, Subscription, Topic}
 import models.Exporter
 import com.sksamuel.pulsar4s.playjson._
 import play.api.libs.json._
+import utils.http.MtlsConfig
 
+import scala.concurrent.Await
 import scala.util.{Failure, Success, Try}
 
 case class PulsarConfig(
@@ -12,7 +16,8 @@ case class PulsarConfig(
                          tlsTrustCertsFilePath: Option[String],
                          tenant: String,
                          namespace: String,
-                         topic: String) extends Exporter {
+                         topic: String,
+                         mtlsConfig: MtlsConfig = MtlsConfig()) extends Exporter {
   override def toJson: JsValue = PulsarConfig.format.writes(this)
 }
 
@@ -23,7 +28,8 @@ object PulsarConfig {
       "tlsTrustCertsFilePath" -> o.tlsTrustCertsFilePath.map(JsString.apply).getOrElse(JsNull).as[JsValue],
       "tenant" -> o.tenant,
       "namespace" -> o.namespace,
-      "topic" -> o.topic
+      "topic" -> o.topic,
+      "mtlsConfig" -> o.mtlsConfig.json
     )
 
     override def reads(json: JsValue): JsResult[PulsarConfig] =
@@ -33,10 +39,11 @@ object PulsarConfig {
           tlsTrustCertsFilePath = (json \ "tlsTrustCertsFilePath").asOpt[String],
           tenant = (json \ "tenant").as[String],
           namespace = (json \ "namespace").as[String],
-          topic = (json \ "topic").as[String]
+          topic = (json \ "topic").as[String],
+          mtlsConfig = MtlsConfig.read((json \ "mtlsConfig").asOpt[JsValue])
         )
       } match {
-        case Failure(e)  => JsError(e.getMessage)
+        case Failure(e) => JsError(e.getMessage)
         case Success(kc) => JsSuccess(kc)
       }
   }
@@ -44,10 +51,25 @@ object PulsarConfig {
 
 object PulsarSetting {
   def client(_env: env.Env, config: PulsarConfig): PulsarClient = {
-    val c = PulsarClientConfig(
-      serviceUrl = config.uri,
-      tlsTrustCertsFilePath = config.tlsTrustCertsFilePath)
-    PulsarClient(c)
+    if (config.mtlsConfig.mtls) {
+      val (_, jks, password) = config.mtlsConfig.toJKS(_env)
+
+      val builder = org.apache.pulsar.client.api.PulsarClient.builder()
+        .serviceUrl(config.uri)
+        .enableTlsHostnameVerification(false)
+        .allowTlsInsecureConnection(config.mtlsConfig.trustAll)
+        .tlsTrustStoreType("jks")
+        .tlsTrustStorePassword(password)
+        .tlsTrustCertsFilePath(jks.getAbsolutePath)
+        .useKeyStoreTls(true)
+
+      config.tlsTrustCertsFilePath.foreach(builder.tlsTrustCertsFilePath)
+
+      new DefaultPulsarClient(builder.build())
+    } else {
+      val c = PulsarClientConfig(serviceUrl = config.uri)
+      PulsarClient(c)
+    }
   }
 
   def producer(_env: env.Env, config: PulsarConfig): Producer[JsValue] = {
