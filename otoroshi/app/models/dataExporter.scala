@@ -1,24 +1,19 @@
 package models
 
-import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.{Sink, Source}
 import env.Env
 import events.Exporters.{WebhookExporter, _}
 import events.{DataExporter, KafkaConfig, PulsarConfig}
-import models.DataExporterConfig._
 import otoroshi.models.{EntityLocation, EntityLocationSupport}
 import otoroshi.script._
-import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json._
 import security.IdGenerator
 import utils._
 
-import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
-import scala.util.{Failure, Success, Try}
-import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success, Try}
 
 
 trait Exporter {

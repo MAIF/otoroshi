@@ -2,7 +2,6 @@ package events
 
 import java.io.File
 import java.nio.file.{Files, Paths, StandardOpenOption}
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 
 import akka.Done
@@ -10,26 +9,29 @@ import akka.actor.{Actor, Props}
 import akka.http.scaladsl.util.FastFuture
 import akka.http.scaladsl.util.FastFuture.EnhancedFuture
 import akka.stream.scaladsl.{Keep, Sink, Source, SourceQueueWithComplete}
-import akka.stream.{OverflowStrategy, QueueOfferResult, scaladsl}
+import akka.stream.{OverflowStrategy, QueueOfferResult}
 import env.Env
 import events.DataExporter.DefaultDataExporter
 import events.impl.{ElasticWritesAnalytics, WebHookAnalytics}
 import models._
 import org.joda.time.DateTime
+import otoroshi.script._
 import play.api.Logger
 import play.api.libs.json.{JsValue, Json}
 import utils.{EmailLocation, MailerSettings}
 
 import scala.collection.concurrent.TrieMap
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Success, Try}
+import otoroshi.utils.syntax.implicits._
 
 object OtoroshiEventsActorSupervizer {
   def props(implicit env: Env) = Props(new OtoroshiEventsActorSupervizer(env))
 }
 
 case class StartExporters()
+case object UpdateExporters
 
 class OtoroshiEventsActorSupervizer(env: Env) extends Actor {
 
@@ -354,4 +356,29 @@ object Exporters {
     }
   }
 
+}
+
+class DataExporterUpdateJob extends Job {
+
+  private val logger = Logger("otoroshi-data-exporter-update-job")
+
+  override def uniqueId: JobId = JobId("io.otoroshi.core.events.DataExporterUpdateJob")
+
+  override def name: String = "Otoroshi data exporter update job"
+
+  override def visibility: JobVisibility = JobVisibility.Internal
+
+  override def kind: JobKind = JobKind.ScheduledEvery
+
+  override def initialDelay: Option[FiniteDuration] = 10.seconds.some
+
+  override def interval: Option[FiniteDuration] = 10.seconds.some
+
+  override def starting: JobStarting = JobStarting.Automatically
+
+  override def instantiation: JobInstantiation = JobInstantiation.OneInstancePerOtoroshiCluster
+
+  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    FastFuture.successful(env.otoroshiEventsActor ! UpdateExporters)
+  }
 }
