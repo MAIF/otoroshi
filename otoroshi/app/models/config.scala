@@ -107,7 +107,6 @@ object CleverCloudSettings {
 
 case class Proxies(
     alertEmails: Option[WSProxyServer] = None,
-    alertWebhooks: Option[WSProxyServer] = None,
     eventsWebhooks: Option[WSProxyServer] = None,
     clevercloud: Option[WSProxyServer] = None,
     services: Option[WSProxyServer] = None,
@@ -124,7 +123,6 @@ object Proxies {
   val format = new Format[Proxies] {
     override def writes(o: Proxies) = Json.obj(
       "alertEmails"    -> WSProxyServerJson.maybeProxyToJson(o.alertEmails),
-      "alertWebhooks"  -> WSProxyServerJson.maybeProxyToJson(o.alertWebhooks),
       "eventsWebhooks" -> WSProxyServerJson.maybeProxyToJson(o.eventsWebhooks),
       "clevercloud"    -> WSProxyServerJson.maybeProxyToJson(o.clevercloud),
       "services"       -> WSProxyServerJson.maybeProxyToJson(o.services),
@@ -138,7 +136,6 @@ object Proxies {
         JsSuccess(
           Proxies(
             alertEmails = (json \ "alertEmails").asOpt[JsValue].flatMap(p => WSProxyServerJson.proxyFromJson(p)),
-            alertWebhooks = (json \ "alertWebhooks").asOpt[JsValue].flatMap(p => WSProxyServerJson.proxyFromJson(p)),
             eventsWebhooks = (json \ "eventsWebhooks").asOpt[JsValue].flatMap(p => WSProxyServerJson.proxyFromJson(p)),
             clevercloud = (json \ "clevercloud").asOpt[JsValue].flatMap(p => WSProxyServerJson.proxyFromJson(p)),
             services = (json \ "services").asOpt[JsValue].flatMap(p => WSProxyServerJson.proxyFromJson(p)),
