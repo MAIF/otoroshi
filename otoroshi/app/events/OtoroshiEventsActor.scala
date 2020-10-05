@@ -146,18 +146,6 @@ object DataExporter {
       Option(internalQueue.get()).foreach(t => f(t._2))
     }
 
-    //lazy val stream: Source[ExportResult, SourceQueueWithComplete[OtoroshiEvent]] = Source
-    //  .queue[OtoroshiEvent](configUnsafe.bufferSize, OverflowStrategy.dropHead)
-    //  .filter(_ => configOpt.exists(_.enabled))
-    //  .mapAsync(configUnsafe.jsonWorkers)(event => event.toEnrichedJson)
-    //  .filter(event => accept(event))
-    //  .map(event => project(event))
-    //  .groupedWithin(configUnsafe.groupSize, configUnsafe.groupDuration)
-    //  .filterNot(_.isEmpty)
-    //  .mapAsync(configUnsafe.sendWorkers)(events => send(events))
-
-    //lazy val (queue, done) = stream.toMat(Sink.ignore)(Keep.both).run()(env.analyticsMaterializer)
-
     override def startExporter(): Future[Unit] = {
       val newQueue = setupQueue()
       val endOfOldQueue = Promise[Unit]

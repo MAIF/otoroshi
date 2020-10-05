@@ -58,7 +58,7 @@ object PulsarSetting {
         .serviceUrl(config.uri)
         .enableTlsHostnameVerification(false)
         .allowTlsInsecureConnection(config.mtlsConfig.trustAll)
-        .tlsTrustStoreType("jks")
+        .tlsTrustStoreType("JKS")
         .tlsTrustStorePassword(password)
         .tlsTrustCertsFilePath(jks.getAbsolutePath)
         .useKeyStoreTls(true)
