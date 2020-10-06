@@ -252,7 +252,7 @@ class DataExporterConfigMigrationJob extends Job {
       DataExporterConfig(
         enabled = true,
         id = IdGenerator.token,
-        name = "--",
+        name = name,
         desc = "--",
         metadata = Map.empty,
         location = EntityLocation(),
