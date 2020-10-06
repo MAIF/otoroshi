@@ -248,7 +248,7 @@ class DataExporterConfigMigrationJob extends Job {
     val analyticsDataExporterConfigFiltering = DataExporterConfigFiltering(
       include = Seq(Json.obj("type" -> Json.obj("$regex" -> "*Event")))
     )
-    def toDataExporterConfig(ex: Exporter, typ: DataExporterConfigType,  filter: DataExporterConfigFiltering): DataExporterConfig =
+    def toDataExporterConfig(name: String, ex: Exporter, typ: DataExporterConfigType,  filter: DataExporterConfigFiltering): DataExporterConfig =
       DataExporterConfig(
         enabled = true,
         id = IdGenerator.token,
@@ -264,15 +264,15 @@ class DataExporterConfigMigrationJob extends Job {
 
     env.datastores.globalConfigDataStore.findById("global").map {
       case Some(globalConfig) =>
-        val analyticsWebhooksExporters = globalConfig.analyticsWebhooks.map(c => toDataExporterConfig(c, DataExporterConfigType.Webhook, analyticsDataExporterConfigFiltering))
-        val alertsWebhooksExporters: Seq[DataExporterConfig] = globalConfig.alertsWebhooks.map(c => toDataExporterConfig(c, DataExporterConfigType.Webhook, alertDataExporterConfigFiltering))
-        val analyticsElasticExporters: Seq[DataExporterConfig] = globalConfig.elasticWritesConfigs.map(c => toDataExporterConfig(c, DataExporterConfigType.Elastic, analyticsDataExporterConfigFiltering))
+        val analyticsWebhooksExporters = globalConfig.analyticsWebhooks.zipWithIndex.map(t => toDataExporterConfig(s"Analytics webhook exporter ${t._2 + 1} from Danger Zone", t._1, DataExporterConfigType.Webhook, analyticsDataExporterConfigFiltering))
+        val alertsWebhooksExporters: Seq[DataExporterConfig] = globalConfig.alertsWebhooks.zipWithIndex.map(t => toDataExporterConfig(s"Alters webhook exporter ${t._2 + 1} from Danger Zone", t._1, DataExporterConfigType.Webhook, alertDataExporterConfigFiltering))
+        val analyticsElasticExporters: Seq[DataExporterConfig] = globalConfig.elasticWritesConfigs.zipWithIndex.map(t => toDataExporterConfig(s"Elastic exporter ${t._2 + 1} from Danger Zone", t._1, DataExporterConfigType.Elastic, analyticsDataExporterConfigFiltering))
         val kafkaExporter: Option[DataExporterConfig] = globalConfig.kafkaConfig
           .filter(c => c.servers.nonEmpty)
-          .map(c => toDataExporterConfig(c, DataExporterConfigType.Kafka, analyticsDataExporterConfigFiltering))
+          .map(c => toDataExporterConfig("Kafka exporter from Danger Zone", c, DataExporterConfigType.Kafka, analyticsDataExporterConfigFiltering))
         val alertMailerExporter: Option[DataExporterConfig] = globalConfig.mailerSettings
           .filter(setting => setting.typ != "none")
-          .map(c => toDataExporterConfig(c, DataExporterConfigType.Mailer, alertDataExporterConfigFiltering))
+          .map(c => toDataExporterConfig("Mail exporter from Danger Zone", c, DataExporterConfigType.Mailer, alertDataExporterConfigFiltering))
 
         analyticsWebhooksExporters ++
           alertsWebhooksExporters ++
