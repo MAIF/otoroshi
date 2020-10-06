@@ -774,5 +774,22 @@ const possibleExporterConfigFormValues = {
       }
     }
   },
+  console: {
+    flow: [],
+    schema: {}
+  },
+  custom: {
+    flow: ["ref", "config"],
+    schema: {
+      ref: {
+        type: 'select',
+        props: { label: 'Exporter', valuesFrom: `/bo/api/proxy/api/scripts/_list?type=exporter` }
+      },
+      config: {
+        type: 'code',
+        props: { label: 'Exporter config.' }
+      }
+    }
+  }
 }
 

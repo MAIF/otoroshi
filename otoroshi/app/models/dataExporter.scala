@@ -15,7 +15,6 @@ import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-
 trait Exporter {
   def toJson: JsValue
 }
@@ -35,6 +34,17 @@ case class FileSettings(path: String, maxFileSize: Int = 10 * 1024 * 1024) exten
     "path" -> path,
     "maxFileSize" -> maxFileSize
   )
+}
+
+case class ExporterRef(ref: String, config: JsValue) extends Exporter {
+  override def toJson: JsValue = Json.obj(
+    "ref" -> ref,
+    "config" -> config
+  )
+}
+
+case class ConsoleSettings() extends Exporter {
+  override def toJson: JsValue = Json.obj()
 }
 
 object DataExporterConfig {
@@ -101,6 +111,9 @@ object DataExporterConfig {
           case "pulsar" => PulsarConfig.format.reads((json \ "config").as[JsObject]).get
           case "file" => FileSettings((json \ "config" \ "path").as[String])
           case "mailer" => MailerSettings.format.reads((json \ "config").as[JsObject]).get
+          case "custom" => ExporterRef((json \ "config" \ "ref").as[String], (json \ "config" \ "config").as[JsValue])
+          case "console" => ConsoleSettings()
+          case _ => throw new RuntimeException("Bad config type")
         }
       )
     } match {
@@ -140,8 +153,16 @@ object DataExporterConfigType {
     def name: String = "mailer"
   }
 
+  case object Custom extends DataExporterConfigType {
+    def name: String = "custom"
+  }
+
   case object None extends DataExporterConfigType {
     def name: String = "none"
+  }
+
+  case object Console extends DataExporterConfigType {
+    def name: String = "console"
   }
 
   def parse(str: String): DataExporterConfigType = str.toLowerCase() match {
@@ -152,6 +173,9 @@ object DataExporterConfigType {
     case "file" => File
     case "mailer" => Mailer
     case "none" => None
+    case "custom" => Custom
+    case "console" => Console
+    case _ => None
   }
 }
 
@@ -192,6 +216,8 @@ case class DataExporterConfig(enabled: Boolean,
       case c: MailgunSettings => new GenericMailerExporter(this)
       case c: SendgridSettings => new GenericMailerExporter(this)
       case c: GenericMailerSettings => new GenericMailerExporter(this)
+      case c: ExporterRef => new CustomExporter(this)
+      case c: ConsoleSettings => new ConsoleExporter(this)
       case _ => throw new RuntimeException("unsupported exporter type")
     }
   }

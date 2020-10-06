@@ -116,6 +116,19 @@ sealed trait DataExporter {
   def stop(): Future[Unit] = FastFuture.successful(())
 }
 
+trait CustomDataExporter extends NamedPlugin with StartableAndStoppable {
+
+  def accept(event: JsValue, config: JsValue)(implicit env: Env): Boolean
+
+  def project(event: JsValue, config: JsValue)(implicit env: Env): JsValue
+
+  def send(events: Seq[JsValue], config: JsValue)(implicit ec: ExecutionContext, env: Env): Future[ExportResult]
+
+  def startExporter(config: JsValue)(implicit ec: ExecutionContext, env: Env): Future[Unit]
+
+  def stopExporter(config: JsValue)(implicit ec: ExecutionContext, env: Env): Future[Unit]
+}
+
 object DataExporter {
 
   abstract class DefaultDataExporter(originalConfig: DataExporterConfig)(implicit ec: ExecutionContext, env: Env) extends DataExporter {
@@ -185,8 +198,8 @@ object DataExporter {
     }
 
     def accept(event: JsValue): Boolean = {
-      configUnsafe.filtering.include.exists(i => otoroshi.utils.Match.matches(event, i)) &&
-        configUnsafe.filtering.exclude.exists(i => !otoroshi.utils.Match.matches(event, i))
+      (configUnsafe.filtering.include.isEmpty || configUnsafe.filtering.include.exists(i => otoroshi.utils.Match.matches(event, i))) &&
+        (configUnsafe.filtering.exclude.isEmpty || configUnsafe.filtering.exclude.exists(i => !otoroshi.utils.Match.matches(event, i)))
     }
 
     def project(event: JsValue): JsValue = {
@@ -284,6 +297,27 @@ object Exporters {
       events.foreach(e => logger.info(Json.stringify(e)))
       FastFuture.successful(ExportResult.ExportResultSuccess)
     }
+  }
+
+  class CustomExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env) extends DefaultDataExporter(config)(ec, env) {
+
+    def currentExporter(): CustomDataExporter = {
+      val ref = exporter[ExporterRef].get.ref
+      env.scriptManager.getAnyScript[CustomDataExporter](ref) match {
+        case Left(err) => ???
+        case Right(exp) => exp
+      }
+    }
+
+    override def accept(event: JsValue): Boolean = currentExporter().accept(event, exporter[ExporterRef].get.config)
+
+    override def project(event: JsValue): JsValue = currentExporter().project(event, exporter[ExporterRef].get.config)
+
+    override def send(events: Seq[JsValue]): Future[ExportResult] = currentExporter().send(events, exporter[ExporterRef].get.config)
+
+    override def start(): Future[Unit] = currentExporter().startExporter(exporter[ExporterRef].get.config)
+
+    override def stop(): Future[Unit] = currentExporter().stopExporter(exporter[ExporterRef].get.config)
   }
 
   class GenericMailerExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env) extends DefaultDataExporter(config)(ec, env) {
