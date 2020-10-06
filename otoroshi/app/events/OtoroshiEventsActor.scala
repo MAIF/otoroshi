@@ -10,6 +10,7 @@ import akka.http.scaladsl.util.FastFuture
 import akka.http.scaladsl.util.FastFuture._
 import akka.stream.scaladsl.{Keep, Sink, Source, SourceQueueWithComplete}
 import akka.stream.{OverflowStrategy, QueueOfferResult}
+import com.sksamuel.pulsar4s.Producer
 import env.Env
 import events.DataExporter.DefaultDataExporter
 import events.impl.{ElasticWritesAnalytics, WebHookAnalytics}
@@ -245,10 +246,24 @@ object DataExporter {
 object Exporters {
 
   class ElasticExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env) extends DefaultDataExporter(config)(ec, env) {
+
+    val clientRef = new AtomicReference[ElasticWritesAnalytics]()
+
+    override def start(): Future[Unit] = {
+      exporter[ElasticAnalyticsConfig].foreach { eec =>
+        clientRef.set(new ElasticWritesAnalytics(eec, env))
+      }
+      FastFuture.successful(())
+    }
+
+    override def stop(): Future[Unit] = {
+      // Option(clientRef.get()).foreach(_.close())
+      FastFuture.successful(())
+    }
+
     override def send(events: Seq[JsValue]): Future[ExportResult] = {
-      // TODO: stateful ElasticWritesAnalytics because of init
-      exporter[ElasticAnalyticsConfig].map { eec =>
-        new ElasticWritesAnalytics(eec, env).publish(events).map(_ => ExportResult.ExportResultSuccess)
+      Option(clientRef.get()).map { client =>
+        client.publish(events).map(_ => ExportResult.ExportResultSuccess)
       } getOrElse {
         FastFuture.successful(ExportResult.ExportResultFailure("Bad config type !"))
       }
@@ -268,31 +283,55 @@ object Exporters {
   }
 
   class KafkaExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env) extends DefaultDataExporter(config)(ec, env) {
-    override def send(events: Seq[JsValue]): Future[ExportResult] = {
-      // TODO: stateful kafkaWrapper because of init
-      env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
-        exporter[KafkaConfig].map { eec =>
-          lazy val kafkaWrapper = new KafkaWrapper(env.analyticsActorSystem, env, c => c.topic)
 
-          Source(events.toList)
-            .mapAsync(10)(evt => kafkaWrapper.publish(evt)(env, eec))
-            .runWith(Sink.ignore)(env.analyticsMaterializer)
-            .map(_ => ExportResult.ExportResultSuccess)
-        } getOrElse {
-          FastFuture.successful(ExportResult.ExportResultFailure("Bad config type !"))
-        }
+    val clientRef = new AtomicReference[KafkaWrapper]()
+
+    override def start(): Future[Unit] = {
+      exporter[KafkaConfig].foreach { eec =>
+        clientRef.set(new KafkaWrapper(env.analyticsActorSystem, env, c => c.topic))
+      }
+      FastFuture.successful(())
+    }
+
+    override def stop(): Future[Unit] = {
+      Option(clientRef.get()).foreach(_.close())
+      FastFuture.successful(())
+    }
+
+    override def send(events: Seq[JsValue]): Future[ExportResult] = {
+      env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
+        Option(clientRef.get()).flatMap(cli => exporter[KafkaConfig].map(conf => (cli, conf))).map {
+          case (cli, conf) =>
+            Source(events.toList)
+              .mapAsync(10)(evt => cli.publish(evt)(env, conf))
+              .runWith(Sink.ignore)(env.analyticsMaterializer)
+              .map(_ => ExportResult.ExportResultSuccess)
+          } getOrElse {
+            FastFuture.successful(ExportResult.ExportResultFailure("Bad config type !"))
+          }
       }
     }
   }
 
   class PulsarExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env) extends DefaultDataExporter(config)(ec, env) {
-    override def send(events: Seq[JsValue]): Future[ExportResult] = {
-      // TODO: stateful PulsarSetting because of init
-      exporter[PulsarConfig].map { eec =>
-        lazy val pulsarProducer = PulsarSetting.producer(env, eec)
 
+    val clientRef = new AtomicReference[Producer[JsValue]]()
+
+    override def start(): Future[Unit] = {
+      exporter[PulsarConfig].foreach { eec =>
+        clientRef.set(PulsarSetting.producer(env, eec))
+      }
+      FastFuture.successful(())
+    }
+
+    override def stop(): Future[Unit] = {
+      Option(clientRef.get()).map(_.closeAsync).getOrElse(FastFuture.successful(()))
+    }
+
+    override def send(events: Seq[JsValue]): Future[ExportResult] = {
+      Option(clientRef.get()).map { cli =>
         Source(events.toList)
-          .mapAsync(10)(evt => pulsarProducer.sendAsync(evt))
+          .mapAsync(10)(evt => cli.sendAsync(evt))
           .runWith(Sink.ignore)(env.analyticsMaterializer)
           .map(_ => ExportResult.ExportResultSuccess)
       } getOrElse {
@@ -398,7 +437,6 @@ object Exporters {
       }
     }
   }
-
 }
 
 class DataExporterUpdateJob extends Job {
