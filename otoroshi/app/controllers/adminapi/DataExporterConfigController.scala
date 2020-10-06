@@ -2,9 +2,10 @@ package controllers.adminapi
 
 import actions.ApiAction
 import env.Env
+import events.UpdateExporters
 import models.DataExporterConfig
 import play.api.Logger
-import play.api.libs.json.{JsObject, JsValue, Json}
+import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
 import play.api.mvc.{AbstractController, ControllerComponents, RequestHeader}
 import utils._
 
@@ -56,6 +57,7 @@ class DataExporterConfigController(val ApiAction: ApiAction, val cc: ControllerC
   override def createEntityOps(entity: DataExporterConfig)(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[DataExporterConfig]]] = {
     env.datastores.dataExporterConfigDataStore.set(entity).map {
       case true => {
+        env.otoroshiEventsActor ! UpdateExporters
         Right(EntityAndContext(
           entity = entity,
           action = "CREATE_DATA_EXPORTER_CONFIG",
@@ -74,8 +76,10 @@ class DataExporterConfigController(val ApiAction: ApiAction, val cc: ControllerC
   }
 
   override def updateEntityOps(entity: DataExporterConfig)(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[DataExporterConfig]]] = {
+    println(Json.prettyPrint(JsArray(entity.filtering.include)))
     env.datastores.dataExporterConfigDataStore.set(entity).map {
       case true => {
+        env.otoroshiEventsActor ! UpdateExporters
         Right(EntityAndContext(
           entity = entity,
           action = "UPDATE_DATA_EXPORTER_CONFIG",
@@ -96,6 +100,7 @@ class DataExporterConfigController(val ApiAction: ApiAction, val cc: ControllerC
   override def deleteEntityOps(id: String)(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], NoEntityAndContext[DataExporterConfig]]] = {
     env.datastores.dataExporterConfigDataStore.delete(id).map {
       case true => {
+        env.otoroshiEventsActor ! UpdateExporters
         Right(NoEntityAndContext(
           action = "DELETE_DATA_EXPORTER_CONFIG",
           message = "User deleted a data exporter config",

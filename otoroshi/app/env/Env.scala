@@ -1023,7 +1023,7 @@ class Env(val configuration: Configuration,
   timeout(1000.millis).andThen {
     case _ =>
       jobManager.start()
-      otoroshiEventsActor! StartExporters()
+      otoroshiEventsActor! StartExporters
   }(otoroshiExecutionContext)
 
   timeout(5000.millis).andThen {

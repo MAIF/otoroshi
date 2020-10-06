@@ -7,7 +7,7 @@ import java.util.concurrent.atomic.AtomicReference
 import akka.Done
 import akka.actor.{Actor, Props}
 import akka.http.scaladsl.util.FastFuture
-import akka.http.scaladsl.util.FastFuture.EnhancedFuture
+import akka.http.scaladsl.util.FastFuture._
 import akka.stream.scaladsl.{Keep, Sink, Source, SourceQueueWithComplete}
 import akka.stream.{OverflowStrategy, QueueOfferResult}
 import env.Env
@@ -17,7 +17,7 @@ import models._
 import org.joda.time.DateTime
 import otoroshi.script._
 import play.api.Logger
-import play.api.libs.json.{JsValue, Json}
+import play.api.libs.json.{JsArray, JsValue, Json}
 import utils.{EmailLocation, MailerSettings}
 
 import scala.collection.concurrent.TrieMap
@@ -30,7 +30,7 @@ object OtoroshiEventsActorSupervizer {
   def props(implicit env: Env) = Props(new OtoroshiEventsActorSupervizer(env))
 }
 
-case class StartExporters()
+case object StartExporters
 case object UpdateExporters
 
 class OtoroshiEventsActorSupervizer(env: Env) extends Actor {
@@ -44,12 +44,10 @@ class OtoroshiEventsActorSupervizer(env: Env) extends Actor {
   val lastUpdate = new AtomicReference[Long](0L)
 
   override def receive: Receive = {
-    case StartExporters() => start()
+    case StartExporters => start()
+    case UpdateExporters => updateExporters()
     case evt: OtoroshiEvent =>
       dataExporters.foreach { case (_, exporter) => exporter.publish(evt) }
-      if ((lastUpdate.get() + 10000) < System.currentTimeMillis()) { // TODO: from config
-        updateExporters() // TODO: move to a job ????
-      }
     case _ =>
   }
 
@@ -57,20 +55,25 @@ class OtoroshiEventsActorSupervizer(env: Env) extends Actor {
     env.datastores.dataExporterConfigDataStore.findAll().fast.map { exporters =>
       for {
         _ <- Future.sequence(dataExporters.map {
-          case (key, _) if exporters.exists(_.id == key) =>
+          case (key, c) if !exporters.exists(_.id == key) =>
+            logger.debug(s"[OtoroshiEventActor] - Stop exporter ${c.configOpt.map(_.name).getOrElse("no name")}")
             dataExporters.remove(key).map(_.stopExporter()).getOrElse(FastFuture.successful(()))
           case _ => FastFuture.successful(())
         })
         _ <- Future.sequence(exporters.map {
-          case config if dataExporters.exists(e => e._1 == config.id && e._2.configOpt.contains(config)) =>
+          case config if dataExporters.exists(e => e._1 == config.id && !e._2.configOpt.contains(config)) && !config.enabled =>
+            logger.debug(s"[OtoroshiEventActor] - stop exporter ${config.name}")
+            dataExporters.remove(config.id).map(_.stopExporter()).getOrElse(FastFuture.successful(()))
+          case config if dataExporters.exists(e => e._1 == config.id && !e._2.configOpt.contains(config)) =>
+            logger.debug(s"[OtoroshiEventActor] - Update exporter ${config.name}")
             dataExporters.get(config.id).map(_.update(config)).getOrElse(FastFuture.successful(()))
-          case config if !dataExporters.contains(config.id) =>
+          case config if !dataExporters.contains(config.id) && config.enabled =>
+            logger.debug(s"[OtoroshiEventActor] - Start exporter ${config.name}")
             val exporter = config.exporter()
             dataExporters.put(config.id, exporter)
             exporter.startExporter()
           case _ => FastFuture.successful(())
         })
-        _ = lastUpdate.set(System.currentTimeMillis())
       } yield ()
     }
   }

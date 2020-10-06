@@ -4,7 +4,6 @@ import faker from 'faker';
 import * as BackOfficeServices from '../services/BackOfficeServices';
 import { Table, SelectInput, ArrayInput, Form, BooleanInput, TextInput, ObjectInput, NumberInput } from '../components/inputs';
 import { Collapse } from '../components/inputs/Collapse';
-import Creatable from 'react-select/lib/Creatable';
 import { JsonObjectAsCodeInput } from '../components/inputs/CodeInput';
 
 function tryOrTrue(f) {
@@ -42,7 +41,7 @@ class Mailer extends Component {
       }
     }
   };
-  sendgridSchema = {
+  sendgridFormSchema = {
     apiKey: {
       type: 'string',
       props: {
@@ -117,6 +116,7 @@ class Mailer extends Component {
     const settings = this.props.value;
     const type = settings.type;
 
+    console.debug({settings})
     return (
       <div>
         <SelectInput
@@ -149,6 +149,13 @@ class Mailer extends Component {
                   type: 'mailjet',
                   apiKeyPublic: '',
                   apiKeyPrivate: '',
+                });
+                break;
+              case 'sendgrid':
+                this.props.onChange({
+                  type: 'sendgrid',
+                  apiKey: '',
+                  to: [],
                 });
                 break;
             }
