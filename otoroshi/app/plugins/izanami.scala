@@ -53,6 +53,22 @@ class IzanamiProxy extends RequestTransformer {
       )
     )
 
+  override def configFlow: Seq[String] = Seq(
+    "featuresEnabled",
+    "featuresWithContextEnabled",
+    "configurationEnabled",
+    "autoContext",
+    "---",
+    "path",
+    "featurePattern",
+    "configPattern",
+    "---",
+    "izanamiUrl",
+    "izanamiClientId",
+    "izanamiClientSecret",
+    "timeout"
+  )
+
   override def description: Option[String] =
     Some(
       s"""This plugin exposes routes to proxy Izanami configuration and features tree APIs.
