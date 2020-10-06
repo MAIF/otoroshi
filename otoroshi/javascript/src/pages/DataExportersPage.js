@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import faker from 'faker';
 
 import * as BackOfficeServices from '../services/BackOfficeServices';
-import { Table, SelectInput, ArrayInput, Form, BooleanInput, TextInput, ObjectInput, NumberInput } from '../components/inputs';
+import { Table, SelectInput, ArrayInput, Form, BooleanInput, TextInput, ObjectInput, NumberInput, SimpleBooleanInput } from '../components/inputs';
 import { Collapse } from '../components/inputs/Collapse';
 import { JsonObjectAsCodeInput } from '../components/inputs/CodeInput';
 
@@ -239,7 +239,15 @@ export class DataExportersPage extends Component {
       content: item => item.enabled,
       cell: (v, item, table) => {
         return (
-        <span className={`label label-${v ? 'success' : 'default'}`}>{v ? 'yes' : 'no'}</span>
+          <SimpleBooleanInput
+            value={item.enabled}
+            onChange={value => {
+              BackOfficeServices.updateDataExporterConfig({
+                ...item,
+                enabled: value,
+              }).then(() => table.update());
+            }}
+          />
         );
       }
     }
@@ -250,10 +258,10 @@ export class DataExportersPage extends Component {
       <div>
         <Table
           parentProps={this.props}
-          selfUrl="data-exporters"
+          selfUrl="exporters"
           defaultTitle="Data exporters"
           defaultValue={() => BackOfficeServices.createNewDataExporterConfig('file')}
-          itemName="data-exporter"
+          itemName="data exporter"
           columns={this.columns}
           fetchItems={BackOfficeServices.findAllDataExporterConfigs}
           updateItem={BackOfficeServices.updateDataExporterConfig}

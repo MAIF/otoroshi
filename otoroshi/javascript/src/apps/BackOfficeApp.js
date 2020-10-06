@@ -356,15 +356,15 @@ class BackOfficeAppContainer extends Component {
                         />
 
                         <Route 
-                          path="/data-exporters/:taction/:titem"
+                          path="/exporters/:taction/:titem"
                           component={props => this.decorate(DataExportersPage, props)}
                         /> 
                         <Route 
-                          path="/data-exporters/:taction"
+                          path="/exporters/:taction"
                           component={props => this.decorate(DataExportersPage, props)}
                         />  
                         <Route 
-                          path="/data-exporters"
+                          path="/exporters"
                           component={props => this.decorate(DataExportersPage, props)}
                         />
                         <Route
