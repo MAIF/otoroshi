@@ -76,7 +76,6 @@ class DataExporterConfigController(val ApiAction: ApiAction, val cc: ControllerC
   }
 
   override def updateEntityOps(entity: DataExporterConfig)(implicit env: Env, ec: ExecutionContext): Future[Either[ApiError[JsValue], EntityAndContext[DataExporterConfig]]] = {
-    println(Json.prettyPrint(JsArray(entity.filtering.include)))
     env.datastores.dataExporterConfigDataStore.set(entity).map {
       case true => {
         env.otoroshiEventsActor ! UpdateExporters

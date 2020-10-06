@@ -263,6 +263,7 @@ class DataExporterConfigMigrationJob extends Job {
       )
 
     env.datastores.globalConfigDataStore.findById("global").map {
+      case None               => Seq.empty
       case Some(globalConfig) =>
         val analyticsWebhooksExporters = globalConfig.analyticsWebhooks.zipWithIndex.map(t => toDataExporterConfig(s"Analytics webhook exporter ${t._2 + 1} from Danger Zone", t._1, DataExporterConfigType.Webhook, analyticsDataExporterConfigFiltering))
         val alertsWebhooksExporters: Seq[DataExporterConfig] = globalConfig.alertsWebhooks.zipWithIndex.map(t => toDataExporterConfig(s"Alters webhook exporter ${t._2 + 1} from Danger Zone", t._1, DataExporterConfigType.Webhook, alertDataExporterConfigFiltering))
@@ -298,6 +299,7 @@ class DataExporterConfigMigrationJob extends Job {
               kafkaConfig = None,
               mailerSettings = None
             ))
+            case None => ()
           }
         case Failure(e) => logger.error("Data exporter migration job failed", e)
       }
