@@ -41,7 +41,7 @@ object KubernetesSupport {
         .withReconciler(new Reconciler {
           override def reconcile(request: Request): reconciler.Result = {
             val service = informer.getIndexer.getByKey(s"${request.getNamespace}/${request.getName}")
-            println(s"$name - ${request.getName} / ${request.getNamespace} / ${service == null}")
+            // println(s"$name - ${request.getName} / ${request.getNamespace} / ${service == null}")
             new io.kubernetes.client.extended.controller.reconciler.Result(false)
           }
         }) // required, set the actual reconciler

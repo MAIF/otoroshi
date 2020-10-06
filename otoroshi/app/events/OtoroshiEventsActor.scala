@@ -246,6 +246,7 @@ object Exporters {
 
   class ElasticExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env) extends DefaultDataExporter(config)(ec, env) {
     override def send(events: Seq[JsValue]): Future[ExportResult] = {
+      // TODO: stateful ElasticWritesAnalytics because of init
       exporter[ElasticAnalyticsConfig].map { eec =>
         new ElasticWritesAnalytics(eec, env).publish(events).map(_ => ExportResult.ExportResultSuccess)
       } getOrElse {
@@ -268,6 +269,7 @@ object Exporters {
 
   class KafkaExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env) extends DefaultDataExporter(config)(ec, env) {
     override def send(events: Seq[JsValue]): Future[ExportResult] = {
+      // TODO: stateful kafkaWrapper because of init
       env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
         exporter[KafkaConfig].map { eec =>
           lazy val kafkaWrapper = new KafkaWrapper(env.analyticsActorSystem, env, c => c.topic)
@@ -285,6 +287,7 @@ object Exporters {
 
   class PulsarExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env) extends DefaultDataExporter(config)(ec, env) {
     override def send(events: Seq[JsValue]): Future[ExportResult] = {
+      // TODO: stateful PulsarSetting because of init
       exporter[PulsarConfig].map { eec =>
         lazy val pulsarProducer = PulsarSetting.producer(env, eec)
 
@@ -310,7 +313,7 @@ object Exporters {
     def currentExporter(): CustomDataExporter = {
       val ref = exporter[ExporterRef].get.ref
       env.scriptManager.getAnyScript[CustomDataExporter](ref) match {
-        case Left(err) => ???
+        case Left(err) => ??? // TODO: finish it !!!!
         case Right(exp) => exp
       }
     }
