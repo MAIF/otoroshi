@@ -162,9 +162,12 @@ object DataExporter {
     }
 
     override def startExporter(): Future[Unit] = {
+      val oldQueue = internalQueue.get()
       val newQueue = setupQueue()
+      internalQueue.set(newQueue)
+      val fuStart = start()
       val endOfOldQueue = Promise[Unit]
-      Option(internalQueue.get()) match {
+      Option(oldQueue) match {
         case None => endOfOldQueue.trySuccess(())
         case Some((_, queue, _)) => {
           queue.watchCompletion().map { _ =>
@@ -173,10 +176,10 @@ object DataExporter {
           queue.complete()
         }
       }
-      endOfOldQueue.future.flatMap { _ =>
-        internalQueue.set(newQueue)
-        start()
-      }
+      for {
+        _ <- fuStart
+        _ <- endOfOldQueue.future
+      } yield ()
     }
 
     override def stopExporter(): Future[Unit] = {
