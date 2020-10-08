@@ -13,6 +13,7 @@ import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import com.google.protobuf.Descriptors.ServiceDescriptor
+import com.nimbusds.jose.jwk.{Curve, ECKey, RSAKey}
 import env.Env
 import models.{ApiKey, RemainingQuotas, ServiceDescriptorIdentifier, ServiceGroupIdentifier}
 import org.apache.commons.codec.binary.Base64
@@ -329,8 +330,7 @@ class ClientCredentialFlow extends RequestTransformer {
     val supportIntrospect = (conf \ "supportIntrospect").asOpt[Boolean].getOrElse(false)
     val expiration = (conf \ "expiration").asOpt[Long].map(_.millis).getOrElse(1.hour)
     val rootPath = (conf \ "rootPath").asOpt[String].getOrElse("/.well-known/otoroshi/oauth")
-    val defaultKeyPair = (conf \ "defaultKeyPair").asOpt[String]
-    val signWithKeyPair = _signWithKeyPair && defaultKeyPair.isDefined
+    val defaultKeyPair = (conf \ "defaultKeyPair").asOpt[String].filter(_.trim.nonEmpty)
 
     def handleBody[A](f: Map[String, String] => Future[Either[Result, HttpRequest]]): Future[Either[Result, HttpRequest]] = {
       awaitingRequests.get(ctx.snowflake).map { promise =>
@@ -396,6 +396,19 @@ class ClientCredentialFlow extends RequestTransformer {
     }
 
     (ctx.rawRequest.method.toLowerCase(), ctx.rawRequest.path) match {
+      case ("get", path) if supportRevoke && path == s"/.well-known/jwks.json" => {
+        env.datastores.apiKeyDataStore.findAll().flatMap { apikeys =>
+          val ids = apikeys.map(_.metadata.get("jwt-sign-keypair")).collect { case Some(value) => value } ++ defaultKeyPair
+          env.datastores.certificatesDataStore.findAll().map { certs =>
+            val exposedCerts: Seq[JsValue] = certs.filter(c => ids.contains(c.id)).map(c => (c.id, c.cryptoKeyPair.getPublic)).flatMap {
+              case (id, pub: RSAPublicKey) => new RSAKey.Builder(pub).keyID(id).build().toJSONString.parseJson.some
+              case (id, pub: ECPublicKey)  => new ECKey.Builder(Curve.forECParameterSpec(pub.getParams), pub).keyID(id).build().toJSONString.parseJson.some
+              case _ => None
+            }
+            Results.Ok(Json.obj("keys" -> JsArray(exposedCerts))).left
+          }
+        }
+      }
       case ("post", path) if supportRevoke && path == s"$rootPath/token/revoke" && useJwtToken => handleBody { body =>
         (
           body.get("token"),
@@ -498,8 +511,11 @@ class ClientCredentialFlow extends RequestTransformer {
               possibleApiKey.flatMap {
                 case Some(apiKey) if apiKey.clientSecret == clientSecret && useJwtToken=> {
 
+                  val keyPairId = apiKey.metadata.get("jwt-sign-keypair").orElse(defaultKeyPair)
+                  val signWithKeyPair = _signWithKeyPair && keyPairId.isDefined
+
                   val maybeKeyPair: Option[KeyPair] = if (signWithKeyPair) {
-                    defaultKeyPair.flatMap(id => DynamicSSLEngineProvider.certificates.get(id)).map(_.cryptoKeyPair)
+                    keyPairId.flatMap(id => DynamicSSLEngineProvider.certificates.get(id)).map(_.cryptoKeyPair)
                   } else {
                     None
                   }
@@ -508,9 +524,7 @@ class ClientCredentialFlow extends RequestTransformer {
                     (kp.getPublic, kp.getPrivate) match {
                       case (pub: RSAPublicKey, priv: RSAPrivateKey) => Algorithm.RSA256(pub, priv)
                       case (pub: ECPublicKey,  priv: ECPrivateKey)  => Algorithm.ECDSA384(pub, priv)
-                      case _                                        =>
-                        println("fuuuuu")
-                        Algorithm.HMAC512(apiKey.clientSecret)
+                      case _                                        => Algorithm.HMAC512(apiKey.clientSecret)
                     }
                   } getOrElse {
                     Algorithm.HMAC512(apiKey.clientSecret)
@@ -524,7 +538,7 @@ class ClientCredentialFlow extends RequestTransformer {
                     .withIssuer(apiKey.clientId)
                     .withAudience("Otoroshi")
                     .applyOnIf(signWithKeyPair) { builder =>
-                      builder.withKeyId(defaultKeyPair.get)
+                      builder.withKeyId(keyPairId.get)
                     }
                     .sign(algo)
                   // no refresh token possible because of https://tools.ietf.org/html/rfc6749#section-4.4.3

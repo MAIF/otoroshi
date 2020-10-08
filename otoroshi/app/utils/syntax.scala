@@ -77,6 +77,7 @@ object implicits {
     def regex: Regex = RegexPool.regex(obj)
     def byteString: ByteString = ByteString(obj)
     def json: JsValue = JsString(obj)
+    def parseJson: JsValue = Json.parse(obj)
     def base64: String = Base64.encodeBase64String(obj.getBytes(StandardCharsets.UTF_8))
     def fromBase64: String = new String(Base64.decodeBase64(obj), StandardCharsets.UTF_8)
   }
