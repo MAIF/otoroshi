@@ -1,5 +1,7 @@
 package otoroshi.plugins.apikeys
 
+import java.security.KeyPair
+import java.security.interfaces.{ECPrivateKey, ECPublicKey, RSAPrivateKey, RSAPublicKey}
 import java.util.concurrent.atomic.AtomicBoolean
 
 import akka.http.scaladsl.util.FastFuture
@@ -21,6 +23,7 @@ import play.api.libs.json._
 import play.api.mvc.{Result, Results}
 import play.core.parsers.FormUrlEncodedParser
 import security.IdGenerator
+import ssl.DynamicSSLEngineProvider
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration._
@@ -275,21 +278,24 @@ class ClientCredentialFlow extends RequestTransformer {
 
   override def name: String = "Client Credential Flow"
 
-  override def defaultConfig: Option[JsObject] =
+  override def defaultConfig: Option[JsObject] = {
     Some(
       Json.obj(
         "ClientCredentialFlow" -> Json.obj(
           "expiration"   -> 1.hour.toMillis,
-          "supportRevoke" -> true,
+          "supportRevoke"     -> true,
           "supportIntrospect" -> true,
-          "restrictToCurrentGroup" -> true,
-          "jwtToken"     -> true,
-          "rootPath" -> "/.well-known/otoroshi/oauth"
+          "jwtToken"          -> true,
+          "autonomous"        -> false,
+          "signWithKeyPair"   -> false,
+          "defaultKeyPair"    -> JsNull,
+          "rootPath"          -> "/.well-known/otoroshi/oauth"
         )
       )
     )
+  }
 
-  override def description: Option[String] =
+  override def description: Option[String] = {
     Some(
       s"""This plugin enabless the oauth client credentials flow on a service and add an endpoint (`/.well-known/otoroshi/oauth/token`) to create an access_token given a client id and secret.
          |If you don't want to have access_tokens as JWT tokens, don't forget to use `ClientCredentialFlowExtractor` pre-routing plugin.
@@ -300,6 +306,7 @@ class ClientCredentialFlow extends RequestTransformer {
          |```
       """.stripMargin
     )
+  }
 
   private val awaitingRequests = new TrieMap[String, Promise[Source[ByteString, _]]]()
 
@@ -315,12 +322,15 @@ class ClientCredentialFlow extends RequestTransformer {
 
   override def transformRequestWithCtx(ctx: TransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     val conf = ctx.configFor("ClientCredentialFlow")
+    val _signWithKeyPair = (conf \ "signWithKeyPair").asOpt[Boolean].getOrElse(false)
     val useJwtToken = (conf \ "jwtToken").asOpt[Boolean].getOrElse(true)
-    val restrictToCurrentGroup = (conf \ "restrictToCurrentGroup").asOpt[Boolean].getOrElse(true)
+    val autonomous = (conf \ "autonomous").asOpt[Boolean].getOrElse(false)
     val supportRevoke = (conf \ "supportRevoke").asOpt[Boolean].getOrElse(false)
     val supportIntrospect = (conf \ "supportIntrospect").asOpt[Boolean].getOrElse(false)
     val expiration = (conf \ "expiration").asOpt[Long].map(_.millis).getOrElse(1.hour)
     val rootPath = (conf \ "rootPath").asOpt[String].getOrElse("/.well-known/otoroshi/oauth")
+    val defaultKeyPair = (conf \ "defaultKeyPair").asOpt[String]
+    val signWithKeyPair = _signWithKeyPair && defaultKeyPair.isDefined
 
     def handleBody[A](f: Map[String, String] => Future[Either[Result, HttpRequest]]): Future[Either[Result, HttpRequest]] = {
       awaitingRequests.get(ctx.snowflake).map { promise =>
@@ -432,11 +442,7 @@ class ClientCredentialFlow extends RequestTransformer {
           case Some(token) => {
             val decoded = JWT.decode(token)
             val clientId = Try(decoded.getClaim("clientId").asString()).orElse(Try(decoded.getIssuer())).getOrElse("--")
-            val possibleApiKey = if (restrictToCurrentGroup) {
-              env.datastores.apiKeyDataStore.findAuthorizeKeyFor(clientId, ctx.descriptor.id)
-            } else {
-              env.datastores.apiKeyDataStore.findById(clientId)
-            }
+            val possibleApiKey = env.datastores.apiKeyDataStore.findById(clientId)
             possibleApiKey.flatMap {
               case Some(apiKey) => {
                 Try(JWT.require(Algorithm.HMAC512(apiKey.clientSecret)).acceptLeeway(10).build().verify(token)) match {
@@ -488,12 +494,27 @@ class ClientCredentialFlow extends RequestTransformer {
 
           def handleTokenRequest(ccfb: ClientCredentialFlowBody): Future[Either[Result, HttpRequest]] = ccfb match {
             case ClientCredentialFlowBody("client_credentials", clientId, clientSecret, scope) => {
-              val possibleApiKey = if (restrictToCurrentGroup)
-                env.datastores.apiKeyDataStore.findAuthorizeKeyFor(clientId, ctx.descriptor.id)
-              else
-                env.datastores.apiKeyDataStore.findById(clientId)
+              val possibleApiKey = env.datastores.apiKeyDataStore.findById(clientId)
               possibleApiKey.flatMap {
                 case Some(apiKey) if apiKey.clientSecret == clientSecret && useJwtToken=> {
+
+                  val maybeKeyPair: Option[KeyPair] = if (signWithKeyPair) {
+                    defaultKeyPair.flatMap(id => DynamicSSLEngineProvider.certificates.get(id)).map(_.cryptoKeyPair)
+                  } else {
+                    None
+                  }
+
+                  val algo: Algorithm = maybeKeyPair.map { kp =>
+                    (kp.getPublic, kp.getPrivate) match {
+                      case (pub: RSAPublicKey, priv: RSAPrivateKey) => Algorithm.RSA256(pub, priv)
+                      case (pub: ECPublicKey,  priv: ECPrivateKey)  => Algorithm.ECDSA384(pub, priv)
+                      case _                                        =>
+                        println("fuuuuu")
+                        Algorithm.HMAC512(apiKey.clientSecret)
+                    }
+                  } getOrElse {
+                    Algorithm.HMAC512(apiKey.clientSecret)
+                  }
 
                   val accessToken = JWT.create()
                     .withJWTId(IdGenerator.uuid)
@@ -502,7 +523,10 @@ class ClientCredentialFlow extends RequestTransformer {
                     .withNotBefore(DateTime.now().toDate)
                     .withIssuer(apiKey.clientId)
                     .withAudience("Otoroshi")
-                    .sign(Algorithm.HMAC512(apiKey.clientSecret))
+                    .applyOnIf(signWithKeyPair) { builder =>
+                      builder.withKeyId(defaultKeyPair.get)
+                    }
+                    .sign(algo)
                   // no refresh token possible because of https://tools.ietf.org/html/rfc6749#section-4.4.3
 
                   val pass = scope.forall { s =>
@@ -619,6 +643,7 @@ class ClientCredentialFlow extends RequestTransformer {
           Results.Unauthorized(Json.obj("error" -> "access_denied", "error_description" -> s"Unauthorized")).leftf
         }
       }
+      case _ if autonomous     => Results.NotFound(Json.obj("error" -> "not_found", "error_description" -> s"Resource not found")).leftf
       case _ if !supportRevoke => ctx.otoroshiRequest.rightf
       case _ => {
 

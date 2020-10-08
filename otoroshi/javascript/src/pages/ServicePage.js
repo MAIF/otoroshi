@@ -1911,6 +1911,22 @@ export class ServicePage extends Component {
             />
             <Separator title="JWT Token Api Key" />
             <BooleanInput
+                label="Secret signed"
+                value={this.state.service.apiKeyConstraints.jwtAuth.secretSigned}
+                help="JWT can be signed by apikey secret using HMAC algo."
+                onChange={v =>
+                    this.changeTheValue('apiKeyConstraints.jwtAuth.secretSigned', v)
+                }
+            />
+            <BooleanInput
+                label="Keypair signed"
+                value={this.state.service.apiKeyConstraints.jwtAuth.keyPairSigned}
+                help="JWT can be signed by an otoroshi managed keypair using RSA/EC algo."
+                onChange={v =>
+                    this.changeTheValue('apiKeyConstraints.jwtAuth.keyPairSigned', v)
+                }
+            />
+            <BooleanInput
               label="Include Http request attrs."
               value={this.state.service.apiKeyConstraints.jwtAuth.includeRequestAttributes}
               help="If enabled, you have to put the following fields in the JWT token corresponding to the current http call (httpPath, httpVerb, httpHost)"

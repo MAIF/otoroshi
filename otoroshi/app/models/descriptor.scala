@@ -956,6 +956,8 @@ object CustomHeadersAuthConstraints {
 }
 case class JwtAuthConstraints(
     enabled: Boolean = true,
+    secretSigned: Boolean = true,
+    keyPairSigned: Boolean = true,
     includeRequestAttributes: Boolean = false,
     maxJwtLifespanSecs: Option[Long] = None, //Some(10 * 365 * 24 * 60 * 60),
     headerName: Option[String] = None,
@@ -964,6 +966,8 @@ case class JwtAuthConstraints(
 ) {
   def json: JsValue = Json.obj(
     "enabled"                  -> enabled,
+    "secretSigned"                  -> secretSigned,
+    "keyPairSigned"                  -> keyPairSigned,
     "includeRequestAttributes" -> includeRequestAttributes,
     "maxJwtLifespanSecs"       -> maxJwtLifespanSecs.map(l => JsNumber(BigDecimal.exact(l))).getOrElse(JsNull).as[JsValue],
     "headerName"               -> headerName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
@@ -979,6 +983,8 @@ object JwtAuthConstraints {
         JsSuccess(
           JwtAuthConstraints(
             enabled = (json \ "enabled").asOpt[Boolean].getOrElse(true),
+            secretSigned = (json \ "secretSigned").asOpt[Boolean].getOrElse(true),
+            keyPairSigned = (json \ "keyPairSigned").asOpt[Boolean].getOrElse(true),
             includeRequestAttributes = (json \ "includeRequestAttributes").asOpt[Boolean].getOrElse(false),
             maxJwtLifespanSecs = (json \ "maxJwtLifespanSecs").asOpt[Long].filter(_ > -1), //.getOrElse(10 * 365 * 24 * 60 * 60),
             headerName = (json \ "headerName").asOpt[String].filterNot(_.trim.isEmpty),
