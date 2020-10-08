@@ -6,6 +6,7 @@ import java.nio.file.Files
 
 import akka.http.scaladsl.util.FastFuture
 import akka.util.ByteString
+import com.auth0.jwt.interfaces.DecodedJWT
 import com.github.blemale.scaffeine.Cache
 import com.typesafe.config.ConfigFactory
 import org.apache.commons.codec.binary.Base64
@@ -212,5 +213,13 @@ object implicits {
         }
       }
     }
+  }
+
+  implicit class BetterDecodedJWT(val jwt: DecodedJWT) extends AnyVal {
+    def claimStr(name: String): Option[String] = Option(jwt.getClaim(name)).filterNot(_.isNull).map(_.asString())
+    def claimBool(name: String): Option[Boolean] = Option(jwt.getClaim(name)).filterNot(_.isNull).map(_.asBoolean())
+    def claimInt(name: String): Option[Int] = Option(jwt.getClaim(name)).filterNot(_.isNull).map(_.asInt())
+    def claimLng(name: String): Option[Long] = Option(jwt.getClaim(name)).filterNot(_.isNull).map(_.asLong())
+    def claimDbl(name: String): Option[Double] = Option(jwt.getClaim(name)).filterNot(_.isNull).map(_.asDouble())
   }
 }

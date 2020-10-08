@@ -270,6 +270,7 @@ class ClientCredentialFlowExtractor extends PreRouting {
 class ClientCredentialFlow extends RequestTransformer {
 
   import otoroshi.utils.syntax.implicits._
+  import utils.RequestImplicits._
 
   private val revokedCache: Cache[String, Boolean] = Scaffeine()
     .recordStats()
@@ -535,8 +536,10 @@ class ClientCredentialFlow extends RequestTransformer {
                     .withExpiresAt(DateTime.now().plus(expiration.toMillis).toDate)
                     .withIssuedAt(DateTime.now().toDate)
                     .withNotBefore(DateTime.now().toDate)
-                    .withIssuer(apiKey.clientId)
-                    .withAudience("Otoroshi")
+                    .withClaim("cid", apiKey.clientId)
+                    .withIssuer(ctx.request.theProtocol + "://" + ctx.request.host)
+                    .withSubject(apiKey.clientId)
+                    .withAudience("otoroshi")
                     .applyOnIf(signWithKeyPair) { builder =>
                       builder.withKeyId(keyPairId.get)
                     }
