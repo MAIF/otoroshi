@@ -596,9 +596,11 @@ object ApiKeyHelper {
               .findAuthorizeKeyFor(clientId, descriptor.id)
               .flatMap {
                 case Some(apiKey) => {
+                  val possibleKeyPairId = apiKey.metadata.get("jwt-sign-keypair")
                   val kid = Option(jwt.getKeyId)
-                    .orElse(apiKey.metadata.get("jwt-sign-keypair"))
+                    .orElse(possibleKeyPairId)
                     .filter(_ => descriptor.apiKeyConstraints.jwtAuth.keyPairSigned)
+                    .filter(id => if (possibleKeyPairId.isDefined) possibleKeyPairId.get == id else true)
                     .flatMap(id => DynamicSSLEngineProvider.certificates.get(id))
                   val kp = kid.map(_.cryptoKeyPair)
                   val algorithmOpt: Option[Algorithm] = Option(jwt.getAlgorithm).collect {
@@ -1005,9 +1007,11 @@ object ApiKeyHelper {
                 .findAuthorizeKeyFor(clientId, descriptor.id)
                 .flatMap {
                   case Some(apiKey) => {
+                    val possibleKeyPairId = apiKey.metadata.get("jwt-sign-keypair")
                     val kid = Option(jwt.getKeyId)
-                      .orElse(apiKey.metadata.get("jwt-sign-keypair"))
+                      .orElse(possibleKeyPairId)
                       .filter(_ => descriptor.apiKeyConstraints.jwtAuth.keyPairSigned)
+                      .filter(id => if (possibleKeyPairId.isDefined) possibleKeyPairId.get == id else true)
                       .flatMap(id => DynamicSSLEngineProvider.certificates.get(id))
                     val kp = kid.map(_.cryptoKeyPair)
                     val algorithmOpt: Option[Algorithm] = Option(jwt.getAlgorithm).collect {
