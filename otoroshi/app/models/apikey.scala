@@ -479,6 +479,7 @@ trait ApiKeyDataStore extends BasicStore[ApiKey] {
 object ApiKeyHelper {
 
   import utils.RequestImplicits._
+  import otoroshi.utils.syntax.implicits._
 
   def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), Charsets.UTF_8)
 
@@ -585,12 +586,9 @@ object ApiKeyHelper {
       Try {
         JWT.decode(jwtTokenValue)
       } map { jwt =>
-        Option(jwt.getClaim("iss"))
-          .filterNot(_.isNull)
-          .map(_.asString())
-          .orElse(
-            Option(jwt.getClaim("clientId")).filterNot(_.isNull).map(_.asString())
-          ) match {
+        jwt.claimStr("clientId")
+          .orElse(jwt.claimStr("cid"))
+          .orElse(jwt.claimStr("iss")) match {
           case Some(clientId) =>
             env.datastores.apiKeyDataStore
               .findAuthorizeKeyFor(clientId, descriptor.id)
@@ -630,7 +628,10 @@ object ApiKeyHelper {
                   algorithmOpt match {
                     case Some(algorithm) => {
                       val verifier =
-                        JWT.require(algorithm).withIssuer(clientId).acceptLeeway(10).build
+                        JWT.require(algorithm)
+                          //.withIssuer(clientId)
+                          .acceptLeeway(10)
+                          .build
                       Try(verifier.verify(jwtTokenValue))
                         .filter { token =>
                           val xsrfToken = token.getClaim("xsrfToken")
@@ -994,14 +995,9 @@ object ApiKeyHelper {
         Try {
           JWT.decode(jwtTokenValue)
         } map { jwt =>
-          Option(jwt.getClaim("clientId"))
-            .filterNot(_.isNull)
-            .map(_.asString())
-            .orElse(
-              Option(jwt.getClaim("iss"))
-                .filterNot(_.isNull)
-                .map(_.asString())
-            ) match {
+          jwt.claimStr("clientId")
+            .orElse(jwt.claimStr("cid"))
+            .orElse(jwt.claimStr("iss")) match {
             case Some(clientId) =>
               env.datastores.apiKeyDataStore
                 .findAuthorizeKeyFor(clientId, descriptor.id)
@@ -1047,7 +1043,7 @@ object ApiKeyHelper {
                         val verifier =
                           JWT
                             .require(algorithm)
-                            .withIssuer(clientId)
+                            // .withIssuer(clientId)
                             .acceptLeeway(10) // TODO: customize ???
                             .build
                         Try(verifier.verify(jwtTokenValue))
@@ -1104,8 +1100,9 @@ object ApiKeyHelper {
                                 errorResult(TooManyRequests, "You performed too much requests", "errors.too.much.requests")
                             }
                           case Failure(e) => {
+                            e.printStackTrace()
                             sendRevokedApiKeyAlert(apiKey)
-                            errorResult(BadRequest, s"Bad API key", "errors.bad.api.key")
+                            errorResult(BadRequest, s"Bad API key 1", "errors.bad.api.key")
                           }
                         }
                       }
