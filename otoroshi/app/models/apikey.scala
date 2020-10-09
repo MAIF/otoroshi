@@ -587,6 +587,7 @@ object ApiKeyHelper {
         JWT.decode(jwtTokenValue)
       } map { jwt =>
         jwt.claimStr("clientId")
+          .orElse(jwt.claimStr("client_id"))
           .orElse(jwt.claimStr("cid"))
           .orElse(jwt.claimStr("iss")) match {
           case Some(clientId) =>
@@ -996,6 +997,7 @@ object ApiKeyHelper {
           JWT.decode(jwtTokenValue)
         } map { jwt =>
           jwt.claimStr("clientId")
+            .orElse(jwt.claimStr("client_id"))
             .orElse(jwt.claimStr("cid"))
             .orElse(jwt.claimStr("iss")) match {
             case Some(clientId) =>
