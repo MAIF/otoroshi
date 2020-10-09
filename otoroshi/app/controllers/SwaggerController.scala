@@ -6,12 +6,14 @@ import play.api.libs.json._
 import play.api.mvc._
 
 object Implicits {
+
   implicit class EnhancedJsValue(val value: JsValue) extends AnyVal {
     def ~~>(description: String): JsValue =
       value.as[JsObject] ++ Json.obj(
         "description" -> description
       )
   }
+
 }
 
 class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends AbstractController(cc) {
@@ -38,30 +40,53 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
 
   def SimpleObjectType =
     Json.obj("type" -> "object",
-             //"required"             -> Json.arr(),
-             "example"              -> Json.obj("key"  -> "value"),
-             "additionalProperties" -> Json.obj("type" -> "string"))
-  def SimpleArrayType   = Json.obj("type" -> "array", "example"  -> Json.arr("a string value"))
-  def SimpleStringType   = Json.obj("type" -> "string", "example"  -> "a string value")
-  def SimpleDoubleType   = Json.obj("type" -> "integer", "format"  -> "double", "example" -> 42.2)
-  def OptionalStringType = Json.obj("type" -> "string", "required" -> false, "example" -> "a string value")
-  def SimpleBooleanType  = Json.obj("type" -> "boolean", "example" -> true)
-  def SimpleDateType     = Json.obj("type" -> "string", "format"   -> "date", "example" -> "2017-07-21")
-  def SimpleDateTimeType = Json.obj("type" -> "string", "format"   -> "date-time", "example" -> "2017-07-21T17:32:28Z")
-  def SimpleTimeType     = Json.obj("type" -> "string", "format"   -> "time", "example" -> "17:32:28.000")
-  def SimpleLongType     = Json.obj("type" -> "integer", "format"  -> "int64", "example" -> 123)
-  def SimpleIntType      = Json.obj("type" -> "integer", "format"  -> "int32", "example" -> 123123)
-  def SimpleHostType     = Json.obj("type" -> "string", "format"   -> "hostname", "example" -> "www.google.com")
-  def SimpleIpv4Type     = Json.obj("type" -> "string", "format"   -> "ipv4", "example" -> "192.192.192.192")
-  def SimpleUriType      = Json.obj("type" -> "string", "format"   -> "uri", "example" -> "http://www.google.com")
-  def SimpleEmailType    = Json.obj("type" -> "string", "format"   -> "email", "example" -> "admin@otoroshi.io")
+      //"required"             -> Json.arr(),
+      "example" -> Json.obj("key" -> "value"),
+      "additionalProperties" -> Json.obj("type" -> "string"))
+
+  def SimpleArrayType = Json.obj("type" -> "array", "items" -> SimpleStringType, "example" -> Json.arr("a string value"))
+
+  def SimpleStringType = Json.obj("type" -> "string", "example" -> "a string value")
+
+  def SimpleDoubleType = Json.obj("type" -> "integer", "format" -> "double", "example" -> 42.2)
+
+  def OptionalStringType = Json.obj("type" -> "string", "example" -> "a string value")
+
+  def SimpleBooleanType = Json.obj("type" -> "boolean", "example" -> true)
+
+  def SimpleDateType = Json.obj("type" -> "string", "format" -> "date", "example" -> "2017-07-21")
+
+  def SimpleDateTimeType = Json.obj("type" -> "string", "format" -> "date-time", "example" -> "2017-07-21T17:32:28Z")
+
+  def SimpleTimeType = Json.obj("type" -> "string", "format" -> "time", "example" -> "17:32:28.000")
+
+  def SimpleLongType = Json.obj("type" -> "integer", "format" -> "int64", "example" -> 123)
+
+  def SimpleIntType = Json.obj("type" -> "integer", "format" -> "int32", "example" -> 123123)
+
+  def SimpleHostType = Json.obj("type" -> "string", "format" -> "hostname", "example" -> "www.google.com")
+
+  def SimpleIpv4Type = Json.obj("type" -> "string", "format" -> "ipv4", "example" -> "192.192.192.192")
+
+  def SimpleUriType = Json.obj("type" -> "string", "format" -> "uri", "example" -> "http://www.google.com")
+
+  def SimpleEmailType = Json.obj("type" -> "string", "format" -> "email", "example" -> "admin@otoroshi.io")
+
   def SimpleUuidType =
     Json.obj("type" -> "string", "format" -> "uuid", "example" -> "110e8400-e29b-11d4-a716-446655440000")
-  def Ref(name: String): JsObject = Json.obj("$ref" -> s"#/definitions/$name")
+
+  def Ref(name: String): JsObject = Json.obj("$ref" -> s"#/components/schemas/$name")
+
+  def Constant(str: String) = Json.obj(
+    "type" -> "string",
+    "enum" -> Json.arr(str)
+  )
+
   def ArrayOf(ref: JsValue) = Json.obj(
-    "type"  -> "array",
+    "type" -> "array",
     "items" -> ref
   )
+
   def OneOf(refs: JsValue*) = Json.obj(
     "oneOf" -> JsArray(refs.toSeq)
   )
@@ -84,50 +109,70 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
     )
   )
 
+  def QueryParam(name: String, desc: String) = Json.obj(
+    "in" -> "query",
+    "name" -> name,
+    "required" -> false,
+    "description" -> desc,
+    "schema" -> Json.obj("type" -> "string")
+  )
+
   def PathParam(name: String, desc: String) = Json.obj(
-    "in"          -> "path",
-    "name"        -> name,
-    "required"    -> true,
-    "type"        -> "string",
-    "description" -> desc
+    "in" -> "path",
+    "name" -> name,
+    "required" -> true,
+    "description" -> desc,
+    "schema" -> Json.obj("type" -> "string")
   )
 
-  def BodyParam(desc: String, typ: JsValue) = Json.obj(
-    "in"          -> "body",
-    "name"        -> "body",
-    "required"    -> true,
-    "schema"      -> typ,
-    "description" -> desc
-  )
+  def BodyParam(desc: String, typ: JsValue) = Some(Json.obj(
+    "schema" -> typ
+  ))
 
-  def GoodResponse(ref: JsValue) = Json.obj(
+  def GoodResponse(ref: JsValue, contents: JsArray = Json.arr("application/json")) = Json.obj(
     "description" -> "Successful operation",
-    "schema"      -> ref
+    "content" -> contents.value.map(_.as[String]).foldLeft(Json.obj())((result, label) => {
+      result ++ Json.obj(label -> Json.obj(
+        "schema" -> ref
+      ))
+    }
+    )
   )
+
+  def BulkResponse(action: String, status: String, actionIdDescription: String) =
+    GoodResponse(ArrayOf(Json.obj(
+      "description" -> "The bulk response",
+      "type" -> "object",
+      "properties" -> Json.obj(
+        "status" -> Constant(status) ~~> "Status",
+        action -> SimpleBooleanType ~~> "Whether the action was carried out correctly or not",
+        "id" -> SimpleBooleanType ~~> actionIdDescription
+      )
+    )))
 
   def Tag(name: String, description: String) = Json.obj(
-    "name"        -> name,
+    "name" -> name,
     "description" -> description
   )
 
   def Operation(
-      summary: String,
-      tag: String,
-      description: String = "",
-      operationId: String = "",
-      produces: JsArray = Json.arr("application/json"),
-      parameters: JsArray = Json.arr(),
-      goodCode: String = "200",
-      goodResponse: JsObject
-  ): JsValue =
+                 summary: String,
+                 tag: String,
+                 description: String = "",
+                 operationId: String = "",
+                 parameters: JsArray = Json.arr(),
+                 goodCode: String = "200",
+                 goodResponse: JsObject,
+                 produces: JsArray = Json.arr("application/json"),
+                 body: Option[JsObject] = None,
+               ): JsValue =
     Json.obj(
-      "deprecated"  -> false,
-      "tags"        -> Json.arr(tag),
-      "summary"     -> summary,
+      "deprecated" -> false,
+      "tags" -> Json.arr(tag),
+      "summary" -> summary,
       "description" -> description,
       "operationId" -> operationId,
-      "produces"    -> produces,
-      "parameters"  -> parameters,
+      "parameters" -> parameters,
       "responses" -> Json.obj(
         "401" -> Json.obj(
           "description" -> "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication"
@@ -145,26 +190,32 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
           "otoroshi_auth" -> Json.arr()
         )
       )
-    )
+    ) ++ body.fold(Json.obj())(b => {
+      Json.obj(
+        "requestBody" -> Json.obj(
+          "content" -> produces.value.map(_.as[String]).foldLeft(Json.obj())((result, label) => {
+            result ++ Json.obj(label -> b)
+          })
+        )
+      )
+    })
 
   def NoAuthOperation(
-      summary: String,
-      tag: String,
-      description: String = "",
-      operationId: String = "",
-      produces: JsArray = Json.arr("application/json"),
-      parameters: JsArray = Json.arr(),
-      goodCode: String = "200",
-      goodResponse: JsObject
-  ): JsValue =
+                       summary: String,
+                       tag: String,
+                       description: String = "",
+                       operationId: String = "",
+                       parameters: JsArray = Json.arr(),
+                       goodCode: String = "200",
+                       goodResponse: JsObject
+                     ): JsValue =
     Json.obj(
-      "deprecated"  -> false,
-      "tags"        -> Json.arr(tag),
-      "summary"     -> summary,
+      "deprecated" -> false,
+      "tags" -> Json.arr(tag),
+      "summary" -> summary,
       "description" -> description,
       "operationId" -> operationId,
-      "produces"    -> produces,
-      "parameters"  -> parameters,
+      "parameters" -> parameters,
       "responses" -> Json.obj(
         "400" -> Json.obj(
           "description" -> "Bad resource format. Take another look to the swagger, or open an issue :)"
@@ -184,73 +235,79 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
 
   def LargeRequestFaultConfig = Json.obj(
     "description" -> "Config for large request injection fault",
-    "type"        -> "object",
-    "required"    -> Json.arr("ratio", "additionalRequestSize"),
+    "type" -> "object",
+    "required" -> Json.arr("ratio", "additionalRequestSize"),
     "properties" -> Json.obj(
-      "ratio"                 -> SimpleDoubleType ~~> "The percentage of requests affected by this fault. Value should be between 0.0 and 1.0",
+      "ratio" -> SimpleDoubleType ~~> "The percentage of requests affected by this fault. Value should be between 0.0 and 1.0",
       "additionalRequestSize" -> SimpleIntType ~~> "The size added to the request body in bytes. Added payload will be spaces only."
     )
   )
 
   def BadResponse = Json.obj(
     "description" -> "An HTTP response that is not supposed to be returned by a service",
-    "type"        -> "object",
-    "required"    -> Json.arr("status", "body", "headers"),
+    "type" -> "object",
+    "required" -> Json.arr("status", "body", "headers"),
     "properties" -> Json.obj(
-      "status"  -> SimpleIntType ~~> "The HTTP status for the response",
-      "body"    -> SimpleStringType ~~> "The body of the HTTP response",
+      "status" -> SimpleIntType ~~> "The HTTP status for the response",
+      "body" -> SimpleStringType ~~> "The body of the HTTP response",
       "headers" -> SimpleObjectType ~~> "The HTTP headers of the response"
     )
   )
+
   def LargeResponseFaultConfig = Json.obj(
     "description" -> "Config for large response injection fault",
-    "type"        -> "object",
-    "required"    -> Json.arr("ratio", "additionalResponseSize"),
+    "type" -> "object",
+    "required" -> Json.arr("ratio", "additionalResponseSize"),
     "properties" -> Json.obj(
-      "ratio"                 -> SimpleDoubleType ~~> "The percentage of requests affected by this fault. Value should be between 0.0 and 1.0",
+      "ratio" -> SimpleDoubleType ~~> "The percentage of requests affected by this fault. Value should be between 0.0 and 1.0",
       "additionalRequestSize" -> SimpleIntType ~~> "The size added to the response body in bytes. Added payload will be spaces only."
     )
   )
+
   def LatencyInjectionFaultConfig = Json.obj(
     "description" -> "Config for large latency injection fault",
-    "type"        -> "object",
-    "required"    -> Json.arr("ratio", "from", "to"),
+    "type" -> "object",
+    "required" -> Json.arr("ratio", "from", "to"),
     "properties" -> Json.obj(
       "ratio" -> SimpleDoubleType ~~> "The percentage of requests affected by this fault. Value should be between 0.0 and 1.0",
-      "from"  -> SimpleIntType ~~> "The start range of latency added to the request",
-      "to"    -> SimpleIntType ~~> "The end range of latency added to the request"
+      "from" -> SimpleIntType ~~> "The start range of latency added to the request",
+      "to" -> SimpleIntType ~~> "The end range of latency added to the request"
     )
   )
+
   def BadResponsesFaultConfig = Json.obj(
     "description" -> "Config for bad requests injection fault",
-    "type"        -> "object",
-    "required"    -> Json.arr("ratio", "responses"),
+    "type" -> "object",
+    "required" -> Json.arr("ratio", "responses"),
     "properties" -> Json.obj(
-      "ratio"     -> SimpleDoubleType ~~> "The percentage of requests affected by this fault. Value should be between 0.0 and 1.0",
+      "ratio" -> SimpleDoubleType ~~> "The percentage of requests affected by this fault. Value should be between 0.0 and 1.0",
       "responses" -> ArrayOf(Ref("BadResponse")) ~~> "The possibles responses"
     )
   )
+
   def ChaosConfig = Json.obj(
     "description" -> "Configuration for the faults that can be injected in requests",
-    "type"        -> "object",
+    "type" -> "object",
     "required" -> Json.arr(
       "enabled"
     ),
     "properties" -> Json.obj(
-      "enabled"                     -> SimpleBooleanType ~~> "Whether or not this config is enabled",
-      "largeRequestFaultConfig"     -> Ref("LargeRequestFaultConfig"),
-      "largeResponseFaultConfig"    -> Ref("LargeResponseFaultConfig"),
+      "enabled" -> SimpleBooleanType ~~> "Whether or not this config is enabled",
+      "largeRequestFaultConfig" -> Ref("LargeRequestFaultConfig"),
+      "largeResponseFaultConfig" -> Ref("LargeResponseFaultConfig"),
       "latencyInjectionFaultConfig" -> Ref("LatencyInjectionFaultConfig"),
-      "badResponsesFaultConfig"     -> Ref("BadResponsesFaultConfig")
+      "badResponsesFaultConfig" -> Ref("BadResponsesFaultConfig")
     )
   )
+
   def OutageStrategy = Json.obj(
     "type" -> "string",
     "enum" -> Json.arr("OneServicePerGroup", "AllServicesPerGroup")
   )
+
   def SnowMonkeyConfig = Json.obj(
     "description" -> """Configuration for the faults that can be injected in requests. The name Snow Monkey is an hommage to Netflix's Chaos Monkey 😉""",
-    "type"        -> "object",
+    "type" -> "object",
     "required" -> Json.arr(
       "enabled",
       "outageStrategy",
@@ -265,44 +322,46 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       "chaosConfig"
     ),
     "properties" -> Json.obj(
-      "enabled"                      -> SimpleBooleanType ~~> "Whether or not this config is enabled",
-      "outageStrategy"               -> Ref("OutageStrategy") ~~> "",
+      "enabled" -> SimpleBooleanType ~~> "Whether or not this config is enabled",
+      "outageStrategy" -> Ref("OutageStrategy") ~~> "",
       "includeUserFacingDescriptors" -> SimpleBooleanType ~~> "Whether or not user facing apps. will be impacted by Snow Monkey",
-      "dryRun"                       -> SimpleBooleanType ~~> "Whether or not outages will actualy impact requests",
-      "timesPerDay"                  -> SimpleIntType ~~> "Number of time per day each service will be outage",
-      "startTime"                    -> SimpleTimeType ~~> "Start time of Snow Monkey each day",
-      "stopTime"                     -> SimpleTimeType ~~> "Stop time of Snow Monkey each day",
-      "outageDurationFrom"           -> SimpleIntType ~~> "Start of outage duration range",
-      "outageDurationTo"             -> SimpleIntType ~~> "End of outage duration range",
-      "targetGroups"                 -> ArrayOf(SimpleStringType) ~~> "Groups impacted by Snow Monkey. If empty, all groups will be impacted",
-      "chaosConfig"                  -> Ref("ChaosConfig")
+      "dryRun" -> SimpleBooleanType ~~> "Whether or not outages will actualy impact requests",
+      "timesPerDay" -> SimpleIntType ~~> "Number of time per day each service will be outage",
+      "startTime" -> SimpleTimeType ~~> "Start time of Snow Monkey each day",
+      "stopTime" -> SimpleTimeType ~~> "Stop time of Snow Monkey each day",
+      "outageDurationFrom" -> SimpleIntType ~~> "Start of outage duration range",
+      "outageDurationTo" -> SimpleIntType ~~> "End of outage duration range",
+      "targetGroups" -> ArrayOf(SimpleStringType) ~~> "Groups impacted by Snow Monkey. If empty, all groups will be impacted",
+      "chaosConfig" -> Ref("ChaosConfig")
     )
   )
+
   def Outage = Json.obj(
     "description" -> "An outage by the Snow Monkey on a service",
-    "type"        -> "object",
-    "required"    -> Json.arr("descriptorId", "descriptorName", "until", "duration"),
+    "type" -> "object",
+    "required" -> Json.arr("descriptorId", "descriptorName", "until", "duration"),
     "properties" -> Json.obj(
-      "descriptorId"   -> SimpleStringType ~~> "The service impacted by outage",
+      "descriptorId" -> SimpleStringType ~~> "The service impacted by outage",
       "descriptorName" -> SimpleStringType ~~> "The name of service impacted by outage",
-      "until"          -> SimpleTimeType ~~> "The end of the outage",
-      "duration"       -> SimpleIntType ~~> "The duration of the outage"
+      "until" -> SimpleTimeType ~~> "The end of the outage",
+      "duration" -> SimpleIntType ~~> "The duration of the outage"
     )
   )
+
   def Target = Json.obj(
     "description" -> "A Target is where an HTTP call will be forwarded in the end from a service domain",
-    "type"        -> "object",
-    "required"    -> Json.arr("host", "scheme"),
+    "type" -> "object",
+    "required" -> Json.arr("host", "scheme"),
     "properties" -> Json.obj(
-      "host"   -> SimpleHostType ~~> "The host on which the HTTP call will be forwarded. Can be a domain name, or an IP address. Can also have a port",
+      "host" -> SimpleHostType ~~> "The host on which the HTTP call will be forwarded. Can be a domain name, or an IP address. Can also have a port",
       "scheme" -> SimpleStringType ~~> "The protocol used for communication. Can be http or https"
     )
   )
 
   def IpFiltering = Json.obj(
     "description" -> "The filtering configuration block for a service of globally.",
-    "type"        -> "object",
-    "required"    -> Json.arr("whitelist", "blacklist"),
+    "type" -> "object",
+    "required" -> Json.arr("whitelist", "blacklist"),
     "properties" -> Json.obj(
       "whitelist" -> ArrayOf(SimpleIpv4Type) ~~> "Whitelisted IP addresses",
       "blacklist" -> ArrayOf(SimpleIpv4Type) ~~> "Blacklisted IP addresses"
@@ -311,38 +370,38 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
 
   def ExposedApi = Json.obj(
     "description" -> "The Open API configuration for your service (if one)",
-    "type"        -> "object",
-    "required"    -> Json.arr("exposeApi"),
+    "type" -> "object",
+    "required" -> Json.arr("exposeApi"),
     "properties" -> Json.obj(
-      "exposeApi"            -> SimpleBooleanType ~~> "Whether or not the current service expose an API with an Open API descriptor",
+      "exposeApi" -> SimpleBooleanType ~~> "Whether or not the current service expose an API with an Open API descriptor",
       "openApiDescriptorUrl" -> SimpleUriType ~~> "The URL of the Open API descriptor"
     )
   )
 
   def HealthCheck = Json.obj(
     "description" -> "The configuration for checking health of a service. Otoroshi will perform GET call on the URL to check if the service is still alive",
-    "type"        -> "object",
-    "required"    -> Json.arr("enabled"),
+    "type" -> "object",
+    "required" -> Json.arr("enabled"),
     "properties" -> Json.obj(
       "enabled" -> SimpleBooleanType ~~> "Whether or not healthcheck is enabled on the current service descriptor",
-      "url"     -> SimpleUriType ~~> "The URL to check"
+      "url" -> SimpleUriType ~~> "The URL to check"
     )
   )
 
   def StatsdConfig = Json.obj(
     "description" -> "The configuration for statsd metrics push",
-    "type"        -> "object",
-    "required"    -> Json.arr("host", "port", "datadog"),
+    "type" -> "object",
+    "required" -> Json.arr("host", "port", "datadog"),
     "properties" -> Json.obj(
-      "host"    -> SimpleStringType ~~> "The host of the StatsD agent",
-      "port"    -> SimpleIntType ~~> "The port of the StatsD agent",
+      "host" -> SimpleStringType ~~> "The host of the StatsD agent",
+      "port" -> SimpleIntType ~~> "The port of the StatsD agent",
       "datadog" -> SimpleBooleanType ~~> "Datadog agent"
     )
   )
 
   def CorsSettings = Json.obj(
     "description" -> "The configuration for cors support",
-    "type"        -> "object",
+    "type" -> "object",
     "required" -> Json.arr(
       "enabled",
       "allowOrigin",
@@ -354,20 +413,20 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       "allowCredentials"
     ),
     "properties" -> Json.obj(
-      "enabled"          -> SimpleBooleanType ~~> "Whether or not cors is enabled",
-      "allowOrigin"      -> SimpleStringType ~~> "The cors allowed origin",
-      "exposeHeaders"    -> ArrayOf(SimpleStringType) ~~> "The cors exposed header",
-      "allowHeaders"     -> ArrayOf(SimpleStringType) ~~> "The cors allowed headers",
-      "allowMethods"     -> ArrayOf(SimpleStringType) ~~> "The cors allowed methods",
+      "enabled" -> SimpleBooleanType ~~> "Whether or not cors is enabled",
+      "allowOrigin" -> SimpleStringType ~~> "The cors allowed origin",
+      "exposeHeaders" -> ArrayOf(SimpleStringType) ~~> "The cors exposed header",
+      "allowHeaders" -> ArrayOf(SimpleStringType) ~~> "The cors allowed headers",
+      "allowMethods" -> ArrayOf(SimpleStringType) ~~> "The cors allowed methods",
       "excludedPatterns" -> ArrayOf(SimpleStringType) ~~> "The cors excluded patterns",
-      "maxAge"           -> SimpleIntType ~~> "Cors max age",
+      "maxAge" -> SimpleIntType ~~> "Cors max age",
       "allowCredentials" -> SimpleBooleanType ~~> "Allow to pass credentials"
     )
   )
 
   def RedirectionSettings = Json.obj(
     "description" -> "The configuration for redirection per service",
-    "type"        -> "object",
+    "type" -> "object",
     "required" -> Json.arr(
       "enabled",
       "to",
@@ -375,14 +434,14 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
     ),
     "properties" -> Json.obj(
       "enabled" -> SimpleBooleanType ~~> "Whether or not redirection is enabled",
-      "to"      -> SimpleStringType ~~> "The location for redirection",
-      "code"    -> SimpleIntType ~~> "The http redirect code",
+      "to" -> SimpleStringType ~~> "The location for redirection",
+      "code" -> SimpleIntType ~~> "The http redirect code",
     )
   )
 
   def ValidationAuthority = Json.obj(
     "description" -> "Settings to access a validation authority server",
-    "type"        -> "object",
+    "type" -> "object",
     "required" -> Json.arr(
       "id",
       "name",
@@ -399,74 +458,246 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       "headers"
     ),
     "properties" -> Json.obj(
-      "id"          -> SimpleStringType ~~> "The id of the settings",
-      "name"        -> SimpleStringType ~~> "The name of the settings",
+      "id" -> SimpleStringType ~~> "The id of the settings",
+      "name" -> SimpleStringType ~~> "The name of the settings",
       "description" -> SimpleStringType ~~> "The description of the settings",
-      "url"         -> SimpleStringType ~~> "The URL of the server",
-      "host"        -> SimpleStringType ~~> "The host of the server",
-      "goodTtl"     -> SimpleLongType ~~> "The TTL for valid access response caching",
-      "badTtl"      -> SimpleLongType ~~> "The TTL for invalid access response caching",
-      "method"      -> SimpleStringType ~~> "The HTTP method",
-      "path"        -> SimpleStringType ~~> "The URL path",
-      "timeout"     -> SimpleLongType ~~> "The call timeout",
-      "noCache"     -> SimpleBooleanType ~~> "Avoid caching responses",
+      "url" -> SimpleStringType ~~> "The URL of the server",
+      "host" -> SimpleStringType ~~> "The host of the server",
+      "goodTtl" -> SimpleLongType ~~> "The TTL for valid access response caching",
+      "badTtl" -> SimpleLongType ~~> "The TTL for invalid access response caching",
+      "method" -> SimpleStringType ~~> "The HTTP method",
+      "path" -> SimpleStringType ~~> "The URL path",
+      "timeout" -> SimpleLongType ~~> "The call timeout",
+      "noCache" -> SimpleBooleanType ~~> "Avoid caching responses",
       "alwaysValid" -> SimpleBooleanType ~~> "Bypass http calls, every certificates are valids",
-      "headers"     -> SimpleObjectType ~~> "HTTP call headers"
+      "headers" -> SimpleObjectType ~~> "HTTP call headers"
+    )
+  )
+
+  def DataExporterConfig = Json.obj(
+    "description" -> "Settings to export Otorshi events",
+    "type" -> "object",
+    "properties" -> Json.obj(
+      "enabled" -> SimpleStringType ~~> "Boolean",
+      "typ" -> Json.obj(
+        "type" -> "string",
+        "enum" -> Json.arr(
+            "kafka",
+            "pulsar",
+            "file",
+            "mailer",
+            "elastic",
+            "console",
+            "custom",
+        ),
+        "description" -> "Type of data exporter"
+      ),
+      "id" -> SimpleStringType ~~> "Id",
+      "name" -> SimpleStringType ~~> "Name",
+      "desc" -> SimpleStringType ~~> "Description",
+      "metadata" -> SimpleObjectType ~~> "Metadata",
+      "location" -> Ref("Location") ~~> "location",
+      "bufferSize" -> SimpleIntType ~~> "buffer size",
+      "jsonWorkers" -> SimpleIntType ~~> "nb workers",
+      "sendWorkers" -> SimpleIntType ~~> "send workers",
+      "groupSize" -> SimpleIntType ~~> "Group size",
+      "groupDuration" -> SimpleLongType ~~> "duration",
+      "filtering" -> Ref("Filtering") ~~> "filtering",
+      "projection" -> SimpleObjectType ~~> "projection",
+      "config" -> OneOf(
+        Ref("ElasticConfig"),
+        Ref("KafkaConfig"),
+        Ref("PulsarDataExporterConfig"),
+        Ref("FileDataExporterConfig"),
+        Ref("MailerGenericExporterConfig"),
+        Ref("MailerConsoleExporterConfig"),
+        Ref("MailerMailgunExporterConfig"),
+        Ref("MailerMailjetExporterConfig"),
+        Ref("MailerSendgridExporterConfig"),
+        Ref("ConsoleDataExporterConfig"),
+        Ref("CustomDataExporterConfig"),
+      ) ~~> "Data Exporter config"
+    )
+  )
+
+  def Filtering = Json.obj(
+    "type" -> "object",
+    "required" -> Json.arr("include, exclude"),
+    "properties" -> Json.obj(
+      "include" -> ArrayOf(SimpleObjectType) ~~> "Including pattern",
+      "exclude" -> ArrayOf(SimpleObjectType) ~~> "Excluding pattern",
+    )
+  )
+
+  def Location = Json.obj(
+    "type" -> "object",
+    "required" -> Json.arr("tenant", "teams"),
+    "properties" -> Json.obj(
+      "tenant" -> SimpleStringType ~~> "Tenant id",
+      "teams" -> ArrayOf(SimpleObjectType) ~~> "Team ids",
+    )
+  )
+
+  def KafkaConfig = Json.obj(
+    "description" -> "The configuration for kafka access",
+    "type" -> "object",
+    "required" -> Json.arr("servers"),
+    "properties" -> Json.obj(
+      "servers" -> ArrayOf(SimpleStringType) ~~> "URLs of the kafka servers",
+      "keyPass" -> OptionalStringType ~~> "Optional keypass",
+      "keyStore" -> OptionalStringType ~~> "Optional path to keystore",
+      "trustore" -> OptionalStringType ~~> "Optional path to trustore",
+      "topic" -> OptionalStringType ~~> "Optional kafka topic (otoroshi-events by default)",
+    )
+  )
+
+  def WebhookConfig = Json.obj(
+    "description" -> "The configuration for webhook",
+    "type" -> "object",
+    "required" -> Json.arr("servers"),
+    "properties" -> Json.obj(
+      "url" -> ArrayOf(SimpleStringType) ~~> "URLs of the webhook",
+      "headers" -> SimpleObjectType ~~> "Optional headers"
+    )
+  )
+
+  def PulsarDataExporterConfig = Json.obj(
+    "description" -> "The configuration for kafka access",
+    "type" -> "object",
+    "required" -> Json.arr("uri", "tenant", "namespace", "topic"),
+    "properties" -> Json.obj(
+      "uri" -> ArrayOf(SimpleStringType) ~~> "URI of the pulsar server",
+      "tenant" -> OptionalStringType ~~> "Tenant",
+      "namespace" -> OptionalStringType ~~> "Namespace",
+      "topic" -> OptionalStringType ~~> "Topic",
+    )
+  )
+
+  def FileDataExporterConfig = Json.obj(
+    "type" -> "object",
+    "required" -> Json.arr("path"),
+    "properties" -> Json.obj(
+      "path" -> SimpleStringType ~~> "Path to file"
+    )
+  )
+
+  def MailerGenericExporterConfig = Json.obj(
+    "type" -> "object",
+    "required" -> Json.arr("type"),
+    "properties" -> Json.obj(
+      "type" -> Constant("generic") ~~> "Type of mailer",
+      "url" -> SimpleStringType ~~> "Url of mailer",
+      "headers" -> SimpleObjectType ~~> "Optional headers",
+      "to" -> ArrayOf(SimpleStringType) ~~> "Email adresses of recipents"
+    )
+  )
+
+  def MailerConsoleExporterConfig = Json.obj(
+    "type" -> "object",
+    "properties" -> Json.obj(
+      "type" -> Constant("generic") ~~> "Type of mailer",
+    )
+  )
+
+  def MailerMailgunExporterConfig = Json.obj(
+    "type" -> "object",
+    "required" -> Json.arr("type"),
+    "properties" -> Json.obj(
+      "type" -> Constant("mailgun") ~~> "Type of mailer",
+      "eu" -> SimpleBooleanType ~~> "Whether the mailgun server is european",
+      "apiKey" -> SimpleStringType ~~> "Mailgun apiKey",
+      "domain" -> SimpleStringType ~~> "Mailgun domain",
+      "to" -> ArrayOf(SimpleEmailType) ~~> "Email adresses of recipents"
+    )
+  )
+
+  def MailerMailjetExporterConfig = Json.obj(
+    "type" -> "object",
+    "required" -> Json.arr("type"),
+    "properties" -> Json.obj(
+      "type" -> Constant("mailjet") ~~> "Type of mailer",
+      "apiKeyPublic" -> SimpleStringType ~~> "Mailjet public apiKey",
+      "apiKeyPrivate" -> SimpleStringType ~~> "Mailjet private apiKey",
+      "to" -> ArrayOf(SimpleEmailType) ~~> "Email adresses of recipents"
+    )
+  )
+
+  def MailerSendgridExporterConfig = Json.obj(
+    "type" -> "object",
+    "required" -> Json.arr("type"),
+    "properties" -> Json.obj(
+      "type" -> Constant("sendgrid") ~~> "Type of mailer",
+      "apiKeyPublic" -> SimpleStringType ~~> "Sendgrid apiKey",
+      "to" -> ArrayOf(SimpleEmailType) ~~> "Email adresses of recipents"
+    )
+  )
+
+  def ConsoleDataExporterConfig = Json.obj(
+    "type" -> "object",
+    "properties" -> Json.obj()
+  )
+
+  def CustomDataExporterConfig = Json.obj(
+    "type" -> "object",
+    "required" -> Json.arr("ref", "config"),
+    "properties" -> Json.obj(
+      "ref" -> SimpleStringType ~~> "Script Ref",
+      "config" -> SimpleObjectType ~~> "Custom data exporter config"
     )
   )
 
   def ElasticConfig = Json.obj(
     "description" -> "The configuration for elastic access",
-    "type"        -> "object",
-    "required"    -> Json.arr("clusterUri", "index", "type", "user", "password", "headers"),
+    "type" -> "object",
+    "required" -> Json.arr("clusterUri", "index", "type", "user", "password", "headers"),
     "properties" -> Json.obj(
       "clusterUri" -> SimpleStringType ~~> "URL of the elastic cluster",
-      "index"      -> OptionalStringType ~~> "Index for events. Default is otoroshi-events",
-      "type"       -> OptionalStringType ~~> "Type of events. Default is event",
-      "user"       -> OptionalStringType ~~> "Optional user",
-      "password"   -> OptionalStringType ~~> "Optional password",
-      "headers"    -> SimpleObjectType ~~> "Additionnal http headers"
+      "index" -> OptionalStringType ~~> "Index for events. Default is otoroshi-events",
+      "type" -> OptionalStringType ~~> "Type of events. Default is event",
+      "user" -> OptionalStringType ~~> "Optional user",
+      "password" -> OptionalStringType ~~> "Optional password",
+      "headers" -> SimpleObjectType ~~> "Additionnal http headers"
     )
   )
 
   def ClientConfig = Json.obj(
     "description" -> "The configuration of the circuit breaker for a service descriptor",
-    "type"        -> "object",
+    "type" -> "object",
     "required" -> Json.arr("useCircuitBreaker",
-                           "retries",
-                           "maxErrors",
-                           "retryInitialDelay",
-                           "backoffFactor",
-                           "callTimeout",
-                           "globalTimeout",
-                           "sampleInterval"),
+      "retries",
+      "maxErrors",
+      "retryInitialDelay",
+      "backoffFactor",
+      "callTimeout",
+      "globalTimeout",
+      "sampleInterval"),
     "properties" -> Json.obj(
       "useCircuitBreaker" -> SimpleBooleanType ~~> "Use a circuit breaker to avoid cascading failure when calling chains of services. Highly recommended !",
-      "retries"           -> SimpleIntType ~~> "Specify how many times the client will try to fetch the result of the request after an error before giving up.",
-      "maxErrors"         -> SimpleIntType ~~> "Specify how many errors can pass before opening the circuit breaker",
+      "retries" -> SimpleIntType ~~> "Specify how many times the client will try to fetch the result of the request after an error before giving up.",
+      "maxErrors" -> SimpleIntType ~~> "Specify how many errors can pass before opening the circuit breaker",
       "retryInitialDelay" -> SimpleIntType ~~> "Specify the delay between two retries. Each retry, the delay is multiplied by the backoff factor",
-      "backoffFactor"     -> SimpleIntType ~~> "Specify the factor to multiply the delay for each retry",
-      "callTimeout"       -> SimpleIntType ~~> "Specify how long each call should last at most in milliseconds",
-      "globalTimeout"     -> SimpleIntType ~~> "Specify how long the global call (with retries) should last at most in milliseconds",
-      "sampleInterval"    -> SimpleIntType ~~> "Specify the sliding window time for the circuit breaker in milliseconds, after this time, error count will be reseted"
+      "backoffFactor" -> SimpleIntType ~~> "Specify the factor to multiply the delay for each retry",
+      "callTimeout" -> SimpleIntType ~~> "Specify how long each call should last at most in milliseconds",
+      "globalTimeout" -> SimpleIntType ~~> "Specify how long the global call (with retries) should last at most in milliseconds",
+      "sampleInterval" -> SimpleIntType ~~> "Specify the sliding window time for the circuit breaker in milliseconds, after this time, error count will be reseted"
     )
   )
 
   def Canary = Json.obj(
     "description" -> "The configuration of the canary mode for a service descriptor",
-    "type"        -> "object",
-    "required"    -> Json.arr("enabled", "traffic", "targets", "root"),
+    "type" -> "object",
+    "required" -> Json.arr("enabled", "traffic", "targets", "root"),
     "properties" -> Json.obj(
       "enabled" -> SimpleBooleanType ~~> "Use canary mode for this service",
       "traffic" -> SimpleIntType ~~> "Ratio of traffic that will be sent to canary targets.",
       "targets" -> ArrayOf(Ref("Target")) ~~> "The list of target that Otoroshi will proxy and expose through the subdomain defined before. Otoroshi will do round-robin load balancing between all those targets with circuit breaker mecanism to avoid cascading failures",
-      "root"    -> SimpleStringType ~~> "Otoroshi will append this root to any target choosen. If the specified root is '/api/foo', then a request to https://yyyyyyy/bar will actually hit https://xxxxxxxxx/api/foo/bar"
+      "root" -> SimpleStringType ~~> "Otoroshi will append this root to any target choosen. If the specified root is '/api/foo', then a request to https://yyyyyyy/bar will actually hit https://xxxxxxxxx/api/foo/bar"
     )
   )
 
   def Service = Json.obj(
     "description" -> "An otoroshi service descriptor. Represent a forward HTTP call on a domain to another location with some optional api management mecanism",
-    "type"        -> "object",
+    "type" -> "object",
     "required" -> Json.arr(
       "id",
       "groups",
@@ -484,62 +715,62 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       "enforceSecureCommunication"
     ),
     "properties" -> Json.obj(
-      "id"                         -> SimpleUuidType ~~> "A unique random string to identify your service",
-      "groups"                     -> SimpleArrayType ~~> "Each service descriptor is attached to groups. A group can have one or more services. Each API key is linked to a group and allow access to every service in the group",
-      "name"                       -> SimpleStringType ~~> "The name of your service. Only for debug and human readability purposes",
-      "env"                        -> SimpleStringType ~~> "The line on which the service is available. Based on that value, the name of the line will be appended to the subdomain. For line prod, nothing will be appended. For example, if the subdomain is 'foo' and line is 'preprod', then the exposed service will be available at 'foo.preprod.mydomain'",
-      "domain"                     -> SimpleStringType ~~> "The domain on which the service is available.",
-      "subdomain"                  -> SimpleStringType ~~> "The subdomain on which the service is available",
-      "targets"                    -> ArrayOf(Ref("Target")) ~~> "The list of target that Otoroshi will proxy and expose through the subdomain defined before. Otoroshi will do round-robin load balancing between all those targets with circuit breaker mecanism to avoid cascading failures",
-      "root"                       -> SimpleStringType ~~> "Otoroshi will append this root to any target choosen. If the specified root is '/api/foo', then a request to https://yyyyyyy/bar will actually hit https://xxxxxxxxx/api/foo/bar",
-      "matchingRoot"               -> SimpleStringType ~~> "The root path on which the service is available",
-      "localHost"                  -> SimpleStringType ~~> "The host used localy, mainly localhost:xxxx",
-      "localScheme"                -> SimpleStringType ~~> "The scheme used localy, mainly http",
-      "redirectToLocal"            -> SimpleBooleanType ~~> "If you work locally with Otoroshi, you may want to use that feature to redirect one particuliar service to a local host. For example, you can relocate https://foo.preprod.bar.com to http://localhost:8080 to make some tests",
-      "enabled"                    -> SimpleBooleanType ~~> "Activate or deactivate your service. Once disabled, users will get an error page saying the service does not exist",
-      "userFacing"                 -> SimpleBooleanType ~~> "The fact that this service will be seen by users and cannot be impacted by the Snow Monkey",
-      "privateApp"                 -> SimpleBooleanType ~~> "When enabled, user will be allowed to use the service (UI) only if they are registered users of the private apps domain",
-      "forceHttps"                 -> SimpleBooleanType ~~> "Will force redirection to https:// if not present",
-      "maintenanceMode"            -> SimpleBooleanType ~~> "Display a maintainance page when a user try to use the service",
-      "buildMode"                  -> SimpleBooleanType ~~> "Display a construction page when a user try to use the service",
+      "id" -> SimpleUuidType ~~> "A unique random string to identify your service",
+      "groups" -> SimpleArrayType ~~> "Each service descriptor is attached to groups. A group can have one or more services. Each API key is linked to a group and allow access to every service in the group",
+      "name" -> SimpleStringType ~~> "The name of your service. Only for debug and human readability purposes",
+      "env" -> SimpleStringType ~~> "The line on which the service is available. Based on that value, the name of the line will be appended to the subdomain. For line prod, nothing will be appended. For example, if the subdomain is 'foo' and line is 'preprod', then the exposed service will be available at 'foo.preprod.mydomain'",
+      "domain" -> SimpleStringType ~~> "The domain on which the service is available.",
+      "subdomain" -> SimpleStringType ~~> "The subdomain on which the service is available",
+      "targets" -> ArrayOf(Ref("Target")) ~~> "The list of target that Otoroshi will proxy and expose through the subdomain defined before. Otoroshi will do round-robin load balancing between all those targets with circuit breaker mecanism to avoid cascading failures",
+      "root" -> SimpleStringType ~~> "Otoroshi will append this root to any target choosen. If the specified root is '/api/foo', then a request to https://yyyyyyy/bar will actually hit https://xxxxxxxxx/api/foo/bar",
+      "matchingRoot" -> SimpleStringType ~~> "The root path on which the service is available",
+      "localHost" -> SimpleStringType ~~> "The host used localy, mainly localhost:xxxx",
+      "localScheme" -> SimpleStringType ~~> "The scheme used localy, mainly http",
+      "redirectToLocal" -> SimpleBooleanType ~~> "If you work locally with Otoroshi, you may want to use that feature to redirect one particuliar service to a local host. For example, you can relocate https://foo.preprod.bar.com to http://localhost:8080 to make some tests",
+      "enabled" -> SimpleBooleanType ~~> "Activate or deactivate your service. Once disabled, users will get an error page saying the service does not exist",
+      "userFacing" -> SimpleBooleanType ~~> "The fact that this service will be seen by users and cannot be impacted by the Snow Monkey",
+      "privateApp" -> SimpleBooleanType ~~> "When enabled, user will be allowed to use the service (UI) only if they are registered users of the private apps domain",
+      "forceHttps" -> SimpleBooleanType ~~> "Will force redirection to https:// if not present",
+      "maintenanceMode" -> SimpleBooleanType ~~> "Display a maintainance page when a user try to use the service",
+      "buildMode" -> SimpleBooleanType ~~> "Display a construction page when a user try to use the service",
       "enforceSecureCommunication" -> SimpleBooleanType ~~> "When enabled, Otoroshi will try to exchange headers with downstream service to ensure no one else can use the service from outside",
-      "sendOtoroshiHeadersBack"    -> SimpleBooleanType ~~> "When enabled, Otoroshi will send headers to consumer like request id, client latency, overhead, etc ...",
-      "xForwardedHeaders"          -> SimpleBooleanType ~~> "When enabled, Otoroshi will send X-Forwarded-* headers to target",
-      "overrideHost"               -> SimpleBooleanType ~~> "When enabled, Otoroshi will automatically set the Host header to corresponding target host",
-      "secComExcludedPatterns"     -> ArrayOf(SimpleStringType) ~~> "URI patterns excluded from secured communications",
-      "publicPatterns"             -> ArrayOf(SimpleStringType) ~~> "By default, every services are private only and you'll need an API key to access it. However, if you want to expose a public UI, you can define one or more public patterns (regex) to allow access to anybody. For example if you want to allow anybody on any URL, just use '/.*'",
-      "privatePatterns"            -> ArrayOf(SimpleStringType) ~~> "If you define a public pattern that is a little bit too much, you can make some of public URL private again",
-      "ipFiltering"                -> Ref("IpFiltering"),
-      "api"                        -> Ref("ExposedApi"),
-      "healthCheck"                -> Ref("HealthCheck"),
-      "clientConfig"               -> Ref("ClientConfig"),
-      "Canary"                     -> Ref("Canary"),
-      "statsdConfig"               -> Ref("StatsdConfig"),
-      "chaosConfig"                -> Ref("ChaosConfig"),
-      "jwtVerifier"                -> OneOf(Ref("LocalJwtVerifier"), Ref("RefJwtVerifier")),
+      "sendOtoroshiHeadersBack" -> SimpleBooleanType ~~> "When enabled, Otoroshi will send headers to consumer like request id, client latency, overhead, etc ...",
+      "xForwardedHeaders" -> SimpleBooleanType ~~> "When enabled, Otoroshi will send X-Forwarded-* headers to target",
+      "overrideHost" -> SimpleBooleanType ~~> "When enabled, Otoroshi will automatically set the Host header to corresponding target host",
+      "secComExcludedPatterns" -> ArrayOf(SimpleStringType) ~~> "URI patterns excluded from secured communications",
+      "publicPatterns" -> ArrayOf(SimpleStringType) ~~> "By default, every services are private only and you'll need an API key to access it. However, if you want to expose a public UI, you can define one or more public patterns (regex) to allow access to anybody. For example if you want to allow anybody on any URL, just use '/.*'",
+      "privatePatterns" -> ArrayOf(SimpleStringType) ~~> "If you define a public pattern that is a little bit too much, you can make some of public URL private again",
+      "ipFiltering" -> Ref("IpFiltering"),
+      "api" -> Ref("ExposedApi"),
+      "healthCheck" -> Ref("HealthCheck"),
+      "clientConfig" -> Ref("ClientConfig"),
+      "Canary" -> Ref("Canary"),
+      "statsdConfig" -> Ref("StatsdConfig"),
+      "chaosConfig" -> Ref("ChaosConfig"),
+      "jwtVerifier" -> OneOf(Ref("LocalJwtVerifier"), Ref("RefJwtVerifier")),
       "secComSettings" -> OneOf(Ref("HSAlgoSettings"),
-                                Ref("RSAlgoSettings"),
-                                Ref("ESAlgoSettings"),
-                                Ref("JWKSAlgoSettings")),
-      "metadata"            -> SimpleObjectType ~~> "Just a bunch of random properties",
-      "matchingHeaders"     -> SimpleObjectType ~~> "Specify headers that MUST be present on client request to route it. Useful to implement versioning",
-      "additionalHeaders"   -> SimpleObjectType ~~> "Specify headers that will be added to each client request. Useful to add authentication",
-      "authConfigRef"       -> SimpleStringType ~~> "A reference to a global auth module config",
-      "transformerRef"      -> SimpleStringType ~~> "A reference to a request transformer",
-      "clientValidatorRef"  -> SimpleStringType ~~> "A reference to validation authority",
-      "clientValidatorRef"  -> SimpleStringType ~~> "A reference to validation authority",
-      "cors"                -> Ref("CorsSettings"),
-      "redirection"         -> Ref("RedirectionSettings"),
-      "overrideHost"        -> SimpleBooleanType ~~> "Host header will be overriden with Host of the target",
-      "xForwardedHeaders"   -> SimpleBooleanType ~~> "Send X-Forwarded-* headers",
-      "gzip"                -> Ref("Gzip"),
+        Ref("RSAlgoSettings"),
+        Ref("ESAlgoSettings"),
+        Ref("JWKSAlgoSettings")),
+      "metadata" -> SimpleObjectType ~~> "Just a bunch of random properties",
+      "matchingHeaders" -> SimpleObjectType ~~> "Specify headers that MUST be present on client request to route it. Useful to implement versioning",
+      "additionalHeaders" -> SimpleObjectType ~~> "Specify headers that will be added to each client request. Useful to add authentication",
+      "authConfigRef" -> SimpleStringType ~~> "A reference to a global auth module config",
+      "transformerRef" -> SimpleStringType ~~> "A reference to a request transformer",
+      "clientValidatorRef" -> SimpleStringType ~~> "A reference to validation authority",
+      "clientValidatorRef" -> SimpleStringType ~~> "A reference to validation authority",
+      "cors" -> Ref("CorsSettings"),
+      "redirection" -> Ref("RedirectionSettings"),
+      "overrideHost" -> SimpleBooleanType ~~> "Host header will be overriden with Host of the target",
+      "xForwardedHeaders" -> SimpleBooleanType ~~> "Send X-Forwarded-* headers",
+      "gzip" -> Ref("Gzip"),
       "headersVerification" -> SimpleObjectType ~~> "Specify headers that will be verified after routing.",
     )
   )
 
   def Gzip = Json.obj(
     "description" -> "Configuration for gzip of service responses",
-    "type"        -> "object",
+    "type" -> "object",
     "required" -> Json.arr(
       "enabled",
       "excludedPatterns",
@@ -550,11 +781,11 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       "compressionLevel",
     ),
     "properties" -> Json.obj(
-      "enabled"          -> SimpleBooleanType ~~> "Whether gzip compression is enabled or not",
+      "enabled" -> SimpleBooleanType ~~> "Whether gzip compression is enabled or not",
       "excludedPatterns" -> ArrayOf(SimpleStringType) ~~> "Patterns that are excluded from gzipping",
-      "whiteList"        -> ArrayOf(SimpleStringType) ~~> "Whitelisted mime types. Wildcard supported",
-      "blackList"        -> ArrayOf(SimpleStringType) ~~> "Blacklisted mime types. Wildcard supported",
-      "bufferSize"       -> SimpleLongType ~~> "Size of the GZip buffer",
+      "whiteList" -> ArrayOf(SimpleStringType) ~~> "Whitelisted mime types. Wildcard supported",
+      "blackList" -> ArrayOf(SimpleStringType) ~~> "Blacklisted mime types. Wildcard supported",
+      "bufferSize" -> SimpleLongType ~~> "Size of the GZip buffer",
       "chunkedThreshold" -> SimpleLongType ~~> "Threshold for chunking data",
       "compressionLevel" -> SimpleIntType ~~> "Compression level. From 0 to 9"
     )
@@ -562,70 +793,70 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
 
   def ApiKey = Json.obj(
     "description" -> "An Otoroshi Api Key. An Api Key is defined for a group of services to allow usage of the same Api Key for multiple services.",
-    "type"        -> "object",
-    "required"    -> Json.arr("clientId", "clientSecret", "clientName", "authorizedEntities", "enabled"),
+    "type" -> "object",
+    "required" -> Json.arr("clientId", "clientSecret", "clientName", "authorizedEntities", "enabled"),
     "properties" -> Json.obj(
-      "clientId"        -> SimpleStringType ~~> "The unique id of the Api Key. Usually 16 random alpha numerical characters, but can be anything",
-      "clientSecret"    -> SimpleStringType ~~> "The secret of the Api Key. Usually 64 random alpha numerical characters, but can be anything",
-      "clientName"      -> SimpleStringType ~~> "The name of the api key, for humans ;-)",
+      "clientId" -> SimpleStringType ~~> "The unique id of the Api Key. Usually 16 random alpha numerical characters, but can be anything",
+      "clientSecret" -> SimpleStringType ~~> "The secret of the Api Key. Usually 64 random alpha numerical characters, but can be anything",
+      "clientName" -> SimpleStringType ~~> "The name of the api key, for humans ;-)",
       "authorizedEntities" -> SimpleArrayType ~~> "The group/service ids (prefixed by group_ or service_ on which the key is authorized",
-      "enabled"         -> SimpleBooleanType ~~> "Whether or not the key is enabled. If disabled, resources won't be available to calls using this key",
+      "enabled" -> SimpleBooleanType ~~> "Whether or not the key is enabled. If disabled, resources won't be available to calls using this key",
       "throttlingQuota" -> SimpleLongType ~~> "Authorized number of calls per second, measured on 10 seconds",
-      "dailyQuota"      -> SimpleLongType ~~> "Authorized number of calls per day",
-      "monthlyQuota"    -> SimpleLongType ~~> "Authorized number of calls per month",
-      "metadata"        -> SimpleObjectType ~~> "Bunch of metadata for the key"
+      "dailyQuota" -> SimpleLongType ~~> "Authorized number of calls per day",
+      "monthlyQuota" -> SimpleLongType ~~> "Authorized number of calls per month",
+      "metadata" -> SimpleObjectType ~~> "Bunch of metadata for the key"
     )
   )
 
   def Group = Json.obj(
     "description" -> "An Otoroshi service group is just a group of service descriptor. It is useful to be able to define Api Keys for the whole group",
-    "type"        -> "object",
-    "required"    -> Json.arr("id", "name"),
+    "type" -> "object",
+    "required" -> Json.arr("id", "name"),
     "properties" -> Json.obj(
-      "id"          -> SimpleStringType ~~> "The unique id of the group. Usually 64 random alpha numerical characters, but can be anything",
-      "name"        -> SimpleStringType ~~> "The name of the group",
+      "id" -> SimpleStringType ~~> "The unique id of the group. Usually 64 random alpha numerical characters, but can be anything",
+      "name" -> SimpleStringType ~~> "The name of the group",
       "description" -> SimpleStringType ~~> "The descriptoin of the group"
     )
   )
 
   def Auth0Config = Json.obj(
     "description" -> "Configuration for Auth0 domain",
-    "type"        -> "object",
-    "required"    -> Json.arr("clientId", "clientSecret", "domain", "callbackUrl"),
+    "type" -> "object",
+    "required" -> Json.arr("clientId", "clientSecret", "domain", "callbackUrl"),
     "properties" -> Json.obj(
-      "clientId"     -> SimpleStringType ~~> "Auth0 client id",
+      "clientId" -> SimpleStringType ~~> "Auth0 client id",
       "clientSecret" -> SimpleStringType ~~> "Auth0 client secret",
-      "domain"       -> SimpleStringType ~~> "Auth0 domain",
-      "callbackUrl"  -> SimpleStringType ~~> "Auth0 callback URL"
+      "domain" -> SimpleStringType ~~> "Auth0 domain",
+      "callbackUrl" -> SimpleStringType ~~> "Auth0 callback URL"
     )
   )
 
   def MailerSettings = Json.obj(
     "description" -> "Configuration for mailgun api client",
-    "type"        -> "object",
-    "required"    -> Json.arr("apiKey", "domain"),
+    "type" -> "object",
+    "required" -> Json.arr("apiKey", "domain"),
     "properties" -> Json.obj(
-      "type"          -> SimpleStringType ~~> "Type of the mailer: console, generic, mailgun, mailjet",
-      "eu"            -> SimpleBooleanType ~~> "Mailgun mailer, use EU tenant api",
-      "apiKey"        -> SimpleStringType ~~> "Mailgun mailer api key",
-      "domain"        -> SimpleStringType ~~> "Mailgun mailer domain",
-      "apiKeyPublic"  -> SimpleStringType ~~> "Mailjet mailer public api key",
+      "type" -> SimpleStringType ~~> "Type of the mailer: console, generic, mailgun, mailjet",
+      "eu" -> SimpleBooleanType ~~> "Mailgun mailer, use EU tenant api",
+      "apiKey" -> SimpleStringType ~~> "Mailgun mailer api key",
+      "domain" -> SimpleStringType ~~> "Mailgun mailer domain",
+      "apiKeyPublic" -> SimpleStringType ~~> "Mailjet mailer public api key",
       "apiKeyPrivate" -> SimpleStringType ~~> "Mailjet mailer private api key",
-      "url"           -> SimpleStringType ~~> "Generic mailer url",
-      "header"        -> SimpleObjectType ~~> "Generic mailer headers",
+      "url" -> SimpleStringType ~~> "Generic mailer url",
+      "header" -> SimpleObjectType ~~> "Generic mailer headers",
     )
   )
 
   def CleverSettings = Json.obj(
     "description" -> "Configuration for CleverCloud client",
-    "type"        -> "object",
-    "required"    -> Json.arr("consumerKey", "consumerSecret", "token", "secret", "orgaId"),
+    "type" -> "object",
+    "required" -> Json.arr("consumerKey", "consumerSecret", "token", "secret", "orgaId"),
     "properties" -> Json.obj(
-      "consumerKey"    -> SimpleStringType ~~> "CleverCloud consumer key",
+      "consumerKey" -> SimpleStringType ~~> "CleverCloud consumer key",
       "consumerSecret" -> SimpleStringType ~~> "CleverCloud consumer token",
-      "token"          -> SimpleStringType ~~> "CleverCloud oauth token",
-      "secret"         -> SimpleStringType ~~> "CleverCloud oauth secret",
-      "orgaId"         -> SimpleStringType ~~> "CleverCloud organization id"
+      "token" -> SimpleStringType ~~> "CleverCloud oauth token",
+      "secret" -> SimpleStringType ~~> "CleverCloud oauth secret",
+      "orgaId" -> SimpleStringType ~~> "CleverCloud organization id"
     )
   )
 
@@ -649,132 +880,132 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
     ),
     "description" -> "The global config object of Otoroshi, used to customize settings of the current Otoroshi instance",
     "properties" -> Json.obj(
-      "lines"                   -> ArrayOf(SimpleStringType) ~~> "Possibles lines for Otoroshi",
-      "streamEntityOnly"        -> SimpleBooleanType ~~> "HTTP will be streamed only. Doesn't work with old browsers",
-      "autoLinkToDefaultGroup"  -> SimpleBooleanType ~~> "If not defined, every new service descriptor will be added to the default group",
+      "lines" -> ArrayOf(SimpleStringType) ~~> "Possibles lines for Otoroshi",
+      "streamEntityOnly" -> SimpleBooleanType ~~> "HTTP will be streamed only. Doesn't work with old browsers",
+      "autoLinkToDefaultGroup" -> SimpleBooleanType ~~> "If not defined, every new service descriptor will be added to the default group",
       "limitConcurrentRequests" -> SimpleBooleanType ~~> "If enabled, Otoroshi will reject new request if too much at the same time",
-      "maxConcurrentRequests"   -> SimpleLongType ~~> "The number of authorized request processed at the same time",
-      "maxHttp10ResponseSize"   -> SimpleLongType ~~> "The max size in bytes of an HTTP 1.0 response",
-      "useCircuitBreakers"      -> SimpleBooleanType ~~> "If enabled, services will be authorized to use circuit breakers",
-      "apiReadOnly"             -> SimpleBooleanType ~~> "If enabled, Admin API won't be able to write/update/delete entities",
-      "u2fLoginOnly"            -> SimpleBooleanType ~~> "If enabled, login to backoffice through Auth0 will be disabled",
-      "ipFiltering"             -> Ref("IpFiltering"),
-      "throttlingQuota"         -> SimpleLongType ~~> "Authorized number of calls per second globally, measured on 10 seconds",
-      "perIpThrottlingQuota"    -> SimpleLongType ~~> "Authorized number of calls per second globally per IP address, measured on 10 seconds",
-      "elasticWritesConfigs"    -> ArrayOf(Ref("ElasticConfig")) ~~> "Configs. for Elastic writes",
-      "elasticReadsConfig"      -> Ref("ElasticConfig") ~~> "Config. for elastic reads",
-      "analyticsWebhooks"       -> ArrayOf(Ref("Webhook")) ~~> "Webhook that will receive all internal Otoroshi events",
-      "alertsWebhooks"          -> ArrayOf(Ref("Webhook")) ~~> "Webhook that will receive all Otoroshi alert events",
-      "alertsEmails"            -> ArrayOf(SimpleEmailType) ~~> "Email addresses that will receive all Otoroshi alert events",
-      "endlessIpAddresses"      -> ArrayOf(SimpleIpv4Type) ~~> "IP addresses for which any request to Otoroshi will respond with 128 Gb of zeros",
-      "middleFingers"           -> SimpleBooleanType ~~> "Use middle finger emoji as a response character for endless HTTP responses",
-      "maxLogsSize"             -> SimpleIntType ~~> "Number of events kept locally",
-      "cleverSettings"          -> Ref("CleverSettings") ~~> "Optional CleverCloud configuration",
-      "mailerSettings"          -> Ref("MailerSettings") ~~> "Optional mailer configuration",
-      "backofficeAuth0Config"   -> Ref("Auth0Config") ~~> "Optional configuration for the backoffice Auth0 domain",
-      "privateAppsAuth0Config"  -> Ref("Auth0Config") ~~> "Optional configuration for the private apps Auth0 domain"
+      "maxConcurrentRequests" -> SimpleLongType ~~> "The number of authorized request processed at the same time",
+      "maxHttp10ResponseSize" -> SimpleLongType ~~> "The max size in bytes of an HTTP 1.0 response",
+      "useCircuitBreakers" -> SimpleBooleanType ~~> "If enabled, services will be authorized to use circuit breakers",
+      "apiReadOnly" -> SimpleBooleanType ~~> "If enabled, Admin API won't be able to write/update/delete entities",
+      "u2fLoginOnly" -> SimpleBooleanType ~~> "If enabled, login to backoffice through Auth0 will be disabled",
+      "ipFiltering" -> Ref("IpFiltering"),
+      "throttlingQuota" -> SimpleLongType ~~> "Authorized number of calls per second globally, measured on 10 seconds",
+      "perIpThrottlingQuota" -> SimpleLongType ~~> "Authorized number of calls per second globally per IP address, measured on 10 seconds",
+      "elasticWritesConfigs" -> ArrayOf(Ref("ElasticConfig")) ~~> "Configs. for Elastic writes",
+      "elasticReadsConfig" -> Ref("ElasticConfig") ~~> "Config. for elastic reads",
+      "analyticsWebhooks" -> ArrayOf(Ref("Webhook")) ~~> "Webhook that will receive all internal Otoroshi events",
+      "alertsWebhooks" -> ArrayOf(Ref("Webhook")) ~~> "Webhook that will receive all Otoroshi alert events",
+      "alertsEmails" -> ArrayOf(SimpleEmailType) ~~> "Email addresses that will receive all Otoroshi alert events",
+      "endlessIpAddresses" -> ArrayOf(SimpleIpv4Type) ~~> "IP addresses for which any request to Otoroshi will respond with 128 Gb of zeros",
+      "middleFingers" -> SimpleBooleanType ~~> "Use middle finger emoji as a response character for endless HTTP responses",
+      "maxLogsSize" -> SimpleIntType ~~> "Number of events kept locally",
+      "cleverSettings" -> Ref("CleverSettings") ~~> "Optional CleverCloud configuration",
+      "mailerSettings" -> Ref("MailerSettings") ~~> "Optional mailer configuration",
+      "backofficeAuth0Config" -> Ref("Auth0Config") ~~> "Optional configuration for the backoffice Auth0 domain",
+      "privateAppsAuth0Config" -> Ref("Auth0Config") ~~> "Optional configuration for the private apps Auth0 domain"
     )
   )
 
   def Webhook = Json.obj(
     "description" -> "A callback URL where events are posted",
-    "type"        -> "object",
-    "required"    -> Json.arr("url", "headers"),
+    "type" -> "object",
+    "required" -> Json.arr("url", "headers"),
     "properties" -> Json.obj(
-      "url"     -> SimpleUriType ~~> "The URL where events are posted",
+      "url" -> SimpleUriType ~~> "The URL where events are posted",
       "headers" -> SimpleObjectType ~~> "Headers to authorize the call or whatever"
     )
   )
 
   def ImportExportStats = Json.obj(
     "description" -> "Global stats for the current Otoroshi instances",
-    "type"        -> "object",
-    "required"    -> Json.arr("calls", "dataIn", "dataOut"),
+    "type" -> "object",
+    "required" -> Json.arr("calls", "dataIn", "dataOut"),
     "properties" -> Json.obj(
-      "calls"   -> SimpleLongType ~~> "Number of calls to Otoroshi globally",
-      "dataIn"  -> SimpleLongType ~~> "The amount of data sent to Otoroshi globally",
+      "calls" -> SimpleLongType ~~> "Number of calls to Otoroshi globally",
+      "dataIn" -> SimpleLongType ~~> "The amount of data sent to Otoroshi globally",
       "dataOut" -> SimpleLongType ~~> "The amount of data sent from Otoroshi globally"
     )
   )
 
   def U2FAdmin = Json.obj(
     "description" -> "Administrator using FIDO U2F device to access Otoroshi",
-    "type"        -> "object",
-    "required"    -> Json.arr("username", "label", "password", "createdAt", "registration"),
+    "type" -> "object",
+    "required" -> Json.arr("username", "label", "password", "createdAt", "registration"),
     "properties" -> Json.obj(
-      "username"     -> SimpleStringType ~~> "The email address of the user",
-      "label"        -> SimpleStringType ~~> "The label for the user",
-      "password"     -> SimpleStringType ~~> "The hashed password of the user",
-      "createdAt"    -> SimpleLongType ~~> "The creation date of the user",
+      "username" -> SimpleStringType ~~> "The email address of the user",
+      "label" -> SimpleStringType ~~> "The label for the user",
+      "password" -> SimpleStringType ~~> "The hashed password of the user",
+      "createdAt" -> SimpleLongType ~~> "The creation date of the user",
       "registration" -> SimpleObjectType ~~> "The U2F registration slug"
     )
   )
 
   def SimpleAdmin = Json.obj(
     "description" -> "Administrator using just login/password tuple to access Otoroshi",
-    "type"        -> "object",
-    "required"    -> Json.arr("username", "label", "password", "createdAt"),
+    "type" -> "object",
+    "required" -> Json.arr("username", "label", "password", "createdAt"),
     "properties" -> Json.obj(
-      "username"  -> SimpleStringType ~~> "The email address of the user",
-      "label"     -> SimpleStringType ~~> "The label for the user",
-      "password"  -> SimpleStringType ~~> "The hashed password of the user",
+      "username" -> SimpleStringType ~~> "The email address of the user",
+      "label" -> SimpleStringType ~~> "The label for the user",
+      "password" -> SimpleStringType ~~> "The hashed password of the user",
       "createdAt" -> SimpleLongType ~~> "The creation date of the user"
     )
   )
 
   def ErrorTemplate = Json.obj(
     "description" -> "Error templates for a service descriptor",
-    "type"        -> "object",
+    "type" -> "object",
     "required" -> Json.arr("serviceId",
-                           "template40x",
-                           "template50x",
-                           "templateBuild",
-                           "templateMaintenance",
-                           "messages"),
+      "template40x",
+      "template50x",
+      "templateBuild",
+      "templateMaintenance",
+      "messages"),
     "properties" -> Json.obj(
-      "serviceId"           -> SimpleStringType ~~> "The Id of the service for which the error template is enabled",
-      "template40x"         -> SimpleStringType ~~> "The html template for 40x errors",
-      "template50x"         -> SimpleStringType ~~> "The html template for 50x errors",
-      "templateBuild"       -> SimpleStringType ~~> "The html template for build page",
+      "serviceId" -> SimpleStringType ~~> "The Id of the service for which the error template is enabled",
+      "template40x" -> SimpleStringType ~~> "The html template for 40x errors",
+      "template50x" -> SimpleStringType ~~> "The html template for 50x errors",
+      "templateBuild" -> SimpleStringType ~~> "The html template for build page",
       "templateMaintenance" -> SimpleStringType ~~> "The html template for maintenance page",
-      "messages"            -> SimpleObjectType ~~> "Map for custom messages"
+      "messages" -> SimpleObjectType ~~> "Map for custom messages"
     )
   )
 
   def ImportExport = Json.obj(
     "description" -> "The structure that can be imported to or exported from Otoroshi. It represent the memory state of Otoroshi",
-    "type"        -> "object",
+    "type" -> "object",
     "required" -> Json.arr("label",
-                           "dateRaw",
-                           "date",
-                           "stats",
-                           "config",
-                           "admins",
-                           "simpleAdmins",
-                           "serviceGroups",
-                           "apiKeys",
-                           "serviceDescriptors",
-                           "errorTemplates"),
+      "dateRaw",
+      "date",
+      "stats",
+      "config",
+      "admins",
+      "simpleAdmins",
+      "serviceGroups",
+      "apiKeys",
+      "serviceDescriptors",
+      "errorTemplates"),
     "properties" -> Json.obj(
-      "label"              -> SimpleStringType,
-      "dateRaw"            -> SimpleLongType,
-      "date"               -> SimpleDateTimeType,
-      "stats"              -> Ref("ImportExportStats") ~~> "Current global stats at the time of export",
-      "config"             -> Ref("GlobalConfig") ~~> "Current global config at the time of export",
-      "appConfig"          -> SimpleObjectType ~~> "Current env variables at the time of export",
-      "admins"             -> ArrayOf(U2FAdmin) ~~> "Current U2F admin at the time of export",
-      "simpleAdmins"       -> ArrayOf(SimpleAdmin) ~~> "Current simple admins at the time of export",
-      "serviceGroups"      -> ArrayOf(Group) ~~> "Current service groups at the time of export",
-      "apiKeys"            -> ArrayOf(ApiKey) ~~> "Current apik keys at the time of export",
+      "label" -> SimpleStringType,
+      "dateRaw" -> SimpleLongType,
+      "date" -> SimpleDateTimeType,
+      "stats" -> Ref("ImportExportStats") ~~> "Current global stats at the time of export",
+      "config" -> Ref("GlobalConfig") ~~> "Current global config at the time of export",
+      "appConfig" -> SimpleObjectType ~~> "Current env variables at the time of export",
+      "admins" -> ArrayOf(U2FAdmin) ~~> "Current U2F admin at the time of export",
+      "simpleAdmins" -> ArrayOf(SimpleAdmin) ~~> "Current simple admins at the time of export",
+      "serviceGroups" -> ArrayOf(Group) ~~> "Current service groups at the time of export",
+      "apiKeys" -> ArrayOf(ApiKey) ~~> "Current apik keys at the time of export",
       "serviceDescriptors" -> ArrayOf(Service) ~~> "Current service descriptors at the time of export",
-      "errorTemplates"     -> ArrayOf(ErrorTemplate) ~~> "Current error templates at the time of export"
+      "errorTemplates" -> ArrayOf(ErrorTemplate) ~~> "Current error templates at the time of export"
     )
   )
 
   def OtoroshiHealth = Json.obj(
     "description" -> "The structure that represent current Otoroshi health",
-    "type"        -> "object",
-    "required"    -> Json.arr("label", "otoroshi", "datastore"),
+    "type" -> "object",
+    "required" -> Json.arr("label", "otoroshi", "datastore"),
     "properties" -> Json.obj(
       "otoroshi" -> Json.obj(
         "type" -> "string",
@@ -789,41 +1020,41 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
 
   def Stats = Json.obj(
     "description" -> "Live stats for a service or globally",
-    "type"        -> "object",
+    "type" -> "object",
     "required" -> Json.arr("calls",
-                           "dataIn",
-                           "dataOut",
-                           "rate",
-                           "duration",
-                           "overhead",
-                           "dataInRate",
-                           "dataOutRate",
-                           "concurrentHandledRequests"),
+      "dataIn",
+      "dataOut",
+      "rate",
+      "duration",
+      "overhead",
+      "dataInRate",
+      "dataOutRate",
+      "concurrentHandledRequests"),
     "properties" -> Json.obj(
-      "calls"                     -> SimpleLongType ~~> "Number of calls on the specified service or globally",
-      "dataIn"                    -> SimpleLongType ~~> "The amount of data sent to the specified service or Otoroshi globally",
-      "dataOut"                   -> SimpleLongType ~~> "The amount of data sent from the specified service or Otoroshi globally",
-      "rate"                      -> SimpleDoubleType ~~> "The rate of data sent from and to the specified service or Otoroshi globally",
-      "duration"                  -> SimpleDoubleType ~~> "The average duration for a call",
-      "overhead"                  -> SimpleDoubleType ~~> "The average overhead time induced by Otoroshi for each call",
-      "dataInRate"                -> SimpleDoubleType ~~> "The rate of data sent to the specified service or Otoroshi globally",
-      "dataOutRate"               -> SimpleDoubleType ~~> "The rate of data sent from the specified service or Otoroshi globally",
+      "calls" -> SimpleLongType ~~> "Number of calls on the specified service or globally",
+      "dataIn" -> SimpleLongType ~~> "The amount of data sent to the specified service or Otoroshi globally",
+      "dataOut" -> SimpleLongType ~~> "The amount of data sent from the specified service or Otoroshi globally",
+      "rate" -> SimpleDoubleType ~~> "The rate of data sent from and to the specified service or Otoroshi globally",
+      "duration" -> SimpleDoubleType ~~> "The average duration for a call",
+      "overhead" -> SimpleDoubleType ~~> "The average overhead time induced by Otoroshi for each call",
+      "dataInRate" -> SimpleDoubleType ~~> "The rate of data sent to the specified service or Otoroshi globally",
+      "dataOutRate" -> SimpleDoubleType ~~> "The rate of data sent from the specified service or Otoroshi globally",
       "concurrentHandledRequests" -> SimpleLongType ~~> "The number of concurrent request currently"
     )
   )
 
   def Patch = Json.obj(
     "description" -> "A set of changes described in JSON Patch format: http://jsonpatch.com/ (RFC 6902)",
-    "type"        -> "array",
+    "type" -> "array",
     "items" -> Json.obj(
-      "type"     -> "object",
+      "type" -> "object",
       "required" -> Json.arr("op", "path"),
       "properties" -> Json.obj(
         "op" -> Json.obj(
           "type" -> "string",
           "enum" -> Json.arr("add", "replace", "remove", "copy", "test")
         ),
-        "path"  -> SimpleStringType,
+        "path" -> SimpleStringType,
         "value" -> Json.obj()
       )
     )
@@ -831,7 +1062,7 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
 
   def Quotas = Json.obj(
     "description" -> "Quotas state for an api key on a service group",
-    "type"        -> "object",
+    "type" -> "object",
     "required" -> Json.arr(
       "authorizedCallsPerSec",
       "currentCallsPerSec",
@@ -844,20 +1075,20 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       "remainingCallsPerMonth"
     ),
     "properties" -> Json.obj(
-      "authorizedCallsPerSec"   -> SimpleLongType ~~> "The number of authorized calls per second",
-      "currentCallsPerSec"      -> SimpleLongType ~~> "The current number of calls per second",
-      "remainingCallsPerSec"    -> SimpleLongType ~~> "The remaining number of calls per second",
-      "authorizedCallsPerDay"   -> SimpleLongType ~~> "The number of authorized calls per day",
-      "currentCallsPerDay"      -> SimpleLongType ~~> "The current number of calls per day",
-      "remainingCallsPerDay"    -> SimpleLongType ~~> "The remaining number of calls per day",
+      "authorizedCallsPerSec" -> SimpleLongType ~~> "The number of authorized calls per second",
+      "currentCallsPerSec" -> SimpleLongType ~~> "The current number of calls per second",
+      "remainingCallsPerSec" -> SimpleLongType ~~> "The remaining number of calls per second",
+      "authorizedCallsPerDay" -> SimpleLongType ~~> "The number of authorized calls per day",
+      "currentCallsPerDay" -> SimpleLongType ~~> "The current number of calls per day",
+      "remainingCallsPerDay" -> SimpleLongType ~~> "The remaining number of calls per day",
       "authorizedCallsPerMonth" -> SimpleLongType ~~> "The number of authorized calls per month",
-      "currentCallsPerMonth"    -> SimpleLongType ~~> "The current number of calls per month",
-      "remainingCallsPerMonth"  -> SimpleLongType ~~> "The number of authorized calls per month"
+      "currentCallsPerMonth" -> SimpleLongType ~~> "The current number of calls per month",
+      "remainingCallsPerMonth" -> SimpleLongType ~~> "The number of authorized calls per month"
     )
   )
 
   def Deleted = Json.obj(
-    "type"     -> "object",
+    "type" -> "object",
     "required" -> Json.arr("deleted"),
     "properties" -> Json.obj(
       "deleted" -> SimpleBooleanType
@@ -865,7 +1096,7 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
   )
 
   def Done = Json.obj(
-    "type"     -> "object",
+    "type" -> "object",
     "required" -> Json.arr("done"),
     "properties" -> Json.obj(
       "done" -> SimpleBooleanType
@@ -874,22 +1105,22 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
 
   def RefJwtVerifier = Json.obj(
     "description" -> "Reference to a global JWT verifier",
-    "type"        -> "object",
+    "type" -> "object",
     "required" -> Json.arr(
       "type",
       "id",
       "enabled"
     ),
     "properties" -> Json.obj(
-      "type"    -> SimpleStringType ~~> "A string with value 'ref'",
-      "id"      -> SimpleStringType ~~> "The id of the GlobalJWTVerifier",
+      "type" -> SimpleStringType ~~> "A string with value 'ref'",
+      "id" -> SimpleStringType ~~> "The id of the GlobalJWTVerifier",
       "enabled" -> SimpleBooleanType ~~> "Is it enabled"
     )
   )
 
   def LocalJwtVerifier = Json.obj(
     "description" -> "A JWT verifier used only for the current service descriptor",
-    "type"        -> "object",
+    "type" -> "object",
     "required" -> Json.arr(
       "type",
       "enabled",
@@ -899,20 +1130,21 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       "strategy"
     ),
     "properties" -> Json.obj(
-      "type"    -> SimpleStringType ~~> "A string with value 'local'",
+      "type" -> SimpleStringType ~~> "A string with value 'local'",
       "enabled" -> SimpleBooleanType ~~> "Is it enabled",
-      "strict"  -> SimpleBooleanType ~~> "Does it fail if JWT not found",
-      "source"  -> OneOf(Ref("InQueryParam"), Ref("InHeader"), Ref("InCookie")),
+      "strict" -> SimpleBooleanType ~~> "Does it fail if JWT not found",
+      "source" -> OneOf(Ref("InQueryParam"), Ref("InHeader"), Ref("InCookie")),
       "algoSettings" -> OneOf(Ref("HSAlgoSettings"),
-                              Ref("RSAlgoSettings"),
-                              Ref("ESAlgoSettings"),
-                              Ref("JWKSAlgoSettings")),
+        Ref("RSAlgoSettings"),
+        Ref("ESAlgoSettings"),
+        Ref("JWKSAlgoSettings")),
       "strategy" -> OneOf(Ref("PassThrough"), Ref("Sign"), Ref("Transform"))
     )
   )
+
   def GlobalJwtVerifier = Json.obj(
     "description" -> "A JWT verifier used by multiple service descriptor",
-    "type"        -> "object",
+    "type" -> "object",
     "required" -> Json.arr(
       "type",
       "id",
@@ -925,22 +1157,23 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       "strategy"
     ),
     "properties" -> Json.obj(
-      "id"      -> SimpleStringType ~~> "Verifier id",
-      "name"    -> SimpleStringType ~~> "Verifier name",
-      "desc"    -> SimpleStringType ~~> "Verifier description",
+      "id" -> SimpleStringType ~~> "Verifier id",
+      "name" -> SimpleStringType ~~> "Verifier name",
+      "desc" -> SimpleStringType ~~> "Verifier description",
       "enabled" -> SimpleBooleanType ~~> "Is it enabled",
-      "strict"  -> SimpleBooleanType ~~> "Does it fail if JWT not found",
-      "source"  -> OneOf(Ref("InQueryParam"), Ref("InHeader"), Ref("InCookie")),
+      "strict" -> SimpleBooleanType ~~> "Does it fail if JWT not found",
+      "source" -> OneOf(Ref("InQueryParam"), Ref("InHeader"), Ref("InCookie")),
       "algoSettings" -> OneOf(Ref("HSAlgoSettings"),
-                              Ref("RSAlgoSettings"),
-                              Ref("ESAlgoSettings"),
-                              Ref("JWKSAlgoSettings")),
+        Ref("RSAlgoSettings"),
+        Ref("ESAlgoSettings"),
+        Ref("JWKSAlgoSettings")),
       "strategy" -> OneOf(Ref("PassThrough"), Ref("Sign"), Ref("Transform"))
     )
   )
+
   def GenericOauth2ModuleConfig = Json.obj(
     "description" -> "Settings to authenticate users using a generic OAuth2 provider",
-    "type"        -> "object",
+    "type" -> "object",
     "required" -> Json.arr(
       "type",
       "id",
@@ -961,39 +1194,39 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       "otoroshiDataField"
     ),
     "properties" -> Json.obj(
-      "type"                 -> SimpleStringType ~~> "Type of settings. value is oauth2",
-      "id"                   -> SimpleStringType ~~> "Unique id of the config",
-      "name"                 -> SimpleStringType ~~> "Name of the config",
-      "desc"                 -> SimpleStringType ~~> "Description of the config",
-      "sessionMaxAge"        -> SimpleIntType ~~> "Max age of the session",
-      "clientId"             -> SimpleStringType ~~> "OAuth Client id",
-      "clientSecret"         -> SimpleStringType ~~> "OAuth Client secret",
-      "authorizeUrl"         -> SimpleStringType ~~> "OAuth authorize URL",
-      "tokenUrl"             -> SimpleStringType ~~> "OAuth token URL",
-      "userInfoUrl"          -> SimpleStringType ~~> "OAuth userinfo to get user profile",
-      "loginUrl"             -> SimpleStringType ~~> "OAuth login URL",
-      "logoutUrl"            -> SimpleStringType ~~> "OAuth logout URL",
-      "callbackUrl"          -> SimpleStringType ~~> "Otoroshi callback URL",
-      "scope"                -> SimpleStringType ~~> "The scope of the token",
-      "claims"               -> SimpleStringType ~~> "The claims of the token",
-      "accessTokenField"     -> SimpleStringType ~~> "Field name to get access token",
-      "nameField"            -> SimpleStringType ~~> "Field name to get name from user profile",
-      "emailField"           -> SimpleStringType ~~> "Field name to get email from user profile",
-      "otoroshiDataField"    -> SimpleStringType ~~> "Field name to get otoroshi metadata from. You can specify sub fields using | as separator",
-      "oidConfig"            -> SimpleStringType ~~> "URL of the OIDC config. file",
-      "useJson"              -> SimpleBooleanType ~~> "Use JSON or URL Form Encoded as payload with the OAuth provider",
-      "useCookies"           -> SimpleBooleanType ~~> "Use for redirection to actual service",
+      "type" -> SimpleStringType ~~> "Type of settings. value is oauth2",
+      "id" -> SimpleStringType ~~> "Unique id of the config",
+      "name" -> SimpleStringType ~~> "Name of the config",
+      "desc" -> SimpleStringType ~~> "Description of the config",
+      "sessionMaxAge" -> SimpleIntType ~~> "Max age of the session",
+      "clientId" -> SimpleStringType ~~> "OAuth Client id",
+      "clientSecret" -> SimpleStringType ~~> "OAuth Client secret",
+      "authorizeUrl" -> SimpleStringType ~~> "OAuth authorize URL",
+      "tokenUrl" -> SimpleStringType ~~> "OAuth token URL",
+      "userInfoUrl" -> SimpleStringType ~~> "OAuth userinfo to get user profile",
+      "loginUrl" -> SimpleStringType ~~> "OAuth login URL",
+      "logoutUrl" -> SimpleStringType ~~> "OAuth logout URL",
+      "callbackUrl" -> SimpleStringType ~~> "Otoroshi callback URL",
+      "scope" -> SimpleStringType ~~> "The scope of the token",
+      "claims" -> SimpleStringType ~~> "The claims of the token",
+      "accessTokenField" -> SimpleStringType ~~> "Field name to get access token",
+      "nameField" -> SimpleStringType ~~> "Field name to get name from user profile",
+      "emailField" -> SimpleStringType ~~> "Field name to get email from user profile",
+      "otoroshiDataField" -> SimpleStringType ~~> "Field name to get otoroshi metadata from. You can specify sub fields using | as separator",
+      "oidConfig" -> SimpleStringType ~~> "URL of the OIDC config. file",
+      "useJson" -> SimpleBooleanType ~~> "Use JSON or URL Form Encoded as payload with the OAuth provider",
+      "useCookies" -> SimpleBooleanType ~~> "Use for redirection to actual service",
       "readProfileFromToken" -> SimpleBooleanType ~~> "The user profile will be read from the JWT token in id_token",
       "jwtVerifier" -> OneOf(Ref("HSAlgoSettings"),
-                             Ref("RSAlgoSettings"),
-                             Ref("ESAlgoSettings"),
-                             Ref("JWKSAlgoSettings")) ~~> "Algo. settings to verify JWT token"
+        Ref("RSAlgoSettings"),
+        Ref("ESAlgoSettings"),
+        Ref("JWKSAlgoSettings")) ~~> "Algo. settings to verify JWT token"
     )
   )
 
   def InQueryParam = Json.obj(
     "description" -> "JWT location in a query param",
-    "type"        -> "object",
+    "type" -> "object",
     "required" -> Json.arr(
       "type",
       "name",
@@ -1003,23 +1236,25 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       "name" -> SimpleStringType ~~> "Name of the query param"
     )
   )
+
   def InHeader = Json.obj(
     "description" -> "JWT location in a header",
-    "type"        -> "object",
+    "type" -> "object",
     "required" -> Json.arr(
       "type",
       "name",
       "remove"
     ),
     "properties" -> Json.obj(
-      "type"   -> SimpleStringType ~~> "String with value InHeader",
-      "name"   -> SimpleStringType ~~> "Name of the header",
+      "type" -> SimpleStringType ~~> "String with value InHeader",
+      "name" -> SimpleStringType ~~> "Name of the header",
       "remove" -> SimpleStringType ~~> "Remove regex inside the value, like 'Bearer '"
     )
   )
+
   def InCookie = Json.obj(
     "description" -> "JWT location in a cookie",
-    "type"        -> "object",
+    "type" -> "object",
     "required" -> Json.arr(
       "type",
       "name",
@@ -1029,156 +1264,165 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       "name" -> SimpleStringType ~~> "Name of the cookie"
     )
   )
+
   def HSAlgoSettings = Json.obj(
     "description" -> "Settings for an HMAC + SHA signing algorithm",
-    "type"        -> "object",
+    "type" -> "object",
     "required" -> Json.arr(
       "type",
       "size",
       "secret",
     ),
     "properties" -> Json.obj(
-      "type"   -> SimpleStringType ~~> "String with value HSAlgoSettings",
-      "size"   -> SimpleIntType ~~> "Size for SHA function. can be 256, 384 or 512",
+      "type" -> SimpleStringType ~~> "String with value HSAlgoSettings",
+      "size" -> SimpleIntType ~~> "Size for SHA function. can be 256, 384 or 512",
       "secret" -> SimpleStringType ~~> "The secret value for the HMAC function"
     )
   )
+
   def RSAlgoSettings = Json.obj(
     "description" -> "Settings for an HMAC + SHA signing algorithm",
-    "type"        -> "object",
+    "type" -> "object",
     "required" -> Json.arr(
       "type",
       "size",
       "publicKey",
     ),
     "properties" -> Json.obj(
-      "type"       -> SimpleStringType ~~> "String with value RSAlgoSettings",
-      "size"       -> SimpleIntType ~~> "Size for SHA function. can be 256, 384 or 512",
-      "publicKey"  -> SimpleStringType ~~> "The public key for the RSA function",
+      "type" -> SimpleStringType ~~> "String with value RSAlgoSettings",
+      "size" -> SimpleIntType ~~> "Size for SHA function. can be 256, 384 or 512",
+      "publicKey" -> SimpleStringType ~~> "The public key for the RSA function",
       "privateKey" -> SimpleStringType ~~> "The private key for the RSA function"
     )
   )
+
   def ESAlgoSettings = Json.obj(
     "description" -> "Settings for an EC + SHA signing algorithm",
-    "type"        -> "object",
+    "type" -> "object",
     "required" -> Json.arr(
       "type",
       "size",
       "publicKey",
     ),
     "properties" -> Json.obj(
-      "type"       -> SimpleStringType ~~> "String with value ESAlgoSettings",
-      "size"       -> SimpleIntType ~~> "Size for SHA function. can be 256, 384 or 512",
-      "publicKey"  -> SimpleStringType ~~> "The public key for the RSA function",
+      "type" -> SimpleStringType ~~> "String with value ESAlgoSettings",
+      "size" -> SimpleIntType ~~> "Size for SHA function. can be 256, 384 or 512",
+      "publicKey" -> SimpleStringType ~~> "The public key for the RSA function",
       "privateKey" -> SimpleStringType ~~> "The private key for the RSA function"
     )
   )
+
   def JWKSAlgoSettings = Json.obj(
     "description" -> "Settings for a JWK set",
-    "type"        -> "object",
+    "type" -> "object",
     "required" -> Json.arr(
       "type",
       "size",
       "publicKey",
     ),
     "properties" -> Json.obj(
-      "type"    -> SimpleStringType ~~> "String with value JWKSAlgoSettings",
-      "url"     -> SimpleStringType ~~> "The url for the http call",
+      "type" -> SimpleStringType ~~> "String with value JWKSAlgoSettings",
+      "url" -> SimpleStringType ~~> "The url for the http call",
       "headers" -> SimpleObjectType ~~> "The headers for the http call",
       "timeout" -> SimpleLongType ~~> "The timeout of the http call",
-      "ttl"     -> SimpleLongType ~~> "The ttl of the keyset",
-      "kty"     -> SimpleStringType ~~> "The type of key: RSA or EC",
+      "ttl" -> SimpleLongType ~~> "The ttl of the keyset",
+      "kty" -> SimpleStringType ~~> "The type of key: RSA or EC",
     )
   )
+
   def MappingSettings = Json.obj(
     "description" -> "Settings to change fields of a JWT token",
-    "type"        -> "object",
+    "type" -> "object",
     "required" -> Json.arr(
       "map",
       "values",
       "remove"
     ),
     "properties" -> Json.obj(
-      "map"    -> SimpleObjectType ~~> "Fields to rename",
+      "map" -> SimpleObjectType ~~> "Fields to rename",
       "values" -> SimpleObjectType ~~> "Fields to set",
       "remove" -> ArrayOf(SimpleStringType) ~~> "Fields to remove"
     )
   )
+
   def TransformSettings = Json.obj(
     "description" -> "Settings to transform a JWT token and its location",
-    "type"        -> "object",
+    "type" -> "object",
     "required" -> Json.arr(
       "location",
       "mappingSettings"
     ),
     "properties" -> Json.obj(
-      "location"        -> OneOf(Ref("InQueryParam"), Ref("InHeader"), Ref("InCookie")),
+      "location" -> OneOf(Ref("InQueryParam"), Ref("InHeader"), Ref("InCookie")),
       "mappingSettings" -> Ref("MappingSettings")
     )
   )
+
   def VerificationSettings = Json.obj(
     "description" -> "Settings to verify the value of JWT token fields",
-    "type"        -> "object",
+    "type" -> "object",
     "required" -> Json.arr(
       "fields"
     ),
     "properties" -> Json.obj(
-      "fields"          -> SimpleObjectType ~~> "Fields to verify with their values",
+      "fields" -> SimpleObjectType ~~> "Fields to verify with their values",
       "mappingSettings" -> Ref("MappingSettings")
     )
   )
+
   def PassThrough = Json.obj(
     "description" -> "Strategy where only signature and field values are verified",
-    "type"        -> "object",
+    "type" -> "object",
     "required" -> Json.arr(
       "type",
       "verificationSettings"
     ),
     "properties" -> Json.obj(
-      "type"                 -> SimpleStringType ~~> "String with value PassThrough",
+      "type" -> SimpleStringType ~~> "String with value PassThrough",
       "verificationSettings" -> Ref("VerificationSettings")
     )
   )
+
   def Sign = Json.obj(
     "description" -> "Strategy where signature and field values are verified, and then token si re-signed",
-    "type"        -> "object",
+    "type" -> "object",
     "required" -> Json.arr(
       "type",
       "verificationSettings",
       "algoSettings"
     ),
     "properties" -> Json.obj(
-      "type"                 -> SimpleStringType ~~> "String with value Sign",
+      "type" -> SimpleStringType ~~> "String with value Sign",
       "verificationSettings" -> Ref("VerificationSettings"),
       "algoSettings" -> OneOf(Ref("HSAlgoSettings"),
-                              Ref("RSAlgoSettings"),
-                              Ref("ESAlgoSettings"),
-                              Ref("JWKSAlgoSettings"))
+        Ref("RSAlgoSettings"),
+        Ref("ESAlgoSettings"),
+        Ref("JWKSAlgoSettings"))
     )
   )
 
   def Transform = Json.obj(
     "description" -> "Strategy where signature and field values are verified, trasnformed and then token si re-signed",
-    "type"        -> "object",
+    "type" -> "object",
     "required" -> Json.arr(
       "type",
       "verificationSettings",
       "algoSettings"
     ),
     "properties" -> Json.obj(
-      "type"                 -> SimpleStringType ~~> "String with value Transform",
+      "type" -> SimpleStringType ~~> "String with value Transform",
       "verificationSettings" -> Ref("VerificationSettings"),
-      "transformSettings"    -> Ref("TransformSettings"),
+      "transformSettings" -> Ref("TransformSettings"),
       "algoSettings" -> OneOf(Ref("HSAlgoSettings"),
-                              Ref("RSAlgoSettings"),
-                              Ref("ESAlgoSettings"),
-                              Ref("JWKSAlgoSettings"))
+        Ref("RSAlgoSettings"),
+        Ref("ESAlgoSettings"),
+        Ref("JWKSAlgoSettings"))
     )
   )
 
   def InMemoryAuthModuleConfig = Json.obj(
     "description" -> "Settings to authenticate users using the in memory user store",
-    "type"        -> "object",
+    "type" -> "object",
     "required" -> Json.arr(
       "type",
       "id",
@@ -1188,18 +1432,18 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       "sessionMaxAge"
     ),
     "properties" -> Json.obj(
-      "type"          -> SimpleStringType ~~> "Type of settings. value is basic",
-      "id"            -> SimpleStringType ~~> "Unique id of the config",
-      "name"          -> SimpleStringType ~~> "Name of the config",
-      "desc"          -> SimpleStringType ~~> "Description of the config",
+      "type" -> SimpleStringType ~~> "Type of settings. value is basic",
+      "id" -> SimpleStringType ~~> "Unique id of the config",
+      "name" -> SimpleStringType ~~> "Name of the config",
+      "desc" -> SimpleStringType ~~> "Description of the config",
       "sessionMaxAge" -> SimpleStringType ~~> "Max age of the session",
-      "users"         -> ArrayOf(Ref("InMemoryUser")) ~~> "List of users"
+      "users" -> ArrayOf(Ref("InMemoryUser")) ~~> "List of users"
     )
   )
 
   def InMemoryUser = Json.obj(
     "description" -> "A user",
-    "type"        -> "object",
+    "type" -> "object",
     "required" -> Json.arr(
       "name",
       "password",
@@ -1207,8 +1451,8 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       "metadata",
     ),
     "properties" -> Json.obj(
-      "name"     -> SimpleStringType ~~> "Name of the user",
-      "email"    -> SimpleStringType ~~> "Email of the user",
+      "name" -> SimpleStringType ~~> "Name of the user",
+      "email" -> SimpleStringType ~~> "Email of the user",
       "password" -> SimpleStringType ~~> "Password of the user (BCrypt hash)",
       "metadata" -> SimpleObjectType ~~> "Metadata of the user"
     )
@@ -1216,22 +1460,22 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
 
   def LdapUser = Json.obj(
     "description" -> "A user",
-    "type"        -> "object",
+    "type" -> "object",
     "required" -> Json.arr(
       "name",
       "email",
       "metadata",
     ),
     "properties" -> Json.obj(
-      "name"     -> SimpleStringType ~~> "Name of the user",
-      "email"    -> SimpleStringType ~~> "Email of the user",
+      "name" -> SimpleStringType ~~> "Name of the user",
+      "email" -> SimpleStringType ~~> "Email of the user",
       "metadata" -> SimpleObjectType ~~> "Metadata of the user"
     )
   )
 
   def Certificate = Json.obj(
     "description" -> "A SSL/TLS X509 certificate",
-    "type"        -> "object",
+    "type" -> "object",
     "required" -> Json.arr(
       "id",
       "chain",
@@ -1247,24 +1491,24 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       "to"
     ),
     "properties" -> Json.obj(
-      "id"         -> SimpleStringType ~~> "Id of the certificate",
-      "chain"      -> SimpleStringType ~~> "Certificate chain of trust in PEM format",
+      "id" -> SimpleStringType ~~> "Id of the certificate",
+      "chain" -> SimpleStringType ~~> "Certificate chain of trust in PEM format",
       "privateKey" -> SimpleStringType ~~> "PKCS8 private key in PEM format",
-      "caRef"      -> SimpleStringType ~~> "Reference for a CA certificate in otoroshi",
-      "autoRenew"  -> SimpleStringType ~~> "Allow Otoroshi to renew the certificate (if self signed)",
-      "domain"     -> SimpleStringType ~~> "Domain of the certificate (read only)",
+      "caRef" -> SimpleStringType ~~> "Reference for a CA certificate in otoroshi",
+      "autoRenew" -> SimpleStringType ~~> "Allow Otoroshi to renew the certificate (if self signed)",
+      "domain" -> SimpleStringType ~~> "Domain of the certificate (read only)",
       "selfSigned" -> SimpleStringType ~~> "Certificate is self signed  read only)",
-      "ca"         -> SimpleStringType ~~> "Certificate is a CA (read only)",
-      "valid"      -> SimpleStringType ~~> "Certificate is valid (read only)",
-      "subject"    -> SimpleStringType ~~> "Subject of the certificate (read only)",
-      "from"       -> SimpleStringType ~~> "Start date of validity",
-      "to"         -> SimpleStringType ~~> "End date of validity"
+      "ca" -> SimpleStringType ~~> "Certificate is a CA (read only)",
+      "valid" -> SimpleStringType ~~> "Certificate is valid (read only)",
+      "subject" -> SimpleStringType ~~> "Subject of the certificate (read only)",
+      "from" -> SimpleStringType ~~> "Start date of validity",
+      "to" -> SimpleStringType ~~> "End date of validity"
     )
   )
 
   def LdapAuthModuleConfig = Json.obj(
     "description" -> "Settings to authenticate users using a generic OAuth2 provider",
-    "type"        -> "object",
+    "type" -> "object",
     "required" -> Json.arr(
       "type",
       "id",
@@ -1283,39 +1527,39 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       "metadataField",
     ),
     "properties" -> Json.obj(
-      "type"              -> SimpleStringType ~~> "Type of settings. value is ldap",
-      "id"                -> SimpleStringType ~~> "Unique id of the config",
-      "name"              -> SimpleStringType ~~> "Name of the config",
-      "desc"              -> SimpleStringType ~~> "Description of the config",
-      "sessionMaxAge"     -> SimpleIntType ~~> "Max age of the session",
-      "serverUrl"         -> SimpleStringType ~~> "URL of the ldap server",
-      "searchBase"        -> SimpleStringType ~~> "LDAP search base",
-      "userBase"          -> SimpleStringType ~~> "LDAP user base DN",
-      "groupFilter"       -> SimpleStringType ~~> "Filter for groups",
-      "searchFilter"      -> SimpleStringType ~~> "Filter for users",
-      "adminUsername"     -> SimpleStringType ~~> "The admin username",
-      "adminPassword"     -> SimpleStringType ~~> "The admin password",
-      "nameField"         -> SimpleStringType ~~> "Field name to get name from user profile",
-      "emailField"        -> SimpleStringType ~~> "Field name to get email from user profile",
+      "type" -> SimpleStringType ~~> "Type of settings. value is ldap",
+      "id" -> SimpleStringType ~~> "Unique id of the config",
+      "name" -> SimpleStringType ~~> "Name of the config",
+      "desc" -> SimpleStringType ~~> "Description of the config",
+      "sessionMaxAge" -> SimpleIntType ~~> "Max age of the session",
+      "serverUrl" -> SimpleStringType ~~> "URL of the ldap server",
+      "searchBase" -> SimpleStringType ~~> "LDAP search base",
+      "userBase" -> SimpleStringType ~~> "LDAP user base DN",
+      "groupFilter" -> SimpleStringType ~~> "Filter for groups",
+      "searchFilter" -> SimpleStringType ~~> "Filter for users",
+      "adminUsername" -> SimpleStringType ~~> "The admin username",
+      "adminPassword" -> SimpleStringType ~~> "The admin password",
+      "nameField" -> SimpleStringType ~~> "Field name to get name from user profile",
+      "emailField" -> SimpleStringType ~~> "Field name to get email from user profile",
       "otoroshiDataField" -> SimpleStringType ~~> "Field name to get otoroshi metadata from. You can specify sub fields using | as separator"
     )
   )
 
   def ScriptCompilationResult = Json.obj(
     "description" -> "The result of the compilation of a Script",
-    "type"        -> "object",
+    "type" -> "object",
     "required" -> Json.arr(
       "done"
     ),
     "properties" -> Json.obj(
-      "done"  -> SimpleBooleanType ~~> "Is the task done or not",
+      "done" -> SimpleBooleanType ~~> "Is the task done or not",
       "error" -> Ref("ScriptCompilationError")
     )
   )
 
   def ScriptCompilationError = Json.obj(
     "description" -> "The error of the compilation of a Script",
-    "type"        -> "object",
+    "type" -> "object",
     "required" -> Json.arr(
       "line",
       "column",
@@ -1324,17 +1568,17 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       "message",
     ),
     "properties" -> Json.obj(
-      "line"       -> SimpleStringType ~~> "The line of the error",
-      "column"     -> SimpleStringType ~~> "The column of the error",
-      "file"       -> SimpleObjectType ~~> "The file where the error is located",
+      "line" -> SimpleStringType ~~> "The line of the error",
+      "column" -> SimpleStringType ~~> "The column of the error",
+      "file" -> SimpleObjectType ~~> "The file where the error is located",
       "rawMessage" -> SimpleObjectType ~~> "The raw message from the compiler",
-      "message"    -> SimpleObjectType ~~> "The message to display for the error"
+      "message" -> SimpleObjectType ~~> "The message to display for the error"
     )
   )
 
   def Script = Json.obj(
     "description" -> "A script to transformer otoroshi requests ",
-    "type"        -> "object",
+    "type" -> "object",
     "required" -> Json.arr(
       "id",
       "name",
@@ -1342,7 +1586,7 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       "code",
     ),
     "properties" -> Json.obj(
-      "id"   -> SimpleStringType ~~> "The id of the script",
+      "id" -> SimpleStringType ~~> "The id of the script",
       "name" -> SimpleStringType ~~> "The name of the script",
       "desc" -> SimpleObjectType ~~> "The description of the script",
       "code" -> SimpleObjectType ~~> "The code of the script"
@@ -1492,8 +1736,8 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       parameters = Json.arr(
         PathParam("serviceId", "The api key service id"),
         PathParam("clientId", "the api key id"),
-        BodyParam("The updated api key", Ref("ApiKey"))
       ),
+      body = BodyParam("The updated api key", Ref("ApiKey")),
       goodResponse = GoodResponse(Ref("ApiKey"))
     ),
     "patch" -> Operation(
@@ -1504,8 +1748,8 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       parameters = Json.arr(
         PathParam("serviceId", "The api key service id"),
         PathParam("clientId", "the api key id"),
-        BodyParam("The patch for the api key", Ref("Patch"))
       ),
+      body = BodyParam("The patch for the api key", Ref("Patch")),
       goodResponse = GoodResponse(Ref("ApiKey"))
     ),
     "delete" -> Operation(
@@ -1541,8 +1785,8 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       parameters = Json.arr(
         PathParam("groupId", "The api key group id"),
         PathParam("clientId", "the api key id"),
-        BodyParam("The updated api key", Ref("ApiKey"))
       ),
+      body = BodyParam("The updated api key", Ref("ApiKey")),
       goodResponse = GoodResponse(Ref("ApiKey"))
     ),
     "patch" -> Operation(
@@ -1553,8 +1797,8 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       parameters = Json.arr(
         PathParam("groupId", "The api key group id"),
         PathParam("clientId", "the api key id"),
-        BodyParam("The patch for the api key", Ref("Patch"))
       ),
+      body = BodyParam("The patch for the api key", Ref("Patch")),
       goodResponse = GoodResponse(Ref("ApiKey"))
     ),
     "delete" -> Operation(
@@ -1584,13 +1828,12 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
     "post" -> Operation(
       tag = "apikeys",
       summary = "Create a new api key for a service",
-      description = "Create a new api key for a service",
       operationId = "createApiKey",
       parameters = Json.arr(
-        PathParam("serviceId", "The api key service id"),
-        BodyParam("The api key to create", Ref("ApiKey"))
+        PathParam("serviceId", "The api key service id")
       ),
-      goodResponse = GoodResponse(Ref("ApiKey"))
+      goodResponse = GoodResponse(Ref("ApiKey")),
+      body = BodyParam("The api key to create", Ref("ApiKey"))
     )
   )
 
@@ -1612,8 +1855,8 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       operationId = "createApiKeyFromGroup",
       parameters = Json.arr(
         PathParam("groupId", "The api key group id"),
-        BodyParam("The api key to create", Ref("ApiKey"))
       ),
+      body = BodyParam("The api key to create", Ref("ApiKey")),
       goodResponse = GoodResponse(Ref("ApiKey"))
     )
   )
@@ -1626,6 +1869,17 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       operationId = "findAllGlobalJwtVerifiers",
       goodResponse = GoodResponse(ArrayOf(Ref("GlobalJwtVerifier")))
     ),
+    "post" -> Operation(
+      tag = "jwt-verifiers",
+      summary = "Create one global JWT verifiers",
+      description = "Create one global JWT verifiers",
+      operationId = "createGlobalJwtVerifier",
+      body = BodyParam("The verifier to create", Ref("GlobalJwtVerifier")),
+      goodResponse = GoodResponse(Ref("GlobalJwtVerifier"))
+    )
+  )
+
+  def JWTVerifier = Json.obj(
     "get" -> Operation(
       tag = "jwt-verifiers",
       summary = "Get one global JWT verifiers",
@@ -1653,8 +1907,8 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       operationId = "updateGlobalJwtVerifier",
       parameters = Json.arr(
         PathParam("verifierId", "The jwt verifier id"),
-        BodyParam("The verifier to update", Ref("GlobalJwtVerifier"))
       ),
+      body = BodyParam("The verifier to update", Ref("GlobalJwtVerifier")),
       goodResponse = GoodResponse(Ref("GlobalJwtVerifier"))
     ),
     "patch" -> Operation(
@@ -1663,19 +1917,9 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       description = "Update one global JWT verifiers",
       operationId = "patchGlobalJwtVerifier",
       parameters = Json.arr(
-        PathParam("verifierId", "The jwt verifier id"),
-        BodyParam("The verifier to update", Ref("Patch"))
+        PathParam("verifierId", "The jwt verifier id")
       ),
-      goodResponse = GoodResponse(Ref("GlobalJwtVerifier"))
-    ),
-    "post" -> Operation(
-      tag = "jwt-verifiers",
-      summary = "Create one global JWT verifiers",
-      description = "Create one global JWT verifiers",
-      operationId = "createGlobalJwtVerifier",
-      parameters = Json.arr(
-        BodyParam("The verifier to create", Ref("GlobalJwtVerifier"))
-      ),
+      body = BodyParam("The verifier to update", Ref("Patch")),
       goodResponse = GoodResponse(Ref("GlobalJwtVerifier"))
     )
   )
@@ -1690,6 +1934,20 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
         ArrayOf(OneOf(Ref("LdapAuthModuleConfig"), Ref("InMemoryAuthModuleConfig"), Ref("GenericOauth2ModuleConfig")))
       )
     ),
+    "post" -> Operation(
+      tag = "auth-config",
+      summary = "Create one global auth. module config",
+      description = "Create one global auth. module config",
+      operationId = "createGlobalAuthModule",
+      body = BodyParam("The auth. config to create",
+        OneOf(Ref("LdapAuthModuleConfig"), Ref("InMemoryAuthModuleConfig"), Ref("GenericOauth2ModuleConfig"))),
+      goodResponse = GoodResponse(
+        OneOf(Ref("LdapAuthModuleConfig"), Ref("InMemoryAuthModuleConfig"), Ref("GenericOauth2ModuleConfig"))
+      )
+    )
+  )
+
+  def AuthConfig = Json.obj(
     "get" -> Operation(
       tag = "auth-config",
       summary = "Get one global auth. module configs",
@@ -1718,10 +1976,10 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       description = "Update one global auth. module config",
       operationId = "updateGlobalAuthModule",
       parameters = Json.arr(
-        PathParam("id", "The auth. config id"),
-        BodyParam("The auth. config to update",
-                  OneOf(Ref("LdapAuthModuleConfig"), Ref("InMemoryAuthModuleConfig"), Ref("GenericOauth2ModuleConfig")))
+        PathParam("id", "The auth. config id")
       ),
+      body = BodyParam("The auth. config to update",
+        OneOf(Ref("LdapAuthModuleConfig"), Ref("InMemoryAuthModuleConfig"), Ref("GenericOauth2ModuleConfig"))),
       goodResponse = GoodResponse(
         OneOf(Ref("LdapAuthModuleConfig"), Ref("InMemoryAuthModuleConfig"), Ref("GenericOauth2ModuleConfig"))
       )
@@ -1732,22 +1990,9 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       description = "Update one global auth. module config",
       operationId = "patchGlobalAuthModule",
       parameters = Json.arr(
-        PathParam("id", "The auth. config id"),
-        BodyParam("The auth. config to update", Ref("Patch"))
+        PathParam("id", "The auth. config id")
       ),
-      goodResponse = GoodResponse(
-        OneOf(Ref("LdapAuthModuleConfig"), Ref("InMemoryAuthModuleConfig"), Ref("GenericOauth2ModuleConfig"))
-      )
-    ),
-    "post" -> Operation(
-      tag = "auth-config",
-      summary = "Create one global auth. module config",
-      description = "Create one global auth. module config",
-      operationId = "createGlobalAuthModule",
-      parameters = Json.arr(
-        BodyParam("The auth. config to create",
-                  OneOf(Ref("LdapAuthModuleConfig"), Ref("InMemoryAuthModuleConfig"), Ref("GenericOauth2ModuleConfig")))
-      ),
+      body = BodyParam("The auth. config to update", Ref("Patch")),
       goodResponse = GoodResponse(
         OneOf(Ref("LdapAuthModuleConfig"), Ref("InMemoryAuthModuleConfig"), Ref("GenericOauth2ModuleConfig"))
       )
@@ -1762,6 +2007,17 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       operationId = "allCerts",
       goodResponse = GoodResponse(ArrayOf(Ref("Certificate")))
     ),
+    "post" -> Operation(
+      tag = "certificates",
+      summary = "Create one certificate",
+      description = "Create one certificate",
+      operationId = "createCert",
+      body = BodyParam("The certificate to create", Ref("Certificate")),
+      goodResponse = GoodResponse(Ref("Certificate"))
+    )
+  )
+
+  def Certificate_ = Json.obj(
     "get" -> Operation(
       tag = "certificates",
       summary = "Get one certificate by id",
@@ -1788,9 +2044,9 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       description = "Update one certificate by id",
       operationId = "putCert",
       parameters = Json.arr(
-        PathParam("id", "The certificate id"),
-        BodyParam("The certificate to update", Ref("Certificate"))
+        PathParam("id", "The certificate id")
       ),
+      body = BodyParam("The certificate to update", Ref("Certificate")),
       goodResponse = GoodResponse(Ref("Certificate"))
     ),
     "patch" -> Operation(
@@ -1799,19 +2055,9 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       description = "Update one certificate by id",
       operationId = "patchCert",
       parameters = Json.arr(
-        PathParam("id", "The certificate id"),
-        BodyParam("The certificate to update", Ref("Patch"))
+        PathParam("id", "The certificate id")
       ),
-      goodResponse = GoodResponse(Ref("Certificate"))
-    ),
-    "post" -> Operation(
-      tag = "certificates",
-      summary = "Create one certificate",
-      description = "Create one certificate",
-      operationId = "createCert",
-      parameters = Json.arr(
-        BodyParam("The certificate to create", Ref("Certificate"))
-      ),
+      body = BodyParam("The certificate to update", Ref("Patch")),
       goodResponse = GoodResponse(Ref("Certificate"))
     )
   )
@@ -1824,6 +2070,17 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       operationId = "findAllClientValidators",
       goodResponse = GoodResponse(ArrayOf(Ref("ValidationAuthority")))
     ),
+    "post" -> Operation(
+      tag = "validation-authorities",
+      summary = "Create one validation authorities",
+      description = "Create one validation authorities",
+      operationId = "createClientValidator",
+      body = BodyParam("The validation authorities to create", Ref("ValidationAuthority")),
+      goodResponse = GoodResponse(Ref("ValidationAuthority"))
+    )
+  )
+
+  def ValidationAuthoritieApi = Json.obj(
     "get" -> Operation(
       tag = "validation-authorities",
       summary = "Get one validation authorities by id",
@@ -1850,9 +2107,9 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       description = "Update one validation authorities by id",
       operationId = "updateClientValidator",
       parameters = Json.arr(
-        PathParam("id", "The validation authorities id"),
-        BodyParam("The validation authorities to update", Ref("ValidationAuthority"))
+        PathParam("id", "The validation authorities id")
       ),
+      body = BodyParam("The validation authorities to update", Ref("ValidationAuthority")),
       goodResponse = GoodResponse(Ref("ValidationAuthority"))
     ),
     "patch" -> Operation(
@@ -1861,19 +2118,9 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       description = "Update one validation authorities by id",
       operationId = "patchClientValidator",
       parameters = Json.arr(
-        PathParam("id", "The validation authorities id"),
-        BodyParam("The validation authorities to update", Ref("Patch"))
+        PathParam("id", "The validation authorities id")
       ),
-      goodResponse = GoodResponse(Ref("ValidationAuthority"))
-    ),
-    "post" -> Operation(
-      tag = "validation-authorities",
-      summary = "Create one validation authorities",
-      description = "Create one validation authorities",
-      operationId = "createClientValidator",
-      parameters = Json.arr(
-        BodyParam("The validation authorities to create", Ref("ValidationAuthority"))
-      ),
+      body = BodyParam("The validation authorities to update", Ref("Patch")),
       goodResponse = GoodResponse(Ref("ValidationAuthority"))
     )
   )
@@ -1905,9 +2152,9 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       description = "Update a service group",
       operationId = "updateGroup",
       parameters = Json.arr(
-        PathParam("serviceGroupId", "The service group id"),
-        BodyParam("The updated service group", Ref("Group"))
+        PathParam("serviceGroupId", "The service group id")
       ),
+      body = BodyParam("The updated service group", Ref("Group")),
       goodResponse = GoodResponse(Ref("Group"))
     ),
     "patch" -> Operation(
@@ -1916,9 +2163,9 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       description = "Update a service group with a diff",
       operationId = "patchGroup",
       parameters = Json.arr(
-        PathParam("serviceGroupId", "The service group id"),
-        BodyParam("The patch for the service group", Ref("Patch"))
+        PathParam("serviceGroupId", "The service group id")
       ),
+      body = BodyParam("The patch for the service group", Ref("Patch")),
       goodResponse = GoodResponse(Ref("Group"))
     ),
     "delete" -> Operation(
@@ -1932,6 +2179,7 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       goodResponse = GoodResponse(Ref("Deleted"))
     )
   )
+
   def GroupsManagement = Json.obj(
     "get" -> Operation(
       tag = "groups",
@@ -1945,12 +2193,11 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       summary = "Create a new service group",
       description = "Create a new service group",
       operationId = "createGroup",
-      parameters = Json.arr(
-        BodyParam("The service group to create", Ref("Group"))
-      ),
+      body = BodyParam("The service group to create", Ref("Group")),
       goodResponse = GoodResponse(Ref("Group"))
     )
   )
+
   def SnowMonkeyConfigApi = Json.obj(
     "get" -> Operation(
       tag = "snowmonkey",
@@ -1964,9 +2211,7 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       summary = "Update current Snow Monkey config",
       description = "Update current Snow Monkey config",
       operationId = "updateSnowMonkey",
-      parameters = Json.arr(
-        BodyParam("The service group to create", Ref("Group"))
-      ),
+      body = BodyParam("The service group to create", Ref("Group")),
       goodResponse = GoodResponse(Ref("SnowMonkeyConfig"))
     ),
     "patch" -> Operation(
@@ -1974,12 +2219,11 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       summary = "Update current Snow Monkey config",
       description = "Update current Snow Monkey config",
       operationId = "patchSnowMonkey",
-      parameters = Json.arr(
-        BodyParam("The service group to create", Ref("Group"))
-      ),
+      body = BodyParam("The service group to create", Ref("Group")),
       goodResponse = GoodResponse(Ref("SnowMonkeyConfig"))
     )
   )
+
   def SnowMonkeyOutageApi = Json.obj(
     "get" -> Operation(
       tag = "snowmonkey",
@@ -1996,6 +2240,7 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       goodResponse = GoodResponse(Ref("Done"))
     )
   )
+
   def SnowMonkeyStartApi = Json.obj(
     "post" -> Operation(
       tag = "snowmonkey",
@@ -2005,6 +2250,7 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       goodResponse = GoodResponse(Ref("Done"))
     )
   )
+
   def SnowMonkeyStopApi = Json.obj(
     "post" -> Operation(
       tag = "snowmonkey",
@@ -2014,6 +2260,7 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       goodResponse = GoodResponse(Ref("Done"))
     )
   )
+
   def ServicesManagement = Json.obj(
     "get" -> Operation(
       tag = "services",
@@ -2027,9 +2274,7 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       summary = "Create a new service descriptor",
       description = "Create a new service descriptor",
       operationId = "createService",
-      parameters = Json.arr(
-        BodyParam("The service descriptor to create", Ref("Service"))
-      ),
+      body = BodyParam("The service descriptor to create", Ref("Service")),
       goodResponse = GoodResponse(Ref("Service"))
     )
   )
@@ -2064,9 +2309,9 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       description = "Update a service descriptor",
       operationId = "updateService",
       parameters = Json.arr(
-        PathParam("serviceId", "The service id"),
-        BodyParam("The updated service descriptor", Ref("Service"))
+        PathParam("serviceId", "The service id")
       ),
+      body = BodyParam("The updated service descriptor", Ref("Service")),
       goodResponse = GoodResponse(Ref("Service"))
     ),
     "patch" -> Operation(
@@ -2075,9 +2320,9 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       description = "Update a service descriptor with a diff",
       operationId = "patchService",
       parameters = Json.arr(
-        PathParam("serviceId", "The service id"),
-        BodyParam("The patch for the service", Ref("Patch"))
+        PathParam("serviceId", "The service id")
       ),
+      body = BodyParam("The patch for the service", Ref("Patch")),
       goodResponse = GoodResponse(Ref("Service"))
     ),
     "delete" -> Operation(
@@ -2105,9 +2350,7 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       summary = "Import the full state of Otoroshi",
       description = "Import the full state of Otoroshi",
       operationId = "fullImport",
-      parameters = Json.arr(
-        BodyParam("The full export", Ref("ImportExport"))
-      ),
+      body = BodyParam("The full export", Ref("ImportExport")),
       goodResponse = GoodResponse(Ref("Done"))
     )
   )
@@ -2125,9 +2368,7 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       summary = "Update the global configuration",
       description = "Update the global configuration",
       operationId = "putGlobalConfig",
-      parameters = Json.arr(
-        BodyParam("The updated global config", Ref("GlobalConfig"))
-      ),
+      body = BodyParam("The updated global config", Ref("GlobalConfig")),
       goodResponse = GoodResponse(Ref("GlobalConfig"))
     ),
     "patch" -> Operation(
@@ -2135,9 +2376,7 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       summary = "Update the global configuration with a diff",
       description = "Update the global configuration with a diff",
       operationId = "patchGlobalConfig",
-      parameters = Json.arr(
-        BodyParam("The updated global config as patch", Ref("Patch"))
-      ),
+      body = BodyParam("The updated global config as patch", Ref("Patch")),
       goodResponse = GoodResponse(Ref("GlobalConfig"))
     )
   )
@@ -2148,9 +2387,7 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       summary = "Import the full state of Otoroshi as a file",
       description = "Import the full state of Otoroshi as a file",
       operationId = "fullImportFromFile",
-      parameters = Json.arr(
-        BodyParam("The full export", Ref("ImportExport"))
-      ),
+      body = BodyParam("The full export", Ref("ImportExport")),
       goodResponse = GoodResponse(Ref("Done"))
     )
   )
@@ -2182,9 +2419,9 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       description = "Add a target to a service descriptor",
       operationId = "serviceAddTarget",
       parameters = Json.arr(
-        PathParam("serviceId", "The service id"),
-        BodyParam("The updated service descriptor", Ref("Target"))
+        PathParam("serviceId", "The service id")
       ),
+      body = BodyParam("The updated service descriptor", Ref("Target")),
       goodResponse = GoodResponse(ArrayOf(Ref("Target")))
     ),
     "patch" -> Operation(
@@ -2194,8 +2431,8 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       operationId = "updateServiceTargets",
       parameters = Json.arr(
         PathParam("serviceId", "The service id"),
-        BodyParam("The patch for the service targets", Ref("Patch"))
       ),
+      body = BodyParam("The patch for the service targets", Ref("Patch")),
       goodResponse = GoodResponse(ArrayOf(Ref("Target")))
     ),
     "delete" -> Operation(
@@ -2228,8 +2465,8 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       operationId = "updateServiceTemplate",
       parameters = Json.arr(
         PathParam("serviceId", "The service id"),
-        BodyParam("The updated service descriptor template", Ref("ErrorTemplate"))
       ),
+      body = BodyParam("The updated service descriptor template", Ref("ErrorTemplate")),
       goodResponse = GoodResponse(Ref("ErrorTemplate"))
     ),
     "post" -> Operation(
@@ -2238,9 +2475,9 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       description = "Update a service descriptor targets",
       operationId = "createServiceTemplate",
       parameters = Json.arr(
-        PathParam("serviceId", "The service id"),
-        BodyParam("The patch for the service error template", Ref("ErrorTemplate"))
+        PathParam("serviceId", "The service id")
       ),
+      body = BodyParam("The patch for the service error template", Ref("ErrorTemplate")),
       goodResponse = GoodResponse(Ref("ErrorTemplate"))
     ),
     "delete" -> Operation(
@@ -2273,8 +2510,8 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       operationId = "updateScript",
       parameters = Json.arr(
         PathParam("scriptId", "The script id"),
-        BodyParam("The updated script", Ref("Script"))
       ),
+      body = BodyParam("The updated script", Ref("Script")),
       goodResponse = GoodResponse(Ref("Script"))
     ),
     "patch" -> Operation(
@@ -2284,8 +2521,8 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       operationId = "patchScript",
       parameters = Json.arr(
         PathParam("scriptId", "The script id"),
-        BodyParam("The patch for the script", Ref("Patch"))
       ),
+      body = BodyParam("The patch for the script", Ref("Patch")),
       goodResponse = GoodResponse(Ref("Script"))
     ),
     "delete" -> Operation(
@@ -2313,9 +2550,7 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       summary = "Create a new script",
       description = "Create a new script",
       operationId = "createScript",
-      parameters = Json.arr(
-        BodyParam("The script to create", Ref("Script"))
-      ),
+      body = BodyParam("The script to create", Ref("Script")),
       goodResponse = GoodResponse(Ref("Script"))
     )
   )
@@ -2326,10 +2561,123 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
       summary = "Compile a script",
       description = "Compile a script",
       operationId = "compileScript",
-      parameters = Json.arr(
-        BodyParam("The script to compile", Ref("Script"))
-      ),
+      body = BodyParam("The script to compile", Ref("Script")),
       goodResponse = GoodResponse(Ref("ScriptCompilationResult"))
+    )
+  )
+
+  def DataExporterConfigsTemplateApi = Json.obj(
+    "get" -> Operation(
+      tag = "data-exporter-configs",
+      summary = "Get all data exporter configs",
+      description = "Get all data exporter configs",
+      operationId = "DataExporterTemplate",
+      parameters = Json.arr(
+        QueryParam("type", "The data exporter config type")
+      ),
+      goodResponse = GoodResponse(Ref("DataExporterConfig"))
+    )
+  )
+
+  def DataExporterConfigsBulkApi = Json.obj(
+    "post" -> Operation(
+      tag = "data-exporter-configs",
+      summary = "Create a new data exporter configs",
+      description = "Create a new data exporter configs",
+      operationId = "createBulkDataExporterConfigs",
+      body = BodyParam("The data exporter configs to create", Ref("DataExporterConfig")),
+      produces = Json.arr("application/ndjson"),
+      goodResponse = BulkResponse("created", "201", "Data exporter id")
+    ),
+    "put" -> Operation(
+      tag = "data-exporter-configs",
+      summary = "Update a data exporter configs",
+      description = "Update a data exporter configs",
+      operationId = "updateBulkDataExporterConfig",
+      body = BodyParam("The updated data exporter configs", Ref("DataExporterConfig")),
+      produces = Json.arr("application/ndjson"),
+      goodResponse = BulkResponse("updated", "200", "Data exporter id")
+    ),
+    "patch" -> Operation(
+      tag = "data-exporter-configs",
+      summary = "Update a data exporter configs with a diff",
+      description = "Update a data exporter configs with a diff",
+      operationId = "patchBulkDataExporterConfig",
+      body = BodyParam("The patches", Ref("Patch")),
+      produces = Json.arr("application/ndjson"),
+      goodResponse = BulkResponse("updated", "200", "Data exporter id")
+    ),
+    "delete" -> Operation(
+      tag = "data-exporter-configs",
+      summary = "Delete a data exporter config",
+      description = "Delete a data exporter config",
+      operationId = "deletebulkDataExporterConfig",
+      body = BodyParam("The patch for the data exporter config", Ref("Patch")),
+      produces = Json.arr("application/ndjson"),
+      goodResponse = BulkResponse("deleted", "200", "Data exporter id")
+    )
+  )
+
+  def DataExporterConfigsApi = Json.obj(
+    "get" -> Operation(
+      tag = "data-exporter-configs",
+      summary = "Get all data exporter configs",
+      description = "Get all data exporter configs",
+      operationId = "findAllDataExporters",
+      goodResponse = GoodResponse(ArrayOf(Ref("DataExporterConfig")))
+    ),
+    "post" -> Operation(
+      tag = "data-exporter-configs",
+      summary = "Create a new data exporter config",
+      description = "Create a new data exporter config",
+      operationId = "createDataExporterConfig",
+      body = BodyParam("The data exporter to create", Ref("DataExporterConfig")),
+      goodResponse = GoodResponse(Ref("DataExporterConfig"))
+    )
+  )
+
+  def DataExporterConfigApi = Json.obj(
+    "get" -> Operation(
+      tag = "data-exporter-configs",
+      summary = "Get a data exporter config",
+      description = "Get a data exporter config",
+      operationId = "findDataExporterConfigById",
+      parameters = Json.arr(
+        PathParam("dataExporterConfigId", "The data exporter config id")
+      ),
+      goodResponse = GoodResponse(Ref("DataExporterConfig"))
+    ),
+    "put" -> Operation(
+      tag = "data-exporter-configs",
+      summary = "Update a data exporter config",
+      description = "Update a data exporter config",
+      operationId = "updateDataExporterConfig",
+      parameters = Json.arr(
+        PathParam("dataExporterConfigId", "The data exporter config id"),
+      ),
+      body = BodyParam("The updated data exporter config", Ref("DataExporterConfig")),
+      goodResponse = GoodResponse(Ref("DataExporterConfig"))
+    ),
+    "patch" -> Operation(
+      tag = "data-exporter-configs",
+      summary = "Update a data exporter config with a diff",
+      description = "Update a data exporter config with a diff",
+      operationId = "patchDataExporterConfig",
+      parameters = Json.arr(
+        PathParam("dataExporterConfigId", "The data exporter config id"),
+      ),
+      body = BodyParam("The patch for the data exporter config", Ref("Patch")),
+      goodResponse = GoodResponse(Ref("DataExporterConfig"))
+    ),
+    "delete" -> Operation(
+      tag = "data-exporter-configs",
+      summary = "Delete a data exporter config",
+      description = "Delete a data exporter config",
+      operationId = "deleteDataExporterConfig",
+      parameters = Json.arr(
+        PathParam("dataExporterConfigId", "The data exporter config id")
+      ),
+      goodResponse = GoodResponse(Ref("Deleted"))
     )
   )
 
@@ -2341,18 +2689,18 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
 
   def swaggerDescriptor(): JsValue = {
     Json.obj(
-      "swagger" -> "2.0",
+      "openapi" -> "3.0.0",
       "info" -> Json.obj(
-        "version"     -> "1.4.23-dev",
-        "title"       -> "Otoroshi Admin API",
+        "version" -> "1.4.23-dev",
+        "title" -> "Otoroshi Admin API",
         "description" -> "Admin API of the Otoroshi reverse proxy",
         "contact" -> Json.obj(
-          "name"  -> "Otoroshi Team",
+          "name" -> "Otoroshi Team",
           "email" -> "oss@maif.fr"
         ),
         "license" -> Json.obj(
           "name" -> "Apache 2.0",
-          "url"  -> "http://www.apache.org/licenses/LICENSE-2.0.html"
+          "url" -> "http://www.apache.org/licenses/LICENSE-2.0.html"
         )
       ),
       "tags" -> Json.arr(
@@ -2370,47 +2718,58 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
         Tag("auth-config", "Everything about Otoroshi global auth. module config"),
         Tag("scripts", "Everything about Otoroshi request transformer scripts"),
         Tag("certificates", "Everything about Otoroshi SSL/TLS certificates"),
-        Tag("validation-authorities", "Everything about Otoroshi validation authorities")
+        Tag("validation-authorities", "Everything about Otoroshi validation authorities"),
+        Tag("data-exporter-configs", "Everything about Otoroshi data exporters")
       ),
       "externalDocs" -> Json.obj(
         "description" -> "Find out more about Otoroshi",
-        "url"         -> "https://maif.github.io/otoroshi/"
+        "url" -> "https://maif.github.io/otoroshi/"
       ),
-      "host"     -> env.adminApiExposedHost,
-      "basePath" -> "/",
-      "schemes"  -> Json.arr(env.exposedRootScheme),
+      "servers" -> Json.arr(
+        Json.obj(
+          "url" -> s"${env.exposedRootScheme}://${env.adminApiExposedHost}/"
+        )
+      ),
       "paths" -> Json.obj(
-        "/new/apikey"                                         -> NewApiKey,
-        "/new/service"                                        -> NewService,
-        "/new/group"                                          -> NewGroup,
-        "/lines"                                              -> AllLines,
-        "/lines/{line}/services"                              -> ServicesForLine,
+        "/new/apikey" -> NewApiKey,
+        "/new/service" -> NewService,
+        "/new/group" -> NewGroup,
+        "/lines" -> AllLines,
+        "/lines/{line}/services" -> ServicesForLine,
         "/api/services/{serviceId}/apikeys/{clientId}/quotas" -> QuotasOfTheApiKeyOfAService,
-        "/api/services/{serviceId}/apikeys/{clientId}/group"  -> GroupForApiKey,
-        "/api/services/{serviceId}/apikeys/{clientId}"        -> ApiKeyManagementForService,
-        "/api/services/{serviceId}/apikeys"                   -> ApiKeysManagementForService,
-        "/api/groups/{groupId}/apikeys/{clientId}/quotas"     -> QuotasOfTheApiKeyOfAGroup,
-        "/api/groups/{groupId}/apikeys/{clientId}"            -> ApiKeyManagementForGroup,
-        "/api/groups/{groupId}/apikeys"                       -> ApiKeysManagementForGroup,
-        "/api/apikeys"                                        -> ApiKeys,
-        "/api/services/{serviceId}/template"                  -> ServiceTemplatesManagement,
-        "/api/services/{serviceId}/targets"                   -> ServiceTargetsManagement,
-        "/api/services/{serviceId}"                           -> ServiceManagement,
-        "/api/services"                                       -> ServicesManagement,
-        "/api/groups/{serviceGroupId}/services"               -> ServicesForGroup,
-        "/api/groups/{serviceGroupId}"                        -> GroupManagement,
-        "/api/groups"                                         -> GroupsManagement,
-        "/api/verifiers"                                      -> JWTVerifiers,
-        "/api/auths"                                          -> AuthConfigs,
-        "/api/scripts/_compile"                               -> ScriptCompilationApi,
-        "/api/scripts/{scriptId}"                             -> ScriptApi,
-        "/api/scripts"                                        -> ScriptsApi,
-        "/api/certificates"                                   -> Certificates,
-        "/api/client-validators"                              -> ValidationAuthoritiesApi,
-        "/api/snowmonkey/config"                              -> SnowMonkeyConfigApi,
-        "/api/snowmonkey/outages"                             -> SnowMonkeyOutageApi,
-        "/api/snowmonkey/_start"                              -> SnowMonkeyStartApi,
-        "/api/snowmonkey/_stop"                               -> SnowMonkeyStopApi,
+        "/api/services/{serviceId}/apikeys/{clientId}/group" -> GroupForApiKey,
+        "/api/services/{serviceId}/apikeys/{clientId}" -> ApiKeyManagementForService,
+        "/api/services/{serviceId}/apikeys" -> ApiKeysManagementForService,
+        "/api/groups/{groupId}/apikeys/{clientId}/quotas" -> QuotasOfTheApiKeyOfAGroup,
+        "/api/groups/{groupId}/apikeys/{clientId}" -> ApiKeyManagementForGroup,
+        "/api/groups/{groupId}/apikeys" -> ApiKeysManagementForGroup,
+        "/api/apikeys" -> ApiKeys,
+        "/api/services/{serviceId}/template" -> ServiceTemplatesManagement,
+        "/api/services/{serviceId}/targets" -> ServiceTargetsManagement,
+        "/api/services/{serviceId}" -> ServiceManagement,
+        "/api/services" -> ServicesManagement,
+        "/api/groups/{serviceGroupId}/services" -> ServicesForGroup,
+        "/api/groups/{serviceGroupId}" -> GroupManagement,
+        "/api/groups" -> GroupsManagement,
+        "/api/verifiers" -> JWTVerifiers,
+        "/api/verifiers/{verifierId}" -> JWTVerifier,
+        "/api/auths" -> AuthConfigs,
+        "/api/auths/{id}" -> AuthConfig,
+        "/api/scripts/_compile" -> ScriptCompilationApi,
+        "/api/scripts/{scriptId}" -> ScriptApi,
+        "/api/scripts" -> ScriptsApi,
+        "/api/data-exporter-configs/_template" -> DataExporterConfigsTemplateApi,
+        "/api/data-exporter-configs/_bulk" -> DataExporterConfigsBulkApi,
+        "/api/data-exporter-configs/{dataExporterConfigId}" -> DataExporterConfigApi,
+        "/api/data-exporter-configs" -> DataExporterConfigsApi,
+        "/api/certificates" -> Certificates,
+        "/api/certificates/{id}" -> Certificate_,
+        "/api/client-validators" -> ValidationAuthoritiesApi,
+        "/api/client-validators/{id}" -> ValidationAuthoritieApi,
+        "/api/snowmonkey/config" -> SnowMonkeyConfigApi,
+        "/api/snowmonkey/outages" -> SnowMonkeyOutageApi,
+        "/api/snowmonkey/_start" -> SnowMonkeyStartApi,
+        "/api/snowmonkey/_stop" -> SnowMonkeyStopApi,
         "/api/live/{id}" -> Json.obj(
           "get" -> Operation(
             tag = "stats",
@@ -2421,10 +2780,7 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
             parameters = Json.arr(
               PathParam("id", "The service id or global for otoroshi stats")
             ),
-            goodResponse = Json.obj(
-              "description" -> "Successful operation",
-              "schema"      -> Ref("Stats")
-            )
+            goodResponse = GoodResponse(Ref("Stats"), Json.arr("application/json", "text/event-stream"))
           )
         ),
         "/api/live" -> Json.obj(
@@ -2436,87 +2792,105 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
             goodResponse = GoodResponse(Ref("Stats"))
           )
         ),
-        "/api/globalconfig"  -> GlobalConfigManagement,
+        "/api/globalconfig" -> GlobalConfigManagement,
         "/api/otoroshi.json" -> ImportExportJson,
-        "/api/import"        -> ImportFromFile,
-        "/health"            -> CheckOtoroshiHealth
+        "/api/import" -> ImportFromFile,
+        "/health" -> CheckOtoroshiHealth
       ),
-      "securityDefinitions" -> Json.obj(
-        "otoroshi_auth" -> Json.obj(
-          "type" -> "basic"
-        )
-      ),
-      "definitions" -> Json.obj(
-        "ApiKey"         -> ApiKey,
-        "Auth0Config"    -> Auth0Config,
-        "Canary"         -> Canary,
-        "CleverSettings" -> CleverSettings,
-        "ClientConfig"   -> ClientConfig,
-        "Deleted"        -> Deleted,
-        "Done"           -> Done,
-        "Environment" -> Json.obj(
-          "type"        -> "string",
-          "example"     -> "prod",
-          "description" -> "The name of the environment for service descriptors"
+      "components" -> Json.obj(
+        "securitySchemes" -> Json.obj(
+          "otoroshi_auth" -> Json.obj(
+            "type" -> "http",
+            "scheme" -> "basic"
+          )
         ),
-        "ErrorTemplate"               -> ErrorTemplate,
-        "ExposedApi"                  -> ExposedApi,
-        "GlobalConfig"                -> GlobalConfig,
-        "Group"                       -> Group,
-        "HealthCheck"                 -> HealthCheck,
-        "OtoroshiHealth"              -> OtoroshiHealth,
-        "ImportExport"                -> ImportExport,
-        "ImportExportStats"           -> ImportExportStats,
-        "IpFiltering"                 -> IpFiltering,
-        "MailerSettings"              -> MailerSettings,
-        "Patch"                       -> Patch,
-        "Quotas"                      -> Quotas,
-        "Service"                     -> Service,
-        "SimpleAdmin"                 -> SimpleAdmin,
-        "Stats"                       -> Stats,
-        "StatsdConfig"                -> StatsdConfig,
-        "Target"                      -> Target,
-        "U2FAdmin"                    -> U2FAdmin,
-        "Webhook"                     -> Webhook,
-        "BadResponse"                 -> BadResponse,
-        "LargeRequestFaultConfig"     -> LargeRequestFaultConfig,
-        "LargeResponseFaultConfig"    -> LargeResponseFaultConfig,
-        "LatencyInjectionFaultConfig" -> LatencyInjectionFaultConfig,
-        "BadResponsesFaultConfig"     -> BadResponsesFaultConfig,
-        "ChaosConfig"                 -> ChaosConfig,
-        "OutageStrategy"              -> OutageStrategy,
-        "SnowMonkeyConfig"            -> SnowMonkeyConfig,
-        "OutageStrategy"              -> OutageStrategy,
-        "Outage"                      -> Outage,
-        "RefJwtVerifier"              -> RefJwtVerifier,
-        "LocalJwtVerifier"            -> LocalJwtVerifier,
-        "InQueryParam"                -> InQueryParam,
-        "InHeader"                    -> InHeader,
-        "InCookie"                    -> InCookie,
-        "HSAlgoSettings"              -> HSAlgoSettings,
-        "RSAlgoSettings"              -> RSAlgoSettings,
-        "ESAlgoSettings"              -> ESAlgoSettings,
-        "JWKSAlgoSettings"            -> JWKSAlgoSettings,
-        "MappingSettings"             -> MappingSettings,
-        "TransformSettings"           -> TransformSettings,
-        "VerificationSettings"        -> VerificationSettings,
-        "PassThrough"                 -> PassThrough,
-        "Sign"                        -> Sign,
-        "Transform"                   -> Transform,
-        "GlobalJwtVerifier"           -> GlobalJwtVerifier,
-        "GenericOauth2ModuleConfig"   -> GenericOauth2ModuleConfig,
-        "InMemoryAuthModuleConfig"    -> InMemoryAuthModuleConfig,
-        "LdapAuthModuleConfig"        -> LdapAuthModuleConfig,
-        "CorsSettings"                -> CorsSettings,
-        "RedirectionSettings"         -> RedirectionSettings,
-        "InMemoryUser"                -> InMemoryUser,
-        "LdapUser"                    -> LdapUser,
-        "Gzip"                        -> Gzip,
-        "Script"                      -> Script,
-        "ScriptCompilationResult"     -> ScriptCompilationResult,
-        "ScriptCompilationError"      -> ScriptCompilationError,
-        "Certificate"                 -> Certificate,
-        "ValidationAuthority"         -> ValidationAuthority
+        "schemas" -> Json.obj(
+          "ApiKey" -> ApiKey,
+          "Auth0Config" -> Auth0Config,
+          "Canary" -> Canary,
+          "CleverSettings" -> CleverSettings,
+          "ClientConfig" -> ClientConfig,
+          "Deleted" -> Deleted,
+          "Done" -> Done,
+          "Environment" -> Json.obj(
+            "type" -> "string",
+            "example" -> "prod",
+            "description" -> "The name of the environment for service descriptors"
+          ),
+          "ErrorTemplate" -> ErrorTemplate,
+          "ExposedApi" -> ExposedApi,
+          "GlobalConfig" -> GlobalConfig,
+          "Group" -> Group,
+          "HealthCheck" -> HealthCheck,
+          "OtoroshiHealth" -> OtoroshiHealth,
+          "ImportExport" -> ImportExport,
+          "ImportExportStats" -> ImportExportStats,
+          "IpFiltering" -> IpFiltering,
+          "MailerSettings" -> MailerSettings,
+          "Patch" -> Patch,
+          "Quotas" -> Quotas,
+          "Service" -> Service,
+          "SimpleAdmin" -> SimpleAdmin,
+          "Stats" -> Stats,
+          "StatsdConfig" -> StatsdConfig,
+          "Target" -> Target,
+          "U2FAdmin" -> U2FAdmin,
+          "Webhook" -> Webhook,
+          "BadResponse" -> BadResponse,
+          "LargeRequestFaultConfig" -> LargeRequestFaultConfig,
+          "LargeResponseFaultConfig" -> LargeResponseFaultConfig,
+          "LatencyInjectionFaultConfig" -> LatencyInjectionFaultConfig,
+          "BadResponsesFaultConfig" -> BadResponsesFaultConfig,
+          "ChaosConfig" -> ChaosConfig,
+          "OutageStrategy" -> OutageStrategy,
+          "SnowMonkeyConfig" -> SnowMonkeyConfig,
+          "OutageStrategy" -> OutageStrategy,
+          "Outage" -> Outage,
+          "RefJwtVerifier" -> RefJwtVerifier,
+          "LocalJwtVerifier" -> LocalJwtVerifier,
+          "InQueryParam" -> InQueryParam,
+          "InHeader" -> InHeader,
+          "InCookie" -> InCookie,
+          "HSAlgoSettings" -> HSAlgoSettings,
+          "RSAlgoSettings" -> RSAlgoSettings,
+          "ESAlgoSettings" -> ESAlgoSettings,
+          "JWKSAlgoSettings" -> JWKSAlgoSettings,
+          "MappingSettings" -> MappingSettings,
+          "TransformSettings" -> TransformSettings,
+          "VerificationSettings" -> VerificationSettings,
+          "PassThrough" -> PassThrough,
+          "Sign" -> Sign,
+          "Transform" -> Transform,
+          "GlobalJwtVerifier" -> GlobalJwtVerifier,
+          "GenericOauth2ModuleConfig" -> GenericOauth2ModuleConfig,
+          "InMemoryAuthModuleConfig" -> InMemoryAuthModuleConfig,
+          "LdapAuthModuleConfig" -> LdapAuthModuleConfig,
+          "CorsSettings" -> CorsSettings,
+          "RedirectionSettings" -> RedirectionSettings,
+          "InMemoryUser" -> InMemoryUser,
+          "LdapUser" -> LdapUser,
+          "Gzip" -> Gzip,
+          "Script" -> Script,
+          "ScriptCompilationResult" -> ScriptCompilationResult,
+          "ScriptCompilationError" -> ScriptCompilationError,
+          "Certificate" -> Certificate,
+          "ValidationAuthority" -> ValidationAuthority,
+          "KafkaConfig" -> KafkaConfig,
+          "ElasticConfig" -> ElasticConfig,
+          "whebhookConfig" -> WebhookConfig,
+          "PulsarDataExporterConfig" -> PulsarDataExporterConfig,
+          "FileDataExporterConfig" -> FileDataExporterConfig,
+          "MailerGenericExporterConfig" -> MailerGenericExporterConfig,
+          "MailerConsoleExporterConfig" -> MailerConsoleExporterConfig,
+          "MailerMailgunExporterConfig" -> MailerMailgunExporterConfig,
+          "MailerMailjetExporterConfig" -> MailerMailjetExporterConfig,
+          "MailerSendgridExporterConfig" -> MailerSendgridExporterConfig,
+          "ConsoleDataExporterConfig" -> ConsoleDataExporterConfig,
+          "CustomDataExporterConfig" -> CustomDataExporterConfig,
+          "DataExporterConfig" -> DataExporterConfig,
+          "Location" -> Location,
+          "Filtering" -> Filtering,
+        )
       )
     )
   }
