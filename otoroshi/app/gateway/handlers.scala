@@ -153,7 +153,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
   lazy val ipRegex = RegexPool.regex(
     "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(:\\d{2,5})?$"
   )
-  lazy val monitoringPaths = Seq("/health", "/metrics")
+  lazy val monitoringPaths = Seq("/health", "/metrics", "/live", "/ready", "/startup")
 
   val sourceBodyParser = BodyParser("Gateway BodyParser") { _ =>
     Accumulator.source[ByteString].map(Right.apply)
