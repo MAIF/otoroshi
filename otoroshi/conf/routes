@@ -5,6 +5,9 @@ GET     /error                                                controllers.BackOf
 GET     /auth0error                                           controllers.AuthController.auth0error(error: Option[String], error_description: Option[String])
 GET     /health                                               controllers.HealthController.health()
 GET     /metrics                                              controllers.HealthController.processMetrics()
+GET     /live                                                 controllers.HealthController.live()
+GET     /ready                                                controllers.HealthController.ready()
+GET     /startup                                              controllers.HealthController.startup()
 
 # WebAuthn URLs
 POST    /bo/webauthn/register/start                           controllers.U2FController.webAuthnRegistrationStart()
