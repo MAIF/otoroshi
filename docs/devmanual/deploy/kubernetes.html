@@ -3300,6 +3300,29 @@ curl -X GET https://httpapp.foo.bar/get -u &quot;$CLIENT_ID:$CLIENT_SECRET&quot;
 CLIENT_SECRET=&quot;xxx&quot;
 curl -X GET -H &#39;Host: httpapp.foo.bar&#39; https://otoroshi-service.otoroshi.svc.cluster.local:8443/get -u &quot;$CLIENT_ID:$CLIENT_SECRET&quot;
 </code></pre>
+<p>it&rsquo;s also possible to define services that targets otoroshi deployment (or otoroshi workers deployment) and use then as valid hosts in otoroshi services </p>
+<pre class="prettyprint"><code class="language-yaml">apiVersion: v1
+kind: Service
+metadata:
+  name: my-awesome-service
+spec:
+  selector:
+    # run: otoroshi-deployment
+    # or in cluster mode
+    run: otoroshi-worker-deployment
+  ports:
+  - port: 8080
+    name: &quot;http&quot;
+    targetPort: &quot;http&quot;
+  - port: 8443
+    name: &quot;https&quot;
+    targetPort: &quot;https&quot;
+</code></pre>
+<p>and access it like</p>
+<pre class="prettyprint"><code class="language-sh">CLIENT_ID=&quot;xxx&quot;
+CLIENT_SECRET=&quot;xxx&quot;
+curl -X GET https://my-awesome-service.my-namspace.svc.cluster.local:8443/get -u &quot;$CLIENT_ID:$CLIENT_SECRET&quot;
+</code></pre>
 <h2><a href="#daikoku-integration" name="daikoku-integration" class="anchor"><span class="anchor-link"></span></a>Daikoku integration</h2>
 <p>It is possible to easily integrate daikoku generated apikeys without any human interaction with the actual apikey secret. To do that, create a plan in Daikoku and setup the integration mode to <code>Automatic</code></p><div class="centered-img">
 <img src="../img/kubernetes-daikoku-integration-enabled.png" /></div>
