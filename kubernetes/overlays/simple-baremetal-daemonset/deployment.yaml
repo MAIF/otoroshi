@@ -65,7 +65,7 @@ spec:
               {\"config\":{\"scripts\":{\"enabled\":true,\"jobRefs\":[\"cp:otoroshi.plugins.jobs.kubernetes.KubernetesIngressControllerJob\",\"cp:otoroshi.plugins.jobs.kubernetes.KubernetesOtoroshiCRDsControllerJob\"],\"jobConfig\":{\"KubernetesConfig\":{\"trust\":false,\"namespaces\":[\"*\"],\"labels\":[],\"ingressClasses\":[\"otoroshi\"],\"defaultGroup\":\"default\",\"ingresses\":true,\"crds\":true,\"kubeLeader\":false,\"restartDependantDeployments\":false,\"templates\":{\"service-group\":{},\"service-descriptor\":{},\"apikeys\":{},\"global-config\":{},\"jwt-verifier\":{},\"tcp-service\":{},\"certificate\":{},\"auth-module\":{},\"script\":{}}}}}}}
         readinessProbe:
           httpGet:
-            path: /health
+            path: /ready
             port: 8080
           failureThreshold: 1
           initialDelaySeconds: 10
@@ -74,7 +74,7 @@ spec:
           timeoutSeconds: 2
         livenessProbe:
           httpGet:
-            path: /health
+            path: /live
             port: 8080
           failureThreshold: 3
           initialDelaySeconds: 10
