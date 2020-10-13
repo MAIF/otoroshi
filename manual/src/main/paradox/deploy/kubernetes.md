@@ -995,6 +995,35 @@ CLIENT_SECRET="xxx"
 curl -X GET -H 'Host: httpapp.foo.bar' https://otoroshi-service.otoroshi.svc.cluster.local:8443/get -u "$CLIENT_ID:$CLIENT_SECRET"
 ```
 
+it's also possible to define services that targets otoroshi deployment (or otoroshi workers deployment) and use then as valid hosts in otoroshi services 
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-awesome-service
+spec:
+  selector:
+    # run: otoroshi-deployment
+    # or in cluster mode
+    run: otoroshi-worker-deployment
+  ports:
+  - port: 8080
+    name: "http"
+    targetPort: "http"
+  - port: 8443
+    name: "https"
+    targetPort: "https"
+```
+
+and access it like
+
+```sh
+CLIENT_ID="xxx"
+CLIENT_SECRET="xxx"
+curl -X GET https://my-awesome-service.my-namspace.svc.cluster.local:8443/get -u "$CLIENT_ID:$CLIENT_SECRET"
+```
+
 ## Daikoku integration
 
 It is possible to easily integrate daikoku generated apikeys without any human interaction with the actual apikey secret. To do that, create a plan in Daikoku and setup the integration mode to `Automatic`
