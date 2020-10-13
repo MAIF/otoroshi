@@ -987,12 +987,12 @@ We don't recommand running Otoroshi behind an existing ingress controller (or so
 
 ## Access a service from inside the k8s cluster
 
-You can access any service referenced in otoroshi, through otoroshin from inside the kubernetes cluster by using the internal otoroshi service (if you use a template based on https://github.com/MAIF/otoroshi/tree/master/kubernetes/base) name and the host header with the service domain like :
+You can access any service referenced in otoroshi, through otoroshin from inside the kubernetes cluster by using the otoroshi service name (if you use a template based on https://github.com/MAIF/otoroshi/tree/master/kubernetes/base deployed in the otoroshi namespace) and the host header with the service domain like :
 
 ```sh
 CLIENT_ID="xxx"
 CLIENT_SECRET="xxx"
-curl -X GET -H 'Host: httpapp.foo.bar' https://otoroshi-internal-service:8443/get -u "$CLIENT_ID:$CLIENT_SECRET"
+curl -X GET -H 'Host: httpapp.foo.bar' https://otoroshi-service.otoroshi.svc.cluster.local:8443/get -u "$CLIENT_ID:$CLIENT_SECRET"
 ```
 
 ## Daikoku integration
