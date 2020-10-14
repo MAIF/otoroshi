@@ -566,7 +566,7 @@ now you can use an existing apikey in the `http-app-group` to access your app
 curl -X GET https://httpapp.foo.bar/get -u existing-apikey-1:secret-1
 ```
 
-## Use Otoroshi CRDs as Ingress controller for a better/full integration
+## Use Otoroshi CRDs for a better/full integration
 
 Otoroshi provides some Custom Resource Definitions for kubernetes in order to manage Otoroshi related entities in kubernetes
 
