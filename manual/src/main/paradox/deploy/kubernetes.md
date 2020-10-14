@@ -1050,3 +1050,4 @@ spec:
   secretName: secret-3
   daikokuToken: RShQrvINByiuieiaCBwIZfGFgdPu7tIJEN5gdV8N8YeH4RI9ErPYJzkuFyAkZ2xy
 ```
+
