@@ -830,7 +830,7 @@ metadata:
 spec:
   ports:
     - port: 8443
-      targetPort: httpss
+      targetPort: https
       name: https
   selector:
     run: http-app-deployment
