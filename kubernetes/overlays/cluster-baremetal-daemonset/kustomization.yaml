@@ -12,4 +12,4 @@ resources:
 patchesStrategicMerge:
   - deployment.yaml
   
-namePrefix: cluster-baremetal-daemonset-
+# namePrefix: cluster-baremetal-daemonset-
