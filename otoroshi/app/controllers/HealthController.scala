@@ -173,10 +173,16 @@ class HealthController(cc: ControllerComponents)(implicit env: Env)
   }
 
   def ready() = Action.async  { req =>
-    withSecurity(req, env.healthAccessKey)(fetchHealth())
+    withSecurity(req, env.healthAccessKey)(fetchHealth().map {
+      case r if r.header.status == 200 => Ok(Json.obj("ready" -> true))
+      case r => ServiceUnavailable(Json.obj("ready" -> false))
+    })
   }
 
   def startup() = Action.async  { req =>
-    withSecurity(req, env.healthAccessKey)(fetchHealth())
+    withSecurity(req, env.healthAccessKey)(fetchHealth().map {
+      case r if r.header.status == 200 => Ok(Json.obj("started" -> true))
+      case r => ServiceUnavailable(Json.obj("started" -> false))
+    })
   }
 }
