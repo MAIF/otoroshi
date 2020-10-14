@@ -12,4 +12,4 @@ resources:
 patchesStrategicMerge:
   - deployment.yaml
   
-namePrefix: simple-baremetal-
+# namePrefix: simple-baremetal-
