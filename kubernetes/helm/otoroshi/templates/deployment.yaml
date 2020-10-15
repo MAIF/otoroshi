@@ -18,10 +18,9 @@ spec:
       app.kubernetes.io/instance: {{ .Release.Name }}
   replicas: {{ .Values.replicas }}
   strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxUnavailable: 1
-      maxSurge: 1
+  {{- with .Values.strategy }}
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
   template:
     metadata:
       labels:
@@ -29,17 +28,17 @@ spec:
         app.kubernetes.io/instance: {{ .Release.Name }}
     spec:
       serviceAccountName: {{ .Values.serviceAccount.name }}
-      terminationGracePeriodSeconds: 60
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
       hostNetwork: false
       containers:
       - image: {{ .Values.image.name }}:{{ .Values.image.tag }}
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         name: {{ .Values.name }}
         ports:
-          - containerPort: 8080
+          - containerPort: {{ .Values.image.http }}
             name: "http"
             protocol: TCP
-          - containerPort: 8443
+          - containerPort: {{ .Values.image.https }}
             name: "https"
             protocol: TCP
         env:
@@ -67,21 +66,17 @@ spec:
         readinessProbe:
           httpGet:
             path: /ready
-            port: 8080
-          failureThreshold: 1
-          initialDelaySeconds: 10
-          periodSeconds: 10
-          successThreshold: 1
-          timeoutSeconds: 2
+            port: {{ .Values.image.http }}
+          {{- with .Values.probes.readiness }}
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
         livenessProbe:
           httpGet:
             path: /live
-            port: 8080
-          failureThreshold: 3
-          initialDelaySeconds: 10
-          periodSeconds: 10
-          successThreshold: 1
-          timeoutSeconds: 2
+            port: {{ .Values.image.http }}
+          {{- with .Values.probes.liveness }}
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
         resources:
           {{- with .Values.resources }}
           {{- toYaml . | nindent 10 }}
@@ -125,7 +120,12 @@ kind: Service
 metadata:
   name: {{ .Values.loadbalancer.name }}
 spec:
+  {{- if .Values.loadbalancer.enabled }}
   type: LoadBalancer
+  {{- end }}
+  {{- if not .Values.loadbalancer.enabled }}
+  type: ClusterIP
+  {{- end }}
   selector:
     app.kubernetes.io/name: {{ template "otoroshi.name" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}
@@ -133,32 +133,12 @@ spec:
   - port: {{ .Values.loadbalancer.http }}
     name: "http"
     targetPort: "http"
+    {{- if not .Values.loadbalancer.enabled }}
+    nodePort: {{ .Values.loadbalancer.nodePort.http }}
+    {{- end }}
   - port: {{ .Values.loadbalancer.https }}
     name: "https"
     targetPort: "https"
----
-apiVersion: proxy.otoroshi.io/v1alpha1
-kind: Certificate
-metadata:
-  name: {{ .Values.service.name }}-certificate
-spec:
-  description: "certificate for {{ .Values.service.name }}"
-  autoRenew: true
-  csr:
-    issuer: CN=Otoroshi Root
-    hosts: 
-    - {{ .Values.service.name }}
-    - {{ .Values.service.name }}.{{ .Release.Namespace }}.svc.cluster.local
-    - {{ .Values.service.apiName }}.{{ .Release.Namespace }}.svc.cluster.local
-    - otoroshi.{{ .Values.env.domain }}
-    - otoroshi-api.{{ .Values.env.domain }}
-    - privateapps.{{ .Values.env.domain }}
-    key:
-      algo: rsa
-      size: 2048
-    subject: uid=otoroshi-service-cert, O=Otoroshi
-    client: false
-    ca: false
-    duration: 31536000000
-    signatureAlg: SHA256WithRSAEncryption
-    digestAlg: SHA-256
+    {{- if not .Values.loadbalancer.enabled }}
+    nodePort: {{ .Values.loadbalancer.nodePort.https }}
+    {{- end }}
