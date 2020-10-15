@@ -107,6 +107,22 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
+  name: {{ .Values.service.apiName }}
+spec:
+  selector:
+    app.kubernetes.io/name: {{ template "otoroshi.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  ports:
+  - port: {{ .Values.service.http }}
+    name: "http"
+    targetPort: "http"
+  - port: {{ .Values.service.https }}
+    name: "https"
+    targetPort: "https"
+---
+apiVersion: v1
+kind: Service
+metadata:
   name: {{ .Values.loadbalancer.name }}
 spec:
   type: LoadBalancer
