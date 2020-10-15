@@ -2,6 +2,7 @@
 name: otoroshi
 
 replicas: 2
+terminationGracePeriodSeconds: 60
 
 serviceAccount:
   name: "otoroshi-admin-user"
@@ -12,6 +13,8 @@ image:
   name: maif/otoroshi
   tag: 1.5.0-jdk11
   pullPolicy: IfNotPresent
+  https: 8443
+  http: 8080
 
 deployment:
   name: otoroshi-deployment
@@ -24,9 +27,13 @@ service:
   http: 8080
 
 loadbalancer:
+  enabled: true
   name: otoroshi-external-service
   https: 443
   http: 443
+  nodePort:
+    http: 31080
+    https: 31443
 
 env:
   storageRoot: otoroshi
@@ -44,4 +51,24 @@ resources:
   limits:
     cpu: "4"
     memory: "4Gi"
+
+strategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 1
+    maxSurge: 1
+
+probes:
+  readiness:
+    failureThreshold: 1          
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    successThreshold: 1
+    timeoutSeconds: 2
+  liveness:  
+    failureThreshold: 3
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    successThreshold: 1
+    timeoutSeconds: 2
 
