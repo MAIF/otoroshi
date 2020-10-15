@@ -38,6 +38,7 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
   private val apiClientRef = new AtomicReference[ApiClient]()
   private val threadPool = Executors.newFixedThreadPool(1)
   private val stopCommand = new AtomicBoolean(false)
+  private val coreDnsIntegrationDone = new AtomicBoolean(false)
 
   override def uniqueId: JobId = JobId("io.otoroshi.plugins.jobs.kubernetes.KubernetesOtoroshiCRDsControllerJob")
 
@@ -154,11 +155,17 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
     if (conf.crds) {
       if (conf.kubeLeader) {
         if (shouldRun.get()) {
+          if (conf.coreDnsIntegration && !coreDnsIntegrationDone.get()) {
+            KubernetesCRDsJob.patchCoreDnsConfig(conf, ctx).map(_ => coreDnsIntegrationDone.compareAndSet(false, true))
+          }
           KubernetesCRDsJob.syncCRDs(conf, ctx.attrs, !stopCommand.get())
         } else {
           ().future
         }
       } else {
+        if (conf.coreDnsIntegration && !coreDnsIntegrationDone.get()) {
+          KubernetesCRDsJob.patchCoreDnsConfig(conf, ctx).map(_ => coreDnsIntegrationDone.compareAndSet(false, true))
+        }
         KubernetesCRDsJob.syncCRDs(conf, ctx.attrs, !stopCommand.get())
       }
     } else {
@@ -230,6 +237,11 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
 
   private def customizeServiceDescriptor(_spec: JsValue, res: KubernetesOtoroshiResource, services: Seq[KubernetesService], endpoints: Seq[KubernetesEndpoint], otoServices: Seq[ServiceDescriptor]): JsValue = {
     val spec = findAndMerge[ServiceDescriptor](_spec, res, "service-descriptor", None, otoServices, _.metadata, _.id, _.toJson, Some(_.enabled))
+    val additionalHosts = Json.arr(
+      s"${res.name}.${res.namespace}.otoroshi.mesh",
+      s"${res.name}.${res.namespace}.otoroshi",
+      s"${res.name}.${res.namespace}.svc.otoroshi"
+    )
     customizeIdAndName(spec, res).applyOn { s =>
       (s \ "env").asOpt[String] match {
         case Some(_) => s
@@ -297,8 +309,8 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
       }
     ).applyOn(s =>
       (s \ "hosts").asOpt[JsArray] match {
-        case None => s.as[JsObject] ++ Json.obj("hosts" -> Json.arr(s"${res.name}.${res.namespace}.otoroshi"))
-        case Some(arr) => s.as[JsObject] ++ Json.obj("hosts" -> (arr ++ Json.arr(s"${res.name}.${res.namespace}.otoroshi")))
+        case None => s.as[JsObject] ++ Json.obj("hosts" -> additionalHosts)
+        case Some(arr) => s.as[JsObject] ++ Json.obj("hosts" -> (arr ++ additionalHosts))
       }
     ).applyOn(s => s.as[JsObject] ++ Json.obj("useAkkaHttpClient" -> true))
   }
@@ -879,7 +891,6 @@ object KubernetesCRDsJob {
     }
   }
 
-
   def syncCRDs(conf: KubernetesConfig, attrs: TypedMap, jobRunning: => Boolean)(implicit env: Env, ec: ExecutionContext): Future[Unit] = env.metrics.withTimerAsync("otoroshi.plugins.kubernetes.crds.sync") {
     val client = new KubernetesClient(conf, env)
     if (!jobRunning) {
@@ -931,6 +942,36 @@ object KubernetesCRDsJob {
       logger.info("Job already running, scheduling after ")
       shouldRunNext.set(true)
       ().future
+    }
+  }
+
+  def patchCoreDnsConfig(conf: KubernetesConfig, ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    val client = new KubernetesClient(conf, env)
+    client.fetchConfigMap(conf.kubeSystemNamespace, "coredns").flatMap {
+      case None => ().future
+      case Some(configMap) if configMap.hasOtoroshiMesh => ().future
+      case Some(configMap) => {
+        val otoMesh =
+          s"""otoroshi.mesh:53 {
+            |    errors
+            |    health
+            |    ready
+            |    kubernetes cluster.local in-addr.arpa ip6.arpa {
+            |        pods insecure
+            |        upstream
+            |        fallthrough in-addr.arpa ip6.arpa
+            |    }
+            |    rewrite name regex (.*)\.otoroshi\.mesh ${conf.otoroshiServiceName}.${conf.otoroshiNamespace}.svc.cluster.local
+            |    forward . /etc/resolv.conf
+            |    cache 30
+            |    loop
+            |    reload
+            |    loadbalance
+            |}""".stripMargin
+        val newData = (configMap.raw \ "data").as[JsObject] ++ Json.obj("Corefile" -> (otoMesh + configMap.corefile))
+        val newRaw = configMap.raw.as[JsObject] ++ Json.obj("data" -> newData)
+        client.updateConfigMap(configMap.namespace, configMap.name, KubernetesConfigMap(newRaw)).map(_ => ())
+      }
     }
   }
 }

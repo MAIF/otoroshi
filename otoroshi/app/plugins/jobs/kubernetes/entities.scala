@@ -27,6 +27,16 @@ trait KubernetesEntity {
 }
 
 case class KubernetesService(raw: JsValue) extends KubernetesEntity
+case class KubernetesConfigMap(raw: JsValue) extends KubernetesEntity {
+  lazy val corefile: String = (raw \ "data" \ "Corefile").as[String]
+  lazy val hasOtoroshiMesh: Boolean = {
+    (raw \ "data" \ "Corefile").asOpt[String] match {
+      case None => true // because Corefile should be there, so avoid to do something wrong
+      case Some(coreFile) if coreFile.contains("otoroshi.mesh:53") => true
+      case Some(_) => false
+    }
+  }
+}
 
 case class KubernetesEndpoint(raw: JsValue) extends KubernetesEntity
 

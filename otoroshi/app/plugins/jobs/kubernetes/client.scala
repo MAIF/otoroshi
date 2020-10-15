@@ -278,6 +278,39 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
     }).map(_.flatten)
   }
 
+  def fetchConfigMap(namespace: String, name: String): Future[Option[KubernetesConfigMap]] = {
+    val cli: WSRequest = client(s"/api/v1/namespaces/$namespace/configmaps/$name", false)
+    cli.addHttpHeaders(
+      "Accept" -> "application/json"
+    ).get().map { resp =>
+      if (resp.status == 200) {
+        KubernetesConfigMap(resp.json).some
+      } else {
+        None
+      }
+    }
+  }
+
+  def updateConfigMap(namespace: String, name: String, newValue: KubernetesConfigMap): Future[Option[KubernetesConfigMap]] = {
+    val cli: WSRequest = client(s"/api/v1/namespaces/$namespace/configmaps/$name", false)
+    cli.addHttpHeaders(
+      "Accept" -> "application/json",
+      "Content-Type" -> "application/json"
+    ).put(newValue.raw).map { resp =>
+      Try {
+        if (resp.status == 200 || resp.status == 201) {
+          KubernetesConfigMap(resp.json).some
+        } else {
+          None
+        }
+      } match {
+        case Success(r) => r
+        case Failure(e) => None
+      }
+    }
+  }
+
+
   def fetchOtoroshiResources[T](pluralName: String, reader: Reads[T], customize: (JsValue, KubernetesOtoroshiResource) => JsValue = (a, b) => a): Future[Seq[OtoResHolder[T]]] = {
     asyncSequence(config.namespaces.map { namespace =>
       val cli: WSRequest = client(s"/apis/proxy.otoroshi.io/v1alpha1/namespaces/$namespace/$pluralName")
