@@ -16,13 +16,13 @@ build () {
   cp -R $LOCATION/kubernetes $LOCATION/manual/src/main/paradox/snippets
   rm -rf $LOCATION/manual/src/main/paradox/snippets/kubernetes/.old
   rm -f $LOCATION/manual/src/main/paradox/snippets/kubernetes/readme.md
-  rm -f $LOCATION/manual/src/main/paradox/snippets/kubernetes/base/readme.md
-  rm -f $LOCATION/manual/src/main/paradox/snippets/kubernetes/overlays/cluster/readme.md
-  rm -f $LOCATION/manual/src/main/paradox/snippets/kubernetes/overlays/cluster-baremetal/readme.md
-  rm -f $LOCATION/manual/src/main/paradox/snippets/kubernetes/overlays/cluster-baremetal-daemonset/readme.md
-  rm -f $LOCATION/manual/src/main/paradox/snippets/kubernetes/overlays/simple/readme.md
-  rm -f $LOCATION/manual/src/main/paradox/snippets/kubernetes/overlays/simple-baremetal/readme.md
-  rm -f $LOCATION/manual/src/main/paradox/snippets/kubernetes/overlays/simple-baremetal-daemonset/readme.md
+  rm -f $LOCATION/manual/src/main/paradox/snippets/kubernetes/kustomize/base/readme.md
+  rm -f $LOCATION/manual/src/main/paradox/snippets/kubernetes/kustomize/overlays/cluster/readme.md
+  rm -f $LOCATION/manual/src/main/paradox/snippets/kubernetes/kustomize/overlays/cluster-baremetal/readme.md
+  rm -f $LOCATION/manual/src/main/paradox/snippets/kubernetes/kustomize/overlays/cluster-baremetal-daemonset/readme.md
+  rm -f $LOCATION/manual/src/main/paradox/snippets/kubernetes/kustomize/overlays/simple/readme.md
+  rm -f $LOCATION/manual/src/main/paradox/snippets/kubernetes/kustomize/overlays/simple-baremetal/readme.md
+  rm -f $LOCATION/manual/src/main/paradox/snippets/kubernetes/kustomize/overlays/simple-baremetal-daemonset/readme.md
   node indexer.js
   rm $LOCATION/manual/src/main/paradox/snippets/reference.conf
   rm $LOCATION/manual/src/main/paradox/snippets/reference-env.conf
@@ -46,13 +46,13 @@ buildDev () {
   cp -R $LOCATION/kubernetes $LOCATION/manual/src/main/paradox/snippets
   rm -rf $LOCATION/manual/src/main/paradox/snippets/kubernetes/.old
   rm -f $LOCATION/manual/src/main/paradox/snippets/kubernetes/readme.md
-  rm -f $LOCATION/manual/src/main/paradox/snippets/kubernetes/base/readme.md
-  rm -f $LOCATION/manual/src/main/paradox/snippets/kubernetes/overlays/cluster/readme.md
-  rm -f $LOCATION/manual/src/main/paradox/snippets/kubernetes/overlays/cluster-baremetal/readme.md
-  rm -f $LOCATION/manual/src/main/paradox/snippets/kubernetes/overlays/cluster-baremetal-daemonset/readme.md
-  rm -f $LOCATION/manual/src/main/paradox/snippets/kubernetes/overlays/simple/readme.md
-  rm -f $LOCATION/manual/src/main/paradox/snippets/kubernetes/overlays/simple-baremetal/readme.md
-  rm -f $LOCATION/manual/src/main/paradox/snippets/kubernetes/overlays/simple-baremetal-daemonset/readme.md
+  rm -f $LOCATION/manual/src/main/paradox/snippets/kubernetes/kustomize/base/readme.md
+  rm -f $LOCATION/manual/src/main/paradox/snippets/kubernetes/kustomize/overlays/cluster/readme.md
+  rm -f $LOCATION/manual/src/main/paradox/snippets/kubernetes/kustomize/overlays/cluster-baremetal/readme.md
+  rm -f $LOCATION/manual/src/main/paradox/snippets/kubernetes/kustomize/overlays/cluster-baremetal-daemonset/readme.md
+  rm -f $LOCATION/manual/src/main/paradox/snippets/kubernetes/kustomize/overlays/simple/readme.md
+  rm -f $LOCATION/manual/src/main/paradox/snippets/kubernetes/kustomize/overlays/simple-baremetal/readme.md
+  rm -f $LOCATION/manual/src/main/paradox/snippets/kubernetes/kustomize/overlays/simple-baremetal-daemonset/readme.md
   node indexer.js
   rm $LOCATION/manual/src/main/paradox/snippets/reference.conf
   rm $LOCATION/manual/src/main/paradox/snippets/reference-env.conf

@@ -14,7 +14,7 @@ You can also create a `kustomization.yaml` file with a remote base
 
 ```yaml
 bases:
-- github.com/MAIF/otoroshi/kubernetes/overlays/prod/?ref=v1.5.0
+- github.com/MAIF/otoroshi/kubernetes/kustomize/overlays/simple/?ref=v1.5.0
 ```
 
 Then deploy it with `kubectl apply -k ./overlays/myoverlay`. 

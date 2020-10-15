@@ -38,6 +38,7 @@ rules:
       - ""
     resources:
       - secrets
+      - configmaps
     verbs:
       - update
       - create
