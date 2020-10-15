@@ -278,6 +278,19 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
     }).map(_.flatten)
   }
 
+  def fetchDeployment(namespace: String, name: String): Future[Option[KubernetesDeployment]] = {
+    val cli: WSRequest = client(s"/api/v1/namespaces/$namespace/deployments/$name", false)
+    cli.addHttpHeaders(
+      "Accept" -> "application/json"
+    ).get().map { resp =>
+      if (resp.status == 200) {
+        KubernetesDeployment(resp.json).some
+      } else {
+        None
+      }
+    }
+  }
+
   def fetchConfigMap(namespace: String, name: String): Future[Option[KubernetesConfigMap]] = {
     val cli: WSRequest = client(s"/api/v1/namespaces/$namespace/configmaps/$name", false)
     cli.addHttpHeaders(
