@@ -39,7 +39,8 @@ case class KubernetesConfig(
   kubeSystemNamespace: String,
   corednsConfigMap: String,
   otoroshiServiceName: String,
-  otoroshiNamespace: String
+  otoroshiNamespace: String,
+  clusterDomain: String,
 )
 
 object KubernetesConfig {
@@ -100,6 +101,7 @@ object KubernetesConfig {
           corednsConfigMap = (conf \ "corednsConfigMap").asOpt[String].getOrElse("coredns"),
           otoroshiServiceName = (conf \ "otoroshiServiceName").asOpt[String].getOrElse("otoroshi-service"),
           otoroshiNamespace = (conf \ "otoroshiNamespace").asOpt[String].getOrElse("otoroshi"),
+          clusterDomain = (conf \ "clusterDomain").asOpt[String].getOrElse("cluster.local"),
         )
       }
       case None => {
@@ -142,6 +144,7 @@ object KubernetesConfig {
           corednsConfigMap = (conf \ "corednsConfigMap").asOpt[String].getOrElse("coredns"),
           otoroshiServiceName = (conf \ "otoroshiServiceName").asOpt[String].getOrElse("otoroshi-service"),
           otoroshiNamespace = (conf \ "otoroshiNamespace").asOpt[String].getOrElse("otoroshi"),
+          clusterDomain = (conf \ "clusterDomain").asOpt[String].getOrElse("cluster.local"),
         )
       }
     }
@@ -165,6 +168,9 @@ object KubernetesConfig {
         "restartDependantDeployments" -> true,
         "kubeSystemNamespace" -> "kube-system",
         "corednsConfigMap" -> "coredns",
+        "otoroshiServiceName" -> "otoroshi-service",
+        "otoroshiNamespace" -> "otoroshi",
+        "clusterDomain" -> "cluster.local",
         "templates" -> Json.obj(
           "service-group" -> Json.obj(),
           "service-descriptor" -> Json.obj(),

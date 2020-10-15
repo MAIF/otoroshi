@@ -39,6 +39,7 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
   private val threadPool = Executors.newFixedThreadPool(1)
   private val stopCommand = new AtomicBoolean(false)
   private val coreDnsIntegrationDone = new AtomicBoolean(false)
+  private val coreDnsIntegrationConfig = new AtomicReference[KubernetesConfig]()
 
   override def uniqueId: JobId = JobId("io.otoroshi.plugins.jobs.kubernetes.KubernetesOtoroshiCRDsControllerJob")
 
@@ -86,6 +87,7 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
     logger.info("start")
     stopCommand.set(false)
     val config = KubernetesConfig.theConfig(ctx)
+    coreDnsIntegrationConfig.set(config)
     if (config.kubeLeader) {
       val apiClient = new ClientBuilder()
         .setVerifyingSsl(!config.trust)
@@ -143,6 +145,7 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
   override def jobStop(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     // Option(apiClientRef.get()).foreach(_.) // nothing to stop stuff here ...
     logger.info("stop")
+    coreDnsIntegrationConfig.set(null)
     stopCommand.set(true)
     threadPool.shutdown()
     shouldRun.set(false)
@@ -155,7 +158,8 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
     if (conf.crds) {
       if (conf.kubeLeader) {
         if (shouldRun.get()) {
-          if (conf.coreDnsIntegration && !coreDnsIntegrationDone.get()) {
+          if (conf.coreDnsIntegration && (!coreDnsIntegrationDone.get() || !Option(coreDnsIntegrationConfig.get()).contains(conf))) {
+            coreDnsIntegrationConfig.set(conf)
             KubernetesCRDsJob.patchCoreDnsConfig(conf, ctx).map(_ => coreDnsIntegrationDone.compareAndSet(false, true))
           }
           KubernetesCRDsJob.syncCRDs(conf, ctx.attrs, !stopCommand.get())
@@ -163,7 +167,8 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
           ().future
         }
       } else {
-        if (conf.coreDnsIntegration && !coreDnsIntegrationDone.get()) {
+        if (conf.coreDnsIntegration && (!coreDnsIntegrationDone.get() || !Option(coreDnsIntegrationConfig.get()).contains(conf))) {
+          coreDnsIntegrationConfig.set(conf)
           KubernetesCRDsJob.patchCoreDnsConfig(conf, ctx).map(_ => coreDnsIntegrationDone.compareAndSet(false, true))
         }
         KubernetesCRDsJob.syncCRDs(conf, ctx.attrs, !stopCommand.get())
@@ -947,30 +952,44 @@ object KubernetesCRDsJob {
 
   def patchCoreDnsConfig(conf: KubernetesConfig, ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     val client = new KubernetesClient(conf, env)
-    client.fetchConfigMap(conf.kubeSystemNamespace, "coredns").flatMap {
+    client.fetchDeployment("kube-system", "coredns").flatMap {
       case None => ().future
-      case Some(configMap) if configMap.hasOtoroshiMesh => ().future
-      case Some(configMap) => {
-        val otoMesh =
-          s"""otoroshi.mesh:53 {
-            |    errors
-            |    health
-            |    ready
-            |    kubernetes cluster.local in-addr.arpa ip6.arpa {
-            |        pods insecure
-            |        upstream
-            |        fallthrough in-addr.arpa ip6.arpa
-            |    }
-            |    rewrite name regex (.*)\.otoroshi\.mesh ${conf.otoroshiServiceName}.${conf.otoroshiNamespace}.svc.cluster.local
-            |    forward . /etc/resolv.conf
-            |    cache 30
-            |    loop
-            |    reload
-            |    loadbalance
-            |}""".stripMargin
-        val newData = (configMap.raw \ "data").as[JsObject] ++ Json.obj("Corefile" -> (otoMesh + configMap.corefile))
-        val newRaw = configMap.raw.as[JsObject] ++ Json.obj("data" -> newData)
-        client.updateConfigMap(configMap.namespace, configMap.name, KubernetesConfigMap(newRaw)).map(_ => ())
+      case Some(coredns) => {
+        client.fetchConfigMap(conf.kubeSystemNamespace, "coredns").flatMap {
+          case None => ().future
+          case Some(configMap) if configMap.hasOtoroshiMesh => ().future
+          case Some(configMap) => {
+            val container = (coredns.raw \ "spec" \ "containers").as[JsArray].value.find(_.select("name").asOpt[String].contains("coredns"))
+            val coredns17 = container.flatMap(_.select("image").asOpt[String].map(_.split(":").last.replace(".", "")).map {
+              case version if version.length == 2 => version.toInt > 16
+              case version if version.length == 3 => version.toInt > 169
+              case version if version.length == 4 => version.toInt > 1699
+              case version if version.length == 5 => version.toInt > 16999
+              case _                              => false
+            }).getOrElse(false)
+            val upstream = if (coredns17) "" else "upstream"
+            val otoMesh =
+              s"""otoroshi.mesh:53 {
+                 |    errors
+                 |    health
+                 |    ready
+                 |    kubernetes ${conf.clusterDomain} in-addr.arpa ip6.arpa {
+                 |        pods insecure
+                 |        $upstream
+                 |        fallthrough in-addr.arpa ip6.arpa
+                 |    }
+                 |    rewrite name regex (.*)\.otoroshi\.mesh ${conf.otoroshiServiceName}.${conf.otoroshiNamespace}.svc.${conf.clusterDomain}
+                 |    forward . /etc/resolv.conf
+                 |    cache 30
+                 |    loop
+                 |    reload
+                 |    loadbalance
+                 |}""".stripMargin
+            val newData = (configMap.raw \ "data").as[JsObject] ++ Json.obj("Corefile" -> (otoMesh + configMap.corefile))
+            val newRaw = configMap.raw.as[JsObject] ++ Json.obj("data" -> newData)
+            client.updateConfigMap(configMap.namespace, configMap.name, KubernetesConfigMap(newRaw)).map(_ => ())
+          }
+        }
       }
     }
   }

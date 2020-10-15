@@ -987,6 +987,8 @@ We don't recommand running Otoroshi behind an existing ingress controller (or so
 
 ## Access a service from inside the k8s cluster
 
+### Using host header overriding
+
 You can access any service referenced in otoroshi, through otoroshi from inside the kubernetes cluster by using the otoroshi service name (if you use a template based on https://github.com/MAIF/otoroshi/tree/master/kubernetes/base deployed in the otoroshi namespace) and the host header with the service domain like :
 
 ```sh
@@ -994,6 +996,8 @@ CLIENT_ID="xxx"
 CLIENT_SECRET="xxx"
 curl -X GET -H 'Host: httpapp.foo.bar' https://otoroshi-service.otoroshi.svc.cluster.local:8443/get -u "$CLIENT_ID:$CLIENT_SECRET"
 ```
+
+### Using dedicated services
 
 it's also possible to define services that targets otoroshi deployment (or otoroshi workers deployment) and use then as valid hosts in otoroshi services 
 
@@ -1024,13 +1028,44 @@ CLIENT_SECRET="xxx"
 curl -X GET https://my-awesome-service.my-namspace.svc.cluster.local:8443/get -u "$CLIENT_ID:$CLIENT_SECRET"
 ```
 
-you can also patch the coredns config to simplify the flow
+### Using coredns integration
+
+You can also enable the coredns integration to simplify the flow. You can use the the following keys in the plugin config :
+
+```javascript
+{
+  "KubernetesConfig": {
+    ...
+    "coreDnsIntegration": false,               // enable coredns integration for intra cluster calls
+    "kubeSystemNamespace": "kube-system",      // the namespace where coredns is deployed
+    "corednsConfigMap": "coredns",             // the name of the coredns configmap
+    "otoroshiServiceName": "otoroshi-service", // the name of the otoroshi service, could be otoroshi-workers-service
+    "otoroshiNamespace": "otoroshi",           // the namespace where otoroshi is deployed
+    "clusterDomain": "cluster.local",          // the domain for cluster services
+    ...
+  }
+}
+```
+
+otoroshi will patch coredns config at startup then you can call your services like
+
+```sh
+CLIENT_ID="xxx"
+CLIENT_SECRET="xxx"
+curl -X GET https://my-awesome-service.my-awesome-service-namespace.otoroshi.mesh:8443/get -u "$CLIENT_ID:$CLIENT_SECRET"
+```
+
+By default, all services created from CRDs service descriptors are exposed as `${service-name}.${service-namespace}.otoroshi.mesh`
+
+### Using coredns with manual patching
+
+you can also patch the coredns config manually
 
 ```sh
 kubectl edit configmaps coredns -n kube-system # or your own custom config map
 ```
 
-and change the `Corefile` data to add the following snippet in at the beginning
+and change the `Corefile` data to add the following snippet in at the end of the file
 
 ```yaml
 otoroshi.mesh:53 {
@@ -1066,7 +1101,7 @@ then you can call your service like
 ```sh
 CLIENT_ID="xxx"
 CLIENT_SECRET="xxx"
-curl -X GET https://my-awesome-service.my-namspace.otoroshi.mesh:8443/get -u "$CLIENT_ID:$CLIENT_SECRET"
+curl -X GET https://my-awesome-service.my-awesome-service-namespace.otoroshi.mesh:8443/get -u "$CLIENT_ID:$CLIENT_SECRET"
 ```
 
 ## Daikoku integration
