@@ -14,7 +14,7 @@ sources:
 maintainers:
   - name: mathieuancelin
 icon: https://raw.githubusercontent.com/MAIF/otoroshi/master/resources/otoroshi-logo.png
-# dependencies:
-#   - name: redis
-#     version: "11.2.0"
-#     repository: "https://charts.bitnami.com/bitnami"
+dependencies:
+  - name: redis
+    version: "11.2.0"
+    repository: "https://charts.bitnami.com/bitnami"
