@@ -195,10 +195,10 @@ case class OtoAnnotationConfig(annotations: Map[String, String]) {
   }.toMap
   def apply(desc: ServiceDescriptor): ServiceDescriptor = {
     annotations.filter {
-      case (key, _) if key.startsWith("otoroshi.ingress.kubernetes.io/") => true
+      case (key, _) if key.startsWith("ingress.otoroshi.io/") => true
       case _ => false
     }.map {
-      case (key, value) => (key.replace("otoroshi.ingress.kubernetes.io/", ""), value)
+      case (key, value) => (key.replace("ingress.otoroshi.io/", ""), value)
     }.foldLeft(desc) {
       case (d, (key, value)) => toCamelCase(key) match {
         case "raw" => {
