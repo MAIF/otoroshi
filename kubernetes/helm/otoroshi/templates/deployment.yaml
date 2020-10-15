@@ -51,7 +51,8 @@ spec:
           - name: APP_STORAGE
             value: lettuce
           - name: REDIS_URL
-            value: {{ .Values.env.redisURL }}
+            # value: {{ .Values.env.redisURL }}
+            value: 'redis://{{ .Release.Name }}-redis-master:6379'
           - name: ADMIN_API_CLIENT_ID
             value: {{ .Values.env.clientId }}
           - name: ADMIN_API_CLIENT_SECRET

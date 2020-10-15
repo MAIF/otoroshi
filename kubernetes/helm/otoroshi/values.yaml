@@ -42,7 +42,7 @@ env:
   clientId: "admin-api-apikey-id"
   clientSecret: "admin-api-apikey-secret"
   secret: "secret"
-  redisURL: "redis://redis-master:6379"
+  redisURL: "redis://otorosi-redis-master:6379"
 
 resources:
   requests:
@@ -71,4 +71,10 @@ probes:
     periodSeconds: 10
     successThreshold: 1
     timeoutSeconds: 2
+
+# redis
+redis:
+  cluster:
+    enabled: false
+  usePassword: false
 
