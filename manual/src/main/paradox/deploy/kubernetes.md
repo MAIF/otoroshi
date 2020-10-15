@@ -987,7 +987,7 @@ We don't recommand running Otoroshi behind an existing ingress controller (or so
 
 ## Access a service from inside the k8s cluster
 
-You can access any service referenced in otoroshi, through otoroshin from inside the kubernetes cluster by using the otoroshi service name (if you use a template based on https://github.com/MAIF/otoroshi/tree/master/kubernetes/base deployed in the otoroshi namespace) and the host header with the service domain like :
+You can access any service referenced in otoroshi, through otoroshi from inside the kubernetes cluster by using the otoroshi service name (if you use a template based on https://github.com/MAIF/otoroshi/tree/master/kubernetes/base deployed in the otoroshi namespace) and the host header with the service domain like :
 
 ```sh
 CLIENT_ID="xxx"
@@ -1022,6 +1022,51 @@ and access it like
 CLIENT_ID="xxx"
 CLIENT_SECRET="xxx"
 curl -X GET https://my-awesome-service.my-namspace.svc.cluster.local:8443/get -u "$CLIENT_ID:$CLIENT_SECRET"
+```
+
+you can also patch the coredns config to simplify the flow
+
+```sh
+kubectl edit configmaps coredns -n kube-system # or your own custom config map
+```
+
+and change the `Corefile` data to add the following snippet in at the beginning
+
+```yaml
+otoroshi.mesh:53 {
+    errors
+    health
+    ready
+    kubernetes cluster.local in-addr.arpa ip6.arpa {
+        pods insecure
+        upstream
+        fallthrough in-addr.arpa ip6.arpa
+    }
+    rewrite name regex (.*)\.otoroshi\.mesh otoroshi-worker-service.otoroshi.svc.cluster.local
+    forward . /etc/resolv.conf
+    cache 30
+    loop
+    reload
+    loadbalance
+}
+```
+
+you can also define simpler rewrite if it suits you use case better
+
+```
+rewrite name my-service.otoroshi.mesh otoroshi-worker-service.otoroshi.svc.cluster.local
+```
+
+do not hesitate to change `otoroshi-worker-service.otoroshi` according to your own setup. If otoroshi is not in cluster mode, change it to `otoroshi-service.otoroshi`. If otoroshi is not deployed in the `otoroshi` namespace, change it to `otoroshi-service.the-namespace`, etc.
+
+By default, all services created from CRDs service descriptors are exposed as `${service-name}.${service-namespace}.otoroshi.mesh`
+
+then you can call your service like 
+
+```sh
+CLIENT_ID="xxx"
+CLIENT_SECRET="xxx"
+curl -X GET https://my-awesome-service.my-namspace.otoroshi.mesh:8443/get -u "$CLIENT_ID:$CLIENT_SECRET"
 ```
 
 ## Daikoku integration

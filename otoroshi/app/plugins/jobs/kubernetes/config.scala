@@ -20,6 +20,7 @@ case class KubernetesConfig(
   trust: Boolean,
   watch: Boolean,
   restartDependantDeployments: Boolean,
+  coreDnsIntegration: Boolean,
   endpoint: String,
   token: Option[String],
   userPassword: Option[String],
@@ -34,7 +35,11 @@ case class KubernetesConfig(
   triggerKey: Option[String],
   triggerHost: Option[String],
   triggerPath: Option[String],
-  templates: JsObject
+  templates: JsObject,
+  kubeSystemNamespace: String,
+  corednsConfigMap: String,
+  otoroshiServiceName: String,
+  otoroshiNamespace: String
 )
 
 object KubernetesConfig {
@@ -81,6 +86,7 @@ object KubernetesConfig {
           ingressEndpointHostname = (conf \ "ingressEndpointHostname").asOpt[String],
           ingressEndpointIp = (conf \ "ingressEndpointIp").asOpt[String],
           ingressEndpointPublishedService = (conf \ "ingressEndpointPublishedServices").asOpt[String],
+          coreDnsIntegration = (conf \ "coreDnsIntegration").asOpt[Boolean].getOrElse(false),
           ingresses = (conf \ "ingresses").asOpt[Boolean].getOrElse(true),
           crds = (conf \ "crds").asOpt[Boolean].getOrElse(true),
           kubeLeader = (conf \ "kubeLeader").asOpt[Boolean].getOrElse(false),
@@ -89,7 +95,11 @@ object KubernetesConfig {
           triggerKey = (conf \ "triggerKey").asOpt[String],
           triggerHost = (conf \ "triggerHost").asOpt[String],
           triggerPath = (conf \ "triggerPath").asOpt[String],
-          templates = (conf \ "templates").asOpt[JsObject].getOrElse(Json.obj())
+          templates = (conf \ "templates").asOpt[JsObject].getOrElse(Json.obj()),
+          kubeSystemNamespace = (conf \ "kubeSystemNamespace").asOpt[String].getOrElse("kube-system"),
+          corednsConfigMap = (conf \ "corednsConfigMap").asOpt[String].getOrElse("coredns"),
+          otoroshiServiceName = (conf \ "otoroshiServiceName").asOpt[String].getOrElse("otoroshi-service"),
+          otoroshiNamespace = (conf \ "otoroshiNamespace").asOpt[String].getOrElse("otoroshi"),
         )
       }
       case None => {
@@ -119,6 +129,7 @@ object KubernetesConfig {
           ingressEndpointIp = (conf \ "ingressEndpointIp").asOpt[String],
           ingressEndpointPublishedService = (conf \ "ingressEndpointPublishedServices").asOpt[String],
           ingresses = (conf \ "ingresses").asOpt[Boolean].getOrElse(true),
+          coreDnsIntegration = (conf \ "coreDnsIntegration").asOpt[Boolean].getOrElse(false),
           crds = (conf \ "crds").asOpt[Boolean].getOrElse(true),
           kubeLeader = (conf \ "kubeLeader").asOpt[Boolean].getOrElse(false),
           restartDependantDeployments = (conf \ "restartDependantDeployments").asOpt[Boolean].getOrElse(false),
@@ -126,7 +137,11 @@ object KubernetesConfig {
           triggerKey = (conf \ "triggerKey").asOpt[String],
           triggerHost = (conf \ "triggerHost").asOpt[String],
           triggerPath = (conf \ "triggerPath").asOpt[String],
-          templates = (conf \ "templates").asOpt[JsObject].getOrElse(Json.obj())
+          templates = (conf \ "templates").asOpt[JsObject].getOrElse(Json.obj()),
+          kubeSystemNamespace = (conf \ "kubeSystemNamespace").asOpt[String].getOrElse("kube-system"),
+          corednsConfigMap = (conf \ "corednsConfigMap").asOpt[String].getOrElse("coredns"),
+          otoroshiServiceName = (conf \ "otoroshiServiceName").asOpt[String].getOrElse("otoroshi-service"),
+          otoroshiNamespace = (conf \ "otoroshiNamespace").asOpt[String].getOrElse("otoroshi"),
         )
       }
     }
@@ -145,8 +160,11 @@ object KubernetesConfig {
         "defaultGroup" -> "default",
         "ingresses" -> true,
         "crds" -> true,
+        "coreDnsIntegration" -> false,
         "kubeLeader" -> false,
         "restartDependantDeployments" -> true,
+        "kubeSystemNamespace" -> "kube-system",
+        "corednsConfigMap" -> "coredns",
         "templates" -> Json.obj(
           "service-group" -> Json.obj(),
           "service-descriptor" -> Json.obj(),
