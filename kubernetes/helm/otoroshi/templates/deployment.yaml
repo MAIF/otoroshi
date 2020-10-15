@@ -1,0 +1,148 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.deployment.name }}
+  labels:
+    app.kubernetes.io/name: {{ template "otoroshi.name" . }}
+    helm.sh/chart: {{ template "otoroshi.chart" . }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  annotations:
+  {{- with .Values.deployment.annotations }}
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ template "otoroshi.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  replicas: {{ .Values.replicas }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ template "otoroshi.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+      terminationGracePeriodSeconds: 60
+      hostNetwork: false
+      containers:
+      - image: {{ .Values.image.name }}:{{ .Values.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        name: {{ .Values.name }}
+        ports:
+          - containerPort: 8080
+            name: "http"
+            protocol: TCP
+          - containerPort: 8443
+            name: "https"
+            protocol: TCP
+        env:
+          - name: APP_STORAGE_ROOT
+            value: {{ .Values.env.storageRoot }}
+          - name: OTOROSHI_INITIAL_ADMIN_PASSWORD
+            value: {{ .Values.env.password }}
+          - name: APP_DOMAIN
+            value: {{ .Values.env.domain }}
+          - name: APP_STORAGE
+            value: lettuce
+          - name: REDIS_URL
+            value: {{ .Values.env.redisURL }}
+          - name: ADMIN_API_CLIENT_ID
+            value: {{ .Values.env.clientId }}
+          - name: ADMIN_API_CLIENT_SECRET
+            value: {{ .Values.env.clientSecret }}
+          - name: ADMIN_API_ADDITIONAL_EXPOSED_DOMAIN
+            value: otoroshi-api-service.{{ .Release.Namespace }}.svc.cluster.local
+          - name: OTOROSHI_SECRET
+            value: {{ .Values.env.secret }}
+          - name: OTOROSHI_INITIAL_CUSTOMIZATION
+            value: >
+              {\"config\":{\"scripts\":{\"enabled\":true,\"jobRefs\":[\"cp:otoroshi.plugins.jobs.kubernetes.KubernetesIngressControllerJob\",\"cp:otoroshi.plugins.jobs.kubernetes.KubernetesOtoroshiCRDsControllerJob\"],\"jobConfig\":{\"KubernetesConfig\":{\"trust\":false,\"namespaces\":[\"*\"],\"labels\":[],\"ingressClasses\":[\"otoroshi\"],\"defaultGroup\":\"default\",\"ingresses\":true,\"crds\":true,\"kubeLeader\":false,\"restartDependantDeployments\":false,"coreDnsIntegration":true, "otoroshiNamespace":"{{ .Release.Namespace }}","otoroshiServiceName":"{{ .Values.service.name }}",\"templates\":{\"service-group\":{},\"service-descriptor\":{},\"apikeys\":{},\"global-config\":{},\"jwt-verifier\":{},\"tcp-service\":{},\"certificate\":{},\"auth-module\":{},\"script\":{}}}}}}}
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+          failureThreshold: 1
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 2
+        livenessProbe:
+          httpGet:
+            path: /live
+            port: 8080
+          failureThreshold: 3
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 2
+        resources:
+          {{- with .Values.resources }}
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
+        
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.service.name }}
+spec:
+  selector:
+    app.kubernetes.io/name: {{ template "otoroshi.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  ports:
+  - port: {{ .Values.service.http }}
+    name: "http"
+    targetPort: "http"
+  - port: {{ .Values.service.https }}
+    name: "https"
+    targetPort: "https"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.loadbalancer.name }}
+spec:
+  type: LoadBalancer
+  selector:
+    app.kubernetes.io/name: {{ template "otoroshi.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  ports:
+  - port: {{ .Values.loadbalancer.http }}
+    name: "http"
+    targetPort: "http"
+  - port: {{ .Values.loadbalancer.https }}
+    name: "https"
+    targetPort: "https"
+---
+apiVersion: proxy.otoroshi.io/v1alpha1
+kind: Certificate
+metadata:
+  name: {{ .Values.service.name }}-certificate
+spec:
+  description: "certificate for {{ .Values.service.name }}"
+  autoRenew: true
+  csr:
+    issuer: CN=Otoroshi Root
+    hosts: 
+    - {{ .Values.service.name }}
+    - {{ .Values.service.name }}.{{ .Release.Namespace }}.svc.cluster.local
+    - {{ .Values.service.apiName }}.{{ .Release.Namespace }}.svc.cluster.local
+    - otoroshi.{{ .Values.env.domain }}
+    - otoroshi-api.{{ .Values.env.domain }}
+    - privateapps.{{ .Values.env.domain }}
+    key:
+      algo: rsa
+      size: 2048
+    subject: uid=otoroshi-service-cert, O=Otoroshi
+    client: false
+    ca: false
+    duration: 31536000000
+    signatureAlg: SHA256WithRSAEncryption
+    digestAlg: SHA-256

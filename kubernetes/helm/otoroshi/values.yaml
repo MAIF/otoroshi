@@ -1,0 +1,47 @@
+
+name: otoroshi
+
+replicas: 2
+
+serviceAccount:
+  name: "otoroshi-admin-user"
+  clusterRole: "otoroshi-admin-user"
+  clusterRoleBinding: "otoroshi-admin-user"
+
+image:
+  name: maif/otoroshi
+  tag: 1.5.0-jdk11
+  pullPolicy: IfNotPresent
+
+deployment:
+  name: otoroshi-deployment
+  annotations: {}
+
+service:
+  name: otoroshi-service
+  apiName: otoroshi-api-service
+  https: 8443
+  http: 8080
+
+loadbalancer:
+  name: otoroshi-external-service
+  https: 443
+  http: 443
+
+env:
+  storageRoot: otoroshi
+  password: password
+  domain: "oto.tools"
+  clientId: "admin-api-apikey-id"
+  clientSecret: "admin-api-apikey-secret"
+  secret: "secret"
+  redisURL: "redis://redis-master:6379"
+
+resources:
+  requests:
+    cpu: "2"
+    memory: "1Gi"
+  limits:
+    cpu: "4"
+    memory: "4Gi"
+
