@@ -16,7 +16,7 @@ lazy val acme4jVersion = "2.9"
 lazy val prometheusVersion = "0.8.1"
 lazy val playJsonVersion = "2.8.1"
 lazy val webAuthnVersion = "1.6.2"
-lazy val kubernetesVersion = "10.0.0"
+lazy val kubernetesVersion = "8.0.0"
 lazy val bouncyCastleVersion = "1.65"
 
 libraryDependencies ++= Seq(
