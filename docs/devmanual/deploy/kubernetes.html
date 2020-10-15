@@ -351,6 +351,7 @@ rules:
       - endpoints
       - secrets
       - configmaps
+      - deployments
       - pods
     verbs:
       - get
@@ -3296,11 +3297,13 @@ curl -X GET https://httpapp.foo.bar/get -u &quot;$CLIENT_ID:$CLIENT_SECRET&quot;
 <p>If you deploy Otoroshi on a kubernetes cluster, the Otoroshi service is deployed as a loadbalancer (service type: <code>LoadBalancer</code>). You&rsquo;ll need to declare in your DNS settings any name that can be routed by otoroshi going to the loadbalancer endpoint (CNAME or ip addresses) of your kubernetes distribution. If you use a managed kubernetes cluster from a cloud provider, it will work seamlessly as they will provide external loadbalancers out of the box. However, if you use a bare metal kubernetes cluster, id doesn&rsquo;t come with support for external loadbalancers (service of type <code>LoadBalancer</code>). So you will have to provide this feature in order to route external TCP traffic to Otoroshi containers running inside the kubernetes cluster. You can use projects like <a href="https://metallb.universe.tf/">MetalLB</a> that provide software <code>LoadBalancer</code> services to bare metal clusters or you can use and customize examples in the installation section.</p><div class="callout warning "><div class="callout-title">Warning</div>
 <p>We don&rsquo;t recommand running Otoroshi behind an existing ingress controller (or something like that) as you will not be able to use features like TCP proxying, TLS, mTLS, etc. Also, this additional layer of reverse proxy will increase call latencies.</p></div>
 <h2><a href="#access-a-service-from-inside-the-k8s-cluster" name="access-a-service-from-inside-the-k8s-cluster" class="anchor"><span class="anchor-link"></span></a>Access a service from inside the k8s cluster</h2>
+<h3><a href="#using-host-header-overriding" name="using-host-header-overriding" class="anchor"><span class="anchor-link"></span></a>Using host header overriding</h3>
 <p>You can access any service referenced in otoroshi, through otoroshi from inside the kubernetes cluster by using the otoroshi service name (if you use a template based on <a href="https://github.com/MAIF/otoroshi/tree/master/kubernetes/base">https://github.com/MAIF/otoroshi/tree/master/kubernetes/base</a> deployed in the otoroshi namespace) and the host header with the service domain like :</p>
 <pre class="prettyprint"><code class="language-sh">CLIENT_ID=&quot;xxx&quot;
 CLIENT_SECRET=&quot;xxx&quot;
 curl -X GET -H &#39;Host: httpapp.foo.bar&#39; https://otoroshi-service.otoroshi.svc.cluster.local:8443/get -u &quot;$CLIENT_ID:$CLIENT_SECRET&quot;
 </code></pre>
+<h3><a href="#using-dedicated-services" name="using-dedicated-services" class="anchor"><span class="anchor-link"></span></a>Using dedicated services</h3>
 <p>it&rsquo;s also possible to define services that targets otoroshi deployment (or otoroshi workers deployment) and use then as valid hosts in otoroshi services </p>
 <pre class="prettyprint"><code class="language-yaml">apiVersion: v1
 kind: Service
@@ -3324,10 +3327,32 @@ spec:
 CLIENT_SECRET=&quot;xxx&quot;
 curl -X GET https://my-awesome-service.my-namspace.svc.cluster.local:8443/get -u &quot;$CLIENT_ID:$CLIENT_SECRET&quot;
 </code></pre>
-<p>you can also patch the coredns config to simplify the flow</p>
+<h3><a href="#using-coredns-integration" name="using-coredns-integration" class="anchor"><span class="anchor-link"></span></a>Using coredns integration</h3>
+<p>You can also enable the coredns integration to simplify the flow. You can use the the following keys in the plugin config :</p>
+<pre class="prettyprint"><code class="language-javascript">{
+  &quot;KubernetesConfig&quot;: {
+    ...
+    &quot;coreDnsIntegration&quot;: false,               // enable coredns integration for intra cluster calls
+    &quot;kubeSystemNamespace&quot;: &quot;kube-system&quot;,      // the namespace where coredns is deployed
+    &quot;corednsConfigMap&quot;: &quot;coredns&quot;,             // the name of the coredns configmap
+    &quot;otoroshiServiceName&quot;: &quot;otoroshi-service&quot;, // the name of the otoroshi service, could be otoroshi-workers-service
+    &quot;otoroshiNamespace&quot;: &quot;otoroshi&quot;,           // the namespace where otoroshi is deployed
+    &quot;clusterDomain&quot;: &quot;cluster.local&quot;,          // the domain for cluster services
+    ...
+  }
+}
+</code></pre>
+<p>otoroshi will patch coredns config at startup then you can call your services like</p>
+<pre class="prettyprint"><code class="language-sh">CLIENT_ID=&quot;xxx&quot;
+CLIENT_SECRET=&quot;xxx&quot;
+curl -X GET https://my-awesome-service.my-awesome-service-namespace.otoroshi.mesh:8443/get -u &quot;$CLIENT_ID:$CLIENT_SECRET&quot;
+</code></pre>
+<p>By default, all services created from CRDs service descriptors are exposed as <code>${service-name}.${service-namespace}.otoroshi.mesh</code></p>
+<h3><a href="#using-coredns-with-manual-patching" name="using-coredns-with-manual-patching" class="anchor"><span class="anchor-link"></span></a>Using coredns with manual patching</h3>
+<p>you can also patch the coredns config manually</p>
 <pre class="prettyprint"><code class="language-sh">kubectl edit configmaps coredns -n kube-system # or your own custom config map
 </code></pre>
-<p>and change the <code>Corefile</code> data to add the following snippet in at the beginning</p>
+<p>and change the <code>Corefile</code> data to add the following snippet in at the end of the file</p>
 <pre class="prettyprint"><code class="language-yaml">otoroshi.mesh:53 {
     errors
     health
@@ -3353,7 +3378,7 @@ curl -X GET https://my-awesome-service.my-namspace.svc.cluster.local:8443/get -u
 <p>then you can call your service like </p>
 <pre class="prettyprint"><code class="language-sh">CLIENT_ID=&quot;xxx&quot;
 CLIENT_SECRET=&quot;xxx&quot;
-curl -X GET https://my-awesome-service.my-namspace.otoroshi.mesh:8443/get -u &quot;$CLIENT_ID:$CLIENT_SECRET&quot;
+curl -X GET https://my-awesome-service.my-awesome-service-namespace.otoroshi.mesh:8443/get -u &quot;$CLIENT_ID:$CLIENT_SECRET&quot;
 </code></pre>
 <h2><a href="#daikoku-integration" name="daikoku-integration" class="anchor"><span class="anchor-link"></span></a>Daikoku integration</h2>
 <p>It is possible to easily integrate daikoku generated apikeys without any human interaction with the actual apikey secret. To do that, create a plan in Daikoku and setup the integration mode to <code>Automatic</code></p><div class="centered-img">
