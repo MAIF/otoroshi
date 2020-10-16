@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+
+<head>
+<title>Managing API keys · Otoroshi</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="description" content='otoroshi-manual'/>
+<link href="https://fonts.googleapis.com/css?family=Roboto:100normal,100italic,300normal,300italic,400normal,400italic,500normal,500italic,700normal,700italic,900normal,900italicc" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="../lib/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../js/page.js"></script>
+<script type="text/javascript" src="../js/groups.js"></script>
+<link rel="stylesheet" type="text/css" href="../lib/normalize.css/normalize.css"/>
+<link rel="stylesheet" type="text/css" href="../lib/foundation/dist/foundation.min.css"/>
+<link rel="stylesheet" type="text/css" href="../css/page.css"/>
+
+<!--
+<link rel="shortcut icon" href="../images/favicon.ico" />
+-->
+</head>
+
+<body>
+<div class="off-canvas-wrapper">
+<div class="off-canvas-wrapper-inner" data-off-canvas-wrapper>
+
+<div class="off-canvas position-left" id="off-canvas-menu" data-off-canvas>
+<nav class="off-canvas-nav">
+<div class="nav-home">
+<a href="../index.html" >
+<span class="home-icon">⌂</span>Otoroshi
+</a>
+<div class="version-number">
+1.4.23-dev
+</div>
+</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../about.html" class="page">About Otoroshi</a></li>
+  <li><a href="../archi.html" class="page">Architecture</a></li>
+  <li><a href="../features.html" class="page">Features</a></li>
+  <li><a href="../quickstart.html" class="page">Try Otoroshi in 5 minutes</a></li>
+  <li><a href="../getotoroshi/index.html" class="page">Get Otoroshi</a>
+  <ul>
+    <li><a href="../getotoroshi/fromsources.html" class="page">From sources</a></li>
+    <li><a href="../getotoroshi/frombinaries.html" class="page">From binaries</a></li>
+    <li><a href="../getotoroshi/fromdocker.html" class="page">From docker</a></li>
+  </ul></li>
+  <li><a href="../firstrun/index.html" class="page">First run</a>
+  <ul>
+    <li><a href="../firstrun/datastore.html" class="page">Choose your datastore</a></li>
+    <li><a href="../firstrun/configfile.html" class="page">Config. with files</a></li>
+    <li><a href="../firstrun/env.html" class="page">Config. with ENVs</a></li>
+    <li><a href="../firstrun/initialstate.html" class="page">Import initial state</a></li>
+    <li><a href="../firstrun/host.html" class="page">Setup your hosts</a></li>
+    <li><a href="../firstrun/run.html" class="page">Run Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../setup/index.html" class="page">Setup Otoroshi</a>
+  <ul>
+    <li><a href="../setup/admin.html" class="page">Manage admin users</a></li>
+    <li><a href="../setup/dangerzone.html" class="page">Configure the Danger zone</a></li>
+  </ul></li>
+  <li><a href="../usage/index.html" class="page">Using Otoroshi</a>
+  <ul>
+    <li><a href="../usage/1-groups.html" class="page">Managing service groups</a></li>
+    <li><a href="../usage/2-services.html" class="page">Managing services</a></li>
+    <li><a href="../usage/3-apikeys.html" class="active page">Managing API keys</a></li>
+    <li><a href="../usage/4-monitor.html" class="page">Monitoring services</a></li>
+    <li><a href="../usage/5-sessions.html" class="page">Managing sessions</a></li>
+    <li><a href="../usage/6-audit.html" class="page">Auditing Otoroshi</a></li>
+    <li><a href="../usage/7-metrics.html" class="page">Otoroshi global metrics</a></li>
+    <li><a href="../usage/8-importsexports.html" class="page">Import and export</a></li>
+    <li><a href="../usage/9-auth.html" class="page">Authentication</a></li>
+  </ul></li>
+  <li><a href="../integrations/index.html" class="page">Third party Integrations</a>
+  <ul>
+    <li><a href="../integrations/analytics.html" class="page">Analytics</a></li>
+    <li><a href="../integrations/mailgun.html" class="page">Mailgun</a></li>
+    <li><a href="../integrations/statsd.html" class="page">StatsD / Datadog</a></li>
+    <li><a href="../integrations/clevercloud.html" class="page">Clever Cloud</a></li>
+  </ul></li>
+  <li><a href="../topics/index.html" class="page">Detailed topics</a>
+  <ul>
+    <li><a href="../topics/snow-monkey.html" class="page">Chaos engineering with the Snow Monkey</a></li>
+    <li><a href="../topics/jwt-verifications.html" class="page">JWT Tokens verification</a></li>
+    <li><a href="../topics/ssl.html" class="page">SSL/TLS termination with Otoroshi</a></li>
+    <li><a href="../topics/mtls.html" class="page">Mutual TLS with Otoroshi</a></li>
+    <li><a href="../topics/clustering.html" class="page">Otoroshi clustering</a></li>
+    <li><a href="../topics/plugins.html" class="page">Otoroshi plugins</a></li>
+    <li><a href="../topics/monitoring.html" class="page">Monitoring Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../api.html" class="page">Admin REST API</a></li>
+  <li><a href="../deploy/index.html" class="page">Deploy to production</a>
+  <ul>
+    <li><a href="../deploy/kubernetes.html" class="page">Kubernetes</a></li>
+    <li><a href="../deploy/clevercloud.html" class="page">Clever Cloud</a></li>
+    <li><a href="../deploy/aws-beanstalk.html" class="page">AWS - Elastic Beanstalk</a></li>
+    <li><a href="../deploy/other.html" class="page">Others</a></li>
+    <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
+</ul>
+</div>
+
+</nav>
+</div>
+
+<div class="off-canvas-content" data-off-canvas-content>
+
+<header class="site-header expanded row">
+<div class="small-12 column">
+<a href="#" class="off-canvas-toggle hide-for-medium" data-toggle="off-canvas-menu"><svg class="svg-icon svg-icon-menu" version="1.1" id="Menu" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 20 20" enable-background="new 0 0 20 20" xml:space="preserve"> <path class="svg-icon-menu-path" fill="#53CDEC" d="M16.4,9H3.6C3.048,9,3,9.447,3,10c0,0.553,0.048,1,0.6,1H16.4c0.552,0,0.6-0.447,0.6-1C17,9.447,16.952,9,16.4,9z M16.4,13
+H3.6C3.048,13,3,13.447,3,14c0,0.553,0.048,1,0.6,1H16.4c0.552,0,0.6-0.447,0.6-1C17,13.447,16.952,13,16.4,13z M3.6,7H16.4
+C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.048,7,3.6,7z"/></svg>
+</a>
+<div class="title-wrapper">
+<div class="title-logo"></div>
+<div class="title"><a href="../index.html">Otoroshi</a></div>
+</div>
+<!--
+<a href="https://www.example.com" class="logo show-for-medium">logo</a>
+-->
+</div>
+</header>
+
+<div class="expanded row">
+
+<div class="medium-3 large-2 show-for-medium column">
+<nav class="site-nav">
+<div class="nav-home">
+<a href="../index.html" >
+<span class="home-icon">⌂</span>Otoroshi
+</a>
+<div class="version-number">
+1.4.23-dev
+</div>
+</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../about.html" class="page">About Otoroshi</a></li>
+  <li><a href="../archi.html" class="page">Architecture</a></li>
+  <li><a href="../features.html" class="page">Features</a></li>
+  <li><a href="../quickstart.html" class="page">Try Otoroshi in 5 minutes</a></li>
+  <li><a href="../getotoroshi/index.html" class="page">Get Otoroshi</a>
+  <ul>
+    <li><a href="../getotoroshi/fromsources.html" class="page">From sources</a></li>
+    <li><a href="../getotoroshi/frombinaries.html" class="page">From binaries</a></li>
+    <li><a href="../getotoroshi/fromdocker.html" class="page">From docker</a></li>
+  </ul></li>
+  <li><a href="../firstrun/index.html" class="page">First run</a>
+  <ul>
+    <li><a href="../firstrun/datastore.html" class="page">Choose your datastore</a></li>
+    <li><a href="../firstrun/configfile.html" class="page">Config. with files</a></li>
+    <li><a href="../firstrun/env.html" class="page">Config. with ENVs</a></li>
+    <li><a href="../firstrun/initialstate.html" class="page">Import initial state</a></li>
+    <li><a href="../firstrun/host.html" class="page">Setup your hosts</a></li>
+    <li><a href="../firstrun/run.html" class="page">Run Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../setup/index.html" class="page">Setup Otoroshi</a>
+  <ul>
+    <li><a href="../setup/admin.html" class="page">Manage admin users</a></li>
+    <li><a href="../setup/dangerzone.html" class="page">Configure the Danger zone</a></li>
+  </ul></li>
+  <li><a href="../usage/index.html" class="page">Using Otoroshi</a>
+  <ul>
+    <li><a href="../usage/1-groups.html" class="page">Managing service groups</a></li>
+    <li><a href="../usage/2-services.html" class="page">Managing services</a></li>
+    <li><a href="../usage/3-apikeys.html" class="active page">Managing API keys</a></li>
+    <li><a href="../usage/4-monitor.html" class="page">Monitoring services</a></li>
+    <li><a href="../usage/5-sessions.html" class="page">Managing sessions</a></li>
+    <li><a href="../usage/6-audit.html" class="page">Auditing Otoroshi</a></li>
+    <li><a href="../usage/7-metrics.html" class="page">Otoroshi global metrics</a></li>
+    <li><a href="../usage/8-importsexports.html" class="page">Import and export</a></li>
+    <li><a href="../usage/9-auth.html" class="page">Authentication</a></li>
+  </ul></li>
+  <li><a href="../integrations/index.html" class="page">Third party Integrations</a>
+  <ul>
+    <li><a href="../integrations/analytics.html" class="page">Analytics</a></li>
+    <li><a href="../integrations/mailgun.html" class="page">Mailgun</a></li>
+    <li><a href="../integrations/statsd.html" class="page">StatsD / Datadog</a></li>
+    <li><a href="../integrations/clevercloud.html" class="page">Clever Cloud</a></li>
+  </ul></li>
+  <li><a href="../topics/index.html" class="page">Detailed topics</a>
+  <ul>
+    <li><a href="../topics/snow-monkey.html" class="page">Chaos engineering with the Snow Monkey</a></li>
+    <li><a href="../topics/jwt-verifications.html" class="page">JWT Tokens verification</a></li>
+    <li><a href="../topics/ssl.html" class="page">SSL/TLS termination with Otoroshi</a></li>
+    <li><a href="../topics/mtls.html" class="page">Mutual TLS with Otoroshi</a></li>
+    <li><a href="../topics/clustering.html" class="page">Otoroshi clustering</a></li>
+    <li><a href="../topics/plugins.html" class="page">Otoroshi plugins</a></li>
+    <li><a href="../topics/monitoring.html" class="page">Monitoring Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../api.html" class="page">Admin REST API</a></li>
+  <li><a href="../deploy/index.html" class="page">Deploy to production</a>
+  <ul>
+    <li><a href="../deploy/kubernetes.html" class="page">Kubernetes</a></li>
+    <li><a href="../deploy/clevercloud.html" class="page">Clever Cloud</a></li>
+    <li><a href="../deploy/aws-beanstalk.html" class="page">AWS - Elastic Beanstalk</a></li>
+    <li><a href="../deploy/other.html" class="page">Others</a></li>
+    <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
+</ul>
+</div>
+
+</nav>
+</div>
+
+<div class="small-12 medium-9 large-10 column">
+<section class="site-content">
+
+<div class="page-header row">
+<div class="medium-12 show-for-medium column">
+<div class="nav-breadcrumbs">
+<ul>
+  <li><a href="../index.html">Otoroshi</a></li>
+  <li><a href="../usage/index.html">Using Otoroshi</a></li>
+  <li>Managing API keys</li>
+</ul>
+</div>
+</div>
+</div>
+
+<div class="page-content row">
+<div class="small-12 large-9 column" id="docs">
+<h1><a href="#managing-api-keys" name="managing-api-keys" class="anchor"><span class="anchor-link"></span></a>Managing API keys</h1>
+<p>Now that you know how to create service groups and service descriptors, we will see how to create API keys.</p>
+<h2><a href="#otoroshi-entities" name="otoroshi-entities" class="anchor"><span class="anchor-link"></span></a>Otoroshi entities</h2>
+<p>There are 3 major entities at the core of Otoroshi.</p>
+<ul>
+  <li>service groups</li>
+  <li>service descriptors</li>
+  <li><strong>api keys</strong></li>
+</ul><div class="centered-img">
+<img src="../img/models-apikey.png" /></div>
+<p>An <code>API key</code> is linked to one or more <code>service group</code> and <code>service descriptor</code> to allow you to access any <code>service descriptor</code> linked or contained in one of the linked <code>service group</code>. You can, of course, create multiple <code>API key</code> for given <code>service group</code>s/<code>service descriptor</code>s.</p>
+<p>In the Otoroshi admin dashboard, we chose to access <code>API keys</code> from <code>service descriptors</code> only, but when you access <code>API keys</code> for a <code>service descriptor</code>, you actually access <code>API keys</code> for the <code>service group</code> containing the <code>service descriptor</code>.</p>
+<p><code>API keys</code> can be provided to Otoroshi through :</p>
+<ul>
+  <li><code>Otoroshi-Authorization: Basic $base64(client_id:client_secret)</code> header, in that case, the <code>Otoroshi-Authorization</code> header will <strong>not</strong> be sent to the target. <code>Basic</code> is optional.</li>
+  <li><code>Authorization: Basic $base64(client_id:client_secret)</code> header, in that case, the <code>Authorization</code> header <strong>will</strong> be sent to the target</li>
+  <li><code>Otoroshi-Token: Bearer $jwt_token</code> where the JWT token has been signed with the <code>API key</code> client secret, in that case, the <code>Otoroshi-Token</code> header will <strong>not</strong> be sent to the target. <code>Bearer</code> is optional.</li>
+  <li><code>Authorization: Bearer $jwt_token</code> where the JWT token has been signed with the <code>API key</code> client secret, in that case, the <code>Authorization</code> header <strong>will</strong> be sent to the target</li>
+  <li><code>Cookie: access_token=$jwt_token;</code> where the JWT token has been signed with the <code>API key</code> client secret, in that case, the cookie named <code>access_token</code> <strong>will</strong> be sent to the target</li>
+  <li><code>Otoroshi-Client-Id</code> and <code>Otoroshi-Client-Secret</code> headers, in that case the <code>Otoroshi-Client-Id</code> and <code>Otoroshi-Client-Secret</code> headers will not be sent to the target.</li>
+</ul>
+<h2><a href="#list-api-keys-for-a-service-descriptor" name="list-api-keys-for-a-service-descriptor" class="anchor"><span class="anchor-link"></span></a>List API keys for a service descriptor</h2>
+<p>Go to a service descriptor using <code>All services</code> quick link in the sidebar or the search box.</p><div class="centered-img">
+<img src="../img/sidebar-all-services.png" /></div>
+<p>Select a <code>service descriptor</code>.</p><div class="centered-img">
+<img src="../img/all-services.png" /></div>
+<p>Click on <code>API keys</code> in the sidebar</p><div class="centered-img">
+<img src="../img/sidebar-apikeys.png" /></div>
+<p>You should see the list of API keys for that <code>service descriptor</code></p><div class="centered-img">
+<img src="../img/apikeys-list.png" /></div>
+<h2><a href="#create-an-api-key-for-a-service-descriptor" name="create-an-api-key-for-a-service-descriptor" class="anchor"><span class="anchor-link"></span></a>Create an API key for a service descriptor</h2><div class="centered-img">
+<img src="../img/add-apikey.png" /></div>
+<p>You can add a name for your new API key, you can also change client&rsquo;s id and client&rsquo;s secret. You can also configure the throttling rate of the API key (calls per second), and the authorized number of call per day and per month. You may also activate or de-activate the api key from that screen.</p>
+<p>Informations about current quotas usage will be returned in response headers.</p>
+<ul>
+  <li><code>Otoroshi-Daily-Calls-Remaining</code> : authorized calls remaining for this day</li>
+  <li><code>Otoroshi-Monthly-Calls-Remaining</code> : authorized calls remaining for this month</li>
+  <li><code>Otoroshi-Proxy-Latency</code> : latency induced by Otoroshi</li>
+  <li><code>Otoroshi-Upstream-Latency</code> : latency between Otoroshi and target</li>
+</ul><div id="quotas" class="centered-img">
+<img src="../img/create-apikey.png" /></div><div class="callout warning "><div class="callout-title">Warning</div>
+<p>Daily and monthly quotas are based on the following rules :</p>
+<ul>
+  <li>daily quota is computed between 00h00:00.000 and 23h59:59.999</li>
+  <li>monthly qutoas is computed between the first day of the month at 00h00:00.000 and the last day of the month at 23h59:59.999</li>
+</ul></div>
+<h2><a href="#update-an-api-key" name="update-an-api-key" class="anchor"><span class="anchor-link"></span></a>Update an API key</h2>
+<p>To update an <code>API key</code>, just click on the edit button <img src="../img/edit.png" /> of your <code>API key</code></p><div class="centered-img">
+<img src="../img/apikey-edit.png" /></div>
+<p>Update the name, secret, state and quotas (if needed) of the <code>API key</code> and click on the <code>Update API key</code> button</p><div class="centered-img">
+<img src="../img/apikey-update.png" /></div>
+<h2><a href="#delete-an-api-key" name="delete-an-api-key" class="anchor"><span class="anchor-link"></span></a>Delete an API key</h2>
+<p>To delete an <code>API key</code>, just click on the delete button <img src="../img/delete.png" /> of your <code>API key</code></p><div class="centered-img">
+<img src="../img/apikey-delete.png" /></div>
+<p>and confirm the command</p><div class="centered-img">
+<img src="../img/apikey-delete-confirm.png" /></div>
+<h3><a href="#read-only" name="read-only" class="anchor"><span class="anchor-link"></span></a>Read only</h3>
+<p>The read only flag on an <code>ApiKey</code> this apikey can only use allowed services with <code>HEAD</code>, <code>OPTIONS</code> and <code>GET</code> http verbs.</p>
+<h2><a href="#use-a-jwt-token-to-pass-an-api-key" name="use-a-jwt-token-to-pass-an-api-key" class="anchor"><span class="anchor-link"></span></a>Use a JWT token to pass an API key</h2>
+<p>You can use a JWT token to pass an API key to Otoroshi. You can use <code>Otoroshi-Authorization: Bearer $jwt_token</code>, <code>Authorization: Bearer $jwt_token</code> header and <code>Cookie: access_token=$jwt_token;</code> to pass the JWT token. You have to create a JWT token with a signing algorythm that can be <code>HS256</code> or <code>HS512</code>. Then you have to provide an <code>iss</code> claim with the value of your API key <code>clientId</code> and sign the JWT token with your API key <code>clientSecret</code>.</p>
+<p>For example, with an API key like <code>clientId=abcdef</code> and <code>clientSecret=1234456789</code>, your JWT token should look like</p>
+<pre class="prettyprint"><code class="language-json">{
+  &quot;alg&quot;: &quot;HS256&quot;,
+  &quot;typ&quot;: &quot;JWT&quot;
+}
+{
+  &quot;iss&quot;:&quot;abcdef&quot;,
+  &quot;name&quot;: &quot;John Doe&quot;,
+  &quot;admin&quot;: true
+}
+</code></pre>
+<p>in that case, when you sign the token with the secret of the API key <code>1234456789</code>, the signature will be <code>_eancnYCD3makSSox2v2xErjNYkRtcX558QiJGCbino</code>, resulting in a encoded JWT header like</p>
+<pre><code>eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.
+eyJpc3MiOiJhYmNkZWYiLCJuYW1lIjoiSm9obiBEb2UiLCJhZG1pbiI6dHJ1ZX0.
+_eancnYCD3makSSox2v2xErjNYkRtcX558QiJGCbino
+</code></pre>
+<div class="nav-next">
+<p><strong>Next:</strong> <a href="../usage/4-monitor.html">Monitoring services</a></p>
+</div>
+</div>
+<div class="large-3 show-for-large column" data-sticky-container>
+<nav class="sidebar sticky" data-sticky data-anchor="docs" data-sticky-on="large">
+<div class="page-nav">
+<div class="nav-title">On this page:</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../usage/3-apikeys.html#managing-api-keys" class="header">Managing API keys</a>
+  <ul>
+    <li><a href="../usage/3-apikeys.html#otoroshi-entities" class="header">Otoroshi entities</a></li>
+    <li><a href="../usage/3-apikeys.html#list-api-keys-for-a-service-descriptor" class="header">List API keys for a service descriptor</a></li>
+    <li><a href="../usage/3-apikeys.html#create-an-api-key-for-a-service-descriptor" class="header">Create an API key for a service descriptor</a></li>
+    <li><a href="../usage/3-apikeys.html#update-an-api-key" class="header">Update an API key</a></li>
+    <li><a href="../usage/3-apikeys.html#delete-an-api-key" class="header">Delete an API key</a></li>
+    <li><a href="../usage/3-apikeys.html#use-a-jwt-token-to-pass-an-api-key" class="header">Use a JWT token to pass an API key</a></li>
+  </ul></li>
+</ul>
+</div>
+</div>
+</nav>
+</div>
+</div>
+
+</section>
+</div>
+
+</div>
+
+<footer class="site-footer">
+
+<section class="site-footer-nav">
+<div class="expanded row">
+<div class="small-12 large-offset-2 large-10 column">
+<div class="row site-footer-content">
+
+<div class="small-12 medium-4 large-3 text-center column">
+<div class="nav-links">
+<ul>
+<!-- <li><a href="https://www.example.com/products/">Products</a> -->
+</ul>
+</div>
+</div>
+
+</div>
+</div>
+</div>
+</section>
+
+<section class="site-footer-base">
+<div class="expanded row">
+<div class="small-12 large-offset-2 large-10 column">
+<div class="row site-footer-content">
+
+<div class="small-12 text-center large-9 column">
+
+<!--
+<div class="copyright">
+<span class="text">&copy; 2020</span>
+<a href="https://www.example.com" class="logo">logo</a>
+</div>
+-->
+</div>
+
+</div>
+</div>
+</div>
+</section>
+</footer>
+
+</div>
+</div>
+</div>
+</body>
+
+<script type="text/javascript" src="../lib/foundation/dist/foundation.min.js"></script>
+<script type="text/javascript">jQuery(document).foundation();</script>
+<script type="text/javascript" src="../js/magellan.js"></script>
+
+<style type="text/css">@import "../lib/prettify/prettify.css";</style>
+<script type="text/javascript" src="../lib/prettify/prettify.js"></script>
+<script type="text/javascript" src="../lib/prettify/lang-scala.js"></script>
+<script type="text/javascript">jQuery(function(){window.prettyPrint && prettyPrint()});</script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/elasticlunr/0.9.5/elasticlunr.js"></script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-112498312-1"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+
+gtag('config', 'UA-112498312-1');
+</script>
+</html>
+
+
+
+
