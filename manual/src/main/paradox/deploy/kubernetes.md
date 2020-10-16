@@ -19,7 +19,7 @@ bases:
 
 Then deploy it with `kubectl apply -k ./overlays/myoverlay`. 
 
-You can also use Helm to deploy a simple otoroshi cluster
+You can also use Helm to deploy a simple otoroshi cluster on your kubernetes cluster
 
 ```sh
 helm repo add otoroshi https://maif.github.io/otoroshi/helm
