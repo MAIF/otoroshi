@@ -13,7 +13,7 @@ clean () {
 
 build () {
   cd $LOCATION/manual
-  cp -R $LOCATION/kubernetes $LOCATION/manual/src/main/paradox/snippets
+  cp -R $LOCATION/kubernetes/kustomize $LOCATION/manual/src/main/paradox/snippets
   rm -rf $LOCATION/manual/src/main/paradox/snippets/kubernetes/.old
   rm -f $LOCATION/manual/src/main/paradox/snippets/kubernetes/readme.md
   rm -f $LOCATION/manual/src/main/paradox/snippets/kubernetes/kustomize/base/readme.md
@@ -43,7 +43,7 @@ build () {
 
 buildDev () {
   cd $LOCATION/manual
-  cp -R $LOCATION/kubernetes $LOCATION/manual/src/main/paradox/snippets
+  cp -R $LOCATION/kubernetes/kustomize $LOCATION/manual/src/main/paradox/snippets
   rm -rf $LOCATION/manual/src/main/paradox/snippets/kubernetes/.old
   rm -f $LOCATION/manual/src/main/paradox/snippets/kubernetes/readme.md
   rm -f $LOCATION/manual/src/main/paradox/snippets/kubernetes/kustomize/base/readme.md
