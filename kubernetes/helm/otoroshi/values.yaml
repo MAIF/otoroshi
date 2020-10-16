@@ -5,7 +5,7 @@ replicas: 2
 terminationGracePeriodSeconds: 60
 
 global:
-  prod: false
+  prod: true
 
 serviceAccount:
   name: "otoroshi-admin-user"
