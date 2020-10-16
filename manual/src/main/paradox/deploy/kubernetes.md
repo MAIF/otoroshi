@@ -132,13 +132,13 @@ We don't recommand running Otoroshi behind an existing ingress controller (or so
 the following manifests are always needed. They create otoroshi CRDs, tokens, role, etc. Redis deployment is not mandatory, it's just an example. You can use your own existing setup.
 
 rbac.yaml
-:   @@snip [rbac.yaml](../snippets/kubernetes/base/rbac.yaml) 
+:   @@snip [rbac.yaml](../snippets/kubernetes/kustomize/base/rbac.yaml) 
 
 crds.yaml
-:   @@snip [crds.yaml](../snippets/kubernetes/base/crds.yaml) 
+:   @@snip [crds.yaml](../snippets/kubernetes/kustomize/base/crds.yaml) 
 
 redis.yaml
-:   @@snip [redis.yaml](../snippets/kubernetes/base/redis.yaml) 
+:   @@snip [redis.yaml](../snippets/kubernetes/kustomize/base/redis.yaml) 
 
 
 ### Deploy a simple otoroshi instanciation on a cloud provider managed kubernetes cluster
@@ -146,26 +146,26 @@ redis.yaml
 Here we have 2 replicas connected to the same redis instance. Nothing fancy. We use a service of type `LoadBalancer` to expose otoroshi to the rest of the world. You have to setup your DNS to bind otoroshi domain names to the `LoadBalancer` external `CNAME` (see the example below)
 
 deployment.yaml
-:   @@snip [deployment.yaml](../snippets/kubernetes/overlays/simple/deployment.yaml) 
+:   @@snip [deployment.yaml](../snippets/kubernetes/kustomize/overlays/simple/deployment.yaml) 
 
 dns.example
-:   @@snip [dns.example](../snippets/kubernetes/overlays/simple/dns.example) 
+:   @@snip [dns.example](../snippets/kubernetes/kustomize/overlays/simple/dns.example) 
 
 ### Deploy a simple otoroshi instanciation on a bare metal kubernetes cluster
 
 Here we have 2 replicas connected to the same redis instance. Nothing fancy. The otoroshi instance are exposed as `nodePort` so you'll have to add a loadbalancer in front of your kubernetes nodes to route external traffic (TCP) to your otoroshi instances. You have to setup your DNS to bind otoroshi domain names to your loadbalancer (see the example below). 
 
 deployment.yaml
-:   @@snip [deployment.yaml](../snippets/kubernetes/overlays/simple-baremetal/deployment.yaml) 
+:   @@snip [deployment.yaml](../snippets/kubernetes/kustomize/overlays/simple-baremetal/deployment.yaml) 
 
 haproxy.example
-:   @@snip [haproxy.example](../snippets/kubernetes/overlays/simple-baremetal/haproxy.example) 
+:   @@snip [haproxy.example](../snippets/kubernetes/kustomize/overlays/simple-baremetal/haproxy.example) 
 
 nginx.example
-:   @@snip [nginx.example](../snippets/kubernetes/overlays/simple-baremetal/nginx.example) 
+:   @@snip [nginx.example](../snippets/kubernetes/kustomize/overlays/simple-baremetal/nginx.example) 
 
 dns.example
-:   @@snip [dns.example](../snippets/kubernetes/overlays/simple-baremetal/dns.example) 
+:   @@snip [dns.example](../snippets/kubernetes/kustomize/overlays/simple-baremetal/dns.example) 
 
 
 ### Deploy a simple otoroshi instanciation on a bare metal kubernetes cluster using a DaemonSet
@@ -173,58 +173,58 @@ dns.example
 Here we have one otoroshi instance on each kubernetes node (with the `otoroshi-kind: instance` label) with redis persistance. The otoroshi instances are exposed as `hostPort` so you'll have to add a loadbalancer in front of your kubernetes nodes to route external traffic (TCP) to your otoroshi instances. You have to setup your DNS to bind otoroshi domain names to your loadbalancer (see the example below). 
 
 deployment.yaml
-:   @@snip [deployment.yaml](../snippets/kubernetes/overlays/simple-baremetal-daemonset/deployment.yaml) 
+:   @@snip [deployment.yaml](../snippets/kubernetes/kustomize/overlays/simple-baremetal-daemonset/deployment.yaml) 
 
 haproxy.example
-:   @@snip [haproxy.example](../snippets/kubernetes/overlays/simple-baremetal-daemonset/haproxy.example) 
+:   @@snip [haproxy.example](../snippets/kubernetes/kustomize/overlays/simple-baremetal-daemonset/haproxy.example) 
 
 nginx.example
-:   @@snip [nginx.example](../snippets/kubernetes/overlays/simple-baremetal-daemonset/nginx.example) 
+:   @@snip [nginx.example](../snippets/kubernetes/kustomize/overlays/simple-baremetal-daemonset/nginx.example) 
 
 dns.example
-:   @@snip [dns.example](../snippets/kubernetes/overlays/simple-baremetal-daemonset/dns.example) 
+:   @@snip [dns.example](../snippets/kubernetes/kustomize/overlays/simple-baremetal-daemonset/dns.example) 
 
 ### Deploy an otoroshi cluster on a cloud provider managed kubernetes cluster
 
 Here we have 2 replicas of an otoroshi leader connected to a redis instance and 2 replicas of an otoroshi worker connected to the leader. We use a service of type `LoadBalancer` to expose otoroshi leader/worker to the rest of the world. You have to setup your DNS to bind otoroshi domain names to the `LoadBalancer` external `CNAME` (see the example below)
 
 deployment.yaml
-:   @@snip [deployment.yaml](../snippets/kubernetes/overlays/cluster/deployment.yaml) 
+:   @@snip [deployment.yaml](../snippets/kubernetes/kustomize/overlays/cluster/deployment.yaml) 
 
 dns.example
-:   @@snip [dns.example](../snippets/kubernetes/overlays/cluster/dns.example) 
+:   @@snip [dns.example](../snippets/kubernetes/kustomize/overlays/cluster/dns.example) 
 
 ### Deploy an otoroshi cluster on a bare metal kubernetes cluster
 
 Here we have 2 replicas of otoroshi leader connected to the same redis instance and 2 replicas for otoroshi worker. The otoroshi instances are exposed as `nodePort` so you'll have to add a loadbalancer in front of your kubernetes nodes to route external traffic (TCP) to your otoroshi instances. You have to setup your DNS to bind otoroshi domain names to your loadbalancer (see the example below). 
 
 deployment.yaml
-:   @@snip [deployment.yaml](../snippets/kubernetes/overlays/cluster-baremetal/deployment.yaml) 
+:   @@snip [deployment.yaml](../snippets/kubernetes/kustomize/overlays/cluster-baremetal/deployment.yaml) 
 
 nginx.example
-:   @@snip [nginx.example](../snippets/kubernetes/overlays/cluster-baremetal/nginx.example) 
+:   @@snip [nginx.example](../snippets/kubernetes/kustomize/overlays/cluster-baremetal/nginx.example) 
 
 dns.example
-:   @@snip [dns.example](../snippets/kubernetes/overlays/cluster-baremetal/dns.example) 
+:   @@snip [dns.example](../snippets/kubernetes/kustomize/overlays/cluster-baremetal/dns.example) 
 
 dns.example
-:   @@snip [dns.example](../snippets/kubernetes/overlays/cluster-baremetal/dns.example) 
+:   @@snip [dns.example](../snippets/kubernetes/kustomize/overlays/cluster-baremetal/dns.example) 
 
 ### Deploy an otoroshi cluster on a bare metal kubernetes cluster using DaemonSet
 
 Here we have 1 otoroshi leader instance on each kubernetes node (with the `otoroshi-kind: leader` label) connected to the same redis instance and 1 otoroshi worker instance on each kubernetes node (with the `otoroshi-kind: worker` label). The otoroshi instances are exposed as `nodePort` so you'll have to add a loadbalancer in front of your kubernetes nodes to route external traffic (TCP) to your otoroshi instances. You have to setup your DNS to bind otoroshi domain names to your loadbalancer (see the example below). 
 
 deployment.yaml
-:   @@snip [deployment.yaml](../snippets/kubernetes/overlays/cluster-baremetal-daemonset/deployment.yaml) 
+:   @@snip [deployment.yaml](../snippets/kubernetes/kustomize/overlays/cluster-baremetal-daemonset/deployment.yaml) 
 
 nginx.example
-:   @@snip [nginx.example](../snippets/kubernetes/overlays/cluster-baremetal-daemonset/nginx.example) 
+:   @@snip [nginx.example](../snippets/kubernetes/kustomize/overlays/cluster-baremetal-daemonset/nginx.example) 
 
 dns.example
-:   @@snip [dns.example](../snippets/kubernetes/overlays/cluster-baremetal-daemonset/dns.example) 
+:   @@snip [dns.example](../snippets/kubernetes/kustomize/overlays/cluster-baremetal-daemonset/dns.example) 
 
 dns.example
-:   @@snip [dns.example](../snippets/kubernetes/overlays/cluster-baremetal-daemonset/dns.example) 
+:   @@snip [dns.example](../snippets/kubernetes/kustomize/overlays/cluster-baremetal-daemonset/dns.example) 
 
 ## Using Otoroshi as an Ingress Controller
 
