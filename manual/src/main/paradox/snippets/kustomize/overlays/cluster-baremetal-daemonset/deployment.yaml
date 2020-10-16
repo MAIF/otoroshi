@@ -1,0 +1,276 @@
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: otoroshi-leader-deployment
+spec:
+  selector:
+    matchLabels:
+      run: otoroshi-leader-deployment
+  template:
+    metadata:
+      labels:
+        run: otoroshi-leader-deployment
+    strategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxUnavailable: 1
+        maxSurge: 1
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: otoroshi-kind
+                operator: In
+                values:
+                - leader
+      tolerations:
+      - key: node-role.kubernetes.io/master
+        effect: NoSchedule
+      serviceAccountName: otoroshi-admin-user
+      terminationGracePeriodSeconds: 60
+      hostNetwork: false
+      restartPolicy: Always
+      containers:
+      - image: maif/otoroshi:1.5.0-jdk11
+        imagePullPolicy: IfNotPresent
+        name: otoroshi-leader
+        ports:
+          - containerPort: 8080
+            hostPort: 41080
+            name: "http"
+            protocol: TCP
+          - containerPort: 8443
+            hostPort: 41443
+            name: "https"
+            protocol: TCP
+        env:
+          - name: APP_STORAGE_ROOT
+            value: otoroshi
+          - name: OTOROSHI_INITIAL_ADMIN_PASSWORD
+            value: ${password}
+          - name: APP_DOMAIN
+            value: ${domain}
+          - name: APP_STORAGE
+            value: lettuce
+          - name: REDIS_URL
+            value: ${redisUrl}
+            # value: redis://redis-leader-service:6379/0
+          - name: CLUSTER_MODE
+            value: Leader
+          - name: CLUSTER_AUTO_UPDATE_STATE
+            value: 'true'
+          - name: CLUSTER_MTLS_ENABLED
+            value: 'true'
+          - name: CLUSTER_MTLS_LOOSE
+            value: 'true'
+          - name: CLUSTER_MTLS_TRUST_ALL
+            value: 'true'
+          - name: CLUSTER_LEADER_URL
+            value: https://otoroshi-leader-api-service.${namespace}.svc.cluster.local:8443
+          - name: CLUSTER_LEADER_HOST
+            value: otoroshi-leader-api-service.${namespace}.svc.cluster.local
+          - name: ADMIN_API_ADDITIONAL_EXPOSED_DOMAIN
+            value: otoroshi-leader-api-service.${namespace}.svc.cluster.local
+          - name: ADMIN_API_CLIENT_ID
+            value: ${clientId}
+          - name: CLUSTER_LEADER_CLIENT_ID
+            value: ${clientId}
+          - name: ADMIN_API_CLIENT_SECRET
+            value: ${clientSecret}
+          - name: CLUSTER_LEADER_CLIENT_SECRET
+            value: ${clientSecret}
+          - name: OTOROSHI_SECRET
+            value: ${otoroshiSecret}
+          - name: OTOROSHI_INITIAL_CUSTOMIZATION
+            value: >
+              {\"config\":{\"scripts\":{\"enabled\":true,\"jobRefs\":[\"cp:otoroshi.plugins.jobs.kubernetes.KubernetesIngressControllerJob\",\"cp:otoroshi.plugins.jobs.kubernetes.KubernetesOtoroshiCRDsControllerJob\"],\"jobConfig\":{\"KubernetesConfig\":{\"trust\":false,\"namespaces\":[\"*\"],\"labels\":[],\"ingressClasses\":[\"otoroshi\"],\"defaultGroup\":\"default\",\"ingresses\":true,\"crds\":true,\"kubeLeader\":false,\"restartDependantDeployments\":false,\"templates\":{\"service-group\":{},\"service-descriptor\":{},\"apikeys\":{},\"global-config\":{},\"jwt-verifier\":{},\"tcp-service\":{},\"certificate\":{},\"auth-module\":{},\"script\":{}}}}}}}
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+          failureThreshold: 1
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 2
+        livenessProbe:
+          httpGet:
+            path: /live
+            port: 8080
+          failureThreshold: 3
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 2
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: otoroshi-worker-deployment
+spec:
+  selector:
+    matchLabels:
+      run: otoroshi-worker-deployment
+  template:
+    metadata:
+      labels:
+        run: otoroshi-worker-deployment
+    replicas: 2
+    strategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxUnavailable: 1
+        maxSurge: 1
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: otoroshi-kind
+                operator: In
+                values:
+                - worker
+      tolerations:
+      - key: node-role.kubernetes.io/master
+        effect: NoSchedule
+      serviceAccountName: otoroshi-admin-user
+      terminationGracePeriodSeconds: 60
+      hostNetwork: false
+      restartPolicy: Always   
+      containers:
+      - image: maif/otoroshi:1.5.0-jdk11
+        imagePullPolicy: IfNotPresent
+        name: otoroshi-worker
+        ports:
+          - containerPort: 8080
+            hostPort: 42080
+            name: "http"
+            protocol: TCP
+          - containerPort: 8443
+            hostPort: 42443
+            name: "https"
+            protocol: TCP
+        env:
+          - name: APP_STORAGE_ROOT
+            value: otoroshi
+          - name: OTOROSHI_INITIAL_ADMIN_PASSWORD
+            value: ${password}
+          - name: APP_DOMAIN
+            value: ${domain}
+          - name: CLUSTER_MODE
+            value: Worker
+          - name: CLUSTER_AUTO_UPDATE_STATE
+            value: 'true'
+          - name: CLUSTER_MTLS_ENABLED
+            value: 'true'
+          - name: CLUSTER_MTLS_LOOSE
+            value: 'true'
+          - name: CLUSTER_MTLS_TRUST_ALL
+            value: 'true'
+          - name: CLUSTER_LEADER_URL
+            value: https://otoroshi-leader-api-service.${namespace}.svc.cluster.local:8443
+          - name: CLUSTER_LEADER_HOST
+            value: otoroshi-leader-api-service.${namespace}.svc.cluster.local
+          - name: ADMIN_API_ADDITIONAL_EXPOSED_DOMAIN
+            value: otoroshi-leader-api-service.${namespace}.svc.cluster.local
+          - name: ADMIN_API_CLIENT_ID
+            value: ${clientId}
+          - name: CLUSTER_LEADER_CLIENT_ID
+            value: ${clientId}
+          - name: ADMIN_API_CLIENT_SECRET
+            value: ${clientSecret}
+          - name: CLUSTER_LEADER_CLIENT_SECRET
+            value: ${clientSecret}
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+          failureThreshold: 1
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 2
+        livenessProbe:
+          httpGet:
+            path: /live
+            port: 8080
+          failureThreshold: 3
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 2
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: otoroshi-leader-api-service
+spec:
+  selector:
+    run: otoroshi-leader-deployment
+  ports:
+  - port: 8080
+    name: "http"
+    targetPort: "http"
+  - port: 8443
+    name: "https"
+    targetPort: "https"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: otoroshi-leader-service
+spec:
+  selector:
+    run: otoroshi-leader-deployment
+  ports:
+  - port: 8080
+    name: "http"
+    targetPort: "http"
+  - port: 8443
+    name: "https"
+    targetPort: "https"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: otoroshi-worker-service
+spec:
+  selector:
+    run: otoroshi-worker-deployment
+  ports:
+  - port: 8080
+    name: "http"
+    targetPort: "http"
+  - port: 8443
+    name: "https"
+    targetPort: "https"
+---
+apiVersion: proxy.otoroshi.io/v1alpha1
+kind: Certificate
+metadata:
+  name: otoroshi-service-certificate
+spec:
+  description: certificate for otoroshi-service
+  autoRenew: true
+  csr:
+    issuer: CN=Otoroshi Root
+    hosts: 
+    - otoroshi-service
+    - otoroshi-service.${namespace}.svc.cluster.local
+    - otoroshi-api-service.${namespace}.svc.cluster.local
+    - otoroshi.${domain}
+    - otoroshi-api.${domain}
+    - privateapps.${domain}
+    key:
+      algo: rsa
+      size: 2048
+    subject: uid=otoroshi-service-cert, O=Otoroshi
+    client: false
+    ca: false
+    duration: 31536000000
+    signatureAlg: SHA256WithRSAEncryption
+    digestAlg: SHA-256
