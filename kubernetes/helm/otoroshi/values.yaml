@@ -4,6 +4,9 @@ name: otoroshi
 replicas: 2
 terminationGracePeriodSeconds: 60
 
+global:
+  prod: false
+
 serviceAccount:
   name: "otoroshi-admin-user"
   clusterRole: "otoroshi-admin-user"
