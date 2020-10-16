@@ -18,10 +18,10 @@ spec:
       app.kubernetes.io/instance: {{ .Release.Name }}
   {{- if .Values.global.prod }}
   replicas: {{ .Values.replicas }}
-  {{-end}}
+  {{- end}}
   {{- if not .Values.global.prod }}
   replicas: 1
-  {{-end}}
+  {{- end}}
   strategy:
   {{- with .Values.strategy }}
   {{- toYaml . | nindent 4 }}
@@ -56,10 +56,10 @@ spec:
           - name: APP_STORAGE
             {{- if .Values.global.prod }}
             value: lettuce
-            {{-end}}
+            {{- end}}
             {{- if not .Values.global.prod }}
             value: inmemory
-            {{-end}}
+            {{- end}}
           - name: REDIS_URL
             # value: {{ .Values.env.redisURL }}
             value: 'redis://{{ .Release.Name }}-redis-master:6379'
