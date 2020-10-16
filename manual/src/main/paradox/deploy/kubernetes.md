@@ -19,7 +19,12 @@ bases:
 
 Then deploy it with `kubectl apply -k ./overlays/myoverlay`. 
 
-Helm charts will be available as soon as possible
+You can also use Helm to deploy a simple otoroshi cluster
+
+```sh
+helm repo add otoroshi https://maif.github.io/otoroshi/helm
+helm install my-otoroshi otoroshi/otoroshi
+```
 
 Below, you will find example of deployment. Do not hesitate to adapt them to your needs. Those descriptors have value placeholders that you will need to replace with actual values like 
 
