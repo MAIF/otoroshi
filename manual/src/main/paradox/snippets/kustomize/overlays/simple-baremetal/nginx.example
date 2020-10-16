@@ -1,0 +1,29 @@
+stream {
+
+  upstream back_http_nodes {
+    zone back_http_nodes 64k;
+    server 10.2.2.40:31080 max_fails=1;
+    server 10.2.2.41:31080 max_fails=1;
+    server 10.2.2.42:31080 max_fails=1;
+  }
+
+  upstream back_https_nodes {
+    zone back_https_nodes 64k;
+    server 10.2.2.40:31443 max_fails=1;
+    server 10.2.2.41:31443 max_fails=1;
+    server 10.2.2.42:31443 max_fails=1;
+  }
+
+  server {
+    listen     80;
+    proxy_pass back_http_nodes;
+    health_check;
+  }
+
+  server {
+    listen     443;
+    proxy_pass back_https_nodes;
+    health_check;
+  }
+  
+}

@@ -1,0 +1,139 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otoroshi-deployment
+spec:
+  selector:
+    matchLabels:
+      run: otoroshi-deployment
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        run: otoroshi-deployment
+    spec:
+      serviceAccountName: otoroshi-admin-user
+      terminationGracePeriodSeconds: 60
+      hostNetwork: false
+      containers:
+      - image: maif/otoroshi:1.5.0-jdk11
+        imagePullPolicy: IfNotPresent
+        name: otoroshi
+        ports:
+          - containerPort: 8080
+            name: "http"
+            protocol: TCP
+          - containerPort: 8443
+            name: "https"
+            protocol: TCP
+        env:
+          - name: APP_STORAGE_ROOT
+            value: otoroshi
+          - name: OTOROSHI_INITIAL_ADMIN_PASSWORD
+            value: ${password}
+          - name: APP_DOMAIN
+            value: ${domain}
+          - name: APP_STORAGE
+            value: lettuce
+          - name: REDIS_URL
+            value: ${redisUrl}
+            # value: redis://redis-leader-service:6379/0
+          - name: ADMIN_API_CLIENT_ID
+            value: ${clientId}
+          - name: ADMIN_API_CLIENT_SECRET
+            value: ${clientSecret}
+          - name: ADMIN_API_ADDITIONAL_EXPOSED_DOMAIN
+            value: otoroshi-api-service.${namespace}.svc.cluster.local
+          - name: OTOROSHI_SECRET
+            value: ${otoroshiSecret}
+          - name: OTOROSHI_INITIAL_CUSTOMIZATION
+            value: >
+              {\"config\":{\"scripts\":{\"enabled\":true,\"jobRefs\":[\"cp:otoroshi.plugins.jobs.kubernetes.KubernetesIngressControllerJob\",\"cp:otoroshi.plugins.jobs.kubernetes.KubernetesOtoroshiCRDsControllerJob\"],\"jobConfig\":{\"KubernetesConfig\":{\"trust\":false,\"namespaces\":[\"*\"],\"labels\":[],\"ingressClasses\":[\"otoroshi\"],\"defaultGroup\":\"default\",\"ingresses\":true,\"crds\":true,\"kubeLeader\":false,\"restartDependantDeployments\":false,\"templates\":{\"service-group\":{},\"service-descriptor\":{},\"apikeys\":{},\"global-config\":{},\"jwt-verifier\":{},\"tcp-service\":{},\"certificate\":{},\"auth-module\":{},\"script\":{}}}}}}}
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+          failureThreshold: 1
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 2
+        livenessProbe:
+          httpGet:
+            path: /live
+            port: 8080
+          failureThreshold: 3
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 2
+        resources:
+          # requests:
+          #   cpu: "100m"
+          #   memory: "50Mi"
+          # limits:
+          #   cpu: "4G"
+          #   memory: "4Gi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: otoroshi-service
+spec:
+  selector:
+    run: otoroshi-deployment
+  ports:
+  - port: 8080
+    name: "http"
+    targetPort: "http"
+  - port: 8443
+    name: "https"
+    targetPort: "https"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: otoroshi-external-service
+spec:
+  selector:
+    run: otoroshi-deployment
+  ports:
+  - port: 80
+    name: "http"
+    targetPort: "http"
+    nodePort: 31080
+  - port: 443
+    name: "https"
+    targetPort: "https"
+    nodePort: 31443
+---
+apiVersion: proxy.otoroshi.io/v1alpha1
+kind: Certificate
+metadata:
+  name: otoroshi-service-certificate
+spec:
+  description: certificate for otoroshi-service
+  autoRenew: true
+  csr:
+    issuer: CN=Otoroshi Root
+    hosts: 
+    - otoroshi-service
+    - otoroshi-service.${namespace}.svc.cluster.local
+    - otoroshi-api-service.${namespace}.svc.cluster.local
+    - otoroshi.${domain}
+    - otoroshi-api.${domain}
+    - privateapps.${domain}
+    key:
+      algo: rsa
+      size: 2048
+    subject: uid=otoroshi-service-cert, O=Otoroshi
+    client: false
+    ca: false
+    duration: 31536000000
+    signatureAlg: SHA256WithRSAEncryption
+    digestAlg: SHA-256
