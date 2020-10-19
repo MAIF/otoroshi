@@ -245,7 +245,8 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
     val additionalHosts = Json.arr(
       s"${res.name}.${res.namespace}.otoroshi.mesh",
       s"${res.name}.${res.namespace}.otoroshi",
-      s"${res.name}.${res.namespace}.svc.otoroshi"
+      s"${res.name}.${res.namespace}.svc.otoroshi",
+      s"${res.name}.${res.namespace}.svc.otoroshi.local"
     )
     customizeIdAndName(spec, res).applyOn { s =>
       (s \ "env").asOpt[String] match {
@@ -969,7 +970,8 @@ object KubernetesCRDsJob {
             }).getOrElse(false)
             val upstream = if (coredns17) "" else "upstream"
             val otoMesh =
-              s"""otoroshi.mesh:53 {
+              s"""### otoroshi-custom-begin ###
+                 |otoroshi.mesh:53 {
                  |    errors
                  |    health
                  |    ready
@@ -979,12 +981,16 @@ object KubernetesCRDsJob {
                  |        fallthrough in-addr.arpa ip6.arpa
                  |    }
                  |    rewrite name regex (.*)\.otoroshi\.mesh ${conf.otoroshiServiceName}.${conf.otoroshiNamespace}.svc.${conf.clusterDomain}
+                 |    rewrite name regex (.*)\.svc\.otoroshi\.local ${conf.otoroshiServiceName}.${conf.otoroshiNamespace}.svc.${conf.clusterDomain}
+                 |    rewrite name regex (.*)\.svc\.otoroshi ${conf.otoroshiServiceName}.${conf.otoroshiNamespace}.svc.${conf.clusterDomain}
+                 |    rewrite name regex (.*)\.otoroshi ${conf.otoroshiServiceName}.${conf.otoroshiNamespace}.svc.${conf.clusterDomain}
                  |    forward . /etc/resolv.conf
                  |    cache 30
                  |    loop
                  |    reload
                  |    loadbalance
-                 |}""".stripMargin
+                 |}
+                 |### otoroshi-custom-end ###""".stripMargin
             val newData = (configMap.raw \ "data").as[JsObject] ++ Json.obj("Corefile" -> (otoMesh + configMap.corefile))
             val newRaw = configMap.raw.as[JsObject] ++ Json.obj("data" -> newData)
             client.updateConfigMap(configMap.namespace, configMap.name, KubernetesConfigMap(newRaw)).map(_ => ())
