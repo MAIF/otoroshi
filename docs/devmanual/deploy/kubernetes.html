@@ -3336,7 +3336,7 @@ curl -X GET https://my-awesome-service.my-namspace.svc.cluster.local:8443/get -u
 <pre class="prettyprint"><code class="language-javascript">{
   &quot;KubernetesConfig&quot;: {
     ...
-    &quot;coreDnsIntegration&quot;: false,               // enable coredns integration for intra cluster calls
+    &quot;coreDnsIntegration&quot;: true,                // enable coredns integration for intra cluster calls
     &quot;kubeSystemNamespace&quot;: &quot;kube-system&quot;,      // the namespace where coredns is deployed
     &quot;corednsConfigMap&quot;: &quot;coredns&quot;,             // the name of the coredns configmap
     &quot;otoroshiServiceName&quot;: &quot;otoroshi-service&quot;, // the name of the otoroshi service, could be otoroshi-workers-service
@@ -3351,7 +3351,7 @@ curl -X GET https://my-awesome-service.my-namspace.svc.cluster.local:8443/get -u
 CLIENT_SECRET=&quot;xxx&quot;
 curl -X GET https://my-awesome-service.my-awesome-service-namespace.otoroshi.mesh:8443/get -u &quot;$CLIENT_ID:$CLIENT_SECRET&quot;
 </code></pre>
-<p>By default, all services created from CRDs service descriptors are exposed as <code>${service-name}.${service-namespace}.otoroshi.mesh</code></p>
+<p>By default, all services created from CRDs service descriptors are exposed as <code>${service-name}.${service-namespace}.otoroshi.mesh</code> or <code>${service-name}.${service-namespace}.svc.otoroshi.local</code></p>
 <h3><a href="#using-coredns-with-manual-patching" name="using-coredns-with-manual-patching" class="anchor"><span class="anchor-link"></span></a>Using coredns with manual patching</h3>
 <p>you can also patch the coredns config manually</p>
 <pre class="prettyprint"><code class="language-sh">kubectl edit configmaps coredns -n kube-system # or your own custom config map
