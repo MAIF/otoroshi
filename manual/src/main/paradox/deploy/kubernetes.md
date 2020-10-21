@@ -1041,7 +1041,7 @@ You can also enable the coredns integration to simplify the flow. You can use th
 {
   "KubernetesConfig": {
     ...
-    "coreDnsIntegration": false,               // enable coredns integration for intra cluster calls
+    "coreDnsIntegration": true,                // enable coredns integration for intra cluster calls
     "kubeSystemNamespace": "kube-system",      // the namespace where coredns is deployed
     "corednsConfigMap": "coredns",             // the name of the coredns configmap
     "otoroshiServiceName": "otoroshi-service", // the name of the otoroshi service, could be otoroshi-workers-service
@@ -1060,7 +1060,7 @@ CLIENT_SECRET="xxx"
 curl -X GET https://my-awesome-service.my-awesome-service-namespace.otoroshi.mesh:8443/get -u "$CLIENT_ID:$CLIENT_SECRET"
 ```
 
-By default, all services created from CRDs service descriptors are exposed as `${service-name}.${service-namespace}.otoroshi.mesh`
+By default, all services created from CRDs service descriptors are exposed as `${service-name}.${service-namespace}.otoroshi.mesh` or `${service-name}.${service-namespace}.svc.otoroshi.local`
 
 ### Using coredns with manual patching
 
