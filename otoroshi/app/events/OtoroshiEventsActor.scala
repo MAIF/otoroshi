@@ -365,7 +365,7 @@ object Exporters {
 
     override def project(event: JsValue): JsValue = withCurrentExporter(_.project(event,CustomDataExporterContext(exporter[ExporterRef].get.config, this))).getOrElse(JsNull)
 
-    override def send(events: Seq[JsValue]): Future[ExportResult] = withCurrentExporter(_.send(events, CustomDataExporterContext(exporter[ExporterRef].get.config, this))).getOrElse(ExportResult.ExportResultFailure("exporter not found !"))
+    override def send(events: Seq[JsValue]): Future[ExportResult] = withCurrentExporter(_.send(events, CustomDataExporterContext(exporter[ExporterRef].get.config, this))).getOrElse(ExportResult.ExportResultFailure("exporter not found !").future)
 
     override def start(): Future[Unit] = withCurrentExporter(_.startExporter(CustomDataExporterContext(exporter[ExporterRef].get.config, this))).getOrElse(().future)
 
