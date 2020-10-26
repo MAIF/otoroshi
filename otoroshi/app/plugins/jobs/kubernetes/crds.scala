@@ -968,6 +968,7 @@ object KubernetesCRDsJob {
               case version if version.length == 5 => version.toInt > 16999
               case _                              => false
             }).getOrElse(false)
+            // TODO: handle config changes
             val upstream = if (coredns17) "" else "upstream"
             val otoMesh =
               s"""### otoroshi-custom-begin ###
