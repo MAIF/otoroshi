@@ -45,6 +45,7 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
       val reqSinkNames      = env.scriptManager.reqSinkNames
       val listenerNames     = env.scriptManager.listenerNames
       val jobNames          = env.scriptManager.jobNames
+      val exporterNames     = env.scriptManager.exporterNames
 
       val typ = ctx.request.getQueryString("type")
       val cpTransformers = typ match {
@@ -77,6 +78,11 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
         case None        => jobNames
         case Some("job") => jobNames
         case _           => Seq.empty
+      }
+      val cpExporterNames = typ match {
+        case None             => exporterNames
+        case Some("exporter") => exporterNames
+        case _                => Seq.empty
       }
       def extractInfosFromJob(c: String): JsValue = {
         env.scriptManager.getAnyScript[Job](s"cp:$c") match {
@@ -114,6 +120,7 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
               case Some("sink") if script.`type` == RequestSinkType          => true
               case Some("listener") if script.`type` == EventListenerType    => true
               case Some("job") if script.`type` == JobType                   => true
+              case Some("exporter") if script.`type` == DataExporterType     => true
               case _                                                         => false
             }
           }
@@ -135,6 +142,7 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
           cpPreRoutes.map(extractInfos) ++
           cpRequestSinks.map(extractInfos) ++
           cpListenerNames.map(extractInfos) ++
+          cpExporterNames.map(extractInfos) ++
           cpJobNames.map(extractInfosFromJob).filter {
             case JsNull => false
             case _      => true
