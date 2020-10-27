@@ -588,6 +588,7 @@ Otoroshi provides some Custom Resource Definitions for kubernetes in order to ma
 - `auth-modules`
 - `scripts`
 - `tcp-services`
+- `data-exporters`
 - `admins`
 
 using CRDs, you will be able to deploy and manager those entities from kubectl or the kubernetes api like
