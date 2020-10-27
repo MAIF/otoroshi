@@ -217,6 +217,7 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
     val clientValidators   = (export \ "clientValidators").asOpt[JsArray].getOrElse(Json.arr())
     val scripts            = (export \ "scripts").asOpt[JsArray].getOrElse(Json.arr())
     val tcpServices        = (export \ "tcpServices").asOpt[JsArray].getOrElse(Json.arr())
+    val dataExporters      = (export \ "dataExporters").asOpt[JsArray].getOrElse(Json.arr())
 
     for {
       _ <- redisCli
@@ -239,6 +240,7 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
       _ <- Future.sequence(clientValidators.value.map(ClientCertificateValidator.fromJsons).map(_.save()))
       _ <- Future.sequence(scripts.value.map(Script.fromJsons).map(_.save()))
       _ <- Future.sequence(tcpServices.value.map(TcpService.fromJsons).map(_.save()))
+      _ <- Future.sequence(dataExporters.value.map(DataExporterConfig.fromJsons).map(_.save()))
     } yield ()
   }
 
@@ -269,6 +271,7 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
       clientValidators <- env.datastores.clientCertificateValidationDataStore.findAll()
       scripts          <- env.datastores.scriptDataStore.findAll()
       tcpServices      <- env.datastores.tcpServiceDataStore.findAll()
+      dataExporters    <- env.datastores.dataExporterConfigDataStore.findAll()
     } yield
       OtoroshiExport(
         config,
@@ -286,7 +289,8 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
         certificates,
         clientValidators,
         scripts,
-        tcpServices
+        tcpServices,
+        dataExporters
       ).json
   }
 

@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import Select from 'react-select';
+import Creatable from 'react-select/lib/Creatable';
 import { Help } from './Help';
 
 export class ArrayInput extends Component {
@@ -33,6 +34,12 @@ export class ArrayInput extends Component {
           })
         )
         .then(values => this.setState({ values, loading: false }));
+    } else if (this.props.values) {
+      if (this.props.values.every(v => v.values && v.label)) {
+        this.setState({values: this.props.values})
+      } else {
+        this.setState({ values: this.props.values.map(value => ({label: value, value}))})
+      }
     }
   }
 
@@ -160,7 +167,7 @@ export class ArrayInput extends Component {
             {idx > 0 && <label className="col-xs-12 col-sm-2 control-label">&nbsp;</label>}
             <div className="col-sm-10">
               <div className="input-group">
-                {!this.props.possibleValues && !this.props.valuesFrom && !this.props.component && (
+                {!this.state.values.length && !this.props.component && (
                   <div className="input-group" style={{ width: '100%' }}>
                     {this.props.prefix && (
                       <div className="input-group-addon">{this.props.prefix}</div>
@@ -180,7 +187,7 @@ export class ArrayInput extends Component {
                     )}
                   </div>
                 )}
-                {this.props.valuesFrom && !this.props.possibleValues && !this.props.component && (
+                {!!this.state.values.length && !this.props.creatable && !this.props.component && (
                   <Select
                     name={`selector-${idx}`}
                     value={value}
@@ -192,15 +199,17 @@ export class ArrayInput extends Component {
                     onChange={e => this.changeValue({ target: { value: e.value } }, idx)}
                   />
                 )}
-                {this.props.possibleValues && !this.props.valuesFrom && !this.props.component && (
-                  <Select
+                {!!this.state.values.length && this.props.creatable && !this.props.component && (
+                  <Creatable
                     name={`selector-${idx}`}
-                    value={value}
+                    value={{label: value, value}}
+                    isLoading={this.state.loading}
                     disabled={this.props.disabled}
                     placeholder={this.props.placeholder}
                     optionRenderer={this.props.optionRenderer}
-                    options={this.props.possibleValues}
+                    options={this.state.values}
                     onChange={e => this.changeValue({ target: { value: e.value } }, idx)}
+                    promptTextCreator={label => `Create events filter "${label}"`}
                   />
                 )}
                 {this.props.component && <Component idx={idx} itemValue={value} {...this.props} />}

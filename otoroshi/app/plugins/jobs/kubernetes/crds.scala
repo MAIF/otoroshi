@@ -244,7 +244,6 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
     val spec = findAndMerge[ServiceDescriptor](_spec, res, "service-descriptor", None, otoServices, _.metadata, _.id, _.toJson, Some(_.enabled))
     val globalName = res.annotations.getOrElse("global-name/otoroshi.io", res.name)
     val additionalHosts = Json.arr(
-      "",
       s"${globalName}.global.otoroshi.mesh",
       s"${globalName}.global.otoroshi",
       s"${globalName}.global.svc.otoroshi",

@@ -1122,7 +1122,7 @@ case class ApiKeyDeletedAlert(`@id`: String,
     "audit"         -> audit.toJson
   )
 }
-
+/*
 object AlertsActor {
   def props(implicit env: Env) = Props(new AlertsActor())
 }
@@ -1138,7 +1138,7 @@ class AlertsActor(implicit env: Env) extends Actor {
 
   lazy val logger = Logger("otoroshi-alert-actor")
 
-  lazy val kafkaWrapper = new KafkaWrapper(env.analyticsActorSystem, env, _.alertsTopic)
+  lazy val kafkaWrapper = new KafkaWrapper(env.analyticsActorSystem, env, _.topic)
 
   lazy val emailStream = Source
     .queue[AlertEvent](5000, OverflowStrategy.dropHead)
@@ -1276,7 +1276,7 @@ class AlertsActorSupervizer(env: Env) extends Actor {
 
 object AlertsActorSupervizer {
   def props(implicit env: Env) = Props(new AlertsActorSupervizer(env))
-}
+}*/
 
 object Alerts {
 
@@ -1285,7 +1285,6 @@ object Alerts {
   def send[A <: AlertEvent](alert: A)(implicit env: Env): Unit = {
     // logger.trace("Alert " + Json.stringify(alert.toEnrichedJson))
     alert.toAnalytics()
-    env.alertsActor ! alert
   }
 }
 

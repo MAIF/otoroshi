@@ -74,6 +74,11 @@
   <logger name="otoroshi-ssl-provider" level="INFO" />
   <logger name="otoroshi-cluster" level="INFO" />
   <logger name="otoroshi-auth-controller" level="INFO" />
+  <logger name="otoroshi-console-mailer" level="INFO" />
+  <logger name="otoroshi-events-actor" level="INFO" />
+  <logger name="otoroshi-events-actor-supervizer" level="INFO" />
+  <logger name="otoroshi-data-exporter" level="INFO" />
+  <logger name="otoroshi-data-exporter-update-job" level="INFO" />
 
   <!-- Off these ones as they are annoying, and anyway we manage configuration ourselves -->
   <logger name="com.avaje.ebean.config.PropertyMapLoader" level="OFF" />

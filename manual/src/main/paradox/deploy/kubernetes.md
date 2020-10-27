@@ -1110,6 +1110,7 @@ then you can call your service like
 ```sh
 CLIENT_ID="xxx"
 CLIENT_SECRET="xxx"
+
 curl -X GET https://my-awesome-service.my-awesome-service-namespace.otoroshi.mesh:8443/get -u "$CLIENT_ID:$CLIENT_SECRET"
 ```
 

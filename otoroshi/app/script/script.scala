@@ -16,7 +16,7 @@ import akka.stream.scaladsl.{Keep, Sink, Source}
 import akka.util.ByteString
 import com.google.common.hash.Hashing
 import env.Env
-import events.{AnalyticEvent, AnalyticsActor, OtoroshiEvent}
+import events.{AnalyticEvent, CustomDataExporter, OtoroshiEvent}
 import io.github.classgraph.ClassInfo
 import javax.script._
 import models._
@@ -65,6 +65,10 @@ object EventListenerType extends PluginType {
 
 object JobType extends PluginType {
   def name: String = "job"
+}
+
+object DataExporterType extends PluginType {
+  def name: String = "exporter"
 }
 
 trait StartableAndStoppable {
@@ -664,7 +668,7 @@ class ScriptManager(env: Env) {
   def firstPluginsSearchDone(): Boolean = _firstPluginsSearchDone.get()
   def firstCompilationDone(): Boolean = _firstCompilationDone.get()
 
-  lazy val (transformersNames, validatorsNames, preRouteNames, reqSinkNames, listenerNames, jobNames) = Try {
+  lazy val (transformersNames, validatorsNames, preRouteNames, reqSinkNames, listenerNames, jobNames, exporterNames) = Try {
     import io.github.classgraph.{ClassGraph, ClassInfoList, ScanResult}
 
     import collection.JavaConverters._
@@ -715,7 +719,12 @@ class ScriptManager(env: Env) {
         .filterNot(predicate)
         .map(_.getName)
 
-      (requestTransformers, validators, preRoutes, reqSinks, listenerNames, jobNames)
+      val customExporters: Seq[String] = (scanResult.getSubclasses(classOf[CustomDataExporter].getName).asScala ++
+        scanResult.getClassesImplementing(classOf[CustomDataExporter].getName).asScala)
+        .filterNot(predicate)
+        .map(_.getName)
+
+      (requestTransformers, validators, preRoutes, reqSinks, listenerNames, jobNames, customExporters)
     } catch {
       case e: Throwable =>
         e.printStackTrace()
@@ -724,10 +733,11 @@ class ScriptManager(env: Env) {
          Seq.empty[String],
          Seq.empty[String],
          Seq.empty[String],
+         Seq.empty[String],
          Seq.empty[String])
     } finally if (scanResult != null) scanResult.close()
   } getOrElse (Seq.empty[String], Seq.empty[String], Seq.empty[String], Seq.empty[String], Seq.empty[String], Seq
-    .empty[String])
+    .empty[String], Seq.empty[String])
 
   def start(): ScriptManager = {
     if (env.scriptingEnabled) {
@@ -1218,6 +1228,7 @@ object Script {
           case "preroute"    => PreRoutingType
           case "sink"        => RequestSinkType
           case "job"         => JobType
+          case "exporter"    => DataExporterType
           case _             => TransformerType
         }
         Script(

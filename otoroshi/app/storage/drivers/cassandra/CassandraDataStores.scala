@@ -22,7 +22,7 @@ import play.api.{Configuration, Environment, Logger}
 import ssl.{CertificateDataStore, ClientCertificateValidationDataStore, KvClientCertificateValidationDataStore}
 import otoroshi.storage._
 import otoroshi.storage.stores._
-import storage.stores.{KvRawDataStore, TeamDataStore, TenantDataStore}
+import storage.stores.{DataExporterConfigDataStore, KvRawDataStore, TeamDataStore, TenantDataStore}
 
 import scala.concurrent.{ExecutionContext, Future}
 import otoroshi.utils.syntax.implicits._
@@ -119,6 +119,9 @@ class CassandraDataStores(naive: Boolean,
 
   private lazy val _teamDataStore = new TeamDataStore(redis, env)
   override def teamDataStore: TeamDataStore = _teamDataStore
+
+  private lazy val _dataExporterConfigDataStore = new DataExporterConfigDataStore(redis, env)
+  override def dataExporterConfigDataStore: DataExporterConfigDataStore = _dataExporterConfigDataStore
 
   override def privateAppsUserDataStore: PrivateAppsUserDataStore               = _privateAppsUserDataStore
   override def backOfficeUserDataStore: BackOfficeUserDataStore                 = _backOfficeUserDataStore

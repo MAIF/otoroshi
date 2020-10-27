@@ -1839,13 +1839,10 @@ case class ServiceDescriptor(
           .flatMap(_ => f)
           .recoverWith {
             case PreRoutingError(body, code, ctype) =>
-              println("fu 1")
               FastFuture.successful(Results.Status(code)(body).as(ctype)).map(Left.apply)
             case PreRoutingErrorWithResult(result) =>
-              println("fu 2")
               FastFuture.successful(result).map(Left.apply)
             case e =>
-              println("fu 3")
               Errors
                 .craftResponseResult(
                   message = e.getMessage,

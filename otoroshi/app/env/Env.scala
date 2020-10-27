@@ -147,16 +147,8 @@ class Env(val configuration: Configuration,
     promise.future
   }
 
-  val (analyticsActor, alertsActor, healthCheckerActor) = {
-    implicit val ec = otoroshiExecutionContext
-    val aa          = otoroshiActorSystem.actorOf(AnalyticsActorSupervizer.props(this))
-    val ala         = otoroshiActorSystem.actorOf(AlertsActorSupervizer.props(this))
-    val ha          = otoroshiActorSystem.actorOf(HealthCheckerActor.props(this))
-    // timeout(FiniteDuration(5, SECONDS)).andThen {
-    //   case _ if clusterConfig.mode != ClusterMode.Worker => ha ! StartHealthCheck()
-    // }
-    (aa, ala, ha)
-  }
+  val healthCheckerActor = otoroshiActorSystem.actorOf(HealthCheckerActor.props(this))
+  val otoroshiEventsActor = otoroshiActorSystem.actorOf(OtoroshiEventsActorSupervizer.props(this))
 
   lazy val sidecarConfig: Option[SidecarConfig] = (
     configuration.getOptionalWithFileSupport[String]("app.sidecar.serviceId"),
@@ -684,8 +676,7 @@ class Env(val configuration: Configuration,
     // geoloc.stop()
     // ua.stop()
     healthCheckerActor ! PoisonPill
-    analyticsActor ! PoisonPill
-    alertsActor ! PoisonPill
+    otoroshiEventsActor ! PoisonPill
     Option(ahcStats.get()).foreach(_.cancel())
     Option(internalAhcStats.get()).foreach(_.cancel())
     jobManager.stop()
@@ -1030,7 +1021,9 @@ class Env(val configuration: Configuration,
   }(otoroshiExecutionContext)
 
   timeout(1000.millis).andThen {
-    case _ => jobManager.start()
+    case _ =>
+      jobManager.start()
+      otoroshiEventsActor! StartExporters
   }(otoroshiExecutionContext)
 
   timeout(5000.millis).andThen {

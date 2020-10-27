@@ -107,6 +107,7 @@ package object modules {
     lazy val globalConfigController       = wire[GlobalConfigController]
     lazy val teamsController              = wire[TeamsController]
     lazy val tenantsController            = wire[TenantsController]
+    lazy val dataExporterConfigController = wire[DataExporterConfigController]
 
     override lazy val assets: Assets = wire[Assets]
     lazy val router: Router = {

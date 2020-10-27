@@ -12,6 +12,7 @@ import { ServiceEventsPage } from '../pages/ServiceEventsPage';
 import { ServiceLiveStatsPage } from '../pages/ServiceLiveStatsPage';
 import { NotFoundPage } from '../pages/NotFoundPage';
 import { DangerZonePage } from '../pages/DangerZonePage';
+import { DataExportersPage } from '../pages/DataExportersPage';
 import { GroupsPage } from '../pages/GroupsPage';
 import { HomePage } from '../pages/HomePage';
 import { ServicesPage } from '../pages/ServicesPage';
@@ -354,6 +355,18 @@ class BackOfficeAppContainer extends Component {
                           component={props => this.decorate(ClusterPage, props)}
                         />
 
+                        <Route 
+                          path="/exporters/:taction/:titem"
+                          component={props => this.decorate(DataExportersPage, props)}
+                        /> 
+                        <Route 
+                          path="/exporters/:taction"
+                          component={props => this.decorate(DataExportersPage, props)}
+                        />  
+                        <Route 
+                          path="/exporters"
+                          component={props => this.decorate(DataExportersPage, props)}
+                        />
                         <Route
                           path="/dangerzone"
                           component={props => this.decorate(DangerZonePage, props)}

@@ -28,19 +28,27 @@ export class Form extends Component {
     flow: PropTypes.array,
   };
 
+  theValue = () => {
+    if (_.isFunction(this.props.value)) {
+      return this.props.value();
+    } else {
+      return this.props.value;
+    }
+  }
+
   changeValue = (name, value) => {
-    const newValue = _.cloneDeep(this.props.value);
+    const newValue = _.cloneDeep(this.theValue());
     deepSet(newValue, name, value);
     this.props.onChange(newValue);
     //if (name.indexOf('.') > -1) {
     //  const [key1, key2] = name.split('.');
     //  const newValue = {
-    //    ...this.props.value,
-    //    [key1]: { ...this.props.value[key1], [key2]: value },
+    //    ...this.theValue(),
+    //    [key1]: { ...this.theValue()[key1], [key2]: value },
     //  };
     //  this.props.onChange(newValue);
     //} else {
-    //  const newValue = { ...this.props.value, [name]: value };
+    //  const newValue = { ...this.theValue(), [name]: value };
     //  this.props.onChange(newValue);
     //}
   };
@@ -48,15 +56,15 @@ export class Form extends Component {
   getValue = (name, defaultValue) => {
     if (name.indexOf('.') > -1) {
       //const [key1, key2] = name.split('.');
-      //if (this.props.value[key1]) {
-      //  return this.props.value[key1][key2] || defaultValue;
+      //if (this.theValue()[key1]) {
+      //  return this.theValue()[key1][key2] || defaultValue;
       //} else {
       //  return defaultValue;
       //}
-      const value = deepGet(this.props.value, name);
+      const value = deepGet(this.theValue(), name);
       return value || defaultValue;
     } else {
-      return this.props.value[name] || defaultValue;
+      return this.theValue()[name] || defaultValue;
     }
   };
 
@@ -140,7 +148,7 @@ export class Form extends Component {
       // console.log('generate', name, 'of type', type, 'from', this.props.schema);
       let component = null;
       if (display) {
-        if (!display(this.props.value)) {
+        if (!display(this.theValue())) {
           return null;
         }
       }
@@ -255,7 +263,7 @@ export class Form extends Component {
           component = React.createElement(type, {
             ...props,
             disabled,
-            rawValue: this.props.value,
+            rawValue: this.theValue(),
             rawOnChange: this.props.onChange,
             key: name,
             value: this.getValue(name, {}),

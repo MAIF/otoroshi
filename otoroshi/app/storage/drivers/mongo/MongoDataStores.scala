@@ -22,7 +22,7 @@ import play.api.libs.json._
 import play.api.{Configuration, Environment, Logger}
 import reactivemongo.api.{MongoConnection, MongoDriver}
 import ssl.{CertificateDataStore, ClientCertificateValidationDataStore, KvClientCertificateValidationDataStore}
-import storage.stores.{KvRawDataStore, TeamDataStore, TenantDataStore}
+import storage.stores.{DataExporterConfigDataStore, KvRawDataStore, TeamDataStore, TenantDataStore}
 import otoroshi.utils.syntax.implicits._
 
 import scala.concurrent.duration._
@@ -142,6 +142,9 @@ class MongoDataStores(configuration: Configuration, environment: Environment, li
 
   private lazy val _teamDataStore = new TeamDataStore(redis, env)
   override def teamDataStore: TeamDataStore = _teamDataStore
+
+  private lazy val _dataExporterConfigDataStore = new DataExporterConfigDataStore(redis, env)
+  override def dataExporterConfigDataStore: DataExporterConfigDataStore = _dataExporterConfigDataStore
 
   override def privateAppsUserDataStore: PrivateAppsUserDataStore               = _privateAppsUserDataStore
   override def backOfficeUserDataStore: BackOfficeUserDataStore                 = _backOfficeUserDataStore

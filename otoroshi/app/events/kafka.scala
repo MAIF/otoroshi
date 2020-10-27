@@ -15,6 +15,7 @@ import akka.stream.scaladsl.{Sink, Source}
 import org.apache.kafka.common.config.SslConfigs
 import play.api.libs.json._
 import env.Env
+import models.Exporter
 import org.apache.kafka.common.config.internals.BrokerSecurityConfigs
 import ssl.DynamicSSLEngineProvider
 import utils.http.MtlsConfig
@@ -24,11 +25,10 @@ case class KafkaConfig(servers: Seq[String],
                        keystore: Option[String] = None,
                        truststore: Option[String] = None,
                        sendEvents: Boolean = false,
-                       alertsTopic: String = "otoroshi-alerts",
-                       analyticsTopic: String = "otoroshi-analytics",
-                       auditTopic: String = "otoroshi-audits",
-                       mtlsConfig: MtlsConfig = MtlsConfig()) {
+                       topic: String = "otoroshi-events",
+                       mtlsConfig: MtlsConfig = MtlsConfig()) extends Exporter {
   def json: JsValue = KafkaConfig.format.writes(this)
+  def toJson: JsValue = KafkaConfig.format.writes(this)
 }
 
 object KafkaConfig {
@@ -40,10 +40,7 @@ object KafkaConfig {
       "keyPass"        -> o.keyPass.map(JsString.apply).getOrElse(JsNull).as[JsValue],
       "keystore"       -> o.keystore.map(JsString.apply).getOrElse(JsNull).as[JsValue],
       "truststore"     -> o.truststore.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-      "sendEvents"     -> o.sendEvents,
-      "alertsTopic"    -> o.alertsTopic,
-      "analyticsTopic" -> o.analyticsTopic,
-      "auditTopic"     -> o.auditTopic,
+      "topic"          -> o.topic,
       "mtlsConfig"     -> o.mtlsConfig.json,
     )
 
@@ -55,9 +52,7 @@ object KafkaConfig {
           keystore = (json \ "keystore").asOpt[String],
           truststore = (json \ "truststore").asOpt[String],
           sendEvents = (json \ "sendEvents").asOpt[Boolean].getOrElse(false),
-          alertsTopic = (json \ "alertsTopic").asOpt[String].getOrElse("otoroshi-alerts"),
-          analyticsTopic = (json \ "analyticsTopic").asOpt[String].getOrElse("otoroshi-analytics"),
-          auditTopic = (json \ "auditTopic").asOpt[String].getOrElse("otoroshi-audits"),
+          topic = (json \ "topic").asOpt[String].getOrElse("otoroshi-events"),
           mtlsConfig = MtlsConfig.read((json \ "mtlsConfig").asOpt[JsValue])
         )
       } match {

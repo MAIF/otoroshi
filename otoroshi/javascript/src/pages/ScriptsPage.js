@@ -188,6 +188,36 @@ class CustomJob extends Job {
 new CustomJob()
 `;
 
+const basicExporter = `
+
+import env.Env
+import otoroshi.script._
+import play.api._
+import play.api.libs.json._
+
+import scala.concurrent.duration._
+import scala.concurrent.{ExecutionContext, Future}
+import events._
+
+class MyDataExporter extends CustomDataExporter  {
+
+  def accept(event: JsValue, ctx: CustomDataExporterContext)(implicit env: Env): Boolean = true
+
+  def project(event: JsValue, ctx: CustomDataExporterContext)(implicit env: Env): JsValue = event
+
+  def send(events: Seq[JsValue], ctx: CustomDataExporterContext)(implicit ec: ExecutionContext, env: Env): Future[ExportResult] = {
+    events.foreach(e => println(Json.stringify(e)))
+    Future.successful(ExportResult.ExportResultSuccess)
+  }
+
+  def startExporter(ctx: CustomDataExporterContext)(implicit ec: ExecutionContext, env: Env): Future[Unit] = Future.successful(())
+
+  def stopExporter(ctx: CustomDataExporterContext)(implicit ec: ExecutionContext, env: Env): Future[Unit] = Future.successful(())
+}
+
+new MyDataExporter()
+`
+
 class CompilationTools extends Component {
   state = {
     compiling: false,
@@ -345,6 +375,14 @@ class ScriptTypeSelector extends Component {
               code: basicJob,
             });
           }
+          if (t === 'exporter') {
+            this.setState({ type: 'exporter' });
+            this.props.rawOnChange({
+              ...this.props.rawValue,
+              type: 'exporter',
+              code: basicExporter,
+            });
+          }
         }}
         possibleValues={[
           { label: 'Request sink', value: 'sink' },
@@ -353,6 +391,7 @@ class ScriptTypeSelector extends Component {
           { label: 'Request transformer', value: 'transformer' },
           { label: 'Event listener', value: 'listener' },
           { label: 'Job', value: 'job' },
+          { label: 'Exporter', value: 'exporter' },
           { label: 'Nano app', value: 'app' },
         ]}
       />

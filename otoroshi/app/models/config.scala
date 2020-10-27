@@ -1,32 +1,26 @@
 package models
 
-import java.security.KeyPair
-
-import akka.NotUsed
 import akka.http.scaladsl.util.FastFuture
-import akka.stream.Materializer
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
 import auth.AuthModuleConfig
-import com.risksense.ipaddr.IpNetwork
 import env.Env
+import events.Exporters._
 import events._
 import org.joda.time.DateTime
 import otoroshi.models.{SimpleOtoroshiAdmin, WebAuthnOtoroshiAdmin}
 import otoroshi.plugins.geoloc.{IpStackGeolocationHelper, MaxMindGeolocationHelper}
 import otoroshi.plugins.useragent.UserAgentHelper
 import otoroshi.script.Script
+import otoroshi.storage.BasicStore
+import otoroshi.tcp.TcpService
 import otoroshi.utils.LetsEncryptSettings
 import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.ws.WSProxyServer
-import otoroshi.storage.BasicStore
-import otoroshi.tcp.TcpService
-import security.{Auth0Config, IdGenerator}
+import security.IdGenerator
 import ssl.{Cert, ClientCertificateValidator}
-import utils.{CleverCloudClient, MailerSettings, MailgunSettings}
 import utils.CleverCloudClient.{CleverSettings, UserTokens}
 import utils.http.MtlsConfig
+import utils._
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -39,7 +33,7 @@ case class ElasticAnalyticsConfig(
     password: Option[String] = None,
     headers: Map[String, String] = Map.empty[String, String],
     mtlsConfig: MtlsConfig = MtlsConfig.default
-) {
+) extends Exporter {
   def toJson: JsValue = ElasticAnalyticsConfig.format.writes(this)
 }
 
@@ -75,7 +69,7 @@ object ElasticAnalyticsConfig {
 
 case class Webhook(url: String,
                    headers: Map[String, String] = Map.empty[String, String],
-                   mtlsConfig: MtlsConfig = MtlsConfig.default) {
+                   mtlsConfig: MtlsConfig = MtlsConfig.default) extends Exporter {
   def toJson: JsValue = Webhook.format.writes(this)
 }
 
@@ -113,7 +107,6 @@ object CleverCloudSettings {
 
 case class Proxies(
     alertEmails: Option[WSProxyServer] = None,
-    alertWebhooks: Option[WSProxyServer] = None,
     eventsWebhooks: Option[WSProxyServer] = None,
     clevercloud: Option[WSProxyServer] = None,
     services: Option[WSProxyServer] = None,
@@ -130,7 +123,6 @@ object Proxies {
   val format = new Format[Proxies] {
     override def writes(o: Proxies) = Json.obj(
       "alertEmails"    -> WSProxyServerJson.maybeProxyToJson(o.alertEmails),
-      "alertWebhooks"  -> WSProxyServerJson.maybeProxyToJson(o.alertWebhooks),
       "eventsWebhooks" -> WSProxyServerJson.maybeProxyToJson(o.eventsWebhooks),
       "clevercloud"    -> WSProxyServerJson.maybeProxyToJson(o.clevercloud),
       "services"       -> WSProxyServerJson.maybeProxyToJson(o.services),
@@ -144,7 +136,6 @@ object Proxies {
         JsSuccess(
           Proxies(
             alertEmails = (json \ "alertEmails").asOpt[JsValue].flatMap(p => WSProxyServerJson.proxyFromJson(p)),
-            alertWebhooks = (json \ "alertWebhooks").asOpt[JsValue].flatMap(p => WSProxyServerJson.proxyFromJson(p)),
             eventsWebhooks = (json \ "eventsWebhooks").asOpt[JsValue].flatMap(p => WSProxyServerJson.proxyFromJson(p)),
             clevercloud = (json \ "clevercloud").asOpt[JsValue].flatMap(p => WSProxyServerJson.proxyFromJson(p)),
             services = (json \ "services").asOpt[JsValue].flatMap(p => WSProxyServerJson.proxyFromJson(p)),
@@ -610,17 +601,6 @@ object GlobalConfig {
           backOfficeAuthRef = (json \ "backOfficeAuthRef").asOpt[String],
           mailerSettings = (json \ "mailerSettings").asOpt[JsValue].flatMap { config =>
             MailerSettings.format.reads(config).asOpt
-          } orElse {
-            (json \ "mailGunSettings").asOpt[JsValue].flatMap { config =>
-              (
-                (config \ "eu").asOpt[Boolean].getOrElse(false),
-                (config \ "apiKey").asOpt[String].filter(_.nonEmpty),
-                (config \ "domain").asOpt[String].filter(_.nonEmpty)
-              ) match {
-                case (eu, Some(apiKey), Some(domain)) => Some(MailgunSettings(eu, apiKey, domain))
-                case _                                => None
-              }
-            }
           },
           cleverSettings = (json \ "cleverSettings").asOpt[JsValue].flatMap { config =>
             (
@@ -711,11 +691,12 @@ case class OtoroshiExport(
    certificates: Seq[Cert] = Seq.empty,
    clientValidators: Seq[ClientCertificateValidator] = Seq.empty,
    scripts: Seq[Script] = Seq.empty,
-   tcpServices: Seq[TcpService] = Seq.empty
+   tcpServices: Seq[TcpService] = Seq.empty,
+   dataExporters: Seq[DataExporterConfig] = Seq.empty
 ) {
 
-  import utils.JsonImplicits._
   import otoroshi.utils.syntax.implicits._
+  import utils.JsonImplicits._
 
   private def customizeAndMergeArray[A](entities: Seq[A], arr: JsArray, fmt: Format[A], extractIdFromJs: JsValue => String, extractIdFromEntity: A => String): Seq[A] = {
     val arrWithId = arr.value.map { item =>
