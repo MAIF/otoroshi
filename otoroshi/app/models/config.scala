@@ -329,47 +329,71 @@ object AutoCert {
   }
 }
 
+case class TlsSettings(defaultDomain: Option[String] = None, randomIfNotFound: Boolean = false) {
+  def json: JsValue = TlsSettings.format.writes(this)
+}
+object TlsSettings {
+  val format = new Format[TlsSettings] {
+    override def writes(o: TlsSettings): JsValue = Json.obj(
+      "defaultDomain"     -> o.defaultDomain.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      "randomIfNotFound" -> o.randomIfNotFound
+    )
+
+    override def reads(json: JsValue): JsResult[TlsSettings] =
+      Try {
+        TlsSettings(
+          defaultDomain = (json \ "defaultDomain").asOpt[String].map(_.trim).filter(_.nonEmpty),
+          randomIfNotFound = (json \ "randomIfNotFound").asOpt[Boolean].getOrElse(false)
+        )
+      } match {
+        case Failure(e)  => JsError(e.getMessage)
+        case Success(ac) => JsSuccess(ac)
+      }
+  }
+}
+
 case class GlobalConfig(
-                         letsEncryptSettings: LetsEncryptSettings = LetsEncryptSettings(),
-                         lines: Seq[String] = Seq("prod"),
-                         enableEmbeddedMetrics: Boolean = true,
-                         streamEntityOnly: Boolean = true,
-                         autoLinkToDefaultGroup: Boolean = true,
-                         limitConcurrentRequests: Boolean = false, // TODO : true by default
-                         maxConcurrentRequests: Long = 1000,
-                         maxHttp10ResponseSize: Long = 4 * (1024 * 1024),
-                         useCircuitBreakers: Boolean = true,
-                         apiReadOnly: Boolean = false,
-                         u2fLoginOnly: Boolean = false,
-                         maintenanceMode: Boolean = false,
-                         ipFiltering: IpFiltering = IpFiltering(),
-                         throttlingQuota: Long = BaseQuotas.MaxValue,
-                         perIpThrottlingQuota: Long = BaseQuotas.MaxValue,
-                         elasticReadsConfig: Option[ElasticAnalyticsConfig] = None,
-                         elasticWritesConfigs: Seq[ElasticAnalyticsConfig] = Seq.empty[ElasticAnalyticsConfig],
-                         analyticsWebhooks: Seq[Webhook] = Seq.empty[Webhook],
-                         logAnalyticsOnServer: Boolean = false,
-                         useAkkaHttpClient: Boolean = false,
-                         // TODO: logBodies: Boolean,
-                         alertsWebhooks: Seq[Webhook] = Seq.empty[Webhook],
-                         alertsEmails: Seq[String] = Seq.empty[String],
-                         endlessIpAddresses: Seq[String] = Seq.empty[String],
-                         kafkaConfig: Option[KafkaConfig] = None,
-                         backOfficeAuthRef: Option[String] = None,
-                         cleverSettings: Option[CleverCloudSettings] = None,
-                         mailerSettings: Option[MailerSettings] = None,
-                         statsdConfig: Option[StatsdConfig] = None,
-                         maxWebhookSize: Int = 100,
-                         middleFingers: Boolean = false,
-                         maxLogsSize: Int = 10000,
-                         otoroshiId: String = IdGenerator.uuid,
-                         snowMonkeyConfig: SnowMonkeyConfig = SnowMonkeyConfig(),
-                         proxies: Proxies = Proxies(),
-                         scripts: GlobalScripts = GlobalScripts(),
-                         geolocationSettings: GeolocationSettings = NoneGeolocationSettings,
-                         userAgentSettings: UserAgentSettings = UserAgentSettings(false),
-                         autoCert: AutoCert = AutoCert(),
-                         metadata: Map[String, String] = Map.empty
+    letsEncryptSettings: LetsEncryptSettings = LetsEncryptSettings(),
+    lines: Seq[String] = Seq("prod"),
+    enableEmbeddedMetrics: Boolean = true,
+    streamEntityOnly: Boolean = true,
+    autoLinkToDefaultGroup: Boolean = true,
+    limitConcurrentRequests: Boolean = false, // TODO : true by default
+    maxConcurrentRequests: Long = 1000,
+    maxHttp10ResponseSize: Long = 4 * (1024 * 1024),
+    useCircuitBreakers: Boolean = true,
+    apiReadOnly: Boolean = false,
+    u2fLoginOnly: Boolean = false,
+    maintenanceMode: Boolean = false,
+    ipFiltering: IpFiltering = IpFiltering(),
+    throttlingQuota: Long = BaseQuotas.MaxValue,
+    perIpThrottlingQuota: Long = BaseQuotas.MaxValue,
+    elasticReadsConfig: Option[ElasticAnalyticsConfig] = None,
+    elasticWritesConfigs: Seq[ElasticAnalyticsConfig] = Seq.empty[ElasticAnalyticsConfig],
+    analyticsWebhooks: Seq[Webhook] = Seq.empty[Webhook],
+    logAnalyticsOnServer: Boolean = false,
+    useAkkaHttpClient: Boolean = false,
+    // TODO: logBodies: Boolean,
+    alertsWebhooks: Seq[Webhook] = Seq.empty[Webhook],
+    alertsEmails: Seq[String] = Seq.empty[String],
+    endlessIpAddresses: Seq[String] = Seq.empty[String],
+    kafkaConfig: Option[KafkaConfig] = None,
+    backOfficeAuthRef: Option[String] = None,
+    cleverSettings: Option[CleverCloudSettings] = None,
+    mailerSettings: Option[MailerSettings] = None,
+    statsdConfig: Option[StatsdConfig] = None,
+    maxWebhookSize: Int = 100,
+    middleFingers: Boolean = false,
+    maxLogsSize: Int = 10000,
+    otoroshiId: String = IdGenerator.uuid,
+    snowMonkeyConfig: SnowMonkeyConfig = SnowMonkeyConfig(),
+    proxies: Proxies = Proxies(),
+    scripts: GlobalScripts = GlobalScripts(),
+    geolocationSettings: GeolocationSettings = NoneGeolocationSettings,
+    userAgentSettings: UserAgentSettings = UserAgentSettings(false),
+    autoCert: AutoCert = AutoCert(),
+    tlsSettings: TlsSettings = TlsSettings(),
+    metadata: Map[String, String] = Map.empty
 ) {
   def save()(implicit ec: ExecutionContext, env: Env)   = env.datastores.globalConfigDataStore.set(this)
   def delete()(implicit ec: ExecutionContext, env: Env) = env.datastores.globalConfigDataStore.delete(this)
@@ -489,6 +513,7 @@ object GlobalConfig {
         "geolocationSettings"     -> o.geolocationSettings.json,
         "userAgentSettings"       -> o.userAgentSettings.json,
         "autoCert"                -> o.autoCert.json,
+        "tlsSettings"             -> o.tlsSettings.json,
         "metadata"                -> o.metadata
       )
     }
@@ -606,6 +631,9 @@ object GlobalConfig {
           autoCert = AutoCert.format
             .reads((json \ "autoCert").asOpt[JsValue].getOrElse(JsNull))
             .getOrElse(AutoCert()),
+          tlsSettings = TlsSettings.format
+            .reads((json \ "tlsSettings").asOpt[JsValue].getOrElse(JsNull))
+            .getOrElse(TlsSettings()),
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty)
         )
       } map {

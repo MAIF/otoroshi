@@ -242,7 +242,12 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
 
   private def customizeServiceDescriptor(_spec: JsValue, res: KubernetesOtoroshiResource, services: Seq[KubernetesService], endpoints: Seq[KubernetesEndpoint], otoServices: Seq[ServiceDescriptor]): JsValue = {
     val spec = findAndMerge[ServiceDescriptor](_spec, res, "service-descriptor", None, otoServices, _.metadata, _.id, _.toJson, Some(_.enabled))
+    val globalName = res.annotations.getOrElse("global-name/otoroshi.io", res.name)
     val additionalHosts = Json.arr(
+      s"${globalName}.global.otoroshi.mesh",
+      s"${globalName}.global.otoroshi",
+      s"${globalName}.global.svc.otoroshi",
+      s"${globalName}.global.svc.otoroshi.local",
       s"${res.name}.${res.namespace}.otoroshi.mesh",
       s"${res.name}.${res.namespace}.otoroshi",
       s"${res.name}.${res.namespace}.svc.otoroshi",

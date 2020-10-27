@@ -8,6 +8,10 @@ Starting at version 1.5.0, Otoroshi provides a native Kubernetes support. Multip
 
 ## Installing otoroshi on your kubernetes cluster
 
+@@@ warning
+You need to have cluster admin privileges to install otoroshi and its service account, role mapping and CRDs on a kubernetes cluster. We also advise you to create a dedicated namespace (you can name it `otoroshi` for example) to install otoroshi
+@@@
+
 If you want to deploy otoroshi into your kubernetes cluster, you can download the deployment descriptors from https://github.com/MAIF/otoroshi/tree/master/kubernetes and use kustomize to create your own overlay.
 
 You can also create a `kustomization.yaml` file with a remote base
@@ -1106,6 +1110,7 @@ then you can call your service like
 ```sh
 CLIENT_ID="xxx"
 CLIENT_SECRET="xxx"
+
 curl -X GET https://my-awesome-service.my-awesome-service-namespace.otoroshi.mesh:8443/get -u "$CLIENT_ID:$CLIENT_SECRET"
 ```
 
