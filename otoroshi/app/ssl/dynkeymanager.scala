@@ -7,6 +7,7 @@ import java.security.cert.X509Certificate
 import com.github.blemale.scaffeine._
 import env.Env
 import javax.net.ssl.{KeyManager, SSLEngine, SSLSession, X509ExtendedKeyManager, X509KeyManager}
+import models.{GlobalConfig, TlsSettings}
 
 import scala.concurrent.duration._
 
@@ -43,16 +44,32 @@ class DynamicKeyManager(manager: X509KeyManager, env: Env) extends X509ExtendedK
     DynamicKeyManager.cache.getIfPresent(domain) match {
       case Some(cert) => Some(cert)
       case None => {
-        DynamicSSLEngineProvider.certificates
+
+        val tlsSettings = env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings).getOrElse(TlsSettings())
+
+        val certs = DynamicSSLEngineProvider.certificates
           .values.toSeq
           .map(_.enrich())
-          .filter(_.matchesDomain(domain))
           .filter(_.notExpired)
           .sortWith((c1, c2) => c1.to.compareTo(c2.to) > 0)
-          .headOption.map { c =>
-            DynamicKeyManager.cache.put(domain, c)
-            c
+
+        certs.find(_.matchesDomain(domain)).orElse(tlsSettings.defaultDomain.flatMap(d => certs.find(_.matchesDomain(d)))).map { c =>
+          DynamicKeyManager.cache.put(domain, c)
+          c
+        } match {
+          case None if tlsSettings.randomIfNotFound => {
+            certs
+              .filterNot(_.ca)
+              .filterNot(_.client)
+              .filterNot(_.keypair)
+              .headOption.map { c =>
+                DynamicKeyManager.cache.put(domain, c)
+                c
+              }
           }
+          case None => None
+          case s @ Some(_) => s
+        }
       }
     }
   }
@@ -72,11 +89,13 @@ class DynamicKeyManager(manager: X509KeyManager, env: Env) extends X509ExtendedK
   }
 
   override def chooseEngineServerAlias(keyType: String, issuers: Array[Principal], engine: SSLEngine): String = {
-    Option(engine.getPeerHost).map { domain =>
-      val autoCertEnabled = env.datastores.globalConfigDataStore.latestSafe.exists(_.autoCert.enabled)
-      val replyNicelyEnabled = env.datastores.globalConfigDataStore.latestSafe.exists(_.autoCert.replyNicely)
+    val latestConfig: Option[GlobalConfig] = env.datastores.globalConfigDataStore.latestSafe
+    val defaultDomain: Option[String] = latestConfig.flatMap(_.tlsSettings.defaultDomain)
+    Option(engine.getPeerHost).orElse(defaultDomain).map { domain =>
+      val autoCertEnabled = latestConfig.exists(_.autoCert.enabled)
+      val replyNicelyEnabled = latestConfig.exists(_.autoCert.replyNicely)
       val sessionKey = SSLSessionJavaHelper.computeKey(engine.getHandshakeSession)
-      val matchesAutoCertDomains = env.datastores.globalConfigDataStore.latestSafe.exists(_.autoCert.matches(domain))
+      val matchesAutoCertDomains = latestConfig.exists(_.autoCert.matches(domain))
       findCertMatching(domain) match {
         case Some(cert) => sessionKey.foreach(key => DynamicKeyManager.sessions.put(key, (engine.getSession, cert.cryptoKeyPair.getPrivate, cert.certificatesChain)))
         case None if autoCertEnabled && !replyNicelyEnabled && !matchesAutoCertDomains => ()

@@ -1136,6 +1136,22 @@ export class DangerZonePage extends Component {
         }),
       },
     },
+    'tlsSettings.randomIfNotFound': {
+      type: 'bool',
+      props: {
+        label: 'Use random cert.',
+        placeholder: '--',
+        help: 'Use the first available cert none matches the current domain',
+      },
+    },
+    'tlsSettings.defaultDomain': {
+      type: 'string',
+      props: {
+        label: 'Default domain',
+        placeholder: '--',
+        help: 'When the SNI domain cannot be found, this one will be used to find the matching certificate',
+      },
+    },
     metadata: {
       type: 'object',
       props: { label: 'Metadata' },
@@ -1235,6 +1251,9 @@ export class DangerZonePage extends Component {
     'userAgentSettings.enabled',
     '>>>Geolocation extraction settings',
     'geolocationSettings',
+    '>>>Tls Settings',
+    'tlsSettings.randomIfNotFound',
+    'tlsSettings.defaultDomain',
     '>>>Auto Generate Certificates',
     'autoCert.enabled',
     'autoCert.replyNicely',

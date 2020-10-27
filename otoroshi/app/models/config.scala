@@ -338,6 +338,29 @@ object AutoCert {
   }
 }
 
+case class TlsSettings(defaultDomain: Option[String] = None, randomIfNotFound: Boolean = false) {
+  def json: JsValue = TlsSettings.format.writes(this)
+}
+object TlsSettings {
+  val format = new Format[TlsSettings] {
+    override def writes(o: TlsSettings): JsValue = Json.obj(
+      "defaultDomain"     -> o.defaultDomain.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      "randomIfNotFound" -> o.randomIfNotFound
+    )
+
+    override def reads(json: JsValue): JsResult[TlsSettings] =
+      Try {
+        TlsSettings(
+          defaultDomain = (json \ "defaultDomain").asOpt[String].map(_.trim).filter(_.nonEmpty),
+          randomIfNotFound = (json \ "randomIfNotFound").asOpt[Boolean].getOrElse(false)
+        )
+      } match {
+        case Failure(e)  => JsError(e.getMessage)
+        case Success(ac) => JsSuccess(ac)
+      }
+  }
+}
+
 case class GlobalConfig(
     letsEncryptSettings: LetsEncryptSettings = LetsEncryptSettings(),
     lines: Seq[String] = Seq("prod"),
@@ -378,6 +401,7 @@ case class GlobalConfig(
     geolocationSettings: GeolocationSettings = NoneGeolocationSettings,
     userAgentSettings: UserAgentSettings = UserAgentSettings(false),
     autoCert: AutoCert = AutoCert(),
+    tlsSettings: TlsSettings = TlsSettings(),
     metadata: Map[String, String] = Map.empty
 ) {
   def save()(implicit ec: ExecutionContext, env: Env)   = env.datastores.globalConfigDataStore.set(this)
@@ -498,6 +522,7 @@ object GlobalConfig {
         "geolocationSettings"     -> o.geolocationSettings.json,
         "userAgentSettings"       -> o.userAgentSettings.json,
         "autoCert"                -> o.autoCert.json,
+        "tlsSettings"             -> o.tlsSettings.json,
         "metadata"                -> o.metadata
       )
     }
@@ -626,6 +651,9 @@ object GlobalConfig {
           autoCert = AutoCert.format
             .reads((json \ "autoCert").asOpt[JsValue].getOrElse(JsNull))
             .getOrElse(AutoCert()),
+          tlsSettings = TlsSettings.format
+            .reads((json \ "tlsSettings").asOpt[JsValue].getOrElse(JsNull))
+            .getOrElse(TlsSettings()),
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty)
         )
       } map {
