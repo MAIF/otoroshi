@@ -524,6 +524,11 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
     customizeIdAndName(spec, res)
   }
 
+  private def customizeDataExporter(_spec: JsValue, res: KubernetesOtoroshiResource, entities: Seq[DataExporterConfig]): JsValue = {
+    val spec = findAndMerge[TcpService](_spec, res, "data-exporter", None, entities, _.metadata, _.id, _.json, Some(_.enabled))
+    customizeIdAndName(spec, res)
+  }
+
   private def customizeAdmin(_spec: JsValue, res: KubernetesOtoroshiResource, entities: Seq[SimpleOtoroshiAdmin]): JsValue = {
     val spec = findAndMerge[SimpleOtoroshiAdmin](_spec, res, "admin", None, entities, _.metadata, _.username, _.json)
     customizeIdAndName(spec, res)
@@ -550,6 +555,7 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
   def crdsFetchAuthModules(modules: Seq[AuthModuleConfig]): Future[Seq[OtoResHolder[AuthModuleConfig]]] = client.fetchOtoroshiResources[AuthModuleConfig]("auth-modules", AuthModuleConfig._fmt, (a, b) => customizeAuthModule(a, b, modules))
   def crdsFetchScripts(scripts: Seq[Script]): Future[Seq[OtoResHolder[Script]]] = client.fetchOtoroshiResources[Script]("scripts", Script._fmt, (a, b) => customizeScripts(a, b, scripts))
   def crdsFetchTcpServices(services: Seq[TcpService]): Future[Seq[OtoResHolder[TcpService]]] = client.fetchOtoroshiResources[TcpService]("tcp-services", TcpService.fmt, (a, b) => customizeTcpService(a, b, services))
+  def crdsFetchDataExporters(exporters: Seq[DataExporterConfig]): Future[Seq[OtoResHolder[DataExporterConfig]]] = client.fetchOtoroshiResources[DataExporterConfig]("data-exporters", DataExporterConfig.format, (a, b) => customizeDataExporter(a, b, exporters))
   def crdsFetchSimpleAdmins(admins: Seq[SimpleOtoroshiAdmin]): Future[Seq[OtoResHolder[SimpleOtoroshiAdmin]]] = client.fetchOtoroshiResources[SimpleOtoroshiAdmin]("admins", v => SimpleOtoroshiAdmin.reads(v), (a, b) => customizeAdmin(a, b, admins))
 }
 
@@ -564,6 +570,7 @@ case class CRDContext(
   scripts: Seq[OtoResHolder[Script]],
   tcpServices: Seq[OtoResHolder[TcpService]],
   simpleAdmins: Seq[OtoResHolder[SimpleOtoroshiAdmin]],
+  dataExporters: Seq[OtoResHolder[DataExporterConfig]],
   otoserviceGroups: Seq[ServiceGroup],
   otoserviceDescriptors: Seq[ServiceDescriptor],
   otoapiKeys: Seq[ApiKey],
@@ -574,6 +581,7 @@ case class CRDContext(
   otoscripts: Seq[Script],
   ototcpServices: Seq[TcpService],
   otosimpleAdmins: Seq[SimpleOtoroshiAdmin],
+  otodataexporters: Seq[DataExporterConfig],
 )
 
 object KubernetesCRDsJob {
@@ -609,6 +617,7 @@ object KubernetesCRDsJob {
       otoscripts <- env.datastores.scriptDataStore.findAll()
       ototcpServices <- env.datastores.tcpServiceDataStore.findAll()
       otosimpleAdmins <- env.datastores.simpleAdminDataStore.findAll()
+      otodataexporters <- env.datastores.dataExporterConfigDataStore.findAll()
 
       services <- clientSupport.client.fetchServices()
       endpoints <- clientSupport.client.fetchEndpoints()
@@ -623,6 +632,7 @@ object KubernetesCRDsJob {
       scripts <- clientSupport.crdsFetchScripts(otoscripts)
       tcpServices <- clientSupport.crdsFetchTcpServices(ototcpServices)
       simpleAdmins <- clientSupport.crdsFetchSimpleAdmins(otosimpleAdmins)
+      dataExporters <- clientSupport.crdsFetchDataExporters(otodataexporters)
 
     } yield {
       CRDContext(
@@ -636,6 +646,7 @@ object KubernetesCRDsJob {
         scripts = scripts,
         tcpServices = tcpServices,
         simpleAdmins = simpleAdmins,
+        dataExporters = dataExporters,
         otoserviceGroups = otoserviceGroups,
         otoserviceDescriptors = otoserviceDescriptors,
         otoapiKeys = otoapiKeys,
@@ -645,7 +656,8 @@ object KubernetesCRDsJob {
         otoauthModules = otoauthModules,
         otoscripts = otoscripts,
         ototcpServices = ototcpServices,
-        otosimpleAdmins = otosimpleAdmins
+        otosimpleAdmins = otosimpleAdmins,
+        otodataexporters = otodataexporters
       )
     }
   }
@@ -663,6 +675,7 @@ object KubernetesCRDsJob {
       scripts,
       tcpServices,
       simpleAdmins,
+      dataExporters,
       otoserviceGroups,
       otoserviceDescriptors,
       otoapiKeys,
@@ -672,7 +685,8 @@ object KubernetesCRDsJob {
       otoauthModules,
       otoscripts,
       ototcpServices,
-      otosimpleAdmins
+      otosimpleAdmins,
+      otodataexporters
     ) = ctx
     if (globalConfigs.size > 1) {
       Future.failed(new RuntimeException("There can only be one GlobalConfig entity !"))
@@ -680,6 +694,7 @@ object KubernetesCRDsJob {
       val entities = (
         compareAndSave(globalConfigs)(otoglobalConfigs, _ => "global", _.save()) ++
           compareAndSave(simpleAdmins)(otosimpleAdmins, v => v.username, v => env.datastores.simpleAdminDataStore.registerUser(v)) ++
+          compareAndSave(dataExporters)(otodataexporters, _.id, _.save()) ++
           compareAndSave(serviceGroups)(otoserviceGroups, _.id, _.save()) ++
           compareAndSave(certificates)(otocertificates, _.id, _.save()) ++
           compareAndSave(jwtVerifiers)(otojwtVerifiers, _.asGlobal.id, _.asGlobal.save()) ++
@@ -711,6 +726,7 @@ object KubernetesCRDsJob {
       scripts,
       tcpServices,
       simpleAdmins,
+      dataExporters,
       otoserviceGroups,
       otoserviceDescriptors,
       otoapiKeys,
@@ -721,6 +737,7 @@ object KubernetesCRDsJob {
       otoscripts,
       ototcpServices,
       otosimpleAdmins,
+      otodataexporters
     ) = ctx
     for {
       _ <- otoserviceGroups
@@ -786,6 +803,13 @@ object KubernetesCRDsJob {
       .map(_.username)
       .debug(seq => logger.info(s"Will delete ${seq.size} out of date admin entities"))
       .applyOn(env.datastores.simpleAdminDataStore.deleteUsers)
+
+    _ <- otodataexporters
+      .filter(sg => sg.metadata.get("otoroshi-provider").contains("kubernetes-crds"))
+      .filterNot(sg => dataExporters.exists(ssg => sg.metadata.get("kubernetes-path").contains(ssg.path)))
+      .map(_.id)
+      .debug(seq => logger.info(s"Will delete ${seq.size} out of date data-exporters entities"))
+      .applyOn(env.datastores.dataExporterConfigDataStore.deleteByIds)
     } yield ()
   }
 
@@ -974,6 +998,7 @@ object KubernetesCRDsJob {
               case _                              => false
             }).getOrElse(false)
             // TODO: handle config changes
+            // TODO: better detection
             val upstream = if (coredns17) "" else "upstream"
             val otoMesh =
               s"""### otoroshi-custom-begin ###
