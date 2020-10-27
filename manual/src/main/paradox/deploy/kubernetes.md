@@ -276,6 +276,7 @@ the configuration can have the following values
       "tcp-service": {},
       "certificate": {},
       "auth-module": {},
+      "data-exporter": {},
       "script": {},
     }
   }
@@ -674,6 +675,7 @@ the configuration can have the following values
       "tcp-service": {},
       "certificate": {},
       "auth-module": {},
+      "data-exporter": {},
       "script": {},
     }
   }

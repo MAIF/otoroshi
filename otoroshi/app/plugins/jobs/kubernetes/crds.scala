@@ -525,7 +525,7 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
   }
 
   private def customizeDataExporter(_spec: JsValue, res: KubernetesOtoroshiResource, entities: Seq[DataExporterConfig]): JsValue = {
-    val spec = findAndMerge[TcpService](_spec, res, "data-exporter", None, entities, _.metadata, _.id, _.json, Some(_.enabled))
+    val spec = findAndMerge[DataExporterConfig](_spec, res, "data-exporter", None, entities, _.metadata, _.id, _.json, Some(_.enabled))
     customizeIdAndName(spec, res)
   }
 
