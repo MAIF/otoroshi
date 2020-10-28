@@ -589,6 +589,7 @@ object KubernetesCRDsJob {
   private val logger = Logger("otoroshi-plugins-kubernetes-crds-sync")
   private val running = new AtomicBoolean(false)
   private val shouldRunNext = new AtomicBoolean(false)
+  private val lastDnsConfigRef = new AtomicReference[String]("--")
 
   def compareAndSave[T](entities: Seq[OtoResHolder[T]])(all: => Seq[T], id: T => String, save: T => Future[Boolean]): Seq[(T, () => Future[Boolean])] = {
     val existing = all.map(v => (id(v), v)).toMap
@@ -980,51 +981,71 @@ object KubernetesCRDsJob {
     }
   }
 
-  def patchCoreDnsConfig(conf: KubernetesConfig, ctx: JobContext, lastConfigHash: String)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  def patchCoreDnsConfig(conf: KubernetesConfig, ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     val client = new KubernetesClient(conf, env)
+    val hash = s"${conf.kubeSystemNamespace}-${conf.clusterDomain}-${conf.otoroshiServiceName}-${conf.otoroshiNamespace}"
+    val configHasChanged = lastDnsConfigRef.get() != hash
+
+    def patchConfig(coredns: KubernetesDeployment, configMap: KubernetesConfigMap, append: Boolean): Future[Unit] = {
+      val container = (coredns.raw \ "spec" \ "containers").as[JsArray].value.find(_.select("name").asOpt[String].contains("coredns"))
+      val coredns17 = container.flatMap(_.select("image").asOpt[String].map(_.split(":").last.replace(".", "")).map {
+        case version if version.length == 2 => version.toInt > 16
+        case version if version.length == 3 => version.toInt > 169
+        case version if version.length == 4 => version.toInt > 1699
+        case version if version.length == 5 => version.toInt > 16999
+        case _                              => false
+      }).getOrElse(false)
+      val upstream = if (coredns17) "" else "upstream"
+      val otoMesh =
+        s"""### otoroshi-mesh-begin ###
+           |otoroshi.mesh:53 {
+           |    errors
+           |    health
+           |    ready
+           |    kubernetes ${conf.clusterDomain} in-addr.arpa ip6.arpa {
+           |        pods insecure
+           |        $upstream
+           |        fallthrough in-addr.arpa ip6.arpa
+           |    }
+           |    rewrite name regex (.*)\.otoroshi\.mesh ${conf.otoroshiServiceName}.${conf.otoroshiNamespace}.svc.${conf.clusterDomain}
+           |    rewrite name regex (.*)\.svc\.otoroshi\.local ${conf.otoroshiServiceName}.${conf.otoroshiNamespace}.svc.${conf.clusterDomain}
+           |    rewrite name regex (.*)\.svc\.otoroshi ${conf.otoroshiServiceName}.${conf.otoroshiNamespace}.svc.${conf.clusterDomain}
+           |    rewrite name regex (.*)\.otoroshi ${conf.otoroshiServiceName}.${conf.otoroshiNamespace}.svc.${conf.clusterDomain}
+           |    forward . /etc/resolv.conf
+           |    cache 30
+           |    loop
+           |    reload
+           |    loadbalance
+           |}
+           |### otoroshi-mesh-end ###""".stripMargin
+
+      val coreFile = configMap.corefile
+      lastDnsConfigRef.set(hash)
+      if (append) {
+        val newData = (configMap.raw \ "data").as[JsObject] ++ Json.obj("Corefile" -> (otoMesh + coreFile))
+        val newRaw = configMap.raw.as[JsObject] ++ Json.obj("data" -> newData)
+        client.updateConfigMap(configMap.namespace, configMap.name, KubernetesConfigMap(newRaw)).map(_ => ())
+      } else {
+        val head = coreFile.split("### otoroshi-mesh-begin ###").toSeq.head
+        val tail = coreFile.split("### otoroshi-mesh-end ###").toSeq.last
+        val newData = (configMap.raw \ "data").as[JsObject] ++ Json.obj("Corefile" -> (head + otoMesh + tail))
+        val newRaw = configMap.raw.as[JsObject] ++ Json.obj("data" -> newData)
+        client.updateConfigMap(configMap.namespace, configMap.name, KubernetesConfigMap(newRaw)).map(_ => ())
+      }
+    }
+
     client.fetchDeployment("kube-system", "coredns").flatMap {
       case None => ().future
       case Some(coredns) => {
         client.fetchConfigMap(conf.kubeSystemNamespace, "coredns").flatMap {
           case None => ().future
-          case Some(configMap) if configMap.hasOtoroshiMesh =>
-            // TODO: handle config changes
+          case Some(configMap) if configMap.hasOtoroshiMesh && !configHasChanged =>
             ().future
+          case Some(configMap) if configMap.hasOtoroshiMesh && configHasChanged =>
+            patchConfig(coredns, configMap, false)
           case Some(configMap) => {
-            val container = (coredns.raw \ "spec" \ "containers").as[JsArray].value.find(_.select("name").asOpt[String].contains("coredns"))
-            val coredns17 = container.flatMap(_.select("image").asOpt[String].map(_.split(":").last.replace(".", "")).map {
-              case version if version.length == 2 => version.toInt > 16
-              case version if version.length == 3 => version.toInt > 169
-              case version if version.length == 4 => version.toInt > 1699
-              case version if version.length == 5 => version.toInt > 16999
-              case _                              => false
-            }).getOrElse(false)
-            val upstream = if (coredns17) "" else "upstream"
-            val otoMesh =
-              s"""### otoroshi-mesh-begin ###
-                 |otoroshi.mesh:53 {
-                 |    errors
-                 |    health
-                 |    ready
-                 |    kubernetes ${conf.clusterDomain} in-addr.arpa ip6.arpa {
-                 |        pods insecure
-                 |        $upstream
-                 |        fallthrough in-addr.arpa ip6.arpa
-                 |    }
-                 |    rewrite name regex (.*)\.otoroshi\.mesh ${conf.otoroshiServiceName}.${conf.otoroshiNamespace}.svc.${conf.clusterDomain}
-                 |    rewrite name regex (.*)\.svc\.otoroshi\.local ${conf.otoroshiServiceName}.${conf.otoroshiNamespace}.svc.${conf.clusterDomain}
-                 |    rewrite name regex (.*)\.svc\.otoroshi ${conf.otoroshiServiceName}.${conf.otoroshiNamespace}.svc.${conf.clusterDomain}
-                 |    rewrite name regex (.*)\.otoroshi ${conf.otoroshiServiceName}.${conf.otoroshiNamespace}.svc.${conf.clusterDomain}
-                 |    forward . /etc/resolv.conf
-                 |    cache 30
-                 |    loop
-                 |    reload
-                 |    loadbalance
-                 |}
-                 |### otoroshi-mesh-end ###""".stripMargin
-            val newData = (configMap.raw \ "data").as[JsObject] ++ Json.obj("Corefile" -> (otoMesh + configMap.corefile))
-            val newRaw = configMap.raw.as[JsObject] ++ Json.obj("data" -> newData)
-            client.updateConfigMap(configMap.namespace, configMap.name, KubernetesConfigMap(newRaw)).map(_ => ())
+            patchConfig(coredns, configMap, true)
+            ().future
           }
         }
       }
