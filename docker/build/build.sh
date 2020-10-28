@@ -67,6 +67,11 @@ build_jdk14 () {
   docker tag otoroshi-jdk14 "maif/otoroshi:$1-jdk14"
 }
 
+build_jdk15 () {
+  docker build --no-cache -f ./Dockerfile-jdk15 -t otoroshi-jdk15 .
+  docker tag otoroshi-jdk15 "maif/otoroshi:$1-jdk15"
+}
+
 build_graal () {
   docker build --no-cache -f ./Dockerfile-graal -t otoroshi-graal .
   docker tag otoroshi-graal "maif/otoroshi:$1-graal"
@@ -116,16 +121,22 @@ case "${1}" in
     build_jdk14 $2
     cleanup
     ;;
+  build-jdk15)
+    prepare_build
+    build_jdk15 $2
+    cleanup
+    ;;
   build-all)
     prepare_build
     build_jdk8 $2
     #build_jdk9 $2
     #build_jdk10 $2
     build_jdk11 $2
-    build_jdk12 $2
-    build_jdk13 $2
+    #build_jdk12 $2
+    #build_jdk13 $2
     #build_jdk14 $2
-    build_graal $2
+    build_jdk15 $2
+    #build_graal $2
     cleanup
     ;;
   push-all)
@@ -134,20 +145,23 @@ case "${1}" in
     #build_jdk9 $2
     #build_jdk10 $2
     build_jdk11 $2
-    build_jdk12 $2
-    build_jdk13 $2
-    build_jdk14 $2
-    build_graal $2
+    #build_jdk12 $2
+    #build_jdk13 $2
+    #build_jdk14 $2
+    #build_jdk14 $2
+    build_jdk15 $2
+    #build_graal $2
     cleanup
     docker push "maif/otoroshi:$2"
     docker push "maif/otoroshi:$2-jdk8"
     #docker push "maif/otoroshi:$2-jdk9"
     #docker push "maif/otoroshi:$2-jdk10"
     docker push "maif/otoroshi:$2-jdk11"
-    docker push "maif/otoroshi:$2-jdk12"
-    docker push "maif/otoroshi:$2-jdk13"
-    docker push "maif/otoroshi:$2-jdk14"
-    docker push "maif/otoroshi:$2-graal"
+    #docker push "maif/otoroshi:$2-jdk12"
+    #docker push "maif/otoroshi:$2-jdk13"
+    #docker push "maif/otoroshi:$2-jdk14"
+    docker push "maif/otoroshi:$2-jdk15"
+    #docker push "maif/otoroshi:$2-graal"
     docker push "maif/otoroshi:latest"
     ;;
   push-graal)
@@ -163,8 +177,10 @@ case "${1}" in
     prepare_build
     docker build --no-cache -f ./Dockerfile-jdk11 -t otoroshi .
     docker tag otoroshi "maif/otoroshi:1.4.23-dev-$NBR"
+    docker tag otoroshi "maif/otoroshi:dev"
     cleanup
     docker push "maif/otoroshi:1.4.23-dev-$NBR"
+    docker push "maif/otoroshi:dev"
     ;;
   build-snapshot)
     NBR=`date +%s`
@@ -173,6 +189,7 @@ case "${1}" in
     prepare_build
     docker build --no-cache -f ./Dockerfile-jdk11 -t otoroshi .
     docker tag otoroshi "maif/otoroshi:1.4.23-dev-$NBR"
+    docker tag otoroshi "maif/otoroshi:dev"
     cleanup
     ;;
   *)
