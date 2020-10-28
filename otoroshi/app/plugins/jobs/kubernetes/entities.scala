@@ -32,7 +32,7 @@ case class KubernetesConfigMap(raw: JsValue) extends KubernetesEntity {
   lazy val hasOtoroshiMesh: Boolean = {
     (raw \ "data" \ "Corefile").asOpt[String] match {
       case None => true // because Corefile should be there, so avoid to do something wrong
-      case Some(coreFile) if coreFile.contains("otoroshi.mesh:53") => true
+      case Some(coreFile) if coreFile.contains("### otoroshi-mesh-begin ###") && coreFile.contains("### otoroshi-mesh-end ###") => true
       case Some(_) => false
     }
   }

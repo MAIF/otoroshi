@@ -75,6 +75,20 @@ probes:
     successThreshold: 1
     timeoutSeconds: 2
 
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      targetAverageUtilization: 80
+  - type: Resource
+    resource:
+      name: memory
+      targetAverageUtilization: 80
+
 # redis
 redis:
   cluster:

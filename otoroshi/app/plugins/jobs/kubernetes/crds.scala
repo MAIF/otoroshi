@@ -980,14 +980,16 @@ object KubernetesCRDsJob {
     }
   }
 
-  def patchCoreDnsConfig(conf: KubernetesConfig, ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  def patchCoreDnsConfig(conf: KubernetesConfig, ctx: JobContext, lastConfigHash: String)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     val client = new KubernetesClient(conf, env)
     client.fetchDeployment("kube-system", "coredns").flatMap {
       case None => ().future
       case Some(coredns) => {
         client.fetchConfigMap(conf.kubeSystemNamespace, "coredns").flatMap {
           case None => ().future
-          case Some(configMap) if configMap.hasOtoroshiMesh => ().future
+          case Some(configMap) if configMap.hasOtoroshiMesh =>
+            // TODO: handle config changes
+            ().future
           case Some(configMap) => {
             val container = (coredns.raw \ "spec" \ "containers").as[JsArray].value.find(_.select("name").asOpt[String].contains("coredns"))
             val coredns17 = container.flatMap(_.select("image").asOpt[String].map(_.split(":").last.replace(".", "")).map {
@@ -997,11 +999,9 @@ object KubernetesCRDsJob {
               case version if version.length == 5 => version.toInt > 16999
               case _                              => false
             }).getOrElse(false)
-            // TODO: handle config changes
-            // TODO: better detection
             val upstream = if (coredns17) "" else "upstream"
             val otoMesh =
-              s"""### otoroshi-custom-begin ###
+              s"""### otoroshi-mesh-begin ###
                  |otoroshi.mesh:53 {
                  |    errors
                  |    health
@@ -1021,7 +1021,7 @@ object KubernetesCRDsJob {
                  |    reload
                  |    loadbalance
                  |}
-                 |### otoroshi-custom-end ###""".stripMargin
+                 |### otoroshi-mesh-end ###""".stripMargin
             val newData = (configMap.raw \ "data").as[JsObject] ++ Json.obj("Corefile" -> (otoMesh + configMap.corefile))
             val newRaw = configMap.raw.as[JsObject] ++ Json.obj("data" -> newData)
             client.updateConfigMap(configMap.namespace, configMap.name, KubernetesConfigMap(newRaw)).map(_ => ())
