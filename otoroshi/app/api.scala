@@ -68,7 +68,7 @@ object OtoroshiLoaderHelper {
     }
 
     def waitForFirstClusterFetch(): Future[Unit] = {
-      if (waitForFirstClusterFetchEnabled) {
+      if (components.env.clusterConfig.mode == ClusterMode.Worker && waitForFirstClusterFetchEnabled) {
         logger.info("waiting for first cluster fetch ...")
         Future.firstCompletedOf(Seq(
           timeout(waitForFirstClusterFetchTimeout.millis),
