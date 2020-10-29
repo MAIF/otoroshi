@@ -897,7 +897,7 @@ object ApiKeyHelper {
           case None => errorResult(Unauthorized, "Invalid API key", "errors.invalid.api.key")
           case Some(key) if key.isInvalid(key.clientSecret) => {
             sendRevokedApiKeyAlert(key)
-            errorResult(BadGateway, "Bad API key", "errors.bad.api.key")
+            errorResult(Unauthorized, "Bad API key", "errors.bad.api.key")
           }
           case Some(key) if !key.matchRouting(descriptor) => {
             errorResult(Unauthorized, "Invalid API key", "errors.bad.api.key")
@@ -1132,7 +1132,7 @@ object ApiKeyHelper {
                   errorResult(Unauthorized, "Invalid API key", "errors.invalid.api.key")
                 case Some(key) if key.isInvalid(apiKeySecret) => {
                   sendRevokedApiKeyAlert(key)
-                  errorResult(BadGateway, "Bad API key", "errors.bad.api.key")
+                  errorResult(Unauthorized, "Bad API key", "errors.bad.api.key")
                 }
                 case Some(key) if !key.matchRouting(descriptor) =>
                   errorResult(Unauthorized, "Invalid API key", "errors.bad.api.key")
