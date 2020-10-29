@@ -21,7 +21,7 @@ spec:
       terminationGracePeriodSeconds: 60
       hostNetwork: false
       containers:
-      - image: maif/otoroshi:1.4.23-dev-jdk11
+      - image: maif/otoroshi:1.5.0-alpha01-jdk11
         imagePullPolicy: IfNotPresent
         name: otoroshi
         ports:

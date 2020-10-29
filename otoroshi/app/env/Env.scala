@@ -759,7 +759,7 @@ class Env(val configuration: Configuration,
     useAkkaHttpClient = true
   )
 
-  lazy val otoroshiVersion     = "1.4.23-dev"
+  lazy val otoroshiVersion     = "1.5.0-alpha01"
   lazy val latestVersionHolder = new AtomicReference[JsValue](JsNull)
   lazy val checkForUpdates     = configuration.getOptionalWithFileSupport[Boolean]("app.checkForUpdates").getOrElse(true)
 
