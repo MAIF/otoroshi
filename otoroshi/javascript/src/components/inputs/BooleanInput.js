@@ -1,30 +1,30 @@
 import React, { Component } from 'react';
 import { Help } from './Help';
 
-const OnSwitch = props => (
+const OnSwitch = (props) => (
   <div className="content-switch-button-on" onClick={props.onChange}>
     <div className="switch-button-on" />
   </div>
 );
 
-const OffSwitch = props => (
+const OffSwitch = (props) => (
   <div className="content-switch-button-off" onClick={props.onChange}>
     <div className="switch-button-off" />
   </div>
 );
 
 export class BooleanInput extends Component {
-  toggleOff = e => {
+  toggleOff = (e) => {
     if (e && e.preventDefault) e.preventDefault();
     if (!this.props.disabled) this.props.onChange(false);
   };
 
-  toggleOn = e => {
+  toggleOn = (e) => {
     if (e && e.preventDefault) e.preventDefault();
     if (!this.props.disabled) this.props.onChange(true);
   };
 
-  toggle = value => {
+  toggle = (value) => {
     if (!this.props.disabled) this.props.onChange(value);
   };
 
@@ -55,17 +55,17 @@ export class BooleanInput extends Component {
 }
 
 export class BiColumnBooleanInput extends Component {
-  toggleOff = e => {
+  toggleOff = (e) => {
     if (e && e.preventDefault) e.preventDefault();
     if (!this.props.disabled) this.props.onChange(false);
   };
 
-  toggleOn = e => {
+  toggleOn = (e) => {
     if (e && e.preventDefault) e.preventDefault();
     if (!this.props.disabled) this.props.onChange(true);
   };
 
-  toggle = value => {
+  toggle = (value) => {
     if (!this.props.disabled) this.props.onChange(value);
   };
 
@@ -99,19 +99,19 @@ export class BiColumnBooleanInput extends Component {
 }
 
 export class SimpleBooleanInput extends Component {
-  toggleOff = e => {
+  toggleOff = (e) => {
     if (e && e.preventDefault) e.preventDefault();
     console.log('off');
     if (!this.props.disabled) this.props.onChange(false);
   };
 
-  toggleOn = e => {
+  toggleOn = (e) => {
     if (e && e.preventDefault) e.preventDefault();
     console.log('on');
     if (!this.props.disabled) this.props.onChange(true);
   };
 
-  toggle = value => {
+  toggle = (value) => {
     if (!this.props.disabled) this.props.onChange(value);
   };
 

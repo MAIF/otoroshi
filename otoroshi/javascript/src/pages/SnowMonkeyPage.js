@@ -67,15 +67,18 @@ export class SnowMonkeyPage extends Component {
   };
 
   columns = [
-    { title: 'Service Name', content: item => item.descriptorName },
+    { title: 'Service Name', content: (item) => item.descriptorName },
     {
       title: 'Outage started at',
-      content: item => moment(item.startedAt).format('YYYY-MM-DD HH:mm:ss.SSS'),
+      content: (item) => moment(item.startedAt).format('YYYY-MM-DD HH:mm:ss.SSS'),
     },
-    { title: 'Outage duration', content: item => moment.duration(item.duration, 'ms').humanize() },
+    {
+      title: 'Outage duration',
+      content: (item) => moment.duration(item.duration, 'ms').humanize(),
+    },
     {
       title: 'Outage until',
-      content: item => {
+      content: (item) => {
         const parts = item.until.split('.')[0].split(':');
         return `${parts[0]}:${parts[1]}:${parts[2]} today`;
       },
@@ -84,13 +87,13 @@ export class SnowMonkeyPage extends Component {
       title: 'Action',
       notSortable: true,
       notFilterable: true,
-      content: item => item,
+      content: (item) => item,
       cell: (v, item, table) => {
         return (
           <button
             type="button"
             className="btn btn-success btn-xs"
-            onClick={e =>
+            onClick={(e) =>
               (window.location = `/bo/dashboard/lines/prod/services/${item.descriptorId}`)
             }>
             <i className="glyphicon glyphicon-link" /> Go to service descriptor
@@ -118,7 +121,7 @@ export class SnowMonkeyPage extends Component {
     document.body.removeEventListener('keydown', this.saveShortcut);
   };
 
-  saveShortcut = e => {
+  saveShortcut = (e) => {
     if (e.keyCode === 83 && (e.ctrlKey || e.metaKey)) {
       e.preventDefault();
       if (this.state.changed) {
@@ -127,15 +130,15 @@ export class SnowMonkeyPage extends Component {
     }
   };
 
-  saveChanges = e => {
+  saveChanges = (e) => {
     // console.log('Save', this.state.config);
     BackOfficeServices.updateSnowMonkeyConfig(this.state.config).then(() => {
       this.updateStateConfig(true);
     });
   };
 
-  updateStateConfig = first => {
-    BackOfficeServices.fetchSnowMonkeyConfig().then(_config => {
+  updateStateConfig = (first) => {
+    BackOfficeServices.fetchSnowMonkeyConfig().then((_config) => {
       const config = enrichConfig(_config);
       this.setState({ config, started: config.enabled });
       if (first) {
@@ -144,7 +147,7 @@ export class SnowMonkeyPage extends Component {
     });
   };
 
-  toggle = e => {
+  toggle = (e) => {
     if (this.state.started) {
       BackOfficeServices.stopSnowMonkey().then(() => {
         this.setState({ started: false });
@@ -349,7 +352,7 @@ export class SnowMonkeyPage extends Component {
         <div className="row">
           <SnowMonkeyConfig
             config={this.state.config}
-            onChange={config => {
+            onChange={(config) => {
               this.setState({
                 config,
                 changed: shallowDiffers(this.state.originalConfig, config),
@@ -369,7 +372,7 @@ export class SnowMonkeyPage extends Component {
           fetchItems={BackOfficeServices.fetchSnowMonkeyOutages}
           showActions={false}
           showLink={false}
-          extractKey={item => item.descriptorId}
+          extractKey={(item) => item.descriptorId}
         />
       </div>
     );

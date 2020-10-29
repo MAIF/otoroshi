@@ -53,22 +53,22 @@ export class GlobalEventsPage extends Component {
   columns = [
     {
       title: '@timestamp',
-      content: item => item['@timestamp'],
+      content: (item) => item['@timestamp'],
       cell: (v, item) => moment(item['@timestamp']).format('DD/MM/YYYY HH:mm:ss:SSS'),
     },
-    { title: '@service', content: item => item['@service'] },
-    { title: '@serviceId', content: item => item['@serviceId'] },
-    { title: '@product', content: item => item['@product'] },
+    { title: '@service', content: (item) => item['@service'] },
+    { title: '@serviceId', content: (item) => item['@serviceId'] },
+    { title: '@product', content: (item) => item['@product'] },
     {
       title: 'Content',
-      content: item => item['@timestamp'],
+      content: (item) => item['@timestamp'],
       notFilterable: true,
       style: { textAlign: 'center', width: 70 },
       cell: (v, item) => (
         <button
           type="button"
           className="btn btn-success btn-xs"
-          onClick={e =>
+          onClick={(e) =>
             window.newAlert(
               <pre style={{ height: 300 }}>{JSON.stringify(item, null, 2)}</pre>,
               'Content'
@@ -80,15 +80,15 @@ export class GlobalEventsPage extends Component {
     },
     {
       title: 'Bodies',
-      content: item => item['@timestamp'],
+      content: (item) => item['@timestamp'],
       notFilterable: true,
       style: { textAlign: 'center', width: 70 },
       cell: (v, item) => (
         <button
           type="button"
           className="btn btn-success btn-xs"
-          onClick={e => {
-            BackOfficeServices.fetchBodiesFor(item['@serviceId'], item.reqId).then(res => {
+          onClick={(e) => {
+            BackOfficeServices.fetchBodiesFor(item['@serviceId'], item.reqId).then((res) => {
               if (!res.error) {
                 const bodyIn = readContent(res.request);
                 const bodyOut = readContent(res.response);
@@ -118,23 +118,23 @@ export class GlobalEventsPage extends Component {
         </button>
       ),
     },
-    { title: 'protocol', content: item => item.protocol },
-    { title: 'from', content: item => item.from },
-    { title: 'duration', content: item => `${item.duration} ms.` },
-    { title: 'overhead', content: item => `${item.overhead} ms.` },
-    { title: 'status', content: item => item.status },
-    { title: 'method', content: item => item.method },
-    { title: 'Access By', content: item => (item.identity ? item.identity.identityType : '--') },
+    { title: 'protocol', content: (item) => item.protocol },
+    { title: 'from', content: (item) => item.from },
+    { title: 'duration', content: (item) => `${item.duration} ms.` },
+    { title: 'overhead', content: (item) => `${item.overhead} ms.` },
+    { title: 'status', content: (item) => item.status },
+    { title: 'method', content: (item) => item.method },
+    { title: 'Access By', content: (item) => (item.identity ? item.identity.identityType : '--') },
     {
       title: 'Accessed By',
-      content: item =>
+      content: (item) =>
         item.identity ? item.identity.label + ' (' + item.identity.identity + ')' : '--',
     },
-    { title: 'Data In', content: item => item.data.dataIn + ' bytes' },
-    { title: 'Data Out', content: item => item.data.dataOut + ' bytes' },
+    { title: 'Data In', content: (item) => item.data.dataIn + ' bytes' },
+    { title: 'Data Out', content: (item) => item.data.dataOut + ' bytes' },
     {
       title: 'uri',
-      content: item => item.url,
+      content: (item) => item.url,
       cell: (v, item) => {
         const url = item.url;
         const parts = url.split('/');
@@ -148,11 +148,11 @@ export class GlobalEventsPage extends Component {
         );
       },
     },
-    { title: '@id', content: item => item['@id'] },
-    { title: 'reqId', content: item => item.reqId },
+    { title: '@id', content: (item) => item['@id'] },
+    { title: 'reqId', content: (item) => item.reqId },
     {
       title: 'To',
-      content: item => `${item.to.scheme}://${item.to.host}${item.to.uri}`,
+      content: (item) => `${item.to.scheme}://${item.to.host}${item.to.uri}`,
       cell: (v, item) => {
         const url = `${item.to.scheme}://${item.to.host}${item.to.uri}`;
         return (
@@ -164,7 +164,7 @@ export class GlobalEventsPage extends Component {
     },
     {
       title: 'Target',
-      content: item => `${item.target.scheme}://${item.target.host}${item.target.uri}`,
+      content: (item) => `${item.target.scheme}://${item.target.host}${item.target.uri}`,
       cell: (v, item) => {
         const url = `${item.target.scheme}://${item.target.host}${item.target.uri}`;
         return (
@@ -176,26 +176,29 @@ export class GlobalEventsPage extends Component {
     },
     {
       title: 'url',
-      content: item => item.url,
+      content: (item) => item.url,
       cell: (v, item) => (
         <a target="_blank" href={item.url}>
           {item.url}
         </a>
       ),
     },
-    { title: 'Headers Count', content: item => item.headers.length },
-    { title: 'Calls per sec', content: item => item.remainingQuotas.currentCallsPerSec },
-    { title: 'Auth. calls per sec', content: item => item.remainingQuotas.authorizedCallsPerSec },
-    { title: 'Rem. calls per sec', content: item => item.remainingQuotas.remainingCallsPerSec },
-    { title: 'Calls per day', content: item => item.remainingQuotas.currentCallsPerDay },
-    { title: 'Auth. calls per day', content: item => item.remainingQuotas.authorizedCallsPerDay },
-    { title: 'Rem. calls per day', content: item => item.remainingQuotas.remainingCallsPerDay },
-    { title: 'Calls per month', content: item => item.remainingQuotas.currentCallsPerMonth },
+    { title: 'Headers Count', content: (item) => item.headers.length },
+    { title: 'Calls per sec', content: (item) => item.remainingQuotas.currentCallsPerSec },
+    { title: 'Auth. calls per sec', content: (item) => item.remainingQuotas.authorizedCallsPerSec },
+    { title: 'Rem. calls per sec', content: (item) => item.remainingQuotas.remainingCallsPerSec },
+    { title: 'Calls per day', content: (item) => item.remainingQuotas.currentCallsPerDay },
+    { title: 'Auth. calls per day', content: (item) => item.remainingQuotas.authorizedCallsPerDay },
+    { title: 'Rem. calls per day', content: (item) => item.remainingQuotas.remainingCallsPerDay },
+    { title: 'Calls per month', content: (item) => item.remainingQuotas.currentCallsPerMonth },
     {
       title: 'Auth. calls per month',
-      content: item => item.remainingQuotas.authorizedCallsPerMonth,
+      content: (item) => item.remainingQuotas.authorizedCallsPerMonth,
     },
-    { title: 'Rem. calls per month', content: item => item.remainingQuotas.remainingCallsPerMonth },
+    {
+      title: 'Rem. calls per month',
+      content: (item) => item.remainingQuotas.remainingCallsPerMonth,
+    },
   ];
 
   componentDidMount() {
@@ -212,8 +215,8 @@ export class GlobalEventsPage extends Component {
       limit,
       this.state.asc ? 'asc' : 'desc'
     ).then(
-      d => d.events,
-      err => console.error(err)
+      (d) => d.events,
+      (err) => console.error(err)
     );
   };
 
@@ -243,7 +246,9 @@ export class GlobalEventsPage extends Component {
                 style={{ width: 100 }}
                 className="form-control"
                 value={this.state.limit}
-                onChange={e => this.setState({ limit: e.target.value }, () => this.table.update())}
+                onChange={(e) =>
+                  this.setState({ limit: e.target.value }, () => this.table.update())
+                }
               />
             </div>
             <div className="input-group" style={{ marginLeft: 10, width: '100%', display: 'flex' }}>
@@ -252,7 +257,7 @@ export class GlobalEventsPage extends Component {
               </span>
               <SimpleBooleanInput
                 value={this.state.asc}
-                onChange={e => {
+                onChange={(e) => {
                   this.setState({ asc: !this.state.asc }, () => {
                     this.table.update();
                   });
@@ -275,8 +280,8 @@ export class GlobalEventsPage extends Component {
           fetchItems={this.fetchEvents}
           showActions={false}
           showLink={false}
-          injectTable={table => (this.table = table)}
-          extractKey={item => item['@id']}
+          injectTable={(table) => (this.table = table)}
+          extractKey={(item) => item['@id']}
         />
       </div>
     );

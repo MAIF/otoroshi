@@ -6,20 +6,20 @@ import moment from 'moment';
 
 export class SessionsPage extends Component {
   columns = [
-    { title: 'Name', content: item => item.name },
+    { title: 'Name', content: (item) => item.name },
     {
       title: 'Email',
-      content: item => item.email,
+      content: (item) => item.email,
     },
     {
       title: 'Created At',
-      content: item => (item.createdAt ? item.createdAt : 0),
+      content: (item) => (item.createdAt ? item.createdAt : 0),
       cell: (v, item) =>
         item.createdAt ? moment(item.createdAt).format('DD/MM/YYYY HH:mm:ss') : '',
     },
     {
       title: 'Expires At',
-      content: item => (item.expiredAt ? item.expiredAt : 0),
+      content: (item) => (item.expiredAt ? item.expiredAt : 0),
       cell: (v, item) =>
         item.expiredAt ? moment(item.expiredAt).format('DD/MM/YYYY HH:mm:ss') : '',
     },
@@ -28,14 +28,14 @@ export class SessionsPage extends Component {
       style: { textAlign: 'center', width: 150 },
       notSortable: true,
       notFilterable: true,
-      content: item => item,
+      content: (item) => item,
       cell: (v, item, table) => {
         return (
           <button
             key={item.randomId}
             type="button"
             className="btn btn-danger btn-xs"
-            onClick={e => this.discardSession(e, item.randomId, table)}>
+            onClick={(e) => this.discardSession(e, item.randomId, table)}>
             <i className="glyphicon glyphicon-fire" /> Discard Session
           </button>
         );
@@ -51,7 +51,7 @@ export class SessionsPage extends Component {
     if (e && e.preventDefault) e.preventDefault();
     window
       .newConfirm(`Are you sure that you want to discard admin session for ${id} ?`)
-      .then(ok => {
+      .then((ok) => {
         if (ok) {
           BackOfficeServices.discardSession(id).then(() => {
             setTimeout(() => {
@@ -63,11 +63,11 @@ export class SessionsPage extends Component {
       });
   };
 
-  discardSessions = e => {
+  discardSessions = (e) => {
     if (e && e.preventDefault) e.preventDefault();
     window
       .newConfirm('Are you sure that you want to discard all admin session including yourself ?')
-      .then(ok => {
+      .then((ok) => {
         if (ok) {
           BackOfficeServices.discardAllSessions().then(() => {
             setTimeout(() => {
@@ -78,18 +78,18 @@ export class SessionsPage extends Component {
       });
   };
 
-  discardOldSessions = e => {
+  discardOldSessions = (e) => {
     if (e && e.preventDefault) e.preventDefault();
-    window.newConfirm('Are you sure that you want to discard old admin session ?').then(ok => {
+    window.newConfirm('Are you sure that you want to discard old admin session ?').then((ok) => {
       if (ok) {
         BackOfficeServices.fetchSessions()
-          .then(sessions => {
-            let groups = _.groupBy(sessions, i => i.email);
-            groups = _.mapValues(groups, g => {
-              const values = _.orderBy(g, i => i.expiredAt, 'desc');
+          .then((sessions) => {
+            let groups = _.groupBy(sessions, (i) => i.email);
+            groups = _.mapValues(groups, (g) => {
+              const values = _.orderBy(g, (i) => i.expiredAt, 'desc');
               const head = values.shift();
               return Promise.all(
-                values.map(v => BackOfficeServices.discardSession(v.randomId))
+                values.map((v) => BackOfficeServices.discardSession(v.randomId))
               ).then(() => head);
             });
             return Promise.all(_.values(groups));
@@ -115,16 +115,18 @@ export class SessionsPage extends Component {
           fetchItems={BackOfficeServices.fetchSessions}
           showActions={false}
           showLink={false}
-          extractKey={item => item.randomId}
+          extractKey={(item) => item.randomId}
           injectTopBar={() => [
-            window.__user.superAdmin ? <button
-              key="discard-all"
-              type="button"
-              className="btn btn-danger"
-              style={{ marginLeft: 15 }}
-              onClick={this.discardSessions}>
-              <i className="glyphicon glyphicon-fire" /> Discard all sessions
-            </button> : null,
+            window.__user.superAdmin ? (
+              <button
+                key="discard-all"
+                type="button"
+                className="btn btn-danger"
+                style={{ marginLeft: 15 }}
+                onClick={this.discardSessions}>
+                <i className="glyphicon glyphicon-fire" /> Discard all sessions
+              </button>
+            ) : null,
             <button
               key="discard-old"
               type="button"

@@ -6,17 +6,17 @@ import { Proxy } from '../components/Proxy';
 
 export class ClientValidatorsPage extends Component {
   columns = [
-    { title: 'Name', content: item => item.name },
-    { title: 'Description', content: item => item.description },
-    { title: 'Host', content: item => item.host },
+    { title: 'Name', content: (item) => item.name },
+    { title: 'Description', content: (item) => item.description },
+    { title: 'Host', content: (item) => item.host },
     {
       title: 'Always valid',
-      content: item => (item.alwaysValid ? 'yes' : 'no'),
+      content: (item) => (item.alwaysValid ? 'yes' : 'no'),
       style: { width: 100, textAlign: 'center' },
     },
     {
       title: 'Cache',
-      content: item => (!item.noCache ? 'yes' : 'no'),
+      content: (item) => (!item.noCache ? 'yes' : 'no'),
       style: { width: 100, textAlign: 'center' },
     },
   ];
@@ -24,7 +24,7 @@ export class ClientValidatorsPage extends Component {
   formSchema = {
     _loc: {
       type: 'location',
-      props: {}
+      props: {},
     },
     id: { type: 'string', disabled: true, props: { label: 'Id', placeholder: '---' } },
     name: {
@@ -41,47 +41,47 @@ export class ClientValidatorsPage extends Component {
     },
     url: {
       type: 'string',
-      display: value => !value.alwaysValid,
+      display: (value) => !value.alwaysValid,
       props: { label: 'URL', placeholder: 'http://127.0.0.1:3000' },
     },
     host: {
       type: 'string',
-      display: value => !value.alwaysValid,
+      display: (value) => !value.alwaysValid,
       props: { label: 'Host', placeholder: 'validator.oto.tools' },
     },
     noCache: {
       type: 'bool',
-      display: value => !value.alwaysValid,
+      display: (value) => !value.alwaysValid,
       props: { label: 'Do not cache validations' },
     },
     goodTtl: {
       type: 'number',
-      display: value => !value.alwaysValid,
+      display: (value) => !value.alwaysValid,
       props: { label: 'Good validation TTL', placeholder: '600000', suffix: 'milliseconds' },
     },
     badTtl: {
       type: 'number',
-      display: value => !value.alwaysValid,
+      display: (value) => !value.alwaysValid,
       props: { label: 'Bad validation  TTL', placeholder: '60000', suffix: 'milliseconds' },
     },
     method: {
       type: 'string',
-      display: value => !value.alwaysValid,
+      display: (value) => !value.alwaysValid,
       props: { label: 'HTTP method', placeholder: 'POST' },
     },
     path: {
       type: 'string',
-      display: value => !value.alwaysValid,
+      display: (value) => !value.alwaysValid,
       props: { label: 'HTTP Path', placeholder: '/certificates/_validate' },
     },
     timeout: {
       type: 'number',
-      display: value => !value.alwaysValid,
+      display: (value) => !value.alwaysValid,
       props: { label: 'Call timeout', placeholder: '10000', suffix: 'milliseconds' },
     },
     headers: {
       type: 'object',
-      display: value => !value.alwaysValid,
+      display: (value) => !value.alwaysValid,
       props: { label: 'HTTP headers' },
     },
     proxy: {
@@ -112,7 +112,7 @@ export class ClientValidatorsPage extends Component {
     this.props.setTitle(`Validation authorities (deprecated)`);
   }
 
-  gotoValidator = verifier => {
+  gotoValidator = (verifier) => {
     this.props.history.push({
       pathname: `validation-authorities/edit/${verifier.id}`,
     });
@@ -152,12 +152,12 @@ export class ClientValidatorsPage extends Component {
           deleteItem={BackOfficeServices.deleteClientValidator}
           createItem={BackOfficeServices.createClientValidator}
           navigateTo={this.gotoValidator}
-          itemUrl={i => `/bo/dashboard/validation-authorities/edit/${i.id}`}
+          itemUrl={(i) => `/bo/dashboard/validation-authorities/edit/${i.id}`}
           showActions={true}
           showLink={false}
           rowNavigation={true}
           firstSort={0}
-          extractKey={item => item.id}
+          extractKey={(item) => item.id}
         />
       </div>
     );

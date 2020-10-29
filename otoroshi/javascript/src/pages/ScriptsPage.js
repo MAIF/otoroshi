@@ -216,7 +216,7 @@ class MyDataExporter extends CustomDataExporter  {
 }
 
 new MyDataExporter()
-`
+`;
 
 class CompilationTools extends Component {
   state = {
@@ -230,7 +230,7 @@ class CompilationTools extends Component {
 
   compile = () => {
     this.setState({ compiling: true });
-    BackOfficeServices.compileScript(this.props.rawValue).then(res => {
+    BackOfficeServices.compileScript(this.props.rawValue).then((res) => {
       if (res.error) {
         this.setState({ error: res.error, compiling: false });
         this.props.setAnnotations([
@@ -322,7 +322,7 @@ class ScriptTypeSelector extends Component {
         label="Type"
         value={this.state.type}
         help="..."
-        onChange={t => {
+        onChange={(t) => {
           if (t === 'app') {
             this.setState({ type: 'app' });
             this.props.rawOnChange({ ...this.props.rawValue, type: 'app', code: basicNanoApp });
@@ -407,7 +407,7 @@ export class ScriptsPage extends Component {
   formSchema = {
     _loc: {
       type: 'location',
-      props: {}
+      props: {},
     },
     warning: {
       type: Warning,
@@ -449,10 +449,10 @@ export class ScriptsPage extends Component {
     compilation: {
       type: CompilationTools,
       props: {
-        setSaveAndCompile: f => {
+        setSaveAndCompile: (f) => {
           this.saveAndCompile = f;
         },
-        setAnnotations: annotations => {
+        setAnnotations: (annotations) => {
           this.setState({ annotations });
         },
       },
@@ -460,8 +460,8 @@ export class ScriptsPage extends Component {
   };
 
   columns = [
-    { title: 'Name', content: item => item.name },
-    { title: 'Description', noMobile: true, content: item => item.desc },
+    { title: 'Name', content: (item) => item.name },
+    { title: 'Description', noMobile: true, content: (item) => item.desc },
   ];
 
   formFlow = ['_loc', 'id', 'name', 'desc', 'type', 'compilation', 'code', 'metadata'];
@@ -476,7 +476,7 @@ export class ScriptsPage extends Component {
         parentProps={this.props}
         selfUrl="plugins"
         defaultTitle="All Plugins"
-        injectTable={t => (this.table = t)}
+        injectTable={(t) => (this.table = t)}
         defaultValue={BackOfficeServices.createNewScript}
         _defaultValue={() => ({
           id: faker.random.alphaNumeric(64),
@@ -493,14 +493,14 @@ export class ScriptsPage extends Component {
         updateItem={BackOfficeServices.updateScript}
         deleteItem={BackOfficeServices.deleteScript}
         createItem={BackOfficeServices.createScript}
-        navigateTo={item => {
+        navigateTo={(item) => {
           window.location = `/bo/dashboard/plugins/edit/${item.id}`;
         }}
-        itemUrl={i => `/bo/dashboard/plugins/edit/${item.id}`}
+        itemUrl={(i) => `/bo/dashboard/plugins/edit/${item.id}`}
         showActions={true}
         showLink={true}
         rowNavigation={true}
-        extractKey={item => item.id}
+        extractKey={(item) => item.id}
       />
     );
   }

@@ -11,7 +11,7 @@ export class GroupStatsPage extends Component {
 
   componentDidMount() {
     this.props.setTitle(`Group analytics`);
-    BackOfficeServices.findGroupById(this.props.params.titem).then(group => {
+    BackOfficeServices.findGroupById(this.props.params.titem).then((group) => {
       this.setState({ group });
       this.props.setTitle(`${group.name} analytics`);
     });

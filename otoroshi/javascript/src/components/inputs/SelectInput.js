@@ -7,7 +7,7 @@ export class SelectInput extends Component {
     error: null,
     loading: false,
     value: this.props.value || null,
-    values: (this.props.possibleValues || []).map(a => ({
+    values: (this.props.possibleValues || []).map((a) => ({
       label: a.label || a,
       value: a.value || a,
     })),
@@ -27,7 +27,7 @@ export class SelectInput extends Component {
     }
     if (nextProps.possibleValues !== this.props.possibleValues) {
       this.setState({
-        values: (nextProps.possibleValues || []).map(a => ({
+        values: (nextProps.possibleValues || []).map((a) => ({
           label: a.label || a,
           value: a.value || a,
         })),
@@ -52,9 +52,9 @@ export class SelectInput extends Component {
         Accept: 'application/json',
       },
     })
-      .then(r => r.json())
-      .then(values =>
-        values.map(v => {
+      .then((r) => r.json())
+      .then((values) =>
+        values.map((v) => {
           if (this.props.transformerMapping) {
             const value = v[this.props.transformerMapping.value];
             const label = v[this.props.transformerMapping.label];
@@ -66,10 +66,10 @@ export class SelectInput extends Component {
           }
         })
       )
-      .then(values => this.setState({ values, loading: false }));
+      .then((values) => this.setState({ values, loading: false }));
   };
 
-  onChange = e => {
+  onChange = (e) => {
     if (e) {
       this.setState({ value: e.value });
       this.props.onChange(e.value);
@@ -79,7 +79,7 @@ export class SelectInput extends Component {
     }
   };
 
-  onChangeClassic = e => {
+  onChangeClassic = (e) => {
     this.setState({ value: e.target.value });
     this.props.onChange(e.target.value);
   };
@@ -111,7 +111,7 @@ export class SelectInput extends Component {
                 className="form-control classic-select"
                 value={this.state.value}
                 onChange={this.onChangeClassic}>
-                {this.state.values.map(value => (
+                {this.state.values.map((value) => (
                   <option value={value.value}>{value.label}</option>
                 ))}
               </select>

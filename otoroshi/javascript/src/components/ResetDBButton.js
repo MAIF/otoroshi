@@ -7,10 +7,10 @@ export class ResetDBButton extends Component {
     loading: false,
   };
 
-  resetDB = e => {
+  resetDB = (e) => {
     if (e && e.preventDefault) e.preventDefault();
-    window.newConfirm('Are you sure you want to reset datastore ?').then(ok => {
-      window.newConfirm('Are you really sure ?').then(ok2 => {
+    window.newConfirm('Are you sure you want to reset datastore ?').then((ok) => {
+      window.newConfirm('Are you really sure ?').then((ok2) => {
         if (ok && ok2) {
           this.setState({ loading: true });
           BackOfficeServices.resetDB().then(() => {

@@ -118,7 +118,7 @@ export class ChaosConfig extends Component {
     );
   };
 
-  displayLabel = label => {
+  displayLabel = (label) => {
     if (this.props.inServiceDescriptor) {
       return `► ${label}`;
     }
@@ -139,14 +139,14 @@ export class ChaosConfig extends Component {
           min="0"
           max="1"
           value={this.state.config.largeRequestFaultConfig.ratio}
-          onChange={v => this.changeTheValue('largeRequestFaultConfig.ratio', v)}
+          onChange={(v) => this.changeTheValue('largeRequestFaultConfig.ratio', v)}
         />
         <NumberInput
           suffix="bytes"
           label="Additional size"
           help="..."
           value={this.state.config.largeRequestFaultConfig.additionalRequestSize}
-          onChange={v => this.changeTheValue('largeRequestFaultConfig.additionalRequestSize', v)}
+          onChange={(v) => this.changeTheValue('largeRequestFaultConfig.additionalRequestSize', v)}
         />
       </Collapse>,
       <Collapse
@@ -160,14 +160,16 @@ export class ChaosConfig extends Component {
           min="0"
           max="1"
           value={this.state.config.largeResponseFaultConfig.ratio}
-          onChange={v => this.changeTheValue('largeResponseFaultConfig.ratio', v)}
+          onChange={(v) => this.changeTheValue('largeResponseFaultConfig.ratio', v)}
         />
         <NumberInput
           suffix="bytes"
           label="Additional size"
           help="..."
           value={this.state.config.largeResponseFaultConfig.additionalResponseSize}
-          onChange={v => this.changeTheValue('largeResponseFaultConfig.additionalResponseSize', v)}
+          onChange={(v) =>
+            this.changeTheValue('largeResponseFaultConfig.additionalResponseSize', v)
+          }
         />
       </Collapse>,
       <Collapse
@@ -181,21 +183,21 @@ export class ChaosConfig extends Component {
           min="0"
           max="1"
           value={this.state.config.latencyInjectionFaultConfig.ratio}
-          onChange={v => this.changeTheValue('latencyInjectionFaultConfig.ratio', v)}
+          onChange={(v) => this.changeTheValue('latencyInjectionFaultConfig.ratio', v)}
         />
         <NumberInput
           suffix="ms."
           label="From"
           help="..."
           value={this.state.config.latencyInjectionFaultConfig.from}
-          onChange={v => this.changeTheValue('latencyInjectionFaultConfig.from', v)}
+          onChange={(v) => this.changeTheValue('latencyInjectionFaultConfig.from', v)}
         />
         <NumberInput
           suffix="ms."
           label="To"
           help="..."
           value={this.state.config.latencyInjectionFaultConfig.to}
-          onChange={v => this.changeTheValue('latencyInjectionFaultConfig.to', v)}
+          onChange={(v) => this.changeTheValue('latencyInjectionFaultConfig.to', v)}
         />
       </Collapse>,
       <Collapse
@@ -209,37 +211,41 @@ export class ChaosConfig extends Component {
           min="0"
           max="1"
           value={this.state.config.badResponsesFaultConfig.ratio}
-          onChange={v => this.changeTheValue('badResponsesFaultConfig.ratio', v)}
+          onChange={(v) => this.changeTheValue('badResponsesFaultConfig.ratio', v)}
         />
         <TextInput
           label="Status"
           help="..."
           value={getOrElse(
             this.state.config.badResponsesFaultConfig.responses[0],
-            i => i.status,
+            (i) => i.status,
             502
           )}
-          onChange={v => this.changeFirstResponse('status', v)}
+          onChange={(v) => this.changeFirstResponse('status', v)}
         />
         <TextInput
           label="Body"
           help="..."
           value={getOrElse(
             this.state.config.badResponsesFaultConfig.responses[0],
-            i => i.body,
+            (i) => i.body,
             '{"error":true}'
           )}
-          onChange={v => this.changeFirstResponse('body', v)}
+          onChange={(v) => this.changeFirstResponse('body', v)}
         />
         <ObjectInput
           label="Headers"
           placeholderKey="Header name (ie.Access-Control-Allow-Origin)"
           placeholderValue="Header value (ie. *)"
-          value={getOrElse(this.state.config.badResponsesFaultConfig.responses[0], i => i.headers, {
-            'Content-Type': 'application/json',
-          })}
+          value={getOrElse(
+            this.state.config.badResponsesFaultConfig.responses[0],
+            (i) => i.headers,
+            {
+              'Content-Type': 'application/json',
+            }
+          )}
           help="..."
-          onChange={v => this.changeFirstResponse('headers', v)}
+          onChange={(v) => this.changeFirstResponse('headers', v)}
         />
       </Collapse>,
     ];
@@ -308,7 +314,7 @@ export class ChaosConfigWithSkin extends Component {
     );
   };
 
-  displayLabel = label => {
+  displayLabel = (label) => {
     if (this.props.inServiceDescriptor) {
       return `► ${label}`;
     }
@@ -329,13 +335,15 @@ export class ChaosConfigWithSkin extends Component {
             min="0"
             max="1"
             value={this.state.config.largeRequestFaultConfig.ratio}
-            onChange={v => this.changeTheValue('largeRequestFaultConfig.ratio', v)}
+            onChange={(v) => this.changeTheValue('largeRequestFaultConfig.ratio', v)}
           />
           <VerticalNumberInput
             suffix="bytes"
             label="Additional size"
             value={this.state.config.largeRequestFaultConfig.additionalRequestSize}
-            onChange={v => this.changeTheValue('largeRequestFaultConfig.additionalRequestSize', v)}
+            onChange={(v) =>
+              this.changeTheValue('largeRequestFaultConfig.additionalRequestSize', v)
+            }
           />
         </Panel>
         <Panel
@@ -348,13 +356,13 @@ export class ChaosConfigWithSkin extends Component {
             min="0"
             max="1"
             value={this.state.config.largeResponseFaultConfig.ratio}
-            onChange={v => this.changeTheValue('largeResponseFaultConfig.ratio', v)}
+            onChange={(v) => this.changeTheValue('largeResponseFaultConfig.ratio', v)}
           />
           <VerticalNumberInput
             suffix="bytes"
             label="Additional size"
             value={this.state.config.largeResponseFaultConfig.additionalResponseSize}
-            onChange={v =>
+            onChange={(v) =>
               this.changeTheValue('largeResponseFaultConfig.additionalResponseSize', v)
             }
           />
@@ -369,19 +377,19 @@ export class ChaosConfigWithSkin extends Component {
             min="0"
             max="1"
             value={this.state.config.latencyInjectionFaultConfig.ratio}
-            onChange={v => this.changeTheValue('latencyInjectionFaultConfig.ratio', v)}
+            onChange={(v) => this.changeTheValue('latencyInjectionFaultConfig.ratio', v)}
           />
           <VerticalNumberInput
             suffix="ms."
             label="From"
             value={this.state.config.latencyInjectionFaultConfig.from}
-            onChange={v => this.changeTheValue('latencyInjectionFaultConfig.from', v)}
+            onChange={(v) => this.changeTheValue('latencyInjectionFaultConfig.from', v)}
           />
           <VerticalNumberInput
             suffix="ms."
             label="To"
             value={this.state.config.latencyInjectionFaultConfig.to}
-            onChange={v => this.changeTheValue('latencyInjectionFaultConfig.to', v)}
+            onChange={(v) => this.changeTheValue('latencyInjectionFaultConfig.to', v)}
           />
         </Panel>
         <Panel
@@ -394,25 +402,25 @@ export class ChaosConfigWithSkin extends Component {
             min="0"
             max="1"
             value={this.state.config.badResponsesFaultConfig.ratio}
-            onChange={v => this.changeTheValue('badResponsesFaultConfig.ratio', v)}
+            onChange={(v) => this.changeTheValue('badResponsesFaultConfig.ratio', v)}
           />
           <VerticalTextInput
             label="Status"
             value={getOrElse(
               this.state.config.badResponsesFaultConfig.responses[0],
-              i => i.status,
+              (i) => i.status,
               502
             )}
-            onChange={v => this.changeFirstResponse('status', v)}
+            onChange={(v) => this.changeFirstResponse('status', v)}
           />
           <VerticalTextInput
             label="Body"
             value={getOrElse(
               this.state.config.badResponsesFaultConfig.responses[0],
-              i => i.body,
+              (i) => i.body,
               '{"error":true}'
             )}
-            onChange={v => this.changeFirstResponse('body', v)}
+            onChange={(v) => this.changeFirstResponse('body', v)}
           />
           <VerticalObjectInput
             label="Headers"
@@ -420,12 +428,12 @@ export class ChaosConfigWithSkin extends Component {
             placeholderValue="Header value (ie. *)"
             value={getOrElse(
               this.state.config.badResponsesFaultConfig.responses[0],
-              i => i.headers,
+              (i) => i.headers,
               {
                 'Content-Type': 'application/json',
               }
             )}
-            onChange={v => this.changeFirstResponse('headers', v)}
+            onChange={(v) => this.changeFirstResponse('headers', v)}
           />
         </Panel>
       </div>

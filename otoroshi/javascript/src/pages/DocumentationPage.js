@@ -20,7 +20,7 @@ export class DocumentationPage extends Component {
 
   componentDidMount() {
     BackOfficeServices.fetchService(this.props.params.lineId, this.props.params.serviceId).then(
-      service => {
+      (service) => {
         this.props.setTitle(`Service documentation`);
         this.setState({ service }, () => {
           this.props.setSidebarContent(this.sidebarContent(service.name));

@@ -71,14 +71,14 @@ function debug(...args) {
 }
 
 function debugSuccess(name) {
-  return data => {
+  return (data) => {
     if (DEBUG) debug(`${name} - ${JSON.stringify(data, null, 2)}\n`);
     return data;
   };
 }
 
 function debugError(name) {
-  return data => {
+  return (data) => {
     if (DEBUG) debug(`ERR - ${name} - ${JSON.stringify(data, null, 2)}\n`);
     return data;
   };
@@ -94,7 +94,7 @@ function fetchOtoroshiGroups() {
       [OTOROSHI_CLIENT_SECRET_HEADER]: OTOROSHI_CLIENT_SECRET,
     },
   })
-    .then(r => r.json(), debugError('fetchOtoroshiGroups'))
+    .then((r) => r.json(), debugError('fetchOtoroshiGroups'))
     .then(debugSuccess('fetchOtoroshiGroups'), debugError('fetchOtoroshiGroups'));
 }
 
@@ -114,7 +114,7 @@ function createOtoroshiCleverCloudGroup() {
       description: 'Group for CleverCloud services',
     }),
   })
-    .then(r => r.json(), debugError('createOtoroshiCleverCloudGroup'))
+    .then((r) => r.json(), debugError('createOtoroshiCleverCloudGroup'))
     .then(
       debugSuccess('createOtoroshiCleverCloudGroup'),
       debugError('createOtoroshiCleverCloudGroup')
@@ -131,9 +131,9 @@ function fetchOtoroshiCleverCloudServices() {
       [OTOROSHI_CLIENT_SECRET_HEADER]: OTOROSHI_CLIENT_SECRET,
     },
   })
-    .then(r => r.json(), debugError('fetchOtoroshiCleverCloudServices'))
-    .then(services => {
-      return services.filter(s => s.metadata.provider && s.metadata.provider === 'clevercloud');
+    .then((r) => r.json(), debugError('fetchOtoroshiCleverCloudServices'))
+    .then((services) => {
+      return services.filter((s) => s.metadata.provider && s.metadata.provider === 'clevercloud');
     }, debugError('fetchOtoroshiCleverCloudServices'))
     .then(
       debugSuccess('fetchOtoroshiCleverCloudServices'),
@@ -151,7 +151,7 @@ function fetchOtoroshiApiKeys() {
       [OTOROSHI_CLIENT_SECRET_HEADER]: OTOROSHI_CLIENT_SECRET,
     },
   })
-    .then(r => r.json(), debugError('fetchOtoroshiApiKeys'))
+    .then((r) => r.json(), debugError('fetchOtoroshiApiKeys'))
     .then(debugSuccess('fetchOtoroshiApiKeys'), debugError('fetchOtoroshiApiKeys'));
 }
 
@@ -172,7 +172,7 @@ function createOtoroshiCleverCloudApiKey() {
       authorizedEntities: ['group_' + CLEVERCLOUD_GROUP],
     }),
   })
-    .then(r => r.json(), debugError('createOtoroshiCleverCloudApiKey'))
+    .then((r) => r.json(), debugError('createOtoroshiCleverCloudApiKey'))
     .then(
       debugSuccess('createOtoroshiCleverCloudApiKey'),
       debugError('createOtoroshiCleverCloudApiKey')
@@ -230,7 +230,7 @@ function createOtoroshiCleverCloudService(id, name, targets) {
     },
     body: JSON.stringify(serviceTemplate),
   })
-    .then(r => r.json(), debugError('createOtoroshiCleverCloudService'))
+    .then((r) => r.json(), debugError('createOtoroshiCleverCloudService'))
     .then(
       debugSuccess('createOtoroshiCleverCloudService'),
       debugError('createOtoroshiCleverCloudService')
@@ -252,7 +252,7 @@ function updateOtoroshiCleverCloudService(id, name, targets) {
       { op: 'replace', path: '/name', value: name },
     ]),
   })
-    .then(r => r.json(), debugError('updateOtoroshiCleverCloudService'))
+    .then((r) => r.json(), debugError('updateOtoroshiCleverCloudService'))
     .then(
       debugSuccess('updateOtoroshiCleverCloudService'),
       debugError('updateOtoroshiCleverCloudService')
@@ -269,7 +269,10 @@ function deleteOtoroshiCleverCloudService(id) {
       [OTOROSHI_CLIENT_SECRET_HEADER]: OTOROSHI_CLIENT_SECRET,
     },
   })
-    .then(r => (r.status === 404 ? null : r.json()), debugError('deleteOtoroshiCleverCloudService'))
+    .then(
+      (r) => (r.status === 404 ? null : r.json()),
+      debugError('deleteOtoroshiCleverCloudService')
+    )
     .then(
       debugSuccess('deleteOtoroshiCleverCloudService'),
       debugError('deleteOtoroshiCleverCloudService')
@@ -286,7 +289,7 @@ function deleteCleverCloudService(id) {
       [OTOROSHI_CLIENT_SECRET_HEADER]: OTOROSHI_CLIENT_SECRET,
     },
   })
-    .then(r => (r.status === 404 ? null : r.json()), debugError('deleteCleverCloudService'))
+    .then((r) => (r.status === 404 ? null : r.json()), debugError('deleteCleverCloudService'))
     .then(debugSuccess('deleteCleverCloudService'), debugError('deleteCleverCloudService'));
 }
 
@@ -300,7 +303,10 @@ function fetchOtoroshiCleverCloudService(id) {
       [OTOROSHI_CLIENT_SECRET_HEADER]: OTOROSHI_CLIENT_SECRET,
     },
   })
-    .then(r => (r.status === 404 ? null : r.json()), debugError('fetchOtoroshiCleverCloudService'))
+    .then(
+      (r) => (r.status === 404 ? null : r.json()),
+      debugError('fetchOtoroshiCleverCloudService')
+    )
     .then(
       debugSuccess('fetchOtoroshiCleverCloudService'),
       debugError('fetchOtoroshiCleverCloudService')
@@ -319,11 +325,11 @@ function LazyPromiseAll(arr, par, f) {
       const task = tasks.pop();
       if (task) {
         f(task).then(
-          res => {
+          (res) => {
             results.push(res);
             setTimeout(performTask);
           },
-          e => error(e)
+          (e) => error(e)
         );
       } else if (!task && results.length === arr.length) {
         success(results);
@@ -343,28 +349,28 @@ function fetchCleverCloudServices() {
     .withParams([CLEVERCLOUD_ORGA_ID])
     .send()
     .toPromise()
-    .then(apps => {
-      return LazyPromiseAll(apps, 4, app => {
+    .then((apps) => {
+      return LazyPromiseAll(apps, 4, (app) => {
         return client.organisations._.applications._.env
           .get()
           .withParams([CLEVERCLOUD_ORGA_ID, app.id])
           .send()
           .toPromise()
           .then(
-            envValues => {
+            (envValues) => {
               const env = {};
-              envValues.forEach(e => (env[e.name] = e.value));
+              envValues.forEach((e) => (env[e.name] = e.value));
               return Object.assign({}, app, { env });
             },
-            err => {
+            (err) => {
               console.log(`Error while fetching envs for ${app.id}`);
               return [];
             }
           );
       });
     })
-    .then(apps => {
-      return apps.filter(s => {
+    .then((apps) => {
+      return apps.filter((s) => {
         return (
           s &&
           s.state === 'SHOULD_BE_UP' &&
@@ -373,7 +379,7 @@ function fetchCleverCloudServices() {
         );
       });
     })
-    .then(apps => {
+    .then((apps) => {
       //console.log('CleverApps', JSON.stringify(apps, null, 2));
       return apps;
     });
@@ -386,8 +392,8 @@ function fetchCleverCloudServices() {
 function setupOtoroshi() {
   log('Checking Otoroshi setup ...');
   return fetchOtoroshiGroups()
-    .then(groups => {
-      const clevercloudGroup = groups.filter(g => g.name === CLEVERCLOUD_GROUP)[0];
+    .then((groups) => {
+      const clevercloudGroup = groups.filter((g) => g.name === CLEVERCLOUD_GROUP)[0];
       if (clevercloudGroup) {
         log('  CleverCloud group already exists ...');
         return clevercloudGroup;
@@ -396,9 +402,9 @@ function setupOtoroshi() {
         return createOtoroshiCleverCloudGroup();
       }
     })
-    .then(group => {
-      return fetchOtoroshiApiKeys(CLEVERCLOUD_GROUP).then(apikeys => {
-        const clevercloudApiKey = apikeys.filter(g => g.clientName === CLEVERCLOUD_API_KEY)[0];
+    .then((group) => {
+      return fetchOtoroshiApiKeys(CLEVERCLOUD_GROUP).then((apikeys) => {
+        const clevercloudApiKey = apikeys.filter((g) => g.clientName === CLEVERCLOUD_API_KEY)[0];
         if (clevercloudApiKey) {
           log('  CleverCloud api key already exists ...');
           return clevercloudApiKey;
@@ -415,23 +421,29 @@ function syncOtoroshiWithCleverCloud() {
   syncing = true;
   const start = Date.now();
   fetchCleverCloudServices()
-    .then(rs => {
-      return fetchOtoroshiCleverCloudServices().then(os => [rs, os]);
+    .then((rs) => {
+      return fetchOtoroshiCleverCloudServices().then((os) => [rs, os]);
     })
-    .then(arr => {
+    .then((arr) => {
       const [clevercloudServices, otoroshiServices] = arr;
       currentServices = clevercloudServices.length;
-      const tasks = clevercloudServices.map(clevercloudService => {
+      const tasks = clevercloudServices.map((clevercloudService) => {
         const otoroshiService = otoroshiServices.filter(
-          s => s.metadata.clevercloudId && s.metadata.clevercloudId === clevercloudService.id
+          (s) => s.metadata.clevercloudId && s.metadata.clevercloudId === clevercloudService.id
         )[0];
-        const targets = clevercloudService.vhosts.map(ep => ({
+        const targets = clevercloudService.vhosts.map((ep) => ({
           scheme: 'https',
           host: `${ep.fqdn}`,
         }));
-        const targetHosts = _.sortBy(targets.map(i => i.host), i => i);
+        const targetHosts = _.sortBy(
+          targets.map((i) => i.host),
+          (i) => i
+        );
         const otoHosts = otoroshiService
-          ? _.sortBy(otoroshiService.targets.map(i => i.host), i => i)
+          ? _.sortBy(
+              otoroshiService.targets.map((i) => i.host),
+              (i) => i
+            )
           : [];
         if (!otoroshiService) {
           log(
@@ -452,19 +464,19 @@ function syncOtoroshiWithCleverCloud() {
             targets
           );
         } else {
-          return new Promise(s => s());
+          return new Promise((s) => s());
         }
       });
       return Promise.all(tasks).then(() => [clevercloudServices, otoroshiServices]);
     })
-    .then(arr => {
-      return fetchOtoroshiCleverCloudServices().then(os => [arr[0], os]);
+    .then((arr) => {
+      return fetchOtoroshiCleverCloudServices().then((os) => [arr[0], os]);
     })
-    .then(arr => {
+    .then((arr) => {
       const [clevercloudServices, otoroshiServices] = arr;
-      const tasks = otoroshiServices.map(otoroshiService => {
+      const tasks = otoroshiServices.map((otoroshiService) => {
         const clevercloudService = clevercloudServices.filter(
-          s => s.id && s.id === otoroshiService.metadata.clevercloudId
+          (s) => s.id && s.id === otoroshiService.metadata.clevercloudId
         )[0];
         if (!clevercloudService) {
           log(`Deleting Otoroshi service ${otoroshiService.name} with id: ${otoroshiService.id}`);
@@ -473,7 +485,7 @@ function syncOtoroshiWithCleverCloud() {
           return null;
         }
       });
-      lastDeletedServices = tasks.filter(i => !!i).length;
+      lastDeletedServices = tasks.filter((i) => !!i).length;
       return Promise.all(tasks);
     })
     .then(() => {
@@ -525,12 +537,9 @@ app.get('/status', (req, res) => {
 });
 
 app.get('/health', (req, res) => {
-  res
-    .status(200)
-    .type('application/json')
-    .send({
-      status: 'RUNNING',
-    });
+  res.status(200).type('application/json').send({
+    status: 'RUNNING',
+  });
 });
 
 app.listen(PORT, () => {

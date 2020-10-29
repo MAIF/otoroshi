@@ -3,7 +3,7 @@ export function createTooltip(message, position, noBootstrap) {
     'data-toggle': 'tooltip',
     'data-placement': position || 'top',
     title: message,
-    ref: r => {
+    ref: (r) => {
       // if (!noBootstrap) {
       //   setTimeout(() => $(r).tooltip({ container: 'body' }));
       // }

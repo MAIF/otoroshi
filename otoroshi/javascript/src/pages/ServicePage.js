@@ -84,7 +84,7 @@ class Target extends Component {
   //   }
   // };
 
-  changeTheUrl = t => {
+  changeTheUrl = (t) => {
     this.setState({ url: t });
     if (t.indexOf('://') > -1) {
       const scheme = (t.split('://')[0] || '').replace('://', '');
@@ -98,7 +98,7 @@ class Target extends Component {
     }
   };
 
-  renderFirstLine = value => {
+  renderFirstLine = (value) => {
     return (
       <TextInput
         label={`Target ${this.props.idx + 1}`}
@@ -110,13 +110,13 @@ class Target extends Component {
           //this.state.dirtyTarget ? this.state.dirtyTarget : value.scheme + '://' + value.host
         }
         help="The URL of the target"
-        onChange={e => this.changeTheUrl(e)}
+        onChange={(e) => this.changeTheUrl(e)}
         after={() => (
           <button
             type="button"
             className="btn btn-primary btn-xs"
             style={{ marginLeft: 5, height: 32, marginTop: 1 }}
-            onClick={e => this.setState({ showMore: !this.state.showMore })}>
+            onClick={(e) => this.setState({ showMore: !this.state.showMore })}>
             <i className="glyphicon glyphicon-eye-open" /> Show more
           </button>
         )}
@@ -137,7 +137,7 @@ class Target extends Component {
           placeholder="changeme.oto.tools"
           value={value.host}
           help="The host of the target"
-          onChange={e => {
+          onChange={(e) => {
             this.setState({ url: value.scheme + '://' + e });
             this.changeTheValue('host', e);
           }}
@@ -147,7 +147,7 @@ class Target extends Component {
           placeholder={this.props.tunnelingEnabled ? 'tcp or udp' : 'http or https'}
           value={value.scheme}
           help="The Scheme of the target"
-          onChange={e => {
+          onChange={(e) => {
             this.setState({ url: e + '://' + value.host });
             this.changeTheValue('scheme', e);
           }}
@@ -157,7 +157,7 @@ class Target extends Component {
           placeholder="1"
           value={value.weight}
           help="The weight of the target in the sequence of targets. Only used with experimental client"
-          onChange={e => this.changeTheValue('weight', e)}
+          onChange={(e) => this.changeTheValue('weight', e)}
         />
         {!this.props.tunnelingEnabled && (
           <SelectInput
@@ -179,7 +179,7 @@ class Target extends Component {
               },
             ]}
             help="The protocol of the target. Only used with experimental client"
-            onChange={e => this.changeTheValue('protocol', e)}
+            onChange={(e) => this.changeTheValue('protocol', e)}
           />
         )}
         <TextInput
@@ -187,25 +187,25 @@ class Target extends Component {
           placeholder="127.0.0.1"
           value={value.ipAddress}
           help="The ip address of the target. Could be useful to perform manual DNS resolution. Only used with experimental client"
-          onChange={e => this.changeTheValue('ipAddress', e)}
+          onChange={(e) => this.changeTheValue('ipAddress', e)}
         />
         <BooleanInput
           label="use mTLS"
           value={value.mtlsConfig.mtls}
           help="If enabled, Otoroshi will try to provide client certificate trusted by the target server."
-          onChange={e => this.changeTheValue('mtlsConfig.mtls', e)}
+          onChange={(e) => this.changeTheValue('mtlsConfig.mtls', e)}
         />
         <BooleanInput
           label="TLS loose"
           value={value.mtlsConfig.loose}
           help="If enabled, Otoroshi will accept any certificate and disable hostname verification"
-          onChange={e => this.changeTheValue('mtlsConfig.loose', e)}
+          onChange={(e) => this.changeTheValue('mtlsConfig.loose', e)}
         />
         <BooleanInput
           label="Trust all"
           value={value.mtlsConfig.trustAll}
           help="If enabled, Otoroshi will accept trust all certificates"
-          onChange={e => this.changeTheValue('mtlsConfig.trustAll', e)}
+          onChange={(e) => this.changeTheValue('mtlsConfig.trustAll', e)}
         />
         {/* `[${a.certType}] ${a.name} - ${a.description}` */}
         {value.mtlsConfig.mtls && (
@@ -214,7 +214,7 @@ class Target extends Component {
             placeholder="Choose a client certificate"
             value={value.mtlsConfig.certs}
             valuesFrom="/bo/api/proxy/api/certificates"
-            transformer={a => ({
+            transformer={(a) => ({
               value: a.id,
               label: (
                 <span>
@@ -226,7 +226,7 @@ class Target extends Component {
               ),
             })}
             help="The certificate used when performing a mTLS call"
-            onChange={e => this.changeTheValue('mtlsConfig.certs', e)}
+            onChange={(e) => this.changeTheValue('mtlsConfig.certs', e)}
           />
         )}
         {value.mtlsConfig.mtls && (
@@ -235,7 +235,7 @@ class Target extends Component {
             placeholder="Choose a trusted certificate"
             value={value.mtlsConfig.trustedCerts}
             valuesFrom="/bo/api/proxy/api/certificates"
-            transformer={a => ({
+            transformer={(a) => ({
               value: a.id,
               label: (
                 <span>
@@ -247,7 +247,7 @@ class Target extends Component {
               ),
             })}
             help="The trusted certificate used when performing a mTLS call"
-            onChange={e => this.changeTheValue('mtlsConfig.trustedCerts', e)}
+            onChange={(e) => this.changeTheValue('mtlsConfig.trustedCerts', e)}
           />
         )}
         <Separator title="Target filter" />,
@@ -266,7 +266,7 @@ class Target extends Component {
             { value: 'NetworkLocationMatch', label: 'NetworkLocationMatch' },
           ]}
           help="The predicate of the target. Only used with experimental client"
-          onChange={e => this.changeTheValue('predicate', { type: e })}
+          onChange={(e) => this.changeTheValue('predicate', { type: e })}
         />
         {value.predicate.type === 'GeolocationMatch' && (
           <ArrayInput
@@ -274,7 +274,7 @@ class Target extends Component {
             placeholder="1.3963;-0.6981;1000"
             value={value.predicate.positions}
             help="The possible location with their radius in Km"
-            onChange={e => this.changeTheValue('predicate.positions', e)}
+            onChange={(e) => this.changeTheValue('predicate.positions', e)}
           />
         )}
         {value.predicate.type === 'NetworkLocationMatch' && [
@@ -283,35 +283,35 @@ class Target extends Component {
             placeholder="local"
             value={value.predicate.provider}
             help="The infra. provider of this target (based on the provide value in the otoroshi configuration app.instance)"
-            onChange={e => this.changeTheValue('predicate.provider', e)}
+            onChange={(e) => this.changeTheValue('predicate.provider', e)}
           />,
           <TextInput
             label="Region"
             placeholder="local"
             value={value.predicate.region}
             help="The region of this target (based on the region value in the otoroshi configuration) app.instance"
-            onChange={e => this.changeTheValue('predicate.region', e)}
+            onChange={(e) => this.changeTheValue('predicate.region', e)}
           />,
           <TextInput
             label="Zone"
             placeholder="local"
             value={value.predicate.zone}
             help="The zone of this target (based on the zone value in the otoroshi configuration) app.instance"
-            onChange={e => this.changeTheValue('predicate.zone', e)}
+            onChange={(e) => this.changeTheValue('predicate.zone', e)}
           />,
           <TextInput
             label="Data center"
             placeholder="local"
             value={value.predicate.dc}
             help="The data center of this target (based on the dc value in the otoroshi configuration) app.instance"
-            onChange={e => this.changeTheValue('dc.dc', e)}
+            onChange={(e) => this.changeTheValue('dc.dc', e)}
           />,
           <TextInput
             label="Rack"
             placeholder="local"
             value={value.predicate.rack}
             help="The rack of this target (based on the rack value in the otoroshi configuration) app.instance"
-            onChange={e => this.changeTheValue('dc.rack', e)}
+            onChange={(e) => this.changeTheValue('dc.rack', e)}
           />,
         ]}
         {value.predicate.type === 'InfraMatch' && (
@@ -320,7 +320,7 @@ class Target extends Component {
             placeholder="local"
             value={value.predicate.provider}
             help="The infra. provider of this target (based on the provide value in the otoroshi configuration app.instance)"
-            onChange={e => this.changeTheValue('predicate.provider', e)}
+            onChange={(e) => this.changeTheValue('predicate.provider', e)}
           />
         )}
         {value.predicate.type === 'DataCenterMatch' && (
@@ -329,7 +329,7 @@ class Target extends Component {
             placeholder="local"
             value={value.predicate.dc}
             help="The data center of this target (based on the dc value in the otoroshi configuration) app.instance"
-            onChange={e => this.changeTheValue('dc.dc', e)}
+            onChange={(e) => this.changeTheValue('dc.dc', e)}
           />
         )}
         {value.predicate.type === 'RackMatch' && (
@@ -338,7 +338,7 @@ class Target extends Component {
             placeholder="local"
             value={value.predicate.rack}
             help="The rack of this target (based on the rack value in the otoroshi configuration) app.instance"
-            onChange={e => this.changeTheValue('dc.rack', e)}
+            onChange={(e) => this.changeTheValue('dc.rack', e)}
           />
         )}
         {value.predicate.type === 'RegionMatch' && (
@@ -347,7 +347,7 @@ class Target extends Component {
             placeholder="local"
             value={value.predicate.region}
             help="The region of this target (based on the region value in the otoroshi configuration)"
-            onChange={e => this.changeTheValue('predicate.region', e)}
+            onChange={(e) => this.changeTheValue('predicate.region', e)}
           />
         )}
         {value.predicate.type === 'ZoneMatch' && (
@@ -356,7 +356,7 @@ class Target extends Component {
             placeholder="local"
             value={value.predicate.zone}
             help="The zone of this target (based on the zone value in the otoroshi configuration)"
-            onChange={e => this.changeTheValue('predicate.zone', e)}
+            onChange={(e) => this.changeTheValue('predicate.zone', e)}
           />
         )}
         <Separator />
@@ -381,7 +381,7 @@ class CustomTimeoutComponent extends Component {
           placeholder="/"
           value={value.path}
           help="The path on which the timeout will be active"
-          onChange={e => this.changeTheValue('path', e)}
+          onChange={(e) => this.changeTheValue('path', e)}
         />
         <NumberInput
           suffix="ms."
@@ -389,7 +389,7 @@ class CustomTimeoutComponent extends Component {
           placeholder="10000"
           value={value.connectionTimeout}
           help="Specify how long each connection should last at most in milliseconds."
-          onChange={e => this.changeTheValue('connectionTimeout', e)}
+          onChange={(e) => this.changeTheValue('connectionTimeout', e)}
         />
         <NumberInput
           suffix="ms."
@@ -397,7 +397,7 @@ class CustomTimeoutComponent extends Component {
           placeholder="10000"
           value={value.idleTimeout}
           help="Specify how long each connection can stay in idle state at most in milliseconds."
-          onChange={e => this.changeTheValue('idleTimeout', e)}
+          onChange={(e) => this.changeTheValue('idleTimeout', e)}
         />
         <NumberInput
           suffix="ms."
@@ -405,7 +405,7 @@ class CustomTimeoutComponent extends Component {
           placeholder="10000"
           value={value.callAndStreamTimeout}
           help="Specify how long each call should last at most in milliseconds for handling the request and streaming the response."
-          onChange={e => this.changeTheValue('callAndStreamTimeout', e)}
+          onChange={(e) => this.changeTheValue('callAndStreamTimeout', e)}
         />
         <NumberInput
           suffix="ms."
@@ -413,7 +413,7 @@ class CustomTimeoutComponent extends Component {
           placeholder="10000"
           value={value.callTimeout}
           help="Specify how long each call should last at most in milliseconds."
-          onChange={e => this.changeTheValue('callTimeout', e)}
+          onChange={(e) => this.changeTheValue('callTimeout', e)}
         />
         <NumberInput
           suffix="ms."
@@ -421,7 +421,7 @@ class CustomTimeoutComponent extends Component {
           placeholder="10000"
           value={value.globalTimeout}
           help="Specify how long the global call (with retries) should last at most in milliseconds."
-          onChange={e => this.changeTheValue('globalTimeout', e)}
+          onChange={(e) => this.changeTheValue('globalTimeout', e)}
         />
         <Separator />
       </div>
@@ -435,14 +435,14 @@ class CanaryCampaign extends Component {
   };
 
   componentDidMount() {
-    BackOfficeServices.fetchCanaryCampaign(this.props.serviceId).then(campaign =>
+    BackOfficeServices.fetchCanaryCampaign(this.props.serviceId).then((campaign) =>
       this.setState({ campaign })
     );
   }
 
-  reset = e => {
+  reset = (e) => {
     BackOfficeServices.resetCanaryCampaign(this.props.serviceId).then(() => {
-      BackOfficeServices.fetchCanaryCampaign(this.props.serviceId).then(campaign =>
+      BackOfficeServices.fetchCanaryCampaign(this.props.serviceId).then((campaign) =>
         this.setState({ campaign })
       );
     });
@@ -479,12 +479,12 @@ class CleverSelector extends Component {
   };
 
   componentDidMount() {
-    BackOfficeServices.findAllApps().then(services => {
+    BackOfficeServices.findAllApps().then((services) => {
       this.setState({ services });
     });
   }
 
-  onChange = e => {
+  onChange = (e) => {
     let url = e.value;
     url = url.substring(0, url.length - 1);
     this.setState({ select: false });
@@ -512,7 +512,7 @@ class CleverSelector extends Component {
             style={{ width: 300, border: '1px solid #ccc' }}
             placeholder="Select a target from CleverCloud"
             value={this.state.value}
-            options={this.state.services.map(s => ({ label: s.name, value: s.url }))}
+            options={this.state.services.map((s) => ({ label: s.name, value: s.url }))}
             onChange={this.onChange}
           />
         </div>
@@ -538,7 +538,7 @@ export class ServicePage extends Component {
     freeDomain: true,
   };
 
-  toggleCollapsed = e => {
+  toggleCollapsed = (e) => {
     if (e && e.preventDefault) e.preventDefault();
     this.setState({ allCollapsed: !this.state.allCollapsed }, () => {
       console.log(this.state.allCollapsed);
@@ -568,7 +568,7 @@ export class ServicePage extends Component {
       });
     } else {
       BackOfficeServices.fetchService(this.props.params.lineId, this.props.params.serviceId).then(
-        service => {
+        (service) => {
           this.props.setTitle(`Service descriptor`);
           this.setState({ service, originalService: service }, () => {
             this.props.setSidebarContent(this.sidebarContent(service.name));
@@ -581,7 +581,7 @@ export class ServicePage extends Component {
   componentDidMount() {
     this.load();
     this.mountShortcuts();
-    BackOfficeServices.env().then(env => this.setState({ env }));
+    BackOfficeServices.env().then((env) => this.setState({ env }));
   }
 
   componentWillReceiveProps(nextProps) {
@@ -602,7 +602,7 @@ export class ServicePage extends Component {
     document.body.removeEventListener('keydown', this.saveShortcut);
   };
 
-  saveShortcut = e => {
+  saveShortcut = (e) => {
     if (e.keyCode === 83 && (e.ctrlKey || e.metaKey)) {
       e.preventDefault();
       if (this.state.changed) {
@@ -620,10 +620,10 @@ export class ServicePage extends Component {
     });
   };
 
-  saveChanges = e => {
+  saveChanges = (e) => {
     if (e && e.preventDefault) e.preventDefault();
     if (this.state.neverSaved) {
-      BackOfficeServices.saveService(this.state.service).then(newService => {
+      BackOfficeServices.saveService(this.state.service).then((newService) => {
         this.setState({
           neverSaved: false,
           changed: false,
@@ -634,14 +634,14 @@ export class ServicePage extends Component {
       });
     } else {
       BackOfficeServices.updateService(this.state.service.id, this.state.service).then(
-        newService => {
+        (newService) => {
           this.setState({ changed: false, service: newService, originalService: newService });
         }
       );
     }
   };
 
-  exportService = e => {
+  exportService = (e) => {
     if (e && e.preventDefault) e.preventDefault();
     const json = JSON.stringify(this.state.service, null, 2);
     const blob = new Blob([json], { type: 'application/json' });
@@ -655,8 +655,8 @@ export class ServicePage extends Component {
     setTimeout(() => document.body.removeChild(a), 300);
   };
 
-  changeTargetsValue = value => {
-    const targets = value.map(t => {
+  changeTargetsValue = (value) => {
+    const targets = value.map((t) => {
       if (t.indexOf('://') > -1) {
         const scheme = (t.split('://')[0] || '').replace('://', '');
         const host = (t.split('://')[1] || '').replace('://', '');
@@ -672,8 +672,8 @@ export class ServicePage extends Component {
     });
   };
 
-  changeCanaryTargetsValue = value => {
-    const targets = value.map(t => {
+  changeCanaryTargetsValue = (value) => {
+    const targets = value.map((t) => {
       if (t.indexOf('://') > -1) {
         const scheme = (t.split('://')[0] || '').replace('://', '');
         const host = (t.split('://')[1] || '').replace('://', '');
@@ -689,7 +689,7 @@ export class ServicePage extends Component {
     });
   };
 
-  transformTarget = target => {
+  transformTarget = (target) => {
     if (!target.scheme && !target.host) {
       return '';
     } else if (target.scheme && !target.host && target.host !== '') {
@@ -699,22 +699,22 @@ export class ServicePage extends Component {
     }
   };
 
-  deleteService = e => {
+  deleteService = (e) => {
     if (e && e.preventDefault) e.preventDefault();
     if (this.state.env.adminApiId === this.state.service.id) {
       window
         .newConfirm(
           `The service you're trying to delete is the Otoroshi Admin API that drives the UI you're currently using. Without it, Otoroshi UI won't be able to work and anything that uses Otoroshi admin API too. Do you really want to do that ?`
         )
-        .then(ok1 => {
+        .then((ok1) => {
           if (ok1) {
-            window.newConfirm(`Are you sure you really want to do that ?`).then(ok2 => {
+            window.newConfirm(`Are you sure you really want to do that ?`).then((ok2) => {
               if (ok1 && ok2) {
                 window
                   .newPrompt(
                     `Type the name of the service (${this.state.service.name}) to delete it`
                   )
-                  .then(name => {
+                  .then((name) => {
                     if (name && name === this.state.service.name) {
                       BackOfficeServices.deleteService(this.state.service).then(() => {
                         window.location.href = `/bo/dashboard/services`;
@@ -731,7 +731,7 @@ export class ServicePage extends Component {
     } else {
       window
         .newPrompt(`Type the name of the service (${this.state.service.name}) to delete it`)
-        .then(name => {
+        .then((name) => {
           if (name && name === this.state.service.name) {
             BackOfficeServices.deleteService(this.state.service).then(() => {
               window.location.href = `/bo/dashboard/services`;
@@ -744,13 +744,13 @@ export class ServicePage extends Component {
     }
   };
 
-  duplicateService = e => {
+  duplicateService = (e) => {
     if (e && e.preventDefault) e.preventDefault();
     window
       .newConfirm(`Are you sure you want to duplicate ${this.state.service.name} ?`)
-      .then(dup => {
+      .then((dup) => {
         if (dup) {
-          BackOfficeServices.createNewService().then(service => {
+          BackOfficeServices.createNewService().then((service) => {
             const newService = { ...this.state.service };
             newService.id = service.id;
             newService.enabled = false;
@@ -770,23 +770,25 @@ export class ServicePage extends Component {
       });
   };
 
-  createNewGroup = e => {
+  createNewGroup = (e) => {
     if (e && e.preventDefault) e.preventDefault();
-    window.newPrompt('New group name').then(groupName => {
+    window.newPrompt('New group name').then((groupName) => {
       if (groupName) {
         BackOfficeServices.createGroup({
           id: faker.random.alphaNumeric(64),
           name: groupName,
           description: 'Group named ' + groupName,
           _loc: { ...this.state.service._loc },
-        }).then(group => {
-          this.setState({ service: { ...this.state.service, groups: [...this.state.service.groups, group.id] } });
+        }).then((group) => {
+          this.setState({
+            service: { ...this.state.service, groups: [...this.state.service.groups, group.id] },
+          });
         });
       }
     });
   };
 
-  createDedicatedGroup = e => {
+  createDedicatedGroup = (e) => {
     if (e && e.preventDefault) e.preventDefault();
     const groupName = this.state.service.name + '-group';
     BackOfficeServices.createGroup({
@@ -794,12 +796,14 @@ export class ServicePage extends Component {
       name: groupName,
       description: 'Group named ' + groupName,
       _loc: { ...this.state.service._loc },
-    }).then(group => {
-      this.setState({ service: { ...this.state.service, groups: [...this.state.service.groups, group.id] } });
+    }).then((group) => {
+      this.setState({
+        service: { ...this.state.service, groups: [...this.state.service.groups, group.id] },
+      });
     });
   };
 
-  resetCircuitBreaker = e => {
+  resetCircuitBreaker = (e) => {
     if (e && e.preventDefault) e.preventDefault();
     fetch(`/bo/api/services/${this.state.service.id}/circuitbreakers`, {
       method: 'DELETE',
@@ -808,8 +812,8 @@ export class ServicePage extends Component {
         Accept: 'application/json',
       },
     })
-      .then(r => r.json())
-      .then(d => console.log(d));
+      .then((r) => r.json())
+      .then((d) => console.log(d));
   };
 
   canaryToStandard = () => {
@@ -839,9 +843,9 @@ export class ServicePage extends Component {
         (ok, cancel) => <NewCertificateForm ok={ok} cancel={cancel} host={host} />,
         { style: { width: '100%' } }
       )
-      .then(form => {
+      .then((form) => {
         if (form) {
-          BackOfficeServices.createCertificateFromForm(form).then(cert => {
+          BackOfficeServices.createCertificateFromForm(form).then((cert) => {
             this.props.setTitle(`Create a new Certificate`);
             window.history.replaceState({}, '', `/bo/dashboard/certificates/add`);
             if (form.letsEncrypt) {
@@ -870,9 +874,9 @@ export class ServicePage extends Component {
         ),
         { style: { width: '100%' } }
       )
-      .then(form => {
+      .then((form) => {
         if (form) {
-          BackOfficeServices.createCertificateFromForm(form).then(cert => {
+          BackOfficeServices.createCertificateFromForm(form).then((cert) => {
             if (!cert.chain) {
               window.newAlert(
                 `Error while creating let's encrypt certificate: ${cert.error}`,
@@ -900,7 +904,7 @@ export class ServicePage extends Component {
     //   }} />, `Ordering certificate for ${domainName}`);
   };
 
-  computeIfButtonDisabled = header => {
+  computeIfButtonDisabled = (header) => {
     return !!this.state.service.additionalHeadersOut[header];
   };
 
@@ -1069,10 +1073,10 @@ export class ServicePage extends Component {
           </div>
           <Collapse collapsed={this.state.allCollapsed} initCollapsed={false} label="Location">
             <Location
-              tenant={this.state.service._loc.tenant || "default"}
-              onChangeTenant={v => this.changeTheValue("_loc.tenant", v)}
-              teams={this.state.service._loc.teams || ["default"]}
-              onChangeTeams={v => this.changeTheValue("_loc.teams", v)}
+              tenant={this.state.service._loc.tenant || 'default'}
+              onChangeTenant={(v) => this.changeTheValue('_loc.tenant', v)}
+              teams={this.state.service._loc.teams || ['default']}
+              onChangeTeams={(v) => this.changeTheValue('_loc.teams', v)}
             />
           </Collapse>
           <TextInput
@@ -1080,16 +1084,16 @@ export class ServicePage extends Component {
             disabled={!this.state.neverSaved}
             placeholder="You service Id"
             value={this.state.service.id}
-            onChange={v => this.changeTheValue('id', v)}
+            onChange={(v) => this.changeTheValue('id', v)}
             help="A unique random string to identify your service"
           />
           <ArrayInput
             label="Groups"
             placeholder="Your service groups"
             value={this.state.service.groups}
-            onChange={v => this.changeTheValue('groups', v)}
+            onChange={(v) => this.changeTheValue('groups', v)}
             valuesFrom="/bo/api/proxy/api/groups"
-            transformer={a => ({ value: a.id, label: a.name })}
+            transformer={(a) => ({ value: a.id, label: a.name })}
             help="Each service descriptor is attached to a group. A group can have one or more services. Each API key is linked to a group and allow access to every service in the group."
           />
           <div className="form-group">
@@ -1119,7 +1123,7 @@ export class ServicePage extends Component {
             placeholder="Your service name"
             value={this.state.service.name}
             help="The name of your service. Only for debug and human readability purposes."
-            onChange={e => this.changeTheValue('name', e)}
+            onChange={(e) => this.changeTheValue('name', e)}
           />
           <Collapse collapsed={this.state.allCollapsed} initCollapsed={false} label="Flags">
             <div className="row">
@@ -1128,45 +1132,45 @@ export class ServicePage extends Component {
                   label="Service enabled"
                   value={this.state.service.enabled}
                   help="Activate or deactivate your service. Once disabled, users will get an error page saying the service does not exist."
-                  onChange={v => this.changeTheValue('enabled', v)}
+                  onChange={(v) => this.changeTheValue('enabled', v)}
                 />
                 <BiColumnBooleanInput
                   label="Read only mode"
                   value={this.state.service.readOnly}
                   help="Authorize only GET, HEAD, OPTIONS calls on this service "
-                  onChange={v => this.changeTheValue('readOnly', v)}
+                  onChange={(v) => this.changeTheValue('readOnly', v)}
                   hide={this.state.service.tcpUdpTunneling}
                 />
                 <BiColumnBooleanInput
                   label="Maintenance mode"
                   value={this.state.service.maintenanceMode}
                   help="Display a maintainance page when a user try to use the service"
-                  onChange={v => this.changeTheValue('maintenanceMode', v)}
+                  onChange={(v) => this.changeTheValue('maintenanceMode', v)}
                 />
                 <BiColumnBooleanInput
                   label="Construction mode"
                   value={this.state.service.buildMode}
                   help="Display a construction page when a user try to use the service"
-                  onChange={v => this.changeTheValue('buildMode', v)}
+                  onChange={(v) => this.changeTheValue('buildMode', v)}
                 />
                 <BiColumnBooleanInput
                   label="Log analytics"
                   value={this.state.service.logAnalyticsOnServer}
                   help="Log analytics events for this service on the servers"
-                  onChange={v => this.changeTheValue('logAnalyticsOnServer', v)}
+                  onChange={(v) => this.changeTheValue('logAnalyticsOnServer', v)}
                 />
                 <BiColumnBooleanInput
                   label="Use new http client"
                   value={this.state.service.useAkkaHttpClient}
                   help="Will use Akka Http Client for every request"
-                  onChange={v => this.changeTheValue('useAkkaHttpClient', v)}
+                  onChange={(v) => this.changeTheValue('useAkkaHttpClient', v)}
                   hide={this.state.service.tcpUdpTunneling}
                 />
                 <BiColumnBooleanInput
                   label="Detect apikey asap"
                   value={this.state.service.detectApiKeySooner}
                   help="If the service is public and you provide an apikey, otoroshi will detect it and validate it. Of course this setting may impact performances because of useless apikey lookups."
-                  onChange={v => this.changeTheValue('detectApiKeySooner', v)}
+                  onChange={(v) => this.changeTheValue('detectApiKeySooner', v)}
                 />
               </div>
               <div className="col-md-6">
@@ -1174,46 +1178,46 @@ export class ServicePage extends Component {
                   label="Send Otoroshi headers back"
                   value={this.state.service.sendOtoroshiHeadersBack}
                   help="When enabled, Otoroshi will send headers to consumer like request id, client latency, overhead, etc ..."
-                  onChange={v => this.changeTheValue('sendOtoroshiHeadersBack', v)}
+                  onChange={(v) => this.changeTheValue('sendOtoroshiHeadersBack', v)}
                 />
                 <BiColumnBooleanInput
                   label="Override Host header"
                   value={this.state.service.overrideHost}
                   help="When enabled, Otoroshi will automatically set the Host header to corresponding target host"
-                  onChange={v => this.changeTheValue('overrideHost', v)}
+                  onChange={(v) => this.changeTheValue('overrideHost', v)}
                   hide={this.state.service.tcpUdpTunneling}
                 />
                 <BiColumnBooleanInput
                   label="Send X-Forwarded-* headers"
                   value={this.state.service.xForwardedHeaders}
                   help="When enabled, Otoroshi will send X-Forwarded-* headers to target"
-                  onChange={v => this.changeTheValue('xForwardedHeaders', v)}
+                  onChange={(v) => this.changeTheValue('xForwardedHeaders', v)}
                   hide={this.state.service.tcpUdpTunneling}
                 />
                 <BiColumnBooleanInput
                   label="Force HTTPS"
                   value={this.state.service.forceHttps}
                   help="Will force redirection to https:// if not present"
-                  onChange={v => this.changeTheValue('forceHttps', v)}
+                  onChange={(v) => this.changeTheValue('forceHttps', v)}
                 />
                 <BiColumnBooleanInput
                   label="Allow HTTP/1.0 requests"
                   value={this.state.service.allowHttp10}
                   help="Will return an error on HTTP/1.0 request"
-                  onChange={v => this.changeTheValue('allowHttp10', v)}
+                  onChange={(v) => this.changeTheValue('allowHttp10', v)}
                   hide={this.state.service.tcpUdpTunneling}
                 />
                 <BiColumnBooleanInput
                   label="Use new WebSocket client"
                   value={this.state.service.useNewWSClient}
                   help="Will use the new websocket client for every websocket request"
-                  onChange={v => this.changeTheValue('useNewWSClient', v)}
+                  onChange={(v) => this.changeTheValue('useNewWSClient', v)}
                 />
                 <BiColumnBooleanInput
                   label="TCP/UDP tunneling"
                   value={this.state.service.tcpUdpTunneling}
                   help="With this setting enabled, otoroshi will not proxy http requests anymore but instead will create a secured tunnel between a cli on your machine and otoroshi to proxy any tcp connection with all otoroshi security features enabled"
-                  onChange={v => this.changeTheValue('tcpUdpTunneling', v)}
+                  onChange={(v) => this.changeTheValue('tcpUdpTunneling', v)}
                 />
                 <a
                   href=" https://github.com/MAIF/otoroshi/tree/master/clients/tcp-udp-tunnel-client"
@@ -1234,7 +1238,7 @@ export class ServicePage extends Component {
                 help="The domain used to expose your service. Should follow pattern: (http|https)://subdomain?.env?.domain.tld?/root? or regex (http|https):\/\/(.*?)\.?(.*?)\.?(.*?)\.?(.*)\/?(.*)"
                 value={this.state.service}
                 disabled={!!(this.state.env && this.state.env.staticExposedDomain)}
-                onChange={newService => {
+                onChange={(newService) => {
                   this.setState({
                     changed: shallowDiffers(this.state.originalService, newService),
                     service: newService,
@@ -1249,7 +1253,7 @@ export class ServicePage extends Component {
                 value={this.state.service.subdomain}
                 disabled={!!(this.state.env && this.state.env.staticExposedDomain)}
                 help="The subdomain on which the service is available"
-                onChange={e => this.changeTheValue('subdomain', e)}
+                onChange={(e) => this.changeTheValue('subdomain', e)}
               />
             )}
             {!this.state.freeDomain && (
@@ -1257,11 +1261,11 @@ export class ServicePage extends Component {
                 label="Line"
                 placeholder="The line on which the service is available"
                 value={this.state.service.env}
-                onChange={e => this.changeTheValue('env', e)}
+                onChange={(e) => this.changeTheValue('env', e)}
                 disabled={!!(this.state.env && this.state.env.staticExposedDomain)}
                 valuesFrom="/bo/api/proxy/api/lines"
                 help="The line on which the service is available. Based on that value, the name of the line will be appended to the subdomain. For line prod, nothing will be appended. For example, if the subdomain is 'foo' and line is 'preprod', then the exposed service will be available at 'foo.preprod.mydomain'"
-                transformer={v => ({ value: v, label: v })}
+                transformer={(v) => ({ value: v, label: v })}
               />
             )}
             {!this.state.freeDomain && (
@@ -1270,7 +1274,7 @@ export class ServicePage extends Component {
                 placeholder="The domain on which the service is available"
                 value={this.state.service.domain}
                 help="The domain on which the service is available."
-                onChange={e => this.changeTheValue('domain', e)}
+                onChange={(e) => this.changeTheValue('domain', e)}
                 disabled={!!(this.state.env && this.state.env.staticExposedDomain)}
               />
             )}
@@ -1280,7 +1284,7 @@ export class ServicePage extends Component {
                 placeholder="The root path on which the service is available"
                 value={this.state.service.matchingRoot}
                 help="The root path on which the service is available"
-                onChange={e => this.changeTheValue('matchingRoot', e)}
+                onChange={(e) => this.changeTheValue('matchingRoot', e)}
               />
             )}
             <div className="form-group">
@@ -1289,7 +1293,7 @@ export class ServicePage extends Component {
                 <button
                   className="btn btn-xs btn-info"
                   type="button"
-                  onClick={e => {
+                  onClick={(e) => {
                     e.preventDefault();
                     this.setState({ freeDomain: !this.state.freeDomain });
                   }}>
@@ -1330,27 +1334,28 @@ export class ServicePage extends Component {
               <LinkDisplay
                 link={`${this.state.service.forceHttps ? 'https' : 'http'}://${
                   this.state.service.subdomain
-                }.${this.state.service.env}.${this.state.service.domain}${this.state.service
-                  .matchingRoot || ''}/`}
+                }.${this.state.service.env}.${this.state.service.domain}${
+                  this.state.service.matchingRoot || ''
+                }/`}
               />
             )}
             <BooleanInput
               label="Strip path"
               value={this.state.service.stripPath}
               help="When matching, strip the matching prefix from the upstream request URL. Defaults to true"
-              onChange={e => this.changeTheValue('stripPath', e)}
+              onChange={(e) => this.changeTheValue('stripPath', e)}
             />
             <BooleanInput
               label="Issue Let's Encrypt cert."
               value={this.state.service.letsEncrypt}
               help="Automatically issue and renew let's encrypt certificate based on domain name. Only if Let's Encrypt enabled in global config."
-              onChange={v => this.changeTheValue('letsEncrypt', v)}
+              onChange={(v) => this.changeTheValue('letsEncrypt', v)}
             />
             <BooleanInput
               label="Issue certificate"
               value={this.state.service.issueCert}
               help="Automatically issue and renew a certificate based on domain name"
-              onChange={v => this.changeTheValue('issueCert', v)}
+              onChange={(v) => this.changeTheValue('issueCert', v)}
             />
             {this.state.service.issueCert && (
               <SelectInput
@@ -1358,7 +1363,7 @@ export class ServicePage extends Component {
                 placeholder="Choose a CA certificate"
                 value={this.state.service.issueCertCA}
                 valuesFrom="/bo/api/proxy/api/certificates?ca=true"
-                transformer={a => ({
+                transformer={(a) => ({
                   value: a.id,
                   label: (
                     <span>
@@ -1370,7 +1375,7 @@ export class ServicePage extends Component {
                   ),
                 })}
                 help="The CA used to issue certificate"
-                onChange={e => this.changeTheValue('issueCertCA', e)}
+                onChange={(e) => this.changeTheValue('issueCertCA', e)}
               />
             )}
             {/*!this.state.freeDomain && (*/}
@@ -1381,7 +1386,7 @@ export class ServicePage extends Component {
                 placeholder="www.oto.tools"
                 value={this.state.service.hosts}
                 help="All the possible hostnames for your service"
-                onChange={e => this.changeTheValue('hosts', e)}
+                onChange={(e) => this.changeTheValue('hosts', e)}
                 disabled={!!(this.state.env && this.state.env.staticExposedDomain)}
               />
               <ArrayInput
@@ -1389,7 +1394,7 @@ export class ServicePage extends Component {
                 placeholder="/"
                 value={this.state.service.paths}
                 help="All the possible matching paths for your service"
-                onChange={e => this.changeTheValue('paths', e)}
+                onChange={(e) => this.changeTheValue('paths', e)}
               />
               {/*<div style={{ borderBottom: '1px solid #424242', marginBottom: 10 }}></div>*/}
             </>
@@ -1408,12 +1413,12 @@ export class ServicePage extends Component {
                 this.state.service.redirection ? this.state.service.redirection.enabled : false
               }
               help="..."
-              onChange={v => this.changeTheValue('redirection.enabled', v)}
+              onChange={(v) => this.changeTheValue('redirection.enabled', v)}
             />
             <SelectInput
               label="Http redirection code"
               value={this.state.service.redirection ? this.state.service.redirection.code : '302'}
-              onChange={e => this.changeTheValue('redirection.code', e)}
+              onChange={(e) => this.changeTheValue('redirection.code', e)}
               possibleValues={[
                 {
                   label: '301: Moved Permanently',
@@ -1443,7 +1448,7 @@ export class ServicePage extends Component {
               placeholder="Redirection location"
               value={this.state.service.redirection.to}
               help="..."
-              onChange={e => this.changeTheValue('redirection.to', e)}
+              onChange={(e) => this.changeTheValue('redirection.to', e)}
             />
           </Collapse>
           <Collapse
@@ -1455,12 +1460,12 @@ export class ServicePage extends Component {
               label="Redirect to local"
               value={this.state.service.redirectToLocal}
               help="If you work locally with Otoroshi, you may want to use that feature to redirect one specific service to a local host. For example, you can relocate https://foo.preprod.bar.com to http://localhost:8080 to make some tests"
-              onChange={v => this.changeTheValue('redirectToLocal', v)}
+              onChange={(v) => this.changeTheValue('redirectToLocal', v)}
               after={() => {
                 if (this.props.env && this.props.env.clevercloud) {
                   return (
                     <CleverSelector
-                      onChange={url => {
+                      onChange={(url) => {
                         const targets = [...this.state.service.targets];
                         const parts = url.split('://');
                         targets[0].host = parts[1];
@@ -1511,7 +1516,7 @@ export class ServicePage extends Component {
                     },
                   ]}
                   help="The load balancing algorithm used"
-                  onChange={e => this.changeTheValue('targetsLoadBalancing', { type: e })}
+                  onChange={(e) => this.changeTheValue('targetsLoadBalancing', { type: e })}
                 />
                 {this.state.service.targetsLoadBalancing.type === 'WeightedBestResponseTime' && (
                   <NumberInput
@@ -1520,7 +1525,7 @@ export class ServicePage extends Component {
                     help="The percentage of targets in with the best response in the whole target pool to choose. If 0,5, then more than 50% of the calls will happen on the target with the best response time."
                     from={0.0}
                     to={0.99}
-                    onChange={v => this.changeTheValue('targetsLoadBalancing.ratio', v)}
+                    onChange={(v) => this.changeTheValue('targetsLoadBalancing.ratio', v)}
                   />
                 )}
                 <ArrayInput
@@ -1538,7 +1543,7 @@ export class ServicePage extends Component {
                     ipAddress: null,
                   }}
                   tunnelingEnabled={this.state.service.tcpUdpTunneling}
-                  onChange={e => this.changeTheValue('targets', e)}
+                  onChange={(e) => this.changeTheValue('targets', e)}
                 />
               </div>
             )}
@@ -1549,14 +1554,14 @@ export class ServicePage extends Component {
                   placeholder="The scheme of the local service"
                   value={this.state.service.localScheme}
                   help="The scheme used localy, mainly http"
-                  onChange={e => this.changeTheValue('localScheme', e)}
+                  onChange={(e) => this.changeTheValue('localScheme', e)}
                 />
                 <TextInput
                   label="Local host"
                   placeholder="The host of the local service"
                   value={this.state.service.localHost}
                   help="The host used localy, mainly localhost:xxxx"
-                  onChange={e => this.changeTheValue('localHost', e)}
+                  onChange={(e) => this.changeTheValue('localHost', e)}
                 />
               </div>
             )}
@@ -1566,7 +1571,7 @@ export class ServicePage extends Component {
                 placeholder="The root URL of the target service"
                 value={this.state.service.root}
                 help="Otoroshi will append this root to any target choosen. If the specified root is '/api/foo', then a request to https://yyyyyyy/bar will actually hit https://xxxxxxxxx/api/foo/bar"
-                onChange={e => this.changeTheValue('root', e)}
+                onChange={(e) => this.changeTheValue('root', e)}
               />
             )}
             {!this.state.service.tcpUdpTunneling && this.state.service.targets.length > 0 && (
@@ -1585,11 +1590,11 @@ export class ServicePage extends Component {
               <div className="col-sm-10">
                 <PublicUiButton
                   value={this.state.service.publicPatterns}
-                  onChange={arr => this.changeTheValue('publicPatterns', arr)}
+                  onChange={(arr) => this.changeTheValue('publicPatterns', arr)}
                 />
                 <PrivateApiButton
                   value={this.state.service.privatePatterns}
-                  onChange={arr => this.changeTheValue('privatePatterns', arr)}
+                  onChange={(arr) => this.changeTheValue('privatePatterns', arr)}
                 />
               </div>
             </div>
@@ -1599,7 +1604,7 @@ export class ServicePage extends Component {
               suffix="regex"
               value={this.state.service.publicPatterns}
               help="By default, every services are private only and you'll need an API key to access it. However, if you want to expose a public UI, you can define one or more public patterns (regex) to allow access to anybody. For example if you want to allow anybody on any URL, just use '/.*'"
-              onChange={arr => this.changeTheValue('publicPatterns', arr)}
+              onChange={(arr) => this.changeTheValue('publicPatterns', arr)}
             />
             <ArrayInput
               label="Private patterns"
@@ -1607,7 +1612,7 @@ export class ServicePage extends Component {
               suffix="regex"
               value={this.state.service.privatePatterns}
               help="If you define a public pattern that is a little bit too much, you can make some of public URL private again"
-              onChange={arr => this.changeTheValue('privatePatterns', arr)}
+              onChange={(arr) => this.changeTheValue('privatePatterns', arr)}
             />
           </Collapse>
           <Collapse
@@ -1619,7 +1624,7 @@ export class ServicePage extends Component {
             label="Restrictions">
             <Restrictions
               value={this.state.service.restrictions}
-              onChange={arr => this.changeTheValue('restrictions', arr)}
+              onChange={(arr) => this.changeTheValue('restrictions', arr)}
             />
           </Collapse>
           <Collapse
@@ -1633,25 +1638,25 @@ export class ServicePage extends Component {
               label="Enabled"
               value={this.state.service.enforceSecureCommunication}
               help="When enabled, Otoroshi will try to exchange headers with downstream service to ensure no one else can use the service from outside."
-              onChange={v => this.changeTheValue('enforceSecureCommunication', v)}
+              onChange={(v) => this.changeTheValue('enforceSecureCommunication', v)}
             />
             <BooleanInput
               label="Send challenge"
               value={this.state.service.sendStateChallenge}
               help="When disbaled, Otoroshi will not check if target service respond with sent random value."
-              onChange={v => this.changeTheValue('sendStateChallenge', v)}
+              onChange={(v) => this.changeTheValue('sendStateChallenge', v)}
             />
             <BooleanInput
               label="Send info. token"
               value={this.state.service.sendInfoToken}
               help="When enabled, Otoroshi add an additional header containing current call informations"
-              onChange={v => this.changeTheValue('sendInfoToken', v)}
+              onChange={(v) => this.changeTheValue('sendInfoToken', v)}
             />
             <SelectInput
               label="Challenge token version"
               value={this.state.service.secComVersion}
               help="Version the otoroshi exchange protocol challenge. This option will be set to V2 in a near future."
-              onChange={arr => this.changeTheValue('secComVersion', arr)}
+              onChange={(arr) => this.changeTheValue('secComVersion', arr)}
               possibleValues={[
                 { label: 'V1 - simple values exchange', value: 1 },
                 { label: 'V2 - signed JWT tokens exchange', value: 2 },
@@ -1661,7 +1666,7 @@ export class ServicePage extends Component {
               label="Info. token version"
               value={this.state.service.secComInfoTokenVersion}
               help="Version the otoroshi exchange protocol info token. This option will be set to Latest in a near future."
-              onChange={arr => this.changeTheValue('secComInfoTokenVersion', arr)}
+              onChange={(arr) => this.changeTheValue('secComInfoTokenVersion', arr)}
               possibleValues={[
                 {
                   label: 'Legacy - legacy version of the info token with flattened values',
@@ -1676,28 +1681,28 @@ export class ServicePage extends Component {
               help="The number of seconds for tokens (state and info) lifes"
               placeholder="10"
               suffix="seconds"
-              onChange={v => this.changeTheValue('secComTtl', v)}
+              onChange={(v) => this.changeTheValue('secComTtl', v)}
             />
             <TextInput
               label="State token header name"
               value={this.state.service.secComHeaders.stateRequestName}
               help="The name of the header containing the state token. If not specified, the value will be taken from the configuration (otoroshi.headers.comm.state)"
               placeholder="Otoroshi-State"
-              onChange={v => this.changeTheValue('secComHeaders.stateRequestName', v)}
+              onChange={(v) => this.changeTheValue('secComHeaders.stateRequestName', v)}
             />
             <TextInput
               label="State token response header name"
               value={this.state.service.secComHeaders.stateResponseName}
               help="The name of the header containing the state response token. If not specified, the value will be taken from the configuration (otoroshi.headers.comm.stateresp)"
               placeholder="Otoroshi-State-Resp"
-              onChange={v => this.changeTheValue('secComHeaders.stateResponseName', v)}
+              onChange={(v) => this.changeTheValue('secComHeaders.stateResponseName', v)}
             />
             <TextInput
               label="Info token header name"
               value={this.state.service.secComHeaders.claimRequestName}
               help="The name of the header containing the info token. If not specified, the value will be taken from the configuration (otoroshi.headers.comm.claim)"
               placeholder="Otoroshi-Claim"
-              onChange={v => this.changeTheValue('secComHeaders.claimRequestName', v)}
+              onChange={(v) => this.changeTheValue('secComHeaders.claimRequestName', v)}
             />
             <ArrayInput
               label="Excluded patterns"
@@ -1705,13 +1710,13 @@ export class ServicePage extends Component {
               suffix="regex"
               value={this.state.service.secComExcludedPatterns}
               help="URI patterns excluded from the otoroshi exchange protocol"
-              onChange={arr => this.changeTheValue('secComExcludedPatterns', arr)}
+              onChange={(arr) => this.changeTheValue('secComExcludedPatterns', arr)}
             />
             <BooleanInput
               label="Use same algo."
               value={this.state.service.secComUseSameAlgo}
               help="When enabled, all JWT token in this section will use the same signing algorithm"
-              onChange={v => this.changeTheValue('secComUseSameAlgo', v)}
+              onChange={(v) => this.changeTheValue('secComUseSameAlgo', v)}
             />
             {this.state.service.secComUseSameAlgo && (
               <AlgoSettings
@@ -1767,14 +1772,14 @@ export class ServicePage extends Component {
               label="Enforce user authentication"
               value={this.state.service.privateApp}
               help="When enabled, user will be allowed to use the service (UI) only if they are registered users of the chosen authentication module."
-              onChange={v => this.changeTheValue('privateApp', v)}
+              onChange={(v) => this.changeTheValue('privateApp', v)}
             />
             <SelectInput
               label="Auth. config"
               value={this.state.service.authConfigRef}
-              onChange={e => this.changeTheValue('authConfigRef', e)}
+              onChange={(e) => this.changeTheValue('authConfigRef', e)}
               valuesFrom="/bo/api/proxy/api/auths"
-              transformer={a => ({ value: a.id, label: a.name })}
+              transformer={(a) => ({ value: a.id, label: a.name })}
               help="..."
             />
             <div className="form-group">
@@ -1803,13 +1808,13 @@ export class ServicePage extends Component {
               suffix="regex"
               value={this.state.service.securityExcludedPatterns}
               help="By default, when security is enabled, everything is secured. But sometimes you need to exlude something, so just add regex to matching path you want to exlude."
-              onChange={arr => this.changeTheValue('securityExcludedPatterns', arr)}
+              onChange={(arr) => this.changeTheValue('securityExcludedPatterns', arr)}
             />
             <BooleanInput
               label="Strict mode"
               value={this.state.service.strictlyPrivate}
               help="Strict mode enabled"
-              onChange={v => this.changeTheValue('strictlyPrivate', v)}
+              onChange={(v) => this.changeTheValue('strictlyPrivate', v)}
             />
             <div className="form-group">
               <label className="col-xs-12 col-sm-2 control-label" />
@@ -1840,25 +1845,27 @@ export class ServicePage extends Component {
               label="From basic auth."
               value={this.state.service.apiKeyConstraints.basicAuth.enabled}
               help="You can pass the api key in Authorization header (ie. from 'Authorization: Basic xxx' header)"
-              onChange={v => this.changeTheValue('apiKeyConstraints.basicAuth.enabled', v)}
+              onChange={(v) => this.changeTheValue('apiKeyConstraints.basicAuth.enabled', v)}
             />
             <BooleanInput
               label="Allow client id only usage"
               value={this.state.service.apiKeyConstraints.clientIdAuth.enabled}
               help="You can pass the api key using client id only (ie. from Otoroshi-Token header)"
-              onChange={v => this.changeTheValue('apiKeyConstraints.clientIdAuth.enabled', v)}
+              onChange={(v) => this.changeTheValue('apiKeyConstraints.clientIdAuth.enabled', v)}
             />
             <BooleanInput
               label="From custom headers"
               value={this.state.service.apiKeyConstraints.customHeadersAuth.enabled}
               help="You can pass the api key using custom headers (ie. Otoroshi-Client-Id and Otoroshi-Client-Secret headers)"
-              onChange={v => this.changeTheValue('apiKeyConstraints.customHeadersAuth.enabled', v)}
+              onChange={(v) =>
+                this.changeTheValue('apiKeyConstraints.customHeadersAuth.enabled', v)
+              }
             />
             <BooleanInput
               label="From JWT token"
               value={this.state.service.apiKeyConstraints.jwtAuth.enabled}
               help="You can pass the api key using a JWT token (ie. from 'Authorization: Bearer xxx' header)"
-              onChange={v => this.changeTheValue('apiKeyConstraints.jwtAuth.enabled', v)}
+              onChange={(v) => this.changeTheValue('apiKeyConstraints.jwtAuth.enabled', v)}
             />
             <Separator title="Basic auth. Api Key" />
             <TextInput
@@ -1866,14 +1873,14 @@ export class ServicePage extends Component {
               value={this.state.service.apiKeyConstraints.basicAuth.headerName}
               help="The name of the header to get Authorization"
               placeholder="Authorization"
-              onChange={v => this.changeTheValue('apiKeyConstraints.basicAuth.headerName', v)}
+              onChange={(v) => this.changeTheValue('apiKeyConstraints.basicAuth.headerName', v)}
             />
             <TextInput
               label="Custom query param name"
               value={this.state.service.apiKeyConstraints.basicAuth.queryName}
               help="The name of the query param to get Authorization"
               placeholder="basic_auth"
-              onChange={v => this.changeTheValue('apiKeyConstraints.basicAuth.queryName', v)}
+              onChange={(v) => this.changeTheValue('apiKeyConstraints.basicAuth.queryName', v)}
             />
             <Separator title="Client Id only Api Key" />
             <TextInput
@@ -1881,14 +1888,14 @@ export class ServicePage extends Component {
               value={this.state.service.apiKeyConstraints.clientIdAuth.headerName}
               help="The name of the header to get the client id"
               placeholder="x-api-key"
-              onChange={v => this.changeTheValue('apiKeyConstraints.clientIdAuth.headerName', v)}
+              onChange={(v) => this.changeTheValue('apiKeyConstraints.clientIdAuth.headerName', v)}
             />
             <TextInput
               label="Custom query param name"
               value={this.state.service.apiKeyConstraints.clientIdAuth.queryName}
               help="The name of the query param to get the client id"
               placeholder="x-api-key"
-              onChange={v => this.changeTheValue('apiKeyConstraints.clientIdAuth.queryName', v)}
+              onChange={(v) => this.changeTheValue('apiKeyConstraints.clientIdAuth.queryName', v)}
             />
             <Separator title="Custom headers Api Key" />
             <TextInput
@@ -1896,7 +1903,7 @@ export class ServicePage extends Component {
               value={this.state.service.apiKeyConstraints.customHeadersAuth.clientIdHeaderName}
               help="The name of the header to get the client id"
               placeholder="Otoroshi-Client-Id"
-              onChange={v =>
+              onChange={(v) =>
                 this.changeTheValue('apiKeyConstraints.customHeadersAuth.clientIdHeaderName', v)
               }
             />
@@ -1905,32 +1912,28 @@ export class ServicePage extends Component {
               value={this.state.service.apiKeyConstraints.customHeadersAuth.clientSecretHeaderName}
               help="The name of the header to get the client secret"
               placeholder="Otoroshi-Client-Secret"
-              onChange={v =>
+              onChange={(v) =>
                 this.changeTheValue('apiKeyConstraints.customHeadersAuth.clientSecretHeaderName', v)
               }
             />
             <Separator title="JWT Token Api Key" />
             <BooleanInput
-                label="Secret signed"
-                value={this.state.service.apiKeyConstraints.jwtAuth.secretSigned}
-                help="JWT can be signed by apikey secret using HMAC algo."
-                onChange={v =>
-                    this.changeTheValue('apiKeyConstraints.jwtAuth.secretSigned', v)
-                }
+              label="Secret signed"
+              value={this.state.service.apiKeyConstraints.jwtAuth.secretSigned}
+              help="JWT can be signed by apikey secret using HMAC algo."
+              onChange={(v) => this.changeTheValue('apiKeyConstraints.jwtAuth.secretSigned', v)}
             />
             <BooleanInput
-                label="Keypair signed"
-                value={this.state.service.apiKeyConstraints.jwtAuth.keyPairSigned}
-                help="JWT can be signed by an otoroshi managed keypair using RSA/EC algo."
-                onChange={v =>
-                    this.changeTheValue('apiKeyConstraints.jwtAuth.keyPairSigned', v)
-                }
+              label="Keypair signed"
+              value={this.state.service.apiKeyConstraints.jwtAuth.keyPairSigned}
+              help="JWT can be signed by an otoroshi managed keypair using RSA/EC algo."
+              onChange={(v) => this.changeTheValue('apiKeyConstraints.jwtAuth.keyPairSigned', v)}
             />
             <BooleanInput
               label="Include Http request attrs."
               value={this.state.service.apiKeyConstraints.jwtAuth.includeRequestAttributes}
               help="If enabled, you have to put the following fields in the JWT token corresponding to the current http call (httpPath, httpVerb, httpHost)"
-              onChange={v =>
+              onChange={(v) =>
                 this.changeTheValue('apiKeyConstraints.jwtAuth.includeRequestAttributes', v)
               }
             />
@@ -1939,83 +1942,85 @@ export class ServicePage extends Component {
               value={this.state.service.apiKeyConstraints.jwtAuth.maxJwtLifespanSecs}
               help="The maximum number of second accepted as token lifespan"
               suffix="seconds"
-              onChange={v => this.changeTheValue('apiKeyConstraints.jwtAuth.maxJwtLifespanSecs', v)}
+              onChange={(v) =>
+                this.changeTheValue('apiKeyConstraints.jwtAuth.maxJwtLifespanSecs', v)
+              }
             />
             <TextInput
               label="Custom header name"
               value={this.state.service.apiKeyConstraints.jwtAuth.headerName}
               help="The name of the header to get the jwt token"
               placeholder="Authorization or Otoroshi-Token"
-              onChange={v => this.changeTheValue('apiKeyConstraints.jwtAuth.headerName', v)}
+              onChange={(v) => this.changeTheValue('apiKeyConstraints.jwtAuth.headerName', v)}
             />
             <TextInput
               label="Custom query param name"
               value={this.state.service.apiKeyConstraints.jwtAuth.queryName}
               help="The name of the query param to get the jwt token"
               placeholder="access_token"
-              onChange={v => this.changeTheValue('apiKeyConstraints.jwtAuth.queryName', v)}
+              onChange={(v) => this.changeTheValue('apiKeyConstraints.jwtAuth.queryName', v)}
             />
             <TextInput
               label="Custom cookie name"
               value={this.state.service.apiKeyConstraints.jwtAuth.cookieName}
               help="The name of the cookie to get the jwt token"
               placeholder="access_token"
-              onChange={v => this.changeTheValue('apiKeyConstraints.jwtAuth.cookieName', v)}
+              onChange={(v) => this.changeTheValue('apiKeyConstraints.jwtAuth.cookieName', v)}
             />
             <Separator title="Routing constraints" />
             <ArrayInput
               label="One Tag in"
               value={this.state.service.apiKeyConstraints.routing.oneTagIn}
               help="Api used should have at least one of the following tags"
-              onChange={v => this.changeTheValue('apiKeyConstraints.routing.oneTagIn', v)}
+              onChange={(v) => this.changeTheValue('apiKeyConstraints.routing.oneTagIn', v)}
             />
             <ArrayInput
               label="All Tags in"
               value={this.state.service.apiKeyConstraints.routing.allTagsIn}
               help="Api used should have all of the following tags"
-              onChange={v => this.changeTheValue('apiKeyConstraints.routing.allTagsIn', v)}
+              onChange={(v) => this.changeTheValue('apiKeyConstraints.routing.allTagsIn', v)}
             />
             <ArrayInput
               label="No Tags in"
               value={this.state.service.apiKeyConstraints.routing.noneTagIn}
               help="Api used should not have one of the following tags"
-              onChange={v => this.changeTheValue('apiKeyConstraints.routing.noneTagIn', v)}
+              onChange={(v) => this.changeTheValue('apiKeyConstraints.routing.noneTagIn', v)}
             />
             <ObjectInput
               label="One Meta. in"
               value={this.state.service.apiKeyConstraints.routing.oneMetaIn}
               help="Api used should have at least one of the following metadata entries"
-              onChange={v => this.changeTheValue('apiKeyConstraints.routing.oneMetaIn', v)}
+              onChange={(v) => this.changeTheValue('apiKeyConstraints.routing.oneMetaIn', v)}
             />
             <ObjectInput
               label="All Meta. in"
               value={this.state.service.apiKeyConstraints.routing.allMetaIn}
               help="Api used should have all of the following metadata entries"
-              onChange={v => this.changeTheValue('apiKeyConstraints.routing.allMetaIn', v)}
+              onChange={(v) => this.changeTheValue('apiKeyConstraints.routing.allMetaIn', v)}
             />
             <ObjectInput
               label="No Meta. in"
               value={this.state.service.apiKeyConstraints.routing.noneMetaIn}
               help="Api used should not have one of the following metadata entries"
-              onChange={v => this.changeTheValue('apiKeyConstraints.routing.noneMetaIn', v)}
+              onChange={(v) => this.changeTheValue('apiKeyConstraints.routing.noneMetaIn', v)}
             />
             <ArrayInput
               label="One Meta key in"
               value={this.state.service.apiKeyConstraints.routing.oneMetaKeyIn}
               help="Api used should have at least one of the following key in metadata"
-              onChange={v => this.changeTheValue('apiKeyConstraints.routing.oneMetaKeyIn', v)}
+              onChange={(v) => this.changeTheValue('apiKeyConstraints.routing.oneMetaKeyIn', v)}
             />
             <ArrayInput
               label="All Meta key in"
               value={this.state.service.apiKeyConstraints.routing.allMetaKeysIn}
               help="Api used should have all of the following keys in metadata"
-              onChange={v => this.changeTheValue('apiKeyConstraints.routing.allMetaKeysIn', v)}
+              onChange={(v) => this.changeTheValue('apiKeyConstraints.routing.allMetaKeysIn', v)}
             />
             <ArrayInput
               label="No Meta key in"
               value={this.state.service.apiKeyConstraints.routing.noneMetaKeysIn}
               help="Api used should not have one of the following keys in metadata"
-              onChange={v => this.changeTheValue('apiKeyConstraints.routing.noneMetaKeysIn', v)}
+              onChange={(v) => this.changeTheValue('apiKeyConstraints.routing.noneMetaKeysIn', v)}
             />
           </Collapse>
           {/*<Collapse
@@ -2183,43 +2188,43 @@ export class ServicePage extends Component {
               label="Enabled"
               value={this.state.service.cors.enabled}
               help="..."
-              onChange={v => this.changeTheValue('cors.enabled', v)}
+              onChange={(v) => this.changeTheValue('cors.enabled', v)}
             />
             <BooleanInput
               label="Allow credentials"
               value={this.state.service.cors.allowCredentials}
               help="..."
-              onChange={v => this.changeTheValue('cors.allowCredentials', v)}
+              onChange={(v) => this.changeTheValue('cors.allowCredentials', v)}
             />
             <TextInput
               label="Allow origin"
               value={this.state.service.cors.allowOrigin}
               help="..."
-              onChange={v => this.changeTheValue('cors.allowOrigin', v)}
+              onChange={(v) => this.changeTheValue('cors.allowOrigin', v)}
             />
             <NumberInput
               label="Max age"
               value={this.state.service.cors.maxAge}
               help="..."
-              onChange={v => this.changeTheValue('cors.maxAge', v)}
+              onChange={(v) => this.changeTheValue('cors.maxAge', v)}
             />
             <ArrayInput
               label="Expose headers"
               value={this.state.service.cors.exposeHeaders}
               help="..."
-              onChange={v => this.changeTheValue('cors.exposeHeaders', v)}
+              onChange={(v) => this.changeTheValue('cors.exposeHeaders', v)}
             />
             <ArrayInput
               label="Allow headers"
               value={this.state.service.cors.allowHeaders}
               help="..."
-              onChange={v => this.changeTheValue('cors.allowHeaders', v)}
+              onChange={(v) => this.changeTheValue('cors.allowHeaders', v)}
             />
             <ArrayInput
               label="Allow methods"
               value={this.state.service.cors.allowMethods}
               help="..."
-              onChange={v => this.changeTheValue('cors.allowMethods', v)}
+              onChange={(v) => this.changeTheValue('cors.allowMethods', v)}
             />
             <ArrayInput
               label="Excluded patterns"
@@ -2227,7 +2232,7 @@ export class ServicePage extends Component {
               suffix="regex"
               value={this.state.service.cors.excludedPatterns}
               help="By default, when cors is enabled, everything has cors. But sometimes you need to exlude something, so just add regex to matching path you want to exlude."
-              onChange={arr => this.changeTheValue('cors.excludedPatterns', arr)}
+              onChange={(arr) => this.changeTheValue('cors.excludedPatterns', arr)}
             />
           </Collapse>
           <Collapse
@@ -2248,16 +2253,16 @@ export class ServicePage extends Component {
                 <ArrayInput
                   label="Verifiers"
                   value={this.state.service.jwtVerifier.ids}
-                  onChange={e => this.changeTheValue('jwtVerifier.ids', e)}
+                  onChange={(e) => this.changeTheValue('jwtVerifier.ids', e)}
                   help="..."
                   valuesFrom="/bo/api/proxy/api/verifiers"
-                  transformer={a => ({ value: a.id, label: a.name })}
+                  transformer={(a) => ({ value: a.id, label: a.name })}
                 />
                 <BooleanInput
                   label="Enabled"
                   value={this.state.service.jwtVerifier.enabled}
                   help="Is JWT verification enabled for this service"
-                  onChange={v => this.changeTheValue('jwtVerifier.enabled', v)}
+                  onChange={(v) => this.changeTheValue('jwtVerifier.enabled', v)}
                 />
                 <div className="form-group">
                   <label className="col-xs-12 col-sm-2 control-label" />
@@ -2268,7 +2273,7 @@ export class ServicePage extends Component {
                       </a>
                     )}
                     {this.state.service.jwtVerifier.ids.length > 0 &&
-                      this.state.service.jwtVerifier.ids.map(id => {
+                      this.state.service.jwtVerifier.ids.map((id) => {
                         return (
                           <a
                             href={`/bo/dashboard/jwt-verifiers/edit/${id}`}
@@ -2287,7 +2292,7 @@ export class ServicePage extends Component {
               suffix="regex"
               value={this.state.service.jwtVerifier.excludedPatterns}
               help="By default, when jwt verification is enabled, everything is verified. But sometimes you need to exclude something, so just add regex to matching path you want to exlude."
-              onChange={v => this.changeTheValue('jwtVerifier.excludedPatterns', v)}
+              onChange={(v) => this.changeTheValue('jwtVerifier.excludedPatterns', v)}
             />
           </Collapse>
           <Collapse
@@ -2299,15 +2304,15 @@ export class ServicePage extends Component {
               label="Enabled"
               value={this.state.service.preRouting.enabled}
               help="Is access validation enabled for this service"
-              onChange={v => this.changeTheValue('preRouting.enabled', v)}
+              onChange={(v) => this.changeTheValue('preRouting.enabled', v)}
             />
             <Scripts
               label="Pre routes"
               refs={this.state.service.preRouting.refs}
               type="preroute"
-              onChange={e => this.changeTheValue('preRouting.refs', e)}
+              onChange={(e) => this.changeTheValue('preRouting.refs', e)}
               config={this.state.service.preRouting.config}
-              onChangeConfig={e => this.changeTheValue('preRouting.config', e)}
+              onChangeConfig={(e) => this.changeTheValue('preRouting.config', e)}
             />
             <ArrayInput
               label="Excluded patterns"
@@ -2315,7 +2320,7 @@ export class ServicePage extends Component {
               suffix="regex"
               value={this.state.service.preRouting.excludedPatterns}
               help="By default, when pre-routing is enabled, everything is verified. But sometimes you need to exclude something, so just add regex to matching path you want to exlude."
-              onChange={v => this.changeTheValue('preRouting.excludedPatterns', v)}
+              onChange={(v) => this.changeTheValue('preRouting.excludedPatterns', v)}
             />
             <div className="form-group">
               <Suspense fallback={<div>loading ...</div>}>
@@ -2323,7 +2328,7 @@ export class ServicePage extends Component {
                   label="Configuration"
                   mode="json"
                   value={JSON.stringify(this.state.service.preRouting.config, null, 2)}
-                  onChange={e => this.changeTheValue('preRouting.config', JSON.parse(e))}
+                  onChange={(e) => this.changeTheValue('preRouting.config', JSON.parse(e))}
                 />
               </Suspense>
             </div>
@@ -2337,15 +2342,15 @@ export class ServicePage extends Component {
               label="Enabled"
               value={this.state.service.accessValidator.enabled}
               help="Is access validation enabled for this service"
-              onChange={v => this.changeTheValue('accessValidator.enabled', v)}
+              onChange={(v) => this.changeTheValue('accessValidator.enabled', v)}
             />
             <Scripts
               label="Access validators"
               refs={this.state.service.accessValidator.refs}
               type="validator"
-              onChange={e => this.changeTheValue('accessValidator.refs', e)}
+              onChange={(e) => this.changeTheValue('accessValidator.refs', e)}
               config={this.state.service.accessValidator.config}
-              onChangeConfig={e => this.changeTheValue('accessValidator.config', e)}
+              onChangeConfig={(e) => this.changeTheValue('accessValidator.config', e)}
             />
             <ArrayInput
               label="Excluded patterns"
@@ -2353,7 +2358,7 @@ export class ServicePage extends Component {
               suffix="regex"
               value={this.state.service.accessValidator.excludedPatterns}
               help="By default, when access validation is enabled, everything is verified. But sometimes you need to exclude something, so just add regex to matching path you want to exlude."
-              onChange={v => this.changeTheValue('accessValidator.excludedPatterns', v)}
+              onChange={(v) => this.changeTheValue('accessValidator.excludedPatterns', v)}
             />
             <div className="form-group">
               <Suspense fallback={<div>loading ...</div>}>
@@ -2361,7 +2366,7 @@ export class ServicePage extends Component {
                   label="Configuration"
                   mode="json"
                   value={JSON.stringify(this.state.service.accessValidator.config, null, 2)}
-                  onChange={e => this.changeTheValue('accessValidator.config', JSON.parse(e))}
+                  onChange={(e) => this.changeTheValue('accessValidator.config', JSON.parse(e))}
                 />
               </Suspense>
             </div>
@@ -2435,7 +2440,7 @@ export class ServicePage extends Component {
               label="Enabled"
               value={this.state.service.gzip.enabled}
               help="..."
-              onChange={v => this.changeTheValue('gzip.enabled', v)}
+              onChange={(v) => this.changeTheValue('gzip.enabled', v)}
             />
             <ArrayInput
               label="Mimetypes whitelist"
@@ -2443,7 +2448,7 @@ export class ServicePage extends Component {
               suffix="pattern"
               value={this.state.service.gzip.whiteList}
               help="..."
-              onChange={arr => this.changeTheValue('gzip.whiteList', arr)}
+              onChange={(arr) => this.changeTheValue('gzip.whiteList', arr)}
             />
             <ArrayInput
               label="Mimetypes blacklist"
@@ -2451,7 +2456,7 @@ export class ServicePage extends Component {
               suffix="pattern"
               value={this.state.service.gzip.blacklist}
               help="..."
-              onChange={arr => this.changeTheValue('gzip.blacklist', arr)}
+              onChange={(arr) => this.changeTheValue('gzip.blacklist', arr)}
             />
             <NumberInput
               label="Compression level"
@@ -2460,21 +2465,21 @@ export class ServicePage extends Component {
               suffix="0 to 9"
               from="0"
               to="9"
-              onChange={v => this.changeTheValue('gzip.compressionLevel', v)}
+              onChange={(v) => this.changeTheValue('gzip.compressionLevel', v)}
             />
             <NumberInput
               label="Buffer size"
               value={this.state.service.gzip.bufferSize}
               help="..."
               suffix="bytes"
-              onChange={v => this.changeTheValue('gzip.bufferSize', v)}
+              onChange={(v) => this.changeTheValue('gzip.bufferSize', v)}
             />
             <NumberInput
               label="Chunk threshold"
               value={this.state.service.gzip.chunkedThreshold}
               help="..."
               suffix="bytes"
-              onChange={v => this.changeTheValue('gzip.chunkedThreshold', v)}
+              onChange={(v) => this.changeTheValue('gzip.chunkedThreshold', v)}
             />
             <ArrayInput
               label="Excluded patterns"
@@ -2482,7 +2487,7 @@ export class ServicePage extends Component {
               suffix="regex"
               value={this.state.service.gzip.excludedPatterns}
               help="By default, when gzip is enabled, everything has gzip. But sometimes you need to exlude something, so just add regex to matching path you want to exlude."
-              onChange={arr => this.changeTheValue('gzip.excludedPatterns', arr)}
+              onChange={(arr) => this.changeTheValue('gzip.excludedPatterns', arr)}
             />
           </Collapse>
           <Collapse
@@ -2494,77 +2499,77 @@ export class ServicePage extends Component {
               label="Use circuit breaker"
               help="Use a circuit breaker to avoid cascading failure when calling chains of services. Highly recommended !"
               value={this.state.service.clientConfig.useCircuitBreaker}
-              onChange={v => this.changeTheValue('clientConfig.useCircuitBreaker', v)}
+              onChange={(v) => this.changeTheValue('clientConfig.useCircuitBreaker', v)}
             />
             <NumberInput
               suffix="times"
               label="Client attempts"
               help="Specify how many times the client will retry to fetch the result of the request after an error before giving up."
               value={this.state.service.clientConfig.retries}
-              onChange={v => this.changeTheValue('clientConfig.retries', v)}
+              onChange={(v) => this.changeTheValue('clientConfig.retries', v)}
             />
             <NumberInput
               suffix="ms."
               label="Client call timeout"
               help="Specify how long each call should last at most in milliseconds."
               value={this.state.service.clientConfig.callTimeout}
-              onChange={v => this.changeTheValue('clientConfig.callTimeout', v)}
+              onChange={(v) => this.changeTheValue('clientConfig.callTimeout', v)}
             />
             <NumberInput
               suffix="ms."
               label="Client call and stream timeout"
               help="Specify how long each call should last at most in milliseconds for handling the request and streaming the response."
               value={this.state.service.clientConfig.callAndStreamTimeout}
-              onChange={v => this.changeTheValue('clientConfig.callAndStreamTimeout', v)}
+              onChange={(v) => this.changeTheValue('clientConfig.callAndStreamTimeout', v)}
             />
             <NumberInput
               suffix="ms."
               label="Client connection timeout"
               help="Specify how long each connection should last at most in milliseconds."
               value={this.state.service.clientConfig.connectionTimeout}
-              onChange={v => this.changeTheValue('clientConfig.connectionTimeout', v)}
+              onChange={(v) => this.changeTheValue('clientConfig.connectionTimeout', v)}
             />
             <NumberInput
               suffix="ms."
               label="Client idle timeout"
               help="Specify how long each connection can stay in idle state at most in milliseconds."
               value={this.state.service.clientConfig.idleTimeout}
-              onChange={v => this.changeTheValue('clientConfig.idleTimeout', v)}
+              onChange={(v) => this.changeTheValue('clientConfig.idleTimeout', v)}
             />
             <NumberInput
               suffix="ms."
               label="Client global timeout"
               help="Specify how long the global call (with retries) should last at most in milliseconds."
               value={this.state.service.clientConfig.globalTimeout}
-              onChange={v => this.changeTheValue('clientConfig.globalTimeout', v)}
+              onChange={(v) => this.changeTheValue('clientConfig.globalTimeout', v)}
             />
             <NumberInput
               suffix="times"
               label="C.breaker max errors"
               value={this.state.service.clientConfig.maxErrors}
               help="Specify how many errors can pass before opening the circuit breaker"
-              onChange={v => this.changeTheValue('clientConfig.maxErrors', v)}
+              onChange={(v) => this.changeTheValue('clientConfig.maxErrors', v)}
             />
             <NumberInput
               suffix="ms."
               label="C.breaker retry delay"
               value={this.state.service.clientConfig.retryInitialDelay}
               help="Specify the delay between two retries. Each retry, the delay is multiplied by the backoff factor"
-              onChange={v => this.changeTheValue('clientConfig.retryInitialDelay', v)}
+              onChange={(v) => this.changeTheValue('clientConfig.retryInitialDelay', v)}
             />
             <NumberInput
               suffix="times"
               label="C.breaker backoff factor"
               help="Specify the factor to multiply the delay for each retry"
               value={this.state.service.clientConfig.backoffFactor}
-              onChange={v => this.changeTheValue('clientConfig.backoffFactor', v)}
+              onChange={(v) => this.changeTheValue('clientConfig.backoffFactor', v)}
             />
             <NumberInput
               suffix="ms."
               label="C.breaker window"
               value={this.state.service.clientConfig.sampleInterval}
               help="Specify the sliding window time for the circuit breaker in milliseconds, after this time, error count will be reseted"
-              onChange={v => this.changeTheValue('clientConfig.sampleInterval', v)}
+              onChange={(v) => this.changeTheValue('clientConfig.sampleInterval', v)}
             />
             <Separator title="Custom timeout settings" />
             <ArrayInput
@@ -2580,12 +2585,12 @@ export class ServicePage extends Component {
                 globalTimeout: 30000,
               }}
               component={CustomTimeoutComponent}
-              onChange={v => this.changeTheValue('clientConfig.customTimeouts', v)}
+              onChange={(v) => this.changeTheValue('clientConfig.customTimeouts', v)}
             />
             <Separator title="Proxy settings" />
             <Proxy
               value={this.state.service.clientConfig.proxy}
-              onChange={v => this.changeTheValue('clientConfig.proxy', v)}
+              onChange={(v) => this.changeTheValue('clientConfig.proxy', v)}
             />
             {false && (
               <div className="form-group">
@@ -2615,7 +2620,7 @@ export class ServicePage extends Component {
               placeholderValue="Header value (ie. *)"
               value={this.state.service.additionalHeaders}
               help="Specify headers that will be added to each client request (from Otoroshi to target). Useful to add authentication."
-              onChange={v => this.changeTheValue('additionalHeaders', v)}
+              onChange={(v) => this.changeTheValue('additionalHeaders', v)}
             />
             <ObjectInput
               label="Additional Headers Out"
@@ -2623,7 +2628,7 @@ export class ServicePage extends Component {
               placeholderValue="Header value (ie. default-src 'src')"
               value={this.state.service.additionalHeadersOut}
               help="Specify headers that will be added to each client response (from Otoroshi to client)."
-              onChange={v => this.changeTheValue('additionalHeadersOut', v)}
+              onChange={(v) => this.changeTheValue('additionalHeadersOut', v)}
             />
             <ObjectInput
               label="Missing only Headers In"
@@ -2631,7 +2636,7 @@ export class ServicePage extends Component {
               placeholderValue="Header value (ie. *)"
               value={this.state.service.missingOnlyHeadersIn}
               help="Specify headers that will be added to each client request (from Otoroshi to target) if not in the original request."
-              onChange={v => this.changeTheValue('missingOnlyHeadersIn', v)}
+              onChange={(v) => this.changeTheValue('missingOnlyHeadersIn', v)}
             />
             <ObjectInput
               label="Missing only Headers Out"
@@ -2639,21 +2644,21 @@ export class ServicePage extends Component {
               placeholderValue="Header value (ie. default-src 'src')"
               value={this.state.service.missingOnlyHeadersOut}
               help="Specify headers that will be added to each client response (from Otoroshi to client) if not in the original response."
-              onChange={v => this.changeTheValue('missingOnlyHeadersOut', v)}
+              onChange={(v) => this.changeTheValue('missingOnlyHeadersOut', v)}
             />
             <ArrayInput
               label="Remove incoming headers"
               placeholder="Header name (ie. X-Api-Key)"
               value={this.state.service.removeHeadersIn}
               help="Remove headers in the client request (from client to Otoroshi)."
-              onChange={v => this.changeTheValue('removeHeadersIn', v)}
+              onChange={(v) => this.changeTheValue('removeHeadersIn', v)}
             />
             <ArrayInput
               label="Remove outgoing headers"
               placeholder="Header name (ie. X-Api-Key)"
               value={this.state.service.removeHeadersOut}
               help="Remove headers in the client response (from Otoroshi to client)."
-              onChange={v => this.changeTheValue('removeHeadersOut', v)}
+              onChange={(v) => this.changeTheValue('removeHeadersOut', v)}
             />
             <div className="form-group">
               <label
@@ -2665,7 +2670,7 @@ export class ServicePage extends Component {
                 <button
                   type="button"
                   style={{ marginBottom: 5 }}
-                  onClick={e => this.addSecurityHeader('X-Frame-Options', 'DENY')}
+                  onClick={(e) => this.addSecurityHeader('X-Frame-Options', 'DENY')}
                   disabled={this.computeIfButtonDisabled('X-Frame-Options')}
                   className="btn btn-xs btn-success">
                   X-Frame-Options
@@ -2673,7 +2678,7 @@ export class ServicePage extends Component {
                 <button
                   type="button"
                   style={{ marginBottom: 5 }}
-                  onClick={e => this.addSecurityHeader('X-XSS-Protection', '1; mode=block')}
+                  onClick={(e) => this.addSecurityHeader('X-XSS-Protection', '1; mode=block')}
                   disabled={this.computeIfButtonDisabled('X-XSS-Protection')}
                   className="btn btn-xs btn-success">
                   X-XSS-Protection
@@ -2681,7 +2686,7 @@ export class ServicePage extends Component {
                 <button
                   type="button"
                   style={{ marginBottom: 5 }}
-                  onClick={e => this.addSecurityHeader('X-Content-Type-Options', 'nosniff')}
+                  onClick={(e) => this.addSecurityHeader('X-Content-Type-Options', 'nosniff')}
                   disabled={this.computeIfButtonDisabled('X-Content-Type-Options')}
                   className="btn btn-xs btn-success">
                   X-Content-Type-Options
@@ -2689,7 +2694,7 @@ export class ServicePage extends Component {
                 <button
                   type="button"
                   style={{ marginBottom: 5 }}
-                  onClick={e =>
+                  onClick={(e) =>
                     this.addSecurityHeader('X-Permitted-Cross-Domain-Policies', 'master-only')
                   }
                   disabled={this.computeIfButtonDisabled('X-Permitted-Cross-Domain-Policies')}
@@ -2699,7 +2704,7 @@ export class ServicePage extends Component {
                 <button
                   type="button"
                   style={{ marginBottom: 5 }}
-                  onClick={e =>
+                  onClick={(e) =>
                     this.addSecurityHeader(
                       'Referrer-Policy',
                       'origin-when-cross-origin, strict-origin-when-cross-origin'
@@ -2712,7 +2717,7 @@ export class ServicePage extends Component {
                 <button
                   type="button"
                   style={{ marginBottom: 5 }}
-                  onClick={e =>
+                  onClick={(e) =>
                     this.addSecurityHeader('Content-Security-Policy', "default-src 'self'")
                   }
                   disabled={this.computeIfButtonDisabled('Content-Security-Policy')}
@@ -2722,7 +2727,7 @@ export class ServicePage extends Component {
                 <button
                   type="button"
                   style={{ marginBottom: 5 }}
-                  onClick={e =>
+                  onClick={(e) =>
                     this.addSecurityHeader(
                       'Strict-Transport-Security',
                       'max-age=86400; includeSubDomains; preload'
@@ -2735,7 +2740,7 @@ export class ServicePage extends Component {
                 <button
                   type="button"
                   style={{ marginBottom: 5 }}
-                  onClick={e =>
+                  onClick={(e) =>
                     this.addSecurityHeader(
                       'Public-Key-Pins',
                       'pin-sha256="....."; max-age=10; includeSubdomains'
@@ -2753,7 +2758,7 @@ export class ServicePage extends Component {
               placeholderValue="Header value (ie. application/vnd.myapp.v2+json)"
               value={this.state.service.matchingHeaders}
               help="Specify headers that MUST be present on client request to route it (pre routing). Useful to implement versioning."
-              onChange={v => this.changeTheValue('matchingHeaders', v)}
+              onChange={(v) => this.changeTheValue('matchingHeaders', v)}
             />
             <ObjectInput
               label="Headers verification"
@@ -2761,7 +2766,7 @@ export class ServicePage extends Component {
               placeholderValue="Header value"
               value={this.state.service.headersVerification}
               help="Verify that some headers has a specific value (post routing)"
-              onChange={v => this.changeTheValue('headersVerification', v)}
+              onChange={(v) => this.changeTheValue('headersVerification', v)}
             />
           </Collapse>
           <Collapse
@@ -2774,7 +2779,7 @@ export class ServicePage extends Component {
               placeholder="The URL for the OpenAPI descriptor of this service"
               value={this.state.service.api.openApiDescriptorUrl}
               help="Specify an open API descriptor. Useful to display the documentation"
-              onChange={e => this.changeTheValue('api.openApiDescriptorUrl', e)}
+              onChange={(e) => this.changeTheValue('api.openApiDescriptorUrl', e)}
             />
             <ObjectInput
               label="Metadata"
@@ -2782,21 +2787,21 @@ export class ServicePage extends Component {
               placeholderValue="Metadata value"
               value={this.state.service.metadata}
               help="Specify metadata for the service. Useful for analytics"
-              onChange={v => this.changeTheValue('metadata', v)}
+              onChange={(v) => this.changeTheValue('metadata', v)}
             />
             <ArrayInput
               label="IP Whitelist"
               placeholder="IP address that can access the service"
               value={this.state.service.ipFiltering.whitelist}
               help="List of whitelisted IP addresses"
-              onChange={arr => this.changeTheValue('ipFiltering.whitelist', arr)}
+              onChange={(arr) => this.changeTheValue('ipFiltering.whitelist', arr)}
             />
             <ArrayInput
               label="IP Blacklist"
               placeholder="IP address that cannot access the service"
               value={this.state.service.ipFiltering.blacklist}
               help="List of blacklisted IP addresses"
-              onChange={arr => this.changeTheValue('ipFiltering.blacklist', arr)}
+              onChange={(arr) => this.changeTheValue('ipFiltering.blacklist', arr)}
             />
           </Collapse>
           <Collapse
@@ -2812,14 +2817,14 @@ export class ServicePage extends Component {
               label="Enabled"
               value={this.state.service.canary.enabled}
               help="Canary mode enabled"
-              onChange={v => this.changeTheValue('canary.enabled', v)}
+              onChange={(v) => this.changeTheValue('canary.enabled', v)}
             />
             <NumberInput
               suffix="ratio"
               label="Traffic split"
               help="Ratio of traffic that will be sent to canary targets. For instance, if traffic is at 0.2, for 10 request, 2 request will go on canary targets and 8 will go on regular targets."
               value={this.state.service.canary.traffic}
-              onChange={v => this.changeTheValue('canary.traffic', v)}
+              onChange={(v) => this.changeTheValue('canary.traffic', v)}
             />
             {/*<ArrayInput
               label="Targets"
@@ -2842,14 +2847,14 @@ export class ServicePage extends Component {
                 predicate: { type: 'AlwaysMatch' },
                 ipAddress: null,
               }}
-              onChange={e => this.changeTheValue('canary.targets', e)}
+              onChange={(e) => this.changeTheValue('canary.targets', e)}
             />
             <TextInput
               label="Targets root"
               placeholder="The root URL of the target service"
               value={this.state.service.canary.root}
               help="Otoroshi will append this root to any target choosen. If the specified root is '/api/foo', then a request to https://yyyyyyy/bar will actually hit https://xxxxxxxxx/api/foo/bar"
-              onChange={e => this.changeTheValue('canary.root', e)}
+              onChange={(e) => this.changeTheValue('canary.root', e)}
             />
             <CanaryCampaign serviceId={this.state.service.id} />
             <div className="form-group">
@@ -2878,13 +2883,13 @@ export class ServicePage extends Component {
               label="HealthCheck enabled"
               value={this.state.service.healthCheck.enabled}
               help="To help failing fast, you can activate healthcheck on a specific URL."
-              onChange={v => this.changeTheValue('healthCheck.enabled', v)}
+              onChange={(v) => this.changeTheValue('healthCheck.enabled', v)}
             />
             <TextInput
               label="HealthCheck url"
               value={this.state.service.healthCheck.url}
               help="The URL to check. Should return an HTTP 200 response. You can also respond with an 'Opun-Health-Check-Logic-Test-Result' header set to the value of the 'Opun-Health-Check-Logic-Test' request header + 42. to make the healthcheck complete."
-              onChange={v => this.changeTheValue('healthCheck.url', v)}
+              onChange={(v) => this.changeTheValue('healthCheck.url', v)}
             />
           </Collapse>
           <Collapse
@@ -2898,20 +2903,20 @@ export class ServicePage extends Component {
               label="User facing app."
               value={this.state.service.userFacing}
               help="If service is set as user facing, Snow Monkey can be configured to not being allowed to create outage on them."
-              onChange={v => this.changeTheValue('userFacing', v)}
+              onChange={(v) => this.changeTheValue('userFacing', v)}
             />
             <BooleanInput
               label="Chaos enabled"
               value={this.state.service.chaosConfig.enabled}
               help="Activate or deactivate chaos setting on this service descriptor."
-              onChange={v => this.changeTheValue('chaosConfig.enabled', v)}
+              onChange={(v) => this.changeTheValue('chaosConfig.enabled', v)}
             />
             <ChaosConfigWithSkin
               inServiceDescriptor
               initCollapsed={false}
               collapsed={this.state.allCollapsed}
               config={this.state.service.chaosConfig}
-              onChange={v => this.changeTheValue('chaosConfig', v)}
+              onChange={(v) => this.changeTheValue('chaosConfig', v)}
             />
           </Collapse>
           <Collapse
@@ -2948,9 +2953,9 @@ export class ServicePage extends Component {
               label="Request transformers"
               refs={this.state.service.transformerRefs}
               type="transformer"
-              onChange={e => this.changeTheValue('transformerRefs', e)}
+              onChange={(e) => this.changeTheValue('transformerRefs', e)}
               config={this.state.service.transformerConfig}
-              onChangeConfig={e => this.changeTheValue('transformerConfig', e)}
+              onChangeConfig={(e) => this.changeTheValue('transformerConfig', e)}
             />
             <div className="form-group">
               <Suspense fallback={<div>loading ...</div>}>
@@ -2958,7 +2963,7 @@ export class ServicePage extends Component {
                   label="Configuration"
                   mode="json"
                   value={JSON.stringify(this.state.service.transformerConfig, null, 2)}
-                  onChange={e => this.changeTheValue('transformerConfig', JSON.parse(e))}
+                  onChange={(e) => this.changeTheValue('transformerConfig', JSON.parse(e))}
                 />
               </Suspense>
             </div>
@@ -3030,12 +3035,12 @@ export class TemplateInput extends Component {
     'You can use some variables in your templates that will be swapped with actual values : ${otoroshiMessage} will contain the raw otoroshi message for the error, ${status} will contain sthe current http status, ${errorId} will contain a unique number to track the error, ${message} will contain a translated value based on http status, ${cause} will contain a translated value based on a unique error id (ie. like errors.service.not.found). ${message} and ${cause} will be fetched from the `Custom messages` map and will have the value you specified.';
 
   componentDidMount() {
-    BackOfficeServices.findTemplateById(this.props.service.id).then(template =>
+    BackOfficeServices.findTemplateById(this.props.service.id).then((template) =>
       this.setState({ template })
     );
   }
 
-  updateState = template => {
+  updateState = (template) => {
     this.setState({ template });
   };
 
@@ -3140,19 +3145,19 @@ export class TemplateInput extends Component {
         'errors.not.found': 'Page not found',
         'errors.bad.origin': 'Bad origin',
       },
-    }).then(template => {
+    }).then((template) => {
       this.setState({ template });
     });
   };
 
   deleteTemplate = () => {
-    BackOfficeServices.deleteTemplate(this.state.template).then(__ =>
+    BackOfficeServices.deleteTemplate(this.state.template).then((__) =>
       this.setState({ template: null })
     );
   };
 
   saveTemplate = () => {
-    BackOfficeServices.updateTemplate(this.state.template).then(template =>
+    BackOfficeServices.updateTemplate(this.state.template).then((template) =>
       this.setState({ template })
     );
   };
@@ -3214,14 +3219,14 @@ export class TemplateInput extends Component {
 }
 
 export class PublicUiButton extends Component {
-  makePublic = e => {
+  makePublic = (e) => {
     if (e && e.preventDefault()) e.preventDefault();
     const newValue = [...this.props.value, '/.*'];
     this.props.onChange(newValue);
   };
 
   render() {
-    const isAlreadyPublic = this.props.value.filter(p => p === '/.*').length > 0;
+    const isAlreadyPublic = this.props.value.filter((p) => p === '/.*').length > 0;
     if (isAlreadyPublic) {
       return (
         <button type="button" disabled className="btn btn-success btn-xs">
@@ -3239,14 +3244,14 @@ export class PublicUiButton extends Component {
 }
 
 export class PrivateApiButton extends Component {
-  makePublic = e => {
+  makePublic = (e) => {
     if (e && e.preventDefault()) e.preventDefault();
     const newValue = [...this.props.value, '/api/.*'];
     this.props.onChange(newValue);
   };
 
   render() {
-    const isAlreadyPrivateApi = this.props.value.filter(p => p === '/api/.*').length > 0;
+    const isAlreadyPrivateApi = this.props.value.filter((p) => p === '/api/.*').length > 0;
     if (isAlreadyPrivateApi) {
       return (
         <button type="button" disabled className="btn btn-danger btn-xs" style={{ marginLeft: 5 }}>

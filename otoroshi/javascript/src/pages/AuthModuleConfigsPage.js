@@ -6,15 +6,15 @@ import { AuthModuleConfig, Oauth2ModuleConfig } from '../components/AuthModuleCo
 
 export class AuthModuleConfigsPage extends Component {
   columns = [
-    { title: 'Name', content: item => item.name },
-    { title: 'Description', content: item => item.desc },
+    { title: 'Name', content: (item) => item.name },
+    { title: 'Description', content: (item) => item.desc },
   ];
 
   componentDidMount() {
     this.props.setTitle(`Global auth. configs`);
   }
 
-  gotoConfig = config => {
+  gotoConfig = (config) => {
     this.props.history.push({
       pathname: `auth-configs/edit/${config.id}`,
     });
@@ -22,19 +22,17 @@ export class AuthModuleConfigsPage extends Component {
 
   duplicate = (s, ss, e) => {
     if (e && e.preventDefault) e.preventDefault();
-    window
-      .newConfirm(`Are you sure you want to duplicate ${s.currentItem.name} ?`)
-      .then(dup => {
-        if (dup) {
-          BackOfficeServices.createNewAuthConfig().then(auth => {
-            const newModule = { ...s.currentItem };
-            newModule.id = auth.id;
-            newModule.name = newModule.name + ' (duplicated)';
-            ss({ currentItem: newModule, showAddForm: true, showEditForm: false });
-            window.history.replaceState({}, '', `/bo/dashboard/auth-configs/add/${newModule.id}`);
-          });
-        }
-      });
+    window.newConfirm(`Are you sure you want to duplicate ${s.currentItem.name} ?`).then((dup) => {
+      if (dup) {
+        BackOfficeServices.createNewAuthConfig().then((auth) => {
+          const newModule = { ...s.currentItem };
+          newModule.id = auth.id;
+          newModule.name = newModule.name + ' (duplicated)';
+          ss({ currentItem: newModule, showAddForm: true, showEditForm: false });
+          window.history.replaceState({}, '', `/bo/dashboard/auth-configs/add/${newModule.id}`);
+        });
+      }
+    });
   };
 
   render() {
@@ -65,12 +63,12 @@ export class AuthModuleConfigsPage extends Component {
           deleteItem={BackOfficeServices.deleteAuthConfig}
           createItem={BackOfficeServices.createAuthConfig}
           navigateTo={this.gotoConfig}
-          itemUrl={i => `/bo/dashboard/auth-configs/edit/${i.id}`}
+          itemUrl={(i) => `/bo/dashboard/auth-configs/edit/${i.id}`}
           showActions={true}
           showLink={false}
           rowNavigation={true}
           firstSort={0}
-          extractKey={item => item.id}
+          extractKey={(item) => item.id}
           formComponent={AuthModuleConfig}
           injectToolbar={(s, ss) => {
             return (
@@ -78,10 +76,10 @@ export class AuthModuleConfigsPage extends Component {
                 <div className="col-xs-12 col-sm-10 displayGroupBtn">
                   <button
                     className="btn btn-info"
-                    type="button"    
+                    type="button"
                     style={{ marginRight: 20 }}
-                    onClick={e => this.duplicate(s, ss, e)}>
-                  <i className="far fa-copy" aria-hidden="true" />
+                    onClick={(e) => this.duplicate(s, ss, e)}>
+                    <i className="far fa-copy" aria-hidden="true" />
                   </button>
                 </div>
               </div>

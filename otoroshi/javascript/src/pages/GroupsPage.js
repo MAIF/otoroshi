@@ -8,7 +8,7 @@ export class GroupsPage extends Component {
   formSchema = {
     _loc: {
       type: 'location',
-      props: {}
+      props: {},
     },
     id: { type: 'string', disabled: true, props: { label: 'Id', placeholder: '---' } },
     name: {
@@ -28,7 +28,7 @@ export class GroupsPage extends Component {
   columns = [
     {
       title: 'Name',
-      content: item => item.name,
+      content: (item) => item.name,
       wrappedCell: (v, item, table) => {
         if (this.state && this.state.env && this.state.env.adminGroupId === item.id) {
           return (
@@ -42,16 +42,16 @@ export class GroupsPage extends Component {
         return item.name;
       },
     },
-    { title: 'Description', noMobile: true, content: item => item.description },
+    { title: 'Description', noMobile: true, content: (item) => item.description },
     {
       title: 'Stats',
       style: { textAlign: 'center', width: 70 },
       notFilterable: true,
-      content: item => (
+      content: (item) => (
         <button
           type="button"
           className="btn btn-sm btn-success"
-          onClick={e => (window.location = `/bo/dashboard/groups/edit/${item.id}/stats`)}>
+          onClick={(e) => (window.location = `/bo/dashboard/groups/edit/${item.id}/stats`)}>
           <i className="glyphicon glyphicon-stats" />
         </button>
       ),
@@ -64,7 +64,7 @@ export class GroupsPage extends Component {
 
   componentDidMount() {
     this.props.setTitle(`All service groups`);
-    BackOfficeServices.env().then(env => this.setState({ env }));
+    BackOfficeServices.env().then((env) => this.setState({ env }));
   }
 
   render() {
@@ -83,19 +83,19 @@ export class GroupsPage extends Component {
         updateItem={BackOfficeServices.updateGroup}
         deleteItem={BackOfficeServices.deleteGroup}
         createItem={BackOfficeServices.createGroup}
-        navigateTo={item => {
+        navigateTo={(item) => {
           window.location = `/bo/dashboard/services?group=${item.id}&groupName=${item.name}`;
           // this.props.history.push({
           //   pathname: `/services?group=${item.id}&groupName=${item.name}`,
           //   // query: { group: item.id, groupName: item.name },
           // });
         }}
-        itemUrl={i => `/bo/dashboard/services?group=${i.id}&groupName=${i.name}`}
-        displayTrash={item => this.state.env && this.state.env.adminGroupId === item.id}
+        itemUrl={(i) => `/bo/dashboard/services?group=${i.id}&groupName=${i.name}`}
+        displayTrash={(item) => this.state.env && this.state.env.adminGroupId === item.id}
         showActions={true}
         showLink={true}
         rowNavigation={true}
-        extractKey={item => item.id}
+        extractKey={(item) => item.id}
       />
     );
   }

@@ -10,7 +10,7 @@ function Base64Url() {
     lookup[chars.charCodeAt(i)] = i;
   }
 
-  let encode = function(arraybuffer) {
+  let encode = function (arraybuffer) {
     let bytes = new Uint8Array(arraybuffer),
       i,
       len = bytes.length,
@@ -32,7 +32,7 @@ function Base64Url() {
     return base64url;
   };
 
-  let decode = function(base64string) {
+  let decode = function (base64string) {
     let bufferLength = base64string.length * 0.75,
       len = base64string.length,
       i,
@@ -139,12 +139,12 @@ export class SelfUpdatePage extends Component {
     clearInterval(this.interval);
   }
 
-  onChange = e => {
+  onChange = (e) => {
     this.setState({ [e.target.name]: e.target.value });
   };
 
   handleError = (mess, t) => {
-    return err => {
+    return (err) => {
       console.log(err && err.message ? err.message : err);
       this.setState({ error: mess });
       throw err;
@@ -185,8 +185,8 @@ export class SelfUpdatePage extends Component {
         origin: window.location.origin,
       }),
     })
-      .then(r => r.json())
-      .then(r => {
+      .then((r) => r.json())
+      .then((r) => {
         this.setState({
           error: null,
           password: '',
@@ -203,7 +203,7 @@ export class SelfUpdatePage extends Component {
       });
   };
 
-  handleErrorWithMessage = message => e => {
+  handleErrorWithMessage = (message) => (e) => {
     console.log('error', message, e);
     this.setState({ error: message });
   };
@@ -215,10 +215,10 @@ export class SelfUpdatePage extends Component {
       headers: {
         Accept: 'application/json',
       },
-    }).then(r => r.json());
+    }).then((r) => r.json());
   };
 
-  registerWebAuthn = e => {
+  registerWebAuthn = (e) => {
     if (e && e.preventDefault) {
       e.preventDefault();
     }
@@ -226,11 +226,11 @@ export class SelfUpdatePage extends Component {
     this.setState({ message: null });
 
     return this.save()
-      .then(user => {
+      .then((user) => {
         this.delete().then(() => this.setState({ message: null, mustRegWebauthnDevice: true }));
         return user;
       })
-      .then(user => {
+      .then((user) => {
         const username = user.username;
         const password = user.password;
         const label = user.label;
@@ -249,8 +249,8 @@ export class SelfUpdatePage extends Component {
           },
           body: JSON.stringify(payload),
         })
-          .then(r => r.json())
-          .then(resp => {
+          .then((r) => r.json())
+          .then((resp) => {
             const requestId = resp.requestId;
             const publicKeyCredentialCreationOptions = { ...resp.request };
             const handle = publicKeyCredentialCreationOptions.user.id + '';
@@ -260,9 +260,11 @@ export class SelfUpdatePage extends Component {
             publicKeyCredentialCreationOptions.user.id = base64url.decode(
               publicKeyCredentialCreationOptions.user.id
             );
-            publicKeyCredentialCreationOptions.excludeCredentials = publicKeyCredentialCreationOptions.excludeCredentials.map(c => {
-              return { ...c, id: base64url.decode(c.id) };
-            });
+            publicKeyCredentialCreationOptions.excludeCredentials = publicKeyCredentialCreationOptions.excludeCredentials.map(
+              (c) => {
+                return { ...c, id: base64url.decode(c.id) };
+              }
+            );
             return navigator.credentials
               .create(
                 {
@@ -270,7 +272,7 @@ export class SelfUpdatePage extends Component {
                 },
                 this.handleErrorWithMessage('Webauthn error 1')
               )
-              .then(credentials => {
+              .then((credentials) => {
                 const json = responseToObject(credentials);
                 return fetch(`/privateapps/register/finish?session=${this.props.session}`, {
                   method: 'POST',
@@ -291,8 +293,8 @@ export class SelfUpdatePage extends Component {
                     },
                   }),
                 })
-                  .then(r => r.json())
-                  .then(resp => {
+                  .then((r) => r.json())
+                  .then((resp) => {
                     this.setState({
                       error: null,
                       password: '',

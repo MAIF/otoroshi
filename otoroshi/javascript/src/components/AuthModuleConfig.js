@@ -35,7 +35,7 @@ function Base64Url() {
     lookup[chars.charCodeAt(i)] = i;
   }
 
-  let encode = function(arraybuffer) {
+  let encode = function (arraybuffer) {
     let bytes = new Uint8Array(arraybuffer),
       i,
       len = bytes.length,
@@ -57,7 +57,7 @@ function Base64Url() {
     return base64url;
   };
 
-  let decode = function(base64string) {
+  let decode = function (base64string) {
     let bufferLength = base64string.length * 0.75,
       len = base64string.length,
       i,
@@ -172,8 +172,8 @@ export class Oauth2ModuleConfig extends Component {
     },
     sessionCookieValues: {
       httpOnly: true,
-      secure: true
-    }
+      secure: true,
+    },
   };
 
   componentDidCatch(error) {
@@ -195,7 +195,7 @@ export class Oauth2ModuleConfig extends Component {
   };
 
   fetchConfig = () => {
-    window.newPrompt('URL of the OIDC config').then(url => {
+    window.newPrompt('URL of the OIDC config').then((url) => {
       if (url) {
         return fetch(`/bo/api/oidc/_fetchConfig`, {
           method: 'POST',
@@ -213,8 +213,8 @@ export class Oauth2ModuleConfig extends Component {
             clientSecret: this.props.value.clientSecret,
           }),
         })
-          .then(r => r.json())
-          .then(config => {
+          .then((r) => r.json())
+          .then((config) => {
             this.props.onChange(config);
           });
       }
@@ -222,40 +222,42 @@ export class Oauth2ModuleConfig extends Component {
   };
 
   fetchKeycloakConfig = () => {
-    window.newPrompt('Keycloak config', { value: '', textarea: true, rows: 12 }).then(strConfig => {
-      if (strConfig) {
-        const config = JSON.parse(strConfig);
-        const serverUrl = config['auth-server-url'];
-        const realm = config.realm;
-        const configUrl = `${serverUrl}/realms/${realm}/.well-known/openid-configuration`;
-        const clientId = config.resource;
-        const clientSecret = config.credentials
-          ? config.credentials.secret
+    window
+      .newPrompt('Keycloak config', { value: '', textarea: true, rows: 12 })
+      .then((strConfig) => {
+        if (strConfig) {
+          const config = JSON.parse(strConfig);
+          const serverUrl = config['auth-server-url'];
+          const realm = config.realm;
+          const configUrl = `${serverUrl}/realms/${realm}/.well-known/openid-configuration`;
+          const clientId = config.resource;
+          const clientSecret = config.credentials
             ? config.credentials.secret
-            : ''
-          : '';
-        return fetch(`/bo/api/oidc/_fetchConfig`, {
-          method: 'POST',
-          credentials: 'include',
-          headers: {
-            Accept: 'application/json',
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            url: configUrl,
-            id: this.props.value.id,
-            name: this.props.value.name,
-            desc: this.props.value.desc,
-            clientId: clientId,
-            clientSecret: clientSecret,
-          }),
-        })
-          .then(r => r.json())
-          .then(config => {
-            this.props.onChange(config);
-          });
-      }
-    });
+              ? config.credentials.secret
+              : ''
+            : '';
+          return fetch(`/bo/api/oidc/_fetchConfig`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+              Accept: 'application/json',
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              url: configUrl,
+              id: this.props.value.id,
+              name: this.props.value.name,
+              desc: this.props.value.desc,
+              clientId: clientId,
+              clientSecret: clientSecret,
+            }),
+          })
+            .then((r) => r.json())
+            .then((config) => {
+              this.props.onChange(config);
+            });
+        }
+      });
   };
 
   render() {
@@ -291,148 +293,148 @@ export class Oauth2ModuleConfig extends Component {
           value={settings.id}
           disabled
           help="..."
-          onChange={v => changeTheValue(path + '.id', v)}
+          onChange={(v) => changeTheValue(path + '.id', v)}
         />
         <TextInput
           label="Name"
           value={settings.name}
           help="..."
-          onChange={v => changeTheValue(path + '.name', v)}
+          onChange={(v) => changeTheValue(path + '.name', v)}
         />
         <TextInput
           label="Description"
           value={settings.desc}
           help="..."
-          onChange={v => changeTheValue(path + '.desc', v)}
+          onChange={(v) => changeTheValue(path + '.desc', v)}
         />
         <BooleanInput
           label="Use cookie"
           value={settings.useCookie}
           help="If your OAuth2 provider does not support query param in redirect uri, you can use cookies instead"
-          onChange={v => changeTheValue(path + '.useCookie', v)}
+          onChange={(v) => changeTheValue(path + '.useCookie', v)}
         />
         <BooleanInput
           label="Use json payloads"
           value={settings.useJson}
           help="..."
-          onChange={v => changeTheValue(path + '.useJson', v)}
+          onChange={(v) => changeTheValue(path + '.useJson', v)}
         />
         <BooleanInput
           label="Refresh tokens"
           value={settings.refreshTokens}
           help="Automatically refresh access token using the refresh token if available"
-          onChange={v => changeTheValue(path + '.refreshTokens', v)}
+          onChange={(v) => changeTheValue(path + '.refreshTokens', v)}
         />
         <BooleanInput
           label="Read profile from token"
           value={settings.readProfileFromToken}
           help="..."
-          onChange={v => changeTheValue(path + '.readProfileFromToken', v)}
+          onChange={(v) => changeTheValue(path + '.readProfileFromToken', v)}
         />
         <BooleanInput
           label="Super admins only"
           value={settings.superAdmins}
           help="All logged in users will have super admins rights"
-          onChange={v => changeTheValue(path + '.superAdmins', v)}
+          onChange={(v) => changeTheValue(path + '.superAdmins', v)}
         />
         <TextInput
           label="Client ID"
           value={settings.clientId}
           help="..."
-          onChange={v => changeTheValue(path + '.clientId', v)}
+          onChange={(v) => changeTheValue(path + '.clientId', v)}
         />
         <TextInput
           label="Client Secret"
           value={settings.clientSecret}
           help="..."
-          onChange={v => changeTheValue(path + '.clientSecret', v)}
+          onChange={(v) => changeTheValue(path + '.clientSecret', v)}
         />
         <Separator title="URLs" />
         <TextInput
           label="Authorize URL"
           value={settings.authorizeUrl}
           help="..."
-          onChange={v => changeTheValue(path + '.authorizeUrl', v)}
+          onChange={(v) => changeTheValue(path + '.authorizeUrl', v)}
         />
         <TextInput
           label="Token URL"
           value={settings.tokenUrl}
           help="..."
-          onChange={v => changeTheValue(path + '.tokenUrl', v)}
+          onChange={(v) => changeTheValue(path + '.tokenUrl', v)}
         />
         <TextInput
           label="Introspection URL"
           value={settings.introspectionUrl}
           help="..."
-          onChange={v => changeTheValue(path + '.introspectionUrl', v)}
+          onChange={(v) => changeTheValue(path + '.introspectionUrl', v)}
         />
         <TextInput
           label="Userinfo URL"
           value={settings.userInfoUrl}
           help="..."
-          onChange={v => changeTheValue(path + '.userInfoUrl', v)}
+          onChange={(v) => changeTheValue(path + '.userInfoUrl', v)}
         />
         <TextInput
           label="Login URL"
           value={settings.loginUrl}
           help="..."
-          onChange={v => changeTheValue(path + '.loginUrl', v)}
+          onChange={(v) => changeTheValue(path + '.loginUrl', v)}
         />
         <TextInput
           label="Logout URL"
           value={settings.logoutUrl}
           help="..."
-          onChange={v => changeTheValue(path + '.logoutUrl', v)}
+          onChange={(v) => changeTheValue(path + '.logoutUrl', v)}
         />
         <TextInput
           label="Callback URL"
           value={settings.callbackUrl}
           help="..."
-          onChange={v => changeTheValue(path + '.callbackUrl', v)}
+          onChange={(v) => changeTheValue(path + '.callbackUrl', v)}
         />
         <Separator title="Token" />
         <TextInput
           label="Access token field name"
           value={settings.accessTokenField}
           help="..."
-          onChange={v => changeTheValue(path + '.accessTokenField', v)}
+          onChange={(v) => changeTheValue(path + '.accessTokenField', v)}
         />
         <TextInput
           label="Scope"
           value={settings.scope}
           help="..."
-          onChange={v => changeTheValue(path + '.scope', v)}
+          onChange={(v) => changeTheValue(path + '.scope', v)}
         />
         <TextInput
           label="Claims"
           value={settings.claims}
           help="..."
-          onChange={v => changeTheValue(path + '.claims', v)}
+          onChange={(v) => changeTheValue(path + '.claims', v)}
         />
         <TextInput
           label="Name field name"
           value={settings.nameField}
           help="..."
-          onChange={v => changeTheValue(path + '.nameField', v)}
+          onChange={(v) => changeTheValue(path + '.nameField', v)}
         />
         <TextInput
           label="Email field name"
           value={settings.emailField}
           help="..."
-          onChange={v => changeTheValue(path + '.emailField', v)}
+          onChange={(v) => changeTheValue(path + '.emailField', v)}
         />
         <TextInput
           label="Otoroshi metadata field name"
           value={settings.otoroshiDataField}
           help="..."
-          onChange={v => changeTheValue(path + '.otoroshiDataField', v)}
+          onChange={(v) => changeTheValue(path + '.otoroshiDataField', v)}
         />
         <Suspense fallback={<div>loading ...</div>}>
           <CodeInput
             label="Extra metadata"
             mode="json"
             value={JSON.stringify(settings.extraMetadata, null, 2)}
-            onChange={e => {
+            onChange={(e) => {
               if (e.trim() === '') {
                 this.changeTheValue(path + '.extraMetadata', {});
               } else {
@@ -441,38 +443,38 @@ export class Oauth2ModuleConfig extends Component {
             }}
           />
         </Suspense>
-        <JsonObjectAsCodeInput 
+        <JsonObjectAsCodeInput
           label="Data override"
           mode="json"
           value={settings.dataOverride || {}}
-          onChange={e => this.changeTheValue(path + '.dataOverride', e)}
+          onChange={(e) => this.changeTheValue(path + '.dataOverride', e)}
         />
-        <JsonObjectAsCodeInput 
+        <JsonObjectAsCodeInput
           label="Rights override"
           mode="json"
           value={settings.rightsOverride || {}}
-          onChange={e => this.changeTheValue(path + '.rightsOverride', e)}
+          onChange={(e) => this.changeTheValue(path + '.rightsOverride', e)}
         />
         <TextInput
           label="Api key metadata field name"
           value={settings.apiKeyMetaField}
           help="..."
-          onChange={v => changeTheValue(path + '.apiKeyMetaField', v)}
+          onChange={(v) => changeTheValue(path + '.apiKeyMetaField', v)}
         />
         <TextInput
           label="Api key tags field name"
           value={settings.apiKeyTagsField}
           help="..."
-          onChange={v => changeTheValue(path + '.apiKeyTagsField', v)}
+          onChange={(v) => changeTheValue(path + '.apiKeyTagsField', v)}
         />
         <Separator title="Proxy" />
-        <Proxy value={settings.proxy} onChange={v => changeTheValue(path + '.proxy', v)} />
+        <Proxy value={settings.proxy} onChange={(v) => changeTheValue(path + '.proxy', v)} />
         <Separator title="OIDC Config" />
         <TextInput
           label="OIDC config url"
           value={settings.oidConfig}
           help="..."
-          onChange={v => changeTheValue(path + '.oidConfig', v)}
+          onChange={(v) => changeTheValue(path + '.oidConfig', v)}
         />
         <Separator title="Token validation" />
         <AlgoSettings
@@ -486,26 +488,26 @@ export class Oauth2ModuleConfig extends Component {
           label="Use mTLS"
           value={settings.mtlsConfig.mtls}
           help="..."
-          onChange={v => changeTheValue(path + '.mtlsConfig.mtls', v)}
+          onChange={(v) => changeTheValue(path + '.mtlsConfig.mtls', v)}
         />
         <BooleanInput
           label="TLS loose"
           value={settings.mtlsConfig.loose}
           help="..."
-          onChange={v => changeTheValue(path + '.mtlsConfig.loose', v)}
+          onChange={(v) => changeTheValue(path + '.mtlsConfig.loose', v)}
         />
         <BooleanInput
           label="Trust all"
           value={settings.mtlsConfig.trustAll}
           help="..."
-          onChange={v => changeTheValue(path + '.mtlsConfig.trustAll', v)}
+          onChange={(v) => changeTheValue(path + '.mtlsConfig.trustAll', v)}
         />
         <ArrayInput
           label="Client certificates"
           placeholder="Choose a client certificate"
           value={settings.mtlsConfig.certs}
           valuesFrom="/bo/api/proxy/api/certificates"
-          transformer={a => ({
+          transformer={(a) => ({
             value: a.id,
             label: (
               <span>
@@ -517,14 +519,14 @@ export class Oauth2ModuleConfig extends Component {
             ),
           })}
           help="The certificates used when performing a mTLS call"
-          onChange={e => changeTheValue(path + '.mtlsConfig.certs', e)}
+          onChange={(e) => changeTheValue(path + '.mtlsConfig.certs', e)}
         />
         <ArrayInput
           label="Trusted certificates"
           placeholder="Choose a trusted certificate"
           value={settings.mtlsConfig.trustedCerts}
           valuesFrom="/bo/api/proxy/api/certificates"
-          transformer={a => ({
+          transformer={(a) => ({
             value: a.id,
             label: (
               <span>
@@ -536,7 +538,7 @@ export class Oauth2ModuleConfig extends Component {
             ),
           })}
           help="The trusted certificates used when performing a mTLS call"
-          onChange={e => changeTheValue(path + '.mtlsConfig.trustedCerts', e)}
+          onChange={(e) => changeTheValue(path + '.mtlsConfig.trustedCerts', e)}
         />
       </div>
     );
@@ -548,12 +550,12 @@ export class User extends Component {
     rawUser: JSON.stringify(this.props.user.metadata),
   };
 
-  handleErrorWithMessage = message => () => {
+  handleErrorWithMessage = (message) => () => {
     console.log('error', message);
     this.setState({ error: message });
   };
 
-  registerWebAuthn = e => {
+  registerWebAuthn = (e) => {
     if (e && e.preventDefault) {
       e.preventDefault();
     }
@@ -576,8 +578,8 @@ export class User extends Component {
           origin: window.location.origin,
         }),
       })
-        .then(r => r.json())
-        .then(resp => {
+        .then((r) => r.json())
+        .then((resp) => {
           const requestId = resp.requestId;
           const publicKeyCredentialCreationOptions = { ...resp.request };
           const handle = publicKeyCredentialCreationOptions.user.id + '';
@@ -587,9 +589,11 @@ export class User extends Component {
           publicKeyCredentialCreationOptions.user.id = base64url.decode(
             publicKeyCredentialCreationOptions.user.id
           );
-          publicKeyCredentialCreationOptions.excludeCredentials = publicKeyCredentialCreationOptions.excludeCredentials.map(c => {
-            return { ...c, id: base64url.decode(c.id) };
-          });
+          publicKeyCredentialCreationOptions.excludeCredentials = publicKeyCredentialCreationOptions.excludeCredentials.map(
+            (c) => {
+              return { ...c, id: base64url.decode(c.id) };
+            }
+          );
           return navigator.credentials
             .create(
               {
@@ -597,7 +601,7 @@ export class User extends Component {
               },
               this.handleErrorWithMessage('Webauthn error')
             )
-            .then(credentials => {
+            .then((credentials) => {
               const json = responseToObject(credentials);
               return fetch(`/bo/api/proxy/api/auths/${this.props.authModuleId}/register/finish`, {
                 method: 'POST',
@@ -618,8 +622,8 @@ export class User extends Component {
                   },
                 }),
               })
-                .then(r => r.json())
-                .then(resp => {
+                .then((r) => r.json())
+                .then((resp) => {
                   this.props.updateAll();
                   console.log('done');
                   this.setState({
@@ -646,14 +650,14 @@ export class User extends Component {
             placeholder="User name"
             className="form-control"
             value={this.props.user.name}
-            onChange={e => this.props.onChange(this.props.user.email, 'name', e.target.value)}
+            onChange={(e) => this.props.onChange(this.props.user.email, 'name', e.target.value)}
           />
           <input
             type="text"
             placeholder="User email"
             className="form-control"
             value={this.props.user.email}
-            onChange={e => this.props.onChange(this.props.user.email, 'email', e.target.value)}
+            onChange={(e) => this.props.onChange(this.props.user.email, 'email', e.target.value)}
           />
           <input
             type="text"
@@ -664,7 +668,7 @@ export class User extends Component {
                 ? this.state.rawUser
                 : JSON.stringify(this.props.user.metadata)
             }
-            onChange={e => {
+            onChange={(e) => {
               try {
                 const finalValue = JSON.parse(e.target.value);
                 this.setState({ rawUser: JSON.stringify(finalValue) });
@@ -680,9 +684,9 @@ export class User extends Component {
             type="button"
             className="btn btn-sm btn-success"
             title="Set password"
-            onClick={e => {
-              window.newPrompt('Type password', { type: 'password' }).then(value1 => {
-                window.newPrompt('Re-type password', { type: 'password' }).then(value2 => {
+            onClick={(e) => {
+              window.newPrompt('Type password', { type: 'password' }).then((value1) => {
+                window.newPrompt('Re-type password', { type: 'password' }).then((value2) => {
                   if (value1 && value2 && value1 === value2) {
                     this.props.hashPassword(this.props.user.email, value1);
                   } else {
@@ -698,7 +702,7 @@ export class User extends Component {
             type="button"
             className="btn btn-sm btn-success"
             title="Generate password"
-            onClick={e => {
+            onClick={(e) => {
               const password = faker.random.alphaNumeric(16);
               this.props.hashPassword(this.props.user.email, password);
               window.newAlert(`The generated password is: ${password}`, 'Generated password');
@@ -711,7 +715,7 @@ export class User extends Component {
               type="button"
               className="btn btn-sm btn-info"
               title="Update profile link"
-              onClick={e => {
+              onClick={(e) => {
                 return fetch(
                   `/bo/api/proxy/api/privateapps/sessions/${this.props.authModuleId}/${this.props.user.email}`,
                   {
@@ -722,8 +726,8 @@ export class User extends Component {
                     },
                   }
                 )
-                  .then(r => r.json())
-                  .then(r => {
+                  .then((r) => r.json())
+                  .then((r) => {
                     console.log(r);
                     const sessionId = r.sessionId;
                     window.newAlert(
@@ -752,7 +756,7 @@ export class User extends Component {
               type="button"
               className="btn btn-sm btn-info"
               title="Send update profile link to user"
-              onClick={e => {
+              onClick={(e) => {
                 return fetch(
                   `/bo/api/proxy/api/privateapps/sessions/send/${this.props.authModuleId}/${this.props.user.email}`,
                   {
@@ -763,8 +767,8 @@ export class User extends Component {
                     },
                   }
                 )
-                  .then(r => r.json())
-                  .then(r => {
+                  .then((r) => r.json())
+                  .then((r) => {
                     window.newAlert('The email containing update link has been sent', 'Email sent');
                   });
               }}
@@ -786,7 +790,7 @@ export class User extends Component {
             type="button"
             className="btn btn-sm btn-danger"
             title="Remove user"
-            onClick={e => this.props.removeUser(this.props.user.email)}>
+            onClick={(e) => this.props.removeUser(this.props.user.email)}>
             <i className="glyphicon glyphicon-trash" />
           </button>
         </div>
@@ -832,15 +836,15 @@ export class BasicModuleConfig extends Component {
     this.props.onChange(newValue);
   };
 
-  removeUser = email => {
+  removeUser = (email) => {
     const newValue = _.cloneDeep(this.props.value);
-    newValue.users = newValue.users.filter(u => u.email !== email);
+    newValue.users = newValue.users.filter((u) => u.email !== email);
     this.props.onChange(newValue);
   };
 
   hashPassword = (email, password) => {
     const newValue = _.cloneDeep(this.props.value);
-    newValue.users.map(user => {
+    newValue.users.map((user) => {
       if (user.email === email) {
         user.password = bcrypt.hashSync(password, bcrypt.genSaltSync(10));
       }
@@ -850,7 +854,7 @@ export class BasicModuleConfig extends Component {
 
   changeField = (email, name, value) => {
     const newValue = _.cloneDeep(this.props.value);
-    newValue.users.map(user => {
+    newValue.users.map((user) => {
       if (user.email === email) {
         user[name] = value;
       }
@@ -860,14 +864,14 @@ export class BasicModuleConfig extends Component {
 
   updateAll = () => {
     const settings = this.props.value || this.props.settings;
-    return BackOfficeServices.findAuthConfigById(settings.id).then(auth =>
+    return BackOfficeServices.findAuthConfigById(settings.id).then((auth) =>
       this.props.onChange(auth)
     );
   };
 
   save = () => {
     const settings = this.props.value || this.props.settings;
-    return BackOfficeServices.updateAuthConfig(settings).then(auth => this.props.onChange(auth));
+    return BackOfficeServices.updateAuthConfig(settings).then((auth) => this.props.onChange(auth));
   };
 
   render() {
@@ -884,38 +888,38 @@ export class BasicModuleConfig extends Component {
           value={settings.id}
           disabled
           help="..."
-          onChange={v => changeTheValue(path + '.id', v)}
+          onChange={(v) => changeTheValue(path + '.id', v)}
         />
         <TextInput
           label="Name"
           value={settings.name}
           help="..."
-          onChange={v => changeTheValue(path + '.name', v)}
+          onChange={(v) => changeTheValue(path + '.name', v)}
         />
         <TextInput
           label="Description"
           value={settings.desc}
           help="..."
-          onChange={v => changeTheValue(path + '.desc', v)}
+          onChange={(v) => changeTheValue(path + '.desc', v)}
         />
         <BooleanInput
           label="Basic auth."
           value={settings.basicAuth}
           help="..."
-          onChange={v => changeTheValue(path + '.basicAuth', v)}
+          onChange={(v) => changeTheValue(path + '.basicAuth', v)}
         />
         <BooleanInput
           label="Login with WebAuthn"
           value={settings.webauthn}
           help="..."
-          onChange={v => changeTheValue(path + '.webauthn', v)}
+          onChange={(v) => changeTheValue(path + '.webauthn', v)}
         />
         <div className="form-group">
           <label htmlFor={`input-users`} className="col-sm-2 control-label">
             Users
           </label>
           <div className="col-sm-10">
-            {this.props.value.users.map(user => (
+            {this.props.value.users.map((user) => (
               <User
                 user={user}
                 authModuleId={settings.id}
@@ -943,7 +947,7 @@ export class BasicModuleConfig extends Component {
               <button
                 type="button"
                 className="btn btn-info"
-                onClick={e => this.setState({ showRaw: !this.state.showRaw })}>
+                onClick={(e) => this.setState({ showRaw: !this.state.showRaw })}>
                 Show raw users
               </button>
             </div>
@@ -956,7 +960,7 @@ export class BasicModuleConfig extends Component {
               <button
                 type="button"
                 className="btn btn-info"
-                onClick={e => this.setState({ showRaw: !this.state.showRaw })}>
+                onClick={(e) => this.setState({ showRaw: !this.state.showRaw })}>
                 Hide raw users
               </button>
             </div>
@@ -968,7 +972,7 @@ export class BasicModuleConfig extends Component {
               label=""
               value={JSON.stringify(settings.users, null, 2)}
               help="..."
-              onChange={v => changeTheValue(path + '.users', JSON.parse(v))}
+              onChange={(v) => changeTheValue(path + '.users', JSON.parse(v))}
             />
           </Suspense>
         )}
@@ -1009,20 +1013,22 @@ export class LdapModuleConfig extends Component {
         'Content-Type': 'application/json',
         Accept: 'application/json',
       },
-      body: JSON.stringify(settings)
-    }).then(r => r.json()).then(r => {
-      if (r.works) {
-        window.newAlert('It Works !')
-      } else {
-        window.newAlert(`Error while checking connection: ${r.error}`)
-      }
-    });
-  }
+      body: JSON.stringify(settings),
+    })
+      .then((r) => r.json())
+      .then((r) => {
+        if (r.works) {
+          window.newAlert('It Works !');
+        } else {
+          window.newAlert(`Error while checking connection: ${r.error}`);
+        }
+      });
+  };
 
   checkUser = () => {
     const settings = this.props.value || this.props.settings;
     window.newAlert(<LdapUserLoginTest config={settings} />, `Testing user login`);
-  }
+  };
 
   render() {
     const settings = this.props.value || this.props.settings;
@@ -1038,111 +1044,115 @@ export class LdapModuleConfig extends Component {
           value={settings.id}
           disabled
           help="..."
-          onChange={v => changeTheValue(path + '.id', v)}
+          onChange={(v) => changeTheValue(path + '.id', v)}
         />
         <TextInput
           label="Name"
           value={settings.name}
           help="..."
-          onChange={v => changeTheValue(path + '.name', v)}
+          onChange={(v) => changeTheValue(path + '.name', v)}
         />
         <TextInput
           label="Description"
           value={settings.desc}
           help="..."
-          onChange={v => changeTheValue(path + '.desc', v)}
+          onChange={(v) => changeTheValue(path + '.desc', v)}
         />
         <BooleanInput
           label="Basic auth."
           value={settings.basicAuth}
           help="..."
-          onChange={v => changeTheValue(path + '.basicAuth', v)}
+          onChange={(v) => changeTheValue(path + '.basicAuth', v)}
         />
         <BooleanInput
           label="Allow empty password"
           value={settings.allowEmptyPassword}
           help="..."
-          onChange={v => changeTheValue(path + '.allowEmptyPassword', v)}
+          onChange={(v) => changeTheValue(path + '.allowEmptyPassword', v)}
         />
         <BooleanInput
           label="Super admins only"
           value={settings.superAdmins}
           help="All logged in users will have super admins rights"
-          onChange={v => changeTheValue(path + '.superAdmins', v)}
+          onChange={(v) => changeTheValue(path + '.superAdmins', v)}
         />
         <TextInput
           label="LDAP Server URL"
           value={settings.serverUrl}
           help="..."
-          onChange={v => changeTheValue(path + '.serverUrl', v)}
+          onChange={(v) => changeTheValue(path + '.serverUrl', v)}
         />
         <TextInput
           label="Search Base"
           value={settings.searchBase}
           help="..."
-          onChange={v => changeTheValue(path + '.searchBase', v)}
+          onChange={(v) => changeTheValue(path + '.searchBase', v)}
         />
         <TextInput
           label="Users search base"
           value={settings.userBase}
           help="..."
-          onChange={v => changeTheValue(path + '.userBase', v)}
+          onChange={(v) => changeTheValue(path + '.userBase', v)}
         />
         <TextInput
           label="Group filter"
           value={settings.groupFilter}
           help="..."
-          onChange={v => changeTheValue(path + '.groupFilter', v)}
+          onChange={(v) => changeTheValue(path + '.groupFilter', v)}
         />
         <TextInput
           label="Search Filter"
           value={settings.searchFilter}
           help="use ${username} as placeholder for searched username"
-          onChange={v => changeTheValue(path + '.searchFilter', v)}
+          onChange={(v) => changeTheValue(path + '.searchFilter', v)}
         />
         <TextInput
           label="Admin username (bind DN)"
           value={settings.adminUsername}
           help="if one"
-          onChange={v => changeTheValue(path + '.adminUsername', v)}
+          onChange={(v) => changeTheValue(path + '.adminUsername', v)}
         />
         <PasswordInput
           label="Admin password"
           value={settings.adminPassword}
           help="if one"
-          onChange={v => changeTheValue(path + '.adminPassword', v)}
+          onChange={(v) => changeTheValue(path + '.adminPassword', v)}
         />
         <div className="form-group">
           <label className="col-xs-12 col-sm-2 control-label"></label>
           <div className="col-sm-10" style={{ display: 'flex' }}>
-            <button type="button" className="btn btn-success" onClick={this.check}>Test admin. connection</button>
-            <button type="button" className="btn btn-success" onClick={this.checkUser}>Test user connection</button>
+            <button type="button" className="btn btn-success" onClick={this.check}>
+              Test admin. connection
+            </button>
+            <button type="button" className="btn btn-success" onClick={this.checkUser}>
+              Test user connection
+            </button>
           </div>
         </div>
         <TextInput
           label="Name field name"
           value={settings.nameField}
           help="..."
-          onChange={v => changeTheValue(path + '.nameField', v)}
+          onChange={(v) => changeTheValue(path + '.nameField', v)}
         />
         <TextInput
           label="Email field name"
           value={settings.emailField}
           help="..."
-          onChange={v => changeTheValue(path + '.emailField', v)}
+          onChange={(v) => changeTheValue(path + '.emailField', v)}
         />
         <TextInput
           label="Otoroshi metadata field name"
           value={settings.metadataField}
           help="..."
-          onChange={v => changeTheValue(path + '.metadataField', v)}
+          onChange={(v) => changeTheValue(path + '.metadataField', v)}
         />
         <Suspense fallback={<div>loading ...</div>}>
           <CodeInput
             label="Extra metadata"
             mode="json"
             value={JSON.stringify(settings.extraMetadata, null, 2)}
-            onChange={e => {
+            onChange={(e) => {
               console.log('changes "', e, '"');
               if (e.trim() === '') {
                 this.changeTheValue(path + '.extraMetadata', {});
@@ -1152,17 +1162,17 @@ export class LdapModuleConfig extends Component {
             }}
           />
         </Suspense>
-        <JsonObjectAsCodeInput 
+        <JsonObjectAsCodeInput
           label="Data override"
           mode="json"
           value={settings.dataOverride || {}}
-          onChange={e => this.changeTheValue(path + '.dataOverride', e)}
+          onChange={(e) => this.changeTheValue(path + '.dataOverride', e)}
         />
-        <JsonObjectAsCodeInput 
+        <JsonObjectAsCodeInput
           label="Rights override"
           mode="json"
           value={settings.rightsOverride || {}}
-          onChange={e => this.changeTheValue(path + '.rightsOverride', e)}
+          onChange={(e) => this.changeTheValue(path + '.rightsOverride', e)}
         />
       </div>
     );
@@ -1170,7 +1180,6 @@ export class LdapModuleConfig extends Component {
 }
 
 class LdapUserLoginTest extends Component {
-
   state = { message: null, error: null, username: '', password: '' };
 
   check = () => {
@@ -1183,15 +1192,20 @@ class LdapUserLoginTest extends Component {
         'Content-Type': 'application/json',
         Accept: 'application/json',
       },
-      body: JSON.stringify({ config, user: { username: this.state.username, password: this.state.password } })
-    }).then(r => r.json()).then(r => {
-      if (r.works) {
-        this.setState({ message: 'It Works !' });
-      } else {
-        this.setState({ error: `Error while checking connection: ${r.error}` })
-      }
-    });
-  }
+      body: JSON.stringify({
+        config,
+        user: { username: this.state.username, password: this.state.password },
+      }),
+    })
+      .then((r) => r.json())
+      .then((r) => {
+        if (r.works) {
+          this.setState({ message: 'It Works !' });
+        } else {
+          this.setState({ error: `Error while checking connection: ${r.error}` });
+        }
+      });
+  };
 
   render() {
     return (
@@ -1199,23 +1213,37 @@ class LdapUserLoginTest extends Component {
         <div className="form-group">
           <label className="col-sm-2">Username</label>
           <div className="col-sm-10">
-            <input type="email" value={this.state.username} onChange={e => this.setState({ username: e.target.value })} className="form-control" placeholder="Username" />
+            <input
+              type="email"
+              value={this.state.username}
+              onChange={(e) => this.setState({ username: e.target.value })}
+              className="form-control"
+              placeholder="Username"
+            />
           </div>
         </div>
         <div className="form-group">
           <label className="col-sm-2">Password</label>
           <div className="col-sm-10">
-            <input type="password" value={this.state.password} onChange={e => this.setState({ password: e.target.value })} className="form-control" placeholder="Password" />
+            <input
+              type="password"
+              value={this.state.password}
+              onChange={(e) => this.setState({ password: e.target.value })}
+              className="form-control"
+              placeholder="Password"
+            />
           </div>
         </div>
         <div className="form-group">
           <label className="col-sm-2"></label>
           <div className="col-sm-10">
-            <button type="button" className="btn btn-success" onClick={this.check}>Test login</button>
+            <button type="button" className="btn btn-success" onClick={this.check}>
+              Test login
+            </button>
             <span className="label label-success">{this.state.message}</span>
             <span className="label label-danger">{this.state.error}</span>
           </div>
-        </div>        
+        </div>
       </form>
     );
   }
@@ -1239,8 +1267,8 @@ export class AuthModuleConfig extends Component {
       <SelectInput
         label="Type"
         value={settings.type}
-        onChange={e => {
-          BackOfficeServices.createNewAuthConfig(e).then(templ => {
+        onChange={(e) => {
+          BackOfficeServices.createNewAuthConfig(e).then((templ) => {
             this.props.onChange(templ);
           });
           /*switch (e) {
@@ -1344,10 +1372,10 @@ export class AuthModuleConfig extends Component {
       <div>
         <Collapse initCollapsed={false} label="Location">
           <Location
-            tenant={settings._loc.tenant || "default"}
-            onChangeTenant={v => this.changeTheValue("_loc.tenant", v)}
-            teams={settings._loc.teams || ["default"]}
-            onChangeTeams={v => this.changeTheValue("_loc.teams", v)}
+            tenant={settings._loc.tenant || 'default'}
+            onChangeTenant={(v) => this.changeTheValue('_loc.tenant', v)}
+            teams={settings._loc.teams || ['default']}
+            onChangeTeams={(v) => this.changeTheValue('_loc.teams', v)}
           />
         </Collapse>
         {selector}
@@ -1358,11 +1386,11 @@ export class AuthModuleConfig extends Component {
         <ObjectInput
           label="Metadata"
           value={settings.metadata}
-          onChange={v => this.changeTheValue(path + '.metadata', v)}
+          onChange={(v) => this.changeTheValue(path + '.metadata', v)}
         />
         <SessionCookieConfig {...this.props} />
       </div>
-    )
+    );
   }
 }
 
@@ -1372,7 +1400,7 @@ const SessionCookieConfig = (props) => {
       const clone = _.cloneDeep(props.value || props.settings);
       const path = name.startsWith('.') ? name.substr(1) : name;
       const newObj = deepSet(clone, path, value);
-      console.debug({newObj})
+      console.debug({ newObj });
       props.onChange(newObj);
     } else {
       props.changeTheValue(name, value);
@@ -1389,20 +1417,20 @@ const SessionCookieConfig = (props) => {
         value={settings.sessionMaxAge}
         help="..."
         suffix="seconds"
-        onChange={v => changeTheValue(path + '.sessionMaxAge', v)}
+        onChange={(v) => changeTheValue(path + '.sessionMaxAge', v)}
       />
       <BooleanInput
         label="HttpOnly"
         value={settings.sessionCookieValues.httpOnly}
         help="Rewrite session cookie httpOnly to false or true"
-        onChange={v => changeTheValue(path + '.sessionCookieValues.httpOnly', v)}
+        onChange={(v) => changeTheValue(path + '.sessionCookieValues.httpOnly', v)}
       />
       <BooleanInput
         label="secure"
         value={settings.sessionCookieValues.secure}
         help="Rewrite session cookie secure to false or true"
-        onChange={v => changeTheValue(path + '.sessionCookieValues.secure', v)}
+        onChange={(v) => changeTheValue(path + '.sessionCookieValues.secure', v)}
       />
     </>
-  )
-}
+  );
+};

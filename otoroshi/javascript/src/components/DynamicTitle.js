@@ -16,7 +16,7 @@ export class DynamicTitle extends Component {
     }
   }
 
-  update = content => {
+  update = (content) => {
     this.setState({ content });
   };
 

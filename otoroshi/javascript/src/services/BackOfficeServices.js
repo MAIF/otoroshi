@@ -13,7 +13,7 @@ export function syncWithMaster(config) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(config),
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function resetDB() {
@@ -23,7 +23,7 @@ export function resetDB() {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function fetchLine(lineId) {
@@ -37,14 +37,18 @@ export function fetchBodiesFor(serviceId, requestId) {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // should use api proxy
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-window.__otoroshi__env__latest = { currentTenant: 'default', userAdmin: false, bypassUserRightsCheck: false };
+window.__otoroshi__env__latest = {
+  currentTenant: 'default',
+  userAdmin: false,
+  bypassUserRightsCheck: false,
+};
 
 export function env() {
   return fetch('/bo/api/env', {
@@ -53,13 +57,15 @@ export function env() {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json()).then(env => {
-    window.__otoroshi__env__latest = env;
-    window.__currentTenant = env.currentTenant;
-    window.__user.superAdmin = env.superAdmin;
-    window.__user.tenantAdmin = env.tenantAdmin;
-    return env;
-  });
+  })
+    .then((r) => r.json())
+    .then((env) => {
+      window.__otoroshi__env__latest = env;
+      window.__currentTenant = env.currentTenant;
+      window.__user.superAdmin = env.superAdmin;
+      window.__user.tenantAdmin = env.tenantAdmin;
+      return env;
+    });
 }
 
 export function version() {
@@ -69,7 +75,7 @@ export function version() {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function fetchClusterMembers() {
@@ -79,7 +85,7 @@ export function fetchClusterMembers() {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function clearClusterMembers() {
@@ -89,7 +95,7 @@ export function clearClusterMembers() {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function fetchSnowMonkeyOutages() {
@@ -99,7 +105,7 @@ export function fetchSnowMonkeyOutages() {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function fetchSnowMonkeyConfig() {
@@ -109,7 +115,7 @@ export function fetchSnowMonkeyConfig() {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function updateSnowMonkeyConfig(config) {
@@ -121,7 +127,7 @@ export function updateSnowMonkeyConfig(config) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(config),
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function startSnowMonkey() {
@@ -131,7 +137,7 @@ export function startSnowMonkey() {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function stopSnowMonkey() {
@@ -141,7 +147,7 @@ export function stopSnowMonkey() {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function fetchCanaryCampaign(serviceId) {
@@ -151,7 +157,7 @@ export function fetchCanaryCampaign(serviceId) {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function resetCanaryCampaign(serviceId) {
@@ -161,7 +167,7 @@ export function resetCanaryCampaign(serviceId) {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function allServices(env, group) {
@@ -176,7 +182,7 @@ export function allServices(env, group) {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function fetchRemainingQuotas(groupId, clientId) {
@@ -186,7 +192,7 @@ export function fetchRemainingQuotas(groupId, clientId) {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function resetRemainingQuotas(groupId, clientId) {
@@ -196,7 +202,7 @@ export function resetRemainingQuotas(groupId, clientId) {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function fetchServiceEvents(serviceId, from, to, limit = 500, order = 'asc') {
@@ -209,7 +215,7 @@ export function fetchServiceEvents(serviceId, from, to, limit = 500, order = 'as
         Accept: 'application/json',
       },
     }
-  ).then(r => r.json());
+  ).then((r) => r.json());
 }
 
 export function fetchGlobalEvents(from, to, limit = 500, order = 'asc') {
@@ -222,7 +228,7 @@ export function fetchGlobalEvents(from, to, limit = 500, order = 'asc') {
         Accept: 'application/json',
       },
     }
-  ).then(r => r.json());
+  ).then((r) => r.json());
 }
 
 export function fetchServiceStats(serviceId, from, to) {
@@ -236,14 +242,14 @@ export function fetchServiceStats(serviceId, from, to) {
       },
     }
   ).then(
-    r => {
+    (r) => {
       if (r.status === 200) {
         return r.json();
       }
       console.log('error while fetching global stats');
       return {};
     },
-    e => {
+    (e) => {
       console.log('error while fetching global stats');
       return {};
     }
@@ -258,14 +264,14 @@ export function fetchGlobalStats(from, to) {
       Accept: 'application/json',
     },
   }).then(
-    r => {
+    (r) => {
       if (r.status === 200) {
         return r.json();
       }
       console.log('error while fetching global stats');
       return {};
     },
-    e => {
+    (e) => {
       console.log('error while fetching global stats');
       return {};
     }
@@ -279,7 +285,7 @@ export function fetchHealthCheckEvents(serviceId) {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function fetchLines() {
@@ -291,15 +297,15 @@ export function fetchLines() {
     },
   })
     .then(
-      r => r.json(),
-      e => {
+      (r) => r.json(),
+      (e) => {
         console.log(e);
         return ['prod'];
       }
     )
     .then(
-      r => r,
-      e => {
+      (r) => r,
+      (e) => {
         console.log(e);
         return ['prod'];
       }
@@ -313,7 +319,7 @@ export function fetchApiKeys(lineId, serviceId) {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function fetchApiKeysForPage(serviceId) {
@@ -323,9 +329,8 @@ export function fetchApiKeysForPage(serviceId) {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
-
 
 export function fetchAllApikeys() {
   return fetch(`/bo/api/proxy/api/apikeys`, {
@@ -334,7 +339,7 @@ export function fetchAllApikeys() {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function fetchApiKeyById(serviceId, apkid) {
@@ -344,7 +349,7 @@ export function fetchApiKeyById(serviceId, apkid) {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function deleteApiKey(serviceId, ak) {
@@ -354,7 +359,7 @@ export function deleteApiKey(serviceId, ak) {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function createApiKey(serviceId, ak) {
@@ -366,7 +371,7 @@ export function createApiKey(serviceId, ak) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(ak),
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function updateApiKey(serviceId, ak) {
@@ -378,7 +383,7 @@ export function updateApiKey(serviceId, ak) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(ak),
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function deleteStandaloneApiKey(ak) {
@@ -388,7 +393,7 @@ export function deleteStandaloneApiKey(ak) {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function createStandaloneApiKey(ak) {
@@ -400,7 +405,7 @@ export function createStandaloneApiKey(ak) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(ak),
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function updateStandaloneApiKey(ak) {
@@ -412,7 +417,7 @@ export function updateStandaloneApiKey(ak) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(ak),
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function getGlobalConfig() {
@@ -422,7 +427,7 @@ export function getGlobalConfig() {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function updateGlobalConfig(gc) {
@@ -434,7 +439,7 @@ export function updateGlobalConfig(gc) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(gc),
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function fetchService(lineId, serviceId) {
@@ -444,7 +449,7 @@ export function fetchService(lineId, serviceId) {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function findServicesForGroup(group) {
@@ -454,7 +459,7 @@ export function findServicesForGroup(group) {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function findAllGroups() {
@@ -464,7 +469,7 @@ export function findAllGroups() {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function findGroupById(id) {
@@ -474,7 +479,7 @@ export function findGroupById(id) {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function deleteGroup(ak) {
@@ -484,7 +489,7 @@ export function deleteGroup(ak) {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function createGroup(ak) {
@@ -496,7 +501,7 @@ export function createGroup(ak) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(ak),
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function updateGroup(ak) {
@@ -508,7 +513,7 @@ export function updateGroup(ak) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(ak),
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function deleteService(service) {
@@ -518,7 +523,7 @@ export function deleteService(service) {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function createNewService() {
@@ -528,7 +533,7 @@ export function createNewService() {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function saveService(service) {
@@ -540,7 +545,7 @@ export function saveService(service) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(service),
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function updateService(serviceId, service) {
@@ -553,7 +558,7 @@ export function updateService(serviceId, service) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(service),
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function findAllApps() {
@@ -563,7 +568,7 @@ export function findAllApps() {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function discardAllSessions() {
@@ -574,7 +579,7 @@ export function discardAllSessions() {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function discardSession(id) {
@@ -585,7 +590,7 @@ export function discardSession(id) {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function fetchSessions() {
@@ -596,7 +601,7 @@ export function fetchSessions() {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function discardAllPrivateAppsSessions() {
@@ -607,7 +612,7 @@ export function discardAllPrivateAppsSessions() {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function discardPrivateAppsSession(id) {
@@ -618,7 +623,7 @@ export function discardPrivateAppsSession(id) {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function fetchPrivateAppsSessions() {
@@ -629,7 +634,7 @@ export function fetchPrivateAppsSessions() {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function panicMode() {
@@ -640,7 +645,7 @@ export function panicMode() {
       Accept: 'application/json',
     },
     body: '{}',
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function fetchAdmins() {
@@ -652,8 +657,8 @@ export function fetchAdmins() {
       Accept: 'application/json',
     },
   })
-    .then(r => r.json())
-    .then(_admins => {
+    .then((r) => r.json())
+    .then((_admins) => {
       // return fetch(`/bo/webauthn/admins`, {
       return fetch(`/bo/api/proxy/api/admins/webauthn`, {
         method: 'GET',
@@ -662,10 +667,10 @@ export function fetchAdmins() {
           Accept: 'application/json',
         },
       })
-        .then(r => r.json())
-        .then(_webauthnadmins => {
-          const admins = _admins.map(admin => ({ ...admin, type: 'SIMPLE' }));
-          const webauthnadmins = _webauthnadmins.map(admin => ({ ...admin, type: 'WEBAUTHN' }));
+        .then((r) => r.json())
+        .then((_webauthnadmins) => {
+          const admins = _admins.map((admin) => ({ ...admin, type: 'SIMPLE' }));
+          const webauthnadmins = _webauthnadmins.map((admin) => ({ ...admin, type: 'WEBAUTHN' }));
           return [...webauthnadmins, ...admins];
         });
     });
@@ -680,7 +685,7 @@ export function discardAdmin(username, id, type) {
       headers: {
         Accept: 'application/json',
       },
-    }).then(r => r.json());
+    }).then((r) => r.json());
   } else if (type === 'WEBAUTHN') {
     //return fetch(`/bo/webauthn/admins/${username}/${id}`, {
     return fetch(`/bo/api/proxy/api/admins/webauthn/${username}/${id}`, {
@@ -689,7 +694,7 @@ export function discardAdmin(username, id, type) {
       headers: {
         Accept: 'application/json',
       },
-    }).then(r => r.json());
+    }).then((r) => r.json());
   } else {
     // nothing
     return;
@@ -703,7 +708,7 @@ export function fetchOtoroshi(ctype) {
     headers: {
       Accept: ctype || 'application/json',
     },
-  }).then(r => (ctype === 'application/json' ? r.json() : r.text()));
+  }).then((r) => (ctype === 'application/json' ? r.json() : r.text()));
 }
 
 export function fetchAuditEvents() {
@@ -713,7 +718,7 @@ export function fetchAuditEvents() {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function fetchAlertEvents() {
@@ -723,7 +728,7 @@ export function fetchAlertEvents() {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function fetchLoggers() {
@@ -733,7 +738,7 @@ export function fetchLoggers() {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function changeLogLevel(name, level) {
@@ -744,7 +749,7 @@ export function changeLogLevel(name, level) {
       Accept: 'application/json',
     },
     body: '{}',
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function fetchTop10() {
@@ -754,7 +759,7 @@ export function fetchTop10() {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function fetchServicesMap() {
@@ -764,11 +769,11 @@ export function fetchServicesMap() {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function fetchServicesTree() {
-  return new Promise(s =>
+  return new Promise((s) =>
     s({
       nodes: [
         { id: 'Otoroshi', group: '1' },
@@ -797,7 +802,7 @@ export function fetchServicesTree() {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function findTemplateById(id) {
@@ -807,7 +812,7 @@ export function findTemplateById(id) {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => (r.status === 404 ? null : r.json()));
+  }).then((r) => (r.status === 404 ? null : r.json()));
 }
 
 export function deleteTemplate(ak) {
@@ -817,7 +822,7 @@ export function deleteTemplate(ak) {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function createTemplate(ak) {
@@ -829,7 +834,7 @@ export function createTemplate(ak) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(ak),
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function updateTemplate(ak) {
@@ -841,7 +846,7 @@ export function updateTemplate(ak) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(ak),
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function findAllJwtVerifiers() {
@@ -851,7 +856,7 @@ export function findAllJwtVerifiers() {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function findJwtVerifierById(id) {
@@ -861,7 +866,7 @@ export function findJwtVerifierById(id) {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function deleteJwtVerifier(ak) {
@@ -871,7 +876,7 @@ export function deleteJwtVerifier(ak) {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function createJwtVerifier(ak) {
@@ -883,7 +888,7 @@ export function createJwtVerifier(ak) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(ak),
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function updateJwtVerifier(ak) {
@@ -895,7 +900,7 @@ export function updateJwtVerifier(ak) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(ak),
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function findAllAuthConfigs() {
@@ -905,7 +910,7 @@ export function findAllAuthConfigs() {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function findAuthConfigById(id) {
@@ -915,7 +920,7 @@ export function findAuthConfigById(id) {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function deleteAuthConfig(ak) {
@@ -925,7 +930,7 @@ export function deleteAuthConfig(ak) {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function createAuthConfig(ak) {
@@ -937,7 +942,7 @@ export function createAuthConfig(ak) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(ak),
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function createNewAuthConfig(kind) {
@@ -947,7 +952,7 @@ export function createNewAuthConfig(kind) {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function updateAuthConfig(ak) {
@@ -959,7 +964,7 @@ export function updateAuthConfig(ak) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(ak),
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -971,7 +976,7 @@ export function findAllCertificates() {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function findCertificateById(id) {
@@ -981,7 +986,7 @@ export function findCertificateById(id) {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function deleteCertificate(ak) {
@@ -991,7 +996,7 @@ export function deleteCertificate(ak) {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function createCertificate(ak) {
@@ -1003,7 +1008,7 @@ export function createCertificate(ak) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(ak),
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function updateCertificate(ak) {
@@ -1015,7 +1020,7 @@ export function updateCertificate(ak) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(ak),
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function certData(chain) {
@@ -1027,7 +1032,7 @@ export function certData(chain) {
       'Content-Type': 'text/plain',
     },
     body: chain,
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function certValid(cert) {
@@ -1039,7 +1044,7 @@ export function certValid(cert) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(cert),
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function selfSignedCert(host) {
@@ -1051,7 +1056,7 @@ export function selfSignedCert(host) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({ host }),
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function selfSignedClientCert(dn) {
@@ -1063,7 +1068,7 @@ export function selfSignedClientCert(dn) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({ dn }),
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function importP12(password, content) {
@@ -1075,7 +1080,7 @@ export function importP12(password, content) {
       'Content-Type': 'application/octet-stream',
     },
     body: content,
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function letsEncryptCert(host) {
@@ -1087,7 +1092,7 @@ export function letsEncryptCert(host) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({ host }),
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function caSignedCert(id, host) {
@@ -1099,7 +1104,7 @@ export function caSignedCert(id, host) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({ id, host }),
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function caSignedClientCert(id, dn) {
@@ -1111,7 +1116,7 @@ export function caSignedClientCert(id, dn) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({ id, dn }),
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function caCert(cn) {
@@ -1123,7 +1128,7 @@ export function caCert(cn) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({ cn }),
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function createCertificateFromForm(form) {
@@ -1135,7 +1140,7 @@ export function createCertificateFromForm(form) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(form),
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function createCSR(form) {
@@ -1147,7 +1152,7 @@ export function createCSR(form) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(form),
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function renewCert(id) {
@@ -1159,7 +1164,7 @@ export function renewCert(id) {
       'Content-Type': 'application/json',
     },
     body: '',
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function findAllClientValidators() {
@@ -1169,7 +1174,7 @@ export function findAllClientValidators() {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function findClientValidatorById(id) {
@@ -1179,7 +1184,7 @@ export function findClientValidatorById(id) {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function deleteClientValidator(ak) {
@@ -1189,7 +1194,7 @@ export function deleteClientValidator(ak) {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function createClientValidator(ak) {
@@ -1201,7 +1206,7 @@ export function createClientValidator(ak) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(ak),
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function updateClientValidator(ak) {
@@ -1213,7 +1218,7 @@ export function updateClientValidator(ak) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(ak),
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function findAllScripts() {
@@ -1223,7 +1228,7 @@ export function findAllScripts() {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function findScriptById(id) {
@@ -1233,7 +1238,7 @@ export function findScriptById(id) {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function deleteScript(ak) {
@@ -1243,7 +1248,7 @@ export function deleteScript(ak) {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function createScript(ak) {
@@ -1255,7 +1260,7 @@ export function createScript(ak) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(ak),
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function compileScript(ak) {
@@ -1267,7 +1272,7 @@ export function compileScript(ak) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(ak),
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function updateScript(ak) {
@@ -1279,7 +1284,7 @@ export function updateScript(ak) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(ak),
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function fetchStats(by, id, from, to, limit = 500) {
@@ -1292,7 +1297,7 @@ export function fetchStats(by, id, from, to, limit = 500) {
         Accept: 'application/json',
       },
     }
-  ).then(r => r.json());
+  ).then((r) => r.json());
 }
 
 export function findAllTcpServices() {
@@ -1302,7 +1307,7 @@ export function findAllTcpServices() {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function findTcpServiceById(id) {
@@ -1312,7 +1317,7 @@ export function findTcpServiceById(id) {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function deleteTcpService(ak) {
@@ -1322,7 +1327,7 @@ export function deleteTcpService(ak) {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function createTcpService(ak) {
@@ -1334,7 +1339,7 @@ export function createTcpService(ak) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(ak),
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function createNewTcpService() {
@@ -1344,7 +1349,7 @@ export function createNewTcpService() {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function updateTcpService(ak) {
@@ -1356,9 +1361,8 @@ export function updateTcpService(ak) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(ak),
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
-
 
 ///////////////////////////////
 // Teams
@@ -1371,7 +1375,7 @@ export function findAllTeams() {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function findTeamById(id) {
@@ -1381,7 +1385,7 @@ export function findTeamById(id) {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function deleteTeam(ak) {
@@ -1391,7 +1395,7 @@ export function deleteTeam(ak) {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function createTeam(ak) {
@@ -1403,7 +1407,7 @@ export function createTeam(ak) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(ak),
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function createNewTeam() {
@@ -1413,7 +1417,7 @@ export function createNewTeam() {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function updateTeam(ak) {
@@ -1425,10 +1429,8 @@ export function updateTeam(ak) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(ak),
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
-
-
 
 ///////////////////////////////
 // Tenants
@@ -1441,7 +1443,7 @@ export function findAllTenants() {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function findTenantById(id) {
@@ -1451,7 +1453,7 @@ export function findTenantById(id) {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function deleteTenant(ak) {
@@ -1461,7 +1463,7 @@ export function deleteTenant(ak) {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function createTenant(ak) {
@@ -1473,7 +1475,7 @@ export function createTenant(ak) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(ak),
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function createNewTenant() {
@@ -1483,7 +1485,7 @@ export function createNewTenant() {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function updateTenant(ak) {
@@ -1495,7 +1497,7 @@ export function updateTenant(ak) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(ak),
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function updateSimpleAdmin(user) {
@@ -1507,7 +1509,7 @@ export function updateSimpleAdmin(user) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(user),
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function updateWebAuthnAdmin(user) {
@@ -1519,7 +1521,7 @@ export function updateWebAuthnAdmin(user) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(user),
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 ///////////////////////////////
@@ -1533,7 +1535,7 @@ export function createNewDataExporterConfig(type) {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function findAllDataExporterConfigs() {
@@ -1543,7 +1545,7 @@ export function findAllDataExporterConfigs() {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function findDataExporterConfigById(id) {
@@ -1553,7 +1555,7 @@ export function findDataExporterConfigById(id) {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function deleteDataExporterConfig(ak) {
@@ -1563,7 +1565,7 @@ export function deleteDataExporterConfig(ak) {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function createDataExporterConfig(ak) {
@@ -1575,7 +1577,7 @@ export function createDataExporterConfig(ak) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(ak),
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function updateDataExporterConfig(ak) {
@@ -1587,7 +1589,7 @@ export function updateDataExporterConfig(ak) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(ak),
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 /////// Templates
@@ -1599,7 +1601,7 @@ export function createNewJwtVerifier() {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function createNewCertificate() {
@@ -1609,7 +1611,7 @@ export function createNewCertificate() {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function createNewGroup() {
@@ -1619,7 +1621,7 @@ export function createNewGroup() {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }
 
 export function createNewScript() {
@@ -1629,5 +1631,5 @@ export function createNewScript() {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => r.json());
+  }).then((r) => r.json());
 }

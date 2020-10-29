@@ -23,7 +23,7 @@ if (!window.requestAnimationFrame) {
 
 if (!window.cancelAnimationFrame) {
   console.log('Polyfill cancelAnimationFrame');
-  window.cancelAnimationFrame = id => {
+  window.cancelAnimationFrame = (id) => {
     clearTimeout(id);
   };
 }

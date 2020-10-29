@@ -49,14 +49,14 @@ function debug(...args) {
 }
 
 function debugSuccess(name) {
-  return data => {
+  return (data) => {
     if (DEBUG) debug(`${name} - ${JSON.stringify(data, null, 2)}\n`);
     return data;
   };
 }
 
 function debugError(name) {
-  return data => {
+  return (data) => {
     if (DEBUG) debug(`ERR - ${name} - ${JSON.stringify(data, null, 2)}\n`);
     return data;
   };
@@ -72,7 +72,7 @@ function fetchOtoroshiGroups() {
       [OTOROSHI_CLIENT_SECRET_HEADER]: OTOROSHI_CLIENT_SECRET,
     },
   })
-    .then(r => r.json(), debugError('fetchOtoroshiGroups'))
+    .then((r) => r.json(), debugError('fetchOtoroshiGroups'))
     .then(debugSuccess('fetchOtoroshiGroups'), debugError('fetchOtoroshiGroups'));
 }
 
@@ -92,7 +92,7 @@ function createOtoroshiKubernetesGroup() {
       description: 'Group for Kubernetes services',
     }),
   })
-    .then(r => r.json(), debugError('createOtoroshiKubernetesGroup'))
+    .then((r) => r.json(), debugError('createOtoroshiKubernetesGroup'))
     .then(
       debugSuccess('createOtoroshiKubernetesGroup'),
       debugError('createOtoroshiKubernetesGroup')
@@ -109,9 +109,9 @@ function fetchOtoroshiKubernetesServices() {
       [OTOROSHI_CLIENT_SECRET_HEADER]: OTOROSHI_CLIENT_SECRET,
     },
   })
-    .then(r => r.json(), debugError('fetchOtoroshiKubernetesServices'))
-    .then(services => {
-      return services.filter(s => s.metadata.provider && s.metadata.provider === 'kubernetes');
+    .then((r) => r.json(), debugError('fetchOtoroshiKubernetesServices'))
+    .then((services) => {
+      return services.filter((s) => s.metadata.provider && s.metadata.provider === 'kubernetes');
     }, debugError('fetchOtoroshiKubernetesServices'))
     .then(
       debugSuccess('fetchOtoroshiKubernetesServices'),
@@ -129,7 +129,7 @@ function fetchOtoroshiApiKeys() {
       [OTOROSHI_CLIENT_SECRET_HEADER]: OTOROSHI_CLIENT_SECRET,
     },
   })
-    .then(r => r.json(), debugError('fetchOtoroshiApiKeys'))
+    .then((r) => r.json(), debugError('fetchOtoroshiApiKeys'))
     .then(debugSuccess('fetchOtoroshiApiKeys'), debugError('fetchOtoroshiApiKeys'));
 }
 
@@ -150,7 +150,7 @@ function createOtoroshiKubernetesApiKey() {
       authorizedGroup: KUBERNETES_GROUP,
     }),
   })
-    .then(r => r.json(), debugError('createOtoroshiKubernetesApiKey'))
+    .then((r) => r.json(), debugError('createOtoroshiKubernetesApiKey'))
     .then(
       debugSuccess('createOtoroshiKubernetesApiKey'),
       debugError('createOtoroshiKubernetesApiKey')
@@ -208,7 +208,7 @@ function createOtoroshiKubernetesService(id, name, targets) {
     },
     body: JSON.stringify(serviceTemplate),
   })
-    .then(r => r.json(), debugError('createOtoroshiKubernetesService'))
+    .then((r) => r.json(), debugError('createOtoroshiKubernetesService'))
     .then(
       debugSuccess('createOtoroshiKubernetesService'),
       debugError('createOtoroshiKubernetesService')
@@ -230,7 +230,7 @@ function updateOtoroshiKubernetesService(id, name, targets) {
       { op: 'replace', path: '/name', value: name },
     ]),
   })
-    .then(r => r.json(), debugError('updateOtoroshiKubernetesService'))
+    .then((r) => r.json(), debugError('updateOtoroshiKubernetesService'))
     .then(
       debugSuccess('updateOtoroshiKubernetesService'),
       debugError('updateOtoroshiKubernetesService')
@@ -247,7 +247,10 @@ function deleteOtoroshiKubernetesService(id) {
       [OTOROSHI_CLIENT_SECRET_HEADER]: OTOROSHI_CLIENT_SECRET,
     },
   })
-    .then(r => (r.status === 404 ? null : r.json()), debugError('deleteOtoroshiKubernetesService'))
+    .then(
+      (r) => (r.status === 404 ? null : r.json()),
+      debugError('deleteOtoroshiKubernetesService')
+    )
     .then(
       debugSuccess('deleteOtoroshiKubernetesService'),
       debugError('deleteOtoroshiKubernetesService')
@@ -264,7 +267,7 @@ function deleteKubernetesService(id) {
       [OTOROSHI_CLIENT_SECRET_HEADER]: OTOROSHI_CLIENT_SECRET,
     },
   })
-    .then(r => (r.status === 404 ? null : r.json()), debugError('deleteKubernetesService'))
+    .then((r) => (r.status === 404 ? null : r.json()), debugError('deleteKubernetesService'))
     .then(debugSuccess('deleteKubernetesService'), debugError('deleteKubernetesService'));
 }
 
@@ -278,7 +281,7 @@ function fetchOtoroshiKubernetesService(id) {
       [OTOROSHI_CLIENT_SECRET_HEADER]: OTOROSHI_CLIENT_SECRET,
     },
   })
-    .then(r => (r.status === 404 ? null : r.json()), debugError('fetchOtoroshiKubernetesService'))
+    .then((r) => (r.status === 404 ? null : r.json()), debugError('fetchOtoroshiKubernetesService'))
     .then(
       debugSuccess('fetchOtoroshiKubernetesService'),
       debugError('fetchOtoroshiKubernetesService')
@@ -297,8 +300,8 @@ function fetchKubernetesServices() {
       Authorization: `Bearer ${KUBERNETES_BEARER}`,
     },
   })
-    .then(r => r.json(), debugError('fetchKubernetesServices pods'))
-    .then(podsResponse => {
+    .then((r) => r.json(), debugError('fetchKubernetesServices pods'))
+    .then((podsResponse) => {
       return fetch(`${KUBERNETES_URL}/api/v1/namespaces/${KUBERNETES_NAMESPACE}/services`, {
         method: 'GET',
         headers: {
@@ -306,8 +309,8 @@ function fetchKubernetesServices() {
           Authorization: `Bearer ${KUBERNETES_BEARER}`,
         },
       })
-        .then(r => r.json(), debugError('fetchKubernetesServices services'))
-        .then(servicesResponse => {
+        .then((r) => r.json(), debugError('fetchKubernetesServices services'))
+        .then((servicesResponse) => {
           return fetch(`${KUBERNETES_URL}/api/v1/namespaces/${KUBERNETES_NAMESPACE}/endpoints`, {
             method: 'GET',
             headers: {
@@ -315,8 +318,8 @@ function fetchKubernetesServices() {
               Authorization: `Bearer ${KUBERNETES_BEARER}`,
             },
           })
-            .then(r => r.json(), debugError('fetchKubernetesServices endpoints'))
-            .then(endpointsResponse => {
+            .then((r) => r.json(), debugError('fetchKubernetesServices endpoints'))
+            .then((endpointsResponse) => {
               return fetch(`${KUBERNETES_URL}/apis/extensions/v1beta1/ingresses`, {
                 method: 'GET',
                 headers: {
@@ -324,8 +327,8 @@ function fetchKubernetesServices() {
                   Authorization: `Bearer ${KUBERNETES_BEARER}`,
                 },
               })
-                .then(r => r.json(), debugError('fetchKubernetesServices ingresses'))
-                .then(ingressesResponse => {
+                .then((r) => r.json(), debugError('fetchKubernetesServices ingresses'))
+                .then((ingressesResponse) => {
                   return {
                     ingresses: ingressesResponse.items,
                     pods: podsResponse.items,
@@ -336,42 +339,44 @@ function fetchKubernetesServices() {
             });
         });
     })
-    .then(items => {
+    .then((items) => {
       const { ingresses, pods, services, endpoints } = items;
       // console.log('ingresses', JSON.stringify(ingresses, null, 2))
       // console.log('pods', JSON.stringify(pods, null, 2))
       // console.log('services', JSON.stringify(services, null, 2))
       // console.log('endpoints', JSON.stringify(endpoints, null, 2))
       const targetedServices = services
-        .map(service => {
+        .map((service) => {
           return {
             name: service.metadata.name,
             id: service.metadata.uid,
-            containerPorts: service.spec.ports.map(p => p.port),
-            ports: service.spec.ports.map(p => p.nodePort),
+            containerPorts: service.spec.ports.map((p) => p.port),
+            ports: service.spec.ports.map((p) => p.nodePort),
             clusterIP: service.spec.clusterIP,
           };
         })
-        .filter(s => s.name !== 'kubernetes')
-        .map(service => {
-          const rawPods = pods.filter(p => p.spec.containers.find(c => c.name === service.name));
-          const servicePods = rawPods.map(pod => {
+        .filter((s) => s.name !== 'kubernetes')
+        .map((service) => {
+          const rawPods = pods.filter((p) =>
+            p.spec.containers.find((c) => c.name === service.name)
+          );
+          const servicePods = rawPods.map((pod) => {
             return {
               hostIP: pod.status.hostIP,
               podIP: pod.status.podIP,
               ready: pod.status.containerStatuses
-                .filter(s => s.name === service.name)
-                .map(s => s.ready)[0],
+                .filter((s) => s.name === service.name)
+                .map((s) => s.ready)[0],
             };
           });
           const publicEndpoints = _.uniqBy(
-            servicePods.map(pod => {
+            servicePods.map((pod) => {
               return {
                 ipAddress: pod[KUBERNETES_SERVICE_IP],
                 port: service.ports[0],
               };
             }),
-            ep => `${ep.ipAddress}:${ep.port}`
+            (ep) => `${ep.ipAddress}:${ep.port}`
           );
           return { ...service, pods: servicePods, publicEndpoints };
         });
@@ -387,8 +392,8 @@ function fetchKubernetesServices() {
 function setupOtoroshi() {
   log('Checking Otoroshi setup ...');
   return fetchOtoroshiGroups()
-    .then(groups => {
-      const kubernetesGroup = groups.filter(g => g.name === KUBERNETES_GROUP)[0];
+    .then((groups) => {
+      const kubernetesGroup = groups.filter((g) => g.name === KUBERNETES_GROUP)[0];
       if (kubernetesGroup) {
         log('  Kubernetes group already exists ...');
         return kubernetesGroup;
@@ -397,9 +402,9 @@ function setupOtoroshi() {
         return createOtoroshiKubernetesGroup();
       }
     })
-    .then(group => {
-      return fetchOtoroshiApiKeys(KUBERNETES_GROUP).then(apikeys => {
-        const kubernetesApiKey = apikeys.filter(g => g.clientName === KUBERNETES_API_KEY)[0];
+    .then((group) => {
+      return fetchOtoroshiApiKeys(KUBERNETES_GROUP).then((apikeys) => {
+        const kubernetesApiKey = apikeys.filter((g) => g.clientName === KUBERNETES_API_KEY)[0];
         if (kubernetesApiKey) {
           log('  Kubernetes api key already exists ...');
           return kubernetesApiKey;
@@ -417,24 +422,30 @@ function syncOtoroshiWithKubernetes() {
   syncing = true;
   const start = Date.now();
   fetchKubernetesServices()
-    .then(rs => {
-      return fetchOtoroshiKubernetesServices().then(os => [rs, os]);
+    .then((rs) => {
+      return fetchOtoroshiKubernetesServices().then((os) => [rs, os]);
     })
-    .then(arr => {
+    .then((arr) => {
       const [kubernetesServices, otoroshiServices] = arr;
       currentServices = kubernetesServices.length;
       //log('  Synchronizing Kubernetes => Otoroshi');
-      const tasks = kubernetesServices.map(kubernetesService => {
+      const tasks = kubernetesServices.map((kubernetesService) => {
         const otoroshiService = otoroshiServices.filter(
-          s => s.metadata.kubernetesId && s.metadata.kubernetesId === kubernetesService.id
+          (s) => s.metadata.kubernetesId && s.metadata.kubernetesId === kubernetesService.id
         )[0];
-        const targets = kubernetesService.publicEndpoints.map(ep => ({
+        const targets = kubernetesService.publicEndpoints.map((ep) => ({
           scheme: 'http',
           host: `${ep.ipAddress}:${ep.port}`,
         }));
-        const targetHosts = _.sortBy(targets.map(i => i.host), i => i);
+        const targetHosts = _.sortBy(
+          targets.map((i) => i.host),
+          (i) => i
+        );
         const otoHosts = otoroshiService
-          ? _.sortBy(otoroshiService.targets.map(i => i.host), i => i)
+          ? _.sortBy(
+              otoroshiService.targets.map((i) => i.host),
+              (i) => i
+            )
           : [];
         const rootPath = kubernetesService.name.split('-')[1];
         if (!otoroshiService) {
@@ -456,20 +467,20 @@ function syncOtoroshiWithKubernetes() {
             targets
           );
         } else {
-          return new Promise(s => s());
+          return new Promise((s) => s());
         }
       });
       return Promise.all(tasks).then(() => [kubernetesServices, otoroshiServices]);
     })
-    .then(arr => {
-      return fetchOtoroshiKubernetesServices().then(os => [arr[0], os]);
+    .then((arr) => {
+      return fetchOtoroshiKubernetesServices().then((os) => [arr[0], os]);
     })
-    .then(arr => {
+    .then((arr) => {
       //log('  Synchronizing Otoroshi => Kubernetes');
       const [kubernetesServices, otoroshiServices] = arr;
-      const tasks = otoroshiServices.map(otoroshiService => {
+      const tasks = otoroshiServices.map((otoroshiService) => {
         const kubernetesService = kubernetesServices.filter(
-          s => s.id && s.id === otoroshiService.metadata.kubernetesId
+          (s) => s.id && s.id === otoroshiService.metadata.kubernetesId
         )[0];
         if (!kubernetesService) {
           log(`Deleting Otoroshi service ${otoroshiService.name} with id: ${otoroshiService.id}`);
@@ -478,7 +489,7 @@ function syncOtoroshiWithKubernetes() {
           return null;
         }
       });
-      lastDeletedServices = tasks.filter(i => !!i).length;
+      lastDeletedServices = tasks.filter((i) => !!i).length;
       return Promise.all(tasks);
     })
     .then(() => {
@@ -531,12 +542,9 @@ app.get('/status', (req, res) => {
 });
 
 app.get('/health', (req, res) => {
-  res
-    .status(200)
-    .type('application/json')
-    .send({
-      status: 'RUNNING',
-    });
+  res.status(200).type('application/json').send({
+    status: 'RUNNING',
+  });
 });
 
 app.listen(PORT, () => {

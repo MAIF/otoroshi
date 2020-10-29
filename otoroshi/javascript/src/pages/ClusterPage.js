@@ -8,28 +8,28 @@ export class ClusterPage extends Component {
     {
       title: 'Member name',
       style: { textAlign: 'left', width: 250 },
-      content: item => item.name.toLowerCase(),
+      content: (item) => item.name.toLowerCase(),
     },
     {
       title: 'Type',
       style: { textAlign: 'center', width: 80 },
-      content: item => item.type,
+      content: (item) => item.type,
     },
     {
       title: 'Location',
       style: { textAlign: 'center', width: 180 },
-      content: item => item.location,
+      content: (item) => item.location,
     },
     {
       title: 'Last seen at',
       style: { display: 'flex', justifyContent: 'center', alignItems: 'center', width: 150 },
       notFilterable: true,
-      content: item => moment(item.lastSeen).format('DD-MM-YYYY HH:mm:ss'),
+      content: (item) => moment(item.lastSeen).format('DD-MM-YYYY HH:mm:ss'),
     },
     {
       title: 'Health',
       style: { display: 'flex', justifyContent: 'center', alignItems: 'center', width: 50 },
-      content: item => item.timeout,
+      content: (item) => item.timeout,
       notFilterable: true,
       cell: (a, item) => {
         const value = item.time - item.lastSeen;
@@ -46,25 +46,25 @@ export class ClusterPage extends Component {
       title: 'Rate',
       style: { textAlign: 'center', width: 80 },
       notFilterable: true,
-      content: item => (item.stats.rate || 0.0).toFixed(2) + ' call/s',
+      content: (item) => (item.stats.rate || 0.0).toFixed(2) + ' call/s',
     },
     {
       title: 'Overhead',
       style: { textAlign: 'center', width: 80 },
       notFilterable: true,
-      content: item => (item.stats.overhead || 0.0).toFixed(2) + ' ms',
+      content: (item) => (item.stats.overhead || 0.0).toFixed(2) + ' ms',
     },
     {
       title: 'Duration',
       style: { textAlign: 'center', width: 80 },
       notFilterable: true,
-      content: item => (item.stats.duration || 0.0).toFixed(2) + ' ms',
+      content: (item) => (item.stats.duration || 0.0).toFixed(2) + ' ms',
     },
     {
       title: 'Data in',
       style: { textAlign: 'center', width: 80 },
       notFilterable: true,
-      content: item => {
+      content: (item) => {
         const kb = (item.stats.dataInRate || 0.0) / 1024;
         const mb = (item.stats.dataInRate || 0.0) / (1024 * 1024);
         if (mb < 1.0) {
@@ -78,7 +78,7 @@ export class ClusterPage extends Component {
       title: 'Data out',
       style: { textAlign: 'center', width: 80 },
       notFilterable: true,
-      content: item => {
+      content: (item) => {
         const kb = (item.stats.dataOutRate || 0.0) / 1024;
         const mb = (item.stats.dataOutRate || 0.0) / (1024 * 1024);
         if (mb < 1.0) {
@@ -92,7 +92,7 @@ export class ClusterPage extends Component {
       title: 'CPU / load',
       style: { textAlign: 'center', width: 150 },
       notFilterable: true,
-      content: item => {
+      content: (item) => {
         const usage = item.stats.cpu_usage || 0.0;
         const loadAverage = item.stats.load_average || 0.0;
         return `${usage.toFixed(2)} % - ${loadAverage.toFixed(3)}`;
@@ -102,7 +102,7 @@ export class ClusterPage extends Component {
       title: 'Mem',
       style: { textAlign: 'center', width: 150 },
       notFilterable: true,
-      content: item => {
+      content: (item) => {
         const usage = item.stats.heap_used || 0.0;
         const total = item.stats.heap_size || 0.0;
         return `${usage} / ${total} Mb`;
@@ -119,7 +119,7 @@ export class ClusterPage extends Component {
   componentDidMount() {
     this.props.setTitle(`Cluster view`);
     this.interval = setInterval(this.update, 5000);
-    BackOfficeServices.env().then(env => {
+    BackOfficeServices.env().then((env) => {
       if (env.clusterRole === 'Off') {
         this.props.setTitle(`Cluster mode is not enabled`);
       } else {
@@ -155,8 +155,8 @@ export class ClusterPage extends Component {
         fetchItems={BackOfficeServices.fetchClusterMembers}
         showActions={false}
         showLink={false}
-        injectTable={t => (this.table = t)}
-        extractKey={item => item.name}
+        injectTable={(t) => (this.table = t)}
+        extractKey={(item) => item.name}
         injectTopBar={() => (
           <button type="button" className="btn btn-danger" onClick={this.clear}>
             <i className="glyphicon glyphicon-trash" /> Clear members

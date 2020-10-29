@@ -34,7 +34,7 @@ export class Form extends Component {
     } else {
       return this.props.value;
     }
-  }
+  };
 
   changeValue = (name, value) => {
     const newValue = _.cloneDeep(this.theValue());
@@ -159,10 +159,10 @@ export class Form extends Component {
               disabled={disabled}
               key={name}
               {...props}
-              tenant={this.getValue(name + ".tenant", "default")}
-              onChangeTenant={v => this.changeValue(name + ".tenant", v)}
-              teams={this.getValue(name + ".teams", ["default"])}
-              onChangeTeams={v => this.changeValue(name + ".teams", v)}
+              tenant={this.getValue(name + '.tenant', 'default')}
+              onChangeTenant={(v) => this.changeValue(name + '.tenant', v)}
+              teams={this.getValue(name + '.teams', ['default'])}
+              onChangeTeams={(v) => this.changeValue(name + '.teams', v)}
             />
           );
         } else if (type === 'array') {
@@ -172,7 +172,7 @@ export class Form extends Component {
               key={name}
               value={this.getValue(name, [])}
               {...props}
-              onChange={v => this.changeValue(name, v)}
+              onChange={(v) => this.changeValue(name, v)}
             />
           );
         } else if (type === 'object') {
@@ -182,7 +182,7 @@ export class Form extends Component {
               key={name}
               value={this.getValue(name, {})}
               {...props}
-              onChange={v => this.changeValue(name, v)}
+              onChange={(v) => this.changeValue(name, v)}
             />
           );
         } else if (type === 'bool') {
@@ -192,7 +192,7 @@ export class Form extends Component {
               key={name}
               value={this.getValue(name, false)}
               {...props}
-              onChange={v => this.changeValue(name, v)}
+              onChange={(v) => this.changeValue(name, v)}
             />
           );
         } else if (type === 'select') {
@@ -202,7 +202,7 @@ export class Form extends Component {
               key={name}
               value={this.getValue(name, '')}
               {...props}
-              onChange={v => this.changeValue(name, v)}
+              onChange={(v) => this.changeValue(name, v)}
             />
           );
         } else if (type === 'string') {
@@ -212,7 +212,7 @@ export class Form extends Component {
               key={name}
               value={this.getValue(name, '')}
               {...props}
-              onChange={v => this.changeValue(name, v)}
+              onChange={(v) => this.changeValue(name, v)}
             />
           );
         } else if (type === 'code') {
@@ -223,7 +223,7 @@ export class Form extends Component {
                 key={name}
                 value={this.getValue(name, '')}
                 {...props}
-                onChange={v => this.changeValue(name, v)}
+                onChange={(v) => this.changeValue(name, v)}
               />
             </Suspense>
           );
@@ -234,7 +234,7 @@ export class Form extends Component {
               key={name}
               value={this.getValue(name, '')}
               {...props}
-              onChange={v => this.changeValue(name, v)}
+              onChange={(v) => this.changeValue(name, v)}
             />
           );
         } else if (type === 'datetime') {
@@ -244,7 +244,7 @@ export class Form extends Component {
               key={name}
               value={this.getValue(name, '')}
               {...props}
-              onChange={v => this.changeValue(name, v)}
+              onChange={(v) => this.changeValue(name, v)}
             />
           );
         } else if (type === 'label') {
@@ -256,7 +256,7 @@ export class Form extends Component {
               key={name}
               value={this.getValue(name, 0)}
               {...props}
-              onChange={v => this.changeValue(name, v)}
+              onChange={(v) => this.changeValue(name, v)}
             />
           );
         } else if (_.isFunction(type)) {
@@ -268,7 +268,7 @@ export class Form extends Component {
             key: name,
             value: this.getValue(name, {}),
             changeValue: this.changeValue,
-            onChange: v => this.changeValue(name, v),
+            onChange: (v) => this.changeValue(name, v),
           });
         } else if (React.isValidElement(type)) {
           component = type;

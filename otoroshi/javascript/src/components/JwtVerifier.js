@@ -47,7 +47,7 @@ export class LocationSettings extends Component {
         <SelectInput
           label={this.props.locationTitle || 'Source'}
           value={location.type}
-          onChange={e => {
+          onChange={(e) => {
             switch (e) {
               case 'InQueryParam':
                 changeTheValue(path + '', { type: 'InQueryParam', name: 'jwt-token' });
@@ -73,7 +73,7 @@ export class LocationSettings extends Component {
             placeholder="jwt-token"
             value={location.name}
             help="The name of the query param where JWT is located"
-            onChange={e => changeTheValue(path + '.name', e)}
+            onChange={(e) => changeTheValue(path + '.name', e)}
           />
         )}
         {location.type === 'InHeader' && [
@@ -82,14 +82,14 @@ export class LocationSettings extends Component {
             placeholder="jwt-token"
             value={location.name}
             help="The name of the header where JWT is located"
-            onChange={e => changeTheValue(path + '.name', e)}
+            onChange={(e) => changeTheValue(path + '.name', e)}
           />,
           <TextInput
             label={this.props.sign ? `Prepend value` : `Remove value`}
             placeholder="Bearer "
             value={location.remove}
             help={(this.props.sign ? 'Remove' : 'Prepend') + ' a value inside the header value'}
-            onChange={e => changeTheValue(path + '.remove', e)}
+            onChange={(e) => changeTheValue(path + '.remove', e)}
           />,
         ]}
         {location.type === 'InCookie' && (
@@ -98,7 +98,7 @@ export class LocationSettings extends Component {
             placeholder="jwt-token"
             value={location.name}
             help="The name of the cookie where JWT is located"
-            onChange={e => changeTheValue(path + '.name', e)}
+            onChange={(e) => changeTheValue(path + '.name', e)}
           />
         )}
       </div>
@@ -130,7 +130,7 @@ export class AlgoSettings extends Component {
         <SelectInput
           label={this.props.algoTitle || 'Algo.'}
           value={algo.type}
-          onChange={e => {
+          onChange={(e) => {
             switch (e) {
               case 'HSAlgoSettings':
                 changeTheValue(path + '', {
@@ -194,7 +194,7 @@ export class AlgoSettings extends Component {
             label="SHA Size"
             help="Word size for the SHA-2 hash function used"
             value={algo.size}
-            onChange={v => changeTheValue(path + '.size', v)}
+            onChange={(v) => changeTheValue(path + '.size', v)}
             possibleValues={[
               { label: '256', value: 256 },
               { label: '384', value: 384 },
@@ -206,14 +206,14 @@ export class AlgoSettings extends Component {
             placeholder="secret"
             value={algo.secret}
             help="The Hmac secret"
-            onChange={e => changeTheValue(path + '.secret', e)}
+            onChange={(e) => changeTheValue(path + '.secret', e)}
           />,
           <BooleanInput
             label="Base64 encoded secret"
             placeholder="secret"
             value={algo.base64}
             help="Is the secret encoded with base64"
-            onChange={e => changeTheValue(path + '.base64', e)}
+            onChange={(e) => changeTheValue(path + '.base64', e)}
           />,
         ]}
         {algo.type === 'RSAlgoSettings' && [
@@ -221,7 +221,7 @@ export class AlgoSettings extends Component {
             label="SHA Size"
             help="Word size for the SHA-2 hash function used"
             value={algo.size}
-            onChange={v => changeTheValue(path + '.size', v)}
+            onChange={(v) => changeTheValue(path + '.size', v)}
             possibleValues={[
               { label: '256', value: 256 },
               { label: '384', value: 384 },
@@ -233,14 +233,14 @@ export class AlgoSettings extends Component {
             value={algo.publicKey}
             help="The RSA public key"
             style={{ fontFamily: 'monospace' }}
-            onChange={e => changeTheValue(path + '.publicKey', e)}
+            onChange={(e) => changeTheValue(path + '.publicKey', e)}
           />,
           <TextareaInput
             label="Private key"
             value={algo.privateKey}
             style={{ fontFamily: 'monospace' }}
             help="The RSA private key, private key can be empty if not used for JWT token signing"
-            onChange={e => changeTheValue(path + '.privateKey', e)}
+            onChange={(e) => changeTheValue(path + '.privateKey', e)}
           />,
         ]}
         {algo.type === 'RSAKPAlgoSettings' && [
@@ -248,7 +248,7 @@ export class AlgoSettings extends Component {
             label="SHA Size"
             help="Word size for the SHA-2 hash function used"
             value={algo.size}
-            onChange={v => changeTheValue(path + '.size', v)}
+            onChange={(v) => changeTheValue(path + '.size', v)}
             possibleValues={[
               { label: '256', value: 256 },
               { label: '384', value: 384 },
@@ -259,9 +259,9 @@ export class AlgoSettings extends Component {
             label="KeyPair"
             help="The keypair used to sign/verify token"
             value={algo.certId}
-            onChange={v => changeTheValue(path + '.certId', v)}
+            onChange={(v) => changeTheValue(path + '.certId', v)}
             valuesFrom="/bo/api/proxy/api/certificates?keypair=true"
-            transformer={a => ({ value: a.id, label: a.name + ' - ' + a.description })}
+            transformer={(a) => ({ value: a.id, label: a.name + ' - ' + a.description })}
           />,
         ]}
         {algo.type === 'ESAlgoSettings' && [
@@ -269,7 +269,7 @@ export class AlgoSettings extends Component {
             label="SHA Size"
             help="Word size for the SHA-2 hash function used"
             value={algo.size}
-            onChange={v => changeTheValue(path + '.size', v)}
+            onChange={(v) => changeTheValue(path + '.size', v)}
             possibleValues={[
               { label: '256', value: 256 },
               { label: '384', value: 384 },
@@ -281,14 +281,14 @@ export class AlgoSettings extends Component {
             value={algo.publicKey}
             help="The ECDSA public key"
             style={{ fontFamily: 'monospace' }}
-            onChange={e => changeTheValue(path + '.publicKey', e)}
+            onChange={(e) => changeTheValue(path + '.publicKey', e)}
           />,
           <TextareaInput
             label="Private key"
             value={algo.privateKey}
             style={{ fontFamily: 'monospace' }}
             help="The ECDSA private key, private key can be empty if not used for JWT token signing"
-            onChange={e => changeTheValue(path + '.privateKey', e)}
+            onChange={(e) => changeTheValue(path + '.privateKey', e)}
           />,
         ]}
         {algo.type === 'JWKSAlgoSettings' && [
@@ -296,33 +296,33 @@ export class AlgoSettings extends Component {
             label="URL"
             value={algo.url}
             help="The JWK Set url"
-            onChange={e => changeTheValue(path + '.url', e)}
+            onChange={(e) => changeTheValue(path + '.url', e)}
           />,
           <NumberInput
             label="HTTP call timeout"
             suffix="millis."
             value={algo.timeout}
             help="Timeout for fetching the keyset"
-            onChange={e => changeTheValue(path + '.timeout', e)}
+            onChange={(e) => changeTheValue(path + '.timeout', e)}
           />,
           <NumberInput
             label="TTL"
             suffix="millis."
             value={algo.ttl}
             help="Cache TTL for the keyset"
-            onChange={e => changeTheValue(path + '.ttl', e)}
+            onChange={(e) => changeTheValue(path + '.ttl', e)}
           />,
           <ObjectInput
             label="HTTP Headers"
             value={algo.headers}
             help="The HTTP headers passed"
-            onChange={e => changeTheValue(path + '.headers', e)}
+            onChange={(e) => changeTheValue(path + '.headers', e)}
           />,
           <SelectInput
             label="Key type"
             help="Type of key"
             value={algo.kty}
-            onChange={v => changeTheValue(path + '.kty', v)}
+            onChange={(v) => changeTheValue(path + '.kty', v)}
             possibleValues={[
               { label: 'RSA', value: 'RSA' },
               { label: 'EC', value: 'EC' },
@@ -333,26 +333,26 @@ export class AlgoSettings extends Component {
             label="Use mTLS"
             value={algo.mtlsConfig.mtls}
             help="..."
-            onChange={v => changeTheValue(path + '.mtlsConfig.mtls', v)}
+            onChange={(v) => changeTheValue(path + '.mtlsConfig.mtls', v)}
           />,
           <BooleanInput
             label="TLS loose"
             value={algo.mtlsConfig.loose}
             help="..."
-            onChange={v => changeTheValue(path + '.mtlsConfig.loose', v)}
+            onChange={(v) => changeTheValue(path + '.mtlsConfig.loose', v)}
           />,
           <BooleanInput
             label="Trust all"
             value={algo.mtlsConfig.trustAll}
             help="..."
-            onChange={v => changeTheValue(path + '.mtlsConfig.trustAll', v)}
+            onChange={(v) => changeTheValue(path + '.mtlsConfig.trustAll', v)}
           />,
           <ArrayInput
             label="Client certificate"
             placeholder="Choose a client certificate"
             value={algo.mtlsConfig.certs}
             valuesFrom="/bo/api/proxy/api/certificates"
-            transformer={a => ({
+            transformer={(a) => ({
               value: a.id,
               label: (
                 <span>
@@ -364,14 +364,14 @@ export class AlgoSettings extends Component {
               ),
             })}
             help="The certificate used when performing a mTLS call"
-            onChange={v => changeTheValue(path + '.mtlsConfig.certs', v)}
+            onChange={(v) => changeTheValue(path + '.mtlsConfig.certs', v)}
           />,
           <ArrayInput
             label="Trusted certificate"
             placeholder="Choose a trusted certificate"
             value={algo.mtlsConfig.trustedCerts}
             valuesFrom="/bo/api/proxy/api/certificates"
-            transformer={a => ({
+            transformer={(a) => ({
               value: a.id,
               label: (
                 <span>
@@ -383,10 +383,10 @@ export class AlgoSettings extends Component {
               ),
             })}
             help="The trusted certificate used when performing a mTLS call"
-            onChange={v => changeTheValue(path + '.mtlsConfig.trustedCerts', v)}
+            onChange={(v) => changeTheValue(path + '.mtlsConfig.trustedCerts', v)}
           />,
           <Separator title="Proxy" />,
-          <Proxy value={algo.proxy} onChange={v => changeTheValue(path + '.proxy', v)} />,
+          <Proxy value={algo.proxy} onChange={(v) => changeTheValue(path + '.proxy', v)} />,
         ]}
       </div>
     );
@@ -429,10 +429,10 @@ export class JwtVerifier extends Component {
           <>
             <Collapse initCollapsed={false} label="Location">
               <Location
-                tenant={verifier._loc.tenant || "default"}
-                onChangeTenant={v => this.changeTheValue("_loc.tenant", v)}
-                teams={verifier._loc.teams || ["default"]}
-                onChangeTeams={v => this.changeTheValue("_loc.teams", v)}
+                tenant={verifier._loc.tenant || 'default'}
+                onChangeTenant={(v) => this.changeTheValue('_loc.tenant', v)}
+                teams={verifier._loc.teams || ['default']}
+                onChangeTeams={(v) => this.changeTheValue('_loc.teams', v)}
               />
             </Collapse>
           </>
@@ -444,7 +444,7 @@ export class JwtVerifier extends Component {
             disabled
             value={verifier.id}
             help="The verifier Id"
-            onChange={e => changeTheValue(path + '.id', e)}
+            onChange={(e) => changeTheValue(path + '.id', e)}
           />
         )}
         {verifier.type === 'global' && (
@@ -453,7 +453,7 @@ export class JwtVerifier extends Component {
             placeholder="The verifier name"
             value={verifier.name}
             help="The verifier name"
-            onChange={e => changeTheValue(path + '.name', e)}
+            onChange={(e) => changeTheValue(path + '.name', e)}
           />
         )}
         {verifier.type === 'global' && (
@@ -462,7 +462,7 @@ export class JwtVerifier extends Component {
             placeholder="The verifier description"
             value={verifier.desc}
             help="The verifier description"
-            onChange={e => changeTheValue(path + '.desc', e)}
+            onChange={(e) => changeTheValue(path + '.desc', e)}
           />
         )}
         {!this.props.global && (
@@ -470,14 +470,14 @@ export class JwtVerifier extends Component {
             label="Enabled"
             value={verifier.enabled}
             help="Is JWT verification enabled for this service"
-            onChange={v => changeTheValue(path + '.enabled', v)}
+            onChange={(v) => changeTheValue(path + '.enabled', v)}
           />
         )}
         <BooleanInput
           label="Strict"
           value={verifier.strict}
           help="If not strict, request without JWT token will be allowed to pass"
-          onChange={v => changeTheValue(path + '.strict', v)}
+          onChange={(v) => changeTheValue(path + '.strict', v)}
         />
         <br />
         {/* **************************************************************************************************** */}
@@ -502,7 +502,7 @@ export class JwtVerifier extends Component {
         <SelectInput
           label="Verif. strategy"
           value={verifier.strategy.type}
-          onChange={e => {
+          onChange={(e) => {
             switch (e) {
               case 'DefaultToken':
                 changeTheValue(path + '.strategy', {
@@ -592,14 +592,14 @@ export class JwtVerifier extends Component {
             label="Strict"
             help="If token already present, the call will fail"
             value={verifier.strategy.strict}
-            onChange={v => changeTheValue(path + '.strategy.strict', v)}
+            onChange={(v) => changeTheValue(path + '.strategy.strict', v)}
           />,
           <Suspense fallback={<div>loading ...</div>}>
             <CodeInput
               label="Default value"
               mode="json"
               value={JSON.stringify(verifier.strategy.token, null, 2)}
-              onChange={e => this.changeTheValue(path + '.strategy.token', JSON.parse(e))}
+              onChange={(e) => this.changeTheValue(path + '.strategy.token', JSON.parse(e))}
             />
           </Suspense>,
           <ObjectInput
@@ -608,7 +608,7 @@ export class JwtVerifier extends Component {
             placeholderValue="Field value"
             value={verifier.strategy.verificationSettings.fields}
             help="When the JWT token is checked, each field specified here will be verified with the provided value"
-            onChange={v => changeTheValue(path + '.strategy.verificationSettings.fields', v)}
+            onChange={(v) => changeTheValue(path + '.strategy.verificationSettings.fields', v)}
           />,
           <ObjectInput
             label="Verify token array value"
@@ -616,7 +616,7 @@ export class JwtVerifier extends Component {
             placeholderValue="One or more comma separated values in the array"
             value={verifier.strategy.verificationSettings.arrayFields}
             help="When the JWT token is checked, each field specified here will be verified if the provided value is contained in the array"
-            onChange={v => changeTheValue(path + '.strategy.verificationSettings.arrayFields', v)}
+            onChange={(v) => changeTheValue(path + '.strategy.verificationSettings.arrayFields', v)}
           />,
         ]}
         {verifier.strategy.type === 'PassThrough' && [
@@ -626,7 +626,7 @@ export class JwtVerifier extends Component {
             placeholderValue="Field value"
             value={verifier.strategy.verificationSettings.fields}
             help="When the JWT token is checked, each field specified here will be verified with the provided value"
-            onChange={v => changeTheValue(path + '.strategy.verificationSettings.fields', v)}
+            onChange={(v) => changeTheValue(path + '.strategy.verificationSettings.fields', v)}
           />,
           <ObjectInput
             label="Verify token array value"
@@ -634,7 +634,7 @@ export class JwtVerifier extends Component {
             placeholderValue="One or more comma separated values in the array"
             value={verifier.strategy.verificationSettings.arrayFields}
             help="When the JWT token is checked, each field specified here will be verified if the provided value is contained in the array"
-            onChange={v => changeTheValue(path + '.strategy.verificationSettings.arrayFields', v)}
+            onChange={(v) => changeTheValue(path + '.strategy.verificationSettings.arrayFields', v)}
           />,
         ]}
         {verifier.strategy.type === 'Sign' && [
@@ -644,7 +644,7 @@ export class JwtVerifier extends Component {
             placeholderValue="Field value"
             value={verifier.strategy.verificationSettings.fields}
             help="When the JWT token is checked, each field specified here will be verified with the provided value"
-            onChange={v => changeTheValue(path + '.strategy.verificationSettings.fields', v)}
+            onChange={(v) => changeTheValue(path + '.strategy.verificationSettings.fields', v)}
           />,
           <ObjectInput
             label="Verify token array value"
@@ -652,7 +652,7 @@ export class JwtVerifier extends Component {
             placeholderValue="One or more comma separated values in the array"
             value={verifier.strategy.verificationSettings.arrayFields}
             help="When the JWT token is checked, each field specified here will be verified if the provided value is contained in the array"
-            onChange={v => changeTheValue(path + '.strategy.verificationSettings.arrayFields', v)}
+            onChange={(v) => changeTheValue(path + '.strategy.verificationSettings.arrayFields', v)}
           />,
           <Separator title="Re-sign settings" />,
           <AlgoSettings
@@ -669,7 +669,7 @@ export class JwtVerifier extends Component {
             placeholderValue="Field value"
             value={verifier.strategy.verificationSettings.fields}
             help="When the JWT token is checked, each field specified here will be verified with the provided value"
-            onChange={v => changeTheValue(path + '.strategy.verificationSettings.fields', v)}
+            onChange={(v) => changeTheValue(path + '.strategy.verificationSettings.fields', v)}
           />,
           <ObjectInput
             label="Verify token array value"
@@ -677,7 +677,7 @@ export class JwtVerifier extends Component {
             placeholderValue="One or more comma separated values in the array"
             value={verifier.strategy.verificationSettings.arrayFields}
             help="When the JWT token is checked, each field specified here will be verified if the provided value is contained in the array"
-            onChange={v => changeTheValue(path + '.strategy.verificationSettings.arrayFields', v)}
+            onChange={(v) => changeTheValue(path + '.strategy.verificationSettings.arrayFields', v)}
           />,
           <Separator title="Re-sign settings" />,
           <AlgoSettings
@@ -700,7 +700,7 @@ export class JwtVerifier extends Component {
             placeholderValue="Field value"
             value={verifier.strategy.transformSettings.mappingSettings.map}
             help="When the JWT token is transformed, it is possible to change a field name, just specify origin field name and target field name"
-            onChange={v =>
+            onChange={(v) =>
               changeTheValue(path + '.strategy.transformSettings.mappingSettings.map', v)
             }
           />,
@@ -710,7 +710,7 @@ export class JwtVerifier extends Component {
             placeholderValue="Field value"
             value={verifier.strategy.transformSettings.mappingSettings.values}
             help="When the JWT token is transformed, it is possible to add new field with static values, just specify field name and value"
-            onChange={v =>
+            onChange={(v) =>
               changeTheValue(path + '.strategy.transformSettings.mappingSettings.values', v)
             }
           />,
@@ -719,7 +719,7 @@ export class JwtVerifier extends Component {
             placeholder="Field name"
             value={verifier.strategy.transformSettings.mappingSettings.remove}
             help="When the JWT token is transformed, it is possible to remove fields"
-            onChange={v =>
+            onChange={(v) =>
               changeTheValue(path + '.strategy.transformSettings.mappingSettings.remove', v)
             }
           />,
@@ -728,7 +728,7 @@ export class JwtVerifier extends Component {
         <ObjectInput
           label="Metadata"
           value={verifier.metadata}
-          onChange={v => changeTheValue(path + '.metadata', v)}
+          onChange={(v) => changeTheValue(path + '.metadata', v)}
         />
       </div>
     );

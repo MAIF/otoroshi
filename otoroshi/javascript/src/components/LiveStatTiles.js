@@ -82,7 +82,7 @@ export class LiveStatTiles extends Component {
 
   componentDidMount() {
     this.evtSource = new EventSource(this.props.url);
-    this.evtSource.onmessage = e => this.onMessage(e);
+    this.evtSource.onmessage = (e) => this.onMessage(e);
   }
 
   componentWillUnmount() {
@@ -110,7 +110,7 @@ export class LiveStatTiles extends Component {
     return [computedValue, unit];
   }
 
-  onMessage = e => {
+  onMessage = (e) => {
     const data = JSON.parse(e.data);
     data.rate = data.rate || 0.0;
     data.duration = data.duration || 0.0;

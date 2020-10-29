@@ -12,7 +12,7 @@ export class ApiKeyStatsPage extends Component {
   componentDidMount() {
     this.props.setTitle(`ApiKey analytics`);
     BackOfficeServices.fetchApiKeyById(this.props.params.serviceId, this.props.params.titem).then(
-      apikey => {
+      (apikey) => {
         this.setState({ apikey });
         this.props.setTitle(`${apikey.clientName} analytics`);
       }

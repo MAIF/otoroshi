@@ -19,9 +19,9 @@ export class ArrayInput extends Component {
           Accept: 'application/json',
         },
       })
-        .then(r => r.json())
-        .then(values =>
-          values.map(v => {
+        .then((r) => r.json())
+        .then((values) =>
+          values.map((v) => {
             if (this.props.transformerMapping) {
               const value = v[this.props.transformerMapping.value];
               const label = v[this.props.transformerMapping.label];
@@ -33,12 +33,12 @@ export class ArrayInput extends Component {
             }
           })
         )
-        .then(values => this.setState({ values, loading: false }));
+        .then((values) => this.setState({ values, loading: false }));
     } else if (this.props.values) {
-      if (this.props.values.every(v => v.values && v.label)) {
-        this.setState({values: this.props.values})
+      if (this.props.values.every((v) => v.values && v.label)) {
+        this.setState({ values: this.props.values });
       } else {
-        this.setState({ values: this.props.values.map(value => ({label: value, value}))})
+        this.setState({ values: this.props.values.map((value) => ({ label: value, value })) });
       }
     }
   }
@@ -50,7 +50,7 @@ export class ArrayInput extends Component {
     this.props.onChange(newValues, e.target.value, idx);
   };
 
-  addFirst = e => {
+  addFirst = (e) => {
     if (e && e.preventDefault) e.preventDefault();
     if (!this.props.value || this.props.value.length === 0) {
       const newValue = this.props.defaultValue || '';
@@ -58,7 +58,7 @@ export class ArrayInput extends Component {
     }
   };
 
-  addNext = e => {
+  addNext = (e) => {
     if (e && e.preventDefault) e.preventDefault();
     const newValues = [...this.props.value, this.props.defaultValue || ''];
     this.props.onChange(newValues, this.props.defaultValue || '', newValues.length - 1);
@@ -115,7 +115,7 @@ export class ArrayInput extends Component {
                         disabled={this.props.disabled}
                         type="button"
                         className="btn btn-danger"
-                        onClick={e => this.remove(e, idx)}>
+                        onClick={(e) => this.remove(e, idx)}>
                         <i className="glyphicon glyphicon-trash" />
                       </button>
                       {idx === values.length - 1 && (
@@ -179,7 +179,7 @@ export class ArrayInput extends Component {
                       id={`input-${this.props.label}`}
                       placeholder={this.props.placeholder}
                       value={value}
-                      onChange={e => this.changeValue(e, idx)}
+                      onChange={(e) => this.changeValue(e, idx)}
                       style={{ width: '100%' }}
                     />
                     {this.props.suffix && (
@@ -196,20 +196,20 @@ export class ArrayInput extends Component {
                     placeholder={this.props.placeholder}
                     optionRenderer={this.props.optionRenderer}
                     options={this.state.values}
-                    onChange={e => this.changeValue({ target: { value: e.value } }, idx)}
+                    onChange={(e) => this.changeValue({ target: { value: e.value } }, idx)}
                   />
                 )}
                 {!!this.state.values.length && this.props.creatable && !this.props.component && (
                   <Creatable
                     name={`selector-${idx}`}
-                    value={{label: value, value}}
+                    value={{ label: value, value }}
                     isLoading={this.state.loading}
                     disabled={this.props.disabled}
                     placeholder={this.props.placeholder}
                     optionRenderer={this.props.optionRenderer}
                     options={this.state.values}
-                    onChange={e => this.changeValue({ target: { value: e.value } }, idx)}
-                    promptTextCreator={label => `Create events filter "${label}"`}
+                    onChange={(e) => this.changeValue({ target: { value: e.value } }, idx)}
+                    promptTextCreator={(label) => `Create events filter "${label}"`}
                   />
                 )}
                 {this.props.component && <Component idx={idx} itemValue={value} {...this.props} />}
@@ -218,7 +218,7 @@ export class ArrayInput extends Component {
                     disabled={this.props.disabled}
                     type="button"
                     className="btn btn-danger"
-                    onClick={e => this.remove(e, idx)}>
+                    onClick={(e) => this.remove(e, idx)}>
                     <i className="glyphicon glyphicon-trash" />
                   </button>
                   {idx === values.length - 1 && (

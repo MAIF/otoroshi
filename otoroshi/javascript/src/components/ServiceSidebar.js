@@ -39,7 +39,7 @@ export class ServiceSidebar extends Component {
     const { env, serviceId, name = 'Service', nolink } = this.props;
     const pathname = window.location.pathname;
     const base = `/bo/dashboard/lines/${env}/services/${serviceId}/`;
-    const className = part => (`${base}${part}` === pathname ? 'active' : '');
+    const className = (part) => (`${base}${part}` === pathname ? 'active' : '');
     return (
       <ul className="nav nav-sidebar">
         <li>

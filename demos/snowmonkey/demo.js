@@ -89,7 +89,7 @@ function callApi() {
     },
   })
     .then(
-      r => {
+      (r) => {
         respTimes = [Date.now() - start, ...respTimes];
         const status = r.status;
         if (status > 199 && status < 300) {
@@ -104,12 +104,12 @@ function callApi() {
         if (status > 499 && status < 600) {
           byResult['5xx'] = byResult['5xx'] + 1;
         }
-        r.text().then(t => {
+        r.text().then((t) => {
           const json = JSON.parse(t);
           respSize = [t.length, ...respSize];
         });
       },
-      e => {
+      (e) => {
         console.log(e);
         errors = errors + 1;
         return;
@@ -130,7 +130,7 @@ function displayState() {
   const keys = Object.keys(byResult);
   clearNthLine(stdout, lastNLines);
   lastNLines = 0 - (keys.length + 1);
-  keys.forEach(key => {
+  keys.forEach((key) => {
     const res = String(byResult[key]);
     const changed = lastResult[key] !== res;
     lastResult[key] = res;
@@ -145,7 +145,7 @@ function displayState() {
 
 const clients = argv.clients || 0;
 
-_.range(0, clients).map(c => callApi());
+_.range(0, clients).map((c) => callApi());
 
 const shouldDisplayState = argv.displayState ? argv.displayState === 'true' : true;
 if (shouldDisplayState) {

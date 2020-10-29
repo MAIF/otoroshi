@@ -11,7 +11,7 @@ const Both = ({ label, rawValue }) => (
     <label className="col-sm-2 control-label">{label}</label>
     <div className="col-sm-10">
       <input
-        onChange={e => ''}
+        onChange={(e) => ''}
         type="text"
         className="form-control"
         value={`${rawValue.clientId}:${rawValue.clientSecret}`}
@@ -26,7 +26,7 @@ const CurlCommand = ({ label, rawValue, env }) => (
     <div className="col-sm-10">
       {env && (
         <input
-          onChange={e => ''}
+          onChange={(e) => ''}
           type="text"
           className="form-control"
           value={`curl -X GET -H '${env.clientIdHeader || 'Opun-Client-Id'}: ${
@@ -45,7 +45,7 @@ const BasicAuthToken = ({ label, rawValue }) => (
     <label className="col-sm-2 control-label">{label}</label>
     <div className="col-sm-10">
       <input
-        onChange={e => ''}
+        onChange={(e) => ''}
         type="text"
         className="form-control"
         value={`Authorization: Basic ${window.btoa(
@@ -63,7 +63,7 @@ const ResetSecret = ({ changeValue }) => (
       <button
         type="button"
         className="btn btn-danger btn-xs"
-        onClick={e => changeValue('clientSecret', faker.random.alphaNumeric(64))}>
+        onClick={(e) => changeValue('clientSecret', faker.random.alphaNumeric(64))}>
         <i className="glyphicon glyphicon-refresh" /> Reset secret
       </button>
     </div>
@@ -71,7 +71,7 @@ const ResetSecret = ({ changeValue }) => (
 );
 
 class ResetQuotas extends Component {
-  resetQuotas = e => {
+  resetQuotas = (e) => {
     e.preventDefault();
     BackOfficeServices.resetRemainingQuotas(
       this.props.rawValue.authorizedGroup,
@@ -104,7 +104,7 @@ class CopyCredentials extends Component {
         <label className="col-sm-2 control-label" />
         <div className="col-sm-10">
           <input
-            ref={r => (this.clipboard = r)}
+            ref={(r) => (this.clipboard = r)}
             style={{ position: 'fixed', left: 0, top: -250 }}
             type="text"
             value={props.rawValue.clientId + ':' + props.rawValue.clientSecret}
@@ -113,7 +113,7 @@ class CopyCredentials extends Component {
           <button
             type="button"
             className="btn btn-success btn-xs"
-            onClick={e => {
+            onClick={(e) => {
               this.clipboard.select();
               document.execCommand('Copy');
             }}>
@@ -132,14 +132,14 @@ class CopyFromLineItem extends Component {
       <button
         type="button"
         className="btn btn-sm btn-info"
-        onClick={e => {
+        onClick={(e) => {
           this.clipboard.select();
           document.execCommand('Copy');
         }}>
         <i className="fas fa-copy" />
         <input
           type="text"
-          ref={r => (this.clipboard = r)}
+          ref={(r) => (this.clipboard = r)}
           style={{ position: 'fixed', left: 0, top: -250 }}
           value={item.clientId + ':' + item.clientSecret}
           alt="copy credentials"
@@ -158,7 +158,7 @@ class DailyRemainingQuotas extends Component {
     BackOfficeServices.fetchRemainingQuotas(
       this.props.rawValue.authorizedGroup,
       this.props.rawValue.clientId
-    ).then(quotas => {
+    ).then((quotas) => {
       console.log(quotas);
       this.setState({ quotas });
     });
@@ -274,11 +274,10 @@ class DailyRemainingQuotas extends Component {
 }
 
 const ApiKeysConstants = {
-
   formSchema: (that) => ({
     _loc: {
       type: 'location',
-      props: {}
+      props: {},
     },
     remainingQuotas: {
       type: DailyRemainingQuotas,
@@ -338,16 +337,18 @@ const ApiKeysConstants = {
         placeholder: 'The groups/services of the api key',
         help: 'The groups/services linked to this api key',
         valuesFrom: '/bo/api/groups-and-services',
-        optionRenderer: p => {
+        optionRenderer: (p) => {
           return (
             <div style={{ display: 'flex' }}>
               <div style={{ width: 60 }}>
-                <span className={`label ${p.kind === 'group' ? 'label-warning' : 'label-success'}`}>{p.kind}</span>
+                <span className={`label ${p.kind === 'group' ? 'label-warning' : 'label-success'}`}>
+                  {p.kind}
+                </span>
               </div>
               <span>{p.label}</span>
             </div>
           );
-        }
+        },
       },
     },
     enabled: {
@@ -474,7 +475,7 @@ const ApiKeysConstants = {
   columns: (that) => [
     {
       title: 'Name',
-      content: item => item.clientName,
+      content: (item) => item.clientName,
       wrappedCell: (v, item, table) => {
         if (that.state && that.state.env && that.state.env.adminApikeyId === item.clientId) {
           return (
@@ -490,13 +491,13 @@ const ApiKeysConstants = {
     },
     {
       title: 'ApiKey Id',
-      content: item => item.clientId,
+      content: (item) => item.clientId,
     },
     {
       title: 'Credentials',
       style: { textAlign: 'center', width: 90 },
       notFilterable: true,
-      content: item => item.clientName,
+      content: (item) => item.clientName,
       cell: (v, item, table) => <CopyFromLineItem item={item} table={table} />,
     },
     {
@@ -508,11 +509,11 @@ const ApiKeysConstants = {
         justifyContent: 'flex-start',
       },
       notFilterable: true,
-      content: item => item.enabled,
+      content: (item) => item.enabled,
       cell: (v, item, table) => (
         <SimpleBooleanInput
           value={item.enabled}
-          onChange={value => {
+          onChange={(value) => {
             BackOfficeServices.updateApiKey(that.props.params.serviceId, {
               ...item,
               enabled: value,
@@ -525,11 +526,11 @@ const ApiKeysConstants = {
       title: 'Stats',
       style: { textAlign: 'center', width: 70 },
       notFilterable: true,
-      content: item => (
+      content: (item) => (
         <button
           type="button"
           className="btn btn-sm btn-success"
-          onClick={e =>
+          onClick={(e) =>
             (window.location = `/bo/dashboard/lines/prod/services/${
               that.state.service ? that.state.service.id : '-'
             }/apikeys/edit/${item.clientId}/stats`)
@@ -576,7 +577,7 @@ const ApiKeysConstants = {
     '>>>Quotas consumption',
     'remainingQuotas',
     'resetQuotas',
-  ]
+  ],
 };
 
 export class ServiceApiKeysPage extends Component {
@@ -595,15 +596,15 @@ export class ServiceApiKeysPage extends Component {
   }
 
   componentDidMount() {
-    BackOfficeServices.env().then(env => this.setState({ env }));
+    BackOfficeServices.env().then((env) => this.setState({ env }));
     BackOfficeServices.fetchService(this.props.params.lineId, this.props.params.serviceId).then(
-      service => {
+      (service) => {
         this.props.setTitle(`Service Api Keys`);
         this.setState({ service }, () => {
           this.props.setSidebarContent(this.sidebarContent(service.name));
           if (this.table) {
-            this.table.readRoute()
-            this.table.update()
+            this.table.readRoute();
+            this.table.update();
           }
         });
       }
@@ -614,16 +615,16 @@ export class ServiceApiKeysPage extends Component {
     return BackOfficeServices.fetchApiKeysForPage(this.props.params.serviceId);
   };
 
-  createItem = ak => {
+  createItem = (ak) => {
     return BackOfficeServices.createApiKey(this.props.params.serviceId, ak);
   };
 
-  updateItem = ak => {
+  updateItem = (ak) => {
     console.log(ak);
     return BackOfficeServices.updateApiKey(this.props.params.serviceId, ak);
   };
 
-  deleteItem = ak => {
+  deleteItem = (ak) => {
     return BackOfficeServices.deleteApiKey(this.props.params.serviceId, ak);
   };
 
@@ -641,7 +642,7 @@ export class ServiceApiKeysPage extends Component {
           throttlingQuota: 100,
           dailyQuota: 1000000,
           monthlyQuota: 1000000000000000000,
-          authorizedEntities: this.state.service.groups.map(g => "group_" + g),
+          authorizedEntities: this.state.service.groups.map((g) => 'group_' + g),
         })}
         itemName="ApiKey"
         formSchema={ApiKeysConstants.formSchema(this)}
@@ -652,21 +653,21 @@ export class ServiceApiKeysPage extends Component {
         deleteItem={this.deleteItem}
         createItem={this.createItem}
         stayAfterSave={true}
-        injectTable={table => (this.table = table)}
+        injectTable={(table) => (this.table = table)}
         showActions={true}
-        displayTrash={item => this.state.env && this.state.env.adminApikeyId === item.clientId}
+        displayTrash={(item) => this.state.env && this.state.env.adminApikeyId === item.clientId}
         showLink={false}
         rowNavigation={true}
-        navigateTo={item =>
+        navigateTo={(item) =>
           this.props.history.push({
             pathname: `/lines/${this.props.params.lineId}/services/${this.props.params.serviceId}/apikeys/edit/${item.clientId}`,
             query: { group: item.id, groupName: item.name },
           })
         }
-        itemUrl={i =>
+        itemUrl={(i) =>
           `/bo/dashboard/lines/${this.props.params.lineId}/services/${this.props.params.serviceId}/apikeys/edit/${i.clientId}`
         }
-        extractKey={item => item.clientId}
+        extractKey={(item) => item.clientId}
       />
     );
   }
@@ -678,7 +679,7 @@ export class ApiKeysPage extends Component {
   };
 
   componentDidMount() {
-    BackOfficeServices.env().then(env => this.setState({ env }));
+    BackOfficeServices.env().then((env) => this.setState({ env }));
     this.props.setTitle(`All apikeys`);
   }
 
@@ -686,16 +687,16 @@ export class ApiKeysPage extends Component {
     return BackOfficeServices.fetchAllApikeys();
   };
 
-  createItem = ak => {
+  createItem = (ak) => {
     return BackOfficeServices.createStandaloneApiKey(ak);
   };
 
-  updateItem = ak => {
+  updateItem = (ak) => {
     console.log(ak);
     return BackOfficeServices.updateStandaloneApiKey(ak);
   };
 
-  deleteItem = ak => {
+  deleteItem = (ak) => {
     return BackOfficeServices.deleteStandaloneApiKey(ak);
   };
 
@@ -725,19 +726,17 @@ export class ApiKeysPage extends Component {
         createItem={this.createItem}
         stayAfterSave={true}
         showActions={true}
-        displayTrash={item => this.state.env && this.state.env.adminApikeyId === item.clientId}
+        displayTrash={(item) => this.state.env && this.state.env.adminApikeyId === item.clientId}
         showLink={false}
         rowNavigation={true}
-        navigateTo={item =>
+        navigateTo={(item) =>
           this.props.history.push({
             pathname: `/apikeys/edit/${item.clientId}`,
             query: { group: item.id, groupName: item.name },
           })
         }
-        itemUrl={i =>
-          `/bo/dashboard/apikeys/edit/${i.clientId}`
-        }
-        extractKey={item => item.clientId}
+        itemUrl={(i) => `/bo/dashboard/apikeys/edit/${i.clientId}`}
+        extractKey={(item) => item.clientId}
       />
     );
   }

@@ -24,7 +24,7 @@ export class ReloadNewVersion extends Component {
 
   checkVersion = () => {
     BackOfficeServices.version().then(
-      data => {
+      (data) => {
         if (data instanceof Error) {
           console.log('Logged out', e);
           this.setState({ display: true, unlogged: true });
@@ -40,7 +40,7 @@ export class ReloadNewVersion extends Component {
           }
         }
       },
-      e => {
+      (e) => {
         console.log('error during version check', e);
         this.setState({ display: true, unlogged: true });
         setTimeout(() => {
@@ -65,7 +65,7 @@ export class ReloadNewVersion extends Component {
               className="btn btn-danger btn-sm"
               style={{ marginLeft: 10 }}
               title="Login now !!!"
-              onClick={e => window.location.reload()}>
+              onClick={(e) => window.location.reload()}>
               <i className="glyphicon glyphicon-refresh" />
             </button>
           </div>
@@ -79,14 +79,14 @@ export class ReloadNewVersion extends Component {
           type="button"
           className="btn btn-danger btn-sm"
           style={{ marginLeft: 10 }}
-          onClick={e => window.location.reload()}>
+          onClick={(e) => window.location.reload()}>
           <i className="glyphicon glyphicon-refresh" />
         </button>
         <button
           type="button"
           className="btn btn-info btn-sm"
           style={{ marginLeft: 10 }}
-          onClick={e => {
+          onClick={(e) => {
             e.preventDefault();
             this.setState({ display: false, versionClosed: true });
           }}>

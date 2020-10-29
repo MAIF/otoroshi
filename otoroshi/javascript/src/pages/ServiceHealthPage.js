@@ -23,7 +23,7 @@ export class ServiceHealthPage extends Component {
     {
       title: 'Health',
       style: { textAlign: 'center' },
-      content: item => item.health,
+      content: (item) => item.health,
       cell: (v, item) => {
         const color = item.health ? this.colors[item.health] : 'grey';
         return <span className="glyphicon glyphicon-heart" style={{ color, fontSize: 16 }} />;
@@ -31,20 +31,20 @@ export class ServiceHealthPage extends Component {
     },
     {
       title: 'Date',
-      content: item => item['@timestamp'],
+      content: (item) => item['@timestamp'],
       cell: (v, item) => moment(item['@timestamp']).format('DD/MM/YYYY HH:mm:ss:SSS'),
     },
-    { title: 'Duration', content: item => `${item.duration} ms.`, style: { textAlign: 'right' } },
-    { title: 'Status', content: item => item.status, style: { textAlign: 'center' } },
+    { title: 'Duration', content: (item) => `${item.duration} ms.`, style: { textAlign: 'right' } },
+    { title: 'Status', content: (item) => item.status, style: { textAlign: 'center' } },
     {
       title: 'Logic Check',
-      content: item => (item.logicCheck ? 'OK' : 'KO'),
+      content: (item) => (item.logicCheck ? 'OK' : 'KO'),
       style: { textAlign: 'center' },
     },
-    { title: 'Error', content: item => (item.error ? item.error : '') },
+    { title: 'Error', content: (item) => (item.error ? item.error : '') },
   ];
 
-  updateEvts = evts => {
+  updateEvts = (evts) => {
     this.setState({ evts });
     if (evts.length > 0) {
       const color = evts[0].health ? this.colors[evts[0].health] : 'grey';
@@ -62,11 +62,11 @@ export class ServiceHealthPage extends Component {
 
   componentDidMount() {
     BackOfficeServices.fetchService(this.props.params.lineId, this.props.params.serviceId).then(
-      service => {
+      (service) => {
         this.setState({ service }, () => {
           if (service.healthCheck.enabled) {
             this.setState({ health: true });
-            BackOfficeServices.fetchHealthCheckEvents(service.id).then(evts => {
+            BackOfficeServices.fetchHealthCheckEvents(service.id).then((evts) => {
               this.updateEvts(evts);
             });
           } else {
@@ -93,7 +93,7 @@ export class ServiceHealthPage extends Component {
     return BackOfficeServices.fetchHealthCheckEvents(this.state.service.id);
   };
 
-  onUpdate = evts => {
+  onUpdate = (evts) => {
     this.updateEvts(evts);
   };
 
@@ -104,36 +104,36 @@ export class ServiceHealthPage extends Component {
       {
         name: '1xx',
         data: evts
-          .filter(e => e.status < 100)
-          .map(e => [e['@timestamp'], e.duration])
+          .filter((e) => e.status < 100)
+          .map((e) => [e['@timestamp'], e.duration])
           .reverse(),
       },
       {
         name: '2xx',
         data: evts
-          .filter(e => e.status > 199 && e.status < 300)
-          .map(e => [e['@timestamp'], e.duration])
+          .filter((e) => e.status > 199 && e.status < 300)
+          .map((e) => [e['@timestamp'], e.duration])
           .reverse(),
       },
       {
         name: '3xx',
         data: evts
-          .filter(e => e.status > 299 && e.status < 400)
-          .map(e => [e['@timestamp'], e.duration])
+          .filter((e) => e.status > 299 && e.status < 400)
+          .map((e) => [e['@timestamp'], e.duration])
           .reverse(),
       },
       {
         name: '4xx',
         data: evts
-          .filter(e => e.status > 399 && e.status < 500)
-          .map(e => [e['@timestamp'], e.duration])
+          .filter((e) => e.status > 399 && e.status < 500)
+          .map((e) => [e['@timestamp'], e.duration])
           .reverse(),
       },
       {
         name: '5xx',
         data: evts
-          .filter(e => e.status > 499 && e.status < 600)
-          .map(e => [e['@timestamp'], e.duration])
+          .filter((e) => e.status > 499 && e.status < 600)
+          .map((e) => [e['@timestamp'], e.duration])
           .reverse(),
       },
     ];
@@ -154,7 +154,7 @@ export class ServiceHealthPage extends Component {
             fetchItems={this.fetchHealthCheckEvents}
             showActions={false}
             showLink={false}
-            extractKey={item => item['@id']}
+            extractKey={(item) => item['@id']}
             onUpdate={this.onUpdate}
           />
         )}

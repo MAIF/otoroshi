@@ -32,7 +32,7 @@ export class OtoDatePicker extends Component {
           format={dateFormat}
           placeholder={['Start Time', 'End Time']}
           onChange={this.onChange}
-          onOk={value => value}
+          onOk={(value) => value}
         />
       </LocaleProvider>
     );
@@ -59,7 +59,7 @@ export class OtoDateTimePicker extends Component {
           format={dateFormat}
           placeholder="Date and time"
           onChange={this.onChange}
-          onOk={value => value}
+          onOk={(value) => value}
         />
       </LocaleProvider>
     );

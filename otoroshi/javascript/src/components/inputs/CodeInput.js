@@ -11,22 +11,22 @@ import 'brace/ext/searchbox';
 
 export class JsonObjectAsCodeInput extends Component {
   render() {
-    return <CodeInput 
-      {...this.props}
-      value={JSON.stringify(this.props.value, null, 2)}
-      onChange={e => {
-        try {
-          this.props.onChange(JSON.parse(e))
-        } catch(ex) {
-          
-        }
-      }}
-    />
+    return (
+      <CodeInput
+        {...this.props}
+        value={JSON.stringify(this.props.value, null, 2)}
+        onChange={(e) => {
+          try {
+            this.props.onChange(JSON.parse(e));
+          } catch (ex) {}
+        }}
+      />
+    );
   }
 }
 
 export default class CodeInput extends Component {
-  static Toggle = props => {
+  static Toggle = (props) => {
     const [display, setDisplay] = useState(true);
     if (display) return <CodeInput {...props} />;
     return (
@@ -35,7 +35,7 @@ export default class CodeInput extends Component {
           {props.label} <Help text={props.help} />
         </label>
         <div className="col-sm-10">
-          <button type="button" className="btn btn-default" onClick={e => setDisplay(!display)}>
+          <button type="button" className="btn btn-default" onClick={(e) => setDisplay(!display)}>
             Display
           </button>
         </div>
@@ -47,7 +47,7 @@ export default class CodeInput extends Component {
     value: null,
   };
 
-  onChange = e => {
+  onChange = (e) => {
     if (e && e.preventDefault) e.preventDefault();
     if (this.props.mode === 'json') {
       try {

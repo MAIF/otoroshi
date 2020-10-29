@@ -7,18 +7,18 @@ export class TenantsPage extends Component {
   columns = [
     {
       title: 'Name',
-      content: item => item.name,
+      content: (item) => item.name,
     },
     {
       title: 'Description',
-      content: item => item.descripiton,
+      content: (item) => item.descripiton,
     },
   ];
 
   deleteTenant = (tenant, table) => {
     window
       .newConfirm('Are you sure you want to delete organization "' + tenant.name + '"')
-      .then(confirmed => {
+      .then((confirmed) => {
         if (confirmed) {
           BackOfficeServices.deleteTenant(tenant).then(() => {
             table.update();
@@ -31,18 +31,13 @@ export class TenantsPage extends Component {
     this.props.setTitle('All Organizations');
   }
 
-  gotoTenant = tenant => {
+  gotoTenant = (tenant) => {
     this.props.history.push({
       pathname: `/organizations/edit/${tenant.id}`,
     });
   };
 
-  formFlow = [
-    'id',
-    'name',
-    'description',
-    'metadata',
-  ];
+  formFlow = ['id', 'name', 'description', 'metadata'];
 
   formSchema = {
     id: { type: 'string', props: { label: 'Id', placeholder: '---' } },
@@ -85,10 +80,10 @@ export class TenantsPage extends Component {
           rowNavigation={true}
           navigateTo={this.gotoTenant}
           firstSort={0}
-          extractKey={item => {
+          extractKey={(item) => {
             return item.id;
           }}
-          itemUrl={i => `/bo/dashboard/organizations/edit/${i.id}`}
+          itemUrl={(i) => `/bo/dashboard/organizations/edit/${i.id}`}
         />
       </div>
     );

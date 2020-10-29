@@ -24,7 +24,7 @@ export class FreeDomainInput extends Component {
     error: null,
   };
 
-  change = e => {
+  change = (e) => {
     const rawValue = e.target.value;
     this.setState({ rawValue });
     const newService = _.cloneDeep(this.props.value);
@@ -36,10 +36,7 @@ export class FreeDomainInput extends Component {
     } else {
       newService.forceHttps = false;
     }
-    let value = e.target.value
-      .replace('https://', '')
-      .replace('http://', '')
-      .replace('://', '');
+    let value = e.target.value.replace('https://', '').replace('http://', '').replace('://', '');
     if (value.indexOf('/') > -1) {
       const parts = value.split('/');
       const lastParts = [...parts];
@@ -57,7 +54,7 @@ export class FreeDomainInput extends Component {
     const reverseParts = value
       .split('.')
       .reverse()
-      .filter(i => !!i);
+      .filter((i) => !!i);
     this.setState({ error: null });
     if (reverseParts.length > 3) {
       newService.domain = `${reverseParts[1]}.${reverseParts[0]}`;

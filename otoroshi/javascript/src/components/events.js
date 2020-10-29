@@ -1,13 +1,13 @@
 export class Events {
   listeners = [];
 
-  dispatch = what => {
+  dispatch = (what) => {
     setTimeout(() => {
-      this.listeners.forEach(listener => listener(what));
+      this.listeners.forEach((listener) => listener(what));
     });
   };
 
-  subscribe = listener => {
+  subscribe = (listener) => {
     this.listeners.push(listener);
     return () => {
       const index = this.listeners.indexOf(listener);

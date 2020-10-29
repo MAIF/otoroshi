@@ -23,7 +23,7 @@ export class WithEnv extends Component {
   };
 
   componentDidMount() {
-    BackOfficeServices.env().then(env => {
+    BackOfficeServices.env().then((env) => {
       lastEnv = env;
       this.setState({ env });
     });

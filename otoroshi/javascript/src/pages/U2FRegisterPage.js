@@ -18,7 +18,7 @@ function Base64Url() {
     lookup[chars.charCodeAt(i)] = i;
   }
 
-  let encode = function(arraybuffer) {
+  let encode = function (arraybuffer) {
     let bytes = new Uint8Array(arraybuffer),
       i,
       len = bytes.length,
@@ -40,7 +40,7 @@ function Base64Url() {
     return base64url;
   };
 
-  let decode = function(base64string) {
+  let decode = function (base64string) {
     let bufferLength = base64string.length * 0.75,
       len = base64string.length,
       i,
@@ -128,21 +128,21 @@ export class U2FRegisterPage extends Component {
   columns = [
     {
       title: 'Username',
-      content: item => item.username,
+      content: (item) => item.username,
     },
     {
       title: 'Label',
-      content: item => item.label,
+      content: (item) => item.label,
     },
     {
       title: 'Created At',
-      content: item => (item.createdAt ? item.createdAt : 0),
+      content: (item) => (item.createdAt ? item.createdAt : 0),
       cell: (v, item) =>
         item.createdAt ? moment(item.createdAt).format('DD/MM/YYYY HH:mm:ss') : '',
     },
     {
       title: 'Type',
-      content: item => item.type && item.type === 'WEBAUTHN',
+      content: (item) => item.type && item.type === 'WEBAUTHN',
       notFilterable: true,
       cell: (v, item) => {
         if (item.type && item.type === 'WEBAUTHN') {
@@ -158,20 +158,20 @@ export class U2FRegisterPage extends Component {
       style: { textAlign: 'right', width: 250 },
       notSortable: true,
       notFilterable: true,
-      content: item => item,
+      content: (item) => item,
       cell: (v, item, table) => {
         return (
           <>
             <button
               type="button"
               className="btn btn-success btn-xs"
-              onClick={e => this.updateOtherUser(item)}>
+              onClick={(e) => this.updateOtherUser(item)}>
               <i className="glyphicon glyphicon-edit" /> Edit User
             </button>
             <button
               type="button"
               className="btn btn-danger btn-xs"
-              onClick={e =>
+              onClick={(e) =>
                 this.discardAdmin(
                   e,
                   item.username,
@@ -192,15 +192,15 @@ export class U2FRegisterPage extends Component {
     this.props.setTitle(`Local admins`);
   }
 
-  onChange = e => {
+  onChange = (e) => {
     this.setState({ [e.target.name]: e.target.value });
   };
 
-  handleError = err => {
+  handleError = (err) => {
     this.setState({ error: err.message });
   };
 
-  handleErrorWithMessage = message => () => {
+  handleErrorWithMessage = (message) => () => {
     this.setState({ error: message });
   };
 
@@ -208,7 +208,7 @@ export class U2FRegisterPage extends Component {
     if (e && e.preventDefault) e.preventDefault();
     window
       .newConfirm(`Are you sure that you want to discard admin user for ${username} ?`)
-      .then(ok => {
+      .then((ok) => {
         if (ok) {
           BackOfficeServices.discardAdmin(username, id, type).then(() => {
             setTimeout(() => {
@@ -216,7 +216,7 @@ export class U2FRegisterPage extends Component {
               if (username === window.__userid) {
                 // force logout
                 fetch('/backoffice/auth0/logout', {
-                  credentials: 'include'
+                  credentials: 'include',
                 }).then(() => {
                   window.location.href = '/bo/dashboard/admins';
                 });
@@ -228,7 +228,7 @@ export class U2FRegisterPage extends Component {
   };
 
   createAdmin = () => {
-    BackOfficeServices.fetchAdmins().then(admins => {
+    BackOfficeServices.fetchAdmins().then((admins) => {
       window
         .popup(
           'Register new admin',
@@ -237,15 +237,15 @@ export class U2FRegisterPage extends Component {
           ),
           { style: { width: '100%' } }
         )
-        .then(form => {
+        .then((form) => {
           if (this.table) this.table.update();
         });
     });
   };
 
   updateCurrentUser = () => {
-    BackOfficeServices.fetchAdmins().then(admins => {
-      const user = admins.filter(a => a.username === window.__userid)[0];
+    BackOfficeServices.fetchAdmins().then((admins) => {
+      const user = admins.filter((a) => a.username === window.__userid)[0];
       window
         .popup(
           'Update admin',
@@ -254,15 +254,15 @@ export class U2FRegisterPage extends Component {
           ),
           { style: { width: '100%' } }
         )
-        .then(form => {
+        .then((form) => {
           if (this.table) this.table.update();
         });
     });
   };
 
   updateOtherUser = (_user) => {
-    BackOfficeServices.fetchAdmins().then(admins => {
-      const user = admins.filter(a => a.username === _user.username)[0];
+    BackOfficeServices.fetchAdmins().then((admins) => {
+      const user = admins.filter((a) => a.username === _user.username)[0];
       window
         .popup(
           'Update admin',
@@ -271,7 +271,7 @@ export class U2FRegisterPage extends Component {
           ),
           { style: { width: '100%' } }
         )
-        .then(form => {
+        .then((form) => {
           if (this.table) this.table.update();
         });
     });
@@ -286,8 +286,8 @@ export class U2FRegisterPage extends Component {
       <div>
         {this.props.env && this.props.env.changePassword && (
           <div class="alert alert-danger" role="alert">
-            You are using the default admin account. You should create a
-            new admin account and delete the default one.
+            You are using the default admin account. You should create a new admin account and
+            delete the default one.
           </div>
         )}
         <form className="form-horizontal hide">
@@ -373,8 +373,8 @@ export class U2FRegisterPage extends Component {
           fetchItems={BackOfficeServices.fetchAdmins}
           showActions={false}
           showLink={false}
-          injectTable={t => (this.table = t)}
-          extractKey={item => (item.registration ? item.registration.keyHandle : item.username)}
+          injectTable={(t) => (this.table = t)}
+          extractKey={(item) => (item.registration ? item.registration.keyHandle : item.username)}
           injectTopBar={() => (
             <>
               <div className="btn-group">
@@ -403,19 +403,19 @@ export class RegisterAdminModal extends Component {
     message: null,
   };
 
-  onChange = e => {
+  onChange = (e) => {
     this.setState({ [e.target.name]: e.target.value });
   };
 
-  handleError = err => {
+  handleError = (err) => {
     this.setState({ error: err.message });
   };
 
-  handleErrorWithMessage = message => (e) => {
+  handleErrorWithMessage = (message) => (e) => {
     this.setState({ error: message + ' ' + e.message ? e.message : e });
   };
 
-  verifyAndDestroy = f => {
+  verifyAndDestroy = (f) => {
     if (this.props.user && this.props.mode === 'update' && this.state.oldPassword) {
       if (bcrypt.compareSync(this.state.oldPassword, this.props.user.password)) {
         BackOfficeServices.discardAdmin(
@@ -444,7 +444,7 @@ export class RegisterAdminModal extends Component {
     }
   };
 
-  simpleRegister = e =>
+  simpleRegister = (e) =>
     this.verifyAndDestroy(() => {
       if (e && e.preventDefault) {
         e.preventDefault();
@@ -476,8 +476,8 @@ export class RegisterAdminModal extends Component {
           label,
         }),
       })
-        .then(r => r.json(), this.handleError)
-        .then(data => {
+        .then((r) => r.json(), this.handleError)
+        .then((data) => {
           if (this.table) this.table.update();
           this.setState({
             error: null,
@@ -491,7 +491,7 @@ export class RegisterAdminModal extends Component {
         }, this.handleError);
     });
 
-  registerWebAuthn = e =>
+  registerWebAuthn = (e) =>
     this.verifyAndDestroy(() => {
       if (e && e.preventDefault) {
         e.preventDefault();
@@ -520,10 +520,10 @@ export class RegisterAdminModal extends Component {
           origin: window.location.origin,
         }),
       })
-        .then(r => r.json())
-        .then(resp => {
+        .then((r) => r.json())
+        .then((resp) => {
           const requestId = resp.requestId;
-          const publicKeyCredentialCreationOptions = { ...resp.request };
+          const publicKeyCredentialCreationOptions = { ...resp.request };
           const handle = publicKeyCredentialCreationOptions.user.id + '';
           publicKeyCredentialCreationOptions.challenge = base64url.decode(
             publicKeyCredentialCreationOptions.challenge
@@ -531,9 +531,11 @@ export class RegisterAdminModal extends Component {
           publicKeyCredentialCreationOptions.user.id = base64url.decode(
             publicKeyCredentialCreationOptions.user.id
           );
-          publicKeyCredentialCreationOptions.excludeCredentials = publicKeyCredentialCreationOptions.excludeCredentials.map(c => {
-            return { ...c, id: base64url.decode(c.id) };
-          });
+          publicKeyCredentialCreationOptions.excludeCredentials = publicKeyCredentialCreationOptions.excludeCredentials.map(
+            (c) => {
+              return { ...c, id: base64url.decode(c.id) };
+            }
+          );
           return navigator.credentials
             .create(
               {
@@ -541,7 +543,7 @@ export class RegisterAdminModal extends Component {
               },
               this.handleErrorWithMessage('Webauthn error')
             )
-            .then(credentials => {
+            .then((credentials) => {
               const json = responseToObject(credentials);
               return fetch('/bo/webauthn/register/finish', {
                 method: 'POST',
@@ -562,8 +564,8 @@ export class RegisterAdminModal extends Component {
                   },
                 }),
               })
-                .then(r => r.json())
-                .then(resp => {
+                .then((r) => r.json())
+                .then((resp) => {
                   if (this.table) this.table.update();
                   this.setState({
                     error: null,
@@ -687,8 +689,8 @@ export class RegisterAdminModal extends Component {
           <button
             type="button"
             className="btn btn-success hide"
-            ref={r => (this.okRef = r)}
-            onClick={e => this.props.ok(this.state)}>
+            ref={(r) => (this.okRef = r)}
+            onClick={(e) => this.props.ok(this.state)}>
             Create
           </button>
         </div>
@@ -702,18 +704,18 @@ export class AdminEditionModal extends Component {
     mode: this.props.mode || 'create',
     user: { ...this.props.user },
     password1: '',
-    password2: ''
+    password2: '',
   };
 
-  onChange = user => {
+  onChange = (user) => {
     this.setState({ user });
   };
 
-  handleError = err => {
+  handleError = (err) => {
     this.setState({ error: err.message });
   };
 
-  handleErrorWithMessage = message => (e) => {
+  handleErrorWithMessage = (message) => (e) => {
     this.setState({ error: message + ' ' + e.message ? e.message : e });
   };
 
@@ -721,72 +723,62 @@ export class AdminEditionModal extends Component {
     username: {
       type: 'string',
       props: {
-        label: "Username"
-      }
+        label: 'Username',
+      },
     },
     label: {
       type: 'string',
       props: {
-        label: "Label"
-      }
+        label: 'Label',
+      },
     },
     password: {
       type: 'string',
       props: {
-        label: "Password"
-      }
+        label: 'Password',
+      },
     },
     type: {
       type: 'string',
       props: {
         disabled: true,
-        label: "Type"
-      }
+        label: 'Type',
+      },
     },
     createdAt: {
       type: 'string',
       props: {
         disabled: true,
-        label: "Created at"
-      }
+        label: 'Created at',
+      },
     },
     metadata: {
       type: 'object',
       props: {
-        label: "Metadata"
-      }
+        label: 'Metadata',
+      },
     },
     _rights: {
       type: UserRights,
-      props: {
-      }
+      props: {},
     },
     rights: {
       type: JsonObjectAsCodeInput,
       props: {
-        height: '200px'
-      }
+        height: '200px',
+      },
     },
     _loc: {
       type: 'location',
-      props: {}
-    }
-  }
+      props: {},
+    },
+  };
 
-  flow = [
-    '_loc',
-    'username',
-    'label',
-    'password',
-    'type',
-    'createdAt',
-    'metadata',
-    'rights'
-  ]
+  flow = ['_loc', 'username', 'label', 'password', 'type', 'createdAt', 'metadata', 'rights'];
 
   onChange = (user) => {
     this.setState({ user });
-  }
+  };
 
   save = (e) => {
     if (this.state.user.type === 'SIMPLE') {
@@ -796,14 +788,23 @@ export class AdminEditionModal extends Component {
       BackOfficeServices.updateWebAuthnAdmin(this.state.user);
     }
     this.props.ok();
-  }
+  };
 
   setPassword = (e) => {
-    if (this.state.password1 && this.state.password2 && this.state.password1 !== '' && this.state.password1 == this.state.password2) {
+    if (
+      this.state.password1 &&
+      this.state.password2 &&
+      this.state.password1 !== '' &&
+      this.state.password1 == this.state.password2
+    ) {
       const salted = bcrypt.hashSync(this.state.password1, bcrypt.genSaltSync());
-      this.setState({ password1: '', password2: '', user: { ...this.state.user, password: salted }});
+      this.setState({
+        password1: '',
+        password2: '',
+        user: { ...this.state.user, password: salted },
+      });
     }
-  }
+  };
 
   render() {
     return (
@@ -817,14 +818,26 @@ export class AdminEditionModal extends Component {
             style={{ marginTop: 5 }}
           />
           <Separator />
-          <div style={{ height: 10 }} />
+          <div style={{ height: 10 }} />
           <form className="form-horizontal">
-            <TextInput label="New password" type="password" value={this.state.password1} onChange={e => this.setState({ password1: e })} />
-            <TextInput label="New password again" type="password" value={this.state.password2} onChange={e => this.setState({ password2: e })} />
+            <TextInput
+              label="New password"
+              type="password"
+              value={this.state.password1}
+              onChange={(e) => this.setState({ password1: e })}
+            />
+            <TextInput
+              label="New password again"
+              type="password"
+              value={this.state.password2}
+              onChange={(e) => this.setState({ password2: e })}
+            />
             <div className="form-group">
               <label className="col-xs-12 col-sm-2 control-label"></label>
               <div className="col-sm-10" style={{ display: 'flex' }}>
-                <button type="button" className="btn btn-success" onClick={this.setPassword}>Change password</button>
+                <button type="button" className="btn btn-success" onClick={this.setPassword}>
+                  Change password
+                </button>
               </div>
             </div>
           </form>
@@ -848,19 +861,19 @@ export class AdminEditionModal extends Component {
 
 class UserRights extends Component {
   render() {
-    console.log(this.props)
+    console.log(this.props);
     return (
       <div style={{ outline: '1px solid red' }}>
-        <ArrayInput 
+        <ArrayInput
           label="Rights"
           value={this.props.rawValue.rights}
-          onChange={e => this.props.changeValue('rights', e)}
+          onChange={(e) => this.props.changeValue('rights', e)}
           component={UserRight}
         />
         {/*<JsonObjectAsCodeInput {...this.props} height="200px" />*/}
       </div>
-    )
-    
+    );
+
     // this.props.rawValue.rights.map(r => <UserRight right={r} />);
   }
 }
@@ -869,27 +882,31 @@ class UserRight extends Component {
   render() {
     return (
       <div style={{ outline: '1px solid green' }}>
-        <SelectInput 
+        <SelectInput
           label="Organization"
-          value={this.props.itemValue.tenant ? this.props.itemValue.tenant.split(":")[0] : '*'}
-          onChange={e => console.log(e)}
+          value={this.props.itemValue.tenant ? this.props.itemValue.tenant.split(':')[0] : '*'}
+          onChange={(e) => console.log(e)}
           valuesFrom="/bo/api/proxy/api/tenants"
-          transformer={a => ({
+          transformer={(a) => ({
             value: a.id,
-            label: a.name + " - " + a.description,
+            label: a.name + ' - ' + a.description,
           })}
         />
-        <ArrayInput 
+        <ArrayInput
           label="Teams"
-          value={this.props.itemValue.teams ? this.props.itemValue.teams.map(t => t ? t.split(":")[0] : '*') : []}
-          onChange={e => console.log(e)}
+          value={
+            this.props.itemValue.teams
+              ? this.props.itemValue.teams.map((t) => (t ? t.split(':')[0] : '*'))
+              : []
+          }
+          onChange={(e) => console.log(e)}
           valuesFrom="/bo/api/proxy/api/teams"
-          transformer={a => ({
+          transformer={(a) => ({
             value: a.id,
-            label: a.name + " - " + a.description,
+            label: a.name + ' - ' + a.description,
           })}
         />
       </div>
-    )
+    );
   }
 }

@@ -5,7 +5,7 @@ export class ProvidersDashboardPage extends Component {
   state = {};
 
   componentDidMount() {
-    BackOfficeServices.env().then(env => {
+    BackOfficeServices.env().then((env) => {
       this.setState({ env }, () => {
         this.loginToDashboard();
         document.querySelector('.main').style.paddingLeft = '0px';
@@ -19,18 +19,18 @@ export class ProvidersDashboardPage extends Component {
     const user = this.state.env.user;
     const id = this.state.env.instanceId;
     const secret = this.state.env.providerDashboardSecret;
-    this.sha256Hex(`${id}:${secret}:${timestamp}`).then(token => {
+    this.sha256Hex(`${id}:${secret}:${timestamp}`).then((token) => {
       const url = `${this.state.env.providerDashboardUrl}?user=${user}&id=${id}&timestamp=${timestamp}&token=${token}`;
       this.setState({ url });
     });
   };
 
-  sha256Hex = message => {
+  sha256Hex = (message) => {
     const msgUint8 = new TextEncoder().encode(message); // encode as (utf-8) Uint8Array
-    return crypto.subtle.digest('SHA-256', msgUint8).then(hashBuffer => {
+    return crypto.subtle.digest('SHA-256', msgUint8).then((hashBuffer) => {
       // hash the message
       const hashArray = Array.from(new Uint8Array(hashBuffer)); // convert buffer to byte array
-      const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join(''); // convert bytes to hex string
+      const hashHex = hashArray.map((b) => b.toString(16).padStart(2, '0')).join(''); // convert bytes to hex string
       return hashHex;
     });
   };

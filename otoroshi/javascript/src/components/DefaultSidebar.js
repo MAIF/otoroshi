@@ -6,9 +6,9 @@ export function DefaultSidebar(props) {
   const pathname = window.location.pathname;
   const search = (window.location.search || '?').substring(1);
   const base = `/bo/dashboard/services`;
-  const rootClassName = part =>
+  const rootClassName = (part) =>
     pathname === `/bo/dashboard/${part}` && search === '' ? 'active' : '';
-  const className = part =>
+  const className = (part) =>
     base === pathname && search.indexOf(`env=${part}`) > -1 ? 'active' : '';
   return (
     <ul className="nav nav-sidebar">
@@ -26,7 +26,7 @@ export function DefaultSidebar(props) {
           All services
         </a>
       </li>
-      {props.lines.map(line => (
+      {props.lines.map((line) => (
         <li key={line}>
           <a
             href={`/bo/dashboard/services?env=${line}`}

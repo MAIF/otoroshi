@@ -20,9 +20,9 @@ class CertificateInfos extends Component {
     error: null,
   };
 
-  update = chain => {
+  update = (chain) => {
     BackOfficeServices.certData(chain)
-      .then(cert => {
+      .then((cert) => {
         if (cert.error) {
           this.setState({ cert: null, error: cert.error });
         } else {
@@ -39,7 +39,7 @@ class CertificateInfos extends Component {
           }
         }
       })
-      .catch(e => {
+      .catch((e) => {
         this.setState({ cert: null, error: e });
       });
   };
@@ -123,9 +123,9 @@ class Commands extends Component {
         (ok, cancel) => <NewCertificateForm ok={ok} cancel={cancel} caRef={id} />,
         { style: { width: '100%' } }
       )
-      .then(form => {
+      .then((form) => {
         if (form) {
-          BackOfficeServices.createCertificateFromForm(form).then(cert => {
+          BackOfficeServices.createCertificateFromForm(form).then((cert) => {
             this.props.setTitle(`Create a new Certificate`);
             window.history.replaceState({}, '', `/bo/dashboard/certificates/add`);
             if (form.letsEncrypt) {
@@ -183,7 +183,7 @@ class Commands extends Component {
               style={{ marginRight: 0 }}
               type="button"
               className="btn btn-sm btn-success"
-              onClick={e => {
+              onClick={(e) => {
                 this.createCASigned(e, this.props.rawValue.id);
               }}>
               <i className="glyphicon glyphicon-plus-sign" /> Create cert.
@@ -194,8 +194,8 @@ class Commands extends Component {
               style={{ marginRight: 0 }}
               type="button"
               className="btn btn-sm btn-success"
-              onClick={e => {
-                BackOfficeServices.renewCert(this.props.rawValue.id).then(cert => {
+              onClick={(e) => {
+                BackOfficeServices.renewCert(this.props.rawValue.id).then((cert) => {
                   this.props.rawOnChange(cert);
                 });
               }}>
@@ -207,10 +207,10 @@ class Commands extends Component {
               style={{ marginRight: 0 }}
               type="button"
               className="btn btn-sm btn-success"
-              onClick={e => {
-                window.newPrompt('Certificate host ?').then(value => {
+              onClick={(e) => {
+                window.newPrompt('Certificate host ?').then((value) => {
                   if (value && value.trim() !== '') {
-                    BackOfficeServices.selfSignedCert(value).then(cert => {
+                    BackOfficeServices.selfSignedCert(value).then((cert) => {
                       this.props.rawOnChange(cert);
                     });
                   }
@@ -260,20 +260,20 @@ class CertificateValid extends Component {
     error: null,
   };
 
-  update = cert => {
+  update = (cert) => {
     if (!cert.privateKey || cert.privateKey.trim() === '') {
       return;
     }
     this.setState({ loading: true }, () => {
       BackOfficeServices.certValid(cert)
-        .then(payload => {
+        .then((payload) => {
           if (payload.error) {
             this.setState({ loading: false, valid: false, error: payload.error });
           } else {
             this.setState({ valid: payload.valid, loading: false, error: null });
           }
         })
-        .catch(e => {
+        .catch((e) => {
           this.setState({ loading: false, valid: false, error: e });
         });
     });
@@ -345,7 +345,7 @@ export class CertificatesPage extends Component {
     commands: {
       type: Commands,
       props: {
-        setTitle: t => this.props.setTitle(t),
+        setTitle: (t) => this.props.setTitle(t),
         table: () => this.table,
       },
     },
@@ -379,15 +379,15 @@ export class CertificatesPage extends Component {
     },
     _loc: {
       type: 'location',
-      props: {}
+      props: {},
     },
   };
 
   columns = [
-    { title: 'Name', content: item => item.name },
-    { title: 'Description', content: item => item.description },
+    { title: 'Name', content: (item) => item.name },
+    { title: 'Description', content: (item) => item.description },
     // { title: 'Domain', content: item => (!item.ca ? item.domain : '') },
-    { title: 'Subject', content: item => item.subject },
+    { title: 'Subject', content: (item) => item.subject },
     // {
     //   title: 'Valid',
     //   content: item => {
@@ -399,12 +399,12 @@ export class CertificatesPage extends Component {
     // },
     {
       title: ' ',
-      content: item =>
+      content: (item) =>
         !item.ca ? null : (
           /*'yes'*/ <button
             type="button"
             className="btn btn-primary btn-sm"
-            onClick={e => this.createCASigned(e, item.id)}>
+            onClick={(e) => this.createCASigned(e, item.id)}>
             <i className="glyphicon glyphicon-plus-sign" />
           </button>
         ),
@@ -427,7 +427,7 @@ export class CertificatesPage extends Component {
         ) : (
           <span className="label label-success">certificate</span>
         ),
-      content: item =>
+      content: (item) =>
         item.client
           ? 'client'
           : item.ca
@@ -462,12 +462,12 @@ export class CertificatesPage extends Component {
     // },
     {
       title: 'From',
-      content: item => moment(item.from).format('DD/MM/YYYY HH:mm:ss'),
+      content: (item) => moment(item.from).format('DD/MM/YYYY HH:mm:ss'),
       style: { textAlign: 'center', width: 150 },
     },
     {
       title: 'To',
-      content: item => moment(item.to).format('DD/MM/YYYY HH:mm:ss'),
+      content: (item) => moment(item.to).format('DD/MM/YYYY HH:mm:ss'),
       style: { textAlign: 'center', width: 150 },
     },
   ];
@@ -497,9 +497,9 @@ export class CertificatesPage extends Component {
   }
 
   createSelfSigned = () => {
-    window.newPrompt('Certificate domain').then(value => {
+    window.newPrompt('Certificate domain').then((value) => {
       if (value && value.trim() !== '') {
-        BackOfficeServices.selfSignedCert(value).then(cert => {
+        BackOfficeServices.selfSignedCert(value).then((cert) => {
           this.props.setTitle(`Create a new certificate`);
           window.history.replaceState({}, '', `/bo/dashboard/certificates/add`);
           this.table.setState({ currentItem: cert, showAddForm: true });
@@ -509,9 +509,9 @@ export class CertificatesPage extends Component {
   };
 
   createSelfSignedClient = () => {
-    window.newPrompt('Certificate DN').then(value => {
+    window.newPrompt('Certificate DN').then((value) => {
       if (value && value.trim() !== '') {
-        BackOfficeServices.selfSignedClientCert(value).then(cert => {
+        BackOfficeServices.selfSignedClientCert(value).then((cert) => {
           // console.log(cert);
           this.props.setTitle(`Create a new certificate`);
           window.history.replaceState({}, '', `/bo/dashboard/certificates/add`);
@@ -525,9 +525,9 @@ export class CertificatesPage extends Component {
     const input = document.querySelector('input[type="file"]');
     const data = new FormData();
     data.append('file', input.files[0]);
-    return window.newPrompt('Certificate password ?').then(password => {
+    return window.newPrompt('Certificate password ?').then((password) => {
       if (password) {
-        return BackOfficeServices.importP12(password, input.files[0]).then(cert => {
+        return BackOfficeServices.importP12(password, input.files[0]).then((cert) => {
           // this.table.update();
           this.props.setTitle(`Create a new certificate`);
           window.history.replaceState({}, '', `/bo/dashboard/certificates/add`);
@@ -544,9 +544,9 @@ export class CertificatesPage extends Component {
         (ok, cancel) => <NewCertificateForm ok={ok} cancel={cancel} letsEncrypt={true} />,
         { style: { width: '100%' } }
       )
-      .then(form => {
+      .then((form) => {
         if (form) {
-          BackOfficeServices.createCertificateFromForm(form).then(cert => {
+          BackOfficeServices.createCertificateFromForm(form).then((cert) => {
             this.props.setTitle(`Create a new Certificate`);
             window.history.replaceState({}, '', `/bo/dashboard/certificates/add`);
             if (form.letsEncrypt) {
@@ -587,9 +587,9 @@ export class CertificatesPage extends Component {
         (ok, cancel) => <NewCertificateForm ok={ok} cancel={cancel} caRef={id} />,
         { style: { width: '100%' } }
       )
-      .then(form => {
+      .then((form) => {
         if (form) {
-          BackOfficeServices.createCertificateFromForm(form).then(cert => {
+          BackOfficeServices.createCertificateFromForm(form).then((cert) => {
             this.props.setTitle(`Create a new Certificate`);
             window.history.replaceState({}, '', `/bo/dashboard/certificates/add`);
             if (form.letsEncrypt) {
@@ -626,9 +626,9 @@ export class CertificatesPage extends Component {
   };
 
   createCA = () => {
-    window.newPrompt('Certificate Authority CN').then(value => {
+    window.newPrompt('Certificate Authority CN').then((value) => {
       if (value && value.trim() !== '') {
-        BackOfficeServices.caCert(value).then(cert => {
+        BackOfficeServices.caCert(value).then((cert) => {
           this.props.setTitle(`Create a new Certificate Authority`);
           window.history.replaceState({}, '', `/bo/dashboard/certificates/add`);
           this.table.setState({ currentItem: cert, showAddForm: true });
@@ -637,15 +637,15 @@ export class CertificatesPage extends Component {
     });
   };
 
-  createCertificate = e => {
+  createCertificate = (e) => {
     e.preventDefault();
     window
       .popup('New Certificate', (ok, cancel) => <NewCertificateForm ok={ok} cancel={cancel} />, {
         style: { width: '100%' },
       })
-      .then(form => {
+      .then((form) => {
         if (form) {
-          BackOfficeServices.createCertificateFromForm(form).then(cert => {
+          BackOfficeServices.createCertificateFromForm(form).then((cert) => {
             console.log(form);
             this.props.setTitle(`Create a new Certificate`);
             window.history.replaceState({}, '', `/bo/dashboard/certificates/add`);
@@ -676,15 +676,15 @@ export class CertificatesPage extends Component {
         updateItem={BackOfficeServices.updateCertificate}
         deleteItem={BackOfficeServices.deleteCertificate}
         createItem={BackOfficeServices.createCertificate}
-        navigateTo={item => {
+        navigateTo={(item) => {
           window.location = `/bo/dashboard/certificates/edit/${item.id}`;
         }}
-        itemUrl={i => `/bo/dashboard/certificates/edit/${i.id}`}
+        itemUrl={(i) => `/bo/dashboard/certificates/edit/${i.id}`}
         showActions={true}
         showLink={true}
         rowNavigation={true}
-        extractKey={item => item.id}
-        injectTable={table => (this.table = table)}
+        extractKey={(item) => item.id}
+        injectTable={(table) => (this.table = table)}
         injectTopBar={() => (
           <>
             {/*<div className="btn-group" style={{ marginRight: 5 }}>
@@ -737,7 +737,7 @@ export class CertificatesPage extends Component {
                 name="export"
                 id="export"
                 className="inputfile btn btn-primary"
-                ref={ref => (this.fileUpload = ref)}
+                ref={(ref) => (this.fileUpload = ref)}
                 style={{ display: 'none' }}
                 onChange={this.importP12}
               />
@@ -779,8 +779,8 @@ export class NewCertificateForm extends Component {
     this.setState({ [name]: value });
   };
 
-  csr = e => {
-    BackOfficeServices.createCSR(this.state).then(csr => {
+  csr = (e) => {
+    BackOfficeServices.createCSR(this.state).then((csr) => {
       console.log('csr', csr);
       const url = URL.createObjectURL(
         new Blob([csr.csr], {
@@ -803,13 +803,13 @@ export class NewCertificateForm extends Component {
               <BooleanInput
                 label="Let's Encrypt"
                 value={this.state.letsEncrypt}
-                onChange={v => this.changeTheValue('letsEncrypt', v)}
+                onChange={(v) => this.changeTheValue('letsEncrypt', v)}
                 help="Is your certificate a Let's Encrypt certificate"
               />
               <TextInput
                 label="Host"
                 value={this.state.host}
-                onChange={v => this.changeTheValue('host', v)}
+                onChange={(v) => this.changeTheValue('host', v)}
                 help="The host of your certificate"
               />
             </form>
@@ -821,8 +821,8 @@ export class NewCertificateForm extends Component {
             <button
               type="button"
               className="btn btn-success"
-              ref={r => (this.okRef = r)}
-              onClick={e => this.props.ok(this.state)}>
+              ref={(r) => (this.okRef = r)}
+              onClick={(e) => this.props.ok(this.state)}>
               Create
             </button>
           </div>
@@ -836,11 +836,11 @@ export class NewCertificateForm extends Component {
             <SelectInput
               label="Issuer"
               value={this.state.caRef}
-              onChange={v => this.changeTheValue('caRef', v)}
+              onChange={(v) => this.changeTheValue('caRef', v)}
               help="The CA used to sign your certificate"
               placeholder="The CA used to sign your certificate"
               valuesFrom="/bo/api/proxy/api/certificates?ca=true"
-              transformer={a => ({ value: a.id, label: a.name + ' - ' + a.description })}
+              transformer={(a) => ({ value: a.id, label: a.name + ' - ' + a.description })}
             />
             <div className="row">
               <div className="col-md-6">
@@ -848,7 +848,7 @@ export class NewCertificateForm extends Component {
                   <BiColumnBooleanInput
                     label="CA certificate"
                     value={this.state.ca}
-                    onChange={v => this.changeTheValue('ca', v)}
+                    onChange={(v) => this.changeTheValue('ca', v)}
                     help="Is your certificate a CA"
                   />
                 )}
@@ -856,7 +856,7 @@ export class NewCertificateForm extends Component {
                   <BiColumnBooleanInput
                     label="Client certificate"
                     value={this.state.client}
-                    onChange={v => this.changeTheValue('client', v)}
+                    onChange={(v) => this.changeTheValue('client', v)}
                     help="Is your certificate a client certificate"
                   />
                 )}
@@ -865,7 +865,7 @@ export class NewCertificateForm extends Component {
                 <BiColumnBooleanInput
                   label="Let's Encrypt"
                   value={this.state.letsEncrypt}
-                  onChange={v => this.changeTheValue('letsEncrypt', v)}
+                  onChange={(v) => this.changeTheValue('letsEncrypt', v)}
                   help="Is your certificate a Let's Encrypt certificate"
                 />
               </div>
@@ -874,14 +874,14 @@ export class NewCertificateForm extends Component {
               label="Key Type"
               help="The type of the private key"
               value={this.state.keyType}
-              onChange={v => changeTheValue('keyType', v)}
+              onChange={(v) => changeTheValue('keyType', v)}
               possibleValues={[{ label: 'RSA', value: 'RSA' }]}
             />
             <SelectInput
               label="Key Size"
               help="The size of the private key"
               value={this.state.keySize}
-              onChange={v => changeTheValue('keySize', v)}
+              onChange={(v) => changeTheValue('keySize', v)}
               possibleValues={[
                 { label: '1024', value: 1024 },
                 { label: '2048', value: 2048 },
@@ -892,7 +892,7 @@ export class NewCertificateForm extends Component {
               label="Signature Algorithm"
               help="The signature algorithm used"
               value={this.state.signatureAlg}
-              onChange={v => changeTheValue('signatureAlg', v)}
+              onChange={(v) => changeTheValue('signatureAlg', v)}
               possibleValues={[
                 { label: 'SHA224WithRSAEncryption', value: 'SHA224WithRSAEncryption' },
                 { label: 'SHA256WithRSAEncryption', value: 'SHA256WithRSAEncryption' },
@@ -904,7 +904,7 @@ export class NewCertificateForm extends Component {
               label="Digest Algorithm"
               help="The digest algorithm used"
               value={this.state.digestAlg}
-              onChange={v => changeTheValue('digestAlg', v)}
+              onChange={(v) => changeTheValue('digestAlg', v)}
               possibleValues={[
                 { label: 'SHA-224', value: 'SHA-224' },
                 { label: 'SHA-256', value: 'SHA-256' },
@@ -917,21 +917,21 @@ export class NewCertificateForm extends Component {
             <NumberInput
               label="Validity"
               value={this.state.duration}
-              onChange={v => this.changeTheValue('duration', v)}
+              onChange={(v) => this.changeTheValue('duration', v)}
               help="How much time your certificate will be valid"
               suffix="days"
             />
             <TextInput
               label="Subject DN"
               value={this.state.subject}
-              onChange={v => this.changeTheValue('subject', v)}
+              onChange={(v) => this.changeTheValue('subject', v)}
               help="The subject DN of your certificate"
             />
             {!this.state.ca && !this.state.client && (
               <ArrayInput
                 label="Hosts"
                 value={this.state.hosts}
-                onChange={v => this.changeTheValue('hosts', v)}
+                onChange={(v) => this.changeTheValue('hosts', v)}
                 help="The hosts of your certificate"
               />
             )}
@@ -949,8 +949,8 @@ export class NewCertificateForm extends Component {
           <button
             type="button"
             className="btn btn-success"
-            ref={r => (this.okRef = r)}
-            onClick={e => this.props.ok(this.state)}>
+            ref={(r) => (this.okRef = r)}
+            onClick={(e) => this.props.ok(this.state)}>
             Create
           </button>
         </div>
@@ -964,13 +964,13 @@ export class LetsEncryptCreation extends Component {
 
   componentDidMount() {
     BackOfficeServices.letsEncryptCert(this.props.domain)
-      .then(cert => {
+      .then((cert) => {
         this.setState({ done: true });
         setTimeout(() => {
-          this.props.onCreated(cert, e => this.setState({ error: e }));
+          this.props.onCreated(cert, (e) => this.setState({ error: e }));
         }, 1000);
       })
-      .catch(e => {
+      .catch((e) => {
         this.setState({ error: e.message ? e.message : e });
       });
   }

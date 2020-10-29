@@ -30,7 +30,7 @@ export class ServiceAnalyticsPage extends Component {
   componentDidMount() {
     this.props.setTitle(`Service analytics`);
     BackOfficeServices.fetchService(this.props.params.lineId, this.props.params.serviceId).then(
-      service => {
+      (service) => {
         this.setState({ service }, () => {
           this.update();
           this.props.setSidebarContent(this.sidebarContent(service.name));
@@ -45,7 +45,7 @@ export class ServiceAnalyticsPage extends Component {
       this.state.service.id,
       this.state.from,
       this.state.to
-    ).then(rawData => {
+    ).then((rawData) => {
       const defaultData = {
         statusesPiechart: { series: [] },
         statusesHistogram: { series: [] },

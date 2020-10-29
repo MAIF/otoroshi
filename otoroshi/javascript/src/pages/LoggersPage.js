@@ -8,11 +8,11 @@ class LogLevel extends Component {
     logger: this.props.logger,
   };
 
-  changeLogLevel = e => {
+  changeLogLevel = (e) => {
     const logger = this.state.logger;
     const level = e.target.value;
     this.setState({ logger: { ...logger, level } });
-    BackOfficeServices.changeLogLevel(logger.name, level).then(l => {
+    BackOfficeServices.changeLogLevel(logger.name, level).then((l) => {
       this.setState({ logger: { ...logger, level: l.newLevel } });
     });
   };
@@ -34,11 +34,11 @@ class LogLevel extends Component {
 
 export class LoggersPage extends Component {
   columns = [
-    { title: 'Name', content: item => item.name },
+    { title: 'Name', content: (item) => item.name },
     {
       title: 'Level',
       style: { textAlign: 'center', width: 100 },
-      content: item => item.level,
+      content: (item) => item.level,
       cell: (value, original, table) => <LogLevel key={value} logger={original} table={table} />,
     },
   ];
@@ -59,7 +59,7 @@ export class LoggersPage extends Component {
         fetchItems={BackOfficeServices.fetchLoggers}
         showActions={false}
         showLink={false}
-        extractKey={item => item.name}
+        extractKey={(item) => item.name}
         pageSize={40}
         search="otoroshi-"
       />

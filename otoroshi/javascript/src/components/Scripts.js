@@ -33,9 +33,9 @@ class PluginsDescription extends Component {
         Accept: 'application/json',
       },
     })
-      .then(r => r.json())
-      .then(scripts => {
-        this.setState({ scripts: scripts.filter(e => !!e.description) });
+      .then((r) => r.json())
+      .then((scripts) => {
+        this.setState({ scripts: scripts.filter((e) => !!e.description) });
         setTimeout(() => {
           this.update();
         }, 100);
@@ -59,14 +59,14 @@ class PluginsDescription extends Component {
     });
   };
 
-  find = ref => {
-    const refs = this.state.scripts.filter(s => s.id === ref);
+  find = (ref) => {
+    const refs = this.state.scripts.filter((s) => s.id === ref);
     return refs[0];
   };
 
   findNode = (ref, tree, findOnly) => {
     const nodes = Array.from(document.querySelectorAll('.Select-value-label'));
-    const node = nodes.filter(n => {
+    const node = nodes.filter((n) => {
       return n.innerText === ref.name;
     })[0];
     if (!node) {
@@ -80,7 +80,7 @@ class PluginsDescription extends Component {
     return ReactDOM.createPortal(tree, parentNode);
   };
 
-  inject = script => {
+  inject = (script) => {
     if (script.defaultConfig) {
       console.log(this.props.config, this.props);
       this.props.onChangeConfig({ ...this.props.config, ...script.defaultConfig });
@@ -88,7 +88,7 @@ class PluginsDescription extends Component {
     }
   };
 
-  displayForm = script => {
+  displayForm = (script) => {
     return script.configRoot && script.configFlow && script.configSchema; // && !!this.props.config[script.configRoot];
   };
 
@@ -100,8 +100,8 @@ class PluginsDescription extends Component {
       <>
         {this.props.refs
           .map(this.find)
-          .filter(e => !!e)
-          .map(script =>
+          .filter((e) => !!e)
+          .map((script) =>
             this.findNode(
               script,
               <div
@@ -126,7 +126,7 @@ class PluginsDescription extends Component {
                       <button
                         type="button"
                         className="btn btn-xs btn-info"
-                        onClick={e => this.inject(script)}
+                        onClick={(e) => this.inject(script)}
                         style={{
                           position: 'absolute',
                           right: 20,
@@ -149,7 +149,7 @@ class PluginsDescription extends Component {
                             ...script.defaultConfig[script.configRoot],
                           }
                         }
-                        onChange={e => {
+                        onChange={(e) => {
                           const newConfig = { ...this.props.config, [script.configRoot]: e };
                           this.props.onChangeConfig(newConfig);
                         }}
@@ -182,7 +182,7 @@ export class Scripts extends Component {
           value={this.props.refs}
           onChange={this.props.onChange}
           valuesFrom={`/bo/api/proxy/api/scripts/_list?type=${this.props.type}`}
-          transformer={a => ({ value: a.id, label: a.name, desc: a.description })}
+          transformer={(a) => ({ value: a.id, label: a.name, desc: a.description })}
           help="..."
         />
         <PluginsDescription

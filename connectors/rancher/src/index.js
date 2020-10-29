@@ -49,14 +49,14 @@ function debug(...args) {
 }
 
 function debugSuccess(name) {
-  return data => {
+  return (data) => {
     if (DEBUG) debug(`${name} - ${JSON.stringify(data, null, 2)}\n`);
     return data;
   };
 }
 
 function debugError(name) {
-  return data => {
+  return (data) => {
     if (DEBUG) debug(`ERR - ${name} - ${JSON.stringify(data, null, 2)}\n`);
     return data;
   };
@@ -72,7 +72,7 @@ function fetchOtoroshiGroups() {
       [OTOROSHI_CLIENT_SECRET_HEADER]: OTOROSHI_CLIENT_SECRET,
     },
   })
-    .then(r => r.json(), debugError('fetchOtoroshiGroups'))
+    .then((r) => r.json(), debugError('fetchOtoroshiGroups'))
     .then(debugSuccess('fetchOtoroshiGroups'), debugError('fetchOtoroshiGroups'));
 }
 
@@ -92,7 +92,7 @@ function createOtoroshiRancherGroup() {
       description: 'Group for Rancher services',
     }),
   })
-    .then(r => r.json(), debugError('createOtoroshiRancherGroup'))
+    .then((r) => r.json(), debugError('createOtoroshiRancherGroup'))
     .then(debugSuccess('createOtoroshiRancherGroup'), debugError('createOtoroshiRancherGroup'));
 }
 
@@ -106,9 +106,9 @@ function fetchOtoroshiRancherServices() {
       [OTOROSHI_CLIENT_SECRET_HEADER]: OTOROSHI_CLIENT_SECRET,
     },
   })
-    .then(r => r.json(), debugError('fetchOtoroshiRancherServices'))
-    .then(services => {
-      return services.filter(s => s.metadata.provider && s.metadata.provider === 'rancher');
+    .then((r) => r.json(), debugError('fetchOtoroshiRancherServices'))
+    .then((services) => {
+      return services.filter((s) => s.metadata.provider && s.metadata.provider === 'rancher');
     }, debugError('fetchOtoroshiRancherServices'))
     .then(debugSuccess('fetchOtoroshiRancherServices'), debugError('fetchOtoroshiRancherServices'));
 }
@@ -123,7 +123,7 @@ function fetchOtoroshiApiKeys() {
       [OTOROSHI_CLIENT_SECRET_HEADER]: OTOROSHI_CLIENT_SECRET,
     },
   })
-    .then(r => r.json(), debugError('fetchOtoroshiApiKeys'))
+    .then((r) => r.json(), debugError('fetchOtoroshiApiKeys'))
     .then(debugSuccess('fetchOtoroshiApiKeys'), debugError('fetchOtoroshiApiKeys'));
 }
 
@@ -144,7 +144,7 @@ function createOtoroshiRancherApiKey() {
       authorizedGroup: RANCHER_GROUP,
     }),
   })
-    .then(r => r.json(), debugError('createOtoroshiRancherApiKey'))
+    .then((r) => r.json(), debugError('createOtoroshiRancherApiKey'))
     .then(debugSuccess('createOtoroshiRancherApiKey'), debugError('createOtoroshiRancherApiKey'));
 }
 
@@ -199,7 +199,7 @@ function createOtoroshiRancherService(id, name, targets) {
     },
     body: JSON.stringify(serviceTemplate),
   })
-    .then(r => r.json(), debugError('createOtoroshiRancherService'))
+    .then((r) => r.json(), debugError('createOtoroshiRancherService'))
     .then(debugSuccess('createOtoroshiRancherService'), debugError('createOtoroshiRancherService'));
 }
 
@@ -218,7 +218,7 @@ function updateOtoroshiRancherService(id, name, targets) {
       { op: 'replace', path: '/name', value: name },
     ]),
   })
-    .then(r => r.json(), debugError('updateOtoroshiRancherService'))
+    .then((r) => r.json(), debugError('updateOtoroshiRancherService'))
     .then(debugSuccess('updateOtoroshiRancherService'), debugError('updateOtoroshiRancherService'));
 }
 
@@ -232,7 +232,7 @@ function deleteOtoroshiRancherService(id) {
       [OTOROSHI_CLIENT_SECRET_HEADER]: OTOROSHI_CLIENT_SECRET,
     },
   })
-    .then(r => (r.status === 404 ? null : r.json()), debugError('deleteOtoroshiRancherService'))
+    .then((r) => (r.status === 404 ? null : r.json()), debugError('deleteOtoroshiRancherService'))
     .then(debugSuccess('deleteOtoroshiRancherService'), debugError('deleteOtoroshiRancherService'));
 }
 
@@ -246,7 +246,7 @@ function deleteRancherService(id) {
       [OTOROSHI_CLIENT_SECRET_HEADER]: OTOROSHI_CLIENT_SECRET,
     },
   })
-    .then(r => (r.status === 404 ? null : r.json()), debugError('deleteRancherService'))
+    .then((r) => (r.status === 404 ? null : r.json()), debugError('deleteRancherService'))
     .then(debugSuccess('deleteRancherService'), debugError('deleteRancherService'));
 }
 
@@ -260,7 +260,7 @@ function fetchOtoroshiRancherService(id) {
       [OTOROSHI_CLIENT_SECRET_HEADER]: OTOROSHI_CLIENT_SECRET,
     },
   })
-    .then(r => (r.status === 404 ? null : r.json()), debugError('fetchOtoroshiRancherService'))
+    .then((r) => (r.status === 404 ? null : r.json()), debugError('fetchOtoroshiRancherService'))
     .then(debugSuccess('fetchOtoroshiRancherService'), debugError('fetchOtoroshiRancherService'));
 }
 
@@ -277,10 +277,10 @@ function fetchRancherServices() {
       Authorization: `Basic ${user}`,
     },
   })
-    .then(r => r.json(), debugError('fetchRancherServices'))
-    .then(rancherServices => {
+    .then((r) => r.json(), debugError('fetchRancherServices'))
+    .then((rancherServices) => {
       return rancherServices.data.filter(
-        s =>
+        (s) =>
           s.state === 'active' &&
           s.launchConfig.labels['service-type'] &&
           s.launchConfig.labels['service-type'] === 'otoroshi-capable'
@@ -296,8 +296,8 @@ function fetchRancherServices() {
 function setupOtoroshi() {
   log('Checking Otoroshi setup ...');
   return fetchOtoroshiGroups()
-    .then(groups => {
-      const rancherGroup = groups.filter(g => g.name === RANCHER_GROUP)[0];
+    .then((groups) => {
+      const rancherGroup = groups.filter((g) => g.name === RANCHER_GROUP)[0];
       if (rancherGroup) {
         log('  Rancher group already exists ...');
         return rancherGroup;
@@ -306,9 +306,9 @@ function setupOtoroshi() {
         return createOtoroshiRancherGroup();
       }
     })
-    .then(group => {
-      return fetchOtoroshiApiKeys(RANCHER_GROUP).then(apikeys => {
-        const rancherApiKey = apikeys.filter(g => g.clientName === RANCHER_API_KEY)[0];
+    .then((group) => {
+      return fetchOtoroshiApiKeys(RANCHER_GROUP).then((apikeys) => {
+        const rancherApiKey = apikeys.filter((g) => g.clientName === RANCHER_API_KEY)[0];
         if (rancherApiKey) {
           log('  Rancher api key already exists ...');
           return rancherApiKey;
@@ -326,24 +326,30 @@ function syncOtoroshiWithRancher() {
   syncing = true;
   const start = Date.now();
   fetchRancherServices()
-    .then(rs => {
-      return fetchOtoroshiRancherServices().then(os => [rs, os]);
+    .then((rs) => {
+      return fetchOtoroshiRancherServices().then((os) => [rs, os]);
     })
-    .then(arr => {
+    .then((arr) => {
       const [rancherServices, otoroshiServices] = arr;
       currentServices = rancherServices.length;
       //log('  Synchronizing Rancher => Otoroshi');
-      const tasks = rancherServices.map(rancherService => {
+      const tasks = rancherServices.map((rancherService) => {
         const otoroshiService = otoroshiServices.filter(
-          s => s.metadata.rancherId && s.metadata.rancherId === rancherService.id
+          (s) => s.metadata.rancherId && s.metadata.rancherId === rancherService.id
         )[0];
-        const targets = rancherService.publicEndpoints.map(ep => ({
+        const targets = rancherService.publicEndpoints.map((ep) => ({
           scheme: 'http',
           host: `${ep.ipAddress}:${ep.port}`,
         }));
-        const targetHosts = _.sortBy(targets.map(i => i.host), i => i);
+        const targetHosts = _.sortBy(
+          targets.map((i) => i.host),
+          (i) => i
+        );
         const otoHosts = otoroshiService
-          ? _.sortBy(otoroshiService.targets.map(i => i.host), i => i)
+          ? _.sortBy(
+              otoroshiService.targets.map((i) => i.host),
+              (i) => i
+            )
           : [];
         const rootPath = rancherService.name.split('-')[1];
         if (!otoroshiService) {
@@ -357,20 +363,20 @@ function syncOtoroshiWithRancher() {
           );
           return updateOtoroshiRancherService(rancherService.id, rancherService.name, targets);
         } else {
-          return new Promise(s => s());
+          return new Promise((s) => s());
         }
       });
       return Promise.all(tasks).then(() => [rancherServices, otoroshiServices]);
     })
-    .then(arr => {
-      return fetchOtoroshiRancherServices().then(os => [arr[0], os]);
+    .then((arr) => {
+      return fetchOtoroshiRancherServices().then((os) => [arr[0], os]);
     })
-    .then(arr => {
+    .then((arr) => {
       //log('  Synchronizing Otoroshi => Rancher');
       const [rancherServices, otoroshiServices] = arr;
-      const tasks = otoroshiServices.map(otoroshiService => {
+      const tasks = otoroshiServices.map((otoroshiService) => {
         const rancherService = rancherServices.filter(
-          s => s.id && s.id === otoroshiService.metadata.rancherId
+          (s) => s.id && s.id === otoroshiService.metadata.rancherId
         )[0];
         if (!rancherService) {
           log(`Deleting Otoroshi service ${otoroshiService.name} with id: ${otoroshiService.id}`);
@@ -379,7 +385,7 @@ function syncOtoroshiWithRancher() {
           return null;
         }
       });
-      lastDeletedServices = tasks.filter(i => !!i).length;
+      lastDeletedServices = tasks.filter((i) => !!i).length;
       return Promise.all(tasks);
     })
     .then(() => {
@@ -432,12 +438,9 @@ app.get('/status', (req, res) => {
 });
 
 app.get('/health', (req, res) => {
-  res
-    .status(200)
-    .type('application/json')
-    .send({
-      status: 'RUNNING',
-    });
+  res.status(200).type('application/json').send({
+    status: 'RUNNING',
+  });
 });
 
 app.listen(PORT, () => {

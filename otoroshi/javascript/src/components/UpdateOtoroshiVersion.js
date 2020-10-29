@@ -18,7 +18,7 @@ export class UpdateOtoroshiVersion extends Component {
           <a
             style={{ marginLeft: 5 }}
             target="_blank"
-            onClick={e => {
+            onClick={(e) => {
               localStorage.setItem(
                 'otoroshi_outdated_popup',
                 JSON.stringify({ closed_at: Date.now() })
@@ -32,7 +32,7 @@ export class UpdateOtoroshiVersion extends Component {
             type="button"
             className="btn btn-danger btn-xs"
             style={{ marginLeft: 5 }}
-            onClick={e => {
+            onClick={(e) => {
               e.preventDefault();
               localStorage.setItem(
                 'otoroshi_outdated_popup',

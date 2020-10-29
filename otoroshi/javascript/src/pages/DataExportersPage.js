@@ -2,7 +2,17 @@ import React, { Component } from 'react';
 import faker from 'faker';
 
 import * as BackOfficeServices from '../services/BackOfficeServices';
-import { Table, SelectInput, ArrayInput, Form, BooleanInput, TextInput, ObjectInput, NumberInput, SimpleBooleanInput } from '../components/inputs';
+import {
+  Table,
+  SelectInput,
+  ArrayInput,
+  Form,
+  BooleanInput,
+  TextInput,
+  ObjectInput,
+  NumberInput,
+  SimpleBooleanInput,
+} from '../components/inputs';
 import { Collapse } from '../components/inputs/Collapse';
 import { JsonObjectAsCodeInput } from '../components/inputs/CodeInput';
 
@@ -38,8 +48,8 @@ class Mailer extends Component {
         label: 'Email addresses',
         placeholder: 'Email address to receive events',
         help: 'Every email address will be notified with a summary of Otoroshi events',
-      }
-    }
+      },
+    },
   };
   sendgridFormSchema = {
     apiKey: {
@@ -55,8 +65,8 @@ class Mailer extends Component {
         label: 'Email addresses',
         placeholder: 'Email address to receive events',
         help: 'Every email address will be notified with a summary of Otoroshi events',
-      }
-    }
+      },
+    },
   };
   mailgunFormSchema = {
     eu: {
@@ -85,8 +95,8 @@ class Mailer extends Component {
         label: 'Email addresses',
         placeholder: 'Email address to receive events',
         help: 'Every email address will be notified with a summary of Otoroshi events',
-      }
-    }
+      },
+    },
   };
   mailjetFormSchema = {
     apiKeyPublic: {
@@ -109,20 +119,20 @@ class Mailer extends Component {
         label: 'Email addresses',
         placeholder: 'Email address to receive events',
         help: 'Every email address will be notified with a summary of Otoroshi events',
-      }
-    }
+      },
+    },
   };
   render() {
     const settings = this.props.value;
     const type = settings.type;
 
-    console.debug({settings})
+    console.debug({ settings });
     return (
       <div>
         <SelectInput
           label="Type"
           value={type}
-          onChange={e => {
+          onChange={(e) => {
             switch (e) {
               case 'console':
                 this.props.onChange({
@@ -212,8 +222,8 @@ class Mailer extends Component {
 
 export class DataExportersPage extends Component {
   state = {
-    dataExporters: []
-  }
+    dataExporters: [],
+  };
 
   componentDidMount() {
     this.props.setTitle(`Data exporters`);
@@ -226,22 +236,22 @@ export class DataExportersPage extends Component {
   columns = [
     {
       title: 'Name',
-      content: item => item.name,
+      content: (item) => item.name,
     },
     {
       title: 'Type',
       style: { textAlign: 'center', width: 100 },
-      content: item => item.type,
+      content: (item) => item.type,
     },
     {
       title: 'Enabled',
       style: { textAlign: 'center', width: 100 },
-      content: item => item.enabled,
+      content: (item) => item.enabled,
       cell: (v, item, table) => {
         return (
           <SimpleBooleanInput
             value={item.enabled}
-            onChange={value => {
+            onChange={(value) => {
               BackOfficeServices.updateDataExporterConfig({
                 ...item,
                 enabled: value,
@@ -249,8 +259,8 @@ export class DataExportersPage extends Component {
             }}
           />
         );
-      }
-    }
+      },
+    },
   ];
 
   render() {
@@ -273,30 +283,28 @@ export class DataExportersPage extends Component {
           showLink={false}
           rowNavigation={true}
           firstSort={0}
-          extractKey={item => item.id}
-          injectTable={ref => this.table = ref}
+          extractKey={(item) => item.id}
+          injectTable={(ref) => (this.table = ref)}
         />
       </div>
-    )
+    );
   }
 }
 
 export class NewExporterForm extends Component {
-
-  updateType = type => {
-    BackOfficeServices.createNewDataExporterConfig(type)
-      .then(config => {
-        this.props.onChange({ ...this.props.value, type, ...config })
-      })
-  }
+  updateType = (type) => {
+    BackOfficeServices.createNewDataExporterConfig(type).then((config) => {
+      this.props.onChange({ ...this.props.value, type, ...config });
+    });
+  };
 
   data = () => {
     return this.props.value;
-  }
+  };
 
   dataChange = (obj) => {
     this.props.onChange({ ...this.props.value, ...obj });
-  }
+  };
 
   render() {
     return (
@@ -306,14 +314,14 @@ export class NewExporterForm extends Component {
             label="Type"
             placeholder="The type of exporter"
             value={this.data().type}
-            onChange={e => this.updateType(e)}
+            onChange={(e) => this.updateType(e)}
             possibleValues={Object.keys(possibleExporterConfigFormValues)}
             help="The type of event exporter"
           />
-          <BooleanInput 
+          <BooleanInput
             label="Enabled"
             value={this.data().enabled}
-            onChange={e => this.dataChange({ enabled: e })}
+            onChange={(e) => this.dataChange({ enabled: e })}
             help="Enable exporter"
           />
           <TextInput
@@ -321,64 +329,87 @@ export class NewExporterForm extends Component {
             placeholder="data exporter config name"
             value={this.data().name}
             help="The data exporter name"
-            onChange={e => this.dataChange({name: e})}
+            onChange={(e) => this.dataChange({ name: e })}
           />
           <TextInput
             label="Description"
             placeholder="data exporter config description"
             value={this.data().desc}
             help="The data exporter description"
-            onChange={e => this.dataChange({ desc: e })}
+            onChange={(e) => this.dataChange({ desc: e })}
           />
           <ObjectInput
             label="Metadata"
             value={this.data().metadata}
-            onChange={v => this.dataChange({ metadata: e})}
+            onChange={(v) => this.dataChange({ metadata: e })}
           />
           <Collapse initCollapsed={true} label="Filtering and projection">
             <JsonObjectAsCodeInput
               label="Filtering"
               value={this.data().filtering}
-              onChange={e => this.dataChange({ filtering: e })}
+              onChange={(e) => this.dataChange({ filtering: e })}
               height="200px"
             />
             <JsonObjectAsCodeInput
               label="Projection"
               value={this.data().projection}
-              onChange={e => this.dataChange({ projection: e })}
+              onChange={(e) => this.dataChange({ projection: e })}
               height="200px"
             />
           </Collapse>
           <Collapse initCollapsed={true} label="Queue details">
-            <NumberInput label="Buffer Size" value={this.data().bufferSize} onChange={v => this.dataChange({ bufferSize: v })} />
-            <NumberInput label="JSON conversion workers" value={this.data().jsonWorkers} onChange={v => this.dataChange({ jsonWorkers: v })} />
-            <NumberInput label="Send workers" value={this.data().sendWorkers} onChange={v => this.dataChange({ sendWorkers: v })} />
-            <NumberInput label="Group size" value={this.data().groupSize} onChange={v => this.dataChange({ groupSize: v })} />
-            <NumberInput label="Group duration" value={this.data().groupDuration} onChange={v => this.dataChange({ groupDuration: v })} />
+            <NumberInput
+              label="Buffer Size"
+              value={this.data().bufferSize}
+              onChange={(v) => this.dataChange({ bufferSize: v })}
+            />
+            <NumberInput
+              label="JSON conversion workers"
+              value={this.data().jsonWorkers}
+              onChange={(v) => this.dataChange({ jsonWorkers: v })}
+            />
+            <NumberInput
+              label="Send workers"
+              value={this.data().sendWorkers}
+              onChange={(v) => this.dataChange({ sendWorkers: v })}
+            />
+            <NumberInput
+              label="Group size"
+              value={this.data().groupSize}
+              onChange={(v) => this.dataChange({ groupSize: v })}
+            />
+            <NumberInput
+              label="Group duration"
+              value={this.data().groupDuration}
+              onChange={(v) => this.dataChange({ groupDuration: v })}
+            />
           </Collapse>
           {this.data().type && (
-            <Collapse collapsed={this.data().allCollapsed} initCollapsed={false} label="Exporter config">
+            <Collapse
+              collapsed={this.data().allCollapsed}
+              initCollapsed={false}
+              label="Exporter config">
               <Form
                 value={() => {
                   if (this.data().type === 'mailer') {
-                    return { mailerSettings: this.data().config }
+                    return { mailerSettings: this.data().config };
                   } else {
-                    return this.data().config
+                    return this.data().config;
                   }
                 }}
-                onChange={config => {
+                onChange={(config) => {
                   if (this.data().type === 'mailer') {
-                    return this.dataChange({ config: config.mailerSettings })
+                    return this.dataChange({ config: config.mailerSettings });
                   } else {
-                    return this.dataChange({ config })
+                    return this.dataChange({ config });
                   }
                 }}
                 flow={possibleExporterConfigFormValues[this.data().type].flow}
                 schema={possibleExporterConfigFormValues[this.data().type].schema}
                 style={{ marginTop: 50 }}
               />
-            </Collapse>)
-          }
+            </Collapse>
+          )}
         </form>
       </>
     );
@@ -438,7 +469,7 @@ const possibleExporterConfigFormValues = {
           label: 'Client certificates',
           placeholder: 'Choose a client certificate',
           valuesFrom: '/bo/api/proxy/api/certificates',
-          transformer: a => ({
+          transformer: (a) => ({
             value: a.id,
             label: (
               <span>
@@ -457,7 +488,7 @@ const possibleExporterConfigFormValues = {
           label: 'Trusted certificates',
           placeholder: 'Choose a trusted certificate',
           valuesFrom: '/bo/api/proxy/api/certificates',
-          transformer: a => ({
+          transformer: (a) => ({
             value: a.id,
             label: (
               <span>
@@ -470,7 +501,7 @@ const possibleExporterConfigFormValues = {
           }),
         },
       },
-    }
+    },
   },
   webhook: {
     flow: [
@@ -513,7 +544,7 @@ const possibleExporterConfigFormValues = {
           label: 'Client certificates',
           placeholder: 'Choose a client certificate',
           valuesFrom: '/bo/api/proxy/api/certificates',
-          transformer: a => ({
+          transformer: (a) => ({
             value: a.id,
             label: (
               <span>
@@ -532,7 +563,7 @@ const possibleExporterConfigFormValues = {
           label: 'Trusted certificates',
           placeholder: 'Choose a trusted certificate',
           valuesFrom: '/bo/api/proxy/api/certificates',
-          transformer: a => ({
+          transformer: (a) => ({
             value: a.id,
             label: (
               <span>
@@ -545,7 +576,7 @@ const possibleExporterConfigFormValues = {
           }),
         },
       },
-    }
+    },
   },
   pulsar: {
     flow: [
@@ -563,15 +594,15 @@ const possibleExporterConfigFormValues = {
         type: 'string',
         props: {
           label: 'Pulsar URI',
-          help: 'URI of the pulsar server'
+          help: 'URI of the pulsar server',
         },
       },
       tlsTrustCertsFilePath: {
         type: 'string',
         props: {
           label: 'Pulsar trusted cert. path',
-          help: 'The path to the trusted TLS certificate file'
-        }
+          help: 'The path to the trusted TLS certificate file',
+        },
       },
       tenant: {
         type: 'string',
@@ -603,17 +634,17 @@ const possibleExporterConfigFormValues = {
       },
       'mtlsConfig.trustAll': {
         type: 'bool',
-        display: v => tryOrTrue(() => v.mtlsConfig.mtls),
+        display: (v) => tryOrTrue(() => v.mtlsConfig.mtls),
         props: { label: 'TrustAll' },
       },
       'mtlsConfig.certs': {
         type: 'array',
-        display: v => tryOrTrue(() => v.mtlsConfig.mtls),
+        display: (v) => tryOrTrue(() => v.mtlsConfig.mtls),
         props: {
           label: 'Client certificates',
           placeholder: 'Choose a client certificate',
           valuesFrom: '/bo/api/proxy/api/certificates',
-          transformer: a => ({
+          transformer: (a) => ({
             value: a.id,
             label: (
               <span>
@@ -628,13 +659,12 @@ const possibleExporterConfigFormValues = {
       },
       'mtlsConfig.trustedCerts': {
         type: 'array',
-        display: v =>
-          tryOrTrue(() => v.mtlsConfig.mtls && !v.mtlsConfig.trustAll),
+        display: (v) => tryOrTrue(() => v.mtlsConfig.mtls && !v.mtlsConfig.trustAll),
         props: {
           label: 'Trusted certificates',
           placeholder: 'Choose a trusted certificate',
           valuesFrom: '/bo/api/proxy/api/certificates',
-          transformer: a => ({
+          transformer: (a) => ({
             value: a.id,
             label: (
               <span>
@@ -647,7 +677,7 @@ const possibleExporterConfigFormValues = {
           }),
         },
       },
-    }
+    },
   },
   kafka: {
     flow: [
@@ -662,7 +692,7 @@ const possibleExporterConfigFormValues = {
       'topic',
     ],
     schema: {
-      'servers': {
+      servers: {
         type: 'array',
         props: {
           label: 'Kafka Servers',
@@ -670,19 +700,20 @@ const possibleExporterConfigFormValues = {
           help: 'The list of servers to contact to connect the Kafka client with the Kafka cluster',
         },
       },
-      'keyPass': {
+      keyPass: {
         type: 'string',
-        display: v => tryOrTrue(() => !v.mtlsConfig.mtls),
+        display: (v) => tryOrTrue(() => !v.mtlsConfig.mtls),
         props: {
           label: 'Kafka keypass',
           placeholder: 'secret',
           type: 'password',
-          help: 'The keystore password if you use a keystore/truststore to connect to Kafka cluster',
+          help:
+            'The keystore password if you use a keystore/truststore to connect to Kafka cluster',
         },
       },
-      'keystore': {
+      keystore: {
         type: 'string',
-        display: v => tryOrTrue(() => !v.mtlsConfig.mtls),
+        display: (v) => tryOrTrue(() => !v.mtlsConfig.mtls),
         props: {
           label: 'Kafka keystore path',
           placeholder: '/home/bas/client.keystore.jks',
@@ -690,9 +721,9 @@ const possibleExporterConfigFormValues = {
             'The keystore path on the server if you use a keystore/truststore to connect to Kafka cluster',
         },
       },
-      'truststore': {
+      truststore: {
         type: 'string',
-        display: v => tryOrTrue(() => !v.mtlsConfig.mtls),
+        display: (v) => tryOrTrue(() => !v.mtlsConfig.mtls),
         props: {
           label: 'Kafka truststore path',
           placeholder: '/home/bas/client.truststore.jks',
@@ -709,17 +740,17 @@ const possibleExporterConfigFormValues = {
       },
       'mtlsConfig.trustAll': {
         type: 'bool',
-        display: v => tryOrTrue(() => v.mtlsConfig.mtls),
+        display: (v) => tryOrTrue(() => v.mtlsConfig.mtls),
         props: { label: 'TrustAll' },
       },
       'mtlsConfig.certs': {
         type: 'array',
-        display: v => tryOrTrue(() => v.mtlsConfig.mtls),
+        display: (v) => tryOrTrue(() => v.mtlsConfig.mtls),
         props: {
           label: 'Client certificates',
           placeholder: 'Choose a client certificate',
           valuesFrom: '/bo/api/proxy/api/certificates',
-          transformer: a => ({
+          transformer: (a) => ({
             value: a.id,
             label: (
               <span>
@@ -734,13 +765,12 @@ const possibleExporterConfigFormValues = {
       },
       'mtlsConfig.trustedCerts': {
         type: 'array',
-        display: v =>
-          tryOrTrue(() => v.mtlsConfig.mtls && !v.mtlsConfig.trustAll),
+        display: (v) => tryOrTrue(() => v.mtlsConfig.mtls && !v.mtlsConfig.trustAll),
         props: {
           label: 'Trusted certificates',
           placeholder: 'Choose a trusted certificate',
           valuesFrom: '/bo/api/proxy/api/certificates',
-          transformer: a => ({
+          transformer: (a) => ({
             value: a.id,
             label: (
               <span>
@@ -753,7 +783,7 @@ const possibleExporterConfigFormValues = {
           }),
         },
       },
-      'topic': {
+      topic: {
         type: 'string',
         props: {
           label: 'Kafka topic',
@@ -761,23 +791,18 @@ const possibleExporterConfigFormValues = {
           help: 'The topic on which Otoroshi alerts will be sent',
         },
       },
-    }
+    },
   },
   mailer: {
-    flow: [
-      'mailerSettings'
-    ],
+    flow: ['mailerSettings'],
     schema: {
       mailerSettings: {
-        type: Mailer
-      }
-    }
+        type: Mailer,
+      },
+    },
   },
   file: {
-    flow: [
-      'path',
-      'maxFileSize'
-    ],
+    flow: ['path', 'maxFileSize'],
     schema: {
       path: {
         type: 'string',
@@ -785,26 +810,29 @@ const possibleExporterConfigFormValues = {
       },
       maxFileSize: {
         type: 'number',
-        props: { label: 'Max file size', placeholder: 'Max size in bytes for a file', suffix: 'bytes' },
-      }
-    }
+        props: {
+          label: 'Max file size',
+          placeholder: 'Max size in bytes for a file',
+          suffix: 'bytes',
+        },
+      },
+    },
   },
   console: {
     flow: [],
-    schema: {}
+    schema: {},
   },
   custom: {
-    flow: ["ref", "config"],
+    flow: ['ref', 'config'],
     schema: {
       ref: {
         type: 'select',
-        props: { label: 'Exporter', valuesFrom: `/bo/api/proxy/api/scripts/_list?type=exporter` }
+        props: { label: 'Exporter', valuesFrom: `/bo/api/proxy/api/scripts/_list?type=exporter` },
       },
       config: {
         type: 'code',
-        props: { label: 'Exporter config.' }
-      }
-    }
-  }
-}
-
+        props: { label: 'Exporter config.' },
+      },
+    },
+  },
+};

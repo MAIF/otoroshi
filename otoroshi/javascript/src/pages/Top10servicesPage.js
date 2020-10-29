@@ -5,10 +5,10 @@ import { Table } from '../components/inputs';
 
 export class Top10servicesPage extends Component {
   columns = [
-    { title: 'Name', content: item => item.name },
+    { title: 'Name', content: (item) => item.name },
     {
       title: 'Rate',
-      content: item => item.rate.toFixed(3) + ' calls per sec.',
+      content: (item) => item.rate.toFixed(3) + ' calls per sec.',
     },
   ];
 
@@ -42,8 +42,8 @@ export class Top10servicesPage extends Component {
           fetchItems={BackOfficeServices.fetchTop10}
           showActions={false}
           showLink={false}
-          injectTable={table => (this.table = table)}
-          extractKey={item => item.id}
+          injectTable={(table) => (this.table = table)}
+          extractKey={(item) => item.id}
         />
       </div>
     );

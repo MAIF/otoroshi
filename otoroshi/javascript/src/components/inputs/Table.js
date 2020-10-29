@@ -73,7 +73,7 @@ export class Table extends Component {
   }
 
   registerSizeChanges = () => {
-    this.sizeListener = _.debounce(e => {
+    this.sizeListener = _.debounce((e) => {
       this.forceUpdate();
     }, 400);
     window.addEventListener('resize', this.sizeListener);
@@ -96,10 +96,10 @@ export class Table extends Component {
         this.showAddForm();
       } else if (action === 'edit') {
         const item = this.props.parentProps.params.titem;
-        this.props.fetchItems().then(data => {
+        this.props.fetchItems().then((data) => {
           //console.log(this.props.parentProps.params);
           //console.log(data);
-          const row = data.filter(d => this.props.extractKey(d) === item)[0];
+          const row = data.filter((d) => this.props.extractKey(d) === item)[0];
           this.showEditForm(null, row);
         });
       }
@@ -114,7 +114,7 @@ export class Table extends Component {
     document.body.removeEventListener('keydown', this.saveShortcut);
   };
 
-  saveShortcut = e => {
+  saveShortcut = (e) => {
     if (e.keyCode === 83 && (e.ctrlKey || e.metaKey)) {
       e.preventDefault();
       if (this.state.showEditForm) {
@@ -129,7 +129,7 @@ export class Table extends Component {
   update = () => {
     this.setState({ loading: true });
     return this.props.fetchItems().then(
-      rawItems => {
+      (rawItems) => {
         this.setState({ items: rawItems, loading: false }, () => {
           if (this.props.onUpdate) {
             this.props.onUpdate(rawItems);
@@ -145,7 +145,7 @@ export class Table extends Component {
     this.props.navigateTo(item);
   };
 
-  closeAddForm = e => {
+  closeAddForm = (e) => {
     if (e && e.preventDefault) e.preventDefault();
     this.unmountShortcuts();
     this.props.parentProps.setTitle(this.props.defaultTitle);
@@ -153,20 +153,20 @@ export class Table extends Component {
     urlTo(`/bo/dashboard/${this.props.selfUrl}`);
   };
 
-  showAddForm = e => {
+  showAddForm = (e) => {
     if (e && e.preventDefault) e.preventDefault();
     this.mountShortcuts();
     this.props.parentProps.setTitle(`Create a new ${this.props.itemName}`);
     urlTo(`/bo/dashboard/${this.props.selfUrl}/add`);
     const defVal = this.props.defaultValue();
     if (defVal.then) {
-      defVal.then(v => this.setState({ currentItem: v, showAddForm: true }));
+      defVal.then((v) => this.setState({ currentItem: v, showAddForm: true }));
     } else {
       this.setState({ currentItem: defVal, showAddForm: true });
     }
   };
 
-  closeEditForm = e => {
+  closeEditForm = (e) => {
     if (e && e.preventDefault) e.preventDefault();
     this.unmountShortcuts();
     this.props.parentProps.setTitle(this.props.defaultTitle);
@@ -184,14 +184,14 @@ export class Table extends Component {
 
   deleteItem = (e, item) => {
     if (e && e.preventDefault) e.preventDefault();
-    window.newConfirm('Are you sure you want to delete that item ?').then(ok => {
+    window.newConfirm('Are you sure you want to delete that item ?').then((ok) => {
       if (ok) {
         this.props
           .deleteItem(item)
           .then(() => {
             return this.props.fetchItems();
           })
-          .then(items => {
+          .then((items) => {
             urlTo(`/bo/dashboard/${this.props.selfUrl}`);
             this.setState({ items, showEditForm: false, showAddForm: false });
           });
@@ -199,20 +199,20 @@ export class Table extends Component {
     });
   };
 
-  createItem = e => {
+  createItem = (e) => {
     if (e && e.preventDefault) e.preventDefault();
     this.props
       .createItem(this.state.currentItem)
       .then(() => {
         return this.props.fetchItems();
       })
-      .then(items => {
+      .then((items) => {
         urlTo(`/bo/dashboard/${this.props.selfUrl}`);
         this.setState({ items, showAddForm: false });
       });
   };
 
-  createItemAndStay = e => {
+  createItemAndStay = (e) => {
     if (e && e.preventDefault) e.preventDefault();
     this.props.createItem(this.state.currentItem).then(() => {
       urlTo(
@@ -222,19 +222,19 @@ export class Table extends Component {
     });
   };
 
-  updateItem = e => {
+  updateItem = (e) => {
     if (e && e.preventDefault) e.preventDefault();
     this.props
       .updateItem(this.state.currentItem)
       .then(() => {
         return this.props.fetchItems();
       })
-      .then(items => {
+      .then((items) => {
         this.setState({ items, showEditForm: false });
       });
   };
 
-  updateItemAndStay = e => {
+  updateItemAndStay = (e) => {
     if (e && e.preventDefault) e.preventDefault();
     this.props.updateItem(this.state.currentItem);
   };
@@ -245,14 +245,14 @@ export class Table extends Component {
     }
     const windowWidth = window.innerWidth;
     const columns = this.props.columns
-      .filter(c => {
+      .filter((c) => {
         if (windowWidth > this.props.mobileSize) {
           return true;
         } else {
           return !c.noMobile;
         }
       })
-      .map(c => {
+      .map((c) => {
         return {
           Header: c.title,
           id: c.title,
@@ -261,24 +261,24 @@ export class Table extends Component {
           style: { ...c.style, height: 30 },
           sortable: !c.notSortable,
           filterable: !c.notFilterable,
-          accessor: d => (c.content ? c.content(d) : d),
-          Filter: d => (
+          accessor: (d) => (c.content ? c.content(d) : d),
+          Filter: (d) => (
             <input
               type="text"
               className="form-control input-sm"
               value={d.filter ? d.filter.value : ''}
-              onChange={e => d.onChange(e.target.value)}
+              onChange={(e) => d.onChange(e.target.value)}
               placeholder="Search ..."
             />
           ),
-          Cell: r => {
+          Cell: (r) => {
             const value = r.value;
             const original = r.original;
             return c.cell ? (
               c.cell(value, original, this)
             ) : (
               <div
-                onClick={e => {
+                onClick={(e) => {
                   if (this.props.rowNavigation) {
                     if (e.metaKey) {
                       if (this.props.itemUrl) {
@@ -306,14 +306,14 @@ export class Table extends Component {
         width: 140,
         style: { textAlign: 'center' },
         filterable: false,
-        accessor: item => (
+        accessor: (item) => (
           <td style={{ width: 140, textAlign: 'center' }}>
             <div className="displayGroupBtn">
               <button
                 type="button"
                 className="btn btn-sm btn-success"
                 {...createTooltip(`Edit this ${this.props.itemName}`, 'top', true)}
-                onClick={e => this.showEditForm(e, item)}>
+                onClick={(e) => this.showEditForm(e, item)}>
                 <i className="glyphicon glyphicon-pencil" />
               </button>
               {this.props.showLink && (
@@ -321,7 +321,7 @@ export class Table extends Component {
                   type="button"
                   className="btn btn-sm btn-primary"
                   {...createTooltip(`Open this ${this.props.itemName}`, 'top', true)}
-                  onClick={e => this.gotoItem(e, item)}>
+                  onClick={(e) => this.gotoItem(e, item)}>
                   <i className="glyphicon glyphicon-link" />
                 </button>
               )}
@@ -338,7 +338,7 @@ export class Table extends Component {
                 <button
                   type="button"
                   className="btn btn-sm btn-danger"
-                  onClick={e => this.deleteItem(e, item)}
+                  onClick={(e) => this.deleteItem(e, item)}
                   {...createTooltip(`Delete this ${this.props.itemName}`, 'top', true)}>
                   <i className="glyphicon glyphicon-trash" />
                 </button>
@@ -348,7 +348,7 @@ export class Table extends Component {
                   type="button"
                   className="btn btn-sm btn-danger"
                   {...createTooltip(`Delete this ${this.props.itemName}`, 'top', true)}
-                  onClick={e => this.deleteItem(e, item)}>
+                  onClick={(e) => this.deleteItem(e, item)}>
                   <i className="glyphicon glyphicon-trash" />
                 </button>
               )}
@@ -420,19 +420,21 @@ export class Table extends Component {
         {this.state.showAddForm && (
           <div className="" role="dialog">
             {this.props.formComponent && [
-              this.props.injectToolbar ? this.props.injectToolbar(this.state, s => this.setState(s)) : null,
+              this.props.injectToolbar
+                ? this.props.injectToolbar(this.state, (s) => this.setState(s))
+                : null,
               <form className="form-horizontal" style={this.props.style}>
                 {React.createElement(this.props.formComponent, {
-                  onChange: currentItem => this.setState({ currentItem }),
+                  onChange: (currentItem) => this.setState({ currentItem }),
                   value: this.state.currentItem,
                   ...(this.props.formPassProps || {}),
                 })}
-              </form>
+              </form>,
             ]}
             {!this.props.formComponent && (
               <Form
                 value={this.state.currentItem}
-                onChange={currentItem => this.setState({ currentItem })}
+                onChange={(currentItem) => this.setState({ currentItem })}
                 flow={this.props.formFlow}
                 schema={this.props.formSchema}
               />
@@ -457,21 +459,23 @@ export class Table extends Component {
         {this.state.showEditForm && (
           <div className="" role="dialog">
             {this.props.formComponent && [
-              this.props.injectToolbar ? this.props.injectToolbar(this.state, s => this.setState(s)) : null,
+              this.props.injectToolbar
+                ? this.props.injectToolbar(this.state, (s) => this.setState(s))
+                : null,
               <form className="form-horizontal" style={this.props.style}>
                 {React.createElement(this.props.formComponent, {
-                  onChange: currentItem => {
+                  onChange: (currentItem) => {
                     this.setState({ currentItem });
                   },
                   value: this.state.currentItem,
                   ...(this.props.formPassProps || {}),
                 })}
-              </form>
+              </form>,
             ]}
             {!this.props.formComponent && (
               <Form
                 value={this.state.currentItem}
-                onChange={currentItem => this.setState({ currentItem })}
+                onChange={(currentItem) => this.setState({ currentItem })}
                 flow={this.props.formFlow}
                 schema={this.props.formSchema}
               />
@@ -492,7 +496,7 @@ export class Table extends Component {
                   type="button"
                   className="btn btn-danger"
                   title="Delete current item"
-                  onClick={e => this.deleteItem(e, this.state.currentItem)}>
+                  onClick={(e) => this.deleteItem(e, this.state.currentItem)}>
                   <i className="glyphicon glyphicon-trash" /> Delete
                 </button>
               )}
@@ -501,7 +505,7 @@ export class Table extends Component {
                   type="button"
                   className="btn btn-danger"
                   title="Delete current item"
-                  onClick={e => this.deleteItem(e, this.state.currentItem)}>
+                  onClick={(e) => this.deleteItem(e, this.state.currentItem)}>
                   <i className="glyphicon glyphicon-trash" /> Delete
                 </button>
               )}

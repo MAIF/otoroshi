@@ -31,7 +31,7 @@ export class Histogram extends Component {
     '#a52a2a',
   ];
 
-  formatTick = v => {
+  formatTick = (v) => {
     if (v > 999999) {
       return (v / 1000000).toFixed(0) + ' M';
     }
@@ -49,15 +49,15 @@ export class Histogram extends Component {
 
     if (
       this.props.series &&
-      this.props.series.map(s => s.data.length).filter(v => v > 0).length > 0
+      this.props.series.map((s) => s.data.length).filter((v) => v > 0).length > 0
     ) {
-      seriesName = this.props.series.map(s => s.name);
+      seriesName = this.props.series.map((s) => s.name);
       const values = [];
-      const sizes = this.props.series.map(s => s.data.length);
+      const sizes = this.props.series.map((s) => s.data.length);
       const size = Math.max(...sizes);
       for (let i = 0; i < size; i++) {
         let finalItem = {};
-        this.props.series.forEach(serie => {
+        this.props.series.forEach((serie) => {
           const item = serie.data[i];
           if (item) {
             finalItem = {
@@ -90,7 +90,7 @@ export class Histogram extends Component {
             <YAxis tickFormatter={this.formatTick} />
             <CartesianGrid strokeDasharray="3 3" />
             <Tooltip />
-            {_.sortBy(seriesName, sn => sn).map((sn, idx) => (
+            {_.sortBy(seriesName, (sn) => sn).map((sn, idx) => (
               <Area
                 key={sn}
                 type="monotone"
@@ -123,7 +123,7 @@ export class RoundChart extends Component {
     '#a52a2a',
   ];
 
-  renderCustomizedLabel = props => {
+  renderCustomizedLabel = (props) => {
     const { x, y, cx, midAngle, innerRadius, outerRadius, percent, index } = props;
     return (
       <text
@@ -145,8 +145,8 @@ export class RoundChart extends Component {
     // console.log(this.props.title, this.props.series);
 
     if (this.props.series && this.props.series[0]) {
-      seriesName = this.props.series.map(s => s.name);
-      data = this.props.series[0].data.map(i => ({ name: i.name, value: i.y }));
+      seriesName = this.props.series.map((s) => s.name);
+      data = this.props.series[0].data.map((i) => ({ name: i.name, value: i.y }));
     }
 
     return (

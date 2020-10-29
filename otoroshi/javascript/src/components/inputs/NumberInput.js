@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import { Help } from './Help';
 
 export class NumberInput extends Component {
-  onChange = e => {
+  onChange = (e) => {
     if (e && e.preventDefault) e.preventDefault();
     const value = e.target.value;
     let oldValue = this.props.value;
@@ -66,7 +66,7 @@ export class NumberInput extends Component {
 }
 
 export class VerticalNumberInput extends Component {
-  onChange = e => {
+  onChange = (e) => {
     if (e && e.preventDefault) e.preventDefault();
     const value = e.target.value;
     if (value.indexOf('.') > -1) {
@@ -124,7 +124,7 @@ export class VerticalNumberInput extends Component {
 }
 
 export class NumberRangeInput extends Component {
-  onChangeFrom = e => {
+  onChangeFrom = (e) => {
     if (e && e.preventDefault) e.preventDefault();
     const value = e.target.value;
     if (value.indexOf('.') > -1) {
@@ -134,7 +134,7 @@ export class NumberRangeInput extends Component {
     }
   };
 
-  onChangeTo = e => {
+  onChangeTo = (e) => {
     if (e && e.preventDefault) e.preventDefault();
     const value = e.target.value;
     if (value.indexOf('.') > -1) {

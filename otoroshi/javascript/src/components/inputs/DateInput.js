@@ -6,7 +6,7 @@ import moment from 'moment';
 import { OtoDateTimePicker } from '../datepicker';
 
 export class DateTimeInput extends Component {
-  onChange = e => {
+  onChange = (e) => {
     if (e && e.preventDefault) e.preventDefault();
     this.props.onChange(e);
   };

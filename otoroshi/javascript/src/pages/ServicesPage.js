@@ -24,7 +24,7 @@ export class ServicesPage extends Component {
   columns = [
     {
       title: 'Name',
-      content: item => item.name,
+      content: (item) => item.name,
       wrappedCell: (v, item, table) => {
         if (this.state && this.state.env && this.state.env.adminApiId === item.id) {
           return (
@@ -42,14 +42,14 @@ export class ServicesPage extends Component {
       title: 'Delete',
       style: { textAlign: 'center', width: 70 },
       notFilterable: true,
-      content: item => item.enabled,
+      content: (item) => item.enabled,
       cell: (v, item, table) => {
         return (
           <button
             type="button"
             className="btn btn-danger btn-sm"
             disabled={this.state && this.state.env && this.state.env.adminApiId === item.id}
-            onClick={e => this.deleteService(item, table)}>
+            onClick={(e) => this.deleteService(item, table)}>
             <i className="glyphicon glyphicon-trash" />
           </button>
         );
@@ -58,7 +58,7 @@ export class ServicesPage extends Component {
     {
       title: 'Env.',
       style: { textAlign: 'center', width: 120 },
-      content: item => item.env,
+      content: (item) => item.env,
       cell: (v, item) => <span className={`label ${this.color(item.env)}`}>{item.env}</span>,
     },
     {
@@ -66,14 +66,14 @@ export class ServicesPage extends Component {
       style: { textAlign: 'center', width: 70 },
       noMobile: true,
       notFilterable: true,
-      content: item => item.enabled,
+      content: (item) => item.enabled,
       cell: (v, item) => (item.enabled ? <span className="glyphicon glyphicon-ok-sign" /> : ''),
     },
     {
       title: 'Private',
       style: { textAlign: 'center', width: 55 },
       noMobile: true,
-      content: item => item.privateApp,
+      content: (item) => item.privateApp,
       notFilterable: true,
       cell: (v, item) => (item.privateApp ? <img src="/assets/images/logoMaif.png" /> : ''),
     },
@@ -82,7 +82,7 @@ export class ServicesPage extends Component {
       style: { textAlign: 'center', width: 55 },
       notFilterable: true,
       noMobile: true,
-      content: item =>
+      content: (item) =>
         !item.privateApp &&
         item.privatePatterns.length === 0 &&
         item.publicPatterns.indexOf('/.*') > -1,
@@ -100,7 +100,7 @@ export class ServicesPage extends Component {
       style: { textAlign: 'center', width: 70 },
       notFilterable: true,
       noMobile: true,
-      content: item => item.enforceSecureCommunication,
+      content: (item) => item.enforceSecureCommunication,
       cell: (v, item) =>
         item.enforceSecureCommunication ? (
           <i className="fas fa-lock fa-lg" />
@@ -113,11 +113,11 @@ export class ServicesPage extends Component {
       style: { textAlign: 'center', width: 50 },
       notFilterable: true,
       noMobile: true,
-      content: item =>
-        item.targets.map(i => i.scheme).filter(i => i.toLowerCase() === 'https').length ===
+      content: (item) =>
+        item.targets.map((i) => i.scheme).filter((i) => i.toLowerCase() === 'https').length ===
         item.targets.length,
       cell: (v, item) =>
-        item.targets.map(i => i.scheme).filter(i => i.toLowerCase() === 'https').length ===
+        item.targets.map((i) => i.scheme).filter((i) => i.toLowerCase() === 'https').length ===
         item.targets.length ? (
           <i className="fas fa-lock fa-lg" />
         ) : (
@@ -140,7 +140,7 @@ export class ServicesPage extends Component {
     }
   }
 
-  displayName = item => {
+  displayName = (item) => {
     console.log(this.state);
     return this.state && this.state.env && this.state.env.adminApiId === item.id ? (
       <span className="label label-danger">{item.name}</span>
@@ -155,7 +155,7 @@ export class ServicesPage extends Component {
         type="button"
         className="btn btn-danger btn-sm"
         disabled={this.state && this.state.env && this.state.env.adminApiId === item.id}
-        onClick={e => this.deleteService(item, table)}>
+        onClick={(e) => this.deleteService(item, table)}>
         <i className="glyphicon glyphicon-trash" />
       </button>
     );
@@ -167,9 +167,9 @@ export class ServicesPage extends Component {
         .newConfirm(
           `The service you're trying to delete is the Otoroshi Admin API that drives the UI you're currently using. Without it, Otoroshi UI won't be able to work and anything that uses Otoroshi admin API too. Do you really want to do that ?`
         )
-        .then(ok1 => {
+        .then((ok1) => {
           if (ok1) {
-            window.newConfirm(`Are you sure you really want to do that ?`).then(ok2 => {
+            window.newConfirm(`Are you sure you really want to do that ?`).then((ok2) => {
               if (ok1 && ok2) {
                 BackOfficeServices.deleteService(service).then(() => {
                   table.update();
@@ -181,7 +181,7 @@ export class ServicesPage extends Component {
     } else {
       window
         .newConfirm('Are you sure you want to delete service "' + service.name + '"')
-        .then(confirmed => {
+        .then((confirmed) => {
           if (confirmed) {
             BackOfficeServices.deleteService(service).then(() => {
               table.update();
@@ -204,7 +204,7 @@ export class ServicesPage extends Component {
       this.title = `All services`;
     }
     this.props.setTitle(this.title);
-    BackOfficeServices.env().then(env => this.setState({ env }));
+    BackOfficeServices.env().then((env) => this.setState({ env }));
     this.props.setSidebarContent(null);
   }
 
@@ -212,9 +212,9 @@ export class ServicesPage extends Component {
     return null;
   }
 
-  addService = e => {
+  addService = (e) => {
     if (e && e.preventDefault) e.preventDefault();
-    BackOfficeServices.createNewService().then(r => {
+    BackOfficeServices.createNewService().then((r) => {
       ServicePage.__willCreateService = r;
       this.props.history.push({
         pathname: `/lines/${r.env}/services/${r.id}`,
@@ -230,7 +230,7 @@ export class ServicesPage extends Component {
     );
   };
 
-  gotoService = service => {
+  gotoService = (service) => {
     this.props.history.push({
       pathname: `/lines/${service.env}/services/${service.id}`,
     });
@@ -255,8 +255,8 @@ export class ServicesPage extends Component {
           rowNavigation={true}
           navigateTo={this.gotoService}
           firstSort={0}
-          extractKey={item => item.id}
-          itemUrl={i => `/bo/dashboard/lines/${i.env}/services/${i.id}`}
+          extractKey={(item) => item.id}
+          itemUrl={(i) => `/bo/dashboard/lines/${i.env}/services/${i.id}`}
           injectTopBar={() => (
             <>
               <div className="btn-group" style={{ marginRight: 5 }}>

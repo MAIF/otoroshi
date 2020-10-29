@@ -9,7 +9,7 @@ function Base64Url() {
     lookup[chars.charCodeAt(i)] = i;
   }
 
-  let encode = function(arraybuffer) {
+  let encode = function (arraybuffer) {
     let bytes = new Uint8Array(arraybuffer),
       i,
       len = bytes.length,
@@ -31,7 +31,7 @@ function Base64Url() {
     return base64url;
   };
 
-  let decode = function(base64string) {
+  let decode = function (base64string) {
     let bufferLength = base64string.length * 0.75,
       len = base64string.length,
       i,
@@ -114,12 +114,12 @@ export class GenericLoginPage extends Component {
     message: null,
   };
 
-  onChange = e => {
+  onChange = (e) => {
     this.setState({ [e.target.name]: e.target.value });
   };
 
   handleError = (mess, t) => {
-    return err => {
+    return (err) => {
       console.log(err && err.message ? err.message : err);
       this.setState({ error: mess });
       throw err;
@@ -198,19 +198,19 @@ export class GenericLoginPageWithWebAuthn extends Component {
     message: null,
   };
 
-  onChange = e => {
+  onChange = (e) => {
     this.setState({ [e.target.name]: e.target.value });
   };
 
   handleError = (mess, t) => {
-    return err => {
+    return (err) => {
       console.log(err && err.message ? err.message : err);
       this.setState({ error: mess });
       throw err;
     };
   };
 
-  webAuthnLogin = e => {
+  webAuthnLogin = (e) => {
     if (e && e.preventDefault) {
       e.preventDefault();
     }
@@ -234,18 +234,18 @@ export class GenericLoginPageWithWebAuthn extends Component {
         origin: window.location.origin,
       }),
     })
-      .then(r => {
+      .then((r) => {
         if (r.status === 200 || r.status == 201) {
           return r.json();
         } else {
           throw new Error('Login error, sorry ...');
         }
       }, this.handleError('Login error, sorry ...'))
-      .then(payload => {
+      .then((payload) => {
         const requestId = payload.requestId;
         const options = payload.request.publicKeyCredentialRequestOptions;
         options.challenge = base64url.decode(options.challenge);
-        options.allowCredentials = options.allowCredentials.map(c => {
+        options.allowCredentials = options.allowCredentials.map((c) => {
           c.id = base64url.decode(c.id);
           return c;
         });
@@ -257,7 +257,7 @@ export class GenericLoginPageWithWebAuthn extends Component {
             },
             this.handleError('Webauthn error, sorry ...')
           )
-          .then(credentials => {
+          .then((credentials) => {
             const json = responseToObject(credentials);
             console.log('fetch2');
             return fetch(this.props.action, {
@@ -279,8 +279,8 @@ export class GenericLoginPageWithWebAuthn extends Component {
                 },
               }),
             })
-              .then(r => r.json())
-              .then(r => {
+              .then((r) => r.json())
+              .then((r) => {
                 const location = r.location;
                 this.setState(
                   { error: null, email: '', password: '', message: `Login successfully` },

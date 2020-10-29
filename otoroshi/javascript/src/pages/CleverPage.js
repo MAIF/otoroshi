@@ -9,21 +9,21 @@ export class CleverPage extends Component {
   columns = [
     {
       title: 'Clever App',
-      content: item => item.name,
+      content: (item) => item.name,
     },
     {
       title: 'Otoroshi',
       style: { textAlign: 'center', width: 100 },
-      content: item => (item.exists ? item.otoUrl : null),
+      content: (item) => (item.exists ? item.otoUrl : null),
       notFilterable: true,
-      cell: value => (value ? <Link to={value}>View service</Link> : ''),
+      cell: (value) => (value ? <Link to={value}>View service</Link> : ''),
     },
     {
       title: 'Clevercloud',
       style: { textAlign: 'center', width: 100 },
       notFilterable: true,
-      content: item => (item.exists ? item.console : ''),
-      cell: value =>
+      content: (item) => (item.exists ? item.console : ''),
+      cell: (value) =>
         value ? (
           <a href={value} target="_blank">
             View app.
@@ -35,9 +35,9 @@ export class CleverPage extends Component {
     {
       title: 'Exists',
       style: { textAlign: 'center', width: 60 },
-      content: item => (item.exists ? 'exists' : 'not-exists'),
+      content: (item) => (item.exists ? 'exists' : 'not-exists'),
       notFilterable: true,
-      cell: item =>
+      cell: (item) =>
         item === 'exists' ? (
           <span className="glyphicon glyphicon-ok-sign" />
         ) : (
@@ -47,15 +47,15 @@ export class CleverPage extends Component {
     {
       title: 'Action',
       style: { textAlign: 'center', width: 150 },
-      content: item => item,
+      content: (item) => item,
       notSortable: true,
       notFilterable: true,
-      cell: item =>
+      cell: (item) =>
         item.exists ? (
           ''
         ) : (
           <button
-            onClick={e => this.createService(e, item)}
+            onClick={(e) => this.createService(e, item)}
             type="button"
             className="btn btn-xs btn-success">
             <i className="glyphicon glyphicon-plus-sign" /> Create service
@@ -69,7 +69,7 @@ export class CleverPage extends Component {
   }
 
   createService = (e, slug) => {
-    BackOfficeServices.createNewService().then(service => {
+    BackOfficeServices.createNewService().then((service) => {
       const newService = { ...service };
       newService.name = slug.name;
       newService.targets[0].host = slug.host;
@@ -96,7 +96,7 @@ export class CleverPage extends Component {
         fetchItems={BackOfficeServices.findAllApps}
         showActions={false}
         showLink={false}
-        extractKey={item => item.id}
+        extractKey={(item) => item.id}
       />
     );
   }

@@ -77,12 +77,12 @@ class Target extends Component {
 class Targets extends Component {
   changeTarget = (idx, oldRule, oldTarget, newTarget) => {
     const value = this.props.rawValue;
-    value.rules.forEach(r => {
+    value.rules.forEach((r) => {
       if (r.domain === oldRule.domain) {
         if (r.domain !== newTarget.domain) {
           this.deleteTarget(r.domain, oldTarget, idx);
-          const rules = value.rules.filter(r => r.domain !== newTarget.domain);
-          const rule = value.rules.filter(r => r.domain === newTarget.domain)[0] || {
+          const rules = value.rules.filter((r) => r.domain !== newTarget.domain);
+          const rule = value.rules.filter((r) => r.domain === newTarget.domain)[0] || {
             domain: newTarget.domain,
             targets: [],
           };
@@ -108,19 +108,19 @@ class Targets extends Component {
 
   deleteTarget = (domain, target, idx) => {
     const value = this.props.rawValue;
-    value.rules.forEach(r => {
+    value.rules.forEach((r) => {
       if (r.domain === domain) {
         r.targets = r.targets.filter((t, i) => i !== idx);
       }
     });
-    value.rules = value.rules.filter(r => r.targets.length > 0);
+    value.rules = value.rules.filter((r) => r.targets.length > 0);
     this.props.rawOnChange(value);
   };
 
   addTarget = () => {
     const value = this.props.rawValue;
-    const rules = value.rules.filter(r => r.domain !== '*');
-    const rule = value.rules.filter(r => r.domain === '*')[0] || { domain: '*', targets: [] };
+    const rules = value.rules.filter((r) => r.domain !== '*');
+    const rule = value.rules.filter((r) => r.domain === '*')[0] || { domain: '*', targets: [] };
     rule.targets.push({
       host: 'my.new.host',
       ip: null,
@@ -142,7 +142,7 @@ class Targets extends Component {
                 key={idx + '-' + ridx}
                 domain={rule.domain}
                 target={target}
-                onChange={newTarget => this.changeTarget(idx, rule, target, newTarget)}
+                onChange={(newTarget) => this.changeTarget(idx, rule, target, newTarget)}
                 delete={() => this.deleteTarget(rule.domain, target, idx)}
               />
             );
@@ -168,24 +168,24 @@ export class TcpServicesPage extends Component {
   columns = [
     {
       title: 'Name',
-      content: item => item.name,
+      content: (item) => item.name,
     },
     {
       title: 'Port',
       style: { textAlign: 'center', width: 80 },
-      content: item => item.port,
+      content: (item) => item.port,
     },
     {
       title: 'Interface',
       style: { textAlign: 'center', width: 80 },
-      content: item => item.interface,
+      content: (item) => item.interface,
     },
     {
       title: 'Tls',
       style: { textAlign: 'center', width: 70 },
       notFilterable: true,
       noMobile: true,
-      content: item => item.tls,
+      content: (item) => item.tls,
       cell: (v, item) => {
         if (item.tls === 'Disabled') {
           return <i className="fas fa-unlock-alt fa-lg" />;
@@ -201,7 +201,7 @@ export class TcpServicesPage extends Component {
       style: { textAlign: 'center', width: 70 },
       notFilterable: true,
       noMobile: true,
-      content: item => item.clientAuth,
+      content: (item) => item.clientAuth,
       cell: (v, item) => {
         if (item.clientAuth === 'None') {
           return <i className="" />;
@@ -217,7 +217,7 @@ export class TcpServicesPage extends Component {
       style: { textAlign: 'center', width: 70 },
       notFilterable: true,
       noMobile: true,
-      content: item => item.clientAuth,
+      content: (item) => item.clientAuth,
       cell: (v, item) => {
         if (!item.sni.enabled) {
           return <i className="" />;
@@ -231,7 +231,7 @@ export class TcpServicesPage extends Component {
   deleteService = (service, table) => {
     window
       .newConfirm('Are you sure you want to delete service "' + service.name + '"')
-      .then(confirmed => {
+      .then((confirmed) => {
         if (confirmed) {
           BackOfficeServices.deleteTcpService(service).then(() => {
             table.update();
@@ -244,7 +244,7 @@ export class TcpServicesPage extends Component {
     this.props.setTitle('All Tcp Services');
   }
 
-  gotoService = service => {
+  gotoService = (service) => {
     this.props.history.push({
       pathname: `/lines/${service.env}/tcp/services/${service.id}`,
     });
@@ -275,7 +275,7 @@ export class TcpServicesPage extends Component {
   formSchema = {
     _loc: {
       type: 'location',
-      props: {}
+      props: {},
     },
     id: { type: 'string', disabled: true, props: { label: 'Id', placeholder: '---' } },
     name: {
@@ -371,10 +371,10 @@ export class TcpServicesPage extends Component {
           rowNavigation={true}
           navigateTo={this.gotoService}
           firstSort={0}
-          extractKey={item => {
+          extractKey={(item) => {
             return item.id;
           }}
-          itemUrl={i => `/bo/dashboard/tcp/services/edit/${i.id}`}
+          itemUrl={(i) => `/bo/dashboard/tcp/services/edit/${i.id}`}
         />
       </div>
     );

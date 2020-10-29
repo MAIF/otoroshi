@@ -3,14 +3,12 @@ import $ from 'jquery';
 
 export default class Popover extends Component {
   componentDidMount() {
-    $(this._ref)
-      .popover(this.props.options)
-      .popover(this.props.state);
+    $(this._ref).popover(this.props.options).popover(this.props.state);
   }
 
   render() {
     return (
-      <div id="test-5" type="button" className="btn btn-lg btn-danger" ref={r => (this._ref = r)}>
+      <div id="test-5" type="button" className="btn btn-lg btn-danger" ref={(r) => (this._ref = r)}>
         {this.props.children}
       </div>
     );
@@ -19,13 +17,13 @@ export default class Popover extends Component {
 
 export function popover(options, state = 'hide', closeAfter) {
   return {
-    ref: r => {
+    ref: (r) => {
       setTimeout(() => {
         $(r)
           .popover(options)
-          .on('shown.bs.popover', eventShown => {
+          .on('shown.bs.popover', (eventShown) => {
             const $popup = $('#' + $(eventShown.target).attr('aria-describedby'));
-            $popup.find('button.cancel').click(e => {
+            $popup.find('button.cancel').click((e) => {
               $popup.popover('hide');
             });
           })
@@ -62,7 +60,7 @@ export class DefaultAdminPopover extends Component {
           })
           .popover('show');
         setTimeout(() => {
-          $('.popovercancel').on('click', e => {
+          $('.popovercancel').on('click', (e) => {
             $(this.ref).popover('hide');
             localStorage.setItem(
               'otoroshi_default_admin_popup',
@@ -91,7 +89,7 @@ export class DefaultAdminPopover extends Component {
     return (
       <li>
         <a
-          ref={r => (this.ref = r)}
+          ref={(r) => (this.ref = r)}
           data-trigger="focus"
           tabIndex="0"
           role="button"

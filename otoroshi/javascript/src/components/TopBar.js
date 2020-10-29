@@ -9,8 +9,8 @@ import * as BackOfficeServices from '../services/BackOfficeServices';
 
 function extractEnv(value = '') {
   const parts = value.split(' ');
-  const env = _.last(parts.filter(i => i.startsWith(':')));
-  const finalValue = parts.filter(i => !i.startsWith(':')).join(' ');
+  const env = _.last(parts.filter((i) => i.startsWith(':')));
+  const finalValue = parts.filter((i) => !i.startsWith(':')).join(' ');
   if (env) {
     return [env.replace(':', ''), finalValue];
   } else {
@@ -26,7 +26,7 @@ export class TopBar extends Component {
     },
   };
 
-  searchServicesOptions = query => {
+  searchServicesOptions = (query) => {
     return fetch(`/bo/api/search/services`, {
       method: 'POST',
       credentials: 'include',
@@ -36,9 +36,9 @@ export class TopBar extends Component {
       },
       body: JSON.stringify({ query: '' }),
     })
-      .then(r => r.json())
-      .then(results => {
-        const options = results.map(v => ({
+      .then((r) => r.json())
+      .then((results) => {
+        const options = results.map((v) => ({
           type: v.type,
           label: v.name,
           value: v.serviceId,
@@ -68,8 +68,8 @@ export class TopBar extends Component {
           action: () => (window.location.href = 'bo/dashboard/exporters'),
           env: <span className="glyphicon glyphicon-send" />,
           label: 'Exporters',
-          value: 'exporters'
-        })
+          value: 'exporters',
+        });
         options.push({
           action: () => (window.location.href = '/bo/dashboard/audit'),
           env: <span className="glyphicon glyphicon-list" />,
@@ -390,13 +390,13 @@ export class TopBar extends Component {
       });
   };
 
-  gotoService = e => {
+  gotoService = (e) => {
     if (e) {
       window.location.href = `/bo/dashboard/lines/${e.env}/services/${e.value}`;
     }
   };
 
-  gotoTcpService = e => {
+  gotoTcpService = (e) => {
     if (e) {
       window.location.href = `/bo/dashboard/tcp/services/edit/${e.value}`;
     }
@@ -416,7 +416,7 @@ export class TopBar extends Component {
     }
   }
 
-  listenToSlash = e => {
+  listenToSlash = (e) => {
     const hasClassNameAndNotAceInput = e.target.className
       ? e.target.className.indexOf('ace_text-input') === -1
       : true;
@@ -434,7 +434,7 @@ export class TopBar extends Component {
       this.mounted = true;
       document.addEventListener('keydown', this.listenToSlash, false);
     }
-    BackOfficeServices.env().then(env => this.setState({ env }));
+    BackOfficeServices.env().then((env) => this.setState({ env }));
   }
 
   componentWillUnmount() {
@@ -476,7 +476,7 @@ export class TopBar extends Component {
               )}
               {this.props.changePassword && (
                 <li
-                  onClick={e => (window.location = '/bo/dashboard/admins')}
+                  onClick={(e) => (window.location = '/bo/dashboard/admins')}
                   style={{ verticalAlign: 'top' }}>
                   <a
                     href="/bo/dashboard/admins"
@@ -537,9 +537,11 @@ export class TopBar extends Component {
                       <span className="glyphicon glyphicon-folder-open" /> Service groups
                     </a>
 
-                    {window.__otoroshi__env__latest.userAdmin && <a href="/bo/dashboard/clever">
-                      <span className="glyphicon glyphicon-list-alt" /> Clever apps
-                    </a>}
+                    {window.__otoroshi__env__latest.userAdmin && (
+                      <a href="/bo/dashboard/clever">
+                        <span className="glyphicon glyphicon-list-alt" /> Clever apps
+                      </a>
+                    )}
                   </li>
                   <li role="separator" className="divider" />
                   <li>
@@ -562,16 +564,18 @@ export class TopBar extends Component {
                     )}
                   </li>
                   <li role="separator" className="divider" />
-                  {window.__otoroshi__env__latest.userAdmin  && this.state.env.clusterRole === 'Leader' && (
-                    <li>
-                      <a href="/bo/dashboard/cluster">
-                        <span className="fa fa-network-wired" /> Cluster view
-                      </a>
-                    </li>
-                  )}
-                  {window.__otoroshi__env__latest.userAdmin  && this.state.env.clusterRole === 'Leader' && (
-                    <li role="separator" className="divider" />
-                  )}
+                  {window.__otoroshi__env__latest.userAdmin &&
+                    this.state.env.clusterRole === 'Leader' && (
+                      <li>
+                        <a href="/bo/dashboard/cluster">
+                          <span className="fa fa-network-wired" /> Cluster view
+                        </a>
+                      </li>
+                    )}
+                  {window.__otoroshi__env__latest.userAdmin &&
+                    this.state.env.clusterRole === 'Leader' && (
+                      <li role="separator" className="divider" />
+                    )}
                   {(window.__otoroshi__env__latest.userAdmin || window.__user.tenantAdmin) && (
                     <>
                       {window.__otoroshi__env__latest.userAdmin && (
@@ -641,11 +645,11 @@ export class TopBar extends Component {
                       </li>
                     </>
                   )}
-                  {window.__otoroshi__env__latest.userAdmin  && (
+                  {window.__otoroshi__env__latest.userAdmin && (
                     <>
                       <li role="separator" className="divider" />
                       <li>
-                          <a href="/bo/dashboard/snowmonkey">
+                        <a href="/bo/dashboard/snowmonkey">
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
                             className="monkeyMenu"
@@ -814,7 +818,7 @@ export class TopBar extends Component {
                       </li>
                     </>
                   )}
-                  {window.__otoroshi__env__latest.userAdmin  && this.state.env.providerDashboardUrl && (
+                  {window.__otoroshi__env__latest.userAdmin && this.state.env.providerDashboardUrl && (
                     <>
                       <li role="separator" className="divider" />
                       <li>
@@ -825,7 +829,7 @@ export class TopBar extends Component {
                       </li>
                     </>
                   )}
-                  {window.__otoroshi__env__latest.userAdmin  && (
+                  {window.__otoroshi__env__latest.userAdmin && (
                     <>
                       <li role="separator" className="divider" />
                       <li>
@@ -858,14 +862,14 @@ export class TopBar extends Component {
               )}
               <div className="form-group" style={{ marginLeft: 10, marginRight: 10 }}>
                 <Async
-                  ref={r => (this.selector = r)}
+                  ref={(r) => (this.selector = r)}
                   name="service-search"
                   value="one"
                   placeholder="Search service, line, etc ..."
                   loadOptions={this.searchServicesOptions}
                   openOnFocus={true}
-                  onChange={i => i.action()}
-                  arrowRenderer={a => {
+                  onChange={(i) => i.action()}
+                  arrowRenderer={(a) => {
                     return (
                       <span
                         style={{ display: 'flex', height: 20 }}
@@ -884,15 +888,15 @@ export class TopBar extends Component {
                   }}
                   filterOptions={(opts, value, excluded, conf) => {
                     const [env, searched] = extractEnv(value);
-                    const filteredOpts = !!env ? opts.filter(i => i.env === env) : opts;
+                    const filteredOpts = !!env ? opts.filter((i) => i.env === env) : opts;
                     const matched = fuzzy.filter(searched, filteredOpts, {
-                      extract: i => i.label,
+                      extract: (i) => i.label,
                       pre: '<',
                       post: '>',
                     });
-                    return matched.map(i => i.original);
+                    return matched.map((i) => i.original);
                   }}
-                  optionRenderer={p => {
+                  optionRenderer={(p) => {
                     const env =
                       p.env && _.isString(p.env)
                         ? p.env.length > 4

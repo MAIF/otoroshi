@@ -7,18 +7,18 @@ export class TeamsPage extends Component {
   columns = [
     {
       title: 'Name',
-      content: item => item.name,
+      content: (item) => item.name,
     },
     {
       title: 'Description',
-      content: item => item.descripiton,
+      content: (item) => item.descripiton,
     },
   ];
 
   deleteTeam = (team, table) => {
     window
       .newConfirm('Are you sure you want to delete team "' + team.name + '"')
-      .then(confirmed => {
+      .then((confirmed) => {
         if (confirmed) {
           BackOfficeServices.deleteTeam(team).then(() => {
             table.update();
@@ -31,19 +31,13 @@ export class TeamsPage extends Component {
     this.props.setTitle('All Teams');
   }
 
-  gotoTeam = team => {
+  gotoTeam = (team) => {
     this.props.history.push({
       pathname: `/teams/edit/${team.id}`,
     });
   };
 
-  formFlow = [
-    'id',
-    'tenant',
-    'name',
-    'description',
-    'metadata',
-  ];
+  formFlow = ['id', 'tenant', 'name', 'description', 'metadata'];
 
   formSchema = {
     id: { type: 'string', props: { label: 'Id', placeholder: '---' } },
@@ -60,11 +54,11 @@ export class TeamsPage extends Component {
       props: {
         label: 'Organization',
         valuesFrom: '/bo/api/proxy/api/tenants',
-        transformer: a => ({
+        transformer: (a) => ({
           value: a.id,
-          label: a.name + " - " + a.description,
-        })
-      }
+          label: a.name + ' - ' + a.description,
+        }),
+      },
     },
     metadata: {
       type: 'object',
@@ -97,10 +91,10 @@ export class TeamsPage extends Component {
           rowNavigation={true}
           navigateTo={this.gotoTeam}
           firstSort={0}
-          extractKey={item => {
+          extractKey={(item) => {
             return item.id;
           }}
-          itemUrl={i => `/bo/dashboard/teams/edit/${i.id}`}
+          itemUrl={(i) => `/bo/dashboard/teams/edit/${i.id}`}
         />
       </div>
     );

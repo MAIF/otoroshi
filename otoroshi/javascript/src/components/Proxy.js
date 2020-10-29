@@ -21,25 +21,25 @@ export class Proxy extends Component {
           label="Proxy host"
           value={proxy.host}
           help="Proxy host"
-          onChange={v => this.changeTheValue('host', v)}
+          onChange={(v) => this.changeTheValue('host', v)}
         />
         <NumberInput
           label="Proxy port"
           value={proxy.port}
           help="Proxy port"
-          onChange={v => this.changeTheValue('port', v)}
+          onChange={(v) => this.changeTheValue('port', v)}
         />
         <TextInput
           label="Proxy principal"
           value={proxy.principal}
           help="Proxy principal"
-          onChange={v => this.changeTheValue('principal', v)}
+          onChange={(v) => this.changeTheValue('principal', v)}
         />
         <PasswordInput
           label="Proxy password"
           value={proxy.password}
           help="Proxy password"
-          onChange={v => this.changeTheValue('password', v)}
+          onChange={(v) => this.changeTheValue('password', v)}
         />
         {/*
         <SelectInput
@@ -75,7 +75,7 @@ export class Proxy extends Component {
             placeholder="IP address that can access the service"
             value={proxy.nonProxyHosts}
             help="List of non proxyable host"
-            onChange={arr => this.changeTheValue('nonProxyHosts', arr)}
+            onChange={(arr) => this.changeTheValue('nonProxyHosts', arr)}
           />
         )}
       </div>

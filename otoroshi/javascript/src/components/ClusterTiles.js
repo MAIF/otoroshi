@@ -76,11 +76,11 @@ export class ClusterTiles extends Component {
   };
 
   componentDidMount() {
-    BackOfficeServices.env().then(env => {
+    BackOfficeServices.env().then((env) => {
       if (env.clusterRole === 'Leader') {
         this.setState({ show: true });
         this.evtSource = new EventSource(this.props.url);
-        this.evtSource.onmessage = e => this.onMessage(e);
+        this.evtSource.onmessage = (e) => this.onMessage(e);
       }
     });
   }
@@ -118,7 +118,7 @@ export class ClusterTiles extends Component {
     return [computedValue, unit];
   }
 
-  onMessage = e => {
+  onMessage = (e) => {
     const data = JSON.parse(e.data);
     data.workers = data.workers || 0;
     data.health = data.health || 'grey';

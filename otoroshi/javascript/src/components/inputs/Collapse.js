@@ -5,7 +5,7 @@ export class Collapse extends Component {
     collapsed: this.props.initCollapsed || this.props.collapsed,
   };
 
-  toggle = e => {
+  toggle = (e) => {
     if (e && e.preventDefault) e.preventDefault();
     this.setState({ collapsed: !this.state.collapsed });
   };
@@ -72,7 +72,7 @@ export class Panel extends Component {
     collapsed: this.props.initCollapsed || this.props.collapsed,
   };
 
-  toggle = e => {
+  toggle = (e) => {
     if (e && e.preventDefault) e.preventDefault();
     this.setState({ collapsed: !this.state.collapsed });
   };

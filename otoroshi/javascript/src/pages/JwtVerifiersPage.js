@@ -6,15 +6,15 @@ import { JwtVerifier } from '../components/JwtVerifier';
 
 export class JwtVerifiersPage extends Component {
   columns = [
-    { title: 'Name', content: item => item.name },
-    { title: 'Description', content: item => item.description },
+    { title: 'Name', content: (item) => item.name },
+    { title: 'Description', content: (item) => item.description },
   ];
 
   componentDidMount() {
     this.props.setTitle(`Global Jwt Verifiers`);
   }
 
-  gotoVerifier = verifier => {
+  gotoVerifier = (verifier) => {
     this.props.history.push({
       pathname: `jwt-verifiers/edit/${verifier.id}`,
     });
@@ -38,12 +38,12 @@ export class JwtVerifiersPage extends Component {
           deleteItem={BackOfficeServices.deleteJwtVerifier}
           createItem={BackOfficeServices.createJwtVerifier}
           navigateTo={this.gotoVerifier}
-          itemUrl={i => `/bo/dashboard/jwt-verifiers/edit/${i.id}`}
+          itemUrl={(i) => `/bo/dashboard/jwt-verifiers/edit/${i.id}`}
           showActions={true}
           showLink={false}
           rowNavigation={true}
           firstSort={0}
-          extractKey={item => item.id}
+          extractKey={(item) => item.id}
           formComponent={JwtVerifier}
           formPassProps={{ global: true }}
         />

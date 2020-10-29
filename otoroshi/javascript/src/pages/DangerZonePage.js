@@ -75,7 +75,7 @@ class Geolocation extends Component {
         <SelectInput
           label="Type"
           value={type}
-          onChange={e => {
+          onChange={(e) => {
             switch (e) {
               case 'none':
                 this.props.onChange({
@@ -158,7 +158,7 @@ class Mailer extends Component {
         label: 'Sendgrid api key',
         placeholder: 'Sendgrid api key',
       },
-    }
+    },
   };
   mailgunFormSchema = {
     eu: {
@@ -207,7 +207,7 @@ class Mailer extends Component {
         <SelectInput
           label="Type"
           value={type}
-          onChange={e => {
+          onChange={(e) => {
             switch (e) {
               case 'console':
                 this.props.onChange({
@@ -363,7 +363,7 @@ export class DangerZonePage extends Component {
         label: 'Client certificates',
         placeholder: 'Choose a client certificate',
         valuesFrom: '/bo/api/proxy/api/certificates',
-        transformer: a => ({
+        transformer: (a) => ({
           value: a.id,
           label: (
             <span>
@@ -382,7 +382,7 @@ export class DangerZonePage extends Component {
         label: 'Trusted certificates',
         placeholder: 'Choose a trusted certificate',
         valuesFrom: '/bo/api/proxy/api/certificates',
-        transformer: a => ({
+        transformer: (a) => ({
           value: a.id,
           label: (
             <span>
@@ -428,7 +428,7 @@ export class DangerZonePage extends Component {
         label: 'Client certificates',
         placeholder: 'Choose a client certificate',
         valuesFrom: '/bo/api/proxy/api/certificates',
-        transformer: a => ({
+        transformer: (a) => ({
           value: a.id,
           label: (
             <span>
@@ -447,7 +447,7 @@ export class DangerZonePage extends Component {
         label: 'Trusted certificates',
         placeholder: 'Choose a trusted certificate',
         valuesFrom: '/bo/api/proxy/api/certificates',
-        transformer: a => ({
+        transformer: (a) => ({
           value: a.id,
           label: (
             <span>
@@ -656,7 +656,7 @@ export class DangerZonePage extends Component {
       props: {
         label: 'Backoffice auth. config',
         valuesFrom: '/bo/api/proxy/api/auths',
-        transformer: a => ({ value: a.id, label: a.name }),
+        transformer: (a) => ({ value: a.id, label: a.name }),
         help: '...',
       },
     },
@@ -848,7 +848,7 @@ export class DangerZonePage extends Component {
         placeholder: 'Selet a CA certificate',
         help: '...',
         valuesFrom: '/bo/api/proxy/api/certificates?ca=true',
-        transformer: a => ({
+        transformer: (a) => ({
           value: a.id,
           label: (
             <span>
@@ -874,7 +874,8 @@ export class DangerZonePage extends Component {
       props: {
         label: 'Default domain',
         placeholder: '--',
-        help: 'When the SNI domain cannot be found, this one will be used to find the matching certificate',
+        help:
+          'When the SNI domain cannot be found, this one will be used to find the matching certificate',
       },
     },
     metadata: {
@@ -962,7 +963,7 @@ export class DangerZonePage extends Component {
     'autoCert.allowed',
     'autoCert.notAllowed',
     '>>>Global metadata',
-    'metadata'
+    'metadata',
   ];
 
   syncSchema = {
@@ -978,7 +979,7 @@ export class DangerZonePage extends Component {
 
   componentDidMount() {
     this.props.setTitle(`Danger Zone`);
-    BackOfficeServices.getGlobalConfig().then(value =>
+    BackOfficeServices.getGlobalConfig().then((value) =>
       this.setState({ value, originalValue: value })
     );
     this.mountShortcuts();
@@ -996,7 +997,7 @@ export class DangerZonePage extends Component {
     document.body.removeEventListener('keydown', this.saveShortcut);
   };
 
-  saveShortcut = e => {
+  saveShortcut = (e) => {
     if (e.keyCode === 83 && (e.ctrlKey || e.metaKey)) {
       e.preventDefault();
       if (this.state.changed) {
@@ -1005,30 +1006,30 @@ export class DangerZonePage extends Component {
     }
   };
 
-  saveGlobalConfig = e => {
+  saveGlobalConfig = (e) => {
     if (e && e.preventDefault) e.preventDefault();
     BackOfficeServices.updateGlobalConfig(this.state.value).then(() => {
       this.setState({ originalValue: this.state.value, changed: false });
     });
   };
 
-  updateState = raw => {
-    const value = {...raw};
+  updateState = (raw) => {
+    const value = { ...raw };
     this.setState({ value, changed: shallowDiffers(this.state.originalValue, value) });
   };
 
   sync = () => {
     this.setState({ syncing: true });
     BackOfficeServices.syncWithMaster(this.state.sync).then(
-      d => this.setState({ syncing: false }),
-      e => this.setState({ syncingError: e, syncing: false })
+      (d) => this.setState({ syncing: false }),
+      (e) => this.setState({ syncingError: e, syncing: false })
     );
   };
 
-  panicMode = e => {
+  panicMode = (e) => {
     if (e && e.preventDefault) e.preventDefault();
-    window.newConfirm('Are you sure you want to enable panic mode ?').then(ok => {
-      window.newConfirm('Are you really sure ?').then(ok2 => {
+    window.newConfirm('Are you sure you want to enable panic mode ?').then((ok) => {
+      window.newConfirm('Are you really sure ?').then((ok2) => {
         if (ok && ok2) {
           BackOfficeServices.panicMode().then(() => {
             window.location.href = '/';
@@ -1038,9 +1039,9 @@ export class DangerZonePage extends Component {
     });
   };
 
-  fullExport = e => {
+  fullExport = (e) => {
     if (e && e.preventDefault) e.preventDefault();
-    BackOfficeServices.fetchOtoroshi('application/json').then(otoroshi => {
+    BackOfficeServices.fetchOtoroshi('application/json').then((otoroshi) => {
       const json = JSON.stringify(otoroshi, null, 2);
       const blob = new Blob([json], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
@@ -1056,9 +1057,9 @@ export class DangerZonePage extends Component {
     });
   };
 
-  fullExportNdJson = e => {
+  fullExportNdJson = (e) => {
     if (e && e.preventDefault) e.preventDefault();
-    BackOfficeServices.fetchOtoroshi('application/x-ndjson').then(otoroshi => {
+    BackOfficeServices.fetchOtoroshi('application/x-ndjson').then((otoroshi) => {
       const blob = new Blob([otoroshi], { type: 'application/x-ndjson' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -1073,15 +1074,15 @@ export class DangerZonePage extends Component {
     });
   };
 
-  importData = e => {
+  importData = (e) => {
     if (e && e.preventDefault()) e.preventDefault();
 
     window
       .newConfirm(
         'Importing will erase all existing data in the datastore.\n You will be logged out at the end of the import.\n You may want to export your data before doing that.\n Are you sure you want to do that ?'
       )
-      .then(ok => {
-        window.newConfirm('Really sure ?').then(ok2 => {
+      .then((ok) => {
+        window.newConfirm('Really sure ?').then((ok2) => {
           if (ok && ok2) {
             const input = document.querySelector('input[type="file"]');
             const data = new FormData();
@@ -1098,15 +1099,15 @@ export class DangerZonePage extends Component {
               },
               body: input.files[0],
             }).then(
-              r => window.location.reload(),
-              e => console.log(e)
+              (r) => window.location.reload(),
+              (e) => console.log(e)
             );
           }
         });
       });
   };
 
-  readyToPush = e => {
+  readyToPush = (e) => {
     this.setState({ readyToPush: e.target.files[0].name });
   };
 
@@ -1152,7 +1153,7 @@ export class DangerZonePage extends Component {
             name="export"
             id="export"
             className="inputfile"
-            ref={ref => (this.fileUpload = ref)}
+            ref={(ref) => (this.fileUpload = ref)}
             style={{ display: 'none' }}
             onChange={this.readyToPush}
           />
@@ -1268,15 +1269,15 @@ class GlobalScripts extends Component {
           label="Enabled"
           value={config.enabled}
           help="Global scripts enabled"
-          onChange={v => this.changeTheValue('enabled', v)}
+          onChange={(v) => this.changeTheValue('enabled', v)}
         />
         <Scripts
           label="Jobs"
           refs={config.jobRefs}
           type="job"
-          onChange={e => this.changeTheValue('jobRefs', e)}
+          onChange={(e) => this.changeTheValue('jobRefs', e)}
           config={config.jobConfig}
-          onChangeConfig={e => this.changeTheValue('jobConfig', e)}
+          onChangeConfig={(e) => this.changeTheValue('jobConfig', e)}
         />
         <div className="form-group">
           <Suspense fallback={<div>loading ...</div>}>
@@ -1284,7 +1285,7 @@ class GlobalScripts extends Component {
               label="Jobs configuration"
               mode="json"
               value={JSON.stringify(config.jobConfig, null, 2)}
-              onChange={e => this.changeTheValue('jobConfig', JSON.parse(e))}
+              onChange={(e) => this.changeTheValue('jobConfig', JSON.parse(e))}
             />
           </Suspense>
         </div>
@@ -1292,9 +1293,9 @@ class GlobalScripts extends Component {
           label="Request sinks"
           refs={config.sinkRefs}
           type="sink"
-          onChange={e => this.changeTheValue('sinkRefs', e)}
+          onChange={(e) => this.changeTheValue('sinkRefs', e)}
           config={config.sinkConfig}
-          onChangeConfig={e => this.changeTheValue('sinkConfig', e)}
+          onChangeConfig={(e) => this.changeTheValue('sinkConfig', e)}
         />
         <div className="form-group">
           <Suspense fallback={<div>loading ...</div>}>
@@ -1302,7 +1303,7 @@ class GlobalScripts extends Component {
               label="Request sinks configuration"
               mode="json"
               value={JSON.stringify(config.sinkConfig, null, 2)}
-              onChange={e => this.changeTheValue('sinkConfig', JSON.parse(e))}
+              onChange={(e) => this.changeTheValue('sinkConfig', JSON.parse(e))}
             />
           </Suspense>
         </div>
@@ -1310,9 +1311,9 @@ class GlobalScripts extends Component {
           label="Pre-routes"
           refs={config.preRouteRefs}
           type="preroute"
-          onChange={e => this.changeTheValue('preRouteRefs', e)}
+          onChange={(e) => this.changeTheValue('preRouteRefs', e)}
           config={config.preRouteConfig}
-          onChangeConfig={e => this.changeTheValue('preRouteConfig', e)}
+          onChangeConfig={(e) => this.changeTheValue('preRouteConfig', e)}
         />
         <div className="form-group">
           <Suspense fallback={<div>loading ...</div>}>
@@ -1320,7 +1321,7 @@ class GlobalScripts extends Component {
               label="Pre-routes configuration"
               mode="json"
               value={JSON.stringify(config.preRouteConfig, null, 2)}
-              onChange={e => this.changeTheValue('preRouteConfig', JSON.parse(e))}
+              onChange={(e) => this.changeTheValue('preRouteConfig', JSON.parse(e))}
             />
           </Suspense>
         </div>
@@ -1328,9 +1329,9 @@ class GlobalScripts extends Component {
           label="Access validators"
           refs={config.validatorRefs}
           type="validator"
-          onChange={e => this.changeTheValue('validatorRefs', e)}
+          onChange={(e) => this.changeTheValue('validatorRefs', e)}
           config={config.validatorConfig}
-          onChangeConfig={e => this.changeTheValue('validatorConfig', e)}
+          onChangeConfig={(e) => this.changeTheValue('validatorConfig', e)}
         />
         <div className="form-group">
           <Suspense fallback={<div>loading ...</div>}>
@@ -1338,7 +1339,7 @@ class GlobalScripts extends Component {
               label="Access validators configuration"
               mode="json"
               value={JSON.stringify(config.validatorConfig, null, 2)}
-              onChange={e => this.changeTheValue('validatorConfig', JSON.parse(e))}
+              onChange={(e) => this.changeTheValue('validatorConfig', JSON.parse(e))}
             />
           </Suspense>
         </div>
@@ -1346,9 +1347,9 @@ class GlobalScripts extends Component {
           label="Transformers"
           refs={config.transformersRefs}
           type="transformer"
-          onChange={e => this.changeTheValue('transformersRefs', e)}
+          onChange={(e) => this.changeTheValue('transformersRefs', e)}
           config={config.transformersConfig}
-          onChangeConfig={e => this.changeTheValue('transformersConfig', e)}
+          onChangeConfig={(e) => this.changeTheValue('transformersConfig', e)}
         />
         <div className="form-group">
           <Suspense fallback={<div>loading ...</div>}>
@@ -1356,7 +1357,7 @@ class GlobalScripts extends Component {
               label="Transformers configuration"
               mode="json"
               value={JSON.stringify(config.transformersConfig, null, 2)}
-              onChange={e => this.changeTheValue('transformersConfig', JSON.parse(e))}
+              onChange={(e) => this.changeTheValue('transformersConfig', JSON.parse(e))}
             />
           </Suspense>
         </div>

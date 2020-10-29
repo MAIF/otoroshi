@@ -41,20 +41,20 @@ function debug(...args) {
 }
 
 function debugSuccess(name) {
-  return data => {
+  return (data) => {
     if (DEBUG) debug(`${name} - ${JSON.stringify(data, null, 2)}\n`);
     return data;
   };
 }
 
 function debugError(name) {
-  return data => {
+  return (data) => {
     if (DEBUG) debug(`ERR - ${name} - ${JSON.stringify(data, null, 2)}\n`);
     return data;
   };
 }
 
-exports.daemon = function(creator) {
+exports.daemon = function (creator) {
   const orchestrator = creator(config);
   const ORCHESTRATOR_NAME = orchestrator.name;
   const ORCHESTRATOR_GROUP = orchestrator.group;
@@ -73,7 +73,7 @@ exports.daemon = function(creator) {
         [OTOROSHI_CLIENT_SECRET_HEADER]: OTOROSHI_CLIENT_SECRET,
       },
     })
-      .then(r => r.json(), debugError('fetchOtoroshiGroups'))
+      .then((r) => r.json(), debugError('fetchOtoroshiGroups'))
       .then(debugSuccess('fetchOtoroshiGroups'), debugError('fetchOtoroshiGroups'));
   }
 
@@ -93,7 +93,7 @@ exports.daemon = function(creator) {
         description: `Group for ${ORCHESTRATOR_NAME} services`,
       }),
     })
-      .then(r => r.json(), debugError('createOtoroshiGroup'))
+      .then((r) => r.json(), debugError('createOtoroshiGroup'))
       .then(debugSuccess('createOtoroshiGroup'), debugError('createOtoroshiGroup'));
   }
 
@@ -107,10 +107,10 @@ exports.daemon = function(creator) {
         [OTOROSHI_CLIENT_SECRET_HEADER]: OTOROSHI_CLIENT_SECRET,
       },
     })
-      .then(r => r.json(), debugError('fetchOtoroshiServices'))
-      .then(services => {
+      .then((r) => r.json(), debugError('fetchOtoroshiServices'))
+      .then((services) => {
         return services.filter(
-          s => s.metadata.provider && s.metadata.provider === ORCHESTRATOR_NAME
+          (s) => s.metadata.provider && s.metadata.provider === ORCHESTRATOR_NAME
         );
       }, debugError('fetchOtoroshiServices'))
       .then(debugSuccess('fetchOtoroshiServices'), debugError('fetchOtoroshiServices'));
@@ -126,7 +126,7 @@ exports.daemon = function(creator) {
         [OTOROSHI_CLIENT_SECRET_HEADER]: OTOROSHI_CLIENT_SECRET,
       },
     })
-      .then(r => r.json(), debugError('fetchOtoroshiApiKeys'))
+      .then((r) => r.json(), debugError('fetchOtoroshiApiKeys'))
       .then(debugSuccess('fetchOtoroshiApiKeys'), debugError('fetchOtoroshiApiKeys'));
   }
 
@@ -147,7 +147,7 @@ exports.daemon = function(creator) {
         authorizedGroup: ORCHESTRATOR_GROUP,
       }),
     })
-      .then(r => r.json(), debugError('createOtoroshiApiKey'))
+      .then((r) => r.json(), debugError('createOtoroshiApiKey'))
       .then(debugSuccess('createOtoroshiApiKey'), debugError('createOtoroshiApiKey'));
   }
 
@@ -202,7 +202,7 @@ exports.daemon = function(creator) {
       },
       body: JSON.stringify(serviceTemplate),
     })
-      .then(r => r.json(), debugError('createOtoroshiService'))
+      .then((r) => r.json(), debugError('createOtoroshiService'))
       .then(debugSuccess('createOtoroshiService'), debugError('createOtoroshiService'));
   }
 
@@ -221,7 +221,7 @@ exports.daemon = function(creator) {
         { op: 'replace', path: '/name', value: name },
       ]),
     })
-      .then(r => r.json(), debugError('updateOtoroshiService'))
+      .then((r) => r.json(), debugError('updateOtoroshiService'))
       .then(debugSuccess('updateOtoroshiService'), debugError('updateOtoroshiService'));
   }
 
@@ -235,7 +235,7 @@ exports.daemon = function(creator) {
         [OTOROSHI_CLIENT_SECRET_HEADER]: OTOROSHI_CLIENT_SECRET,
       },
     })
-      .then(r => (r.status === 404 ? null : r.json()), debugError('deleteOtoroshiService'))
+      .then((r) => (r.status === 404 ? null : r.json()), debugError('deleteOtoroshiService'))
       .then(debugSuccess('deleteOtoroshiService'), debugError('deleteOtoroshiService'));
   }
 
@@ -249,7 +249,7 @@ exports.daemon = function(creator) {
         [OTOROSHI_CLIENT_SECRET_HEADER]: OTOROSHI_CLIENT_SECRET,
       },
     })
-      .then(r => (r.status === 404 ? null : r.json()), debugError('deleteService'))
+      .then((r) => (r.status === 404 ? null : r.json()), debugError('deleteService'))
       .then(debugSuccess('deleteService'), debugError('deleteService'));
   }
 
@@ -263,7 +263,7 @@ exports.daemon = function(creator) {
         [OTOROSHI_CLIENT_SECRET_HEADER]: OTOROSHI_CLIENT_SECRET,
       },
     })
-      .then(r => (r.status === 404 ? null : r.json()), debugError('fetchOtoroshiService'))
+      .then((r) => (r.status === 404 ? null : r.json()), debugError('fetchOtoroshiService'))
       .then(debugSuccess('fetchOtoroshiService'), debugError('fetchOtoroshiService'));
   }
 
@@ -274,8 +274,8 @@ exports.daemon = function(creator) {
   function setupOtoroshi() {
     log('Checking Otoroshi setup ...');
     return fetchOtoroshiGroups()
-      .then(groups => {
-        const orchGroup = groups.filter(g => g.name === ORCHESTRATOR_GROUP)[0];
+      .then((groups) => {
+        const orchGroup = groups.filter((g) => g.name === ORCHESTRATOR_GROUP)[0];
         if (orchGroup) {
           log(`  ${ORCHESTRATOR_NAME} group already exists ...`);
           return orchGroup;
@@ -284,9 +284,9 @@ exports.daemon = function(creator) {
           return createOtoroshiGroup();
         }
       })
-      .then(group => {
-        return fetchOtoroshiApiKeys(ORCHESTRATOR_GROUP).then(apikeys => {
-          const orchApiKey = apikeys.filter(g => g.clientName === ORCHESTRATOR_API_KEY)[0];
+      .then((group) => {
+        return fetchOtoroshiApiKeys(ORCHESTRATOR_GROUP).then((apikeys) => {
+          const orchApiKey = apikeys.filter((g) => g.clientName === ORCHESTRATOR_API_KEY)[0];
           if (orchApiKey) {
             log(`  ${ORCHESTRATOR_NAME} api key already exists ...`);
             return orchApiKey;
@@ -303,23 +303,29 @@ exports.daemon = function(creator) {
     syncing = true;
     const start = Date.now();
     fetchOrchestratorServices()
-      .then(rs => {
-        return fetchOtoroshiServices().then(os => [rs, os]);
+      .then((rs) => {
+        return fetchOtoroshiServices().then((os) => [rs, os]);
       })
-      .then(arr => {
+      .then((arr) => {
         const [orchestratorServices, otoroshiServices] = arr;
         currentServices = orchestratorServices.length;
-        const tasks = orchestratorServices.map(orchService => {
+        const tasks = orchestratorServices.map((orchService) => {
           const otoroshiService = otoroshiServices.filter(
-            s => s.metadata.orchestratorId && s.metadata.orchestratorId === orchService.id
+            (s) => s.metadata.orchestratorId && s.metadata.orchestratorId === orchService.id
           )[0];
-          const targets = orchService.targets.map(ep => ({
+          const targets = orchService.targets.map((ep) => ({
             scheme: 'http',
             host: `${ep.ipAddress}:${ep.port}`,
           }));
-          const targetHosts = _.sortBy(targets.map(i => i.host), i => i);
+          const targetHosts = _.sortBy(
+            targets.map((i) => i.host),
+            (i) => i
+          );
           const otoHosts = otoroshiService
-            ? _.sortBy(otoroshiService.targets.map(i => i.host), i => i)
+            ? _.sortBy(
+                otoroshiService.targets.map((i) => i.host),
+                (i) => i
+              )
             : [];
           const rootPath = orchService.name.split('-')[1];
           if (!otoroshiService) {
@@ -333,19 +339,19 @@ exports.daemon = function(creator) {
             );
             return updateOtoroshiService(orchService.id, orchService.name, targets);
           } else {
-            return new Promise(s => s());
+            return new Promise((s) => s());
           }
         });
         return Promise.all(tasks).then(() => [orchestratorServices, otoroshiServices]);
       })
-      .then(arr => {
-        return fetchOtoroshiServices().then(os => [arr[0], os]);
+      .then((arr) => {
+        return fetchOtoroshiServices().then((os) => [arr[0], os]);
       })
-      .then(arr => {
+      .then((arr) => {
         const [orchestratorServices, otoroshiServices] = arr;
-        const tasks = otoroshiServices.map(otoroshiService => {
+        const tasks = otoroshiServices.map((otoroshiService) => {
           const orchService = orchestratorServices.filter(
-            s => s.id && s.id === otoroshiService.metadata.orchestratorId
+            (s) => s.id && s.id === otoroshiService.metadata.orchestratorId
           )[0];
           if (!orchService) {
             log(`Deleting Otoroshi service ${otoroshiService.name} with id: ${otoroshiService.id}`);
@@ -354,7 +360,7 @@ exports.daemon = function(creator) {
             return null;
           }
         });
-        lastDeletedServices = tasks.filter(i => !!i).length;
+        lastDeletedServices = tasks.filter((i) => !!i).length;
         return Promise.all(tasks);
       })
       .then(() => {
@@ -406,12 +412,9 @@ exports.daemon = function(creator) {
   });
 
   app.get('/health', (req, res) => {
-    res
-      .status(200)
-      .type('application/json')
-      .send({
-        status: 'RUNNING',
-      });
+    res.status(200).type('application/json').send({
+      status: 'RUNNING',
+    });
   });
 
   function startDaemon() {

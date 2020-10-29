@@ -81,9 +81,9 @@ if (action === 'server') {
       },
     })
       .then(
-        r => {
+        (r) => {
           if (r.status === 200) {
-            return r.json().then(json => {
+            return r.json().then((json) => {
               const name = json.name;
               if (byResult[name]) {
                 byResult[name] = byResult[name] + 1;
@@ -99,7 +99,7 @@ if (action === 'server') {
             return;
           }
         },
-        e => {
+        (e) => {
           console.log(e);
           errors = errors + 1;
           return;
@@ -114,7 +114,7 @@ if (action === 'server') {
     const keys = Object.keys(byResult);
     clearNthLine(stdout, lastNLines);
     lastNLines = 0 - (keys.length + 1);
-    keys.forEach(key => {
+    keys.forEach((key) => {
       const res = String(byResult[key]);
       const changed = lastResult[key] !== res;
       lastResult[key] = res;

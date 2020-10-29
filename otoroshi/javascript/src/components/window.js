@@ -41,7 +41,7 @@ class Alert extends Component {
                 </a>
               )}
               <button
-                ref={r => (this.okRef = r)}
+                ref={(r) => (this.okRef = r)}
                 type="button"
                 className="btn btn-primary"
                 onClick={this.props.close}>
@@ -81,14 +81,14 @@ class Confirm extends Component {
             </div>
             <div className="modal-footer">
               <button
-                ref={r => (this.cancelRef = r)}
+                ref={(r) => (this.cancelRef = r)}
                 type="button"
                 className="btn btn-danger"
                 onClick={this.props.cancel}>
                 Cancel
               </button>
               <button
-                ref={r => (this.okRef = r)}
+                ref={(r) => (this.okRef = r)}
                 type="button"
                 className="btn btn-success"
                 onClick={this.props.ok}>
@@ -135,17 +135,17 @@ class Prompt extends Component {
                   type={this.props.type || 'text'}
                   className="form-control"
                   value={this.state.text}
-                  ref={r => (this.ref = r)}
-                  onChange={e => this.setState({ text: e.target.value })}
+                  ref={(r) => (this.ref = r)}
+                  onChange={(e) => this.setState({ text: e.target.value })}
                 />
               )}
               {this.props.textarea && (
                 <textarea
                   className="form-control"
                   value={this.state.text}
-                  ref={r => (this.ref = r)}
+                  ref={(r) => (this.ref = r)}
                   rows={this.props.rows || 5}
-                  onChange={e => this.setState({ text: e.target.value })}
+                  onChange={(e) => this.setState({ text: e.target.value })}
                 />
               )}
             </div>
@@ -156,8 +156,8 @@ class Prompt extends Component {
               <button
                 type="button"
                 className="btn btn-success"
-                ref={r => (this.okRef = r)}
-                onClick={e => this.props.ok(this.state.text)}>
+                ref={(r) => (this.okRef = r)}
+                onClick={(e) => this.props.ok(this.state.text)}>
                 Ok
               </button>
             </div>
@@ -205,7 +205,7 @@ export function registerAlert() {
     document.body.appendChild(div);
   }
   window.newAlert = (message, title, linkOpt) => {
-    return new Promise(success => {
+    return new Promise((success) => {
       ReactDOM.render(
         <Alert
           message={message}
@@ -229,7 +229,7 @@ export function registerConfirm() {
     div.setAttribute('id', 'otoroshi-alerts-container');
     document.body.appendChild(div);
   }
-  window.newConfirm = message => {
+  window.newConfirm = (message) => {
     return new Promise((success, failure) => {
       ReactDOM.render(
         <Confirm
@@ -265,7 +265,7 @@ export function registerPrompt() {
           type={opts.type}
           textarea={opts.textarea}
           rows={opts.rows}
-          ok={inputValue => {
+          ok={(inputValue) => {
             success(inputValue);
             ReactDOM.unmountComponentAtNode(document.getElementById('otoroshi-alerts-container'));
           }}
@@ -292,7 +292,7 @@ export function registerPopup() {
         <Popup
           body={fn}
           title={title}
-          ok={inputValue => {
+          ok={(inputValue) => {
             success(inputValue);
             ReactDOM.unmountComponentAtNode(document.getElementById('otoroshi-alerts-container'));
           }}

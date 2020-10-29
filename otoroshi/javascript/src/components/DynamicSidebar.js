@@ -16,7 +16,7 @@ export class DynamicSidebar extends Component {
     }
   }
 
-  update = content => {
+  update = (content) => {
     this.setState({ content });
   };
 

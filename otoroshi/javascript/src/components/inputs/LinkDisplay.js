@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 
-export const LinkDisplay = props => (
+export const LinkDisplay = (props) => (
   <div className="form-group">
     <label className="col-sm-2 control-label" />
     <div className="col-sm-10">

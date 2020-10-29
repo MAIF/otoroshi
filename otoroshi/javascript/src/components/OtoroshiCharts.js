@@ -44,9 +44,9 @@ export class OtoroshiCharts extends Component {
     this.update(nextProps);
   }
 
-  update = props => {
+  update = (props) => {
     this.setState({ loading: true }, () => {
-      props.fetchData(this.state.from, this.state.to).then(rawData => {
+      props.fetchData(this.state.from, this.state.to).then((rawData) => {
         const data = {
           ...this.defaultPayload,
           ...rawData,

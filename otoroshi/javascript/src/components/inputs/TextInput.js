@@ -8,24 +8,24 @@ export class PasswordInput extends Component {
 }
 
 export class TextInput extends Component {
-  onChange = e => {
+  onChange = (e) => {
     if (e && e.preventDefault) e.preventDefault();
     this.props.onChange(e.target.value);
   };
 
-  onDrop = ev => {
+  onDrop = (ev) => {
     ev.preventDefault();
     if (ev.dataTransfer.items) {
       for (var i = 0; i < ev.dataTransfer.items.length; i++) {
         if (ev.dataTransfer.items[i].kind === 'file') {
           const file = ev.dataTransfer.items[i].getAsFile();
-          file.text().then(text => this.props.onChange(text));
+          file.text().then((text) => this.props.onChange(text));
         }
       }
     } else {
       for (var i = 0; i < ev.dataTransfer.files.length; i++) {
         const file = ev.dataTransfer.files[i];
-        file.text().then(text => this.props.onChange(text));
+        file.text().then((text) => this.props.onChange(text));
       }
     }
   };
@@ -52,7 +52,7 @@ export class TextInput extends Component {
                 value={this.props.value || ''}
                 onChange={this.onChange}
                 onDrop={this.props.onDrop || this.onDrop}
-                onDragOver={e => e.preventDefault()}
+                onDragOver={(e) => e.preventDefault()}
               />
               {this.props.suffix && <div className="input-group-addon">{this.props.suffix}</div>}
             </div>
@@ -67,7 +67,7 @@ export class TextInput extends Component {
               value={this.props.value || ''}
               onChange={this.onChange}
               onDrop={this.props.onDrop || this.onDrop}
-              onDragOver={e => e.preventDefault()}
+              onDragOver={(e) => e.preventDefault()}
             />
           )}
           {!!this.props.after && this.props.after()}
@@ -78,24 +78,24 @@ export class TextInput extends Component {
 }
 
 export class TextareaInput extends Component {
-  onChange = e => {
+  onChange = (e) => {
     if (e && e.preventDefault) e.preventDefault();
     this.props.onChange(e.target.value);
   };
 
-  onDrop = ev => {
+  onDrop = (ev) => {
     ev.preventDefault();
     if (ev.dataTransfer.items) {
       for (var i = 0; i < ev.dataTransfer.items.length; i++) {
         if (ev.dataTransfer.items[i].kind === 'file') {
           const file = ev.dataTransfer.items[i].getAsFile();
-          file.text().then(text => this.props.onChange(text));
+          file.text().then((text) => this.props.onChange(text));
         }
       }
     } else {
       for (var i = 0; i < ev.dataTransfer.files.length; i++) {
         const file = ev.dataTransfer.files[i];
-        file.text().then(text => this.props.onChange(text));
+        file.text().then((text) => this.props.onChange(text));
       }
     }
   };
@@ -117,7 +117,7 @@ export class TextareaInput extends Component {
             style={this.props.style}
             rows={this.props.rows || 3}
             onDrop={this.props.onDrop || this.onDrop}
-            onDragOver={e => e.preventDefault()}
+            onDragOver={(e) => e.preventDefault()}
           />
         </div>
       </div>
@@ -126,45 +126,45 @@ export class TextareaInput extends Component {
 }
 
 export class RangeTextInput extends Component {
-  onChangeFrom = e => {
+  onChangeFrom = (e) => {
     if (e && e.preventDefault) e.preventDefault();
     this.props.onChangeFrom(e.target.value);
   };
-  onChangeTo = e => {
+  onChangeTo = (e) => {
     if (e && e.preventDefault) e.preventDefault();
     this.props.onChangeTo(e.target.value);
   };
 
-  onDropFrom = ev => {
+  onDropFrom = (ev) => {
     ev.preventDefault();
     if (ev.dataTransfer.items) {
       for (var i = 0; i < ev.dataTransfer.items.length; i++) {
         if (ev.dataTransfer.items[i].kind === 'file') {
           const file = ev.dataTransfer.items[i].getAsFile();
-          file.text().then(text => this.props.onChangeFrom(text));
+          file.text().then((text) => this.props.onChangeFrom(text));
         }
       }
     } else {
       for (var i = 0; i < ev.dataTransfer.files.length; i++) {
         const file = ev.dataTransfer.files[i];
-        file.text().then(text => this.props.onChangeFrom(text));
+        file.text().then((text) => this.props.onChangeFrom(text));
       }
     }
   };
 
-  onDropTo = ev => {
+  onDropTo = (ev) => {
     ev.preventDefault();
     if (ev.dataTransfer.items) {
       for (var i = 0; i < ev.dataTransfer.items.length; i++) {
         if (ev.dataTransfer.items[i].kind === 'file') {
           const file = ev.dataTransfer.items[i].getAsFile();
-          file.text().then(text => this.props.onChangeTo(text));
+          file.text().then((text) => this.props.onChangeTo(text));
         }
       }
     } else {
       for (var i = 0; i < ev.dataTransfer.files.length; i++) {
         const file = ev.dataTransfer.files[i];
-        file.text().then(text => this.props.onChangeTo(text));
+        file.text().then((text) => this.props.onChangeTo(text));
       }
     }
   };
@@ -190,7 +190,7 @@ export class RangeTextInput extends Component {
                 value={this.props.valueFrom || ''}
                 onChange={this.onChangeFrom}
                 onDrop={this.props.onDropFrom || this.onDropFrom}
-                onDragOver={e => e.preventDefault()}
+                onDragOver={(e) => e.preventDefault()}
               />
               {this.props.suffixFrom && (
                 <div className="input-group-addon">{this.props.suffixFrom}</div>
@@ -211,7 +211,7 @@ export class RangeTextInput extends Component {
                 value={this.props.valueTo || ''}
                 onChange={this.onChangeTo}
                 onDrop={this.props.onDropTo || this.onDropTo}
-                onDragOver={e => e.preventDefault()}
+                onDragOver={(e) => e.preventDefault()}
               />
               {this.props.suffixTo && (
                 <div className="input-group-addon">{this.props.suffixTo}</div>
@@ -229,7 +229,7 @@ export class RangeTextInput extends Component {
                 value={this.props.valueFrom || ''}
                 onChange={this.onChangeFrom}
                 onDrop={this.props.onDropFrom || this.onDropFrom}
-                onDragOver={e => e.preventDefault()}
+                onDragOver={(e) => e.preventDefault()}
               />
             </div>
           )}
@@ -244,7 +244,7 @@ export class RangeTextInput extends Component {
                 value={this.props.valueTo || ''}
                 onChange={this.onChangeTo}
                 onDrop={this.props.onDropTo || this.onDropTo}
-                onDragOver={e => e.preventDefault()}
+                onDragOver={(e) => e.preventDefault()}
               />
             </div>
           )}
@@ -255,23 +255,23 @@ export class RangeTextInput extends Component {
 }
 
 export class VerticalTextInput extends Component {
-  onChange = e => {
+  onChange = (e) => {
     if (e && e.preventDefault) e.preventDefault();
     this.props.onChange(e.target.value);
   };
-  onDrop = ev => {
+  onDrop = (ev) => {
     ev.preventDefault();
     if (ev.dataTransfer.items) {
       for (var i = 0; i < ev.dataTransfer.items.length; i++) {
         if (ev.dataTransfer.items[i].kind === 'file') {
           const file = ev.dataTransfer.items[i].getAsFile();
-          file.text().then(text => this.props.onChange(text));
+          file.text().then((text) => this.props.onChange(text));
         }
       }
     } else {
       for (var i = 0; i < ev.dataTransfer.files.length; i++) {
         const file = ev.dataTransfer.files[i];
-        file.text().then(text => this.props.onChange(text));
+        file.text().then((text) => this.props.onChange(text));
       }
     }
   };
@@ -296,7 +296,7 @@ export class VerticalTextInput extends Component {
                   value={this.props.value || ''}
                   onChange={this.onChange}
                   onDrop={this.props.onDrop || this.onDrop}
-                  onDragOver={e => e.preventDefault()}
+                  onDragOver={(e) => e.preventDefault()}
                 />
                 {this.props.suffix && <div className="input-group-addon">{this.props.suffix}</div>}
               </div>
@@ -311,7 +311,7 @@ export class VerticalTextInput extends Component {
                 value={this.props.value || ''}
                 onChange={this.onChange}
                 onDrop={this.props.onDrop || this.onDrop}
-                onDragOver={e => e.preventDefault()}
+                onDragOver={(e) => e.preventDefault()}
               />
             )}
           </div>

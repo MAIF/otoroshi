@@ -29,27 +29,34 @@ window.jQuery = $;
 
 require('bootstrap/dist/js/bootstrap.min');
 
-Number.prototype.prettify = function() {
+Number.prototype.prettify = function () {
   return this.toString().replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1 ');
 };
 
 window._fetch = window.fetch;
-window.fetch = function(...params) {
+window.fetch = function (...params) {
   const url = params[0];
   const options = params[1];
-  const doNotPassTenant = window.__otoroshi__env__latest.userAdmin || window.__otoroshi__env__latest.bypassUserRightsCheck;
+  const doNotPassTenant =
+    window.__otoroshi__env__latest.userAdmin ||
+    window.__otoroshi__env__latest.bypassUserRightsCheck;
   if (!doNotPassTenant && params.length == 2 && _.isObject(options)) {
-    const currentTenant = window.localStorage.getItem("Otoroshi-Tenant") || "default";
-    return window._fetch(url, { ...options, headers: { ...options.headers, 'Otoroshi-Tenant': currentTenant }}).then(r => {
-      if (r.status === 401 || r.status === 403) {
-        if (window.toast) {
-          window.toast('Authorization error', "You're not allowed to do that !", 'error');
+    const currentTenant = window.localStorage.getItem('Otoroshi-Tenant') || 'default';
+    return window
+      ._fetch(url, {
+        ...options,
+        headers: { ...options.headers, 'Otoroshi-Tenant': currentTenant },
+      })
+      .then((r) => {
+        if (r.status === 401 || r.status === 403) {
+          if (window.toast) {
+            window.toast('Authorization error', "You're not allowed to do that !", 'error');
+          }
+          throw new Error("You're not allowed to do that !");
+        } else {
+          return r;
         }
-        throw new Error("You're not allowed to do that !");
-      } else {
-        return r;
-      }
-    });
+      });
   } else {
     // console.log('do not pass tenant for', url, {
     //   plength: params.length,
@@ -59,7 +66,7 @@ window.fetch = function(...params) {
     // });
     return window._fetch(...params);
   }
-}
+};
 
 const pattern = '38384040373937396665';
 
@@ -67,7 +74,7 @@ function Konami(callback) {
   let input = '';
   document.addEventListener(
     'keydown',
-    event => {
+    (event) => {
       input += event ? event.keyCode : event.keyCode;
       if (input.length > pattern.length) {
         input = input.substr(input.length - pattern.length);
@@ -84,7 +91,7 @@ function Konami(callback) {
 function setupKonami() {
   Konami(() => {
     function showClippy() {
-      window.clippy.load('Clippy', function(agent) {
+      window.clippy.load('Clippy', function (agent) {
         agent.moveTo(window.innerWidth - 200, 150);
         agent.show();
         setTimeout(() => {

@@ -34,7 +34,7 @@ class RestrictionPath extends Component {
             placeholder="Http Method"
             type="text"
             value={this.props.itemValue.method}
-            onChange={e => this.changeTheValue('method', e.target.value)}
+            onChange={(e) => this.changeTheValue('method', e.target.value)}
           />
           <input
             className="form-control"
@@ -42,7 +42,7 @@ class RestrictionPath extends Component {
             placeholder="Http Path"
             type="text"
             value={this.props.itemValue.path}
-            onChange={e => this.changeTheValue('path', e.target.value)}
+            onChange={(e) => this.changeTheValue('path', e.target.value)}
           />
         </div>
       </div>
@@ -64,13 +64,13 @@ export class Restrictions extends Component {
           label="Enabled"
           value={value.enabled}
           help="Enable restrictions"
-          onChange={v => this.changeTheValue('enabled', v)}
+          onChange={(v) => this.changeTheValue('enabled', v)}
         />
         <BooleanInput
           label="Allow last"
           value={value.allowLast}
           help="Otoroshi will test forbidden and notFound paths before testing allowed paths"
-          onChange={v => this.changeTheValue('allowLast', v)}
+          onChange={(v) => this.changeTheValue('allowLast', v)}
         />
         <ArrayInput
           label="Allowed"
@@ -78,7 +78,7 @@ export class Restrictions extends Component {
           help="Allowed paths"
           component={RestrictionPath}
           defaultValue={{ method: '*', path: '/.*' }}
-          onChange={v => this.changeTheValue('allowed', v)}
+          onChange={(v) => this.changeTheValue('allowed', v)}
         />
         <ArrayInput
           label="Forbidden"
@@ -86,7 +86,7 @@ export class Restrictions extends Component {
           help="Forbidden paths"
           component={RestrictionPath}
           defaultValue={{ method: '*', path: '/.*' }}
-          onChange={v => this.changeTheValue('forbidden', v)}
+          onChange={(v) => this.changeTheValue('forbidden', v)}
         />
         <ArrayInput
           label="Not Found"
@@ -94,7 +94,7 @@ export class Restrictions extends Component {
           help="Not found paths"
           component={RestrictionPath}
           defaultValue={{ method: '*', path: '/.*' }}
-          onChange={v => this.changeTheValue('notFound', v)}
+          onChange={(v) => this.changeTheValue('notFound', v)}
         />
       </div>
     );

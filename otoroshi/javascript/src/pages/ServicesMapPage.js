@@ -5,12 +5,12 @@ import * as BackOfficeServices from '../services/BackOfficeServices';
 export class ServicesMapPage extends Component {
   componentDidMount() {
     this.props.setTitle(`Services Map`);
-    BackOfficeServices.fetchServicesMap().then(data => {
+    BackOfficeServices.fetchServicesMap().then((data) => {
       this.drawGraphAsZoomableCirclePacking(data);
     });
   }
 
-  drawGraphAsZoomableCirclePacking = root => {
+  drawGraphAsZoomableCirclePacking = (root) => {
     const w = window.innerWidth - 230;
     const h = window.innerHeight - 190;
     const r = h - 30;
@@ -22,7 +22,7 @@ export class ServicesMapPage extends Component {
     const pack = d3.layout
       .pack()
       .size([r, r])
-      .value(d => d.size);
+      .value((d) => d.size);
 
     const vis = d3
       .select(this.svg)
@@ -47,28 +47,28 @@ export class ServicesMapPage extends Component {
       .data(nodes)
       .enter()
       .append('circle')
-      .attr('class', d => (d.children ? 'parent' : 'child'))
-      .attr('cx', d => d.x)
-      .attr('cy', d => d.y)
-      .attr('r', d => d.r)
-      .on('click', d => zoom(node == d ? root : d))
+      .attr('class', (d) => (d.children ? 'parent' : 'child'))
+      .attr('cx', (d) => d.x)
+      .attr('cy', (d) => d.y)
+      .attr('r', (d) => d.r)
+      .on('click', (d) => zoom(node == d ? root : d))
       .append('title')
-      .text(d => d.name);
+      .text((d) => d.name);
 
     vis
       .selectAll('text')
       .data(nodes)
       .enter()
       .append('text')
-      .attr('class', d => (d.children ? 'parent' : 'child'))
-      .attr('x', d => d.x)
-      .attr('y', d => {
+      .attr('class', (d) => (d.children ? 'parent' : 'child'))
+      .attr('x', (d) => d.x)
+      .attr('y', (d) => {
         if (d === root) {
           return d.y - d.r + 40;
         }
         return d.y;
       })
-      .attr('style', d => {
+      .attr('style', (d) => {
         if (d === root) {
           return 'font-weight:bold;font-size:20px;color:white;';
         }
@@ -76,7 +76,7 @@ export class ServicesMapPage extends Component {
       })
       .attr('dy', '.35em')
       .attr('text-anchor', 'middle')
-      .text(d => (d.children ? shortName(d) : ''));
+      .text((d) => (d.children ? shortName(d) : ''));
 
     d3.select(window).on('click', () => zoom(root));
 
@@ -93,23 +93,23 @@ export class ServicesMapPage extends Component {
       let t = vis.transition().duration(d3.event.altKey ? 3500 : 750);
 
       t.selectAll('circle')
-        .attr('cx', d => x(d.x))
-        .attr('cy', d => y(d.y))
-        .attr('r', d => k * d.r);
+        .attr('cx', (d) => x(d.x))
+        .attr('cy', (d) => y(d.y))
+        .attr('r', (d) => k * d.r);
 
       t.selectAll('text')
-        .attr('x', d => x(d.x))
-        .attr('y', d => {
+        .attr('x', (d) => x(d.x))
+        .attr('y', (d) => {
           if (d === root) {
             return y(d.y - d.r + 40);
           }
           return zoomed ? y(d.children ? d.y - d.r + 20 : d.y) : y(d.y);
         })
-        .attr('style', d =>
+        .attr('style', (d) =>
           (zoomed && d.children) || d === root ? 'font-weight:bold;font-size:20px;color:white;' : ''
         )
-        .text(d => (zoomed ? d.name : d.children ? shortName(d) : ''))
-        .style('opacity', d => (k * d.r > 20 ? 1 : 0));
+        .text((d) => (zoomed ? d.name : d.children ? shortName(d) : ''))
+        .style('opacity', (d) => (k * d.r > 20 ? 1 : 0));
 
       node = d;
       if (d3.event) {
@@ -121,7 +121,7 @@ export class ServicesMapPage extends Component {
   render() {
     return (
       <div className="services-map">
-        <svg ref={r => (this.svg = r)} />
+        <svg ref={(r) => (this.svg = r)} />
       </div>
     );
   }

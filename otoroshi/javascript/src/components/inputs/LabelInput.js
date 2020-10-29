@@ -14,7 +14,7 @@ export class LabelInput extends Component {
   componentDidMount() {
     const transform = this.props.transform || this.identity;
     if (this.props.from) {
-      this.props.from().then(value => this.setState({ value: transform(value) }));
+      this.props.from().then((value) => this.setState({ value: transform(value) }));
     }
   }
 

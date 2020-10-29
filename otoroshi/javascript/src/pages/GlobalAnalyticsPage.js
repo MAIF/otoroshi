@@ -24,7 +24,7 @@ export class GlobalAnalyticsPage extends Component {
 
   update = () => {
     this.setState({ loading: true });
-    BackOfficeServices.fetchGlobalStats(this.state.from, this.state.to).then(rawData => {
+    BackOfficeServices.fetchGlobalStats(this.state.from, this.state.to).then((rawData) => {
       const data = {
         ...{
           statusesPiechart: { series: [] },
