@@ -4,6 +4,70 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0-alpha01] - 2020-10-29
+
+https://github.com/MAIF/otoroshi/milestone/6?closed=1
+https://github.com/MAIF/otoroshi/compare/v1.4.22...v1.5.0-alpha01
+https://github.com/MAIF/otoroshi/releases/tag/v1.5.0-alpha01
+
+- Add pluggable authentication modules for services instead of Auth0 only (#3)
+- Include Kubernetes ingress controller as a Job (#91)
+- Add support for Redis cluster (#252)
+- More JWT support from Otoroshi to Backends (#4)
+- [plugin] - Mirror traffic (#118)
+- HealthCheck disable service strategy (#221)
+- add bulk apis for main entities (#285)
+- Cleanup documentation (#295)
+- Support full OIDC / OAuth2 lifecycle with forwarded access token (#298)
+- Streaming input issue (#331)
+- Identity aware TCP forwarding over HTTPS  (#332)
+- Add a geoloc target matcher  (#338)
+- Use ndjson raw export for the import/export feature instead of partial json (#343)
+- Compatibility issues with Elastic 7.x (#344)
+- Document tcp tunneling (#356)
+- Update U2F documentation (#357)
+- add a button to test LDAP connection (#426)
+- cleanup datastore code (#464)
+- Remove U2F support (#468)
+- Customize UI title from config. (#469)
+- Update all JS deps (#470)
+- Webauthn support multiple devices for the same user (#471)
+- Support for client_credentials flow backed by apikeys (#472)
+- Rewrite SSL/TLS part with new Dynamic SSLContext (#473)
+- accesslog plugins - the referred is not in the response (#477)
+- If script description is empty, then take the programmatic one (#478)
+- multi-tenant / multi-teams (#479)
+- plugins to populate user from jwt token and use it in otoroshi token (#481)
+- Move third-party apikeys OIDC to a plugin and deprecate the original feature (#482)
+- Add email address in let's encrypt settings (#484)
+- add kubernetes deployment descriptors examples (#485)
+- add Helm chart to deploy otoroshi (#486)
+- Add routing constraint based on meta keys (#536)
+- Have a unique name for groups (#539)
+- Handle initial data import with a merge option (#544)
+- Read initial secrets from files path (#545)
+- Do not support enabled in kubernetes entities (#546)
+- override httpOnly and secure in private apps session cookie from module config (#547)
+- Typo in security header key X-Frame-Options (#548)
+- Delete non existant (in otoroshi) secrets  (#551)
+- Try to find entities by id then merge it (#552)
+- Avoid phishing during private-apps authentication (#553)
+- Revamping secrets and testing them at startup (#555)
+- Duplicate auth. module configs. (#557)
+- back <- after consulting a service don't refresh the menu (#558)
+- Error after suppressing a Service target (#559)
+- Multiple authorized entities on apikeys (#560)
+- Multiple groups on service descriptors (#561)
+- Generic data exporters (#588)
+- Assign worker to handle only selected tenant data (#590)
+- Support Kubernetes 1.18 IngressClass (#591)
+- Generic notifier support in exporters (#592)
+- Add liveness probe check in service descriptors health check (crd, ingress) (#593)
+- Add usage of custom configuration file in configfile (#633)
+- Handle samesite in cookies (#660)
+- Support sendgrid for alert emails (#665)
+- enhance coredns patching to handle config changes (#667)
+
 ## [1.4.22] - 2020-03-17
 
 https://github.com/MAIF/otoroshi/milestone/29?closed=1

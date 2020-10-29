@@ -287,7 +287,7 @@ electron-osx-sign@^0.4.11:
     minimist "^1.2.0"
     plist "^3.0.1"
 
-electron-packager@15.1.9:
+electron-packager@15.1.0:
   version "15.1.0"
   resolved "https://registry.yarnpkg.com/electron-packager/-/electron-packager-15.1.0.tgz#16a3733e4cad26112a2ac36f0b0f35c3b0170eff"
   integrity sha512-THNm4bz1DfvR9f0g51+NjuAYELflM8+1vhQ/iv/G8vyZNKzSMuFd5doobngQKq3rRsLdPNZVnGqDdgS884d7Og==

@@ -79,14 +79,23 @@ function runSystemCommand(command, args, location, env = {}) {
 }
 
 function runScript(script, where, env = {}) {
-  const source = spawn(script, [], {
-    cwd: where,
-    shell: true,
-    env: { ...process.env, ...env },
-    stdio: ['ignore', 'pipe', process.stderr]
+  return new Promise((success, failure) => {
+    const source = spawn(script, [], {
+      cwd: where,
+      shell: true,
+      env: { ...process.env, ...env },
+      stdio: ['ignore', 'pipe', process.stderr]
+    });
+    source.on('close', (code) => {
+      if (code === 0) {
+        success('return code: ' + code)
+      } else {
+        failure(new Error('bad return code: ' + code));
+      }
+    });
+    return echoReadable(source.stdout);
   });
-  return echoReadable(source.stdout);
-}
+}  
 
 async function changeVersion(where, from, to, exclude = []) {
   console.log(`Changing version from '${from}' to '${to}'`)
@@ -111,9 +120,6 @@ async function buildVersion(version, where, releaseDir) {
   await runSystemCommand('/bin/sh', [path.resolve(where, './scripts/build.sh'), 'clean'], where);
   // build ui
   await runScript(`
-    source $NVM_TOOL
-    nvm install 13.1.0
-    nvm use 13.1.0
     cd ${where}/otoroshi/javascript
     yarn install
     cd ${where}
@@ -215,9 +221,6 @@ async function buildLinuxCLI(location, version) {
 
 async function buildTcpTunnelingCli(location, version) {
   await runScript(`
-    source $NVM_TOOL
-    nvm install 12.7.0
-    nvm use 12.7.0
     cd ${location}/clients/tcp-udp-tunnel-client
     yarn install
     yarn pkg
@@ -237,9 +240,6 @@ async function buildTcpTunnelingCli(location, version) {
 
 async function buildTcpTunnelingCliGUI(location, version) {
   await runScript(`
-    source $NVM_TOOL
-    nvm install 12.7.0
-    nvm use 12.7.0
     cd ${location}/clients/tcp-udp-tunnel-client-gui
     yarn install
     yarn dist-mac
@@ -384,6 +384,7 @@ async function ensureStep(step, file, f) {
 async function releaseOtoroshi(from, to, next, last, location, dryRun) {
   console.log(`Releasing Otoroshi from version '${from}' to version '${to}'/'${next}' (${location})`);
   console.log(`Don't forget to set JAVA_HOME to JDK8_HOME and to docker login`);
+  console.log(`Don't forget to setup nvm with latest 13.x`);
   console.log(`Don't forget to update the CHANGELOG file before starting`);
   console.log(`Press a key to continue ...`)
   await keypress();
