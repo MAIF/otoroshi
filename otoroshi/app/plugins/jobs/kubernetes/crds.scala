@@ -839,6 +839,9 @@ object KubernetesCRDsJob {
   }
 
   def exportCerts(conf: KubernetesConfig, attrs: TypedMap, clientSupport: ClientSupport, ctx: CRDContext, certs: Seq[(String, String, Cert)], updatedSecrets: AtomicReference[Seq[(String, String)]])(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+
+    import ssl.SSLImplicits._
+
     logger.info(s"will export ${certs.size} certificates as secrets")
     implicit val mat = env.otoroshiMaterializer
     Source(certs.toList)
@@ -846,13 +849,23 @@ object KubernetesCRDsJob {
         case (namespace, name, cert) => clientSupport.client.fetchSecret(namespace, name).flatMap {
           case None =>
             updatedSecrets.updateAndGet(seq => seq :+ (namespace, name))
-            clientSupport.client.createSecret(namespace, name, "kubernetes.io/tls", Json.obj("tls.crt" -> cert.chain.base64, "tls.key" -> cert.privateKey.base64), "crd/cert", cert.id)
+            clientSupport.client.createSecret(namespace, name, "kubernetes.io/tls", Json.obj(
+              "tls.crt" -> cert.chain.base64,
+              "tls.key" -> cert.privateKey.base64,
+              "cert.crt" -> cert.certificates.head.asPem,
+              "ca-chain.crt" -> cert.certificates.tail.map(_.asPem).mkString("\n\n"),
+            ), "crd/cert", cert.id)
           case Some(secret) =>
             val chain = (secret.raw \ "data" \ "tls.crt").as[String].applyOn(s => s.fromBase64)
             val privateKey = (secret.raw \ "data" \ "tls.key").as[String].applyOn(s => s.fromBase64)
             if ((chain != cert.chain) || (privateKey != cert.privateKey)) {
               updatedSecrets.updateAndGet(seq => seq :+ (namespace, name))
-              clientSupport.client.updateSecret(namespace, name, "kubernetes.io/tls", Json.obj("tls.crt" -> cert.chain.base64, "tls.key" -> cert.privateKey.base64), "crd/cert", cert.id)
+              clientSupport.client.updateSecret(namespace, name, "kubernetes.io/tls", Json.obj(
+                "tls.crt" -> cert.chain.base64,
+                "tls.key" -> cert.privateKey.base64,
+                "cert.crt" -> cert.certificates.head.asPem,
+                "ca-chain.crt" -> cert.certificates.tail.map(_.asPem).mkString("\n\n"),
+              ), "crd/cert", cert.id)
             } else {
               ().future
             }

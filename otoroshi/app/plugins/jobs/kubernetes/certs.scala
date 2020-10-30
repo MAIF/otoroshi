@@ -114,6 +114,9 @@ object KubernetesCertSyncJob {
   }
 
   def syncOtoroshiCertToKubernetesSecrets(client: KubernetesClient, jobRunning: => Boolean)(implicit env: Env, ec: ExecutionContext): Future[Unit] = env.metrics.withTimerAsync("otoroshi.plugins.kubernetes.oto-certs.sync") {
+
+    import ssl.SSLImplicits._
+
     implicit val mat = env.otoroshiMaterializer
     if (!jobRunning) {
       shouldRunNext.set(false)
@@ -129,9 +132,19 @@ object KubernetesCertSyncJob {
                   .mapAsync(1) { cert =>
                     kubeCerts.find(c => c.metaId.contains(cert.id)) match {
                       case None =>
-                        client.createSecret("otoroshi", cert.name.slugifyWithSlash, "kubernetes.io/tls", Json.obj("tls.crt" -> cert.chain.base64, "tls.key" -> cert.privateKey.base64), "job/cert", cert.id)
+                        client.createSecret("otoroshi", cert.name.slugifyWithSlash, "kubernetes.io/tls", Json.obj(
+                          "tls.crt" -> cert.chain.base64,
+                          "tls.key" -> cert.privateKey.base64,
+                          "cert.crt" -> cert.certificates.head.asPem,
+                          "ca-chain.crt" -> cert.certificates.tail.map(_.asPem).mkString("\n\n"),
+                        ), "job/cert", cert.id)
                       case Some(c) =>
-                        client.updateSecret(c.namespace, c.name, "kubernetes.io/tls", Json.obj("tls.crt" -> cert.chain.base64, "tls.key" -> cert.privateKey.base64), "job/cert", cert.id)
+                        client.updateSecret(c.namespace, c.name, "kubernetes.io/tls", Json.obj(
+                          "tls.crt" -> cert.chain.base64,
+                          "tls.key" -> cert.privateKey.base64,
+                          "cert.crt" -> cert.certificates.head.asPem,
+                          "ca-chain.crt" -> cert.certificates.tail.map(_.asPem).mkString("\n\n"),
+                        ), "job/cert", cert.id)
                     }
                   }.runWith(Sink.ignore)
             _ <- Source (kubeCerts.toList)
