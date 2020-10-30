@@ -3078,7 +3078,7 @@ data:
   cert.crt: TG9yZW0gaXBzdW0gZG9sb3Igc2l0IGFtZXQsIGNvbnNlY3RldHVyIGFkaXBpc2NpbmcgZWxpdA==
   ca-chain.crt: TG9yZW0gaXBzdW0gZG9sb3Igc2l0IGFtZXQsIGNvbnNlY3RldHVyIGFkaXBpc2NpbmcgZWxpdA== 
 </code></pre>
-<h3><a href="#full-example" name="full-example" class="anchor"><span class="anchor-link"></span></a>Full example</h3>
+<h2><a href="#full-crd-example" name="full-crd-example" class="anchor"><span class="anchor-link"></span></a>Full CRD example</h2>
 <p>then you can deploy the previous example with better configuration level, and using mtls, apikeys, etc</p>
 <p>Let say the app looks like :</p>
 <pre class="prettyprint"><code class="language-js">const fs = require(&#39;fs&#39;); 
@@ -3087,13 +3087,20 @@ const https = require(&#39;https&#39;);
 // here we read the apikey to access http-app-2 from files mounted from secrets
 const clientId = fs.readFileSync(&#39;/var/run/secrets/kubernetes.io/apikeys/clientId&#39;).toString(&#39;utf8&#39;)
 const clientSecret = fs.readFileSync(&#39;/var/run/secrets/kubernetes.io/apikeys/clientSecret&#39;).toString(&#39;utf8&#39;)
-const cert = fs.readFileSync(&#39;/var/run/secrets/kubernetes.io/certs/cert.crt&#39;).toString(&#39;utf8&#39;)
-const ca = fs.readFileSync(&#39;/var/run/secrets/kubernetes.io/certs/ca-chain.crt&#39;).toString(&#39;utf8&#39;)
+
+const backendKey = fs.readFileSync(&#39;/var/run/secrets/kubernetes.io/certs/backend/tls.key&#39;).toString(&#39;utf8&#39;)
+const backendCert = fs.readFileSync(&#39;/var/run/secrets/kubernetes.io/certs/backend/cert.crt&#39;).toString(&#39;utf8&#39;)
+const backendCa = fs.readFileSync(&#39;/var/run/secrets/kubernetes.io/certs/backend/ca-chain.crt&#39;).toString(&#39;utf8&#39;)
+
+const clientKey = fs.readFileSync(&#39;/var/run/secrets/kubernetes.io/certs/client/tls.key&#39;).toString(&#39;utf8&#39;)
+const clientCert = fs.readFileSync(&#39;/var/run/secrets/kubernetes.io/certs/client/cert.crt&#39;).toString(&#39;utf8&#39;)
+const clientCa = fs.readFileSync(&#39;/var/run/secrets/kubernetes.io/certs/client/ca-chain.crt&#39;).toString(&#39;utf8&#39;)
 
 function callApi2() {
   return new Promise((success, failure) =&gt; {
     const options = { 
-      hostname: &#39;httpapp2.foo.bar&#39;, 
+      // using the implicit internal name (*.global.otoroshi.mesh) of the other service descriptor passing through otoroshi
+      hostname: &#39;http-app-service-descriptor-2.global.otoroshi.mesh&#39;,  
       port: 433, 
       path: &#39;/&#39;, 
       method: &#39;GET&#39;,
@@ -3101,7 +3108,10 @@ function callApi2() {
         &#39;Accept&#39;: &#39;application/json&#39;,
         &#39;Otoroshi-Client-Id&#39;: clientId,
         &#39;Otoroshi-Client-Secret&#39;: clientSecret,
-      }
+      },
+      cert: clientCert,
+      key: clientKey,
+      ca: clientCa
     }; 
     let data = &#39;&#39;;
     const req = https.request(options, (res) =&gt; { 
@@ -3120,9 +3130,9 @@ function callApi2() {
 }
 
 const options = { 
-  key: fs.readFileSync(&#39;/var/run/secrets/kubernetes.io/certs/tls.key&#39;), 
-  cert: cert, 
-  ca: ca, 
+  key: backendKey, 
+  cert: backendCert, 
+  ca: backendCa, 
   // we want mtls behavior
   requestCert: true, 
   rejectUnauthorized: true
@@ -3165,21 +3175,31 @@ spec:
           mountPath: &quot;/var/run/secrets/kubernetes.io/apikeys&quot;
           readOnly: true
         volumeMounts:
-        - name: cert-volume
+        - name: backend-cert-volume
           # here you will be able to read app cert from files 
-          # - /var/run/secrets/kubernetes.io/certs/tls.crt
-          # - /var/run/secrets/kubernetes.io/certs/tls.key
-          mountPath: &quot;/var/run/secrets/kubernetes.io/certs&quot;
+          # - /var/run/secrets/kubernetes.io/certs/backend/tls.crt
+          # - /var/run/secrets/kubernetes.io/certs/backend/tls.key
+          mountPath: &quot;/var/run/secrets/kubernetes.io/certs/backend&quot;
+          readOnly: true
+        - name: client-cert-volume
+          # here you will be able to read app cert from files 
+          # - /var/run/secrets/kubernetes.io/certs/client/tls.crt
+          # - /var/run/secrets/kubernetes.io/certs/client/tls.key
+          mountPath: &quot;/var/run/secrets/kubernetes.io/certs/client&quot;
           readOnly: true
       volumes:
       - name: apikey-volume
         secret:
           # here we reference the secret name from apikey http-app-2-apikey-1
           secretName: secret-2
-      - name: cert-volume
+      - name: backend-cert-volume
         secret:
           # here we reference the secret name from cert http-app-certificate-backend
           secretName: http-app-certificate-backend-secret
+      - name: client-cert-volume
+        secret:
+          # here we reference the secret name from cert http-app-certificate-client
+          secretName: http-app-certificate-client-secret
 ---
 apiVersion: v1
 kind: Service
@@ -3260,7 +3280,7 @@ spec:
   csr:
     issuer: CN=Otoroshi Root
     hosts: 
-    - http-app-service
+    - http-app-service 
     key:
       algo: rsa
       size: 2048
@@ -3278,6 +3298,7 @@ metadata:
 spec:
   description: certificate for the http-app
   autoRenew: true
+  secretName: http-app-certificate-client-secret
   csr:
     issuer: CN=Otoroshi Root
     key:
@@ -3300,7 +3321,8 @@ spec:
   - http-app-group
   forceHttps: true
   hosts:
-  - httpapp.foo.bar
+  - httpapp.foo.bar # hostname exposed oustide of the kubernetes cluster
+  # - http-app-service-descriptor.global.otoroshi.mesh # implicit internal name inside the kubernetes cluster 
   matchingRoot: /
   targets:
   - url: https://http-app-service:8443
@@ -3449,6 +3471,7 @@ spec:
     <li><a href="../deploy/kubernetes.html#installing-otoroshi-on-your-kubernetes-cluster" class="header">Installing otoroshi on your kubernetes cluster</a></li>
     <li><a href="../deploy/kubernetes.html#using-otoroshi-as-an-ingress-controller" class="header">Using Otoroshi as an Ingress Controller</a></li>
     <li><a href="../deploy/kubernetes.html#use-otoroshi-crds-for-a-better-full-integration" class="header">Use Otoroshi CRDs for a better/full integration</a></li>
+    <li><a href="../deploy/kubernetes.html#full-crd-example" class="header">Full CRD example</a></li>
     <li><a href="../deploy/kubernetes.html#expose-otoroshi-to-outside-world" class="header">Expose Otoroshi to outside world</a></li>
     <li><a href="../deploy/kubernetes.html#access-a-service-from-inside-the-k8s-cluster" class="header">Access a service from inside the k8s cluster</a></li>
     <li><a href="../deploy/kubernetes.html#daikoku-integration" class="header">Daikoku integration</a></li>
