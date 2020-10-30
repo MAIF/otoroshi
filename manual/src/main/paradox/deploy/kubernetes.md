@@ -747,7 +747,7 @@ data:
   ca-chain.crt: TG9yZW0gaXBzdW0gZG9sb3Igc2l0IGFtZXQsIGNvbnNlY3RldHVyIGFkaXBpc2NpbmcgZWxpdA== 
 ```
 
-### Full example
+## Full CRD example
 
 then you can deploy the previous example with better configuration level, and using mtls, apikeys, etc
 
@@ -760,13 +760,20 @@ const https = require('https');
 // here we read the apikey to access http-app-2 from files mounted from secrets
 const clientId = fs.readFileSync('/var/run/secrets/kubernetes.io/apikeys/clientId').toString('utf8')
 const clientSecret = fs.readFileSync('/var/run/secrets/kubernetes.io/apikeys/clientSecret').toString('utf8')
-const cert = fs.readFileSync('/var/run/secrets/kubernetes.io/certs/cert.crt').toString('utf8')
-const ca = fs.readFileSync('/var/run/secrets/kubernetes.io/certs/ca-chain.crt').toString('utf8')
+
+const backendKey = fs.readFileSync('/var/run/secrets/kubernetes.io/certs/backend/tls.key').toString('utf8')
+const backendCert = fs.readFileSync('/var/run/secrets/kubernetes.io/certs/backend/cert.crt').toString('utf8')
+const backendCa = fs.readFileSync('/var/run/secrets/kubernetes.io/certs/backend/ca-chain.crt').toString('utf8')
+
+const clientKey = fs.readFileSync('/var/run/secrets/kubernetes.io/certs/client/tls.key').toString('utf8')
+const clientCert = fs.readFileSync('/var/run/secrets/kubernetes.io/certs/client/cert.crt').toString('utf8')
+const clientCa = fs.readFileSync('/var/run/secrets/kubernetes.io/certs/client/ca-chain.crt').toString('utf8')
 
 function callApi2() {
   return new Promise((success, failure) => {
     const options = { 
-      hostname: 'httpapp2.foo.bar', 
+      // using the implicit internal name (*.global.otoroshi.mesh) of the other service descriptor passing through otoroshi
+      hostname: 'http-app-service-descriptor-2.global.otoroshi.mesh',  
       port: 433, 
       path: '/', 
       method: 'GET',
@@ -774,7 +781,10 @@ function callApi2() {
         'Accept': 'application/json',
         'Otoroshi-Client-Id': clientId,
         'Otoroshi-Client-Secret': clientSecret,
-      }
+      },
+      cert: clientCert,
+      key: clientKey,
+      ca: clientCa
     }; 
     let data = '';
     const req = https.request(options, (res) => { 
@@ -793,9 +803,9 @@ function callApi2() {
 }
 
 const options = { 
-  key: fs.readFileSync('/var/run/secrets/kubernetes.io/certs/tls.key'), 
-  cert: cert, 
-  ca: ca, 
+  key: backendKey, 
+  cert: backendCert, 
+  ca: backendCa, 
   // we want mtls behavior
   requestCert: true, 
   rejectUnauthorized: true
@@ -841,21 +851,31 @@ spec:
           mountPath: "/var/run/secrets/kubernetes.io/apikeys"
           readOnly: true
         volumeMounts:
-        - name: cert-volume
+        - name: backend-cert-volume
           # here you will be able to read app cert from files 
-          # - /var/run/secrets/kubernetes.io/certs/tls.crt
-          # - /var/run/secrets/kubernetes.io/certs/tls.key
-          mountPath: "/var/run/secrets/kubernetes.io/certs"
+          # - /var/run/secrets/kubernetes.io/certs/backend/tls.crt
+          # - /var/run/secrets/kubernetes.io/certs/backend/tls.key
+          mountPath: "/var/run/secrets/kubernetes.io/certs/backend"
+          readOnly: true
+        - name: client-cert-volume
+          # here you will be able to read app cert from files 
+          # - /var/run/secrets/kubernetes.io/certs/client/tls.crt
+          # - /var/run/secrets/kubernetes.io/certs/client/tls.key
+          mountPath: "/var/run/secrets/kubernetes.io/certs/client"
           readOnly: true
       volumes:
       - name: apikey-volume
         secret:
           # here we reference the secret name from apikey http-app-2-apikey-1
           secretName: secret-2
-      - name: cert-volume
+      - name: backend-cert-volume
         secret:
           # here we reference the secret name from cert http-app-certificate-backend
           secretName: http-app-certificate-backend-secret
+      - name: client-cert-volume
+        secret:
+          # here we reference the secret name from cert http-app-certificate-client
+          secretName: http-app-certificate-client-secret
 ---
 apiVersion: v1
 kind: Service
@@ -936,7 +956,7 @@ spec:
   csr:
     issuer: CN=Otoroshi Root
     hosts: 
-    - http-app-service
+    - http-app-service 
     key:
       algo: rsa
       size: 2048
@@ -954,6 +974,7 @@ metadata:
 spec:
   description: certificate for the http-app
   autoRenew: true
+  secretName: http-app-certificate-client-secret
   csr:
     issuer: CN=Otoroshi Root
     key:
@@ -976,7 +997,8 @@ spec:
   - http-app-group
   forceHttps: true
   hosts:
-  - httpapp.foo.bar
+  - httpapp.foo.bar # hostname exposed oustide of the kubernetes cluster
+  # - http-app-service-descriptor.global.otoroshi.mesh # implicit internal name inside the kubernetes cluster 
   matchingRoot: /
   targets:
   - url: https://http-app-service:8443
