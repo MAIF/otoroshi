@@ -3056,6 +3056,28 @@ secretName: the-secret-name
   signatureAlg: SHA256WithRSAEncryption
   digestAlg: SHA-256
 </code></pre>
+<p>when apikeys are exported as kubernetes secrets, they will have the type <code>otoroshi.io/apikey-secret</code> with values <code>clientId</code> and <code>clientSecret</code></p>
+<pre class="prettyprint"><code class="language-yaml">apiVersion: v1
+kind: Secret
+metadata:
+  name: apikey-1
+type: otoroshi.io/apikey-secret
+data:
+  clientId: TG9yZW0gaXBzdW0gZG9sb3Igc2l0IGFtZXQsIGNvbnNlY3RldHVyIGFkaXBpc2NpbmcgZWxpdA==
+  clientSecret: TG9yZW0gaXBzdW0gZG9sb3Igc2l0IGFtZXQsIGNvbnNlY3RldHVyIGFkaXBpc2NpbmcgZWxpdA==
+</code></pre>
+<p>when certificates are exported as kubernetes secrets, they will have the type <code>kubernetes.io/tls</code> with the standard values <code>tls.crt</code> (the full cert chain) and <code>tls.key</code> (the private key). For more convenience, they will also have a <code>cert.crt</code> value containing the actual certificate without the ca chain and <code>ca-chain.crt</code> containing the ca chain without the certificate.</p>
+<pre class="prettyprint"><code class="language-yaml">apiVersion: v1
+kind: Secret
+metadata:
+  name: certificate-1
+type: kubernetes.io/tls
+data:
+  tls.crt: TG9yZW0gaXBzdW0gZG9sb3Igc2l0IGFtZXQsIGNvbnNlY3RldHVyIGFkaXBpc2NpbmcgZWxpdA==
+  tls.key: TG9yZW0gaXBzdW0gZG9sb3Igc2l0IGFtZXQsIGNvbnNlY3RldHVyIGFkaXBpc2NpbmcgZWxpdA==
+  cert.crt: TG9yZW0gaXBzdW0gZG9sb3Igc2l0IGFtZXQsIGNvbnNlY3RldHVyIGFkaXBpc2NpbmcgZWxpdA==
+  ca-chain.crt: TG9yZW0gaXBzdW0gZG9sb3Igc2l0IGFtZXQsIGNvbnNlY3RldHVyIGFkaXBpc2NpbmcgZWxpdA== 
+</code></pre>
 <h3><a href="#full-example" name="full-example" class="anchor"><span class="anchor-link"></span></a>Full example</h3>
 <p>then you can deploy the previous example with better configuration level, and using mtls, apikeys, etc</p>
 <p>Let say the app looks like :</p>
@@ -3065,14 +3087,8 @@ const https = require(&#39;https&#39;);
 // here we read the apikey to access http-app-2 from files mounted from secrets
 const clientId = fs.readFileSync(&#39;/var/run/secrets/kubernetes.io/apikeys/clientId&#39;).toString(&#39;utf8&#39;)
 const clientSecret = fs.readFileSync(&#39;/var/run/secrets/kubernetes.io/apikeys/clientSecret&#39;).toString(&#39;utf8&#39;)
-
-// here we read the certificate for the app
-const crt = fs.readFileSync(&#39;/var/run/secrets/kubernetes.io/certs/tls.crt&#39;)
-  .toString(&#39;utf8&#39;)
-  .split(&#39;-----BEGIN CERTIFICATE-----\n&#39;)
-  .filter(s =&gt; s.trim() !== &#39;&#39;);
-const cert = &#39;-----BEGIN CERTIFICATE-----\n&#39; + crt.shift()
-const ca = crt.join(&#39;-----BEGIN CERTIFICATE-----\n&#39;)
+const cert = fs.readFileSync(&#39;/var/run/secrets/kubernetes.io/certs/cert.crt&#39;).toString(&#39;utf8&#39;)
+const ca = fs.readFileSync(&#39;/var/run/secrets/kubernetes.io/certs/ca-chain.crt&#39;).toString(&#39;utf8&#39;)
 
 function callApi2() {
   return new Promise((success, failure) =&gt; {
