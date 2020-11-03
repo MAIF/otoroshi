@@ -20,6 +20,7 @@ import models._
 import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
+import otoroshi.jobs.updates.SoftwareUpdatesJobs
 import otoroshi.models.{EntityLocation, EntityLocationSupport, TenantId}
 import otoroshi.models.RightsChecker.{SuperAdminOnly, TenantAdminOnly}
 import otoroshi.ssl.pki.models.{GenCertResponse, GenCsrQuery}
@@ -152,7 +153,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
     Ok(
       Json.obj("version"        -> commitVersion,
                "currentVersion" -> env.otoroshiVersion,
-               "nextVersion"    -> env.latestVersionHolder.get())
+               "nextVersion"    -> SoftwareUpdatesJobs.latestVersionHolder.get())
     )
   }
 
@@ -184,7 +185,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
             "bypassUserRightsCheck"   -> env.bypassUserRightsCheck,
             "clientIdHeader"          -> env.Headers.OtoroshiClientId,
             "clientSecretHeader"      -> env.Headers.OtoroshiClientSecret,
-            "version"                 -> env.latestVersionHolder.get(),
+            "version"                 -> SoftwareUpdatesJobs.latestVersionHolder.get(),
             "currentVersion"          -> env.otoroshiVersion,
             "commitVersion"           -> commitVersion,
             "adminApiId"              -> env.backOfficeServiceId,

@@ -760,7 +760,6 @@ class Env(val configuration: Configuration,
   )
 
   lazy val otoroshiVersion     = "1.5.0-alpha02-dev"
-  lazy val latestVersionHolder = new AtomicReference[JsValue](JsNull)
   lazy val checkForUpdates     = configuration.getOptionalWithFileSupport[Boolean]("app.checkForUpdates").getOrElse(true)
 
   lazy val jmxEnabled = configuration.getOptionalWithFileSupport[Boolean]("otoroshi.jmx.enabled").getOrElse(false)
@@ -971,51 +970,6 @@ class Env(val configuration: Configuration,
           ))(ec, this)
           case Some(_) =>
         }
-      }
-
-      if (checkForUpdates) {
-        otoroshiActorSystem.scheduler.scheduleAtFixedRate(5.second, 24.hours)(utils.SchedulerHelper.runnable {
-          datastores.globalConfigDataStore
-            .singleton()(otoroshiExecutionContext, this)
-            .map { globalConfig =>
-              var cleanVersion: Double = otoroshiVersion.toLowerCase() match {
-                case v if v.contains("-snapshot") =>
-                  v.replace(".", "").replace("v", "").replace("-snapshot", "").toDouble - 0.5
-                case v if v.contains("-dev") =>
-                  v.replace(".", "").replace("-dev", "").replace("v", "").toDouble - 0.5
-                case v => v.replace(".", "").replace("-dev", "").replace("v", "").replace("-snapshot", "").toDouble
-              }
-              _internalClient
-                .url("https://updates.otoroshi.io/api/versions/latest")
-                .withRequestTimeout(10.seconds)
-                .withHttpHeaders(
-                  "Otoroshi-Version" -> otoroshiVersion,
-                  "Otoroshi-Id"      -> globalConfig.otoroshiId
-                )
-                .get()
-                .map { response =>
-                  val body = response.json.as[JsObject]
-
-                  val latestVersion      = (body \ "version_raw").as[String]
-                  val latestVersionClean = (body \ "version_number").as[Double]
-                  latestVersionHolder.set(
-                    body ++ Json.obj(
-                      "current_version_raw"    -> otoroshiVersion,
-                      "current_version_number" -> cleanVersion,
-                      "outdated"               -> (latestVersionClean > cleanVersion)
-                    )
-                  )
-                  if (latestVersionClean > cleanVersion) {
-                    logger.info(
-                      s"A new version of Otoroshi ($latestVersion, your version is $otoroshiVersion) is available. You can download it on https://maif.github.io/otoroshi/ or at https://github.com/MAIF/otoroshi/releases/tag/$latestVersion"
-                    )
-                  }
-                }
-            }
-            .andThen {
-              case Failure(e) => e.printStackTrace()
-            }
-        })
       }
       ()
   }(otoroshiExecutionContext)

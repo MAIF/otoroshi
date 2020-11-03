@@ -74,6 +74,8 @@ spec:
           - name: OTOROSHI_INITIAL_CUSTOMIZATION
             value: >
               {\"config\":{\"scripts\":{\"enabled\":true,\"jobRefs\":[\"cp:otoroshi.plugins.jobs.kubernetes.KubernetesIngressControllerJob\",\"cp:otoroshi.plugins.jobs.kubernetes.KubernetesOtoroshiCRDsControllerJob\"],\"jobConfig\":{\"KubernetesConfig\":{\"trust\":false,\"namespaces\":[\"*\"],\"labels\":[],\"ingressClasses\":[\"otoroshi\"],\"defaultGroup\":\"default\",\"ingresses\":true,\"crds\":true,\"kubeLeader\":false,\"restartDependantDeployments\":false,"coreDnsIntegration":true, "otoroshiNamespace":"{{ .Release.Namespace }}","otoroshiServiceName":"{{ .Values.service.name }}",\"templates\":{\"service-group\":{},\"service-descriptor\":{},\"apikeys\":{},\"global-config\":{},\"jwt-verifier\":{},\"tcp-service\":{},\"certificate\":{},\"auth-module\":{},\"script\":{}}}}}}}
+          - name: JAVA_OPTS
+            value: '-Xms2g -Xmx4g'
         readinessProbe:
           httpGet:
             path: /ready
