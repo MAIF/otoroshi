@@ -153,7 +153,7 @@ object VersionSuffix {
   }
 }
 
-case class Version(major: Int, minor: Int, micro: Int, suffix: Option[VersionSuffix], suffixVersion: Option[Int], raw: String) extends Comparable[Version] {
+case class Version(major: Int, minor: Int, patch: Int, suffix: Option[VersionSuffix], suffixVersion: Option[Int], raw: String) extends Comparable[Version] {
   lazy val value = {
     raw.toLowerCase() match {
       case v if v.contains("-snapshot") =>
@@ -212,7 +212,7 @@ case class Version(major: Int, minor: Int, micro: Int, suffix: Option[VersionSuf
   def isEquals(version: Version): Boolean = {
     if (major == version.major) {
       if (minor == version.minor) {
-        if (micro == version.micro) {
+        if (patch == version.patch) {
           suffixEquals(version)
         } else {
           false
@@ -228,10 +228,10 @@ case class Version(major: Int, minor: Int, micro: Int, suffix: Option[VersionSuf
   def isAfter(version: Version): Boolean = {
     if (major == version.major) {
       if (minor == version.minor) {
-        if (micro == version.micro) {
+        if (patch == version.patch) {
           suffixAfter(version)
         } else {
-          micro > version.micro
+          patch > version.patch
         }
       } else {
         minor > version.minor
@@ -259,40 +259,70 @@ case class Version(major: Int, minor: Int, micro: Int, suffix: Option[VersionSuf
 }
 
 object Version {
+  private val splits = Seq("alpha0", "alpha", "beta0", "beta", "rc0", "rc", "dev", "snapshot", "a", "b")
   def apply(rawVersion: String): Version = {
-    val lower = rawVersion.toLowerCase()
-    val (versionText, suffix, suffixValue) = lower.split("-").toList match {
-      case head :: suffix :: Nil if suffix.startsWith("alpha0")               => (head, VersionSuffix.Alpha.some, Try(suffix.replace("alpha0", "").toInt).toOption)
-      case head :: suffix :: Nil if suffix.startsWith("alpha")                => (head, VersionSuffix.Alpha.some, Try(suffix.replace("alpha", "").toInt).toOption)
-      case head :: suffix :: Nil if suffix.startsWith("beta0")                => (head, VersionSuffix.Beta.some, Try(suffix.replace("beta0", "").toInt).toOption)
-      case head :: suffix :: Nil if suffix.startsWith("beta")                 => (head, VersionSuffix.Beta.some, Try(suffix.replace("beta", "").toInt).toOption)
-      case head :: suffix :: Nil if suffix.startsWith("rc0")                  => (head, VersionSuffix.ReleaseCandidate.some, Try(suffix.replace("rc0", "").toInt).toOption)
-      case head :: suffix :: Nil if suffix.startsWith("rc")                   => (head, VersionSuffix.ReleaseCandidate.some, Try(suffix.replace("rc", "").toInt).toOption)
-      case head :: suffix :: "dev" :: Nil if suffix.startsWith("alpha0")      => (head, VersionSuffix.Dev.some, Try(suffix.replace("alpha0", "").toInt).toOption)
-      case head :: suffix :: "dev" :: Nil if suffix.startsWith("alpha")       => (head, VersionSuffix.Dev.some, Try(suffix.replace("alpha", "").toInt).toOption)
-      case head :: suffix :: "dev" :: Nil if suffix.startsWith("beta0")       => (head, VersionSuffix.Dev.some, Try(suffix.replace("beta0", "").toInt).toOption)
-      case head :: suffix :: "dev" :: Nil if suffix.startsWith("beta")        => (head, VersionSuffix.Dev.some, Try(suffix.replace("beta", "").toInt).toOption)
-      case head :: suffix :: "dev" :: Nil if suffix.startsWith("rc0")         => (head, VersionSuffix.Dev.some, Try(suffix.replace("rc0", "").toInt).toOption)
-      case head :: suffix :: "dev" :: Nil if suffix.startsWith("rc")          => (head, VersionSuffix.Dev.some, Try(suffix.replace("rc", "").toInt).toOption)
-      case head :: suffix :: "snapshot" :: Nil if suffix.startsWith("alpha0") => (head, VersionSuffix.Dev.some, Try(suffix.replace("alpha0", "").toInt).toOption)
-      case head :: suffix :: "snapshot" :: Nil if suffix.startsWith("alpha")  => (head, VersionSuffix.Dev.some, Try(suffix.replace("alpha", "").toInt).toOption)
-      case head :: suffix :: "snapshot" :: Nil if suffix.startsWith("beta0")  => (head, VersionSuffix.Dev.some, Try(suffix.replace("beta0", "").toInt).toOption)
-      case head :: suffix :: "snapshot" :: Nil if suffix.startsWith("beta")   => (head, VersionSuffix.Dev.some, Try(suffix.replace("beta", "").toInt).toOption)
-      case head :: suffix :: "snapshot" :: Nil if suffix.startsWith("rc0")    => (head, VersionSuffix.Dev.some, Try(suffix.replace("rc0", "").toInt).toOption)
-      case head :: suffix :: "snapshot" :: Nil if suffix.startsWith("rc")     => (head, VersionSuffix.Dev.some, Try(suffix.replace("rc", "").toInt).toOption)
-      case head :: "dev" :: Nil                                               => (head, VersionSuffix.Dev.some, None)
-      case head :: "snapshot" :: Nil                                          => (head, VersionSuffix.Snapshot.some, None)
-      case head :: "alpha" :: suffixValue :: Nil                              => (head, VersionSuffix.Alpha.some, Try(suffixValue.toInt).toOption)
-      case head :: "beta" :: suffixValue :: Nil                               => (head, VersionSuffix.Beta.some, Try(suffixValue.toInt).toOption)
-      case head :: "rc" :: suffixValue :: Nil                                 => (head, VersionSuffix.ReleaseCandidate.some, Try(suffixValue.toInt).toOption)
-      case head :: _                                                          => (head, None, None)
+    val lower = rawVersion.toLowerCase().applyOnWithPredicate(_.startsWith("v"))(_.substring(1))
+    val (versionText, suffix, suffixValue) = if (lower.contains("-")) {
+      lower.split("-").toList match {
+        case head :: suffix :: Nil if suffix.startsWith("alpha0") => (head, VersionSuffix.Alpha.some, Try(suffix.replace("alpha0", "").toInt).toOption)
+        case head :: suffix :: Nil if suffix.startsWith("alpha") => (head, VersionSuffix.Alpha.some, Try(suffix.replace("alpha", "").replace(".", "").toInt).toOption)
+        case head :: suffix :: Nil if suffix.startsWith("a") => (head, VersionSuffix.Alpha.some, Try(suffix.replace("a", "").replace(".", "").toInt).toOption)
+        case head :: suffix :: Nil if suffix.startsWith("beta0") => (head, VersionSuffix.Beta.some, Try(suffix.replace("beta0", "").toInt).toOption)
+        case head :: suffix :: Nil if suffix.startsWith("beta") => (head, VersionSuffix.Beta.some, Try(suffix.replace("beta", "").replace(".", "").toInt).toOption)
+        case head :: suffix :: Nil if suffix.startsWith("b") => (head, VersionSuffix.Beta.some, Try(suffix.replace("b", "").replace(".", "").toInt).toOption)
+        case head :: suffix :: Nil if suffix.startsWith("rc0") => (head, VersionSuffix.ReleaseCandidate.some, Try(suffix.replace("rc0", "").toInt).toOption)
+        case head :: suffix :: Nil if suffix.startsWith("rc") => (head, VersionSuffix.ReleaseCandidate.some, Try(suffix.replace("rc", "").replace(".", "").toInt).toOption)
+        /////// this section because ... ///////
+        case head :: suffix :: "dev" :: Nil if suffix.startsWith("alpha0") => (head, VersionSuffix.Dev.some, Try(suffix.replace("alpha0", "").toInt).toOption)
+        case head :: suffix :: "dev" :: Nil if suffix.startsWith("alpha") => (head, VersionSuffix.Dev.some, Try(suffix.replace("alpha", "").replace(".", "").toInt).toOption)
+        case head :: suffix :: "dev" :: Nil if suffix.startsWith("a") => (head, VersionSuffix.Dev.some, Try(suffix.replace("a", "").replace(".", "").toInt).toOption)
+        case head :: suffix :: "dev" :: Nil if suffix.startsWith("beta0") => (head, VersionSuffix.Dev.some, Try(suffix.replace("beta0", "").toInt).toOption)
+        case head :: suffix :: "dev" :: Nil if suffix.startsWith("beta") => (head, VersionSuffix.Dev.some, Try(suffix.replace("beta", "").replace(".", "").toInt).toOption)
+        case head :: suffix :: "dev" :: Nil if suffix.startsWith("b") => (head, VersionSuffix.Dev.some, Try(suffix.replace("b", "").replace(".", "").toInt).toOption)
+        case head :: suffix :: "dev" :: Nil if suffix.startsWith("rc0") => (head, VersionSuffix.Dev.some, Try(suffix.replace("rc0", "").toInt).toOption)
+        case head :: suffix :: "dev" :: Nil if suffix.startsWith("rc") => (head, VersionSuffix.Dev.some, Try(suffix.replace("rc", "").replace(".", "").toInt).toOption)
+        case head :: suffix :: "snapshot" :: Nil if suffix.startsWith("alpha0") => (head, VersionSuffix.Dev.some, Try(suffix.replace("alpha0", "").toInt).toOption)
+        case head :: suffix :: "snapshot" :: Nil if suffix.startsWith("alpha") => (head, VersionSuffix.Dev.some, Try(suffix.replace("alpha", "").replace(".", "").toInt).toOption)
+        case head :: suffix :: "snapshot" :: Nil if suffix.startsWith("a") => (head, VersionSuffix.Dev.some, Try(suffix.replace("a", "").replace(".", "").toInt).toOption)
+        case head :: suffix :: "snapshot" :: Nil if suffix.startsWith("beta0") => (head, VersionSuffix.Dev.some, Try(suffix.replace("beta0", "").toInt).toOption)
+        case head :: suffix :: "snapshot" :: Nil if suffix.startsWith("beta") => (head, VersionSuffix.Dev.some, Try(suffix.replace("beta", "").replace(".", "").toInt).toOption)
+        case head :: suffix :: "snapshot" :: Nil if suffix.startsWith("b") => (head, VersionSuffix.Dev.some, Try(suffix.replace("b", "").replace(".", "").toInt).toOption)
+        case head :: suffix :: "snapshot" :: Nil if suffix.startsWith("rc0") => (head, VersionSuffix.Dev.some, Try(suffix.replace("rc0", "").toInt).toOption)
+        case head :: suffix :: "snapshot" :: Nil if suffix.startsWith("rc") => (head, VersionSuffix.Dev.some, Try(suffix.replace("rc", "").replace(".", "").toInt).toOption)
+        /////// this section because ... ///////
+        case head :: "dev" :: Nil => (head, VersionSuffix.Dev.some, None)
+        case head :: "snapshot" :: Nil => (head, VersionSuffix.Snapshot.some, None)
+        case head :: "alpha" :: suffixValue :: Nil => (head, VersionSuffix.Alpha.some, Try(suffixValue.replace(".", "").toInt).toOption)
+        case head :: "a" :: suffixValue :: Nil => (head, VersionSuffix.Alpha.some, Try(suffixValue.replace(".", "").toInt).toOption)
+        case head :: "beta" :: suffixValue :: Nil => (head, VersionSuffix.Beta.some, Try(suffixValue.replace(".", "").toInt).toOption)
+        case head :: "b" :: suffixValue :: Nil => (head, VersionSuffix.Beta.some, Try(suffixValue.replace(".", "").toInt).toOption)
+        case head :: "rc" :: suffixValue :: Nil => (head, VersionSuffix.ReleaseCandidate.some, Try(suffixValue.replace(".", "").toInt).toOption)
+        case head :: _ => (head, None, None)
+      }
+    } else {
+      splits.find(lower.contains(_)) match {
+        case None => (lower, None, None)
+        case Some(split) => lower.split(split).toList match {
+          case head :: Nil if split == "dev"      => (head, VersionSuffix.Dev.some, None)
+          case head :: Nil if split == "snapshot" => (head, VersionSuffix.Snapshot.some, None)
+          case head :: suffixValue :: Nil if split == "alpha0" => (head, VersionSuffix.Alpha.some, Try(suffixValue.toInt).toOption)
+          case head :: suffixValue :: Nil if split == "alpha"  => (head, VersionSuffix.Alpha.some, Try(suffixValue.replace(".", "").toInt).toOption)
+          case head :: suffixValue :: Nil if split == "a"  => (head, VersionSuffix.Alpha.some, Try(suffixValue.replace(".", "").toInt).toOption)
+          case head :: suffixValue :: Nil if split == "beta0" => (head, VersionSuffix.Beta.some, Try(suffixValue.toInt).toOption)
+          case head :: suffixValue :: Nil if split == "beta"  => (head, VersionSuffix.Beta.some, Try(suffixValue.replace(".", "").toInt).toOption)
+          case head :: suffixValue :: Nil if split == "a"  => (head, VersionSuffix.Beta.some, Try(suffixValue.replace(".", "").toInt).toOption)
+          case head :: suffixValue :: Nil if split == "rc0" => (head, VersionSuffix.ReleaseCandidate.some, Try(suffixValue.toInt).toOption)
+          case head :: suffixValue :: Nil if split == "rc"  => (head, VersionSuffix.ReleaseCandidate.some, Try(suffixValue.replace(".", "").toInt).toOption)
+          case head :: _ => (head, None, None)
+        }
+      }
     }
-    val (major, minor, micro) = versionText.split("\\.").toList match {
+    val (major, minor, patch) = versionText.split("\\.").toList match {
       case _major :: Nil                     => (Try(_major.toInt).getOrElse(0), 0, 0)
       case _major :: _minor :: Nil           => (Try(_major.toInt).getOrElse(0), Try(_minor.toInt).getOrElse(0), 0)
-      case _major :: _minor :: _micro :: Nil => (Try(_major.toInt).getOrElse(0), Try(_minor.toInt).getOrElse(0), Try(_micro.toInt).getOrElse(0))
+      case _major :: _minor :: _patch :: Nil => (Try(_major.toInt).getOrElse(0), Try(_minor.toInt).getOrElse(0), Try(_patch.toInt).getOrElse(0))
       case _                                 => (0, 0, 0)
     }
-    new Version(major, minor, micro, suffix, suffixValue, rawVersion)
+    new Version(major, minor, patch, suffix, suffixValue, rawVersion)
   }
 }

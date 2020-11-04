@@ -23,6 +23,12 @@ class VersionSpec extends WordSpec with MustMatchers with OptionValues {
       Version("1.5.0-rc-2").isAfter(Version("1.5.0-beta3")) mustBe true
       Version("1.5.0-alpha01").isEquals(Version("1.5.0-alpha-1")) mustBe true
       Version("1.5.0-alpha01").isEquals(Version("1.5.0-alpha1")) mustBe true
+      Version("v1.5.0-alpha01").isEquals(Version("1.5.0-alpha1")) mustBe true
+      Version("v1alpha1").isEquals(Version("1.0.0-alpha01")) mustBe true
+      Version("v1alpha1").isEquals(Version("1.0.0-alpha1")) mustBe true
+      Version("v1alpha1").isEquals(Version("1.0.0-alpha-1")) mustBe true
+      Version("v1alpha1").isEquals(Version("1.0.0-alpha.1")) mustBe true
+      Version("v1alpha1").isEquals(Version("1.0.0-a.1")) mustBe true
     }
   }
 }
