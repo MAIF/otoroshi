@@ -304,7 +304,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
     }
   }
 
-  def updateConfigMap(namespace: String, name: String, newValue: KubernetesConfigMap): Future[Option[KubernetesConfigMap]] = {
+  def updateConfigMap(namespace: String, name: String, newValue: KubernetesConfigMap): Future[Either[(Int, String), KubernetesConfigMap]] = {
     val cli: WSRequest = client(s"/api/v1/namespaces/$namespace/configmaps/$name", false)
     cli.addHttpHeaders(
       "Accept" -> "application/json",
@@ -312,13 +312,13 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
     ).put(newValue.raw).map { resp =>
       Try {
         if (resp.status == 200 || resp.status == 201) {
-          KubernetesConfigMap(resp.json).some
+          KubernetesConfigMap(resp.json).right
         } else {
-          None
+          Left((resp.status, resp.body))
         }
       } match {
         case Success(r) => r
-        case Failure(e) => None
+        case Failure(e) => Left((0, e.getMessage))
       }
     }
   }

@@ -956,9 +956,10 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
                 val expirations = new ConcurrentHashMap[String, Long]()
                 resp.bodyAsSource
                   .via(env.clusterConfig.gunzip())
-                  .via(Framing.delimiter(ByteString("\n"), 32 * 1024 * 1024))
-                  .runWith(Sink.foreach { bs =>
-                    val item  = Json.parse(bs.utf8String)
+                  .via(Framing.delimiter(ByteString("\n"), 32 * 1024 * 1024, true))
+                  .map(bs => Try(Json.parse(bs.utf8String)))
+                  .collect { case Success(item) => item }
+                  .runWith(Sink.foreach { item =>
                     val key   = (item \ "k").as[String]
                     val value = (item \ "v").as[JsValue]
                     val what  = (item \ "w").as[String]

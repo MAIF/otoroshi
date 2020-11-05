@@ -997,9 +997,10 @@ object KubernetesCRDsJob {
   def patchCoreDnsConfig(conf: KubernetesConfig, ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     val client = new KubernetesClient(conf, env)
     val hash = s"${conf.kubeSystemNamespace}-${conf.clusterDomain}-${conf.otoroshiServiceName}-${conf.otoroshiNamespace}"
-    val configHasChanged = lastDnsConfigRef.get() != hash
+    // val configHasChanged = lastDnsConfigRef.get() != hash
 
     def patchConfig(coredns: KubernetesDeployment, configMap: KubernetesConfigMap, append: Boolean): Future[Unit] = {
+      logger.info("patching coredns config. with otoroshi mesh")
       val container = (coredns.raw \ "spec" \ "containers").as[JsArray].value.find(_.select("name").asOpt[String].contains("coredns"))
       val coredns17 = container.flatMap(_.select("image").asOpt[String].map(_.split(":").last.replace(".", "")).map {
         case version if version.length == 2 => version.toInt > 16
@@ -1011,6 +1012,7 @@ object KubernetesCRDsJob {
       val upstream = if (coredns17) "" else "upstream"
       val otoMesh =
         s"""### otoroshi-mesh-begin ###
+           |### config-hash: $hash
            |otoroshi.mesh:53 {
            |    errors
            |    health
@@ -1037,13 +1039,19 @@ object KubernetesCRDsJob {
       if (append) {
         val newData = (configMap.raw \ "data").as[JsObject] ++ Json.obj("Corefile" -> (otoMesh + coreFile))
         val newRaw = configMap.raw.as[JsObject] ++ Json.obj("data" -> newData)
-        client.updateConfigMap(configMap.namespace, configMap.name, KubernetesConfigMap(newRaw)).map(_ => ())
+        client.updateConfigMap(configMap.namespace, configMap.name, KubernetesConfigMap(newRaw)).andThen {
+          case Failure(e) => logger.error("error while patching coredns config. (append)", e)
+          case Success(Left((status, body))) => logger.error(s"error while patching coredns config. got status $status and body '$body' (append)")
+        }.map(_ => ())
       } else {
         val head = coreFile.split("### otoroshi-mesh-begin ###").toSeq.head
         val tail = coreFile.split("### otoroshi-mesh-end ###").toSeq.last
         val newData = (configMap.raw \ "data").as[JsObject] ++ Json.obj("Corefile" -> (head + otoMesh + tail))
         val newRaw = configMap.raw.as[JsObject] ++ Json.obj("data" -> newData)
-        client.updateConfigMap(configMap.namespace, configMap.name, KubernetesConfigMap(newRaw)).map(_ => ())
+        client.updateConfigMap(configMap.namespace, configMap.name, KubernetesConfigMap(newRaw)).andThen {
+          case Failure(e) => logger.error("error while patching coredns config.", e)
+          case Success(Left((status, body))) => logger.error(s"error while patching coredns config. got status $status and body '$body'")
+        }.map(_ => ())
       }
     }
 
@@ -1052,10 +1060,24 @@ object KubernetesCRDsJob {
       case Some(coredns) => {
         client.fetchConfigMap(conf.kubeSystemNamespace, "coredns").flatMap {
           case None => ().future
-          case Some(configMap) if configMap.hasOtoroshiMesh && !configHasChanged =>
-            ().future
-          case Some(configMap) if configMap.hasOtoroshiMesh && configHasChanged =>
-            patchConfig(coredns, configMap, false)
+          case Some(configMap) if configMap.hasOtoroshiMesh => {
+            val hashFromConfigMap = configMap.corefile
+              .split("\\n")
+              .find(_.trim.startsWith("### config-hash: "))
+              .map(_.replace("### config-hash: ", "").replace("\n", ""))
+              .getOrElse("--")
+            val configHasChanged = hashFromConfigMap != hash
+            logger.debug(s"current hash: $hash, hash from coredns configmap: $hashFromConfigMap, config has changed: $configHasChanged")
+            if (configHasChanged) {
+              patchConfig(coredns, configMap, true)
+            } else {
+              ().future
+            }
+          }
+          // case Some(configMap) if configMap.hasOtoroshiMesh && !configHasChanged =>
+          //   ().future
+          // case Some(configMap) if configMap.hasOtoroshiMesh && configHasChanged =>
+          //   patchConfig(coredns, configMap, false)
           case Some(configMap) => {
             patchConfig(coredns, configMap, true)
             ().future
