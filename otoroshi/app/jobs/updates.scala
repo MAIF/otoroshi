@@ -91,10 +91,12 @@ sealed trait VersionSuffix {
   def isBefore(vSuffix: VersionSuffix, sSuffixVersion: Int, vSuffixVersion: Int): Boolean = !isAfter(vSuffix, sSuffixVersion, vSuffixVersion)
   def isAfter(vSuffix: VersionSuffix, sSuffixVersion: Int, vSuffixVersion: Int): Boolean
   def isEquals(vSuffix: VersionSuffix, sSuffixVersion: Int, vSuffixVersion: Int): Boolean
+  def stringify(): String
 }
 
 object VersionSuffix {
   case object Dev extends VersionSuffix {
+    def stringify(): String = "dev"
     def isAfter(vSuffix: VersionSuffix, sSuffixVersion: Int, vSuffixVersion: Int): Boolean = vSuffix match {
       case Dev => sSuffixVersion > vSuffixVersion
       case Snapshot => sSuffixVersion > vSuffixVersion
@@ -109,10 +111,12 @@ object VersionSuffix {
     }
   }
   case object Snapshot extends VersionSuffix {
+    def stringify(): String = "snapshot"
     def isAfter(vSuffix: VersionSuffix, sSuffixVersion: Int, vSuffixVersion: Int): Boolean = Dev.isAfter(vSuffix, sSuffixVersion, vSuffixVersion)
     def isEquals(vSuffix: VersionSuffix, sSuffixVersion: Int, vSuffixVersion: Int): Boolean = Dev.isEquals(vSuffix, sSuffixVersion, vSuffixVersion)
   }
   case object Alpha extends VersionSuffix {
+    def stringify(): String = "alpha"
     def isAfter(vSuffix: VersionSuffix, sSuffixVersion: Int, vSuffixVersion: Int): Boolean = vSuffix match {
       case Dev => true
       case Snapshot => true
@@ -126,6 +130,7 @@ object VersionSuffix {
     }
   }
   case object Beta extends VersionSuffix {
+    def stringify(): String = "beta"
     def isAfter(vSuffix: VersionSuffix, sSuffixVersion: Int, vSuffixVersion: Int): Boolean = vSuffix match {
       case Dev => true
       case Snapshot => true
@@ -139,6 +144,7 @@ object VersionSuffix {
     }
   }
   case object ReleaseCandidate extends VersionSuffix {
+    def stringify(): String = "rc"
     def isAfter(vSuffix: VersionSuffix, sSuffixVersion: Int, vSuffixVersion: Int): Boolean = vSuffix match {
       case Dev => true
       case Snapshot => true
@@ -153,7 +159,7 @@ object VersionSuffix {
   }
 }
 
-case class Version(major: Int, minor: Int, patch: Int, suffix: Option[VersionSuffix], suffixVersion: Option[Int], raw: String) extends Comparable[Version] {
+case class Version(major: Int, minor: Int, patch: Int, build: Option[Int], suffix: Option[VersionSuffix], suffixVersion: Option[Int], raw: String) extends Comparable[Version] {
   lazy val value = {
     raw.toLowerCase() match {
       case v if v.contains("-snapshot") =>
@@ -256,6 +262,12 @@ case class Version(major: Int, minor: Int, patch: Int, suffix: Option[VersionSuf
       case (Some(sSuffix), Some(vSuffix)) => sSuffix.isEquals(vSuffix, suffixVersion.getOrElse(0), version.suffixVersion.getOrElse(0))
     }
   }
+  def stringify(): String = {
+    val buildStr = build.map(v => s".$v")
+    val suffixStr = suffix.map(v => s"-${v.stringify()}")
+    val suffixVersionStr = suffixVersion.map(v => s".$v")
+    s"$major.$minor.$patch$buildStr$suffixStr$suffixVersionStr"
+  }
 }
 
 object Version {
@@ -317,12 +329,13 @@ object Version {
         }
       }
     }
-    val (major, minor, patch) = versionText.split("\\.").toList match {
-      case _major :: Nil                     => (Try(_major.toInt).getOrElse(0), 0, 0)
-      case _major :: _minor :: Nil           => (Try(_major.toInt).getOrElse(0), Try(_minor.toInt).getOrElse(0), 0)
-      case _major :: _minor :: _patch :: Nil => (Try(_major.toInt).getOrElse(0), Try(_minor.toInt).getOrElse(0), Try(_patch.toInt).getOrElse(0))
-      case _                                 => (0, 0, 0)
+    val (major, minor, patch, build) = versionText.split("\\.").toList match {
+      case _major :: Nil                               => (Try(_major.toInt).getOrElse(0), 0, 0, None)
+      case _major :: _minor :: Nil                     => (Try(_major.toInt).getOrElse(0), Try(_minor.toInt).getOrElse(0), 0, None)
+      case _major :: _minor :: _patch :: Nil           => (Try(_major.toInt).getOrElse(0), Try(_minor.toInt).getOrElse(0), Try(_patch.toInt).getOrElse(0), None)
+      case _major :: _minor :: _patch :: _build :: Nil => (Try(_major.toInt).getOrElse(0), Try(_minor.toInt).getOrElse(0), Try(_patch.toInt).getOrElse(0), Try(_build.toInt).toOption)
+      case _                                           => (0, 0, 0, None)
     }
-    new Version(major, minor, patch, suffix, suffixValue, rawVersion)
+    new Version(major, minor, patch, build, suffix, suffixValue, rawVersion)
   }
 }
