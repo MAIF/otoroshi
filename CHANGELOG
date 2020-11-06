@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0-alpha.2] - 2020-11-06
+
+https://github.com/MAIF/otoroshi/issues?q=is%3Aissue+label%3A1.5.0-alpha.2+is%3Aclosed
+https://github.com/MAIF/otoroshi/compare/v1.5.0-alpha01...v1.5.0-alpha.2
+https://github.com/MAIF/otoroshi/releases/tag/v1.5.0-alpha.2
+
+### Fixed
+
+- Fix the version checker to understand alpha and beta (#669)
+- Better coredns config patch (#671)
+
+### Added
+
+- Include jwt token fields in the elContext (#672)
+
 ## [1.5.0-alpha01] - 2020-10-29
 
 https://github.com/MAIF/otoroshi/milestone/6?closed=1
