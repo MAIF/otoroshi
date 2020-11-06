@@ -46,7 +46,7 @@ services:
       - config-server
 
   otoroshi-service-1:
-    image: maif/otoroshi:1.5.0-alpha02-dev
+    image: maif/otoroshi:1.5.0-alpha.2
     networks:
       - mesh
     environment:
@@ -59,7 +59,7 @@ services:
       - config-server
 
   otoroshi-service-2:
-    image: maif/otoroshi:1.5.0-alpha02-dev
+    image: maif/otoroshi:1.5.0-alpha.2
     networks:
       - mesh
     environment:
@@ -72,7 +72,7 @@ services:
       - config-server
 
   otoroshi-service-3:
-    image: maif/otoroshi:1.5.0-alpha02-dev
+    image: maif/otoroshi:1.5.0-alpha.2
     networks:
       - mesh
     environment:
@@ -85,7 +85,7 @@ services:
       - config-server
 
   otoroshi-service-frontend:
-    image: maif/otoroshi:1.5.0-alpha02-dev
+    image: maif/otoroshi:1.5.0-alpha.2
     networks:
       - mesh
     ports:
@@ -99,7 +99,7 @@ services:
       - service-frontend
 
   otoroshi-gateway:
-    image: maif/otoroshi:1.5.0-alpha02-dev
+    image: maif/otoroshi:1.5.0-alpha.2
     networks:
       - mesh
     ports:

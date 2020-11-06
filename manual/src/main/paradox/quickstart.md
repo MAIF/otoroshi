@@ -14,7 +14,7 @@ Otoroshi is an awesome reverse proxy built with Scala that handles all the calls
 ## Download otoroshi
 
 ```sh
-curl -L -o otoroshi.jar 'https://github.com/MAIF/otoroshi/releases/download/v1.5.0-alpha02-dev/otoroshi.jar'
+curl -L -o otoroshi.jar 'https://github.com/MAIF/otoroshi/releases/download/v1.5.0-alpha.2/otoroshi.jar'
 ```
 
 If you don’t/can’t have these tools on your machine, you can start a sandboxed environment using here with the following command
@@ -48,7 +48,7 @@ as the result, you will see something like
 ```log
 $ java -jar otoroshi.jar
 
-[info] otoroshi-env - Otoroshi version 1.5.0-alpha02-dev
+[info] otoroshi-env - Otoroshi version 1.5.0-alpha.2
 [info] otoroshi-env - Admin API exposed on http://otoroshi-api.oto.tools:8080
 [info] otoroshi-env - Admin UI  exposed on http://otoroshi.oto.tools:8080
 [warn] otoroshi-env - Scripting is enabled on this Otoroshi instance !
