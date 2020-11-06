@@ -462,4 +462,13 @@ if (!releaseLast) {
   throw new Error('No last version')
 }
 
+console.log({
+  dryRun,
+  releaseFrom,
+  releaseTo,
+  releaseNext,
+  releaseLast,
+  location
+})
+
 releaseOtoroshi(releaseFrom, releaseTo, releaseNext, releaseLast, location, dryRun);
