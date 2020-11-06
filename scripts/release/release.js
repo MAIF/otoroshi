@@ -78,7 +78,7 @@ function runSystemCommand(command, args, location, env = {}) {
   return echoReadable(source.stdout);
 }
 
-function runScript(script, where, env = {}) {
+function runScript(script, where, env = {}, fit) {
   return new Promise((success, failure) => {
     const source = spawn(script, [], {
       cwd: where,
@@ -87,10 +87,14 @@ function runScript(script, where, env = {}) {
       stdio: ['ignore', 'pipe', process.stderr]
     });
     source.on('close', (code) => {
-      if (code === 0) {
+      if (fit) {
         success('return code: ' + code)
       } else {
-        failure(new Error('bad return code: ' + code));
+        if (code === 0) {
+          success('return code: ' + code)
+        } else {
+          failure(new Error('bad return code: ' + code));
+        }
       }
     });
     return echoReadable(source.stdout);
@@ -138,7 +142,7 @@ async function buildVersion(version, where, releaseDir) {
     cp ${releaseDir}/swagger.json ${where}/manual/src/main/paradox/code/
     ps aux | grep java | grep otoroshi.jar | awk '{print $2}' | xargs kill  >> /dev/null
     rm -f ./RUNNING_PID
-  `, where);
+  `, where, {}, true);
   await runSystemCommand('git', ['commit', '-am', `Update swagger file before release`], location);
   // build doc with schemas
   await runSystemCommand('/bin/sh', [path.resolve(where, './scripts/doc.sh'), 'all'], where);
