@@ -189,7 +189,32 @@ object GlobalExpressionLanguage {
                   }
                 )
                 .getOrElse(s"no-meta-$field")
-
+            case r"user.profile.$field@(.*):$dv@(.*)" if user.isDefined =>
+              user
+                .map(_.profile)
+                .map(
+                  json =>
+                    (json \ field).asOpt[JsValue] match {
+                      case Some(JsNumber(number)) => number.toString()
+                      case Some(JsString(str))    => str
+                      case Some(JsBoolean(b))     => b.toString
+                      case _                      => dv
+                    }
+                )
+                .getOrElse(dv)
+            case r"user.profile.$field@(.*)" if user.isDefined =>
+              user
+                .map(_.profile)
+                .map(
+                  json =>
+                    (json \ field).asOpt[JsValue] match {
+                      case Some(JsNumber(number)) => number.toString()
+                      case Some(JsString(str))    => str
+                      case Some(JsBoolean(b))     => b.toString
+                      case _                      => s"no-meta-$field"
+                    }
+                )
+                .getOrElse(s"no-profile-$field")
             case expr => "bad-expr" //s"$${$expr}"
           }
         } recover {

@@ -6,7 +6,7 @@ import org.joda.time.DateTime
 import otoroshi.plugins.JsonPathUtils
 import otoroshi.script.{PreRouting, PreRoutingContext, PreRoutingError}
 import otoroshi.utils.syntax.implicits._
-import play.api.libs.json.{JsNull, JsObject, JsValue, Json}
+import play.api.libs.json.{JsBoolean, JsNull, JsNumber, JsObject, JsString, JsValue, Json}
 import play.api.mvc.Results
 import security.{IdGenerator, OtoroshiClaim}
 
@@ -86,6 +86,11 @@ class JwtUserExtractor extends PreRouting {
                 case (key, _) if registeredClaims.contains(key) => false
                 case _ => true
               })
+              val tokenMap: Map[String, String] = parsedJsonToken.value.collect {
+                case (key, JsNumber(number)) => (key, number.toString())
+                case (key, JsString(value))  => (key, value)
+                case (key, JsBoolean(value)) => (key, value.toString)
+              }.toMap
               val meta: Option[JsValue] = metaPath.flatMap(path => Try(JsonPathUtils.getAt[net.minidev.json.JSONObject](jsonToken, path)).toOption.flatten).map(o => Json.parse(o.toJSONString))
               val user: PrivateAppsUser = PrivateAppsUser(
                 randomId = IdGenerator.uuid,
@@ -103,6 +108,8 @@ class JwtUserExtractor extends PreRouting {
                 location = ctx.descriptor.location
               )
               ctx.attrs.put(otoroshi.plugins.Keys.UserKey -> user)
+              val newElContext: Map[String, String] = ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).get ++ tokenMap
+              ctx.attrs.put(otoroshi.plugins.Keys.ElCtxKey -> newElContext)
               Results.Ok(Json.obj()).future
             }
           }
