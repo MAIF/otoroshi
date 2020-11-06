@@ -1,0 +1,55 @@
+apiVersion: proxy.otoroshi.io/v1alpha1
+kind: AuthModule
+metadata:
+  name: http-app-auth
+  io.otoroshi/id: http-app-auth
+spec:
+  type: oauth2
+  desc: Keycloak mTLS
+  sessionMaxAge: 86400
+  clientId: otoroshi
+  clientSecret: ''
+  authorizeUrl: 'https://keycloak.foo.bar/auth/realms/master/protocol/openid-connect/auth'
+  tokenUrl: 'https://keycloak.foo.bar/auth/realms/master/protocol/openid-connect/token'
+  userInfoUrl: 'https://keycloak.foo.bar/auth/realms/master/protocol/openid-connect/userinfo'
+  introspectionUrl: 'https://keycloak.foo.bar/auth/realms/master/protocol/openid-connect/token/introspect'
+  loginUrl: 'https://keycloak.foo.bar/auth/realms/master/protocol/openid-connect/auth'
+  logoutUrl: 'https://keycloak.foo.bar/auth/realms/master/protocol/openid-connect/logout'
+  scope: openid address email microprofile-jwt offline_access phone profile roles web-origins
+  claims: ''
+  useCookie: false
+  useJson: false
+  readProfileFromToken: false
+  accessTokenField: access_token
+  jwtVerifier:
+    type: JWKSAlgoSettings
+    url: 'http://keycloak.foo.bar/auth/realms/master/protocol/openid-connect/certs'
+    timeout: 2000
+    headers: {}
+    ttl: 3600000
+    kty: RSA
+    proxy: 
+    mtlsConfig:
+      certs: []
+      trustedCerts: []
+      mtls: false
+      loose: false
+      trustAll: false
+  nameField: email
+  emailField: email
+  apiKeyMetaField: apkMeta
+  apiKeyTagsField: apkTags
+  otoroshiDataField: app_metadata|otoroshi_data
+  callbackUrl: 'https://privateapps.oto.tools/privateapps/generic/callback'
+  oidConfig: 'http://keycloak.foo.bar/auth/realms/master/.well-known/openid-configuration'
+  mtlsConfig:
+    certs:
+    - UID=httpapp-client, O=OtoroshiApps
+    trustedCerts:
+    - UID=httpapp-client, O=OtoroshiApps
+    mtls: true
+    loose: false
+    trustAll: false
+  proxy: 
+  extraMetadata: {}
+  refreshTokens: false
