@@ -412,7 +412,7 @@ async function releaseOtoroshi(from, to, next, last, location, dryRun) {
     }
     await changeVersion(location, from, to);
     await changeVersion(location, last, to);
-    await runSystemCommand('git', ['commit', '-am', `Update version to ${next}`], location);
+    await runSystemCommand('git', ['commit', '-am', `Update version to ${to}`], location);
   });
   await ensureStep('BUILD_OTOROSHI', releaseFile, () => buildVersion(to, location, releaseDir));
   // await ensureStep('BUILD_LINUX_CLI', releaseFile, () => buildLinuxCLI(location, to));
