@@ -65,7 +65,7 @@ export class TopBar extends Component {
           value: 'Alerts-Log',
         });
         options.push({
-          action: () => (window.location.href = 'bo/dashboard/exporters'),
+          action: () => (window.location.href = '/bo/dashboard/exporters'),
           env: <span className="glyphicon glyphicon-send" />,
           label: 'Exporters',
           value: 'exporters',
