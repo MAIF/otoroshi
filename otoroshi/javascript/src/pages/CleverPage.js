@@ -39,7 +39,7 @@ export class CleverPage extends Component {
       notFilterable: true,
       cell: (item) =>
         item === 'exists' ? (
-          <span className="glyphicon glyphicon-ok-sign" />
+          <span className="fas fa-check-circle" />
         ) : (
           <span style={{ color: 'red' }} className="glyphicon glyphicon-exclamation-sign" />
         ),

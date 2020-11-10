@@ -85,16 +85,16 @@ h4 {
     margin-left: 0px;
     // margin-right: -5px;
 }
-.backoffice-container .glyphicon-ok-sign,.backoffice-container .glyphicon-remove-sign{
+.backoffice-container .fa-check-circle,.backoffice-container .fa-times-circle{
     font-size: 16px;
     top: 4px;
 }
 
-.fa-globe-americas,.glyphicon-ok-sign,.fa-lock {
+.backoffice-container .fa-globe-americas,.backoffice-container .fa-check-circle, .backoffice-container .fa-lock {
   color:$savecolor;
 }
 
-.fa-unlock-alt, .glyphicon-remove-sign.alertorange {
+.backoffice-container .fa-unlock-alt, .fas fa-times-circle.alertorange {
   color:orange;
 }
 
