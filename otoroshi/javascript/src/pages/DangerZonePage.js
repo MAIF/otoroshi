@@ -1133,7 +1133,7 @@ export class DangerZonePage extends Component {
                   type="button"
                   onClick={this.saveGlobalConfig}
                   {...propsDisabled}>
-                  <i className="glyphicon glyphicon-hdd" />
+                  <i className="fas fa-hdd" />
                 </button>
               </div>
             </div>
@@ -1173,7 +1173,7 @@ export class DangerZonePage extends Component {
                     paddingBottom: 6,
                     cursor: 'pointer',
                   }}>
-                  <i className="glyphicon glyphicon-file" /> Recover from a full export file
+                  <i className="fas fa-file" /> Recover from a full export file
                 </label>
               </div>
             </div>
@@ -1183,7 +1183,7 @@ export class DangerZonePage extends Component {
               <label className="col-sm-2 control-label" />
               <div className="col-sm-10">
                 <button type="button" className="btn btn-danger" onClick={this.importData}>
-                  <i className="glyphicon glyphicon-import" /> Flush DataStore & Import file '
+                  <i className="fas fa-file-import" /> Flush DataStore & Import file '
                   {this.state.readyToPush}'
                 </button>
               </div>
@@ -1196,17 +1196,17 @@ export class DangerZonePage extends Component {
             <label className="col-sm-2 control-label" />
             <div className="col-sm-10">
               <button type="button" className="btn btn-success" onClick={this.fullExport}>
-                <i className="glyphicon glyphicon-export" /> Full export
+                <i className="fas fa-file-export" /> Full export
               </button>
               <button type="button" className="btn btn-success" onClick={this.fullExportNdJson}>
-                <i className="glyphicon glyphicon-export" /> Full export (ndjson)
+                <i className="fas fa-file-export" /> Full export (ndjson)
               </button>
               <button
                 type="button"
                 className="btn btn-danger"
                 style={{ marginLeft: 5, marginRight: 5 }}
                 onClick={this.panicMode}>
-                <i className="glyphicon glyphicon-fire" /> Enable Panic Mode
+                <i className="fas fa-fire" /> Enable Panic Mode
               </button>
             </div>
           </div>
@@ -1225,18 +1225,18 @@ class BackOfficeAuthButtons extends Component {
         <div className="col-sm-10">
           {!this.props.rawValue.backOfficeAuthRef && (
             <a href={`/bo/dashboard/auth-configs/add`} className="btn btn-sm btn-primary">
-              <i className="glyphicon glyphicon-plus" /> Create a new auth. config.
+              <i className="fas fa-plus" /> Create a new auth. config.
             </a>
           )}
           {this.props.rawValue.backOfficeAuthRef && (
             <a
               href={`/bo/dashboard/auth-configs/edit/${this.props.rawValue.backOfficeAuthRef}`}
               className="btn btn-sm btn-success">
-              <i className="glyphicon glyphicon-edit" /> Edit the auth. config.
+              <i className="fas fa-edit" /> Edit the auth. config.
             </a>
           )}
           <a href={`/bo/dashboard/auth-configs`} className="btn btn-sm btn-primary">
-            <i className="glyphicon glyphicon-link" /> all auth. config.
+            <i className="fas fa-link" /> all auth. config.
           </a>
         </div>
       </div>

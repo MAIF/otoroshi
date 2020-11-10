@@ -42,7 +42,7 @@ export function DefaultSidebar(props) {
           href="#"
           onClick={props.addService}
           {...createTooltip('Create a new service descriptor')}>
-          <i className="glyphicon glyphicon-plus" /> Add service
+          <i className="fas fa-plus" /> Add service
         </a>
       </li>
       {props.env && props.env.clevercloud && (
@@ -53,7 +53,7 @@ export function DefaultSidebar(props) {
             {...createTooltip(
               'Create a new service descriptor based on an existing Clever Cloud application'
             )}>
-            <i className="glyphicon glyphicon-plus" /> Add service from a CleverApp
+            <i className="fas fa-plus" /> Add service from a CleverApp
           </a>
         </li>
       )}
@@ -73,7 +73,7 @@ export function DefaultSidebar(props) {
       </li>
       <li>
         <a href={`/bo/dashboard/apikeys/add`} {...createTooltip('Create a new apikey')}>
-          <i className="glyphicon glyphicon-plus" /> Add apikey
+          <i className="fas fa-plus" /> Add apikey
         </a>
       </li>
       <li>
@@ -92,7 +92,7 @@ export function DefaultSidebar(props) {
       </li>
       <li>
         <a href={`/bo/dashboard/tcp/services/add`} {...createTooltip('Create a new Tcp service')}>
-          <i className="glyphicon glyphicon-plus" /> Add Tcp service
+          <i className="fas fa-plus" /> Add Tcp service
         </a>
       </li>
     </ul>

@@ -50,7 +50,7 @@ export class ServicesPage extends Component {
             className="btn btn-danger btn-sm"
             disabled={this.state && this.state.env && this.state.env.adminApiId === item.id}
             onClick={(e) => this.deleteService(item, table)}>
-            <i className="glyphicon glyphicon-trash" />
+            <i className="fas fa-trash" />
           </button>
         );
       },
@@ -156,7 +156,7 @@ export class ServicesPage extends Component {
         className="btn btn-danger btn-sm"
         disabled={this.state && this.state.env && this.state.env.adminApiId === item.id}
         onClick={(e) => this.deleteService(item, table)}>
-        <i className="glyphicon glyphicon-trash" />
+        <i className="fas fa-trash" />
       </button>
     );
   };
@@ -265,7 +265,7 @@ export class ServicesPage extends Component {
                   onClick={this.addService}
                   style={{ marginRight: 0 }}
                   className="btn btn-primary">
-                  <i className="glyphicon glyphicon-plus-sign" /> Create new service
+                  <i className="fas fa-plus-circle" /> Create new service
                 </button>
               </div>
             </>

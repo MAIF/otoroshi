@@ -40,7 +40,7 @@ export class UpdateOtoroshiVersion extends Component {
               );
               this.forceUpdate();
             }}>
-            <i className="glyphicon glyphicon-remove" />
+            <i className="fas fa-times" />
           </button>
         </div>
       );

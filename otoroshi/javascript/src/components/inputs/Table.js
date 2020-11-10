@@ -314,7 +314,7 @@ export class Table extends Component {
                 className="btn btn-sm btn-success"
                 {...createTooltip(`Edit this ${this.props.itemName}`, 'top', true)}
                 onClick={(e) => this.showEditForm(e, item)}>
-                <i className="glyphicon glyphicon-pencil" />
+                <i className="fas fa-pencil-alt" />
               </button>
               {this.props.showLink && (
                 <button
@@ -322,7 +322,7 @@ export class Table extends Component {
                   className="btn btn-sm btn-primary"
                   {...createTooltip(`Open this ${this.props.itemName}`, 'top', true)}
                   onClick={(e) => this.gotoItem(e, item)}>
-                  <i className="glyphicon glyphicon-link" />
+                  <i className="fas fa-link" />
                 </button>
               )}
               {this.props.displayTrash && this.props.displayTrash(item) && (
@@ -331,7 +331,7 @@ export class Table extends Component {
                   className="btn btn-sm btn-danger"
                   disabled
                   {...createTooltip(`Delete this ${this.props.itemName}`, 'top', true)}>
-                  <i className="glyphicon glyphicon-trash" />
+                  <i className="fas fa-trash" />
                 </button>
               )}
               {this.props.displayTrash && !this.props.displayTrash(item) && (
@@ -340,7 +340,7 @@ export class Table extends Component {
                   className="btn btn-sm btn-danger"
                   onClick={(e) => this.deleteItem(e, item)}
                   {...createTooltip(`Delete this ${this.props.itemName}`, 'top', true)}>
-                  <i className="glyphicon glyphicon-trash" />
+                  <i className="fas fa-trash" />
                 </button>
               )}
               {!this.props.displayTrash && (
@@ -349,7 +349,7 @@ export class Table extends Component {
                   className="btn btn-sm btn-danger"
                   {...createTooltip(`Delete this ${this.props.itemName}`, 'top', true)}
                   onClick={(e) => this.deleteItem(e, item)}>
-                  <i className="glyphicon glyphicon-trash" />
+                  <i className="fas fa-trash" />
                 </button>
               )}
             </div>
@@ -368,7 +368,7 @@ export class Table extends Component {
                   className="btn btn-primary"
                   {...createTooltip('Reload the current table')}
                   onClick={this.update}>
-                  <span className="glyphicon glyphicon-refresh" />
+                  <span className="fas fa-sync" />
                 </button>
                 {this.props.showActions && (
                   <button
@@ -377,7 +377,7 @@ export class Table extends Component {
                     style={{ marginLeft: 10 }}
                     onClick={this.showAddForm}
                     {...createTooltip(`Create a new ${this.props.itemName}`)}>
-                    <span className="glyphicon glyphicon-plus-sign" /> Add item
+                    <span className="fas fa-plus-circle" /> Add item
                   </button>
                 )}
                 {this.props.injectTopBar && this.props.injectTopBar()}
@@ -446,12 +446,12 @@ export class Table extends Component {
               </button>
               {this.props.stayAfterSave && (
                 <button type="button" className="btn btn-primary" onClick={this.createItemAndStay}>
-                  <i className="glyphicon glyphicon-hdd" /> Create and stay on this{' '}
+                  <i className="fas fa-hdd" /> Create and stay on this{' '}
                   {this.props.itemName}
                 </button>
               )}
               <button type="button" className="btn btn-primary" onClick={this.createItem}>
-                <i className="glyphicon glyphicon-hdd" /> Create {this.props.itemName}
+                <i className="fas fa-hdd" /> Create {this.props.itemName}
               </button>
             </div>
           </div>
@@ -488,7 +488,7 @@ export class Table extends Component {
                   className="btn btn-danger"
                   title="Delete current item"
                   disabled>
-                  <i className="glyphicon glyphicon-trash" /> Delete
+                  <i className="fas fa-trash" /> Delete
                 </button>
               )}
               {this.props.displayTrash && !this.props.displayTrash(this.state.currentItem) && (
@@ -497,7 +497,7 @@ export class Table extends Component {
                   className="btn btn-danger"
                   title="Delete current item"
                   onClick={(e) => this.deleteItem(e, this.state.currentItem)}>
-                  <i className="glyphicon glyphicon-trash" /> Delete
+                  <i className="fas fa-trash" /> Delete
                 </button>
               )}
               {!this.props.displayTrash && (
@@ -506,20 +506,20 @@ export class Table extends Component {
                   className="btn btn-danger"
                   title="Delete current item"
                   onClick={(e) => this.deleteItem(e, this.state.currentItem)}>
-                  <i className="glyphicon glyphicon-trash" /> Delete
+                  <i className="fas fa-trash" /> Delete
                 </button>
               )}
               <button type="button" className="btn btn-danger" onClick={this.closeEditForm}>
-                <i className="glyphicon glyphicon-remove" /> Cancel
+                <i className="fas fa-times" /> Cancel
               </button>
               {this.props.stayAfterSave && (
                 <button type="button" className="btn btn-success" onClick={this.updateItemAndStay}>
-                  <i className="glyphicon glyphicon-hdd" /> Update and stay on this{' '}
+                  <i className="fas fa-hdd" /> Update and stay on this{' '}
                   {this.props.itemName}
                 </button>
               )}
               <button type="button" className="btn btn-success" onClick={this.updateItem}>
-                <i className="glyphicon glyphicon-hdd" /> Update {this.props.itemName}
+                <i className="fas fa-hdd" /> Update {this.props.itemName}
               </button>
             </div>
           </div>

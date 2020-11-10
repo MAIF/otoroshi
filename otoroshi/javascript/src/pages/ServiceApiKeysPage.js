@@ -64,7 +64,7 @@ const ResetSecret = ({ changeValue }) => (
         type="button"
         className="btn btn-danger btn-xs"
         onClick={(e) => changeValue('clientSecret', faker.random.alphaNumeric(64))}>
-        <i className="glyphicon glyphicon-refresh" /> Reset secret
+        <i className="fas fa-sync" /> Reset secret
       </button>
     </div>
   </div>
@@ -88,7 +88,7 @@ class ResetQuotas extends Component {
         <label className="col-sm-2 control-label" />
         <div className="col-sm-10">
           <button type="button" className="btn btn-danger btn-xs" onClick={this.resetQuotas}>
-            <i className="glyphicon glyphicon-refresh" /> Reset quotas consumption
+            <i className="fas fa-sync" /> Reset quotas consumption
           </button>
         </div>
       </div>
@@ -535,7 +535,7 @@ const ApiKeysConstants = {
               that.state.service ? that.state.service.id : '-'
             }/apikeys/edit/${item.clientId}/stats`)
           }>
-          <i className="glyphicon glyphicon-stats" />
+          <i className="fas fa-chart-bar" />
         </button>
       ),
     },

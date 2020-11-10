@@ -26,7 +26,7 @@ export class ServiceHealthPage extends Component {
       content: (item) => item.health,
       cell: (v, item) => {
         const color = item.health ? this.colors[item.health] : 'grey';
-        return <span className="glyphicon glyphicon-heart" style={{ color, fontSize: 16 }} />;
+        return <span className="fas fa-heart" style={{ color, fontSize: 16 }} />;
       },
     },
     {
@@ -50,7 +50,7 @@ export class ServiceHealthPage extends Component {
       const color = evts[0].health ? this.colors[evts[0].health] : 'grey';
       this.title = (
         <span>
-          Service health is <i className="glyphicon glyphicon-heart" style={{ color }} />
+          Service health is <i className="fas fa-heart" style={{ color }} />
         </span>
       );
       this.props.setTitle(this.title);

@@ -117,7 +117,7 @@ class Target extends Component {
             className="btn btn-primary btn-xs"
             style={{ marginLeft: 5, height: 32, marginTop: 1 }}
             onClick={(e) => this.setState({ showMore: !this.state.showMore })}>
-            <i className="glyphicon glyphicon-eye-open" /> Show more
+            <i className="fas fa-eye" /> Show more
           </button>
         )}
       />
@@ -462,7 +462,7 @@ class CanaryCampaign extends Component {
               standard)
             </span>
             <button type="button" className="btn btn-danger btn-xs" onClick={this.reset}>
-              <i className="glyphicon glyphicon-trash" /> Reset campaign
+              <i className="fas fa-trash" /> Reset campaign
             </button>
           </div>
         )}
@@ -520,7 +520,7 @@ class CleverSelector extends Component {
     }
     return (
       <button type="button" className="btn btn-xs btn-success" onClick={this.show}>
-        <i className="glyphicon glyphicon-plus-sign" /> Select a target from CleverCloud
+        <i className="fas fa-plus-circle" /> Select a target from CleverCloud
       </button>
     );
   }
@@ -1015,7 +1015,7 @@ export class ServicePage extends Component {
                   true
                 )}
                 onClick={this.deleteService}>
-                <i className="glyphicon glyphicon-trash" />
+                <i className="fas fa-trash" />
               </button>
               {this.state.allCollapsed && (
                 <button
@@ -1023,7 +1023,7 @@ export class ServicePage extends Component {
                   type="button"
                   onClick={this.toggleCollapsed}
                   {...createTooltip('Unfold all form groups', 'left', true)}>
-                  <i className="glyphicon glyphicon-eye-open" />
+                  <i className="fas fa-eye" />
                 </button>
               )}
               {!this.state.allCollapsed && (
@@ -1032,7 +1032,7 @@ export class ServicePage extends Component {
                   type="button"
                   onClick={this.toggleCollapsed}
                   {...createTooltip('Fold all form groups', 'left', true)}>
-                  <i className="glyphicon glyphicon-eye-close" />
+                  <i className="fas fa-eye-slash" />
                 </button>
               )}
 
@@ -1041,7 +1041,7 @@ export class ServicePage extends Component {
                 type="button"
                 {...createTooltip('Export the current service as a JSON file.', 'left', true)}
                 onClick={this.exportService}>
-                <i className="glyphicon glyphicon-export" />
+                <i className="fas fa-file-export" />
               </button>
               <button
                 className="btn btn-info"
@@ -1104,7 +1104,7 @@ export class ServicePage extends Component {
                 className="btn btn-success pull-right btn-xs"
                 {...createTooltip('You can create a new group to host this descriptor')}
                 onClick={this.createNewGroup}>
-                <i className="glyphicon glyphicon-plus" /> Create a new group
+                <i className="fas fa-plus" /> Create a new group
               </button>
               <button
                 type="button"
@@ -1114,7 +1114,7 @@ export class ServicePage extends Component {
                   'You can create a new group with an auto generated name to host this descriptor'
                 )}
                 onClick={this.createDedicatedGroup}>
-                <i className="glyphicon glyphicon-plus" /> Create dedicated group
+                <i className="fas fa-plus" /> Create dedicated group
               </button>
             </div>
           </div>
@@ -1304,12 +1304,12 @@ export class ServicePage extends Component {
                     type="button"
                     onClick={this.createLetsEncrypt}
                     className="btn btn-xs btn-info">
-                    <i className="glyphicon glyphicon-plus-sign" /> Create Let's Encrypt cert.
+                    <i className="fas fa-plus-circle" /> Create Let's Encrypt cert.
                   </button>
                 )}
                 {!this.state.neverSaved && (
                   <button type="button" onClick={this.createCert} className="btn btn-xs btn-info">
-                    <i className="glyphicon glyphicon-plus-sign" /> Create certificate
+                    <i className="fas fa-plus-circle" /> Create certificate
                   </button>
                 )}
               </div>
@@ -1787,18 +1787,18 @@ export class ServicePage extends Component {
               <div className="col-sm-10">
                 {!this.state.service.authConfigRef && (
                   <a href={`/bo/dashboard/auth-configs/add`} className="btn btn-sm btn-primary">
-                    <i className="glyphicon glyphicon-plus" /> Create a new auth. config.
+                    <i className="fas fa-plus" /> Create a new auth. config.
                   </a>
                 )}
                 {this.state.service.authConfigRef && (
                   <a
                     href={`/bo/dashboard/auth-configs/edit/${this.state.service.authConfigRef}`}
                     className="btn btn-sm btn-success">
-                    <i className="glyphicon glyphicon-edit" /> Edit the auth. config.
+                    <i className="fas fa-edit" /> Edit the auth. config.
                   </a>
                 )}
                 <a href={`/bo/dashboard/auth-configs`} className="btn btn-sm btn-primary">
-                  <i className="glyphicon glyphicon-link" /> all auth. config.
+                  <i className="fas fa-link" /> all auth. config.
                 </a>
               </div>
             </div>
@@ -2077,18 +2077,18 @@ export class ServicePage extends Component {
                   <div className="col-sm-10">
                     {!this.state.service.thirdPartyApiKey.oidcConfigRef && (
                       <a href={`/bo/dashboard/auth-configs/add`} className="btn btn-sm btn-primary">
-                        <i className="glyphicon glyphicon-plus" /> Create a new auth. config.
+                        <i className="fas fa-plus" /> Create a new auth. config.
                       </a>
                     )}
                     {this.state.service.thirdPartyApiKey.oidcConfigRef && (
                       <a
                         href={`/bo/dashboard/auth-configs/edit/${this.state.service.thirdPartyApiKey.oidcConfigRef}`}
                         className="btn btn-sm btn-success">
-                        <i className="glyphicon glyphicon-edit" /> Edit the auth. config.
+                        <i className="fas fa-edit" /> Edit the auth. config.
                       </a>
                     )}
                     <a href={`/bo/dashboard/auth-configs`} className="btn btn-sm btn-primary">
-                      <i className="glyphicon glyphicon-link" /> all auth. config.
+                      <i className="fas fa-link" /> all auth. config.
                     </a>
                   </div>
                 </div>
@@ -2269,7 +2269,7 @@ export class ServicePage extends Component {
                   <div className="col-sm-10">
                     {!this.state.service.jwtVerifier.ids.length === 0 && (
                       <a href={`/bo/dashboard/jwt-verifiers/add`} className="btn btn-primary">
-                        <i className="glyphicon glyphicon-plus" /> Create a new Jwt Verifier config
+                        <i className="fas fa-plus" /> Create a new Jwt Verifier config
                       </a>
                     )}
                     {this.state.service.jwtVerifier.ids.length > 0 &&
@@ -2278,7 +2278,7 @@ export class ServicePage extends Component {
                           <a
                             href={`/bo/dashboard/jwt-verifiers/edit/${id}`}
                             className="btn btn-success">
-                            <i className="glyphicon glyphicon-edit" /> Edit the global Jwt Verifier
+                            <i className="fas fa-edit" /> Edit the global Jwt Verifier
                           </a>
                         );
                       })}
@@ -2413,18 +2413,18 @@ export class ServicePage extends Component {
                   <a
                     href={`/bo/dashboard/validation-authorities/add`}
                     className="btn btn-sm btn-primary">
-                    <i className="glyphicon glyphicon-plus" /> Create a new validation authority.
+                    <i className="fas fa-plus" /> Create a new validation authority.
                   </a>
                 )}
                 {this.state.service.clientValidatorRef && (
                   <a
                     href={`/bo/dashboard/validation-authorities/edit/${this.state.service.clientValidatorRef}`}
                     className="btn btn-sm btn-success">
-                    <i className="glyphicon glyphicon-edit" /> Edit the validation authority.
+                    <i className="fas fa-edit" /> Edit the validation authority.
                   </a>
                 )}
                 <a href={`/bo/dashboard/validation-authorities`} className="btn btn-sm btn-primary">
-                  <i className="glyphicon glyphicon-link" /> all validation authorities.
+                  <i className="fas fa-link" /> all validation authorities.
                 </a>
               </div>
             </div>
@@ -3075,7 +3075,7 @@ export class TemplateInput extends Component {
         <div class="jumbotron">
             ${
               error
-                ? `<h2><i class="glyphicon glyphicon-warning-sign"></i> ${title}</h2>`
+                ? `<h2><i class="fas fa-exclamation-triangle"></i> ${title}</h2>`
                 : `<h2 style="color:white;">${title}</h2>`
             }
             <p class="lead">
@@ -3198,7 +3198,7 @@ export class TemplateInput extends Component {
               className="btn btn-danger pull-right"
               title="Delete template"
               onClick={this.deleteTemplate}>
-              <i className="glyphicon glyphicon-trash" />
+              <i className="fas fa-trash" />
             </button>
           </div>
         </div>
