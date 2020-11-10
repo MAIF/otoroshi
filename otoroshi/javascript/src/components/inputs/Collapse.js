@@ -34,7 +34,7 @@ export class Collapse extends Component {
                 type="button"
                 className="btn btn-info pull-right btn-xs"
                 onClick={this.toggle}>
-                <i className="glyphicon glyphicon-eye-open" />
+                <i className="fas fa-eye" />
               </button>
             </div>
           </div>
@@ -55,7 +55,7 @@ export class Collapse extends Component {
                 type="button"
                 className="btn btn-info pull-right btn-xs"
                 onClick={this.toggle}>
-                <i className="glyphicon glyphicon-eye-close" />
+                <i className="fas fa-eye-slash" />
               </button>
             </div>
           </div>

@@ -66,7 +66,7 @@ class Target extends Component {
             alignItems: 'center',
           }}>
           <button type="button" className="btn btn-danger" onClick={this.props.delete}>
-            <i className="glyphicon glyphicon-trash" />
+            <i className="fas fa-trash" />
           </button>
         </div>
       </div>
@@ -156,7 +156,7 @@ class Targets extends Component {
             alignItems: 'center',
           }}>
           <button type="button" className="btn btn-primary" onClick={this.addTarget}>
-            <i className="glyphicon glyphicon-plus-sign" />
+            <i className="fas fa-plus-circle" />
           </button>
         </div>
       </div>

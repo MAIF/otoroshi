@@ -66,7 +66,7 @@ export class ReloadNewVersion extends Component {
               style={{ marginLeft: 10 }}
               title="Login now !!!"
               onClick={(e) => window.location.reload()}>
-              <i className="glyphicon glyphicon-refresh" />
+              <i className="fas fa-sync" />
             </button>
           </div>
         </div>
@@ -80,7 +80,7 @@ export class ReloadNewVersion extends Component {
           className="btn btn-danger btn-sm"
           style={{ marginLeft: 10 }}
           onClick={(e) => window.location.reload()}>
-          <i className="glyphicon glyphicon-refresh" />
+          <i className="fas fa-sync" />
         </button>
         <button
           type="button"
@@ -90,7 +90,7 @@ export class ReloadNewVersion extends Component {
             e.preventDefault();
             this.setState({ display: false, versionClosed: true });
           }}>
-          <i className="glyphicon glyphicon-remove" />
+          <i className="fas fa-times" />
         </button>
       </div>
     );
