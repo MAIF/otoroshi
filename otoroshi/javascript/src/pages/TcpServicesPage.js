@@ -206,9 +206,9 @@ export class TcpServicesPage extends Component {
         if (item.clientAuth === 'None') {
           return <i className="" />;
         } else if (item.clientAuth === 'Want') {
-          return <span className="glyphicon glyphicon-ok-sign" />;
+          return <span className="fas fa-check-circle" />;
         } else {
-          return <span className="glyphicon glyphicon-ok-sign" />;
+          return <span className="fas fa-check-circle" />;
         }
       },
     },
@@ -222,7 +222,7 @@ export class TcpServicesPage extends Component {
         if (!item.sni.enabled) {
           return <i className="" />;
         } else {
-          return <span className="glyphicon glyphicon-ok-sign" />;
+          return <span className="fas fa-check-circle" />;
         }
       },
     },

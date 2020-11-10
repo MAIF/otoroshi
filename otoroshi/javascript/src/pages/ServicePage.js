@@ -507,7 +507,7 @@ class CleverSelector extends Component {
             className="btn btn-danger"
             style={{ marginRight: 10 }}
             onClick={this.show}>
-            <i className="glyphicon glyphicon-remove-sign" />
+            <i className="fas fa-times-circle" />
           </button>
           <Select
             style={{ width: 300, border: '1px solid #ccc' }}
