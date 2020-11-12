@@ -87,6 +87,28 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       items.filter(i => config.labels.forall(t => i.labels.get(t._1) == t._2.some))
     }
   }
+  private def filterNamespaceLabels[A <: KubernetesEntity](items: Seq[A]): Seq[A] = {
+    // TODO: handle kubernetes label expressions
+    if (config.namespacesLabels.isEmpty) {
+      items
+    } else {
+      items.filter(i => config.namespacesLabels.forall(t => i.labels.get(t._1) == t._2.some))
+    }
+  }
+  def fetchNamespacesAndFilterLabels(): Future[Seq[KubernetesNamespace]] = {
+    val cli: WSRequest = client(s"/api/v1/namespaces")
+    cli.addHttpHeaders(
+      "Accept" -> "application/json"
+    ).get().map { resp =>
+      if (resp.status == 200) {
+        filterLabels((resp.json \ "items").as[JsArray].value.map { item =>
+          KubernetesNamespace(item)
+        })
+      } else {
+        Seq.empty
+      }
+    }
+  }
   def fetchServices(): Future[Seq[KubernetesService]] = {
     asyncSequence(config.namespaces.map { namespace =>
       val cli: WSRequest = client(s"/api/v1/namespaces/$namespace/services")
@@ -322,7 +344,6 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       }
     }
   }
-
 
   def fetchOtoroshiResources[T](pluralName: String, reader: Reads[T], customize: (JsValue, KubernetesOtoroshiResource) => JsValue = (a, b) => a): Future[Seq[OtoResHolder[T]]] = {
     asyncSequence(config.namespaces.map { namespace =>

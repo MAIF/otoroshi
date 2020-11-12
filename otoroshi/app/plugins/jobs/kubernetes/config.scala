@@ -26,6 +26,7 @@ case class KubernetesConfig(
   userPassword: Option[String],
   caCert: Option[String],
   namespaces: Seq[String],
+  namespacesLabels: Map[String, String],
   labels: Map[String, String],
   ingressClasses: Seq[String],
   defaultGroup: String,
@@ -81,6 +82,7 @@ object KubernetesConfig {
             (defaultUser \ "cluster" \ "certificate-authority-data").as[String]
           },
           namespaces = (conf \ "namespaces").asOpt[Seq[String]].filter(_.nonEmpty).getOrElse(Seq("*")),
+          namespacesLabels = (conf \ "namespacesLabels").asOpt[Map[String, String]].getOrElse(Map.empty),
           labels = (conf \ "labels").asOpt[Map[String, String]].getOrElse(Map.empty),
           ingressClasses = (conf \ "ingressClasses").asOpt[Seq[String]].orElse((conf \ "ingressClass").asOpt[String].map(v => Seq(v))).getOrElse(Seq("otoroshi")), // can be *
           defaultGroup = (conf \ "defaultGroup").asOpt[String].getOrElse("default"),
@@ -124,6 +126,7 @@ object KubernetesConfig {
               new File("/var/run/secrets/kubernetes.io/serviceaccount/ca.crt").some.filter(_.exists()).map(f => Files.readAllLines(f.toPath).asScala.mkString("\n").trim())
             ),
           namespaces = (conf \ "namespaces").asOpt[Seq[String]].filter(_.nonEmpty).getOrElse(Seq("*")),
+          namespacesLabels = (conf \ "namespacesLabels").asOpt[Map[String, String]].getOrElse(Map.empty),
           labels = (conf \ "labels").asOpt[Map[String, String]].getOrElse(Map.empty),
           ingressClasses = (conf \ "ingressClasses").asOpt[Seq[String]].orElse((conf \ "ingressClass").asOpt[String].map(v => Seq(v))).getOrElse(Seq("otoroshi")), // can be *
           defaultGroup = (conf \ "defaultGroup").asOpt[String].getOrElse("default"),
@@ -158,7 +161,8 @@ object KubernetesConfig {
         "caCert" -> "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt",
         "trust" -> false,
         "namespaces" -> Json.arr("*"),
-        "labels" -> JsArray(),
+        "labels" -> Json.obj(),
+        "namespacesLabels" -> Json.obj(),
         "ingressClasses" -> Json.arr("otoroshi"),
         "defaultGroup" -> "default",
         "ingresses" -> true,

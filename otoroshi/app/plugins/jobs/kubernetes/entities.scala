@@ -26,6 +26,7 @@ trait KubernetesEntity {
   lazy val annotations: Map[String, String] = (raw \ "metadata" \ "annotations").asOpt[Map[String, String]].getOrElse(Map.empty)
 }
 
+case class KubernetesNamespace(raw: JsValue) extends KubernetesEntity
 case class KubernetesService(raw: JsValue) extends KubernetesEntity
 case class KubernetesConfigMap(raw: JsValue) extends KubernetesEntity {
   lazy val corefile: String = (raw \ "data" \ "Corefile").as[String]

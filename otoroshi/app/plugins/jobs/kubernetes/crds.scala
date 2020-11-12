@@ -119,6 +119,7 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
       })
     }
 
+    // TODO: should be dynamic
     if (config.watch) {
       implicit val mat = env.otoroshiMaterializer
       val conf = KubernetesConfig.theConfig(ctx)
@@ -268,45 +269,65 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
         case Some(_) => s
         case None => s.as[JsObject] ++ Json.obj("subdomain" -> (s \ "id").as[String])
       }
-    }.applyOn { s =>
-      (s \ "targets").asOpt[JsArray] match {
-        case Some(targets) => {
-          if (targets.value.isEmpty) {
-            s
-          } else {
-            s.as[JsObject] ++ Json.obj("targets" -> JsArray(targets.value.map(item => item.applyOn(target =>
-              ((target \ "url").asOpt[String] match {
-                case None => target
-                case Some(tv) =>
-                  val uri = Uri(tv)
-                  target.as[JsObject] ++ Json.obj(
-                    "host" -> (uri.authority.host.toString() + ":" + uri.effectivePort),
-                    "scheme" -> uri.scheme
-                  )
-              }).applyOn { targetJson =>
-                val serviceName = (target \ "serviceName").asOpt[String]
-                val servicePort = (target \ "servicePort").asOpt[JsValue]
-                (serviceName, servicePort) match {
-                  case (Some(sn), Some(sp)) => {
-                    val service = services.find(s => s.path == res.path)
-                    val endpoint = endpoints.find(s => s.path == res.path)
-                    (service, endpoint) match {
-                      case (Some(s), p) => {
-                        val port = IntOrString(sp.asOpt[Int], sp.asOpt[String])
-                        val targets = KubernetesIngressToDescriptor.serviceToTargetsSync(s, p, port, client, logger)
-                        JsArray(targets.map(_.toJson))
-                      }
-                      case _ => targetJson
-                    }
-                  }
-                  case _ => targetJson
-                }
-                targetJson
-              }
-            ))))
-          }
+    }.applyOn { serviceDesc =>
+      //(serviceDesc \ "targets").asOpt[JsArray] match {
+      //  case Some(targets) => {
+      //    if (targets.value.isEmpty) {
+      //      serviceDesc
+      //    } else {
+      //      serviceDesc.as[JsObject] ++ Json.obj("targets" -> JsArray(targets.value.map(item => item.applyOn(target =>
+      //        ((target \ "url").asOpt[String] match {
+      //          case None => target
+      //          case Some(tv) =>
+      //            val uri = Uri(tv)
+      //            target.as[JsObject] ++ Json.obj(
+      //              "host" -> (uri.authority.host.toString() + ":" + uri.effectivePort),
+      //              "scheme" -> uri.scheme
+      //            )
+      //        }).applyOn { targetJson =>
+      //          // targetJson
+      //        }
+      //      ))))
+      //    }
+      //  }
+      //  case None => s.as[JsObject] ++ Json.obj("targets" -> Json.arr())
+      //}
+      (serviceDesc \ "targets").asOpt[JsValue] match {
+        case Some(JsArray(targets)) => {
+          serviceDesc.as[JsObject] ++ Json.obj("targets" -> JsArray(targets.map(item => item.applyOn(target =>
+            ((target \ "url").asOpt[String] match {
+              case None => target
+              case Some(tv) =>
+                val uri = Uri(tv)
+                target.as[JsObject] ++ Json.obj(
+                  "host" -> (uri.authority.host.toString() + ":" + uri.effectivePort),
+                  "scheme" -> uri.scheme
+                )
+            })
+          ))))
         }
-        case None => s.as[JsObject] ++ Json.obj("targets" -> Json.arr())
+        case Some(obj @ JsObject(_)) => {
+          val serviceName = (obj \ "serviceName").asOpt[String]
+          val servicePort = (obj \ "servicePort").asOpt[JsValue]
+          val finalTargets: JsArray = (serviceName, servicePort) match {
+            case (Some(sn), Some(sp)) => {
+              val path = if (sn.contains("/")) sn else s"${res.namespace}/$sn"
+              val service = services.find(s => s.path == path)
+              val endpoint = endpoints.find(s => s.path == path)
+              (service, endpoint) match {
+                case (Some(s), p) => {
+                  val port = IntOrString(sp.asOpt[Int], sp.asOpt[String])
+                  val targets = KubernetesIngressToDescriptor.serviceToTargetsSync(s, p, port, obj, client, logger)
+                  JsArray(targets.map(_.toJson))
+                }
+                case _ => Json.arr()
+              }
+            }
+            case _ => Json.arr()
+          }
+          serviceDesc.as[JsObject] ++ Json.obj("targets" -> finalTargets)
+        }
+        case _ => serviceDesc.as[JsObject] ++ Json.obj("targets" -> Json.arr())
       }
     }.applyOn(s =>
       (s \ "group").asOpt[String] match {
@@ -602,6 +623,16 @@ object KubernetesCRDsJob {
       }
     } map {
       case (_, value) => (value, () => save(value))
+    }
+  }
+
+  def getNamespaces(client: KubernetesClient, conf: KubernetesConfig)(implicit env: Env, ec: ExecutionContext): Future[Seq[String]] = {
+    if (conf.namespacesLabels.isEmpty) {
+      conf.namespaces.future
+    } else {
+      client.fetchNamespacesAndFilterLabels().map { namespaces =>
+        namespaces.map(_.name)
+      }
     }
   }
 
@@ -940,43 +971,48 @@ object KubernetesCRDsJob {
     }
   }
 
-  def syncCRDs(conf: KubernetesConfig, attrs: TypedMap, jobRunning: => Boolean)(implicit env: Env, ec: ExecutionContext): Future[Unit] = env.metrics.withTimerAsync("otoroshi.plugins.kubernetes.crds.sync") {
-    val client = new KubernetesClient(conf, env)
+  def syncCRDs(_conf: KubernetesConfig, attrs: TypedMap, jobRunning: => Boolean)(implicit env: Env, ec: ExecutionContext): Future[Unit] = env.metrics.withTimerAsync("otoroshi.plugins.kubernetes.crds.sync") {
+    val _client = new KubernetesClient(_conf, env)
     if (!jobRunning) {
       shouldRunNext.set(false)
       running.set(false)
     }
-    if (jobRunning && conf.crds && running.compareAndSet(false, true)) {
+    if (jobRunning && _conf.crds && running.compareAndSet(false, true)) {
       shouldRunNext.set(false)
       logger.info(s"Sync. otoroshi CRDs at ${DateTime.now()}")
-      KubernetesCertSyncJob.syncKubernetesSecretsToOtoroshiCerts(client, jobRunning).flatMap { _ =>
-        val clientSupport = new ClientSupport(client, logger)
-        val apiKeysToExport = new AtomicReference[Seq[(String, String, ApiKey)]](Seq.empty)
-        val certsToExport = new AtomicReference[Seq[(String, String, Cert)]](Seq.empty)
-        val updatedSecrets = new AtomicReference[Seq[(String, String)]](Seq.empty)
-        for {
-          _ <- ().future
-          _ = logger.info("starting sync !")
-          ctx <- context(conf, attrs, clientSupport, (ns, n, apk) => apiKeysToExport.getAndUpdate(s => s :+ (ns, n, apk)), (ns, n, cert) => certsToExport.getAndUpdate(c => c :+ (ns, n, cert)))
-          _ = logger.info("importing CRDs entities")
-          _ <- importCRDEntities(conf, attrs, clientSupport, ctx)
-          _ = logger.info("deleting outdated entities")
-          _ <- deleteOutDatedEntities(conf, attrs, ctx)
-          _ = logger.info("exporting apikeys as secrets")
-          _ <- exportApiKeys(conf, attrs, clientSupport, ctx, apiKeysToExport.get(), updatedSecrets)
-          _ = logger.info("exporting certs as secrets")
-          _ <- exportCerts(conf, attrs, clientSupport, ctx, certsToExport.get(), updatedSecrets)
-          _ = logger.info("deleting unused secrets")
-          _ <- deleteOutDatedSecrets(conf, attrs, clientSupport, ctx, updatedSecrets)
-          _ = logger.info("restarting dependant deployments")
-          _ <- restartDependantDeployments(conf, attrs, clientSupport, ctx, updatedSecrets.get())
-          _ = logger.info("sync done !")
-        } yield ()
+      getNamespaces(_client, _conf).flatMap { namespaces =>
+        logger.info(s"otoroshi will sync CRDs for the following namespaces: [ ${namespaces.mkString(", ")} ]")
+        val conf = _conf.copy(namespaces = namespaces)
+        val client = new KubernetesClient(conf, env)
+        KubernetesCertSyncJob.syncKubernetesSecretsToOtoroshiCerts(client, jobRunning).flatMap { _ =>
+          val clientSupport = new ClientSupport(client, logger)
+          val apiKeysToExport = new AtomicReference[Seq[(String, String, ApiKey)]](Seq.empty)
+          val certsToExport = new AtomicReference[Seq[(String, String, Cert)]](Seq.empty)
+          val updatedSecrets = new AtomicReference[Seq[(String, String)]](Seq.empty)
+          for {
+            _ <- ().future
+            _ = logger.info("starting sync !")
+            ctx <- context(conf, attrs, clientSupport, (ns, n, apk) => apiKeysToExport.getAndUpdate(s => s :+ (ns, n, apk)), (ns, n, cert) => certsToExport.getAndUpdate(c => c :+ (ns, n, cert)))
+            _ = logger.info("importing CRDs entities")
+            _ <- importCRDEntities(conf, attrs, clientSupport, ctx)
+            _ = logger.info("deleting outdated entities")
+            _ <- deleteOutDatedEntities(conf, attrs, ctx)
+            _ = logger.info("exporting apikeys as secrets")
+            _ <- exportApiKeys(conf, attrs, clientSupport, ctx, apiKeysToExport.get(), updatedSecrets)
+            _ = logger.info("exporting certs as secrets")
+            _ <- exportCerts(conf, attrs, clientSupport, ctx, certsToExport.get(), updatedSecrets)
+            _ = logger.info("deleting unused secrets")
+            _ <- deleteOutDatedSecrets(conf, attrs, clientSupport, ctx, updatedSecrets)
+            _ = logger.info("restarting dependant deployments")
+            _ <- restartDependantDeployments(conf, attrs, clientSupport, ctx, updatedSecrets.get())
+            _ = logger.info("sync done !")
+          } yield ()
+        }
       }.flatMap { _ =>
         if (shouldRunNext.get()) {
           shouldRunNext.set(false)
           logger.info("restart job right now because sync was asked during sync ")
-          syncCRDs(conf, attrs, jobRunning)
+          syncCRDs(_conf, attrs, jobRunning)
         } else {
           ().future
         }

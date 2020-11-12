@@ -15,6 +15,7 @@ import io.kubernetes.client.util.credentials.AccessTokenAuthentication
 import models._
 import org.joda.time.DateTime
 import otoroshi.plugins.jobs.kubernetes.IngressSupport.IntOrString
+import otoroshi.plugins.jobs.kubernetes.KubernetesCRDsJob.{getNamespaces, logger}
 import otoroshi.script._
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
@@ -112,6 +113,7 @@ class KubernetesIngressControllerJob extends Job {
         }
       })
     }
+    // TODO: should be dynamic
     if (config.watch) {
       implicit val mat = env.otoroshiMaterializer
       val conf = KubernetesConfig.theConfig(ctx)
@@ -417,72 +419,77 @@ object KubernetesIngressSyncJob {
     OtoAnnotationConfig(annotations)
   }
 
-  def syncIngresses(conf: KubernetesConfig, attrs: TypedMap)(implicit env: Env, ec: ExecutionContext): Future[Unit] = env.metrics.withTimerAsync("otoroshi.plugins.kubernetes.ingresses.sync")  {
+  def syncIngresses(_conf: KubernetesConfig, attrs: TypedMap)(implicit env: Env, ec: ExecutionContext): Future[Unit] = env.metrics.withTimerAsync("otoroshi.plugins.kubernetes.ingresses.sync")  {
     implicit val mat = env.otoroshiMaterializer
-    val client = new KubernetesClient(conf, env)
+    val _client = new KubernetesClient(_conf, env)
     if (running.compareAndSet(false, true)) {
       shouldRunNext.set(false)
-      logger.info("sync certs ...")
-      client.fetchCerts().flatMap { certs =>
-        client.fetchIngressClasses().flatMap { clusterIngressClasses =>
-          logger.info("fetch ingresses")
-          client.fetchIngressesAndFilterLabels().flatMap { ingresses =>
-            logger.info("update ingresses")
-            Source(ingresses.toList)
-              .mapAsync(1) { ingressRaw =>
-                if (shouldProcessIngress(conf.ingressClasses, clusterIngressClasses, ingressRaw.ingressClazz, ingressRaw.ingressClassName, conf)) {
-                  val otoroshiConfig = parseConfig(ingressRaw.annotations)
-                  if (ingressRaw.isValid()) {
-                    val certNames = ingressRaw.ingress.spec.tls.map(_.secretName).map(_.toLowerCase)
-                    val certsToImport = certs.filter(c => certNames.contains(c.name.toLowerCase()))
-                    (ingressRaw.ingress.spec.backend match {
-                      case Some(backend) => {
-                        backend.asDescriptor(ingressRaw.namespace, conf, otoroshiConfig, client, logger).flatMap {
-                          case None => ().future
-                          case Some(desc) => desc.save()
-                        }
-                      }
-                      case None => {
-                        ingressRaw.updateIngressStatus(client).flatMap { _ =>
-                          ingressRaw.asDescriptors(conf, otoroshiConfig, client, logger).flatMap { descs =>
-                            Future.sequence(descs.map(_.save()))
+      getNamespaces(_client, _conf).flatMap { namespaces =>
+        logger.info(s"otoroshi will sync ingresses for the following namespaces: [ ${namespaces.mkString(", ")} ]")
+        val conf = _conf.copy(namespaces = namespaces)
+        val client = new KubernetesClient(conf, env)
+        logger.info("sync certs ...")
+        client.fetchCerts().flatMap { certs =>
+          client.fetchIngressClasses().flatMap { clusterIngressClasses =>
+            logger.info("fetch ingresses")
+            client.fetchIngressesAndFilterLabels().flatMap { ingresses =>
+              logger.info("update ingresses")
+              Source(ingresses.toList)
+                .mapAsync(1) { ingressRaw =>
+                  if (shouldProcessIngress(conf.ingressClasses, clusterIngressClasses, ingressRaw.ingressClazz, ingressRaw.ingressClassName, conf)) {
+                    val otoroshiConfig = parseConfig(ingressRaw.annotations)
+                    if (ingressRaw.isValid()) {
+                      val certNames = ingressRaw.ingress.spec.tls.map(_.secretName).map(_.toLowerCase)
+                      val certsToImport = certs.filter(c => certNames.contains(c.name.toLowerCase()))
+                      (ingressRaw.ingress.spec.backend match {
+                        case Some(backend) => {
+                          backend.asDescriptor(ingressRaw.namespace, conf, otoroshiConfig, client, logger).flatMap {
+                            case None => ().future
+                            case Some(desc) => desc.save()
                           }
                         }
+                        case None => {
+                          ingressRaw.updateIngressStatus(client).flatMap { _ =>
+                            ingressRaw.asDescriptors(conf, otoroshiConfig, client, logger).flatMap { descs =>
+                              Future.sequence(descs.map(_.save()))
+                            }
+                          }
+                        }
+                      }) andThen {
+                        case _ => KubernetesCertSyncJob.importCerts(certsToImport)
                       }
-                    }) andThen {
-                      case _ => KubernetesCertSyncJob.importCerts(certsToImport)
+                    } else {
+                      ().future
                     }
                   } else {
                     ().future
                   }
-                } else {
-                  ().future
-                }
-              }.runWith(Sink.ignore).map(_ => ()).flatMap { _ =>
+                }.runWith(Sink.ignore).map(_ => ()).flatMap { _ =>
 
-              val existingInKube = ingresses.flatMap { ingress =>
-                ingress.ingress.spec.rules.flatMap { rule =>
-                  val host = rule.host.getOrElse("*")
-                  rule.http.paths.map { path =>
-                    val root = path.path.getOrElse("/")
-                    s"${ingress.namespace}-${ingress.name}-$host-$root".slugifyWithSlash
+                val existingInKube = ingresses.flatMap { ingress =>
+                  ingress.ingress.spec.rules.flatMap { rule =>
+                    val host = rule.host.getOrElse("*")
+                    rule.http.paths.map { path =>
+                      val root = path.path.getOrElse("/")
+                      s"${ingress.namespace}-${ingress.name}-$host-$root".slugifyWithSlash
+                    }
                   }
                 }
-              }
 
-              env.datastores.serviceDescriptorDataStore.findAll().flatMap { services =>
-                val toDelete = services.filter { service =>
-                  service.metadata.get("otoroshi-provider").contains("kubernetes-ingress")
-                }.map { service =>
-                  (service.metadata.getOrElse("kubernetes-ingress-id", "--"), service.id, service.name)
-                }.filterNot {
-                  case (ingressId, _, _) => existingInKube.contains(ingressId)
-                }
-                logger.info(s"Deleting services: ${toDelete.map(_._3).mkString(", ")}")
-                env.datastores.serviceDescriptorDataStore.deleteByIds(toDelete.map(_._2)).andThen {
-                  case Failure(e) => e.printStackTrace()
-                }.map { _ =>
-                  ()
+                env.datastores.serviceDescriptorDataStore.findAll().flatMap { services =>
+                  val toDelete = services.filter { service =>
+                    service.metadata.get("otoroshi-provider").contains("kubernetes-ingress")
+                  }.map { service =>
+                    (service.metadata.getOrElse("kubernetes-ingress-id", "--"), service.id, service.name)
+                  }.filterNot {
+                    case (ingressId, _, _) => existingInKube.contains(ingressId)
+                  }
+                  logger.info(s"Deleting services: ${toDelete.map(_._3).mkString(", ")}")
+                  env.datastores.serviceDescriptorDataStore.deleteByIds(toDelete.map(_._2)).andThen {
+                    case Failure(e) => e.printStackTrace()
+                  }.map { _ =>
+                    ()
+                  }
                 }
               }
             }
@@ -493,7 +500,7 @@ object KubernetesIngressSyncJob {
         if (shouldRunNext.get()) {
           shouldRunNext.set(false)
           logger.info("restart job right now because sync was asked during sync ")
-          syncIngresses(conf, attrs)
+          syncIngresses(_conf, attrs)
         } else {
           ().future
         }
@@ -637,7 +644,8 @@ object KubernetesIngressToDescriptor {
       }.runWith(Sink.seq).map(_.flatten)
   }
 
-  def serviceToTargetsSync(kubeService: KubernetesService, kubeEndpointOpt: Option[KubernetesEndpoint], port: IntOrString, client: KubernetesClient, logger: Logger): Seq[Target] = {
+  def serviceToTargetsSync(kubeService: KubernetesService, kubeEndpointOpt: Option[KubernetesEndpoint], port: IntOrString, template: JsObject, client: KubernetesClient, logger: Logger): Seq[Target] = {
+      val templateTarget = Target.format.reads(template ++ Json.obj("host" -> "--")).get
       val serviceType = (kubeService.raw \ "spec" \ "type").as[String]
       val serviceName = kubeService.name
       val maybePortSpec: Option[JsValue] = (kubeService.raw \ "spec" \ "ports").as[JsArray].value.find { value =>
@@ -658,18 +666,18 @@ object KubernetesIngressToDescriptor {
           serviceType match {
             case "ExternalName" =>
               val serviceExternalName = (kubeService.raw \ "spec" \ "externalName").as[String]
-              Seq(Target(s"$serviceExternalName:$portValue", protocol))
+              Seq(templateTarget.copy(host = s"$serviceExternalName:$portValue", scheme = protocol))
             case _ => kubeEndpointOpt match {
               case None => serviceType match {
                 case "ClusterIP" =>
                   val serviceIp = (kubeService.raw \ "spec" \ "clusterIP").as[String]
-                  Seq(Target(s"$serviceName:$portValue", protocol, ipAddress = Some(serviceIp)))
+                  Seq(templateTarget.copy(host = s"$serviceName:$portValue", scheme = protocol, ipAddress = Some(serviceIp)))
                 case "NodePort" =>
                   val serviceIp = (kubeService.raw \ "spec" \ "clusterIP").as[String] // TODO: does it actually work ?
-                  Seq(Target(s"$serviceName:$portValue", protocol, ipAddress = Some(serviceIp)))
+                  Seq(templateTarget.copy(host = s"$serviceName:$portValue", scheme = protocol, ipAddress = Some(serviceIp)))
                 case "LoadBalancer" =>
                   val serviceIp = (kubeService.raw \ "spec" \ "clusterIP").as[String] // TODO: does it actually work ?
-                  Seq(Target(s"$serviceName:$portValue", protocol, ipAddress = Some(serviceIp)))
+                  Seq(templateTarget.copy(host = s"$serviceName:$portValue", scheme = protocol, ipAddress = Some(serviceIp)))
                 case _ => Seq.empty
               }
               case Some(kubeEndpoint) => {
@@ -685,7 +693,7 @@ object KubernetesIngressToDescriptor {
                     val addresses = (subset \ "addresses").asOpt[JsArray].map(_.value).getOrElse(Seq.empty)
                     addresses.map { address =>
                       val serviceIp = (address \ "ip").as[String]
-                      Target(s"$serviceName:$endpointPort", endpointProtocol, ipAddress = Some(serviceIp))
+                      templateTarget.copy(host =s"$serviceName:$endpointPort", scheme = endpointProtocol, ipAddress = Some(serviceIp))
                     }
                   }
                 }
@@ -696,13 +704,13 @@ object KubernetesIngressToDescriptor {
       }
   }
 
-  def serviceToTargets(namespace: String, name: String, port: IntOrString, client: KubernetesClient, logger: Logger)(implicit ec: ExecutionContext, env: Env): Future[Seq[Target]] = {
+  def serviceToTargets(namespace: String, name: String, port: IntOrString, template: JsObject, client: KubernetesClient, logger: Logger)(implicit ec: ExecutionContext, env: Env): Future[Seq[Target]] = {
     client.fetchService(namespace, name).flatMap {
       case None =>
         logger.info(s"Service $name not found on namespace $namespace")
         Seq.empty.future
       case Some(kubeService) => client.fetchEndpoint(namespace, name).map { kubeEndpointOpt =>
-        serviceToTargetsSync(kubeService, kubeEndpointOpt, port, client, logger)
+        serviceToTargetsSync(kubeService, kubeEndpointOpt, port, template, client, logger)
       }
     }
   }
