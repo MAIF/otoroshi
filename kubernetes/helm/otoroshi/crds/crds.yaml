@@ -50,8 +50,6 @@ spec:
               type: string
             subdomain:
               type: string
-            targets:
-              type: array
             root:
               type: string
             matchingRoot:
