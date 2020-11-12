@@ -68,10 +68,6 @@
       }
     }
   }
-
-  i.glyphicon.glyphicon-off {
-    margin-left: 4px;
-  }
 }
 
 .navbar-header {
@@ -79,7 +75,6 @@
   background-color: $primaryColor;
 }
 
-.glyphicon-cog,
 .navbar-inverse .navbar-nav > li > a {
   color: $primaryColor;
 }
