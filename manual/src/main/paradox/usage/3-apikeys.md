@@ -14,9 +14,11 @@ There are 3 major entities at the core of Otoroshi.
 <img src="../img/models-apikey.png" />
 @@@
 
-An `API key` is linked to one or more `service group` and `service descriptor` to allow you to access any `service descriptor` linked or contained in one of the linked `service group`. You can, of course, create multiple `API key` for given `service group`s/`service descriptor`s.
+An `API key` is linked to one or more `service group` and `service descriptor` to allow you to access any `service descriptor` linked or contained in one of the linked `service group`. You can, of course, create multiple `API key` for given `service groups`/`service descriptors`.
 
-In the Otoroshi admin dashboard, we chose to access `API keys` from `service descriptors` only, but when you access `API keys` for a `service descriptor`, you actually access `API keys` for the `service group` containing the `service descriptor`.
+In the Otoroshi admin dashboard, ApiKeys can be accessed from two way:
+* `All apikeys` entry from sidebar.
+* `API keys` from `service descriptors`. When you access `API keys` for a `service descriptor`, you actually access `API keys` for the `service group` containing the `service descriptor`.
 
 `API keys` can be provided to Otoroshi through :
 
@@ -59,7 +61,7 @@ You should see the list of API keys for that `service descriptor`
 <img src="../img/add-apikey.png" />
 @@@
 
-You can add a name for your new API key, you can also change client's id and client's secret. You can also configure the throttling rate of the API key (calls per second), and the authorized number of call per day and per month. You may also activate or de-activate the api key from that screen.
+You can add a name for your new API key, you can also change client's id and client's secret. A validity date can be given to the key, after which the API key will be disabled. You can also configure the throttling rate of the API key (calls per second), and the authorized number of call per day and per month. You may also activate or de-activate the api key from that screen.
 
 Informations about current quotas usage will be returned in response headers.
 
@@ -68,6 +70,7 @@ Informations about current quotas usage will be returned in response headers.
 * `Otoroshi-Proxy-Latency` : latency induced by Otoroshi
 * `Otoroshi-Upstream-Latency` : latency between Otoroshi and target
 
+<!-- TODO: update screen print -->
 @@@ div { .centered-img #quotas }
 <img src="../img/create-apikey.png" />
 @@@
@@ -111,6 +114,8 @@ and confirm the command
 
 The read only flag on an `ApiKey` this apikey can only use allowed services with `HEAD`, `OPTIONS` and `GET` http verbs.
 
+<!-- TODO: clienntId only && constrainned servcie only ? -->
+
 ## Use a JWT token to pass an API key
 
 You can use a JWT token to pass an API key to Otoroshi. 
@@ -138,3 +143,9 @@ eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.
 eyJpc3MiOiJhYmNkZWYiLCJuYW1lIjoiSm9obiBEb2UiLCJhZG1pbiI6dHJ1ZX0.
 _eancnYCD3makSSox2v2xErjNYkRtcX558QiJGCbino
 ```
+
+## Automatic secret Rotation
+<!-- TODO -->
+
+## Restriction
+<!-- TODO -->
