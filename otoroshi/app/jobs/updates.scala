@@ -73,7 +73,7 @@ class SoftwareUpdatesJobs extends Job {
                 )
                 if (isAfter) {
                   logger.info(
-                    s"A new version of Otoroshi ($latestVersion, your version is $otoroshiVersion) is available. You can download it on https://maif.github.io/otoroshi/ or at https://github.com/MAIF/otoroshi/releases/tag/${latestVersion.raw}"
+                    s"A new version of Otoroshi (${latestVersion.raw}, your version is $otoroshiVersion) is available. You can download it on https://maif.github.io/otoroshi/ or at https://github.com/MAIF/otoroshi/releases/tag/${latestVersion.raw}"
                   )
                 }
               }

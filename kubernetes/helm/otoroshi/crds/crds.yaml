@@ -38,7 +38,6 @@ spec:
       properties:
         spec:
           type: object
-          required: ["targets", "hosts"]
           properties:
             group:
               type: string
