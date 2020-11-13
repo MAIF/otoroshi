@@ -9,7 +9,7 @@ import akka.util.ByteString
 import com.auth0.jwt.interfaces.DecodedJWT
 import com.github.blemale.scaffeine.Cache
 import com.typesafe.config.ConfigFactory
-import org.apache.commons.codec.binary.Base64
+import org.apache.commons.codec.binary.{Base64, Hex}
 import org.apache.commons.io.Charsets
 import play.api.{ConfigLoader, Configuration, Logger}
 import play.api.libs.json._
@@ -70,6 +70,11 @@ object implicits {
   implicit class RegexOps(sc: StringContext) {
     def rr = new scala.util.matching.Regex(sc.parts.mkString)
   }
+  object BetterString {
+    import java.security.MessageDigest
+    val digest256 = MessageDigest.getInstance("SHA-256")
+    val digest512 = MessageDigest.getInstance("SHA-512")
+  }
   implicit class BetterString(private val obj: String) extends AnyVal {
     import otoroshi.utils.string.Implicits._
     def slugify: String = obj.slug
@@ -81,6 +86,8 @@ object implicits {
     def parseJson: JsValue = Json.parse(obj)
     def base64: String = Base64.encodeBase64String(obj.getBytes(StandardCharsets.UTF_8))
     def fromBase64: String = new String(Base64.decodeBase64(obj), StandardCharsets.UTF_8)
+    def sha256: String = Hex.encodeHexString(BetterString.digest256.digest(obj.getBytes(StandardCharsets.UTF_8)))
+    def sha512: String = Hex.encodeHexString(BetterString.digest512.digest(obj.getBytes(StandardCharsets.UTF_8)))
   }
   implicit class BetterBoolean(private val obj: Boolean) extends AnyVal {
     def json: JsValue = JsBoolean(obj)

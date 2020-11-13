@@ -547,7 +547,7 @@ object KubernetesIngressToDescriptor {
                 val maybePortSpec: Option[JsValue] = (kubeService.raw \ "spec" \ "ports").as[JsArray].value.find { value =>
                   path.backend.servicePort match {
                     case IntOrString(Some(v), _) => (value \ "port").asOpt[Int].contains(v)
-                    case IntOrString(_, Some(v)) => (value \ "port").asOpt[String].contains(v)
+                    case IntOrString(_, Some(v)) => (value \ "name").asOpt[String].contains(v)
                     case _ => false
                   }
                 }
@@ -651,7 +651,7 @@ object KubernetesIngressToDescriptor {
       val maybePortSpec: Option[JsValue] = (kubeService.raw \ "spec" \ "ports").as[JsArray].value.find { value =>
         port match {
           case IntOrString(Some(v), _) => (value \ "port").asOpt[Int].contains(v)
-          case IntOrString(_, Some(v)) => (value \ "port").asOpt[String].contains(v)
+          case IntOrString(_, Some(v)) => (value \ "name").asOpt[String].contains(v)
           case _ => false
         }
       }

@@ -1,6 +1,6 @@
 package otoroshi.plugins.jobs.kubernetes
 
-import java.util.concurrent.Executors
+import java.util.concurrent.{Executors, TimeUnit}
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 
 import akka.http.scaladsl.model.Uri
@@ -29,7 +29,7 @@ import utils.TypedMap
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Success, Try}
 
 class KubernetesOtoroshiCRDsControllerJob extends Job {
 
@@ -38,8 +38,6 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
   private val apiClientRef = new AtomicReference[ApiClient]()
   private val threadPool = Executors.newFixedThreadPool(1)
   private val stopCommand = new AtomicBoolean(false)
-  private val coreDnsIntegrationDone = new AtomicBoolean(false)
-  private val coreDnsIntegrationConfig = new AtomicReference[KubernetesConfig]()
 
   override def uniqueId: JobId = JobId("io.otoroshi.plugins.jobs.kubernetes.KubernetesOtoroshiCRDsControllerJob")
 
@@ -87,7 +85,6 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
     logger.info("start")
     stopCommand.set(false)
     val config = KubernetesConfig.theConfig(ctx)
-    coreDnsIntegrationConfig.set(config)
     if (config.kubeLeader) {
       val apiClient = new ClientBuilder()
         .setVerifyingSsl(!config.trust)
@@ -146,7 +143,6 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
   override def jobStop(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     // Option(apiClientRef.get()).foreach(_.) // nothing to stop stuff here ...
     logger.info("stop")
-    coreDnsIntegrationConfig.set(null)
     stopCommand.set(true)
     threadPool.shutdown()
     shouldRun.set(false)
@@ -159,19 +155,13 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
     if (conf.crds) {
       if (conf.kubeLeader) {
         if (shouldRun.get()) {
-          if (conf.coreDnsIntegration && (!coreDnsIntegrationDone.get() || !Option(coreDnsIntegrationConfig.get()).contains(conf))) {
-            coreDnsIntegrationConfig.set(conf)
-            KubernetesCRDsJob.patchCoreDnsConfig(conf, ctx).map(_ => coreDnsIntegrationDone.compareAndSet(false, true))
-          }
+          KubernetesCRDsJob.patchCoreDnsConfig(conf, ctx)
           KubernetesCRDsJob.syncCRDs(conf, ctx.attrs, !stopCommand.get())
         } else {
           ().future
         }
       } else {
-        if (conf.coreDnsIntegration && (!coreDnsIntegrationDone.get() || !Option(coreDnsIntegrationConfig.get()).contains(conf))) {
-          coreDnsIntegrationConfig.set(conf)
-          KubernetesCRDsJob.patchCoreDnsConfig(conf, ctx).map(_ => coreDnsIntegrationDone.compareAndSet(false, true))
-        }
+        KubernetesCRDsJob.patchCoreDnsConfig(conf, ctx)
         KubernetesCRDsJob.syncCRDs(conf, ctx.attrs, !stopCommand.get())
       }
     } else {
@@ -179,6 +169,56 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
     }
   }
 }
+
+/*
+class ClientSupportTest extends Job {
+
+  def uniqueId: JobId = JobId("ClientSupportTest")
+  override def visibility: JobVisibility            = JobVisibility.UserLand
+  override def kind: JobKind                        = JobKind.ScheduledOnce
+  override def starting: JobStarting                = JobStarting.Automatically
+  override def instantiation: JobInstantiation      = JobInstantiation.OneInstancePerOtoroshiInstance
+  override def initialDelay: Option[FiniteDuration] = Some(FiniteDuration(5000, TimeUnit.MILLISECONDS))
+
+  override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    println("running ClientSupportTest")
+    Try {
+      val cliSupport = new ClientSupport(new KubernetesClient(KubernetesConfig.theConfig(Json.obj(
+        "endpoint" -> "http://localhost:8080"
+      )), env), Logger("test"))
+      val resource = Json.parse(
+        """{
+          |  "apiVersion": "proxy.otoroshi.io/v1alpha1",
+          |  "kind": "ApiKey",
+          |  "metadata": {
+          |    "name": "apikey-test",
+          |    "namespace": "foo",
+          |    "uid":"000000"
+          |  },
+          |  "spec": {
+          |    "exportSecret": true,
+          |    "secretName": "apikey-secret",
+          |    "rotation": {
+          |      "enabled": true,
+          |      "rotationEvery": 2,
+          |      "gracePeriod": 1
+          |    }
+          |  }
+          |}""".stripMargin)
+
+      def fake(a: String, b: String, apk: ApiKey): Unit = {
+        println(s"$a:$b:$apk")
+      }
+
+      val res = cliSupport.customizeApiKey(resource.select("spec").as[JsValue], KubernetesOtoroshiResource(resource), Seq.empty, Seq.empty, fake)
+      println(Json.prettyPrint(res))
+    } match {
+      case Failure(e) => e.printStackTrace()
+      case Success(_) => ()
+    }
+    ().future
+  }
+}*/
 
 class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: ExecutionContext, env: Env) {
 
@@ -254,6 +294,29 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
       s"${res.name}.${res.namespace}.svc.otoroshi",
       s"${res.name}.${res.namespace}.svc.otoroshi.local"
     )
+
+    def handleTargetFrom(obj: JsObject, serviceDesc: JsValue): JsValue = {
+      val serviceName = (obj \ "serviceName").asOpt[String]
+      val servicePort = (obj \ "servicePort").asOpt[JsValue]
+      val finalTargets: JsArray = (serviceName, servicePort) match {
+        case (Some(sn), Some(sp)) => {
+          val path = if (sn.contains("/")) sn else s"${res.namespace}/$sn"
+          val service = services.find(s => s.path == path)
+          val endpoint = endpoints.find(s => s.path == path)
+          (service, endpoint) match {
+            case (Some(s), p) => {
+              val port = IntOrString(sp.asOpt[Int], sp.asOpt[String])
+              val targets = KubernetesIngressToDescriptor.serviceToTargetsSync(s, p, port, obj, client, logger)
+              JsArray(targets.map(_.toJson))
+            }
+            case _ => Json.arr()
+          }
+        }
+        case _ => Json.arr()
+      }
+      serviceDesc.as[JsObject] ++ Json.obj("targets" -> finalTargets)
+    }
+
     customizeIdAndName(spec, res).applyOn { s =>
       (s \ "env").asOpt[String] match {
         case Some(_) => s
@@ -270,28 +333,6 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
         case None => s.as[JsObject] ++ Json.obj("subdomain" -> (s \ "id").as[String])
       }
     }.applyOn { serviceDesc =>
-      //(serviceDesc \ "targets").asOpt[JsArray] match {
-      //  case Some(targets) => {
-      //    if (targets.value.isEmpty) {
-      //      serviceDesc
-      //    } else {
-      //      serviceDesc.as[JsObject] ++ Json.obj("targets" -> JsArray(targets.value.map(item => item.applyOn(target =>
-      //        ((target \ "url").asOpt[String] match {
-      //          case None => target
-      //          case Some(tv) =>
-      //            val uri = Uri(tv)
-      //            target.as[JsObject] ++ Json.obj(
-      //              "host" -> (uri.authority.host.toString() + ":" + uri.effectivePort),
-      //              "scheme" -> uri.scheme
-      //            )
-      //        }).applyOn { targetJson =>
-      //          // targetJson
-      //        }
-      //      ))))
-      //    }
-      //  }
-      //  case None => s.as[JsObject] ++ Json.obj("targets" -> Json.arr())
-      //}
       (serviceDesc \ "targets").asOpt[JsValue] match {
         case Some(JsArray(targets)) => {
           serviceDesc.as[JsObject] ++ Json.obj("targets" -> JsArray(targets.map(item => item.applyOn(target =>
@@ -306,30 +347,15 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
             })
           ))))
         }
-        case Some(obj @ JsObject(_)) => {
-          val serviceName = (obj \ "serviceName").asOpt[String]
-          val servicePort = (obj \ "servicePort").asOpt[JsValue]
-          val finalTargets: JsArray = (serviceName, servicePort) match {
-            case (Some(sn), Some(sp)) => {
-              val path = if (sn.contains("/")) sn else s"${res.namespace}/$sn"
-              val service = services.find(s => s.path == path)
-              val endpoint = endpoints.find(s => s.path == path)
-              (service, endpoint) match {
-                case (Some(s), p) => {
-                  val port = IntOrString(sp.asOpt[Int], sp.asOpt[String])
-                  val targets = KubernetesIngressToDescriptor.serviceToTargetsSync(s, p, port, obj, client, logger)
-                  JsArray(targets.map(_.toJson))
-                }
-                case _ => Json.arr()
-              }
-            }
-            case _ => Json.arr()
-          }
-          serviceDesc.as[JsObject] ++ Json.obj("targets" -> finalTargets)
-        }
+        case Some(obj @ JsObject(_)) => handleTargetFrom(obj, serviceDesc)
         case _ => serviceDesc.as[JsObject] ++ Json.obj("targets" -> Json.arr())
       }
-    }.applyOn(s =>
+    }.applyOn(serviceDesc =>
+      (serviceDesc \ "targetsFrom").asOpt[JsObject] match {
+        case None => serviceDesc
+        case Some(obj) => handleTargetFrom(obj, serviceDesc)
+      }
+    ).applyOn(s =>
       (s \ "group").asOpt[String] match {
         case None => s
         case Some(v) => s.as[JsObject] - "group" ++ Json.obj("groups" -> Json.arr(v))
@@ -347,84 +373,79 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
     ).applyOn(s => s.as[JsObject] ++ Json.obj("useAkkaHttpClient" -> true))
   }
 
-  private def customizeApiKey(_spec: JsValue, res: KubernetesOtoroshiResource, secrets: Seq[KubernetesSecret], apikeys: Seq[ApiKey], registerApkToExport: Function3[String, String, ApiKey, Unit]): JsValue = {
+  def customizeApiKey(_spec: JsValue, res: KubernetesOtoroshiResource, secrets: Seq[KubernetesSecret], apikeys: Seq[ApiKey], registerApkToExport: Function3[String, String, ApiKey, Unit]): JsValue = {
     val dkToken = (_spec \ "daikokuToken").asOpt[String]
     val dkApkOpt: Option[ApiKey] = dkToken.flatMap(t => apikeys.find(_.metadata.get("daikoku_integration_token") == t.some))
-    dkApkOpt match {
-      case None => Json.obj()
-      case Some(_) => {
-        val spec = findAndMerge[ApiKey](_spec, res, "apikey", dkApkOpt, apikeys, _.metadata, _.clientId, _.toJson, Some(_.enabled))
-        spec.applyOn(s =>
-          (s \ "clientName").asOpt[String] match {
-            case None => s.as[JsObject] ++ Json.obj("clientName" -> res.name)
-            case Some(_) => s
-          }
-        ).applyOn(s =>
-          (s \ "group").asOpt[String] match {
-            case None => s
-            case Some(v) => s.as[JsObject] - "group" ++ Json.obj("authorizedEntities" -> Json.arr("group_" + v))
-          }
-        ).applyOn(s =>
-          (s \ "authorizedEntities").asOpt[String] match {
-            case None => s.as[JsObject] ++ Json.obj("authorizedEntities" -> Json.arr("group_default"))
-            case Some(v) => s
-          }
-        ).applyOn { s =>
-          dkApkOpt match {
-            case None => s
-            case Some(apk) => s.as[JsObject] ++ Json.obj("authorizedEntities" -> JsArray(apk.authorizedEntities.map(_.json)))
-          }
-        }.applyOn { s =>
-          val shouldExport = (s \ "exportSecret").asOpt[Boolean].getOrElse(false)
-          (s \ "secretName").asOpt[String] match {
-            case None => {
-              s.applyOn(js =>
-                (s \ "clientId").asOpt[String] match {
-                  case None => s.as[JsObject] ++ Json.obj("clientId" -> IdGenerator.token(64))
-                  case Some(v) => s
-                }
-              ).applyOn(js =>
-                (s \ "clientSecret").asOpt[String] match {
-                  case None => s.as[JsObject] ++ Json.obj("clientSecret" -> IdGenerator.token(128))
-                  case Some(v) => s
-                }
-              )
-            }
-            case Some(v) => {
-              val parts = v.split("/").toList.map(_.trim)
-              val name = if (parts.size == 2) parts.last else v
-              val namespace = if (parts.size == 2) parts.head else res.namespace
-              val path = s"$namespace/$name"
-              val apiKeyOpt: Option[ApiKey] = apikeys.filter(_.metadata.get("otoroshi-provider").contains("kubernetes-crds")).find(_.metadata.get("kubernetes-path").contains(res.path))
-              val secretOpt = secrets.find(_.path == path)
-              val possibleClientSecret = if (shouldExport) IdGenerator.token(128) else "secret-not-found"
-              val clientId = apiKeyOpt.map(_.clientId).getOrElse(secretOpt.map(s => (s.raw \ "data" \ "clientId").as[String].applyOn(_.fromBase64)).getOrElse(IdGenerator.token(64)))
-              val clientSecret = apiKeyOpt.map(_.clientSecret).getOrElse(secretOpt.map(s => (s.raw \ "data" \ "clientSecret").as[String].applyOn(_.fromBase64)).getOrElse(possibleClientSecret))
-              if (shouldExport) {
-                registerApkToExport(namespace, name, ApiKey(clientId, clientSecret,
-                  clientName = name,
-                  authorizedEntities = Seq(ServiceGroupIdentifier("default"))
-                ))
-              }
-              s.as[JsObject] ++ Json.obj(
-                "clientId" -> clientId,
-                "clientSecret" -> clientSecret
-              )
-            }
-          }
-        }.applyOn(s =>
-          s.as[JsObject] ++ Json.obj(
-            "metadata" -> ((s \ "metadata").asOpt[JsObject].getOrElse(Json.obj()) ++ Json.obj(
-              "otoroshi-provider" -> "kubernetes-crds",
-              "kubernetes-name" -> res.name,
-              "kubernetes-namespace" -> res.namespace,
-              "kubernetes-path" -> res.path,
-              "kubernetes-uid" -> res.uid
-            ))
-          )
-        )
+    val spec = findAndMerge[ApiKey](_spec, res, "apikey", dkApkOpt, apikeys, _.metadata, _.clientId, _.toJson, Some(_.enabled))
+    spec.applyOn(s =>
+      (s \ "clientName").asOpt[String] match {
+        case None => s.as[JsObject] ++ Json.obj("clientName" -> res.name)
+        case Some(_) => s
       }
-    }
+    ).applyOn(s =>
+      (s \ "group").asOpt[String] match {
+        case None => s
+        case Some(v) => s.as[JsObject] - "group" ++ Json.obj("authorizedEntities" -> Json.arr("group_" + v))
+      }
+    ).applyOn(s =>
+      (s \ "authorizedEntities").asOpt[String] match {
+        case None => s.as[JsObject] ++ Json.obj("authorizedEntities" -> Json.arr("group_default"))
+        case Some(v) => s
+      }
+    ).applyOn { s =>
+      dkApkOpt match {
+        case None => s
+        case Some(apk) => s.as[JsObject] ++ Json.obj("authorizedEntities" -> JsArray(apk.authorizedEntities.map(_.json)))
+      }
+    }.applyOn { s =>
+      val shouldExport = (s \ "exportSecret").asOpt[Boolean].getOrElse(false)
+      (s \ "secretName").asOpt[String] match {
+        case None => {
+          s.applyOn(js =>
+            (s \ "clientId").asOpt[String] match {
+              case None => s.as[JsObject] ++ Json.obj("clientId" -> IdGenerator.token(64))
+              case Some(v) => s
+            }
+          ).applyOn(js =>
+            (s \ "clientSecret").asOpt[String] match {
+              case None => s.as[JsObject] ++ Json.obj("clientSecret" -> IdGenerator.token(128))
+              case Some(v) => s
+            }
+          )
+        }
+        case Some(v) => {
+          val parts = v.split("/").toList.map(_.trim)
+          val name = if (parts.size == 2) parts.last else v
+          val namespace = if (parts.size == 2) parts.head else res.namespace
+          val path = s"$namespace/$name"
+          val apiKeyOpt: Option[ApiKey] = apikeys.filter(_.metadata.get("otoroshi-provider").contains("kubernetes-crds")).find(_.metadata.get("kubernetes-path").contains(res.path))
+          val secretOpt = secrets.find(_.path == path)
+          val possibleClientSecret = if (shouldExport) IdGenerator.token(128) else "secret-not-found"
+          val clientId = apiKeyOpt.map(_.clientId).getOrElse(secretOpt.map(s => (s.raw \ "data" \ "clientId").as[String].applyOn(_.fromBase64)).getOrElse(IdGenerator.token(64)))
+          val clientSecret = apiKeyOpt.map(_.clientSecret).getOrElse(secretOpt.map(s => (s.raw \ "data" \ "clientSecret").as[String].applyOn(_.fromBase64)).getOrElse(possibleClientSecret))
+          if (shouldExport) {
+            registerApkToExport(namespace, name, ApiKey(clientId, clientSecret,
+              clientName = name,
+              authorizedEntities = Seq(ServiceGroupIdentifier("default"))
+            ))
+          }
+          s.as[JsObject] ++ Json.obj(
+            "clientId" -> clientId,
+            "clientSecret" -> clientSecret
+          )
+        }
+      }
+    }.applyOn(s =>
+      s.as[JsObject] ++ Json.obj(
+        "metadata" -> ((s \ "metadata").asOpt[JsObject].getOrElse(Json.obj()) ++ Json.obj(
+          "otoroshi-provider" -> "kubernetes-crds",
+          "kubernetes-name" -> res.name,
+          "kubernetes-namespace" -> res.namespace,
+          "kubernetes-path" -> res.path,
+          "kubernetes-uid" -> res.uid
+        ))
+      )
+    )
   }
 
   private def foundACertWithSameIdAndCsr(id: String, csrJson: JsValue, caOpt: Option[Cert], certs: Seq[Cert]): Option[Cert] = {
@@ -1031,25 +1052,38 @@ object KubernetesCRDsJob {
   }
 
   def patchCoreDnsConfig(conf: KubernetesConfig, ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    logger.debug("patchCoreDnsConfig")
     val client = new KubernetesClient(conf, env)
-    val hash = s"${conf.kubeSystemNamespace}-${conf.clusterDomain}-${conf.otoroshiServiceName}-${conf.otoroshiNamespace}"
-    // val configHasChanged = lastDnsConfigRef.get() != hash
+    val hash = Seq(
+      conf.kubeSystemNamespace,
+      conf.coreDnsConfigMapName,
+      conf.coreDnsDeploymentName,
+      conf.coreDnsIntegrationDryRun,
+      conf.corednsPort,
+      conf.clusterDomain,
+      conf.otoroshiServiceName,
+      conf.otoroshiNamespace
+    ).mkString("-").sha256
 
-    def patchConfig(coredns: KubernetesDeployment, configMap: KubernetesConfigMap, append: Boolean): Future[Unit] = {
-      logger.info("patching coredns config. with otoroshi mesh")
-      val container = (coredns.raw \ "spec" \ "containers").as[JsArray].value.find(_.select("name").asOpt[String].contains("coredns"))
-      val coredns17 = container.flatMap(_.select("image").asOpt[String].map(_.split(":").last.replace(".", "")).map {
-        case version if version.length == 2 => version.toInt > 16
-        case version if version.length == 3 => version.toInt > 169
-        case version if version.length == 4 => version.toInt > 1699
-        case version if version.length == 5 => version.toInt > 16999
-        case _                              => false
-      }).getOrElse(false)
+    def patchConfig(coredns: Option[KubernetesDeployment], configMap: KubernetesConfigMap, append: Boolean): Future[Unit] = Try {
+      logger.debug("patching coredns config. with otoroshi mesh")
+      val coredns17: Boolean = {
+        coredns.flatMap { cdns =>
+          val container = (cdns.raw \ "spec" \ "containers").as[JsArray].value.find(_.select("name").asOpt[String].contains("coredns"))
+          container.flatMap(_.select("image").asOpt[String].map(_.split(":").last.replace(".", "")).map {
+            case version if version.length == 2 => Try(version.toInt > 16).getOrElse(false)
+            case version if version.length == 3 => Try(version.toInt > 169).getOrElse(false)
+            case version if version.length == 4 => Try(version.toInt > 1699).getOrElse(false)
+            case version if version.length == 5 => Try(version.toInt > 16999).getOrElse(false)
+            case _ => false
+          })
+        }.getOrElse(false)
+      }
       val upstream = if (coredns17) "" else "upstream"
       val otoMesh =
         s"""### otoroshi-mesh-begin ###
            |### config-hash: $hash
-           |otoroshi.mesh:53 {
+           |otoroshi.mesh:${conf.corednsPort} {
            |    errors
            |    health
            |    ready
@@ -1058,10 +1092,10 @@ object KubernetesCRDsJob {
            |        $upstream
            |        fallthrough in-addr.arpa ip6.arpa
            |    }
-           |    rewrite name regex (.*)\.otoroshi\.mesh ${conf.otoroshiServiceName}.${conf.otoroshiNamespace}.svc.${conf.clusterDomain}
-           |    rewrite name regex (.*)\.svc\.otoroshi\.local ${conf.otoroshiServiceName}.${conf.otoroshiNamespace}.svc.${conf.clusterDomain}
-           |    rewrite name regex (.*)\.svc\.otoroshi ${conf.otoroshiServiceName}.${conf.otoroshiNamespace}.svc.${conf.clusterDomain}
-           |    rewrite name regex (.*)\.otoroshi ${conf.otoroshiServiceName}.${conf.otoroshiNamespace}.svc.${conf.clusterDomain}
+           |    rewrite name regex (.*)\\.otoroshi\\.mesh ${conf.otoroshiServiceName}.${conf.otoroshiNamespace}.svc.${conf.clusterDomain}
+           |    rewrite name regex (.*)\\.svc\\.otoroshi\\.local ${conf.otoroshiServiceName}.${conf.otoroshiNamespace}.svc.${conf.clusterDomain}
+           |    rewrite name regex (.*)\\.svc\\.otoroshi ${conf.otoroshiServiceName}.${conf.otoroshiNamespace}.svc.${conf.clusterDomain}
+           |    rewrite name regex (.*)\\.otoroshi ${conf.otoroshiServiceName}.${conf.otoroshiNamespace}.svc.${conf.clusterDomain}
            |    forward . /etc/resolv.conf
            |    cache 30
            |    loop
@@ -1075,51 +1109,78 @@ object KubernetesCRDsJob {
       if (append) {
         val newData = (configMap.raw \ "data").as[JsObject] ++ Json.obj("Corefile" -> (otoMesh + coreFile))
         val newRaw = configMap.raw.as[JsObject] ++ Json.obj("data" -> newData)
-        client.updateConfigMap(configMap.namespace, configMap.name, KubernetesConfigMap(newRaw)).andThen {
-          case Failure(e) => logger.error("error while patching coredns config. (append)", e)
-          case Success(Left((status, body))) => logger.error(s"error while patching coredns config. got status $status and body '$body' (append)")
-        }.map(_ => ())
+        if (conf.coreDnsIntegrationDryRun) {
+          logger.debug(s"new coredns config append: ${Json.prettyPrint(newRaw)}")
+          ().future
+        } else {
+          client.updateConfigMap(configMap.namespace, configMap.name, KubernetesConfigMap(newRaw)).andThen {
+            case Failure(e) => logger.error("error while patching coredns config. (append)", e)
+            case Success(Left((status, body))) => logger.error(s"error while patching coredns config. got status $status and body '$body' (append)")
+          }.map(_ => ())
+        }
       } else {
         val head = coreFile.split("### otoroshi-mesh-begin ###").toSeq.head
         val tail = coreFile.split("### otoroshi-mesh-end ###").toSeq.last
         val newData = (configMap.raw \ "data").as[JsObject] ++ Json.obj("Corefile" -> (head + otoMesh + tail))
         val newRaw = configMap.raw.as[JsObject] ++ Json.obj("data" -> newData)
-        client.updateConfigMap(configMap.namespace, configMap.name, KubernetesConfigMap(newRaw)).andThen {
-          case Failure(e) => logger.error("error while patching coredns config.", e)
-          case Success(Left((status, body))) => logger.error(s"error while patching coredns config. got status $status and body '$body'")
-        }.map(_ => ())
+        if (conf.coreDnsIntegrationDryRun) {
+          logger.debug(s"new coredns config: ${Json.prettyPrint(newRaw)}")
+          ().future
+        } else {
+          client.updateConfigMap(configMap.namespace, configMap.name, KubernetesConfigMap(newRaw)).andThen {
+            case Failure(e) => logger.error("error while patching coredns config.", e)
+            case Success(Left((status, body))) => logger.error(s"error while patching coredns config. got status $status and body '$body'")
+          }.map(_ => ())
+        }
       }
+    } match {
+      case Success(future) => future
+      case Failure(error) =>
+        logger.error("error while patching coredns config", error)
+        Future.failed(error)
     }
 
-    client.fetchDeployment("kube-system", "coredns").flatMap {
-      case None => ().future
-      case Some(coredns) => {
-        client.fetchConfigMap(conf.kubeSystemNamespace, "coredns").flatMap {
-          case None => ().future
-          case Some(configMap) if configMap.hasOtoroshiMesh => {
-            val hashFromConfigMap = configMap.corefile
-              .split("\\n")
-              .find(_.trim.startsWith("### config-hash: "))
-              .map(_.replace("### config-hash: ", "").replace("\n", ""))
-              .getOrElse("--")
-            val configHasChanged = hashFromConfigMap != hash
-            logger.debug(s"current hash: $hash, hash from coredns configmap: $hashFromConfigMap, config has changed: $configHasChanged")
-            if (configHasChanged) {
-              patchConfig(coredns, configMap, true)
-            } else {
-              ().future
-            }
-          }
-          // case Some(configMap) if configMap.hasOtoroshiMesh && !configHasChanged =>
-          //   ().future
-          // case Some(configMap) if configMap.hasOtoroshiMesh && configHasChanged =>
-          //   patchConfig(coredns, configMap, false)
-          case Some(configMap) => {
-            patchConfig(coredns, configMap, true)
+    def fetchCorednsConfig(coredns: Option[KubernetesDeployment]): Future[Unit] = {
+      client.fetchConfigMap(conf.kubeSystemNamespace, conf.coreDnsConfigMapName).flatMap {
+        case None =>
+          logger.error("no coredns config.")
+          ().future
+        case Some(configMap) if configMap.hasOtoroshiMesh => {
+          logger.debug(s"configMap 1 ${configMap.corefile}")
+          val hashFromConfigMap = configMap.corefile
+            .split("\\n")
+            .find(_.trim.startsWith("### config-hash: "))
+            .map(_.replace("### config-hash: ", "").replace("\n", ""))
+            .getOrElse("--")
+          val configHasChanged = hashFromConfigMap != hash
+          logger.debug(s"current hash: $hash, hash from coredns configmap: $hashFromConfigMap, config has changed: $configHasChanged")
+          if (configHasChanged) {
+            patchConfig(coredns, configMap, false)
+            ().future
+          } else {
+            logger.info("coredns has latest otoroshi config. ")
             ().future
           }
         }
+        case Some(configMap) => {
+          logger.debug(s"configMap 2 ${configMap.corefile}")
+          patchConfig(coredns, configMap, true)
+          ().future
+        }
       }
+    }
+    if (conf.coreDnsIntegration) {
+      client.fetchDeployment(conf.kubeSystemNamespace, conf.coreDnsDeploymentName).flatMap {
+        case None =>
+          logger.info("no coredns deployment.")
+          fetchCorednsConfig(None)
+        case Some(coredns) => {
+          fetchCorednsConfig(coredns.some)
+        }
+      }
+    } else {
+      // TODO: handle config delete !
+      ().future
     }
   }
 }
