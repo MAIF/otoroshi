@@ -70,6 +70,8 @@ export class AuthModuleConfigsPage extends Component {
           firstSort={0}
           extractKey={(item) => item.id}
           formComponent={AuthModuleConfig}
+          export={true}
+          kubernetesKind="AuthModule"
           injectToolbar={(s, ss) => {
             return (
               <div className="form-group btnsService">

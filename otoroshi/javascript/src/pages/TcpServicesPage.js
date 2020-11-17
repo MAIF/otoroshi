@@ -375,6 +375,8 @@ export class TcpServicesPage extends Component {
             return item.id;
           }}
           itemUrl={(i) => `/bo/dashboard/tcp/services/edit/${i.id}`}
+          export={true}
+          kubernetesKind="TcpService"
         />
       </div>
     );

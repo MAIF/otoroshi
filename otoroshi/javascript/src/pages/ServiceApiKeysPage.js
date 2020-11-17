@@ -658,6 +658,8 @@ export class ServiceApiKeysPage extends Component {
         displayTrash={(item) => this.state.env && this.state.env.adminApikeyId === item.clientId}
         showLink={false}
         rowNavigation={true}
+        export={true}
+        kubernetesKind="ApiKey"
         navigateTo={(item) =>
           this.props.history.push({
             pathname: `/lines/${this.props.params.lineId}/services/${this.props.params.serviceId}/apikeys/edit/${item.clientId}`,
@@ -729,6 +731,8 @@ export class ApiKeysPage extends Component {
         displayTrash={(item) => this.state.env && this.state.env.adminApikeyId === item.clientId}
         showLink={false}
         rowNavigation={true}
+        export={true}
+        kubernetesKind="ApiKey"
         navigateTo={(item) =>
           this.props.history.push({
             pathname: `/apikeys/edit/${item.clientId}`,

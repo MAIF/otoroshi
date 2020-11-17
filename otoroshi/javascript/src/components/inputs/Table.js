@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import { Form } from '.';
 import _ from 'lodash';
 import { createTooltip } from '../../tooltips';
+import YAML from 'yaml'
 
 import ReactTable from 'react-table';
 
@@ -238,6 +239,47 @@ export class Table extends Component {
     if (e && e.preventDefault) e.preventDefault();
     this.props.updateItem(this.state.currentItem);
   };
+
+  exportJson = (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    const name = this.state.currentItem.name.replace(/ /g, '-').replace(/\(/g, '').replace(/\)/g, '').toLowerCase();
+    const itemName = this.props.itemName.replace(/ /g, '-').replace(/\(/g, '').replace(/\)/g, '').toLowerCase();
+    const json = JSON.stringify(this.state.currentItem, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.id = String(Date.now());
+    a.style.display = 'none';
+    a.download = `${itemName}-${name}-${Date.now()}.json`;
+    a.href = url;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => document.body.removeChild(a), 300);
+  };
+
+  exportYaml = (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    const name = this.state.currentItem.name.replace(/ /g, '-').replace(/\(/g, '').replace(/\)/g, '').toLowerCase();
+    const itemName = this.props.itemName.replace(/ /g, '-').replace(/\(/g, '').replace(/\)/g, '').toLowerCase();
+    const json = YAML.stringify({ 
+      apiVersion: 'proxy.otoroshi.io/v1alpha1', 
+      kind: this.props.kubernetesKind, 
+      metadata: { 
+        name
+      }, 
+      spec: this.state.currentItem
+    });
+    const blob = new Blob([json], { type: 'application/yaml' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.id = String(Date.now());
+    a.style.display = 'none';
+    a.download = `${itemName}-${name}-${Date.now()}.yaml`;
+    a.href = url;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => document.body.removeChild(a), 300);
+  }
 
   render() {
     if (this.state.hasError) {
@@ -482,6 +524,24 @@ export class Table extends Component {
             )}
             <hr />
             <div className="form-buttons pull-right">
+              {this.props.export && (
+                <>
+                  <button
+                    onClick={this.exportJson}
+                    type="button"
+                    className="btn btn-info"
+                    title="Export as json">
+                    <i className="glyphicon glyphicon-export" /> JSON
+                  </button>
+                  <button
+                    onClick={this.exportYaml}
+                    type="button"
+                    className="btn btn-info"
+                    title="Export as yaml">
+                    <i className="glyphicon glyphicon-export" /> YAML
+                  </button>
+                </>
+              )}
               {this.props.displayTrash && this.props.displayTrash(this.state.currentItem) && (
                 <button
                   type="button"

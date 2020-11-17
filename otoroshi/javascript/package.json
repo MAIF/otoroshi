@@ -56,7 +56,8 @@
     "set-value": "3.0.2",
     "showdown": "1.9.1",
     "uuid": "8.3.0",
-    "whatwg-fetch": "3.4.1"
+    "whatwg-fetch": "3.4.1",
+    "yaml": "^1.10.0"
   },
   "devDependencies": {
     "@babel/core": "7.11.6",

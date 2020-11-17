@@ -684,6 +684,8 @@ export class CertificatesPage extends Component {
         showLink={true}
         rowNavigation={true}
         extractKey={(item) => item.id}
+        export={true}
+        kubernetesKind="Certificate"
         injectTable={(table) => (this.table = table)}
         injectTopBar={() => (
           <>

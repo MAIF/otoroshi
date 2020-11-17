@@ -46,6 +46,8 @@ export class JwtVerifiersPage extends Component {
           extractKey={(item) => item.id}
           formComponent={JwtVerifier}
           formPassProps={{ global: true }}
+          export={true}
+          kubernetesKind="JwtVerifier"
         />
       </div>
     );

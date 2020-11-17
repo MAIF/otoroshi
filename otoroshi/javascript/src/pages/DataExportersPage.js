@@ -285,6 +285,8 @@ export class DataExportersPage extends Component {
           firstSort={0}
           extractKey={(item) => item.id}
           injectTable={(ref) => (this.table = ref)}
+          export={true}
+          kubernetesKind="DataExporter"
         />
       </div>
     );

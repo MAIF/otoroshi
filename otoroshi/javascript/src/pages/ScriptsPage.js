@@ -501,6 +501,8 @@ export class ScriptsPage extends Component {
         showLink={true}
         rowNavigation={true}
         extractKey={(item) => item.id}
+        export={true}
+        kubernetesKind="Script"
       />
     );
   }
