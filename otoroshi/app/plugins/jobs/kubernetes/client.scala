@@ -10,6 +10,7 @@ import akka.stream.scaladsl.{Framing, Sink, Source}
 import akka.util.ByteString
 import env.Env
 import models._
+import org.joda.time.DateTime
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json._
@@ -524,31 +525,42 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
     Source.repeat(())
       .flatMapConcat { _ =>
         //println("run from " + last.get())
-        val lbl = labelSelector.map(s => s"&labelSelector=$s").getOrElse("")
-        val cli: WSRequest = client(s"/apis/$api/namespaces/$namespace/$resource?watch=true&resourceVersion=${last.get()}&timeoutSeconds=$timeout$lbl")
-        val f: Future[Source[Seq[ByteString], _]] = cli.addHttpHeaders(
+        logger.info(s"watch on ${api}/${namespace}/${resource}")
+        val lblStart = labelSelector.map(s => s"?labelSelector=$s").getOrElse("")
+        val cliStart: WSRequest = client(s"/apis/$api/namespaces/$namespace/$resource$lblStart")
+        val f: Future[Source[Seq[ByteString], _]] = cliStart.addHttpHeaders(
           "Accept" -> "application/json"
-        ).withMethod("GET").stream().map { resp =>
-          if (resp.status == 200) {
-            resp.bodyAsSource
-              // .alsoTo(Sink.foreach(v => println(v.utf8String)))
-              .via(Framing.delimiter("\n".byteString, Int.MaxValue, true))
-              .map { line =>
-                val json = Json.parse(line.utf8String)
-                // val name = (json \ "object" \ "metadata" \ "name").asOpt[String]
-                // val namespace = (json \ "object" \ "metadata" \ "namespace").asOpt[String]
-                val resourceVersion = (json \ "object" \ "metadata" \ "resourceVersion").asOpt[String]
-                // println(s"processing $namespace / $name - $resourceVersion")
-                resourceVersion.foreach(v => last.set(v))
-                line
-              }
-              .groupedWithin(1000, 2.seconds)
-          } else {
-            Source.empty
+        ).withMethod("GET").withRequestTimeout(timeout.seconds).get().flatMap { list =>
+          val resourceVersionStart = (list.json \ "metadata" \ "resourceVersion").asOpt[String].getOrElse("0")
+          last.set(resourceVersionStart)
+          val lbl = labelSelector.map(s => s"&labelSelector=$s").getOrElse("")
+          val cli: WSRequest = client(s"/apis/$api/namespaces/$namespace/$resource?watch=1&resourceVersion=${last.get()}&timeoutSeconds=$timeout$lbl")
+          cli.addHttpHeaders(
+            "Accept" -> "application/json"
+          ).withMethod("GET").withRequestTimeout(timeout.seconds).stream().map { resp =>
+            if (resp.status == 200) {
+              resp.bodyAsSource
+                //.alsoTo(Sink.foreach(v => println(v.utf8String)))
+                .via(Framing.delimiter("\n".byteString, Int.MaxValue, true))
+                .map { line =>
+                  val json = Json.parse(line.utf8String)
+                  // logger.info(s"[${DateTime.now().toString()}] evt : ${Json.stringify(json)}")
+                  // val name = (json \ "object" \ "metadata" \ "name").asOpt[String]
+                  // val namespace = (json \ "object" \ "metadata" \ "namespace").asOpt[String]
+                  val resourceVersion = (json \ "object" \ "metadata" \ "resourceVersion").asOpt[String]
+                  // println(s"processing $namespace / $name - $resourceVersion")
+                  resourceVersion.foreach(v => last.set(v))
+                  line
+                }
+                .groupedWithin(1000, 2.seconds)
+            } else {
+              Source.empty
+            }
           }
         }
         Source.future(f).flatMapConcat(v => v)
       }
+      .filterNot(_.isEmpty)
       .takeWhile(_ => !stop.get())
   }
 }

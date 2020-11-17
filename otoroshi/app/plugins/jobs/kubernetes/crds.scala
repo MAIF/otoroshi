@@ -38,6 +38,8 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
   private val apiClientRef = new AtomicReference[ApiClient]()
   private val threadPool = Executors.newFixedThreadPool(1)
   private val stopCommand = new AtomicBoolean(false)
+  private val watchCommand = new AtomicBoolean(false)
+  private val lastWatchStopped = new AtomicBoolean(true)
 
   override def uniqueId: JobId = JobId("io.otoroshi.plugins.jobs.kubernetes.KubernetesOtoroshiCRDsControllerJob")
 
@@ -84,6 +86,8 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
   override def jobStart(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     logger.info("start")
     stopCommand.set(false)
+    lastWatchStopped.set(true)
+    watchCommand.set(false)
     val config = KubernetesConfig.theConfig(ctx)
     if (config.kubeLeader) {
       val apiClient = new ClientBuilder()
@@ -116,9 +120,16 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
       })
     }
 
-    // TODO: should be dynamic
-    if (config.watch) {
+    handleWatch(config, ctx)
+    ().future
+  }
+
+  def handleWatch(config: KubernetesConfig, ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Unit = {
+    if (config.watch && !watchCommand.get() && lastWatchStopped.get()) {
+      logger.info("starting namespaces watch ...")
       implicit val mat = env.otoroshiMaterializer
+      watchCommand.set(true)
+      lastWatchStopped.set(false)
       val conf = KubernetesConfig.theConfig(ctx)
       val client = new KubernetesClient(conf, env)
       val source = client.watchOtoResources(conf.namespaces, Seq(
@@ -132,18 +143,29 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
         "scripts",
         "tcp-services",
         "admins"
-      ), 30, stopCommand).merge(
-        client.watchKubeResources(conf.namespaces, Seq("secrets", "services", "pods", "endpoints"), 30, stopCommand)
+      ), 30, watchCommand).merge(
+        client.watchKubeResources(conf.namespaces, Seq("secrets", "services", "pods", "endpoints"), 30, watchCommand)
       )
-      source.throttle(1, 5.seconds).runWith(Sink.foreach(_ => KubernetesCRDsJob.syncCRDs(conf, ctx.attrs, !stopCommand.get())))
+      source.takeWhile(_ => !watchCommand.get()).throttle(1, 10.seconds).filterNot(_.isEmpty).alsoTo(Sink.onComplete {
+        case _ => lastWatchStopped.set(true)
+      }).runWith(Sink.foreach { group =>
+        logger.debug(s"sync triggered by a group of ${group.size} events")
+        KubernetesCRDsJob.syncCRDs(conf, ctx.attrs, !stopCommand.get())
+      })
+    } else if (!config.watch) {
+      logger.info("stopping namespaces watch")
+      watchCommand.set(false)
+    } else {
+      logger.info("watching already ...")
     }
-    ().future
   }
 
   override def jobStop(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     // Option(apiClientRef.get()).foreach(_.) // nothing to stop stuff here ...
-    logger.info("stop")
+    logger.info("stopping kubernetes controller job")
     stopCommand.set(true)
+    watchCommand.set(false)
+    lastWatchStopped.set(true)
     threadPool.shutdown()
     shouldRun.set(false)
     ().future
@@ -155,12 +177,14 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
     if (conf.crds) {
       if (conf.kubeLeader) {
         if (shouldRun.get()) {
+          handleWatch(conf, ctx)
           KubernetesCRDsJob.patchCoreDnsConfig(conf, ctx)
           KubernetesCRDsJob.syncCRDs(conf, ctx.attrs, !stopCommand.get())
         } else {
           ().future
         }
       } else {
+        handleWatch(conf, ctx)
         KubernetesCRDsJob.patchCoreDnsConfig(conf, ctx)
         KubernetesCRDsJob.syncCRDs(conf, ctx.attrs, !stopCommand.get())
       }
@@ -1033,7 +1057,10 @@ object KubernetesCRDsJob {
         if (shouldRunNext.get()) {
           shouldRunNext.set(false)
           logger.info("restart job right now because sync was asked during sync ")
-          syncCRDs(_conf, attrs, jobRunning)
+          env.otoroshiScheduler.scheduleOnce(5.seconds) {
+            syncCRDs(_conf, attrs, jobRunning)
+          }
+          ().future
         } else {
           ().future
         }
