@@ -1,11 +1,12 @@
 package otoroshi.models
 
 import env.Env
-import models.BackOfficeUser
+import models._
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
 import utils.RegexPool
 
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 case class UserRights(rights: Seq[UserRight]) {
@@ -252,11 +253,18 @@ object Tenant {
       case Success(e) => JsSuccess(e)
     }
   }
+  def fromJsons(value: JsValue): Tenant =
+    try {
+      format.reads(value).get
+    } catch {
+      case e: Throwable => throw e
+    }
 }
 case class Tenant(id: TenantId, name: String, description: String, metadata: Map[String, String]) extends EntityLocationSupport {
   override def internalId: String = id.value
   override def json: JsValue = Tenant.format.writes(this)
   override def location: EntityLocation = EntityLocation(id, Seq.empty)
+  def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.tenantDataStore.set(this)
 }
 object Team {
   val format = new Format[Team] {
@@ -280,9 +288,16 @@ object Team {
       case Success(e) => JsSuccess(e)
     }
   }
+  def fromJsons(value: JsValue): Team =
+    try {
+      format.reads(value).get
+    } catch {
+      case e: Throwable => throw e
+    }
 }
 case class Team(id: TeamId, tenant: TenantId, name: String, description: String, metadata: Map[String, String]) extends EntityLocationSupport {
   override def internalId: String = id.value
   override def json: JsValue = Team.format.writes(this)
   override def location: EntityLocation = EntityLocation(tenant, Seq(id))
+  def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.teamDataStore.set(this)
 }

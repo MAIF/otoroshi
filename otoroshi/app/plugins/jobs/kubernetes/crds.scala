@@ -15,7 +15,7 @@ import io.kubernetes.client.util.ClientBuilder
 import io.kubernetes.client.util.credentials.AccessTokenAuthentication
 import models._
 import org.joda.time.DateTime
-import otoroshi.models.SimpleOtoroshiAdmin
+import otoroshi.models.{SimpleOtoroshiAdmin, Team, Tenant}
 import otoroshi.plugins.jobs.kubernetes.IngressSupport.IntOrString
 import otoroshi.script._
 import otoroshi.ssl.pki.models.GenCsrQuery
@@ -585,6 +585,16 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
     customizeIdAndName(spec, res)
   }
 
+  private def customizeTenant(_spec: JsValue, res: KubernetesOtoroshiResource, entities: Seq[Tenant]): JsValue = {
+    val spec = findAndMerge[Tenant](_spec, res, "tenant", None, entities, _.metadata, _.id.value, _.json)
+    customizeIdAndName(spec, res)
+  }
+
+  private def customizeTeam(_spec: JsValue, res: KubernetesOtoroshiResource, entities: Seq[Team]): JsValue = {
+    val spec = findAndMerge[Team](_spec, res, "team", None, entities, _.metadata, _.id.value, _.json)
+    customizeIdAndName(spec, res)
+  }
+
   private def customizeTcpService(_spec: JsValue, res: KubernetesOtoroshiResource, entities: Seq[TcpService]): JsValue = {
     val spec = findAndMerge[TcpService](_spec, res, "tcp-service", None, entities, _.metadata, _.id, _.json, Some(_.enabled))
     customizeIdAndName(spec, res)
@@ -605,6 +615,8 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
     template.deepMerge(entity.toJson.as[JsObject].deepMerge(_spec.as[JsObject]))
   }
 
+  def crdsFetchTenants(tenants: Seq[Tenant]): Future[Seq[OtoResHolder[Tenant]]] = client.fetchOtoroshiResources[Tenant]("tenants", Tenant.format, (a, b) => customizeTenant(a, b, tenants))
+  def crdsFetchTeams(teams: Seq[Team]): Future[Seq[OtoResHolder[Team]]] = client.fetchOtoroshiResources[Team]("teams", Team.format, (a, b) => customizeTeam(a, b, teams))
   def crdsFetchServiceGroups(groups: Seq[ServiceGroup]): Future[Seq[OtoResHolder[ServiceGroup]]] = client.fetchOtoroshiResources[ServiceGroup]("service-groups", ServiceGroup._fmt, (a, b) => customizeServiceGroup(a, b, groups))
   def crdsFetchServiceDescriptors(services: Seq[KubernetesService], endpoints: Seq[KubernetesEndpoint], otoServices: Seq[ServiceDescriptor]): Future[Seq[OtoResHolder[ServiceDescriptor]]] = {
     client.fetchOtoroshiResources[ServiceDescriptor]("service-descriptors", ServiceDescriptor._fmt, (a, b) => customizeServiceDescriptor(a, b, services, endpoints, otoServices))
@@ -625,6 +637,18 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
   def crdsFetchSimpleAdmins(admins: Seq[SimpleOtoroshiAdmin]): Future[Seq[OtoResHolder[SimpleOtoroshiAdmin]]] = client.fetchOtoroshiResources[SimpleOtoroshiAdmin]("admins", v => SimpleOtoroshiAdmin.reads(v), (a, b) => customizeAdmin(a, b, admins))
 }
 
+case class ExportersCtx(
+  dataExporters: Seq[OtoResHolder[DataExporterConfig]],
+  otodataexporters: Seq[DataExporterConfig],
+)
+
+case class TenantAndTeamsCtx(
+  tenants: Seq[OtoResHolder[Tenant]],
+  teams: Seq[OtoResHolder[Team]],
+  ototenants: Seq[Tenant],
+  ototeams: Seq[Team],
+)
+
 case class CRDContext(
   serviceGroups: Seq[OtoResHolder[ServiceGroup]],
   serviceDescriptors: Seq[OtoResHolder[ServiceDescriptor]],
@@ -636,7 +660,6 @@ case class CRDContext(
   scripts: Seq[OtoResHolder[Script]],
   tcpServices: Seq[OtoResHolder[TcpService]],
   simpleAdmins: Seq[OtoResHolder[SimpleOtoroshiAdmin]],
-  dataExporters: Seq[OtoResHolder[DataExporterConfig]],
   otoserviceGroups: Seq[ServiceGroup],
   otoserviceDescriptors: Seq[ServiceDescriptor],
   otoapiKeys: Seq[ApiKey],
@@ -647,7 +670,8 @@ case class CRDContext(
   otoscripts: Seq[Script],
   ototcpServices: Seq[TcpService],
   otosimpleAdmins: Seq[SimpleOtoroshiAdmin],
-  otodataexporters: Seq[DataExporterConfig],
+  expctx: ExportersCtx,
+  ttctx: TenantAndTeamsCtx
 )
 
 object KubernetesCRDsJob {
@@ -695,6 +719,8 @@ object KubernetesCRDsJob {
       ototcpServices <- env.datastores.tcpServiceDataStore.findAll()
       otosimpleAdmins <- env.datastores.simpleAdminDataStore.findAll()
       otodataexporters <- env.datastores.dataExporterConfigDataStore.findAll()
+      ototeams <- env.datastores.teamDataStore.findAll()
+      ototenants <- env.datastores.tenantDataStore.findAll()
 
       services <- clientSupport.client.fetchServices()
       endpoints <- clientSupport.client.fetchEndpoints()
@@ -710,6 +736,8 @@ object KubernetesCRDsJob {
       tcpServices <- clientSupport.crdsFetchTcpServices(ototcpServices)
       simpleAdmins <- clientSupport.crdsFetchSimpleAdmins(otosimpleAdmins)
       dataExporters <- clientSupport.crdsFetchDataExporters(otodataexporters)
+      teams <- clientSupport.crdsFetchTeams(ototeams)
+      tenants <- clientSupport.crdsFetchTenants(ototenants)
 
     } yield {
       CRDContext(
@@ -723,7 +751,6 @@ object KubernetesCRDsJob {
         scripts = scripts,
         tcpServices = tcpServices,
         simpleAdmins = simpleAdmins,
-        dataExporters = dataExporters,
         otoserviceGroups = otoserviceGroups,
         otoserviceDescriptors = otoserviceDescriptors,
         otoapiKeys = otoapiKeys,
@@ -734,7 +761,16 @@ object KubernetesCRDsJob {
         otoscripts = otoscripts,
         ototcpServices = ototcpServices,
         otosimpleAdmins = otosimpleAdmins,
-        otodataexporters = otodataexporters
+        expctx = ExportersCtx(
+          dataExporters = dataExporters,
+          otodataexporters = otodataexporters,
+        ),
+        ttctx = TenantAndTeamsCtx(
+          teams = teams,
+          tenants = tenants,
+          ototeams = ototeams,
+          ototenants = ototenants,
+        )
       )
     }
   }
@@ -752,7 +788,6 @@ object KubernetesCRDsJob {
       scripts,
       tcpServices,
       simpleAdmins,
-      dataExporters,
       otoserviceGroups,
       otoserviceDescriptors,
       otoapiKeys,
@@ -763,8 +798,19 @@ object KubernetesCRDsJob {
       otoscripts,
       ototcpServices,
       otosimpleAdmins,
-      otodataexporters
+      expctx,
+      ttctx
     ) = ctx
+    val ExportersCtx(
+      dataExporters,
+      otodataexporters,
+    ) = expctx
+    val TenantAndTeamsCtx(
+      tenants,
+      teams,
+      ototenants,
+      ototeams,
+    ) = ttctx
     if (globalConfigs.size > 1) {
       Future.failed(new RuntimeException("There can only be one GlobalConfig entity !"))
     } else {
@@ -772,6 +818,8 @@ object KubernetesCRDsJob {
         compareAndSave(globalConfigs)(otoglobalConfigs, _ => "global", _.save()) ++
           compareAndSave(simpleAdmins)(otosimpleAdmins, v => v.username, v => env.datastores.simpleAdminDataStore.registerUser(v)) ++
           compareAndSave(dataExporters)(otodataexporters, _.id, _.save()) ++
+          compareAndSave(tenants)(ototenants, _.id.value, _.save()) ++
+          compareAndSave(teams)(ototeams, _.id.value, _.save()) ++
           compareAndSave(serviceGroups)(otoserviceGroups, _.id, _.save()) ++
           compareAndSave(certificates)(otocertificates, _.id, _.save()) ++
           compareAndSave(jwtVerifiers)(otojwtVerifiers, _.asGlobal.id, _.asGlobal.save()) ++
@@ -803,7 +851,6 @@ object KubernetesCRDsJob {
       scripts,
       tcpServices,
       simpleAdmins,
-      dataExporters,
       otoserviceGroups,
       otoserviceDescriptors,
       otoapiKeys,
@@ -814,9 +861,34 @@ object KubernetesCRDsJob {
       otoscripts,
       ototcpServices,
       otosimpleAdmins,
-      otodataexporters
+      expctx,
+      ttctx
     ) = ctx
+    val ExportersCtx(
+      dataExporters,
+      otodataexporters,
+    ) = expctx
+    val TenantAndTeamsCtx(
+      tenants,
+      teams,
+      ototenants,
+      ototeams,
+    ) = ttctx
     for {
+      _ <- ototenants
+        .filter(sg => sg.metadata.get("otoroshi-provider").contains("kubernetes-crds"))
+        .filterNot(sg => tenants.exists(ssg => sg.metadata.get("kubernetes-path").contains(ssg.path)))
+        .map(_.id.value)
+        .debug(seq => logger.info(s"Will delete ${seq.size} out of date tenants entities"))
+        .applyOn(env.datastores.tenantDataStore.deleteByIds)
+
+      _ <- ototeams
+        .filter(sg => sg.metadata.get("otoroshi-provider").contains("kubernetes-crds"))
+        .filterNot(sg => teams.exists(ssg => sg.metadata.get("kubernetes-path").contains(ssg.path)))
+        .map(_.id.value)
+        .debug(seq => logger.info(s"Will delete ${seq.size} out of date teams entities"))
+        .applyOn(env.datastores.teamDataStore.deleteByIds)
+
       _ <- otoserviceGroups
       .filter(sg => sg.metadata.get("otoroshi-provider").contains("kubernetes-crds"))
       .filterNot(sg => serviceGroups.exists(ssg => sg.metadata.get("kubernetes-path").contains(ssg.path)))

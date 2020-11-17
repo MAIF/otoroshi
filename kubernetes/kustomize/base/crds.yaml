@@ -28,6 +28,32 @@ spec:
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
+  name: organizations.proxy.otoroshi.io
+spec:
+  group: proxy.otoroshi.io
+  version: v1alpha1
+  names:
+    kind: Organization
+    plural: organizations
+    singular: organization
+  scope: Namespaced
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: teams.proxy.otoroshi.io
+spec:
+  group: proxy.otoroshi.io
+  version: v1alpha1
+  names:
+    kind: Team
+    plural: teams
+    singular: team
+  scope: Namespaced
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
   name: service-descriptors.proxy.otoroshi.io
 spec:
   group: proxy.otoroshi.io
@@ -38,7 +64,6 @@ spec:
       properties:
         spec:
           type: object
-          required: ["targets", "hosts"]
           properties:
             group:
               type: string
@@ -50,8 +75,6 @@ spec:
               type: string
             subdomain:
               type: string
-            targets:
-              type: array
             root:
               type: string
             matchingRoot:
