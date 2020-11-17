@@ -76,9 +76,9 @@ class KubernetesIngressControllerJob extends Job {
       .getOrElse(JobInstantiation.OneInstancePerOtoroshiCluster)
   }
 
-  override def initialDelay: Option[FiniteDuration] = 5.seconds.some
+  override def initialDelay(ctx: JobContext): Option[FiniteDuration] = 5.seconds.some
 
-  override def interval: Option[FiniteDuration] = 60.seconds.some
+  override def interval(ctx: JobContext): Option[FiniteDuration] = 60.seconds.some
 
   override def jobStart(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     stopCommand.set(false)

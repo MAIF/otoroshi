@@ -73,35 +73,35 @@ trait Job extends NamedPlugin with StartableAndStoppable with InternalEventListe
   final override def pluginType: PluginType = JobType
 
   def uniqueId: JobId
-  def visibility: JobVisibility            = JobVisibility.UserLand
-  def kind: JobKind                        = JobKind.Autonomous
-  def starting: JobStarting                = JobStarting.Automatically
-  def instantiation: JobInstantiation      = JobInstantiation.OneInstancePerOtoroshiInstance
-  def initialDelay: Option[FiniteDuration] = Some(FiniteDuration(0, TimeUnit.MILLISECONDS))
-  def interval: Option[FiniteDuration]     = None
-  def cronExpression: Option[String]       = None
+  def visibility: JobVisibility                             = JobVisibility.UserLand
+  def kind: JobKind                                         = JobKind.Autonomous
+  def starting: JobStarting                                 = JobStarting.Automatically
+  def instantiation: JobInstantiation                       = JobInstantiation.OneInstancePerOtoroshiInstance
+  def initialDelay(ctx: JobContext): Option[FiniteDuration] = Some(FiniteDuration(0, TimeUnit.MILLISECONDS))
+  def interval(ctx: JobContext): Option[FiniteDuration]     = None
+  def cronExpression(ctx: JobContext): Option[String]       = None
 
   private[script] def jobStartHook(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
-    JobStartedEvent(env.snowflakeGenerator.nextIdStr(), env.env, this).toAnalytics()
+    JobStartedEvent(env.snowflakeGenerator.nextIdStr(), env.env, this, ctx).toAnalytics()
     jobStart(ctx)(env, ec)
   }
 
   private[script] def jobStopHook(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
-    JobStoppedEvent(env.snowflakeGenerator.nextIdStr(), env.env, this).toAnalytics()
+    JobStoppedEvent(env.snowflakeGenerator.nextIdStr(), env.env, this, ctx).toAnalytics()
     promise.trySuccess(())
     jobStop(ctx)(env, ec)
   }
 
   private[script] def jobRunHook(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
-    JobRunEvent(env.snowflakeGenerator.nextIdStr(), env.env, this).toAnalytics()
+    JobRunEvent(env.snowflakeGenerator.nextIdStr(), env.env, this, ctx).toAnalytics()
     try {
       jobRun(ctx)(env, ec).andThen {
         case Failure(e) =>
-          JobErrorEvent(env.snowflakeGenerator.nextIdStr(), env.env, this, e)
+          JobErrorEvent(env.snowflakeGenerator.nextIdStr(), env.env, this, ctx, e)
       }
     } catch {
       case e: Throwable =>
-        JobErrorEvent(env.snowflakeGenerator.nextIdStr(), env.env, this, e)
+        JobErrorEvent(env.snowflakeGenerator.nextIdStr(), env.env, this, ctx, e)
         FastFuture.failed(e)
     }
   }
@@ -138,15 +138,15 @@ trait Job extends NamedPlugin with StartableAndStoppable with InternalEventListe
     }(manager.jobExecutor)
   }
 
-  final def auditJson(implicit env: Env): JsValue = Json.obj(
+  final def auditJson(ctx: JobContext)(implicit env: Env): JsValue = Json.obj(
     "uniqueId"       -> uniqueId.id,
     "name"           -> name,
     "kind"           -> kind.toString,
     "starting"       -> starting.toString,
     "instantiation"  -> instantiation.toString,
-    "initialDelay"   -> initialDelay.map(v => BigDecimal(v.toMillis)).map(JsNumber.apply).getOrElse(JsNull).as[JsValue],
-    "interval"       -> interval.map(v => BigDecimal(v.toMillis)).map(JsNumber.apply).getOrElse(JsNull).as[JsValue],
-    "cronExpression" -> cronExpression.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+    "initialDelay"   -> initialDelay(ctx).map(v => BigDecimal(v.toMillis)).map(JsNumber.apply).getOrElse(JsNull).as[JsValue],
+    "interval"       -> interval(ctx).map(v => BigDecimal(v.toMillis)).map(JsNumber.apply).getOrElse(JsNull).as[JsValue],
+    "cronExpression" -> cronExpression(ctx).map(JsString.apply).getOrElse(JsNull).as[JsValue],
     "config" -> env.datastores.globalConfigDataStore.latestSafe
       .map(_.scripts.jobConfig)
       .getOrElse(Json.obj())
@@ -234,7 +234,7 @@ case class RegisteredJobContext(
     )
     job.kind match {
       case JobKind.Autonomous if !ranOnce.get() => {
-        ref.set(Some(actorSystem.scheduler.scheduleOnce(job.initialDelay.getOrElse(0.millisecond)) {
+        ref.set(Some(actorSystem.scheduler.scheduleOnce(job.initialDelay(ctx).getOrElse(0.millisecond)) {
           try {
             if (!stopped.get()) {
               job.jobRunHook(ctx).andThen {
@@ -253,7 +253,7 @@ case class RegisteredJobContext(
         }))
       }
       case JobKind.ScheduledOnce if !ranOnce.get() => {
-        ref.set(Some(actorSystem.scheduler.scheduleOnce(job.initialDelay.getOrElse(0.millisecond)) {
+        ref.set(Some(actorSystem.scheduler.scheduleOnce(job.initialDelay(ctx).getOrElse(0.millisecond)) {
           try {
             if (!stopped.get()) {
               job.jobRunHook(ctx).andThen {
@@ -272,7 +272,7 @@ case class RegisteredJobContext(
         }))
       }
       case JobKind.ScheduledEvery if !ranOnce.get() => {
-        ref.set(Some(actorSystem.scheduler.scheduleOnce(job.initialDelay.getOrElse(0.millisecond)) {
+        ref.set(Some(actorSystem.scheduler.scheduleOnce(job.initialDelay(ctx).getOrElse(0.millisecond)) {
           try {
             if (!stopped.get()) {
               job.jobRunHook(ctx).andThen {
@@ -289,7 +289,7 @@ case class RegisteredJobContext(
         }))
       }
       case JobKind.ScheduledEvery => {
-        job.interval match {
+        job.interval(ctx) match {
           case None => ()
           case Some(interval) => {
             ref.set(Some(actorSystem.scheduler.scheduleOnce(interval) {
@@ -311,7 +311,7 @@ case class RegisteredJobContext(
         }
       }
       case JobKind.Cron => {
-        job.cronExpression match {
+        job.cronExpression(ctx) match {
           case None => ()
           case Some(expression) => {
 
@@ -538,10 +538,7 @@ class JobManager(env: Env) {
   }
 
   def registerJob(job: Job): RegisteredJobContext = {
-    JobManager.logger.debug(
-      s"Registering job '${job.name}' with id '${job.uniqueId}' of kind ${job.kind} starting ${job.starting} with ${job.instantiation} (${job.initialDelay} / ${job.interval} - ${job.cronExpression})"
-    )
-    val ctx = RegisteredJobContext(
+    val rctx = RegisteredJobContext(
       job = job,
       env = env,
       actorSystem = jobActorSystem,
@@ -551,8 +548,18 @@ class JobManager(env: Env) {
       runId = new AtomicReference[String](env.snowflakeGenerator.nextIdStr()),
       ref = new AtomicReference[Option[Cancellable]](None)
     )
-    registeredJobs.putIfAbsent(job.uniqueId, ctx)
-    ctx
+    val ctx = JobContext(
+      snowflake = rctx.runId.get(),
+      attrs = TypedMap.empty,
+      globalConfig = env.datastores.globalConfigDataStore.latestSafe.map(_.scripts.jobConfig).getOrElse(Json.obj()),
+      actorSystem = jobActorSystem,
+      scheduler = jobActorSystem.scheduler
+    )
+    JobManager.logger.debug(
+      s"Registering job '${job.name}' with id '${job.uniqueId}' of kind ${job.kind} starting ${job.starting} with ${job.instantiation} (${job.initialDelay(ctx)} / ${job.interval(ctx)} - ${job.cronExpression(ctx)})"
+    )
+    registeredJobs.putIfAbsent(job.uniqueId, rctx)
+    rctx
   }
 
   def unregisterJob(job: Job): Unit = {

@@ -4,7 +4,7 @@ import akka.util.ByteString
 import env.Env
 import models._
 import org.joda.time.DateTime
-import otoroshi.script.Job
+import otoroshi.script.{Job, JobContext}
 import play.api.libs.json._
 import ssl.Cert
 
@@ -205,7 +205,7 @@ case class MaxConcurrentRequestReachedEvent(`@id`: String,
   )
 }
 
-case class JobStartedEvent(`@id`: String, `@env`: String, job: Job, `@timestamp`: DateTime = DateTime.now())
+case class JobStartedEvent(`@id`: String, `@env`: String, job: Job, ctx: JobContext, `@timestamp`: DateTime = DateTime.now())
     extends AuditEvent {
 
   override def `@service`: String   = "Otoroshi"
@@ -223,11 +223,11 @@ case class JobStartedEvent(`@id`: String, `@env`: String, job: Job, `@timestamp`
     "@service"   -> `@service`,
     "@env"       -> `@env`,
     "audit"      -> "JobStartedEvent",
-    "job"        -> job.auditJson(_env)
+    "job"        -> job.auditJson(ctx)(_env)
   )
 }
 
-case class JobStoppedEvent(`@id`: String, `@env`: String, job: Job, `@timestamp`: DateTime = DateTime.now())
+case class JobStoppedEvent(`@id`: String, `@env`: String, job: Job, ctx: JobContext, `@timestamp`: DateTime = DateTime.now())
     extends AuditEvent {
 
   override def `@service`: String   = "Otoroshi"
@@ -245,11 +245,11 @@ case class JobStoppedEvent(`@id`: String, `@env`: String, job: Job, `@timestamp`
     "@service"   -> `@service`,
     "@env"       -> `@env`,
     "audit"      -> "JobStoppedEvent",
-    "job"        -> job.auditJson(_env)
+    "job"        -> job.auditJson(ctx)(_env)
   )
 }
 
-case class JobRunEvent(`@id`: String, `@env`: String, job: Job, `@timestamp`: DateTime = DateTime.now())
+case class JobRunEvent(`@id`: String, `@env`: String, job: Job, ctx: JobContext, `@timestamp`: DateTime = DateTime.now())
     extends AuditEvent {
 
   override def `@service`: String   = "Otoroshi"
@@ -267,13 +267,14 @@ case class JobRunEvent(`@id`: String, `@env`: String, job: Job, `@timestamp`: Da
     "@service"   -> `@service`,
     "@env"       -> `@env`,
     "audit"      -> "JobRunEvent",
-    "job"        -> job.auditJson(_env)
+    "job"        -> job.auditJson(ctx)(_env)
   )
 }
 
 case class JobErrorEvent(`@id`: String,
                          `@env`: String,
                          job: Job,
+                         ctx: JobContext,
                          err: Throwable,
                          `@timestamp`: DateTime = DateTime.now())
     extends AuditEvent {
@@ -293,7 +294,7 @@ case class JobErrorEvent(`@id`: String,
     "@service"   -> `@service`,
     "@env"       -> `@env`,
     "audit"      -> "JobErrorEvent",
-    "job"        -> job.auditJson(_env),
+    "job"        -> job.auditJson(ctx)(_env),
     "err"        -> err.getMessage,
   )
 }
