@@ -648,6 +648,7 @@ object KubernetesIngressToDescriptor {
       val templateTarget = Target.format.reads(template ++ Json.obj("host" -> "--")).get
       val serviceType = (kubeService.raw \ "spec" \ "type").as[String]
       val serviceName = kubeService.name
+      val serviceNamespace = kubeService.namespace
       val maybePortSpec: Option[JsValue] = (kubeService.raw \ "spec" \ "ports").as[JsArray].value.find { value =>
         port match {
           case IntOrString(Some(v), _) => (value \ "port").asOpt[Int].contains(v)
@@ -670,14 +671,14 @@ object KubernetesIngressToDescriptor {
             case _ => kubeEndpointOpt match {
               case None => serviceType match {
                 case "ClusterIP" =>
-                  val serviceIp = (kubeService.raw \ "spec" \ "clusterIP").as[String]
-                  Seq(templateTarget.copy(host = s"$serviceName:$portValue", scheme = protocol, ipAddress = Some(serviceIp)))
+                  val serviceIp = (kubeService.raw \ "spec" \ "clusterIP").asOpt[String]
+                  Seq(templateTarget.copy(host = s"$serviceName.$serviceNamespace.svc.${client.config.clusterDomain}:$portValue", scheme = protocol, ipAddress = serviceIp))
                 case "NodePort" =>
-                  val serviceIp = (kubeService.raw \ "spec" \ "clusterIP").as[String] // TODO: does it actually work ?
-                  Seq(templateTarget.copy(host = s"$serviceName:$portValue", scheme = protocol, ipAddress = Some(serviceIp)))
+                  val serviceIp = (kubeService.raw \ "spec" \ "clusterIP").asOpt[String]
+                  Seq(templateTarget.copy(host = s"$serviceName.$serviceNamespace.svc.${client.config.clusterDomain}:$portValue", scheme = protocol, ipAddress = serviceIp))
                 case "LoadBalancer" =>
-                  val serviceIp = (kubeService.raw \ "spec" \ "clusterIP").as[String] // TODO: does it actually work ?
-                  Seq(templateTarget.copy(host = s"$serviceName:$portValue", scheme = protocol, ipAddress = Some(serviceIp)))
+                  val serviceIp = (kubeService.raw \ "spec" \ "clusterIP").asOpt[String]
+                  Seq(templateTarget.copy(host = s"$serviceName.$serviceNamespace.svc.${client.config.clusterDomain}:$portValue", scheme = protocol, ipAddress = serviceIp))
                 case _ => Seq.empty
               }
               case Some(kubeEndpoint) => {
@@ -693,7 +694,7 @@ object KubernetesIngressToDescriptor {
                     val addresses = (subset \ "addresses").asOpt[JsArray].map(_.value).getOrElse(Seq.empty)
                     addresses.map { address =>
                       val serviceIp = (address \ "ip").as[String]
-                      templateTarget.copy(host =s"$serviceName:$endpointPort", scheme = endpointProtocol, ipAddress = Some(serviceIp))
+                      templateTarget.copy(host =s"$serviceName.$serviceNamespace.svc.${client.config.clusterDomain}:$endpointPort", scheme = endpointProtocol, ipAddress = Some(serviceIp))
                     }
                   }
                 }
