@@ -20,7 +20,7 @@ A `service descriptor` is contained in one or multiple `service group`s and is a
 
 To create a `service descriptor`, click on `Add service` on the Otoroshi sidebar. Then you will be asked to choose a name for the service and the group of the service. You also have two buttons to create a new group and assign it to the service and create a new group with a name based on the service name.
 
-<!-- TODO:  mutlitenant + teams -->
+<!-- TODO:  multitenant + teams -->
 
 You will have a serie of toggle buttons to
 
@@ -128,6 +128,7 @@ If you enabled this section, CORS will be automatically supported on the current
 @@@
 
 ### JWT tokens verification
+see here @ref:[JWT verification](../topics/jwt-verifications.md)
 <!-- TODO -->
 
 ### Access validation

@@ -5,7 +5,7 @@ You can create auth. configuration in Otoroshi. Just go to `settings (cog icon) 
 ## OAuth 2
 
 Create a new `Generic oauth2 provider` config and customize the following informations:
-
+<!-- TODO: some fields are missing, maybe non relevant ? -->
 ```json
 {
   "clientId": "xxxx",
@@ -45,7 +45,7 @@ if you are using a [KeyCloak](https://www.keycloak.org/) server, you can configu
 ```
 
 ## Ldap
-
+<!-- TODO: some fields are missing, maybe non relevant ? -->
 Create a new `Ldap auth. provider` config and customize the following informations:
 
 ```json
@@ -86,7 +86,7 @@ Create a new OAuth 2 config and add the following informations:
 }
 ```
 
-If you enable Otoroshi exchange protocol, the JWT xill have the following fields (all optional)
+If you enable Otoroshi exchange protocol, the JWT will have the following fields (all optional)
 
 * `email`
 * `name`
