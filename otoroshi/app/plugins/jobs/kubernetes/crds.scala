@@ -142,7 +142,10 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
         "auth-modules",
         "scripts",
         "tcp-services",
-        "admins"
+        "admins",
+        "data-exporters",
+        "teams",
+        "tenants",
       ), 30, watchCommand).merge(
         client.watchKubeResources(conf.namespaces, Seq("secrets", "services", "pods", "endpoints"), 30, watchCommand)
       )
