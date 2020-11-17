@@ -5,7 +5,7 @@ import auth.{AuthModuleConfig, GenericOauth2ModuleConfig, SessionCookieValues}
 import env.Env
 import models._
 import org.joda.time.DateTime
-import otoroshi.models.{SimpleOtoroshiAdmin, WebAuthnOtoroshiAdmin}
+import otoroshi.models.{SimpleOtoroshiAdmin, Team, Tenant, WebAuthnOtoroshiAdmin}
 import otoroshi.script.Script
 import otoroshi.storage.{RedisLike, RedisLikeStore}
 import otoroshi.tcp.TcpService
@@ -218,6 +218,8 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
     val scripts            = (export \ "scripts").asOpt[JsArray].getOrElse(Json.arr())
     val tcpServices        = (export \ "tcpServices").asOpt[JsArray].getOrElse(Json.arr())
     val dataExporters      = (export \ "dataExporters").asOpt[JsArray].getOrElse(Json.arr())
+    val tenants            = (export \ "tenants").asOpt[JsArray].getOrElse(Json.arr())
+    val teams              = (export \ "teams").asOpt[JsArray].getOrElse(Json.arr())
 
     for {
       _ <- redisCli
@@ -241,6 +243,8 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
       _ <- Future.sequence(scripts.value.map(Script.fromJsons).map(_.save()))
       _ <- Future.sequence(tcpServices.value.map(TcpService.fromJsons).map(_.save()))
       _ <- Future.sequence(dataExporters.value.map(DataExporterConfig.fromJsons).map(_.save()))
+      _ <- Future.sequence(tenants.value.map(Tenant.fromJsons).map(_.save()))
+      _ <- Future.sequence(teams.value.map(Team.fromJsons).map(_.save()))
     } yield ()
   }
 
@@ -272,6 +276,8 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
       scripts          <- env.datastores.scriptDataStore.findAll()
       tcpServices      <- env.datastores.tcpServiceDataStore.findAll()
       dataExporters    <- env.datastores.dataExporterConfigDataStore.findAll()
+      tenants          <- env.datastores.tenantDataStore.findAll()
+      teams            <- env.datastores.teamDataStore.findAll()
     } yield
       OtoroshiExport(
         config,
@@ -290,7 +296,9 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
         clientValidators,
         scripts,
         tcpServices,
-        dataExporters
+        dataExporters,
+        tenants,
+        teams
       ).json
   }
 

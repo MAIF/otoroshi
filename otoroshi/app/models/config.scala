@@ -6,7 +6,7 @@ import env.Env
 import events.Exporters._
 import events._
 import org.joda.time.DateTime
-import otoroshi.models.{SimpleOtoroshiAdmin, WebAuthnOtoroshiAdmin}
+import otoroshi.models.{SimpleOtoroshiAdmin, Team, Tenant, WebAuthnOtoroshiAdmin}
 import otoroshi.plugins.geoloc.{IpStackGeolocationHelper, MaxMindGeolocationHelper}
 import otoroshi.plugins.useragent.UserAgentHelper
 import otoroshi.script.Script
@@ -692,7 +692,9 @@ case class OtoroshiExport(
    clientValidators: Seq[ClientCertificateValidator] = Seq.empty,
    scripts: Seq[Script] = Seq.empty,
    tcpServices: Seq[TcpService] = Seq.empty,
-   dataExporters: Seq[DataExporterConfig] = Seq.empty
+   dataExporters: Seq[DataExporterConfig] = Seq.empty,
+   tenants: Seq[Tenant] = Seq.empty,
+   teams: Seq[Team] = Seq.empty,
 ) {
 
   import otoroshi.utils.syntax.implicits._
@@ -736,6 +738,9 @@ case class OtoroshiExport(
       certificates = customizeAndMergeArray[Cert](certificates, customization.select("certificates").asOpt[JsArray].getOrElse(Json.arr()), Cert._fmt, _.select("id").asString, _.id),
       scripts = customizeAndMergeArray[Script](scripts, customization.select("scripts").asOpt[JsArray].getOrElse(Json.arr()), Script._fmt, _.select("id").asString, _.id),
       tcpServices = customizeAndMergeArray[TcpService](tcpServices, customization.select("tcpServices").asOpt[JsArray].getOrElse(Json.arr()), TcpService.fmt, _.select("id").asString, _.id),
+      dataExporters = customizeAndMergeArray[DataExporterConfig](dataExporters, customization.select("dataExporters").asOpt[JsArray].getOrElse(Json.arr()), DataExporterConfig.format, _.select("id").asString, _.id),
+      tenants = customizeAndMergeArray[Tenant](tenants, customization.select("tenants").asOpt[JsArray].getOrElse(Json.arr()), Tenant.format, _.select("id").asString, _.id.value),
+      teams = customizeAndMergeArray[Team](teams, customization.select("teams").asOpt[JsArray].getOrElse(Json.arr()), Team.format, _.select("id").asString, _.id.value),
       admins = customizeAndMergeArray[WebAuthnOtoroshiAdmin](admins, customization.select("admins").asOpt[JsArray].getOrElse(Json.arr()), WebAuthnOtoroshiAdmin.fmt, _.select("username").asString, _.username),
       simpleAdmins = customizeAndMergeArray[SimpleOtoroshiAdmin](simpleAdmins, customization.select("simpleAdmins").asOpt[JsArray].getOrElse(Json.arr()), SimpleOtoroshiAdmin.fmt, _.select("username").asString, _.username),
     )
@@ -763,7 +768,10 @@ case class OtoroshiExport(
       "certificates" -> JsArray(certificates.map(_.toJson)),
       "clientValidators" -> JsArray(clientValidators.map(_.asJson)),
       "scripts" -> JsArray(scripts.map(_.toJson)),
-      "tcpServices" -> JsArray(tcpServices.map(_.json))
+      "tcpServices" -> JsArray(tcpServices.map(_.json)),
+      "dataExporters" -> JsArray(dataExporters.map(_.json)),
+      "tenants" -> JsArray(tenants.map(_.json)),
+      "teams" -> JsArray(teams.map(_.json)),
     )
   }
 }
