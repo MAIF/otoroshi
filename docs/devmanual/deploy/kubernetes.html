@@ -437,6 +437,32 @@ spec:
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
+  name: organizations.proxy.otoroshi.io
+spec:
+  group: proxy.otoroshi.io
+  version: v1alpha1
+  names:
+    kind: Organization
+    plural: organizations
+    singular: organization
+  scope: Namespaced
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: teams.proxy.otoroshi.io
+spec:
+  group: proxy.otoroshi.io
+  version: v1alpha1
+  names:
+    kind: Team
+    plural: teams
+    singular: team
+  scope: Namespaced
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
   name: service-descriptors.proxy.otoroshi.io
 spec:
   group: proxy.otoroshi.io
@@ -447,7 +473,6 @@ spec:
       properties:
         spec:
           type: object
-          required: [&quot;targets&quot;, &quot;hosts&quot;]
           properties:
             group:
               type: string
@@ -459,8 +484,6 @@ spec:
               type: string
             subdomain:
               type: string
-            targets:
-              type: array
             root:
               type: string
             matchingRoot:
@@ -2820,6 +2843,8 @@ spec:
   <li><code>tcp-services</code></li>
   <li><code>data-exporters</code></li>
   <li><code>admins</code></li>
+  <li><code>teams</code></li>
+  <li><code>organizations</code></li>
 </ul>
 <p>using CRDs, you will be able to deploy and manager those entities from kubectl or the kubernetes api like</p>
 <pre class="prettyprint"><code class="language-sh">sudo kubectl get apikeys --all-namespaces
@@ -3005,6 +3030,31 @@ spec:
   proxy: 
   extraMetadata: {}
   refreshTokens: false</code></pre></dd>
+  <dt>organization.yaml
+  </dt>
+  <dd>
+  <pre class="prettyprint"><code class="language-yaml">apiVersion: proxy.otoroshi.io/v1alpha1
+kind: Tenant
+metadata:
+  name: default-organization
+spec:
+  id: default
+  name: Default organization
+  description: Default organization created for any otoroshi instance
+  metadata: {}</code></pre></dd>
+  <dt>team.yaml
+  </dt>
+  <dd>
+  <pre class="prettyprint"><code class="language-yaml">apiVersion: proxy.otoroshi.io/v1alpha1
+kind: Team
+metadata:
+  name: default-team
+spec:
+  id: default
+  tenant: default
+  name: Default team
+  description: Default team created for any otoroshi instance
+  metadata: {}</code></pre></dd>
 </dl>
 <h3><a href="#configuration" name="configuration" class="anchor"><span class="anchor-link"></span></a>Configuration</h3>
 <p>To configure it, just go to the danger zone, and in <code>Global scripts</code> add the job named <code>Kubernetes Otoroshi CRDs Controller</code>. Then add the following configuration for the job (with your own tweak of course)</p>
@@ -3047,6 +3097,8 @@ spec:
       &quot;auth-module&quot;: {},
       &quot;data-exporter&quot;: {},
       &quot;script&quot;: {},
+      &quot;organization&quot;: {},
+      &quot;team&quot;: {},
     }
   }
 }
