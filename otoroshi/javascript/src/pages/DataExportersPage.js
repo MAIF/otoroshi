@@ -453,7 +453,7 @@ const possibleExporterConfigFormValues = {
       },
       'mtlsConfig.mtls': {
         type: 'bool',
-        props: { label: 'Use mTLS' },
+        props: { label: 'Custom TLS Settings' },
       },
       'mtlsConfig.loose': {
         type: 'bool',
@@ -528,7 +528,7 @@ const possibleExporterConfigFormValues = {
       },
       'mtlsConfig.mtls': {
         type: 'bool',
-        props: { label: 'Use mTLS' },
+        props: { label: 'Custom TLS Settings' },
       },
       'mtlsConfig.loose': {
         type: 'bool',
@@ -628,8 +628,8 @@ const possibleExporterConfigFormValues = {
       'mtlsConfig.mtls': {
         type: 'bool',
         props: {
-          label: 'Use client certs.',
-          help: 'Use client certs. from Otoroshi datastore',
+          label: 'Custom TLS Settings',
+          help: 'Custom TLS Settings',
         },
       },
       'mtlsConfig.trustAll': {
@@ -734,8 +734,8 @@ const possibleExporterConfigFormValues = {
       'mtlsConfig.mtls': {
         type: 'bool',
         props: {
-          label: 'Use client certs.',
-          help: 'Use client certs. from Otoroshi datastore',
+          label: 'Custom TLS Settings',
+          help: 'Custom TLS Settings',
         },
       },
       'mtlsConfig.trustAll': {

@@ -347,7 +347,7 @@ export class DangerZonePage extends Component {
     },
     'mtlsConfig.mtls': {
       type: 'bool',
-      props: { label: 'Use mTLS' },
+      props: { label: 'Custom TLS Settings' },
     },
     'mtlsConfig.loose': {
       type: 'bool',
@@ -412,7 +412,7 @@ export class DangerZonePage extends Component {
     },
     'mtlsConfig.mtls': {
       type: 'bool',
-      props: { label: 'Use mTLS' },
+      props: { label: 'Custom TLS Settings' },
     },
     'mtlsConfig.loose': {
       type: 'bool',

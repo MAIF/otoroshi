@@ -190,9 +190,9 @@ class Target extends Component {
           onChange={(e) => this.changeTheValue('ipAddress', e)}
         />
         <BooleanInput
-          label="use mTLS"
+          label="Custom TLS Settings"
           value={value.mtlsConfig.mtls}
-          help="If enabled, Otoroshi will try to provide client certificate trusted by the target server."
+          help="If enabled, Otoroshi will try to provide client certificate trusted by the target server, trust all servers, etc."
           onChange={(e) => this.changeTheValue('mtlsConfig.mtls', e)}
         />
         <BooleanInput
