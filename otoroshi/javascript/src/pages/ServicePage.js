@@ -1,6 +1,7 @@
 import React, { Component, Suspense } from 'react';
 import ReactDOM from 'react-dom';
 import PropTypes from 'prop-types';
+import YAML from 'yaml'
 import * as BackOfficeServices from '../services/BackOfficeServices';
 import { ServiceSidebar } from '../components/ServiceSidebar';
 import {
@@ -648,12 +649,34 @@ export class ServicePage extends Component {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.style.display = 'none';
-    a.download = `service-${this.state.service.name}-${this.state.service.env}.json`;
+    a.download = `service-descriptor-${this.state.service.name}-${Date.now()}.json`;
     a.href = url;
     document.body.appendChild(a);
     a.click();
     setTimeout(() => document.body.removeChild(a), 300);
   };
+
+  exportServiceYaml = (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    const name = this.state.service.name.replace(/ /g, '-').replace(/\(/g, '').replace(/\)/g, '').toLowerCase();
+    const json = YAML.stringify({ 
+      apiVersion: 'proxy.otoroshi.io/v1alpha1', 
+      kind: 'ServiceDescriptor', 
+      metadata: { 
+        name
+      }, 
+      spec: { ...this.state.service, name: undefined }
+    });
+    const blob = new Blob([json], { type: 'application/yaml' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.style.display = 'none';
+    a.download = `service-descriptor-${name}-${Date.now()}.yaml`;
+    a.href = url;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => document.body.removeChild(a), 300);
+  }
 
   changeTargetsValue = (value) => {
     const targets = value.map((t) => {
@@ -1041,6 +1064,13 @@ export class ServicePage extends Component {
                 type="button"
                 {...createTooltip('Export the current service as a JSON file.', 'left', true)}
                 onClick={this.exportService}>
+                <i className="glyphicon glyphicon-export" />
+              </button>
+              <button
+                className="btn btn-info"
+                type="button"
+                {...createTooltip('Export the current service as a kubernetes YAML file.', 'left', true)}
+                onClick={this.exportServiceYaml}>
                 <i className="glyphicon glyphicon-export" />
               </button>
               <button

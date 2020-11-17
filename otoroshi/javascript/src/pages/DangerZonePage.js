@@ -5,6 +5,7 @@ import { Form, SelectInput, BooleanInput } from '../components/inputs';
 import { Proxy } from '../components/Proxy';
 import { Scripts } from '../components/Scripts';
 import moment from 'moment';
+import YAML from 'yaml'
 
 import deepSet from 'set-value';
 import _ from 'lodash';
@@ -1074,6 +1075,43 @@ export class DangerZonePage extends Component {
     });
   };
 
+  exportJson = (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    const json = JSON.stringify(this.state.value, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.id = String(Date.now());
+    a.style.display = 'none';
+    a.download = `global-config-${Date.now()}.json`;
+    a.href = url;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => document.body.removeChild(a), 300);
+  };
+
+  exportYaml = (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    const json = YAML.stringify({ 
+      apiVersion: 'proxy.otoroshi.io/v1alpha1', 
+      kind: 'GlobalConfig', 
+      metadata: { 
+        name: 'global-config'
+      }, 
+      spec: this.state.value
+    });
+    const blob = new Blob([json], { type: 'application/yaml' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.id = String(Date.now());
+    a.style.display = 'none';
+    a.download = `global-config-${Date.now()}.yaml`;
+    a.href = url;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => document.body.removeChild(a), 300);
+  }
+
   importData = (e) => {
     if (e && e.preventDefault()) e.preventDefault();
 
@@ -1200,6 +1238,12 @@ export class DangerZonePage extends Component {
               </button>
               <button type="button" className="btn btn-success" onClick={this.fullExportNdJson}>
                 <i className="glyphicon glyphicon-export" /> Full export (ndjson)
+              </button>
+              <button type="button" className="btn btn-info" onClick={this.exportJson}>
+                <i className="glyphicon glyphicon-export" /> JSON
+              </button>
+              <button type="button" className="btn btn-info" onClick={this.exportYaml}>
+                <i className="glyphicon glyphicon-export" /> YAML
               </button>
               <button
                 type="button"
