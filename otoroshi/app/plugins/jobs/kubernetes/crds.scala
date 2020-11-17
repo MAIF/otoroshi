@@ -586,7 +586,7 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
   }
 
   private def customizeTenant(_spec: JsValue, res: KubernetesOtoroshiResource, entities: Seq[Tenant]): JsValue = {
-    val spec = findAndMerge[Tenant](_spec, res, "tenant", None, entities, _.metadata, _.id.value, _.json)
+    val spec = findAndMerge[Tenant](_spec, res, "organization", None, entities, _.metadata, _.id.value, _.json)
     customizeIdAndName(spec, res)
   }
 
@@ -615,7 +615,7 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
     template.deepMerge(entity.toJson.as[JsObject].deepMerge(_spec.as[JsObject]))
   }
 
-  def crdsFetchTenants(tenants: Seq[Tenant]): Future[Seq[OtoResHolder[Tenant]]] = client.fetchOtoroshiResources[Tenant]("tenants", Tenant.format, (a, b) => customizeTenant(a, b, tenants))
+  def crdsFetchTenants(tenants: Seq[Tenant]): Future[Seq[OtoResHolder[Tenant]]] = client.fetchOtoroshiResources[Tenant]("organizations", Tenant.format, (a, b) => customizeTenant(a, b, tenants))
   def crdsFetchTeams(teams: Seq[Team]): Future[Seq[OtoResHolder[Team]]] = client.fetchOtoroshiResources[Team]("teams", Team.format, (a, b) => customizeTeam(a, b, teams))
   def crdsFetchServiceGroups(groups: Seq[ServiceGroup]): Future[Seq[OtoResHolder[ServiceGroup]]] = client.fetchOtoroshiResources[ServiceGroup]("service-groups", ServiceGroup._fmt, (a, b) => customizeServiceGroup(a, b, groups))
   def crdsFetchServiceDescriptors(services: Seq[KubernetesService], endpoints: Seq[KubernetesEndpoint], otoServices: Seq[ServiceDescriptor]): Future[Seq[OtoResHolder[ServiceDescriptor]]] = {
