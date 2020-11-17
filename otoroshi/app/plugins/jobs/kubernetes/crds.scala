@@ -899,14 +899,26 @@ object KubernetesCRDsJob {
           case None =>
             // println(s"create $namespace/$name with ${apikey.clientId} and ${apikey.clientSecret}")
             updatedSecrets.updateAndGet(seq => seq :+ (namespace, name))
-            clientSupport.client.createSecret(namespace, name, "otoroshi.io/apikey-secret", Json.obj("clientId" -> apikey.clientId.base64, "clientSecret" -> apikey.clientSecret.base64), "crd/apikey", apikey.clientId)
+            clientSupport.client.createSecret(namespace, name, "otoroshi.io/apikey-secret", Json.obj(
+              "clientId" -> apikey.clientId.base64,
+              "clientSecret" -> apikey.clientSecret.base64,
+              "userPwd" -> s"${apikey.clientId}:${apikey.clientSecret}".base64,
+              "basicAuth" -> s"${apikey.clientId}:${apikey.clientSecret}".base64.base64,
+              "basicAuthHeader" -> ("Basic " + s"${apikey.clientId}:${apikey.clientSecret}".base64).base64,
+            ), "crd/apikey", apikey.clientId)
           case Some(secret) =>
             val clientId = (secret.raw \ "data" \ "clientId").as[String].applyOn(s => s.fromBase64)
             val clientSecret = (secret.raw \ "data" \ "clientSecret").as[String].applyOn(s => s.fromBase64)
             if ((clientId != apikey.clientId) || (clientSecret != apikey.clientSecret)) {
               // println(s"updating $namespace/$name  with ${apikey.clientId} and ${apikey.clientSecret}")
               updatedSecrets.updateAndGet(seq => seq :+ (namespace, name))
-              clientSupport.client.updateSecret(namespace, name, "otoroshi.io/apikey-secret", Json.obj("clientId" -> apikey.clientId.base64, "clientSecret" -> apikey.clientSecret.base64), "crd/apikey", apikey.clientId)
+              clientSupport.client.updateSecret(namespace, name, "otoroshi.io/apikey-secret", Json.obj(
+                "clientId" -> apikey.clientId.base64,
+                "clientSecret" -> apikey.clientSecret.base64,
+                "userPwd" -> s"${apikey.clientId}:${apikey.clientSecret}".base64,
+                "basicAuth" -> s"${apikey.clientId}:${apikey.clientSecret}".base64.base64,
+                "basicAuthHeader" -> ("Basic " + s"${apikey.clientId}:${apikey.clientSecret}".base64).base64,
+              ), "crd/apikey", apikey.clientId)
             } else {
               ().future
             }
