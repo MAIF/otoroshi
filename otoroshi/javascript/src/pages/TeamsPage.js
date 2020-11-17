@@ -95,6 +95,8 @@ export class TeamsPage extends Component {
             return item.id;
           }}
           itemUrl={(i) => `/bo/dashboard/teams/edit/${i.id}`}
+          export={true}
+          kubernetesKind="Team"
         />
       </div>
     );

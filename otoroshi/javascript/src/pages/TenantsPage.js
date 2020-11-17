@@ -84,6 +84,8 @@ export class TenantsPage extends Component {
             return item.id;
           }}
           itemUrl={(i) => `/bo/dashboard/organizations/edit/${i.id}`}
+          export={true}
+          kubernetesKind="Tenant"
         />
       </div>
     );
