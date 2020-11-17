@@ -620,10 +620,10 @@ apikey.yaml
 :   @@snip [apikey.yaml](../snippets/crds/apikey.yaml) 
 
 service-descriptor.yaml
-:   @@snip [service-descriptor.yaml](../snippets/crds/service-descriptor.yaml) 
+:   @@snip [service.yaml](../snippets/crds/service-descriptor.yaml) 
 
 certificate.yaml
-:   @@snip [certificate.yaml](../snippets/crds/certificate.yaml) 
+:   @@snip [cert.yaml](../snippets/crds/certificate.yaml) 
 
 jwt.yaml
 :   @@snip [jwt.yaml](../snippets/crds/jwt.yaml) 
@@ -632,7 +632,7 @@ auth.yaml
 :   @@snip [auth.yaml](../snippets/crds/auth.yaml) 
 
 organization.yaml
-:   @@snip [organization.yaml](../snippets/crds/organization.yaml) 
+:   @@snip [orga.yaml](../snippets/crds/organization.yaml) 
 
 team.yaml
 :   @@snip [team.yaml](../snippets/crds/team.yaml) 
