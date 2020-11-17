@@ -238,9 +238,9 @@ class HealthCheckJob extends Job {
 
   override def instantiation: JobInstantiation = JobInstantiation.OneInstancePerOtoroshiCluster
 
-  override def initialDelay: Option[FiniteDuration] = 10.seconds.some
+  override def initialDelay(ctx: JobContext): Option[FiniteDuration] = 10.seconds.some
 
-  override def interval: Option[FiniteDuration] = 10.seconds.some
+  override def interval(ctx: JobContext): Option[FiniteDuration] = 10.seconds.some
 
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     implicit val mat = env.otoroshiMaterializer
@@ -274,9 +274,9 @@ class HealthCheckLocalCacheJob extends Job {
 
   override def instantiation: JobInstantiation = JobInstantiation.OneInstancePerOtoroshiInstance
 
-  override def initialDelay: Option[FiniteDuration] = 10.seconds.some
+  override def initialDelay(ctx: JobContext): Option[FiniteDuration] = 10.seconds.some
 
-  override def interval: Option[FiniteDuration] = 10.seconds.some
+  override def interval(ctx: JobContext): Option[FiniteDuration] = 10.seconds.some
 
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     env.datastores.rawDataStore.keys(s"${env.storageRoot}:targets:bad-health:*").map { keys =>

@@ -174,8 +174,8 @@ class CustomJob extends Job {
   override def kind: JobKind = JobKind.ScheduledOnce
   override def starting: JobStarting = JobStarting.FromConfiguration
   override def instantiation: JobInstantiation = JobInstantiation.OneInstancePerOtoroshiInstance
-  override def initialDelay: Option[FiniteDuration] = Some(0.millisecond)
-  override def interval: Option[FiniteDuration] = Some(10.minutes)
+  override def initialDelay(ctx: JobContext): Option[FiniteDuration] = Some(0.millisecond)
+  override def interval(ctx: JobContext): Option[FiniteDuration] = Some(10.minutes)
 
   override def jobStart(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = Job.funit
   override def jobStop(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = Job.funit

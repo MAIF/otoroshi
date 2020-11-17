@@ -37,9 +37,9 @@ class SoftwareUpdatesJobs extends Job {
 
   override def instantiation: JobInstantiation = JobInstantiation.OneInstancePerOtoroshiInstance
 
-  override def initialDelay: Option[FiniteDuration] = 5.seconds.some
+  override def initialDelay(ctx: JobContext): Option[FiniteDuration] = 5.seconds.some
 
-  override def interval: Option[FiniteDuration] = 24.hours.some
+  override def interval(ctx: JobContext): Option[FiniteDuration] = 24.hours.some
 
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     val otoroshiVersion = env.otoroshiVersion

@@ -455,9 +455,9 @@ class DataExporterUpdateJob extends Job {
 
   override def kind: JobKind = JobKind.ScheduledEvery
 
-  override def initialDelay: Option[FiniteDuration] = 10.seconds.some
+  override def initialDelay(ctx: JobContext): Option[FiniteDuration] = 10.seconds.some
 
-  override def interval: Option[FiniteDuration] = 10.seconds.some
+  override def interval(ctx: JobContext): Option[FiniteDuration] = 10.seconds.some
 
   override def starting: JobStarting = JobStarting.Automatically
 
