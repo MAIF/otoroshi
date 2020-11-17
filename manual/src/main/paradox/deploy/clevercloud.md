@@ -48,8 +48,11 @@ Now, your app is ready, don't forget to add a custom domains name on the CleverC
 
 ## Example of CleverCloud env. variables
 
-You can add more env variables to customize your Otoroshi instance like the following. Use the expert mode to copy/paste all the values in one shot. Don't forget to change all `xxxx` values by random values. Don't forget to redirect your domain name to clevercloud. Also, change the `latest_otoroshi_version` to the latest otoroshi version published on github. If you want an real datastore, create a redis addon on clevercloud, link it to your otoroshi app and change the `APP_STORAGE` variable to `redis`
+You can add more env variables to customize your Otoroshi instance like the following. Use the expert mode to copy/paste all the values in one shot. If you want an real datastore, create a redis addon on clevercloud, link it to your otoroshi app and change the `APP_STORAGE` variable to `redis`
 
+<div id="clevercloud-envvars"></div>
+
+<div class="hide">
 ```
 ADMIN_API_CLIENT_ID=xxxx
 ADMIN_API_CLIENT_SECRET=xxxxx
@@ -80,3 +83,4 @@ ENABLE_METRICS=true
 OTOROSHI_ANALYTICS_PRESSURE_ENABLED=true
 USE_CACHE=true
 ```
+</div>
