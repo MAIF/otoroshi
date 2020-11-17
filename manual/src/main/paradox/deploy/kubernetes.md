@@ -591,6 +591,8 @@ Otoroshi provides some Custom Resource Definitions for kubernetes in order to ma
 - `tcp-services`
 - `data-exporters`
 - `admins`
+- `teams`
+- `organizations`
 
 using CRDs, you will be able to deploy and manager those entities from kubectl or the kubernetes api like
 
@@ -628,6 +630,12 @@ jwt.yaml
 
 auth.yaml
 :   @@snip [auth.yaml](../snippets/crds/auth.yaml) 
+
+organization.yaml
+:   @@snip [organization.yaml](../snippets/crds/organization.yaml) 
+
+team.yaml
+:   @@snip [team.yaml](../snippets/crds/team.yaml) 
 
 
 ### Configuration
@@ -677,6 +685,8 @@ the configuration can have the following values
       "auth-module": {},
       "data-exporter": {},
       "script": {},
+      "organization": {},
+      "team": {},
     }
   }
 }
