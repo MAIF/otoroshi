@@ -330,7 +330,7 @@ export class AlgoSettings extends Component {
           />,
           <Separator title="TLS settings for JWKS fetching" />,
           <BooleanInput
-            label="Use mTLS"
+            label="Custom TLS Settings"
             value={algo.mtlsConfig.mtls}
             help="..."
             onChange={(v) => changeTheValue(path + '.mtlsConfig.mtls', v)}

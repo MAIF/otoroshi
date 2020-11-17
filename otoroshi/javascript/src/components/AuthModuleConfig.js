@@ -485,7 +485,7 @@ export class Oauth2ModuleConfig extends Component {
         />
         <Separator title="TLS settings" />
         <BooleanInput
-          label="Use mTLS"
+          label="Custom TLS Settings"
           value={settings.mtlsConfig.mtls}
           help="..."
           onChange={(v) => changeTheValue(path + '.mtlsConfig.mtls', v)}
