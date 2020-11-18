@@ -35,11 +35,11 @@ class SoftwareUpdatesJobs extends Job {
 
   override def starting: JobStarting = JobStarting.Automatically
 
-  override def instantiation: JobInstantiation = JobInstantiation.OneInstancePerOtoroshiInstance
+  override def instantiation(ctx: JobContext, env: Env): JobInstantiation = JobInstantiation.OneInstancePerOtoroshiInstance
 
-  override def initialDelay(ctx: JobContext): Option[FiniteDuration] = 5.seconds.some
+  override def initialDelay(ctx: JobContext, env: Env): Option[FiniteDuration] = 5.seconds.some
 
-  override def interval(ctx: JobContext): Option[FiniteDuration] = 24.hours.some
+  override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] = 24.hours.some
 
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     val otoroshiVersion = env.otoroshiVersion

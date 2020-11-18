@@ -455,13 +455,13 @@ class DataExporterUpdateJob extends Job {
 
   override def kind: JobKind = JobKind.ScheduledEvery
 
-  override def initialDelay(ctx: JobContext): Option[FiniteDuration] = 10.seconds.some
+  override def initialDelay(ctx: JobContext, env: Env): Option[FiniteDuration] = 10.seconds.some
 
-  override def interval(ctx: JobContext): Option[FiniteDuration] = 10.seconds.some
+  override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] = 10.seconds.some
 
   override def starting: JobStarting = JobStarting.Automatically
 
-  override def instantiation: JobInstantiation = JobInstantiation.OneInstancePerOtoroshiCluster
+  override def instantiation(ctx: JobContext, env: Env): JobInstantiation = JobInstantiation.OneInstancePerOtoroshiCluster
 
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     FastFuture.successful(env.otoroshiEventsActor ! UpdateExporters)
