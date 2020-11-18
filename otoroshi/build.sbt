@@ -1,6 +1,6 @@
 name := """otoroshi"""
 organization := "fr.maif.otoroshi"
-version := "1.5.0-alpha.3"
+version := "1.5.0-dev"
 scalaVersion := scalaLangVersion
 
 lazy val root = (project in file("."))
