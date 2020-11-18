@@ -1,7 +1,7 @@
 import React, { Component, Suspense } from 'react';
 import ReactDOM from 'react-dom';
 import PropTypes from 'prop-types';
-import YAML from 'yaml'
+import YAML from 'yaml';
 import * as BackOfficeServices from '../services/BackOfficeServices';
 import { ServiceSidebar } from '../components/ServiceSidebar';
 import {
@@ -658,14 +658,18 @@ export class ServicePage extends Component {
 
   exportServiceYaml = (e) => {
     if (e && e.preventDefault) e.preventDefault();
-    const name = this.state.service.name.replace(/ /g, '-').replace(/\(/g, '').replace(/\)/g, '').toLowerCase();
-    const json = YAML.stringify({ 
-      apiVersion: 'proxy.otoroshi.io/v1alpha1', 
-      kind: 'ServiceDescriptor', 
-      metadata: { 
-        name
-      }, 
-      spec: { ...this.state.service, name: undefined }
+    const name = this.state.service.name
+      .replace(/ /g, '-')
+      .replace(/\(/g, '')
+      .replace(/\)/g, '')
+      .toLowerCase();
+    const json = YAML.stringify({
+      apiVersion: 'proxy.otoroshi.io/v1alpha1',
+      kind: 'ServiceDescriptor',
+      metadata: {
+        name,
+      },
+      spec: { ...this.state.service, name: undefined },
     });
     const blob = new Blob([json], { type: 'application/yaml' });
     const url = URL.createObjectURL(blob);
@@ -676,7 +680,7 @@ export class ServicePage extends Component {
     document.body.appendChild(a);
     a.click();
     setTimeout(() => document.body.removeChild(a), 300);
-  }
+  };
 
   changeTargetsValue = (value) => {
     const targets = value.map((t) => {
@@ -1069,7 +1073,11 @@ export class ServicePage extends Component {
               <button
                 className="btn btn-info"
                 type="button"
-                {...createTooltip('Export the current service as a kubernetes YAML file.', 'left', true)}
+                {...createTooltip(
+                  'Export the current service as a kubernetes YAML file.',
+                  'left',
+                  true
+                )}
                 onClick={this.exportServiceYaml}>
                 <i className="glyphicon glyphicon-export" />
               </button>

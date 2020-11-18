@@ -5,7 +5,7 @@ import { Form, SelectInput, BooleanInput } from '../components/inputs';
 import { Proxy } from '../components/Proxy';
 import { Scripts } from '../components/Scripts';
 import moment from 'moment';
-import YAML from 'yaml'
+import YAML from 'yaml';
 
 import deepSet from 'set-value';
 import _ from 'lodash';
@@ -1092,13 +1092,13 @@ export class DangerZonePage extends Component {
 
   exportYaml = (e) => {
     if (e && e.preventDefault) e.preventDefault();
-    const json = YAML.stringify({ 
-      apiVersion: 'proxy.otoroshi.io/v1alpha1', 
-      kind: 'GlobalConfig', 
-      metadata: { 
-        name: 'global-config'
-      }, 
-      spec: this.state.value
+    const json = YAML.stringify({
+      apiVersion: 'proxy.otoroshi.io/v1alpha1',
+      kind: 'GlobalConfig',
+      metadata: {
+        name: 'global-config',
+      },
+      spec: this.state.value,
     });
     const blob = new Blob([json], { type: 'application/yaml' });
     const url = URL.createObjectURL(blob);
@@ -1110,7 +1110,7 @@ export class DangerZonePage extends Component {
     document.body.appendChild(a);
     a.click();
     setTimeout(() => document.body.removeChild(a), 300);
-  }
+  };
 
   importData = (e) => {
     if (e && e.preventDefault()) e.preventDefault();
