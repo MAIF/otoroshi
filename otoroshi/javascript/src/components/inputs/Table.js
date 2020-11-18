@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import { Form } from '.';
 import _ from 'lodash';
 import { createTooltip } from '../../tooltips';
-import YAML from 'yaml'
+import YAML from 'yaml';
 
 import ReactTable from 'react-table';
 
@@ -242,8 +242,16 @@ export class Table extends Component {
 
   exportJson = (e) => {
     if (e && e.preventDefault) e.preventDefault();
-    const name = this.state.currentItem.name.replace(/ /g, '-').replace(/\(/g, '').replace(/\)/g, '').toLowerCase();
-    const itemName = this.props.itemName.replace(/ /g, '-').replace(/\(/g, '').replace(/\)/g, '').toLowerCase();
+    const name = this.state.currentItem.name
+      .replace(/ /g, '-')
+      .replace(/\(/g, '')
+      .replace(/\)/g, '')
+      .toLowerCase();
+    const itemName = this.props.itemName
+      .replace(/ /g, '-')
+      .replace(/\(/g, '')
+      .replace(/\)/g, '')
+      .toLowerCase();
     const json = JSON.stringify(this.state.currentItem, null, 2);
     const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -259,15 +267,23 @@ export class Table extends Component {
 
   exportYaml = (e) => {
     if (e && e.preventDefault) e.preventDefault();
-    const name = this.state.currentItem.name.replace(/ /g, '-').replace(/\(/g, '').replace(/\)/g, '').toLowerCase();
-    const itemName = this.props.itemName.replace(/ /g, '-').replace(/\(/g, '').replace(/\)/g, '').toLowerCase();
-    const json = YAML.stringify({ 
-      apiVersion: 'proxy.otoroshi.io/v1alpha1', 
-      kind: this.props.kubernetesKind, 
-      metadata: { 
-        name
-      }, 
-      spec: this.state.currentItem
+    const name = this.state.currentItem.name
+      .replace(/ /g, '-')
+      .replace(/\(/g, '')
+      .replace(/\)/g, '')
+      .toLowerCase();
+    const itemName = this.props.itemName
+      .replace(/ /g, '-')
+      .replace(/\(/g, '')
+      .replace(/\)/g, '')
+      .toLowerCase();
+    const json = YAML.stringify({
+      apiVersion: 'proxy.otoroshi.io/v1alpha1',
+      kind: this.props.kubernetesKind,
+      metadata: {
+        name,
+      },
+      spec: this.state.currentItem,
     });
     const blob = new Blob([json], { type: 'application/yaml' });
     const url = URL.createObjectURL(blob);
@@ -279,7 +295,7 @@ export class Table extends Component {
     document.body.appendChild(a);
     a.click();
     setTimeout(() => document.body.removeChild(a), 300);
-  }
+  };
 
   render() {
     if (this.state.hasError) {
