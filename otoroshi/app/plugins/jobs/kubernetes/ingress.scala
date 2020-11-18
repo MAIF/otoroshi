@@ -170,13 +170,13 @@ class KubernetesIngressControllerJob extends Job {
       lastWatchStopped.set(false)
       val conf = KubernetesConfig.theConfig(ctx)
       val client = new KubernetesClient(conf, env)
-      val source = client.watchKubeResources(conf.namespaces, Seq("secrets", "services", "pods", "endpoints"), 30, !watchCommand.get())
-        .merge(client.watchNetResources(conf.namespaces, Seq("ingresses"), 30, !watchCommand.get()))
-      source.takeWhile(_ => !watchCommand.get())/*.throttle(1, 10.seconds)*/.filterNot(_.isEmpty).alsoTo(Sink.onComplete {
+      val source = client.watchKubeResources(conf.namespaces, Seq("secrets", "services", "pods", "endpoints"), conf.watchTimeoutSeconds, !watchCommand.get())
+        .merge(client.watchNetResources(conf.namespaces, Seq("ingresses"), conf.watchTimeoutSeconds, !watchCommand.get()))
+      source.takeWhile(_ => !watchCommand.get()).filterNot(_.isEmpty).alsoTo(Sink.onComplete {
         case _ => lastWatchStopped.set(true)
       }).runWith(Sink.foreach { group =>
         val now = System.currentTimeMillis()
-        if ((lastWatchSync.get() + 10000) < now) { // 10 sec
+        if ((lastWatchSync.get() + (conf.watchGracePeriodSeconds * 1000L)) < now) { // 10 sec
           logger.debug(s"sync triggered by a group of ${group.size} events")
           KubernetesIngressSyncJob.syncIngresses(conf, ctx.attrs)
         }
