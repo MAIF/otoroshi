@@ -4,6 +4,27 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0-alpha.3] - 2020-11-18
+
+https://github.com/MAIF/otoroshi/issues?q=is%3Aissue+label%3A1.5.0-alpha.3+is%3Aclosed
+https://github.com/MAIF/otoroshi/compare/v1.5.0-alpha.2...v1.5.0-alpha.3
+https://github.com/MAIF/otoroshi/releases/tag/v1.5.0-alpha.3
+
+- Add a clever cloud generator in doc page (#673)
+- service registration fails when no endpoints (#674)
+- Increase default chunk size for akka http (#676)
+- disabling global script should stop current jobs (#678)
+- fix kubernetes job watch (#680)
+- Job for apikeys rotation (#683)
+- Add entries in the ApiKey secret to have Base64(client_id:client_secret) ready (#686)
+- Provide job context to various duration function in Job api (#687)
+- Add tenants and teams to crds (#689)
+- Get kubernetes job interval from config. (#691)
+- fix watch for ingress and certs (#692)
+- add env in coredns customization (#693)
+- handle coredns customization removal (#694)
+- add various watch timeout in KubernetesConfig (#695)
+
 ## [1.5.0-alpha.2] - 2020-11-06
 
 https://github.com/MAIF/otoroshi/issues?q=is%3Aissue+label%3A1.5.0-alpha.2+is%3Aclosed
