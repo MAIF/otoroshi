@@ -498,19 +498,19 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
     }
   }
 
-  def watchOtoResources(namespaces: Seq[String], resources: Seq[String], timeout: Int, stop: AtomicBoolean, labelSelector: Option[String] = None):Source[Seq[ByteString], _] = {
+  def watchOtoResources(namespaces: Seq[String], resources: Seq[String], timeout: Int, stop: => Boolean, labelSelector: Option[String] = None):Source[Seq[ByteString], _] = {
     watchResources(namespaces, resources, "proxy.otoroshi.io/v1alpha1", timeout, stop, labelSelector)
   }
 
-  def watchNetResources(namespaces: Seq[String], resources: Seq[String], timeout: Int, stop: AtomicBoolean, labelSelector: Option[String] = None):Source[Seq[ByteString], _] = {
+  def watchNetResources(namespaces: Seq[String], resources: Seq[String], timeout: Int, stop: => Boolean, labelSelector: Option[String] = None):Source[Seq[ByteString], _] = {
     watchResources(namespaces, resources, "networking.k8s.io/v1beta1", timeout, stop, labelSelector)
   }
 
-  def watchKubeResources(namespaces: Seq[String], resources: Seq[String], timeout: Int, stop: AtomicBoolean, labelSelector: Option[String] = None):Source[Seq[ByteString], _] = {
+  def watchKubeResources(namespaces: Seq[String], resources: Seq[String], timeout: Int, stop: => Boolean, labelSelector: Option[String] = None):Source[Seq[ByteString], _] = {
     watchResources(namespaces, resources, "v1", timeout, stop, labelSelector)
   }
 
-  def watchResources(namespaces: Seq[String], resources: Seq[String], api: String, timeout: Int, stop: AtomicBoolean, labelSelector: Option[String] = None): Source[Seq[ByteString], _] = {
+  def watchResources(namespaces: Seq[String], resources: Seq[String], api: String, timeout: Int, stop: => Boolean, labelSelector: Option[String] = None): Source[Seq[ByteString], _] = {
     if (namespaces.contains("*")) {
       resources.map(r => watchResource("*", r, api, timeout, stop, labelSelector)).foldLeft(Source.empty[Seq[ByteString]])((s1, s2) => s1.merge(s2))
     } else {
@@ -518,49 +518,73 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
     }
   }
 
-  def watchResource(namespace: String, resource: String, api: String, timeout: Int, stop: AtomicBoolean, labelSelector: Option[String] = None): Source[Seq[ByteString], _] = {
-    // val pattern = Pattern.compile(""""resourceVersion"="([0-9]*)"""")
-    // println(s"watchResource $namespace $resource $api")
+  def watchResource(namespace: String, resource: String, api: String, timeout: Int, stop: => Boolean, labelSelector: Option[String] = None): Source[Seq[ByteString], _] = {
+
+    import utils.http.Implicits._
+
+    val lastTime = new AtomicLong(0L)
     val last = new AtomicReference[String]("0")
     Source.repeat(())
       .flatMapConcat { _ =>
-        //println("run from " + last.get())
-        logger.info(s"watch on ${api}/${namespace}/${resource}")
-        val lblStart = labelSelector.map(s => s"?labelSelector=$s").getOrElse("")
-        val cliStart: WSRequest = client(s"/apis/$api/namespaces/$namespace/$resource$lblStart")
-        val f: Future[Source[Seq[ByteString], _]] = cliStart.addHttpHeaders(
-          "Accept" -> "application/json"
-        ).withMethod("GET").withRequestTimeout(timeout.seconds).get().flatMap { list =>
-          val resourceVersionStart = (list.json \ "metadata" \ "resourceVersion").asOpt[String].getOrElse("0")
-          last.set(resourceVersionStart)
-          val lbl = labelSelector.map(s => s"&labelSelector=$s").getOrElse("")
-          val cli: WSRequest = client(s"/apis/$api/namespaces/$namespace/$resource?watch=1&resourceVersion=${last.get()}&timeoutSeconds=$timeout$lbl")
-          cli.addHttpHeaders(
+        val now = System.currentTimeMillis()
+        if ((lastTime.get() + 5000) > now) {
+          logger.debug("call too close, waiting for 5 secs")
+          Source.single(Source.empty).delay(5.seconds).flatMapConcat(v => v)
+        } else {
+          lastTime.set(now)
+          logger.debug(s"watch on ${api}/${namespace}/${resource} for ${timeout} seconds ! ")
+          val lblStart = labelSelector.map(s => s"?labelSelector=$s").getOrElse("")
+          val cliStart: WSRequest = client(s"/apis/$api/namespaces/$namespace/$resource$lblStart")
+          val f: Future[Source[Seq[ByteString], _]] = cliStart.addHttpHeaders(
             "Accept" -> "application/json"
-          ).withMethod("GET").withRequestTimeout(timeout.seconds).stream().map { resp =>
-            if (resp.status == 200) {
-              resp.bodyAsSource
-                //.alsoTo(Sink.foreach(v => println(v.utf8String)))
-                .via(Framing.delimiter("\n".byteString, Int.MaxValue, true))
-                .map { line =>
-                  val json = Json.parse(line.utf8String)
-                  // logger.info(s"[${DateTime.now().toString()}] evt : ${Json.stringify(json)}")
-                  // val name = (json \ "object" \ "metadata" \ "name").asOpt[String]
-                  // val namespace = (json \ "object" \ "metadata" \ "namespace").asOpt[String]
-                  val resourceVersion = (json \ "object" \ "metadata" \ "resourceVersion").asOpt[String]
-                  // println(s"processing $namespace / $name - $resourceVersion")
-                  resourceVersion.foreach(v => last.set(v))
-                  line
+          ).withMethod("GET").withRequestTimeout(timeout.seconds).get().flatMap { list =>
+            if (list.status == 200) {
+              val resourceVersionStart = (list.json \ "metadata" \ "resourceVersion").asOpt[String].getOrElse("0")
+              last.set(resourceVersionStart)
+              val lbl = labelSelector.map(s => s"&labelSelector=$s").getOrElse("")
+              val cli: WSRequest = client(s"/apis/$api/namespaces/$namespace/$resource?watch=1&resourceVersion=${last.get()}&timeoutSeconds=$timeout$lbl")
+              cli.addHttpHeaders(
+                "Accept" -> "application/json"
+              ).withMethod("GET").withRequestTimeout(timeout.seconds).stream().map { resp =>
+                if (resp.status == 200) {
+                  resp.bodyAsSource
+                    .via(Framing.delimiter("\n".byteString, Int.MaxValue, true))
+                    .map(_.utf8String)
+                    .filterNot(_.trim.isEmpty)
+                    .map { line =>
+                      val json = Json.parse(line)
+                      val typ = (json \ "type").asOpt[String]
+                      val name = (json \ "object" \ "metadata" \ "name").asOpt[String]
+                      val ns = (json \ "object" \ "metadata" \ "namespace").asOpt[String]
+                      val resourceVersion = (json \ "object" \ "metadata" \ "resourceVersion").asOpt[String]
+                      logger.debug(s"received event for ${api}/${namespace}/${resource} - $typ - $ns/$name($resourceVersion)")
+                      resourceVersion.foreach(v => last.set(v))
+                      ByteString(line)
+                    }
+                    .groupedWithin(1000, 2.seconds)
+                } else {
+                  resp.ignore()
+                  Source.empty
                 }
-                .groupedWithin(1000, 2.seconds)
+              }.recover {
+                case e =>
+                  logger.error(s"error while watching ${api}/${namespace}/${resource}", e)
+                  Source.empty
+              }
             } else {
-              Source.empty
+              list.ignore()
+              logger.info(s"resource ${resource} of api ${api} does not exists on namespace ${namespace}")
+              Source.empty.future
             }
+          }.recover {
+            case e =>
+              logger.error(s"error while fetching latest version of ${api}/${namespace}/${resource}", e)
+              Source.empty
           }
+          Source.future(f).flatMapConcat(v => v)
         }
-        Source.future(f).flatMapConcat(v => v)
       }
       .filterNot(_.isEmpty)
-      .takeWhile(_ => !stop.get())
+      .takeWhile(_ => !stop)
   }
 }

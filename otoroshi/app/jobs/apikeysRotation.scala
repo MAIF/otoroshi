@@ -22,13 +22,13 @@ class ApikeysSecretsRotationJobs extends Job {
 
   override def kind: JobKind = JobKind.ScheduledEvery
 
-  override def initialDelay(ctx: JobContext): Option[FiniteDuration] = 1.minutes.some
+  override def initialDelay(ctx: JobContext, env: Env): Option[FiniteDuration] = 1.minutes.some
 
-  override def interval(ctx: JobContext): Option[FiniteDuration] = 10.minutes.some
+  override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] = 10.minutes.some
 
   override def starting: JobStarting = JobStarting.Automatically
 
-  override def instantiation: JobInstantiation = JobInstantiation.OneInstancePerOtoroshiCluster
+  override def instantiation(ctx: JobContext, env: Env): JobInstantiation = JobInstantiation.OneInstancePerOtoroshiCluster
 
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     env.datastores.apiKeyDataStore.findAll().flatMap { apikeys =>

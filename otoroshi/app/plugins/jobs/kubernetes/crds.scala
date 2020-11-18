@@ -1,7 +1,7 @@
 package otoroshi.plugins.jobs.kubernetes
 
 import java.util.concurrent.{Executors, TimeUnit}
-import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong, AtomicReference}
 
 import akka.http.scaladsl.model.Uri
 import akka.stream.scaladsl.{Sink, Source}
@@ -40,6 +40,7 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
   private val stopCommand = new AtomicBoolean(false)
   private val watchCommand = new AtomicBoolean(false)
   private val lastWatchStopped = new AtomicBoolean(true)
+  private val lastWatchSync = new AtomicLong(0L)
 
   override def uniqueId: JobId = JobId("io.otoroshi.plugins.jobs.kubernetes.KubernetesOtoroshiCRDsControllerJob")
 
@@ -63,8 +64,8 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
 
   override def starting: JobStarting = JobStarting.FromConfiguration
 
-  override def instantiation: JobInstantiation = {
-    Option(DynamicSSLEngineProvider.getCurrentEnv())
+  override def instantiation(ctx: JobContext, env: Env): JobInstantiation = {
+    Option(env)
       .flatMap(env => env.datastores.globalConfigDataStore.latestSafe.map(c => (env, c)))
       .map { case (env, c) => (env, KubernetesConfig.theConfig((c.scripts.jobConfig \ "KubernetesConfig").as[JsValue])(env, env.otoroshiExecutionContext)) }
       .map {
@@ -79,9 +80,9 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
       .getOrElse(JobInstantiation.OneInstancePerOtoroshiCluster)
   }
 
-  override def initialDelay(ctx: JobContext): Option[FiniteDuration] = 5.seconds.some
+  override def initialDelay(ctx: JobContext, env: Env): Option[FiniteDuration] = 5.seconds.some
 
-  override def interval(ctx: JobContext): Option[FiniteDuration] = 60.seconds.some
+  override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] = KubernetesConfig.theConfig(ctx)(env, env.otoroshiExecutionContext).syncIntervalSeconds.seconds.some
 
   override def jobStart(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     logger.info("start")
@@ -146,20 +147,23 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
         "data-exporters",
         "teams",
         "tenants",
-      ), 30, watchCommand).merge(
-        client.watchKubeResources(conf.namespaces, Seq("secrets", "services", "pods", "endpoints"), 30, watchCommand)
+      ), 30, !watchCommand.get()).merge(
+        client.watchKubeResources(conf.namespaces, Seq("secrets", "services", "pods", "endpoints"), 30, !watchCommand.get())
       )
-      source.takeWhile(_ => !watchCommand.get()).throttle(1, 10.seconds).filterNot(_.isEmpty).alsoTo(Sink.onComplete {
+      source.takeWhile(_ => !watchCommand.get())/*.throttle(1, 10.seconds)*/.filterNot(_.isEmpty).alsoTo(Sink.onComplete {
         case _ => lastWatchStopped.set(true)
       }).runWith(Sink.foreach { group =>
-        logger.debug(s"sync triggered by a group of ${group.size} events")
-        KubernetesCRDsJob.syncCRDs(conf, ctx.attrs, !stopCommand.get())
+        val now = System.currentTimeMillis()
+        if ((lastWatchSync.get() + 10000) < now) { // 10 sec
+          logger.debug(s"sync triggered by a group of ${group.size} events")
+          KubernetesCRDsJob.syncCRDs(conf, ctx.attrs, !stopCommand.get())
+        }
       })
     } else if (!config.watch) {
       logger.info("stopping namespaces watch")
       watchCommand.set(false)
     } else {
-      logger.info("watching already ...")
+      logger.info(s"watching already ...")
     }
   }
 

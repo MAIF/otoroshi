@@ -237,7 +237,7 @@ class DataExporterConfigMigrationJob extends Job {
 
   override def starting: JobStarting = JobStarting.Automatically
 
-  override def instantiation: JobInstantiation = JobInstantiation.OneInstancePerOtoroshiCluster
+  override def instantiation(ctx: JobContext, env: Env): JobInstantiation = JobInstantiation.OneInstancePerOtoroshiCluster
 
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     implicit val mat = env.otoroshiMaterializer

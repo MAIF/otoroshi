@@ -60,8 +60,8 @@ class KubernetesIngressControllerJob extends Job {
 
   override def starting: JobStarting = JobStarting.FromConfiguration
 
-  override def instantiation: JobInstantiation = {
-    Option(DynamicSSLEngineProvider.getCurrentEnv())
+  override def instantiation(ctx: JobContext, env: Env): JobInstantiation = {
+    Option(env)
       .flatMap(env => env.datastores.globalConfigDataStore.latestSafe.map(c => (env, c)))
       .map { case (env, c) => (env, KubernetesConfig.theConfig((c.scripts.jobConfig \ "KubernetesConfig").as[JsValue])(env, env.otoroshiExecutionContext)) }
       .map {
@@ -76,9 +76,9 @@ class KubernetesIngressControllerJob extends Job {
       .getOrElse(JobInstantiation.OneInstancePerOtoroshiCluster)
   }
 
-  override def initialDelay(ctx: JobContext): Option[FiniteDuration] = 5.seconds.some
+  override def initialDelay(ctx: JobContext, env: Env): Option[FiniteDuration] = 5.seconds.some
 
-  override def interval(ctx: JobContext): Option[FiniteDuration] = 60.seconds.some
+  override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] = KubernetesConfig.theConfig(ctx)(env, env.otoroshiExecutionContext).syncIntervalSeconds.seconds.some
 
   override def jobStart(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     stopCommand.set(false)
@@ -119,8 +119,8 @@ class KubernetesIngressControllerJob extends Job {
       val conf = KubernetesConfig.theConfig(ctx)
       val client = new KubernetesClient(conf, env)
       val source =
-        client.watchKubeResources(conf.namespaces, Seq("secrets", "services", "pods", "endpoints"), 30, stopCommand)
-          .merge(client.watchNetResources(conf.namespaces, Seq("ingresses"), 30, stopCommand))
+        client.watchKubeResources(conf.namespaces, Seq("secrets", "services", "pods", "endpoints"), 30, stopCommand.get())
+          .merge(client.watchNetResources(conf.namespaces, Seq("ingresses"), 30, stopCommand.get()))
       source.throttle(1, 5.seconds).runWith(Sink.foreach(_ => KubernetesIngressSyncJob.syncIngresses(conf, ctx.attrs)))
     }
     ().future
