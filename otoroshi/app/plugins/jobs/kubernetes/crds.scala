@@ -147,14 +147,14 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
         "data-exporters",
         "teams",
         "tenants",
-      ), 30, !watchCommand.get()).merge(
-        client.watchKubeResources(conf.namespaces, Seq("secrets", "services", "pods", "endpoints"), 30, !watchCommand.get())
+      ), conf.watchTimeoutSeconds, !watchCommand.get()).merge(
+        client.watchKubeResources(conf.namespaces, Seq("secrets", "services", "pods", "endpoints"), conf.watchTimeoutSeconds, !watchCommand.get())
       )
-      source.takeWhile(_ => !watchCommand.get())/*.throttle(1, 10.seconds)*/.filterNot(_.isEmpty).alsoTo(Sink.onComplete {
+      source.takeWhile(_ => !watchCommand.get()).filterNot(_.isEmpty).alsoTo(Sink.onComplete {
         case _ => lastWatchStopped.set(true)
       }).runWith(Sink.foreach { group =>
         val now = System.currentTimeMillis()
-        if ((lastWatchSync.get() + 10000) < now) { // 10 sec
+        if ((lastWatchSync.get() + (conf.watchGracePeriodSeconds * 1000L)) < now) { // 10 sec
           logger.debug(s"sync triggered by a group of ${group.size} events")
           KubernetesCRDsJob.syncCRDs(conf, ctx.attrs, !stopCommand.get())
         }
@@ -1148,7 +1148,7 @@ object KubernetesCRDsJob {
         if (shouldRunNext.get()) {
           shouldRunNext.set(false)
           logger.info("restart job right now because sync was asked during sync ")
-          env.otoroshiScheduler.scheduleOnce(5.seconds) {
+          env.otoroshiScheduler.scheduleOnce(_conf.watchGracePeriodSeconds.seconds) {
             syncCRDs(_conf, attrs, jobRunning)
           }
           ().future
@@ -1180,7 +1180,8 @@ object KubernetesCRDsJob {
       conf.corednsPort,
       conf.clusterDomain,
       conf.otoroshiServiceName,
-      conf.otoroshiNamespace
+      conf.otoroshiNamespace,
+      conf.coreDnsEnv
     ).mkString("-").sha256
 
     def patchConfig(coredns: Option[KubernetesDeployment], configMap: KubernetesConfigMap, append: Boolean): Future[Unit] = Try {
@@ -1198,10 +1199,13 @@ object KubernetesCRDsJob {
         }.getOrElse(false)
       }
       val upstream = if (coredns17) "" else "upstream"
+      val coreDnsNameEnv = conf.coreDnsEnv.map(e => s"$e-").getOrElse("")
+      val coreDnsDomainEnv = conf.coreDnsEnv.map(e => s"$e.").getOrElse("")
+      val coreDnsDomainRegexEnv = conf.coreDnsEnv.map(e => s"$e\\.").getOrElse("")
       val otoMesh =
-        s"""### otoroshi-mesh-begin ###
+        s"""### otoroshi-${coreDnsNameEnv}mesh-begin ###
            |### config-hash: $hash
-           |otoroshi.mesh:${conf.corednsPort} {
+           |${coreDnsDomainEnv}otoroshi.mesh:${conf.corednsPort} {
            |    errors
            |    health
            |    ready
@@ -1210,17 +1214,17 @@ object KubernetesCRDsJob {
            |        $upstream
            |        fallthrough in-addr.arpa ip6.arpa
            |    }
-           |    rewrite name regex (.*)\\.otoroshi\\.mesh ${conf.otoroshiServiceName}.${conf.otoroshiNamespace}.svc.${conf.clusterDomain}
-           |    rewrite name regex (.*)\\.svc\\.otoroshi\\.local ${conf.otoroshiServiceName}.${conf.otoroshiNamespace}.svc.${conf.clusterDomain}
-           |    rewrite name regex (.*)\\.svc\\.otoroshi ${conf.otoroshiServiceName}.${conf.otoroshiNamespace}.svc.${conf.clusterDomain}
-           |    rewrite name regex (.*)\\.otoroshi ${conf.otoroshiServiceName}.${conf.otoroshiNamespace}.svc.${conf.clusterDomain}
+           |    rewrite name regex (.*)\\.${coreDnsDomainRegexEnv}otoroshi\\.mesh ${conf.otoroshiServiceName}.${conf.otoroshiNamespace}.svc.${conf.clusterDomain}
+           |    rewrite name regex (.*)\\.svc\\.${coreDnsDomainRegexEnv}otoroshi\\.mesh ${conf.otoroshiServiceName}.${conf.otoroshiNamespace}.svc.${conf.clusterDomain}
+           |    # rewrite name regex (.*)\\.svc\\.${coreDnsDomainRegexEnv}otoroshi ${conf.otoroshiServiceName}.${conf.otoroshiNamespace}.svc.${conf.clusterDomain}
+           |    # rewrite name regex (.*)\\.${coreDnsDomainRegexEnv}otoroshi ${conf.otoroshiServiceName}.${conf.otoroshiNamespace}.svc.${conf.clusterDomain}
            |    forward . /etc/resolv.conf
            |    cache 30
            |    loop
            |    reload
            |    loadbalance
            |}
-           |### otoroshi-mesh-end ###""".stripMargin
+           |### otoroshi-${coreDnsNameEnv}mesh-end ###""".stripMargin
 
       val coreFile = configMap.corefile
       lastDnsConfigRef.set(hash)
@@ -1237,8 +1241,8 @@ object KubernetesCRDsJob {
           }.map(_ => ())
         }
       } else {
-        val head = coreFile.split("### otoroshi-mesh-begin ###").toSeq.head
-        val tail = coreFile.split("### otoroshi-mesh-end ###").toSeq.last
+        val head = coreFile.split(s"### otoroshi-${coreDnsNameEnv}mesh-begin ###").toSeq.head
+        val tail = coreFile.split(s"### otoroshi-${coreDnsNameEnv}mesh-end ###").toSeq.last
         val newData = (configMap.raw \ "data").as[JsObject] ++ Json.obj("Corefile" -> (head + otoMesh + tail))
         val newRaw = configMap.raw.as[JsObject] ++ Json.obj("data" -> newData)
         if (conf.coreDnsIntegrationDryRun) {
@@ -1263,7 +1267,7 @@ object KubernetesCRDsJob {
         case None =>
           logger.error("no coredns config.")
           ().future
-        case Some(configMap) if configMap.hasOtoroshiMesh => {
+        case Some(configMap) if configMap.hasOtoroshiMesh(conf) => {
           logger.debug(s"configMap 1 ${configMap.corefile}")
           val hashFromConfigMap = configMap.corefile
             .split("\\n")
@@ -1287,6 +1291,30 @@ object KubernetesCRDsJob {
         }
       }
     }
+
+    def deleteOtoroshiMeshFromCoreDnsConfig() = {
+      client.fetchConfigMap(conf.kubeSystemNamespace, conf.coreDnsConfigMapName).flatMap {
+        case Some(configMap) if configMap.hasOtoroshiMesh(conf) => {
+          val coreFile = configMap.corefile
+          val coreDnsNameEnv = conf.coreDnsEnv.map(e => s"$e-").getOrElse("")
+          val head = coreFile.split(s"### otoroshi-${coreDnsNameEnv}mesh-begin ###").toSeq.head
+          val tail = coreFile.split(s"### otoroshi-${coreDnsNameEnv}mesh-end ###").toSeq.last
+          val newData = (configMap.raw \ "data").as[JsObject] ++ Json.obj("Corefile" -> (head + tail))
+          val newRaw = configMap.raw.as[JsObject] ++ Json.obj("data" -> newData)
+          if (conf.coreDnsIntegrationDryRun) {
+            logger.debug(s"new coredns config: ${Json.prettyPrint(newRaw)}")
+            ().future
+          } else {
+            client.updateConfigMap(configMap.namespace, configMap.name, KubernetesConfigMap(newRaw)).andThen {
+              case Failure(e) => logger.error("error while patching coredns config.", e)
+              case Success(Left((status, body))) => logger.error(s"error while patching coredns config. got status $status and body '$body'")
+            }.map(_ => ())
+          }
+        }
+        case _ => ().future
+      }
+    }
+
     if (conf.coreDnsIntegration) {
       client.fetchDeployment(conf.kubeSystemNamespace, conf.coreDnsDeploymentName).flatMap {
         case None =>
@@ -1297,7 +1325,7 @@ object KubernetesCRDsJob {
         }
       }
     } else {
-      // TODO: handle config delete !
+      deleteOtoroshiMeshFromCoreDnsConfig()
       ().future
     }
   }

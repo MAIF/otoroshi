@@ -30,10 +30,11 @@ case class KubernetesNamespace(raw: JsValue) extends KubernetesEntity
 case class KubernetesService(raw: JsValue) extends KubernetesEntity
 case class KubernetesConfigMap(raw: JsValue) extends KubernetesEntity {
   lazy val corefile: String = (raw \ "data" \ "Corefile").as[String]
-  lazy val hasOtoroshiMesh: Boolean = {
+  def hasOtoroshiMesh(conf: KubernetesConfig): Boolean = {
+    val coreDnsNameEnv = conf.coreDnsEnv.map(e => s"$e-").getOrElse("")
     (raw \ "data" \ "Corefile").asOpt[String] match {
       case None => true // because Corefile should be there, so avoid to do something wrong
-      case Some(coreFile) if coreFile.contains("### otoroshi-mesh-begin ###") && coreFile.contains("### otoroshi-mesh-end ###") => true
+      case Some(coreFile) if coreFile.contains(s"### otoroshi-${coreDnsNameEnv}mesh-begin ###") && coreFile.contains(s"### otoroshi-${coreDnsNameEnv}mesh-end ###") => true
       case Some(_) => false
     }
   }

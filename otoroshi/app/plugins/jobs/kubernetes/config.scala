@@ -46,6 +46,9 @@ case class KubernetesConfig(
   otoroshiNamespace: String,
   clusterDomain: String,
   syncIntervalSeconds: Long,
+  coreDnsEnv: Option[String],
+  watchTimeoutSeconds: Int,
+  watchGracePeriodSeconds: Int
 )
 
 object KubernetesConfig {
@@ -112,6 +115,9 @@ object KubernetesConfig {
           corednsPort = (conf \ "corednsPort").asOpt[Int].getOrElse(53),
           clusterDomain = (conf \ "clusterDomain").asOpt[String].getOrElse("cluster.local"),
           syncIntervalSeconds = (conf \ "syncIntervalSeconds").asOpt[Long].getOrElse(60L),
+          coreDnsEnv = (conf \ "coreDnsEnv").asOpt[String].filterNot(_.trim.isEmpty),
+          watchTimeoutSeconds = (conf \ "watchTimeoutSeconds").asOpt[Int].getOrElse(60),
+          watchGracePeriodSeconds = (conf \ "watchGracePeriodSeconds").asOpt[Int].getOrElse(5),
         )
       }
       case None => {
@@ -160,6 +166,9 @@ object KubernetesConfig {
           corednsPort = (conf \ "corednsPort").asOpt[Int].getOrElse(53),
           clusterDomain = (conf \ "clusterDomain").asOpt[String].getOrElse("cluster.local"),
           syncIntervalSeconds = (conf \ "syncIntervalSeconds").asOpt[Long].getOrElse(60L),
+          coreDnsEnv = (conf \ "coreDnsEnv").asOpt[String].filterNot(_.trim.isEmpty),
+          watchTimeoutSeconds = (conf \ "watchTimeoutSeconds").asOpt[Int].getOrElse(60),
+          watchGracePeriodSeconds = (conf \ "watchGracePeriodSeconds").asOpt[Int].getOrElse(5),
         )
       }
     }
@@ -191,6 +200,9 @@ object KubernetesConfig {
         "otoroshiNamespace" -> "otoroshi",
         "clusterDomain" -> "cluster.local",
         "syncIntervalSeconds" -> 60,
+        "coreDnsEnv" -> null,
+        "watchTimeoutSeconds" -> 60,
+        "watchGracePeriodSeconds" -> 5,
         "templates" -> Json.obj(
           "service-group" -> Json.obj(),
           "service-descriptor" -> Json.obj(),
