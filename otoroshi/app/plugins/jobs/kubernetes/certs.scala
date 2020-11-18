@@ -1,6 +1,6 @@
 package otoroshi.plugins.jobs.kubernetes
 
-import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong}
 
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.{Sink, Source}
@@ -169,6 +169,9 @@ class KubernetesToOtoroshiCertSyncJob extends Job {
 
   private val logger = Logger("otoroshi-plugins-kubernetes-to-otoroshi-certs-job")
   private val stopCommand = new AtomicBoolean(false)
+  private val watchCommand = new AtomicBoolean(false)
+  private val lastWatchStopped = new AtomicBoolean(true)
+  private val lastWatchSync = new AtomicLong(0L)
 
   override def uniqueId: JobId = JobId("io.otoroshi.plugins.jobs.kubernetes.KubernetesToOtoroshiCertSyncJob")
 
@@ -200,19 +203,17 @@ class KubernetesToOtoroshiCertSyncJob extends Job {
 
   override def jobStart(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     stopCommand.set(false)
+    lastWatchStopped.set(true)
+    watchCommand.set(false)
     val config = KubernetesConfig.theConfig(ctx)
-    if (config.watch) {
-      implicit val mat = env.otoroshiMaterializer
-      val conf = KubernetesConfig.theConfig(ctx)
-      val client = new KubernetesClient(conf, env)
-      val source = client.watchKubeResources(conf.namespaces, Seq("secrets", "endpoints"), 30, stopCommand.get())
-      source.throttle(1, 5.seconds).runWith(Sink.foreach(_ => KubernetesCertSyncJob.syncKubernetesSecretsToOtoroshiCerts(client, !stopCommand.get())))
-    }
+    handleWatch(config, ctx)
     ().future
   }
 
   override def jobStop(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     stopCommand.set(true)
+    watchCommand.set(false)
+    lastWatchStopped.set(true)
     ().future
   }
 
@@ -220,7 +221,34 @@ class KubernetesToOtoroshiCertSyncJob extends Job {
     val conf = KubernetesConfig.theConfig(ctx)
     val client = new KubernetesClient(conf, env)
     logger.info("Running kubernetes to otoroshi certs. sync ...")
+    handleWatch(conf, ctx)
     KubernetesCertSyncJob.syncKubernetesSecretsToOtoroshiCerts(client, !stopCommand.get())
+  }
+
+  def handleWatch(config: KubernetesConfig, ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Unit = {
+    if (config.watch && !watchCommand.get() && lastWatchStopped.get()) {
+      logger.info("starting namespaces watch ...")
+      implicit val mat = env.otoroshiMaterializer
+      watchCommand.set(true)
+      lastWatchStopped.set(false)
+      val conf = KubernetesConfig.theConfig(ctx)
+      val client = new KubernetesClient(conf, env)
+      val source = client.watchKubeResources(conf.namespaces, Seq("secrets", "endpoints"), 30, !watchCommand.get())
+      source.takeWhile(_ => !watchCommand.get())/*.throttle(1, 10.seconds)*/.filterNot(_.isEmpty).alsoTo(Sink.onComplete {
+        case _ => lastWatchStopped.set(true)
+      }).runWith(Sink.foreach { group =>
+        val now = System.currentTimeMillis()
+        if ((lastWatchSync.get() + 10000) < now) { // 10 sec
+          logger.debug(s"sync triggered by a group of ${group.size} events")
+          KubernetesCertSyncJob.syncKubernetesSecretsToOtoroshiCerts(client, !stopCommand.get())
+        }
+      })
+    } else if (!config.watch) {
+      logger.info("stopping namespaces watch")
+      watchCommand.set(false)
+    } else {
+      logger.info(s"watching already ...")
+    }
   }
 }
 
