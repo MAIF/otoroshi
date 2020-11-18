@@ -571,9 +571,13 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
                   logger.error(s"error while watching ${api}/${namespace}/${resource}", e)
                   Source.empty
               }
+            } else if (list.status == 404) {
+              list.ignore()
+              logger.error(s"resource ${resource} of api ${api} does not exists on namespace ${namespace}")
+              Source.empty.future
             } else {
               list.ignore()
-              logger.info(s"resource ${resource} of api ${api} does not exists on namespace ${namespace}")
+              logger.error(s"error while trying to get ${resource} of api ${api} on namespace ${namespace}: ${list.status} - ${list.body}")
               Source.empty.future
             }
           }.recover {
