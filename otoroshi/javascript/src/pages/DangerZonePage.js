@@ -477,7 +477,7 @@ export class DangerZonePage extends Component {
     'ipFiltering.whitelist': {
       type: 'array',
       props: {
-        label: 'IP Whitelist',
+        label: 'IP allowed list',
         placeholder: 'IP address that can access Otoroshi',
         help: 'Only IP addresses that will be able to access Otoroshi exposed services',
       },
@@ -485,7 +485,7 @@ export class DangerZonePage extends Component {
     'ipFiltering.blacklist': {
       type: 'array',
       props: {
-        label: 'IP Blacklist',
+        label: 'IP blocklist',
         placeholder: 'IP address that cannot access the Otoroshi',
         help: 'IP addresses that will be refused to access Otoroshi exposed services',
       },
@@ -970,10 +970,10 @@ export class DangerZonePage extends Component {
   syncSchema = {
     host: {
       type: 'string',
-      props: { label: 'Master host', placeholder: 'xxxxx-redis.services.clever-cloud.com' },
+      props: { label: 'Leader host', placeholder: 'xxxxx-redis.services.clever-cloud.com' },
     },
-    port: { type: 'number', props: { label: 'Master port', placeholder: '4242' } },
-    password: { type: 'string', props: { label: 'Master password', type: 'password' } },
+    port: { type: 'number', props: { label: 'Leader port', placeholder: '4242' } },
+    password: { type: 'string', props: { label: 'Leader password', type: 'password' } },
   };
 
   syncFlow = ['host', 'port', 'password'];
@@ -1021,7 +1021,7 @@ export class DangerZonePage extends Component {
 
   sync = () => {
     this.setState({ syncing: true });
-    BackOfficeServices.syncWithMaster(this.state.sync).then(
+    BackOfficeServices.syncWithLeader(this.state.sync).then(
       (d) => this.setState({ syncing: false }),
       (e) => this.setState({ syncingError: e, syncing: false })
     );

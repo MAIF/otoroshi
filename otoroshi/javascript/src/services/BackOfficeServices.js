@@ -4,7 +4,7 @@ import moment from 'moment';
 // Should stay in BackOffice controller
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-export function syncWithMaster(config) {
+export function syncWithLeader(config) {
   return fetch(`/bo/api/redis/sync`, {
     method: 'POST',
     credentials: 'include',
