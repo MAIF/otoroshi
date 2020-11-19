@@ -622,8 +622,8 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
   def crdsFetchTenants(tenants: Seq[Tenant]): Future[Seq[OtoResHolder[Tenant]]] = client.fetchOtoroshiResources[Tenant]("organizations", Tenant.format, (a, b) => customizeTenant(a, b, tenants))
   def crdsFetchTeams(teams: Seq[Team]): Future[Seq[OtoResHolder[Team]]] = client.fetchOtoroshiResources[Team]("teams", Team.format, (a, b) => customizeTeam(a, b, teams))
   def crdsFetchServiceGroups(groups: Seq[ServiceGroup]): Future[Seq[OtoResHolder[ServiceGroup]]] = client.fetchOtoroshiResources[ServiceGroup]("service-groups", ServiceGroup._fmt, (a, b) => customizeServiceGroup(a, b, groups))
-  def crdsFetchServiceDescriptors(services: Seq[KubernetesService], endpoints: Seq[KubernetesEndpoint], otoServices: Seq[ServiceDescriptor]): Future[Seq[OtoResHolder[ServiceDescriptor]]] = {
-    client.fetchOtoroshiResources[ServiceDescriptor]("service-descriptors", ServiceDescriptor._fmt, (a, b) => customizeServiceDescriptor(a, b, services, endpoints, otoServices))
+  def crdsFetchServiceDescriptors(services: Seq[KubernetesService], endpoints: Seq[KubernetesEndpoint], otoServices: Seq[ServiceDescriptor], conf: KubernetesConfig): Future[Seq[OtoResHolder[ServiceDescriptor]]] = {
+    client.fetchOtoroshiResources[ServiceDescriptor]("service-descriptors", ServiceDescriptor._fmt, (a, b) => customizeServiceDescriptor(a, b, services, endpoints, otoServices, conf))
   }
   def crdsFetchApiKeys(secrets: Seq[KubernetesSecret], apikeys: Seq[ApiKey], registerApkToExport: Function3[String, String, ApiKey, Unit]): Future[Seq[OtoResHolder[ApiKey]]] = {
     val otoApikeySecrets = secrets.filter(_.theType == "otoroshi.io/apikey-secret")
@@ -730,7 +730,7 @@ object KubernetesCRDsJob {
       endpoints <- clientSupport.client.fetchEndpoints()
       secrets <- clientSupport.client.fetchSecrets()
       serviceGroups <- clientSupport.crdsFetchServiceGroups(otoserviceGroups)
-      serviceDescriptors <- clientSupport.crdsFetchServiceDescriptors(services, endpoints, otoserviceDescriptors)
+      serviceDescriptors <- clientSupport.crdsFetchServiceDescriptors(services, endpoints, otoserviceDescriptors, conf)
       apiKeys <- clientSupport.crdsFetchApiKeys(secrets, otoapiKeys, registerApkToExport)
       certificates <- clientSupport.crdsFetchCertificates(otocertificates, registerCertToExport)
       globalConfigs <- clientSupport.crdsFetchGlobalConfig(otoglobalConfigs.head)
