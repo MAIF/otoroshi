@@ -15,7 +15,7 @@ To see last `app.events.maxSize` admin actions on Otoroshi from the UI, go to `s
 @@@
 
 ## Alerts
-<!-- TODO: if dataexporters "ALERTS" not set, it can't works ?? -->
+<!-- FIXME: if dataexporters "ALERTS" not set, it can't works: explain that -->
 To see last `app.events.maxSize` alerts on Otoroshi from the UI, go to `settings (cog icon) / Alerts log`.
 
 @@@ div { .centered-img }

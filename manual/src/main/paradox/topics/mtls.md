@@ -261,7 +261,7 @@ curl --cacert ./ca/ca-frontend.cer https://api.frontend.lol:8443/
 # the output should be: {"message":"Hello World!"}
 ```
 
-<!-- FIXME:Deprecated ???? -->
+<!-- FIXME:Deprecated ???? oui a réécrire-->
 now we have to enforce the fact that we want client certificate for `api.frontend.lol`. To do that, we have to create a `Validation authority` in otoroshi and use it on the `api.frontend.lol` service. Go to http://otoroshi.oto.tools:8080/bo/dashboard/validation-authorities and create a new item. A validation authority is supposed to be a remote service that will say if the client certificate is valid. Here we don't really care if the certificate is valid or not, but we want to enforce the fact that there is a client certificate. So just check the `All cert. valid button`.
 
 @@@ div { .centered-img }

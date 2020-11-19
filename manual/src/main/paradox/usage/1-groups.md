@@ -36,7 +36,6 @@ A `service group` is a really simple structure with an `id`, a name and a descri
 <img src="../img/service-groups-add.png" />
 @@@
 
-<!-- TODO: Add multitenant information -->
 modify the name and the description of the group. Metadata can be added.
 
 @@@ div { .centered-img }
@@ -65,7 +64,7 @@ To update a `Service group`, just click on the edit button <img src="../img/edit
 <img src="../img/service-groups-edit.png" />
 @@@
 
-Update the name, the description or metadata of the `Service group` and click on the `Update group` button to validate name update.
+Update the name, the description or metadata of the `Service group` and click on the `Update group` button to validate update.
 
 @@@ div { .centered-img }
 <!-- TODO: Update screen print -->

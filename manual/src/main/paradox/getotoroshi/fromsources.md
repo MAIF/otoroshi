@@ -3,7 +3,7 @@
 to build Otoroshi from sources, you need the following tools :
 
 * git
-* JDK 8
+* JDK 11
 * SBT
 * node
 * yarn

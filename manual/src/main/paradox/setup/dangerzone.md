@@ -6,10 +6,6 @@ This section is under rewrite. The following content is deprecated and UI may ha
 
 Now that you have an actual admin account, go to `setting (cog icon) / Danger Zone` in order to configure your Otoroshi instance.
 
-@@@ div { .centered-img }
-<img src="../img/go-to-danger-zone.png" />
-@@@
-
 ## Commons settings
 
 This part allows you to configure various things :
@@ -33,7 +29,7 @@ This part allows you to configure various things :
 <img src="../img/danger-zone-1-commons.png" />
 @@@
 
-## Whitelist / blacklist settings
+## IP address filtering settings
 
 Otoroshi is capable of filtering request by ip address, allowing or blocking requests.
 
@@ -47,7 +43,7 @@ Otoroshi also provides a fun feature called `Endless HTTP responses`. If you put
 Note that you may provide ip address with wildcard like the following `42.42.*.42` or `42.42.42.*` or `42.42.*.*`
 @@@
 
-## Global throttling settings
+## Quotas settings
 
 Otoroshi is capable of managing throttling at a global level. Here you can configure number of authorized requests per second on a single Otoroshi instance and the number of authorized request per second for a unique ip address.
 
@@ -55,9 +51,11 @@ Otoroshi is capable of managing throttling at a global level. Here you can confi
 <img src="../img/danger-zone-3-throttling.png" />
 @@@
 
-## Analytics settings
+## Analytics settings - Dashboard datasource
 
-One on the major features of Otoroshi is being able of generating internal events. Those events are not stored in Otoroshi's datastore but can be sent using a `Data exporter`. You can configure those `Data exporters` from the `Exporters` page. For more information about `exporters` and what it does, just go to the @ref:[detailed chapter](../usage/10-exporters.md)
+One on the major features of Otoroshi is being able of generating internal `events`. Those `events` are not stored in Otoroshi's datastore but can be sent using a `Exporter`. You can configure those `Exporters` from the `Exporters` page. For more information about `events` and `exporters`, just go to the @ref:[detailed chapter](../usage/10-events.md).
+
+If an `exporter` is setup as an Elastic exporter (with all analytics events sent), Otoroshi can read in this Elastic to render the dashboard, just fill the cluster the Elastic config.
 
 Otoroshi is also capable of reading some analytics and displays it from another MAIF product called `Omoïkane`. As Omoikane is not publicly available yet, is capable of storing events in an [Elastic](https://www.elastic.co/) cluster. For more information about analytics and what it does, just go to the @ref:[detailed chapter](../integrations/analytics.md)
 
@@ -112,10 +110,6 @@ For more information about Clever-Cloud integration and what it does, just go to
 
 ## Import / exports and panic mode
 
-For more details about imports and exports, please go to the @ref:[dedicated chapter](../usage/8-importsexports.md)
+For more details about imports and exports, please go to the @ref:[dedicated chapter](../setup/importsexports.md)
 
 About panic mode, it's an unusual feature that allows you to discard all current admin. sessions, allows only admin users with U2F devices to log back, and pass the API in read-only mode. Only a person who has access to Otoroshi's datastore will be able to turn it back on.
-
-@@@ div { .centered-img }
-<img src="../img/danger-zone-11-bottom.png" />
-@@@

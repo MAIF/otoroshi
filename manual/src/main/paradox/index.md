@@ -40,7 +40,7 @@ now open your browser to <a href="http://otoroshi.oto.tools:8080/" target="_blan
 * @ref:[Try Otoroshi in 5 minutes](./quickstart.md)
 * @ref:[Get Otoroshi](./getotoroshi/index.md)
 * @ref:[First run](./firstrun/index.md)
-* @ref:[Setup Otoroshi](./setup/index.md)
+* @ref:[Administrate Otoroshi](./setup/index.md)
 * @ref:[Using Otoroshi](./usage/index.md)
 * @ref:[Third party Integrations](./integrations/index.md)
 * @ref:[Detailed topics](./topics/index.md)

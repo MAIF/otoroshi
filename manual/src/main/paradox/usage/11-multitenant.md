@@ -1,2 +1,0 @@
-<!-- TODO:  Organizations-->
-<!-- TODO:  Team-->

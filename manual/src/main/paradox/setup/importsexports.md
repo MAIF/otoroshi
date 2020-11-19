@@ -12,10 +12,6 @@ Click on the `Full export` button.
 
 Your browser will start to download a JSON file containing the internal state of your Otoroshi cluster.
 
-@@@ div { .centered-img }
-<img src="../img/full-export-2.png" />
-@@@
-
 ## Full import
 
 If you want to restore an export, go to `settings (cog icon) / Danger Zone` and scroll to the bottom of the page.  Click on the `Recover from full export file` button
@@ -24,14 +20,4 @@ If you want to restore an export, go to `settings (cog icon) / Danger Zone` and 
 <img src="../img/full-import-1.png" />
 @@@
 
-Choose export file on your system.
-
-@@@ div { .centered-img }
-<img src="../img/full-import-1-bis.png" />
-@@@
-
-Click on the `Flush datastore and import ...` button, confirm and you will be logged out.
-
-@@@ div { .centered-img }
-<img src="../img/full-import-2.png" />
-@@@
+Choose export file on your system and click on the `Flush datastore and import ...` button, confirm and you will be logged out.
