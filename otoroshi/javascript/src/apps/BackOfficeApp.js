@@ -503,13 +503,13 @@ class BackOfficeAppContainer extends Component {
                             type="button"
                             className="btn btn-success"
                             onClick={(e) => window.history.back()}>
-                            <i className="glyphicon glyphicon-arrow-left" /> back
+                            <i className="fas fa-arrow-left" /> back
                           </button>
                           <button
                             type="button"
                             className="btn btn-danger"
                             onClick={(e) => window.location.reload()}>
-                            <i className="glyphicon glyphicon-repeat" /> reload
+                            <i className="fas fa-redo" /> reload
                           </button>
                         </div>
                       </div>

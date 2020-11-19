@@ -66,7 +66,7 @@ class Target extends Component {
             alignItems: 'center',
           }}>
           <button type="button" className="btn btn-danger" onClick={this.props.delete}>
-            <i className="glyphicon glyphicon-trash" />
+            <i className="fas fa-trash" />
           </button>
         </div>
       </div>
@@ -156,7 +156,7 @@ class Targets extends Component {
             alignItems: 'center',
           }}>
           <button type="button" className="btn btn-primary" onClick={this.addTarget}>
-            <i className="glyphicon glyphicon-plus-sign" />
+            <i className="fas fa-plus-circle" />
           </button>
         </div>
       </div>
@@ -206,9 +206,9 @@ export class TcpServicesPage extends Component {
         if (item.clientAuth === 'None') {
           return <i className="" />;
         } else if (item.clientAuth === 'Want') {
-          return <span className="glyphicon glyphicon-ok-sign" />;
+          return <span className="fas fa-check-circle" />;
         } else {
-          return <span className="glyphicon glyphicon-ok-sign" />;
+          return <span className="fas fa-check-circle" />;
         }
       },
     },
@@ -222,7 +222,7 @@ export class TcpServicesPage extends Component {
         if (!item.sni.enabled) {
           return <i className="" />;
         } else {
-          return <span className="glyphicon glyphicon-ok-sign" />;
+          return <span className="fas fa-check-circle" />;
         }
       },
     },

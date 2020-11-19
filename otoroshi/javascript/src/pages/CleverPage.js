@@ -39,9 +39,9 @@ export class CleverPage extends Component {
       notFilterable: true,
       cell: (item) =>
         item === 'exists' ? (
-          <span className="glyphicon glyphicon-ok-sign" />
+          <span className="fas fa-check-circle" />
         ) : (
-          <span style={{ color: 'red' }} className="glyphicon glyphicon-exclamation-sign" />
+          <span style={{ color: 'red' }} className="fas fa-exclamation-circle" />
         ),
     },
     {
@@ -58,7 +58,7 @@ export class CleverPage extends Component {
             onClick={(e) => this.createService(e, item)}
             type="button"
             className="btn btn-xs btn-success">
-            <i className="glyphicon glyphicon-plus-sign" /> Create service
+            <i className="fas fa-plus-circle" /> Create service
           </button>
         ),
     },

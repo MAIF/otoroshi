@@ -98,7 +98,7 @@ export class PrivateAppsSessionsPage extends Component {
             type="button"
             className="btn btn-danger btn-xs"
             onClick={(e) => this.discardSession(e, item.randomId, table)}>
-            <i className="glyphicon glyphicon-fire" /> Discard Session
+            <i className="fas fa-fire" /> Discard Session
           </button>
         );
       },
@@ -189,7 +189,7 @@ export class PrivateAppsSessionsPage extends Component {
                 className="btn btn-danger"
                 style={{ marginLeft: 15 }}
                 onClick={this.discardSessions}>
-                <i className="glyphicon glyphicon-fire" /> Discard all sessions
+                <i className="fas fa-fire" /> Discard all sessions
               </button>
             ) : null,
             <button
@@ -198,7 +198,7 @@ export class PrivateAppsSessionsPage extends Component {
               className="btn btn-danger"
               style={{ marginLeft: 15 }}
               onClick={this.discardOldSessions}>
-              <i className="glyphicon glyphicon-fire" /> Discard old sessions
+              <i className="fas fa-fire" /> Discard old sessions
             </button>,
           ]}
         />

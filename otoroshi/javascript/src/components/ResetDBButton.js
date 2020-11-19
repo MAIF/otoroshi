@@ -25,13 +25,13 @@ export class ResetDBButton extends Component {
     if (this.state.loading) {
       return (
         <button type="button" className="btn btn-default active">
-          <i className="glyphicon glyphicon-fire" /> Reset DB
+          <i className="fas fa-fire" /> Reset DB
         </button>
       );
     }
     return (
       <button type="button" className="btn btn-danger" onClick={this.resetDB}>
-        <i className="glyphicon glyphicon-fire" /> Reset DB
+        <i className="fas fa-fire" /> Reset DB
       </button>
     );
   }

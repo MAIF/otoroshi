@@ -50,7 +50,7 @@ export class ServicesPage extends Component {
             className="btn btn-danger btn-sm"
             disabled={this.state && this.state.env && this.state.env.adminApiId === item.id}
             onClick={(e) => this.deleteService(item, table)}>
-            <i className="glyphicon glyphicon-trash" />
+            <i className="fas fa-trash" />
           </button>
         );
       },
@@ -67,7 +67,7 @@ export class ServicesPage extends Component {
       noMobile: true,
       notFilterable: true,
       content: (item) => item.enabled,
-      cell: (v, item) => (item.enabled ? <span className="glyphicon glyphicon-ok-sign" /> : ''),
+      cell: (v, item) => (item.enabled ? <span className="fas fa-check-circle" /> : ''),
     },
     {
       title: 'Private',
@@ -90,7 +90,7 @@ export class ServicesPage extends Component {
         !item.privateApp &&
         item.privatePatterns.length === 0 &&
         item.publicPatterns.indexOf('/.*') > -1 ? (
-          <i className="glyphicon glyphicon-remove-sign alertorange" />
+          <i className="fas fa-times-circle alertorange" />
         ) : (
           <i className="fas fa-globe-americas fa-lg" aria-hidden="true" />
         ),
@@ -135,7 +135,7 @@ export class ServicesPage extends Component {
         noMobile: true,
         notFilterable: true,
         cell: (v, item) =>
-          item.redirectToLocal ? <span className="glyphicon glyphicon-ok-sign" /> : '',
+          item.redirectToLocal ? <span className="fas fa-check-circle" /> : '',
       });
     }
   }
@@ -156,7 +156,7 @@ export class ServicesPage extends Component {
         className="btn btn-danger btn-sm"
         disabled={this.state && this.state.env && this.state.env.adminApiId === item.id}
         onClick={(e) => this.deleteService(item, table)}>
-        <i className="glyphicon glyphicon-trash" />
+        <i className="fas fa-trash" />
       </button>
     );
   };
@@ -265,7 +265,7 @@ export class ServicesPage extends Component {
                   onClick={this.addService}
                   style={{ marginRight: 0 }}
                   className="btn btn-primary">
-                  <i className="glyphicon glyphicon-plus-sign" /> Create new service
+                  <i className="fas fa-plus-circle" /> Create new service
                 </button>
               </div>
             </>

@@ -166,7 +166,7 @@ export class U2FRegisterPage extends Component {
               type="button"
               className="btn btn-success btn-xs"
               onClick={(e) => this.updateOtherUser(item)}>
-              <i className="glyphicon glyphicon-edit" /> Edit User
+              <i className="fas fa-edit" /> Edit User
             </button>
             <button
               type="button"
@@ -180,7 +180,7 @@ export class U2FRegisterPage extends Component {
                   item.type
                 )
               }>
-              <i className="glyphicon glyphicon-fire" /> Discard User
+              <i className="fas fa-fire" /> Discard User
             </button>
           </>
         );
@@ -379,7 +379,7 @@ export class U2FRegisterPage extends Component {
             <>
               <div className="btn-group">
                 <button type="button" className="btn btn-primary" onClick={this.createAdmin}>
-                  <i className="glyphicon glyphicon-plus-sign" /> Register admin.
+                  <i className="fas fa-plus-circle" /> Register admin.
                 </button>
               </div>
             </>

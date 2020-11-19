@@ -89,7 +89,7 @@ export class ArrayInput extends Component {
                     type="button"
                     className="btn btn-primary"
                     onClick={this.addFirst}>
-                    <i className="glyphicon glyphicon-plus-sign" />{' '}
+                    <i className="fas fa-plus-circle" />{' '}
                   </button>
                 </div>
               )}
@@ -116,7 +116,7 @@ export class ArrayInput extends Component {
                         type="button"
                         className="btn btn-danger"
                         onClick={(e) => this.remove(e, idx)}>
-                        <i className="glyphicon glyphicon-trash" />
+                        <i className="fas fa-trash" />
                       </button>
                       {idx === values.length - 1 && (
                         <button
@@ -124,7 +124,7 @@ export class ArrayInput extends Component {
                           type="button"
                           className="btn btn-primary"
                           onClick={this.addNext}>
-                          <i className="glyphicon glyphicon-plus-sign" />{' '}
+                          <i className="fas fa-plus-circle" />{' '}
                         </button>
                       )}
                     </span>
@@ -152,7 +152,7 @@ export class ArrayInput extends Component {
                 type="button"
                 className="btn btn-primary"
                 onClick={this.addFirst}>
-                <i className="glyphicon glyphicon-plus-sign" />{' '}
+                <i className="fas fa-plus-circle" />{' '}
               </button>
             </div>
           </div>
@@ -219,7 +219,7 @@ export class ArrayInput extends Component {
                     type="button"
                     className="btn btn-danger"
                     onClick={(e) => this.remove(e, idx)}>
-                    <i className="glyphicon glyphicon-trash" />
+                    <i className="fas fa-trash" />
                   </button>
                   {idx === values.length - 1 && (
                     <button
@@ -227,7 +227,7 @@ export class ArrayInput extends Component {
                       type="button"
                       className="btn btn-primary"
                       onClick={this.addNext}>
-                      <i className="glyphicon glyphicon-plus-sign" />{' '}
+                      <i className="fas fa-plus-circle" />{' '}
                     </button>
                   )}
                 </span>

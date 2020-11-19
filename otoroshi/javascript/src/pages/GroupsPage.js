@@ -52,7 +52,7 @@ export class GroupsPage extends Component {
           type="button"
           className="btn btn-sm btn-success"
           onClick={(e) => (window.location = `/bo/dashboard/groups/edit/${item.id}/stats`)}>
-          <i className="glyphicon glyphicon-stats" />
+          <i className="fas fa-chart-bar" />
         </button>
       ),
     },
