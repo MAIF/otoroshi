@@ -312,18 +312,15 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
     }
   }
 
-  private def customizeServiceDescriptor(_spec: JsValue, res: KubernetesOtoroshiResource, services: Seq[KubernetesService], endpoints: Seq[KubernetesEndpoint], otoServices: Seq[ServiceDescriptor]): JsValue = {
+  private def customizeServiceDescriptor(_spec: JsValue, res: KubernetesOtoroshiResource, services: Seq[KubernetesService], endpoints: Seq[KubernetesEndpoint], otoServices: Seq[ServiceDescriptor], conf: KubernetesConfig): JsValue = {
     val spec = findAndMerge[ServiceDescriptor](_spec, res, "service-descriptor", None, otoServices, _.metadata, _.id, _.toJson, Some(_.enabled))
     val globalName = res.annotations.getOrElse("global-name/otoroshi.io", res.name)
+    val coreDnsDomainEnv = conf.coreDnsEnv.map(e => s"$e.").getOrElse("")
     val additionalHosts = Json.arr(
-      s"${globalName}.global.otoroshi.mesh",
-      s"${globalName}.global.otoroshi",
-      s"${globalName}.global.svc.otoroshi",
-      s"${globalName}.global.svc.otoroshi.local",
-      s"${res.name}.${res.namespace}.otoroshi.mesh",
-      s"${res.name}.${res.namespace}.otoroshi",
-      s"${res.name}.${res.namespace}.svc.otoroshi",
-      s"${res.name}.${res.namespace}.svc.otoroshi.local"
+      s"${globalName}.global.${coreDnsDomainEnv}otoroshi.mesh",
+      s"${res.name}.${res.namespace}.${coreDnsDomainEnv}otoroshi.mesh",
+      s"${res.name}.${res.namespace}.svc.${coreDnsDomainEnv}otoroshi.mesh",
+      s"${res.name}.${res.namespace}.svc.${conf.clusterDomain}"
     )
 
     def handleTargetFrom(obj: JsObject, serviceDesc: JsValue): JsValue = {
@@ -1215,9 +1212,6 @@ object KubernetesCRDsJob {
            |        fallthrough in-addr.arpa ip6.arpa
            |    }
            |    rewrite name regex (.*)\\.${coreDnsDomainRegexEnv}otoroshi\\.mesh ${conf.otoroshiServiceName}.${conf.otoroshiNamespace}.svc.${conf.clusterDomain}
-           |    rewrite name regex (.*)\\.svc\\.${coreDnsDomainRegexEnv}otoroshi\\.mesh ${conf.otoroshiServiceName}.${conf.otoroshiNamespace}.svc.${conf.clusterDomain}
-           |    # rewrite name regex (.*)\\.svc\\.${coreDnsDomainRegexEnv}otoroshi ${conf.otoroshiServiceName}.${conf.otoroshiNamespace}.svc.${conf.clusterDomain}
-           |    # rewrite name regex (.*)\\.${coreDnsDomainRegexEnv}otoroshi ${conf.otoroshiServiceName}.${conf.otoroshiNamespace}.svc.${conf.clusterDomain}
            |    forward . /etc/resolv.conf
            |    cache 30
            |    loop
