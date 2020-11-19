@@ -30,6 +30,7 @@ rules:
       - configmaps
       - deployments
       - pods
+      - namespaces
     verbs:
       - get
       - list
@@ -71,6 +72,9 @@ rules:
       - scripts
       - tcp-services
       - admins
+      - organizations
+      - teams
+
     verbs:
       - get
       - list
