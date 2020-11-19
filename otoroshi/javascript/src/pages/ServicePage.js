@@ -2481,7 +2481,7 @@ export class ServicePage extends Component {
               onChange={(v) => this.changeTheValue('gzip.enabled', v)}
             />
             <ArrayInput
-              label="Mimetypes whitelist"
+              label="Mimetypes allowed list"
               placeholder="text/html"
               suffix="pattern"
               value={this.state.service.gzip.whiteList}
@@ -2489,7 +2489,7 @@ export class ServicePage extends Component {
               onChange={(arr) => this.changeTheValue('gzip.whiteList', arr)}
             />
             <ArrayInput
-              label="Mimetypes blacklist"
+              label="Mimetypes blocklist"
               placeholder="text/html"
               suffix="pattern"
               value={this.state.service.gzip.blacklist}
@@ -2828,17 +2828,17 @@ export class ServicePage extends Component {
               onChange={(v) => this.changeTheValue('metadata', v)}
             />
             <ArrayInput
-              label="IP Whitelist"
+              label="IP allowed list"
               placeholder="IP address that can access the service"
               value={this.state.service.ipFiltering.whitelist}
-              help="List of whitelisted IP addresses"
+              help="List of allowed IP addresses"
               onChange={(arr) => this.changeTheValue('ipFiltering.whitelist', arr)}
             />
             <ArrayInput
-              label="IP Blacklist"
+              label="IP blocklist"
               placeholder="IP address that cannot access the service"
               value={this.state.service.ipFiltering.blacklist}
-              help="List of blacklisted IP addresses"
+              help="List of blocked IP addresses"
               onChange={(arr) => this.changeTheValue('ipFiltering.blacklist', arr)}
             />
           </Collapse>
