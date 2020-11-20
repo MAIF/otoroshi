@@ -74,11 +74,57 @@ object WorkFlowResult {
   }
 }
 
+object WorkFlowOperator {
+  def isOperator(value: JsValue): Boolean = value.asOpt[JsObject].exists(_.value.keySet.exists(_.startsWith("$")))
+  def apply(spec: JsValue, ctx: WorkFlowTaskContext): JsValue = {
+    val obj = spec.asOpt[JsObject].getOrElse(Json.obj())
+    obj.value.head match {
+      case ("$path", JsString(path)) =>
+        JsonPathUtils.getAtPolyJson(ctx.json, path).getOrElse(JsNull)
+      case ("$path", v@JsObject(_)) =>
+        JsonPathUtils.getAtPolyJson(ctx.json, v.select("at").as[String]).getOrElse(JsNull)
+      case _ =>
+        spec
+    }
+  }
+}
+
 trait WorkFlowTask {
   def name: String
   def theType: WorkFlowTaskType
   def json: JsValue
   def run(ctx: WorkFlowTaskContext)(implicit ec: ExecutionContext, mat: Materializer, env: Env): Future[WorkFlowResult]
+  def withPredicate(spec: JsValue, ctx: WorkFlowTaskContext)(f: => Future[WorkFlowResult])(implicit ec: ExecutionContext, mat: Materializer, env: Env): Future[WorkFlowResult] = {
+    lazy val predicate = WorkFlowPredicate(spec.select("predicate").asOpt[JsObject].getOrElse(Json.obj()))
+    if (predicate.check(ctx.json)) {
+      f
+    } else {
+      ctx.responses.put(name, Json.obj("success" -> false))
+      WorkFlowResult.WorkFlowFailure(this, new RuntimeException(s"initial predicate check fail")).future
+    }
+  }
+  def applyEl(value: String, ctx: WorkFlowTaskContext, env: Env): String = {
+    WorkFlowEl(value, ctx, env)
+  }
+
+  def applyTransformation(value: JsValue, ctx: WorkFlowTaskContext, env: Env): JsValue = {
+
+    def isOperator(jsObject: JsObject) = WorkFlowOperator.isOperator(jsObject)
+
+    def transform(what: JsValue): JsValue = what match {
+      case JsString(value)                => JsString(applyEl(value, ctx, env))
+      case v@JsNumber(_)                  => v
+      case v@JsBoolean(_)                 => v
+      case JsNull                         => JsNull
+      case v@JsObject(_) if isOperator(v) => transform(WorkFlowOperator.apply(v, ctx))
+      case JsObject(values)               => JsObject(values.map {
+        case (key, value) => (key, transform(value))
+      })
+      case JsArray(values)                => JsArray(values.map(transform))
+    }
+
+    transform(value)
+  }
 }
 
 object WorkFlowTask {
@@ -180,7 +226,18 @@ class WorkFlow(spec: WorkFlowSpec) {
   lazy val description: String = spec.description
 
   def run(input: WorkFlowRequest)(implicit ec: ExecutionContext, mat: Materializer, env: Env): Future[WorkFlowResponse] = {
-    val ctx = WorkFlowTaskContext(input.input, new TrieMap[String, JsValue](), new TrieMap[String, JsValue](), new AtomicReference[JsValue](Json.obj("status" -> 200, "headers" -> Json.obj("Content-Type" -> "application/json"), "body" -> Json.obj()))) // TODO
+    val ctx = WorkFlowTaskContext(
+      input.input,
+      new TrieMap[String, JsValue](),
+      new TrieMap[String, JsValue](),
+      new AtomicReference[JsValue](Json.obj(
+        "status" -> 200,
+        "headers" -> Json.obj(
+          "Content-Type" -> "application/json"
+        ),
+        "body" -> Json.obj()
+      ))
+    )
     logger.info("running workflow")
     Source(spec.tasks.toList)
       .mapAsync(1) { task =>
@@ -270,28 +327,13 @@ case class ComposeResponseWorkFlowTask(spec: JsValue) extends WorkFlowTask {
   override def theType: WorkFlowTaskType = WorkFlowTaskType.ComposeResponse
   override def json: JsValue = ComposeResponseWorkFlowTask.format.writes(this)
 
-  lazy val predicate = WorkFlowPredicate(spec.select("predicate").asOpt[JsObject].getOrElse(Json.obj()))
-
-  def applyEl(value: String, ctx: WorkFlowTaskContext, env: Env): String = {
-    // TODO: handle el
-    // GlobalExpressionLanguage
-    WorkFlowEl(value, ctx, env)
-  }
-
-  def applyTransformation(value: JsValue, ctx: WorkFlowTaskContext): JsValue = {
-    // TODO: handle el and refs
-    value
-  }
-
   override def run(ctx: WorkFlowTaskContext)(implicit ec: ExecutionContext, mat: Materializer, env: Env): Future[WorkFlowResult] = {
-    if (predicate.check(ctx.json)) {
-      val response = applyTransformation(spec.select("response").as[JsValue], ctx)
-      val responseStr = applyEl(response.stringify, ctx, env)
-      ctx.response.set(Json.parse(responseStr))
+    withPredicate(spec, ctx) {
+      val response = applyTransformation(spec.select("response").as[JsValue], ctx, env)
+      //val responseStr = applyEl(response.stringify, ctx, env)
+      //ctx.response.set(Json.parse(responseStr))
+      ctx.response.set(response)
       WorkFlowResult.WorkFlowSuccess(this).future
-    } else {
-      ctx.responses.put(name, Json.obj("success" -> false))
-      WorkFlowResult.WorkFlowFailure(this, new RuntimeException(s"initial predicate check fail")).future
     }
   }
 }
@@ -313,26 +355,15 @@ case class HttpWorkFlowTask(spec: JsValue) extends WorkFlowTask {
   override def theType: WorkFlowTaskType = WorkFlowTaskType.HTTP
   override def json: JsValue = HttpWorkFlowTask.format.writes(this)
 
-  def applyEl(value: String, ctx: WorkFlowTaskContext, env: Env): String = {
-    // TODO: handle el
-    // GlobalExpressionLanguage
-    WorkFlowEl(value, ctx, env)
-  }
-
-  def applyTransformation(value: JsValue, ctx: WorkFlowTaskContext): JsValue = {
-    // TODO: handle el and refs
-    value
-  }
-
   lazy val name                         = spec.select("name").as[String]
   lazy val requestSpec                  = spec.select("request").as[JsObject]
   lazy val method: String               = requestSpec.select("method").asOpt[String].map(_.toUpperCase()).getOrElse("GET")
-  def url(ctx: WorkFlowTaskContext, env: Env): String = applyEl(applyTransformation(requestSpec.select("url").as[JsValue], ctx).as[String], ctx, env)
+  def url(ctx: WorkFlowTaskContext, env: Env): String = applyEl(applyTransformation(requestSpec.select("url").as[JsValue], ctx, env).as[String], ctx, env)
   lazy val timeout: FiniteDuration      = requestSpec.select("timeout").asOpt[Long].getOrElse(10000L).millis
   def headers(ctx: WorkFlowTaskContext, env: Env): Map[String, String] = requestSpec.select("headers").asOpt[Map[String, String]].getOrElse(Map.empty).mapValues(v => applyEl(v, ctx, env))
   lazy val tls: MtlsConfig              = requestSpec.select("tls").asOpt(MtlsConfig.format).getOrElse(MtlsConfig())
   def bodyOpt(ctx: WorkFlowTaskContext, env: Env): Option[ByteString]  = requestSpec.select("body").asOpt[JsValue].map { body =>
-    val finalBody = applyTransformation(body, ctx)
+    val finalBody = applyTransformation(body, ctx, env)
     finalBody match {
       case JsString(value) => ByteString(applyEl(value, ctx, env))
       case JsNumber(value) => ByteString(value.toString())
@@ -343,10 +374,9 @@ case class HttpWorkFlowTask(spec: JsValue) extends WorkFlowTask {
   lazy val successSpec                  = spec.select("success").as[JsObject]
   lazy val successStatuses              = successSpec.select("statuses").asOpt[JsArray].map(_.value.map(_.asInt)).getOrElse(Seq(200))
   lazy val successPredicate             = WorkFlowPredicate(successSpec.select("predicate").asOpt[JsObject].getOrElse(Json.obj()))
-  lazy val predicate                    = WorkFlowPredicate(spec.select("predicate").asOpt[JsObject].getOrElse(Json.obj()))
 
   override def run(ctx: WorkFlowTaskContext)(implicit ec: ExecutionContext, mat: Materializer, env: Env): Future[WorkFlowResult] = {
-    if (predicate.check(ctx.json)) {
+    withPredicate(spec, ctx) {
       val finalUrl = url(ctx, env)
       val req = env.MtlsWs.url(finalUrl, tls) // TODO: handle service-id
         .withRequestTimeout(timeout) // TODO: handle apikey
@@ -384,9 +414,6 @@ case class HttpWorkFlowTask(spec: JsValue) extends WorkFlowTask {
             WorkFlowResult.WorkFlowFailure(this, new RuntimeException(s"success predicate check fail"))
           }
         }
-    } else {
-      ctx.responses.put(name, Json.obj("success" -> false))
-      WorkFlowResult.WorkFlowFailure(this, new RuntimeException(s"initial predicate check fail")).future
     }
   }
 }
