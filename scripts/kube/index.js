@@ -28,6 +28,83 @@ function handle(req, res) {
   }
 }
 
+function fakeDNS(req, res) {
+  res.status(200).send(JSON.parse(`{
+    "apiVersion": "operator.openshift.io/v1",
+    "kind": "DNS",
+    "metadata": {
+      "creationTimestamp": "2020-08-18T16:08:43Z",
+      "finalizers": [
+        "dns.operator.openshift.io/dns-controller"
+      ],
+      "generation": 11,
+      "name": "default",
+      "resourceVersion": "46598410",
+      "selfLink": "/apis/operator.openshift.io/v1/dnses/default",
+      "uid": "32967567-11bc-46d7-8af2-bf5af50e66ee"
+    },
+    "spec": {
+      "servers": [
+        {
+          "forwardPlugin": {
+            "upstreams": [
+              "172.30.150.28:5353"
+            ]
+          },
+          "name": "otoroshi-dns",
+          "zones": [
+            "gateway-api-tdv.otoroshi.mesh"
+          ]
+        }
+      ]
+    }
+  }`))
+}
+
+function fakeService(req, res) {
+  res.status(200).send(JSON.parse(`{
+    "apiVersion": "v1",
+    "kind": "Service",
+    "metadata": {
+      "name": "otoroshi-dns",
+      "namespace": "gateway-api-tdv",
+      "labels": {
+        "app": "otoroshi",
+        "component": "coredns"
+      }
+    },
+    "spec": {
+      "clusterIP": "172.30.150.29",
+      "selector": {
+        "app": "otoroshi",
+        "component": "coredns"
+      },
+      "type": "ClusterIP",
+      "ports": [
+        {
+          "name": "dns",
+          "port": 5353,
+          "protocol": "UDP"
+        },
+        {
+          "name": "dns-tcp",
+          "port": 5353,
+          "protocol": "TCP"
+        }
+      ]
+    }
+  }`))
+}
+
+function fakeDNSPost(req, res) {
+  console.log(req.headers);
+  console.log(JSON.stringify(req.body, null, 2))
+  res.status(200).send({});
+}
+
+app.patch('/apis/operator.openshift.io/v1/dnses/default', fakeDNSPost); 
+app.get('/apis/operator.openshift.io/v1/dnses/default', fakeDNS); 
+app.get('/apis/v1/services/otoroshi-dns', fakeService); 
 app.get('/apis/:version/:resource', handle);
 app.get('/apis/:api/:version/:resource', handle);
 

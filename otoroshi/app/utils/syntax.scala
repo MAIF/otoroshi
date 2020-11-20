@@ -118,6 +118,10 @@ object implicits {
       }
     }
   }
+  implicit class BetterJsLookupResult(private val obj: JsLookupResult) extends AnyVal {
+    def select(name: String): JsLookupResult = (obj \ name)
+    def select(index: Int): JsLookupResult = (obj \ index)
+  }
   implicit class BetterJsReadable(private val obj: JsReadable) extends AnyVal {
     def asString: String = obj.as[String]
     def asInt: Int = obj.as[Int]

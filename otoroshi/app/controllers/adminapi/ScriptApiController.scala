@@ -12,6 +12,7 @@ import play.api.mvc._
 import utils._
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success, Try}
 
 class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents)(implicit val env: Env)
   extends AbstractController(cc) with BulkControllerHelper[Script, JsValue] with CrudControllerHelper[Script, JsValue] {
@@ -95,15 +96,25 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
         env.scriptManager.getAnyScript[NamedPlugin](s"cp:$c") match {
           case Left(_) => Json.obj("id" -> s"cp:$c", "name" -> c, "description" -> JsNull)
           case Right(instance) =>
-            Json.obj(
-              "id"            -> s"cp:$c",
-              "name"          -> instance.name,
-              "description"   -> instance.description.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-              "defaultConfig" -> instance.defaultConfig.getOrElse(JsNull).as[JsValue],
-              "configRoot"    -> instance.configRoot.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-              "configSchema"  -> instance.configSchema.getOrElse(JsNull).as[JsValue],
-              "configFlow"    -> JsArray(instance.configFlow.map(JsString.apply))
-            )
+            Try {
+              println(instance)
+              println(instance.name)
+              println(instance.description)
+              Json.obj(
+                "id" -> s"cp:$c",
+                "name" -> instance.name,
+                "description" -> instance.description.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+                "defaultConfig" -> instance.defaultConfig.getOrElse(JsNull).as[JsValue],
+                "configRoot" -> instance.configRoot.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+                "configSchema" -> instance.configSchema.getOrElse(JsNull).as[JsValue],
+                "configFlow" -> JsArray(instance.configFlow.map(JsString.apply))
+              )
+            } match {
+              case Failure(e) =>
+                println("fuuu2")
+                Json.obj()
+              case Success(value) => value
+            }
         }
       }
       env.datastores.scriptDataStore.findAll().map { all =>
