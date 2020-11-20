@@ -116,6 +116,46 @@ class WorkFlowTestSpec(name: String, configurationSpec: => Configuration)
       // println(Json.prettyPrint(resp.json))
     }
 
+    "handle composition" in {
+      val workflow = WorkFlow(WorkFlowSpec.inline(Json.obj(
+        "name" -> "test-workflow",
+        "description" -> "",
+        "tasks" -> Json.arr(
+          Json.obj(
+            "name" -> "call-service",
+            "type" -> "http",
+            "request" -> Json.obj(
+              "method" -> "GET",
+              "url" -> "http://${env.KUBERNETES_SERVICE_HOST}:${env.KUBERNETES_SERVICE_PORT}/apis/v1/services/otoroshi-dns",
+              "headers" -> Json.obj(
+                "accept" -> "application/json",
+                "authorization" -> "Bearer ${file:///var/run/secrets/kubernetes.io/serviceaccount/token}",
+              ),
+              "tls" -> Json.obj(
+                "mtls" -> true,
+                "trustAll" -> true
+              )
+            ),
+            "success" -> Json.obj(
+              "statuses" -> Json.arr(200)
+            )
+          ),
+          Json.obj(
+            "name" -> "response",
+            "type" -> "compose-response",
+            "response" -> Json.obj(
+              "foo" -> "bar",
+              "status" -> Json.obj("$path" -> "$.responses.call-service.status"),
+              "value" -> Json.obj("$path" -> "$.responses.call-service.body.spec"),
+            )
+          )
+        )
+      )))
+
+      val resp = workflow.run(WorkFlowRequest.inline(Json.obj())).futureValue
+      println(Json.prettyPrint(resp.json))
+    }
+
     "shutdown" in {
       stopAll()
     }

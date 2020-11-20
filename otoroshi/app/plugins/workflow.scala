@@ -141,7 +141,7 @@ class WorkflowEndpoint extends RequestTransformer {
   }
 
   override def transformRequestWithCtx(ctx: TransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
-    val specJson = ctx.config.select("workflow").as[JsValue]
+    val specJson = ctx.configFor("WorkflowEndpoint").select("workflow").as[JsValue]
     val spec = WorkFlowSpec.inline(specJson)
     val workflow = WorkFlow(spec)
     awaitingRequests.get(ctx.snowflake).map { promise =>
@@ -166,8 +166,11 @@ class WorkflowEndpoint extends RequestTransformer {
         )
         workflow.run(WorkFlowRequest.inline(input)).map { resp =>
           val response = resp.ctx.response.get
-          val ctype = response.select("headers").select("Content-Type").as[String]
-          val body = if (ctype == "application/json") response.select("body").as[JsValue].stringify else response.select("body").as[String]
+          val ctype = response.select("headers").select("Content-Type").asOpt[String].orElse(response.select("headers").select("content-type").asOpt[String]).getOrElse("text/plain")
+          val body = response.select("body").as[JsValue] match {
+            case JsString(value) => value
+            case value => value.stringify
+          }
           val success = resp.success
           if (success) {
             Left(Results.Status(response.select("status").asInt)(body).as(ctype))
