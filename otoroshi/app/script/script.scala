@@ -149,6 +149,20 @@ trait NamedPlugin { self =>
         genFlow(config, "")
       }
     }
+
+  def jsonDescription(): JsObject = Try {
+    Json.obj(
+      "name" -> name,
+      "description" -> description.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      "defaultConfig" -> defaultConfig.getOrElse(JsNull).as[JsValue],
+      "configRoot" -> configRoot.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      "configSchema" -> configSchema.getOrElse(JsNull).as[JsValue],
+      "configFlow" -> JsArray(configFlow.map(JsString.apply))
+    )
+  } match {
+    case Failure(ex) => Json.obj()
+    case Success(s) => s
+  }
 }
 
 case class HttpRequest(url: String,

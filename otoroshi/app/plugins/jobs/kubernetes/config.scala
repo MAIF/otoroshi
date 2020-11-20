@@ -200,7 +200,7 @@ object KubernetesConfig {
         "otoroshiNamespace" -> "otoroshi",
         "clusterDomain" -> "cluster.local",
         "syncIntervalSeconds" -> 60,
-        "coreDnsEnv" -> null,
+        "coreDnsEnv" -> JsNull,
         "watchTimeoutSeconds" -> 60,
         "watchGracePeriodSeconds" -> 5,
         "templates" -> Json.obj(
