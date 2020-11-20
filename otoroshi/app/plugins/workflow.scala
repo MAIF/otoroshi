@@ -1,15 +1,25 @@
 package otoroshi.plugins.workflow
 
+import java.util.concurrent.atomic.AtomicBoolean
+
+import akka.stream.Materializer
 import akka.stream.scaladsl.{Sink, Source}
+import akka.util.ByteString
 import env.Env
-import otoroshi.script.{Job, JobContext, JobId, JobInstantiation, JobKind, JobStarting, JobVisibility}
+import models.{ApiKey, PrivateAppsUser, ServiceDescriptor}
+import otoroshi.script.{AfterRequestContext, BeforeRequestContext, HttpRequest, Job, JobContext, JobId, JobInstantiation, JobKind, JobStarting, JobVisibility, RequestTransformer, TransformerRequestBodyContext, TransformerRequestContext}
 import play.api.Logger
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.concurrent.duration._
 import otoroshi.utils.syntax.implicits._
 import otoroshi.utils.workflow.{WorkFlow, WorkFlowRequest, WorkFlowSpec}
-import play.api.libs.json.{JsObject, Json}
+import play.api.libs.json.{JsBoolean, JsNumber, JsObject, JsString, JsValue, Json}
+import play.api.mvc.{RequestHeader, Result, Results}
+import play.core.parsers.FormUrlEncodedParser
+import utils.TypedMap
+
+import scala.collection.concurrent.TrieMap
 
 class WorkflowJob extends Job {
 
@@ -85,5 +95,92 @@ class WorkflowJob extends Job {
     val spec = ctx.config.select("workflow").asOpt[JsObject].getOrElse(Json.obj())
     val workflow = WorkFlow(WorkFlowSpec.inline(spec))
     workflow.run(WorkFlowRequest.inline(input)).map(_ => ())
+  }
+}
+
+class WorkflowEndpoint extends RequestTransformer {
+
+  private val awaitingRequests = new TrieMap[String, Promise[Source[ByteString, _]]]()
+
+  override def beforeRequest(ctx: BeforeRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
+    awaitingRequests.putIfAbsent(ctx.snowflake, Promise[Source[ByteString, _]])
+    funit
+  }
+
+  override def afterRequest(ctx: AfterRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
+    awaitingRequests.remove(ctx.snowflake)
+    funit
+  }
+
+  override def transformRequestBodyWithCtx(ctx: TransformerRequestBodyContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
+    awaitingRequests.get(ctx.snowflake).map(_.trySuccess(ctx.body))
+    ctx.body
+  }
+
+  override def name: String = "Workflow endpoint"
+
+  override def defaultConfig: Option[JsObject] = {
+    Some(
+      Json.obj(
+        "WorkflowEndpoint" -> Json.obj(
+          "workflow" -> Json.obj()
+        )
+      )
+    )
+  }
+
+  override def description: Option[String] = {
+    Some(
+      s"""This plugin runs a workflow and return the response
+         |
+         |```json
+         |${Json.prettyPrint(defaultConfig.get)}
+         |```
+      """.stripMargin
+    )
+  }
+
+  override def transformRequestWithCtx(ctx: TransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
+    val specJson = ctx.config.select("workflow").as[JsValue]
+    val spec = WorkFlowSpec.inline(specJson)
+    val workflow = WorkFlow(spec)
+    awaitingRequests.get(ctx.snowflake).map { promise =>
+      val consumed = new AtomicBoolean(false)
+      val bodySource: Source[ByteString, _] = Source
+        .future(promise.future)
+        .flatMapConcat(s => s)
+        .alsoTo(Sink.onComplete {
+          case _ => consumed.set(true)
+        })
+
+      bodySource.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
+        val body = if (ctx.request.contentType.getOrElse("--").contains("application/json")) Json.parse(bodyRaw.utf8String) else JsString(bodyRaw.utf8String)
+        val input = Json.obj(
+          "request" -> ctx.rawRequest.json,
+          "otoroshiRequest" -> ctx.otoroshiRequest.json,
+          "snowflake" -> ctx.snowflake,
+          "descriptor" -> ctx.descriptor.json,
+          "config" -> ctx.config,
+          "globalConfig" -> ctx.globalConfig,
+          "body" -> body
+        )
+        workflow.run(WorkFlowRequest.inline(input)).map { resp =>
+          val response = resp.ctx.response.get
+          val ctype = response.select("headers").select("Content-Type").as[String]
+          val body = if (ctype == "application/json") response.select("body").as[JsValue].stringify else response.select("body").as[String]
+          val success = resp.success
+          if (success) {
+            Left(Results.Status(response.select("status").asInt)(body).as(ctype))
+          } else {
+            Left(Results.InternalServerError(Json.obj("error" -> "workflow failed")))
+          }
+        }
+      } andThen {
+        case _ =>
+          if (!consumed.get()) bodySource.runWith(Sink.ignore)
+      }
+    } getOrElse {
+      Results.InternalServerError(Json.obj("error" -> "body_error")).leftf
+    }
   }
 }
