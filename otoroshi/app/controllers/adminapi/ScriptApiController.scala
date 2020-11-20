@@ -95,26 +95,7 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
       def extractInfos(c: String): JsValue = {
         env.scriptManager.getAnyScript[NamedPlugin](s"cp:$c") match {
           case Left(_) => Json.obj("id" -> s"cp:$c", "name" -> c, "description" -> JsNull)
-          case Right(instance) =>
-            Try {
-              println(instance)
-              println(instance.name)
-              println(instance.description)
-              Json.obj(
-                "id" -> s"cp:$c",
-                "name" -> instance.name,
-                "description" -> instance.description.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-                "defaultConfig" -> instance.defaultConfig.getOrElse(JsNull).as[JsValue],
-                "configRoot" -> instance.configRoot.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-                "configSchema" -> instance.configSchema.getOrElse(JsNull).as[JsValue],
-                "configFlow" -> JsArray(instance.configFlow.map(JsString.apply))
-              )
-            } match {
-              case Failure(e) =>
-                println("fuuu2")
-                Json.obj()
-              case Success(value) => value
-            }
+          case Right(instance) =>  instance.jsonDescription ++ Json.obj("id" -> s"cp:$c", "name" -> instance.name)
         }
       }
       env.datastores.scriptDataStore.findAll().map { all =>
