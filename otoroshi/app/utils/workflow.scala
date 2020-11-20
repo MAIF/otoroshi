@@ -2,6 +2,7 @@ package otoroshi.utils.workflow
 
 import java.io.File
 import java.nio.file.Files
+import java.util.concurrent.atomic.AtomicReference
 
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Sink, Source}
@@ -57,6 +58,7 @@ sealed trait WorkFlowTaskType
 
 object WorkFlowTaskType {
   case object HTTP extends WorkFlowTaskType
+  case object ComposeResponse extends WorkFlowTaskType
 }
 
 sealed trait WorkFlowResult {
@@ -83,6 +85,7 @@ object WorkFlowTask {
   val format = new Format[WorkFlowTask] {
     override def reads(json: JsValue): JsResult[WorkFlowTask] = json.select("type").asString match {
       case "http" => HttpWorkFlowTask.format.reads(json)
+      case "compose-response" => ComposeResponseWorkFlowTask.format.reads(json)
       case v => JsError(s"$v is not a valid task type")
     }
     override def writes(o: WorkFlowTask): JsValue = o.json
@@ -157,11 +160,12 @@ object WorkFlowEl {
   }
 }
 
-case class WorkFlowTaskContext(input: JsValue, cache: TrieMap[String, JsValue], responses: TrieMap[String, JsValue]) {
+case class WorkFlowTaskContext(input: JsValue, cache: TrieMap[String, JsValue], responses: TrieMap[String, JsValue], response: AtomicReference[JsValue]) {
   def json: JsValue = Json.obj(
     "input" -> input,
     "cache" -> JsObject(cache),
-    "responses" -> JsObject(responses)
+    "responses" -> JsObject(responses),
+    "response" -> Option(response.get()).getOrElse(Json.obj()).as[JsValue]
   )
 }
 
@@ -176,7 +180,7 @@ class WorkFlow(spec: WorkFlowSpec) {
   lazy val description: String = spec.description
 
   def run(input: WorkFlowRequest)(implicit ec: ExecutionContext, mat: Materializer, env: Env): Future[WorkFlowResponse] = {
-    val ctx = WorkFlowTaskContext(input.input, new TrieMap[String, JsValue](), new TrieMap[String, JsValue]()) // TODO
+    val ctx = WorkFlowTaskContext(input.input, new TrieMap[String, JsValue](), new TrieMap[String, JsValue](), new AtomicReference[JsValue](Json.obj("status" -> 200, "headers" -> Json.obj("Content-Type" -> "application/json"), "body" -> Json.obj()))) // TODO
     logger.info("running workflow")
     Source(spec.tasks.toList)
       .mapAsync(1) { task =>
@@ -244,6 +248,50 @@ case class WorkFlowPredicate(spec: JsValue) {
       true
     } else {
       operator.apply(left, right, payload)
+    }
+  }
+}
+
+object ComposeResponseWorkFlowTask {
+  val format = new Format[ComposeResponseWorkFlowTask] {
+    override def reads(json: JsValue): JsResult[ComposeResponseWorkFlowTask] = Try {
+      ComposeResponseWorkFlowTask(json)
+    } match {
+      case Failure(e) => JsError(e.getMessage)
+      case Success(value) => JsSuccess(value)
+    }
+    override def writes(o: ComposeResponseWorkFlowTask): JsValue = ???
+  }
+}
+
+case class ComposeResponseWorkFlowTask(spec: JsValue) extends WorkFlowTask {
+
+  lazy val name = spec.select("name").as[String]
+  override def theType: WorkFlowTaskType = WorkFlowTaskType.ComposeResponse
+  override def json: JsValue = ComposeResponseWorkFlowTask.format.writes(this)
+
+  lazy val predicate = WorkFlowPredicate(spec.select("predicate").asOpt[JsObject].getOrElse(Json.obj()))
+
+  def applyEl(value: String, ctx: WorkFlowTaskContext, env: Env): String = {
+    // TODO: handle el
+    // GlobalExpressionLanguage
+    WorkFlowEl(value, ctx, env)
+  }
+
+  def applyTransformation(value: JsValue, ctx: WorkFlowTaskContext): JsValue = {
+    // TODO: handle el and refs
+    value
+  }
+
+  override def run(ctx: WorkFlowTaskContext)(implicit ec: ExecutionContext, mat: Materializer, env: Env): Future[WorkFlowResult] = {
+    if (predicate.check(ctx.json)) {
+      val response = applyTransformation(spec.select("response").as[JsValue], ctx)
+      val responseStr = applyEl(response.stringify, ctx, env)
+      ctx.response.set(Json.parse(responseStr))
+      WorkFlowResult.WorkFlowSuccess(this).future
+    } else {
+      ctx.responses.put(name, Json.obj("success" -> false))
+      WorkFlowResult.WorkFlowFailure(this, new RuntimeException(s"initial predicate check fail")).future
     }
   }
 }
