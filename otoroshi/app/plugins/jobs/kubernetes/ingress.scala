@@ -15,7 +15,6 @@ import io.kubernetes.client.util.credentials.AccessTokenAuthentication
 import models._
 import org.joda.time.DateTime
 import otoroshi.plugins.jobs.kubernetes.IngressSupport.IntOrString
-import otoroshi.plugins.jobs.kubernetes.KubernetesCRDsJob.{getNamespaces, logger}
 import otoroshi.script._
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
@@ -460,7 +459,7 @@ object KubernetesIngressSyncJob {
     val _client = new KubernetesClient(_conf, env)
     if (running.compareAndSet(false, true)) {
       shouldRunNext.set(false)
-      getNamespaces(_client, _conf).flatMap { namespaces =>
+      KubernetesCRDsJob.getNamespaces(_client, _conf).flatMap { namespaces =>
         logger.info(s"otoroshi will sync ingresses for the following namespaces: [ ${namespaces.mkString(", ")} ]")
         val conf = _conf.copy(namespaces = namespaces)
         val client = new KubernetesClient(conf, env)
