@@ -95,3 +95,7 @@ redis:
     enabled: false
   usePassword: false
 
+webhooks:
+  validation: true
+  sidecarInject: false
+
