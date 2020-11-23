@@ -42,6 +42,14 @@ case class ApiActionContext[A](apiKey: ApiKey, request: Request[A]) {
 
   private val bouRef = new AtomicReference[Either[String, Option[BackOfficeUser]]]()
 
+  def userIsSuperAdmin(implicit env: Env): Boolean = {
+    backOfficeUser match {
+      case Left(_) => false
+      case Right(None) => false
+      case Right(Some(user)) => user.rights.superAdmin
+    }
+  }
+
   def oneAuthorizedTenant(implicit env: Env): TenantId = backOfficeUser.toOption.flatten.map(_.rights.oneAuthorizedTenant).getOrElse(TenantId.default)
   def oneAuthorizedTeam(implicit env: Env): TeamId = backOfficeUser.toOption.flatten.map(_.rights.oneAuthorizedTeam).getOrElse(TeamId.default)
 
