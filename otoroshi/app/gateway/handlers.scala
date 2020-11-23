@@ -6,6 +6,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import akka.actor.{Actor, Props}
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
+import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import auth.{AuthModuleConfig, SessionCookieValues}
 import com.google.common.base.Charsets
@@ -55,6 +56,7 @@ class ErrorHandler()(implicit env: Env) extends HttpErrorHandler {
     RequestSink.maybeSinkRequest(
       snowflake,
       request,
+      Source.empty,
       attrs,
       RequestOrigin.ErrorHandler,
       statusCode,
@@ -87,6 +89,7 @@ class ErrorHandler()(implicit env: Env) extends HttpErrorHandler {
     RequestSink.maybeSinkRequest(
       snowflake,
       request,
+      Source.empty,
       attrs,
       RequestOrigin.ErrorHandler,
       500,
