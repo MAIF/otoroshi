@@ -4,7 +4,7 @@ import { v4 as uuid } from 'uuid';
 
 class Toast extends Component {
   render() {
-    const backgroundColor = '#333';
+    const backgroundColor = '#5A5A5A';
     let color = null;
     if (this.props.toast.kind === 'error') {
       color = 'rgb(213, 68, 63)';
@@ -88,6 +88,7 @@ export class Toasts extends Component {
   render() {
     return (
       <div
+        id="otoroshi-toasts"
         style={{
           padding: 10,
           paddingBottom: 0,
