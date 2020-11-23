@@ -1,11 +1,6 @@
-# Managing service groups
+# Service groups
 
 Go to `settings (cog icon) / All service groups` to access the list of service groups.
-
-@@@ div { .centered-img }
-<img src="../img/settings-menu-groups.png" />
-@@@
-
 And you should see the list of existing `Service groups`.
 
 @@@ div { .centered-img }
@@ -31,56 +26,17 @@ A `service group` is just some kind of logical container for `service descriptor
 ## Create a service group
 
 A `service group` is a really simple structure with an `id`, a name and a description. To create a new one, just click on the `Add item` button.
+Modify the name and the description of the group, metadata can be added.
+Then, click on `Create group`
 
-@@@ div { .centered-img }
-<img src="../img/service-groups-add.png" />
-@@@
-
-modify the name and the description of the group. Metadata can be added.
-
-@@@ div { .centered-img }
-<!-- TODO: Update screen print -->
-<img src="../img/service-groups-new.png" />
-@@@
-
-and click on `Create group`
-
-@@@ div { .centered-img }
-<!-- TODO: Update screen print -->
-<img src="../img/service-groups-create.png" />
-@@@
-
-Then, you should find your brand new `Service group` in the list of `Service groups`
-
-@@@ div { .centered-img }
-<img src="../img/service-groups-created.png" />
-@@@
+You should find your brand new `Service group` in the list of `Service groups`
 
 ## Update a service
 
 To update a `Service group`, just click on the edit button <img src="../img/edit.png" /> of your `Service group`
-
-@@@ div { .centered-img }
-<img src="../img/service-groups-edit.png" />
-@@@
-
 Update the name, the description or metadata of the `Service group` and click on the `Update group` button to validate update.
-
-@@@ div { .centered-img }
-<!-- TODO: Update screen print -->
-<img src="../img/service-groups-update.png" />
-@@@
 
 ## Delete a service group
 
-To delete a `Service group`, just click on the delete button <img src="../img/delete.png" /> of your `Service group`
-
-@@@ div { .centered-img }
-<img src="../img/service-groups-delete.png" />
-@@@
-
+To delete a `Service group`, just click on the delete button <img src="../img/delete.png" /> of your `Service group`.
 Finally confirm the command
-
-@@@ div { .centered-img }
-<img src="../img/service-groups-delete-confirm.png" />
-@@@

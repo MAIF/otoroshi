@@ -1,6 +1,6 @@
-# Managing services
+# Service descriptors
 
-Now let's create services. Services or `service descriptor` let you declare how to proxy a call from a domain name to another domain name (or multiple domain names). Let's say you have an API exposed on `http://192.168.0.42` and I want to expose it on `https://my.api.foo`. Otoroshi will proxy all calls to `https://my.api.foo` and forward them to `http://192.168.0.42`. While doing that, it will also log everyhting, control accesses, etc.
+Services or `service descriptor` let you declare how to proxy a call from a domain name to another domain name (or multiple domain names). Let's say you have an API exposed on `http://192.168.0.42` and I want to expose it on `https://my.api.foo`. Otoroshi will proxy all calls to `https://my.api.foo` and forward them to `http://192.168.0.42`. While doing that, it will also log everyhting, control accesses, etc.
 
 ## Otoroshi entities
 
@@ -14,13 +14,11 @@ There are 3 major entities at the core of Otoroshi
 <img src="../img/models-service.png" />
 @@@
 
-A `service descriptor` is contained in one or multiple `service group`s and is allowed to be accessed by all the `api key`s authorized on those `service group`s or apikeys directly authorized on the service itself.
+A `service descriptor` is contained in one or multiple `service groups` and is allowed to be accessed by all the `api keys` authorized on those `service groups` or `api keys` directly authorized on the service itself.
 
 ## Create a service descriptor
 
 To create a `service descriptor`, click on `Add service` on the Otoroshi sidebar. Then you will be asked to choose a name for the service and the group of the service. You also have two buttons to create a new group and assign it to the service and create a new group with a name based on the service name.
-
-<!-- TODO:  multitenant + teams -->
 
 You will have a serie of toggle buttons to
 
@@ -114,10 +112,19 @@ Java
 
 ### Service authentication
 
-See @ref:[Authentication](./9-auth.md)
+See @ref:[Authentication](./auth.md)
 
 ### Api Keys constraints
-<!-- TODO -->
+In Otoroshi you can provide your API key in several ways :
+* From basic authentication - Authorization header
+* With just clien ID
+* From custom Header
+* From JWT token
+
+Select the right way for you, header or query param customization is possible.
+
+Otoroshi provide also a way to filter service access by the presence or not of a tag, metadata or metadata key in API key provided.
+
 
 ### CORS 
 
@@ -129,6 +136,8 @@ If you enabled this section, CORS will be automatically supported on the current
 
 ### JWT tokens verification
 see here @ref:[JWT verification](../topics/jwt-verifications.md)
+
+### Pre routing
 <!-- TODO -->
 
 ### Access validation
@@ -185,9 +194,10 @@ Otoroshi is also capable of checking the health of a service. You can define a U
 ### Custom errors template
 <!-- TODO -->
 
-### Request transformation
-<!-- TODO -->
 
 ### Custom error templates
 
 Finally, you can define custom error templates that will be displayed when an error occurs when Otoroshi try to reach the target or when Otoroshi itself has an error. You can also define custom templates for maintenance and service pages.
+
+### Request transformation
+<!-- TODO -->
