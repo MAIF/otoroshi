@@ -625,9 +625,13 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
   def crdsFetchServiceDescriptors(services: Seq[KubernetesService], endpoints: Seq[KubernetesEndpoint], otoServices: Seq[ServiceDescriptor], conf: KubernetesConfig): Future[Seq[OtoResHolder[ServiceDescriptor]]] = {
     client.fetchOtoroshiResources[ServiceDescriptor]("service-descriptors", ServiceDescriptor._fmt, (a, b) => customizeServiceDescriptor(a, b, services, endpoints, otoServices, conf))
   }
-  def crdsFetchApiKeys(secrets: Seq[KubernetesSecret], apikeys: Seq[ApiKey], registerApkToExport: Function3[String, String, ApiKey, Unit]): Future[Seq[OtoResHolder[ApiKey]]] = {
+  def crdsFetchApiKeys(secrets: Seq[KubernetesSecret], apikeys: Seq[ApiKey], registerApkToExport: Function3[String, String, ApiKey, Unit], conf: KubernetesConfig): Future[Seq[OtoResHolder[ApiKey]]] = {
     val otoApikeySecrets = secrets.filter(_.theType == "otoroshi.io/apikey-secret")
     client.fetchOtoroshiResources[ApiKey]("apikeys", ApiKey._fmt, (a, b) => customizeApiKey(a, b, otoApikeySecrets, apikeys, registerApkToExport))
+      .map {
+        case apikeys if conf.syncDaikokuApikeysOnly => apikeys.filter(_.typed.metadata.contains("daikoku_integration_token"))
+        case apikeys => apikeys
+      }
   }
   def crdsFetchCertificates(certs: Seq[Cert], registerCertToExport: Function3[String, String, Cert, Unit]): Future[Seq[OtoResHolder[Cert]]] = {
     client.fetchOtoroshiResources[Cert]("certificates", Cert._fmt, (a, b) => customizeCert(a, b, certs, registerCertToExport))
@@ -731,7 +735,7 @@ object KubernetesCRDsJob {
       secrets <- clientSupport.client.fetchSecrets()
       serviceGroups <- clientSupport.crdsFetchServiceGroups(otoserviceGroups)
       serviceDescriptors <- clientSupport.crdsFetchServiceDescriptors(services, endpoints, otoserviceDescriptors, conf)
-      apiKeys <- clientSupport.crdsFetchApiKeys(secrets, otoapiKeys, registerApkToExport)
+      apiKeys <- clientSupport.crdsFetchApiKeys(secrets, otoapiKeys, registerApkToExport, conf)
       certificates <- clientSupport.crdsFetchCertificates(otocertificates, registerCertToExport)
       globalConfigs <- clientSupport.crdsFetchGlobalConfig(otoglobalConfigs.head)
       jwtVerifiers <- clientSupport.crdsFetchJwtVerifiers(otojwtVerifiers)
