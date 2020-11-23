@@ -11,6 +11,7 @@ import com.github.blemale.scaffeine.Cache
 import com.typesafe.config.ConfigFactory
 import org.apache.commons.codec.binary.{Base64, Hex}
 import org.apache.commons.io.Charsets
+import otoroshi.plugins.JsonPathUtils
 import play.api.{ConfigLoader, Configuration, Logger}
 import play.api.libs.json._
 import utils.{Regex, RegexPool}
@@ -106,7 +107,7 @@ object implicits {
     def prettify: String = Json.prettyPrint(obj)
     def select(name: String): JsLookupResult = (obj \ name)
     def select(index: Int): JsLookupResult = (obj \ index)
-    def atPath(path: String): JsLookupResult = {
+    def at(path: String): JsLookupResult = {
       val parts = path.split("\\.").toSeq
       parts.foldLeft(obj) {
         case (source: JsObject, part) => (source \ part).as[JsValue]
@@ -115,6 +116,23 @@ object implicits {
       } match {
         case JsNull => JsUndefined(s"path '${path}' does not exists")
         case value => JsDefined(value)
+      }
+    }
+    def atPointer(path: String): JsLookupResult = {
+      val parts = path.split("/").toSeq.filterNot(_.trim.isEmpty)
+      parts.foldLeft(obj) {
+        case (source: JsObject, part) => (source \ part).as[JsValue]
+        case (source: JsArray, part) => (source \ part.toInt).as[JsValue]
+        case (value, part) => JsNull
+      } match {
+        case JsNull => JsUndefined(s"path '${path}' does not exists")
+        case value => JsDefined(value)
+      }
+    }
+    def atPath(path: String): JsLookupResult = {
+      JsonPathUtils.getAtPolyJson(obj, path) match {
+        case None => JsUndefined(s"path '${path}' does not exists")
+        case Some(value) => JsDefined(value)
       }
     }
   }
