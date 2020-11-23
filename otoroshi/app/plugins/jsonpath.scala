@@ -6,7 +6,7 @@ import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider
 import com.jayway.jsonpath.{Configuration, JsonPath}
 import net.minidev.json.{JSONArray, JSONObject}
 import play.api.Logger
-import play.api.libs.json.{JsArray, JsBoolean, JsNumber, JsObject, JsString, JsValue, Json, Writes}
+import play.api.libs.json.{JsArray, JsBoolean, JsNumber, JsObject, JsString, JsValue, Json, Reads, Writes}
 import otoroshi.utils.syntax.implicits._
 
 import scala.util.{Failure, Success, Try}
@@ -16,25 +16,26 @@ object JsonPathUtils {
   private val logger = Logger("otoroshi-plugins-jsonpath-helper")
 
   def matchWith(payload: JsValue, what: String): String => Boolean = { query: String => {
-    Try(JsonPath.parse(Json.stringify(payload)).read[JSONArray](query)) match {
-      case Failure(err) =>
-        logger.error(s"error while matching query '$query' against $what: $err")
-        false
-      case Success(res) =>
-        res.size() > 0
-    }
-  }
-  }
+    getAtPolyJson(payload, query).isDefined
+    // Try(JsonPath.parse(Json.stringify(payload)).read[JSONArray](query)) match {
+    //   case Failure(err) =>
+    //     logger.error(s"error while matching query '$query' against $what: $err")
+    //     false
+    //   case Success(res) =>
+    //     res.size() > 0
+    // }
+  }}
 
-  def getAtJson[T](payload: JsValue, path: String): Option[T] = getAt[T](Json.stringify(payload), path)
+  def getAtJson[T](payload: JsValue, path: String)(implicit r: Reads[T]): Option[T] = getAt[T](Json.stringify(payload), path)(r)
 
-  def getAt[T](payload: String, path: String): Option[T] = {
-    Try(JsonPath.parse(payload).read(path)) match {
-      case Failure(err) =>
-        logger.error(s"error while matching query '$path' against '$payload': $err")
-        None
-      case Success(res) => Option(res)
-    }
+  def getAt[T](payload: String, path: String)(implicit r: Reads[T]): Option[T] = {
+    getAtPoly(payload, path).map(_.as[T](r))
+    // Try(JsonPath.parse(payload).read(path)) match {
+    //   case Failure(err) =>
+    //     logger.error(s"error while matching query '$path' against '$payload': $err")
+    //     None
+    //   case Success(res) => Option(res)
+    // }
   }
 
   //def getAtJsonWithType(payload: JsValue, path: String, typ: String): Option[JsValue] = getAtWithType(Json.stringify(payload), path, typ)
@@ -87,7 +88,9 @@ object JsonPathUtils {
       val docCtx = JsonPath.parse(payload, config)
       Writes.jsonNodeWrites.writes(docCtx.read[JsonNode](path))
     } match {
-      case Failure(e) => None
+      case Failure(e) =>
+        logger.error(s"error while trying to read '$path' on '$payload'", e)
+        None
       case Success(s) => s.some
     }
   }

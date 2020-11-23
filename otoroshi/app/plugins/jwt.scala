@@ -91,7 +91,7 @@ class JwtUserExtractor extends PreRouting {
                 case (key, JsString(value))  => (key, value)
                 case (key, JsBoolean(value)) => (key, value.toString)
               }.toMap
-              val meta: Option[JsValue] = metaPath.flatMap(path => Try(JsonPathUtils.getAt[net.minidev.json.JSONObject](jsonToken, path)).toOption.flatten).map(o => Json.parse(o.toJSONString))
+              val meta: Option[JsValue] = metaPath.flatMap(path => Try(JsonPathUtils.getAt[JsObject](jsonToken, path)).toOption.flatten)
               val user: PrivateAppsUser = PrivateAppsUser(
                 randomId = IdGenerator.uuid,
                 name = JsonPathUtils.getAt[String](jsonToken, namePath).getOrElse("--"),
