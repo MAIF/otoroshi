@@ -8,13 +8,11 @@
   z-index: 100000;
   color: white;
   display: flex;
-  align-items: center;
-  justify-content: space-around;
+  flex-direction: column;
   padding-left: 10px;
   border-bottom-left-radius: 4px;
   a,a:hover{
     color : #856404;
-    text-decoration: underline;
   }
 }
 

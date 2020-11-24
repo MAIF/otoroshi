@@ -57,41 +57,45 @@ export class ReloadNewVersion extends Component {
     if (this.state.unlogged) {
       return (
         <div className="loggedOutVeil">
-          <div className="topbar-popup">
-            Your session has expired and you're now logged out. You will be asked to login in 20
-            seconds.
-            <button
-              type="button"
-              className="btn btn-danger btn-sm"
-              style={{ marginLeft: 10 }}
-              title="Login now !!!"
-              onClick={(e) => window.location.reload()}>
-              <i className="fas fa-sync" />
-            </button>
+          <div className="topbar-popup" style={{justifyContent:'center'}}>
+            <div style={{display:'flex', alignItems:'center',marginLeft:10}}>
+              Your session has expired and you're now logged out. You will be asked to login in 20
+              seconds.
+              <button
+                type="button"
+                className="btn btn-danger btn-xs"
+                style={{ marginLeft: 10 }}
+                title="Login now !!!"
+                onClick={(e) => window.location.reload()}>
+                <i className="fas fa-sync" />
+              </button>
+            </div>
           </div>
         </div>
       );
     }
     return (
       <div className="topbar-popup">
-        A new version of Otoroshi has been deployed
         <button
           type="button"
-          className="btn btn-danger btn-sm"
-          style={{ marginLeft: 10 }}
-          onClick={(e) => window.location.reload()}>
-          <i className="fas fa-sync" />
-        </button>
-        <button
-          type="button"
-          className="btn btn-info btn-sm"
-          style={{ marginLeft: 10 }}
+          className="btn btn-xs"
+          style={{ alignSelf: 'flex-end',marginTop:5 }}
           onClick={(e) => {
             e.preventDefault();
             this.setState({ display: false, versionClosed: true });
           }}>
-          <i className="fas fa-times" />
+        <i className="fas fa-times" />
         </button>
+        <div style={{display:'flex', alignItems:'center', justifyContent:'center'}}>
+          A new version of Otoroshi has been deployed
+          <button
+            type="button"
+            className="btn btn-danger btn-sm"
+            style={{ marginLeft: 10 }}
+            onClick={(e) => window.location.reload()}>
+            <i className="fas fa-sync" />
+          </button>
+        </div>
       </div>
     );
   }

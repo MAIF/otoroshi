@@ -1,20 +1,28 @@
-
-
-.dropdown-menu{
-    background-color: $fondBody;
-  }
-  .dropdown-menu>li>a:focus, .dropdown-menu>li>a:hover {background-image: none;
-      background-color: $fondGrisclairSurvolMenu;
-  }
-  .dropdown-menu>li>a {
+.dropdown-menu {
+  background-color: $fondBody;
+  > li > a {
     color: $colorGris;
-    &:hover .monkeyMenu .st1{
-      fill:#262626;
+    &:focus,
+    &:hover {
+      background-image: none;
+      background-color: $fondGrisclairSurvolMenu;
+
+      .monkeyMenu {
+        .st1 {
+          fill: #262626;
+        }
+
+        .st0 {
+          fill: #9e9e9e;
+        }
+      }
     }
-    &:hover .monkeyMenu .st0{
-      fill:#9e9e9e;
-    }
-    .monkeyMenu{
+    .monkeyMenu {
       margin-left: -8px;
     }
+  }
+}
+
+.dropdown .dropdown-toggle:hover{
+  background-color: lighten($fondBody,10%) !important;
 }
