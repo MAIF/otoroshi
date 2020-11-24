@@ -639,7 +639,7 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
     client.fetchOtoroshiResources[Cert]("certificates", Cert._fmt, (a, b) => customizeCert(a, b, certs, registerCertToExport))
   }
   def crdsFetchGlobalConfig(config: GlobalConfig): Future[Seq[OtoResHolder[GlobalConfig]]] = client.fetchOtoroshiResources[GlobalConfig]("global-configs", GlobalConfig._fmt, (a, b) => customizeGlobalConfig(a, b, config))
-  def crdsFetchJwtVerifiers(verifiers: Seq[GlobalJwtVerifier]): Future[Seq[OtoResHolder[JwtVerifier]]] = client.fetchOtoroshiResources[JwtVerifier]("jwt-verifiers", JwtVerifier.fmt, (a, b) => customizeJwtVerifier(a, b, verifiers))
+  def crdsFetchJwtVerifiers(verifiers: Seq[GlobalJwtVerifier]): Future[Seq[OtoResHolder[GlobalJwtVerifier]]] = client.fetchOtoroshiResources[GlobalJwtVerifier]("jwt-verifiers", GlobalJwtVerifier._fmt, (a, b) => customizeJwtVerifier(a, b, verifiers))
   def crdsFetchAuthModules(modules: Seq[AuthModuleConfig]): Future[Seq[OtoResHolder[AuthModuleConfig]]] = client.fetchOtoroshiResources[AuthModuleConfig]("auth-modules", AuthModuleConfig._fmt, (a, b) => customizeAuthModule(a, b, modules))
   def crdsFetchScripts(scripts: Seq[Script]): Future[Seq[OtoResHolder[Script]]] = client.fetchOtoroshiResources[Script]("scripts", Script._fmt, (a, b) => customizeScripts(a, b, scripts))
   def crdsFetchTcpServices(services: Seq[TcpService]): Future[Seq[OtoResHolder[TcpService]]] = client.fetchOtoroshiResources[TcpService]("tcp-services", TcpService.fmt, (a, b) => customizeTcpService(a, b, services))
@@ -665,7 +665,7 @@ case class CRDContext(
   apiKeys: Seq[OtoResHolder[ApiKey]],
   certificates: Seq[OtoResHolder[Cert]],
   globalConfigs: Seq[OtoResHolder[GlobalConfig]],
-  jwtVerifiers: Seq[OtoResHolder[JwtVerifier]],
+  jwtVerifiers: Seq[OtoResHolder[GlobalJwtVerifier]],
   authModules: Seq[OtoResHolder[AuthModuleConfig]],
   scripts: Seq[OtoResHolder[Script]],
   tcpServices: Seq[OtoResHolder[TcpService]],
@@ -675,7 +675,7 @@ case class CRDContext(
   otoapiKeys: Seq[ApiKey],
   otocertificates: Seq[Cert],
   otoglobalConfigs: Seq[GlobalConfig],
-  otojwtVerifiers: Seq[JwtVerifier],
+  otojwtVerifiers: Seq[GlobalJwtVerifier],
   otoauthModules: Seq[AuthModuleConfig],
   otoscripts: Seq[Script],
   ototcpServices: Seq[TcpService],

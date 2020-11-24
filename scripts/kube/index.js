@@ -5,6 +5,65 @@ const app = express();
 
 app.use(bodyParsers.json());
 
+const mockJwtVerifier = {
+  "apiVersion": "proxy.otoroshi.io/v1alpha1",
+  "kind": "JwtVerifier",
+  "metadata": {
+    "creationTimestamp": "2020-11-20T09:55:32Z",
+    "generation": 1,
+    "name": "jwt-verifier",
+    "namespace": "default",
+    "resourceVersion": "115398009",
+    "uid": "f73679c0-d952-43ab-93bf-f733c9356dad"
+  },
+  "spec": {
+    "algoSettings": {
+      "base64": false,
+      "secret": "secret",
+      "size": 512,
+      "type": "HSAlgoSettings"
+    },
+    "description": "token jwt verifier",
+    "source": {
+      "name": "Authorization",
+      "remove": "Bearer ",
+      "type": "InHeader"
+    },
+    "strategy": {
+      "algoSettings": {
+        "base64": false,
+        "secret": "secret",
+        "size": 512,
+        "type": "HSAlgoSettings"
+      },
+      "transformSettings": {
+        "location": {
+          "name": "Authorization",
+          "remove": "Bearer ",
+          "type": "InHeader"
+        },
+        "mappingSettings": {
+          "map": {},
+          "remove": [],
+          "values": {
+            "foo-ide": "${token.user:null}",
+            "foo-idp": "${token.id:null}",
+            "foo-num": "${token.num|token.num:null}",
+            "num": "${token.num|token.num:null}",
+            "roles": "${token.auth|token.roles:null},${apikey.metadata.ROLES:null}",
+            "sub": "${token.user:null}"
+          }
+        }
+      },
+      "type": "Transform",
+      "verificationSettings": {
+        "arrayFields": {},
+        "fields": {}
+      }
+    }
+  }
+}
+
 function handle(req, res) {
   if (req.query.watch === '1' || req.query.watch === 1) {
     console.log('watch', req.method, req.path, req.query.watch, req.query.resourceVersion, req.query.timeoutSeconds)
@@ -13,18 +72,23 @@ function handle(req, res) {
       res.end();
     }, parseInt(req.query.timeoutSeconds, 10) * 1000)
   } else {
-    res.status(200).send({
-      apiVersion: req.params.api || 'v1',
-      kind: req.params.resource,
-      metadata: {
-        name: "http-app-group",
-        namespace: req.params.namespace || 'default',
-        resourceVersion: "1"
-      },       
-      spec: {
-        description: "a group to hold services about the http-app"
-      }
-    });
+    if (req.params.resource === 'jwt-verifiers') {
+      // console.log(`handle request on ${req.method} ${req.path}`)
+      res.status(200).send({ items: [mockJwtVerifier] })
+    } else {
+      res.status(200).send({
+        apiVersion: req.params.api || 'v1',
+        kind: req.params.resource,
+        metadata: {
+          name: "http-app-group",
+          namespace: req.params.namespace || 'default',
+          resourceVersion: "1"
+        },       
+        spec: {
+          description: "a group to hold services about the http-app"
+        }
+      });
+    }
   }
 }
 
