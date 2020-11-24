@@ -325,7 +325,7 @@ case class Cert(
       }
     } recover {
       case e =>
-        DynamicSSLEngineProvider.logger.error(s"Error while checking certificate validity (${name})", e)
+        DynamicSSLEngineProvider.logger.error(s"Error while checking certificate validity (${name})")
         false
     } getOrElse false
   }
@@ -364,6 +364,8 @@ object Cert {
   import SSLImplicits._
 
   val OtoroshiCA = "otoroshi-ca"
+  val OtoroshiWildcard = "otoroshi-wildcard"
+  val OtoroshiClient = "otoroshi-client"
 
   lazy val logger = Logger("otoroshi-cert")
 

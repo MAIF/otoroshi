@@ -986,32 +986,32 @@ class Env(val configuration: Configuration,
       implicit val ev = this
       for {
         _ <- datastores.globalConfigDataStore.migrate()
-        _ <- datastores.certificatesDataStore
-              .findAll()
-              .map { certs =>
-                val hasInitialCert = datastores.certificatesDataStore.hasInitialCerts()(this, otoroshiExecutionContext)
-                if (!hasInitialCert && certs.isEmpty) {
-                  val foundOtoroshiCa         = certs.find(c => c.ca && c.id == Cert.OtoroshiCA)
-                  val foundOtoroshiDomainCert = certs.find(c => c.domain == s"*.${this.domain}")
-                  val ca                      = FakeKeyStore.createCA(s"CN=Otoroshi Root", FiniteDuration(365, TimeUnit.DAYS), None, None)
-                  val caCert                  = Cert(ca.cert, ca.keyPair, None, false).enrich()
-                  if (foundOtoroshiCa.isEmpty) {
-                    logger.info(s"Generating CA certificate for Otoroshi self signed certificates ...")
-                    caCert.copy(id = Cert.OtoroshiCA).save()
-                  }
-                  if (foundOtoroshiDomainCert.isEmpty) {
-                    logger.info(s"Generating a self signed SSL certificate for https://*.${this.domain} ...")
-                    val cert1 = FakeKeyStore.createCertificateFromCA(s"*.${this.domain}",
-                                                                     FiniteDuration(365, TimeUnit.DAYS),
-                                                                     None,
-                                                                     None,
-                                                                     ca.cert,
-                                                                     ca.keyPair)
-                    Cert(cert1.cert, cert1.keyPair, foundOtoroshiCa.getOrElse(caCert), false).enrich().save()
-                  }
-                }
-              }
-        //_ <- clusterAgent.startF()
+        // _ <- datastores.certificatesDataStore
+        //       .findAll()
+        //       .map { certs =>
+        //         val hasInitialCert = datastores.certificatesDataStore.hasInitialCerts()(this, otoroshiExecutionContext)
+        //         if (!hasInitialCert && certs.isEmpty) {
+        //           val foundOtoroshiCa         = certs.find(c => c.ca && c.id == Cert.OtoroshiCA)
+        //           val foundOtoroshiDomainCert = certs.find(c => c.domain == s"*.${this.domain}")
+        //           val ca                      = FakeKeyStore.createCA(s"CN=Otoroshi Root", FiniteDuration(365, TimeUnit.DAYS), None, None)
+        //           val caCert                  = Cert(ca.cert, ca.keyPair, None, false).enrich()
+        //           if (foundOtoroshiCa.isEmpty) {
+        //             logger.info(s"Generating CA certificate for Otoroshi self signed certificates ...")
+        //             caCert.copy(id = Cert.OtoroshiCA).save()
+        //           }
+        //           if (foundOtoroshiDomainCert.isEmpty) {
+        //             logger.info(s"Generating a self signed SSL certificate for https://*.${this.domain} ...")
+        //             val cert1 = FakeKeyStore.createCertificateFromCA(s"*.${this.domain}",
+        //                                                              FiniteDuration(365, TimeUnit.DAYS),
+        //                                                              None,
+        //                                                              None,
+        //                                                              ca.cert,
+        //                                                              ca.keyPair)
+        //             Cert(cert1.cert, cert1.keyPair, foundOtoroshiCa.getOrElse(caCert), false).enrich().save()
+        //           }
+        //         }
+        //       }
+        // _ <- clusterAgent.startF()
       } yield ()
     }
   }(otoroshiExecutionContext)
