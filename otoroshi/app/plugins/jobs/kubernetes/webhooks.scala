@@ -8,6 +8,7 @@ import otoroshi.models.{SimpleOtoroshiAdmin, Team, Tenant}
 import otoroshi.script.{RequestOrigin, RequestSink, RequestSinkContext, Script}
 import otoroshi.tcp.TcpService
 import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.yaml.Yaml
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc.{Result, Results}
@@ -59,7 +60,11 @@ class KubernetesAdmissionWebhookCRDValidator extends RequestSink {
   override def handle(ctx: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Future[Result] = {
     implicit val mat = env.otoroshiMaterializer
     ctx.body.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
-      val json = Json.parse(bodyRaw.utf8String)
+      val json: JsValue = ctx.request.contentType match {
+        case Some(v) if v.contains("application/json") => Json.parse(bodyRaw.utf8String)
+        case Some(v) if v.contains("application/yaml") => Yaml.parse(bodyRaw.utf8String)
+        case _ => Json.parse(bodyRaw.utf8String)
+      }
       val operation = (json \ "request" \ "operation").as[String]
       val obj = (json \ "request" \ "object").as[JsObject]
       val uid = (json \ "request" \ "uid").as[String]
@@ -278,7 +283,11 @@ class KubernetesAdmissionWebhookSidecarInjector extends RequestSink {
   override def handle(ctx: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Future[Result] = {
     implicit val mat = env.otoroshiMaterializer
     ctx.body.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
-      val json = Json.parse(bodyRaw.utf8String)
+      val json: JsValue = ctx.request.contentType match {
+        case Some(v) if v.contains("application/json") => Json.parse(bodyRaw.utf8String)
+        case Some(v) if v.contains("application/yaml") => Yaml.parse(bodyRaw.utf8String)
+        case _ => Json.parse(bodyRaw.utf8String)
+      }
       val operation = (json \ "request" \ "operation").as[String]
       val obj = (json \ "request" \ "object").as[JsObject]
       val uid = (json \ "request" \ "uid").as[String]
@@ -289,8 +298,8 @@ class KubernetesAdmissionWebhookSidecarInjector extends RequestSink {
         "response" -> Json.obj(
           "uid" -> uid,
           "allowed" -> true,
-          "patchType" -> "JSONPatch",
-          "patch" -> "[]".base64 // Base64 jsonpath
+          // "patchType" -> "JSONPatch",
+          // "patch" -> "[]".base64 // Base64 jsonpath
         )
       )).future
     }

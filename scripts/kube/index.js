@@ -109,6 +109,7 @@ app.get('/apis/:version/:resource', handle);
 app.get('/apis/:api/:version/:resource', handle);
 
 app.all('/*', (req, res) => {
+  console.log(`unhandled request on ${req.method} ${req.path}`)
   res.status(204).send('');
 })
 

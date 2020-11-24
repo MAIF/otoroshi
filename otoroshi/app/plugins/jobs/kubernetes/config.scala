@@ -8,6 +8,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import env.Env
 import otoroshi.script._
 import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.yaml.Yaml
 import play.api.libs.json._
 
 import scala.concurrent.ExecutionContext
@@ -62,10 +63,11 @@ object KubernetesConfig {
     sys.env.get("KUBECONFIG") match {
       case Some(configPath) => {
         val configContent = Files.readAllLines(new File(configPath).toPath).asScala.mkString("\n").trim()
-        val yamlReader = new ObjectMapper(new YAMLFactory())
-        val obj = yamlReader.readValue(configContent, classOf[Object])
-        val jsonWriter = new ObjectMapper()
-        val json = Json.parse(jsonWriter.writeValueAsString(obj))
+        // val yamlReader = new ObjectMapper(new YAMLFactory())
+        // val obj = yamlReader.readValue(configContent, classOf[Object])
+        // val jsonWriter = new ObjectMapper()
+        // val json = Json.parse(jsonWriter.writeValueAsString(obj))
+        val json = Yaml.parse(configContent)
         val currentContextName = (json \ "current-context").as[String]
         val currentContextUser = (json \ "contexts").as[JsArray].value.find(v => (v \ "name").as[String] == currentContextName).get.\("context").\("user").as[String]
         val currentContextCluster = (json \ "contexts").as[JsArray].value.find(v => (v \ "name").as[String] == currentContextName).get.\("context").\("cluster").as[String]
