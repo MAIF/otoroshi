@@ -8,6 +8,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import env.Env
 import otoroshi.script._
 import otoroshi.utils.syntax.implicits._
+import otoroshi.utils.yaml.Yaml
 import play.api.libs.json._
 
 import scala.concurrent.ExecutionContext
@@ -19,6 +20,7 @@ case class KubernetesConfig(
   kubeLeader: Boolean,
   trust: Boolean,
   watch: Boolean,
+  syncDaikokuApikeysOnly: Boolean,
   restartDependantDeployments: Boolean,
   coreDnsIntegration: Boolean,
   coreDnsIntegrationDryRun: Boolean,
@@ -61,10 +63,11 @@ object KubernetesConfig {
     sys.env.get("KUBECONFIG") match {
       case Some(configPath) => {
         val configContent = Files.readAllLines(new File(configPath).toPath).asScala.mkString("\n").trim()
-        val yamlReader = new ObjectMapper(new YAMLFactory())
-        val obj = yamlReader.readValue(configContent, classOf[Object])
-        val jsonWriter = new ObjectMapper()
-        val json = Json.parse(jsonWriter.writeValueAsString(obj))
+        // val yamlReader = new ObjectMapper(new YAMLFactory())
+        // val obj = yamlReader.readValue(configContent, classOf[Object])
+        // val jsonWriter = new ObjectMapper()
+        // val json = Json.parse(jsonWriter.writeValueAsString(obj))
+        val json = Yaml.parse(configContent)
         val currentContextName = (json \ "current-context").as[String]
         val currentContextUser = (json \ "contexts").as[JsArray].value.find(v => (v \ "name").as[String] == currentContextName).get.\("context").\("user").as[String]
         val currentContextCluster = (json \ "contexts").as[JsArray].value.find(v => (v \ "name").as[String] == currentContextName).get.\("context").\("cluster").as[String]
@@ -103,6 +106,7 @@ object KubernetesConfig {
           kubeLeader = (conf \ "kubeLeader").asOpt[Boolean].getOrElse(false),
           restartDependantDeployments = (conf \ "restartDependantDeployments").asOpt[Boolean].getOrElse(false),
           watch = (conf \ "watch").asOpt[Boolean].getOrElse(true),
+          syncDaikokuApikeysOnly = (conf \ "syncDaikokuApikeysOnly").asOpt[Boolean].getOrElse(false),
           triggerKey = (conf \ "triggerKey").asOpt[String],
           triggerHost = (conf \ "triggerHost").asOpt[String],
           triggerPath = (conf \ "triggerPath").asOpt[String],
@@ -154,6 +158,7 @@ object KubernetesConfig {
           kubeLeader = (conf \ "kubeLeader").asOpt[Boolean].getOrElse(false),
           restartDependantDeployments = (conf \ "restartDependantDeployments").asOpt[Boolean].getOrElse(false),
           watch = (conf \ "watch").asOpt[Boolean].getOrElse(true),
+          syncDaikokuApikeysOnly = (conf \ "syncDaikokuApikeysOnly").asOpt[Boolean].getOrElse(false),
           triggerKey = (conf \ "triggerKey").asOpt[String],
           triggerHost = (conf \ "triggerHost").asOpt[String],
           triggerPath = (conf \ "triggerPath").asOpt[String],
@@ -192,6 +197,8 @@ object KubernetesConfig {
         "coreDnsIntegrationDryRun" -> false,
         "kubeLeader" -> false,
         "restartDependantDeployments" -> true,
+        "watch" -> true,
+        "syncDaikokuApikeysOnly" -> false,
         "kubeSystemNamespace" -> "kube-system",
         "coreDnsConfigMapName" -> "coredns",
         "coreDnsDeploymentName" -> "coredns",
@@ -200,7 +207,7 @@ object KubernetesConfig {
         "otoroshiNamespace" -> "otoroshi",
         "clusterDomain" -> "cluster.local",
         "syncIntervalSeconds" -> 60,
-        "coreDnsEnv" -> null,
+        "coreDnsEnv" -> JsNull,
         "watchTimeoutSeconds" -> 60,
         "watchGracePeriodSeconds" -> 5,
         "templates" -> Json.obj(

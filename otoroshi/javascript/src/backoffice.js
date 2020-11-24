@@ -53,6 +53,10 @@ window.fetch = function (...params) {
             window.toast('Authorization error', "You're not allowed to do that !", 'error');
           }
           throw new Error("You're not allowed to do that !");
+        } else if (r.status > 499 && window.toast) {
+          return r.then(text => {
+            window.toast('Server error', "An error occured server side: " + text, 'error');
+          });
         } else {
           return r;
         }

@@ -73,6 +73,34 @@ object Project {
           case ("$value", value) => {
             dest = dest ++ Json.obj(key -> value)
           }
+          case ("$at", JsString(searchPath)) => {
+            dest = dest ++ Json.obj(key -> source.at(searchPath).asOpt[JsValue].getOrElse(JsNull).as[JsValue])
+          }
+          case ("$atIf", spec: JsObject) => {
+            val path = (spec \ "path").as[String]
+            val predPath = (spec \ "predicate" \ "at").as[String]
+            val predValue = (spec \ "predicate" \ "value").as[JsValue]
+            val atPredPath = source.at(predPath)
+            if (atPredPath.isDefined && atPredPath.as[JsValue] == predValue) {
+              dest = dest ++ Json.obj(key -> source.at(path).as[JsValue])
+            } else {
+              dest = dest ++ Json.obj(key -> JsNull)
+            }
+          }
+          case ("$pointer", JsString(searchPath)) => {
+            dest = dest ++ Json.obj(key -> source.atPointer(searchPath).asOpt[JsValue].getOrElse(JsNull).as[JsValue])
+          }
+          case ("$pointerIf", spec: JsObject) => {
+            val path = (spec \ "path").as[String]
+            val predPath = (spec \ "predicate" \ "pointer").as[String]
+            val predValue = (spec \ "predicate" \ "value").as[JsValue]
+            val atPredPath = source.atPointer(predPath)
+            if (atPredPath.isDefined && atPredPath.as[JsValue] == predValue) {
+              dest = dest ++ Json.obj(key -> source.atPointer(path).as[JsValue])
+            } else {
+              dest = dest ++ Json.obj(key -> JsNull)
+            }
+          }
           case ("$path", JsString(searchPath)) => {
             dest = dest ++ Json.obj(key -> source.atPath(searchPath).asOpt[JsValue].getOrElse(JsNull).as[JsValue])
           }
@@ -90,7 +118,7 @@ object Project {
           case ("$header", spec: JsObject) => {
             val path = (spec \ "path").as[String]
             val headerName = (spec \ "name").as[String].toLowerCase()
-            val headers = source.atPath(path).as[JsArray]
+            val headers = source.at(path).as[JsArray]
             val header = headers.value.find { header =>
               val name = (header \ "key").as[String].toLowerCase()
               name == headerName

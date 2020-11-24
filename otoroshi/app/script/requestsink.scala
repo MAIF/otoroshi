@@ -1,6 +1,8 @@
 package otoroshi.script
 
 import akka.http.scaladsl.util.FastFuture
+import akka.stream.scaladsl.Source
+import akka.util.ByteString
 import env.Env
 import play.api.libs.json._
 import play.api.mvc.{RequestHeader, Result, Results}
@@ -19,6 +21,7 @@ object RequestSink {
 
   def maybeSinkRequest(snowflake: String,
                        req: RequestHeader,
+                       body: Source[ByteString, _],
                        attrs: utils.TypedMap,
                        origin: RequestOrigin,
                        status: Int,
@@ -37,7 +40,8 @@ object RequestSink {
             attrs = attrs,
             status = status,
             message = message,
-            origin = origin
+            origin = origin,
+            body = body
           )
           val rss = config.scripts.sinkRefs.map(r => env.scriptManager.getAnyScript[RequestSink](r)).collect {
             case Right(rs) => rs
@@ -65,6 +69,7 @@ case class RequestSinkContext(
     origin: RequestOrigin,
     status: Int,
     message: String,
+    body: Source[ByteString, _]
 ) extends ContextWithConfig {
 
   private def conf[A](prefix: String = "config-"): Option[JsValue] = {

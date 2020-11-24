@@ -55,7 +55,7 @@ export class ObjectInput extends Component {
                 type="button"
                 className="btn btn-primary"
                 onClick={this.addFirst}>
-                <i className="glyphicon glyphicon-plus-sign" />{' '}
+                <i className="fas fa-folder" />{' '}
               </button>
             </div>
           </div>
@@ -94,7 +94,7 @@ export class ObjectInput extends Component {
                     type="button"
                     className="btn btn-danger"
                     onClick={(e) => this.remove(e, value[0])}>
-                    <i className="glyphicon glyphicon-trash" />
+                    <i className="fas fa-trash" />
                   </button>
                   {idx === values.length - 1 && (
                     <button
@@ -102,7 +102,7 @@ export class ObjectInput extends Component {
                       type="button"
                       className="btn btn-primary"
                       onClick={this.addNext}>
-                      <i className="glyphicon glyphicon-plus-sign" />{' '}
+                      <i className="fas fa-plus-circle" />{' '}
                     </button>
                   )}
                 </span>
@@ -168,7 +168,7 @@ export class VerticalObjectInput extends Component {
                   type="button"
                   className="btn btn-primary"
                   onClick={this.addFirst}>
-                  <i className="glyphicon glyphicon-plus-sign" />{' '}
+                  <i className="fas fa-plus-circle" />{' '}
                 </button>
               </div>
             </div>
@@ -209,7 +209,7 @@ export class VerticalObjectInput extends Component {
                     className="btn btn-sm btn-danger"
                     style={{ marginRight: 0 }}
                     onClick={(e) => this.remove(e, value[0])}>
-                    <i className="glyphicon glyphicon-trash" />
+                    <i className="fas fa-trash" />
                   </button>
                 </span>
               </div>
@@ -228,7 +228,7 @@ export class VerticalObjectInput extends Component {
                     className="btn btn-sm btn-block btn-primary"
                     style={{ marginRight: 0 }}
                     onClick={this.addNext}>
-                    <i className="glyphicon glyphicon-plus-sign" />{' '}
+                    <i className="fas fa-plus-circle" />{' '}
                   </button>
                 </div>
               )}

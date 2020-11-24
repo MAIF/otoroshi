@@ -420,6 +420,7 @@ class ReverseProxyAction(env: Env) {
               attrs = attrs)
             RequestSink.maybeSinkRequest(snowflake,
               req,
+              ctx.requestBody,
               attrs,
               RequestOrigin.ReverseProxy,
               404,
@@ -443,7 +444,7 @@ class ReverseProxyAction(env: Env) {
                       Some("errors.service.not.found"),
                       attrs = attrs)
                   RequestSink
-                    .maybeSinkRequest(snowflake, req, attrs, RequestOrigin.ReverseProxy, 404, s"Service not found", err).map(Left.apply)
+                    .maybeSinkRequest(snowflake, req, ctx.requestBody, attrs, RequestOrigin.ReverseProxy, 404, s"Service not found", err).map(Left.apply)
                 case Some(desc) if !desc.enabled =>
                   val err = Errors
                     .craftResponseResult(s"Service unavailable",
@@ -454,6 +455,7 @@ class ReverseProxyAction(env: Env) {
                       attrs = attrs)
                   RequestSink.maybeSinkRequest(snowflake,
                     req,
+                    ctx.requestBody,
                     attrs,
                     RequestOrigin.ReverseProxy,
                     503,

@@ -32,8 +32,6 @@ prepare_build () {
 
 build_jdk8 () {
   docker build --no-cache -t otoroshi .
-  docker tag otoroshi "maif/otoroshi:latest" 
-  docker tag otoroshi "maif/otoroshi:$1" 
   docker tag otoroshi "maif/otoroshi:$1-jdk8"
 }
 
@@ -49,6 +47,8 @@ build_jdk10 () {
 
 build_jdk11 () {
   docker build --no-cache -f ./Dockerfile-jdk11 -t otoroshi-jdk11 .
+  docker tag otoroshi "maif/otoroshi:latest" 
+  docker tag otoroshi "maif/otoroshi:$1" 
   docker tag otoroshi-jdk11 "maif/otoroshi:$1-jdk11"
 }
 

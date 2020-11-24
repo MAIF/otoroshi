@@ -3,6 +3,7 @@ package otoroshi.plugins.jobs.kubernetes
 import java.util.concurrent.{Executors, TimeUnit}
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong, AtomicReference}
 
+import akka.util.ByteString
 import akka.http.scaladsl.model.Uri
 import akka.stream.scaladsl.{Sink, Source}
 import auth.AuthModuleConfig
@@ -23,6 +24,7 @@ import otoroshi.tcp.TcpService
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json._
+import play.api.mvc.{Result, Results}
 import security.IdGenerator
 import ssl.{Cert, DynamicSSLEngineProvider}
 import utils.TypedMap
@@ -253,7 +255,7 @@ class ClientSupportTest extends Job {
 
 class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: ExecutionContext, env: Env) {
 
-  private def customizeIdAndName(spec: JsValue, res: KubernetesOtoroshiResource): JsValue = {
+  private[kubernetes] def customizeIdAndName(spec: JsValue, res: KubernetesOtoroshiResource): JsValue = {
     spec.applyOn(s =>
       (s \ "name").asOpt[String] match {
         case None => s.as[JsObject] ++ Json.obj("name" -> res.name)
@@ -287,7 +289,7 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
     )
   }
 
-  private def findEntityByIdAndPath[T](entities: Seq[T], name: String, res: KubernetesOtoroshiResource, metaExtr: T => Map[String, String], idExtr: T => String): Option[T] = {
+  private[kubernetes] def findEntityByIdAndPath[T](entities: Seq[T], name: String, res: KubernetesOtoroshiResource, metaExtr: T => Map[String, String], idExtr: T => String): Option[T] = {
     val existingById = entities.find(s => res.metaId.contains(idExtr(s)))
     val existingKubePath = entities.filter(e => metaExtr(e).get("otoroshi-provider").contains("kubernetes-crds")).find(e => metaExtr(e).get("kubernetes-path").contains(res.path))
     (existingById, existingKubePath) match {
@@ -300,7 +302,7 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
     }
   }
 
-  private def findAndMerge[T](_spec: JsValue, res: KubernetesOtoroshiResource, templateName: String, maybe: Option[T], entities: Seq[T], metaExtr: T => Map[String, String], idExtr: T => String, toJson: T => JsValue, enabledExtr: Option[T => Boolean] = None): JsObject = {
+  private[kubernetes] def findAndMerge[T](_spec: JsValue, res: KubernetesOtoroshiResource, templateName: String, maybe: Option[T], entities: Seq[T], metaExtr: T => Map[String, String], idExtr: T => String, toJson: T => JsValue, enabledExtr: Option[T => Boolean] = None): JsObject = {
     val opt = maybe.orElse(findEntityByIdAndPath[T](entities, templateName, res, metaExtr, idExtr))
     val template = (client.config.templates \ templateName).asOpt[JsObject].getOrElse(Json.obj())
     val spec = template.deepMerge(opt.map(v => toJson(v).as[JsObject].deepMerge(_spec.as[JsObject])).getOrElse(_spec).as[JsObject])
@@ -312,18 +314,15 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
     }
   }
 
-  private def customizeServiceDescriptor(_spec: JsValue, res: KubernetesOtoroshiResource, services: Seq[KubernetesService], endpoints: Seq[KubernetesEndpoint], otoServices: Seq[ServiceDescriptor]): JsValue = {
+  private[kubernetes] def customizeServiceDescriptor(_spec: JsValue, res: KubernetesOtoroshiResource, services: Seq[KubernetesService], endpoints: Seq[KubernetesEndpoint], otoServices: Seq[ServiceDescriptor], conf: KubernetesConfig): JsValue = {
     val spec = findAndMerge[ServiceDescriptor](_spec, res, "service-descriptor", None, otoServices, _.metadata, _.id, _.toJson, Some(_.enabled))
     val globalName = res.annotations.getOrElse("global-name/otoroshi.io", res.name)
+    val coreDnsDomainEnv = conf.coreDnsEnv.map(e => s"$e.").getOrElse("")
     val additionalHosts = Json.arr(
-      s"${globalName}.global.otoroshi.mesh",
-      s"${globalName}.global.otoroshi",
-      s"${globalName}.global.svc.otoroshi",
-      s"${globalName}.global.svc.otoroshi.local",
-      s"${res.name}.${res.namespace}.otoroshi.mesh",
-      s"${res.name}.${res.namespace}.otoroshi",
-      s"${res.name}.${res.namespace}.svc.otoroshi",
-      s"${res.name}.${res.namespace}.svc.otoroshi.local"
+      s"${globalName}.global.${coreDnsDomainEnv}otoroshi.mesh",
+      s"${res.name}.${res.namespace}.${coreDnsDomainEnv}otoroshi.mesh",
+      s"${res.name}.${res.namespace}.svc.${coreDnsDomainEnv}otoroshi.mesh",
+      s"${res.name}.${res.namespace}.svc.${conf.clusterDomain}"
     )
 
     def handleTargetFrom(obj: JsObject, serviceDesc: JsValue): JsValue = {
@@ -479,7 +478,7 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
     )
   }
 
-  private def foundACertWithSameIdAndCsr(id: String, csrJson: JsValue, caOpt: Option[Cert], certs: Seq[Cert]): Option[Cert] = {
+  private[kubernetes] def foundACertWithSameIdAndCsr(id: String, csrJson: JsValue, caOpt: Option[Cert], certs: Seq[Cert]): Option[Cert] = {
     certs
       //.find(c => c.id == id)
       .filter(_.entityMetadata.get("otoroshi-provider").contains("kubernetes-crds"))
@@ -488,7 +487,7 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
       .headOption
   }
 
-  private def customizeCert(_spec: JsValue, res: KubernetesOtoroshiResource, certs: Seq[Cert], registerCertToExport: Function3[String, String, Cert, Unit]): JsValue = {
+  private[kubernetes] def customizeCert(_spec: JsValue, res: KubernetesOtoroshiResource, certs: Seq[Cert], registerCertToExport: Function3[String, String, Cert, Unit]): JsValue = {
     val spec = findAndMerge[Cert](_spec, res, "certificate", None, certs, _.entityMetadata, _.id, _.toJson)
     val id = s"kubernetes-crd-import-${res.namespace}-${res.name}".slugifyWithSlash
     spec.applyOn(s =>
@@ -572,52 +571,52 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
     }
   }
 
-  private def customizeServiceGroup(_spec: JsValue, res: KubernetesOtoroshiResource, entities: Seq[ServiceGroup]): JsValue = {
+  private[kubernetes] def customizeServiceGroup(_spec: JsValue, res: KubernetesOtoroshiResource, entities: Seq[ServiceGroup]): JsValue = {
     val spec = findAndMerge[ServiceGroup](_spec, res, "service-group", None, entities, _.metadata, _.id, _.toJson)
     customizeIdAndName(spec, res)
   }
 
-  private def customizeJwtVerifier(_spec: JsValue, res: KubernetesOtoroshiResource, entities: Seq[GlobalJwtVerifier]): JsValue = {
+  private[kubernetes] def customizeJwtVerifier(_spec: JsValue, res: KubernetesOtoroshiResource, entities: Seq[GlobalJwtVerifier]): JsValue = {
     val spec = findAndMerge[GlobalJwtVerifier](_spec, res, "jwt-verifier", None, entities, _.metadata, _.id, _.asJson, Some(_.enabled))
     customizeIdAndName(spec, res)
   }
 
-  private def customizeAuthModule(_spec: JsValue, res: KubernetesOtoroshiResource, entities: Seq[AuthModuleConfig]): JsValue = {
+  private[kubernetes] def customizeAuthModule(_spec: JsValue, res: KubernetesOtoroshiResource, entities: Seq[AuthModuleConfig]): JsValue = {
     val spec = findAndMerge[AuthModuleConfig](_spec, res, "auth-module", None, entities, _.metadata, _.id, _.asJson)
     customizeIdAndName(spec, res)
   }
 
-  private def customizeScripts(_spec: JsValue, res: KubernetesOtoroshiResource, entities: Seq[Script]): JsValue = {
+  private[kubernetes] def customizeScripts(_spec: JsValue, res: KubernetesOtoroshiResource, entities: Seq[Script]): JsValue = {
     val spec = findAndMerge[Script](_spec, res, "script", None, entities, _.metadata, _.id, _.toJson)
     customizeIdAndName(spec, res)
   }
 
-  private def customizeTenant(_spec: JsValue, res: KubernetesOtoroshiResource, entities: Seq[Tenant]): JsValue = {
+  private[kubernetes] def customizeTenant(_spec: JsValue, res: KubernetesOtoroshiResource, entities: Seq[Tenant]): JsValue = {
     val spec = findAndMerge[Tenant](_spec, res, "organization", None, entities, _.metadata, _.id.value, _.json)
     customizeIdAndName(spec, res)
   }
 
-  private def customizeTeam(_spec: JsValue, res: KubernetesOtoroshiResource, entities: Seq[Team]): JsValue = {
+  private[kubernetes] def customizeTeam(_spec: JsValue, res: KubernetesOtoroshiResource, entities: Seq[Team]): JsValue = {
     val spec = findAndMerge[Team](_spec, res, "team", None, entities, _.metadata, _.id.value, _.json)
     customizeIdAndName(spec, res)
   }
 
-  private def customizeTcpService(_spec: JsValue, res: KubernetesOtoroshiResource, entities: Seq[TcpService]): JsValue = {
+  private[kubernetes] def customizeTcpService(_spec: JsValue, res: KubernetesOtoroshiResource, entities: Seq[TcpService]): JsValue = {
     val spec = findAndMerge[TcpService](_spec, res, "tcp-service", None, entities, _.metadata, _.id, _.json, Some(_.enabled))
     customizeIdAndName(spec, res)
   }
 
-  private def customizeDataExporter(_spec: JsValue, res: KubernetesOtoroshiResource, entities: Seq[DataExporterConfig]): JsValue = {
+  private[kubernetes] def customizeDataExporter(_spec: JsValue, res: KubernetesOtoroshiResource, entities: Seq[DataExporterConfig]): JsValue = {
     val spec = findAndMerge[DataExporterConfig](_spec, res, "data-exporter", None, entities, _.metadata, _.id, _.json, Some(_.enabled))
     customizeIdAndName(spec, res)
   }
 
-  private def customizeAdmin(_spec: JsValue, res: KubernetesOtoroshiResource, entities: Seq[SimpleOtoroshiAdmin]): JsValue = {
+  private[kubernetes] def customizeAdmin(_spec: JsValue, res: KubernetesOtoroshiResource, entities: Seq[SimpleOtoroshiAdmin]): JsValue = {
     val spec = findAndMerge[SimpleOtoroshiAdmin](_spec, res, "admin", None, entities, _.metadata, _.username, _.json)
     customizeIdAndName(spec, res)
   }
 
-  private def customizeGlobalConfig(_spec: JsValue, res: KubernetesOtoroshiResource, entity: GlobalConfig): JsValue = {
+  private[kubernetes] def customizeGlobalConfig(_spec: JsValue, res: KubernetesOtoroshiResource, entity: GlobalConfig): JsValue = {
     val template = (client.config.templates \ "global-config").asOpt[JsObject].getOrElse(Json.obj())
     template.deepMerge(entity.toJson.as[JsObject].deepMerge(_spec.as[JsObject]))
   }
@@ -625,12 +624,16 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
   def crdsFetchTenants(tenants: Seq[Tenant]): Future[Seq[OtoResHolder[Tenant]]] = client.fetchOtoroshiResources[Tenant]("organizations", Tenant.format, (a, b) => customizeTenant(a, b, tenants))
   def crdsFetchTeams(teams: Seq[Team]): Future[Seq[OtoResHolder[Team]]] = client.fetchOtoroshiResources[Team]("teams", Team.format, (a, b) => customizeTeam(a, b, teams))
   def crdsFetchServiceGroups(groups: Seq[ServiceGroup]): Future[Seq[OtoResHolder[ServiceGroup]]] = client.fetchOtoroshiResources[ServiceGroup]("service-groups", ServiceGroup._fmt, (a, b) => customizeServiceGroup(a, b, groups))
-  def crdsFetchServiceDescriptors(services: Seq[KubernetesService], endpoints: Seq[KubernetesEndpoint], otoServices: Seq[ServiceDescriptor]): Future[Seq[OtoResHolder[ServiceDescriptor]]] = {
-    client.fetchOtoroshiResources[ServiceDescriptor]("service-descriptors", ServiceDescriptor._fmt, (a, b) => customizeServiceDescriptor(a, b, services, endpoints, otoServices))
+  def crdsFetchServiceDescriptors(services: Seq[KubernetesService], endpoints: Seq[KubernetesEndpoint], otoServices: Seq[ServiceDescriptor], conf: KubernetesConfig): Future[Seq[OtoResHolder[ServiceDescriptor]]] = {
+    client.fetchOtoroshiResources[ServiceDescriptor]("service-descriptors", ServiceDescriptor._fmt, (a, b) => customizeServiceDescriptor(a, b, services, endpoints, otoServices, conf))
   }
-  def crdsFetchApiKeys(secrets: Seq[KubernetesSecret], apikeys: Seq[ApiKey], registerApkToExport: Function3[String, String, ApiKey, Unit]): Future[Seq[OtoResHolder[ApiKey]]] = {
+  def crdsFetchApiKeys(secrets: Seq[KubernetesSecret], apikeys: Seq[ApiKey], registerApkToExport: Function3[String, String, ApiKey, Unit], conf: KubernetesConfig): Future[Seq[OtoResHolder[ApiKey]]] = {
     val otoApikeySecrets = secrets.filter(_.theType == "otoroshi.io/apikey-secret")
     client.fetchOtoroshiResources[ApiKey]("apikeys", ApiKey._fmt, (a, b) => customizeApiKey(a, b, otoApikeySecrets, apikeys, registerApkToExport))
+      .map {
+        case apikeys if conf.syncDaikokuApikeysOnly => apikeys.filter(_.typed.metadata.contains("daikoku_integration_token"))
+        case apikeys => apikeys
+      }
   }
   def crdsFetchCertificates(certs: Seq[Cert], registerCertToExport: Function3[String, String, Cert, Unit]): Future[Seq[OtoResHolder[Cert]]] = {
     client.fetchOtoroshiResources[Cert]("certificates", Cert._fmt, (a, b) => customizeCert(a, b, certs, registerCertToExport))
@@ -733,8 +736,8 @@ object KubernetesCRDsJob {
       endpoints <- clientSupport.client.fetchEndpoints()
       secrets <- clientSupport.client.fetchSecrets()
       serviceGroups <- clientSupport.crdsFetchServiceGroups(otoserviceGroups)
-      serviceDescriptors <- clientSupport.crdsFetchServiceDescriptors(services, endpoints, otoserviceDescriptors)
-      apiKeys <- clientSupport.crdsFetchApiKeys(secrets, otoapiKeys, registerApkToExport)
+      serviceDescriptors <- clientSupport.crdsFetchServiceDescriptors(services, endpoints, otoserviceDescriptors, conf)
+      apiKeys <- clientSupport.crdsFetchApiKeys(secrets, otoapiKeys, registerApkToExport, conf)
       certificates <- clientSupport.crdsFetchCertificates(otocertificates, registerCertToExport)
       globalConfigs <- clientSupport.crdsFetchGlobalConfig(otoglobalConfigs.head)
       jwtVerifiers <- clientSupport.crdsFetchJwtVerifiers(otojwtVerifiers)
@@ -1215,9 +1218,6 @@ object KubernetesCRDsJob {
            |        fallthrough in-addr.arpa ip6.arpa
            |    }
            |    rewrite name regex (.*)\\.${coreDnsDomainRegexEnv}otoroshi\\.mesh ${conf.otoroshiServiceName}.${conf.otoroshiNamespace}.svc.${conf.clusterDomain}
-           |    rewrite name regex (.*)\\.svc\\.${coreDnsDomainRegexEnv}otoroshi\\.mesh ${conf.otoroshiServiceName}.${conf.otoroshiNamespace}.svc.${conf.clusterDomain}
-           |    # rewrite name regex (.*)\\.svc\\.${coreDnsDomainRegexEnv}otoroshi ${conf.otoroshiServiceName}.${conf.otoroshiNamespace}.svc.${conf.clusterDomain}
-           |    # rewrite name regex (.*)\\.${coreDnsDomainRegexEnv}otoroshi ${conf.otoroshiServiceName}.${conf.otoroshiNamespace}.svc.${conf.clusterDomain}
            |    forward . /etc/resolv.conf
            |    cache 30
            |    loop

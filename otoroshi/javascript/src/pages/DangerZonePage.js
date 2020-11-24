@@ -477,7 +477,7 @@ export class DangerZonePage extends Component {
     'ipFiltering.whitelist': {
       type: 'array',
       props: {
-        label: 'IP Whitelist',
+        label: 'IP allowed list',
         placeholder: 'IP address that can access Otoroshi',
         help: 'Only IP addresses that will be able to access Otoroshi exposed services',
       },
@@ -485,7 +485,7 @@ export class DangerZonePage extends Component {
     'ipFiltering.blacklist': {
       type: 'array',
       props: {
-        label: 'IP Blacklist',
+        label: 'IP blocklist',
         placeholder: 'IP address that cannot access the Otoroshi',
         help: 'IP addresses that will be refused to access Otoroshi exposed services',
       },
@@ -970,10 +970,10 @@ export class DangerZonePage extends Component {
   syncSchema = {
     host: {
       type: 'string',
-      props: { label: 'Master host', placeholder: 'xxxxx-redis.services.clever-cloud.com' },
+      props: { label: 'Leader host', placeholder: 'xxxxx-redis.services.clever-cloud.com' },
     },
-    port: { type: 'number', props: { label: 'Master port', placeholder: '4242' } },
-    password: { type: 'string', props: { label: 'Master password', type: 'password' } },
+    port: { type: 'number', props: { label: 'Leader port', placeholder: '4242' } },
+    password: { type: 'string', props: { label: 'Leader password', type: 'password' } },
   };
 
   syncFlow = ['host', 'port', 'password'];
@@ -1021,7 +1021,7 @@ export class DangerZonePage extends Component {
 
   sync = () => {
     this.setState({ syncing: true });
-    BackOfficeServices.syncWithMaster(this.state.sync).then(
+    BackOfficeServices.syncWithLeader(this.state.sync).then(
       (d) => this.setState({ syncing: false }),
       (e) => this.setState({ syncingError: e, syncing: false })
     );
@@ -1171,7 +1171,7 @@ export class DangerZonePage extends Component {
                   type="button"
                   onClick={this.saveGlobalConfig}
                   {...propsDisabled}>
-                  <i className="glyphicon glyphicon-hdd" />
+                  <i className="fas fa-hdd" />
                 </button>
               </div>
             </div>
@@ -1211,7 +1211,7 @@ export class DangerZonePage extends Component {
                     paddingBottom: 6,
                     cursor: 'pointer',
                   }}>
-                  <i className="glyphicon glyphicon-file" /> Recover from a full export file
+                  <i className="fas fa-file" /> Recover from a full export file
                 </label>
               </div>
             </div>
@@ -1221,7 +1221,7 @@ export class DangerZonePage extends Component {
               <label className="col-sm-2 control-label" />
               <div className="col-sm-10">
                 <button type="button" className="btn btn-danger" onClick={this.importData}>
-                  <i className="glyphicon glyphicon-import" /> Flush DataStore & Import file '
+                  <i className="fas fa-file-import" /> Flush DataStore & Import file '
                   {this.state.readyToPush}'
                 </button>
               </div>
@@ -1234,10 +1234,10 @@ export class DangerZonePage extends Component {
             <label className="col-sm-2 control-label" />
             <div className="col-sm-10">
               <button type="button" className="btn btn-success" onClick={this.fullExport}>
-                <i className="glyphicon glyphicon-export" /> Full export
+                <i className="fas fa-file-export" /> Full export
               </button>
               <button type="button" className="btn btn-success" onClick={this.fullExportNdJson}>
-                <i className="glyphicon glyphicon-export" /> Full export (ndjson)
+                <i className="fas fa-file-export" /> Full export (ndjson)
               </button>
               <button type="button" className="btn btn-info" onClick={this.exportJson}>
                 <i className="glyphicon glyphicon-export" /> JSON
@@ -1250,7 +1250,7 @@ export class DangerZonePage extends Component {
                 className="btn btn-danger"
                 style={{ marginLeft: 5, marginRight: 5 }}
                 onClick={this.panicMode}>
-                <i className="glyphicon glyphicon-fire" /> Enable Panic Mode
+                <i className="fas fa-fire" /> Enable Panic Mode
               </button>
             </div>
           </div>
@@ -1269,18 +1269,18 @@ class BackOfficeAuthButtons extends Component {
         <div className="col-sm-10">
           {!this.props.rawValue.backOfficeAuthRef && (
             <a href={`/bo/dashboard/auth-configs/add`} className="btn btn-sm btn-primary">
-              <i className="glyphicon glyphicon-plus" /> Create a new auth. config.
+              <i className="fas fa-plus" /> Create a new auth. config.
             </a>
           )}
           {this.props.rawValue.backOfficeAuthRef && (
             <a
               href={`/bo/dashboard/auth-configs/edit/${this.props.rawValue.backOfficeAuthRef}`}
               className="btn btn-sm btn-success">
-              <i className="glyphicon glyphicon-edit" /> Edit the auth. config.
+              <i className="fas fa-edit" /> Edit the auth. config.
             </a>
           )}
           <a href={`/bo/dashboard/auth-configs`} className="btn btn-sm btn-primary">
-            <i className="glyphicon glyphicon-link" /> all auth. config.
+            <i className="fas fa-link" /> all auth. config.
           </a>
         </div>
       </div>

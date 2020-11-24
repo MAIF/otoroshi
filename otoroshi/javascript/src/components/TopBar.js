@@ -54,79 +54,79 @@ export class TopBar extends Component {
         options.sort((a, b) => a.label.localeCompare(b.label));
         options.push({
           action: () => (window.location.href = '/bo/dashboard/admins'),
-          env: <span className="glyphicon glyphicon-user" />,
+          env: <span className="fas fa-user" />,
           label: 'Admins',
           value: 'Admins',
         });
         options.push({
           action: () => (window.location.href = '/bo/dashboard/alerts'),
-          env: <span className="glyphicon glyphicon-list" />,
+          env: <span className="fas fa-list" />,
           label: 'Alerts Log',
           value: 'Alerts-Log',
         });
         options.push({
           action: () => (window.location.href = '/bo/dashboard/exporters'),
-          env: <span className="glyphicon glyphicon-send" />,
+          env: <span className="fas fa-paper-plane" />,
           label: 'Exporters',
           value: 'exporters',
         });
         options.push({
           action: () => (window.location.href = '/bo/dashboard/audit'),
-          env: <span className="glyphicon glyphicon-list" />,
+          env: <span className="fas fa-list" />,
           label: 'Audit Log',
           value: 'Audit-Log',
         });
         options.push({
           label: 'CleverCloud Apps',
           value: 'CleverCloud-Apps',
-          env: <i className="glyphicon glyphicon-list-alt" />,
+          env: <i className="fas fa-list-alt" />,
           action: () => (window.location.href = '/bo/dashboard/clever'),
         });
         options.push({
           action: () => (window.location.href = '/bo/dashboard/dangerzone'),
-          env: <span className="glyphicon glyphicon-alert" />,
+          env: <span className="fas fa-exclamation-triangle" />,
           label: 'Danger Zone',
           value: 'Danger-Zone',
         });
         options.push({
           label: 'Documentation',
           value: 'Documentation',
-          env: <i className="glyphicon glyphicon-book" />,
+          env: <i className="fas fa-book" />,
           action: () => (window.location.href = '/docs/index.html'),
         });
         options.push({
           action: () => (window.location.href = '/bo/dashboard/stats'),
-          env: <span className="glyphicon glyphicon-signal" />,
+          env: <span className="fas fa-signal" />,
           label: 'Global Analytics',
           value: 'Global-Analytics',
         });
         options.push({
           action: () => (window.location.href = '/bo/dashboard/events'),
-          env: <span className="glyphicon glyphicon-list" />,
+          env: <span className="fas fa-list" />,
           label: 'Global Events',
           value: 'Global-Events',
         });
         options.push({
           label: 'Groups',
           value: 'Groups',
-          env: <i className="glyphicon glyphicon-folder-open" />,
+          env: <i className="fas fa-folder-open" />,
           action: () => (window.location.href = '/bo/dashboard/groups'),
         });
         options.push({
           label: 'Organizations',
           value: 'Organizations',
-          env: <i className="glyphicon glyphicon-folder-open" />,
+          env: <i className="fas fa-folder-open" />,
           action: () => (window.location.href = '/bo/dashboard/organizations'),
         });
         options.push({
           label: 'Teams',
           value: 'Teams',
-          env: <i className="glyphicon glyphicon-folder-open" />,
+          env: <i className="fas fa-folder-open" />,
           action: () => (window.location.href = '/bo/dashboard/teams'),
         });
         options.push({
           action: () => (window.location.href = '/bo/dashboard/loggers'),
-          env: <span className="glyphicon glyphicon-book" />,
+          env: <span className="fas fa-book" />,
           label: 'Loggers level',
           value: 'Loggers-level',
         });
@@ -144,25 +144,25 @@ export class TopBar extends Component {
         });
         options.push({
           action: () => (window.location.href = '/bo/dashboard/map'),
-          env: <span className="glyphicon glyphicon-globe" />,
+          env: <span className="fas fa-globe" />,
           label: 'Services map',
           value: 'Services-map',
         });
         options.push({
           action: () => (window.location.href = '/bo/dashboard/sessions/admin'),
-          env: <span className="glyphicon glyphicon-user" />,
+          env: <span className="fas fa-user" />,
           label: 'Admin. sessions',
           value: 'Admin-sessions',
         });
         options.push({
           action: () => (window.location.href = '/bo/dashboard/sessions/private'),
-          env: <span className="glyphicon glyphicon-lock" />,
+          env: <span className="fas fa-lock" />,
           label: 'Priv. apps sessions',
           value: 'Priv-apps-sessions',
         });
         options.push({
           action: () => (window.location.href = '/bo/dashboard/top10'),
-          env: <span className="glyphicon glyphicon-fire" />,
+          env: <span className="fas fa-fire" />,
           label: 'Top 10 services',
           value: 'Top-10-services',
         });
@@ -174,7 +174,7 @@ export class TopBar extends Component {
         });
         options.push({
           action: () => (window.location.href = '/bo/dashboard/auth-configs'),
-          env: <span className="glyphicon glyphicon-lock" />,
+          env: <span className="fas fa-lock" />,
           label: 'Global auth. configs',
           value: 'auth-configs',
         });
@@ -193,7 +193,7 @@ export class TopBar extends Component {
         if (this.state.env.clusterRole === 'Leader') {
           options.push({
             action: () => (window.location.href = '/bo/dashboard/cluster'),
-            env: <span className="fa fa-network-wired" />,
+            env: <span className="fas fa-network-wired" />,
             label: 'Cluster view',
             value: 'cluster-view',
           });
@@ -201,7 +201,7 @@ export class TopBar extends Component {
         if (this.state.env.scriptingEnabled === true) {
           options.push({
             action: () => (window.location.href = '/bo/dashboard/plugins'),
-            env: <span className="fa fa-book-dead" />,
+            env: <span className="fas fa-book-dead" />,
             label: 'Plugins',
             value: 'plugins',
           });
@@ -491,7 +491,7 @@ export class TopBar extends Component {
                       data-placement="bottom"
                       title="You are using the default admin account. You should create a new admin account quickly and delete the default one."
                       style={{ backgroundColor: '#c9302c', marginBottom: 5 }}>
-                      <i className="glyphicon glyphicon-alert" />
+                      <i className="fas fa-exclamation-triangle" />
                     </span>
                   </a>
                 </li>
@@ -508,7 +508,7 @@ export class TopBar extends Component {
                 </a>
                 <ul className="dropdown-menu">
                   {/*<li>
-                    <a href="/bo/dashboard/users"><span className="glyphicon glyphicon-user" /> All users</a>
+                    <a href="/bo/dashboard/users"><span className="fas fa-user" /> All users</a>
                   </li>*/}
                   <li>
                     <a href="#">
@@ -518,28 +518,28 @@ export class TopBar extends Component {
                   </li>
                   <li>
                     <a href="/docs/index.html" target="_blank">
-                      <span className="glyphicon glyphicon-book" /> User manual
+                      <span className="fas fa-book" /> User manual
                     </a>
                   </li>
                   <li role="separator" className="divider" />
                   <li>
                     {window.__otoroshi__env__latest.userAdmin && (
                       <a href="/bo/dashboard/organizations">
-                        <span className="glyphicon glyphicon-folder-open" /> Organizations
+                        <span className="fas fa-folder-open" /> Organizations
                       </a>
                     )}
                     {window.__user.tenantAdmin && (
                       <a href="/bo/dashboard/teams">
-                        <span className="glyphicon glyphicon-folder-open" /> Teams
+                        <span className="fas fa-folder-open" /> Teams
                       </a>
                     )}
                     <a href="/bo/dashboard/groups">
-                      <span className="glyphicon glyphicon-folder-open" /> Service groups
+                      <span className="fas fa-folder-open" /> Service groups
                     </a>
 
                     {window.__otoroshi__env__latest.userAdmin && (
                       <a href="/bo/dashboard/clever">
-                        <span className="glyphicon glyphicon-list-alt" /> Clever apps
+                        <span className="fas fa-list-alt" /> Clever apps
                       </a>
                     )}
                   </li>
@@ -549,7 +549,7 @@ export class TopBar extends Component {
                       <span className="fas fa-key" /> Jwt Verifiers
                     </a>
                     <a href="/bo/dashboard/auth-configs">
-                      <span className="glyphicon glyphicon-lock" /> Authentication configs
+                      <span className="fas fa-lock" /> Authentication configs
                     </a>
                     <a href="/bo/dashboard/certificates">
                       <span className="fas fa-certificate" /> SSL/TLS Certificates
@@ -568,7 +568,7 @@ export class TopBar extends Component {
                     this.state.env.clusterRole === 'Leader' && (
                       <li>
                         <a href="/bo/dashboard/cluster">
-                          <span className="fa fa-network-wired" /> Cluster view
+                          <span className="fas fa-network-wired" /> Cluster view
                         </a>
                       </li>
                     )}
@@ -582,45 +582,45 @@ export class TopBar extends Component {
                         <>
                           <li>
                             <a href="/bo/dashboard/stats">
-                              <i className="glyphicon glyphicon-signal" /> Analytics
+                              <i className="fas fa-signal" /> Analytics
                             </a>
                           </li>
                           <li>
                             <a href="/bo/dashboard/events">
-                              <i className="glyphicon glyphicon-list" /> Events log
+                              <i className="fas fa-list" /> Events log
                             </a>
                           </li>
                           <li className="hide">
                             <a href="/bo/dashboard/top10">
-                              <span className="glyphicon glyphicon-fire" /> Top 10 services
+                              <span className="fas fa-fire" /> Top 10 services
                             </a>
                           </li>
                           <li className="hide">
                             <a href="/bo/dashboard/map">
-                              <span className="glyphicon glyphicon-globe" /> Services map
+                              <span className="fas fa-globe" /> Services map
                             </a>
                           </li>
                           <li role="separator" className="divider hide" />
                           <li className="hide">
                             <a href="/bo/dashboard/loggers">
-                              <span className="glyphicon glyphicon-book" /> Loggers level
+                              <span className="fas fa-book" /> Loggers level
                             </a>
                           </li>
                           <li>
                             <a href="/bo/dashboard/audit">
-                              <span className="glyphicon glyphicon-list" /> Audit log
+                              <span className="fas fa-list" /> Audit log
                             </a>
                           </li>
                           <li>
                             <a href="/bo/dashboard/alerts">
-                              <span className="glyphicon glyphicon-list" /> Alerts log
+                              <span className="fas fa-list" /> Alerts log
                             </a>
                           </li>
                         </>
                       )}
                       <li>
                         <a href="/bo/dashboard/exporters">
-                          <span className="glyphicon glyphicon-send" /> Exporters
+                          <span className="fas fa-paper-plane" /> Exporters
                         </a>
                       </li>
                       <li role="separator" className="divider" />
@@ -630,17 +630,17 @@ export class TopBar extends Component {
                     <>
                       <li>
                         <a href="/bo/dashboard/admins">
-                          <span className="glyphicon glyphicon-user" /> Admins
+                          <span className="fas fa-user" /> Admins
                         </a>
                       </li>
                       <li>
                         <a href="/bo/dashboard/sessions/admin">
-                          <span className="glyphicon glyphicon-user" /> Admins sessions
+                          <span className="fas fa-user" /> Admins sessions
                         </a>
                       </li>
                       <li>
                         <a href="/bo/dashboard/sessions/private">
-                          <span className="glyphicon glyphicon-lock" /> Priv. apps sessions
+                          <span className="fas fa-lock" /> Priv. apps sessions
                         </a>
                       </li>
                     </>
@@ -834,7 +834,7 @@ export class TopBar extends Component {
                       <li role="separator" className="divider" />
                       <li>
                         <a href="/bo/dashboard/dangerzone">
-                          <span className="glyphicon glyphicon-alert" /> Danger Zone
+                          <span className="fas fa-exclamation-triangle" /> Danger Zone
                         </a>
                       </li>
                     </>
@@ -842,7 +842,7 @@ export class TopBar extends Component {
                   <li role="separator" className="divider" />
                   <li>
                     <a href="/backoffice/auth0/logout" className="link-logout">
-                      <span className="glyphicon glyphicon-off" />
+                      <span className="fas fa-power-off" />
                       <span className="topbar-userName"> {window.__userid} </span>
                     </a>
                   </li>
@@ -905,7 +905,7 @@ export class TopBar extends Component {
                         : null;
                     return (
                       <div style={{ display: 'flex' }}>
-                        <div style={{ width: 60 }}>
+                        <div style={{ width: 60,display: 'flex',justifyContent:'center',alignItems:'center' }}>
                           {p.env && _.isString(p.env) && (
                             <span className={`label ${this.color(p.env)}`}>{env}</span>
                           )}

@@ -96,7 +96,7 @@ export class SnowMonkeyPage extends Component {
             onClick={(e) =>
               (window.location = `/bo/dashboard/lines/prod/services/${item.descriptorId}`)
             }>
-            <i className="glyphicon glyphicon-link" /> Go to service descriptor
+            <i className="fas fa-link" /> Go to service descriptor
           </button>
         );
       },
@@ -178,7 +178,7 @@ export class SnowMonkeyPage extends Component {
                 type="button"
                 className={`btn btn-${this.state.started ? 'danger' : 'success'}`}
                 onClick={this.toggle}>
-                <i className={`glyphicon glyphicon-${this.state.started ? 'stop' : 'play'}`} />
+                <i className={`fas fa-${this.state.started ? 'stop' : 'play'}`} />
                 {this.state.started ? ' Stop that damn monkey ...' : ' Unleash the monkey !'}
               </button>
               <button
@@ -186,7 +186,7 @@ export class SnowMonkeyPage extends Component {
                 className={`btn btn-success`}
                 {...moreProps}
                 onClick={this.saveChanges}>
-                <i className={`glyphicon glyphicon-hdd`} /> Save
+                <i className={`fas fa-hdd`} /> Save
               </button>
             </div>
           </div>

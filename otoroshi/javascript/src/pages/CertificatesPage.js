@@ -186,7 +186,7 @@ class Commands extends Component {
               onClick={(e) => {
                 this.createCASigned(e, this.props.rawValue.id);
               }}>
-              <i className="glyphicon glyphicon-plus-sign" /> Create cert.
+              <i className="fas fa-plus-circle" /> Create cert.
             </button>
           )}
           {canRenew && (
@@ -199,7 +199,7 @@ class Commands extends Component {
                   this.props.rawOnChange(cert);
                 });
               }}>
-              <i className="glyphicon glyphicon-repeat" /> Renew
+              <i className="fas fa-redo" /> Renew
             </button>
           )}
           {false && (
@@ -405,7 +405,7 @@ export class CertificatesPage extends Component {
             type="button"
             className="btn btn-primary btn-sm"
             onClick={(e) => this.createCASigned(e, item.id)}>
-            <i className="glyphicon glyphicon-plus-sign" />
+            <i className="fas fa-plus-circle" />
           </button>
         ),
       style: { textAlign: 'center', width: 70 },
@@ -695,7 +695,7 @@ export class CertificatesPage extends Component {
               onClick={this.createLetsEncrypt}
               style={{ marginRight: 0 }}
               className="btn btn-primary">
-              <i className="glyphicon glyphicon-plus-sign" /> Let's Encrypt cert.
+              <i className="fas fa-plus-circle" /> Let's Encrypt cert.
             </button>
           </div>*/}
             <div className="btn-group">
@@ -704,35 +704,35 @@ export class CertificatesPage extends Component {
               onClick={this.createSelfSigned}
               style={{ marginRight: 0 }}
               className="btn btn-primary">
-              <i className="glyphicon glyphicon-plus-sign" /> Self signed cert.
+              <i className="fas fa-plus-circle" /> Self signed cert.
             </button>
             <button
               type="button"
               onClick={this.createSelfSignedClient}
               style={{ marginRight: 0 }}
               className="btn btn-primary">
-              <i className="glyphicon glyphicon-plus-sign" /> Self signed client cert.
+              <i className="fas fa-plus-circle" /> Self signed client cert.
             </button>
             <button
               type="button"
               onClick={this.createCA}
               style={{ marginRight: 0 }}
               className="btn btn-primary">
-              <i className="glyphicon glyphicon-plus-sign" /> Self signed CA
+              <i className="fas fa-plus-circle" /> Self signed CA
             </button>*/}
               <button
                 type="button"
                 onClick={this.createLetsEncrypt}
                 style={{ marginRight: 0 }}
                 className="btn btn-primary">
-                <i className="glyphicon glyphicon-plus-sign" /> Let's Encrypt Certificate
+                <i className="fas fa-plus-circle" /> Let's Encrypt Certificate
               </button>
               <button
                 type="button"
                 onClick={this.createCertificate}
                 style={{ marginRight: 0 }}
                 className="btn btn-primary">
-                <i className="glyphicon glyphicon-plus-sign" /> Create Certificate
+                <i className="fas fa-plus-circle" /> Create Certificate
               </button>
               <input
                 type="file"
@@ -747,7 +747,7 @@ export class CertificatesPage extends Component {
                 htmlFor="export"
                 style={{ marginRight: 0 }}
                 className="fake-inputfile btn btn-primary ">
-                <i className="glyphicon glyphicon-file" /> Import .p12 file
+                <i className="fas fa-file" /> Import .p12 file
               </label>
             </div>
           </>
@@ -942,7 +942,7 @@ export class NewCertificateForm extends Component {
         <div className="modal-footer">
           {this.state.caRef && (
             <button type="button" className="btn btn-primary" onClick={this.csr}>
-              <i className="glyphicon glyphicon-file" /> Download CSR
+              <i className="fas fa-file" /> Download CSR
             </button>
           )}
           <button type="button" className="btn btn-danger" onClick={this.props.cancel}>

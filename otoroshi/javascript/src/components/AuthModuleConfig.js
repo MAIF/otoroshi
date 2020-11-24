@@ -696,7 +696,7 @@ export class User extends Component {
               });
             }}
             style={{ marginRight: 0 }}>
-            <i className="glyphicon glyphicon-edit" />
+            <i className="fas fa-edit" />
           </button>
           <button
             type="button"
@@ -708,7 +708,7 @@ export class User extends Component {
               window.newAlert(`The generated password is: ${password}`, 'Generated password');
             }}
             style={{ marginRight: 0 }}>
-            <i className="glyphicon glyphicon-repeat" />
+            <i className="fas fa-redo" />
           </button>
           {this.props.webauthn && (
             <button
@@ -748,7 +748,7 @@ export class User extends Component {
                   });
               }}
               style={{ marginRight: 0 }}>
-              <i className="glyphicon glyphicon-link" />
+              <i className="fas fa-link" />
             </button>
           )}
           {this.props.webauthn && (
@@ -773,7 +773,7 @@ export class User extends Component {
                   });
               }}
               style={{ marginRight: 0 }}>
-              <i className="glyphicon glyphicon-envelope" />
+              <i className="fas fa-envelope" />
             </button>
           )}
           {this.props.webauthn && (
@@ -783,7 +783,7 @@ export class User extends Component {
               onClick={this.registerWebAuthn}
               title="Register webauthn device"
               style={{ marginRight: 0 }}>
-              <i className="glyphicon glyphicon-lock" />
+              <i className="fas fa-lock" />
             </button>
           )}
           <button
@@ -791,7 +791,7 @@ export class User extends Component {
             className="btn btn-sm btn-danger"
             title="Remove user"
             onClick={(e) => this.props.removeUser(this.props.user.email)}>
-            <i className="glyphicon glyphicon-trash" />
+            <i className="fas fa-trash" />
           </button>
         </div>
       </div>
@@ -936,7 +936,7 @@ export class BasicModuleConfig extends Component {
               className="btn btn-info"
               onClick={this.addUser}
               style={{ marginTop: 20 }}>
-              <i className="glyphicon glyphicon-plus-sign" /> Add user
+              <i className="fas fa-plus-circle" /> Add user
             </button>
           </div>
         </div>

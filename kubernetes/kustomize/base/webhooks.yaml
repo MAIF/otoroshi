@@ -1,0 +1,59 @@
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: otoroshi-admission-webhook-validation
+  labels:
+    app: otoroshi
+    component: otoroshi-validation-webhook
+webhooks:
+  - name: otoroshi-admission-webhook.otoroshi.io
+    rules:
+      - operations: 
+          - "CREATE"
+          - "UPDATE"
+        apiGroups: 
+          - "proxy.otoroshi.io"
+        apiVersions: 
+          - "*"
+        resources: 
+          - "*"
+        scope: "Namespaced"
+    clientConfig:
+      # url: "https://otoroshi-kubernetes-admission-webhook.otoroshi.svc.cluster.local:8443/apis/webhooks/validation"
+      service:
+        name: otoroshi-service
+        namespace: otoroshi
+        path: "/apis/webhooks/validation"
+        port: https
+        caBundle: "..." # injected at runtime ???
+    failurePolicy: Fail
+    sideEffects: None
+    admissionReviewVersions: ["v1"]
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: otoroshi-admission-webhook-injector
+  labels:
+    app: otoroshi
+    component: otoroshi-validation-webhook
+webhooks:
+  - name: otoroshi-admission-webhook-injector.otoroshi.io
+    rules:
+      - operations: [ "CREATE" ]
+        apiGroups: [""]
+        apiVersions: ["v1"]
+        resources: ["pods"]
+        scope: "Namespaced"
+    clientConfig:
+      # url: "https://otoroshi-kubernetes-admission-webhook.otoroshi.svc.cluster.local:8443/apis/webhooks/inject"
+      service:
+        name: otoroshi-service
+        namespace: otoroshi
+        path: "/apis/webhooks/sidecar"
+        port: https
+        caBundle: "..." # inject at runtime ???
+    failurePolicy: Fail
+    sideEffects: None
+    admissionReviewVersions: ["v1"]

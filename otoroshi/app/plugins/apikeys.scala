@@ -33,7 +33,7 @@ import scala.util.{Failure, Success, Try}
 
 class HasAllowedApiKeyValidator extends AccessValidator {
 
-  override def name: String = "Allowed apikeys only"
+  override def name: String = "[DEPRECATED] Allowed apikeys only"
 
   override def configRoot: Option[String] = Some("HasAllowedApiKeyValidator")
 

@@ -104,12 +104,12 @@ export class Location extends Component {
           <div className="col-sm-10">
             {window.__user.superAdmin && (
               <a className="btn btn-xs btn-info pull-right" href="/bo/dashboard/organizations">
-                <i className="glyphicon glyphicon-edit"></i> Manage organizations
+                <i className="fas fa-edit"></i> Manage organizations
               </a>
             )}
             {window.__user.tenantAdmin && (
               <a className="btn btn-xs btn-info pull-right" href="/bo/dashboard/teams">
-                <i className="glyphicon glyphicon-edit"></i> Manage teams
+                <i className="fas fa-edit"></i> Manage teams
               </a>
             )}
           </div>

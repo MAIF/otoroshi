@@ -14,22 +14,22 @@ import { createTooltip } from '../tooltips';
       </h3>
     </li>
     <li>
-      <Link to={`/lines/${env}/services/${serviceId}/health`}><i className="glyphicon glyphicon-heart" /> Health</Link>
+      <Link to={`/lines/${env}/services/${serviceId}/health`}><i className="fas fa-heart" /> Health</Link>
     </li>
     <li>
-      <Link to={`/lines/${env}/services/${serviceId}/stats`}><i className="glyphicon glyphicon-stats" /> Live stats</Link>
+      <Link to={`/lines/${env}/services/${serviceId}/stats`}><i className="fas fa-chart-bar" /> Live stats</Link>
     </li>
     <li>
-      <Link to={`/lines/${env}/services/${serviceId}/analytics`}><i className="glyphicon glyphicon-signal" /> Analytics</Link>
+      <Link to={`/lines/${env}/services/${serviceId}/analytics`}><i className="fas fa-signal" /> Analytics</Link>
     </li>
     <li>
-      <Link to={`/lines/${env}/services/${serviceId}/events`}><i className="glyphicon glyphicon-list" /> Events</Link>
+      <Link to={`/lines/${env}/services/${serviceId}/events`}><i className="fas fa-list" /> Events</Link>
     </li>
     <li>
-      <Link to={`/lines/${env}/services/${serviceId}/apikeys`}><i className="glyphicon glyphicon-lock" /> API Keys</Link>
+      <Link to={`/lines/${env}/services/${serviceId}/apikeys`}><i className="fas fa-lock" /> API Keys</Link>
     </li>
     <li>
-      <Link to={`/lines/${env}/services/${serviceId}/doc`}><i className="glyphicon glyphicon-folder-close" /> Documentation</Link>
+      <Link to={`/lines/${env}/services/${serviceId}/doc`}><i className="fas fa-folder" /> Documentation</Link>
     </li>
   </ul>
 );*/
@@ -64,7 +64,7 @@ export class ServiceSidebar extends Component {
               {...createTooltip(`Show healthcheck report for ${name}`)}
               to={`/lines/${env}/services/${serviceId}/health`}
               className={className('health')}>
-              <i className="glyphicon glyphicon-heart" /> Health
+              <i className="fas fa-heart" /> Health
             </Link>
           </li>
         )}
@@ -74,7 +74,7 @@ export class ServiceSidebar extends Component {
               to={`/lines/${env}/services/${serviceId}/stats`}
               {...createTooltip(`Show live metrics report for ${name}`)}
               className={className('stats')}>
-              <i className="glyphicon glyphicon-stats" /> Live metrics
+              <i className="fas fa-chart-bar" /> Live metrics
             </Link>
           </li>
         )}
@@ -84,7 +84,7 @@ export class ServiceSidebar extends Component {
               to={`/lines/${env}/services/${serviceId}/analytics`}
               {...createTooltip(`Show analytics report for ${name}`)}
               className={className('analytics')}>
-              <i className="glyphicon glyphicon-signal" /> Analytics
+              <i className="fas fa-signal" /> Analytics
             </Link>
           </li>
         )}
@@ -94,7 +94,7 @@ export class ServiceSidebar extends Component {
               to={`/lines/${env}/services/${serviceId}/events`}
               {...createTooltip(`Show raw events report for ${name}`)}
               className={className('events')}>
-              <i className="glyphicon glyphicon-list" /> Events
+              <i className="fas fa-list" /> Events
             </Link>
           </li>
         )}
@@ -104,7 +104,7 @@ export class ServiceSidebar extends Component {
               to={`/lines/${env}/services/${serviceId}/apikeys`}
               {...createTooltip(`Manage all API keys that can access ${name}`)}
               className={className('apikeys')}>
-              <i className="glyphicon glyphicon-lock" /> API Keys
+              <i className="fas fa-lock" /> API Keys
             </Link>
           </li>
         )}
@@ -114,7 +114,7 @@ export class ServiceSidebar extends Component {
               to={`/lines/${env}/services/${serviceId}/doc`}
               {...createTooltip(`Show open API documentation for ${name}`)}
               className={className('doc')}>
-              <i className="glyphicon glyphicon-folder-close" /> Documentation
+              <i className="fas fa-folder" /> Documentation
             </Link>
           </li>
         )}
