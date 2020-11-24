@@ -131,7 +131,6 @@ class InitialCertsJob extends Job {
   }
 
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
-    logger.info("running running !!!")
     runWithNewPki()
   }
 }
