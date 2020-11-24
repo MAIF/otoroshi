@@ -32,6 +32,7 @@ class InitialCertsJob extends Job {
 
   override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] = 24.hours.some
 
+  @deprecated
   def runWithOldSchoolPki(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     env.datastores.certificatesDataStore
       .findAll()

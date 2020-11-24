@@ -766,7 +766,7 @@ export class NewCertificateForm extends Component {
     keyType: 'RSA',
     keySize: 2048,
     duration: 365,
-    subject: this.props.subject || 'C=FR, L=Poitiers, O=OtoroshiLabs, OU=Foo',
+    subject: this.props.subject || 'SN=Foo, OU=User Certificates, OU=Otoroshi Certificates, O=Otoroshi',
     host: this.props.host || 'www.foo.bar',
     hosts: this.props.host ? [this.props.host] : this.props.hosts || [],
     signatureAlg: 'SHA256WithRSAEncryption',
