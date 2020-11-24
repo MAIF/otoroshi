@@ -735,6 +735,7 @@ export class AdminEditionModal extends Component {
     password: {
       type: 'string',
       props: {
+        disabled: true,
         label: 'Password',
       },
     },
