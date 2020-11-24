@@ -385,13 +385,13 @@ class ClientCertChainHeader extends RequestTransformer {
             "notBefore"    -> c.getNotBefore.getTime,
             "serialNumber" -> c.getSerialNumber.toString(16),
             "subjectCN" -> Option(c.getSubjectDN.getName)
-              .flatMap(_.split(",").toSeq.map(_.trim).find(_.startsWith("CN=")))
-              .map(_.replace("CN=", ""))
+              .flatMap(_.split(",").toSeq.map(_.trim).find(_.toLowerCase().startsWith("cn=")))
+              .map(_.replace("CN=", "").replace("cn=", ""))
               .getOrElse(c.getSubjectDN.getName)
               .asInstanceOf[String],
             "issuerCN" -> Option(c.getIssuerDN.getName)
-              .flatMap(_.split(",").toSeq.map(_.trim).find(_.startsWith("CN=")))
-              .map(_.replace("CN=", ""))
+              .flatMap(_.split(",").toSeq.map(_.trim).find(_.toLowerCase().startsWith("cn=")))
+              .map(_.replace("CN=", "").replace("cn=", ""))
               .getOrElse(c.getIssuerDN.getName)
               .asInstanceOf[String]
         )

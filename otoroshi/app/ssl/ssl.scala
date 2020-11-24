@@ -340,19 +340,19 @@ case class Cert(
   }
 
   def toGenCertResponse(implicit env: Env): GenCertResponse = {
+    val query = GenCsrQuery(
+      hosts = Seq(domain),
+      subject = Some(subject)
+    )
     GenCertResponse(
       serial = serialNumberLng.get,
       cert = certificate.get,
       csr = Await
-        .result(env.pki.genCsr(GenCsrQuery(
-                                 hosts = Seq(domain),
-                                 subject = Some(subject)
-                               ),
-                               None)(env.otoroshiExecutionContext),
-                10.seconds)
+        .result(env.pki.genCsr(query,None)(env.otoroshiExecutionContext), 10.seconds)
         .right
         .get
         .csr,
+      csrQuery = query.some,
       key = cryptoKeyPair.getPrivate,
       ca = caFromChain.get
     )
@@ -802,7 +802,7 @@ trait CertificateDataStore extends BasicStore[Cert] {
                           env.pki
                             .genCert(GenCsrQuery(
                                        hosts = Seq(domain),
-                                       subject = Some(s"CN=$domain,OU=Auto Generated Certs")
+                                       subject = Some(s"CN=$domain,OU=Auto Generated Certificates, OU=Otoroshi Certificates, O=Otoroshi")
                                      ),
                                      cert.certificate.get,
                                      cert.cryptoKeyPair.getPrivate)
@@ -1565,7 +1565,7 @@ object FakeKeyStore {
       val PrivateKeyEntry  = "otoroshi-selfsigned"
     }
 
-    def DistinguishedName(host: String) = s"CN=$host, OU=Otoroshi Certificates, O=Otoroshi, C=FR"
+    def DistinguishedName(host: String) = s"CN=$host, OU=Otoroshi Certificates, O=Otoroshi"
     def SubDN(host: String)             = s"CN=$host"
   }
 
@@ -2317,7 +2317,7 @@ object SSLImplicits {
 object SSLSessionJavaHelper {
 
   val NotAllowed = "CN=NotAllowedCert"
-  val BadDN      = s"O=Otoroshi,OU=Auto Generated Certs,$NotAllowed"
+  val BadDN      = s"$NotAllowed, OU=Auto Generated Certs, OU=Otoroshi Certificates, O=Otoroshi"
 
   def computeKey(session: SSLSession): Option[String] = {
     computeKey(session.toString)
@@ -2342,60 +2342,3 @@ case class NoCertificateFoundException(hostname: String)
 case class NoHostFoundException()     extends RuntimeException(s"No hostname or aliases found !") with NoStackTrace
 case class NoAliasesFoundException()  extends RuntimeException(s"No aliases found in SSLContext !") with NoStackTrace
 case class NoHostnameFoundException() extends RuntimeException(s"No hostname found in SSLContext !") with NoStackTrace
-
-/**
-FROM ubuntu:18.04
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
-  autoconf \
-  bison \
-  build-essential \
-  ca-certificates \
-  curl \
-  gzip \
-  libreadline-dev \
-  patch \
-  pkg-config \
-  sed \
-  zlib1g-dev
-
-RUN mkdir -p /build/openssl
-RUN mkdir -p /build/curl
-
-RUN curl -s https://www.openssl.org/source/openssl-1.1.1a.tar.gz | tar -C /build/openssl -xzf - && \
-    cd /build/openssl/openssl-1.1.1a && \
-    ./Configure \
-      --prefix=/opt/openssl/openssl-1.1.1 \
-      enable-crypto-mdebug enable-crypto-mdebug-backtrace \
-      linux-x86_64 && \
-    make && make install_sw
-
-ENV LD_LIBRARY_PATH /opt/openssl/openssl-1.1.1/lib
-
-RUN curl -s https://curl.haxx.se/download/curl-7.62.0.tar.gz | tar -C /build/curl -xzf - && \
-    cd /build/curl/curl-7.62.0 && \
-    env PKG_CONFIG_PATH=/opt/openssl/openssl-1.1.1/lib/pkgconfig ./configure --with-ssl --prefix=/opt/curl/curl-7.62 && make && make install
-
-CMD ["/opt/curl/curl-7.62/bin/curl", "--tlsv1.3", "https://enabled.tls13.com/"]
-**/
-
-/**
-# https://blog.codeship.com/how-to-set-up-mutual-tls-authentication/
-openssl genrsa -aes256 -out ca/ca.key 4096
-# chmod 400 ca/ca.key
-# with CN=CA-ROOT
-openssl req -new -x509 -sha256 -days 730 -key ca/ca.key -out ca/ca.crt
-# chmod 444 ca/ca.crt
-openssl genrsa -out server/app.oto.tools.key 2048
-# chmod 400 server/app.oto.tools.key
-# with CN=*.oto.tools
-openssl req -new -key server/app.oto.tools.key -sha256 -out server/app.oto.tools.csr
-openssl x509 -req -days 365 -sha256 -in server/app.oto.tools.csr -CA ca/ca.crt -CAkey ca/ca.key -set_serial 1 -out server/app.oto.tools.crt
-# chmod 444 server/app.oto.tools.crt
-openssl verify -CAfile ca/ca.crt server/app.oto.tools.crt
-openssl genrsa -out client/client.key 2048
-# with CN and other stuff about the actual device/user
-openssl req -new -key client/client.key -out client/client.csr
-openssl x509 -req -days 365 -sha256 -in client/client.csr -CA ca/ca.crt -CAkey ca/ca.key -set_serial 2 -out client/client.crt
-openssl pkcs12 -export -clcerts -in client/client.crt -inkey client/client.key -out client/client.p12
-**/

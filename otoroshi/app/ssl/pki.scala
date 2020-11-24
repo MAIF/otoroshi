@@ -22,7 +22,7 @@ import play.api.libs.json._
 import security.IdGenerator
 import ssl.Cert
 import ssl.SSLImplicits._
-import utils.future.Implicits._
+import otoroshi.utils.syntax.implicits._
 
 import scala.concurrent.duration._
 import scala.concurrent.duration.FiniteDuration
@@ -123,6 +123,7 @@ object models {
   case class GenCertResponse(serial: Long,
                              cert: X509Certificate,
                              csr: PKCS10CertificationRequest,
+                             csrQuery: Option[GenCsrQuery],
                              key: PrivateKey,
                              ca: X509Certificate) {
     def json: JsValue = Json.obj(
@@ -130,12 +131,16 @@ object models {
       "cert"   -> cert.asPem,
       "csr"    -> csr.asPem,
       "key"    -> key.asPem,
-      "ca"     -> ca.asPem
+      "ca"     -> ca.asPem,
+      "query"  -> csrQuery.map(_.json).getOrElse(JsNull).as[JsValue]
     )
     def chain: String        = s"${key.asPem}\n${cert.asPem}\n${ca.asPem}"
     def chainWithCsr: String = s"${key.asPem}\n${cert.asPem}\n${ca.asPem}\n${csr.asPem}"
     def keyPair: KeyPair     = new KeyPair(cert.getPublicKey, key)
-    def toCert: Cert         = Cert.apply(cert, keyPair, ca, false).enrich()
+    def toCert: Cert         = {
+      val c = Cert.apply(cert, keyPair, ca, false)
+      c.copy(entityMetadata = c.entityMetadata + ("csr" -> csrQuery.map(_.json.stringify).getOrElse("--"))).enrich()
+    }
   }
 
   case class SignCertResponse(cert: X509Certificate, csr: PKCS10CertificationRequest, ca: Option[X509Certificate]) {
@@ -150,8 +155,6 @@ object models {
 }
 
 trait Pki {
-
-  import utils.future.Implicits._
 
   // genkeypair          generate a public key / private key pair
   def genKeyPair(query: ByteString)(implicit ec: ExecutionContext): Future[Either[String, GenKeyPairResponse]] =
@@ -346,6 +349,7 @@ class BouncyCastlePki(generator: IdGenerator) extends Pki {
             GenCertResponse(resp.cert.getSerialNumber.longValue(),
                             resp.cert,
                             resp.csr,
+                            query.some,
                             csr.right.get.privateKey,
                             caCert)
           )
@@ -466,7 +470,7 @@ class BouncyCastlePki(generator: IdGenerator) extends Pki {
             val cert = certificateFactory
               .generateCertificate(new ByteArrayInputStream(certencoded))
               .asInstanceOf[X509Certificate]
-            Right(GenCertResponse(_serial, cert, csr, kpr.privateKey, cert))
+            Right(GenCertResponse(_serial, cert, csr, query.some, kpr.privateKey, cert))
           } match {
             case Failure(e)      => Left(e.getMessage).future
             case Success(either) => either.future
@@ -518,7 +522,7 @@ class BouncyCastlePki(generator: IdGenerator) extends Pki {
           val cert = certificateFactory
             .generateCertificate(new ByteArrayInputStream(certencoded))
             .asInstanceOf[X509Certificate]
-          Right(GenCertResponse(_serial, cert, csr, kpr.privateKey, cert))
+          Right(GenCertResponse(_serial, cert, csr, query.some, kpr.privateKey, cert))
         } match {
           case Failure(e)      => Left(e.getMessage).future
           case Success(either) => either.future
@@ -579,7 +583,7 @@ class BouncyCastlePki(generator: IdGenerator) extends Pki {
           val cert = certificateFactory
             .generateCertificate(new ByteArrayInputStream(certencoded))
             .asInstanceOf[X509Certificate]
-          Right(GenCertResponse(_serial, cert, csr, kpr.privateKey, cert))
+          Right(GenCertResponse(_serial, cert, csr, query.some, kpr.privateKey, cert))
         } match {
           case Failure(e)      => Left(e.getMessage).future
           case Success(either) => either.future
