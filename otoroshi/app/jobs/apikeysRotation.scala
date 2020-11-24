@@ -1,4 +1,4 @@
-package jobs
+package otoroshi.jobs.apikeys
 
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.{Sink, Source}
