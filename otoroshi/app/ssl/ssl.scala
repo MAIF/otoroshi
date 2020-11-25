@@ -364,6 +364,7 @@ object Cert {
   import SSLImplicits._
 
   val OtoroshiCA = "otoroshi-ca"
+  val OtoroshiIntermediateCA = "otoroshi-intermediate-ca"
   val OtoroshiWildcard = "otoroshi-wildcard"
   val OtoroshiClient = "otoroshi-client"
 

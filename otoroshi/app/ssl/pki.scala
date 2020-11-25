@@ -541,7 +541,8 @@ class BouncyCastlePki(generator: IdGenerator) extends Pki {
           val privateKey          = PrivateKeyFactory.createKey(kpr.privateKey.getEncoded)
           val signatureAlgorithm  = new DefaultSignatureAlgorithmIdentifierFinder().find(query.signatureAlg)
           val digestAlgorithm     = new DefaultDigestAlgorithmIdentifierFinder().find(query.digestAlg)
-          val signer              = new BcRSAContentSignerBuilder(signatureAlgorithm, digestAlgorithm).build(privateKey)
+          //val signer              = new BcRSAContentSignerBuilder(signatureAlgorithm, digestAlgorithm).build(privateKey)
+          val signer = new BcRSAContentSignerBuilder(signatureAlgorithm, digestAlgorithm).build(PrivateKeyFactory.createKey(caKey.getEncoded))
           val names               = new GeneralNames(query.hosts.map(name => new GeneralName(GeneralName.dNSName, name)).toArray)
           val csrBuilder          = new JcaPKCS10CertificationRequestBuilder(new X500Name(query.subj), kpr.publicKey)
           val extensionsGenerator = new ExtensionsGenerator
@@ -560,7 +561,8 @@ class BouncyCastlePki(generator: IdGenerator) extends Pki {
           csrBuilder.addAttribute(PKCSObjectIdentifiers.pkcs_9_at_extensionRequest /* x509Certificate */,
                                   extensionsGenerator.generate)
           val csr    = csrBuilder.build(signer)
-          val issuer = csr.getSubject
+          // val issuer = csr.getSubject
+          val issuer = new X500Name(caCert.getSubjectX500Principal.getName)
           val serial = java.math.BigInteger.valueOf(query.existingSerialNumber.getOrElse(_serial)) // new java.math.BigInteger(32, new SecureRandom)
           val from   = new java.util.Date
           val to     = new java.util.Date(System.currentTimeMillis + query.duration.toMillis)
