@@ -28,6 +28,7 @@ $(function() {
     'admin_api_service_id': generateSecret(32),
     'shared_key': generateSecret(32),
     'crypto_secret': generateSecret(32),
+    'oto_secret': generateSecret(32),
     'session_name': `oto-session-${generateSecret(8)}`,
     'app_domain': 'cleverapps.io',
     'app_storage': 'inmemory',
@@ -82,6 +83,7 @@ ADMIN_API_SERVICE_ID=${state.admin_api_service_id}
 CLAIM_SHAREDKEY=${state.shared_key}
 OTOROSHI_INITIAL_ADMIN_LOGIN=${state.init_login}
 OTOROSHI_INITIAL_ADMIN_PASSWORD=${state.init_pwd}
+OTOROSHI_SECRET=${state.oto_secret}
 PLAY_CRYPTO_SECRET=${state.crypto_secret}
 SESSION_NAME=${state.session_name}
 APP_DOMAIN=${state.app_domain}
