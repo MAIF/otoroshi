@@ -357,6 +357,7 @@ rules:
       - secrets
       - configmaps
       - deployments
+      - namespaces
       - pods
     verbs:
       - get
@@ -400,6 +401,8 @@ rules:
       - tcp-services
       - data-exporters
       - admins
+      - organizations
+      - teams
     verbs:
       - get
       - list
