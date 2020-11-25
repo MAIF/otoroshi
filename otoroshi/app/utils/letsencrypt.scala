@@ -28,7 +28,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 case class LetsEncryptSettings(enabled: Boolean = false,
-                               server: String = "acme://letsencrypt.org",
+                               server: String = "acme://letsencrypt.org/staging",
                                emails: Seq[String] = Seq.empty,
                                contacts: Seq[String] = Seq.empty,
                                publicKey: String = "",

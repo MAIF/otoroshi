@@ -6,20 +6,16 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
 import env.Env
-import models.{ApiKey, PrivateAppsUser, ServiceDescriptor}
-import otoroshi.script.{AfterRequestContext, BeforeRequestContext, HttpRequest, Job, JobContext, JobId, JobInstantiation, JobKind, JobStarting, JobVisibility, RequestTransformer, TransformerRequestBodyContext, TransformerRequestContext}
-import play.api.Logger
-
-import scala.concurrent.{ExecutionContext, Future, Promise}
-import scala.concurrent.duration._
+import otoroshi.script._
 import otoroshi.utils.syntax.implicits._
 import otoroshi.utils.workflow.{WorkFlow, WorkFlowRequest, WorkFlowSpec}
-import play.api.libs.json.{JsBoolean, JsNumber, JsObject, JsString, JsValue, Json}
-import play.api.mvc.{RequestHeader, Result, Results}
-import play.core.parsers.FormUrlEncodedParser
-import utils.TypedMap
+import play.api.Logger
+import play.api.libs.json.{JsObject, JsString, JsValue, Json}
+import play.api.mvc.{Result, Results}
 
 import scala.collection.concurrent.TrieMap
+import scala.concurrent.duration._
+import scala.concurrent.{ExecutionContext, Future, Promise}
 
 class WorkflowJob extends Job {
 
@@ -27,7 +23,7 @@ class WorkflowJob extends Job {
 
   override def uniqueId: JobId = JobId("io.otoroshi.plugins.jobs.WorkflowJob")
 
-  override def name: String = "Run a workflow periodically"
+  override def name: String = "Workflow job"
 
   override def defaultConfig: Option[JsObject] = Json.obj("WorkflowJob" -> Json.obj(
     "input" -> Json.obj(
@@ -88,12 +84,11 @@ class WorkflowJob extends Job {
   override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] = ctx.config.select("intervalMillis").asOpt[Long].getOrElse(60000L).millis.some
 
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
-
     implicit val mat = env.otoroshiMaterializer
-
-    val input = ctx.config.select("input").asOpt[JsObject].getOrElse(Json.obj())
-    val spec = ctx.config.select("workflow").asOpt[JsObject].getOrElse(Json.obj())
-    val workflow = WorkFlow(WorkFlowSpec.inline(spec))
+    val input = ctx.configFor("WorkflowJob").select("input").asOpt[JsObject].getOrElse(Json.obj())
+    val specJson = ctx.configFor("WorkflowJob").select("workflow").asOpt[JsObject].getOrElse(Json.obj())
+    val spec = WorkFlowSpec.inline(specJson)
+    val workflow = WorkFlow(spec)
     workflow.run(WorkFlowRequest.inline(input)).map(_ => ())
   }
 }

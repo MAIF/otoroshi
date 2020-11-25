@@ -216,14 +216,18 @@ case class WorkFlowTaskContext(input: JsValue, cache: TrieMap[String, JsValue], 
 }
 
 object WorkFlow {
+  val logger = Logger(s"otoroshi-workflow")
   def apply(spec: WorkFlowSpec): WorkFlow = new WorkFlow(spec)
 }
 
 class WorkFlow(spec: WorkFlowSpec) {
 
-  lazy val logger = Logger(s"workflow-$name")
   lazy val name: String = spec.name
   lazy val description: String = spec.description
+
+  def log(str: String): Unit = {
+    WorkFlow.logger.info(s"[workflow-$name] ${str}")
+  }
 
   def run(input: WorkFlowRequest)(implicit ec: ExecutionContext, mat: Materializer, env: Env): Future[WorkFlowResponse] = {
     val ctx = WorkFlowTaskContext(
@@ -238,16 +242,16 @@ class WorkFlow(spec: WorkFlowSpec) {
         "body" -> Json.obj()
       ))
     )
-    logger.info("running workflow")
+    log("running workflow")
     Source(spec.tasks.toList)
       .mapAsync(1) { task =>
-        logger.info(s"running task '${task.name}'")
+        log(s"running task '${task.name}'")
         task.run(ctx).recover {
           case e => WorkFlowResult.WorkFlowFailure(task, e)
         }.andThen {
-          case Failure(e) => logger.info(s"task '${task.name}' completed with failure: ${e.getMessage}")
-          case Success(WorkFlowResult.WorkFlowFailure(t, e)) => logger.info(s"task '${task.name}' completed with failure: ${e.getMessage}")
-          case Success(WorkFlowResult.WorkFlowSuccess(t)) => logger.info(s"task '${task.name}' completed with success")
+          case Failure(e) => log(s"task '${task.name}' completed with failure: ${e.getMessage}")
+          case Success(WorkFlowResult.WorkFlowFailure(t, e)) => log(s"task '${task.name}' completed with failure: ${e.getMessage}")
+          case Success(WorkFlowResult.WorkFlowSuccess(t)) => log(s"task '${task.name}' completed with success")
         }
       }.takeWhile({
         case WorkFlowResult.WorkFlowSuccess(_) => true
@@ -260,9 +264,9 @@ class WorkFlow(spec: WorkFlowSpec) {
           case WorkFlowResult.WorkFlowFailure(_, _) => true
         })
         if (success) {
-          logger.info("workflow finished with success")
+          log("workflow finished with success")
         } else {
-          logger.info("workflow finished with failure")
+          log("workflow finished with failure")
         }
         WorkFlowResponse(success, ctx, results)
       }
