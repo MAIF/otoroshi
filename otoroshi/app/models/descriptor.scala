@@ -1497,7 +1497,7 @@ case class ServiceDescriptor(
     }
     rootMatched
       .filter(_ => stripPath)
-      .map(m => root.replace(m, ""))
+      .map(m => root.replaceFirst(m.replace(".", "\\."), ""))
       .getOrElse(rawUri)
   }
 
