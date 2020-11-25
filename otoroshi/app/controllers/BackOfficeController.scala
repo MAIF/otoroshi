@@ -859,7 +859,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
       Try {
         Json.parse(body.utf8String).\("host").asOpt[String] match {
           case Some(host) => {
-            env.datastores.certificatesDataStore.findById(Cert.OtoroshiCA).map {
+            env.datastores.certificatesDataStore.findById(Cert.OtoroshiIntermediateCA).map {
               case None => {
                 val cert =
                   FakeKeyStore.createSelfSignedCertificate(host, FiniteDuration(365, TimeUnit.DAYS), None, None)
@@ -895,7 +895,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
       Try {
         Json.parse(body.utf8String).\("dn").asOpt[String] match {
           case Some(dn) => {
-            env.datastores.certificatesDataStore.findById(Cert.OtoroshiCA).map {
+            env.datastores.certificatesDataStore.findById(Cert.OtoroshiIntermediateCA).map {
               case None => {
                 val cert =
                   FakeKeyStore.createSelfSignedClientCertificate(dn, FiniteDuration(365, TimeUnit.DAYS), None, None)
