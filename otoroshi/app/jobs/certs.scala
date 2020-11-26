@@ -61,8 +61,8 @@ class InitialCertsJob extends Job {
       }
   }
 
-  def createOrFind(name: String, description: String, subject: String, hosts: Seq[String], duration: FiniteDuration, ca: Boolean, client: Boolean, id: String, certs: Seq[Cert], from: Option[Cert])(implicit env: Env, ec: ExecutionContext): Future[Option[Cert]] = {
-    certs.find(c => c.id == id).filter(_.enrich().valid) match {
+  def createOrFind(name: String, description: String, subject: String, hosts: Seq[String], duration: FiniteDuration, ca: Boolean, client: Boolean, id: String, found: Option[Cert], from: Option[Cert])(implicit env: Env, ec: ExecutionContext): Future[Option[Cert]] = {
+    found.filter(_.enrich().valid) match {
       case None => {
         logger.info(s"Generating ${name} ... ")
         val query = GenCsrQuery(
@@ -99,16 +99,16 @@ class InitialCertsJob extends Job {
   }
 
   def runWithNewPki()(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
-    env.datastores.certificatesDataStore
-      .findAll()
-      .flatMap { certs =>
-        for {
-          root         <- createOrFind("Otoroshi Default Root CA Certificate",         "Otoroshi root CA (auto-generated)",              s"CN=Otoroshi Default Root CA Certificate, OU=Otoroshi Certificates, O=Otoroshi",                      Seq.empty,               (10 * 365).days, true,  false, Cert.OtoroshiCA,             certs, None)
-          intermediate <- createOrFind("Otoroshi Default Intermediate CA Certificate", "Otoroshi intermediate CA (auto-generated)",      s"CN=Otoroshi Default Intermediate CA Certificate, OU=Otoroshi Certificates, O=Otoroshi",              Seq.empty,               (10 * 365).days, true,  false, Cert.OtoroshiIntermediateCA, certs, root)
-          _            <- createOrFind("Otoroshi Default Wildcard Certificate",        "Otoroshi wildcard certificate (auto-generated)", s"CN=*.${env.domain}, SN=Otoroshi Default Wildcard Certificate, OU=Otoroshi Certificates, O=Otoroshi", Seq(s"*.${env.domain}"), (1 * 365).days,  false, false, Cert.OtoroshiWildcard,       certs, intermediate)
-          _            <- createOrFind("Otoroshi Default Client Certificate",          "Otoroshi client certificate (auto-generated)",   s"CN=Otoroshi Default Client Certificate, OU=Otoroshi Certificates, O=Otoroshi",                       Seq.empty,               (1 * 365).days,  false, true,  Cert.OtoroshiClient,         certs, intermediate)
-        } yield ()
-      }
+    for {
+      cRoot         <- env.datastores.certificatesDataStore.findById(Cert.OtoroshiCA)
+      cIntermediate <- env.datastores.certificatesDataStore.findById(Cert.OtoroshiIntermediateCA)
+      cWildcard     <- env.datastores.certificatesDataStore.findById(Cert.OtoroshiWildcard)
+      cClient       <- env.datastores.certificatesDataStore.findById(Cert.OtoroshiClient)
+      root          <- createOrFind("Otoroshi Default Root CA Certificate",         "Otoroshi root CA (auto-generated)",              s"CN=Otoroshi Default Root CA Certificate, OU=Otoroshi Certificates, O=Otoroshi",                      Seq.empty,               (10 * 365).days, true,  false, Cert.OtoroshiCA,             cRoot,         None)
+      intermediate  <- createOrFind("Otoroshi Default Intermediate CA Certificate", "Otoroshi intermediate CA (auto-generated)",      s"CN=Otoroshi Default Intermediate CA Certificate, OU=Otoroshi Certificates, O=Otoroshi",              Seq.empty,               (10 * 365).days, true,  false, Cert.OtoroshiIntermediateCA, cIntermediate, root)
+      _             <- createOrFind("Otoroshi Default Wildcard Certificate",        "Otoroshi wildcard certificate (auto-generated)", s"CN=*.${env.domain}, SN=Otoroshi Default Wildcard Certificate, OU=Otoroshi Certificates, O=Otoroshi", Seq(s"*.${env.domain}"), (1 * 365).days,  false, false, Cert.OtoroshiWildcard,       cWildcard,     intermediate)
+      _             <- createOrFind("Otoroshi Default Client Certificate",          "Otoroshi client certificate (auto-generated)",   s"CN=Otoroshi Default Client Certificate, OU=Otoroshi Certificates, O=Otoroshi",                       Seq.empty,               (1 * 365).days,  false, true,  Cert.OtoroshiClient,         cClient,       intermediate)
+    } yield () 
   }
 
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
