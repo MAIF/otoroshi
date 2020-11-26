@@ -108,7 +108,7 @@ class InitialCertsJob extends Job {
       intermediate  <- createOrFind("Otoroshi Default Intermediate CA Certificate", "Otoroshi intermediate CA (auto-generated)",      s"CN=Otoroshi Default Intermediate CA Certificate, OU=Otoroshi Certificates, O=Otoroshi",              Seq.empty,               (10 * 365).days, true,  false, Cert.OtoroshiIntermediateCA, cIntermediate, root)
       _             <- createOrFind("Otoroshi Default Wildcard Certificate",        "Otoroshi wildcard certificate (auto-generated)", s"CN=*.${env.domain}, SN=Otoroshi Default Wildcard Certificate, OU=Otoroshi Certificates, O=Otoroshi", Seq(s"*.${env.domain}"), (1 * 365).days,  false, false, Cert.OtoroshiWildcard,       cWildcard,     intermediate)
       _             <- createOrFind("Otoroshi Default Client Certificate",          "Otoroshi client certificate (auto-generated)",   s"CN=Otoroshi Default Client Certificate, OU=Otoroshi Certificates, O=Otoroshi",                       Seq.empty,               (1 * 365).days,  false, true,  Cert.OtoroshiClient,         cClient,       intermediate)
-    } yield () 
+    } yield ()
   }
 
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {

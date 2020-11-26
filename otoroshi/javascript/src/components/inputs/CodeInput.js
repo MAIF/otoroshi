@@ -14,6 +14,7 @@ export class JsonObjectAsCodeInput extends Component {
     return (
       <CodeInput
         {...this.props}
+        mode="json"
         value={JSON.stringify(this.props.value, null, 2)}
         onChange={(e) => {
           try {
@@ -58,7 +59,9 @@ export default class CodeInput extends Component {
       } catch (ex) {
         if (e.trim() === '') {
           this.setState({ value: '{}' });
-        } else {
+        } else if (e.indexOf('}{}') > -1) {
+          this.setState({ value: e.replace('}{}', '}') });
+        } else {
           this.setState({ value: e });
         }
       }
