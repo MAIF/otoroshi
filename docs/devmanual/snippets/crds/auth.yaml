@@ -2,7 +2,8 @@ apiVersion: proxy.otoroshi.io/v1alpha1
 kind: AuthModule
 metadata:
   name: http-app-auth
-  io.otoroshi/id: http-app-auth
+  annotations:
+    io.otoroshi/id: http-app-auth
 spec:
   type: oauth2
   desc: Keycloak mTLS
