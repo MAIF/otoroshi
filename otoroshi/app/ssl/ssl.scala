@@ -363,10 +363,10 @@ object Cert {
 
   import SSLImplicits._
 
-  val OtoroshiCA = "otoroshi-ca"
+  val OtoroshiCA             = "otoroshi-root-ca"
   val OtoroshiIntermediateCA = "otoroshi-intermediate-ca"
-  val OtoroshiWildcard = "otoroshi-wildcard"
-  val OtoroshiClient = "otoroshi-client"
+  val OtoroshiWildcard       = "otoroshi-wildcard"
+  val OtoroshiClient         = "otoroshi-client"
 
   lazy val logger = Logger("otoroshi-cert")
 
