@@ -2957,7 +2957,8 @@ spec:
 kind: JwtVerifier
 metadata:
   name: http-app-verifier
-  io.otoroshi/id: http-app-verifier
+  annotations:
+    io.otoroshi/id: http-app-verifier
 spec:
   desc: verify that the jwt token in header jwt is ok
   strict: true
@@ -2982,7 +2983,8 @@ spec:
 kind: AuthModule
 metadata:
   name: http-app-auth
-  io.otoroshi/id: http-app-auth
+  annotations:
+    io.otoroshi/id: http-app-auth
 spec:
   type: oauth2
   desc: Keycloak mTLS

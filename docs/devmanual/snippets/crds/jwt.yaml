@@ -2,7 +2,8 @@ apiVersion: proxy.otoroshi.io/v1alpha1
 kind: JwtVerifier
 metadata:
   name: http-app-verifier
-  io.otoroshi/id: http-app-verifier
+  annotations:
+    io.otoroshi/id: http-app-verifier
 spec:
   desc: verify that the jwt token in header jwt is ok
   strict: true
