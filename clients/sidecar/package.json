@@ -1,0 +1,32 @@
+{
+  "name": "otoroshi-sidecar",
+  "version": "1.5.0-dev",
+  "description": "Sidecar to use otoroshi with ease in kubernetes",
+  "main": "src/sidecar.js",
+  "bin": "src/sidecar.js",
+  "license": "MIT",
+  "scripts": {
+    "dev": "nodemon src/dev.js",
+    "start": "node src/sidecar.js",
+    "pkg": "pkg . && rm -rf ./binaries && mkdir -p ./binaries && mv otoroshi-sidecar* ./binaries/"
+  },
+  "pkg": {
+    "assets": [],
+    "targets": [
+      "latest-macos",
+      "latest-linux",
+      "latest-win"
+    ]
+  },
+  "devDependencies": {
+    "nodemon": "2.0.6",
+    "pkg": "4.4.9"
+  },
+  "dependencies": {
+    "jsonwebtoken": "8.5.1",
+    "lodash": "4.17.20",
+    "node-fetch": "2.6.1",
+    "query-string": "6.13.7",
+    "uuid": "8.3.1"
+  }
+}
