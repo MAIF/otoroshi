@@ -189,6 +189,7 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
           handleWatch(conf, ctx)
           KubernetesCRDsJob.patchCoreDnsConfig(conf, ctx)
           KubernetesCRDsJob.patchValidatingAdmissionWebhook(conf, ctx)
+          KubernetesCRDsJob.patchMutatingAdmissionWebhook(conf, ctx)
           KubernetesCRDsJob.syncCRDs(conf, ctx.attrs, !stopCommand.get())
         } else {
           ().future
@@ -197,6 +198,7 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
         handleWatch(conf, ctx)
         KubernetesCRDsJob.patchCoreDnsConfig(conf, ctx)
         KubernetesCRDsJob.patchValidatingAdmissionWebhook(conf, ctx)
+        KubernetesCRDsJob.patchMutatingAdmissionWebhook(conf, ctx)
         KubernetesCRDsJob.syncCRDs(conf, ctx.attrs, !stopCommand.get())
       }
     } else {
