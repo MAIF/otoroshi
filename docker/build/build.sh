@@ -182,6 +182,16 @@ case "${1}" in
     docker push "maif/otoroshi:1.5.0-dev-$NBR"
     docker push "maif/otoroshi:dev"
     ;;
+  build-and-push-local)
+    NBR=`date +%s`
+    echo "Will build version 1.5.0-dev-$NBR"
+    cp ../../otoroshi/target/universal/otoroshi-1.5.0-dev.zip otoroshi-dist.zip
+    prepare_build
+    docker build --no-cache -f ./Dockerfile-jdk11 -t otoroshi .
+    docker tag otoroshi "registry.oto.tools:5000/maif/otoroshi:1.5.0-dev-$NBR"
+    cleanup
+    docker push "registry.oto.tools:5000/maif/otoroshi:1.5.0-dev-$NBR"
+    ;;
   build-snapshot)
     NBR=`date +%s`
     echo "Will build version 1.5.0-dev-$NBR"

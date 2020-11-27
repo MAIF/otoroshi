@@ -148,7 +148,7 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
         "admins",
         "data-exporters",
         "teams",
-        "tenants",
+        "organizations",
       ), conf.watchTimeoutSeconds, !watchCommand.get()).merge(
         client.watchKubeResources(conf.namespaces, Seq("secrets", "services", "pods", "endpoints"), conf.watchTimeoutSeconds, !watchCommand.get())
       )
@@ -402,8 +402,8 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
     ).applyOn { s =>
       val enabledAdditionalHosts = (s \ "enabledAdditionalHosts").asOpt[Boolean].getOrElse(true)
       (s \ "hosts").asOpt[JsArray] match {
-        case None if additionalHosts => s.as[JsObject] ++ Json.obj("hosts" -> additionalHosts)
-        case Some(arr) if additionalHosts => s.as[JsObject] ++ Json.obj("hosts" -> (arr ++ additionalHosts))
+        case None if enabledAdditionalHosts => s.as[JsObject] ++ Json.obj("hosts" -> additionalHosts)
+        case Some(arr) if enabledAdditionalHosts => s.as[JsObject] ++ Json.obj("hosts" -> (arr ++ additionalHosts))
         case _ => s.as[JsObject]
       }
     }.applyOn(s => s.as[JsObject] ++ Json.obj("useAkkaHttpClient" -> true))
@@ -1345,7 +1345,7 @@ object KubernetesCRDsJob {
           ().future
         case Some(webhookSpec) => {
           val webhook = webhookSpec.webhooks.value.head
-          val caBundle = webhook.select("clientConfig").select("service").select("caBundle").asOpt[String].getOrElse("")
+          val caBundle = webhook.select("clientConfig").select("caBundle").asOpt[String].getOrElse("")
           val failurePolicy = webhook.select("failurePolicy").asOpt[String].getOrElse("Ignore")
           if (caBundle.trim.isEmpty || failurePolicy == "Ignore") {
             DynamicSSLEngineProvider.certificates.get(Cert.OtoroshiIntermediateCA) match {
@@ -1356,7 +1356,7 @@ object KubernetesCRDsJob {
                 client.patchValidatingWebhookConfiguration(conf.validatingWebhookName, Json.arr(
                   Json.obj(
                     "op" -> "replace",
-                    "path" -> "/webhooks/0/clientConfig/service/caBundle",
+                    "path" -> "/webhooks/0/clientConfig/caBundle",
                     "value" -> ca.chain
                   ),
                   Json.obj(
@@ -1383,7 +1383,7 @@ object KubernetesCRDsJob {
           ().future
         case Some(webhookSpec) => {
           val webhook = webhookSpec.webhooks.value.head
-          val caBundle = webhook.select("clientConfig").select("service").select("caBundle").asOpt[String].getOrElse("")
+          val caBundle = webhook.select("clientConfig").select("caBundle").asOpt[String].getOrElse("")
           val failurePolicy = webhook.select("failurePolicy").asOpt[String].getOrElse("Ignore")
           if (caBundle.trim.isEmpty || failurePolicy == "Ignore") {
             DynamicSSLEngineProvider.certificates.get(Cert.OtoroshiIntermediateCA) match {
@@ -1394,7 +1394,7 @@ object KubernetesCRDsJob {
                 client.patchMutatingWebhookConfiguration(conf.mutatingWebhookName, Json.arr(
                   Json.obj(
                     "op" -> "replace",
-                    "path" -> "/webhooks/0/clientConfig/service/caBundle",
+                    "path" -> "/webhooks/0/clientConfig/caBundle",
                     "value" -> ca.chain
                   ),
                   Json.obj(
