@@ -26,7 +26,7 @@ webhooks:
         namespace: otoroshi
         path: "/apis/webhooks/validation"
         port: 8443
-        caBundle: "" # injected at runtime
+      caBundle: "" # injected at runtime
     failurePolicy: Ignore # inject at runtime
     sideEffects: None
     admissionReviewVersions: 
@@ -64,7 +64,7 @@ webhooks:
         namespace: otoroshi
         path: "/apis/webhooks/sidecar"
         port: 8443
-        caBundle: "" # inject at runtime
+      caBundle: "" # inject at runtime
     failurePolicy: Ignore # inject at runtime
     sideEffects: None
     admissionReviewVersions: 

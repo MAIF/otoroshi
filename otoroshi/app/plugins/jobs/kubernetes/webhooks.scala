@@ -22,6 +22,7 @@ class KubernetesAdmissionWebhookCRDValidator extends RequestSink {
 
   override def matches(ctx: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Boolean = {
     val config = KubernetesConfig.theConfig(ctx)
+    println(ctx.request.method, ctx.request.domain, ctx.request.path, ctx.origin, ctx.request)
     ctx.request.domain.contentEquals(s"${config.otoroshiServiceName}.${config.otoroshiNamespace}.svc.${config.clusterDomain}") &&
       ctx.request.path.contentEquals("/apis/webhooks/validator") &&
       ctx.origin == RequestOrigin.ReverseProxy &&
@@ -245,6 +246,7 @@ class KubernetesAdmissionWebhookSidecarInjector extends RequestSink {
 
   override def matches(ctx: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Boolean = {
     val config = KubernetesConfig.theConfig(ctx)
+    println(ctx.request.method, ctx.request.domain, ctx.request.path, ctx.origin, ctx.request)
     ctx.request.domain.contentEquals(s"${config.otoroshiServiceName}.${config.otoroshiNamespace}.svc.${config.clusterDomain}") &&
       ctx.request.path.contentEquals("/apis/webhooks/inject") &&
       ctx.origin == RequestOrigin.ReverseProxy &&

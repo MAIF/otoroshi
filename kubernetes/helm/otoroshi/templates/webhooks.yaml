@@ -27,7 +27,7 @@ webhooks:
         namespace: {{ .Release.Namespace }}
         path: "/apis/webhooks/validation"
         port: 8443
-        caBundle: "" # injected at runtime
+      caBundle: "" # injected at runtime
     failurePolicy: Ignore
     sideEffects: None
     admissionReviewVersions: 
@@ -67,7 +67,7 @@ webhooks:
         namespace: {{ .Release.Namespace }}
         path: "/apis/webhooks/inject"
         port: 8443
-        caBundle: "." # injected at runtime
+      caBundle: "." # injected at runtime
     failurePolicy: Ignore
     sideEffects: None
     admissionReviewVersions: 
