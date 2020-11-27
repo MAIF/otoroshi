@@ -1,25 +1,9 @@
 const http = require('http');
 const https = require('https');
 const moment = require('moment');
+const jwt = require('jsonwebtoken');
 const fs = require('fs');
 const uuidv4 = require('uuid/v4');
-
-const OTOROSHI_HOST = process.env.OTOROSHI_HOST || 'otoroshi-service.otoroshi.svc.cluster.local';
-const OTOROSHI_PORT = parseInt(process.env.OTOROSHI_PORT || '8443', 10);
-const LOCAL_PORT = parseInt(process.env.LOCAL_PORT || '8081', 10);
-
-// TODO: update at interval
-const CLIENT_ID = fs.readFileSync('/var/run/secrets/kubernetes.io/otoroshi.io/apikeys/clientId').toString('utf8')
-const CLIENT_SECRET = fs.readFileSync('/var/run/secrets/kubernetes.io/otoroshi.io/apikeys/clientSecret').toString('utf8')
-
-const CLIENT_CA = fs.readFileSync('/var/run/secrets/kubernetes.io/otoroshi.io/certs/client/ca-chain.crt').toString('utf8')
-const CLIENT_CERT = fs.readFileSync('/var/run/secrets/kubernetes.io/otoroshi.io/certs/client/cert.crt').toString('utf8')
-const CLIENT_KEY = fs.readFileSync('/var/run/secrets/kubernetes.io/otoroshi.io/certs/client/tls.key').toString('utf8')
-
-const BACKEND_CA = fs.readFileSync('/var/run/secrets/kubernetes.io/otoroshi.io/certs/backend/ca-chain.crt').toString('utf8')
-const BACKEND_CERT = fs.readFileSync('/var/run/secrets/kubernetes.io/otoroshi.io/certs/backend/cert.crt').toString('utf8')
-const BACKEND_KEY = fs.readFileSync('/var/run/secrets/kubernetes.io/otoroshi.io/certs/backend/tls.key').toString('utf8')
-// TODO: update at interval
 
 function createServer(opts, fn) {
   if (opts.ssl) {
@@ -58,6 +42,8 @@ function InternalProxy(opts) {
 
   const server = createServer(opts, (req, res, secure) => {
 
+    const ctx = opts.context();
+
     try {
       const args = {};
 
@@ -69,26 +55,26 @@ function InternalProxy(opts) {
       }
 
       const domain = req.headers.host.split(':')[0];
-      const isHandledByOtoroshi = domain.indexOf('otoroshi.mesh') > -1;
+      const isHandledByOtoroshi = domain.indexOf(ctx.OTOROSHI_DOMAIN) > -1;
       
       const requestId = uuidv4();
       let options = {
-        host: OTOROSHI_HOST,
-        port: OTOROSHI_PORT,
+        host: ctx.OTOROSHI_HOST,
+        port: ctx.OTOROSHI_PORT,
         path: req.url,
         method: req.method,
         headers: {
           ...req.headers,
-          'Otoroshi-Client-Id': CLIENT_ID,
-          'Otoroshi-Client-Secret': CLIENT_SECRET,
+          'Otoroshi-Client-Id': ctx.CLIENT_ID,
+          'Otoroshi-Client-Secret': ctx.CLIENT_SECRET,
         },
-        cert: CLIENT_CERT,
-        key: CLIENT_KEY,
-        ca: CLIENT_CA
+        cert: ctx.CLIENT_CERT,
+        key: ctx.CLIENT_KEY,
+        ca: ctx.CLIENT_CA
       };
       req.setEncoding('utf8');
       if (!isHandledByOtoroshi) {
-        // TODO: just proxy here and not fail!
+        // just proxy here and not fail ???
         res.writeHead(400, { 'Content-Type': 'application/json' });
         res.write(JSON.stringify({ error: 'not an otoroshi request' }));
         res.end();
@@ -140,18 +126,18 @@ function InternalProxy(opts) {
         forwardReq.end();
       }
     } catch (_error) {
-      console.log(`[INTERNAL_PROXY] ${moment().format('YYYY-MM-DD HH:mm:ss.SSS')} http request to service raised: `, _error, {});
+      console.log(`[INTERNAL-PROXY] ${moment().format('YYYY-MM-DD HH:mm:ss.SSS')} http request to service raised: `, _error, {});
       if (_error.type === 'ProxyError') {
         try {
           writeError(_error.status, _error.body, _error.ctype, res, args);
         } catch (_error2) {
-          console.log(`[INTERNAL_PROXY] ${moment().format('YYYY-MM-DD HH:mm:ss.SSS')} Could not send error response: `, _error2, {});
+          console.log(`[INTERNAL-PROXY] ${moment().format('YYYY-MM-DD HH:mm:ss.SSS')} Could not send error response: `, _error2, {});
         }
       } else {
         try {
-          writeError(502, `{"error": "Internal error", "type":"INTERNAL_PROXY", "message":"${_error.message}" }`, 'application/json', res, args);
+          writeError(502, `{"error": "Internal error", "type":"INTERNAL-PROXY", "message":"${_error.message}" }`, 'application/json', res, args);
         } catch (_error2) {
-          console.log(`[INTERNAL_PROXY] ${moment().format('YYYY-MM-DD HH:mm:ss.SSS')} Could not send error response: `, _error2, {});
+          console.log(`[INTERNAL-PROXY] ${moment().format('YYYY-MM-DD HH:mm:ss.SSS')} Could not send error response: `, _error2, {});
         }
       }
     }
@@ -161,14 +147,18 @@ function InternalProxy(opts) {
 }
 
 function ExternalProxy(opts) {
+  
+  const _ctx = opts.context();
 
   const server = createServer({ ...opts, ssl: {
-    key: BACKEND_KEY, 
-    cert: BACKEND_CERT, 
-    ca: BACKEND_CA, 
+    key: _ctx.BACKEND_KEY, 
+    cert: _ctx.BACKEND_CERT, 
+    ca: _ctx.BACKEND_CA, 
     requestCert: true, 
     rejectUnauthorized: true
   } }, (req, res, secure) => {
+
+    const ctx = opts.context();
 
     try {
       const args = {};
@@ -183,11 +173,34 @@ function ExternalProxy(opts) {
       const requestId = uuidv4();
       const stateToken = req.headers['otoroshi-state'];
       const claimToken = req.headers['otoroshi-claim'];
-      // TODO: validate tokens
-      // TODO: check if client cert
+
+      if (claimToken && stateToken) { 
+        try {
+          const stateTokenIsJwt = stateToken.split('.').legnth === 3;
+          const state = stateTokenIsJwt ? jwt.verify(stateToken, ctx.TOKEN_SECRET) : stateToken;
+          const claims = jwt.verify(claimToken, ctx.TOKEN_SECRET);
+          args.claims = JSON.stringify(claims);
+          if (stateTokenIsJwt) {
+            const jwtTokenRaw = { "state-resp": args.state, aud: "Otoroshi", iat: Math.floor(Date.now() / 1000), exp: Math.floor(Date.now() / 1000) + 10 };
+            const jwtToken = jwt.sign(jwtTokenRaw, ctx.TOKEN_SECRET, { algorithm: 'HS512' });
+            args.state = jwtToken
+          } else {
+            args.state = state;
+          }
+        } catch(err) {
+          return writeError(400, `{"error":"bad tokens"}`, 'application/json', res, args);
+        }
+      } else {
+        return writeError(400, `{"error":"no tokens"}`, 'application/json', res, args);
+      }
+
+      if (!req.socket.getPeerCertificate().subject) {
+        return writeError(400, `{"error":"bad client cert"}`, 'application/json', res, args);
+      }
+
       const options = {
         host: '127.0.0.1',
-        port: LOCAL_PORT,
+        port: ctx.LOCAL_PORT,
         path: req.url,
         method: req.method,
         headers: {
@@ -199,7 +212,7 @@ function ExternalProxy(opts) {
       console.log(`[EXTERNAL-PROXY] ${moment().format('YYYY-MM-DD HH:mm:ss.SSS')} - ${requestId} - HTTP/${req.httpVersion} - ${req.method} - ${secure ? 'https' : 'http'}://${domain}${req.url}`);
 
       const forwardReq = http.request(options, (forwardRes) => {
-        const headersOut = { ...forwardRes.headers, 'otoroshi-state-resp': stateToken };  // TODO: handle v2 ???     
+        const headersOut = { ...forwardRes.headers, 'otoroshi-claim': args.claims, 'otoroshi-state-resp': args.state }; 
         res.writeHead(forwardRes.statusCode, headersOut);
         forwardRes.setEncoding('utf8');
         let ended = false;
