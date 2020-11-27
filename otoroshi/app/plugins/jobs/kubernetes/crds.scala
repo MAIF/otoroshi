@@ -395,12 +395,14 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
         case None => s.as[JsObject] ++ Json.obj("groups" -> Json.arr("default"))
         case Some(_) => s
       }
-    ).applyOn(s =>
+    ).applyOn { s =>
+      val enabledAdditionalHosts = (s \ "enabledAdditionalHosts").asOpt[Boolean].getOrElse(true)
       (s \ "hosts").asOpt[JsArray] match {
-        case None => s.as[JsObject] ++ Json.obj("hosts" -> additionalHosts)
-        case Some(arr) => s.as[JsObject] ++ Json.obj("hosts" -> (arr ++ additionalHosts))
+        case None if additionalHosts => s.as[JsObject] ++ Json.obj("hosts" -> additionalHosts)
+        case Some(arr) if additionalHosts => s.as[JsObject] ++ Json.obj("hosts" -> (arr ++ additionalHosts))
+        case _ => s.as[JsObject]
       }
-    ).applyOn(s => s.as[JsObject] ++ Json.obj("useAkkaHttpClient" -> true))
+    }.applyOn(s => s.as[JsObject] ++ Json.obj("useAkkaHttpClient" -> true))
   }
 
   def customizeApiKey(_spec: JsValue, res: KubernetesOtoroshiResource, secrets: Seq[KubernetesSecret], apikeys: Seq[ApiKey], registerApkToExport: Function3[String, String, ApiKey, Unit]): JsValue = {
