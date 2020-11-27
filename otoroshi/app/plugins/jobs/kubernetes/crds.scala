@@ -188,6 +188,7 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
         if (shouldRun.get()) {
           handleWatch(conf, ctx)
           KubernetesCRDsJob.patchCoreDnsConfig(conf, ctx)
+          KubernetesCRDsJob.patchValidatingAdmissionWebhook(conf, ctx)
           KubernetesCRDsJob.syncCRDs(conf, ctx.attrs, !stopCommand.get())
         } else {
           ().future
@@ -195,6 +196,7 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
       } else {
         handleWatch(conf, ctx)
         KubernetesCRDsJob.patchCoreDnsConfig(conf, ctx)
+        KubernetesCRDsJob.patchValidatingAdmissionWebhook(conf, ctx)
         KubernetesCRDsJob.syncCRDs(conf, ctx.attrs, !stopCommand.get())
       }
     } else {
@@ -1330,5 +1332,81 @@ object KubernetesCRDsJob {
       deleteOtoroshiMeshFromCoreDnsConfig()
       ().future
     }
+  }
+
+  def patchValidatingAdmissionWebhook(conf: KubernetesConfig, ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    val client = new KubernetesClient(conf, env)
+    client.fetchValidatingWebhookConfiguration(conf.validatingWebhookName) // otoroshi-admission-webhook-validation
+      .flatMap {
+        case None =>
+          logger.info("no validating webhook found, moving along ...")
+          ().future
+        case Some(webhookSpec) => {
+          val webhook = webhookSpec.webhooks.value.head
+          val caBundle = webhook.select("clientConfig").select("service").select("caBundle").asOpt[String].getOrElse("")
+          val failurePolicy = webhook.select("failurePolicy").asOpt[String].getOrElse("Ignore")
+          if (caBundle.trim.isEmpty || failurePolicy == "Ignore") {
+            DynamicSSLEngineProvider.certificates.get(Cert.OtoroshiIntermediateCA) match {
+              case None =>
+                logger.info("no otoroshi intermediate ca found, moving along ...")
+                ().future
+              case Some(ca) => {
+                client.patchValidatingWebhookConfiguration(conf.validatingWebhookName, Json.arr(
+                  Json.obj(
+                    "op" -> "replace",
+                    "path" -> "/webhooks/0/clientConfig/service/caBundle",
+                    "value" -> ca.chain
+                  ),
+                  Json.obj(
+                    "op" -> "replace",
+                    "path" -> "/webhooks/0/failurePolicy",
+                    "value" -> "Fail"
+                  )
+                )).map(_ => ())
+              }
+            }
+          } else {
+            ().future
+          }
+        }
+      }
+  }
+
+  def patchMutatingAdmissionWebhook(conf: KubernetesConfig, ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    val client = new KubernetesClient(conf, env)
+    client.fetchMutatingWebhookConfiguration(conf.mutatingWebhookName) // otoroshi-admission-webhook-injector
+      .flatMap {
+        case None =>
+          logger.info("no mutating webhook found, moving along ...")
+          ().future
+        case Some(webhookSpec) => {
+          val webhook = webhookSpec.webhooks.value.head
+          val caBundle = webhook.select("clientConfig").select("service").select("caBundle").asOpt[String].getOrElse("")
+          val failurePolicy = webhook.select("failurePolicy").asOpt[String].getOrElse("Ignore")
+          if (caBundle.trim.isEmpty || failurePolicy == "Ignore") {
+            DynamicSSLEngineProvider.certificates.get(Cert.OtoroshiIntermediateCA) match {
+              case None =>
+                logger.info("no otoroshi intermediate ca found, moving along ...")
+                ().future
+              case Some(ca) => {
+                client.patchMutatingWebhookConfiguration(conf.mutatingWebhookName, Json.arr(
+                  Json.obj(
+                    "op" -> "replace",
+                    "path" -> "/webhooks/0/clientConfig/service/caBundle",
+                    "value" -> ca.chain
+                  ),
+                  Json.obj(
+                    "op" -> "replace",
+                    "path" -> "/webhooks/0/failurePolicy",
+                    "value" -> "Fail"
+                  )
+                )).map(_ => ())
+              }
+            }
+          } else {
+            ().future
+          }
+        }
+      }
   }
 }

@@ -50,7 +50,9 @@ case class KubernetesConfig(
   syncIntervalSeconds: Long,
   coreDnsEnv: Option[String],
   watchTimeoutSeconds: Int,
-  watchGracePeriodSeconds: Int
+  watchGracePeriodSeconds: Int,
+  mutatingWebhookName: String,
+  validatingWebhookName: String,
 )
 
 object KubernetesConfig {
@@ -122,6 +124,8 @@ object KubernetesConfig {
           coreDnsEnv = (conf \ "coreDnsEnv").asOpt[String].filterNot(_.trim.isEmpty),
           watchTimeoutSeconds = (conf \ "watchTimeoutSeconds").asOpt[Int].getOrElse(60),
           watchGracePeriodSeconds = (conf \ "watchGracePeriodSeconds").asOpt[Int].getOrElse(5),
+          mutatingWebhookName = (conf \ "mutatingWebhookName").asOpt[String].getOrElse("otoroshi-admission-webhook-injector"),
+          validatingWebhookName = (conf \ "validatingWebhookName").asOpt[String].getOrElse("otoroshi-admission-webhook-validation"),
         )
       }
       case None => {
@@ -174,6 +178,8 @@ object KubernetesConfig {
           coreDnsEnv = (conf \ "coreDnsEnv").asOpt[String].filterNot(_.trim.isEmpty),
           watchTimeoutSeconds = (conf \ "watchTimeoutSeconds").asOpt[Int].getOrElse(60),
           watchGracePeriodSeconds = (conf \ "watchGracePeriodSeconds").asOpt[Int].getOrElse(5),
+          mutatingWebhookName = (conf \ "mutatingWebhookName").asOpt[String].getOrElse("otoroshi-admission-webhook-injector"),
+          validatingWebhookName = (conf \ "validatingWebhookName").asOpt[String].getOrElse("otoroshi-admission-webhook-validation"),
         )
       }
     }
@@ -210,6 +216,8 @@ object KubernetesConfig {
         "coreDnsEnv" -> JsNull,
         "watchTimeoutSeconds" -> 60,
         "watchGracePeriodSeconds" -> 5,
+        "mutatingWebhookName" -> "otoroshi-admission-webhook-injector",
+        "validatingWebhookName" -> "otoroshi-admission-webhook-validation",
         "templates" -> Json.obj(
           "service-group" -> Json.obj(),
           "service-descriptor" -> Json.obj(),
