@@ -242,7 +242,7 @@ export class Table extends Component {
 
   exportJson = (e) => {
     if (e && e.preventDefault) e.preventDefault();
-    const name = this.state.currentItem.name
+    const name = (this.state.currentItem.name || this.state.currentItem.clientName)
       .replace(/ /g, '-')
       .replace(/\(/g, '')
       .replace(/\)/g, '')
@@ -267,7 +267,7 @@ export class Table extends Component {
 
   exportYaml = (e) => {
     if (e && e.preventDefault) e.preventDefault();
-    const name = this.state.currentItem.name
+    const name = (this.state.currentItem.name || this.state.currentItem.clientName)
       .replace(/ /g, '-')
       .replace(/\(/g, '')
       .replace(/\)/g, '')
