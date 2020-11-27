@@ -500,7 +500,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
 
   def fetchMutatingWebhookConfiguration(name: String): Future[Option[KubernetesMutatingWebhookConfiguration]] = {
     val cli: WSRequest = client(s"/apis/admissionregistration.k8s.io/v1/mutatingwebhookconfigurations/$name", false)
-    () => cli.addHttpHeaders(
+    cli.addHttpHeaders(
       "Accept" -> "application/json"
     ).get().map { resp =>
       if (resp.status == 200) {
@@ -532,7 +532,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
 
   def fetchValidatingWebhookConfiguration(name: String): Future[Option[KubernetesValidatingWebhookConfiguration]] = {
     val cli: WSRequest = client(s"/apis/admissionregistration.k8s.io/v1/validatingwebhookconfigurations/$name", false)
-    () => cli.addHttpHeaders(
+    cli.addHttpHeaders(
       "Accept" -> "application/json"
     ).get().map { resp =>
       if (resp.status == 200) {

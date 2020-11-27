@@ -60,6 +60,15 @@ rules:
     verbs:
       - update
   - apiGroups:
+      - admissionregistration.k8s.io
+    resources:
+      - validatingwebhookconfigurations
+      - mutatingwebhookconfigurations
+    verbs:
+      - get
+      - update
+      - patch
+  - apiGroups:
       - proxy.otoroshi.io
     resources:
       - service-groups
