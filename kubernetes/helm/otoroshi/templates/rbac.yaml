@@ -42,6 +42,7 @@ rules:
       - configmaps
     verbs:
       - update
+      - update
       - create
       - delete
   - apiGroups:
@@ -59,6 +60,15 @@ rules:
       - ingresses/status
     verbs:
       - update
+  - apiGroups:
+      - admissionregistration.k8s.io
+    resources:
+      - validatingwebhookconfigurations
+      - mutatingwebhookconfigurations
+    verbs:
+      - get
+      - update
+      - patch
   - apiGroups:
       - proxy.otoroshi.io
     resources:
