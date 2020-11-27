@@ -4,7 +4,7 @@ import env.Env
 import models.ServiceDescriptor
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
-import play.api.libs.json.{JsObject, JsValue, Json}
+import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
 import security.OtoroshiClaim
 import ssl.{Cert, DynamicSSLEngineProvider}
 import otoroshi.utils.syntax.implicits._
@@ -38,6 +38,14 @@ case class KubernetesConfigMap(raw: JsValue) extends KubernetesEntity {
       case Some(_) => false
     }
   }
+}
+
+case class KubernetesValidatingWebhookConfiguration(raw: JsValue) extends KubernetesEntity {
+  lazy val webhooks: JsArray = (raw \ "webhooks").as[JsArray]
+}
+
+case class KubernetesMutatingWebhookConfiguration(raw: JsValue) extends KubernetesEntity {
+  lazy val webhooks: JsArray = (raw \ "webhooks").as[JsArray]
 }
 
 case class KubernetesEndpoint(raw: JsValue) extends KubernetesEntity

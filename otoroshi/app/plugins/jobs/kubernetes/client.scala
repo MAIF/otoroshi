@@ -498,6 +498,70 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
     }
   }
 
+  def fetchMutatingWebhookConfiguration(name: String): Future[Option[KubernetesMutatingWebhookConfiguration]] = {
+    val cli: WSRequest = client(s"/apis/admissionregistration.k8s.io/v1/mutatingwebhookconfigurations/$name", false)
+    () => cli.addHttpHeaders(
+      "Accept" -> "application/json"
+    ).get().map { resp =>
+      if (resp.status == 200) {
+        KubernetesMutatingWebhookConfiguration(resp.json).some
+      } else {
+        None
+      }
+    }
+  }
+
+  def patchMutatingWebhookConfiguration(name: String, body: JsValue): Future[Option[KubernetesMutatingWebhookConfiguration]] = {
+    val cli: WSRequest = client(s"/apis/admissionregistration.k8s.io/v1/mutatingwebhookconfigurations/$name", false)
+    cli.addHttpHeaders(
+      "Accept" -> "application/json",
+      "Content-Type" -> "application/json"
+    ).patch(body).map { resp =>
+      Try {
+        if (resp.status == 200 || resp.status == 201) {
+          KubernetesMutatingWebhookConfiguration(resp.json).some
+        } else {
+          None
+        }
+      } match {
+        case Success(r) => r
+        case Failure(e) => None
+      }
+    }
+  }
+
+  def fetchValidatingWebhookConfiguration(name: String): Future[Option[KubernetesValidatingWebhookConfiguration]] = {
+    val cli: WSRequest = client(s"/apis/admissionregistration.k8s.io/v1/validatingwebhookconfigurations/$name", false)
+    () => cli.addHttpHeaders(
+      "Accept" -> "application/json"
+    ).get().map { resp =>
+      if (resp.status == 200) {
+        KubernetesValidatingWebhookConfiguration(resp.json).some
+      } else {
+        None
+      }
+    }
+  }
+
+  def patchValidatingWebhookConfiguration(name: String, body: JsValue): Future[Option[KubernetesValidatingWebhookConfiguration]] = {
+    val cli: WSRequest = client(s"/apis/admissionregistration.k8s.io/v1/mutatingwebhookconfigurations/$name", false)
+    cli.addHttpHeaders(
+      "Accept" -> "application/json",
+      "Content-Type" -> "application/json"
+    ).patch(body).map { resp =>
+      Try {
+        if (resp.status == 200 || resp.status == 201) {
+          KubernetesValidatingWebhookConfiguration(resp.json).some
+        } else {
+          None
+        }
+      } match {
+        case Success(r) => r
+        case Failure(e) => None
+      }
+    }
+  }
+
   def watchOtoResources(namespaces: Seq[String], resources: Seq[String], timeout: Int, stop: => Boolean, labelSelector: Option[String] = None):Source[Seq[ByteString], _] = {
     watchResources(namespaces, resources, "proxy.otoroshi.io/v1alpha1", timeout, stop, labelSelector)
   }
