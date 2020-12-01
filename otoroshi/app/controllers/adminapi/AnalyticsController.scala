@@ -5,6 +5,7 @@ import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
 import env.Env
 import events._
+import models.ServiceDescriptor
 import org.joda.time.DateTime
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
@@ -449,17 +450,25 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(
       val fromDate = from.map(f => new DateTime(f.toLong)).orElse(DateTime.now().minusDays(30).withTimeAtStartOfDay().some)
       val toDate = to.map(f => new DateTime(f.toLong))
 
-      val futureFilterable: Future[Option[Filterable]] = serviceId match {
+      val futureFilterable: Future[Option[Seq[ServiceDescriptor]]] = serviceId match {
         case Some(id) =>
-          env.datastores.serviceDescriptorDataStore.findById(id).map(_.map(ServiceDescriptorFilterable.apply))
+          env.datastores.serviceDescriptorDataStore.findById(id).map(_.map(Seq(_)))
+        case None => env.datastores.serviceDescriptorDataStore.findAll()
+          .map(_.filter(d => ctx.canUserRead(d)))
+          .map {
+            case seq: Seq[ServiceDescriptor] => Some(seq)
+            case Nil => None
+          }
         case _ => FastFuture.successful(None)
       }
 
-      futureFilterable
-        .flatMap(filterable => analyticsService.fetchServicesStatus(filterable, fromDate, toDate).map {
+      futureFilterable.flatMap {
+        case Some(desc) => analyticsService.fetchServicesStatus(desc, fromDate, toDate).map {
           case Some(value) => Ok(value)
           case None => NotFound(Json.obj("error" -> "No entity found"))
-        })
+        }
+        case None => NotFound(Json.obj("error" -> "No entity found")).future
+      }
     }
   }
 }

@@ -999,15 +999,16 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
     }
   }
 
-  override def fetchServicesStatus(filterable: Option[Filterable],
+  override def fetchServicesStatus(servicesDescriptors: Seq[ServiceDescriptor],
                                   from: Option[DateTime],
                                   to: Option[DateTime])(
                                    implicit env: Env,
                                    ec: ExecutionContext): Future[Option[JsValue]] = {
     query(Json.obj(
       "query" -> Json.obj(
-        "bool" -> filters(filterable, from, to, eventFilter = healthCheckEventFilters)
-      ),
+        "bool" -> filters(None, from, to, eventFilter = healthCheckEventFilters,
+          additionalMust = Seq(Json.obj("terms" -> Json.obj("@serviceId" -> JsArray(servicesDescriptors.map(d => JsString(d.id))))))
+        )),
       "aggs" -> Json.obj(
         "services" -> Json.obj(
           "terms" -> Json.obj(
@@ -1035,7 +1036,7 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
         (json \ "aggregations" \ "services" \ "buckets")
           .asOpt[JsArray]
           .map { services =>
-            Json.arr(services.value.map(service => {
+            JsArray(services.value.map(service => {
               val id = (service \ "key").as[String]
               val total_period = (service \ "doc_count").as[Float]
               val dates = (service \ "date" \ "buckets")
@@ -1055,10 +1056,10 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
                       Json.obj("health" -> value, "total" -> count, "percentage" -> percentage)
                     })
 
-                  Json.obj("date" -> timestamp, "dateAsString" -> hrDate, "total" -> total_day, "status" -> Json.arr(status))
+                  Json.obj("date" -> timestamp, "dateAsString" -> hrDate, "total" -> total_day, "status" -> JsArray(status))
                 })
 
-              Json.obj("descriptor" -> id, "total" -> total_period, "dates" -> Json.arr(dates))
+              Json.obj("descriptor" -> id, "total" -> total_period, "dates" -> JsArray(dates))
             }))
           }
       }

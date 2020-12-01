@@ -524,7 +524,7 @@ trait AnalyticsReadsService {
       implicit env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]]
-  def fetchServicesStatus(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(
+  def fetchServicesStatus(servicesDescriptors: Seq[ServiceDescriptor], from: Option[DateTime], to: Option[DateTime])(
     implicit env: Env,
     ec: ExecutionContext
   ): Future[Option[JsValue]]
@@ -728,13 +728,13 @@ class AnalyticsReadsServiceImpl(globalConfig: GlobalConfig, env: Env) extends An
         .getOrElse(FastFuture.successful(None))
     )
 
-  override def fetchServicesStatus(filterable: Option[Filterable],
+  override def fetchServicesStatus(servicesDescriptors: Seq[ServiceDescriptor],
                                   from: Option[DateTime],
                                   to: Option[DateTime])(
     implicit env: Env,
     ec: ExecutionContext): Future[Option[JsValue]] =
     underlyingService().flatMap(
-      _.map(_.fetchServicesStatus(filterable, from, to))
+      _.map(_.fetchServicesStatus(servicesDescriptors, from, to))
         .getOrElse(FastFuture.successful(None))
     )
 }
