@@ -410,6 +410,7 @@ POST    /api/data-exporter-configs                          controllers.adminapi
 GET     /api/stats/global                                     controllers.adminapi.AnalyticsController.globalStats(from: Option[String], to: Option[String])
 GET     /api/stats                                            controllers.adminapi.AnalyticsController.filterableStats(from: Option[String], to: Option[String])
 GET     /api/events                                           controllers.adminapi.AnalyticsController.filterableEvents(from: Option[String], to: Option[String])
+GET     /api/status                                           controllers.adminapi.AnalyticsController.servicesStatus(from: Option[String], to: Option[String])
 
 GET     /api/admin-sessions                                   controllers.adminapi.UsersController.sessions()
 DELETE  /api/admin-sessions/:id                               controllers.adminapi.UsersController.discardSession(id)
