@@ -440,4 +440,26 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(
       NotFound(Json.obj("error" -> s"No entity found")).future
     }
   }
+
+  def servicesStatus(from: Option[String], to: Option[String]) = ApiAction.async { ctx =>
+    env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
+      val analyticsService = new AnalyticsReadsServiceImpl(globalConfig, env)
+
+      val serviceId = ctx.request.getQueryString("service")
+      val fromDate = from.map(f => new DateTime(f.toLong)).orElse(DateTime.now().minusDays(30).withTimeAtStartOfDay().some)
+      val toDate = to.map(f => new DateTime(f.toLong))
+
+      val futureFilterable: Future[Option[Filterable]] = serviceId match {
+        case Some(id) =>
+          env.datastores.serviceDescriptorDataStore.findById(id).map(_.map(ServiceDescriptorFilterable.apply))
+        case _ => FastFuture.successful(None)
+      }
+
+      futureFilterable
+        .flatMap(filterable => analyticsService.fetchServicesStatus(filterable, fromDate, toDate).map {
+          case Some(value) => Ok(value)
+          case None => NotFound(Json.obj("error" -> "No entity found"))
+        })
+    }
+  }
 }
