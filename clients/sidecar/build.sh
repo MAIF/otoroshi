@@ -1,0 +1,63 @@
+#!/bin/sh
+
+LOCATION=`pwd`
+
+cleanup () {
+  rm -rf ./node_modules
+}
+
+prepare_build () {
+  yarn install
+}
+
+build () {
+  docker build --no-cache -t otoroshi-sidecar .
+  docker tag otoroshi "maif/otoroshi-sidecar:$1"
+}
+
+echo "Docker images for otoroshi-sidecar version $2"
+
+case "${1}" in
+  prepare-build)
+    prepare_build
+    ;;
+  cleanup)
+    cleanup
+    ;;
+  build)
+    cleanup
+    prepare_build
+    build $2
+    ;;
+  push)
+    cleanup
+    prepare_build
+    build $2
+    docker push "maif/otoroshi-sidecar:$2"
+    docker push "maif/otoroshi-sidecar:latest"
+    ;;
+  build-and-push-snapshot)
+    cleanup
+    prepare_build
+    build "dev"
+    docker tag otoroshi "maif/otoroshi:dev"
+    docker push "maif/otoroshi:dev"
+    ;;
+  build-local)
+    cleanup
+    prepare_build
+    build "dev"
+    ;;
+  build-and-push-local)
+    cleanup
+    prepare_build
+    build "dev"
+    docker tag otoroshi "registry.oto.tools:5000/maif/otoroshi:dev"
+    docker push "registry.oto.tools:5000/maif/otoroshi:dev"
+    ;;
+  *)
+    echo "Build otoroshi-sidecar docker images"
+    ;;
+esac
+
+exit ${?}
