@@ -146,7 +146,7 @@ class PkiController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env
         findCertificateByIdOrSerialNumber(ca).flatMap {
           case None => NotFound(Json.obj("error" -> "ca not found !")).future
           case Some(cacert) =>
-            env.pki.genCert(body, cacert.certificate.get, cacert.cryptoKeyPair.getPrivate).flatMap {
+            env.pki.genCert(body, cacert.certificate.get, cacert.certificates.tail, cacert.cryptoKeyPair.getPrivate).flatMap {
               case Left(err) => BadRequest(Json.obj("error" -> err)).future
               case Right(kp) =>
                 val cert = kp.toCert
@@ -163,7 +163,7 @@ class PkiController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env
         findCertificateByIdOrSerialNumber(ca).flatMap {
           case None => NotFound(Json.obj("error" -> "ca not found !")).future
           case Some(cacert) =>
-            env.pki.genSubCA(body, cacert.certificate.get, cacert.cryptoKeyPair.getPrivate).flatMap {
+            env.pki.genSubCA(body, cacert.certificate.get,  cacert.certificates.tail, cacert.cryptoKeyPair.getPrivate).flatMap {
               case Left(err) => BadRequest(Json.obj("error" -> err)).future
               case Right(kp) =>
                 val cert = kp.toCert

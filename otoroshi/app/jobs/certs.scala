@@ -54,6 +54,7 @@ class InitialCertsJob extends Job {
               None,
               None,
               ca.cert,
+              Seq.empty,
               ca.keyPair)
             Cert(cert1.cert, cert1.keyPair, foundOtoroshiCa.getOrElse(caCert), false).enrich().save()
           }
@@ -64,7 +65,6 @@ class InitialCertsJob extends Job {
   def createOrFind(name: String, description: String, subject: String, hosts: Seq[String], duration: FiniteDuration, ca: Boolean, client: Boolean, id: String, found: Option[Cert], from: Option[Cert])(implicit env: Env, ec: ExecutionContext): Future[Option[Cert]] = {
     found.filter(_.enrich().valid) match {
       case None => {
-        logger.info(s"Generating ${name} ... ")
         val query = GenCsrQuery(
           hosts = hosts,
           subject = subject.some,
@@ -74,8 +74,8 @@ class InitialCertsJob extends Job {
         )
         (from match {
           case None if ca => env.pki.genSelfSignedCA(query)
-          case Some(c) if ca => env.pki.genSubCA(query, c.certificate.head, c.cryptoKeyPair.getPrivate)
-          case Some(c) => env.pki.genCert(query, c.certificate.head, c.cryptoKeyPair.getPrivate)
+          case Some(c) if ca =>  env.pki.genSubCA(query, c.certificates.head, c.certificates.tail, c.cryptoKeyPair.getPrivate)
+          case Some(c) => env.pki.genCert(query, c.certificates.head, c.certificates.tail, c.cryptoKeyPair.getPrivate)
           case _ => Left("bad configuration").future
         }).flatMap {
           case Left(error) =>

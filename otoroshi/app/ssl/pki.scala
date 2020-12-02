@@ -125,7 +125,8 @@ object models {
                              csr: PKCS10CertificationRequest,
                              csrQuery: Option[GenCsrQuery],
                              key: PrivateKey,
-                             ca: X509Certificate) {
+                             ca: X509Certificate,
+                             caChain: Seq[X509Certificate]) {
     def json: JsValue = Json.obj(
       "serial" -> serial,
       "cert"   -> cert.asPem,
@@ -138,8 +139,21 @@ object models {
     def chainWithCsr: String = s"${key.asPem}\n${cert.asPem}\n${ca.asPem}\n${csr.asPem}"
     def keyPair: KeyPair     = new KeyPair(cert.getPublicKey, key)
     def toCert: Cert         = {
-      val c = Cert.apply(cert, keyPair, ca, false)
-      c.copy(entityMetadata = c.entityMetadata + ("csr" -> csrQuery.map(_.json.stringify).getOrElse("--"))).enrich()
+      Cert(
+        id = IdGenerator.token(32),
+        name = "none",
+        description = "none",
+        chain = if (cert == ca) {
+          cert.asPem
+        } else {
+          cert.asPem + "\n" + ca.asPem + "\n" + caChain.map(_.asPem).mkString("\n")
+        },
+        privateKey = keyPair.getPrivate.asPem,
+        caRef = None,
+        entityMetadata = Map(
+          "csr" -> csrQuery.map(_.json.stringify).getOrElse("--")
+        )
+      ).enrich()
     }
   }
 
@@ -172,11 +186,11 @@ trait Pki {
   }
 
   // gencert          generate a private key and a certificate
-  def genCert(query: ByteString, caCert: X509Certificate, caKey: PrivateKey)(
+  def genCert(query: ByteString, caCert: X509Certificate, caChain: Seq[X509Certificate], caKey: PrivateKey)(
       implicit ec: ExecutionContext
   ): Future[Either[String, GenCertResponse]] = GenCsrQuery.fromJson(Json.parse(query.utf8String)) match {
     case Left(err) => Left(err).future
-    case Right(q)  => genCert(q, caCert, caKey)
+    case Right(q)  => genCert(q, caCert, caChain, caKey)
   }
 
   // sign             signs a certificate
@@ -208,11 +222,11 @@ trait Pki {
       case Right(q)  => genSelfSignedCA(q)
     }
 
-  def genSubCA(query: ByteString, caCert: X509Certificate, caKey: PrivateKey)(
+  def genSubCA(query: ByteString, caCert: X509Certificate, caChain: Seq[X509Certificate], caKey: PrivateKey)(
       implicit ec: ExecutionContext
   ): Future[Either[String, GenCertResponse]] = GenCsrQuery.fromJson(Json.parse(query.utf8String)) match {
     case Left(err) => Left(err).future
-    case Right(q)  => genSubCA(q, caCert, caKey)
+    case Right(q)  => genSubCA(q, caCert, caChain, caKey)
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -228,7 +242,7 @@ trait Pki {
   ): Future[Either[String, GenCsrResponse]]
 
   // gencert          generate a private key and a certificate
-  def genCert(query: GenCsrQuery, caCert: X509Certificate, caKey: PrivateKey)(
+  def genCert(query: GenCsrQuery, caCert: X509Certificate, caChain: Seq[X509Certificate], caKey: PrivateKey)(
       implicit ec: ExecutionContext
   ): Future[Either[String, GenCertResponse]]
 
@@ -245,7 +259,7 @@ trait Pki {
 
   def genSelfSignedCert(query: GenCsrQuery)(implicit ec: ExecutionContext): Future[Either[String, GenCertResponse]]
 
-  def genSubCA(query: GenCsrQuery, caCert: X509Certificate, caKey: PrivateKey)(
+  def genSubCA(query: GenCsrQuery, caCert: X509Certificate, caChain: Seq[X509Certificate], caKey: PrivateKey)(
       implicit ec: ExecutionContext
   ): Future[Either[String, GenCertResponse]]
 }
@@ -332,7 +346,7 @@ class BouncyCastlePki(generator: IdGenerator) extends Pki {
   }
 
   // gencert          generate a private key and a certificate
-  override def genCert(query: GenCsrQuery, caCert: X509Certificate, caKey: PrivateKey)(
+  override def genCert(query: GenCsrQuery, caCert: X509Certificate, caChain: Seq[X509Certificate], caKey: PrivateKey)(
       implicit ec: ExecutionContext
   ): Future[Either[String, GenCertResponse]] = {
     (for {
@@ -351,7 +365,8 @@ class BouncyCastlePki(generator: IdGenerator) extends Pki {
                             resp.csr,
                             query.some,
                             csr.right.get.privateKey,
-                            caCert)
+                            caCert,
+                            caChain)
           )
       }).transformWith {
       case Failure(e)               => Left(e.getMessage).future
@@ -470,7 +485,7 @@ class BouncyCastlePki(generator: IdGenerator) extends Pki {
             val cert = certificateFactory
               .generateCertificate(new ByteArrayInputStream(certencoded))
               .asInstanceOf[X509Certificate]
-            Right(GenCertResponse(_serial, cert, csr, query.some, kpr.privateKey, cert))
+            Right(GenCertResponse(_serial, cert, csr, query.some, kpr.privateKey, cert, Seq.empty))
           } match {
             case Failure(e)      => Left(e.getMessage).future
             case Success(either) => either.future
@@ -522,7 +537,7 @@ class BouncyCastlePki(generator: IdGenerator) extends Pki {
           val cert = certificateFactory
             .generateCertificate(new ByteArrayInputStream(certencoded))
             .asInstanceOf[X509Certificate]
-          Right(GenCertResponse(_serial, cert, csr, query.some, kpr.privateKey, cert))
+          Right(GenCertResponse(_serial, cert, csr, query.some, kpr.privateKey, cert, Seq.empty))
         } match {
           case Failure(e)      => Left(e.getMessage).future
           case Success(either) => either.future
@@ -530,7 +545,7 @@ class BouncyCastlePki(generator: IdGenerator) extends Pki {
     }
   }
 
-  override def genSubCA(query: GenCsrQuery, caCert: X509Certificate, caKey: PrivateKey)(
+  override def genSubCA(query: GenCsrQuery, caCert: X509Certificate, caChain: Seq[X509Certificate], caKey: PrivateKey)(
       implicit ec: ExecutionContext
   ): Future[Either[String, GenCertResponse]] = {
     genKeyPair(query.key).flatMap {
@@ -585,7 +600,7 @@ class BouncyCastlePki(generator: IdGenerator) extends Pki {
           val cert = certificateFactory
             .generateCertificate(new ByteArrayInputStream(certencoded))
             .asInstanceOf[X509Certificate]
-          Right(GenCertResponse(_serial, cert, csr, query.some, kpr.privateKey, cert))
+          Right(GenCertResponse(_serial, cert, csr, query.some, kpr.privateKey, caCert, caChain))
         } match {
           case Failure(e)      => Left(e.getMessage).future
           case Success(either) => either.future

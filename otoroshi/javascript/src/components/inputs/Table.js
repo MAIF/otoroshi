@@ -375,13 +375,13 @@ export class Table extends Component {
                 <i className="fas fa-pencil-alt" />
               </button>
               {this.props.showLink && (
-                <button
-                  type="button"
+                <a
                   className="btn btn-sm btn-primary"
                   {...createTooltip(`Open this ${this.props.itemName}`, 'top', true)}
-                  onClick={(e) => this.gotoItem(e, item)}>
+                  href={`${this.props.itemUrl(item)}`}
+                  _onClick={(e) => this.gotoItem(e, item)}>
                   <i className="fas fa-link" />
-                </button>
+                </a>
               )}
               {this.props.displayTrash && this.props.displayTrash(item) && (
                 <button
