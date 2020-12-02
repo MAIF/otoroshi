@@ -2,8 +2,7 @@ const http = require('http');
 const https = require('https');
 const moment = require('moment');
 const jwt = require('jsonwebtoken');
-const fs = require('fs');
-const uuidv4 = require('uuid/v4');
+const uuidv4 = require('uuid').v4;
 
 function createServer(opts, fn) {
   if (opts.ssl) {
@@ -12,8 +11,8 @@ function createServer(opts, fn) {
     });
     return {
       listen: (lopts) => {
-        console.log(`[${opts.type}] ${moment().format('YYYY-MM-DD HH:mm:ss.SSS')} - Proxy listening on https://${lopts.hostname}:${lopts.httpsPort}`);
-        s1.listen(lopts.port, lopts.hostname);
+        console.log(`[${opts.type}] ${moment().format('YYYY-MM-DD HH:mm:ss.SSS')} - Proxy listening on https://${lopts.hostname}:${lopts.port}`);
+        return s1.listen(lopts.port, lopts.hostname);
       },
       close: () => s1.close()
     };
@@ -23,8 +22,8 @@ function createServer(opts, fn) {
     });
     return {
       listen: (lopts) => {
-        console.log(`[${opts.type}] ${moment().format('YYYY-MM-DD HH:mm:ss.SSS')} - Proxy listening on http://${lopts.hostname}:${lopts.httpPort}`);
-        s1.listen(lopts.port, lopts.hostname);
+        console.log(`[${opts.type}] ${moment().format('YYYY-MM-DD HH:mm:ss.SSS')} - Proxy listening on http://${lopts.hostname}:${lopts.port}`);
+        return s1.listen(lopts.port, lopts.hostname);
       },
       close: () => s1.close()
     };
@@ -33,12 +32,14 @@ function createServer(opts, fn) {
 
 function writeError(code, err, ctype, res, args) {
   const _headers = { 'Content-Type': ctype };
-  res.writeHead(code, headers);
+  res.writeHead(code, _headers);
   res.write(err);
   res.end();
 }
 
 function InternalProxy(opts) {
+
+  opts.type = 'INTERNAL-PROXY'
 
   const server = createServer(opts, (req, res, secure) => {
 
@@ -47,7 +48,7 @@ function InternalProxy(opts) {
     try {
       const args = {};
 
-      if (req.socket.localAddress !== '127.0.0.1' && req.socket.localAddress !== 'localhost') {
+      if (opts.enableOriginCheck && (req.socket.localAddress !== '127.0.0.1' && req.socket.localAddress !== 'localhost' && req.socket.localAddress.indexOf('127.0.0.1') === -1)) {
         res.writeHead(500, { 'Content-Type': 'application/json' });
         res.write(JSON.stringify({ error: 'bad origin' }));
         res.end();
@@ -83,6 +84,7 @@ function InternalProxy(opts) {
 
       console.log(`[INTERNAL-PROXY] ${moment().format('YYYY-MM-DD HH:mm:ss.SSS')} - ${requestId} - HTTP/${req.httpVersion} - ${req.method} - ${secure ? 'https' : 'http'}://${domain}${req.url}`);
 
+      // options.agent = new https.Agent(options);
       const forwardReq = https.request(options, (forwardRes) => {
         const headersOut = { ...forwardRes.headers };      
         res.writeHead(forwardRes.statusCode, headersOut);
@@ -93,14 +95,12 @@ function InternalProxy(opts) {
           res.end();
           if (!ended) {
             ended = true;
-            span.end();
           }
         });
         forwardRes.on('end', () => {
           res.end();
           if (!ended) {
             ended = true;
-            span.end();
           }
         });
       }).on('error', (err) => {
@@ -147,6 +147,8 @@ function InternalProxy(opts) {
 }
 
 function ExternalProxy(opts) {
+
+  opts.type = 'EXTERNAL-PROXY'
   
   const _ctx = opts.context();
 
@@ -154,16 +156,16 @@ function ExternalProxy(opts) {
     key: _ctx.BACKEND_KEY, 
     cert: _ctx.BACKEND_CERT, 
     ca: _ctx.BACKEND_CA, 
-    requestCert: true, 
-    rejectUnauthorized: true
-  } }, (req, res, secure) => {
-
+    // requestCert: true, 
+    rejectUnauthorized: true,
+  } }, (req, res, secure) => { 
+    
     const ctx = opts.context();
 
     try {
       const args = {};
 
-      if (req.socket.localAddress === '127.0.0.1' || req.socket.localAddress === 'localhost') {
+      if (opts.enableOriginCheck && (req.socket.localAddress === '127.0.0.1' || req.socket.localAddress === 'localhost' || req.socket.localAddress.indexOf('127.0.0.1') > -1)) {
         res.writeHead(500, { 'Content-Type': 'application/json' });
         res.write(JSON.stringify({ error: 'bad origin' }));
         res.end();
@@ -173,6 +175,7 @@ function ExternalProxy(opts) {
       const requestId = uuidv4();
       const stateToken = req.headers['otoroshi-state'];
       const claimToken = req.headers['otoroshi-claim'];
+      const domain = req.headers.host.split(':')[0];
 
       if (claimToken && stateToken) { 
         try {
@@ -194,9 +197,9 @@ function ExternalProxy(opts) {
         return writeError(400, `{"error":"no tokens"}`, 'application/json', res, args);
       }
 
-      if (!req.socket.getPeerCertificate().subject) {
-        return writeError(400, `{"error":"bad client cert"}`, 'application/json', res, args);
-      }
+      // if (!req.socket.getPeerCertificate().subject) {
+      //   return writeError(400, `{"error":"bad client cert"}`, 'application/json', res, args);
+      // }
 
       const options = {
         host: '127.0.0.1',
@@ -221,14 +224,12 @@ function ExternalProxy(opts) {
           res.end();
           if (!ended) {
             ended = true;
-            span.end();
           }
         });
         forwardRes.on('end', () => {
           res.end();
           if (!ended) {
             ended = true;
-            span.end();
           }
         });
       }).on('error', (err) => {

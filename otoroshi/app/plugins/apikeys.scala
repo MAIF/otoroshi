@@ -397,7 +397,7 @@ class ClientCredentialFlow extends RequestTransformer {
     }
 
     (ctx.rawRequest.method.toLowerCase(), ctx.rawRequest.path) match {
-      case ("get", path) if supportRevoke && path == s"/.well-known/jwks.json" => {
+      case ("get", path)  if supportRevoke && path == s"/.well-known/jwks.json" => {
         env.datastores.apiKeyDataStore.findAll().flatMap { apikeys =>
           val ids = apikeys.map(_.metadata.get("jwt-sign-keypair")).collect { case Some(value) => value } ++ defaultKeyPair
           env.datastores.certificatesDataStore.findAll().map { certs =>
