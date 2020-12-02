@@ -294,16 +294,123 @@ class KubernetesAdmissionWebhookSidecarInjector extends RequestSink {
       val obj = (json \ "request" \ "object").as[JsObject]
       val uid = (json \ "request" \ "uid").as[String]
       val version = (obj \ "apiVersion").as[String]
-      Results.Ok(Json.obj(
-        "apiVersion" -> "admission.k8s.io/v1",
-        "kind" -> "AdmissionReview",
-        "response" -> Json.obj(
-          "uid" -> uid,
-          "allowed" -> true,
-          // "patchType" -> "JSONPatch",
-          // "patch" -> "[]".base64 // Base64 jsonpath
-        )
-      )).future
+      val inject = obj.select("metadata").select("otoroshi.io/sidecar").asOpt[String].contains("inject")
+      if (inject) {
+        val conf = KubernetesConfig.theConfig(ctx)
+        val apikey = obj.select("metadata").select("otoroshi.io/sidecar-apikey").as[String]
+        val backendCert = obj.select("metadata").select("otoroshi.io/sidecar-backend-cert").as[String]
+        val clientCert = obj.select("metadata").select("otoroshi.io/sidecar-client-cert").as[String]
+        val tokenSecret = obj.select("metadata").select("otoroshi.io/token-secret").asOpt[String].getOrElse("secret")
+        val localPort = obj.select("spec").select("containers").select(0).select("ports").select(0).select("containerPort").asOpt[Int].getOrElse(8081)
+        Results.Ok(Json.obj(
+          "apiVersion" -> "admission.k8s.io/v1",
+          "kind" -> "AdmissionReview",
+          "response" -> Json.obj(
+            "uid" -> uid,
+            "allowed" -> true,
+            "patchType" -> "JSONPatch",
+            "patch" -> Json.arr(
+              Json.obj(
+                "op" -> "add",
+                "path" -> "/spec/containers/-",
+                "value" -> Json.parse(
+                  s"""{
+                    |  "image": "maif/otoroshi-sidecar:latest",
+                    |  "imagePullPolicy": "IfNotPresent",
+                    |  "name": "otoroshi-sidecar",
+                    |  "ports": [
+                    |    {
+                    |      "containerPort": 8443,
+                    |      "name": "https"
+                    |    }
+                    |  ],
+                    |  "env": [
+                    |    {
+                    |      "name": "TOKEN_SECRET",
+                    |      "value": "${tokenSecret}"
+                    |    },
+                    |    {
+                    |      "name": "OTOROSHI_DOMAIN",
+                    |      "value": "otoroshi.mesh"
+                    |    },
+                    |    {
+                    |      "name": "OTOROSHI_HOST",
+                    |      "value": "${conf.otoroshiServiceName}.${conf.otoroshiNamespace}.svc.${conf.clusterDomain}"
+                    |    },
+                    |    {
+                    |      "name": "OTOROSHI_PORT",
+                    |      "value": "8443"
+                    |    },
+                    |    {
+                    |      "name": "LOCAL_PORT",
+                    |      "value": "${localPort}"
+                    |    },
+                    |    {
+                    |      "name": "EXTERNAL_PORT",
+                    |      "value": "8443"
+                    |    },
+                    |    {
+                    |      "name": "INTERNAL_PORT",
+                    |      "value": "8080"
+                    |    }
+                    |  ],
+                    |  "volumeMounts": [
+                    |    {
+                    |      "name": "apikey-volume",
+                    |      "mountPath": "/var/run/secrets/kubernetes.io/otoroshi.io/apikeys",
+                    |      "readOnly": true
+                    |    },
+                    |    {
+                    |      "name": "backend-cert-volume",
+                    |      "mountPath": "/var/run/secrets/kubernetes.io/otoroshi.io/certs/backend",
+                    |      "readOnly": true
+                    |    },
+                    |    {
+                    |      "name": "client-cert-volume",
+                    |      "mountPath": "/var/run/secrets/kubernetes.io/otoroshi.io/certs/client",
+                    |      "readOnly": true
+                    |    }
+                    |  ]
+                    |}""".stripMargin)
+              ),
+              Json.obj(
+                "op" -> "add",
+                "path" -> "/spec/volumes",
+                "value" -> Json.parse(
+                  s"""[
+                     |  {
+                     |    "name": "apikey-volume",
+                     |    "secret": {
+                     |      "secretName": ${apikey}"
+                     |    }
+                     |  },
+                     |  {
+                     |    "name": "backend-cert-volume",
+                     |    "secret": {
+                     |      "secretName": "${backendCert}"
+                     |    }
+                     |  },
+                     |  {
+                     |    "name": "client-cert-volume",
+                     |    "secret": {
+                     |      "secretName": "${clientCert}"
+                     |    }
+                     |  }
+                     |]""".stripMargin)
+              )
+            ).stringify.base64
+          )
+        )).future
+      } else {
+        Results.Ok(Json.obj(
+          "apiVersion" -> "admission.k8s.io/v1",
+          "kind" -> "AdmissionReview",
+          "response" -> Json.obj(
+            "uid" -> uid,
+            "allowed" -> true,
+          )
+        )).future
+      }
     }
   }
 }
