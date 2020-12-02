@@ -184,6 +184,7 @@ case class Cert(
                                                   Some(cryptoKeyPair),
                                                   certificate.map(_.getSerialNumber.longValue()),
                                                   caCert.certificate.get,
+                                                  caCert.certificates.tail,
                                                   caCert.cryptoKeyPair)
               copy(chain = resp.cert.asPem + "\n" + caCert.chain, privateKey = resp.key.asPem).enrich()
             case Some(caCert) =>
@@ -192,6 +193,7 @@ case class Cert(
                                                               Some(cryptoKeyPair),
                                                               certificate.map(_.getSerialNumber.longValue()),
                                                               caCert.certificate.get,
+                                                              caCert.certificates.tail,
                                                               caCert.cryptoKeyPair)
               copy(chain = resp.cert.asPem + "\n" + caCert.chain, privateKey = resp.key.asPem).enrich()
             case _ =>
@@ -354,7 +356,8 @@ case class Cert(
         .csr,
       csrQuery = query.some,
       key = cryptoKeyPair.getPrivate,
-      ca = caFromChain.get
+      ca = caFromChain.get,
+      caChain = certificates.tail
     )
   }
 }
@@ -806,6 +809,7 @@ trait CertificateDataStore extends BasicStore[Cert] {
                                        subject = Some(s"CN=$domain,OU=Auto Generated Certificates, OU=Otoroshi Certificates, O=Otoroshi")
                                      ),
                                      cert.certificate.get,
+                                     cert.certificates.tail,
                                      cert.cryptoKeyPair.getPrivate)
                             .flatMap {
                               case Left(err) =>
@@ -833,6 +837,7 @@ trait CertificateDataStore extends BasicStore[Cert] {
                                  subject = Some(SSLSessionJavaHelper.BadDN)
                                ),
                                cert.certificate.get,
+                               cert.certificates.tail,
                                cert.cryptoKeyPair.getPrivate)
                       .flatMap {
                         case Left(err) =>
@@ -1634,6 +1639,7 @@ object FakeKeyStore {
                                     kp: Option[KeyPair],
                                     serial: Option[Long],
                                     ca: X509Certificate,
+                                    caChain: Seq[X509Certificate],
                                     caKeyPair: KeyPair)(implicit env: Env): GenCertResponse = {
 
     val f = env.pki.genCert(
@@ -1647,6 +1653,7 @@ object FakeKeyStore {
         client = true
       ),
       ca,
+      caChain,
       caKeyPair.getPrivate
     )
 
@@ -1682,6 +1689,7 @@ object FakeKeyStore {
                               kp: Option[KeyPair],
                               serial: Option[Long],
                               ca: X509Certificate,
+                              caChain: Seq[X509Certificate],
                               caKeyPair: KeyPair)(implicit env: Env): GenCertResponse = {
 
     val f = env.pki.genCert(
@@ -1694,6 +1702,7 @@ object FakeKeyStore {
         existingSerialNumber = serial
       ),
       ca,
+      caChain,
       caKeyPair.getPrivate
     )
 
@@ -1707,6 +1716,7 @@ object FakeKeyStore {
                   kp: Option[KeyPair],
                   serial: Option[Long],
                   ca: X509Certificate,
+                  caChain: Seq[X509Certificate],
                   caKeyPair: KeyPair)(implicit env: Env): GenCertResponse = {
 
     val f = env.pki.genSubCA(
@@ -1717,9 +1727,10 @@ object FakeKeyStore {
         duration = duration,
         existingKeyPair = kp,
         existingSerialNumber = serial,
-        ca = true
+        ca = true,
       ),
       ca,
+      caChain,
       caKeyPair.getPrivate
     )
 
