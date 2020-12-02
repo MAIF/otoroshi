@@ -9,6 +9,7 @@ import akka.stream.Materializer
 import akka.util.ByteString
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers
 import org.bouncycastle.asn1.x500.X500Name
+import org.bouncycastle.asn1.{ASN1Integer, x509}
 import org.bouncycastle.asn1.x509._
 import org.bouncycastle.cert.X509v3CertificateBuilder
 import org.bouncycastle.crypto.util.PrivateKeyFactory
@@ -322,11 +323,8 @@ class BouncyCastlePki(generator: IdGenerator) extends Pki {
                 extensionsGenerator.addExtension(
                   Extension.authorityKeyIdentifier,
                   false,
-                  new AuthorityKeyIdentifier(
-                    new GeneralNames(new GeneralName(new X509Name(ca.getSubjectX500Principal.getName))),
-                    ca.getSerialNumber
-                  )
-              )
+                  new AuthorityKeyIdentifier(new ASN1Integer(ca.getSerialNumber).getEncoded)
+                )
             )
             extensionsGenerator.addExtension(Extension.subjectAlternativeName, false, names)
           } else {
@@ -345,43 +343,13 @@ class BouncyCastlePki(generator: IdGenerator) extends Pki {
     }
   }
 
-  // gencert          generate a private key and a certificate
-  override def genCert(query: GenCsrQuery, caCert: X509Certificate, caChain: Seq[X509Certificate], caKey: PrivateKey)(
-      implicit ec: ExecutionContext
-  ): Future[Either[String, GenCertResponse]] = {
-    (for {
-      csr <- genCsr(query, Some(caCert))
-      cert <- csr match {
-               case Left(err)   => FastFuture.successful(Left(err))
-               case Right(_csr) => signCert(_csr.csr, query.duration, caCert, caKey, query.existingSerialNumber)
-             }
-    } yield
-      cert match {
-        case Left(err) => Left(err)
-        case Right(resp) =>
-          Right(
-            GenCertResponse(resp.cert.getSerialNumber.longValue(),
-                            resp.cert,
-                            resp.csr,
-                            query.some,
-                            csr.right.get.privateKey,
-                            caCert,
-                            caChain)
-          )
-      }).transformWith {
-      case Failure(e)               => Left(e.getMessage).future
-      case Success(Left(e))         => Left(e).future
-      case Success(Right(response)) => Right(response).future
-    }
-  }
-
   // sign             signs a certificate
   override def signCert(
-      csr: PKCS10CertificationRequest,
-      validity: FiniteDuration,
-      caCert: X509Certificate,
-      caKey: PrivateKey,
-      existingSerialNumber: Option[Long]
+    csr: PKCS10CertificationRequest,
+    validity: FiniteDuration,
+    caCert: X509Certificate,
+    caKey: PrivateKey,
+    existingSerialNumber: Option[Long]
   )(implicit ec: ExecutionContext): Future[Either[String, SignCertResponse]] = {
     generator.nextIdSafe().map { _serial =>
       val issuer  = new X500Name(caCert.getSubjectX500Principal.getName)
@@ -415,6 +383,36 @@ class BouncyCastlePki(generator: IdGenerator) extends Pki {
     }
   }
 
+  // gencert          generate a private key and a certificate
+  override def genCert(query: GenCsrQuery, caCert: X509Certificate, caChain: Seq[X509Certificate], caKey: PrivateKey)(
+      implicit ec: ExecutionContext
+  ): Future[Either[String, GenCertResponse]] = {
+    (for {
+      csr <- genCsr(query, Some(caCert))
+      cert <- csr match {
+               case Left(err)   => FastFuture.successful(Left(err))
+               case Right(_csr) => signCert(_csr.csr, query.duration, caCert, caKey, query.existingSerialNumber)
+             }
+    } yield
+      cert match {
+        case Left(err) => Left(err)
+        case Right(resp) =>
+          Right(
+            GenCertResponse(resp.cert.getSerialNumber.longValue(),
+                            resp.cert,
+                            resp.csr,
+                            query.some,
+                            csr.right.get.privateKey,
+                            caCert,
+                            caChain)
+          )
+      }).transformWith {
+      case Failure(e)               => Left(e.getMessage).future
+      case Success(Left(e))         => Left(e).future
+      case Success(Right(response)) => Right(response).future
+    }
+  }
+
   override def genSelfSignedCert(
       query: GenCsrQuery
   )(implicit ec: ExecutionContext): Future[Either[String, GenCertResponse]] = {
@@ -426,6 +424,7 @@ class BouncyCastlePki(generator: IdGenerator) extends Pki {
         case Right(_kpr) =>
           val kpr = query.existingKeyPair.map(v => GenKeyPairResponse(v.getPublic, v.getPrivate)).getOrElse(_kpr)
           generator.nextIdSafe().map { _serial =>
+            val serial = java.math.BigInteger.valueOf(query.existingSerialNumber.getOrElse(_serial)) // new java.math.BigInteger(32, new SecureRandom)
             val privateKey          = PrivateKeyFactory.createKey(kpr.privateKey.getEncoded)
             val signatureAlgorithm  = new DefaultSignatureAlgorithmIdentifierFinder().find(query.signatureAlg)
             val digestAlgorithm     = new DefaultDigestAlgorithmIdentifierFinder().find(query.digestAlg)
@@ -438,6 +437,11 @@ class BouncyCastlePki(generator: IdGenerator) extends Pki {
               extensionsGenerator.addExtension(Extension.keyUsage,
                                                true,
                                                new KeyUsage(KeyUsage.digitalSignature | KeyUsage.keyEncipherment))
+              extensionsGenerator.addExtension(
+                Extension.subjectKeyIdentifier,
+                false,
+                new SubjectKeyIdentifier(new ASN1Integer(serial).getEncoded)
+              )
               // extensionsGenerator.addExtension(Extension.extendedKeyUsage, false, new ExtendedKeyUsage(Seq(KeyPurposeId.id_kp_serverAuth, KeyPurposeId.id_kp_clientAuth).toArray))
               if (query.client && query.hasDnsNameOrCName) {
                 extensionsGenerator.addExtension(
@@ -464,7 +468,6 @@ class BouncyCastlePki(generator: IdGenerator) extends Pki {
                                     extensionsGenerator.generate)
             val csr    = csrBuilder.build(signer)
             val issuer = csr.getSubject
-            val serial = java.math.BigInteger.valueOf(query.existingSerialNumber.getOrElse(_serial)) // new java.math.BigInteger(32, new SecureRandom)
             val from   = new java.util.Date
             val to     = new java.util.Date(System.currentTimeMillis + query.duration.toMillis)
             val certgen =
@@ -502,6 +505,7 @@ class BouncyCastlePki(generator: IdGenerator) extends Pki {
       case Right(_kpr) =>
         val kpr = query.existingKeyPair.map(v => GenKeyPairResponse(v.getPublic, v.getPrivate)).getOrElse(_kpr)
         generator.nextIdSafe().map { _serial =>
+          val serial              = java.math.BigInteger.valueOf(query.existingSerialNumber.getOrElse(_serial)) // new java.math.BigInteger(32, new SecureRandom)
           val privateKey          = PrivateKeyFactory.createKey(kpr.privateKey.getEncoded)
           val signatureAlgorithm  = new DefaultSignatureAlgorithmIdentifierFinder().find(query.signatureAlg)
           val digestAlgorithm     = new DefaultDigestAlgorithmIdentifierFinder().find(query.digestAlg)
@@ -513,11 +517,15 @@ class BouncyCastlePki(generator: IdGenerator) extends Pki {
           extensionsGenerator.addExtension(Extension.keyUsage,
                                            true,
                                            new KeyUsage(KeyUsage.keyCertSign | KeyUsage.cRLSign))
+          extensionsGenerator.addExtension(
+            Extension.subjectKeyIdentifier,
+            false,
+            new SubjectKeyIdentifier(new ASN1Integer(serial).getEncoded)
+          )
           csrBuilder.addAttribute(PKCSObjectIdentifiers.pkcs_9_at_extensionRequest /* x509Certificate */,
                                   extensionsGenerator.generate)
           val csr    = csrBuilder.build(signer)
           val issuer = csr.getSubject
-          val serial = java.math.BigInteger.valueOf(query.existingSerialNumber.getOrElse(_serial)) // new java.math.BigInteger(32, new SecureRandom)
           val from   = new java.util.Date
           val to     = new java.util.Date(System.currentTimeMillis + query.duration.toMillis)
           val certgen =
@@ -553,6 +561,7 @@ class BouncyCastlePki(generator: IdGenerator) extends Pki {
       case Right(_kpr) =>
         val kpr = query.existingKeyPair.map(v => GenKeyPairResponse(v.getPublic, v.getPrivate)).getOrElse(_kpr)
         generator.nextIdSafe().map { _serial =>
+          val serial = java.math.BigInteger.valueOf(query.existingSerialNumber.getOrElse(_serial)) // new java.math.BigInteger(32, new SecureRandom)
           val privateKey          = PrivateKeyFactory.createKey(kpr.privateKey.getEncoded)
           val signatureAlgorithm  = new DefaultSignatureAlgorithmIdentifierFinder().find(query.signatureAlg)
           val digestAlgorithm     = new DefaultDigestAlgorithmIdentifierFinder().find(query.digestAlg)
@@ -561,24 +570,25 @@ class BouncyCastlePki(generator: IdGenerator) extends Pki {
           val names               = new GeneralNames(query.hosts.map(name => new GeneralName(GeneralName.dNSName, name)).toArray)
           val csrBuilder          = new JcaPKCS10CertificationRequestBuilder(new X500Name(query.subj), kpr.publicKey)
           val extensionsGenerator = new ExtensionsGenerator
-          extensionsGenerator.addExtension(Extension.basicConstraints, true, new BasicConstraints(true))
+          extensionsGenerator.addExtension(Extension.basicConstraints, true, new BasicConstraints(0))
           extensionsGenerator.addExtension(Extension.keyUsage,
                                            true,
-                                           new KeyUsage(KeyUsage.keyCertSign | KeyUsage.cRLSign))
+                                           new KeyUsage(KeyUsage.keyCertSign | KeyUsage.cRLSign | KeyUsage.digitalSignature))
           extensionsGenerator.addExtension(
             Extension.authorityKeyIdentifier,
             false,
-            new AuthorityKeyIdentifier(
-              new GeneralNames(new GeneralName(new X509Name(caCert.getSubjectX500Principal.getName))),
-              caCert.getSerialNumber
-            )
+            new AuthorityKeyIdentifier(new ASN1Integer(caCert.getSerialNumber).getEncoded)
+          )
+          extensionsGenerator.addExtension(
+            Extension.subjectKeyIdentifier,
+            false,
+            new SubjectKeyIdentifier(new ASN1Integer(serial).getEncoded)
           )
           csrBuilder.addAttribute(PKCSObjectIdentifiers.pkcs_9_at_extensionRequest /* x509Certificate */,
                                   extensionsGenerator.generate)
           val csr    = csrBuilder.build(signer)
           // val issuer = csr.getSubject
           val issuer = new X500Name(caCert.getSubjectX500Principal.getName)
-          val serial = java.math.BigInteger.valueOf(query.existingSerialNumber.getOrElse(_serial)) // new java.math.BigInteger(32, new SecureRandom)
           val from   = new java.util.Date
           val to     = new java.util.Date(System.currentTimeMillis + query.duration.toMillis)
           val certgen =
