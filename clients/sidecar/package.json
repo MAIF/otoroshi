@@ -6,9 +6,9 @@
   "bin": "src/sidecar.js",
   "license": "MIT",
   "scripts": {
-    "certs-js": "rm -rf ./certs && mkdir certs && node src/cert.js",
+    "certs-js": "rm -rf ./certs && mkdir certs && node src/test/cert.js",
     "certs-sh": "rm -rf ./certs && ./cert.sh",
-    "test": "nodemon src/test.js",
+    "test": "nodemon src/test/test.js",
     "dev": "nodemon src/dev.js",
     "start": "node src/sidecar.js",
     "pkg": "pkg . && rm -rf ./binaries && mkdir -p ./binaries && mv otoroshi-sidecar* ./binaries/"

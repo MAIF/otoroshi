@@ -137,6 +137,7 @@ object KubernetesCertSyncJob {
                           "tls.key" -> cert.privateKey.base64,
                           "cert.crt" -> cert.certificates.head.asPem,
                           "ca-chain.crt" -> cert.certificates.tail.map(_.asPem).mkString("\n\n"),
+                          "ca.crt" -> cert.certificates.last.asPem,
                         ), "job/cert", cert.id)
                       case Some(c) =>
                         client.updateSecret(c.namespace, c.name, "kubernetes.io/tls", Json.obj(
@@ -144,6 +145,7 @@ object KubernetesCertSyncJob {
                           "tls.key" -> cert.privateKey.base64,
                           "cert.crt" -> cert.certificates.head.asPem,
                           "ca-chain.crt" -> cert.certificates.tail.map(_.asPem).mkString("\n\n"),
+                          "ca.crt" -> cert.certificates.last.asPem,
                         ), "job/cert", cert.id)
                     }
                   }.runWith(Sink.ignore)

@@ -1030,6 +1030,7 @@ object KubernetesCRDsJob {
               "tls.key" -> cert.privateKey.base64,
               "cert.crt" -> cert.certificates.head.asPem,
               "ca-chain.crt" -> cert.certificates.tail.map(_.asPem).mkString("\n\n"),
+              "ca.crt" -> cert.certificates.last.asPem,
             ), "crd/cert", cert.id)
           case Some(secret) =>
             val chain = (secret.raw \ "data" \ "tls.crt").as[String].applyOn(s => s.fromBase64)
@@ -1041,6 +1042,7 @@ object KubernetesCRDsJob {
                 "tls.key" -> cert.privateKey.base64,
                 "cert.crt" -> cert.certificates.head.asPem,
                 "ca-chain.crt" -> cert.certificates.tail.map(_.asPem).mkString("\n\n"),
+                "ca.crt" -> cert.certificates.last.asPem,
               ), "crd/cert", cert.id)
             } else {
               ().future
