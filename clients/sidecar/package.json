@@ -6,6 +6,8 @@
   "bin": "src/sidecar.js",
   "license": "MIT",
   "scripts": {
+    "certs-js": "rm -rf ./certs && mkdir certs && node src/cert.js",
+    "certs-sh": "rm -rf ./certs && ./cert.sh",
     "test": "nodemon src/test.js",
     "dev": "nodemon src/dev.js",
     "start": "node src/sidecar.js",
