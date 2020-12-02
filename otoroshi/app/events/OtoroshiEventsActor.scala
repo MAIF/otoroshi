@@ -217,7 +217,7 @@ object DataExporter {
       if (configUnsafe.projection.value.isEmpty) {
         event
       } else {
-        otoroshi.utils.Project.project(event, configUnsafe.projection)
+        otoroshi.utils.Projection.project(event, configUnsafe.projection, identity)
       }
     }
 

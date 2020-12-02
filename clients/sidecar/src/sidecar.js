@@ -58,5 +58,5 @@ function contextExtractor() {
   }
 }
 
-const internalProxy = InternalProxy({ context: contextExtractor() }).listen({ hostname: '127.0.0.1', port: INTERNAL_PORT })
-const externalProxy = ExternalProxy({ context: contextExtractor() }).listen({ hostname: '0.0.0.0', port: EXTERNAL_PORT })
+const internalProxy = InternalProxy({ rejectUnauthorized: true, requestCert: true, enableOriginCheck: true, context: contextExtractor }).listen({ hostname: '127.0.0.1', port: INTERNAL_PORT })
+const externalProxy = ExternalProxy({ rejectUnauthorized: true, requestCert: true, enableOriginCheck: true, context: contextExtractor }).listen({ hostname: '0.0.0.0', port: EXTERNAL_PORT })
