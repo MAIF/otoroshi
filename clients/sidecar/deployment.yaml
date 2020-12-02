@@ -1,0 +1,95 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: http-app-deployment-from
+spec:
+  selector:
+    matchLabels:
+      run: http-app-deployment
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        run: http-app-deployment
+      annotations:
+        otoroshi.io/sidecar: inject
+        otoroshi.io/sidecar-apikey: http-app-apikey-secret
+        otoroshi.io/sidecar-backend-cert: http-app-certificate-backend-secret
+        otoroshi.io/sidecar-client-cert: http-app-certificate-client-secret
+        otoroshi.io/token-secret: secret
+      containers:
+      - image: foo/http-app
+        imagePullPolicy: IfNotPresent
+        name: otoroshi
+        ports:
+          - containerPort: 8081
+            name: "http"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: http-app-deployment-to
+spec:
+  selector:
+    matchLabels:
+      run: http-app-deployment
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        run: http-app-deployment
+        otoroshi.io/sidecar: inject
+        otoroshi.io/sidecar-apikey: http-app-apikey-secret
+        otoroshi.io/sidecar-backend-cert: http-app-certificate-backend-secret
+        otoroshi.io/sidecar-client-cert: http-app-certificate-client-secret
+        otoroshi.io/token-secret: secret
+    spec:
+      containers:
+      - image: foo/http-app
+        imagePullPolicy: IfNotPresent
+        name: otoroshi
+        ports:
+          - containerPort: 8081
+            name: "http"
+      - image: maif/otoroshi-sidecar
+        imagePullPolicy: IfNotPresent
+        name: otoroshi-sidecar
+        ports:
+          - containerPort: 8443
+            name: "https"
+        env:
+          - name: TOKEN_SECRET
+            value: secret
+          - name: OTOROSHI_DOMAIN
+            value: otoroshi.mesh
+          - name: OTOROSHI_HOST
+            value: otoroshi-service.otoroshi.svc.cluster.local
+          - name: OTOROSHI_PORT
+            value: '8443'
+          - name: LOCAL_PORT
+            value: '8081'
+          - name: EXTERNAL_PORT
+            value: '8443'
+          - name: INTERNAL_PORT
+            value: '8080'
+        volumeMounts:
+        - name: apikey-volume
+          mountPath: "/var/run/secrets/kubernetes.io/otoroshi.io/apikeys"
+          readOnly: true
+        - name: backend-cert-volume
+          mountPath: "/var/run/secrets/kubernetes.io/otoroshi.io/certs/backend"
+          readOnly: true
+        - name: client-cert-volume
+          mountPath: "/var/run/secrets/kubernetes.io/otoroshi.io/certs/client"
+          readOnly: true
+      volumes:
+      - name: apikey-volume
+        secret:
+          secretName: http-app-apikey-secret
+      - name: backend-cert-volume
+        secret:
+          secretName: http-app-certificate-backend-secret
+      - name: client-cert-volume
+        secret:
+          secretName: http-app-certificate-client-secret
