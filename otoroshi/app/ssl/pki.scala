@@ -9,8 +9,8 @@ import akka.stream.Materializer
 import akka.util.ByteString
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers
 import org.bouncycastle.asn1.x500.X500Name
-import org.bouncycastle.asn1.{ASN1Integer, ASN1Sequence, x509}
 import org.bouncycastle.asn1.x509._
+import org.bouncycastle.asn1.{ASN1Integer, ASN1Sequence}
 import org.bouncycastle.cert.X509v3CertificateBuilder
 import org.bouncycastle.crypto.util.PrivateKeyFactory
 import org.bouncycastle.operator.bc.BcRSAContentSignerBuilder
@@ -19,14 +19,13 @@ import org.bouncycastle.pkcs.PKCS10CertificationRequest
 import org.bouncycastle.pkcs.jcajce.JcaPKCS10CertificationRequestBuilder
 import org.bouncycastle.util.io.pem.PemReader
 import otoroshi.ssl.pki.models._
+import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
 import security.IdGenerator
 import ssl.Cert
 import ssl.SSLImplicits._
-import otoroshi.utils.syntax.implicits._
 
-import scala.concurrent.duration._
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration.{FiniteDuration, _}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
@@ -352,6 +351,7 @@ class BouncyCastlePki(generator: IdGenerator) extends Pki {
     existingSerialNumber: Option[Long]
   )(implicit ec: ExecutionContext): Future[Either[String, SignCertResponse]] = {
     generator.nextIdSafe().map { _serial =>
+      // val __issuer = new X500Name(caCert.getSubjectX500Principal.getName)
       val issuer  = X500Name.getInstance(ASN1Sequence.getInstance(caCert.getSubjectX500Principal.getEncoded))
       val serial  = java.math.BigInteger.valueOf(existingSerialNumber.getOrElse(_serial)) // new java.math.BigInteger(32, new SecureRandom)
       val from    = new java.util.Date
@@ -431,6 +431,8 @@ class BouncyCastlePki(generator: IdGenerator) extends Pki {
             val signer              = new BcRSAContentSignerBuilder(signatureAlgorithm, digestAlgorithm).build(privateKey)
             val names               = new GeneralNames(query.hosts.map(name => new GeneralName(GeneralName.dNSName, name)).toArray)
             val csrBuilder          = new JcaPKCS10CertificationRequestBuilder(new X500Name(query.subj), kpr.publicKey)
+            //val x500Name            = X500Name.getInstance(ASN1Sequence.getInstance(new X500Principal(query.subj).getEncoded))
+            //val csrBuilder          = new JcaPKCS10CertificationRequestBuilder(x500Name, kpr.publicKey)
             val extensionsGenerator = new ExtensionsGenerator
             extensionsGenerator.addExtension(Extension.basicConstraints, true, new BasicConstraints(query.ca))
             if (!query.ca) {
@@ -512,6 +514,8 @@ class BouncyCastlePki(generator: IdGenerator) extends Pki {
           val signer              = new BcRSAContentSignerBuilder(signatureAlgorithm, digestAlgorithm).build(privateKey)
           val names               = new GeneralNames(query.hosts.map(name => new GeneralName(GeneralName.dNSName, name)).toArray)
           val csrBuilder          = new JcaPKCS10CertificationRequestBuilder(new X500Name(query.subj), kpr.publicKey)
+          //val x500Name            = X500Name.getInstance(ASN1Sequence.getInstance(new X500Principal(query.subj).getEncoded))
+          //val csrBuilder          = new JcaPKCS10CertificationRequestBuilder(x500Name, kpr.publicKey)
           val extensionsGenerator = new ExtensionsGenerator
           extensionsGenerator.addExtension(Extension.basicConstraints, true, new BasicConstraints(true))
           extensionsGenerator.addExtension(Extension.keyUsage,
@@ -569,6 +573,8 @@ class BouncyCastlePki(generator: IdGenerator) extends Pki {
           val signer = new BcRSAContentSignerBuilder(signatureAlgorithm, digestAlgorithm).build(PrivateKeyFactory.createKey(caKey.getEncoded))
           val names               = new GeneralNames(query.hosts.map(name => new GeneralName(GeneralName.dNSName, name)).toArray)
           val csrBuilder          = new JcaPKCS10CertificationRequestBuilder(new X500Name(query.subj), kpr.publicKey)
+          //val x500Name            = X500Name.getInstance(ASN1Sequence.getInstance(new X500Principal(query.subj).getEncoded))
+          //val csrBuilder          = new JcaPKCS10CertificationRequestBuilder(x500Name, kpr.publicKey)
           val extensionsGenerator = new ExtensionsGenerator
           extensionsGenerator.addExtension(Extension.basicConstraints, true, new BasicConstraints(0))
           extensionsGenerator.addExtension(Extension.keyUsage,

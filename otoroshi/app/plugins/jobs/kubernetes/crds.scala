@@ -1394,7 +1394,7 @@ object KubernetesCRDsJob {
               val caBundle = webhook.select("clientConfig").select("caBundle").asOpt[String].getOrElse("")
               val failurePolicy = webhook.select("failurePolicy").asOpt[String].getOrElse("Ignore")
               val base64ca: String = Base64.getEncoder.encodeToString(ca.certificates.head.getEncoded)
-              println(s"caBundle: ${caBundle}, failurePolicy: $failurePolicy, base64: $base64ca, eq: ${caBundle == base64ca}")
+              // println(s"caBundle: ${caBundle}, failurePolicy: $failurePolicy, base64: $base64ca, eq: ${caBundle == base64ca}")
               if (caBundle.trim.isEmpty || failurePolicy == "Ignore" || caBundle != base64ca) {
                 logger.info("updating otoroshi validating admission webhook ...")
                 client.patchValidatingWebhookConfiguration(conf.validatingWebhookName, Json.arr(
