@@ -368,6 +368,7 @@ object Cert {
 
   val OtoroshiCA             = "otoroshi-root-ca"
   val OtoroshiIntermediateCA = "otoroshi-intermediate-ca"
+  val OtoroshiJwtSigning     = "otoroshi-jwt-signing"
   val OtoroshiWildcard       = "otoroshi-wildcard"
   val OtoroshiClient         = "otoroshi-client"
 
