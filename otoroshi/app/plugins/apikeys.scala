@@ -845,7 +845,6 @@ class ClientCredentialService extends RequestSink {
   private def jwks(conf: ClientCredentialServiceConfig, ctx: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Future[Result] = {
     env.datastores.apiKeyDataStore.findAll().flatMap { apikeys =>
       val ids = apikeys.map(_.metadata.get("jwt-sign-keypair")).collect { case Some(value) => value } ++ conf.defaultKeyPair.some
-      println(ids)
       env.datastores.certificatesDataStore.findAll().map { certs =>
         val exposedCerts: Seq[JsValue] = certs.filter(c => ids.contains(c.id)).map(c => (c.id, c.cryptoKeyPair.getPublic)).flatMap {
           case (id, pub: RSAPublicKey) => new RSAKey.Builder(pub).keyID(id).build().toJSONString.parseJson.some
