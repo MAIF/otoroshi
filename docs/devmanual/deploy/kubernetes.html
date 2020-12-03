@@ -388,6 +388,15 @@ rules:
     verbs:
       - update
   - apiGroups:
+      - admissionregistration.k8s.io
+    resources:
+      - validatingwebhookconfigurations
+      - mutatingwebhookconfigurations
+    verbs:
+      - get
+      - update
+      - patch
+  - apiGroups:
       - proxy.otoroshi.io
     resources:
       - service-groups
@@ -982,7 +991,44 @@ spec:
             value: ${otoroshiSecret}
           - name: OTOROSHI_INITIAL_CUSTOMIZATION
             value: &gt;
-              {\&quot;config\&quot;:{\&quot;scripts\&quot;:{\&quot;enabled\&quot;:true,\&quot;jobRefs\&quot;:[\&quot;cp:otoroshi.plugins.jobs.kubernetes.KubernetesIngressControllerJob\&quot;,\&quot;cp:otoroshi.plugins.jobs.kubernetes.KubernetesOtoroshiCRDsControllerJob\&quot;],\&quot;jobConfig\&quot;:{\&quot;KubernetesConfig\&quot;:{\&quot;trust\&quot;:false,\&quot;namespaces\&quot;:[\&quot;*\&quot;],\&quot;labels\&quot;:[],\&quot;ingressClasses\&quot;:[\&quot;otoroshi\&quot;],\&quot;defaultGroup\&quot;:\&quot;default\&quot;,\&quot;ingresses\&quot;:true,\&quot;crds\&quot;:true,\&quot;kubeLeader\&quot;:false,\&quot;restartDependantDeployments\&quot;:false,\&quot;templates\&quot;:{\&quot;service-group\&quot;:{},\&quot;service-descriptor\&quot;:{},\&quot;apikeys\&quot;:{},\&quot;global-config\&quot;:{},\&quot;jwt-verifier\&quot;:{},\&quot;tcp-service\&quot;:{},\&quot;certificate\&quot;:{},\&quot;auth-module\&quot;:{},\&quot;script\&quot;:{}}}}}}}
+              {
+                &quot;config&quot;:{
+                  &quot;scripts&quot;:{
+                    &quot;enabled&quot;:true,
+                    &quot;jobRefs&quot;:[
+                      &quot;cp:otoroshi.plugins.jobs.kubernetes.KubernetesOtoroshiCRDsControllerJob&quot;
+                    ],
+                    &quot;jobConfig&quot;:{
+                      &quot;KubernetesConfig&quot;:{
+                        &quot;trust&quot;:false,
+                        &quot;namespaces&quot;:[
+                          &quot;*&quot;
+                        ],
+                        &quot;labels&quot;:[],
+                        &quot;ingressClasses&quot;:[
+                          &quot;otoroshi&quot;
+                        ],
+                        &quot;defaultGroup&quot;:&quot;default&quot;,
+                        &quot;ingresses&quot;:true,
+                        &quot;crds&quot;:true,
+                        &quot;kubeLeader&quot;:false,
+                        &quot;restartDependantDeployments&quot;:false,
+                        &quot;templates&quot;:{
+                          &quot;service-group&quot;:{},
+                          &quot;service-descriptor&quot;:{},
+                          &quot;apikeys&quot;:{},
+                          &quot;global-config&quot;:{},
+                          &quot;jwt-verifier&quot;:{},
+                          &quot;tcp-service&quot;:{},
+                          &quot;certificate&quot;:{},
+                          &quot;auth-module&quot;:{},
+                          &quot;script&quot;:{}
+                        }
+                      }
+                    }
+                  }
+                }
+              }
           - name: JAVA_OPTS
             value: &#39;-Xms2g -Xmx4g&#39;
         readinessProbe:
@@ -1138,7 +1184,44 @@ spec:
             value: ${otoroshiSecret}
           - name: OTOROSHI_INITIAL_CUSTOMIZATION
             value: &gt;
-              {\&quot;config\&quot;:{\&quot;scripts\&quot;:{\&quot;enabled\&quot;:true,\&quot;jobRefs\&quot;:[\&quot;cp:otoroshi.plugins.jobs.kubernetes.KubernetesIngressControllerJob\&quot;,\&quot;cp:otoroshi.plugins.jobs.kubernetes.KubernetesOtoroshiCRDsControllerJob\&quot;],\&quot;jobConfig\&quot;:{\&quot;KubernetesConfig\&quot;:{\&quot;trust\&quot;:false,\&quot;namespaces\&quot;:[\&quot;*\&quot;],\&quot;labels\&quot;:[],\&quot;ingressClasses\&quot;:[\&quot;otoroshi\&quot;],\&quot;defaultGroup\&quot;:\&quot;default\&quot;,\&quot;ingresses\&quot;:true,\&quot;crds\&quot;:true,\&quot;kubeLeader\&quot;:false,\&quot;restartDependantDeployments\&quot;:false,\&quot;templates\&quot;:{\&quot;service-group\&quot;:{},\&quot;service-descriptor\&quot;:{},\&quot;apikeys\&quot;:{},\&quot;global-config\&quot;:{},\&quot;jwt-verifier\&quot;:{},\&quot;tcp-service\&quot;:{},\&quot;certificate\&quot;:{},\&quot;auth-module\&quot;:{},\&quot;script\&quot;:{}}}}}}}
+              {
+                &quot;config&quot;:{
+                  &quot;scripts&quot;:{
+                    &quot;enabled&quot;:true,
+                    &quot;jobRefs&quot;:[
+                      &quot;cp:otoroshi.plugins.jobs.kubernetes.KubernetesOtoroshiCRDsControllerJob&quot;
+                    ],
+                    &quot;jobConfig&quot;:{
+                      &quot;KubernetesConfig&quot;:{
+                        &quot;trust&quot;:false,
+                        &quot;namespaces&quot;:[
+                          &quot;*&quot;
+                        ],
+                        &quot;labels&quot;:[],
+                        &quot;ingressClasses&quot;:[
+                          &quot;otoroshi&quot;
+                        ],
+                        &quot;defaultGroup&quot;:&quot;default&quot;,
+                        &quot;ingresses&quot;:true,
+                        &quot;crds&quot;:true,
+                        &quot;kubeLeader&quot;:false,
+                        &quot;restartDependantDeployments&quot;:false,
+                        &quot;templates&quot;:{
+                          &quot;service-group&quot;:{},
+                          &quot;service-descriptor&quot;:{},
+                          &quot;apikeys&quot;:{},
+                          &quot;global-config&quot;:{},
+                          &quot;jwt-verifier&quot;:{},
+                          &quot;tcp-service&quot;:{},
+                          &quot;certificate&quot;:{},
+                          &quot;auth-module&quot;:{},
+                          &quot;script&quot;:{}
+                        }
+                      }
+                    }
+                  }
+                }
+              }
           - name: JAVA_OPTS
             value: &#39;-Xms2g -Xmx4g&#39;
         readinessProbe:
@@ -1370,7 +1453,44 @@ spec:
             value: ${otoroshiSecret}
           - name: OTOROSHI_INITIAL_CUSTOMIZATION
             value: &gt;
-              {\&quot;config\&quot;:{\&quot;scripts\&quot;:{\&quot;enabled\&quot;:true,\&quot;jobRefs\&quot;:[\&quot;cp:otoroshi.plugins.jobs.kubernetes.KubernetesIngressControllerJob\&quot;,\&quot;cp:otoroshi.plugins.jobs.kubernetes.KubernetesOtoroshiCRDsControllerJob\&quot;],\&quot;jobConfig\&quot;:{\&quot;KubernetesConfig\&quot;:{\&quot;trust\&quot;:false,\&quot;namespaces\&quot;:[\&quot;*\&quot;],\&quot;labels\&quot;:[],\&quot;ingressClasses\&quot;:[\&quot;otoroshi\&quot;],\&quot;defaultGroup\&quot;:\&quot;default\&quot;,\&quot;ingresses\&quot;:true,\&quot;crds\&quot;:true,\&quot;kubeLeader\&quot;:false,\&quot;restartDependantDeployments\&quot;:false,\&quot;templates\&quot;:{\&quot;service-group\&quot;:{},\&quot;service-descriptor\&quot;:{},\&quot;apikeys\&quot;:{},\&quot;global-config\&quot;:{},\&quot;jwt-verifier\&quot;:{},\&quot;tcp-service\&quot;:{},\&quot;certificate\&quot;:{},\&quot;auth-module\&quot;:{},\&quot;script\&quot;:{}}}}}}}
+              {
+                &quot;config&quot;:{
+                  &quot;scripts&quot;:{
+                    &quot;enabled&quot;:true,
+                    &quot;jobRefs&quot;:[
+                      &quot;cp:otoroshi.plugins.jobs.kubernetes.KubernetesOtoroshiCRDsControllerJob&quot;
+                    ],
+                    &quot;jobConfig&quot;:{
+                      &quot;KubernetesConfig&quot;:{
+                        &quot;trust&quot;:false,
+                        &quot;namespaces&quot;:[
+                          &quot;*&quot;
+                        ],
+                        &quot;labels&quot;:[],
+                        &quot;ingressClasses&quot;:[
+                          &quot;otoroshi&quot;
+                        ],
+                        &quot;defaultGroup&quot;:&quot;default&quot;,
+                        &quot;ingresses&quot;:true,
+                        &quot;crds&quot;:true,
+                        &quot;kubeLeader&quot;:false,
+                        &quot;restartDependantDeployments&quot;:false,
+                        &quot;templates&quot;:{
+                          &quot;service-group&quot;:{},
+                          &quot;service-descriptor&quot;:{},
+                          &quot;apikeys&quot;:{},
+                          &quot;global-config&quot;:{},
+                          &quot;jwt-verifier&quot;:{},
+                          &quot;tcp-service&quot;:{},
+                          &quot;certificate&quot;:{},
+                          &quot;auth-module&quot;:{},
+                          &quot;script&quot;:{}
+                        }
+                      }
+                    }
+                  }
+                }
+              }
           - name: JAVA_OPTS
             value: &#39;-Xms2g -Xmx4g&#39;
         readinessProbe:
@@ -1596,7 +1716,44 @@ spec:
             value: ${otoroshiSecret}
           - name: OTOROSHI_INITIAL_CUSTOMIZATION
             value: &gt;
-              {\&quot;config\&quot;:{\&quot;scripts\&quot;:{\&quot;enabled\&quot;:true,\&quot;jobRefs\&quot;:[\&quot;cp:otoroshi.plugins.jobs.kubernetes.KubernetesIngressControllerJob\&quot;,\&quot;cp:otoroshi.plugins.jobs.kubernetes.KubernetesOtoroshiCRDsControllerJob\&quot;],\&quot;jobConfig\&quot;:{\&quot;KubernetesConfig\&quot;:{\&quot;trust\&quot;:false,\&quot;namespaces\&quot;:[\&quot;*\&quot;],\&quot;labels\&quot;:[],\&quot;ingressClasses\&quot;:[\&quot;otoroshi\&quot;],\&quot;defaultGroup\&quot;:\&quot;default\&quot;,\&quot;ingresses\&quot;:true,\&quot;crds\&quot;:true,\&quot;kubeLeader\&quot;:false,\&quot;restartDependantDeployments\&quot;:false,\&quot;templates\&quot;:{\&quot;service-group\&quot;:{},\&quot;service-descriptor\&quot;:{},\&quot;apikeys\&quot;:{},\&quot;global-config\&quot;:{},\&quot;jwt-verifier\&quot;:{},\&quot;tcp-service\&quot;:{},\&quot;certificate\&quot;:{},\&quot;auth-module\&quot;:{},\&quot;script\&quot;:{}}}}}}}
+              {
+                &quot;config&quot;:{
+                  &quot;scripts&quot;:{
+                    &quot;enabled&quot;:true,
+                    &quot;jobRefs&quot;:[
+                      &quot;cp:otoroshi.plugins.jobs.kubernetes.KubernetesOtoroshiCRDsControllerJob&quot;
+                    ],
+                    &quot;jobConfig&quot;:{
+                      &quot;KubernetesConfig&quot;:{
+                        &quot;trust&quot;:false,
+                        &quot;namespaces&quot;:[
+                          &quot;*&quot;
+                        ],
+                        &quot;labels&quot;:[],
+                        &quot;ingressClasses&quot;:[
+                          &quot;otoroshi&quot;
+                        ],
+                        &quot;defaultGroup&quot;:&quot;default&quot;,
+                        &quot;ingresses&quot;:true,
+                        &quot;crds&quot;:true,
+                        &quot;kubeLeader&quot;:false,
+                        &quot;restartDependantDeployments&quot;:false,
+                        &quot;templates&quot;:{
+                          &quot;service-group&quot;:{},
+                          &quot;service-descriptor&quot;:{},
+                          &quot;apikeys&quot;:{},
+                          &quot;global-config&quot;:{},
+                          &quot;jwt-verifier&quot;:{},
+                          &quot;tcp-service&quot;:{},
+                          &quot;certificate&quot;:{},
+                          &quot;auth-module&quot;:{},
+                          &quot;script&quot;:{}
+                        }
+                      }
+                    }
+                  }
+                }
+              }          
           - name: JAVA_OPTS
             value: &#39;-Xms2g -Xmx4g&#39;
         readinessProbe:
@@ -1898,7 +2055,44 @@ spec:
             value: ${otoroshiSecret}
           - name: OTOROSHI_INITIAL_CUSTOMIZATION
             value: &gt;
-              {\&quot;config\&quot;:{\&quot;scripts\&quot;:{\&quot;enabled\&quot;:true,\&quot;jobRefs\&quot;:[\&quot;cp:otoroshi.plugins.jobs.kubernetes.KubernetesIngressControllerJob\&quot;,\&quot;cp:otoroshi.plugins.jobs.kubernetes.KubernetesOtoroshiCRDsControllerJob\&quot;],\&quot;jobConfig\&quot;:{\&quot;KubernetesConfig\&quot;:{\&quot;trust\&quot;:false,\&quot;namespaces\&quot;:[\&quot;*\&quot;],\&quot;labels\&quot;:[],\&quot;ingressClasses\&quot;:[\&quot;otoroshi\&quot;],\&quot;defaultGroup\&quot;:\&quot;default\&quot;,\&quot;ingresses\&quot;:true,\&quot;crds\&quot;:true,\&quot;kubeLeader\&quot;:false,\&quot;restartDependantDeployments\&quot;:false,\&quot;templates\&quot;:{\&quot;service-group\&quot;:{},\&quot;service-descriptor\&quot;:{},\&quot;apikeys\&quot;:{},\&quot;global-config\&quot;:{},\&quot;jwt-verifier\&quot;:{},\&quot;tcp-service\&quot;:{},\&quot;certificate\&quot;:{},\&quot;auth-module\&quot;:{},\&quot;script\&quot;:{}}}}}}}
+              {
+                &quot;config&quot;:{
+                  &quot;scripts&quot;:{
+                    &quot;enabled&quot;:true,
+                    &quot;jobRefs&quot;:[
+                      &quot;cp:otoroshi.plugins.jobs.kubernetes.KubernetesOtoroshiCRDsControllerJob&quot;
+                    ],
+                    &quot;jobConfig&quot;:{
+                      &quot;KubernetesConfig&quot;:{
+                        &quot;trust&quot;:false,
+                        &quot;namespaces&quot;:[
+                          &quot;*&quot;
+                        ],
+                        &quot;labels&quot;:[],
+                        &quot;ingressClasses&quot;:[
+                          &quot;otoroshi&quot;
+                        ],
+                        &quot;defaultGroup&quot;:&quot;default&quot;,
+                        &quot;ingresses&quot;:true,
+                        &quot;crds&quot;:true,
+                        &quot;kubeLeader&quot;:false,
+                        &quot;restartDependantDeployments&quot;:false,
+                        &quot;templates&quot;:{
+                          &quot;service-group&quot;:{},
+                          &quot;service-descriptor&quot;:{},
+                          &quot;apikeys&quot;:{},
+                          &quot;global-config&quot;:{},
+                          &quot;jwt-verifier&quot;:{},
+                          &quot;tcp-service&quot;:{},
+                          &quot;certificate&quot;:{},
+                          &quot;auth-module&quot;:{},
+                          &quot;script&quot;:{}
+                        }
+                      }
+                    }
+                  }
+                }
+              }
           - name: JAVA_OPTS
             value: &#39;-Xms2g -Xmx4g&#39;
         readinessProbe:
@@ -2255,7 +2449,44 @@ spec:
             value: ${otoroshiSecret}
           - name: OTOROSHI_INITIAL_CUSTOMIZATION
             value: &gt;
-              {\&quot;config\&quot;:{\&quot;scripts\&quot;:{\&quot;enabled\&quot;:true,\&quot;jobRefs\&quot;:[\&quot;cp:otoroshi.plugins.jobs.kubernetes.KubernetesIngressControllerJob\&quot;,\&quot;cp:otoroshi.plugins.jobs.kubernetes.KubernetesOtoroshiCRDsControllerJob\&quot;],\&quot;jobConfig\&quot;:{\&quot;KubernetesConfig\&quot;:{\&quot;trust\&quot;:false,\&quot;namespaces\&quot;:[\&quot;*\&quot;],\&quot;labels\&quot;:[],\&quot;ingressClasses\&quot;:[\&quot;otoroshi\&quot;],\&quot;defaultGroup\&quot;:\&quot;default\&quot;,\&quot;ingresses\&quot;:true,\&quot;crds\&quot;:true,\&quot;kubeLeader\&quot;:false,\&quot;restartDependantDeployments\&quot;:false,\&quot;templates\&quot;:{\&quot;service-group\&quot;:{},\&quot;service-descriptor\&quot;:{},\&quot;apikeys\&quot;:{},\&quot;global-config\&quot;:{},\&quot;jwt-verifier\&quot;:{},\&quot;tcp-service\&quot;:{},\&quot;certificate\&quot;:{},\&quot;auth-module\&quot;:{},\&quot;script\&quot;:{}}}}}}}
+              {
+                &quot;config&quot;:{
+                  &quot;scripts&quot;:{
+                    &quot;enabled&quot;:true,
+                    &quot;jobRefs&quot;:[
+                      &quot;cp:otoroshi.plugins.jobs.kubernetes.KubernetesOtoroshiCRDsControllerJob&quot;
+                    ],
+                    &quot;jobConfig&quot;:{
+                      &quot;KubernetesConfig&quot;:{
+                        &quot;trust&quot;:false,
+                        &quot;namespaces&quot;:[
+                          &quot;*&quot;
+                        ],
+                        &quot;labels&quot;:[],
+                        &quot;ingressClasses&quot;:[
+                          &quot;otoroshi&quot;
+                        ],
+                        &quot;defaultGroup&quot;:&quot;default&quot;,
+                        &quot;ingresses&quot;:true,
+                        &quot;crds&quot;:true,
+                        &quot;kubeLeader&quot;:false,
+                        &quot;restartDependantDeployments&quot;:false,
+                        &quot;templates&quot;:{
+                          &quot;service-group&quot;:{},
+                          &quot;service-descriptor&quot;:{},
+                          &quot;apikeys&quot;:{},
+                          &quot;global-config&quot;:{},
+                          &quot;jwt-verifier&quot;:{},
+                          &quot;tcp-service&quot;:{},
+                          &quot;certificate&quot;:{},
+                          &quot;auth-module&quot;:{},
+                          &quot;script&quot;:{}
+                        }
+                      }
+                    }
+                  }
+                }
+              }
           - name: JAVA_OPTS
             value: &#39;-Xms2g -Xmx4g&#39;
         readinessProbe:
@@ -3294,7 +3525,7 @@ kind: ServiceGroup
 metadata:
   name: http-app-group
   annotations:
-    io.otoroshi/id: http-app-group
+    otoroshi.io/id: http-app-group
 spec:
   description: a group to hold services about the http-app
 ---
