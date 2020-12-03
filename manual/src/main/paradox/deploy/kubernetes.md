@@ -904,7 +904,7 @@ kind: ServiceGroup
 metadata:
   name: http-app-group
   annotations:
-    io.otoroshi/id: http-app-group
+    otoroshi.io/id: http-app-group
 spec:
   description: a group to hold services about the http-app
 ---
