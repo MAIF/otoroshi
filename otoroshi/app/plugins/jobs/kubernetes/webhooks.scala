@@ -22,8 +22,11 @@ class KubernetesAdmissionWebhookCRDValidator extends RequestSink {
 
   override def matches(ctx: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Boolean = {
     val config = KubernetesConfig.theConfig(ctx)
-    println(ctx.request.method, ctx.request.domain, ctx.request.path, ctx.origin, ctx.request)
-    ctx.request.domain.contentEquals(s"${config.otoroshiServiceName}.${config.otoroshiNamespace}.svc.${config.clusterDomain}") &&
+    println("KubernetesAdmissionWebhookCRDValidator", ctx.request.method, ctx.request.domain, ctx.request.path, ctx.origin, ctx.request)
+    (
+      ctx.request.domain.contentEquals(s"${config.otoroshiServiceName}.${config.otoroshiNamespace}.svc.${config.clusterDomain}") ||
+      ctx.request.domain.contentEquals(s"${config.otoroshiServiceName}.${config.otoroshiNamespace}.svc")
+    ) &&
       ctx.request.path.contentEquals("/apis/webhooks/validator") &&
       ctx.origin == RequestOrigin.ReverseProxy &&
       ctx.request.method == "POST"
@@ -246,8 +249,11 @@ class KubernetesAdmissionWebhookSidecarInjector extends RequestSink {
 
   override def matches(ctx: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Boolean = {
     val config = KubernetesConfig.theConfig(ctx)
-    println(ctx.request.method, ctx.request.domain, ctx.request.path, ctx.origin, ctx.request)
-    ctx.request.domain.contentEquals(s"${config.otoroshiServiceName}.${config.otoroshiNamespace}.svc.${config.clusterDomain}") &&
+    println("KubernetesAdmissionWebhookSidecarInjector", ctx.request.method, ctx.request.domain, ctx.request.path, ctx.origin, ctx.request)
+    (
+      ctx.request.domain.contentEquals(s"${config.otoroshiServiceName}.${config.otoroshiNamespace}.svc.${config.clusterDomain}") ||
+      ctx.request.domain.contentEquals(s"${config.otoroshiServiceName}.${config.otoroshiNamespace}.svc")
+    ) &&
       ctx.request.path.contentEquals("/apis/webhooks/inject") &&
       ctx.origin == RequestOrigin.ReverseProxy &&
       ctx.request.method == "POST"
@@ -281,7 +287,7 @@ class KubernetesAdmissionWebhookSidecarInjector extends RequestSink {
 
   def regCert(arg1: String, arg2: String, arg3: Cert): Unit = ()
   def regApk(arg1: String, arg2: String, arg3: ApiKey): Unit = ()
-
+  
   override def handle(ctx: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Future[Result] = {
     implicit val mat = env.otoroshiMaterializer
     ctx.body.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>

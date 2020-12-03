@@ -444,7 +444,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
     val cli: WSRequest = client(s"/api/v1/namespaces/$namespace/secrets/$name", false)
     cli.addHttpHeaders(
       "Accept" -> "application/json",
-      "Content-Type" -> "application/json"
+      "Content-Type" -> "application/json-patch+json"
     ).patch(Json.obj(
     "data" -> data
     )).map { resp =>
@@ -483,7 +483,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
     val cli: WSRequest = client(s"/api/v1/namespaces/$namespace/deployments/$name", false)
     cli.addHttpHeaders(
       "Accept" -> "application/json",
-      "Content-Type" -> "application/json"
+      "Content-Type" -> "application/json-patch+json"
     ).patch(body).map { resp =>
       Try {
         if (resp.status == 200 || resp.status == 201) {
@@ -515,7 +515,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
     val cli: WSRequest = client(s"/apis/admissionregistration.k8s.io/v1/mutatingwebhookconfigurations/$name", false)
     cli.addHttpHeaders(
       "Accept" -> "application/json",
-      "Content-Type" -> "application/json"
+      "Content-Type" -> "application/json-patch+json"
     ).patch(body).map { resp =>
       Try {
         if (resp.status == 200 || resp.status == 201) {
@@ -544,10 +544,10 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
   }
 
   def patchValidatingWebhookConfiguration(name: String, body: JsValue): Future[Option[KubernetesValidatingWebhookConfiguration]] = {
-    val cli: WSRequest = client(s"/apis/admissionregistration.k8s.io/v1/mutatingwebhookconfigurations/$name", false)
+    val cli: WSRequest = client(s"/apis/admissionregistration.k8s.io/v1/validatingwebhookconfigurations/$name", false)
     cli.addHttpHeaders(
       "Accept" -> "application/json",
-      "Content-Type" -> "application/json"
+      "Content-Type" -> "application/json-patch+json"
     ).patch(body).map { resp =>
       Try {
         if (resp.status == 200 || resp.status == 201) {
