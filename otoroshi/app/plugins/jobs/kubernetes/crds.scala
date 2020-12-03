@@ -1,5 +1,6 @@
 package otoroshi.plugins.jobs.kubernetes
 
+import java.util.Base64
 import java.util.concurrent.{Executors, TimeUnit}
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong, AtomicReference}
 
@@ -1350,16 +1351,16 @@ object KubernetesCRDsJob {
           val caBundle = webhook.select("clientConfig").select("caBundle").asOpt[String].getOrElse("")
           val failurePolicy = webhook.select("failurePolicy").asOpt[String].getOrElse("Ignore")
           if (caBundle.trim.isEmpty || failurePolicy == "Ignore") {
-            DynamicSSLEngineProvider.certificates.get(Cert.OtoroshiIntermediateCA) match {
+            DynamicSSLEngineProvider.certificates.get(Cert.OtoroshiCA) match {
               case None =>
-                logger.info("no otoroshi intermediate ca found, moving along ...")
+                logger.info("no otoroshi root ca found, moving along ...")
                 ().future
               case Some(ca) => {
                 client.patchValidatingWebhookConfiguration(conf.validatingWebhookName, Json.arr(
                   Json.obj(
-                    "op" -> "replace",
+                    "op" -> "add",
                     "path" -> "/webhooks/0/clientConfig/caBundle",
-                    "value" -> ca.chain
+                    "value" -> Base64.getEncoder.encodeToString(ca.certificates.head.getEncoded)
                   ),
                   Json.obj(
                     "op" -> "replace",
@@ -1384,20 +1385,21 @@ object KubernetesCRDsJob {
           logger.info("no mutating webhook found, moving along ...")
           ().future
         case Some(webhookSpec) => {
+          println(webhookSpec.pretty)
           val webhook = webhookSpec.webhooks.value.head
           val caBundle = webhook.select("clientConfig").select("caBundle").asOpt[String].getOrElse("")
           val failurePolicy = webhook.select("failurePolicy").asOpt[String].getOrElse("Ignore")
           if (caBundle.trim.isEmpty || failurePolicy == "Ignore") {
-            DynamicSSLEngineProvider.certificates.get(Cert.OtoroshiIntermediateCA) match {
+            DynamicSSLEngineProvider.certificates.get(Cert.OtoroshiCA) match {
               case None =>
-                logger.info("no otoroshi intermediate ca found, moving along ...")
+                logger.info("no otoroshi root ca found, moving along ...")
                 ().future
               case Some(ca) => {
                 client.patchMutatingWebhookConfiguration(conf.mutatingWebhookName, Json.arr(
                   Json.obj(
-                    "op" -> "replace",
+                    "op" -> "add",
                     "path" -> "/webhooks/0/clientConfig/caBundle",
-                    "value" -> ca.chain
+                    "value" -> Base64.getEncoder.encodeToString(ca.certificates.head.getEncoded)
                   ),
                   Json.obj(
                     "op" -> "replace",
