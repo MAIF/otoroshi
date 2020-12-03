@@ -191,6 +191,7 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
           KubernetesCRDsJob.patchCoreDnsConfig(conf, ctx)
           KubernetesCRDsJob.patchValidatingAdmissionWebhook(conf, ctx)
           KubernetesCRDsJob.patchMutatingAdmissionWebhook(conf, ctx)
+          KubernetesCRDsJob.createWebhookCerts(conf, ctx)
           KubernetesCRDsJob.syncCRDs(conf, ctx.attrs, !stopCommand.get())
         } else {
           ().future
@@ -200,6 +201,7 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
         KubernetesCRDsJob.patchCoreDnsConfig(conf, ctx)
         KubernetesCRDsJob.patchValidatingAdmissionWebhook(conf, ctx)
         KubernetesCRDsJob.patchMutatingAdmissionWebhook(conf, ctx)
+        KubernetesCRDsJob.createWebhookCerts(conf, ctx)
         KubernetesCRDsJob.syncCRDs(conf, ctx.attrs, !stopCommand.get())
       }
     } else {
@@ -1339,6 +1341,42 @@ object KubernetesCRDsJob {
     }
   }
 
+  def createWebhookCerts(config: KubernetesConfig, ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    env.datastores.certificatesDataStore.findById(Cert.OtoroshiCA).flatMap {
+      case None => ().future
+      case Some(ca) => {
+        env.datastores.certificatesDataStore.findById("kubernetes-webhooks-cert").flatMap {
+          case Some(_) => ().future
+          case None => {
+            val query = GenCsrQuery(
+              hosts = Seq(
+                s"${config.otoroshiServiceName}.${config.otoroshiNamespace}.svc.${config.clusterDomain}",
+                s"${config.otoroshiServiceName}.${config.otoroshiNamespace}.svc"
+              ),
+              subject = "SN=Kubernetes Webhooks Certificate, OU=Otoroshi Certificates, O=Otoroshi".some,
+              duration = 365.days,
+            )
+            logger.info("generating certificate for kubernetes webhooks")
+            env.pki.genCert(query, ca.certificates.head, ca.certificates.tail, ca.cryptoKeyPair.getPrivate).flatMap {
+              case Left(e) =>
+                logger.info(s"error while generating certificate for kubernetes webhooks: $e")
+                ().future
+              case Right(response) => {
+                val cert = response.toCert.enrich().copy(
+                  id = "kubernetes-webhooks-cert",
+                  autoRenew = true,
+                  name = "Kubernetes Webhooks Certificate",
+                  description = "Kubernetes Webhooks Certificate (auto-generated)"
+                )
+                cert.save().map(_ => ())
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
   def patchValidatingAdmissionWebhook(conf: KubernetesConfig, ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     val client = new KubernetesClient(conf, env)
     client.fetchValidatingWebhookConfiguration(conf.validatingWebhookName) // otoroshi-admission-webhook-validation
@@ -1347,20 +1385,23 @@ object KubernetesCRDsJob {
           logger.info("no validating webhook found, moving along ...")
           ().future
         case Some(webhookSpec) => {
-          val webhook = webhookSpec.webhooks.value.head
-          val caBundle = webhook.select("clientConfig").select("caBundle").asOpt[String].getOrElse("")
-          val failurePolicy = webhook.select("failurePolicy").asOpt[String].getOrElse("Ignore")
-          if (caBundle.trim.isEmpty || failurePolicy == "Ignore") {
-            DynamicSSLEngineProvider.certificates.get(Cert.OtoroshiCA) match {
-              case None =>
-                logger.info("no otoroshi root ca found, moving along ...")
-                ().future
-              case Some(ca) => {
+          DynamicSSLEngineProvider.certificates.get(Cert.OtoroshiCA) match {
+            case None =>
+              logger.info("no otoroshi root ca found, moving along ...")
+              ().future
+            case Some(ca) => {
+              val webhook = webhookSpec.webhooks.value.head
+              val caBundle = webhook.select("clientConfig").select("caBundle").asOpt[String].getOrElse("")
+              val failurePolicy = webhook.select("failurePolicy").asOpt[String].getOrElse("Ignore")
+              val base64ca: String = Base64.getEncoder.encodeToString(ca.certificates.head.getEncoded)
+              println(s"caBundle: ${caBundle}, failurePolicy: $failurePolicy, base64: $base64ca, eq: ${caBundle == base64ca}")
+              if (caBundle.trim.isEmpty || failurePolicy == "Ignore" || caBundle != base64ca) {
+                logger.info("updating otoroshi validating admission webhook ...")
                 client.patchValidatingWebhookConfiguration(conf.validatingWebhookName, Json.arr(
                   Json.obj(
                     "op" -> "add",
                     "path" -> "/webhooks/0/clientConfig/caBundle",
-                    "value" -> Base64.getEncoder.encodeToString(ca.certificates.head.getEncoded)
+                    "value" -> base64ca
                   ),
                   Json.obj(
                     "op" -> "replace",
@@ -1368,10 +1409,10 @@ object KubernetesCRDsJob {
                     "value" -> "Fail"
                   )
                 )).map(_ => ())
+              } else {
+                ().future
               }
             }
-          } else {
-            ().future
           }
         }
       }
@@ -1385,21 +1426,22 @@ object KubernetesCRDsJob {
           logger.info("no mutating webhook found, moving along ...")
           ().future
         case Some(webhookSpec) => {
-          println(webhookSpec.pretty)
-          val webhook = webhookSpec.webhooks.value.head
-          val caBundle = webhook.select("clientConfig").select("caBundle").asOpt[String].getOrElse("")
-          val failurePolicy = webhook.select("failurePolicy").asOpt[String].getOrElse("Ignore")
-          if (caBundle.trim.isEmpty || failurePolicy == "Ignore") {
-            DynamicSSLEngineProvider.certificates.get(Cert.OtoroshiCA) match {
-              case None =>
-                logger.info("no otoroshi root ca found, moving along ...")
-                ().future
-              case Some(ca) => {
+          DynamicSSLEngineProvider.certificates.get(Cert.OtoroshiCA) match {
+            case None =>
+              logger.info("no otoroshi root ca found, moving along ...")
+              ().future
+            case Some(ca) => {
+              val webhook = webhookSpec.webhooks.value.head
+              val caBundle = webhook.select("clientConfig").select("caBundle").asOpt[String].getOrElse("")
+              val failurePolicy = webhook.select("failurePolicy").asOpt[String].getOrElse("Ignore")
+              val base64ca: String = Base64.getEncoder.encodeToString(ca.certificates.head.getEncoded)
+              if (caBundle.trim.isEmpty || failurePolicy == "Ignore" || caBundle != base64ca) {
+                logger.info("updating otoroshi mutating admission webhook ...")
                 client.patchMutatingWebhookConfiguration(conf.mutatingWebhookName, Json.arr(
                   Json.obj(
                     "op" -> "add",
                     "path" -> "/webhooks/0/clientConfig/caBundle",
-                    "value" -> Base64.getEncoder.encodeToString(ca.certificates.head.getEncoded)
+                    "value" -> base64ca
                   ),
                   Json.obj(
                     "op" -> "replace",
@@ -1407,10 +1449,10 @@ object KubernetesCRDsJob {
                     "value" -> "Fail"
                   )
                 )).map(_ => ())
+              } else {
+                ().future
               }
             }
-          } else {
-            ().future
           }
         }
       }

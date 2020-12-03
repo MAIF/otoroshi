@@ -9,7 +9,7 @@ import akka.stream.Materializer
 import akka.util.ByteString
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers
 import org.bouncycastle.asn1.x500.X500Name
-import org.bouncycastle.asn1.{ASN1Integer, x509}
+import org.bouncycastle.asn1.{ASN1Integer, ASN1Sequence, x509}
 import org.bouncycastle.asn1.x509._
 import org.bouncycastle.cert.X509v3CertificateBuilder
 import org.bouncycastle.crypto.util.PrivateKeyFactory
@@ -352,7 +352,7 @@ class BouncyCastlePki(generator: IdGenerator) extends Pki {
     existingSerialNumber: Option[Long]
   )(implicit ec: ExecutionContext): Future[Either[String, SignCertResponse]] = {
     generator.nextIdSafe().map { _serial =>
-      val issuer  = new X500Name(caCert.getSubjectX500Principal.getName)
+      val issuer  = X500Name.getInstance(ASN1Sequence.getInstance(caCert.getSubjectX500Principal.getEncoded))
       val serial  = java.math.BigInteger.valueOf(existingSerialNumber.getOrElse(_serial)) // new java.math.BigInteger(32, new SecureRandom)
       val from    = new java.util.Date
       val to      = new java.util.Date(System.currentTimeMillis + validity.toMillis)
@@ -588,7 +588,8 @@ class BouncyCastlePki(generator: IdGenerator) extends Pki {
                                   extensionsGenerator.generate)
           val csr    = csrBuilder.build(signer)
           // val issuer = csr.getSubject
-          val issuer = new X500Name(caCert.getSubjectX500Principal.getName)
+          // val __issuer = new X500Name(caCert.getSubjectX500Principal.getName)
+          val issuer  = X500Name.getInstance(ASN1Sequence.getInstance(caCert.getSubjectX500Principal.getEncoded))
           val from   = new java.util.Date
           val to     = new java.util.Date(System.currentTimeMillis + query.duration.toMillis)
           val certgen =

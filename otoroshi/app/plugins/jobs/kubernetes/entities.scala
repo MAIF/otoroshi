@@ -18,8 +18,8 @@ trait KubernetesEntity {
   lazy val spec: JsObject = (raw \ "spec").asOpt[JsObject].getOrElse(Json.obj())
   lazy val uid: String = (raw \ "metadata" \ "uid").as[String]
   lazy val name: String = (raw \ "metadata" \ "name").as[String]
-  lazy val metaKind: Option[String] = annotations.get("io.otoroshi/kind")
-  lazy val metaId: Option[String] = annotations.get("io.otoroshi/id")
+  lazy val metaKind: Option[String] = annotations.get("io.otoroshi/kind").orElse(annotations.get("otoroshi.io/kind"))
+  lazy val metaId: Option[String] = annotations.get("io.otoroshi/id").orElse(annotations.get("otoroshi.io/id"))
   lazy val namespace: String = (raw \ "metadata" \ "namespace").as[String]
   lazy val path: String = s"$namespace/$name"
   lazy val labels: Map[String, String] = (raw \ "metadata" \ "labels").asOpt[Map[String, String]].getOrElse(Map.empty)

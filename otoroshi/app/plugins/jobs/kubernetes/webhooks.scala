@@ -287,7 +287,7 @@ class KubernetesAdmissionWebhookSidecarInjector extends RequestSink {
 
   def regCert(arg1: String, arg2: String, arg3: Cert): Unit = ()
   def regApk(arg1: String, arg2: String, arg3: ApiKey): Unit = ()
-  
+
   override def handle(ctx: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Future[Result] = {
     implicit val mat = env.otoroshiMaterializer
     ctx.body.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>

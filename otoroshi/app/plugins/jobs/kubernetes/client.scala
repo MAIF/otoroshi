@@ -387,8 +387,8 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       "metadata" -> Json.obj(
         "name" -> name,
         "annotation" -> Json.obj(
-          "io.otoroshi/kind" -> kind,
-          "io.otoroshi/id" -> id
+          "otoroshi.io/kind" -> kind,
+          "otoroshi.io/id" -> id
         )
       ),
       "type" -> typ,
@@ -419,8 +419,8 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       "metadata" -> Json.obj(
         "name" -> name,
         "annotation" -> Json.obj(
-          "io.otoroshi/kind" -> kind,
-          "io.otoroshi/id" -> id
+          "otoroshi.io/kind" -> kind,
+          "otoroshi.io/id" -> id
         )
       ),
       "type" -> typ,

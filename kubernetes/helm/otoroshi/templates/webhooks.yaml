@@ -56,10 +56,10 @@ webhooks:
         scope: "Namespaced"
     # namespaceSelector:
     #   matchLabels:
-    #     io.otoroshi/sidecar: inject
+    #     otoroshi.io/sidecar: inject
     objectSelector:
       matchLabels:
-        io.otoroshi/sidecar: inject
+        otoroshi.io/sidecar: inject
     clientConfig:
       # url: "https://otoroshi-kubernetes-admission-webhook.otoroshi.svc.cluster.local:8443/apis/webhooks/inject"
       service:
