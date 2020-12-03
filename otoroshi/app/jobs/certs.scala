@@ -62,7 +62,7 @@ class InitialCertsJob extends Job {
       }
   }
 
-  def createOrFind(name: String, description: String, subject: String, hosts: Seq[String], duration: FiniteDuration, ca: Boolean, client: Boolean, id: String, found: Option[Cert], from: Option[Cert])(implicit env: Env, ec: ExecutionContext): Future[Option[Cert]] = {
+  def createOrFind(name: String, description: String, subject: String, hosts: Seq[String], duration: FiniteDuration, ca: Boolean, client: Boolean, keypair: Boolean, id: String, found: Option[Cert], from: Option[Cert])(implicit env: Env, ec: ExecutionContext): Future[Option[Cert]] = {
     found.filter(_.enrich().valid) match {
       case None => {
         val query = GenCsrQuery(
@@ -87,6 +87,7 @@ class InitialCertsJob extends Job {
               autoRenew = true,
               ca = ca,
               client = client,
+              keypair = keypair,
               name = name,
               description = description
             )
@@ -104,10 +105,12 @@ class InitialCertsJob extends Job {
       cIntermediate <- env.datastores.certificatesDataStore.findById(Cert.OtoroshiIntermediateCA)
       cWildcard     <- env.datastores.certificatesDataStore.findById(Cert.OtoroshiWildcard)
       cClient       <- env.datastores.certificatesDataStore.findById(Cert.OtoroshiClient)
-      root          <- createOrFind("Otoroshi Default Root CA Certificate",         "Otoroshi root CA (auto-generated)",              s"CN=Otoroshi Default Root CA Certificate, OU=Otoroshi Certificates, O=Otoroshi",                      Seq.empty,               (10 * 365).days, true,  false, Cert.OtoroshiCA,             cRoot,         None)
-      intermediate  <- createOrFind("Otoroshi Default Intermediate CA Certificate", "Otoroshi intermediate CA (auto-generated)",      s"CN=Otoroshi Default Intermediate CA Certificate, OU=Otoroshi Certificates, O=Otoroshi",              Seq.empty,               (10 * 365).days, true,  false, Cert.OtoroshiIntermediateCA, cIntermediate, root)
-      _             <- createOrFind("Otoroshi Default Wildcard Certificate",        "Otoroshi wildcard certificate (auto-generated)", s"CN=*.${env.domain}, SN=Otoroshi Default Wildcard Certificate, OU=Otoroshi Certificates, O=Otoroshi", Seq(s"*.${env.domain}"), (1 * 365).days,  false, false, Cert.OtoroshiWildcard,       cWildcard,     intermediate)
-      _             <- createOrFind("Otoroshi Default Client Certificate",          "Otoroshi client certificate (auto-generated)",   s"CN=Otoroshi Default Client Certificate, OU=Otoroshi Certificates, O=Otoroshi",                       Seq.empty,               (1 * 365).days,  false, true,  Cert.OtoroshiClient,         cClient,       intermediate)
+      cJwt          <- env.datastores.certificatesDataStore.findById(Cert.OtoroshiJwtSigning)
+      root          <- createOrFind("Otoroshi Default Root CA Certificate",         "Otoroshi root CA (auto-generated)",              s"CN=Otoroshi Default Root CA Certificate, OU=Otoroshi Certificates, O=Otoroshi",                      Seq.empty,               (10 * 365).days, true,  false, false, Cert.OtoroshiCA,             cRoot,         None)
+      intermediate  <- createOrFind("Otoroshi Default Intermediate CA Certificate", "Otoroshi intermediate CA (auto-generated)",      s"CN=Otoroshi Default Intermediate CA Certificate, OU=Otoroshi Certificates, O=Otoroshi",              Seq.empty,               (10 * 365).days, true,  false, false, Cert.OtoroshiIntermediateCA, cIntermediate, root)
+      _             <- createOrFind("Otoroshi Default Wildcard Certificate",        "Otoroshi wildcard certificate (auto-generated)", s"CN=*.${env.domain}, SN=Otoroshi Default Wildcard Certificate, OU=Otoroshi Certificates, O=Otoroshi", Seq(s"*.${env.domain}"), (1 * 365).days,  false, false, false, Cert.OtoroshiWildcard,       cWildcard,     intermediate)
+      _             <- createOrFind("Otoroshi Default Client Certificate",          "Otoroshi client certificate (auto-generated)",   s"CN=Otoroshi Default Client Certificate, OU=Otoroshi Certificates, O=Otoroshi",                       Seq.empty,               (1 * 365).days,  false, true,  false, Cert.OtoroshiClient,         cClient,       intermediate)
+      _             <- createOrFind("Otoroshi Default Jwt Signing Keypair",         "Otoroshi jwt signing keypair (auto-generated)",   s"CN=Otoroshi Default Jwt Signing Keypair, OU=Otoroshi Certificates, O=Otoroshi",                     Seq.empty,               (1 * 365).days,  false, false, true, Cert.OtoroshiJwtSigning,     cJwt,          intermediate)
     } yield ()
   }
 

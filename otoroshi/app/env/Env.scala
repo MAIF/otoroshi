@@ -38,7 +38,7 @@ import play.api.libs.ws._
 import play.api.libs.ws.ahc._
 import play.twirl.api.Html
 import security.{ClaimCrypto, IdGenerator}
-import ssl.{DynamicSSLEngineProvider}
+import ssl.{Cert, DynamicSSLEngineProvider}
 import utils.http._
 import utils.{HasMetrics, Metrics}
 import otoroshi.utils.syntax.implicits._
@@ -708,6 +708,18 @@ class Env(val configuration: Configuration,
     throttlingQuota = 100000,
     maxLogsSize = configuration.getOptionalWithFileSupport[Int]("app.events.maxSize").getOrElse(100),
     otoroshiId = configuration.getOptionalWithFileSupport[String]("otoroshi.instance.instanceId").getOrElse(IdGenerator.uuid),
+    scripts = GlobalScripts(
+      enabled = true,
+      sinkRefs = Seq("cp:otoroshi.plugins.apikeys.ClientCredentialService"),
+      sinkConfig = Json.obj(
+        "ClientCredentialService" -> Json.obj(
+          "domain"  -> "*",
+          "expiration"     -> 1.hour.toMillis,
+          "defaultKeyPair" -> Cert.OtoroshiJwtSigning,
+          "secure"         -> true
+        )
+      )
+    )
   )
 
   lazy val backOfficeGroup = ServiceGroup(

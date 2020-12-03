@@ -24,7 +24,7 @@ import play.api.libs.json._
 import play.api.mvc.{Result, Results}
 import play.core.parsers.FormUrlEncodedParser
 import security.IdGenerator
-import ssl.DynamicSSLEngineProvider
+import ssl.{Cert, DynamicSSLEngineProvider}
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration._
@@ -299,7 +299,7 @@ class ClientCredentialFlow extends RequestTransformer {
 
   override def description: Option[String] = {
     Some(
-      s"""This plugin enabless the oauth client credentials flow on a service and add an endpoint (`/.well-known/otoroshi/oauth/token`) to create an access_token given a client id and secret.
+      s"""This plugin enables the oauth client credentials flow on a service and add an endpoint (`/.well-known/otoroshi/oauth/token`) to create an access_token given a client id and secret.
          |If you don't want to have access_tokens as JWT tokens, don't forget to use `ClientCredentialFlowExtractor` pre-routing plugin.
          |Don't forget to authorize access to `/.well-known/otoroshi/oauth/token` in service settings (public paths)
          |
@@ -747,5 +747,244 @@ class ClientCredentialFlow extends RequestTransformer {
   override def transformRequestBodyWithCtx(ctx: TransformerRequestBodyContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
     awaitingRequests.get(ctx.snowflake).map(_.trySuccess(ctx.body))
     ctx.body
+  }
+}
+
+class ClientCredentialService extends RequestSink {
+
+  import utils.RequestImplicits._
+  import otoroshi.utils.syntax.implicits._
+
+  case class ClientCredentialServiceConfig(raw: JsValue) {
+    lazy val expiration = (raw \ "expiration").asOpt[Long].map(_.millis).getOrElse(1.hour)
+    lazy val defaultKeyPair = (raw \ "defaultKeyPair").asOpt[String].filter(_.trim.nonEmpty).getOrElse(Cert.OtoroshiJwtSigning)
+    lazy val domain = (raw \ "domain").asOpt[String].filter(_.trim.nonEmpty).getOrElse("*")
+    lazy val secure = (raw \ "secure").asOpt[Boolean].getOrElse(true)
+  }
+
+  override def name: String = "Client Credential Service"
+
+  override def defaultConfig: Option[JsObject] = {
+    Some(
+      Json.obj(
+        "ClientCredentialService" -> Json.obj(
+          "domain"  -> "*",
+          "expiration"     -> 1.hour.toMillis,
+          "defaultKeyPair" -> Cert.OtoroshiJwtSigning,
+          "secure"         -> true
+        )
+      )
+    )
+  }
+
+  override def description: Option[String] = {
+    Some(
+      s"""This plugin add an an oauth client credentials service (`https://unhandleddomain/.well-known/otoroshi/oauth/token`) to create an access_token given a client id and secret.
+         |
+         |```json
+         |${Json.prettyPrint(defaultConfig.get)}
+         |```
+      """.stripMargin
+    )
+  }
+
+  override def matches(ctx: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Boolean = {
+    val conf = ClientCredentialServiceConfig(ctx.configFor("ClientCredentialService"))
+    val domainMatches = conf.domain match {
+      case "*"   => true
+      case value => ctx.request.theDomain == value
+    }
+    domainMatches && ctx.origin == RequestOrigin.ReverseProxy && ctx.request.relativeUri.startsWith("/.well-known/otoroshi/oauth/")
+  }
+
+  private def handleBody(ctx: RequestSinkContext)(f: Map[String, String] => Future[Result])(implicit env: Env, ec: ExecutionContext): Future[Result] = {
+    implicit val mat = env.otoroshiMaterializer
+    val charset = ctx.request.charset.getOrElse("UTF-8")
+    ctx.body.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
+      ctx.request.headers.get("Content-Type") match {
+        case Some(ctype) if ctype.toLowerCase().contains("application/x-www-form-urlencoded") => {
+          val urlEncodedString = bodyRaw.utf8String
+          val body = FormUrlEncodedParser.parse(urlEncodedString, charset).mapValues(_.head)
+          val map: Map[String, String] = body ++ ctx.request.headers
+            .get("Authorization")
+            .filter(_.startsWith("Basic "))
+            .map(_.replace("Basic ", ""))
+            .map(v => org.apache.commons.codec.binary.Base64.decodeBase64(v))
+            .map(v => new String(v))
+            .filter(_.contains(":"))
+            .map(_.split(":").toSeq)
+            .map(v => Map("client_id" -> v.head, "client_secret" -> v.last))
+            .getOrElse(Map.empty[String, String])
+          f(map)
+        }
+        case Some(ctype) if ctype.toLowerCase().contains("application/json") => {
+          val json = Json.parse(bodyRaw.utf8String).as[JsObject]
+          val map: Map[String, String] = json.value.toSeq.collect {
+            case (key, JsString(v))  => (key, v)
+            case (key, JsNumber(v))  => (key, v.toString())
+            case (key, JsBoolean(v)) => (key, v.toString)
+          }.toMap ++ ctx.request.headers
+            .get("Authorization")
+            .filter(_.startsWith("Basic "))
+            .map(_.replace("Basic ", ""))
+            .map(v => org.apache.commons.codec.binary.Base64.decodeBase64(v))
+            .map(v => new String(v))
+            .filter(_.contains(":"))
+            .map(_.split(":").toSeq)
+            .map(v => Map("client_id" -> v.head, "client_secret" -> v.last))
+            .getOrElse(Map.empty[String, String])
+          f(map)
+        }
+        case _ =>
+          // bad content type
+          Results.Unauthorized(Json.obj("error" -> "access_denied", "error_description" -> s"Unauthorized")).future
+      }
+    }
+  }
+
+  private def jwks(conf: ClientCredentialServiceConfig, ctx: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Future[Result] = {
+    env.datastores.apiKeyDataStore.findAll().flatMap { apikeys =>
+      val ids = apikeys.map(_.metadata.get("jwt-sign-keypair")).collect { case Some(value) => value } ++ conf.defaultKeyPair.some
+      println(ids)
+      env.datastores.certificatesDataStore.findAll().map { certs =>
+        val exposedCerts: Seq[JsValue] = certs.filter(c => ids.contains(c.id)).map(c => (c.id, c.cryptoKeyPair.getPublic)).flatMap {
+          case (id, pub: RSAPublicKey) => new RSAKey.Builder(pub).keyID(id).build().toJSONString.parseJson.some
+          case (id, pub: ECPublicKey)  => new ECKey.Builder(Curve.forECParameterSpec(pub.getParams), pub).keyID(id).build().toJSONString.parseJson.some
+          case _ => None
+        }
+        Results.Ok(Json.obj("keys" -> JsArray(exposedCerts)))
+      }
+    }
+  }
+
+  private def introspect(conf: ClientCredentialServiceConfig, ctx: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Future[Result] = {
+    handleBody(ctx) { body =>
+      body.get("token") match {
+        case Some(token) => {
+          val decoded = JWT.decode(token)
+          val clientId = Try(decoded.getClaim("clientId").asString()).orElse(Try(decoded.getIssuer())).getOrElse("--")
+          val possibleApiKey = env.datastores.apiKeyDataStore.findById(clientId)
+          possibleApiKey.flatMap {
+            case Some(apiKey) => {
+              val keyPairId = apiKey.metadata.getOrElse("jwt-sign-keypair", conf.defaultKeyPair)
+              val maybeKeyPair: Option[KeyPair] = DynamicSSLEngineProvider.certificates.get(keyPairId).map(_.cryptoKeyPair)
+              val algo: Algorithm = maybeKeyPair.map { kp =>
+                (kp.getPublic, kp.getPrivate) match {
+                  case (pub: RSAPublicKey, priv: RSAPrivateKey) => Algorithm.RSA256(pub, priv)
+                  case (pub: ECPublicKey,  priv: ECPrivateKey)  => Algorithm.ECDSA384(pub, priv)
+                  case _                                        => Algorithm.HMAC512(apiKey.clientSecret)
+                }
+              } getOrElse {
+                Algorithm.HMAC512(apiKey.clientSecret)
+              }
+              Try(JWT.require(algo).acceptLeeway(10).build().verify(token)) match {
+                case Failure(e) => Results.Unauthorized(Json.obj("error" -> "access_denied", "error_description" -> s"Unauthorized")).future
+                case Success(_) => Results.Ok(apiKey.lightJson ++ Json.obj("access_type" -> "apikey")).future
+              }
+            }
+            case None =>
+              // apikey not found
+              Results.Unauthorized(Json.obj("error" -> "access_denied", "error_description" -> s"Unauthorized")).future
+          }
+        }
+        case _ =>
+          // bad body
+          Results.Unauthorized(Json.obj("error" -> "access_denied", "error_description" -> s"Unauthorized")).future
+      }
+    }
+  }
+
+  private def handleTokenRequest(ccfb: ClientCredentialFlowBody, conf: ClientCredentialServiceConfig, ctx: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Future[Result] = ccfb match {
+    case ClientCredentialFlowBody("client_credentials", clientId, clientSecret, scope) => {
+      val possibleApiKey = env.datastores.apiKeyDataStore.findById(clientId)
+      possibleApiKey.flatMap {
+        case Some(apiKey) if apiKey.clientSecret == clientSecret => {
+          val keyPairId = apiKey.metadata.getOrElse("jwt-sign-keypair", conf.defaultKeyPair)
+          val maybeKeyPair: Option[KeyPair] = DynamicSSLEngineProvider.certificates.get(keyPairId).map(_.cryptoKeyPair)
+          val algo: Algorithm = maybeKeyPair.map { kp =>
+            (kp.getPublic, kp.getPrivate) match {
+              case (pub: RSAPublicKey, priv: RSAPrivateKey) => Algorithm.RSA256(pub, priv)
+              case (pub: ECPublicKey,  priv: ECPrivateKey)  => Algorithm.ECDSA384(pub, priv)
+              case _                                        => Algorithm.HMAC512(apiKey.clientSecret)
+            }
+          } getOrElse {
+            Algorithm.HMAC512(apiKey.clientSecret)
+          }
+
+          val accessToken = JWT.create()
+            .withJWTId(IdGenerator.uuid)
+            .withExpiresAt(DateTime.now().plus(conf.expiration.toMillis).toDate)
+            .withIssuedAt(DateTime.now().toDate)
+            .withNotBefore(DateTime.now().toDate)
+            .withClaim("cid", apiKey.clientId)
+            .withIssuer(ctx.request.theProtocol + "://" + ctx.request.host)
+            .withSubject(apiKey.clientId)
+            .withAudience("otoroshi")
+            .withKeyId(keyPairId)
+            .sign(algo)
+          // no refresh token possible because of https://tools.ietf.org/html/rfc6749#section-4.4.3
+
+          val pass = scope.forall { s =>
+            val scopes = s.split(" ").toSeq
+            val scopeInter = apiKey.metadata.get("scope").exists(_.split(" ").toSeq.intersect(scopes).nonEmpty)
+            scopeInter && apiKey.metadata.get("scope").map(_.split(" ").toSeq.intersect(scopes).size).getOrElse(scopes.size) == scopes.size
+          }
+          if (pass) {
+            val scopeObj = scope.orElse(apiKey.metadata.get("scope")).map(v => Json.obj("scope" -> v)).getOrElse(Json.obj())
+            Results.Ok(Json.obj(
+              "access_token" -> accessToken,
+              "token_type" -> "Bearer",
+              "expires_in" -> conf.expiration.toSeconds
+            ) ++ scopeObj).future
+          } else {
+            Results.Forbidden(Json.obj("error" -> "access_denied", "error_description" -> s"Client has not been granted scopes: ${scope.get}")).future
+          }
+        }
+        case _ => Results.Unauthorized(Json.obj("error" -> "access_denied", "error_description" -> s"Bad client credentials")).future
+      }
+    }
+    case _ => Results.BadRequest(Json.obj("error" -> "unauthorized_client", "error_description" -> s"Grant type '${ccfb.grantType}' not supported !")).future
+  }
+
+  private def token(conf: ClientCredentialServiceConfig, ctx: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Future[Result] = handleBody(ctx) { body =>
+    (
+      body.get("grant_type"),
+      body.get("client_id"),
+      body.get("client_secret"),
+      body.get("scope"),
+    ) match {
+      case (Some(gtype), Some(clientId), Some(clientSecret), scope) => handleTokenRequest(ClientCredentialFlowBody(gtype, clientId, clientSecret, scope), conf, ctx)
+      case _ => ctx.request.headers
+        .get("Authorization")
+        .filter(_.startsWith("Basic "))
+        .map(_.replace("Basic ", ""))
+        .map(v => org.apache.commons.codec.binary.Base64.decodeBase64(v))
+        .map(v => new String(v))
+        .filter(_.contains(":"))
+        .map(_.split(":").toSeq)
+        .map(v => (v.head, v.last))
+        .map {
+          case (clientId, clientSecret) => handleTokenRequest(ClientCredentialFlowBody(body.getOrElse("grant_type", "--"), clientId, clientSecret, None), conf, ctx)
+        }
+        .getOrElse {
+          // bad credentials
+          Results.Unauthorized(Json.obj("error" -> "access_denied", "error_description" -> s"Unauthorized")).future
+        }
+    }
+  }
+
+  override def handle(ctx: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Future[Result] = {
+    val conf = ClientCredentialServiceConfig(ctx.configFor("ClientCredentialService"))
+    val secureMatch = if (conf.secure) ctx.request.theSecured else true
+    if (secureMatch) {
+      (ctx.request.method.toLowerCase(), ctx.request.relativeUri) match {
+        case ("get", "/.well-known/otoroshi/oauth/jwks.json") => jwks(conf, ctx)
+        case ("post", "/.well-known/otoroshi/oauth/token/introspect") => introspect(conf, ctx)
+        case ("post", "/.well-known/otoroshi/oauth/token") => token(conf, ctx)
+        case _ => Results.NotFound(Json.obj("error" -> "not_found", "error_description" -> s"resource not found")).future
+      }
+    } else {
+      Results.BadRequest(Json.obj("error" -> "bad_request", "error_description" -> s"use a secure channel")).future
+    }
   }
 }
