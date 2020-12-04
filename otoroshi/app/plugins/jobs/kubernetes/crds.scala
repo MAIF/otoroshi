@@ -534,7 +534,7 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
             case None => None
             case Some(dn) =>
               DynamicSSLEngineProvider.certificates.find {
-                case (_, cert) => cert.certificate.map(_.getIssuerDN.getName).contains(dn)
+                case (_, cert) => cert.id == dn || cert.certificate.map(_.getSubjectDN.getName).contains(dn)
               }
           }
           val maybeCert = foundACertWithSameIdAndCsr(id, csrJson, caOpt.map(_._2), certs)

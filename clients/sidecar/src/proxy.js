@@ -31,6 +31,7 @@ function createServer(opts, fn) {
 }
 
 function writeError(code, err, ctype, res, args) {
+  console.log('error', code, err, ctype, res, args);
   const _headers = { 'Content-Type': ctype };
   res.writeHead(code, _headers);
   res.write(err);
@@ -166,6 +167,7 @@ function ExternalProxy(opts) {
       const args = {};
 
       if (opts.enableOriginCheck && (req.socket.localAddress === '127.0.0.1' || req.socket.localAddress === 'localhost' || req.socket.localAddress.indexOf('127.0.0.1') > -1)) {
+        console.log('bad origin');
         res.writeHead(500, { 'Content-Type': 'application/json' });
         res.write(JSON.stringify({ error: 'bad origin' }));
         res.end();
@@ -191,9 +193,11 @@ function ExternalProxy(opts) {
             args.state = state;
           }
         } catch(err) {
+          console.log('bad tokens');
           return writeError(400, `{"error":"bad tokens"}`, 'application/json', res, args);
         }
       } else {
+        console.log('no tokens');
         return writeError(400, `{"error":"no tokens"}`, 'application/json', res, args);
       }
 
@@ -217,6 +221,7 @@ function ExternalProxy(opts) {
       const forwardReq = http.request(options, (forwardRes) => {
         const headersOut = { ...forwardRes.headers, 'otoroshi-claim': args.claims, 'otoroshi-state-resp': args.state }; 
         res.writeHead(forwardRes.statusCode, headersOut);
+        console.log(forwardRes.statusCode, headersOut);
         forwardRes.setEncoding('utf8');
         let ended = false;
         forwardRes.on('data', (chunk) => res.write(chunk));
