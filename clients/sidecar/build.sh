@@ -39,10 +39,10 @@ case "${1}" in
   build-and-push-snapshot)
     cleanup
     prepare_build
-    build "dev"
-    docker tag otoroshi-sidecar "maif/otoroshi-sidecar:dev"
+    build $2
+    docker tag otoroshi-sidecar "maif/otoroshi-sidecar:$2"
     docker tag otoroshi-sidecar "maif/otoroshi-sidecar:latest"
-    docker push "maif/otoroshi-sidecar:dev"
+    docker push "maif/otoroshi-sidecar:$2"
     docker push "maif/otoroshi-sidecar:latest"
     ;;
   build-local)
@@ -53,10 +53,10 @@ case "${1}" in
   build-and-push-local)
     cleanup
     prepare_build
-    build "dev"
-    docker tag otoroshi-sidecar "registry.oto.tools:5000/maif/otoroshi-sidecar:dev"
+    build $2
+    docker tag otoroshi-sidecar "registry.oto.tools:5000/maif/otoroshi-sidecar:$2"
     docker tag otoroshi-sidecar "registry.oto.tools:5000/maif/otoroshi-sidecar:latest"
-    docker push "registry.oto.tools:5000/maif/otoroshi-sidecar:dev"
+    docker push "registry.oto.tools:5000/maif/otoroshi-sidecar:$2"
     docker push "registry.oto.tools:5000/maif/otoroshi-sidecar:latest"
     ;;
   *)

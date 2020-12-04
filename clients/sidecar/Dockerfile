@@ -6,10 +6,13 @@ RUN mkdir -p /app
 
 WORKDIR /app
 
-COPY ./src /app/
-COPY ./node_modules /app/
-COPY ./package.json /app/
-COPY ./yarn.lock /app/
+COPY ./src /app/src
+COPY ./node_modules /app/node_modules
+COPY ./package.json /app/package.json
+COPY ./yarn.lock /app/yarn.lock
+COPY ./entrypoint.sh /app/entrypoint.sh 
+
+RUN ls -ahl /app
 
 ENTRYPOINT ["./entrypoint.sh"]
 

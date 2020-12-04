@@ -1,3 +1,5 @@
+const fs = require('fs');
+
 const { InternalProxy, ExternalProxy } = require('./proxy');
 
 const EXTERNAL_PORT = parseInt(process.env.EXTERNAL_PORT || '8443', 10);
