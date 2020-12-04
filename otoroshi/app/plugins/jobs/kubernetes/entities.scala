@@ -96,6 +96,7 @@ case class KubernetesDeployment(raw: JsValue) extends KubernetesEntity
 
 case class KubernetesCertSecret(raw: JsValue) extends KubernetesEntity {
   lazy val data: JsValue = (raw \ "data").as[JsValue]
+  lazy val isOtoCert: Boolean = metaKind.isDefined
   def cert: Option[Cert] = Try {
     val crt = (data \ "tls.crt").asOpt[String]
     val key = (data \ "tls.key").asOpt[String]

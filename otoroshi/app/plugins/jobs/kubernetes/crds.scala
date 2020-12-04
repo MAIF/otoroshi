@@ -1038,8 +1038,10 @@ object KubernetesCRDsJob {
           case Some(secret) =>
             val chain = (secret.raw \ "data" \ "tls.crt").as[String].applyOn(s => s.fromBase64)
             val privateKey = (secret.raw \ "data" \ "tls.key").as[String].applyOn(s => s.fromBase64)
-            if ((chain != cert.chain) || (privateKey != cert.privateKey)) {
-              updatedSecrets.updateAndGet(seq => seq :+ (namespace, name))
+            //if ((chain != cert.chain) || (privateKey != cert.privateKey)) {
+            updatedSecrets.updateAndGet(seq => seq :+ (namespace, name))
+            if (!(chain == cert.chain && privateKey == cert.privateKey)) {
+              logger.info(s"updating secret: $namespace/$name")
               clientSupport.client.updateSecret(namespace, name, "kubernetes.io/tls", Json.obj(
                 "tls.crt" -> cert.chain.base64,
                 "tls.key" -> cert.privateKey.base64,
@@ -1052,7 +1054,6 @@ object KubernetesCRDsJob {
             }
         }
       }.runWith(Sink.ignore).map(_ => ())
-    ().future
   }
 
   def restartDependantDeployments(conf: KubernetesConfig, attrs: TypedMap, clientSupport: ClientSupport, ctx: CRDContext, _updatedSecrets: Seq[(String, String)])(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
@@ -1108,7 +1109,7 @@ object KubernetesCRDsJob {
   def deleteOutDatedSecrets(conf: KubernetesConfig, attrs: TypedMap, clientSupport: ClientSupport, ctx: CRDContext, updatedSecretsRef: AtomicReference[Seq[(String, String)]])(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     implicit val mat = env.otoroshiMaterializer
     val lastSecrets = updatedSecretsRef.get().map(t => t._1 + "/" + t._2)
-    clientSupport.client.fetchSecrets().map { allSecretsRaw =>
+    clientSupport.client.fetchSecrets().flatMap { allSecretsRaw =>
       val allSecrets = allSecretsRaw.filter(_.metaId.isDefined).map(_.path)
       val outOfSync = allSecrets.filterNot(v => lastSecrets.contains(v))
       Source(outOfSync.toList)
@@ -1116,8 +1117,9 @@ object KubernetesCRDsJob {
           val parts = path.split("/")
           val namespace = parts.head
           val name = parts.last
+          // logger.info(s"delete secret: $namespace/$name")
           clientSupport.client.deleteSecret(namespace, name)
-        }.runWith(Sink.ignore)
+        }.runWith(Sink.ignore).map(_ => ())
     }
   }
 

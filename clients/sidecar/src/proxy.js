@@ -157,8 +157,8 @@ function ExternalProxy(opts) {
     key: _ctx.BACKEND_KEY, 
     cert: _ctx.BACKEND_CERT, 
     ca: _ctx.BACKEND_CA, 
-    // requestCert: true, 
-    rejectUnauthorized: true,
+    requestCert: opts.requestCert, 
+    rejectUnauthorized: opts.rejectUnauthorized,
   } }, (req, res, secure) => { 
     
     const ctx = opts.context();

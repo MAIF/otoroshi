@@ -4,6 +4,9 @@ const { InternalProxy, ExternalProxy } = require('./proxy');
 
 const EXTERNAL_PORT = parseInt(process.env.EXTERNAL_PORT || '8443', 10);
 const INTERNAL_PORT = parseInt(process.env.INTERNAL_PORT || '8080', 10);
+const REQUEST_CERT = (process.env.REQUEST_CERT || 'true') === 'true';
+const REJECT_UNAUTHORIZED = (process.env.REJECT_UNAUTHORIZED || 'true') === 'true';
+const ENABLE_ORIGIN_CHECK = (process.env.ENABLE_ORIGIN_CHECK || 'true') === 'true';
 
 function contextExtractor() {
 
@@ -60,5 +63,22 @@ function contextExtractor() {
   }
 }
 
-const internalProxy = InternalProxy({ rejectUnauthorized: true, requestCert: true, enableOriginCheck: true, context: contextExtractor }).listen({ hostname: '127.0.0.1', port: INTERNAL_PORT })
-const externalProxy = ExternalProxy({ rejectUnauthorized: true, requestCert: true, enableOriginCheck: true, context: contextExtractor }).listen({ hostname: '0.0.0.0', port: EXTERNAL_PORT })
+const internalProxy = InternalProxy({ 
+  rejectUnauthorized: REJECT_UNAUTHORIZED, 
+  requestCert: REQUEST_CERT, 
+  enableOriginCheck: ENABLE_ORIGIN_CHECK, 
+  context: contextExtractor 
+}).listen({ 
+  hostname: '127.0.0.1', 
+  port: INTERNAL_PORT 
+});
+
+const externalProxy = ExternalProxy({ 
+  rejectUnauthorized: REJECT_UNAUTHORIZED, 
+  requestCert: REQUEST_CERT, 
+  enableOriginCheck: ENABLE_ORIGIN_CHECK, 
+  context: contextExtractor 
+}).listen({ 
+  hostname: '0.0.0.0', 
+  port: EXTERNAL_PORT 
+});
