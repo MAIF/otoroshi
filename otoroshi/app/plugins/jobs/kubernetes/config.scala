@@ -53,6 +53,7 @@ case class KubernetesConfig(
   watchGracePeriodSeconds: Int,
   mutatingWebhookName: String,
   validatingWebhookName: String,
+  image: Option[String]
 )
 
 object KubernetesConfig {
@@ -126,6 +127,7 @@ object KubernetesConfig {
           watchGracePeriodSeconds = (conf \ "watchGracePeriodSeconds").asOpt[Int].getOrElse(5),
           mutatingWebhookName = (conf \ "mutatingWebhookName").asOpt[String].getOrElse("otoroshi-admission-webhook-injector"),
           validatingWebhookName = (conf \ "validatingWebhookName").asOpt[String].getOrElse("otoroshi-admission-webhook-validation"),
+          image = (conf \ "image").asOpt[String].filter(_.trim.nonEmpty),
         )
       }
       case None => {
@@ -180,6 +182,7 @@ object KubernetesConfig {
           watchGracePeriodSeconds = (conf \ "watchGracePeriodSeconds").asOpt[Int].getOrElse(5),
           mutatingWebhookName = (conf \ "mutatingWebhookName").asOpt[String].getOrElse("otoroshi-admission-webhook-injector"),
           validatingWebhookName = (conf \ "validatingWebhookName").asOpt[String].getOrElse("otoroshi-admission-webhook-validation"),
+          image = (conf \ "image").asOpt[String].filter(_.trim.nonEmpty),
         )
       }
     }

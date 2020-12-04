@@ -1031,9 +1031,9 @@ object KubernetesCRDsJob {
             clientSupport.client.createSecret(namespace, name, "kubernetes.io/tls", Json.obj(
               "tls.crt" -> cert.chain.base64,
               "tls.key" -> cert.privateKey.base64,
-              "cert.crt" -> cert.certificates.head.asPem,
-              "ca-chain.crt" -> cert.certificates.tail.map(_.asPem).mkString("\n\n"),
-              "ca.crt" -> cert.certificates.last.asPem,
+              "cert.crt" -> cert.certificates.head.asPem.base64,
+              "ca-chain.crt" -> cert.certificates.tail.map(_.asPem).mkString("\n\n").base64,
+              "ca.crt" -> cert.certificates.last.asPem.base64,
             ), "crd/cert", cert.id)
           case Some(secret) =>
             val chain = (secret.raw \ "data" \ "tls.crt").as[String].applyOn(s => s.fromBase64)
@@ -1043,9 +1043,9 @@ object KubernetesCRDsJob {
               clientSupport.client.updateSecret(namespace, name, "kubernetes.io/tls", Json.obj(
                 "tls.crt" -> cert.chain.base64,
                 "tls.key" -> cert.privateKey.base64,
-                "cert.crt" -> cert.certificates.head.asPem,
-                "ca-chain.crt" -> cert.certificates.tail.map(_.asPem).mkString("\n\n"),
-                "ca.crt" -> cert.certificates.last.asPem,
+                "cert.crt" -> cert.certificates.head.asPem.base64,
+                "ca-chain.crt" -> cert.certificates.tail.map(_.asPem).mkString("\n\n").base64,
+                "ca.crt" -> cert.certificates.last.asPem.base64,
               ), "crd/cert", cert.id)
             } else {
               ().future
@@ -1342,36 +1342,40 @@ object KubernetesCRDsJob {
   }
 
   def createWebhookCerts(config: KubernetesConfig, ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+
+    def doIt(ca: Cert) = {
+      val query = GenCsrQuery(
+        hosts = Seq(
+          s"${config.otoroshiServiceName}.${config.otoroshiNamespace}.svc.${config.clusterDomain}",
+          s"${config.otoroshiServiceName}.${config.otoroshiNamespace}.svc"
+        ),
+        subject = "SN=Kubernetes Webhooks Certificate, OU=Otoroshi Certificates, O=Otoroshi".some,
+        duration = 365.days,
+      )
+      logger.info("generating certificate for kubernetes webhooks")
+      env.pki.genCert(query, ca.certificates.head, ca.certificates.tail, ca.cryptoKeyPair.getPrivate).flatMap {
+        case Left(e) =>
+          logger.info(s"error while generating certificate for kubernetes webhooks: $e")
+          ().future
+        case Right(response) => {
+          val cert = response.toCert.enrich().applyOn(c => c.copy(
+            id = "kubernetes-webhooks-cert",
+            autoRenew = true,
+            name = "Kubernetes Webhooks Certificate",
+            description = "Kubernetes Webhooks Certificate (auto-generated)",
+            entityMetadata = c.entityMetadata ++ Map("domain" -> s"${config.otoroshiServiceName}.${config.otoroshiNamespace}.svc")
+          ))
+          cert.save().map(_ => ())
+        }
+      }
+    }
+
     env.datastores.certificatesDataStore.findById(Cert.OtoroshiCA).flatMap {
       case None => ().future
       case Some(ca) => {
         env.datastores.certificatesDataStore.findById("kubernetes-webhooks-cert").flatMap {
-          case Some(_) => ().future
-          case None => {
-            val query = GenCsrQuery(
-              hosts = Seq(
-                s"${config.otoroshiServiceName}.${config.otoroshiNamespace}.svc.${config.clusterDomain}",
-                s"${config.otoroshiServiceName}.${config.otoroshiNamespace}.svc"
-              ),
-              subject = "SN=Kubernetes Webhooks Certificate, OU=Otoroshi Certificates, O=Otoroshi".some,
-              duration = 365.days,
-            )
-            logger.info("generating certificate for kubernetes webhooks")
-            env.pki.genCert(query, ca.certificates.head, ca.certificates.tail, ca.cryptoKeyPair.getPrivate).flatMap {
-              case Left(e) =>
-                logger.info(s"error while generating certificate for kubernetes webhooks: $e")
-                ().future
-              case Right(response) => {
-                val cert = response.toCert.enrich().copy(
-                  id = "kubernetes-webhooks-cert",
-                  autoRenew = true,
-                  name = "Kubernetes Webhooks Certificate",
-                  description = "Kubernetes Webhooks Certificate (auto-generated)"
-                )
-                cert.save().map(_ => ())
-              }
-            }
-          }
+          case Some(c) if c.entityMetadata.get("domain") == "${config.otoroshiServiceName}.${config.otoroshiNamespace}.svc".some => ().future
+          case _ => doIt(ca)
         }
       }
     }
@@ -1393,7 +1397,7 @@ object KubernetesCRDsJob {
               val webhook = webhookSpec.webhooks.value.head
               val caBundle = webhook.select("clientConfig").select("caBundle").asOpt[String].getOrElse("")
               val failurePolicy = webhook.select("failurePolicy").asOpt[String].getOrElse("Ignore")
-              val base64ca: String = Base64.getEncoder.encodeToString(ca.certificates.head.getEncoded)
+              val base64ca: String = ca.chain.base64 // Base64.getEncoder.encodeToString(ca.certificates.head.getEncoded)
               // println(s"caBundle: ${caBundle}, failurePolicy: $failurePolicy, base64: $base64ca, eq: ${caBundle == base64ca}")
               if (caBundle.trim.isEmpty || failurePolicy == "Ignore" || caBundle != base64ca) {
                 logger.info("updating otoroshi validating admission webhook ...")
@@ -1434,7 +1438,7 @@ object KubernetesCRDsJob {
               val webhook = webhookSpec.webhooks.value.head
               val caBundle = webhook.select("clientConfig").select("caBundle").asOpt[String].getOrElse("")
               val failurePolicy = webhook.select("failurePolicy").asOpt[String].getOrElse("Ignore")
-              val base64ca: String = Base64.getEncoder.encodeToString(ca.certificates.head.getEncoded)
+              val base64ca: String = ca.chain.base64 // Base64.getEncoder.encodeToString(ca.certificates.head.getEncoded)
               if (caBundle.trim.isEmpty || failurePolicy == "Ignore" || caBundle != base64ca) {
                 logger.info("updating otoroshi mutating admission webhook ...")
                 client.patchMutatingWebhookConfiguration(conf.mutatingWebhookName, Json.arr(

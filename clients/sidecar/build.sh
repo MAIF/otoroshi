@@ -12,7 +12,7 @@ prepare_build () {
 
 build () {
   docker build --no-cache -t otoroshi-sidecar .
-  docker tag otoroshi "maif/otoroshi-sidecar:$1"
+  docker tag otoroshi-sidecar "maif/otoroshi-sidecar:$1"
 }
 
 echo "Docker images for otoroshi-sidecar version $2"
@@ -40,8 +40,10 @@ case "${1}" in
     cleanup
     prepare_build
     build "dev"
-    docker tag otoroshi "maif/otoroshi:dev"
-    docker push "maif/otoroshi:dev"
+    docker tag otoroshi-sidecar "maif/otoroshi-sidecar:dev"
+    docker tag otoroshi-sidecar "maif/otoroshi-sidecar:latest"
+    docker push "maif/otoroshi-sidecar:dev"
+    docker push "maif/otoroshi-sidecar:latest"
     ;;
   build-local)
     cleanup
@@ -52,8 +54,10 @@ case "${1}" in
     cleanup
     prepare_build
     build "dev"
-    docker tag otoroshi "registry.oto.tools:5000/maif/otoroshi:dev"
-    docker push "registry.oto.tools:5000/maif/otoroshi:dev"
+    docker tag otoroshi-sidecar "registry.oto.tools:5000/maif/otoroshi-sidecar:dev"
+    docker tag otoroshi-sidecar "registry.oto.tools:5000/maif/otoroshi-sidecar:latest"
+    docker push "registry.oto.tools:5000/maif/otoroshi-sidecar:dev"
+    docker push "registry.oto.tools:5000/maif/otoroshi-sidecar:latest"
     ;;
   *)
     echo "Build otoroshi-sidecar docker images"

@@ -15,6 +15,7 @@ import play.api.mvc.{Result, Results}
 import ssl.Cert
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success, Try}
 
 class KubernetesAdmissionWebhookCRDValidator extends RequestSink {
 
@@ -22,12 +23,11 @@ class KubernetesAdmissionWebhookCRDValidator extends RequestSink {
 
   override def matches(ctx: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Boolean = {
     val config = KubernetesConfig.theConfig(ctx)
-    println("KubernetesAdmissionWebhookCRDValidator", ctx.request.method, ctx.request.domain, ctx.request.path, ctx.origin, ctx.request)
     (
       ctx.request.domain.contentEquals(s"${config.otoroshiServiceName}.${config.otoroshiNamespace}.svc.${config.clusterDomain}") ||
       ctx.request.domain.contentEquals(s"${config.otoroshiServiceName}.${config.otoroshiNamespace}.svc")
     ) &&
-      ctx.request.path.contentEquals("/apis/webhooks/validator") &&
+      ctx.request.path.contentEquals("/apis/webhooks/validation") &&
       ctx.origin == RequestOrigin.ReverseProxy &&
       ctx.request.method == "POST"
   }
@@ -249,7 +249,6 @@ class KubernetesAdmissionWebhookSidecarInjector extends RequestSink {
 
   override def matches(ctx: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Boolean = {
     val config = KubernetesConfig.theConfig(ctx)
-    println("KubernetesAdmissionWebhookSidecarInjector", ctx.request.method, ctx.request.domain, ctx.request.path, ctx.origin, ctx.request)
     (
       ctx.request.domain.contentEquals(s"${config.otoroshiServiceName}.${config.otoroshiNamespace}.svc.${config.clusterDomain}") ||
       ctx.request.domain.contentEquals(s"${config.otoroshiServiceName}.${config.otoroshiNamespace}.svc")
@@ -258,35 +257,6 @@ class KubernetesAdmissionWebhookSidecarInjector extends RequestSink {
       ctx.origin == RequestOrigin.ReverseProxy &&
       ctx.request.method == "POST"
   }
-
-  def success(uid: String): Future[Result] = {
-    Results.Ok(Json.obj(
-      "apiVersion" -> "admission.k8s.io/v1",
-      "kind" -> "AdmissionReview",
-      "response" -> Json.obj(
-        "uid" -> uid,
-        "allowed" -> true
-      )
-    )).future
-  }
-
-  def error(uid: String, errors: Seq[(JsPath, Seq[JsonValidationError])]): Future[Result] = {
-    Results.Ok(Json.obj(
-      "apiVersion" -> "admission.k8s.io/v1",
-      "kind" -> "AdmissionReview",
-      "response" -> Json.obj(
-        "uid" -> uid,
-        "allowed" -> false,
-        "status" -> Json.obj(
-          "code" -> 400,
-          "message" -> s"Entity format errors: \n\n${errors.flatMap(err => err._2.map(verr => s" * ${err._1.toString()}: ${verr.message}")).mkString("\n")}"
-        )
-      )
-    )).future
-  }
-
-  def regCert(arg1: String, arg2: String, arg3: Cert): Unit = ()
-  def regApk(arg1: String, arg2: String, arg3: ApiKey): Unit = ()
 
   override def handle(ctx: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Future[Result] = {
     implicit val mat = env.otoroshiMaterializer
@@ -300,113 +270,143 @@ class KubernetesAdmissionWebhookSidecarInjector extends RequestSink {
       val obj = (json \ "request" \ "object").as[JsObject]
       val uid = (json \ "request" \ "uid").as[String]
       val version = (obj \ "apiVersion").as[String]
-      val inject = obj.select("metadata").select("otoroshi.io/sidecar").asOpt[String].contains("inject")
+      val inject = obj.select("metadata").select("labels").select("otoroshi.io/sidecar").asOpt[String].contains("inject")
       if (inject) {
-        val conf = KubernetesConfig.theConfig(ctx)
-        val apikey = obj.select("metadata").select("otoroshi.io/sidecar-apikey").as[String]
-        val backendCert = obj.select("metadata").select("otoroshi.io/sidecar-backend-cert").as[String]
-        val clientCert = obj.select("metadata").select("otoroshi.io/sidecar-client-cert").as[String]
-        val tokenSecret = obj.select("metadata").select("otoroshi.io/token-secret").asOpt[String].getOrElse("secret")
-        val localPort = obj.select("spec").select("containers").select(0).select("ports").select(0).select("containerPort").asOpt[Int].getOrElse(8081)
-        Results.Ok(Json.obj(
-          "apiVersion" -> "admission.k8s.io/v1",
-          "kind" -> "AdmissionReview",
-          "response" -> Json.obj(
-            "uid" -> uid,
-            "allowed" -> true,
-            "patchType" -> "JSONPatch",
-            "patch" -> Json.arr(
-              Json.obj(
-                "op" -> "add",
-                "path" -> "/spec/containers/-",
-                "value" -> Json.parse(
-                  s"""{
-                    |  "image": "maif/otoroshi-sidecar:latest",
-                    |  "imagePullPolicy": "IfNotPresent",
-                    |  "name": "otoroshi-sidecar",
-                    |  "ports": [
-                    |    {
-                    |      "containerPort": 8443,
-                    |      "name": "https"
-                    |    }
-                    |  ],
-                    |  "env": [
-                    |    {
-                    |      "name": "TOKEN_SECRET",
-                    |      "value": "${tokenSecret}"
-                    |    },
-                    |    {
-                    |      "name": "OTOROSHI_DOMAIN",
-                    |      "value": "otoroshi.mesh"
-                    |    },
-                    |    {
-                    |      "name": "OTOROSHI_HOST",
-                    |      "value": "${conf.otoroshiServiceName}.${conf.otoroshiNamespace}.svc.${conf.clusterDomain}"
-                    |    },
-                    |    {
-                    |      "name": "OTOROSHI_PORT",
-                    |      "value": "8443"
-                    |    },
-                    |    {
-                    |      "name": "LOCAL_PORT",
-                    |      "value": "${localPort}"
-                    |    },
-                    |    {
-                    |      "name": "EXTERNAL_PORT",
-                    |      "value": "8443"
-                    |    },
-                    |    {
-                    |      "name": "INTERNAL_PORT",
-                    |      "value": "8080"
-                    |    }
-                    |  ],
-                    |  "volumeMounts": [
-                    |    {
-                    |      "name": "apikey-volume",
-                    |      "mountPath": "/var/run/secrets/kubernetes.io/otoroshi.io/apikeys",
-                    |      "readOnly": true
-                    |    },
-                    |    {
-                    |      "name": "backend-cert-volume",
-                    |      "mountPath": "/var/run/secrets/kubernetes.io/otoroshi.io/certs/backend",
-                    |      "readOnly": true
-                    |    },
-                    |    {
-                    |      "name": "client-cert-volume",
-                    |      "mountPath": "/var/run/secrets/kubernetes.io/otoroshi.io/certs/client",
-                    |      "readOnly": true
-                    |    }
-                    |  ]
-                    |}""".stripMargin)
-              ),
-              Json.obj(
-                "op" -> "add",
-                "path" -> "/spec/volumes",
-                "value" -> Json.parse(
-                  s"""[
-                     |  {
-                     |    "name": "apikey-volume",
-                     |    "secret": {
-                     |      "secretName": ${apikey}"
-                     |    }
-                     |  },
-                     |  {
-                     |    "name": "backend-cert-volume",
-                     |    "secret": {
-                     |      "secretName": "${backendCert}"
-                     |    }
-                     |  },
-                     |  {
-                     |    "name": "client-cert-volume",
-                     |    "secret": {
-                     |      "secretName": "${clientCert}"
-                     |    }
-                     |  }
-                     |]""".stripMargin)
-              )
-            ).stringify.base64
+        Try {
+          val conf = KubernetesConfig.theConfig(ctx)
+          val meta = obj.select("metadata").as[JsObject]
+          val apikey = meta.select("annotations").select("otoroshi.io/sidecar-apikey").as[String]
+          val backendCert = meta.select("annotations").select("otoroshi.io/sidecar-backend-cert").as[String]
+          val clientCert = meta.select("annotations").select("otoroshi.io/sidecar-client-cert").as[String]
+          val tokenSecret = meta.select("annotations").select("otoroshi.io/token-secret").asOpt[String].getOrElse("secret")
+          val localPort = obj.select("spec").select("containers").select(0).select("ports").select(0).select("containerPort").asOpt[Int].getOrElse(8081)
+          val image = conf.image.getOrElse("maif/otoroshi-sidecar:latest")
+          val base64patch = Json.arr(
+            Json.obj(
+              "op" -> "add",
+              "path" -> "/spec/containers/-",
+              "value" -> Json.parse(
+                s"""{
+                   |  "image": "${image}",
+                   |  "imagePullPolicy": "IfNotPresent",
+                   |  "name": "otoroshi-sidecar",
+                   |  "ports": [
+                   |    {
+                   |      "containerPort": 8443,
+                   |      "name": "https"
+                   |    }
+                   |  ],
+                   |  "env": [
+                   |    {
+                   |      "name": "TOKEN_SECRET",
+                   |      "value": "${tokenSecret}"
+                   |    },
+                   |    {
+                   |      "name": "OTOROSHI_DOMAIN",
+                   |      "value": "otoroshi.mesh"
+                   |    },
+                   |    {
+                   |      "name": "OTOROSHI_HOST",
+                   |      "value": "${conf.otoroshiServiceName}.${conf.otoroshiNamespace}.svc.${conf.clusterDomain}"
+                   |    },
+                   |    {
+                   |      "name": "OTOROSHI_PORT",
+                   |      "value": "8443"
+                   |    },
+                   |    {
+                   |      "name": "LOCAL_PORT",
+                   |      "value": "${localPort}"
+                   |    },
+                   |    {
+                   |      "name": "EXTERNAL_PORT",
+                   |      "value": "8443"
+                   |    },
+                   |    {
+                   |      "name": "INTERNAL_PORT",
+                   |      "value": "8080"
+                   |    }
+                   |  ],
+                   |  "volumeMounts": [
+                   |    {
+                   |      "name": "apikey-volume",
+                   |      "mountPath": "/var/run/secrets/kubernetes.io/otoroshi.io/apikeys",
+                   |      "readOnly": true
+                   |    },
+                   |    {
+                   |      "name": "backend-cert-volume",
+                   |      "mountPath": "/var/run/secrets/kubernetes.io/otoroshi.io/certs/backend",
+                   |      "readOnly": true
+                   |    },
+                   |    {
+                   |      "name": "client-cert-volume",
+                   |      "mountPath": "/var/run/secrets/kubernetes.io/otoroshi.io/certs/client",
+                   |      "readOnly": true
+                   |    }
+                   |  ]
+                   |}""".stripMargin)
+            ),
+            Json.obj(
+              "op" -> "add",
+              "path" -> "/spec/volumes/-",
+              "value" -> Json.parse(
+                s"""{
+                   |  "name": "apikey-volume",
+                   |  "secret": {
+                   |    "secretName": "${apikey}"
+                   |  }
+                   |}""".stripMargin)
+            ),
+            Json.obj(
+              "op" -> "add",
+              "path" -> "/spec/volumes/-",
+              "value" -> Json.parse(
+                s"""{
+                   |  "name": "backend-cert-volume",
+                   |  "secret": {
+                   |    "secretName": "${backendCert}"
+                   |  }
+                   |}""".stripMargin)
+            ),
+            Json.obj(
+              "op" -> "add",
+              "path" -> "/spec/volumes/-",
+              "value" -> Json.parse(
+                s"""{
+                   |  "name": "client-cert-volume",
+                   |  "secret": {
+                   |    "secretName": "${clientCert}"
+                   |  }
+                   |}""".stripMargin)
+            )
+          ).stringify.base64
+          val patch = Json.obj(
+            "apiVersion" -> "admission.k8s.io/v1",
+            "kind" -> "AdmissionReview",
+            "response" -> Json.obj(
+              "uid" -> uid,
+              "allowed" -> true,
+              "patchType" -> "JSONPatch",
+              "patch" -> base64patch
+            )
           )
-        )).future
+          // println(patch.prettify)
+          Results.Ok(patch)
+        } match {
+          case Success(r) => r.future
+          case Failure(e) =>
+            Results.Ok(Json.obj(
+            "apiVersion" -> "admission.k8s.io/v1",
+            "kind" -> "AdmissionReview",
+            "response" -> Json.obj(
+              "uid" -> uid,
+              "allowed" -> false,
+              "status" -> Json.obj(
+                "code" -> 400,
+                "message" -> s"${e.getMessage}"
+              )
+            )
+          )).future
+        }
       } else {
         Results.Ok(Json.obj(
           "apiVersion" -> "admission.k8s.io/v1",
