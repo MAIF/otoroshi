@@ -386,7 +386,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       "kind" -> "Secret",
       "metadata" -> Json.obj(
         "name" -> name,
-        "annotation" -> Json.obj(
+        "annotations" -> Json.obj(
           "otoroshi.io/kind" -> kind,
           "otoroshi.io/id" -> id
         )
@@ -399,11 +399,14 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
         if (resp.status == 200 || resp.status == 201) {
           KubernetesSecret(resp.json).some
         } else {
+          // logger.error(s"error create cert: ${resp.status} - ${resp.body}")
           None
         }
       } match {
         case Success(r) => r
-        case Failure(e) => None
+        case Failure(e) =>
+          // logger.error(s"error create cert", e)
+          None
       }
     }
   }
@@ -418,7 +421,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       "kind" -> "Secret",
       "metadata" -> Json.obj(
         "name" -> name,
-        "annotation" -> Json.obj(
+        "annotations" -> Json.obj(
           "otoroshi.io/kind" -> kind,
           "otoroshi.io/id" -> id
         )
@@ -431,32 +434,14 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
         if (resp.status == 200 || resp.status == 201) {
           KubernetesSecret(resp.json).some
         } else {
+          // logger.error(s"error update cert: ${resp.status} - ${resp.body}")
           None
         }
       } match {
         case Success(r) => r
-        case Failure(e) => None
-      }
-    }
-  }
-
-  def patchSecret(namespace: String, name: String, typ: String, data: JsObject): Future[Option[KubernetesSecret]] = {
-    val cli: WSRequest = client(s"/api/v1/namespaces/$namespace/secrets/$name", false)
-    cli.addHttpHeaders(
-      "Accept" -> "application/json",
-      "Content-Type" -> "application/json-patch+json"
-    ).patch(Json.obj(
-    "data" -> data
-    )).map { resp =>
-      Try {
-        if (resp.status == 200 || resp.status == 201) {
-          KubernetesSecret(resp.json).some
-        } else {
+        case Failure(e) =>
+          // logger.error(s"error update cert", e)
           None
-        }
-      } match {
-        case Success(r) => r
-        case Failure(e) => None
       }
     }
   }

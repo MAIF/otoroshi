@@ -26,7 +26,7 @@ object KubernetesCertSyncJob {
       case (_, value) => (value.contentHash, value)
     }
 
-    Future.sequence(certs.map { cert =>
+    Future.sequence(certs.filterNot(_.isOtoCert).map { cert =>
       cert.cert match {
         case None => ().future
         case Some(found) => {
@@ -135,17 +135,17 @@ object KubernetesCertSyncJob {
                         client.createSecret("otoroshi", cert.name.slugifyWithSlash, "kubernetes.io/tls", Json.obj(
                           "tls.crt" -> cert.chain.base64,
                           "tls.key" -> cert.privateKey.base64,
-                          "cert.crt" -> cert.certificates.head.asPem,
-                          "ca-chain.crt" -> cert.certificates.tail.map(_.asPem).mkString("\n\n"),
-                          "ca.crt" -> cert.certificates.last.asPem,
+                          "cert.crt" -> cert.certificates.head.asPem.base64,
+                          "ca-chain.crt" -> cert.certificates.tail.map(_.asPem).mkString("\n\n").base64,
+                          "ca.crt" -> cert.certificates.last.asPem.base64,
                         ), "job/cert", cert.id)
                       case Some(c) =>
                         client.updateSecret(c.namespace, c.name, "kubernetes.io/tls", Json.obj(
                           "tls.crt" -> cert.chain.base64,
                           "tls.key" -> cert.privateKey.base64,
-                          "cert.crt" -> cert.certificates.head.asPem,
-                          "ca-chain.crt" -> cert.certificates.tail.map(_.asPem).mkString("\n\n"),
-                          "ca.crt" -> cert.certificates.last.asPem,
+                          "cert.crt" -> cert.certificates.head.asPem.base64,
+                          "ca-chain.crt" -> cert.certificates.tail.map(_.asPem).mkString("\n\n").base64,
+                          "ca.crt" -> cert.certificates.last.asPem.base64,
                         ), "job/cert", cert.id)
                     }
                   }.runWith(Sink.ignore)
