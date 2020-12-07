@@ -89,3 +89,5 @@ rm ./certs/oto-client.cer
 mv ./certs/_oto-client.cer ./certs/oto-client.cer
 
 rm -f .srl
+
+touch ./certs/foo

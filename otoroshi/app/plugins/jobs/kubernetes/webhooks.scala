@@ -226,16 +226,6 @@ class KubernetesAdmissionWebhookCRDValidator extends RequestSink {
             )
           )).future
         }
-        // Results.Ok(Json.obj(
-        //   "apiVersion" -> "admission.k8s.io/v1",
-        //   "kind" -> "AdmissionReview",
-        //   "response" -> Json.obj(
-        //     "uid" -> uid,
-        //     "allowed" -> true,
-        //     "patchType" -> "JSONPatch",
-        //     "patch" -> "W3sib3AiOiAiYWRkIiwgInBhdGgiOiAiL3NwZWMvcmVwbGljYXMiLCAidmFsdWUiOiAzfV0=" // Base64 jsonpath
-        //   )
-        // )).future
       } else {
         success(uid)
       }
@@ -288,7 +278,7 @@ class KubernetesAdmissionWebhookSidecarInjector extends RequestSink {
               "value" -> Json.parse(
                 s"""{
                    |  "image": "${image}",
-                   |  "imagePullPolicy": "IfNotPresent",
+                   |  "imagePullPolicy": "Always",
                    |  "name": "otoroshi-sidecar",
                    |  "ports": [
                    |    {
@@ -297,34 +287,18 @@ class KubernetesAdmissionWebhookSidecarInjector extends RequestSink {
                    |    }
                    |  ],
                    |  "env": [
-                   |    {
-                   |      "name": "TOKEN_SECRET",
-                   |      "value": "${tokenSecret}"
-                   |    },
-                   |    {
-                   |      "name": "OTOROSHI_DOMAIN",
-                   |      "value": "otoroshi.mesh"
-                   |    },
-                   |    {
-                   |      "name": "OTOROSHI_HOST",
-                   |      "value": "${conf.otoroshiServiceName}.${conf.otoroshiNamespace}.svc.${conf.clusterDomain}"
-                   |    },
-                   |    {
-                   |      "name": "OTOROSHI_PORT",
-                   |      "value": "8443"
-                   |    },
-                   |    {
-                   |      "name": "LOCAL_PORT",
-                   |      "value": "${localPort}"
-                   |    },
-                   |    {
-                   |      "name": "EXTERNAL_PORT",
-                   |      "value": "8443"
-                   |    },
-                   |    {
-                   |      "name": "INTERNAL_PORT",
-                   |      "value": "8080"
-                   |    }
+                   |    {"name": "TOKEN_SECRET","value": "${tokenSecret}"},
+                   |    {"name": "OTOROSHI_DOMAIN","value": "otoroshi.mesh"},
+                   |    {"name": "OTOROSHI_HOST","value": "${conf.otoroshiServiceName}.${conf.otoroshiNamespace}.svc.${conf.clusterDomain}"},
+                   |    {"name": "OTOROSHI_PORT","value": "8443"},
+                   |    {"name": "LOCAL_PORT","value": "${localPort}"},
+                   |    {"name": "EXTERNAL_PORT","value": "8443"},
+                   |    {"name": "INTERNAL_PORT","value": "8080"},
+                   |    {"name":"REQUEST_CERT","value":"false"}, // TODO: enable !! make it customizable
+                   |    {"name":"ENABLE_ORIGIN_CHECK","value":"true"},
+                   |    {"name":"DISABLE_TOKENS_CHECK","value":"false"},
+                   |    {"name":"DISPLAY_ENV", "value":"false"},
+                   |    {"name":"ENABLE_TRACE", "value":"false"}
                    |  ],
                    |  "volumeMounts": [
                    |    {

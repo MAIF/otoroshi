@@ -1376,7 +1376,7 @@ object KubernetesCRDsJob {
       case None => ().future
       case Some(ca) => {
         env.datastores.certificatesDataStore.findById("kubernetes-webhooks-cert").flatMap {
-          case Some(c) if c.entityMetadata.get("domain") == "${config.otoroshiServiceName}.${config.otoroshiNamespace}.svc".some => ().future
+          case Some(c) if c.entityMetadata.get("domain") == s"${config.otoroshiServiceName}.${config.otoroshiNamespace}.svc".some => ().future
           case _ => doIt(ca)
         }
       }

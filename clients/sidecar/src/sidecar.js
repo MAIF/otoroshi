@@ -5,8 +5,11 @@ const { InternalProxy, ExternalProxy } = require('./proxy');
 const EXTERNAL_PORT = parseInt(process.env.EXTERNAL_PORT || '8443', 10);
 const INTERNAL_PORT = parseInt(process.env.INTERNAL_PORT || '8080', 10);
 const REQUEST_CERT = (process.env.REQUEST_CERT || 'true') === 'true';
+const DISABLE_TOKENS_CHECK = (process.env.DISABLE_TOKENS_CHECK || 'true') === 'true';
 const REJECT_UNAUTHORIZED = (process.env.REJECT_UNAUTHORIZED || 'true') === 'true';
 const ENABLE_ORIGIN_CHECK = (process.env.ENABLE_ORIGIN_CHECK || 'true') === 'true';
+const DISPLAY_ENV = (process.env.DISPLAY_ENV || 'true') === 'true';
+const ENABLE_TRACE = (process.env.ENABLE_TRACE || 'true') === 'true';
 
 function contextExtractor() {
 
@@ -46,11 +49,23 @@ function contextExtractor() {
       BACKEND_CERT,
       BACKEND_KEY,
       TOKEN_SECRET,
+      EXTERNAL_PORT,
+      INTERNAL_PORT,
+      REQUEST_CERT,
+      DISABLE_TOKENS_CHECK,
+      REJECT_UNAUTHORIZED,
+      ENABLE_ORIGIN_CHECK,
+      DISPLAY_ENV,
+      ENABLE_TRACE
     }
   }
 
   let latest = extract();
   let next = Date.now() + 60000;
+
+  if (DISPLAY_ENV) {
+    console.log('current env:', JSON.stringify(latest, null, 2))
+  }
 
   return () => {
     if (Date.now() > next) {
@@ -67,7 +82,9 @@ const internalProxy = InternalProxy({
   rejectUnauthorized: REJECT_UNAUTHORIZED, 
   requestCert: REQUEST_CERT, 
   enableOriginCheck: ENABLE_ORIGIN_CHECK, 
-  context: contextExtractor 
+  disableTokensCheck: DISABLE_TOKENS_CHECK,
+  enableTrace: ENABLE_TRACE,
+  context: contextExtractor()
 }).listen({ 
   hostname: '127.0.0.1', 
   port: INTERNAL_PORT 
@@ -77,7 +94,9 @@ const externalProxy = ExternalProxy({
   rejectUnauthorized: REJECT_UNAUTHORIZED, 
   requestCert: REQUEST_CERT, 
   enableOriginCheck: ENABLE_ORIGIN_CHECK, 
-  context: contextExtractor 
+  disableTokensCheck: DISABLE_TOKENS_CHECK,
+  enableTrace: ENABLE_TRACE,
+  context: contextExtractor()
 }).listen({ 
   hostname: '0.0.0.0', 
   port: EXTERNAL_PORT 

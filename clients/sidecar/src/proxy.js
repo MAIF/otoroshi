@@ -1,3 +1,4 @@
+const tls = require('tls');
 const http = require('http');
 const https = require('https');
 const moment = require('moment');
@@ -157,8 +158,18 @@ function ExternalProxy(opts) {
     key: _ctx.BACKEND_KEY, 
     cert: _ctx.BACKEND_CERT, 
     ca: _ctx.BACKEND_CA, 
+    enableTrace: opts.enableTrace,
     requestCert: opts.requestCert, 
     rejectUnauthorized: opts.rejectUnauthorized,
+    // SNICallback: (servername, cb) => {
+    //   console.log(`servername: "${servername}"`);
+    //   cb(false)
+    //   //cb(tls.createSecureContext({
+    //   //  key: _ctx.BACKEND_KEY, 
+    //   //  cert: _ctx.BACKEND_CERT, 
+    //   //  ca: _ctx.BACKEND_CA, 
+    //   //}));
+    // }
   } }, (req, res, secure) => { 
     
     const ctx = opts.context();
@@ -179,31 +190,36 @@ function ExternalProxy(opts) {
       const claimToken = req.headers['otoroshi-claim'];
       const domain = req.headers.host.split(':')[0];
 
-      if (claimToken && stateToken) { 
-        try {
-          const stateTokenIsJwt = stateToken.split('.').legnth === 3;
-          const state = stateTokenIsJwt ? jwt.verify(stateToken, ctx.TOKEN_SECRET) : stateToken;
-          const claims = jwt.verify(claimToken, ctx.TOKEN_SECRET);
-          args.claims = JSON.stringify(claims);
-          if (stateTokenIsJwt) {
-            const jwtTokenRaw = { "state-resp": args.state, aud: "Otoroshi", iat: Math.floor(Date.now() / 1000), exp: Math.floor(Date.now() / 1000) + 10 };
-            const jwtToken = jwt.sign(jwtTokenRaw, ctx.TOKEN_SECRET, { algorithm: 'HS512' });
-            args.state = jwtToken
-          } else {
-            args.state = state;
+      if (!opts.disableTokensCheck) { 
+        if (claimToken && stateToken) { 
+          try {
+            const stateTokenIsJwt = stateToken.split('.').legnth === 3;
+            const state = stateTokenIsJwt ? jwt.verify(stateToken, ctx.TOKEN_SECRET) : stateToken;
+            const claims = jwt.verify(claimToken, ctx.TOKEN_SECRET);
+            args.claims = JSON.stringify(claims);
+            if (stateTokenIsJwt) {
+              const jwtTokenRaw = { "state-resp": args.state, aud: "Otoroshi", iat: Math.floor(Date.now() / 1000), exp: Math.floor(Date.now() / 1000) + 10 };
+              const jwtToken = jwt.sign(jwtTokenRaw, ctx.TOKEN_SECRET, { algorithm: 'HS512' });
+              args.state = jwtToken
+            } else {
+              args.state = state;
+            }
+          } catch(err) {
+            console.log('bad tokens');
+            return writeError(400, `{"error":"bad tokens"}`, 'application/json', res, args);
           }
-        } catch(err) {
-          console.log('bad tokens');
-          return writeError(400, `{"error":"bad tokens"}`, 'application/json', res, args);
+        } else {
+          console.log('no tokens');
+          return writeError(400, `{"error":"no tokens"}`, 'application/json', res, args);
         }
       } else {
-        console.log('no tokens');
-        return writeError(400, `{"error":"no tokens"}`, 'application/json', res, args);
+        args.claims = '{}';
+        args.state = '' + Date.now();
       }
 
-      // if (!req.socket.getPeerCertificate().subject) {
-      //   return writeError(400, `{"error":"bad client cert"}`, 'application/json', res, args);
-      // }
+      if (opts.requestCert && !req.socket.getPeerCertificate().subject) {
+        return writeError(400, `{"error":"bad client cert"}`, 'application/json', res, args);
+      }
 
       const options = {
         host: '127.0.0.1',
