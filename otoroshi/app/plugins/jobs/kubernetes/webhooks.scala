@@ -295,7 +295,7 @@ class KubernetesAdmissionWebhookSidecarInjector extends RequestSink {
                    |    {"name": "LOCAL_PORT","value": "${localPort}"},
                    |    {"name": "EXTERNAL_PORT","value": "8443"},
                    |    {"name": "INTERNAL_PORT","value": "8080"},
-                   |    {"name":"REQUEST_CERT","value":"false"},
+                   |    {"name":"REQUEST_CERT","value":"true"},
                    |    {"name":"ENABLE_ORIGIN_CHECK","value":"true"},
                    |    {"name":"DISABLE_TOKENS_CHECK","value":"false"},
                    |    {"name":"DISPLAY_ENV", "value":"false"},

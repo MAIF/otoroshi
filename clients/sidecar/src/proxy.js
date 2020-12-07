@@ -32,7 +32,7 @@ function createServer(opts, fn) {
 }
 
 function writeError(code, err, ctype, res, args) {
-  console.log('error', code, err, ctype, res, args);
+  console.log('error', code, err, ctype, args);
   const _headers = { 'Content-Type': ctype };
   res.writeHead(code, _headers);
   res.write(err);
@@ -193,23 +193,22 @@ function ExternalProxy(opts) {
       if (!opts.disableTokensCheck) { 
         if (claimToken && stateToken) { 
           try {
-            const stateTokenIsJwt = stateToken.split('.').legnth === 3;
+            const stateTokenIsJwt = stateToken.split('.').length === 3;
             const state = stateTokenIsJwt ? jwt.verify(stateToken, ctx.TOKEN_SECRET) : stateToken;
             const claims = jwt.verify(claimToken, ctx.TOKEN_SECRET);
+            // console.log(stateTokenIsJwt, claims, state)
             args.claims = JSON.stringify(claims);
             if (stateTokenIsJwt) {
-              const jwtTokenRaw = { "state-resp": args.state, aud: "Otoroshi", iat: Math.floor(Date.now() / 1000), exp: Math.floor(Date.now() / 1000) + 10 };
+              const jwtTokenRaw = { "state-resp": state.state, aud: "Otoroshi", iat: Math.floor(Date.now() / 1000), exp: Math.floor(Date.now() / 1000) + 10 };
               const jwtToken = jwt.sign(jwtTokenRaw, ctx.TOKEN_SECRET, { algorithm: 'HS512' });
               args.state = jwtToken
             } else {
               args.state = state;
             }
           } catch(err) {
-            console.log('bad tokens');
             return writeError(400, `{"error":"bad tokens"}`, 'application/json', res, args);
           }
         } else {
-          console.log('no tokens');
           return writeError(400, `{"error":"no tokens"}`, 'application/json', res, args);
         }
       } else {
@@ -237,7 +236,6 @@ function ExternalProxy(opts) {
       const forwardReq = http.request(options, (forwardRes) => {
         const headersOut = { ...forwardRes.headers, 'otoroshi-claim': args.claims, 'otoroshi-state-resp': args.state }; 
         res.writeHead(forwardRes.statusCode, headersOut);
-        console.log(forwardRes.statusCode, headersOut);
         forwardRes.setEncoding('utf8');
         let ended = false;
         forwardRes.on('data', (chunk) => res.write(chunk));
