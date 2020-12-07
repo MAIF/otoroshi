@@ -271,6 +271,7 @@ class KubernetesAdmissionWebhookSidecarInjector extends RequestSink {
           val tokenSecret = meta.select("annotations").select("otoroshi.io/token-secret").asOpt[String].getOrElse("secret")
           val localPort = obj.select("spec").select("containers").select(0).select("ports").select(0).select("containerPort").asOpt[Int].getOrElse(8081)
           val image = conf.image.getOrElse("maif/otoroshi-sidecar:latest")
+          // TODO: enable !! make it customizable
           val base64patch = Json.arr(
             Json.obj(
               "op" -> "add",
@@ -294,7 +295,7 @@ class KubernetesAdmissionWebhookSidecarInjector extends RequestSink {
                    |    {"name": "LOCAL_PORT","value": "${localPort}"},
                    |    {"name": "EXTERNAL_PORT","value": "8443"},
                    |    {"name": "INTERNAL_PORT","value": "8080"},
-                   |    {"name":"REQUEST_CERT","value":"false"}, // TODO: enable !! make it customizable
+                   |    {"name":"REQUEST_CERT","value":"false"},
                    |    {"name":"ENABLE_ORIGIN_CHECK","value":"true"},
                    |    {"name":"DISABLE_TOKENS_CHECK","value":"false"},
                    |    {"name":"DISPLAY_ENV", "value":"false"},
