@@ -71,6 +71,7 @@ async function test() {
   writeFiles('./certs/backend', backend, chain);
   writeFiles('./certs/client', client, chain);
   writeFiles('./certs/oto-client', otoCli, chain);
+  fs.writeFileSync('./certs/foo', '')
 }
 
 test();

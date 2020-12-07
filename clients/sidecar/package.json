@@ -8,6 +8,7 @@
   "scripts": {
     "certs-js": "rm -rf ./certs && mkdir certs && node src/test/cert.js",
     "certs-sh": "rm -rf ./certs && ./cert.sh",
+    "serv": "nodemon src/test/serv.js",
     "test": "nodemon src/test/test.js",
     "dev": "nodemon src/dev.js",
     "start": "node src/sidecar.js",
