@@ -13,9 +13,9 @@ import scala.concurrent.duration._
 
 object KeyManagerCompatibility {
 
-  def keyManager(manager: X509KeyManager, env: Env): KeyManager = {
+  def keyManager(allCerts: () => Seq[Cert], client: Boolean, manager: X509KeyManager, env: Env): KeyManager = {
     // new X509KeyManagerSnitch(manager)
-    new DynamicKeyManager(manager, env)
+    new DynamicKeyManager(allCerts, client, manager, env)
   }
   def session(key: String): Option[(SSLSession, PrivateKey, Array[X509Certificate])] = {
     // Option(X509KeyManagerSnitch._sslSessions.getIfPresent(key))
@@ -28,7 +28,7 @@ object DynamicKeyManager {
   val sessions = Scaffeine().maximumSize(1000).expireAfterWrite(5.seconds).build[String, (SSLSession, PrivateKey, Array[X509Certificate])]
 }
 
-class DynamicKeyManager(manager: X509KeyManager, env: Env) extends X509ExtendedKeyManager {
+class DynamicKeyManager(allCerts: () => Seq[Cert], client: Boolean, manager: X509KeyManager, env: Env) extends X509ExtendedKeyManager {
 
   override def getClientAliases(keyType: String, issuers: Array[Principal]): Array[String] = manager.getClientAliases(keyType, issuers)
 
@@ -41,34 +41,39 @@ class DynamicKeyManager(manager: X509KeyManager, env: Env) extends X509ExtendedK
   override def chooseEngineClientAlias(keyType: Array[String], issuers: Array[Principal], engine: SSLEngine): String = chooseClientAlias(keyType, issuers, null)
 
   def findCertMatching(domain: String): Option[Cert] = {
-    DynamicKeyManager.cache.getIfPresent(domain) match {
-      case Some(cert) => Some(cert)
-      case None => {
+    if (client) {
+      // TODO: find based on chooseEngineServerAlias issuers array !!!
+      allCerts().headOption
+    } else {
+      DynamicKeyManager.cache.getIfPresent(domain) match {
+        case Some(cert) => Some(cert)
+        case None => {
 
-        val tlsSettings = env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings).getOrElse(TlsSettings())
+          val tlsSettings = env.datastores.globalConfigDataStore.latestSafe.map(_.tlsSettings).getOrElse(TlsSettings())
 
-        val certs = DynamicSSLEngineProvider.certificates
-          .values.toSeq
-          .map(_.enrich())
-          .filter(_.notExpired)
-          .sortWith((c1, c2) => c1.to.compareTo(c2.to) > 0)
+          val certs = allCerts()
+            .map(_.enrich())
+            .filter(_.notExpired)
+            .sortWith((c1, c2) => c1.to.compareTo(c2.to) > 0)
 
-        certs.find(_.matchesDomain(domain)).orElse(tlsSettings.defaultDomain.flatMap(d => certs.find(_.matchesDomain(d)))).map { c =>
-          DynamicKeyManager.cache.put(domain, c)
-          c
-        } match {
-          case None if tlsSettings.randomIfNotFound => {
-            certs
-              .filterNot(_.ca)
-              .filterNot(_.client)
-              .filterNot(_.keypair)
-              .headOption.map { c =>
+          // TODO: no * before with * then longer before smaller
+          certs.find(_.matchesDomain(domain)).orElse(tlsSettings.defaultDomain.flatMap(d => certs.find(_.matchesDomain(d)))).map { c =>
+            DynamicKeyManager.cache.put(domain, c)
+            c
+          } match {
+            case None if tlsSettings.randomIfNotFound => {
+              certs
+                .filterNot(_.ca)
+                .filterNot(_.client)
+                .filterNot(_.keypair)
+                .headOption.map { c =>
                 DynamicKeyManager.cache.put(domain, c)
                 c
               }
+            }
+            case None => None
+            case s@Some(_) => s
           }
-          case None => None
-          case s @ Some(_) => s
         }
       }
     }

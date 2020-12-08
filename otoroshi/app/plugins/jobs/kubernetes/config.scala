@@ -231,6 +231,11 @@ object KubernetesConfig {
           "certificate" -> Json.obj(),
           "auth-module" -> Json.obj(),
           "script" -> Json.obj(),
+          "data-exporters" -> Json.obj(),
+          "organizations" -> Json.obj(),
+          "teams" -> Json.obj(),
+          "admins" -> Json.obj(),
+          "webhooks" -> Json.obj()
         )
       )
     )

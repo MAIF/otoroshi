@@ -271,12 +271,54 @@ class KubernetesAdmissionWebhookSidecarInjector extends RequestSink {
           val tokenSecret = meta.select("annotations").select("otoroshi.io/token-secret").asOpt[String].getOrElse("secret")
           val localPort = obj.select("spec").select("containers").select(0).select("ports").select(0).select("containerPort").asOpt[Int].getOrElse(8081)
           val image = conf.image.getOrElse("maif/otoroshi-sidecar:latest")
-          // TODO: enable !! make it customizable
+          val template       = conf.templates.select("webhooks")
+
+          val containerPort  = conf.templates.select("containerPort")
+          val otoroshi       = template.select("otoroshi")
+          val ports          = template.select("ports")
+          val flags          = template.select("flags")
+
+          val containerPortV = containerPort.select("value").asOpt[Int].getOrElse(8443)
+
+          def envVariable(name: String, value: String): JsValue = Json.obj("name" -> name, "value" -> value)
+          def envVariableInt(name: String, value: Int): JsValue = Json.obj("name" -> name, "value" -> value.toString)
+          def envVariableBool(name: String, value: Boolean): JsValue = Json.obj("name" -> name, "value" -> value.toString)
+          def volumeMount(name: String, path: String): JsValue = Json.obj("name" -> name, "mountPath" -> path, "readOnly" -> true)
+          def secretVolume(volumeName: String, secretName: String): JsValue = Json.obj("name" -> volumeName, "secret" -> Json.obj("secretName" -> secretName))
+
           val base64patch = Json.arr(
             Json.obj(
               "op" -> "add",
               "path" -> "/spec/containers/-",
-              "value" -> Json.parse(
+              "value" -> Json.obj(
+                "image" -> image,
+                "imagePullPolicy" -> "Always",
+                "name" -> "otoroshi-sidecar",
+                "ports" -> Json.arr(Json.obj(
+                  "name" -> JsString(containerPort.select("name").asOpt[String].getOrElse("https")),
+                  "containerPort" -> containerPortV
+                )),
+                "env" -> Json.arr(
+                  envVariable("TOKEN_SECRET", tokenSecret),
+                  envVariable("OTOROSHI_DOMAIN", otoroshi.select("domain").asOpt[String].getOrElse("otoroshi.mesh")),
+                  envVariable("OTOROSHI_HOST", otoroshi.select("host").asOpt[String].getOrElse(s"${conf.otoroshiServiceName}.${conf.otoroshiNamespace}.svc.${conf.clusterDomain}")),
+                  envVariableInt("OTOROSHI_PORT", otoroshi.select("port").asOpt[Int].getOrElse(8443)),
+                  envVariableInt("LOCAL_PORT", ports.select("local").asOpt[Int].getOrElse(localPort)),
+                  envVariableInt("EXTERNAL_PORT", ports.select("external").asOpt[Int].getOrElse(8443)),
+                  envVariableInt("INTERNAL_PORT", ports.select("internal").asOpt[Int].getOrElse(8080)),
+                  envVariableBool("REQUEST_CERT", flags.select("requestCert").asOpt[Boolean].getOrElse(true)),
+                  envVariableBool("ENABLE_ORIGIN_CHECK", flags.select("originCheck").asOpt[Boolean].getOrElse(true)),
+                  envVariableBool("DISABLE_TOKENS_CHECK", !flags.select("tokensCheck").asOpt[Boolean].getOrElse(true)),
+                  envVariableBool("DISPLAY_ENV", flags.select("displayEnv").asOpt[Boolean].getOrElse(false)),
+                  envVariableBool("ENABLE_TRACE", flags.select("tlsTrace").asOpt[Boolean].getOrElse(false)),
+                ),
+                "volumeMounts" -> Json.arr(
+                  volumeMount("apikey-volume", "/var/run/secrets/kubernetes.io/otoroshi.io/apikeys"),
+                  volumeMount("backend-cert-volume", "/var/run/secrets/kubernetes.io/otoroshi.io/certs/backend"),
+                  volumeMount("client-cert-volume", "/var/run/secrets/kubernetes.io/otoroshi.io/certs/client"),
+                )
+              )
+              /*"value" -> Json.parse(
                 s"""{
                    |  "image": "${image}",
                    |  "imagePullPolicy": "Always",
@@ -288,18 +330,18 @@ class KubernetesAdmissionWebhookSidecarInjector extends RequestSink {
                    |    }
                    |  ],
                    |  "env": [
-                   |    {"name": "TOKEN_SECRET","value": "${tokenSecret}"},
-                   |    {"name": "OTOROSHI_DOMAIN","value": "otoroshi.mesh"},
-                   |    {"name": "OTOROSHI_HOST","value": "${conf.otoroshiServiceName}.${conf.otoroshiNamespace}.svc.${conf.clusterDomain}"},
-                   |    {"name": "OTOROSHI_PORT","value": "8443"},
-                   |    {"name": "LOCAL_PORT","value": "${localPort}"},
-                   |    {"name": "EXTERNAL_PORT","value": "8443"},
-                   |    {"name": "INTERNAL_PORT","value": "8080"},
-                   |    {"name":"REQUEST_CERT","value":"true"},
-                   |    {"name":"ENABLE_ORIGIN_CHECK","value":"true"},
-                   |    {"name":"DISABLE_TOKENS_CHECK","value":"false"},
-                   |    {"name":"DISPLAY_ENV", "value":"false"},
-                   |    {"name":"ENABLE_TRACE", "value":"false"}
+                   |    {"name": "TOKEN_SECRET", "value": "${tokenSecret}"},
+                   |    {"name": "OTOROSHI_DOMAIN", "value": "otoroshi.mesh"},
+                   |    {"name": "OTOROSHI_HOST", "value": "${conf.otoroshiServiceName}.${conf.otoroshiNamespace}.svc.${conf.clusterDomain}"},
+                   |    {"name": "OTOROSHI_PORT", "value": "8443"},
+                   |    {"name": "LOCAL_PORT", "value": "${localPort}"},
+                   |    {"name": "EXTERNAL_PORT", "value": "8443"},
+                   |    {"name": "INTERNAL_PORT", "value": "8080"},
+                   |    {"name": "REQUEST_CERT", "value": "true"},
+                   |    {"name": "ENABLE_ORIGIN_CHECK", "value": "true"},
+                   |    {"name": "DISABLE_TOKENS_CHECK", "value": "false"},
+                   |    {"name": "DISPLAY_ENV", "value":"false"},
+                   |    {"name": "ENABLE_TRACE", "value":"false"}
                    |  ],
                    |  "volumeMounts": [
                    |    {
@@ -318,40 +360,22 @@ class KubernetesAdmissionWebhookSidecarInjector extends RequestSink {
                    |      "readOnly": true
                    |    }
                    |  ]
-                   |}""".stripMargin)
+                   |}""".stripMargin)*/
             ),
             Json.obj(
               "op" -> "add",
               "path" -> "/spec/volumes/-",
-              "value" -> Json.parse(
-                s"""{
-                   |  "name": "apikey-volume",
-                   |  "secret": {
-                   |    "secretName": "${apikey}"
-                   |  }
-                   |}""".stripMargin)
+              "value" -> secretVolume("apikey-volume", apikey)
             ),
             Json.obj(
               "op" -> "add",
               "path" -> "/spec/volumes/-",
-              "value" -> Json.parse(
-                s"""{
-                   |  "name": "backend-cert-volume",
-                   |  "secret": {
-                   |    "secretName": "${backendCert}"
-                   |  }
-                   |}""".stripMargin)
+              "value" -> secretVolume("backend-cert-volume", backendCert)
             ),
             Json.obj(
               "op" -> "add",
               "path" -> "/spec/volumes/-",
-              "value" -> Json.parse(
-                s"""{
-                   |  "name": "client-cert-volume",
-                   |  "secret": {
-                   |    "secretName": "${clientCert}"
-                   |  }
-                   |}""".stripMargin)
+              "value" -> secretVolume("client-cert-volume", clientCert)
             )
           ).stringify.base64
           val patch = Json.obj(
@@ -364,7 +388,6 @@ class KubernetesAdmissionWebhookSidecarInjector extends RequestSink {
               "patch" -> base64patch
             )
           )
-          // println(patch.prettify)
           Results.Ok(patch)
         } match {
           case Success(r) => r.future
