@@ -629,14 +629,19 @@ class AkkWsClient(config: WSClientConfig, env: Env)(implicit system: ActorSystem
                              pool)
       }
       case certs if (clientCerts ++ trustedCerts).nonEmpty => {
-        logger.debug(s"Calling ${request.uri} with mTLS context of ${certs.size} certificates")
+        logger.debug(s"Calling ${request.uri} with mTLS context of ${clientCerts.size} client certificates and ${trustedCerts.size} trusted certificates")
+        // logger.info(s"Calling ${request.uri} with mTLS context of ${clientCerts.size} client certificates and ${trustedCerts.size} trusted certificates: ${Json.prettyPrint(Json.obj(
+        //   "clientCerts" -> JsArray(clientCerts.map(c => JsString(c.name + " - " + c.enrich().certificates.head.getSubjectDN.getName))),
+        //   "trustedCerts" -> JsArray(trustedCerts.map(c => JsString(c.name + " - " + c.enrich().certificates.head.getSubjectDN.getName))),
+        // ))}")
         val sslContext = env.metrics.withTimer("otoroshi.core.tls.http-client.single-context-fetch") {
           val cacheKey = certs.sortWith((c1, c2) => c1.id.compareTo(c2.id) > 0).map(_.cacheKey).mkString("-")
           singleSslContextCache.getOrElse(
             cacheKey,
-            DynamicSSLEngineProvider.setupSslContextFor(certs, trustedCerts, trustAll, env)
+            DynamicSSLEngineProvider.setupSslContextFor(certs, trustedCerts, trustAll, client = true, env)
           )
         }
+        // val sslContext = DynamicSSLEngineProvider.setupSslContextFor(clientCerts, trustedCerts, trustAll, env)
         env.metrics.withTimer("otoroshi.core.tls.http-client.single-context-call") {
           val pool = customizer(connectionPoolSettings).withMaxConnections(512)
           val cctx = if (loose) {
@@ -684,9 +689,10 @@ class AkkWsClient(config: WSClientConfig, env: Env)(implicit system: ActorSystem
           val cacheKey = certs.sortWith((c1, c2) => c1.id.compareTo(c2.id) > 0).map(_.cacheKey).mkString("-")
           singleSslContextCache.getOrElse(
             cacheKey,
-            DynamicSSLEngineProvider.setupSslContextFor(certs, trustedCerts, trustAll, env)
+            DynamicSSLEngineProvider.setupSslContextFor(certs, trustedCerts, trustAll, client = true, env)
           )
         }
+        // val sslContext = DynamicSSLEngineProvider.setupSslContextFor(clientCerts, trustedCerts, trustAll, env)
         env.metrics.withTimer("otoroshi.core.tls.http-client.single-context-call") {
           val cctx = if (loose) {
             ConnectionContext.https(sslContext, sslConfig = Some(akkaSSLLooseConfig))

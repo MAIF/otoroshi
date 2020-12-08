@@ -962,7 +962,7 @@ object DynamicSSLEngineProvider {
       keyManagerFactory.init(keyStore, EMPTY_PASSWORD)
       logger.debug("SSL Context init ...")
       val keyManagers: Array[KeyManager] = keyManagerFactory.getKeyManagers.map(
-        m => KeyManagerCompatibility.keyManager(m.asInstanceOf[X509KeyManager], optEnv.get) // new X509KeyManagerSnitch(m.asInstanceOf[X509KeyManager]).asInstanceOf[KeyManager]
+        m => KeyManagerCompatibility.keyManager(() => DynamicSSLEngineProvider.certificates.values.toSeq, false, m.asInstanceOf[X509KeyManager], optEnv.get) // new X509KeyManagerSnitch(m.asInstanceOf[X509KeyManager]).asInstanceOf[KeyManager]
       )
       val tm: Array[TrustManager] =
       optEnv.flatMap(e => e.configuration.getOptionalWithFileSupport[Boolean]("play.server.https.trustStore.noCaVerification")).map {
@@ -1073,7 +1073,7 @@ object DynamicSSLEngineProvider {
     }
    */
 
-  def setupSslContextFor(certs: Seq[Cert], trustedCerts: Seq[Cert], forceTrustAll: Boolean, env: Env): SSLContext =
+  def setupSslContextFor(certs: Seq[Cert], trustedCerts: Seq[Cert], forceTrustAll: Boolean, client: Boolean, env: Env): SSLContext =
     env.metrics.withTimer("otoroshi.core.tls.setup-single-context") {
 
       val optEnv = Option(env)
@@ -1105,7 +1105,7 @@ object DynamicSSLEngineProvider {
       keyManagerFactory.init(keyStore1, EMPTY_PASSWORD)
       logger.debug("SSL Context init ...")
       val keyManagers: Array[KeyManager] = keyManagerFactory.getKeyManagers.map(
-        m => KeyManagerCompatibility.keyManager(m.asInstanceOf[X509KeyManager], optEnv.get) // new X509KeyManagerSnitch(m.asInstanceOf[X509KeyManager]).asInstanceOf[KeyManager]
+        m => KeyManagerCompatibility.keyManager(() => certs, client, m.asInstanceOf[X509KeyManager], optEnv.get) // new X509KeyManagerSnitch(m.asInstanceOf[X509KeyManager]).asInstanceOf[KeyManager]
       )
 
       val keyStore2: KeyStore = if (trustedCerts.nonEmpty) createKeyStore(trustedCerts) else keyStore1
