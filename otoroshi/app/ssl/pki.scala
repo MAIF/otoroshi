@@ -12,6 +12,7 @@ import org.bouncycastle.asn1.x500.X500Name
 import org.bouncycastle.asn1.x509._
 import org.bouncycastle.asn1.{ASN1Integer, ASN1Sequence}
 import org.bouncycastle.cert.X509v3CertificateBuilder
+import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils
 import org.bouncycastle.crypto.util.PrivateKeyFactory
 import org.bouncycastle.operator.bc.BcRSAContentSignerBuilder
 import org.bouncycastle.operator.{DefaultDigestAlgorithmIdentifierFinder, DefaultSignatureAlgorithmIdentifierFinder}
@@ -120,7 +121,7 @@ object models {
     def chain: String = s"${csr.asPem}\n${privateKey.asPem}\n${publicKey.asPem}"
   }
 
-  case class GenCertResponse(serial: Long,
+  case class GenCertResponse(serial: java.math.BigInteger,
                              cert: X509Certificate,
                              csr: PKCS10CertificationRequest,
                              csrQuery: Option[GenCsrQuery],
@@ -266,6 +267,12 @@ trait Pki {
 
 class BouncyCastlePki(generator: IdGenerator) extends Pki {
 
+  private val random = new SecureRandom()
+
+  private def generateSerial(): Try[java.math.BigInteger] = {
+    Try(new java.math.BigInteger(64, random))
+  }
+
   // genkeypair          generate a public key / private key pair
   override def genKeyPair(
       query: GenKeyPairQuery
@@ -311,7 +318,7 @@ class BouncyCastlePki(generator: IdGenerator) extends Pki {
             } else if (query.client) {
               extensionsGenerator.addExtension(Extension.extendedKeyUsage,
                                                false,
-                                               new ExtendedKeyUsage(Seq(KeyPurposeId.id_kp_clientAuth).toArray))
+                                               new ExtendedKeyUsage(Seq(KeyPurposeId.id_kp_clientAuth, KeyPurposeId.id_kp_serverAuth).toArray))
             } else {
               extensionsGenerator.addExtension(Extension.extendedKeyUsage,
                                                false,
@@ -322,8 +329,10 @@ class BouncyCastlePki(generator: IdGenerator) extends Pki {
                 extensionsGenerator.addExtension(
                   Extension.authorityKeyIdentifier,
                   false,
-                  new AuthorityKeyIdentifier(new ASN1Integer(ca.getSerialNumber).getEncoded)
+                  new JcaX509ExtensionUtils().createAuthorityKeyIdentifier(ca.getPublicKey).getEncoded
+                  // new AuthorityKeyIdentifier(new ASN1Integer(ca.getSerialNumber).getEncoded)
                 )
+              // TODO: subjectkeyidentifier ????
             )
             extensionsGenerator.addExtension(Extension.subjectAlternativeName, false, names)
           } else {
@@ -350,10 +359,11 @@ class BouncyCastlePki(generator: IdGenerator) extends Pki {
     caKey: PrivateKey,
     existingSerialNumber: Option[Long]
   )(implicit ec: ExecutionContext): Future[Either[String, SignCertResponse]] = {
-    generator.nextIdSafe().map { _serial =>
+    //generator.nextIdSafe().map { _serial =>
+    generateSerial().map { _serial =>
       // val __issuer = new X500Name(caCert.getSubjectX500Principal.getName)
       val issuer  = X500Name.getInstance(ASN1Sequence.getInstance(caCert.getSubjectX500Principal.getEncoded))
-      val serial  = java.math.BigInteger.valueOf(existingSerialNumber.getOrElse(_serial)) // new java.math.BigInteger(32, new SecureRandom)
+      val serial  = existingSerialNumber.map(java.math.BigInteger.valueOf).getOrElse(_serial) // new java.math.BigInteger(32, new SecureRandom)
       val from    = new java.util.Date
       val to      = new java.util.Date(System.currentTimeMillis + validity.toMillis)
       val certgen = new X509v3CertificateBuilder(issuer, serial, from, to, csr.getSubject, csr.getSubjectPublicKeyInfo)
@@ -398,7 +408,7 @@ class BouncyCastlePki(generator: IdGenerator) extends Pki {
         case Left(err) => Left(err)
         case Right(resp) =>
           Right(
-            GenCertResponse(resp.cert.getSerialNumber.longValue(),
+            GenCertResponse(resp.cert.getSerialNumber,
                             resp.cert,
                             resp.csr,
                             query.some,
@@ -423,8 +433,9 @@ class BouncyCastlePki(generator: IdGenerator) extends Pki {
         case Left(e) => Left(e).future
         case Right(_kpr) =>
           val kpr = query.existingKeyPair.map(v => GenKeyPairResponse(v.getPublic, v.getPrivate)).getOrElse(_kpr)
-          generator.nextIdSafe().map { _serial =>
-            val serial = java.math.BigInteger.valueOf(query.existingSerialNumber.getOrElse(_serial)) // new java.math.BigInteger(32, new SecureRandom)
+          // generator.nextIdSafe().map { _serial =>
+          generateSerial().map { _serial =>
+            val serial = query.existingSerialNumber.map(java.math.BigInteger.valueOf).getOrElse(_serial) // new java.math.BigInteger(32, new SecureRandom)
             val privateKey          = PrivateKeyFactory.createKey(kpr.privateKey.getEncoded)
             val signatureAlgorithm  = new DefaultSignatureAlgorithmIdentifierFinder().find(query.signatureAlg)
             val digestAlgorithm     = new DefaultDigestAlgorithmIdentifierFinder().find(query.digestAlg)
@@ -442,7 +453,8 @@ class BouncyCastlePki(generator: IdGenerator) extends Pki {
               extensionsGenerator.addExtension(
                 Extension.subjectKeyIdentifier,
                 false,
-                new SubjectKeyIdentifier(new ASN1Integer(serial).getEncoded)
+                new JcaX509ExtensionUtils().createSubjectKeyIdentifier(kpr.publicKey).getEncoded
+                // new SubjectKeyIdentifier(new ASN1Integer(serial).getEncoded)
               )
               // extensionsGenerator.addExtension(Extension.extendedKeyUsage, false, new ExtendedKeyUsage(Seq(KeyPurposeId.id_kp_serverAuth, KeyPurposeId.id_kp_clientAuth).toArray))
               if (query.client && query.hasDnsNameOrCName) {
@@ -454,7 +466,7 @@ class BouncyCastlePki(generator: IdGenerator) extends Pki {
               } else if (query.client) {
                 extensionsGenerator.addExtension(Extension.extendedKeyUsage,
                                                  false,
-                                                 new ExtendedKeyUsage(Seq(KeyPurposeId.id_kp_clientAuth).toArray))
+                                                 new ExtendedKeyUsage(Seq(KeyPurposeId.id_kp_clientAuth, KeyPurposeId.id_kp_serverAuth).toArray))
               } else {
                 extensionsGenerator.addExtension(Extension.extendedKeyUsage,
                                                  false,
@@ -506,8 +518,9 @@ class BouncyCastlePki(generator: IdGenerator) extends Pki {
       case Left(e) => Left(e).future
       case Right(_kpr) =>
         val kpr = query.existingKeyPair.map(v => GenKeyPairResponse(v.getPublic, v.getPrivate)).getOrElse(_kpr)
-        generator.nextIdSafe().map { _serial =>
-          val serial              = java.math.BigInteger.valueOf(query.existingSerialNumber.getOrElse(_serial)) // new java.math.BigInteger(32, new SecureRandom)
+        //generator.nextIdSafe().map { _serial =>
+        generateSerial().map { _serial =>
+          val serial              = query.existingSerialNumber.map(java.math.BigInteger.valueOf).getOrElse(_serial) // new java.math.BigInteger(32, new SecureRandom)
           val privateKey          = PrivateKeyFactory.createKey(kpr.privateKey.getEncoded)
           val signatureAlgorithm  = new DefaultSignatureAlgorithmIdentifierFinder().find(query.signatureAlg)
           val digestAlgorithm     = new DefaultDigestAlgorithmIdentifierFinder().find(query.digestAlg)
@@ -522,9 +535,16 @@ class BouncyCastlePki(generator: IdGenerator) extends Pki {
                                            true,
                                            new KeyUsage(KeyUsage.keyCertSign | KeyUsage.cRLSign))
           extensionsGenerator.addExtension(
+            Extension.authorityKeyIdentifier,
+            false,
+            new JcaX509ExtensionUtils().createAuthorityKeyIdentifier(kpr.publicKey).getEncoded
+            // new AuthorityKeyIdentifier(new ASN1Integer(serial).getEncoded)
+          )
+          extensionsGenerator.addExtension(
             Extension.subjectKeyIdentifier,
             false,
-            new SubjectKeyIdentifier(new ASN1Integer(serial).getEncoded)
+            new JcaX509ExtensionUtils().createSubjectKeyIdentifier(kpr.publicKey).getEncoded
+            // new SubjectKeyIdentifier(new ASN1Integer(serial).getEncoded)
           )
           csrBuilder.addAttribute(PKCSObjectIdentifiers.pkcs_9_at_extensionRequest /* x509Certificate */,
                                   extensionsGenerator.generate)
@@ -564,8 +584,9 @@ class BouncyCastlePki(generator: IdGenerator) extends Pki {
       case Left(e) => Left(e).future
       case Right(_kpr) =>
         val kpr = query.existingKeyPair.map(v => GenKeyPairResponse(v.getPublic, v.getPrivate)).getOrElse(_kpr)
-        generator.nextIdSafe().map { _serial =>
-          val serial = java.math.BigInteger.valueOf(query.existingSerialNumber.getOrElse(_serial)) // new java.math.BigInteger(32, new SecureRandom)
+        // generator.nextIdSafe().map { _serial =>
+        generateSerial().map { _serial =>
+          val serial = query.existingSerialNumber.map(java.math.BigInteger.valueOf).getOrElse(_serial) // new java.math.BigInteger(32, new SecureRandom)
           val privateKey          = PrivateKeyFactory.createKey(kpr.privateKey.getEncoded)
           val signatureAlgorithm  = new DefaultSignatureAlgorithmIdentifierFinder().find(query.signatureAlg)
           val digestAlgorithm     = new DefaultDigestAlgorithmIdentifierFinder().find(query.digestAlg)
@@ -583,12 +604,14 @@ class BouncyCastlePki(generator: IdGenerator) extends Pki {
           extensionsGenerator.addExtension(
             Extension.authorityKeyIdentifier,
             false,
-            new AuthorityKeyIdentifier(new ASN1Integer(caCert.getSerialNumber).getEncoded)
+            new JcaX509ExtensionUtils().createAuthorityKeyIdentifier(caCert.getPublicKey).getEncoded
+            // new AuthorityKeyIdentifier(new ASN1Integer(caCert.getSerialNumber).getEncoded)
           )
           extensionsGenerator.addExtension(
             Extension.subjectKeyIdentifier,
             false,
-            new SubjectKeyIdentifier(new ASN1Integer(serial).getEncoded)
+            new JcaX509ExtensionUtils().createSubjectKeyIdentifier(kpr.publicKey).getEncoded
+            // new SubjectKeyIdentifier(new ASN1Integer(serial).getEncoded)
           )
           csrBuilder.addAttribute(PKCSObjectIdentifiers.pkcs_9_at_extensionRequest /* x509Certificate */,
                                   extensionsGenerator.generate)
