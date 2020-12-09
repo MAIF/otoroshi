@@ -70,6 +70,8 @@ libraryDependencies ++= Seq(
   "com.sksamuel.pulsar4s"    %% "pulsar4s-core"              % "2.6.0",
   "com.sksamuel.pulsar4s"    %% "pulsar4s-akka-streams"      % "2.6.0",
 
+  "org.jsoup" % "jsoup" % "1.13.1",
+
   // fix multiple CVEs
   "com.fasterxml.jackson.core" % "jackson-databind"          % "2.10.3",
   "org.yaml"                   % "snakeyaml"                 % "1.26",
