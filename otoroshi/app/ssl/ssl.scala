@@ -142,7 +142,7 @@ case class Cert(
   }
   def signature: Option[String]     = this.metadata.map(v => (v \ "signature").as[String])
   def serialNumber: Option[String]  = this.metadata.map(v => (v \ "serialNumber").as[String])
-  def serialNumberLng: Option[Long] = this.metadata.map(v => (v \ "serialNumberLng").as[Long])
+  def serialNumberLng: Option[java.math.BigInteger] = this.metadata.map(v => (v \ "serialNumberLng").as[java.math.BigInteger])
   def matchesDomain(dom: String): Boolean = allDomains.exists(d => RegexPool.apply(d).matches(dom))
 
   def renew(

@@ -157,19 +157,10 @@ function ExternalProxy(opts) {
   const server = createServer({ ...opts, ssl: {
     key: _ctx.BACKEND_KEY, 
     cert: _ctx.BACKEND_CERT, 
-    ca: _ctx.BACKEND_CA, 
+    ca: _ctx.BACKEND_CA, // TODO: expected cert instead ?
     enableTrace: opts.enableTrace,
     requestCert: opts.requestCert, 
     rejectUnauthorized: opts.rejectUnauthorized,
-    // SNICallback: (servername, cb) => {
-    //   console.log(`servername: "${servername}"`);
-    //   cb(false)
-    //   //cb(tls.createSecureContext({
-    //   //  key: _ctx.BACKEND_KEY, 
-    //   //  cert: _ctx.BACKEND_CERT, 
-    //   //  ca: _ctx.BACKEND_CA, 
-    //   //}));
-    // }
   } }, (req, res, secure) => { 
     
     const ctx = opts.context();
