@@ -71,46 +71,90 @@ spec:
             value: ${clientSecret}
           - name: OTOROSHI_SECRET
             value: ${otoroshiSecret}
+          - name: HEALTH_LIMIT
+            value: "5000"
+          - name: SSL_OUTSIDE_CLIENT_AUTH
+            value: Want
+          - name: HTTPS_WANT_CLIENT_AUTH
+            value: "true"
           - name: OTOROSHI_INITIAL_CUSTOMIZATION
             value: >
               {
                 "config":{
+                  "tlsSettings": {
+                    "defaultDomain": "www.${domain}",
+                    "randomIfNotFound": false
+                  },
                   "scripts":{
                     "enabled":true,
+                    "sinkRefs":[
+                      "cp:otoroshi.plugins.jobs.kubernetes.KubernetesAdmissionWebhookCRDValidator",
+                      "cp:otoroshi.plugins.jobs.kubernetes.KubernetesAdmissionWebhookSidecarInjector"
+                    ],
+                    "sinkConfig": {},
                     "jobRefs":[
                       "cp:otoroshi.plugins.jobs.kubernetes.KubernetesOtoroshiCRDsControllerJob"
                     ],
                     "jobConfig":{
-                      "KubernetesConfig":{
-                        "trust":false,
-                        "namespaces":[
+                      "KubernetesConfig": {
+                        "trust": false,
+                        "namespaces": [
                           "*"
                         ],
-                        "labels":[],
-                        "ingressClasses":[
+                        "labels": {},
+                        "namespacesLabels": {},
+                        "ingressClasses": [
                           "otoroshi"
                         ],
-                        "defaultGroup":"default",
-                        "ingresses":true,
-                        "crds":true,
-                        "kubeLeader":false,
-                        "restartDependantDeployments":false,
-                        "templates":{
-                          "service-group":{},
-                          "service-descriptor":{},
-                          "apikeys":{},
-                          "global-config":{},
-                          "jwt-verifier":{},
-                          "tcp-service":{},
-                          "certificate":{},
-                          "auth-module":{},
-                          "script":{}
+                        "defaultGroup": "default",
+                        "ingresses": false,
+                        "crds": true,
+                        "coreDnsIntegration": false,
+                        "coreDnsIntegrationDryRun": false,
+                        "kubeLeader": false,
+                        "restartDependantDeployments": false,
+                        "watch": false,
+                        "syncDaikokuApikeysOnly": false,
+                        "kubeSystemNamespace": "kube-system",
+                        "coreDnsConfigMapName": "coredns",
+                        "coreDnsDeploymentName": "coredns",
+                        "corednsPort": 53,
+                        "otoroshiServiceName": "otoroshi-worker-service",
+                        "otoroshiNamespace": "${namespace}",
+                        "clusterDomain": "cluster.local",
+                        "syncIntervalSeconds": 60,
+                        "coreDnsEnv": null,
+                        "watchTimeoutSeconds": 60,
+                        "watchGracePeriodSeconds": 5,
+                        "mutatingWebhookName": "otoroshi-admission-webhook-injector",
+                        "validatingWebhookName": "otoroshi-admission-webhook-validation",
+                        "templates": {
+                          "service-group": {},
+                          "service-descriptor": {},
+                          "apikeys": {},
+                          "global-config": {},
+                          "jwt-verifier": {},
+                          "tcp-service": {},
+                          "certificate": {},
+                          "auth-module": {},
+                          "script": {},
+                          "organizations": {},
+                          "teams": {},
+                          "webhooks": {
+                            "flags": {
+                              "requestCert": true,
+                              "originCheck": true,
+                              "tokensCheck": true,
+                              "displayEnv": false,
+                              "tlsTrace": false
+                            }
+                          }
                         }
                       }
                     }
                   }
                 }
-              }          
+              }        
           - name: JAVA_OPTS
             value: '-Xms2g -Xmx4g'
         readinessProbe:
@@ -197,6 +241,12 @@ spec:
             value: ${clientSecret}
           - name: CLUSTER_LEADER_CLIENT_SECRET
             value: ${clientSecret}
+          - name: HEALTH_LIMIT
+            value: "5000"
+          - name: SSL_OUTSIDE_CLIENT_AUTH
+            value: Want
+          - name: HTTPS_WANT_CLIENT_AUTH
+            value: "true"
           - name: JAVA_OPTS
             value: '-Xms2g -Xmx4g'  
         readinessProbe:
