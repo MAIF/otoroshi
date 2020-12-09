@@ -4,16 +4,16 @@
 
 # sh ./certs.sh
 # curl -k -H "Host: mtls.oto.tools" https://mtls.oto.tools:18443/ --include
-go run backendmtls.go &
+GODEBUG=x509ignoreCN=0 go run backendmtls.go &
 sleep 5
-go run clientbackend.go > clientbackend.out
+GODEBUG=x509ignoreCN=0 go run clientbackend.go > clientbackend.out
 cp ../../otoroshi/target/scala-2.12/otoroshi.jar ./otoroshi.jar
 java -Dapp.domain=oto.tools -Dhttp.port=18080 -Dhttps.port=18443 -jar otoroshi.jar &
 sleep 20
 yarn install
 node oto.js
 sleep 10
-go run clientfrontend.go > clientfrontend.out
+GODEBUG=x509ignoreCN=0 go run clientfrontend.go > clientfrontend.out
 sleep 5
 # curl -k -H "Host: mtls.oto.tools" https://mtls.oto.tools:18443/ --include
 node check.js
