@@ -269,6 +269,7 @@ class KubernetesAdmissionWebhookSidecarInjector extends RequestSink {
           val backendCert = meta.select("annotations").select("otoroshi.io/sidecar-backend-cert").as[String]
           val clientCert = meta.select("annotations").select("otoroshi.io/sidecar-client-cert").as[String]
           val tokenSecret = meta.select("annotations").select("otoroshi.io/token-secret").asOpt[String].getOrElse("secret")
+          val expectedDN = meta.select("annotations").select("otoroshi.io/expected-dn").asOpt[String].getOrElse("cn=none")
           val localPort = obj.select("spec").select("containers").select(0).select("ports").select(0).select("containerPort").asOpt[Int].getOrElse(8081)
           val image = conf.image.getOrElse("maif/otoroshi-sidecar:latest")
           val template       = conf.templates.select("webhooks")
@@ -311,6 +312,8 @@ class KubernetesAdmissionWebhookSidecarInjector extends RequestSink {
                   envVariableBool("DISABLE_TOKENS_CHECK", !flags.select("tokensCheck").asOpt[Boolean].getOrElse(true)),
                   envVariableBool("DISPLAY_ENV", flags.select("displayEnv").asOpt[Boolean].getOrElse(false)),
                   envVariableBool("ENABLE_TRACE", flags.select("tlsTrace").asOpt[Boolean].getOrElse(false)),
+                  envVariableBool("ENABLE_CLIENT_CERT_CHECK", flags.select("clientCertCheck").asOpt[Boolean].getOrElse(true)),
+                  envVariable("EXPECTED_DN", expectedDN)
                 ),
                 "volumeMounts" -> Json.arr(
                   volumeMount("apikey-volume", "/var/run/secrets/kubernetes.io/otoroshi.io/apikeys"),
