@@ -21,6 +21,14 @@ class KubernetesAdmissionWebhookCRDValidator extends RequestSink {
 
   val logger = Logger("otoroshi-crd-validator")
 
+  override def name: String = "Kubernetes admission validator webhook"
+
+  override def description: Option[String] =
+    Some(
+      s"""This plugin exposes a webhook to kubernetes to handle manifests validation
+    """.stripMargin
+    )
+
   override def matches(ctx: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Boolean = {
     val config = KubernetesConfig.theConfig(ctx)
     (
@@ -236,6 +244,14 @@ class KubernetesAdmissionWebhookCRDValidator extends RequestSink {
 class KubernetesAdmissionWebhookSidecarInjector extends RequestSink {
 
   val logger = Logger("otoroshi-sidecar-injector")
+
+  override def name: String = "Kubernetes sidecar injector webhook"
+
+  override def description: Option[String] =
+    Some(
+      s"""This plugin exposes a webhook to kubernetes to inject otoroshi-sidecar in pods
+    """.stripMargin
+    )
 
   override def matches(ctx: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Boolean = {
     val config = KubernetesConfig.theConfig(ctx)
