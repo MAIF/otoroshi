@@ -5,4 +5,6 @@
 # nvm install 14
 # nvm use 14
 
-node src/sidecar.js "$@" 
+# node src/sidecar.js "$@" 
+pm2 start src/sidecar.js -i 2 --time --log sidecar.log -- "$@" 
+pm2 logs

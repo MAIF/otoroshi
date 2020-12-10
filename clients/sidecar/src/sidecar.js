@@ -10,6 +10,7 @@ const REJECT_UNAUTHORIZED = (process.env.REJECT_UNAUTHORIZED || 'true') === 'tru
 const ENABLE_ORIGIN_CHECK = (process.env.ENABLE_ORIGIN_CHECK || 'true') === 'true';
 const DISPLAY_ENV = (process.env.DISPLAY_ENV || 'true') === 'true';
 const ENABLE_TRACE = (process.env.ENABLE_TRACE || 'true') === 'true';
+const ENABLE_CLIENT_CERT_CHECK = (process.env.ENABLE_CLIENT_CERT_CHECK || 'true') === 'true';
 
 function contextExtractor() {
 
@@ -27,6 +28,7 @@ function contextExtractor() {
     const BACKEND_CERT_PATH =  process.env.BACKEND_CERT_PATH;
     const BACKEND_KEY_PATH =   process.env.BACKEND_KEY_PATH;
     const TOKEN_SECRET =       process.env.TOKEN_SECRET || 'secret';
+    const EXPECTED_DN =        process.env.EXPECTED_DN;
     const CLIENT_ID =          process.env.CLIENT_ID || fs.readFileSync(CLIENT_ID_PATH || '/var/run/secrets/kubernetes.io/otoroshi.io/apikeys/clientId').toString('utf8')
     const CLIENT_SECRET =      process.env.CLIENT_SECRET || fs.readFileSync(CLIENT_SECRET_PATH || '/var/run/secrets/kubernetes.io/otoroshi.io/apikeys/clientSecret').toString('utf8')
     const CLIENT_CA =          process.env.CLIENT_CA || fs.readFileSync(CLIENT_CA_PATH || '/var/run/secrets/kubernetes.io/otoroshi.io/certs/client/ca.crt').toString('utf8')
@@ -56,7 +58,9 @@ function contextExtractor() {
       REJECT_UNAUTHORIZED,
       ENABLE_ORIGIN_CHECK,
       DISPLAY_ENV,
-      ENABLE_TRACE
+      ENABLE_TRACE,
+      ENABLE_CLIENT_CERT_CHECK,
+      EXPECTED_DN
     }
   }
 

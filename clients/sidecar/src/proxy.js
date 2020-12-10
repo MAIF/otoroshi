@@ -153,6 +153,13 @@ function ExternalProxy(opts) {
   opts.type = 'EXTERNAL-PROXY'
   
   const _ctx = opts.context();
+  let  expectedDN = {};
+  if (_ctx.EXPECTED_DN) {
+    _ctx.EXPECTED_DN.split(',').map(p => p.trim()).map(p => {
+      const [key, value] = p.split('=');
+      expectedDN[key.toUpperCase()] = value;
+    });
+  }
 
   const server = createServer({ ...opts, ssl: {
     key: _ctx.BACKEND_KEY, 
@@ -207,7 +214,16 @@ function ExternalProxy(opts) {
         args.state = '' + Date.now();
       }
 
-      if (opts.requestCert && !req.socket.getPeerCertificate().subject) {
+      // console.log(!!req.socket.getPeerCertificate(), !!req.socket.getPeerCertificate().subject, req.socket.getPeerCertificate().subject, expectedDN)
+
+      const predicate = req.socket.getPeerCertificate() && 
+        req.socket.getPeerCertificate().subject &&
+        Object.keys(req.socket.getPeerCertificate().subject)
+          .map(k => req.socket.getPeerCertificate().subject[k] === expectedDN[k])
+          .filter(v => v === false)
+          .length === 0;
+
+      if (opts.requestCert && ctx.ENABLE_CLIENT_CERT_CHECK && ctx.EXPECTED_DN && !predicate) {
         return writeError(400, `{"error":"bad client cert"}`, 'application/json', res, args);
       }
 
