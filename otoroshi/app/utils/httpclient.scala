@@ -36,11 +36,27 @@ import play.shaded.ahc.org.asynchttpclient.util.Assertions
 import security.IdGenerator
 import ssl.{Cert, DynamicSSLEngineProvider}
 
+import otoroshi.utils.syntax.implicits._
+
 import scala.collection.immutable.TreeMap
 import scala.concurrent.duration.{Duration, _}
 import scala.concurrent.{Await, Future}
 import scala.util.{Failure, Success, Try}
 import scala.xml.{Elem, XML}
+
+case class DNPart(raw: String) {
+  private val parts = raw.split("=").map(_.trim)
+  val name = parts.head.toLowerCase()
+    .applyOnWithPredicate(_ == "sn")(p => "surname")
+  val value = parts.last
+}
+
+case class DN(raw: String) {
+  val parts = raw.split(",").toSeq.map(_.trim).map(DNPart.apply)
+  def isEqualsTo(other: DN): Boolean = {
+    parts.size == other.parts.size && parts.forall(p => other.parts.exists(o => o.name == p.name && o.value == p.value))
+  }
+}
 
 case class MtlsConfig(certs: Seq[String] = Seq.empty,
                       trustedCerts: Seq[String] = Seq.empty,
@@ -51,13 +67,18 @@ case class MtlsConfig(certs: Seq[String] = Seq.empty,
     certs.flatMap { id =>
       DynamicSSLEngineProvider.certificates.get(id) match {
         case a @ Some(_) => a
-        case None => DynamicSSLEngineProvider.certificates.values.toSeq.filter { cert =>
-          cert.certificate.exists(_.getSubjectDN.getName == id)
-        } filter { cert =>
-          cert.from.isBefore(org.joda.time.DateTime.now()) && cert.to.isAfter(org.joda.time.DateTime.now())
-        } sortWith { (c1, c2) =>
-          c1.to.compareTo(c2.to) > 0
-        } headOption
+        case None =>
+          val dn = DN(id)
+          DynamicSSLEngineProvider.certificates.values.toSeq.filter { cert =>
+            cert.certificate.exists { c =>
+              val otherDn = DN(c.getSubjectDN.getName)
+              dn.isEqualsTo(otherDn)
+            }
+          } filter { cert =>
+            cert.from.isBefore(org.joda.time.DateTime.now()) && cert.to.isAfter(org.joda.time.DateTime.now())
+          } sortWith { (c1, c2) =>
+            c1.to.compareTo(c2.to) > 0
+          } headOption
       }
     }
   }
@@ -65,13 +86,18 @@ case class MtlsConfig(certs: Seq[String] = Seq.empty,
     trustedCerts.flatMap { id =>
       DynamicSSLEngineProvider.certificates.get(id) match {
         case a @ Some(_) => a
-        case None => DynamicSSLEngineProvider.certificates.values.toSeq.filter { cert =>
-          cert.certificate.exists(_.getSubjectDN.getName == id)
-        } filter { cert =>
-          cert.from.isBefore(org.joda.time.DateTime.now()) && cert.to.isAfter(org.joda.time.DateTime.now())
-        } sortWith { (c1, c2) =>
-          c1.to.compareTo(c2.to) > 0
-        } headOption
+        case None =>
+          val dn = DN(id)
+          DynamicSSLEngineProvider.certificates.values.toSeq.filter { cert =>
+            cert.certificate.exists { c =>
+              val otherDn = DN(c.getSubjectDN.getName)
+              dn.isEqualsTo(otherDn)
+            }
+          } filter { cert =>
+            cert.from.isBefore(org.joda.time.DateTime.now()) && cert.to.isAfter(org.joda.time.DateTime.now())
+          } sortWith { (c1, c2) =>
+            c1.to.compareTo(c2.to) > 0
+          } headOption
       }
     }
   }
