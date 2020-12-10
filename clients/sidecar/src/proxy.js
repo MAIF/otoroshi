@@ -5,6 +5,28 @@ const moment = require('moment');
 const jwt = require('jsonwebtoken');
 const uuidv4 = require('uuid').v4;
 
+function secondCall(req) {
+  if (req.headers['otoroshi-proxied-host'] && req.headers['otoroshi-proxied-host'] === 'backend.k3s.local:31080') {
+    console.log('making second call')
+    http.get('http://127.0.0.1:8080/api', {
+      headers: {
+        host: 'backend.default.otoroshi.mesh'
+      }
+    }, (res) => {
+      res.setEncoding('utf8');
+      let rawData = '';
+      res.on('data', (chunk) => { rawData += chunk; });
+      res.on('end', () => {
+        try {
+          console.log('second call result', res.statusCode, rawData);
+        } catch (e) {
+          console.error(e.message);
+        }
+      });
+    });
+  }
+}
+
 function createServer(opts, fn) {
   if (opts.ssl) {
     const s1 = https.createServer(opts.ssl, (req, res) => {
@@ -247,6 +269,7 @@ function ExternalProxy(opts) {
         let ended = false;
         forwardRes.on('data', (chunk) => res.write(chunk));
         forwardRes.on('close', () => {
+          // secondCall(req);
           res.end();
           if (!ended) {
             ended = true;
