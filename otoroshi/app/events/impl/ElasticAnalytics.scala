@@ -1004,6 +1004,18 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
                                   to: Option[DateTime])(
                                    implicit env: Env,
                                    ec: ExecutionContext): Future[Option[JsValue]] = {
+    val extendedBounds = from
+      .map { from =>
+        Json.obj(
+          "max" -> to.getOrElse(DateTime.now).getMillis,
+          "min" -> from.getMillis
+        )
+      }
+      .getOrElse {
+        Json.obj(
+          "max" -> to.getOrElse(DateTime.now).getMillis
+        )
+      }
     query(Json.obj(
       "query" -> Json.obj(
         "bool" -> filters(None, from, to, eventFilter = healthCheckEventFilters,
@@ -1018,7 +1030,10 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
             "date" -> Json.obj(
               "date_histogram" -> Json.obj(
                 "field" -> "@timestamp",
-                "interval" -> "day"
+                "interval" -> "day",
+                "format" -> "yyyy-MM-dd",
+                "min_doc_count" -> 0,
+                "extended_bounds" -> extendedBounds
               ),
               "aggs" -> Json.obj(
                 "status" -> Json.obj(
@@ -1062,6 +1077,61 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
               Json.obj("descriptor" -> id, "total" -> total_period, "dates" -> JsArray(dates))
             }))
           }
+      }
+  }
+
+  override def fetchServiceResponseTime(servicesDescriptor: ServiceDescriptor,
+                                   from: Option[DateTime],
+                                   to: Option[DateTime])(
+                                    implicit env: Env,
+                                    ec: ExecutionContext): Future[Option[JsValue]] = {
+    val extendedBounds = from
+      .map { from =>
+        Json.obj(
+          "max" -> to.getOrElse(DateTime.now).getMillis,
+          "min" -> from.getMillis
+        )
+      }
+      .getOrElse {
+        Json.obj(
+          "max" -> to.getOrElse(DateTime.now).getMillis
+        )
+      }
+
+    query(Json.obj(
+      "query" -> Json.obj(
+        "bool" -> filters(None, from, to, eventFilter = healthCheckEventFilters,
+          additionalMust = Seq(Json.obj("term" -> Json.obj("@serviceId" -> Json.obj("value" -> servicesDescriptor.id))))
+        )),
+      "aggs" -> Json.obj(
+        "dates" -> Json.obj(
+          "date_histogram" -> Json.obj(
+            "field" -> "@timestamp",
+            "interval" -> "hour",
+            "format" -> "yyyy-MM-dd",
+            "min_doc_count" -> 0,
+            "extended_bounds" -> extendedBounds
+          ),
+          "aggs" -> Json.obj(
+            "duration" -> Json.obj(
+              "avg" -> Json.obj(
+                "field" -> "duration"
+              )
+            )
+          )
+        )
+      )
+    ))
+      .map { json =>
+        (json \ "aggregations" \ "dates" \ "buckets")
+          .asOpt[JsArray]
+          .map(_.value)
+          .map(dates => JsArray(dates.map(date => {
+            val timestamp = (date \ "key").as[Float]
+            val duration = (date \ "duration" \ "value").asOpt[Float]
+
+            Json.obj("timestamp" -> timestamp, "duration" -> duration)
+          })))
       }
   }
 }

@@ -288,6 +288,32 @@ export function fetchHealthCheckEvents(serviceId) {
   }).then((r) => r.json());
 }
 
+export function fetchServiceStatus(serviceId) {
+  return fetchServicesStatus([serviceId])
+}
+
+export function fetchServicesStatus(servicesIds = []) {
+  return fetch(`/bo/api/proxy/api/status`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(servicesIds),
+  }).then((r) => r.json());
+}
+
+export function fetchServiceResponseTime(serviceId) {
+  return fetch(`/bo/api/proxy/api/services/${serviceId}/response`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json'
+    }
+  }).then((r) => r.json());
+}
+
 export function fetchLines() {
   return fetch('/bo/api/proxy/api/lines', {
     method: 'GET',

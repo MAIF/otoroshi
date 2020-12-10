@@ -9,7 +9,7 @@ import models.ServiceDescriptor
 import org.joda.time.DateTime
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
-import play.api.libs.json.{JsObject, JsValue, Json}
+import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
 import play.api.mvc.{AbstractController, ControllerComponents, RequestHeader}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -442,33 +442,71 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(
     }
   }
 
-  def servicesStatus(from: Option[String], to: Option[String]) = ApiAction.async { ctx =>
+  def servicesStatus(from: Option[String], to: Option[String]) = ApiAction.async(parse.json) { ctx =>
     env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
       val analyticsService = new AnalyticsReadsServiceImpl(globalConfig, env)
 
-      val serviceId = ctx.request.getQueryString("service")
-      val fromDate = from.map(f => new DateTime(f.toLong)).orElse(DateTime.now().minusDays(30).withTimeAtStartOfDay().some)
+      val fromDate = from.map(f => new DateTime(f.toLong)).orElse(DateTime.now().minusDays(90).withTimeAtStartOfDay().some)
       val toDate = to.map(f => new DateTime(f.toLong))
 
-      val futureFilterable: Future[Option[Seq[ServiceDescriptor]]] = serviceId match {
-        case Some(id) =>
-          env.datastores.serviceDescriptorDataStore.findById(id).map(_.map(Seq(_)))
+      val eventualDescriptors: Future[Seq[ServiceDescriptor]] = ctx.request.body.asOpt[JsArray] match {
+        case Some(services) => env.datastores.serviceDescriptorDataStore.findAllById(services.value.map(_.as[String]))
         case None => env.datastores.serviceDescriptorDataStore.findAll()
-          .map(_.filter(d => ctx.canUserRead(d)))
-          .map {
-            case seq: Seq[ServiceDescriptor] => Some(seq)
-            case Nil => None
-          }
-        case _ => FastFuture.successful(None)
       }
 
-      futureFilterable.flatMap {
-        case Some(desc) => analyticsService.fetchServicesStatus(desc, fromDate, toDate).map {
-          case Some(value) => Ok(value)
-          case None => NotFound(Json.obj("error" -> "No entity found"))
+      eventualDescriptors
+        .map(_.filter(d => ctx.canUserRead(d)))
+        .map {
+          case seq: Seq[ServiceDescriptor] => Some(seq)
+          case Nil => None
         }
-        case None => NotFound(Json.obj("error" -> "No entity found")).future
-      }
+        .flatMap {
+          case Some(desc) => analyticsService.fetchServicesStatus(desc, fromDate, toDate).map {
+            case Some(value) => Ok(value)
+            case None => NotFound(Json.obj("error" -> "No entity found"))
+          }
+          case None => NotFound(Json.obj("error" -> "No entity found")).future
+        }
+    }
+  }
+
+  def serviceStatus(serviceId: String, from: Option[String], to: Option[String]) = ApiAction.async(parse.json) { ctx =>
+    env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
+      val analyticsService = new AnalyticsReadsServiceImpl(globalConfig, env)
+
+      val fromDate = from.map(f => new DateTime(f.toLong)).orElse(DateTime.now().minusDays(90).withTimeAtStartOfDay().some)
+      val toDate = to.map(f => new DateTime(f.toLong))
+
+      env.datastores.serviceDescriptorDataStore.findById(serviceId)
+        .flatMap {
+          case None => NotFound(Json.obj("error" -> s"Service: '$serviceId' not found")).future
+          case Some(desc) if !ctx.canUserRead(desc)=> ctx.fforbidden
+          case Some(desc) => analyticsService.fetchServicesStatus(Seq(desc), fromDate, toDate).map {
+            case Some(value) => Ok(value)
+            case None => NotFound(Json.obj("error" -> "No entity found"))
+          }
+        }
+    }
+  }
+
+  def serviceResponseTime(serviceId: String, from: Option[String], to: Option[String]) = ApiAction.async { ctx =>
+    val fromDate = from.map(f => new DateTime(f.toLong)).orElse(DateTime.now().minusDays(90).withTimeAtStartOfDay().some)
+    val toDate = to.map(f => new DateTime(f.toLong))
+
+    env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
+      val analyticsService = new AnalyticsReadsServiceImpl(globalConfig, env)
+
+      env.datastores.serviceDescriptorDataStore.findById(serviceId)
+        .flatMap {
+          case None => NotFound(Json.obj("error" -> s"Service: '$serviceId' not found")).future
+          case Some(desc) if !ctx.canUserRead(desc)=> ctx.fforbidden
+          case Some(desc) => analyticsService.fetchServiceResponseTime(desc, fromDate, toDate).map {
+            case Some(value) =>
+              logger.warn("ok")
+              Ok(value)
+            case None => NotFound(Json.obj("error" -> "No entity found"))
+          }
+        }
     }
   }
 }
