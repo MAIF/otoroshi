@@ -8,10 +8,10 @@ const uuidv4 = require('uuid').v4;
 function secondCall(req) {
   if (req.headers['otoroshi-proxied-host'] && req.headers['otoroshi-proxied-host'] === 'backend.k3s.local:31080') {
     console.log('making second call')
-    http.get('http://127.0.0.1:8080/api', {
-      headers: {
-        host: 'backend.default.otoroshi.mesh'
-      }
+    http.get('http://backend.default.oto.tools:8080/api', {
+      // headers: {
+      //   host: 'backend.default.otoroshi.mesh'
+      // }
     }, (res) => {
       res.setEncoding('utf8');
       let rawData = '';
@@ -80,7 +80,7 @@ function InternalProxy(opts) {
       }
 
       const domain = req.headers.host.split(':')[0];
-      const isHandledByOtoroshi = domain.indexOf(ctx.OTOROSHI_DOMAIN) > -1;
+      const isHandledByOtoroshi = domain.indexOf(ctx.OTOROSHI_DOMAIN) > -1 || domain.indexOf('oto.tools') > -1 || domain.indexOf('otoroshi.tools') > -1;
       
       const requestId = uuidv4();
       let options = {
@@ -90,6 +90,7 @@ function InternalProxy(opts) {
         method: req.method,
         headers: {
           ...req.headers,
+          'host': (req.headers['host'] || '').replace('oto.tools', 'otoroshi.mesh').replace('otoroshi.tools', 'otoroshi.mesh'),
           'Otoroshi-Client-Id': ctx.CLIENT_ID,
           'Otoroshi-Client-Secret': ctx.CLIENT_SECRET,
         },

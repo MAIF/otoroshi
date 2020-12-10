@@ -192,6 +192,7 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
           KubernetesCRDsJob.patchValidatingAdmissionWebhook(conf, ctx)
           KubernetesCRDsJob.patchMutatingAdmissionWebhook(conf, ctx)
           KubernetesCRDsJob.createWebhookCerts(conf, ctx)
+          KubernetesCRDsJob.createMeshCerts(conf, ctx)
           KubernetesCRDsJob.syncCRDs(conf, ctx.attrs, !stopCommand.get())
         } else {
           ().future
@@ -202,6 +203,7 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
         KubernetesCRDsJob.patchValidatingAdmissionWebhook(conf, ctx)
         KubernetesCRDsJob.patchMutatingAdmissionWebhook(conf, ctx)
         KubernetesCRDsJob.createWebhookCerts(conf, ctx)
+        KubernetesCRDsJob.createMeshCerts(conf, ctx)
         KubernetesCRDsJob.syncCRDs(conf, ctx.attrs, !stopCommand.get())
       }
     } else {
@@ -1382,6 +1384,54 @@ object KubernetesCRDsJob {
       }
     }
   }
+
+  def createMeshCerts(config: KubernetesConfig, ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+
+    val certId = "kubernetes-mesh-cert"
+
+    val query = GenCsrQuery(
+      hosts = Seq(
+        s"*.otoroshi.mesh",
+        s"*.svc.otoroshi.mesh",
+        s"*.global.otoroshi.mesh"
+      ),
+      subject = "SN=Kubernetes Mesh Certificate, OU=Otoroshi Certificates, O=Otoroshi".some,
+      duration = 365.days,
+    )
+
+    val queryJson = query.json.stringify
+
+    def doIt(ca: Cert) = {
+
+      logger.info("generating certificate for kubernetes mesh")
+      env.pki.genCert(query, ca.certificates.head, ca.certificates.tail, ca.cryptoKeyPair.getPrivate).flatMap {
+        case Left(e) =>
+          logger.info(s"error while generating certificate for kubernetes mesh: $e")
+          ().future
+        case Right(response) => {
+          val cert = response.toCert.enrich().applyOn(c => c.copy(
+            id = certId,
+            autoRenew = true,
+            name = "Kubernetes Mesh Certificate",
+            description = "Kubernetes Mesh Certificate (auto-generated)",
+            entityMetadata = c.entityMetadata ++ Map("csr" -> queryJson)
+          ))
+          cert.save().map(_ => ())
+        }
+      }
+    }
+
+    env.datastores.certificatesDataStore.findById(Cert.OtoroshiIntermediateCA).flatMap {
+      case None => ().future
+      case Some(ca) => {
+        env.datastores.certificatesDataStore.findById(certId).flatMap {
+          case Some(c) if c.entityMetadata.get("csr") == queryJson.some => ().future
+          case _ => doIt(ca)
+        }
+      }
+    }
+  }
+
 
   def patchValidatingAdmissionWebhook(conf: KubernetesConfig, ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     val client = new KubernetesClient(conf, env)

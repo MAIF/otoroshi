@@ -1,4 +1,5 @@
-FROM node:14
+FROM keymetrics/pm2:14-alpine
+# FROM node:14
 # FROM ubuntu
 
 LABEL maintainer "MAIF <oss@maif.fr>"
@@ -13,8 +14,7 @@ COPY ./package.json /app/package.json
 COPY ./yarn.lock /app/yarn.lock
 COPY ./entrypoint.sh /app/entrypoint.sh 
 
-RUN yarn global add pm2
-
+# RUN yarn global add pm2
 # RUN apt-get update -y
 # RUN apt-get install -y git wget curl apt-transport-https openssl
 # RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.37.2/install.sh | bash
