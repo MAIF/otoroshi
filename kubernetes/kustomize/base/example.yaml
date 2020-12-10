@@ -21,6 +21,7 @@ spec:
         otoroshi.io/sidecar-backend-cert: backend-cert
         otoroshi.io/sidecar-client-cert: oto-client-cert
         otoroshi.io/token-secret: secret
+        otoroshi.io/expected-dn: UID=oto-client-cert, O=OtoroshiApps
     spec:
       containers:
       - image: containous/whoami:latest
