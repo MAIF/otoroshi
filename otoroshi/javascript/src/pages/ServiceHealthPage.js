@@ -1,7 +1,8 @@
 import React, { Component } from 'react';
 import * as BackOfficeServices from '../services/BackOfficeServices';
 import { ServiceSidebar } from '../components/ServiceSidebar';
-import { Histogram, Line } from '../components/recharts';
+import { Histogram } from '../components/recharts';
+import { BooleanInput } from '../components/inputs'
 import classNames from 'classnames';
 import { Popover } from 'antd';
 import moment from 'moment';
@@ -12,9 +13,9 @@ export class ServiceHealthPage extends Component {
   state = {
     service: null,
     health: false,
-    evts: [],
     status: [],
-    responsesTime: []
+    responsesTime: [],
+    stopTheCountUnknownStatus: true
   };
 
   colors = {
@@ -22,22 +23,6 @@ export class ServiceHealthPage extends Component {
     YELLOW: '#ff8900',
     GREEN: '#95cf3d',
     BLACK: '#000000',
-  };
-
-  updateEvts = (evts) => {
-    this.setState({ evts });
-    if (evts.length > 0) {
-      const color = evts[0].health ? this.colors[evts[0].health] : 'grey';
-      this.title = (
-        <span>
-          Service health is <i className="fas fa-heart" style={{ color }} />
-        </span>
-      );
-      this.props.setTitle(this.title);
-    } else {
-      this.title = 'No HealthCheck available yet';
-      this.props.setTitle(this.title);
-    }
   };
 
   componentDidMount() {
@@ -53,8 +38,15 @@ export class ServiceHealthPage extends Component {
               BackOfficeServices.fetchServiceResponseTime(service.id),
             ])
               .then(([evts, status, responsesTime]) => {
-                this.updateEvts(evts);
-                this.setState({ status, responsesTime })
+                this.setState({ status, responsesTime }, () => {
+                  const color = evts[0].health ? this.colors[evts[0].health] : 'grey';
+                  this.title = (
+                    <span>
+                      Service health is <i className="fas fa-heart" style={{ color }} />
+                    </span>
+                  );
+                  this.props.setTitle(this.title);
+                })
               });
           } else {
             this.title = 'No HealthCheck available yet';
@@ -85,9 +77,15 @@ export class ServiceHealthPage extends Component {
 
     return (
       <div className="content-health">
-        <Uptime health={this.state.status} />
-        <OverallUptime health={this.state.status} />
-        <ResponseTime responsesTime={this.state.responsesTime}/>
+        <Uptime health={this.state.status} stopTheCountUnknownStatus={this.state.stopTheCountUnknownStatus}/>
+        <OverallUptime health={this.state.status} stopTheCountUnknownStatus={this.state.stopTheCountUnknownStatus}/>
+        <ResponseTime responsesTime={this.state.responsesTime} stopTheCountUnknownStatus={this.state.stopTheCountUnknownStatus}/>
+        <BooleanInput
+          label="Don't use unknown status when calculating averages"
+          value={this.state.stopTheCountUnknownStatus}
+          help="Use unknown statuses whene calculating averages could modify results and may not be representative"
+          onChange={(stopTheCountUnknownStatus) => this.setState({ stopTheCountUnknownStatus })}
+        />
       </div>
     );
   }
@@ -108,7 +106,7 @@ class Uptime extends Component {
       })
 
     const avg = this.props.health[0].dates
-      // .filter(d => d.status.length)
+      .filter(d => !this.props.stopTheCountUnknownStatus || d.status.length)
       .reduce((avg, value, _, { length }) => {
         return avg + value.status
           .filter(s => s.health === "GREEN" || s.health === "YELLOW")
@@ -123,6 +121,7 @@ class Uptime extends Component {
           <div className="flex-status">
             {test.map((t, idx) => (
               <Popover
+                key={idx}
                 placement="bottom"
                 title={t.date}
                 content={!t.status.length ?
@@ -153,6 +152,7 @@ class OverallUptime extends Component {
     const dates = this.props.health[0].dates;
 
     const avg = dates => dates
+      .filter(d => !this.props.stopTheCountUnknownStatus || d.status.length)
       .reduce((avg, value, _, { length }) => {
         return avg + value.status
           .filter(s => s.health === "GREEN" || s.health === "YELLOW")
@@ -197,7 +197,6 @@ class OverallUptime extends Component {
 
 class ResponseTime extends Component {
   render() {
-    console.debug({ test: this.props.responsesTime.map(x => x ? parseInt(x.duration) : x)})
     return (
       <div>
         <h3>Response Time Last 90 days</h3>
@@ -205,7 +204,7 @@ class ResponseTime extends Component {
           <Histogram series={[{
             name: 'test',
             data: this.props.responsesTime
-              .filter(d => d.duration !== null)
+              .filter(d => !this.props.stopTheCountUnknownStatus || d.duration !== null)
               .map(e => [e.timestamp, e.duration ? parseInt(e.duration) : e.duration])
           }]} hideXAxis={true} title="HealthChecks average responses duration (ms.)" unit="millis." />
         </div>
