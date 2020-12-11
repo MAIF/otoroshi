@@ -274,6 +274,7 @@ class KubernetesAdmissionWebhookSidecarInjector extends RequestSink {
       }
       val operation = (json \ "request" \ "operation").as[String]
       val obj = (json \ "request" \ "object").as[JsObject]
+      // obj.prettify.debugPrintln
       val uid = (json \ "request" \ "uid").as[String]
       val version = (obj \ "apiVersion").as[String]
       val inject = obj.select("metadata").select("labels").select("otoroshi.io/sidecar").asOpt[String].contains("inject")
@@ -311,10 +312,28 @@ class KubernetesAdmissionWebhookSidecarInjector extends RequestSink {
                 "image" -> image,
                 "imagePullPolicy" -> "Always",
                 "name" -> "otoroshi-sidecar",
-                "ports" -> Json.arr(Json.obj(
-                  "name" -> JsString(containerPort.select("name").asOpt[String].getOrElse("https")),
-                  "containerPort" -> containerPortV
-                )),
+                "ports" -> Json.arr(
+                  Json.obj(
+                    "name" -> JsString(containerPort.select("name").asOpt[String].getOrElse("https")),
+                    "containerPort" -> containerPortV
+                  ),
+                  Json.obj(
+                    "name" -> "dns",
+                    "containerPort" -> 53
+                  )
+                ),
+                "securityContext" -> Json.obj(
+                  "allowPrivilegeEscalation" -> false,
+                  "capabilities" -> Json.obj(
+                    "add" -> Json.arr(
+                      "NET_BIND_SERVICE"
+                    ),
+                    "drop" -> Json.arr(
+                      "all"
+                    ),
+                    "readOnlyRootFilesystem" -> true
+                  )
+                ),
                 "env" -> Json.arr(
                   envVariable("TOKEN_SECRET", tokenSecret),
                   envVariable("OTOROSHI_DOMAIN", otoroshi.select("domain").asOpt[String].getOrElse("otoroshi.mesh")),
@@ -337,50 +356,62 @@ class KubernetesAdmissionWebhookSidecarInjector extends RequestSink {
                   volumeMount("client-cert-volume", "/var/run/secrets/kubernetes.io/otoroshi.io/certs/client"),
                 )
               )
-              /*"value" -> Json.parse(
-                s"""{
-                   |  "image": "${image}",
-                   |  "imagePullPolicy": "Always",
-                   |  "name": "otoroshi-sidecar",
-                   |  "ports": [
-                   |    {
-                   |      "containerPort": 8443,
-                   |      "name": "https"
-                   |    }
-                   |  ],
-                   |  "env": [
-                   |    {"name": "TOKEN_SECRET", "value": "${tokenSecret}"},
-                   |    {"name": "OTOROSHI_DOMAIN", "value": "otoroshi.mesh"},
-                   |    {"name": "OTOROSHI_HOST", "value": "${conf.otoroshiServiceName}.${conf.otoroshiNamespace}.svc.${conf.clusterDomain}"},
-                   |    {"name": "OTOROSHI_PORT", "value": "8443"},
-                   |    {"name": "LOCAL_PORT", "value": "${localPort}"},
-                   |    {"name": "EXTERNAL_PORT", "value": "8443"},
-                   |    {"name": "INTERNAL_PORT", "value": "8080"},
-                   |    {"name": "REQUEST_CERT", "value": "true"},
-                   |    {"name": "ENABLE_ORIGIN_CHECK", "value": "true"},
-                   |    {"name": "DISABLE_TOKENS_CHECK", "value": "false"},
-                   |    {"name": "DISPLAY_ENV", "value":"false"},
-                   |    {"name": "ENABLE_TRACE", "value":"false"}
-                   |  ],
-                   |  "volumeMounts": [
-                   |    {
-                   |      "name": "apikey-volume",
-                   |      "mountPath": "/var/run/secrets/kubernetes.io/otoroshi.io/apikeys",
-                   |      "readOnly": true
-                   |    },
-                   |    {
-                   |      "name": "backend-cert-volume",
-                   |      "mountPath": "/var/run/secrets/kubernetes.io/otoroshi.io/certs/backend",
-                   |      "readOnly": true
-                   |    },
-                   |    {
-                   |      "name": "client-cert-volume",
-                   |      "mountPath": "/var/run/secrets/kubernetes.io/otoroshi.io/certs/client",
-                   |      "readOnly": true
-                   |    }
-                   |  ]
-                   |}""".stripMargin)*/
             ),
+            /*Json.obj(
+              "op" -> "add",
+              "path" -> "/spec/containers/-",
+              "value" -> Json.obj(
+                "image" -> "andyshinn/dnsmasq:latest",
+                "imagePullPolicy" -> "Always",
+                "name" -> "otoroshi-sidecar-dns",
+                "ports" -> Json.arr(
+                  Json.obj(
+                    "name" -> "dns",
+                    "containerPort" -> 53
+                  )
+                ),
+                "securityContext" -> Json.obj(
+                  "allowPrivilegeEscalation" -> false,
+                  "capabilities" -> Json.obj(
+                    "add" -> Json.arr(
+                      "NET_BIND_SERVICE"
+                    ),
+                    "drop" -> Json.arr(
+                      "all"
+                    ),
+                    "readOnlyRootFilesystem" -> true
+                  )
+                ),
+                "command" -> Json.arr("dnsmasq")
+                //"command" -> Json.arr("dnsmasq", "-k", "--conf-file=/etc/dnsmasq-custom.conf")
+                //"command" -> Json.arr("dnsmasq", "-k", "--address=/otoroshi.mesh/127.0.0.1", "--resolv-file=/etc/resolv.back.conf", "--no-daemon")
+                //"command" -> Json.arr("dnsmasq", "-k", "--address=/otoroshi.mesh/127.0.0.1", "--server=`cat /etc/resolv.back.conf | grep nameserver | awk '{print $2}'`", "--no-daemon")
+              )
+            ),*/
+            // Json.obj(
+            //   "op" -> "add",
+            //   "path" -> "/spec/initContainers",
+            //   "value" -> Json.arr()
+            // ),
+            // Json.obj(
+            //   "op" -> "add",
+            //   "path" -> "/spec/initContainers/-",
+            //   "value" -> Json.obj(
+            //     "image" -> "busybox:1.28",
+            //     "imagePullPolicy" -> "Always",
+            //     "name" -> "otoroshi-sidecar-dns-config",
+            //     "command" -> Json.arr("sh", "-c", "ls -ahl /etc; cp /etc/resolv.conf /etc/resolv.back.conf; ls -ahl /etc; echo 'nameserver=127.0.0.1' > /etc/resolv.conf;")
+            //   )
+            // ),
+            // Json.obj(
+            //   "op" -> "add",
+            //   "path" -> "/spec/dnsConfig",
+            //   "value" -> Json.obj(
+            //     "nameservers" -> Json.arr(
+            //       "127.0.0.1"
+            //     )
+            //   )
+            // ),
             Json.obj(
               "op" -> "add",
               "path" -> "/spec/volumes/-",
@@ -396,7 +427,7 @@ class KubernetesAdmissionWebhookSidecarInjector extends RequestSink {
               "path" -> "/spec/volumes/-",
               "value" -> secretVolume("client-cert-volume", clientCert)
             )
-          ).stringify.base64
+          )/*.debug(a => a.prettify.debugPrintln)*/.stringify.base64
           val patch = Json.obj(
             "apiVersion" -> "admission.k8s.io/v1",
             "kind" -> "AdmissionReview",

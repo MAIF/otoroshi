@@ -189,6 +189,8 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
         if (shouldRun.get()) {
           handleWatch(conf, ctx)
           KubernetesCRDsJob.patchCoreDnsConfig(conf, ctx)
+          KubernetesCRDsJob.patchKubeDnsConfig(conf, ctx)
+          KubernetesCRDsJob.patchOpenshiftDnsOperatorConfig(conf, ctx)
           KubernetesCRDsJob.patchValidatingAdmissionWebhook(conf, ctx)
           KubernetesCRDsJob.patchMutatingAdmissionWebhook(conf, ctx)
           KubernetesCRDsJob.createWebhookCerts(conf, ctx)
@@ -200,6 +202,8 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
       } else {
         handleWatch(conf, ctx)
         KubernetesCRDsJob.patchCoreDnsConfig(conf, ctx)
+        KubernetesCRDsJob.patchKubeDnsConfig(conf, ctx)
+        KubernetesCRDsJob.patchOpenshiftDnsOperatorConfig(conf, ctx)
         KubernetesCRDsJob.patchValidatingAdmissionWebhook(conf, ctx)
         KubernetesCRDsJob.patchMutatingAdmissionWebhook(conf, ctx)
         KubernetesCRDsJob.createWebhookCerts(conf, ctx)
@@ -1345,6 +1349,14 @@ object KubernetesCRDsJob {
     }
   }
 
+  def patchKubeDnsConfig(conf: KubernetesConfig, ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    ().future
+  }
+
+  def patchOpenshiftDnsOperatorConfig(conf: KubernetesConfig, ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    ().future
+  }
+
   def createWebhookCerts(config: KubernetesConfig, ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
 
     def doIt(ca: Cert) = {
@@ -1431,7 +1443,6 @@ object KubernetesCRDsJob {
       }
     }
   }
-
 
   def patchValidatingAdmissionWebhook(conf: KubernetesConfig, ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     val client = new KubernetesClient(conf, env)
