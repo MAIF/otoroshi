@@ -8,22 +8,28 @@ const uuidv4 = require('uuid').v4;
 function secondCall(req) {
   if (req.headers['otoroshi-proxied-host'] && req.headers['otoroshi-proxied-host'] === 'backend.k3s.local:31080') {
     console.log('making second call')
-    http.get('http://backend.default.oto.tools:8080/api', {
-      // headers: {
-      //   host: 'backend.default.otoroshi.mesh'
-      // }
-    }, (res) => {
-      res.setEncoding('utf8');
-      let rawData = '';
-      res.on('data', (chunk) => { rawData += chunk; });
-      res.on('end', () => {
-        try {
-          console.log('second call result', res.statusCode, rawData);
-        } catch (e) {
-          console.error(e.message);
-        }
+    try {
+      console.log("try")
+      http.get('http://backend.default.otoroshi.mesh:8080/api', {
+        // headers: {
+        //   host: 'backend.default.otoroshi.mesh'
+        // }
+      }, (res) => {
+        res.setEncoding('utf8');
+        let rawData = '';
+        res.on('data', (chunk) => { rawData += chunk; });
+        res.on('end', () => {
+          try {
+            console.log('second call result', res.statusCode, rawData);
+          } catch (e) {
+            console.error(e.message);
+          }
+        });
       });
-    });
+    } catch(e) {
+      console.log('catch')
+      console.log('error while second call', e)
+    }
   }
 }
 
@@ -270,7 +276,7 @@ function ExternalProxy(opts) {
         let ended = false;
         forwardRes.on('data', (chunk) => res.write(chunk));
         forwardRes.on('close', () => {
-          // secondCall(req);
+          secondCall(req);
           res.end();
           if (!ended) {
             ended = true;

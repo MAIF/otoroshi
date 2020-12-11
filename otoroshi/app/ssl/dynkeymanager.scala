@@ -56,8 +56,25 @@ class DynamicKeyManager(allCerts: () => Seq[Cert], client: Boolean, manager: X50
             .filter(_.notExpired)
             .sortWith((c1, c2) => c1.to.compareTo(c2.to) > 0)
 
+          val foundCert = certs.filter(_.matchesDomain(domain)).flatMap(c => c.allDomains.map(d => (d, c))).sortWith {
+            case ((d1, _), (d2, _)) if d1.contains("*") && d2.contains("*") => d1.size > d2.size
+            case ((d1, _), (d2, _)) if d1.contains("*") && !d2.contains("*") => false
+            case ((d1, _), (d2, _)) if !d1.contains("*") && d2.contains("*") => true
+            case ((d1, _), (d2, _)) if !d1.contains("*") && !d2.contains("*") => true
+          }.map(_._2).headOption
+
+          val foundCertDef = tlsSettings.defaultDomain.flatMap { d =>
+            certs.filter(_.matchesDomain(d)).flatMap(c => c.allDomains.map(d => (d, c))).sortWith {
+              case ((d1, _), (d2, _)) if d1.contains("*") && d2.contains("*") => d1.size > d2.size
+              case ((d1, _), (d2, _)) if d1.contains("*") && !d2.contains("*") => false
+              case ((d1, _), (d2, _)) if !d1.contains("*") && d2.contains("*") => true
+              case ((d1, _), (d2, _)) if !d1.contains("*") && !d2.contains("*") => true
+            }.map(_._2).headOption
+          }
+
           // TODO: no * before with * then longer before smaller
-          certs.find(_.matchesDomain(domain)).orElse(tlsSettings.defaultDomain.flatMap(d => certs.find(_.matchesDomain(d)))).map { c =>
+          // certs.find(_.matchesDomain(domain)).orElse(tlsSettings.defaultDomain.flatMap(d => certs.find(_.matchesDomain(d)))).map { c =>
+          foundCert.orElse(foundCertDef).map { c =>
             DynamicKeyManager.cache.put(domain, c)
             c
           } match {
