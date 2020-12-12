@@ -46,9 +46,9 @@ case "${1}" in
     docker push "maif/otoroshi-sidecar:latest"
 
     docker build --no-cache -t otoroshi-sidecar-init -f Dockerfile-init .
-    docker tag otoroshi-sidecar-init "maif/otoroshi-sidecar-init:$1"
+    docker tag otoroshi-sidecar-init "maif/otoroshi-sidecar-init:$2"
     docker tag otoroshi-sidecar-init "maif/otoroshi-sidecar-init:latest"
-    docker push "maif/otoroshi-sidecar-init:$1"
+    docker push "maif/otoroshi-sidecar-init:$2"
     docker push "maif/otoroshi-sidecar-init:latest"
     ;;
   build-local)
@@ -66,9 +66,9 @@ case "${1}" in
     docker push "registry.oto.tools:5000/maif/otoroshi-sidecar:latest"
 
     docker build --no-cache -t otoroshi-sidecar-init -f Dockerfile-init .
-    docker tag otoroshi-sidecar-init "registry.oto.tools:5000/maif/otoroshi-sidecar-init:$1"
+    docker tag otoroshi-sidecar-init "registry.oto.tools:5000/maif/otoroshi-sidecar-init:$2"
     docker tag otoroshi-sidecar-init "registry.oto.tools:5000/maif/otoroshi-sidecar-init:latest"
-    docker push "registry.oto.tools:5000/maif/otoroshi-sidecar-init:$1"
+    docker push "registry.oto.tools:5000/maif/otoroshi-sidecar-init:$2"
     docker push "registry.oto.tools:5000/maif/otoroshi-sidecar-init:latest"
     ;;
   *)

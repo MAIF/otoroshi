@@ -296,6 +296,12 @@ class KubernetesAdmissionWebhookSidecarInjector extends RequestSink {
           val ports          = template.select("ports")
           val flags          = template.select("flags")
 
+          val localPortV = ports.select("local").asOpt[Int].getOrElse(localPort)
+
+          if (localPortV == 80) {
+            throw new RuntimeException("The application service cannot use port 80 !")
+          }
+
           val containerPortV = containerPort.select("value").asOpt[Int].getOrElse(8443)
 
           def envVariable(name: String, value: String): JsValue = Json.obj("name" -> name, "value" -> value)
@@ -400,6 +406,14 @@ class KubernetesAdmissionWebhookSidecarInjector extends RequestSink {
                 "image" -> image.replace("otoroshi-sidecar:", "otoroshi-sidecar-init:"),
                 "imagePullPolicy" -> "Always",
                 "name" -> "otoroshi-sidecar-init",
+                "securityContext" -> Json.obj(
+                "capabilities" -> Json.obj(
+                  "add" -> Json.arr(
+                    "NET_ADMIN"
+                    )
+                  ),
+                  "privileged" -> true
+                ),
                 "env" -> Json.arr(
                   envVariableInt("FROM", 80),
                   envVariableInt("TO",  ports.select("internal").asOpt[Int].getOrElse(8080))
