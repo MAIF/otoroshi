@@ -10,7 +10,8 @@ function secondCall(req) {
     console.log('making second call')
     try {
       console.log("try")
-      http.get('http://backend.default.otoroshi.mesh/api', {
+      // http.get('http://backend.default.otoroshi.mesh/api', {
+      http.get('http://backend.default.oto.tools/api', {
         // headers: {
         //   host: 'backend.default.otoroshi.mesh'
         // }
@@ -276,7 +277,7 @@ function ExternalProxy(opts) {
         let ended = false;
         forwardRes.on('data', (chunk) => res.write(chunk));
         forwardRes.on('close', () => {
-          secondCall(req);
+          // secondCall(req);
           res.end();
           if (!ended) {
             ended = true;
