@@ -317,23 +317,23 @@ class KubernetesAdmissionWebhookSidecarInjector extends RequestSink {
                     "name" -> JsString(containerPort.select("name").asOpt[String].getOrElse("https")),
                     "containerPort" -> containerPortV
                   ),
-                  Json.obj(
-                    "name" -> "dns",
-                    "containerPort" -> 53
-                  )
+                  // Json.obj(
+                  //   "name" -> "dns",
+                  //   "containerPort" -> 53
+                  // )
                 ),
-                "securityContext" -> Json.obj(
-                  "allowPrivilegeEscalation" -> false,
-                  "capabilities" -> Json.obj(
-                    "add" -> Json.arr(
-                      "NET_BIND_SERVICE"
-                    ),
-                    "drop" -> Json.arr(
-                      "all"
-                    ),
-                    "readOnlyRootFilesystem" -> true
-                  )
-                ),
+                // "securityContext" -> Json.obj(
+                //   "allowPrivilegeEscalation" -> false,
+                //   "capabilities" -> Json.obj(
+                //     "add" -> Json.arr(
+                //       "NET_BIND_SERVICE"
+                //     ),
+                //     "drop" -> Json.arr(
+                //       "all"
+                //     ),
+                //     "readOnlyRootFilesystem" -> true
+                //   )
+                // ),
                 "env" -> Json.arr(
                   envVariable("TOKEN_SECRET", tokenSecret),
                   envVariable("OTOROSHI_DOMAIN", otoroshi.select("domain").asOpt[String].getOrElse("otoroshi.mesh")),
@@ -388,21 +388,24 @@ class KubernetesAdmissionWebhookSidecarInjector extends RequestSink {
                 //"command" -> Json.arr("dnsmasq", "-k", "--address=/otoroshi.mesh/127.0.0.1", "--server=`cat /etc/resolv.back.conf | grep nameserver | awk '{print $2}'`", "--no-daemon")
               )
             ),*/
-            // Json.obj(
-            //   "op" -> "add",
-            //   "path" -> "/spec/initContainers",
-            //   "value" -> Json.arr()
-            // ),
-            // Json.obj(
-            //   "op" -> "add",
-            //   "path" -> "/spec/initContainers/-",
-            //   "value" -> Json.obj(
-            //     "image" -> "busybox:1.28",
-            //     "imagePullPolicy" -> "Always",
-            //     "name" -> "otoroshi-sidecar-dns-config",
-            //     "command" -> Json.arr("sh", "-c", "ls -ahl /etc; cp /etc/resolv.conf /etc/resolv.back.conf; ls -ahl /etc; echo 'nameserver=127.0.0.1' > /etc/resolv.conf;")
-            //   )
-            // ),
+            Json.obj(
+              "op" -> "add",
+              "path" -> "/spec/initContainers",
+              "value" -> Json.arr()
+            ),
+            Json.obj(
+              "op" -> "add",
+              "path" -> "/spec/initContainers/-",
+              "value" -> Json.obj(
+                "image" -> image.replace("otoroshi-sidecar:", "otoroshi-sidecar-init:"),
+                "imagePullPolicy" -> "Always",
+                "name" -> "otoroshi-sidecar-init",
+                "env" -> Json.arr(
+                  envVariableInt("FROM", 80),
+                  envVariableInt("TO",  ports.select("internal").asOpt[Int].getOrElse(8080))
+                )
+              )
+            ),
             // Json.obj(
             //   "op" -> "add",
             //   "path" -> "/spec/dnsConfig",
