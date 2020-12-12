@@ -10,7 +10,7 @@ function secondCall(req) {
     console.log('making second call')
     try {
       console.log("try")
-      http.get('http://backend.default.otoroshi.mesh:8080/api', {
+      http.get('http://backend.default.otoroshi.mesh/api', {
         // headers: {
         //   host: 'backend.default.otoroshi.mesh'
         // }
@@ -108,7 +108,7 @@ function InternalProxy(opts) {
       if (!isHandledByOtoroshi) {
         // just proxy here and not fail ???
         res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.write(JSON.stringify({ error: 'not an otoroshi request' }));
+        res.write(JSON.stringify({ error: 'not an otoroshi request ' + domain }));
         res.end();
         return;
       }
