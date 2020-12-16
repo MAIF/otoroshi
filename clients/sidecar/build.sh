@@ -29,12 +29,17 @@ case "${1}" in
     prepare_build
     build $2
     ;;
-  push)
+  push-all)
     cleanup
     prepare_build
     build $2
     docker push "maif/otoroshi-sidecar:$2"
     docker push "maif/otoroshi-sidecar:latest"
+    docker build --no-cache -t otoroshi-sidecar-init -f Dockerfile-init .
+    docker tag otoroshi-sidecar-init "maif/otoroshi-sidecar-init:$2"
+    docker tag otoroshi-sidecar-init "maif/otoroshi-sidecar-init:latest"
+    docker push "maif/otoroshi-sidecar-init:$2"
+    docker push "maif/otoroshi-sidecar-init:latest"
     ;;
   build-and-push-snapshot)
     cleanup
