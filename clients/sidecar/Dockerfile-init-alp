@@ -1,0 +1,5 @@
+FROM alpine:3.12
+RUN apk --no-cache add iptables
+COPY init.sh .
+RUN chmod +x ./init.sh
+ENTRYPOINT ["init.sh"]
