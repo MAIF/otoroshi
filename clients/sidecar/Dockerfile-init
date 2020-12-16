@@ -1,8 +1,11 @@
-FROM ubuntu:latest
+# FROM ubuntu:latest
 
 # Install the iptables command.
-RUN apt-get update && \
-    apt-get install -y iptables
+# RUN apt-get update && \
+#     apt-get install -y iptables
+
+FROM alpine:3.12
+RUN apk --no-cache add iptables
 
 # Copy the initialization script into the container.
 COPY init.sh /usr/local/bin/
