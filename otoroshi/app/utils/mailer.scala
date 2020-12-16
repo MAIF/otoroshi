@@ -30,28 +30,28 @@ case class ConsoleMailerSettings() extends MailerSettings with Exporter {
 
 case class MailjetSettings(apiKeyPublic: String, apiKeyPrivate: String, to: Seq[EmailLocation]) extends MailerSettings with Exporter {
   override def typ: String                                      = "mailjet"
-  override def asMailer(config: GlobalConfig, env: Env): Mailer = new MailjetMailer(env, config)
+  override def asMailer(config: GlobalConfig, env: Env): Mailer = new MailjetMailer(env, config, this)
   override def json: JsValue                                    = MailjetSettings.format.writes(this)
   override def toJson: JsValue                                  = MailjetSettings.format.writes(this)
 }
 
 case class MailgunSettings(eu: Boolean, apiKey: String, domain: String, to: Seq[EmailLocation]) extends MailerSettings with Exporter {
   override def typ: String                                      = "mailgun"
-  override def asMailer(config: GlobalConfig, env: Env): Mailer = new MailgunMailer(env, config)
+  override def asMailer(config: GlobalConfig, env: Env): Mailer = new MailgunMailer(env, config, this)
   override def json: JsValue                                    = MailgunSettings.format.writes(this)
   override def toJson: JsValue                                  = MailgunSettings.format.writes(this)
 }
 
 case class SendgridSettings(apiKey: String, to: Seq[EmailLocation]) extends MailerSettings with Exporter {
   override def typ: String                                      = "sendgrid"
-  override def asMailer(config: GlobalConfig, env: Env): Mailer = new SendgridMailer(env, config)
+  override def asMailer(config: GlobalConfig, env: Env): Mailer = new SendgridMailer(env, config, this)
   override def json: JsValue                                    = SendgridSettings.format.writes(this)
   override def toJson: JsValue                                    = SendgridSettings.format.writes(this)
 }
 
 case class GenericMailerSettings(url: String, headers: Map[String, String], to: Seq[EmailLocation]) extends MailerSettings with Exporter {
   override def typ: String                                      = "generic"
-  override def asMailer(config: GlobalConfig, env: Env): Mailer = new GenericMailer(env, config)
+  override def asMailer(config: GlobalConfig, env: Env): Mailer = new GenericMailer(env, config, this)
   override def json: JsValue                                    = GenericMailerSettings.format.writes(this)
   override def toJson: JsValue                                    = GenericMailerSettings.format.writes(this)
 }
@@ -287,20 +287,19 @@ class LogMailer() extends Mailer {
   }
 }
 
-class MailgunMailer(env: Env, config: GlobalConfig) extends Mailer {
+class MailgunMailer(env: Env, config: GlobalConfig, settings: MailgunSettings) extends Mailer {
 
   lazy val logger = Logger("otoroshi-mailgun-mailer")
 
   def send(from: EmailLocation, to: Seq[EmailLocation], subject: String, html: String)(
       implicit ec: ExecutionContext
   ): Future[Unit] = {
-    val fu = config.mailerSettings.flatMap(_.mailgunSettings).map { mailgunSettings =>
-      env.Ws // no need for mtls here
-        .url(mailgunSettings.eu match {
-          case true  => s"https://api.eu.mailgun.net/v3/${mailgunSettings.domain}/messages"
-          case false => s"https://api.mailgun.net/v3/${mailgunSettings.domain}/messages"
+    val fu =  env.Ws // no need for mtls here
+        .url(settings.eu match {
+          case true  => s"https://api.eu.mailgun.net/v3/${settings.domain}/messages"
+          case false => s"https://api.mailgun.net/v3/${settings.domain}/messages"
         })
-        .withAuth("api", mailgunSettings.apiKey, WSAuthScheme.BASIC)
+        .withAuth("api", settings.apiKey, WSAuthScheme.BASIC)
         .withMaybeProxyServer(config.proxies.alertEmails)
         .post(
           Map(
@@ -311,9 +310,6 @@ class MailgunMailer(env: Env, config: GlobalConfig) extends Mailer {
           )
         )
         .map(_.ignore()(env.otoroshiMaterializer))
-    } getOrElse {
-      FastFuture.successful(())
-    }
     fu.andThen {
         case Success(res) => logger.debug("Alert email sent")
         case Failure(e)   => logger.error("Error while sending alert email", e)
@@ -323,15 +319,14 @@ class MailgunMailer(env: Env, config: GlobalConfig) extends Mailer {
   }
 }
 
-class MailjetMailer(env: Env, config: GlobalConfig) extends Mailer {
+class MailjetMailer(env: Env, config: GlobalConfig, settings: MailjetSettings) extends Mailer {
 
   lazy val logger = Logger("otoroshi-mailjet-mailer")
 
   def send(from: EmailLocation, to: Seq[EmailLocation], subject: String, html: String)(
       implicit ec: ExecutionContext
   ): Future[Unit] = {
-    val fu = config.mailerSettings.flatMap(_.mailjetSettings).map { settings =>
-      env.Ws // no need for mtls here
+    val fu = env.Ws // no need for mtls here
         .url(s"https://api.mailjet.com/v3.1/send")
         .withAuth(settings.apiKeyPublic, settings.apiKeyPrivate, WSAuthScheme.BASIC)
         .withHttpHeaders("Content-Type" -> "application/json")
@@ -360,9 +355,6 @@ class MailjetMailer(env: Env, config: GlobalConfig) extends Mailer {
           )
         )
         .map(_.ignore()(env.otoroshiMaterializer))
-    } getOrElse {
-      FastFuture.successful(())
-    }
     fu.andThen {
         case Success(res) => logger.info("Alert email sent")
         case Failure(e)   => logger.error("Error while sending alert email", e)
@@ -372,15 +364,14 @@ class MailjetMailer(env: Env, config: GlobalConfig) extends Mailer {
   }
 }
 
-class SendgridMailer(env: Env, config: GlobalConfig) extends Mailer {
+class SendgridMailer(env: Env, config: GlobalConfig, settings: SendgridSettings) extends Mailer {
 
   lazy val logger = Logger("otoroshi-sendgrid-mailer")
 
   def send(from: EmailLocation, to: Seq[EmailLocation], subject: String, html: String)(
     implicit ec: ExecutionContext
   ): Future[Unit] = {
-    val fu = config.mailerSettings.flatMap(_.sendgridSettings).map { settings =>
-      env.Ws // no need for mtls here
+    val fu = env.Ws // no need for mtls here
         .url(s"https://api.sendgrid.com/v3/mail/send")
         .withHttpHeaders(
           "Authorization" -> s"Bearer ${settings.apiKey}",
@@ -410,9 +401,6 @@ class SendgridMailer(env: Env, config: GlobalConfig) extends Mailer {
           )
         ))
         .map(_.ignore()(env.otoroshiMaterializer))
-    } getOrElse {
-      FastFuture.successful(())
-    }
     fu.andThen {
       case Success(res) => logger.info("Alert email sent")
       case Failure(e)   => logger.error("Error while sending alert email", e)
@@ -422,15 +410,14 @@ class SendgridMailer(env: Env, config: GlobalConfig) extends Mailer {
   }
 }
 
-class GenericMailer(env: Env, config: GlobalConfig) extends Mailer {
+class GenericMailer(env: Env, config: GlobalConfig, settings: GenericMailerSettings) extends Mailer {
 
   lazy val logger = Logger("otoroshi-generic-mailer")
 
   def send(from: EmailLocation, to: Seq[EmailLocation], subject: String, html: String)(
       implicit ec: ExecutionContext
   ): Future[Unit] = {
-    val fu = config.mailerSettings.flatMap(_.genericSettings).map { settings =>
-      env.Ws // no need for mtls here
+    val fu = env.Ws // no need for mtls here
         .url(settings.url)
         .withHttpHeaders("Content-Type" -> "application/json")
         .addHttpHeaders(settings.headers.toSeq: _*)
@@ -454,9 +441,6 @@ class GenericMailer(env: Env, config: GlobalConfig) extends Mailer {
           )
         )
         .map(_.ignore()(env.otoroshiMaterializer))
-    } getOrElse {
-      FastFuture.successful(())
-    }
     fu.andThen {
         case Success(res) => logger.info("Alert email sent")
         case Failure(e)   => logger.error("Error while sending alert email", e)
