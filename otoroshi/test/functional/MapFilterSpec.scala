@@ -48,9 +48,9 @@ class MapFilterSpec extends WordSpec with MustMatchers with OptionValues {
       otoroshi.utils.Match.matches(source, Json.obj("codes" -> Json.obj("$all" -> Json.arr("a", "b", "c")))) mustBe false
     }
     "project objects" in {
-      otoroshi.utils.Project.project(source, Json.obj("foo"  -> true, "status" -> true)) mustBe Json.obj("foo" -> "bar", "status" -> 200)
-      otoroshi.utils.Project.project(source, Json.obj("foo"  -> true, "inner" -> true)) mustBe Json.obj("foo" -> "bar", "inner" -> Json.obj("foo" -> "bar", "bar" -> "foo"))
-      otoroshi.utils.Project.project(source, Json.obj("foo"  -> true, "inner" -> Json.obj("foo" -> true))) mustBe Json.obj("foo" -> "bar", "inner" -> Json.obj("foo" -> "bar"))
+      otoroshi.utils.Projection.project(source, Json.obj("foo"  -> true, "status" -> true), identity) mustBe Json.obj("foo" -> "bar", "status" -> 200)
+      otoroshi.utils.Projection.project(source, Json.obj("foo"  -> true, "inner" -> true), identity) mustBe Json.obj("foo" -> "bar", "inner" -> Json.obj("foo" -> "bar", "bar" -> "foo"))
+      otoroshi.utils.Projection.project(source, Json.obj("foo"  -> true, "inner" -> Json.obj("foo" -> true)), identity) mustBe Json.obj("foo" -> "bar", "inner" -> Json.obj("foo" -> "bar"))
     }
     "work on actual otoroshi event" in {
       val source = Json.parse(
@@ -558,7 +558,7 @@ class MapFilterSpec extends WordSpec with MustMatchers with OptionValues {
       )
 
       otoroshi.utils.Match.matches(source, predicate) mustBe true
-      val result = otoroshi.utils.Project.project(source, projection)
+      val result = otoroshi.utils.Projection.project(source, projection, identity)
       println(Json.prettyPrint(result))
     }
   }
