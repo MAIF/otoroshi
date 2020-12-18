@@ -989,46 +989,90 @@ spec:
             value: otoroshi-api-service.${namespace}.svc.cluster.local
           - name: OTOROSHI_SECRET
             value: ${otoroshiSecret}
+          - name: HEALTH_LIMIT
+            value: &quot;5000&quot;
+          - name: SSL_OUTSIDE_CLIENT_AUTH
+            value: Want
+          - name: HTTPS_WANT_CLIENT_AUTH
+            value: &quot;true&quot;
           - name: OTOROSHI_INITIAL_CUSTOMIZATION
             value: &gt;
               {
                 &quot;config&quot;:{
+                  &quot;tlsSettings&quot;: {
+                    &quot;defaultDomain&quot;: &quot;www.${domain}&quot;,
+                    &quot;randomIfNotFound&quot;: false
+                  },
                   &quot;scripts&quot;:{
                     &quot;enabled&quot;:true,
+                    &quot;sinkRefs&quot;:[
+                      &quot;cp:otoroshi.plugins.jobs.kubernetes.KubernetesAdmissionWebhookCRDValidator&quot;,
+                      &quot;cp:otoroshi.plugins.jobs.kubernetes.KubernetesAdmissionWebhookSidecarInjector&quot;
+                    ],
+                    &quot;sinkConfig&quot;: {},
                     &quot;jobRefs&quot;:[
                       &quot;cp:otoroshi.plugins.jobs.kubernetes.KubernetesOtoroshiCRDsControllerJob&quot;
                     ],
                     &quot;jobConfig&quot;:{
-                      &quot;KubernetesConfig&quot;:{
-                        &quot;trust&quot;:false,
-                        &quot;namespaces&quot;:[
+                      &quot;KubernetesConfig&quot;: {
+                        &quot;trust&quot;: false,
+                        &quot;namespaces&quot;: [
                           &quot;*&quot;
                         ],
-                        &quot;labels&quot;:[],
-                        &quot;ingressClasses&quot;:[
+                        &quot;labels&quot;: {},
+                        &quot;namespacesLabels&quot;: {},
+                        &quot;ingressClasses&quot;: [
                           &quot;otoroshi&quot;
                         ],
-                        &quot;defaultGroup&quot;:&quot;default&quot;,
-                        &quot;ingresses&quot;:true,
-                        &quot;crds&quot;:true,
-                        &quot;kubeLeader&quot;:false,
-                        &quot;restartDependantDeployments&quot;:false,
-                        &quot;templates&quot;:{
-                          &quot;service-group&quot;:{},
-                          &quot;service-descriptor&quot;:{},
-                          &quot;apikeys&quot;:{},
-                          &quot;global-config&quot;:{},
-                          &quot;jwt-verifier&quot;:{},
-                          &quot;tcp-service&quot;:{},
-                          &quot;certificate&quot;:{},
-                          &quot;auth-module&quot;:{},
-                          &quot;script&quot;:{}
+                        &quot;defaultGroup&quot;: &quot;default&quot;,
+                        &quot;ingresses&quot;: false,
+                        &quot;crds&quot;: true,
+                        &quot;coreDnsIntegration&quot;: false,
+                        &quot;coreDnsIntegrationDryRun&quot;: false,
+                        &quot;kubeLeader&quot;: false,
+                        &quot;restartDependantDeployments&quot;: false,
+                        &quot;watch&quot;: false,
+                        &quot;syncDaikokuApikeysOnly&quot;: false,
+                        &quot;kubeSystemNamespace&quot;: &quot;kube-system&quot;,
+                        &quot;coreDnsConfigMapName&quot;: &quot;coredns&quot;,
+                        &quot;coreDnsDeploymentName&quot;: &quot;coredns&quot;,
+                        &quot;corednsPort&quot;: 53,
+                        &quot;otoroshiServiceName&quot;: &quot;otoroshi-service&quot;,
+                        &quot;otoroshiNamespace&quot;: &quot;${namespace}&quot;,
+                        &quot;clusterDomain&quot;: &quot;cluster.local&quot;,
+                        &quot;syncIntervalSeconds&quot;: 60,
+                        &quot;coreDnsEnv&quot;: null,
+                        &quot;watchTimeoutSeconds&quot;: 60,
+                        &quot;watchGracePeriodSeconds&quot;: 5,
+                        &quot;mutatingWebhookName&quot;: &quot;otoroshi-admission-webhook-injector&quot;,
+                        &quot;validatingWebhookName&quot;: &quot;otoroshi-admission-webhook-validation&quot;,
+                        &quot;templates&quot;: {
+                          &quot;service-group&quot;: {},
+                          &quot;service-descriptor&quot;: {},
+                          &quot;apikeys&quot;: {},
+                          &quot;global-config&quot;: {},
+                          &quot;jwt-verifier&quot;: {},
+                          &quot;tcp-service&quot;: {},
+                          &quot;certificate&quot;: {},
+                          &quot;auth-module&quot;: {},
+                          &quot;script&quot;: {},
+                          &quot;organizations&quot;: {},
+                          &quot;teams&quot;: {},
+                          &quot;webhooks&quot;: {
+                            &quot;flags&quot;: {
+                              &quot;requestCert&quot;: true,
+                              &quot;originCheck&quot;: true,
+                              &quot;tokensCheck&quot;: true,
+                              &quot;displayEnv&quot;: false,
+                              &quot;tlsTrace&quot;: false
+                            }
+                          }
                         }
                       }
                     }
                   }
                 }
-              }
+              }  
           - name: JAVA_OPTS
             value: &#39;-Xms2g -Xmx4g&#39;
         readinessProbe:
@@ -1182,46 +1226,90 @@ spec:
             value: otoroshi-api-service.${namespace}.svc.cluster.local
           - name: OTOROSHI_SECRET
             value: ${otoroshiSecret}
+          - name: HEALTH_LIMIT
+            value: &quot;5000&quot;
+          - name: SSL_OUTSIDE_CLIENT_AUTH
+            value: Want
+          - name: HTTPS_WANT_CLIENT_AUTH
+            value: &quot;true&quot;
           - name: OTOROSHI_INITIAL_CUSTOMIZATION
             value: &gt;
               {
                 &quot;config&quot;:{
+                  &quot;tlsSettings&quot;: {
+                    &quot;defaultDomain&quot;: &quot;www.${domain}&quot;,
+                    &quot;randomIfNotFound&quot;: false
+                  },
                   &quot;scripts&quot;:{
                     &quot;enabled&quot;:true,
+                    &quot;sinkRefs&quot;:[
+                      &quot;cp:otoroshi.plugins.jobs.kubernetes.KubernetesAdmissionWebhookCRDValidator&quot;,
+                      &quot;cp:otoroshi.plugins.jobs.kubernetes.KubernetesAdmissionWebhookSidecarInjector&quot;
+                    ],
+                    &quot;sinkConfig&quot;: {},
                     &quot;jobRefs&quot;:[
                       &quot;cp:otoroshi.plugins.jobs.kubernetes.KubernetesOtoroshiCRDsControllerJob&quot;
                     ],
                     &quot;jobConfig&quot;:{
-                      &quot;KubernetesConfig&quot;:{
-                        &quot;trust&quot;:false,
-                        &quot;namespaces&quot;:[
+                      &quot;KubernetesConfig&quot;: {
+                        &quot;trust&quot;: false,
+                        &quot;namespaces&quot;: [
                           &quot;*&quot;
                         ],
-                        &quot;labels&quot;:[],
-                        &quot;ingressClasses&quot;:[
+                        &quot;labels&quot;: {},
+                        &quot;namespacesLabels&quot;: {},
+                        &quot;ingressClasses&quot;: [
                           &quot;otoroshi&quot;
                         ],
-                        &quot;defaultGroup&quot;:&quot;default&quot;,
-                        &quot;ingresses&quot;:true,
-                        &quot;crds&quot;:true,
-                        &quot;kubeLeader&quot;:false,
-                        &quot;restartDependantDeployments&quot;:false,
-                        &quot;templates&quot;:{
-                          &quot;service-group&quot;:{},
-                          &quot;service-descriptor&quot;:{},
-                          &quot;apikeys&quot;:{},
-                          &quot;global-config&quot;:{},
-                          &quot;jwt-verifier&quot;:{},
-                          &quot;tcp-service&quot;:{},
-                          &quot;certificate&quot;:{},
-                          &quot;auth-module&quot;:{},
-                          &quot;script&quot;:{}
+                        &quot;defaultGroup&quot;: &quot;default&quot;,
+                        &quot;ingresses&quot;: false,
+                        &quot;crds&quot;: true,
+                        &quot;coreDnsIntegration&quot;: false,
+                        &quot;coreDnsIntegrationDryRun&quot;: false,
+                        &quot;kubeLeader&quot;: false,
+                        &quot;restartDependantDeployments&quot;: false,
+                        &quot;watch&quot;: false,
+                        &quot;syncDaikokuApikeysOnly&quot;: false,
+                        &quot;kubeSystemNamespace&quot;: &quot;kube-system&quot;,
+                        &quot;coreDnsConfigMapName&quot;: &quot;coredns&quot;,
+                        &quot;coreDnsDeploymentName&quot;: &quot;coredns&quot;,
+                        &quot;corednsPort&quot;: 53,
+                        &quot;otoroshiServiceName&quot;: &quot;otoroshi-service&quot;,
+                        &quot;otoroshiNamespace&quot;: &quot;${namespace}&quot;,
+                        &quot;clusterDomain&quot;: &quot;cluster.local&quot;,
+                        &quot;syncIntervalSeconds&quot;: 60,
+                        &quot;coreDnsEnv&quot;: null,
+                        &quot;watchTimeoutSeconds&quot;: 60,
+                        &quot;watchGracePeriodSeconds&quot;: 5,
+                        &quot;mutatingWebhookName&quot;: &quot;otoroshi-admission-webhook-injector&quot;,
+                        &quot;validatingWebhookName&quot;: &quot;otoroshi-admission-webhook-validation&quot;,
+                        &quot;templates&quot;: {
+                          &quot;service-group&quot;: {},
+                          &quot;service-descriptor&quot;: {},
+                          &quot;apikeys&quot;: {},
+                          &quot;global-config&quot;: {},
+                          &quot;jwt-verifier&quot;: {},
+                          &quot;tcp-service&quot;: {},
+                          &quot;certificate&quot;: {},
+                          &quot;auth-module&quot;: {},
+                          &quot;script&quot;: {},
+                          &quot;organizations&quot;: {},
+                          &quot;teams&quot;: {},
+                          &quot;webhooks&quot;: {
+                            &quot;flags&quot;: {
+                              &quot;requestCert&quot;: true,
+                              &quot;originCheck&quot;: true,
+                              &quot;tokensCheck&quot;: true,
+                              &quot;displayEnv&quot;: false,
+                              &quot;tlsTrace&quot;: false
+                            }
+                          }
                         }
                       }
                     }
                   }
                 }
-              }
+              }  
           - name: JAVA_OPTS
             value: &#39;-Xms2g -Xmx4g&#39;
         readinessProbe:
@@ -1451,46 +1539,90 @@ spec:
             value: otoroshi-api-service.${namespace}.svc.cluster.local
           - name: OTOROSHI_SECRET
             value: ${otoroshiSecret}
+          - name: HEALTH_LIMIT
+            value: &quot;5000&quot;
+          - name: SSL_OUTSIDE_CLIENT_AUTH
+            value: Want
+          - name: HTTPS_WANT_CLIENT_AUTH
+            value: &quot;true&quot;
           - name: OTOROSHI_INITIAL_CUSTOMIZATION
             value: &gt;
               {
                 &quot;config&quot;:{
+                  &quot;tlsSettings&quot;: {
+                    &quot;defaultDomain&quot;: &quot;www.${domain}&quot;,
+                    &quot;randomIfNotFound&quot;: false
+                  },
                   &quot;scripts&quot;:{
                     &quot;enabled&quot;:true,
+                    &quot;sinkRefs&quot;:[
+                      &quot;cp:otoroshi.plugins.jobs.kubernetes.KubernetesAdmissionWebhookCRDValidator&quot;,
+                      &quot;cp:otoroshi.plugins.jobs.kubernetes.KubernetesAdmissionWebhookSidecarInjector&quot;
+                    ],
+                    &quot;sinkConfig&quot;: {},
                     &quot;jobRefs&quot;:[
                       &quot;cp:otoroshi.plugins.jobs.kubernetes.KubernetesOtoroshiCRDsControllerJob&quot;
                     ],
                     &quot;jobConfig&quot;:{
-                      &quot;KubernetesConfig&quot;:{
-                        &quot;trust&quot;:false,
-                        &quot;namespaces&quot;:[
+                      &quot;KubernetesConfig&quot;: {
+                        &quot;trust&quot;: false,
+                        &quot;namespaces&quot;: [
                           &quot;*&quot;
                         ],
-                        &quot;labels&quot;:[],
-                        &quot;ingressClasses&quot;:[
+                        &quot;labels&quot;: {},
+                        &quot;namespacesLabels&quot;: {},
+                        &quot;ingressClasses&quot;: [
                           &quot;otoroshi&quot;
                         ],
-                        &quot;defaultGroup&quot;:&quot;default&quot;,
-                        &quot;ingresses&quot;:true,
-                        &quot;crds&quot;:true,
-                        &quot;kubeLeader&quot;:false,
-                        &quot;restartDependantDeployments&quot;:false,
-                        &quot;templates&quot;:{
-                          &quot;service-group&quot;:{},
-                          &quot;service-descriptor&quot;:{},
-                          &quot;apikeys&quot;:{},
-                          &quot;global-config&quot;:{},
-                          &quot;jwt-verifier&quot;:{},
-                          &quot;tcp-service&quot;:{},
-                          &quot;certificate&quot;:{},
-                          &quot;auth-module&quot;:{},
-                          &quot;script&quot;:{}
+                        &quot;defaultGroup&quot;: &quot;default&quot;,
+                        &quot;ingresses&quot;: false,
+                        &quot;crds&quot;: true,
+                        &quot;coreDnsIntegration&quot;: false,
+                        &quot;coreDnsIntegrationDryRun&quot;: false,
+                        &quot;kubeLeader&quot;: false,
+                        &quot;restartDependantDeployments&quot;: false,
+                        &quot;watch&quot;: false,
+                        &quot;syncDaikokuApikeysOnly&quot;: false,
+                        &quot;kubeSystemNamespace&quot;: &quot;kube-system&quot;,
+                        &quot;coreDnsConfigMapName&quot;: &quot;coredns&quot;,
+                        &quot;coreDnsDeploymentName&quot;: &quot;coredns&quot;,
+                        &quot;corednsPort&quot;: 53,
+                        &quot;otoroshiServiceName&quot;: &quot;otoroshi-service&quot;,
+                        &quot;otoroshiNamespace&quot;: &quot;${namespace}&quot;,
+                        &quot;clusterDomain&quot;: &quot;cluster.local&quot;,
+                        &quot;syncIntervalSeconds&quot;: 60,
+                        &quot;coreDnsEnv&quot;: null,
+                        &quot;watchTimeoutSeconds&quot;: 60,
+                        &quot;watchGracePeriodSeconds&quot;: 5,
+                        &quot;mutatingWebhookName&quot;: &quot;otoroshi-admission-webhook-injector&quot;,
+                        &quot;validatingWebhookName&quot;: &quot;otoroshi-admission-webhook-validation&quot;,
+                        &quot;templates&quot;: {
+                          &quot;service-group&quot;: {},
+                          &quot;service-descriptor&quot;: {},
+                          &quot;apikeys&quot;: {},
+                          &quot;global-config&quot;: {},
+                          &quot;jwt-verifier&quot;: {},
+                          &quot;tcp-service&quot;: {},
+                          &quot;certificate&quot;: {},
+                          &quot;auth-module&quot;: {},
+                          &quot;script&quot;: {},
+                          &quot;organizations&quot;: {},
+                          &quot;teams&quot;: {},
+                          &quot;webhooks&quot;: {
+                            &quot;flags&quot;: {
+                              &quot;requestCert&quot;: true,
+                              &quot;originCheck&quot;: true,
+                              &quot;tokensCheck&quot;: true,
+                              &quot;displayEnv&quot;: false,
+                              &quot;tlsTrace&quot;: false
+                            }
+                          }
                         }
                       }
                     }
                   }
                 }
-              }
+              }  
           - name: JAVA_OPTS
             value: &#39;-Xms2g -Xmx4g&#39;
         readinessProbe:
@@ -1714,46 +1846,90 @@ spec:
             value: ${clientSecret}
           - name: OTOROSHI_SECRET
             value: ${otoroshiSecret}
+          - name: HEALTH_LIMIT
+            value: &quot;5000&quot;
+          - name: SSL_OUTSIDE_CLIENT_AUTH
+            value: Want
+          - name: HTTPS_WANT_CLIENT_AUTH
+            value: &quot;true&quot;
           - name: OTOROSHI_INITIAL_CUSTOMIZATION
             value: &gt;
               {
                 &quot;config&quot;:{
+                  &quot;tlsSettings&quot;: {
+                    &quot;defaultDomain&quot;: &quot;www.${domain}&quot;,
+                    &quot;randomIfNotFound&quot;: false
+                  },
                   &quot;scripts&quot;:{
                     &quot;enabled&quot;:true,
+                    &quot;sinkRefs&quot;:[
+                      &quot;cp:otoroshi.plugins.jobs.kubernetes.KubernetesAdmissionWebhookCRDValidator&quot;,
+                      &quot;cp:otoroshi.plugins.jobs.kubernetes.KubernetesAdmissionWebhookSidecarInjector&quot;
+                    ],
+                    &quot;sinkConfig&quot;: {},
                     &quot;jobRefs&quot;:[
                       &quot;cp:otoroshi.plugins.jobs.kubernetes.KubernetesOtoroshiCRDsControllerJob&quot;
                     ],
                     &quot;jobConfig&quot;:{
-                      &quot;KubernetesConfig&quot;:{
-                        &quot;trust&quot;:false,
-                        &quot;namespaces&quot;:[
+                      &quot;KubernetesConfig&quot;: {
+                        &quot;trust&quot;: false,
+                        &quot;namespaces&quot;: [
                           &quot;*&quot;
                         ],
-                        &quot;labels&quot;:[],
-                        &quot;ingressClasses&quot;:[
+                        &quot;labels&quot;: {},
+                        &quot;namespacesLabels&quot;: {},
+                        &quot;ingressClasses&quot;: [
                           &quot;otoroshi&quot;
                         ],
-                        &quot;defaultGroup&quot;:&quot;default&quot;,
-                        &quot;ingresses&quot;:true,
-                        &quot;crds&quot;:true,
-                        &quot;kubeLeader&quot;:false,
-                        &quot;restartDependantDeployments&quot;:false,
-                        &quot;templates&quot;:{
-                          &quot;service-group&quot;:{},
-                          &quot;service-descriptor&quot;:{},
-                          &quot;apikeys&quot;:{},
-                          &quot;global-config&quot;:{},
-                          &quot;jwt-verifier&quot;:{},
-                          &quot;tcp-service&quot;:{},
-                          &quot;certificate&quot;:{},
-                          &quot;auth-module&quot;:{},
-                          &quot;script&quot;:{}
+                        &quot;defaultGroup&quot;: &quot;default&quot;,
+                        &quot;ingresses&quot;: false,
+                        &quot;crds&quot;: true,
+                        &quot;coreDnsIntegration&quot;: false,
+                        &quot;coreDnsIntegrationDryRun&quot;: false,
+                        &quot;kubeLeader&quot;: false,
+                        &quot;restartDependantDeployments&quot;: false,
+                        &quot;watch&quot;: false,
+                        &quot;syncDaikokuApikeysOnly&quot;: false,
+                        &quot;kubeSystemNamespace&quot;: &quot;kube-system&quot;,
+                        &quot;coreDnsConfigMapName&quot;: &quot;coredns&quot;,
+                        &quot;coreDnsDeploymentName&quot;: &quot;coredns&quot;,
+                        &quot;corednsPort&quot;: 53,
+                        &quot;otoroshiServiceName&quot;: &quot;otoroshi-worker-service&quot;,
+                        &quot;otoroshiNamespace&quot;: &quot;${namespace}&quot;,
+                        &quot;clusterDomain&quot;: &quot;cluster.local&quot;,
+                        &quot;syncIntervalSeconds&quot;: 60,
+                        &quot;coreDnsEnv&quot;: null,
+                        &quot;watchTimeoutSeconds&quot;: 60,
+                        &quot;watchGracePeriodSeconds&quot;: 5,
+                        &quot;mutatingWebhookName&quot;: &quot;otoroshi-admission-webhook-injector&quot;,
+                        &quot;validatingWebhookName&quot;: &quot;otoroshi-admission-webhook-validation&quot;,
+                        &quot;templates&quot;: {
+                          &quot;service-group&quot;: {},
+                          &quot;service-descriptor&quot;: {},
+                          &quot;apikeys&quot;: {},
+                          &quot;global-config&quot;: {},
+                          &quot;jwt-verifier&quot;: {},
+                          &quot;tcp-service&quot;: {},
+                          &quot;certificate&quot;: {},
+                          &quot;auth-module&quot;: {},
+                          &quot;script&quot;: {},
+                          &quot;organizations&quot;: {},
+                          &quot;teams&quot;: {},
+                          &quot;webhooks&quot;: {
+                            &quot;flags&quot;: {
+                              &quot;requestCert&quot;: true,
+                              &quot;originCheck&quot;: true,
+                              &quot;tokensCheck&quot;: true,
+                              &quot;displayEnv&quot;: false,
+                              &quot;tlsTrace&quot;: false
+                            }
+                          }
                         }
                       }
                     }
                   }
                 }
-              }          
+              }        
           - name: JAVA_OPTS
             value: &#39;-Xms2g -Xmx4g&#39;
         readinessProbe:
@@ -1840,6 +2016,12 @@ spec:
             value: ${clientSecret}
           - name: CLUSTER_LEADER_CLIENT_SECRET
             value: ${clientSecret}
+          - name: HEALTH_LIMIT
+            value: &quot;5000&quot;
+          - name: SSL_OUTSIDE_CLIENT_AUTH
+            value: Want
+          - name: HTTPS_WANT_CLIENT_AUTH
+            value: &quot;true&quot;
           - name: JAVA_OPTS
             value: &#39;-Xms2g -Xmx4g&#39;  
         readinessProbe:
@@ -2053,46 +2235,90 @@ spec:
             value: ${clientSecret}
           - name: OTOROSHI_SECRET
             value: ${otoroshiSecret}
+          - name: HEALTH_LIMIT
+            value: &quot;5000&quot;
+          - name: SSL_OUTSIDE_CLIENT_AUTH
+            value: Want
+          - name: HTTPS_WANT_CLIENT_AUTH
+            value: &quot;true&quot;
           - name: OTOROSHI_INITIAL_CUSTOMIZATION
             value: &gt;
               {
                 &quot;config&quot;:{
+                  &quot;tlsSettings&quot;: {
+                    &quot;defaultDomain&quot;: &quot;www.${domain}&quot;,
+                    &quot;randomIfNotFound&quot;: false
+                  },
                   &quot;scripts&quot;:{
                     &quot;enabled&quot;:true,
+                    &quot;sinkRefs&quot;:[
+                      &quot;cp:otoroshi.plugins.jobs.kubernetes.KubernetesAdmissionWebhookCRDValidator&quot;,
+                      &quot;cp:otoroshi.plugins.jobs.kubernetes.KubernetesAdmissionWebhookSidecarInjector&quot;
+                    ],
+                    &quot;sinkConfig&quot;: {},
                     &quot;jobRefs&quot;:[
                       &quot;cp:otoroshi.plugins.jobs.kubernetes.KubernetesOtoroshiCRDsControllerJob&quot;
                     ],
                     &quot;jobConfig&quot;:{
-                      &quot;KubernetesConfig&quot;:{
-                        &quot;trust&quot;:false,
-                        &quot;namespaces&quot;:[
+                      &quot;KubernetesConfig&quot;: {
+                        &quot;trust&quot;: false,
+                        &quot;namespaces&quot;: [
                           &quot;*&quot;
                         ],
-                        &quot;labels&quot;:[],
-                        &quot;ingressClasses&quot;:[
+                        &quot;labels&quot;: {},
+                        &quot;namespacesLabels&quot;: {},
+                        &quot;ingressClasses&quot;: [
                           &quot;otoroshi&quot;
                         ],
-                        &quot;defaultGroup&quot;:&quot;default&quot;,
-                        &quot;ingresses&quot;:true,
-                        &quot;crds&quot;:true,
-                        &quot;kubeLeader&quot;:false,
-                        &quot;restartDependantDeployments&quot;:false,
-                        &quot;templates&quot;:{
-                          &quot;service-group&quot;:{},
-                          &quot;service-descriptor&quot;:{},
-                          &quot;apikeys&quot;:{},
-                          &quot;global-config&quot;:{},
-                          &quot;jwt-verifier&quot;:{},
-                          &quot;tcp-service&quot;:{},
-                          &quot;certificate&quot;:{},
-                          &quot;auth-module&quot;:{},
-                          &quot;script&quot;:{}
+                        &quot;defaultGroup&quot;: &quot;default&quot;,
+                        &quot;ingresses&quot;: false,
+                        &quot;crds&quot;: true,
+                        &quot;coreDnsIntegration&quot;: false,
+                        &quot;coreDnsIntegrationDryRun&quot;: false,
+                        &quot;kubeLeader&quot;: false,
+                        &quot;restartDependantDeployments&quot;: false,
+                        &quot;watch&quot;: false,
+                        &quot;syncDaikokuApikeysOnly&quot;: false,
+                        &quot;kubeSystemNamespace&quot;: &quot;kube-system&quot;,
+                        &quot;coreDnsConfigMapName&quot;: &quot;coredns&quot;,
+                        &quot;coreDnsDeploymentName&quot;: &quot;coredns&quot;,
+                        &quot;corednsPort&quot;: 53,
+                        &quot;otoroshiServiceName&quot;: &quot;otoroshi-worker-service&quot;,
+                        &quot;otoroshiNamespace&quot;: &quot;${namespace}&quot;,
+                        &quot;clusterDomain&quot;: &quot;cluster.local&quot;,
+                        &quot;syncIntervalSeconds&quot;: 60,
+                        &quot;coreDnsEnv&quot;: null,
+                        &quot;watchTimeoutSeconds&quot;: 60,
+                        &quot;watchGracePeriodSeconds&quot;: 5,
+                        &quot;mutatingWebhookName&quot;: &quot;otoroshi-admission-webhook-injector&quot;,
+                        &quot;validatingWebhookName&quot;: &quot;otoroshi-admission-webhook-validation&quot;,
+                        &quot;templates&quot;: {
+                          &quot;service-group&quot;: {},
+                          &quot;service-descriptor&quot;: {},
+                          &quot;apikeys&quot;: {},
+                          &quot;global-config&quot;: {},
+                          &quot;jwt-verifier&quot;: {},
+                          &quot;tcp-service&quot;: {},
+                          &quot;certificate&quot;: {},
+                          &quot;auth-module&quot;: {},
+                          &quot;script&quot;: {},
+                          &quot;organizations&quot;: {},
+                          &quot;teams&quot;: {},
+                          &quot;webhooks&quot;: {
+                            &quot;flags&quot;: {
+                              &quot;requestCert&quot;: true,
+                              &quot;originCheck&quot;: true,
+                              &quot;tokensCheck&quot;: true,
+                              &quot;displayEnv&quot;: false,
+                              &quot;tlsTrace&quot;: false
+                            }
+                          }
                         }
                       }
                     }
                   }
                 }
-              }
+              }  
           - name: JAVA_OPTS
             value: &#39;-Xms2g -Xmx4g&#39;
         readinessProbe:
@@ -2179,6 +2405,12 @@ spec:
             value: ${clientSecret}
           - name: CLUSTER_LEADER_CLIENT_SECRET
             value: ${clientSecret}
+          - name: HEALTH_LIMIT
+            value: &quot;5000&quot;
+          - name: SSL_OUTSIDE_CLIENT_AUTH
+            value: Want
+          - name: HTTPS_WANT_CLIENT_AUTH
+            value: &quot;true&quot;
           - name: JAVA_OPTS
             value: &#39;-Xms2g -Xmx4g&#39;
         readinessProbe:
@@ -2447,46 +2679,90 @@ spec:
             value: ${clientSecret}
           - name: OTOROSHI_SECRET
             value: ${otoroshiSecret}
+          - name: HEALTH_LIMIT
+            value: &quot;5000&quot;
+          - name: SSL_OUTSIDE_CLIENT_AUTH
+            value: Want
+          - name: HTTPS_WANT_CLIENT_AUTH
+            value: &quot;true&quot;
           - name: OTOROSHI_INITIAL_CUSTOMIZATION
             value: &gt;
               {
                 &quot;config&quot;:{
+                  &quot;tlsSettings&quot;: {
+                    &quot;defaultDomain&quot;: &quot;www.${domain}&quot;,
+                    &quot;randomIfNotFound&quot;: false
+                  },
                   &quot;scripts&quot;:{
                     &quot;enabled&quot;:true,
+                    &quot;sinkRefs&quot;:[
+                      &quot;cp:otoroshi.plugins.jobs.kubernetes.KubernetesAdmissionWebhookCRDValidator&quot;,
+                      &quot;cp:otoroshi.plugins.jobs.kubernetes.KubernetesAdmissionWebhookSidecarInjector&quot;
+                    ],
+                    &quot;sinkConfig&quot;: {},
                     &quot;jobRefs&quot;:[
                       &quot;cp:otoroshi.plugins.jobs.kubernetes.KubernetesOtoroshiCRDsControllerJob&quot;
                     ],
                     &quot;jobConfig&quot;:{
-                      &quot;KubernetesConfig&quot;:{
-                        &quot;trust&quot;:false,
-                        &quot;namespaces&quot;:[
+                      &quot;KubernetesConfig&quot;: {
+                        &quot;trust&quot;: false,
+                        &quot;namespaces&quot;: [
                           &quot;*&quot;
                         ],
-                        &quot;labels&quot;:[],
-                        &quot;ingressClasses&quot;:[
+                        &quot;labels&quot;: {},
+                        &quot;namespacesLabels&quot;: {},
+                        &quot;ingressClasses&quot;: [
                           &quot;otoroshi&quot;
                         ],
-                        &quot;defaultGroup&quot;:&quot;default&quot;,
-                        &quot;ingresses&quot;:true,
-                        &quot;crds&quot;:true,
-                        &quot;kubeLeader&quot;:false,
-                        &quot;restartDependantDeployments&quot;:false,
-                        &quot;templates&quot;:{
-                          &quot;service-group&quot;:{},
-                          &quot;service-descriptor&quot;:{},
-                          &quot;apikeys&quot;:{},
-                          &quot;global-config&quot;:{},
-                          &quot;jwt-verifier&quot;:{},
-                          &quot;tcp-service&quot;:{},
-                          &quot;certificate&quot;:{},
-                          &quot;auth-module&quot;:{},
-                          &quot;script&quot;:{}
+                        &quot;defaultGroup&quot;: &quot;default&quot;,
+                        &quot;ingresses&quot;: false,
+                        &quot;crds&quot;: true,
+                        &quot;coreDnsIntegration&quot;: false,
+                        &quot;coreDnsIntegrationDryRun&quot;: false,
+                        &quot;kubeLeader&quot;: false,
+                        &quot;restartDependantDeployments&quot;: false,
+                        &quot;watch&quot;: false,
+                        &quot;syncDaikokuApikeysOnly&quot;: false,
+                        &quot;kubeSystemNamespace&quot;: &quot;kube-system&quot;,
+                        &quot;coreDnsConfigMapName&quot;: &quot;coredns&quot;,
+                        &quot;coreDnsDeploymentName&quot;: &quot;coredns&quot;,
+                        &quot;corednsPort&quot;: 53,
+                        &quot;otoroshiServiceName&quot;: &quot;otoroshi-worker-service&quot;,
+                        &quot;otoroshiNamespace&quot;: &quot;${namespace}&quot;,
+                        &quot;clusterDomain&quot;: &quot;cluster.local&quot;,
+                        &quot;syncIntervalSeconds&quot;: 60,
+                        &quot;coreDnsEnv&quot;: null,
+                        &quot;watchTimeoutSeconds&quot;: 60,
+                        &quot;watchGracePeriodSeconds&quot;: 5,
+                        &quot;mutatingWebhookName&quot;: &quot;otoroshi-admission-webhook-injector&quot;,
+                        &quot;validatingWebhookName&quot;: &quot;otoroshi-admission-webhook-validation&quot;,
+                        &quot;templates&quot;: {
+                          &quot;service-group&quot;: {},
+                          &quot;service-descriptor&quot;: {},
+                          &quot;apikeys&quot;: {},
+                          &quot;global-config&quot;: {},
+                          &quot;jwt-verifier&quot;: {},
+                          &quot;tcp-service&quot;: {},
+                          &quot;certificate&quot;: {},
+                          &quot;auth-module&quot;: {},
+                          &quot;script&quot;: {},
+                          &quot;organizations&quot;: {},
+                          &quot;teams&quot;: {},
+                          &quot;webhooks&quot;: {
+                            &quot;flags&quot;: {
+                              &quot;requestCert&quot;: true,
+                              &quot;originCheck&quot;: true,
+                              &quot;tokensCheck&quot;: true,
+                              &quot;displayEnv&quot;: false,
+                              &quot;tlsTrace&quot;: false
+                            }
+                          }
                         }
                       }
                     }
                   }
                 }
-              }
+              }  
           - name: JAVA_OPTS
             value: &#39;-Xms2g -Xmx4g&#39;
         readinessProbe:
@@ -2587,6 +2863,12 @@ spec:
             value: ${clientSecret}
           - name: CLUSTER_LEADER_CLIENT_SECRET
             value: ${clientSecret}
+          - name: HEALTH_LIMIT
+            value: &quot;5000&quot;
+          - name: SSL_OUTSIDE_CLIENT_AUTH
+            value: Want
+          - name: HTTPS_WANT_CLIENT_AUTH
+            value: &quot;true&quot;
           - name: JAVA_OPTS
             value: &#39;-Xms2g -Xmx4g&#39;
         readinessProbe:
@@ -3748,6 +4030,487 @@ CLIENT_SECRET=&quot;xxx&quot;
 
 curl -X GET https://my-awesome-service.my-awesome-service-namespace.otoroshi.mesh:8443/get -u &quot;$CLIENT_ID:$CLIENT_SECRET&quot;
 </code></pre>
+<h3><a href="#using-openshift-dns-operator" name="using-openshift-dns-operator" class="anchor"><span class="anchor-link"></span></a>Using Openshift DNS operator</h3>
+<p>Openshift DNS operator does not allow to customize DNS configuration a lot, so you will have to provide your own coredns deployment and declare it as a stub in the Openshift DNS operator. </p>
+<p>Here is an example of coredns deployment with otoroshi domain config</p>
+<dl>
+  <dt>coredns.yaml
+  </dt>
+  <dd>
+  <pre class="prettyprint"><code class="language-yaml">---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otoroshi-dns
+  labels:
+    app: otoroshi
+    component: coredns
+data:
+  Corefile: |
+    otoroshi.mesh:5353 {
+        errors
+        health
+        ready
+        kubernetes cluster.local in-addr.arpa ip6.arpa {
+            pods insecure
+            fallthrough in-addr.arpa ip6.arpa
+        }
+        rewrite name regex (.*)\.otoroshi\.mesh otoroshi-service.otoroshi.svc.cluster.local
+        forward . /etc/resolv.conf
+        cache 30
+        loop
+        reload
+        loadbalance
+    }
+    .:5353 {
+        errors
+        health
+        kubernetes cluster.local in-addr.arpa ip6.arpa {
+          pods insecure
+          fallthrough in-addr.arpa ip6.arpa
+        }
+        forward . /etc/resolv.conf
+        cache 30
+        loop
+        reload
+        loadbalance
+    }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: otoroshi-dns
+  labels:
+    app: otoroshi
+    component: coredns
+spec:
+  # clusterIP: 1.1.1.1
+  selector:
+    app: otoroshi
+    component: coredns
+  type: ClusterIP
+  ports:
+    - name: dns
+      port: 5353
+      protocol: UDP
+    - name: dns-tcp
+      port: 5353
+      protocol: TCP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otoroshi-dns
+  labels:
+    app: otoroshi
+    component: coredns
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: otoroshi
+      component: coredns
+  template:
+    metadata:
+      labels:
+        app: otoroshi
+        component: coredns
+    spec:
+      serviceAccountName: otoroshi-admin-user
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - otoroshi
+                    - key: component
+                      operator: In
+                      values:
+                        - coredns
+                topologyKey: &quot;kubernetes.io/hostname&quot;
+      tolerations:
+        - key: &quot;CriticalAddonsOnly&quot;
+          operator: &quot;Exists&quot;
+      containers:
+        - name: coredns
+          image: coredns/coredns:1.8.0
+          imagePullPolicy: IfNotPresent
+          resources:
+            limits:
+              memory: 170Mi
+            requests:
+              cpu: 100m
+              memory: 70Mi
+          args: [ &quot;-conf&quot;, &quot;/etc/coredns/Corefile&quot; ]
+          volumeMounts:
+            - name: config-volume
+              mountPath: /etc/coredns
+              readOnly: true
+          ports:
+            - containerPort: 5353
+              name: dns
+              protocol: UDP
+            - containerPort: 5353
+              name: dns-tcp
+              protocol: TCP
+          securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            add:
+            - NET_BIND_SERVICE
+            drop:
+            - all
+          readOnlyRootFilesystem: true
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 30
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 5
+      dnsPolicy: Default
+      volumes:
+        - name: config-volume
+          configMap:
+            name: otoroshi-dns
+            items:
+              - key: Corefile
+                path: Corefile
+  </code></pre></dd>
+</dl>
+<p>then you can enable the Openshift DNS operator integration in the otoroshi kubernetes job</p>
+<pre class="prettyprint"><code class="language-javascript">{
+  &quot;KubernetesConfig&quot;: {
+    ...
+    &quot;openshiftDnsOperatorIntegration&quot;: true,                // enable openshift dns operator integration for intra cluster calls
+    &quot;openshiftDnsOperatorCoreDnsNamespace&quot;: &quot;otoroshi&quot;,    // namespace where coredns is installed
+    &quot;openshiftDnsOperatorCoreDnsName&quot;: &quot;otoroshi-dns&quot;,     // name of the coredns service
+    &quot;openshiftDnsOperatorCoreDnsPort&quot;: 5353,               // port of the coredns service
+    ...
+  }
+}
+</code></pre>
+<p>don&rsquo;t forget to update the otoroshi <code>ClusterRole</code></p>
+<pre class="prettyprint"><code class="language-yaml">- apiGroups:
+    - operator.openshift.io
+  resources:
+    - dnses
+  verbs:
+    - get
+    - list
+    - watch
+    - update
+</code></pre>
+<h2><a href="#easier-integration-with-otoroshi-sidecar" name="easier-integration-with-otoroshi-sidecar" class="anchor"><span class="anchor-link"></span></a>Easier integration with otoroshi-sidecar</h2>
+<p>Otoroshi can help you to easily use existing services without modifications while gettings all the perks of otoroshi like apikeys, mTLS, exchange protocol, etc. To do so, otoroshi will inject a sidecar container in the pod of your deployment that will handle call coming from otoroshi and going to otoroshi. To enable otoroshi-sidecar, you need to deploy the following admission webhooks</p>
+<dl>
+  <dt>webhooks.yaml
+  </dt>
+  <dd>
+  <pre class="prettyprint"><code class="language-yaml">---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: otoroshi-admission-webhook-validation
+  labels:
+    app: otoroshi
+    component: otoroshi-validation-webhook
+webhooks:
+  - name: otoroshi-admission-webhook.otoroshi.io
+    rules:
+      - operations: 
+          - &quot;CREATE&quot;
+          - &quot;UPDATE&quot;
+        apiGroups: 
+          - &quot;proxy.otoroshi.io&quot;
+        apiVersions: 
+          - &quot;*&quot;
+        resources: 
+          - &quot;*&quot;
+        scope: &quot;Namespaced&quot;
+    clientConfig:
+      # url: &quot;https://otoroshi-kubernetes-admission-webhook.otoroshi.svc.cluster.local:8443/apis/webhooks/validation&quot;
+      service:
+        name: otoroshi-service
+        namespace: otoroshi
+        path: &quot;/apis/webhooks/validation&quot;
+        port: 8443
+      caBundle: &quot;&quot; # injected at runtime
+    failurePolicy: Ignore # inject at runtime
+    sideEffects: None
+    admissionReviewVersions: 
+      - &quot;v1&quot;
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: otoroshi-admission-webhook-injector
+  labels:
+    app: otoroshi
+    component: otoroshi-validation-webhook
+webhooks:
+  - name: otoroshi-admission-webhook-injector.otoroshi.io
+    rules:
+      - operations: 
+          - &quot;CREATE&quot; 
+        apiGroups: 
+          - &quot;&quot;
+        apiVersions: 
+          - &quot;v1&quot;
+        resources: 
+          - &quot;pods&quot;
+        scope: &quot;Namespaced&quot;
+    # namespaceSelector:
+    #   matchLabels:
+    #     otoroshi.io/sidecar: inject
+    objectSelector:
+      matchLabels:
+        otoroshi.io/sidecar: inject
+    clientConfig:
+      # url: &quot;https://otoroshi-kubernetes-admission-webhook.otoroshi.svc.cluster.local:8443/apis/webhooks/inject&quot;
+      service:
+        name: otoroshi-service
+        namespace: otoroshi
+        path: &quot;/apis/webhooks/inject&quot;
+        port: 8443
+      caBundle: &quot;&quot; # inject at runtime
+    failurePolicy: Ignore # inject at runtime
+    sideEffects: None
+    admissionReviewVersions: 
+      - &quot;v1&quot;</code></pre></dd>
+</dl>
+<p>then it&rsquo;s quite easy to add the sidecar, just add the following label to your pod <code>otoroshi.io/sidecar: inject</code> and some annotations to tell otoroshi what certificates and apikeys to use.</p>
+<pre class="prettyprint"><code class="language-yaml">annotations:
+  otoroshi.io/sidecar-apikey: backend-apikey
+  otoroshi.io/sidecar-backend-cert: backend-cert
+  otoroshi.io/sidecar-client-cert: oto-client-cert
+  otoroshi.io/token-secret: secret
+  otoroshi.io/expected-dn: UID=oto-client-cert, O=OtoroshiApps
+</code></pre>
+<p>now you can just call you otoroshi handled apis from inside your pod like <code>curl http://my-service.namespace.otoroshi.mesh/api</code> without passing any apikey or client certificate and the sidecar will handle everything for you. Same thing for call from otoroshi to your pod, everything will be done in mTLS fashion with apikeys and otoroshi exchange protocol</p>
+<p>here is a full example</p>
+<dl>
+  <dt>sidecar.yaml
+  </dt>
+  <dd>
+  <pre class="prettyprint"><code class="language-yaml">---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-deployment
+spec:
+  selector:
+    matchLabels:
+      run: app-deployment
+      app: node
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        run: app-deployment
+        app: node
+        foo: bar
+        otoroshi.io/sidecar: inject
+      annotations:
+        otoroshi.io/sidecar-apikey: backend-apikey
+        otoroshi.io/sidecar-backend-cert: backend-cert
+        otoroshi.io/sidecar-client-cert: oto-client-cert
+        otoroshi.io/token-secret: secret
+        otoroshi.io/expected-dn: UID=oto-client-cert, O=OtoroshiApps
+    spec:
+      containers:
+      - image: containous/whoami:latest
+        name: whoami
+        args: [&quot;--port&quot;, &quot;8081&quot;]
+        ports:
+          - name: main-port
+            containerPort: 8081
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: app-service
+spec:
+  selector:
+    run: app-deployment
+  ports:
+  - port: 8443
+    name: &quot;https&quot;
+    targetPort: &quot;https&quot;
+---
+apiVersion: proxy.otoroshi.io/v1alpha1
+kind: Certificate
+metadata:
+  name: backend-cert
+spec:
+  description: backend-cert
+  autoRenew: true
+  exportSecret: true 
+  secretName: backend-cert
+  csr:
+    hosts:
+      - app-service.default.svc.cluster.local
+    issuer: otoroshi-intermediate-ca
+    key:
+      algo: rsa
+      size: 2048
+    subject: UID=backend-cert, O=OtoroshiApps
+    duration: 31536000000
+    signatureAlg: SHA256WithRSAEncryption
+    digestAlg: SHA-256
+---
+apiVersion: proxy.otoroshi.io/v1alpha1
+kind: Certificate
+metadata:
+  name: client-cert
+  annotations:
+    otoroshi.io/id: client-cert
+spec:
+  description: client-cert
+  autoRenew: true
+  exportSecret: true
+  client: true
+  secretName: client-cert
+  csr:
+    client: true
+    issuer: otoroshi-intermediate-ca
+    key:
+      algo: rsa
+      size: 2048
+    subject: UID=client-cert, O=OtoroshiApps
+    duration: 31536000000
+    signatureAlg: SHA256WithRSAEncryption
+    digestAlg: SHA-256
+---
+apiVersion: proxy.otoroshi.io/v1alpha1
+kind: Certificate
+metadata:
+  name: oto-client-cert
+  annotations:
+    otoroshi.io/id: oto-client-cert
+spec:
+  description: oto-client-cert
+  autoRenew: true
+  exportSecret: true
+  client: true
+  secretName: oto-client-cert
+  csr:
+    client: true
+    issuer: otoroshi-intermediate-ca
+    key:
+      algo: rsa
+      size: 2048
+    subject: UID=oto-client-cert, O=OtoroshiApps
+    duration: 31536000000
+    signatureAlg: SHA256WithRSAEncryption
+    digestAlg: SHA-256
+---
+apiVersion: proxy.otoroshi.io/v1alpha1
+kind: Certificate
+metadata:
+  name: frontend-cert
+spec:
+  description: frontend-cert
+  autoRenew: true
+  csr:
+    issuer: otoroshi-intermediate-ca
+    hosts:
+      - backend.oto.tools
+    key:
+      algo: rsa
+      size: 2048
+    subject: UID=frontend-cert, O=OtoroshiApps
+    duration: 31536000000
+    signatureAlg: SHA256WithRSAEncryption
+    digestAlg: SHA-256
+---
+apiVersion: proxy.otoroshi.io/v1alpha1
+kind: Certificate
+metadata:
+  name: mesh-cert
+spec:
+  description: mesh-cert
+  autoRenew: true
+  csr:
+    issuer: otoroshi-intermediate-ca
+    hosts:
+      - &#39;*.default.otoroshi.mesh&#39;
+    key:
+      algo: rsa
+      size: 2048
+    subject: O=Otoroshi, OU=Otoroshi Certificates, CN=kubernetes-mesh
+    duration: 31536000000
+    signatureAlg: SHA256WithRSAEncryption
+    digestAlg: SHA-256
+---
+apiVersion: proxy.otoroshi.io/v1alpha1
+kind: ApiKey
+metadata:
+  name: backend-apikey
+spec:
+  exportSecret: true 
+  secretName: backend-apikey
+  authorizedEntities:
+    - group_default
+---
+apiVersion: proxy.otoroshi.io/v1alpha1
+kind: ServiceDescriptor
+metadata:
+  name: backend
+spec:
+  description: backend
+  groups: 
+  - default
+  forceHttps: false
+  hosts:
+  - backend.oto.tools
+  matchingRoot: /
+  publicPatterns:
+    - /.*
+  secComUseSameAlgo: true
+  secComVersion: 2
+  secComInfoTokenVersion: Latest
+  secComSettings:
+    type: HSAlgoSettings
+    size: 512
+    secret: secret
+    base64: false
+  secComAlgoChallengeOtoToBack:
+    type: HSAlgoSettings
+    size: 512
+    secret: secret
+    base64: false
+  secComAlgoChallengeBackToOto:
+    type: HSAlgoSettings
+    size: 512
+    secret: secret
+    base64: false
+  secComAlgoInfoToken:
+    type: HSAlgoSettings
+    size: 512
+    secret: secret
+    base64: false
+  targets:
+  - url: https://app-service.default.svc.cluster.local:8443
+    mtlsConfig:
+      mtls: true
+      certs: 
+        - UID=oto-client-cert, O=OtoroshiApps
+      trustedCerts: 
+        - otoroshi-intermediate-ca</code></pre></dd>
+</dl><div class="callout warning "><div class="callout-title">Warning</div>
+<p>Please avoid to use port <code>80</code> for your pod as it&rsquo;s the default port to access otoroshi from your pod and the call will be redirect to the sidecar via an iptables rule</p></div>
 <h2><a href="#daikoku-integration" name="daikoku-integration" class="anchor"><span class="anchor-link"></span></a>Daikoku integration</h2>
 <p>It is possible to easily integrate daikoku generated apikeys without any human interaction with the actual apikey secret. To do that, create a plan in Daikoku and setup the integration mode to <code>Automatic</code></p><div class="centered-img">
 <img src="../img/kubernetes-daikoku-integration-enabled.png" /></div>
@@ -3781,6 +4544,7 @@ spec:
     <li><a href="../deploy/kubernetes.html#full-crd-example" class="header">Full CRD example</a></li>
     <li><a href="../deploy/kubernetes.html#expose-otoroshi-to-outside-world" class="header">Expose Otoroshi to outside world</a></li>
     <li><a href="../deploy/kubernetes.html#access-a-service-from-inside-the-k8s-cluster" class="header">Access a service from inside the k8s cluster</a></li>
+    <li><a href="../deploy/kubernetes.html#easier-integration-with-otoroshi-sidecar" class="header">Easier integration with otoroshi-sidecar</a></li>
     <li><a href="../deploy/kubernetes.html#daikoku-integration" class="header">Daikoku integration</a></li>
   </ul></li>
 </ul>

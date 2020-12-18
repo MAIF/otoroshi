@@ -1575,6 +1575,8 @@ otoroshi {
     initialCertKey = ${?CLUSTER_WORKER_INITIAL_CERT_KEY}
     initialCertKey = ${?INITIAL_CERT_KEY}
     // initialCerts = []
+    genWildcardCert = true
+    genWildcardCert = ${?OTOROSHI_SSL_GEN_WILDCARD_CERT}
   }
   cluster {
     mode = &quot;off&quot;
