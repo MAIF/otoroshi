@@ -1,0 +1,205 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-deployment
+spec:
+  selector:
+    matchLabels:
+      run: app-deployment
+      app: node
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        run: app-deployment
+        app: node
+        foo: bar
+        otoroshi.io/sidecar: inject
+      annotations:
+        otoroshi.io/sidecar-apikey: backend-apikey
+        otoroshi.io/sidecar-backend-cert: backend-cert
+        otoroshi.io/sidecar-client-cert: oto-client-cert
+        otoroshi.io/token-secret: secret
+        otoroshi.io/expected-dn: UID=oto-client-cert, O=OtoroshiApps
+    spec:
+      containers:
+      - image: containous/whoami:latest
+        name: whoami
+        args: ["--port", "8081"]
+        ports:
+          - name: main-port
+            containerPort: 8081
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: app-service
+spec:
+  selector:
+    run: app-deployment
+  ports:
+  - port: 8443
+    name: "https"
+    targetPort: "https"
+---
+apiVersion: proxy.otoroshi.io/v1alpha1
+kind: Certificate
+metadata:
+  name: backend-cert
+spec:
+  description: backend-cert
+  autoRenew: true
+  exportSecret: true 
+  secretName: backend-cert
+  csr:
+    hosts:
+      - app-service.default.svc.cluster.local
+    issuer: otoroshi-intermediate-ca
+    key:
+      algo: rsa
+      size: 2048
+    subject: UID=backend-cert, O=OtoroshiApps
+    duration: 31536000000
+    signatureAlg: SHA256WithRSAEncryption
+    digestAlg: SHA-256
+---
+apiVersion: proxy.otoroshi.io/v1alpha1
+kind: Certificate
+metadata:
+  name: client-cert
+  annotations:
+    otoroshi.io/id: client-cert
+spec:
+  description: client-cert
+  autoRenew: true
+  exportSecret: true
+  client: true
+  secretName: client-cert
+  csr:
+    client: true
+    issuer: otoroshi-intermediate-ca
+    key:
+      algo: rsa
+      size: 2048
+    subject: UID=client-cert, O=OtoroshiApps
+    duration: 31536000000
+    signatureAlg: SHA256WithRSAEncryption
+    digestAlg: SHA-256
+---
+apiVersion: proxy.otoroshi.io/v1alpha1
+kind: Certificate
+metadata:
+  name: oto-client-cert
+  annotations:
+    otoroshi.io/id: oto-client-cert
+spec:
+  description: oto-client-cert
+  autoRenew: true
+  exportSecret: true
+  client: true
+  secretName: oto-client-cert
+  csr:
+    client: true
+    issuer: otoroshi-intermediate-ca
+    key:
+      algo: rsa
+      size: 2048
+    subject: UID=oto-client-cert, O=OtoroshiApps
+    duration: 31536000000
+    signatureAlg: SHA256WithRSAEncryption
+    digestAlg: SHA-256
+---
+apiVersion: proxy.otoroshi.io/v1alpha1
+kind: Certificate
+metadata:
+  name: frontend-cert
+spec:
+  description: frontend-cert
+  autoRenew: true
+  csr:
+    issuer: otoroshi-intermediate-ca
+    hosts:
+      - backend.oto.tools
+    key:
+      algo: rsa
+      size: 2048
+    subject: UID=frontend-cert, O=OtoroshiApps
+    duration: 31536000000
+    signatureAlg: SHA256WithRSAEncryption
+    digestAlg: SHA-256
+---
+apiVersion: proxy.otoroshi.io/v1alpha1
+kind: Certificate
+metadata:
+  name: mesh-cert
+spec:
+  description: mesh-cert
+  autoRenew: true
+  csr:
+    issuer: otoroshi-intermediate-ca
+    hosts:
+      - '*.default.otoroshi.mesh'
+    key:
+      algo: rsa
+      size: 2048
+    subject: O=Otoroshi, OU=Otoroshi Certificates, CN=kubernetes-mesh
+    duration: 31536000000
+    signatureAlg: SHA256WithRSAEncryption
+    digestAlg: SHA-256
+---
+apiVersion: proxy.otoroshi.io/v1alpha1
+kind: ApiKey
+metadata:
+  name: backend-apikey
+spec:
+  exportSecret: true 
+  secretName: backend-apikey
+  authorizedEntities:
+    - group_default
+---
+apiVersion: proxy.otoroshi.io/v1alpha1
+kind: ServiceDescriptor
+metadata:
+  name: backend
+spec:
+  description: backend
+  groups: 
+  - default
+  forceHttps: false
+  hosts:
+  - backend.oto.tools
+  matchingRoot: /
+  publicPatterns:
+    - /.*
+  secComUseSameAlgo: true
+  secComVersion: 2
+  secComInfoTokenVersion: Latest
+  secComSettings:
+    type: HSAlgoSettings
+    size: 512
+    secret: secret
+    base64: false
+  secComAlgoChallengeOtoToBack:
+    type: HSAlgoSettings
+    size: 512
+    secret: secret
+    base64: false
+  secComAlgoChallengeBackToOto:
+    type: HSAlgoSettings
+    size: 512
+    secret: secret
+    base64: false
+  secComAlgoInfoToken:
+    type: HSAlgoSettings
+    size: 512
+    secret: secret
+    base64: false
+  targets:
+  - url: https://app-service.default.svc.cluster.local:8443
+    mtlsConfig:
+      mtls: true
+      certs: 
+        - UID=oto-client-cert, O=OtoroshiApps
+      trustedCerts: 
+        - otoroshi-intermediate-ca

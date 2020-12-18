@@ -483,6 +483,38 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
     }
   }
 
+
+  def fetchOpenshiftDnsOperator(): Future[Option[KubernetesOpenshiftDnsOperator]] = {
+    val cli: WSRequest = client(s"/apis/operator.openshift.io/v1/dnses/default", false)
+    cli.addHttpHeaders(
+      "Accept" -> "application/json"
+    ).get().map { resp =>
+      if (resp.status == 200) {
+        KubernetesOpenshiftDnsOperator(resp.json).some
+      } else {
+        None
+      }
+    }
+  }
+
+  def updateOpenshiftDnsOperator(source: KubernetesOpenshiftDnsOperator): Future[Option[KubernetesOpenshiftDnsOperator]] = {
+    fetchOpenshiftDnsOperator().flatMap {
+      case None => None.future
+      case Some(dns) => {
+        val cli: WSRequest = client(s"/apis/operator.openshift.io/v1/dnses/default", false)
+        cli.addHttpHeaders(
+          "Accept" -> "application/json"
+        ).put(dns.raw.as[JsObject] ++ Json.obj("spec" -> source.spec)).map { resp =>
+          if (resp.status == 200) {
+            KubernetesOpenshiftDnsOperator(resp.json).some
+          } else {
+            None
+          }
+        }
+      }
+    }
+  }
+
   def fetchMutatingWebhookConfiguration(name: String): Future[Option[KubernetesMutatingWebhookConfiguration]] = {
     val cli: WSRequest = client(s"/apis/admissionregistration.k8s.io/v1/mutatingwebhookconfigurations/$name", false)
     cli.addHttpHeaders(

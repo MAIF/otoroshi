@@ -1171,6 +1171,73 @@ CLIENT_SECRET="xxx"
 curl -X GET https://my-awesome-service.my-awesome-service-namespace.otoroshi.mesh:8443/get -u "$CLIENT_ID:$CLIENT_SECRET"
 ```
 
+### Using Openshift DNS operator
+
+Openshift DNS operator does not allow to customize DNS configuration a lot, so you will have to provide your own coredns deployment and declare it as a stub in the Openshift DNS operator. 
+
+Here is an example of coredns deployment with otoroshi domain config
+
+coredns.yaml
+:   @@snip [coredns.yaml](../snippets/kubernetes/kustomize/base/coredns.yaml)
+
+then you can enable the Openshift DNS operator integration in the otoroshi kubernetes job
+
+```javascript
+{
+  "KubernetesConfig": {
+    ...
+    "openshiftDnsOperatorIntegration": true,                // enable openshift dns operator integration for intra cluster calls
+    "openshiftDnsOperatorCoreDnsNamespace": "otoroshi",    // namespace where coredns is installed
+    "openshiftDnsOperatorCoreDnsName": "otoroshi-dns",     // name of the coredns service
+    "openshiftDnsOperatorCoreDnsPort": 5353,               // port of the coredns service
+    ...
+  }
+}
+```
+
+don't forget to update the otoroshi `ClusterRole`
+
+```yaml
+- apiGroups:
+    - operator.openshift.io
+  resources:
+    - dnses
+  verbs:
+    - get
+    - list
+    - watch
+    - update
+```
+
+## Easier integration with otoroshi-sidecar
+
+Otoroshi can help you to easily use existing services without modifications while gettings all the perks of otoroshi like apikeys, mTLS, exchange protocol, etc. To do so, otoroshi will inject a sidecar container in the pod of your deployment that will handle call coming from otoroshi and going to otoroshi. To enable otoroshi-sidecar, you need to deploy the following admission webhooks
+
+webhooks.yaml
+:   @@snip [webhooks.yaml](../snippets/kubernetes/kustomize/base/webhooks.yaml)
+
+then it's quite easy to add the sidecar, just add the following label to your pod `otoroshi.io/sidecar: inject` and some annotations to tell otoroshi what certificates and apikeys to use.
+
+```yaml
+annotations:
+  otoroshi.io/sidecar-apikey: backend-apikey
+  otoroshi.io/sidecar-backend-cert: backend-cert
+  otoroshi.io/sidecar-client-cert: oto-client-cert
+  otoroshi.io/token-secret: secret
+  otoroshi.io/expected-dn: UID=oto-client-cert, O=OtoroshiApps
+```
+
+now you can just call you otoroshi handled apis from inside your pod like `curl http://my-service.namespace.otoroshi.mesh/api` without passing any apikey or client certificate and the sidecar will handle everything for you. Same thing for call from otoroshi to your pod, everything will be done in mTLS fashion with apikeys and otoroshi exchange protocol
+
+here is a full example
+
+sidecar.yaml
+:   @@snip [sidecar.yaml](../snippets/kubernetes/kustomize/base/sidecar.yaml)
+
+@@@ warning
+Please avoid to use port `80` for your pod as it's the default port to access otoroshi from your pod and the call will be redirect to the sidecar via an iptables rule
+@@@
+
 ## Daikoku integration
 
 It is possible to easily integrate daikoku generated apikeys without any human interaction with the actual apikey secret. To do that, create a plan in Daikoku and setup the integration mode to `Automatic`
