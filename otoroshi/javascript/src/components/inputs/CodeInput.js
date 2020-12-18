@@ -61,7 +61,7 @@ export default class CodeInput extends Component {
           this.setState({ value: '{}' });
         } else if (e.indexOf('}{}') > -1) {
           this.setState({ value: e.replace('}{}', '}') });
-        } else {
+        } else {
           this.setState({ value: e });
         }
       }

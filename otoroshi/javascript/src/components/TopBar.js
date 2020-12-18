@@ -905,7 +905,13 @@ export class TopBar extends Component {
                         : null;
                     return (
                       <div style={{ display: 'flex' }}>
-                        <div style={{ width: 60,display: 'flex',justifyContent:'center',alignItems:'center' }}>
+                        <div
+                          style={{
+                            width: 60,
+                            display: 'flex',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                          }}>
                           {p.env && _.isString(p.env) && (
                             <span className={`label ${this.color(p.env)}`}>{env}</span>
                           )}

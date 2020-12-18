@@ -57,8 +57,8 @@ export class ReloadNewVersion extends Component {
     if (this.state.unlogged) {
       return (
         <div className="loggedOutVeil">
-          <div className="topbar-popup" style={{justifyContent:'center'}}>
-            <div style={{display:'flex', alignItems:'center',marginLeft:10}}>
+          <div className="topbar-popup" style={{ justifyContent: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', marginLeft: 10 }}>
               Your session has expired and you're now logged out. You will be asked to login in 20
               seconds.
               <button
@@ -79,14 +79,14 @@ export class ReloadNewVersion extends Component {
         <button
           type="button"
           className="btn btn-xs"
-          style={{ alignSelf: 'flex-end',marginTop:5 }}
+          style={{ alignSelf: 'flex-end', marginTop: 5 }}
           onClick={(e) => {
             e.preventDefault();
             this.setState({ display: false, versionClosed: true });
           }}>
-        <i className="fas fa-times" />
+          <i className="fas fa-times" />
         </button>
-        <div style={{display:'flex', alignItems:'center', justifyContent:'center'}}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           A new version of Otoroshi has been deployed
           <button
             type="button"

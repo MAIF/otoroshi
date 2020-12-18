@@ -54,8 +54,8 @@ window.fetch = function (...params) {
           }
           throw new Error("You're not allowed to do that !");
         } else if (r.status > 499 && window.toast) {
-          return r.then(text => {
-            window.toast('Server error', "An error occured server side: " + text, 'error');
+          return r.then((text) => {
+            window.toast('Server error', 'An error occured server side: ' + text, 'error');
           });
         } else {
           return r;

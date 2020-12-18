@@ -134,8 +134,7 @@ export class ServicesPage extends Component {
         style: { textAlign: 'center', width: 55 },
         noMobile: true,
         notFilterable: true,
-        cell: (v, item) =>
-          item.redirectToLocal ? <span className="fas fa-check-circle" /> : '',
+        cell: (v, item) => (item.redirectToLocal ? <span className="fas fa-check-circle" /> : ''),
       });
     }
   }
