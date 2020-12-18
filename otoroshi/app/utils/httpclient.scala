@@ -46,8 +46,14 @@ import scala.xml.{Elem, XML}
 
 case class DNPart(raw: String) {
   private val parts = raw.split("=").map(_.trim)
-  val name = parts.head.toLowerCase()
-    .applyOnWithPredicate(_ == "sn")(p => "surname")
+  val name = {
+    val head = parts.head.toLowerCase()
+    if (head == "sn") {
+      "surname"
+    } else {
+      head
+    }
+  }
   val value = parts.last
 }
 
@@ -55,6 +61,9 @@ case class DN(raw: String) {
   val parts = raw.split(",").toSeq.map(_.trim).map(DNPart.apply)
   def isEqualsTo(other: DN): Boolean = {
     parts.size == other.parts.size && parts.forall(p => other.parts.exists(o => o.name == p.name && o.value == p.value))
+  }
+  def stringify: String = {
+    parts.sortWith((a, b) => a.name.compareTo(b.name) > 0).map(p => s"${p.name.toUpperCase()}=${p.value}").mkString(", ")
   }
 }
 

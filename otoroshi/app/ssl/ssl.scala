@@ -60,6 +60,7 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 import scala.concurrent.duration._
 import otoroshi.utils.syntax.implicits._
+import utils.http.DN
 
 /**
  * git over http works with otoroshi
@@ -1499,7 +1500,7 @@ object CertificateData {
     val client: Boolean = usages.contains(KeyPurposeId.id_kp_clientAuth)
     // val client: Boolean = Try(cert.getExtensionValue("2.5.29.37")) match {
     Json.obj(
-      "issuerDN"        -> cert.getIssuerDN.getName,
+      "issuerDN"        -> DN(cert.getIssuerDN.getName).stringify,
       "notAfter"        -> cert.getNotAfter.getTime,
       "notBefore"       -> cert.getNotBefore.getTime,
       "serialNumber"    -> cert.getSerialNumber.toString(16),
@@ -1508,7 +1509,7 @@ object CertificateData {
       "sigAlgOID"       -> cert.getSigAlgOID,
       "_signature"      -> new String(encoder.encode(cert.getSignature)),
       "signature"       -> DigestUtils.sha256Hex(cert.getSignature).toUpperCase().grouped(2).mkString(":"),
-      "subjectDN"       -> cert.getSubjectDN.getName,
+      "subjectDN"       -> DN(cert.getSubjectDN.getName).stringify,
       "domain"          -> domain,
       "rawDomain"       -> rawDomain.map(JsString.apply).getOrElse(JsNull).as[JsValue],
       "version"         -> cert.getVersion,
@@ -2282,7 +2283,7 @@ object SSLImplicits {
       s"${PemHeaders.BeginCertificate}\n${Base64.getEncoder.encodeToString(cert.getEncoded).grouped(64).mkString("\n")}\n${PemHeaders.EndCertificate}\n"
     def altNames: Seq[String] = CertInfo.getSubjectAlternativeNames(cert, logger).asScala.toSeq
     def rawDomain: Option[String] = {
-      Option(cert.getSubjectDN.getName)
+      Option(DN(cert.getSubjectDN.getName).stringify)
         .flatMap(_.split(",").toSeq.map(_.trim).find(_.toLowerCase.startsWith("cn=")))
         .map(_.replace("CN=", "").replace("cn=", ""))
     }
@@ -2290,20 +2291,20 @@ object SSLImplicits {
     def domain: String              = domains.headOption.getOrElse(cert.getSubjectDN.getName)
     def domains: Seq[String]        = (rawDomain ++ altNames).toSeq
     def asJson: JsObject = Json.obj(
-      "subjectDN"    -> cert.getSubjectDN.getName,
-      "issuerDN"     -> cert.getIssuerDN.getName,
+      "subjectDN"    -> DN(cert.getSubjectDN.getName).stringify,
+      "issuerDN"     -> DN(cert.getIssuerDN.getName).stringify,
       "notAfter"     -> cert.getNotAfter.getTime,
       "notBefore"    -> cert.getNotBefore.getTime,
       "serialNumber" -> cert.getSerialNumber.toString(16),
-      "subjectCN" -> Option(cert.getSubjectDN.getName)
+      "subjectCN" -> Option(DN(cert.getSubjectDN.getName).stringify)
         .flatMap(_.split(",").toSeq.map(_.trim).find(_.startsWith("CN=")))
         .map(_.replace("CN=", ""))
-        .getOrElse(cert.getSubjectDN.getName)
+        .getOrElse(DN(cert.getSubjectDN.getName).stringify)
         .asInstanceOf[String],
-      "issuerCN" -> Option(cert.getIssuerDN.getName)
+      "issuerCN" -> Option(DN(cert.getIssuerDN.getName).stringify)
         .flatMap(_.split(",").toSeq.map(_.trim).find(_.startsWith("CN=")))
         .map(_.replace("CN=", ""))
-        .getOrElse(cert.getIssuerDN.getName)
+        .getOrElse(DN(cert.getIssuerDN.getName).stringify)
         .asInstanceOf[String]
     )
   }
