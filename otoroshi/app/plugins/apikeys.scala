@@ -25,6 +25,7 @@ import play.api.mvc.{Result, Results}
 import play.core.parsers.FormUrlEncodedParser
 import security.IdGenerator
 import ssl.{Cert, DynamicSSLEngineProvider}
+import utils.http.DN
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration._
@@ -190,7 +191,7 @@ class CertificateAsApikey extends PreRouting {
       case Some(cert) => {
         val conf         = context.configFor("CertificateAsApikey")
         val serialNumber = cert.getSerialNumber.toString
-        val subjectDN    = cert.getSubjectDN.getName
+        val subjectDN    = DN(cert.getSubjectDN.getName).stringify
         val clientId     = Base64.encodeBase64String((subjectDN + "-" + serialNumber).getBytes)
         // TODO: validate CA DN based on config array
         // TODO: validate CA serial based on config array

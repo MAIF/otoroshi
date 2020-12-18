@@ -4,6 +4,40 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0-alpha.4] - 2020-12-18
+
+https://github.com/MAIF/otoroshi/issues?q=is%3Aissue+label%3A1.5.0-alpha.4+is%3Aclosed
+https://github.com/MAIF/otoroshi/compare/v1.5.0-alpha.3...v1.5.0-alpha.4
+https://github.com/MAIF/otoroshi/releases/tag/v1.5.0-alpha.4
+
+- [UI] : add button to export form data to YAML descriptor (#679)
+- Experiment with a MutatingAdmissionWebhook to add a helper as a sidecar (#681)
+- Experiment with a ValidatingAdmissionWebhook to return useful errors when deploying otoroshi entities (#682)
+- Rename 'mtlsSettings' to 'tlsSettings' in the UI (#684)
+- Use standard kubernetes service names in target transformation (#688)
+- deprecate HasAllowedApiKeyValidator plugin (#696)
+- Remove whitelist/blacklist from UI (#697)
+- Custom template button does not work anymore (#698)
+- Cleanup possible hostnames for the kubernetes internal cluster calls (#700)
+- try to reduce memory impact of initial classpath scanning (#701)
+- only organization admins can create others admins  (#704)
+- when an organization admin creates other admins, enforce new admin organizations and teams (#705)
+- flag in kubernetes config to accepts apikeys only with daikoku tokens (#706)
+- jwt-verifiers not imported with kubernetes job (#707)
+- workflow job (#708)
+- weird npe on job list since 1.5.0-alpha.3 (#709)
+- fix bad jsonpath functions (#710)
+- include jsonpath operator in transformation utils (#711)
+- include simple el in transformation utils (#712)
+- json editor adds '{}' at the end when pasting a json document (#714)
+- strip path removes too much stuff (#715)
+- io.otoroshi/id is not in annotations in documentation (#716)
+- Add a flag in service to avoid adding default hosts (#718)
+- Make global client_credential flow available by default  (#723)
+- issue when generating subcas (#726)
+- Fix issuer DN in certificate to avoid certificate check in go (#729)
+- Some "add" doesn't work for HTTP headers in Service descriptor (#734)
+
 ## [1.5.0-alpha.3] - 2020-11-18
 
 https://github.com/MAIF/otoroshi/issues?q=is%3Aissue+label%3A1.5.0-alpha.3+is%3Aclosed

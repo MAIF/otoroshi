@@ -29,6 +29,7 @@ import play.api.mvc.{Result, Results}
 import security.IdGenerator
 import ssl.{Cert, DynamicSSLEngineProvider}
 import utils.TypedMap
+import utils.http.DN
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -540,7 +541,7 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
             case None => None
             case Some(dn) =>
               DynamicSSLEngineProvider.certificates.find {
-                case (_, cert) => cert.id == dn || cert.certificate.map(_.getSubjectDN.getName).contains(dn)
+                case (_, cert) => cert.id == dn || cert.certificate.exists(c => DN(c.getSubjectDN.getName).isEqualsTo(DN(dn)))
               }
           }
           val maybeCert = foundACertWithSameIdAndCsr(id, csrJson, caOpt.map(_._2), certs)

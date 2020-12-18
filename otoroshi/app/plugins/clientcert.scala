@@ -11,7 +11,7 @@ import play.api.mvc.Result
 import utils.RegexPool
 import utils.RequestImplicits._
 import utils.future.Implicits._
-import utils.http.MtlsConfig
+import utils.http.{DN, MtlsConfig}
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.{ExecutionContext, Future}
@@ -53,7 +53,7 @@ class HasClientCertMatchingApikeyValidator extends AccessValidator {
                     chain.headOption match {
                       case Some(cert) =>
                         FastFuture.successful(
-                          RegexPool(dn).matches(cert.getIssuerDN.getName)
+                          RegexPool(dn).matches(DN(cert.getIssuerDN.getName).stringify)
                         )
                       case None => FastFuture.successful(false)
                     }
@@ -121,13 +121,13 @@ class HasClientCertMatchingValidator extends AccessValidator {
         val regexAllowedIssuerDNs =
           (config \ "regexIssuerDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
         if (certs.exists(cert => allowedSerialNumbers.exists(s => s == cert.getSerialNumber.toString(16))) ||
-            certs.exists(cert => allowedSubjectDNs.exists(s => RegexPool(s).matches(cert.getSubjectDN.getName))) ||
-            certs.exists(cert => allowedIssuerDNs.exists(s => RegexPool(s).matches(cert.getIssuerDN.getName))) ||
+            certs.exists(cert => allowedSubjectDNs.exists(s => RegexPool(s).matches(DN(cert.getSubjectDN.getName).stringify))) ||
+            certs.exists(cert => allowedIssuerDNs.exists(s => RegexPool(s).matches(DN(cert.getIssuerDN.getName).stringify))) ||
             certs.exists(
-              cert => regexAllowedSubjectDNs.exists(s => RegexPool.regex(s).matches(cert.getSubjectDN.getName))
+              cert => regexAllowedSubjectDNs.exists(s => RegexPool.regex(s).matches(DN(cert.getSubjectDN.getName).stringify))
             ) ||
             certs.exists(
-              cert => regexAllowedIssuerDNs.exists(s => RegexPool.regex(s).matches(cert.getIssuerDN.getName))
+              cert => regexAllowedIssuerDNs.exists(s => RegexPool.regex(s).matches(DN(cert.getIssuerDN.getName).stringify))
             )) {
           FastFuture.successful(true)
         } else {
@@ -243,10 +243,10 @@ class HasClientCertMatchingHttpValidator extends AccessValidator {
     val regexAllowedIssuerDNs =
       (values \ "regexIssuerDNs").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
     if (certs.exists(cert => allowedSerialNumbers.exists(s => s == cert.getSerialNumber.toString(16))) ||
-        certs.exists(cert => allowedSubjectDNs.exists(s => RegexPool(s).matches(cert.getSubjectDN.getName))) ||
-        certs.exists(cert => allowedIssuerDNs.exists(s => RegexPool(s).matches(cert.getIssuerDN.getName))) ||
-        certs.exists(cert => regexAllowedSubjectDNs.exists(s => RegexPool.regex(s).matches(cert.getSubjectDN.getName))) ||
-        certs.exists(cert => regexAllowedIssuerDNs.exists(s => RegexPool.regex(s).matches(cert.getIssuerDN.getName)))) {
+        certs.exists(cert => allowedSubjectDNs.exists(s => RegexPool(s).matches(DN(cert.getSubjectDN.getName).stringify))) ||
+        certs.exists(cert => allowedIssuerDNs.exists(s => RegexPool(s).matches(DN(cert.getIssuerDN.getName).stringify))) ||
+        certs.exists(cert => regexAllowedSubjectDNs.exists(s => RegexPool.regex(s).matches(DN(cert.getSubjectDN.getName).stringify))) ||
+        certs.exists(cert => regexAllowedIssuerDNs.exists(s => RegexPool.regex(s).matches(DN(cert.getIssuerDN.getName).stringify)))) {
       true
     } else {
       false
@@ -379,20 +379,20 @@ class ClientCertChainHeader extends RequestTransformer {
       chain.map(
         c =>
           Json.obj(
-            "subjectDN"    -> c.getSubjectDN.getName,
-            "issuerDN"     -> c.getIssuerDN.getName,
+            "subjectDN"    -> DN(c.getSubjectDN.getName).stringify,
+            "issuerDN"     -> DN(c.getIssuerDN.getName).stringify,
             "notAfter"     -> c.getNotAfter.getTime,
             "notBefore"    -> c.getNotBefore.getTime,
             "serialNumber" -> c.getSerialNumber.toString(16),
-            "subjectCN" -> Option(c.getSubjectDN.getName)
+            "subjectCN" -> Option(DN(c.getSubjectDN.getName).stringify)
               .flatMap(_.split(",").toSeq.map(_.trim).find(_.toLowerCase().startsWith("cn=")))
               .map(_.replace("CN=", "").replace("cn=", ""))
-              .getOrElse(c.getSubjectDN.getName)
+              .getOrElse(DN(c.getSubjectDN.getName).stringify)
               .asInstanceOf[String],
-            "issuerCN" -> Option(c.getIssuerDN.getName)
+            "issuerCN" -> Option(DN(c.getIssuerDN.getName).stringify)
               .flatMap(_.split(",").toSeq.map(_.trim).find(_.toLowerCase().startsWith("cn=")))
               .map(_.replace("CN=", "").replace("cn=", ""))
-              .getOrElse(c.getIssuerDN.getName)
+              .getOrElse(DN(c.getIssuerDN.getName).stringify)
               .asInstanceOf[String]
         )
       )
@@ -424,7 +424,7 @@ class ClientCertChainHeader extends RequestTransformer {
 
         val pemMap = if (sendAsPem) Map(pemHeaderName -> ctx.request.clientCertChainPemString) else Map.empty
         val dnsMap =
-          if (sendDns) Map(dnsHeaderName -> Json.stringify(JsArray(chain.map(c => JsString(c.getSubjectDN.getName)))))
+          if (sendDns) Map(dnsHeaderName -> Json.stringify(JsArray(chain.map(c => JsString(DN(c.getSubjectDN.getName).stringify)))))
           else Map.empty
         val chainMap = if (sendChain) Map(chainHeaderName -> Json.stringify(jsonChain(chain))) else Map.empty
 
