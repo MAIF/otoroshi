@@ -55,7 +55,7 @@ export class ObjectInput extends Component {
                 type="button"
                 className="btn btn-primary"
                 onClick={this.addFirst}>
-                <i className="fas fa-folder" />{' '}
+                <i className="fas fa-plus-circle" />{' '}
               </button>
             </div>
           </div>
