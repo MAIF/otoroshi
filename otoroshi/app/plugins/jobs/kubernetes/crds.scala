@@ -1354,7 +1354,51 @@ object KubernetesCRDsJob {
   }
 
   def patchOpenshiftDnsOperatorConfig(conf: KubernetesConfig, ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
-    ().future
+    if (conf.openshiftDnsOperatorIntegration) {
+      val client = new KubernetesClient(conf, env)
+      for {
+        dnsOperator  <- client.fetchOpenshiftDnsOperator()
+        service      <- client.fetchService(conf.openshiftDnsOperatorCoreDnsNamespace, conf.openshiftDnsOperatorCoreDnsName)
+        hasOtoroshiDnsServer = dnsOperator.exists(_.servers.exists(_.name == conf.openshiftDnsOperatorCoreDnsName))
+        shouldNotUpdate = dnsOperator.exists(_.servers.find(_.name == conf.openshiftDnsOperatorCoreDnsName).exists(_.forwardPluginUpstreams.exists(_.startsWith(service.map(_.clusterIP).getOrElse("--")))))
+        _            <- if (service.isDefined && dnsOperator.isDefined && !hasOtoroshiDnsServer) {
+          val servers = dnsOperator.get.servers.map(_.raw) :+ Json.obj(
+            "name" -> conf.openshiftDnsOperatorCoreDnsName,
+            "zones" -> Json.arr(
+               s"${conf.coreDnsEnv.map(e => s"$e.").getOrElse("")}otoroshi.mesh"
+            ),
+            "forwardPlugin" -> Json.obj(
+              "upstreams" -> Json.arr(
+                s"${service.get.clusterIP}:${conf.openshiftDnsOperatorCoreDnsPort}"
+              )
+            )
+          )
+          client.updateOpenshiftDnsOperator(KubernetesOpenshiftDnsOperator(Json.obj("spec" -> dnsOperator.get.spec.++(Json.obj("servers" -> servers)))))
+        } else ().future
+        _            <- if (service.isDefined && dnsOperator.isDefined && hasOtoroshiDnsServer && !shouldNotUpdate) {
+          val servers = dnsOperator.get.servers.map(_.raw).map { server =>
+            if (server.select("name").as[String] == conf.openshiftDnsOperatorCoreDnsName) {
+              Json.obj(
+                "name" -> conf.openshiftDnsOperatorCoreDnsName,
+                "zones" -> Json.arr(
+                  s"${conf.coreDnsEnv.map(e => s"$e.").getOrElse("")}otoroshi.mesh"
+                ),
+                "forwardPlugin" -> Json.obj(
+                  "upstreams" -> Json.arr(
+                    s"${service.get.clusterIP}:${conf.openshiftDnsOperatorCoreDnsPort}"
+                  )
+                )
+              )
+            } else {
+              server
+            }
+          }
+          client.updateOpenshiftDnsOperator(KubernetesOpenshiftDnsOperator(Json.obj("spec" -> dnsOperator.get.spec.++(Json.obj("servers" -> servers)))))
+        } else ().future
+      } yield ()
+    } else {
+      ().future
+    }
   }
 
   def createWebhookCerts(config: KubernetesConfig, ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {

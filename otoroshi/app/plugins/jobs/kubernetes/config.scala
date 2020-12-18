@@ -53,7 +53,11 @@ case class KubernetesConfig(
   watchGracePeriodSeconds: Int,
   mutatingWebhookName: String,
   validatingWebhookName: String,
-  image: Option[String]
+  image: Option[String],
+  openshiftDnsOperatorIntegration: Boolean,
+  openshiftDnsOperatorCoreDnsNamespace: String,
+  openshiftDnsOperatorCoreDnsName: String,
+  openshiftDnsOperatorCoreDnsPort: Int
 )
 
 object KubernetesConfig {
@@ -128,6 +132,10 @@ object KubernetesConfig {
           mutatingWebhookName = (conf \ "mutatingWebhookName").asOpt[String].getOrElse("otoroshi-admission-webhook-injector"),
           validatingWebhookName = (conf \ "validatingWebhookName").asOpt[String].getOrElse("otoroshi-admission-webhook-validation"),
           image = (conf \ "image").asOpt[String].filter(_.trim.nonEmpty),
+          openshiftDnsOperatorIntegration = (conf \ "openshiftDnsOperatorIntegration").asOpt[Boolean].getOrElse(false),
+          openshiftDnsOperatorCoreDnsNamespace = (conf \ "openshiftDnsOperatorCoreDnsNamespace").asOpt[String].getOrElse("otoroshi"),
+          openshiftDnsOperatorCoreDnsName = (conf \ "openshiftDnsOperatorCoreDnsName").asOpt[String].getOrElse("otoroshi-dns"),
+          openshiftDnsOperatorCoreDnsPort = (conf \ "openshiftDnsOperatorCoreDnsPort").asOpt[Int].getOrElse(5353),
         )
       }
       case None => {
@@ -183,6 +191,10 @@ object KubernetesConfig {
           mutatingWebhookName = (conf \ "mutatingWebhookName").asOpt[String].getOrElse("otoroshi-admission-webhook-injector"),
           validatingWebhookName = (conf \ "validatingWebhookName").asOpt[String].getOrElse("otoroshi-admission-webhook-validation"),
           image = (conf \ "image").asOpt[String].filter(_.trim.nonEmpty),
+          openshiftDnsOperatorIntegration = (conf \ "openshiftDnsOperatorIntegration").asOpt[Boolean].getOrElse(false),
+          openshiftDnsOperatorCoreDnsNamespace = (conf \ "openshiftDnsOperatorCoreDnsNamespace").asOpt[String].getOrElse("otoroshi"),
+          openshiftDnsOperatorCoreDnsName = (conf \ "openshiftDnsOperatorCoreDnsName").asOpt[String].getOrElse("otoroshi-dns"),
+          openshiftDnsOperatorCoreDnsPort = (conf \ "openshiftDnsOperatorCoreDnsPort").asOpt[Int].getOrElse(5353),
         )
       }
     }
@@ -221,6 +233,10 @@ object KubernetesConfig {
         "watchGracePeriodSeconds" -> 5,
         "mutatingWebhookName" -> "otoroshi-admission-webhook-injector",
         "validatingWebhookName" -> "otoroshi-admission-webhook-validation",
+        "openshiftDnsOperatorIntegration" -> false,
+        "openshiftDnsOperatorCoreDnsNamespace" -> "otoroshi",
+        "openshiftDnsOperatorCoreDnsName" -> "otoroshi-dns",
+        "openshiftDnsOperatorCoreDnsPort" -> 5353,
         "templates" -> Json.obj(
           "service-group" -> Json.obj(),
           "service-descriptor" -> Json.obj(),

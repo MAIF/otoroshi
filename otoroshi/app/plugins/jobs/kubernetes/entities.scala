@@ -27,7 +27,9 @@ trait KubernetesEntity {
 }
 
 case class KubernetesNamespace(raw: JsValue) extends KubernetesEntity
-case class KubernetesService(raw: JsValue) extends KubernetesEntity
+case class KubernetesService(raw: JsValue) extends KubernetesEntity {
+  lazy val clusterIP: String = (raw \ "spec" \ "clusterIP").as[String]
+}
 case class KubernetesConfigMap(raw: JsValue) extends KubernetesEntity {
   lazy val corefile: String = (raw \ "data" \ "Corefile").as[String]
   def hasOtoroshiMesh(conf: KubernetesConfig): Boolean = {
@@ -46,6 +48,16 @@ case class KubernetesValidatingWebhookConfiguration(raw: JsValue) extends Kubern
 
 case class KubernetesMutatingWebhookConfiguration(raw: JsValue) extends KubernetesEntity {
   lazy val webhooks: JsArray = (raw \ "webhooks").as[JsArray]
+}
+
+case class KubernetesOpenshiftDnsOperatorServer(raw: JsValue) {
+  lazy val name: String = raw.select("name").as[String]
+  lazy val zones: Seq[String] = raw.select("zones").asOpt[Seq[String]].getOrElse(Seq.empty)
+  lazy val forwardPluginUpstreams: Seq[String] = raw.select("forwardPlugin").select("upstreams").asOpt[Seq[String]].getOrElse(Seq.empty)
+}
+
+case class KubernetesOpenshiftDnsOperator(raw: JsValue) extends KubernetesEntity {
+  lazy val servers = (raw \ "spec" \ "servers").asOpt[JsArray].map(_.value.map(KubernetesOpenshiftDnsOperatorServer.apply)).getOrElse(Seq.empty)
 }
 
 case class KubernetesEndpoint(raw: JsValue) extends KubernetesEntity
