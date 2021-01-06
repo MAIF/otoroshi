@@ -1,6 +1,6 @@
-# Managing services
+# Service descriptors
 
-Now let's create services. Services or `service descriptor` let you declare how to proxy a call from a domain name to another domain name (or multiple domain names). Let's say you have an API exposed on `http://192.168.0.42` and I want to expose it on `https://my.api.foo`. Otoroshi will proxy all calls to `https://my.api.foo` and forward them to `http://192.168.0.42`. While doing that, it will also log everyhting, control accesses, etc.
+Services or `service descriptor` let you declare how to proxy a call from a domain name to another domain name (or multiple domain names). Let's say you have an API exposed on `http://192.168.0.42` and I want to expose it on `https://my.api.foo`. Otoroshi will proxy all calls to `https://my.api.foo` and forward them to `http://192.168.0.42`. While doing that, it will also log everyhting, control accesses, etc.
 
 ## Otoroshi entities
 
@@ -14,7 +14,7 @@ There are 3 major entities at the core of Otoroshi
 <img src="../img/models-service.png" />
 @@@
 
-A `service descriptor` is contained in one or multiple `service group`s and is allowed to be accessed by all the `api key`s authorized on those `service group`s or apikeys directly authorized on the service itself.
+A `service descriptor` is contained in one or multiple `service groups` and is allowed to be accessed by all the `api keys` authorized on those `service groups` or `api keys` directly authorized on the service itself.
 
 ## Create a service descriptor
 
@@ -110,37 +110,49 @@ Scala
 Java
 :   @@snip [filter.java](../snippets/filter.java)
 
+### Service authentication
 
-### Canary mode
+See @ref:[Authentication](./auth.md)
 
-Otoroshi provides a feature called `Canary mode`. It lets you define new targets for a service, and route a percentage of the traffic on those targets. It's a good way to test a new version of a service before public release. As any client need to be routed to the same version of targets any time, Otoroshi will issue a special header and a cookie containing a `session id`. The header is named `Otoroshi-Canary-Id`.
+### Api Keys constraints
+In Otoroshi you can provide your API key in several ways :
+* From basic authentication - Authorization header
+* With just clien ID
+* From custom Header
+* From JWT token
+
+Select the right way for you, header or query param customization is possible.
+
+Otoroshi provide also a way to filter service access by the presence or not of a tag, metadata or metadata key in API key provided.
+
+
+### CORS 
+
+If you enabled this section, CORS will be automatically supported on the current service provider. The pre-flight request will be handled by Otoroshi. You can customize every CORS headers :
 
 @@@ div { .centered-img }
-<img src="../img/new-service-canary.png" />
+<img src="../img/cors.png" />
 @@@
 
-### Service health check
+### JWT tokens verification
+see here @ref:[JWT verification](../topics/jwt-verifications.md)
 
-Otoroshi is also capable of checking the health of a service. You can define a URL that will be tested, and Otoroshi will ping that URL regularly. Will doing so, Otoroshi will pass a numeric value in a header named `Otoroshi-Health-Check-Logic-Test`. You can respond with a header named `Otoroshi-Health-Check-Logic-Test-Result` that contains the value of `Otoroshi-Health-Check-Logic-Test` + 42 to indicate that the service is working properly.
+### Pre routing
+<!-- TODO -->
 
-@@@ div { .centered-img }
-<img src="../img/new-service-healthcheck.png" />
-@@@
+### Access validation
+<!-- TODO -->
+
+### Gzip support
+<!-- TODO -->
 
 ### Service circuit breaker
 
 In Otoroshi, each service has its own client settings with a circuit breaker and some retry capabilities. In the `Client settings` section, you will be able to customize the client's behavior.
 
+<!-- TODO new screen print -->
 @@@ div { .centered-img }
 <img src="../img/new-service-client.png" />
-@@@
-
-### Service settings
-
-You can also provide some additionnal information about a given service, like an `Open API` descriptor, some metadata, a list of whitelisted/blacklisted ip addresses, etc.
-
-@@@ div { .centered-img #service-meta }
-<img src="../img/new-service-meta.png" />
 @@@
 
 ### HTTP Headers
@@ -152,18 +164,40 @@ You will also be able to define headers to route the call only if the defined he
 <img src="../img/new-service-headers.png" />
 @@@
 
-### CORS 
+### Additional settings
 
-If you enabled this section, CORS will be automatically supported on the current service provider. The pre-flight request will be handled by Otoroshi. You can customize every CORS headers :
+You can also provide some additionnal information about a given service, like an `Open API` descriptor, some metadata, a list of whitelisted/blacklisted ip addresses, etc.
 
-@@@ div { .centered-img }
-<img src="../img/cors.png" />
+@@@ div { .centered-img #service-meta }
+<img src="../img/new-service-meta.png" />
 @@@
 
-### Service authentication
+### Canary mode
 
-See @ref:[Aauthentication](./9-auth.md)
+Otoroshi provides a feature called `Canary mode`. It lets you define new targets for a service, and route a percentage of the traffic on those targets. It's a good way to test a new version of a service before public release. As any client need to be routed to the same version of targets any time, Otoroshi will issue a special header and a cookie containing a `session id`. The header is named `Otoroshi-Canary-Id`.
+
+@@@ div { .centered-img }
+<img src="../img/new-service-canary.png" />
+@@@
+
+### HealthCheck settings
+
+Otoroshi is also capable of checking the health of a service. You can define a URL that will be tested, and Otoroshi will ping that URL regularly. Will doing so, Otoroshi will pass a numeric value in a header named `Otoroshi-Health-Check-Logic-Test`. You can respond with a header named `Otoroshi-Health-Check-Logic-Test-Result` that contains the value of `Otoroshi-Health-Check-Logic-Test` + 42 to indicate that the service is working properly.
+
+@@@ div { .centered-img }
+<img src="../img/new-service-healthcheck.png" />
+@@@
+
+### Faults injection
+<!-- TODO -->
+
+### Custom errors template
+<!-- TODO -->
+
 
 ### Custom error templates
 
 Finally, you can define custom error templates that will be displayed when an error occurs when Otoroshi try to reach the target or when Otoroshi itself has an error. You can also define custom templates for maintenance and service pages.
+
+### Request transformation
+<!-- TODO -->

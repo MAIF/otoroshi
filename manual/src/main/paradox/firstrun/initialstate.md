@@ -2,10 +2,32 @@
 
 Now you are almost ready to run Otoroshi for the first time, but maybe you want to import data from previous Otoroshi installation in your current datastore.
 
-To do that, you need to add the `app.importFrom` setting to the Otoroshi configuration (of `$APP_IMPORT_FROM` env).
+## Import from a file
 
-It can be a file path or a URL
+To import data from file, you need to add the `app.importFrom` setting to the Otoroshi configuration (or `$APP_IMPORT_FROM` env).
 
+It can be a file path or a URL. 
+
+## Import with initial customization
+
+To import data inline in your configuration, you need to add the `app.initialCustomization` setting to the Otoroshi configuration (or `$OTOROSHI_INITIAL_CUSTOMIZATION` env).
+
+It is a one line json object with the following properties :
+
+| name | description |
+| ---- | ----- |
+| config | Otoroshi global configuration |
+| descs | Services descriptors |
+| apikeys | Apikeys |
+| groups | Services groups |
+| tmplts | Error templates |
+| jswVerifiers | Jwt verifiers |
+| authConfigs | Auth module configs |
+| certificates | certificates |
+| scripts | Scripts |
+| tcpServices | Tcp services |
+| admins | otoroshi admins with web authentication |
+| simpleAdmins | otoroshi admins (without web authentication) |
 ## Example of export
 
 ```json

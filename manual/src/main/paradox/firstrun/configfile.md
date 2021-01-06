@@ -19,7 +19,14 @@ if you want to define your own config file and use it on an otoroshi instance, u
 ```sh
 java -Dconfig.file=/path/to/otoroshi.conf -jar otoroshi.jar
 ``` 
-
+## First start
+| name | type | default value  | description |
+| ---- |:----:| -------------- | ----- |
+| `app.importFrom` | string | | a file path or a URL to an Otoroshi export file. If the datastore is empty on startup, this file will be used to import data to the empty DB |
+| `app.importFromHeaders` | array | [] | a list of `:` separated header to use if the `app.importFrom` setting is a URL |
+| `app.initialCustomization` | string |  | An start configuration as JsObject injected as initial configuration. See [Inital customization](./initialstate.md#initial-customization) for more informations |
+| `app.adminLogin` | string |  | Default Otoroshi admin login |
+| `app.adminPassword` | string |  | Default Otoroshi admin password |
 ## Common configuration
 
 | name | type | default value  | description |
@@ -36,6 +43,8 @@ java -Dconfig.file=/path/to/otoroshi.conf -jar otoroshi.jar
 | `app.claim.sharedKey` | string | "secret" | the shared secret used for signing the JWT token passed between Otoroshi and backend services |
 | `app.webhooks.size` | number | 100 | number of events sent at most when calling one of the analytics webhooks |
 | `app.throttlingWindow` | number | 10 | time window (in seconds) used to compute throttling quotas for ApiKeys |
+| `app.checkForUpdates` | boolean | true | Enable daily otoroshi update check |
+| `app.overheadThreshold` | number | 500 | Overhead limit that trigger a `HighOverheadAlert` event when it is exceeded |
 
 ## Admin API configuration
 
@@ -80,8 +89,7 @@ As Otoroshi supports multiple datastores, you'll have to provide some details ab
 | name | type | default value  | description |
 | ---- |:----:| -------------- | ----- |
 | `app.storage` | string | "inmemory" | what kind of storage engine you want to use. Possible values are `inmemory`, `file`, `redis`, `cassandra` |
-| `app.importFrom` | string | | a file path or a URL to an Otoroshi export file. If the datastore is empty on startup, this file will be used to import data to the empty DB |
-| `app.importFromHeaders` | array | [] | a list of `:` separated header to use if the `app.importFrom` setting is a URL |
+| `app.storageRoot` | string | "otoroshi" | Root key of storage keys |
 | `app.initialData` | object |  | object representing Otoroshi internal data as exported from danger zone so you don't need a config file and a data import file |
 | `app.redis.host` | string | "localhost" | the host of the redis server |
 | `app.redis.port` | number | 6379 | the port of the redis server |

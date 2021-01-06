@@ -1,5 +1,6 @@
 # Otoroshi plugins
 
+<!-- TODO ??? -->
 @@@ warning
 This section is under rewrite. The following content is deprecated
 @@@
@@ -15,7 +16,7 @@ there are many plugin types
 * `access validation` plugins: used to validate if a request can pass or not based on whatever you want
 * `request transformer` plugins: used to transform request, responses and their body. Can be used to return arbitrary content
 * `event listener` plugins: any plugin type can listen to otoroshi internal events and react to thems
-* `job` plugins: tasks taht can run automatically once, on be scheduled with a cron expression or every defined interval
+* `job` plugins: tasks that can run automatically once, on be scheduled with a cron expression or every defined interval
 
 ## Code and signatures
 

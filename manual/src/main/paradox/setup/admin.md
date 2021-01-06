@@ -1,17 +1,8 @@
 # Manage admin users
 
-@@@ warning
-This section is under rewrite. The following content is deprecated and UI may have changed
-@@@
-
 ## Create admin user after the first run
 
 Click on the `Create an admin user` warning popup, or go to `settings (cog icon) / Admins`.
-
-@@@ div { .centered-img }
-<img src="../img/go-to-admins.png" />
-@@@
-
 You will see the list of registered admin users.
 
 @@@ div { .centered-img }
@@ -20,15 +11,7 @@ You will see the list of registered admin users.
 
 Click on `Register admin.`
 
-@@@ div { .centered-img }
-<img src="../img/register-admin-button.png" />
-@@@
-
-Now, enter informations about the new admin you want to create.
-
-@@@ div { .centered-img }
-<img src="../img/create-admin.png" />
-@@@
+Now, enter informations (label, login and password) about the new admin you want to create.
 
 Click on `Register Admin`.
 
@@ -41,6 +24,8 @@ Now, you can discard the generated admin, confirm, then logout, login with the a
 @@@ div { .centered-img }
 <img src="../img/home-page.png" />
 @@@
+
+New `admins` are created in default organization with an access to all teams. To update oragnization or team, just click on the edit user button of the `admin` and 
 
 ## Create admin user with U2F device login
 

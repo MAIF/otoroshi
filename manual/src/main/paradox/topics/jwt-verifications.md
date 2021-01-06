@@ -3,7 +3,7 @@
 Sometimes, it can be pretty useful to verify Jwt tokens coming from other provider on some services. Otoroshi provides a tool to do that per service. In the Service descriptor page, you can find a `Jwt token Verification` section dedicated to this topic.
 
 ## Service descriptor local verifications
-
+<!-- TODO: UI has been probably updated -->
 @@@ div { .centered-img }
 <img src="../img/jwt-verif-capture.png" />
 @@@
@@ -99,6 +99,7 @@ you can of course use multiple expressions in one field like `my-value-is-${date
 
 You can  create global jwt verifiers and reference them in your services (from the `Type` selector). When you set the type of verification to `Reference to a global definition`, you can choose an existing global jwt verifier
 
+<!-- FIXME: undefined screen capture -->
 @@@ div { .centered-img }
 <img src="../img/jwt-verif-global-ref.png" />
 @@@
