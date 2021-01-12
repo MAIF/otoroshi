@@ -3120,9 +3120,7 @@ export class TemplateInput extends Component {
       <meta name="theme-color" content="#000000">
       <meta name="robots" content="noindex, nofollow">
       <link rel="shortcut icon" type="image/png" href="/__otoroshi_assets/images/favicon.png">
-      <link rel="stylesheet" href="/__otoroshi_assets/stylesheets/bootstrap.min.css">
-      <link rel="stylesheet" href="/__otoroshi_assets/stylesheets/bootstrap-theme.min.css">
-      <link rel="stylesheet" media="screen" href="/__otoroshi_assets/stylesheets/otoroshiapps.css">
+        <link rel="stylesheet" media="screen" href="/__otoroshi_assets/stylesheets/otoroshiapps.css">
       <link href="/assets/fonts/raleway/raleway.css" rel="stylesheet">
       <link rel="stylesheet" media="screen" href="/__otoroshi_assets/stylesheets/error.css">
   </head>
