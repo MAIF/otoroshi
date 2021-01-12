@@ -28,7 +28,6 @@
   "dependencies": {
     "antd": "3.26.0",
     "bcryptjs": "2.4.3",
-    "bootstrap": "3.4.1",
     "browser-update": "3.3.22",
     "byte-converter": "0.1.4",
     "es-symbol": "1.1.2",
