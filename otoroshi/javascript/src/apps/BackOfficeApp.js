@@ -82,7 +82,7 @@ class BackOfficeAppContainer extends Component {
 
   componentDidMount() {
     this.props.history.listen(() => {
-      document.getElementById('sidebar').setAttribute('class', 'col-sm-2 sidebar collapse');
+      document.getElementById('sidebar').setAttribute('class','aside collapse');
       // document.getElementById('navbar').setAttribute('class', 'navbar-collapse collapse');
       document
         .getElementById('toggle-sidebar')
@@ -135,13 +135,10 @@ class BackOfficeAppContainer extends Component {
           <UpdateOtoroshiVersion env={this.state.env} />,
           <TopBar {...this.props} changePassword={this.state.env.changePassword} />,
         ]}
-        <div className="container-fluid">
-          <div className="row">
-            <div className="col-sm-2 sidebar" id="sidebar">
-              <div className="sidebar-container">
+        <div className="aside" id="sidebar">
                 <div className="sidebar-content">
                   <GlobalTenantSelector />
-                  <ul className="nav nav-sidebar">
+                  <ul>
                     <li>
                       <h2>
                         <a
@@ -173,15 +170,12 @@ class BackOfficeAppContainer extends Component {
                           )}
                       </span>
                     )}
-                  </div>
                 </div>
               </div>
             </div>
-            <div className="col-sm-10 col-sm-offset-2 main">
-              <div className="row">
+            <div className="main">
                 <div className={classes.join(' ')}>
                   <DynamicTitle />
-                  <div className="row" style={{ marginTop: 1 }}>
                     {!this.state.catchedError && (
                       <Switch>
                         <Route
@@ -481,6 +475,7 @@ class BackOfficeAppContainer extends Component {
                       </Switch>
                     )}
                     {this.state.catchedError && (
+                      <div>
                       <div
                         style={{
                           display: 'flex',
@@ -501,25 +496,22 @@ class BackOfficeAppContainer extends Component {
                         <div style={{ marginTop: 20 }}>
                           <button
                             type="button"
-                            className="btn btn-success"
+                            className="btn-success"
                             onClick={(e) => window.history.back()}>
                             <i className="fas fa-arrow-left" /> back
                           </button>
                           <button
                             type="button"
-                            className="btn btn-danger"
+                            className="btn-danger ml-10"
                             onClick={(e) => window.location.reload()}>
                             <i className="fas fa-redo" /> reload
                           </button>
                         </div>
                       </div>
+                      </div>
                     )}
                   </div>
                 </div>
-              </div>
-            </div>
-          </div>
-        </div>
         <Toasts />
       </div>
     );
