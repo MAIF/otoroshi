@@ -1,0 +1,110 @@
+nav {
+  z-index: 1030;
+  position: sticky;
+  top: 0;
+  background-color: $secondaryBgColor;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-direction: column;
+  @media screen and (min-width: $bp1) {
+    flex-direction: row;
+  }
+  .dropdown {
+    cursor: pointer;
+    right: 0px;
+    @media screen and (min-width: $bp1) {
+      position: relative;
+    }
+    .fa-cog {
+      padding: 15px;
+      font-size: 1.5em;
+      color: #fff;
+    }
+
+    .dropdown-content{
+      right: 0;
+      left: auto;
+    }
+
+  }
+  &.active+#sidebar{
+    @media screen and (max-width: $bp1) {
+      display: block;
+    }
+  }
+}
+
+#navbar {
+  padding: 15px;
+  width: 100%;
+
+  @media screen and (max-width: $bp1) {
+    display: flex;
+    justify-content: center;
+  }
+  @media screen and (min-width: $bp1) {
+    padding: 0px;
+    width: auto;
+  }
+  .Select-control {
+    border: 1px solid #ccc;
+    @media screen and (min-width: $bp1) {
+      width: 400px;
+    }
+  }
+}
+
+.navbar-toggle {
+  position: fixed;
+  color:#fff;
+  padding: 9px 10px;
+  margin-left: 15px;
+  margin-top: 7px;
+  background-color: transparent;
+  background-image: none;
+  border: 1px solid #333;
+  border-radius: 4px;
+  @media screen and (min-width: $bp1) {
+    display: none;
+  }
+}
+
+.brand {
+    color: $linkColor;
+    height: 52px;
+    background-color: $primaryColor;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    line-height: inherit;
+    white-space: nowrap;
+    transition: background-color ease-in-out .15s;
+    @media screen and (min-width: $bp1) {
+      width: 20%;
+      margin-right: 1rem;
+    }
+    &__content{
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      color:#fff;
+      line-height: 1.2rem;
+    }
+    &:hover{
+      background-color: lighten($primaryColor,5%);
+    }
+}
+
+
+#btn_sidebar{
+  position: fixed;
+  left: 10px;
+  top: 10px;
+  @media screen and (min-width: $bp1) {
+    display: none;
+  }
+}
+
