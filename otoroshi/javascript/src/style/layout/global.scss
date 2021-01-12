@@ -1,0 +1,277 @@
+// GENERAL STYLE //
+
+body {
+  font-family: Raleway, Helvetica, sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  background-color: $primaryBgColor;
+  color: $textColor;
+  line-height: 1.5rem;
+}
+
+h1{
+  color: $primaryColor;
+  font-size: 24px;
+}
+
+h2{
+  color:$primaryColor;
+  font-size: 20px;
+}
+
+h3{
+  color:$primaryColor;
+  font-size: 16px;
+}
+
+h4{
+  color: $primaryColor;
+  font-size: 12px;
+}
+
+a {
+  text-decoration: none;
+  color: $linkColor;
+}
+
+hr {
+  color:$secondaryBgColor;
+}
+
+strong{
+  font-weight: bolder;
+}
+
+pre {
+  display: block;
+  padding: 9.5px;
+  margin: 0 0 10px;
+  font-size: 13px;
+  line-height: 1.42857143;
+  color: #333;
+  word-break: break-all;
+  word-wrap: break-word;
+  background-color: #f5f5f5;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  overflow: auto;
+}
+
+code {
+  padding: 2px 4px;
+  font-size: 90%;
+  color: #c7254e;
+  background-color: #f9f2f4;
+  border-radius: 4px;
+  white-space: break-spaces;
+}
+
+.bg-none{
+  background: none;
+}
+* {
+  box-sizing: border-box;
+}
+
+// LAYOUT //
+
+.container {
+ // display: flex;
+ // width: 970px;
+  margin-right: auto;
+  margin-left: auto;
+}
+
+// display
+.hide{
+  display: none !important;
+}
+.d-block{
+  display:block !important;
+}
+.d-inline-block{
+  display:inline-block;
+}
+
+// cursors
+.cursor-pointer{
+  cursor: pointer;
+}
+
+//flex
+.flex {
+  display: flex;
+}
+
+.flex-inline {
+  display: inline-flex;
+}
+
+.flex-column{
+  flex-direction: column;
+}
+.flex-wrap{
+  flex-wrap: wrap;
+}
+
+.f-justify_between{
+  justify-content: space-between;
+}
+.f-justify_around{
+  justify-content: space-around;
+}
+.f-justify_center{
+  justify-content: center;
+}
+.f-justify_start{
+  justify-content: flex-start;
+}
+.f-justify_end{
+  justify-content: flex-end;
+}
+
+.f-align_start{
+  align-items: start;
+}
+.f-align_center{
+  align-items: center;
+}
+
+.grow-1{
+  flex-grow: 1;
+}
+
+//positions
+.p-fixed {
+  position: fixed;
+}
+
+.p-relative{
+  position: relative;
+}
+
+//grid
+.grid{
+  display: grid;
+}
+.grid-template--halfFIX{
+  grid-template-columns: 1fr 1fr;
+}
+.grid-template--1fr{
+  grid-template-columns: 1fr;
+}
+.grid-template--half{
+  grid-template-columns: 1fr 1fr;
+}
+.grid-template--two-two {
+  grid-template-columns: 2fr 2fr;
+}
+.grid-template--third{
+  grid-template-columns: 1fr 3fr;
+}
+.grid-template--two-third{
+  grid-template-columns: 2fr 3fr;
+}
+.grid-template-bp1--fifth{
+  @media screen and (min-width: $bp1) {
+    grid-template-columns: 1fr 5fr;
+  }
+}
+.grid-template-bp1--fifth-reverse{
+  grid-template-columns: 5fr 1fr;
+}
+
+.grid-template--1-auto{
+  grid-template-columns: 1fr auto;
+}
+.grid-template--auto-1{
+  grid-template-columns: auto 1fr;
+}
+.grid-template--1-1-auto {
+  grid-template-columns: 1fr 1fr auto;
+}
+
+.grid-colgap--5 {
+  grid-column-gap: 5px;
+}
+
+.grid-align-items_baseline {
+  align-items: baseline;
+}
+
+.grid-align-items_center {
+  align-items: center;
+}
+
+// COLORS (text, background, border)
+$colors : ("white": #FFF, "dark":$darkColor, "warning":$warningColor, "alert":$alertColor,"success":$successColor,"info":$infoColor,"primary":$primaryColor);
+
+@each $shortcut, $color in $colors{
+  .text__#{$shortcut} {
+    color: $color;
+  }
+  .text__#{$shortcut}--important {
+    color: $color!important;
+  }
+  .bg__#{$shortcut} {
+    background-color: $color;
+  }
+  .bg__#{$shortcut}--important {
+    background-color: $color!important;
+  }
+  .border__#{$shortcut} {
+    border-color: $color;
+  }
+  .border__#{$shortcut}--important {
+    border-color: $color!important;
+  }
+}
+
+
+//margins & paddings
+$marginSizes : 5, 10, 20;
+$target : ("m":"margin","mt":"margin-top", "mr":"margin-right", "mb":"margin-bottom","ml":"margin-left", "p":"padding","pt":"padding-top", "pr":"padding-right", "pb":"padding-bottom","pl":"padding-left"  );
+@each $size in $marginSizes{
+  @each $shortcut, $property in $target{
+    .#{$shortcut}-#{$size} {
+      #{$property}: #{$size+'px'};
+    }
+  }
+}
+
+//width
+$widthSizes : 25, 33, 50, 100;
+@each $size in $widthSizes{
+    .w-#{$size} {
+      width: #{$size+'%'};
+  }
+}
+
+@media screen and (max-width: $bp1) {
+  @each $size in $marginSizes{
+    @each $shortcut, $property in $target{
+      .#{$shortcut}-bp1-#{$size} {
+        #{$property}: #{$size+'px'};
+      }
+    }
+  }
+
+  @each $size in $widthSizes{
+    .w-bp1-#{$size} {
+      width: #{$size+'%'};
+    }
+  }
+
+  .flex-bp1-wrap{
+    flex-wrap: wrap;
+  }
+  .flex-bp1-column{
+    flex-direction: column;
+  }
+  .f-bp1-justify_start{
+    justify-content: flex-start;
+  }
+  .f-bp1-align_start{
+    align-items: flex-start;
+  }
+}

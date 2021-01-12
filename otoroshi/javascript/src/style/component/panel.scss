@@ -1,0 +1,79 @@
+.panel-heading {
+  //text-align: right;
+  padding: 10px 15px;
+  border-bottom: 1px solid transparent;
+  border-top-left-radius: 3px;
+  border-top-right-radius: 3px;
+  .close {
+   // font-size: 40px;
+   // line-height: 0.4;
+  }
+}
+
+.panel {
+  margin-bottom: 20px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  -webkit-box-shadow: 0 1px 1px rgba(0,0,0,.05);
+  box-shadow: 0 1px 1px rgba(0,0,0,.05);
+
+}
+
+.panel,
+.panel-heading {
+  background-color: $primaryBgColor;
+  border-color: $primaryColor;
+  &.panel-danger{
+    border-color: $alertColor;
+  }
+  &.panel-success{
+    border-color: $successColor;
+  }
+  &.panel-warning{
+    border-color: $warningColor;
+  }
+  h3,h4 {
+    color: #fff;
+    line-height: 2em;
+  }
+}
+
+.panel-title {
+  margin-top: 0;
+  margin-bottom: 0;
+  font-size: 16px;
+  color: inherit;
+}
+.panel-body {
+  padding: 15px;
+}
+
+
+.panel-success > .panel-heading {
+  background-image: -webkit-linear-gradient(top,$successColor 0,$successColor 100%);
+  background-image: -o-linear-gradient(top,$successColor 0,$successColor 100%);
+  background-image: -webkit-gradient(linear,left top,left bottom,from($successColor),to($successColor));
+  background-image: linear-gradient(to bottom,$successColor 0,$successColor 100%);
+  filter: progid:DXImageTransform.Microsoft.gradient(startColorstr= '$successColor', endColorstr='$successColor', GradientType=0);
+  color:#fff;
+}
+.panel-danger > .panel-heading {
+  background-image: -webkit-linear-gradient(top,$alertColor 0,$alertColor 100%);
+  background-image: -o-linear-gradient(top,$alertColor 0,$alertColor 100%);
+  background-image: -webkit-gradient(linear,left top,left bottom,from($alertColor),to($alertColor));
+  background-image: linear-gradient(to bottom,$alertColor 0,$alertColor 100%);
+  filter: progid:DXImageTransform.Microsoft.gradient(startColorstr= '$alertColor', endColorstr='$alertColor', GradientType=0);
+  color:#fff;
+}
+.panel-warning > .panel-heading {
+  background-image: -webkit-linear-gradient(top,$warningColor 0,$warningColor 100%);
+  background-image: -o-linear-gradient(top,$warningColor 0,$warningColor 100%);
+  background-image: -webkit-gradient(linear,left top,left bottom,from($warningColor),to($warningColor));
+  background-image: linear-gradient(to bottom,$warningColor 0,$warningColor 100%);
+  filter: progid:DXImageTransform.Microsoft.gradient(startColorstr= '$warningColor', endColorstr='$warningColor', GradientType=0);
+  color:#fff;
+}
+
+.variant-panel {
+  border-color: $primaryColor
+}
