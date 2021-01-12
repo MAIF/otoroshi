@@ -1,0 +1,28 @@
+.label {
+  padding: .2rem .3rem;
+  font-size: 11px;
+  line-height: 1;
+  color: #fff;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: baseline;
+  border-radius: .2rem;
+  &-primary{
+    background-color: #337ab7;
+  }
+  &-success{
+    background-color: #5cb85c;
+  }
+  &-warning{
+    background-color: #f0ad4e;
+  }
+  &-info{
+    background-color: #5bc0de;
+  }
+  &-default{
+    background-color: #777;
+  }
+  &-danger{
+    background-color: #d9534f;
+  }
+}
