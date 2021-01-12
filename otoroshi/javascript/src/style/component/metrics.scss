@@ -1,0 +1,49 @@
+.rowMetrics {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 20px;
+}
+
+.metric {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  border-radius: 4px;
+  background-color: $secondaryBgColor;
+  height: 100px;
+  margin: 10px;
+  font-family: 'Roboto';
+  font-size: 23px;
+  font-weight: bold;
+  color: #fff;
+}
+
+.metric-text {
+  z-index: 103;
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.metric-box {
+  width: 100%;
+  height: 100%;
+  z-index: 100;
+  position: relative;
+  margin-top: 10px;
+}
+
+
+.metric-text-value{
+  text-shadow: rgb(0, 0, 0) 1px 1px, rgb(0, 0, 0) -1px 1px, rgb(0, 0, 0) -1px -1px, rgb(0, 0, 0) 1px -1px;
+}
+
+.metric-text-title{
+    text-shadow: rgb(0, 0, 0) 1px 1px, rgb(0, 0, 0) -1px 1px, rgb(0, 0, 0) -1px -1px, rgb(0, 0, 0) 1px -1px;
+        font-size: 22px;
+        font-weight: normal;
+}
