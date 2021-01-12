@@ -1,0 +1,64 @@
+.Select-menu-outer {
+  background-color: #6b6b6b;
+  z-index: 9999;
+}
+//zone recherche quand select open
+.is-open > .Select-control,.Select.is-focused > .Select-control,.Select.is-focused:not(.is-open) > .Select-control{
+  background-color: $secondaryBgColor;
+  color: #fff;
+ }
+// élément en focus
+.Select-option.is-focused {
+    color: #fff;
+    background-color: $secondaryBgColor;
+
+    &:hover .st1{
+      fill:#fff;
+    }
+}
+
+.Select-option.is-focused:hover{
+    background-color: $secondaryBgColor;
+}
+
+.Select-control,.Select-option {
+ background-color: #373735;
+}
+
+.Select-control {
+ background: 	none;
+ border: 	none;
+}
+
+.Select-clear-zone:hover {
+ color: #666;
+}
+// couleur de text du select
+.Select-option {
+  color: #8C8C8B;
+  .monkeyMenu {
+    width: 24px;
+    margin-left: -4px;
+
+    .st1 {
+      fill: #8C8C8B;
+    }
+  }
+}
+
+.Select-value, .Select-placeholder,.Select.has-value.Select--single > .Select-control .Select-value .Select-value-label, .Select.has-value.is-pseudo-focused.Select--single > .Select-control .Select-value .Select-value-label {
+	color:$textColor;
+	background-color: 	$secondaryBgColor;
+}
+
+.Select-menu{
+  overflow: auto;
+}
+
+.Select-placeholder{
+  margin: 2px;
+}
+
+.Select-input>input{
+  padding-top: 0px;
+}
