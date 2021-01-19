@@ -106,6 +106,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
           KubernetesNamespace(item)
         })
       } else {
+        logger.info(s"fetchNamespacesAndFilterLabels: bad status ${resp.status}")
         Seq.empty
       }
     }
@@ -121,6 +122,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
             KubernetesService(item)
           }
         } else {
+          logger.info(s"fetchServices: bad status ${resp.status}")
           Seq.empty
         }
       }
@@ -134,6 +136,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       if (resp.status == 200) {
         KubernetesService(resp.json).some
       } else {
+        logger.info(s"fetchService: bad status ${resp.status}")
         None
       }
     }
@@ -146,6 +149,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       if (resp.status == 200) {
         KubernetesSecret(resp.json).some
       } else {
+        logger.info(s"fetchSecret: bad status ${resp.status}")
         None
       }
     }
@@ -161,6 +165,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
             KubernetesEndpoint(item)
           }
         } else {
+          logger.info(s"fetchEndpoints: bad status ${resp.status}")
           Seq.empty
         }
       }
@@ -174,6 +179,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       if (resp.status == 200) {
         KubernetesEndpoint(resp.json).some
       } else {
+        logger.info(s"fetchEndpoint: bad status ${resp.status}")
         None
       }
     }
@@ -241,6 +247,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
             KubernetesDeployment(item)
           }
         } else {
+          logger.info(s"fetchDeployments: bad status ${resp.status}")
           Seq.empty
         }
       }
@@ -257,6 +264,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
             KubernetesPod(item)
           }
         } else {
+          logger.info(s"fetchPods: bad status ${resp.status}")
           Seq.empty
         }
       }
@@ -279,6 +287,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
             KubernetesSecret(item)
           }
         } else {
+          logger.info(s"fetchSecrets: bad status ${resp.status}")
           Seq.empty
         }
       }
@@ -295,6 +304,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
             KubernetesSecret(item)
           })
         } else {
+          logger.info(s"fetchSecretsAndFilterLabels: bad status ${resp.status}")
           Seq.empty
         }
       }
@@ -309,6 +319,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       if (resp.status == 200) {
         KubernetesDeployment(resp.json).some
       } else {
+        logger.info(s"fetchDeployment: bad status ${resp.status}")
         None
       }
     }
@@ -322,6 +333,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       if (resp.status == 200) {
         KubernetesConfigMap(resp.json).some
       } else {
+        logger.info(s"fetchConfigMap: bad status ${resp.status}")
         None
       }
     }
@@ -366,6 +378,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
               case Success((JsSuccess(item, _), raw)) => OtoResHolder(raw, item)
             }
           } else {
+            logger.info(s"fetchOtoroshiResources ${pluralName}: bad status ${resp.status}")
             Seq.empty
           }
         } match {
@@ -474,6 +487,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
         if (resp.status == 200 || resp.status == 201) {
           KubernetesDeployment(resp.json).some
         } else {
+          logger.info(s"patchDeployment: bad status ${resp.status}")
           None
         }
       } match {
@@ -492,6 +506,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       if (resp.status == 200) {
         KubernetesOpenshiftDnsOperator(resp.json).some
       } else {
+        logger.info(s"fetchOpenshiftDnsOperator: bad status ${resp.status}")
         None
       }
     }
@@ -508,6 +523,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
           if (resp.status == 200) {
             KubernetesOpenshiftDnsOperator(resp.json).some
           } else {
+            logger.info(s"updateOpenshiftDnsOperator: bad status ${resp.status}")
             None
           }
         }
@@ -523,6 +539,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       if (resp.status == 200) {
         KubernetesMutatingWebhookConfiguration(resp.json).some
       } else {
+        logger.info(s"fetchMutatingWebhookConfiguration: bad status ${resp.status}")
         None
       }
     }
@@ -538,6 +555,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
         if (resp.status == 200 || resp.status == 201) {
           KubernetesMutatingWebhookConfiguration(resp.json).some
         } else {
+          logger.info(s"patchMutatingWebhookConfiguration: bad status ${resp.status}")
           None
         }
       } match {
@@ -555,6 +573,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
       if (resp.status == 200) {
         KubernetesValidatingWebhookConfiguration(resp.json).some
       } else {
+        logger.info(s"fetchValidatingWebhookConfiguration: bad status ${resp.status}")
         None
       }
     }
@@ -570,6 +589,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
         if (resp.status == 200 || resp.status == 201) {
           KubernetesValidatingWebhookConfiguration(resp.json).some
         } else {
+          logger.info(s"patchValidatingWebhookConfiguration: bad status ${resp.status}")
           None
         }
       } match {
