@@ -6,8 +6,14 @@ import { Help } from './Help';
 export class ArrayInput extends Component {
   state = {
     loading: false,
-    values: [],
+    values: this.props.possibleValues || [],
   };
+
+  componentWillReceiveProps(next) {
+    if (next.possibleValues !== this.props.possibleValues) {
+      this.setState({ values: next.possibleValues });
+    }
+  }
 
   componentDidMount() {
     if (this.props.valuesFrom) {
