@@ -130,9 +130,7 @@ class Target extends Component {
             return (
               <button
                 type="button"
-                className="btn btn-primary btn-xs"
-                style={{ marginLeft: 5, height: 32, marginTop: 1 }}
-                onClick={(e) => this.setState({ showMore: !this.state.showMore })}>
+                className="btn-info btn-xs" onClick={(e) => this.setState({ showMore: !this.state.showMore })}>
                 <i className="fas fa-eye" /> Show more
               </button>
             );
@@ -141,10 +139,6 @@ class Target extends Component {
       />
     );
   };
-
-  containsOneValueOf = (value, values) => {
-    return values.filter(v => value.indexOf(v) > -1).length > 0;
-  }
 
   render() {
     const value = this.props.itemValue;
@@ -160,10 +154,6 @@ class Target extends Component {
           value={value.host}
           help="The host of the target"
           onChange={(e) => {
-            if (this.containsOneValueOf(e, ['http:', 'https:', 'tcp:', 'udp:', '/'])) {
-              window.newAlert('You cannot use protocol scheme or / in the Host name');
-              return;
-            }
             this.setState({ url: value.scheme + '://' + e });
             this.changeTheValue('host', e);
           }}
@@ -1093,7 +1083,7 @@ export class ServicePage extends Component {
                 type="button"
                 {...createTooltip('Export the current service as a JSON file.', 'left', true)}
                 onClick={this.exportService}>
-                <i className="fas fa-file-export" /> JSON
+                <i className="fas fa-file-export" />
               </button>
               <button
                 className="btn btn-info"
@@ -2320,15 +2310,6 @@ export class ServicePage extends Component {
                   help="..."
                   valuesFrom="/bo/api/proxy/api/verifiers"
                   transformer={(a) => ({ value: a.id, label: a.name })}
-                  additionalButton={({ itemValue }) => (
-                    <button
-                      disabled={this.props.disabled}
-                      type="button"
-                      className="btn btn-success"
-                      onClick={() => this.props.history.push(`/jwt-verifiers/edit/${itemValue}`)}>
-                      <i className="fas fa-edit" />
-                    </button>
-                  )}
                 />
                 <BooleanInput
                   label="Enabled"
@@ -2336,11 +2317,11 @@ export class ServicePage extends Component {
                   help="Is JWT verification enabled for this service"
                   onChange={(v) => this.changeTheValue('jwtVerifier.enabled', v)}
                 />
-                <div className="form-group">
-                  <label className="col-xs-12 col-sm-2 control-label" />
-                  <div className="col-sm-10">
+                <div className="form__group mb-20 grid-template-bp1--fifth">
+                  <label />
+                  <div>
                     {this.state.service.jwtVerifier.ids.length === 0 && (
-                      <a href={`/bo/dashboard/jwt-verifiers/add`} className="btn btn-primary">
+                      <a href={`/bo/dashboard/jwt-verifiers/add`} className="btn btn-info">
                         <i className="fas fa-plus" /> Create a new Jwt Verifier config
                       </a>
                     )}

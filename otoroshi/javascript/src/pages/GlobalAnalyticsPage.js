@@ -108,7 +108,7 @@ export class GlobalAnalyticsPage extends Component {
 
     return (
       <div className="chartsAnalytics">
-        <div className="row" style={{ marginBottom: 30, marginLeft: 2 }}>
+        <div style={{ marginBottom: 30, marginLeft: 2 }}>
           <div className="">
             <OtoDatePicker
               updateDateRange={this.updateDateRange}
@@ -155,9 +155,9 @@ export class GlobalAnalyticsPage extends Component {
           </div>
         )}
         {!this.state.loading && (
-          <div className="row">
-            <div className="col-md-6">
-              <table className="fulltable table table-bordered table-striped table-condensed table-hover">
+          <div className="flex flex-bp1-column mb-10">
+            <div className="w-100 mr-5  mb-bp1-10">
+              <table className="fulltable table table-bordered table-striped table-condensed table-hover w-100">
                 <thead>
                   <tr>
                     <td>Informations</td>
@@ -182,7 +182,7 @@ export class GlobalAnalyticsPage extends Component {
                 </tbody>
               </table>
             </div>
-            <div className="col-md-6">
+            <div className="w-100">
               <RoundChart
                 series={data.statusesPiechart && data.statusesPiechart.series}
                 title="Http statuses"
@@ -192,16 +192,16 @@ export class GlobalAnalyticsPage extends Component {
           </div>
         )}
         {!this.state.loading && [
-          <div className="row">
-            <div className="col-md-12">
+          <div className="mb-10">
+            <div className="">
               <Histogram
                 series={data.statusesHistogram && data.statusesHistogram.series}
                 title="Http statuses"
               />
             </div>
           </div>,
-          <div className="row">
-            <div className="col-md-12">
+          <div className="mb-10">
+            <div className="">
               <Histogram
                 series={data.durationStats && data.durationStats.series}
                 title="Duration"
@@ -209,8 +209,8 @@ export class GlobalAnalyticsPage extends Component {
               />
             </div>
           </div>,
-          <div className="row">
-            <div className="col-md-12">
+          <div className="mb-10">
+            <div className="">
               <Histogram
                 series={data.durationPercentiles && data.durationPercentiles.series}
                 title="Duration percentiles"
@@ -218,8 +218,8 @@ export class GlobalAnalyticsPage extends Component {
               />
             </div>
           </div>,
-          <div className="row">
-            <div className="col-md-12">
+          <div className="mb-10">
+            <div className="">
               <Histogram
                 series={data.overheadStats && data.overheadStats.series}
                 title="Overhead"
@@ -227,8 +227,8 @@ export class GlobalAnalyticsPage extends Component {
               />
             </div>
           </div>,
-          <div className="row">
-            <div className="col-md-12">
+          <div className="mb-10">
+            <div className="">
               <Histogram
                 series={data.overheadPercentiles && data.overheadPercentiles.series}
                 title="Overhead percentiles"
@@ -236,8 +236,8 @@ export class GlobalAnalyticsPage extends Component {
               />
             </div>
           </div>,
-          <div className="row">
-            <div className="col-md-12">
+          <div className="mb-10">
+            <div className="">
               <Histogram
                 series={data.dataInStats && data.dataInStats.series}
                 title="Data In"
@@ -245,8 +245,8 @@ export class GlobalAnalyticsPage extends Component {
               />
             </div>
           </div>,
-          <div className="row">
-            <div className="col-md-12">
+          <div className="mb-10">
+            <div className="">
               <Histogram
                 series={data.dataOutStats && data.dataOutStats.series}
                 title="Data In"
@@ -254,8 +254,8 @@ export class GlobalAnalyticsPage extends Component {
               />
             </div>
           </div>,
-          <div className="row">
-            <div className="col-md-12">
+          <div>
+            <div>
               <RoundChart
                 series={data.productPiechart && data.productPiechart.series}
                 title="Hits by product"
@@ -263,8 +263,8 @@ export class GlobalAnalyticsPage extends Component {
               />
             </div>
           </div>,
-          <div className="row">
-            <div className="col-md-12">
+          <div className="mb-10">
+            <div className="">
               <RoundChart
                 series={data.servicePiechart && data.servicePiechart.series}
                 title="Hits by service"
@@ -272,8 +272,8 @@ export class GlobalAnalyticsPage extends Component {
               />
             </div>
           </div>,
-          <div className="row">
-            <div className="col-md-12">
+          <div className="mb-10">
+            <div className="">
               <RoundChart
                 series={data.apiKeyPiechart && data.apiKeyPiechart.series}
                 title="Hits by apikey"
@@ -281,8 +281,8 @@ export class GlobalAnalyticsPage extends Component {
               />
             </div>
           </div>,
-          <div className="row">
-            <div className="col-md-12">
+          <div className="mb-10">
+            <div className="">
               <RoundChart
                 series={data.userPiechart && data.userPiechart.series}
                 title="Hits by user"

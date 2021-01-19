@@ -317,7 +317,7 @@ export class Table extends Component {
           Filter: (d) => (
             <input
               type="text"
-              className="form-control input-sm"
+              className="input-sm"
               value={d.filter ? d.filter.value : ''}
               onChange={(e) => d.onChange(e.target.value)}
               placeholder="Search ..."
@@ -363,14 +363,14 @@ export class Table extends Component {
             <div className="displayGroupBtn">
               <button
                 type="button"
-                className="btn btn-sm btn-success"
+                className="btn-sm btn-success"
                 {...createTooltip(`Edit this ${this.props.itemName}`, 'top', true)}
                 onClick={(e) => this.showEditForm(e, item)}>
                 <i className="fas fa-pencil-alt" />
               </button>
               {this.props.showLink && (
                 <a
-                  className="btn btn-sm btn-primary"
+                  className="button btn-sm btn-info ml-5"
                   {...createTooltip(`Open this ${this.props.itemName}`, 'top', true)}
                   href={`${this.props.itemUrl(item)}`}
                   _onClick={(e) => this.gotoItem(e, item)}>
@@ -380,7 +380,7 @@ export class Table extends Component {
               {this.props.displayTrash && this.props.displayTrash(item) && (
                 <button
                   type="button"
-                  className="btn btn-sm btn-danger"
+                  className="btn-sm btn-danger ml-5"
                   disabled
                   {...createTooltip(`Delete this ${this.props.itemName}`, 'top', true)}>
                   <i className="fas fa-trash" />
@@ -389,7 +389,7 @@ export class Table extends Component {
               {this.props.displayTrash && !this.props.displayTrash(item) && (
                 <button
                   type="button"
-                  className="btn btn-sm btn-danger"
+                  className="btn-sm btn-danger ml-5"
                   onClick={(e) => this.deleteItem(e, item)}
                   {...createTooltip(`Delete this ${this.props.itemName}`, 'top', true)}>
                   <i className="fas fa-trash" />
@@ -398,7 +398,7 @@ export class Table extends Component {
               {!this.props.displayTrash && (
                 <button
                   type="button"
-                  className="btn btn-sm btn-danger"
+                  className="btn-sm btn-danger ml-5"
                   {...createTooltip(`Delete this ${this.props.itemName}`, 'top', true)}
                   onClick={(e) => this.deleteItem(e, item)}>
                   <i className="fas fa-trash" />
@@ -413,11 +413,11 @@ export class Table extends Component {
       <div>
         {!this.state.showEditForm && !this.state.showAddForm && (
           <div>
-            <div className="row" style={{ marginBottom: 10, marginTop: 2 }}>
-              <div className="col-md-12">
+            <div style={{ marginBottom: 10, marginTop: 2 }}>
+              <div className="">
                 <button
                   type="button"
-                  className="btn btn-primary"
+                  className="btn-info"
                   {...createTooltip('Reload the current table')}
                   onClick={this.update}>
                   <span className="fas fa-sync" />
@@ -425,7 +425,7 @@ export class Table extends Component {
                 {this.props.showActions && (
                   <button
                     type="button"
-                    className="btn btn-primary"
+                    className="btn-info"
                     style={{ marginLeft: 10 }}
                     onClick={this.showAddForm}
                     {...createTooltip(`Create a new ${this.props.itemName}`)}>
@@ -475,7 +475,7 @@ export class Table extends Component {
               this.props.injectToolbar
                 ? this.props.injectToolbar(this.state, (s) => this.setState(s))
                 : null,
-              <form className="form-horizontal" style={this.props.style}>
+              <form style={this.props.style}>
                 {React.createElement(this.props.formComponent, {
                   onChange: (currentItem) => this.setState({ currentItem }),
                   value: this.state.currentItem,
@@ -492,16 +492,16 @@ export class Table extends Component {
               />
             )}
             <hr />
-            <div className="form-buttons pull-right">
-              <button type="button" className="btn btn-danger" onClick={this.closeAddForm}>
+            <div className="btn__group--right">
+              <button type="button" className="btn-danger" onClick={this.closeAddForm}>
                 Cancel
               </button>
               {this.props.stayAfterSave && (
-                <button type="button" className="btn btn-primary" onClick={this.createItemAndStay}>
+                <button type="button" className="btn-info ml-5" onClick={this.createItemAndStay}>
                   <i className="fas fa-hdd" /> Create and stay on this {this.props.itemName}
                 </button>
               )}
-              <button type="button" className="btn btn-primary" onClick={this.createItem}>
+              <button type="button" className="btn-info ml-5" onClick={this.createItem}>
                 <i className="fas fa-hdd" /> Create {this.props.itemName}
               </button>
             </div>
@@ -513,7 +513,7 @@ export class Table extends Component {
               this.props.injectToolbar
                 ? this.props.injectToolbar(this.state, (s) => this.setState(s))
                 : null,
-              <form className="form-horizontal" style={this.props.style}>
+              <form style={this.props.style}>
                 {React.createElement(this.props.formComponent, {
                   onChange: (currentItem) => {
                     this.setState({ currentItem });
@@ -532,29 +532,29 @@ export class Table extends Component {
               />
             )}
             <hr />
-            <div className="form-buttons pull-right">
+            <div className="btn__group--right">
               {this.props.export && (
                 <>
                   <button
                     onClick={this.exportJson}
                     type="button"
-                    className="btn btn-info"
+                    className="btn-info"
                     title="Export as json">
-                    <i className="glyphicon glyphicon-export" /> JSON
+                    <i className="fas fa-file-export" /> JSON
                   </button>
                   <button
                     onClick={this.exportYaml}
                     type="button"
-                    className="btn btn-info"
+                    className="btn-info ml-5"
                     title="Export as yaml">
-                    <i className="glyphicon glyphicon-export" /> YAML
+                    <i className="fas fa-file-export" /> YAML
                   </button>
                 </>
               )}
               {this.props.displayTrash && this.props.displayTrash(this.state.currentItem) && (
                 <button
                   type="button"
-                  className="btn btn-danger"
+                  className="btn-danger ml-5"
                   title="Delete current item"
                   disabled>
                   <i className="fas fa-trash" /> Delete
@@ -563,7 +563,7 @@ export class Table extends Component {
               {this.props.displayTrash && !this.props.displayTrash(this.state.currentItem) && (
                 <button
                   type="button"
-                  className="btn btn-danger"
+                  className="btn-danger ml-5"
                   title="Delete current item"
                   onClick={(e) => this.deleteItem(e, this.state.currentItem)}>
                   <i className="fas fa-trash" /> Delete
@@ -572,21 +572,21 @@ export class Table extends Component {
               {!this.props.displayTrash && (
                 <button
                   type="button"
-                  className="btn btn-danger"
+                  className="btn-danger ml-5"
                   title="Delete current item"
                   onClick={(e) => this.deleteItem(e, this.state.currentItem)}>
                   <i className="fas fa-trash" /> Delete
                 </button>
               )}
-              <button type="button" className="btn btn-danger" onClick={this.closeEditForm}>
+              <button type="button" className="btn-danger ml-5" onClick={this.closeEditForm}>
                 <i className="fas fa-times" /> Cancel
               </button>
               {this.props.stayAfterSave && (
-                <button type="button" className="btn btn-success" onClick={this.updateItemAndStay}>
+                <button type="button" className="btn-success ml-5" onClick={this.updateItemAndStay}>
                   <i className="fas fa-hdd" /> Update and stay on this {this.props.itemName}
                 </button>
               )}
-              <button type="button" className="btn btn-success" onClick={this.updateItem}>
+              <button type="button" className="btn-success ml-5" onClick={this.updateItem}>
                 <i className="fas fa-hdd" /> Update {this.props.itemName}
               </button>
             </div>

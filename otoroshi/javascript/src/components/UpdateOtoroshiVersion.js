@@ -15,18 +15,18 @@ export class UpdateOtoroshiVersion extends Component {
     if (this.props.env && this.props.env.version && this.props.env.version.outdated && show) {
       return (
         <div className="topbar-popup">
-          <button
-            type="button"
-            className="btn btn-xs"
-            style={{ alignSelf: 'flex-end', marginTop: 5 }}
-            onClick={(e) => {
-              e.preventDefault();
-              localStorage.setItem(
-                'otoroshi_outdated_popup',
-                JSON.stringify({ closed_at: Date.now() })
-              );
-              this.forceUpdate();
-            }}>
+            <button
+                type="button"
+                className="btn btn-xs mt-5 mr-5 bg-none"
+                style={{ alignSelf: 'flex-end' }}
+                onClick={(e) => {
+                    e.preventDefault();
+                    localStorage.setItem(
+                        'otoroshi_outdated_popup',
+                        JSON.stringify({ closed_at: Date.now() })
+                    );
+                    this.forceUpdate();
+                }}>
             <i className="fas fa-times" />
           </button>
           <a
