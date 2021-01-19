@@ -14,16 +14,17 @@ class Alert extends Component {
       <div className="modal" tabindex="-1" role="dialog" style={{ display: 'block' }}>
         <div className="modal-dialog" role="document">
           <div className="modal-content">
-            <div className="modal-header">
+            <div className="modal-header flex flex-column">
               <button
                 type="button"
                 className="close"
                 data-dismiss="modal"
                 onClick={this.props.close}
-                aria-label="Close">
+                aria-label="Close"
+                style={{alignSelf:'flex-end'}}>
                 <span aria-hidden="true">&times;</span>
               </button>
-              <h4 className="modal-title">{this.props.title ? this.props.title : 'Alert'}</h4>
+              <h2 className="modal-title">{this.props.title ? this.props.title : 'Alert'}</h2>
             </div>
             <div className="modal-body">
               {_.isString(res) && <p>{res}</p>}
@@ -43,7 +44,7 @@ class Alert extends Component {
               <button
                 ref={(r) => (this.okRef = r)}
                 type="button"
-                className="btn btn-primary"
+                className="btn-info"
                 onClick={this.props.close}>
                 Close
               </button>
@@ -65,16 +66,17 @@ class Confirm extends Component {
       <div className="modal" tabindex="-1" role="dialog" style={{ display: 'block' }}>
         <div className="modal-dialog" role="document">
           <div className="modal-content">
-            <div className="modal-header">
+            <div className="modal-header flex flex-column">
               <button
                 type="button"
                 className="close"
                 data-dismiss="modal"
                 onClick={this.props.cancel}
-                aria-label="Close">
+                aria-label="Close"
+                style={{alignSelf:'flex-end'}}>
                 <span aria-hidden="true">&times;</span>
               </button>
-              <h4 className="modal-title">{this.props.title ? this.props.title : 'Confirm'}</h4>
+              <h2 className="modal-title">{this.props.title ? this.props.title : 'Confirm'}</h2>
             </div>
             <div className="modal-body">
               <p>{this.props.message}</p>
@@ -83,14 +85,14 @@ class Confirm extends Component {
               <button
                 ref={(r) => (this.cancelRef = r)}
                 type="button"
-                className="btn btn-danger"
+                className="btn-danger mr-5"
                 onClick={this.props.cancel}>
                 Cancel
               </button>
               <button
                 ref={(r) => (this.okRef = r)}
                 type="button"
-                className="btn btn-success"
+                className="btn-success"
                 onClick={this.props.ok}>
                 Ok
               </button>
@@ -117,23 +119,23 @@ class Prompt extends Component {
       <div className="modal" tabindex="-1" role="dialog" style={{ display: 'block' }}>
         <div className="modal-dialog" role="document">
           <div className="modal-content">
-            <div className="modal-header">
+            <div className="modal-header flex flex-column">
               <button
                 type="button"
                 className="close"
                 data-dismiss="modal"
                 onClick={this.props.cancel}
-                aria-label="Close">
+                aria-label="Close"
+                style={{alignSelf:'flex-end'}}>
                 <span aria-hidden="true">&times;</span>
               </button>
-              <h4 className="modal-title">{this.props.title ? this.props.title : 'Prompt'}</h4>
+              <h2 className="modal-title">{this.props.title ? this.props.title : 'Prompt'}</h2>
             </div>
-            <div className="modal-body">
-              <p>{this.props.message}</p>
+            <div className="modal-body form">
+              <p className="mb-5">{this.props.message}</p>
               {!this.props.textarea && (
                 <input
                   type={this.props.type || 'text'}
-                  className="form-control"
                   value={this.state.text}
                   ref={(r) => (this.ref = r)}
                   onChange={(e) => this.setState({ text: e.target.value })}
@@ -141,7 +143,6 @@ class Prompt extends Component {
               )}
               {this.props.textarea && (
                 <textarea
-                  className="form-control"
                   value={this.state.text}
                   ref={(r) => (this.ref = r)}
                   rows={this.props.rows || 5}
@@ -150,12 +151,12 @@ class Prompt extends Component {
               )}
             </div>
             <div className="modal-footer">
-              <button type="button" className="btn btn-danger" onClick={this.props.cancel}>
+              <button type="button" className="btn-danger mr-5" onClick={this.props.cancel}>
                 Cancel
               </button>
               <button
                 type="button"
-                className="btn btn-success"
+                className="btn-success"
                 ref={(r) => (this.okRef = r)}
                 onClick={(e) => this.props.ok(this.state.text)}>
                 Ok
@@ -178,16 +179,17 @@ class Popup extends Component {
         style={{ display: 'block', ...this.props.style }}>
         <div className="modal-dialog" role="document">
           <div className="modal-content">
-            <div className="modal-header">
+            <div className="modal-header flex flex-column">
               <button
                 type="button"
                 className="close"
                 data-dismiss="modal"
                 onClick={this.props.cancel}
-                aria-label="Close">
+                aria-label="Close"
+                style={{alignSelf:'flex-end'}}>
                 <span aria-hidden="true">&times;</span>
               </button>
-              <h4 className="modal-title">{this.props.title}</h4>
+              <h2 className="modal-title">{this.props.title}</h2>
             </div>
             {this.props.body(this.props.ok, this.props.cancel)}
           </div>

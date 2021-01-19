@@ -131,38 +131,35 @@ export class GenericLoginPage extends Component {
       <div className="jumbotron">
         <h3 style={{ marginBottom: 40 }}>Login</h3>
         <form
-          className="form-horizontal"
           style={{ textAlign: 'left' }}
           method={this.props.method}
           action={this.props.action}>
-          <input type="hidden" name="token" className="form-control" value={this.props.token} />
-          <div className="form-group">
-            <label className="col-sm-2 control-label">Username</label>
-            <div className="col-sm-10">
+          <input type="hidden" name="token" value={this.props.token} />
+          <div className="form__group mb-20 grid-template-bp1--fifth">
+            <label >Username</label>
+            <div >
               <input
                 type="text"
                 name="username"
-                className="form-control"
                 value={this.props.username}
                 onChange={this.onChange}
               />
             </div>
           </div>
-          <div className="form-group">
-            <label className="col-sm-2 control-label">Password</label>
-            <div className="col-sm-10">
+          <div className="form__group mb-20 grid-template-bp1--fifth">
+            <label >Password</label>
+            <div >
               <input
                 type="password"
                 name="password"
-                className="form-control"
                 value={this.props.password}
                 onChange={this.onChange}
               />
             </div>
           </div>
-          <div className="form-group">
-            <label className="col-sm-2 control-label" />
-            <div className="col-sm-10">
+          <div className="form__group mb-20 grid-template-bp1--fifth">
+            <label  />
+            <div >
               <button
                 type="submit"
                 className="btn"
@@ -172,9 +169,9 @@ export class GenericLoginPage extends Component {
               </button>
             </div>
           </div>
-          <div className="form-group">
-            <label className="col-sm-2 control-label" />
-            <div className="col-sm-10">
+          <div className="form__group mb-20 grid-template-bp1--fifth">
+            <label  />
+            <div >
               <p>{!this.state.error && this.state.message}</p>
               <p style={{ color: 'red', width: '100%', textAlign: 'left' }}>
                 {!!this.state.error && this.state.error}
@@ -298,39 +295,36 @@ export class GenericLoginPageWithWebAuthn extends Component {
       <div className="jumbotron">
         <h3 style={{ marginBottom: 40 }}>Login</h3>
         <form
-          className="form-horizontal"
           style={{ textAlign: 'left' }}
           onSubmit={this.webAuthnLogin}
           _method={this.props.method}
           _action={this.props.action}>
-          <input type="hidden" name="token" className="form-control" value={this.props.token} />
-          <div className="form-group">
-            <label className="col-sm-2 control-label">Username</label>
-            <div className="col-sm-10">
+          <input type="hidden" name="token" value={this.props.token} />
+          <div className="form__group mb-20 grid-template-bp1--fifth">
+            <label >Username</label>
+            <div >
               <input
                 type="text"
                 name="username"
-                className="form-control"
                 value={this.props.username}
                 onChange={this.onChange}
               />
             </div>
           </div>
-          <div className="form-group">
-            <label className="col-sm-2 control-label">Password</label>
-            <div className="col-sm-10">
+          <div className="form__group mb-20 grid-template-bp1--fifth">
+            <label >Password</label>
+            <div >
               <input
                 type="password"
                 name="password"
-                className="form-control"
                 value={this.props.password}
                 onChange={this.onChange}
               />
             </div>
           </div>
-          <div className="form-group">
-            <label className="col-sm-2 control-label" />
-            <div className="col-sm-10">
+          <div className="form__group mb-20 grid-template-bp1--fifth">
+            <label  />
+            <div >
               <button
                 type="submit"
                 className="btn"
@@ -340,9 +334,9 @@ export class GenericLoginPageWithWebAuthn extends Component {
               </button>
             </div>
           </div>
-          <div className="form-group">
-            <label className="col-sm-2 control-label" />
-            <div className="col-sm-10">
+          <div className="form__group mb-20 grid-template-bp1--fifth">
+            <label  />
+            <div >
               <p>{!this.state.error && this.state.message}</p>
               <p style={{ color: 'red', width: '100%', textAlign: 'left' }}>
                 {!!this.state.error && this.state.error}

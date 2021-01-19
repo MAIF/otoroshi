@@ -156,7 +156,7 @@ class CertificateInfos extends Component {
           label="Public key"
           disabled={true}
           rows={6}
-          style={{ fontFamily: 'monospace' }}
+          style={{ fontFamily: 'monospace',width:'100%' }}
           value={this.state.cert.publicKey}
         />
       </div>
@@ -229,13 +229,12 @@ class Commands extends Component {
       this.props.rawValue.selfSigned ||
       !!this.props.rawValue.caRef;
     return (
-      <div style={{ width: '100%', display: 'flex', justifyContent: 'flex-end', marginBottom: 20 }}>
-        <div className="btn-group">
+      <div>
+        <div className="btn__group--right">
           {this.props.rawValue.ca && (
             <button
-              style={{ marginRight: 0 }}
               type="button"
-              className="btn btn-sm btn-success"
+              className="button btn-sm btn-success mr-5 mb-5"
               onClick={(e) => {
                 this.createCASigned(e, this.props.rawValue.id);
               }}>
@@ -244,9 +243,8 @@ class Commands extends Component {
           )}
           {canRenew && (
             <button
-              style={{ marginRight: 0 }}
               type="button"
-              className="btn btn-sm btn-success"
+              className="button btn-sm btn-success mr-5 mb-5"
               onClick={(e) => {
                 BackOfficeServices.renewCert(this.props.rawValue.id).then((cert) => {
                   this.props.rawOnChange(cert);
@@ -257,9 +255,8 @@ class Commands extends Component {
           )}
           {false && (
             <button
-              style={{ marginRight: 0 }}
               type="button"
-              className="btn btn-sm btn-success"
+              className="button btn-sm btn-success mr-5 mb-5"
               onClick={(e) => {
                 window.newPrompt('Certificate host ?').then((value) => {
                   if (value && value.trim() !== '') {
@@ -273,31 +270,27 @@ class Commands extends Component {
             </button>
           )}
           <a
-            style={{ marginRight: 0 }}
             href={this.state.certUrl}
             download={`${this.props.rawValue.domain}.cer`}
-            className="btn btn-sm btn-success">
+            className="button btn-sm btn-success mr-5 mb-5">
             <i className="fas fa-download" /> Certificate Only
           </a>
           <a
-            style={{ marginRight: 0 }}
             href={this.state.fullChainUrl}
             download={`${this.props.rawValue.domain}.fullchain.cer`}
-            className="btn btn-sm btn-success">
+            className="button btn-sm btn-success mr-5 mb-5">
             <i className="fas fa-download" /> Full Chain
           </a>
           <a
-            style={{ marginRight: 0 }}
             href={this.state.privateKeyUrl}
             download={`${this.props.rawValue.domain}.key`}
-            className="btn btn-sm btn-success">
+            className="button btn-sm btn-success mr-5 mb-5">
             <i className="fas fa-download" /> Private Key
           </a>
           <a
-            style={{ marginRight: 0 }}
             href={this.state.fullPkUrl}
             download={`${this.props.rawValue.domain}.pem`}
-            className="btn btn-sm btn-success">
+            className="button btn-sm btn-success mb-5">
             <i className="fas fa-download" /> Full Chain + Private Key
           </a>
         </div>
@@ -363,21 +356,14 @@ class CertificateValid extends Component {
       );
 
     return (
-      <div className="form-group">
-        <label className="col-sm-2 control-label" />
-        <div className="col-sm-10">
-          {this.state.valid === true &&
-            (this.state.revoked === RevocationReason.VALID.value ? (
-              <div className="alert alert-success" role="alert">
-                Your certificate is valid
-              </div>
-            ) : (
-              this.state.revoked && (
-                <div className="alert alert-warning" role="alert">
-                  Your certificate is valid but it has been revoked : {this.state.revoked}
-                </div>
-              )
-            ))}
+      <div className="form__group mb-20 grid-template-bp1--fifth">
+        <label />
+        <div>
+          {this.state.valid === true && (
+            <div className="alert alert-success" role="alert">
+              Your certificate is valid
+            </div>
+          )}
           {this.state.valid === false && (
             <div className="alert alert-danger" role="alert">
               Your certificate is not valid{' '}
@@ -429,7 +415,7 @@ export class CertificatesPage extends Component {
     },
     chain: {
       type: 'text',
-      props: { label: 'Certificate full chain', rows: 6, style: { fontFamily: 'monospace' } },
+      props: { label: 'Certificate full chain', rows: 6, style: { fontFamily: 'monospace',width:'100%' } },
     },
     password: {
       type: 'password',
@@ -442,7 +428,7 @@ export class CertificatesPage extends Component {
     },
     privateKey: {
       type: 'text',
-      props: { label: 'Certificate private key', rows: 6, style: { fontFamily: 'monospace' } },
+      props: { label: 'Certificate private key', rows: 6, style: { fontFamily: 'monospace',width:'100%' } },
     },
     autoRenew: {
       type: 'bool',
@@ -499,7 +485,7 @@ export class CertificatesPage extends Component {
         !item.ca ? null : (
           /*'yes'*/ <button
             type="button"
-            className="btn btn-primary btn-sm"
+            className="btn-info btn-sm"
             onClick={(e) => this.createCASigned(e, item.id)}>
             <i className="fas fa-plus-circle" />
           </button>
@@ -828,61 +814,58 @@ export class CertificatesPage extends Component {
               type="button"
               onClick={this.createLetsEncrypt}
               style={{ marginRight: 0 }}
-              className="btn btn-primary">
+              className="btn-info">
               <i className="fas fa-plus-circle" /> Let's Encrypt cert.
             </button>
           </div>*/}
-            <div className="btn-group">
+              <div className="mt-5 mb-5 btn-group">
               {/*<button
               type="button"
               onClick={this.createSelfSigned}
               style={{ marginRight: 0 }}
-              className="btn btn-primary">
+              className="btn-info">
               <i className="fas fa-plus-circle" /> Self signed cert.
             </button>
             <button
               type="button"
               onClick={this.createSelfSignedClient}
               style={{ marginRight: 0 }}
-              className="btn btn-primary">
+              className="btn-info">
               <i className="fas fa-plus-circle" /> Self signed client cert.
             </button>
             <button
               type="button"
               onClick={this.createCA}
               style={{ marginRight: 0 }}
-              className="btn btn-primary">
+              className="btn-info">
               <i className="fas fa-plus-circle" /> Self signed CA
             </button>*/}
               <button
                 type="button"
                 onClick={this.createLetsEncrypt}
-                style={{ marginRight: 0 }}
-                className="btn btn-primary">
+                className="btn-info button mb-5">
                 <i className="fas fa-plus-circle" /> Let's Encrypt Certificate
               </button>
               <button
                 type="button"
                 onClick={this.createCertificate}
-                style={{ marginRight: 0 }}
-                className="btn btn-primary">
+                className="btn-info button mb-5">
                 <i className="fas fa-plus-circle" /> Create Certificate
               </button>
               <input
                 type="file"
                 name="export"
                 id="export"
-                className="inputfile btn btn-primary"
+                className="button btn-info mb-5"
                 ref={(ref) => (this.fileUpload = ref)}
                 style={{ display: 'none' }}
                 onChange={this.importP12}
               />
-              <label
+              <button
                 htmlFor="export"
-                style={{ marginRight: 0 }}
-                className="fake-inputfile btn btn-primary ">
+                className="button btn-info mb-5">
                 <i className="fas fa-file" /> Import .p12 file
-              </label>
+              </button>
             </div>
           </>
         )}
@@ -937,7 +920,7 @@ export class NewCertificateForm extends Component {
       return (
         <>
           <div className="modal-body">
-            <form className="form-horizontal" style={{ overflowY: 'auto' }}>
+            <form style={{ overflowY: 'auto' }}>
               <BooleanInput
                 label="Let's Encrypt"
                 value={this.state.letsEncrypt}
@@ -953,12 +936,12 @@ export class NewCertificateForm extends Component {
             </form>
           </div>
           <div className="modal-footer">
-            <button type="button" className="btn btn-danger" onClick={this.props.cancel}>
+            <button type="button" className="btn-danger mr-5" onClick={this.props.cancel}>
               Cancel
             </button>
             <button
               type="button"
-              className="btn btn-success"
+              className="btn-success"
               ref={(r) => (this.okRef = r)}
               onClick={(e) => this.props.ok(this.state)}>
               Create
@@ -970,7 +953,7 @@ export class NewCertificateForm extends Component {
     return (
       <>
         <div className="modal-body">
-          <form className="form-horizontal" style={{ overflowY: 'auto', maxHeight: '80vh' }}>
+          <form  style={{ overflowY: 'auto', maxHeight: '80vh' }}>
             <SelectInput
               label="Issuer"
               value={this.state.caRef}
@@ -980,8 +963,8 @@ export class NewCertificateForm extends Component {
               valuesFrom="/bo/api/proxy/api/certificates?ca=true"
               transformer={(a) => ({ value: a.id, label: a.name + ' - ' + a.description })}
             />
-            <div className="row">
-              <div className="col-md-6">
+            <div>
+              <div>
                 {!this.state.client && (
                   <BiColumnBooleanInput
                     label="CA certificate"
@@ -999,7 +982,7 @@ export class NewCertificateForm extends Component {
                   />
                 )}
               </div>
-              <div className="col-md-6">
+              <div>
                 <BiColumnBooleanInput
                   label="Let's Encrypt"
                   value={this.state.letsEncrypt}
@@ -1111,11 +1094,11 @@ export class NewCertificateForm extends Component {
         </div>
         <div className="modal-footer">
           {this.state.caRef && (
-            <button type="button" className="btn btn-primary" onClick={this.csr}>
+            <button type="button" className="btn-info mr-5" onClick={this.csr}>
               <i className="fas fa-file" /> Download CSR
             </button>
           )}
-          <button type="button" className="btn btn-danger" onClick={this.props.cancel}>
+          <button type="button" className="btn-danger mr-5" onClick={this.props.cancel}>
             Cancel
           </button>
           <button

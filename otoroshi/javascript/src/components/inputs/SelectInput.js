@@ -87,11 +87,11 @@ export class SelectInput extends Component {
   render() {
     if (this.state.error) {
       return (
-        <div className="form-group">
-          <label htmlFor={`input-${this.props.label}`} className="col-xs-12 col-sm-2 control-label">
+        <div className="form__group mb-20 grid-template-bp1--fifth">
+          <label htmlFor={`input-${this.props.label}`} >
             {this.props.label} <Help text={this.props.help} />
           </label>
-          <div className="col-sm-10">
+          <div >
             <div style={{ width: '100%' }}>
               <span>{this.state.error.message ? this.state.error.message : this.state.error}</span>
             </div>
@@ -101,14 +101,14 @@ export class SelectInput extends Component {
     }
     if (this.props.classic && !this.props.disabled) {
       return (
-        <div className="form-group">
-          <label htmlFor={`input-${this.props.label}`} className="col-xs-12 col-sm-2 control-label">
+        <div className="form__group mb-20 grid-template-bp1--fifth">
+          <label htmlFor={`input-${this.props.label}`} >
             {this.props.label} <Help text={this.props.help} />
           </label>
-          <div className="col-sm-10">
+          <div >
             <div style={{ width: '100%' }}>
               <select
-                className="form-control classic-select"
+                className="classic-select"
                 value={this.state.value}
                 onChange={this.onChangeClassic}>
                 {this.state.values.map((value) => (
@@ -121,11 +121,11 @@ export class SelectInput extends Component {
       );
     }
     return (
-      <div className="form-group">
-        <label htmlFor={`input-${this.props.label}`} className="col-xs-12 col-sm-2 control-label">
+      <div className="form__group mb-20 grid-template-bp1--fifth">
+        <label htmlFor={`input-${this.props.label}`} >
           {this.props.label} <Help text={this.props.help} />
         </label>
-        <div className="col-sm-10">
+        <div >
           <div style={{ width: '100%' }}>
             {!this.props.disabled && (
               <Select
@@ -141,7 +141,6 @@ export class SelectInput extends Component {
             {this.props.disabled && (
               <input
                 type="text"
-                className="form-control"
                 disabled={true}
                 placeholder={this.props.placeholder}
                 value={this.state.value}
