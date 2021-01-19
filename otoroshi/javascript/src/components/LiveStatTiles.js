@@ -177,8 +177,8 @@ export class LiveStatTiles extends Component {
       );
     }
     return (
-      <div>
-        <h4 className="live-title">LIVE METRICS</h4>
+      <div className="">
+        <h3>LIVE METRICS</h3>
         <div className="rowMetrics">
           <Metric time={Date.now()} value={this.state.rate} legend="requests per second" />
           <Metric time={Date.now()} value={this.state.duration} legend="ms. per request" />
@@ -193,7 +193,7 @@ export class LiveStatTiles extends Component {
             legend="concurrent requests"
           />
         </div>
-        <h4 className="live-title">GLOBAL METRICS</h4>
+        <h3 className="mt-20">GLOBAL METRICS</h3>
         <div className="rowMetrics">
           <Metric time={Date.now()} value={this.state.requests} legend="requests served" />
           <Metric time={Date.now()} value={this.state.dataIn} />

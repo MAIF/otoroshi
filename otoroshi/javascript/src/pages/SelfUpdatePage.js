@@ -329,75 +329,70 @@ export class SelfUpdatePage extends Component {
           this link will expire in {duration.humanize()} ({('0' + duration.hours()).slice(-2)}:
           {('0' + duration.minutes()).slice(-2)}:{('0' + duration.seconds()).slice(-2)})
         </h5>
-        <form className="form-horizontal" style={{ textAlign: 'left' }}>
-          <div className="form-group">
-            <label className="col-sm-2 control-label">Email</label>
-            <div className="col-sm-10">
+        <form style={{ textAlign: 'left' }}>
+          <div className="form__group mb-20 grid-template-bp1--fifth">
+            <label>Email</label>
+            <div >
               <input
                 type="text"
                 name="username"
-                className="form-control"
                 disabled
                 value={this.state.email}
               />
             </div>
           </div>
-          <div className="form-group">
-            <label className="col-sm-2 control-label">Name</label>
-            <div className="col-sm-10">
+          <div className="form__group mb-20 grid-template-bp1--fifth">
+            <label>Name</label>
+            <div >
               <input
                 type="text"
                 name="name"
-                className="form-control"
                 value={this.state.name}
                 onChange={this.onChange}
               />
             </div>
           </div>
-          <div className="form-group">
-            <label className="col-sm-2 control-label">
+          <div className="form__group mb-20 grid-template-bp1--fifth">
+            <label>
               Password <small style={{ color: 'rgb(181, 179, 179)' }}>(required)</small>
             </label>
-            <div className="col-sm-10">
+            <div >
               <input
                 type="password"
                 name="password"
-                className="form-control"
                 value={this.state.password}
                 onChange={this.onChange}
               />
             </div>
           </div>
-          <div className="form-group">
-            <label className="col-sm-2 control-label">New password</label>
-            <div className="col-sm-10">
+          <div className="form__group mb-20 grid-template-bp1--fifth">
+            <label>New password</label>
+            <div >
               <input
                 type="password"
                 name="newPassword"
-                className="form-control"
                 value={this.state.newPassword}
                 onChange={this.onChange}
               />
             </div>
           </div>
-          <div className="form-group">
-            <label className="col-sm-2 control-label">
+          <div className="form__group mb-20 grid-template-bp1--fifth">
+            <label>
               New password <small style={{ color: 'rgb(181, 179, 179)' }}>(again)</small>
             </label>
-            <div className="col-sm-10">
+            <div >
               <input
                 type="password"
                 name="reNewPassword"
-                className="form-control"
                 value={this.state.reNewPassword}
                 onChange={this.onChange}
               />
             </div>
           </div>
           {this.state.webauthn && this.state.mustRegWebauthnDevice && (
-            <div className="form-group">
-              <label className="col-sm-2 control-label" />
-              <div className="col-sm-10">
+            <div className="form__group mb-20 grid-template-bp1--fifth">
+              <label />
+              <div >
                 {this.state.hasWebauthnDeviceReg && (
                   <p style={{ width: '100%', textAlign: 'left' }}>
                     The auth. module requires strong authentication with Webauthn compatible device.
@@ -414,9 +409,9 @@ export class SelfUpdatePage extends Component {
               </div>
             </div>
           )}
-          <div className="form-group">
-            <label className="col-sm-2 control-label" />
-            <div className="col-sm-10">
+          <div className="form__group mb-20 grid-template-bp1--fifth">
+            <label />
+            <div >
               <button type="button" className="btn" style={{ marginLeft: 0 }} onClick={this.save}>
                 Update name and/or password
               </button>
@@ -433,9 +428,9 @@ export class SelfUpdatePage extends Component {
               )}
             </div>
           </div>
-          <div className="form-group">
-            <label className="col-sm-2 control-label" />
-            <div className="col-sm-10">
+          <div className="form__group mb-20 grid-template-bp1--fifth">
+            <label />
+            <div >
               <p style={{ color: 'green', width: '100%', textAlign: 'left' }}>
                 {!this.state.error && this.state.message}
               </p>

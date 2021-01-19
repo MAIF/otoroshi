@@ -311,7 +311,7 @@ export class NewExporterForm extends Component {
   render() {
     return (
       <>
-        <form className="form-horizontal">
+        <form>
           <SelectInput
             label="Type"
             placeholder="The type of exporter"

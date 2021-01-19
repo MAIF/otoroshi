@@ -232,13 +232,13 @@ export class AlgoSettings extends Component {
             label="Public key"
             value={algo.publicKey}
             help="The RSA public key"
-            style={{ fontFamily: 'monospace' }}
+            style={{ fontFamily: 'monospace',width:'100%' }}
             onChange={(e) => changeTheValue(path + '.publicKey', e)}
           />,
           <TextareaInput
             label="Private key"
             value={algo.privateKey}
-            style={{ fontFamily: 'monospace' }}
+            style={{ fontFamily: 'monospace',width:'100%' }}
             help="The RSA private key, private key can be empty if not used for JWT token signing"
             onChange={(e) => changeTheValue(path + '.privateKey', e)}
           />,
@@ -280,13 +280,13 @@ export class AlgoSettings extends Component {
             label="Public key"
             value={algo.publicKey}
             help="The ECDSA public key"
-            style={{ fontFamily: 'monospace' }}
+            style={{ fontFamily: 'monospace',width:'100%' }}
             onChange={(e) => changeTheValue(path + '.publicKey', e)}
           />,
           <TextareaInput
             label="Private key"
             value={algo.privateKey}
-            style={{ fontFamily: 'monospace' }}
+            style={{ fontFamily: 'monospace',width:'100%' }}
             help="The ECDSA private key, private key can be empty if not used for JWT token signing"
             onChange={(e) => changeTheValue(path + '.privateKey', e)}
           />,

@@ -25,20 +25,18 @@ class RestrictionPath extends Component {
 
   render() {
     return (
-      <div className="form-group">
-        <label className="col-xs-12 col-sm-2 control-label" />
-        <div className="col-sm-10" style={{ display: 'flex' }}>
+      <div className="form__group mb-20 grid-template-bp1--fifth">
+        <label />
+        <div className="flex">
           <input
-            className="form-control"
-            style={{ width: '30%' }}
+            className="w-50"
             placeholder="Http Method"
             type="text"
             value={this.props.itemValue.method}
             onChange={(e) => this.changeTheValue('method', e.target.value)}
           />
           <input
-            className="form-control"
-            style={{ width: '70%' }}
+            className="w-50"
             placeholder="Http Path"
             type="text"
             value={this.props.itemValue.path}

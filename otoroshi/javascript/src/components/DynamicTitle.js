@@ -23,7 +23,7 @@ export class DynamicTitle extends Component {
   render() {
     if (!this.state.content) return null;
     return (
-      <div className="fixedH3">
+      <div className="fixed-title">
         <h3 className="page-header">{this.state.content}</h3>
       </div>
     );

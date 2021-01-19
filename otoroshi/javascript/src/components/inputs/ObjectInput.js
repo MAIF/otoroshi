@@ -43,38 +43,35 @@ export class ObjectInput extends Component {
     return (
       <div>
         {values.length === 0 && (
-          <div className="form-group">
+          <div className="form__group mb-20 grid-template-bp1--fifth">
             <label
-              htmlFor={`input-${this.props.label}`}
-              className="col-xs-12 col-sm-2 control-label">
+              htmlFor={`input-${this.props.label}`}>
               {this.props.label} <Help text={this.props.help} />
             </label>
-            <div className="col-sm-10">
+            <div>
               <button
                 disabled={this.props.disabled}
                 type="button"
-                className="btn btn-primary"
+                className="btn-info"
                 onClick={this.addFirst}>
-                <i className="fas fa-plus-circle" />{' '}
+                <i className="fas fa-folder" />{' '}
               </button>
             </div>
           </div>
         )}
         {values.map((value, idx) => (
-          <div className="form-group">
+          <div className="form__group mb-20 grid-template-bp1--fifth">
             {idx === 0 && (
-              <label className="col-xs-12 col-sm-2 control-label">
+              <label>
                 {this.props.label} <Help text={this.props.help} />
               </label>
             )}
-            {idx > 0 && <label className="col-xs-12 col-sm-2 control-label">&nbsp;</label>}
-            <div className="col-sm-10">
-              <div className="input-group">
+            {idx > 0 && <label>&nbsp;</label>}
+            <div>
+              <div className="grid grid-template--1-1-auto grid-align-items_center">
                 <input
                   disabled={this.props.disabled}
                   type="text"
-                  className="form-control"
-                  style={{ width: '50%' }}
                   placeholder={this.props.placeholderKey}
                   value={value[0]}
                   onChange={(e) => this.changeKey(e, value[0])}
@@ -82,17 +79,15 @@ export class ObjectInput extends Component {
                 <input
                   disabled={this.props.disabled}
                   type="text"
-                  className="form-control"
-                  style={{ width: '50%' }}
                   placeholder={this.props.placeholderValue}
                   value={value[1]}
                   onChange={(e) => this.changeValue(e, value[0])}
                 />
-                <span className="input-group-btn">
+                <span className="input-group-btn ml-5">
                   <button
                     disabled={this.props.disabled}
                     type="button"
-                    className="btn btn-danger"
+                    className="btn-danger"
                     onClick={(e) => this.remove(e, value[0])}>
                     <i className="fas fa-trash" />
                   </button>
@@ -100,7 +95,7 @@ export class ObjectInput extends Component {
                     <button
                       disabled={this.props.disabled}
                       type="button"
-                      className="btn btn-primary"
+                      className="btn-info ml-5"
                       onClick={this.addNext}>
                       <i className="fas fa-plus-circle" />{' '}
                     </button>
@@ -157,16 +152,16 @@ export class VerticalObjectInput extends Component {
     return (
       <div>
         {values.length === 0 && (
-          <div className="form-group">
-            <div className="col-xs-12">
-              <label htmlFor={`input-${this.props.label}`} className="control-label">
+          <div className="form__group mb-20 grid-template-bp1--fifth">
+            <div>
+              <label htmlFor={`input-${this.props.label}`}>
                 {this.props.label} <Help text={this.props.help} />
               </label>
               <div>
                 <button
                   disabled={this.props.disabled}
                   type="button"
-                  className="btn btn-primary"
+                  className="btn-info"
                   onClick={this.addFirst}>
                   <i className="fas fa-plus-circle" />{' '}
                 </button>
@@ -175,20 +170,18 @@ export class VerticalObjectInput extends Component {
           </div>
         )}
         {values.map((value, idx) => (
-          <div className="form-group" style={{ marginBottom: 5 }}>
-            <div className="col-xs-12">
+          <div>
+            <div>
               {idx === 0 && (
-                <label className="control-label">
+                <label>
                   {this.props.label} <Help text={this.props.help} />
                 </label>
               )}
-              {idx > 0 && false && <label className="control-label">&nbsp;</label>}
-              <div className="input-group">
+              {idx > 0 && false && <label>&nbsp;</label>}
+              <div className="grid grid-template--1-1-auto grid-align-items_center">
                 <input
                   disabled={this.props.disabled}
                   type="text"
-                  className="form-control"
-                  style={{ width: '50%' }}
                   placeholder={this.props.placeholderKey}
                   value={value[0]}
                   onChange={(e) => this.changeKey(e, value[0])}
@@ -196,18 +189,15 @@ export class VerticalObjectInput extends Component {
                 <input
                   disabled={this.props.disabled}
                   type="text"
-                  className="form-control"
-                  style={{ width: '50%' }}
                   placeholder={this.props.placeholderValue}
                   value={value[1]}
                   onChange={(e) => this.changeValue(e, value[0])}
                 />
-                <span className="input-group-btn">
+                <span className="input-group-btn ml-5">
                   <button
                     disabled={this.props.disabled}
                     type="button"
-                    className="btn btn-sm btn-danger"
-                    style={{ marginRight: 0 }}
+                    className="btn-sm btn-danger"
                     onClick={(e) => this.remove(e, value[0])}>
                     <i className="fas fa-trash" />
                   </button>
@@ -225,7 +215,7 @@ export class VerticalObjectInput extends Component {
                   <button
                     disabled={this.props.disabled}
                     type="button"
-                    className="btn btn-sm btn-block btn-primary"
+                    className="btn btn-sm btn-block btn-info"
                     style={{ marginRight: 0 }}
                     onClick={this.addNext}>
                     <i className="fas fa-plus-circle" />{' '}
