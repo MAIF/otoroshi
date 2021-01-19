@@ -74,15 +74,6 @@ input.button[type="file"]{
   }
 }
 
-.btn-primary {
-  color: $primaryColor;
-  border-color: $primaryColor;
-  &:hover{
-    border-color: darken($primaryColor,10%);
-    background-color: darken($secondaryBgColor,5%);
-  }
-}
-
 .btn-black {
   color: #fff;
   border-color: #111;
