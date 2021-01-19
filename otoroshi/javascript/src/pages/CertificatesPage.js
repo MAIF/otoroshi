@@ -156,7 +156,7 @@ class CertificateInfos extends Component {
           label="Public key"
           disabled={true}
           rows={6}
-          style={{ fontFamily: 'monospace',width:'100%' }}
+          style={{ fontFamily: 'monospace' }}
           value={this.state.cert.publicKey}
         />
       </div>
@@ -229,12 +229,13 @@ class Commands extends Component {
       this.props.rawValue.selfSigned ||
       !!this.props.rawValue.caRef;
     return (
-      <div>
-        <div className="btn__group--right">
+      <div style={{ width: '100%', display: 'flex', justifyContent: 'flex-end', marginBottom: 20 }}>
+        <div className="btn-group">
           {this.props.rawValue.ca && (
             <button
+              style={{ marginRight: 0 }}
               type="button"
-              className="button btn-sm btn-success mr-5 mb-5"
+              className="btn btn-sm btn-success"
               onClick={(e) => {
                 this.createCASigned(e, this.props.rawValue.id);
               }}>
@@ -243,8 +244,9 @@ class Commands extends Component {
           )}
           {canRenew && (
             <button
+              style={{ marginRight: 0 }}
               type="button"
-              className="button btn-sm btn-success mr-5 mb-5"
+              className="btn btn-sm btn-success"
               onClick={(e) => {
                 BackOfficeServices.renewCert(this.props.rawValue.id).then((cert) => {
                   this.props.rawOnChange(cert);
@@ -255,8 +257,9 @@ class Commands extends Component {
           )}
           {false && (
             <button
+              style={{ marginRight: 0 }}
               type="button"
-              className="button btn-sm btn-success mr-5 mb-5"
+              className="btn btn-sm btn-success"
               onClick={(e) => {
                 window.newPrompt('Certificate host ?').then((value) => {
                   if (value && value.trim() !== '') {
@@ -270,27 +273,31 @@ class Commands extends Component {
             </button>
           )}
           <a
+            style={{ marginRight: 0 }}
             href={this.state.certUrl}
             download={`${this.props.rawValue.domain}.cer`}
-            className="button btn-sm btn-success mr-5 mb-5">
+            className="btn btn-sm btn-success">
             <i className="fas fa-download" /> Certificate Only
           </a>
           <a
+            style={{ marginRight: 0 }}
             href={this.state.fullChainUrl}
             download={`${this.props.rawValue.domain}.fullchain.cer`}
-            className="button btn-sm btn-success mr-5 mb-5">
+            className="btn btn-sm btn-success">
             <i className="fas fa-download" /> Full Chain
           </a>
           <a
+            style={{ marginRight: 0 }}
             href={this.state.privateKeyUrl}
             download={`${this.props.rawValue.domain}.key`}
-            className="button btn-sm btn-success mr-5 mb-5">
+            className="btn btn-sm btn-success">
             <i className="fas fa-download" /> Private Key
           </a>
           <a
+            style={{ marginRight: 0 }}
             href={this.state.fullPkUrl}
             download={`${this.props.rawValue.domain}.pem`}
-            className="button btn-sm btn-success mb-5">
+            className="btn btn-sm btn-success">
             <i className="fas fa-download" /> Full Chain + Private Key
           </a>
         </div>
@@ -419,7 +426,7 @@ export class CertificatesPage extends Component {
     },
     privateKey: {
       type: 'text',
-      props: { label: 'Certificate private key', rows: 6, style: { fontFamily: 'monospace',width:'100%' } },
+      props: { label: 'Certificate private key', rows: 6, style: { fontFamily: 'monospace' } },
     },
     autoRenew: {
       type: 'bool',
@@ -476,7 +483,7 @@ export class CertificatesPage extends Component {
         !item.ca ? null : (
           /*'yes'*/ <button
             type="button"
-            className="btn-info btn-sm"
+            className="btn btn-primary btn-sm"
             onClick={(e) => this.createCASigned(e, item.id)}>
             <i className="fas fa-plus-circle" />
           </button>
@@ -564,13 +571,10 @@ export class CertificatesPage extends Component {
     'autoRenew',
     'client',
     'keypair',
-    'exposed',
-    'revoked',
     'commands',
     'valid',
     'chain',
     'privateKey',
-    'password',
     'infos',
     'metadata',
   ];
@@ -805,7 +809,7 @@ export class CertificatesPage extends Component {
               type="button"
               onClick={this.createLetsEncrypt}
               style={{ marginRight: 0 }}
-              className="btn-info">
+              className="btn btn-primary">
               <i className="fas fa-plus-circle" /> Let's Encrypt cert.
             </button>
           </div>*/}
@@ -814,49 +818,52 @@ export class CertificatesPage extends Component {
               type="button"
               onClick={this.createSelfSigned}
               style={{ marginRight: 0 }}
-              className="btn-info">
+              className="btn btn-primary">
               <i className="fas fa-plus-circle" /> Self signed cert.
             </button>
             <button
               type="button"
               onClick={this.createSelfSignedClient}
               style={{ marginRight: 0 }}
-              className="btn-info">
+              className="btn btn-primary">
               <i className="fas fa-plus-circle" /> Self signed client cert.
             </button>
             <button
               type="button"
               onClick={this.createCA}
               style={{ marginRight: 0 }}
-              className="btn-info">
+              className="btn btn-primary">
               <i className="fas fa-plus-circle" /> Self signed CA
             </button>*/}
               <button
                 type="button"
                 onClick={this.createLetsEncrypt}
-                className="btn-info button mb-5">
+                style={{ marginRight: 0 }}
+                className="btn btn-primary">
                 <i className="fas fa-plus-circle" /> Let's Encrypt Certificate
               </button>
               <button
                 type="button"
                 onClick={this.createCertificate}
-                className="btn-info button mb-5">
+                style={{ marginRight: 0 }}
+                className="btn btn-primary">
                 <i className="fas fa-plus-circle" /> Create Certificate
               </button>
               <input
                 type="file"
                 name="export"
                 id="export"
-                className="button btn-info mb-5"
+                className="inputfile btn btn-primary"
                 ref={(ref) => (this.fileUpload = ref)}
                 style={{ display: 'none' }}
                 onChange={this.importP12}
               />
-              <button
+              <label
                 htmlFor="export"
-                className="button btn-info mb-5">
+                style={{ marginRight: 0 }}
+                className="fake-inputfile btn btn-primary ">
                 <i className="fas fa-file" /> Import .p12 file
-              </button>
+              </label>
             </div>
           </>
         )}
@@ -911,7 +918,7 @@ export class NewCertificateForm extends Component {
       return (
         <>
           <div className="modal-body">
-            <form style={{ overflowY: 'auto' }}>
+            <form className="form-horizontal" style={{ overflowY: 'auto' }}>
               <BooleanInput
                 label="Let's Encrypt"
                 value={this.state.letsEncrypt}
@@ -927,12 +934,12 @@ export class NewCertificateForm extends Component {
             </form>
           </div>
           <div className="modal-footer">
-            <button type="button" className="btn-danger mr-5" onClick={this.props.cancel}>
+            <button type="button" className="btn btn-danger" onClick={this.props.cancel}>
               Cancel
             </button>
             <button
               type="button"
-              className="btn-success"
+              className="btn btn-success"
               ref={(r) => (this.okRef = r)}
               onClick={(e) => this.props.ok(this.state)}>
               Create
@@ -944,7 +951,7 @@ export class NewCertificateForm extends Component {
     return (
       <>
         <div className="modal-body">
-          <form  style={{ overflowY: 'auto', maxHeight: '80vh' }}>
+          <form className="form-horizontal" style={{ overflowY: 'auto', maxHeight: '80vh' }}>
             <SelectInput
               label="Issuer"
               value={this.state.caRef}
@@ -954,8 +961,8 @@ export class NewCertificateForm extends Component {
               valuesFrom="/bo/api/proxy/api/certificates?ca=true"
               transformer={(a) => ({ value: a.id, label: a.name + ' - ' + a.description })}
             />
-            <div>
-              <div>
+            <div className="row">
+              <div className="col-md-6">
                 {!this.state.client && (
                   <BiColumnBooleanInput
                     label="CA certificate"
@@ -973,7 +980,7 @@ export class NewCertificateForm extends Component {
                   />
                 )}
               </div>
-              <div>
+              <div className="col-md-6">
                 <BiColumnBooleanInput
                   label="Let's Encrypt"
                   value={this.state.letsEncrypt}
@@ -992,65 +999,37 @@ export class NewCertificateForm extends Component {
               label="Key Type"
               help="The type of the private key"
               value={this.state.keyType}
-              onChange={(v) => {
-                this.changeTheValue('keyType', v);
-                this.changeTheValue('keySize', 256);
-                this.changeTheValue('signatureAlg', 'SHA256withECDSA');
-                this.changeTheValue('digestAlg', 'SHA-256');
-              }}
-              possibleValues={[
-                { label: 'RSA', value: 'RSA' },
-                { label: 'ECDSA', value: 'ECDSA' },
-              ]}
+              onChange={(v) => changeTheValue('keyType', v)}
+              possibleValues={[{ label: 'RSA', value: 'RSA' }]}
             />
             <SelectInput
-              label={this.state.keyType !== 'RSA' ? 'Curve' : 'Key Size'}
-              help={
-                this.state.keyType !== 'RSA'
-                  ? 'The curve used for the key'
-                  : 'The size of the private key'
-              }
+              label="Key Size"
+              help="The size of the private key"
               value={this.state.keySize}
-              onChange={(v) => this.changeTheValue('keySize', v)}
-              possibleValues={
-                this.state.keyType === 'RSA'
-                  ? [
-                      { label: '2048', value: 2048 },
-                      { label: '4096', value: 4096 },
-                      { label: '6144', value: 6144 },
-                    ]
-                  : [
-                      { label: 'P256', value: 256 },
-                      { label: 'P384', value: 384 },
-                      { label: 'P521', value: 521 },
-                    ]
-              }
+              onChange={(v) => changeTheValue('keySize', v)}
+              possibleValues={[
+                { label: '1024', value: 1024 },
+                { label: '2048', value: 2048 },
+                { label: '4096', value: 4096 },
+              ]}
             />
             <SelectInput
               label="Signature Algorithm"
               help="The signature algorithm used"
               value={this.state.signatureAlg}
-              onChange={(v) => this.changeTheValue('signatureAlg', v)}
-              possibleValues={
-                this.state.keyType === 'RSA'
-                  ? [
-                      { label: 'SHA224WithRSAEncryption', value: 'SHA224WithRSAEncryption' },
-                      { label: 'SHA256WithRSAEncryption', value: 'SHA256WithRSAEncryption' },
-                      { label: 'SHA384WithRSAEncryption', value: 'SHA384WithRSAEncryption' },
-                      { label: 'SHA512WithRSAEncryption', value: 'SHA512WithRSAEncryption' },
-                    ]
-                  : [
-                      { label: 'SHA256withECDSA', value: 'SHA256withECDSA' },
-                      { label: 'SHA384withECDSA', value: 'SHA384withECDSA' },
-                      { label: 'SHA512withECDSA', value: 'SHA512withECDSA' },
-                    ]
-              }
+              onChange={(v) => changeTheValue('signatureAlg', v)}
+              possibleValues={[
+                { label: 'SHA224WithRSAEncryption', value: 'SHA224WithRSAEncryption' },
+                { label: 'SHA256WithRSAEncryption', value: 'SHA256WithRSAEncryption' },
+                { label: 'SHA384WithRSAEncryption', value: 'SHA384WithRSAEncryption' },
+                { label: 'SHA512WithRSAEncryption', value: 'SHA512WithRSAEncryption' },
+              ]}
             />
             <SelectInput
               label="Digest Algorithm"
               help="The digest algorithm used"
               value={this.state.digestAlg}
-              onChange={(v) => this.changeTheValue('digestAlg', v)}
+              onChange={(v) => changeTheValue('digestAlg', v)}
               possibleValues={[
                 { label: 'SHA-224', value: 'SHA-224' },
                 { label: 'SHA-256', value: 'SHA-256' },
@@ -1085,11 +1064,11 @@ export class NewCertificateForm extends Component {
         </div>
         <div className="modal-footer">
           {this.state.caRef && (
-            <button type="button" className="btn-info mr-5" onClick={this.csr}>
+            <button type="button" className="btn btn-primary" onClick={this.csr}>
               <i className="fas fa-file" /> Download CSR
             </button>
           )}
-          <button type="button" className="btn-danger mr-5" onClick={this.props.cancel}>
+          <button type="button" className="btn btn-danger" onClick={this.props.cancel}>
             Cancel
           </button>
           <button
