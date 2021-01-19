@@ -2324,7 +2324,7 @@ export class ServicePage extends Component {
                 <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
                   <label />
                   <div>
-                    {!this.state.service.jwtVerifier.ids.length === 0 && (
+                    {this.state.service.jwtVerifier.ids.length === 0 && (
                       <a href={`/bo/dashboard/jwt-verifiers/add`} className="button btn-info">
                         <i className="fas fa-plus" /> Create a new Jwt Verifier config
                       </a>
