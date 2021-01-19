@@ -341,9 +341,6 @@ export class Table extends Component {
                       }
                     } else {
                       this.gotoItem(e, original);
-                    }
-                  } else {
-                    this.gotoItem(e, original);
                   }
                 }
               }}
