@@ -920,12 +920,29 @@ class Env(val configuration: Configuration,
                     location = EntityLocation()
                   )
 
+                  val defaultTenant = Tenant(
+                    id = TenantId("default"), 
+                    name = "Default organization", 
+                    description = "The default organization", 
+                    metadata = Map.empty[String, String]
+                  )
+
+                  val defaultTeam = Team(
+                    id = TeamId("default"), 
+                    tenant = TenantId("default"), 
+                    name = "Default Team", 
+                    description = "The default Team of the default organization",
+                    metadata = Map.empty[String, String]
+                  )
+
                   val baseExport = OtoroshiExport(
                     config = defaultConfig,
                     descs = Seq(backOfficeDescriptor),
                     apikeys = Seq(backOfficeApiKey, defaultGroupApiKey),
                     groups = Seq(backOfficeGroup, defaultGroup),
                     simpleAdmins = Seq(admin),
+                    teams = Seq(defaultTeam),
+                    tenants = Seq(defaultTenant)
                   )
 
                   val initialCustomization = configuration
