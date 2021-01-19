@@ -171,26 +171,26 @@ export class SnowMonkeyPage extends Component {
     }
     return (
       <div>
-        <div className="row">
-          <div className="form-group btnsService">
-            <div className="col-xs-12 col-sm-10 displayGroupBtn">
+        <div className="">
+          <div className="btns-fixed">
+            <div className="displayGroupBtn">
               <button
                 type="button"
-                className={`btn btn-${this.state.started ? 'danger' : 'success'}`}
+                className={`mr-5 btn-${this.state.started ? 'danger' : 'success'}`}
                 onClick={this.toggle}>
                 <i className={`fas fa-${this.state.started ? 'stop' : 'play'}`} />
                 {this.state.started ? ' Stop that damn monkey ...' : ' Unleash the monkey !'}
               </button>
               <button
                 type="button"
-                className={`btn btn-success`}
+                className={`btn-success`}
                 {...moreProps}
                 onClick={this.saveChanges}>
                 <i className={`fas fa-hdd`} /> Save
               </button>
             </div>
           </div>
-          <div className="col-md-12 text-center">
+          <div className="flex f-justify_center">
             <svg
               version="1.1"
               className={this.state.started ? 'monkey snowMonkeyAnim' : 'monkey'}
@@ -349,7 +349,7 @@ export class SnowMonkeyPage extends Component {
             </svg>
           </div>
         </div>
-        <div className="row">
+        <div>
           <SnowMonkeyConfig
             config={this.state.config}
             onChange={(config) => {
