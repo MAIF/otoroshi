@@ -4,9 +4,45 @@ body {
     padding-top: 	0px;
 }
 
+.container {
+    margin-right: auto;
+    margin-left: auto;
+}
+
 .header {
 	/*margin-bottom: 	0px;*/
 	border: 	none;
+}
+
+@media screen and (min-width: 768px) {
+	nav {
+		flex-direction: row;
+	}
+}
+nav {
+    z-index: 1030;
+    position: sticky;
+    top: 0;
+    background-color: #494948;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-direction: column;
+}
+
+.navbar-brand {
+    font-size: 18px;
+    line-height: 1.4rem;
+    padding-top: 15px;
+    padding-bottom: 15px;
+}
+
+.hide {
+    display: none !important;
+}
+
+a {
+	text-decoration: none;
 }
 h3 {
 	background-color: #F9B000;
@@ -34,15 +70,13 @@ flex-direction: 	column;
 display: 	flex;
 }
 
-.glyphicon-remove-circle {
-top: 9px;
-    padding-right: 10px;
-    font-size: 40px;
-}
 
 .jumbotron {
 	background-color: #494948;
 	color: 	#949ba2;
+	text-align: center;
+    padding: 40px;
+    border-radius: 10px;
 }
 
 .logoOtoroshi {
