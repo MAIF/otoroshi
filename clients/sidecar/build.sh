@@ -13,6 +13,7 @@ prepare_build () {
 build () {
   docker build --no-cache -t otoroshi-sidecar .
   docker tag otoroshi-sidecar "maif/otoroshi-sidecar:$1"
+  docker tag otoroshi-sidecar "maif/otoroshi-sidecar:latest"
 }
 
 echo "Docker images for otoroshi-sidecar version $2"
