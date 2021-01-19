@@ -148,7 +148,7 @@ export class ClusterTiles extends Component {
     if (health === 'green') healthValue = 2;
     return (
       <div>
-        <h4 className="live-title">CLUSTER METRICS</h4>
+        <h3>CLUSTER METRICS</h3>
         <div className="rowMetrics">
           <Metric
             time={Date.now()}

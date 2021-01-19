@@ -231,28 +231,27 @@ export class GlobalEventsPage extends Component {
       return null;
     }
     return (
-      <div>
-        <div className="row" style={{ marginBottom: 30 }}>
-          <div className="col-xs-12" style={{ display: 'flex', alignItems: 'center' }}>
+      <div className="">
+        <div className="mb-20" >
+          <div className="flex f-justify_between flex-bp1-column f-bp1-align_start">
             <OtoDatePicker
               updateDateRange={this.updateDateRange}
               from={this.state.from}
               to={this.state.to}
             />
-            <div className="input-group" style={{ marginLeft: 10 }}>
+            <div className="grid grid-template--1-auto form mt-bp1-10" >
               <div className="input-group-addon">Limit</div>
               <input
                 type="number"
-                style={{ width: 100 }}
-                className="form-control"
+                size="5"
                 value={this.state.limit}
                 onChange={(e) =>
                   this.setState({ limit: e.target.value }, () => this.table.update())
                 }
               />
             </div>
-            <div className="input-group" style={{ marginLeft: 10, width: '100%', display: 'flex' }}>
-              <span style={{ marginTop: 10, marginRight: 5 }}>
+            <div className="input-group flex f-align_center mt-bp1-10" >
+              <span className="mr-5">
                 Order by timestamp ascending values
               </span>
               <SimpleBooleanInput

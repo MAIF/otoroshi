@@ -250,9 +250,9 @@ class CompilationTools extends Component {
 
   render() {
     return (
-      <div className="form-group">
-        <label className="col-xs-12 col-sm-2 control-label" />
-        <div className="col-sm-10">
+      <div className="form__group mb-20 grid-template-bp1--fifth">
+        <label />
+        <div >
           <button
             type="button"
             className={`btn btn-${this.state.error ? 'danger' : 'success'}`}
@@ -273,9 +273,9 @@ class CompilationTools extends Component {
 export class Warning extends Component {
   render() {
     return (
-      <div className="form-group">
-        <label className="col-xs-12 col-sm-2 control-label" />
-        <div className="col-sm-10">
+      <div className="form__group mb-20 grid-template-bp1--fifth">
+        <label />
+        <div className="">
           <div
             style={{
               padding: 10,
@@ -472,6 +472,7 @@ export class ScriptsPage extends Component {
 
   render() {
     return (
+    <div className="">
       <Table
         parentProps={this.props}
         selfUrl="plugins"
@@ -504,6 +505,7 @@ export class ScriptsPage extends Component {
         export={true}
         kubernetesKind="Script"
       />
+      </div>
     );
   }
 }

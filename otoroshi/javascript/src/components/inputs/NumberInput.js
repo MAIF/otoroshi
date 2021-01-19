@@ -22,13 +22,13 @@ export class NumberInput extends Component {
 
   render() {
     return (
-      <div className="form-group">
-        <label htmlFor={`input-${this.props.label}`} className="col-xs-12 col-sm-2 control-label">
+      <div className="form__group mb-20 grid-template-bp1--fifth">
+        <label htmlFor={`input-${this.props.label}`}>
           {this.props.label} <Help text={this.props.help} />
         </label>
-        <div className="col-sm-10">
+        <div>
           {(this.props.prefix || this.props.suffix) && (
-            <div className="input-group">
+            <div className="grid grid-template--1-auto">
               {this.props.prefix && <div className="input-group-addon">{this.props.prefix}</div>}
               <input
                 type="number"
@@ -36,7 +36,6 @@ export class NumberInput extends Component {
                 min={this.props.min}
                 max={this.props.max}
                 disabled={this.props.disabled}
-                className="form-control"
                 id={`input-${this.props.label}`}
                 placeholder={this.props.placeholder}
                 value={this.props.value}
@@ -52,7 +51,6 @@ export class NumberInput extends Component {
               min={this.props.min}
               max={this.props.max}
               disabled={this.props.disabled}
-              className="form-control"
               id={`input-${this.props.label}`}
               placeholder={this.props.placeholder}
               value={this.props.value}
@@ -78,14 +76,14 @@ export class VerticalNumberInput extends Component {
 
   render() {
     return (
-      <div className="form-group">
-        <div className="col-xs-12">
-          <label htmlFor={`input-${this.props.label}`} className="control-label">
+      <div className="">
+        <div className="">
+          <label htmlFor={`input-${this.props.label}`} className="">
             {this.props.label} <Help text={this.props.help} />
           </label>
           <div>
             {(this.props.prefix || this.props.suffix) && (
-              <div className="input-group">
+              <div className="grid grid-template--1-auto">
                 {this.props.prefix && <div className="input-group-addon">{this.props.prefix}</div>}
                 <input
                   type="number"
@@ -93,7 +91,6 @@ export class VerticalNumberInput extends Component {
                   min={this.props.min}
                   max={this.props.max}
                   disabled={this.props.disabled}
-                  className="form-control"
                   id={`input-${this.props.label}`}
                   placeholder={this.props.placeholder}
                   value={this.props.value}
@@ -109,7 +106,6 @@ export class VerticalNumberInput extends Component {
                 min={this.props.min}
                 max={this.props.max}
                 disabled={this.props.disabled}
-                className="form-control"
                 id={`input-${this.props.label}`}
                 placeholder={this.props.placeholder}
                 value={this.props.value}
@@ -146,13 +142,13 @@ export class NumberRangeInput extends Component {
 
   render() {
     return (
-      <div className="form-group">
-        <label htmlFor={`input-${this.props.label}`} className="col-xs-12 col-sm-2 control-label">
+      <div className="form__group mb-20 grid-template-bp1--fifth">
+        <label htmlFor={`input-${this.props.label}`}>
           {this.props.label} <Help text={this.props.help} />
         </label>
-        <div className="col-sm-10">
+        <div className="">
           {(this.props.prefixFrom || this.props.suffixFrom) && (
-            <div className="input-group col-sm-6" style={{ float: 'inherit' }}>
+            <div className="grid grid-template--1-auto" style={{ float: 'inherit' }}>
               {this.props.prefixFrom && (
                 <div className="input-group-addon">{this.props.prefixFrom}</div>
               )}
@@ -162,7 +158,6 @@ export class NumberRangeInput extends Component {
                 min={this.props.minFrom}
                 max={this.props.maxFrom}
                 disabled={this.props.disabled}
-                className="form-control"
                 id={`input-${this.props.labelFrom}`}
                 placeholder={this.props.placeholderFrom}
                 value={this.props.valueFrom}
@@ -174,7 +169,7 @@ export class NumberRangeInput extends Component {
             </div>
           )}
           {(this.props.prefixTo || this.props.suffixTo) && (
-            <div className="input-group col-sm-6" style={{ float: 'inherit' }}>
+            <div className="grid grid-template--1-auto mt-5" style={{ float: 'inherit' }}>
               {this.props.prefixTo && (
                 <div className="input-group-addon">{this.props.prefixTo}</div>
               )}
@@ -184,7 +179,6 @@ export class NumberRangeInput extends Component {
                 min={this.props.minTo}
                 max={this.props.maxTo}
                 disabled={this.props.disabled}
-                className="form-control"
                 id={`input-${this.props.labelTo}`}
                 placeholder={this.props.placeholderTo}
                 value={this.props.valueTo}
@@ -202,7 +196,6 @@ export class NumberRangeInput extends Component {
               min={this.props.minFrom}
               max={this.props.maxFrom}
               disabled={this.props.disabledFrom}
-              className="form-control"
               id={`input-${this.props.labelFrom}`}
               placeholder={this.props.placeholderFrom}
               value={this.props.valueFrom}
@@ -216,7 +209,6 @@ export class NumberRangeInput extends Component {
               min={this.props.minTo}
               max={this.props.maxTo}
               disabled={this.props.disabledTo}
-              className="form-control"
               id={`input-${this.props.labelTo}`}
               placeholder={this.props.placeholderTo}
               value={this.props.valueTo}
