@@ -77,17 +77,17 @@ export class ArrayInput extends Component {
     if (Component) {
       return (
         <div style={{ marginRight: 10 }}>
-          <div className="form-group">
-            <label className="col-xs-12 col-sm-2 control-label">
+          <div className="form__group mb-10 grid-template-bp1--fifth">
+            <label>
               {this.props.label} <Help text={this.props.help} />
             </label>
-            <div className="col-sm-10" style={{ marginBottom: 20 }}>
+            <div className="" >
               {values.length === 0 && (
-                <div className="col-sm-10">
+                <div>
                   <button
                     disabled={this.props.disabled}
                     type="button"
-                    className="btn btn-primary"
+                    className="btn-info"
                     onClick={this.addFirst}>
                     <i className="fas fa-plus-circle" />{' '}
                   </button>
@@ -95,22 +95,17 @@ export class ArrayInput extends Component {
               )}
             </div>
           </div>
-          <div className="form-group" style={{ marginLeft: 0 }}>
+          <div className="">
             {values.map((value, idx) => (
-              <div className="form-group" key={idx}>
-                <div className="col-sm-12">
+              <div className="" key={idx}>
+                <div className="">
                   {/*<div className="input-groupp">*/}
                   {this.props.component && (
                     <Component idx={idx} itemValue={value} {...this.props} />
                   )}
                   <div
-                    style={{
-                      width: '100%',
-                      display: 'flex',
-                      justifyContent: 'flex-end',
-                      paddingRight: 0,
-                    }}>
-                    <span className="input-group-btnn">
+                    className="flex f-justify_end mb-10">
+                    <span className="input-group-append">
                       <button
                         disabled={this.props.disabled}
                         type="button"
@@ -122,7 +117,7 @@ export class ArrayInput extends Component {
                         <button
                           disabled={this.props.disabled}
                           type="button"
-                          className="btn btn-primary"
+                          className="btn-info ml-5"
                           onClick={this.addNext}>
                           <i className="fas fa-plus-circle" />{' '}
                         </button>
@@ -140,17 +135,17 @@ export class ArrayInput extends Component {
     return (
       <div>
         {values.length === 0 && (
-          <div className="form-group">
+          <div className="form__group mb-20 grid-template-bp1--fifth">
             <label
               htmlFor={`input-${this.props.label}`}
-              className="col-xs-12 col-sm-2 control-label">
+              className="">
               {this.props.label} <Help text={this.props.help} />
             </label>
-            <div className="col-sm-10">
+            <div>
               <button
                 disabled={this.props.disabled}
                 type="button"
-                className="btn btn-primary"
+                className="btn-info"
                 onClick={this.addFirst}>
                 <i className="fas fa-plus-circle" />{' '}
               </button>
@@ -158,29 +153,27 @@ export class ArrayInput extends Component {
           </div>
         )}
         {values.map((value, idx) => (
-          <div className="form-group" key={idx}>
+          <div className="form__group mb-20 grid-template-bp1--fifth grid-align-items_baseline" style={{alignItems: 'baseline'}} key={idx}>
             {idx === 0 && (
-              <label className="col-xs-12 col-sm-2 control-label">
+              <label className="">
                 {this.props.label} <Help text={this.props.help} />
               </label>
             )}
-            {idx > 0 && <label className="col-xs-12 col-sm-2 control-label">&nbsp;</label>}
-            <div className="col-sm-10">
-              <div className="input-group">
+            {idx > 0 && <label>&nbsp;</label>}
+            <div>
+              <div className="flex">
                 {!this.state.values.length && !this.props.component && (
-                  <div className="input-group" style={{ width: '100%' }}>
+                  <div className="w-100 grid grid-template--1-auto" >
                     {this.props.prefix && (
                       <div className="input-group-addon">{this.props.prefix}</div>
                     )}
                     <input
                       disabled={this.props.disabled}
                       type={this.props.inputType || 'text'}
-                      className="form-control"
                       id={`input-${this.props.label}`}
                       placeholder={this.props.placeholder}
                       value={value}
                       onChange={(e) => this.changeValue(e, idx)}
-                      style={{ width: '100%' }}
                     />
                     {this.props.suffix && (
                       <div className="input-group-addon">{this.props.suffix}</div>
@@ -188,36 +181,40 @@ export class ArrayInput extends Component {
                   </div>
                 )}
                 {!!this.state.values.length && !this.props.creatable && !this.props.component && (
-                  <Select
-                    name={`selector-${idx}`}
-                    value={value}
-                    isLoading={this.state.loading}
-                    disabled={this.props.disabled}
-                    placeholder={this.props.placeholder}
-                    optionRenderer={this.props.optionRenderer}
-                    options={this.state.values}
-                    onChange={(e) => this.changeValue({ target: { value: e.value } }, idx)}
-                  />
+                <div className="w-100" >
+                      <Select
+                        name={`selector-${idx}`}
+                        value={value}
+                        isLoading={this.state.loading}
+                        disabled={this.props.disabled}
+                        placeholder={this.props.placeholder}
+                        optionRenderer={this.props.optionRenderer}
+                        options={this.state.values}
+                        onChange={(e) => this.changeValue({ target: { value: e.value } }, idx)}
+                      />
+                </div>
                 )}
                 {!!this.state.values.length && this.props.creatable && !this.props.component && (
-                  <Creatable
-                    name={`selector-${idx}`}
-                    value={{ label: value, value }}
-                    isLoading={this.state.loading}
-                    disabled={this.props.disabled}
-                    placeholder={this.props.placeholder}
-                    optionRenderer={this.props.optionRenderer}
-                    options={this.state.values}
-                    onChange={(e) => this.changeValue({ target: { value: e.value } }, idx)}
-                    promptTextCreator={(label) => `Create events filter "${label}"`}
-                  />
+                <div className="w-100" >
+                      <Creatable
+                        name={`selector-${idx}`}
+                        value={{ label: value, value }}
+                        isLoading={this.state.loading}
+                        disabled={this.props.disabled}
+                        placeholder={this.props.placeholder}
+                        optionRenderer={this.props.optionRenderer}
+                        options={this.state.values}
+                        onChange={(e) => this.changeValue({ target: { value: e.value } }, idx)}
+                        promptTextCreator={(label) => `Create events filter "${label}"`}
+                      />
+                </div>
                 )}
                 {this.props.component && <Component idx={idx} itemValue={value} {...this.props} />}
-                <span className="input-group-btn">
+                <span className="flex ml-5">
                   <button
                     disabled={this.props.disabled}
                     type="button"
-                    className="btn btn-danger"
+                    className="btn-danger"
                     onClick={(e) => this.remove(e, idx)}>
                     <i className="fas fa-trash" />
                   </button>
@@ -225,7 +222,7 @@ export class ArrayInput extends Component {
                     <button
                       disabled={this.props.disabled}
                       type="button"
-                      className="btn btn-primary"
+                      className="btn-info ml-5"
                       onClick={this.addNext}>
                       <i className="fas fa-plus-circle" />{' '}
                     </button>

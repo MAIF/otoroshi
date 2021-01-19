@@ -69,36 +69,38 @@ export class GroupsPage extends Component {
 
   render() {
     return (
-      <Table
-        parentProps={this.props}
-        selfUrl="groups"
-        defaultTitle="All service groups"
-        defaultValue={BackOfficeServices.createNewGroup}
-        itemName="group"
-        formSchema={this.formSchema}
-        formFlow={this.formFlow}
-        columns={this.columns}
-        stayAfterSave={true}
-        fetchItems={BackOfficeServices.findAllGroups}
-        updateItem={BackOfficeServices.updateGroup}
-        deleteItem={BackOfficeServices.deleteGroup}
-        createItem={BackOfficeServices.createGroup}
-        navigateTo={(item) => {
-          window.location = `/bo/dashboard/services?group=${item.id}&groupName=${item.name}`;
-          // this.props.history.push({
-          //   pathname: `/services?group=${item.id}&groupName=${item.name}`,
-          //   // query: { group: item.id, groupName: item.name },
-          // });
-        }}
-        itemUrl={(i) => `/bo/dashboard/services?group=${i.id}&groupName=${i.name}`}
-        displayTrash={(item) => this.state.env && this.state.env.adminGroupId === item.id}
-        showActions={true}
-        showLink={true}
-        rowNavigation={true}
-        extractKey={(item) => item.id}
-        export={true}
-        kubernetesKind="ServiceGroup"
-      />
+        <div>
+          <Table
+            parentProps={this.props}
+            selfUrl="groups"
+            defaultTitle="All service groups"
+            defaultValue={BackOfficeServices.createNewGroup}
+            itemName="group"
+            formSchema={this.formSchema}
+            formFlow={this.formFlow}
+            columns={this.columns}
+            stayAfterSave={true}
+            fetchItems={BackOfficeServices.findAllGroups}
+            updateItem={BackOfficeServices.updateGroup}
+            deleteItem={BackOfficeServices.deleteGroup}
+            createItem={BackOfficeServices.createGroup}
+            navigateTo={(item) => {
+              window.location = `/bo/dashboard/services?group=${item.id}&groupName=${item.name}`;
+              // this.props.history.push({
+              //   pathname: `/services?group=${item.id}&groupName=${item.name}`,
+              //   // query: { group: item.id, groupName: item.name },
+              // });
+            }}
+            itemUrl={(i) => `/bo/dashboard/services?group=${i.id}&groupName=${i.name}`}
+            displayTrash={(item) => this.state.env && this.state.env.adminGroupId === item.id}
+            showActions={true}
+            showLink={true}
+            rowNavigation={true}
+            extractKey={(item) => item.id}
+            export={true}
+            kubernetesKind="ServiceGroup"
+          />
+             </div>
     );
   }
 }
