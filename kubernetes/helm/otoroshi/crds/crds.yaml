@@ -1,5 +1,5 @@
 ---
-apiVersion: apiextensions.k8s.io/v1beta1
+apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   name: service-groups.proxy.otoroshi.io
@@ -25,7 +25,7 @@ spec:
     singular: service-group
   scope: Namespaced
 ---
-apiVersion: apiextensions.k8s.io/v1beta1
+apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   name: organizations.proxy.otoroshi.io
@@ -38,7 +38,7 @@ spec:
     singular: organization
   scope: Namespaced
 ---
-apiVersion: apiextensions.k8s.io/v1beta1
+apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   name: teams.proxy.otoroshi.io
@@ -51,7 +51,7 @@ spec:
     singular: team
   scope: Namespaced
 ---
-apiVersion: apiextensions.k8s.io/v1beta1
+apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   name: service-descriptors.proxy.otoroshi.io
@@ -161,7 +161,7 @@ spec:
     singular: service-descriptor
   scope: Namespaced
 ---
-apiVersion: apiextensions.k8s.io/v1beta1
+apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   name: apikeys.proxy.otoroshi.io
@@ -221,7 +221,7 @@ spec:
     singular: apikey
   scope: Namespaced
 ---
-apiVersion: apiextensions.k8s.io/v1beta1
+apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   name: certificates.proxy.otoroshi.io
@@ -264,7 +264,7 @@ spec:
     singular: certificate
   scope: Namespaced
 ---
-apiVersion: apiextensions.k8s.io/v1beta1
+apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   name: global-configs.proxy.otoroshi.io
@@ -277,7 +277,7 @@ spec:
     singular: global-config
   scope: Namespaced
 ---
-apiVersion: apiextensions.k8s.io/v1beta1
+apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   name: jwt-verifiers.proxy.otoroshi.io
@@ -290,7 +290,7 @@ spec:
     singular: jwt-verifier
   scope: Namespaced
 ---
-apiVersion: apiextensions.k8s.io/v1beta1
+apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   name: auth-modules.proxy.otoroshi.io
@@ -303,7 +303,7 @@ spec:
     singular: auth-module
   scope: Namespaced
 ---
-apiVersion: apiextensions.k8s.io/v1beta1
+apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   name: scripts.proxy.otoroshi.io
@@ -334,7 +334,7 @@ spec:
     singular: script
   scope: Namespaced
 ---
-apiVersion: apiextensions.k8s.io/v1beta1
+apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   name: tcp-services.proxy.otoroshi.io
@@ -347,7 +347,7 @@ spec:
     singular: tcp-service
   scope: Namespaced
 ---
-apiVersion: apiextensions.k8s.io/v1beta1
+apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   name: data-exporters.proxy.otoroshi.io
@@ -360,7 +360,7 @@ spec:
     singular: data-exporter
   scope: Namespaced
 ---
-apiVersion: apiextensions.k8s.io/v1beta1
+apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   name: admins.proxy.otoroshi.io
