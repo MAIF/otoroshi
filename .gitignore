@@ -16,4 +16,5 @@ target
 .settings
 .project
 .vscode
+.bsp
 oto-events*
