@@ -1361,8 +1361,14 @@ object KubernetesCRDsJob {
         dnsOperator  <- client.fetchOpenshiftDnsOperator()
         service      <- client.fetchService(conf.openshiftDnsOperatorCoreDnsNamespace, conf.openshiftDnsOperatorCoreDnsName)
         hasOtoroshiDnsServer = dnsOperator.exists(_.servers.exists(_.name == conf.openshiftDnsOperatorCoreDnsName))
-        shouldNotUpdate = dnsOperator.exists(_.servers.find(_.name == conf.openshiftDnsOperatorCoreDnsName).exists(_.forwardPluginUpstreams.exists(_.startsWith(service.map(_.clusterIP).getOrElse("--")))))
-        _            <- if (service.isDefined && dnsOperator.isDefined && !hasOtoroshiDnsServer) {
+        shouldNotUpdate      = dnsOperator.exists(dnso =>
+          dnso.servers.find(_.name == conf.openshiftDnsOperatorCoreDnsName).exists(_.forwardPluginUpstreams.exists(_.startsWith(service.map(_.clusterIP).getOrElse("--")))) && 
+          dnso.servers.find(_.name == conf.openshiftDnsOperatorCoreDnsName).exists(_.zones.exists(_.contains(s"${conf.coreDnsEnv.map(e => s"$e.").getOrElse("")}otoroshi.mesh")))
+        )
+        _ = logger.debug(s"Openshift DNS Operator has dns server: ${hasOtoroshiDnsServer} and should not be updated ${shouldNotUpdate}")
+        _ = logger.debug(s"Openshift DNS Operator config: ${dnsOperator.map(_.spec.prettify).getOrElse("--")}")
+        _ = logger.debug(s"Otoroshi CoreDNS config: ${service.map(_.spec.prettify).getOrElse("--")}")
+        _ <- if (service.isDefined && dnsOperator.isDefined && !hasOtoroshiDnsServer) {
           val servers = dnsOperator.get.servers.map(_.raw) :+ Json.obj(
             "name" -> conf.openshiftDnsOperatorCoreDnsName,
             "zones" -> Json.arr(
@@ -1374,7 +1380,9 @@ object KubernetesCRDsJob {
               )
             )
           )
-          client.updateOpenshiftDnsOperator(KubernetesOpenshiftDnsOperator(Json.obj("spec" -> dnsOperator.get.spec.++(Json.obj("servers" -> servers)))))
+          client.updateOpenshiftDnsOperator(KubernetesOpenshiftDnsOperator(Json.obj("spec" -> dnsOperator.get.spec.++(Json.obj("servers" -> servers))))).andThen {
+            case Success(Some(_)) => logger.info("Successfully patched Openshift DNS Operator to add coredns as upstream server")
+          }
         } else ().future
         _            <- if (service.isDefined && dnsOperator.isDefined && hasOtoroshiDnsServer && !shouldNotUpdate) {
           val servers = dnsOperator.get.servers.map(_.raw).map { server =>
@@ -1394,7 +1402,9 @@ object KubernetesCRDsJob {
               server
             }
           }
-          client.updateOpenshiftDnsOperator(KubernetesOpenshiftDnsOperator(Json.obj("spec" -> dnsOperator.get.spec.++(Json.obj("servers" -> servers)))))
+          client.updateOpenshiftDnsOperator(KubernetesOpenshiftDnsOperator(Json.obj("spec" -> dnsOperator.get.spec.++(Json.obj("servers" -> servers))))).andThen {
+            case Success(Some(_)) => logger.info("Successfully patched Openshift DNS Operator to update coredns as upstream server")
+          }
         } else ().future
       } yield ()
     } else {
