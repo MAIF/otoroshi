@@ -360,6 +360,7 @@ export class TcpServicesPage extends Component {
           defaultTitle={this.title}
           defaultValue={BackOfficeServices.createNewTcpService}
           itemName="Tcp Service"
+          defaultTitle="All Tcp Services"
           columns={this.columns}
           stayAfterSave={true}
           fetchItems={BackOfficeServices.findAllTcpServices}
