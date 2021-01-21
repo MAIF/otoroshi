@@ -532,24 +532,6 @@ export class Table extends Component {
             )}
             <hr />
             <div className="btn__group--right">
-              {this.props.export && (
-                <>
-                  <button
-                    onClick={this.exportJson}
-                    type="button"
-                    className="btn-info"
-                    title="Export as json">
-                    <i className="fas fa-file-export" /> JSON
-                  </button>
-                  <button
-                    onClick={this.exportYaml}
-                    type="button"
-                    className="btn-info ml-5"
-                    title="Export as yaml">
-                    <i className="fas fa-file-export" /> YAML
-                  </button>
-                </>
-              )}
               {this.props.displayTrash && this.props.displayTrash(this.state.currentItem) && (
                 <button
                   type="button"
