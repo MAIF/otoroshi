@@ -119,6 +119,7 @@ case class Cert(
     to: DateTime = DateTime.now(),
     sans: Seq[String] = Seq.empty,
     entityMetadata: Map[String, String] = Map.empty,
+    password: Option[String] = None,
     location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation()
 ) extends otoroshi.models.EntityLocationSupport {
 
@@ -209,7 +210,7 @@ case class Cert(
       }
     }
   }
-  def password: Option[String] = None
+  // def password: Option[String] = None
   def save()(implicit ec: ExecutionContext, env: Env) = {
     val current = this.enrich()
     env.datastores.certificatesDataStore.set(current)
@@ -455,6 +456,7 @@ object Cert {
       "keypair"     -> cert.keypair,
       "sans"        -> JsArray(cert.sans.map(JsString.apply)),
       "certType"    -> cert.certType,
+      "password"    -> cert.password,
       "metadata"    -> cert.entityMetadata
 
     )
@@ -472,6 +474,7 @@ object Cert {
           sans = (json \ "sans").asOpt[Seq[String]].getOrElse(Seq.empty),
           chain = (json \ "chain").as[String],
           caRef = (json \ "caRef").asOpt[String],
+          password = (json \ "password").asOpt[String].filter(_.trim.nonEmpty),
           privateKey = (json \ "privateKey").asOpt[String].getOrElse(""),
           selfSigned = (json \ "selfSigned").asOpt[Boolean].getOrElse(false),
           ca = (json \ "ca").asOpt[Boolean].getOrElse(false),

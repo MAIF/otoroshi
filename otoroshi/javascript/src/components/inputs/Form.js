@@ -215,6 +215,17 @@ export class Form extends Component {
               onChange={(v) => this.changeValue(name, v)}
             />
           );
+        } else if (type === 'password') {
+          component = (
+            <TextInput
+              disabled={disabled}
+              key={name}
+              value={this.getValue(name, '')}
+              type="password"
+              {...props}
+              onChange={(v) => this.changeValue(name, v)}
+            />
+          );
         } else if (type === 'code') {
           component = (
             <Suspense fallback={<div>loading ...</div>}>

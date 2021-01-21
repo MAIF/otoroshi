@@ -361,6 +361,10 @@ export class CertificatesPage extends Component {
       type: 'text',
       props: { label: 'Certificate full chain', rows: 6, style: { fontFamily: 'monospace' } },
     },
+    password: {
+      type: 'password',
+      props: { label: 'Private key password', placeholder: "key password if any", rows: 6, style: { fontFamily: 'monospace' } },
+    },
     privateKey: {
       type: 'text',
       props: { label: 'Certificate private key', rows: 6, style: { fontFamily: 'monospace' } },
@@ -484,6 +488,7 @@ export class CertificatesPage extends Component {
     'valid',
     'chain',
     'privateKey',
+    'password',
     'infos',
     'metadata',
   ];
