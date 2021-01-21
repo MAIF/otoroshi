@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import * as BackOfficeServices from '../services/BackOfficeServices';
 import { ServiceSidebar } from '../components/ServiceSidebar';
 import { Histogram } from '../components/recharts';
-import { BooleanInput } from '../components/inputs'
+import { BooleanInput } from '../components/inputs';
 import classNames from 'classnames';
 import { Popover } from 'antd';
 import moment from 'moment';
@@ -83,7 +83,7 @@ export class ServiceHealthPage extends Component {
         <BooleanInput
           label="Don't use unknown status when calculating averages"
           value={this.state.stopTheCountUnknownStatus}
-          help="Use unknown statuses whene calculating averages could modify results and may not be representative"
+          help="Use unknown statuses when calculating averages could modify results and may not be representative"
           onChange={(stopTheCountUnknownStatus) => this.setState({ stopTheCountUnknownStatus })}
         />
       </div>

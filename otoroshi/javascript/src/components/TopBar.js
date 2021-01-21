@@ -586,6 +586,11 @@ export class TopBar extends Component {
                             </a>
                           </li>
                           <li>
+                            <a href="/bo/dashboard/status">
+                              <i className="fas fa-heart" /> Status
+                            </a>
+                          </li>
+                          <li>
                             <a href="/bo/dashboard/events">
                               <i className="fas fa-list" /> Events log
                             </a>
