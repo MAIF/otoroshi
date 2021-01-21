@@ -539,24 +539,6 @@ export class Table extends Component {
             )}
             <hr />
             <div className="btn__group--right">
-              {this.props.export && (
-                <>
-                  <button
-                    onClick={this.exportJson}
-                    type="button"
-                    className="btn-info"
-                    title="Export as json">
-                    <i className="fas fa-file-export" /> JSON
-                  </button>
-                  <button
-                    onClick={this.exportYaml}
-                    type="button"
-                    className="btn-info ml-5"
-                    title="Export as yaml">
-                    <i className="fas fa-file-export" /> YAML
-                  </button>
-                </>
-              )}
               {this.props.displayTrash && this.props.displayTrash(this.state.currentItem) && (
                 <button
                   type="button"
@@ -587,6 +569,24 @@ export class Table extends Component {
               <button type="button" className="btn-danger ml-5" onClick={this.closeEditForm}>
                 <i className="fas fa-times" /> Cancel
               </button>
+              {this.props.export && (
+                <>
+                  <button
+                    onClick={this.exportJson}
+                    type="button"
+                    className="btn-info ml-5"
+                    title="Export as json">
+                    <i className="fas fa-file-export" /> JSON
+                  </button>
+                  <button
+                    onClick={this.exportYaml}
+                    type="button"
+                    className="btn-info ml-5"
+                    title="Export as yaml">
+                    <i className="fas fa-file-export" /> YAML
+                  </button>
+                </>
+              )}
               {this.props.stayAfterSave && (
                 <button type="button" className="btn-success ml-5" onClick={this.updateItemAndStay}>
                   <i className="fas fa-hdd" /> Update and stay on this {this.props.itemName}
