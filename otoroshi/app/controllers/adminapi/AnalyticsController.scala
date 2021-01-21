@@ -238,6 +238,70 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(
     }
   }
 
+  def globalStatus(from: Option[String] = None, to: Option[String] = None) = ApiAction.async { ctx =>
+    Audit.send(
+      AdminApiEvent(
+        env.snowflakeGenerator.nextIdStr(),
+        env.env,
+        Some(ctx.apiKey),
+        ctx.user,
+        "ACCESS_GLOBAL_STATUSES",
+        s"User accessed a global statuses",
+        ctx.from,
+        ctx.ua,
+        Json.obj()
+      )
+    )
+
+    val paginationPage: Int = ctx.request.queryString
+      .get("page")
+      .flatMap(_.headOption)
+      .map(_.toInt)
+      .getOrElse(1)
+    val paginationPageSize: Int =
+      ctx.request.queryString
+        .get("pageSize")
+        .flatMap(_.headOption)
+        .map(_.toInt)
+        .getOrElse(Int.MaxValue)
+
+    val paginationPosition = paginationPage * paginationPageSize
+
+    env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
+      val analyticsService = new AnalyticsReadsServiceImpl(globalConfig, env)
+
+      val fromDate = from.map(f => new DateTime(f.toLong)).orElse(DateTime.now().minusDays(90).withTimeAtStartOfDay().some)
+      val toDate = to.map(f => new DateTime(f.toLong))
+
+      env.datastores.serviceDescriptorDataStore.findAll()
+        .map(_
+          .filter(d => ctx.canUserRead(d))
+          .filter(d => d.healthCheck.enabled)
+          .sortWith(_.name < _.name)
+        )
+        .map {
+          case seq: Seq[ServiceDescriptor] => Some(seq)
+          case Nil => None
+        }
+        .flatMap {
+          case Some(desc) =>
+            val count = desc.size
+            val seq = desc.slice(paginationPosition, paginationPosition + paginationPageSize)
+
+            analyticsService.fetchServicesStatus(seq, fromDate, toDate).map {
+            case Some(value) => Ok(value).withHeaders(
+              "X-Count"     -> desc.size.toString,
+              "X-Offset"    -> paginationPosition.toString,
+              "X-Page"      -> paginationPage.toString,
+              "X-Page-Size" -> paginationPageSize.toString
+            )
+            case None => NotFound(Json.obj("error" -> "No entity found"))
+          }
+          case None => NotFound(Json.obj("error" -> "No entity found")).future
+        }
+    }
+  }
+
   def serviceEvents(serviceId: String, from: Option[String] = None, to: Option[String] = None) = ApiAction.async {
     ctx =>
       Audit.send(

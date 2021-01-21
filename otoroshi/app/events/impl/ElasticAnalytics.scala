@@ -1074,7 +1074,9 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
                   Json.obj("date" -> timestamp, "dateAsString" -> hrDate, "total" -> total_day, "status" -> JsArray(status))
                 })
 
-              Json.obj("descriptor" -> id, "total" -> total_period, "dates" -> JsArray(dates))
+              val name = servicesDescriptors.find(_.id == id).map(_.name).getOrElse("UNKNOWN")
+              val env = servicesDescriptors.find(_.id == id).map(_.env).getOrElse("prod")
+              Json.obj("descriptor" -> id, "service" -> name, "line" -> env,  "total" -> total_period, "dates" -> JsArray(dates))
             }))
           }
       }

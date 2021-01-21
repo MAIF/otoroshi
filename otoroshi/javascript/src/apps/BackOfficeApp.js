@@ -27,6 +27,7 @@ import { ServicesMapPage } from '../pages/ServicesMapPage';
 import { PrivateAppsSessionsPage } from '../pages/PrivateAppsSessionsPage';
 import { GlobalEventsPage } from '../pages/GlobalEventsPage';
 import { GlobalAnalyticsPage } from '../pages/GlobalAnalyticsPage';
+import { GlobalStatusPage } from '../pages/GlobalStatusPage';
 import { SnowMonkeyPage } from '../pages/SnowMonkeyPage';
 import { JwtVerifiersPage } from '../pages/JwtVerifiersPage';
 import { AuthModuleConfigsPage } from '../pages/AuthModuleConfigsPage';
@@ -406,6 +407,10 @@ class BackOfficeAppContainer extends Component {
                         <Route
                           path="/stats"
                           component={(props) => this.decorate(GlobalAnalyticsPage, props)}
+                        />
+                        <Route
+                          path="/status"
+                          component={(props) => this.decorate(GlobalStatusPage, props)}
                         />
                         <Route
                           path="/events"

@@ -40,6 +40,12 @@
   border-radius: 6px;
   color: #131a26;
   font-size: 18px;
+  margin-bottom: 45px;
+
+  &.global {
+    margin-bottom: 15px;
+    padding: 10px;
+  }
 
   .uptime-avg {
     font-size: 24px;
@@ -69,11 +75,5 @@
         border-right: solid 1px #fff;
       }
     }
-  }
-}
-
-.content-health {
-  h3 {
-    margin: 45px 0 15px 0;
   }
 }
