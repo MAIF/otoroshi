@@ -1068,7 +1068,7 @@ export class ServicePage extends Component {
                 type="button"
                 {...createTooltip('Export the current service as a JSON file.', 'left', true)}
                 onClick={this.exportService}>
-                <i className="fas fa-file-export" />
+                <i className="fas fa-file-export" /> JSON
               </button>
               <button
                 className="btn btn-info"
@@ -1079,7 +1079,7 @@ export class ServicePage extends Component {
                   true
                 )}
                 onClick={this.exportServiceYaml}>
-                <i className="glyphicon glyphicon-export" />
+                <i className="fas fa-file-export" /> YAML
               </button>
               <button
                 className="btn btn-info"
