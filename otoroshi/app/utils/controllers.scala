@@ -587,9 +587,19 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
             data = Source(finalItems.toList.map(e => e.stringify.byteString)),
             contentLength = None,
             contentType = "application/x-ndjson".some
-          ))
+          )).withHeaders(
+            "X-Count"     -> entities.size.toString,
+            "X-Offset"    -> paginationPosition.toString,
+            "X-Page"      -> paginationPage.toString,
+            "X-Page-Size" -> paginationPageSize.toString
+          )
         } else {
-          Ok(JsArray(finalItems))
+          Ok(JsArray(finalItems)).withHeaders(
+            "X-Count"     -> entities.size.toString,
+            "X-Offset"    -> paginationPosition.toString,
+            "X-Page"      -> paginationPage.toString,
+            "X-Page-Size" -> paginationPageSize.toString
+          )
         }
       }
     }
