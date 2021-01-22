@@ -1,15 +1,10 @@
 import React, { Component } from 'react';
-import {Link} from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import _ from 'lodash';
-import classNames from 'classnames';
-import { Popover } from 'antd';
 import Pagination from 'react-paginate';
 import { BooleanInput } from '../components/inputs';
 import * as BackOfficeServices from '../services/BackOfficeServices';
-
-const formatPercentage = (value, decimal = 2) => {
-  return parseFloat(value).toFixed(decimal) + " %"
-}
+import {Uptime} from '../components/Status'
 
 export class GlobalStatusPage extends Component {
   state = {
@@ -27,13 +22,13 @@ export class GlobalStatusPage extends Component {
   }
 
   handlePageClick = (data) => {
-    this.setState({page: data.selected}, () => this.update())
+    this.setState({ page: data.selected }, () => this.update())
   };
 
   update = () => {
     this.setState({ loading: true });
     BackOfficeServices.fetchGlobalStatus(this.state.page, this.state.pageSize)
-      .then(({status, count}) => {
+      .then(({ status, count }) => {
         this.setState({ status, count, loading: false });
       });
   };
@@ -98,7 +93,14 @@ export class GlobalStatusPage extends Component {
               {this.state.status
                 .sort((s1, s2) => s1.service.localeCompare(s2.service))
                 .map((health, idx) => {
-                  return <Uptime key={idx} health={health} stopTheCountUnknownStatus={this.state.stopTheCountUnknownStatus} />
+                  return (
+                    <>
+                      <Link to={`/lines/${health.line}/services/${health.descriptor}/health`}>
+                        <h3>{health.service}</h3>
+                      </Link>
+                      <Uptime key={idx} className="global" health={health} stopTheCountUnknownStatus={this.state.stopTheCountUnknownStatus} />
+                    </>
+                  )
                 })}
             </div>
             <Pagination
@@ -119,57 +121,5 @@ export class GlobalStatusPage extends Component {
         )}
       </div>
     );
-  }
-}
-
-class Uptime extends Component {
-  render() {
-    const test = this.props.health.dates
-      .map(h => {
-        const availability = h.status.length ? h.status
-          .filter(s => s.health === "GREEN" || s.health === "YELLOW")
-          .reduce((acc, curr) => acc + curr.percentage, 0).toFixed(2) : `unknown`
-        return { date: h.dateAsString, availability, status: h.status }
-      })
-
-    const avg = this.props.health.dates
-      .filter(d => !this.props.stopTheCountUnknownStatus || d.status.length)
-      .reduce((avg, value, _, { length }) => {
-        return avg + value.status
-          .filter(s => s.health === "GREEN" || s.health === "YELLOW")
-          .reduce((acc, curr) => acc + curr.percentage, 0) / length
-      }, 0)
-    return (
-      <div className="health-container global">
-        <div className="container--header" style={{
-          display: 'flex',
-          justifyContent: 'space-between'
-        }}>
-          <Link to={`/lines/${this.props.health.line}/services/${this.props.health.descriptor}/health`}>
-            <h3>{this.props.health.service}</h3>
-          </Link>
-          <div className="uptime-avg">{formatPercentage(avg)}</div>
-        </div>
-        <div className="flex-status">
-          {test.map((t, idx) => (
-            <Popover
-              key={idx}
-              placement="bottom"
-              title={t.date}
-              content={!t.status.length ?
-                <span>UNKNOWN</span> :
-                <ul>{t.status.map((s, i) => <li key={i}>{`${s.health}: ${formatPercentage(s.percentage)}`}</li>)}</ul>}>
-              <div key={idx} className={classNames('status', {
-                green: t.availability !== 'unknown' && t.availability >= 100,
-                'light-green': t.availability !== 'unknown' && t.availability >= 99 && t.availability < 100,
-                orange: t.availability !== 'unknown' && t.availability >= 95 && t.availability < 99,
-                red: t.availability !== 'unknown' && t.availability < 95,
-                gray: t.availability === 'unknown'
-              })}></div>
-            </Popover>
-          ))}
-        </div>
-      </div>
-    )
   }
 }
