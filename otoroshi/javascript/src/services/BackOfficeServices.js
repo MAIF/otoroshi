@@ -313,7 +313,14 @@ export function fetchHealthCheckEvents(serviceId) {
 }
 
 export function fetchServiceStatus(serviceId) {
-  return fetchServicesStatus([serviceId])
+  return fetch(`/bo/api/proxy/api/services/${serviceId}/status`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+  }).then((r) => r.json());
 }
 
 export function fetchServicesStatus(servicesIds = []) {
