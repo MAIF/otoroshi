@@ -285,7 +285,6 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(
         }
         .flatMap {
           case Some(desc) =>
-            val count = desc.size
             val seq = desc.slice(paginationPosition, paginationPosition + paginationPageSize)
 
             analyticsService.fetchServicesStatus(seq, fromDate, toDate).map {
@@ -534,7 +533,7 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(
     }
   }
 
-  def serviceStatus(serviceId: String, from: Option[String], to: Option[String]) = ApiAction.async(parse.json) { ctx =>
+  def serviceStatus(serviceId: String, from: Option[String], to: Option[String]) = ApiAction.async { ctx =>
     env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
       val analyticsService = new AnalyticsReadsServiceImpl(globalConfig, env)
 
@@ -546,6 +545,33 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(
           case None => NotFound(Json.obj("error" -> s"Service: '$serviceId' not found")).future
           case Some(desc) if !ctx.canUserRead(desc)=> ctx.fforbidden
           case Some(desc) => analyticsService.fetchServicesStatus(Seq(desc), fromDate, toDate).map {
+            case Some(value) => Ok(value)
+            case None => NotFound(Json.obj("error" -> "No entity found"))
+          }
+        }
+    }
+  }
+
+  def groupStatus(groupId: String, from: Option[String], to: Option[String]) = ApiAction.async { ctx =>
+    env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
+      val analyticsService = new AnalyticsReadsServiceImpl(globalConfig, env)
+
+      val fromDate = from.map(f => new DateTime(f.toLong)).orElse(DateTime.now().minusDays(90).withTimeAtStartOfDay().some)
+      val toDate = to.map(f => new DateTime(f.toLong))
+
+      env.datastores.serviceDescriptorDataStore.findByGroup(groupId)
+        .map(_
+          .filter(d => ctx.canUserRead(d))
+          .filter(d => d.healthCheck.enabled)
+          .sortWith(_.name < _.name)
+        )
+        .map {
+          case seq: Seq[ServiceDescriptor] => Some(seq)
+          case Nil => None
+        }
+        .flatMap {
+          case None => NotFound(Json.obj("error" -> "No entity found")).future
+          case Some(desc) => analyticsService.fetchServicesStatus(desc, fromDate, toDate).map {
             case Some(value) => Ok(value)
             case None => NotFound(Json.obj("error" -> "No entity found"))
           }
