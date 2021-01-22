@@ -1,11 +1,10 @@
 import React, { Component } from 'react';
-import * as BackOfficeServices from '../services/BackOfficeServices';
+import moment from 'moment';
 import { ServiceSidebar } from '../components/ServiceSidebar';
 import { Histogram } from '../components/recharts';
 import { BooleanInput } from '../components/inputs';
-import classNames from 'classnames';
-import { Popover } from 'antd';
-import moment from 'moment';
+import {Uptime, formatPercentage} from '../components/Status';
+import * as BackOfficeServices from '../services/BackOfficeServices';
 
 import 'antd/dist/antd.css';
 
@@ -73,11 +72,14 @@ export class ServiceHealthPage extends Component {
   };
 
   render() {
-    if (!this.state.service) return null;
+    if (!this.state.service || !this.state.status.length) return null;
 
     return (
       <div className="content-health">
-        <Uptime health={this.state.status} stopTheCountUnknownStatus={this.state.stopTheCountUnknownStatus}/>
+        <div>
+          <h3>Uptime last 90 days</h3>
+          <Uptime health={this.state.status[0]} stopTheCountUnknownStatus={this.state.stopTheCountUnknownStatus}/>
+        </div>
         <OverallUptime health={this.state.status} stopTheCountUnknownStatus={this.state.stopTheCountUnknownStatus}/>
         <ResponseTime responsesTime={this.state.responsesTime} stopTheCountUnknownStatus={this.state.stopTheCountUnknownStatus}/>
         <BooleanInput
@@ -88,58 +90,6 @@ export class ServiceHealthPage extends Component {
         />
       </div>
     );
-  }
-}
-
-class Uptime extends Component {
-  render() {
-    if (!this.props.health.length) {
-      return null;
-    }
-
-    const test = this.props.health[0].dates
-      .map(h => {
-        const availability = h.status.length ? h.status
-          .filter(s => s.health === "GREEN" || s.health === "YELLOW")
-          .reduce((acc, curr) => acc + curr.percentage, 0) : `unknown`
-        return { date: h.dateAsString, availability, status: h.status }
-      })
-
-    const avg = this.props.health[0].dates
-      .filter(d => !this.props.stopTheCountUnknownStatus || d.status.length)
-      .reduce((avg, value, _, { length }) => {
-        return avg + value.status
-          .filter(s => s.health === "GREEN" || s.health === "YELLOW")
-          .reduce((acc, curr) => acc + curr.percentage, 0) / length
-      }, 0)
-
-    return (
-      <div>
-        <h3>Uptime last 90 days</h3>
-        <div className="health-container">
-          <div className="uptime-avg">{formatPercentage(avg)}</div>
-          <div className="flex-status">
-            {test.map((t, idx) => (
-              <Popover
-                key={idx}
-                placement="bottom"
-                title={t.date}
-                content={!t.status.length ?
-                  <span>UNKNOWN</span> :
-                  <ul>{t.status.map((s, i) => <li key={i}>{`${s.health}: ${s.percentage}%`}</li>)}</ul>}>
-                <div key={idx} className={classNames('status', {
-                  green: t.availability !== 'unknown' && t.availability === 100,
-                  'light-green': t.availability !== 'unknown' && t.availability >= 99 && t.availability < 100,
-                  orange: t.availability !== 'unknown' && t.availability >= 95 && t.availability < 99,
-                  red: t.availability !== 'unknown' && t.availability < 95,
-                  gray: t.availability === 'unknown'
-                })}></div>
-              </Popover>
-            ))}
-          </div>
-        </div>
-      </div>
-    )
   }
 }
 
@@ -211,8 +161,4 @@ class ResponseTime extends Component {
       </div>
     )
   }
-}
-
-const formatPercentage = (value, decimal = 2) => {
-  return parseFloat(value).toFixed(decimal) + " %"
 }
