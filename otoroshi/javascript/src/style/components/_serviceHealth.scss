@@ -1,0 +1,118 @@
+@keyframes pulseBig {
+  0% { opacity: 0.5; }
+  70% {
+    opacity: 0;
+    transform: scale(1.6);
+  }
+  100% { opacity: 0; }
+}
+
+.flex-status {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+}
+.status {
+  height: 35px; width: 10px;
+  border-radius: 5px;
+
+  &:hover::before {
+    content: '';
+    display: block;
+    width: inherit; height: inherit;
+    border-radius: inherit;
+    background-color: rgb(255, 255, 255, .5)
+  }
+
+  &.green {
+    background-color: #3bd671;
+  }
+  &.light-green {
+    background-color: #75e29b;
+  }
+  &.orange {
+    background-color: #f29030;
+  }
+  &.red {
+    background-color: #df484a;
+  }
+  &.gray {
+    background-color: gray;
+  }
+}
+
+.health-container {
+  background: rgb(73, 73, 72);
+  padding: 60px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+  border-radius: 6px;
+  color: #131a26;
+  font-size: 18px;
+  margin-bottom: 45px;
+
+  &.global {
+    margin-bottom: 15px;
+    padding: 10px;
+  }
+
+  .uptime-avg {
+    font-size: 24px;
+    font-weight: 600;
+    color: #3bd671;
+  }
+
+  &.uptime {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+
+    .uptime {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      padding-left: 35px;
+      color: #fff;
+
+      .uptime-value {
+        font-size: 24px;
+        font-weight: 600;
+      }
+
+      &:not(:last-child) {
+        border-right: solid 1px #fff;
+      }
+    }
+  }
+}
+
+.status-info {
+  display: flex;
+  align-items: center;
+  position: relative;
+
+  .dot {
+    display: block;
+    margin-right: 10px;
+    width: 15px; height: 15px;
+    border-radius: 15px;
+    position: relative;
+
+    &.green { background-color: #3bd671;}
+    &.yellow { background-color: #f29030;}
+    &.red { background-color: #df484a;}
+    &.black { background-color: #000000;}
+  }
+
+  .dot::before {
+    content: '';
+    width: 100%; height: 100%;
+    position: absolute;
+    animation: pulseBig 2s infinite;
+    opacity: 1;
+    border-radius: 50%;
+    top: 0;
+    left: 0;
+    background-color: inherit;
+  }
+}

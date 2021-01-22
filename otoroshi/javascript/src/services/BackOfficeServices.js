@@ -278,6 +278,30 @@ export function fetchGlobalStats(from, to) {
   );
 }
 
+export function fetchGlobalStatus(page, limit) {
+  return fetch(`/bo/api/proxy/api/status/global?&pageSize=${limit}&page=${page}`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+    },
+  }).then(
+    (r) => {
+      if (r.status === 200) {
+        const count = r.headers.get('X-Count')
+        return r.json() 
+          .then(status => ({status, count}));
+      }
+      console.log('error while fetching global stats');
+      return {};
+    },
+    (e) => {
+      console.log('error while fetching global stats');
+      return {};
+    }
+  );
+}
+
 export function fetchHealthCheckEvents(serviceId) {
   return fetch(`/bo/api/proxy/api/services/${serviceId}/health`, {
     method: 'GET',
@@ -285,6 +309,39 @@ export function fetchHealthCheckEvents(serviceId) {
     headers: {
       Accept: 'application/json',
     },
+  }).then((r) => r.json());
+}
+
+export function fetchServiceStatus(serviceId) {
+  return fetch(`/bo/api/proxy/api/services/${serviceId}/status`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+  }).then((r) => r.json());
+}
+
+export function fetchServicesStatus(servicesIds = []) {
+  return fetch(`/bo/api/proxy/api/status`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(servicesIds),
+  }).then((r) => r.json());
+}
+
+export function fetchServiceResponseTime(serviceId) {
+  return fetch(`/bo/api/proxy/api/services/${serviceId}/response`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json'
+    }
   }).then((r) => r.json());
 }
 

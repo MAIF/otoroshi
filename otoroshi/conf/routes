@@ -156,6 +156,7 @@ PATCH   /api/groups/:groupId/apikeys/:clientId                controllers.admina
 DELETE  /api/groups/:groupId/apikeys/:clientId                controllers.adminapi.ApiKeysFromGroupController.deleteApiKeyFromGroup(groupId, clientId)
 POST    /api/groups/:groupId/apikeys                          controllers.adminapi.ApiKeysFromGroupController.createApiKeyFromGroup(groupId)
 GET     /api/groups/:groupId/apikeys                          controllers.adminapi.ApiKeysFromGroupController.apiKeysFromGroup(groupId)
+GET     /api/groups/:groupId/status                           controllers.adminapi.AnalyticsController.groupStatus(groupId, from: Option[String], to: Option[String])
 
 ## Services
 GET     /api/services/_template                               controllers.adminapi.TemplatesController.initiateService()
@@ -170,7 +171,9 @@ PATCH   /api/services/:serviceId/targets                      controllers.admina
 GET     /api/services/:serviceId/live                         controllers.adminapi.StatsController.serviceLiveStats(serviceId, every: Option[Int])
 GET     /api/services/:serviceId/stats                        controllers.adminapi.AnalyticsController.serviceStats(serviceId, from: Option[String], to: Option[String])
 GET     /api/services/:serviceId/events                       controllers.adminapi.AnalyticsController.serviceEvents(serviceId, from: Option[String], to: Option[String])
+GET     /api/services/:serviceId/status                       controllers.adminapi.AnalyticsController.serviceStatus(serviceId, from: Option[String], to: Option[String])
 GET     /api/services/:serviceId/health                       controllers.adminapi.ServicesController.serviceHealth(serviceId)
+GET     /api/services/:serviceId/response                     controllers.adminapi.AnalyticsController.serviceResponseTime(serviceId, from: Option[String], to: Option[String])
 GET     /api/services/:serviceId/canary                       controllers.adminapi.CanaryController.serviceCanaryMembers(serviceId)
 DELETE  /api/services/:serviceId/canary                       controllers.adminapi.CanaryController.resetServiceCanaryMembers(serviceId)
 # GET     /api/services/:serviceId                              controllers.adminapi.ServicesController.service(serviceId)
@@ -408,8 +411,10 @@ GET     /api/data-exporter-configs                          controllers.adminapi
 POST    /api/data-exporter-configs                          controllers.adminapi.DataExporterConfigController.createAction()
 
 GET     /api/stats/global                                     controllers.adminapi.AnalyticsController.globalStats(from: Option[String], to: Option[String])
+GET     /api/status/global                                    controllers.adminapi.AnalyticsController.globalStatus(from: Option[String], to: Option[String])
 GET     /api/stats                                            controllers.adminapi.AnalyticsController.filterableStats(from: Option[String], to: Option[String])
 GET     /api/events                                           controllers.adminapi.AnalyticsController.filterableEvents(from: Option[String], to: Option[String])
+POST    /api/status                                           controllers.adminapi.AnalyticsController.servicesStatus(from: Option[String], to: Option[String])
 
 GET     /api/admin-sessions                                   controllers.adminapi.UsersController.sessions()
 DELETE  /api/admin-sessions/:id                               controllers.adminapi.UsersController.discardSession(id)

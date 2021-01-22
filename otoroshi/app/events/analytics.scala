@@ -524,6 +524,14 @@ trait AnalyticsReadsService {
       implicit env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]]
+  def fetchServicesStatus(servicesDescriptors: Seq[ServiceDescriptor], from: Option[DateTime], to: Option[DateTime])(
+    implicit env: Env,
+    ec: ExecutionContext
+  ): Future[Option[JsValue]]
+  def fetchServiceResponseTime(servicesDescriptor: ServiceDescriptor, from: Option[DateTime], to: Option[DateTime])(
+    implicit env: Env,
+    ec: ExecutionContext
+  ): Future[Option[JsValue]]
 }
 
 trait AnalyticsWritesService {
@@ -721,6 +729,26 @@ class AnalyticsReadsServiceImpl(globalConfig: GlobalConfig, env: Env) extends An
   ): Future[Option[JsValue]] =
     underlyingService().flatMap(
       _.map(_.fetchServicePiechart(filterable, from, to, size))
+        .getOrElse(FastFuture.successful(None))
+    )
+
+  override def fetchServicesStatus(servicesDescriptors: Seq[ServiceDescriptor],
+                                  from: Option[DateTime],
+                                  to: Option[DateTime])(
+    implicit env: Env,
+    ec: ExecutionContext): Future[Option[JsValue]] =
+    underlyingService().flatMap(
+      _.map(_.fetchServicesStatus(servicesDescriptors, from, to))
+        .getOrElse(FastFuture.successful(None))
+    )
+
+  override def fetchServiceResponseTime(servicesDescriptor: ServiceDescriptor,
+                                  from: Option[DateTime],
+                                  to: Option[DateTime])(
+    implicit env: Env,
+    ec: ExecutionContext): Future[Option[JsValue]] =
+    underlyingService().flatMap(
+      _.map(_.fetchServiceResponseTime(servicesDescriptor, from, to))
         .getOrElse(FastFuture.successful(None))
     )
 }

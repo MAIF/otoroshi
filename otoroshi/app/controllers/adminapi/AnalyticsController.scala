@@ -5,10 +5,11 @@ import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
 import env.Env
 import events._
+import models.ServiceDescriptor
 import org.joda.time.DateTime
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
-import play.api.libs.json.{JsObject, JsValue, Json}
+import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
 import play.api.mvc.{AbstractController, ControllerComponents, RequestHeader}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -237,6 +238,69 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(
     }
   }
 
+  def globalStatus(from: Option[String] = None, to: Option[String] = None) = ApiAction.async { ctx =>
+    Audit.send(
+      AdminApiEvent(
+        env.snowflakeGenerator.nextIdStr(),
+        env.env,
+        Some(ctx.apiKey),
+        ctx.user,
+        "ACCESS_GLOBAL_STATUSES",
+        s"User accessed a global statuses",
+        ctx.from,
+        ctx.ua,
+        Json.obj()
+      )
+    )
+
+    val paginationPage: Int = ctx.request.queryString
+      .get("page")
+      .flatMap(_.headOption)
+      .map(_.toInt)
+      .getOrElse(1)
+    val paginationPageSize: Int =
+      ctx.request.queryString
+        .get("pageSize")
+        .flatMap(_.headOption)
+        .map(_.toInt)
+        .getOrElse(Int.MaxValue)
+
+    val paginationPosition = paginationPage * paginationPageSize
+
+    env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
+      val analyticsService = new AnalyticsReadsServiceImpl(globalConfig, env)
+
+      val fromDate = from.map(f => new DateTime(f.toLong)).orElse(DateTime.now().minusDays(90).withTimeAtStartOfDay().some)
+      val toDate = to.map(f => new DateTime(f.toLong))
+
+      env.datastores.serviceDescriptorDataStore.findAll()
+        .map(_
+          .filter(d => ctx.canUserRead(d))
+          .filter(d => d.healthCheck.enabled)
+          .sortWith(_.name < _.name)
+        )
+        .map {
+          case seq: Seq[ServiceDescriptor] => Some(seq)
+          case Nil => None
+        }
+        .flatMap {
+          case Some(desc) =>
+            val seq = desc.slice(paginationPosition, paginationPosition + paginationPageSize)
+
+            analyticsService.fetchServicesStatus(seq, fromDate, toDate).map {
+            case Some(value) => Ok(value).withHeaders(
+              "X-Count"     -> desc.size.toString,
+              "X-Offset"    -> paginationPosition.toString,
+              "X-Page"      -> paginationPage.toString,
+              "X-Page-Size" -> paginationPageSize.toString
+            )
+            case None => NotFound(Json.obj("error" -> "No entity found"))
+          }
+          case None => NotFound(Json.obj("error" -> "No entity found")).future
+        }
+    }
+  }
+
   def serviceEvents(serviceId: String, from: Option[String] = None, to: Option[String] = None) = ApiAction.async {
     ctx =>
       Audit.send(
@@ -438,6 +502,101 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(
       }
     } getOrElse {
       NotFound(Json.obj("error" -> s"No entity found")).future
+    }
+  }
+
+  def servicesStatus(from: Option[String], to: Option[String]) = ApiAction.async(parse.json) { ctx =>
+    env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
+      val analyticsService = new AnalyticsReadsServiceImpl(globalConfig, env)
+
+      val fromDate = from.map(f => new DateTime(f.toLong)).orElse(DateTime.now().minusDays(90).withTimeAtStartOfDay().some)
+      val toDate = to.map(f => new DateTime(f.toLong))
+
+      val eventualDescriptors: Future[Seq[ServiceDescriptor]] = ctx.request.body.asOpt[JsArray] match {
+        case Some(services) => env.datastores.serviceDescriptorDataStore.findAllById(services.value.map(_.as[String]))
+        case None => env.datastores.serviceDescriptorDataStore.findAll()
+      }
+
+      eventualDescriptors
+        .map(_.filter(d => ctx.canUserRead(d)))
+        .map {
+          case seq: Seq[ServiceDescriptor] => Some(seq)
+          case Nil => None
+        }
+        .flatMap {
+          case Some(desc) => analyticsService.fetchServicesStatus(desc, fromDate, toDate).map {
+            case Some(value) => Ok(value)
+            case None => NotFound(Json.obj("error" -> "No entity found"))
+          }
+          case None => NotFound(Json.obj("error" -> "No entity found")).future
+        }
+    }
+  }
+
+  def serviceStatus(serviceId: String, from: Option[String], to: Option[String]) = ApiAction.async { ctx =>
+    env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
+      val analyticsService = new AnalyticsReadsServiceImpl(globalConfig, env)
+
+      val fromDate = from.map(f => new DateTime(f.toLong)).orElse(DateTime.now().minusDays(90).withTimeAtStartOfDay().some)
+      val toDate = to.map(f => new DateTime(f.toLong))
+
+      env.datastores.serviceDescriptorDataStore.findById(serviceId)
+        .flatMap {
+          case None => NotFound(Json.obj("error" -> s"Service: '$serviceId' not found")).future
+          case Some(desc) if !ctx.canUserRead(desc)=> ctx.fforbidden
+          case Some(desc) => analyticsService.fetchServicesStatus(Seq(desc), fromDate, toDate).map {
+            case Some(value) => Ok(value)
+            case None => NotFound(Json.obj("error" -> "No entity found"))
+          }
+        }
+    }
+  }
+
+  def groupStatus(groupId: String, from: Option[String], to: Option[String]) = ApiAction.async { ctx =>
+    env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
+      val analyticsService = new AnalyticsReadsServiceImpl(globalConfig, env)
+
+      val fromDate = from.map(f => new DateTime(f.toLong)).orElse(DateTime.now().minusDays(90).withTimeAtStartOfDay().some)
+      val toDate = to.map(f => new DateTime(f.toLong))
+
+      env.datastores.serviceDescriptorDataStore.findByGroup(groupId)
+        .map(_
+          .filter(d => ctx.canUserRead(d))
+          .filter(d => d.healthCheck.enabled)
+          .sortWith(_.name < _.name)
+        )
+        .map {
+          case seq: Seq[ServiceDescriptor] => Some(seq)
+          case Nil => None
+        }
+        .flatMap {
+          case None => NotFound(Json.obj("error" -> "No entity found")).future
+          case Some(desc) => analyticsService.fetchServicesStatus(desc, fromDate, toDate).map {
+            case Some(value) => Ok(value)
+            case None => NotFound(Json.obj("error" -> "No entity found"))
+          }
+        }
+    }
+  }
+
+  def serviceResponseTime(serviceId: String, from: Option[String], to: Option[String]) = ApiAction.async { ctx =>
+    val fromDate = from.map(f => new DateTime(f.toLong)).orElse(DateTime.now().minusDays(90).withTimeAtStartOfDay().some)
+    val toDate = to.map(f => new DateTime(f.toLong))
+
+    env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
+      val analyticsService = new AnalyticsReadsServiceImpl(globalConfig, env)
+
+      env.datastores.serviceDescriptorDataStore.findById(serviceId)
+        .flatMap {
+          case None => NotFound(Json.obj("error" -> s"Service: '$serviceId' not found")).future
+          case Some(desc) if !ctx.canUserRead(desc)=> ctx.fforbidden
+          case Some(desc) => analyticsService.fetchServiceResponseTime(desc, fromDate, toDate).map {
+            case Some(value) =>
+              logger.warn("ok")
+              Ok(value)
+            case None => NotFound(Json.obj("error" -> "No entity found"))
+          }
+        }
     }
   }
 }

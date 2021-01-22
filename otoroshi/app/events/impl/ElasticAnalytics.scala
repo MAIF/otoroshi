@@ -71,6 +71,9 @@ object ElasticTemplates {
       |        "@env": {
       |          "type": "keyword"
       |        },
+      |        "health": {
+      |          "type": "keyword"
+      |        },
       |        "headers": {
       |          "properties": {
       |            "key": {
@@ -144,6 +147,9 @@ object ElasticTemplates {
       |        "@env": {
       |          "type": "keyword"
       |        },
+      |        "health": {
+      |          "type": "keyword"
+      |        },
       |        "headers": {
       |          "properties": {
       |            "key": {
@@ -177,7 +183,11 @@ object ElasticWritesAnalytics {
 
   val clusterInitializedCache = new ConcurrentHashMap[String, (Boolean, ElasticVersion)]()
 
-  def toKey(config: ElasticAnalyticsConfig): String = s"${config.clusterUri}/${config.index}/${config.`type`}"
+  def toKey(config: ElasticAnalyticsConfig): String = {
+    val index: String = config.index.getOrElse("otoroshi-events")
+    val `type`: String = config.`type`.getOrElse("event")
+    s"${config.clusterUri}/$index/${`type`}"
+  }
 
   def initialized(config: ElasticAnalyticsConfig, version: ElasticVersion): Unit = {
     clusterInitializedCache.putIfAbsent(toKey(config), (true, version))
@@ -239,7 +249,7 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env) extends A
     } else {
       implicit val ec: ExecutionContext = executionContext
       logger.info(
-        s"Creating Otoroshi template for $index on es cluster at ${config.clusterUri}/${config.index}/${config.`type`}"
+        s"Creating Otoroshi template for $index on es cluster at ${config.clusterUri}/$index/${`type`}"
       )
       Await.result(
         getElasticVersion().flatMap { version =>
@@ -249,13 +259,13 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env) extends A
           }
           val tpl: JsValue = Json.parse(strTpl.replace("$$$INDEX$$$", index))
           logger.debug(s"Creating otoroshi template with \n${Json.prettyPrint(tpl)}")
-          url(urlFromPath("/_index_template/otoroshi-tpl"))
+          url(urlFromPath("/_template/otoroshi-tpl"))
             .get()
             .flatMap { resp =>
               resp.status match {
                 case 200 =>
                   resp.ignore()
-                  val tplCreated = url(urlFromPath("/_index_template/otoroshi-tpl")).put(tpl)
+                  val tplCreated = url(urlFromPath("/_template/otoroshi-tpl")).put(tpl)
                   tplCreated.onComplete {
                     case Success(r) if r.status >= 400 =>
                       logger.error(s"Error creating template ${r.status}: ${r.body}")
@@ -272,7 +282,7 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env) extends A
                   tplCreated.map(_ => ())
                 case 404 =>
                   resp.ignore()
-                  val tplCreated = url(urlFromPath("/_index_template/otoroshi-tpl")).post(tpl)
+                  val tplCreated = url(urlFromPath("/_template/otoroshi-tpl")).post(tpl)
                   tplCreated.onComplete {
                     case Success(r) if r.status >= 400 =>
                       logger.error(s"Error creating template ${r.status}: ${r.body}")
@@ -904,12 +914,14 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
   }
 
   private def gatewayEventFilters = Seq(Json.obj("term" -> Json.obj("@type" -> "GatewayEvent")))
+  private def healthCheckEventFilters = Seq(Json.obj("term" -> Json.obj("@type" -> "HealthCheckEvent")))
 
   private def filters(filterable: Option[Filterable],
                       mayBeFrom: Option[DateTime],
                       mayBeTo: Option[DateTime],
                       additionalMust: Seq[JsObject] = Seq.empty,
-                      additionalShould: Seq[JsObject] = Seq.empty): JsObject = {
+                      additionalShould: Seq[JsObject] = Seq.empty,
+                      eventFilter: Seq[JsObject] = gatewayEventFilters): JsObject = {
 
     // val serviceQuery = service.map { s =>
     //   Json.obj(
@@ -927,7 +939,7 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
         Json.obj(
           "must" -> (
             dateFilters(mayBeFrom, mayBeTo) ++
-              gatewayEventFilters ++
+              eventFilter ++
               additionalMust
             )
         )
@@ -944,7 +956,7 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
             ),
           "must" -> (
             dateFilters(mayBeFrom, mayBeTo) ++
-              gatewayEventFilters ++
+              eventFilter ++
               additionalMust
             )
         )
@@ -962,7 +974,7 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
             ),
           "must" -> (
             dateFilters(mayBeFrom, mayBeTo) ++
-              gatewayEventFilters ++
+              eventFilter ++
               additionalMust
             )
         )
@@ -979,11 +991,149 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
             ),
           "must" -> (
             dateFilters(mayBeFrom, mayBeTo) ++
-              gatewayEventFilters ++
+              eventFilter ++
               additionalMust
             )
         )
       }
     }
+  }
+
+  override def fetchServicesStatus(servicesDescriptors: Seq[ServiceDescriptor],
+                                  from: Option[DateTime],
+                                  to: Option[DateTime])(
+                                   implicit env: Env,
+                                   ec: ExecutionContext): Future[Option[JsValue]] = {
+    val extendedBounds = from
+      .map { from =>
+        Json.obj(
+          "max" -> to.getOrElse(DateTime.now).getMillis,
+          "min" -> from.getMillis
+        )
+      }
+      .getOrElse {
+        Json.obj(
+          "max" -> to.getOrElse(DateTime.now).getMillis
+        )
+      }
+    query(Json.obj(
+      "query" -> Json.obj(
+        "bool" -> filters(None, from, to, eventFilter = healthCheckEventFilters,
+          additionalMust = Seq(Json.obj("terms" -> Json.obj("@serviceId" -> JsArray(servicesDescriptors.map(d => JsString(d.id))))))
+        )),
+      "aggs" -> Json.obj(
+        "services" -> Json.obj(
+          "terms" -> Json.obj(
+            "field" -> "@serviceId"
+          ),
+          "aggs" -> Json.obj(
+            "date" -> Json.obj(
+              "date_histogram" -> Json.obj(
+                "field" -> "@timestamp",
+                "interval" -> "day",
+                "format" -> "yyyy-MM-dd",
+                "min_doc_count" -> 0,
+                "extended_bounds" -> extendedBounds
+              ),
+              "aggs" -> Json.obj(
+                "status" -> Json.obj(
+                  "terms" -> Json.obj(
+                    "field" -> "health"
+                  )
+                )
+              )
+            )
+          )
+        )
+      )
+    ))
+      .map { json =>
+        (json \ "aggregations" \ "services" \ "buckets")
+          .asOpt[JsArray]
+          .map { services =>
+            JsArray(services.value.map(service => {
+              val id = (service \ "key").as[String]
+              val total_period = (service \ "doc_count").as[Float]
+              val dates = (service \ "date" \ "buckets")
+                .as[JsArray]
+                .value
+                .map(date => {
+                  val timestamp = (date \ "key").as[Float]
+                  val hrDate = (date \ "key_as_string").as[String]
+                  val total_day = (date \ "doc_count").as[Float]
+                  val status = (date \ "status" \ "buckets")
+                    .as[JsArray]
+                    .value
+                    .map(h => {
+                      val value = (h \ "key").as[String]
+                      val count = (h \ "doc_count").as[Float]
+                      val percentage = (count / total_day) * 100
+                      Json.obj("health" -> value, "total" -> count, "percentage" -> percentage)
+                    })
+
+                  Json.obj("date" -> timestamp, "dateAsString" -> hrDate, "total" -> total_day, "status" -> JsArray(status))
+                })
+
+              val name = servicesDescriptors.find(_.id == id).map(_.name).getOrElse("UNKNOWN")
+              val env = servicesDescriptors.find(_.id == id).map(_.env).getOrElse("prod")
+              Json.obj("descriptor" -> id, "service" -> name, "line" -> env,  "total" -> total_period, "dates" -> JsArray(dates))
+            }))
+          }
+      }
+  }
+
+  override def fetchServiceResponseTime(servicesDescriptor: ServiceDescriptor,
+                                   from: Option[DateTime],
+                                   to: Option[DateTime])(
+                                    implicit env: Env,
+                                    ec: ExecutionContext): Future[Option[JsValue]] = {
+    val extendedBounds = from
+      .map { from =>
+        Json.obj(
+          "max" -> to.getOrElse(DateTime.now).getMillis,
+          "min" -> from.getMillis
+        )
+      }
+      .getOrElse {
+        Json.obj(
+          "max" -> to.getOrElse(DateTime.now).getMillis
+        )
+      }
+
+    query(Json.obj(
+      "query" -> Json.obj(
+        "bool" -> filters(None, from, to, eventFilter = healthCheckEventFilters,
+          additionalMust = Seq(Json.obj("term" -> Json.obj("@serviceId" -> Json.obj("value" -> servicesDescriptor.id))))
+        )),
+      "aggs" -> Json.obj(
+        "dates" -> Json.obj(
+          "date_histogram" -> Json.obj(
+            "field" -> "@timestamp",
+            "interval" -> "hour",
+            "format" -> "yyyy-MM-dd",
+            "min_doc_count" -> 0,
+            "extended_bounds" -> extendedBounds
+          ),
+          "aggs" -> Json.obj(
+            "duration" -> Json.obj(
+              "avg" -> Json.obj(
+                "field" -> "duration"
+              )
+            )
+          )
+        )
+      )
+    ))
+      .map { json =>
+        (json \ "aggregations" \ "dates" \ "buckets")
+          .asOpt[JsArray]
+          .map(_.value)
+          .map(dates => JsArray(dates.map(date => {
+            val timestamp = (date \ "key").as[Float]
+            val duration = (date \ "duration" \ "value").asOpt[Float]
+
+            Json.obj("timestamp" -> timestamp, "duration" -> duration)
+          })))
+      }
   }
 }
