@@ -1024,6 +1024,33 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
       }
   }
 
+  def createExporterConfig(config: DataExporterConfig,
+                           customPort: Option[Int] = None,
+                           ws: WSClient = wsClient): Future[DataExporterConfig] = {
+    ws.url(s"http://localhost:${customPort.getOrElse(port)}/api/data-exporter-configs")
+      .withHttpHeaders(
+        "Host"         -> "otoroshi-api.oto.tools",
+        "Content-Type" -> "application/json"
+      )
+      .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+      .post(Json.stringify(config.json))
+      .map { response =>
+        DataExporterConfig.fromJsons(response.json)
+      }
+  }
+  def deleteExporterConfig(id: String,
+                        customPort: Option[Int] = None,
+                        ws: WSClient = wsClient): Future[Unit] = {
+    ws.url(s"http://localhost:${customPort.getOrElse(port)}/api/data-exporter-configs/$id")
+      .withHttpHeaders(
+        "Host"         -> "otoroshi-api.oto.tools",
+        "Content-Type" -> "application/json"
+      )
+      .withAuth("admin-api-apikey-id", "admin-api-apikey-secret", WSAuthScheme.BASIC)
+      .delete()
+      .map(_ => ())
+  }
+
   def updateOtoroshiConfig(config: GlobalConfig,
                            customPort: Option[Int] = None,
                            ws: WSClient = wsClient): Future[GlobalConfig] = {
