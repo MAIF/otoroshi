@@ -1,10 +1,9 @@
 package functional
 
 import java.util.concurrent.atomic.AtomicInteger
-
 import akka.actor.ActorSystem
 import com.typesafe.config.ConfigFactory
-import models.{ApiKey, ServiceGroupIdentifier, Webhook}
+import models.{ApiKey, DataExporterConfig, DataExporterConfigFiltering, DataExporterConfigType, GlobalConfig, ServiceGroupIdentifier, Webhook}
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatestplus.play.PlaySpec
 import play.api.Configuration
@@ -13,17 +12,18 @@ import play.api.libs.json.Json
 import scala.concurrent.duration._
 
 class AlertAndAnalyticsSpec(name: String, configurationSpec: => Configuration)
-    extends OtoroshiSpec {
+  extends OtoroshiSpec {
 
   lazy val serviceHost = "analytics.oto.tools"
-  implicit val system  = ActorSystem("otoroshi-test")
+  implicit val system = ActorSystem("otoroshi-test")
 
   override def getTestConfiguration(configuration: Configuration) = Configuration(
     ConfigFactory
-      .parseString(s"""
-                      |{
-                      |  app.analyticsWindow = 1
-                      |}
+      .parseString(
+        s"""
+           |{
+           |  app.analyticsWindow = 1
+           |}
        """.stripMargin)
       .resolve()
   ).withFallback(configurationSpec).withFallback(configuration)
@@ -38,7 +38,7 @@ class AlertAndAnalyticsSpec(name: String, configurationSpec: => Configuration)
     "produce alerts when admin api are modified" in {
 
       val counter = new AtomicInteger(0)
-      val server  = new AlertServer(counter).await()
+      val server = new AlertServer(counter).await()
 
       val apiKey = ApiKey(
         clientId = "apikey-monthly",
@@ -47,16 +47,23 @@ class AlertAndAnalyticsSpec(name: String, configurationSpec: => Configuration)
         authorizedEntities = Seq(ServiceGroupIdentifier("default"))
       )
 
-      val config = (for {
+      val webhookEventsExporters = DataExporterConfig(
+        enabled = true,
+        typ = DataExporterConfigType.Webhook,
+        id = "webhook-exp",
+        name = "webhook-exp",
+        desc = "webhook-exp",
+        metadata = Map.empty,
+        filtering = DataExporterConfigFiltering(
+          include = Seq(Json.obj("@type" -> "AlertEvent"))),
+        projection = Json.obj(),
+        config = Webhook(url = s"http://127.0.0.1:${server.port}"),
+        groupSize = 1
+      )
+
+      val config: GlobalConfig = (for {
+        _ <- createExporterConfig(webhookEventsExporters)
         config <- getOtoroshiConfig()
-        newConfig = config.copy(
-          alertsWebhooks = Seq(
-            Webhook(
-              url = s"http://127.0.0.1:${server.port}/events"
-            )
-          )
-        )
-        _ <- updateOtoroshiConfig(newConfig)
       } yield config).futureValue
 
       awaitF(6.seconds).futureValue
@@ -72,6 +79,8 @@ class AlertAndAnalyticsSpec(name: String, configurationSpec: => Configuration)
 
       awaitF(6.seconds).futureValue
 
+      deleteExporterConfig(webhookEventsExporters.id).futureValue
+
       server.stop()
     }
 
@@ -86,16 +95,24 @@ class AlertAndAnalyticsSpec(name: String, configurationSpec: => Configuration)
         authorizedEntities = Seq(ServiceGroupIdentifier("default"))
       )
 
-      val config = (for {
+      val webhookEventsExporters = DataExporterConfig(
+        enabled = true,
+        typ = DataExporterConfigType.Webhook,
+        id = "webhook-exp",
+        name = "webhook-exp",
+        desc = "webhook-exp",
+        metadata = Map.empty,
+        filtering = DataExporterConfigFiltering(
+          include = Seq(Json.obj("@type" -> Json.obj("$regex" -> ".*Event")))
+        ),
+        projection = Json.obj(),
+        config = Webhook(url = s"http://127.0.0.1:${server.port}"),
+        groupSize = 1
+      )
+
+      val config: GlobalConfig = (for {
+        _ <- createExporterConfig(webhookEventsExporters)
         config <- getOtoroshiConfig()
-        newConfig = config.copy(
-          analyticsWebhooks = Seq(
-            Webhook(
-              url = s"http://127.0.0.1:${server.port}/events"
-            )
-          )
-        )
-        _ <- updateOtoroshiConfig(newConfig)
       } yield config).futureValue
 
       awaitF(6.seconds).futureValue
@@ -109,12 +126,10 @@ class AlertAndAnalyticsSpec(name: String, configurationSpec: => Configuration)
 
       await(2.seconds)
 
-      counter.get() >= 16 && counter.get() <= 21 mustBe true
+      println(counter.get())
+      counter.get() >= 16 mustBe true
 
-      updateOtoroshiConfig(config).futureValue
-
-      awaitF(6.seconds).futureValue
-
+      deleteExporterConfig(webhookEventsExporters.id).futureValue
       server.stop()
     }
 
