@@ -2295,6 +2295,7 @@ export class ServicePage extends Component {
                   help="..."
                   valuesFrom="/bo/api/proxy/api/verifiers"
                   transformer={(a) => ({ value: a.id, label: a.name })}
+                  onEdit={id => this.props.history.push(`/jwt-verifiers/edit/${id}`)}
                 />
                 <BooleanInput
                   label="Enabled"
@@ -2305,21 +2306,11 @@ export class ServicePage extends Component {
                 <div className="form-group">
                   <label className="col-xs-12 col-sm-2 control-label" />
                   <div className="col-sm-10">
-                    {!this.state.service.jwtVerifier.ids.length === 0 && (
+                    {this.state.service.jwtVerifier.ids.length === 0 && (
                       <a href={`/bo/dashboard/jwt-verifiers/add`} className="btn btn-primary">
                         <i className="fas fa-plus" /> Create a new Jwt Verifier config
                       </a>
                     )}
-                    {this.state.service.jwtVerifier.ids.length > 0 &&
-                      this.state.service.jwtVerifier.ids.map((id) => {
-                        return (
-                          <a
-                            href={`/bo/dashboard/jwt-verifiers/edit/${id}`}
-                            className="btn btn-success">
-                            <i className="fas fa-edit" /> Edit the global Jwt Verifier
-                          </a>
-                        );
-                      })}
                   </div>
                 </div>
               </div>

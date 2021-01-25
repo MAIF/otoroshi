@@ -227,6 +227,15 @@ export class ArrayInput extends Component {
                     onClick={(e) => this.remove(e, idx)}>
                     <i className="fas fa-trash" />
                   </button>
+                  {this.props.onEdit &&
+                    <button
+                      disabled={this.props.disabled}
+                      type="button"
+                      className="btn btn-success"
+                      onClick={() => this.props.onEdit(value)}>
+                      <i className="fas fa-edit" />
+                    </button>
+                  }
                   {idx === values.length - 1 && (
                     <button
                       disabled={this.props.disabled}
