@@ -80,6 +80,8 @@ export class ArrayInput extends Component {
   render() {
     const values = this.props.value || [];
     const Component = this.props.component;
+    const AdditionalButton = this.props.additionalButton;
+
     if (Component) {
       return (
         <div style={{ marginRight: 10 }}>
@@ -227,15 +229,7 @@ export class ArrayInput extends Component {
                     onClick={(e) => this.remove(e, idx)}>
                     <i className="fas fa-trash" />
                   </button>
-                  {this.props.onEdit &&
-                    <button
-                      disabled={this.props.disabled}
-                      type="button"
-                      className="btn btn-success"
-                      onClick={() => this.props.onEdit(value)}>
-                      <i className="fas fa-edit" />
-                    </button>
-                  }
+                  {this.props.additionalButton && <AdditionalButton idx={idx} itemValue={value} {...this.props} />}
                   {idx === values.length - 1 && (
                     <button
                       disabled={this.props.disabled}
