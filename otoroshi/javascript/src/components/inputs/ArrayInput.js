@@ -13,33 +13,40 @@ export class ArrayInput extends Component {
     if (next.possibleValues !== this.props.possibleValues) {
       this.setState({ values: next.possibleValues });
     }
+    if (next.value !== this.props.value && !!this.props.valuesFrom) {
+      this.updateValuesFrom();
+    }
+  }
+
+  updateValuesFrom = () => {
+    this.setState({ loading: true });
+    fetch(this.props.valuesFrom, {
+      method: 'GET',
+      credentials: 'include',
+      headers: {
+        Accept: 'application/json',
+      },
+    })
+      .then((r) => r.json())
+      .then((values) =>
+        values.map((v) => {
+          if (this.props.transformerMapping) {
+            const value = v[this.props.transformerMapping.value];
+            const label = v[this.props.transformerMapping.label];
+            return { value, label };
+          } else if (this.props.transformer) {
+            return this.props.transformer(v);
+          } else {
+            return v;
+          }
+        })
+      )
+      .then((values) => this.setState({ values, loading: false }));
   }
 
   componentDidMount() {
     if (this.props.valuesFrom) {
-      this.setState({ loading: true });
-      fetch(this.props.valuesFrom, {
-        method: 'GET',
-        credentials: 'include',
-        headers: {
-          Accept: 'application/json',
-        },
-      })
-        .then((r) => r.json())
-        .then((values) =>
-          values.map((v) => {
-            if (this.props.transformerMapping) {
-              const value = v[this.props.transformerMapping.value];
-              const label = v[this.props.transformerMapping.label];
-              return { value, label };
-            } else if (this.props.transformer) {
-              return this.props.transformer(v);
-            } else {
-              return v;
-            }
-          })
-        )
-        .then((values) => this.setState({ values, loading: false }));
+      this.updateValuesFrom();
     } else if (this.props.values) {
       if (this.props.values.every((v) => v.values && v.label)) {
         this.setState({ values: this.props.values });
