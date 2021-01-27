@@ -26,7 +26,8 @@ object P12Helper {
           chain = chain.map(_.asPem).mkString("\n\n"),
           privateKey = key.asPrivateKeyPem,
           caRef = None,
-          client = true
+          client = true,
+          exposed = false
         ).enrich()
         certs = certs :+ cert
       }
