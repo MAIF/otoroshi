@@ -287,6 +287,11 @@ export class DataExportersPage extends Component {
           injectTable={(ref) => (this.table = ref)}
           export={true}
           kubernetesKind="DataExporter"
+          navigateTo={(exporter) => {
+            this.props.history.push({
+              pathname: `/exporters/edit/${exporter.id}`,
+            });
+          }}
         />
       </div>
     );
@@ -837,4 +842,8 @@ const possibleExporterConfigFormValues = {
       },
     },
   },
+  metrics: {
+    flow: [],
+    schema: {}
+  }
 };

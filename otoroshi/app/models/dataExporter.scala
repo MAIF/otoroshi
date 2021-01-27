@@ -47,6 +47,10 @@ case class ConsoleSettings() extends Exporter {
   override def toJson: JsValue = Json.obj()
 }
 
+case class MetricsSettings() extends Exporter {
+  override def toJson: JsValue = Json.obj()
+}
+
 object DataExporterConfig {
 
   import scala.concurrent.duration._
@@ -113,6 +117,7 @@ object DataExporterConfig {
           case "mailer" => MailerSettings.format.reads((json \ "config").as[JsObject]).get
           case "custom" => ExporterRef((json \ "config" \ "ref").as[String], (json \ "config" \ "config").as[JsValue])
           case "console" => ConsoleSettings()
+          case "metrics" => MetricsSettings()
           case _ => throw new RuntimeException("Bad config type")
         }
       )
@@ -165,6 +170,10 @@ object DataExporterConfigType {
     def name: String = "console"
   }
 
+  case object Metrics extends DataExporterConfigType {
+    def name: String = "metrics"
+  }
+
   def parse(str: String): DataExporterConfigType = str.toLowerCase() match {
     case "kafka" => Kafka
     case "pulsar" => Pulsar
@@ -175,6 +184,7 @@ object DataExporterConfigType {
     case "none" => None
     case "custom" => Custom
     case "console" => Console
+    case "metrics" => Metrics
     case _ => None
   }
 }
@@ -218,6 +228,7 @@ case class DataExporterConfig(enabled: Boolean,
       case c: GenericMailerSettings => new GenericMailerExporter(this)
       case c: ExporterRef => new CustomExporter(this)
       case c: ConsoleSettings => new ConsoleExporter(this)
+      case c: MetricsSettings => new MetricsExporter(this)
       case _ => throw new RuntimeException("unsupported exporter type")
     }
   }

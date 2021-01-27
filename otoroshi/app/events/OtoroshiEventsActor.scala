@@ -3,7 +3,6 @@ package events
 import java.io.File
 import java.nio.file.{Files, Paths, StandardOpenOption}
 import java.util.concurrent.atomic.AtomicReference
-
 import akka.Done
 import akka.actor.{Actor, Props}
 import akka.http.scaladsl.util.FastFuture
@@ -11,6 +10,7 @@ import akka.http.scaladsl.util.FastFuture._
 import akka.stream.scaladsl.{Keep, Sink, Source, SourceQueueWithComplete}
 import akka.stream.{OverflowStrategy, QueueOfferResult}
 import com.sksamuel.pulsar4s.Producer
+import com.spotify.metrics.core.MetricId
 import env.Env
 import events.DataExporter.DefaultDataExporter
 import events.impl.{ElasticWritesAnalytics, WebHookAnalytics}
@@ -18,7 +18,7 @@ import models._
 import org.joda.time.DateTime
 import otoroshi.script._
 import play.api.Logger
-import play.api.libs.json.{JsArray, JsNull, JsValue, Json}
+import play.api.libs.json.{JsArray, JsNull, JsObject, JsString, JsValue, Json}
 import utils.{EmailLocation, MailerSettings}
 
 import scala.collection.concurrent.TrieMap
@@ -26,6 +26,8 @@ import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Success, Try}
 import otoroshi.utils.syntax.implicits._
+
+import scala.collection.JavaConverters._
 
 object OtoroshiEventsActorSupervizer {
   def props(implicit env: Env) = Props(new OtoroshiEventsActorSupervizer(env))
@@ -347,6 +349,57 @@ object Exporters {
   class ConsoleExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env) extends DefaultDataExporter(config)(ec, env) {
     override def send(events: Seq[JsValue]): Future[ExportResult] = {
       events.foreach(e => logger.info(Json.stringify(e)))
+      FastFuture.successful(ExportResult.ExportResultSuccess)
+    }
+  }
+
+  class MetricsExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env) extends DefaultDataExporter(config)(ec, env) {
+    override def send(events: Seq[JsValue]): Future[ExportResult] = {
+      events.foreach { event =>
+        if ((event \ "@type").as[String] == "GatewayEvent") {
+            val descriptor = (event \ "descriptor").as[JsObject]
+            val target = (event \ "target").as[JsObject]
+            val to = (event \ "to").as[JsObject]
+
+            val id = (descriptor \ "id").as[String]
+            val protocol = (target \ "scheme").as[String]
+            val method = (event \ "method").as[String].toLowerCase
+            val status = (event \ "status").as[Long]
+            val duration = (event \ "duration").as[Long]
+            val uri = (to \ "uri").as[String]
+
+            val tags: Map[String, String] = Map(
+              "serviceName"-> id,
+              "protocol" -> protocol,
+              "method" -> method,
+              "status" -> status.toString,
+              "uri" -> uri)
+
+            env.metrics
+              .counter(MetricId
+                .build("otoroshi.requests.count")
+                .tagged("serviceName", "otoroshi"))
+              .inc()
+
+            env.metrics.histogram(MetricId
+              .build("otoroshi.requests.duration.millis")
+              .tagged("serviceName", "otoroshi"))
+              .update(duration)
+
+            env.metrics.counter(MetricId
+              .build(s"otoroshi.service.requests.count")
+              .tagged(tags.asJava))
+              .inc()
+
+            env.metrics
+              .histogram(MetricId
+                .build(s"otoroshi.service.requests.duration.millis")
+                .tagged()
+              )
+              .update(duration)
+          }
+      }
+
       FastFuture.successful(ExportResult.ExportResultSuccess)
     }
   }

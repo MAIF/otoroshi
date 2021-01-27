@@ -4,15 +4,14 @@ import java.lang.management.ManagementFactory
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.{AtomicLong, AtomicReference}
 import java.util.{Timer => _, _}
-
 import akka.actor.Cancellable
 import akka.http.scaladsl.util.FastFuture
 import cluster.{ClusterMode, StatsView}
 import com.codahale.metrics._
 import com.codahale.metrics.jmx.JmxReporter
-import com.codahale.metrics.jvm._
 import env.Env
 import events.StatsDReporter
+
 import javax.management.{Attribute, ObjectName}
 import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
 
@@ -20,15 +19,12 @@ import scala.concurrent.duration.FiniteDuration
 import java.io.StringWriter
 import java.util
 import java.util.concurrent.TimeUnit
-
 import com.codahale.metrics.MetricRegistry
-import com.codahale.metrics.MetricRegistry.MetricSupplier
 import com.codahale.metrics.json.MetricsModule
-import com.codahale.metrics.jvm.{MemoryUsageGaugeSet, ThreadStatesGaugeSet}
+import com.codahale.metrics.jvm.{GarbageCollectorMetricSet, JvmAttributeGaugeSet, MemoryUsageGaugeSet, ThreadStatesGaugeSet}
 import com.fasterxml.jackson.databind.ObjectMapper
-import io.prometheus.client.Collector
-import io.prometheus.client.dropwizard.DropwizardExports
-import io.prometheus.client.dropwizard.samplebuilder.{CustomMappingSampleBuilder, MapperConfig}
+import com.spotify.metrics.core.{MetricId, SemanticMetricRegistry}
+import com.spotify.metrics.jvm.{CpuGaugeSet, FileDescriptorGaugeSet}
 import io.prometheus.client.exporter.common.TextFormat
 import play.api.inject.ApplicationLifecycle
 
@@ -53,7 +49,10 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) extends Time
 
   private implicit val ev                    = env
   private implicit val ec                    = env.otoroshiExecutionContext
-  private val metricRegistry: MetricRegistry = new MetricRegistry
+
+  private val metricRegistry: SemanticMetricRegistry = new SemanticMetricRegistry
+  private val jmxRegistry: MetricRegistry = new MetricRegistry
+
   private val mbs                            = ManagementFactory.getPlatformMBeanServer
   private val rt                             = Runtime.getRuntime
 
@@ -77,11 +76,23 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) extends Time
   // metricRegistry.register("jvm.buffer", new BufferPoolMetricSet(ManagementFactory.getPlatformMBeanServer()))
   // metricRegistry.register("jvm.classloading", new ClassLoadingGaugeSet())
   // metricRegistry.register("jvm.files", new FileDescriptorRatioGauge())
-  metricRegistry.register("jvm.memory", new MemoryUsageGaugeSet())
-  metricRegistry.register("jvm.thread", new ThreadStatesGaugeSet())
-  metricRegistry.register("jvm.gc", new GarbageCollectorMetricSet())
-  metricRegistry.register("jvm.attr", new JvmAttributeGaugeSet())
-  metricRegistry.register(
+
+  register("jvm.memory", new MemoryUsageGaugeSet())
+  register("jvm.thread", new ThreadStatesGaugeSet())
+  register("jvm.gc", new GarbageCollectorMetricSet())
+  register("jvm.attr", new JvmAttributeGaugeSet())
+
+  metricRegistry.register(MetricId.build("jvm-cpu"), CpuGaugeSet.create)
+  metricRegistry.register(MetricId.build("jvm-fd-ratio"), new FileDescriptorGaugeSet)
+
+/*  metricRegistry.register(MetricId.build("jvm.memory"), new MemoryUsageGaugeSet())
+  metricRegistry.register(MetricId.build("jvm.thread"), new ThreadStatesMetricSet())
+  metricRegistry.register(MetricId.build("jvm.gc"), new GarbageCollectorMetricSet())
+  metricRegistry.register(MetricId.build("jvm.attr"), new JvmAttributeGaugeSet())
+  metricRegistry.register(MetricId.build("jvm-cpu"), CpuGaugeSet.create)
+  metricRegistry.register(MetricId.build("jvm-fd-ratio"), new FileDescriptorGaugeSet)*/
+
+  register(
     "attr",
     new MetricSet {
       override def getMetrics: util.Map[String, Metric] = {
@@ -108,39 +119,81 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) extends Time
     }
   )
 
+  private def register(name: String, obj: Metric): Unit = {
+    metricRegistry.register(MetricId.build(name), obj)
+    jmxRegistry.register(name, obj)
+  }
+
   private def mark[T](name: String, value: Any): Unit = {
     lastData.computeIfAbsent(name, (t: String) => new AtomicReference[Any](value))
     lastData.getOrDefault(name, new AtomicReference[Any](value)).set(value)
-    metricRegistry.gauge("otoroshi.internals." + name,
-                         () => internalGauge(lastData.getOrDefault(name, new AtomicReference[Any](value)).get()))
+
+    try {
+      register("otoroshi.internals." + name,
+        internalGauge(lastData.getOrDefault(name, new AtomicReference[Any](value)).get()))
+    } catch {
+      case _: Throwable =>
+    }
   }
 
   def markString(name: String, value: String): Unit = mark(name, value)
   def markLong(name: String, value: Long): Unit     = mark(name, value)
   def markDouble(name: String, value: Double): Unit = mark(name, value)
-  def counter(name: String): Counter                = metricRegistry.counter(name)
-  def histogram(name: String): Histogram            = metricRegistry.histogram(name)
-  def timer(name: String): Timer                    = metricRegistry.timer(name)
+
+  def counter(name: MetricId): Counter                = {
+    metricRegistry.counter(name)
+    jmxRegistry.counter(name.getKey)
+  }
+  def counter(name: String): Counter                  = {
+    metricRegistry.counter(MetricId.build(name))
+    jmxRegistry.counter(name)
+  }
+
+  def histogram(name: MetricId): Histogram            = {
+    metricRegistry.histogram(name)
+    jmxRegistry.histogram(name.getKey)
+  }
+  def histogram(name: String): Histogram              = {
+    metricRegistry.histogram(MetricId.build(name))
+    jmxRegistry.histogram(name)
+  }
+
+  def timer(name: MetricId): Timer                    = {
+    metricRegistry.timer(name)
+    jmxRegistry.timer(name.getKey)
+  }
+  def timer(name: String): Timer                      = {
+    metricRegistry.timer(MetricId.build(name))
+    jmxRegistry.timer(name)
+  }
+
   override def withTimer[T](name: String)(f: => T): T = {
-    val ctx = metricRegistry.timer(name).time()
+    val jmxCtx = jmxRegistry.timer(name).time()
+    val ctx = metricRegistry.timer(MetricId.build(name)).time()
     try {
       val res = f
       ctx.close()
+      jmxCtx.close()
       res
     } catch {
       case e: Throwable =>
         ctx.close()
-        metricRegistry.counter(name + ".errors").inc()
+        jmxCtx.close()
+        metricRegistry.counter(MetricId.build(name + ".errors")).inc()
+        jmxRegistry.counter(name + ".errors").inc()
         throw e
     }
   }
   override def withTimerAsync[T](name: String)(f: => Future[T])(implicit ec: ExecutionContext): Future[T] = {
-    val ctx = metricRegistry.timer(name).time()
+    val jmxCtx = metricRegistry.timer(MetricId.build(name)).time()
+    val ctx = metricRegistry.timer(MetricId.build(name)).time()
     f.andThen {
       case r =>
         ctx.close()
+        jmxCtx.close()
         if (r.isFailure) {
-          metricRegistry.counter(name + ".errors").inc()
+          metricRegistry.counter(MetricId.build(name + ".errors")).inc()
+          jmxRegistry.counter(name + ".errors").inc()
         }
     }
   }
@@ -154,27 +207,7 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) extends Time
   private val objectMapper = new ObjectMapper()
   objectMapper.registerModule(new MetricsModule(TimeUnit.SECONDS, TimeUnit.MILLISECONDS, false))
 
-  private val prometheus = {
-
-    val labels = new HashMap[String, String]()
-    labels.put("service", "${0}")
-    labels.put("protocol", "${1}")
-    labels.put("method", "${2}")
-    labels.put("status", "${3}")
-
-    val configDuration = new MapperConfig()
-    configDuration.setMatch("otoroshi.service.requests.duration.millis.*.*.*.*")
-    configDuration.setName("otoroshi.service.requests.duration.millis")
-    configDuration.setLabels(labels)
-
-    val configTotal = new MapperConfig()
-    configTotal.setMatch("otoroshi.service.requests.total.*.*.*.*")
-    configTotal.setName("otoroshi.service.requests.total")
-    configTotal.setLabels(labels)
-
-    val sampleBuilder = new CustomMappingSampleBuilder(Arrays.asList(configDuration, configTotal))
-    new DropwizardExports(metricRegistry, sampleBuilder)
-  }
+  private val prometheus = new CustomCollector(metricRegistry)
 
   def prometheusExport(filter: Option[String] = None): String = {
     filter match {
@@ -307,7 +340,7 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) extends Time
   private val jmx: Option[JmxReporter] = {
     Some(env.metricsEnabled).filter(_ == true).map { _ =>
       val reporter: JmxReporter = JmxReporter
-        .forRegistry(metricRegistry)
+        .forRegistry(jmxRegistry)
         .convertRatesTo(TimeUnit.SECONDS)
         .convertDurationsTo(TimeUnit.MILLISECONDS)
         .build
