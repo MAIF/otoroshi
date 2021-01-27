@@ -3,15 +3,9 @@ package events
 import java.io.Closeable
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
-import java.util.function.BiConsumer
-
-import scala.concurrent.{Future, Promise}
-import scala.util.{Failure, Try}
-import scala.util.control.NonFatal
-import akka.{Done, NotUsed}
 import akka.actor.{Actor, ActorSystem, Cancellable, Props}
-import com.codahale.metrics.{Counter, Gauge, MetricRegistry, Reporter}
-import play.api.libs.json._
+import com.codahale.metrics.{Counter, Gauge, Reporter}
+import com.spotify.metrics.core.{MetricId, SemanticMetricRegistry}
 import env.Env
 import github.gphat.censorinus._
 
@@ -208,7 +202,7 @@ object StatsdActor {
   def props(env: Env) = Props(new StatsdActor(env))
 }
 
-class StatsDReporter(registry: MetricRegistry, env: Env) extends Reporter with Closeable {
+class StatsDReporter(registry: SemanticMetricRegistry, env: Env) extends Reporter with Closeable {
 
   implicit val e  = env
   implicit val ec = env.analyticsExecutionContext
@@ -218,9 +212,9 @@ class StatsDReporter(registry: MetricRegistry, env: Env) extends Reporter with C
   def sendToStatsD(): Unit = {
     env.datastores.globalConfigDataStore.singleton().map { config =>
       registry.getGauges
-        .forEach((name: String, gauge: Gauge[_]) => env.statsd.metric(name, gauge.getValue)(config.statsdConfig))
+        .forEach((name: MetricId, gauge: Gauge[_]) => env.statsd.metric(name.getKey, gauge.getValue)(config.statsdConfig))
       registry.getCounters
-        .forEach((name: String, gauge: Counter) => env.statsd.metric(name, gauge.getCount)(config.statsdConfig))
+        .forEach((name: MetricId, gauge: Counter) => env.statsd.metric(name.getKey, gauge.getCount)(config.statsdConfig))
     }
   }
 

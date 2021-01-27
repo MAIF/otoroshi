@@ -28,8 +28,9 @@ libraryDependencies ++= Seq(
   "com.github.etaty"         %% "rediscala"                  % "1.9.0",
   "com.github.gphat"         %% "censorinus"                 % "2.1.16",
   "com.typesafe.akka"        %% "akka-stream-kafka"          % "2.0.2",
-  "io.dropwizard.metrics"    % "metrics-core"                % metricsVersion,    // Apache 2.0
-  "io.dropwizard.metrics"    % "metrics-jvm"                 % metricsVersion,    // Apache 2.0
+
+  "com.spotify.metrics"      % "semantic-metrics-core"       % "1.1.6",
+//  "io.dropwizard.metrics"    % "metrics-jvm"                 % metricsVersion,    // Apache 2.0
   "io.dropwizard.metrics"    % "metrics-jmx"                 % metricsVersion,    // Apache 2.0
   "io.dropwizard.metrics"    % "metrics-json"                % metricsVersion,    // Apache 2.0
   "io.prometheus"            % "simpleclient_common"         % prometheusVersion, // Apache 2.0
