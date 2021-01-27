@@ -970,7 +970,8 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
               privateKey = ca.key.asPem,
               caRef = None,
               autoRenew = false,
-              client = false
+              client = false,
+              exposed = false
             ).enrich()
             val cert = _cert.copy(name = _cert.domain, description = s"Certificate for ${_cert.subject}")
             Ok(cert.toJson)

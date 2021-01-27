@@ -153,7 +153,8 @@ object models {
         caRef = None,
         entityMetadata = Map(
           "csr" -> csrQuery.map(_.json.stringify).getOrElse("--")
-        )
+        ),
+        exposed = false
       ).enrich()
     }
   }

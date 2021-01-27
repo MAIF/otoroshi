@@ -373,6 +373,10 @@ export class CertificatesPage extends Component {
       type: 'bool',
       props: { label: 'Auto renew cert.' },
     },
+    exposed: {
+      type: 'bool',
+      props: { label: 'Public key exposed' },
+    },
     client: {
       type: 'bool',
       props: { label: 'Client cert.' },
@@ -484,6 +488,7 @@ export class CertificatesPage extends Component {
     'autoRenew',
     'client',
     'keypair',
+    'exposed',
     'commands',
     'valid',
     'chain',

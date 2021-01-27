@@ -110,6 +110,7 @@ case class Cert(
     selfSigned: Boolean = false,
     ca: Boolean = false,
     valid: Boolean = false,
+    exposed: Boolean,
     autoRenew: Boolean = false,
     letsEncrypt: Boolean = false,
     client: Boolean = false,
@@ -385,7 +386,8 @@ object Cert {
       privateKey = privateKey,
       caRef = None,
       autoRenew = false,
-      client = false
+      client = false,
+      exposed = false
     ).enrich()
   }
 
@@ -399,6 +401,7 @@ object Cert {
       caRef = caRef,
       autoRenew = false,
       client = client,
+      exposed = false
     ).enrich()
     c.copy(name = c.domain, description = s"Certificate for ${c.subject}")
   }
@@ -412,7 +415,8 @@ object Cert {
       privateKey = keyPair.getPrivate.asPem,
       caRef = Some(ca.id),
       autoRenew = false,
-      client = client
+      client = client,
+      exposed = false
     ).enrich()
     c.copy(name = c.domain, description = s"Certificate for ${c.subject}")
   }
@@ -430,7 +434,8 @@ object Cert {
       // s"${PemHeaders.BeginPrivateKey}\n${Base64.getEncoder.encodeToString(keyPair.getPrivate.getEncoded)}\n${PemHeaders.EndPrivateKey}",
       caRef = None,
       autoRenew = false,
-      client = client
+      client = client,
+      exposed = false
     ).enrich()
     c.copy(name = c.domain, description = s"Certificate for ${c.subject}")
   }
@@ -447,6 +452,7 @@ object Cert {
       "selfSigned"  -> cert.selfSigned,
       "ca"          -> cert.ca,
       "valid"       -> cert.valid,
+      "exposed"     -> cert.exposed,
       "autoRenew"   -> cert.autoRenew,
       "letsEncrypt" -> cert.letsEncrypt,
       "subject"     -> cert.subject,
@@ -481,6 +487,7 @@ object Cert {
           client = (json \ "client").asOpt[Boolean].getOrElse(false),
           keypair = (json \ "keypair").asOpt[Boolean].getOrElse(false),
           valid = (json \ "valid").asOpt[Boolean].getOrElse(false),
+          exposed = (json \ "exposed").asOpt[Boolean].getOrElse(false),
           autoRenew = (json \ "autoRenew").asOpt[Boolean].getOrElse(false),
           letsEncrypt = (json \ "letsEncrypt").asOpt[Boolean].getOrElse(false),
           subject = (json \ "subject").asOpt[String].getOrElse("--"),
@@ -706,7 +713,8 @@ trait CertificateDataStore extends BasicStore[Cert] {
         privateKey = "",
         caRef = None,
         ca = true,
-        client = false
+        client = false,
+        exposed = false
       ).enrich()
       val cert = _cert.copy(name = _cert.domain, description = s"Certificate for ${_cert.subject}")
       findAll().map { certs =>
@@ -735,7 +743,8 @@ trait CertificateDataStore extends BasicStore[Cert] {
         chain = certContent,
         privateKey = keyContent,
         caRef = None,
-        client = false
+        client = false,
+        exposed = false
       ).enrich()
       val cert = _cert.copy(name = _cert.domain, description = s"Certificate for ${_cert.subject}")
       findAll().map { certs =>
@@ -1615,7 +1624,8 @@ object FakeKeyStore {
       privateKey = keyPair.getPrivate.asPem,
       caRef = None,
       autoRenew = false,
-      client = false
+      client = false,
+      exposed = false
     )
   }
 
