@@ -208,6 +208,19 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
           filtering = DataExporterConfigFiltering(),
           config = FileSettings(path = "/tmp/otoroshi-events.log")
         )
+      case Some("metrics") =>
+        DataExporterConfig(
+          typ = DataExporterConfigType.Metrics,
+          id = IdGenerator.token,
+          name = "New metrics exporter config",
+          desc = "New metrics exporter config",
+          metadata = Map.empty,
+          enabled = false,
+          location = EntityLocation(),
+          projection = Json.obj(),
+          filtering = DataExporterConfigFiltering(),
+          config = MetricsSettings()
+        )
       case _ => DataExporterConfig(
         typ = DataExporterConfigType.Mailer,
         id = IdGenerator.token,
