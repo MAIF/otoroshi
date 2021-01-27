@@ -375,7 +375,7 @@ export class CertificatesPage extends Component {
     },
     exposed: {
       type: 'bool',
-      props: { label: 'Public key exposed' },
+      props: { label: 'Public key exposed', help: 'If true, the public key will be exposed on http://otoroshi-api.your-domain/.well-known/jwks.json' },
     },
     client: {
       type: 'bool',
