@@ -303,9 +303,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
     import com.nimbusds.jose.jwk.{Curve, ECKey, RSAKey}
     import otoroshi.utils.syntax.implicits._
     import java.security.interfaces.{ECPrivateKey, ECPublicKey, RSAPrivateKey, RSAPublicKey}
-
-    println("jwks gen")
-
+    
     env.datastores.certificatesDataStore.findAll().map { certs =>
       val exposedCerts = certs.filter(_.exposed).map(c => (c.id, c.cryptoKeyPair.getPublic)).flatMap {
         case (id, pub: RSAPublicKey) => new RSAKey.Builder(pub).keyID(id).build().toJSONString.parseJson.some
