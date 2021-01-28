@@ -7,7 +7,7 @@
   z-index: 1050;
   margin: 0 auto;
   overflow: hidden;
-  @media screen and (min-width: $bp1) {
+  @media screen and (min-width: $bp-xs) {
     width: 50%;
   }
 }
