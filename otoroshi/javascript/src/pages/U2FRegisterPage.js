@@ -291,7 +291,7 @@ export class U2FRegisterPage extends Component {
           </div>
         )}
         <form className="hide">
-          <div className="form__group mb-20 grid-template-bp1--fifth">
+          <div className="form__group mb-20 grid-template-xs--fifth">
             <label >Label</label>
             <div>
               <input
@@ -302,7 +302,7 @@ export class U2FRegisterPage extends Component {
               />
             </div>
           </div>
-          <div className="form__group mb-20 grid-template-bp1--fifth">
+          <div className="form__group mb-20 grid-template-xs--fifth">
             <label >Email</label>
             <div>
               <input
@@ -313,7 +313,7 @@ export class U2FRegisterPage extends Component {
               />
             </div>
           </div>
-          <div className="form__group mb-20 grid-template-bp1--fifth">
+          <div className="form__group mb-20 grid-template-xs--fifth">
             <label >Password</label>
             <div>
               <input
@@ -324,7 +324,7 @@ export class U2FRegisterPage extends Component {
               />
             </div>
           </div>
-          <div className="form__group mb-20 grid-template-bp1--fifth">
+          <div className="form__group mb-20 grid-template-xs--fifth">
             <label >Re-type Password</label>
             <div>
               <input
@@ -335,7 +335,7 @@ export class U2FRegisterPage extends Component {
               />
             </div>
           </div>
-          <div className="form__group mb-20 grid-template-bp1--fifth">
+          <div className="form__group mb-20 grid-template-xs--fifth">
             <label  />
             <div>
               <button type="button" className="btn-success" onClick={this.simpleRegister}>
@@ -350,7 +350,7 @@ export class U2FRegisterPage extends Component {
               </button>
             </div>
           </div>
-          <div className="form__group mb-20 grid-template-bp1--fifth">
+          <div className="form__group mb-20 grid-template-xs--fifth">
             <label  />
             <div>
               <p>{!this.state.error && this.state.message}</p>
@@ -583,7 +583,7 @@ export class RegisterAdminModal extends Component {
       <>
         <div className="modal-body">
           <form>
-            <div className="form__group mb-20 grid-template-bp1--fifth">
+            <div className="form__group mb-20 grid-template-xs--fifth">
               <label >Label</label>
               <div>
                 <input
@@ -594,7 +594,7 @@ export class RegisterAdminModal extends Component {
                 />
               </div>
             </div>
-            <div className="form__group mb-20 grid-template-bp1--fifth">
+            <div className="form__group mb-20 grid-template-xs--fifth">
               <label >Username</label>
               <div>
                 <input
@@ -607,7 +607,7 @@ export class RegisterAdminModal extends Component {
               </div>
             </div>
             {this.props.mode === 'update' && (
-              <div className="form__group mb-20 grid-template-bp1--fifth">
+              <div className="form__group mb-20 grid-template-xs--fifth">
                 <label >Old Password</label>
                 <div>
                   <input
@@ -620,7 +620,7 @@ export class RegisterAdminModal extends Component {
                 </div>
               </div>
             )}
-            <div className="form__group mb-20 grid-template-bp1--fifth">
+            <div className="form__group mb-20 grid-template-xs--fifth">
               <label >Password</label>
               <div>
                 <input
@@ -634,7 +634,7 @@ export class RegisterAdminModal extends Component {
                 />
               </div>
             </div>
-            <div className="form__group mb-20 grid-template-bp1--fifth">
+            <div className="form__group mb-20 grid-template-xs--fifth">
               <label >Re-type Password</label>
               <div>
                 <input
@@ -650,11 +650,11 @@ export class RegisterAdminModal extends Component {
                 />
               </div>
             </div>
-            <div className="form__group mb-20 grid-template-bp1--fifth hide">
+            <div className="form__group mb-20 grid-template-xs--fifth hide">
               <label  />
               <div></div>
             </div>
-            <div className="form__group mb-20 grid-template-bp1--fifth">
+            <div className="form__group mb-20 grid-template-xs--fifth">
               <label  />
               <div>
                 <p>{!this.state.error && this.state.message}</p>
@@ -825,7 +825,7 @@ export class AdminEditionModal extends Component {
               value={this.state.password2}
               onChange={(e) => this.setState({ password2: e })}
             />
-            <div className="form__group mb-20 grid-template-bp1--fifth">
+            <div className="form__group mb-20 grid-template-xs--fifth">
               <label ></label>
               <div style={{ display: 'flex' }}>
                 <button type="button" className="btn btn-success" onClick={this.setPassword}>

@@ -1,28 +1,20 @@
 .label {
-  padding: .2rem .3rem;
-  font-size: 11px;
+  display: inline-block;
+  min-width: 10px;
+  padding: 3px 7px;
+  font-size: 12px;
+  font-weight: 700;
   line-height: 1;
-  color: #fff;
   text-align: center;
   white-space: nowrap;
-  vertical-align: baseline;
-  border-radius: .2rem;
-  &-primary{
-    background-color: #337ab7;
-  }
-  &-success{
-    background-color: #5cb85c;
-  }
-  &-warning{
-    background-color: #f0ad4e;
-  }
-  &-info{
-    background-color: #5bc0de;
-  }
-  &-default{
-    background-color: #777;
-  }
-  &-danger{
-    background-color: #d9534f;
-  }
+  vertical-align: middle;
+  color: #fff;
+  border-radius: 0.2rem;
+}
+
+.label-xl {
+  display: block;
+  padding: 15px;
+  border: 1px solid transparent;
+  border-radius: 4px;
 }

@@ -35,11 +35,11 @@ export class TextInput extends Component {
       return null;
     }
     return (
-      <div className="form__group mb-20 grid-template-bp1--fifth">
+      <div className="form__group mb-20 grid-template-xs--fifth">
         <label htmlFor={`input-${this.props.label}`} >
           {this.props.label} <Help text={this.props.help} />
         </label>
-        <div className="flex f-align_center">
+        <div className="flex align-items__center">
           {(this.props.prefix || this.props.suffix) && (
             <div className="input-group">
               {this.props.prefix && <div className="input-group-addon">{this.props.prefix}</div>}
@@ -100,7 +100,7 @@ export class TextareaInput extends Component {
 
   render() {
     return (
-      <div className="form__group mb-20 grid-template-bp1--fifth">
+      <div className="form__group mb-20 grid-template-xs--fifth">
         <label htmlFor={`input-${this.props.label}`} >
           {this.props.label} <Help text={this.props.help} />
         </label>
@@ -168,7 +168,7 @@ export class RangeTextInput extends Component {
 
   render() {
     return (
-      <div className="form__group mb-20 grid-template-bp1--fifth">
+      <div className="form__group mb-20 grid-template-xs--fifth">
         <label htmlFor={`input-${this.props.label}`} >
           {this.props.label} <Help text={this.props.help} />
         </label>

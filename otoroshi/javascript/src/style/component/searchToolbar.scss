@@ -44,7 +44,7 @@ i.search-loading {
     margin: 5px 5px 10px 5px;
     background-color: $secondaryBgColor;
   label:hover{
-    background-color: $tertiaryColor;
+    background-color: $tertiaryBgColor;
     color: $darkColor;
   }
 }
@@ -71,7 +71,7 @@ i.search-loading {
   to { -webkit-transform: rotate(1turn); }
 }
 
-@media screen and (max-width: $bp1) {
+@media screen and (max-width: $bp-xs) {
   .multi-search {
     display: flex;
     flex-direction: column;
