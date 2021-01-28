@@ -49,13 +49,13 @@ function genQuery(subj, duration, ca, client) {
 
 async function test() {
 
-  const root    = await getCert(genQuery('CN=root', 10 * 365 * 24 * 60 * 1000, true, false), '/api/pki/cas')
-  const subca   = await getCert(genQuery('CN=subca', 10 * 365 * 24 * 60 * 1000, true, false), `/api/pki/cas/${root.certId}/cas`)
+  const root    = await getCert(genQuery('CN=root', 10 * 365 * 24 * 60 * 60 * 1000, true, false), '/api/pki/cas')
+  const subca   = await getCert(genQuery('CN=subca', 10 * 365 * 24 * 60 * 60 * 1000, true, false), `/api/pki/cas/${root.certId}/cas`)
   // const subca = root;
-  const oto     = await getCert(genQuery('CN=api.oto.tools', 365 * 24 * 60 * 1000, false, false), `/api/pki/cas/${subca.certId}/certs`)
-  const backend = await getCert(genQuery('CN=api-test.oto.tools', 365 * 24 * 60 * 1000, false, false), `/api/pki/cas/${subca.certId}/certs`)
-  const client  = await getCert(genQuery('CN=api-test.oto.tools', 365 * 24 * 60 * 1000, false, true), `/api/pki/cas/${subca.certId}/certs`)
-  const otoCli  = await getCert(genQuery('CN=api.oto.tools', 365 * 24 * 60 * 1000, false, true), `/api/pki/cas/${subca.certId}/certs`)
+  const oto     = await getCert(genQuery('CN=api-oto.oto.tools', 365 * 24 * 60 * 60 * 1000, false, false), `/api/pki/cas/${subca.certId}/certs`)
+  const backend = await getCert(genQuery('CN=api-test.oto.tools', 365 * 24 * 60 * 60 * 1000, false, false), `/api/pki/cas/${subca.certId}/certs`)
+  const client  = await getCert(genQuery('CN=api-cli.oto.tools', 365 * 24 * 60 * 60 * 1000, false, true), `/api/pki/cas/${subca.certId}/certs`)
+  const otoCli  = await getCert(genQuery('CN=oto-cli.oto.tools', 365 * 24 * 60 * 60 * 1000, false, true), `/api/pki/cas/${subca.certId}/certs`)
 
   function writeFiles(path, cert, chain = []) {
     fs.writeFileSync(path + '.cer', cert.cert + '\n' + chain.map(c => c.cert).join('\n'));
