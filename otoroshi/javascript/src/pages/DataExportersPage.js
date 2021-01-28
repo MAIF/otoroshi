@@ -475,7 +475,7 @@ const possibleExporterConfigFormValues = {
             value: a.id,
             label: (
               <span>
-                <span className="label label-success" style={{ minWidth: 63 }}>
+                <span className="label bg__success" style={{ minWidth: 63 }}>
                   {a.certType}
                 </span>{' '}
                 {a.name} - {a.description}
@@ -494,7 +494,7 @@ const possibleExporterConfigFormValues = {
             value: a.id,
             label: (
               <span>
-                <span className="label label-success" style={{ minWidth: 63 }}>
+                <span className="label bg__success" style={{ minWidth: 63 }}>
                   {a.certType}
                 </span>{' '}
                 {a.name} - {a.description}
@@ -550,7 +550,7 @@ const possibleExporterConfigFormValues = {
             value: a.id,
             label: (
               <span>
-                <span className="label label-success" style={{ minWidth: 63 }}>
+                <span className="label bg__success" style={{ minWidth: 63 }}>
                   {a.certType}
                 </span>{' '}
                 {a.name} - {a.description}
@@ -569,7 +569,7 @@ const possibleExporterConfigFormValues = {
             value: a.id,
             label: (
               <span>
-                <span className="label label-success" style={{ minWidth: 63 }}>
+                <span className="label bg__success" style={{ minWidth: 63 }}>
                   {a.certType}
                 </span>{' '}
                 {a.name} - {a.description}
@@ -650,7 +650,7 @@ const possibleExporterConfigFormValues = {
             value: a.id,
             label: (
               <span>
-                <span className="label label-success" style={{ minWidth: 63 }}>
+                <span className="label bg__success" style={{ minWidth: 63 }}>
                   {a.certType}
                 </span>{' '}
                 {a.name} - {a.description}
@@ -670,7 +670,7 @@ const possibleExporterConfigFormValues = {
             value: a.id,
             label: (
               <span>
-                <span className="label label-success" style={{ minWidth: 63 }}>
+                <span className="label bg__success" style={{ minWidth: 63 }}>
                   {a.certType}
                 </span>{' '}
                 {a.name} - {a.description}
@@ -756,7 +756,7 @@ const possibleExporterConfigFormValues = {
             value: a.id,
             label: (
               <span>
-                <span className="label label-success" style={{ minWidth: 63 }}>
+                <span className="label bg__success" style={{ minWidth: 63 }}>
                   {a.certType}
                 </span>{' '}
                 {a.name} - {a.description}
@@ -776,7 +776,7 @@ const possibleExporterConfigFormValues = {
             value: a.id,
             label: (
               <span>
-                <span className="label label-success" style={{ minWidth: 63 }}>
+                <span className="label bg__success" style={{ minWidth: 63 }}>
                   {a.certType}
                 </span>{' '}
                 {a.name} - {a.description}

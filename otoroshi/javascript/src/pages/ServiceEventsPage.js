@@ -248,13 +248,13 @@ export class ServiceEventsPage extends Component {
     return (
       <div>
         <div className="mb-20">
-          <div className="flex f-justify_between f-align_center flex-bp1-column">
+          <div className="flex f-justify_between align-items__center flex-xs-column">
             <OtoDatePicker
               updateDateRange={this.updateDateRange}
               from={this.state.from}
               to={this.state.to}
             />
-            <div className="form grid grid-template--1-auto mt-bp1-10" >
+            <div className="form grid grid-template--1-auto mt-xs-10" >
               <div className="input-group-addon">Limit</div>
               <input
                 type="number"
@@ -265,7 +265,7 @@ export class ServiceEventsPage extends Component {
                 }
               />
             </div>
-            <div className="input-group flex f-align_center mt-bp1-10">
+            <div className="input-group flex align-items__center mt-xs-10">
               <span style={{ marginRight: 5 }}>
                 Order by timestamp ascending values
               </span>

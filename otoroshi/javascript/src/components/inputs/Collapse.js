@@ -24,7 +24,7 @@ export class Collapse extends Component {
       return (
         <div>
           <hr />
-          <div className="form__group mb-10 grid-template-bp1--fifth mt-10">
+          <div className="form__group mb-10 grid-template-xs--fifth mt-10">
             <label />
             <div className="flex f-justify_between cursor-pointer" onClick={this.toggle}>
               <span style={{ color: 'grey', fontWeight: 'bold', marginTop: 7 }}>
@@ -45,7 +45,7 @@ export class Collapse extends Component {
       return (
         <div>
           <hr />
-          <div className="form__group mb-10 grid-template-bp1--fifth mt-10">
+          <div className="form__group mb-10 grid-template-xs--fifth mt-10">
             <label />
             <div className="flex f-justify_between cursor-pointer" onClick={this.toggle}>
               <span style={{ color: 'grey', fontWeight: 'bold', marginTop: 7 }}>
@@ -85,7 +85,7 @@ export class Panel extends Component {
 
   render() {
     return (
-      <div className="ml-5 mb-5 w-25 w-bp1-100">
+      <div className="ml-5 mb-5 w-25 w-xs-100">
         <div className="panel panel-primary" style={{ marginBottom: 0 }}>
           <div className="panel-heading" style={{ cursor: 'pointer' }} onClick={this.toggle}>
             {this.props.title}

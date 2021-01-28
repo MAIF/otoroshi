@@ -9,23 +9,27 @@ body {
   line-height: 1.5rem;
 }
 
-h1{
+
+%color-h {
   color: $primaryColor;
+}
+h1{
+  @extend %color-h;
   font-size: 24px;
 }
 
 h2{
-  color:$primaryColor;
+  @extend %color-h;
   font-size: 20px;
 }
 
 h3{
-  color:$primaryColor;
+  @extend %color-h;
   font-size: 16px;
 }
 
 h4{
-  color: $primaryColor;
+  @extend %color-h;
   font-size: 12px;
 }
 
@@ -66,9 +70,6 @@ code {
   white-space: break-spaces;
 }
 
-.bg-none{
-  background: none;
-}
 * {
   box-sizing: border-box;
 }
@@ -76,12 +77,14 @@ code {
 // LAYOUT //
 
 .container {
- // display: flex;
- // width: 970px;
   margin-right: auto;
   margin-left: auto;
 }
 
+// background
+.bg-none{
+  background: none;
+}
 // display
 .hide{
   display: none !important;
@@ -93,9 +96,13 @@ code {
   display:inline-block;
 }
 
-// cursors
-.cursor-pointer{
-  cursor: pointer;
+//positions
+.p-fixed {
+  position: fixed;
+}
+
+.p-relative{
+  position: relative;
 }
 
 //flex
@@ -130,25 +137,10 @@ code {
   justify-content: flex-end;
 }
 
-.f-align_start{
-  align-items: start;
-}
-.f-align_center{
-  align-items: center;
-}
-
 .grow-1{
   flex-grow: 1;
 }
 
-//positions
-.p-fixed {
-  position: fixed;
-}
-
-.p-relative{
-  position: relative;
-}
 
 //grid
 .grid{
@@ -172,12 +164,12 @@ code {
 .grid-template--two-third{
   grid-template-columns: 2fr 3fr;
 }
-.grid-template-bp1--fifth{
-  @media screen and (min-width: $bp1) {
+.grid-template-xs--fifth{
+  @media screen and (min-width: $bp-xs) {
     grid-template-columns: 1fr 5fr;
   }
 }
-.grid-template-bp1--fifth-reverse{
+.grid-template-xs--fifth-reverse{
   grid-template-columns: 5fr 1fr;
 }
 
@@ -195,17 +187,26 @@ code {
   grid-column-gap: 5px;
 }
 
-.grid-align-items_baseline {
-  align-items: baseline;
+//align-items
+.align-items__start{
+  align-items: start;
+}
+.align-items__center{
+  align-items: center;
 }
 
-.grid-align-items_center {
-  align-items: center;
+.align-items__baseline {
+  align-items: baseline;
+}
+// cursors
+.cursor-pointer{
+  cursor: pointer;
 }
 
 // COLORS (text, background, border)
 $colors : ("white": #FFF, "dark":$darkColor, "warning":$warningColor, "alert":$alertColor,"success":$successColor,"info":$infoColor,"primary":$primaryColor);
 
+//  colors for text, bg, border. --important optionnal
 @each $shortcut, $color in $colors{
   .text__#{$shortcut} {
     color: $color;
@@ -239,7 +240,7 @@ $target : ("m":"margin","mt":"margin-top", "mr":"margin-right", "mb":"margin-bot
   }
 }
 
-//width
+//w-[]   width sizes
 $widthSizes : 25, 33, 50, 100;
 @each $size in $widthSizes{
     .w-#{$size} {
@@ -247,31 +248,31 @@ $widthSizes : 25, 33, 50, 100;
   }
 }
 
-@media screen and (max-width: $bp1) {
+@media screen and (max-width: $bp-xs) {
   @each $size in $marginSizes{
     @each $shortcut, $property in $target{
-      .#{$shortcut}-bp1-#{$size} {
+      .#{$shortcut}-xs-#{$size} {
         #{$property}: #{$size+'px'};
       }
     }
   }
 
   @each $size in $widthSizes{
-    .w-bp1-#{$size} {
+    .w-xs-#{$size} {
       width: #{$size+'%'};
     }
   }
 
-  .flex-bp1-wrap{
+  .flex-xs-wrap{
     flex-wrap: wrap;
   }
-  .flex-bp1-column{
+  .flex-xs-column{
     flex-direction: column;
   }
-  .f-bp1-justify_start{
+  .f-xs-justify_start{
     justify-content: flex-start;
   }
-  .f-bp1-align_start{
+  .f-xs-align_start{
     align-items: flex-start;
   }
 }

@@ -18,7 +18,7 @@ form, .form{
   label{
     margin-right: 10px;
     text-align: left;
-    @media screen and (min-width: $bp1) {
+    @media screen and (min-width: $bp-xs) {
       text-align: right;
     }
   }

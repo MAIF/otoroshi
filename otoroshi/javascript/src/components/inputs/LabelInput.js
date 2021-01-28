@@ -20,7 +20,7 @@ export class LabelInput extends Component {
 
   render() {
     return (
-      <div className="form__group mb-20 grid-template-bp1--fifth">
+      <div className="form__group mb-20 grid-template-xs--fifth">
         <label>
           {this.props.label} <Help text={this.props.help} />
         </label>
@@ -40,7 +40,7 @@ export class HelpInput extends Component {
 
   render() {
     return (
-      <div className="form__group mb-20 grid-template-bp1--fifth">
+      <div className="form__group mb-20 grid-template-xs--fifth">
         <label />
         <div>{this.state.value}</div>
       </div>

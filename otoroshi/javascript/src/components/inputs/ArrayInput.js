@@ -83,7 +83,7 @@ export class ArrayInput extends Component {
     if (Component) {
       return (
         <div style={{ marginRight: 10 }}>
-          <div className="form__group mb-10 grid-template-bp1--fifth">
+          <div className="form__group mb-10 grid-template-xs--fifth">
             <label>
               {this.props.label} <Help text={this.props.help} />
             </label>
@@ -141,7 +141,7 @@ export class ArrayInput extends Component {
     return (
       <div>
         {values.length === 0 && (
-          <div className="form__group mb-20 grid-template-bp1--fifth">
+          <div className="form__group mb-20 grid-template-xs--fifth">
             <label
               htmlFor={`input-${this.props.label}`}
               className="">
@@ -159,7 +159,7 @@ export class ArrayInput extends Component {
           </div>
         )}
         {values.map((value, idx) => (
-          <div className="form__group mb-20 grid-template-bp1--fifth grid-align-items_baseline" style={{alignItems: 'baseline'}} key={idx}>
+          <div className="form__group mb-20 grid-template-xs--fifth align-items__baseline" style={{alignItems: 'baseline'}} key={idx}>
             {idx === 0 && (
               <label className="">
                 {this.props.label} <Help text={this.props.help} />
