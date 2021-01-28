@@ -22,7 +22,7 @@ export class NumberInput extends Component {
 
   render() {
     return (
-      <div className="form__group mb-20 grid-template-bp1--fifth">
+      <div className="form__group mb-20 grid-template-xs--fifth">
         <label htmlFor={`input-${this.props.label}`}>
           {this.props.label} <Help text={this.props.help} />
         </label>
@@ -142,7 +142,7 @@ export class NumberRangeInput extends Component {
 
   render() {
     return (
-      <div className="form__group mb-20 grid-template-bp1--fifth">
+      <div className="form__group mb-20 grid-template-xs--fifth">
         <label htmlFor={`input-${this.props.label}`}>
           {this.props.label} <Help text={this.props.help} />
         </label>

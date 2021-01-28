@@ -475,7 +475,7 @@ export class TopBar extends Component {
                 <div style={{ marginRight: 10 }}>
                   <span
                     title="Current line"
-                    className="label label-success"
+                    className="label bg__success"
                     style={{ fontSize: 20, cursor: 'pointer' }}>
                     {selected}
                   </span>
@@ -546,7 +546,7 @@ export class TopBar extends Component {
                 />
               </div>
             </form>
-            <div className="p-fixed flex f-align_center" style={{right:0, top:0}}>
+            <div className="p-fixed flex align-items__center" style={{right:0, top:0}}>
               {window.__apiReadOnly && (
                   <a className="text__alert mr-10" title="Admin API in read-only mode">
                     <span className="fas fa-lock fa-lg" />

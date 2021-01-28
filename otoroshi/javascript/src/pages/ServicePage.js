@@ -466,12 +466,12 @@ class CanaryCampaign extends Component {
 
   render() {
     return (
-      <div className="form-group">
-        <label htmlFor={`input-${this.props.label}`} className="col-xs-12 col-sm-2 control-label">
+      <div className="form__group mb-20 grid-template-xs--fifth">
+        <label htmlFor={`input-${this.props.label}`} >
           Campaign stats <Help text="Stats about users target in the current canary campaign" />
         </label>
         {this.state.campaign && (
-          <div className="col-sm-10" style={{ paddingTop: 5 }}>
+          <div style={{ paddingTop: 5 }}>
             <span style={{ marginRight: 10 }}>
               {this.state.campaign.canaryUsers + this.state.campaign.standardUsers} users (
               {this.state.campaign.canaryUsers} canary / {this.state.campaign.standardUsers}{' '}
@@ -1043,12 +1043,12 @@ export class ServicePage extends Component {
       delete propsDisabled.disabled;
     }
     return (
-      <div>
-        <form className="form-horizontal">
-          <div className="form-group btnsService">
-            <div className="col-xs-12 col-sm-10 displayGroupBtn">
+      <div className="">
+        <form className="">
+          <div className="btns-fixed">
+            <div className="btn__group--right">
               <button
-                className="btn btn-danger"
+                className="btn-danger mr-5"
                 type="button"
                 disabled={this.state.env && this.state.env.adminApiId === this.state.service.id}
                 {...createTooltip(
@@ -1061,7 +1061,7 @@ export class ServicePage extends Component {
               </button>
               {this.state.allCollapsed && (
                 <button
-                  className="btn btn-info"
+                  className="btn-info mr-5"
                   type="button"
                   onClick={this.toggleCollapsed}
                   {...createTooltip('Unfold all form groups', 'left', true)}>
@@ -1070,7 +1070,7 @@ export class ServicePage extends Component {
               )}
               {!this.state.allCollapsed && (
                 <button
-                  className="btn btn-info"
+                  className="btn-info mr-5"
                   type="button"
                   onClick={this.toggleCollapsed}
                   {...createTooltip('Fold all form groups', 'left', true)}>
@@ -1079,14 +1079,14 @@ export class ServicePage extends Component {
               )}
 
               <button
-                className="btn btn-info"
+                className="btn-info mr-5"
                 type="button"
                 {...createTooltip('Export the current service as a JSON file.', 'left', true)}
                 onClick={this.exportService}>
                 <i className="fas fa-file-export" />
               </button>
               <button
-                className="btn btn-info"
+                className="btn-info mr-5"
                 type="button"
                 {...createTooltip(
                   'Export the current service as a kubernetes YAML file.',
@@ -1094,10 +1094,10 @@ export class ServicePage extends Component {
                   true
                 )}
                 onClick={this.exportServiceYaml}>
-                <i className="fas fa-file-export" /> YAML
+                <i className="fas fa-file-export" />
               </button>
               <button
-                className="btn btn-info"
+                className="btn-info mr-5"
                 type="button"
                 {...createTooltip(
                   'Duplicate the current service as a new one to avoid refilling the form with same informations',
@@ -1108,7 +1108,7 @@ export class ServicePage extends Component {
                 <i className="far fa-copy" aria-hidden="true" />
               </button>
               <button
-                className="btn btn-save"
+                className="btn-success"
                 type="button"
                 data-toggle="tooltip"
                 data-placement="top"
@@ -1122,8 +1122,8 @@ export class ServicePage extends Component {
                 onClick={this.saveChanges}>
                 <i className="far fa-save" />
               </button>
-            </div>
           </div>
+        </div>
           <Collapse collapsed={this.state.allCollapsed} initCollapsed={false} label="Location">
             <Location
               tenant={this.state.service._loc.tenant || 'default'}
@@ -1149,20 +1149,19 @@ export class ServicePage extends Component {
             transformer={(a) => ({ value: a.id, label: a.name })}
             help="Each service descriptor is attached to a group. A group can have one or more services. Each API key is linked to a group and allow access to every service in the group."
           />
-          <div className="form-group">
-            <label className="col-xs-12 col-sm-2 control-label" />
-            <div className="col-sm-10">
+          <div className="form__group mb-20 grid-template-xs--fifth">
+            <label />
+            <div className="btn__group--right">
               <button
                 type="button"
-                className="btn btn-success pull-right btn-xs"
+                className="btn-success btn-xs"
                 {...createTooltip('You can create a new group to host this descriptor')}
                 onClick={this.createNewGroup}>
                 <i className="fas fa-plus" /> Create a new group
               </button>
               <button
                 type="button"
-                className="btn btn-success pull-right btn-xs"
-                style={{ marginRight: 5 }}
+                className="btn-success btn-xs ml-5 mr-5"
                 {...createTooltip(
                   'You can create a new group with an auto generated name to host this descriptor'
                 )}
@@ -1179,8 +1178,8 @@ export class ServicePage extends Component {
             onChange={(e) => this.changeTheValue('name', e)}
           />
           <Collapse collapsed={this.state.allCollapsed} initCollapsed={false} label="Flags">
-            <div className="row">
-              <div className="col-md-6">
+            <div className="flex f-justify_between">
+              <div className="w-100">
                 <BiColumnBooleanInput
                   label="Service enabled"
                   value={this.state.service.enabled}
@@ -1226,7 +1225,7 @@ export class ServicePage extends Component {
                   onChange={(v) => this.changeTheValue('detectApiKeySooner', v)}
                 />
               </div>
-              <div className="col-md-6">
+              <div className="w-100">
                 <BiColumnBooleanInput
                   label="Send Otoroshi headers back"
                   value={this.state.service.sendOtoroshiHeadersBack}
@@ -1275,6 +1274,7 @@ export class ServicePage extends Component {
                 <a
                   href=" https://github.com/MAIF/otoroshi/tree/master/clients/tcp-udp-tunnel-client"
                   target="_blank">
+                  <i className="fas fa-share-square mr-5"></i>
                   Learn more about TCP/UDP tunneling
                 </a>
               </div>
@@ -1340,11 +1340,11 @@ export class ServicePage extends Component {
                 onChange={(e) => this.changeTheValue('matchingRoot', e)}
               />
             )}
-            <div className="form-group">
-              <label className="col-xs-12 col-sm-2 control-label" />
-              <div className="col-sm-10">
+            <div className="form__group mb-20 grid-template-xs--fifth">
+              <label  />
+              <div>
                 <button
-                  className="btn btn-xs btn-info"
+                  className="btn-xs btn-info mr-5"
                   type="button"
                   onClick={(e) => {
                     e.preventDefault();
@@ -1356,12 +1356,12 @@ export class ServicePage extends Component {
                   <button
                     type="button"
                     onClick={this.createLetsEncrypt}
-                    className="btn btn-xs btn-info">
+                    className="btn-xs btn-info mr-5">
                     <i className="fas fa-plus-circle" /> Create Let's Encrypt cert.
                   </button>
                 )}
                 {!this.state.neverSaved && (
-                  <button type="button" onClick={this.createCert} className="btn btn-xs btn-info">
+                  <button type="button" onClick={this.createCert} className="btn-xs btn-info mr-5">
                     <i className="fas fa-plus-circle" /> Create certificate
                   </button>
                 )}
@@ -1638,9 +1638,9 @@ export class ServicePage extends Component {
             collapsed={this.state.allCollapsed}
             initCollapsed={false}
             label="URL Patterns">
-            <div className="form-group">
-              <label className="col-xs-12 col-sm-2 control-label" />
-              <div className="col-sm-10">
+            <div className="form__group mb-20 grid-template-xs--fifth">
+              <label/>
+              <div>
                 <PublicUiButton
                   value={this.state.service.publicPatterns}
                   onChange={(arr) => this.changeTheValue('publicPatterns', arr)}
@@ -1781,9 +1781,9 @@ export class ServicePage extends Component {
             {!this.state.service.secComUseSameAlgo && (
               <>
                 <hr style={{ borderTop: '1px solid #595959' }} />
-                <div className="form-group">
-                  <label className="col-xs-12 col-sm-2 control-label">Otoroshi to backend</label>
-                  <div className="col-sm-10">
+                <div className="form__group mb-20 grid-template-xs--fifth">
+                  <label >Otoroshi to backend</label>
+                  <div>
                     <AlgoSettings
                       algo={this.state.service.secComAlgoChallengeOtoToBack}
                       path="secComAlgoChallengeOtoToBack"
@@ -1792,9 +1792,9 @@ export class ServicePage extends Component {
                   </div>
                 </div>
                 <hr style={{ borderTop: '1px solid #595959' }} />
-                <div className="form-group">
-                  <label className="col-xs-12 col-sm-2 control-label">Backend to otoroshi</label>
-                  <div className="col-sm-10">
+                <div className="form__group mb-20 grid-template-xs--fifth">
+                  <label >Backend to otoroshi</label>
+                  <div>
                     <AlgoSettings
                       algo={this.state.service.secComAlgoChallengeBackToOto}
                       path="secComAlgoChallengeBackToOto"
@@ -1803,9 +1803,9 @@ export class ServicePage extends Component {
                   </div>
                 </div>
                 <hr style={{ borderTop: '1px solid #595959' }} />
-                <div className="form-group">
-                  <label className="col-xs-12 col-sm-2 control-label">Info. token</label>
-                  <div className="col-sm-10">
+                <div className="form__group mb-20 grid-template-xs--fifth">
+                  <label >Info. token</label>
+                  <div>
                     <AlgoSettings
                       algo={this.state.service.secComAlgoInfoToken}
                       path="secComAlgoInfoToken"
@@ -1835,22 +1835,22 @@ export class ServicePage extends Component {
               transformer={(a) => ({ value: a.id, label: a.name })}
               help="..."
             />
-            <div className="form-group">
-              <label className="col-xs-12 col-sm-2 control-label" />
-              <div className="col-sm-10">
+            <div className="form__group mb-20 grid-template-xs--fifth">
+              <label/>
+              <div>
                 {!this.state.service.authConfigRef && (
-                  <a href={`/bo/dashboard/auth-configs/add`} className="btn btn-sm btn-primary">
+                  <a href={`/bo/dashboard/auth-configs/add`} className="button btn-sm btn-info">
                     <i className="fas fa-plus" /> Create a new auth. config.
                   </a>
                 )}
                 {this.state.service.authConfigRef && (
                   <a
                     href={`/bo/dashboard/auth-configs/edit/${this.state.service.authConfigRef}`}
-                    className="btn btn-sm btn-success">
+                    className="button btn-sm btn-success ml-5">
                     <i className="fas fa-edit" /> Edit the auth. config.
                   </a>
                 )}
-                <a href={`/bo/dashboard/auth-configs`} className="btn btn-sm btn-primary">
+                <a href={`/bo/dashboard/auth-configs`} className="button btn-sm btn-info ml-5">
                   <i className="fas fa-link" /> all auth. config.
                 </a>
               </div>
@@ -1869,9 +1869,9 @@ export class ServicePage extends Component {
               help="Strict mode enabled"
               onChange={(v) => this.changeTheValue('strictlyPrivate', v)}
             />
-            <div className="form-group">
-              <label className="col-xs-12 col-sm-2 control-label" />
-              <div className="col-sm-10">
+            <div className="form__group mb-20 grid-template-xs--fifth">
+              <label  />
+              <div>
                 <p
                   style={{
                     padding: 10,
@@ -2125,11 +2125,11 @@ export class ServicePage extends Component {
                   transformer={a => ({ value: a.id, label: a.name })}
                   help="..."
                 />
-                <div className="form-group">
-                  <label className="col-xs-12 col-sm-2 control-label" />
-                  <div className="col-sm-10">
+                <div className="form__group mb-20 grid-template-xs--fifth">
+                  <label  />
+                  <div>
                     {!this.state.service.thirdPartyApiKey.oidcConfigRef && (
-                      <a href={`/bo/dashboard/auth-configs/add`} className="btn btn-sm btn-primary">
+                      <a href={`/bo/dashboard/auth-configs/add`} className="btn btn-sm btn-info">
                         <i className="fas fa-plus" /> Create a new auth. config.
                       </a>
                     )}
@@ -2140,7 +2140,7 @@ export class ServicePage extends Component {
                         <i className="fas fa-edit" /> Edit the auth. config.
                       </a>
                     )}
-                    <a href={`/bo/dashboard/auth-configs`} className="btn btn-sm btn-primary">
+                    <a href={`/bo/dashboard/auth-configs`} className="btn btn-sm btn-info">
                       <i className="fas fa-link" /> all auth. config.
                     </a>
                   </div>
@@ -2320,11 +2320,21 @@ export class ServicePage extends Component {
                 <div className="form__group mb-20 grid-template-bp1--fifth">
                   <label />
                   <div>
-                    {this.state.service.jwtVerifier.ids.length === 0 && (
-                      <a href={`/bo/dashboard/jwt-verifiers/add`} className="btn btn-info">
+                    {!this.state.service.jwtVerifier.ids.length === 0 && (
+                      <a href={`/bo/dashboard/jwt-verifiers/add`} className="button btn-info">
                         <i className="fas fa-plus" /> Create a new Jwt Verifier config
                       </a>
                     )}
+                    {this.state.service.jwtVerifier.ids.length > 0 &&
+                      this.state.service.jwtVerifier.ids.map((id) => {
+                        return (
+                          <a
+                            href={`/bo/dashboard/jwt-verifiers/edit/${id}`}
+                            className="button btn-success">
+                            <i className="fas fa-edit" /> Edit the global Jwt Verifier
+                          </a>
+                        );
+                      })}
                   </div>
                 </div>
               </div>
@@ -2365,7 +2375,7 @@ export class ServicePage extends Component {
               help="By default, when pre-routing is enabled, everything is verified. But sometimes you need to exclude something, so just add regex to matching path you want to exlude."
               onChange={(v) => this.changeTheValue('preRouting.excludedPatterns', v)}
             />
-            <div className="form-group">
+            <div>
               <Suspense fallback={<div>loading ...</div>}>
                 <CodeInput
                   label="Configuration"
@@ -2403,7 +2413,7 @@ export class ServicePage extends Component {
               help="By default, when access validation is enabled, everything is verified. But sometimes you need to exclude something, so just add regex to matching path you want to exlude."
               onChange={(v) => this.changeTheValue('accessValidator.excludedPatterns', v)}
             />
-            <div className="form-group">
+            <div>
               <Suspense fallback={<div>loading ...</div>}>
                 <CodeInput
                   label="Configuration"
@@ -2419,9 +2429,9 @@ export class ServicePage extends Component {
             collapsed={this.state.allCollapsed}
             initCollapsed={true}
             label="Validation authority">
-            <div class="form-group">
-              <label class="col-xs-12 col-sm-2 control-label" />
-              <div class="col-sm-10">
+            <div class="form__group mb-20 grid-template-xs--fifth">
+              <label />
+              <div>
                 <div
                   style={{
                     padding: 10,
@@ -2449,13 +2459,13 @@ export class ServicePage extends Component {
               transformer={a => ({ value: a.id, label: a.name })}
               help="..."
             />
-            <div className="form-group">
-              <label className="col-xs-12 col-sm-2 control-label" />
-              <div className="col-sm-10">
+            <div className="form__group mb-20 grid-template-xs--fifth">
+              <label  />
+              <div>
                 {!this.state.service.clientValidatorRef && (
                   <a
                     href={`/bo/dashboard/validation-authorities/add`}
-                    className="btn btn-sm btn-primary">
+                    className="btn btn-sm btn-info">
                     <i className="fas fa-plus" /> Create a new validation authority.
                   </a>
                 )}
@@ -2466,7 +2476,7 @@ export class ServicePage extends Component {
                     <i className="fas fa-edit" /> Edit the validation authority.
                   </a>
                 )}
-                <a href={`/bo/dashboard/validation-authorities`} className="btn btn-sm btn-primary">
+                <a href={`/bo/dashboard/validation-authorities`} className="btn btn-sm btn-info">
                   <i className="fas fa-link" /> all validation authorities.
                 </a>
               </div>
@@ -2636,9 +2646,9 @@ export class ServicePage extends Component {
               onChange={(v) => this.changeTheValue('clientConfig.proxy', v)}
             />
             {false && (
-              <div className="form-group">
-                <label className="col-xs-12 col-sm-2 control-label" />
-                <div className="col-sm-10">
+              <div className="form__group mb-20 grid-template-xs--fifth">
+                <label  />
+                <div>
                   <button
                     type="button"
                     className="btn btn-danger btn-xs"
@@ -2703,50 +2713,44 @@ export class ServicePage extends Component {
               help="Remove headers in the client response (from Otoroshi to client)."
               onChange={(v) => this.changeTheValue('removeHeadersOut', v)}
             />
-            <div className="form-group">
+            <div className="form__group mb-20 grid-template-xs--fifth">
               <label
-                htmlFor={`input-${this.props.label}`}
-                className="col-xs-12 col-sm-2 control-label">
+                htmlFor={`input-${this.props.label}`}>
                 Security headers
               </label>
-              <div className="col-sm-10">
+              <div>
                 <button
                   type="button"
-                  style={{ marginBottom: 5 }}
                   onClick={(e) => this.addSecurityHeader('X-Frame-Options', 'DENY')}
                   disabled={this.computeIfButtonDisabled('X-Frame-Options')}
-                  className="btn btn-xs btn-success">
+                  className="btn-xs btn-success mr-5 mb-5">
                   X-Frame-Options
                 </button>
                 <button
                   type="button"
-                  style={{ marginBottom: 5 }}
                   onClick={(e) => this.addSecurityHeader('X-XSS-Protection', '1; mode=block')}
                   disabled={this.computeIfButtonDisabled('X-XSS-Protection')}
-                  className="btn btn-xs btn-success">
+                  className="btn-xs btn-success mr-5 mb-5">
                   X-XSS-Protection
                 </button>
                 <button
                   type="button"
-                  style={{ marginBottom: 5 }}
                   onClick={(e) => this.addSecurityHeader('X-Content-Type-Options', 'nosniff')}
                   disabled={this.computeIfButtonDisabled('X-Content-Type-Options')}
-                  className="btn btn-xs btn-success">
+                  className="btn-xs btn-success mr-5 mb-5">
                   X-Content-Type-Options
                 </button>
                 <button
                   type="button"
-                  style={{ marginBottom: 5 }}
                   onClick={(e) =>
                     this.addSecurityHeader('X-Permitted-Cross-Domain-Policies', 'master-only')
                   }
                   disabled={this.computeIfButtonDisabled('X-Permitted-Cross-Domain-Policies')}
-                  className="btn btn-xs btn-success">
+                  className="btn-xs btn-success mr-5 mb-5">
                   X-Permitted-Cross-Domain-Policies
                 </button>
                 <button
                   type="button"
-                  style={{ marginBottom: 5 }}
                   onClick={(e) =>
                     this.addSecurityHeader(
                       'Referrer-Policy',
@@ -2754,22 +2758,20 @@ export class ServicePage extends Component {
                     )
                   }
                   disabled={this.computeIfButtonDisabled('Referrer-Policy')}
-                  className="btn btn-xs btn-success">
+                  className="btn-xs btn-success mr-5 mb-5">
                   Referrer-Policy
                 </button>
                 <button
                   type="button"
-                  style={{ marginBottom: 5 }}
                   onClick={(e) =>
                     this.addSecurityHeader('Content-Security-Policy', "default-src 'self'")
                   }
                   disabled={this.computeIfButtonDisabled('Content-Security-Policy')}
-                  className="btn btn-xs btn-success">
+                  className="btn-xs btn-success mr-5 mb-5">
                   Content-Security-Policy
                 </button>
                 <button
                   type="button"
-                  style={{ marginBottom: 5 }}
                   onClick={(e) =>
                     this.addSecurityHeader(
                       'Strict-Transport-Security',
@@ -2777,12 +2779,11 @@ export class ServicePage extends Component {
                     )
                   }
                   disabled={this.computeIfButtonDisabled('Strict-Transport-Security')}
-                  className="btn btn-xs btn-success">
+                  className="btn-xs btn-success mr-5 mb-5">
                   Strict-Transport-Security
                 </button>
                 <button
                   type="button"
-                  style={{ marginBottom: 5 }}
                   onClick={(e) =>
                     this.addSecurityHeader(
                       'Public-Key-Pins',
@@ -2790,7 +2791,7 @@ export class ServicePage extends Component {
                     )
                   }
                   disabled={this.computeIfButtonDisabled('Public-Key-Pins')}
-                  className="btn btn-xs btn-success">
+                  className="btn-xs btn-success mr-5 mb-5">
                   Public-Key-Pins
                 </button>
               </div>
@@ -2900,12 +2901,12 @@ export class ServicePage extends Component {
               onChange={(e) => this.changeTheValue('canary.root', e)}
             />
             <CanaryCampaign serviceId={this.state.service.id} />
-            <div className="form-group">
+            <div className="form__group mb-20 grid-template-xs--fifth">
               <label
                 htmlFor={`input-${this.props.label}`}
-                className="col-xs-12 col-sm-2 control-label"
+                
               />
-              <div className="col-sm-10" style={{ paddingTop: 5 }}>
+              <div style={{ paddingTop: 5 }}>
                 <button
                   type="button"
                   className="btn btn-success btn-xs"
@@ -2969,9 +2970,9 @@ export class ServicePage extends Component {
             label="Custom errors template">
             {!this.state.neverSaved && <TemplateInput service={this.state.service} />}
             {this.state.neverSaved && (
-              <div className="form-group">
-                <label className="col-xs-12 col-sm-2 control-label" />
-                <div className="col-sm-10">
+              <div className="form__group mb-20 grid-template-xs--fifth">
+                <label  />
+                <div>
                   <p style={{ padding: 10, borderRadius: 5, backgroundColor: '#494948' }}>
                     Custom error templates are not available on a service descriptor that hasn't
                     been created yet. Just save the service descriptor and it will be available.
@@ -3000,7 +3001,7 @@ export class ServicePage extends Component {
               config={this.state.service.transformerConfig}
               onChangeConfig={(e) => this.changeTheValue('transformerConfig', e)}
             />
-            <div className="form-group">
+            <div>
               <Suspense fallback={<div>loading ...</div>}>
                 <CodeInput
                   label="Configuration"
@@ -3101,18 +3102,12 @@ export class TemplateInput extends Component {
       <meta name="theme-color" content="#000000">
       <meta name="robots" content="noindex, nofollow">
       <link rel="shortcut icon" type="image/png" href="/__otoroshi_assets/images/favicon.png">
-        <link rel="stylesheet" media="screen" href="/__otoroshi_assets/stylesheets/otoroshiapps.css">
+      <link rel="stylesheet" media="screen" href="/__otoroshi_assets/stylesheets/otoroshiapps.css">
       <link href="/assets/fonts/raleway/raleway.css" rel="stylesheet">
       <link rel="stylesheet" media="screen" href="/__otoroshi_assets/stylesheets/error.css">
   </head>
   <body>
       <div class="container">
-        <div class="header clearfix">
-            <nav class="navbar-inverse"></nav>
-            <a class="navbar-brand" href="/" style="display: flex;">
-            <span>おとろし</span>&nbsp; Otoroshi
-            </a>
-        </div>
         <div class="jumbotron">
             ${
               error
@@ -3206,9 +3201,9 @@ export class TemplateInput extends Component {
   render() {
     if (!this.state.template) {
       return (
-        <div className="form-group">
-          <label className="col-xs-12 col-sm-2 control-label" />
-          <div className="col-sm-10">
+        <div className="form__group mb-20 grid-template-xs--fifth">
+          <label  />
+          <div>
             <button type="button" className="btn btn-success" onClick={this.createTemplate}>
               Create custom error template
             </button>
@@ -3218,14 +3213,14 @@ export class TemplateInput extends Component {
     }
     return (
       <div>
-        <div className="form-group">
-          <label className="col-xs-12 col-sm-2 control-label" />
-          <div className="col-sm-8">
+        <div className="form__group mb-20 grid-template-xs--fifth">
+          <label  />
+          <div>
             <p style={{ padding: 10, borderRadius: 5, backgroundColor: '#494948' }}>
               {this.message}
             </p>
           </div>
-          <div className="col-sm-2">
+          <div>
             <button
               type="button"
               className="btn btn-success pull-right"
@@ -3243,9 +3238,9 @@ export class TemplateInput extends Component {
             </button>
           </div>
         </div>
-        <div className="form-group">
-          <label className="col-xs-12 col-sm-2 control-label" />
-          <div className="col-sm-10" />
+        <div className="form__group mb-20 grid-template-xs--fifth">
+          <label  />
+          <div />
         </div>
         <Form
           value={this.getValue()}
@@ -3270,13 +3265,13 @@ export class PublicUiButton extends Component {
     const isAlreadyPublic = this.props.value.filter((p) => p === '/.*').length > 0;
     if (isAlreadyPublic) {
       return (
-        <button type="button" disabled className="btn btn-success btn-xs">
+        <button type="button" disabled className="btn-success btn-xs">
           <i className="fas fa-unlock" /> Service is already a 'public ui' ...
         </button>
       );
     } else {
       return (
-        <button type="button" className="btn btn-success btn-xs" onClick={this.makePublic}>
+        <button type="button" className="btn-success btn-xs" onClick={this.makePublic}>
           <i className="fas fa-unlock" /> Make service a 'public ui'
         </button>
       );

@@ -149,7 +149,7 @@ export class ClusterTiles extends Component {
     return (
       <div>
         <h3>CLUSTER METRICS</h3>
-        <div className="rowMetrics">
+        <div className="metric-row">
           <Metric
             time={Date.now()}
             link="/bo/dashboard/cluster"

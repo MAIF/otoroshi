@@ -368,7 +368,7 @@ export class DangerZonePage extends Component {
           value: a.id,
           label: (
             <span>
-              <span className="label label-success" style={{ minWidth: 63 }}>
+              <span className="label bg__success" style={{ minWidth: 63 }}>
                 {a.certType}
               </span>{' '}
               {a.name} - {a.description}
@@ -387,7 +387,7 @@ export class DangerZonePage extends Component {
           value: a.id,
           label: (
             <span>
-              <span className="label label-success" style={{ minWidth: 63 }}>
+              <span className="label bg__success" style={{ minWidth: 63 }}>
                 {a.certType}
               </span>{' '}
               {a.name} - {a.description}
@@ -433,7 +433,7 @@ export class DangerZonePage extends Component {
           value: a.id,
           label: (
             <span>
-              <span className="label label-success" style={{ minWidth: 63 }}>
+              <span className="label bg__success" style={{ minWidth: 63 }}>
                 {a.certType}
               </span>{' '}
               {a.name} - {a.description}
@@ -452,7 +452,7 @@ export class DangerZonePage extends Component {
           value: a.id,
           label: (
             <span>
-              <span className="label label-success" style={{ minWidth: 63 }}>
+              <span className="label bg__success" style={{ minWidth: 63 }}>
                 {a.certType}
               </span>{' '}
               {a.name} - {a.description}
@@ -853,7 +853,7 @@ export class DangerZonePage extends Component {
           value: a.id,
           label: (
             <span>
-              <span className="label label-success" style={{ minWidth: 63 }}>
+              <span className="label bg__success" style={{ minWidth: 63 }}>
                 {a.certType}
               </span>{' '}
               {a.name} - {a.description}
@@ -1194,7 +1194,7 @@ export class DangerZonePage extends Component {
             onChange={this.readyToPush}
           />
           {!this.state.readyToPush && (
-            <div className="form__group mb-20 grid-template-bp1--fifth">
+            <div className="form__group mb-20 grid-template-xs--fifth">
               <label/>
               <div className="mt-10">
                 <label
@@ -1207,7 +1207,7 @@ export class DangerZonePage extends Component {
             </div>
           )}
           {this.state.readyToPush && (
-            <div className="form__group mb-20 grid-template-bp1--fifth">
+            <div className="form__group mb-20 grid-template-xs--fifth">
               <label  />
               <div >
                 <button type="button" className="btn btn-danger" onClick={this.importData}>
@@ -1220,7 +1220,7 @@ export class DangerZonePage extends Component {
         </form>
         <hr />
         <form>
-          <div className="form__group mb-20 grid-template-bp1--fifth">
+          <div className="form__group mb-20 grid-template-xs--fifth">
             <label  />
             <div >
               <button type="button" className="btn-success mr-5 mb-5" onClick={this.fullExport}>
@@ -1253,7 +1253,7 @@ export class DangerZonePage extends Component {
 class BackOfficeAuthButtons extends Component {
   render() {
     return (
-      <div className="form__group mb-20 grid-template-bp1--fifth">
+      <div className="form__group mb-20 grid-template-xs--fifth">
         <label />
         <div >
           {!this.props.rawValue.backOfficeAuthRef && (
