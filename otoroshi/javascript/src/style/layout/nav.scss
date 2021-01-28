@@ -7,13 +7,13 @@ nav {
   justify-content: space-between;
   align-items: center;
   flex-direction: column;
-  @media screen and (min-width: $bp1) {
+  @media screen and (min-width: $bp-xs) {
     flex-direction: row;
   }
   .dropdown {
     cursor: pointer;
     right: 0px;
-    @media screen and (min-width: $bp1) {
+    @media screen and (min-width: $bp-xs) {
       position: relative;
     }
     .fa-cog {
@@ -29,7 +29,7 @@ nav {
 
   }
   &.active+#sidebar{
-    @media screen and (max-width: $bp1) {
+    @media screen and (max-width: $bp-xs) {
       display: block;
     }
   }
@@ -39,17 +39,17 @@ nav {
   padding: 15px;
   width: 100%;
 
-  @media screen and (max-width: $bp1) {
+  @media screen and (max-width: $bp-xs) {
     display: flex;
     justify-content: center;
   }
-  @media screen and (min-width: $bp1) {
+  @media screen and (min-width: $bp-xs) {
     padding: 0px;
     width: auto;
   }
   .Select-control {
     border: 1px solid #ccc;
-    @media screen and (min-width: $bp1) {
+    @media screen and (min-width: $bp-xs) {
       width: 400px;
     }
   }
@@ -65,7 +65,7 @@ nav {
   background-image: none;
   border: 1px solid #333;
   border-radius: 4px;
-  @media screen and (min-width: $bp1) {
+  @media screen and (min-width: $bp-xs) {
     display: none;
   }
 }
@@ -82,7 +82,7 @@ nav {
     line-height: inherit;
     white-space: nowrap;
     transition: background-color ease-in-out .15s;
-    @media screen and (min-width: $bp1) {
+    @media screen and (min-width: $bp-xs) {
       width: 20%;
       margin-right: 1rem;
     }
@@ -103,7 +103,7 @@ nav {
   position: fixed;
   left: 10px;
   top: 10px;
-  @media screen and (min-width: $bp1) {
+  @media screen and (min-width: $bp-xs) {
     display: none;
   }
 }
