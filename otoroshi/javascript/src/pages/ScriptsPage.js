@@ -250,7 +250,7 @@ class CompilationTools extends Component {
 
   render() {
     return (
-      <div className="form__group mb-20 grid-template-bp1--fifth">
+      <div className="form__group mb-20 grid-template-xs--fifth">
         <label />
         <div >
           <button
@@ -273,7 +273,7 @@ class CompilationTools extends Component {
 export class Warning extends Component {
   render() {
     return (
-      <div className="form__group mb-20 grid-template-bp1--fifth">
+      <div className="form__group mb-20 grid-template-xs--fifth">
         <label />
         <div className="">
           <div

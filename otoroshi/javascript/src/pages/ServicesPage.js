@@ -9,15 +9,15 @@ import * as BackOfficeServices from '../services/BackOfficeServices';
 export class ServicesPage extends Component {
   color(env) {
     if (env === 'prod') {
-      return 'label-success';
+      return 'bg__success';
     } else if (env === 'preprod') {
-      return 'label-primary';
+      return 'bg__primary';
     } else if (env === 'experiments') {
-      return 'label-warning';
+      return 'bg__warning';
     } else if (env === 'dev') {
-      return 'label-info';
+      return 'bg__info';
     } else {
-      return 'label-default';
+      return 'bg__dark';
     }
   }
 
@@ -30,7 +30,7 @@ export class ServicesPage extends Component {
           return (
             <span
               title="This service is the API that drives the UI you're currently using. Without it, Otoroshi UI won't be able to work and anything that uses Otoroshi admin API too. You might not want to delete it"
-              className="label label-danger">
+              className="label bg__alert">
               {item.name}
             </span>
           );
@@ -136,7 +136,7 @@ export class ServicesPage extends Component {
   displayName = (item) => {
     console.log(this.state);
     return this.state && this.state.env && this.state.env.adminApiId === item.id ? (
-      <span className="label label-danger">{item.name}</span>
+      <span className="label bg__alert">{item.name}</span>
     ) : (
       item.name
     );

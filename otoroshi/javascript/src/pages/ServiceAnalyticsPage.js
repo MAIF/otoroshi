@@ -179,8 +179,8 @@ export class ServiceAnalyticsPage extends Component {
           </div>
         )}
         {!this.state.loading && (
-          <div className="flex flex-bp1-column mb-10">
-            <div className="w-100 mr-5  mb-bp1-10">
+          <div className="flex flex-xs-column mb-10">
+            <div className="w-100 mr-5  mb-xs-10">
               <table className="fulltable table table-bordered table-striped table-condensed table-hover w-100">
                 <thead>
                   <tr>
