@@ -110,7 +110,8 @@ case class Cert(
     selfSigned: Boolean = false,
     ca: Boolean = false,
     valid: Boolean = false,
-    exposed: Boolean,
+    exposed: Boolean = false,
+    revoked: Boolean,
     autoRenew: Boolean = false,
     letsEncrypt: Boolean = false,
     client: Boolean = false,
@@ -136,6 +137,7 @@ case class Cert(
     else "certificate"
   }
 
+  lazy val notRevoked: Boolean = !revoked
   lazy val cacheKey: String    = s"$id###$contentHash"
   lazy val contentHash: String = Hashing.sha256().hashString(s"$chain:$privateKey", StandardCharsets.UTF_8).toString
 
@@ -387,7 +389,8 @@ object Cert {
       caRef = None,
       autoRenew = false,
       client = false,
-      exposed = false
+      exposed = false,
+      revoked = false
     ).enrich()
   }
 
@@ -401,7 +404,8 @@ object Cert {
       caRef = caRef,
       autoRenew = false,
       client = client,
-      exposed = false
+      exposed = false,
+      revoked = false
     ).enrich()
     c.copy(name = c.domain, description = s"Certificate for ${c.subject}")
   }
@@ -416,7 +420,8 @@ object Cert {
       caRef = Some(ca.id),
       autoRenew = false,
       client = client,
-      exposed = false
+      exposed = false,
+      revoked = false
     ).enrich()
     c.copy(name = c.domain, description = s"Certificate for ${c.subject}")
   }
@@ -435,7 +440,8 @@ object Cert {
       caRef = None,
       autoRenew = false,
       client = client,
-      exposed = false
+      exposed = false,
+      revoked = false
     ).enrich()
     c.copy(name = c.domain, description = s"Certificate for ${c.subject}")
   }
@@ -453,6 +459,7 @@ object Cert {
       "ca"          -> cert.ca,
       "valid"       -> cert.valid,
       "exposed"     -> cert.exposed,
+      "revoked"     -> cert.revoked,
       "autoRenew"   -> cert.autoRenew,
       "letsEncrypt" -> cert.letsEncrypt,
       "subject"     -> cert.subject,
@@ -488,6 +495,7 @@ object Cert {
           keypair = (json \ "keypair").asOpt[Boolean].getOrElse(false),
           valid = (json \ "valid").asOpt[Boolean].getOrElse(false),
           exposed = (json \ "exposed").asOpt[Boolean].getOrElse(false),
+          revoked = (json \ "revoked").asOpt[Boolean].getOrElse(false),
           autoRenew = (json \ "autoRenew").asOpt[Boolean].getOrElse(false),
           letsEncrypt = (json \ "letsEncrypt").asOpt[Boolean].getOrElse(false),
           subject = (json \ "subject").asOpt[String].getOrElse("--"),
@@ -588,6 +596,7 @@ trait CertificateDataStore extends BasicStore[Cert] {
 
     def renewCAs(certificates: Seq[Cert]): Future[Unit] = {
       val renewableCas = certificates
+        .filter(_.notRevoked)
         .filter(_.autoRenew)
         .filter(cert => cert.ca)
         .filter(willBeInvalidSoon)
@@ -613,6 +622,7 @@ trait CertificateDataStore extends BasicStore[Cert] {
 
     def renewNonCaCertificates(certificates: Seq[Cert]): Future[Unit] = {
       val renewableCertificates = certificates
+        .filter(_.notRevoked)
         .filter(_.autoRenew)
         .filterNot(_.ca)
         .filter(willBeInvalidSoon) // TODO: fix
@@ -638,6 +648,7 @@ trait CertificateDataStore extends BasicStore[Cert] {
 
     def markExpiredCertsAsExpired(certificates: Seq[Cert]): Future[Unit] = {
       val expiredCertificates = certificates
+        .filter(_.notRevoked)
         .filterNot { cert =>
           cert.from.isBefore(org.joda.time.DateTime.now()) && cert.to.isAfter(org.joda.time.DateTime.now())
         }
@@ -714,7 +725,8 @@ trait CertificateDataStore extends BasicStore[Cert] {
         caRef = None,
         ca = true,
         client = false,
-        exposed = false
+        exposed = false,
+        revoked = false
       ).enrich()
       val cert = _cert.copy(name = _cert.domain, description = s"Certificate for ${_cert.subject}")
       findAll().map { certs =>
@@ -744,7 +756,8 @@ trait CertificateDataStore extends BasicStore[Cert] {
         privateKey = keyContent,
         caRef = None,
         client = false,
-        exposed = false
+        exposed = false,
+        revoked = false
       ).enrich()
       val cert = _cert.copy(name = _cert.domain, description = s"Certificate for ${_cert.subject}")
       findAll().map { certs =>
@@ -920,7 +933,8 @@ object DynamicSSLEngineProvider {
     CASE_INSENSITIVE
   )
 
-  val certificates = new TrieMap[String, Cert]()
+  val _certificates = new TrieMap[String, Cert]()
+  def certificates: TrieMap[String, Cert] = _certificates.filter(_._2.notRevoked)
 
   private lazy val firstSetupDone           = new AtomicBoolean(false)
   private lazy val currentContext           = new AtomicReference[SSLContext](setupContext(FakeHasMetrics))
@@ -940,6 +954,8 @@ object DynamicSSLEngineProvider {
 
   private def setupContext(env: HasMetrics): SSLContext =
     env.metrics.withTimer("otoroshi.core.tls.setup-global-context") {
+
+      val certificates = _certificates.filter(_._2.notRevoked)
 
       val optEnv = Option(currentEnv.get)
 
@@ -975,7 +991,7 @@ object DynamicSSLEngineProvider {
       keyManagerFactory.init(keyStore, EMPTY_PASSWORD)
       logger.debug("SSL Context init ...")
       val keyManagers: Array[KeyManager] = keyManagerFactory.getKeyManagers.map(
-        m => KeyManagerCompatibility.keyManager(() => DynamicSSLEngineProvider.certificates.values.toSeq, false, m.asInstanceOf[X509KeyManager], optEnv.get) // new X509KeyManagerSnitch(m.asInstanceOf[X509KeyManager]).asInstanceOf[KeyManager]
+        m => KeyManagerCompatibility.keyManager(() => certificates.values.toSeq, false, m.asInstanceOf[X509KeyManager], optEnv.get) // new X509KeyManagerSnitch(m.asInstanceOf[X509KeyManager]).asInstanceOf[KeyManager]
       )
       val tm: Array[TrustManager] =
       optEnv.flatMap(e => e.configuration.getOptionalWithFileSupport[Boolean]("play.server.https.trustStore.noCaVerification")).map {
@@ -1086,8 +1102,11 @@ object DynamicSSLEngineProvider {
     }
    */
 
-  def setupSslContextFor(certs: Seq[Cert], trustedCerts: Seq[Cert], forceTrustAll: Boolean, client: Boolean, env: Env): SSLContext =
+  def setupSslContextFor(_certs: Seq[Cert], _trustedCerts: Seq[Cert], forceTrustAll: Boolean, client: Boolean, env: Env): SSLContext =
     env.metrics.withTimer("otoroshi.core.tls.setup-single-context") {
+
+      val certs = _certs.filter(_.notRevoked)
+      val trustedCerts = _trustedCerts.filter(_.notRevoked)
 
       val optEnv = Option(env)
 
@@ -1147,12 +1166,12 @@ object DynamicSSLEngineProvider {
   def sslConfigSettings: SSLConfigSettings = currentSslConfigSettings.get()
 
   def getHostNames(): Seq[String] = {
-    certificates.values.map(_.domain).toSet.toSeq
+    _certificates.values.filter(_.notRevoked).map(_.domain).toSet.toSeq
   }
 
   def addCertificates(certs: Seq[Cert], env: Env): SSLContext = {
     firstSetupDone.compareAndSet(false, true)
-    certs.foreach(crt => certificates.put(crt.id, crt))
+    certs.filter(_.notRevoked).foreach(crt => _certificates.put(crt.id, crt))
     val ctx = setupContext(env)
     currentContext.set(ctx)
     ctx
@@ -1160,8 +1179,8 @@ object DynamicSSLEngineProvider {
 
   def setCertificates(certs: Seq[Cert], env: Env): SSLContext = {
     firstSetupDone.compareAndSet(false, true)
-    certificates.clear()
-    certs.foreach(crt => certificates.put(crt.id, crt))
+    _certificates.clear()
+    certs.filter(_.notRevoked).foreach(crt => _certificates.put(crt.id, crt))
     val ctx = setupContext(env)
     currentContext.set(ctx)
     ctx
@@ -1625,7 +1644,8 @@ object FakeKeyStore {
       caRef = None,
       autoRenew = false,
       client = false,
-      exposed = false
+      exposed = false,
+      revoked = false
     )
   }
 
