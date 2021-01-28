@@ -274,7 +274,7 @@ export class Oauth2ModuleConfig extends Component {
     }
     return (
       <div>
-        <div className="form__group mb-20 grid-template-bp1--fifth">
+        <div className="form__group mb-20 grid-template-xs--fifth">
           <label
             htmlFor={`input-${this.props.label}`}
           />
@@ -510,7 +510,7 @@ export class Oauth2ModuleConfig extends Component {
             value: a.id,
             label: (
               <span>
-                <span className="label label-success" style={{ minWidth: 63 }}>
+                <span className="label bg__success" style={{ minWidth: 63 }}>
                   {a.certType}
                 </span>{' '}
                 {a.name} - {a.description}
@@ -529,7 +529,7 @@ export class Oauth2ModuleConfig extends Component {
             value: a.id,
             label: (
               <span>
-                <span className="label label-success" style={{ minWidth: 63 }}>
+                <span className="label bg__success" style={{ minWidth: 63 }}>
                   {a.certType}
                 </span>{' '}
                 {a.name} - {a.description}
@@ -907,7 +907,7 @@ export class BasicModuleConfig extends Component {
           help="..."
           onChange={(v) => changeTheValue(path + '.webauthn', v)}
         />
-        <div className="form__group mb-20 grid-template-bp1--fifth">
+        <div className="form__group mb-20 grid-template-xs--fifth">
           <label htmlFor={`input-users`}>
             Users
           </label>
@@ -934,7 +934,7 @@ export class BasicModuleConfig extends Component {
           </div>
         </div>
         {!this.state.showRaw && (
-          <div className="form__group mb-20 grid-template-bp1--fifth">
+          <div className="form__group mb-20 grid-template-xs--fifth">
             <label>Users raw</label>
             <div>
               <button
@@ -947,7 +947,7 @@ export class BasicModuleConfig extends Component {
           </div>
         )}
         {this.state.showRaw && (
-          <div className="form__group mb-20 grid-template-bp1--fifth">
+          <div className="form__group mb-20 grid-template-xs--fifth">
             <label>Users raw</label>
             <div>
               <button
@@ -1111,7 +1111,7 @@ export class LdapModuleConfig extends Component {
           help="if one"
           onChange={(v) => changeTheValue(path + '.adminPassword', v)}
         />
-        <div className="form__group mb-20 grid-template-bp1--fifth">
+        <div className="form__group mb-20 grid-template-xs--fifth">
           <label></label>
           <div style={{ display: 'flex' }}>
             <button type="button" className="btn btn-success" onClick={this.check}>
@@ -1203,7 +1203,7 @@ class LdapUserLoginTest extends Component {
   render() {
     return (
       <form>
-        <div className="form__group mb-20 grid-template-bp1--fifth">
+        <div className="form__group mb-20 grid-template-xs--fifth">
           <label>Username</label>
           <div>
             <input
@@ -1214,7 +1214,7 @@ class LdapUserLoginTest extends Component {
             />
           </div>
         </div>
-        <div className="form__group mb-20 grid-template-bp1--fifth">
+        <div className="form__group mb-20 grid-template-xs--fifth">
           <label>Password</label>
           <div>
             <input
@@ -1225,14 +1225,14 @@ class LdapUserLoginTest extends Component {
             />
           </div>
         </div>
-        <div className="form__group mb-20 grid-template-bp1--fifth">
+        <div className="form__group mb-20 grid-template-xs--fifth">
           <label></label>
           <div>
             <button type="button" className="btn btn-success" onClick={this.check}>
               Test login
             </button>
-            <span className="label label-success">{this.state.message}</span>
-            <span className="label label-danger">{this.state.error}</span>
+            <span className="label bg__success">{this.state.message}</span>
+            <span className="label bg__alert">{this.state.error}</span>
           </div>
         </div>
       </form>

@@ -181,7 +181,7 @@ export class Scripts extends Component {
           config={this.props.config}
           onChangeConfig={this.props.onChangeConfig}
         />
-        <div className="form__group mb-20 grid-template-bp1--fifth">
+        <div className="form__group mb-20 grid-template-xs--fifth">
           <label />
           <div>
             {this.props.refs && this.props.refs.length === 0 && (

@@ -34,7 +34,7 @@ export class GroupsPage extends Component {
           return (
             <span
               title="This group holds the API that drives the UI you're currently using. Without it, Otoroshi UI won't be able to work and anything that uses Otoroshi admin API too. You might not want to delete it"
-              className="label label-danger">
+              className="label bg__alert">
               {item.name}
             </span>
           );

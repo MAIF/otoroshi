@@ -233,13 +233,13 @@ export class GlobalEventsPage extends Component {
     return (
       <div className="">
         <div className="mb-20" >
-          <div className="flex f-justify_between flex-bp1-column f-bp1-align_start">
+          <div className="flex f-justify_between flex-xs-column f-xs-align_start">
             <OtoDatePicker
               updateDateRange={this.updateDateRange}
               from={this.state.from}
               to={this.state.to}
             />
-            <div className="grid grid-template--1-auto form mt-bp1-10" >
+            <div className="grid grid-template--1-auto form mt-xs-10" >
               <div className="input-group-addon">Limit</div>
               <input
                 type="number"
@@ -250,7 +250,7 @@ export class GlobalEventsPage extends Component {
                 }
               />
             </div>
-            <div className="input-group flex f-align_center mt-bp1-10" >
+            <div className="input-group flex align-items__center mt-xs-10" >
               <span className="mr-5">
                 Order by timestamp ascending values
               </span>

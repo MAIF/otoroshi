@@ -356,7 +356,7 @@ class CertificateValid extends Component {
       );
 
     return (
-      <div className="form__group mb-20 grid-template-bp1--fifth">
+      <div className="form__group mb-20 grid-template-xs--fifth">
         <label />
         <div>
           {this.state.valid === true && (
@@ -416,15 +416,6 @@ export class CertificatesPage extends Component {
     chain: {
       type: 'text',
       props: { label: 'Certificate full chain', rows: 6, style: { fontFamily: 'monospace',width:'100%' } },
-    },
-    password: {
-      type: 'password',
-      props: {
-        label: 'Private key password',
-        placeholder: 'key password if any',
-        rows: 6,
-        style: { fontFamily: 'monospace' },
-      },
     },
     privateKey: {
       type: 'text',

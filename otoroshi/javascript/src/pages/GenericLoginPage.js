@@ -135,7 +135,7 @@ export class GenericLoginPage extends Component {
           method={this.props.method}
           action={this.props.action}>
           <input type="hidden" name="token" value={this.props.token} />
-          <div className="form__group mb-20 grid-template-bp1--fifth">
+          <div className="form__group mb-20 grid-template-xs--fifth">
             <label >Username</label>
             <div >
               <input
@@ -146,7 +146,7 @@ export class GenericLoginPage extends Component {
               />
             </div>
           </div>
-          <div className="form__group mb-20 grid-template-bp1--fifth">
+          <div className="form__group mb-20 grid-template-xs--fifth">
             <label >Password</label>
             <div >
               <input
@@ -157,7 +157,7 @@ export class GenericLoginPage extends Component {
               />
             </div>
           </div>
-          <div className="form__group mb-20 grid-template-bp1--fifth">
+          <div className="form__group mb-20 grid-template-xs--fifth">
             <label  />
             <div >
               <button
@@ -169,7 +169,7 @@ export class GenericLoginPage extends Component {
               </button>
             </div>
           </div>
-          <div className="form__group mb-20 grid-template-bp1--fifth">
+          <div className="form__group mb-20 grid-template-xs--fifth">
             <label  />
             <div >
               <p>{!this.state.error && this.state.message}</p>
@@ -300,7 +300,7 @@ export class GenericLoginPageWithWebAuthn extends Component {
           _method={this.props.method}
           _action={this.props.action}>
           <input type="hidden" name="token" value={this.props.token} />
-          <div className="form__group mb-20 grid-template-bp1--fifth">
+          <div className="form__group mb-20 grid-template-xs--fifth">
             <label >Username</label>
             <div >
               <input
@@ -311,7 +311,7 @@ export class GenericLoginPageWithWebAuthn extends Component {
               />
             </div>
           </div>
-          <div className="form__group mb-20 grid-template-bp1--fifth">
+          <div className="form__group mb-20 grid-template-xs--fifth">
             <label >Password</label>
             <div >
               <input
@@ -322,7 +322,7 @@ export class GenericLoginPageWithWebAuthn extends Component {
               />
             </div>
           </div>
-          <div className="form__group mb-20 grid-template-bp1--fifth">
+          <div className="form__group mb-20 grid-template-xs--fifth">
             <label  />
             <div >
               <button
@@ -334,7 +334,7 @@ export class GenericLoginPageWithWebAuthn extends Component {
               </button>
             </div>
           </div>
-          <div className="form__group mb-20 grid-template-bp1--fifth">
+          <div className="form__group mb-20 grid-template-xs--fifth">
             <label  />
             <div >
               <p>{!this.state.error && this.state.message}</p>
