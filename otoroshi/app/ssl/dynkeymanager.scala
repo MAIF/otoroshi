@@ -8,6 +8,7 @@ import com.github.blemale.scaffeine._
 import env.Env
 import javax.net.ssl.{KeyManager, SSLEngine, SSLSession, X509ExtendedKeyManager, X509KeyManager}
 import models.{GlobalConfig, TlsSettings}
+import utils.http.DN
 
 import scala.concurrent.duration._
 
@@ -39,17 +40,20 @@ class DynamicKeyManager(allCerts: () => Seq[Cert], client: Boolean, manager: X50
   override def chooseServerAlias(keyType: String, issuers: Array[Principal], socket: Socket): String = manager.chooseServerAlias(keyType, issuers, socket)
 
   override def chooseEngineClientAlias(keyType: Array[String], issuers: Array[Principal], engine: SSLEngine): String = {
-    val res = chooseClientAlias(keyType, issuers, null)
-    println("chooseEngineClientAlias", res, issuers.map(_.getName()).mkString(" | "))
-    res
+    // val res = chooseClientAlias(keyType, issuers, null)
+    // println("chooseEngineClientAlias", res, issuers.map(_.getName()).mkString("|"))
+    issuers.map(_.getName()).mkString("|")
   }
 
   def findCertMatching(domain: String): Option[Cert] = {
     if (client) {
-      // TODO: find based on chooseEngineServerAlias issuers array !!!
+      val dns = domain.split("\\|").toSeq.map(DN.apply)
       val certs = allCerts()
           .map(_.enrich())
           .filter(c => c.notRevoked && c.notExpired)
+          .filter { c =>
+            c.certificates.map(_.getSubjectDN.getName).map(DN.apply).exists(dn => dns.contains(dn))
+          }
           .sortWith((c1, c2) => c1.to.compareTo(c2.to) > 0)
       certs.headOption
     } else {
