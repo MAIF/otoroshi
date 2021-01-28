@@ -195,6 +195,14 @@ code {
   cursor: pointer;
 }
 
+.align-items__baseline {
+  align-items: baseline;
+}
+// cursors
+.cursor-pointer{
+  cursor: pointer;
+}
+
 // COLORS (text, background, border)
 $colors : ("white": #FFF,"black": #000, "dark":$darkColor, "warning":$warningColor, "alert":$alertColor,"success":$successColor,"info":$infoColor,"primary":$primaryColor);
 
