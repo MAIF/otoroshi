@@ -154,7 +154,8 @@ object models {
         entityMetadata = Map(
           "csr" -> csrQuery.map(_.json.stringify).getOrElse("--")
         ),
-        exposed = false
+        exposed = false,
+        revoked = false
       ).enrich()
     }
   }

@@ -377,6 +377,10 @@ export class CertificatesPage extends Component {
       type: 'bool',
       props: { label: 'Public key exposed', help: 'If true, the public key will be exposed on http://otoroshi-api.your-domain/.well-known/jwks.json' },
     },
+    exposed: {
+      type: 'bool',
+      props: { label: 'Certificate revoked', help: 'If true, certificate will be added to the OCSP api' },
+    },
     client: {
       type: 'bool',
       props: { label: 'Client cert.' },
@@ -489,6 +493,7 @@ export class CertificatesPage extends Component {
     'client',
     'keypair',
     'exposed',
+    'revoked',
     'commands',
     'valid',
     'chain',
