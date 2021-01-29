@@ -766,6 +766,7 @@ export class AdminEditionModal extends Component {
     rights: {
       type: JsonObjectAsCodeInput,
       props: {
+        label: 'Rights',
         height: '200px',
       },
     },
