@@ -30,6 +30,8 @@ import scala.concurrent.duration.{FiniteDuration, _}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
+import org.bouncycastle.jce.ECNamedCurveTable
+
 object models {
 
   case class GenKeyPairQuery(algo: String = "rsa", size: Int = 2048) {
@@ -71,6 +73,11 @@ object models {
             key = (json \ "key")
               .asOpt[JsValue]
               .flatMap(v => GenKeyPairQuery.fromJson(v).toOption)
+              .orElse(GenKeyPairQuery.fromJson(Json.obj(
+                "algo" -> (json \ "keyType").as[JsValue],
+                "size" -> (json \ "keySize").as[JsValue]
+              )).toOption)
+              .map(q => q.copy(algo = q.algo.toLowerCase()))
               .getOrElse(GenKeyPairQuery()),
             name = (json \ "name").asOpt[Map[String, String]].getOrElse(Map.empty),
             subject = (json \ "subject").asOpt[String],
@@ -280,9 +287,22 @@ class BouncyCastlePki(generator: IdGenerator) extends Pki {
       query: GenKeyPairQuery
   )(implicit ec: ExecutionContext): Future[Either[String, GenKeyPairResponse]] = {
     Try {
-      val keyPairGenerator = KeyPairGenerator.getInstance(query.algo.toUpperCase())
-      keyPairGenerator.initialize(query.size, new SecureRandom())
-      keyPairGenerator.generateKeyPair()
+      if (query.algo == "ecdsa") {
+        val curve = query.size match {
+          case 256 => "secp256r1"
+          case 384 => "secp384r1"
+          case 521 => "secp521r1"
+          case _ =>   "secp256r1"
+        }
+        val ecSpec = ECNamedCurveTable.getParameterSpec(curve);
+        val keyPairGenerator = KeyPairGenerator.getInstance(query.algo.toUpperCase(), "BC")
+        keyPairGenerator.initialize(ecSpec, new SecureRandom())
+        keyPairGenerator.generateKeyPair()
+      } else {
+        val keyPairGenerator = KeyPairGenerator.getInstance(query.algo.toUpperCase(), "BC")
+        keyPairGenerator.initialize(query.size, new SecureRandom())
+        keyPairGenerator.generateKeyPair()
+      }
     } match {
       case Failure(e)       => Left(e.getMessage).future
       case Success(keyPair) => Right(GenKeyPairResponse(keyPair.getPublic, keyPair.getPrivate)).future
@@ -301,7 +321,7 @@ class BouncyCastlePki(generator: IdGenerator) extends Pki {
           val privateKey          = PrivateKeyFactory.createKey(kpr.privateKey.getEncoded)
           val signatureAlgorithm  = new DefaultSignatureAlgorithmIdentifierFinder().find(query.signatureAlg)
           val digestAlgorithm     = new DefaultDigestAlgorithmIdentifierFinder().find(query.digestAlg)
-          val signer              = new BcRSAContentSignerBuilder(signatureAlgorithm, digestAlgorithm).build(privateKey)
+          val signer              = contentSigner(signatureAlgorithm, digestAlgorithm, privateKey)
           val names               = new GeneralNames(query.hosts.map(name => new GeneralName(GeneralName.dNSName, name)).toArray)
           val csrBuilder          = new JcaPKCS10CertificationRequestBuilder(new X500Name(query.subj), kpr.publicKey)
           val extensionsGenerator = new ExtensionsGenerator
@@ -353,6 +373,20 @@ class BouncyCastlePki(generator: IdGenerator) extends Pki {
     }
   }
 
+  import org.bouncycastle.operator._
+  import org.bouncycastle.operator.bc._
+  import org.bouncycastle.crypto.params._
+
+  def contentSigner(signatureAlg: AlgorithmIdentifier, digestAlg: AlgorithmIdentifier, pkey: AsymmetricKeyParameter): ContentSigner = {
+    val asn1Oid = signatureAlg.getAlgorithm.toString
+    val ec = asn1Oid == "1.2.840.10045.4.3.2" || asn1Oid == "1.2.840.10045.4.3.3" || asn1Oid == "1.2.840.10045.4.3.4"
+    if (!ec) {
+      new BcRSAContentSignerBuilder(signatureAlg, digestAlg).build(pkey)
+    } else {
+      new BcECContentSignerBuilder(signatureAlg, digestAlg).build(pkey)
+    }
+  }
+
   // sign             signs a certificate
   override def signCert(
     csr: PKCS10CertificationRequest,
@@ -380,8 +414,7 @@ class BouncyCastlePki(generator: IdGenerator) extends Pki {
       })
       // val signatureAlgorithm = new DefaultSignatureAlgorithmIdentifierFinder().find("SHA256WithRSAEncryption")
       val digestAlgorithm = new DefaultDigestAlgorithmIdentifierFinder().find("SHA-256")
-      val signer = new BcRSAContentSignerBuilder(csr.getSignatureAlgorithm, digestAlgorithm)
-        .build(PrivateKeyFactory.createKey(caKey.getEncoded))
+      val signer = contentSigner(csr.getSignatureAlgorithm, digestAlgorithm, PrivateKeyFactory.createKey(caKey.getEncoded))
       val holder                                 = certgen.build(signer)
       val certencoded                            = holder.toASN1Structure.getEncoded
       val certificateFactory: CertificateFactory = CertificateFactory.getInstance("X.509")
@@ -441,7 +474,7 @@ class BouncyCastlePki(generator: IdGenerator) extends Pki {
             val privateKey          = PrivateKeyFactory.createKey(kpr.privateKey.getEncoded)
             val signatureAlgorithm  = new DefaultSignatureAlgorithmIdentifierFinder().find(query.signatureAlg)
             val digestAlgorithm     = new DefaultDigestAlgorithmIdentifierFinder().find(query.digestAlg)
-            val signer              = new BcRSAContentSignerBuilder(signatureAlgorithm, digestAlgorithm).build(privateKey)
+            val signer              = contentSigner(signatureAlgorithm, digestAlgorithm, privateKey)
             val names               = new GeneralNames(query.hosts.map(name => new GeneralName(GeneralName.dNSName, name)).toArray)
             val csrBuilder          = new JcaPKCS10CertificationRequestBuilder(new X500Name(query.subj), kpr.publicKey)
             //val x500Name            = X500Name.getInstance(ASN1Sequence.getInstance(new X500Principal(query.subj).getEncoded))
@@ -526,7 +559,7 @@ class BouncyCastlePki(generator: IdGenerator) extends Pki {
           val privateKey          = PrivateKeyFactory.createKey(kpr.privateKey.getEncoded)
           val signatureAlgorithm  = new DefaultSignatureAlgorithmIdentifierFinder().find(query.signatureAlg)
           val digestAlgorithm     = new DefaultDigestAlgorithmIdentifierFinder().find(query.digestAlg)
-          val signer              = new BcRSAContentSignerBuilder(signatureAlgorithm, digestAlgorithm).build(privateKey)
+          val signer              = contentSigner(signatureAlgorithm, digestAlgorithm, privateKey)
           val names               = new GeneralNames(query.hosts.map(name => new GeneralName(GeneralName.dNSName, name)).toArray)
           val csrBuilder          = new JcaPKCS10CertificationRequestBuilder(new X500Name(query.subj), kpr.publicKey)
           //val x500Name            = X500Name.getInstance(ASN1Sequence.getInstance(new X500Principal(query.subj).getEncoded))
@@ -592,8 +625,7 @@ class BouncyCastlePki(generator: IdGenerator) extends Pki {
           val privateKey          = PrivateKeyFactory.createKey(kpr.privateKey.getEncoded)
           val signatureAlgorithm  = new DefaultSignatureAlgorithmIdentifierFinder().find(query.signatureAlg)
           val digestAlgorithm     = new DefaultDigestAlgorithmIdentifierFinder().find(query.digestAlg)
-          //val signer              = new BcRSAContentSignerBuilder(signatureAlgorithm, digestAlgorithm).build(privateKey)
-          val signer = new BcRSAContentSignerBuilder(signatureAlgorithm, digestAlgorithm).build(PrivateKeyFactory.createKey(caKey.getEncoded))
+          val signer = contentSigner(signatureAlgorithm, digestAlgorithm, PrivateKeyFactory.createKey(caKey.getEncoded))
           val names               = new GeneralNames(query.hosts.map(name => new GeneralName(GeneralName.dNSName, name)).toArray)
           val csrBuilder          = new JcaPKCS10CertificationRequestBuilder(new X500Name(query.subj), kpr.publicKey)
           //val x500Name            = X500Name.getInstance(ASN1Sequence.getInstance(new X500Principal(query.subj).getEncoded))
@@ -634,8 +666,7 @@ class BouncyCastlePki(generator: IdGenerator) extends Pki {
               }
             }
           })
-          val certsigner = new BcRSAContentSignerBuilder(csr.getSignatureAlgorithm, digestAlgorithm)
-            .build(PrivateKeyFactory.createKey(caKey.getEncoded))
+          val certsigner = contentSigner(csr.getSignatureAlgorithm, digestAlgorithm, PrivateKeyFactory.createKey(caKey.getEncoded))
           val holder                                 = certgen.build(certsigner)
           val certencoded                            = holder.toASN1Structure.getEncoded
           val certificateFactory: CertificateFactory = CertificateFactory.getInstance("X.509")
