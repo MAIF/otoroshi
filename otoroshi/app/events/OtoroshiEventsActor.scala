@@ -18,7 +18,7 @@ import models._
 import org.joda.time.DateTime
 import otoroshi.script._
 import play.api.Logger
-import play.api.libs.json.{JsArray, JsNull, JsObject, JsString, JsValue, Json}
+import play.api.libs.json.{JsNull, JsObject, JsString, JsValue, Json}
 import utils.{EmailLocation, MailerSettings}
 
 import scala.collection.concurrent.TrieMap
@@ -27,6 +27,7 @@ import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Success, Try}
 import otoroshi.utils.syntax.implicits._
 
+import scala.annotation.tailrec
 import scala.collection.JavaConverters._
 
 object OtoroshiEventsActorSupervizer {
@@ -354,37 +355,57 @@ object Exporters {
   }
 
   class MetricsExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env) extends DefaultDataExporter(config)(ec, env) {
+
+    private def incGlobalOtoroshiMetrics(duration: Long): Unit = {
+      env.metrics
+        .counter(MetricId
+          .build("otoroshi.requests.count")
+          .tagged("serviceName", "otoroshi"))
+        .inc()
+
+      env.metrics.histogram(MetricId
+        .build("otoroshi.requests.duration.millis")
+        .tagged("serviceName", "otoroshi"))
+        .update(duration)
+    }
+
+    @tailrec
+    private def getValueWithPath(path: String, value: JsValue): String = {
+      val idx = path.indexOf(".")
+      if(idx != -1) {
+        getValueWithPath(path.substring(idx+1), (value \ path.substring(0, idx)).as[JsObject])
+      } else {
+        getStringOrJsObject(value, path)
+      }
+    }
+
+    private def getStringOrJsObject(value: JsValue, path: String): String = {
+      (value \ path).asOpt[String] match {
+        case Some(value) => value
+        case _ => (value \ path).as[JsObject].toString
+      }
+    }
+
     override def send(events: Seq[JsValue]): Future[ExportResult] = {
+
+      val labels = (config.config.toJson \ "labels").as[Map[String, String]]
+      val sortedLabels = labels.partition(_._1.contains("."))
+
       events.foreach { event =>
         if ((event \ "@type").as[String] == "GatewayEvent") {
-            val descriptor = (event \ "descriptor").as[JsObject]
-            val target = (event \ "target").as[JsObject]
-            val to = (event \ "to").as[JsObject]
-
-            val id = (descriptor \ "id").as[String]
-            val protocol = (target \ "scheme").as[String]
-            val method = (event \ "method").as[String].toLowerCase
-            val status = (event \ "status").as[Long]
             val duration = (event \ "duration").as[Long]
-            val uri = (to \ "uri").as[String]
 
-            val tags: Map[String, String] = Map(
-              "serviceName"-> id,
-              "protocol" -> protocol,
-              "method" -> method,
-              "status" -> status.toString,
-              "uri" -> uri)
+            var tags : Map[String, String] = Map()
 
-            env.metrics
-              .counter(MetricId
-                .build("otoroshi.requests.count")
-                .tagged("serviceName", "otoroshi"))
-              .inc()
+            sortedLabels._1.foreach(objectlabel => {
+              tags += (objectlabel._2.trim -> getValueWithPath(objectlabel._1.trim.replace("$at", "@"), event))
+            })
 
-            env.metrics.histogram(MetricId
-              .build("otoroshi.requests.duration.millis")
-              .tagged("serviceName", "otoroshi"))
-              .update(duration)
+            sortedLabels._2.foreach(primitiveLabel => {
+              tags += (primitiveLabel._2.trim -> getStringOrJsObject(event, primitiveLabel._1.trim.replace("$at", "@")))
+            })
+
+            incGlobalOtoroshiMetrics(duration)
 
             env.metrics.counter(MetricId
               .build(s"otoroshi.service.requests.count")
@@ -394,7 +415,7 @@ object Exporters {
             env.metrics
               .histogram(MetricId
                 .build(s"otoroshi.service.requests.duration.millis")
-                .tagged()
+                .tagged(tags.asJava)
               )
               .update(duration)
           }

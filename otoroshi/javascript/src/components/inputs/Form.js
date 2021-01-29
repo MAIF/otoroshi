@@ -19,6 +19,7 @@ import deepSet from 'set-value';
 import { Separator } from '../Separator';
 import { Collapse } from './Collapse';
 import { TextareaInput } from './TextInput';
+import { ArraySelectInput } from './ArraySelectInput';
 
 export class Form extends Component {
   static propTypes = {
@@ -266,6 +267,16 @@ export class Form extends Component {
               disabled={disabled}
               key={name}
               value={this.getValue(name, 0)}
+              {...props}
+              onChange={(v) => this.changeValue(name, v)}
+            />
+          );
+        } else if (type === 'array_select') {
+          component = (
+            <ArraySelectInput
+              disabled={disabled}
+              key={name}
+              value={this.getValue(name, [])}
               {...props}
               onChange={(v) => this.changeValue(name, v)}
             />

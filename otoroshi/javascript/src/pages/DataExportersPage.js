@@ -348,7 +348,7 @@ export class NewExporterForm extends Component {
           <ObjectInput
             label="Metadata"
             value={this.data().metadata}
-            onChange={(v) => this.dataChange({ metadata: e })}
+            onChange={(e) => this.dataChange({ metadata: e })}
           />
           <Collapse initCollapsed={true} label="Filtering and projection">
             <JsonObjectAsCodeInput
@@ -843,7 +843,32 @@ const possibleExporterConfigFormValues = {
     },
   },
   metrics: {
-    flow: [],
-    schema: {}
+    flow: [
+      'labels'
+    ],
+    schema: {
+      labels: {
+        type: 'array_select',
+        props: {
+          label: 'Labels',
+          placeholderKey: 'Choose a entry metric label',
+          placeholderValue: 'Choose your destination label',
+          valuesFrom: '/bo/api/proxy/api/events/_template?eventType=GatewayEvent',
+          help: "The selected properties from events and their projection",
+          title: "Properties of an event to retrieve and transform into metric labels",
+          transformer: (a) => ({
+            value: a.id,
+            label: (
+              <span>
+                <span className="label label-success" style={{ minWidth: 63 }}>
+                  {a.certType}
+                </span>{' '}
+                {a.name}
+              </span>
+            ),
+          }),
+        },
+      },
+    }
   }
 };

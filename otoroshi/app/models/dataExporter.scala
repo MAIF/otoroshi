@@ -47,8 +47,10 @@ case class ConsoleSettings() extends Exporter {
   override def toJson: JsValue = Json.obj()
 }
 
-case class MetricsSettings() extends Exporter {
-  override def toJson: JsValue = Json.obj()
+case class MetricsSettings(labels: Map[String, String] = Map()) extends Exporter {
+  override def toJson: JsValue = Json.obj(
+    "labels" -> labels
+  )
 }
 
 object DataExporterConfig {
@@ -117,7 +119,7 @@ object DataExporterConfig {
           case "mailer" => MailerSettings.format.reads((json \ "config").as[JsObject]).get
           case "custom" => ExporterRef((json \ "config" \ "ref").as[String], (json \ "config" \ "config").as[JsValue])
           case "console" => ConsoleSettings()
-          case "metrics" => MetricsSettings()
+          case "metrics" => MetricsSettings((json \ "config" \ "labels").as[Map[String, String]])
           case _ => throw new RuntimeException("Bad config type")
         }
       )
