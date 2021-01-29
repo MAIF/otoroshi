@@ -1,9 +1,11 @@
-# Manage organizations
+# Organizations
 
-Go to `settings (cog icon) / Organizations` to access the list of organizations.
 
-<!-- TODO: explain organization purpose -->
+Organizations in Otoroshi are basically the higher container of entities, like tenant in a multi-tenant application. 
+Organizations allows to limit the visibility of entities to @ref:[admins](./admin.md) or @ref:[teams](./team.md) between them.
 
+
+Go to `settings (cog icon) / Organizations` to access the list of organizations and manage them.
 ## Create an organization
 
 An `organization` is a really simple structure with an id, a name and a description (maybe metadata if you want). To create a new one, just click on the `add item` button.

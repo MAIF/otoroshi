@@ -1,7 +1,6 @@
 # Import initial state
 
 Now you are almost ready to run Otoroshi for the first time, but maybe you want to import data from previous Otoroshi installation in your current datastore.
-
 ## Import from a file
 
 To import data from file, you need to add the `app.importFrom` setting to the Otoroshi configuration (or `$APP_IMPORT_FROM` env).

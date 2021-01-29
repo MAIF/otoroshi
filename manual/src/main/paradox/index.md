@@ -75,18 +75,19 @@ Otoroshi is Open Source and available under the [Apache 2 License](https://opens
 
 @@@ index
 
-* [About Otoroshi](about.md)
-* [Architecture](archi.md)
-* [Features](features.md)
-* [Quickstart](quickstart.md)
-* [Get otoroshi](getotoroshi/index.md)
-* [First run](firstrun/index.md)
-* [Setup](setup/index.md)
-* [Using Otoroshi](entities/index.md)
-* [Integrations](integrations/index.md)
-* [Detailed topics](topics/index.md)
-* [Admin REST API](api.md)
-* [Deploy to production](deploy/index.md)
+* [About Otoroshi](./about.md)
+* [Architecture](./archi.md)
+* [Features](./features.md)
+* [Try Otoroshi in 5 minutes](./quickstart.md)
+* [Get Otoroshi](./getotoroshi/index.md)
+* [First run](./firstrun/index.md)
+* [Administrate Otoroshi](./setup/index.md)
+* [Using Otoroshi](./entities/index.md)
+* [Events](./events/index.md)
+* [Security](./security/index.md)
+* [Detailed topics](./topics/index.md)
+* [Admin REST API](./api.md)
+* [Deploy to production](./deploy/index.md)
 * [Developing Otoroshi](./dev.md)
 
 @@@

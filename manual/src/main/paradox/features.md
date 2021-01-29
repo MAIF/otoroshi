@@ -4,6 +4,8 @@
 This section is under construction
 @@@
 
+<!-- todo: currated list -->
+
 All the features supported by **Otoroshi** are listed below
 
 * Dynamic changes at runtime without full reload 

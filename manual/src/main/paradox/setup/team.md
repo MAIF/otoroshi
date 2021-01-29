@@ -1,8 +1,9 @@
-# Manage teams
+# Teams
 
-Go to `settings (cog icon) / Teams` to access the list of organizations.
+Teams in Otoroshi are basically a container of `admin`. 
+Teh teams allows to limit the visibility of entities to a group of @ref:[admins](./admin.md) within an @ref:[organization](./tenant.md).
 
-<!-- TODO: explain teams purpose -->
+Go to `settings (cog icon) / Teams` to access the list of teams and manage them.
 
 ## Create a team
 

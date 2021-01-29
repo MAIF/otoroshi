@@ -4,42 +4,28 @@
 
 Click on the `Create an admin user` warning popup, or go to `settings (cog icon) / Admins`.
 You will see the list of registered admin users.
-
-@@@ div { .centered-img }
-<img src="../img/first-admins-screen.png" />
-@@@
-
 Click on `Register admin.`
 
 Now, enter informations (label, login and password) about the new admin you want to create.
 
 Click on `Register Admin`.
-
-@@@ div { .centered-img }
-<img src="../img/admin-created-admin.png" />
-@@@
-
 Now, you can discard the generated admin, confirm, then logout, login with the admin user you have just created and the danger popup will go away
 
-@@@ div { .centered-img }
-<img src="../img/home-page.png" />
-@@@
-
-New `admins` are created in default organization with an access to all teams. To update oragnization or team, just click on the edit user button of the `admin` and 
+## Edit Admins rights
+New `admins` are created in default organization with an access to all teams. 
+To update organization or team, just click on the edit user button of the `admin` and modify `Rights`.
+`Rights` is composing by 2 properties, `tenant` and `team`. Both can have multiple string values composed like"team/organization:right" (ex: "default:rw")
+Organization or team value can be `*`to match all organizations or teams.
+Rights can be:
+- r for Read only
+- w for Write only
+- rw from Read/Write
 
 ## Create admin user with U2F device login
 
 Go to `settings (cog icon) / Admins`, click on `Register Admin`.
 
-@@@ div { .centered-img }
-<img src="../img/register-admin-button.png" />
-@@@
-
 Enter informations about the new admin you want to create.
-
-@@@ div { .centered-img }
-<img src="../img/create-admin-u2f.png" />
-@@@
 
 Click on `Register Admin with WebAuthn`.
 
@@ -57,16 +43,8 @@ To be able to use FIDO U2F devices, Otoroshi must be served over https
 
 Go to `settings (cog icon) / Admins`, at the bottom of the page, you will see a list of admin users that you can discard. Just click on the `Discard User` button on the right side of the row and confirm that you actually want to discard an admin user.
 
-@@@ div { .centered-img }
-<img src="../img/discard-admin-user.png" />
-@@@
-
 ## Admin sessions management
 
 Go to `settings (cog icon) / Admins sessions`, you will see a list of active admin user sessions
-
-@@@ div { .centered-img }
-<img src="../img/admin-users-sessions.png" />
-@@@
 
 You can either discard single sessions one by one using the `Discard Session` on each targeted row of the list or discard all active sessions using the `Discard all sessions` button at the top of the page.
