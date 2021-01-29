@@ -4,6 +4,7 @@ import actions.ApiAction
 import akka.http.scaladsl.util.FastFuture
 import auth.{AuthModuleConfig, BasicAuthModuleConfig, GenericOauth2ModuleConfig, LdapAuthModuleConfig}
 import env.Env
+import events.GatewayEvent
 import models._
 import org.mindrot.jbcrypt.BCrypt
 import otoroshi.models.RightsChecker
@@ -12,10 +13,11 @@ import otoroshi.tcp._
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json._
-import play.api.mvc.{AbstractController, ControllerComponents, RequestHeader, Result}
+import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents, RequestHeader, Result}
 import security.IdGenerator
 import ssl.Cert
 
+import scala.reflect.runtime.universe._
 import scala.concurrent.Future
 
 class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env: Env)
@@ -284,6 +286,48 @@ class TemplatesController(ApiAction: ApiAction, cc: ControllerComponents)(implic
             .applyOn(v => v.copy(location = v.location.copy(tenant = ctx.currentTenant, teams = Seq(ctx.oneAuthorizedTeam))))
             .json, patch, TcpService.fmt, _.save())
         case _ => FastFuture.successful(NotFound(Json.obj("error" -> "entity not found")))
+      }
+    }
+  }
+
+
+  def templateSpec(eventType: String = "GatewayEvent"): Action[AnyContent] = ApiAction.async { ctx =>
+    ctx.checkRights(RightsChecker.Anyone) {
+
+      def rec(tpe: Type): List[List[TermSymbol]] = {
+        val collected = tpe.members.collect {
+          case m: TermSymbol if m.isCaseAccessor => m
+        }.toList
+
+        if (collected.nonEmpty)
+          collected
+            .flatMap(m => {
+              m match {
+                case r: MethodSymbol =>
+                  if (r.returnType.typeArgs.nonEmpty) {
+                    rec(r.returnType.typeArgs.head).map(m :: _)
+                  } else {
+                    rec(r.returnType).map(m :: _)
+                  }
+                case symbol => List(List(symbol))
+              }
+            })
+        else
+          List(Nil)
+      }
+
+      eventType match {
+        case "GatewayEvent" =>
+          var fields: JsArray = Json.arr()
+          rec(typeOf[GatewayEvent])
+            .map(_.map(_.name).mkString(".").trim)
+            .distinct
+            .sorted
+            .foreach { field =>
+                fields = fields :+ Json.obj("id" -> field, "name" -> field)
+            }
+          Ok(fields).future
+        case _ => BadRequest("Event type unkown").future
       }
     }
   }
