@@ -8,6 +8,7 @@ import com.github.blemale.scaffeine._
 import env.Env
 import javax.net.ssl.{KeyManager, SSLEngine, SSLSession, X509ExtendedKeyManager, X509KeyManager}
 import models.{GlobalConfig, TlsSettings}
+import utils.http.DN
 
 import scala.concurrent.duration._
 
@@ -38,12 +39,23 @@ class DynamicKeyManager(allCerts: () => Seq[Cert], client: Boolean, manager: X50
 
   override def chooseServerAlias(keyType: String, issuers: Array[Principal], socket: Socket): String = manager.chooseServerAlias(keyType, issuers, socket)
 
-  override def chooseEngineClientAlias(keyType: Array[String], issuers: Array[Principal], engine: SSLEngine): String = chooseClientAlias(keyType, issuers, null)
+  override def chooseEngineClientAlias(keyType: Array[String], issuers: Array[Principal], engine: SSLEngine): String = {
+    // val res = chooseClientAlias(keyType, issuers, null)
+    // println("chooseEngineClientAlias", res, issuers.map(_.getName()).mkString("|"))
+    issuers.map(_.getName()).mkString("|")
+  }
 
   def findCertMatching(domain: String): Option[Cert] = {
     if (client) {
-      // TODO: find based on chooseEngineServerAlias issuers array !!!
-      allCerts().headOption
+      val dns = domain.split("\\|").toSeq.map(DN.apply)
+      val certs = allCerts()
+          .map(_.enrich())
+          .filter(c => c.notRevoked && c.notExpired)
+          .filter { c =>
+            c.certificates.map(_.getSubjectDN.getName).map(DN.apply).exists(dn => dns.contains(dn))
+          }
+          .sortWith((c1, c2) => c1.to.compareTo(c2.to) > 0)
+      certs.headOption
     } else {
       DynamicKeyManager.cache.getIfPresent(domain) match {
         case Some(cert) => Some(cert)
@@ -53,9 +65,10 @@ class DynamicKeyManager(allCerts: () => Seq[Cert], client: Boolean, manager: X50
 
           val certs = allCerts()
             .map(_.enrich())
-            .filter(_.notExpired)
+            .filter(c => c.notRevoked && c.notExpired)
             .sortWith((c1, c2) => c1.to.compareTo(c2.to) > 0)
 
+          // no * before with * then longer before smaller
           val foundCert = certs.filter(_.matchesDomain(domain)).flatMap(c => c.allDomains.map(d => (d, c))).sortWith {
             case ((d1, _), (d2, _)) if d1.contains("*") && d2.contains("*") => d1.size > d2.size
             case ((d1, _), (d2, _)) if d1.contains("*") && !d2.contains("*") => false
@@ -72,7 +85,6 @@ class DynamicKeyManager(allCerts: () => Seq[Cert], client: Boolean, manager: X50
             }.map(_._2).headOption
           }
 
-          // TODO: no * before with * then longer before smaller
           // certs.find(_.matchesDomain(domain)).orElse(tlsSettings.defaultDomain.flatMap(d => certs.find(_.matchesDomain(d)))).map { c =>
           foundCert.orElse(foundCertDef).map { c =>
             DynamicKeyManager.cache.put(domain, c)

@@ -971,7 +971,8 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
               caRef = None,
               autoRenew = false,
               client = false,
-              exposed = false
+              exposed = false,
+              revoked = false
             ).enrich()
             val cert = _cert.copy(name = _cert.domain, description = s"Certificate for ${_cert.subject}")
             Ok(cert.toJson)

@@ -27,7 +27,8 @@ object P12Helper {
           privateKey = key.asPrivateKeyPem,
           caRef = None,
           client = true,
-          exposed = false
+          exposed = false,
+          revoked = false
         ).enrich()
         certs = certs :+ cert
       }
