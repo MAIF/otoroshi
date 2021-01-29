@@ -8,7 +8,6 @@ All Otoroshi entities implements the multi organizations / multi teams feature. 
 * [Services groups](./groups.md)
 * [Services](./services.md)
 * [API Keys](./apikeys.md)
-* [Otoroshi events](./events.md)
 * [Sessions](./sessions.md)
 * [Authentication](./auth.md)
 * [Certificates](./certificates.md)
