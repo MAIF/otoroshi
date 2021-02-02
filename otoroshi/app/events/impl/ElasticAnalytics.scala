@@ -103,75 +103,149 @@ object ElasticTemplates {
   val indexTemplate_v7 =
     """{
       |  "index_patterns" : ["$$$INDEX$$$-*"],
-      |  "template": {
-      |    "settings": {
-      |      "number_of_shards": 1,
-      |      "index": {}
-      |    },
-      |    "mappings": {
-      |      "date_detection": false,
-      |      "dynamic_templates": [
-      |        {
-      |          "string_template": {
-      |            "match": "*",
-      |            "mapping": {
-      |              "type": "text",
-      |              "fielddata": true
-      |            },
-      |            "match_mapping_type": "string"
+      |  "settings": {
+      |    "number_of_shards": 1,
+      |    "index": {}
+      |  },
+      |  "mappings": {
+      |    "date_detection": false,
+      |    "dynamic_templates": [
+      |      {
+      |        "string_template": {
+      |          "match": "*",
+      |          "mapping": {
+      |            "type": "text",
+      |            "fielddata": true
+      |          },
+      |          "match_mapping_type": "string"
+      |        }
+      |      }
+      |    ],
+      |    "properties": {
+      |      "@id": {
+      |        "type": "keyword"
+      |      },
+      |      "@timestamp": {
+      |        "type": "date"
+      |      },
+      |      "@created": {
+      |        "type": "date"
+      |      },
+      |      "@product": {
+      |        "type": "keyword"
+      |      },
+      |      "@type": {
+      |        "type": "keyword"
+      |      },
+      |      "@service": {
+      |        "type": "keyword"
+      |      },
+      |      "@serviceId": {
+      |        "type": "keyword"
+      |      },
+      |      "@env": {
+      |        "type": "keyword"
+      |      },
+      |      "health": {
+      |        "type": "keyword"
+      |      },
+      |      "headers": {
+      |        "properties": {
+      |          "key": {
+      |            "type": "keyword"
+      |          },
+      |          "value": {
+      |            "type": "keyword"
       |          }
       |        }
-      |      ],
-      |      "properties": {
-      |        "@id": {
-      |          "type": "keyword"
-      |        },
-      |        "@timestamp": {
-      |          "type": "date"
-      |        },
-      |        "@created": {
-      |          "type": "date"
-      |        },
-      |        "@product": {
-      |          "type": "keyword"
-      |        },
-      |        "@type": {
-      |          "type": "keyword"
-      |        },
-      |        "@service": {
-      |          "type": "keyword"
-      |        },
-      |        "@serviceId": {
-      |          "type": "keyword"
-      |        },
-      |        "@env": {
-      |          "type": "keyword"
-      |        },
-      |        "health": {
-      |          "type": "keyword"
-      |        },
-      |        "headers": {
-      |          "properties": {
-      |            "key": {
-      |              "type": "keyword"
-      |            },
-      |            "value": {
-      |              "type": "keyword"
-      |            }
-      |          }
-      |        },
-      |        "headersOut": {
-      |          "properties": {
-      |            "key": {
-      |              "type": "keyword"
-      |            },
-      |            "value": {
-      |              "type": "keyword"
-      |            }
+      |      },
+      |      "headersOut": {
+      |        "properties": {
+      |          "key": {
+      |            "type": "keyword"
+      |          },
+      |          "value": {
+      |            "type": "keyword"
       |          }
       |        }
       |      }
       |    }
+      |  }
+      |}
+    """.stripMargin
+
+    val indexTemplate_v7_8 =
+    """{
+      |  "index_patterns" : ["$$$INDEX$$$-*"],
+      |  "template": {
+      |  "settings": {
+      |    "number_of_shards": 1,
+      |    "index": {}
+      |  },
+      |  "mappings": {
+      |    "date_detection": false,
+      |    "dynamic_templates": [
+      |      {
+      |        "string_template": {
+      |          "match": "*",
+      |          "mapping": {
+      |            "type": "text",
+      |            "fielddata": true
+      |          },
+      |          "match_mapping_type": "string"
+      |        }
+      |      }
+      |    ],
+      |    "properties": {
+      |      "@id": {
+      |        "type": "keyword"
+      |      },
+      |      "@timestamp": {
+      |        "type": "date"
+      |      },
+      |      "@created": {
+      |        "type": "date"
+      |      },
+      |      "@product": {
+      |        "type": "keyword"
+      |      },
+      |      "@type": {
+      |        "type": "keyword"
+      |      },
+      |      "@service": {
+      |        "type": "keyword"
+      |      },
+      |      "@serviceId": {
+      |        "type": "keyword"
+      |      },
+      |      "@env": {
+      |        "type": "keyword"
+      |      },
+      |      "health": {
+      |        "type": "keyword"
+      |      },
+      |      "headers": {
+      |        "properties": {
+      |          "key": {
+      |            "type": "keyword"
+      |          },
+      |          "value": {
+      |            "type": "keyword"
+      |          }
+      |        }
+      |      },
+      |      "headersOut": {
+      |        "properties": {
+      |          "key": {
+      |            "type": "keyword"
+      |          },
+      |          "value": {
+      |            "type": "keyword"
+      |          }
+      |        }
+      |      }
+      |    }
+      |  }
       |  }
       |}
     """.stripMargin
@@ -202,6 +276,7 @@ sealed trait ElasticVersion
 object ElasticVersion {
   case object UnderSeven extends ElasticVersion
   case object AboveSeven extends ElasticVersion
+  case object AboveSevenEight extends ElasticVersion
 }
 
 class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env) extends AnalyticsWritesService {
@@ -232,14 +307,30 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env) extends A
   }
 
   private def getElasticVersion()(implicit ec: ExecutionContext): Future[ElasticVersion] = {
+
+    import otoroshi.jobs.updates.Version
+
     url(urlFromPath(""))
       .get()
       .map(_.json)
-      .map(json => (json \ "version" \ "number").asOpt[String].getOrElse("6.x"))
-      .map(v => v.split("\\.").headOption.map(_.toInt).getOrElse(6))
-      .map {
-        case v if v <= 6 => ElasticVersion.UnderSeven
-        case v if v > 6 => ElasticVersion.AboveSeven
+      .map(json => (json \ "version" \ "number").asOpt[String].getOrElse("6.0.0"))
+      // .map(v => v.split("\\.").headOption.map(_.toInt).getOrElse(6))
+      .map { _v =>
+        Version(_v) match {
+          case v if v.isBefore(Version("7.0.0")) =>  ElasticVersion.UnderSeven
+          case v if v.isAfterEq(Version("7.8.0")) => ElasticVersion.AboveSevenEight
+          case v if v.isAfterEq(Version("7.0.0")) => ElasticVersion.AboveSeven
+          case _ => ElasticVersion.AboveSeven
+        }
+        // _v.split("\\.").headOption.map(_.toInt).getOrElse(6) match {
+        //   case v if v <= 6 => ElasticVersion.UnderSeven
+        //   case v if v > 6 => {
+        //     _v.split("\\.").drop(1).headOption.map(_.toInt).getOrElse(1) match {
+        //       case v if v >= 8 => ElasticVersion.AboveSevenEight
+        //       case v if v < 8 => ElasticVersion.AboveSeven
+        //     }
+        //   }
+        // } 
       }
   }
 
@@ -253,19 +344,22 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env) extends A
       )
       Await.result(
         getElasticVersion().flatMap { version =>
-          val strTpl = version match {
-            case ElasticVersion.UnderSeven => ElasticTemplates.indexTemplate_v6
-            case ElasticVersion.AboveSeven => ElasticTemplates.indexTemplate_v7
+          // from elastic 7.8, we should use /_index_template/otoroshi-tpl and wrap almost everything expect index_patterns in a "template" object
+          val (strTpl, indexTemplatePath) = version match {
+            case ElasticVersion.UnderSeven      => (ElasticTemplates.indexTemplate_v6, "/_template/otoroshi-tpl")
+            case ElasticVersion.AboveSeven      => (ElasticTemplates.indexTemplate_v7, "/_template/otoroshi-tpl")
+            case ElasticVersion.AboveSevenEight => (ElasticTemplates.indexTemplate_v7_8, "/_index_template/otoroshi-tpl")
           }
           val tpl: JsValue = Json.parse(strTpl.replace("$$$INDEX$$$", index))
           logger.debug(s"Creating otoroshi template with \n${Json.prettyPrint(tpl)}")
-          url(urlFromPath("/_template/otoroshi-tpl"))
+          url(urlFromPath(indexTemplatePath))
             .get()
             .flatMap { resp =>
               resp.status match {
                 case 200 =>
+                // TODO: check if same ???
                   resp.ignore()
-                  val tplCreated = url(urlFromPath("/_template/otoroshi-tpl")).put(tpl)
+                  val tplCreated = url(urlFromPath(indexTemplatePath)).put(tpl)
                   tplCreated.onComplete {
                     case Success(r) if r.status >= 400 =>
                       logger.error(s"Error creating template ${r.status}: ${r.body}")
@@ -273,16 +367,16 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env) extends A
                       logger.error("Error creating template", e)
                     case Success(r) =>
                       r.ignore()
-                      logger.debug("Otoroshi template created")
+                      logger.debug("Otoroshi template updated")
                       ElasticWritesAnalytics.initialized(config, version)
                     case _ =>
-                      logger.debug("Otoroshi template created")
+                      logger.debug("Otoroshi template updated")
                       ElasticWritesAnalytics.initialized(config, version)
                   }
                   tplCreated.map(_ => ())
                 case 404 =>
                   resp.ignore()
-                  val tplCreated = url(urlFromPath("/_template/otoroshi-tpl")).post(tpl)
+                  val tplCreated = url(urlFromPath(indexTemplatePath)).post(tpl)
                   tplCreated.onComplete {
                     case Success(r) if r.status >= 400 =>
                       logger.error(s"Error creating template ${r.status}: ${r.body}")
@@ -354,6 +448,11 @@ class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env) extends A
             if (resp.status >= 400) {
               logger.error(s"Error publishing event to elastic: ${resp.status}, ${resp.body} --- event: $event")
             } else {
+              val esResponse = Json.parse(resp.body)
+              val esError = (esResponse \ "errors").asOpt[Boolean].getOrElse(false)
+              if (esError) {
+                logger.error(s"An error occured in ES bulk: ${resp.status}, ${Json.prettyPrint(esResponse)}")
+              }
               resp.ignore()
             }
           case Failure(e) =>

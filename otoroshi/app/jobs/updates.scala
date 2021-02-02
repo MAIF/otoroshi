@@ -246,6 +246,10 @@ case class Version(major: Int, minor: Int, patch: Int, build: Option[Int], suffi
       major > version.major
     }
   }
+
+  def isAfterEq(version: Version): Boolean = isEquals(version) || isAfter(version)
+  def isBeforeEq(version: Version): Boolean = isEquals(version) || isBefore(version)
+
   private def suffixAfter(version: Version): Boolean = {
     (suffix, version.suffix) match {
       case (None, None)                   => false

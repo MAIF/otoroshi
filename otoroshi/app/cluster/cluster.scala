@@ -57,7 +57,7 @@ import scala.util.{Failure, Success, Try}
  *
  * java -Dhttp.port=8080 -Dhttps.port=8443 -Dotoroshi.cluster.mode=leader -Dotoroshi.cluster.autoUpdateState=true -Dapp.adminPassword=password -Dapp.storage=file -Dotoroshi.loggers.otoroshi-cluster=DEBUG -jar otoroshi.jar
  * java -Dhttp.port=9080 -Dhttps.port=9443 -Dotoroshi.cluster.mode=worker  -Dapp.storage=file -Dotoroshi.loggers.otoroshi-cluster=DEBUG -jar otoroshi.jar
- *
+ * java -Dhttp.port=9080 -Dotoroshi.cluster.leader.url=http://otoroshi-api.oto.tools:9999 -Dotoroshi.cluster.worker.dbpath=./worker.db -Dhttps.port=9443 -Dotoroshi.cluster.mode=worker  -Dapp.storage=file -Dotoroshi.loggers.otoroshi-cluster=DEBUG -jar otoroshi.jar
  */
 object Cluster {
   lazy val logger = Logger("otoroshi-cluster")

@@ -269,6 +269,7 @@ object Exporters {
     }
 
     override def send(events: Seq[JsValue]): Future[ExportResult] = {
+      logger.debug(s"sending ${events.size} events to elastic !!!")
       Option(clientRef.get()).map { client =>
         client.publish(events).map(_ => ExportResult.ExportResultSuccess)
       } getOrElse {
@@ -535,7 +536,7 @@ class DataExporterUpdateJob extends Job {
 
   override def starting: JobStarting = JobStarting.Automatically
 
-  override def instantiation(ctx: JobContext, env: Env): JobInstantiation = JobInstantiation.OneInstancePerOtoroshiCluster
+  override def instantiation(ctx: JobContext, env: Env): JobInstantiation = JobInstantiation.OneInstancePerOtoroshiInstance
 
   override def jobRun(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     FastFuture.successful(env.otoroshiEventsActor ! UpdateExporters)
