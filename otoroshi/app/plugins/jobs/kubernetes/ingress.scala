@@ -177,6 +177,11 @@ class KubernetesIngressControllerJob extends Job {
       implicit val mat = env.otoroshiMaterializer
       watchCommand.set(true)
       lastWatchStopped.set(false)
+      env.otoroshiScheduler.scheduleOnce(5.minutes) {
+        logger.info("trigger stop namespaces watch after 5 min.")
+        watchCommand.set(false)
+        lastWatchStopped.set(true)
+      }
       val conf = KubernetesConfig.theConfig(ctx)
       val client = new KubernetesClient(conf, env)
       val source = Source.future(getNamespaces(client, conf))
