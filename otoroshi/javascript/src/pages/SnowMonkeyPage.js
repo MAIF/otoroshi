@@ -172,8 +172,8 @@ export class SnowMonkeyPage extends Component {
     return (
       <div>
         <div className="">
-          <div className="btns-fixed">
-            <div className="displayGroupBtn">
+          <div className="btn__group-fixed--right">
+            <div className="">
               <button
                 type="button"
                 className={`mr-5 btn-${this.state.started ? 'danger' : 'success'}`}

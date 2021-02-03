@@ -237,7 +237,7 @@ export class U2FLoginPage extends Component {
       <div className="jumbotron m-20">
         <h1 className="mb-20">Admin login</h1>
         <form onSubmit={this.simpleLogin}>
-          <div className="form__group mb-20 grid-template-xs--fifth">
+          <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
             <label >Username</label>
             <div>
               <input
@@ -248,7 +248,7 @@ export class U2FLoginPage extends Component {
               />
             </div>
           </div>
-          <div className="form__group mb-20 grid-template-xs--fifth">
+          <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
             <label >Password</label>
             <div>
               <input
@@ -276,7 +276,7 @@ export class U2FLoginPage extends Component {
               </button>
             </div>
           </div>
-          <div className="form__group mb-20 grid-template-xs--fifth">
+          <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
             <label />
             <div>
               <p>{!this.state.error && this.state.message}</p>

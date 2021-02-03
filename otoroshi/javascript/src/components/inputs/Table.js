@@ -360,7 +360,7 @@ export class Table extends Component {
         filterable: false,
         accessor: (item) => (
           <td style={{ width: 140, textAlign: 'center' }}>
-            <div className="displayGroupBtn">
+            <div className="">
               <button
                 type="button"
                 className="btn-sm btn-success"

@@ -146,47 +146,22 @@ code {
 .grid{
   display: grid;
 }
-.grid-template--halfFIX{
-  grid-template-columns: 1fr 1fr;
-}
-.grid-template--1fr{
-  grid-template-columns: 1fr;
-}
-.grid-template--half{
-  grid-template-columns: 1fr 1fr;
-}
-.grid-template--two-two {
-  grid-template-columns: 2fr 2fr;
-}
-.grid-template--third{
-  grid-template-columns: 1fr 3fr;
-}
-.grid-template--two-third{
+
+.grid-template-col__2fr-3fr{
   grid-template-columns: 2fr 3fr;
 }
-.grid-template-xs--fifth{
+
+.grid-template-col__1fr-auto{
+  grid-template-columns: 1fr auto;
+}
+.grid-template-col_1fr-1fr-auto {
+  grid-template-columns: 1fr 1fr auto;
+}
+.grid-template-col-xs__1fr-5fr{
   @media screen and (min-width: $bp-xs) {
     grid-template-columns: 1fr 5fr;
   }
 }
-.grid-template-xs--fifth-reverse{
-  grid-template-columns: 5fr 1fr;
-}
-
-.grid-template--1-auto{
-  grid-template-columns: 1fr auto;
-}
-.grid-template--auto-1{
-  grid-template-columns: auto 1fr;
-}
-.grid-template--1-1-auto {
-  grid-template-columns: 1fr 1fr auto;
-}
-
-.grid-colgap--5 {
-  grid-column-gap: 5px;
-}
-
 //align-items
 .align-items__start{
   align-items: start;

@@ -110,32 +110,16 @@ class Target extends Component {
           this.state.url
           //this.state.dirtyTarget ? this.state.dirtyTarget : value.scheme + '://' + value.host
         }
-        help="The URL of the target. Do not put anything more than scheme://domain:port. Not path supported"
-        onChange={(e) => {
-          const domain = e
-            .replace('http://', '')
-            .replace('https://', '')
-            .replace('tcp://', '')
-            .replace('udp://', '')
-          if (this.containsOneValueOf(domain, ['http:', 'https:', 'tcp:', 'udp:', '/'])) {
-            window.newAlert('You cannot put the path here, use target root');
-            return;
-          }
-          this.changeTheUrl(e);
-        }}
-        after={() => {
-          if (!this.props.itemValue.mtlsConfig) {
-            return null;
-          } else {
-            return (
-              <button
-                type="button"
-                className="btn-info btn-xs" onClick={(e) => this.setState({ showMore: !this.state.showMore })}>
-                <i className="fas fa-eye" /> Show more
-              </button>
-            );
-          }
-        }}
+        help="The URL of the target"
+        onChange={(e) => this.changeTheUrl(e)}
+        after={() => (
+          <button
+            type="button"
+            className="btn-info btn-xs"
+            onClick={(e) => this.setState({ showMore: !this.state.showMore })}>
+            <i className="fas fa-eye" /> Show more
+          </button>
+        )}
       />
     );
   };
@@ -234,7 +218,7 @@ class Target extends Component {
               value: a.id,
               label: (
                 <span>
-                  <span className="label label-success" style={{ minWidth: 63 }}>
+                  <span className="label bg__success" style={{ minWidth: 63 }}>
                     {a.certType}
                   </span>{' '}
                   {a.name} - {a.description}
@@ -255,7 +239,7 @@ class Target extends Component {
               value: a.id,
               label: (
                 <span>
-                  <span className="label label-success" style={{ minWidth: 63 }}>
+                  <span className="label bg__success" style={{ minWidth: 63 }}>
                     {a.certType}
                   </span>{' '}
                   {a.name} - {a.description}
@@ -1420,7 +1404,7 @@ export class ServicePage extends Component {
                   value: a.id,
                   label: (
                     <span>
-                      <span className="label label-success" style={{ minWidth: 63 }}>
+                      <span className="label bg__success" style={{ minWidth: 63 }}>
                         {a.certType}
                       </span>{' '}
                       {a.name} - {a.description}
@@ -2317,7 +2301,7 @@ export class ServicePage extends Component {
                   help="Is JWT verification enabled for this service"
                   onChange={(v) => this.changeTheValue('jwtVerifier.enabled', v)}
                 />
-                <div className="form__group mb-20 grid-template-bp1--fifth">
+                <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
                   <label />
                   <div>
                     {!this.state.service.jwtVerifier.ids.length === 0 && (
