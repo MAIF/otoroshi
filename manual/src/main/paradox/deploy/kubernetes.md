@@ -1173,7 +1173,7 @@ curl -X GET https://my-awesome-service.my-awesome-service-namespace.otoroshi.mes
 
 ### Using old kube-dns system
 
-if your stuck with an old version of kubedns,  you will have to provide your own coredns deployment and declare it as a stubDomain in the old kube-dns system. 
+if your stuck with an old version of kubernetes, it uses kube-dns that is not supported by otoroshi, so you will have to provide your own coredns deployment and declare it as a stubDomain in the old kube-dns system. 
 
 Here is an example of coredns deployment with otoroshi domain config
 
