@@ -1171,6 +1171,30 @@ CLIENT_SECRET="xxx"
 curl -X GET https://my-awesome-service.my-awesome-service-namespace.otoroshi.mesh:8443/get -u "$CLIENT_ID:$CLIENT_SECRET"
 ```
 
+### Using old kube-dns system
+
+if your stuck with an old version of kubedns,  you will have to provide your own coredns deployment and declare it as a stubDomain in the old kube-dns system. 
+
+Here is an example of coredns deployment with otoroshi domain config
+
+coredns.yaml
+:   @@snip [coredns.yaml](../snippets/kubernetes/kustomize/base/coredns.yaml)
+
+then you can enable the kube-dns integration in the otoroshi kubernetes job
+
+```javascript
+{
+  "KubernetesConfig": {
+    ...
+    "kubeDnsOperatorIntegration": true,                // enable kube-dns integration for intra cluster calls
+    "kubeDnsOperatorCoreDnsNamespace": "otoroshi",    // namespace where coredns is installed
+    "kubeDnsOperatorCoreDnsName": "otoroshi-dns",     // name of the coredns service
+    "kubeDnsOperatorCoreDnsPort": 5353,               // port of the coredns service
+    ...
+  }
+}
+```
+
 ### Using Openshift DNS operator
 
 Openshift DNS operator does not allow to customize DNS configuration a lot, so you will have to provide your own coredns deployment and declare it as a stub in the Openshift DNS operator. 
