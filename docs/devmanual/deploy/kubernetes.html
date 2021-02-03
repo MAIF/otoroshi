@@ -1074,7 +1074,7 @@ spec:
                 }
               }  
           - name: JAVA_OPTS
-            value: &#39;-Xms2g -Xmx4g&#39;
+            value: &#39;-Xms2g -Xmx4g -XX:+UseContainerSupport -XX:MaxRAMPercentage=80.0&#39;
         readinessProbe:
           httpGet:
             path: /ready
@@ -1311,7 +1311,7 @@ spec:
                 }
               }  
           - name: JAVA_OPTS
-            value: &#39;-Xms2g -Xmx4g&#39;
+            value: &#39;-Xms2g -Xmx4g -XX:+UseContainerSupport -XX:MaxRAMPercentage=80.0&#39;
         readinessProbe:
           httpGet:
             path: /ready
@@ -1624,7 +1624,7 @@ spec:
                 }
               }  
           - name: JAVA_OPTS
-            value: &#39;-Xms2g -Xmx4g&#39;
+            value: &#39;-Xms2g -Xmx4g -XX:+UseContainerSupport -XX:MaxRAMPercentage=80.0&#39;
         readinessProbe:
           httpGet:
             path: /ready
@@ -1931,7 +1931,7 @@ spec:
                 }
               }        
           - name: JAVA_OPTS
-            value: &#39;-Xms2g -Xmx4g&#39;
+            value: &#39;-Xms2g -Xmx4g -XX:+UseContainerSupport -XX:MaxRAMPercentage=80.0&#39;
         readinessProbe:
           httpGet:
             path: /ready
@@ -2023,7 +2023,7 @@ spec:
           - name: HTTPS_WANT_CLIENT_AUTH
             value: &quot;true&quot;
           - name: JAVA_OPTS
-            value: &#39;-Xms2g -Xmx4g&#39;  
+            value: &#39;-Xms2g -Xmx4g -XX:+UseContainerSupport -XX:MaxRAMPercentage=80.0&#39;
         readinessProbe:
           httpGet:
             path: /ready
@@ -2320,7 +2320,7 @@ spec:
                 }
               }  
           - name: JAVA_OPTS
-            value: &#39;-Xms2g -Xmx4g&#39;
+            value: &#39;-Xms2g -Xmx4g -XX:+UseContainerSupport -XX:MaxRAMPercentage=80.0&#39;
         readinessProbe:
           httpGet:
             path: /ready
@@ -2412,7 +2412,7 @@ spec:
           - name: HTTPS_WANT_CLIENT_AUTH
             value: &quot;true&quot;
           - name: JAVA_OPTS
-            value: &#39;-Xms2g -Xmx4g&#39;
+            value: &#39;-Xms2g -Xmx4g -XX:+UseContainerSupport -XX:MaxRAMPercentage=80.0&#39;
         readinessProbe:
           httpGet:
             path: /ready
@@ -2764,7 +2764,7 @@ spec:
                 }
               }  
           - name: JAVA_OPTS
-            value: &#39;-Xms2g -Xmx4g&#39;
+            value: &#39;-Xms2g -Xmx4g -XX:+UseContainerSupport -XX:MaxRAMPercentage=80.0&#39;
         readinessProbe:
           httpGet:
             path: /ready
@@ -2870,7 +2870,7 @@ spec:
           - name: HTTPS_WANT_CLIENT_AUTH
             value: &quot;true&quot;
           - name: JAVA_OPTS
-            value: &#39;-Xms2g -Xmx4g&#39;
+            value: &#39;-Xms2g -Xmx4g -XX:+UseContainerSupport -XX:MaxRAMPercentage=80.0&#39;
         readinessProbe:
           httpGet:
             path: /ready
@@ -4031,7 +4031,7 @@ CLIENT_SECRET=&quot;xxx&quot;
 curl -X GET https://my-awesome-service.my-awesome-service-namespace.otoroshi.mesh:8443/get -u &quot;$CLIENT_ID:$CLIENT_SECRET&quot;
 </code></pre>
 <h3><a href="#using-old-kube-dns-system" name="using-old-kube-dns-system" class="anchor"><span class="anchor-link"></span></a>Using old kube-dns system</h3>
-<p>if your stuck with an old version of kubedns, you will have to provide your own coredns deployment and declare it as a stubDomain in the old kube-dns system. </p>
+<p>if your stuck with an old version of kubernetes, it uses kube-dns that is not supported by otoroshi, so you will have to provide your own coredns deployment and declare it as a stubDomain in the old kube-dns system. </p>
 <p>Here is an example of coredns deployment with otoroshi domain config</p>
 <dl>
   <dt>coredns.yaml
