@@ -33,6 +33,7 @@ object Errors {
                           cbDuration: Long = 0L,
                           callAttempts: Int = 0,
                           emptyBody: Boolean = false,
+                          sendEvent: Boolean = true,
                           attrs: TypedMap)(implicit ec: ExecutionContext, env: Env): Future[Result] = {
 
     val errorId = env.snowflakeGenerator.nextIdStr()
@@ -306,7 +307,7 @@ object Errors {
         }
       case None => standardResult()
     }) andThen {
-      case scala.util.Success(resp) => sendAnalytics(resp.header.headers.toSeq.map(Header.apply))
+      case scala.util.Success(resp) if sendEvent => sendAnalytics(resp.header.headers.toSeq.map(Header.apply))
     }
   }
 }

@@ -783,7 +783,7 @@ sealed trait JwtVerifier extends AsJson {
                attrs: TypedMap)(
       f: JwtInjection => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
-    internalVerify(request, desc, apikey, user, elContext, attrs)(f).map {
+    internalVerify(request, desc, apikey, user, elContext, attrs, sendEvent = true)(f).map {
       case Left(badResult)   => Left[Result, Flow[PlayWSMessage, PlayWSMessage, _]](badResult)
       case Right(goodResult) => goodResult
     }
@@ -797,7 +797,7 @@ sealed trait JwtVerifier extends AsJson {
                attrs: TypedMap)(
                 f: JwtInjection => Future[Either[Result, A]]
               )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
-    internalVerify(request, desc, apikey, user, elContext, attrs)(f).map {
+    internalVerify(request, desc, apikey, user, elContext, attrs, sendEvent = true)(f).map {
       case Left(badResult)   => Left[Result, A](badResult)
       case Right(goodResult) => goodResult
     }
@@ -811,7 +811,7 @@ sealed trait JwtVerifier extends AsJson {
              attrs: TypedMap)(
       f: JwtInjection => Future[Result]
   )(implicit ec: ExecutionContext, env: Env): Future[Result] = {
-    internalVerify(request, desc, apikey, user, elContext, attrs)(f).map {
+    internalVerify(request, desc, apikey, user, elContext, attrs, sendEvent = true)(f).map {
       case Left(badResult)   => badResult
       case Right(goodResult) => goodResult
     }
@@ -822,7 +822,7 @@ sealed trait JwtVerifier extends AsJson {
                                         apikey: Option[ApiKey],
                                         user: Option[PrivateAppsUser],
                                         elContext: Map[String, String],
-                                        attrs: TypedMap)(
+                                        attrs: TypedMap, sendEvent: Boolean)(
       f: JwtInjection => Future[A]
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
 
@@ -841,7 +841,8 @@ sealed trait JwtVerifier extends AsJson {
                     request,
                     Some(desc),
                     None,
-                    attrs = attrs
+                    attrs = attrs,
+                    sendEvent = sendEvent
                   )
                   .left[A]
               case Some(outputAlgorithm) => {
@@ -882,7 +883,8 @@ sealed trait JwtVerifier extends AsJson {
                 request,
                 Some(desc),
                 None,
-                attrs = attrs
+                attrs = attrs,
+                sendEvent = sendEvent
               )
               .left[A]
           }
@@ -927,7 +929,8 @@ sealed trait JwtVerifier extends AsJson {
                     request,
                     Some(desc),
                     None,
-                    attrs = attrs
+                    attrs = attrs,
+                    sendEvent = sendEvent
                   )
                   .left[A]
               case Success(decodedToken) =>
@@ -940,7 +943,8 @@ sealed trait JwtVerifier extends AsJson {
                         request,
                         Some(desc),
                         None,
-                        attrs = attrs
+                        attrs = attrs,
+                        sendEvent = sendEvent
                       )
                       .left[A]
                   }
@@ -956,7 +960,8 @@ sealed trait JwtVerifier extends AsJson {
                             request,
                             Some(desc),
                             None,
-                            attrs = attrs
+                            attrs = attrs,
+                            sendEvent = sendEvent
                           )
                           .left[A]
                       case Some(outputAlgorithm) => {
@@ -975,7 +980,8 @@ sealed trait JwtVerifier extends AsJson {
                             request,
                             Some(desc),
                             None,
-                            attrs = attrs
+                            attrs = attrs,
+                            sendEvent = sendEvent
                           )
                           .left[A]
                       case Some(outputAlgorithm) => {
@@ -1153,7 +1159,7 @@ case class RefJwtVerifier(
                 .flatMap {
                   case Some(verifier) =>
                     verifier
-                      .internalVerify(request, desc, apikey, user, elContext, attrs)(f)
+                      .internalVerify(request, desc, apikey, user, elContext, attrs, queue.isEmpty)(f)
                       .map {
                         case Left(result) =>
                           last.set(Left(result))
@@ -1164,6 +1170,7 @@ case class RefJwtVerifier(
                               last.set(Left(result))
                               dequeueNext()
                             case Right(flow) =>
+                              // the first that passes win !
                               promise.trySuccess(result)
                           }
                       }

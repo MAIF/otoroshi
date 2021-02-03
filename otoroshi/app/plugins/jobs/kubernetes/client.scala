@@ -618,6 +618,14 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
     }
   }
 
+  def watchResourcesDynNamespaces(namespaces: () => Seq[String], resources: Seq[String], api: String, timeout: Int, stop: => Boolean, labelSelector: Option[String] = None): Source[Seq[ByteString], _] = {
+    if (namespaces().contains("*")) {
+      resources.map(r => watchResource("*", r, api, timeout, stop, labelSelector)).foldLeft(Source.empty[Seq[ByteString]])((s1, s2) => s1.merge(s2))
+    } else {
+      resources.flatMap(r => namespaces().map(n => watchResource(n, r, api, timeout, stop, labelSelector))).foldLeft(Source.empty[Seq[ByteString]])((s1, s2) => s1.merge(s2))
+    }
+  }
+
   def watchResource(namespace: String, resource: String, api: String, timeout: Int, stop: => Boolean, labelSelector: Option[String] = None): Source[Seq[ByteString], _] = {
 
     import utils.http.Implicits._
