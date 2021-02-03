@@ -450,7 +450,7 @@ class CanaryCampaign extends Component {
 
   render() {
     return (
-      <div className="form__group mb-20 grid-template-xs--fifth">
+      <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
         <label htmlFor={`input-${this.props.label}`} >
           Campaign stats <Help text="Stats about users target in the current canary campaign" />
         </label>
@@ -1029,7 +1029,7 @@ export class ServicePage extends Component {
     return (
       <div className="">
         <form className="">
-          <div className="btns-fixed">
+          <div className="btn__group-fixed--right">
             <div className="btn__group--right">
               <button
                 className="btn-danger mr-5"
@@ -1133,7 +1133,7 @@ export class ServicePage extends Component {
             transformer={(a) => ({ value: a.id, label: a.name })}
             help="Each service descriptor is attached to a group. A group can have one or more services. Each API key is linked to a group and allow access to every service in the group."
           />
-          <div className="form__group mb-20 grid-template-xs--fifth">
+          <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
             <label />
             <div className="btn__group--right">
               <button
@@ -1324,7 +1324,7 @@ export class ServicePage extends Component {
                 onChange={(e) => this.changeTheValue('matchingRoot', e)}
               />
             )}
-            <div className="form__group mb-20 grid-template-xs--fifth">
+            <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
               <label  />
               <div>
                 <button
@@ -1622,7 +1622,7 @@ export class ServicePage extends Component {
             collapsed={this.state.allCollapsed}
             initCollapsed={false}
             label="URL Patterns">
-            <div className="form__group mb-20 grid-template-xs--fifth">
+            <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
               <label/>
               <div>
                 <PublicUiButton
@@ -1765,7 +1765,7 @@ export class ServicePage extends Component {
             {!this.state.service.secComUseSameAlgo && (
               <>
                 <hr style={{ borderTop: '1px solid #595959' }} />
-                <div className="form__group mb-20 grid-template-xs--fifth">
+                <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
                   <label >Otoroshi to backend</label>
                   <div>
                     <AlgoSettings
@@ -1776,7 +1776,7 @@ export class ServicePage extends Component {
                   </div>
                 </div>
                 <hr style={{ borderTop: '1px solid #595959' }} />
-                <div className="form__group mb-20 grid-template-xs--fifth">
+                <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
                   <label >Backend to otoroshi</label>
                   <div>
                     <AlgoSettings
@@ -1787,7 +1787,7 @@ export class ServicePage extends Component {
                   </div>
                 </div>
                 <hr style={{ borderTop: '1px solid #595959' }} />
-                <div className="form__group mb-20 grid-template-xs--fifth">
+                <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
                   <label >Info. token</label>
                   <div>
                     <AlgoSettings
@@ -1819,7 +1819,7 @@ export class ServicePage extends Component {
               transformer={(a) => ({ value: a.id, label: a.name })}
               help="..."
             />
-            <div className="form__group mb-20 grid-template-xs--fifth">
+            <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
               <label/>
               <div>
                 {!this.state.service.authConfigRef && (
@@ -1853,7 +1853,7 @@ export class ServicePage extends Component {
               help="Strict mode enabled"
               onChange={(v) => this.changeTheValue('strictlyPrivate', v)}
             />
-            <div className="form__group mb-20 grid-template-xs--fifth">
+            <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
               <label  />
               <div>
                 <p
@@ -2109,7 +2109,7 @@ export class ServicePage extends Component {
                   transformer={a => ({ value: a.id, label: a.name })}
                   help="..."
                 />
-                <div className="form__group mb-20 grid-template-xs--fifth">
+                <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
                   <label  />
                   <div>
                     {!this.state.service.thirdPartyApiKey.oidcConfigRef && (
@@ -2301,7 +2301,7 @@ export class ServicePage extends Component {
                   help="Is JWT verification enabled for this service"
                   onChange={(v) => this.changeTheValue('jwtVerifier.enabled', v)}
                 />
-                <div className="form__group mb-20 grid-template-xs--fifth">
+                <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
                   <label />
                   <div>
                     {!this.state.service.jwtVerifier.ids.length === 0 && (
@@ -2413,7 +2413,7 @@ export class ServicePage extends Component {
             collapsed={this.state.allCollapsed}
             initCollapsed={true}
             label="Validation authority">
-            <div class="form__group mb-20 grid-template-xs--fifth">
+            <div class="form__group mb-20 grid-template-col-xs__1fr-5fr">
               <label />
               <div>
                 <div
@@ -2443,7 +2443,7 @@ export class ServicePage extends Component {
               transformer={a => ({ value: a.id, label: a.name })}
               help="..."
             />
-            <div className="form__group mb-20 grid-template-xs--fifth">
+            <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
               <label  />
               <div>
                 {!this.state.service.clientValidatorRef && (
@@ -2630,7 +2630,7 @@ export class ServicePage extends Component {
               onChange={(v) => this.changeTheValue('clientConfig.proxy', v)}
             />
             {false && (
-              <div className="form__group mb-20 grid-template-xs--fifth">
+              <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
                 <label  />
                 <div>
                   <button
@@ -2697,7 +2697,7 @@ export class ServicePage extends Component {
               help="Remove headers in the client response (from Otoroshi to client)."
               onChange={(v) => this.changeTheValue('removeHeadersOut', v)}
             />
-            <div className="form__group mb-20 grid-template-xs--fifth">
+            <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
               <label
                 htmlFor={`input-${this.props.label}`}>
                 Security headers
@@ -2885,7 +2885,7 @@ export class ServicePage extends Component {
               onChange={(e) => this.changeTheValue('canary.root', e)}
             />
             <CanaryCampaign serviceId={this.state.service.id} />
-            <div className="form__group mb-20 grid-template-xs--fifth">
+            <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
               <label
                 htmlFor={`input-${this.props.label}`}
                 
@@ -2954,7 +2954,7 @@ export class ServicePage extends Component {
             label="Custom errors template">
             {!this.state.neverSaved && <TemplateInput service={this.state.service} />}
             {this.state.neverSaved && (
-              <div className="form__group mb-20 grid-template-xs--fifth">
+              <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
                 <label  />
                 <div>
                   <p style={{ padding: 10, borderRadius: 5, backgroundColor: '#494948' }}>
@@ -3185,7 +3185,7 @@ export class TemplateInput extends Component {
   render() {
     if (!this.state.template) {
       return (
-        <div className="form__group mb-20 grid-template-xs--fifth">
+        <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
           <label  />
           <div>
             <button type="button" className="btn btn-success" onClick={this.createTemplate}>
@@ -3197,7 +3197,7 @@ export class TemplateInput extends Component {
     }
     return (
       <div>
-        <div className="form__group mb-20 grid-template-xs--fifth">
+        <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
           <label  />
           <div>
             <p style={{ padding: 10, borderRadius: 5, backgroundColor: '#494948' }}>
@@ -3222,7 +3222,7 @@ export class TemplateInput extends Component {
             </button>
           </div>
         </div>
-        <div className="form__group mb-20 grid-template-xs--fifth">
+        <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
           <label  />
           <div />
         </div>

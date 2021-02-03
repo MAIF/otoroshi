@@ -22,13 +22,13 @@ export class NumberInput extends Component {
 
   render() {
     return (
-      <div className="form__group mb-20 grid-template-xs--fifth">
+      <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
         <label htmlFor={`input-${this.props.label}`}>
           {this.props.label} <Help text={this.props.help} />
         </label>
         <div>
           {(this.props.prefix || this.props.suffix) && (
-            <div className="grid grid-template--1-auto">
+            <div className="grid grid-template-col__1fr-auto">
               {this.props.prefix && <div className="input-group-addon">{this.props.prefix}</div>}
               <input
                 type="number"
@@ -83,7 +83,7 @@ export class VerticalNumberInput extends Component {
           </label>
           <div>
             {(this.props.prefix || this.props.suffix) && (
-              <div className="grid grid-template--1-auto">
+              <div className="grid grid-template-col__1fr-auto">
                 {this.props.prefix && <div className="input-group-addon">{this.props.prefix}</div>}
                 <input
                   type="number"
@@ -142,13 +142,13 @@ export class NumberRangeInput extends Component {
 
   render() {
     return (
-      <div className="form__group mb-20 grid-template-xs--fifth">
+      <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
         <label htmlFor={`input-${this.props.label}`}>
           {this.props.label} <Help text={this.props.help} />
         </label>
         <div className="">
           {(this.props.prefixFrom || this.props.suffixFrom) && (
-            <div className="grid grid-template--1-auto" style={{ float: 'inherit' }}>
+            <div className="grid grid-template-col__1fr-auto" style={{ float: 'inherit' }}>
               {this.props.prefixFrom && (
                 <div className="input-group-addon">{this.props.prefixFrom}</div>
               )}
@@ -169,7 +169,7 @@ export class NumberRangeInput extends Component {
             </div>
           )}
           {(this.props.prefixTo || this.props.suffixTo) && (
-            <div className="grid grid-template--1-auto mt-5" style={{ float: 'inherit' }}>
+            <div className="grid grid-template-col__1fr-auto mt-5" style={{ float: 'inherit' }}>
               {this.props.prefixTo && (
                 <div className="input-group-addon">{this.props.prefixTo}</div>
               )}
