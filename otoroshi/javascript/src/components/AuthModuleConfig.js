@@ -274,7 +274,7 @@ export class Oauth2ModuleConfig extends Component {
     }
     return (
       <div>
-        <div className="form__group mb-20 grid-template-xs--fifth">
+        <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
           <label
             htmlFor={`input-${this.props.label}`}
           />
@@ -675,7 +675,7 @@ export class User extends Component {
             }}
           />
         </div>
-        <div className="btn-group" style={{ marginLeft: 0 }}>
+        <div className="btn__group" style={{ marginLeft: 0 }}>
           <button
             type="button"
             className="btn-sm btn-success mr-5 mb-5"
@@ -907,7 +907,7 @@ export class BasicModuleConfig extends Component {
           help="..."
           onChange={(v) => changeTheValue(path + '.webauthn', v)}
         />
-        <div className="form__group mb-20 grid-template-xs--fifth">
+        <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
           <label htmlFor={`input-users`}>
             Users
           </label>
@@ -934,7 +934,7 @@ export class BasicModuleConfig extends Component {
           </div>
         </div>
         {!this.state.showRaw && (
-          <div className="form__group mb-20 grid-template-xs--fifth">
+          <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
             <label>Users raw</label>
             <div>
               <button
@@ -947,7 +947,7 @@ export class BasicModuleConfig extends Component {
           </div>
         )}
         {this.state.showRaw && (
-          <div className="form__group mb-20 grid-template-xs--fifth">
+          <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
             <label>Users raw</label>
             <div>
               <button
@@ -1111,7 +1111,7 @@ export class LdapModuleConfig extends Component {
           help="if one"
           onChange={(v) => changeTheValue(path + '.adminPassword', v)}
         />
-        <div className="form__group mb-20 grid-template-xs--fifth">
+        <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
           <label></label>
           <div style={{ display: 'flex' }}>
             <button type="button" className="btn btn-success" onClick={this.check}>
@@ -1203,7 +1203,7 @@ class LdapUserLoginTest extends Component {
   render() {
     return (
       <form>
-        <div className="form__group mb-20 grid-template-xs--fifth">
+        <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
           <label>Username</label>
           <div>
             <input
@@ -1214,7 +1214,7 @@ class LdapUserLoginTest extends Component {
             />
           </div>
         </div>
-        <div className="form__group mb-20 grid-template-xs--fifth">
+        <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
           <label>Password</label>
           <div>
             <input
@@ -1225,7 +1225,7 @@ class LdapUserLoginTest extends Component {
             />
           </div>
         </div>
-        <div className="form__group mb-20 grid-template-xs--fifth">
+        <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
           <label></label>
           <div>
             <button type="button" className="btn btn-success" onClick={this.check}>

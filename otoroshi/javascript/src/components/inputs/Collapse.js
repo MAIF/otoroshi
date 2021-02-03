@@ -24,12 +24,12 @@ export class Collapse extends Component {
       return (
         <div>
           <hr />
-          <div className="form__group mb-10 grid-template-xs--fifth mt-10">
+          <div className="form__group grid-template-col-xs__1fr-5fr mb-10 mt-10">
             <label />
-            <div className="flex f-justify_between cursor-pointer" onClick={this.toggle}>
-              <span style={{ color: 'grey', fontWeight: 'bold', marginTop: 7 }}>
+            <div className="flex f-justify_between cursor-pointer mb-10" onClick={this.toggle}>
+              <h3>
                 {this.props.label}
-              </span>
+              </h3>
               <button
                 type="button"
                 className="btn-info btn-xs"
@@ -45,12 +45,12 @@ export class Collapse extends Component {
       return (
         <div>
           <hr />
-          <div className="form__group mb-10 grid-template-xs--fifth mt-10">
+          <div className="form__group grid-template-col-xs__1fr-5fr mb-10 mt-10">
             <label />
-            <div className="flex f-justify_between cursor-pointer" onClick={this.toggle}>
-              <span style={{ color: 'grey', fontWeight: 'bold', marginTop: 7 }}>
+            <div className="flex f-justify_between cursor-pointer mb-10" onClick={this.toggle}>
+              <h3>
                 {this.props.label}
-              </span>
+              </h3>
               <button
                 type="button"
                 className="btn-info btn-xs"

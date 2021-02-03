@@ -43,7 +43,7 @@ export class ObjectInput extends Component {
     return (
       <div>
         {values.length === 0 && (
-          <div className="form__group mb-20 grid-template-xs--fifth">
+          <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
             <label
               htmlFor={`input-${this.props.label}`}>
               {this.props.label} <Help text={this.props.help} />
@@ -60,7 +60,7 @@ export class ObjectInput extends Component {
           </div>
         )}
         {values.map((value, idx) => (
-          <div className="form__group mb-20 grid-template-xs--fifth">
+          <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
             {idx === 0 && (
               <label>
                 {this.props.label} <Help text={this.props.help} />
@@ -68,7 +68,7 @@ export class ObjectInput extends Component {
             )}
             {idx > 0 && <label>&nbsp;</label>}
             <div>
-              <div className="grid grid-template--1-1-auto align-items__center">
+              <div className="grid grid-template-col_1fr-1fr-auto align-items__center">
                 <input
                   disabled={this.props.disabled}
                   type="text"
@@ -152,7 +152,7 @@ export class VerticalObjectInput extends Component {
     return (
       <div>
         {values.length === 0 && (
-          <div className="form__group mb-20 grid-template-xs--fifth">
+          <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
             <div>
               <label htmlFor={`input-${this.props.label}`}>
                 {this.props.label} <Help text={this.props.help} />
@@ -178,7 +178,7 @@ export class VerticalObjectInput extends Component {
                 </label>
               )}
               {idx > 0 && false && <label>&nbsp;</label>}
-              <div className="grid grid-template--1-1-auto align-items__center">
+              <div className="grid grid-template-col_1fr-1fr-auto align-items__center">
                 <input
                   disabled={this.props.disabled}
                   type="text"

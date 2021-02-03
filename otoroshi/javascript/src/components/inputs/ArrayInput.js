@@ -92,7 +92,7 @@ export class ArrayInput extends Component {
     if (Component) {
       return (
         <div style={{ marginRight: 10 }}>
-          <div className="form__group mb-10 grid-template-xs--fifth">
+          <div className="form__group mb-10 grid-template-col-xs__1fr-5fr">
             <label>
               {this.props.label} <Help text={this.props.help} />
             </label>
@@ -150,7 +150,7 @@ export class ArrayInput extends Component {
     return (
       <div>
         {values.length === 0 && (
-          <div className="form__group mb-20 grid-template-xs--fifth">
+          <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
             <label
               htmlFor={`input-${this.props.label}`}
               className="">
@@ -168,7 +168,7 @@ export class ArrayInput extends Component {
           </div>
         )}
         {values.map((value, idx) => (
-          <div className="form__group mb-20 grid-template-xs--fifth align-items__baseline" style={{alignItems: 'baseline'}} key={idx}>
+          <div className="form__group mb-20 grid-template-col-xs__1fr-5fr align-items__baseline" style={{alignItems: 'baseline'}} key={idx}>
             {idx === 0 && (
               <label className="">
                 {this.props.label} <Help text={this.props.help} />
@@ -178,7 +178,7 @@ export class ArrayInput extends Component {
             <div>
               <div className="flex">
                 {!this.state.values.length && !this.props.component && (
-                  <div className="w-100 grid grid-template--1-auto" >
+                  <div className="w-100 grid grid-template-col__1fr-auto" >
                     {this.props.prefix && (
                       <div className="input-group-addon">{this.props.prefix}</div>
                     )}

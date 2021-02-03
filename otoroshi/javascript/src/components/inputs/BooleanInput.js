@@ -33,7 +33,7 @@ export class BooleanInput extends Component {
 
     return (
       <div>
-        <div className="form__group mb-20 grid-template-xs--fifth">
+        <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
           <label>
             {this.props.label} <Help text={this.props.help} />
           </label>
@@ -77,7 +77,7 @@ export class BiColumnBooleanInput extends Component {
 
     return (
       <div>
-        <div className="form__group mb-20 grid-template--two-third">
+        <div className="form__group mb-20 grid-template-col__2fr-3fr">
           <label>
             {this.props.label} <Help text={this.props.help} />
           </label>
