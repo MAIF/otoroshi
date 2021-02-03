@@ -1,13 +1,16 @@
 package actions
 
+import java.util.concurrent.TimeUnit
+
 import akka.http.scaladsl.util.FastFuture
 import akka.http.scaladsl.util.FastFuture._
 import auth.GenericOauth2Module
-import cluster.ClusterMode
+import cluster._
 import env.Env
 import models.PrivateAppsUser
 import play.api.mvc._
 
+import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 import utils.RequestImplicits._
 
@@ -34,13 +37,17 @@ class PrivateAppsAction(val parser: BodyParser[AnyContent])(implicit env: Env)
           val cookieOpt = request.cookies.find(c => c.name.startsWith("oto-papps-"))
           cookieOpt.flatMap(env.extractPrivateSessionId).map { id =>
             // request.cookies.get("oto-papps").flatMap(env.extractPrivateSessionId).map { id =>
+            Cluster.logger.debug(s"private apps session checking for $id - from action")
             env.datastores.privateAppsUserDataStore.findById(id).flatMap {
               case Some(user) =>
                 user.withAuthModuleConfig(a => GenericOauth2Module.handleTokenRefresh(a, user))
                 block(PrivateAppsActionContext(request, Some(user), globalConfig))
               case None if env.clusterConfig.mode == ClusterMode.Worker => {
+                Cluster.logger.debug(s"private apps session $id not found locally - from action")
                 env.clusterAgent.isSessionValid(id).flatMap {
-                  case Some(user) => block(PrivateAppsActionContext(request, Some(user), globalConfig))
+                  case Some(user) => 
+                    user.save(Duration(user.expiredAt.getMillis - System.currentTimeMillis(), TimeUnit.MILLISECONDS))
+                    block(PrivateAppsActionContext(request, Some(user), globalConfig))
                   case None       => block(PrivateAppsActionContext(request, None, globalConfig))
                 }
               }

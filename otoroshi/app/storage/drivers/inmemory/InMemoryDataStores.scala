@@ -169,7 +169,7 @@ class InMemoryDataStores(configuration: Configuration,
                 key.startsWith(s"${env.storageRoot}:users:backoffice") ||
                 key.startsWith(s"${env.storageRoot}:admins:") ||
                 key.startsWith(s"${env.storageRoot}:u2f:users:") ||
-                key.startsWith(s"${env.storageRoot}:users:") ||
+                // key.startsWith(s"${env.storageRoot}:users:") ||
                 key.startsWith(s"${env.storageRoot}:webauthn:admins:") ||
                 key.startsWith(s"${env.storageRoot}:deschealthcheck:") ||
                 key.startsWith(s"${env.storageRoot}:scall:stats:") ||

@@ -133,10 +133,14 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
           }
         }
         case Leader => {
-          Cluster.logger.trace(s"[${env.clusterConfig.mode.name}] valid session $sessionId")
+          Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] valid session $sessionId")
           env.datastores.privateAppsUserDataStore.findById(sessionId).map {
-            case Some(user) => Ok(user.toJson)
-            case None => NotFound(Json.obj("error" -> "Session not found"))
+            case Some(user) => 
+              Cluster.logger.debug(s"Session $sessionId is valid")
+              Ok(user.toJson)
+            case None => 
+              Cluster.logger.debug(s"Session $sessionId not valid")
+              NotFound(Json.obj("error" -> "Session not found"))
           }
         }
       }
@@ -159,11 +163,12 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
           }
         }
         case Leader => {
-          Cluster.logger.trace(s"[${env.clusterConfig.mode.name}] creating session")
+          Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] creating session")
           PrivateAppsUser.fmt.reads(ctx.request.body) match {
             case JsError(e) => FastFuture.successful(BadRequest(Json.obj("error" -> "Bad session format")))
             case JsSuccess(user, _) =>
-              user.save(Duration(System.currentTimeMillis() - user.expiredAt.getMillis, TimeUnit.MILLISECONDS)).map {
+              Cluster.logger.debug(s"Saving session for user ${user.name} for the next ${Duration(user.expiredAt.getMillis - System.currentTimeMillis(), TimeUnit.MILLISECONDS)} ms")
+              user.save(Duration(user.expiredAt.getMillis - System.currentTimeMillis(), TimeUnit.MILLISECONDS)).map {
                 session =>
                   Created(session.toJson)
               }

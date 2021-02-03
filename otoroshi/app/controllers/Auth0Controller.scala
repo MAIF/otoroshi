@@ -213,6 +213,7 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
       user
         .save(Duration(auth.sessionMaxAge, TimeUnit.SECONDS))
         .map { paUser =>
+          logger.debug(s"Auth callback, creating session on the leader ${paUser.email}")
           env.clusterAgent.createSession(paUser)
           Alerts.send(UserLoggedInAlert(env.snowflakeGenerator.nextIdStr(), env.env, paUser, ctx.from, ctx.ua, auth.id))
           ctx.request.session

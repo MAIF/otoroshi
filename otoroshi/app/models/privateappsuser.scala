@@ -1,5 +1,7 @@
 package models
 
+import java.util.concurrent.TimeUnit
+
 import akka.http.scaladsl.util.FastFuture
 import auth.{AuthModuleConfig, GenericOauth2Module}
 import env.Env
@@ -11,6 +13,8 @@ import play.api.mvc.{RequestHeader, Result, Results}
 import otoroshi.storage.BasicStore
 import utils.JsonImplicits._
 import utils.TypedMap
+
+import cluster._
 
 import scala.concurrent.duration._
 import scala.concurrent.duration.Duration
@@ -39,7 +43,7 @@ case class PrivateAppsUser(randomId: String,
   def save(duration: Duration)(implicit ec: ExecutionContext, env: Env): Future[PrivateAppsUser] =
     env.datastores.privateAppsUserDataStore
       .set(this.copy(expiredAt = DateTime.now().plus(duration.toMillis)), Some(duration))
-      .map(_ => this)
+      .map(_ => this.copy(expiredAt = DateTime.now().plus(duration.toMillis)))
 
   def delete()(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
     env.datastores.privateAppsUserDataStore.delete(randomId)
@@ -158,8 +162,21 @@ object PrivateAppsUserHelper {
                     req.headers.get("Otoroshi-Token").flatMap(value => env.extractPrivateSessionIdFromString(value))
                   )
                   .map { id =>
-                    env.datastores.privateAppsUserDataStore.findById(id).andThen {
-                      case Success(Some(user)) => GenericOauth2Module.handleTokenRefresh(auth, user)
+                    Cluster.logger.debug(s"private apps session checking for $id - from helper")
+                    env.datastores.privateAppsUserDataStore.findById(id).flatMap {
+                      case Some(user) =>
+                        GenericOauth2Module.handleTokenRefresh(auth, user)
+                        FastFuture.successful(Some(user))
+                      case None if env.clusterConfig.mode == ClusterMode.Worker => {
+                        Cluster.logger.debug(s"private apps session $id not found locally - from helper")
+                        env.clusterAgent.isSessionValid(id).map {
+                          case Some(user) => 
+                            user.save(Duration(user.expiredAt.getMillis - System.currentTimeMillis(), TimeUnit.MILLISECONDS))
+                            Some(user)
+                          case None       => None
+                        }
+                      }
+                      case None => FastFuture.successful(None)
                     }
                   } getOrElse {
                     FastFuture.successful(None)

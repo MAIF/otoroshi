@@ -809,6 +809,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
     if (env.clusterConfig.mode.isWorker) {
       Retry
         .retry(times = config.worker.retries, delay = 20, ctx = "leader-session-valid") { tryCount =>
+          Cluster.logger.debug(s"Checking if session $id is valid with a leader")
           env.MtlsWs
             .url(otoroshiUrl + s"/api/cluster/sessions/$id", config.mtlsConfig)
             .withHttpHeaders(
@@ -821,6 +822,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             .withMaybeProxyServer(config.proxy)
             .get()
             .filter { resp =>
+              if (resp.status == 200) Cluster.logger.debug(s"Session $id is valid")
               resp.ignoreIf(resp.status != 200)
               resp.status == 200
             }
@@ -840,6 +842,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
 
   def createSession(user: PrivateAppsUser): Future[Option[PrivateAppsUser]] = {
     if (env.clusterConfig.mode.isWorker) {
+      Cluster.logger.debug(s"Creating session for ${user.email} on the leader: ${Json.prettyPrint(user.json)}")
       Retry
         .retry(times = config.worker.retries, delay = 20, ctx = "leader-create-session") { tryCount =>
           env.MtlsWs
@@ -855,6 +858,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             .withMaybeProxyServer(config.proxy)
             .post(user.toJson)
             .filter { resp =>
+              Cluster.logger.debug(s"Session for ${user.name} created on the leader ${resp.status}")
               resp.ignoreIf(resp.status != 201)
               resp.status == 201
             }
@@ -1403,7 +1407,7 @@ class SwappableInMemoryDataStores(configuration: Configuration,
                 key.startsWith(s"${env.storageRoot}:users:backoffice") ||
                 key.startsWith(s"${env.storageRoot}:admins:") ||
                 key.startsWith(s"${env.storageRoot}:u2f:users:") ||
-                key.startsWith(s"${env.storageRoot}:users:") ||
+                // key.startsWith(s"${env.storageRoot}:users:") ||
                 key.startsWith(s"${env.storageRoot}:webauthn:admins:") ||
                 key.startsWith(s"${env.storageRoot}:deschealthcheck:") ||
                 key.startsWith(s"${env.storageRoot}:scall:stats:") ||

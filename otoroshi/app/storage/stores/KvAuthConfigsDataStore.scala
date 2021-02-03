@@ -26,8 +26,12 @@ class KvAuthConfigsDataStore(redisCli: RedisLike, _env: Env)
       .map(_ => token)
   }
   override def validateLoginToken(token: String)(implicit ec: ExecutionContext): Future[Boolean] = {
-    redisCli.exists(s"${_env.storageRoot}:auth:tokens:$token").andThen {
-      case _ => redisCli.del(s"${_env.storageRoot}:auth:tokens:$token")
+    if (_env.clusterConfig.mode.isWorker) {
+      Future.successful(true) // TODO: temporary fix it
+    } else {
+      redisCli.exists(s"${_env.storageRoot}:auth:tokens:$token").andThen {
+        case _ => redisCli.del(s"${_env.storageRoot}:auth:tokens:$token")
+      }
     }
   }
 
