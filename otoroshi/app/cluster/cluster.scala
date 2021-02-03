@@ -805,6 +805,134 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
     !firstSuccessfulStateFetchDone.get()
   }
 
+  def isLoginTokenValid(token: String): Future[Boolean] = {
+    if (env.clusterConfig.mode.isWorker) {
+      Retry
+        .retry(times = config.worker.retries, delay = 20, ctx = "leader-login-token-valid") { tryCount =>
+          Cluster.logger.debug(s"Checking if login token $token is valid with a leader")
+          env.MtlsWs
+            .url(otoroshiUrl + s"/api/cluster/login-tokens/$token", config.mtlsConfig)
+            .withHttpHeaders(
+              "Host"                                    -> config.leader.host,
+              ClusterAgent.OtoroshiWorkerNameHeader     -> config.worker.name,
+              ClusterAgent.OtoroshiWorkerLocationHeader -> s"$hostAddress:${env.port}/${env.httpsPort}"
+            )
+            .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
+            .withRequestTimeout(Duration(config.worker.timeout, TimeUnit.MILLISECONDS))
+            .withMaybeProxyServer(config.proxy)
+            .get()
+            .filter { resp =>
+              if (resp.status == 200) Cluster.logger.debug(s"Login token $token is valid")
+              resp.ignoreIf(resp.status != 200)
+              resp.status == 200
+            }
+            .map(resp => true)
+        }
+        .recover {
+          case e =>
+            Cluster.logger.debug(
+              s"[${env.clusterConfig.mode.name}] Error while checking login token with Otoroshi leader cluster"
+            )
+            false
+        }
+    } else {
+      FastFuture.successful(false)
+    }
+  }
+
+  def getUserToken(token: String): Future[Option[JsValue]] = {
+    if (env.clusterConfig.mode.isWorker) {
+      Retry
+        .retry(times = config.worker.retries, delay = 20, ctx = "leader-user-token-get") { tryCount =>
+          Cluster.logger.debug(s"Checking if user token $token is valid with a leader")
+          env.MtlsWs
+            .url(otoroshiUrl + s"/api/cluster/user-tokens/$token", config.mtlsConfig)
+            .withHttpHeaders(
+              "Host"                                    -> config.leader.host,
+              ClusterAgent.OtoroshiWorkerNameHeader     -> config.worker.name,
+              ClusterAgent.OtoroshiWorkerLocationHeader -> s"$hostAddress:${env.port}/${env.httpsPort}"
+            )
+            .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
+            .withRequestTimeout(Duration(config.worker.timeout, TimeUnit.MILLISECONDS))
+            .withMaybeProxyServer(config.proxy)
+            .get()
+            .filter { resp =>
+              if (resp.status == 200) Cluster.logger.debug(s"User token $token is valid")
+              resp.ignoreIf(resp.status != 200)
+              resp.status == 200
+            }
+            .map(resp => Some(Json.parse(resp.body)))
+        }
+        .recover {
+          case e =>
+            Cluster.logger.debug(
+              s"[${env.clusterConfig.mode.name}] Error while checking user token with Otoroshi leader cluster"
+            )
+            None
+        }
+    } else {
+      FastFuture.successful(None)
+    }
+  }
+
+  def createLoginToken(token: String): Future[Option[String]] = {
+    if (env.clusterConfig.mode.isWorker) {
+      Cluster.logger.debug(s"Creating login token for $token on the leader")
+      Retry
+        .retry(times = config.worker.retries, delay = 20, ctx = "leader-create-login-token") { tryCount =>
+          env.MtlsWs
+            .url(otoroshiUrl + s"/api/cluster/login-tokens/$token", config.mtlsConfig)
+            .withHttpHeaders(
+              "Host"                                    -> config.leader.host,
+              "Content-Type"                            -> "application/json",
+              ClusterAgent.OtoroshiWorkerNameHeader     -> config.worker.name,
+              ClusterAgent.OtoroshiWorkerLocationHeader -> s"$hostAddress:${env.port}/${env.httpsPort}"
+            )
+            .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
+            .withRequestTimeout(Duration(config.worker.timeout, TimeUnit.MILLISECONDS))
+            .withMaybeProxyServer(config.proxy)
+            .post(Json.obj())
+            .filter { resp =>
+              Cluster.logger.debug(s"login token for ${token} created on the leader ${resp.status}")
+              resp.ignoreIf(resp.status != 201)
+              resp.status == 201
+            }
+            .map(resp => Some(token))
+        }
+    } else {
+      FastFuture.successful(None)
+    }
+  }
+
+  def setUserToken(token: String, user: JsValue): Future[Option[Unit]] = {
+    if (env.clusterConfig.mode.isWorker) {
+      Cluster.logger.debug(s"Creating user token for ${token} on the leader: ${Json.prettyPrint(user)}")
+      Retry
+        .retry(times = config.worker.retries, delay = 20, ctx = "leader-create-user-token") { tryCount =>
+          env.MtlsWs
+            .url(otoroshiUrl + s"/api/cluster/user-tokens", config.mtlsConfig)
+            .withHttpHeaders(
+              "Host"                                    -> config.leader.host,
+              "Content-Type"                            -> "application/json",
+              ClusterAgent.OtoroshiWorkerNameHeader     -> config.worker.name,
+              ClusterAgent.OtoroshiWorkerLocationHeader -> s"$hostAddress:${env.port}/${env.httpsPort}"
+            )
+            .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
+            .withRequestTimeout(Duration(config.worker.timeout, TimeUnit.MILLISECONDS))
+            .withMaybeProxyServer(config.proxy)
+            .post(user)
+            .filter { resp =>
+              Cluster.logger.debug(s"User token for ${token} created on the leader ${resp.status}")
+              resp.ignoreIf(resp.status != 201)
+              resp.status == 201
+            }
+            .map(resp =>Some(()))
+        }
+    } else {
+      FastFuture.successful(None)
+    }
+  }
+
   def isSessionValid(id: String): Future[Option[PrivateAppsUser]] = {
     if (env.clusterConfig.mode.isWorker) {
       Retry

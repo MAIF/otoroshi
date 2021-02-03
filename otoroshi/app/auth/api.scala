@@ -136,7 +136,7 @@ trait OAuth2ModuleConfig extends AuthModuleConfig {
 }
 
 trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {
-  def generateLoginToken()(implicit ec: ExecutionContext): Future[String]
+  def generateLoginToken(maybeTokenValue: Option[String] = None)(implicit ec: ExecutionContext): Future[String]
   def validateLoginToken(token: String)(implicit ec: ExecutionContext): Future[Boolean]
 
   def setUserForToken(token: String, user: JsValue)(implicit ec: ExecutionContext): Future[Unit]

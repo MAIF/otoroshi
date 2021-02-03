@@ -332,6 +332,10 @@ GET     /api/cluster/state                                    controllers.admina
 GET     /api/cluster/members                                  controllers.adminapi.ClusterController.getClusterMembers()
 DELETE  /api/cluster/members                                  controllers.adminapi.ClusterController.clearClusterMembers()
 GET     /api/cluster/live                                     controllers.adminapi.ClusterController.liveCluster()
+GET     /api/cluster/login-tokens/:id                         controllers.adminapi.ClusterController.isLoginTokenValid(id)
+POST    /api/cluster/login-tokens/:id                         controllers.adminapi.ClusterController.createLoginToken(id)
+GET     /api/cluster/user-tokens/:id                          controllers.adminapi.ClusterController.getUserToken(id)
+POST    /api/cluster/user-tokens                              controllers.adminapi.ClusterController.setUserToken()
 
 GET     /api/scripts/_template                                controllers.adminapi.TemplatesController.initiateScript()
 # GET     /api/scripts/:id                                      controllers.adminapi.ScriptApiController.findScriptById(id)

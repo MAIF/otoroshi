@@ -122,6 +122,96 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
     }
   }
 
+  def isLoginTokenValid(token: String) = ApiAction.async { ctx =>
+    ctx.checkRights(RightsChecker.SuperAdminOnly) {
+      env.clusterConfig.mode match {
+        case Off => FastFuture.successful(NotFound(Json.obj("error" -> "Cluster API not available")))
+        case Worker => {
+          env.clusterAgent.isLoginTokenValid(token).map {
+            case true => Ok(Json.obj("token" -> token))
+            case false => NotFound(Json.obj("error" -> "Login token not found"))
+          }
+        }
+        case Leader => {
+          Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] valid login token $token")
+          env.datastores.authConfigsDataStore.validateLoginToken(token).map {
+            case true => 
+              Cluster.logger.debug(s"Login token $token is valid")
+              Ok(Json.obj("token" -> token))
+            case false => 
+              Cluster.logger.debug(s"Login token $token not valid")
+              NotFound(Json.obj("error" -> "Login token not found"))
+          }
+        }
+      }
+    }
+  }
+
+  def getUserToken(token: String) = ApiAction.async { ctx => 
+    ctx.checkRights(RightsChecker.SuperAdminOnly) {
+      env.clusterConfig.mode match {
+        case Off => FastFuture.successful(NotFound(Json.obj("error" -> "Cluster API not available")))
+        case Worker => {
+          env.clusterAgent.getUserToken(token).map {
+            case Some(token) => Ok(Json.obj("token" -> token))
+            case None => NotFound(Json.obj("error" -> "User token not found"))
+          }
+        }
+        case Leader => {
+          Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] valid user token $token")
+          env.datastores.authConfigsDataStore.getUserForToken(token).map {
+            case Some(user) => 
+              Cluster.logger.debug(s"User token $token is valid")
+              Ok(user)
+            case None => 
+              Cluster.logger.debug(s"User token $token not found")
+              NotFound(Json.obj("error" -> "User token not found"))
+          }
+        }
+      }
+    }
+  }
+
+  def createLoginToken(token: String) = ApiAction.async(parse.json) { ctx => 
+    ctx.checkRights(RightsChecker.SuperAdminOnly) {
+      env.clusterConfig.mode match {
+        case Off => FastFuture.successful(NotFound(Json.obj("error" -> "Cluster API not available")))
+        case Worker => {
+          env.clusterAgent.createLoginToken(token).map {
+            case Some(_) => Created(Json.obj("token" -> token))
+            case _ => InternalServerError(Json.obj("error" -> "Failed to create login token on leader"))
+          }
+        }
+        case Leader => {
+          Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] creating login token $token")
+          env.datastores.authConfigsDataStore.generateLoginToken(Some(token)).map(t => Created(Json.obj("token" -> t)))
+        }
+      }
+    }
+  }
+
+  def setUserToken() = ApiAction.async(parse.json) { ctx => 
+    ctx.checkRights(RightsChecker.SuperAdminOnly) {
+      env.clusterConfig.mode match {
+        case Off => FastFuture.successful(NotFound(Json.obj("error" -> "Cluster API not available")))
+        case Worker => {
+          val token = (ctx.request.body \ "token").as[String]
+          val usr = (ctx.request.body \ "user").as[JsValue]
+          env.clusterAgent.setUserToken(token, usr).map {
+            case Some(_) => Created(Json.obj("token" -> token))
+            case _ => InternalServerError(Json.obj("error" -> "Failed to create user token on leader"))
+          }
+        }
+        case Leader => {
+          val token = (ctx.request.body \ "token").as[String]
+          val usr = (ctx.request.body \ "user").as[JsValue]
+          Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] creating user token $token")
+          env.datastores.authConfigsDataStore.setUserForToken(token, usr).map(_ =>  Created(Json.obj("token" -> token)))
+        }
+      }
+    }
+  }
+
   def isSessionValid(sessionId: String) = ApiAction.async { ctx =>
     ctx.checkRights(RightsChecker.SuperAdminOnly) {
       env.clusterConfig.mode match {
@@ -157,7 +247,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
             case JsSuccess(user, _) => {
               env.clusterAgent.createSession(user).map {
                 case Some(session) => Created(session.toJson)
-                case _ => InternalServerError(Json.obj("error" -> "Failed to create session on master"))
+                case _ => InternalServerError(Json.obj("error" -> "Failed to create session on leader"))
               }
             }
           }
