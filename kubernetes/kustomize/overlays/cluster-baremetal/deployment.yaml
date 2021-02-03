@@ -156,7 +156,7 @@ spec:
                 }
               }  
           - name: JAVA_OPTS
-            value: '-Xms2g -Xmx4g'
+            value: '-Xms2g -Xmx4g -XX:+UseContainerSupport -XX:MaxRAMPercentage=80.0'
         readinessProbe:
           httpGet:
             path: /ready
@@ -248,7 +248,7 @@ spec:
           - name: HTTPS_WANT_CLIENT_AUTH
             value: "true"
           - name: JAVA_OPTS
-            value: '-Xms2g -Xmx4g'
+            value: '-Xms2g -Xmx4g -XX:+UseContainerSupport -XX:MaxRAMPercentage=80.0'
         readinessProbe:
           httpGet:
             path: /ready
