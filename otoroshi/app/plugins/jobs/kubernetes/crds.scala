@@ -1351,7 +1351,44 @@ object KubernetesCRDsJob {
   }
 
   def patchKubeDnsConfig(conf: KubernetesConfig, ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
-    ().future
+    if (conf.kubeDnsOperatorIntegration) {
+      val client = new KubernetesClient(conf, env)
+      val otoDomain = s"${conf.coreDnsEnv.map(e => s"$e.").getOrElse("")}otoroshi.mesh"
+      for {
+        kubeDnsDep  <- client.fetchDeployment(conf.kubeSystemNamespace, "kube-dns")
+        kubeDnsCm   <- client.fetchConfigMap(conf.kubeSystemNamespace, "kube-dns")
+        service      <- client.fetchService(conf.kubeDnsOperatorCoreDnsNamespace, conf.kubeDnsOperatorCoreDnsName)
+        hasOtoroshiDnsServer = kubeDnsDep.isDefined && kubeDnsCm.isDefined && kubeDnsCm.exists(_.stubDomains.keys.contains(otoDomain))
+        shouldNotUpdate      = kubeDnsDep.isDefined && kubeDnsCm.isDefined && kubeDnsCm.exists(cm =>
+          (cm.stubDomains \ otoDomain).as[Seq[String]].contains(service.map(_.clusterIP).getOrElse("--"))
+        )
+        _ = logger.debug(s"kube-dns Operator has dns server: ${hasOtoroshiDnsServer} and should not be updated ${shouldNotUpdate}")
+        _ = logger.debug(s"kube-dns Operator config: ${kubeDnsCm.map(_.data.prettify).getOrElse("--")}")
+        _ = logger.debug(s"Otoroshi CoreDNS config: ${service.map(_.spec.prettify).getOrElse("--")}")
+        _ <- if (service.isDefined && kubeDnsDep.isDefined && kubeDnsCm.isDefined && !hasOtoroshiDnsServer) {
+          val cm = kubeDnsCm.get
+          val stubDomains = cm.stubDomains ++ Json.obj(
+            otoDomain -> Json.arr(s"${service.get.clusterIP}:${conf.kubeDnsOperatorCoreDnsPort}")
+          )
+          val newCm = KubernetesConfigMap(cm.rawObj ++ Json.obj("data" -> (cm.data ++ Json.obj("stubDomains" -> stubDomains))))
+          client.updateConfigMap(conf.kubeSystemNamespace, "kube-dns", newCm).andThen {
+            case Success(Right(_)) => logger.info("Successfully patched kube-dns Operator to add coredns as upstream server")
+          }
+        } else ().future
+        _            <- if (service.isDefined && kubeDnsDep.isDefined && kubeDnsCm.isDefined && hasOtoroshiDnsServer && !shouldNotUpdate) {
+          val cm = kubeDnsCm.get
+          val stubDomains = cm.stubDomains ++ Json.obj(
+            otoDomain -> Json.arr(s"${service.get.clusterIP}:${conf.kubeDnsOperatorCoreDnsPort}")
+          )
+          val newCm = KubernetesConfigMap(cm.rawObj ++ Json.obj("data" -> (cm.data ++ Json.obj("stubDomains" -> stubDomains))))
+          client.updateConfigMap(conf.kubeSystemNamespace, "kube-dns", newCm).andThen {
+            case Success(Right(_)) => logger.info("Successfully patched kube-dns Operator to add coredns as upstream server")
+          }
+        } else ().future
+      } yield ()
+    } else {
+      ().future
+    }
   }
 
   def patchOpenshiftDnsOperatorConfig(conf: KubernetesConfig, ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {

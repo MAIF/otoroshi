@@ -497,7 +497,6 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
     }
   }
 
-
   def fetchOpenshiftDnsOperator(): Future[Option[KubernetesOpenshiftDnsOperator]] = {
     val cli: WSRequest = client(s"/apis/operator.openshift.io/v1/dnses/default", false)
     cli.addHttpHeaders(

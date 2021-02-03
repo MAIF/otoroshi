@@ -57,7 +57,11 @@ case class KubernetesConfig(
   openshiftDnsOperatorIntegration: Boolean,
   openshiftDnsOperatorCoreDnsNamespace: String,
   openshiftDnsOperatorCoreDnsName: String,
-  openshiftDnsOperatorCoreDnsPort: Int
+  openshiftDnsOperatorCoreDnsPort: Int,
+  kubeDnsOperatorIntegration: Boolean,
+  kubeDnsOperatorCoreDnsNamespace: String,
+  kubeDnsOperatorCoreDnsName: String,
+  kubeDnsOperatorCoreDnsPort: Int
 )
 
 object KubernetesConfig {
@@ -136,6 +140,10 @@ object KubernetesConfig {
           openshiftDnsOperatorCoreDnsNamespace = (conf \ "openshiftDnsOperatorCoreDnsNamespace").asOpt[String].getOrElse("otoroshi"),
           openshiftDnsOperatorCoreDnsName = (conf \ "openshiftDnsOperatorCoreDnsName").asOpt[String].getOrElse("otoroshi-dns"),
           openshiftDnsOperatorCoreDnsPort = (conf \ "openshiftDnsOperatorCoreDnsPort").asOpt[Int].getOrElse(5353),
+          kubeDnsOperatorIntegration = (conf \ "kubetDnsOperatorIntegration").asOpt[Boolean].getOrElse(false),
+          kubeDnsOperatorCoreDnsNamespace = (conf \ "kubetDnsOperatorCoreDnsNamespace").asOpt[String].getOrElse("otoroshi"),
+          kubeDnsOperatorCoreDnsName = (conf \ "kubetDnsOperatorCoreDnsName").asOpt[String].getOrElse("otoroshi-dns"),
+          kubeDnsOperatorCoreDnsPort = (conf \ "kubetDnsOperatorCoreDnsPort").asOpt[Int].getOrElse(5353),
         )
       }
       case None => {
@@ -195,6 +203,10 @@ object KubernetesConfig {
           openshiftDnsOperatorCoreDnsNamespace = (conf \ "openshiftDnsOperatorCoreDnsNamespace").asOpt[String].getOrElse("otoroshi"),
           openshiftDnsOperatorCoreDnsName = (conf \ "openshiftDnsOperatorCoreDnsName").asOpt[String].getOrElse("otoroshi-dns"),
           openshiftDnsOperatorCoreDnsPort = (conf \ "openshiftDnsOperatorCoreDnsPort").asOpt[Int].getOrElse(5353),
+          kubeDnsOperatorIntegration = (conf \ "kubetDnsOperatorIntegration").asOpt[Boolean].getOrElse(false),
+          kubeDnsOperatorCoreDnsNamespace = (conf \ "kubetDnsOperatorCoreDnsNamespace").asOpt[String].getOrElse("otoroshi"),
+          kubeDnsOperatorCoreDnsName = (conf \ "kubetDnsOperatorCoreDnsName").asOpt[String].getOrElse("otoroshi-dns"),
+          kubeDnsOperatorCoreDnsPort = (conf \ "kubetDnsOperatorCoreDnsPort").asOpt[Int].getOrElse(5353),
         )
       }
     }
@@ -237,6 +249,10 @@ object KubernetesConfig {
         "openshiftDnsOperatorCoreDnsNamespace" -> "otoroshi",
         "openshiftDnsOperatorCoreDnsName" -> "otoroshi-dns",
         "openshiftDnsOperatorCoreDnsPort" -> 5353,
+        "kubeDnsOperatorIntegration" -> false,
+        "kubeDnsOperatorCoreDnsNamespace" -> "otoroshi",
+        "kubeDnsOperatorCoreDnsName" -> "otoroshi-dns",
+        "kubeDnsOperatorCoreDnsPort" -> 5353,
         "templates" -> Json.obj(
           "service-group" -> Json.obj(),
           "service-descriptor" -> Json.obj(),
