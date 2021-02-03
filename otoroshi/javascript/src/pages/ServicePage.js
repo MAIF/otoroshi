@@ -238,7 +238,7 @@ class Target extends Component {
               value: a.id,
               label: (
                 <span>
-                  <span className="label label-success" style={{ minWidth: 63 }}>
+                  <span className="label bg__success" style={{ minWidth: 63 }}>
                     {a.certType}
                   </span>{' '}
                   {a.name} - {a.description}
@@ -259,7 +259,7 @@ class Target extends Component {
               value: a.id,
               label: (
                 <span>
-                  <span className="label label-success" style={{ minWidth: 63 }}>
+                  <span className="label bg__success" style={{ minWidth: 63 }}>
                     {a.certType}
                   </span>{' '}
                   {a.name} - {a.description}
@@ -1424,7 +1424,7 @@ export class ServicePage extends Component {
                   value: a.id,
                   label: (
                     <span>
-                      <span className="label label-success" style={{ minWidth: 63 }}>
+                      <span className="label bg__success" style={{ minWidth: 63 }}>
                         {a.certType}
                       </span>{' '}
                       {a.name} - {a.description}
@@ -2321,7 +2321,7 @@ export class ServicePage extends Component {
                   help="Is JWT verification enabled for this service"
                   onChange={(v) => this.changeTheValue('jwtVerifier.enabled', v)}
                 />
-                <div className="form__group mb-20 grid-template-bp1--fifth">
+                <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
                   <label />
                   <div>
                     {!this.state.service.jwtVerifier.ids.length === 0 && (

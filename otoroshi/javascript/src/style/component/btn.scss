@@ -23,29 +23,61 @@ button,.button {
   &:focus{
     outline: 0;
   }
+  &.close {
+    font-size: 21px;
+    font-weight: 700;
+    line-height: 1;
+    color: #000;
+    text-shadow: 0 1px 0 #fff;
+    border-color: transparent;
+    &:hover{
+      background-color: transparent;
+      border-color: transparent;
+      color:#444;
+      transition: color 0.5s;
+    }
+  }
 }
 
 input.button[type="file"]{
   padding-bottom: 4px;
 }
 
-.btn__group--right{
-  display: flex;
-  justify-content: flex-end;
-  flex-wrap: wrap;
-  button {
-    margin-bottom: 5px;
+.btn__group{
+  
+  &--right{
+    display: flex;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    button {
+      margin-bottom: 5px;
+    }
+  }
+
+  &-fixed--right {
+    position: fixed;
+    right: 20px;
+    z-index: 1;
+    background-color: $primaryBgColor;
+    +div{
+      padding-top: 50px;
+    }
+  }
+  & > .button:not(:last-child):not(.dropdown-toggle), 
+  & > .btn__group:not(:last-child) > .button {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+  & > .button:not(:first-child), 
+  & > .btn__group:not(:first-child) > .button {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
   }
 }
 
-.btn-group > .button:not(:last-child):not(.dropdown-toggle), .btn-group > .btn-group:not(:last-child) > .button {
-  border-top-right-radius: 0;
-  border-bottom-right-radius: 0;
-}
-.btn-group > .button:not(:first-child), .btn-group > .btn-group:not(:first-child) > .button {
-  border-top-left-radius: 0;
-  border-bottom-left-radius: 0;
-}
+
+
+
 // btn color
 .btn-info{
   color:#fff;
@@ -140,29 +172,3 @@ input.button[type="file"]{
   }
 }
 
-button.close {
-  font-size: 21px;
-  font-weight: 700;
-  line-height: 1;
-  color: #000;
-  text-shadow: 0 1px 0 #fff;
-  border-color: transparent;
-  &:hover{
-    background-color: transparent;
-    border-color: transparent;
-    color:#444;
-    transition: color 0.5s;
-  }
-}
-
-.btns-fixed {
-  position: fixed;
-  right: 20px;
- // width: 100%;
-  z-index: 1;
-  background-color: $primaryBgColor;
-  //padding-bottom: 16px;
-  +div{
-    padding-top: 50px;
-  }
-}

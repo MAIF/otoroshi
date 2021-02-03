@@ -356,7 +356,7 @@ class CertificateValid extends Component {
       );
 
     return (
-      <div className="form__group mb-20 grid-template-xs--fifth">
+      <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
         <label />
         <div>
           {this.state.valid === true && (
@@ -800,7 +800,7 @@ export class CertificatesPage extends Component {
         injectTable={(table) => (this.table = table)}
         injectTopBar={() => (
           <>
-            {/*<div className="btn-group" style={{ marginRight: 5 }}>
+            {/*<div className="btn__group" style={{ marginRight: 5 }}>
             <button
               type="button"
               onClick={this.createLetsEncrypt}
@@ -809,7 +809,7 @@ export class CertificatesPage extends Component {
               <i className="fas fa-plus-circle" /> Let's Encrypt cert.
             </button>
           </div>*/}
-            <div className="mt-5 mb-5 btn-group">
+              <div className="mt-5 mb-5 btn__group">
               {/*<button
               type="button"
               onClick={this.createSelfSigned}
