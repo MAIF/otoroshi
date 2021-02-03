@@ -227,6 +227,16 @@ class KubernetesToOtoroshiCertSyncJob extends Job {
     KubernetesCertSyncJob.syncKubernetesSecretsToOtoroshiCerts(client, !stopCommand.get())
   }
 
+  def getNamespaces(client: KubernetesClient, conf: KubernetesConfig)(implicit env: Env, ec: ExecutionContext): Future[Seq[String]] = {
+    if (conf.namespacesLabels.isEmpty) {
+      conf.namespaces.future
+    } else {
+      client.fetchNamespacesAndFilterLabels().map { namespaces =>
+        namespaces.map(_.name)
+      }
+    }
+  }
+
   def handleWatch(config: KubernetesConfig, ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Unit = {
     if (config.watch && !watchCommand.get() && lastWatchStopped.get()) {
       logger.info("starting namespaces watch ...")
@@ -235,7 +245,10 @@ class KubernetesToOtoroshiCertSyncJob extends Job {
       lastWatchStopped.set(false)
       val conf = KubernetesConfig.theConfig(ctx)
       val client = new KubernetesClient(conf, env)
-      val source = client.watchKubeResources(conf.namespaces, Seq("secrets", "endpoints"), conf.watchTimeoutSeconds, !watchCommand.get())
+      val source = Source.future(getNamespaces(client, conf))
+        .flatMapConcat { nses =>
+          client.watchKubeResources(nses, Seq("secrets", "endpoints"), conf.watchTimeoutSeconds, !watchCommand.get())
+        }
       source.takeWhile(_ => !watchCommand.get()).filterNot(_.isEmpty).alsoTo(Sink.onComplete {
         case _ => lastWatchStopped.set(true)
       }).runWith(Sink.foreach { group =>

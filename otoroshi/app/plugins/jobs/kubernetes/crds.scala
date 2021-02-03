@@ -129,6 +129,16 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
     ().future
   }
 
+  def getNamespaces(client: KubernetesClient, conf: KubernetesConfig)(implicit env: Env, ec: ExecutionContext): Future[Seq[String]] = {
+    if (conf.namespacesLabels.isEmpty) {
+      conf.namespaces.future
+    } else {
+      client.fetchNamespacesAndFilterLabels().map { namespaces =>
+        namespaces.map(_.name)
+      }
+    }
+  }
+
   def handleWatch(config: KubernetesConfig, ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Unit = {
     if (config.watch && !watchCommand.get() && lastWatchStopped.get()) {
       logger.info("starting namespaces watch ...")
@@ -137,23 +147,26 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
       lastWatchStopped.set(false)
       val conf = KubernetesConfig.theConfig(ctx)
       val client = new KubernetesClient(conf, env)
-      val source = client.watchOtoResources(conf.namespaces, Seq(
-        "service-groups",
-        "service-descriptors",
-        "apikeys",
-        "certificates",
-        "global-configs",
-        "jwt-verifiers",
-        "auth-modules",
-        "scripts",
-        "tcp-services",
-        "admins",
-        "data-exporters",
-        "teams",
-        "organizations",
-      ), conf.watchTimeoutSeconds, !watchCommand.get()).merge(
-        client.watchKubeResources(conf.namespaces, Seq("secrets", "services", "pods", "endpoints"), conf.watchTimeoutSeconds, !watchCommand.get())
-      )
+      val source = Source.future(getNamespaces(client, conf))
+        .flatMapConcat { nses =>
+          client.watchOtoResources(nses, Seq(
+            "service-groups",
+            "service-descriptors",
+            "apikeys",
+            "certificates",
+            "global-configs",
+            "jwt-verifiers",
+            "auth-modules",
+            "scripts",
+            "tcp-services",
+            "admins",
+            "data-exporters",
+            "teams",
+            "organizations",
+          ), conf.watchTimeoutSeconds, !watchCommand.get()).merge(
+            client.watchKubeResources(nses, Seq("secrets", "services", "pods", "endpoints"), conf.watchTimeoutSeconds, !watchCommand.get())
+          )
+        }
       source.takeWhile(_ => !watchCommand.get()).filterNot(_.isEmpty).alsoTo(Sink.onComplete {
         case _ => lastWatchStopped.set(true)
       }).runWith(Sink.foreach { group =>
