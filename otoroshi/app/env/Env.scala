@@ -29,6 +29,7 @@ import otoroshi.storage.drivers.inmemory._
 import otoroshi.storage.drivers.lettuce._
 import otoroshi.storage.drivers.leveldb._
 import otoroshi.storage.drivers.mongo._
+import otoroshi.storage.drivers.reactivepg.ReactivePgDataStores
 import otoroshi.storage.drivers.rediscala._
 import otoroshi.tcp.TcpService
 import play.api._
@@ -637,6 +638,8 @@ class Env(val configuration: Configuration,
         new MongoDataStores(configuration, environment, lifecycle, this)
       case "lettuce" if clusterConfig.mode == ClusterMode.Leader =>
         new LettuceDataStores(configuration, environment, lifecycle, this)
+      case "reactive-pg" if clusterConfig.mode == ClusterMode.Leader =>
+        new ReactivePgDataStores(configuration, environment, lifecycle, this)
       case "redis"             => new RedisLFDataStores(configuration, environment, lifecycle, this)
       case "inmemory"          => new InMemoryDataStores(configuration, environment, lifecycle, PersistenceKind.NoopPersistenceKind, this)
       case "leveldb"           => new LevelDbDataStores(configuration, environment, lifecycle, this)
@@ -652,6 +655,7 @@ class Env(val configuration: Configuration,
       case "redis-sentinel"    => new RedisSentinelDataStores(configuration, environment, lifecycle, this)
       case "redis-sentinel-lf" => new RedisSentinelLFDataStores(configuration, environment, lifecycle, this)
       case "lettuce"           => new LettuceDataStores(configuration, environment, lifecycle, this)
+      case "reactive-pg"       => new ReactivePgDataStores(configuration, environment, lifecycle, this)
       case e                   => throw new RuntimeException(s"Bad storage value from conf: $e")
     }
   }

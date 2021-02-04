@@ -265,24 +265,7 @@ async function githubTag(location, version) {
   await runSystemCommand('git', ['tag', '-am', `Release Otoroshi version ${version}`, 'v' + version], location);
 }
 
-async function pushToBintray(location, version) {
-  await runScript(`
-    curl -T "$LOCATION/release-$VERSION/otoroshi.jar" -umathieuancelin:$BINTRAY_API_KEY -H 'X-Bintray-Publish: 1' -H 'X-Bintray-Override: 1' -H "X-Bintray-Version: $VERSION" -H 'X-Bintray-Package: otoroshi.jar' "https://api.bintray.com/content/maif/binaries/otoroshi.jar/$VERSION/otoroshi.jar"
-    curl -T "$LOCATION/release-$VERSION/otoroshi-$VERSION.zip" -umathieuancelin:$BINTRAY_API_KEY -H 'X-Bintray-Publish: 1' -H 'X-Bintray-Override: 1' -H "X-Bintray-Version: $VERSION" -H 'X-Bintray-Package: otoroshi-dist' "https://api.bintray.com/content/maif/binaries/otoroshi-dist/$VERSION/otoroshi-dist.zip"
-    curl -T "$LOCATION/release-$VERSION/otoroshi-manual-$VERSION.zip" -umathieuancelin:$BINTRAY_API_KEY -H 'X-Bintray-Publish: 1' -H 'X-Bintray-Override: 1' -H "X-Bintray-Version: $VERSION" -H 'X-Bintray-Package: otoroshi-manual' "https://api.bintray.com/content/maif/binaries/otoroshi-manual/$VERSION/otoroshi-manual-$VERSION.zip"
-    # curl -T "$LOCATION/release-$VERSION/linux-otoroshicli" -umathieuancelin:$BINTRAY_API_KEY -H 'X-Bintray-Publish: 1' -H 'X-Bintray-Override: 1' -H "X-Bintray-Version: $VERSION" -H 'X-Bintray-Package: linux-otoroshicli' "https://api.bintray.com/content/maif/binaries/linux-otoroshicli/$VERSION/otoroshicli"
-    # curl -T "$LOCATION/release-$VERSION/mac-otoroshicli" -umathieuancelin:$BINTRAY_API_KEY -H 'X-Bintray-Publish: 1' -H 'X-Bintray-Override: 1' -H "X-Bintray-Version: $VERSION" -H 'X-Bintray-Package: mac-otoroshicli' "https://api.bintray.com/content/maif/binaries/mac-otoroshicli/$VERSION/otoroshicli"
-    `, 
-    location, 
-    {
-      LOCATION: location,
-      VERSION: version,
-      BINTRAY_API_KEY,
-      GITHUB_TOKEN
-    }
-  );
-}
-
+// TODO: push on github repo
 async function publishSbt(location, version) {
   await runScript(`
     cd $LOCATION/otoroshi
@@ -420,17 +403,13 @@ async function releaseOtoroshi(from, to, next, last, location, dryRun) {
     await runSystemCommand('git', ['commit', '-am', `Update version to ${to}`], location);
   });
   await ensureStep('BUILD_OTOROSHI', releaseFile, () => buildVersion(to, location, releaseDir));
-  // await ensureStep('BUILD_LINUX_CLI', releaseFile, () => buildLinuxCLI(location, to));
   await ensureStep('BUILD_TCP_TUNNEL_CLI', releaseFile, () => buildTcpTunnelingCli(location, to));
   await ensureStep('BUILD_TCP_TUNNEL_CLI_GUI', releaseFile, () => buildTcpTunnelingCliGUI(location, to));
   if (!dryRun) {
     await ensureStep('CREATE_GITHUB_RELEASE', releaseFile, () => createGithubRelease(to, releaseDir));
     await ensureStep('CREATE_GITHUB_TAG', releaseFile, () => githubTag(location, to));
-    // await ensureStep('PUSH_TO_BINTRAY', releaseFile, () => pushToBintray(location, to));
     // await ensureStep('PUBLISH_LIBRARIES', releaseFile, () => publishSbt(location, to));
     await ensureStep('PUBLISH_DOCKER_OTOROSHI', releaseFile, () => publishDockerOtoroshi(location, to));
-    // await ensureStep('PUBLISH_DOCKER_OTOROSHI_CLI', releaseFile, () => publishDockerCli(location, to));
-    // await ensureStep('PUBLISH_DOCKER_OTOROSHI_DEMO', releaseFile, () => publishDockerDemo(location, to));
     await ensureStep('CHANGE_TO_DEV_VERSION', releaseFile, () => changeVersion(location, to, next, ['./readme.md']));
     await ensureStep('PUSH_TO_GITHUB', releaseFile, async () => {
       await runSystemCommand('git', ['commit', '-am', `Update version to ${next}`], location);
