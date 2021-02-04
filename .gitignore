@@ -5,6 +5,7 @@ release-*
 cassandra-data
 mongo-data
 redis-data
+pg-data
 node_modules
 .idea
 .gradle

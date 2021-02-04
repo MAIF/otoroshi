@@ -15,7 +15,7 @@ import env.Env
 import events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
 import gateway.{InMemoryRequestsDataStore, RequestsDataStore}
 import io.vertx.pgclient.{PgConnectOptions, PgPool}
-import io.vertx.sqlclient.PoolOptions
+import io.vertx.sqlclient.{PoolOptions, Row}
 import models._
 import otoroshi.models.{SimpleAdminDataStore, WebAuthnAdminDataStore}
 import otoroshi.script.{KvScriptDataStore, ScriptDataStore}
@@ -32,7 +32,7 @@ import utils.SchedulerHelper
 
 import scala.concurrent._
 import scala.concurrent.duration._
-import scala.util.Try
+import scala.util.{Failure, Success, Try}
 
 object pgimplicits {
   implicit class VertxFutureEnhancer[A](val future: io.vertx.core.Future[A]) extends AnyVal {
@@ -73,7 +73,7 @@ class ReactivePgDataStores(configuration: Configuration,
 
   import pgimplicits._
 
-  private val logger = Logger("otoroshi-redis-lettuce-datastores")
+  private val logger = Logger("otoroshi-reactive-pg-datastores")
 
   private lazy val reactivePgStatsItems: Int = configuration.getOptionalWithFileSupport[Int]("app.redis.windowSize").getOrElse(99)
 
@@ -88,13 +88,13 @@ class ReactivePgDataStores(configuration: Configuration,
 
   private lazy val connectOptions = new PgConnectOptions()
     .setPort(5432)
-    .setHost("the-host")
-    .setDatabase("the-db")
-    .setUser("user")
-    .setPassword("secret")
+    .setHost("localhost")
+    .setDatabase("otoroshi")
+    .setUser("otoroshi")
+    .setPassword("otoroshi")
 
   private lazy val poolOptions = new PoolOptions()
-    .setMaxSize(5)
+    .setMaxSize(10)
 
   private lazy val client = PgPool.pool(connectOptions, poolOptions)
 
@@ -111,13 +111,13 @@ class ReactivePgDataStores(configuration: Configuration,
            |create table if not exists otoroshi.entities (
            |  key text not null,
            |  type text not null,
-           |  created_at TIMESTAMPTZ not null,
+           |  ttl_starting_at TIMESTAMPTZ not null,
            |  ttl interval default '1000 years'::interval,
            |  counter bigint default 0,
            |  value text,
-           |  lvalue bson default '[]'::jsonb,
-           |  svalue bson default '{}'::jsonb,
-           |  mvalue bson default '{}'::jsonb,
+           |  lvalue jsonb default '[]'::jsonb,
+           |  svalue jsonb default '{}'::jsonb,
+           |  mvalue jsonb default '{}'::jsonb,
            |  PRIMARY KEY (key)
            |);
            |""".stripMargin).executeAsync()
@@ -127,7 +127,7 @@ class ReactivePgDataStores(configuration: Configuration,
   def setupCleanup(): Unit = {
     implicit val ec = reactivePgActorSystem.dispatcher
     cancel.set(reactivePgActorSystem.scheduler.scheduleAtFixedRate(1.minute, 5.minutes)(SchedulerHelper.runnable {
-      client.query("DELETE FROM otoroshi.entities WHERE (created_at + ttl) < NOW();").executeAsync()
+      // client.query("DELETE FROM otoroshi.entities WHERE (ttl_starting_at + ttl) < NOW();").executeAsync()
     }))
   }
 
@@ -379,8 +379,30 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env) extends Redis
   implicit val ec = system.dispatcher
   implicit val mat = env.otoroshiMaterializer
 
+  private val logger = Logger("otoroshi-reactive-pg-kv")
+
+  val debugQueries = true
+
+  def queryOne[A](query: String, params: Seq[AnyRef] = Seq.empty)(f: Row => A): Future[Option[A]] = {
+    if (debugQueries) logger.info(s"query: $query, params: $params")
+    pool.preparedQuery(query)
+      .execute(io.vertx.sqlclient.Tuple.from(params.toArray))
+      .scala
+      .flatMap { _rows =>
+        Try {
+          val rows = _rows.asScala
+          rows.headOption.map { row =>
+            f(row)
+          }
+        } match {
+          case Success(value) => FastFuture.successful(value)
+          case Failure(e) => FastFuture.failed(e)
+        }
+      }
+  }
+
   def typ(key: String): Future[String] = {
-    pool.query(s"select type from otoroshi.entities where key = '${key}' and (created_all + ttl) > NOW() limit 1;")
+    pool.query(s"select type from otoroshi.entities where key = '${key}' and (ttl_starting_at + ttl) > NOW() limit 1;")
       .executeAsync()
       .map(_.asScala.head.getString("type"))
   }
@@ -402,7 +424,7 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env) extends Redis
   }
 
   override def get(key: String): Future[Option[ByteString]] = {
-    pool.query(s"select value, counter, type from otoroshi.entities where key = '${key}' and (created_all + ttl) > NOW() limit 1;")
+    pool.query(s"select value, counter, type from otoroshi.entities where key = '${key}' and (ttl_starting_at + ttl) > NOW() limit 1;")
       .executeAsync()
       .map { _rows =>
         val rows = _rows.asScala
@@ -426,7 +448,7 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env) extends Redis
   }
 
   override def del(keys: String*): Future[Long] = {
-    pool.query(s"delete from otoroshi.entities where key in (${keys.map(k => s"'$k'").mkString(", ")}) and (created_all + ttl) > NOW();")
+    pool.query(s"delete from otoroshi.entities where key in (${keys.map(k => s"'$k'").mkString(", ")}) and (ttl_starting_at + ttl) > NOW();")
       .executeAsync()
       .map(_ => keys.size)
   }
@@ -434,26 +456,35 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env) extends Redis
   override def incr(key: String): Future[Long] = incrby(key, 1)
 
   override def incrby(key: String, increment: Long): Future[Long] = {
-    pool.query(s"update otoroshi.entities set type = 'counter', counter = counter + $increment where key = '${key}' and (created_all + ttl) > NOW() returning counter;")
+    pool.query(s"update otoroshi.entities set type = 'counter', counter = counter + $increment where key = '${key}' and (ttl_starting_at + ttl) > NOW() returning counter;")
       .executeAsync()
       .map(_.asScala.headOption.flatMap(r => Try(r.getLong("counter").longValue()).toOption).getOrElse(0L))
   }
 
   override def exists(key: String): Future[Boolean] = {
-    pool.query(s"select type from otoroshi.entities where key = '${key}' and (created_all + ttl) > NOW() limit 1;")
+    pool.query(s"select type from otoroshi.entities where key = '${key}' and (ttl_starting_at + ttl) > NOW() limit 1;")
       .executeAsync()
       .map(_.asScala.nonEmpty)
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   override def setBS(key: String, value: ByteString, exSeconds: Option[Long], pxMilliseconds: Option[Long]): Future[Boolean] = {
-    pool.query(s"update otoroshi.entities set type = 'string', value = '${value.utf8String}' where key = '${key}' and (created_all + ttl) > NOW() returning counter;")
-      .executeAsync()
-      .map(_ => true)
+    val ttl = exSeconds.map(_ * 1000).orElse(pxMilliseconds).map(v => s"'$v milliseconds'::interval").getOrElse("'1000 years'::interval")
+    val maybeTtlUpdate = exSeconds.map(_ * 1000).orElse(pxMilliseconds).map(v => s"'$v milliseconds'::interval").map(ttl => s", ttl = $ttl, ttl_starting_at = NOW()").getOrElse("")
+    queryOne(
+      s"""
+         |insert into otoroshi.entities (key, type, ttl, ttl_starting_at, value)
+         |values ('${key}', 'string', $ttl, NOW(), '${value.utf8String}')
+         |ON CONFLICT (key)
+         |DO
+         |  update set type = 'string', value = '${value.utf8String}'${maybeTtlUpdate};
+         |""".stripMargin) { _ =>
+      true
+    }.map(_.getOrElse(true))
   }
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   override def keys(pattern: String): Future[Seq[String]] = {
-    pool.query(s"select key where key ~ '${pattern.replace("*", ".*")}' and (created_all + ttl) > NOW();")
+    pool.query(s"select key from otoroshi.entities where key ~ '${pattern.replace("*", ".*")}' and (ttl_starting_at + ttl) > NOW();")
       .executeAsync()
       .map { _rows =>
         val rows = _rows.asScala
@@ -462,13 +493,13 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env) extends Redis
   }
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   override def hdel(key: String, fields: String*): Future[Long] = {
-    pool.query(s"update otoroshi.entities set type = 'hash', mvalue = mvalue - ARRAY[${fields.map(m => s"'$m'").mkString(",")}] where key = '${key}' and (created_all + ttl) > NOW();")
+    pool.query(s"update otoroshi.entities set type = 'hash', mvalue = mvalue - ARRAY[${fields.map(m => s"'$m'").mkString(",")}] where key = '${key}' and (ttl_starting_at + ttl) > NOW();")
       .executeAsync()
       .map(_ => fields.size)
   }
 
   override def hgetall(key: String): Future[Map[String, ByteString]] = {
-    pool.query(s"select mvalue from otoroshi.entities where key = '${key}' and (created_all + ttl) > NOW() limit 1;")
+    pool.query(s"select mvalue from otoroshi.entities where key = '${key}' and (ttl_starting_at + ttl) > NOW() limit 1;")
       .executeAsync()
       .map { _rows =>
         _rows.asScala
@@ -481,7 +512,7 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env) extends Redis
   override def hset(key: String, field: String, value: String): Future[Boolean] =  hsetBS(key, field, value.byteString)
 
   override def hsetBS(key: String, field: String, value: ByteString): Future[Boolean] = {
-    pool.query(s"""update otoroshi.entities set type = 'hash', mvalue = mvalue || '{"${key}":"${value.utf8String}"}'::jsonb where key = '${key}' and (created_all + ttl) > NOW();""")
+    pool.query(s"""update otoroshi.entities set type = 'hash', mvalue = mvalue || '{"${key}":"${value.utf8String}"}'::jsonb where key = '${key}' and (ttl_starting_at + ttl) > NOW();""")
       .executeAsync()
       .map(_ => true)
   }
@@ -491,7 +522,7 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env) extends Redis
   override def lpushLong(key: String, values: Long*): Future[Long] = lpushBS(key, values.map(_.toString.byteString): _*)
 
   private def getArray(key: String): Future[Option[Seq[ByteString]]] = {
-    pool.query(s"select lvalue where key = '${key}' and (created_all + ttl) > NOW() limit 1;")
+    pool.query(s"select lvalue from otoroshi.entities where key = '${key}' and (ttl_starting_at + ttl) > NOW() limit 1;")
       .executeAsync()
       .map { _rows =>
         val rows = _rows.asScala
@@ -504,7 +535,7 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env) extends Redis
   override def llen(key: String): Future[Long] = getArray(key).map(_.map(_.size.toLong).getOrElse(0L)) // TODO: improve, use jsonb_array_length(lvallue) as length
 
   override def lpushBS(key: String, values: ByteString*): Future[Long] = {
-    pool.query(s"""update otoroshi.entities set type = 'list', lvalue = lvalue || '[${values.map(v => s""""$v""").mkString(",")}]'::jsonb where key = '${key}' and (created_all + ttl) > NOW();""")
+    pool.query(s"""update otoroshi.entities set type = 'list', lvalue = lvalue || '[${values.map(v => s""""$v""").mkString(",")}]'::jsonb where key = '${key}' and (ttl_starting_at + ttl) > NOW();""")
       .executeAsync()
       .map(_ => values.size)
   }
@@ -516,7 +547,7 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env) extends Redis
       case None => FastFuture.successful(false)
       case Some(arr) => {
         val newArr = JsArray(arr.slice(start.toInt, stop.toInt).map(i => JsString(i.utf8String))).stringify
-        pool.query(s"""update otoroshi.entities set type = 'list', lvalue = '$newArr'::jsonb where key = '${key}' and (created_all + ttl) > NOW();""")
+        pool.query(s"""update otoroshi.entities set type = 'list', lvalue = '$newArr'::jsonb where key = '${key}' and (ttl_starting_at + ttl) > NOW();""")
           .executeAsync()
           .map(_ => true)
       }
@@ -525,7 +556,7 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env) extends Redis
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   override def pttl(key: String): Future[Long] = {
-    pool.query(s"select (created_all + ttl) as expire_at from otoroshi.entities where key = '${key}' and (created_all + ttl) > NOW() limit 1;")
+    pool.query(s"select (ttl_starting_at + ttl) as expire_at from otoroshi.entities where key = '${key}' and (ttl_starting_at + ttl) > NOW() limit 1;")
       .executeAsync()
       .map { _rows =>
         val rows = _rows.asScala
@@ -543,7 +574,7 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env) extends Redis
 
   override def pexpire(key: String, milliseconds: Long): Future[Boolean] = {
     // TODO: make it work with millis
-    pool.query(s"update otoroshi.entities set ttl = '$milliseconds milliseconds'::interval, created_at = NOW() where key = '${key}' and (created_all + ttl) > NOW();")
+    pool.query(s"update otoroshi.entities set ttl = '$milliseconds milliseconds'::interval, ttl_starting_at = NOW() where key = '${key}' and (ttl_starting_at + ttl) > NOW();")
       .executeAsync()
       .map(_ => true)
   }
@@ -551,7 +582,7 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env) extends Redis
   override def sadd(key: String, members: String*): Future[Long] = saddBS(key, members.map(_.byteString): _*)
 
   override def saddBS(key: String, members: ByteString*): Future[Long] = {
-    pool.query(s"update otoroshi.entities set type = 'set', svalue = svalue || '{${members.map(m => s""""$m":"-"""").mkString(",")}}'::jsonb where key = '${key}' and (created_all + ttl) > NOW();")
+    pool.query(s"update otoroshi.entities set type = 'set', svalue = svalue || '{${members.map(m => s""""$m":"-"""").mkString(",")}}'::jsonb where key = '${key}' and (ttl_starting_at + ttl) > NOW();")
       .executeAsync()
       .map(_ => members.size)
   }
@@ -559,7 +590,7 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env) extends Redis
   override def sismember(key: String, member: String): Future[Boolean] = sismemberBS(key, member.byteString)
 
   override def sismemberBS(key: String, member: ByteString): Future[Boolean] = {
-    pool.query(s"select svalue from otoroshi.entities where key = '${key}' and svalue -> '${member.utf8String}' = '-' and (created_all + ttl) > NOW() limit 1;")
+    pool.query(s"select svalue from otoroshi.entities where key = '${key}' and svalue -> '${member.utf8String}' = '-' and (ttl_starting_at + ttl) > NOW() limit 1;")
       .executeAsync()
       .map { _rows =>
         _rows.asScala.nonEmpty
@@ -567,7 +598,7 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env) extends Redis
   }
 
   override def smembers(key: String): Future[Seq[ByteString]] = {
-    pool.query(s"select svalue from otoroshi.entities where key = '${key}' and (created_all + ttl) > NOW() limit 1;")
+    pool.query(s"select svalue from otoroshi.entities where key = '${key}' and (ttl_starting_at + ttl) > NOW() limit 1;")
       .executeAsync()
       .map { _rows =>
         _rows.asScala.headOption.map(r => Json.parse(r.getString("svalue")).as[JsObject].keys.toSeq.map(ByteString.apply)).getOrElse(Seq.empty)
@@ -577,7 +608,7 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env) extends Redis
   override def srem(key: String, members: String*): Future[Long] = sremBS(key, members.map(_.byteString): _*)
 
   override def sremBS(key: String, members: ByteString*): Future[Long] = {
-    pool.query(s"update otoroshi.entities set type = 'set', svalue = svalue - ARRAY[${members.map(m => s"'$m'").mkString(",")}] where key = '${key}' and (created_all + ttl) > NOW();")
+    pool.query(s"update otoroshi.entities set type = 'set', svalue = svalue - ARRAY[${members.map(m => s"'$m'").mkString(",")}] where key = '${key}' and (ttl_starting_at + ttl) > NOW();")
       .executeAsync()
       .map(_ => members.size)
   }
@@ -585,7 +616,7 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env) extends Redis
   override def scard(key: String): Future[Long] = smembers(key).map(_.size) // TODO: improve
 
   override def rawGet(key: String): Future[Option[JsValue]] = {
-    pool.query(s"select json_agg(t) as json from otoroshi.entities t where key = '${key}' and (created_all + ttl) > NOW() limit 1;")
+    pool.query(s"select json_agg(t) as json from otoroshi.entities t where key = '${key}' and (ttl_starting_at + ttl) > NOW() limit 1;")
       .executeAsync()
       .map(_.asScala.headOption.flatMap(r => Try(r.getString("json")).toOption).map(Json.parse))
   }

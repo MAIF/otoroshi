@@ -656,6 +656,7 @@ class Env(val configuration: Configuration,
       case "redis-sentinel-lf" => new RedisSentinelLFDataStores(configuration, environment, lifecycle, this)
       case "lettuce"           => new LettuceDataStores(configuration, environment, lifecycle, this)
       case "reactive-pg"       => new ReactivePgDataStores(configuration, environment, lifecycle, this)
+      case "pg"                => new ReactivePgDataStores(configuration, environment, lifecycle, this)
       case e                   => throw new RuntimeException(s"Bad storage value from conf: $e")
     }
   }
