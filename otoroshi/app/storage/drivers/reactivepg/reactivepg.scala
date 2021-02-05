@@ -86,15 +86,19 @@ class ReactivePgDataStores(configuration: Configuration,
         .getOrElse(ConfigFactory.empty)
     )
 
-  private lazy val connectOptions = new PgConnectOptions()
-    .setPort(configuration.getOptional[Int]("app.pg.port").getOrElse(5432))
-    .setHost(configuration.getOptional[String]("app.pg.host").getOrElse("localhost"))
-    .setDatabase(configuration.getOptional[String]("app.pg.database").getOrElse("otoroshi"))
-    .setUser(configuration.getOptional[String]("app.pg.user").getOrElse("otoroshi"))
-    .setPassword(configuration.getOptional[String]("app.pg.password").getOrElse("otoroshi"))
+  private lazy val connectOptions = if (configuration.has("app.pg.uri")) {
+    PgConnectOptions.fromUri(configuration.get[String]("app.pg.uri"))
+  } else {
+    new PgConnectOptions()
+      .setPort(configuration.getOptional[Int]("app.pg.port").getOrElse(5432))
+      .setHost(configuration.getOptional[String]("app.pg.host").getOrElse("localhost"))
+      .setDatabase(configuration.getOptional[String]("app.pg.database").getOrElse("otoroshi"))
+      .setUser(configuration.getOptional[String]("app.pg.user").getOrElse("otoroshi"))
+      .setPassword(configuration.getOptional[String]("app.pg.password").getOrElse("otoroshi"))
+  }
 
   private lazy val poolOptions = new PoolOptions()
-    .setMaxSize(configuration.getOptional[Int]("app.pg.poolSize").getOrElse(10))
+    .setMaxSize(configuration.getOptional[Int]("app.pg.poolSize").getOrElse(20))
 
   private lazy val client = PgPool.pool(connectOptions, poolOptions)
 
@@ -258,7 +262,6 @@ class ReactivePgDataStores(configuration: Configuration,
                   (key.startsWith(s"${env.storageRoot}:data:") && key.endsWith(":stats:out"))
               }
               .map { key =>
-                // TODO: handle with getRaw like mongo
                 for {
                   w     <- redis.typ(key)
                   ttl   <- redis.pttl(key)
@@ -296,7 +299,6 @@ class ReactivePgDataStores(configuration: Configuration,
           case keys => {
             Source(keys.toList)
               .mapAsync(1) { key =>
-              // TODO: handle with getRaw like mongo
                 for {
                   w     <- redis.typ(key)
                   ttl   <- redis.pttl(key)
@@ -305,10 +307,12 @@ class ReactivePgDataStores(configuration: Configuration,
                   value match {
                     case JsNull => JsNull
                     case _ =>
-                      Json.obj("k" -> key,
+                      Json.obj(
+                        "k" -> key,
                         "v" -> value,
                         "t" -> (if (ttl == -1) -1 else (System.currentTimeMillis() + ttl)),
-                        "w" -> w)
+                        "w" -> w
+                      )
                   }
               }
               .runWith(Sink.seq)
@@ -324,7 +328,6 @@ class ReactivePgDataStores(configuration: Configuration,
     implicit val ev  = env
     implicit val ecc = env.otoroshiExecutionContext
     implicit val mat = env.otoroshiMaterializer
-    // TODO: handle with getRaw like mongo
     redis
       .keys(s"${env.storageRoot}:*")
       .flatMap(keys => if (keys.nonEmpty) redis.del(keys: _*) else FastFuture.successful(0L))
@@ -336,6 +339,7 @@ class ReactivePgDataStores(configuration: Configuration,
             val pttl  = (json \ "t").as[Long]
             val what  = (json \ "w").as[String]
             (what match {
+              case "counter" => redis.setCounter(key, value.as[Long])
               case "string" => redis.set(key, value.as[String])
               case "hash" =>
                 Source(value.as[JsObject].value.toList)
@@ -358,8 +362,8 @@ class ReactivePgDataStores(configuration: Configuration,
   }
 
   private def fetchValueForType(typ: String, key: String)(implicit ec: ExecutionContext): Future[JsValue] = {
-    // TODO: handle with getRaw like mongo
     typ match {
+      case "counter" => redis.getCounter(key).map(_.map(v => JsNumber(v)).getOrElse(JsNumber(0L)))
       case "hash" => redis.hgetall(key).map(m => JsObject(m.map(t => (t._1, JsString(t._2.utf8String)))))
       case "list" => redis.lrange(key, 0, Long.MaxValue).map(l => JsArray(l.map(s => JsString(s.utf8String))))
       case "set"  => redis.smembers(key).map(l => JsArray(l.map(s => JsString(s.utf8String))))
@@ -380,11 +384,10 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env) extends Redis
   import collection.JavaConverters._
 
   implicit val ec = system.dispatcher
-  implicit val mat = env.otoroshiMaterializer
 
   private val logger = Logger("otoroshi-reactive-pg-kv")
 
-  val debugQueries = false
+  private val debugQueries = env.configuration.getOptional[Boolean]("app.pg.logQueries").getOrElse(false)
 
   def queryRaw[A](query: String, params: Seq[AnyRef] = Seq.empty, debug: Boolean = false)(f: Seq[Row] => A): Future[A] = {
     if (debug || debugQueries) logger.info(s"""query: "$query", params: "${params.mkString(", ")}"""")
@@ -495,9 +498,17 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env) extends Redis
   }
 
   override def mget(keys: String*): Future[Seq[Option[ByteString]]] = {
-    // TODO: improve
-    Source(keys.toList)
-      .mapAsync(1)(key => get(key)).runFold(Seq.empty[Option[ByteString]])((seq, opt) => seq :+ opt)
+    val allkeys = keys.map(k => s"'$k'").mkString(", ")
+    querySeq(s"select key, value, counter, type from otoroshi.entities where key in ($allkeys) and (ttl_starting_at + ttl) > NOW();") { row =>
+      val value = row.getString("type") match {
+        case "counter" => row.getLong("counter").toString.byteString
+        case _ => row.getString("value").byteString
+      }
+      (row.getString("key"), value)
+    }.map { tuples =>
+      val m = tuples.toMap
+      keys.map(k => m.get(k))
+    }
   }
 
   override def set(key: String, value: String, exSeconds: Option[Long], pxMilliseconds: Option[Long]): Future[Boolean] = {
@@ -522,6 +533,16 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env) extends Redis
          |""".stripMargin, Seq(key, increment.asInstanceOf[AnyRef])) { row =>
       row.getLong("counter").longValue()
     }.map(_.getOrElse(increment))
+  }
+
+  def getCounter(key: String): Future[Option[Long]] = {
+    get(key).map(_.map(_.utf8String.toLong))
+  }
+
+  def setCounter(key: String, value: Long): Future[Unit] = {
+    queryRaw(s"insert into otoroshi.entities (key, type, counter) values ($$1, 'counter', $$2)", Seq(key, value.asInstanceOf[AnyRef])) { _ =>
+      ()
+    }
   }
 
   override def exists(key: String): Future[Boolean] = {
@@ -560,7 +581,12 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env) extends Redis
 
   override def hgetall(key: String): Future[Map[String, ByteString]] = {
     queryOne(s"select mvalue from otoroshi.entities where key = $$1 and (ttl_starting_at + ttl) > NOW() limit 1;", Seq(key)) { row =>
-      Json.parse(row.getJsonObject("mvalue").encode()).as[JsObject].value.mapValues(v => v.asString.byteString).toMap
+      Try {
+        Json.parse(row.getJsonObject("mvalue").encode()).as[JsObject].value.mapValues(v => v.asString.byteString).toMap
+      } match {
+        case Success(s) => s
+        case Failure(e) => Json.parse(row.getString("mvalue")).as[JsObject].value.mapValues(v => v.asString.byteString).toMap
+      }
     }.map(_.getOrElse(Map.empty[String, ByteString]))
   }
 
@@ -588,7 +614,12 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env) extends Redis
       .map { _rows =>
         val rows = _rows.asScala
         rows.headOption.map { row =>
-          Json.parse(row.getJsonArray("lvalue").encode()).asArray.value.map(e => e.asString.byteString)
+          Try {
+            Json.parse(row.getJsonArray("lvalue").encode()).asArray.value.map(e => e.asString.byteString)
+          } match {
+            case Success(s) => s
+            case Failure(exception) => Json.parse(row.getString("lvalue")).asArray.value.map(e => e.asString.byteString)
+          }
         }
       }
   }
@@ -614,9 +645,15 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env) extends Redis
   }
 
   override def lrange(key: String, start: Long, stop: Long): Future[Seq[ByteString]] = {
-    // getArray(key).map(_.map(_.slice(start.toInt, stop.toInt)).getOrElse(Seq.empty))
     queryOne(s"select jsonb_path_query_array(lvalue, '$$[$start to $stop]') as slice from otoroshi.entities where key = $$1 and (ttl_starting_at + ttl) > NOW();", Seq(key)) { row =>
-      Try(row.getJsonArray("slice").encode()).map(s => Json.parse(s).asArray.value.map(v => v.asString.byteString)).getOrElse(Seq.empty)
+      Try(row.getJsonArray("slice").encode()).map { s =>
+        Try {
+          Json.parse(s).asArray.value.map(v => v.asString.byteString)
+        } match {
+          case Success(value) => value
+          case Failure(ex) => Json.parse(row.getString("slice")).asArray.value.map(v => v.asString.byteString)
+        }
+      }.getOrElse(Seq.empty)
     }.map(_.getOrElse(Seq.empty))
   }
 
@@ -657,13 +694,14 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env) extends Redis
   override def sadd(key: String, members: String*): Future[Long] = saddBS(key, members.map(_.byteString): _*)
 
   override def saddBS(key: String, members: ByteString*): Future[Long] = {
+    val obj = JsObject(members.map(m => (m.utf8String, JsString("-")))).stringify
     queryRaw(
       s"""insert into otoroshi.entities (key, type, svalue)
-         |values ($$1, 'set', $$2::jsonb)
+         |values ($$1, 'set', '$obj'::jsonb)
          |on conflict (key)
          |do
-         |  update set type = 'set', svalue = otoroshi.entities.svalue || $$2::jsonb;
-         |""".stripMargin, Seq(key, JsObject(members.map(m => (m.utf8String, JsString("-")))).stringify)) { _ =>
+         |  update set type = 'set', svalue = otoroshi.entities.svalue || '$obj'::jsonb;
+         |""".stripMargin, Seq(key)) { _ =>
       members.size
     }
   }
@@ -696,10 +734,13 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env) extends Redis
   }
 
   override def scard(key: String): Future[Long] = {
-    smembers(key).map(_.size) // TODO: improve
-    // queryOne(s"select json_array_length(json_object_keys(svalue)::jsonb) as length from otoroshi.entities t where key = $$1 and (ttl_starting_at + ttl) > NOW();", Seq(key)) { row =>
-    //   row.getLong("length").longValue()
-    // }.map(_.getOrElse(0))
+    queryOne(
+      s"""select count(*) from (
+         |	select jsonb_object_keys(svalue) as length from otoroshi.entities where key = $$1 and (ttl_starting_at + ttl) > NOW()
+         |) A;
+         |""".stripMargin, Seq(key)) { row =>
+      row.getLong("count").longValue()
+    }.map(_.getOrElse(0))
   }
 
   override def rawGet(key: String): Future[Option[JsValue]] = {
