@@ -4,6 +4,36 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0-alpha.5] - 2020-02-05
+
+https://github.com/MAIF/otoroshi/issues?q=is%3Aissue+label%3A1.5.0-alpha.5+is%3Aclosed
+https://github.com/MAIF/otoroshi/compare/v1.5.0-alpha.4...v1.5.0-alpha.5
+https://github.com/MAIF/otoroshi/releases/tag/v1.5.0-alpha.5
+
+- kubernetes job improvments (#677)
+- Add an api to get the availability of a service over time (#713)
+- Support private key passwords on certificates (#717)
+- watch does not handle new namespaces until restart (#719)
+- watch does not use namespace label filtering (#720)
+- Add support for kubedns and openshift dns operator (#721)
+- Add documentation about coredns stubdomain for openshift and kubedns (#722)
+- Exporter to fill internal metrics  (#725)
+- Support EC certificates in the pki (#727)
+- Title not displayed after cancel a TCP service (#728)
+- change apiversion in crds (#730)
+- fix the findCertMatching in DynamicKeyManager to chose the most client specific cert (#733)
+- enhance pki (#735)
+- default jwks.json route (#736)
+- create default team and orga at first startup (#742)
+- Team selector is broken in UI (#743)
+- Unleash the snow monkey seems broken (#744)
+- Add specific JVM flags in kubernetes manifests (#745)
+- Session management does not work in cluster mode (#752)
+- Login tokens does not work in cluster mode (#753)
+- Chaining jwt verifier in non strict mode generate more events than needed (#755)
+- Experiment postgresql support (#757)
+
+
 ## [1.5.0-alpha.4] - 2020-12-18
 
 https://github.com/MAIF/otoroshi/issues?q=is%3Aissue+label%3A1.5.0-alpha.4+is%3Aclosed
