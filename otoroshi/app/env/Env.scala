@@ -638,7 +638,7 @@ class Env(val configuration: Configuration,
         new MongoDataStores(configuration, environment, lifecycle, this)
       case "lettuce" if clusterConfig.mode == ClusterMode.Leader =>
         new LettuceDataStores(configuration, environment, lifecycle, this)
-      case "reactive-pg" if clusterConfig.mode == ClusterMode.Leader =>
+      case "experimental-pg" if clusterConfig.mode == ClusterMode.Leader =>
         new ReactivePgDataStores(configuration, environment, lifecycle, this)
       case "redis"             => new RedisLFDataStores(configuration, environment, lifecycle, this)
       case "inmemory"          => new InMemoryDataStores(configuration, environment, lifecycle, PersistenceKind.NoopPersistenceKind, this)
@@ -655,8 +655,7 @@ class Env(val configuration: Configuration,
       case "redis-sentinel"    => new RedisSentinelDataStores(configuration, environment, lifecycle, this)
       case "redis-sentinel-lf" => new RedisSentinelLFDataStores(configuration, environment, lifecycle, this)
       case "lettuce"           => new LettuceDataStores(configuration, environment, lifecycle, this)
-      case "reactive-pg"       => new ReactivePgDataStores(configuration, environment, lifecycle, this)
-      case "pg"                => new ReactivePgDataStores(configuration, environment, lifecycle, this)
+      case "experimental-pg"   => new ReactivePgDataStores(configuration, environment, lifecycle, this)
       case e                   => throw new RuntimeException(s"Bad storage value from conf: $e")
     }
   }

@@ -813,6 +813,12 @@ object ApiKeyHelper {
       )
     }
 
+    // if (req.headers.get("Otoroshi-Client-Id").isEmpty) {
+    //   println("no apikey", req.method, req.path)
+    // } else {
+    //   println("with apikey", req.method, req.path)
+    // }
+
     // if (descriptor.thirdPartyApiKey.enabled) {
     //   descriptor.thirdPartyApiKey.handleGen[T](req, descriptor, config, attrs) { key =>
     //     callDownstream(config, key, None)
@@ -1158,10 +1164,10 @@ object ApiKeyHelper {
               }
           }
           case _ =>
-            errorResult(BadRequest, "No ApiKey provided", "errors.no.api.key")
+            errorResult(BadRequest, "No ApiKey provided 1", "errors.no.api.key")
         }
       } else {
-        errorResult(BadRequest, "No ApiKey provided", "errors.no.api.key")
+        errorResult(BadRequest, "No ApiKey provided 2", "errors.no.api.key")
       }
     //}
   }

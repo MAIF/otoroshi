@@ -246,7 +246,7 @@ class MongoRedis(actorSystem: ActorSystem, connection: MongoConnection, dbName: 
               .map(
                 _.flatMap(
                   _.getAs[String](
-                    "valu" +
+                    "value" +
                     "e"
                   ).map(_.toLong)
                 ).getOrElse(0L)

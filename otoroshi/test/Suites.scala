@@ -71,6 +71,17 @@ object Configurations {
        """.stripMargin)
       .resolve()
   )
+
+  val PgConfiguration = Configuration(
+    ConfigFactory
+      .parseString("""
+                     |{
+                     |  app.storage = "experimental-pg"
+                     |  app.pg.testMode = true
+                     |}
+       """.stripMargin)
+      .resolve()
+  )
 }
 
 object OtoroshiTests {
@@ -83,6 +94,7 @@ object OtoroshiTests {
       case "cassandra-naive" => ("Cassandra Naive", Configurations.CassandraNaiveConfiguration)
       case "cassandra"       => ("Cassandra", Configurations.CassandraConfiguration)
       case "mongo"           => ("Mongo", Configurations.MongoConfiguration)
+      case "experimental-pg" => ("Experimental PG", Configurations.PgConfiguration)
       case e                 => throw new RuntimeException(s"Bad storage value from conf: $e")
     }
   }
@@ -174,7 +186,7 @@ class OtoroshiTests extends Suites(OtoroshiTests.getSuites(): _*) with BeforeAnd
 class DevOtoroshiTests
     extends Suites(
       // new TeamsSpec("DEV", Configurations.InMemoryConfiguration),
-      new WorkFlowTestSpec("DEV", Configurations.InMemoryConfiguration),
+      new BasicSpec("DEV", Configurations.PgConfiguration),
       // new MapFilterSpec(),
       // new VersionSpec(),
     )
