@@ -1063,6 +1063,23 @@ play.http {
     timeout = 10000
     pollEvery = 10000
   }
+  pg {
+    uri = ${?PG_URI}
+    uri = ${?POSTGRESQL_ADDON_URI}
+    poolSize = 20
+    poolSize = ${?PG_POOL_SIZE}
+    port = 5432
+    port = ${?PG_PORT}
+    host = &quot;localhost&quot;
+    host = ${?PG_HOST}
+    database = &quot;otoroshi&quot;
+    database = ${?PG_DATABASE}
+    user = &quot;otoroshi&quot;
+    user = ${?PG_USER}
+    password = &quot;otoroshi&quot;
+    password = ${?PG_PASSWORD}
+    logQueries = ${?PG_DEBUG_QUERIES}
+  }
   cassandra {
     windowSize = 99
     windowSize = ${?CASSANDRA_WINDOW_SIZE}
