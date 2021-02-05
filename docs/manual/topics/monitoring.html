@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+
+<head>
+<title>Monitoring Otoroshi · Otoroshi</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="description" content='otoroshi-manual'/>
+<link href="https://fonts.googleapis.com/css?family=Roboto:100normal,100italic,300normal,300italic,400normal,400italic,500normal,500italic,700normal,700italic,900normal,900italicc" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="../lib/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../js/page.js"></script>
+<script type="text/javascript" src="../js/cc.js"></script>
+<script type="text/javascript" src="../js/groups.js"></script>
+<link rel="stylesheet" type="text/css" href="../lib/normalize.css/normalize.css"/>
+<link rel="stylesheet" type="text/css" href="../lib/foundation/dist/foundation.min.css"/>
+<link rel="stylesheet" type="text/css" href="../css/page.css"/>
+
+<!--
+<link rel="shortcut icon" href="../images/favicon.ico" />
+-->
+</head>
+
+<body>
+<div class="off-canvas-wrapper">
+<div class="off-canvas-wrapper-inner" data-off-canvas-wrapper>
+
+<div class="off-canvas position-left" id="off-canvas-menu" data-off-canvas>
+<nav class="off-canvas-nav">
+<div class="nav-home">
+<a href="../index.html" >
+<span class="home-icon">⌂</span>Otoroshi
+</a>
+<div class="version-number">
+1.5.0-alpha.5
+</div>
+</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../about.html" class="page">About Otoroshi</a></li>
+  <li><a href="../archi.html" class="page">Architecture</a></li>
+  <li><a href="../features.html" class="page">Features</a></li>
+  <li><a href="../quickstart.html" class="page">Try Otoroshi in 5 minutes</a></li>
+  <li><a href="../getotoroshi/index.html" class="page">Get Otoroshi</a>
+  <ul>
+    <li><a href="../getotoroshi/fromsources.html" class="page">From sources</a></li>
+    <li><a href="../getotoroshi/frombinaries.html" class="page">From binaries</a></li>
+    <li><a href="../getotoroshi/fromdocker.html" class="page">From docker</a></li>
+  </ul></li>
+  <li><a href="../firstrun/index.html" class="page">First run</a>
+  <ul>
+    <li><a href="../firstrun/datastore.html" class="page">Choose your datastore</a></li>
+    <li><a href="../firstrun/configfile.html" class="page">Config. with files</a></li>
+    <li><a href="../firstrun/env.html" class="page">Config. with ENVs</a></li>
+    <li><a href="../firstrun/initialstate.html" class="page">Import initial state</a></li>
+    <li><a href="../firstrun/host.html" class="page">Setup your hosts</a></li>
+    <li><a href="../firstrun/run.html" class="page">Run Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../setup/index.html" class="page">Setup Otoroshi</a>
+  <ul>
+    <li><a href="../setup/admin.html" class="page">Manage admin users</a></li>
+    <li><a href="../setup/dangerzone.html" class="page">Configure the Danger zone</a></li>
+  </ul></li>
+  <li><a href="../usage/index.html" class="page">Using Otoroshi</a>
+  <ul>
+    <li><a href="../usage/1-groups.html" class="page">Managing service groups</a></li>
+    <li><a href="../usage/2-services.html" class="page">Managing services</a></li>
+    <li><a href="../usage/3-apikeys.html" class="page">Managing API keys</a></li>
+    <li><a href="../usage/4-monitor.html" class="page">Monitoring services</a></li>
+    <li><a href="../usage/5-sessions.html" class="page">Managing sessions</a></li>
+    <li><a href="../usage/6-audit.html" class="page">Auditing Otoroshi</a></li>
+    <li><a href="../usage/7-metrics.html" class="page">Otoroshi global metrics</a></li>
+    <li><a href="../usage/8-importsexports.html" class="page">Import and export</a></li>
+    <li><a href="../usage/9-auth.html" class="page">Authentication</a></li>
+  </ul></li>
+  <li><a href="../integrations/index.html" class="page">Third party Integrations</a>
+  <ul>
+    <li><a href="../integrations/analytics.html" class="page">Analytics</a></li>
+    <li><a href="../integrations/mailgun.html" class="page">Mailgun</a></li>
+    <li><a href="../integrations/statsd.html" class="page">StatsD / Datadog</a></li>
+    <li><a href="../integrations/clevercloud.html" class="page">Clever Cloud</a></li>
+  </ul></li>
+  <li><a href="../topics/index.html" class="page">Detailed topics</a>
+  <ul>
+    <li><a href="../topics/snow-monkey.html" class="page">Chaos engineering with the Snow Monkey</a></li>
+    <li><a href="../topics/jwt-verifications.html" class="page">JWT Tokens verification</a></li>
+    <li><a href="../topics/ssl.html" class="page">SSL/TLS termination with Otoroshi</a></li>
+    <li><a href="../topics/mtls.html" class="page">Mutual TLS with Otoroshi</a></li>
+    <li><a href="../topics/clustering.html" class="page">Otoroshi clustering</a></li>
+    <li><a href="../topics/plugins.html" class="page">Otoroshi plugins</a></li>
+    <li><a href="../topics/monitoring.html" class="active page">Monitoring Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../api.html" class="page">Admin REST API</a></li>
+  <li><a href="../deploy/index.html" class="page">Deploy to production</a>
+  <ul>
+    <li><a href="../deploy/kubernetes.html" class="page">Kubernetes</a></li>
+    <li><a href="../deploy/clevercloud.html" class="page">Clever Cloud</a></li>
+    <li><a href="../deploy/aws-beanstalk.html" class="page">AWS - Elastic Beanstalk</a></li>
+    <li><a href="../deploy/other.html" class="page">Others</a></li>
+    <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
+</ul>
+</div>
+
+</nav>
+</div>
+
+<div class="off-canvas-content" data-off-canvas-content>
+
+<header class="site-header expanded row">
+<div class="small-12 column">
+<a href="#" class="off-canvas-toggle hide-for-medium" data-toggle="off-canvas-menu"><svg class="svg-icon svg-icon-menu" version="1.1" id="Menu" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 20 20" enable-background="new 0 0 20 20" xml:space="preserve"> <path class="svg-icon-menu-path" fill="#53CDEC" d="M16.4,9H3.6C3.048,9,3,9.447,3,10c0,0.553,0.048,1,0.6,1H16.4c0.552,0,0.6-0.447,0.6-1C17,9.447,16.952,9,16.4,9z M16.4,13
+H3.6C3.048,13,3,13.447,3,14c0,0.553,0.048,1,0.6,1H16.4c0.552,0,0.6-0.447,0.6-1C17,13.447,16.952,13,16.4,13z M3.6,7H16.4
+C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.048,7,3.6,7z"/></svg>
+</a>
+<div class="title-wrapper">
+<div class="title-logo"></div>
+<div class="title"><a href="../index.html">Otoroshi</a></div>
+</div>
+<!--
+<a href="https://www.example.com" class="logo show-for-medium">logo</a>
+-->
+</div>
+</header>
+
+<div class="expanded row">
+
+<div class="medium-3 large-2 show-for-medium column">
+<nav class="site-nav">
+<div class="nav-home">
+<a href="../index.html" >
+<span class="home-icon">⌂</span>Otoroshi
+</a>
+<div class="version-number">
+1.5.0-alpha.5
+</div>
+</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../about.html" class="page">About Otoroshi</a></li>
+  <li><a href="../archi.html" class="page">Architecture</a></li>
+  <li><a href="../features.html" class="page">Features</a></li>
+  <li><a href="../quickstart.html" class="page">Try Otoroshi in 5 minutes</a></li>
+  <li><a href="../getotoroshi/index.html" class="page">Get Otoroshi</a>
+  <ul>
+    <li><a href="../getotoroshi/fromsources.html" class="page">From sources</a></li>
+    <li><a href="../getotoroshi/frombinaries.html" class="page">From binaries</a></li>
+    <li><a href="../getotoroshi/fromdocker.html" class="page">From docker</a></li>
+  </ul></li>
+  <li><a href="../firstrun/index.html" class="page">First run</a>
+  <ul>
+    <li><a href="../firstrun/datastore.html" class="page">Choose your datastore</a></li>
+    <li><a href="../firstrun/configfile.html" class="page">Config. with files</a></li>
+    <li><a href="../firstrun/env.html" class="page">Config. with ENVs</a></li>
+    <li><a href="../firstrun/initialstate.html" class="page">Import initial state</a></li>
+    <li><a href="../firstrun/host.html" class="page">Setup your hosts</a></li>
+    <li><a href="../firstrun/run.html" class="page">Run Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../setup/index.html" class="page">Setup Otoroshi</a>
+  <ul>
+    <li><a href="../setup/admin.html" class="page">Manage admin users</a></li>
+    <li><a href="../setup/dangerzone.html" class="page">Configure the Danger zone</a></li>
+  </ul></li>
+  <li><a href="../usage/index.html" class="page">Using Otoroshi</a>
+  <ul>
+    <li><a href="../usage/1-groups.html" class="page">Managing service groups</a></li>
+    <li><a href="../usage/2-services.html" class="page">Managing services</a></li>
+    <li><a href="../usage/3-apikeys.html" class="page">Managing API keys</a></li>
+    <li><a href="../usage/4-monitor.html" class="page">Monitoring services</a></li>
+    <li><a href="../usage/5-sessions.html" class="page">Managing sessions</a></li>
+    <li><a href="../usage/6-audit.html" class="page">Auditing Otoroshi</a></li>
+    <li><a href="../usage/7-metrics.html" class="page">Otoroshi global metrics</a></li>
+    <li><a href="../usage/8-importsexports.html" class="page">Import and export</a></li>
+    <li><a href="../usage/9-auth.html" class="page">Authentication</a></li>
+  </ul></li>
+  <li><a href="../integrations/index.html" class="page">Third party Integrations</a>
+  <ul>
+    <li><a href="../integrations/analytics.html" class="page">Analytics</a></li>
+    <li><a href="../integrations/mailgun.html" class="page">Mailgun</a></li>
+    <li><a href="../integrations/statsd.html" class="page">StatsD / Datadog</a></li>
+    <li><a href="../integrations/clevercloud.html" class="page">Clever Cloud</a></li>
+  </ul></li>
+  <li><a href="../topics/index.html" class="page">Detailed topics</a>
+  <ul>
+    <li><a href="../topics/snow-monkey.html" class="page">Chaos engineering with the Snow Monkey</a></li>
+    <li><a href="../topics/jwt-verifications.html" class="page">JWT Tokens verification</a></li>
+    <li><a href="../topics/ssl.html" class="page">SSL/TLS termination with Otoroshi</a></li>
+    <li><a href="../topics/mtls.html" class="page">Mutual TLS with Otoroshi</a></li>
+    <li><a href="../topics/clustering.html" class="page">Otoroshi clustering</a></li>
+    <li><a href="../topics/plugins.html" class="page">Otoroshi plugins</a></li>
+    <li><a href="../topics/monitoring.html" class="active page">Monitoring Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../api.html" class="page">Admin REST API</a></li>
+  <li><a href="../deploy/index.html" class="page">Deploy to production</a>
+  <ul>
+    <li><a href="../deploy/kubernetes.html" class="page">Kubernetes</a></li>
+    <li><a href="../deploy/clevercloud.html" class="page">Clever Cloud</a></li>
+    <li><a href="../deploy/aws-beanstalk.html" class="page">AWS - Elastic Beanstalk</a></li>
+    <li><a href="../deploy/other.html" class="page">Others</a></li>
+    <li><a href="../deploy/scaling.html" class="page">Scaling Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
+</ul>
+</div>
+
+</nav>
+</div>
+
+<div class="small-12 medium-9 large-10 column">
+<section class="site-content">
+
+<div class="page-header row">
+<div class="medium-12 show-for-medium column">
+<div class="nav-breadcrumbs">
+<ul>
+  <li><a href="../index.html">Otoroshi</a></li>
+  <li><a href="../topics/index.html">Detailed topics</a></li>
+  <li>Monitoring Otoroshi</li>
+</ul>
+</div>
+</div>
+</div>
+
+<div class="page-content row">
+<div class="small-12 large-9 column" id="docs">
+<h1><a href="#monitoring-otoroshi" name="monitoring-otoroshi" class="anchor"><span class="anchor-link"></span></a>Monitoring Otoroshi</h1>
+<p>The Otoroshi API exposes two endpoints for </p>
+<ul>
+  <li><code>/health</code>: the health of the Otoroshi instance</li>
+  <li><code>/metrics</code>: the metrics of the Otoroshi instance, either in JSON or Prometheus format using the <code>Accept</code> header (with <code>application/json</code> / <code>application/prometheus</code> values) or the <code>format</code> query param (with <code>json</code> or <code>prometheus</code> values)</li>
+</ul>
+<h2><a href="#endpoints-security" name="endpoints-security" class="anchor"><span class="anchor-link"></span></a>Endpoints security</h2>
+<p>The two endpoints are exposed publicly on the Otoroshi admin api. But you can remove the corresponding public pattern and query the endpoints using standard apikeys. If you don&rsquo;t want to use apikeys but don&rsquo;t want to expose the endpoints publicly, you can defined two config. variables (<code>app.health.accessKey</code> or <code>HEALTH_ACCESS_KEY</code> and <code>otoroshi.metrics.accessKey</code> or <code>OTOROSHI_METRICS_ACCESS_KEY</code>) that will hold an access key for the endpoints. Then you can call the endpoints with an <code>access_key</code> query param with the value defined in the config. If you don&rsquo;t defined <code>otoroshi.metrics.accessKey</code> but define <code>app.health.accessKey</code>, <code>otoroshi.metrics.accessKey</code> will have the value of <code>app.health.accessKey</code>.</p>
+<h2><a href="#examples" name="examples" class="anchor"><span class="anchor-link"></span></a>Examples</h2>
+<p>let say <code>app.health.accessKey</code> has value <code>MILpkVv6f2kG9Xmnc4mFIYRU4rTxHVGkxvB0hkQLZwEaZgE2hgbOXiRsN1DBnbtY</code></p>
+<pre class="prettyprint"><code class="language-sh">$ curl http://otoroshi-api.oto.tools:8080/health\?access_key\=MILpkVv6f2kG9Xmnc4mFIYRU4rTxHVGkxvB0hkQLZwEaZgE2hgbOXiRsN1DBnbtY
+{&quot;otoroshi&quot;:&quot;healthy&quot;,&quot;datastore&quot;:&quot;healthy&quot;}
+
+$ curl -H &#39;Accept: application/json&#39; http://otoroshi-api.oto.tools:8080/metrics\?access_key\=MILpkVv6f2kG9Xmnc4mFIYRU4rTxHVGkxvB0hkQLZwEaZgE2hgbOXiRsN1DBnbtY
+{&quot;version&quot;:&quot;4.0.0&quot;,&quot;gauges&quot;:{&quot;attr.app.commit&quot;:{&quot;value&quot;:&quot;xxxx&quot;},&quot;attr.app.id&quot;:{&quot;value&quot;:&quot;xxxx&quot;},&quot;attr.cluster.mode&quot;:{&quot;value&quot;:&quot;Leader&quot;},&quot;attr.cluster.name&quot;:{&quot;value&quot;:&quot;otoroshi-leader-0&quot;},&quot;attr.instance.env&quot;:{&quot;value&quot;:&quot;prod&quot;},&quot;attr.instance.id&quot;:{&quot;value&quot;:&quot;xxxx&quot;},&quot;attr.instance.number&quot;:{&quot;value&quot;:&quot;0&quot;},&quot;attr.jvm.cpu.usage&quot;:{&quot;value&quot;:136},&quot;attr.jvm.heap.size&quot;:{&quot;value&quot;:1409},&quot;attr.jvm.heap.used&quot;:{&quot;value&quot;:112},&quot;internals.0.concurrent-requests&quot;:{&quot;value&quot;:1},&quot;internals.global.throttling-quotas&quot;:{&quot;value&quot;:2},&quot;jvm.attr.name&quot;:{&quot;value&quot;:&quot;2085@xxxx&quot;},&quot;jvm.attr.uptime&quot;:{&quot;value&quot;:2296900},&quot;jvm.attr.vendor&quot;:{&quot;value&quot;:&quot;JDK11&quot;},&quot;jvm.gc.PS-MarkSweep.count&quot;:{&quot;value&quot;:3},&quot;jvm.gc.PS-MarkSweep.time&quot;:{&quot;value&quot;:261},&quot;jvm.gc.PS-Scavenge.count&quot;:{&quot;value&quot;:12},&quot;jvm.gc.PS-Scavenge.time&quot;:{&quot;value&quot;:161},&quot;jvm.memory.heap.committed&quot;:{&quot;value&quot;:1477967872},&quot;jvm.memory.heap.init&quot;:{&quot;value&quot;:1690304512},&quot;jvm.memory.heap.max&quot;:{&quot;value&quot;:3005218816},&quot;jvm.memory.heap.usage&quot;:{&quot;value&quot;:0.03916456777568639},&quot;jvm.memory.heap.used&quot;:{&quot;value&quot;:117698096},&quot;jvm.memory.non-heap.committed&quot;:{&quot;value&quot;:166445056},&quot;jvm.memory.non-heap.init&quot;:{&quot;value&quot;:7667712},&quot;jvm.memory.non-heap.max&quot;:{&quot;value&quot;:994050048},&quot;jvm.memory.non-heap.usage&quot;:{&quot;value&quot;:0.1523920694986979},&quot;jvm.memory.non-heap.used&quot;:{&quot;value&quot;:151485344},&quot;jvm.memory.pools.CodeHeap-&#39;non-nmethods&#39;.committed&quot;:{&quot;value&quot;:2555904},&quot;jvm.memory.pools.CodeHeap-&#39;non-nmethods&#39;.init&quot;:{&quot;value&quot;:2555904},&quot;jvm.memory.pools.CodeHeap-&#39;non-nmethods&#39;.max&quot;:{&quot;value&quot;:5832704},&quot;jvm.memory.pools.CodeHeap-&#39;non-nmethods&#39;.usage&quot;:{&quot;value&quot;:0.28408093398876405},&quot;jvm.memory.pools.CodeHeap-&#39;non-nmethods&#39;.used&quot;:{&quot;value&quot;:1656960},&quot;jvm.memory.pools.CodeHeap-&#39;non-profiled-nmethods&#39;.committed&quot;:{&quot;value&quot;:11796480},&quot;jvm.memory.pools.CodeHeap-&#39;non-profiled-nmethods&#39;.init&quot;:{&quot;value&quot;:2555904},&quot;jvm.memory.pools.CodeHeap-&#39;non-profiled-nmethods&#39;.max&quot;:{&quot;value&quot;:122912768},&quot;jvm.memory.pools.CodeHeap-&#39;non-profiled-nmethods&#39;.usage&quot;:{&quot;value&quot;:0.09536102872567315},&quot;jvm.memory.pools.CodeHeap-&#39;non-profiled-nmethods&#39;.used&quot;:{&quot;value&quot;:11721088},&quot;jvm.memory.pools.CodeHeap-&#39;profiled-nmethods&#39;.committed&quot;:{&quot;value&quot;:37355520},&quot;jvm.memory.pools.CodeHeap-&#39;profiled-nmethods&#39;.init&quot;:{&quot;value&quot;:2555904},&quot;jvm.memory.pools.CodeHeap-&#39;profiled-nmethods&#39;.max&quot;:{&quot;value&quot;:122912768},&quot;jvm.memory.pools.CodeHeap-&#39;profiled-nmethods&#39;.usage&quot;:{&quot;value&quot;:0.2538573047187417},&quot;jvm.memory.pools.CodeHeap-&#39;profiled-nmethods&#39;.used&quot;:{&quot;value&quot;:31202304},&quot;jvm.memory.pools.Compressed-Class-Space.committed&quot;:{&quot;value&quot;:14942208},&quot;jvm.memory.pools.Compressed-Class-Space.init&quot;:{&quot;value&quot;:0},&quot;jvm.memory.pools.Compressed-Class-Space.max&quot;:{&quot;value&quot;:367001600},&quot;jvm.memory.pools.Compressed-Class-Space.usage&quot;:{&quot;value&quot;:0.033858838762555805},&quot;jvm.memory.pools.Compressed-Class-Space.used&quot;:{&quot;value&quot;:12426248},&quot;jvm.memory.pools.Metaspace.committed&quot;:{&quot;value&quot;:99794944},&quot;jvm.memory.pools.Metaspace.init&quot;:{&quot;value&quot;:0},&quot;jvm.memory.pools.Metaspace.max&quot;:{&quot;value&quot;:375390208},&quot;jvm.memory.pools.Metaspace.usage&quot;:{&quot;value&quot;:0.25168142904782426},&quot;jvm.memory.pools.Metaspace.used&quot;:{&quot;value&quot;:94478744},&quot;jvm.memory.pools.PS-Eden-Space.committed&quot;:{&quot;value&quot;:349700096},&quot;jvm.memory.pools.PS-Eden-Space.init&quot;:{&quot;value&quot;:422576128},&quot;jvm.memory.pools.PS-Eden-Space.max&quot;:{&quot;value&quot;:1110966272},&quot;jvm.memory.pools.PS-Eden-Space.usage&quot;:{&quot;value&quot;:0.07505125052077188},&quot;jvm.memory.pools.PS-Eden-Space.used&quot;:{&quot;value&quot;:83379408},&quot;jvm.memory.pools.PS-Eden-Space.used-after-gc&quot;:{&quot;value&quot;:0},&quot;jvm.memory.pools.PS-Old-Gen.committed&quot;:{&quot;value&quot;:1127219200},&quot;jvm.memory.pools.PS-Old-Gen.init&quot;:{&quot;value&quot;:1127219200},&quot;jvm.memory.pools.PS-Old-Gen.max&quot;:{&quot;value&quot;:2253914112},&quot;jvm.memory.pools.PS-Old-Gen.usage&quot;:{&quot;value&quot;:0.014950035505168354},&quot;jvm.memory.pools.PS-Old-Gen.used&quot;:{&quot;value&quot;:33696096},&quot;jvm.memory.pools.PS-Old-Gen.used-after-gc&quot;:{&quot;value&quot;:23791152},&quot;jvm.memory.pools.PS-Survivor-Space.committed&quot;:{&quot;value&quot;:1048576},&quot;jvm.memory.pools.PS-Survivor-Space.init&quot;:{&quot;value&quot;:70254592},&quot;jvm.memory.pools.PS-Survivor-Space.max&quot;:{&quot;value&quot;:1048576},&quot;jvm.memory.pools.PS-Survivor-Space.usage&quot;:{&quot;value&quot;:0.59375},&quot;jvm.memory.pools.PS-Survivor-Space.used&quot;:{&quot;value&quot;:622592},&quot;jvm.memory.pools.PS-Survivor-Space.used-after-gc&quot;:{&quot;value&quot;:622592},&quot;jvm.memory.total.committed&quot;:{&quot;value&quot;:1644412928},&quot;jvm.memory.total.init&quot;:{&quot;value&quot;:1697972224},&quot;jvm.memory.total.max&quot;:{&quot;value&quot;:3999268864},&quot;jvm.memory.total.used&quot;:{&quot;value&quot;:269184904},&quot;jvm.thread.blocked.count&quot;:{&quot;value&quot;:0},&quot;jvm.thread.count&quot;:{&quot;value&quot;:82},&quot;jvm.thread.daemon.count&quot;:{&quot;value&quot;:11},&quot;jvm.thread.deadlock.count&quot;:{&quot;value&quot;:0},&quot;jvm.thread.deadlocks&quot;:{&quot;value&quot;:[]},&quot;jvm.thread.new.count&quot;:{&quot;value&quot;:0},&quot;jvm.thread.runnable.count&quot;:{&quot;value&quot;:25},&quot;jvm.thread.terminated.count&quot;:{&quot;value&quot;:0},&quot;jvm.thread.timed_waiting.count&quot;:{&quot;value&quot;:10},&quot;jvm.thread.waiting.count&quot;:{&quot;value&quot;:47}},&quot;counters&quot;:{},&quot;histograms&quot;:{},&quot;meters&quot;:{},&quot;timers&quot;:{}}
+
+$ curl -H &#39;Accept: application/prometheus&#39; http://otoroshi-api.oto.tools:8080/metrics\?access_key\=MILpkVv6f2kG9Xmnc4mFIYRU4rTxHVGkxvB0hkQLZwEaZgE2hgbOXiRsN1DBnbtY
+# TYPE attr_jvm_cpu_usage gauge
+attr_jvm_cpu_usage 83.0
+# TYPE attr_jvm_heap_size gauge
+attr_jvm_heap_size 1409.0
+# TYPE attr_jvm_heap_used gauge
+attr_jvm_heap_used 220.0
+# TYPE internals_0_concurrent_requests gauge
+internals_0_concurrent_requests 1.0
+# TYPE internals_global_throttling_quotas gauge
+internals_global_throttling_quotas 3.0
+# TYPE jvm_attr_uptime gauge
+jvm_attr_uptime 2372614.0
+# TYPE jvm_gc_PS_MarkSweep_count gauge
+jvm_gc_PS_MarkSweep_count 3.0
+# TYPE jvm_gc_PS_MarkSweep_time gauge
+jvm_gc_PS_MarkSweep_time 261.0
+# TYPE jvm_gc_PS_Scavenge_count gauge
+jvm_gc_PS_Scavenge_count 12.0
+# TYPE jvm_gc_PS_Scavenge_time gauge
+jvm_gc_PS_Scavenge_time 161.0
+# TYPE jvm_memory_heap_committed gauge
+jvm_memory_heap_committed 1.477967872E9
+# TYPE jvm_memory_heap_init gauge
+jvm_memory_heap_init 1.690304512E9
+# TYPE jvm_memory_heap_max gauge
+jvm_memory_heap_max 3.005218816E9
+# TYPE jvm_memory_heap_usage gauge
+jvm_memory_heap_usage 0.07680553268571043
+# TYPE jvm_memory_heap_used gauge
+jvm_memory_heap_used 2.30817432E8
+# TYPE jvm_memory_non_heap_committed gauge
+jvm_memory_non_heap_committed 1.66510592E8
+# TYPE jvm_memory_non_heap_init gauge
+jvm_memory_non_heap_init 7667712.0
+# TYPE jvm_memory_non_heap_max gauge
+jvm_memory_non_heap_max 9.94050048E8
+# TYPE jvm_memory_non_heap_usage gauge
+jvm_memory_non_heap_usage 0.15262878997416435
+# TYPE jvm_memory_non_heap_used gauge
+jvm_memory_non_heap_used 1.51720656E8
+# TYPE jvm_memory_pools_CodeHeap__non_nmethods__committed gauge
+jvm_memory_pools_CodeHeap__non_nmethods__committed 2555904.0
+# TYPE jvm_memory_pools_CodeHeap__non_nmethods__init gauge
+jvm_memory_pools_CodeHeap__non_nmethods__init 2555904.0
+# TYPE jvm_memory_pools_CodeHeap__non_nmethods__max gauge
+jvm_memory_pools_CodeHeap__non_nmethods__max 5832704.0
+# TYPE jvm_memory_pools_CodeHeap__non_nmethods__usage gauge
+jvm_memory_pools_CodeHeap__non_nmethods__usage 0.28408093398876405
+# TYPE jvm_memory_pools_CodeHeap__non_nmethods__used gauge
+jvm_memory_pools_CodeHeap__non_nmethods__used 1656960.0
+# TYPE jvm_memory_pools_CodeHeap__non_profiled_nmethods__committed gauge
+jvm_memory_pools_CodeHeap__non_profiled_nmethods__committed 1.1862016E7
+# TYPE jvm_memory_pools_CodeHeap__non_profiled_nmethods__init gauge
+jvm_memory_pools_CodeHeap__non_profiled_nmethods__init 2555904.0
+# TYPE jvm_memory_pools_CodeHeap__non_profiled_nmethods__max gauge
+jvm_memory_pools_CodeHeap__non_profiled_nmethods__max 1.22912768E8
+# TYPE jvm_memory_pools_CodeHeap__non_profiled_nmethods__usage gauge
+jvm_memory_pools_CodeHeap__non_profiled_nmethods__usage 0.09610562183417755
+# TYPE jvm_memory_pools_CodeHeap__non_profiled_nmethods__used gauge
+jvm_memory_pools_CodeHeap__non_profiled_nmethods__used 1.1812608E7
+# TYPE jvm_memory_pools_CodeHeap__profiled_nmethods__committed gauge
+jvm_memory_pools_CodeHeap__profiled_nmethods__committed 3.735552E7
+# TYPE jvm_memory_pools_CodeHeap__profiled_nmethods__init gauge
+jvm_memory_pools_CodeHeap__profiled_nmethods__init 2555904.0
+# TYPE jvm_memory_pools_CodeHeap__profiled_nmethods__max gauge
+jvm_memory_pools_CodeHeap__profiled_nmethods__max 1.22912768E8
+# TYPE jvm_memory_pools_CodeHeap__profiled_nmethods__usage gauge
+jvm_memory_pools_CodeHeap__profiled_nmethods__usage 0.25493618368435084
+# TYPE jvm_memory_pools_CodeHeap__profiled_nmethods__used gauge
+jvm_memory_pools_CodeHeap__profiled_nmethods__used 3.1334912E7
+# TYPE jvm_memory_pools_Compressed_Class_Space_committed gauge
+jvm_memory_pools_Compressed_Class_Space_committed 1.4942208E7
+# TYPE jvm_memory_pools_Compressed_Class_Space_init gauge
+jvm_memory_pools_Compressed_Class_Space_init 0.0
+# TYPE jvm_memory_pools_Compressed_Class_Space_max gauge
+jvm_memory_pools_Compressed_Class_Space_max 3.670016E8
+# TYPE jvm_memory_pools_Compressed_Class_Space_usage gauge
+jvm_memory_pools_Compressed_Class_Space_usage 0.03386023385184152
+# TYPE jvm_memory_pools_Compressed_Class_Space_used gauge
+jvm_memory_pools_Compressed_Class_Space_used 1.242676E7
+# TYPE jvm_memory_pools_Metaspace_committed gauge
+jvm_memory_pools_Metaspace_committed 9.9794944E7
+# TYPE jvm_memory_pools_Metaspace_init gauge
+jvm_memory_pools_Metaspace_init 0.0
+# TYPE jvm_memory_pools_Metaspace_max gauge
+jvm_memory_pools_Metaspace_max 3.75390208E8
+# TYPE jvm_memory_pools_Metaspace_usage gauge
+jvm_memory_pools_Metaspace_usage 0.25170985813247426
+# TYPE jvm_memory_pools_Metaspace_used gauge
+jvm_memory_pools_Metaspace_used 9.4489416E7
+# TYPE jvm_memory_pools_PS_Eden_Space_committed gauge
+jvm_memory_pools_PS_Eden_Space_committed 3.49700096E8
+# TYPE jvm_memory_pools_PS_Eden_Space_init gauge
+jvm_memory_pools_PS_Eden_Space_init 4.22576128E8
+# TYPE jvm_memory_pools_PS_Eden_Space_max gauge
+jvm_memory_pools_PS_Eden_Space_max 1.110966272E9
+# TYPE jvm_memory_pools_PS_Eden_Space_usage gauge
+jvm_memory_pools_PS_Eden_Space_usage 0.17698545577448457
+# TYPE jvm_memory_pools_PS_Eden_Space_used gauge
+jvm_memory_pools_PS_Eden_Space_used 1.96624872E8
+# TYPE jvm_memory_pools_PS_Eden_Space_used_after_gc gauge
+jvm_memory_pools_PS_Eden_Space_used_after_gc 0.0
+# TYPE jvm_memory_pools_PS_Old_Gen_committed gauge
+jvm_memory_pools_PS_Old_Gen_committed 1.1272192E9
+# TYPE jvm_memory_pools_PS_Old_Gen_init gauge
+jvm_memory_pools_PS_Old_Gen_init 1.1272192E9
+# TYPE jvm_memory_pools_PS_Old_Gen_max gauge
+jvm_memory_pools_PS_Old_Gen_max 2.253914112E9
+# TYPE jvm_memory_pools_PS_Old_Gen_usage gauge
+jvm_memory_pools_PS_Old_Gen_usage 0.014950035505168354
+# TYPE jvm_memory_pools_PS_Old_Gen_used gauge
+jvm_memory_pools_PS_Old_Gen_used 3.3696096E7
+# TYPE jvm_memory_pools_PS_Old_Gen_used_after_gc gauge
+jvm_memory_pools_PS_Old_Gen_used_after_gc 2.3791152E7
+# TYPE jvm_memory_pools_PS_Survivor_Space_committed gauge
+jvm_memory_pools_PS_Survivor_Space_committed 1048576.0
+# TYPE jvm_memory_pools_PS_Survivor_Space_init gauge
+jvm_memory_pools_PS_Survivor_Space_init 7.0254592E7
+# TYPE jvm_memory_pools_PS_Survivor_Space_max gauge
+jvm_memory_pools_PS_Survivor_Space_max 1048576.0
+# TYPE jvm_memory_pools_PS_Survivor_Space_usage gauge
+jvm_memory_pools_PS_Survivor_Space_usage 0.59375
+# TYPE jvm_memory_pools_PS_Survivor_Space_used gauge
+jvm_memory_pools_PS_Survivor_Space_used 622592.0
+# TYPE jvm_memory_pools_PS_Survivor_Space_used_after_gc gauge
+jvm_memory_pools_PS_Survivor_Space_used_after_gc 622592.0
+# TYPE jvm_memory_total_committed gauge
+jvm_memory_total_committed 1.644478464E9
+# TYPE jvm_memory_total_init gauge
+jvm_memory_total_init 1.697972224E9
+# TYPE jvm_memory_total_max gauge
+jvm_memory_total_max 3.999268864E9
+# TYPE jvm_memory_total_used gauge
+jvm_memory_total_used 3.82665128E8
+# TYPE jvm_thread_blocked_count gauge
+jvm_thread_blocked_count 0.0
+# TYPE jvm_thread_count gauge
+jvm_thread_count 82.0
+# TYPE jvm_thread_daemon_count gauge
+jvm_thread_daemon_count 11.0
+# TYPE jvm_thread_deadlock_count gauge
+jvm_thread_deadlock_count 0.0
+# TYPE jvm_thread_new_count gauge
+jvm_thread_new_count 0.0
+# TYPE jvm_thread_runnable_count gauge
+jvm_thread_runnable_count 25.0
+# TYPE jvm_thread_terminated_count gauge
+jvm_thread_terminated_count 0.0
+# TYPE jvm_thread_timed_waiting_count gauge
+jvm_thread_timed_waiting_count 10.0
+# TYPE jvm_thread_waiting_count gauge
+jvm_thread_waiting_count 47.0
+</code></pre>
+<div class="nav-next">
+<p><strong>Next:</strong> <a href="../api.html">Admin REST API</a></p>
+</div>
+</div>
+<div class="large-3 show-for-large column" data-sticky-container>
+<nav class="sidebar sticky" data-sticky data-anchor="docs" data-sticky-on="large">
+<div class="page-nav">
+<div class="nav-title">On this page:</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../topics/monitoring.html#monitoring-otoroshi" class="header">Monitoring Otoroshi</a>
+  <ul>
+    <li><a href="../topics/monitoring.html#endpoints-security" class="header">Endpoints security</a></li>
+    <li><a href="../topics/monitoring.html#examples" class="header">Examples</a></li>
+  </ul></li>
+</ul>
+</div>
+</div>
+</nav>
+</div>
+</div>
+
+</section>
+</div>
+
+</div>
+
+<footer class="site-footer">
+
+<section class="site-footer-nav">
+<div class="expanded row">
+<div class="small-12 large-offset-2 large-10 column">
+<div class="row site-footer-content">
+
+<div class="small-12 medium-4 large-3 text-center column">
+<div class="nav-links">
+<ul>
+<!-- <li><a href="https://www.example.com/products/">Products</a> -->
+</ul>
+</div>
+</div>
+
+</div>
+</div>
+</div>
+</section>
+
+<section class="site-footer-base">
+<div class="expanded row">
+<div class="small-12 large-offset-2 large-10 column">
+<div class="row site-footer-content">
+
+<div class="small-12 text-center large-9 column">
+
+<!--
+<div class="copyright">
+<span class="text">&copy; 2021</span>
+<a href="https://www.example.com" class="logo">logo</a>
+</div>
+-->
+</div>
+
+</div>
+</div>
+</div>
+</section>
+</footer>
+
+</div>
+</div>
+</div>
+</body>
+
+<script type="text/javascript" src="../lib/foundation/dist/foundation.min.js"></script>
+<script type="text/javascript">jQuery(document).foundation();</script>
+<script type="text/javascript" src="../js/magellan.js"></script>
+
+<style type="text/css">@import "../lib/prettify/prettify.css";</style>
+<script type="text/javascript" src="../lib/prettify/prettify.js"></script>
+<script type="text/javascript" src="../lib/prettify/lang-scala.js"></script>
+<script type="text/javascript">jQuery(function(){window.prettyPrint && prettyPrint()});</script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/elasticlunr/0.9.5/elasticlunr.js"></script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-112498312-1"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+
+gtag('config', 'UA-112498312-1');
+</script>
+</html>
+
+
+
+
