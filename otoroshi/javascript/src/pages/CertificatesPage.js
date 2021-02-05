@@ -363,7 +363,12 @@ export class CertificatesPage extends Component {
     },
     password: {
       type: 'password',
-      props: { label: 'Private key password', placeholder: "key password if any", rows: 6, style: { fontFamily: 'monospace' } },
+      props: {
+        label: 'Private key password',
+        placeholder: 'key password if any',
+        rows: 6,
+        style: { fontFamily: 'monospace' },
+      },
     },
     privateKey: {
       type: 'text',
@@ -375,11 +380,18 @@ export class CertificatesPage extends Component {
     },
     exposed: {
       type: 'bool',
-      props: { label: 'Public key exposed', help: 'If true, the public key will be exposed on http://otoroshi-api.your-domain/.well-known/jwks.json' },
+      props: {
+        label: 'Public key exposed',
+        help:
+          'If true, the public key will be exposed on http://otoroshi-api.your-domain/.well-known/jwks.json',
+      },
     },
     revoked: {
       type: 'bool',
-      props: { label: 'Certificate revoked', help: 'If true, certificate will be added to the OCSP api' },
+      props: {
+        label: 'Certificate revoked',
+        help: 'If true, certificate will be added to the OCSP api',
+      },
     },
     client: {
       type: 'bool',
@@ -456,8 +468,8 @@ export class CertificatesPage extends Component {
     },
     {
       title: 'revoked',
-      cell: (v, item) => item.revoked ? <span className="label label-danger">yes</span> : '',
-      content: (item) => item.revoked ? 'yes' : 'no',
+      cell: (v, item) => (item.revoked ? <span className="label label-danger">yes</span> : ''),
+      content: (item) => (item.revoked ? 'yes' : 'no'),
       style: { textAlign: 'center', width: 70 },
     },
     // {
@@ -899,46 +911,58 @@ export class NewCertificateForm extends Component {
               help="The type of the private key"
               value={this.state.keyType}
               onChange={(v) => {
-                this.changeTheValue('keyType', v)
-                this.changeTheValue('keySize', 256)
-                this.changeTheValue('signatureAlg', 'SHA256withECDSA')
-                this.changeTheValue('digestAlg', 'SHA-256')
+                this.changeTheValue('keyType', v);
+                this.changeTheValue('keySize', 256);
+                this.changeTheValue('signatureAlg', 'SHA256withECDSA');
+                this.changeTheValue('digestAlg', 'SHA-256');
               }}
               possibleValues={[
                 { label: 'RSA', value: 'RSA' },
-                { label: 'ECDSA', value: 'ECDSA' }
+                { label: 'ECDSA', value: 'ECDSA' },
               ]}
             />
             <SelectInput
-              label={this.state.keyType !== 'RSA' ? "Curve" : "Key Size"}
-              help={this.state.keyType !== 'RSA' ? "The curve used for the key" : "The size of the private key"}
+              label={this.state.keyType !== 'RSA' ? 'Curve' : 'Key Size'}
+              help={
+                this.state.keyType !== 'RSA'
+                  ? 'The curve used for the key'
+                  : 'The size of the private key'
+              }
               value={this.state.keySize}
               onChange={(v) => this.changeTheValue('keySize', v)}
-              possibleValues={this.state.keyType === 'RSA' ? [
-                { label: '2048', value: 2048 },
-                { label: '4096', value: 4096 },
-                { label: '6144', value: 6144 },
-              ] : [
-                { label: 'P256', value: 256 },
-                { label: 'P384', value: 384 },
-                { label: 'P521', value: 521 },
-              ]}
+              possibleValues={
+                this.state.keyType === 'RSA'
+                  ? [
+                      { label: '2048', value: 2048 },
+                      { label: '4096', value: 4096 },
+                      { label: '6144', value: 6144 },
+                    ]
+                  : [
+                      { label: 'P256', value: 256 },
+                      { label: 'P384', value: 384 },
+                      { label: 'P521', value: 521 },
+                    ]
+              }
             />
             <SelectInput
               label="Signature Algorithm"
               help="The signature algorithm used"
               value={this.state.signatureAlg}
               onChange={(v) => this.changeTheValue('signatureAlg', v)}
-              possibleValues={this.state.keyType === 'RSA' ? [
-                { label: 'SHA224WithRSAEncryption', value: 'SHA224WithRSAEncryption' },
-                { label: 'SHA256WithRSAEncryption', value: 'SHA256WithRSAEncryption' },
-                { label: 'SHA384WithRSAEncryption', value: 'SHA384WithRSAEncryption' },
-                { label: 'SHA512WithRSAEncryption', value: 'SHA512WithRSAEncryption' },
-              ] : [
-                { label: 'SHA256withECDSA', value: 'SHA256withECDSA' },
-                { label: 'SHA384withECDSA', value: 'SHA384withECDSA' },
-                { label: 'SHA512withECDSA', value: 'SHA512withECDSA' },
-              ]}
+              possibleValues={
+                this.state.keyType === 'RSA'
+                  ? [
+                      { label: 'SHA224WithRSAEncryption', value: 'SHA224WithRSAEncryption' },
+                      { label: 'SHA256WithRSAEncryption', value: 'SHA256WithRSAEncryption' },
+                      { label: 'SHA384WithRSAEncryption', value: 'SHA384WithRSAEncryption' },
+                      { label: 'SHA512WithRSAEncryption', value: 'SHA512WithRSAEncryption' },
+                    ]
+                  : [
+                      { label: 'SHA256withECDSA', value: 'SHA256withECDSA' },
+                      { label: 'SHA384withECDSA', value: 'SHA384withECDSA' },
+                      { label: 'SHA512withECDSA', value: 'SHA512withECDSA' },
+                    ]
+              }
             />
             <SelectInput
               label="Digest Algorithm"

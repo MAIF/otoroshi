@@ -4,7 +4,6 @@ import * as BackOfficeServices from '../services/BackOfficeServices';
 import { Separator } from './Separator';
 
 export class Location extends Component {
-
   state = { possibleTeams: [], possibleTenants: [], tenant: 'default' };
 
   componentDidMount() {

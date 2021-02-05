@@ -4,7 +4,7 @@ import _ from 'lodash';
 import Pagination from 'react-paginate';
 import { BooleanInput } from '../components/inputs';
 import * as BackOfficeServices from '../services/BackOfficeServices';
-import {Uptime} from '../components/Status'
+import { Uptime } from '../components/Status';
 
 export class GlobalStatusPage extends Component {
   state = {
@@ -13,7 +13,7 @@ export class GlobalStatusPage extends Component {
     stopTheCountUnknownStatus: true,
     page: 0,
     count: 0,
-    pageSize: 4
+    pageSize: 4,
   };
 
   componentDidMount() {
@@ -22,15 +22,16 @@ export class GlobalStatusPage extends Component {
   }
 
   handlePageClick = (data) => {
-    this.setState({ page: data.selected }, () => this.update())
+    this.setState({ page: data.selected }, () => this.update());
   };
 
   update = () => {
     this.setState({ loading: true });
-    BackOfficeServices.fetchGlobalStatus(this.state.page, this.state.pageSize)
-      .then(({ status, count }) => {
+    BackOfficeServices.fetchGlobalStatus(this.state.page, this.state.pageSize).then(
+      ({ status, count }) => {
         this.setState({ status, count, loading: false });
-      });
+      }
+    );
   };
 
   render() {
@@ -85,7 +86,9 @@ export class GlobalStatusPage extends Component {
                   label="Don't use unknown status when calculating averages"
                   value={this.state.stopTheCountUnknownStatus}
                   help="Use unknown statuses when calculating averages could modify results and may not be representative"
-                  onChange={(stopTheCountUnknownStatus) => this.setState({ stopTheCountUnknownStatus })}
+                  onChange={(stopTheCountUnknownStatus) =>
+                    this.setState({ stopTheCountUnknownStatus })
+                  }
                 />
               </div>
             </div>
@@ -98,15 +101,20 @@ export class GlobalStatusPage extends Component {
                       <Link to={`/lines/${health.line}/services/${health.descriptor}/health`}>
                         <h3>{health.service}</h3>
                       </Link>
-                      <Uptime key={idx} className="global" health={health} stopTheCountUnknownStatus={this.state.stopTheCountUnknownStatus} />
+                      <Uptime
+                        key={idx}
+                        className="global"
+                        health={health}
+                        stopTheCountUnknownStatus={this.state.stopTheCountUnknownStatus}
+                      />
                     </>
-                  )
+                  );
                 })}
             </div>
             <Pagination
-              previousLabel='previous'
-              nextLabel='next'
-              breakLabel='...'
+              previousLabel="previous"
+              nextLabel="next"
+              breakLabel="..."
               breakClassName={'break'}
               pageCount={Math.ceil(this.state.count / this.state.pageSize)}
               marginPagesDisplayed={1}

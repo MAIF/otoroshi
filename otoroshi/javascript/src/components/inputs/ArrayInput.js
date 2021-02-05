@@ -42,7 +42,7 @@ export class ArrayInput extends Component {
         })
       )
       .then((values) => this.setState({ values, loading: false }));
-  }
+  };
 
   componentDidMount() {
     if (this.props.valuesFrom) {
@@ -236,7 +236,9 @@ export class ArrayInput extends Component {
                     onClick={(e) => this.remove(e, idx)}>
                     <i className="fas fa-trash" />
                   </button>
-                  {this.props.additionalButton && <AdditionalButton idx={idx} itemValue={value} {...this.props} />}
+                  {this.props.additionalButton && (
+                    <AdditionalButton idx={idx} itemValue={value} {...this.props} />
+                  )}
                   {idx === values.length - 1 && (
                     <button
                       disabled={this.props.disabled}

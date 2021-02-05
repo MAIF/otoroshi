@@ -82,12 +82,12 @@ export class Histogram extends Component {
           flexDirection: 'column',
           justifyContent: 'center',
           alignItems: 'center',
-          width: '100%'
+          width: '100%',
         }}>
         <h4 style={{ color: 'white' }}>{this.props.title}</h4>
         <ResponsiveContainer height={this.props.height || 200}>
           <AreaChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-            <XAxis dataKey="name" hide={!!this.props.hideXAxis}/>
+            <XAxis dataKey="name" hide={!!this.props.hideXAxis} />
             <YAxis tickFormatter={this.formatTick} />
             <CartesianGrid strokeDasharray="3 3" />
             <Tooltip />

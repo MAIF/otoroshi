@@ -288,9 +288,8 @@ export function fetchGlobalStatus(page, limit) {
   }).then(
     (r) => {
       if (r.status === 200) {
-        const count = r.headers.get('X-Count')
-        return r.json() 
-          .then(status => ({status, count}));
+        const count = r.headers.get('X-Count');
+        return r.json().then((status) => ({ status, count }));
       }
       console.log('error while fetching global stats');
       return {};
@@ -340,8 +339,8 @@ export function fetchServiceResponseTime(serviceId) {
     method: 'GET',
     credentials: 'include',
     headers: {
-      Accept: 'application/json'
-    }
+      Accept: 'application/json',
+    },
   }).then((r) => r.json());
 }
 

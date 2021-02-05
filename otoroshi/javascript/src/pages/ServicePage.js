@@ -2295,7 +2295,7 @@ export class ServicePage extends Component {
                   help="..."
                   valuesFrom="/bo/api/proxy/api/verifiers"
                   transformer={(a) => ({ value: a.id, label: a.name })}
-                  additionalButton={({ itemValue }) =>
+                  additionalButton={({ itemValue }) => (
                     <button
                       disabled={this.props.disabled}
                       type="button"
@@ -2303,7 +2303,7 @@ export class ServicePage extends Component {
                       onClick={() => this.props.history.push(`/jwt-verifiers/edit/${itemValue}`)}>
                       <i className="fas fa-edit" />
                     </button>
-                  }
+                  )}
                 />
                 <BooleanInput
                   label="Enabled"

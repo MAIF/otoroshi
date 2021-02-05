@@ -3,7 +3,7 @@ import moment from 'moment';
 import { ServiceSidebar } from '../components/ServiceSidebar';
 import { Histogram } from '../components/recharts';
 import { BooleanInput } from '../components/inputs';
-import {Uptime, formatPercentage} from '../components/Status';
+import { Uptime, formatPercentage } from '../components/Status';
 import * as BackOfficeServices from '../services/BackOfficeServices';
 
 import 'antd/dist/antd.css';
@@ -14,7 +14,7 @@ export class ServiceHealthPage extends Component {
     health: false,
     status: [],
     responsesTime: [],
-    stopTheCountUnknownStatus: true
+    stopTheCountUnknownStatus: true,
   };
 
   colors = {
@@ -35,18 +35,17 @@ export class ServiceHealthPage extends Component {
               BackOfficeServices.fetchHealthCheckEvents(service.id),
               BackOfficeServices.fetchServiceStatus(service.id),
               BackOfficeServices.fetchServiceResponseTime(service.id),
-            ])
-              .then(([evts, status, responsesTime]) => {
-                this.setState({ status, responsesTime }, () => {
-                  const color = evts[0].health ? this.colors[evts[0].health] : 'grey';
-                  this.title = (
-                    <span>
-                      Service health is <i className="fas fa-heart" style={{ color }} />
-                    </span>
-                  );
-                  this.props.setTitle(this.title);
-                })
+            ]).then(([evts, status, responsesTime]) => {
+              this.setState({ status, responsesTime }, () => {
+                const color = evts[0].health ? this.colors[evts[0].health] : 'grey';
+                this.title = (
+                  <span>
+                    Service health is <i className="fas fa-heart" style={{ color }} />
+                  </span>
+                );
+                this.props.setTitle(this.title);
               });
+            });
           } else {
             this.title = 'No HealthCheck available yet';
             this.props.setTitle(this.title);
@@ -78,10 +77,19 @@ export class ServiceHealthPage extends Component {
       <div className="content-health">
         <div>
           <h3>Uptime last 90 days</h3>
-          <Uptime health={this.state.status[0]} stopTheCountUnknownStatus={this.state.stopTheCountUnknownStatus}/>
+          <Uptime
+            health={this.state.status[0]}
+            stopTheCountUnknownStatus={this.state.stopTheCountUnknownStatus}
+          />
         </div>
-        <OverallUptime health={this.state.status} stopTheCountUnknownStatus={this.state.stopTheCountUnknownStatus}/>
-        <ResponseTime responsesTime={this.state.responsesTime} stopTheCountUnknownStatus={this.state.stopTheCountUnknownStatus}/>
+        <OverallUptime
+          health={this.state.status}
+          stopTheCountUnknownStatus={this.state.stopTheCountUnknownStatus}
+        />
+        <ResponseTime
+          responsesTime={this.state.responsesTime}
+          stopTheCountUnknownStatus={this.state.stopTheCountUnknownStatus}
+        />
         <BooleanInput
           label="Don't use unknown status when calculating averages"
           value={this.state.stopTheCountUnknownStatus}
@@ -101,23 +109,31 @@ class OverallUptime extends Component {
 
     const dates = this.props.health[0].dates;
 
-    const avg = dates => dates
-      .filter(d => !this.props.stopTheCountUnknownStatus || d.status.length)
-      .reduce((avg, value, _, { length }) => {
-        return avg + value.status
-          .filter(s => s.health === "GREEN" || s.health === "YELLOW")
-          .reduce((acc, curr) => acc + curr.percentage, 0) / length
-      }, 0)
+    const avg = (dates) =>
+      dates
+        .filter((d) => !this.props.stopTheCountUnknownStatus || d.status.length)
+        .reduce((avg, value, _, { length }) => {
+          return (
+            avg +
+            value.status
+              .filter((s) => s.health === 'GREEN' || s.health === 'YELLOW')
+              .reduce((acc, curr) => acc + curr.percentage, 0) /
+              length
+          );
+        }, 0);
 
     const today = moment().startOf('day');
     const last7days = moment().subtract(7, 'days').startOf('day');
     const last30days = moment().subtract(30, 'days').startOf('day');
 
-
-    const lastDayUptime = formatPercentage(avg(dates.filter(d => d.date > today.valueOf())))
-    const last7daysUptime = formatPercentage(avg(dates.filter(d => d.date > last7days.valueOf())))
-    const last30daysUptime = formatPercentage(avg(dates.filter(d => d.date > last30days.valueOf())))
-    const last90daysUptime = formatPercentage(avg(dates))
+    const lastDayUptime = formatPercentage(avg(dates.filter((d) => d.date > today.valueOf())));
+    const last7daysUptime = formatPercentage(
+      avg(dates.filter((d) => d.date > last7days.valueOf()))
+    );
+    const last30daysUptime = formatPercentage(
+      avg(dates.filter((d) => d.date > last30days.valueOf()))
+    );
+    const last90daysUptime = formatPercentage(avg(dates));
 
     return (
       <div>
@@ -141,7 +157,7 @@ class OverallUptime extends Component {
           </div>
         </div>
       </div>
-    )
+    );
   }
 }
 
@@ -151,14 +167,21 @@ class ResponseTime extends Component {
       <div>
         <h3>Response Time Last 90 days</h3>
         <div className="health-container uptime">
-          <Histogram series={[{
-            name: 'test',
-            data: this.props.responsesTime
-              .filter(d => !this.props.stopTheCountUnknownStatus || d.duration !== null)
-              .map(e => [e.timestamp, e.duration ? parseInt(e.duration) : e.duration])
-          }]} hideXAxis={true} title="HealthChecks average responses duration (ms.)" unit="millis." />
+          <Histogram
+            series={[
+              {
+                name: 'test',
+                data: this.props.responsesTime
+                  .filter((d) => !this.props.stopTheCountUnknownStatus || d.duration !== null)
+                  .map((e) => [e.timestamp, e.duration ? parseInt(e.duration) : e.duration]),
+              },
+            ]}
+            hideXAxis={true}
+            title="HealthChecks average responses duration (ms.)"
+            unit="millis."
+          />
         </div>
       </div>
-    )
+    );
   }
 }

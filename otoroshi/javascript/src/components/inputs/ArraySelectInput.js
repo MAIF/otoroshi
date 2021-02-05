@@ -40,7 +40,7 @@ export class ArraySelectInput extends Component {
         })
       )
       .then((possibleValues) => this.setState({ possibleValues, loading: false }));
-  }
+  };
 
   changeValue = (e, name) => {
     if (e && e.preventDefault) e.preventDefault();
@@ -80,9 +80,7 @@ export class ArraySelectInput extends Component {
 
   renderOnEmptyValues = () => (
     <div className="form-group">
-      <label
-        htmlFor={`input-${this.props.label}`}
-        className="col-xs-12 col-sm-2 control-label">
+      <label htmlFor={`input-${this.props.label}`} className="col-xs-12 col-sm-2 control-label">
         {this.props.label} <Help text={this.props.help} />
       </label>
       <div className="col-sm-10">
@@ -95,10 +93,10 @@ export class ArraySelectInput extends Component {
         </button>
       </div>
     </div>
-  )
+  );
 
   renderActions = (values, idx, value) => (
-    <span className="input-group-btn" style={{ minWidth: "fit-content" }}>
+    <span className="input-group-btn" style={{ minWidth: 'fit-content' }}>
       <button
         disabled={this.props.disabled}
         type="button"
@@ -116,7 +114,7 @@ export class ArraySelectInput extends Component {
         </button>
       )}
     </span>
-  )
+  );
 
   render() {
     const values = Object.keys(this.props.value || {}).map((k) => [k, this.props.value[k]]);
@@ -128,14 +126,13 @@ export class ArraySelectInput extends Component {
 
         {values.map((value, idx) => (
           <div className="form-group" key={idx}>
-            {
-              idx === 0 ?
-                <label className="col-xs-12 col-sm-2 control-label">
-                  {this.props.label} <Help text={this.props.help} />
-                </label>
-                :
-                <label className="col-xs-12 col-sm-2 control-label">&nbsp;</label>
-            }
+            {idx === 0 ? (
+              <label className="col-xs-12 col-sm-2 control-label">
+                {this.props.label} <Help text={this.props.help} />
+              </label>
+            ) : (
+              <label className="col-xs-12 col-sm-2 control-label">&nbsp;</label>
+            )}
             <div className="col-sm-10">
               <div style={{ display: 'flex' }}>
                 <div style={{ flex: 1 }}>

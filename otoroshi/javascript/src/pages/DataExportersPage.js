@@ -843,9 +843,7 @@ const possibleExporterConfigFormValues = {
     },
   },
   metrics: {
-    flow: [
-      'labels'
-    ],
+    flow: ['labels'],
     schema: {
       labels: {
         type: 'array_select',
@@ -854,8 +852,8 @@ const possibleExporterConfigFormValues = {
           placeholderKey: 'Choose a entry metric label',
           placeholderValue: 'Choose your destination label',
           valuesFrom: '/bo/api/proxy/api/events/_template?eventType=GatewayEvent',
-          help: "The selected properties from events and their projection",
-          title: "Properties of an event to retrieve and transform into metric labels",
+          help: 'The selected properties from events and their projection',
+          title: 'Properties of an event to retrieve and transform into metric labels',
           transformer: (a) => ({
             value: a.id,
             label: (
@@ -869,6 +867,6 @@ const possibleExporterConfigFormValues = {
           }),
         },
       },
-    }
-  }
+    },
+  },
 };
