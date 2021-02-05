@@ -102,7 +102,7 @@ class ReactivePgDataStores(configuration: Configuration,
 
   private lazy val client = PgPool.pool(connectOptions, poolOptions)
 
-  private lazy val redis = new ReactivePgRedis(client, reactivePgActorSystem, env)
+  private lazy val redis = new ReactivePgRedis(client, reactivePgActorSystem, env, configuration.getOptional[Boolean]("app.pg.avoidJsonPath").getOrElse(false))
 
   private val cancel = new AtomicReference[Cancellable]()
 
@@ -116,7 +116,7 @@ class ReactivePgDataStores(configuration: Configuration,
            |  key text not null,
            |  type text not null,
            |  ttl_starting_at TIMESTAMPTZ default NOW(),
-           |  ttl interval default '10000 years'::interval,
+           |  ttl interval default '1000 years'::interval,
            |  counter bigint default 0,
            |  value text,
            |  lvalue jsonb default '[]'::jsonb,
@@ -377,7 +377,7 @@ class ReactivePgDataStores(configuration: Configuration,
   }
 }
 
-class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env) extends RedisLike {
+class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env, avoidJsonPath: Boolean) extends RedisLike {
 
   import pgimplicits._
 
@@ -553,7 +553,7 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env) extends Redis
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   override def setBS(key: String, value: ByteString, exSeconds: Option[Long], pxMilliseconds: Option[Long]): Future[Boolean] = {
-    val ttl = exSeconds.map(_ * 1000).orElse(pxMilliseconds).map(v => s"'$v milliseconds'::interval").getOrElse("'10000 years'::interval")
+    val ttl = exSeconds.map(_ * 1000).orElse(pxMilliseconds).map(v => s"'$v milliseconds'::interval").getOrElse("'1000 years'::interval")
     val maybeTtlUpdate = exSeconds.map(_ * 1000).orElse(pxMilliseconds).map(v => s"'$v milliseconds'::interval").map(ttl => s", ttl = $ttl, ttl_starting_at = NOW()").getOrElse("")
     queryOne(
       s"""insert into otoroshi.entities (key, type, ttl, ttl_starting_at, value)
@@ -645,22 +645,56 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env) extends Redis
 
   override def lrange(key: String, start: Long, _stop: Long): Future[Seq[ByteString]] = {
     val stop = if (_stop > (Int.MaxValue - 1)) Int.MaxValue - 1 else _stop
-    queryOne(s"select jsonb_path_query_array(lvalue, '$$[$start to $stop]') as slice from otoroshi.entities where key = $$1 and (ttl_starting_at + ttl) > NOW();", Seq(key)) { row =>
-      Try(row.getJsonArray("slice").encode()).map { s =>
-        Try {
-          Json.parse(s).asArray.value.map(v => v.asString.byteString)
-        } match {
-          case Success(value) => value
-          case Failure(ex) => Json.parse(row.getString("slice")).asArray.value.map(v => v.asString.byteString)
+    if (avoidJsonPath) {
+      getArray(key).map(_.map(_.slice(start.toInt, stop.toInt)).getOrElse(Seq.empty)) // awful but not supported in some cases like cockroachdb
+    } else {
+      queryOne(s"select jsonb_path_query_array(lvalue, '$$[$start to $stop]') as slice from otoroshi.entities where key = $$1 and (ttl_starting_at + ttl) > NOW();", Seq(key)) { row =>
+        Try(row.getJsonArray("slice").encode()).map { s =>
+          Try {
+            Json.parse(s).asArray.value.map(v => v.asString.byteString)
+          } match {
+            case Success(value) => value
+            case Failure(ex) => Json.parse(row.getString("slice")).asArray.value.map(v => v.asString.byteString)
+          }
+        }.getOrElse(Seq.empty)
+      }.map(_.getOrElse(Seq.empty)).recoverWith {
+        case ex: io.vertx.pgclient.PgException if ex.getMessage.contains("jsonb_path_query_array(): unimplemented:") => {
+          getArray(key).map(_.map(_.slice(start.toInt, stop.toInt)).getOrElse(Seq.empty)) // awful but not supported in some cases like cockroachdb
         }
-      }.getOrElse(Seq.empty)
-    }.map(_.getOrElse(Seq.empty))
+      }
+    }
   }
 
   override def ltrim(key: String, start: Long, _stop: Long): Future[Boolean] = {
     val stop = if (_stop > (Int.MaxValue - 1)) Int.MaxValue - 1 else _stop
-    queryRaw(s"update otoroshi.entities set type = 'list', lvalue = jsonb_path_query_array(lvalue, '$$[$start to $stop]') where key = $$1 and (ttl_starting_at + ttl) > NOW();", Seq(key)) { _ =>
-      true
+    if (avoidJsonPath) {
+      // awful but not supported in some cases like cockroachdb
+      getArray(key).flatMap {
+        case None => FastFuture.successful(false)
+        case Some(arr) => {
+          val newArr = JsArray(arr.slice(start.toInt, stop.toInt).map(i => JsString(i.utf8String))).stringify
+          queryRaw(s"""update otoroshi.entities set type = 'list', lvalue = '$newArr'::jsonb where key = $$1 and (ttl_starting_at + ttl) > NOW();""", Seq(key)) { _ =>
+            true
+          }
+        }
+      }
+    } else {
+      queryRaw(s"update otoroshi.entities set type = 'list', lvalue = jsonb_path_query_array(lvalue, '$$[$start to $stop]') where key = $$1 and (ttl_starting_at + ttl) > NOW();", Seq(key)) { _ =>
+        true
+      }.recoverWith {
+        case ex: io.vertx.pgclient.PgException if ex.getMessage.contains("jsonb_path_query_array(): unimplemented:") => {
+          // awful but not supported in some cases like cockroachdb
+          getArray(key).flatMap {
+            case None => FastFuture.successful(false)
+            case Some(arr) => {
+              val newArr = JsArray(arr.slice(start.toInt, stop.toInt).map(i => JsString(i.utf8String))).stringify
+              queryRaw(s"""update otoroshi.entities set type = 'list', lvalue = '$newArr'::jsonb where key = $$1 and (ttl_starting_at + ttl) > NOW();""", Seq(key)) { _ =>
+                true
+              }
+            }
+          }
+        }
+      }
     }
   }
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
