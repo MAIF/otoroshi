@@ -365,7 +365,7 @@ class ReactivePgDataStores(configuration: Configuration,
     typ match {
       case "counter" => redis.getCounter(key).map(_.map(v => JsNumber(v)).getOrElse(JsNumber(0L)))
       case "hash" => redis.hgetall(key).map(m => JsObject(m.map(t => (t._1, JsString(t._2.utf8String)))))
-      case "list" => redis.lrange(key, 0, Long.MaxValue).map(l => JsArray(l.map(s => JsString(s.utf8String))))
+      case "list" => redis.lrange(key, 0, Int.MaxValue - 1).map(l => JsArray(l.map(s => JsString(s.utf8String))))
       case "set"  => redis.smembers(key).map(l => JsArray(l.map(s => JsString(s.utf8String))))
       case "string" =>
         redis.get(key).map {
