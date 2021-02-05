@@ -625,7 +625,6 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env) extends Redis
   }
 
   override def llen(key: String): Future[Long] = {
-    // getArray(key).map(_.map(_.size.toLong).getOrElse(0L))
     queryOne(s"select jsonb_array_length(lvalue) as length from otoroshi.entities where key = $$1 and (ttl_starting_at + ttl) > NOW();", Seq(key)) { row =>
       row.getLong("length").longValue()
     }.map(_.getOrElse(0L))
@@ -644,7 +643,8 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env) extends Redis
     }
   }
 
-  override def lrange(key: String, start: Long, stop: Long): Future[Seq[ByteString]] = {
+  override def lrange(key: String, start: Long, _stop: Long): Future[Seq[ByteString]] = {
+    val stop = if (_stop > (Int.MaxValue - 1)) Int.MaxValue - 1 else _stop
     queryOne(s"select jsonb_path_query_array(lvalue, '$$[$start to $stop]') as slice from otoroshi.entities where key = $$1 and (ttl_starting_at + ttl) > NOW();", Seq(key)) { row =>
       Try(row.getJsonArray("slice").encode()).map { s =>
         Try {
@@ -657,19 +657,11 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env) extends Redis
     }.map(_.getOrElse(Seq.empty))
   }
 
-  override def ltrim(key: String, start: Long, stop: Long): Future[Boolean] = {
+  override def ltrim(key: String, start: Long, _stop: Long): Future[Boolean] = {
+    val stop = if (_stop > (Int.MaxValue - 1)) Int.MaxValue - 1 else _stop
     queryRaw(s"update otoroshi.entities set type = 'list', lvalue = jsonb_path_query_array(lvalue, '$$[$start to $stop]') where key = $$1 and (ttl_starting_at + ttl) > NOW();", Seq(key)) { _ =>
       true
     }
-    // getArray(key).flatMap {
-    //   case None => FastFuture.successful(false)
-    //   case Some(arr) => {
-    //     val newArr = JsArray(arr.slice(start.toInt, stop.toInt).map(i => JsString(i.utf8String))).stringify
-    //     pool.query(s"""update otoroshi.entities set type = 'list', lvalue = '$newArr'::jsonb where key = '${key}' and (ttl_starting_at + ttl) > NOW();""")
-    //       .executeAsync()
-    //       .map(_ => true)
-    //   }
-    // }
   }
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
