@@ -127,6 +127,7 @@ class ReactivePgDataStores(configuration: Configuration,
       .setDatabase(configuration.getOptional[String]("app.pg.database").getOrElse("otoroshi"))
       .setUser(configuration.getOptional[String]("app.pg.user").getOrElse("otoroshi"))
       .setPassword(configuration.getOptional[String]("app.pg.password").getOrElse("otoroshi"))
+      .setSsl(configuration.getOptional[Boolean]("app.pg.ssl").getOrElse(false))
   }
 
   private lazy val poolOptions = new PoolOptions()
@@ -138,7 +139,7 @@ class ReactivePgDataStores(configuration: Configuration,
     client,
     reactivePgActorSystem,
     env,
-    _optimized = true,
+    _optimized = configuration.getOptional[Boolean]("app.pg.optimized").getOrElse(true),
     avoidJsonPath = configuration.getOptional[Boolean]("app.pg.avoidJsonPath").getOrElse(false)
   )
 
