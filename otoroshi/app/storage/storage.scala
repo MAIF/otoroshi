@@ -121,6 +121,8 @@ trait BasicStore[T] {
 }
 
 trait RedisLike {
+  def optimized: Boolean = false
+  def asOptimized: OptimizedRedisLike = this.asInstanceOf[OptimizedRedisLike]
   def health()(implicit ec: ExecutionContext): Future[DataStoreHealth]
   def start(): Unit = {}
   def stop(): Unit
@@ -171,6 +173,15 @@ trait RedisLike {
   def sremBS(key: String, members: ByteString*): Future[Long]
   def scard(key: String): Future[Long]
   def rawGet(key: String): Future[Option[Any]]
+}
+
+trait OptimizedRedisLike {
+  def findAllOptimized(kind: String): Future[Seq[JsValue]]
+  def extractKind(key: String): Option[String]
+  def serviceDescriptors_findByEnv(env: String): Future[Seq[ServiceDescriptor]]
+  def serviceDescriptors_findByGroup(id: String): Future[Seq[ServiceDescriptor]]
+  def apiKeys_findByService(service: ServiceDescriptor): Future[Seq[ApiKey]]
+  def apiKeys_findByGroup(serviceId: String): Future[Seq[ApiKey]]
 }
 
 trait RedisLikeStore[T] extends BasicStore[T] {
@@ -225,19 +236,38 @@ trait RedisLikeStore[T] extends BasicStore[T] {
   def findAll(force: Boolean = false)(implicit ec: ExecutionContext, env: Env): Future[Seq[T]] = {
 
     def actualFindAll() = {
-      redisLike
-        .keys(key("*").key)
-        .flatMap(
-          keys =>
-            if (keys.isEmpty) FastFuture.successful(Seq.empty[Option[ByteString]])
-            else redisLike.mget(keys: _*)
-        )
-        .map(
-          seq =>
-            seq.filter(_.isDefined).map(_.get).map(v => fromJsonSafe(Json.parse(v.utf8String))).collect {
+
+      @inline
+      def oldSchoolFind() = {
+        redisLike
+          .keys(key("*").key)
+          .flatMap(
+            keys =>
+              if (keys.isEmpty) FastFuture.successful(Seq.empty[Option[ByteString]])
+              else redisLike.mget(keys: _*)
+          )
+          .map(
+            seq =>
+              seq.filter(_.isDefined).map(_.get).map(v => fromJsonSafe(Json.parse(v.utf8String))).collect {
+                case JsSuccess(i, _) => i
+              }
+          )
+      }
+
+      if (redisLike.optimized) {
+        val optRedis = redisLike.asInstanceOf[OptimizedRedisLike]
+        optRedis.extractKind(keyStr("")).map { kind =>
+          optRedis.findAllOptimized(kind).map { seq =>
+            seq.map(v => fromJsonSafe(v)).collect {
               case JsSuccess(i, _) => i
+            }
           }
-        )
+        } getOrElse {
+          oldSchoolFind()
+        }
+      } else {
+        oldSchoolFind()
+      }
     }
 
     if (_findAllCached) {

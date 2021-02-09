@@ -402,12 +402,22 @@ class KvServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int, _env:
     redisCli.get(dataOutForServiceKey(id)).map(_.map(_.utf8String.toLong).getOrElse(0L))
 
   // TODO : rewrite with less naïve implem
-  override def findByEnv(env: String)(implicit ec: ExecutionContext, _env: Env): Future[Seq[ServiceDescriptor]] =
-    findAll().map(_.filter(_.env == env))
+  override def findByEnv(env: String)(implicit ec: ExecutionContext, _env: Env): Future[Seq[ServiceDescriptor]] = {
+    if (redisCli.optimized) {
+      redisCli.asOptimized.serviceDescriptors_findByEnv(env)
+    } else {
+      findAll().map(_.filter(_.env == env))
+    }
+  }
 
   // TODO : rewrite with less naïve implem
-  override def findByGroup(id: String)(implicit ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] =
-    findAll().map(_.filter(_.groups.contains(id)))
+  override def findByGroup(id: String)(implicit ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] = {
+    if (redisCli.optimized) {
+      redisCli.asOptimized.serviceDescriptors_findByGroup(id)
+    } else {
+      findAll().map(_.filter(_.groups.contains(id)))
+    }
+  }
 
   override def count()(implicit ec: ExecutionContext, env: Env): Future[Long] =
     redisCli.keys(key("*").key).map(_.size.toLong)

@@ -178,9 +178,13 @@ class KvApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyDataStore 
   override def findByService(serviceId: String)(implicit ec: ExecutionContext, env: Env): Future[Seq[ApiKey]] = {
     env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
       case Some(descriptor) => {
-        env.datastores.apiKeyDataStore.findAll().fast.map { keys =>
-          keys.filter { key =>
-            key.authorizedOnService(descriptor.id) || key.authorizedOnOneGroupFrom(descriptor.groups)
+        if (redisCli.optimized) {
+          redisCli.asOptimized.apiKeys_findByService(descriptor)
+        } else {
+          env.datastores.apiKeyDataStore.findAll().fast.map { keys =>
+            keys.filter { key =>
+              key.authorizedOnService(descriptor.id) || key.authorizedOnOneGroupFrom(descriptor.groups)
+            }
           }
         }
       }
@@ -190,15 +194,19 @@ class KvApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyDataStore 
 
   // optimized
   override def findByGroup(groupId: String)(implicit ec: ExecutionContext, env: Env): Future[Seq[ApiKey]] = {
-    env.datastores.serviceGroupDataStore.findById(groupId).flatMap {
-      case Some(group) => {
-        env.datastores.apiKeyDataStore.findAll().fast.map { keys =>
-          keys.filter { key =>
-            key.authorizedOnGroup(group.id)
+    if (redisCli.optimized) {
+      redisCli.asOptimized.apiKeys_findByGroup(groupId)
+    } else {
+      env.datastores.serviceGroupDataStore.findById(groupId).flatMap {
+        case Some(group) => {
+          env.datastores.apiKeyDataStore.findAll().fast.map { keys =>
+            keys.filter { key =>
+              key.authorizedOnGroup(group.id)
+            }
           }
         }
+        case None => FastFuture.failed(new GroupNotFoundException(groupId))
       }
-      case None => FastFuture.failed(new GroupNotFoundException(groupId))
     }
   }
 

@@ -94,7 +94,8 @@ object EntityIdentifier {
 sealed trait EntityIdentifier {
   def prefix: String
   def id: String
-  def json: JsValue = JsString(s"${prefix}_${id}")
+  def str: String = s"${prefix}_${id}"
+  def json: JsValue = JsString(str)
 }
 case class ServiceGroupIdentifier(id: String) extends EntityIdentifier {
   def prefix: String = "group"

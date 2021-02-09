@@ -130,19 +130,27 @@ class ReactivePgDataStores(configuration: Configuration,
   }
 
   private lazy val poolOptions = new PoolOptions()
-    .setMaxSize(configuration.getOptional[Int]("app.pg.poolSize").getOrElse(20))
+    .setMaxSize(configuration.getOptional[Int]("app.pg.poolSize").getOrElse(100))
 
   private lazy val client = PgPool.pool(connectOptions, poolOptions)
 
-  private lazy val redis = new ReactivePgRedis(client, reactivePgActorSystem, env, configuration.getOptional[Boolean]("app.pg.avoidJsonPath").getOrElse(false))
+  private lazy val redis = new ReactivePgRedis(
+    client,
+    reactivePgActorSystem,
+    env,
+    _optimized = true,
+    avoidJsonPath = configuration.getOptional[Boolean]("app.pg.avoidJsonPath").getOrElse(false)
+  )
 
   private val cancel = new AtomicReference[Cancellable]()
 
   def runSchemaCreation(): Unit = {
     implicit val ec = reactivePgActorSystem.dispatcher
     logger.info("Running database migrations ...")
+    val testMode = configuration.getOptional[Boolean]("app.pg.testMode").getOrElse(false)
     Await.result((for {
       _ <- client.query("CREATE SCHEMA IF NOT EXISTS otoroshi;").executeAsync()
+      _ <- if (testMode) redis.drop() else FastFuture.successful(())
       _ <- client.query(s"""
            |create table if not exists otoroshi.entities (
            |  key text not null,
@@ -150,17 +158,23 @@ class ReactivePgDataStores(configuration: Configuration,
            |  ttl_starting_at TIMESTAMPTZ default NOW(),
            |  ttl interval default '1000 years'::interval,
            |  counter bigint default 0,
-           |  value text,
+           |  value text default '',
            |  lvalue jsonb default '[]'::jsonb,
            |  svalue jsonb default '{}'::jsonb,
            |  mvalue jsonb default '{}'::jsonb,
+           |  kind text default '',
+           |  jvalue jsonb default '{}'::jsonb,
            |  PRIMARY KEY (key)
            |);
            |""".stripMargin).executeAsync()
+      _ <- client.withConnection(c => c.preparedQuery(s"""
+           |create index concurrently if not exists otoroshi_kind_idx on otoroshi.entities using btree (kind) with (deduplicate_items = true);
+           |""".stripMargin).execute()).scala
+      _ <- client.withConnection(c => c.preparedQuery(s"""
+           |create index concurrently if not exists otoroshi_key_idx on otoroshi.entities using btree (key) with (deduplicate_items = true);
+           |""".stripMargin).execute()).scala
+      _ <- if (testMode) redis.flushall() else FastFuture.successful(())
     } yield ()), 5.minutes)
-    if (configuration.getOptional[Boolean]("app.pg.testMode").getOrElse(false)) {
-      Await.result(redis.flushall(), 5.minutes)
-    }
   }
 
   def setupCleanup(): Unit = {
@@ -170,12 +184,32 @@ class ReactivePgDataStores(configuration: Configuration,
     }))
   }
 
+  // def mockService(): Unit = {
+  //   reactivePgActorSystem.scheduler.scheduleOnce(10.seconds) {
+  //     ServiceDescriptor(
+  //       id = "mock-service",
+  //       groups = Seq("admin-api-group"),
+  //       name = "mock-service",
+  //       env = "prod",
+  //       domain = "oto.tools",
+  //       subdomain = "test",
+  //       forceHttps = false,
+  //       enforceSecureCommunication = false,
+  //       targets = Seq(
+  //         Target("mirror.opunmaif.io")
+  //       )
+  //     ).save()(reactivePgActorSystem.dispatcher, env)
+  //     logger.info("\nregistering mock service ...\n\n")
+  //   }(reactivePgActorSystem.dispatcher)
+  // }
+
   override def before(configuration: Configuration,
                       environment: Environment,
                       lifecycle: ApplicationLifecycle): Future[Unit] = {
     logger.info("Now using PostgreSQL (reactive-pg) DataStores")
     runSchemaCreation()
     setupCleanup()
+    // mockService()
     _serviceDescriptorDataStore.startCleanup(env)
     _certificateDataStore.startSync()
     FastFuture.successful(())
@@ -263,9 +297,7 @@ class ReactivePgDataStores(configuration: Configuration,
       case _ => Unreachable
     }
   }
-  override def rawExport(
-                          group: Int
-                        )(implicit ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = {
+  override def rawExport(group: Int)(implicit ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = {
     Source
       .future(
         redis.keys(s"${env.storageRoot}:*")
@@ -409,11 +441,31 @@ class ReactivePgDataStores(configuration: Configuration,
   }
 }
 
-class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env, avoidJsonPath: Boolean) extends RedisLike {
+class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env, _optimized: Boolean, avoidJsonPath: Boolean) extends RedisLike with OptimizedRedisLike {
 
   import pgimplicits._
 
   import collection.JavaConverters._
+
+  // val avoid = Seq(
+  //   "KEYS otoroshi:certs:",
+  //   "MGET otoroshi:certs:",
+  //   "KEYS otoroshi:scripts:",
+  //   "MGET otoroshi:scripts:",
+  //   "KEYS otoroshi:targets:",
+  //   "MGET otoroshi:targets:",
+  //   "KEYS otoroshi:tcp:services",
+  //   "MGET otoroshi:tcp:services",
+  //   "KEYS otoroshi:data-exporters",
+  //   "MGET otoroshi:data-exporters",
+  //   "otoroshi:locks:jobs:",
+  //   "otoroshi:cluster:",
+  //   "otoroshi:certs-last-updated",
+  //   "INCR ",
+  //   "PEXPIRE ",
+  //   "otoroshi:data",
+  //   "otoroshi:scall"
+  // )
 
   private implicit val ec = system.dispatcher
 
@@ -421,7 +473,7 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env, avoidJsonPath
 
   private val debugQueries = env.configuration.getOptional[Boolean]("app.pg.logQueries").getOrElse(false)
 
-  def queryRaw[A](query: String, params: Seq[AnyRef] = Seq.empty, debug: Boolean = false)(f: Seq[Row] => A): Future[A] = {
+  private def queryRaw[A](query: String, params: Seq[AnyRef] = Seq.empty, debug: Boolean = false)(f: Seq[Row] => A): Future[A] = {
     if (debug || debugQueries) logger.info(s"""query: "$query", params: "${params.mkString(", ")}"""")
     pool.preparedQuery(query)
       .execute(io.vertx.sqlclient.Tuple.from(params.toArray))
@@ -439,25 +491,36 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env, avoidJsonPath
     }
   }
 
-  def querySeq[A](query: String, params: Seq[AnyRef] = Seq.empty, debug: Boolean = false)(f: Row => Option[A]): Future[Seq[A]] = {
+  private def querySeq[A](query: String, params: Seq[AnyRef] = Seq.empty, debug: Boolean = false)(f: Row => Option[A]): Future[Seq[A]] = {
     queryRaw[Seq[A]](query, params, debug)(rows => rows.map(f).flatten)
   }
 
-  def queryOneOpt[A](query: String, params: Seq[AnyRef] = Seq.empty, debug: Boolean = false)(f: Row => Option[A]): Future[Option[A]] = {
+  private def queryOne[A](query: String, params: Seq[AnyRef] = Seq.empty, debug: Boolean = false)(f: Row => Option[A]): Future[Option[A]] = {
     queryRaw[Option[A]](query, params, debug)(rows => rows.headOption.flatMap(row => f(row)))
   }
 
+  @inline
+  private def measure[A](what: String)(fut: => Future[A]): Future[A] = {
+    fut
+    // val start = System.currentTimeMillis()
+    // fut.andThen {
+    //   case _ if false && !avoid.exists(a => what.contains(a)) => logger.info(what + " " + (System.currentTimeMillis() - start) + " ms.")
+    // }
+  }
+
   def typ(key: String): Future[String] = {
-    queryOneOpt(s"select type from otoroshi.entities where key = $$1 and (ttl_starting_at + ttl) > NOW() limit 1;", Seq(key)) { row =>
+    queryOne(s"select type from otoroshi.entities where key = $$1 and (ttl_starting_at + ttl) > NOW() limit 1;", Seq(key)) { row =>
       row.optString("type")
     }.map(_.getOrElse("none"))
   }
 
   def info(): Future[String] = {
-   queryOneOpt("select version() as version;") { row =>
+   queryOne("select version() as version;") { row =>
      row.optString("version")
    }.map(_.getOrElse("none"))
   }
+
+  override val optimized: Boolean = _optimized
 
   override def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] = {
     info().map(_ => Healthy).recover { case _ => Unreachable }
@@ -471,22 +534,107 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env, avoidJsonPath
     }
   }
 
-  override def get(key: String): Future[Option[ByteString]] = {
-    queryOneOpt(s"select value, counter, type from otoroshi.entities where key = $$1 and (ttl_starting_at + ttl) > NOW() limit 1;", Seq(key)) { row =>
+  def drop(): Future[Boolean] = {
+    queryRaw(s"drop table if exists otoroshi.entities ;") { _ =>
+      true
+    }
+  }
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // optimized stuff
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  def extractKind(key: String): Option[String] = {
+    val ds = env.datastores
+    key match {
+      case _ if key.startsWith(ds.serviceDescriptorDataStore.keyStr("")) => "service-descriptor".some
+      case _ if key.startsWith(ds.apiKeyDataStore.keyStr("")) => "apikey".some
+      case _ if key.startsWith(ds.certificatesDataStore.keyStr("")) => "certificate".some
+      case _ if key.startsWith(ds.serviceGroupDataStore.keyStr("")) => "service-group".some
+      case _ if key.startsWith(ds.globalJwtVerifierDataStore.keyStr("")) => "jwt-verifier".some
+      case _ if key.startsWith(ds.authConfigsDataStore.keyStr("")) => "auth-module".some
+      case _ if key.startsWith(ds.scriptDataStore.keyStr("")) => "script".some
+      case _ if key.startsWith(ds.dataExporterConfigDataStore.keyStr("")) => "data-exporter".some
+      case _ if key.startsWith(ds.teamDataStore.keyStr("")) => "team".some
+      case _ if key.startsWith(ds.tenantDataStore.keyStr("")) => "tenant".some
+      case _ if key.startsWith(ds.tcpServiceDataStore.keyStr("")) => "tcp-service".some
+      case _ if key.startsWith(ds.globalConfigDataStore.keyStr("")) => "global-config".some
+      case _ => None
+    }
+  }
+
+  def matchesEntity(key: String, value: ByteString): Option[(String, String)] = {
+    extractKind(key).map(kind => (kind, preCompute(kind, value)))
+  }
+
+  def preCompute(key: String, value: ByteString): String = {
+    if (key == "service-descriptor") {
+      val desc = ServiceDescriptor.fromJsons(Json.parse(value.utf8String))
+      val jsonDesc = desc.json.asObject ++ Json.obj(
+        "__allHosts" -> desc.allHosts,
+        "__allPaths" -> desc.allPaths,
+      )
+      jsonDesc.stringify
+    } else {
+      value.utf8String
+    }
+  }
+
+  def findAllOptimized(kind: String): Future[Seq[JsValue]] = measure(s"FINDALL_OPTM $kind") {
+    querySeq(s"select jvalue from otoroshi.entities where kind = $$1 and (ttl_starting_at + ttl) > NOW();", Seq(kind)) { row =>
+      row.optJsObject("jvalue")
+    }
+  }
+
+  def serviceDescriptors_findByEnv(ev: String): Future[Seq[ServiceDescriptor]] = {
+    querySeq(s"select value from otoroshi.entities where kind = 'service-descriptor' and jvalue -> 'env' = '${ev}' and (ttl_starting_at + ttl) > NOW();") { row =>
+      row.optJsObject("value").map(ServiceDescriptor.fromJsonSafe).collect {
+        case JsSuccess(service, _) => service
+      }
+    }
+  }
+
+  def serviceDescriptors_findByGroup(id: String): Future[Seq[ServiceDescriptor]] = {
+    querySeq(s"select value from otoroshi.entities where kind = 'service-descriptor' and jvalue -> 'groups' ? '${id}' and (ttl_starting_at + ttl) > NOW();") { row =>
+      row.optJsObject("value").map(ServiceDescriptor.fromJsonSafe).collect {
+        case JsSuccess(service, _) => service
+      }
+    }
+  }
+  def apiKeys_findByService(service: ServiceDescriptor): Future[Seq[ApiKey]] = {
+    val predicates = (
+      Seq(s"jvalue -> 'authorizedEntities' ? '${ServiceDescriptorIdentifier(service.id).str}'") ++
+        service.groups.map(g => s"jvalue -> 'authorizedEntities' ? '${ServiceGroupIdentifier(g).str}'")
+    ).mkString(" or ")
+    querySeq(
+      s"""select value from otoroshi.entities where kind = 'apikey' and ($predicates) and (ttl_starting_at + ttl) > NOW();""".stripMargin) { row =>
+      row.optJsObject("value").map(ApiKey.fromJsonSafe).collect {
+        case JsSuccess(apikey, _) => apikey
+      }
+    }
+  }
+  def apiKeys_findByGroup(groupId: String): Future[Seq[ApiKey]] = {
+    querySeq(s"select value from otoroshi.entities where kind = 'apikey' and jvalue -> 'authorizedEntities' ? '${ServiceGroupIdentifier(groupId).str}' and (ttl_starting_at + ttl) > NOW();") { row =>
+      row.optJsObject("value").map(ApiKey.fromJsonSafe).collect {
+        case JsSuccess(apikey, _) => apikey
+      }
+    }
+  }
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  override def get(key: String): Future[Option[ByteString]] = measure(s"GET $key") {
+    queryOne(s"select value, counter, type from otoroshi.entities where key = $$1 and (ttl_starting_at + ttl) > NOW() limit 1;", Seq(key)) { row =>
       row.optString("type") match {
         case Some("counter") => row.optLong("counter").map(_.toString.byteString)
-        case Some("string")  => row.optString("value").map(_.byteString)
+        case Some("string")  => row.optString("value").filter(_.nonEmpty).map(_.byteString)
         case _ => None
       }
     }
   }
 
-  override def mget(keys: String*): Future[Seq[Option[ByteString]]] = {
+  override def mget(keys: String*): Future[Seq[Option[ByteString]]] = measure(s"MGET ${keys.mkString(", ")}") {
     val allkeys = keys.map(k => s"'$k'").mkString(", ")
     querySeq(s"select key, value, counter, type from otoroshi.entities where key in ($allkeys) and (ttl_starting_at + ttl) > NOW();") { row =>
       val value = row.optString("type") match {
         case Some("counter") => row.optLong("counter").map(_.toString.byteString)
-        case Some("string") => row.optString("value").map(_.byteString)
+        case Some("string") => row.optString("value").filter(_.nonEmpty).map(_.byteString)
         case _ => None
       }
       row.optString("key").map(k => (k, value))
@@ -500,7 +648,7 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env, avoidJsonPath
     setBS(key, value.byteString, exSeconds, pxMilliseconds)
   }
 
-  override def del(keys: String*): Future[Long] = {
+  override def del(keys: String*): Future[Long] = measure(s"DEL ${keys.mkString(", ")}") {
     queryRaw(s"delete from otoroshi.entities where key in (${keys.map(k => s"'$k'").mkString(", ")}) and (ttl_starting_at + ttl) > NOW();") { _ =>
       keys.size
     }
@@ -508,8 +656,8 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env, avoidJsonPath
 
   override def incr(key: String): Future[Long] = incrby(key, 1)
 
-  override def incrby(key: String, increment: Long): Future[Long] = {
-    queryOneOpt(
+  override def incrby(key: String, increment: Long): Future[Long] = measure(s"INCR $key") {
+    queryOne(
       s"""insert into otoroshi.entities (key, type, counter)
          |values ($$1, 'counter', $$2)
          |on conflict (key)
@@ -530,31 +678,62 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env, avoidJsonPath
     }
   }
 
-  override def exists(key: String): Future[Boolean] = {
-    queryOneOpt(s"select type from otoroshi.entities where key = $$1 and (ttl_starting_at + ttl) > NOW() limit 1;", Seq(key)) { row =>
+  override def exists(key: String): Future[Boolean] = measure(s"EXISTS $key") {
+    queryOne(s"select type from otoroshi.entities where key = $$1 and (ttl_starting_at + ttl) > NOW() limit 1;", Seq(key)) { row =>
       true.some
     }.map(_.isDefined)
   }
 
-  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  override def setBS(key: String, value: ByteString, exSeconds: Option[Long], pxMilliseconds: Option[Long]): Future[Boolean] = {
+  override def setBS(key: String, value: ByteString, exSeconds: Option[Long], pxMilliseconds: Option[Long]): Future[Boolean] = measure(s"SET $key $exSeconds $pxMilliseconds") {
     val ttl = exSeconds.map(_ * 1000).orElse(pxMilliseconds).map(v => s"'$v milliseconds'::interval").getOrElse("'1000 years'::interval")
     val maybeTtlUpdate = exSeconds.map(_ * 1000).orElse(pxMilliseconds).map(v => s"'$v milliseconds'::interval").map(ttl => s", ttl = $ttl, ttl_starting_at = NOW()").getOrElse("")
-    queryOneOpt(
-      s"""insert into otoroshi.entities (key, type, ttl, ttl_starting_at, value)
-         |values ('${key}', 'string', $ttl, NOW(), '${value.utf8String}')
-         |ON CONFLICT (key)
-         |DO
-         |  update set type = 'string', value = '${value.utf8String}'${maybeTtlUpdate};
-         |""".stripMargin) { _ =>
-      true.some
-    }.map(_.getOrElse(true))
+    matchesEntity(key, value) match {
+      case Some((kind, jsonValue)) => {
+        queryOne(
+          s"""insert into otoroshi.entities (key, type, ttl, ttl_starting_at, value, kind, jvalue)
+             |values ('${key}', 'string', $ttl, NOW(), '${value.utf8String}', '${kind}', '$jsonValue'::jsonb)
+             |ON CONFLICT (key)
+             |DO
+             |  update set type = 'string', value = '${value.utf8String}'${maybeTtlUpdate}, kind = '${kind}', jvalue = '$jsonValue'::jsonb;
+             |""".stripMargin) { _ =>
+          true.some
+        }.map(_.getOrElse(true))
+      }
+      case None => {
+        queryOne(
+          s"""insert into otoroshi.entities (key, type, ttl, ttl_starting_at, value)
+             |values ('${key}', 'string', $ttl, NOW(), '${value.utf8String}')
+             |ON CONFLICT (key)
+             |DO
+             |  update set type = 'string', value = '${value.utf8String}'${maybeTtlUpdate};
+             |""".stripMargin) { _ =>
+          true.some
+        }.map(_.getOrElse(true))
+      }
+    }
   }
-  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  override def keys(pattern: String): Future[Seq[String]] = {
+
+  override def keys(pattern: String): Future[Seq[String]] = measure(s"KEYS $pattern") {
     val processed = pattern.replace("*", ".*")
     querySeq(s"select key from otoroshi.entities where key ~ $$1 and (ttl_starting_at + ttl) > NOW();", Seq(processed)) { row =>
       row.optString("key")
+    }
+  }
+
+  override def pttl(key: String): Future[Long] = {
+    queryOne(s"select (ttl_starting_at + ttl) as expire_at from otoroshi.entities where key = $$1 and (ttl_starting_at + ttl) > NOW() limit 1;", Seq(key)) { row =>
+      val now = System.currentTimeMillis()
+      row.optOffsetDatetime("expire_at").map(ldate => (ldate.toEpochSecond * 1000) - now)
+    }.map(_.filter(_ > -1).getOrElse(-1))
+  }
+
+  override def ttl(key: String): Future[Long] = pttl(key).map(v => v / 1000L)
+
+  override def expire(key: String, seconds: Int): Future[Boolean] = pexpire(key, seconds * 1000L)
+
+  override def pexpire(key: String, milliseconds: Long): Future[Boolean] = measure(s"PEXPIRE $key $milliseconds") {
+    queryRaw(s"update otoroshi.entities set ttl = '$milliseconds milliseconds'::interval, ttl_starting_at = NOW() where key = $$1 and (ttl_starting_at + ttl) > NOW();", Seq(key)) { row =>
+      true
     }
   }
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -565,7 +744,7 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env, avoidJsonPath
   }
 
   override def hgetall(key: String): Future[Map[String, ByteString]] = {
-    queryOneOpt(s"select mvalue from otoroshi.entities where key = $$1 and (ttl_starting_at + ttl) > NOW() limit 1;", Seq(key)) { row =>
+    queryOne(s"select mvalue from otoroshi.entities where key = $$1 and (ttl_starting_at + ttl) > NOW() limit 1;", Seq(key)) { row =>
       row.optJsObject("mvalue").map(_.value.mapValues(v => v.asString.byteString).toMap)
     }.map(_.getOrElse(Map.empty[String, ByteString]))
   }
@@ -589,13 +768,13 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env, avoidJsonPath
   override def lpushLong(key: String, values: Long*): Future[Long] = lpushBS(key, values.map(_.toString.byteString): _*)
 
   private def getArray(key: String): Future[Option[Seq[ByteString]]] = {
-    queryOneOpt(s"select lvalue from otoroshi.entities where key = $$1 and (ttl_starting_at + ttl) > NOW() limit 1;", Seq(key)) { row =>
+    queryOne(s"select lvalue from otoroshi.entities where key = $$1 and (ttl_starting_at + ttl) > NOW() limit 1;", Seq(key)) { row =>
       row.optJsArray("lvalue").map(_.value.map(e => e.asString.byteString))
     }
   }
 
   override def llen(key: String): Future[Long] = {
-    queryOneOpt(s"select jsonb_array_length(lvalue) as length from otoroshi.entities where key = $$1 and (ttl_starting_at + ttl) > NOW();", Seq(key)) { row =>
+    queryOne(s"select jsonb_array_length(lvalue) as length from otoroshi.entities where key = $$1 and (ttl_starting_at + ttl) > NOW();", Seq(key)) { row =>
       row.optLong("length")
     }.map(_.getOrElse(0L))
   }
@@ -618,7 +797,7 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env, avoidJsonPath
     if (avoidJsonPath) {
       getArray(key).map(_.map(_.slice(start.toInt, stop.toInt)).getOrElse(Seq.empty)) // awful but not supported in some cases like cockroachdb
     } else {
-      queryOneOpt(s"select jsonb_path_query_array(lvalue, '$$[$start to $stop]') as slice from otoroshi.entities where key = $$1 and (ttl_starting_at + ttl) > NOW();", Seq(key)) { row =>
+      queryOne(s"select jsonb_path_query_array(lvalue, '$$[$start to $stop]') as slice from otoroshi.entities where key = $$1 and (ttl_starting_at + ttl) > NOW();", Seq(key)) { row =>
         row.optJsArray("slice").map(_.value.map(v => v.asString.byteString))
       }.map(_.getOrElse(Seq.empty)).recoverWith {
         case ex: io.vertx.pgclient.PgException if ex.getMessage.contains("jsonb_path_query_array(): unimplemented:") => {
@@ -662,23 +841,6 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env, avoidJsonPath
   }
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  override def pttl(key: String): Future[Long] = {
-    queryOneOpt(s"select (ttl_starting_at + ttl) as expire_at from otoroshi.entities where key = $$1 and (ttl_starting_at + ttl) > NOW() limit 1;", Seq(key)) { row =>
-      val now = System.currentTimeMillis()
-      row.optOffsetDatetime("expire_at").map(ldate => (ldate.toEpochSecond * 1000) - now)
-    }.map(_.filter(_ > -1).getOrElse(-1))
-  }
-
-  override def ttl(key: String): Future[Long] = pttl(key).map(v => v / 1000L)
-
-  override def expire(key: String, seconds: Int): Future[Boolean] = pexpire(key, seconds * 1000L)
-
-  override def pexpire(key: String, milliseconds: Long): Future[Boolean] = {
-    queryRaw(s"update otoroshi.entities set ttl = '$milliseconds milliseconds'::interval, ttl_starting_at = NOW() where key = $$1 and (ttl_starting_at + ttl) > NOW();", Seq(key)) { row =>
-      true
-    }
-  }
-
   override def sadd(key: String, members: String*): Future[Long] = saddBS(key, members.map(_.byteString): _*)
 
   override def saddBS(key: String, members: ByteString*): Future[Long] = {
@@ -703,7 +865,7 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env, avoidJsonPath
   }
 
   override def smembers(key: String): Future[Seq[ByteString]] = {
-    queryOneOpt(s"select svalue from otoroshi.entities where key = $$1 and (ttl_starting_at + ttl) > NOW() limit 1;", Seq(key)) { row =>
+    queryOne(s"select svalue from otoroshi.entities where key = $$1 and (ttl_starting_at + ttl) > NOW() limit 1;", Seq(key)) { row =>
       row.optJsObject("svalue").map(_.keys.toSeq.map(ByteString.apply))
     }.map(_.getOrElse(Seq.empty))
   }
@@ -717,7 +879,7 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env, avoidJsonPath
   }
 
   override def scard(key: String): Future[Long] = {
-    queryOneOpt(
+    queryOne(
       s"""select count(*) from (
          |	select jsonb_object_keys(svalue) as length from otoroshi.entities where key = $$1 and (ttl_starting_at + ttl) > NOW()
          |) A;
@@ -727,7 +889,7 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env, avoidJsonPath
   }
 
   override def rawGet(key: String): Future[Option[JsValue]] = {
-    queryOneOpt(s"select json_agg(t) as json from otoroshi.entities t where key = $$1 and (ttl_starting_at + ttl) > NOW() limit 1;", Seq(key)) { row =>
+    queryOne(s"select json_agg(t) as json from otoroshi.entities t where key = $$1 and (ttl_starting_at + ttl) > NOW() limit 1;", Seq(key)) { row =>
       row.optJsObject("json")
     }
   }
