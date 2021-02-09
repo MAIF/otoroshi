@@ -584,6 +584,15 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env, _optimized: B
     }
   }
 
+  def serviceDescriptors_findByHost(query: ServiceDescriptorQuery): Future[Seq[ServiceDescriptor]] = {
+    val queryRegex = "^" + query.toHost.replace("*", ".*").replace(".", "\\.")
+    querySeq(s"select value from otoroshi.entities, jsonb_array_elements_text(jvalue->'__allHosts') many(elem) where (jvalue->'enabled')::boolean = true and kind = 'service-descriptor' and elem ~ '$queryRegex' and (ttl_starting_at + ttl) > NOW();") { row =>
+      row.optJsObject("value").map(ServiceDescriptor.fromJsonSafe).collect {
+        case JsSuccess(service, _) => service
+      }
+    }
+  }
+
   def serviceDescriptors_findByEnv(ev: String): Future[Seq[ServiceDescriptor]] = {
     querySeq(s"select value from otoroshi.entities where kind = 'service-descriptor' and jvalue -> 'env' = '${ev}' and (ttl_starting_at + ttl) > NOW();") { row =>
       row.optJsObject("value").map(ServiceDescriptor.fromJsonSafe).collect {

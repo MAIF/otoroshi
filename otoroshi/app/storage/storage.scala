@@ -178,6 +178,7 @@ trait RedisLike {
 trait OptimizedRedisLike {
   def findAllOptimized(kind: String): Future[Seq[JsValue]]
   def extractKind(key: String): Option[String]
+  def serviceDescriptors_findByHost(query: ServiceDescriptorQuery): Future[Seq[ServiceDescriptor]]
   def serviceDescriptors_findByEnv(env: String): Future[Seq[ServiceDescriptor]]
   def serviceDescriptors_findByGroup(id: String): Future[Seq[ServiceDescriptor]]
   def apiKeys_findByService(service: ServiceDescriptor): Future[Seq[ApiKey]]

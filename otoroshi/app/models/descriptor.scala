@@ -27,6 +27,7 @@ import play.api.mvc.{RequestHeader, Result, Results}
 import otoroshi.script._
 import security.{IdGenerator, OtoroshiClaim}
 import otoroshi.storage.BasicStore
+import otoroshi.storage.stores.KvServiceDescriptorDataStore
 import utils.{GzipConfig, RegexPool, ReplaceAllWith, TypedMap}
 
 import scala.collection.concurrent.TrieMap
@@ -2371,13 +2372,19 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
               requestHeader: RequestHeader,
               attrs: TypedMap)(implicit ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] = {
     ServiceDescriptorDataStore.logger.debug("Full scan of services, should not pass here anymore ...")
+    // val redisCli = this.asInstanceOf[KvServiceDescriptorDataStore].redisLike
+    // val all = if (redisCli.optimized) {
+    //   redisCli.asOptimized.serviceDescriptors_findByHost(query)
+    // } else {
+    //   findAll()
+    // }
     findAll().flatMap { descriptors =>
       val validDescriptors = descriptors.filter { sr =>
         if (!sr.enabled) {
           false
         } else {
           sr.allHosts match {
-            case hosts if hosts.isEmpty   => false
+            case hosts if hosts.isEmpty => false
             case hosts if hosts.size == 1 => utils.RegexPool(hosts.head).matches(query.toHost)
             case hosts => {
               hosts.exists(host => utils.RegexPool(host).matches(query.toHost))
