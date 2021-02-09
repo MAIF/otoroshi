@@ -59,7 +59,7 @@ input.button[type="file"]{
     right: 20px;
     z-index: 1;
     background-color: $primaryBgColor;
-    +div{
+    +div,+form{
       padding-top: 50px;
     }
   }

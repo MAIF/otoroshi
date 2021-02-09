@@ -74,12 +74,11 @@ export class AuthModuleConfigsPage extends Component {
           kubernetesKind="AuthModule"
           injectToolbar={(s, ss) => {
             return (
-              <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr btnsService">
+              <div className="btn__group-fixed--right mb-20 grid-template-col-xs-up__1fr-5fr">
                 <div className="">
                   <button
                     className="btn btn-info"
                     type="button"
-                    style={{ marginRight: 20 }}
                     onClick={(e) => this.duplicate(s, ss, e)}>
                     <i className="far fa-copy" aria-hidden="true" />
                   </button>

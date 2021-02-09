@@ -172,7 +172,7 @@ export class SnowMonkeyPage extends Component {
     return (
       <div>
         <div className="">
-          <div className="btn__grouposition--fixed--right">
+          <div className="btn__group-fixed--right">
             <div className="">
               <button
                 type="button"
