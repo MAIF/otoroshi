@@ -155,7 +155,7 @@ export class OtoroshiCharts extends Component {
           </div>
         )}
         {!this.state.loading && (
-          <div className="flex flex-xs-column mb-10">
+          <div className="display--flex flex-direction-xs--column mb-10">
             <div className="w-100 mr-5  mb-xs-10">
               <table className="fulltable table table-bordered table-striped table-condensed table-hover w-100">
                 <thead>

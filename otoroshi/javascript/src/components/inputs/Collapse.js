@@ -24,9 +24,9 @@ export class Collapse extends Component {
       return (
         <div>
           <hr />
-          <div className="form__group grid-template-col-xs__1fr-5fr mb-10 mt-10">
+          <div className="form__group grid-template-col-xs-up__1fr-5fr mb-10 mt-10">
             <label />
-            <div className="flex f-justify_between cursor-pointer mb-10" onClick={this.toggle}>
+            <div className="display--flex justify-content--between cursor--pointer mb-10" onClick={this.toggle}>
               <h3>
                 {this.props.label}
               </h3>
@@ -45,9 +45,9 @@ export class Collapse extends Component {
       return (
         <div>
           <hr />
-          <div className="form__group grid-template-col-xs__1fr-5fr mb-10 mt-10">
+          <div className="form__group grid-template-col-xs-up__1fr-5fr mb-10 mt-10">
             <label />
-            <div className="flex f-justify_between cursor-pointer mb-10" onClick={this.toggle}>
+            <div className="display--flex justify-content--between cursor--pointer mb-10" onClick={this.toggle}>
               <h3>
                 {this.props.label}
               </h3>

@@ -16,7 +16,7 @@ export class DateTimeInput extends Component {
       return null;
     }
     return (
-      <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
+      <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
         <label htmlFor={`input-${this.props.label}`}>
           {this.props.label} <Help text={this.props.help} />
         </label>
