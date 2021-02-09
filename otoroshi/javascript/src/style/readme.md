@@ -2,16 +2,16 @@
 
 ## Layout
 The container is fluid.
-The main layout is defined as a *global* and areas are divided in : *header*, *aside* and *section*.
+The main layout is defined like this : *global.scss* and areas are divided in : *header.scss*, *aside.scss* and *section.scss*.
 
 ## Breakpoint
 
-Defined in variables.scss. Default breakpoint for mobile is
+Defined in variables.scss. Default breakpoint for media queries are
 ```css
   $bp-xs-up:767px; //min-width
   $bp-xs:$bp-xs-up - 1; //max-width
 ```
-add *-xs-* in the name (see examples below)
+add *-xs-* or *-xs-up-* in the name (see examples below)
 
 ## Margins & Padding
 * Choice of values (in pixels) : 5, 10, 20
@@ -23,14 +23,14 @@ add *-xs-* in the name (see examples below)
     m-5, ...  (margin : 5px)
     pt-10, ... (padding-top : 10px)
 
-    m-xs-20, ... (margin < breakpoint value : 5px)
+    m-xs-20, ... (margin for breakpoint max-width value : 20px)
 ```
 
 ## Colors for text, background, border
 
-* Choice of colors : *white*, *black* and a list of colors where values defined in the variable.scss :  *dark*, *warning*, *alert*, *success*, *info*, *primary*
+* Choice of colors : *white*, *black* and a list of colors values defined in the variable.scss :  *dark*, *warning*, *alert*, *success*, *info*, *primary*
 
-* !important is optionnal with --important
+* add *--important* after the name will !important the value
 
 **Example of classname**
 ```css
