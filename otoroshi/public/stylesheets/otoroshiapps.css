@@ -3,20 +3,24 @@
 body {
   padding-bottom: 20px;
   background-color: #373735;
-  font-family: 'Raleway', Helvetica, sans-serif;
+  font-family: "Raleway", Helvetica, sans-serif;
 }
 
 .navbar-brand {
-  background-color: #F9B000;
+  background-color: #f9b000;
   color: white;
   font-weight: 700;
   transition-duration: 0.5s;
   flex-direction: column;
   text-align: center;
-  padding-top: 4px;
+  font-size: 18px;
+  line-height: 1.4rem;
+  padding-top: 15px;
+  padding-bottom: 15px;
 }
 
-a.navbar-brand :focus, a.navbar-brand:hover {
+a.navbar-brand :focus,
+a.navbar-brand:hover {
   color: white;
 }
 
@@ -24,22 +28,26 @@ a.navbar-brand :focus, a.navbar-brand:hover {
   background-color: #ffc02e;
 }
 
-.navbar-brand, .navbar-nav>li>a {
+.navbar-brand,
+.navbar-nav > li > a {
   text-shadow: none;
 }
 
-.navbar-inverse .navbar-nav>li>a {
+.navbar-inverse .navbar-nav > li > a {
   transition-duration: 0.5s;
   color: #f9b000;
 }
 
-.navbar-inverse .navbar-nav>li>a:focus, .navbar-inverse .navbar-nav>li>a:hover {
+.navbar-inverse .navbar-nav > li > a:focus,
+.navbar-inverse .navbar-nav > li > a:hover {
   color: #ffc02e;
 }
 
 /* Everything but the jumbotron gets side spacing for mobile first views */
 
-.header, .marketing, .footer {
+.header,
+.marketing,
+.footer {
   padding-right: 15px;
   padding-left: 15px;
 }
@@ -177,10 +185,12 @@ a.navbar-brand :focus, a.navbar-brand:hover {
 @media (min-width: 768px) {
   .container {
     max-width: 730px;
+    margin-right: auto;
+    margin-left: auto;
   }
 }
 
-.container-narrow>hr {
+.container-narrow > hr {
   margin: 30px 0;
 }
 
@@ -195,8 +205,8 @@ a.navbar-brand :focus, a.navbar-brand:hover {
 
 .jumbotron .btn {
   background: none;
-  color: #F9B000;
-  border-color: #F9B000;
+  color: #f9b000;
+  border-color: #f9b000;
   margin-left: 20px;
 }
 
@@ -216,20 +226,22 @@ a.navbar-brand :focus, a.navbar-brand:hover {
   margin: 40px 0;
 }
 
-.marketing p+h4 {
+.marketing p + h4 {
   margin-top: 28px;
 }
 
-  /* Remove the padding we set earlier */
-  .header, .marketing, .footer {
-    padding-right: 0;
-    padding-left: 0;
-  }
-  /* Space out the masthead */
-  .header {
-    margin-bottom: 30px;
-  }
-  /* Remove the bottom border on the jumbotron for visual effect */
-  .jumbotron {
-    border-bottom: 0;
-  }
+/* Remove the padding we set earlier */
+.header,
+.marketing,
+.footer {
+  padding-right: 0;
+  padding-left: 0;
+}
+/* Space out the masthead */
+.header {
+  margin-bottom: 30px;
+}
+/* Remove the bottom border on the jumbotron for visual effect */
+.jumbotron {
+  border-bottom: 0;
+}

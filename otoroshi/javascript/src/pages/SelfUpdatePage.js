@@ -330,7 +330,7 @@ export class SelfUpdatePage extends Component {
           {('0' + duration.minutes()).slice(-2)}:{('0' + duration.seconds()).slice(-2)})
         </h5>
         <form style={{ textAlign: 'left' }}>
-          <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
+          <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
             <label>Email</label>
             <div >
               <input
@@ -341,7 +341,7 @@ export class SelfUpdatePage extends Component {
               />
             </div>
           </div>
-          <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
+          <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
             <label>Name</label>
             <div >
               <input
@@ -352,7 +352,7 @@ export class SelfUpdatePage extends Component {
               />
             </div>
           </div>
-          <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
+          <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
             <label>
               Password <small style={{ color: 'rgb(181, 179, 179)' }}>(required)</small>
             </label>
@@ -365,7 +365,7 @@ export class SelfUpdatePage extends Component {
               />
             </div>
           </div>
-          <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
+          <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
             <label>New password</label>
             <div >
               <input
@@ -376,7 +376,7 @@ export class SelfUpdatePage extends Component {
               />
             </div>
           </div>
-          <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
+          <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
             <label>
               New password <small style={{ color: 'rgb(181, 179, 179)' }}>(again)</small>
             </label>
@@ -390,7 +390,7 @@ export class SelfUpdatePage extends Component {
             </div>
           </div>
           {this.state.webauthn && this.state.mustRegWebauthnDevice && (
-            <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
+            <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
               <label />
               <div >
                 {this.state.hasWebauthnDeviceReg && (
@@ -409,7 +409,7 @@ export class SelfUpdatePage extends Component {
               </div>
             </div>
           )}
-          <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
+          <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
             <label />
             <div >
               <button type="button" className="btn" style={{ marginLeft: 0 }} onClick={this.save}>
@@ -428,7 +428,7 @@ export class SelfUpdatePage extends Component {
               )}
             </div>
           </div>
-          <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
+          <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
             <label />
             <div >
               <p style={{ color: 'green', width: '100%', textAlign: 'left' }}>

@@ -324,7 +324,7 @@ export class ChaosConfigWithSkin extends Component {
   render() {
     if (!this.state.config) return null;
     return (
-      <div className="flex flex-xs-wrap">
+      <div className="display--flex flex-wrap-xs--wrap">
         <Panel
           title="Large request fault"
           collapsed={this.props.collapsed}

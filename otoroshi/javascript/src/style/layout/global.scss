@@ -9,7 +9,7 @@ body {
   line-height: 1.5rem;
 }
 
-
+// HTML elements
 %color-h {
   color: $primaryColor;
 }
@@ -76,76 +76,69 @@ code {
 
 // LAYOUT //
 
-.container {
-  margin-right: auto;
-  margin-left: auto;
-}
-
-// background
-.bg-none{
-  background: none;
-}
 // display
-.hide{
+.display--none{
   display: none !important;
 }
-.d-block{
+.display--block{
   display:block !important;
 }
-.d-inline-block{
+.display--inline-block{
   display:inline-block;
 }
 
+.display--flex {
+  display: flex;
+}
+
+.display--inline-flex {
+  display: inline-flex;
+}
+
+.display--grid{
+  display: grid;
+}
+
 //positions
-.p-fixed {
+.position--fixed {
   position: fixed;
 }
 
-.p-relative{
+.position--relative{
   position: relative;
 }
 
 //flex
-.flex {
-  display: flex;
-}
 
-.flex-inline {
-  display: inline-flex;
-}
-
-.flex-column{
+.flex-direction--column{
   flex-direction: column;
 }
-.flex-wrap{
+.flex-wrap--wrap{
   flex-wrap: wrap;
 }
 
-.f-justify_between{
+.justify-content--between{
   justify-content: space-between;
 }
-.f-justify_around{
+.justify-content--around{
   justify-content: space-around;
 }
-.f-justify_center{
+.justify-content--center{
   justify-content: center;
 }
-.f-justify_start{
+.justify-content--start{
   justify-content: flex-start;
 }
-.f-justify_end{
+.justify-content--end{
   justify-content: flex-end;
 }
 
-.grow-1{
+.grow--1{
   flex-grow: 1;
 }
 
 
 //grid
-.grid{
-  display: grid;
-}
 
 .grid-template-col__2fr-3fr{
   grid-template-columns: 2fr 3fr;
@@ -157,29 +150,29 @@ code {
 .grid-template-col_1fr-1fr-auto {
   grid-template-columns: 1fr 1fr auto;
 }
-.grid-template-col-xs__1fr-5fr{
-  @media screen and (min-width: $bp-xs) {
+.grid-template-col-xs-up__1fr-5fr{
+  @media screen and (min-width: $bp-xs-up) {
     grid-template-columns: 1fr 5fr;
   }
 }
 //align-items
-.align-items__start{
+.align-items--start{
   align-items: start;
 }
-.align-items__center{
+.align-items--center{
   align-items: center;
 }
 
-.align-items__baseline {
+.align-items--baseline {
   align-items: baseline;
 }
 // cursors
-.cursor-pointer{
+.cursor--pointer{
   cursor: pointer;
 }
 
 // COLORS (text, background, border)
-$colors : ("white": #FFF, "dark":$darkColor, "warning":$warningColor, "alert":$alertColor,"success":$successColor,"info":$infoColor,"primary":$primaryColor);
+$colors : ("white": #FFF,"black": #000, "dark":$darkColor, "warning":$warningColor, "alert":$alertColor,"success":$successColor,"info":$infoColor,"primary":$primaryColor);
 
 //  colors for text, bg, border. --important optionnal
 @each $shortcut, $color in $colors{
@@ -203,6 +196,10 @@ $colors : ("white": #FFF, "dark":$darkColor, "warning":$warningColor, "alert":$a
   }
 }
 
+// background
+.bg--none{
+  background: none;
+}
 
 //margins & paddings
 $marginSizes : 5, 10, 20;
@@ -223,6 +220,7 @@ $widthSizes : 25, 33, 50, 100;
   }
 }
 
+//Media queries, breakpoint
 @media screen and (max-width: $bp-xs) {
   @each $size in $marginSizes{
     @each $shortcut, $property in $target{
@@ -238,16 +236,14 @@ $widthSizes : 25, 33, 50, 100;
     }
   }
 
-  .flex-xs-wrap{
+  // alignement
+  .flex-wrap-xs--wrap{
     flex-wrap: wrap;
   }
-  .flex-xs-column{
+  .flex-direction-xs--column{
     flex-direction: column;
   }
-  .f-xs-justify_start{
-    justify-content: flex-start;
-  }
-  .f-xs-align_start{
+  .align-items-xs--start{
     align-items: flex-start;
   }
 }

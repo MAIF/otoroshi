@@ -2,10 +2,9 @@
 @import "reset";
 
 @import 'layout/global';
-@import "layout/nav";
+@import "layout/header";
 @import "layout/aside";
-@import "layout/main";
-@import "layout/login";
+@import "layout/section";
 @import "layout/otoroshi";
 
 @import "component/form";

@@ -25,9 +25,9 @@ class RestrictionPath extends Component {
 
   render() {
     return (
-      <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
+      <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
         <label />
-        <div className="flex">
+        <div className="display--flex">
           <input
             className="w-50"
             placeholder="Http Method"

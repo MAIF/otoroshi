@@ -7,7 +7,7 @@ import faker from 'faker';
 import { Restrictions } from '../components/Restrictions';
 
 const Both = ({ label, rawValue }) => (
-  <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
+  <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
     <label>{label}</label>
     <div>
       <input
@@ -20,7 +20,7 @@ const Both = ({ label, rawValue }) => (
 );
 
 const CurlCommand = ({ label, rawValue, env }) => (
-  <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
+  <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
     <label>{label}</label>
     <div>
       {env && (
@@ -39,7 +39,7 @@ const CurlCommand = ({ label, rawValue, env }) => (
 );
 
 const BasicAuthToken = ({ label, rawValue }) => (
-  <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
+  <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
     <label>{label}</label>
     <div>
       <input
@@ -54,7 +54,7 @@ const BasicAuthToken = ({ label, rawValue }) => (
 );
 
 const ResetSecret = ({ changeValue }) => (
-  <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
+  <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
     <label />
     <div>
       <button
@@ -81,7 +81,7 @@ class ResetQuotas extends Component {
   render() {
     console.log(this.props);
     return (
-      <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
+      <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
         <label />
         <div>
           <button type="button" className="btn btn-danger btn-xs" onClick={this.resetQuotas}>
@@ -97,7 +97,7 @@ class CopyCredentials extends Component {
   render() {
     const props = this.props;
     return (
-      <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
+      <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
         <label />
         <div>
           <input
@@ -174,7 +174,7 @@ class DailyRemainingQuotas extends Component {
       remainingCallsPerMonth: 0,
     };
     return [
-      <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
+      <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
         <label htmlFor="input-Throttling quota">
           Consumed daily calls <Help text="The number of calls consumed today" />
         </label>
@@ -189,7 +189,7 @@ class DailyRemainingQuotas extends Component {
           </div>
         </div>
       </div>,
-      <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
+      <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
         <label htmlFor="input-Throttling quota">
           Remaining daily calls <Help text="The remaining number of calls for today" />
         </label>
@@ -204,7 +204,7 @@ class DailyRemainingQuotas extends Component {
           </div>
         </div>
       </div>,
-      <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
+      <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
         <label htmlFor="input-Throttling quota" >
           Consumed monthly calls <Help text="The number of calls consumed this month" />
         </label>
@@ -219,7 +219,7 @@ class DailyRemainingQuotas extends Component {
           </div>
         </div>
       </div>,
-      <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
+      <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
         <label htmlFor="input-Throttling quota" >
           Remaining monthly calls <Help text="The remaining number of calls for this month" />
         </label>

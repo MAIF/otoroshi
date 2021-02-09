@@ -31,7 +31,7 @@ export default class CodeInput extends Component {
     const [display, setDisplay] = useState(true);
     if (display) return <CodeInput {...props} />;
     return (
-      <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
+      <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
         <label htmlFor={`input-${props.label}`}>
           {props.label} <Help text={props.help} />
         </label>
@@ -77,7 +77,7 @@ export default class CodeInput extends Component {
       code = JSON.stringify(code, null, 2);
     }
     return (
-      <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
+      <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
         <label htmlFor={`input-${this.props.label}`}>
           {this.props.label} <Help text={this.props.help} />
         </label>

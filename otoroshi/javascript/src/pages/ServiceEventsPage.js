@@ -248,7 +248,7 @@ export class ServiceEventsPage extends Component {
     return (
       <div>
         <div className="mb-20">
-          <div className="flex f-justify_between align-items__center flex-xs-column">
+          <div className="display--flex justify-content--between align-items--center flex-direction-xs--column">
             <OtoDatePicker
               updateDateRange={this.updateDateRange}
               from={this.state.from}
@@ -265,7 +265,7 @@ export class ServiceEventsPage extends Component {
                 }
               />
             </div>
-            <div className="input-group flex align-items__center mt-xs-10">
+            <div className="input-group display--flex align-items--center mt-xs-10">
               <span style={{ marginRight: 5 }}>
                 Order by timestamp ascending values
               </span>
