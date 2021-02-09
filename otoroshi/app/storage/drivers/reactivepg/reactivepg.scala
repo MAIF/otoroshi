@@ -297,6 +297,28 @@ class ReactivePgDataStores(configuration: Configuration,
       case _ => Unreachable
     }
   }
+  def fromRawGetToExport(v: JsValue): JsValue = {
+    val typ = v.select("type").asString
+    val actualType = typ match {
+      case "counter" => "string"
+      case _ => typ
+    }
+    val pl = typ match {
+      case "counter" => JsString(v.select("counter").asLong.toString)
+      case "hash" =>    v.select("mvalue").asObject
+      case "list" =>    v.select("lvalue").asArray
+      case "set" =>     JsArray(v.select("svalue").asObject.keys.toSeq.map(JsString.apply))
+      case "string" =>  v.select("value").as[JsString]
+      case _ => JsNull
+    }
+    val ttl = if (v.select("ttl").asString == "1000 years") -1 else v.select("pttl").asLong
+    Json.obj(
+      "k" -> v.select("key").asString,
+      "w" -> actualType,
+      "t" -> ttl,
+      "v" -> pl
+    )
+  }
   override def rawExport(group: Int)(implicit ec: ExecutionContext, mat: Materializer, env: Env): Source[JsValue, NotUsed] = {
     Source
       .future(
@@ -327,17 +349,11 @@ class ReactivePgDataStores(configuration: Configuration,
               }
               .map { key =>
                 for {
-                  w     <- redis.typ(key)
-                  ttl   <- redis.pttl(key)
-                  value <- fetchValueForType(w, key)
+                  raw <- redis.rawGet(key)
                 } yield
-                  value match {
-                    case JsNull => JsNull
-                    case _ =>
-                      Json.obj("k" -> key,
-                        "v" -> value,
-                        "t" -> (if (ttl == -1) -1 else (System.currentTimeMillis() + ttl)),
-                        "w" -> w)
+                  raw match {
+                    case None => JsNull
+                    case Some(v) => fromRawGetToExport(v)
                   }
               }
           )
@@ -364,19 +380,11 @@ class ReactivePgDataStores(configuration: Configuration,
             Source(keys.toList)
               .mapAsync(1) { key =>
                 for {
-                  w     <- redis.typ(key)
-                  ttl   <- redis.pttl(key)
-                  value <- fetchValueForType(w, key)
+                  raw <- redis.rawGet(key)
                 } yield
-                  value match {
-                    case JsNull => JsNull
-                    case _ =>
-                      Json.obj(
-                        "k" -> key,
-                        "v" -> value,
-                        "t" -> (if (ttl == -1) -1 else (System.currentTimeMillis() + ttl)),
-                        "w" -> w
-                      )
+                  raw match {
+                    case None => JsNull
+                    case Some(v) => fromRawGetToExport(v)
                   }
               }
               .runWith(Sink.seq)
@@ -404,7 +412,10 @@ class ReactivePgDataStores(configuration: Configuration,
             val what  = (json \ "w").as[String]
             (what match {
               case "counter" => redis.setCounter(key, value.as[Long])
-              case "string" => redis.set(key, value.as[String])
+              case "string" => Try(value.as[String].toLong) match {
+                case Failure(_) => redis.set(key, value.as[String])
+                case Success(l) => redis.setCounter(key, l)
+              }
               case "hash" =>
                 Source(value.as[JsObject].value.toList)
                   .mapAsync(1)(v => redis.hset(key, v._1, Json.stringify(v._2)))
@@ -423,21 +434,6 @@ class ReactivePgDataStores(configuration: Configuration,
           .runWith(Sink.ignore)
           .map(_ => ())
       }
-  }
-
-  private def fetchValueForType(typ: String, key: String)(implicit ec: ExecutionContext): Future[JsValue] = {
-    typ match {
-      case "counter" => redis.getCounter(key).map(_.map(v => JsNumber(v)).getOrElse(JsNumber(0L)))
-      case "hash" => redis.hgetall(key).map(m => JsObject(m.map(t => (t._1, JsString(t._2.utf8String)))))
-      case "list" => redis.lrange(key, 0, Int.MaxValue - 1).map(l => JsArray(l.map(s => JsString(s.utf8String))))
-      case "set"  => redis.smembers(key).map(l => JsArray(l.map(s => JsString(s.utf8String))))
-      case "string" =>
-        redis.get(key).map {
-          case None    => JsNull
-          case Some(a) => JsString(a.utf8String)
-        }
-      case _ => FastFuture.successful(JsNull)
-    }
   }
 }
 
@@ -898,8 +894,9 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env, _optimized: B
   }
 
   override def rawGet(key: String): Future[Option[JsValue]] = {
-    queryOne(s"select json_agg(t) as json from otoroshi.entities t where key = $$1 and (ttl_starting_at + ttl) > NOW() limit 1;", Seq(key)) { row =>
-      row.optJsObject("json")
+    queryOne(s"select json_agg(t) as json, (t.ttl_starting_at + t.ttl) as expire_at from otoroshi.entities t where key = $$1 and (ttl_starting_at + ttl) > NOW() group by ttl_starting_at, ttl limit 1 ;", Seq(key)) { row =>
+      val ttl = row.optOffsetDatetime("expire_at").map(ldate => ldate.toEpochSecond * 1000).getOrElse(-1L)
+      row.optJsArray("json").flatMap(_.value.headOption).map(_.asObject ++ Json.obj("pttl" -> ttl))
     }
   }
 }

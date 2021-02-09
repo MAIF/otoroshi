@@ -261,6 +261,7 @@ class InMemoryDataStores(configuration: Configuration,
             val pttl  = (json \ "t").as[Long]
             val what  = (json \ "w").as[String]
             (what match {
+              case "counter" => redis.set(key, value.as[Long].toString)
               case "string" => redis.set(key, value.as[String])
               case "hash" =>
                 Source(value.as[JsObject].value.toList)

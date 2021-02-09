@@ -1036,6 +1036,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
     import collection.JavaConverters._
 
     what match {
+      case "counter" => Some(ByteString(value.as[Long].toString))
       case "string" => Some(ByteString(value.as[String]))
       case "set" => {
         val list = new java.util.concurrent.CopyOnWriteArraySet[ByteString]
@@ -1410,6 +1411,7 @@ class SwappableInMemoryDataStores(configuration: Configuration,
     import collection.JavaConverters._
 
     what match {
+      case "counter" => Some(ByteString(value.as[Long].toString))
       case "string" => Some(ByteString(value.as[String]))
       case "set" => {
         val list = new java.util.concurrent.CopyOnWriteArraySet[ByteString]
@@ -1627,6 +1629,7 @@ class SwappableInMemoryDataStores(configuration: Configuration,
             val pttl  = (json \ "t").as[Long]
             val what  = (json \ "what").as[String]
             (what match {
+              case "counter" => redis.set(key, value.as[String])
               case "string" => redis.set(key, value.as[String])
               case "hash" =>
                 Source(value.as[JsObject].value.toList)

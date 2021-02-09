@@ -103,6 +103,7 @@ class FilePersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
     import collection.JavaConverters._
 
     what match {
+      case "counter" => Some(ByteString(value.as[Long].toString))
       case "string" => Some(ByteString(value.as[String]))
       case "set" => {
         val list = new java.util.concurrent.CopyOnWriteArraySet[ByteString]
@@ -227,6 +228,7 @@ class HttpPersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
     import collection.JavaConverters._
 
     what match {
+      case "counter" => Some(ByteString(value.as[Long].toString))
       case "string" => Some(ByteString(value.as[String]))
       case "set" => {
         val list = new java.util.concurrent.CopyOnWriteArraySet[ByteString]
