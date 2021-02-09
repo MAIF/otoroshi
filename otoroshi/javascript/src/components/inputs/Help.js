@@ -11,7 +11,7 @@ export class Help extends Component {
       return (
           <span>
             <i
-              className="far fa-question-circle cursor-pointer"
+              className="far fa-question-circle cursor--pointer"
                 data-tip data-for={`registerTip-${randomId}`}
             />
             <ReactTooltip id={`registerTip-${randomId}`} place="top" effect="solid" multiline={true} className="tooltip">

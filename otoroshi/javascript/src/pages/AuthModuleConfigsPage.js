@@ -74,7 +74,7 @@ export class AuthModuleConfigsPage extends Component {
           kubernetesKind="AuthModule"
           injectToolbar={(s, ss) => {
             return (
-              <div className="form__group mb-20 grid-template-col-xs__1fr-5fr btnsService">
+              <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr btnsService">
                 <div className="">
                   <button
                     className="btn btn-info"

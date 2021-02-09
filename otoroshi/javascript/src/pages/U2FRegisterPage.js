@@ -290,8 +290,8 @@ export class U2FRegisterPage extends Component {
             delete the default one.
           </div>
         )}
-        <form className="hide">
-          <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
+        <form className="display--none">
+          <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
             <label >Label</label>
             <div>
               <input
@@ -302,7 +302,7 @@ export class U2FRegisterPage extends Component {
               />
             </div>
           </div>
-          <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
+          <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
             <label >Email</label>
             <div>
               <input
@@ -313,7 +313,7 @@ export class U2FRegisterPage extends Component {
               />
             </div>
           </div>
-          <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
+          <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
             <label >Password</label>
             <div>
               <input
@@ -324,7 +324,7 @@ export class U2FRegisterPage extends Component {
               />
             </div>
           </div>
-          <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
+          <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
             <label >Re-type Password</label>
             <div>
               <input
@@ -335,7 +335,7 @@ export class U2FRegisterPage extends Component {
               />
             </div>
           </div>
-          <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
+          <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
             <label  />
             <div>
               <button type="button" className="btn-success" onClick={this.simpleRegister}>
@@ -350,7 +350,7 @@ export class U2FRegisterPage extends Component {
               </button>
             </div>
           </div>
-          <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
+          <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
             <label  />
             <div>
               <p>{!this.state.error && this.state.message}</p>
@@ -358,7 +358,7 @@ export class U2FRegisterPage extends Component {
             </div>
           </div>
         </form>
-        <hr className="hide" />
+        <hr className="display--none" />
         <Table
           parentProps={this.props}
           selfUrl="admins"
@@ -583,7 +583,7 @@ export class RegisterAdminModal extends Component {
       <>
         <div className="modal-body">
           <form>
-            <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
+            <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
               <label >Label</label>
               <div>
                 <input
@@ -594,7 +594,7 @@ export class RegisterAdminModal extends Component {
                 />
               </div>
             </div>
-            <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
+            <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
               <label >Username</label>
               <div>
                 <input
@@ -607,7 +607,7 @@ export class RegisterAdminModal extends Component {
               </div>
             </div>
             {this.props.mode === 'update' && (
-              <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
+              <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
                 <label >Old Password</label>
                 <div>
                   <input
@@ -620,7 +620,7 @@ export class RegisterAdminModal extends Component {
                 </div>
               </div>
             )}
-            <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
+            <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
               <label >Password</label>
               <div>
                 <input
@@ -634,7 +634,7 @@ export class RegisterAdminModal extends Component {
                 />
               </div>
             </div>
-            <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
+            <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
               <label >Re-type Password</label>
               <div>
                 <input
@@ -650,11 +650,11 @@ export class RegisterAdminModal extends Component {
                 />
               </div>
             </div>
-            <div className="form__group mb-20 grid-template-col-xs__1fr-5fr hide">
+            <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr display--none">
               <label  />
               <div></div>
             </div>
-            <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
+            <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
               <label  />
               <div>
                 <p>{!this.state.error && this.state.message}</p>
@@ -679,7 +679,7 @@ export class RegisterAdminModal extends Component {
           </button>
           <button
             type="button"
-            className="btn btn-success hide"
+            className="btn btn-success display--none"
             ref={(r) => (this.okRef = r)}
             onClick={(e) => this.props.ok(this.state)}>
             Create
@@ -825,7 +825,7 @@ export class AdminEditionModal extends Component {
               value={this.state.password2}
               onChange={(e) => this.setState({ password2: e })}
             />
-            <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
+            <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
               <label ></label>
               <div style={{ display: 'flex' }}>
                 <button type="button" className="btn btn-success" onClick={this.setPassword}>

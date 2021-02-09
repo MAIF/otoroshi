@@ -172,7 +172,7 @@ export class SnowMonkeyPage extends Component {
     return (
       <div>
         <div className="">
-          <div className="btn__group-fixed--right">
+          <div className="btn__grouposition--fixed--right">
             <div className="">
               <button
                 type="button"
@@ -190,7 +190,7 @@ export class SnowMonkeyPage extends Component {
               </button>
             </div>
           </div>
-          <div className="flex f-justify_center">
+          <div className="display--flex justify-content--center">
             <svg
               version="1.1"
               className={this.state.started ? 'monkey snowMonkeyAnim' : 'monkey'}

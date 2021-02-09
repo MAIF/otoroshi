@@ -1162,7 +1162,7 @@ export class DangerZonePage extends Component {
     return (
       <div className="">
         <div>
-          <div className="btn__group-fixed--right">
+          <div className="btn__grouposition--fixed--right">
               <div className="btn__group--right">
                 <button
                   title="Add item"
@@ -1194,7 +1194,7 @@ export class DangerZonePage extends Component {
             onChange={this.readyToPush}
           />
           {!this.state.readyToPush && (
-            <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
+            <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
               <label/>
               <div className="mt-10">
                 <label
@@ -1207,7 +1207,7 @@ export class DangerZonePage extends Component {
             </div>
           )}
           {this.state.readyToPush && (
-            <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
+            <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
               <label  />
               <div >
                 <button type="button" className="btn btn-danger" onClick={this.importData}>
@@ -1220,7 +1220,7 @@ export class DangerZonePage extends Component {
         </form>
         <hr />
         <form>
-          <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
+          <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
             <label  />
             <div >
               <button type="button" className="btn-success mr-5 mb-5" onClick={this.fullExport}>
@@ -1253,7 +1253,7 @@ export class DangerZonePage extends Component {
 class BackOfficeAuthButtons extends Component {
   render() {
     return (
-      <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
+      <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
         <label />
         <div >
           {!this.props.rawValue.backOfficeAuthRef && (

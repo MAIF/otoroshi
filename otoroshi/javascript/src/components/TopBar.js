@@ -470,7 +470,7 @@ export class TopBar extends Component {
                 <span>Menu</span>
               </button>
             
-            <form id="navbar" className="grow-1">
+            <form id="navbar" className="grow--1">
               {selected && (
                 <div style={{ marginRight: 10 }}>
                   <span
@@ -546,7 +546,7 @@ export class TopBar extends Component {
                 />
               </div>
             </form>
-            <div className="p-fixed flex align-items__center" style={{right:0, top:0}}>
+            <div className="position--fixed display--flex align-items--center" style={{right:0, top:0}}>
               {window.__apiReadOnly && (
                   <a className="text__alert mr-10" title="Admin API in read-only mode">
                     <span className="fas fa-lock fa-lg" />
@@ -620,7 +620,7 @@ export class TopBar extends Component {
                     <a href="/bo/dashboard/certificates">
                       <span className="fas fa-certificate" /> SSL/TLS Certificates
                     </a>
-                    <a className="hide" href="/bo/dashboard/validation-authorities">
+                    <a className="display--none" href="/bo/dashboard/validation-authorities">
                       <span className="fas fa-gavel" /> Validation authorities
                     </a>
                     {this.state.env.scriptingEnabled === true && (
@@ -661,18 +661,18 @@ export class TopBar extends Component {
                               <i className="fas fa-list" /> Events log
                             </a>
                           </li>
-                          <li className="hide">
+                          <li className="display--none">
                             <a href="/bo/dashboard/top10">
                               <span className="fas fa-fire" /> Top 10 services
                             </a>
                           </li>
-                          <li className="hide">
+                          <li className="display--none">
                             <a href="/bo/dashboard/map">
                               <span className="fas fa-globe" /> Services map
                             </a>
                           </li>
-                          <li role="separator" className="divider hide" />
-                          <li className="hide">
+                          <li role="separator" className="divider display--none" />
+                          <li className="display--none">
                             <a href="/bo/dashboard/loggers">
                               <span className="fas fa-book" /> Loggers level
                             </a>

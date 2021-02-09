@@ -115,8 +115,8 @@ class PluginsDescription extends Component {
                       backgroundColor: '#494948',
                       width: '100%',
                     }}>
-                  <div className="flex f-justify_between">
-                      <h3 className="d-inline-block">{script.name}</h3>
+                  <div className="flex justify-content--between">
+                      <h3 className="display--inline-block">{script.name}</h3>
                       {!!script.defaultConfig && (
                         <button
                           type="button"
@@ -181,7 +181,7 @@ export class Scripts extends Component {
           config={this.props.config}
           onChangeConfig={this.props.onChangeConfig}
         />
-        <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
+        <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
           <label />
           <div>
             {this.props.refs && this.props.refs.length === 0 && (
