@@ -1160,9 +1160,8 @@ export class DangerZonePage extends Component {
       delete propsDisabled.disabled;
     }
     return (
-      <div className="">
-        <div>
-          <div className="btn__grouposition--fixed--right">
+      <div>
+          <div className="btn__group-fixed--right">
               <div className="btn__group--right">
                 <button
                   title="Add item"
@@ -1174,14 +1173,14 @@ export class DangerZonePage extends Component {
                 </button>
             </div>
           </div>
+        <div>
+          <Form
+            value={this.state.value}
+            onChange={this.updateState}
+            flow={this.formFlow}
+            schema={this.formSchema}
+          />
         </div>
-        <Form
-          value={this.state.value}
-          onChange={this.updateState}
-          flow={this.formFlow}
-          schema={this.formSchema}
-          style={{ marginTop: 50 }}
-        />
         <hr />
         <form>
           <input
