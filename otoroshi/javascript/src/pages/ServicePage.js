@@ -1029,7 +1029,7 @@ export class ServicePage extends Component {
     return (
       <div className="">
         <form className="">
-          <div className="btn__grouposition--fixed--right">
+          <div className="btn__group-fixed--right">
             <div className="btn__group--right">
               <button
                 className="btn-danger mr-5"
