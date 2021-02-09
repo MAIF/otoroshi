@@ -99,7 +99,7 @@ export class Location extends Component {
           })}
           help="The teams where this entity will belong"
         />
-        <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
+        <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
           <label className=""></label>
           <div className="btn__group--right">
             {window.__user.superAdmin && (

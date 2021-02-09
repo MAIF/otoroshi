@@ -274,7 +274,7 @@ export class Oauth2ModuleConfig extends Component {
     }
     return (
       <div>
-        <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
+        <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
           <label
             htmlFor={`input-${this.props.label}`}
           />
@@ -639,11 +639,9 @@ export class User extends Component {
   render() {
     return (
       <div
-        style={{
-          display: 'flex',
-          marginTop: 10,
-        }}>
-        <div className="csol-sm-10 row" style={{ width: '80%', paddingLeft: 15, paddingRight: 20 }}>
+      className="display--flex mt-10"
+        >
+        <div className="" style={{ width: '80%', paddingLeft: 15, paddingRight: 20 }}>
           <input
             type="text"
             placeholder="User name"
@@ -726,12 +724,8 @@ export class User extends Component {
                     const sessionId = r.sessionId;
                     window.newAlert(
                       <div
-                        style={{
-                          display: 'flex',
-                          flexDirection: 'column',
-                          justifyContent: 'center',
-                          alignItems: 'center',
-                        }}>
+                        className="display--flex flex-direction--column justify-content--center align-items--center"
+                      >
                         <p>The link to update user profile is usable for the next 10 minutes</p>
                         <a
                           target="_blank"
@@ -907,7 +901,7 @@ export class BasicModuleConfig extends Component {
           help="..."
           onChange={(v) => changeTheValue(path + '.webauthn', v)}
         />
-        <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
+        <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
           <label htmlFor={`input-users`}>
             Users
           </label>
@@ -934,7 +928,7 @@ export class BasicModuleConfig extends Component {
           </div>
         </div>
         {!this.state.showRaw && (
-          <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
+          <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
             <label>Users raw</label>
             <div>
               <button
@@ -947,7 +941,7 @@ export class BasicModuleConfig extends Component {
           </div>
         )}
         {this.state.showRaw && (
-          <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
+          <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
             <label>Users raw</label>
             <div>
               <button
@@ -1111,9 +1105,9 @@ export class LdapModuleConfig extends Component {
           help="if one"
           onChange={(v) => changeTheValue(path + '.adminPassword', v)}
         />
-        <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
+        <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
           <label></label>
-          <div style={{ display: 'flex' }}>
+          <div className="display--flex">
             <button type="button" className="btn btn-success" onClick={this.check}>
               Test admin. connection
             </button>
@@ -1203,7 +1197,7 @@ class LdapUserLoginTest extends Component {
   render() {
     return (
       <form>
-        <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
+        <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
           <label>Username</label>
           <div>
             <input
@@ -1214,7 +1208,7 @@ class LdapUserLoginTest extends Component {
             />
           </div>
         </div>
-        <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
+        <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
           <label>Password</label>
           <div>
             <input
@@ -1225,7 +1219,7 @@ class LdapUserLoginTest extends Component {
             />
           </div>
         </div>
-        <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
+        <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
           <label></label>
           <div>
             <button type="button" className="btn btn-success" onClick={this.check}>
