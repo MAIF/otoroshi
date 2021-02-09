@@ -14,7 +14,7 @@ class Alert extends Component {
       <div className="modal" tabindex="-1" role="dialog" style={{ display: 'block' }}>
         <div className="modal-dialog" role="document">
           <div className="modal-content">
-            <div className="modal-header flex flex-column">
+            <div className="modal-header display--flex flex-direction--column">
               <button
                 type="button"
                 className="close"
@@ -66,7 +66,7 @@ class Confirm extends Component {
       <div className="modal" tabindex="-1" role="dialog" style={{ display: 'block' }}>
         <div className="modal-dialog" role="document">
           <div className="modal-content">
-            <div className="modal-header flex flex-column">
+            <div className="modal-header display--flex flex-direction--column">
               <button
                 type="button"
                 className="close"
@@ -119,7 +119,7 @@ class Prompt extends Component {
       <div className="modal" tabindex="-1" role="dialog" style={{ display: 'block' }}>
         <div className="modal-dialog" role="document">
           <div className="modal-content">
-            <div className="modal-header flex flex-column">
+            <div className="modal-header display--flex flex-direction--column">
               <button
                 type="button"
                 className="close"
@@ -179,7 +179,7 @@ class Popup extends Component {
         style={{ display: 'block', ...this.props.style }}>
         <div className="modal-dialog" role="document">
           <div className="modal-content">
-            <div className="modal-header flex flex-column">
+            <div className="modal-header display--flex flex-direction--column">
               <button
                 type="button"
                 className="close"

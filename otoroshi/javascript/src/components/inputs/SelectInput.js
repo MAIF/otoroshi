@@ -87,7 +87,7 @@ export class SelectInput extends Component {
   render() {
     if (this.state.error) {
       return (
-        <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
+        <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
           <label htmlFor={`input-${this.props.label}`} >
             {this.props.label} <Help text={this.props.help} />
           </label>
@@ -101,7 +101,7 @@ export class SelectInput extends Component {
     }
     if (this.props.classic && !this.props.disabled) {
       return (
-        <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
+        <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
           <label htmlFor={`input-${this.props.label}`} >
             {this.props.label} <Help text={this.props.help} />
           </label>
@@ -121,7 +121,7 @@ export class SelectInput extends Component {
       );
     }
     return (
-      <div className="form__group mb-20 grid-template-col-xs__1fr-5fr">
+      <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
         <label htmlFor={`input-${this.props.label}`} >
           {this.props.label} <Help text={this.props.help} />
         </label>

@@ -1,7 +1,7 @@
 .aside {
   display: flex;
   width: 100%;
-  @media screen and (min-width: $bp-xs) {
+  @media screen and (min-width: $bp-xs-up) {
     width: 20%;
   }
   @media screen and (max-width: $bp-xs) {
@@ -24,14 +24,6 @@
     text-transform: uppercase;
     margin-left: 10px;
     margin-top: 20px;
-
-    a {
-      padding: 5px 0 5px 30px;
-      margin-left: -30px;
-      display: block;
-      transition-duration: 1s;
-      color: $primaryColor;
-    }
   }
 
   li {
@@ -56,9 +48,10 @@
         color: $primaryColor;
       }
     }
-  }
 
-  .active a {
-    color: $primaryColor;
+    h2 a {
+      margin-left: -40px;
+      color: $primaryColor;
+    }
   }
 }

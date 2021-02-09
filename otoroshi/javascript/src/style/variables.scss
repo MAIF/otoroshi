@@ -13,5 +13,6 @@ $primaryBgColor:#373735;
 $secondaryBgColor:#494948;
 $tertiaryBgColor: #9e9e9e;
 
-$bp-xs:768px;
 
+$bp-xs-up:767px; //min-width
+$bp-xs:$bp-xs-up - 1; //max-width
