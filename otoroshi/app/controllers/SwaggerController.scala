@@ -2691,7 +2691,7 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
     Json.obj(
       "openapi" -> "3.0.0",
       "info" -> Json.obj(
-        "version" -> "1.5.0-dev",
+        "version" -> "1.5.0-alpha.7",
         "title" -> "Otoroshi Admin API",
         "description" -> "Admin API of the Otoroshi reverse proxy",
         "contact" -> Json.obj(
