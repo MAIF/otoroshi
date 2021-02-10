@@ -49,6 +49,7 @@ object implicits {
     }
     def applyOn[B](f: A => B): B = f(obj)
     def applyOnIf(predicate: => Boolean)(f: A => A): A = if (predicate) f(obj) else obj
+    def applyOnWithOpt[B](opt: => Option[B])(f: (A, B) => A): A = if (opt.isDefined) f(obj, opt.get) else obj
     def applyOnWithPredicate(predicate: A => Boolean)(f: A => A): A = if (predicate(obj)) f(obj) else obj
 
     def seffectOn(f: A => Unit): A = {
