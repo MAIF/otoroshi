@@ -90,6 +90,12 @@ As Otoroshi supports multiple datastores, you'll have to provide some details ab
 | `app.cassandra.hosts` | string | "127.0.0.1" | the host of the cassandra server |
 | `app.cassandra.host` | string | "127.0.0.1" | the list of cassandra hosts |
 | `app.cassandra.port` | number | 9042 | the port of the cassandra servers |
+| `app.pg.uri` | string |   | the uri of your pg database |
+| `app.pg.host` | string | localhost | the host of your pg database |
+| `app.pg.port` | number | 5432 | the port of your pg database |
+| `app.pg.database` | string | otoroshi | the database name |
+| `app.pg.user` | string | otoroshi | the username to connect to your pg database |
+| `app.pg.password` | string | otoroshi | the password to connect to your pg database |
 
 ## Headers configuration
 

@@ -186,13 +186,16 @@ class ReactivePgDataStores(configuration: Configuration,
     .setMaxSize(configuration.getOptional[Int]("app.pg.poolSize").getOrElse(100))
 
   private lazy val testMode = configuration.getOptional[Boolean]("app.pg.testMode").getOrElse(false)
-
+  private lazy val schema = configuration.getOptional[String]("app.pg.schema").getOrElse("otoroshi")
+  private lazy val table = configuration.getOptional[String]("app.pg.table").getOrElse("entities")
+  private lazy val schemaDotTable = s"$schema.$table"
   private lazy val client = PgPool.pool(connectOptions, poolOptions)
 
   private lazy val redis = new ReactivePgRedis(
     client,
     reactivePgActorSystem,
     env,
+    schemaDotTable,
     _optimized = configuration.getOptional[Boolean]("app.pg.optimized").getOrElse(true),
     avoidJsonPath = configuration.getOptional[Boolean]("app.pg.avoidJsonPath").getOrElse(false)
   )
@@ -204,10 +207,10 @@ class ReactivePgDataStores(configuration: Configuration,
     logger.info("Running database migrations ...")
 
     Await.result((for {
-      _ <- client.query("CREATE SCHEMA IF NOT EXISTS otoroshi;").executeAsync()
+      _ <- client.query(s"CREATE SCHEMA IF NOT EXISTS $schema;").executeAsync()
       _ <- if (testMode) redis.drop() else FastFuture.successful(())
       _ <- client.query(s"""
-           |create table if not exists otoroshi.entities (
+           |create table if not exists $schemaDotTable (
            |  key text not null,
            |  type text not null,
            |  ttl_starting_at TIMESTAMPTZ default NOW(),
@@ -223,10 +226,10 @@ class ReactivePgDataStores(configuration: Configuration,
            |);
            |""".stripMargin).executeAsync()
       _ <- client.withConnection(c => c.preparedQuery(s"""
-           |create index concurrently if not exists otoroshi_kind_idx on otoroshi.entities using btree (kind);
+           |create index concurrently if not exists otoroshi_kind_idx on $schemaDotTable using btree (kind);
            |""".stripMargin).execute()).scala
       _ <- client.withConnection(c => c.preparedQuery(s"""
-           |create index concurrently if not exists otoroshi_key_idx on otoroshi.entities using btree (key);
+           |create index concurrently if not exists otoroshi_key_idx on $schemaDotTable using btree (key);
            |""".stripMargin).execute()).scala
       _ <- if (testMode) redis.flushall() else FastFuture.successful(())
     } yield ()), 5.minutes)
@@ -235,16 +238,16 @@ class ReactivePgDataStores(configuration: Configuration,
   def setupCleanup(): Unit = {
     implicit val ec = reactivePgActorSystem.dispatcher
     cancel.set(reactivePgActorSystem.scheduler.scheduleAtFixedRate(1.minute, 5.minutes)(SchedulerHelper.runnable {
-      client.query("DELETE FROM otoroshi.entities WHERE (ttl_starting_at + ttl) < NOW();").executeAsync()
+      client.query(s"DELETE FROM $schemaDotTable WHERE (ttl_starting_at + ttl) < NOW();").executeAsync()
     }))
   }
 
   def mockService(): Unit = {
     reactivePgActorSystem.scheduler.scheduleOnce(10.seconds) {
       ServiceDescriptor(
-        id = "mock-service",
+        id = "mock-service-for-pg-tests",
         groups = Seq("admin-api-group"),
-        name = "mock-service",
+        name = "mock-service-for-pg-tests",
         env = "prod",
         domain = "oto.tools",
         subdomain = "test",
@@ -254,7 +257,6 @@ class ReactivePgDataStores(configuration: Configuration,
           Target("mirror.opunmaif.io")
         )
       ).save()(reactivePgActorSystem.dispatcher, env)
-      logger.info("\n\nregistering mock service ...\n\n")
     }(reactivePgActorSystem.dispatcher)
   }
 
@@ -492,7 +494,7 @@ class ReactivePgDataStores(configuration: Configuration,
   }
 }
 
-class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env, _optimized: Boolean, avoidJsonPath: Boolean) extends RedisLike with OptimizedRedisLike {
+class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env, schemaDotTable: String, _optimized: Boolean, avoidJsonPath: Boolean) extends RedisLike with OptimizedRedisLike {
 
   import pgimplicits._
 
@@ -536,7 +538,7 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env, _optimized: B
   }
 
   def typ(key: String): Future[String] = measure("pg.ops.type") {
-    queryOne(s"select type from otoroshi.entities where key = $$1 and (ttl_starting_at + ttl) > NOW() limit 1;", Seq(key)) { row =>
+    queryOne(s"select type from $schemaDotTable where key = $$1 and (ttl_starting_at + ttl) > NOW() limit 1;", Seq(key)) { row =>
       row.optString("type")
     }.map(_.getOrElse("none"))
   }
@@ -556,13 +558,13 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env, _optimized: B
   override def stop(): Unit = ()
 
   override def flushall(): Future[Boolean] = measure("pg.ops.flush-all") {
-    queryRaw(s"truncate otoroshi.entities;") { _ =>
+    queryRaw(s"truncate $schemaDotTable;") { _ =>
       true
     }
   }
 
   def drop(): Future[Boolean] = measure("pg.ops.drop") {
-    queryRaw(s"drop table if exists otoroshi.entities ;") { _ =>
+    queryRaw(s"drop table if exists $schemaDotTable ;") { _ =>
       true
     }
   }
@@ -606,14 +608,14 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env, _optimized: B
   }
 
   def findAllOptimized(kind: String): Future[Seq[JsValue]] = measure("pg.ops.optm.find-all") {
-    querySeq(s"select jvalue from otoroshi.entities where kind = $$1 and (ttl_starting_at + ttl) > NOW();", Seq(kind)) { row =>
+    querySeq(s"select jvalue from $schemaDotTable where kind = $$1 and (ttl_starting_at + ttl) > NOW();", Seq(kind)) { row =>
       row.optJsObject("jvalue")
     }
   }
 
   def serviceDescriptors_findByHost(query: ServiceDescriptorQuery): Future[Seq[ServiceDescriptor]] = measure("pg.ops.optm.services-find-by-host") {
     val queryRegex = "^" + query.toHost.replace("*", ".*").replace(".", "\\.")
-    querySeq(s"select value from otoroshi.entities, jsonb_array_elements_text(jvalue->'__allHosts') many(elem) where (jvalue->'enabled')::boolean = true and kind = 'service-descriptor' and elem ~ '$queryRegex' and (ttl_starting_at + ttl) > NOW();") { row =>
+    querySeq(s"select value from $schemaDotTable, jsonb_array_elements_text(jvalue->'__allHosts') many(elem) where (jvalue->'enabled')::boolean = true and kind = 'service-descriptor' and elem ~ '$queryRegex' and (ttl_starting_at + ttl) > NOW();") { row =>
       row.optJsObject("value").map(ServiceDescriptor.fromJsonSafe).collect {
         case JsSuccess(service, _) => service
       }
@@ -621,7 +623,7 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env, _optimized: B
   }
 
   def serviceDescriptors_findByEnv(ev: String): Future[Seq[ServiceDescriptor]] = measure("pg.ops.optm.services-find-by-env") {
-    querySeq(s"select value from otoroshi.entities where kind = 'service-descriptor' and jvalue -> 'env' = '${ev}' and (ttl_starting_at + ttl) > NOW();") { row =>
+    querySeq(s"select value from $schemaDotTable where kind = 'service-descriptor' and jvalue -> 'env' = '${ev}' and (ttl_starting_at + ttl) > NOW();") { row =>
       row.optJsObject("value").map(ServiceDescriptor.fromJsonSafe).collect {
         case JsSuccess(service, _) => service
       }
@@ -629,7 +631,7 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env, _optimized: B
   }
 
   def serviceDescriptors_findByGroup(id: String): Future[Seq[ServiceDescriptor]] = measure("pg.ops.optm.find-by-group") {
-    querySeq(s"select value from otoroshi.entities where kind = 'service-descriptor' and jvalue -> 'groups' ? '${id}' and (ttl_starting_at + ttl) > NOW();") { row =>
+    querySeq(s"select value from $schemaDotTable where kind = 'service-descriptor' and jvalue -> 'groups' ? '${id}' and (ttl_starting_at + ttl) > NOW();") { row =>
       row.optJsObject("value").map(ServiceDescriptor.fromJsonSafe).collect {
         case JsSuccess(service, _) => service
       }
@@ -642,7 +644,7 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env, _optimized: B
         service.groups.map(g => s"jvalue -> 'authorizedEntities' ? '${ServiceGroupIdentifier(g).str}'")
     ).mkString(" or ")
     querySeq(
-      s"""select value from otoroshi.entities where kind = 'apikey' and ($predicates) and (ttl_starting_at + ttl) > NOW();""".stripMargin) { row =>
+      s"""select value from $schemaDotTable where kind = 'apikey' and ($predicates) and (ttl_starting_at + ttl) > NOW();""".stripMargin) { row =>
       row.optJsObject("value").map(ApiKey.fromJsonSafe).collect {
         case JsSuccess(apikey, _) => apikey
       }
@@ -650,7 +652,7 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env, _optimized: B
   }
 
   def apiKeys_findByGroup(groupId: String): Future[Seq[ApiKey]] = measure("pg.ops.optm.apikeys-find-by-group") {
-    querySeq(s"select value from otoroshi.entities where kind = 'apikey' and jvalue -> 'authorizedEntities' ? '${ServiceGroupIdentifier(groupId).str}' and (ttl_starting_at + ttl) > NOW();") { row =>
+    querySeq(s"select value from $schemaDotTable where kind = 'apikey' and jvalue -> 'authorizedEntities' ? '${ServiceGroupIdentifier(groupId).str}' and (ttl_starting_at + ttl) > NOW();") { row =>
       row.optJsObject("value").map(ApiKey.fromJsonSafe).collect {
         case JsSuccess(apikey, _) => apikey
       }
@@ -658,7 +660,7 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env, _optimized: B
   }
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   override def get(key: String): Future[Option[ByteString]] = measure("pg.ops.get") {
-    queryOne(s"select value, counter, type from otoroshi.entities where key = $$1 and (ttl_starting_at + ttl) > NOW() limit 1;", Seq(key)) { row =>
+    queryOne(s"select value, counter, type from $schemaDotTable where key = $$1 and (ttl_starting_at + ttl) > NOW() limit 1;", Seq(key)) { row =>
       row.optString("type") match {
         case Some("counter") => row.optLong("counter").map(_.toString.byteString)
         case Some("string")  => row.optString("value").filter(_.nonEmpty).map(_.byteString)
@@ -669,7 +671,7 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env, _optimized: B
 
   override def mget(keys: String*): Future[Seq[Option[ByteString]]] = measure("pg.ops.mget") {
     val allkeys = keys.map(k => s"'$k'").mkString(", ")
-    querySeq(s"select key, value, counter, type from otoroshi.entities where key in ($allkeys) and (ttl_starting_at + ttl) > NOW();") { row =>
+    querySeq(s"select key, value, counter, type from $schemaDotTable where key in ($allkeys) and (ttl_starting_at + ttl) > NOW();") { row =>
       val value = row.optString("type") match {
         case Some("counter") => row.optLong("counter").map(_.toString.byteString)
         case Some("string") => row.optString("value").filter(_.nonEmpty).map(_.byteString)
@@ -687,7 +689,7 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env, _optimized: B
   }
 
   override def del(keys: String*): Future[Long] = measure("pg.ops.del") {
-    queryRaw(s"delete from otoroshi.entities where key in (${keys.map(k => s"'$k'").mkString(", ")}) and (ttl_starting_at + ttl) > NOW();") { _ =>
+    queryRaw(s"delete from $schemaDotTable where key in (${keys.map(k => s"'$k'").mkString(", ")}) and (ttl_starting_at + ttl) > NOW();") { _ =>
       keys.size
     }
   }
@@ -696,11 +698,11 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env, _optimized: B
 
   override def incrby(key: String, increment: Long): Future[Long] = measure("pg.ops.incr") {
     queryOne(
-      s"""insert into otoroshi.entities (key, type, counter)
+      s"""insert into $schemaDotTable (key, type, counter)
          |values ($$1, 'counter', $$2)
          |on conflict (key)
          |do
-         |  update set type = 'counter', counter = otoroshi.entities.counter + $$2 returning counter;
+         |  update set type = 'counter', counter = $schemaDotTable.counter + $$2 returning counter;
          |""".stripMargin, Seq(key, increment.asInstanceOf[AnyRef])) { row =>
       row.optLong("counter")
     }.map(_.getOrElse(increment))
@@ -711,13 +713,13 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env, _optimized: B
   }
 
   def setCounter(key: String, value: Long): Future[Unit] = {
-    queryRaw(s"insert into otoroshi.entities (key, type, counter) values ($$1, 'counter', $$2)", Seq(key, value.asInstanceOf[AnyRef])) { _ =>
+    queryRaw(s"insert into $schemaDotTable (key, type, counter) values ($$1, 'counter', $$2)", Seq(key, value.asInstanceOf[AnyRef])) { _ =>
       ()
     }
   }
 
   override def exists(key: String): Future[Boolean] = measure("pg.ops.exists") {
-    queryOne(s"select type from otoroshi.entities where key = $$1 and (ttl_starting_at + ttl) > NOW() limit 1;", Seq(key)) { row =>
+    queryOne(s"select type from $schemaDotTable where key = $$1 and (ttl_starting_at + ttl) > NOW() limit 1;", Seq(key)) { row =>
       true.some
     }.map(_.isDefined)
   }
@@ -728,7 +730,7 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env, _optimized: B
     matchesEntity(key, value) match {
       case Some((kind, jsonValue)) => {
         queryOne(
-          s"""insert into otoroshi.entities (key, type, ttl, ttl_starting_at, value, kind, jvalue)
+          s"""insert into $schemaDotTable (key, type, ttl, ttl_starting_at, value, kind, jvalue)
              |values ('${key}', 'string', $ttl, NOW(), '${value.utf8String}', '${kind}', '$jsonValue'::jsonb)
              |ON CONFLICT (key)
              |DO
@@ -739,7 +741,7 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env, _optimized: B
       }
       case None => {
         queryOne(
-          s"""insert into otoroshi.entities (key, type, ttl, ttl_starting_at, value)
+          s"""insert into $schemaDotTable (key, type, ttl, ttl_starting_at, value)
              |values ('${key}', 'string', $ttl, NOW(), '${value.utf8String}')
              |ON CONFLICT (key)
              |DO
@@ -753,13 +755,13 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env, _optimized: B
 
   override def keys(pattern: String): Future[Seq[String]] = measure("pg.ops.keys") {
     val processed = pattern.replace("*", ".*")
-    querySeq(s"select key from otoroshi.entities where key ~ $$1 and (ttl_starting_at + ttl) > NOW();", Seq(processed)) { row =>
+    querySeq(s"select key from $schemaDotTable where key ~ $$1 and (ttl_starting_at + ttl) > NOW();", Seq(processed)) { row =>
       row.optString("key")
     }
   }
 
   override def pttl(key: String): Future[Long] = measure("pg.ops.pttl") {
-    queryOne(s"select (ttl_starting_at + ttl) as expire_at from otoroshi.entities where key = $$1 and (ttl_starting_at + ttl) > NOW() limit 1;", Seq(key)) { row =>
+    queryOne(s"select (ttl_starting_at + ttl) as expire_at from $schemaDotTable where key = $$1 and (ttl_starting_at + ttl) > NOW() limit 1;", Seq(key)) { row =>
       val now = System.currentTimeMillis()
       row.optOffsetDatetime("expire_at").map(ldate => (ldate.toEpochSecond * 1000) - now)
     }.map(_.filter(_ > -1).getOrElse(-1))
@@ -770,19 +772,19 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env, _optimized: B
   override def expire(key: String, seconds: Int): Future[Boolean] = pexpire(key, seconds * 1000L)
 
   override def pexpire(key: String, milliseconds: Long): Future[Boolean] = measure("pg.ops.pexpire") {
-    queryRaw(s"update otoroshi.entities set ttl = '$milliseconds milliseconds'::interval, ttl_starting_at = NOW() where key = $$1 and (ttl_starting_at + ttl) > NOW();", Seq(key)) { row =>
+    queryRaw(s"update $schemaDotTable set ttl = '$milliseconds milliseconds'::interval, ttl_starting_at = NOW() where key = $$1 and (ttl_starting_at + ttl) > NOW();", Seq(key)) { row =>
       true
     }
   }
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   override def hdel(key: String, fields: String*): Future[Long] = measure("pg.ops.hdel") {
-    queryRaw(s"update otoroshi.entities set type = 'hash', mvalue = mvalue - ARRAY[${fields.map(m => s"'$m'").mkString(",")}] where key = $$1 and (ttl_starting_at + ttl) > NOW();") { _ =>
+    queryRaw(s"update $schemaDotTable set type = 'hash', mvalue = mvalue - ARRAY[${fields.map(m => s"'$m'").mkString(",")}] where key = $$1 and (ttl_starting_at + ttl) > NOW();") { _ =>
       fields.size
     }
   }
 
   override def hgetall(key: String): Future[Map[String, ByteString]] = measure("pg.ops.hgetall") {
-    queryOne(s"select mvalue from otoroshi.entities where key = $$1 and (ttl_starting_at + ttl) > NOW() limit 1;", Seq(key)) { row =>
+    queryOne(s"select mvalue from $schemaDotTable where key = $$1 and (ttl_starting_at + ttl) > NOW() limit 1;", Seq(key)) { row =>
       row.optJsObject("mvalue").map(_.value.mapValues(v => v.asString.byteString).toMap)
     }.map(_.getOrElse(Map.empty[String, ByteString]))
   }
@@ -791,11 +793,11 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env, _optimized: B
 
   override def hsetBS(key: String, field: String, value: ByteString): Future[Boolean] = measure("pg.ops.hset") {
     queryRaw(
-      s"""insert into otoroshi.entities (key, type, mvalue)
+      s"""insert into $schemaDotTable (key, type, mvalue)
          |values ($$1, 'hash', $$2::jsonb)
          |on conflict (key)
          |do
-         |  update set type = 'hash', mvalue = otoroshi.entities.mvalue || $$2::jsonb;
+         |  update set type = 'hash', mvalue = $schemaDotTable.mvalue || $$2::jsonb;
          |""".stripMargin, Seq(key, Json.obj(key -> value.utf8String).stringify)) { _ =>
       true
     }
@@ -806,13 +808,13 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env, _optimized: B
   override def lpushLong(key: String, values: Long*): Future[Long] = lpushBS(key, values.map(_.toString.byteString): _*)
 
   private def getArray(key: String): Future[Option[Seq[ByteString]]] = measure("pg.ops.lget") {
-    queryOne(s"select lvalue from otoroshi.entities where key = $$1 and (ttl_starting_at + ttl) > NOW() limit 1;", Seq(key)) { row =>
+    queryOne(s"select lvalue from $schemaDotTable where key = $$1 and (ttl_starting_at + ttl) > NOW() limit 1;", Seq(key)) { row =>
       row.optJsArray("lvalue").map(_.value.map(e => e.asString.byteString))
     }
   }
 
   override def llen(key: String): Future[Long] = measure("pg.ops.llen") {
-    queryOne(s"select jsonb_array_length(lvalue) as length from otoroshi.entities where key = $$1 and (ttl_starting_at + ttl) > NOW();", Seq(key)) { row =>
+    queryOne(s"select jsonb_array_length(lvalue) as length from $schemaDotTable where key = $$1 and (ttl_starting_at + ttl) > NOW();", Seq(key)) { row =>
       row.optLong("length")
     }.map(_.getOrElse(0L))
   }
@@ -820,11 +822,11 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env, _optimized: B
   override def lpushBS(key: String, values: ByteString*): Future[Long] = measure("pg.ops.lpush") {
     val arr = JsArray(values.map(v => JsString(v.utf8String))).stringify
     queryRaw(
-      s"""insert into otoroshi.entities (key, type, lvalue)
+      s"""insert into $schemaDotTable (key, type, lvalue)
          |values ($$1, 'list', '$arr'::jsonb)
          |on conflict (key)
          |do
-         |  update set type = 'list', lvalue = otoroshi.entities.lvalue || '$arr'::jsonb;
+         |  update set type = 'list', lvalue = $schemaDotTable.lvalue || '$arr'::jsonb;
          |""".stripMargin, Seq(key)) { _ =>
       values.size
     }
@@ -835,7 +837,7 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env, _optimized: B
     if (avoidJsonPath) {
       getArray(key).map(_.map(_.slice(start.toInt, stop.toInt)).getOrElse(Seq.empty)) // awful but not supported in some cases like cockroachdb
     } else {
-      queryOne(s"select jsonb_path_query_array(lvalue, '$$[$start to $stop]') as slice from otoroshi.entities where key = $$1 and (ttl_starting_at + ttl) > NOW();", Seq(key)) { row =>
+      queryOne(s"select jsonb_path_query_array(lvalue, '$$[$start to $stop]') as slice from $schemaDotTable where key = $$1 and (ttl_starting_at + ttl) > NOW();", Seq(key)) { row =>
         row.optJsArray("slice").map(_.value.map(v => v.asString.byteString))
       }.map(_.getOrElse(Seq.empty)).recoverWith {
         case ex: io.vertx.pgclient.PgException if ex.getMessage.contains("jsonb_path_query_array(): unimplemented:") => {
@@ -853,13 +855,13 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env, _optimized: B
         case None => FastFuture.successful(false)
         case Some(arr) => {
           val newArr = JsArray(arr.slice(start.toInt, stop.toInt).map(i => JsString(i.utf8String))).stringify
-          queryRaw(s"""update otoroshi.entities set type = 'list', lvalue = '$newArr'::jsonb where key = $$1 and (ttl_starting_at + ttl) > NOW();""", Seq(key)) { _ =>
+          queryRaw(s"""update $schemaDotTable set type = 'list', lvalue = '$newArr'::jsonb where key = $$1 and (ttl_starting_at + ttl) > NOW();""", Seq(key)) { _ =>
             true
           }
         }
       }
     } else {
-      queryRaw(s"update otoroshi.entities set type = 'list', lvalue = jsonb_path_query_array(lvalue, '$$[$start to $stop]') where key = $$1 and (ttl_starting_at + ttl) > NOW();", Seq(key)) { _ =>
+      queryRaw(s"update $schemaDotTable set type = 'list', lvalue = jsonb_path_query_array(lvalue, '$$[$start to $stop]') where key = $$1 and (ttl_starting_at + ttl) > NOW();", Seq(key)) { _ =>
         true
       }.recoverWith {
         case ex: io.vertx.pgclient.PgException if ex.getMessage.contains("jsonb_path_query_array(): unimplemented:") => {
@@ -868,7 +870,7 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env, _optimized: B
             case None => FastFuture.successful(false)
             case Some(arr) => {
               val newArr = JsArray(arr.slice(start.toInt, stop.toInt).map(i => JsString(i.utf8String))).stringify
-              queryRaw(s"""update otoroshi.entities set type = 'list', lvalue = '$newArr'::jsonb where key = $$1 and (ttl_starting_at + ttl) > NOW();""", Seq(key)) { _ =>
+              queryRaw(s"""update $schemaDotTable set type = 'list', lvalue = '$newArr'::jsonb where key = $$1 and (ttl_starting_at + ttl) > NOW();""", Seq(key)) { _ =>
                 true
               }
             }
@@ -884,11 +886,11 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env, _optimized: B
   override def saddBS(key: String, members: ByteString*): Future[Long] = measure("pg.ops.sadd") {
     val obj = JsObject(members.map(m => (m.utf8String, JsString("-")))).stringify
     queryRaw(
-      s"""insert into otoroshi.entities (key, type, svalue)
+      s"""insert into $schemaDotTable (key, type, svalue)
          |values ($$1, 'set', '$obj'::jsonb)
          |on conflict (key)
          |do
-         |  update set type = 'set', svalue = otoroshi.entities.svalue || '$obj'::jsonb;
+         |  update set type = 'set', svalue = $schemaDotTable.svalue || '$obj'::jsonb;
          |""".stripMargin, Seq(key)) { _ =>
       members.size
     }
@@ -897,13 +899,13 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env, _optimized: B
   override def sismember(key: String, member: String): Future[Boolean] = sismemberBS(key, member.byteString)
 
   override def sismemberBS(key: String, member: ByteString): Future[Boolean] = measure("pg.ops.sismember") {
-    queryRaw(s"select svalue from otoroshi.entities where key = $$1 and svalue ? '${member.utf8String}' and (ttl_starting_at + ttl) > NOW() limit 1;", Seq(key)) { rows =>
+    queryRaw(s"select svalue from $schemaDotTable where key = $$1 and svalue ? '${member.utf8String}' and (ttl_starting_at + ttl) > NOW() limit 1;", Seq(key)) { rows =>
       rows.nonEmpty
     }
   }
 
   override def smembers(key: String): Future[Seq[ByteString]] = measure("pg.ops.smembers") {
-    queryOne(s"select svalue from otoroshi.entities where key = $$1 and (ttl_starting_at + ttl) > NOW() limit 1;", Seq(key)) { row =>
+    queryOne(s"select svalue from $schemaDotTable where key = $$1 and (ttl_starting_at + ttl) > NOW() limit 1;", Seq(key)) { row =>
       row.optJsObject("svalue").map(_.keys.toSeq.map(ByteString.apply))
     }.map(_.getOrElse(Seq.empty))
   }
@@ -911,7 +913,7 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env, _optimized: B
   override def srem(key: String, members: String*): Future[Long] = sremBS(key, members.map(_.byteString): _*)
 
   override def sremBS(key: String, members: ByteString*): Future[Long] = measure("pg.ops.srem") {
-    queryRaw(s"update otoroshi.entities set type = 'set', svalue = svalue - ARRAY[${members.map(m => s"'$m'").mkString(",")}] where key = $$1 and (ttl_starting_at + ttl) > NOW();", Seq(key)) { _ =>
+    queryRaw(s"update $schemaDotTable set type = 'set', svalue = svalue - ARRAY[${members.map(m => s"'$m'").mkString(",")}] where key = $$1 and (ttl_starting_at + ttl) > NOW();", Seq(key)) { _ =>
       members.size
     }
   }
@@ -919,7 +921,7 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env, _optimized: B
   override def scard(key: String): Future[Long] = measure("pg.ops.scard") {
     queryOne(
       s"""select count(*) from (
-         |	select jsonb_object_keys(svalue) as length from otoroshi.entities where key = $$1 and (ttl_starting_at + ttl) > NOW()
+         |	select jsonb_object_keys(svalue) as length from $schemaDotTable where key = $$1 and (ttl_starting_at + ttl) > NOW()
          |) A;
          |""".stripMargin, Seq(key)) { row =>
       row.optLong("count")
@@ -927,7 +929,7 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env, _optimized: B
   }
 
   override def rawGet(key: String): Future[Option[JsValue]] = measure("pg.ops.rawget") {
-    queryOne(s"select *, (t.ttl_starting_at + t.ttl) as expire_at from otoroshi.entities t where key = $$1 and (ttl_starting_at + ttl) > NOW() limit 1 ;", Seq(key)) { row =>
+    queryOne(s"select *, (t.ttl_starting_at + t.ttl) as expire_at from $schemaDotTable t where key = $$1 and (ttl_starting_at + ttl) > NOW() limit 1 ;", Seq(key)) { row =>
       val ttl = row.optOffsetDatetime("expire_at").map(ldate => ldate.toEpochSecond * 1000).getOrElse(-1L)
       val interval = row.getValue("ttl").asInstanceOf[io.vertx.pgclient.data.Interval]
       val intervalStr = if (interval.getYears == 1000) "1000 years" else interval.toString
@@ -945,7 +947,7 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env, _optimized: B
         "pttl" -> ttl
       ).some
     }
-    // queryOne(s"select json_agg(t) as json, (t.ttl_starting_at + t.ttl) as expire_at from otoroshi.entities t where key = $$1 and (ttl_starting_at + ttl) > NOW() group by ttl_starting_at, ttl limit 1 ;", Seq(key)) { row =>
+    // queryOne(s"select json_agg(t) as json, (t.ttl_starting_at + t.ttl) as expire_at from $schemaDotTable t where key = $$1 and (ttl_starting_at + ttl) > NOW() group by ttl_starting_at, ttl limit 1 ;", Seq(key)) { row =>
     //   val ttl = row.optOffsetDatetime("expire_at").map(ldate => ldate.toEpochSecond * 1000).getOrElse(-1L)
     //   row.optJsArray("json").flatMap(_.value.headOption).map(_.asObject ++ Json.obj("pttl" -> ttl))
     // }
