@@ -500,6 +500,42 @@ C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.
       <td>9042 </td>
       <td>the port of the cassandra servers </td>
     </tr>
+    <tr>
+      <td><code>app.pg.uri</code> </td>
+      <td align="center">string </td>
+      <td> </td>
+      <td>the uri of your pg database </td>
+    </tr>
+    <tr>
+      <td><code>app.pg.host</code> </td>
+      <td align="center">string </td>
+      <td>localhost </td>
+      <td>the host of your pg database </td>
+    </tr>
+    <tr>
+      <td><code>app.pg.port</code> </td>
+      <td align="center">number </td>
+      <td>5432 </td>
+      <td>the port of your pg database </td>
+    </tr>
+    <tr>
+      <td><code>app.pg.database</code> </td>
+      <td align="center">string </td>
+      <td>otoroshi </td>
+      <td>the database name </td>
+    </tr>
+    <tr>
+      <td><code>app.pg.user</code> </td>
+      <td align="center">string </td>
+      <td>otoroshi </td>
+      <td>the username to connect to your pg database </td>
+    </tr>
+    <tr>
+      <td><code>app.pg.password</code> </td>
+      <td align="center">string </td>
+      <td>otoroshi </td>
+      <td>the password to connect to your pg database </td>
+    </tr>
   </tbody>
 </table>
 <h2><a href="#headers-configuration" name="headers-configuration" class="anchor"><span class="anchor-link"></span></a>Headers configuration</h2>
@@ -1079,6 +1115,29 @@ play.http {
     password = &quot;otoroshi&quot;
     password = ${?PG_PASSWORD}
     logQueries = ${?PG_DEBUG_QUERIES}
+    avoidJsonPath = false
+    avoidJsonPath = ${?PG_AVOID_JSON_PATH}
+    optimized = true
+    optimized = ${?PG_OPTIMIZED}
+    connect-timeout = ${?PG_CONNECT_TIMEOUT}
+    idle-timeout = ${?PG_IDLE_TIMEOUT}
+    log-activity = ${?PG_LOG_ACTIVITY}
+    pipelining-limit = ${?PG_PIPELINING_LIMIT}
+    ssl {
+      enabled = false
+      enabled = ${?PG_SSL_ENABLED}
+      mode = &quot;VERIFY_CA&quot;
+      mode = ${?PG_SSL_MODE}
+      trusted-certs-path = []
+      trusted-certs = []
+      trusted-cert-path = ${?PG_SSL_TRUSTED_CERT_PATH}
+      trusted-cert = ${?PG_SSL_TRUSTED_CERT}
+      client-certs-path = []
+      client-certs = []
+      client-cert-path = ${?PG_SSL_CLIENT_CERT_PATH}
+      client-cert = ${?PG_SSL_CLIENT_CERT}
+      trust-all = ${?PG_SSL_TRUST_ALL}
+    }
   }
   cassandra {
     windowSize = 99
