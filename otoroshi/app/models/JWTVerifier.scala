@@ -183,6 +183,7 @@ object AlgoSettings extends FromJson[AlgoSettings] {
         case "ESAlgoSettings"    => ESAlgoSettings.fromJson(json)
         case "JWKSAlgoSettings"  => JWKSAlgoSettings.fromJson(json)
         case "RSAKPAlgoSettings" => RSAKPAlgoSettings.fromJson(json)
+        case "ESKPAlgoSettings"  => ESKPAlgoSettings.fromJson(json)
       }
     } recover {
       case e => Left(e)
@@ -529,6 +530,52 @@ case class RSAKPAlgoSettings(size: Int, certId: String) extends AlgoSettings {
 
   override def asJson = Json.obj(
     "type"   -> "RSAKPAlgoSettings",
+    "size"   -> this.size,
+    "certId" -> this.certId
+  )
+}
+
+object ESKPAlgoSettings extends FromJson[ESKPAlgoSettings] {
+  override def fromJson(json: JsValue): Either[Throwable, ESKPAlgoSettings] =
+    Try {
+      Right(
+        ESKPAlgoSettings(
+          (json \ "size").as[Int],
+          (json \ "certId").as[String]
+        )
+      )
+    } recover {
+      case e => Left(e)
+    } get
+}
+case class ESKPAlgoSettings(size: Int, certId: String) extends AlgoSettings {
+
+  import scala.concurrent.duration._
+
+  override def asAlgorithm(mode: AlgoMode)(implicit env: Env): Option[Algorithm] = {
+    Await.result(asAlgorithmF(mode)(env, env.otoroshiExecutionContext), 10.seconds)
+  }
+
+  override def asAlgorithmF(mode: AlgoMode)(implicit env: Env, ec: ExecutionContext): Future[Option[Algorithm]] = {
+    env.datastores.certificatesDataStore
+      .findById(certId)
+      .map(_.flatMap { cert =>
+        val keyPair = cert.cryptoKeyPair
+        (keyPair.getPublic, keyPair.getPrivate) match {
+          case (pk: ECPublicKey, pkk: ECPrivateKey) =>
+            size match {
+              case 256 => Some(Algorithm.ECDSA256(pk, pkk))
+              case 384 => Some(Algorithm.ECDSA384(pk, pkk))
+              case 512 => Some(Algorithm.ECDSA512(pk, pkk))
+              case _   => None
+            }
+          case _ => None
+        }
+      })
+  }
+
+  override def asJson = Json.obj(
+    "type"   -> "ESKPAlgoSettings",
     "size"   -> this.size,
     "certId" -> this.certId
   )

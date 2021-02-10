@@ -264,6 +264,27 @@ export class AlgoSettings extends Component {
             transformer={(a) => ({ value: a.id, label: a.name + ' - ' + a.description })}
           />,
         ]}
+        {algo.type === 'ESKPAlgoSettings' && [
+          <SelectInput
+            label="SHA Size"
+            help="Word size for the SHA-2 hash function used"
+            value={algo.size}
+            onChange={(v) => changeTheValue(path + '.size', v)}
+            possibleValues={[
+              { label: '256', value: 256 },
+              { label: '384', value: 384 },
+              { label: '512', value: 512 },
+            ]}
+          />,
+          <SelectInput
+            label="KeyPair"
+            help="The keypair used to sign/verify token"
+            value={algo.certId}
+            onChange={(v) => changeTheValue(path + '.certId', v)}
+            valuesFrom="/bo/api/proxy/api/certificates?keypair=true"
+            transformer={(a) => ({ value: a.id, label: a.name + ' - ' + a.description })}
+          />,
+        ]}
         {algo.type === 'ESAlgoSettings' && [
           <SelectInput
             label="SHA Size"
