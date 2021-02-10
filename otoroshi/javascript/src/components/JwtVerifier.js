@@ -186,6 +186,7 @@ export class AlgoSettings extends Component {
             { label: 'ECDSA + SHA', value: 'ESAlgoSettings' },
             { label: 'JWK Set', value: 'JWKSAlgoSettings' },
             { label: 'RSASSA-PKCS1 + SHA from KeyPair', value: 'RSAKPAlgoSettings' },
+            { label: 'ECDSA + SHA from KeyPair', value: 'ESKPAlgoSettings' },
           ]}
           help="What kind of algorithm you want to use to verify/sign your JWT token with"
         />
