@@ -775,7 +775,7 @@ class Env(val configuration: Configuration,
     useAkkaHttpClient = true
   )
 
-  lazy val otoroshiVersion     = "1.5.0-alpha.7"
+  lazy val otoroshiVersion     = "1.5.0-dev"
   lazy val checkForUpdates     = configuration.getOptionalWithFileSupport[Boolean]("app.checkForUpdates").getOrElse(true)
 
   lazy val jmxEnabled = configuration.getOptionalWithFileSupport[Boolean]("otoroshi.jmx.enabled").getOrElse(false)
