@@ -1,0 +1,18 @@
+apiVersion: proxy.otoroshi.io/v1alpha1
+kind: Certificate
+metadata:
+  name: http-app-certificate-client
+spec:
+  description: certificate for the http-app
+  autoRenew: true
+  csr:
+    issuer: CN=Otoroshi Root
+    key:
+      algo: rsa
+      size: 2048
+    subject: UID=httpapp-client, O=OtoroshiApps
+    client: false
+    ca: false
+    duration: 31536000000
+    signatureAlg: SHA256WithRSAEncryption
+    digestAlg: SHA-256
