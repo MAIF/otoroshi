@@ -177,6 +177,13 @@ export class AlgoSettings extends Component {
                   certId: null,
                 });
                 break;
+              case 'ESKPAlgoSettings':
+                changeTheValue(path + '', {
+                  type: 'ESKPAlgoSettings',
+                  size: 512,
+                  certId: null,
+                });
+                break;
             }
             // changeTheValue(path + '', e)
           }}
