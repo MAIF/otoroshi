@@ -42,7 +42,7 @@ export class GroupsPage extends Component {
         return item.name;
       },
     },
-    { title: 'Description', noMobile: true, content: (item) => item.description },
+    { title: 'Description', content: (item) => item.description },
     {
       title: 'Stats',
       style: { textAlign: 'center', width: 70 },

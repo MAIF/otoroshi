@@ -184,7 +184,6 @@ export class TcpServicesPage extends Component {
       title: 'Tls',
       style: { textAlign: 'center', width: 70 },
       notFilterable: true,
-      noMobile: true,
       content: (item) => item.tls,
       cell: (v, item) => {
         if (item.tls === 'Disabled') {
@@ -200,7 +199,6 @@ export class TcpServicesPage extends Component {
       title: 'Client Auth.',
       style: { textAlign: 'center', width: 70 },
       notFilterable: true,
-      noMobile: true,
       content: (item) => item.clientAuth,
       cell: (v, item) => {
         if (item.clientAuth === 'None') {
@@ -216,7 +214,6 @@ export class TcpServicesPage extends Component {
       title: 'SNI routing',
       style: { textAlign: 'center', width: 70 },
       notFilterable: true,
-      noMobile: true,
       content: (item) => item.clientAuth,
       cell: (v, item) => {
         if (!item.sni.enabled) {

@@ -461,7 +461,7 @@ export class ScriptsPage extends Component {
 
   columns = [
     { title: 'Name', content: (item) => item.name },
-    { title: 'Description', noMobile: true, content: (item) => item.desc },
+    { title: 'Description',  content: (item) => item.desc },
   ];
 
   formFlow = ['_loc', 'id', 'name', 'desc', 'type', 'compilation', 'code', 'metadata'];
