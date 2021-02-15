@@ -508,10 +508,11 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env, schemaDotTabl
 
   private def queryRaw[A](query: String, params: Seq[AnyRef] = Seq.empty, debug: Boolean = false)(f: Seq[Row] => A): Future[A] = {
     if (debug || debugQueries) logger.info(s"""query: "$query", params: "${params.mkString(", ")}"""")
-    pool.preparedQuery(query)
-      .execute(io.vertx.sqlclient.Tuple.from(params.toArray))
-      .scala
-      .flatMap { _rows =>
+    val isRead = query.toLowerCase().trim.startsWith("select")
+    (isRead match {
+      case true =>  pool.withConnection(c => c.preparedQuery(query).execute(io.vertx.sqlclient.Tuple.from(params.toArray))).scala
+      case false => pool.preparedQuery(query).execute(io.vertx.sqlclient.Tuple.from(params.toArray)).scala
+    }).flatMap { _rows =>
         Try {
           val rows = _rows.asScala.toSeq
           f(rows)
