@@ -207,6 +207,9 @@ class WebSocketHandler()(implicit env: Env) {
                 status = resp.status,
                 headers = req.headers.toSimpleMap.toSeq.map(Header.apply),
                 headersOut = resp.headersOut,
+                otoroshiHeadersIn = resp.otoroshiHeadersIn,
+                otoroshiHeadersOut = resp.otoroshiHeadersOut,
+                extraInfos = attrs.get(otoroshi.plugins.Keys.GatewayEventExtraInfosKey),
                 identity = apiKey
                   .map(
                     k =>
@@ -327,7 +330,9 @@ class WebSocketHandler()(implicit env: Env) {
                     badResult.header.status,
                     false,
                     0,
-                    _headersOut.map(Header.apply)
+                    headersOut         = badResult.header.headers.toSeq.map(Header.apply),
+                    otoroshiHeadersOut = _headersOut.map(Header.apply),
+                    otoroshiHeadersIn  = headersIn.map(Header.apply),
                   )
                 )
                 badResult.withHeaders(_headersOut: _*)
@@ -404,6 +409,8 @@ class WebSocketHandler()(implicit env: Env) {
                             200,
                             false,
                             0,
+                            Seq.empty[Header],
+                            Seq.empty[Header],
                             Seq.empty[Header]
                           )
                         )
@@ -431,6 +438,8 @@ class WebSocketHandler()(implicit env: Env) {
                             200,
                             false,
                             0,
+                            Seq.empty[Header],
+                            Seq.empty[Header],
                             Seq.empty[Header]
                           )
                         )
@@ -511,6 +520,8 @@ class WebSocketHandler()(implicit env: Env) {
                           200,
                           false,
                           0,
+                          Seq.empty[Header],
+                          Seq.empty[Header],
                           Seq.empty[Header]
                         )
                       )
@@ -559,7 +570,9 @@ class WebSocketHandler()(implicit env: Env) {
                             200,
                             false,
                             0,
-                            Seq.empty[Header]
+                            headersOut = Seq.empty[Header],
+                            otoroshiHeadersOut = Seq.empty[Header],
+                            otoroshiHeadersIn = req.headers.toSimpleMap.map(Header.apply).toSeq,
                           )
                         )
                     })

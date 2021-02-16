@@ -32,7 +32,7 @@ import utils._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NoStackTrace
 
-case class ProxyDone(status: Int, isChunked: Boolean, upstreamLatency: Long, headersOut: Seq[Header])
+case class ProxyDone(status: Int, isChunked: Boolean, upstreamLatency: Long, headersOut: Seq[Header], otoroshiHeadersOut: Seq[Header], otoroshiHeadersIn: Seq[Header])
 
 class ErrorHandler()(implicit env: Env) extends HttpErrorHandler {
 

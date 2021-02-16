@@ -293,6 +293,9 @@ case class GatewayEvent(
     status: Int,
     headers: Seq[Header],
     headersOut: Seq[Header],
+    otoroshiHeadersIn: Seq[Header],
+    otoroshiHeadersOut: Seq[Header],
+    extraInfos: Option[JsValue],
     responseChunked: Boolean,
     identity: Option[Identity] = None,
     gwError: Option[String] = None,
@@ -351,6 +354,9 @@ object GatewayEvent {
     "userAgentInfo"   -> o.userAgentInfo.getOrElse(JsNull).as[JsValue],
     "geolocationInfo" -> o.geolocationInfo.getOrElse(JsNull).as[JsValue],
     "extrasData"      -> o.extraAnalyticsData.getOrElse(JsNull).as[JsValue],
+    "otoroshiHeadersIn"  -> o.otoroshiHeadersIn.map(Header.format.writes),
+    "otoroshiHeadersOut" -> o.otoroshiHeadersOut.map(Header.format.writes),
+    "extraInfos"         -> o.extraInfos.getOrElse(JsNull).as[JsValue],
   )
 }
 

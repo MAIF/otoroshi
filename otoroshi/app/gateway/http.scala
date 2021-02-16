@@ -245,6 +245,9 @@ class HttpHandler()(implicit env: Env) {
               status = resp.status,
               headers = req.headers.toSimpleMap.toSeq.map(Header.apply),
               headersOut = resp.headersOut,
+              otoroshiHeadersIn = resp.otoroshiHeadersIn,
+              otoroshiHeadersOut = resp.otoroshiHeadersOut,
+              extraInfos = attrs.get(otoroshi.plugins.Keys.GatewayEventExtraInfosKey),
               identity = apiKey
                 .map(
                   k =>
@@ -378,7 +381,9 @@ class HttpHandler()(implicit env: Env) {
               badResult.header.status,
               false,
               0,
-              _headersOut.map(Header.apply)
+              headersOut         = badResult.header.headers.toSeq.map(Header.apply),
+              otoroshiHeadersOut = _headersOut.map(Header.apply),
+              otoroshiHeadersIn  = headersIn.map(Header.apply),
             )
           )
           badResult.withHeaders(_headersOut: _*)
@@ -617,10 +622,14 @@ class HttpHandler()(implicit env: Env) {
                         case Success(_) =>
                           // debugLogger.trace(s"end of stream for ${protocol}://${req.host}${req.relativeUri}")
                           promise.trySuccess(
-                            ProxyDone(httpResponse.status,
+                            ProxyDone(
+                              httpResponse.status,
                               isChunked,
                               upstreamLatency,
-                              headersOut.map(Header.apply))
+                              headersOut         = resp.headers.mapValues(_.head).toSeq.map(Header.apply),
+                              otoroshiHeadersOut = headersOut.map(Header.apply),
+                              otoroshiHeadersIn  = headersIn.map(Header.apply),
+                            )
                           )
                         case Failure(e) =>
                           if (!(req.relativeUri.startsWith("/api/live/global") && e.getMessage == "Connection reset by peer")) {
@@ -631,10 +640,14 @@ class HttpHandler()(implicit env: Env) {
                           }
                           resp.ignore()
                           promise.trySuccess(
-                            ProxyDone(httpResponse.status,
+                            ProxyDone(
+                              httpResponse.status,
                               isChunked,
                               upstreamLatency,
-                              headersOut.map(Header.apply))
+                              headersOut         = resp.headers.mapValues(_.head).toSeq.map(Header.apply),
+                              otoroshiHeadersOut = headersOut.map(Header.apply),
+                              otoroshiHeadersIn  = headersIn.map(Header.apply),
+                            )
                           )
                       })
                       .map { bs =>
@@ -772,10 +785,14 @@ class HttpHandler()(implicit env: Env) {
                                 "Triggering promise as content length is 0"
                               )
                             promise.trySuccess(
-                              ProxyDone(httpResponse.status,
+                              ProxyDone(
+                                httpResponse.status,
                                 isChunked,
                                 upstreamLatency,
-                                headersOut.map(Header.apply))
+                                headersOut         = resp.headers.mapValues(_.head).toSeq.map(Header.apply),
+                                otoroshiHeadersOut = headersOut.map(Header.apply),
+                                otoroshiHeadersIn  = headersIn.map(Header.apply),
+                              )
                             )
                           }
                           // stream out
