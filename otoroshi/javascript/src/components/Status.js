@@ -9,6 +9,9 @@ export const formatPercentage = (value, decimal = 2) => {
 
 export class Uptime extends Component {
   render() {
+    if (!this.props.health) {
+      return null;
+    }
     const test = this.props.health.dates.map((h) => {
       const availability = h.status.length
         ? h.status

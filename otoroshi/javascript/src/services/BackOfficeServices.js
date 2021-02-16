@@ -308,7 +308,16 @@ export function fetchHealthCheckEvents(serviceId) {
     headers: {
       Accept: 'application/json',
     },
-  }).then((r) => r.json());
+  }).then(r => {
+    if (r.status !== 200) {
+      return [];
+    } else {
+      return r.json();
+    }
+  }).catch(e => {
+    console.log('error while fetching service status')
+    return [];
+  });
 }
 
 export function fetchServiceStatus(serviceId) {
@@ -319,7 +328,16 @@ export function fetchServiceStatus(serviceId) {
       Accept: 'application/json',
       'Content-Type': 'application/json',
     },
-  }).then((r) => r.json());
+  }).then(r => {
+    if (r.status !== 200) {
+      return [];
+    } else {
+      return r.json();
+    }
+  }).catch(e => {
+    console.log('error while fetching service status')
+    return [];
+  });
 }
 
 export function fetchServicesStatus(servicesIds = []) {
@@ -341,7 +359,16 @@ export function fetchServiceResponseTime(serviceId) {
     headers: {
       Accept: 'application/json',
     },
-  }).then((r) => r.json());
+  }).then(r => {
+    if (r.status !== 200) {
+      return [];
+    } else {
+      return r.json();
+    }
+  }).catch(e => {
+    console.log('error while fetching service response time')
+    return [];
+  });
 }
 
 export function fetchLines() {

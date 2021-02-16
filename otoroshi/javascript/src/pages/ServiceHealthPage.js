@@ -71,7 +71,14 @@ export class ServiceHealthPage extends Component {
   };
 
   render() {
-    if (!this.state.service || !this.state.status.length) return null;
+    if (!this.state.service || !this.state.status.length) {
+      return (
+        <>
+          <p>Your don't have any service health data available. Maybe you don't have an ElasticSearch instance connected to your Otoroshi</p>
+          <p>To do that, add a <a href="/bo/dashboard/exporters">data exporter</a> sending events to an ElasticSearch and settings to read events from your ElasticSeach in the <a href="/bo/dashboard/dangerzone">Danger Zone</a></p>
+        </>
+      )
+    };
 
     return (
       <div className="content-health">
