@@ -123,15 +123,21 @@ class Target extends Component {
           }
           this.changeTheUrl(e);
         }}
-        after={() => (
-          <button
-            type="button"
-            className="btn btn-primary btn-xs"
-            style={{ marginLeft: 5, height: 32, marginTop: 1 }}
-            onClick={(e) => this.setState({ showMore: !this.state.showMore })}>
-            <i className="fas fa-eye" /> Show more
-          </button>
-        )}
+        after={() => {
+          if (!this.props.itemValue.mtlsConfig) {
+            return null;
+          } else {
+            return (
+              <button
+              type="button"
+              className="btn btn-primary btn-xs"
+              style={{ marginLeft: 5, height: 32, marginTop: 1 }}
+              onClick={(e) => this.setState({ showMore: !this.state.showMore })}>
+              <i className="fas fa-eye" /> Show more
+            </button>
+            );
+          }
+        }}
       />
     );
   };
