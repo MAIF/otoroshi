@@ -110,8 +110,19 @@ class Target extends Component {
           this.state.url
           //this.state.dirtyTarget ? this.state.dirtyTarget : value.scheme + '://' + value.host
         }
-        help="The URL of the target"
-        onChange={(e) => this.changeTheUrl(e)}
+        help="The URL of the target. Do not put anything more than scheme://domain:port. Not path supported"
+        onChange={(e) => {
+          const domain = e
+            .replace('http://', '')
+            .replace('https://', '')
+            .replace('tcp://', '')
+            .replace('udp://', '')
+          if (this.containsOneValueOf(domain, ['http:', 'https:', 'tcp:', 'udp:', '/'])) {
+            window.newAlert('You cannot put the path here, use target root');
+            return;
+          }
+          this.changeTheUrl(e);
+        }}
         after={() => (
           <button
             type="button"
@@ -124,6 +135,10 @@ class Target extends Component {
       />
     );
   };
+
+  containsOneValueOf = (value, values) => {
+    return values.filter(v => value.indexOf(v) > -1).length > 0;
+  }
 
   render() {
     const value = this.props.itemValue;
@@ -139,6 +154,10 @@ class Target extends Component {
           value={value.host}
           help="The host of the target"
           onChange={(e) => {
+            if (this.containsOneValueOf(e, ['http:', 'https:', 'tcp:', 'udp:', '/'])) {
+              window.newAlert('You cannot use protocol scheme or / in the Host name');
+              return;
+            }
             this.setState({ url: value.scheme + '://' + e });
             this.changeTheValue('host', e);
           }}
