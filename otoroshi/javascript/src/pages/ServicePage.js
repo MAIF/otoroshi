@@ -129,12 +129,12 @@ class Target extends Component {
           } else {
             return (
               <button
-              type="button"
-              className="btn btn-primary btn-xs"
-              style={{ marginLeft: 5, height: 32, marginTop: 1 }}
-              onClick={(e) => this.setState({ showMore: !this.state.showMore })}>
-              <i className="fas fa-eye" /> Show more
-            </button>
+                type="button"
+                className="btn btn-primary btn-xs"
+                style={{ marginLeft: 5, height: 32, marginTop: 1 }}
+                onClick={(e) => this.setState({ showMore: !this.state.showMore })}>
+                <i className="fas fa-eye" /> Show more
+              </button>
             );
           }
         }}
