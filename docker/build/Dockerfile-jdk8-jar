@@ -1,4 +1,4 @@
-FROM ghcr.io/graalvm/graalvm-ce:latest
+FROM openjdk:8
 
 LABEL maintainer "MAIF <oss@maif.fr>"
 
@@ -22,5 +22,3 @@ EXPOSE 8080
 STOPSIGNAL SIGINT
 
 CMD [""]
-
-# RUN native-image -H:+ReportUnsupportedElementsAtRuntime --verbose --delay-class-initialization-to-runtime=play.api.Play$ -jar otoroshi.jar 

@@ -164,6 +164,7 @@ async function buildVersion(version, where, releaseDir) {
 
 async function publishDockerOtoroshi(location, version) {
   await runSystemCommand('cp', [path.resolve(location, `./otoroshi/target/universal/otoroshi-${version}.zip`), path.resolve(location, `./docker/build/otoroshi-dist.zip`)], location);
+  await runSystemCommand('cp', [path.resolve(location, `./otoroshi/target/scala-2.12/otoroshi.jar`), path.resolve(location, `./docker/build/otoroshi.jar`)], location);
   await runSystemCommand('sh', [path.resolve(location, `./docker/build/build.sh`), 'push-all', version], path.resolve(location, `./docker/build`));
   await runSystemCommand('sh', [path.resolve(location, `./clients/sidecar/build.sh`), 'push-all', version], path.resolve(location, `./clients/sidecar`));
 }
