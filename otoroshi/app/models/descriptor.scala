@@ -1497,7 +1497,7 @@ case class ServiceDescriptor(
       case ps               => ps.find(p => root.startsWith(p))
     }
     rootMatched
-      .filter(_ => stripPath)
+      .filter(m => stripPath && root.startsWith(m))
       .map(m => root.replaceFirst(m.replace(".", "\\."), ""))
       .getOrElse(rawUri)
   }
