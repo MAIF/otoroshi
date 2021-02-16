@@ -13,7 +13,7 @@ import play.api.Logger
 import play.api.mvc.{Result, Results}
 import scala.util._
 import scala.concurrent.{ExecutionContext, Future}
-import utils.future.Implicits._
+import otoroshi.utils.syntax.implicits._
 
 /**
  * Your own request transformer
@@ -42,7 +42,7 @@ import akka.stream.scaladsl._
 import akka.util.ByteString
 import env.Env
 import otoroshi.script._
-import utils.future.Implicits._
+import otoroshi.utils.syntax.implicits._
 import play.api.mvc._
 import play.api.mvc.Results._
 import play.api.libs.json._
@@ -88,7 +88,7 @@ import akka.http.scaladsl.util._
 import akka.stream.scaladsl._
 import env.Env
 import otoroshi.script._
-import utils.future.Implicits._
+import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -109,7 +109,7 @@ import akka.http.scaladsl.util._
 import akka.stream.scaladsl._
 import env.Env
 import otoroshi.script._
-import utils.future.Implicits._
+import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -126,7 +126,7 @@ const basicSink = `
 import akka.stream.scaladsl._
 import env.Env
 import otoroshi.script._
-import utils.future.Implicits._
+import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
 import scala.concurrent.{ExecutionContext, Future}
 import play.api.mvc._

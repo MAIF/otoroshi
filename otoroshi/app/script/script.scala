@@ -1391,6 +1391,7 @@ trait ScriptDataStore extends BasicStore[Script] {
              |import play.api.mvc.{Result, Results}
              |import scala.util._
              |import scala.concurrent.{ExecutionContext, Future}
+             |import otoroshi.utils.syntax.implicits._
              |
              |/**
              | * Your own request transformer
