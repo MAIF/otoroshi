@@ -133,9 +133,9 @@ import play.api.mvc._
 
 class CustomRequestSink extends RequestSink {
   override def matches(context: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Boolean = true
-  override def handle(context: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Future[Result] = FastFuture.successful(
-    Results.Ok(Json.obj("message" -> "hello world!"))
-  )
+  override def handle(context: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Future[Result] = {
+    Results.Ok(Json.obj("message" -> "hello world!")).future
+  }
 }
 
 new CustomRequestSink()
@@ -150,7 +150,7 @@ class CustomListener extends OtoroshiEventListener {
   override def onEvent(evt: OtoroshiEvent)(implicit env: Env): Unit = {
     case alert: AlertEvent if alert.\`@serviceId\` == "admin-api" =>
       println("Alert ! Alert !")
-    case _ =>
+    case _ => ()
   }
 }
 
@@ -173,9 +173,9 @@ class CustomJob extends Job {
   
   override def kind: JobKind = JobKind.ScheduledOnce
   override def starting: JobStarting = JobStarting.FromConfiguration
-  override def instantiation: JobInstantiation = JobInstantiation.OneInstancePerOtoroshiInstance
-  override def initialDelay(ctx: JobContext): Option[FiniteDuration] = Some(0.millisecond)
-  override def interval(ctx: JobContext): Option[FiniteDuration] = Some(10.minutes)
+  override def instantiation(ctx: JobContext, env: Env): JobInstantiation = JobInstantiation.OneInstancePerOtoroshiInstance
+  override def initialDelay(ctx: JobContext, env: Env): Option[FiniteDuration] = Some(0.millisecond)
+  override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] = Some(10.minutes)
 
   override def jobStart(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = Job.funit
   override def jobStop(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = Job.funit
