@@ -184,6 +184,12 @@ export class AlgoSettings extends Component {
                   certId: null,
                 });
                 break;
+              case 'KidAlgoSettings':
+                changeTheValue(path + '', {
+                  type: 'KidAlgoSettings',
+                  onlyExposedCerts: false,
+                });
+                break;
             }
             // changeTheValue(path + '', e)
           }}
@@ -191,9 +197,10 @@ export class AlgoSettings extends Component {
             { label: 'Hmac + SHA', value: 'HSAlgoSettings' },
             { label: 'RSASSA-PKCS1 + SHA', value: 'RSAlgoSettings' },
             { label: 'ECDSA + SHA', value: 'ESAlgoSettings' },
-            { label: 'JWK Set', value: 'JWKSAlgoSettings' },
+            { label: 'JWK Set (only for verification)', value: 'JWKSAlgoSettings' },
             { label: 'RSASSA-PKCS1 + SHA from KeyPair', value: 'RSAKPAlgoSettings' },
             { label: 'ECDSA + SHA from KeyPair', value: 'ESKPAlgoSettings' },
+            { label: 'Otoroshi KeyPair from token kid (only for verification)', value: 'KidAlgoSettings' },
           ]}
           help="What kind of algorithm you want to use to verify/sign your JWT token with"
         />
@@ -518,7 +525,7 @@ export class JwtVerifier extends Component {
         />
         <br />
         {/* **************************************************************************************************** */}
-        <Separator title="Token validation" />
+        <Separator title={verifier.strategy.type === 'DefaultToken' ? 'Default token signature': "Token validation"} />
         <AlgoSettings
           path={`${path}.algoSettings`}
           changeTheValue={this.changeTheValue}

@@ -23,7 +23,7 @@ import play.api.libs.json._
 import play.api.libs.ws.WSProxyServer
 import play.api.mvc.{RequestHeader, Result, Results}
 import security.IdGenerator
-import ssl.PemUtils
+import ssl.{DynamicSSLEngineProvider, PemUtils}
 import otoroshi.storage.BasicStore
 import utils.TypedMap
 import utils.http.MtlsConfig
@@ -141,6 +141,8 @@ case object OutputMode                                 extends AlgoMode
 
 sealed trait AlgoSettings extends AsJson {
 
+  def keyId: Option[String]
+
   def asAlgorithm(mode: AlgoMode)(implicit env: Env): Option[Algorithm]
 
   def asAlgorithmF(mode: AlgoMode)(implicit env: Env, ec: ExecutionContext): Future[Option[Algorithm]] = {
@@ -184,6 +186,7 @@ object AlgoSettings extends FromJson[AlgoSettings] {
         case "JWKSAlgoSettings"  => JWKSAlgoSettings.fromJson(json)
         case "RSAKPAlgoSettings" => RSAKPAlgoSettings.fromJson(json)
         case "ESKPAlgoSettings"  => ESKPAlgoSettings.fromJson(json)
+        case "KidAlgoSettings"   => KidAlgoSettings.fromJson(json)
       }
     } recover {
       case e => Left(e)
@@ -213,6 +216,8 @@ object HSAlgoSettings extends FromJson[HSAlgoSettings] {
     } get
 }
 case class HSAlgoSettings(size: Int, secret: String, base64: Boolean = false) extends AlgoSettings {
+
+  def keyId: Option[String] = None
 
   override def asAlgorithm(mode: AlgoMode)(implicit env: Env): Option[Algorithm] = size match {
     case 256 if base64 => Some(Algorithm.HMAC256(ApacheBase64.decodeBase64(transformValue(secret))))
@@ -245,6 +250,8 @@ object RSAlgoSettings extends FromJson[RSAlgoSettings] {
     } get
 }
 case class RSAlgoSettings(size: Int, publicKey: String, privateKey: Option[String]) extends AlgoSettings {
+
+  def keyId: Option[String] = None
 
   def getPublicKey(value: String): RSAPublicKey = {
     val publicBytes = ApacheBase64.decodeBase64(
@@ -311,6 +318,8 @@ object ESAlgoSettings extends FromJson[ESAlgoSettings] {
     } get
 }
 case class ESAlgoSettings(size: Int, publicKey: String, privateKey: Option[String]) extends AlgoSettings {
+
+  def keyId: Option[String] = None
 
   def getPublicKey(value: String): ECPublicKey = {
     val publicBytes = ApacheBase64.decodeBase64(
@@ -401,6 +410,8 @@ case class JWKSAlgoSettings(url: String,
     extends AlgoSettings {
 
   val logger = Logger("otoroshi-jwks")
+
+  def keyId: Option[String] = None
 
   def algoFromJwk(alg: String, jwk: JWK): Option[Algorithm] = {
     jwk match {
@@ -506,26 +517,32 @@ case class RSAKPAlgoSettings(size: Int, certId: String) extends AlgoSettings {
 
   import scala.concurrent.duration._
 
+  def keyId: Option[String] = certId.some
+
   override def asAlgorithm(mode: AlgoMode)(implicit env: Env): Option[Algorithm] = {
     Await.result(asAlgorithmF(mode)(env, env.otoroshiExecutionContext), 10.seconds)
   }
 
   override def asAlgorithmF(mode: AlgoMode)(implicit env: Env, ec: ExecutionContext): Future[Option[Algorithm]] = {
     env.datastores.certificatesDataStore
-      .findById(certId)
-      .map(_.flatMap { cert =>
-        val keyPair = cert.cryptoKeyPair
-        (keyPair.getPublic, keyPair.getPrivate) match {
-          case (pk: RSAPublicKey, pkk: RSAPrivateKey) =>
-            size match {
-              case 256 => Some(Algorithm.RSA256(pk, pkk))
-              case 384 => Some(Algorithm.RSA384(pk, pkk))
-              case 512 => Some(Algorithm.RSA512(pk, pkk))
-              case _   => None
-            }
-          case _ => None
+      .findById(certId).map {
+        case s @ Some(_) => s
+        case None => DynamicSSLEngineProvider.certificates.values.find(_.entityMetadata.get("nextCertificate").contains(certId))
+      }.map { c =>
+        c.flatMap { cert =>
+          val keyPair = cert.cryptoKeyPair
+          (keyPair.getPublic, keyPair.getPrivate) match {
+            case (pk: RSAPublicKey, pkk: RSAPrivateKey) =>
+              size match {
+                case 256 => Some(Algorithm.RSA256(pk, pkk))
+                case 384 => Some(Algorithm.RSA384(pk, pkk))
+                case 512 => Some(Algorithm.RSA512(pk, pkk))
+                case _   => None
+              }
+            case _ => None
+          }
         }
-      })
+      }
   }
 
   override def asJson = Json.obj(
@@ -552,14 +569,19 @@ case class ESKPAlgoSettings(size: Int, certId: String) extends AlgoSettings {
 
   import scala.concurrent.duration._
 
+  def keyId: Option[String] = certId.some
+
   override def asAlgorithm(mode: AlgoMode)(implicit env: Env): Option[Algorithm] = {
     Await.result(asAlgorithmF(mode)(env, env.otoroshiExecutionContext), 10.seconds)
   }
 
   override def asAlgorithmF(mode: AlgoMode)(implicit env: Env, ec: ExecutionContext): Future[Option[Algorithm]] = {
     env.datastores.certificatesDataStore
-      .findById(certId)
-      .map(_.flatMap { cert =>
+      .findById(certId).map {
+      case s @ Some(_) => s
+      case None => DynamicSSLEngineProvider.certificates.values.find(_.entityMetadata.get("nextCertificate").contains(certId))
+    }.map { c =>
+      c.flatMap { cert =>
         val keyPair = cert.cryptoKeyPair
         (keyPair.getPublic, keyPair.getPrivate) match {
           case (pk: ECPublicKey, pkk: ECPrivateKey) =>
@@ -571,13 +593,76 @@ case class ESKPAlgoSettings(size: Int, certId: String) extends AlgoSettings {
             }
           case _ => None
         }
-      })
+      }
+    }
   }
 
   override def asJson = Json.obj(
     "type"   -> "ESKPAlgoSettings",
     "size"   -> this.size,
     "certId" -> this.certId
+  )
+}
+
+object KidAlgoSettings extends FromJson[KidAlgoSettings] {
+  override def fromJson(json: JsValue): Either[Throwable, KidAlgoSettings] =
+    Try {
+      Right(
+        KidAlgoSettings(
+          (json \ "onlyExposedCerts").asOpt[Boolean].getOrElse(false)
+        )
+      )
+    } recover {
+      case e => Left(e)
+    } get
+}
+
+case class KidAlgoSettings(onlyExposedCerts: Boolean) extends AlgoSettings {
+
+  import scala.concurrent.duration._
+
+  def keyId: Option[String] = None
+
+  override def asAlgorithm(mode: AlgoMode)(implicit env: Env): Option[Algorithm] = {
+    Await.result(asAlgorithmF(mode)(env, env.otoroshiExecutionContext), 10.seconds)
+  }
+
+  override def asAlgorithmF(mode: AlgoMode)(implicit env: Env, ec: ExecutionContext): Future[Option[Algorithm]] = {
+    mode match {
+      case InputMode(typ, Some(kid)) => {
+        val certs = DynamicSSLEngineProvider.certificates
+        val certOpt = certs.get(kid).orElse(certs.values.find(_.entityMetadata.get("nextCertificate").contains(kid))).filter {
+          case c if !c.exposed && onlyExposedCerts => false
+          case c => true
+        }
+        certOpt.flatMap { cert =>
+          val keyPair = cert.cryptoKeyPair
+          (keyPair.getPublic, keyPair.getPrivate) match {
+            case (pk: ECPublicKey, pkk: ECPrivateKey) =>
+              typ match {
+                case "ES256" => Some(Algorithm.ECDSA256(pk, pkk))
+                case "ES384" => Some(Algorithm.ECDSA384(pk, pkk))
+                case "ES512" => Some(Algorithm.ECDSA512(pk, pkk))
+                case _   => None
+              }
+            case (pk: RSAPublicKey, pkk: RSAPrivateKey) =>
+              typ match {
+                case "RS256" => Some(Algorithm.RSA256(pk, pkk))
+                case "RS384" => Some(Algorithm.RSA384(pk, pkk))
+                case "RS512" => Some(Algorithm.RSA512(pk, pkk))
+                case _   => None
+              }
+            case _ => None
+          }
+        }.future
+      }
+      case _ => None.future
+    }
+  }
+
+  override def asJson = Json.obj(
+    "type"   -> "KidAlgoSettings",
+    "onlyExposedCerts"   -> this.onlyExposedCerts,
   )
 }
 
@@ -812,7 +897,7 @@ sealed trait JwtVerifier extends AsJson {
   def strategy: VerifierStrategy
   def asGlobal: GlobalJwtVerifier = this.asInstanceOf[GlobalJwtVerifier]
 
-  private def sign(token: JsObject, algorithm: Algorithm): String = {
+  private def sign(token: JsObject, algorithm: Algorithm, kid: Option[String]): String = {
     val headerJson     = Json.obj("alg" -> algorithm.getName, "typ" -> "JWT")
     val header         = ApacheBase64.encodeBase64URLSafeString(Json.stringify(headerJson).getBytes(StandardCharsets.UTF_8))
     val payload        = ApacheBase64.encodeBase64URLSafeString(Json.stringify(token).getBytes(StandardCharsets.UTF_8))
@@ -913,7 +998,7 @@ sealed trait JwtVerifier extends AsJson {
                     env
                   )
                   .as[JsObject]
-                val signedToken = sign(interpolatedToken, outputAlgorithm)
+                val signedToken = sign(interpolatedToken, outputAlgorithm, None)
                 val decodedToken = JWT.decode(signedToken)
                 f(source.asJwtInjection(decodedToken,  signedToken)).right[Result]
               }
@@ -1013,7 +1098,7 @@ sealed trait JwtVerifier extends AsJson {
                           .left[A]
                       case Some(outputAlgorithm) => {
                         val newToken = sign(Json.parse(ApacheBase64.decodeBase64(decodedToken.getPayload)).as[JsObject],
-                                            outputAlgorithm)
+                                            outputAlgorithm, aSettings.keyId)
                         f(source.asJwtInjection(decodedToken, newToken)).right[Result]
                       }
                     }
@@ -1076,7 +1161,7 @@ sealed trait JwtVerifier extends AsJson {
                             .filterNot(f => tSettings.mappingSettings.remove.contains(f._1))
                             .toMap
                         )
-                        val newToken = sign(newJsonToken, outputAlgorithm)
+                        val newToken = sign(newJsonToken, outputAlgorithm, aSettings.keyId)
                         source match {
                           case _: InQueryParam => f(tSettings.location.asJwtInjection(decodedToken, newToken)).right[Result]
                           case InHeader(n, _) =>

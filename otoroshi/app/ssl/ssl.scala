@@ -218,8 +218,8 @@ case class Cert(
     val current = this.enrich()
     env.datastores.certificatesDataStore.set(current)
   }
-  def notExpired: Boolean = from.isBefore(org.joda.time.DateTime.now()) && to.isAfter(org.joda.time.DateTime.now())
-  def expired: Boolean = !notExpired
+  lazy val notExpired: Boolean = from.isBefore(org.joda.time.DateTime.now()) && to.isAfter(org.joda.time.DateTime.now())
+  lazy val expired: Boolean = !notExpired
   def enrich() = {
     val meta = this.metadata.get
     this.copy(
@@ -600,11 +600,17 @@ trait CertificateDataStore extends BasicStore[Cert] {
         .filter(_.autoRenew)
         .filter(cert => cert.ca)
         .filter(willBeInvalidSoon)
-        .filterNot(c => c.name.startsWith("[UNTIL EXPIRATION] "))
+        .filterNot(c => c.entityMetadata.get("untilExpiration").contains("true") || c.name.startsWith("[UNTIL EXPIRATION] "))
       Source(renewableCas.toList)
         .mapAsync(1) {
           case c => c.renew()
-            .flatMap(d => c.copy(id = IdGenerator.token, name = "[UNTIL EXPIRATION] " + c.name).save().map(_ => d))
+            .flatMap(d => c.copy(
+              id = IdGenerator.token, name = "[UNTIL EXPIRATION] " + c.name,
+              entityMetadata = c.entityMetadata ++ Map(
+                "untilExpiration" -> "true",
+                "nextCertificate" -> c.id
+              )
+            ).save().map(_ => d))
             .flatMap(c => c.save().map(_ => c))
         }
         .map { c =>
@@ -626,11 +632,17 @@ trait CertificateDataStore extends BasicStore[Cert] {
         .filter(_.autoRenew)
         .filterNot(_.ca)
         .filter(willBeInvalidSoon) // TODO: fix
-        .filterNot(c => c.name.startsWith("[UNTIL EXPIRATION] "))
+        .filterNot(c => c.entityMetadata.get("untilExpiration").contains("true") || c.name.startsWith("[UNTIL EXPIRATION] "))
       Source(renewableCertificates.toList)
         .mapAsync(1) {
           case c => c.renew()
-            .flatMap(d => c.copy(id = IdGenerator.token, name = "[UNTIL EXPIRATION] " + c.name).save().map(_ => d))
+            .flatMap(d => c.copy(
+              id = IdGenerator.token, name = "[UNTIL EXPIRATION] " + c.name,
+              entityMetadata = c.entityMetadata ++ Map(
+                "untilExpiration" -> "true",
+                "nextCertificate" -> c.id
+              )
+            ).save().map(_ => d))
             .flatMap(c => c.save().map(_ => c))
         }
         .map { c =>
@@ -654,8 +666,8 @@ trait CertificateDataStore extends BasicStore[Cert] {
         }
       Source(expiredCertificates.toList)
         .mapAsync(1) {
-          case c if c.name.startsWith("[EXPIRED] ")=> c.applyOn(d => d.save().map(_ => d))
-          case c if !c.name.startsWith("[EXPIRED] ")=> c.copy(name = "[EXPIRED] " + c.name).applyOn(d => d.save().map(_ => d))
+          case c if c.entityMetadata.get("expired").contains("true") || c.name.startsWith("[EXPIRED] ")=> c.applyOn(d => d.save().map(_ => d))
+          case c if !(c.entityMetadata.get("expired").contains("true") || c.name.startsWith("[EXPIRED] ")) => c.copy(name = "[EXPIRED] " + c.name, entityMetadata = c.entityMetadata ++ Map("expired" -> "true")).applyOn(d => d.save().map(_ => d))
         }
         .map { c =>
           Alerts.send(

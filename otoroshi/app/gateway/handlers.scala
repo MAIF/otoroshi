@@ -305,7 +305,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
     import java.security.interfaces.{ECPrivateKey, ECPublicKey, RSAPrivateKey, RSAPublicKey}
     
     env.datastores.certificatesDataStore.findAll().map { certs =>
-      val exposedCerts = certs.filter(_.exposed).map(c => (c.id, c.cryptoKeyPair.getPublic)).flatMap {
+      val exposedCerts = certs.filter(c => c.exposed && c.notRevoked && c.notExpired).map(c => (c.id, c.cryptoKeyPair.getPublic)).flatMap {
         case (id, pub: RSAPublicKey) => new RSAKey.Builder(pub).keyID(id).build().toJSONString.parseJson.some
         case (id, pub: ECPublicKey)  => new ECKey.Builder(Curve.forECParameterSpec(pub.getParams), pub).keyID(id).build().toJSONString.parseJson.some
         case _ => None
