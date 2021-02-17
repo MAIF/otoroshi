@@ -49,7 +49,6 @@ export class Table extends Component {
     rowNavigation: false,
     stayAfterSave: false,
     pageSize: 15,
-    mobileSize: 767,
   };
 
   state = {
@@ -303,13 +302,6 @@ export class Table extends Component {
     }
     const windowWidth = window.innerWidth;
     const columns = this.props.columns
-      .filter((c) => {
-        if (windowWidth > this.props.mobileSize) {
-          return true;
-        } else {
-          return !c.noMobile;
-        }
-      })
       .map((c) => {
         return {
           Header: c.title,

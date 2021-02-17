@@ -64,7 +64,6 @@ export class ServicesPage extends Component {
     {
       title: 'Active',
       style: { textAlign: 'center', width: 70 },
-      noMobile: true,
       notFilterable: true,
       content: (item) => item.enabled,
       cell: (v, item) => (item.enabled ? <span className="fas fa-check-circle" /> : ''),
@@ -72,7 +71,6 @@ export class ServicesPage extends Component {
     {
       title: 'Private',
       style: { textAlign: 'center', width: 55 },
-      noMobile: true,
       content: (item) => item.privateApp,
       notFilterable: true,
       cell: (v, item) => (item.privateApp ? <img src="/assets/images/logoMaif.png" /> : ''),
@@ -81,7 +79,6 @@ export class ServicesPage extends Component {
       title: '*Public',
       style: { textAlign: 'center', width: 55 },
       notFilterable: true,
-      noMobile: true,
       content: (item) =>
         !item.privateApp &&
         item.privatePatterns.length === 0 &&
@@ -99,7 +96,6 @@ export class ServicesPage extends Component {
       title: 'Sec. Ex.',
       style: { textAlign: 'center', width: 70 },
       notFilterable: true,
-      noMobile: true,
       content: (item) => item.enforceSecureCommunication,
       cell: (v, item) =>
         item.enforceSecureCommunication ? (
@@ -112,7 +108,6 @@ export class ServicesPage extends Component {
       title: 'HTTPS',
       style: { textAlign: 'center', width: 50 },
       notFilterable: true,
-      noMobile: true,
       content: (item) =>
         item.targets.map((i) => i.scheme).filter((i) => i.toLowerCase() === 'https').length ===
         item.targets.length,
@@ -132,7 +127,6 @@ export class ServicesPage extends Component {
       this.columns.push({
         title: 'Local',
         style: { textAlign: 'center', width: 55 },
-        noMobile: true,
         notFilterable: true,
         cell: (v, item) => (item.redirectToLocal ? <span className="fas fa-check-circle" /> : ''),
       });
