@@ -204,6 +204,14 @@ export class AlgoSettings extends Component {
           ]}
           help="What kind of algorithm you want to use to verify/sign your JWT token with"
         />
+        {algo.type === 'KidAlgoSettings' && [
+          <BooleanInput
+            label="Use only exposed keypairs"
+            value={algo.onlyExposedCerts}
+            help="..."
+            onChange={(e) => changeTheValue(path + '.onlyExposedCerts', e)}
+          />,
+        ]}
         {algo.type === 'HSAlgoSettings' && [
           <SelectInput
             label="SHA Size"
