@@ -2412,7 +2412,7 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
             case services if services.isEmpty => {
               // fast lookup should not store empty results, so ...
               ServiceDescriptorDataStore.logger
-                .warn(s"FastLookup false positive for ${query.toHost}, doing a fullscan instead ...")
+                .debug(s"FastLookup false positive for ${query.toHost}, doing a fullscan instead ...")
               rawFind(query, requestHeader, attrs)
             }
             case services => sortServices(services, query, requestHeader, attrs)
