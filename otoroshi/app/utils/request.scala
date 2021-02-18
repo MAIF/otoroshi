@@ -15,6 +15,7 @@ object RequestImplicits {
   private val uriCache = new ConcurrentHashMap[String, String]()
 
   implicit class EnhancedRequestHeader(val requestHeader: RequestHeader) extends AnyVal {
+    def thePath: String = relativeUri
     def relativeUri: String = {
       val uri = requestHeader.uri
       uriCache.computeIfAbsent(uri, _ => {
