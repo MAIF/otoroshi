@@ -17,6 +17,14 @@
                 <a class="btn btn-lg" href="@routes.AuthController.confidentialAppLoginPage()" role="button">Login</a>
             </p>
         }
+        <p style="color: #ddd;
+            text-align: justify">
+            If you have been redirected here after login to an app, it means something went wrong (like you waited too much time before actually log in).
+        </p>
+        <p style="color: #ddd;
+            text-align: justify">
+            Please try to reload the original url of your app (do not try to reload this page) to trigger a new login.
+        </p>
         <p><img class="logoOtoroshi" src="@(_env.otoroshiLogo)" /></p>
     </div>
 }
