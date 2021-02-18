@@ -358,35 +358,32 @@ object Exporters {
 
   class MetricsExporter(config: DataExporterConfig)(implicit ec: ExecutionContext, env: Env) extends DefaultDataExporter(config)(ec, env) {
 
-    private def incGlobalOtoroshiMetrics(duration: Long): Unit = {
-      env.metrics
-        .counter(MetricId
-          .build("otoroshi.requests.count")
-          .tagged("serviceName", "otoroshi"))
-        .inc()
-
-      env.metrics.histogram(MetricId
-        .build("otoroshi.requests.duration.millis")
-        .tagged("serviceName", "otoroshi"))
-        .update(duration)
+    private def incGlobalOtoroshiMetrics(duration: Long, overheadWoCb: Long, cbDuration: Long, overhead: Long, dataIn: Long, dataOut: Long): Unit = {
+      env.metrics.counter(MetricId.build("otoroshi.requests.count").tagged("serviceName", "otoroshi")).inc()
+      env.metrics.histogram(MetricId.build("otoroshi.requests.duration.millis").tagged("serviceName", "otoroshi")).update(duration)
+      env.metrics.histogram(MetricId.build("otoroshi.requests.overheadWoCb.millis").tagged("serviceName", "otoroshi")).update(overheadWoCb)
+      env.metrics.histogram(MetricId.build("otoroshi.requests.cbDuration.millis").tagged("serviceName", "otoroshi")).update(cbDuration)
+      env.metrics.histogram(MetricId.build("otoroshi.requests.overhead.millis").tagged("serviceName", "otoroshi")).update(overhead)
+      env.metrics.histogram(MetricId.build("otoroshi.requests.data.in.bytes").tagged("serviceName", "otoroshi")).update(dataIn)
+      env.metrics.histogram(MetricId.build("otoroshi.requests.data.out.bytes").tagged("serviceName", "otoroshi")).update(dataOut)
     }
 
-    @tailrec
-    private def getValueWithPath(path: String, value: JsValue): String = {
-      val idx = path.indexOf(".")
-      if(idx != -1) {
-        getValueWithPath(path.substring(idx+1), (value \ path.substring(0, idx)).as[JsObject])
-      } else {
-        getStringOrJsObject(value, path)
-      }
-    }
+    // @tailrec
+    // private def getValueWithPath(path: String, value: JsValue): String = {
+    //   val idx = path.indexOf(".")
+    //   if(idx != -1) {
+    //     getValueWithPath(path.substring(idx+1), (value \ path.substring(0, idx)).as[JsObject])
+    //   } else {
+    //     getStringOrJsObject(value, path)
+    //   }
+    // }
 
-    private def getStringOrJsObject(value: JsValue, path: String): String = {
-      (value \ path).asOpt[String] match {
-        case Some(value) => value
-        case _ => (value \ path).as[JsObject].toString
-      }
-    }
+    // private def getStringOrJsObject(value: JsValue, path: String): String = {
+    //   (value \ path).asOpt[String] match {
+    //     case Some(value) => value
+    //     case _ => (value \ path).as[JsObject].toString
+    //   }
+    // }
 
     private def getValueAt(value: JsValue, path: String): String = {
       value.at(path).asOpt[JsValue] match {
@@ -408,7 +405,12 @@ object Exporters {
       events.foreach { event =>
         if ((event \ "@type").as[String] == "GatewayEvent") {
           Try {
-            val duration = (event \ "duration").as[Long]
+            val duration = (event \ "duration").asOpt[Long].getOrElse(0L)
+            val dataIn = (event \ "data" \ "dataIn").asOpt[Long].getOrElse(0L)
+            val dataOut = (event \ "data" \ "dataOut").asOpt[Long].getOrElse(0L)
+            val overheadWoCb = (event \ "overheadWoCb").asOpt[Long].getOrElse(0L)
+            val cbDuration = (event \ "cbDuration").asOpt[Long].getOrElse(0L)
+            val overhead = (event \ "overhead").asOpt[Long].getOrElse(0L)
 
             var tags: Map[String, String] = Map()
 
@@ -420,19 +422,14 @@ object Exporters {
               tags += (primitiveLabel._2.trim -> getValueAt(event, primitiveLabel._1.trim.replace("$at", "@"))) // getStringOrJsObject(event, primitiveLabel._1.trim.replace("$at", "@")))
             })
 
-            incGlobalOtoroshiMetrics(duration)
-
-            env.metrics.counter(MetricId
-              .build(s"otoroshi.service.requests.count")
-              .tagged(tags.asJava))
-              .inc()
-
-            env.metrics
-              .histogram(MetricId
-                .build(s"otoroshi.service.requests.duration.millis")
-                .tagged(tags.asJava)
-              )
-              .update(duration)
+            incGlobalOtoroshiMetrics(duration, overheadWoCb, cbDuration, overhead, dataIn, dataOut)
+            env.metrics.counter(MetricId.build(s"otoroshi.service.requests.count").tagged(tags.asJava)).inc()
+            env.metrics.histogram(MetricId.build(s"otoroshi.service.requests.duration.millis").tagged(tags.asJava)).update(duration)
+            env.metrics.histogram(MetricId.build(s"otoroshi.service.requests.overheadWoCb.millis").tagged(tags.asJava)).update(overheadWoCb)
+            env.metrics.histogram(MetricId.build(s"otoroshi.service.requests.cbDuration.millis").tagged(tags.asJava)).update(cbDuration)
+            env.metrics.histogram(MetricId.build(s"otoroshi.service.requests.overhead.millis").tagged(tags.asJava)).update(overhead)
+            env.metrics.histogram(MetricId.build(s"otoroshi.service.requests.data.in.bytes").tagged(tags.asJava)).update(dataIn)
+            env.metrics.histogram(MetricId.build(s"otoroshi.service.requests.data.out.bytes").tagged(tags.asJava)).update(dataOut)
           } match {
             case Failure(e) => logger.error("error while collection tags", e)
             case _ =>
