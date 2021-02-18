@@ -10,6 +10,7 @@ import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import auth.{AuthModuleConfig, SessionCookieValues}
 import com.google.common.base.Charsets
+import controllers.HealthController
 import env.Env
 import events._
 import models._
@@ -143,7 +144,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                             filters: Seq[EssentialFilter],
                             webCommands: WebCommands,
                             optDevContext: Option[DevContext],
-                            actionBuilder: ActionBuilder[Request, AnyContent])(implicit env: Env, mat: Materializer)
+                            actionBuilder: ActionBuilder[Request, AnyContent],
+                            healthController: HealthController)(implicit env: Env, mat: Materializer)
     extends DefaultHttpRequestHandler(webCommands, optDevContext, router, errorHandler, configuration, filters) {
 
   implicit lazy val ec        = env.otoroshiExecutionContext
@@ -281,6 +283,13 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
           case _ if request.relativeUri.startsWith("/.well-known/otoroshi/logout") => Some(removePrivateAppsCookies())
           case _ if request.relativeUri.startsWith("/.well-known/otoroshi/me")     => Some(myProfile())
           case _ if request.relativeUri.startsWith("/.well-known/acme-challenge/") => Some(letsEncrypt())
+
+          case _ if request.relativeUri.startsWith("/.well-known/otoroshi/health")  => Some(healthController.health())
+          case _ if request.relativeUri.startsWith("/.well-known/otoroshi/metrics") => Some(healthController.processMetrics())
+          case _ if request.relativeUri.startsWith("/.well-known/otoroshi/live")    => Some(healthController.live())
+          case _ if request.relativeUri.startsWith("/.well-known/otoroshi/ready")   => Some(healthController.ready())
+          case _ if request.relativeUri.startsWith("/.well-known/otoroshi/startup") => Some(healthController.startup())
+
           case env.backOfficeHost if !isSecured && toHttps                         => Some(redirectToHttps())
           case env.privateAppsHost if !isSecured && toHttps                        => Some(redirectToHttps())
           case env.privateAppsHost if monitoring                                   => Some(forbidden())
