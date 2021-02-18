@@ -244,6 +244,11 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
     }
   }
 
+  def fu(str: String): Boolean = {
+    println(s"fu def $str")
+    true
+  }
+
   def internalRouteRequest(request: RequestHeader): Option[Handler] = {
     if (env.globalMaintenanceMode) {
       if (request.relativeUri.contains("__otoroshi_assets")) {
@@ -271,32 +276,34 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
       } else {
         val toHttps    = env.exposedRootSchemeIsHttps
         val host       = request.theDomain // if (request.host.contains(":")) request.host.split(":")(0) else request.host
-        val monitoring = monitoringPaths.exists(p => request.relativeUri.startsWith(p))
+        val relativeUri = request.relativeUri
+        val monitoring = monitoringPaths.exists(p => relativeUri.startsWith(p))
         host match {
-          case str if matchRedirection(str)                                          => Some(redirectToMainDomain())
-          case _ if ipRegex.matches(request.theHost) && monitoring                   => super.routeRequest(request)
-          case _ if request.relativeUri.contains("__otoroshi_assets")                => super.routeRequest(request)
-          case _ if request.relativeUri.startsWith("/__otoroshi_private_apps_login") => Some(setPrivateAppsCookies())
-          case _ if request.relativeUri.startsWith("/__otoroshi_private_apps_logout") =>
-            Some(removePrivateAppsCookies())
-          case _ if request.relativeUri.startsWith("/.well-known/otoroshi/login")  => Some(setPrivateAppsCookies())
-          case _ if request.relativeUri.startsWith("/.well-known/otoroshi/logout") => Some(removePrivateAppsCookies())
-          case _ if request.relativeUri.startsWith("/.well-known/otoroshi/me")     => Some(myProfile())
-          case _ if request.relativeUri.startsWith("/.well-known/acme-challenge/") => Some(letsEncrypt())
+          case _ if relativeUri.contains("__otoroshi_assets")                => super.routeRequest(request)
+          case _ if relativeUri.startsWith("/__otoroshi_private_apps_login") => Some(setPrivateAppsCookies())
+          case _ if relativeUri.startsWith("/__otoroshi_private_apps_logout") => Some(removePrivateAppsCookies())
 
-          case _ if request.relativeUri.startsWith("/.well-known/otoroshi/health")  => Some(healthController.health())
-          case _ if request.relativeUri.startsWith("/.well-known/otoroshi/metrics") => Some(healthController.processMetrics())
-          case _ if request.relativeUri.startsWith("/.well-known/otoroshi/live")    => Some(healthController.live())
-          case _ if request.relativeUri.startsWith("/.well-known/otoroshi/ready")   => Some(healthController.ready())
-          case _ if request.relativeUri.startsWith("/.well-known/otoroshi/startup") => Some(healthController.startup())
+          case _ if relativeUri.startsWith("/.well-known/otoroshi/health")  => Some(healthController.health())
+          case _ if relativeUri.startsWith("/.well-known/otoroshi/metrics") => Some(healthController.processMetrics())
+          case _ if relativeUri.startsWith("/.well-known/otoroshi/live")    => Some(healthController.live())
+          case _ if relativeUri.startsWith("/.well-known/otoroshi/ready")   => Some(healthController.ready())
+          case _ if relativeUri.startsWith("/.well-known/otoroshi/startup") => Some(healthController.startup())
+
+          case _ if relativeUri.startsWith("/.well-known/otoroshi/login")  => Some(setPrivateAppsCookies())
+          case _ if relativeUri.startsWith("/.well-known/otoroshi/logout") => Some(removePrivateAppsCookies())
+          case _ if relativeUri.startsWith("/.well-known/otoroshi/me")     => Some(myProfile())
+          case _ if relativeUri.startsWith("/.well-known/acme-challenge/") => Some(letsEncrypt())
+
+          case _ if ipRegex.matches(request.theHost) && monitoring                   => super.routeRequest(request)
+          case str if matchRedirection(str)                                          => Some(redirectToMainDomain())
 
           case env.backOfficeHost if !isSecured && toHttps                         => Some(redirectToHttps())
           case env.privateAppsHost if !isSecured && toHttps                        => Some(redirectToHttps())
           case env.privateAppsHost if monitoring                                   => Some(forbidden())
-          case env.adminApiExposedHost if request.relativeUri.startsWith("/.well-known/jwks.json") => Some(jwks())
-          case env.backOfficeHost if request.relativeUri.startsWith("/.well-known/jwks.json") => Some(jwks())
-          case env.adminApiExposedHost if request.relativeUri.startsWith("/.well-known/otoroshi/ocsp") => Some(ocsp())
-          case env.backOfficeHost if request.relativeUri.startsWith("/.well-known/otoroshi/ocsp") => Some(ocsp())
+          case env.adminApiExposedHost if relativeUri.startsWith("/.well-known/jwks.json") => Some(jwks())
+          case env.backOfficeHost if relativeUri.startsWith("/.well-known/jwks.json") => Some(jwks())
+          case env.adminApiExposedHost if relativeUri.startsWith("/.well-known/otoroshi/ocsp") => Some(ocsp())
+          case env.backOfficeHost if relativeUri.startsWith("/.well-known/otoroshi/ocsp") => Some(ocsp())
           case env.adminApiExposedHost if monitoring                               => super.routeRequest(request)
           case env.backOfficeHost if monitoring                                    => super.routeRequest(request)
           case env.adminApiHost if env.exposeAdminApi                              => super.routeRequest(request)

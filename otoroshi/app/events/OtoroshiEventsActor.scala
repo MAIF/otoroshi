@@ -3,6 +3,7 @@ package events
 import java.io.File
 import java.nio.file.{Files, Paths, StandardOpenOption}
 import java.util.concurrent.atomic.AtomicReference
+
 import akka.Done
 import akka.actor.{Actor, Props}
 import akka.http.scaladsl.util.FastFuture
@@ -18,13 +19,13 @@ import models._
 import org.joda.time.DateTime
 import otoroshi.script._
 import play.api.Logger
-import play.api.libs.json.{JsNull, JsObject, JsString, JsValue, Json}
+import play.api.libs.json.{JsArray, JsBoolean, JsNull, JsNumber, JsObject, JsString, JsValue, Json}
 import utils.{EmailLocation, MailerSettings}
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future, Promise}
-import scala.util.{Success, Try}
+import scala.util.{Failure, Success, Try}
 import otoroshi.utils.syntax.implicits._
 
 import scala.annotation.tailrec
@@ -387,6 +388,18 @@ object Exporters {
       }
     }
 
+    private def getValueAt(value: JsValue, path: String): String = {
+      value.at(path).asOpt[JsValue] match {
+        case Some(JsString(value)) => value
+        case Some(JsBoolean(value)) => value.toString
+        case Some(JsNumber(value)) => value.toString()
+        case Some(value @ JsObject(_)) => value.stringify
+        case Some(value @ JsArray(_)) => value.stringify
+        case Some(JsNull) => "null"
+        case _ => "--"
+      }
+    }
+
     override def send(events: Seq[JsValue]): Future[ExportResult] = {
 
       val labels = (config.config.toJson \ "labels").as[Map[String, String]]
@@ -394,16 +407,17 @@ object Exporters {
 
       events.foreach { event =>
         if ((event \ "@type").as[String] == "GatewayEvent") {
+          Try {
             val duration = (event \ "duration").as[Long]
 
-            var tags : Map[String, String] = Map()
+            var tags: Map[String, String] = Map()
 
             sortedLabels._1.foreach(objectlabel => {
-              tags += (objectlabel._2.trim -> getValueWithPath(objectlabel._1.trim.replace("$at", "@"), event))
+              tags += (objectlabel._2.trim -> getValueAt(event, objectlabel._1.trim.replace("$at", "@"))) // getValueWithPath(objectlabel._1.trim.replace("$at", "@"), event))
             })
 
             sortedLabels._2.foreach(primitiveLabel => {
-              tags += (primitiveLabel._2.trim -> getStringOrJsObject(event, primitiveLabel._1.trim.replace("$at", "@")))
+              tags += (primitiveLabel._2.trim -> getValueAt(event, primitiveLabel._1.trim.replace("$at", "@"))) // getStringOrJsObject(event, primitiveLabel._1.trim.replace("$at", "@")))
             })
 
             incGlobalOtoroshiMetrics(duration)
@@ -419,7 +433,11 @@ object Exporters {
                 .tagged(tags.asJava)
               )
               .update(duration)
+          } match {
+            case Failure(e) => logger.error("error while collection tags", e)
+            case _ =>
           }
+        }
       }
 
       FastFuture.successful(ExportResult.ExportResultSuccess)
