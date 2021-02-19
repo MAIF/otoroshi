@@ -11,7 +11,6 @@ import org.bouncycastle.cert.ocsp.{BasicOCSPRespBuilder, CertificateID, Certific
 import org.bouncycastle.operator.{ContentSigner, DefaultDigestAlgorithmIdentifierFinder, DigestCalculatorProvider}
 import org.bouncycastle.operator.jcajce.{JcaContentSignerBuilder, JcaContentVerifierProviderBuilder, JcaDigestCalculatorProviderBuilder}
 import play.api.mvc.{RequestHeader, Result, Results}
-import play.api.Logger
 import play.api.libs.json.Json
 import ssl.Cert
 import org.joda.time.DateTime
@@ -35,16 +34,17 @@ case class OCSPCertificateStatusWrapper (
 // test command: openssl ocsp -issuer "ca.cer" -cert "*.oto.tools.cer" -text -url http://otoroshi-api.oto.tools:9999/.well-known/otoroshi/ocsp -header "HOST" "otoroshi-api.oto.tools"
 class OcspResponder(env: Env, implicit val ec: ExecutionContext) {
 
-  private val logger = Logger("otoroshi-ocsp-responder")
   private implicit val mat = env.otoroshiMaterializer
 
-  val rejectUnknown = false
+  val rejectUnknown = true
 
   var issuingCertificate: X509CertificateHolder = _
   var contentSigner: ContentSigner = _
   var digestCalculatorProvider: DigestCalculatorProvider = _
   var signingCertificateChain: Array[X509CertificateHolder] = _
   var responderID: RespID = _
+
+  val nextUpdateOffset = 30
 
   for {
     certificates <- env.datastores.certificatesDataStore.findAll()(ec, env)
@@ -53,7 +53,7 @@ class OcspResponder(env: Env, implicit val ec: ExecutionContext) {
   } yield {
     (optRootCA, optIntermediateCA) match {
       case (Some(rootCA), Some(intermediateCA)) if intermediateCA.caFromChain.isDefined =>
-        issuingCertificate = new JcaX509CertificateHolder(intermediateCA.caFromChain.get) // TODO - faire mieux que le get sur un option
+        issuingCertificate = new JcaX509CertificateHolder(intermediateCA.caFromChain.get)
 
         contentSigner = new JcaContentSignerBuilder ("SHA256withRSA")
           .setProvider ("BC")
@@ -133,7 +133,7 @@ class OcspResponder(env: Env, implicit val ec: ExecutionContext) {
         certificateID,
         OCSPCertificateStatusWrapper(getUnknownStatus,
           DateTime.now(),
-          DateTime.now().plusSeconds(10)), // TODO - voir ce qu'on met ici
+          DateTime.now().plusSeconds(nextUpdateOffset)),
         extensions)
 
     } else {
@@ -167,7 +167,7 @@ class OcspResponder(env: Env, implicit val ec: ExecutionContext) {
       case Some(cert) =>
         var status = getUnknownStatus
         if(cert.revoked)
-            status = new RevokedStatus(cert.from.toDate, CRLReason.unspecified) // TODO - voir si on met un date de revocation et la raison dans les metadatas
+            status = new RevokedStatus(cert.from.toDate, CRLReason.unspecified)
         else if (cert.expired)
             status = new RevokedStatus(cert.to.toDate, CRLReason.superseded)
         else if (cert.isValid)
@@ -177,7 +177,7 @@ class OcspResponder(env: Env, implicit val ec: ExecutionContext) {
 
         Some(OCSPCertificateStatusWrapper(status,
           updateTime,
-          updateTime.plusSeconds(10) // TODO - voir ce qu'on met ici
+          updateTime.plusSeconds(nextUpdateOffset)
         ))
     }
   }
