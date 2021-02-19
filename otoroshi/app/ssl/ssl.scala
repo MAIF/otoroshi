@@ -947,6 +947,7 @@ object DynamicSSLEngineProvider {
 
   val _certificates = new TrieMap[String, Cert]()
   def certificates: TrieMap[String, Cert] = _certificates.filter(_._2.notRevoked)
+  def allCertificates: TrieMap[String, Cert] = _certificates
 
   private lazy val firstSetupDone           = new AtomicBoolean(false)
   private lazy val currentContext           = new AtomicReference[SSLContext](setupContext(FakeHasMetrics))
