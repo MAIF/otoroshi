@@ -283,11 +283,11 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
           case _ if relativeUri.startsWith("/__otoroshi_private_apps_login") => Some(setPrivateAppsCookies())
           case _ if relativeUri.startsWith("/__otoroshi_private_apps_logout") => Some(removePrivateAppsCookies())
 
-          case _ if relativeUri.startsWith("/.well-known/otoroshi/health")  => Some(healthController.health())
-          case _ if relativeUri.startsWith("/.well-known/otoroshi/metrics") => Some(healthController.processMetrics())
-          case _ if relativeUri.startsWith("/.well-known/otoroshi/live")    => Some(healthController.live())
-          case _ if relativeUri.startsWith("/.well-known/otoroshi/ready")   => Some(healthController.ready())
-          case _ if relativeUri.startsWith("/.well-known/otoroshi/startup") => Some(healthController.startup())
+          case _ if relativeUri.startsWith("/.well-known/otoroshi/monitoring/health")  => Some(healthController.health())
+          case _ if relativeUri.startsWith("/.well-known/otoroshi/monitoring/metrics") => Some(healthController.processMetrics())
+          case _ if relativeUri.startsWith("/.well-known/otoroshi/monitoring/live")    => Some(healthController.live())
+          case _ if relativeUri.startsWith("/.well-known/otoroshi/monitoring/ready")   => Some(healthController.ready())
+          case _ if relativeUri.startsWith("/.well-known/otoroshi/monitoring/startup") => Some(healthController.startup())
 
           case _ if relativeUri.startsWith("/.well-known/otoroshi/login")  => Some(setPrivateAppsCookies())
           case _ if relativeUri.startsWith("/.well-known/otoroshi/logout") => Some(removePrivateAppsCookies())
