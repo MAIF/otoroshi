@@ -123,6 +123,7 @@ trait NamedPlugin { self =>
                 }
               }
               case ("mtlsConfig", a @ JsObject(_)) => genSchema(a, prefix + "mtlsConfig.")
+              case ("mtls", a @ JsObject(_)) => genSchema(a, prefix + "mtls.")
               case ("filter", a @ JsObject(_))     => genSchema(a, prefix + "filter.")
               case ("not", a @ JsObject(_))        => genSchema(a, prefix + "not.")
               case (key, JsObject(_)) =>
@@ -141,6 +142,7 @@ trait NamedPlugin { self =>
         def genFlow(jsobj: JsObject, prefix: String): Seq[String] = {
           jsobj.value.toSeq.flatMap {
             case ("mtlsConfig", a @ JsObject(_)) => genFlow(a, prefix + "mtlsConfig.")
+            case ("mtls", a @ JsObject(_))       => genFlow(a, prefix + "mtls.")
             case ("filter", a @ JsObject(_))     => genFlow(a, prefix + "filter.")
             case ("not", a @ JsObject(_))        => genFlow(a, prefix + "not.")
             case (key, value)                    => Seq(prefix + key)
