@@ -6,6 +6,7 @@ import akka.http.scaladsl.model.Uri
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
+import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import env.Env
 import otoroshi.script.{AfterRequestContext, BeforeRequestContext, HttpRequest, HttpResponse, RequestTransformer, TransformerRequestBodyContext, TransformerRequestContext, TransformerResponseContext}
 import play.api.libs.json.{JsNull, JsObject, JsValue, Json}
@@ -14,12 +15,13 @@ import otoroshi.utils.syntax.implicits._
 import play.api.libs.ws.{DefaultWSCookie, WSAuthScheme, WSCookie}
 import security.IdGenerator
 import utils.RequestImplicits._
-import utils.TypedMap
+import utils.{RegexPool, TypedMap}
 import utils.http.{MtlsConfig, WSCookieWithSameSite}
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.{DurationLong, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future, Promise}
+import scala.util.Success
 
 case class IzanamiProxyConfig(
   path: String,
@@ -43,7 +45,8 @@ case class IzanamiCanaryConfig(
   mtls: MtlsConfig,
   izanamiClientId: String,
   izanamiClientSecret: String,
-  timeout: FiniteDuration
+  timeout: FiniteDuration,
+  routeConfig: Option[JsObject]
 )
 
 class IzanamiProxy extends RequestTransformer {
@@ -233,7 +236,10 @@ class IzanamiProxy extends RequestTransformer {
 case class IzanamiCanaryRoutingConfigRoute(
   route: String,
   variants: Map[String, String],
-  default: String
+  default: String,
+  wildcard: Boolean,
+  exact: Boolean,
+  regex: Boolean
 )
 case class IzanamiCanaryRoutingConfig(
   routes: Seq[IzanamiCanaryRoutingConfigRoute]
@@ -247,6 +253,9 @@ object IzanamiCanaryRoutingConfig {
           route = item.select("route").asString,
           default = item.select("default").asString,
           variants = item.select("variants").asOpt[Map[String, String]].getOrElse(Map.empty),
+          wildcard = item.select("wildcard").asOpt[Boolean].getOrElse(false),
+          exact = item.select("exact").asOpt[Boolean].getOrElse(false),
+          regex = item.select("regex").asOpt[Boolean].getOrElse(false),
         )
       }
     )
@@ -257,9 +266,15 @@ class IzanamiCanary extends RequestTransformer {
 
   private val cookieJar = new TrieMap[String, WSCookie]()
 
+  private val cache: Cache[String, JsValue] = Scaffeine()
+    .recordStats()
+    .expireAfterWrite(10.minutes)
+    .maximumSize(1000)
+    .build()
+
   override def name: String = "Izanami Canary Campaign"
 
-  override def defaultConfig: Option[JsObject] =
+  override def defaultConfig: Option[JsObject] = {
     Some(
       Json.obj(
         "IzanamiCanary" -> Json.obj(
@@ -273,6 +288,7 @@ class IzanamiCanary extends RequestTransformer {
         )
       )
     )
+  }
 
   override def configFlow: Seq[String] = Seq(
     "experimentId",
@@ -290,7 +306,7 @@ class IzanamiCanary extends RequestTransformer {
     "mtls.trustAll",
   )
 
-  override def description: Option[String] =
+  override def description: Option[String] = {
     Some(
       s"""This plugin allow you to perform canary testing based on an izanami experiment campaign (A/B test).
          |
@@ -301,6 +317,7 @@ class IzanamiCanary extends RequestTransformer {
          |```
     """.stripMargin
     )
+  }
 
   def readConfig(ctx: TransformerRequestContext): IzanamiCanaryConfig = {
     val rawConfig = ctx.configFor("IzanamiCanary")
@@ -311,7 +328,8 @@ class IzanamiCanary extends RequestTransformer {
       izanamiClientId = (rawConfig \ "izanamiClientId").asOpt[String].getOrElse("client"),
       izanamiClientSecret = (rawConfig \ "izanamiClientSecret").asOpt[String].getOrElse("secret"),
       timeout = (rawConfig \ "timeout").asOpt[Long].map(_.millis).getOrElse(5000.millis),
-      mtls = MtlsConfig.format.reads(rawConfig.select("mtls").as[JsValue]).getOrElse(MtlsConfig())
+      mtls = MtlsConfig.format.reads(rawConfig.select("mtls").as[JsValue]).getOrElse(MtlsConfig()),
+      routeConfig = rawConfig.select("routeConfig").asOpt[JsObject]
     )
   }
 
@@ -349,32 +367,47 @@ class IzanamiCanary extends RequestTransformer {
     }
   }
 
-  def fetchIzanamiVariant(cid: String, config: IzanamiCanaryConfig, ctx: TransformerRequestContext)(implicit env: Env, ec: ExecutionContext): Future[String] = {
-    env.MtlsWs
-      .url(s"${config.izanamiUrl}/api/experiments/${config.experimentId}/displayed?clientId=$cid", config.mtls)
-      .withRequestTimeout(config.timeout)
-      .withHttpHeaders(
-        "Content-Type" -> "application/json",
-        "Izanami-Client-Id" -> config.izanamiClientId,
-        "Izanami-Client-Secret" -> config.izanamiClientSecret
-      )
-      .withAuth(config.izanamiClientId, config.izanamiClientSecret, WSAuthScheme.BASIC)
-      .post("").map { resp =>
-      resp.json.asObject.select("variant").select("id").asOpt[String].getOrElse(IdGenerator.uuid)
+  def withCache(key: String)(f: String => Future[JsValue])(implicit ec: ExecutionContext): Future[JsValue] = {
+    cache.getIfPresent(key).map(_.future).getOrElse {
+      f(key).andThen {
+        case Success(v) => cache.put(key, v)
+      }
     }
   }
 
+  def fetchIzanamiVariant(cid: String, config: IzanamiCanaryConfig, ctx: TransformerRequestContext)(implicit env: Env, ec: ExecutionContext): Future[String] = {
+    withCache(s"${config.izanamiUrl}/api/experiments/${config.experimentId}/displayed?clientId=$cid") { url =>
+      env.MtlsWs
+        .url(url, config.mtls)
+        .withRequestTimeout(config.timeout)
+        .withHttpHeaders(
+          "Content-Type" -> "application/json",
+          "Izanami-Client-Id" -> config.izanamiClientId,
+          "Izanami-Client-Secret" -> config.izanamiClientSecret
+        )
+        .withAuth(config.izanamiClientId, config.izanamiClientSecret, WSAuthScheme.BASIC)
+        .post("").map(_.json)
+    }.map(r => r.asObject.select("variant").select("id").asOpt[String].getOrElse(IdGenerator.uuid))
+  }
+
   def fetchIzanamiRoutingConfig(config: IzanamiCanaryConfig, ctx: TransformerRequestContext)(implicit env: Env, ec: ExecutionContext): Future[IzanamiCanaryRoutingConfig] = {
-    env.MtlsWs
-      .url(s"${config.izanamiUrl}/api/configs/${config.configId}", config.mtls)
-      .withRequestTimeout(config.timeout)
-      .withHttpHeaders(
-        "Izanami-Client-Id" -> config.izanamiClientId,
-        "Izanami-Client-Secret" -> config.izanamiClientSecret
-      )
-      .withAuth(config.izanamiClientId, config.izanamiClientSecret, WSAuthScheme.BASIC)
-      .get().map { resp =>
-      val routing = resp.json.asObject.select("value").as[JsObject]
+    withCache(s"${config.izanamiUrl}/api/configs/${config.configId}") { url =>
+      config.routeConfig match {
+        case Some(c) => c.future
+        case None => {
+          env.MtlsWs
+            .url(url, config.mtls)
+            .withRequestTimeout(config.timeout)
+            .withHttpHeaders(
+              "Izanami-Client-Id" -> config.izanamiClientId,
+              "Izanami-Client-Secret" -> config.izanamiClientSecret
+            )
+            .withAuth(config.izanamiClientId, config.izanamiClientSecret, WSAuthScheme.BASIC)
+            .get().map(_.json)
+        }
+      }
+    }.map { json =>
+      val routing = json.asObject.select("value").as[JsObject]
       IzanamiCanaryRoutingConfig.fromJson(routing)
     }
   }
@@ -390,7 +423,16 @@ class IzanamiCanary extends RequestTransformer {
       val uri = ctx.otoroshiRequest.uri
       val path: Uri.Path = uri.path
       val pathStr = path.toString()
-      val newPath: Uri.Path = routing.routes.find(r => pathStr.startsWith(r.route)) match {
+      val newPath: Uri.Path = routing.routes.find {
+        case r if r.wildcard => RegexPool(r.route).matches(pathStr)
+        case r if r.regex => RegexPool.regex(r.route).matches(pathStr)
+        case r if r.exact => pathStr == r.route
+        case r => pathStr.startsWith(r.route)
+      } match {
+        case Some(route) if route.wildcard || route.regex || route.exact => route.variants.get(variant) match {
+          case Some(variantPath) => Uri.Path(variantPath)
+          case None => Uri.Path(route.default)
+        }
         case Some(route) =>
           val strippedPath = pathStr.replaceFirst(route.route, "")
           route.variants.get(variant) match {
