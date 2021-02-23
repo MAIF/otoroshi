@@ -472,7 +472,7 @@ export class TopBar extends Component {
             
             <form id="navbar" className="grow--1">
               {selected && (
-                <div style={{ marginRight: 10 }}>
+                <div className="mr-10">
                   <span
                     title="Current line"
                     className="label bg__success"
@@ -481,7 +481,7 @@ export class TopBar extends Component {
                   </span>
                 </div>
               )}
-              <div style={{ marginLeft: 10, marginRight: 10 }}>
+              <div className="mr-10 ml-10 display--inline-block">
                 <Async
                   ref={(r) => (this.selector = r)}
                   name="service-search"
