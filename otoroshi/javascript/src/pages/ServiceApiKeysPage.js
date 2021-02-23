@@ -179,7 +179,7 @@ class DailyRemainingQuotas extends Component {
           Consumed daily calls <Help text="The number of calls consumed today" />
         </label>
         <div>
-          <div className="grid grid-template-col__1fr-auto">
+          <div className="display--grid grid-template-col__1fr-auto">
             <input
               type="number"
               id="input-Throttling quota"
@@ -194,7 +194,7 @@ class DailyRemainingQuotas extends Component {
           Remaining daily calls <Help text="The remaining number of calls for today" />
         </label>
         <div>
-          <div className="grid grid-template-col__1fr-auto">
+          <div className="display--grid grid-template-col__1fr-auto">
             <input
               type="number"
               id="input-Throttling quota"
@@ -209,7 +209,7 @@ class DailyRemainingQuotas extends Component {
           Consumed monthly calls <Help text="The number of calls consumed this month" />
         </label>
         <div>
-          <div className="grid grid-template-col__1fr-auto">
+          <div className="display--grid grid-template-col__1fr-auto">
             <input
               type="number"
               id="input-Throttling quota"
@@ -224,7 +224,7 @@ class DailyRemainingQuotas extends Component {
           Remaining monthly calls <Help text="The remaining number of calls for this month" />
         </label>
         <div>
-          <div className="grid grid-template-col__1fr-auto">
+          <div className="display--grid grid-template-col__1fr-auto">
             <input
               type="number"
               id="input-Throttling quota"

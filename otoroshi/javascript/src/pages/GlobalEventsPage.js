@@ -239,7 +239,7 @@ export class GlobalEventsPage extends Component {
               from={this.state.from}
               to={this.state.to}
             />
-            <div className="grid grid-template-col__1fr-auto form mt-xs-10" >
+            <div className="display--grid grid-template-col__1fr-auto form mt-xs-10" >
               <div className="input-group-addon">Limit</div>
               <input
                 type="number"
