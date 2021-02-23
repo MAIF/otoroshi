@@ -29,8 +29,8 @@ import ssl.SSLImplicits._
 import scala.concurrent.duration.{FiniteDuration, _}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
-
 import org.bouncycastle.jce.ECNamedCurveTable
+import org.bouncycastle.operator
 
 object models {
 
@@ -215,7 +215,7 @@ trait Pki {
     val pemObject = pemReader.readPemObject()
     val _csr      = new PKCS10CertificationRequest(pemObject.getContent)
     pemReader.close()
-    signCert(_csr, validity, caCert, caKey, existingSerialNumber)
+    signCert(_csr, validity, caCert, caKey, existingSerialNumber, None)
   }
 
   // selfsign         generates a self-signed certificate
@@ -262,7 +262,8 @@ trait Pki {
       validity: FiniteDuration,
       caCert: X509Certificate,
       caKey: PrivateKey,
-      existingSerialNumber: Option[Long]
+      existingSerialNumber: Option[Long],
+      originalQuery: Option[GenCsrQuery]
   )(implicit ec: ExecutionContext): Future[Either[String, SignCertResponse]]
 
   def genSelfSignedCA(query: GenCsrQuery)(implicit ec: ExecutionContext): Future[Either[String, GenCertResponse]]
@@ -393,7 +394,8 @@ class BouncyCastlePki(generator: IdGenerator) extends Pki {
     validity: FiniteDuration,
     caCert: X509Certificate,
     caKey: PrivateKey,
-    existingSerialNumber: Option[Long]
+    existingSerialNumber: Option[Long],
+    originalQuery: Option[GenCsrQuery]
   )(implicit ec: ExecutionContext): Future[Either[String, SignCertResponse]] = {
     //generator.nextIdSafe().map { _serial =>
     generateSerial().map { _serial =>
@@ -412,9 +414,9 @@ class BouncyCastlePki(generator: IdGenerator) extends Pki {
           }
         }
       })
-      // val signatureAlgorithm = new DefaultSignatureAlgorithmIdentifierFinder().find("SHA256WithRSAEncryption")
-      val digestAlgorithm = new DefaultDigestAlgorithmIdentifierFinder().find("SHA-256")
-      val signer = contentSigner(csr.getSignatureAlgorithm, digestAlgorithm, PrivateKeyFactory.createKey(caKey.getEncoded))
+      val digestAlgorithm = originalQuery.map(c => new DefaultDigestAlgorithmIdentifierFinder().find(c.digestAlg)).getOrElse(new DefaultDigestAlgorithmIdentifierFinder().find("SHA-256"))
+      val parentSignatureAlg = new DefaultSignatureAlgorithmIdentifierFinder().find(caCert.getSigAlgName)
+      val signer = contentSigner(parentSignatureAlg /*csr.getSignatureAlg*/, digestAlgorithm, PrivateKeyFactory.createKey(caKey.getEncoded))
       val holder                                 = certgen.build(signer)
       val certencoded                            = holder.toASN1Structure.getEncoded
       val certificateFactory: CertificateFactory = CertificateFactory.getInstance("X.509")
@@ -436,7 +438,7 @@ class BouncyCastlePki(generator: IdGenerator) extends Pki {
       csr <- genCsr(query, Some(caCert))
       cert <- csr match {
                case Left(err)   => FastFuture.successful(Left(err))
-               case Right(_csr) => signCert(_csr.csr, query.duration, caCert, caKey, query.existingSerialNumber)
+               case Right(_csr) => signCert(_csr.csr, query.duration, caCert, caKey, query.existingSerialNumber, query.some)
              }
     } yield
       cert match {
@@ -666,7 +668,8 @@ class BouncyCastlePki(generator: IdGenerator) extends Pki {
               }
             }
           })
-          val certsigner = contentSigner(csr.getSignatureAlgorithm, digestAlgorithm, PrivateKeyFactory.createKey(caKey.getEncoded))
+          val parentSignatureAlg = new DefaultSignatureAlgorithmIdentifierFinder().find(caCert.getSigAlgName)
+          val certsigner = contentSigner(parentSignatureAlg /*csr.getSignatureAlg*/, digestAlgorithm, PrivateKeyFactory.createKey(caKey.getEncoded))
           val holder                                 = certgen.build(certsigner)
           val certencoded                            = holder.toASN1Structure.getEncoded
           val certificateFactory: CertificateFactory = CertificateFactory.getInstance("X.509")
