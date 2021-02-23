@@ -254,7 +254,7 @@ export class ServiceEventsPage extends Component {
               from={this.state.from}
               to={this.state.to}
             />
-            <div className="form grid grid-template-col__1fr-auto mt-xs-10" >
+            <div className="form display--grid grid-template-col__1fr-auto mt-xs-10" >
               <div className="input-group-addon">Limit</div>
               <input
                 type="number"
