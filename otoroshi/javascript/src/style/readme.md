@@ -11,7 +11,7 @@ Defined in variables.scss. Default breakpoint for media queries are
   $bp-xs-up:767px; //min-width
   $bp-xs:$bp-xs-up - 1; //max-width
 ```
-add *-xs-* or *-xs-up-* in the name (see examples below)
+add *-xs-up-* or *-xs-* to the name of the class to target the breakpoint. Example *m-xs-20*
 
 ## Margins & Padding
 * Choice of values (in pixels) : 5, 10, 20
@@ -51,8 +51,11 @@ add *-xs-* or *-xs-up-* in the name (see examples below)
 ```
 
 ## Display
- * Choice of values : display--none, .display--block, display--inline-block, display--flex, display--inline-flex, display--grid
+ * Choice of values : **display** concatenate among : --none, --block, --inline-block, --flex, --inline-flex, --grid
 
+```css
+  display--none, display--block, ...
+```
 
 ## Positions
  * Choice of values : position--fixed, position--relative
@@ -60,14 +63,14 @@ add *-xs-* or *-xs-up-* in the name (see examples below)
 ## Flex
 * flex-direction--column, flex-direction-xs--column
 * flex-wrap--wrap, flex-wrap-xs--wrap
-* justify-content : --between, --around, --center, --start, --end
+* justify-content concatenate among : --between, --around, --center, --start, --end
 * grow--1
 
 ```css
   justify-content--between
 ```
 ## Grid
-* Choice of grid-template-col : __2fr-3fr, __1fr-auto, __1fr-1fr-auto
+* Choice of grid-template-col concatenate among : __2fr-3fr, __1fr-auto, __1fr-1fr-auto
 * Choice of grid-template-col-xs-up : __1fr-5fr
   
 ```css
@@ -76,8 +79,46 @@ add *-xs-* or *-xs-up-* in the name (see examples below)
 ```
 
 ## Items alignements
-* align-items : --start, --center, --baseline
+* align-items concatenate among : --start, --center, --baseline
 * align-items-xs--start
+```css
+  align-items--start,...
+```
 
 ## Cursor
 * cursor--pointer
+
+
+## Template examples
+
+### Default structure for content with label ane input
+* form__group mb-20 grid-template-bp1--fifth
+  
+  ```html
+  <div class="form__group grid-template-col-xs-up__1fr-5fr mb-10 mt-10">
+    <label></label>
+    <div class="display--flex justify-content--between cursor--pointer mb-10">
+      <h3>Location</h3>
+      <button type="button" class="btn-info btn-xs"><i class="fas fa-eye-slash"></i></button>
+    </div>
+  </div>
+  ```
+
+### Display buttons
+* btn__group--right -> display the button(s) to the right
+* btn__group-fixed--right -> display the button(s) to the right and fixed them
+
+
+### Display form with prepend or append informations
+```html
+<div class="display--grid grid-template-col__1fr-auto">
+	<input type="number" id="input-Traffic split" value="0.2">
+	<div class="input-group-addon">ratio</div>
+</div>
+
+<div class="display--grid grid-template-col__1fr-auto">
+  <div class="input-group-addon">ratio</div>
+  <input type="number" id="input-Traffic split" value="0.2">
+</div>
+```
+*input-group-addon* must be a child of a form or .form parent
