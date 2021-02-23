@@ -320,7 +320,8 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
             email = user.email,
             profile = user.asJson,
             realm = authConfig.cookieSuffix(descriptor),
-            otoroshiData = authConfig.dataOverride.get(user.email).map(v => authConfig.extraMetadata.deepMerge(v)).orElse(Some(user.metadata)),
+            // otoroshiData = authConfig.dataOverride.get(user.email).map(v => authConfig.extraMetadata.deepMerge(v)).orElse(Some(user.metadata)),
+            otoroshiData = authConfig.dataOverride.get(user.email).map(v => authConfig.extraMetadata.deepMerge(v)).orElse(Some(authConfig.extraMetadata.deepMerge(user.metadata))),
             authConfigId = authConfig.id,
             metadata = Map.empty,
             location = authConfig.location
