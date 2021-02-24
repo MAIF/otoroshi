@@ -37,6 +37,7 @@ class BiscuitExtractor extends PreRouting {
 
   import collection.JavaConverters._
 
+  // TODO: check if it's a bug, first letter is missing in parsed rule (lient_id instead of client_id)
   // val ruleTuple = Parser.rule("client_id($id) <- client_id(#authority, $id) @ []").get()
   val client_id_rule = com.clevercloud.biscuit.token.builder.Utils.rule(
     "client_id",
