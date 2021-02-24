@@ -499,7 +499,7 @@ class Env(val configuration: Configuration,
 
   lazy val statsd  = new StatsdWrapper(otoroshiActorSystem, this)
   lazy val metrics = new Metrics(this, lifecycle)
-  lazy val pki     = new BouncyCastlePki(snowflakeGenerator)
+  lazy val pki     = new BouncyCastlePki(snowflakeGenerator, this)
 
   lazy val hash = s"${System.currentTimeMillis()}"
 

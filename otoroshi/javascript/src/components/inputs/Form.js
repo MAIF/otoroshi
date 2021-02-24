@@ -201,7 +201,7 @@ export class Form extends Component {
             <SelectInput
               disabled={disabled}
               key={name}
-              value={this.getValue(name, '')}
+              value={this.getValue(name, (props.defaultValue || ''))}
               {...props}
               onChange={(v) => this.changeValue(name, v)}
             />

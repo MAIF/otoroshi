@@ -167,7 +167,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
 
   val reqCounter = new AtomicInteger(0)
 
-  val ocspResponder = OcspResponder(env)
+  val ocspResponder = OcspResponder(env, ec)
 
   val headersInFiltered = Seq(
     env.Headers.OtoroshiState,

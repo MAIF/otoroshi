@@ -14,6 +14,20 @@ import {
 import moment from 'moment';
 import faker from 'faker';
 
+const RevocationReason = {
+  VALID: { value: 'VALID', label: 'Valid - The certificate is not revoked' },
+  UNSPECIFIED: { value: 'UNSPECIFIED', label: 'Unspecified - Can be used to revoke certificates for reasons other than the specific codes.' },
+  KEY_COMPROMISE: { value: 'KEY_COMPROMISE', label: 'KeyCompromise - It is known or suspected that the subject\'s private key or other aspects have been compromised.' },
+  CA_COMPROMISE: { value: 'CA_COMPROMISE', label: 'CACompromise - It is known or suspected that the subject\'s private key or other aspects have been compromised.' },
+  AFFILIATION_CHANGED : { value: 'AFFILIATION_CHANGED', label: 'AffiliationChanged - The subject\'s name or other information in the certificate has been modified but there is no cause to suspect that the private key has been compromised.' },
+  SUPERSEDED : { value: 'SUPERSEDED', label: 'Superseded - The certificate has been superseded but there is no cause to suspect that the private key has been compromised' },
+  CESSATION_OF_OPERATION : { value: 'CESSATION_OF_OPERATION', label: 'CessationOfOperation - The certificate is no longer needed for the purpose for which it was issued but there is no cause to suspect that the private key has been compromised' },
+  CERTIFICATE_HOLD : { value: 'CERTIFICATE_HOLD', label: 'CertificateHold - The certificate is temporarily revoked but there is no cause to suspect that the private kye has been compromised' },
+  REMOVE_FROM_CRL : { value: 'REMOVE_FROM_CRL', label: 'RemoveFromCRL - The certificate has been unrevoked' },
+  PRIVILEGE_WITH_DRAWN : { value: 'PRIVILEGE_WITH_DRAWN', label: 'PrivilegeWithdrawn - The certificate was revoked because a privilege contained within that certificate has been withdrawn' },
+  AA_COMPROMISE : { value: 'AA_COMPROMISE', label: 'AACompromise - It is known or suspected that aspects of the AA validated in the attribute certificate, have been compromised' }
+}
+
 class CertificateInfos extends Component {
   state = {
     cert: null,
@@ -257,6 +271,7 @@ class CertificateValid extends Component {
   state = {
     loading: false,
     valid: null,
+    revoked: RevocationReason.VALID.value,
     error: null,
   };
 
@@ -270,7 +285,7 @@ class CertificateValid extends Component {
           if (payload.error) {
             this.setState({ loading: false, valid: false, error: payload.error });
           } else {
-            this.setState({ valid: payload.valid, loading: false, error: null });
+            this.setState({ valid: payload.valid, loading: false, error: null, revoked: cert.revoked });
           }
         })
         .catch((e) => {
@@ -302,18 +317,23 @@ class CertificateValid extends Component {
           <LabelInput label="Error" value={this.state.error} />
         </div>
       );
+
     return (
       <div className="form-group">
         <label className="col-sm-2 control-label" />
         <div className="col-sm-10">
           {this.state.valid === true && (
+            this.state.revoked === RevocationReason.VALID.value ? 
             <div className="alert alert-success" role="alert">
               Your certificate is valid
+            </div> : 
+            this.state.revoked && <div className="alert alert-warning" role="alert">
+              Your certificate is valid but it has been revoked : {this.state.revoked}
             </div>
           )}
           {this.state.valid === false && (
             <div className="alert alert-danger" role="alert">
-              Your certificate is not valid
+              Your certificate is not valid {this.state.revoked !== RevocationReason.VALID.value ? (' : ' + this.state.revoked) : ''}
             </div>
           )}
         </div>
@@ -387,10 +407,12 @@ export class CertificatesPage extends Component {
       },
     },
     revoked: {
-      type: 'bool',
+      type: 'select',
       props: {
-        label: 'Certificate revoked',
-        help: 'If true, certificate will be added to the OCSP api',
+        label: 'Certificate status',
+        defaultValue: RevocationReason.VALID.value,
+        // value: () => (this.props.value || RevocationReason.VALID.value),
+        possibleValues: Object.values(RevocationReason),
       },
     },
     client: {
@@ -468,8 +490,8 @@ export class CertificatesPage extends Component {
     },
     {
       title: 'revoked',
-      cell: (v, item) => (item.revoked ? <span className="label label-danger">yes</span> : ''),
-      content: (item) => (item.revoked ? 'yes' : 'no'),
+      cell: (v, item) => (item.revoked !== RevocationReason.VALID.value ? <span className="label label-danger">yes</span> : ''),
+      content: (item) => (item.revoked !== RevocationReason.VALID.value ? 'yes' : 'no'),
       style: { textAlign: 'center', width: 70 },
     },
     // {
@@ -545,7 +567,6 @@ export class CertificatesPage extends Component {
     window.newPrompt('Certificate DN').then((value) => {
       if (value && value.trim() !== '') {
         BackOfficeServices.selfSignedClientCert(value).then((cert) => {
-          // console.log(cert);
           this.props.setTitle(`Create a new certificate`);
           window.history.replaceState({}, '', `/bo/dashboard/certificates/add`);
           this.table.setState({ currentItem: cert, showAddForm: true });
@@ -679,7 +700,6 @@ export class CertificatesPage extends Component {
       .then((form) => {
         if (form) {
           BackOfficeServices.createCertificateFromForm(form).then((cert) => {
-            console.log(form);
             this.props.setTitle(`Create a new Certificate`);
             window.history.replaceState({}, '', `/bo/dashboard/certificates/add`);
             if (form.letsEncrypt) {
@@ -691,6 +711,30 @@ export class CertificatesPage extends Component {
         }
       });
   };
+
+  updateCertificate = cert => {
+    if(cert.revoked === RevocationReason.VALID)
+      delete cert.metadata.revocationReason
+    else {
+      cert.metadata.revocationReason = cert.revoked
+      cert.revoked = true;
+    }
+
+    BackOfficeServices.updateCertificate(cert)
+  }
+
+  findAllCertificates = () => {
+    return BackOfficeServices.findAllCertificates()
+      .then(certificates => certificates.map(cert => {
+        if(cert.metadata.revocationReason)
+          cert.revoked = RevocationReason[cert.metadata.revocationReason]? RevocationReason[cert.metadata.revocationReason].value : RevocationReason.UNSPECIFIED
+        else if(cert.revoked) // cert was revoked before revocation reason list implementation so set unspecified as reason 
+          cert.revoked = RevocationReason.UNSPECIFIED.value
+        else 
+          cert.revoked = RevocationReason.VALID.value
+        return cert;
+      }))
+  }
 
   render() {
     return (
@@ -705,8 +749,8 @@ export class CertificatesPage extends Component {
         formFlow={this.formFlow}
         columns={this.columns}
         stayAfterSave={true}
-        fetchItems={BackOfficeServices.findAllCertificates}
-        updateItem={BackOfficeServices.updateCertificate}
+        fetchItems={this.findAllCertificates}
+        updateItem={this.updateCertificate}
         deleteItem={BackOfficeServices.deleteCertificate}
         createItem={BackOfficeServices.createCertificate}
         navigateTo={(item) => {
@@ -804,7 +848,7 @@ export class NewCertificateForm extends Component {
     host: this.props.host || 'www.foo.bar',
     hosts: this.props.host ? [this.props.host] : this.props.hosts || [],
     signatureAlg: 'SHA256WithRSAEncryption',
-    digestAlg: 'SHA-256',
+    digestAlg: 'SHA-256'
   };
 
   componentDidMount() {

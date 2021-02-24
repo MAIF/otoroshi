@@ -3,15 +3,15 @@ package otoroshi.ssl.pki
 import java.io.{ByteArrayInputStream, StringReader}
 import java.security._
 import java.security.cert.{CertificateFactory, X509Certificate}
-
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
 import akka.util.ByteString
+import env.Env
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers
 import org.bouncycastle.asn1.x500.X500Name
 import org.bouncycastle.asn1.x509._
-import org.bouncycastle.asn1.{ASN1Integer, ASN1Sequence}
-import org.bouncycastle.cert.X509v3CertificateBuilder
+import org.bouncycastle.asn1.{ASN1EncodableVector, ASN1Integer, ASN1ObjectIdentifier, ASN1Sequence, DERIA5String, DERSequence, x509}
+import org.bouncycastle.cert.{X509ExtensionUtils, X509v3CertificateBuilder}
 import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils
 import org.bouncycastle.crypto.util.PrivateKeyFactory
 import org.bouncycastle.operator.bc.BcRSAContentSignerBuilder
@@ -30,6 +30,7 @@ import scala.concurrent.duration.{FiniteDuration, _}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 import org.bouncycastle.jce.ECNamedCurveTable
+import org.jose4j.keys.X509Util
 import org.bouncycastle.operator
 
 object models {
@@ -275,7 +276,7 @@ trait Pki {
   ): Future[Either[String, GenCertResponse]]
 }
 
-class BouncyCastlePki(generator: IdGenerator) extends Pki {
+class BouncyCastlePki(generator: IdGenerator, env: Env) extends Pki {
 
   private val random = new SecureRandom()
 
@@ -407,13 +408,16 @@ class BouncyCastlePki(generator: IdGenerator) extends Pki {
       val certgen = new X509v3CertificateBuilder(issuer, serial, from, to, csr.getSubject, csr.getSubjectPublicKeyInfo)
       csr.getAttributes.foreach(attr => {
         attr.getAttributeValues.collect {
-          case exts: Extensions => {
+          case exts: Extensions =>
             exts.getExtensionOIDs.map(id => exts.getExtension(id)).filter(_ != null).foreach { ext =>
               certgen.addExtension(ext.getExtnId, ext.isCritical, ext.getParsedValue)
             }
-          }
         }
       })
+
+      val access = buildAuthorityInfoAccess()
+      certgen.addExtension(access._1, access._2, access._3)
+
       val digestAlgorithm = originalQuery.map(c => new DefaultDigestAlgorithmIdentifierFinder().find(c.digestAlg)).getOrElse(new DefaultDigestAlgorithmIdentifierFinder().find("SHA-256"))
       val parentSignatureAlg = new DefaultSignatureAlgorithmIdentifierFinder().find(caCert.getSigAlgName)
       val signer = contentSigner(parentSignatureAlg /*csr.getSignatureAlg*/, digestAlgorithm, PrivateKeyFactory.createKey(caKey.getEncoded))
@@ -428,6 +432,20 @@ class BouncyCastlePki(generator: IdGenerator) extends Pki {
       case Failure(err)  => Left(err.getMessage).future
       case Success(cert) => Right(SignCertResponse(cert, csr, Some(caCert))).future
     }
+  }
+
+  private def buildAuthorityInfoAccess(): (ASN1ObjectIdentifier, Boolean, DERSequence) = {
+    val caIssuers = new AccessDescription(AccessDescription.id_ad_caIssuers,
+      new GeneralName(GeneralName.uniformResourceIdentifier, new DERIA5String(s"${env.backOfficeSubDomain}.${env.domain}")))
+
+    val ocsp = new AccessDescription(AccessDescription.id_ad_ocsp,
+      new GeneralName(GeneralName.uniformResourceIdentifier, new DERIA5String(s"${env.backOfficeSubDomain}.${env.domain}/.well-known/otoroshi/ocsp")))
+
+    val aia_ASN = new ASN1EncodableVector()
+    aia_ASN.add(caIssuers)
+    aia_ASN.add(ocsp)
+
+   (Extension.authorityInfoAccess, false, new DERSequence(aia_ASN))
   }
 
   // gencert          generate a private key and a certificate
@@ -532,6 +550,10 @@ class BouncyCastlePki(generator: IdGenerator) extends Pki {
                 }
               }
             })
+
+            val access = buildAuthorityInfoAccess()
+            certgen.addExtension(access._1, access._2, access._3)
+
             // val signatureAlgorithm = new DefaultSignatureAlgorithmIdentifierFinder().find("SHA256WithRSAEncryption")
             val holder                                 = certgen.build(signer)
             val certencoded                            = holder.toASN1Structure.getEncoded
@@ -600,6 +622,10 @@ class BouncyCastlePki(generator: IdGenerator) extends Pki {
               }
             }
           })
+
+          val access = buildAuthorityInfoAccess()
+          certgen.addExtension(access._1, access._2, access._3)
+
           val holder                                 = certgen.build(signer)
           val certencoded                            = holder.toASN1Structure.getEncoded
           val certificateFactory: CertificateFactory = CertificateFactory.getInstance("X.509")
@@ -668,6 +694,10 @@ class BouncyCastlePki(generator: IdGenerator) extends Pki {
               }
             }
           })
+          
+          val access = buildAuthorityInfoAccess()
+          certgen.addExtension(access._1, access._2, access._3)
+
           val parentSignatureAlg = new DefaultSignatureAlgorithmIdentifierFinder().find(caCert.getSigAlgName)
           val certsigner = contentSigner(parentSignatureAlg /*csr.getSignatureAlg*/, digestAlgorithm, PrivateKeyFactory.createKey(caKey.getEncoded))
           val holder                                 = certgen.build(certsigner)

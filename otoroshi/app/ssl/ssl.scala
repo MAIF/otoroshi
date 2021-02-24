@@ -14,7 +14,6 @@ import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong, AtomicReference}
 import java.util.regex.Pattern.CASE_INSENSITIVE
 import java.util.regex.{Matcher, Pattern}
 import java.util.{Base64, Date}
-
 import actions.ApiAction
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.{Materializer, TLSClientAuth}
@@ -25,6 +24,7 @@ import com.typesafe.sslconfig.ssl.SSLConfigSettings
 import env.Env
 import events.{Alerts, CertExpiredAlert, CertRenewalAlert}
 import gateway.Errors
+
 import javax.crypto.Cipher.DECRYPT_MODE
 import javax.crypto.spec.PBEKeySpec
 import javax.crypto.{Cipher, EncryptedPrivateKeyInfo, SecretKey, SecretKeyFactory}
@@ -98,6 +98,15 @@ object ClientAuth {
     }
   }
 }
+
+case class OCSPCertProjection(
+                     revoked: Boolean,
+                     valid: Boolean,
+                     expired: Boolean,
+                     revocationReason: String,
+                     from: Date,
+                     to: Date
+                     )
 
 case class Cert(
     id: String,
@@ -946,8 +955,9 @@ object DynamicSSLEngineProvider {
   )
 
   val _certificates = new TrieMap[String, Cert]()
+  val _ocspProjectionCertificates = new TrieMap[java.math.BigInteger, OCSPCertProjection]()
+
   def certificates: TrieMap[String, Cert] = _certificates.filter(_._2.notRevoked)
-  def allCertificates: TrieMap[String, Cert] = _certificates
 
   private lazy val firstSetupDone           = new AtomicBoolean(false)
   private lazy val currentContext           = new AtomicReference[SSLContext](setupContext(FakeHasMetrics))
@@ -1194,6 +1204,13 @@ object DynamicSSLEngineProvider {
     firstSetupDone.compareAndSet(false, true)
     _certificates.clear()
     certs.filter(_.notRevoked).foreach(crt => _certificates.put(crt.id, crt))
+    certs
+      .filter(r => r.serialNumberLng.isDefined)
+      .foreach(crt => _ocspProjectionCertificates.put(
+          crt.serialNumberLng.get,
+          OCSPCertProjection(crt.revoked, crt.isValid, crt.expired,
+            crt.entityMetadata.getOrElse("revocationReason", "VALID"),
+            crt.from.toDate, crt.to.toDate)))
     val ctx = setupContext(env)
     currentContext.set(ctx)
     ctx
