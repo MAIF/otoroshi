@@ -8,6 +8,7 @@ import com.auth0.jwt.algorithms.Algorithm
 import com.clevercloud.biscuit.crypto._
 import com.clevercloud.biscuit.token.Biscuit
 import com.clevercloud.biscuit.token.builder.Term.Str
+import com.clevercloud.biscuit.token.builder.parser.Parser
 import env.Env
 import otoroshi.script.{PreRouting, PreRoutingContext, PreRoutingErrorWithResult}
 import otoroshi.utils.syntax.implicits._
@@ -82,7 +83,7 @@ class BiscuitExtractor extends PreRouting {
 
     import com.clevercloud.biscuit.token.builder.Block
     import com.clevercloud.biscuit.token.builder.Utils._
-
+    
     val client_id = "tdrw4ixcssyvljrq"
     val client_secret = "pdpzme7xpg58y1za0yqyihycschnq74iu7437qqfjor0h3jeo505n6w4ofg1pa17"
     val algo = Algorithm.HMAC256(client_secret)
