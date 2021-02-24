@@ -848,7 +848,8 @@ export class NewCertificateForm extends Component {
     host: this.props.host || 'www.foo.bar',
     hosts: this.props.host ? [this.props.host] : this.props.hosts || [],
     signatureAlg: 'SHA256WithRSAEncryption',
-    digestAlg: 'SHA-256'
+    digestAlg: 'SHA-256',
+    includeAIA: false
   };
 
   componentDidMount() {
@@ -947,6 +948,12 @@ export class NewCertificateForm extends Component {
                   value={this.state.letsEncrypt}
                   onChange={(v) => this.changeTheValue('letsEncrypt', v)}
                   help="Is your certificate a Let's Encrypt certificate"
+                />
+                <BiColumnBooleanInput
+                  label="Include A.I.A"
+                  value={this.state.includeAIA}
+                  onChange={(v) => this.changeTheValue('includeAIA', v)}
+                  help="Include authority information access urls in the certificate"
                 />
               </div>
             </div>
