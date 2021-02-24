@@ -150,6 +150,7 @@ export class Table extends Component {
     this.unmountShortcuts();
     this.props.parentProps.setTitle(this.props.defaultTitle);
     this.setState({ currentItem: null, showAddForm: false });
+    this.update();
     urlTo(`/bo/dashboard/${this.props.selfUrl}`);
   };
 
@@ -171,6 +172,7 @@ export class Table extends Component {
     this.unmountShortcuts();
     this.props.parentProps.setTitle(this.props.defaultTitle);
     this.setState({ currentItem: null, showEditForm: false });
+    this.update();
     urlTo(`/bo/dashboard/${this.props.selfUrl}`);
   };
 

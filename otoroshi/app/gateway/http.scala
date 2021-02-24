@@ -61,9 +61,9 @@ class HttpHandler()(implicit env: Env) {
 
     val ActualCallContext(req, descriptor, _target, apiKey, paUsr, jwtInjection, snowMonkeyContext, snowflake, attrs, elCtx, globalConfig, withTrackingCookies, bodyAlreadyConsumed, requestBody, secondStart, firstOverhead, cbDuration, callAttempts) = ctx
 
-    val counterIn = attrs.get(otoroshi.plugins.Keys.RequestCounterIn).get
-    val counterOut = attrs.get(otoroshi.plugins.Keys.RequestCounterOut).get
-    val canaryId = attrs.get(otoroshi.plugins.Keys.RequestCanaryId).get
+    val counterIn = attrs.get(otoroshi.plugins.Keys.RequestCounterInKey).get
+    val counterOut = attrs.get(otoroshi.plugins.Keys.RequestCounterOutKey).get
+    val canaryId = attrs.get(otoroshi.plugins.Keys.RequestCanaryIdKey).get
     val callDate = attrs.get(otoroshi.plugins.Keys.RequestTimestampKey).get
     val start = attrs.get(otoroshi.plugins.Keys.RequestStartKey).get
 

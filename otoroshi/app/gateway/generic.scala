@@ -362,12 +362,13 @@ class ReverseProxyAction(env: Env) {
     val bodyAlreadyConsumed = new AtomicBoolean(false)
     val protocol            = req.theProtocol
     val attrs = utils.TypedMap.empty.put(
-      otoroshi.plugins.Keys.SnowFlakeKey        -> snowflake,
-      otoroshi.plugins.Keys.RequestTimestampKey -> callDate,
-      otoroshi.plugins.Keys.RequestStartKey     -> start,
-      otoroshi.plugins.Keys.RequestWebsocketKey -> false,
-      otoroshi.plugins.Keys.RequestCounterIn -> counterIn,
-      otoroshi.plugins.Keys.RequestCounterOut-> counterOut
+      otoroshi.plugins.Keys.RequestNumberKey     -> reqNumber,
+      otoroshi.plugins.Keys.SnowFlakeKey         -> snowflake,
+      otoroshi.plugins.Keys.RequestTimestampKey  -> callDate,
+      otoroshi.plugins.Keys.RequestStartKey      -> start,
+      otoroshi.plugins.Keys.RequestWebsocketKey  -> false,
+      otoroshi.plugins.Keys.RequestCounterInKey  -> counterIn,
+      otoroshi.plugins.Keys.RequestCounterOutKey -> counterOut
     )
 
     val elCtx: Map[String, String] = Map(
@@ -524,12 +525,14 @@ class ReverseProxyAction(env: Env) {
                                           }
                                         } map (value => value.split("::")(1))
                                       val canaryId: String = maybeCanaryId.getOrElse(IdGenerator.uuid + "-" + reqNumber)
-                                      attrs.put(otoroshi.plugins.Keys.RequestCanaryId -> canaryId)
+                                      attrs.put(otoroshi.plugins.Keys.RequestCanaryIdKey -> canaryId)
 
                                       val trackingId: String = req.cookies
                                         .get("otoroshi-tracking")
                                         .map(_.value)
                                         .getOrElse(IdGenerator.uuid + "-" + reqNumber)
+
+                                      attrs.put(otoroshi.plugins.Keys.RequestTrackingIdKey -> trackingId)
 
                                       if (maybeCanaryId.isDefined) {
                                         logger.debug(s"request already has canary id : $canaryId")
