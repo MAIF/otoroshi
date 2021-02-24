@@ -74,6 +74,8 @@ libraryDependencies ++= Seq(
 
   "org.jsoup" % "jsoup" % "1.13.1",
 
+  "com.clever-cloud" % "biscuit-java" % "0.6.1",
+
   // fix multiple CVEs
   "com.fasterxml.jackson.core" % "jackson-databind"          % "2.10.3",
   "org.yaml"                   % "snakeyaml"                 % "1.26",
