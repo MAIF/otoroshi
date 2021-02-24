@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+
+<head>
+<title>Scaling Otoroshi · Otoroshi</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="description" content='otoroshi-manual'/>
+<link href="https://fonts.googleapis.com/css?family=Roboto:100normal,100italic,300normal,300italic,400normal,400italic,500normal,500italic,700normal,700italic,900normal,900italicc" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="../lib/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../js/page.js"></script>
+<script type="text/javascript" src="../js/cc.js"></script>
+<script type="text/javascript" src="../js/groups.js"></script>
+<link rel="stylesheet" type="text/css" href="../lib/normalize.css/normalize.css"/>
+<link rel="stylesheet" type="text/css" href="../lib/foundation/dist/foundation.min.css"/>
+<link rel="stylesheet" type="text/css" href="../css/page.css"/>
+
+<!--
+<link rel="shortcut icon" href="../images/favicon.ico" />
+-->
+</head>
+
+<body>
+<div class="off-canvas-wrapper">
+<div class="off-canvas-wrapper-inner" data-off-canvas-wrapper>
+
+<div class="off-canvas position-left" id="off-canvas-menu" data-off-canvas>
+<nav class="off-canvas-nav">
+<div class="nav-home">
+<a href="../index.html" >
+<span class="home-icon">⌂</span>Otoroshi
+</a>
+<div class="version-number">
+1.5.0-alpha.8
+</div>
+</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../about.html" class="page">About Otoroshi</a></li>
+  <li><a href="../archi.html" class="page">Architecture</a></li>
+  <li><a href="../features.html" class="page">Features</a></li>
+  <li><a href="../quickstart.html" class="page">Try Otoroshi in 5 minutes</a></li>
+  <li><a href="../getotoroshi/index.html" class="page">Get Otoroshi</a>
+  <ul>
+    <li><a href="../getotoroshi/fromsources.html" class="page">From sources</a></li>
+    <li><a href="../getotoroshi/frombinaries.html" class="page">From binaries</a></li>
+    <li><a href="../getotoroshi/fromdocker.html" class="page">From docker</a></li>
+  </ul></li>
+  <li><a href="../firstrun/index.html" class="page">First run</a>
+  <ul>
+    <li><a href="../firstrun/datastore.html" class="page">Choose your datastore</a></li>
+    <li><a href="../firstrun/configfile.html" class="page">Config. with files</a></li>
+    <li><a href="../firstrun/env.html" class="page">Config. with ENVs</a></li>
+    <li><a href="../firstrun/initialstate.html" class="page">Import initial state</a></li>
+    <li><a href="../firstrun/host.html" class="page">Setup your hosts</a></li>
+    <li><a href="../firstrun/run.html" class="page">Run Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../setup/index.html" class="page">Setup Otoroshi</a>
+  <ul>
+    <li><a href="../setup/admin.html" class="page">Manage admin users</a></li>
+    <li><a href="../setup/dangerzone.html" class="page">Configure the Danger zone</a></li>
+  </ul></li>
+  <li><a href="../usage/index.html" class="page">Using Otoroshi</a>
+  <ul>
+    <li><a href="../usage/1-groups.html" class="page">Managing service groups</a></li>
+    <li><a href="../usage/2-services.html" class="page">Managing services</a></li>
+    <li><a href="../usage/3-apikeys.html" class="page">Managing API keys</a></li>
+    <li><a href="../usage/4-monitor.html" class="page">Monitoring services</a></li>
+    <li><a href="../usage/5-sessions.html" class="page">Managing sessions</a></li>
+    <li><a href="../usage/6-audit.html" class="page">Auditing Otoroshi</a></li>
+    <li><a href="../usage/7-metrics.html" class="page">Otoroshi global metrics</a></li>
+    <li><a href="../usage/8-importsexports.html" class="page">Import and export</a></li>
+    <li><a href="../usage/9-auth.html" class="page">Authentication</a></li>
+  </ul></li>
+  <li><a href="../integrations/index.html" class="page">Third party Integrations</a>
+  <ul>
+    <li><a href="../integrations/analytics.html" class="page">Analytics</a></li>
+    <li><a href="../integrations/mailgun.html" class="page">Mailgun</a></li>
+    <li><a href="../integrations/statsd.html" class="page">StatsD / Datadog</a></li>
+    <li><a href="../integrations/clevercloud.html" class="page">Clever Cloud</a></li>
+  </ul></li>
+  <li><a href="../topics/index.html" class="page">Detailed topics</a>
+  <ul>
+    <li><a href="../topics/snow-monkey.html" class="page">Chaos engineering with the Snow Monkey</a></li>
+    <li><a href="../topics/jwt-verifications.html" class="page">JWT Tokens verification</a></li>
+    <li><a href="../topics/ssl.html" class="page">SSL/TLS termination with Otoroshi</a></li>
+    <li><a href="../topics/mtls.html" class="page">Mutual TLS with Otoroshi</a></li>
+    <li><a href="../topics/clustering.html" class="page">Otoroshi clustering</a></li>
+    <li><a href="../topics/plugins.html" class="page">Otoroshi plugins</a></li>
+    <li><a href="../topics/monitoring.html" class="page">Monitoring Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../api.html" class="page">Admin REST API</a></li>
+  <li><a href="../deploy/index.html" class="page">Deploy to production</a>
+  <ul>
+    <li><a href="../deploy/kubernetes.html" class="page">Kubernetes</a></li>
+    <li><a href="../deploy/clevercloud.html" class="page">Clever Cloud</a></li>
+    <li><a href="../deploy/aws-beanstalk.html" class="page">AWS - Elastic Beanstalk</a></li>
+    <li><a href="../deploy/other.html" class="page">Others</a></li>
+    <li><a href="../deploy/scaling.html" class="active page">Scaling Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
+</ul>
+</div>
+
+</nav>
+</div>
+
+<div class="off-canvas-content" data-off-canvas-content>
+
+<header class="site-header expanded row">
+<div class="small-12 column">
+<a href="#" class="off-canvas-toggle hide-for-medium" data-toggle="off-canvas-menu"><svg class="svg-icon svg-icon-menu" version="1.1" id="Menu" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 20 20" enable-background="new 0 0 20 20" xml:space="preserve"> <path class="svg-icon-menu-path" fill="#53CDEC" d="M16.4,9H3.6C3.048,9,3,9.447,3,10c0,0.553,0.048,1,0.6,1H16.4c0.552,0,0.6-0.447,0.6-1C17,9.447,16.952,9,16.4,9z M16.4,13
+H3.6C3.048,13,3,13.447,3,14c0,0.553,0.048,1,0.6,1H16.4c0.552,0,0.6-0.447,0.6-1C17,13.447,16.952,13,16.4,13z M3.6,7H16.4
+C16.952,7,17,6.553,17,6c0-0.553-0.048-1-0.6-1H3.6C3.048,5,3,5.447,3,6C3,6.553,3.048,7,3.6,7z"/></svg>
+</a>
+<div class="title-wrapper">
+<div class="title-logo"></div>
+<div class="title"><a href="../index.html">Otoroshi</a></div>
+</div>
+<!--
+<a href="https://www.example.com" class="logo show-for-medium">logo</a>
+-->
+</div>
+</header>
+
+<div class="expanded row">
+
+<div class="medium-3 large-2 show-for-medium column">
+<nav class="site-nav">
+<div class="nav-home">
+<a href="../index.html" >
+<span class="home-icon">⌂</span>Otoroshi
+</a>
+<div class="version-number">
+1.5.0-alpha.8
+</div>
+</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../about.html" class="page">About Otoroshi</a></li>
+  <li><a href="../archi.html" class="page">Architecture</a></li>
+  <li><a href="../features.html" class="page">Features</a></li>
+  <li><a href="../quickstart.html" class="page">Try Otoroshi in 5 minutes</a></li>
+  <li><a href="../getotoroshi/index.html" class="page">Get Otoroshi</a>
+  <ul>
+    <li><a href="../getotoroshi/fromsources.html" class="page">From sources</a></li>
+    <li><a href="../getotoroshi/frombinaries.html" class="page">From binaries</a></li>
+    <li><a href="../getotoroshi/fromdocker.html" class="page">From docker</a></li>
+  </ul></li>
+  <li><a href="../firstrun/index.html" class="page">First run</a>
+  <ul>
+    <li><a href="../firstrun/datastore.html" class="page">Choose your datastore</a></li>
+    <li><a href="../firstrun/configfile.html" class="page">Config. with files</a></li>
+    <li><a href="../firstrun/env.html" class="page">Config. with ENVs</a></li>
+    <li><a href="../firstrun/initialstate.html" class="page">Import initial state</a></li>
+    <li><a href="../firstrun/host.html" class="page">Setup your hosts</a></li>
+    <li><a href="../firstrun/run.html" class="page">Run Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../setup/index.html" class="page">Setup Otoroshi</a>
+  <ul>
+    <li><a href="../setup/admin.html" class="page">Manage admin users</a></li>
+    <li><a href="../setup/dangerzone.html" class="page">Configure the Danger zone</a></li>
+  </ul></li>
+  <li><a href="../usage/index.html" class="page">Using Otoroshi</a>
+  <ul>
+    <li><a href="../usage/1-groups.html" class="page">Managing service groups</a></li>
+    <li><a href="../usage/2-services.html" class="page">Managing services</a></li>
+    <li><a href="../usage/3-apikeys.html" class="page">Managing API keys</a></li>
+    <li><a href="../usage/4-monitor.html" class="page">Monitoring services</a></li>
+    <li><a href="../usage/5-sessions.html" class="page">Managing sessions</a></li>
+    <li><a href="../usage/6-audit.html" class="page">Auditing Otoroshi</a></li>
+    <li><a href="../usage/7-metrics.html" class="page">Otoroshi global metrics</a></li>
+    <li><a href="../usage/8-importsexports.html" class="page">Import and export</a></li>
+    <li><a href="../usage/9-auth.html" class="page">Authentication</a></li>
+  </ul></li>
+  <li><a href="../integrations/index.html" class="page">Third party Integrations</a>
+  <ul>
+    <li><a href="../integrations/analytics.html" class="page">Analytics</a></li>
+    <li><a href="../integrations/mailgun.html" class="page">Mailgun</a></li>
+    <li><a href="../integrations/statsd.html" class="page">StatsD / Datadog</a></li>
+    <li><a href="../integrations/clevercloud.html" class="page">Clever Cloud</a></li>
+  </ul></li>
+  <li><a href="../topics/index.html" class="page">Detailed topics</a>
+  <ul>
+    <li><a href="../topics/snow-monkey.html" class="page">Chaos engineering with the Snow Monkey</a></li>
+    <li><a href="../topics/jwt-verifications.html" class="page">JWT Tokens verification</a></li>
+    <li><a href="../topics/ssl.html" class="page">SSL/TLS termination with Otoroshi</a></li>
+    <li><a href="../topics/mtls.html" class="page">Mutual TLS with Otoroshi</a></li>
+    <li><a href="../topics/clustering.html" class="page">Otoroshi clustering</a></li>
+    <li><a href="../topics/plugins.html" class="page">Otoroshi plugins</a></li>
+    <li><a href="../topics/monitoring.html" class="page">Monitoring Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../api.html" class="page">Admin REST API</a></li>
+  <li><a href="../deploy/index.html" class="page">Deploy to production</a>
+  <ul>
+    <li><a href="../deploy/kubernetes.html" class="page">Kubernetes</a></li>
+    <li><a href="../deploy/clevercloud.html" class="page">Clever Cloud</a></li>
+    <li><a href="../deploy/aws-beanstalk.html" class="page">AWS - Elastic Beanstalk</a></li>
+    <li><a href="../deploy/other.html" class="page">Others</a></li>
+    <li><a href="../deploy/scaling.html" class="active page">Scaling Otoroshi</a></li>
+  </ul></li>
+  <li><a href="../dev.html" class="page">Developing Otoroshi</a></li>
+</ul>
+</div>
+
+</nav>
+</div>
+
+<div class="small-12 medium-9 large-10 column">
+<section class="site-content">
+
+<div class="page-header row">
+<div class="medium-12 show-for-medium column">
+<div class="nav-breadcrumbs">
+<ul>
+  <li><a href="../index.html">Otoroshi</a></li>
+  <li><a href="../deploy/index.html">Deploy to production</a></li>
+  <li>Scaling Otoroshi</li>
+</ul>
+</div>
+</div>
+</div>
+
+<div class="page-content row">
+<div class="small-12 large-9 column" id="docs">
+<h1><a href="#scaling-otoroshi" name="scaling-otoroshi" class="anchor"><span class="anchor-link"></span></a>Scaling Otoroshi</h1>
+<h2><a href="#using-multiple-instances-with-a-front-load-balancer" name="using-multiple-instances-with-a-front-load-balancer" class="anchor"><span class="anchor-link"></span></a>Using multiple instances with a front load balancer</h2>
+<p>Otoroshi has been designed to work with multiple instances. If you already have an infrastructure using frontal load balancing, you just have to declare Otoroshi instances as the target of all domain names handled by Otoroshi</p>
+<h2><a href="#using-master-workers-mode-of-otoroshi" name="using-master-workers-mode-of-otoroshi" class="anchor"><span class="anchor-link"></span></a>Using master / workers mode of Otoroshi</h2>
+<p>You can read everything about it in <a href="../topics/clustering.html">the clustering section</a> of the documentation.</p>
+<h2><a href="#using-ipvs" name="using-ipvs" class="anchor"><span class="anchor-link"></span></a>Using IPVS</h2>
+<p>You can use <a href="https://en.wikipedia.org/wiki/IP_Virtual_Server">IPVS</a> to load balance layer 4 traffic directly from the Linux Kernel to multiple instances of Otoroshi. You can find example of configuration <a href="http://www.linuxvirtualserver.org/VS-DRouting.html">here</a> </p>
+<h2><a href="#using-dns-round-robin" name="using-dns-round-robin" class="anchor"><span class="anchor-link"></span></a>Using DNS Round Robin</h2>
+<p>You can use <a href="https://en.wikipedia.org/wiki/Round-robin_DNS">DNS round robin technique</a> to declare multiple A records under the domain names handled by Otoroshi.</p>
+<h2><a href="#using-software-l4-l7-load-balancers" name="using-software-l4-l7-load-balancers" class="anchor"><span class="anchor-link"></span></a>Using software L4/L7 load balancers</h2>
+<p>You can use software L4 load balancers like NGINX or HAProxy to load balance layer 4 traffic directly from the Linux Kernel to multiple instances of Otoroshi.</p>
+<dl>
+  <dt>NGINX L7</dt>
+  <dd>
+  <pre class="prettyprint"><code class="language-conf">upstream otoroshi {
+  server 192.168.1.40:8080 max_fails=1;
+  server 192.168.1.41:8080 max_fails=1;
+  server 192.168.1.42:8080 max_fails=1;
+}
+
+server {
+  listen 80;
+  # http://nginx.org/en/docs/http/server_names.html
+  server_name otoroshi.oto.tools otoroshi-api.oto.tools otoroshi-admin-internal-api.oto.tools privateapps.oto.tools *-api.oto.tools;
+  location / {
+    # SSE config
+    proxy_buffering off;
+    proxy_cache off;
+    proxy_set_header Connection &#39;&#39;;
+    proxy_http_version 1.1;
+    chunked_transfer_encoding off;
+  
+    # websockets config
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection &quot;upgrade&quot;;
+  
+    # other config
+    proxy_set_header Host $http_host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_pass http://otoroshi;
+  }
+}
+
+server {
+  listen 443 ssl;
+  # http://nginx.org/en/docs/http/server_names.html
+  server_name otoroshi.oto.tools otoroshi-api.oto.tools otoroshi-admin-internal-api.oto.tools privateapps.oto.tools *-api.oto.tools;
+  ssl_certificate           /etc/letsencrypt/wildcard.oto.tools/fullchain.pem;
+  ssl_certificate_key       /etc/letsencrypt/wildcard.oto.tools/privkey.pem;
+  ssl_session_cache         shared:SSL:10m;
+  ssl_session_timeout       5m;
+  ssl_prefer_server_ciphers on;
+  ssl_ciphers               ECDH+AESGCM:ECDH+AES256:ECDH+AES128:DH+3DES:!ADH:!AECDH:!MD5;
+  ssl_protocols             TLSv1 TLSv1.1 TLSv1.2;
+  location / {
+    # SSE config
+    proxy_buffering off;
+    proxy_cache off;
+    proxy_set_header Connection &#39;&#39;;
+    proxy_http_version 1.1;
+    chunked_transfer_encoding off;
+  
+    # websockets config
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection &quot;upgrade&quot;;
+  
+    # other config
+    proxy_set_header Host $http_host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_pass http://otoroshi;
+  }
+}</code></pre></dd>
+  <dt>NGINX L4</dt>
+  <dd>
+  <pre class="prettyprint"><code class="language-conf">stream {
+
+  upstream back_http_nodes {
+    zone back_http_nodes 64k;
+    server 192.168.1.40:8080 max_fails=1;
+    server 192.168.1.41:8080 max_fails=1;
+    server 192.168.1.42:8080 max_fails=1;
+  }
+
+  upstream back_https_nodes {
+    zone back_https_nodes 64k;
+    server 192.168.1.40:8443 max_fails=1;
+    server 192.168.1.41:8443 max_fails=1;
+    server 192.168.1.42:8443 max_fails=1;
+  }
+
+  server {
+    listen     80;
+    proxy_pass back_http_nodes;
+    health_check;
+  }
+
+  server {
+    listen     443;
+    proxy_pass back_https_nodes;
+    health_check;
+  }
+  
+}
+</code></pre></dd>
+  <dt>HA Proxy L7</dt>
+  <dd>
+  <pre class="prettyprint"><code class="language-conf">frontend front_nodes_http
+    bind *:80
+    mode http
+    default_backend back_http_nodes
+    timeout client          1m
+
+frontend front_nodes_https
+    bind *:443
+    mode http
+    default_backend back_https_nodes
+    timeout client          1m
+
+backend back_http_nodes
+    mode http
+    balance roundrobin
+    option forwardfor
+    http-request set-header X-Forwarded-Port %[dst_port]
+    http-request add-header X-Forwarded-Proto https if { ssl_fc }
+    http-request set-header X-Client-IP %[src]
+    server node1 192.168.1.40:8080
+    server node2 192.168.1.41:8080
+    server node3 192.168.1.42:8080
+    timeout connect        10s
+    timeout server          1m
+
+backend back_https_nodes
+    mode http
+    balance roundrobin
+    option forwardfor
+    http-request set-header X-Forwarded-Port %[dst_port]
+    http-request add-header X-Forwarded-Proto https if { ssl_fc }
+    http-request set-header X-Client-IP %[src]
+    server node1 192.168.1.40:8443
+    server node2 192.168.1.41:8443
+    server node3 192.168.1.42:8443
+    timeout connect        10s
+    timeout server          1m</code></pre></dd>
+  <dt>HA Proxy L4</dt>
+  <dd>
+  <pre class="prettyprint"><code class="language-conf">frontend front_nodes_http
+    bind *:80
+    mode tcp
+    default_backend back_http_nodes
+    timeout client          1m
+
+frontend front_nodes_https
+    bind *:443
+    mode tcp
+    default_backend back_https_nodes
+    timeout client          1m
+
+backend back_http_nodes
+    mode tcp
+    balance roundrobin
+    server node1 192.168.1.40:8080
+    server node2 192.168.1.41:8080
+    server node3 192.168.1.42:8080
+    timeout connect        10s
+    timeout server          1m
+
+backend back_https_nodes
+    mode tcp
+    balance roundrobin
+    server node1 192.168.1.40:8443
+    server node2 192.168.1.41:8443
+    server node3 192.168.1.42:8443
+    timeout connect        10s
+    timeout server          1m</code></pre></dd>
+</dl>
+<h2><a href="#using-a-custom-tcp-load-balancer" name="using-a-custom-tcp-load-balancer" class="anchor"><span class="anchor-link"></span></a>Using a custom TCP load balancer</h2>
+<p>You can also use any other TCP load balancer, from a hardware box to a small js file like</p>
+<dl>
+  <dt>tcp-proxy.js
+  </dt>
+  <dd>
+  <pre class="prettyprint"><code class="language-js">const proxy = require(&quot;node-tcp-proxy&quot;);
+
+const hosts = [&quot;192.168.1.40&quot;, &quot;192.168.1.41&quot;, &quot;192.168.1.42&quot;];
+const portsHttp = [8080, 8080, 8080];
+const portsHttps = [8443, 8443, 8443];
+
+const proxyHttp = proxy.createProxy(80, hosts, portsHttp, {
+  tls: false
+});
+
+const proxyHttps = proxy.createProxy(443, hosts, portsHttps, {
+  tls: false
+});
+</code></pre></dd>
+  <dt>tcp-proxy.rs
+  </dt>
+  <dd>
+  <pre class="prettyprint"><code class="language-rs">extern crate futures;
+extern crate tokio;
+extern crate rand;
+
+use futures::{Future, Stream};
+use rand::Rng;
+use std::net::SocketAddr;
+use tokio::io::copy;
+use tokio::net::{TcpListener, TcpStream};
+use tokio::prelude::*;
+
+fn main() -&gt; Result&lt;(), Box&lt;std::error::Error&gt;&gt; {
+    let urls: Vec&lt;std::net::SocketAddr&gt; = vec![
+        std::net::SocketAddr::new(&quot;192.168.1.40&quot;.parse().unwrap(), 8080),
+        std::net::SocketAddr::new(&quot;192.168.1.41&quot;.parse().unwrap(), 8080),
+        std::net::SocketAddr::new(&quot;192.168.1.42&quot;.parse().unwrap(), 8080),
+    ];
+    let addr: SocketAddr = &quot;0.0.0.0:80&quot;.to_string().parse().unwrap();
+    let sock = TcpListener::bind(&amp;addr).unwrap();
+    println!(&quot;TCP load balancer listening on {}&quot;, addr);
+    let done = sock
+        .incoming()
+        .map_err(move |e| println!(&quot;Error accepting socket; error = {:?}&quot;, e))
+        .for_each(move |server_socket| {
+            let index = rand::thread_rng().gen_range(0, urls.len());
+            let url = &amp;urls[index];
+            let client_pair = TcpStream::connect(&amp;url).map(|socket| socket.split());
+            let msg = client_pair
+                .and_then(move |(client_reader, client_writer)| {
+                    let (server_reader, server_writer) = server_socket.split();
+                    let upload = copy(server_reader, client_writer);
+                    let download = copy(client_reader, server_writer);
+                    upload.join(download)
+                }).then(|_res| {
+                    Ok(())
+                });
+            tokio::spawn(msg);
+            Ok(())
+        });
+    tokio::run(done);
+    Ok(())
+}</code></pre></dd>
+</dl>
+<div class="nav-next">
+<p><strong>Next:</strong> <a href="../dev.html">Developing Otoroshi</a></p>
+</div>
+</div>
+<div class="large-3 show-for-large column" data-sticky-container>
+<nav class="sidebar sticky" data-sticky data-anchor="docs" data-sticky-on="large">
+<div class="page-nav">
+<div class="nav-title">On this page:</div>
+<div class="nav-toc">
+<ul>
+  <li><a href="../deploy/scaling.html#scaling-otoroshi" class="header">Scaling Otoroshi</a>
+  <ul>
+    <li><a href="../deploy/scaling.html#using-multiple-instances-with-a-front-load-balancer" class="header">Using multiple instances with a front load balancer</a></li>
+    <li><a href="../deploy/scaling.html#using-master-workers-mode-of-otoroshi" class="header">Using master / workers mode of Otoroshi</a></li>
+    <li><a href="../deploy/scaling.html#using-ipvs" class="header">Using IPVS</a></li>
+    <li><a href="../deploy/scaling.html#using-dns-round-robin" class="header">Using DNS Round Robin</a></li>
+    <li><a href="../deploy/scaling.html#using-software-l4-l7-load-balancers" class="header">Using software L4/L7 load balancers</a></li>
+    <li><a href="../deploy/scaling.html#using-a-custom-tcp-load-balancer" class="header">Using a custom TCP load balancer</a></li>
+  </ul></li>
+</ul>
+</div>
+</div>
+</nav>
+</div>
+</div>
+
+</section>
+</div>
+
+</div>
+
+<footer class="site-footer">
+
+<section class="site-footer-nav">
+<div class="expanded row">
+<div class="small-12 large-offset-2 large-10 column">
+<div class="row site-footer-content">
+
+<div class="small-12 medium-4 large-3 text-center column">
+<div class="nav-links">
+<ul>
+<!-- <li><a href="https://www.example.com/products/">Products</a> -->
+</ul>
+</div>
+</div>
+
+</div>
+</div>
+</div>
+</section>
+
+<section class="site-footer-base">
+<div class="expanded row">
+<div class="small-12 large-offset-2 large-10 column">
+<div class="row site-footer-content">
+
+<div class="small-12 text-center large-9 column">
+
+<!--
+<div class="copyright">
+<span class="text">&copy; 2021</span>
+<a href="https://www.example.com" class="logo">logo</a>
+</div>
+-->
+</div>
+
+</div>
+</div>
+</div>
+</section>
+</footer>
+
+</div>
+</div>
+</div>
+</body>
+
+<script type="text/javascript" src="../lib/foundation/dist/foundation.min.js"></script>
+<script type="text/javascript">jQuery(document).foundation();</script>
+<script type="text/javascript" src="../js/magellan.js"></script>
+
+<style type="text/css">@import "../lib/prettify/prettify.css";</style>
+<script type="text/javascript" src="../lib/prettify/prettify.js"></script>
+<script type="text/javascript" src="../lib/prettify/lang-scala.js"></script>
+<script type="text/javascript">jQuery(function(){window.prettyPrint && prettyPrint()});</script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/elasticlunr/0.9.5/elasticlunr.js"></script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-112498312-1"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+
+gtag('config', 'UA-112498312-1');
+</script>
+</html>
+
+
+
+
