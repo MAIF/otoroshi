@@ -12,9 +12,10 @@ import org.bouncycastle.operator.{ContentSigner, DefaultDigestAlgorithmIdentifie
 import org.bouncycastle.operator.jcajce.{JcaContentSignerBuilder, JcaContentVerifierProviderBuilder, JcaDigestCalculatorProviderBuilder}
 import play.api.mvc.{RequestHeader, Result, Results}
 import play.api.libs.json.Json
-import ssl.Cert
+import ssl.{Cert, DynamicSSLEngineProvider, OCSPCertProjection}
 import org.joda.time.DateTime
 import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder
+import play.api.Logger
 
 import java.util.Date
 import scala.concurrent.{ExecutionContext, Future}
@@ -23,68 +24,63 @@ object OcspResponder {
   def apply(env: Env, ec: ExecutionContext): OcspResponder = new OcspResponder(env, ec)
 }
 
-case class OCSPCertificateStatusWrapper (
-                                          certificateStatus: CertificateStatus,
-                                          thisUpdate: DateTime,
-                                          nextUpdate: DateTime)
-
 // check for inspiration: https://github.com/wdawson/revoker/blob/master/src/main/java/wdawson/samples/revoker/resources/OCSPResponderResource.java
 // for testing: https://akshayranganath.github.io/OCSP-Validation-With-Openssl/
 // test command: openssl ocsp -issuer chain.pem -cert certificate.pem -text -url http://otoroshi-api.oto.tools:9999/.well-known/otoroshi/ocsp -header "HOST" "otoroshi-api.oto.tools"
-// test command: openssl ocsp -issuer "ca.cer" -cert "*.oto.tools.cer" -text -url http://otoroshi-api.oto.tools:9999/.well-known/otoroshi/ocsp -header "HOST" "otoroshi-api.oto.tools"
+// test command: openssl ocsp -issuer "ca.cer" -cert "*.oto.tools.cer" -text -urDynamicSSLEngineProviderl http://otoroshi-api.oto.tools:9999/.well-known/otoroshi/ocsp -header "HOST" "otoroshi-api.oto.tools"
 class OcspResponder(env: Env, implicit val ec: ExecutionContext) {
 
   private implicit val mat = env.otoroshiMaterializer
 
+  lazy val logger = Logger("otoroshi-certificates-ocsp")
+
   val rejectUnknown = true
-
-  var issuingCertificate: X509CertificateHolder = _
-  var contentSigner: ContentSigner = _
-  var digestCalculatorProvider: DigestCalculatorProvider = _
-  var signingCertificateChain: Array[X509CertificateHolder] = _
-  var responderID: RespID = _
-
-  val nextUpdateOffset = 30
-
-  for {
-    certificates <- env.datastores.certificatesDataStore.findAll()(ec, env)
-    optRootCA <- FastFuture.successful(certificates.find(p => p.id == "otoroshi-root-ca"))
-    optIntermediateCA <- FastFuture.successful(certificates.find(p => p.id == "otoroshi-intermediate-ca"))
-  } yield {
-    (optRootCA, optIntermediateCA) match {
-      case (Some(rootCA), Some(intermediateCA)) if intermediateCA.caFromChain.isDefined =>
-        issuingCertificate = new JcaX509CertificateHolder(intermediateCA.caFromChain.get)
-
-        contentSigner = new JcaContentSignerBuilder ("SHA256withRSA")
-          .setProvider ("BC")
-          .build (rootCA.cryptoKeyPair.getPrivate)
-
-        digestCalculatorProvider = new JcaDigestCalculatorProviderBuilder ()
-          .setProvider ("BC")
-          .build ()
-
-        signingCertificateChain = rootCA.certificatesChain.map (c => new JcaX509CertificateHolder (c) )
-
-        responderID = new RespID (
-          SubjectPublicKeyInfo.getInstance (rootCA.cryptoKeyPair.getPublic.getEncoded),
-          digestCalculatorProvider.get (new DefaultDigestAlgorithmIdentifierFinder ().find ("SHA-1") )
-        )
-
-      case (None, None) => throw new RuntimeException(s"Missing root CA, intermediate CA or intermediate CA chain")
-    }
-  }
+  val nextUpdateOffset: Int = env.configuration.getOptional[Int]("app.ocsp.caching.seconds").getOrElse(3600)
 
   def respond(req: RequestHeader, body: Source[ByteString, _])(implicit ec: ExecutionContext): Future[Result] = {
-    body.runFold(ByteString.empty)(_ ++ _).map { bs =>
-      val body = bs.utf8String
-      if (body.isEmpty) {
-        Results.BadRequest(Json.obj("error" -> "Missing body"))
+    body.runFold(ByteString.empty)(_ ++ _).flatMap { bs =>
+      if (bs.isEmpty) {
+        FastFuture.successful(
+          Results.BadRequest(Json.obj("error" -> "Missing body"))
+        )
       } else {
         val ocspReq = new OCSPReq(bs.toArray)
 
-        if (ocspReq.isSigned && !isSignatureValid(ocspReq)) {
-          Results.BadRequest(new OCSPRespBuilder().build(OCSPRespBuilder.MALFORMED_REQUEST, null).getEncoded)
-        } else {
+        if (ocspReq.isSigned && !isSignatureValid(ocspReq))
+          FastFuture.successful(
+            Results.BadRequest(new OCSPRespBuilder().build(OCSPRespBuilder.MALFORMED_REQUEST, null).getEncoded)
+          )
+        else
+          manageRequest(ocspReq).map(response => {
+            Results.Ok(response.getEncoded)
+          })
+      }
+    }
+  }
+
+  def manageRequest(ocspReq: OCSPReq): Future[OCSPResp] = {
+    for {
+      // certificates <- FastFuture.successful(DynamicSSLEngineProvider._allCertificates) //*env.datastores.certificatesDataStore.findAll()(ec, env)*/
+      optRootCA <- env.datastores.certificatesDataStore.findById("otoroshi-root-ca")(ec, env)
+      optIntermediateCA <- env.datastores.certificatesDataStore.findById("otoroshi-intermediate-ca")(ec, env)
+    } yield {
+      (optRootCA, optIntermediateCA) match {
+        case (Some(rootCA), Some(intermediateCA)) if intermediateCA.caFromChain.isDefined =>
+          val issuingCertificate = new JcaX509CertificateHolder(intermediateCA.caFromChain.get)
+
+          val contentSigner = new JcaContentSignerBuilder ("SHA256withRSA")
+            .setProvider ("BC")
+            .build (rootCA.cryptoKeyPair.getPrivate)
+
+          val digestCalculatorProvider = new JcaDigestCalculatorProviderBuilder ()
+            .setProvider ("BC")
+            .build ()
+
+          val responderID = new RespID (
+            SubjectPublicKeyInfo.getInstance (rootCA.cryptoKeyPair.getPublic.getEncoded),
+            digestCalculatorProvider.get (new DefaultDigestAlgorithmIdentifierFinder ().find ("SHA-1") )
+          )
+
           val responseBuilder = new BasicOCSPRespBuilder(responderID)
           val nonceExtension = ocspReq.getExtension(OCSPObjectIdentifiers.id_pkix_ocsp_nonce)
 
@@ -104,16 +100,27 @@ class OcspResponder(env: Env, implicit val ec: ExecutionContext) {
           // Check that each request is valid and put the appropriate response in the builder
           val requests = ocspReq.getRequestList
           requests.foreach { request =>
-            addResponse(responseBuilder, request)
+            addResponse(responseBuilder, request, issuingCertificate, digestCalculatorProvider)
           }
 
-          Results.Ok(buildAndSignResponse(responseBuilder).getEncoded)
-        }
+          val signingCertificateChain: Array[X509CertificateHolder] = rootCA.certificatesChain.map(new JcaX509CertificateHolder(_))
+
+          new OCSPRespBuilder()
+            .build(
+              OCSPRespBuilder.SUCCESSFUL,
+              responseBuilder.build(contentSigner, signingCertificateChain, new Date())
+            )
+
+        case (None, None) => throw new RuntimeException(s"Missing root CA, intermediate CA or intermediate CA chain")
       }
     }
   }
 
-  def addResponse(responseBuilder: BasicOCSPRespBuilder, request: Req): Any = {
+  def addResponse(
+                   responseBuilder: BasicOCSPRespBuilder,
+                   request: Req,
+                   issuingCertificate: JcaX509CertificateHolder,
+                   digestCalculatorProvider: DigestCalculatorProvider): Unit = {
     val certificateID = request.getCertID
 
     var extensions = new Extensions(Array[Extension]())
@@ -129,26 +136,23 @@ class OcspResponder(env: Env, implicit val ec: ExecutionContext) {
     val matchesIssuer = certificateID.matchesIssuer(issuingCertificate, digestCalculatorProvider)
 
     if (!matchesIssuer) {
-      addResponseForCertificateRequest(responseBuilder,
+      responseBuilder.addResponse(
         certificateID,
-        OCSPCertificateStatusWrapper(getUnknownStatus,
-          DateTime.now(),
-          DateTime.now().plusSeconds(nextUpdateOffset)),
+        getUnknownStatus,
+        DateTime.now().toDate,
+        DateTime.now().plusSeconds(nextUpdateOffset).toDate,
         extensions)
 
     } else {
-      env.datastores.certificatesDataStore.findAll()(ec, env)
-        .map(certificates => {
-          val certificateSummary = certificates
-              .filter(f => f.serialNumberLng.isDefined)
-              .find(f => f.serialNumberLng.get == certificateID.getSerialNumber)
+        val certificateStatus = DynamicSSLEngineProvider._ocspProjectionCertificates.get(certificateID.getSerialNumber)
 
-          getOCSPCertificateStatus(certificateSummary).map(value => {
-            addResponseForCertificateRequest(responseBuilder,
-              request.getCertID,
-              value,
-              extensions)
-          })
+        getOCSPCertificateStatus(certificateStatus).foreach(value => {
+          responseBuilder.addResponse(
+            request.getCertID,
+            value._1,
+            value._2.toDate,
+            value._3.toDate,
+            extensions)
         })
     }
   }
@@ -161,39 +165,41 @@ class OcspResponder(env: Env, implicit val ec: ExecutionContext) {
     }
   }
 
-  def getOCSPCertificateStatus(certData: Option[Cert]): Option[OCSPCertificateStatusWrapper] = {
+  def getOCSPCertificateStatus(certData: Option[OCSPCertProjection]): Option[(CertificateStatus, DateTime, DateTime)] = {
     certData match {
       case None => None
       case Some(cert) =>
         var status = getUnknownStatus
         if(cert.revoked)
-            status = new RevokedStatus(cert.from.toDate, CRLReason.unspecified)
+            status = new RevokedStatus(cert.from, getCRLReason(cert.revocationReason))
         else if (cert.expired)
-            status = new RevokedStatus(cert.to.toDate, CRLReason.superseded)
-        else if (cert.isValid)
+            status = new RevokedStatus(cert.to, getCRLReason(cert.revocationReason))
+        else if (cert.valid)
           status = CertificateStatus.GOOD
 
         val updateTime = DateTime.now()
 
-        Some(OCSPCertificateStatusWrapper(status,
+        Some((status,
           updateTime,
           updateTime.plusSeconds(nextUpdateOffset)
         ))
     }
   }
 
-  def addResponseForCertificateRequest(responseBuilder: BasicOCSPRespBuilder,
-    certificateID: CertificateID, status: OCSPCertificateStatusWrapper, extensions: Extensions) {
-    responseBuilder.addResponse(certificateID,
-      status.certificateStatus,
-      status.thisUpdate.toDate,
-      status.nextUpdate.toDate,
-      extensions)
-  }
-
-  def buildAndSignResponse(responseBuilder: BasicOCSPRespBuilder): OCSPResp = {
-    val basicResponse = responseBuilder.build(contentSigner, signingCertificateChain, new Date())
-    new OCSPRespBuilder().build(OCSPRespBuilder.SUCCESSFUL, basicResponse)
+  def getCRLReason(revocationReason: String): Int = {
+    revocationReason match {
+      case "UNSPECIFIED" => CRLReason.unspecified
+      case "KEY_COMPROMISE" => CRLReason.keyCompromise
+      case "CA_COMPROMISE" => CRLReason.cACompromise
+      case "AFFILIATION_CHANGED" => CRLReason.affiliationChanged
+      case "SUPERSEDED" => CRLReason.superseded
+      case "CESSATION_OF_OPERATION" => CRLReason.cessationOfOperation
+      case "CERTIFICATE_HOLD" => CRLReason.certificateHold
+      case "REMOVE_FROM_CRL" => CRLReason.removeFromCRL
+      case "PRIVILEGE_WITH_DRAWN" =>CRLReason.privilegeWithdrawn
+      case "AA_COMPROMISE" =>  CRLReason.aACompromise
+      case _ => CRLReason.unspecified
+    }
   }
 
   def isSignatureValid(ocspReq: OCSPReq): Boolean =
