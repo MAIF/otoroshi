@@ -28,8 +28,8 @@ export class GlobalStatusPage extends Component {
   update = () => {
     this.setState({ loading: true });
     BackOfficeServices.fetchGlobalStatus(this.state.page, this.state.pageSize).then(
-      ({ status, count }) => {
-        this.setState({ status, count, loading: false });
+      ({ status, count, error }) => {
+        this.setState({ status, count, error, loading: false });
       }
     );
   };
@@ -38,7 +38,14 @@ export class GlobalStatusPage extends Component {
     if (!window.__user.superAdmin) {
       return null;
     }
-
+    if (this.state.error || (this.state.status && this.state.status.length === 0)) {
+      return (
+        <>
+          <p>Your don't have any service health data available. Maybe you don't have an ElasticSearch instance connected to your Otoroshi</p>
+          <p>To do that, add a <a href="/bo/dashboard/exporters">data exporter</a> sending events to an ElasticSearch and settings to read events from your ElasticSeach in the <a href="/bo/dashboard/dangerzone">Danger Zone</a></p>
+        </>
+      );
+    }
     return (
       <div className="global-status">
         {this.state.loading && (

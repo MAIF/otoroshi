@@ -288,15 +288,18 @@ export function fetchGlobalStatus(page, limit) {
   }).then(
     (r) => {
       if (r.status === 200) {
-        const count = r.headers.get('X-Count');
+        const count = r.headers.get('X-Count') || 0;
         return r.json().then((status) => ({ status, count }));
+      } else {
+        return r.text().then(e => {
+          console.log('bad status while fetching global stats', e);
+          return { status: [], count: 0, error: 'bad status while fetching global stats' };
+        })
       }
-      console.log('error while fetching global stats');
-      return {};
     },
     (e) => {
-      console.log('error while fetching global stats');
-      return {};
+      console.log('error while fetching global stats', e);
+      return { status: [], count: 0, error: 'error while fetching global stats' };
     }
   );
 }
