@@ -30,30 +30,53 @@ import scala.concurrent.{ExecutionContext, Future}
 
 object CertParentHelper {
 
+  private val logger = Logger("otoroshi-cert-helper")
+
   private val cache: Cache[BigInt, Boolean] = Scaffeine()
     .recordStats()
-    .expireAfterWrite(10.minutes)
+    .expireAfterWrite(2.minutes)
     .maximumSize(1000)
     .build()
 
-  def fromOtoroshiRootCa(cert: X509Certificate): Boolean = {
-    cache.getIfPresent(cert.getSerialNumber) match {
-      case Some(res) => res
-      case None => {
-        DynamicSSLEngineProvider.certificates.values.find(_.id == Cert.OtoroshiCA) match {
-          case None => false
-          case Some(caCert) => {
-            val ca = caCert.certificate.get
-            if (ca.getSerialNumber == cert.getSerialNumber) {
-              cache.put(cert.getSerialNumber, true)
-              true
-            } else {
-              val issuerDn = DN(cert.getIssuerDN.getName)
-              DynamicSSLEngineProvider.certificates.values.find(_.certificate.exists(c => DN(c.getSubjectDN.getName).isEqualsTo(issuerDn))) match {
-                case None =>
-                  cache.put(cert.getSerialNumber, false)
-                  false
-                case Some(issuer) => fromOtoroshiRootCa(issuer.certificate.get)
+  def fromOtoroshiRootCa(cert: X509Certificate, level: Int = 0): Boolean = {
+    logger.debug(s"fromOtoroshiRootCa: ${cert.getSerialNumber} - ${DN(cert.getSubjectDN.getName)}")
+    if (level > 100) {
+      logger.error(s"failed to find origin for cert ${cert.getSerialNumber} - ${DN(cert.getSubjectDN.getName)}")
+      cache.put(cert.getSerialNumber, false)
+      false
+    } else {
+      cache.getIfPresent(cert.getSerialNumber) match {
+        case Some(res) =>
+          logger.debug("success from cache")
+          res
+        case None => {
+          logger.debug("cache miss")
+          DynamicSSLEngineProvider.certificates.values.find(_.id == Cert.OtoroshiCA) match {
+            case None =>
+              logger.debug("ca not found")
+              false
+            case Some(caCert) => {
+              logger.debug("ca found")
+              val ca = caCert.certificate.get
+              if (ca.getSerialNumber == cert.getSerialNumber) {
+                cache.put(cert.getSerialNumber, true)
+                true
+              } else {
+                val issuerDn = DN(cert.getIssuerDN.getName)
+                logger.debug(s"searching for $issuerDn")
+                DynamicSSLEngineProvider.certificates.values.find(_.certificate.exists(c => DN(c.getSubjectDN.getName).isEqualsTo(issuerDn))) match {
+                  case None =>
+                    logger.debug("issuer not found")
+                    cache.put(cert.getSerialNumber, false)
+                    false
+                  case Some(issuer) if cert.getSerialNumber == issuer.certificate.get.getSerialNumber =>
+                    logger.debug("not from otoroshi")
+                    cache.put(cert.getSerialNumber, false)
+                    false
+                  case Some(issuer) if cert.getSerialNumber != issuer.certificate.get.getSerialNumber =>
+                    logger.debug("found issuer")
+                    fromOtoroshiRootCa(issuer.certificate.get, level + 1)
+                }
               }
             }
           }
@@ -81,7 +104,18 @@ class OcspResponder(env: Env, implicit val ec: ExecutionContext) {
   val nextUpdateOffset: Int = env.configuration.getOptional[Int]("app.ocsp.caching.seconds").getOrElse(3600)
 
   def aia(id: String, req: RequestHeader)(implicit ec: ExecutionContext): Future[Result] = {
-    DynamicSSLEngineProvider.certificates.values.find(c => c.certificate.get.getSerialNumber.toString == id && c.exposed && CertParentHelper.fromOtoroshiRootCa(c.certificate.get)) match {
+    import scala.util._
+    // DynamicSSLEngineProvider.certificates.values.find(c => c.certificate.get.getSerialNumber.toString == id && c.exposed && CertParentHelper.fromOtoroshiRootCa(c.certificate.get)) match {
+    DynamicSSLEngineProvider.certificates.values.find { c =>
+      Try {
+        c.certificate.get.getSerialNumber.toString == id && c.exposed && CertParentHelper.fromOtoroshiRootCa(c.certificate.get)
+      } match {
+        case Failure(e) =>
+          e.printStackTrace()
+          false
+        case Success(v) => v
+      }
+    } match {
       case None => Results.NotFound("").as("application/pkix-cert").future
       case Some(cert) => Results.Ok(cert.certificate.get.asPem).as("application/pkix-cert").future
     }
