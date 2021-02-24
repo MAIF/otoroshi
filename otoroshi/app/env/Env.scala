@@ -398,6 +398,16 @@ class Env(val configuration: Configuration,
   lazy val backOfficeHost      = composeMainUrl(backOfficeSubDomain)
   lazy val privateAppsHost     = composeMainUrl(privateAppsSubDomain)
 
+  lazy val exposedHttpPort: String = configuration.getOptionalWithFileSupport[Int]("app.exposed-ports.http").orElse(port.some).map {
+    case 80 => ""
+    case v => s":$v"
+  }.getOrElse("")
+
+  lazy val exposedHttpsPort: String = configuration.getOptionalWithFileSupport[Int]("app.exposed-ports.https").orElse(httpsPort.some).map {
+    case 443 => ""
+    case v => s":$v"
+  }.getOrElse("")
+
   lazy val procNbr = Runtime.getRuntime.availableProcessors()
 
   lazy val ahcStats = new AtomicReference[Cancellable]()

@@ -14,6 +14,7 @@ import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong, AtomicReference}
 import java.util.regex.Pattern.CASE_INSENSITIVE
 import java.util.regex.{Matcher, Pattern}
 import java.util.{Base64, Date}
+
 import actions.ApiAction
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.{Materializer, TLSClientAuth}
@@ -24,7 +25,6 @@ import com.typesafe.sslconfig.ssl.SSLConfigSettings
 import env.Env
 import events.{Alerts, CertExpiredAlert, CertRenewalAlert}
 import gateway.Errors
-
 import javax.crypto.Cipher.DECRYPT_MODE
 import javax.crypto.spec.PBEKeySpec
 import javax.crypto.{Cipher, EncryptedPrivateKeyInfo, SecretKey, SecretKeyFactory}
@@ -38,6 +38,7 @@ import org.bouncycastle.openssl.{PEMEncryptedKeyPair, PEMKeyPair, PEMParser}
 import org.bouncycastle.pkcs.PKCS10CertificationRequest
 import org.bouncycastle.util.io.pem.PemReader
 import org.joda.time.{DateTime, Interval}
+import otoroshi.ssl.CertParentHelper
 import otoroshi.ssl.pki.models.{GenCertResponse, GenCsrQuery, GenKeyPairQuery}
 import otoroshi.utils.LetsEncryptHelper
 import play.api.libs.json._
@@ -380,11 +381,15 @@ object Cert {
 
   import SSLImplicits._
 
-  val OtoroshiCA             = "otoroshi-root-ca"
-  val OtoroshiIntermediateCA = "otoroshi-intermediate-ca"
-  val OtoroshiJwtSigning     = "otoroshi-jwt-signing"
-  val OtoroshiWildcard       = "otoroshi-wildcard"
-  val OtoroshiClient         = "otoroshi-client"
+  val OtoroshiCaDN             = s"CN=Otoroshi Default Root CA Certificate, OU=Otoroshi Certificates, O=Otoroshi"
+  val OtoroshiCA               = "otoroshi-root-ca"
+  val OtoroshiIntermediateCaDN = s"CN=Otoroshi Default Intermediate CA Certificate, OU=Otoroshi Certificates, O=Otoroshi"
+  val OtoroshiIntermediateCA   = "otoroshi-intermediate-ca"
+  val OtoroshiJwtSigningDn     = s"CN=Otoroshi Default Jwt Signing Keypair, OU=Otoroshi Certificates, O=Otoroshi"
+  val OtoroshiJwtSigning       = "otoroshi-jwt-signing"
+  val OtoroshiWildcard         = "otoroshi-wildcard"
+  val OtoroshiClientDn         = s"CN=Otoroshi Default Client Certificate, OU=Otoroshi Certificates, O=Otoroshi"
+  val OtoroshiClient           = "otoroshi-client"
 
   lazy val logger = Logger("otoroshi-cert")
 
@@ -1205,7 +1210,7 @@ object DynamicSSLEngineProvider {
     _certificates.clear()
     certs.filter(_.notRevoked).foreach(crt => _certificates.put(crt.id, crt))
     certs
-      .filter(r => r.serialNumberLng.isDefined)
+      .filter(r => r.serialNumberLng.isDefined && CertParentHelper.fromOtoroshiRootCa(r.certificate.get))
       .foreach(crt => _ocspProjectionCertificates.put(
           crt.serialNumberLng.get,
           OCSPCertProjection(crt.revoked, crt.isValid, crt.expired,

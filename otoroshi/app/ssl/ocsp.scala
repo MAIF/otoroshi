@@ -1,5 +1,7 @@
 package otoroshi.ssl
 
+import java.security.cert.X509Certificate
+
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
@@ -16,9 +18,50 @@ import ssl.{Cert, DynamicSSLEngineProvider, OCSPCertProjection}
 import org.joda.time.DateTime
 import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder
 import play.api.Logger
-
 import java.util.Date
+
+import com.github.blemale.scaffeine.{Cache, Scaffeine}
+import otoroshi.utils.syntax.implicits._
+import ssl.SSLImplicits.EnhancedX509Certificate
+import utils.http.DN
+
+import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
+
+object CertParentHelper {
+
+  private val cache: Cache[BigInt, Boolean] = Scaffeine()
+    .recordStats()
+    .expireAfterWrite(10.minutes)
+    .maximumSize(1000)
+    .build()
+
+  def fromOtoroshiRootCa(cert: X509Certificate): Boolean = {
+    cache.getIfPresent(cert.getSerialNumber) match {
+      case Some(res) => res
+      case None => {
+        DynamicSSLEngineProvider.certificates.values.find(_.id == Cert.OtoroshiCA) match {
+          case None => false
+          case Some(caCert) => {
+            val ca = caCert.certificate.get
+            if (ca.getSerialNumber == cert.getSerialNumber) {
+              cache.put(cert.getSerialNumber, true)
+              true
+            } else {
+              val issuerDn = DN(cert.getIssuerDN.getName)
+              DynamicSSLEngineProvider.certificates.values.find(_.certificate.exists(c => DN(c.getSubjectDN.getName).isEqualsTo(issuerDn))) match {
+                case None =>
+                  cache.put(cert.getSerialNumber, false)
+                  false
+                case Some(issuer) => fromOtoroshiRootCa(issuer.certificate.get)
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
 
 object OcspResponder {
   def apply(env: Env, ec: ExecutionContext): OcspResponder = new OcspResponder(env, ec)
@@ -37,6 +80,13 @@ class OcspResponder(env: Env, implicit val ec: ExecutionContext) {
   val rejectUnknown = true
   val nextUpdateOffset: Int = env.configuration.getOptional[Int]("app.ocsp.caching.seconds").getOrElse(3600)
 
+  def aia(id: String, req: RequestHeader)(implicit ec: ExecutionContext): Future[Result] = {
+    DynamicSSLEngineProvider.certificates.values.find(c => c.certificate.get.getSerialNumber.toString == id && c.exposed && CertParentHelper.fromOtoroshiRootCa(c.certificate.get)) match {
+      case None => Results.NotFound("").as("application/pkix-cert").future
+      case Some(cert) => Results.Ok(cert.certificate.get.asPem).as("application/pkix-cert").future
+    }
+  }
+
   def respond(req: RequestHeader, body: Source[ByteString, _])(implicit ec: ExecutionContext): Future[Result] = {
     body.runFold(ByteString.empty)(_ ++ _).flatMap { bs =>
       if (bs.isEmpty) {
@@ -46,23 +96,25 @@ class OcspResponder(env: Env, implicit val ec: ExecutionContext) {
       } else {
         val ocspReq = new OCSPReq(bs.toArray)
 
-        if (ocspReq.isSigned && !isSignatureValid(ocspReq))
-          FastFuture.successful(
-            Results.BadRequest(new OCSPRespBuilder().build(OCSPRespBuilder.MALFORMED_REQUEST, null).getEncoded)
-          )
-        else
-          manageRequest(ocspReq).map(response => {
+        if (ocspReq.isSigned && !isSignatureValid(ocspReq)) {
+          Results.BadRequest(new OCSPRespBuilder().build(OCSPRespBuilder.MALFORMED_REQUEST, null).getEncoded).future
+        } else {
+          manageRequest(ocspReq).map { response =>
             Results.Ok(response.getEncoded)
-          })
+          } recover {
+            case e: Throwable =>
+              logger.error("error while checking certificate", e)
+              Results.BadRequest(new OCSPRespBuilder().build(OCSPRespBuilder.INTERNAL_ERROR, null).getEncoded)
+          }
+        }
       }
     }
   }
 
   def manageRequest(ocspReq: OCSPReq): Future[OCSPResp] = {
     for {
-      // certificates <- FastFuture.successful(DynamicSSLEngineProvider._allCertificates) //*env.datastores.certificatesDataStore.findAll()(ec, env)*/
-      optRootCA <- env.datastores.certificatesDataStore.findById("otoroshi-root-ca")(ec, env)
-      optIntermediateCA <- env.datastores.certificatesDataStore.findById("otoroshi-intermediate-ca")(ec, env)
+      optRootCA <- env.datastores.certificatesDataStore.findById(Cert.OtoroshiCA)(ec, env)
+      optIntermediateCA <- env.datastores.certificatesDataStore.findById(Cert.OtoroshiIntermediateCA)(ec, env)
     } yield {
       (optRootCA, optIntermediateCA) match {
         case (Some(rootCA), Some(intermediateCA)) if intermediateCA.caFromChain.isDefined =>

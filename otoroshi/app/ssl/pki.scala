@@ -1,8 +1,10 @@
 package otoroshi.ssl.pki
 
 import java.io.{ByteArrayInputStream, StringReader}
+import java.math.BigInteger
 import java.security._
 import java.security.cert.{CertificateFactory, X509Certificate}
+
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
 import akka.util.ByteString
@@ -32,6 +34,8 @@ import scala.util.{Failure, Success, Try}
 import org.bouncycastle.jce.ECNamedCurveTable
 import org.jose4j.keys.X509Util
 import org.bouncycastle.operator
+import otoroshi.ssl.CertParentHelper
+import utils.http.DN
 
 object models {
 
@@ -54,6 +58,7 @@ object models {
       subject: Option[String] = None,
       client: Boolean = false,
       ca: Boolean = false,
+      includeAIA: Boolean = false,
       duration: FiniteDuration = 365.days,
       signatureAlg: String = "SHA256WithRSAEncryption",
       digestAlg: String = "SHA-256",
@@ -84,6 +89,7 @@ object models {
             subject = (json \ "subject").asOpt[String],
             client = (json \ "client").asOpt[Boolean].getOrElse(false),
             ca = (json \ "ca").asOpt[Boolean].getOrElse(false),
+            includeAIA = (json \ "includeAIA").asOpt[Boolean].getOrElse(false),
             duration = (json \ "duration").asOpt[Long].map(_.millis).getOrElse(365.days),
             signatureAlg = (json \ "signatureAlg").asOpt[String].getOrElse("SHA256WithRSAEncryption"),
             digestAlg = (json \ "digestAlg").asOpt[String].getOrElse("SHA-256"),
@@ -415,8 +421,10 @@ class BouncyCastlePki(generator: IdGenerator, env: Env) extends Pki {
         }
       })
 
-      val access = buildAuthorityInfoAccess()
-      certgen.addExtension(access._1, access._2, access._3)
+      if (originalQuery.exists(_.includeAIA) && CertParentHelper.fromOtoroshiRootCa(caCert)) {
+        val access = buildAuthorityInfoAccess(serial)
+        certgen.addExtension(access._1, access._2, access._3)
+      }
 
       val digestAlgorithm = originalQuery.map(c => new DefaultDigestAlgorithmIdentifierFinder().find(c.digestAlg)).getOrElse(new DefaultDigestAlgorithmIdentifierFinder().find("SHA-256"))
       val parentSignatureAlg = new DefaultSignatureAlgorithmIdentifierFinder().find(caCert.getSigAlgName)
@@ -434,16 +442,25 @@ class BouncyCastlePki(generator: IdGenerator, env: Env) extends Pki {
     }
   }
 
-  private def buildAuthorityInfoAccess(): (ASN1ObjectIdentifier, Boolean, DERSequence) = {
-    val caIssuers = new AccessDescription(AccessDescription.id_ad_caIssuers,
-      new GeneralName(GeneralName.uniformResourceIdentifier, new DERIA5String(s"${env.backOfficeSubDomain}.${env.domain}")))
+  private def buildAuthorityInfoAccess(certId: BigInteger): (ASN1ObjectIdentifier, Boolean, DERSequence) = {
 
-    val ocsp = new AccessDescription(AccessDescription.id_ad_ocsp,
-      new GeneralName(GeneralName.uniformResourceIdentifier, new DERIA5String(s"${env.backOfficeSubDomain}.${env.domain}/.well-known/otoroshi/ocsp")))
+    val caIssuers1 = new AccessDescription(AccessDescription.id_ad_caIssuers,
+      new GeneralName(GeneralName.uniformResourceIdentifier, new DERIA5String(s"http://${env.backOfficeHost}${env.exposedHttpPort}/.well-known/otoroshi/certificates/$certId")))
+
+    val caIssuers2 = new AccessDescription(AccessDescription.id_ad_caIssuers,
+      new GeneralName(GeneralName.uniformResourceIdentifier, new DERIA5String(s"http://${env.adminApiExposedHost}${env.exposedHttpPort}/.well-known/otoroshi/certificates/$certId")))
+
+    val ocsp1 = new AccessDescription(AccessDescription.id_ad_ocsp,
+      new GeneralName(GeneralName.uniformResourceIdentifier, new DERIA5String(s"http://${env.backOfficeHost}${env.exposedHttpPort}/.well-known/otoroshi/ocsp")))
+
+    val ocsp2 = new AccessDescription(AccessDescription.id_ad_ocsp,
+      new GeneralName(GeneralName.uniformResourceIdentifier, new DERIA5String(s"http://${env.adminApiExposedHost}${env.exposedHttpPort}/.well-known/otoroshi/ocsp")))
 
     val aia_ASN = new ASN1EncodableVector()
-    aia_ASN.add(caIssuers)
-    aia_ASN.add(ocsp)
+    //aia_ASN.add(caIssuers1)
+    aia_ASN.add(caIssuers2)
+    //aia_ASN.add(ocsp1)
+    aia_ASN.add(ocsp2)
 
    (Extension.authorityInfoAccess, false, new DERSequence(aia_ASN))
   }
@@ -551,8 +568,8 @@ class BouncyCastlePki(generator: IdGenerator, env: Env) extends Pki {
               }
             })
 
-            val access = buildAuthorityInfoAccess()
-            certgen.addExtension(access._1, access._2, access._3)
+            //val access = buildAuthorityInfoAccess()
+            //certgen.addExtension(access._1, access._2, access._3)
 
             // val signatureAlgorithm = new DefaultSignatureAlgorithmIdentifierFinder().find("SHA256WithRSAEncryption")
             val holder                                 = certgen.build(signer)
@@ -623,8 +640,10 @@ class BouncyCastlePki(generator: IdGenerator, env: Env) extends Pki {
             }
           })
 
-          val access = buildAuthorityInfoAccess()
-          certgen.addExtension(access._1, access._2, access._3)
+          if (query.includeAIA && DN(Cert.OtoroshiCaDN).isEqualsTo(DN(csr.getSubject.toString))) {
+            val access = buildAuthorityInfoAccess(serial)
+            certgen.addExtension(access._1, access._2, access._3)
+          }
 
           val holder                                 = certgen.build(signer)
           val certencoded                            = holder.toASN1Structure.getEncoded
@@ -694,9 +713,11 @@ class BouncyCastlePki(generator: IdGenerator, env: Env) extends Pki {
               }
             }
           })
-          
-          val access = buildAuthorityInfoAccess()
-          certgen.addExtension(access._1, access._2, access._3)
+
+          if (query.includeAIA && CertParentHelper.fromOtoroshiRootCa(caCert)) {
+            val access = buildAuthorityInfoAccess(serial)
+            certgen.addExtension(access._1, access._2, access._3)
+          }
 
           val parentSignatureAlg = new DefaultSignatureAlgorithmIdentifierFinder().find(caCert.getSigAlgName)
           val certsigner = contentSigner(parentSignatureAlg /*csr.getSignatureAlg*/, digestAlgorithm, PrivateKeyFactory.createKey(caKey.getEncoded))

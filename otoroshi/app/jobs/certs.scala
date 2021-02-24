@@ -71,6 +71,7 @@ class InitialCertsJob extends Job {
           ca = ca,
           client = client,
           duration = duration,
+          includeAIA = true,
         )
         (from match {
           case None if ca => env.pki.genSelfSignedCA(query)
@@ -89,7 +90,8 @@ class InitialCertsJob extends Job {
               client = client,
               keypair = keypair,
               name = name,
-              description = description
+              description = description,
+              exposed = true
             )
             cert.save().map(_ => cert.some)
           }
@@ -107,10 +109,10 @@ class InitialCertsJob extends Job {
       cWildcard     <- env.datastores.certificatesDataStore.findById(Cert.OtoroshiWildcard)
       cClient       <- env.datastores.certificatesDataStore.findById(Cert.OtoroshiClient)
       cJwt          <- env.datastores.certificatesDataStore.findById(Cert.OtoroshiJwtSigning)
-      root          <- createOrFind("Otoroshi Default Root CA Certificate",         "Otoroshi root CA (auto-generated)",              s"CN=Otoroshi Default Root CA Certificate, OU=Otoroshi Certificates, O=Otoroshi",                      Seq.empty,               (10 * 365).days, true,  false, false, Cert.OtoroshiCA,             cRoot,         None)
-      intermediate  <- createOrFind("Otoroshi Default Intermediate CA Certificate", "Otoroshi intermediate CA (auto-generated)",      s"CN=Otoroshi Default Intermediate CA Certificate, OU=Otoroshi Certificates, O=Otoroshi",              Seq.empty,               (10 * 365).days, true,  false, false, Cert.OtoroshiIntermediateCA, cIntermediate, root)
-      _             <- createOrFind("Otoroshi Default Client Certificate",          "Otoroshi client certificate (auto-generated)",   s"CN=Otoroshi Default Client Certificate, OU=Otoroshi Certificates, O=Otoroshi",                       Seq.empty,               (1 * 365).days,  false, true,  false, Cert.OtoroshiClient,         cClient,       intermediate)
-      _             <- createOrFind("Otoroshi Default Jwt Signing Keypair",         "Otoroshi jwt signing keypair (auto-generated)",  s"CN=Otoroshi Default Jwt Signing Keypair, OU=Otoroshi Certificates, O=Otoroshi",                      Seq.empty,               (1 * 365).days,  false, false, true, Cert.OtoroshiJwtSigning,      cJwt,          intermediate)
+      root          <- createOrFind("Otoroshi Default Root CA Certificate",         "Otoroshi root CA (auto-generated)",              Cert.OtoroshiCaDN,                                                                                             Seq.empty,               (10 * 365).days, true,  false, false, Cert.OtoroshiCA,             cRoot,         None)
+      intermediate  <- createOrFind("Otoroshi Default Intermediate CA Certificate", "Otoroshi intermediate CA (auto-generated)",      Cert.OtoroshiIntermediateCaDN,              Seq.empty,               (10 * 365).days, true,  false, false, Cert.OtoroshiIntermediateCA, cIntermediate, root)
+      _             <- createOrFind("Otoroshi Default Client Certificate",          "Otoroshi client certificate (auto-generated)",   Cert.OtoroshiClientDn,                      Seq.empty,               (1 * 365).days,  false, true,  false, Cert.OtoroshiClient,         cClient,       intermediate)
+      _             <- createOrFind("Otoroshi Default Jwt Signing Keypair",         "Otoroshi jwt signing keypair (auto-generated)",  Cert.OtoroshiJwtSigningDn,                  Seq.empty,               (1 * 365).days,  false, false, true, Cert.OtoroshiJwtSigning,      cJwt,          intermediate)
       alreadyDone   <- env.datastores.rawDataStore.get(s"${env.storageRoot}:jobs:initials-certs-job:wildcard-gen").map(_.exists(_.utf8String == "done"))
       alreadyExists <- env.datastores.certificatesDataStore.findAll().map(_.exists(_.allDomains.contains(s"*.${env.domain}")))
       _             <- if (alreadyDone || alreadyExists || disableWildcardGen) ().future else {

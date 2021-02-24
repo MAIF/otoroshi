@@ -244,11 +244,6 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
     }
   }
 
-  def fu(str: String): Boolean = {
-    println(s"fu def $str")
-    true
-  }
-
   def internalRouteRequest(request: RequestHeader): Option[Handler] = {
     if (env.globalMaintenanceMode) {
       if (request.relativeUri.contains("__otoroshi_assets")) {
@@ -303,6 +298,8 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
           case env.adminApiExposedHost if relativeUri.startsWith("/.well-known/jwks.json") => Some(jwks())
           case env.backOfficeHost if relativeUri.startsWith("/.well-known/jwks.json") => Some(jwks())
           case env.adminApiExposedHost if relativeUri.startsWith("/.well-known/otoroshi/ocsp") => Some(ocsp())
+          case env.backOfficeHost if relativeUri.startsWith("/.well-known/otoroshi/certificates/") => Some(aia(relativeUri.replace("/.well-known/otoroshi/certificates/", "")))
+          case env.adminApiExposedHost if relativeUri.startsWith("/.well-known/otoroshi/certificates/") => Some(aia(relativeUri.replace("/.well-known/otoroshi/certificates/", "")))
           case env.backOfficeHost if relativeUri.startsWith("/.well-known/otoroshi/ocsp") => Some(ocsp())
           case env.adminApiExposedHost if monitoring                               => super.routeRequest(request)
           case env.backOfficeHost if monitoring                                    => super.routeRequest(request)
@@ -339,6 +336,10 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
 
   def ocsp() = actionBuilder.async(sourceBodyParser) { req =>
     ocspResponder.respond(req, req.body)
+  }
+
+  def aia(id: String) = actionBuilder.async { req =>
+    ocspResponder.aia(id, req)
   }
 
   def letsEncrypt() = actionBuilder.async { req =>
