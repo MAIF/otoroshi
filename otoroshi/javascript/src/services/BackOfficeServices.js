@@ -291,10 +291,10 @@ export function fetchGlobalStatus(page, limit) {
         const count = r.headers.get('X-Count') || 0;
         return r.json().then((status) => ({ status, count }));
       } else {
-        return r.text().then(e => {
+        return r.text().then((e) => {
           console.log('bad status while fetching global stats', e);
           return { status: [], count: 0, error: 'bad status while fetching global stats' };
-        })
+        });
       }
     },
     (e) => {
@@ -311,16 +311,18 @@ export function fetchHealthCheckEvents(serviceId) {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => {
-    if (r.status !== 200) {
+  })
+    .then((r) => {
+      if (r.status !== 200) {
+        return [];
+      } else {
+        return r.json();
+      }
+    })
+    .catch((e) => {
+      console.log('error while fetching service status');
       return [];
-    } else {
-      return r.json();
-    }
-  }).catch(e => {
-    console.log('error while fetching service status')
-    return [];
-  });
+    });
 }
 
 export function fetchServiceStatus(serviceId) {
@@ -331,16 +333,18 @@ export function fetchServiceStatus(serviceId) {
       Accept: 'application/json',
       'Content-Type': 'application/json',
     },
-  }).then(r => {
-    if (r.status !== 200) {
+  })
+    .then((r) => {
+      if (r.status !== 200) {
+        return [];
+      } else {
+        return r.json();
+      }
+    })
+    .catch((e) => {
+      console.log('error while fetching service status');
       return [];
-    } else {
-      return r.json();
-    }
-  }).catch(e => {
-    console.log('error while fetching service status')
-    return [];
-  });
+    });
 }
 
 export function fetchServicesStatus(servicesIds = []) {
@@ -362,16 +366,18 @@ export function fetchServiceResponseTime(serviceId) {
     headers: {
       Accept: 'application/json',
     },
-  }).then(r => {
-    if (r.status !== 200) {
+  })
+    .then((r) => {
+      if (r.status !== 200) {
+        return [];
+      } else {
+        return r.json();
+      }
+    })
+    .catch((e) => {
+      console.log('error while fetching service response time');
       return [];
-    } else {
-      return r.json();
-    }
-  }).catch(e => {
-    console.log('error while fetching service response time')
-    return [];
-  });
+    });
 }
 
 export function fetchLines() {

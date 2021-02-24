@@ -116,7 +116,7 @@ class Target extends Component {
             .replace('http://', '')
             .replace('https://', '')
             .replace('tcp://', '')
-            .replace('udp://', '')
+            .replace('udp://', '');
           if (this.containsOneValueOf(domain, ['http:', 'https:', 'tcp:', 'udp:', '/'])) {
             window.newAlert('You cannot put the path here, use target root');
             return;
@@ -143,8 +143,8 @@ class Target extends Component {
   };
 
   containsOneValueOf = (value, values) => {
-    return values.filter(v => value.indexOf(v) > -1).length > 0;
-  }
+    return values.filter((v) => value.indexOf(v) > -1).length > 0;
+  };
 
   render() {
     const value = this.props.itemValue;
