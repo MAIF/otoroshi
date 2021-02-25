@@ -470,7 +470,7 @@ export class TopBar extends Component {
                 <span>Menu</span>
               </button>
             
-            <form id="navbar" className="grow--1">
+            <form id="navbar" className="display--flex grow--1">
               {selected && (
                 <div className="mr-10">
                   <span
