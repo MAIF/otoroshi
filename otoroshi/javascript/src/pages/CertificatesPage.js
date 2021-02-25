@@ -809,7 +809,7 @@ export class CertificatesPage extends Component {
               <i className="fas fa-plus-circle" /> Let's Encrypt cert.
             </button>
           </div>*/}
-              <div className="mt-5 mb-5 btn__group">
+              <div className="mt-10 mb-5 btn__group">
               {/*<button
               type="button"
               onClick={this.createSelfSigned}
