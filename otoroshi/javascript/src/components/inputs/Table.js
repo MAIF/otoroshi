@@ -425,8 +425,7 @@ export class Table extends Component {
                 {this.props.showActions && (
                   <button
                     type="button"
-                    className="btn-info"
-                    style={{ marginLeft: 10 }}
+                    className="btn-info ml-5"
                     onClick={this.showAddForm}
                     {...createTooltip(`Create a new ${this.props.itemName}`)}>
                     <span className="fas fa-plus-circle" /> Add item
