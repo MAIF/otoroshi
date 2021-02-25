@@ -1162,7 +1162,7 @@ export class ServicePage extends Component {
             onChange={(e) => this.changeTheValue('name', e)}
           />
           <Collapse collapsed={this.state.allCollapsed} initCollapsed={false} label="Flags">
-            <div className="flex f-justify_between">
+            <div className="display--flex f-justify_between">
               <div className="w-100">
                 <BiColumnBooleanInput
                   label="Service enabled"
