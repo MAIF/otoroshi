@@ -83,6 +83,7 @@ input.button[type="file"]{
   color:#fff;
   border-color:  $infoColor;
   &:hover{
+    color:#fff;
     border-color: darken($infoColor,10%);
     background-color: darken($secondaryBgColor,5%);
   }
@@ -92,6 +93,7 @@ input.button[type="file"]{
   color:#fff;
   border-color:  $alertColor;
   &:hover{
+    color:#fff;
     border-color: darken($alertColor,10%);
     background-color: darken($secondaryBgColor,5%);
   }
@@ -101,6 +103,7 @@ input.button[type="file"]{
   color:#fff;
   border-color: $successColor;
   &:hover{
+    color:#fff;
     border-color: darken($successColor,10%);
     background-color: darken($secondaryBgColor,5%);
   }
@@ -110,6 +113,7 @@ input.button[type="file"]{
   color: #fff;
   border-color: #111;
   &:hover{
+    color:#fff;
     border-color: #000;
     background-color: #000;
   }
