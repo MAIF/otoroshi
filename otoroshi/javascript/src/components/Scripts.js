@@ -115,7 +115,7 @@ class PluginsDescription extends Component {
                       backgroundColor: '#494948',
                       width: '100%',
                     }}>
-                  <div className="flex justify-content--between">
+                  <div className="display--flex justify-content--between">
                       <h3 className="display--inline-block">{script.name}</h3>
                       {!!script.defaultConfig && (
                         <button
