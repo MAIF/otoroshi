@@ -6,15 +6,17 @@ import java.security.SecureRandom
 import akka.http.scaladsl.util.FastFuture
 import com.auth0.jwt.algorithms.Algorithm
 import com.clevercloud.biscuit.crypto._
-import com.clevercloud.biscuit.token.Biscuit
 import com.clevercloud.biscuit.token.builder.Caveat
 import com.clevercloud.biscuit.token.builder.Term.Str
+import com.clevercloud.biscuit.token.builder.Utils.{fact, s, string}
 import com.clevercloud.biscuit.token.builder.parser.Parser
+import com.clevercloud.biscuit.token.{Biscuit, Verifier}
 import env.Env
-import otoroshi.script.{PreRouting, PreRoutingContext, PreRoutingErrorWithResult}
+import models.{ApiKey, PrivateAppsUser, ServiceDescriptor}
+import otoroshi.script._
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json.{JsObject, Json}
-import play.api.mvc.Results
+import play.api.mvc.{RequestHeader, Results}
 import utils.RequestImplicits._
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -31,20 +33,146 @@ object vavr_implicits {
   }
 }
 
-case class BiscuitExtractorConfig(
+case class BiscuitConfig(
   publicKey: String,
   caveats: Seq[String],
   facts: Seq[String],
   resources: Seq[String],
   rules: Seq[String],
-  revocation_ids: Seq[Long]
+  revocation_ids: Seq[Long],
+  extractor: String,
+  extractorName: String
 )
+
+object BiscuitConfig {
+  val example: JsObject = Json.obj(
+    "publicKey" -> "",
+    "caveats" -> Json.arr(),
+    "facts" -> Json.arr(),
+    "resources" -> Json.arr(),
+    "rules" -> Json.arr(),
+    "revocation_ids" -> Json.arr(),
+    "extractor" -> Json.obj(
+      "type" -> "header",
+      "name" -> "Authorization"
+    )
+  )
+}
+
+trait VerificationContext {
+  def request: RequestHeader
+  def descriptor: ServiceDescriptor
+  def apikey: Option[ApiKey]
+  def user: Option[PrivateAppsUser]
+}
+
+case class PreRoutingVerifierContext(ctx: PreRoutingContext, apk: ApiKey) extends VerificationContext {
+  override def request: RequestHeader = ctx.request
+  override def descriptor: ServiceDescriptor = ctx.descriptor
+  override def apikey: Option[ApiKey] = apk.some
+  override def user: Option[PrivateAppsUser] = None
+}
+
+case class AccessValidatorContext(ctx: AccessContext) extends VerificationContext {
+  override def request: RequestHeader = ctx.request
+  override def descriptor: ServiceDescriptor = ctx.descriptor
+  override def apikey: Option[ApiKey] = ctx.apikey
+  override def user: Option[PrivateAppsUser] = ctx.user
+}
+
+object BiscuitHelper {
+
+  import vavr_implicits._
+
+  import collection.JavaConverters._
+
+  def readConfig(name: String, ctx: ContextWithConfig): BiscuitConfig = {
+    val rawConfig = ctx.configFor(name)
+    BiscuitConfig(
+      publicKey = (rawConfig \ "publicKey").as[String],
+      caveats = (rawConfig \ "caveats").asOpt[Seq[String]].getOrElse(Seq.empty),
+      facts = (rawConfig \ "facts").asOpt[Seq[String]].getOrElse(Seq.empty),
+      resources = (rawConfig \ "resources").asOpt[Seq[String]].getOrElse(Seq.empty),
+      rules = (rawConfig \ "rules").asOpt[Seq[String]].getOrElse(Seq.empty),
+      revocation_ids = (rawConfig \ "revocation_ids").asOpt[Seq[Long]].getOrElse(Seq.empty),
+      extractor = (rawConfig \ "extractor" \ "type").asOpt[String].getOrElse("header"),
+      extractorName = (rawConfig \ "extractor" \ "name").asOpt[String].getOrElse("Authorization"),
+    )
+  }
+
+  def readOrWrite(method: String): String = method match {
+    case "DELETE" => "write"
+    case "GET" => "read"
+    case "HEAD" => "read"
+    case "OPTIONS" => "read"
+    case "PATCH" => "write"
+    case "POST" => "write"
+    case "PUT" => "write"
+    case _ => "none"
+  }
+
+  def extractToken(req: RequestHeader, config: BiscuitConfig): Option[String] = {
+    (config.extractor match {
+      case "header" => req.headers.get(config.extractorName)
+      case "query" => req.getQueryString(config.extractorName)
+      case "cookie" => req.cookies.get(config.extractorName).map(_.value)
+      case _ => None
+    }).map(_.replace("Bearer ", "").replace("Biscuit ", "").replace("biscuit: ", ""))
+  }
+
+  def verify(verifier: Verifier, config: BiscuitConfig, ctx: VerificationContext)(implicit env: Env): Either[com.clevercloud.biscuit.error.Error, Unit] = {
+    verifier.set_time()
+    verifier.add_operation(readOrWrite(ctx.request.method))
+    verifier.add_fact(fact("resource", Seq(s("ambient"), string(ctx.request.method.toLowerCase()), string(ctx.request.theDomain), string(ctx.request.thePath)).asJava))
+    verifier.add_fact(fact("req_path", Seq(s("ambient"), string(ctx.request.thePath)).asJava))
+    verifier.add_fact(fact("req_domain", Seq(s("ambient"), string(ctx.request.theDomain)).asJava))
+    verifier.add_fact(fact("req_method", Seq(s("ambient"), string(ctx.request.method.toLowerCase())).asJava))
+    verifier.add_fact(fact("descriptor_id", Seq(s("ambient"), string(ctx.descriptor.id)).asJava))
+    ctx.apikey.foreach { apikey =>
+      apikey.tags.foreach(tag => verifier.add_fact(fact("apikey_tag", Seq(s("ambient"), string(tag)).asJava)))
+      apikey.metadata.foreach(tuple => verifier.add_fact(fact("apikey_meta", Seq(s("ambient"), string(tuple._1), string(tuple._2)).asJava)))
+    }
+    ctx.user.foreach { user =>
+      user.metadata.foreach(tuple => verifier.add_fact(fact("user_meta", Seq(s("ambient"), string(tuple._1), string(tuple._2)).asJava)))
+    }
+    config.resources.foreach(r => verifier.add_resource(r))
+    // TODO: change when implemented
+    // config.caveats.map(Parser.caveat).filter(_.isRight).map(_.get()._2).foreach(r => verifier.add_caveat(r))
+    config.caveats.map(Parser.rule).filter(_.isRight).map(_.get()._2).map(r => new Caveat(r)).foreach(r => verifier.add_caveat(r))
+    config.facts.map(Parser.fact).filter(_.isRight).map(_.get()._2).foreach(r => verifier.add_fact(r))
+    config.rules.map(Parser.rule).filter(_.isRight).map(_.get()._2).foreach(r => verifier.add_rule(r))
+    if (config.revocation_ids.nonEmpty) {
+      verifier.revocation_check(config.revocation_ids.toList.map(_.asInstanceOf[java.lang.Long]).asJava)
+    }
+    // TODO: here, add ambient stuff, rules from config, query some stuff, etc ..
+    verifier.verify().asScala match {
+      case Left(err) => Left[com.clevercloud.biscuit.error.Error, Unit](err)
+      case Right(_) => Right(())
+    }
+  }
+}
 
 class BiscuitExtractor extends PreRouting {
 
   import vavr_implicits._
 
   import collection.JavaConverters._
+
+  override def name: String = "Apikey from Biscuit token extractor"
+
+  override def defaultConfig: Option[JsObject] = BiscuitConfig.example.some
+
+  override def description: Option[String] = {
+    s"""This plugin extract an from a Biscuit token where the biscuit has an #authority fact 'client_id' containing
+       |apikey client_id and an #authority fact 'client_sign' that is the HMAC256 signature of the apikey client_id with the apikey client_secret
+       |
+       |This plugin can accept the following configuration
+       |
+       |```json
+       |${defaultConfig.get.prettify}
+       |```
+    """.stripMargin.some
+  }
 
   // TODO: check if it's a bug, first letter is missing in parsed rule (lient_id instead of client_id)
   // val ruleTuple = Parser.rule("client_id($id) <- client_id(#authority, $id) @ []").get()
@@ -76,22 +204,6 @@ class BiscuitExtractor extends PreRouting {
     ).asJava
   )
 
-  def readConfig(ctx: PreRoutingContext): BiscuitExtractorConfig = {
-    val rawConfig = ctx.configFor("BiscuitExtractor")
-    BiscuitExtractorConfig(
-      publicKey = (rawConfig \ "publicKey").as[String],
-      caveats = (rawConfig \ "caveats").asOpt[Seq[String]].getOrElse(Seq.empty),
-      facts = (rawConfig \ "facts").asOpt[Seq[String]].getOrElse(Seq.empty),
-      resources = (rawConfig \ "resources").asOpt[Seq[String]].getOrElse(Seq.empty),
-      rules = (rawConfig \ "rules").asOpt[Seq[String]].getOrElse(Seq.empty),
-      revocation_ids = (rawConfig \ "revocation_ids").asOpt[Seq[Long]].getOrElse(Seq.empty),
-    )
-  }
-
-  def unauthorized(error: JsObject): Future[Unit] = {
-    FastFuture.failed(PreRoutingErrorWithResult(Results.Unauthorized(error)))
-  }
-
   def testing(): Unit = {
 
     import com.clevercloud.biscuit.token.builder.Block
@@ -112,25 +224,14 @@ class BiscuitExtractor extends PreRouting {
     println(s"curl http://biscuit.oto.tools:9999 -H 'Authorization: Bearer ${biscuit.serialize_b64().get()}'")
   }
 
-  def readOrWrite(method: String): String = method match {
-    case "DELETE" => "write"
-    case "GET" => "read"
-    case "HEAD" => "read"
-    case "OPTIONS" => "read"
-    case "PATCH" => "write"
-    case "POST" => "write"
-    case "PUT" => "write"
-    case _ => "none"
+  def unauthorized(error: JsObject): Future[Unit] = {
+    FastFuture.failed(PreRoutingErrorWithResult(Results.Unauthorized(error)))
   }
 
   override def preRoute(ctx: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
-    import com.clevercloud.biscuit.token.builder.Utils._
-
-    val config = readConfig(ctx)
-    // testing()
-    ctx.request.headers.get("Authorization") match {
-      case Some(value) if value.startsWith("Bearer ") => {
-        val token = value.replace("Bearer ", "")
+    val config = BiscuitHelper.readConfig("BiscuitExtractor", ctx)
+    BiscuitHelper.extractToken(ctx.request, config) match {
+      case Some(token) => {
         Biscuit.from_b64(token).asScala match {
           case Left(err) => unauthorized(Json.obj("error" -> "unauthorized", "error_description" -> s"deserialization error: $err"))
           case Right(biscuit) => biscuit.verify(new PublicKey(config.publicKey)).asScala match {
@@ -151,28 +252,11 @@ class BiscuitExtractor extends PreRouting {
                       val algo = Algorithm.HMAC256(apikey.clientSecret)
                       val signed = org.apache.commons.codec.binary.Base64.encodeBase64URLSafeString(algo.sign(client_id.getBytes(StandardCharsets.UTF_8)))
                       if (signed == client_sign) {
-                        verifier.set_time()
-                        verifier.add_operation(readOrWrite(ctx.request.method))
-                        verifier.add_fact(fact("resource", Seq(s("ambient"), string(ctx.request.method.toLowerCase()), string(ctx.request.theDomain), string(ctx.request.thePath)).asJava))
-                        verifier.add_fact(fact("req_path", Seq(s("ambient"), string(ctx.request.thePath)).asJava))
-                        verifier.add_fact(fact("req_domain", Seq(s("ambient"), string(ctx.request.theDomain)).asJava))
-                        verifier.add_fact(fact("req_method", Seq(s("ambient"), string(ctx.request.method.toLowerCase())).asJava))
-                        verifier.add_fact(fact("descriptor_id", Seq(s("ambient"), string(ctx.descriptor.id)).asJava))
-                        apikey.tags.foreach(tag => verifier.add_fact(fact("apikey_tag", Seq(s("ambient"), string(tag)).asJava)))
-                        apikey.metadata.foreach(tuple => verifier.add_fact(fact("apikey_meta", Seq(s("ambient"), string(tuple._1), string(tuple._2)).asJava)))
-                        config.resources.foreach(r => verifier.add_resource(r))
-                        // TODO: change when implemented
-                        // config.caveats.map(Parser.caveat).filter(_.isRight).map(_.get()._2).foreach(r => verifier.add_caveat(r))
-                        config.caveats.map(Parser.rule).filter(_.isRight).map(_.get()._2).map(r => new Caveat(r)).foreach(r => verifier.add_caveat(r))
-                        config.facts.map(Parser.fact).filter(_.isRight).map(_.get()._2).foreach(r => verifier.add_fact(r))
-                        config.rules.map(Parser.rule).filter(_.isRight).map(_.get()._2).foreach(r => verifier.add_rule(r))
-                        verifier.revocation_check(config.revocation_ids.toList.map(_.asInstanceOf[java.lang.Long]).asJava)
-                        // TODO: here, add ambient stuff, rules from config, query some stuff, etc ..
-                        verifier.verify().asScala match {
+                        BiscuitHelper.verify(verifier, config, PreRoutingVerifierContext(ctx, apikey)) match {
                           case Left(err) => unauthorized(Json.obj("error" -> "unauthorized", "error_description" -> s"verification error: $err"))
                           case Right(_) => {
                             // println(biscuit.print())
-                            //println(verifier.print_world())
+                            // println(verifier.print_world())
                             ctx.attrs.put(otoroshi.plugins.Keys.ApiKeyKey -> apikey)
                             ().future
                           }
@@ -191,6 +275,46 @@ class BiscuitExtractor extends PreRouting {
         }
       }
       case _ => ().future
+    }
+  }
+}
+
+class BiscuitValidator extends AccessValidator {
+
+  import vavr_implicits._
+
+  override def name: String = "Biscuit token validator"
+
+  override def defaultConfig: Option[JsObject] = BiscuitConfig.example.some
+
+  override def description: Option[String] = {
+    s"""This plugin validates a Biscuit token.
+       |
+       |This plugin can accept the following configuration
+       |
+       |```json
+       |${defaultConfig.get.prettify}
+       |```
+    """.stripMargin.some
+  }
+
+  override def canAccess(ctx: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
+    val config = BiscuitHelper.readConfig("BiscuitValidator", ctx)
+    BiscuitHelper.extractToken(ctx.request, config) match {
+      case Some(token) => {
+        Biscuit.from_b64(token).asScala match {
+          case Left(_) => false.future
+          case Right(biscuit) => biscuit.verify(new PublicKey(config.publicKey)).asScala match {
+            case Left(_) => false.future
+            case Right(verifier) => {
+              BiscuitHelper.verify(verifier, config, AccessValidatorContext(ctx)) match {
+                case Left(_) => false.future
+                case Right(_) => true.future
+              }
+            }
+          }
+        }
+      }
     }
   }
 }
