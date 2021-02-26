@@ -82,6 +82,13 @@ trait RawDataStore {
   def sadd(key: String, members: Seq[ByteString]): Future[Long]
   def sismember(key: String, member: ByteString): Future[Boolean]
   def smembers(key: String): Future[Seq[ByteString]]
+  def allMatching(pattern: String)(implicit ec: ExecutionContext, env: Env): Future[Seq[ByteString]] = {
+    keys(pattern)
+      .flatMap {
+        case keys if keys.isEmpty => FastFuture.successful(Seq.empty[Option[ByteString]])
+        case keys => mget(keys)
+      }.map(seq => seq.filter(_.isDefined).map(_.get))
+  }
 }
 
 trait BasicStore[T] {
