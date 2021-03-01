@@ -130,6 +130,8 @@ case class ApiKey(clientId: String = IdGenerator.token(16),
   def delete()(implicit ec: ExecutionContext, env: Env) = env.datastores.apiKeyDataStore.delete(this)
   def exists()(implicit ec: ExecutionContext, env: Env) = env.datastores.apiKeyDataStore.exists(this)
   def toJson                                            = ApiKey.toJson(this)
+  def isActive(): Boolean = enabled && validUntil.map(date => date.isBeforeNow).getOrElse(true)
+  def isInactive(): Boolean = !isActive()
   def isValid(value: String): Boolean =
     enabled && ((value == clientSecret) || (rotation.enabled && rotation.nextSecret.contains(value)))
   def isInvalid(value: String): Boolean = !isValid(value)

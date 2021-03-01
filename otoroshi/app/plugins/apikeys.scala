@@ -1,7 +1,10 @@
 package otoroshi.plugins.apikeys
 
-import java.security.KeyPair
+import java.nio.charset.StandardCharsets
+import java.security.{KeyPair, SecureRandom}
 import java.security.interfaces.{ECPrivateKey, ECPublicKey, RSAPrivateKey, RSAPublicKey}
+import java.util
+import java.util.Date
 import java.util.concurrent.atomic.AtomicBoolean
 
 import akka.http.scaladsl.util.FastFuture
@@ -11,6 +14,10 @@ import akka.util.ByteString
 import cluster.ClusterAgent
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
+import com.clevercloud.biscuit.token
+import com.clevercloud.biscuit.token.builder.Caveat
+import com.clevercloud.biscuit.token.builder.parser.Parser
+import com.clevercloud.biscuit.token.format.SealedBiscuit
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import com.google.protobuf.Descriptors.ServiceDescriptor
 import com.nimbusds.jose.jwk.{Curve, ECKey, RSAKey}
@@ -20,6 +27,8 @@ import org.apache.commons.codec.binary.Base64
 import org.joda.time.DateTime
 import otoroshi.plugins.JsonPathUtils
 import otoroshi.script._
+import otoroshi.utils.crypto.Signatures
+import otoroshi.utils.jwks.JWKSHelper
 import play.api.libs.json._
 import play.api.mvc.{Result, Results}
 import play.core.parsers.FormUrlEncodedParser
@@ -230,7 +239,7 @@ class CertificateAsApikey extends PreRouting {
   }
 }
 
-case class ClientCredentialFlowBody(grantType: String, clientId: String, clientSecret: String, scope: Option[String])
+case class ClientCredentialFlowBody(grantType: String, clientId: String, clientSecret: String, scope: Option[String], bearerKind: String)
 
 class ClientCredentialFlowExtractor extends PreRouting {
 
@@ -279,7 +288,7 @@ class ClientCredentialFlow extends RequestTransformer {
     .maximumSize(1000)
     .build()
 
-  override def name: String = "Client Credential Flow"
+  override def name: String = "Client Credential Flow (deprecated, use the 'Client Credential Service' sink)"
 
   override def defaultConfig: Option[JsObject] = {
     Some(
@@ -508,10 +517,10 @@ class ClientCredentialFlow extends RequestTransformer {
             })
 
           def handleTokenRequest(ccfb: ClientCredentialFlowBody): Future[Either[Result, HttpRequest]] = ccfb match {
-            case ClientCredentialFlowBody("client_credentials", clientId, clientSecret, scope) => {
+            case ClientCredentialFlowBody("client_credentials", clientId, clientSecret, scope, kind) => {
               val possibleApiKey = env.datastores.apiKeyDataStore.findById(clientId)
               possibleApiKey.flatMap {
-                case Some(apiKey) if apiKey.clientSecret == clientSecret && useJwtToken=> {
+                case Some(apiKey) if (apiKey.clientSecret == clientSecret || apiKey.rotation.nextSecret.contains(clientSecret)) && useJwtToken=> {
 
                   val keyPairId = apiKey.metadata.get("jwt-sign-keypair").orElse(defaultKeyPair)
                   val signWithKeyPair = _signWithKeyPair && keyPairId.isDefined
@@ -563,7 +572,7 @@ class ClientCredentialFlow extends RequestTransformer {
                     Results.Forbidden(Json.obj("error" -> "access_denied", "error_description" -> s"Client has not been granted scopes: ${scope.get}")).leftf
                   }
                 }
-                case Some(apiKey) if apiKey.clientSecret == clientSecret && !useJwtToken=> {
+                case Some(apiKey) if (apiKey.clientSecret == clientSecret || apiKey.rotation.nextSecret.contains(clientSecret)) && !useJwtToken=> {
                   val randomToken = IdGenerator.token(64)
                   env.datastores.rawDataStore.set(s"${env.storageRoot}:plugins:client-credentials-flow:access-tokens:$randomToken", ByteString(apiKey.clientSecret), Some(expiration.toMillis)).map { _ =>
                     val pass = scope.forall { s =>
@@ -601,8 +610,9 @@ class ClientCredentialFlow extends RequestTransformer {
                   body.get("client_id"),
                   body.get("client_secret"),
                   body.get("scope"),
+                  body.get("bearer_kind"),
                 ) match {
-                  case (Some(gtype), Some(clientId), Some(clientSecret), scope) => handleTokenRequest(ClientCredentialFlowBody(gtype, clientId, clientSecret, scope))
+                  case (Some(gtype), Some(clientId), Some(clientSecret), scope, kind) => handleTokenRequest(ClientCredentialFlowBody(gtype, clientId, clientSecret, scope, kind.getOrElse("jwt")))
                   case _ => ctx.request.headers
                     .get("Authorization")
                     .filter(_.startsWith("Basic "))
@@ -613,7 +623,7 @@ class ClientCredentialFlow extends RequestTransformer {
                     .map(_.split(":").toSeq)
                     .map(v => (v.head, v.last))
                     .map {
-                      case (clientId, clientSecret) => handleTokenRequest(ClientCredentialFlowBody(body.getOrElse("grant_type", "--"), clientId, clientSecret, None))
+                      case (clientId, clientSecret) => handleTokenRequest(ClientCredentialFlowBody(body.getOrElse("grant_type", "--"), clientId, clientSecret, None, body.getOrElse("bearer_kind", "jwt")))
                     }
                     .getOrElse {
                       // bad credentials
@@ -628,8 +638,9 @@ class ClientCredentialFlow extends RequestTransformer {
                   (json \ "client_id").asOpt[String],
                   (json \ "client_secret").asOpt[String],
                   (json \ "scope").asOpt[String],
+                  (json \ "bearer_kind").asOpt[String],
                 ) match {
-                  case (Some(gtype), Some(clientId), Some(clientSecret), scope) => handleTokenRequest(ClientCredentialFlowBody(gtype, clientId, clientSecret, scope))
+                  case (Some(gtype), Some(clientId), Some(clientSecret), scope, kind) => handleTokenRequest(ClientCredentialFlowBody(gtype, clientId, clientSecret, scope, kind.getOrElse("jwt")))
                   case _ => ctx.request.headers
                     .get("Authorization")
                     .filter(_.startsWith("Basic "))
@@ -640,7 +651,7 @@ class ClientCredentialFlow extends RequestTransformer {
                     .map(_.split(":").toSeq)
                     .map(v => (v.head, v.last))
                     .map {
-                      case (clientId, clientSecret) => handleTokenRequest(ClientCredentialFlowBody((json \ "grant_type").asOpt[String].getOrElse("--"), clientId, clientSecret, None))
+                      case (clientId, clientSecret) => handleTokenRequest(ClientCredentialFlowBody((json \ "grant_type").asOpt[String].getOrElse("--"), clientId, clientSecret, None, (json \ "bearer_kind").asOpt[String].getOrElse("jwt")))
                     }
                     .getOrElse {
                       // bad credentials
@@ -751,6 +762,15 @@ class ClientCredentialFlow extends RequestTransformer {
   }
 }
 
+case class BiscuitConf(
+  privkey: Option[String] = None,
+  secret: Option[String] = Some("secret"),
+  sealedToken: Boolean = false,
+  caveats: Seq[String] = Seq.empty,
+  facts: Seq[String] = Seq.empty,
+  rules: Seq[String] = Seq.empty,
+)
+
 class ClientCredentialService extends RequestSink {
 
   import utils.RequestImplicits._
@@ -761,6 +781,16 @@ class ClientCredentialService extends RequestSink {
     lazy val defaultKeyPair = (raw \ "defaultKeyPair").asOpt[String].filter(_.trim.nonEmpty).getOrElse(Cert.OtoroshiJwtSigning)
     lazy val domain = (raw \ "domain").asOpt[String].filter(_.trim.nonEmpty).getOrElse("*")
     lazy val secure = (raw \ "secure").asOpt[Boolean].getOrElse(true)
+    lazy val biscuit = (raw \ "biscuit").asOpt[JsObject].map { js =>
+      BiscuitConf(
+        privkey = (js \ "privkey").asOpt[String],
+        secret = (js \ "secret").asOpt[String],
+        sealedToken = (js \ "sealedToken").asOpt[Boolean].getOrElse(false),
+        caveats = (js \ "caveats").asOpt[Seq[String]].getOrElse(Seq.empty),
+        facts = (js \ "facts").asOpt[Seq[String]].getOrElse(Seq.empty),
+        rules = (js \ "rules").asOpt[Seq[String]].getOrElse(Seq.empty),
+      )
+    }.getOrElse(BiscuitConf())
   }
 
   override def name: String = "Client Credential Service"
@@ -844,16 +874,9 @@ class ClientCredentialService extends RequestSink {
   }
 
   private def jwks(conf: ClientCredentialServiceConfig, ctx: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Future[Result] = {
-    env.datastores.apiKeyDataStore.findAll().flatMap { apikeys =>
-      val ids = apikeys.map(_.metadata.get("jwt-sign-keypair")).collect { case Some(value) => value } ++ conf.defaultKeyPair.some
-      env.datastores.certificatesDataStore.findAll().map { certs =>
-        val exposedCerts: Seq[JsValue] = certs.filter(c => ids.contains(c.id)).map(c => (c.id, c.cryptoKeyPair.getPublic)).flatMap {
-          case (id, pub: RSAPublicKey) => new RSAKey.Builder(pub).keyID(id).build().toJSONString.parseJson.some
-          case (id, pub: ECPublicKey)  => new ECKey.Builder(Curve.forECParameterSpec(pub.getParams), pub).keyID(id).build().toJSONString.parseJson.some
-          case _ => None
-        }
-        Results.Ok(Json.obj("keys" -> JsArray(exposedCerts)))
-      }
+    JWKSHelper.jwks(ctx.request, conf.defaultKeyPair.some.toSeq).map {
+      case Left(body) => Results.NotFound(body)
+      case Right(body) => Results.Ok(body)
     }
   }
 
@@ -895,10 +918,68 @@ class ClientCredentialService extends RequestSink {
   }
 
   private def handleTokenRequest(ccfb: ClientCredentialFlowBody, conf: ClientCredentialServiceConfig, ctx: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Future[Result] = ccfb match {
-    case ClientCredentialFlowBody("client_credentials", clientId, clientSecret, scope) => {
+    case ClientCredentialFlowBody("client_credentials", clientId, clientSecret, scope, bearerKind) => {
       val possibleApiKey = env.datastores.apiKeyDataStore.findById(clientId)
       possibleApiKey.flatMap {
-        case Some(apiKey) if apiKey.clientSecret == clientSecret => {
+        case Some(apiKey) if (apiKey.clientSecret == clientSecret || apiKey.rotation.nextSecret.contains(clientSecret)) && bearerKind == "biscuit" => {
+
+          import com.clevercloud.biscuit.crypto.KeyPair
+          import com.clevercloud.biscuit.token.Biscuit
+          import com.clevercloud.biscuit.token.builder.Utils._
+          import com.clevercloud.biscuit.token.builder.Block
+          import collection.JavaConverters._
+
+          val biscuitConf: BiscuitConf = conf.biscuit
+
+          val symbols = Biscuit.default_symbol_table()
+          val authority_builder = new Block(0, symbols)
+
+          authority_builder.add_fact(fact("token_id",    Seq(s("authority"), string(IdGenerator.uuid)).asJava))
+          authority_builder.add_fact(fact("token_exp",   Seq(s("authority"), date(DateTime.now().plus(conf.expiration.toMillis).toDate)).asJava))
+          authority_builder.add_fact(fact("token_iat",   Seq(s("authority"), date(DateTime.now().toDate)).asJava))
+          authority_builder.add_fact(fact("token_nbf",   Seq(s("authority"), date(DateTime.now().toDate)).asJava))
+          authority_builder.add_fact(fact("token_iss",   Seq(s("authority"), string(ctx.request.theProtocol + "://" + ctx.request.host)).asJava))
+          authority_builder.add_fact(fact("token_aud",   Seq(s("authority"), string("otoroshi")).asJava))
+          authority_builder.add_fact(fact("client_id",   Seq(s("authority"), string(apiKey.clientId)).asJava))
+          authority_builder.add_fact(fact("client_sign", Seq(s("authority"), string(Signatures.hmacSha256Sign(apiKey.clientId, apiKey.clientSecret))).asJava))
+
+          biscuitConf.caveats.map(Parser.rule).filter(_.isRight).map(_.get()._2).map(r => new Caveat(r)).foreach(r => authority_builder.add_caveat(r))
+          biscuitConf.facts.map(Parser.fact).filter(_.isRight).map(_.get()._2).foreach(r => authority_builder.add_fact(r))
+          biscuitConf.rules.map(Parser.rule).filter(_.isRight).map(_.get()._2).foreach(r => authority_builder.add_rule(r))
+
+          def fromApiKey(name: String): Seq[String] = apiKey.metadata.get(name).map(Json.parse).map(_.asArray.value.map(_.asString)).getOrElse(Seq.empty)
+
+          fromApiKey("biscuit_caveats").map(Parser.rule).filter(_.isRight).map(_.get()._2).map(r => new Caveat(r)).foreach(r => authority_builder.add_caveat(r))
+          fromApiKey("biscuit_facts").map(Parser.fact).filter(_.isRight).map(_.get()._2).foreach(r => authority_builder.add_fact(r))
+          fromApiKey("biscuit_rules").map(Parser.rule).filter(_.isRight).map(_.get()._2).foreach(r => authority_builder.add_rule(r))
+
+          val accessToken: String = if (biscuitConf.sealedToken) {
+            val bytes = SealedBiscuit.make(authority_builder.build(), new util.ArrayList[com.clevercloud.biscuit.token.Block](), biscuitConf.secret.get.getBytes(StandardCharsets.UTF_8)).get().serialize().get()
+            Base64.encodeBase64URLSafeString(bytes)
+          } else {
+            val privKeyValue = apiKey.metadata.get("biscuit_pubkey").orElse(biscuitConf.privkey)
+            val keypair = new KeyPair(privKeyValue.get)
+            val rng = new SecureRandom()
+            Biscuit.make(rng, keypair, symbols, authority_builder.build()).get().serialize_b64().get()
+          }
+
+          val pass = scope.forall { s =>
+            val scopes = s.split(" ").toSeq
+            val scopeInter = apiKey.metadata.get("scope").exists(_.split(" ").toSeq.intersect(scopes).nonEmpty)
+            scopeInter && apiKey.metadata.get("scope").map(_.split(" ").toSeq.intersect(scopes).size).getOrElse(scopes.size) == scopes.size
+          }
+          if (pass) {
+            val scopeObj = scope.orElse(apiKey.metadata.get("scope")).map(v => Json.obj("scope" -> v)).getOrElse(Json.obj())
+            Results.Ok(Json.obj(
+              "access_token" -> accessToken,
+              "token_type" -> "Bearer",
+              "expires_in" -> conf.expiration.toSeconds
+            ) ++ scopeObj).future
+          } else {
+            Results.Forbidden(Json.obj("error" -> "access_denied", "error_description" -> s"Client has not been granted scopes: ${scope.get}")).future
+          }
+        }
+        case Some(apiKey) if apiKey.clientSecret == clientSecret || apiKey.rotation.nextSecret.contains(clientSecret) => {
           val keyPairId = apiKey.metadata.getOrElse("jwt-sign-keypair", conf.defaultKeyPair)
           val maybeKeyPair: Option[KeyPair] = DynamicSSLEngineProvider.certificates.get(keyPairId).map(_.cryptoKeyPair)
           val algo: Algorithm = maybeKeyPair.map { kp =>
@@ -952,8 +1033,9 @@ class ClientCredentialService extends RequestSink {
       body.get("client_id"),
       body.get("client_secret"),
       body.get("scope"),
+      body.get("bearer_kind"),
     ) match {
-      case (Some(gtype), Some(clientId), Some(clientSecret), scope) => handleTokenRequest(ClientCredentialFlowBody(gtype, clientId, clientSecret, scope), conf, ctx)
+      case (Some(gtype), Some(clientId), Some(clientSecret), scope, kind) => handleTokenRequest(ClientCredentialFlowBody(gtype, clientId, clientSecret, scope, kind.getOrElse("jwt")), conf, ctx)
       case _ => ctx.request.headers
         .get("Authorization")
         .filter(_.startsWith("Basic "))
@@ -964,7 +1046,7 @@ class ClientCredentialService extends RequestSink {
         .map(_.split(":").toSeq)
         .map(v => (v.head, v.last))
         .map {
-          case (clientId, clientSecret) => handleTokenRequest(ClientCredentialFlowBody(body.getOrElse("grant_type", "--"), clientId, clientSecret, None), conf, ctx)
+          case (clientId, clientSecret) => handleTokenRequest(ClientCredentialFlowBody(body.getOrElse("grant_type", "--"), clientId, clientSecret, None, body.getOrElse("bearer_kind", "jwt")), conf, ctx)
         }
         .getOrElse {
           // bad credentials

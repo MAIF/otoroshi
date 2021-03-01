@@ -17,6 +17,7 @@ import models._
 import otoroshi.script._
 import otoroshi.ssl.OcspResponder
 import otoroshi.utils.LetsEncryptHelper
+import otoroshi.utils.jwks.JWKSHelper
 import play.api.ApplicationLoader.DevContext
 import play.api.Logger
 import play.api.http.{Status => _, _}
@@ -289,18 +290,20 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
           case _ if relativeUri.startsWith("/.well-known/otoroshi/me")     => Some(myProfile())
           case _ if relativeUri.startsWith("/.well-known/acme-challenge/") => Some(letsEncrypt())
 
-          case _ if ipRegex.matches(request.theHost) && monitoring                   => super.routeRequest(request)
-          case str if matchRedirection(str)                                          => Some(redirectToMainDomain())
+          case _ if ipRegex.matches(request.theHost) && monitoring                 => super.routeRequest(request)
+          case str if matchRedirection(str)                                        => Some(redirectToMainDomain())
 
           case env.backOfficeHost if !isSecured && toHttps                         => Some(redirectToHttps())
           case env.privateAppsHost if !isSecured && toHttps                        => Some(redirectToHttps())
           case env.privateAppsHost if monitoring                                   => Some(forbidden())
-          case env.adminApiExposedHost if relativeUri.startsWith("/.well-known/jwks.json") => Some(jwks())
-          case env.backOfficeHost if relativeUri.startsWith("/.well-known/jwks.json") => Some(jwks())
-          case env.adminApiExposedHost if relativeUri.startsWith("/.well-known/otoroshi/ocsp") => Some(ocsp())
-          case env.backOfficeHost if relativeUri.startsWith("/.well-known/otoroshi/certificates/") => Some(aia(relativeUri.replace("/.well-known/otoroshi/certificates/", "")))
+
+          case env.adminApiExposedHost if relativeUri.startsWith("/.well-known/jwks.json")              => Some(jwks())
+          case env.backOfficeHost      if relativeUri.startsWith("/.well-known/jwks.json")              => Some(jwks())
+          case env.adminApiExposedHost if relativeUri.startsWith("/.well-known/otoroshi/ocsp")          => Some(ocsp())
+          case env.backOfficeHost      if relativeUri.startsWith("/.well-known/otoroshi/certificates/") => Some(aia(relativeUri.replace("/.well-known/otoroshi/certificates/", "")))
           case env.adminApiExposedHost if relativeUri.startsWith("/.well-known/otoroshi/certificates/") => Some(aia(relativeUri.replace("/.well-known/otoroshi/certificates/", "")))
-          case env.backOfficeHost if relativeUri.startsWith("/.well-known/otoroshi/ocsp") => Some(ocsp())
+          case env.backOfficeHost      if relativeUri.startsWith("/.well-known/otoroshi/ocsp")          => Some(ocsp())
+
           case env.adminApiExposedHost if monitoring                               => super.routeRequest(request)
           case env.backOfficeHost if monitoring                                    => super.routeRequest(request)
           case env.adminApiHost if env.exposeAdminApi                              => super.routeRequest(request)
@@ -317,20 +320,9 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
   }
 
   def jwks() = actionBuilder.async { req =>
-    import com.nimbusds.jose.jwk.{Curve, ECKey, RSAKey}
-    import otoroshi.utils.syntax.implicits._
-    import java.security.interfaces.{ECPrivateKey, ECPublicKey, RSAPrivateKey, RSAPublicKey}
-    if (req.method == "GET") {
-      env.datastores.certificatesDataStore.findAll().map { certs =>
-        val exposedCerts = certs.filter(c => c.exposed && c.notRevoked && c.notExpired).map(c => (c.id, c.cryptoKeyPair.getPublic)).flatMap {
-          case (id, pub: RSAPublicKey) => new RSAKey.Builder(pub).keyID(id).build().toJSONString.parseJson.some
-          case (id, pub: ECPublicKey) => new ECKey.Builder(Curve.forECParameterSpec(pub.getParams), pub).keyID(id).build().toJSONString.parseJson.some
-          case _ => None
-        }
-        Results.Ok(Json.obj("keys" -> JsArray(exposedCerts)))
-      }
-    } else {
-      Results.NotFound(Json.obj("error" -> "resource not found !")).future
+    JWKSHelper.jwks(req, Seq.empty).map {
+      case Left(body) => Results.NotFound(body)
+      case Right(body) => Results.Ok(body)
     }
   }
 
