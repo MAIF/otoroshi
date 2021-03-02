@@ -10,6 +10,7 @@ import otoroshi.models.{SimpleOtoroshiAdmin, Team, Tenant, WebAuthnOtoroshiAdmin
 import otoroshi.plugins.geoloc.{IpStackGeolocationHelper, MaxMindGeolocationHelper}
 import otoroshi.plugins.useragent.UserAgentHelper
 import otoroshi.script.Script
+import otoroshi.script.plugins.Plugins
 import otoroshi.storage.BasicStore
 import otoroshi.tcp.TcpService
 import otoroshi.utils.LetsEncryptSettings
@@ -393,6 +394,7 @@ case class GlobalConfig(
     userAgentSettings: UserAgentSettings = UserAgentSettings(false),
     autoCert: AutoCert = AutoCert(),
     tlsSettings: TlsSettings = TlsSettings(),
+    plugins: Plugins = Plugins(),
     metadata: Map[String, String] = Map.empty
 ) {
   def save()(implicit ec: ExecutionContext, env: Env)   = env.datastores.globalConfigDataStore.set(this)
@@ -514,6 +516,7 @@ object GlobalConfig {
         "userAgentSettings"       -> o.userAgentSettings.json,
         "autoCert"                -> o.autoCert.json,
         "tlsSettings"             -> o.tlsSettings.json,
+        "plugins"                 -> o.plugins.json,
         "metadata"                -> o.metadata
       )
     }
@@ -634,6 +637,9 @@ object GlobalConfig {
           tlsSettings = TlsSettings.format
             .reads((json \ "tlsSettings").asOpt[JsValue].getOrElse(JsNull))
             .getOrElse(TlsSettings()),
+          plugins = Plugins.format
+            .reads((json \ "plugins").asOpt[JsValue].getOrElse(JsNull))
+            .getOrElse(Plugins()),
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty)
         )
       } map {

@@ -4,6 +4,7 @@ import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import env.Env
+import otoroshi.utils.config.ConfigUtils
 import play.api.libs.json._
 import play.api.mvc.{RequestHeader, Result, Results}
 import utils.TypedMap
@@ -30,20 +31,20 @@ object RequestSink {
     env.metrics.withTimerAsync("otoroshi.core.proxy.request-sink") {
       env.datastores.globalConfigDataStore.singleton().flatMap {
         case config if !config.scripts.enabled         => err
-        case config if config.scripts.sinkRefs.isEmpty => err
+        case config if (config.scripts.sinkRefs ++ config.plugins.sinks(req)).isEmpty => err
         case config =>
           val ctx = RequestSinkContext(
             snowflake = snowflake,
             index = -1,
             request = req,
-            config = config.scripts.sinkConfig,
+            config = ConfigUtils.merge(config.scripts.sinkConfig, config.plugins.config),
             attrs = attrs,
             status = status,
             message = message,
             origin = origin,
             body = body
           )
-          val rss = config.scripts.sinkRefs.map(r => env.scriptManager.getAnyScript[RequestSink](r)).collect {
+          val rss = (config.scripts.sinkRefs ++ config.plugins.sinks(req)).distinct.map(r => env.scriptManager.getAnyScript[RequestSink](r)).collect {
             case Right(rs) => rs
           }
           rss.find(_.matches(ctx)) match {

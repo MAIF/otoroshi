@@ -25,9 +25,11 @@ import play.api.libs.ws.{DefaultWSProxyServer, WSProxyServer}
 import play.api.mvc.Results.{NotFound, TooManyRequests}
 import play.api.mvc.{RequestHeader, Result, Results}
 import otoroshi.script._
+import otoroshi.script.plugins.Plugins
 import security.{IdGenerator, OtoroshiClaim}
 import otoroshi.storage.BasicStore
 import otoroshi.storage.stores.KvServiceDescriptorDataStore
+import otoroshi.utils.config.ConfigUtils
 import utils.{GzipConfig, RegexPool, ReplaceAllWith, TypedMap}
 
 import scala.collection.concurrent.TrieMap
@@ -1461,6 +1463,7 @@ case class ServiceDescriptor(
     transformerConfig: JsValue = Json.obj(),
     accessValidator: AccessValidatorRef = AccessValidatorRef(),
     preRouting: PreRoutingRef = PreRoutingRef(),
+    plugins: Plugins = Plugins(),
     ///////////////////////////////////////////////////////////
     gzip: GzipConfig = GzipConfig(),
     // thirdPartyApiKey: ThirdPartyApiKeyConfig = OIDCThirdPartyApiKeyConfig(false, None),
@@ -1597,6 +1600,7 @@ case class ServiceDescriptor(
                                     f: => Future[Either[Result, A]]
                                   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
 
+    val plugs = plugins.accessValidators(req)
     val gScripts = env.datastores.globalConfigDataStore.latestSafe
       .filter(_.scripts.enabled)
       .map(_.scripts)
@@ -1611,7 +1615,7 @@ case class ServiceDescriptor(
         )
         .map(_.refs)
         .getOrElse(Seq.empty)
-      val refs = gScripts.validatorRefs ++ lScripts
+      val refs = (plugs ++ gScripts.validatorRefs ++ lScripts).distinct
       if (refs.nonEmpty) {
         env.metrics
           .withTimerAsync("otoroshi.core.proxy.validate-access") {
@@ -1632,8 +1636,8 @@ case class ServiceDescriptor(
                       user = user,
                       apikey = apikey,
                       attrs = attrs,
-                      globalConfig = gScripts.validatorConfig,
-                      config = accessValidator.config
+                      globalConfig = ConfigUtils.mergeOpt(gScripts.validatorConfig, env.datastores.globalConfigDataStore.latestSafe.map(_.plugins.config)),
+                      config = ConfigUtils.merge(accessValidator.config, plugins.config)
                     )
                   )
               }
@@ -1797,6 +1801,7 @@ case class ServiceDescriptor(
 
     import utils.future.Implicits._
 
+    val plugs = plugins.preRoutings(req)
     val gScripts = env.datastores.globalConfigDataStore.latestSafe
       .filter(_.scripts.enabled)
       .map(_.scripts)
@@ -1810,7 +1815,7 @@ case class ServiceDescriptor(
         )
         .map(_.refs)
         .getOrElse(Seq.empty)
-      val refs = gScripts.preRouteRefs ++ lScripts
+      val refs = (plugs ++ gScripts.preRouteRefs ++ lScripts).distinct
       if (refs.nonEmpty) {
         env.metrics
           .withTimerAsync("otoroshi.core.proxy.pre-routing") {
@@ -1829,8 +1834,8 @@ case class ServiceDescriptor(
                       request = req,
                       descriptor = this,
                       attrs = attrs,
-                      globalConfig = gScripts.preRouteConfig,
-                      config = preRouting.config
+                      globalConfig = ConfigUtils.mergeOpt(gScripts.preRouteConfig, env.datastores.globalConfigDataStore.latestSafe.map(_.plugins.config)),
+                      config = ConfigUtils.merge(preRouting.config, plugins.config)
                     )
                   )
               }
@@ -1995,6 +2000,9 @@ object ServiceDescriptor {
           accessValidator = AccessValidatorRef.format
             .reads((json \ "accessValidator").asOpt[JsValue].getOrElse(JsNull))
             .getOrElse(AccessValidatorRef()),
+          plugins = Plugins.format
+            .reads((json \ "plugins").asOpt[JsValue].getOrElse(JsNull))
+            .getOrElse(Plugins()),
           preRouting = PreRoutingRef.format
             .reads((json \ "preRouting").asOpt[JsValue].getOrElse(JsNull))
             .getOrElse(PreRoutingRef()),
@@ -2092,6 +2100,7 @@ object ServiceDescriptor {
         "restrictions"                 -> sd.restrictions.json,
         "accessValidator"              -> sd.accessValidator.json,
         "preRouting"                   -> sd.preRouting.json,
+        "plugins"                      -> sd.plugins.json,
         "hosts"                        -> JsArray(sd.hosts.map(JsString.apply)),
         "paths"                        -> JsArray(sd.paths.map(JsString.apply)),
         "issueCert"                    -> sd.issueCert,

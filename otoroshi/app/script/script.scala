@@ -28,6 +28,7 @@ import play.api.mvc._
 import redis.RedisClientMasterSlaves
 import security.{IdGenerator, OtoroshiClaim}
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
+import otoroshi.utils.config.ConfigUtils
 import utils.TypedMap
 
 import scala.collection.concurrent.TrieMap
@@ -1072,11 +1073,12 @@ object Implicits {
       env.metrics.withTimerAsync("otoroshi.core.proxy.before-request") {
         env.scriptingEnabled match {
           case true =>
+            val plugs = desc.plugins.requestTransformers(ctx.request)
             val gScripts = env.datastores.globalConfigDataStore.latestSafe
               .filter(_.scripts.enabled)
               .map(_.scripts)
               .getOrElse(GlobalScripts(transformersConfig = Json.obj()))
-            val refs = gScripts.transformersRefs ++ desc.transformerRefs
+            val refs = (plugs ++ gScripts.transformersRefs ++ desc.transformerRefs).distinct
             if (refs.nonEmpty) {
               Source(refs.toList.zipWithIndex).runForeach {
                 case (ref, index) =>
@@ -1085,8 +1087,8 @@ object Implicits {
                     .beforeRequest(
                       ctx.copy(
                         index = index,
-                        config = ctx.config,
-                        globalConfig = gScripts.transformersConfig
+                        globalConfig = ConfigUtils.mergeOpt(gScripts.transformersConfig, env.datastores.globalConfigDataStore.latestSafe.map(_.plugins.config)),
+                        config = ConfigUtils.merge(ctx.config, desc.plugins.config)
                       )
                     )(env, ec, mat)
               }
@@ -1104,11 +1106,12 @@ object Implicits {
       env.metrics.withTimerAsync("otoroshi.core.proxy.after-request") {
         env.scriptingEnabled match {
           case true =>
+            val plugs = desc.plugins.requestTransformers(ctx.request)
             val gScripts = env.datastores.globalConfigDataStore.latestSafe
               .filter(_.scripts.enabled)
               .map(_.scripts)
               .getOrElse(GlobalScripts(transformersConfig = Json.obj()))
-            val refs = gScripts.transformersRefs ++ desc.transformerRefs
+            val refs = (plugs ++ gScripts.transformersRefs ++ desc.transformerRefs).distinct
             if (refs.nonEmpty) {
               Source(refs.toList.zipWithIndex).runForeach {
                 case (ref, index) =>
@@ -1117,8 +1120,8 @@ object Implicits {
                     .afterRequest(
                       ctx.copy(
                         index = index,
-                        config = ctx.config,
-                        globalConfig = gScripts.transformersConfig
+                        globalConfig = ConfigUtils.mergeOpt(gScripts.transformersConfig, env.datastores.globalConfigDataStore.latestSafe.map(_.plugins.config)),
+                        config = ConfigUtils.merge(ctx.config, desc.plugins.config)
                       )
                     )(env, ec, mat)
               }
@@ -1136,11 +1139,12 @@ object Implicits {
       env.metrics.withTimerAsync("otoroshi.core.proxy.transform-request") {
         env.scriptingEnabled match {
           case true =>
+            val plugs = desc.plugins.requestTransformers(context.request)
             val gScripts = env.datastores.globalConfigDataStore.latestSafe
               .filter(_.scripts.enabled)
               .map(_.scripts)
               .getOrElse(GlobalScripts(transformersConfig = Json.obj()))
-            val refs = gScripts.transformersRefs ++ desc.transformerRefs
+            val refs = (plugs ++ gScripts.transformersRefs ++ desc.transformerRefs).distinct
             if (refs.nonEmpty) {
               val either: Either[Result, HttpRequest] = Right(context.otoroshiRequest)
               Source(refs.toList.zipWithIndex).runFoldAsync(either) {
@@ -1151,8 +1155,9 @@ object Implicits {
                     .transformRequestWithCtx(
                       context.copy(otoroshiRequest = lastHttpRequest,
                                    index = index,
-                                   config = context.config,
-                                   globalConfig = gScripts.transformersConfig)
+                        globalConfig = ConfigUtils.mergeOpt(gScripts.transformersConfig, env.datastores.globalConfigDataStore.latestSafe.map(_.plugins.config)),
+                        config = ConfigUtils.merge(context.config, desc.plugins.config)
+                      )
                     )(env, ec, mat)
               }
             } else {
@@ -1168,11 +1173,12 @@ object Implicits {
       env.metrics.withTimerAsync("otoroshi.core.proxy.transform-response") {
         env.scriptingEnabled match {
           case true =>
+            val plugs = desc.plugins.requestTransformers(context.request)
             val gScripts = env.datastores.globalConfigDataStore.latestSafe
               .filter(_.scripts.enabled)
               .map(_.scripts)
               .getOrElse(GlobalScripts(transformersConfig = Json.obj()))
-            val refs = gScripts.transformersRefs ++ desc.transformerRefs
+            val refs = (plugs ++ gScripts.transformersRefs ++ desc.transformerRefs).distinct
             if (refs.nonEmpty) {
               val either: Either[Result, HttpResponse] = Right(context.otoroshiResponse)
               Source(refs.toList.zipWithIndex).runFoldAsync(either) {
@@ -1183,8 +1189,9 @@ object Implicits {
                     .transformResponseWithCtx(
                       context.copy(otoroshiResponse = lastHttpResponse,
                                    index = index,
-                                   config = context.config,
-                                   globalConfig = gScripts.transformersConfig)
+                        globalConfig = ConfigUtils.mergeOpt(gScripts.transformersConfig, env.datastores.globalConfigDataStore.latestSafe.map(_.plugins.config)),
+                        config = ConfigUtils.merge(context.config, desc.plugins.config)
+                      )
                     )(env, ec, mat)
               }
             } else {
@@ -1200,11 +1207,12 @@ object Implicits {
       env.metrics.withTimerAsync("otoroshi.core.proxy.transform-error") {
         env.scriptingEnabled match {
           case true =>
+            val plugs = desc.plugins.requestTransformers(context.request)
             val gScripts = env.datastores.globalConfigDataStore.latestSafe
               .filter(_.scripts.enabled)
               .map(_.scripts)
               .getOrElse(GlobalScripts(transformersConfig = Json.obj()))
-            val refs = gScripts.transformersRefs ++ desc.transformerRefs
+            val refs = (plugs ++ gScripts.transformersRefs ++ desc.transformerRefs).distinct
             if (refs.nonEmpty) {
               val result: Result = context.otoroshiResult
               Source(refs.toList.zipWithIndex).runFoldAsync(result) {
@@ -1231,8 +1239,8 @@ object Implicits {
                           )
                         ),
                         index = index,
-                        config = context.config,
-                        globalConfig = gScripts.transformersConfig
+                        globalConfig = ConfigUtils.mergeOpt(gScripts.transformersConfig, env.datastores.globalConfigDataStore.latestSafe.map(_.plugins.config)),
+                        config = ConfigUtils.merge(context.config, desc.plugins.config)
                       )
                     )(env, ec, mat)
               }
@@ -1249,11 +1257,12 @@ object Implicits {
       env.metrics.withTimer("otoroshi.core.proxy.transform-request-body") {
         env.scriptingEnabled match {
           case true =>
+            val plugs = desc.plugins.requestTransformers(context.request)
             val gScripts = env.datastores.globalConfigDataStore.latestSafe
               .filter(_.scripts.enabled)
               .map(_.scripts)
               .getOrElse(GlobalScripts(transformersConfig = Json.obj()))
-            val refs = gScripts.transformersRefs ++ desc.transformerRefs
+            val refs = (plugs ++ gScripts.transformersRefs ++ desc.transformerRefs).distinct
             if (refs.nonEmpty) {
               Source.futureSource(Source(refs.toList.zipWithIndex).runFold(context.body) {
                 case (body, (ref, index)) =>
@@ -1262,8 +1271,9 @@ object Implicits {
                     .transformRequestBodyWithCtx(
                       context.copy(body = body,
                                    index = index,
-                                   config = context.config,
-                                   globalConfig = gScripts.transformersConfig)
+                        globalConfig = ConfigUtils.mergeOpt(gScripts.transformersConfig, env.datastores.globalConfigDataStore.latestSafe.map(_.plugins.config)),
+                        config = ConfigUtils.merge(context.config, desc.plugins.config)
+                      )
                     )(env, ec, mat)
               })
             } else {
@@ -1279,21 +1289,24 @@ object Implicits {
       env.metrics.withTimer("otoroshi.core.proxy.transform-response-body") {
         env.scriptingEnabled match {
           case true =>
+            val plugs = desc.plugins.requestTransformers(context.request)
             val gScripts = env.datastores.globalConfigDataStore.latestSafe
               .filter(_.scripts.enabled)
               .map(_.scripts)
               .getOrElse(GlobalScripts(transformersConfig = Json.obj()))
-            val refs = gScripts.transformersRefs ++ desc.transformerRefs
+            val refs = (plugs ++ gScripts.transformersRefs ++ desc.transformerRefs).distinct
             if (refs.nonEmpty) {
               Source.futureSource(Source(refs.toList.zipWithIndex).runFold(context.body) {
                 case (body, (ref, index)) =>
                   env.scriptManager
                     .getScript(ref)
                     .transformResponseBodyWithCtx(
-                      context.copy(body = body,
-                                   index = index,
-                                   config = context.config,
-                                   globalConfig = gScripts.transformersConfig)
+                      context.copy(
+                        body = body,
+                        index = index,
+                        globalConfig = ConfigUtils.mergeOpt(gScripts.transformersConfig, env.datastores.globalConfigDataStore.latestSafe.map(_.plugins.config)),
+                        config = ConfigUtils.merge(context.config, desc.plugins.config)
+                      )
                     )(env, ec, mat)
               })
             } else {
