@@ -3,6 +3,7 @@ package cluster
 import java.io.File
 import java.lang.management.ManagementFactory
 import java.net.InetAddress
+import java.security.MessageDigest
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, AtomicLong, AtomicReference}
 import java.util.concurrent.{ConcurrentHashMap, TimeUnit}
 import java.util.regex.Pattern
@@ -23,6 +24,7 @@ import events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
 import gateway.{InMemoryRequestsDataStore, RequestsDataStore, Retry}
 import javax.management.{Attribute, ObjectName}
 import models._
+import org.apache.commons.codec.binary.Hex
 import org.joda.time.DateTime
 import otoroshi.models.{SimpleAdminDataStore, TenantId, WebAuthnAdminDataStore}
 import otoroshi.script.{KvScriptDataStore, ScriptDataStore}
@@ -35,7 +37,7 @@ import play.api.inject.ApplicationLifecycle
 import play.api.libs.json._
 import play.api.libs.streams.Accumulator
 import play.api.libs.ws.{DefaultWSProxyServer, SourceBody, WSAuthScheme, WSProxyServer}
-import play.api.mvc.{AbstractController, BodyParser, ControllerComponents}
+import play.api.mvc.{AbstractController, BodyParser, ControllerComponents, Result}
 import play.api.{Configuration, Environment, Logger}
 import redis.RedisClientMasterSlaves
 import security.IdGenerator
@@ -50,6 +52,7 @@ import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.math.BigDecimal.RoundingMode
+import scala.util.control.NoStackTrace
 import scala.util.{Failure, Success, Try}
 
 /**
@@ -58,6 +61,7 @@ import scala.util.{Failure, Success, Try}
  * java -Dhttp.port=8080 -Dhttps.port=8443 -Dotoroshi.cluster.mode=leader -Dotoroshi.cluster.autoUpdateState=true -Dapp.adminPassword=password -Dapp.storage=file -Dotoroshi.loggers.otoroshi-cluster=DEBUG -jar otoroshi.jar
  * java -Dhttp.port=9080 -Dhttps.port=9443 -Dotoroshi.cluster.mode=worker  -Dapp.storage=file -Dotoroshi.loggers.otoroshi-cluster=DEBUG -jar otoroshi.jar
  * java -Dhttp.port=9080 -Dotoroshi.cluster.leader.url=http://otoroshi-api.oto.tools:9999 -Dotoroshi.cluster.worker.dbpath=./worker.db -Dhttps.port=9443 -Dotoroshi.cluster.mode=worker  -Dapp.storage=file -Dotoroshi.loggers.otoroshi-cluster=DEBUG -jar otoroshi.jar
+ * java -Dhttp.port=9080 -Dotoroshi.cluster.leader.url=http://otoroshi-api.oto.tools:9999 -Dotoroshi.cluster.worker.dbpath=./worker.db -Dhttps.port=9443 -Dotoroshi.cluster.mode=worker -jar otoroshi.jar
  */
 object Cluster {
   lazy val logger = Logger("otoroshi-cluster")
@@ -149,7 +153,7 @@ object ClusterConfig {
     ClusterConfig(
       mode = configuration.getOptionalWithFileSupport[String]("mode").flatMap(ClusterMode.apply).getOrElse(ClusterMode.Off),
       compression = configuration.getOptionalWithFileSupport[Int]("compression").getOrElse(-1),
-      autoUpdateState = configuration.getOptionalWithFileSupport[Boolean]("autoUpdateState").getOrElse(false),
+      autoUpdateState = configuration.getOptionalWithFileSupport[Boolean]("autoUpdateState").getOrElse(true),
       mtlsConfig = MtlsConfig(
         certs = configuration.getOptionalWithFileSupport[Seq[String]]("mtls.certs").getOrElse(Seq.empty),
         trustedCerts = configuration.getOptionalWithFileSupport[Seq[String]]("mtls.trustedCerts").getOrElse(Seq.empty),
@@ -616,9 +620,11 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
   private val membershipRef   = new AtomicReference[Cancellable]()
   private val stateUpdaterRef = new AtomicReference[Cancellable]()
 
-  private val caching   = new AtomicBoolean(false)
-  private val cachedAt  = new AtomicLong(0L)
-  private val cachedRef = new AtomicReference[ByteString](ByteString.empty)
+  private val caching     = new AtomicBoolean(false)
+  private val cachedAt    = new AtomicLong(0L)
+  private val cacheCount  = new AtomicLong(0L)
+  private val cacheDigest = new AtomicReference[String]("--")
+  private val cachedRef   = new AtomicReference[ByteString](ByteString.empty)
 
   private lazy val hostAddress: String = env.configuration
     .getOptionalWithFileSupport[String]("otoroshi.cluster.selfAddress")
@@ -721,16 +727,24 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
 
   def cachedState     = cachedRef.get()
   def cachedTimestamp = cachedAt.get()
+  def cachedCount     = cacheCount.get()
+  def cachedDigest    = cacheDigest.get()
 
   private def cacheState(): Unit = {
     if (caching.compareAndSet(false, true)) {
       val start      = System.currentTimeMillis()
       // var stateCache = ByteString.empty
+      val counter = new AtomicLong(0L)
+      val digest = MessageDigest.getInstance("SHA-256")
       env.datastores
         .rawExport(env.clusterConfig.leader.groupingBy)
         .map { item =>
           ByteString(Json.stringify(item) + "\n")
         }
+        .alsoTo(Sink.foreach { item =>
+          digest.update(item.asByteBuffer)
+          counter.incrementAndGet()
+        })
         .via(env.clusterConfig.gzip())
         // .alsoTo(Sink.fold(ByteString.empty)(_ ++ _))
         // .alsoTo(Sink.foreach(bs => stateCache = stateCache ++ bs))
@@ -753,6 +767,8 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
           case Success(stateCache) => {
             cachedRef.set(stateCache)
             cachedAt.set(System.currentTimeMillis())
+            cacheCount.set(counter.get())
+            cacheDigest.set(Hex.encodeHexString(digest.digest()))
             caching.compareAndSet(true, false)
             env.datastores.clusterStateDataStore.updateDataOut(stateCache.size)
             env.clusterConfig.leader.stateDumpPath
@@ -1087,9 +1103,17 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
               .flatMap { resp =>
                 val store       = new ConcurrentHashMap[String, Any]()
                 val expirations = new ConcurrentHashMap[String, Long]()
+                val responseDigest = resp.header("X-Data-Digest")
+                val responseCount = resp.header("X-Data-Count")
+                val counter = new AtomicLong(0L)
+                val digest = MessageDigest.getInstance("SHA-256")
                 resp.bodyAsSource
                   .via(env.clusterConfig.gunzip())
                   .via(Framing.delimiter(ByteString("\n"), 32 * 1024 * 1024, true))
+                  .alsoTo(Sink.foreach { item =>
+                    digest.update((item ++ ByteString("\n")).asByteBuffer)
+                    counter.incrementAndGet()
+                  })
                   .map(bs => Try(Json.parse(bs.utf8String)))
                   .collect { case Success(item) => item }
                   .runWith(Sink.foreach { item =>
@@ -1102,14 +1126,37 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
                       expirations.put(key, ttl)
                     }
                   })
-                  .map { _ =>
+                  .flatMap { _ =>
+                    val cliDigest = Hex.encodeHexString(digest.digest())
                     Cluster.logger.debug(
                       s"[${env.clusterConfig.mode.name}] Consumed state in ${System.currentTimeMillis() - start} ms at try $tryCount."
                     )
-                    lastPoll.set(DateTime.now())
-                    if (!store.isEmpty) {
-                      firstSuccessfulStateFetchDone.compareAndSet(false, true)
-                      env.datastores.asInstanceOf[SwappableInMemoryDataStores].swap(Memory(store, expirations))
+                    val valid = (for {
+                      count <- responseCount
+                      dig   <- responseDigest
+                    } yield {
+                      val v = (count.toLong == counter.get()) && (dig == cliDigest)
+                      if (!v) {
+                        Cluster.logger.warn(
+                          s"[${env.clusterConfig.mode.name}] state polling validation failed (${tryCount}): expected count: ${count} / ${counter.get()} : ${count.toLong == counter.get()}, expected hash: ${dig} / ${cliDigest} : ${dig == cliDigest}, trying again !"
+                        )
+                      }
+                      v
+                    }).getOrElse(true)
+                    if (valid) {
+                      lastPoll.set(DateTime.now())
+                      if (!store.isEmpty) {
+                        firstSuccessfulStateFetchDone.compareAndSet(false, true)
+                        env.datastores.asInstanceOf[SwappableInMemoryDataStores].swap(Memory(store, expirations))
+                      }
+                      FastFuture.successful(())
+                    } else {
+                      FastFuture.failed(PollStateValidationError(
+                        responseCount.map(_.toLong).getOrElse(0L),
+                        counter.get(),
+                        responseDigest.getOrElse("--"),
+                        cliDigest
+                      ))
                     }
                   }
               }
@@ -1319,6 +1366,10 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
     }
   }
 }
+
+case class PollStateValidationError(expectedCount: Long, count: Long, expectedHash: String, hash: String)
+  extends RuntimeException(s"PollStateValidationError($expectedCount, $count, $expectedHash, $hash)")
+    with NoStackTrace
 
 class SwappableInMemoryDataStores(configuration: Configuration,
                                   environment: Environment,

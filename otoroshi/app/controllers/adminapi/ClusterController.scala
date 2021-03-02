@@ -1,6 +1,7 @@
 package controllers.adminapi
 
 import java.io.File
+import java.security.MessageDigest
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong, AtomicReference}
 
@@ -13,6 +14,7 @@ import cluster.{Cluster, ClusterAgent, ClusterMode, MemberView}
 import com.google.common.io.Files
 import env.Env
 import models.PrivateAppsUser
+import org.apache.commons.codec.binary.Hex
 import org.joda.time.DateTime
 import otoroshi.models.RightsChecker
 import play.api.http.HttpEntity
@@ -400,6 +402,8 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
   val caching   = new AtomicBoolean(false)
   val cachedAt  = new AtomicLong(0L)
   val cachedRef = new AtomicReference[ByteString]()
+  val cachedCount  = new AtomicLong(0L)
+  val cachedDigest = new AtomicReference[String]("--")
 
   def internalState() = ApiAction.async { ctx =>
     ctx.checkRights(RightsChecker.SuperAdminOnly) {
@@ -443,11 +447,17 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
             if (caching.compareAndSet(false, true)) {
               val start: Long = System.currentTimeMillis()
               // var stateCache = ByteString.empty
+              val counter = new AtomicLong(0L)
+              val digest = MessageDigest.getInstance("SHA-256")
               env.datastores
                 .rawExport(env.clusterConfig.leader.groupingBy)
                 .map { item =>
                   ByteString(Json.stringify(item) + "\n")
                 }
+                .alsoTo(Sink.foreach { item =>
+                  digest.update(item.asByteBuffer)
+                  counter.incrementAndGet()
+                })
                 .via(env.clusterConfig.gzip())
                 // .alsoTo(Sink.fold(ByteString.empty)(_ ++ _))
                 // .alsoTo(Sink.foreach(bs => stateCache = stateCache ++ bs))
@@ -480,6 +490,8 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
                     }
                     cachedRef.set(stateCache)
                     cachedAt.set(System.currentTimeMillis())
+                    cachedCount.set(counter.get())
+                    cachedDigest.set(Hex.encodeHexString(digest.digest()))
                     caching.compareAndSet(true, false)
                     env.datastores.clusterStateDataStore.updateDataOut(stateCache.size)
                     env.clusterConfig.leader.stateDumpPath
@@ -494,6 +506,8 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
                         Some("application/x-ndjson")
                       )
                     ).withHeaders(
+                      "X-Data-Count" -> s"${cachedCount.get()}",
+                      "X-Data-Digest" -> cachedDigest.get(),
                       "X-Data-From" -> s"${System.currentTimeMillis()}",
                       "X-Data-Fresh" -> "true"
                     ) //.withHeaders("Content-Encoding" -> "gzip")
@@ -507,6 +521,8 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
                 s"[${env.clusterConfig.mode.name}] Sending state from cache (${cachedValue.size / 1024} Kb) ..."
               )
               Ok.sendEntity(HttpEntity.Streamed(Source.single(cachedValue), None, Some("application/x-ndjson"))).withHeaders(
+                "X-Data-Count" -> s"${cachedCount.get()}",
+                "X-Data-Digest" -> cachedDigest.get(),
                 "X-Data-From" -> s"${cachedAt.get()}",
                 "X-Data-From-Cache" -> "true"
               ).future
@@ -515,12 +531,14 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
 
           if (env.clusterConfig.autoUpdateState) {
             Cluster.logger.debug(
-              s"[${env.clusterConfig.mode.name}] Sending state from auto cache (${cachedValue.size / 1024} Kb) ..."
+              s"[${env.clusterConfig.mode.name}] Sending state from auto cache (${env.clusterLeaderAgent.cachedCount} items / ${cachedValue.size / 1024} Kb) ..."
             )
             Ok.sendEntity(
               HttpEntity.Streamed(Source.single(env.clusterLeaderAgent.cachedState), None, Some("application/x-ndjson"))
             )
               .withHeaders(
+                "X-Data-Count" -> s"${env.clusterLeaderAgent.cachedCount}",
+                "X-Data-Digest" -> env.clusterLeaderAgent.cachedDigest,
                 "X-Data-From" -> s"${env.clusterLeaderAgent.cachedTimestamp}",
                 "X-Data-Auto" -> "true"
               ).future
@@ -532,6 +550,8 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
             )
             Ok.sendEntity(HttpEntity.Streamed(Source.single(cachedValue), None, Some("application/x-ndjson")))
               .withHeaders(
+                "X-Data-Count" -> s"${cachedCount.get()}",
+                "X-Data-Digest" -> cachedDigest.get(),
                 "X-Data-From" -> s"${cachedAt.get()}",
                 "X-Data-From-Cache" -> "true"
               ).future
@@ -543,6 +563,8 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
             )
             Ok.sendEntity(HttpEntity.Streamed(Source.single(cachedValue), None, Some("application/x-ndjson")))
               .withHeaders(
+                "X-Data-Count" -> s"${cachedCount.get()}",
+                "X-Data-Digest" -> cachedDigest.get(),
                 "X-Data-From" -> s"${cachedAt.get()}",
                 "X-Data-From-Cache" -> "true"
               ).future

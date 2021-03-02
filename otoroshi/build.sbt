@@ -126,6 +126,8 @@ assemblyMergeStrategy in assembly := {
   case PathList(ps @ _*) if ps.last == "io.netty.versions.properties" => MergeStrategy.first
   case PathList(ps @ _*) if ps.contains("reference-overrides.conf")   => MergeStrategy.concat
   case PathList(ps @ _*) if ps.contains("field_mask.proto")           => MergeStrategy.first // ???
+  case PathList(ps @ _*) if ps.contains("plugin.proto")               => MergeStrategy.first // ??? not sure if it uses the latest version for biscuit
+  case PathList(ps @ _*) if ps.contains("descriptor.proto")           => MergeStrategy.first // ??? not sure if it uses the latest version for biscuit
   case PathList(ps @ _*) if ps.contains("module-info.class")          => MergeStrategy.first // ???
   case PathList(ps @ _*) if ps.contains("ModuleUtil.class")           => MergeStrategy.first // ???
   case PathList(ps @ _*) if ps.contains("GuardedBy.class")            => MergeStrategy.first // ???
