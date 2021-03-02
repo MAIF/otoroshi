@@ -10,6 +10,7 @@ import akka.util.ByteString
 import env.Env
 import otoroshi.storage._
 import play.api.Logger
+import play.api.libs.json.{JsValue, Json}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -27,7 +28,7 @@ object SwappableInMemoryRedis {
   lazy val logger = Logger("otoroshi-atomic-in-memory-datastore")
 }
 
-class SwappableInMemoryRedis(env: Env, actorSystem: ActorSystem) extends RedisLike {
+class SwappableInMemoryRedis(_optimized: Boolean, env: Env, actorSystem: ActorSystem) extends RedisLike with OptimizedRedisLike {
 
   import actorSystem.dispatcher
 
@@ -77,6 +78,20 @@ class SwappableInMemoryRedis(env: Env, actorSystem: ActorSystem) extends RedisLi
     store.clear()
     expirations.clear()
     FastFuture.successful(true)
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // optimized stuff
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+  override val optimized: Boolean = _optimized
+
+  override def findAllOptimized(kind: String, kindKey: String): Future[Seq[JsValue]] = {
+    FastFuture.successful(
+      store.asScala.toSeq.collect {
+        case (key, value) if key.startsWith(kindKey) && value.isInstanceOf[ByteString] => Json.parse(value.asInstanceOf[ByteString].utf8String)
+      }
+    )
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

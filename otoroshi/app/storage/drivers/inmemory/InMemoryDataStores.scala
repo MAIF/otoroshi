@@ -48,7 +48,8 @@ class InMemoryDataStores(configuration: Configuration,
         .getOrElse(ConfigFactory.empty)
     )
   val materializer = Materializer(actorSystem)
-  lazy val redis = new SwappableInMemoryRedis(env, actorSystem)
+  val _optimized = configuration.getOptional[Boolean]("app.inmemory.optimized").getOrElse(false)
+  lazy val redis = new SwappableInMemoryRedis(_optimized, env, actorSystem)
 
   lazy val persistence = persistenceKind match {
     case PersistenceKind.HttpPersistenceKind => new HttpPersistence(this, env)

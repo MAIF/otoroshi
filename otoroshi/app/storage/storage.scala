@@ -183,13 +183,54 @@ trait RedisLike {
 }
 
 trait OptimizedRedisLike {
-  def findAllOptimized(kind: String): Future[Seq[JsValue]]
-  def extractKind(key: String): Option[String]
-  def serviceDescriptors_findByHost(query: ServiceDescriptorQuery): Future[Seq[ServiceDescriptor]]
-  def serviceDescriptors_findByEnv(env: String): Future[Seq[ServiceDescriptor]]
-  def serviceDescriptors_findByGroup(id: String): Future[Seq[ServiceDescriptor]]
-  def apiKeys_findByService(service: ServiceDescriptor): Future[Seq[ApiKey]]
-  def apiKeys_findByGroup(serviceId: String): Future[Seq[ApiKey]]
+  def findAllOptimized(kind: String, kindKey: String): Future[Seq[JsValue]]
+  def serviceDescriptors_findByHost(query: ServiceDescriptorQuery)(implicit ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] = {
+    FastFuture.failed(new NotImplementedError())
+  }
+  def serviceDescriptors_findByEnv(ev: String)(implicit ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] = {
+    env.datastores.serviceDescriptorDataStore.findAll().map(_.filter(_.env == ev))
+  }
+  def serviceDescriptors_findByGroup(id: String)(implicit ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] = {
+    env.datastores.serviceDescriptorDataStore.findAll().map(_.filter(_.groups.contains(id)))
+  }
+  def apiKeys_findByService(service: ServiceDescriptor)(implicit ec: ExecutionContext, env: Env): Future[Seq[ApiKey]] = {
+    env.datastores.apiKeyDataStore.findAll().map { keys =>
+      keys.filter { key =>
+        key.authorizedOnService(service.id) || key.authorizedOnOneGroupFrom(service.groups)
+      }
+    }
+  }
+  def apiKeys_findByGroup(groupId: String)(implicit ec: ExecutionContext, env: Env): Future[Seq[ApiKey]] = {
+    env.datastores.serviceGroupDataStore.findById(groupId).flatMap {
+      case Some(group) => {
+        env.datastores.apiKeyDataStore.findAll().map { keys =>
+          keys.filter { key =>
+            key.authorizedOnGroup(group.id)
+          }
+        }
+      }
+      case None => FastFuture.failed(new GroupNotFoundException(groupId))
+    }
+  }
+  def extractKind(key: String, env: Env): Option[String] = {
+    import otoroshi.utils.syntax.implicits._
+    val ds = env.datastores
+    key match {
+      case _ if key.startsWith(ds.serviceDescriptorDataStore.keyStr("")) => "service-descriptor".some
+      case _ if key.startsWith(ds.apiKeyDataStore.keyStr("")) => "apikey".some
+      case _ if key.startsWith(ds.certificatesDataStore.keyStr("")) => "certificate".some
+      case _ if key.startsWith(ds.serviceGroupDataStore.keyStr("")) => "service-group".some
+      case _ if key.startsWith(ds.globalJwtVerifierDataStore.keyStr("")) => "jwt-verifier".some
+      case _ if key.startsWith(ds.authConfigsDataStore.keyStr("")) => "auth-module".some
+      case _ if key.startsWith(ds.scriptDataStore.keyStr("")) => "script".some
+      case _ if key.startsWith(ds.dataExporterConfigDataStore.keyStr("")) => "data-exporter".some
+      case _ if key.startsWith(ds.teamDataStore.keyStr("")) => "team".some
+      case _ if key.startsWith(ds.tenantDataStore.keyStr("")) => "tenant".some
+      case _ if key.startsWith(ds.tcpServiceDataStore.keyStr("")) => "tcp-service".some
+      case _ if key.startsWith(ds.globalConfigDataStore.keyStr("")) => "global-config".some
+      case _ => None
+    }
+  }
 }
 
 trait RedisLikeStore[T] extends BasicStore[T] {
@@ -241,7 +282,7 @@ trait RedisLikeStore[T] extends BasicStore[T] {
     }
   }
 
-  def findAll(force: Boolean = false)(implicit ec: ExecutionContext, env: Env): Future[Seq[T]] = {
+  def findAll(force: Boolean = false)(implicit ec: ExecutionContext, env: Env): Future[Seq[T]] = env.metrics.withTimerAsync("otoroshi.core.store.find-all") {
 
     def actualFindAll() = {
 
@@ -264,8 +305,9 @@ trait RedisLikeStore[T] extends BasicStore[T] {
 
       if (redisLike.optimized) {
         val optRedis = redisLike.asInstanceOf[OptimizedRedisLike]
-        optRedis.extractKind(keyStr("")).map { kind =>
-          optRedis.findAllOptimized(kind).map { seq =>
+        val kindKey = keyStr("")
+        optRedis.extractKind(kindKey, env).map { kind =>
+          optRedis.findAllOptimized(kind, kindKey).map { seq =>
             seq.map(v => fromJsonSafe(v)).collect {
               case JsSuccess(i, _) => i
             }

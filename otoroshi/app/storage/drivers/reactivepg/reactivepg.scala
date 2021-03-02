@@ -572,27 +572,9 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env, schemaDotTabl
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // optimized stuff
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  def extractKind(key: String): Option[String] = {
-    val ds = env.datastores
-    key match {
-      case _ if key.startsWith(ds.serviceDescriptorDataStore.keyStr("")) => "service-descriptor".some
-      case _ if key.startsWith(ds.apiKeyDataStore.keyStr("")) => "apikey".some
-      case _ if key.startsWith(ds.certificatesDataStore.keyStr("")) => "certificate".some
-      case _ if key.startsWith(ds.serviceGroupDataStore.keyStr("")) => "service-group".some
-      case _ if key.startsWith(ds.globalJwtVerifierDataStore.keyStr("")) => "jwt-verifier".some
-      case _ if key.startsWith(ds.authConfigsDataStore.keyStr("")) => "auth-module".some
-      case _ if key.startsWith(ds.scriptDataStore.keyStr("")) => "script".some
-      case _ if key.startsWith(ds.dataExporterConfigDataStore.keyStr("")) => "data-exporter".some
-      case _ if key.startsWith(ds.teamDataStore.keyStr("")) => "team".some
-      case _ if key.startsWith(ds.tenantDataStore.keyStr("")) => "tenant".some
-      case _ if key.startsWith(ds.tcpServiceDataStore.keyStr("")) => "tcp-service".some
-      case _ if key.startsWith(ds.globalConfigDataStore.keyStr("")) => "global-config".some
-      case _ => None
-    }
-  }
 
   def matchesEntity(key: String, value: ByteString): Option[(String, String)] = {
-    extractKind(key).map(kind => (kind, preCompute(kind, value)))
+    extractKind(key, env).map(kind => (kind, preCompute(kind, value)))
   }
 
   def preCompute(key: String, value: ByteString): String = {
@@ -608,13 +590,13 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env, schemaDotTabl
     }
   }
 
-  def findAllOptimized(kind: String): Future[Seq[JsValue]] = measure("pg.ops.optm.find-all") {
+  def findAllOptimized(kind: String, kindKey: String): Future[Seq[JsValue]] = measure("pg.ops.optm.find-all") {
     querySeq(s"select jvalue from $schemaDotTable where kind = $$1 and (ttl_starting_at + ttl) > NOW();", Seq(kind)) { row =>
       row.optJsObject("jvalue")
     }
   }
 
-  def serviceDescriptors_findByHost(query: ServiceDescriptorQuery): Future[Seq[ServiceDescriptor]] = measure("pg.ops.optm.services-find-by-host") {
+  override def serviceDescriptors_findByHost(query: ServiceDescriptorQuery)(implicit ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] = measure("pg.ops.optm.services-find-by-host") {
     val queryRegex = "^" + query.toHost.replace("*", ".*").replace(".", "\\.")
     querySeq(s"select value from $schemaDotTable, jsonb_array_elements_text(jvalue->'__allHosts') many(elem) where (jvalue->'enabled')::boolean = true and kind = 'service-descriptor' and elem ~ '$queryRegex' and (ttl_starting_at + ttl) > NOW();") { row =>
       row.optJsObject("value").map(ServiceDescriptor.fromJsonSafe).collect {
@@ -623,7 +605,7 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env, schemaDotTabl
     }
   }
 
-  def serviceDescriptors_findByEnv(ev: String): Future[Seq[ServiceDescriptor]] = measure("pg.ops.optm.services-find-by-env") {
+  override def serviceDescriptors_findByEnv(ev: String)(implicit ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] = measure("pg.ops.optm.services-find-by-env") {
     querySeq(s"select value from $schemaDotTable where kind = 'service-descriptor' and jvalue -> 'env' = '${ev}' and (ttl_starting_at + ttl) > NOW();") { row =>
       row.optJsObject("value").map(ServiceDescriptor.fromJsonSafe).collect {
         case JsSuccess(service, _) => service
@@ -631,7 +613,7 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env, schemaDotTabl
     }
   }
 
-  def serviceDescriptors_findByGroup(id: String): Future[Seq[ServiceDescriptor]] = measure("pg.ops.optm.find-by-group") {
+  override def serviceDescriptors_findByGroup(id: String)(implicit ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] = measure("pg.ops.optm.find-by-group") {
     querySeq(s"select value from $schemaDotTable where kind = 'service-descriptor' and jvalue -> 'groups' ? '${id}' and (ttl_starting_at + ttl) > NOW();") { row =>
       row.optJsObject("value").map(ServiceDescriptor.fromJsonSafe).collect {
         case JsSuccess(service, _) => service
@@ -639,7 +621,7 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env, schemaDotTabl
     }
   }
 
-  def apiKeys_findByService(service: ServiceDescriptor): Future[Seq[ApiKey]] = measure("pg.ops.optm.apikeys-find-by-service"){
+  override def apiKeys_findByService(service: ServiceDescriptor)(implicit ec: ExecutionContext, env: Env): Future[Seq[ApiKey]] = measure("pg.ops.optm.apikeys-find-by-service"){
     val predicates = (
       Seq(s"jvalue -> 'authorizedEntities' ? '${ServiceDescriptorIdentifier(service.id).str}'") ++
         service.groups.map(g => s"jvalue -> 'authorizedEntities' ? '${ServiceGroupIdentifier(g).str}'")
@@ -652,7 +634,7 @@ class ReactivePgRedis(pool: PgPool, system: ActorSystem, env: Env, schemaDotTabl
     }
   }
 
-  def apiKeys_findByGroup(groupId: String): Future[Seq[ApiKey]] = measure("pg.ops.optm.apikeys-find-by-group") {
+  override def apiKeys_findByGroup(groupId: String)(implicit ec: ExecutionContext, env: Env): Future[Seq[ApiKey]] = measure("pg.ops.optm.apikeys-find-by-group") {
     querySeq(s"select value from $schemaDotTable where kind = 'apikey' and jvalue -> 'authorizedEntities' ? '${ServiceGroupIdentifier(groupId).str}' and (ttl_starting_at + ttl) > NOW();") { row =>
       row.optJsObject("value").map(ApiKey.fromJsonSafe).collect {
         case JsSuccess(apikey, _) => apikey
