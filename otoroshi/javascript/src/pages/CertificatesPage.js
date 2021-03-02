@@ -564,13 +564,10 @@ export class CertificatesPage extends Component {
     'autoRenew',
     'client',
     'keypair',
-    'exposed',
-    'revoked',
     'commands',
     'valid',
     'chain',
     'privateKey',
-    'password',
     'infos',
     'metadata',
   ];
@@ -992,65 +989,37 @@ export class NewCertificateForm extends Component {
               label="Key Type"
               help="The type of the private key"
               value={this.state.keyType}
-              onChange={(v) => {
-                this.changeTheValue('keyType', v);
-                this.changeTheValue('keySize', 256);
-                this.changeTheValue('signatureAlg', 'SHA256withECDSA');
-                this.changeTheValue('digestAlg', 'SHA-256');
-              }}
-              possibleValues={[
-                { label: 'RSA', value: 'RSA' },
-                { label: 'ECDSA', value: 'ECDSA' },
-              ]}
+              onChange={(v) => changeTheValue('keyType', v)}
+              possibleValues={[{ label: 'RSA', value: 'RSA' }]}
             />
             <SelectInput
-              label={this.state.keyType !== 'RSA' ? 'Curve' : 'Key Size'}
-              help={
-                this.state.keyType !== 'RSA'
-                  ? 'The curve used for the key'
-                  : 'The size of the private key'
-              }
+              label="Key Size"
+              help="The size of the private key"
               value={this.state.keySize}
-              onChange={(v) => this.changeTheValue('keySize', v)}
-              possibleValues={
-                this.state.keyType === 'RSA'
-                  ? [
-                      { label: '2048', value: 2048 },
-                      { label: '4096', value: 4096 },
-                      { label: '6144', value: 6144 },
-                    ]
-                  : [
-                      { label: 'P256', value: 256 },
-                      { label: 'P384', value: 384 },
-                      { label: 'P521', value: 521 },
-                    ]
-              }
+              onChange={(v) => changeTheValue('keySize', v)}
+              possibleValues={[
+                { label: '1024', value: 1024 },
+                { label: '2048', value: 2048 },
+                { label: '4096', value: 4096 },
+              ]}
             />
             <SelectInput
               label="Signature Algorithm"
               help="The signature algorithm used"
               value={this.state.signatureAlg}
-              onChange={(v) => this.changeTheValue('signatureAlg', v)}
-              possibleValues={
-                this.state.keyType === 'RSA'
-                  ? [
-                      { label: 'SHA224WithRSAEncryption', value: 'SHA224WithRSAEncryption' },
-                      { label: 'SHA256WithRSAEncryption', value: 'SHA256WithRSAEncryption' },
-                      { label: 'SHA384WithRSAEncryption', value: 'SHA384WithRSAEncryption' },
-                      { label: 'SHA512WithRSAEncryption', value: 'SHA512WithRSAEncryption' },
-                    ]
-                  : [
-                      { label: 'SHA256withECDSA', value: 'SHA256withECDSA' },
-                      { label: 'SHA384withECDSA', value: 'SHA384withECDSA' },
-                      { label: 'SHA512withECDSA', value: 'SHA512withECDSA' },
-                    ]
-              }
+              onChange={(v) => changeTheValue('signatureAlg', v)}
+              possibleValues={[
+                { label: 'SHA224WithRSAEncryption', value: 'SHA224WithRSAEncryption' },
+                { label: 'SHA256WithRSAEncryption', value: 'SHA256WithRSAEncryption' },
+                { label: 'SHA384WithRSAEncryption', value: 'SHA384WithRSAEncryption' },
+                { label: 'SHA512WithRSAEncryption', value: 'SHA512WithRSAEncryption' },
+              ]}
             />
             <SelectInput
               label="Digest Algorithm"
               help="The digest algorithm used"
               value={this.state.digestAlg}
-              onChange={(v) => this.changeTheValue('digestAlg', v)}
+              onChange={(v) => changeTheValue('digestAlg', v)}
               possibleValues={[
                 { label: 'SHA-224', value: 'SHA-224' },
                 { label: 'SHA-256', value: 'SHA-256' },
