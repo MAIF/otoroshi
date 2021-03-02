@@ -939,7 +939,7 @@ class ClientCredentialService extends RequestSink {
           authority_builder.add_fact(fact("token_iat",   Seq(s("authority"), date(DateTime.now().toDate)).asJava))
           authority_builder.add_fact(fact("token_nbf",   Seq(s("authority"), date(DateTime.now().toDate)).asJava))
           authority_builder.add_fact(fact("token_iss",   Seq(s("authority"), string(ctx.request.theProtocol + "://" + ctx.request.host)).asJava))
-          authority_builder.add_fact(fact("token_aud",   Seq(s("authority"), string("otoroshi")).asJava))
+          authority_builder.add_fact(fact("token_aud",   Seq(s("authority"), s("otoroshi")).asJava))
           authority_builder.add_fact(fact("client_id",   Seq(s("authority"), string(apiKey.clientId)).asJava))
           authority_builder.add_fact(fact("client_sign", Seq(s("authority"), string(Signatures.hmacSha256Sign(apiKey.clientId, apiKey.clientSecret))).asJava))
 
