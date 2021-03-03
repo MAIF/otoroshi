@@ -3,7 +3,6 @@ package otoroshi.plugins.jobs.kubernetes
 import java.util.Base64
 import java.util.concurrent.{Executors, TimeUnit}
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong, AtomicReference}
-
 import akka.util.ByteString
 import akka.http.scaladsl.model.Uri
 import akka.stream.scaladsl.{Sink, Source}
@@ -17,7 +16,7 @@ import io.kubernetes.client.util.ClientBuilder
 import io.kubernetes.client.util.credentials.AccessTokenAuthentication
 import models._
 import org.joda.time.DateTime
-import otoroshi.models.{SimpleOtoroshiAdmin, Team, Tenant}
+import otoroshi.models.{DataExporterConfig, SimpleOtoroshiAdmin, Team, Tenant}
 import otoroshi.plugins.jobs.kubernetes.IngressSupport.IntOrString
 import otoroshi.script._
 import otoroshi.ssl.pki.models.GenCsrQuery

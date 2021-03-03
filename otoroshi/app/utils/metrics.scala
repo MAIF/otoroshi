@@ -26,13 +26,14 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.spotify.metrics.core.{MetricId, SemanticMetricRegistry}
 import com.spotify.metrics.jvm.{CpuGaugeSet, FileDescriptorGaugeSet}
 import io.prometheus.client.exporter.common.TextFormat
+import play.api.Logger
 import play.api.inject.ApplicationLifecycle
 
 import scala.concurrent.{ExecutionContext, Future}
 
 trait TimerMetrics {
-  def withTimer[T](name: String)(f: => T): T                                                     = f
-  def withTimerAsync[T](name: String)(f: => Future[T])(implicit ec: ExecutionContext): Future[T] = f
+  def withTimer[T](name: String, display: Boolean = false)(f: => T): T                                                     = f
+  def withTimerAsync[T](name: String, display: Boolean = false)(f: => Future[T])(implicit ec: ExecutionContext): Future[T] = f
 }
 
 object FakeTimerMetrics extends TimerMetrics
@@ -49,6 +50,8 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) extends Time
 
   private implicit val ev                    = env
   private implicit val ec                    = env.otoroshiExecutionContext
+
+  private val logger = Logger("otoroshi-metrics")
 
   private val metricRegistry: SemanticMetricRegistry = new SemanticMetricRegistry
   private val jmxRegistry: MetricRegistry = new MetricRegistry
@@ -167,12 +170,15 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) extends Time
     jmxRegistry.timer(name)
   }
 
-  override def withTimer[T](name: String)(f: => T): T = {
+  override def withTimer[T](name: String, display: Boolean = false)(f: => T): T = {
     val jmxCtx = jmxRegistry.timer(name).time()
     val ctx = metricRegistry.timer(MetricId.build(name)).time()
     try {
       val res = f
-      ctx.close()
+      val elapsed = ctx.stop()
+      if (display) {
+        logger.info(s"elapsed time for $name: ${elapsed} nanoseconds.")
+      }
       jmxCtx.close()
       res
     } catch {
@@ -184,12 +190,15 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) extends Time
         throw e
     }
   }
-  override def withTimerAsync[T](name: String)(f: => Future[T])(implicit ec: ExecutionContext): Future[T] = {
+  override def withTimerAsync[T](name: String, display: Boolean = false)(f: => Future[T])(implicit ec: ExecutionContext): Future[T] = {
     val jmxCtx = metricRegistry.timer(MetricId.build(name)).time()
     val ctx = metricRegistry.timer(MetricId.build(name)).time()
     f.andThen {
       case r =>
-        ctx.close()
+        val elapsed = ctx.stop()
+        if (display) {
+          logger.info(s"elapsed time for $name: ${elapsed} nanoseconds.")
+        }
         jmxCtx.close()
         if (r.isFailure) {
           metricRegistry.counter(MetricId.build(name + ".errors")).inc()

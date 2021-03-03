@@ -5,7 +5,7 @@ import auth.{AuthModuleConfig, GenericOauth2ModuleConfig, SessionCookieValues}
 import env.Env
 import models._
 import org.joda.time.DateTime
-import otoroshi.models.{SimpleOtoroshiAdmin, Team, Tenant, WebAuthnOtoroshiAdmin}
+import otoroshi.models.{DataExporterConfig, SimpleOtoroshiAdmin, Team, Tenant, WebAuthnOtoroshiAdmin}
 import otoroshi.script.Script
 import otoroshi.storage.{RedisLike, RedisLikeStore}
 import otoroshi.tcp.TcpService

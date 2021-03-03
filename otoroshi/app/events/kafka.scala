@@ -1,4 +1,4 @@
-package events
+package otoroshi.events
 
 import scala.concurrent.{Await, Future, Promise}
 import scala.util.{Failure, Success, Try}
@@ -15,8 +15,9 @@ import akka.stream.scaladsl.{Sink, Source}
 import org.apache.kafka.common.config.SslConfigs
 import play.api.libs.json._
 import env.Env
-import models.Exporter
+import otoroshi.models.Exporter
 import org.apache.kafka.common.config.internals.BrokerSecurityConfigs
+import otoroshi.models.Exporter
 import ssl.DynamicSSLEngineProvider
 import utils.http.MtlsConfig
 

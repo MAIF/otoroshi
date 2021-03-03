@@ -2,8 +2,8 @@ package controllers.adminapi
 
 import actions.ApiAction
 import env.Env
-import events.UpdateExporters
-import models.DataExporterConfig
+import otoroshi.events.UpdateExporters
+import otoroshi.models.DataExporterConfig
 import play.api.Logger
 import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
 import play.api.mvc.{AbstractController, ControllerComponents, RequestHeader}

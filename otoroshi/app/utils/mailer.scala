@@ -3,7 +3,8 @@ package utils
 import akka.http.scaladsl.util.FastFuture
 import akka.http.scaladsl.util.FastFuture._
 import env.Env
-import models.{Exporter, GlobalConfig}
+import models.GlobalConfig
+import otoroshi.models.Exporter
 import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.ws.WSAuthScheme

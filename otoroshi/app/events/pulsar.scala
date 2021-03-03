@@ -1,10 +1,10 @@
-package events
+package otoroshi.events
 
 import java.util.concurrent.TimeUnit
-
 import com.sksamuel.pulsar4s.{Consumer, ConsumerConfig, DefaultPulsarClient, Producer, ProducerConfig, PulsarClient, PulsarClientConfig, Subscription, Topic}
-import models.Exporter
+import otoroshi.models.Exporter
 import com.sksamuel.pulsar4s.playjson._
+import otoroshi.models.Exporter
 import play.api.libs.json._
 import utils.http.MtlsConfig
 

@@ -4,7 +4,6 @@ import java.lang.management.ManagementFactory
 import java.rmi.registry.LocateRegistry
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
-
 import akka.actor.{ActorSystem, Cancellable, PoisonPill, Scheduler}
 import akka.http.scaladsl.util.FastFuture._
 import akka.stream.Materializer
@@ -14,12 +13,14 @@ import cluster._
 import com.typesafe.config.{ConfigFactory, ConfigRenderOptions}
 import events._
 import gateway.CircuitBreakersHolder
-import health.{HealthCheckerActor, StartHealthCheck}
+import otoroshi.health.{HealthCheckerActor, StartHealthCheck}
+
 import javax.management.remote.{JMXConnectorServerFactory, JMXServiceURL}
 import models._
 import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
+import otoroshi.events.{OtoroshiEventsActorSupervizer, StartExporters}
 import otoroshi.models.{EntityLocation, OtoroshiAdminType, SimpleOtoroshiAdmin, Team, TeamAccess, TeamId, Tenant, TenantAccess, TenantId, UserRight, UserRights, WebAuthnOtoroshiAdmin}
 import otoroshi.script.{AccessValidatorRef, JobManager, Script, ScriptCompiler, ScriptManager}
 import otoroshi.ssl.pki.BouncyCastlePki

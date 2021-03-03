@@ -11,7 +11,7 @@ import akka.pattern.{CircuitBreaker => AkkaCircuitBreaker}
 import akka.stream.scaladsl.Flow
 import env.Env
 import events._
-import health.HealthCheck
+import otoroshi.health.HealthCheck
 import models.{ApiKey, GlobalConfig, ServiceDescriptor, Target}
 import play.api.Logger
 import play.api.http.websocket.{Message => PlayWSMessage}

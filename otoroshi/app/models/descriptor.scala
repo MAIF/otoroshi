@@ -1463,7 +1463,7 @@ case class ServiceDescriptor(
     transformerConfig: JsValue = Json.obj(),
     accessValidator: AccessValidatorRef = AccessValidatorRef(),
     preRouting: PreRoutingRef = PreRoutingRef(),
-    plugins: Plugins = Plugins(),
+    plugins: Plugins = Plugins("default-descriptor-plugins"),
     ///////////////////////////////////////////////////////////
     gzip: GzipConfig = GzipConfig(),
     // thirdPartyApiKey: ThirdPartyApiKeyConfig = OIDCThirdPartyApiKeyConfig(false, None),
@@ -1606,7 +1606,7 @@ case class ServiceDescriptor(
       .map(_.scripts)
       .getOrElse(GlobalScripts())
 
-    if ((gScripts.enabled && gScripts.validatorRefs.nonEmpty) || (accessValidator.enabled && accessValidator.refs.nonEmpty)) {
+    if (plugs.nonEmpty || (gScripts.enabled && gScripts.validatorRefs.nonEmpty) || (accessValidator.enabled && accessValidator.refs.nonEmpty)) {
       val lScripts: Seq[String] = Some(accessValidator)
         .filter(
           pr =>
@@ -1806,7 +1806,7 @@ case class ServiceDescriptor(
       .filter(_.scripts.enabled)
       .map(_.scripts)
       .getOrElse(GlobalScripts())
-    if ((gScripts.enabled && gScripts.preRouteRefs.nonEmpty) || (preRouting.enabled && preRouting.refs.nonEmpty)) {
+    if (plugs.nonEmpty || (gScripts.enabled && gScripts.preRouteRefs.nonEmpty) || (preRouting.enabled && preRouting.refs.nonEmpty)) {
       val lScripts: Seq[String] = Some(preRouting)
         .filter(
           pr =>
@@ -2002,7 +2002,7 @@ object ServiceDescriptor {
             .getOrElse(AccessValidatorRef()),
           plugins = Plugins.format
             .reads((json \ "plugins").asOpt[JsValue].getOrElse(JsNull))
-            .getOrElse(Plugins()),
+            .getOrElse(Plugins("descriptor-plugins")),
           preRouting = PreRoutingRef.format
             .reads((json \ "preRouting").asOpt[JsValue].getOrElse(JsNull))
             .getOrElse(PreRoutingRef()),

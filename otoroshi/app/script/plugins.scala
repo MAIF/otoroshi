@@ -1,14 +1,17 @@
 package otoroshi.script.plugins
 
+import akka.http.scaladsl.util.FastFuture
+import akka.stream.Materializer
 import env.Env
-import models.GlobalScripts
-import otoroshi.script.{AccessValidator, AccessValidatorType, AppType, CompilingValidator, DefaultValidator, NamedPlugin, PluginType, PreRouting, PreRoutingRef, PreRoutingType, RequestSink, RequestSinkType, RequestTransformer, TransformerType}
+import otoroshi.script._
 import play.api.libs.json.{Format, JsArray, JsError, JsResult, JsString, JsSuccess, JsValue, Json}
-import play.api.mvc.RequestHeader
+import play.api.mvc.{RequestHeader, Result}
 import otoroshi.utils.syntax.implicits._
 import utils.RequestImplicits._
 
-import scala.concurrent.ExecutionContext
+import java.util.concurrent.atomic.AtomicReference
+import scala.concurrent.{ExecutionContext, Future}
+import scala.reflect.ClassTag
 import scala.util.Try
 
 object Plugins {
@@ -26,6 +29,7 @@ object Plugins {
             refs = (json \ "refs")
               .asOpt[Seq[String]]
               .getOrElse(Seq.empty),
+            name = (json \ "name").asOpt[String].getOrElse("no-name"),
             enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
             config = (json \ "config").asOpt[JsValue].getOrElse(Json.obj()),
             excluded = (json \ "excluded").asOpt[Seq[String]].getOrElse(Seq.empty[String])
@@ -37,33 +41,36 @@ object Plugins {
   }
 }
 
-case class Plugins(enabled: Boolean = false,
+case class Plugins(name: String,
+                   enabled: Boolean = false,
                    excluded: Seq[String] = Seq.empty[String],
                    refs: Seq[String] = Seq.empty,
                    config: JsValue = Json.obj()) {
 
-  private def plugin[A](ref: String, typ: PluginType)(implicit ec: ExecutionContext, env: Env): Option[A] = {
+  private val transformers = new AtomicReference[Seq[String]](null)
+
+  private def plugin[A](ref: String)(implicit ec: ExecutionContext, env: Env, ct: ClassTag[A]): Option[A] = {
     env.scriptManager.getAnyScript[NamedPlugin](ref) match {
-      case Right(validator) if typ == validator.pluginType => validator.asInstanceOf[A].some
+      case Right(validator) if ct.runtimeClass.isAssignableFrom(validator.getClass) => validator.asInstanceOf[A].some
       case _ => None
     }
   }
 
-  private def getPlugins[A](req: RequestHeader, typ: PluginType)(implicit ec: ExecutionContext, env: Env): Seq[String] = {
+  private def getPlugins[A](req: RequestHeader)(implicit ec: ExecutionContext, env: Env, ct: ClassTag[A]): Seq[String] = {
     val globalPlugins = env.datastores.globalConfigDataStore.latestSafe
       .map(_.plugins)
       .filter(p => p.enabled && p.refs.nonEmpty)
       .filter(pls => pls.excluded.isEmpty || !pls.excluded.exists(p => utils.RegexPool.regex(p).matches(req.thePath)))
-      .getOrElse(Plugins())
-      .refs.map(r => (r, plugin[A](r, typ)))
+      .getOrElse(Plugins(s"fake-global-${ct.runtimeClass.getName}"))
+      .refs.map(r => (r, plugin[A](r)))
       .collect {
         case (ref, Some(_)) => ref
       }
     val localPlugins = Some(this)
       .filter(p => p.enabled && p.refs.nonEmpty)
       .filter(pls => pls.excluded.isEmpty || !pls.excluded.exists(p => utils.RegexPool.regex(p).matches(req.thePath)))
-      .getOrElse(Plugins())
-      .refs.map(r => (r, plugin[A](r, typ)))
+      .getOrElse(Plugins(s"fake-local-${ct.runtimeClass.getName}"))
+      .refs.map(r => (r, plugin[A](r)))
       .collect {
         case (ref, Some(_)) => ref
       }
@@ -73,21 +80,25 @@ case class Plugins(enabled: Boolean = false,
   def json: JsValue = Plugins.format.writes(this)
 
   def sinks(req: RequestHeader)(implicit ec: ExecutionContext, env: Env): Seq[String] = {
-    getPlugins[RequestSink](req, RequestSinkType)
+    getPlugins[RequestSink](req)
   }
 
   def preRoutings(req: RequestHeader)(implicit ec: ExecutionContext, env: Env): Seq[String] = {
-    getPlugins[PreRouting](req, PreRoutingType)
+    getPlugins[PreRouting](req)
   }
 
   def accessValidators(req: RequestHeader)(implicit ec: ExecutionContext, env: Env): Seq[String] = {
-    getPlugins[AccessValidator](req, AccessValidatorType)
+    getPlugins[AccessValidator](req)
   }
 
   def requestTransformers(req: RequestHeader)(implicit ec: ExecutionContext, env: Env): Seq[String] = {
-    (
-      getPlugins[RequestTransformer](req, AppType) ++
-      getPlugins[RequestTransformer](req, TransformerType)
-    ).distinct
+    val cachedTransformers = transformers.get()
+    if (cachedTransformers == null) {
+      val trs = getPlugins[RequestTransformer](req)
+      transformers.compareAndSet(null, trs)
+      trs
+    } else {
+      cachedTransformers
+    }
   }
 }

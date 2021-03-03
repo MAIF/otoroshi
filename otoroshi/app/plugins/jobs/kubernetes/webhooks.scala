@@ -4,7 +4,7 @@ import akka.util.ByteString
 import auth.AuthModuleConfig
 import env.Env
 import models._
-import otoroshi.models.{SimpleOtoroshiAdmin, Team, Tenant}
+import otoroshi.models.{DataExporterConfig, SimpleOtoroshiAdmin, Team, Tenant}
 import otoroshi.script.{RequestOrigin, RequestSink, RequestSinkContext, Script}
 import otoroshi.tcp.TcpService
 import otoroshi.utils.syntax.implicits._

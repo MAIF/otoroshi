@@ -6,6 +6,7 @@ import cluster.ClusterMode
 import env.Env
 import events._
 import org.joda.time.DateTime
+import otoroshi.events.KafkaWrapper
 import otoroshi.script.{HttpResponse, RequestTransformer, TransformerErrorContext, TransformerResponseContext}
 import play.api.Logger
 import play.api.libs.json._

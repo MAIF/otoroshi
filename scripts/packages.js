@@ -33,13 +33,22 @@ function walkSync(dir, recursive, filelist = []) {
 //console.log(__dirname, process.cwd())
 
 const files = walkSync(path.join(process.cwd(), 'otoroshi', 'app'), true, []);
+const packages = {};
+const packagesFirstLevel = {};
 
 const lines = files.map(file => {
   const content = fs.readFileSync(file.path).toString('utf8').split('\n');
   const firstLine = content[0];
   if (firstLine.indexOf('package') === 0) {
+    const package = firstLine.replace("package ", '').trim();
+    packages[package] = '';
+    if (package.indexOf('.') > -1) {
+      packagesFirstLevel[package.split('.')[0]] = '';
+    } else {
+      packagesFirstLevel[package] = '';
+    }
     if (firstLine.indexOf('package otoroshi') < 0) {
-      return `// ${file.path.replace(process.cwd(), '')}\n${firstLine}\n`;
+      return `// app${file.path.replace(process.cwd(), '')}\n${firstLine}\n`;
     } else {
       return '';
     }
@@ -48,4 +57,6 @@ const lines = files.map(file => {
   }
 }).filter(i => i.length > 0)
 
-console.log(files.length, lines.length / 3, lines.join('\n'));
+console.log(files.length, lines.length / 3)
+console.log(Object.keys(packagesFirstLevel))
+console.log(lines.join('\n'))

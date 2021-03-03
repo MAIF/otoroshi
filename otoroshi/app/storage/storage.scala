@@ -282,7 +282,7 @@ trait RedisLikeStore[T] extends BasicStore[T] {
     }
   }
 
-  def findAll(force: Boolean = false)(implicit ec: ExecutionContext, env: Env): Future[Seq[T]] = env.metrics.withTimerAsync("otoroshi.core.store.find-all") {
+  def findAll(force: Boolean = false)(implicit ec: ExecutionContext, env: Env): Future[Seq[T]] = /*env.metrics.withTimerAsync("otoroshi.core.store.find-all")*/ {
 
     def actualFindAll() = {
 

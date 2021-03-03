@@ -3,10 +3,11 @@ package models
 import akka.http.scaladsl.util.FastFuture
 import auth.AuthModuleConfig
 import env.Env
-import events.Exporters._
+import otoroshi.events.Exporters._
 import events._
 import org.joda.time.DateTime
-import otoroshi.models.{SimpleOtoroshiAdmin, Team, Tenant, WebAuthnOtoroshiAdmin}
+import otoroshi.events.KafkaConfig
+import otoroshi.models.{DataExporterConfig, Exporter, SimpleOtoroshiAdmin, Team, Tenant, WebAuthnOtoroshiAdmin}
 import otoroshi.plugins.geoloc.{IpStackGeolocationHelper, MaxMindGeolocationHelper}
 import otoroshi.plugins.useragent.UserAgentHelper
 import otoroshi.script.Script
@@ -394,7 +395,7 @@ case class GlobalConfig(
     userAgentSettings: UserAgentSettings = UserAgentSettings(false),
     autoCert: AutoCert = AutoCert(),
     tlsSettings: TlsSettings = TlsSettings(),
-    plugins: Plugins = Plugins(),
+    plugins: Plugins = Plugins("default-config-plugins"),
     metadata: Map[String, String] = Map.empty
 ) {
   def save()(implicit ec: ExecutionContext, env: Env)   = env.datastores.globalConfigDataStore.set(this)
@@ -639,7 +640,7 @@ object GlobalConfig {
             .getOrElse(TlsSettings()),
           plugins = Plugins.format
             .reads((json \ "plugins").asOpt[JsValue].getOrElse(JsNull))
-            .getOrElse(Plugins()),
+            .getOrElse(Plugins("config-plugins")),
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty)
         )
       } map {

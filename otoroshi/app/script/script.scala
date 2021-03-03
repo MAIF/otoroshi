@@ -16,8 +16,8 @@ import akka.stream.scaladsl.{Keep, Sink, Source}
 import akka.util.ByteString
 import com.google.common.hash.Hashing
 import env.Env
-import events.{AnalyticEvent, CustomDataExporter, OtoroshiEvent}
-import io.github.classgraph.ClassInfo
+import otoroshi.events._
+import events.{AnalyticEvent, OtoroshiEvent}
 import javax.script._
 import models._
 import play.api.Logger
@@ -30,6 +30,7 @@ import security.{IdGenerator, OtoroshiClaim}
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import otoroshi.utils.config.ConfigUtils
 import utils.TypedMap
+import otoroshi.utils.syntax.implicits._
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration._
@@ -686,116 +687,122 @@ class ScriptManager(env: Env) {
   def firstCompilationDone(): Boolean = _firstCompilationDone.get()
 
   lazy val (transformersNames, validatorsNames, preRouteNames, reqSinkNames, listenerNames, jobNames, exporterNames) = Try {
-    import io.github.classgraph.{ClassGraph, ClassInfoList, ScanResult}
+    import io.github.classgraph.{ClassGraph, ClassInfo, ScanResult}
 
     import collection.JavaConverters._
     val start = System.currentTimeMillis()
     val scanResult: ScanResult = new ClassGraph()
       .addClassLoader(env.environment.classLoader)
-      .enableAllInfo
-      .blacklistPackages(
-        "java.*",
-        "javax.*",
-        "aix.*",
-        "akka.*",
-        "cats.*",
-        "ch.qos.logback.*",
-        "com.auth0.*",
-        "com.blueconic.*",
-        "com.carrotsearch.*",
-        "com.codahale.*",
-        "com.cronutils.*",
-        "com.datastax.*",
-        "com.esri.*",
-        "com.fasterxml.jackson.*",
-        "com.github.benmanes.*",
-        "com.github.blemale.*",
-        "com.github.luben.*",
-        "com.google.*",
-        "com.jayway.*",
-        "com.jcabi.*",
-        "com.kenai.*",
-        "com.maxmind.*",
-        "com.nimbusds.*",
-        "com.risksense.*",
-        "com.scurrilous.*",
-        "com.sksamuel.*",
-        "com.squareup.*",
-        "com.sun.*",
-        "com.thoughtworks.*",
-        "com.twitter.*",
-        "com.typesafe.*",
-        "com.upokecenter.*",
-        "com.yubico.*",
-        "common.message.*",
-        "diffson.*",
-        "edu.umd.*",
-        "external.reactivemongo.*",
-        "github.gphat.censorinus.*",
-        "google.*",
-        "groovy.*",
-        "groovyjarjarantlr.*",
-        "groovyjarjarasm.*",
-        "groovyjarjarcommonscli/*",
-        "groovyjarjarpicocli.*",
-        "groverconfig8491016507689653801.*",
-        "io.airlift.*",
-        "io.estatico.*",
-        "io.github.*",
-        "io.gsonfire.*",
-        "io.jsonwebtoken.*",
-        "io.kubernetes.*",
-        "io.lettuce.*",
-        "io.netty.*",
-        "io.prometheus.*",
-        "io.sundr.*",
-        "io.swagger.*",
-        "javax.*",
-        "jni.*",
-        "jnr.*",
-        "kafka.*",
-        "kaleidoscope.*",
-        "linux.*",
-        "macrocompat.*",
-        "mozilla.*",
-        "net.i2p.*",
-        "net.jcip.*",
-        "net.jpountz.*",
-        "net.minidev.*",
-        "net.objecthunter.*",
-        "nonapi.io.github.*",
-        "okhttp3.*",
-        "okio.*",
-        "org.apache.*",
-        "org.aspectj.*",
-        "org.bouncycastle.*",
-        "org.checkerframework.*",
-        "org.codehaus.*",
-        "org.eclipse.*",
-        "org.iq80.*",
-        "org.javatuples.*",
-        "org.joda.*",
-        "org.jose4j.*",
-        "org.json.*",
-        "org.mindrot.*",
-        "org.mortbay.*",
-        "org.objectweb.*",
-        "org.reactivestreams.*",
-        "org.shredzone.*",
-        "org.slf4j.*",
-        "org.xbill.*",
-        "org.xerial.*",
-        "org.yaml.*",
-        "play.*",
-        "public.*",
-        "reactivemongo.*",
-        "reactor.*",
-        "redis.*",
-        "scala.*",
-        "templates.*",
-        "win.*",
-      )
-      .scan
+      .enableClassInfo()
+      .whitelistPackages(
+        "otoroshi",
+        "otoroshi_third_party",
+        "otoroshi_third_party_plugins",
+      ).scan
+
+    // val scanResult: ScanResult = new ClassGraph().addClassLoader(env.environment.classLoader).enableAllInfo.blacklistPackages(
+    //   "java.*",
+    //   "javax.*",
+    //   "aix.*",
+    //   "akka.*",
+    //   "cats.*",
+    //   "ch.qos.logback.*",
+    //   "com.auth0.*",
+    //   "com.blueconic.*",
+    //   "com.carrotsearch.*",
+    //   "com.codahale.*",
+    //   "com.cronutils.*",
+    //   "com.datastax.*",
+    //   "com.esri.*",
+    //   "com.fasterxml.jackson.*",
+    //   "com.github.benmanes.*",
+    //   "com.github.blemale.*",
+    //   "com.github.luben.*",
+    //   "com.google.*",
+    //   "com.jayway.*",
+    //   "com.jcabi.*",
+    //   "com.kenai.*",
+    //   "com.maxmind.*",
+    //   "com.nimbusds.*",
+    //   "com.risksense.*",
+    //   "com.scurrilous.*",
+    //   "com.sksamuel.*",
+    //   "com.squareup.*",
+    //   "com.sun.*",
+    //   "com.thoughtworks.*",
+    //   "com.twitter.*",
+    //   "com.typesafe.*",
+    //   "com.upokecenter.*",
+    //   "com.yubico.*",
+    //   "common.message.*",
+    //   "diffson.*",
+    //   "edu.umd.*",
+    //   "external.reactivemongo.*",
+    //   "github.gphat.censorinus.*",
+    //   "google.*",
+    //   "groovy.*",
+    //   "groovyjarjarantlr.*",
+    //   "groovyjarjarasm.*",
+    //   "groovyjarjarcommonscli/*",
+    //   "groovyjarjarpicocli.*",
+    //   "groverconfig8491016507689653801.*",
+    //   "io.airlift.*",
+    //   "io.estatico.*",
+    //   "io.github.*",
+    //   "io.gsonfire.*",
+    //   "io.jsonwebtoken.*",
+    //   "io.kubernetes.*",
+    //   "io.lettuce.*",
+    //   "io.netty.*",
+    //   "io.prometheus.*",
+    //   "io.sundr.*",
+    //   "io.swagger.*",
+    //   "javax.*",
+    //   "jni.*",
+    //   "jnr.*",
+    //   "kafka.*",
+    //   "kaleidoscope.*",
+    //   "linux.*",
+    //   "macrocompat.*",
+    //   "mozilla.*",
+    //   "net.i2p.*",
+    //   "net.jcip.*",
+    //   "net.jpountz.*",
+    //   "net.minidev.*",
+    //   "net.objecthunter.*",
+    //   "nonapi.io.github.*",
+    //   "okhttp3.*",
+    //   "okio.*",
+    //   "org.apache.*",
+    //   "org.aspectj.*",
+    //   "org.bouncycastle.*",
+    //   "org.checkerframework.*",
+    //   "org.codehaus.*",
+    //   "org.eclipse.*",
+    //   "org.iq80.*",
+    //   "org.javatuples.*",
+    //   "org.joda.*",
+    //   "org.jose4j.*",
+    //   "org.json.*",
+    //   "org.mindrot.*",
+    //   "org.mortbay.*",
+    //   "org.objectweb.*",
+    //   "org.reactivestreams.*",
+    //   "org.shredzone.*",
+    //   "org.slf4j.*",
+    //   "org.xbill.*",
+    //   "org.xerial.*",
+    //   "org.yaml.*",
+    //   "play.*",
+    //   "public.*",
+    //   "reactivemongo.*",
+    //   "reactor.*",
+    //   "redis.*",
+    //   "scala.*",
+    //   "templates.*",
+    //   "win.*",
+    // ).scan
+
     logger.debug(s"classpath scanning in ${System.currentTimeMillis() - start} ms.")
     try {
 
@@ -858,6 +865,9 @@ class ScriptManager(env: Env) {
     } finally if (scanResult != null) scanResult.close()
   } getOrElse (Seq.empty[String], Seq.empty[String], Seq.empty[String], Seq.empty[String], Seq.empty[String], Seq
     .empty[String], Seq.empty[String])
+
+  private val allPlugins = Seq(transformersNames, validatorsNames, preRouteNames, reqSinkNames, listenerNames, jobNames, exporterNames).flatten
+  logger.debug(s"found ${allPlugins.size} plugins in classpath")
 
   def start(): ScriptManager = {
     if (env.scriptingEnabled) {

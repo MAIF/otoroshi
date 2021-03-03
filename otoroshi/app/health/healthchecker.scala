@@ -1,4 +1,4 @@
-package health
+package otoroshi.health
 
 import java.util.concurrent.TimeUnit
 

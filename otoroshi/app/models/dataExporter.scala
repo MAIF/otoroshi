@@ -1,15 +1,15 @@
-package models
+package otoroshi.models
 
 import akka.stream.scaladsl.{Sink, Source}
 import env.Env
-import events.Exporters.{WebhookExporter, _}
-import events.{DataExporter, KafkaConfig, PulsarConfig}
-import otoroshi.models.{EntityLocation, EntityLocationSupport}
+import models.{ElasticAnalyticsConfig, Webhook}
+import otoroshi.events.Exporters.{ConsoleExporter, CustomExporter, ElasticExporter, FileAppenderExporter, GenericMailerExporter, KafkaExporter, MetricsExporter, PulsarExporter, WebhookExporter}
+import otoroshi.events._
 import otoroshi.script._
 import play.api.Logger
 import play.api.libs.json._
 import security.IdGenerator
-import utils._
+import utils.{ConsoleMailerSettings, GenericMailerSettings, MailerSettings, MailgunSettings, MailjetSettings, NoneMailerSettings, SendgridSettings}
 
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}

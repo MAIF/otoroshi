@@ -1,9 +1,8 @@
-package events
+package otoroshi.events
 
 import java.io.File
 import java.nio.file.{Files, Paths, StandardOpenOption}
 import java.util.concurrent.atomic.AtomicReference
-
 import akka.Done
 import akka.actor.{Actor, Props}
 import akka.http.scaladsl.util.FastFuture
@@ -13,10 +12,12 @@ import akka.stream.{OverflowStrategy, QueueOfferResult}
 import com.sksamuel.pulsar4s.Producer
 import com.spotify.metrics.core.MetricId
 import env.Env
-import events.DataExporter.DefaultDataExporter
+import events.OtoroshiEvent
+import otoroshi.events.DataExporter.DefaultDataExporter
 import events.impl.{ElasticWritesAnalytics, WebHookAnalytics}
 import models._
 import org.joda.time.DateTime
+import otoroshi.models.{DataExporterConfig, Exporter, ExporterRef, FileSettings}
 import otoroshi.script._
 import play.api.Logger
 import play.api.libs.json.{JsArray, JsBoolean, JsNull, JsNumber, JsObject, JsString, JsValue, Json}
