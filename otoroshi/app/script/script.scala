@@ -686,19 +686,21 @@ class ScriptManager(env: Env) {
   def firstPluginsSearchDone(): Boolean = _firstPluginsSearchDone.get()
   def firstCompilationDone(): Boolean = _firstCompilationDone.get()
 
+  val starting = System.currentTimeMillis()
+
   lazy val (transformersNames, validatorsNames, preRouteNames, reqSinkNames, listenerNames, jobNames, exporterNames) = Try {
     import io.github.classgraph.{ClassGraph, ClassInfo, ScanResult}
 
     import collection.JavaConverters._
     val start = System.currentTimeMillis()
+    val confPackages: Seq[String] = env.configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.plugins.packages").getOrElse(Seq.empty) ++
+      env.configuration.getOptionalWithFileSupport[String]("otoroshi.plugins.packagesStr").map(v => v.split(",").map(_.trim).toSeq).getOrElse(Seq.empty)
+    val allPackages = Seq("otoroshi", "otoroshi_third_party", "otoroshi_third_party_plugins") ++ confPackages
     val scanResult: ScanResult = new ClassGraph()
       .addClassLoader(env.environment.classLoader)
       .enableClassInfo()
-      .whitelistPackages(
-        "otoroshi",
-        "otoroshi_third_party",
-        "otoroshi_third_party_plugins",
-      ).scan
+      .whitelistPackages(allPackages: _*)
+      .scan
 
     // val scanResult: ScanResult = new ClassGraph().addClassLoader(env.environment.classLoader).enableAllInfo.blacklistPackages(
     //   "java.*",
@@ -867,7 +869,7 @@ class ScriptManager(env: Env) {
     .empty[String], Seq.empty[String])
 
   private val allPlugins = Seq(transformersNames, validatorsNames, preRouteNames, reqSinkNames, listenerNames, jobNames, exporterNames).flatten
-  logger.debug(s"found ${allPlugins.size} plugins in classpath")
+  logger.info(s"Found ${allPlugins.size} plugins in classpath (${System.currentTimeMillis() - starting} ms)")
 
   def start(): ScriptManager = {
     if (env.scriptingEnabled) {
