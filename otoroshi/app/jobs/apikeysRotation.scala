@@ -10,13 +10,13 @@ import otoroshi.utils.syntax.implicits._
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
-class ApikeysSecretsRotationJobs extends Job {
+class ApikeysSecretsRotationJob extends Job {
 
   private val logger = Logger("otoroshi-apikeys-secrets-rotation-job")
 
-  override def uniqueId: JobId = JobId("io.otoroshi.core.jobs.ApikeysSecretsRotationJobs")
+  override def uniqueId: JobId = JobId("io.otoroshi.core.jobs.ApikeysSecretsRotationJob")
 
-  override def name: String = "Otoroshi apikeys secrets rotation jobs"
+  override def name: String = "Otoroshi apikeys secrets rotation job"
 
   override def visibility: JobVisibility = JobVisibility.Internal
 

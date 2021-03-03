@@ -105,5 +105,5 @@ object CompilingPreRouting extends PreRouting {
 
 class FailingPreRoute extends PreRouting {
   override def preRoute(context: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] =
-    Future.failed(PreRoutingError.fromString("Fuuuuu !"))
+    Future.failed(PreRoutingError.fromString("epic fail!"))
 }

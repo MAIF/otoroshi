@@ -818,6 +818,8 @@ class ScriptManager(env: Env) {
         c.getName == "otoroshi.script.DefaultValidator$" ||
         c.getName == "otoroshi.script.DefaultPreRouting$" ||
         c.getName == "otoroshi.script.DefaultRequestSink$" ||
+        c.getName == "otoroshi.script.FailingPreRoute" ||
+        c.getName == "otoroshi.script.FailingPreRoute$" ||
         c.getName == "otoroshi.script.DefaultOtoroshiEventListener$" ||
         c.getName == "otoroshi.script.DefaultJob$" ||
         c.getName == "otoroshi.script.CompilingJob$" ||
@@ -868,8 +870,10 @@ class ScriptManager(env: Env) {
   } getOrElse (Seq.empty[String], Seq.empty[String], Seq.empty[String], Seq.empty[String], Seq.empty[String], Seq
     .empty[String], Seq.empty[String])
 
-  private val allPlugins = Seq(transformersNames, validatorsNames, preRouteNames, reqSinkNames, listenerNames, jobNames, exporterNames).flatten
+  private val allPlugins = Seq(transformersNames, validatorsNames, preRouteNames, reqSinkNames, listenerNames, jobNames, exporterNames).flatten.distinct.sortWith((s1, s2) => s1.compareTo(s2) < 0)
+  private val printPlugins = env.configuration.getOptionalWithFileSupport[Boolean]("otoroshi.plugins.print").getOrElse(false)
   logger.info(s"Found ${allPlugins.size} plugins in classpath (${System.currentTimeMillis() - starting} ms)")
+  if (printPlugins) logger.info("\n\n" + allPlugins.mkString("\n") + "\n")
 
   def start(): ScriptManager = {
     if (env.scriptingEnabled) {
