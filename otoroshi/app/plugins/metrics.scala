@@ -1,18 +1,17 @@
 package otoroshi.plugins.metrics
 
 import java.io.StringWriter
-
 import akka.stream.Materializer
 import env.Env
 import io.prometheus.client.{Collector, CollectorRegistry}
 import io.prometheus.client.exporter.common.TextFormat
 import otoroshi.script._
+import otoroshi.utils.RegexPool
 import otoroshi.utils.string.Implicits._
 import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.mvc.{Result, Results}
-import utils.RegexPool
-import utils.RequestImplicits._
-import utils.future.Implicits._
+import otoroshi.utils.http.RequestImplicits._
+import otoroshi.utils.future.Implicits._
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try

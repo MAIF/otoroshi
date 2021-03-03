@@ -13,7 +13,7 @@ import play.api.Logger
 import play.api.libs.json._
 import security.Auth0Config
 import ssl.{Cert, ClientCertificateValidator}
-import utils.JsonImplicits._
+import otoroshi.utils.json.JsonImplicits._
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}

@@ -1,7 +1,6 @@
 package otoroshi.plugins.loggers
 
 import java.util.concurrent.atomic.{AtomicLong, AtomicReference}
-
 import akka.actor.ActorSystem
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
@@ -17,11 +16,11 @@ import play.api.libs.json._
 import play.api.mvc.{RequestHeader, Result, Results}
 import redis.{RedisClientMasterSlaves, RedisServer}
 import security.OtoroshiClaim
-import utils.JsonImplicits._
-import utils.RegexPool
-import utils.RequestImplicits._
-import utils.future.Implicits._
+import otoroshi.utils.json.JsonImplicits._
+import otoroshi.utils.http.RequestImplicits._
+import otoroshi.utils.future.Implicits._
 import kaleidoscope._
+import otoroshi.utils.RegexPool
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}

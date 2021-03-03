@@ -5,11 +5,11 @@ import akka.util.ByteString
 import env.Env
 import otoroshi.models.RightsChecker.Anyone
 import otoroshi.script._
+import otoroshi.utils.controllers.{ApiError, BulkControllerHelper, CrudControllerHelper, EntityAndContext, JsonApiError, NoEntityAndContext, OptionalEntityAndContext, SeqEntityAndContext}
 import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.streams.Accumulator
 import play.api.mvc._
-import utils._
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -17,7 +17,7 @@ import scala.util.{Failure, Success, Try}
 class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents)(implicit val env: Env)
   extends AbstractController(cc) with BulkControllerHelper[Script, JsValue] with CrudControllerHelper[Script, JsValue] {
 
-  import utils.future.Implicits._
+  import otoroshi.utils.future.Implicits._
 
   implicit lazy val ec  = env.otoroshiExecutionContext
   implicit lazy val mat = env.otoroshiMaterializer

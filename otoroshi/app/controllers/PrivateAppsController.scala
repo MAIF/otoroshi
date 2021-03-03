@@ -5,14 +5,15 @@ import akka.http.scaladsl.util.FastFuture
 import akka.util.ByteString
 import auth.{BasicAuthModule, BasicAuthUser}
 import env.Env
+
 import javax.crypto.Cipher
 import javax.crypto.spec.SecretKeySpec
 import org.mindrot.jbcrypt.BCrypt
+import otoroshi.utils.mailer.EmailLocation
 import play.api.libs.json.Json
 import play.api.mvc._
 import security.IdGenerator
-import utils.EmailLocation
-import utils.future.Implicits._
+import otoroshi.utils.future.Implicits._
 
 import scala.concurrent.Future
 

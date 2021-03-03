@@ -8,13 +8,13 @@ import models._
 import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
 import org.joda.time.DateTime
 import otoroshi.models.{TeamAccess, TenantAccess, UserRight, UserRights}
+import otoroshi.utils.http.MtlsConfig
 import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.ws.{WSProxyServer, WSResponse}
 import play.api.mvc.Results.Redirect
 import play.api.mvc.{AnyContent, Request, RequestHeader, Result}
 import security.IdGenerator
-import utils.http.MtlsConfig
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -168,7 +168,7 @@ case class GenericOauth2ModuleConfig(
 case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModule {
 
   import play.api.libs.ws.DefaultBodyWritables._
-  import utils.http.Implicits._
+  import otoroshi.utils.http.Implicits._
   import otoroshi.utils.syntax.implicits._
 
   override def paLoginPage(request: RequestHeader,

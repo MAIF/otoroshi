@@ -1,12 +1,13 @@
 package otoroshi.storage.stores
 
 import java.util.concurrent.atomic.AtomicReference
-
 import akka.actor.Cancellable
 import env.Env
 import models.Key
 import otoroshi.storage.{RedisLike, RedisLikeStore}
-import otoroshi.utils.LetsEncryptHelper
+import otoroshi.utils
+import otoroshi.utils.{SchedulerHelper, future}
+import otoroshi.utils.letsencrypt.LetsEncryptHelper
 import play.api.Logger
 import play.api.libs.json.Format
 import ssl.{Cert, CertificateDataStore, DynamicSSLEngineProvider}
@@ -38,7 +39,7 @@ class KvCertificateDataStore(redisCli: RedisLike, _env: Env)
     implicit val env = _env
     importInitialCerts(logger)
     cancelRenewRef.set(
-      _env.otoroshiActorSystem.scheduler.scheduleAtFixedRate(60.seconds, 1.hour + ((Math.random() * 10) + 1).minutes)(utils.SchedulerHelper.runnable {
+      _env.otoroshiActorSystem.scheduler.scheduleAtFixedRate(60.seconds, 1.hour + ((Math.random() * 10) + 1).minutes)(SchedulerHelper.runnable {
         _env.datastores.certificatesDataStore.renewCertificates()
       })
     )

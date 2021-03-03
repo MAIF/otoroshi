@@ -1,4 +1,4 @@
-package utils
+package otoroshi.utils.controllers
 
 import actions.{ApiAction, ApiActionContext}
 import akka.stream.scaladsl.{Framing, Source}
@@ -7,14 +7,14 @@ import env.Env
 import events._
 import org.joda.time.DateTime
 import otoroshi.models.EntityLocationSupport
+import otoroshi.utils.json.JsonPatchHelpers.patchJson
 import otoroshi.utils.syntax.implicits._
 import play.api.http.HttpEntity
 import play.api.libs.json._
 import play.api.libs.streams.Accumulator
-import play.api.mvc.Results.{BadRequest, Ok}
+import play.api.mvc.Results.Ok
 import play.api.mvc._
 import security.IdGenerator
-import utils.JsonPatchHelpers.patchJson
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Success, Try}

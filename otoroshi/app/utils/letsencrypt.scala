@@ -1,4 +1,4 @@
-package otoroshi.utils
+package otoroshi.utils.letsencrypt
 
 import java.io.StringWriter
 import java.security.cert.X509Certificate
@@ -6,7 +6,6 @@ import java.security.spec.{PKCS8EncodedKeySpec, X509EncodedKeySpec}
 import java.security.{KeyFactory, KeyPair}
 import java.util.Base64
 import java.util.concurrent.Executors
-
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Keep, Sink, Source}
@@ -16,11 +15,11 @@ import events.{Alerts, CertRenewalAlert}
 import org.shredzone.acme4j._
 import org.shredzone.acme4j.challenge._
 import org.shredzone.acme4j.util._
+import otoroshi.utils.RegexPool
 import play.api.Logger
 import play.api.libs.json._
 import ssl.DynamicSSLEngineProvider.base64Decode
 import ssl.{Cert, PemHeaders}
-import utils.RegexPool
 
 import scala.collection.JavaConverters._
 import scala.concurrent.duration._

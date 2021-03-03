@@ -8,12 +8,12 @@ import events._
 import org.joda.time.DateTime
 import otoroshi.events.KafkaWrapper
 import otoroshi.script.{HttpResponse, RequestTransformer, TransformerErrorContext, TransformerResponseContext}
+import otoroshi.utils.RegexPool
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc.Result
-import utils.RegexPool
-import utils.RequestImplicits._
-import utils.future.Implicits._
+import otoroshi.utils.http.RequestImplicits._
+import otoroshi.utils.future.Implicits._
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.{ExecutionContext, Future}

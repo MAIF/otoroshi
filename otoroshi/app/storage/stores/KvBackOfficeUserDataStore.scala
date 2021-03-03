@@ -5,7 +5,7 @@ import akka.util.ByteString
 import env.Env
 import models.{BackOfficeUser, BackOfficeUserDataStore, Key}
 import play.api.libs.json.{Format, JsSuccess, JsValue, Json}
-import utils.JsonImplicits._
+import otoroshi.utils.json.JsonImplicits._
 import otoroshi.storage.{RedisLike, RedisLikeStore}
 
 import scala.concurrent.{ExecutionContext, Future}

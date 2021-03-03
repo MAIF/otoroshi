@@ -19,9 +19,10 @@ import models._
 import org.joda.time.DateTime
 import otoroshi.models.{DataExporterConfig, Exporter, ExporterRef, FileSettings}
 import otoroshi.script._
+import otoroshi.utils.mailer.{EmailLocation, MailerSettings}
 import play.api.Logger
 import play.api.libs.json.{JsArray, JsBoolean, JsNull, JsNumber, JsObject, JsString, JsValue, Json}
-import utils.{EmailLocation, MailerSettings}
+import otoroshi.utils.mailer.EmailLocation
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration._

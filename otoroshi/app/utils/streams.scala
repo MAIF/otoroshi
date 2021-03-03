@@ -1,4 +1,4 @@
-package utils
+package otoroshi.utils.streams
 
 import akka.stream._
 import akka.stream.stage._

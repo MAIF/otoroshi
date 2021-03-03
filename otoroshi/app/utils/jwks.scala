@@ -1,4 +1,4 @@
-package otoroshi.utils.jwks
+package otoroshi.utils.jwk
 
 import java.security.interfaces.{ECPublicKey, RSAPublicKey}
 

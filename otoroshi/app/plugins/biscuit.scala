@@ -18,7 +18,7 @@ import otoroshi.utils.crypto.Signatures
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json.{JsObject, Json}
 import play.api.mvc.{RequestHeader, Results}
-import utils.RequestImplicits._
+import otoroshi.utils.http.RequestImplicits._
 
 import scala.concurrent.{ExecutionContext, Future}
 

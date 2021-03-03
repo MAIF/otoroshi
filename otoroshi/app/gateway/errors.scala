@@ -8,12 +8,12 @@ import org.joda.time.DateTime
 import otoroshi.el.TargetExpressionLanguage
 import otoroshi.script.Implicits._
 import otoroshi.script.{HttpResponse, TransformerErrorContext}
+import otoroshi.utils.TypedMap
 import play.api.libs.json.{JsValue, Json}
 import play.api.libs.ws.DefaultWSCookie
 import play.api.mvc.Results.Status
 import play.api.mvc.{RequestHeader, Result}
-import utils.RequestImplicits._
-import utils.TypedMap
+import otoroshi.utils.http.RequestImplicits._
 
 import scala.concurrent.{ExecutionContext, Future}
 

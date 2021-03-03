@@ -9,11 +9,11 @@ import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
 import otoroshi.models.RightsChecker.{SuperAdminOnly, TenantAdminOnly}
 import otoroshi.models.{UserRights, _}
+import otoroshi.utils.controllers.{AdminApiHelper, JsonApiError, SendAuditAndAlert}
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc._
 import security.IdGenerator
-import utils.{AdminApiHelper, JsonApiError, SendAuditAndAlert}
 
 import scala.concurrent.Future
 

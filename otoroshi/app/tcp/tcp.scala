@@ -3,7 +3,6 @@ package otoroshi.tcp
 import java.net.{InetAddress, InetSocketAddress}
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong, AtomicReference}
 import java.util.regex.MatchResult
-
 import actions.ApiAction
 import akka.actor.{ActorSystem, Cancellable}
 import akka.http.scaladsl.settings.ServerSettings
@@ -15,6 +14,7 @@ import akka.util.ByteString
 import akka.{AwesomeIncomingConnection, Done, TcpUtils}
 import env.Env
 import events.{DataInOut, Location, TcpEvent}
+
 import javax.net.ssl._
 import models.IpFiltering
 import org.joda.time.DateTime
@@ -25,7 +25,7 @@ import redis.RedisClientMasterSlaves
 import security.IdGenerator
 import ssl.{ClientAuth, CustomSSLEngine, DynamicSSLEngineProvider}
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
-import utils.RegexPool
+import otoroshi.utils.{RegexPool, SchedulerHelper}
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future, Promise}
@@ -895,7 +895,7 @@ class RunningServers(env: Env) {
 
   def start(): RunningServers = {
     if (running.compareAndSet(false, true)) {
-      ref.set(system.scheduler.scheduleAtFixedRate(1.second, 10.seconds)(utils.SchedulerHelper.runnable(
+      ref.set(system.scheduler.scheduleAtFixedRate(1.second, 10.seconds)(SchedulerHelper.runnable(
         updateRunningServers()
       )))
     }

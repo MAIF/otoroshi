@@ -9,7 +9,7 @@ import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json.{JsArray, JsError, JsSuccess, Json}
 import play.api.mvc.{AbstractController, ControllerComponents}
-import utils.JsonPatchHelpers.patchJson
+import otoroshi.utils.json.JsonPatchHelpers.patchJson
 
 class SnowMonkeyController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env: Env)
   extends AbstractController(cc) {

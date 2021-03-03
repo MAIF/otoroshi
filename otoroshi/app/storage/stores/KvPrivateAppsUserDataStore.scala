@@ -3,7 +3,7 @@ package otoroshi.storage.stores
 import env.Env
 import models.{Key, PrivateAppsUser, PrivateAppsUserDataStore}
 import play.api.libs.json.{Format, Json}
-import utils.JsonImplicits._
+import otoroshi.utils.json.JsonImplicits._
 import otoroshi.storage.{RedisLike, RedisLikeStore}
 
 class KvPrivateAppsUserDataStore(redisCli: RedisLike, _env: Env)

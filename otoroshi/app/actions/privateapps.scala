@@ -12,7 +12,7 @@ import play.api.mvc._
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
-import utils.RequestImplicits._
+import otoroshi.utils.http.RequestImplicits._
 
 case class PrivateAppsActionContext[A](request: Request[A],
                                        user: Option[PrivateAppsUser],

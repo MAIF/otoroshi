@@ -30,7 +30,7 @@ case class CheckFirstService(startedAt: DateTime, services: Seq[ServiceDescripto
 
 object HealthCheck {
 
-  import utils.http.Implicits._
+  import otoroshi.utils.http.Implicits._
 
   val badHealth = new TrieMap[String, Unit]()
 

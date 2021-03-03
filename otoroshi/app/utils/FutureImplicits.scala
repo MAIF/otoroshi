@@ -1,4 +1,4 @@
-package utils
+package otoroshi.utils
 
 import akka.http.scaladsl.util.FastFuture
 
@@ -25,8 +25,6 @@ package object future {
     }
 
     implicit final class EnhancedFuture[A](future: Future[A]) {
-
-      import akka.http.scaladsl.util.FastFuture._
 
       def fold[U](pf: PartialFunction[Try[A], U])(implicit executor: ExecutionContext): Future[U] = {
         val promise = Promise[U]

@@ -281,7 +281,7 @@ object ElasticVersion {
 
 class ElasticWritesAnalytics(config: ElasticAnalyticsConfig, env: Env) extends AnalyticsWritesService {
 
-  import utils.http.Implicits._
+  import otoroshi.utils.http.Implicits._
 
   lazy val logger = Logger("otoroshi-analytics-writes-elastic")
 

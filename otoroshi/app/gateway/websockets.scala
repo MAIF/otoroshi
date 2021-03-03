@@ -2,7 +2,6 @@ package gateway
 
 import java.net.{InetAddress, InetSocketAddress}
 import java.util.concurrent.atomic.AtomicReference
-
 import akka.NotUsed
 import akka.actor.{Actor, ActorRef, PoisonPill, Props}
 import akka.http.scaladsl.ClientTransport
@@ -21,6 +20,7 @@ import org.joda.time.DateTime
 import otoroshi.el.TargetExpressionLanguage
 import otoroshi.script.Implicits._
 import otoroshi.script.TransformerRequestContext
+import otoroshi.utils.UrlSanitizer
 import play.api.Logger
 import play.api.http.websocket.{CloseMessage, PingMessage, PongMessage, BinaryMessage => PlayWSBinaryMessage, Message => PlayWSMessage, TextMessage => PlayWSTextMessage}
 import play.api.libs.json.{JsValue, Json}
@@ -29,10 +29,10 @@ import play.api.libs.ws.DefaultWSCookie
 import play.api.mvc.Results.NotFound
 import play.api.mvc._
 import security.{IdGenerator, OtoroshiClaim}
-import utils.RequestImplicits._
-import utils._
-import utils.future.Implicits._
-import utils.http.{ManualResolveTransport, WSCookieWithSameSite, WSProxyServerUtils}
+import otoroshi.utils.http.RequestImplicits._
+import otoroshi.utils.http.{HeadersHelper, ManualResolveTransport, WSCookieWithSameSite, WSProxyServerUtils}
+import otoroshi.utils.udp._
+import otoroshi.utils.future.Implicits._
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future, Promise}
@@ -422,9 +422,9 @@ class WebSocketHandler()(implicit env: Env) {
                   Flow[PlayWSMessage]
                     .collect {
                       case PlayWSBinaryMessage(data) =>
-                        utils.Datagram(data, remoteAddress)
+                        Datagram(data, remoteAddress)
                       case _ =>
-                        utils.Datagram(ByteString.empty, remoteAddress)
+                        Datagram(ByteString.empty, remoteAddress)
                     }
                     .via(
                       UdpClient
@@ -464,9 +464,9 @@ class WebSocketHandler()(implicit env: Env) {
                         .asOpt[String]
                         .map(str => ByteString(base64decoder.decode(str)))
                         .getOrElse(ByteString.empty)
-                      (port, address, utils.Datagram(_data, remoteAddress))
+                      (port, address, Datagram(_data, remoteAddress))
                     case _ =>
-                      (0, "localhost", utils.Datagram(ByteString.empty, remoteAddress))
+                      (0, "localhost", Datagram(ByteString.empty, remoteAddress))
                   }
 
                 val updFlow: Flow[Datagram, Datagram, Future[InetSocketAddress]] =
@@ -479,18 +479,18 @@ class WebSocketHandler()(implicit env: Env) {
                 : Flow[PlayWSMessage, PlayWSBinaryMessage, NotUsed] = fromJson via Flow
                   .fromGraph(GraphDSL.create() { implicit builder =>
                     val dispatch = builder.add(
-                      UnzipWith[(Int, String, utils.Datagram),
+                      UnzipWith[(Int, String, Datagram),
                         Int,
                         String,
-                        utils.Datagram](
+                        Datagram](
                         a => a
                       )
                     )
                     val merge = builder.add(
                       ZipWith[Int,
                         String,
-                        utils.Datagram,
-                        (Int, String, utils.Datagram)](
+                        Datagram,
+                        (Int, String, Datagram)](
                         (a, b, c) => (a, b, c)
                       )
                     )

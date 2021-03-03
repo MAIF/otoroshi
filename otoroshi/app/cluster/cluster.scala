@@ -7,7 +7,6 @@ import java.security.MessageDigest
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, AtomicLong, AtomicReference}
 import java.util.concurrent.{ConcurrentHashMap, TimeUnit}
 import java.util.regex.Pattern
-
 import actions.ApiAction
 import akka.{Done, NotUsed}
 import akka.actor.{ActorSystem, Cancellable}
@@ -22,6 +21,7 @@ import com.typesafe.config.ConfigFactory
 import env.Env
 import events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
 import gateway.{InMemoryRequestsDataStore, RequestsDataStore, Retry}
+
 import javax.management.{Attribute, ObjectName}
 import models._
 import org.apache.commons.codec.binary.Hex
@@ -32,6 +32,8 @@ import otoroshi.storage._
 import otoroshi.storage.drivers.inmemory._
 import otoroshi.storage.stores._
 import otoroshi.tcp.{KvTcpServiceDataStoreDataStore, TcpServiceDataStore}
+import otoroshi.utils
+import otoroshi.utils.{SchedulerHelper, future}
 import play.api.http.HttpEntity
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.json._
@@ -44,9 +46,9 @@ import security.IdGenerator
 import ssl._
 import storage.drivers.inmemory.{Memory, SwappableInMemoryRedis}
 import storage.stores.{DataExporterConfigDataStore, KvRawDataStore, TeamDataStore, TenantDataStore}
-import utils.http.Implicits._
+import otoroshi.utils.http.Implicits._
+import otoroshi.utils.http.MtlsConfig
 import otoroshi.utils.syntax.implicits._
-import utils.http.MtlsConfig
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.{Duration, FiniteDuration}
@@ -694,7 +696,7 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
     if (config.mode == ClusterMode.Leader) {
       Cluster.logger.debug(s"[${env.clusterConfig.mode.name}] Starting cluster leader agent")
       membershipRef.set(
-        env.otoroshiScheduler.scheduleAtFixedRate(1.second, 30.seconds)(utils.SchedulerHelper.runnable(
+        env.otoroshiScheduler.scheduleAtFixedRate(1.second, 30.seconds)(SchedulerHelper.runnable(
           try {
             renewMemberShip()
           } catch {

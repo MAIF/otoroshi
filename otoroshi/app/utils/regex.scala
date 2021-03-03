@@ -1,11 +1,9 @@
-package utils
-
-import java.util.regex.Pattern.CASE_INSENSITIVE
-
-import collection.JavaConversions._
-import java.util.regex.{MatchResult, Matcher, Pattern}
+package otoroshi.utils
 
 import play.api.Logger
+
+import java.util.regex.Pattern.CASE_INSENSITIVE
+import java.util.regex.{MatchResult, Matcher, Pattern}
 
 case class Regex(originalPattern: String, compiledPattern: Pattern) {
   def matches(value: String): Boolean = compiledPattern.matcher(value).matches()

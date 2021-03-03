@@ -1,17 +1,17 @@
 package otoroshi.plugins.clientcert
 
 import java.security.cert.X509Certificate
-
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
 import env.Env
 import otoroshi.script._
+import otoroshi.utils.RegexPool
+import otoroshi.utils.http.{DN, MtlsConfig}
 import play.api.libs.json._
 import play.api.mvc.Result
-import utils.RegexPool
-import utils.RequestImplicits._
-import utils.future.Implicits._
-import utils.http.{DN, MtlsConfig}
+import otoroshi.utils.http.RequestImplicits._
+import otoroshi.utils.future.Implicits._
+import otoroshi.utils.http.MtlsConfig
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.{ExecutionContext, Future}

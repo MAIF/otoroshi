@@ -1,4 +1,4 @@
-package utils
+package otoroshi.utils.cache
 
 import java.util.concurrent.ConcurrentHashMap
 

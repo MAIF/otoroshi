@@ -5,12 +5,12 @@ import akka.util.ByteString
 import env.Env
 import events._
 import models.{ErrorTemplate, ServiceDescriptor, ServiceDescriptorQuery, Target}
+import otoroshi.utils.controllers.{AdminApiHelper, ApiError, BulkControllerHelper, CrudControllerHelper, EntityAndContext, JsonApiError, NoEntityAndContext, OptionalEntityAndContext, SendAuditAndAlert, SeqEntityAndContext}
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc.{AbstractController, BodyParser, ControllerComponents, RequestHeader}
-import utils.JsonPatchHelpers.patchJson
-import utils._
+import otoroshi.utils.json.JsonPatchHelpers.patchJson
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.streams.Accumulator
 import play.api.mvc.Results.Status

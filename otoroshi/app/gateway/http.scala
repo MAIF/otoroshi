@@ -12,6 +12,7 @@ import org.joda.time.DateTime
 import otoroshi.el.TargetExpressionLanguage
 import otoroshi.script.Implicits._
 import otoroshi.script.{TransformerRequestBodyContext, TransformerRequestContext, TransformerResponseBodyContext, TransformerResponseContext}
+import otoroshi.utils.UrlSanitizer
 import play.api.Logger
 import play.api.http.HttpEntity
 import play.api.libs.json.{JsArray, JsString, JsValue, Json}
@@ -20,10 +21,10 @@ import play.api.libs.ws.{DefaultWSCookie, EmptyBody, SourceBody}
 import play.api.mvc.Results.{BadGateway, Forbidden, HttpVersionNotSupported, NotFound, Status}
 import play.api.mvc._
 import security.{IdGenerator, OtoroshiClaim}
-import utils.RequestImplicits._
-import utils.http.Implicits._
-import utils.http.WSCookieWithSameSite
-import utils.{HeadersHelper, MaxLengthLimiter, UrlSanitizer}
+import otoroshi.utils.http.RequestImplicits._
+import otoroshi.utils.http.{HeadersHelper, WSCookieWithSameSite}
+import otoroshi.utils.http.Implicits._
+import otoroshi.utils.streams.MaxLengthLimiter
 
 import scala.concurrent.{Future, Promise}
 import scala.util.{Failure, Success}

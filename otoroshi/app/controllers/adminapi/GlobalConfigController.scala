@@ -9,7 +9,7 @@ import otoroshi.models.RightsChecker
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc.{AbstractController, ControllerComponents}
-import utils.JsonPatchHelpers.patchJson
+import otoroshi.utils.json.JsonPatchHelpers.patchJson
 
 class GlobalConfigController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env: Env)
   extends AbstractController(cc) {

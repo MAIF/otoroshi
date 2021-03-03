@@ -6,7 +6,6 @@ import java.security.interfaces.{ECPrivateKey, ECPublicKey, RSAPrivateKey, RSAPu
 import java.util
 import java.util.Date
 import java.util.concurrent.atomic.AtomicBoolean
-
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Sink, Source}
@@ -28,13 +27,13 @@ import org.joda.time.DateTime
 import otoroshi.plugins.JsonPathUtils
 import otoroshi.script._
 import otoroshi.utils.crypto.Signatures
-import otoroshi.utils.jwks.JWKSHelper
+import otoroshi.utils.http.DN
+import otoroshi.utils.jwk.JWKSHelper
 import play.api.libs.json._
 import play.api.mvc.{Result, Results}
 import play.core.parsers.FormUrlEncodedParser
 import security.IdGenerator
 import ssl.{Cert, DynamicSSLEngineProvider}
-import utils.http.DN
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration._
@@ -280,7 +279,7 @@ class ClientCredentialFlowExtractor extends PreRouting {
 class ClientCredentialFlow extends RequestTransformer {
 
   import otoroshi.utils.syntax.implicits._
-  import utils.RequestImplicits._
+  import otoroshi.utils.http.RequestImplicits._
 
   private val revokedCache: Cache[String, Boolean] = Scaffeine()
     .recordStats()
@@ -773,7 +772,7 @@ case class BiscuitConf(
 
 class ClientCredentialService extends RequestSink {
 
-  import utils.RequestImplicits._
+  import otoroshi.utils.http.RequestImplicits._
   import otoroshi.utils.syntax.implicits._
 
   case class ClientCredentialServiceConfig(raw: JsValue) {

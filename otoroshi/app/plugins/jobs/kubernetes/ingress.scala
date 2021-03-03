@@ -2,7 +2,6 @@ package otoroshi.plugins.jobs.kubernetes
 
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong, AtomicReference}
-
 import akka.stream.scaladsl.{Sink, Source}
 import cluster.ClusterMode
 import com.google.common.base.CaseFormat
@@ -16,13 +15,13 @@ import models._
 import org.joda.time.DateTime
 import otoroshi.plugins.jobs.kubernetes.IngressSupport.IntOrString
 import otoroshi.script._
+import otoroshi.utils.{RegexPool, TypedMap}
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc.{Result, Results}
 import ssl.DynamicSSLEngineProvider
-import utils.RequestImplicits._
-import utils.{RegexPool, TypedMap}
+import otoroshi.utils.http.RequestImplicits._
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}

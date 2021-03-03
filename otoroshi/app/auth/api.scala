@@ -9,7 +9,7 @@ import play.api.libs.ws.WSProxyServer
 import play.api.mvc.{AnyContent, Request, RequestHeader, Result}
 import security.IdGenerator
 import otoroshi.storage.BasicStore
-import utils.http.MtlsConfig
+import otoroshi.utils.http.MtlsConfig
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try

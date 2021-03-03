@@ -1,7 +1,7 @@
-package utils
+package otoroshi.utils.json
 
-import play.api.libs.json._
 import org.joda.time.DateTime
+import play.api.libs.json._
 
 object JsonImplicits {
   implicit val jodaDateTimeWrites: Writes[DateTime] = play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites
@@ -13,10 +13,8 @@ object JsonPatchHelpers {
 
   // import gnieh.diffson.playJson._
 
-  import play.api.libs.json._
-  import diffson.playJson._
   import diffson.playJson.DiffsonProtocol._
-  import diffson.jsonpatch._
+  import play.api.libs.json._
 
   def patchJson(patchOps: JsValue, document: JsValue): JsValue = {
     val patch = diffson.playJson.DiffsonProtocol.JsonPatchFormat.reads(patchOps).get

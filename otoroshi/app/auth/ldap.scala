@@ -298,7 +298,7 @@ case class LdapAuthModuleConfig(
 
 case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
 
-  import utils.future.Implicits._
+  import otoroshi.utils.future.Implicits._
 
   def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), Charsets.UTF_8)
 

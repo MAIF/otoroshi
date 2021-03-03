@@ -4,7 +4,6 @@ import otoroshi.plugins.JsonPathUtils
 import otoroshi.utils.syntax.implicits._
 import otoroshi.utils.workflow.{WorkFlowOperator, WorkFlowTaskContext}
 import play.api.libs.json._
-import utils.RegexPool
 
 sealed trait Operator[T] {
   def apply(source: JsValue, key: String): T

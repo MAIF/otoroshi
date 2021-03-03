@@ -3,12 +3,12 @@ package storage.drivers.inmemory
 import java.util.concurrent.atomic.AtomicReference
 import java.util.concurrent.{ConcurrentHashMap, TimeUnit}
 import java.util.regex.Pattern
-
 import akka.actor.ActorSystem
 import akka.http.scaladsl.util.FastFuture
 import akka.util.ByteString
 import env.Env
 import otoroshi.storage._
+import otoroshi.utils.SchedulerHelper
 import play.api.Logger
 import play.api.libs.json.{JsValue, Json}
 
@@ -47,7 +47,7 @@ class SwappableInMemoryRedis(_optimized: Boolean, env: Env, actorSystem: ActorSy
   @inline private def store: ConcurrentHashMap[String, Any]        = _storeHolder.get().store
   @inline private def expirations: ConcurrentHashMap[String, Long] = _storeHolder.get().expirations
 
-  private val cancel = actorSystem.scheduler.scheduleAtFixedRate(0.millis, 100.millis)(utils.SchedulerHelper.runnable {
+  private val cancel = actorSystem.scheduler.scheduleAtFixedRate(0.millis, 100.millis)(SchedulerHelper.runnable {
     try {
       val time = System.currentTimeMillis()
       expirations.entrySet().asScala.foreach { entry =>

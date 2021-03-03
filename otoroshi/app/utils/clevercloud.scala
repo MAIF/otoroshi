@@ -1,4 +1,4 @@
-package utils
+package otoroshi.utils.clevercloud
 
 import java.util.Base64
 
@@ -13,7 +13,7 @@ import models.GlobalConfig
 import play.api.Logger
 import play.api.libs.json.{JsArray, JsObject, JsValue}
 import play.utils.UriEncoding
-import utils.CleverCloudClient.CleverSettings
+import otoroshi.utils.clevercloud.CleverCloudClient.CleverSettings
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Random, Success}
@@ -72,7 +72,7 @@ object CleverCloudClient {
 
 class CleverCloudClient(env: Env, config: GlobalConfig, val settings: CleverSettings, val orgaId: String) {
 
-  import utils.http.Implicits._
+  import otoroshi.utils.http.Implicits._
 
   import CleverCloudClient._
 

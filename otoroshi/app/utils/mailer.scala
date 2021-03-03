@@ -1,4 +1,4 @@
-package utils
+package otoroshi.utils.mailer
 
 import akka.http.scaladsl.util.FastFuture
 import akka.http.scaladsl.util.FastFuture._
@@ -8,7 +8,7 @@ import otoroshi.models.Exporter
 import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.ws.WSAuthScheme
-import utils.http.Implicits._
+import otoroshi.utils.http.Implicits._
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}

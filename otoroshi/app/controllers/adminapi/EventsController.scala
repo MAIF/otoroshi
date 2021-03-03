@@ -4,11 +4,11 @@ import actions.{ApiAction, UnAuthApiAction}
 import akka.util.ByteString
 import env.Env
 import otoroshi.models.RightsChecker
+import otoroshi.utils.controllers.{AdminApiHelper, JsonApiError, SendAuditAndAlert}
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc.{AbstractController, ControllerComponents}
-import utils.{AdminApiHelper, JsonApiError, SendAuditAndAlert}
 
 class EventsController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env: Env)
   extends AbstractController(cc) with AdminApiHelper {

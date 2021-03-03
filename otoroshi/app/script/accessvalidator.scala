@@ -4,18 +4,17 @@ import java.security.MessageDigest
 import java.security.cert.X509Certificate
 import java.util.Base64
 import java.util.concurrent.TimeUnit
-
 import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.util.FastFuture
 import env.Env
 import gateway.Errors
 import models._
 import org.apache.commons.codec.binary.Hex
+import otoroshi.utils.{RegexPool, TypedMap}
 import play.api.libs.json._
 import play.api.libs.ws.WSProxyServer
 import play.api.mvc.{RequestHeader, Result, Results}
 import ssl.{ClientCertificateValidator, PemHeaders}
-import utils.{RegexPool, TypedMap}
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.Duration

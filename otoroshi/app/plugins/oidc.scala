@@ -2,7 +2,6 @@ package otoroshi.plugins.oidc
 
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
-
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Sink, Source}
@@ -13,6 +12,7 @@ import env.Env
 import gateway.Errors
 import models._
 import otoroshi.script._
+import otoroshi.utils.{RegexPool, TypedMap}
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json._
@@ -21,7 +21,6 @@ import play.api.libs.ws.WSAuthScheme
 import play.api.mvc.Results.TooManyRequests
 import play.api.mvc.{RequestHeader, Result, Results}
 import security.IdGenerator
-import utils.TypedMap
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.Duration
@@ -408,7 +407,7 @@ case class OIDCThirdPartyApiKeyConfig(
   rolesPath: Seq[String] = Seq.empty,
 ) extends ThirdPartyApiKeyConfig {
 
-  import utils.http.Implicits._
+  import otoroshi.utils.http.Implicits._
 
   import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
 
@@ -443,7 +442,7 @@ case class OIDCThirdPartyApiKeyConfig(
   }
 
   private def shouldBeVerified(path: String): Boolean =
-    !excludedPatterns.exists(p => utils.RegexPool.regex(p).matches(path))
+    !excludedPatterns.exists(p => RegexPool.regex(p).matches(path))
 
   private def handleInternal[A](req: RequestHeader,
                                 descriptor: ServiceDescriptor,

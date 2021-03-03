@@ -6,10 +6,11 @@ import models.{ElasticAnalyticsConfig, Webhook}
 import otoroshi.events.Exporters.{ConsoleExporter, CustomExporter, ElasticExporter, FileAppenderExporter, GenericMailerExporter, KafkaExporter, MetricsExporter, PulsarExporter, WebhookExporter}
 import otoroshi.events._
 import otoroshi.script._
+import otoroshi.utils.mailer.{ConsoleMailerSettings, GenericMailerSettings, MailerSettings, MailgunSettings, MailjetSettings, NoneMailerSettings, SendgridSettings}
 import play.api.Logger
 import play.api.libs.json._
 import security.IdGenerator
-import utils.{ConsoleMailerSettings, GenericMailerSettings, MailerSettings, MailgunSettings, MailjetSettings, NoneMailerSettings, SendgridSettings}
+import otoroshi.utils.mailer.MailerSettings
 
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}

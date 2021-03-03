@@ -1,21 +1,16 @@
 package ssl;
 
-import akka.util.ByteString;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import scala.Option;
 import scala.Tuple3;
-import scala.Unit;
 import scala.Unit$;
-import scala.reflect.ClassTag;
-import scala.reflect.ClassTag$;
-import utils.RegexPool;
+import otoroshi.utils.RegexPool;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.X509ExtendedKeyManager;
 import javax.net.ssl.X509KeyManager;
-import java.math.BigInteger;
 import java.net.Socket;
 import java.security.Principal;
 import java.security.PrivateKey;

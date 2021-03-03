@@ -1,4 +1,4 @@
-package utils
+package otoroshi.utils.prometheus
 
 import com.codahale.metrics._
 import com.spotify.metrics.core.{MetricId, SemanticMetricRegistry}

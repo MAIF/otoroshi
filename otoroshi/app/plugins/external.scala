@@ -4,17 +4,16 @@ import java.security.MessageDigest
 import java.security.cert.X509Certificate
 import java.util.Base64
 import java.util.concurrent.TimeUnit
-
 import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.util.FastFuture
 import env.Env
 import models.{ApiKey, PrivateAppsUser, ServiceDescriptor, WSProxyServerJson}
 import org.apache.commons.codec.binary.Hex
 import otoroshi.script.{AccessContext, AccessValidator}
+import otoroshi.utils.http.MtlsConfig
 import play.api.libs.json._
 import play.api.libs.ws.WSProxyServer
 import ssl.{ClientCertificateValidator, PemHeaders}
-import utils.http.MtlsConfig
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.Duration
@@ -37,7 +36,7 @@ case class ExternalHttpValidatorConfig(config: JsValue) {
 
 class ExternalHttpValidator extends AccessValidator {
 
-  import utils.http.Implicits._
+  import otoroshi.utils.http.Implicits._
 
   override def name: String = "External Http Validator"
 

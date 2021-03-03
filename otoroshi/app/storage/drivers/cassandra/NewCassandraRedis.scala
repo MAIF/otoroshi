@@ -3,7 +3,6 @@ package otoroshi.storage.drivers.cassandra
 import java.util.concurrent.atomic.AtomicReference
 import java.util.concurrent.{TimeUnit, _}
 import java.util.regex.Pattern
-
 import akka.actor.{ActorSystem, Cancellable}
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
@@ -17,7 +16,7 @@ import com.typesafe.config.ConfigFactory
 import env.Env
 import play.api.{Configuration, Logger}
 import otoroshi.storage._
-import utils.SchedulerHelper
+import otoroshi.utils.SchedulerHelper
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}

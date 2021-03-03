@@ -15,8 +15,8 @@ import otoroshi.script._
 import play.api.Logger
 import play.api.libs.json.{JsNumber, JsObject, JsValue, Json}
 import play.api.mvc.{Result, Results}
-import utils.RequestImplicits._
-import utils.future.Implicits._
+import otoroshi.utils.http.RequestImplicits._
+import otoroshi.utils.future.Implicits._
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.{ExecutionContext, Future}

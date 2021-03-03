@@ -33,6 +33,8 @@ import otoroshi.storage.drivers.mongo._
 import otoroshi.storage.drivers.reactivepg.ReactivePgDataStores
 import otoroshi.storage.drivers.rediscala._
 import otoroshi.tcp.TcpService
+import otoroshi.utils.http.{AkkWsClient, MtlsWs, WsClientChooser}
+import otoroshi.utils.metrics.{HasMetrics, Metrics}
 import play.api._
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.json.{JsArray, JsNull, JsObject, JsValue, Json}
@@ -41,8 +43,8 @@ import play.api.libs.ws.ahc._
 import play.twirl.api.Html
 import security.{ClaimCrypto, IdGenerator}
 import ssl.{Cert, DynamicSSLEngineProvider}
-import utils.http._
-import utils.{HasMetrics, Metrics}
+import otoroshi.utils.http._
+import otoroshi.utils.metrics.Metrics
 import otoroshi.utils.syntax.implicits._
 import play.shaded.ahc.org.asynchttpclient.{AsyncHttpClient, DefaultAsyncHttpClient}
 
@@ -522,7 +524,7 @@ class Env(val configuration: Configuration,
   def exposedRootSchemeIsHttps = exposedRootScheme == "https"
 
   lazy val Ws     = _internalClient
-  lazy val MtlsWs = utils.http.MtlsWs(_internalClient)
+  lazy val MtlsWs = otoroshi.utils.http.MtlsWs(_internalClient)
 
   lazy val snowflakeSeed      = configuration.getOptionalWithFileSupport[Long]("app.snowflake.seed").get
   lazy val snowflakeGenerator = IdGenerator(snowflakeSeed)
@@ -922,7 +924,7 @@ class Env(val configuration: Configuration,
                                                   Seq(ServiceGroupIdentifier("default")),
                                                   validUntil = None)
 
-                  import utils.JsonImplicits._
+                  import otoroshi.utils.json.JsonImplicits._
 
                   val admin = SimpleOtoroshiAdmin(
                     username = login,

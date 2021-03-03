@@ -1,4 +1,4 @@
-package utils
+package otoroshi.utils.udp
 
 import java.net.InetSocketAddress
 

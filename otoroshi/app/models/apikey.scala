@@ -1,7 +1,6 @@
 package models
 
 import java.security.interfaces.{ECPrivateKey, ECPublicKey, RSAPrivateKey, RSAPublicKey}
-
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.Flow
 import akka.util.ByteString
@@ -18,8 +17,8 @@ import play.api.mvc.Results.{BadGateway, BadRequest, NotFound, TooManyRequests, 
 import play.api.mvc.{RequestHeader, Result, Results}
 import security.{IdGenerator, OtoroshiClaim}
 import otoroshi.storage.BasicStore
+import otoroshi.utils.TypedMap
 import ssl.DynamicSSLEngineProvider
-import utils.TypedMap
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -481,7 +480,7 @@ trait ApiKeyDataStore extends BasicStore[ApiKey] {
 
 object ApiKeyHelper {
 
-  import utils.RequestImplicits._
+  import otoroshi.utils.http.RequestImplicits._
   import otoroshi.utils.syntax.implicits._
 
   def decodeBase64(encoded: String): String = new String(OtoroshiClaim.decoder.decode(encoded), Charsets.UTF_8)

@@ -7,7 +7,7 @@ import org.joda.time.DateTime
 import otoroshi.models._
 import play.api.Logger
 import play.api.libs.json._
-import utils.JsonImplicits._
+import otoroshi.utils.json.JsonImplicits._
 import otoroshi.utils.syntax.implicits._
 
 import scala.concurrent.duration._

@@ -5,8 +5,8 @@ import com.sksamuel.pulsar4s.{Consumer, ConsumerConfig, DefaultPulsarClient, Pro
 import otoroshi.models.Exporter
 import com.sksamuel.pulsar4s.playjson._
 import otoroshi.models.Exporter
+import otoroshi.utils.http.MtlsConfig
 import play.api.libs.json._
-import utils.http.MtlsConfig
 
 import scala.concurrent.Await
 import scala.util.{Failure, Success, Try}

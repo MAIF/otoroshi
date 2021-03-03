@@ -6,11 +6,11 @@ import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc.RequestHeader
-import utils.ReplaceAllWith
 
 import scala.util.Try
-import utils.RequestImplicits._
+import otoroshi.utils.http.RequestImplicits._
 import kaleidoscope._
+import otoroshi.utils.{ReplaceAllWith, TypedMap}
 import otoroshi.utils.syntax.implicits._
 
 object GlobalExpressionLanguage {
@@ -20,14 +20,14 @@ object GlobalExpressionLanguage {
   val expressionReplacer = ReplaceAllWith("\\$\\{([^}]*)\\}")
 
   def apply(
-      value: String,
-      req: Option[RequestHeader],
-      service: Option[ServiceDescriptor],
-      apiKey: Option[ApiKey],
-      user: Option[PrivateAppsUser],
-      context: Map[String, String],
-      attrs: utils.TypedMap,
-      env: Env
+             value: String,
+             req: Option[RequestHeader],
+             service: Option[ServiceDescriptor],
+             apiKey: Option[ApiKey],
+             user: Option[PrivateAppsUser],
+             context: Map[String, String],
+             attrs: TypedMap,
+             env: Env
   ): String = {
     // println(s"${req}:${service}:${apiKey}:${user}:${context}")
     value match {
@@ -236,7 +236,7 @@ object HeadersExpressionLanguage {
       apiKey: Option[ApiKey],
       user: Option[PrivateAppsUser],
       context: Map[String, String],
-      attrs: utils.TypedMap,
+      attrs: TypedMap,
       env: Env
   ): String = {
     GlobalExpressionLanguage.apply(
@@ -261,7 +261,7 @@ object RedirectionExpressionLanguage {
       apiKey: Option[ApiKey],
       user: Option[PrivateAppsUser],
       context: Map[String, String],
-      attrs: utils.TypedMap,
+      attrs: TypedMap,
       env: Env
   ): String = {
     GlobalExpressionLanguage.apply(
@@ -286,7 +286,7 @@ object TargetExpressionLanguage {
       apiKey: Option[ApiKey],
       user: Option[PrivateAppsUser],
       context: Map[String, String],
-      attrs: utils.TypedMap,
+      attrs: TypedMap,
       env: Env
   ): String = {
     GlobalExpressionLanguage.apply(
@@ -311,7 +311,7 @@ object JwtExpressionLanguage {
       apiKey: Option[ApiKey],
       user: Option[PrivateAppsUser],
       context: Map[String, String],
-      attrs: utils.TypedMap,
+      attrs: TypedMap,
       env: Env
   ): String = {
     GlobalExpressionLanguage.apply(
@@ -333,7 +333,7 @@ object JwtExpressionLanguage {
       apiKey: Option[ApiKey],
       user: Option[PrivateAppsUser],
       context: Map[String, String],
-      attrs: utils.TypedMap,
+      attrs: TypedMap,
       env: Env
   ): JsValue = {
     value match {

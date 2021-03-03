@@ -1,12 +1,11 @@
-package utils
-
-import java.util.zip.Deflater
+package otoroshi.utils.gzip
 
 import akka.http.scaladsl.util.FastFuture
+import akka.stream._
 import akka.stream.scaladsl._
 import akka.stream.stage.{GraphStage, GraphStageLogic, InHandler, OutHandler}
-import akka.stream._
 import akka.util.ByteString
+import otoroshi.utils.RegexPool
 import play.api.Logger
 import play.api.http._
 import play.api.libs.json._
@@ -75,7 +74,7 @@ case class GzipConfig(
   def asJson: JsValue = GzipConfig._fmt.writes(this)
 
   import play.api.http.HeaderNames._
-  import utils.RequestImplicits._
+  import otoroshi.utils.http.RequestImplicits._
 
   private def createGzipFlow: Flow[ByteString, ByteString, _] = GzipFlow.gzip(bufferSize, compressionLevel)
 
@@ -83,7 +82,7 @@ case class GzipConfig(
                                                            mat: Materializer): Future[Result] = {
     implicit val ec = mat.executionContext
 
-    if (enabled && (!excludedPatterns.exists(p => utils.RegexPool.regex(p).matches(request.relativeUri)))) {
+    if (enabled && (!excludedPatterns.exists(p => RegexPool.regex(p).matches(request.relativeUri)))) {
       if (shouldCompress(result) && shouldGzip(request, result)) {
 
         val header = result.header.copy(headers = setupHeader(result.header))

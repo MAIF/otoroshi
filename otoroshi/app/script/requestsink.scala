@@ -4,10 +4,10 @@ import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import env.Env
+import otoroshi.utils.TypedMap
 import otoroshi.utils.config.ConfigUtils
 import play.api.libs.json._
 import play.api.mvc.{RequestHeader, Result, Results}
-import utils.TypedMap
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -23,7 +23,7 @@ object RequestSink {
   def maybeSinkRequest(snowflake: String,
                        req: RequestHeader,
                        body: Source[ByteString, _],
-                       attrs: utils.TypedMap,
+                       attrs: TypedMap,
                        origin: RequestOrigin,
                        status: Int,
                        message: String,

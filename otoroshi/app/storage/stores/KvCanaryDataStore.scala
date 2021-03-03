@@ -4,7 +4,7 @@ import akka.http.scaladsl.util.FastFuture
 import env.Env
 import otoroshi.storage.RedisLike
 import models._
-import utils.future.Implicits._
+import otoroshi.utils.future.Implicits._
 import play.api.Logger
 
 import scala.concurrent.{ExecutionContext, Future}

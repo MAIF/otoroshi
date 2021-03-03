@@ -10,12 +10,12 @@ import gateway.Errors
 import models.BackOfficeUser
 import otoroshi.models.RightsChecker.{SuperAdminOnly, TenantAdminOnly}
 import otoroshi.models.{EntityLocationSupport, RightsChecker, TenantId}
+import otoroshi.utils.TypedMap
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json.Json
 import play.api.mvc.Results.Status
 import play.api.mvc._
-import utils.RequestImplicits._
-import utils.TypedMap
+import otoroshi.utils.http.RequestImplicits._
 
 import scala.concurrent.{ExecutionContext, Future}
 

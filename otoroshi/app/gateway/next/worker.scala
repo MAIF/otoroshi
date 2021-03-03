@@ -4,7 +4,6 @@ import java.io.File
 import java.net.{InetSocketAddress, URLEncoder}
 import java.security.{Provider, SecureRandom}
 import java.util.concurrent.atomic.AtomicInteger
-
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.settings.ServerSettings
@@ -18,9 +17,11 @@ import com.google.common.base.Charsets
 import com.typesafe.config.{ConfigFactory, ConfigValueFactory}
 import env.Env
 import gateway._
+
 import javax.net.ssl._
 import models._
-import otoroshi.utils.LetsEncryptHelper
+import otoroshi.utils.letsencrypt._
+import otoroshi.utils.{RegexPool, TypedMap}
 import otoroshi.utils.syntax.implicits._
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.json.{JsObject, Json}
@@ -32,7 +33,6 @@ import play.api.mvc.request.{Cell, RequestAttrKey}
 import play.api.{Configuration, Environment, Logger, Mode}
 import security.OtoroshiClaim
 import ssl.{ClientAuth, DynamicSSLEngineProvider, KeyManagerCompatibility, SSLSessionJavaHelper}
-import utils.{RegexPool, TypedMap}
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -241,7 +241,7 @@ class OtoroshiRequestHandler(snowMonkey: SnowMonkey,
                             reverseProxyAction: ReverseProxyAction)(implicit env: Env, mat: Materializer) {
 
   import FakeActionBuilder.Handler
-  import utils.RequestImplicits._
+  import otoroshi.utils.http.RequestImplicits._
 
   implicit lazy val ec        = env.otoroshiExecutionContext
   implicit lazy val scheduler = env.otoroshiScheduler
@@ -487,7 +487,7 @@ class OtoroshiRequestHandler(snowMonkey: SnowMonkey,
   def myProfile() = actionBuilder.async { req =>
     implicit val request = req
 
-    val attrs = utils.TypedMap.empty
+    val attrs = TypedMap.empty
 
     env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
       ServiceLocation(req.theHost, globalConfig) match {

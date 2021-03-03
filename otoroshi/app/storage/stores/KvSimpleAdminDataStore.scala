@@ -4,7 +4,7 @@ import akka.http.scaladsl.util.FastFuture
 import env.Env
 import otoroshi.models._
 import play.api.libs.json._
-import utils.JsonImplicits._
+import otoroshi.utils.json.JsonImplicits._
 
 import scala.util.Success
 import akka.util.ByteString

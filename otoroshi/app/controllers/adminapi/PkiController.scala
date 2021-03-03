@@ -12,7 +12,7 @@ import play.api.libs.json.{JsError, JsObject, JsSuccess, Json}
 import play.api.libs.streams.Accumulator
 import play.api.mvc.{AbstractController, Action, BodyParser, ControllerComponents}
 import ssl.{Cert, CertificateData, P12Helper}
-import utils.future.Implicits._
+import otoroshi.utils.future.Implicits._
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -181,7 +181,7 @@ class PkiController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env
         (jsonBody \ "host").asOpt[String] match {
           case None => FastFuture.successful(BadRequest(Json.obj("error" -> "no domain found in request")))
           case Some(domain) =>
-            otoroshi.utils.LetsEncryptHelper.createCertificate(domain).map {
+            otoroshi.utils.letsencrypt.LetsEncryptHelper.createCertificate(domain).map {
               case Left(err) => InternalServerError(Json.obj("error" -> err))
               case Right(cert) => Ok(cert.toGenCertResponse.json.as[JsObject] ++ Json.obj("certId" -> cert.id))
             }

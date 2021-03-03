@@ -17,7 +17,7 @@ import otoroshi.plugins.useragent.UserAgentHelper
 import otoroshi.tcp.TcpService
 import play.api.Logger
 import play.api.libs.json._
-import utils.JsonImplicits._
+import otoroshi.utils.json.JsonImplicits._
 
 import scala.collection.mutable
 import scala.concurrent.duration.FiniteDuration

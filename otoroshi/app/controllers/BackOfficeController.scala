@@ -2,7 +2,6 @@ package controllers
 
 import java.util.Base64
 import java.util.concurrent.TimeUnit
-
 import actions.{ApiActionContext, BackOfficeAction, BackOfficeActionAuth}
 import akka.http.scaladsl.util.FastFuture
 import akka.http.scaladsl.util.FastFuture._
@@ -24,6 +23,7 @@ import otoroshi.jobs.updates.SoftwareUpdatesJobs
 import otoroshi.models.{EntityLocation, EntityLocationSupport, TenantId}
 import otoroshi.models.RightsChecker.{SuperAdminOnly, TenantAdminOnly}
 import otoroshi.ssl.pki.models.{GenCertResponse, GenCsrQuery}
+import otoroshi.utils.http.MtlsConfig
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.http.HttpEntity
@@ -33,9 +33,8 @@ import play.api.libs.ws.SourceBody
 import play.api.mvc._
 import security._
 import ssl._
-import utils.LocalCache
-import utils.RequestImplicits._
-import utils.http.MtlsConfig
+import otoroshi.utils.misc.LocalCache
+import otoroshi.utils.http.RequestImplicits._
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -513,7 +512,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
   }
 
   def fetchOpenIdConfiguration() = BackOfficeActionAuth.async(parse.json) { ctx =>
-    import utils.http.Implicits._
+    import otoroshi.utils.http.Implicits._
 
     import scala.concurrent.duration._
 
@@ -1060,7 +1059,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
     (ctx.request.body \ "host").asOpt[String] match {
       case None => FastFuture.successful(BadRequest(Json.obj("error" -> "no domain found in request")))
       case Some(domain) =>
-        otoroshi.utils.LetsEncryptHelper.createCertificate(domain).map {
+        otoroshi.utils.letsencrypt.LetsEncryptHelper.createCertificate(domain).map {
           case Left(err)   => InternalServerError(Json.obj("error" -> err))
           case Right(cert) => Ok(cert.toJson)
         }
@@ -1109,7 +1108,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
           maybeHost match {
             case None => BadRequest(Json.obj("error" -> "No domain found !")).future
             case Some(domain) =>
-              otoroshi.utils.LetsEncryptHelper.createCertificate(domain).map {
+              otoroshi.utils.letsencrypt.LetsEncryptHelper.createCertificate(domain).map {
                 case Left(err)   => InternalServerError(Json.obj("error" -> err))
                 case Right(cert) => Ok(cert.toJson)
               }

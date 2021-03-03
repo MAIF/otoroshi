@@ -2,9 +2,9 @@ package otoroshi.models
 
 import env.Env
 import models._
+import otoroshi.utils.RegexPool
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
-import utils.RegexPool
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}

@@ -1,7 +1,6 @@
 package functional
 
 import java.util.Base64
-
 import akka.actor.ActorSystem
 import auth.{AuthModuleConfig, BasicAuthModuleConfig}
 import com.auth0.jwt.JWT
@@ -12,13 +11,13 @@ import models.{ApiKey, BackOfficeUser, GlobalJwtVerifier, ServiceDescriptor, Ser
 import otoroshi.models.{TeamAccess, TeamId, TenantAccess, TenantId, UserRight, UserRights}
 import otoroshi.script.{AccessValidatorRef, Script}
 import otoroshi.tcp.TcpService
+import otoroshi.utils.http.MtlsConfig
 import play.api.Configuration
 import play.api.libs.json.{JsArray, JsValue, Json}
 import security.IdGenerator
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.ws.WSAuthScheme
 import ssl.{Cert, ClientCertificateValidator}
-import utils.http.MtlsConfig
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}

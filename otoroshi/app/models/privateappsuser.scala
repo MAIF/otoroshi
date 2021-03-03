@@ -1,7 +1,6 @@
 package models
 
 import java.util.concurrent.TimeUnit
-
 import akka.http.scaladsl.util.FastFuture
 import auth.{AuthModuleConfig, GenericOauth2Module}
 import env.Env
@@ -11,10 +10,9 @@ import play.api.libs.json._
 import play.api.mvc.Results.InternalServerError
 import play.api.mvc.{RequestHeader, Result, Results}
 import otoroshi.storage.BasicStore
-import utils.JsonImplicits._
-import utils.TypedMap
-
+import otoroshi.utils.json.JsonImplicits._
 import cluster._
+import otoroshi.utils.TypedMap
 
 import scala.concurrent.duration._
 import scala.concurrent.duration.Duration
@@ -128,7 +126,7 @@ trait PrivateAppsUserDataStore extends BasicStore[PrivateAppsUser]
 
 object PrivateAppsUserHelper {
 
-  import utils.RequestImplicits._
+  import otoroshi.utils.http.RequestImplicits._
 
   case class PassWithAuthContext(req: RequestHeader,
                                  query: ServiceDescriptorQuery,

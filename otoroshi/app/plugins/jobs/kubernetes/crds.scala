@@ -21,14 +21,14 @@ import otoroshi.plugins.jobs.kubernetes.IngressSupport.IntOrString
 import otoroshi.script._
 import otoroshi.ssl.pki.models.GenCsrQuery
 import otoroshi.tcp.TcpService
+import otoroshi.utils.TypedMap
+import otoroshi.utils.http.DN
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc.{Result, Results}
 import security.IdGenerator
 import ssl.{Cert, DynamicSSLEngineProvider}
-import utils.TypedMap
-import utils.http.DN
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}

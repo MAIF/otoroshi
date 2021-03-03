@@ -12,7 +12,7 @@ import scala.util.{Failure, Success}
 
 class WebHookAnalytics(webhook: Webhook, config: GlobalConfig) extends AnalyticsWritesService {
 
-  import utils.http.Implicits._
+  import otoroshi.utils.http.Implicits._
 
   lazy val logger = Logger("otoroshi-analytics-webhook")
 

@@ -17,7 +17,7 @@ import play.api.Logger
 import play.api.libs.json.{JsArray, JsValue, Json}
 import play.api.mvc._
 import security.{IdGenerator, OtoroshiClaim}
-import utils.RequestImplicits._
+import otoroshi.utils.http.RequestImplicits._
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}

@@ -2,7 +2,6 @@ package controllers
 
 import java.net.URLEncoder
 import java.util.concurrent.TimeUnit
-
 import actions.{BackOfficeAction, BackOfficeActionAuth, PrivateAppsAction}
 import akka.http.scaladsl.util.FastFuture
 import akka.util.ByteString
@@ -11,12 +10,12 @@ import env.Env
 import events._
 import gateway.Errors
 import models.{BackOfficeUser, CorsSettings, PrivateAppsUser, ServiceDescriptor}
+import otoroshi.utils.TypedMap
 import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc._
 import security.IdGenerator
-import utils.TypedMap
-import utils.future.Implicits._
+import otoroshi.utils.future.Implicits._
 
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
@@ -100,8 +99,8 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
   }
 
   def confidentialAppLoginPage() = PrivateAppsAction.async { ctx =>
-    import utils.RequestImplicits._
-    import utils.future.Implicits._
+    import otoroshi.utils.http.RequestImplicits._
+    import otoroshi.utils.future.Implicits._
 
     implicit val req = ctx.request
 
@@ -202,8 +201,8 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
   }
 
   def confidentialAppCallback() = PrivateAppsAction.async { ctx =>
-    import utils.RequestImplicits._
-    import utils.future.Implicits._
+    import otoroshi.utils.http.RequestImplicits._
+    import otoroshi.utils.future.Implicits._
 
     implicit val req = ctx.request
 
@@ -341,7 +340,7 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
   }
 
   def backOfficeLogout() = BackOfficeActionAuth.async { ctx =>
-    import utils.RequestImplicits._
+    import otoroshi.utils.http.RequestImplicits._
     implicit val request = ctx.request
     val redirect         = request.getQueryString("redirect")
     ctx.user.simpleLogin match {

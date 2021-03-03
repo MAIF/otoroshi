@@ -9,7 +9,7 @@ import models.ApiKeyHelper.decodeBase64
 import otoroshi.script.{PreRouting, PreRoutingContext}
 import otoroshi.utils.syntax.implicits._
 import ssl.DynamicSSLEngineProvider
-import utils.RequestImplicits._
+import otoroshi.utils.http.RequestImplicits._
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}

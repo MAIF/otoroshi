@@ -15,6 +15,7 @@ import gateway._
 import modules.OtoroshiComponentsInstances
 import otoroshi.api.OtoroshiLoaderHelper.EnvContainer
 import otoroshi.storage.DataStores
+import otoroshi.utils.metrics.Metrics
 import play.api.http.{DefaultHttpFilters, HttpErrorHandler, HttpRequestHandler}
 import play.api.inject.Injector
 import play.api.libs.ws.WSClient
@@ -26,7 +27,6 @@ import play.core.server.{AkkaHttpServerComponents, ServerConfig}
 import play.filters.HttpFiltersComponents
 import router.Routes
 import ssl.DynamicSSLEngineProvider
-import utils.Metrics
 
 import scala.concurrent.{Await, ExecutionContext, Future, Promise}
 import scala.concurrent.duration._

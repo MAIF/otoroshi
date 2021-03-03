@@ -5,7 +5,6 @@ import java.security.MessageDigest
 import java.security.cert.X509Certificate
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
-
 import actions.ApiAction
 import akka.{Done, NotUsed}
 import akka.actor.{Actor, ActorRef, Cancellable, Props}
@@ -18,6 +17,7 @@ import com.google.common.hash.Hashing
 import env.Env
 import otoroshi.events._
 import events.{AnalyticEvent, OtoroshiEvent}
+
 import javax.script._
 import models._
 import play.api.Logger
@@ -28,8 +28,8 @@ import play.api.mvc._
 import redis.RedisClientMasterSlaves
 import security.{IdGenerator, OtoroshiClaim}
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
+import otoroshi.utils.{SchedulerHelper, TypedMap}
 import otoroshi.utils.config.ConfigUtils
-import utils.TypedMap
 import otoroshi.utils.syntax.implicits._
 
 import scala.collection.concurrent.TrieMap
@@ -365,7 +365,7 @@ case class TransformerErrorContext(
     user: Option[PrivateAppsUser],
     config: JsValue,
     globalConfig: JsValue = Json.obj(),
-    attrs: utils.TypedMap
+    attrs: TypedMap
 ) extends TransformerContext {}
 
 trait RequestTransformer extends StartableAndStoppable with NamedPlugin with InternalEventListener {
@@ -695,7 +695,7 @@ class ScriptManager(env: Env) {
     val start = System.currentTimeMillis()
     val confPackages: Seq[String] = env.configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.plugins.packages").getOrElse(Seq.empty) ++
       env.configuration.getOptionalWithFileSupport[String]("otoroshi.plugins.packagesStr").map(v => v.split(",").map(_.trim).toSeq).getOrElse(Seq.empty)
-    val allPackages = Seq("otoroshi", "otoroshi_third_party", "otoroshi_third_party_plugins") ++ confPackages
+    val allPackages = Seq("otoroshi", "otoroshi_plugins", "otoroshi_third_party", "otoroshi_third_party_plugins") ++ confPackages
     val scanResult: ScanResult = new ClassGraph()
       .addClassLoader(env.environment.classLoader)
       .enableClassInfo()
@@ -874,7 +874,7 @@ class ScriptManager(env: Env) {
   def start(): ScriptManager = {
     if (env.scriptingEnabled) {
       updateRef.set(
-        env.otoroshiScheduler.scheduleAtFixedRate(1.second, 10.second)(utils.SchedulerHelper.runnable(updateScriptCache(firstScan.compareAndSet(false, true))))(
+        env.otoroshiScheduler.scheduleAtFixedRate(1.second, 10.second)(SchedulerHelper.runnable(updateScriptCache(firstScan.compareAndSet(false, true))))(
           env.otoroshiExecutionContext
         )
       )

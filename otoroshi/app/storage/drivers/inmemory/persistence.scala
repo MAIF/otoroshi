@@ -4,7 +4,6 @@ import java.io.File
 import java.nio.file.Files
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicReference
-
 import akka.actor.Cancellable
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
@@ -12,11 +11,12 @@ import akka.stream.scaladsl.{Framing, Keep, Sink, Source}
 import akka.util.ByteString
 import com.google.common.base.Charsets
 import env.Env
+import otoroshi.utils.SchedulerHelper
 import play.api.Logger
 import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
 import play.api.libs.ws.SourceBody
 import storage.drivers.inmemory.Memory
-import utils.http.Implicits._
+import otoroshi.utils.http.Implicits._
 
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.duration._
@@ -68,7 +68,7 @@ class FilePersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
       file.createNewFile()
     }
     readStateFromDisk(Files.readAllLines(file.toPath).asScala.toSeq)
-    cancelRef.set(ds.actorSystem.scheduler.scheduleAtFixedRate(1.second, 5.seconds)(utils.SchedulerHelper.runnable {
+    cancelRef.set(ds.actorSystem.scheduler.scheduleAtFixedRate(1.second, 5.seconds)(SchedulerHelper.runnable {
       Await.result(writeStateToDisk()(ds.actorSystem.dispatcher, ds.materializer), 10.seconds)
     })(ds.actorSystem.dispatcher))
     FastFuture.successful(())

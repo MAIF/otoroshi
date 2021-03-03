@@ -3,7 +3,6 @@ package otoroshi.plugins.jobs.kubernetes
 import java.util.Base64
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong, AtomicReference}
 import java.util.regex.Pattern
-
 import akka.{Done, NotUsed}
 import akka.http.scaladsl.model.Uri
 import akka.stream.scaladsl.{Framing, Sink, Source}
@@ -11,13 +10,13 @@ import akka.util.ByteString
 import env.Env
 import models._
 import org.joda.time.DateTime
+import otoroshi.utils.UrlSanitizer
+import otoroshi.utils.http.MtlsConfig
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.ws.WSRequest
 import ssl.{Cert, DynamicSSLEngineProvider}
-import utils.UrlSanitizer
-import utils.http.MtlsConfig
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -620,7 +619,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
 
   def watchResource(namespace: String, resource: String, api: String, timeout: Int, stop: => Boolean, labelSelector: Option[String] = None): Source[Seq[ByteString], _] = {
 
-    import utils.http.Implicits._
+    import otoroshi.utils.http.Implicits._
 
     val lastTime = new AtomicLong(0L)
     val last = new AtomicReference[String]("0")

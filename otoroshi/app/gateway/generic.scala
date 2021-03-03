@@ -1,7 +1,6 @@
 package gateway
 
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, AtomicLong}
-
 import akka.actor.{ActorRef, Scheduler}
 import akka.http.scaladsl.util.FastFuture
 import akka.http.scaladsl.util.FastFuture._
@@ -16,12 +15,13 @@ import org.joda.time.DateTime
 import otoroshi.el.HeadersExpressionLanguage
 import otoroshi.script.Implicits._
 import otoroshi.script._
+import otoroshi.utils.TypedMap
 import play.api.Logger
 import play.api.http.HttpEntity
 import play.api.mvc.Results._
 import play.api.mvc.{Cookie, RequestHeader, Result, Results}
 import security.IdGenerator
-import utils.RequestImplicits._
+import otoroshi.utils.http.RequestImplicits._
 import utils._
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -361,7 +361,7 @@ class ReverseProxyAction(env: Env) {
     val start               = System.currentTimeMillis()
     val bodyAlreadyConsumed = new AtomicBoolean(false)
     val protocol            = req.theProtocol
-    val attrs = utils.TypedMap.empty.put(
+    val attrs = TypedMap.empty.put(
       otoroshi.plugins.Keys.RequestNumberKey     -> reqNumber,
       otoroshi.plugins.Keys.SnowFlakeKey         -> snowflake,
       otoroshi.plugins.Keys.RequestTimestampKey  -> callDate,
@@ -891,19 +891,19 @@ object ReverseProxyHelper {
           errorResult(TooManyRequests, "[GLOBAL] You performed too much requests", "errors.too.much.requests")
         } else if (globalConfig.ipFiltering.notMatchesWhitelist(remoteAddress)) {
           /*else if (globalConfig.ipFiltering.whitelist.nonEmpty && !globalConfig.ipFiltering.whitelist
-               .exists(ip => utils.RegexPool(ip).matches(remoteAddress))) {*/
+               .exists(ip => otoroshi.utils.RegexPool(ip).matches(remoteAddress))) {*/
           errorResult(Forbidden, "Your IP address is not allowed", "errors.ip.address.not.allowed") // global whitelist
         } else if (globalConfig.ipFiltering.matchesBlacklist(remoteAddress)) {
           /*else if (globalConfig.ipFiltering.blacklist.nonEmpty && globalConfig.ipFiltering.blacklist
-                 .exists(ip => utils.RegexPool(ip).matches(remoteAddress))) {*/
+                 .exists(ip => otoroshi.utils.RegexPool(ip).matches(remoteAddress))) {*/
           errorResult(Forbidden, "Your IP address is not allowed", "errors.ip.address.not.allowed") // global blacklist
         } else if (descriptor.ipFiltering.notMatchesWhitelist(remoteAddress)) {
           /*else if (descriptor.ipFiltering.whitelist.nonEmpty && !descriptor.ipFiltering.whitelist
-               .exists(ip => utils.RegexPool(ip).matches(remoteAddress))) {*/
+               .exists(ip => otoroshi.utils.RegexPool(ip).matches(remoteAddress))) {*/
           errorResult(Forbidden, "Your IP address is not allowed", "errors.ip.address.not.allowed") // service whitelist
         } else if (descriptor.ipFiltering.matchesBlacklist(remoteAddress)) {
           /*else if (descriptor.ipFiltering.blacklist.nonEmpty && descriptor.ipFiltering.blacklist
-               .exists(ip => utils.RegexPool(ip).matches(remoteAddress))) {*/
+               .exists(ip => otoroshi.utils.RegexPool(ip).matches(remoteAddress))) {*/
           errorResult(Forbidden, "Your IP address is not allowed", "errors.ip.address.not.allowed") // service blacklist
         } else if (globalConfig.matchesEndlessIpAddresses(remoteAddress)) {
           /*else if (globalConfig.endlessIpAddresses.nonEmpty && globalConfig.endlessIpAddresses

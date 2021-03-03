@@ -3,7 +3,6 @@ package otoroshi.utils.syntax
 import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
-
 import akka.http.scaladsl.util.FastFuture
 import akka.util.ByteString
 import com.auth0.jwt.interfaces.DecodedJWT
@@ -12,9 +11,10 @@ import com.typesafe.config.ConfigFactory
 import org.apache.commons.codec.binary.{Base64, Hex}
 import org.apache.commons.io.Charsets
 import otoroshi.plugins.JsonPathUtils
+import otoroshi.utils.{Regex, RegexPool}
 import play.api.{ConfigLoader, Configuration, Logger}
 import play.api.libs.json._
-import utils.{Regex, RegexPool}
+import otoroshi.utils.Regex
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.reflect.ClassTag

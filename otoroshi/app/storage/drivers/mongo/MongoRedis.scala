@@ -1,7 +1,6 @@
 package otoroshi.storage.drivers.mongo
 
 import java.util.concurrent.TimeUnit
-
 import akka.actor.ActorSystem
 import akka.http.scaladsl.util.FastFuture
 import akka.util.ByteString
@@ -10,10 +9,10 @@ import play.api.Logger
 import reactivemongo.api.bson.collection.BSONCollection
 import reactivemongo.api.indexes.{Index, IndexType}
 import reactivemongo.api.{Cursor, DefaultDB, MongoConnection}
-import utils.SchedulerHelper
 import reactivemongo.bson._
 import reactivemongo.api.bson.compat._
 import otoroshi.storage.{DataStoreHealth, Healthy, RedisLike}
+import otoroshi.utils.SchedulerHelper
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}

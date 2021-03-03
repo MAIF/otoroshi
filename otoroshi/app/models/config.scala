@@ -14,14 +14,18 @@ import otoroshi.script.Script
 import otoroshi.script.plugins.Plugins
 import otoroshi.storage.BasicStore
 import otoroshi.tcp.TcpService
-import otoroshi.utils.LetsEncryptSettings
+import otoroshi.utils.RegexPool
+import otoroshi.utils.letsencrypt.LetsEncryptSettings
+import otoroshi.utils.clevercloud.CleverCloudClient
 import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.ws.WSProxyServer
 import security.IdGenerator
 import ssl.{Cert, ClientCertificateValidator}
-import utils.CleverCloudClient.{CleverSettings, UserTokens}
-import utils.http.MtlsConfig
+import otoroshi.utils.clevercloud.CleverCloudClient.{CleverSettings, UserTokens}
+import otoroshi.utils.http.MtlsConfig
+import otoroshi.utils.letsencrypt.LetsEncryptSettings
+import otoroshi.utils.mailer.MailerSettings
 import utils._
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -300,8 +304,8 @@ case class AutoCert(enabled: Boolean = false,
                     replyNicely: Boolean = false) {
   def json: JsValue = AutoCert.format.writes(this)
   def matches(domain: String): Boolean = {
-    !notAllowed.exists(p => utils.RegexPool.apply(p).matches(domain)) &&
-      allowed.exists(p => utils.RegexPool.apply(p).matches(domain))
+    !notAllowed.exists(p => otoroshi.utils.RegexPool.apply(p).matches(domain)) &&
+      allowed.exists(p => otoroshi.utils.RegexPool.apply(p).matches(domain))
   }
 }
 
@@ -425,7 +429,7 @@ case class GlobalConfig(
         if (ip.contains("/")) {
           IpFiltering.network(ip).contains(ipAddress)
         } else {
-          utils.RegexPool(ip).matches(ipAddress)
+          RegexPool(ip).matches(ipAddress)
         }
       }
     } else {
@@ -705,7 +709,7 @@ case class OtoroshiExport(
 ) {
 
   import otoroshi.utils.syntax.implicits._
-  import utils.JsonImplicits._
+  import otoroshi.utils.json.JsonImplicits._
 
   private def customizeAndMergeArray[A](entities: Seq[A], arr: JsArray, fmt: Format[A], extractIdFromJs: JsValue => String, extractIdFromEntity: A => String): Seq[A] = {
     val arrWithId = arr.value.map { item =>

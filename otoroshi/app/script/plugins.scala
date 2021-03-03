@@ -4,10 +4,12 @@ import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
 import env.Env
 import otoroshi.script._
+import otoroshi.utils.RegexPool
 import play.api.libs.json.{Format, JsArray, JsError, JsResult, JsString, JsSuccess, JsValue, Json}
 import play.api.mvc.{RequestHeader, Result}
 import otoroshi.utils.syntax.implicits._
-import utils.RequestImplicits._
+import otoroshi.utils.http.RequestImplicits._
+import otoroshi.utils
 
 import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.{ExecutionContext, Future}
@@ -68,7 +70,7 @@ case class Plugins(name: String,
       }
     val localPlugins = Some(this)
       .filter(p => p.enabled && p.refs.nonEmpty)
-      .filter(pls => pls.excluded.isEmpty || !pls.excluded.exists(p => utils.RegexPool.regex(p).matches(req.thePath)))
+      .filter(pls => pls.excluded.isEmpty || !pls.excluded.exists(p => RegexPool.regex(p).matches(req.thePath)))
       .getOrElse(Plugins(s"fake-local-${ct.runtimeClass.getName}"))
       .refs.map(r => (r, plugin[A](r)))
       .collect {

@@ -2,7 +2,6 @@ package gateway
 
 import java.net.URLEncoder
 import java.util.concurrent.atomic.AtomicInteger
-
 import akka.actor.{Actor, Props}
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
@@ -16,8 +15,9 @@ import events._
 import models._
 import otoroshi.script._
 import otoroshi.ssl.OcspResponder
-import otoroshi.utils.LetsEncryptHelper
-import otoroshi.utils.jwks.JWKSHelper
+import otoroshi.utils.{RegexPool, TypedMap}
+import otoroshi.utils.letsencrypt._
+import otoroshi.utils.jwk.JWKSHelper
 import play.api.ApplicationLoader.DevContext
 import play.api.Logger
 import play.api.http.{Status => _, _}
@@ -29,7 +29,7 @@ import play.api.routing.Router
 import play.core.WebCommands
 import security.OtoroshiClaim
 import ssl.{KeyManagerCompatibility, SSLSessionJavaHelper}
-import utils.RequestImplicits._
+import otoroshi.utils.http.RequestImplicits._
 import utils._
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -431,7 +431,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
   def myProfile() = actionBuilder.async { req =>
     implicit val request = req
 
-    val attrs = utils.TypedMap.empty
+    val attrs = TypedMap.empty
 
     env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
       ServiceLocation(req.theHost, globalConfig) match {

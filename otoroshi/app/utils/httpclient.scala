@@ -1,43 +1,35 @@
-package utils.http
-
-import java.io.{File, FileOutputStream}
-import java.net.{InetAddress, InetSocketAddress, URI}
-import java.nio.file.Path
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicReference
+package otoroshi.utils.http
 
 import akka.actor.ActorSystem
-import akka.http.scaladsl.Http.OutgoingConnection
 import akka.http.scaladsl.model.HttpHeader.ParsingResult
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.model.ws.{Message, WebSocketRequest, WebSocketUpgradeResponse}
 import akka.http.scaladsl.settings.{ClientConnectionSettings, ConnectionPoolSettings}
-import akka.http.scaladsl.util.FastFuture
 import akka.http.scaladsl.{ClientTransport, ConnectionContext, Http, HttpsConnectionContext}
 import akka.stream.Materializer
-import akka.stream.TLSProtocol.NegotiateNewSession
-import akka.stream.scaladsl.{Flow, Source, Tcp}
+import akka.stream.scaladsl.{Flow, Source}
 import akka.util.ByteString
-import com.github.blemale.scaffeine.{Cache, LoadingCache, Scaffeine}
+import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import com.google.common.base.Charsets
 import com.typesafe.sslconfig.akka.AkkaSSLConfig
-import com.typesafe.sslconfig.ssl.{DefaultHostnameVerifier, NoopHostnameVerifier, SSLConfigSettings}
-import com.typesafe.sslconfig.util.LoggerFactory
+import com.typesafe.sslconfig.ssl.SSLConfigSettings
 import env.Env
-import javax.net.ssl.{HostnameVerifier, SSLContext, SSLSession}
 import models.{ClientConfig, Target}
 import org.apache.commons.codec.binary.Base64
+import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.ws._
-import play.api.mvc.{MultipartFormData}
-import play.api.Logger
+import play.api.mvc.MultipartFormData
 import play.shaded.ahc.org.asynchttpclient.util.Assertions
 import security.IdGenerator
 import ssl.{Cert, DynamicSSLEngineProvider}
 
-import otoroshi.utils.syntax.implicits._
-
+import java.io.{File, FileOutputStream}
+import java.net.{InetAddress, InetSocketAddress, URI}
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicReference
+import javax.net.ssl.SSLContext
 import scala.collection.immutable.TreeMap
 import scala.concurrent.duration.{Duration, _}
 import scala.concurrent.{Await, Future}
@@ -572,9 +564,7 @@ object SSLConfigSettingsCustomizer {
 class AkkWsClient(config: WSClientConfig, env: Env)(implicit system: ActorSystem, materializer: Materializer)
     extends WSClient {
 
-  import SSLConfigSettingsCustomizer._
-
-  import utils.CacheImplicits._
+  import otoroshi.utils.cache.CacheImplicits._
 
   val ec     = system.dispatcher
   val mat    = materializer

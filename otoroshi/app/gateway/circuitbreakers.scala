@@ -1,9 +1,9 @@
 package gateway
 
 import akka.http.scaladsl.util.FastFuture._
+
 import java.util.concurrent.{ConcurrentHashMap, TimeUnit}
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
-
 import akka.Done
 import akka.actor.Scheduler
 import akka.http.scaladsl.util.FastFuture
@@ -13,10 +13,10 @@ import env.Env
 import events._
 import otoroshi.health.HealthCheck
 import models.{ApiKey, GlobalConfig, ServiceDescriptor, Target}
+import otoroshi.utils.TypedMap
 import play.api.Logger
 import play.api.http.websocket.{Message => PlayWSMessage}
 import play.api.mvc.{RequestHeader, Result}
-import utils.TypedMap
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration._

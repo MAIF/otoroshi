@@ -4,7 +4,6 @@ import java.nio.charset.StandardCharsets
 import java.security.interfaces.{ECPrivateKey, ECPublicKey, RSAPrivateKey, RSAPublicKey}
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
-
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.Flow
 import com.auth0.jwt.JWT
@@ -25,8 +24,9 @@ import play.api.mvc.{RequestHeader, Result, Results}
 import security.IdGenerator
 import ssl.{DynamicSSLEngineProvider, PemUtils}
 import otoroshi.storage.BasicStore
-import utils.TypedMap
-import utils.http.MtlsConfig
+import otoroshi.utils.{RegexPool, TypedMap}
+import otoroshi.utils
+import otoroshi.utils.http.MtlsConfig
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.FiniteDuration
@@ -437,7 +437,7 @@ case class JWKSAlgoSettings(url: String,
 
   override def asAlgorithmF(mode: AlgoMode)(implicit env: Env, ec: ExecutionContext): Future[Option[Algorithm]] = {
 
-    import utils.http.Implicits._
+    import otoroshi.utils.http.Implicits._
 
     mode match {
       case InputMode(alg, Some(kid)) => {
@@ -1337,7 +1337,7 @@ case class RefJwtVerifier(
   override def shouldBeVerified(path: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
     ids match {
       case s if s.isEmpty => FastFuture.successful(false)
-      case _              => FastFuture.successful(!excludedPatterns.exists(p => utils.RegexPool.regex(p).matches(path)))
+      case _              => FastFuture.successful(!excludedPatterns.exists(p => RegexPool.regex(p).matches(path)))
     }
   }
 }

@@ -14,7 +14,6 @@ import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong, AtomicReference}
 import java.util.regex.Pattern.CASE_INSENSITIVE
 import java.util.regex.{Matcher, Pattern}
 import java.util.{Base64, Date}
-
 import actions.ApiAction
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.{Materializer, TLSClientAuth}
@@ -25,6 +24,7 @@ import com.typesafe.sslconfig.ssl.SSLConfigSettings
 import env.Env
 import events.{Alerts, CertExpiredAlert, CertRenewalAlert}
 import gateway.Errors
+
 import javax.crypto.Cipher.DECRYPT_MODE
 import javax.crypto.spec.PBEKeySpec
 import javax.crypto.{Cipher, EncryptedPrivateKeyInfo, SecretKey, SecretKeyFactory}
@@ -40,7 +40,8 @@ import org.bouncycastle.util.io.pem.PemReader
 import org.joda.time.{DateTime, Interval}
 import otoroshi.ssl.CertParentHelper
 import otoroshi.ssl.pki.models.{GenCertResponse, GenCsrQuery, GenKeyPairQuery}
-import otoroshi.utils.LetsEncryptHelper
+import otoroshi.utils.letsencrypt.LetsEncryptHelper
+import otoroshi.utils.{RegexPool, TypedMap}
 import play.api.libs.json._
 import play.api.libs.ws.WSProxyServer
 import play.api.mvc._
@@ -50,9 +51,11 @@ import play.server.api.SSLEngineProvider
 import redis.RedisClientMasterSlaves
 import security.IdGenerator
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
+import otoroshi.utils.http.DN
+import otoroshi.utils.metrics.{FakeHasMetrics, HasMetrics}
 import sun.security.util.ObjectIdentifier
 import sun.security.x509._
-import utils.{FakeHasMetrics, HasMetrics, RegexPool, TypedMap}
+import otoroshi.utils.metrics.FakeHasMetrics
 import otoroshi.utils.syntax.implicits._
 
 import scala.collection.concurrent.TrieMap
@@ -61,7 +64,6 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 import scala.concurrent.duration._
 import otoroshi.utils.syntax.implicits._
-import utils.http.DN
 
 /**
  * git over http works with otoroshi
@@ -848,8 +850,8 @@ trait CertificateDataStore extends BasicStore[Cert] {
                 DynamicSSLEngineProvider.logger.error(s"CA cert not found to generate certificate for $domain")
                 FastFuture.successful(None)
               case Some(cert) => {
-                !notAllowed.exists(p => utils.RegexPool.apply(p).matches(domain)) && allowed.exists(
-                  p => utils.RegexPool.apply(p).matches(domain)
+                !notAllowed.exists(p => otoroshi.utils.RegexPool.apply(p).matches(domain)) && allowed.exists(
+                  p => RegexPool.apply(p).matches(domain)
                 ) match {
                   case true => {
                     env.datastores.certificatesDataStore.findAll().flatMap { certificates =>
@@ -2048,7 +2050,7 @@ case class ClientCertificateValidator(
   def json: JsValue = asJson
   def internalId: String = id
 
-  import utils.http.Implicits._
+  import otoroshi.utils.http.Implicits._
 
   /*
   TEST CODE

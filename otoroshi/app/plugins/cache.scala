@@ -1,7 +1,6 @@
 package otoroshi.plugins.cache
 
 import java.util.concurrent.atomic.{AtomicLong, AtomicReference}
-
 import akka.actor.ActorSystem
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
@@ -9,12 +8,12 @@ import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
 import env.Env
 import otoroshi.script.{HttpRequest, RequestTransformer, TransformerRequestContext, TransformerResponseBodyContext}
+import otoroshi.utils.RegexPool
 import play.api.Logger
 import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.mvc.{RequestHeader, Result, Results}
 import redis.{RedisClientMasterSlaves, RedisServer}
-import utils.RegexPool
-import utils.RequestImplicits._
+import otoroshi.utils.http.RequestImplicits._
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}

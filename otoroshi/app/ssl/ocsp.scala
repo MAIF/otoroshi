@@ -1,7 +1,6 @@
 package otoroshi.ssl
 
 import java.security.cert.X509Certificate
-
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
@@ -18,12 +17,12 @@ import ssl.{Cert, DynamicSSLEngineProvider, OCSPCertProjection}
 import org.joda.time.DateTime
 import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder
 import play.api.Logger
-import java.util.Date
 
+import java.util.Date
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
+import otoroshi.utils.http.DN
 import otoroshi.utils.syntax.implicits._
 import ssl.SSLImplicits.EnhancedX509Certificate
-import utils.http.DN
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}

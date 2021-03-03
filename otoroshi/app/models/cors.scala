@@ -1,6 +1,7 @@
 package models
-import java.util.concurrent.TimeUnit
+import otoroshi.utils.RegexPool
 
+import java.util.concurrent.TimeUnit
 import play.api.libs.json._
 import play.api.mvc.RequestHeader
 
@@ -59,7 +60,7 @@ case class CorsSettings(
   }
 
   def shouldApplyCors(path: String): Boolean = {
-    !excludedPatterns.exists(p => utils.RegexPool.regex(p).matches(path))
+    !excludedPatterns.exists(p => RegexPool.regex(p).matches(path))
   }
 
   override def asJson: JsValue = Json.obj(

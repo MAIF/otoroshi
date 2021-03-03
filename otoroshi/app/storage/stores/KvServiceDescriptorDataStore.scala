@@ -1,7 +1,6 @@
 package otoroshi.storage.stores
 
 import java.util.concurrent.atomic.AtomicReference
-
 import akka.actor.Cancellable
 import akka.http.scaladsl.util.FastFuture
 import akka.http.scaladsl.util.FastFuture._
@@ -13,7 +12,7 @@ import play.api.Logger
 import play.api.libs.json.Format
 import play.api.mvc.RequestHeader
 import otoroshi.storage.{RedisLike, RedisLikeStore}
-import utils.RegexPool
+import otoroshi.utils.{RegexPool, SchedulerHelper}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
@@ -72,7 +71,7 @@ class KvServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int, _env:
 
   def startCleanup(env: Env): Unit = {
     updateRef.set(
-      env.otoroshiScheduler.scheduleAtFixedRate(10.seconds, 5.minutes)(utils.SchedulerHelper.runnable(
+      env.otoroshiScheduler.scheduleAtFixedRate(10.seconds, 5.minutes)(SchedulerHelper.runnable(
         cleanupFastLookups()(env.otoroshiExecutionContext, env.otoroshiMaterializer, env)
       ))(env.otoroshiExecutionContext)
     )

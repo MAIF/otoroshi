@@ -3,12 +3,12 @@ package otoroshi.storage.drivers.leveldb
 import java.io.File
 import java.util.concurrent.{ConcurrentHashMap, TimeUnit}
 import java.util.regex.Pattern
-
 import akka.actor.ActorSystem
 import akka.http.scaladsl.util.FastFuture._
 import akka.http.scaladsl.util.FastFuture
 import akka.util.ByteString
 import otoroshi.storage.{DataStoreHealth, Healthy, RedisLike}
+import otoroshi.utils.SchedulerHelper
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
@@ -28,7 +28,7 @@ class LevelDbRedis(actorSystem: ActorSystem, dbPath: String) extends RedisLike {
   private val expirations = new ConcurrentHashMap[String, Long]()
   private val patterns    = new ConcurrentHashMap[String, Pattern]()
 
-  private val cancel = actorSystem.scheduler.scheduleAtFixedRate(0.millis, 10.millis)(utils.SchedulerHelper.runnable {
+  private val cancel = actorSystem.scheduler.scheduleAtFixedRate(0.millis, 10.millis)(SchedulerHelper.runnable {
     val time = System.currentTimeMillis()
     expirations.entrySet().asScala.foreach { entry =>
       if (entry.getValue < time) {

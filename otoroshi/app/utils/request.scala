@@ -1,13 +1,10 @@
-package utils
-
-import java.util.Base64
-import java.util.concurrent.ConcurrentHashMap
+package otoroshi.utils.http
 
 import akka.http.scaladsl.model.Uri
 import env.Env
-import play.api.mvc.{Request, RequestHeader}
-import ssl.PemHeaders
+import play.api.mvc.RequestHeader
 
+import java.util.concurrent.ConcurrentHashMap
 import scala.util.Try
 
 object RequestImplicits {

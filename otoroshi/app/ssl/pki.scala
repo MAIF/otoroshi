@@ -4,7 +4,6 @@ import java.io.{ByteArrayInputStream, StringReader}
 import java.math.BigInteger
 import java.security._
 import java.security.cert.{CertificateFactory, X509Certificate}
-
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
 import akka.util.ByteString
@@ -35,7 +34,7 @@ import org.bouncycastle.jce.ECNamedCurveTable
 import org.jose4j.keys.X509Util
 import org.bouncycastle.operator
 import otoroshi.ssl.CertParentHelper
-import utils.http.DN
+import otoroshi.utils.http.DN
 
 object models {
 

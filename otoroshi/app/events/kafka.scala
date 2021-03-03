@@ -18,8 +18,8 @@ import env.Env
 import otoroshi.models.Exporter
 import org.apache.kafka.common.config.internals.BrokerSecurityConfigs
 import otoroshi.models.Exporter
+import otoroshi.utils.http.MtlsConfig
 import ssl.DynamicSSLEngineProvider
-import utils.http.MtlsConfig
 
 case class KafkaConfig(servers: Seq[String],
                        keyPass: Option[String] = None,

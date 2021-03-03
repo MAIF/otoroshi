@@ -2,7 +2,6 @@ package models
 
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.{AtomicInteger, AtomicLong, AtomicReference}
-
 import akka.http.scaladsl.model.{HttpProtocol, HttpProtocols}
 import akka.http.scaladsl.util.FastFuture
 import akka.http.scaladsl.util.FastFuture._
@@ -29,15 +28,17 @@ import otoroshi.script.plugins.Plugins
 import security.{IdGenerator, OtoroshiClaim}
 import otoroshi.storage.BasicStore
 import otoroshi.storage.stores.KvServiceDescriptorDataStore
+import otoroshi.utils.{RegexPool, TypedMap}
 import otoroshi.utils.config.ConfigUtils
-import utils.{GzipConfig, RegexPool, ReplaceAllWith, TypedMap}
+import otoroshi.utils.gzip.GzipConfig
+import otoroshi.utils.ReplaceAllWith
+import otoroshi.utils.http.MtlsConfig
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.{FiniteDuration, _}
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
-import utils.RequestImplicits._
-import utils.http.MtlsConfig
+import otoroshi.utils.http.RequestImplicits._
 
 case class ServiceDescriptorQuery(subdomain: String,
                                   line: String = "prod",
@@ -460,11 +461,11 @@ case class NetworkLocationMatch(
     "rack"     -> rack,
   )
   override def matches(reqId: String, req: RequestHeader, attrs: TypedMap)(implicit env: Env): Boolean = {
-    utils.RegexPool(provider.trim.toLowerCase).matches(env.infraProvider.trim.toLowerCase) &&
-    utils.RegexPool(region.trim.toLowerCase).matches(env.region.trim.toLowerCase) &&
-    utils.RegexPool(zone.trim.toLowerCase).matches(env.zone.trim.toLowerCase) &&
-    utils.RegexPool(dataCenter.trim.toLowerCase).matches(env.dataCenter.trim.toLowerCase) &&
-    utils.RegexPool(rack.trim.toLowerCase).matches(env.rack.trim.toLowerCase)
+    otoroshi.utils.RegexPool(provider.trim.toLowerCase).matches(env.infraProvider.trim.toLowerCase) &&
+    otoroshi.utils.RegexPool(region.trim.toLowerCase).matches(env.region.trim.toLowerCase) &&
+    otoroshi.utils.RegexPool(zone.trim.toLowerCase).matches(env.zone.trim.toLowerCase) &&
+    otoroshi.utils.RegexPool(dataCenter.trim.toLowerCase).matches(env.dataCenter.trim.toLowerCase) &&
+    otoroshi.utils.RegexPool(rack.trim.toLowerCase).matches(env.rack.trim.toLowerCase)
   }
 }
 
@@ -547,7 +548,7 @@ case class IpFiltering(whitelist: Seq[String] = Seq.empty[String], blacklist: Se
         if (ip.contains("/")) {
           IpFiltering.network(ip).contains(ipAddress)
         } else {
-          utils.RegexPool(ip).matches(ipAddress)
+          otoroshi.utils.RegexPool(ip).matches(ipAddress)
         }
       }
     } else {
@@ -560,7 +561,7 @@ case class IpFiltering(whitelist: Seq[String] = Seq.empty[String], blacklist: Se
         if (ip.contains("/")) {
           IpFiltering.network(ip).contains(ipAddress)
         } else {
-          utils.RegexPool(ip).matches(ipAddress)
+          otoroshi.utils.RegexPool(ip).matches(ipAddress)
         }
       }
     } else {
@@ -573,7 +574,7 @@ case class IpFiltering(whitelist: Seq[String] = Seq.empty[String], blacklist: Se
         if (ip.contains("/")) {
           IpFiltering.network(ip).contains(ipAddress)
         } else {
-          utils.RegexPool(ip).matches(ipAddress)
+          otoroshi.utils.RegexPool(ip).matches(ipAddress)
         }
       }
     } else {
@@ -662,7 +663,7 @@ case class ClientConfig(
   def toJson = ClientConfig.format.writes(this)
   def timeouts(path: String): Option[CustomTimeouts] = {
     if (customTimeouts.isEmpty) None
-    else customTimeouts.find(c => utils.RegexPool(c.path).matches(path))
+    else customTimeouts.find(c => otoroshi.utils.RegexPool(c.path).matches(path))
   }
   def extractTimeout(path: String, f: CustomTimeouts => Long, f2: ClientConfig => Long): FiniteDuration =
     timeouts(path).map(f).getOrElse(f2(this)).millis
@@ -838,7 +839,7 @@ case class RedirectionSettings(enabled: Boolean = false, code: Int = 303, to: St
   def formattedTo(request: RequestHeader,
                   descriptor: ServiceDescriptor,
                   ctx: Map[String, String],
-                  attrs: utils.TypedMap,
+                  attrs: TypedMap,
                   env: Env): String =
     RedirectionExpressionLanguage(to, Some(request), Some(descriptor), None, None, ctx, attrs, env)
 }
@@ -1246,7 +1247,7 @@ case class Restrictions(
       env: Env
   ): (Boolean, Future[Result]) = {
 
-    import utils.RequestImplicits._
+    import otoroshi.utils.http.RequestImplicits._
 
     if (enabled) {
       val method = req.method
@@ -1529,18 +1530,18 @@ case class ServiceDescriptor(
   this.apiKeyConstraints.routing.noneMetaKeysIn.isEmpty
 
   def isUriPublic(uri: String): Boolean =
-    !privatePatterns.exists(p => utils.RegexPool.regex(p).matches(uri)) && publicPatterns.exists(
-      p => utils.RegexPool.regex(p).matches(uri)
+    !privatePatterns.exists(p => otoroshi.utils.RegexPool.regex(p).matches(uri)) && publicPatterns.exists(
+      p => otoroshi.utils.RegexPool.regex(p).matches(uri)
     )
 
   def isExcludedFromSecurity(uri: String): Boolean = {
     securityExcludedPatterns.exists(
-      p => utils.RegexPool.regex(p).matches(uri)
+      p => otoroshi.utils.RegexPool.regex(p).matches(uri)
     )
   }
 
   def isUriExcludedFromSecuredCommunication(uri: String): Boolean =
-    secComExcludedPatterns.exists(p => utils.RegexPool.regex(p).matches(uri))
+    secComExcludedPatterns.exists(p => otoroshi.utils.RegexPool.regex(p).matches(uri))
   def isPrivate = privateApp
   def updateMetrics(callDuration: Long,
                     callOverhead: Long,
@@ -1611,7 +1612,7 @@ case class ServiceDescriptor(
         .filter(
           pr =>
             pr.enabled && (pr.excludedPatterns.isEmpty || pr.excludedPatterns
-              .exists(p => utils.RegexPool.regex(p).matches(req.path)))
+              .exists(p => otoroshi.utils.RegexPool.regex(p).matches(req.path)))
         )
         .map(_.refs)
         .getOrElse(Seq.empty)
@@ -1776,7 +1777,7 @@ case class ServiceDescriptor(
     }
   }
 
-  import utils.RequestImplicits._
+  import otoroshi.utils.http.RequestImplicits._
 
   def preRoute(
       snowflake: String,
@@ -1799,7 +1800,7 @@ case class ServiceDescriptor(
     f: => Future[Either[Result, A]]
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
 
-    import utils.future.Implicits._
+    import otoroshi.utils.future.Implicits._
 
     val plugs = plugins.preRoutings(req)
     val gScripts = env.datastores.globalConfigDataStore.latestSafe
@@ -1811,7 +1812,7 @@ case class ServiceDescriptor(
         .filter(
           pr =>
             pr.enabled && (pr.excludedPatterns.isEmpty || pr.excludedPatterns
-              .exists(p => utils.RegexPool.regex(p).matches(req.path)))
+              .exists(p => otoroshi.utils.RegexPool.regex(p).matches(req.path)))
         )
         .map(_.refs)
         .getOrElse(Seq.empty)
@@ -2394,9 +2395,9 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
         } else {
           sr.allHosts match {
             case hosts if hosts.isEmpty => false
-            case hosts if hosts.size == 1 => utils.RegexPool(hosts.head).matches(query.toHost)
+            case hosts if hosts.size == 1 => otoroshi.utils.RegexPool(hosts.head).matches(query.toHost)
             case hosts => {
-              hosts.exists(host => utils.RegexPool(host).matches(query.toHost))
+              hosts.exists(host => RegexPool(host).matches(query.toHost))
             }
           }
         }

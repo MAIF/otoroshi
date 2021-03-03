@@ -5,10 +5,10 @@ import akka.util.ByteString
 import env.Env
 import models.ServiceDescriptor
 import otoroshi.script.CompilingPreRouting.funit
+import otoroshi.utils.TypedMap
 import play.api.libs.json._
 import play.api.mvc.{RequestHeader, Result}
 import play.twirl.api.Html
-import utils.TypedMap
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try

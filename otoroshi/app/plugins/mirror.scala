@@ -1,7 +1,6 @@
 package otoroshi.plugins.mirror
 
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
-
 import akka.http.scaladsl.model.Uri
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Sink, Source}
@@ -11,13 +10,14 @@ import events.AuditEvent
 import models.{ServiceDescriptor, Target}
 import org.joda.time.DateTime
 import otoroshi.script._
+import otoroshi.utils.UrlSanitizer
+import otoroshi.utils.http.HeadersHelper
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
 import play.api.libs.ws.{EmptyBody, InMemoryBody, WSRequest, WSResponse}
 import play.api.mvc.{RequestHeader, Result}
-import utils.RequestImplicits._
-import utils.http.Implicits._
-import utils.{HeadersHelper, UrlSanitizer}
+import otoroshi.utils.http.RequestImplicits._
+import otoroshi.utils.http.Implicits._
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.{ExecutionContext, Future, Promise}

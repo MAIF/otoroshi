@@ -3,13 +3,13 @@ package controllers.adminapi
 import actions.ApiAction
 import env.Env
 import models.ApiKey
+import otoroshi.utils.controllers.{AdminApiHelper, ApiError, BulkControllerHelper, CrudControllerHelper, EntityAndContext, JsonApiError, NoEntityAndContext, OptionalEntityAndContext, SeqEntityAndContext}
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc.{AbstractController, ControllerComponents, RequestHeader, Results}
 import security.IdGenerator
-import utils.JsonPatchHelpers.patchJson
-import utils._
+import otoroshi.utils.json.JsonPatchHelpers.patchJson
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}

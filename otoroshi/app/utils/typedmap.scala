@@ -1,4 +1,4 @@
-package utils
+package otoroshi.utils
 
 import play.api.libs.typedmap.{TypedEntry, TypedKey}
 

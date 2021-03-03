@@ -2,7 +2,6 @@ package otoroshi.script
 
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
-
 import akka.actor.{ActorSystem, Cancellable, Scheduler}
 import akka.http.scaladsl.util.FastFuture
 import akka.util.ByteString
@@ -13,10 +12,11 @@ import com.cronutils.model.time.ExecutionTime
 import env.Env
 import events.{JobErrorEvent, JobRunEvent, JobStartedEvent, JobStoppedEvent}
 import models.GlobalConfig
+import otoroshi.utils
+import otoroshi.utils.{SchedulerHelper, TypedMap, future}
 import play.api.Logger
 import play.api.libs.json._
 import security.IdGenerator
-import utils.TypedMap
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration._
@@ -531,7 +531,7 @@ class JobManager(env: Env) {
     JobManager.logger.info("Starting job manager")
     env.scriptManager.jobNames
       .map(name => env.scriptManager.getAnyScript[Job]("cp:" + name)) // starting auto registering for cp jobs
-    scanRef.set(jobScheduler.scheduleAtFixedRate(1.second, 1.second)(utils.SchedulerHelper.runnable(scanRegisteredJobs()))(jobExecutor))
+    scanRef.set(jobScheduler.scheduleAtFixedRate(1.second, 1.second)(SchedulerHelper.runnable(scanRegisteredJobs()))(jobExecutor))
     lockRef.set(jobScheduler.scheduleAtFixedRate(1.second, 10.seconds)(utils.SchedulerHelper.runnable(updateLocks()))(jobExecutor))
   }
 

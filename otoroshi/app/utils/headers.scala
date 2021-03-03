@@ -1,18 +1,16 @@
-package utils
-
-import java.security.cert.X509Certificate
+package otoroshi.utils.http
 
 import env.Env
 import gateway.SnowMonkeyContext
 import models._
 import otoroshi.el.HeadersExpressionLanguage
-import play.api.libs.json.{JsArray, JsString, Json}
+import otoroshi.utils.TypedMap
+import otoroshi.utils.http.RequestImplicits._
 import play.api.libs.ws.WSResponse
 import play.api.mvc.{RequestHeader, Result}
 import security.OtoroshiClaim
 
 import scala.concurrent.ExecutionContext
-import utils.RequestImplicits._
 
 object HeadersHelperImplicits {
   implicit class BetterSeq(val seq: Seq[(String, String)]) extends AnyVal {
@@ -114,7 +112,7 @@ object HeadersHelper {
       fromOtoroshi: Option[String],
       snowMonkeyContext: SnowMonkeyContext,
       jwtInjection: JwtInjection,
-      attrs: utils.TypedMap
+      attrs: TypedMap
   )(implicit env: Env, ec: ExecutionContext): Seq[(String, String)] = {
 
     val stateRequestHeaderName =
@@ -241,7 +239,7 @@ object HeadersHelper {
       upstreamLatency: Long,
       canaryId: String,
       remainingQuotas: RemainingQuotas,
-      attrs: utils.TypedMap
+      attrs: TypedMap
   )(implicit env: Env, ec: ExecutionContext): Seq[(String, String)] = {
 
     val stateResponseHeaderName = descriptor.secComHeaders.stateResponseName
@@ -357,7 +355,7 @@ object HeadersHelper {
       upstreamLatency: Long,
       canaryId: String,
       remainingQuotas: RemainingQuotas,
-      attrs: utils.TypedMap
+      attrs: TypedMap
   )(implicit env: Env, ec: ExecutionContext): Seq[(String, String)] = {
 
     val stateResponseHeaderName = descriptor.secComHeaders.stateResponseName
@@ -461,7 +459,7 @@ object HeadersHelper {
       jwtInjection: JwtInjection,
       stateRequestHeaderName: String,
       claimRequestHeaderName: String,
-      attrs: utils.TypedMap
+      attrs: TypedMap
   )(implicit env: Env, ec: ExecutionContext): Seq[(String, String)] = {
     val headersIn: Seq[(String, String)] = {
       (descriptor.missingOnlyHeadersIn
@@ -543,7 +541,7 @@ object HeadersHelper {
       canaryId: String,
       remainingQuotas: RemainingQuotas,
       stateResponseHeaderName: String,
-      attrs: utils.TypedMap
+      attrs: TypedMap
   )(implicit env: Env, ec: ExecutionContext): Seq[(String, String)] = {
 
     val _headersForOut: Seq[(String, String)] = resp.headers.toSeq.flatMap(
@@ -609,7 +607,7 @@ object HeadersHelper {
       canaryId: String,
       remainingQuotas: RemainingQuotas,
       stateResponseHeaderName: String,
-      attrs: utils.TypedMap
+      attrs: TypedMap
   )(implicit env: Env, ec: ExecutionContext): Seq[(String, String)] = {
     val _headersOut: Seq[(String, String)] = {
       descriptor.missingOnlyHeadersOut

@@ -1,4 +1,4 @@
-package utils
+package otoroshi.utils.misc
 
 import scala.concurrent.Future
 

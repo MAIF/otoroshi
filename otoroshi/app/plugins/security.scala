@@ -5,7 +5,7 @@ import env.Env
 import otoroshi.script.{HttpRequest, RequestTransformer, TransformerRequestContext}
 import play.api.libs.json.{JsNull, JsObject, JsValue, Json}
 import play.api.mvc.{Result, Results}
-import utils.future.Implicits._
+import otoroshi.utils.future.Implicits._
 
 import scala.concurrent.{ExecutionContext, Future}
 

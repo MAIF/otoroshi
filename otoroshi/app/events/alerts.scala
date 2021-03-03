@@ -1,7 +1,6 @@
 package events
 
 import java.util.concurrent.{Executors, TimeUnit}
-
 import akka.actor.{Actor, Cancellable, OneForOneStrategy, PoisonPill, Props, SupervisorStrategy, Terminated}
 import akka.actor.SupervisorStrategy._
 import akka.http.scaladsl.util.FastFuture._
@@ -17,13 +16,13 @@ import play.api.libs.json.{JsArray, JsValue, Json, Writes}
 import play.api.libs.ws.WSAuthScheme
 import play.api.mvc.RequestHeader
 import ssl.Cert
-import utils.EmailLocation
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 import scala.concurrent.duration.FiniteDuration
-import utils.RequestImplicits._
+import otoroshi.utils.http.RequestImplicits._
+import otoroshi.utils.mailer.EmailLocation
 
 trait AlertEvent extends AnalyticEvent {
   override def `@type`: String = "AlertEvent"
@@ -1131,7 +1130,7 @@ class AlertsActor(implicit env: Env) extends Actor {
 
   import org.joda.time.DateTime
   import events.KafkaWrapper
-  import utils.http.Implicits._
+  import otoroshi.utils.http.Implicits._
 
   implicit val ec  = env.analyticsExecutionContext
   implicit val mat = env.analyticsMaterializer
