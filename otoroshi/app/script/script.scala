@@ -695,7 +695,7 @@ class ScriptManager(env: Env) {
     val start = System.currentTimeMillis()
     val confPackages: Seq[String] = env.configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.plugins.packages").getOrElse(Seq.empty) ++
       env.configuration.getOptionalWithFileSupport[String]("otoroshi.plugins.packagesStr").map(v => v.split(",").map(_.trim).toSeq).getOrElse(Seq.empty)
-    val allPackages = Seq("otoroshi", "otoroshi_plugins", "otoroshi_third_party", "otoroshi_third_party_plugins") ++ confPackages
+    val allPackages = Seq("otoroshi", "otoroshi_plugins") ++ confPackages
     val scanResult: ScanResult = new ClassGraph()
       .addClassLoader(env.environment.classLoader)
       .enableClassInfo()
