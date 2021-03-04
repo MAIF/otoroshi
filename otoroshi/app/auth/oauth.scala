@@ -1,4 +1,4 @@
-package auth
+package otoroshi.auth
 
 import akka.http.scaladsl.util.FastFuture
 import com.auth0.jwt.JWT

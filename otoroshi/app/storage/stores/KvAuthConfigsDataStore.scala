@@ -1,7 +1,7 @@
 package otoroshi.storage.stores
 
 import akka.http.scaladsl.util.FastFuture
-import auth.{AuthConfigsDataStore, AuthModuleConfig}
+import otoroshi.auth.{AuthConfigsDataStore, AuthModuleConfig}
 import env.Env
 import models._
 import play.api.libs.json.{Format, JsValue, Json}

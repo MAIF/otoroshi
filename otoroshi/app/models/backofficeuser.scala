@@ -1,7 +1,7 @@
 package models
 
 import akka.http.scaladsl.util.FastFuture._
-import auth.AuthModuleConfig
+import otoroshi.auth.AuthModuleConfig
 import env.Env
 import org.joda.time.DateTime
 import otoroshi.models.{EntityLocationSupport, TeamAccess, TenantAccess, UserRight, UserRights}

@@ -5,7 +5,7 @@ import akka.http.scaladsl.util.FastFuture
 import akka.stream._
 import akka.stream.scaladsl._
 import akka.util.ByteString
-import auth.AuthConfigsDataStore
+import otoroshi.auth.AuthConfigsDataStore
 import otoroshi.cluster.ClusterStateDataStore
 import env.Env
 import otoroshi.events._

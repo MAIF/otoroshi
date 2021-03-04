@@ -7,7 +7,7 @@ import java.util.concurrent.atomic.AtomicReference
 import akka.actor.{ActorSystem, Cancellable, PoisonPill, Scheduler}
 import akka.http.scaladsl.util.FastFuture._
 import akka.stream.Materializer
-import auth.{AuthModuleConfig, SessionCookieValues}
+import otoroshi.auth.{AuthModuleConfig, SessionCookieValues}
 import ch.qos.logback.classic.{Level, LoggerContext}
 import otoroshi.cluster._
 import com.typesafe.config.{ConfigFactory, ConfigRenderOptions}

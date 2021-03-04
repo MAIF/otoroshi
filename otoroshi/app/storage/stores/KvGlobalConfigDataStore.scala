@@ -1,7 +1,7 @@
 package otoroshi.storage.stores
 
 import akka.http.scaladsl.util.FastFuture
-import auth.{AuthModuleConfig, GenericOauth2ModuleConfig, SessionCookieValues}
+import otoroshi.auth.{AuthModuleConfig, GenericOauth2ModuleConfig, SessionCookieValues}
 import env.Env
 import models._
 import org.joda.time.DateTime

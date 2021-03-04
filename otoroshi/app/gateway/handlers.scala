@@ -7,7 +7,7 @@ import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
-import auth.{AuthModuleConfig, SessionCookieValues}
+import otoroshi.auth.{AuthModuleConfig, SessionCookieValues}
 import com.google.common.base.Charsets
 import controllers.HealthController
 import env.Env

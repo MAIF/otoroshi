@@ -5,7 +5,7 @@ import java.util.concurrent.TimeUnit
 import otoroshi.actions.{BackOfficeAction, BackOfficeActionAuth, PrivateAppsAction}
 import akka.http.scaladsl.util.FastFuture
 import akka.util.ByteString
-import auth.{AuthModuleConfig, BasicAuthModule, BasicAuthModuleConfig, GenericOauth2ModuleConfig}
+import otoroshi.auth.{AuthModuleConfig, BasicAuthModule, BasicAuthModuleConfig, GenericOauth2ModuleConfig}
 import env.Env
 import otoroshi.events._
 import gateway.Errors

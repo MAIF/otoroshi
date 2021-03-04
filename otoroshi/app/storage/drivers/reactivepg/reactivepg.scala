@@ -8,7 +8,7 @@ import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
-import auth.AuthConfigsDataStore
+import otoroshi.auth.AuthConfigsDataStore
 import otoroshi.cluster.{ClusterStateDataStore, KvClusterStateDataStore}
 import com.typesafe.config.ConfigFactory
 import env.Env

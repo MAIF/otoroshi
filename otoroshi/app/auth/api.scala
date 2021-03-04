@@ -1,4 +1,4 @@
-package auth
+package otoroshi.auth
 
 import env.Env
 import models._

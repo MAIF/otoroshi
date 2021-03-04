@@ -2,7 +2,7 @@ package functional
 
 import java.util.Base64
 import akka.actor.ActorSystem
-import auth.{AuthModuleConfig, BasicAuthModuleConfig}
+import otoroshi.auth.{AuthModuleConfig, BasicAuthModuleConfig}
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.google.common.base.Charsets

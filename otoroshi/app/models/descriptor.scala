@@ -7,7 +7,7 @@ import akka.http.scaladsl.util.FastFuture
 import akka.http.scaladsl.util.FastFuture._
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
-import auth._
+import otoroshi.auth._
 import com.auth0.jwt.JWT
 import com.google.common.hash.Hashing
 import com.risksense.ipaddr.IpNetwork

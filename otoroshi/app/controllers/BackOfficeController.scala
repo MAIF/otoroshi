@@ -7,7 +7,7 @@ import akka.http.scaladsl.util.FastFuture
 import akka.http.scaladsl.util.FastFuture._
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
-import auth.{GenericOauth2ModuleConfig, LdapAuthModuleConfig, SessionCookieValues}
+import otoroshi.auth.{GenericOauth2ModuleConfig, LdapAuthModuleConfig, SessionCookieValues}
 import ch.qos.logback.classic.{Level, LoggerContext}
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm

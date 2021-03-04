@@ -1,4 +1,4 @@
-package auth
+package otoroshi.auth
 
 import java.security.SecureRandom
 import java.util.Optional

@@ -1,7 +1,7 @@
 package models
 
 import akka.http.scaladsl.util.FastFuture
-import auth.AuthModuleConfig
+import otoroshi.auth.AuthModuleConfig
 import env.Env
 import otoroshi.events.Exporters._
 import otoroshi.events._

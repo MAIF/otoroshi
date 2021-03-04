@@ -1,7 +1,7 @@
 package otoroshi.plugins.jobs.kubernetes
 
 import akka.util.ByteString
-import auth.AuthModuleConfig
+import otoroshi.auth.AuthModuleConfig
 import env.Env
 import models._
 import otoroshi.models.{DataExporterConfig, SimpleOtoroshiAdmin, Team, Tenant}

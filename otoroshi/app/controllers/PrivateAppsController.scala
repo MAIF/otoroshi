@@ -3,7 +3,7 @@ package controllers
 import otoroshi.actions.{ApiAction, PrivateAppsAction}
 import akka.http.scaladsl.util.FastFuture
 import akka.util.ByteString
-import auth.{BasicAuthModule, BasicAuthUser}
+import otoroshi.auth.{BasicAuthModule, BasicAuthUser}
 import env.Env
 
 import javax.crypto.Cipher

@@ -15,7 +15,7 @@ import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Compression, Flow, Framing, Sink, Source}
 import akka.util.ByteString
-import auth.AuthConfigsDataStore
+import otoroshi.auth.AuthConfigsDataStore
 import com.google.common.io.Files
 import com.typesafe.config.ConfigFactory
 import env.Env
