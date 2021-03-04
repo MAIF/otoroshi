@@ -1,0 +1,38 @@
+@import otoroshi.models.BackOfficeUser
+@import otoroshi.models.GlobalConfig
+@import play.api.libs.json.Json
+
+@(user: BackOfficeUser, config: GlobalConfig, _env: otoroshi.env.Env, version: String, possibleTenants: Seq[String])
+
+@moreScripts = {
+    <script src="@routes.Assets.versioned("javascripts/d3.v3.min.js")"></script>
+    <script type="text/javascript">
+        window.__title = '@_env.title';
+        window.__isDev = @_env.liveJs;
+        window.__env = '@_env.env';
+        window.__userid = '@user.email';
+        window.__apiReadOnly = @config.apiReadOnly;
+        window.__u2fLoginOnly = @config.u2fLoginOnly;
+        window.__currentVersion = '@version';
+        window.__user = @Html(Json.stringify(user.toJson));
+        window.__user.superAdmin = @(user.rights.superAdmin(_env))
+        var tenant = window.localStorage.getItem("Otoroshi-Tenant");
+        var possibleTenants = [@Html(possibleTenants.map(v => s""""$v"""").mkString(", "))];
+        if (tenant) {
+            if (possibleTenants.indexOf(tenant) === -1) {
+                console.log("setting current tenant to", possibleTenants[0]);
+                window.localStorage.setItem("Otoroshi-Tenant", possibleTenants[0]);
+                window.__currentTenant = possibleTenants[0];
+            } else {
+                console.log("keeping current tenant to", tenant);
+                window.__currentTenant = tenant;
+                window.localStorage.setItem("Otoroshi-Tenant", tenant);
+            }
+        }
+        Otoroshi.init(document.getElementById("app"));
+    </script>
+}
+
+@main(_env.title, user, _env, moreScripts = moreScripts) {
+    <div id="app"></div>
+}

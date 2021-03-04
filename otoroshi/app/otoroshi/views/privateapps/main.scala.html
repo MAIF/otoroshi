@@ -1,0 +1,42 @@
+@import otoroshi.models.PrivateAppsUser
+
+@(title: String, _env: otoroshi.env.Env, userOpt: Option[PrivateAppsUser] = None, moreScripts: Html = play.twirl.api.Html(""), moreStyles: Html = play.twirl.api.Html(""))(content: Html)
+
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>@title</title>
+        <meta name="robots" content="noindex, nofollow">
+        <link rel="shortcut icon" type="image/png" href="@routes.Assets.versioned("images/favicon.png")">
+        <link rel="stylesheet" href="@routes.Assets.versioned("stylesheets/bootstrap.min.css")">
+        <link rel="stylesheet" href="@routes.Assets.versioned("stylesheets/bootstrap-theme.min.css")">
+        <link rel="stylesheet" media="screen" href="@routes.Assets.versioned("stylesheets/otoroshiapps.css")">
+        <link href="@routes.Assets.versioned("fonts/font-awesome/css/fontawesome.min.css")" rel="stylesheet">
+        <link href="@routes.Assets.versioned("fonts/raleway/raleway.css")" rel="stylesheet">
+        @moreStyles
+        @_env.providerCssUrlHtml
+    </head>
+    <body>
+        <div class="container">
+            <div class="header clearfix">
+                @for(user <- userOpt) {
+                    <nav>
+                        <ul class="nav pull-right">
+                            <li role="presentation"><a href="#">@user.email</a></li>
+                        </ul>
+                    </nav>
+                }
+                <a class="navbar-brand" href="/" style="display: flex;">
+                    <span>おとろし</span>&nbsp; Private apps
+                </a>
+            </div>
+            @content
+            <footer class="footer hide">
+                <p>Otoroshi by MAIF</p>
+            </footer>
+        </div>
+        <script type="text/javascript" src="@routes.Assets.versioned("javascripts/jquery.js")"></script>
+        @moreScripts
+        @_env.providerJsUrlHtml
+    </body>
+</html>
