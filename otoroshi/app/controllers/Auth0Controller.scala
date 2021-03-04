@@ -8,7 +8,7 @@ import akka.util.ByteString
 import otoroshi.auth.{AuthModuleConfig, BasicAuthModule, BasicAuthModuleConfig, GenericOauth2ModuleConfig}
 import env.Env
 import otoroshi.events._
-import gateway.Errors
+import otoroshi.gateway.Errors
 import models.{BackOfficeUser, CorsSettings, PrivateAppsUser, ServiceDescriptor}
 import otoroshi.utils.TypedMap
 import play.api.Logger

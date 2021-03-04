@@ -9,7 +9,7 @@ import akka.stream.scaladsl.{Keep, Sink, Source}
 import akka.util.ByteString
 import env.Env
 import otoroshi.events.HealthCheckEvent
-import gateway.Retry
+import otoroshi.gateway.Retry
 import models.{SecComVersion, ServiceDescriptor, Target}
 import org.joda.time.DateTime
 import otoroshi.script.{Job, JobContext, JobId, JobInstantiation, JobKind, JobStarting, JobVisibility}

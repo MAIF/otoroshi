@@ -1,4 +1,4 @@
-package gateway
+package otoroshi.gateway
 
 import java.net.URLEncoder
 import java.util.concurrent.atomic.AtomicInteger

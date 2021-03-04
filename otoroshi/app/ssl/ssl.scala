@@ -23,7 +23,7 @@ import com.google.common.hash.Hashing
 import com.typesafe.sslconfig.ssl.SSLConfigSettings
 import env.Env
 import otoroshi.events.{Alerts, CertExpiredAlert, CertRenewalAlert}
-import gateway.Errors
+import otoroshi.gateway.Errors
 
 import javax.crypto.Cipher.DECRYPT_MODE
 import javax.crypto.spec.PBEKeySpec

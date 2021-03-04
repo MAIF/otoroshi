@@ -1,7 +1,7 @@
 package otoroshi.utils.http
 
 import env.Env
-import gateway.SnowMonkeyContext
+import otoroshi.gateway.SnowMonkeyContext
 import models._
 import otoroshi.el.HeadersExpressionLanguage
 import otoroshi.utils.TypedMap

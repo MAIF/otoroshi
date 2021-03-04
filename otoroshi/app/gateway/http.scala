@@ -1,4 +1,4 @@
-package gateway
+package otoroshi.gateway
 
 import akka.actor.ActorRef
 import akka.http.scaladsl.util.FastFuture

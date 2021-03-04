@@ -9,7 +9,7 @@ import otoroshi.auth.GenericOauth2ModuleConfig
 import otoroshi.cluster.ClusterAgent
 import com.auth0.jwt.JWT
 import env.Env
-import gateway.Errors
+import otoroshi.gateway.Errors
 import models._
 import otoroshi.script._
 import otoroshi.utils.{RegexPool, TypedMap}

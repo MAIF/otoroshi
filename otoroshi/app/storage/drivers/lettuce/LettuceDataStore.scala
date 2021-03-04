@@ -13,7 +13,7 @@ import otoroshi.cluster.{ClusterStateDataStore, KvClusterStateDataStore}
 import com.typesafe.config.ConfigFactory
 import env.Env
 import otoroshi.events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
-import gateway.{InMemoryRequestsDataStore, RequestsDataStore}
+import otoroshi.gateway.{InMemoryRequestsDataStore, RequestsDataStore}
 import io.lettuce.core.cluster.RedisClusterClient
 import io.lettuce.core.masterreplica.{MasterReplica, StatefulRedisMasterReplicaConnection}
 import io.lettuce.core.resource.{ClientResources, DefaultClientResources}

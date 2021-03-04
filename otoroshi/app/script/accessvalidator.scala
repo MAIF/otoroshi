@@ -7,7 +7,7 @@ import java.util.concurrent.TimeUnit
 import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.util.FastFuture
 import env.Env
-import gateway.Errors
+import otoroshi.gateway.Errors
 import models._
 import org.apache.commons.codec.binary.Hex
 import otoroshi.utils.{RegexPool, TypedMap}

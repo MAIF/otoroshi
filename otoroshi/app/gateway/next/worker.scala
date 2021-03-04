@@ -1,4 +1,4 @@
-package gateway.next
+package otoroshi.gateway.next
 
 import java.io.File
 import java.net.{InetSocketAddress, URLEncoder}
@@ -16,7 +16,7 @@ import otoroshi.auth.{AuthModuleConfig, SessionCookieValues}
 import com.google.common.base.Charsets
 import com.typesafe.config.{ConfigFactory, ConfigValueFactory}
 import env.Env
-import gateway._
+import otoroshi.gateway._
 
 import javax.net.ssl._
 import models._

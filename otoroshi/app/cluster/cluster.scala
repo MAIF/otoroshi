@@ -20,7 +20,7 @@ import com.google.common.io.Files
 import com.typesafe.config.ConfigFactory
 import env.Env
 import otoroshi.events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
-import gateway.{InMemoryRequestsDataStore, RequestsDataStore, Retry}
+import otoroshi.gateway.{InMemoryRequestsDataStore, RequestsDataStore, Retry}
 
 import javax.management.{Attribute, ObjectName}
 import models._

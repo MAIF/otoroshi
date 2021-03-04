@@ -9,7 +9,7 @@ import com.auth0.jwt.algorithms.Algorithm
 import com.google.common.base.Charsets
 import env.Env
 import otoroshi.events.{Alerts, ApiKeySecretHasRotated, ApiKeySecretWillRotate, RevokedApiKeyUsageAlert}
-import gateway.Errors
+import otoroshi.gateway.Errors
 import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.json._

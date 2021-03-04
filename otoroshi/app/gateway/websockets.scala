@@ -1,4 +1,4 @@
-package gateway
+package otoroshi.gateway
 
 import java.net.{InetAddress, InetSocketAddress}
 import java.util.concurrent.atomic.AtomicReference

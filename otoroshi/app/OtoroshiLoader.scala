@@ -7,7 +7,7 @@ import com.softwaremill.macwire._
 import controllers._
 import controllers.adminapi._
 import env.Env
-import gateway._
+import otoroshi.gateway._
 import modules._
 import otoroshi.api.OtoroshiLoaderHelper
 import otoroshi.api.OtoroshiLoaderHelper.EnvContainer

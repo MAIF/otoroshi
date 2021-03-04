@@ -6,7 +6,7 @@ import akka.http.scaladsl.util.FastFuture
 import otoroshi.auth.GenericOauth2Module
 import env.Env
 import otoroshi.events.{Alerts, BlackListedBackOfficeUserAlert}
-import gateway.Errors
+import otoroshi.gateway.Errors
 import models.BackOfficeUser
 import otoroshi.models.RightsChecker.{SuperAdminOnly, TenantAdminOnly}
 import otoroshi.models.{EntityLocationSupport, RightsChecker, TenantId}

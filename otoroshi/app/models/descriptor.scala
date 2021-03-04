@@ -12,7 +12,7 @@ import com.auth0.jwt.JWT
 import com.google.common.hash.Hashing
 import com.risksense.ipaddr.IpNetwork
 import env.Env
-import gateway.Errors
+import otoroshi.gateway.Errors
 import org.joda.time.DateTime
 import otoroshi.el.RedirectionExpressionLanguage
 import otoroshi.plugins.oidc.{OIDCThirdPartyApiKeyConfig, ThirdPartyApiKeyConfig}

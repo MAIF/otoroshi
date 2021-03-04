@@ -1,4 +1,4 @@
-package gateway
+package otoroshi.gateway
 
 import java.util.concurrent.atomic.AtomicLong
 

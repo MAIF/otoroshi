@@ -12,7 +12,7 @@ import ch.qos.logback.classic.{Level, LoggerContext}
 import otoroshi.cluster._
 import com.typesafe.config.{ConfigFactory, ConfigRenderOptions}
 import otoroshi.events._
-import gateway.CircuitBreakersHolder
+import otoroshi.gateway.CircuitBreakersHolder
 import otoroshi.health.{HealthCheckerActor, StartHealthCheck}
 
 import javax.management.remote.{JMXConnectorServerFactory, JMXServiceURL}
