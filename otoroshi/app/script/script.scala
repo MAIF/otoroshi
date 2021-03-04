@@ -915,7 +915,7 @@ class ScriptManager(env: Env) {
   private val printPlugins =
     env.configuration.getOptionalWithFileSupport[Boolean]("otoroshi.plugins.print").getOrElse(false)
   logger.info(s"Found ${allPlugins.size} plugins in classpath (${System.currentTimeMillis() - starting} ms)")
-  if (printPlugins) logger.info("\n\n" + allPlugins.mkString("\n") + "\n")
+  if (printPlugins) logger.info("\n\n" + allPlugins.map(s => s" - $s").mkString("\n") + "\n")
 
   def start(): ScriptManager = {
     if (env.scriptingEnabled) {
