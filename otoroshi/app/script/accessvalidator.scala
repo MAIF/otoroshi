@@ -21,21 +21,24 @@ import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
-case class AccessValidatorRef(enabled: Boolean = false,
-                              excludedPatterns: Seq[String] = Seq.empty[String],
-                              refs: Seq[String] = Seq.empty,
-                              config: JsValue = Json.obj()) {
+case class AccessValidatorRef(
+    enabled: Boolean = false,
+    excludedPatterns: Seq[String] = Seq.empty[String],
+    refs: Seq[String] = Seq.empty,
+    config: JsValue = Json.obj()
+) {
   def json: JsValue = AccessValidatorRef.format.writes(this)
 }
 
 object AccessValidatorRef {
   val format = new Format[AccessValidatorRef] {
-    override def writes(o: AccessValidatorRef): JsValue = Json.obj(
-      "enabled"          -> o.enabled,
-      "refs"             -> JsArray(o.refs.map(JsString.apply)),
-      "config"           -> o.config,
-      "excludedPatterns" -> JsArray(o.excludedPatterns.map(JsString.apply)),
-    )
+    override def writes(o: AccessValidatorRef): JsValue             =
+      Json.obj(
+        "enabled"          -> o.enabled,
+        "refs"             -> JsArray(o.refs.map(JsString.apply)),
+        "config"           -> o.config,
+        "excludedPatterns" -> JsArray(o.excludedPatterns.map(JsString.apply))
+      )
     override def reads(json: JsValue): JsResult[AccessValidatorRef] =
       Try {
         JsSuccess(
@@ -60,10 +63,10 @@ case object Allowed               extends Access
 case class Denied(result: Result) extends Access
 
 trait AccessValidator extends StartableAndStoppable with NamedPlugin with InternalEventListener {
-  final def pluginType: PluginType = AccessValidatorType
+  final def pluginType: PluginType                                                                = AccessValidatorType
   def access(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Access] = {
     canAccess(context)(env, ec).flatMap {
-      case true => FastFuture.successful(Allowed)
+      case true  => FastFuture.successful(Allowed)
       case false =>
         Errors
           .craftResponseResult(

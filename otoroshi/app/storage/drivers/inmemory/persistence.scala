@@ -50,7 +50,8 @@ class NoopPersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
 class FilePersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
 
   private val logger         = Logger("otoroshi-file-db-datastores")
-  private val dbPath: String = env.configuration.getOptionalWithFileSupport[String]("app.filedb.path").getOrElse("./filedb/state.ndjson")
+  private val dbPath: String =
+    env.configuration.getOptionalWithFileSupport[String]("app.filedb.path").getOrElse("./filedb/state.ndjson")
   private val cancelRef      = new AtomicReference[Cancellable]()
   private val lastHash       = new AtomicReference[Int](0)
 
@@ -103,29 +104,30 @@ class FilePersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
 
     what match {
       case "counter" => Some(ByteString(value.as[Long].toString))
-      case "string" => Some(ByteString(value.as[String]))
-      case "set" => {
+      case "string"  => Some(ByteString(value.as[String]))
+      case "set"     => {
         val list = new java.util.concurrent.CopyOnWriteArraySet[ByteString]
         list.addAll(value.as[JsArray].value.map(a => ByteString(a.as[String])).asJava)
         Some(list)
       }
-      case "list" => {
+      case "list"    => {
         val list = new java.util.concurrent.CopyOnWriteArrayList[ByteString]
         list.addAll(value.as[JsArray].value.map(a => ByteString(a.as[String])).asJava)
         Some(list)
       }
-      case "hash" => {
+      case "hash"    => {
         val map = new java.util.concurrent.ConcurrentHashMap[String, ByteString]
         map.putAll(value.as[JsObject].value.map(t => (t._1, ByteString(t._2.as[String]))).asJava)
         Some(map)
       }
-      case _ => None
+      case _         => None
     }
   }
 
   private def writeStateToDisk()(implicit ec: ExecutionContext, mat: Materializer): Future[Unit] = {
     val file = new File(dbPath)
-    Source.futureSource[JsValue, Any](ds.fullNdJsonExport(100, 1, 4))
+    Source
+      .futureSource[JsValue, Any](ds.fullNdJsonExport(100, 1, 4))
       .map { item =>
         Json.stringify(item) + "\n"
       }
@@ -145,16 +147,20 @@ class HttpPersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
 
   private val logger = Logger("otoroshi-http-db-datastores")
 
-  private val stateUrl: String =
-    env.configuration.getOptionalWithFileSupport[String]("app.httpdb.url").getOrElse("http://127.0.0.1:8888/worker-0/state.json")
+  private val stateUrl: String                  =
+    env.configuration
+      .getOptionalWithFileSupport[String]("app.httpdb.url")
+      .getOrElse("http://127.0.0.1:8888/worker-0/state.json")
   private val stateHeaders: Map[String, String] =
-    env.configuration.getOptionalWithFileSupport[Map[String, String]]("app.httpdb.headers").getOrElse(Map.empty[String, String])
-  private val stateTimeout: FiniteDuration =
+    env.configuration
+      .getOptionalWithFileSupport[Map[String, String]]("app.httpdb.headers")
+      .getOrElse(Map.empty[String, String])
+  private val stateTimeout: FiniteDuration      =
     env.configuration.getOptionalWithFileSupport[Long]("app.httpdb.timeout").map(_.millis).getOrElse(10.seconds)
-  private val statePoll: FiniteDuration =
+  private val statePoll: FiniteDuration         =
     env.configuration.getOptionalWithFileSupport[Long]("app.httpdb.pollEvery").map(_.millis).getOrElse(10.seconds)
-  private val cancelRef    = new AtomicReference[Cancellable]()
-  private val lastHash     = new AtomicReference[Int](0)
+  private val cancelRef                         = new AtomicReference[Cancellable]()
+  private val lastHash                          = new AtomicReference[Int](0)
 
   override def kind: PersistenceKind = PersistenceKind.HttpPersistenceKind
 
@@ -188,9 +194,9 @@ class HttpPersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
     implicit val mat = ds.materializer
     val store        = new ConcurrentHashMap[String, Any]()
     val expirations  = new ConcurrentHashMap[String, Long]()
-    val headers = stateHeaders.toSeq ++ Seq(
-      "Accept" -> "application/x-ndjson"
-    )
+    val headers      = stateHeaders.toSeq ++ Seq(
+        "Accept" -> "application/x-ndjson"
+      )
     env.Ws // no need for mtls here
       .url(stateUrl)
       .withRequestTimeout(stateTimeout)
@@ -228,36 +234,36 @@ class HttpPersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
 
     what match {
       case "counter" => Some(ByteString(value.as[Long].toString))
-      case "string" => Some(ByteString(value.as[String]))
-      case "set" => {
+      case "string"  => Some(ByteString(value.as[String]))
+      case "set"     => {
         val list = new java.util.concurrent.CopyOnWriteArraySet[ByteString]
         list.addAll(value.as[JsArray].value.map(a => ByteString(a.as[String])).asJava)
         Some(list)
       }
-      case "list" => {
+      case "list"    => {
         val list = new java.util.concurrent.CopyOnWriteArrayList[ByteString]
         list.addAll(value.as[JsArray].value.map(a => ByteString(a.as[String])).asJava)
         Some(list)
       }
-      case "hash" => {
+      case "hash"    => {
         val map = new java.util.concurrent.ConcurrentHashMap[String, ByteString]
         map.putAll(value.as[JsObject].value.map(t => (t._1, ByteString(t._2.as[String]))).asJava)
         Some(map)
       }
-      case _ => None
+      case _         => None
     }
   }
 
   private def writeStateToHttp(): Future[Unit] = {
     implicit val ec  = ds.actorSystem.dispatcher
     implicit val mat = ds.materializer
-    val source = Source.futureSource[JsValue, Any](ds.fullNdJsonExport(100, 1, 4)).map { item =>
+    val source       = Source.futureSource[JsValue, Any](ds.fullNdJsonExport(100, 1, 4)).map { item =>
       ByteString(Json.stringify(item) + "\n")
     }
     ds.logger.debug("Writing state to http db ...")
-    val headers = stateHeaders.toSeq ++ Seq(
-      "Content-Type" -> "application/x-ndjson"
-    )
+    val headers      = stateHeaders.toSeq ++ Seq(
+        "Content-Type" -> "application/x-ndjson"
+      )
     env.Ws // no need for mtls here
       .url(stateUrl)
       .withRequestTimeout(stateTimeout)

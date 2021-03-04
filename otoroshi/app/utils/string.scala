@@ -10,7 +10,7 @@ object Utils {
     val searched = search.toSeq
     input.map {
       case c if searched.contains(c) => replChar
-      case c => c
+      case c                         => c
     }
   }
 }

@@ -7,8 +7,7 @@ import play.api.Logger
 import play.api.libs.streams.Accumulator
 import play.api.mvc._
 
-class ApiController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env: Env)
-    extends AbstractController(cc) {
+class ApiController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env: Env) extends AbstractController(cc) {
 
   implicit lazy val ec  = env.otoroshiExecutionContext
   implicit lazy val mat = env.otoroshiMaterializer

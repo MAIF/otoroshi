@@ -11,15 +11,17 @@ case class Key(key: String) {
     key.matches(regex)
   }
 
-  def /(path: String): Key = key match {
-    case "" => Key(s"$path")
-    case _  => Key(s"$key:$path")
-  }
+  def /(path: String): Key =
+    key match {
+      case "" => Key(s"$path")
+      case _  => Key(s"$key:$path")
+    }
 
-  def /(path: Key): Key = key match {
-    case "" => path
-    case _  => Key(s"$key:${path.key}")
-  }
+  def /(path: Key): Key =
+    key match {
+      case "" => path
+      case _  => Key(s"$key:${path.key}")
+    }
 
   val segments: Seq[String] = key.split(":")
 
@@ -37,7 +39,7 @@ object Key {
 
   def apply(path: Seq[String]): Key = new Key(path.mkString(":"))
 
-  val reads: Reads[Key] = Reads[Key] { k =>
+  val reads: Reads[Key]   = Reads[Key] { k =>
     k.asOpt[String] match {
       case Some(k) => JsSuccess(Key(k))
       case None    => JsError("Not a string")

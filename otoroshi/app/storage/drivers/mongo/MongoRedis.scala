@@ -30,59 +30,61 @@ class MongoRedis(actorSystem: ActorSystem, connection: MongoConnection, dbName: 
     for {
       coll <- database.map(_.collection[BSONCollection]("values"))
       _    <- coll.create().recover { case _ => () }
-      _    <- coll.indexesManager.ensure(Index(reactivemongo.api.bson.collection.BSONSerializationPack)(
-        key = Seq("key" -> IndexType.Ascending),
-        name = Some("key_idx"),
-        unique = true,
-        background = false,
-        sparse = false,
-        dropDups = false,
-        expireAfterSeconds = None,
-        storageEngine = None,
-        weights = None,
-        defaultLanguage = None,
-        languageOverride = None,
-        textIndexVersion = None,
-        sphereIndexVersion = None,
-        bits = None,
-        min = None,
-        max = None,
-        bucketSize = None,
-        collation = None,
-        wildcardProjection = None,
-        version = None,
-        partialFilter = None,
-        options = BSONDocument.empty
-      ))
-      _ <- coll.indexesManager.ensure(
-        Index(reactivemongo.api.bson.collection.BSONSerializationPack)(
-          key = Seq("ttl" -> IndexType.Ascending),
-          name = Some("ttl_idx"),
-          unique = true,
-          background = false,
-          sparse = false,
-          dropDups = false,
-          expireAfterSeconds = None,
-          storageEngine = None,
-          weights = None,
-          defaultLanguage = None,
-          languageOverride = None,
-          textIndexVersion = None,
-          sphereIndexVersion = None,
-          bits = None,
-          min = None,
-          max = None,
-          bucketSize = None,
-          collation = None,
-          wildcardProjection = None,
-          version = None,
-          partialFilter = None,
-          options = BSONDocument(
-            "expireAfterSeconds" -> 0
-          )
-        )
-      )
-      _ = logger.info("Mongo indexes created !")
+      _    <- coll.indexesManager.ensure(
+                Index(reactivemongo.api.bson.collection.BSONSerializationPack)(
+                  key = Seq("key" -> IndexType.Ascending),
+                  name = Some("key_idx"),
+                  unique = true,
+                  background = false,
+                  sparse = false,
+                  dropDups = false,
+                  expireAfterSeconds = None,
+                  storageEngine = None,
+                  weights = None,
+                  defaultLanguage = None,
+                  languageOverride = None,
+                  textIndexVersion = None,
+                  sphereIndexVersion = None,
+                  bits = None,
+                  min = None,
+                  max = None,
+                  bucketSize = None,
+                  collation = None,
+                  wildcardProjection = None,
+                  version = None,
+                  partialFilter = None,
+                  options = BSONDocument.empty
+                )
+              )
+      _    <- coll.indexesManager.ensure(
+                Index(reactivemongo.api.bson.collection.BSONSerializationPack)(
+                  key = Seq("ttl" -> IndexType.Ascending),
+                  name = Some("ttl_idx"),
+                  unique = true,
+                  background = false,
+                  sparse = false,
+                  dropDups = false,
+                  expireAfterSeconds = None,
+                  storageEngine = None,
+                  weights = None,
+                  defaultLanguage = None,
+                  languageOverride = None,
+                  textIndexVersion = None,
+                  sphereIndexVersion = None,
+                  bits = None,
+                  min = None,
+                  max = None,
+                  bucketSize = None,
+                  collation = None,
+                  wildcardProjection = None,
+                  version = None,
+                  partialFilter = None,
+                  options = BSONDocument(
+                    "expireAfterSeconds" -> 0
+                  )
+                )
+              )
+      _     = logger.info("Mongo indexes created !")
     } yield ()
   }
 
@@ -93,11 +95,10 @@ class MongoRedis(actorSystem: ActorSystem, connection: MongoConnection, dbName: 
   def withValuesCollection[A](f: BSONCollection => Future[A]): Future[A] = {
     database
       .map(_.collection("values"))
-      .flatMap(
-        c =>
-          f(c).andThen {
-            case Failure(e) => logger.error("Error in DB query", e)
-          }
+      .flatMap(c =>
+        f(c).andThen {
+          case Failure(e) => logger.error("Error in DB query", e)
+        }
       )
   }
 
@@ -110,7 +111,7 @@ class MongoRedis(actorSystem: ActorSystem, connection: MongoConnection, dbName: 
               "$lte" -> BSONDateTime(System.currentTimeMillis()) //DateTime.now(DateTimeZone.UTC).getMillis)
             )
           ),
-          writeConcern =reactivemongo.api.commands.WriteConcern.Acknowledged
+          writeConcern = reactivemongo.api.commands.WriteConcern.Acknowledged
         )
         .map { wr =>
           logger.debug(s"Delete ${wr.n} items ...")
@@ -130,291 +131,310 @@ class MongoRedis(actorSystem: ActorSystem, connection: MongoConnection, dbName: 
 
   override def flushall(): Future[Boolean] = withValuesCollection(_.drop(false)).map(_ => true)
 
-  def rawGet(key: String): Future[Option[BSONDocument]] = withValuesCollection { coll =>
-    coll
-      .find(
-        BSONDocument(
-          "key" -> key
+  def rawGet(key: String): Future[Option[BSONDocument]] =
+    withValuesCollection { coll =>
+      coll
+        .find(
+          BSONDocument(
+            "key" -> key
+          )
         )
-      )
-      .one[BSONDocument]
-  }
+        .one[BSONDocument]
+    }
 
-  override def get(key: String): Future[Option[ByteString]] = withValuesCollection { coll =>
-    coll
-      .find(
-        BSONDocument(
-          "key" -> key
+  override def get(key: String): Future[Option[ByteString]] =
+    withValuesCollection { coll =>
+      coll
+        .find(
+          BSONDocument(
+            "key" -> key
+          )
         )
-      )
-      .one[BSONDocument]
-      .map { doc =>
-        doc.flatMap(d => d.getAs[String]("value")).map(ByteString.apply)
-      }
-  }
+        .one[BSONDocument]
+        .map { doc =>
+          doc.flatMap(d => d.getAs[String]("value")).map(ByteString.apply)
+        }
+    }
 
-  override def mget(keys: String*): Future[Seq[Option[ByteString]]] = withValuesCollection { coll =>
-    coll
-      .find(BSONDocument("key" -> BSONDocument("$in" -> BSONArray(keys.map(BSONString.apply)))))
-      .cursor[BSONDocument]()
-      .collect[List](-1, Cursor.FailOnError[List[BSONDocument]]())
-      .map(list => list.map(i => i.getAs[String]("value").map(ByteString.apply)))
-  }
+  override def mget(keys: String*): Future[Seq[Option[ByteString]]] =
+    withValuesCollection { coll =>
+      coll
+        .find(BSONDocument("key" -> BSONDocument("$in" -> BSONArray(keys.map(BSONString.apply)))))
+        .cursor[BSONDocument]()
+        .collect[List](-1, Cursor.FailOnError[List[BSONDocument]]())
+        .map(list => list.map(i => i.getAs[String]("value").map(ByteString.apply)))
+    }
 
   override def set(key: String, value: String, exSeconds: Option[Long], pxMilliseconds: Option[Long]): Future[Boolean] =
     setBS(key, ByteString(value), exSeconds, pxMilliseconds)
 
-  override def setBS(key: String,
-                     value: ByteString,
-                     exSeconds: Option[Long],
-                     pxMilliseconds: Option[Long]): Future[Boolean] = withValuesCollection { coll =>
-    coll
-      .update(
-        BSONDocument("key" -> key),
-        BSONDocument(
-          "$set" -> BSONDocument(
-            "type"  -> "string",
-            "key"   -> key,
-            "value" -> value.utf8String,
-            "ttl" -> exSeconds
-              .map(_ * 1000)
-              .orElse(pxMilliseconds)
-              .map(_ + System.currentTimeMillis())
-              .map(BSONDateTime.apply)
-              .getOrElse(BSONNull)
-          )
-        ),
-        upsert = true,
-        writeConcern = reactivemongo.api.commands.WriteConcern.Acknowledged
-      )
-      .map(_.ok)
-  }
+  override def setBS(
+      key: String,
+      value: ByteString,
+      exSeconds: Option[Long],
+      pxMilliseconds: Option[Long]
+  ): Future[Boolean] =
+    withValuesCollection { coll =>
+      coll
+        .update(
+          BSONDocument("key" -> key),
+          BSONDocument(
+            "$set"           -> BSONDocument(
+              "type"  -> "string",
+              "key"   -> key,
+              "value" -> value.utf8String,
+              "ttl"   -> exSeconds
+                .map(_ * 1000)
+                .orElse(pxMilliseconds)
+                .map(_ + System.currentTimeMillis())
+                .map(BSONDateTime.apply)
+                .getOrElse(BSONNull)
+            )
+          ),
+          upsert = true,
+          writeConcern = reactivemongo.api.commands.WriteConcern.Acknowledged
+        )
+        .map(_.ok)
+    }
 
-  override def del(keys: String*): Future[Long] = withValuesCollection { coll =>
-    coll.remove(BSONDocument("key" -> BSONDocument("$in" -> BSONArray(keys.map(BSONString.apply))))).map(_.n)
-  }
+  override def del(keys: String*): Future[Long] =
+    withValuesCollection { coll =>
+      coll.remove(BSONDocument("key" -> BSONDocument("$in" -> BSONArray(keys.map(BSONString.apply))))).map(_.n)
+    }
 
-  override def exists(key: String): Future[Boolean] = withValuesCollection { coll =>
-    coll.find(BSONDocument("key" -> key)).one[BSONDocument].map(_.isDefined)
-  }
+  override def exists(key: String): Future[Boolean] =
+    withValuesCollection { coll =>
+      coll.find(BSONDocument("key" -> key)).one[BSONDocument].map(_.isDefined)
+    }
 
-  override def keys(pattern: String): Future[Seq[String]] = withValuesCollection { coll =>
-    coll
-      .find(
-        BSONDocument("key" -> BSONDocument("$regex" -> pattern.replaceAll("\\*", ".*"), "$options" -> "i")),
-        BSONDocument("key" -> 1)
-      )
-      .cursor[BSONDocument]()
-      .collect[List](-1, Cursor.FailOnError[List[BSONDocument]]())
-      .map(_.map(_.getAs[String]("key").get))
-  }
+  override def keys(pattern: String): Future[Seq[String]] =
+    withValuesCollection { coll =>
+      coll
+        .find(
+          BSONDocument("key" -> BSONDocument("$regex" -> pattern.replaceAll("\\*", ".*"), "$options" -> "i")),
+          BSONDocument("key" -> 1)
+        )
+        .cursor[BSONDocument]()
+        .collect[List](-1, Cursor.FailOnError[List[BSONDocument]]())
+        .map(_.map(_.getAs[String]("key").get))
+    }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   override def incr(key: String): Future[Long] = incrby(key, 1)
 
-  override def incrby(key: String, increment: Long): Future[Long] = withValuesCollection { coll => // OUTCH
-    coll.find(BSONDocument("key" -> key)).one[BSONDocument].flatMap {
-      case None =>
-        coll
-          .insert(BSONDocument(
-                    "key"   -> key,
-                    "type"  -> "counter",
-                    "value" -> (increment + "")
-                  ),
-                  writeConcern = reactivemongo.api.commands.WriteConcern.Acknowledged)
-          .map { _ =>
-            increment
-          }
-      case Some(doc) =>
-        coll
-          .update(
-            BSONDocument("key" -> key),
-            BSONDocument(
-              "$set" -> BSONDocument(
-                "value" -> doc.getAs[String]("value").map(a => (a.toLong + increment).toString).get
-              )
-            ),
-            upsert = true,
-            writeConcern = reactivemongo.api.commands.WriteConcern.Acknowledged
-          )
-          .flatMap { _ =>
-            coll
-              .find(BSONDocument("key" -> key))
-              .one[BSONDocument]
-              .map(
-                _.flatMap(
-                  _.getAs[String](
-                    "value" +
-                    "e"
-                  ).map(_.toLong)
-                ).getOrElse(0L)
-              ) /*.andThen {
+  override def incrby(key: String, increment: Long): Future[Long] =
+    withValuesCollection { coll => // OUTCH
+      coll.find(BSONDocument("key" -> key)).one[BSONDocument].flatMap {
+        case None      =>
+          coll
+            .insert(
+              BSONDocument(
+                "key"   -> key,
+                "type"  -> "counter",
+                "value" -> (increment + "")
+              ),
+              writeConcern = reactivemongo.api.commands.WriteConcern.Acknowledged
+            )
+            .map { _ =>
+              increment
+            }
+        case Some(doc) =>
+          coll
+            .update(
+              BSONDocument("key" -> key),
+              BSONDocument(
+                "$set"           -> BSONDocument(
+                  "value" -> doc.getAs[String]("value").map(a => (a.toLong + increment).toString).get
+                )
+              ),
+              upsert = true,
+              writeConcern = reactivemongo.api.commands.WriteConcern.Acknowledged
+            )
+            .flatMap { _ =>
+              coll
+                .find(BSONDocument("key" -> key))
+                .one[BSONDocument]
+                .map(
+                  _.flatMap(
+                    _.getAs[String](
+                      "value" +
+                      "e"
+                    ).map(_.toLong)
+                  ).getOrElse(0L)
+                ) /*.andThen {
           case Success(counter) => println(s"counter at $key incremented by $increment is at $counter")
         }*/
-          }
+            }
+      }
     }
-  }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  override def hdel(key: String, fields: String*): Future[Long] = withValuesCollection { coll =>
-    coll
-      .update(
-        BSONDocument("key" -> key),
-        BSONDocument(
-          "$unset" -> BSONDocument(
-            fields.map(field => s"value.$field" -> BSONString(""))
-          )
-        ),
-        upsert = true,
-        writeConcern = reactivemongo.api.commands.WriteConcern.Acknowledged
-      )
-      .map(_.n)
-  }
-
-  override def hgetall(key: String): Future[Map[String, ByteString]] = withValuesCollection { coll =>
-    coll
-      .find(
-        BSONDocument(
-          "key" -> key
+  override def hdel(key: String, fields: String*): Future[Long] =
+    withValuesCollection { coll =>
+      coll
+        .update(
+          BSONDocument("key" -> key),
+          BSONDocument(
+            "$unset"         -> BSONDocument(
+              fields.map(field => s"value.$field" -> BSONString(""))
+            )
+          ),
+          upsert = true,
+          writeConcern = reactivemongo.api.commands.WriteConcern.Acknowledged
         )
-      )
-      .one[BSONDocument]
-      .map { doc =>
-        doc
-          .flatMap(d => d.getAs[BSONDocument]("value"))
-          .map(_.toMap.mapValues(a => ByteString(a.asInstanceOf[BSONString].value)))
-          .getOrElse(Map.empty)
-      }
-  }
+        .map(_.n)
+    }
+
+  override def hgetall(key: String): Future[Map[String, ByteString]] =
+    withValuesCollection { coll =>
+      coll
+        .find(
+          BSONDocument(
+            "key" -> key
+          )
+        )
+        .one[BSONDocument]
+        .map { doc =>
+          doc
+            .flatMap(d => d.getAs[BSONDocument]("value"))
+            .map(_.toMap.mapValues(a => ByteString(a.asInstanceOf[BSONString].value)))
+            .getOrElse(Map.empty)
+        }
+    }
 
   override def hset(key: String, field: String, value: String): Future[Boolean] = hsetBS(key, field, ByteString(value))
 
-  override def hsetBS(key: String, field: String, value: ByteString): Future[Boolean] = withValuesCollection { coll =>
-    coll.find(BSONDocument("key" -> key)).one[BSONDocument].flatMap {
-      case None =>
-        coll
-          .insert(
-            BSONDocument(
-              "key"  -> key,
-              "type" -> "hash",
-              "value" -> BSONDocument(
-                field -> value.utf8String
-              )
-            ),
-            writeConcern = reactivemongo.api.commands.WriteConcern.Acknowledged
-          )
-          .map(_.ok)
-      case Some(_) =>
-        coll
-          .update(
-            BSONDocument("key" -> key),
-            BSONDocument(
-              "$set" -> BSONDocument(
-                "type"          -> "hash",
-                "key"           -> key,
-                s"value.$field" -> value.utf8String
-              )
-            ),
-            upsert = true,
-            writeConcern = reactivemongo.api.commands.WriteConcern.Acknowledged
-          )
-          .map(_.ok)
+  override def hsetBS(key: String, field: String, value: ByteString): Future[Boolean] =
+    withValuesCollection { coll =>
+      coll.find(BSONDocument("key" -> key)).one[BSONDocument].flatMap {
+        case None    =>
+          coll
+            .insert(
+              BSONDocument(
+                "key"   -> key,
+                "type"  -> "hash",
+                "value" -> BSONDocument(
+                  field -> value.utf8String
+                )
+              ),
+              writeConcern = reactivemongo.api.commands.WriteConcern.Acknowledged
+            )
+            .map(_.ok)
+        case Some(_) =>
+          coll
+            .update(
+              BSONDocument("key" -> key),
+              BSONDocument(
+                "$set"           -> BSONDocument(
+                  "type"          -> "hash",
+                  "key"           -> key,
+                  s"value.$field" -> value.utf8String
+                )
+              ),
+              upsert = true,
+              writeConcern = reactivemongo.api.commands.WriteConcern.Acknowledged
+            )
+            .map(_.ok)
+      }
     }
-  }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  override def llen(key: String): Future[Long] = withValuesCollection { coll => // OUTCH
-    coll.find(BSONDocument("key" -> key)).one[BSONDocument].map { doc =>
-      doc.map(_.getAs[BSONArray]("value").map(_.size).getOrElse(0)).getOrElse(0).toLong
+  override def llen(key: String): Future[Long] =
+    withValuesCollection { coll => // OUTCH
+      coll.find(BSONDocument("key" -> key)).one[BSONDocument].map { doc =>
+        doc.map(_.getAs[BSONArray]("value").map(_.size).getOrElse(0)).getOrElse(0).toLong
+      }
     }
-  }
 
   override def lpush(key: String, values: String*): Future[Long] = lpushBS(key, values.map(ByteString.apply): _*)
 
   override def lpushLong(key: String, values: Long*): Future[Long] =
     lpushBS(key, values.map(_.toString).map(ByteString.apply): _*)
 
-  override def lpushBS(key: String, values: ByteString*): Future[Long] = withValuesCollection { coll =>
-    coll.find(BSONDocument("key" -> key)).one[BSONDocument].flatMap {
-      case None =>
-        coll
-          .insert(
-            BSONDocument(
-              "key"   -> key,
-              "type"  -> "list",
-              "value" -> BSONArray(values.map(s => BSONString.apply(s.utf8String)))
-            ),
-            writeConcern = reactivemongo.api.commands.WriteConcern.Acknowledged
-          )
-          .map(_.n)
-      case Some(_) =>
-        coll
-          .update(
-            BSONDocument("key" -> key),
-            BSONDocument(
-              "$push" -> BSONDocument(
-                "value" -> BSONDocument("$each" -> BSONArray(values.map(s => BSONString.apply(s.utf8String))))
-              )
-            ),
-            upsert = true,
-            writeConcern = reactivemongo.api.commands.WriteConcern.Acknowledged
-          )
-          .map(_.n)
+  override def lpushBS(key: String, values: ByteString*): Future[Long] =
+    withValuesCollection { coll =>
+      coll.find(BSONDocument("key" -> key)).one[BSONDocument].flatMap {
+        case None    =>
+          coll
+            .insert(
+              BSONDocument(
+                "key"   -> key,
+                "type"  -> "list",
+                "value" -> BSONArray(values.map(s => BSONString.apply(s.utf8String)))
+              ),
+              writeConcern = reactivemongo.api.commands.WriteConcern.Acknowledged
+            )
+            .map(_.n)
+        case Some(_) =>
+          coll
+            .update(
+              BSONDocument("key" -> key),
+              BSONDocument(
+                "$push"          -> BSONDocument(
+                  "value" -> BSONDocument("$each" -> BSONArray(values.map(s => BSONString.apply(s.utf8String))))
+                )
+              ),
+              upsert = true,
+              writeConcern = reactivemongo.api.commands.WriteConcern.Acknowledged
+            )
+            .map(_.n)
+      }
     }
-  }
 
-  override def lrange(key: String, start: Long, stop: Long): Future[Seq[ByteString]] = withValuesCollection { coll =>
-    coll.find(BSONDocument("key" -> key)).one[BSONDocument].map { opt =>
-      opt
-        .flatMap(doc => doc.getAs[BSONArray]("value"))
-        .map(
-          arr =>
+  override def lrange(key: String, start: Long, stop: Long): Future[Seq[ByteString]] =
+    withValuesCollection { coll =>
+      coll.find(BSONDocument("key" -> key)).one[BSONDocument].map { opt =>
+        opt
+          .flatMap(doc => doc.getAs[BSONArray]("value"))
+          .map(arr =>
             arr.elements
               .map { el =>
                 el.value.asInstanceOf[BSONString].value
               }
               .map(ByteString.apply)
-        )
-        .map(seq => seq.slice(start.toInt, stop.toInt - start.toInt))
-        .getOrElse(Seq.empty)
+          )
+          .map(seq => seq.slice(start.toInt, stop.toInt - start.toInt))
+          .getOrElse(Seq.empty)
+      }
     }
-  }
 
   // WARNING : will work only if start == 0, should be good for now
-  override def ltrim(key: String, start: Long, stop: Long): Future[Boolean] = withValuesCollection { coll =>
-    coll
-      .update(
-        BSONDocument("key" -> key),
-        BSONDocument(
-          "$push" -> BSONDocument(
-            "value" -> BSONDocument(
-              "$each"  -> BSONArray(),
-              "$slice" -> (0 - stop)
+  override def ltrim(key: String, start: Long, stop: Long): Future[Boolean] =
+    withValuesCollection { coll =>
+      coll
+        .update(
+          BSONDocument("key" -> key),
+          BSONDocument(
+            "$push"          -> BSONDocument(
+              "value" -> BSONDocument(
+                "$each"  -> BSONArray(),
+                "$slice" -> (0 - stop)
+              )
             )
-          )
-        ),
-        writeConcern = reactivemongo.api.commands.WriteConcern.Acknowledged
-      )
-      .map(_.ok)
-  }
+          ),
+          writeConcern = reactivemongo.api.commands.WriteConcern.Acknowledged
+        )
+        .map(_.ok)
+    }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  override def pttl(key: String): Future[Long] = withValuesCollection { coll =>
-    coll
-      .find(BSONDocument("key" -> key))
-      .one[BSONDocument]
-      .map(
-        _.flatMap(d => d.getAs[Long]("ttl"))
-        //.map(t => new DateTime(t, DateTimeZone.UTC).getMillis - DateTime.now(DateTimeZone.UTC).getMillis)
-          .map(t => new DateTime(t).getMillis - DateTime.now().getMillis)
-          .filter(_ > -1)
-          .getOrElse(-1)
-      )
-  }
+  override def pttl(key: String): Future[Long] =
+    withValuesCollection { coll =>
+      coll
+        .find(BSONDocument("key" -> key))
+        .one[BSONDocument]
+        .map(
+          _.flatMap(d => d.getAs[Long]("ttl"))
+          //.map(t => new DateTime(t, DateTimeZone.UTC).getMillis - DateTime.now(DateTimeZone.UTC).getMillis)
+            .map(t => new DateTime(t).getMillis - DateTime.now().getMillis)
+            .filter(_ > -1)
+            .getOrElse(-1)
+        )
+    }
 
   override def ttl(key: String): Future[Long] =
     pttl(key).map(t => scala.concurrent.duration.Duration(t, TimeUnit.MILLISECONDS).toSeconds)
@@ -428,7 +448,7 @@ class MongoRedis(actorSystem: ActorSystem, connection: MongoConnection, dbName: 
         .findAndUpdate(
           BSONDocument("key" -> key),
           BSONDocument(
-            "$set" -> BSONDocument("ttl" -> BSONDateTime(ttl))
+            "$set"           -> BSONDocument("ttl" -> BSONDateTime(ttl))
           )
         )
         .map(_.lastError.isEmpty)
@@ -439,67 +459,71 @@ class MongoRedis(actorSystem: ActorSystem, connection: MongoConnection, dbName: 
 
   override def sadd(key: String, members: String*): Future[Long] = saddBS(key, members.map(ByteString.apply): _*)
 
-  override def saddBS(key: String, members: ByteString*): Future[Long] = withValuesCollection { coll =>
-    coll.find(BSONDocument("key" -> key)).one[BSONDocument].flatMap {
-      case None =>
-        coll
-          .insert(
-            BSONDocument(
-              "key"   -> key,
-              "type"  -> "set",
-              "value" -> BSONArray(members.map(s => BSONString.apply(s.utf8String)))
-            ),
-            writeConcern = reactivemongo.api.commands.WriteConcern.Acknowledged
-          )
-          .map(_.n)
-      case Some(_) => {
-        coll
-          .update(
-            BSONDocument("key" -> key),
-            BSONDocument(
-              "$addToSet" -> BSONDocument(
-                "value" -> BSONDocument("$each" -> BSONArray(members.map(s => BSONString.apply(s.utf8String))))
-              )
-            ),
-            upsert = true,
-            writeConcern = reactivemongo.api.commands.WriteConcern.Acknowledged
-          )
-          .map(_.n)
+  override def saddBS(key: String, members: ByteString*): Future[Long] =
+    withValuesCollection { coll =>
+      coll.find(BSONDocument("key" -> key)).one[BSONDocument].flatMap {
+        case None    =>
+          coll
+            .insert(
+              BSONDocument(
+                "key"   -> key,
+                "type"  -> "set",
+                "value" -> BSONArray(members.map(s => BSONString.apply(s.utf8String)))
+              ),
+              writeConcern = reactivemongo.api.commands.WriteConcern.Acknowledged
+            )
+            .map(_.n)
+        case Some(_) => {
+          coll
+            .update(
+              BSONDocument("key" -> key),
+              BSONDocument(
+                "$addToSet"      -> BSONDocument(
+                  "value" -> BSONDocument("$each" -> BSONArray(members.map(s => BSONString.apply(s.utf8String))))
+                )
+              ),
+              upsert = true,
+              writeConcern = reactivemongo.api.commands.WriteConcern.Acknowledged
+            )
+            .map(_.n)
+        }
       }
     }
-  }
 
   override def sismember(key: String, member: String): Future[Boolean] = sismemberBS(key, ByteString(member))
 
   override def sismemberBS(key: String, member: ByteString): Future[Boolean] =
     smembers(key).map(_.contains(member)) // OUTCH
 
-  override def smembers(key: String): Future[Seq[ByteString]] = withValuesCollection { coll =>
-    coll
-      .find(BSONDocument("key" -> key))
-      .one[BSONDocument]
-      .map(_.flatMap { doc =>
-        doc.getAs[BSONArray]("value").map { arr =>
-          arr.elements.map(e => ByteString(e.value.asInstanceOf[BSONString].value))
-        }
-      }.getOrElse(Seq.empty[ByteString]))
-  }
+  override def smembers(key: String): Future[Seq[ByteString]] =
+    withValuesCollection { coll =>
+      coll
+        .find(BSONDocument("key" -> key))
+        .one[BSONDocument]
+        .map(_.flatMap { doc =>
+          doc.getAs[BSONArray]("value").map { arr =>
+            arr.elements.map(e => ByteString(e.value.asInstanceOf[BSONString].value))
+          }
+        }.getOrElse(Seq.empty[ByteString]))
+    }
 
   override def srem(key: String, members: String*): Future[Long] = sremBS(key, members.map(ByteString.apply): _*)
 
-  override def sremBS(key: String, members: ByteString*): Future[Long] = withValuesCollection { coll =>
-    coll
-      .update(
-        BSONDocument("key"   -> key),
-        BSONDocument("$pull" -> BSONDocument("value" -> BSONArray(members.map(_.utf8String).map(BSONString.apply)))),
-        writeConcern = reactivemongo.api.commands.WriteConcern.Acknowledged
-      )
-      .map(_.n)
-  }
-
-  override def scard(key: String): Future[Long] = withValuesCollection { coll => // OUTCH
-    coll.find(BSONDocument("key" -> key)).one[BSONDocument].map { doc =>
-      doc.map(_.getAs[BSONArray]("value").map(_.size).getOrElse(0)).getOrElse(0).toLong
+  override def sremBS(key: String, members: ByteString*): Future[Long] =
+    withValuesCollection { coll =>
+      coll
+        .update(
+          BSONDocument("key"   -> key),
+          BSONDocument("$pull" -> BSONDocument("value" -> BSONArray(members.map(_.utf8String).map(BSONString.apply)))),
+          writeConcern = reactivemongo.api.commands.WriteConcern.Acknowledged
+        )
+        .map(_.n)
     }
-  }
+
+  override def scard(key: String): Future[Long] =
+    withValuesCollection { coll => // OUTCH
+      coll.find(BSONDocument("key" -> key)).one[BSONDocument].map { doc =>
+        doc.map(_.getAs[BSONArray]("value").map(_.size).getOrElse(0)).getOrElse(0).toLong
+      }
+    }
 }

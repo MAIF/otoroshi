@@ -53,40 +53,42 @@ class HasAllowedUsersValidator extends AccessValidator {
   override def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
     context.user match {
       case Some(user) => {
-        val config = (context.config \ "HasAllowedUsersValidator")
+        val config              = (context.config \ "HasAllowedUsersValidator")
           .asOpt[JsValue]
           .orElse((context.config \ "HasAllowedUsersValidator").asOpt[JsValue])
           .getOrElse(context.config)
-        val allowedUsernames =
+        val allowedUsernames    =
           (config \ "usernames").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
-        val allowedEmails =
+        val allowedEmails       =
           (config \ "emails").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
         val allowedEmailDomains =
           (config \ "emailDomains").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
-        val metadataMatch =
+        val metadataMatch       =
           (config \ "metadataMatch").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
-        val metadataNotMatch =
+        val metadataNotMatch    =
           (config \ "metadataNotMatch").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
-        val profileMatch =
+        val profileMatch        =
           (config \ "profileMatch").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
-        val profileNotMatch =
+        val profileNotMatch     =
           (config \ "profileNotMatch").asOpt[JsArray].map(_.value.map(_.as[String])).getOrElse(Seq.empty[String])
-        val userMetaRaw = user.otoroshiData.getOrElse(Json.obj())
-        if (allowedUsernames.contains(user.name) ||
-            allowedEmails.contains(user.email) ||
-            allowedEmailDomains.exists(domain => user.email.endsWith(domain)) ||
-            (metadataMatch.exists(JsonPathUtils.matchWith(userMetaRaw, "user metadata")) && !metadataNotMatch.exists(
-              JsonPathUtils.matchWith(userMetaRaw, "user metadata")
-            )) ||
-            (profileMatch.exists(JsonPathUtils.matchWith(user.profile, "user profile")) && !profileNotMatch.exists(
-              JsonPathUtils.matchWith(user.profile, "user profile")
-            ))) {
+        val userMetaRaw         = user.otoroshiData.getOrElse(Json.obj())
+        if (
+          allowedUsernames.contains(user.name) ||
+          allowedEmails.contains(user.email) ||
+          allowedEmailDomains.exists(domain => user.email.endsWith(domain)) ||
+          (metadataMatch.exists(JsonPathUtils.matchWith(userMetaRaw, "user metadata")) && !metadataNotMatch.exists(
+            JsonPathUtils.matchWith(userMetaRaw, "user metadata")
+          )) ||
+          (profileMatch.exists(JsonPathUtils.matchWith(user.profile, "user profile")) && !profileNotMatch.exists(
+            JsonPathUtils.matchWith(user.profile, "user profile")
+          ))
+        ) {
           FastFuture.successful(true)
         } else {
           FastFuture.successful(false)
         }
       }
-      case _ => FastFuture.successful(false)
+      case _          => FastFuture.successful(false)
     }
   }
 }

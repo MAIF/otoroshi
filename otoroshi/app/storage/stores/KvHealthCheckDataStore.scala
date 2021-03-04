@@ -20,14 +20,16 @@ class KvHealthCheckDataStore(redisCli: RedisLike, _env: Env) extends HealthCheck
       _ <- redisCli.ltrim(key((evt \ "@serviceId").as[String]), 0, collectionSize)
     } yield n
 
-  override def findAll(serviceDescriptor: ServiceDescriptor)(implicit ec: ExecutionContext,
-                                                             env: Env): Future[Seq[HealthCheckEvent]] =
+  override def findAll(
+      serviceDescriptor: ServiceDescriptor
+  )(implicit ec: ExecutionContext, env: Env): Future[Seq[HealthCheckEvent]] =
     redisCli
       .lrange(key(serviceDescriptor.id), 0, collectionSize - 1)
       .map(seq => seq.map(i => Json.parse(i.utf8String).as(HealthCheckEvent.format)))
 
-  override def findLast(serviceDescriptor: ServiceDescriptor)(implicit ec: ExecutionContext,
-                                                              env: Env): Future[Option[HealthCheckEvent]] =
+  override def findLast(
+      serviceDescriptor: ServiceDescriptor
+  )(implicit ec: ExecutionContext, env: Env): Future[Option[HealthCheckEvent]] =
     redisCli
       .lrange(key(serviceDescriptor.id), 0, 1)
       .map(seq => seq.map(i => Json.parse(i.utf8String).as(HealthCheckEvent.format)).headOption)

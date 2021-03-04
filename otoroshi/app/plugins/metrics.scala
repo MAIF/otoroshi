@@ -66,10 +66,10 @@ class ServiceMetrics extends RequestTransformer {
                 arr ++ value.toSeq.foldLeft(Json.arr()) {
                   case (arr2, (key2, value2 @ JsObject(_))) =>
                     arr2 ++ Json.arr(value2 ++ Json.obj("name" -> key2, "type" -> key))
-                  case (arr2, (key2, value2)) =>
+                  case (arr2, (key2, value2))               =>
                     arr2
                 }
-              case (arr, (key, value)) => arr
+              case (arr, (key, value))           => arr
             }
           }
 
@@ -91,7 +91,7 @@ class ServiceMetrics extends RequestTransformer {
         val config    = ctx.configFor("ServiceMetrics")
         val queryName = (config \ "accessKeyQuery").asOpt[String].getOrElse("access_key")
         (config \ "accessKeyValue").asOpt[String] match {
-          case None => result()
+          case None                                                                 => result()
           case Some("${config.app.health.accessKey}")
               if env.healthAccessKey.isDefined && ctx.request
                 .getQueryString(queryName)
@@ -239,7 +239,7 @@ class PrometheusEndpoint extends RequestSink {
     val includeMetrics = (config \ "includeMetrics").asOpt[Boolean].getOrElse(false)
 
     def result(): Future[Result] = {
-      val writer = new StringWriter()
+      val writer  = new StringWriter()
       TextFormat.write004(writer, PrometheusSupport.registry.metricFamilySamples())
       var payload = writer.toString
       if (includeMetrics) {
@@ -249,7 +249,7 @@ class PrometheusEndpoint extends RequestSink {
     }
 
     (config \ "accessKeyValue").asOpt[String] match {
-      case None => result()
+      case None                                                                 => result()
       case Some("${config.app.health.accessKey}")
           if env.healthAccessKey.isDefined && ctx.request
             .getQueryString(queryName)
@@ -361,31 +361,39 @@ class PrometheusServiceMetrics extends RequestTransformer {
     reqDurationGlobal.observe(duration)
     if (includeUri) {
       reqDurationHistogramWithUri
-        .labels(ctx.otoroshiResponse.status.toString,
-                ctx.request.method.toLowerCase(),
-                ctx.request.theProtocol,
-                ctx.descriptor.name.slug,
-                ctx.request.relativeUri)
+        .labels(
+          ctx.otoroshiResponse.status.toString,
+          ctx.request.method.toLowerCase(),
+          ctx.request.theProtocol,
+          ctx.descriptor.name.slug,
+          ctx.request.relativeUri
+        )
         .observe(duration)
       reqTotalHistogramWithUri
-        .labels(ctx.otoroshiResponse.status.toString,
-                ctx.request.method.toLowerCase(),
-                ctx.request.theProtocol,
-                ctx.descriptor.name.slug,
-                ctx.request.relativeUri)
+        .labels(
+          ctx.otoroshiResponse.status.toString,
+          ctx.request.method.toLowerCase(),
+          ctx.request.theProtocol,
+          ctx.descriptor.name.slug,
+          ctx.request.relativeUri
+        )
         .inc()
     } else {
       reqDurationHistogram
-        .labels(ctx.otoroshiResponse.status.toString,
-                ctx.request.method.toLowerCase(),
-                ctx.request.theProtocol,
-                ctx.descriptor.name.slug)
+        .labels(
+          ctx.otoroshiResponse.status.toString,
+          ctx.request.method.toLowerCase(),
+          ctx.request.theProtocol,
+          ctx.descriptor.name.slug
+        )
         .observe(duration)
       reqTotalHistogram
-        .labels(ctx.otoroshiResponse.status.toString,
-                ctx.request.method.toLowerCase(),
-                ctx.request.theProtocol,
-                ctx.descriptor.name.slug)
+        .labels(
+          ctx.otoroshiResponse.status.toString,
+          ctx.request.method.toLowerCase(),
+          ctx.request.theProtocol,
+          ctx.descriptor.name.slug
+        )
         .inc()
     }
     Right(ctx.otoroshiResponse).future
@@ -403,31 +411,39 @@ class PrometheusServiceMetrics extends RequestTransformer {
     reqDurationGlobal.observe(duration)
     if (includeUri) {
       reqDurationHistogramWithUri
-        .labels(ctx.otoroshiResponse.status.toString,
-                ctx.request.method.toLowerCase(),
-                ctx.request.theProtocol,
-                ctx.descriptor.name.slug,
-                ctx.request.relativeUri)
+        .labels(
+          ctx.otoroshiResponse.status.toString,
+          ctx.request.method.toLowerCase(),
+          ctx.request.theProtocol,
+          ctx.descriptor.name.slug,
+          ctx.request.relativeUri
+        )
         .observe(duration)
       reqTotalHistogramWithUri
-        .labels(ctx.otoroshiResponse.status.toString,
-                ctx.request.method.toLowerCase(),
-                ctx.request.theProtocol,
-                ctx.descriptor.name.slug,
-                ctx.request.relativeUri)
+        .labels(
+          ctx.otoroshiResponse.status.toString,
+          ctx.request.method.toLowerCase(),
+          ctx.request.theProtocol,
+          ctx.descriptor.name.slug,
+          ctx.request.relativeUri
+        )
         .inc()
     } else {
       reqDurationHistogram
-        .labels(ctx.otoroshiResponse.status.toString,
-                ctx.request.method.toLowerCase(),
-                ctx.request.theProtocol,
-                ctx.descriptor.name.slug)
+        .labels(
+          ctx.otoroshiResponse.status.toString,
+          ctx.request.method.toLowerCase(),
+          ctx.request.theProtocol,
+          ctx.descriptor.name.slug
+        )
         .observe(duration)
       reqTotalHistogram
-        .labels(ctx.otoroshiResponse.status.toString,
-                ctx.request.method.toLowerCase(),
-                ctx.request.theProtocol,
-                ctx.descriptor.name.slug)
+        .labels(
+          ctx.otoroshiResponse.status.toString,
+          ctx.request.method.toLowerCase(),
+          ctx.request.theProtocol,
+          ctx.descriptor.name.slug
+        )
         .inc()
     }
     ctx.otoroshiResult.future

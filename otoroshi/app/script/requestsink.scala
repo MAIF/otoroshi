@@ -12,27 +12,29 @@ import play.api.mvc.{RequestHeader, Result, Results}
 import scala.concurrent.{ExecutionContext, Future}
 
 trait RequestSink extends StartableAndStoppable with NamedPlugin with InternalEventListener {
-  final def pluginType: PluginType                                                           = RequestSinkType
-  def matches(context: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Boolean = false
+  final def pluginType: PluginType                                                                 = RequestSinkType
+  def matches(context: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Boolean       = false
   def handle(context: RequestSinkContext)(implicit env: Env, ec: ExecutionContext): Future[Result] =
     FastFuture.successful(Results.NotImplemented(Json.obj("error" -> "not implemented yet")))
 }
 
 object RequestSink {
 
-  def maybeSinkRequest(snowflake: String,
-                       req: RequestHeader,
-                       body: Source[ByteString, _],
-                       attrs: TypedMap,
-                       origin: RequestOrigin,
-                       status: Int,
-                       message: String,
-                       err: => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] =
+  def maybeSinkRequest(
+      snowflake: String,
+      req: RequestHeader,
+      body: Source[ByteString, _],
+      attrs: TypedMap,
+      origin: RequestOrigin,
+      status: Int,
+      message: String,
+      err: => Future[Result]
+  )(implicit ec: ExecutionContext, env: Env): Future[Result] =
     env.metrics.withTimerAsync("otoroshi.core.proxy.request-sink") {
       env.datastores.globalConfigDataStore.singleton().flatMap {
-        case config if !config.scripts.enabled         => err
+        case config if !config.scripts.enabled                                        => err
         case config if (config.scripts.sinkRefs ++ config.plugins.sinks(req)).isEmpty => err
-        case config =>
+        case config                                                                   =>
           val ctx = RequestSinkContext(
             snowflake = snowflake,
             index = -1,
@@ -44,7 +46,8 @@ object RequestSink {
             origin = origin,
             body = body
           )
-          val rss = (config.scripts.sinkRefs ++ config.plugins.sinks(req)).distinct.map(r => env.scriptManager.getAnyScript[RequestSink](r)).collect {
+          val rss = (config.scripts.sinkRefs ++ config.plugins
+            .sinks(req)).distinct.map(r => env.scriptManager.getAnyScript[RequestSink](r)).collect {
             case Right(rs) => rs
           }
           rss.find(_.matches(ctx)) match {

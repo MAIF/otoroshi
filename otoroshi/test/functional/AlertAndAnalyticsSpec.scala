@@ -12,22 +12,21 @@ import play.api.libs.json.Json
 
 import scala.concurrent.duration._
 
-class AlertAndAnalyticsSpec(name: String, configurationSpec: => Configuration)
-  extends OtoroshiSpec {
+class AlertAndAnalyticsSpec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 
   lazy val serviceHost = "analytics.oto.tools"
-  implicit val system = ActorSystem("otoroshi-test")
+  implicit val system  = ActorSystem("otoroshi-test")
 
-  override def getTestConfiguration(configuration: Configuration) = Configuration(
-    ConfigFactory
-      .parseString(
-        s"""
+  override def getTestConfiguration(configuration: Configuration) =
+    Configuration(
+      ConfigFactory
+        .parseString(s"""
            |{
            |  app.analyticsWindow = 1
            |}
        """.stripMargin)
-      .resolve()
-  ).withFallback(configurationSpec).withFallback(configuration)
+        .resolve()
+    ).withFallback(configurationSpec).withFallback(configuration)
 
   s"[$name] Otoroshi Alerts and Analytics module" should {
 
@@ -39,7 +38,7 @@ class AlertAndAnalyticsSpec(name: String, configurationSpec: => Configuration)
     "produce alerts when admin api are modified" in {
 
       val counter = new AtomicInteger(0)
-      val server = new AlertServer(counter).await()
+      val server  = new AlertServer(counter).await()
 
       val apiKey = ApiKey(
         clientId = "apikey-monthly",
@@ -55,15 +54,14 @@ class AlertAndAnalyticsSpec(name: String, configurationSpec: => Configuration)
         name = "webhook-exp",
         desc = "webhook-exp",
         metadata = Map.empty,
-        filtering = DataExporterConfigFiltering(
-          include = Seq(Json.obj("@type" -> "AlertEvent"))),
+        filtering = DataExporterConfigFiltering(include = Seq(Json.obj("@type" -> "AlertEvent"))),
         projection = Json.obj(),
         config = Webhook(url = s"http://127.0.0.1:${server.port}"),
         groupSize = 1
       )
 
       val config: GlobalConfig = (for {
-        _ <- createExporterConfig(webhookEventsExporters)
+        _      <- createExporterConfig(webhookEventsExporters)
         config <- getOtoroshiConfig()
       } yield config).futureValue
 
@@ -112,7 +110,7 @@ class AlertAndAnalyticsSpec(name: String, configurationSpec: => Configuration)
       )
 
       val config: GlobalConfig = (for {
-        _ <- createExporterConfig(webhookEventsExporters)
+        _      <- createExporterConfig(webhookEventsExporters)
         config <- getOtoroshiConfig()
       } yield config).futureValue
 

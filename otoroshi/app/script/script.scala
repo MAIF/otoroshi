@@ -86,38 +86,40 @@ trait NamedPlugin { self =>
   def description: Option[String] = None
 
   def defaultConfig: Option[JsObject] = None
-  def configRoot: Option[String] = defaultConfig match {
-    case None                                   => None
-    case Some(config) if config.value.size > 1  => None
-    case Some(config) if config.value.isEmpty   => None
-    case Some(config) if config.value.size == 1 => config.value.headOption.map(_._1)
-  }
+  def configRoot: Option[String]      =
+    defaultConfig match {
+      case None                                   => None
+      case Some(config) if config.value.size > 1  => None
+      case Some(config) if config.value.isEmpty   => None
+      case Some(config) if config.value.size == 1 => config.value.headOption.map(_._1)
+    }
 
   def configSchema: Option[JsObject] =
     defaultConfig.flatMap(c => configRoot.map(r => (c \ r).asOpt[JsObject].getOrElse(Json.obj()))) match {
-      case None => None
+      case None         => None
       case Some(config) => {
         def genSchema(jsobj: JsObject, prefix: String): JsObject = {
           jsobj.value.toSeq
             .map {
-              case (key, JsString(_)) =>
+              case (key, JsString(_))              =>
                 Json.obj(prefix + key -> Json.obj("type" -> "string", "props" -> Json.obj("label" -> (prefix + key))))
-              case (key, JsNumber(_)) =>
+              case (key, JsNumber(_))              =>
                 Json.obj(prefix + key -> Json.obj("type" -> "number", "props" -> Json.obj("label" -> (prefix + key))))
-              case (key, JsBoolean(_)) =>
+              case (key, JsBoolean(_))             =>
                 Json.obj(prefix + key -> Json.obj("type" -> "bool", "props" -> Json.obj("label" -> (prefix + key))))
-              case (key, JsArray(values)) => {
+              case (key, JsArray(values))          => {
                 if (values.isEmpty) {
                   Json.obj(prefix + key -> Json.obj("type" -> "array", "props" -> Json.obj("label" -> (prefix + key))))
                 } else {
                   values.head match {
                     case JsNumber(_) =>
                       Json.obj(
-                        prefix + key -> Json.obj("type" -> "array",
-                                                 "props" -> Json.obj("label" -> (prefix + key),
-                                                                     "inputType" -> "number"))
+                        prefix + key -> Json.obj(
+                          "type"  -> "array",
+                          "props" -> Json.obj("label" -> (prefix + key), "inputType" -> "number")
+                        )
                       )
-                    case _ =>
+                    case _           =>
                       Json.obj(
                         prefix + key -> Json.obj("type" -> "array", "props" -> Json.obj("label" -> (prefix + key)))
                       )
@@ -125,21 +127,21 @@ trait NamedPlugin { self =>
                 }
               }
               case ("mtlsConfig", a @ JsObject(_)) => genSchema(a, prefix + "mtlsConfig.")
-              case ("mtls", a @ JsObject(_)) => genSchema(a, prefix + "mtls.")
+              case ("mtls", a @ JsObject(_))       => genSchema(a, prefix + "mtls.")
               case ("filter", a @ JsObject(_))     => genSchema(a, prefix + "filter.")
               case ("not", a @ JsObject(_))        => genSchema(a, prefix + "not.")
-              case (key, JsObject(_)) =>
+              case (key, JsObject(_))              =>
                 Json.obj(prefix + key -> Json.obj("type" -> "object", "props" -> Json.obj("label" -> (prefix + key))))
-              case (key, JsNull) => Json.obj()
+              case (key, JsNull)                   => Json.obj()
             }
             .foldLeft(Json.obj())(_ ++ _)
         }
         Some(genSchema(config, ""))
       }
     }
-  def configFlow: Seq[String] =
+  def configFlow: Seq[String]        =
     defaultConfig.flatMap(c => configRoot.map(r => (c \ r).asOpt[JsObject].getOrElse(Json.obj()))) match {
-      case None => Seq.empty
+      case None         => Seq.empty
       case Some(config) => {
         def genFlow(jsobj: JsObject, prefix: String): Seq[String] = {
           jsobj.value.toSeq.flatMap {
@@ -154,29 +156,32 @@ trait NamedPlugin { self =>
       }
     }
 
-  def jsonDescription(): JsObject = Try {
-    Json.obj(
-      "name" -> name,
-      "description" -> description.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-      "defaultConfig" -> defaultConfig.getOrElse(JsNull).as[JsValue],
-      "configRoot" -> configRoot.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-      "configSchema" -> configSchema.getOrElse(JsNull).as[JsValue],
-      "configFlow" -> JsArray(configFlow.map(JsString.apply))
-    )
-  } match {
-    case Failure(ex) => Json.obj()
-    case Success(s) => s
-  }
+  def jsonDescription(): JsObject =
+    Try {
+      Json.obj(
+        "name"          -> name,
+        "description"   -> description.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+        "defaultConfig" -> defaultConfig.getOrElse(JsNull).as[JsValue],
+        "configRoot"    -> configRoot.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+        "configSchema"  -> configSchema.getOrElse(JsNull).as[JsValue],
+        "configFlow"    -> JsArray(configFlow.map(JsString.apply))
+      )
+    } match {
+      case Failure(ex) => Json.obj()
+      case Success(s)  => s
+    }
 }
 
-case class HttpRequest(url: String,
-                       method: String,
-                       headers: Map[String, String],
-                       cookies: Seq[WSCookie] = Seq.empty[WSCookie],
-                       version: String,
-                       clientCertificateChain: Option[Seq[X509Certificate]],
-                       target: Option[Target],
-                       claims: OtoroshiClaim) {
+case class HttpRequest(
+    url: String,
+    method: String,
+    headers: Map[String, String],
+    cookies: Seq[WSCookie] = Seq.empty[WSCookie],
+    version: String,
+    clientCertificateChain: Option[Seq[X509Certificate]],
+    target: Option[Target],
+    claims: OtoroshiClaim
+) {
   lazy val contentType: Option[String] = headers.get("Content-Type").orElse(headers.get("content-type"))
   lazy val host: String                = headers.get("Host").orElse(headers.get("host")).getOrElse("")
   lazy val uri: Uri                    = Uri(url)
@@ -186,46 +191,56 @@ case class HttpRequest(url: String,
   lazy val path: String                = uri.path.toString()
   lazy val queryString: Option[String] = uri.rawQueryString
   lazy val relativeUri: String         = uri.toRelative.toString()
-  def json: JsValue = Json.obj(
-    "url" -> url,
-    "method" -> method,
-    "headers" -> headers,
-    "version" -> version,
-    "cookies" -> JsArray(cookies.map(c => Json.obj(
-      "name" -> c.name,
-      "value" -> c.value,
-      "domain" -> c.domain.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-      "path" -> c.path.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-      "maxAge" -> c.maxAge.map(v => JsNumber(BigDecimal(v))).getOrElse(JsNull).as[JsValue],
-      "secure" -> c.secure,
-      "httpOnly" -> c.httpOnly,
-    )))
-  )
+  def json: JsValue                    =
+    Json.obj(
+      "url"     -> url,
+      "method"  -> method,
+      "headers" -> headers,
+      "version" -> version,
+      "cookies" -> JsArray(
+        cookies.map(c =>
+          Json.obj(
+            "name"     -> c.name,
+            "value"    -> c.value,
+            "domain"   -> c.domain.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+            "path"     -> c.path.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+            "maxAge"   -> c.maxAge.map(v => JsNumber(BigDecimal(v))).getOrElse(JsNull).as[JsValue],
+            "secure"   -> c.secure,
+            "httpOnly" -> c.httpOnly
+          )
+        )
+      )
+    )
 }
 
 case class HttpResponse(status: Int, headers: Map[String, String], cookies: Seq[WSCookie] = Seq.empty[WSCookie]) {
-  def json: JsValue = Json.obj(
-    "status" -> status,
-    "headers" -> headers,
-    "cookies" -> JsArray(cookies.map(c => Json.obj(
-      "name" -> c.name,
-      "value" -> c.value,
-      "domain" -> c.domain.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-      "path" -> c.path.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-      "maxAge" -> c.maxAge.map(v => JsNumber(BigDecimal(v))).getOrElse(JsNull).as[JsValue],
-      "secure" -> c.secure,
-      "httpOnly" -> c.httpOnly,
-    )))
-  )
+  def json: JsValue =
+    Json.obj(
+      "status"  -> status,
+      "headers" -> headers,
+      "cookies" -> JsArray(
+        cookies.map(c =>
+          Json.obj(
+            "name"     -> c.name,
+            "value"    -> c.value,
+            "domain"   -> c.domain.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+            "path"     -> c.path.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+            "maxAge"   -> c.maxAge.map(v => JsNumber(BigDecimal(v))).getOrElse(JsNull).as[JsValue],
+            "secure"   -> c.secure,
+            "httpOnly" -> c.httpOnly
+          )
+        )
+      )
+    )
 }
 
 trait ContextWithConfig {
   def index: Int
   def config: JsValue
   def globalConfig: JsValue
-  def configExists(name: String): Boolean =
+  def configExists(name: String): Boolean         =
     (config \ name).asOpt[JsValue].orElse((globalConfig \ name).asOpt[JsValue]).isDefined
-  def configFor(name: String): JsValue =
+  def configFor(name: String): JsValue            =
     configForOpt(name).getOrElse(Json.obj())
   def configForOpt(name: String): Option[JsValue] =
     (config \ name).asOpt[JsValue].orElse((globalConfig \ name).asOpt[JsValue])
@@ -393,47 +408,55 @@ trait RequestTransformer extends StartableAndStoppable with NamedPlugin with Int
   def transformRequestWithCtx(
       context: TransformerRequestContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
-    transformRequest(context.snowflake,
-                     context.rawRequest,
-                     context.otoroshiRequest,
-                     context.descriptor,
-                     context.apikey,
-                     context.user)(env, ec, mat)
+    transformRequest(
+      context.snowflake,
+      context.rawRequest,
+      context.otoroshiRequest,
+      context.descriptor,
+      context.apikey,
+      context.user
+    )(env, ec, mat)
   }
 
   def transformResponseWithCtx(
       context: TransformerResponseContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] = {
-    transformResponse(context.snowflake,
-                      context.rawResponse,
-                      context.otoroshiResponse,
-                      context.descriptor,
-                      context.apikey,
-                      context.user)(env, ec, mat)
+    transformResponse(
+      context.snowflake,
+      context.rawResponse,
+      context.otoroshiResponse,
+      context.descriptor,
+      context.apikey,
+      context.user
+    )(env, ec, mat)
   }
 
   def transformRequestBodyWithCtx(
       context: TransformerRequestBodyContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
-    transformRequestBody(context.snowflake,
-                         context.body,
-                         context.rawRequest,
-                         context.otoroshiRequest,
-                         context.descriptor,
-                         context.apikey,
-                         context.user)(env, ec, mat)
+    transformRequestBody(
+      context.snowflake,
+      context.body,
+      context.rawRequest,
+      context.otoroshiRequest,
+      context.descriptor,
+      context.apikey,
+      context.user
+    )(env, ec, mat)
   }
 
   def transformResponseBodyWithCtx(
       context: TransformerResponseBodyContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
-    transformResponseBody(context.snowflake,
-                          context.body,
-                          context.rawResponse,
-                          context.otoroshiResponse,
-                          context.descriptor,
-                          context.apikey,
-                          context.user)(env, ec, mat)
+    transformResponseBody(
+      context.snowflake,
+      context.body,
+      context.rawResponse,
+      context.otoroshiResponse,
+      context.descriptor,
+      context.apikey,
+      context.user
+    )(env, ec, mat)
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -555,7 +578,7 @@ trait NanoApp extends RequestTransformer {
       ctx: TransformerRequestContext
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     awaitingRequests.get(ctx.snowflake).map { promise =>
-      val consumed = new AtomicBoolean(false)
+      val consumed                          = new AtomicBoolean(false)
       val bodySource: Source[ByteString, _] = Source
         .future(promise.future)
         .flatMapConcat(s => s)
@@ -638,7 +661,7 @@ class ScriptCompiler(env: Env) {
                 "message"    -> message
               )
             )
-          case ex: Throwable =>
+          case ex: Throwable       =>
             logger.error(s"Compilation error", ex)
             Left(
               Json.obj(
@@ -658,10 +681,11 @@ class ScriptCompiler(env: Env) {
 }
 
 case class ScriptsState(compiling: Boolean, initialized: Boolean) {
-  def json: JsValue = Json.obj(
-    "compiling" -> compiling,
-    "initialized"   -> initialized
-  )
+  def json: JsValue =
+    Json.obj(
+      "compiling"   -> compiling,
+      "initialized" -> initialized
+    )
 }
 
 class ScriptManager(env: Env) {
@@ -681,204 +705,222 @@ class ScriptManager(env: Env) {
   private val listeningCpScripts = new AtomicReference[Seq[InternalEventListener]](Seq.empty)
 
   private val _firstPluginsSearchDone = new AtomicBoolean(false)
-  private val _firstCompilationDone = new AtomicBoolean(false)
+  private val _firstCompilationDone   = new AtomicBoolean(false)
 
   def firstPluginsSearchDone(): Boolean = _firstPluginsSearchDone.get()
-  def firstCompilationDone(): Boolean = _firstCompilationDone.get()
+  def firstCompilationDone(): Boolean   = _firstCompilationDone.get()
 
   val starting = System.currentTimeMillis()
 
-  lazy val (transformersNames, validatorsNames, preRouteNames, reqSinkNames, listenerNames, jobNames, exporterNames) = Try {
-    import io.github.classgraph.{ClassGraph, ClassInfo, ScanResult}
+  lazy val (transformersNames, validatorsNames, preRouteNames, reqSinkNames, listenerNames, jobNames, exporterNames) =
+    Try {
+      import io.github.classgraph.{ClassGraph, ClassInfo, ScanResult}
 
-    import collection.JavaConverters._
-    val start = System.currentTimeMillis()
-    val confPackages: Seq[String] = env.configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.plugins.packages").getOrElse(Seq.empty) ++
-      env.configuration.getOptionalWithFileSupport[String]("otoroshi.plugins.packagesStr").map(v => v.split(",").map(_.trim).toSeq).getOrElse(Seq.empty)
-    val allPackages = Seq("otoroshi", "otoroshi_plugins") ++ confPackages
-    val scanResult: ScanResult = new ClassGraph()
-      .addClassLoader(env.environment.classLoader)
-      .enableClassInfo()
-      .whitelistPackages(allPackages: _*)
-      .scan
+      import collection.JavaConverters._
+      val start                     = System.currentTimeMillis()
+      val confPackages: Seq[String] =
+        env.configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.plugins.packages").getOrElse(Seq.empty) ++
+        env.configuration
+          .getOptionalWithFileSupport[String]("otoroshi.plugins.packagesStr")
+          .map(v => v.split(",").map(_.trim).toSeq)
+          .getOrElse(Seq.empty)
+      val allPackages               = Seq("otoroshi", "otoroshi_plugins") ++ confPackages
+      val scanResult: ScanResult    = new ClassGraph()
+        .addClassLoader(env.environment.classLoader)
+        .enableClassInfo()
+        .whitelistPackages(allPackages: _*)
+        .scan
 
-    // val scanResult: ScanResult = new ClassGraph().addClassLoader(env.environment.classLoader).enableAllInfo.blacklistPackages(
-    //   "java.*",
-    //   "javax.*",
-    //   "aix.*",
-    //   "akka.*",
-    //   "cats.*",
-    //   "ch.qos.logback.*",
-    //   "com.auth0.*",
-    //   "com.blueconic.*",
-    //   "com.carrotsearch.*",
-    //   "com.codahale.*",
-    //   "com.cronutils.*",
-    //   "com.datastax.*",
-    //   "com.esri.*",
-    //   "com.fasterxml.jackson.*",
-    //   "com.github.benmanes.*",
-    //   "com.github.blemale.*",
-    //   "com.github.luben.*",
-    //   "com.google.*",
-    //   "com.jayway.*",
-    //   "com.jcabi.*",
-    //   "com.kenai.*",
-    //   "com.maxmind.*",
-    //   "com.nimbusds.*",
-    //   "com.risksense.*",
-    //   "com.scurrilous.*",
-    //   "com.sksamuel.*",
-    //   "com.squareup.*",
-    //   "com.sun.*",
-    //   "com.thoughtworks.*",
-    //   "com.twitter.*",
-    //   "com.typesafe.*",
-    //   "com.upokecenter.*",
-    //   "com.yubico.*",
-    //   "common.message.*",
-    //   "diffson.*",
-    //   "edu.umd.*",
-    //   "external.reactivemongo.*",
-    //   "github.gphat.censorinus.*",
-    //   "google.*",
-    //   "groovy.*",
-    //   "groovyjarjarantlr.*",
-    //   "groovyjarjarasm.*",
-    //   "groovyjarjarcommonscli/*",
-    //   "groovyjarjarpicocli.*",
-    //   "groverconfig8491016507689653801.*",
-    //   "io.airlift.*",
-    //   "io.estatico.*",
-    //   "io.github.*",
-    //   "io.gsonfire.*",
-    //   "io.jsonwebtoken.*",
-    //   "io.kubernetes.*",
-    //   "io.lettuce.*",
-    //   "io.netty.*",
-    //   "io.prometheus.*",
-    //   "io.sundr.*",
-    //   "io.swagger.*",
-    //   "javax.*",
-    //   "jni.*",
-    //   "jnr.*",
-    //   "kafka.*",
-    //   "kaleidoscope.*",
-    //   "linux.*",
-    //   "macrocompat.*",
-    //   "mozilla.*",
-    //   "net.i2p.*",
-    //   "net.jcip.*",
-    //   "net.jpountz.*",
-    //   "net.minidev.*",
-    //   "net.objecthunter.*",
-    //   "nonapi.io.github.*",
-    //   "okhttp3.*",
-    //   "okio.*",
-    //   "org.apache.*",
-    //   "org.aspectj.*",
-    //   "org.bouncycastle.*",
-    //   "org.checkerframework.*",
-    //   "org.codehaus.*",
-    //   "org.eclipse.*",
-    //   "org.iq80.*",
-    //   "org.javatuples.*",
-    //   "org.joda.*",
-    //   "org.jose4j.*",
-    //   "org.json.*",
-    //   "org.mindrot.*",
-    //   "org.mortbay.*",
-    //   "org.objectweb.*",
-    //   "org.reactivestreams.*",
-    //   "org.shredzone.*",
-    //   "org.slf4j.*",
-    //   "org.xbill.*",
-    //   "org.xerial.*",
-    //   "org.yaml.*",
-    //   "play.*",
-    //   "public.*",
-    //   "reactivemongo.*",
-    //   "reactor.*",
-    //   "redis.*",
-    //   "scala.*",
-    //   "templates.*",
-    //   "win.*",
-    // ).scan
+      // val scanResult: ScanResult = new ClassGraph().addClassLoader(env.environment.classLoader).enableAllInfo.blacklistPackages(
+      //   "java.*",
+      //   "javax.*",
+      //   "aix.*",
+      //   "akka.*",
+      //   "cats.*",
+      //   "ch.qos.logback.*",
+      //   "com.auth0.*",
+      //   "com.blueconic.*",
+      //   "com.carrotsearch.*",
+      //   "com.codahale.*",
+      //   "com.cronutils.*",
+      //   "com.datastax.*",
+      //   "com.esri.*",
+      //   "com.fasterxml.jackson.*",
+      //   "com.github.benmanes.*",
+      //   "com.github.blemale.*",
+      //   "com.github.luben.*",
+      //   "com.google.*",
+      //   "com.jayway.*",
+      //   "com.jcabi.*",
+      //   "com.kenai.*",
+      //   "com.maxmind.*",
+      //   "com.nimbusds.*",
+      //   "com.risksense.*",
+      //   "com.scurrilous.*",
+      //   "com.sksamuel.*",
+      //   "com.squareup.*",
+      //   "com.sun.*",
+      //   "com.thoughtworks.*",
+      //   "com.twitter.*",
+      //   "com.typesafe.*",
+      //   "com.upokecenter.*",
+      //   "com.yubico.*",
+      //   "common.message.*",
+      //   "diffson.*",
+      //   "edu.umd.*",
+      //   "external.reactivemongo.*",
+      //   "github.gphat.censorinus.*",
+      //   "google.*",
+      //   "groovy.*",
+      //   "groovyjarjarantlr.*",
+      //   "groovyjarjarasm.*",
+      //   "groovyjarjarcommonscli/*",
+      //   "groovyjarjarpicocli.*",
+      //   "groverconfig8491016507689653801.*",
+      //   "io.airlift.*",
+      //   "io.estatico.*",
+      //   "io.github.*",
+      //   "io.gsonfire.*",
+      //   "io.jsonwebtoken.*",
+      //   "io.kubernetes.*",
+      //   "io.lettuce.*",
+      //   "io.netty.*",
+      //   "io.prometheus.*",
+      //   "io.sundr.*",
+      //   "io.swagger.*",
+      //   "javax.*",
+      //   "jni.*",
+      //   "jnr.*",
+      //   "kafka.*",
+      //   "kaleidoscope.*",
+      //   "linux.*",
+      //   "macrocompat.*",
+      //   "mozilla.*",
+      //   "net.i2p.*",
+      //   "net.jcip.*",
+      //   "net.jpountz.*",
+      //   "net.minidev.*",
+      //   "net.objecthunter.*",
+      //   "nonapi.io.github.*",
+      //   "okhttp3.*",
+      //   "okio.*",
+      //   "org.apache.*",
+      //   "org.aspectj.*",
+      //   "org.bouncycastle.*",
+      //   "org.checkerframework.*",
+      //   "org.codehaus.*",
+      //   "org.eclipse.*",
+      //   "org.iq80.*",
+      //   "org.javatuples.*",
+      //   "org.joda.*",
+      //   "org.jose4j.*",
+      //   "org.json.*",
+      //   "org.mindrot.*",
+      //   "org.mortbay.*",
+      //   "org.objectweb.*",
+      //   "org.reactivestreams.*",
+      //   "org.shredzone.*",
+      //   "org.slf4j.*",
+      //   "org.xbill.*",
+      //   "org.xerial.*",
+      //   "org.yaml.*",
+      //   "play.*",
+      //   "public.*",
+      //   "reactivemongo.*",
+      //   "reactor.*",
+      //   "redis.*",
+      //   "scala.*",
+      //   "templates.*",
+      //   "win.*",
+      // ).scan
 
-    logger.debug(s"classpath scanning in ${System.currentTimeMillis() - start} ms.")
-    try {
+      logger.debug(s"classpath scanning in ${System.currentTimeMillis() - start} ms.")
+      try {
 
-      def predicate(c: ClassInfo): Boolean =
-        c.getName == "otoroshi.script.DefaultRequestTransformer$" ||
-        c.getName == "otoroshi.script.CompilingRequestTransformer$" ||
-        c.getName == "otoroshi.script.CompilingValidator$" ||
-        c.getName == "otoroshi.script.CompilingPreRouting$" ||
-        c.getName == "otoroshi.script.CompilingRequestSink$" ||
-        c.getName == "otoroshi.script.CompilingOtoroshiEventListener$" ||
-        c.getName == "otoroshi.script.DefaultValidator$" ||
-        c.getName == "otoroshi.script.DefaultPreRouting$" ||
-        c.getName == "otoroshi.script.DefaultRequestSink$" ||
-        c.getName == "otoroshi.script.FailingPreRoute" ||
-        c.getName == "otoroshi.script.FailingPreRoute$" ||
-        c.getName == "otoroshi.script.DefaultOtoroshiEventListener$" ||
-        c.getName == "otoroshi.script.DefaultJob$" ||
-        c.getName == "otoroshi.script.CompilingJob$" ||
-        c.getName == "otoroshi.script.NanoApp" ||
-        c.getName == "otoroshi.script.NanoApp$"
+        def predicate(c: ClassInfo): Boolean =
+          c.getName == "otoroshi.script.DefaultRequestTransformer$" ||
+          c.getName == "otoroshi.script.CompilingRequestTransformer$" ||
+          c.getName == "otoroshi.script.CompilingValidator$" ||
+          c.getName == "otoroshi.script.CompilingPreRouting$" ||
+          c.getName == "otoroshi.script.CompilingRequestSink$" ||
+          c.getName == "otoroshi.script.CompilingOtoroshiEventListener$" ||
+          c.getName == "otoroshi.script.DefaultValidator$" ||
+          c.getName == "otoroshi.script.DefaultPreRouting$" ||
+          c.getName == "otoroshi.script.DefaultRequestSink$" ||
+          c.getName == "otoroshi.script.FailingPreRoute" ||
+          c.getName == "otoroshi.script.FailingPreRoute$" ||
+          c.getName == "otoroshi.script.DefaultOtoroshiEventListener$" ||
+          c.getName == "otoroshi.script.DefaultJob$" ||
+          c.getName == "otoroshi.script.CompilingJob$" ||
+          c.getName == "otoroshi.script.NanoApp" ||
+          c.getName == "otoroshi.script.NanoApp$"
 
-      val requestTransformers: Seq[String] = (scanResult.getSubclasses(classOf[RequestTransformer].getName).asScala ++
-      scanResult.getClassesImplementing(classOf[RequestTransformer].getName).asScala)
-        .filterNot(predicate)
-        .map(_.getName)
+        val requestTransformers: Seq[String] = (scanResult.getSubclasses(classOf[RequestTransformer].getName).asScala ++
+        scanResult.getClassesImplementing(classOf[RequestTransformer].getName).asScala)
+          .filterNot(predicate)
+          .map(_.getName)
 
-      val validators: Seq[String] = (scanResult.getSubclasses(classOf[AccessValidator].getName).asScala ++
-      scanResult.getClassesImplementing(classOf[AccessValidator].getName).asScala).filterNot(predicate).map(_.getName)
+        val validators: Seq[String] = (scanResult.getSubclasses(classOf[AccessValidator].getName).asScala ++
+        scanResult.getClassesImplementing(classOf[AccessValidator].getName).asScala).filterNot(predicate).map(_.getName)
 
-      val preRoutes: Seq[String] = (scanResult.getSubclasses(classOf[PreRouting].getName).asScala ++
-      scanResult.getClassesImplementing(classOf[PreRouting].getName).asScala).filterNot(predicate).map(_.getName)
+        val preRoutes: Seq[String] = (scanResult.getSubclasses(classOf[PreRouting].getName).asScala ++
+        scanResult.getClassesImplementing(classOf[PreRouting].getName).asScala).filterNot(predicate).map(_.getName)
 
-      val reqSinks: Seq[String] = (scanResult.getSubclasses(classOf[RequestSink].getName).asScala ++
-      scanResult.getClassesImplementing(classOf[RequestSink].getName).asScala).filterNot(predicate).map(_.getName)
+        val reqSinks: Seq[String] = (scanResult.getSubclasses(classOf[RequestSink].getName).asScala ++
+        scanResult.getClassesImplementing(classOf[RequestSink].getName).asScala).filterNot(predicate).map(_.getName)
 
-      val listenerNames: Seq[String] = (scanResult.getSubclasses(classOf[OtoroshiEventListener].getName).asScala ++
-      scanResult.getClassesImplementing(classOf[OtoroshiEventListener].getName).asScala)
-        .filterNot(predicate)
-        .map(_.getName)
+        val listenerNames: Seq[String] = (scanResult.getSubclasses(classOf[OtoroshiEventListener].getName).asScala ++
+        scanResult.getClassesImplementing(classOf[OtoroshiEventListener].getName).asScala)
+          .filterNot(predicate)
+          .map(_.getName)
 
-      val jobNames: Seq[String] = (scanResult.getSubclasses(classOf[Job].getName).asScala ++
-      scanResult.getClassesImplementing(classOf[Job].getName).asScala)
-        .filterNot(predicate)
-        .map(_.getName)
+        val jobNames: Seq[String] = (scanResult.getSubclasses(classOf[Job].getName).asScala ++
+        scanResult.getClassesImplementing(classOf[Job].getName).asScala)
+          .filterNot(predicate)
+          .map(_.getName)
 
-      val customExporters: Seq[String] = (scanResult.getSubclasses(classOf[CustomDataExporter].getName).asScala ++
+        val customExporters: Seq[String] = (scanResult.getSubclasses(classOf[CustomDataExporter].getName).asScala ++
         scanResult.getClassesImplementing(classOf[CustomDataExporter].getName).asScala)
-        .filterNot(predicate)
-        .map(_.getName)
+          .filterNot(predicate)
+          .map(_.getName)
 
-      (requestTransformers, validators, preRoutes, reqSinks, listenerNames, jobNames, customExporters)
-    } catch {
-      case e: Throwable =>
-        e.printStackTrace()
-        (Seq.empty[String],
-         Seq.empty[String],
-         Seq.empty[String],
-         Seq.empty[String],
-         Seq.empty[String],
-         Seq.empty[String],
-         Seq.empty[String])
-    } finally if (scanResult != null) scanResult.close()
-  } getOrElse (Seq.empty[String], Seq.empty[String], Seq.empty[String], Seq.empty[String], Seq.empty[String], Seq
-    .empty[String], Seq.empty[String])
+        (requestTransformers, validators, preRoutes, reqSinks, listenerNames, jobNames, customExporters)
+      } catch {
+        case e: Throwable =>
+          e.printStackTrace()
+          (
+            Seq.empty[String],
+            Seq.empty[String],
+            Seq.empty[String],
+            Seq.empty[String],
+            Seq.empty[String],
+            Seq.empty[String],
+            Seq.empty[String]
+          )
+      } finally if (scanResult != null) scanResult.close()
+    } getOrElse (Seq.empty[String], Seq.empty[String], Seq.empty[String], Seq.empty[String], Seq.empty[String], Seq
+      .empty[String], Seq.empty[String])
 
-  private val allPlugins = Seq(transformersNames, validatorsNames, preRouteNames, reqSinkNames, listenerNames, jobNames, exporterNames).flatten.distinct.sortWith((s1, s2) => s1.compareTo(s2) < 0)
-  private val printPlugins = env.configuration.getOptionalWithFileSupport[Boolean]("otoroshi.plugins.print").getOrElse(false)
+  private val allPlugins   = Seq(
+    transformersNames,
+    validatorsNames,
+    preRouteNames,
+    reqSinkNames,
+    listenerNames,
+    jobNames,
+    exporterNames
+  ).flatten.distinct.sortWith((s1, s2) => s1.compareTo(s2) < 0)
+  private val printPlugins =
+    env.configuration.getOptionalWithFileSupport[Boolean]("otoroshi.plugins.print").getOrElse(false)
   logger.info(s"Found ${allPlugins.size} plugins in classpath (${System.currentTimeMillis() - starting} ms)")
   if (printPlugins) logger.info("\n\n" + allPlugins.mkString("\n") + "\n")
 
   def start(): ScriptManager = {
     if (env.scriptingEnabled) {
       updateRef.set(
-        env.otoroshiScheduler.scheduleAtFixedRate(1.second, 10.second)(SchedulerHelper.runnable(updateScriptCache(firstScan.compareAndSet(false, true))))(
+        env.otoroshiScheduler.scheduleAtFixedRate(1.second, 10.second)(
+          SchedulerHelper.runnable(updateScriptCache(firstScan.compareAndSet(false, true)))
+        )(
           env.otoroshiExecutionContext
         )
       )
@@ -888,18 +930,16 @@ class ScriptManager(env: Env) {
   }
 
   def stop(): Unit = {
-    cache.foreach(
-      s =>
-        Try {
-          s._2._3.asInstanceOf[StartableAndStoppable].stop(env)
-          s._2._3.asInstanceOf[InternalEventListener].stopEvent(env)
+    cache.foreach(s =>
+      Try {
+        s._2._3.asInstanceOf[StartableAndStoppable].stop(env)
+        s._2._3.asInstanceOf[InternalEventListener].stopEvent(env)
       }
     )
-    cpCache.foreach(
-      s =>
-        Try {
-          s._2._2.asInstanceOf[StartableAndStoppable].stop(env)
-          s._2._2.asInstanceOf[InternalEventListener].stopEvent(env)
+    cpCache.foreach(s =>
+      Try {
+        s._2._2.asInstanceOf[StartableAndStoppable].stop(env)
+        s._2._2.asInstanceOf[InternalEventListener].stopEvent(env)
       }
     )
     Option(updateRef.get()).foreach(_.cancel())
@@ -917,7 +957,7 @@ class ScriptManager(env: Env) {
     env.metrics.withTimerAsync("otoroshi.core.plugins.classpath-scanning-starting") {
       Future {
         logger.info("Finding and starting plugins ...")
-        val start = System.currentTimeMillis()
+        val start   = System.currentTimeMillis()
         val plugins = (transformersNames ++ validatorsNames ++ preRouteNames)
           .map(c => env.scriptManager.getAnyScript[NamedPlugin](s"cp:$c"))
           .collect {
@@ -936,10 +976,10 @@ class ScriptManager(env: Env) {
   private def compileAndUpdate(script: Script, oldScript: Option[InternalEventListener]): Future[Unit] = {
     compiling.putIfAbsent(script.id, ()) match {
       case Some(_) => FastFuture.successful(()) // do nothing as something is compiling
-      case None => {
+      case None    => {
         logger.debug(s"Updating script ${script.name}")
         env.scriptCompiler.compile(script.code).map {
-          case Left(err) =>
+          case Left(err)    =>
             logger.error(s"Script ${script.name} with id ${script.id} does not compile: ${err}")
             compiling.remove(script.id)
             ()
@@ -965,12 +1005,12 @@ class ScriptManager(env: Env) {
 
   private def compileAndUpdateIfNeeded(script: Script): Future[Unit] = {
     (cache.get(script.id), compiling.get(script.id)) match {
-      case (None, None)       => compileAndUpdate(script, None)
-      case (None, Some(_))    => FastFuture.successful(()) // do nothing as something is compiling
-      case (Some(_), Some(_)) => FastFuture.successful(()) // do nothing as something is compiling
+      case (None, None)                             => compileAndUpdate(script, None)
+      case (None, Some(_))                          => FastFuture.successful(()) // do nothing as something is compiling
+      case (Some(_), Some(_))                       => FastFuture.successful(()) // do nothing as something is compiling
       case (Some(cs), None) if cs._1 != script.hash =>
         compileAndUpdate(script, Some(cs._3.asInstanceOf[InternalEventListener]))
-      case (Some(_), None) => FastFuture.successful(()) // do nothing as script has not changed from cache
+      case (Some(_), None)                          => FastFuture.successful(()) // do nothing as script has not changed from cache
     }
   }
 
@@ -1017,7 +1057,7 @@ class ScriptManager(env: Env) {
                 tr.asInstanceOf[StartableAndStoppable].startWithPluginId(r, env)
                 tr.asInstanceOf[InternalEventListener].startEvent(r, env)
               }
-            case Failure(e) =>
+            case Failure(e)  =>
               e.printStackTrace()
               logger.error(s"Classpath script `$ref` does not exists ...")
           }
@@ -1027,10 +1067,10 @@ class ScriptManager(env: Env) {
           case None         => Left("not-in-cache")
         }
       }
-      case r => {
+      case r                        => {
         env.datastores.scriptDataStore.findById(ref).map {
           case Some(script) => compileAndUpdateIfNeeded(script)
-          case None =>
+          case None         =>
             logger.error(s"Script with id `$ref` does not exists ...")
           // do nothing as the script does not exists
         }
@@ -1089,12 +1129,12 @@ object Implicits {
       env.metrics.withTimerAsync("otoroshi.core.proxy.before-request") {
         env.scriptingEnabled match {
           case true =>
-            val plugs = desc.plugins.requestTransformers(ctx.request)
+            val plugs    = desc.plugins.requestTransformers(ctx.request)
             val gScripts = env.datastores.globalConfigDataStore.latestSafe
               .filter(_.scripts.enabled)
               .map(_.scripts)
               .getOrElse(GlobalScripts(transformersConfig = Json.obj()))
-            val refs = (plugs ++ gScripts.transformersRefs ++ desc.transformerRefs).distinct
+            val refs     = (plugs ++ gScripts.transformersRefs ++ desc.transformerRefs).distinct
             if (refs.nonEmpty) {
               Source(refs.toList.zipWithIndex).runForeach {
                 case (ref, index) =>
@@ -1103,7 +1143,10 @@ object Implicits {
                     .beforeRequest(
                       ctx.copy(
                         index = index,
-                        globalConfig = ConfigUtils.mergeOpt(gScripts.transformersConfig, env.datastores.globalConfigDataStore.latestSafe.map(_.plugins.config)),
+                        globalConfig = ConfigUtils.mergeOpt(
+                          gScripts.transformersConfig,
+                          env.datastores.globalConfigDataStore.latestSafe.map(_.plugins.config)
+                        ),
                         config = ConfigUtils.merge(ctx.config, desc.plugins.config)
                       )
                     )(env, ec, mat)
@@ -1111,7 +1154,7 @@ object Implicits {
             } else {
               FastFuture.successful(Done)
             }
-          case _ => FastFuture.successful(Done)
+          case _    => FastFuture.successful(Done)
         }
       }
     }
@@ -1122,12 +1165,12 @@ object Implicits {
       env.metrics.withTimerAsync("otoroshi.core.proxy.after-request") {
         env.scriptingEnabled match {
           case true =>
-            val plugs = desc.plugins.requestTransformers(ctx.request)
+            val plugs    = desc.plugins.requestTransformers(ctx.request)
             val gScripts = env.datastores.globalConfigDataStore.latestSafe
               .filter(_.scripts.enabled)
               .map(_.scripts)
               .getOrElse(GlobalScripts(transformersConfig = Json.obj()))
-            val refs = (plugs ++ gScripts.transformersRefs ++ desc.transformerRefs).distinct
+            val refs     = (plugs ++ gScripts.transformersRefs ++ desc.transformerRefs).distinct
             if (refs.nonEmpty) {
               Source(refs.toList.zipWithIndex).runForeach {
                 case (ref, index) =>
@@ -1136,7 +1179,10 @@ object Implicits {
                     .afterRequest(
                       ctx.copy(
                         index = index,
-                        globalConfig = ConfigUtils.mergeOpt(gScripts.transformersConfig, env.datastores.globalConfigDataStore.latestSafe.map(_.plugins.config)),
+                        globalConfig = ConfigUtils.mergeOpt(
+                          gScripts.transformersConfig,
+                          env.datastores.globalConfigDataStore.latestSafe.map(_.plugins.config)
+                        ),
                         config = ConfigUtils.merge(ctx.config, desc.plugins.config)
                       )
                     )(env, ec, mat)
@@ -1144,7 +1190,7 @@ object Implicits {
             } else {
               FastFuture.successful(Done)
             }
-          case _ => FastFuture.successful(Done)
+          case _    => FastFuture.successful(Done)
         }
       }
     }
@@ -1155,23 +1201,27 @@ object Implicits {
       env.metrics.withTimerAsync("otoroshi.core.proxy.transform-request") {
         env.scriptingEnabled match {
           case true =>
-            val plugs = desc.plugins.requestTransformers(context.request)
+            val plugs    = desc.plugins.requestTransformers(context.request)
             val gScripts = env.datastores.globalConfigDataStore.latestSafe
               .filter(_.scripts.enabled)
               .map(_.scripts)
               .getOrElse(GlobalScripts(transformersConfig = Json.obj()))
-            val refs = (plugs ++ gScripts.transformersRefs ++ desc.transformerRefs).distinct
+            val refs     = (plugs ++ gScripts.transformersRefs ++ desc.transformerRefs).distinct
             if (refs.nonEmpty) {
               val either: Either[Result, HttpRequest] = Right(context.otoroshiRequest)
               Source(refs.toList.zipWithIndex).runFoldAsync(either) {
-                case (Left(badResult), (_, _)) => FastFuture.successful(Left(badResult))
+                case (Left(badResult), (_, _))              => FastFuture.successful(Left(badResult))
                 case (Right(lastHttpRequest), (ref, index)) =>
                   env.scriptManager
                     .getScript(ref)
                     .transformRequestWithCtx(
-                      context.copy(otoroshiRequest = lastHttpRequest,
-                                   index = index,
-                        globalConfig = ConfigUtils.mergeOpt(gScripts.transformersConfig, env.datastores.globalConfigDataStore.latestSafe.map(_.plugins.config)),
+                      context.copy(
+                        otoroshiRequest = lastHttpRequest,
+                        index = index,
+                        globalConfig = ConfigUtils.mergeOpt(
+                          gScripts.transformersConfig,
+                          env.datastores.globalConfigDataStore.latestSafe.map(_.plugins.config)
+                        ),
                         config = ConfigUtils.merge(context.config, desc.plugins.config)
                       )
                     )(env, ec, mat)
@@ -1179,7 +1229,7 @@ object Implicits {
             } else {
               FastFuture.successful(Right(context.otoroshiRequest))
             }
-          case _ => FastFuture.successful(Right(context.otoroshiRequest))
+          case _    => FastFuture.successful(Right(context.otoroshiRequest))
         }
       }
 
@@ -1189,23 +1239,27 @@ object Implicits {
       env.metrics.withTimerAsync("otoroshi.core.proxy.transform-response") {
         env.scriptingEnabled match {
           case true =>
-            val plugs = desc.plugins.requestTransformers(context.request)
+            val plugs    = desc.plugins.requestTransformers(context.request)
             val gScripts = env.datastores.globalConfigDataStore.latestSafe
               .filter(_.scripts.enabled)
               .map(_.scripts)
               .getOrElse(GlobalScripts(transformersConfig = Json.obj()))
-            val refs = (plugs ++ gScripts.transformersRefs ++ desc.transformerRefs).distinct
+            val refs     = (plugs ++ gScripts.transformersRefs ++ desc.transformerRefs).distinct
             if (refs.nonEmpty) {
               val either: Either[Result, HttpResponse] = Right(context.otoroshiResponse)
               Source(refs.toList.zipWithIndex).runFoldAsync(either) {
-                case (Left(badResult), _) => FastFuture.successful(Left(badResult))
+                case (Left(badResult), _)                    => FastFuture.successful(Left(badResult))
                 case (Right(lastHttpResponse), (ref, index)) =>
                   env.scriptManager
                     .getScript(ref)
                     .transformResponseWithCtx(
-                      context.copy(otoroshiResponse = lastHttpResponse,
-                                   index = index,
-                        globalConfig = ConfigUtils.mergeOpt(gScripts.transformersConfig, env.datastores.globalConfigDataStore.latestSafe.map(_.plugins.config)),
+                      context.copy(
+                        otoroshiResponse = lastHttpResponse,
+                        index = index,
+                        globalConfig = ConfigUtils.mergeOpt(
+                          gScripts.transformersConfig,
+                          env.datastores.globalConfigDataStore.latestSafe.map(_.plugins.config)
+                        ),
                         config = ConfigUtils.merge(context.config, desc.plugins.config)
                       )
                     )(env, ec, mat)
@@ -1213,7 +1267,7 @@ object Implicits {
             } else {
               FastFuture.successful(Right(context.otoroshiResponse))
             }
-          case _ => FastFuture.successful(Right(context.otoroshiResponse))
+          case _    => FastFuture.successful(Right(context.otoroshiResponse))
         }
       }
 
@@ -1223,12 +1277,12 @@ object Implicits {
       env.metrics.withTimerAsync("otoroshi.core.proxy.transform-error") {
         env.scriptingEnabled match {
           case true =>
-            val plugs = desc.plugins.requestTransformers(context.request)
+            val plugs    = desc.plugins.requestTransformers(context.request)
             val gScripts = env.datastores.globalConfigDataStore.latestSafe
               .filter(_.scripts.enabled)
               .map(_.scripts)
               .getOrElse(GlobalScripts(transformersConfig = Json.obj()))
-            val refs = (plugs ++ gScripts.transformersRefs ++ desc.transformerRefs).distinct
+            val refs     = (plugs ++ gScripts.transformersRefs ++ desc.transformerRefs).distinct
             if (refs.nonEmpty) {
               val result: Result = context.otoroshiResult
               Source(refs.toList.zipWithIndex).runFoldAsync(result) {
@@ -1241,21 +1295,23 @@ object Implicits {
                         otoroshiResponse = HttpResponse(
                           lastResult.header.status,
                           lastResult.header.headers,
-                          lastResult.newCookies.map(
-                            c =>
-                              DefaultWSCookie(
-                                name = c.name,
-                                value = c.value,
-                                domain = c.domain,
-                                path = Option(c.path),
-                                maxAge = c.maxAge.map(_.toLong),
-                                secure = c.secure,
-                                httpOnly = c.httpOnly
+                          lastResult.newCookies.map(c =>
+                            DefaultWSCookie(
+                              name = c.name,
+                              value = c.value,
+                              domain = c.domain,
+                              path = Option(c.path),
+                              maxAge = c.maxAge.map(_.toLong),
+                              secure = c.secure,
+                              httpOnly = c.httpOnly
                             )
                           )
                         ),
                         index = index,
-                        globalConfig = ConfigUtils.mergeOpt(gScripts.transformersConfig, env.datastores.globalConfigDataStore.latestSafe.map(_.plugins.config)),
+                        globalConfig = ConfigUtils.mergeOpt(
+                          gScripts.transformersConfig,
+                          env.datastores.globalConfigDataStore.latestSafe.map(_.plugins.config)
+                        ),
                         config = ConfigUtils.merge(context.config, desc.plugins.config)
                       )
                     )(env, ec, mat)
@@ -1263,7 +1319,7 @@ object Implicits {
             } else {
               FastFuture.successful(context.otoroshiResult)
             }
-          case _ => FastFuture.successful(context.otoroshiResult)
+          case _    => FastFuture.successful(context.otoroshiResult)
         }
       }
 
@@ -1273,21 +1329,25 @@ object Implicits {
       env.metrics.withTimer("otoroshi.core.proxy.transform-request-body") {
         env.scriptingEnabled match {
           case true =>
-            val plugs = desc.plugins.requestTransformers(context.request)
+            val plugs    = desc.plugins.requestTransformers(context.request)
             val gScripts = env.datastores.globalConfigDataStore.latestSafe
               .filter(_.scripts.enabled)
               .map(_.scripts)
               .getOrElse(GlobalScripts(transformersConfig = Json.obj()))
-            val refs = (plugs ++ gScripts.transformersRefs ++ desc.transformerRefs).distinct
+            val refs     = (plugs ++ gScripts.transformersRefs ++ desc.transformerRefs).distinct
             if (refs.nonEmpty) {
               Source.futureSource(Source(refs.toList.zipWithIndex).runFold(context.body) {
                 case (body, (ref, index)) =>
                   env.scriptManager
                     .getScript(ref)
                     .transformRequestBodyWithCtx(
-                      context.copy(body = body,
-                                   index = index,
-                        globalConfig = ConfigUtils.mergeOpt(gScripts.transformersConfig, env.datastores.globalConfigDataStore.latestSafe.map(_.plugins.config)),
+                      context.copy(
+                        body = body,
+                        index = index,
+                        globalConfig = ConfigUtils.mergeOpt(
+                          gScripts.transformersConfig,
+                          env.datastores.globalConfigDataStore.latestSafe.map(_.plugins.config)
+                        ),
                         config = ConfigUtils.merge(context.config, desc.plugins.config)
                       )
                     )(env, ec, mat)
@@ -1295,7 +1355,7 @@ object Implicits {
             } else {
               context.body
             }
-          case _ => context.body
+          case _    => context.body
         }
       }
 
@@ -1305,12 +1365,12 @@ object Implicits {
       env.metrics.withTimer("otoroshi.core.proxy.transform-response-body") {
         env.scriptingEnabled match {
           case true =>
-            val plugs = desc.plugins.requestTransformers(context.request)
+            val plugs    = desc.plugins.requestTransformers(context.request)
             val gScripts = env.datastores.globalConfigDataStore.latestSafe
               .filter(_.scripts.enabled)
               .map(_.scripts)
               .getOrElse(GlobalScripts(transformersConfig = Json.obj()))
-            val refs = (plugs ++ gScripts.transformersRefs ++ desc.transformerRefs).distinct
+            val refs     = (plugs ++ gScripts.transformersRefs ++ desc.transformerRefs).distinct
             if (refs.nonEmpty) {
               Source.futureSource(Source(refs.toList.zipWithIndex).runFold(context.body) {
                 case (body, (ref, index)) =>
@@ -1320,7 +1380,10 @@ object Implicits {
                       context.copy(
                         body = body,
                         index = index,
-                        globalConfig = ConfigUtils.mergeOpt(gScripts.transformersConfig, env.datastores.globalConfigDataStore.latestSafe.map(_.plugins.config)),
+                        globalConfig = ConfigUtils.mergeOpt(
+                          gScripts.transformersConfig,
+                          env.datastores.globalConfigDataStore.latestSafe.map(_.plugins.config)
+                        ),
                         config = ConfigUtils.merge(context.config, desc.plugins.config)
                       )
                     )(env, ec, mat)
@@ -1328,28 +1391,28 @@ object Implicits {
             } else {
               context.body
             }
-          case _ => context.body
+          case _    => context.body
         }
       }
   }
 }
 
 case class Script(
-  id: String,
-  name: String,
-  desc: String,
-  code: String,
-  `type`: PluginType,
-  metadata: Map[String, String],
-  location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation()
+    id: String,
+    name: String,
+    desc: String,
+    code: String,
+    `type`: PluginType,
+    metadata: Map[String, String],
+    location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation()
 ) extends otoroshi.models.EntityLocationSupport {
   def save()(implicit ec: ExecutionContext, env: Env)   = env.datastores.scriptDataStore.set(this)
   def delete()(implicit ec: ExecutionContext, env: Env) = env.datastores.scriptDataStore.delete(this)
   def exists()(implicit ec: ExecutionContext, env: Env) = env.datastores.scriptDataStore.exists(this)
   def toJson                                            = Script.toJson(this)
   def hash: String                                      = Hashing.sha256().hashString(code, StandardCharsets.UTF_8).toString
-  def json: JsValue = toJson
-  def internalId: String = id
+  def json: JsValue                                     = toJson
+  def internalId: String                                = id
 }
 
 object Script {
@@ -1358,15 +1421,16 @@ object Script {
 
   val digest: MessageDigest = MessageDigest.getInstance("SHA-256")
 
-  val _fmt: Format[Script] = new Format[Script] {
-    override def writes(apk: Script): JsValue = apk.location.jsonWithKey ++ Json.obj(
-      "id"   -> apk.id,
-      "name" -> apk.name,
-      "desc" -> apk.desc,
-      "code" -> apk.code,
-      "type" -> apk.`type`.name,
-      "metadata" -> apk.metadata
-    )
+  val _fmt: Format[Script]                                                                  = new Format[Script] {
+    override def writes(apk: Script): JsValue           =
+      apk.location.jsonWithKey ++ Json.obj(
+        "id"       -> apk.id,
+        "name"     -> apk.name,
+        "desc"     -> apk.desc,
+        "code"     -> apk.code,
+        "type"     -> apk.`type`.name,
+        "metadata" -> apk.metadata
+      )
     override def reads(json: JsValue): JsResult[Script] =
       Try {
         val scriptType = (json \ "type").asOpt[String].getOrElse("transformer") match {
@@ -1396,8 +1460,8 @@ object Script {
           JsError(t.getMessage)
       } get
   }
-  def toJson(value: Script): JsValue = _fmt.writes(value)
-  def fromJsons(value: JsValue): Script =
+  def toJson(value: Script): JsValue                                                        = _fmt.writes(value)
+  def fromJsons(value: JsValue): Script                                                     =
     try {
       _fmt.reads(value).get
     } catch {
@@ -1410,11 +1474,12 @@ object Script {
 }
 
 trait ScriptDataStore extends BasicStore[Script] {
-  def template: Script = Script(
-    id = IdGenerator.token,
-    name = "New request transformer",
-    desc = "New request transformer",
-    code = """import akka.stream.Materializer
+  def template: Script =
+    Script(
+      id = IdGenerator.token,
+      name = "New request transformer",
+      desc = "New request transformer",
+      code = """import akka.stream.Materializer
              |import otoroshi.env.Env
              |import otoroshi.models.{ApiKey, PrivateAppsUser, ServiceDescriptor}
              |import otoroshi.script._
@@ -1445,9 +1510,9 @@ trait ScriptDataStore extends BasicStore[Script] {
              |// don't forget to return an instance of the transformer to make it work
              |new MyTransformer()
            """.stripMargin,
-    `type` = TransformerType,
-    metadata = Map.empty
-  )
+      `type` = TransformerType,
+      metadata = Map.empty
+    )
 }
 
 class KvScriptDataStore(redisCli: RedisLike, _env: Env) extends ScriptDataStore with RedisLikeStore[Script] {

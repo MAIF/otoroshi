@@ -89,10 +89,12 @@ class CleverCloudClient(env: Env, config: GlobalConfig, val settings: CleverSett
       Keys.oauth_nonce            -> s"${Random.nextInt(1000000000)}"
     )
 
-  def cleverCall(method: HttpMethod = CleverCloudClient.GET,
-                 endpoint: String,
-                 queryParams: Seq[(String, String)] = Seq.empty[(String, String)],
-                 body: Map[String, List[String]] = Map.empty) = {
+  def cleverCall(
+      method: HttpMethod = CleverCloudClient.GET,
+      endpoint: String,
+      queryParams: Seq[(String, String)] = Seq.empty[(String, String)],
+      body: Map[String, List[String]] = Map.empty
+  ) = {
     val url = s"${settings.apiHost}$endpoint"
 
     val params: String = simpleAuthorization(method, url, queryParams, settings.apiAuthToken)
@@ -119,31 +121,37 @@ class CleverCloudClient(env: Env, config: GlobalConfig, val settings: CleverSett
 
   }
 
-  private def simpleAuthorization(httpMethod: HttpMethod,
-                                  url: String,
-                                  queryParams: Seq[(String, String)],
-                                  userTokens: UserTokens) =
+  private def simpleAuthorization(
+      httpMethod: HttpMethod,
+      url: String,
+      queryParams: Seq[(String, String)],
+      userTokens: UserTokens
+  ) =
     authorization(httpMethod, url, getOauthParams(Some(userTokens.secret)), queryParams, userTokens)
 
-  private def hmacAuthorization(httpMethod: HttpMethod,
-                                url: String,
-                                queryParams: Seq[(String, String)],
-                                userTokens: UserTokens) = {
+  private def hmacAuthorization(
+      httpMethod: HttpMethod,
+      url: String,
+      queryParams: Seq[(String, String)],
+      userTokens: UserTokens
+  ) = {
     val oauthToken = getOauthParams(Some(userTokens.secret)) + (Keys.oauth_signature_method -> "HMAC-SHA512")
     authorization(httpMethod, url, oauthToken, queryParams, userTokens)
   }
 
-  private def authorization(httpMethod: HttpMethod,
-                            url: String,
-                            oauthParams: Map[String, String],
-                            queryParams: Seq[(String, String)],
-                            userTokens: UserTokens): Seq[(String, String)] = {
+  private def authorization(
+      httpMethod: HttpMethod,
+      url: String,
+      oauthParams: Map[String, String],
+      queryParams: Seq[(String, String)],
+      userTokens: UserTokens
+  ): Seq[(String, String)] = {
 
-    val mParams: Map[String, String] = queryParams.toMap ++ oauthParams + (Keys.oauth_token -> userTokens.token)
+    val mParams: Map[String, String]  = queryParams.toMap ++ oauthParams + (Keys.oauth_token -> userTokens.token)
     val params: Seq[(String, String)] =
       mParams.map { case (k, v) => (k, v) }.toSeq.filter { case (k, v) => k != Keys.oauth_signature }
 
-    val signature =
+    val signature                     =
       if (oauthParams(Keys.oauth_signature_method) == "HMAC-SHA512") {
         signRequest(httpMethod, url, params, userTokens)
       } else {

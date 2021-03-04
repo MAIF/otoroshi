@@ -28,31 +28,32 @@ class KvChaosDataStore(redisCli: RedisLike, _env: Env) extends ChaosDataStore {
       descriptor: ServiceDescriptor,
       conf: SnowMonkeyConfig
   )(implicit ec: ExecutionContext, env: Env): Future[FiniteDuration] = {
-    val dayEnd = DateTime.now().millisOfDay().withMaximumValue().getMillis - System.currentTimeMillis()
-    val bound =
+    val dayEnd            = DateTime.now().millisOfDay().withMaximumValue().getMillis - System.currentTimeMillis()
+    val bound             =
       if (conf.outageDurationTo.toMillis.toInt == conf.outageDurationFrom.toMillis.toInt)
         conf.outageDurationFrom.toMillis.toInt
       else (conf.outageDurationTo.toMillis.toInt - conf.outageDurationFrom.toMillis.toInt)
     val outageDuration    = (conf.outageDurationFrom.toMillis + new scala.util.Random().nextInt(bound)).millis
-    val serviceUntilKey   = s"${env.storageRoot}:outage:bydesc:until:${descriptor.id}" // until end of duration
+    val serviceUntilKey   = s"${env.storageRoot}:outage:bydesc:until:${descriptor.id}"   // until end of duration
     val serviceCounterKey = s"${env.storageRoot}:outage:bydesc:counter:${descriptor.id}" // until end of day
-    val groupCounterKeys   = descriptor.groups.map(g => s"${env.storageRoot}:outage:bygroup:counter:$g") // until end of day
+    val groupCounterKeys  =
+      descriptor.groups.map(g => s"${env.storageRoot}:outage:bygroup:counter:$g") // until end of day
     for {
       _ <- FastFuture.sequence(groupCounterKeys.map(k => redisCli.incr(k)))
       _ <- redisCli.incr(serviceCounterKey)
       _ <- redisCli.set(
-            serviceUntilKey,
-            Json.stringify(
-              Json.obj(
-                "descriptorName" -> descriptor.name,
-                "descriptorId"   -> descriptor.id,
-                "until"          -> DateTime.now().plus(outageDuration.toMillis).toLocalTime.toString,
-                "duration"       -> outageDuration.toMillis,
-                "startedAt"      -> DateTime.now().toString()
-              )
-            ),
-            pxMilliseconds = Some(outageDuration.toMillis)
-          )
+             serviceUntilKey,
+             Json.stringify(
+               Json.obj(
+                 "descriptorName" -> descriptor.name,
+                 "descriptorId"   -> descriptor.id,
+                 "until"          -> DateTime.now().plus(outageDuration.toMillis).toLocalTime.toString,
+                 "duration"       -> outageDuration.toMillis,
+                 "startedAt"      -> DateTime.now().toString()
+               )
+             ),
+             pxMilliseconds = Some(outageDuration.toMillis)
+           )
       _ <- redisCli.pexpire(serviceCounterKey, dayEnd)
       _ <- FastFuture.sequence(groupCounterKeys.map(k => redisCli.pexpire(k, dayEnd)))
     } yield outageDuration
@@ -85,12 +86,12 @@ class KvChaosDataStore(redisCli: RedisLike, _env: Env) extends ChaosDataStore {
 
   override def getOutages()(implicit ec: ExecutionContext, env: Env): Future[Seq[Outage]] = {
     for {
-      keys        <- redisCli.keys(s"${env.storageRoot}:outage:bydesc:until:*")
-      outagesBS   <- if (keys.isEmpty) FastFuture.successful(Seq.empty) else redisCli.mget(keys: _*)
+      keys       <- redisCli.keys(s"${env.storageRoot}:outage:bydesc:until:*")
+      outagesBS  <- if (keys.isEmpty) FastFuture.successful(Seq.empty) else redisCli.mget(keys: _*)
       outagesJson = outagesBS.filter(_.isDefined).map(_.get).map(v => v.utf8String)
-      outages = outagesJson.map(v => Outage.fmt.reads(Json.parse(v))).collect {
-        case JsSuccess(i, _) => i
-      }
+      outages     = outagesJson.map(v => Outage.fmt.reads(Json.parse(v))).collect {
+                      case JsSuccess(i, _) => i
+                    }
     } yield outages
   }
 }

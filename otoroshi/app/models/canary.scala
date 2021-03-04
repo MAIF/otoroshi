@@ -9,8 +9,8 @@ trait CanaryDataStore {
 
   def destroyCanarySession(serviceId: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean]
 
-  def isCanary(serviceId: String, trackingId: String, traffic: Double, reqNumber: Int, config: GlobalConfig)(
-      implicit ec: ExecutionContext,
+  def isCanary(serviceId: String, trackingId: String, traffic: Double, reqNumber: Int, config: GlobalConfig)(implicit
+      ec: ExecutionContext,
       env: Env
   ): Future[Boolean]
 

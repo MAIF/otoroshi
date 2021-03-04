@@ -22,29 +22,32 @@ case class PreRoutingErrorWithResult(result: Result)
     with NoStackTrace
 
 object PreRoutingError {
-  def fromString(body: String, code: Int = 500, contentType: String = "text/plain"): PreRoutingError =
+  def fromString(body: String, code: Int = 500, contentType: String = "text/plain"): PreRoutingError      =
     new PreRoutingError(ByteString(body), code, contentType)
   def fromJson(body: JsValue, code: Int = 500, contentType: String = "application/json"): PreRoutingError =
     new PreRoutingError(ByteString(Json.stringify(body)), code, contentType)
-  def fromHtml(body: Html, code: Int = 500, contentType: String = "text/html"): PreRoutingError =
+  def fromHtml(body: Html, code: Int = 500, contentType: String = "text/html"): PreRoutingError           =
     new PreRoutingError(ByteString(body.body), code, contentType)
 }
 
-case class PreRoutingRef(enabled: Boolean = false,
-                         excludedPatterns: Seq[String] = Seq.empty[String],
-                         refs: Seq[String] = Seq.empty,
-                         config: JsValue = Json.obj()) {
+case class PreRoutingRef(
+    enabled: Boolean = false,
+    excludedPatterns: Seq[String] = Seq.empty[String],
+    refs: Seq[String] = Seq.empty,
+    config: JsValue = Json.obj()
+) {
   def json: JsValue = PreRoutingRef.format.writes(this)
 }
 
 object PreRoutingRef {
   val format = new Format[PreRoutingRef] {
-    override def writes(o: PreRoutingRef): JsValue = Json.obj(
-      "enabled"          -> o.enabled,
-      "refs"             -> JsArray(o.refs.map(JsString.apply)),
-      "config"           -> o.config,
-      "excludedPatterns" -> JsArray(o.excludedPatterns.map(JsString.apply)),
-    )
+    override def writes(o: PreRoutingRef): JsValue             =
+      Json.obj(
+        "enabled"          -> o.enabled,
+        "refs"             -> JsArray(o.refs.map(JsString.apply)),
+        "config"           -> o.config,
+        "excludedPatterns" -> JsArray(o.excludedPatterns.map(JsString.apply))
+      )
     override def reads(json: JsValue): JsResult[PreRoutingRef] =
       Try {
         JsSuccess(

@@ -14,13 +14,15 @@ import scala.concurrent.duration.FiniteDuration
 case class StatsdConfig(datadog: Boolean, host: String, port: Int)
 
 case class StatsdEventClose()
-case class StatsdEvent(action: String,
-                       name: String,
-                       value: Double,
-                       strValue: String,
-                       sampleRate: Double,
-                       bypassSampler: Boolean,
-                       config: StatsdConfig)
+case class StatsdEvent(
+    action: String,
+    name: String,
+    value: Double,
+    strValue: String,
+    sampleRate: Double,
+    bypassSampler: Boolean,
+    config: StatsdConfig
+)
 
 class StatsdWrapper(actorSystem: ActorSystem, env: Env) {
 
@@ -103,15 +105,14 @@ class StatsdWrapper(actorSystem: ActorSystem, env: Env) {
   // }
 
   def metric(name: String, value: Any)(implicit optConfig: Option[StatsdConfig]): Unit = {
-    optConfig.foreach(
-      config =>
-        value match {
-          case b: Boolean => statsdActor ! StatsdEvent("set", name, 0.0, b.toString, defaultSampleRate, false, config)
-          case b: Long    => statsdActor ! StatsdEvent("gauge", name, b.toDouble, "", defaultSampleRate, false, config)
-          case b: Double  => statsdActor ! StatsdEvent("gauge", name, b.toDouble, "", defaultSampleRate, false, config)
-          case b: Int     => statsdActor ! StatsdEvent("gauge", name, b.toDouble, "", defaultSampleRate, false, config)
-          case b: String  => statsdActor ! StatsdEvent("set", name, 0.0, b, defaultSampleRate, false, config)
-          case _          =>
+    optConfig.foreach(config =>
+      value match {
+        case b: Boolean => statsdActor ! StatsdEvent("set", name, 0.0, b.toString, defaultSampleRate, false, config)
+        case b: Long    => statsdActor ! StatsdEvent("gauge", name, b.toDouble, "", defaultSampleRate, false, config)
+        case b: Double  => statsdActor ! StatsdEvent("gauge", name, b.toDouble, "", defaultSampleRate, false, config)
+        case b: Int     => statsdActor ! StatsdEvent("gauge", name, b.toDouble, "", defaultSampleRate, false, config)
+        case b: String  => statsdActor ! StatsdEvent("set", name, 0.0, b, defaultSampleRate, false, config)
+        case _          =>
       }
     )
     if (optConfig.isEmpty) close()
@@ -129,19 +130,19 @@ class StatsdActor(env: Env) extends Actor {
   lazy val logger = play.api.Logger("otoroshi-statsd-actor")
 
   override def receive: Receive = {
-    case StatsdEventClose() => {
+    case StatsdEventClose()                                                                             => {
       config = None
       statsdclient.foreach(_.shutdown())
       datadogclient.foreach(_.shutdown())
       statsdclient = None
       datadogclient = None
     }
-    case event: StatsdEvent if config.isEmpty => {
+    case event: StatsdEvent if config.isEmpty                                                           => {
       config = Some(event.config)
       statsdclient.foreach(_.shutdown())
       datadogclient.foreach(_.shutdown())
       event.config.datadog match {
-        case true =>
+        case true  =>
           logger.debug("Running statsd for DataDog")
           datadogclient = Some(new DogStatsDClient(event.config.host, event.config.port, "otoroshi"))
         case false =>
@@ -150,12 +151,12 @@ class StatsdActor(env: Env) extends Actor {
       }
       self ! event
     }
-    case event: StatsdEvent if config.isDefined && config.get != event.config => {
+    case event: StatsdEvent if config.isDefined && config.get != event.config                           => {
       config = Some(event.config)
       statsdclient.foreach(_.shutdown())
       datadogclient.foreach(_.shutdown())
       event.config.datadog match {
-        case true =>
+        case true  =>
           logger.debug("Reconfiguring statsd for DataDog")
           datadogclient = Some(new DogStatsDClient(event.config.host, event.config.port, "otoroshi"))
         case false =>
@@ -164,37 +165,37 @@ class StatsdActor(env: Env) extends Actor {
       }
       self ! event
     }
-    case StatsdEvent("counter", name, value, _, sampleRate, bypassSampler, StatsdConfig(false, _, _)) =>
+    case StatsdEvent("counter", name, value, _, sampleRate, bypassSampler, StatsdConfig(false, _, _))   =>
       statsdclient.get.counter(name, value, sampleRate, bypassSampler)
     case StatsdEvent("decrement", name, value, _, sampleRate, bypassSampler, StatsdConfig(false, _, _)) =>
       statsdclient.get.decrement(name, value, sampleRate, bypassSampler)
-    case StatsdEvent("gauge", name, value, _, sampleRate, bypassSampler, StatsdConfig(false, _, _)) =>
+    case StatsdEvent("gauge", name, value, _, sampleRate, bypassSampler, StatsdConfig(false, _, _))     =>
       statsdclient.get.gauge(name, value, sampleRate, bypassSampler)
     case StatsdEvent("increment", name, value, _, sampleRate, bypassSampler, StatsdConfig(false, _, _)) =>
       statsdclient.get.increment(name, value, sampleRate, bypassSampler)
-    case StatsdEvent("meter", name, value, _, sampleRate, bypassSampler, StatsdConfig(false, _, _)) =>
+    case StatsdEvent("meter", name, value, _, sampleRate, bypassSampler, StatsdConfig(false, _, _))     =>
       statsdclient.get.meter(name, value, sampleRate, bypassSampler)
-    case StatsdEvent("timer", name, value, _, sampleRate, bypassSampler, StatsdConfig(false, _, _)) =>
+    case StatsdEvent("timer", name, value, _, sampleRate, bypassSampler, StatsdConfig(false, _, _))     =>
       statsdclient.get.timer(name, value, sampleRate, bypassSampler)
-    case StatsdEvent("set", name, _, value, sampleRate, bypassSampler, StatsdConfig(false, _, _)) =>
+    case StatsdEvent("set", name, _, value, sampleRate, bypassSampler, StatsdConfig(false, _, _))       =>
       statsdclient.get.set(name, value)
 
-    case StatsdEvent("counter", name, value, _, sampleRate, bypassSampler, StatsdConfig(true, _, _)) =>
+    case StatsdEvent("counter", name, value, _, sampleRate, bypassSampler, StatsdConfig(true, _, _))    =>
       datadogclient.get.counter(name, value, sampleRate, Seq.empty[String], bypassSampler)
-    case StatsdEvent("decrement", name, value, _, sampleRate, bypassSampler, StatsdConfig(true, _, _)) =>
+    case StatsdEvent("decrement", name, value, _, sampleRate, bypassSampler, StatsdConfig(true, _, _))  =>
       datadogclient.get.decrement(name, value, sampleRate, Seq.empty[String], bypassSampler)
-    case StatsdEvent("gauge", name, value, _, sampleRate, bypassSampler, StatsdConfig(true, _, _)) =>
+    case StatsdEvent("gauge", name, value, _, sampleRate, bypassSampler, StatsdConfig(true, _, _))      =>
       datadogclient.get.gauge(name, value, sampleRate, Seq.empty[String], bypassSampler)
-    case StatsdEvent("increment", name, value, _, sampleRate, bypassSampler, StatsdConfig(true, _, _)) =>
+    case StatsdEvent("increment", name, value, _, sampleRate, bypassSampler, StatsdConfig(true, _, _))  =>
       datadogclient.get.increment(name, value, sampleRate, Seq.empty[String], bypassSampler)
-    case StatsdEvent("meter", name, value, _, sampleRate, bypassSampler, StatsdConfig(true, _, _)) =>
+    case StatsdEvent("meter", name, value, _, sampleRate, bypassSampler, StatsdConfig(true, _, _))      =>
       datadogclient.get.histogram(name, value, sampleRate, Seq.empty[String], bypassSampler)
-    case StatsdEvent("timer", name, value, _, sampleRate, bypassSampler, StatsdConfig(true, _, _)) =>
+    case StatsdEvent("timer", name, value, _, sampleRate, bypassSampler, StatsdConfig(true, _, _))      =>
       datadogclient.get.timer(name, value, sampleRate, Seq.empty[String], bypassSampler)
-    case StatsdEvent("set", name, _, value, sampleRate, bypassSampler, StatsdConfig(true, _, _)) =>
+    case StatsdEvent("set", name, _, value, sampleRate, bypassSampler, StatsdConfig(true, _, _))        =>
       datadogclient.get.set(name, value, Seq.empty[String])
 
-    case _ =>
+    case _                                                                                              =>
   }
 }
 
@@ -212,18 +213,20 @@ class StatsDReporter(registry: SemanticMetricRegistry, env: Env) extends Reporte
   def sendToStatsD(): Unit = {
     env.datastores.globalConfigDataStore.singleton().map { config =>
       registry.getGauges
-        .forEach((name: MetricId, gauge: Gauge[_]) => env.statsd.metric(name.getKey, gauge.getValue)(config.statsdConfig))
+        .forEach((name: MetricId, gauge: Gauge[_]) =>
+          env.statsd.metric(name.getKey, gauge.getValue)(config.statsdConfig)
+        )
       registry.getCounters
-        .forEach((name: MetricId, gauge: Counter) => env.statsd.metric(name.getKey, gauge.getCount)(config.statsdConfig))
+        .forEach((name: MetricId, gauge: Counter) =>
+          env.statsd.metric(name.getKey, gauge.getCount)(config.statsdConfig)
+        )
     }
   }
 
   def start(): StatsDReporter = {
     cancellable.set(
       Some(
-        env.analyticsScheduler.scheduleAtFixedRate(
-          FiniteDuration(5, TimeUnit.SECONDS),
-          env.metricsEvery)(
+        env.analyticsScheduler.scheduleAtFixedRate(FiniteDuration(5, TimeUnit.SECONDS), env.metricsEvery)(
           new Runnable {
             override def run(): Unit = sendToStatsD()
           }

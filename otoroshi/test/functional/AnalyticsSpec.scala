@@ -17,14 +17,13 @@ import otoroshi.security.IdGenerator
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
-class AnalyticsSpec(name: String, configurationSpec: => Configuration)
-    extends OtoroshiSpec {
+class AnalyticsSpec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 
   implicit val system = ActorSystem("otoroshi-test")
 
-  lazy val serviceHost  = "api.oto.tools"
-  lazy val elasticUrl   = "http://127.0.0.1:9200"
-  lazy val analytics = new ElasticWritesAnalytics(
+  lazy val serviceHost = "api.oto.tools"
+  lazy val elasticUrl  = "http://127.0.0.1:9200"
+  lazy val analytics   = new ElasticWritesAnalytics(
     ElasticAnalyticsConfig(
       elasticUrl,
       Some("otoroshi-events"),
@@ -35,15 +34,16 @@ class AnalyticsSpec(name: String, configurationSpec: => Configuration)
     otoroshiComponents.env
   )
 
-  override def getTestConfiguration(configuration: Configuration) = Configuration(
-    ConfigFactory
-      .parseString(s"""
+  override def getTestConfiguration(configuration: Configuration) =
+    Configuration(
+      ConfigFactory
+        .parseString(s"""
                       |{
                       |  app.analyticsWindow = 2
                       |}
        """.stripMargin)
-      .resolve()
-  ).withFallback(configurationSpec).withFallback(configuration)
+        .resolve()
+    ).withFallback(configurationSpec).withFallback(configuration)
 
   s"Analytics API" should {
 
@@ -61,8 +61,8 @@ class AnalyticsSpec(name: String, configurationSpec: => Configuration)
 
         ws.url(s"$elasticUrl/_refresh").post("").futureValue
 
-        val from = now.minusMinutes(100)
-        val url = serviceId
+        val from           = now.minusMinutes(100)
+        val url            = serviceId
           .map(id => s"/api/services/$id/stats?from=${from.getMillis}&to=${now.getMillis}")
           .getOrElse(s"/api/stats/global?from=${from.getMillis}&to=${now.getMillis}")
         val (resp, status) =
@@ -79,10 +79,10 @@ class AnalyticsSpec(name: String, configurationSpec: => Configuration)
         val `4**`             = statusesHistogram.find(j => (j \ "name").as[String] == "4**").get
         (`4**` \ "count").as[Int] mustBe 20
         (`4**` \ "data").as[Seq[JsValue]].nonEmpty mustBe true
-        val `2**` = statusesHistogram.find(j => (j \ "name").as[String] == "2**").get
+        val `2**`             = statusesHistogram.find(j => (j \ "name").as[String] == "2**").get
         (`2**` \ "count").as[Int] mustBe count
         (`2**` \ "data").as[Seq[JsValue]].nonEmpty mustBe true
-        val `5**` = statusesHistogram.find(j => (j \ "name").as[String] == "5**").get
+        val `5**`             = statusesHistogram.find(j => (j \ "name").as[String] == "5**").get
         (`5**` \ "count").as[Int] mustBe 30
         (`5**` \ "data").as[Seq[JsValue]].nonEmpty mustBe true
 
@@ -95,13 +95,15 @@ class AnalyticsSpec(name: String, configurationSpec: => Configuration)
 
         val overheadPercentiles      = (resp \ "overheadPercentiles" \ "series").as[Seq[JsValue]]
         val overheadPercentilesNames = overheadPercentiles.map(j => (j \ "name").as[String])
-        overheadPercentilesNames must contain theSameElementsAs Vector("1.0",
-                                                                       "5.0",
-                                                                       "25.0",
-                                                                       "50.0",
-                                                                       "75.0",
-                                                                       "95.0",
-                                                                       "99.0")
+        overheadPercentilesNames must contain theSameElementsAs Vector(
+          "1.0",
+          "5.0",
+          "25.0",
+          "50.0",
+          "75.0",
+          "95.0",
+          "99.0"
+        )
         overheadPercentilesNames foreach { n =>
           testHistoValues(overheadPercentiles, n, 50)
         }
@@ -126,13 +128,15 @@ class AnalyticsSpec(name: String, configurationSpec: => Configuration)
 
         val durationPercentiles      = (resp \ "durationPercentiles" \ "series").as[Seq[JsValue]]
         val durationPercentilesNames = overheadPercentiles.map(j => (j \ "name").as[String])
-        durationPercentilesNames must contain theSameElementsAs Vector("1.0",
-                                                                       "5.0",
-                                                                       "25.0",
-                                                                       "50.0",
-                                                                       "75.0",
-                                                                       "95.0",
-                                                                       "99.0")
+        durationPercentilesNames must contain theSameElementsAs Vector(
+          "1.0",
+          "5.0",
+          "25.0",
+          "50.0",
+          "75.0",
+          "95.0",
+          "99.0"
+        )
         durationPercentilesNames foreach { n =>
           testHistoValues(durationPercentiles, n, 500)
         }
@@ -264,12 +268,14 @@ class AnalyticsSpec(name: String, configurationSpec: => Configuration)
 
   }
 
-  private def event(ts: DateTime,
-                    status: Int,
-                    duration: Long,
-                    overhead: Long,
-                    dataIn: Long,
-                    dataOut: Long): AnalyticEvent = {
+  private def event(
+      ts: DateTime,
+      status: Int,
+      duration: Long,
+      overhead: Long,
+      dataIn: Long,
+      dataOut: Long
+  ): AnalyticEvent = {
     GatewayEvent(
       `@id` = IdGenerator.nextId(1024).toString,
       `@timestamp` = ts,
@@ -303,12 +309,14 @@ class AnalyticsSpec(name: String, configurationSpec: => Configuration)
       `@product` = "mon-product",
       responseChunked = false,
       descriptor = Some(
-        ServiceDescriptor(id = "123456",
-                          groups = Seq("test"),
-                          name = "name",
-                          env = "prod",
-                          domain = "toto.com",
-                          subdomain = "")
+        ServiceDescriptor(
+          id = "123456",
+          groups = Seq("test"),
+          name = "name",
+          env = "prod",
+          domain = "toto.com",
+          subdomain = ""
+        )
       ),
       remainingQuotas = RemainingQuotas(),
       viz = None,
@@ -337,7 +345,8 @@ class AnalyticsSpec(name: String, configurationSpec: => Configuration)
       ),
       enabled = true,
       metadata = Map.empty,
-      chaosConfig = ChaosConfig._fmt.reads(Json.parse("""{
+      chaosConfig = ChaosConfig._fmt
+        .reads(Json.parse("""{
                                                         |  "enabled" : false,
                                                         |  "largeRequestFaultConfig" : {
                                                         |    "ratio" : 0.2,
@@ -356,7 +365,8 @@ class AnalyticsSpec(name: String, configurationSpec: => Configuration)
                                                         |    "ratio" : 0.2,
                                                         |    "responses" : [ ]
                                                         |  }
-                                                        |}""".stripMargin)).get
+                                                        |}""".stripMargin))
+        .get
     )
   }
 

@@ -43,10 +43,10 @@ object UserAgentHelper {
         }(ec)
       }
       cache.get(ua) match {
-        case details @ Some(_) => details.flatten
+        case details @ Some(_)                      => details.flatten
         case None if parserInitializationDone.get() => {
           Try(parserRef.get().parse(ua)) match {
-            case Failure(e) =>
+            case Failure(e)            =>
               cache.putIfAbsent(ua, None)
             case Success(capabilities) => {
               val details = Some(JsObject(capabilities.getValues.asScala.map {
@@ -57,7 +57,7 @@ object UserAgentHelper {
           }
           cache.get(ua).flatten
         }
-        case _ => None // initialization in progress
+        case _                                      => None // initialization in progress
       }
     }
   }
@@ -73,7 +73,7 @@ class UserAgentExtractor extends PreRouting {
     Some(
       Json.obj(
         "UserAgentInfo" -> Json.obj(
-          "log" -> false,
+          "log" -> false
         )
       )
     )
@@ -97,10 +97,10 @@ class UserAgentExtractor extends PreRouting {
     val config = ctx.configFor("UserAgentInfo")
     val log    = (config \ "log").asOpt[Boolean].getOrElse(false)
     ctx.request.headers.get("User-Agent") match {
-      case None => funit
+      case None     => funit
       case Some(ua) =>
         UserAgentHelper.userAgentDetails(ua) match {
-          case None => funit
+          case None       => funit
           case Some(info) => {
             if (log) logger.info(s"User-Agent: $ua, ${Json.prettyPrint(info)}")
             ctx.attrs.putIfAbsent(Keys.UserAgentInfoKey -> info)
@@ -134,7 +134,7 @@ class UserAgentInfoEndpoint extends RequestTransformer {
           case None           => Right(ctx.otoroshiRequest).future
           case Some(location) => Left(Results.Ok(location)).future
         }
-      case _ => Right(ctx.otoroshiRequest).future
+      case _                                                   => Right(ctx.otoroshiRequest).future
     }
   }
 }
@@ -147,7 +147,7 @@ class UserAgentInfoHeader extends RequestTransformer {
     Some(
       Json.obj(
         "UserAgentInfoHeader" -> Json.obj(
-          "headerName" -> "X-User-Agent-Info",
+          "headerName" -> "X-User-Agent-Info"
         )
       )
     )
@@ -174,13 +174,13 @@ class UserAgentInfoHeader extends RequestTransformer {
     val config     = ctx.configFor("UserAgentInfoHeader")
     val headerName = (config \ "headerName").asOpt[String].getOrElse("X-User-Agent-Info")
     ctx.attrs.get(otoroshi.plugins.Keys.UserAgentInfoKey) match {
-      case None => Right(ctx.otoroshiRequest).future
+      case None       => Right(ctx.otoroshiRequest).future
       case Some(info) => {
         Right(
           ctx.otoroshiRequest.copy(
             headers = ctx.otoroshiRequest.headers ++ Map(
-              headerName -> Json.stringify(info)
-            )
+                headerName -> Json.stringify(info)
+              )
           )
         ).future
       }

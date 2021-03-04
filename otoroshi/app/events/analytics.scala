@@ -141,7 +141,7 @@ class AnalyticsActorSupervizer(env: Env) extends Actor {
 object AnalyticsActorSupervizer {
   def props(implicit env: Env) = Props(new AnalyticsActorSupervizer(env))
 }
-*/
+ */
 
 object AnalyticEvent {
   lazy val logger = Logger("otoroshi-analytics-event")
@@ -170,16 +170,16 @@ trait AnalyticEvent extends OtoroshiEvent {
   def toJson(implicit _env: Env): JsValue
   override def toEnrichedJson(implicit _env: Env, ec: ExecutionContext): Future[JsValue] = {
     val jsonObject = toJson(_env).as[JsObject]
-    val uaDetails = (jsonObject \ "userAgentInfo").asOpt[JsValue] match {
+    val uaDetails  = (jsonObject \ "userAgentInfo").asOpt[JsValue] match {
       case Some(details) => details
-      case None =>
+      case None          =>
         fromUserAgent match {
-          case None => JsNull
+          case None     => JsNull
           case Some(ua) =>
             _env.datastores.globalConfigDataStore.latestSafe match {
               case None                                              => JsNull
               case Some(config) if !config.userAgentSettings.enabled => JsNull
-              case Some(config) =>
+              case Some(config)                                      =>
                 config.userAgentSettings.find(ua) match {
                   case None          => JsNull
                   case Some(details) => details
@@ -187,16 +187,16 @@ trait AnalyticEvent extends OtoroshiEvent {
             }
         }
     }
-    val fOrigin = (jsonObject \ "geolocationInfo").asOpt[JsValue] match {
+    val fOrigin    = (jsonObject \ "geolocationInfo").asOpt[JsValue] match {
       case Some(details) => FastFuture.successful(details)
-      case None =>
+      case None          =>
         fromOrigin match {
-          case None => FastFuture.successful(JsNull)
+          case None            => FastFuture.successful(JsNull)
           case Some(ipAddress) => {
             _env.datastores.globalConfigDataStore.latestSafe match {
               case None                                                => FastFuture.successful(JsNull)
               case Some(config) if !config.geolocationSettings.enabled => FastFuture.successful(JsNull)
-              case Some(config) =>
+              case Some(config)                                        =>
                 config.geolocationSettings.find(ipAddress).map {
                   case None          => JsNull
                   case Some(details) => details
@@ -205,24 +205,23 @@ trait AnalyticEvent extends OtoroshiEvent {
           }
         }
     }
-    fOrigin.map(
-      originDetails =>
-        jsonObject ++ Json.obj(
-          "user-agent-details" -> uaDetails,
-          "origin-details"     -> originDetails,
-          "instance-number"    -> _env.number,
-          "instance-name"      -> _env.name,
-          "instance-zone"      -> _env.zone,
-          "instance-region"    -> _env.region,
-          "instance-dc"        -> _env.dataCenter,
-          "instance-provider"  -> _env.infraProvider,
-          "instance-rack"      -> _env.rack,
-          "cluster-mode"       -> _env.clusterConfig.mode.name,
-          "cluster-name" -> (_env.clusterConfig.mode match {
-            case ClusterMode.Worker => _env.clusterConfig.worker.name
-            case ClusterMode.Leader => _env.clusterConfig.leader.name
-            case _                  => "none"
-          })
+    fOrigin.map(originDetails =>
+      jsonObject ++ Json.obj(
+        "user-agent-details" -> uaDetails,
+        "origin-details"     -> originDetails,
+        "instance-number"    -> _env.number,
+        "instance-name"      -> _env.name,
+        "instance-zone"      -> _env.zone,
+        "instance-region"    -> _env.region,
+        "instance-dc"        -> _env.dataCenter,
+        "instance-provider"  -> _env.infraProvider,
+        "instance-rack"      -> _env.rack,
+        "cluster-mode"       -> _env.clusterConfig.mode.name,
+        "cluster-name"       -> (_env.clusterConfig.mode match {
+          case ClusterMode.Worker => _env.clusterConfig.worker.name
+          case ClusterMode.Leader => _env.clusterConfig.leader.name
+          case _                  => "none"
+        })
       )
     )
   }
@@ -317,47 +316,48 @@ case class GatewayEvent(
 }
 
 object GatewayEvent {
-  def writes(o: GatewayEvent, env: Env): JsValue = Json.obj(
-    "@type"           -> o.`@type`,
-    "@id"             -> o.`@id`,
-    "@timestamp"      -> o.`@timestamp`,
-    "@callAt"         -> o.`@calledAt`,
-    "reqId"           -> o.reqId,
-    "parentReqId"     -> o.parentReqId.map(l => JsString(l)).getOrElse(JsNull).as[JsValue],
-    "protocol"        -> o.protocol,
-    "to"              -> Location.format.writes(o.to),
-    "target"          -> Location.format.writes(o.target),
-    "url"             -> o.url,
-    "method"          -> o.method,
-    "from"            -> o.from,
-    "@env"            -> o.env,
-    "duration"        -> o.duration,
-    "overhead"        -> o.overhead,
-    "data"            -> DataInOut.fmt.writes(o.data),
-    "status"          -> o.status,
-    "responseChunked" -> o.responseChunked,
-    "headers"         -> o.headers.map(Header.format.writes),
-    "headersOut"      -> o.headersOut.map(Header.format.writes),
-    "identity"        -> o.identity.map(Identity.format.writes).getOrElse(JsNull).as[JsValue],
-    "gwError"         -> o.gwError.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-    "err"             -> o.err,
-    "@serviceId"      -> o.`@serviceId`,
-    "@service"        -> o.`@service`,
-    "descriptor"      -> o.descriptor.map(d => ServiceDescriptor.toJson(d)).getOrElse(JsNull).as[JsValue],
-    "@product"        -> o.`@product`,
-    "remainingQuotas" -> o.remainingQuotas,
-    "viz"             -> o.viz.map(_.toJson).getOrElse(JsNull).as[JsValue],
-    "cbDuration"      -> o.cbDuration,
-    "overheadWoCb"    -> o.overheadWoCb,
-    "callAttempts"    -> o.callAttempts,
-    "clientCertChain" -> o.clientCertChain,
-    "userAgentInfo"   -> o.userAgentInfo.getOrElse(JsNull).as[JsValue],
-    "geolocationInfo" -> o.geolocationInfo.getOrElse(JsNull).as[JsValue],
-    "extrasData"      -> o.extraAnalyticsData.getOrElse(JsNull).as[JsValue],
-    "otoroshiHeadersIn"  -> o.otoroshiHeadersIn.map(Header.format.writes),
-    "otoroshiHeadersOut" -> o.otoroshiHeadersOut.map(Header.format.writes),
-    "extraInfos"         -> o.extraInfos.getOrElse(JsNull).as[JsValue],
-  )
+  def writes(o: GatewayEvent, env: Env): JsValue =
+    Json.obj(
+      "@type"              -> o.`@type`,
+      "@id"                -> o.`@id`,
+      "@timestamp"         -> o.`@timestamp`,
+      "@callAt"            -> o.`@calledAt`,
+      "reqId"              -> o.reqId,
+      "parentReqId"        -> o.parentReqId.map(l => JsString(l)).getOrElse(JsNull).as[JsValue],
+      "protocol"           -> o.protocol,
+      "to"                 -> Location.format.writes(o.to),
+      "target"             -> Location.format.writes(o.target),
+      "url"                -> o.url,
+      "method"             -> o.method,
+      "from"               -> o.from,
+      "@env"               -> o.env,
+      "duration"           -> o.duration,
+      "overhead"           -> o.overhead,
+      "data"               -> DataInOut.fmt.writes(o.data),
+      "status"             -> o.status,
+      "responseChunked"    -> o.responseChunked,
+      "headers"            -> o.headers.map(Header.format.writes),
+      "headersOut"         -> o.headersOut.map(Header.format.writes),
+      "identity"           -> o.identity.map(Identity.format.writes).getOrElse(JsNull).as[JsValue],
+      "gwError"            -> o.gwError.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      "err"                -> o.err,
+      "@serviceId"         -> o.`@serviceId`,
+      "@service"           -> o.`@service`,
+      "descriptor"         -> o.descriptor.map(d => ServiceDescriptor.toJson(d)).getOrElse(JsNull).as[JsValue],
+      "@product"           -> o.`@product`,
+      "remainingQuotas"    -> o.remainingQuotas,
+      "viz"                -> o.viz.map(_.toJson).getOrElse(JsNull).as[JsValue],
+      "cbDuration"         -> o.cbDuration,
+      "overheadWoCb"       -> o.overheadWoCb,
+      "callAttempts"       -> o.callAttempts,
+      "clientCertChain"    -> o.clientCertChain,
+      "userAgentInfo"      -> o.userAgentInfo.getOrElse(JsNull).as[JsValue],
+      "geolocationInfo"    -> o.geolocationInfo.getOrElse(JsNull).as[JsValue],
+      "extrasData"         -> o.extraAnalyticsData.getOrElse(JsNull).as[JsValue],
+      "otoroshiHeadersIn"  -> o.otoroshiHeadersIn.map(Header.format.writes),
+      "otoroshiHeadersOut" -> o.otoroshiHeadersOut.map(Header.format.writes),
+      "extraInfos"         -> o.extraInfos.getOrElse(JsNull).as[JsValue]
+    )
 }
 
 case class TcpEvent(
@@ -377,7 +377,7 @@ case class TcpEvent(
     gwError: Option[String] = None,
     `@serviceId`: String,
     `@service`: String,
-    service: Option[TcpService],
+    service: Option[TcpService]
 ) extends AnalyticEvent {
   override def fromOrigin: Option[String]    = Some(remote)
   override def fromUserAgent: Option[String] = None
@@ -385,25 +385,26 @@ case class TcpEvent(
 }
 
 object TcpEvent {
-  def writes(o: TcpEvent, env: Env): JsValue = Json.obj(
-    "@type"      -> o.`@type`,
-    "@id"        -> o.`@id`,
-    "@timestamp" -> o.`@timestamp`,
-    "reqId"      -> o.reqId,
-    "protocol"   -> o.protocol,
-    "port"       -> o.port,
-    "to"         -> Location.format.writes(o.to),
-    "target"     -> Location.format.writes(o.target),
-    "remote"     -> o.remote,
-    "local"      -> o.local,
-    "duration"   -> o.duration,
-    "overhead"   -> o.overhead,
-    "data"       -> DataInOut.fmt.writes(o.data),
-    "gwError"    -> o.gwError.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-    "@serviceId" -> o.`@serviceId`,
-    "@service"   -> o.`@service`,
-    "service"    -> o.service.map(_.json).getOrElse(JsNull).as[JsValue],
-  )
+  def writes(o: TcpEvent, env: Env): JsValue =
+    Json.obj(
+      "@type"      -> o.`@type`,
+      "@id"        -> o.`@id`,
+      "@timestamp" -> o.`@timestamp`,
+      "reqId"      -> o.reqId,
+      "protocol"   -> o.protocol,
+      "port"       -> o.port,
+      "to"         -> Location.format.writes(o.to),
+      "target"     -> Location.format.writes(o.target),
+      "remote"     -> o.remote,
+      "local"      -> o.local,
+      "duration"   -> o.duration,
+      "overhead"   -> o.overhead,
+      "data"       -> DataInOut.fmt.writes(o.data),
+      "gwError"    -> o.gwError.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      "@serviceId" -> o.`@serviceId`,
+      "@service"   -> o.`@service`,
+      "service"    -> o.service.map(_.json).getOrElse(JsNull).as[JsValue]
+    )
 }
 
 case class HealthCheckEvent(
@@ -420,12 +421,12 @@ case class HealthCheckEvent(
     error: Option[String] = None,
     health: Option[String] = None
 ) extends AnalyticEvent {
-  override def fromOrigin: Option[String]    = None
-  override def fromUserAgent: Option[String] = None
-  def toJson(implicit _env: Env): JsValue    = HealthCheckEvent.format.writes(this)
+  override def fromOrigin: Option[String]                                  = None
+  override def fromUserAgent: Option[String]                               = None
+  def toJson(implicit _env: Env): JsValue                                  = HealthCheckEvent.format.writes(this)
   def pushToRedis()(implicit ec: ExecutionContext, env: Env): Future[Long] =
     toEnrichedJson.flatMap(e => env.datastores.healthCheckDataStore.push(e))
-  def isUp: Boolean =
+  def isUp: Boolean                                                        =
     if (error.isDefined) {
       false
     } else {
@@ -442,10 +443,12 @@ object HealthCheckEvent {
 }
 
 trait HealthCheckDataStore {
-  def findAll(serviceDescriptor: ServiceDescriptor)(implicit ec: ExecutionContext,
-                                                    env: Env): Future[Seq[HealthCheckEvent]]
-  def findLast(serviceDescriptor: ServiceDescriptor)(implicit ec: ExecutionContext,
-                                                     env: Env): Future[Option[HealthCheckEvent]]
+  def findAll(
+      serviceDescriptor: ServiceDescriptor
+  )(implicit ec: ExecutionContext, env: Env): Future[Seq[HealthCheckEvent]]
+  def findLast(
+      serviceDescriptor: ServiceDescriptor
+  )(implicit ec: ExecutionContext, env: Env): Future[Option[HealthCheckEvent]]
   def push(event: JsValue)(implicit ec: ExecutionContext, env: Env): Future[Long]
 }
 
@@ -455,88 +458,96 @@ case class ApiKeyFilterable(apiKey: ApiKey)                        extends Filte
 case class ServiceGroupFilterable(group: ServiceGroup)             extends Filterable
 
 trait AnalyticsReadsService {
-  def events(eventType: String,
-             filterable: Option[Filterable],
-             from: Option[DateTime],
-             to: Option[DateTime],
-             page: Int = 1,
-             size: Int = 50,
-             order: String = "desc")(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]]
-  def fetchHits(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(
-      implicit env: Env,
+  def events(
+      eventType: String,
+      filterable: Option[Filterable],
+      from: Option[DateTime],
+      to: Option[DateTime],
+      page: Int = 1,
+      size: Int = 50,
+      order: String = "desc"
+  )(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]]
+  def fetchHits(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(implicit
+      env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]]
-  def fetchDataIn(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(
-      implicit env: Env,
+  def fetchDataIn(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(implicit
+      env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]]
-  def fetchDataOut(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(
-      implicit env: Env,
+  def fetchDataOut(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(implicit
+      env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]]
-  def fetchAvgDuration(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(
-      implicit env: Env,
+  def fetchAvgDuration(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(implicit
+      env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]]
-  def fetchAvgOverhead(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(
-      implicit env: Env,
+  def fetchAvgOverhead(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(implicit
+      env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]]
-  def fetchStatusesPiechart(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(
-      implicit env: Env,
+  def fetchStatusesPiechart(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(implicit
+      env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]]
-  def fetchStatusesHistogram(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(
-      implicit env: Env,
+  def fetchStatusesHistogram(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(implicit
+      env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]]
-  def fetchDataInStatsHistogram(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(
-      implicit env: Env,
+  def fetchDataInStatsHistogram(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(implicit
+      env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]]
-  def fetchDataOutStatsHistogram(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(
-      implicit env: Env,
+  def fetchDataOutStatsHistogram(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(implicit
+      env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]]
-  def fetchDurationStatsHistogram(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(
-      implicit env: Env,
+  def fetchDurationStatsHistogram(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(implicit
+      env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]]
   def fetchDurationPercentilesHistogram(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(
-      implicit env: Env,
+      implicit
+      env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]]
   def fetchOverheadPercentilesHistogram(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(
-      implicit env: Env,
+      implicit
+      env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]]
-  def fetchOverheadStatsHistogram(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(
-      implicit env: Env,
+  def fetchOverheadStatsHistogram(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(implicit
+      env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]]
   def fetchProductPiechart(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime], size: Int)(
-      implicit env: Env,
+      implicit
+      env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]]
-  def fetchApiKeyPiechart(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(
-      implicit env: Env,
+  def fetchApiKeyPiechart(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(implicit
+      env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]]
-  def fetchUserPiechart(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(
-      implicit env: Env,
+  def fetchUserPiechart(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(implicit
+      env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]]
   def fetchServicePiechart(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime], size: Int)(
-      implicit env: Env,
+      implicit
+      env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]]
   def fetchServicesStatus(servicesDescriptors: Seq[ServiceDescriptor], from: Option[DateTime], to: Option[DateTime])(
-    implicit env: Env,
-    ec: ExecutionContext
+      implicit
+      env: Env,
+      ec: ExecutionContext
   ): Future[Option[JsValue]]
   def fetchServiceResponseTime(servicesDescriptor: ServiceDescriptor, from: Option[DateTime], to: Option[DateTime])(
-    implicit env: Env,
-    ec: ExecutionContext
+      implicit
+      env: Env,
+      ec: ExecutionContext
   ): Future[Option[JsValue]]
 }
 
@@ -549,20 +560,20 @@ class AnalyticsReadsServiceImpl(globalConfig: GlobalConfig, env: Env) extends An
 
   private def underlyingService()(implicit env: Env, ec: ExecutionContext): Future[Option[AnalyticsReadsService]] = {
     FastFuture.successful(
-      globalConfig.elasticReadsConfig.map(
-        c => new ElasticReadsAnalytics(c, env)
-      )
+      globalConfig.elasticReadsConfig.map(c => new ElasticReadsAnalytics(c, env))
     )
   }
 
-  override def events(eventType: String,
-                      filterable: Option[Filterable],
-                      from: Option[DateTime],
-                      to: Option[DateTime],
-                      page: Int,
-                      size: Int,
-                      order: String = "desc")(
-      implicit env: Env,
+  override def events(
+      eventType: String,
+      filterable: Option[Filterable],
+      from: Option[DateTime],
+      to: Option[DateTime],
+      page: Int,
+      size: Int,
+      order: String = "desc"
+  )(implicit
+      env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]] =
     underlyingService().flatMap(
@@ -698,39 +709,46 @@ class AnalyticsReadsServiceImpl(globalConfig: GlobalConfig, env: Env) extends An
       _.map(_.fetchOverheadStatsHistogram(filterable, from, to))
         .getOrElse(FastFuture.successful(None))
     )
-  override def fetchProductPiechart(filterable: Option[Filterable],
-                                    from: Option[DateTime],
-                                    to: Option[DateTime],
-                                    size: Int)(
-      implicit env: Env,
+  override def fetchProductPiechart(
+      filterable: Option[Filterable],
+      from: Option[DateTime],
+      to: Option[DateTime],
+      size: Int
+  )(implicit
+      env: Env,
       ec: ExecutionContext
-  ): Future[Option[JsValue]] =
+  ): Future[Option[JsValue]]                                          =
     underlyingService().flatMap(
       _.map(_.fetchProductPiechart(filterable, from, to, size))
         .getOrElse(FastFuture.successful(None))
     )
 
   override def fetchApiKeyPiechart(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(
-      implicit env: Env,
+      implicit
+      env: Env,
       ec: ExecutionContext
-  ): Future[Option[JsValue]] = underlyingService().flatMap(
-    _.map(_.fetchApiKeyPiechart(filterable, from, to))
-      .getOrElse(FastFuture.successful(None))
-  )
+  ): Future[Option[JsValue]] =
+    underlyingService().flatMap(
+      _.map(_.fetchApiKeyPiechart(filterable, from, to))
+        .getOrElse(FastFuture.successful(None))
+    )
 
-  override def fetchUserPiechart(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(
-      implicit env: Env,
+  override def fetchUserPiechart(filterable: Option[Filterable], from: Option[DateTime], to: Option[DateTime])(implicit
+      env: Env,
       ec: ExecutionContext
-  ): Future[Option[JsValue]] = underlyingService().flatMap(
-    _.map(_.fetchUserPiechart(filterable, from, to))
-      .getOrElse(FastFuture.successful(None))
-  )
+  ): Future[Option[JsValue]] =
+    underlyingService().flatMap(
+      _.map(_.fetchUserPiechart(filterable, from, to))
+        .getOrElse(FastFuture.successful(None))
+    )
 
-  override def fetchServicePiechart(filterable: Option[Filterable],
-                                    from: Option[DateTime],
-                                    to: Option[DateTime],
-                                    size: Int)(
-      implicit env: Env,
+  override def fetchServicePiechart(
+      filterable: Option[Filterable],
+      from: Option[DateTime],
+      to: Option[DateTime],
+      size: Int
+  )(implicit
+      env: Env,
       ec: ExecutionContext
   ): Future[Option[JsValue]] =
     underlyingService().flatMap(
@@ -738,21 +756,21 @@ class AnalyticsReadsServiceImpl(globalConfig: GlobalConfig, env: Env) extends An
         .getOrElse(FastFuture.successful(None))
     )
 
-  override def fetchServicesStatus(servicesDescriptors: Seq[ServiceDescriptor],
-                                  from: Option[DateTime],
-                                  to: Option[DateTime])(
-    implicit env: Env,
-    ec: ExecutionContext): Future[Option[JsValue]] =
+  override def fetchServicesStatus(
+      servicesDescriptors: Seq[ServiceDescriptor],
+      from: Option[DateTime],
+      to: Option[DateTime]
+  )(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] =
     underlyingService().flatMap(
       _.map(_.fetchServicesStatus(servicesDescriptors, from, to))
         .getOrElse(FastFuture.successful(None))
     )
 
-  override def fetchServiceResponseTime(servicesDescriptor: ServiceDescriptor,
-                                  from: Option[DateTime],
-                                  to: Option[DateTime])(
-    implicit env: Env,
-    ec: ExecutionContext): Future[Option[JsValue]] =
+  override def fetchServiceResponseTime(
+      servicesDescriptor: ServiceDescriptor,
+      from: Option[DateTime],
+      to: Option[DateTime]
+  )(implicit env: Env, ec: ExecutionContext): Future[Option[JsValue]] =
     underlyingService().flatMap(
       _.map(_.fetchServiceResponseTime(servicesDescriptor, from, to))
         .getOrElse(FastFuture.successful(None))

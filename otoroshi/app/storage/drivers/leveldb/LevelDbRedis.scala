@@ -67,24 +67,30 @@ class LevelDbRedis(actorSystem: ActorSystem, dbPath: String) extends RedisLike {
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  override def rawGet(key: String): Future[Option[Any]] = Future.successful {
-    getValueAt(key).map(ByteString.apply)
-  }
+  override def rawGet(key: String): Future[Option[Any]] =
+    Future.successful {
+      getValueAt(key).map(ByteString.apply)
+    }
 
-  override def get(key: String): Future[Option[ByteString]] = Future.successful {
-    getValueAt(key).map(ByteString.apply)
-  }
+  override def get(key: String): Future[Option[ByteString]] =
+    Future.successful {
+      getValueAt(key).map(ByteString.apply)
+    }
 
-  override def set(key: String,
-                   value: String,
-                   exSeconds: Option[Long] = None,
-                   pxMilliseconds: Option[Long] = None): Future[Boolean] =
+  override def set(
+      key: String,
+      value: String,
+      exSeconds: Option[Long] = None,
+      pxMilliseconds: Option[Long] = None
+  ): Future[Boolean] =
     setBS(key, ByteString(value), exSeconds, pxMilliseconds)
 
-  override def setBS(key: String,
-                     value: ByteString,
-                     exSeconds: Option[Long] = None,
-                     pxMilliseconds: Option[Long] = None): Future[Boolean] = {
+  override def setBS(
+      key: String,
+      value: ByteString,
+      exSeconds: Option[Long] = None,
+      pxMilliseconds: Option[Long] = None
+  ): Future[Boolean] = {
     db.put(bytes(key), value.toArray[Byte])
     if (exSeconds.isDefined) {
       expire(key, exSeconds.get.toInt)

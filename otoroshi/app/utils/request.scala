@@ -12,13 +12,16 @@ object RequestImplicits {
   private val uriCache = new ConcurrentHashMap[String, String]()
 
   implicit class EnhancedRequestHeader(val requestHeader: RequestHeader) extends AnyVal {
-    def thePath: String = relativeUri
+    def thePath: String                      = relativeUri
     def relativeUri: String = {
       val uri = requestHeader.uri
-      uriCache.computeIfAbsent(uri, _ => {
-        // println(s"computing uri for $uri")
-        Try(Uri(uri).toRelative.toString()).getOrElse(uri)
-      })
+      uriCache.computeIfAbsent(
+        uri,
+        _ => {
+          // println(s"computing uri for $uri")
+          Try(Uri(uri).toRelative.toString()).getOrElse(uri)
+        }
+      )
     }
     @inline
     def theDomain(implicit env: Env): String = theHost.split(':').head
@@ -96,17 +99,16 @@ object RequestImplicits {
     def clientCertChainPem: Seq[String] = {
       import otoroshi.ssl.SSLImplicits._
       requestHeader.clientCertificateChain
-        .map(
-          chain =>
-            chain.map { cert =>
-              cert.asPem
-            // s"${PemHeaders.BeginCertificate}\n${Base64.getEncoder.encodeToString(cert.getEncoded)}\n${PemHeaders.EndCertificate}"
+        .map(chain =>
+          chain.map { cert =>
+            cert.asPem
+          // s"${PemHeaders.BeginCertificate}\n${Base64.getEncoder.encodeToString(cert.getEncoded)}\n${PemHeaders.EndCertificate}"
           }
         )
         .getOrElse(Seq.empty[String])
     }
     @inline
-    def clientCertChainPemString: String = clientCertChainPem.mkString("\n")
+    def clientCertChainPemString: String     = clientCertChainPem.mkString("\n")
 
     @inline
     def theHasBody: Boolean =

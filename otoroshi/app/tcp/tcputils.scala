@@ -25,7 +25,7 @@ case class AwesomeIncomingConnection(underlying: IncomingConnection, domain: Fut
 
 object TcpUtils {
 
-  val domainNamePattern = Pattern.compile("(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]")
+  val domainNamePattern                                                                                                = Pattern.compile("(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]")
   private val tlsWrapping: BidiFlow[ByteString, TLSProtocol.SendBytes, TLSProtocol.SslTlsInbound, ByteString, NotUsed] =
     BidiFlow.fromFlows(
       Flow[ByteString].map(TLSProtocol.SendBytes),

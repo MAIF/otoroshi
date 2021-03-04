@@ -5,7 +5,12 @@ import akka.http.scaladsl.util.FastFuture
 import otoroshi.cluster.{ClusterMode, StatsView}
 import com.codahale.metrics.jmx.JmxReporter
 import com.codahale.metrics.json.MetricsModule
-import com.codahale.metrics.jvm.{GarbageCollectorMetricSet, JvmAttributeGaugeSet, MemoryUsageGaugeSet, ThreadStatesGaugeSet}
+import com.codahale.metrics.jvm.{
+  GarbageCollectorMetricSet,
+  JvmAttributeGaugeSet,
+  MemoryUsageGaugeSet,
+  ThreadStatesGaugeSet
+}
 import com.codahale.metrics.{MetricRegistry, _}
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.spotify.metrics.core.{MetricId, SemanticMetricRegistry}
@@ -30,8 +35,10 @@ import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
 trait TimerMetrics {
-  def withTimer[T](name: String, display: Boolean = false)(f: => T): T                                                     = f
-  def withTimerAsync[T](name: String, display: Boolean = false)(f: => Future[T])(implicit ec: ExecutionContext): Future[T] = f
+  def withTimer[T](name: String, display: Boolean = false)(f: => T): T = f
+  def withTimerAsync[T](name: String, display: Boolean = false)(f: => Future[T])(implicit
+      ec: ExecutionContext
+  ): Future[T]                                                         = f
 }
 
 object FakeTimerMetrics extends TimerMetrics
@@ -46,16 +53,16 @@ object FakeHasMetrics extends HasMetrics {
 
 class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) extends TimerMetrics {
 
-  private implicit val ev                    = env
-  private implicit val ec                    = env.otoroshiExecutionContext
+  private implicit val ev = env
+  private implicit val ec = env.otoroshiExecutionContext
 
   private val logger = Logger("otoroshi-metrics")
 
   private val metricRegistry: SemanticMetricRegistry = new SemanticMetricRegistry
-  private val jmxRegistry: MetricRegistry = new MetricRegistry
+  private val jmxRegistry: MetricRegistry            = new MetricRegistry
 
-  private val mbs                            = ManagementFactory.getPlatformMBeanServer
-  private val rt                             = Runtime.getRuntime
+  private val mbs = ManagementFactory.getPlatformMBeanServer
+  private val rt  = Runtime.getRuntime
 
   private val appEnv         = Option(System.getenv("APP_ENV")).getOrElse("--")
   private val commitId       = Option(System.getenv("COMMIT_ID")).getOrElse("--")
@@ -86,7 +93,7 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) extends Time
   metricRegistry.register(MetricId.build("jvm-cpu"), CpuGaugeSet.create)
   metricRegistry.register(MetricId.build("jvm-fd-ratio"), new FileDescriptorGaugeSet)
 
-/*  metricRegistry.register(MetricId.build("jvm.memory"), new MemoryUsageGaugeSet())
+  /*  metricRegistry.register(MetricId.build("jvm.memory"), new MemoryUsageGaugeSet())
   metricRegistry.register(MetricId.build("jvm.thread"), new ThreadStatesMetricSet())
   metricRegistry.register(MetricId.build("jvm.gc"), new GarbageCollectorMetricSet())
   metricRegistry.register(MetricId.build("jvm.attr"), new JvmAttributeGaugeSet())
@@ -130,8 +137,10 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) extends Time
     lastData.getOrDefault(name, new AtomicReference[Any](value)).set(value)
 
     try {
-      register("otoroshi.internals." + name,
-        internalGauge(lastData.getOrDefault(name, new AtomicReference[Any](value)).get()))
+      register(
+        "otoroshi.internals." + name,
+        internalGauge(lastData.getOrDefault(name, new AtomicReference[Any](value)).get())
+      )
     } catch {
       case _: Throwable =>
     }
@@ -141,38 +150,38 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) extends Time
   def markLong(name: String, value: Long): Unit     = mark(name, value)
   def markDouble(name: String, value: Double): Unit = mark(name, value)
 
-  def counter(name: MetricId): Counter                = {
+  def counter(name: MetricId): Counter = {
     metricRegistry.counter(name)
     jmxRegistry.counter(name.getKey)
   }
-  def counter(name: String): Counter                  = {
+  def counter(name: String): Counter = {
     metricRegistry.counter(MetricId.build(name))
     jmxRegistry.counter(name)
   }
 
-  def histogram(name: MetricId): Histogram            = {
+  def histogram(name: MetricId): Histogram = {
     metricRegistry.histogram(name)
     jmxRegistry.histogram(name.getKey)
   }
-  def histogram(name: String): Histogram              = {
+  def histogram(name: String): Histogram = {
     metricRegistry.histogram(MetricId.build(name))
     jmxRegistry.histogram(name)
   }
 
-  def timer(name: MetricId): Timer                    = {
+  def timer(name: MetricId): Timer = {
     metricRegistry.timer(name)
     jmxRegistry.timer(name.getKey)
   }
-  def timer(name: String): Timer                      = {
+  def timer(name: String): Timer = {
     metricRegistry.timer(MetricId.build(name))
     jmxRegistry.timer(name)
   }
 
   override def withTimer[T](name: String, display: Boolean = false)(f: => T): T = {
     val jmxCtx = jmxRegistry.timer(name).time()
-    val ctx = metricRegistry.timer(MetricId.build(name)).time()
+    val ctx    = metricRegistry.timer(MetricId.build(name)).time()
     try {
-      val res = f
+      val res     = f
       val elapsed = ctx.stop()
       if (display) {
         logger.info(s"elapsed time for $name: ${elapsed} nanoseconds.")
@@ -188,9 +197,11 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) extends Time
         throw e
     }
   }
-  override def withTimerAsync[T](name: String, display: Boolean = false)(f: => Future[T])(implicit ec: ExecutionContext): Future[T] = {
+  override def withTimerAsync[T](name: String, display: Boolean = false)(
+      f: => Future[T]
+  )(implicit ec: ExecutionContext): Future[T] = {
     val jmxCtx = metricRegistry.timer(MetricId.build(name)).time()
-    val ctx = metricRegistry.timer(MetricId.build(name)).time()
+    val ctx    = metricRegistry.timer(MetricId.build(name)).time()
     f.andThen {
       case r =>
         val elapsed = ctx.stop()
@@ -218,7 +229,7 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) extends Time
 
   def prometheusExport(filter: Option[String] = None): String = {
     filter match {
-      case None => {
+      case None       => {
         val writer = new StringWriter()
         TextFormat.write004(writer, new SimpleEnum(prometheus.collect()))
         writer.toString
@@ -234,7 +245,7 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) extends Time
 
   def jsonExport(filter: Option[String] = None): String = {
     filter match {
-      case None => objectMapper.writeValueAsString(metricRegistry)
+      case None       => objectMapper.writeValueAsString(metricRegistry)
       case Some(path) => {
         val jsonRaw = objectMapper.writeValueAsString(metricRegistry)
         val json    = Json.parse(jsonRaw)
@@ -278,15 +289,16 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) extends Time
 
   def defaultHttpFormat(filter: Option[String] = None): String = defaultFormat("json")
 
-  def defaultFormat(format: String, filter: Option[String] = None): String = format match {
-    case "json"       => jsonExport(filter)
-    case "prometheus" => prometheusExport(filter)
-    case _            => jsonExport(filter)
-  }
+  def defaultFormat(format: String, filter: Option[String] = None): String =
+    format match {
+      case "json"       => jsonExport(filter)
+      case "prometheus" => prometheusExport(filter)
+      case _            => jsonExport(filter)
+    }
 
   private def getProcessCpuLoad(): Double = {
-    val name = ObjectName.getInstance("java.lang:type=OperatingSystem")
-    val list = mbs.getAttributes(name, Array("ProcessCpuLoad"))
+    val name  = ObjectName.getInstance("java.lang:type=OperatingSystem")
+    val list  = mbs.getAttributes(name, Array("ProcessCpuLoad"))
     if (list.isEmpty) return 0.0
     val att   = list.get(0).asInstanceOf[Attribute]
     val value = att.getValue.asInstanceOf[Double]
@@ -333,13 +345,12 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) extends Time
 
   private val update: Option[Cancellable] = {
     Some(env.metricsEnabled).filter(_ == true).map { _ =>
-      val cancellable = env.otoroshiScheduler.scheduleAtFixedRate(
-        FiniteDuration(5, TimeUnit.SECONDS),
-        env.metricsEvery)(
-        new Runnable {
-          override def run(): Unit = updateMetrics()
-        }
-      )
+      val cancellable =
+        env.otoroshiScheduler.scheduleAtFixedRate(FiniteDuration(5, TimeUnit.SECONDS), env.metricsEvery)(
+          new Runnable {
+            override def run(): Unit = updateMetrics()
+          }
+        )
       cancellable
     }
   }
@@ -376,48 +387,58 @@ class SimpleEnum[T](l: util.List[T]) extends util.Enumeration[T] {
   override def nextElement(): T         = it.next()
 }
 
-case class MeterView(count: Long,
-                     meanRate: Double,
-                     oneMinuteRate: Double,
-                     fiveMinuteRate: Double,
-                     fifteenMinuteRate: Double) {
-  def toJson: JsValue = Json.obj(
-    "count"             -> count,
-    "meanRate"          -> meanRate,
-    "oneMinuteRate"     -> oneMinuteRate,
-    "fiveMinuteRate"    -> fiveMinuteRate,
-    "fifteenMinuteRate" -> fifteenMinuteRate
-  )
+case class MeterView(
+    count: Long,
+    meanRate: Double,
+    oneMinuteRate: Double,
+    fiveMinuteRate: Double,
+    fifteenMinuteRate: Double
+) {
+  def toJson: JsValue =
+    Json.obj(
+      "count"             -> count,
+      "meanRate"          -> meanRate,
+      "oneMinuteRate"     -> oneMinuteRate,
+      "fiveMinuteRate"    -> fiveMinuteRate,
+      "fifteenMinuteRate" -> fifteenMinuteRate
+    )
 }
 
 object MeterView {
   def apply(meter: Meter): MeterView =
-    new MeterView(meter.getCount,
-                  meter.getMeanRate,
-                  meter.getOneMinuteRate,
-                  meter.getFiveMinuteRate,
-                  meter.getFifteenMinuteRate)
+    new MeterView(
+      meter.getCount,
+      meter.getMeanRate,
+      meter.getOneMinuteRate,
+      meter.getFiveMinuteRate,
+      meter.getFifteenMinuteRate
+    )
 }
 
-case class TimerView(count: Long,
-                     meanRate: Double,
-                     oneMinuteRate: Double,
-                     fiveMinuteRate: Double,
-                     fifteenMinuteRate: Double) {
-  def toJson: JsValue = Json.obj(
-    "count"             -> count,
-    "meanRate"          -> meanRate,
-    "oneMinuteRate"     -> oneMinuteRate,
-    "fiveMinuteRate"    -> fiveMinuteRate,
-    "fifteenMinuteRate" -> fifteenMinuteRate
-  )
+case class TimerView(
+    count: Long,
+    meanRate: Double,
+    oneMinuteRate: Double,
+    fiveMinuteRate: Double,
+    fifteenMinuteRate: Double
+) {
+  def toJson: JsValue =
+    Json.obj(
+      "count"             -> count,
+      "meanRate"          -> meanRate,
+      "oneMinuteRate"     -> oneMinuteRate,
+      "fiveMinuteRate"    -> fiveMinuteRate,
+      "fifteenMinuteRate" -> fifteenMinuteRate
+    )
 }
 
 object TimerView {
   def apply(meter: Timer): TimerView =
-    new TimerView(meter.getCount,
-                  meter.getMeanRate,
-                  meter.getOneMinuteRate,
-                  meter.getFiveMinuteRate,
-                  meter.getFifteenMinuteRate)
+    new TimerView(
+      meter.getCount,
+      meter.getMeanRate,
+      meter.getOneMinuteRate,
+      meter.getFiveMinuteRate,
+      meter.getFifteenMinuteRate
+    )
 }

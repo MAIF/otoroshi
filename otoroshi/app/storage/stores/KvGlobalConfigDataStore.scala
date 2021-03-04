@@ -36,25 +36,27 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
 
   def throttlingKey(): String = s"${_env.storageRoot}:throttling:global"
 
-  private val callsForIpAddressCache =
+  private val callsForIpAddressCache  =
     new java.util.concurrent.ConcurrentHashMap[String, java.util.concurrent.atomic.AtomicLong]()
   private val quotasForIpAddressCache =
     new java.util.concurrent.ConcurrentHashMap[String, java.util.concurrent.atomic.AtomicLong]()
 
-  def incrementCallsForIpAddressWithTTL(ipAddress: String,
-                                        ttl: Int = 10)(implicit ec: ExecutionContext): Future[Long] = {
+  def incrementCallsForIpAddressWithTTL(ipAddress: String, ttl: Int = 10)(implicit
+      ec: ExecutionContext
+  ): Future[Long] = {
 
     @inline
-    def actualCall() = redisCli.incrby(s"${_env.storageRoot}:throttling:perip:$ipAddress", 1L).flatMap { secCalls =>
-      if (!callsForIpAddressCache.containsKey(ipAddress)) {
-        callsForIpAddressCache.putIfAbsent(ipAddress, new java.util.concurrent.atomic.AtomicLong(secCalls))
-      } else {
-        callsForIpAddressCache.get(ipAddress).set(secCalls)
+    def actualCall() =
+      redisCli.incrby(s"${_env.storageRoot}:throttling:perip:$ipAddress", 1L).flatMap { secCalls =>
+        if (!callsForIpAddressCache.containsKey(ipAddress)) {
+          callsForIpAddressCache.putIfAbsent(ipAddress, new java.util.concurrent.atomic.AtomicLong(secCalls))
+        } else {
+          callsForIpAddressCache.get(ipAddress).set(secCalls)
+        }
+        redisCli.pttl(s"${_env.storageRoot}:throttling:perip:$ipAddress").filter(_ > -1).recoverWith {
+          case _ => redisCli.expire(s"${_env.storageRoot}:throttling:perip:$ipAddress", ttl)
+        } map (_ => secCalls)
       }
-      redisCli.pttl(s"${_env.storageRoot}:throttling:perip:$ipAddress").filter(_ > -1).recoverWith {
-        case _ => redisCli.expire(s"${_env.storageRoot}:throttling:perip:$ipAddress", ttl)
-      } map (_ => secCalls)
-    }
 
     if (callsForIpAddressCache.containsKey(ipAddress)) {
       actualCall()
@@ -70,7 +72,7 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
       redisCli.get(s"${_env.storageRoot}:throttling:peripquota:$ipAddress").map(_.map(_.utf8String.toLong)).andThen {
         case Success(Some(quota)) if !quotasForIpAddressCache.containsKey(ipAddress) =>
           quotasForIpAddressCache.putIfAbsent(ipAddress, new java.util.concurrent.atomic.AtomicLong(quota))
-        case Success(Some(quota)) if quotasForIpAddressCache.containsKey(ipAddress) =>
+        case Success(Some(quota)) if quotasForIpAddressCache.containsKey(ipAddress)  =>
           quotasForIpAddressCache.get(ipAddress).set(quota)
       }
     if (quotasForIpAddressCache.containsKey(ipAddress)) {
@@ -103,8 +105,9 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
   //   }
   // }
 
-  def quotasValidationFor(from: String)(implicit ec: ExecutionContext,
-                                        env: Env): Future[(Boolean, Long, Option[Long])] = {
+  def quotasValidationFor(
+      from: String
+  )(implicit ec: ExecutionContext, env: Env): Future[(Boolean, Long, Option[Long])] = {
     val a = withinThrottlingQuota()
     val b = incrementCallsForIpAddressWithTTL(from)
     val c = quotaForIpAddress(from)
@@ -115,11 +118,13 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
     } yield (within, secCalls, maybeQuota)
   }
 
-  override def updateQuotas(config: otoroshi.models.GlobalConfig)(implicit ec: ExecutionContext, env: Env): Future[Unit] =
+  override def updateQuotas(
+      config: otoroshi.models.GlobalConfig
+  )(implicit ec: ExecutionContext, env: Env): Future[Unit] =
     for {
       secCalls <- redisCli.incrby(throttlingKey(), 1L)
       _        <- redisCli.ttl(throttlingKey()).filter(_ > -1).recoverWith { case _ => redisCli.expire(throttlingKey(), 10) }
-      fu       = env.metrics.markLong(s"global.throttling-quotas", secCalls)
+      fu        = env.metrics.markLong(s"global.throttling-quotas", secCalls)
     } yield ()
 
   override def allEnv()(implicit ec: ExecutionContext, env: Env): Future[Set[String]] = singleton().map(_.lines.toSet)
@@ -129,7 +134,7 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
 
   override def findById(id: String)(implicit ec: ExecutionContext, env: Env): Future[Option[GlobalConfig]] = {
     val staticGlobalScripts: GlobalScripts = env.staticGlobalScripts
-    if (/*env.staticExposedDomainEnabled && */staticGlobalScripts.enabled) {
+    if (/*env.staticExposedDomainEnabled && */ staticGlobalScripts.enabled) {
       super
         .findById(id)(ec, env)
         .map(_.map { c =>
@@ -138,10 +143,10 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
               enabled = true,
               transformersRefs = staticGlobalScripts.transformersRefs ++ c.scripts.transformersRefs,
               transformersConfig = staticGlobalScripts.transformersConfig.as[JsObject] ++ c.scripts.transformersConfig
-                .as[JsObject],
+                  .as[JsObject],
               validatorRefs = staticGlobalScripts.validatorRefs ++ c.scripts.validatorRefs,
               validatorConfig = staticGlobalScripts.validatorConfig.as[JsObject] ++ c.scripts.validatorConfig
-                .as[JsObject],
+                  .as[JsObject],
               preRouteRefs = staticGlobalScripts.preRouteRefs ++ c.scripts.preRouteRefs,
               preRouteConfig = staticGlobalScripts.preRouteConfig.as[JsObject] ++ c.scripts.preRouteConfig.as[JsObject],
               sinkRefs = staticGlobalScripts.sinkRefs ++ c.scripts.sinkRefs,
@@ -172,11 +177,12 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
     val ref  = configCache.get()
 
     @inline
-    def actualCall() = findById("global").map(_.get).andThen {
-      case Success(conf) =>
-        lastConfigCache.set(time)
-        configCache.set(conf)
-    }
+    def actualCall() =
+      findById("global").map(_.get).andThen {
+        case Success(conf) =>
+          lastConfigCache.set(time)
+          configCache.set(conf)
+      }
 
     if (ref == null) {
       lastConfigCache.set(time)
@@ -196,8 +202,10 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
     }
   }
 
-  override def set(value: GlobalConfig, pxMilliseconds: Option[Duration] = None)(implicit ec: ExecutionContext,
-                                                                                 env: Env): Future[Boolean] = {
+  override def set(value: GlobalConfig, pxMilliseconds: Option[Duration] = None)(implicit
+      ec: ExecutionContext,
+      env: Env
+  ): Future[Boolean] = {
     super.set(value, pxMilliseconds)(ec, env).andThen {
       case Success(_) => configCache.set(value)
     }
@@ -223,15 +231,18 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
 
     for {
       _ <- redisCli
-            .keys(s"${env.storageRoot}:*")
-            .flatMap(keys => if (keys.nonEmpty) redisCli.del(keys: _*) else FastFuture.successful(0L))
+             .keys(s"${env.storageRoot}:*")
+             .flatMap(keys => if (keys.nonEmpty) redisCli.del(keys: _*) else FastFuture.successful(0L))
       _ <- config.save()
+      _ <-
+        Future.sequence(
+          admins.value.map(v => env.datastores.webAuthnAdminDataStore.registerUser(WebAuthnOtoroshiAdmin.reads(v).get))
+        )
       _ <- Future.sequence(
-            admins.value.map(v => env.datastores.webAuthnAdminDataStore.registerUser(WebAuthnOtoroshiAdmin.reads(v).get))
-          )
-      _ <- Future.sequence(
-            simpleAdmins.value.map(v => env.datastores.simpleAdminDataStore.registerUser(SimpleOtoroshiAdmin.reads(v).get))
-          )
+             simpleAdmins.value.map(v =>
+               env.datastores.simpleAdminDataStore.registerUser(SimpleOtoroshiAdmin.reads(v).get)
+             )
+           )
       _ <- Future.sequence(serviceGroups.value.map(ServiceGroup.fromJsons).map(_.save()))
       _ <- Future.sequence(apiKeys.value.map(ApiKey.fromJsons).map(_.save()))
       _ <- Future.sequence(serviceDescriptors.value.map(ServiceDescriptor.fromJsons).map(_.save()))
@@ -278,28 +289,27 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
       dataExporters    <- env.datastores.dataExporterConfigDataStore.findAll()
       tenants          <- env.datastores.tenantDataStore.findAll()
       teams            <- env.datastores.teamDataStore.findAll()
-    } yield
-      OtoroshiExport(
-        config,
-        descs,
-        apikeys,
-        groups,
-        tmplts,
-        calls,
-        dataIn,
-        dataOut,
-        admins,
-        simpleAdmins,
-        jwtVerifiers,
-        authConfigs,
-        certificates,
-        clientValidators,
-        scripts,
-        tcpServices,
-        dataExporters,
-        tenants,
-        teams
-      ).json
+    } yield OtoroshiExport(
+      config,
+      descs,
+      apikeys,
+      groups,
+      tmplts,
+      calls,
+      dataIn,
+      dataOut,
+      admins,
+      simpleAdmins,
+      jwtVerifiers,
+      authConfigs,
+      certificates,
+      clientValidators,
+      scripts,
+      tcpServices,
+      dataExporters,
+      tenants,
+      teams
+    ).json
   }
 
   override def migrate()(implicit ec: ExecutionContext, env: Env): Future[Unit] = {
@@ -310,92 +320,100 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
         case (Some(_), Some(_)) => {
           redisCli.get(migrationKey).flatMap {
             case Some(_) => FastFuture.successful(())
-            case None => {
+            case None    => {
               logger.info("OAuth config migration - Saving global configuration before migration")
               for {
-                _ <- redisCli.setBS(s"${_env.storageRoot}:migrations:globalconfig:before130", configBS)
-                backofficeAuth0Config = (json \ "backofficeAuth0Config").asOpt[JsValue].flatMap { config =>
-                  (
-                    (config \ "clientId").asOpt[String].filter(_.nonEmpty),
-                    (config \ "clientSecret").asOpt[String].filter(_.nonEmpty),
-                    (config \ "domain").asOpt[String].filter(_.nonEmpty),
-                    (config \ "callbackUrl").asOpt[String].filter(_.nonEmpty)
-                  ) match {
-                    case (Some(clientId), Some(clientSecret), Some(domain), Some(callbackUrl)) =>
-                      Some(Auth0Config(clientSecret, clientId, callbackUrl, domain))
-                    case _ => None
-                  }
-                }
+                _                     <- redisCli.setBS(s"${_env.storageRoot}:migrations:globalconfig:before130", configBS)
+                backofficeAuth0Config  = (json \ "backofficeAuth0Config").asOpt[JsValue].flatMap { config =>
+                                           (
+                                             (config \ "clientId").asOpt[String].filter(_.nonEmpty),
+                                             (config \ "clientSecret").asOpt[String].filter(_.nonEmpty),
+                                             (config \ "domain").asOpt[String].filter(_.nonEmpty),
+                                             (config \ "callbackUrl").asOpt[String].filter(_.nonEmpty)
+                                           ) match {
+                                             case (
+                                                   Some(clientId),
+                                                   Some(clientSecret),
+                                                   Some(domain),
+                                                   Some(callbackUrl)
+                                                 ) =>
+                                               Some(Auth0Config(clientSecret, clientId, callbackUrl, domain))
+                                             case _ => None
+                                           }
+                                         }
                 privateAppsAuth0Config = (json \ "privateAppsAuth0Config").asOpt[JsValue].flatMap { config =>
-                  (
-                    (config \ "clientId").asOpt[String].filter(_.nonEmpty),
-                    (config \ "clientSecret").asOpt[String].filter(_.nonEmpty),
-                    (config \ "domain").asOpt[String].filter(_.nonEmpty),
-                    (config \ "callbackUrl").asOpt[String].filter(_.nonEmpty)
-                  ) match {
-                    case (Some(clientId), Some(clientSecret), Some(domain), Some(callbackUrl)) =>
-                      Some(Auth0Config(clientSecret, clientId, callbackUrl, domain))
-                    case _ => None
-                  }
-                }
-                _ = logger.info("OAuth config migration - creating global oauth configuration for private apps")
-                _ <- privateAppsAuth0Config
-                      .map(
-                        c =>
-                          env.datastores.authConfigsDataStore.set(
-                            GenericOauth2ModuleConfig(
-                              id = "confidential-apps",
-                              name = "Confidential apps Auth0 provider",
-                              desc = "Use to be the Auth0 global config. for private apps",
-                              clientId = c.clientId,
-                              clientSecret = c.secret,
-                              tokenUrl = s"https://${c.domain}/oauth/token",
-                              authorizeUrl = s"https://${c.domain}/authorize",
-                              userInfoUrl = s"https://${c.domain}/userinfo",
-                              loginUrl = s"https://${c.domain}/authorize",
-                              logoutUrl = s"https://${c.domain}/logout",
-                              callbackUrl = c.callbackURL,
-                              metadata = Map.empty,
-                              sessionCookieValues = SessionCookieValues()
-                            )
-                        )
-                      )
-                      .getOrElse(FastFuture.successful(()))
-                _ = logger.info("OAuth config migration - creating global oauth configuration for otoroshi backoffice")
-                _ <- backofficeAuth0Config
-                      .map(
-                        c =>
-                          env.datastores.authConfigsDataStore.set(
-                            GenericOauth2ModuleConfig(
-                              id = "otoroshi-backoffice",
-                              name = "Otoroshi backoffic Auth0 provider",
-                              desc = "Use to be the Auth0 global config. for Otoroshi backoffice",
-                              clientId = c.clientId,
-                              clientSecret = c.secret,
-                              tokenUrl = s"https://${c.domain}/oauth/token",
-                              authorizeUrl = s"https://${c.domain}/authorize",
-                              userInfoUrl = s"https://${c.domain}/userinfo",
-                              loginUrl = s"https://${c.domain}/authorize",
-                              logoutUrl = s"https://${c.domain}/logout",
-                              callbackUrl = c.callbackURL,
-                              metadata = Map.empty,
-                              sessionCookieValues = SessionCookieValues()
-                            )
-                        )
-                      )
-                      .getOrElse(FastFuture.successful(()))
-                _      = logger.info("OAuth config migration - creating global oauth configuration for otoroshi backoffice")
-                config <- env.datastores.globalConfigDataStore.findById("global").map(_.get)
-                configWithBackOffice = backofficeAuth0Config
-                  .map(_ => config.copy(backOfficeAuthRef = Some("otoroshi-backoffice")))
-                  .getOrElse(config)
-                _ <- configWithBackOffice.save()
-                _ = logger.info("OAuth config migration - migration done !")
+                                           (
+                                             (config \ "clientId").asOpt[String].filter(_.nonEmpty),
+                                             (config \ "clientSecret").asOpt[String].filter(_.nonEmpty),
+                                             (config \ "domain").asOpt[String].filter(_.nonEmpty),
+                                             (config \ "callbackUrl").asOpt[String].filter(_.nonEmpty)
+                                           ) match {
+                                             case (
+                                                   Some(clientId),
+                                                   Some(clientSecret),
+                                                   Some(domain),
+                                                   Some(callbackUrl)
+                                                 ) =>
+                                               Some(Auth0Config(clientSecret, clientId, callbackUrl, domain))
+                                             case _ => None
+                                           }
+                                         }
+                _                      = logger.info("OAuth config migration - creating global oauth configuration for private apps")
+                _                     <- privateAppsAuth0Config
+                                           .map(c =>
+                                             env.datastores.authConfigsDataStore.set(
+                                               GenericOauth2ModuleConfig(
+                                                 id = "confidential-apps",
+                                                 name = "Confidential apps Auth0 provider",
+                                                 desc = "Use to be the Auth0 global config. for private apps",
+                                                 clientId = c.clientId,
+                                                 clientSecret = c.secret,
+                                                 tokenUrl = s"https://${c.domain}/oauth/token",
+                                                 authorizeUrl = s"https://${c.domain}/authorize",
+                                                 userInfoUrl = s"https://${c.domain}/userinfo",
+                                                 loginUrl = s"https://${c.domain}/authorize",
+                                                 logoutUrl = s"https://${c.domain}/logout",
+                                                 callbackUrl = c.callbackURL,
+                                                 metadata = Map.empty,
+                                                 sessionCookieValues = SessionCookieValues()
+                                               )
+                                             )
+                                           )
+                                           .getOrElse(FastFuture.successful(()))
+                _                      = logger.info("OAuth config migration - creating global oauth configuration for otoroshi backoffice")
+                _                     <- backofficeAuth0Config
+                                           .map(c =>
+                                             env.datastores.authConfigsDataStore.set(
+                                               GenericOauth2ModuleConfig(
+                                                 id = "otoroshi-backoffice",
+                                                 name = "Otoroshi backoffic Auth0 provider",
+                                                 desc = "Use to be the Auth0 global config. for Otoroshi backoffice",
+                                                 clientId = c.clientId,
+                                                 clientSecret = c.secret,
+                                                 tokenUrl = s"https://${c.domain}/oauth/token",
+                                                 authorizeUrl = s"https://${c.domain}/authorize",
+                                                 userInfoUrl = s"https://${c.domain}/userinfo",
+                                                 loginUrl = s"https://${c.domain}/authorize",
+                                                 logoutUrl = s"https://${c.domain}/logout",
+                                                 callbackUrl = c.callbackURL,
+                                                 metadata = Map.empty,
+                                                 sessionCookieValues = SessionCookieValues()
+                                               )
+                                             )
+                                           )
+                                           .getOrElse(FastFuture.successful(()))
+                _                      = logger.info("OAuth config migration - creating global oauth configuration for otoroshi backoffice")
+                config                <- env.datastores.globalConfigDataStore.findById("global").map(_.get)
+                configWithBackOffice   = backofficeAuth0Config
+                                           .map(_ => config.copy(backOfficeAuthRef = Some("otoroshi-backoffice")))
+                                           .getOrElse(config)
+                _                     <- configWithBackOffice.save()
+                _                      = logger.info("OAuth config migration - migration done !")
               } yield ()
             }
           }
         }
-        case _ => FastFuture.successful(())
+        case _                  => FastFuture.successful(())
       }
     }
   }

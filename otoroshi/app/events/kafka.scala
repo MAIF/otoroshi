@@ -21,14 +21,16 @@ import otoroshi.models.Exporter
 import otoroshi.utils.http.MtlsConfig
 import otoroshi.ssl.DynamicSSLEngineProvider
 
-case class KafkaConfig(servers: Seq[String],
-                       keyPass: Option[String] = None,
-                       keystore: Option[String] = None,
-                       truststore: Option[String] = None,
-                       sendEvents: Boolean = false,
-                       topic: String = "otoroshi-events",
-                       mtlsConfig: MtlsConfig = MtlsConfig()) extends Exporter {
-  def json: JsValue = KafkaConfig.format.writes(this)
+case class KafkaConfig(
+    servers: Seq[String],
+    keyPass: Option[String] = None,
+    keystore: Option[String] = None,
+    truststore: Option[String] = None,
+    sendEvents: Boolean = false,
+    topic: String = "otoroshi-events",
+    mtlsConfig: MtlsConfig = MtlsConfig()
+) extends Exporter {
+  def json: JsValue   = KafkaConfig.format.writes(this)
   def toJson: JsValue = KafkaConfig.format.writes(this)
 }
 
@@ -36,14 +38,15 @@ object KafkaConfig {
 
   implicit val format = new Format[KafkaConfig] { // Json.format[KafkaConfig]
 
-    override def writes(o: KafkaConfig): JsValue = Json.obj(
-      "servers"        -> JsArray(o.servers.map(JsString.apply)),
-      "keyPass"        -> o.keyPass.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-      "keystore"       -> o.keystore.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-      "truststore"     -> o.truststore.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-      "topic"          -> o.topic,
-      "mtlsConfig"     -> o.mtlsConfig.json,
-    )
+    override def writes(o: KafkaConfig): JsValue =
+      Json.obj(
+        "servers"    -> JsArray(o.servers.map(JsString.apply)),
+        "keyPass"    -> o.keyPass.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+        "keystore"   -> o.keystore.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+        "truststore" -> o.truststore.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+        "topic"      -> o.topic,
+        "mtlsConfig" -> o.mtlsConfig.json
+      )
 
     override def reads(json: JsValue): JsResult[KafkaConfig] =
       Try {
@@ -140,7 +143,7 @@ class KafkaWrapperActor(env: Env, topicFunction: KafkaConfig => String) extends 
   lazy val logger = play.api.Logger("otoroshi-kafka-wrapper")
 
   override def receive: Receive = {
-    case event: KafkaWrapperEvent if config.isEmpty && eventProducer.isEmpty => {
+    case event: KafkaWrapperEvent if config.isEmpty && eventProducer.isEmpty                                   => {
       config = Some(event.config)
       eventProducer.foreach(_.close())
       eventProducer = Some(new KafkaEventProducer(event.env, event.config, topicFunction))
@@ -160,17 +163,17 @@ class KafkaWrapperActor(env: Env, topicFunction: KafkaConfig => String) extends 
         }
       }
     }
-    case event: KafkaWrapperEvent =>
+    case event: KafkaWrapperEvent                                                                              =>
       if (event.config.sendEvents) {
         eventProducer.get.publish(event.event).andThen {
           case Failure(e) => logger.error("Error while pushing event to kafka", e)
         }
       }
-    case KafkaWrapperEventClose() =>
+    case KafkaWrapperEventClose()                                                                              =>
       eventProducer.foreach(_.close())
       config = None
       eventProducer = None
-    case _ =>
+    case _                                                                                                     =>
   }
 }
 
@@ -188,8 +191,8 @@ class KafkaEventProducer(_env: otoroshi.env.Env, config: KafkaConfig, topicFunct
 
   logger.debug(s"Initializing kafka event store on topic ${topic}")
 
-  private lazy val producerSettings                             = KafkaSettings.producerSettings(_env, config)
-  private lazy val producer: Producer[Array[Byte], String]      = producerSettings.createKafkaProducer
+  private lazy val producerSettings                        = KafkaSettings.producerSettings(_env, config)
+  private lazy val producer: Producer[Array[Byte], String] = producerSettings.createKafkaProducer
 
   def publish(event: JsValue): Future[Done] = {
     val promise = Promise[RecordMetadata]
@@ -208,13 +211,14 @@ class KafkaEventProducer(_env: otoroshi.env.Env, config: KafkaConfig, topicFunct
   def close() =
     producer.close()
 
-  private def callback(promise: Promise[RecordMetadata]) = new Callback {
-    override def onCompletion(metadata: RecordMetadata, exception: Exception) =
-      if (exception != null) {
-        promise.failure(exception)
-      } else {
-        promise.success(metadata)
-      }
+  private def callback(promise: Promise[RecordMetadata]) =
+    new Callback {
+      override def onCompletion(metadata: RecordMetadata, exception: Exception) =
+        if (exception != null) {
+          promise.failure(exception)
+        } else {
+          promise.success(metadata)
+        }
 
-  }
+    }
 }

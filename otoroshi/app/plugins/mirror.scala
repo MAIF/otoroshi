@@ -24,20 +24,20 @@ import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.Success
 
 case class RequestContext(
- id: String,
- request: RequestHeader,
- started: AtomicBoolean,
- otoRequest: AtomicReference[HttpRequest],
- mirroredRequest: AtomicReference[HttpRequest],
- otoResponse: AtomicReference[HttpResponse],
- input: AtomicReference[ByteString],
- output: AtomicReference[ByteString],
- mirroredBody: AtomicReference[ByteString],
- mirroredResp: AtomicReference[WSResponse],
- done: Promise[Unit],
- mirrorDone: Promise[Unit],
- descriptor: ServiceDescriptor,
- config: MirroringPluginConfig
+    id: String,
+    request: RequestHeader,
+    started: AtomicBoolean,
+    otoRequest: AtomicReference[HttpRequest],
+    mirroredRequest: AtomicReference[HttpRequest],
+    otoResponse: AtomicReference[HttpResponse],
+    input: AtomicReference[ByteString],
+    output: AtomicReference[ByteString],
+    mirroredBody: AtomicReference[ByteString],
+    mirroredResp: AtomicReference[WSResponse],
+    done: Promise[Unit],
+    mirrorDone: Promise[Unit],
+    descriptor: ServiceDescriptor,
+    config: MirroringPluginConfig
 ) {
 
   def generateEvent(env: Env): Unit = {
@@ -49,52 +49,53 @@ case class RequestContext(
 
   def runMirrorRequest(env: Env): Unit = {
     started.compareAndSet(false, true)
-    implicit val ec = env.otoroshiExecutionContext
-    implicit val ev = env
-    implicit val mat = env.otoroshiMaterializer
-    val req = request
-    val currentReqHasBody = req.theHasBody
-    val httpRequest = otoRequest.get()
-    val uri = Uri(config.to)
-    val url = httpRequest.uri.copy(scheme = uri.scheme, authority = uri.authority.copy(
-      host = uri.authority.host,
-      port = uri.authority.port
-    ))
-    val mReq = httpRequest.copy(
+    implicit val ec         = env.otoroshiExecutionContext
+    implicit val ev         = env
+    implicit val mat        = env.otoroshiMaterializer
+    val req                 = request
+    val currentReqHasBody   = req.theHasBody
+    val httpRequest         = otoRequest.get()
+    val uri                 = Uri(config.to)
+    val url                 = httpRequest.uri.copy(
+      scheme = uri.scheme,
+      authority = uri.authority.copy(
+        host = uri.authority.host,
+        port = uri.authority.port
+      )
+    )
+    val mReq                = httpRequest.copy(
       url = url.toString(),
       headers = httpRequest.headers.filterNot(_._1 == "Host") ++ Seq("Host" -> url.authority.host.toString())
     )
     mirroredRequest.set(mReq)
     val finalTarget: Target = Target(host = url.authority.host.toString(), scheme = url.scheme)
-    val globalConfig = env.datastores.globalConfigDataStore.latest()(env.otoroshiExecutionContext, env)
-    val clientReq = descriptor.useAkkaHttpClient match {
+    val globalConfig        = env.datastores.globalConfigDataStore.latest()(env.otoroshiExecutionContext, env)
+    val clientReq           = descriptor.useAkkaHttpClient match {
       case _ if finalTarget.mtlsConfig.mtls =>
         env.gatewayClient.akkaUrlWithTarget(
           UrlSanitizer.sanitize(url.toString()),
           finalTarget,
           descriptor.clientConfig
         )
-      case true =>
+      case true                             =>
         env.gatewayClient.akkaUrlWithTarget(
           UrlSanitizer.sanitize(url.toString()),
           finalTarget,
           descriptor.clientConfig
         )
-      case false =>
+      case false                            =>
         env.gatewayClient.urlWithTarget(
           UrlSanitizer.sanitize(url.toString()),
           finalTarget,
           descriptor.clientConfig
         )
     }
-    val body =
+    val body                =
       if (currentReqHasBody) InMemoryBody(input.get())
       else EmptyBody
-    val builder: WSRequest = clientReq
+    val builder: WSRequest  = clientReq
       .withRequestTimeout(
-        descriptor.clientConfig.extractTimeout(req.relativeUri,
-          _.callAndStreamTimeout,
-          _.callAndStreamTimeout)
+        descriptor.clientConfig.extractTimeout(req.relativeUri, _.callAndStreamTimeout, _.callAndStreamTimeout)
       )
       .withMethod(httpRequest.method)
       .withHttpHeaders(
@@ -108,7 +109,7 @@ case class RequestContext(
       .withMaybeProxyServer(
         descriptor.clientConfig.proxy.orElse(globalConfig.proxies.services)
       )
-    val builderWithBody = if (currentReqHasBody) {
+    val builderWithBody     = if (currentReqHasBody) {
       builder.withBody(body)
     } else {
       builder
@@ -131,7 +132,7 @@ case class RequestContext(
 }
 
 case class MirroringEvent(`@id`: String, `@env`: String, ctx: RequestContext, `@timestamp`: DateTime = DateTime.now())
-  extends AuditEvent {
+    extends AuditEvent {
 
   override def `@service`: String   = "Otoroshi"
   override def `@serviceId`: String = "--"
@@ -139,55 +140,67 @@ case class MirroringEvent(`@id`: String, `@env`: String, ctx: RequestContext, `@
   override def fromOrigin: Option[String]    = None
   override def fromUserAgent: Option[String] = None
 
-  override def toJson(implicit _env: Env): JsValue = Json.obj(
-    "@id"        -> `@id`,
-    "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
-    "@type"      -> `@type`,
-    "@product"   -> _env.eventsName,
-    "@serviceId" -> `@serviceId`,
-    "@service"   -> `@service`,
-    "@env"       -> `@env`,
-    "audit"      -> "MirroringEvent",
-    "mirroring"    -> Json.obj(
-      "reqId" -> ctx.id,
-      "requestToOto" -> Json.obj(
-        "url" -> ctx.request.theUrl,
-        "method" -> ctx.request.method,
-        "headers" -> ctx.request.headers.toSimpleMap,
-        "version" -> ctx.request.version,
-        "cookies" -> JsArray(ctx.request.cookies.toSeq.map(c => Json.obj(
-          "name" -> c.name,
-          "value" -> c.value,
-          "domain" -> c.domain.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-          "path" -> c.path,
-          "maxAge" -> c.maxAge.map(v => JsNumber(BigDecimal(v))).getOrElse(JsNull).as[JsValue],
-          "secure" -> c.secure,
-          "httpOnly" -> c.httpOnly,
-        )))
-      ),
-      "requestToTarget" -> ctx.otoRequest.get().json,
-      "requestToMirroredTarget" -> ctx.mirroredRequest.get().json,
-      "response" -> ctx.otoResponse.get().json,
-      "inputBody" -> ctx.input.get().utf8String,
-      "outputBody" -> ctx.output.get().utf8String,
-      "mirroredBody" -> ctx.mirroredBody.get().utf8String,
-      "mirroredResponse" -> Json.obj(
-        "status" -> ctx.mirroredResp.get().status,
-        "headers" -> ctx.mirroredResp.get().headers.mapValues(_.last),
-        "cookies" -> JsArray(ctx.mirroredResp.get().cookies.map(c => Json.obj(
-          "name" -> c.name,
-          "value" -> c.value,
-          "domain" -> c.domain.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-          "path" -> c.path.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-          "maxAge" -> c.maxAge.map(v => JsNumber(BigDecimal(v))).getOrElse(JsNull).as[JsValue],
-          "secure" -> c.secure,
-          "httpOnly" -> c.httpOnly,
-        )))
-      ),
-      "serviceId" -> ctx.descriptor.id,
-      "config" -> ctx.config.conf,
+  override def toJson(implicit _env: Env): JsValue =
+    Json.obj(
+      "@id"        -> `@id`,
+      "@timestamp" -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
+      "@type"      -> `@type`,
+      "@product"   -> _env.eventsName,
+      "@serviceId" -> `@serviceId`,
+      "@service"   -> `@service`,
+      "@env"       -> `@env`,
+      "audit"      -> "MirroringEvent",
+      "mirroring"  -> Json.obj(
+        "reqId"                   -> ctx.id,
+        "requestToOto"            -> Json.obj(
+          "url"     -> ctx.request.theUrl,
+          "method"  -> ctx.request.method,
+          "headers" -> ctx.request.headers.toSimpleMap,
+          "version" -> ctx.request.version,
+          "cookies" -> JsArray(
+            ctx.request.cookies.toSeq.map(c =>
+              Json.obj(
+                "name"     -> c.name,
+                "value"    -> c.value,
+                "domain"   -> c.domain.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+                "path"     -> c.path,
+                "maxAge"   -> c.maxAge.map(v => JsNumber(BigDecimal(v))).getOrElse(JsNull).as[JsValue],
+                "secure"   -> c.secure,
+                "httpOnly" -> c.httpOnly
+              )
+            )
+          )
+        ),
+        "requestToTarget"         -> ctx.otoRequest.get().json,
+        "requestToMirroredTarget" -> ctx.mirroredRequest.get().json,
+        "response"                -> ctx.otoResponse.get().json,
+        "inputBody"               -> ctx.input.get().utf8String,
+        "outputBody"              -> ctx.output.get().utf8String,
+        "mirroredBody"            -> ctx.mirroredBody.get().utf8String,
+        "mirroredResponse"        -> Json.obj(
+          "status"  -> ctx.mirroredResp.get().status,
+          "headers" -> ctx.mirroredResp.get().headers.mapValues(_.last),
+          "cookies" -> JsArray(
+            ctx.mirroredResp
+              .get()
+              .cookies
+              .map(c =>
+                Json.obj(
+                  "name"     -> c.name,
+                  "value"    -> c.value,
+                  "domain"   -> c.domain.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+                  "path"     -> c.path.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+                  "maxAge"   -> c.maxAge.map(v => JsNumber(BigDecimal(v))).getOrElse(JsNull).as[JsValue],
+                  "secure"   -> c.secure,
+                  "httpOnly" -> c.httpOnly
+                )
+              )
+          )
+        ),
+        "serviceId"               -> ctx.descriptor.id,
+        "config"                  -> ctx.config.conf
+      )
     )
-  )
 }
 
 class MirroringPluginConfig(val conf: JsValue) {
@@ -196,10 +209,10 @@ class MirroringPluginConfig(val conf: JsValue) {
     enabled // TODO: filter by path and method
   }
 
-  lazy val to: String = (conf \ "to").as[String]
-  lazy val enabled: Boolean = (conf \ "enabled").asOpt[Boolean].getOrElse(true)
+  lazy val to: String                     = (conf \ "to").as[String]
+  lazy val enabled: Boolean               = (conf \ "enabled").asOpt[Boolean].getOrElse(true)
   lazy val shouldCaptureResponse: Boolean = (conf \ "captureResponse").asOpt[Boolean].getOrElse(false)
-  lazy val generateEvents: Boolean = (conf \ "generateEvents").asOpt[Boolean].getOrElse(false)
+  lazy val generateEvents: Boolean        = (conf \ "generateEvents").asOpt[Boolean].getOrElse(false)
 }
 
 object MirroringPluginConfig {
@@ -214,10 +227,10 @@ class MirroringPlugin extends RequestTransformer {
     Some(
       Json.obj(
         "MirroringPlugin" -> Json.obj(
-          "enabled" -> true,
-          "to" -> "https://foo.bar.dev",
+          "enabled"         -> true,
+          "to"              -> "https://foo.bar.dev",
           "captureResponse" -> false,
-          "generateEvents" -> false
+          "generateEvents"  -> false
         )
       )
     )
@@ -239,17 +252,21 @@ class MirroringPlugin extends RequestTransformer {
 
   private val inFlightRequests = new TrieMap[String, RequestContext]()
 
-  override def afterRequest(ctx: AfterRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
+  override def afterRequest(
+      ctx: AfterRequestContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
     inFlightRequests.remove(ctx.snowflake)
     ().future
   }
 
-  override def beforeRequest(ctx: BeforeRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
+  override def beforeRequest(
+      ctx: BeforeRequestContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Unit] = {
     val cfg = MirroringPluginConfig(ctx.configFor("MirroringPlugin"))
     if (cfg.shouldBeMirrored(ctx.request)) {
-      val done = Promise[Unit]
+      val done       = Promise[Unit]
       val mirrorDone = Promise[Unit]
-      val context = RequestContext(
+      val context    = RequestContext(
         id = ctx.snowflake,
         request = ctx.request,
         started = new AtomicBoolean(false),
@@ -279,9 +296,11 @@ class MirroringPlugin extends RequestTransformer {
     ().future
   }
 
-  override def transformErrorWithCtx(ctx: TransformerErrorContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Result] = {
+  override def transformErrorWithCtx(
+      ctx: TransformerErrorContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Result] = {
     inFlightRequests.get(ctx.snowflake) match {
-      case None =>
+      case None          =>
       case Some(context) =>
         context.otoResponse.set(ctx.otoroshiResponse)
         context.done.trySuccess(())
@@ -289,31 +308,41 @@ class MirroringPlugin extends RequestTransformer {
     ctx.otoroshiResult.future
   }
 
-  override def transformRequestWithCtx(ctx: TransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
+  override def transformRequestWithCtx(
+      ctx: TransformerRequestContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     inFlightRequests.get(ctx.snowflake) match {
-      case None =>
+      case None          =>
       case Some(context) =>
         context.otoRequest.set(ctx.otoroshiRequest)
     }
     ctx.otoroshiRequest.right.future
   }
 
-  override def transformResponseWithCtx(ctx: TransformerResponseContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] = {
+  override def transformResponseWithCtx(
+      ctx: TransformerResponseContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] = {
     inFlightRequests.get(ctx.snowflake) match {
-      case None =>
+      case None          =>
       case Some(context) =>
         context.otoResponse.set(ctx.otoroshiResponse)
     }
     ctx.otoroshiResponse.right.future
   }
 
-  override def transformRequestBodyWithCtx(ctx: TransformerRequestBodyContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
+  override def transformRequestBodyWithCtx(
+      ctx: TransformerRequestBodyContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
     ctx.body
       .alsoTo(Sink.foreach(bs => inFlightRequests.get(ctx.snowflake).foreach(_.input.getAndUpdate(v => v.concat(bs)))))
-      .alsoTo(Sink.onComplete(t => ec.execute(() => inFlightRequests.get(ctx.snowflake).foreach(_.runMirrorRequest(env)))))
+      .alsoTo(
+        Sink.onComplete(t => ec.execute(() => inFlightRequests.get(ctx.snowflake).foreach(_.runMirrorRequest(env))))
+      )
   }
 
-  override def transformResponseBodyWithCtx(ctx: TransformerResponseBodyContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
+  override def transformResponseBodyWithCtx(
+      ctx: TransformerResponseBodyContext
+  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, _] = {
     val cfg = MirroringPluginConfig(ctx.configFor("MirroringPlugin"))
     inFlightRequests.get(ctx.snowflake).foreach { c =>
       if (!c.started.get()) {
@@ -322,7 +351,7 @@ class MirroringPlugin extends RequestTransformer {
     }
     if (cfg.shouldCaptureResponse) {
       inFlightRequests.get(ctx.snowflake) match {
-        case None => ctx.body
+        case None          => ctx.body
         case Some(context) =>
           ctx.body
             .alsoTo(Sink.foreach(bs => context.output.getAndUpdate(v => v.concat(bs))))

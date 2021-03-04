@@ -8,7 +8,6 @@ object JsonImplicits {
   implicit val jodaDateTimeReads: Reads[DateTime]   = play.api.libs.json.JodaReads.DefaultJodaDateTimeReads
 }
 
-
 object JsonPatchHelpers {
 
   // import gnieh.diffson.playJson._

@@ -33,7 +33,7 @@ class MaxMindGeolocationInfoExtractor extends PreRouting {
       Json.obj(
         "GeolocationInfo" -> Json.obj(
           "path" -> "global",
-          "log"  -> false,
+          "log"  -> false
         )
       )
     )
@@ -62,14 +62,14 @@ class MaxMindGeolocationInfoExtractor extends PreRouting {
     val log     = (config \ "log").asOpt[Boolean].getOrElse(false)
     val from    = ctx.request.theIpAddress
     pathOpt match {
-      case None => FastFuture.successful(())
+      case None           => FastFuture.successful(())
       case Some("global") =>
         env.datastores.globalConfigDataStore.latestSafe match {
           case None                                      => FastFuture.successful(())
           case Some(c) if !c.geolocationSettings.enabled => FastFuture.successful(())
-          case Some(c) =>
+          case Some(c)                                   =>
             c.geolocationSettings.find(from).map {
-              case None => FastFuture.successful(())
+              case None           => FastFuture.successful(())
               case Some(location) => {
                 if (log) logger.info(s"Ip-Address: $from, ${Json.prettyPrint(location)}")
                 ctx.attrs.putIfAbsent(Keys.GeolocationInfoKey -> location)
@@ -77,9 +77,9 @@ class MaxMindGeolocationInfoExtractor extends PreRouting {
               }
             }
         }
-      case Some(path) =>
+      case Some(path)     =>
         MaxMindGeolocationHelper.find(from, path).map {
-          case None => FastFuture.successful(())
+          case None           => FastFuture.successful(())
           case Some(location) => {
             if (log) logger.info(s"Ip-Address: $from, ${Json.prettyPrint(location)}")
             ctx.attrs.putIfAbsent(Keys.GeolocationInfoKey -> location)
@@ -102,7 +102,7 @@ class IpStackGeolocationInfoExtractor extends PreRouting {
         "GeolocationInfo" -> Json.obj(
           "apikey"  -> "xxxxxxx",
           "timeout" -> 2000,
-          "log"     -> false,
+          "log"     -> false
         )
       )
     )
@@ -131,10 +131,10 @@ class IpStackGeolocationInfoExtractor extends PreRouting {
     val log           = (config \ "log").asOpt[Boolean].getOrElse(false)
     val from          = ctx.request.theIpAddress
     apiKeyOpt match {
-      case None => FastFuture.successful(())
+      case None         => FastFuture.successful(())
       case Some(apiKey) =>
         IpStackGeolocationHelper.find(from, apiKey, timeout).map {
-          case None => FastFuture.successful(())
+          case None           => FastFuture.successful(())
           case Some(location) => {
             if (log) logger.info(s"Ip-Address: $from, ${Json.prettyPrint(location)}")
             ctx.attrs.putIfAbsent(Keys.GeolocationInfoKey -> location)
@@ -153,7 +153,7 @@ class GeolocationInfoHeader extends RequestTransformer {
     Some(
       Json.obj(
         "GeolocationInfoHeader" -> Json.obj(
-          "headerName" -> "X-Geolocation-Info",
+          "headerName" -> "X-Geolocation-Info"
         )
       )
     )
@@ -180,13 +180,13 @@ class GeolocationInfoHeader extends RequestTransformer {
     val config     = ctx.configFor("GeolocationInfoHeader")
     val headerName = (config \ "headerName").asOpt[String].getOrElse("X-Geolocation-Info")
     ctx.attrs.get(otoroshi.plugins.Keys.GeolocationInfoKey) match {
-      case None => Right(ctx.otoroshiRequest).future
+      case None           => Right(ctx.otoroshiRequest).future
       case Some(location) => {
         Right(
           ctx.otoroshiRequest.copy(
             headers = ctx.otoroshiRequest.headers ++ Map(
-              headerName -> Json.stringify(location)
-            )
+                headerName -> Json.stringify(location)
+              )
           )
         ).future
       }
@@ -214,11 +214,13 @@ class GeolocationInfoEndpoint extends RequestTransformer {
     (ctx.rawRequest.method.toLowerCase(), ctx.rawRequest.path) match {
       case ("get", "/.well-known/otoroshi/plugins/geolocation") =>
         ctx.attrs.get(otoroshi.plugins.Keys.GeolocationInfoKey) match {
-          case None =>
-            Left(Results.NotFound(Json.obj("error" -> "geolocation not found"))).future // Right(ctx.otoroshiRequest).future
+          case None           =>
+            Left(
+              Results.NotFound(Json.obj("error" -> "geolocation not found"))
+            ).future // Right(ctx.otoroshiRequest).future
           case Some(location) => Left(Results.Ok(location)).future
         }
-      case _ => Right(ctx.otoroshiRequest).future
+      case _                                                    => Right(ctx.otoroshiRequest).future
     }
   }
 }
@@ -229,12 +231,14 @@ object IpStackGeolocationHelper {
 
   private val cache = new TrieMap[String, Option[JsValue]]()
 
-  def find(ip: String, apikey: String, timeout: Long)(implicit env: Env,
-                                                      ec: ExecutionContext): Future[Option[JsValue]] = {
+  def find(ip: String, apikey: String, timeout: Long)(implicit
+      env: Env,
+      ec: ExecutionContext
+  ): Future[Option[JsValue]] = {
     env.metrics.withTimerAsync("otoroshi.plugins.geolocation.ipstack.details") {
       cache.get(ip) match {
         case Some(details) => FastFuture.successful(details)
-        case None => {
+        case None          => {
           env.Ws // no need for mtls here
             .url(s"http://api.ipstack.com/$ip?access_key=$apikey&format=1")
             .withFollowRedirects(false)
@@ -245,7 +249,7 @@ object IpStackGeolocationHelper {
                 val res = Some(resp.json)
                 cache.putIfAbsent(ip, res)
                 res
-              case _ => None
+              case _                                                                                                => None
             }
         }
       }
@@ -261,7 +265,7 @@ object MaxMindGeolocationHelper {
   private val ipCache = new TrieMap[String, InetAddress]()
   private val cache   = new TrieMap[String, Option[JsValue]]()
   private val dbs     = new TrieMap[String, (AtomicReference[DatabaseReader], AtomicBoolean, AtomicBoolean)]()
-  private val exc =
+  private val exc     =
     ExecutionContext.fromExecutor(Executors.newFixedThreadPool(Runtime.getRuntime.availableProcessors() + 1))
 
   def dbRefInit(path: String)(implicit env: Env, ec: ExecutionContext): Unit = {
@@ -271,9 +275,11 @@ object MaxMindGeolocationHelper {
         if (path.startsWith("http:zip://") || path.startsWith("https:zip://") || path.toLowerCase().contains(".zip")) {
           logger.info(s"Initializing Geolocation db from zip file URL: ${path.replace("zip:", "")} ...")
           initDbFromURLWithUnzip(path)
-        } else if (path.startsWith("http:tgz://") || path.startsWith("https:tgz://") || path
-                     .toLowerCase()
-                     .contains(".tar.gz")) {
+        } else if (
+          path.startsWith("http:tgz://") || path.startsWith("https:tgz://") || path
+            .toLowerCase()
+            .contains(".tar.gz")
+        ) {
           logger.info(s"Initializing Geolocation db from tar.gz file URL: ${path.replace("tgz:", "")} ...")
           initDbFromURLWithUntar(path)
         } else if (path.startsWith("http://") || path.startsWith("https://")) {
@@ -290,15 +296,17 @@ object MaxMindGeolocationHelper {
 
     def tryInit(): Future[Unit] = {
       dbs.get(path) match {
-        case None =>
-          dbs.putIfAbsent(path,
-                          (new AtomicReference[DatabaseReader](), new AtomicBoolean(false), new AtomicBoolean(false)))
+        case None                                             =>
+          dbs.putIfAbsent(
+            path,
+            (new AtomicReference[DatabaseReader](), new AtomicBoolean(false), new AtomicBoolean(false))
+          )
           tryInit()
-        case Some((_, _, initialized)) if initialized.get() =>
+        case Some((_, _, initialized)) if initialized.get()   =>
           FastFuture.successful(())
         case Some((_, initializing, _)) if initializing.get() =>
           FastFuture.successful(())
-        case Some((_, initializing, _)) =>
+        case Some((_, initializing, _))                       =>
           env.metrics.withTimerAsync("otoroshi.plugins.geolocation.maxmind.init") {
             init(initializing)
           }
@@ -317,7 +325,7 @@ object MaxMindGeolocationHelper {
       tuple._3.set(true)
     }
   }
-  def dbInitializationDoneGet(path: String): Boolean = dbs.get(path).exists(_._3.get())
+  def dbInitializationDoneGet(path: String): Boolean       = dbs.get(path).exists(_._3.get())
 
   private def wasSuccessful(io: IOResult): Boolean = {
     io.wasSuccessful
@@ -352,12 +360,12 @@ object MaxMindGeolocationHelper {
         case resp if resp.status != 200 =>
           logger.error("Geolocation db initialization from URL failed, could not write file on disk")
           dbInitializationDoneSet(url)
-        case resp => {
+        case resp                       => {
           resp.bodyAsSource.runWith(FileIO.toPath(file))(env.otoroshiMaterializer).map {
             case res if !wasSuccessful(res) =>
               logger.error("Geolocation db initialization from URL failed, status was not 200")
               dbInitializationDoneSet(url)
-            case res if wasSuccessful(res) =>
+            case res if wasSuccessful(res)  =>
               val cityDbFile = file.toFile
               val cityDb     = new DatabaseReader.Builder(cityDbFile).build()
               dbRefSet(url, cityDb)
@@ -382,14 +390,14 @@ object MaxMindGeolocationHelper {
         case resp if resp.status != 200 =>
           logger.error("Geolocation db initialization from zip file URL failed, status was not 200")
           dbInitializationDoneSet(rawUrl)
-        case resp => {
+        case resp                       => {
           resp.bodyAsSource.runWith(FileIO.toPath(file))(env.otoroshiMaterializer).map {
             case res if !wasSuccessful(res) =>
               logger.error("Geolocation db initialization from zip file URL failed, could not write file on disk")
               dbInitializationDoneSet(rawUrl)
-            case res if wasSuccessful(res) =>
+            case res if wasSuccessful(res)  =>
               Try {
-                val builder = new ProcessBuilder
+                val builder  = new ProcessBuilder
                 builder.command(
                   "/bin/sh",
                   "-c",
@@ -440,14 +448,14 @@ s                     |mv *.mmdb geolite.mmdb
         case resp if resp.status != 200 =>
           logger.error("Geolocation db initialization from tar.gz file URL failed, status was not 200")
           dbInitializationDoneSet(rawUrl)
-        case resp => {
+        case resp                       => {
           resp.bodyAsSource.runWith(FileIO.toPath(file))(env.otoroshiMaterializer).map {
             case res if !wasSuccessful(res) =>
               logger.error("Geolocation db initialization from tar.gz file URL failed, could not write file on disk")
               dbInitializationDoneSet(rawUrl)
-            case res if wasSuccessful(res) =>
+            case res if wasSuccessful(res)  =>
               Try {
-                val builder = new ProcessBuilder
+                val builder  = new ProcessBuilder
                 builder.command(
                   "/bin/sh",
                   "-c",
@@ -464,7 +472,7 @@ s                     |mv *.mmdb geolite.mmdb
                 val process  = builder.start
                 val exitCode = process.waitFor
                 exitCode match {
-                  case 0 =>
+                  case 0    =>
                     val cityDbFile = dir.resolve("geolite.mmdb").toFile
                     val cityDb     = new DatabaseReader.Builder(cityDbFile).build()
                     dbRefSet(rawUrl, cityDb)
@@ -491,7 +499,7 @@ s                     |mv *.mmdb geolite.mmdb
     env.metrics.withTimerAsync("otoroshi.plugins.geolocation.maxmind.details") {
       dbRefInit(file)
       cache.get(ip) match {
-        case loc @ Some(_) => FastFuture.successful(loc.flatten)
+        case loc @ Some(_)                         => FastFuture.successful(loc.flatten)
         case None if dbInitializationDoneGet(file) => {
           val inet = ipCache.getOrElseUpdate(ip, InetAddress.getByName(ip))
           //dbs.get(file) match {
@@ -499,12 +507,12 @@ s                     |mv *.mmdb geolite.mmdb
           //    logger.error(s"Did not found db for $file")
           //  case Some((ref, _, _)) => {
           dbRefGet(file) match {
-            case None =>
+            case None     =>
               logger.error(s"Did not found dbref for $file")
               FastFuture.successful(None)
             case Some(db) => {
               Try(db.city(inet)) match { // TODO: blocking ???
-                case Failure(e) =>
+                case Failure(e)    =>
                   cache.putIfAbsent(ip, None)
                 case Success(city) => {
                   Option(city)
@@ -512,7 +520,7 @@ s                     |mv *.mmdb geolite.mmdb
                       // val asn = asnDb.asn(inet)
                       // val org = asn.getAutonomousSystemOrganization // TODO: blocking ??? non free version ?
                       // val asnNumber = asn.getAutonomousSystemNumber // TODO: blocking ??? non free version ?
-                      val ipType = if (ip.contains(":")) "ipv6" else "ipv4"
+                      val ipType   = if (ip.contains(":")) "ipv6" else "ipv4"
                       val location = Json.obj(
                         "ip"             -> ip,
                         "type"           -> ipType,
@@ -525,7 +533,7 @@ s                     |mv *.mmdb geolite.mmdb
                         "city"           -> c.getCity.getName,
                         "latitude"       -> JsNumber(c.getLocation.getLatitude.toDouble),
                         "longitude"      -> JsNumber(c.getLocation.getLongitude.toDouble),
-                        "location" -> Json.obj(
+                        "location"       -> Json.obj(
                           "geoname_id" -> JsNumber(c.getCountry.getGeoNameId.toInt),
                           "name"       -> c.getCountry.getName,
                           "languages"  -> Json.arr(),
@@ -545,7 +553,7 @@ s                     |mv *.mmdb geolite.mmdb
           //}
           FastFuture.successful(cache.get(ip).flatten)
         }
-        case _ =>
+        case _                                     =>
           FastFuture.successful(None) // initialization in progress
       }
     }

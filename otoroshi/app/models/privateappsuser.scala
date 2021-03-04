@@ -19,20 +19,22 @@ import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Success, Try}
 
-case class PrivateAppsUser(randomId: String,
-                           name: String,
-                           email: String,
-                           profile: JsValue,
-                           token: JsValue = Json.obj(),
-                           realm: String,
-                           authConfigId: String,
-                           otoroshiData: Option[JsValue],
-                           createdAt: DateTime = DateTime.now(),
-                           expiredAt: DateTime = DateTime.now(),
-                           lastRefresh: DateTime = DateTime.now(),
-                           metadata: Map[String, String],
-                           location: otoroshi.models.EntityLocation,
-                          ) extends RefreshableUser with otoroshi.models.EntityLocationSupport {
+case class PrivateAppsUser(
+    randomId: String,
+    name: String,
+    email: String,
+    profile: JsValue,
+    token: JsValue = Json.obj(),
+    realm: String,
+    authConfigId: String,
+    otoroshiData: Option[JsValue],
+    createdAt: DateTime = DateTime.now(),
+    expiredAt: DateTime = DateTime.now(),
+    lastRefresh: DateTime = DateTime.now(),
+    metadata: Map[String, String],
+    location: otoroshi.models.EntityLocation
+) extends RefreshableUser
+    with otoroshi.models.EntityLocationSupport {
 
   def picture: Option[String]             = (profile \ "picture").asOpt[String]
   def field(name: String): Option[String] = (profile \ name).asOpt[String]
@@ -46,29 +48,33 @@ case class PrivateAppsUser(randomId: String,
   def delete()(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
     env.datastores.privateAppsUserDataStore.delete(randomId)
 
-  def toJson: JsValue = PrivateAppsUser.fmt.writes(this)
-  def asJsonCleaned: JsValue = Json.obj(
-    "name"     -> name,
-    "email"    -> email,
-    "profile"  -> profile,
-    "metadata" -> otoroshiData
-  )
+  def toJson: JsValue        = PrivateAppsUser.fmt.writes(this)
+  def asJsonCleaned: JsValue =
+    Json.obj(
+      "name"     -> name,
+      "email"    -> email,
+      "profile"  -> profile,
+      "metadata" -> otoroshiData
+    )
 
   def withAuthModuleConfig[A](f: AuthModuleConfig => A)(implicit ec: ExecutionContext, env: Env): Unit = {
     env.datastores.authConfigsDataStore.findById(authConfigId).map {
-      case None => ()
+      case None       => ()
       case Some(auth) => f(auth)
     }
   }
   override def updateToken(tok: JsValue)(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
-    env.datastores.privateAppsUserDataStore.set(copy(
-      token = tok,
-      lastRefresh = DateTime.now()
-    ), Some((expiredAt.toDate.getTime - System.currentTimeMillis()).millis))
+    env.datastores.privateAppsUserDataStore.set(
+      copy(
+        token = tok,
+        lastRefresh = DateTime.now()
+      ),
+      Some((expiredAt.toDate.getTime - System.currentTimeMillis()).millis)
+    )
   }
 
   override def internalId: String = randomId
-  override def json: JsValue = PrivateAppsUser.fmt.writes(this)
+  override def json: JsValue      = PrivateAppsUser.fmt.writes(this)
 }
 
 object PrivateAppsUser {
@@ -98,27 +104,28 @@ object PrivateAppsUser {
             expiredAt = new DateTime((json \ "expiredAt").as[Long]),
             lastRefresh = new DateTime((json \ "lastRefresh").as[Long]),
             metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-            location = otoroshi.models.EntityLocation.readFromKey(json),
+            location = otoroshi.models.EntityLocation.readFromKey(json)
           )
         )
       } recover {
         case e => JsError(e.getMessage)
       } get
 
-    override def writes(o: PrivateAppsUser) = o.location.jsonWithKey ++ Json.obj(
-      "randomId"     -> o.randomId,
-      "name"         -> o.name,
-      "email"        -> o.email,
-      "authConfigId" -> o.authConfigId,
-      "profile"      -> o.profile,
-      "token"        -> o.token,
-      "realm"        -> o.realm,
-      "otoroshiData" -> o.otoroshiData,
-      "createdAt"    -> o.createdAt.toDate.getTime,
-      "expiredAt"    -> o.expiredAt.toDate.getTime,
-      "lastRefresh"  -> o.lastRefresh.toDate.getTime,
-      "metadata"     -> o.metadata
-    )
+    override def writes(o: PrivateAppsUser) =
+      o.location.jsonWithKey ++ Json.obj(
+        "randomId"     -> o.randomId,
+        "name"         -> o.name,
+        "email"        -> o.email,
+        "authConfigId" -> o.authConfigId,
+        "profile"      -> o.profile,
+        "token"        -> o.token,
+        "realm"        -> o.realm,
+        "otoroshiData" -> o.otoroshiData,
+        "createdAt"    -> o.createdAt.toDate.getTime,
+        "expiredAt"    -> o.expiredAt.toDate.getTime,
+        "lastRefresh"  -> o.lastRefresh.toDate.getTime,
+        "metadata"     -> o.metadata
+      )
   }
 }
 
@@ -128,24 +135,26 @@ object PrivateAppsUserHelper {
 
   import otoroshi.utils.http.RequestImplicits._
 
-  case class PassWithAuthContext(req: RequestHeader,
-                                 query: ServiceDescriptorQuery,
-                                 descriptor: ServiceDescriptor,
-                                 attrs: TypedMap,
-                                 config: GlobalConfig,
-                                 logger: Logger)
+  case class PassWithAuthContext(
+      req: RequestHeader,
+      query: ServiceDescriptorQuery,
+      descriptor: ServiceDescriptor,
+      attrs: TypedMap,
+      config: GlobalConfig,
+      logger: Logger
+  )
 
-  def isPrivateAppsSessionValid(req: RequestHeader, desc: ServiceDescriptor, attrs: TypedMap)(
-      implicit executionContext: ExecutionContext,
+  def isPrivateAppsSessionValid(req: RequestHeader, desc: ServiceDescriptor, attrs: TypedMap)(implicit
+      executionContext: ExecutionContext,
       env: Env
   ): Future[Option[PrivateAppsUser]] = {
     attrs.get(otoroshi.plugins.Keys.UserKey) match {
       case Some(preExistingUser) => FastFuture.successful(Some(preExistingUser))
-      case _ =>
+      case _                     =>
         desc.authConfigRef match {
           case Some(ref) =>
             env.datastores.authConfigsDataStore.findById(ref).flatMap {
-              case None => FastFuture.successful(None)
+              case None       => FastFuture.successful(None)
               case Some(auth) => {
                 val expected = "oto-papps-" + auth.cookieSuffix(desc)
                 req.cookies
@@ -162,26 +171,28 @@ object PrivateAppsUserHelper {
                   .map { id =>
                     Cluster.logger.debug(s"private apps session checking for $id - from helper")
                     env.datastores.privateAppsUserDataStore.findById(id).flatMap {
-                      case Some(user) =>
+                      case Some(user)                                           =>
                         GenericOauth2Module.handleTokenRefresh(auth, user)
                         FastFuture.successful(Some(user))
                       case None if env.clusterConfig.mode == ClusterMode.Worker => {
                         Cluster.logger.debug(s"private apps session $id not found locally - from helper")
                         env.clusterAgent.isSessionValid(id).map {
-                          case Some(user) => 
-                            user.save(Duration(user.expiredAt.getMillis - System.currentTimeMillis(), TimeUnit.MILLISECONDS))
+                          case Some(user) =>
+                            user.save(
+                              Duration(user.expiredAt.getMillis - System.currentTimeMillis(), TimeUnit.MILLISECONDS)
+                            )
                             Some(user)
                           case None       => None
                         }
                       }
-                      case None => FastFuture.successful(None)
+                      case None                                                 => FastFuture.successful(None)
                     }
                   } getOrElse {
-                    FastFuture.successful(None)
-                  }
+                  FastFuture.successful(None)
+                }
               }
             }
-          case None => FastFuture.successful(None)
+          case None      => FastFuture.successful(None)
         }
     }
   }
@@ -197,27 +208,31 @@ object PrivateAppsUserHelper {
     isPrivateAppsSessionValid(req, descriptor, attrs).flatMap {
       case Some(paUsr) =>
         callDownstream(config, None, Some(paUsr))
-      case None => {
-        val redirect = req
+      case None        => {
+        val redirect   = req
           .getQueryString("redirect")
           .getOrElse(s"${req.theProtocol}://${req.theHost}${req.relativeUri}")
         val redirectTo = env.rootScheme + env.privateAppsHost + env.privateAppsPort
-          .map(a => s":$a")
-          .getOrElse("") + otoroshi.controllers.routes.AuthController
-          .confidentialAppLoginPage()
-          .url + s"?desc=${descriptor.id}&redirect=${redirect}"
+            .map(a => s":$a")
+            .getOrElse("") + otoroshi.controllers.routes.AuthController
+            .confidentialAppLoginPage()
+            .url + s"?desc=${descriptor.id}&redirect=${redirect}"
         logger.trace("should redirect to " + redirectTo)
         descriptor.authConfigRef match {
-          case None =>
-            errorResult(InternalServerError,
-                        "Auth. config. ref not found on the descriptor",
-                        "errors.auth.config.ref.not.found")
+          case None      =>
+            errorResult(
+              InternalServerError,
+              "Auth. config. ref not found on the descriptor",
+              "errors.auth.config.ref.not.found"
+            )
           case Some(ref) => {
             env.datastores.authConfigsDataStore.findById(ref).flatMap {
-              case None =>
-                errorResult(InternalServerError,
-                            "Auth. config. not found on the descriptor",
-                            "errors.auth.config.not.found")
+              case None       =>
+                errorResult(
+                  InternalServerError,
+                  "Auth. config. not found on the descriptor",
+                  "errors.auth.config.not.found"
+                )
               case Some(auth) => {
                 FastFuture
                   .successful(

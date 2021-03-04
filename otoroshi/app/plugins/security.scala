@@ -22,7 +22,7 @@ class SecurityTxt extends RequestTransformer {
           "Acknowledgments"     -> "https://...",
           "Preferred-Languages" -> "en, fr",
           "Policy"              -> "https://...",
-          "Hiring"              -> "https://...",
+          "Hiring"              -> "https://..."
         )
       )
     )
@@ -53,11 +53,11 @@ class SecurityTxt extends RequestTransformer {
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     (ctx.rawRequest.method, ctx.rawRequest.path) match {
       case ("GET", "/.well-known/security.txt") => {
-        val config = ctx.configFor("SecurityTxt")
-        val host   = s"https://${ctx.descriptor.toHost}"
+        val config  = ctx.configFor("SecurityTxt")
+        val host    = s"https://${ctx.descriptor.toHost}"
         val contact =
           (config \ "contact").asOpt[String].orElse((config \ "Contact").asOpt[String]).map(c => s"Contact: $c\n")
-        val values = Seq("Encryption", "Acknowledgments", "Preferred-Languages", "Policy", "Hiring").map { key =>
+        val values  = Seq("Encryption", "Acknowledgments", "Preferred-Languages", "Policy", "Hiring").map { key =>
           (config \ key.toLowerCase())
             .asOpt[String]
             .orElse((config \ key).asOpt[String])
@@ -77,7 +77,7 @@ class SecurityTxt extends RequestTransformer {
             .getOrElse("")
         }
         contact match {
-          case None => Left(Results.InternalServerError("Contact missing !!!")).future
+          case None       => Left(Results.InternalServerError("Contact missing !!!")).future
           case Some(cont) => {
             Left(
               Results
@@ -87,7 +87,7 @@ class SecurityTxt extends RequestTransformer {
           }
         }
       }
-      case (_, _) => Right(ctx.otoroshiRequest).future
+      case (_, _)                               => Right(ctx.otoroshiRequest).future
     }
   }
 }

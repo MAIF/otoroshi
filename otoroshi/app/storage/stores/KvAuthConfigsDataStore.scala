@@ -20,7 +20,9 @@ class KvAuthConfigsDataStore(redisCli: RedisLike, _env: Env)
   override def key(id: String): Key                       = Key.Empty / _env.storageRoot / "auth" / "configs" / id
   override def extractId(value: AuthModuleConfig): String = value.id
 
-  override def generateLoginToken(maybeTokenValue: Option[String] = None)(implicit ec: ExecutionContext): Future[String] = {
+  override def generateLoginToken(
+      maybeTokenValue: Option[String] = None
+  )(implicit ec: ExecutionContext): Future[String] = {
     val token = maybeTokenValue.getOrElse(IdGenerator.token(128))
     if (_env.clusterConfig.mode.isWorker) {
       for {
@@ -36,7 +38,7 @@ class KvAuthConfigsDataStore(redisCli: RedisLike, _env: Env)
   override def validateLoginToken(token: String)(implicit ec: ExecutionContext): Future[Boolean] = {
     if (_env.clusterConfig.mode.isWorker) {
       redisCli.exists(s"${_env.storageRoot}:auth:tokens:$token").flatMap {
-        case true => 
+        case true  =>
           redisCli.del(s"${_env.storageRoot}:auth:tokens:$token")
           FastFuture.successful(true)
         case false => _env.clusterAgent.isLoginTokenValid(token)
@@ -51,14 +53,20 @@ class KvAuthConfigsDataStore(redisCli: RedisLike, _env: Env)
   override def setUserForToken(token: String, user: JsValue)(implicit ec: ExecutionContext): Future[Unit] = {
     if (_env.clusterConfig.mode.isWorker) {
       for {
-        _ <- redisCli.set(s"${_env.storageRoot}:auth:tokens:$token:user", Json.stringify(user), pxMilliseconds = Some(5.minutes.toMillis))
+        _ <- redisCli.set(
+               s"${_env.storageRoot}:auth:tokens:$token:user",
+               Json.stringify(user),
+               pxMilliseconds = Some(5.minutes.toMillis)
+             )
         _ <- _env.clusterAgent.setUserToken(token, user)
       } yield ()
     } else {
       redisCli
-        .set(s"${_env.storageRoot}:auth:tokens:$token:user",
-            Json.stringify(user),
-            pxMilliseconds = Some(5.minutes.toMillis))
+        .set(
+          s"${_env.storageRoot}:auth:tokens:$token:user",
+          Json.stringify(user),
+          pxMilliseconds = Some(5.minutes.toMillis)
+        )
         .map(_ => ())
     }
   }
@@ -69,11 +77,12 @@ class KvAuthConfigsDataStore(redisCli: RedisLike, _env: Env)
         .get(s"${_env.storageRoot}:auth:tokens:$token:user")
         .map { bs =>
           bs.map(a => Json.parse(a.utf8String))
-        }.flatMap {
-          case Some(user) => 
+        }
+        .flatMap {
+          case Some(user) =>
             redisCli.del(s"${_env.storageRoot}:auth:tokens:$token:user")
             FastFuture.successful(Some(user))
-          case None => _env.clusterAgent.getUserToken(token)
+          case None       => _env.clusterAgent.getUserToken(token)
         }
     } else {
       redisCli

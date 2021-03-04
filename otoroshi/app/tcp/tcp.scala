@@ -34,34 +34,34 @@ import scala.util.{Failure, Success, Try}
 import otoroshi.utils.syntax.implicits._
 
 /**
-- [x] TCP service can be disabled
-- [x] TCP service without sni is defined on a port and forwards to targets
-- [x] Target can define their own dns resolving
-- [x] TCP service can match a sni domain for a same port (need to catch sni name per request)
-- [x] TCP service can forward non matching request to local http server (only for sni request)
-- [x] TCP service can be exposed over tls using dyn tls stuff
-- [x] TCP service can passthrough tls
-– [x] TCP service can specify if it needs or wants mtls
-– [x] Passthrough + SNI
-- [x] rules
+ * - [x] TCP service can be disabled
+ * - [x] TCP service without sni is defined on a port and forwards to targets
+ * - [x] Target can define their own dns resolving
+ * - [x] TCP service can match a sni domain for a same port (need to catch sni name per request)
+ * - [x] TCP service can forward non matching request to local http server (only for sni request)
+ * - [x] TCP service can be exposed over tls using dyn tls stuff
+ * - [x] TCP service can passthrough tls
+ * – [x] TCP service can specify if it needs or wants mtls
+ * – [x] Passthrough + SNI
+ * - [x] rules
  * if no sni matching, then only one Tcp service can exists with a specific port number
  * if sni matching, then multiple Tcp services can exists with a the port number
  * if sni matching, then all Tcp services using the same port number must have the same Tls mode
-- [x] We need a new datastore for tcp services
-- [x] We need to include tcp services in backup/restore
-- [x] We need a new admin api for tcp services
-- [x] We need a new UI for tcp services
-- [x] We need to wire routexxx functions to the new datastore
-- [x] We need to generate access events
-- [x] A job will request all tcp services with unique ports and stats tcp server. Servers will be shut down with otoroshi app
-- [ ] add api in swagger when feature is ready
-- [ ] support ClientConfig for tcp
-- [ ] support ClientValidator for tcp
-- [ ] support IpFiltering
-- [ ] support healthCheck for tcp (+UI)
-- [ ] support snowMonkey for tcp
-- [ ] support live metrics (+UI)
-- [ ] support analytics in UI (metrics + events)
+ * - [x] We need a new datastore for tcp services
+ * - [x] We need to include tcp services in backup/restore
+ * - [x] We need a new admin api for tcp services
+ * - [x] We need a new UI for tcp services
+ * - [x] We need to wire routexxx functions to the new datastore
+ * - [x] We need to generate access events
+ * - [x] A job will request all tcp services with unique ports and stats tcp server. Servers will be shut down with otoroshi app
+ * - [ ] add api in swagger when feature is ready
+ * - [ ] support ClientConfig for tcp
+ * - [ ] support ClientValidator for tcp
+ * - [ ] support IpFiltering
+ * - [ ] support healthCheck for tcp (+UI)
+ * - [ ] support snowMonkey for tcp
+ * - [ ] support live metrics (+UI)
+ * - [ ] support analytics in UI (metrics + events)
  */
 case class TcpService(
     id: String = IdGenerator.token,
@@ -81,107 +81,117 @@ case class TcpService(
     // healthCheck
     // snowMonkey
 ) extends otoroshi.models.EntityLocationSupport {
-  def internalId: String = id
+  def internalId: String                              = id
   def json: JsValue                                   = TcpService.fmt.writes(this)
   def save()(implicit ec: ExecutionContext, env: Env) = env.datastores.tcpServiceDataStore.set(this)
 }
-case class SniSettings(enabled: Boolean,
-                       forwardIfNoMatch: Boolean,
-                       forwardsTo: TcpTarget = TcpTarget("127.0.0.1", None, 8080, false)) {
+case class SniSettings(
+    enabled: Boolean,
+    forwardIfNoMatch: Boolean,
+    forwardsTo: TcpTarget = TcpTarget("127.0.0.1", None, 8080, false)
+) {
   def json: JsValue = SniSettings.fmt.writes(this)
 }
 object SniSettings {
-  def fmt: Format[SniSettings] = new Format[SniSettings] {
-    override def writes(o: SniSettings): JsValue = Json.obj(
-      "enabled"          -> o.enabled,
-      "forwardIfNoMatch" -> o.forwardIfNoMatch,
-      "forwardsTo"       -> o.forwardsTo.json,
-    )
-    override def reads(json: JsValue): JsResult[SniSettings] =
-      Try {
-        JsSuccess(
-          SniSettings(
-            enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
-            forwardIfNoMatch = (json \ "forwardIfNoMatch").asOpt[Boolean].getOrElse(false),
-            forwardsTo = (json \ "forwardsTo").asOpt(TcpTarget.fmt).getOrElse(TcpTarget("127.0.0.1", None, 8080, false))
-          )
+  def fmt: Format[SniSettings] =
+    new Format[SniSettings] {
+      override def writes(o: SniSettings): JsValue             =
+        Json.obj(
+          "enabled"          -> o.enabled,
+          "forwardIfNoMatch" -> o.forwardIfNoMatch,
+          "forwardsTo"       -> o.forwardsTo.json
         )
-      } recover {
-        case e => JsError(e.getMessage)
-      } get
-  }
+      override def reads(json: JsValue): JsResult[SniSettings] =
+        Try {
+          JsSuccess(
+            SniSettings(
+              enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
+              forwardIfNoMatch = (json \ "forwardIfNoMatch").asOpt[Boolean].getOrElse(false),
+              forwardsTo =
+                (json \ "forwardsTo").asOpt(TcpTarget.fmt).getOrElse(TcpTarget("127.0.0.1", None, 8080, false))
+            )
+          )
+        } recover {
+          case e => JsError(e.getMessage)
+        } get
+    }
 }
 case class TcpTarget(host: String, ip: Option[String], port: Int, tls: Boolean) {
   def json: JsValue             = TcpTarget.fmt.writes(this)
   def toAnalyticsString: String = s"${host}${ip.map(v => "/" + v).getOrElse("")}:${port}"
 }
 object TcpTarget {
-  def fmt: Format[TcpTarget] = new Format[TcpTarget] {
-    override def writes(o: TcpTarget): JsValue = Json.obj(
-      "host" -> o.host,
-      "ip"   -> o.ip.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-      "port" -> o.port,
-      "tls"  -> o.tls
-    )
-    override def reads(json: JsValue): JsResult[TcpTarget] =
-      Try {
-        JsSuccess(
-          TcpTarget(
-            host = (json \ "host").as[String],
-            ip = (json \ "ip").asOpt[String],
-            port = (json \ "port").asOpt[Int].getOrElse(8080),
-            tls = (json \ "tls").asOpt[Boolean].getOrElse(false)
-          )
+  def fmt: Format[TcpTarget] =
+    new Format[TcpTarget] {
+      override def writes(o: TcpTarget): JsValue             =
+        Json.obj(
+          "host" -> o.host,
+          "ip"   -> o.ip.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+          "port" -> o.port,
+          "tls"  -> o.tls
         )
-      } recover {
-        case e => JsError(e.getMessage)
-      } get
-  }
+      override def reads(json: JsValue): JsResult[TcpTarget] =
+        Try {
+          JsSuccess(
+            TcpTarget(
+              host = (json \ "host").as[String],
+              ip = (json \ "ip").asOpt[String],
+              port = (json \ "port").asOpt[Int].getOrElse(8080),
+              tls = (json \ "tls").asOpt[Boolean].getOrElse(false)
+            )
+          )
+        } recover {
+          case e => JsError(e.getMessage)
+        } get
+    }
 }
 case class TcpRule(domain: String, targets: Seq[TcpTarget]) {
   def json: JsValue = TcpRule.fmt.writes(this)
 }
 object TcpRule {
-  def fmt: Format[TcpRule] = new Format[TcpRule] {
-    override def writes(o: TcpRule): JsValue = Json.obj(
-      "domain"  -> o.domain,
-      "targets" -> JsArray(o.targets.map(_.json))
-    )
-    override def reads(json: JsValue): JsResult[TcpRule] =
-      Try {
-        JsSuccess(
-          TcpRule(
-            domain = (json \ "domain").asOpt[String].getOrElse("*"),
-            targets = (json \ "targets").asOpt(Reads.seq(TcpTarget.fmt)).getOrElse(Seq.empty)
-          )
+  def fmt: Format[TcpRule] =
+    new Format[TcpRule] {
+      override def writes(o: TcpRule): JsValue             =
+        Json.obj(
+          "domain"  -> o.domain,
+          "targets" -> JsArray(o.targets.map(_.json))
         )
-      } recover {
-        case e => JsError(e.getMessage)
-      } get
-  }
+      override def reads(json: JsValue): JsResult[TcpRule] =
+        Try {
+          JsSuccess(
+            TcpRule(
+              domain = (json \ "domain").asOpt[String].getOrElse("*"),
+              targets = (json \ "targets").asOpt(Reads.seq(TcpTarget.fmt)).getOrElse(Seq.empty)
+            )
+          )
+        } recover {
+          case e => JsError(e.getMessage)
+        } get
+    }
 }
 sealed trait TlsMode {
   def name: String
 }
 object TlsMode {
-  case object Disabled extends TlsMode {
+  case object Disabled    extends TlsMode {
     def name: String = "Disabled"
   }
-  case object Enabled extends TlsMode {
+  case object Enabled     extends TlsMode {
     def name: String = "Enabled"
   }
   case object PassThrough extends TlsMode {
     def name: String = "PassThrough"
   }
-  def apply(v: String): Option[TlsMode] = v match {
-    case "Disabled"    => Some(Disabled)
-    case "disabled"    => Some(Disabled)
-    case "Enabled"     => Some(Enabled)
-    case "enabled"     => Some(Enabled)
-    case "PassThrough" => Some(PassThrough)
-    case "passthrough" => Some(PassThrough)
-    case _             => None
-  }
+  def apply(v: String): Option[TlsMode] =
+    v match {
+      case "Disabled"    => Some(Disabled)
+      case "disabled"    => Some(Disabled)
+      case "Enabled"     => Some(Enabled)
+      case "enabled"     => Some(Enabled)
+      case "PassThrough" => Some(PassThrough)
+      case "passthrough" => Some(PassThrough)
+      case _             => None
+    }
 }
 
 object TcpService {
@@ -224,18 +234,19 @@ object TcpService {
         case e => JsError(e.getMessage)
       } get
 
-    override def writes(o: TcpService): JsValue = o.location.jsonWithKey ++ Json.obj(
-      "id"         -> o.id,
-      "name"       -> o.name,
-      "enabled"    -> o.enabled,
-      "tls"        -> o.tls.name,
-      "sni"        -> o.sni.json,
-      "clientAuth" -> o.clientAuth.name,
-      "port"       -> o.port,
-      "interface"  -> o.interface,
-      "rules"      -> JsArray(o.rules.map(_.json)),
-      "metadata"   -> o.metadata
-    )
+    override def writes(o: TcpService): JsValue =
+      o.location.jsonWithKey ++ Json.obj(
+        "id"         -> o.id,
+        "name"       -> o.name,
+        "enabled"    -> o.enabled,
+        "tls"        -> o.tls.name,
+        "sni"        -> o.sni.json,
+        "clientAuth" -> o.clientAuth.name,
+        "port"       -> o.port,
+        "interface"  -> o.interface,
+        "rules"      -> JsArray(o.rules.map(_.json)),
+        "metadata"   -> o.metadata
+      )
   }
 
   def runServers(env: Env): RunningServers = {
@@ -252,13 +263,15 @@ object TcpService {
     RegexPool(matchRule).matches(domain)
   }
 
-  def routeWithoutSNI(incoming: Tcp.IncomingConnection,
-                      port: Int,
-                      id: String,
-                      tls: Boolean,
-                      start: Long,
-                      debugger: String => Sink[ByteString, Future[Done]])(cb: (Long, Long) => Unit)(
-      implicit ec: ExecutionContext,
+  def routeWithoutSNI(
+      incoming: Tcp.IncomingConnection,
+      port: Int,
+      id: String,
+      tls: Boolean,
+      start: Long,
+      debugger: String => Sink[ByteString, Future[Done]]
+  )(cb: (Long, Long) => Unit)(implicit
+      ec: ExecutionContext,
       actorSystem: ActorSystem,
       materializer: Materializer,
       env: Env
@@ -276,22 +289,28 @@ object TcpService {
             val target  = targets.apply(index.toInt)
             targetRef.set(target)
             target.tls match {
-              case true => {
+              case true  => {
                 val remoteAddress = target.ip match {
                   case Some(ip) =>
-                    new InetSocketAddress(InetAddress.getByAddress(target.host, InetAddress.getByName(ip).getAddress),
-                                          target.port)
-                  case None => new InetSocketAddress(target.host, target.port)
+                    new InetSocketAddress(
+                      InetAddress.getByAddress(target.host, InetAddress.getByName(ip).getAddress),
+                      target.port
+                    )
+                  case None     => new InetSocketAddress(target.host, target.port)
                 }
-                Tcp().outgoingConnectionWithTls(remoteAddress,
-                  () => DynamicSSLEngineProvider.createSSLEngine(ClientAuth.None, None, None))
+                Tcp().outgoingConnectionWithTls(
+                  remoteAddress,
+                  () => DynamicSSLEngineProvider.createSSLEngine(ClientAuth.None, None, None)
+                )
               }
               case false => {
                 val remoteAddress = target.ip match {
                   case Some(ip) =>
-                    new InetSocketAddress(InetAddress.getByAddress(target.host, InetAddress.getByName(ip).getAddress),
-                                          target.port)
-                  case None => new InetSocketAddress(target.host, target.port)
+                    new InetSocketAddress(
+                      InetAddress.getByAddress(target.host, InetAddress.getByName(ip).getAddress),
+                      target.port
+                    )
+                  case None     => new InetSocketAddress(target.host, target.port)
                 }
                 Tcp().outgoingConnection(remoteAddress)
               }
@@ -301,7 +320,9 @@ object TcpService {
           fullLayer
             .alsoTo(Sink.foreach(bs => dataOut.addAndGet(bs.size))) // debugger("[RESP]: ")
             .alsoTo(Sink.onComplete(_ => cb(dataIn.get(), dataOut.get())))
-            .joinMat(incoming.flow.alsoTo(Sink.foreach(bs => dataIn.addAndGet(bs.size))))(Keep.left) // debugger("[REQ]: ")
+            .joinMat(incoming.flow.alsoTo(Sink.foreach(bs => dataIn.addAndGet(bs.size))))(
+              Keep.left
+            )                                                       // debugger("[REQ]: ")
             .run()
             .map(_ => {
               val target    = Option(targetRef.get()).map(t => t.toAnalyticsString).getOrElse("--")
@@ -375,7 +396,7 @@ object TcpService {
             )
         }
       }
-      case _ =>
+      case _                                =>
         val target    = Option(targetRef.get()).map(t => t.toAnalyticsString).getOrElse("--")
         val targetTls = Option(targetRef.get()).map(t => t.tls).getOrElse(false)
         Future.successful(
@@ -401,13 +422,15 @@ object TcpService {
     }
   }
 
-  def routeWithSNI(incoming: AwesomeIncomingConnection,
-                   port: Int,
-                   id: String,
-                   tls: Boolean,
-                   start: Long,
-                   debugger: String => Sink[ByteString, Future[Done]])(cb: (Long, Long) => Unit)(
-      implicit ec: ExecutionContext,
+  def routeWithSNI(
+      incoming: AwesomeIncomingConnection,
+      port: Int,
+      id: String,
+      tls: Boolean,
+      start: Long,
+      debugger: String => Sink[ByteString, Future[Done]]
+  )(cb: (Long, Long) => Unit)(implicit
+      ec: ExecutionContext,
       actorSystem: ActorSystem,
       materializer: Materializer,
       env: Env
@@ -424,46 +447,52 @@ object TcpService {
               ref.set(sniDomain + ":" + port)
               log.info(s"domain: $sniDomain, local: ${incoming.localAddress}, remote: ${incoming.remoteAddress}")
               service.rules.find(r => domainMatch(r.domain, sniDomain)) match {
-                case Some(rule) => {
+                case Some(rule)                           => {
                   val targets = rule.targets
                   val index   = reqCounter.incrementAndGet() % (if (targets.nonEmpty) targets.size else 1)
                   val target  = targets.apply(index.toInt)
                   targetRef.set(target)
                   target.tls match {
-                    case true => {
+                    case true  => {
                       val remoteAddress = target.ip match {
                         case Some(ip) =>
-                          new InetSocketAddress(InetAddress.getByAddress(target.host,
-                                                                         InetAddress.getByName(ip).getAddress),
-                                                target.port)
-                        case None => new InetSocketAddress(target.host, target.port)
+                          new InetSocketAddress(
+                            InetAddress.getByAddress(target.host, InetAddress.getByName(ip).getAddress),
+                            target.port
+                          )
+                        case None     => new InetSocketAddress(target.host, target.port)
                       }
-                      Tcp().outgoingConnectionWithTls(remoteAddress,
-                        () => DynamicSSLEngineProvider.createSSLEngine(ClientAuth.None, None, None))
+                      Tcp().outgoingConnectionWithTls(
+                        remoteAddress,
+                        () => DynamicSSLEngineProvider.createSSLEngine(ClientAuth.None, None, None)
+                      )
                     }
                     case false => {
                       val remoteAddress = target.ip match {
                         case Some(ip) =>
-                          new InetSocketAddress(InetAddress.getByAddress(target.host,
-                                                                         InetAddress.getByName(ip).getAddress),
-                                                target.port)
-                        case None => new InetSocketAddress(target.host, target.port)
+                          new InetSocketAddress(
+                            InetAddress.getByAddress(target.host, InetAddress.getByName(ip).getAddress),
+                            target.port
+                          )
+                        case None     => new InetSocketAddress(target.host, target.port)
                       }
                       Tcp().outgoingConnection(remoteAddress)
                     }
                   }
                 }
                 case None if service.sni.forwardIfNoMatch => {
-                  val target = service.sni.forwardsTo
+                  val target        = service.sni.forwardsTo
                   val remoteAddress = target.ip match {
                     case Some(ip) =>
-                      new InetSocketAddress(InetAddress.getByAddress(target.host, InetAddress.getByName(ip).getAddress),
-                                            target.port)
-                    case None => new InetSocketAddress(target.host, target.port)
+                      new InetSocketAddress(
+                        InetAddress.getByAddress(target.host, InetAddress.getByName(ip).getAddress),
+                        target.port
+                      )
+                    case None     => new InetSocketAddress(target.host, target.port)
                   }
                   Tcp().outgoingConnection(remoteAddress)
                 }
-                case None => {
+                case None                                 => {
                   Flow[ByteString].flatMapConcat(_ => Source.failed(new RuntimeException("No domain matches")))
                 }
               }
@@ -473,11 +502,13 @@ object TcpService {
                 Flow[ByteString].flatMapConcat(_ => Source.failed(e))
             }
           }
-          val overhead = System.currentTimeMillis() - start
+          val overhead                                           = System.currentTimeMillis() - start
           fullLayer
             .alsoTo(Sink.foreach(bs => dataOut.addAndGet(bs.size))) // debugger("[RESP]: ")
             .alsoTo(Sink.onComplete(_ => cb(dataIn.get(), dataOut.get())))
-            .joinMat(incoming.flow.alsoTo(Sink.foreach(bs => dataIn.addAndGet(bs.size))))(Keep.left) // debugger("[REQ]: ")
+            .joinMat(incoming.flow.alsoTo(Sink.foreach(bs => dataIn.addAndGet(bs.size))))(
+              Keep.left
+            )                                                       // debugger("[REQ]: ")
             .run()
             .map(_ => {
               val target    = Option(targetRef.get()).map(t => t.toAnalyticsString).getOrElse("--")
@@ -551,7 +582,7 @@ object TcpService {
             )
         }
       }
-      case _ =>
+      case _                                                       =>
         val target    = Option(targetRef.get()).map(t => t.toAnalyticsString).getOrElse("--")
         val targetTls = Option(targetRef.get()).map(t => t.tls).getOrElse(false)
         Future.successful(
@@ -580,10 +611,12 @@ object TcpService {
 
 class TcpEngineProvider {
   def createSSLEngine(clientAuth: ClientAuth, env: Env): SSLEngine = {
-    lazy val cipherSuites = env.configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.cipherSuites").filterNot(_.isEmpty)
-    lazy val protocols    = env.configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.protocols").filterNot(_.isEmpty)
+    lazy val cipherSuites =
+      env.configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.cipherSuites").filterNot(_.isEmpty)
+    lazy val protocols    =
+      env.configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.protocols").filterNot(_.isEmpty)
 
-    val context: SSLContext = DynamicSSLEngineProvider.current
+    val context: SSLContext    = DynamicSSLEngineProvider.current
     DynamicSSLEngineProvider.logger.debug(s"Create SSLEngine from: $context")
     val rawEngine              = context.createSSLEngine()
     val engine                 = new CustomSSLEngine(rawEngine)
@@ -591,8 +624,8 @@ class TcpEngineProvider {
     val rawEnabledProtocols    = rawEngine.getEnabledProtocols.toSeq
     cipherSuites.foreach(s => rawEngine.setEnabledCipherSuites(s.toArray))
     protocols.foreach(p => rawEngine.setEnabledProtocols(p.toArray))
-    val sslParameters = new SSLParameters
-    val matchers      = new java.util.ArrayList[SNIMatcher]()
+    val sslParameters          = new SSLParameters
+    val matchers               = new java.util.ArrayList[SNIMatcher]()
     clientAuth match {
       case ClientAuth.Want =>
         engine.setWantClientAuth(true)
@@ -600,7 +633,7 @@ class TcpEngineProvider {
       case ClientAuth.Need =>
         engine.setNeedClientAuth(true)
         sslParameters.setNeedClientAuth(true)
-      case _ =>
+      case _               =>
     }
     matchers.add(new SNIMatcher(0) {
       override def matches(sniServerName: SNIServerName): Boolean = {
@@ -609,7 +642,7 @@ class TcpEngineProvider {
             val hostName = hn.getAsciiName
             DynamicSSLEngineProvider.logger.debug(s"createSSLEngine - for $hostName")
             engine.setEngineHostName(hostName)
-          case _ =>
+          case _               =>
             DynamicSSLEngineProvider.logger.debug(s"Not a hostname :( ${sniServerName.toString}")
         }
         true
@@ -627,13 +660,21 @@ object TcpProxy {
   def apply(tcp: TcpService)(implicit system: ActorSystem, mat: Materializer): TcpProxy =
     new TcpProxy(tcp.interface, tcp.port, tcp.tls, tcp.sni.enabled, tcp.clientAuth, false)(system, mat)
   def apply(interface: String, port: Int, tls: TlsMode, sni: Boolean, clientAuth: ClientAuth, debug: Boolean = false)(
-      implicit system: ActorSystem,
+      implicit
+      system: ActorSystem,
       mat: Materializer
-  ): TcpProxy = new TcpProxy(interface, port, tls, sni, clientAuth, debug)(system, mat)
+  ): TcpProxy                                                                           = new TcpProxy(interface, port, tls, sni, clientAuth, debug)(system, mat)
 }
 
-class TcpProxy(interface: String, port: Int, tls: TlsMode, sni: Boolean, clientAuth: ClientAuth, debug: Boolean = false)(
-    implicit system: ActorSystem,
+class TcpProxy(
+    interface: String,
+    port: Int,
+    tls: TlsMode,
+    sni: Boolean,
+    clientAuth: ClientAuth,
+    debug: Boolean = false
+)(implicit
+    system: ActorSystem,
     mat: Materializer
 ) {
 
@@ -641,10 +682,11 @@ class TcpProxy(interface: String, port: Int, tls: TlsMode, sni: Boolean, clientA
   private implicit val ec = system.dispatcher
   private val provider    = new TcpEngineProvider()
 
-  private def debugger(title: String): Sink[ByteString, Future[Done]] = debug match {
-    case true  => Sink.foreach[ByteString](bs => log.info(title + bs.utf8String))
-    case false => Sink.ignore
-  }
+  private def debugger(title: String): Sink[ByteString, Future[Done]] =
+    debug match {
+      case true  => Sink.foreach[ByteString](bs => log.info(title + bs.utf8String))
+      case false => Sink.ignore
+    }
 
   private def tcpBindTlsAndSNI(settings: ServerSettings, env: Env): Future[Tcp.ServerBinding] = {
     TcpUtils
@@ -818,7 +860,7 @@ class TcpProxy(interface: String, port: Int, tls: TlsMode, sni: Boolean, clientA
       case Success(_)                           => log.info(s"Tcp     proxy listening on $interface:$port")
       case Failure(e) if tls == TlsMode.Enabled =>
         log.error(s"Error while binding Tcp/Tls proxy on $interface:$port", e)
-      case Failure(e) => log.error(s"Error while binding Tcp     proxy on $interface:$port", e)
+      case Failure(e)                           => log.error(s"Error while binding Tcp     proxy on $interface:$port", e)
     }
   }
 }
@@ -847,7 +889,7 @@ class RunningServers(env: Env) {
           val actualServers = runningServers.get()
           val existingPorts = actualServers.map(_.port)
           log.debug(s"[RunningServer] existing $existingPorts")
-          val changed = services.filter(s => existingPorts.contains(s.port)).filter { s =>
+          val changed       = services.filter(s => existingPorts.contains(s.port)).filter { s =>
             val server = actualServers.find(_.port == s.port).get
             s.interface != server.oldService.interface ||
             s.sni != server.oldService.sni ||
@@ -855,19 +897,19 @@ class RunningServers(env: Env) {
             s.clientAuth != server.oldService.clientAuth
           }
           log.debug(s"[RunningServer] changed ${changed.map(_.port)}")
-          val notRunning = services.filterNot(s => existingPorts.contains(s.port))
+          val notRunning    = services.filterNot(s => existingPorts.contains(s.port))
           log.debug(s"[RunningServer] notRunning ${notRunning.map(_.port)}")
           val willExistPort = (changed ++ notRunning ++ services).distinct.map(_.port)
           log.debug(s"[RunningServer] willExist ${willExistPort}")
-          val toShutDown = actualServers.filterNot(s => willExistPort.contains(s.port))
+          val toShutDown    = actualServers.filterNot(s => willExistPort.contains(s.port))
           log.debug(s"[RunningServer] toShutDown ${toShutDown.map(_.port)}")
-          val allDown1 = Future.sequence(toShutDown.map { s =>
+          val allDown1      = Future.sequence(toShutDown.map { s =>
             log.info(
               s"Stopping Tcp proxy on ${s.oldService.interface}:${s.oldService.port} because it does not exists anymore"
             )
             s.binding.flatMap(_.unbind())
           })
-          val allDown2 = Future.sequence(changed.map { s =>
+          val allDown2      = Future.sequence(changed.map { s =>
             val server = actualServers.find(_.port == s.port).get
             log.info(
               s"Stopping Tcp proxy on ${server.oldService.interface}:${server.oldService.port} because the service changed"
@@ -882,7 +924,7 @@ class RunningServers(env: Env) {
             val running2      = notRunning.map(s => RunningServer(s.port, s, TcpProxy(s).start(env)))
             val changedPorts  = changed.map(_.port)
             val shutdownPorts = toShutDown.map(_.port)
-            val stayServers =
+            val stayServers   =
               actualServers.filterNot(s => changedPorts.contains(s.port) || shutdownPorts.contains(s.port))
             runningServers.set(stayServers ++ running1 ++ running2)
           }
@@ -895,9 +937,13 @@ class RunningServers(env: Env) {
 
   def start(): RunningServers = {
     if (running.compareAndSet(false, true)) {
-      ref.set(system.scheduler.scheduleAtFixedRate(1.second, 10.seconds)(SchedulerHelper.runnable(
-        updateRunningServers()
-      )))
+      ref.set(
+        system.scheduler.scheduleAtFixedRate(1.second, 10.seconds)(
+          SchedulerHelper.runnable(
+            updateRunningServers()
+          )
+        )
+      )
     }
     this
   }
@@ -918,28 +964,29 @@ class RunningServers(env: Env) {
 }
 
 sealed trait TcpServiceDataStore extends BasicStore[TcpService] {
-  def template: TcpService = TcpService(
-    id = IdGenerator.token,
-    enabled = true,
-    tls = TlsMode.Disabled,
-    sni = SniSettings(false, false),
-    clientAuth = ClientAuth.None,
-    port = 4200,
-    metadata = Map.empty,
-    rules = Seq(
-      TcpRule(
-        domain = "*",
-        targets = Seq(
-          TcpTarget(
-            "42.42.42.42",
-            None,
-            4200,
-            false
+  def template: TcpService =
+    TcpService(
+      id = IdGenerator.token,
+      enabled = true,
+      tls = TlsMode.Disabled,
+      sni = SniSettings(false, false),
+      clientAuth = ClientAuth.None,
+      port = 4200,
+      metadata = Map.empty,
+      rules = Seq(
+        TcpRule(
+          domain = "*",
+          targets = Seq(
+            TcpTarget(
+              "42.42.42.42",
+              None,
+              4200,
+              false
+            )
           )
         )
       )
     )
-  )
 }
 
 class KvTcpServiceDataStoreDataStore(redisCli: RedisLike, env: Env)

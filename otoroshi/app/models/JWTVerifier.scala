@@ -47,25 +47,26 @@ case class JwtInjection(
     additionalHeaders: Map[String, String] = Map.empty,
     removeHeaders: Seq[String] = Seq.empty,
     additionalCookies: Map[String, String] = Map.empty,
-    removeCookies: Seq[String] = Seq.empty,
+    removeCookies: Seq[String] = Seq.empty
 ) extends AsJson {
-  def asJson: JsValue = Json.obj(
-    "additionalHeaders" -> JsObject(this.additionalHeaders.mapValues(JsString.apply)),
-    "removeHeaders"     -> JsArray(this.removeHeaders.map(JsString.apply)),
-    "additionalCookies" -> JsObject(this.additionalCookies.mapValues(JsString.apply)),
-    "removeCookies"     -> JsArray(this.removeCookies.map(JsString.apply))
-  )
+  def asJson: JsValue =
+    Json.obj(
+      "additionalHeaders" -> JsObject(this.additionalHeaders.mapValues(JsString.apply)),
+      "removeHeaders"     -> JsArray(this.removeHeaders.map(JsString.apply)),
+      "additionalCookies" -> JsObject(this.additionalCookies.mapValues(JsString.apply)),
+      "removeCookies"     -> JsArray(this.removeCookies.map(JsString.apply))
+    )
 }
 
 object JwtInjection extends FromJson[JwtInjection] {
   override def fromJson(json: JsValue) = ???
 }
 
-sealed trait JwtTokenLocation extends AsJson {
+sealed trait JwtTokenLocation                          extends AsJson                     {
   def token(request: RequestHeader): Option[String]
   def asJwtInjection(originalToken: DecodedJWT, newToken: String): JwtInjection
 }
-object JwtTokenLocation extends FromJson[JwtTokenLocation] {
+object JwtTokenLocation                                extends FromJson[JwtTokenLocation] {
   override def fromJson(json: JsValue): Either[Throwable, JwtTokenLocation] =
     Try {
       (json \ "type").as[String] match {
@@ -77,7 +78,7 @@ object JwtTokenLocation extends FromJson[JwtTokenLocation] {
       case e => Left(e)
     } get
 }
-object InQueryParam extends FromJson[InQueryParam] {
+object InQueryParam                                    extends FromJson[InQueryParam]     {
   override def fromJson(json: JsValue): Either[Throwable, InQueryParam] =
     Try {
       Right(
@@ -89,12 +90,12 @@ object InQueryParam extends FromJson[InQueryParam] {
       case e => Left(e)
     } get
 }
-case class InQueryParam(name: String) extends JwtTokenLocation {
-  def token(request: RequestHeader): Option[String]  = request.getQueryString(name)
+case class InQueryParam(name: String)                  extends JwtTokenLocation           {
+  def token(request: RequestHeader): Option[String]                             = request.getQueryString(name)
   def asJwtInjection(originalToken: DecodedJWT, newToken: String): JwtInjection = JwtInjection()
-  override def asJson                                = Json.obj("type" -> "InQueryParam", "name" -> this.name)
+  override def asJson                                                           = Json.obj("type" -> "InQueryParam", "name" -> this.name)
 }
-object InHeader extends FromJson[InHeader] {
+object InHeader                                        extends FromJson[InHeader]         {
   override def fromJson(json: JsValue): Either[Throwable, InHeader] =
     Try {
       Right(
@@ -107,7 +108,7 @@ object InHeader extends FromJson[InHeader] {
       case e => Left(e)
     } get
 }
-case class InHeader(name: String, remove: String = "") extends JwtTokenLocation {
+case class InHeader(name: String, remove: String = "") extends JwtTokenLocation           {
   def token(request: RequestHeader): Option[String] = {
     request.headers.get(name).map { h =>
       h.replaceAll(remove, "")
@@ -115,9 +116,9 @@ case class InHeader(name: String, remove: String = "") extends JwtTokenLocation 
   }
   def asJwtInjection(originalToken: DecodedJWT, newToken: String): JwtInjection =
     JwtInjection(originalToken.some, additionalHeaders = Map(name -> (remove + newToken)))
-  override def asJson = Json.obj("type" -> "InHeader", "name" -> this.name, "remove" -> this.remove)
+  override def asJson                                                           = Json.obj("type" -> "InHeader", "name" -> this.name, "remove" -> this.remove)
 }
-object InCookie extends FromJson[InCookie] {
+object InCookie                                        extends FromJson[InCookie]         {
   override def fromJson(json: JsValue): Either[Throwable, InCookie] =
     Try {
       Right(
@@ -129,10 +130,11 @@ object InCookie extends FromJson[InCookie] {
       case e => Left(e)
     } get
 }
-case class InCookie(name: String) extends JwtTokenLocation {
-  def token(request: RequestHeader): Option[String]  = request.cookies.get(name).map(_.value)
-  def asJwtInjection(originalToken: DecodedJWT, newToken: String): JwtInjection = JwtInjection(originalToken.some, additionalCookies = Map(name -> newToken))
-  override def asJson                                = Json.obj("type" -> "InCookie", "name" -> this.name)
+case class InCookie(name: String)                      extends JwtTokenLocation           {
+  def token(request: RequestHeader): Option[String]                             = request.cookies.get(name).map(_.value)
+  def asJwtInjection(originalToken: DecodedJWT, newToken: String): JwtInjection =
+    JwtInjection(originalToken.some, additionalCookies = Map(name -> newToken))
+  override def asJson                                                           = Json.obj("type" -> "InCookie", "name" -> this.name)
 }
 
 sealed trait AlgoMode
@@ -176,7 +178,7 @@ sealed trait AlgoSettings extends AsJson {
     )
   }
 }
-object AlgoSettings extends FromJson[AlgoSettings] {
+object AlgoSettings                                                           extends FromJson[AlgoSettings]   {
   override def fromJson(json: JsValue): Either[Throwable, AlgoSettings] =
     Try {
       (json \ "type").as[String] match {
@@ -201,7 +203,7 @@ object AlgoSettings extends FromJson[AlgoSettings] {
     }
   }
 }
-object HSAlgoSettings extends FromJson[HSAlgoSettings] {
+object HSAlgoSettings                                                         extends FromJson[HSAlgoSettings] {
   override def fromJson(json: JsValue): Either[Throwable, HSAlgoSettings] =
     Try {
       Right(
@@ -215,27 +217,29 @@ object HSAlgoSettings extends FromJson[HSAlgoSettings] {
       case e => Left(e)
     } get
 }
-case class HSAlgoSettings(size: Int, secret: String, base64: Boolean = false) extends AlgoSettings {
+case class HSAlgoSettings(size: Int, secret: String, base64: Boolean = false) extends AlgoSettings             {
 
   def keyId: Option[String] = None
 
-  override def asAlgorithm(mode: AlgoMode)(implicit env: Env): Option[Algorithm] = size match {
-    case 256 if base64 => Some(Algorithm.HMAC256(ApacheBase64.decodeBase64(transformValue(secret))))
-    case 384 if base64 => Some(Algorithm.HMAC384(ApacheBase64.decodeBase64(transformValue(secret))))
-    case 512 if base64 => Some(Algorithm.HMAC512(ApacheBase64.decodeBase64(transformValue(secret))))
-    case 256           => Some(Algorithm.HMAC256(transformValue(secret)))
-    case 384           => Some(Algorithm.HMAC384(transformValue(secret)))
-    case 512           => Some(Algorithm.HMAC512(transformValue(secret)))
-    case _             => None
-  }
-  override def asJson = Json.obj(
-    "type"   -> "HSAlgoSettings",
-    "size"   -> this.size,
-    "secret" -> this.secret,
-    "base64" -> this.base64,
-  )
+  override def asAlgorithm(mode: AlgoMode)(implicit env: Env): Option[Algorithm] =
+    size match {
+      case 256 if base64 => Some(Algorithm.HMAC256(ApacheBase64.decodeBase64(transformValue(secret))))
+      case 384 if base64 => Some(Algorithm.HMAC384(ApacheBase64.decodeBase64(transformValue(secret))))
+      case 512 if base64 => Some(Algorithm.HMAC512(ApacheBase64.decodeBase64(transformValue(secret))))
+      case 256           => Some(Algorithm.HMAC256(transformValue(secret)))
+      case 384           => Some(Algorithm.HMAC384(transformValue(secret)))
+      case 512           => Some(Algorithm.HMAC512(transformValue(secret)))
+      case _             => None
+    }
+  override def asJson                                                            =
+    Json.obj(
+      "type"   -> "HSAlgoSettings",
+      "size"   -> this.size,
+      "secret" -> this.secret,
+      "base64" -> this.base64
+    )
 }
-object RSAlgoSettings extends FromJson[RSAlgoSettings] {
+object RSAlgoSettings                                                               extends FromJson[RSAlgoSettings] {
   override def fromJson(json: JsValue): Either[Throwable, RSAlgoSettings] =
     Try {
       Right(
@@ -249,7 +253,7 @@ object RSAlgoSettings extends FromJson[RSAlgoSettings] {
       case e => Left(e)
     } get
 }
-case class RSAlgoSettings(size: Int, publicKey: String, privateKey: Option[String]) extends AlgoSettings {
+case class RSAlgoSettings(size: Int, publicKey: String, privateKey: Option[String]) extends AlgoSettings             {
 
   def keyId: Option[String] = None
 
@@ -277,33 +281,41 @@ case class RSAlgoSettings(size: Int, publicKey: String, privateKey: Option[Strin
     }
   }
 
-  override def asAlgorithm(mode: AlgoMode)(implicit env: Env): Option[Algorithm] = size match {
-    case 256 =>
-      Some(
-        Algorithm.RSA256(getPublicKey(transformValue(publicKey)),
-                         privateKey.filterNot(_.trim.isEmpty).map(pk => getPrivateKey(transformValue(pk))).orNull)
-      )
-    case 384 =>
-      Some(
-        Algorithm.RSA384(getPublicKey(transformValue(publicKey)),
-                         privateKey.filterNot(_.trim.isEmpty).map(pk => getPrivateKey(transformValue(pk))).orNull)
-      )
-    case 512 =>
-      Some(
-        Algorithm.RSA512(getPublicKey(transformValue(publicKey)),
-                         privateKey.filterNot(_.trim.isEmpty).map(pk => getPrivateKey(transformValue(pk))).orNull)
-      )
-    case _ => None
-  }
+  override def asAlgorithm(mode: AlgoMode)(implicit env: Env): Option[Algorithm] =
+    size match {
+      case 256 =>
+        Some(
+          Algorithm.RSA256(
+            getPublicKey(transformValue(publicKey)),
+            privateKey.filterNot(_.trim.isEmpty).map(pk => getPrivateKey(transformValue(pk))).orNull
+          )
+        )
+      case 384 =>
+        Some(
+          Algorithm.RSA384(
+            getPublicKey(transformValue(publicKey)),
+            privateKey.filterNot(_.trim.isEmpty).map(pk => getPrivateKey(transformValue(pk))).orNull
+          )
+        )
+      case 512 =>
+        Some(
+          Algorithm.RSA512(
+            getPublicKey(transformValue(publicKey)),
+            privateKey.filterNot(_.trim.isEmpty).map(pk => getPrivateKey(transformValue(pk))).orNull
+          )
+        )
+      case _   => None
+    }
 
-  override def asJson = Json.obj(
-    "type"       -> "RSAlgoSettings",
-    "size"       -> this.size,
-    "publicKey"  -> this.publicKey,
-    "privateKey" -> this.privateKey.map(pk => JsString(pk)).getOrElse(JsNull).as[JsValue]
-  )
+  override def asJson =
+    Json.obj(
+      "type"       -> "RSAlgoSettings",
+      "size"       -> this.size,
+      "publicKey"  -> this.publicKey,
+      "privateKey" -> this.privateKey.map(pk => JsString(pk)).getOrElse(JsNull).as[JsValue]
+    )
 }
-object ESAlgoSettings extends FromJson[ESAlgoSettings] {
+object ESAlgoSettings                                                               extends FromJson[ESAlgoSettings] {
   override def fromJson(json: JsValue): Either[Throwable, ESAlgoSettings] =
     Try {
       Right(
@@ -317,7 +329,7 @@ object ESAlgoSettings extends FromJson[ESAlgoSettings] {
       case e => Left(e)
     } get
 }
-case class ESAlgoSettings(size: Int, publicKey: String, privateKey: Option[String]) extends AlgoSettings {
+case class ESAlgoSettings(size: Int, publicKey: String, privateKey: Option[String]) extends AlgoSettings             {
 
   def keyId: Option[String] = None
 
@@ -345,31 +357,39 @@ case class ESAlgoSettings(size: Int, publicKey: String, privateKey: Option[Strin
     }
   }
 
-  override def asAlgorithm(mode: AlgoMode)(implicit env: Env): Option[Algorithm] = size match {
-    case 256 =>
-      Some(
-        Algorithm.ECDSA256(getPublicKey(transformValue(publicKey)),
-                           privateKey.filterNot(_.trim.isEmpty).map(pk => getPrivateKey(transformValue(pk))).orNull)
-      )
-    case 384 =>
-      Some(
-        Algorithm.ECDSA384(getPublicKey(transformValue(publicKey)),
-                           privateKey.filterNot(_.trim.isEmpty).map(pk => getPrivateKey(transformValue(pk))).orNull)
-      )
-    case 512 =>
-      Some(
-        Algorithm.ECDSA512(getPublicKey(transformValue(publicKey)),
-                           privateKey.filterNot(_.trim.isEmpty).map(pk => getPrivateKey(transformValue(pk))).orNull)
-      )
-    case _ => None
-  }
+  override def asAlgorithm(mode: AlgoMode)(implicit env: Env): Option[Algorithm] =
+    size match {
+      case 256 =>
+        Some(
+          Algorithm.ECDSA256(
+            getPublicKey(transformValue(publicKey)),
+            privateKey.filterNot(_.trim.isEmpty).map(pk => getPrivateKey(transformValue(pk))).orNull
+          )
+        )
+      case 384 =>
+        Some(
+          Algorithm.ECDSA384(
+            getPublicKey(transformValue(publicKey)),
+            privateKey.filterNot(_.trim.isEmpty).map(pk => getPrivateKey(transformValue(pk))).orNull
+          )
+        )
+      case 512 =>
+        Some(
+          Algorithm.ECDSA512(
+            getPublicKey(transformValue(publicKey)),
+            privateKey.filterNot(_.trim.isEmpty).map(pk => getPrivateKey(transformValue(pk))).orNull
+          )
+        )
+      case _   => None
+    }
 
-  override def asJson = Json.obj(
-    "type"       -> "ESAlgoSettings",
-    "size"       -> this.size,
-    "publicKey"  -> this.publicKey,
-    "privateKey" -> this.privateKey.map(pk => JsString(pk)).getOrElse(JsNull).as[JsValue]
-  )
+  override def asJson =
+    Json.obj(
+      "type"       -> "ESAlgoSettings",
+      "size"       -> this.size,
+      "publicKey"  -> this.publicKey,
+      "privateKey" -> this.privateKey.map(pk => JsString(pk)).getOrElse(JsNull).as[JsValue]
+    )
 }
 object JWKSAlgoSettings extends FromJson[JWKSAlgoSettings] {
 
@@ -400,14 +420,15 @@ object JWKSAlgoSettings extends FromJson[JWKSAlgoSettings] {
     } get
   }
 }
-case class JWKSAlgoSettings(url: String,
-                            headers: Map[String, String],
-                            timeout: FiniteDuration,
-                            ttl: FiniteDuration,
-                            kty: KeyType,
-                            proxy: Option[WSProxyServer] = None,
-                            mtlsConfig: MtlsConfig)
-    extends AlgoSettings {
+case class JWKSAlgoSettings(
+    url: String,
+    headers: Map[String, String],
+    timeout: FiniteDuration,
+    ttl: FiniteDuration,
+    kty: KeyType,
+    proxy: Option[WSProxyServer] = None,
+    mtlsConfig: MtlsConfig
+) extends AlgoSettings {
 
   val logger = Logger("otoroshi-jwks")
 
@@ -421,13 +442,13 @@ case class JWKSAlgoSettings(url: String,
           case "RS384" => Some(Algorithm.RSA384(rsaKey.toRSAPublicKey, null))
           case "RS512" => Some(Algorithm.RSA512(rsaKey.toRSAPublicKey, null))
         }
-      case ecKey: ECKey =>
+      case ecKey: ECKey   =>
         alg match {
           case "EC256" => Some(Algorithm.ECDSA256(ecKey.toECPublicKey, null))
           case "EC384" => Some(Algorithm.ECDSA384(ecKey.toECPublicKey, null))
           case "EC512" => Some(Algorithm.ECDSA512(ecKey.toECPublicKey, null))
         }
-      case _ => None
+      case _              => None
     }
   }
 
@@ -448,7 +469,7 @@ case class JWKSAlgoSettings(url: String,
               case None      => FastFuture.successful(None)
             }
           }
-          case _ => {
+          case _                                                       => {
             // val protocol = url.split("://").toSeq.headOption.getOrElse("http")
             env.MtlsWs
               .url(url, mtlsConfig)
@@ -473,7 +494,7 @@ case class JWKSAlgoSettings(url: String,
                       case None      => None
                     }
                   }
-                  case None => None
+                  case None         => None
                 }
               }
               .recover {
@@ -484,23 +505,24 @@ case class JWKSAlgoSettings(url: String,
           }
         }
       }
-      case _ => FastFuture.successful(None)
+      case _                         => FastFuture.successful(None)
     }
   }
 
-  override def asJson: JsValue = Json.obj(
-    "type"       -> "JWKSAlgoSettings",
-    "url"        -> url,
-    "timeout"    -> timeout.toMillis,
-    "headers"    -> headers,
-    "ttl"        -> ttl.toMillis,
-    "kty"        -> kty.getValue,
-    "proxy"      -> WSProxyServerJson.maybeProxyToJson(proxy),
-    "mtlsConfig" -> mtlsConfig.json
-  )
+  override def asJson: JsValue =
+    Json.obj(
+      "type"       -> "JWKSAlgoSettings",
+      "url"        -> url,
+      "timeout"    -> timeout.toMillis,
+      "headers"    -> headers,
+      "ttl"        -> ttl.toMillis,
+      "kty"        -> kty.getValue,
+      "proxy"      -> WSProxyServerJson.maybeProxyToJson(proxy),
+      "mtlsConfig" -> mtlsConfig.json
+    )
 }
 
-object RSAKPAlgoSettings extends FromJson[RSAKPAlgoSettings] {
+object RSAKPAlgoSettings                                extends FromJson[RSAKPAlgoSettings] {
   override def fromJson(json: JsValue): Either[Throwable, RSAKPAlgoSettings] =
     Try {
       Right(
@@ -513,7 +535,7 @@ object RSAKPAlgoSettings extends FromJson[RSAKPAlgoSettings] {
       case e => Left(e)
     } get
 }
-case class RSAKPAlgoSettings(size: Int, certId: String) extends AlgoSettings {
+case class RSAKPAlgoSettings(size: Int, certId: String) extends AlgoSettings                {
 
   import scala.concurrent.duration._
 
@@ -525,10 +547,13 @@ case class RSAKPAlgoSettings(size: Int, certId: String) extends AlgoSettings {
 
   override def asAlgorithmF(mode: AlgoMode)(implicit env: Env, ec: ExecutionContext): Future[Option[Algorithm]] = {
     env.datastores.certificatesDataStore
-      .findById(certId).map {
+      .findById(certId)
+      .map {
         case s @ Some(_) => s
-        case None => DynamicSSLEngineProvider.certificates.values.find(_.entityMetadata.get("nextCertificate").contains(certId))
-      }.map { c =>
+        case None        =>
+          DynamicSSLEngineProvider.certificates.values.find(_.entityMetadata.get("nextCertificate").contains(certId))
+      }
+      .map { c =>
         c.flatMap { cert =>
           val keyPair = cert.cryptoKeyPair
           (keyPair.getPublic, keyPair.getPrivate) match {
@@ -539,20 +564,21 @@ case class RSAKPAlgoSettings(size: Int, certId: String) extends AlgoSettings {
                 case 512 => Some(Algorithm.RSA512(pk, pkk))
                 case _   => None
               }
-            case _ => None
+            case _                                      => None
           }
         }
       }
   }
 
-  override def asJson = Json.obj(
-    "type"   -> "RSAKPAlgoSettings",
-    "size"   -> this.size,
-    "certId" -> this.certId
-  )
+  override def asJson =
+    Json.obj(
+      "type"   -> "RSAKPAlgoSettings",
+      "size"   -> this.size,
+      "certId" -> this.certId
+    )
 }
 
-object ESKPAlgoSettings extends FromJson[ESKPAlgoSettings] {
+object ESKPAlgoSettings                                extends FromJson[ESKPAlgoSettings] {
   override def fromJson(json: JsValue): Either[Throwable, ESKPAlgoSettings] =
     Try {
       Right(
@@ -565,7 +591,7 @@ object ESKPAlgoSettings extends FromJson[ESKPAlgoSettings] {
       case e => Left(e)
     } get
 }
-case class ESKPAlgoSettings(size: Int, certId: String) extends AlgoSettings {
+case class ESKPAlgoSettings(size: Int, certId: String) extends AlgoSettings               {
 
   import scala.concurrent.duration._
 
@@ -577,31 +603,35 @@ case class ESKPAlgoSettings(size: Int, certId: String) extends AlgoSettings {
 
   override def asAlgorithmF(mode: AlgoMode)(implicit env: Env, ec: ExecutionContext): Future[Option[Algorithm]] = {
     env.datastores.certificatesDataStore
-      .findById(certId).map {
-      case s @ Some(_) => s
-      case None => DynamicSSLEngineProvider.certificates.values.find(_.entityMetadata.get("nextCertificate").contains(certId))
-    }.map { c =>
-      c.flatMap { cert =>
-        val keyPair = cert.cryptoKeyPair
-        (keyPair.getPublic, keyPair.getPrivate) match {
-          case (pk: ECPublicKey, pkk: ECPrivateKey) =>
-            size match {
-              case 256 => Some(Algorithm.ECDSA256(pk, pkk))
-              case 384 => Some(Algorithm.ECDSA384(pk, pkk))
-              case 512 => Some(Algorithm.ECDSA512(pk, pkk))
-              case _   => None
-            }
-          case _ => None
+      .findById(certId)
+      .map {
+        case s @ Some(_) => s
+        case None        =>
+          DynamicSSLEngineProvider.certificates.values.find(_.entityMetadata.get("nextCertificate").contains(certId))
+      }
+      .map { c =>
+        c.flatMap { cert =>
+          val keyPair = cert.cryptoKeyPair
+          (keyPair.getPublic, keyPair.getPrivate) match {
+            case (pk: ECPublicKey, pkk: ECPrivateKey) =>
+              size match {
+                case 256 => Some(Algorithm.ECDSA256(pk, pkk))
+                case 384 => Some(Algorithm.ECDSA384(pk, pkk))
+                case 512 => Some(Algorithm.ECDSA512(pk, pkk))
+                case _   => None
+              }
+            case _                                    => None
+          }
         }
       }
-    }
   }
 
-  override def asJson = Json.obj(
-    "type"   -> "ESKPAlgoSettings",
-    "size"   -> this.size,
-    "certId" -> this.certId
-  )
+  override def asJson =
+    Json.obj(
+      "type"   -> "ESKPAlgoSettings",
+      "size"   -> this.size,
+      "certId" -> this.certId
+    )
 }
 
 object KidAlgoSettings extends FromJson[KidAlgoSettings] {
@@ -630,43 +660,45 @@ case class KidAlgoSettings(onlyExposedCerts: Boolean) extends AlgoSettings {
   override def asAlgorithmF(mode: AlgoMode)(implicit env: Env, ec: ExecutionContext): Future[Option[Algorithm]] = {
     mode match {
       case InputMode(typ, Some(kid)) => {
-        val certs = DynamicSSLEngineProvider.certificates
-        val certOpt = certs.get(kid).orElse(certs.values.find(_.entityMetadata.get("nextCertificate").contains(kid))).filter {
-          case c if !c.exposed && onlyExposedCerts => false
-          case c => true
-        }
+        val certs   = DynamicSSLEngineProvider.certificates
+        val certOpt =
+          certs.get(kid).orElse(certs.values.find(_.entityMetadata.get("nextCertificate").contains(kid))).filter {
+            case c if !c.exposed && onlyExposedCerts => false
+            case c                                   => true
+          }
         certOpt.flatMap { cert =>
           val keyPair = cert.cryptoKeyPair
           (keyPair.getPublic, keyPair.getPrivate) match {
-            case (pk: ECPublicKey, pkk: ECPrivateKey) =>
+            case (pk: ECPublicKey, pkk: ECPrivateKey)   =>
               typ match {
                 case "ES256" => Some(Algorithm.ECDSA256(pk, pkk))
                 case "ES384" => Some(Algorithm.ECDSA384(pk, pkk))
                 case "ES512" => Some(Algorithm.ECDSA512(pk, pkk))
-                case _   => None
+                case _       => None
               }
             case (pk: RSAPublicKey, pkk: RSAPrivateKey) =>
               typ match {
                 case "RS256" => Some(Algorithm.RSA256(pk, pkk))
                 case "RS384" => Some(Algorithm.RSA384(pk, pkk))
                 case "RS512" => Some(Algorithm.RSA512(pk, pkk))
-                case _   => None
+                case _       => None
               }
-            case _ => None
+            case _                                      => None
           }
         }.future
       }
-      case _ => None.future
+      case _                         => None.future
     }
   }
 
-  override def asJson = Json.obj(
-    "type"   -> "KidAlgoSettings",
-    "onlyExposedCerts"   -> this.onlyExposedCerts,
-  )
+  override def asJson =
+    Json.obj(
+      "type"             -> "KidAlgoSettings",
+      "onlyExposedCerts" -> this.onlyExposedCerts
+    )
 }
 
-object MappingSettings extends FromJson[MappingSettings] {
+object MappingSettings                                                                     extends FromJson[MappingSettings]   {
   override def fromJson(json: JsValue): Either[Throwable, MappingSettings] =
     Try {
       Right(
@@ -680,17 +712,19 @@ object MappingSettings extends FromJson[MappingSettings] {
       case e => Left(e)
     } get
 }
-case class MappingSettings(map: Map[String, String] = Map.empty,
-                           values: JsObject = Json.obj(),
-                           remove: Seq[String] = Seq.empty[String])
-    extends AsJson {
-  override def asJson = Json.obj(
-    "map"    -> JsObject(map.mapValues(JsString.apply)),
-    "values" -> values,
-    "remove" -> JsArray(remove.map(JsString.apply))
-  )
+case class MappingSettings(
+    map: Map[String, String] = Map.empty,
+    values: JsObject = Json.obj(),
+    remove: Seq[String] = Seq.empty[String]
+)                                                                                          extends AsJson                      {
+  override def asJson =
+    Json.obj(
+      "map"    -> JsObject(map.mapValues(JsString.apply)),
+      "values" -> values,
+      "remove" -> JsArray(remove.map(JsString.apply))
+    )
 }
-object TransformSettings extends FromJson[TransformSettings] {
+object TransformSettings                                                                   extends FromJson[TransformSettings] {
   override def fromJson(json: JsValue): Either[Throwable, TransformSettings] =
     Try {
       for {
@@ -701,11 +735,12 @@ object TransformSettings extends FromJson[TransformSettings] {
       case e => Left(e)
     } get
 }
-case class TransformSettings(location: JwtTokenLocation, mappingSettings: MappingSettings) extends AsJson {
-  override def asJson = Json.obj(
-    "location"        -> location.asJson,
-    "mappingSettings" -> mappingSettings.asJson
-  )
+case class TransformSettings(location: JwtTokenLocation, mappingSettings: MappingSettings) extends AsJson                      {
+  override def asJson =
+    Json.obj(
+      "location"        -> location.asJson,
+      "mappingSettings" -> mappingSettings.asJson
+    )
 }
 
 object VerificationSettings extends FromJson[VerificationSettings] {
@@ -727,14 +762,14 @@ case class VerificationSettings(fields: Map[String, String] = Map.empty, arrayFi
   def additionalVerification(jwt: DecodedJWT): DecodedJWT = {
     val token: JsObject = Try(Json.parse(ApacheBase64.decodeBase64(jwt.getPayload)).as[JsObject]).getOrElse(Json.obj())
     arrayFields.foldLeft(jwt)((a, b) => {
-      val values: Set[String] = (token \ b._1)
+      val values: Set[String]         = (token \ b._1)
         .as[JsArray]
         .value
         .collect {
           case JsNumber(nbr) => nbr.toString()
           case JsBoolean(b)  => b.toString
-        case JsString(str)   => str
-      } toSet
+          case JsString(str) => str
+        } toSet
       val expectedValues: Set[String] = if (b._2.contains(",")) {
         b._2.split(",").map(_.trim).toSet
       } else {
@@ -752,10 +787,10 @@ case class VerificationSettings(fields: Map[String, String] = Map.empty, arrayFi
         .acceptLeeway(10)
     ) {
       case (a, b) if b._1 == PublicClaims.AUDIENCE => a.withAudience(b._2)
-      case (a, b) if b._1 == PublicClaims.ISSUER => a.withIssuer(b._2)
-      case (a, b) if b._1 == PublicClaims.JWT_ID => a.withJWTId( b._2)
-      case (a, b) if b._1 == PublicClaims.SUBJECT => a.withSubject(b._2)
-      case (a, b) => a.withClaim(b._1, b._2)
+      case (a, b) if b._1 == PublicClaims.ISSUER   => a.withIssuer(b._2)
+      case (a, b) if b._1 == PublicClaims.JWT_ID   => a.withJWTId(b._2)
+      case (a, b) if b._1 == PublicClaims.SUBJECT  => a.withSubject(b._2)
+      case (a, b)                                  => a.withClaim(b._1, b._2)
     }
     arrayFields.foldLeft(verification)((a, b) => {
       if (b._2.contains(",")) {
@@ -767,10 +802,11 @@ case class VerificationSettings(fields: Map[String, String] = Map.empty, arrayFi
     })
   }
 
-  override def asJson = Json.obj(
-    "fields"      -> JsObject(this.fields.mapValues(JsString.apply)),
-    "arrayFields" -> JsObject(this.arrayFields.mapValues(JsString.apply)),
-  )
+  override def asJson =
+    Json.obj(
+      "fields"      -> JsObject(this.fields.mapValues(JsString.apply)),
+      "arrayFields" -> JsObject(this.arrayFields.mapValues(JsString.apply))
+    )
 }
 
 object VerifierStrategy extends FromJson[VerifierStrategy] {
@@ -809,16 +845,18 @@ object DefaultToken extends FromJson[VerifierStrategy] {
     } get
 }
 
-case class DefaultToken(strict: Boolean = true,
-                        token: JsValue,
-                        verificationSettings: VerificationSettings = VerificationSettings())
-    extends VerifierStrategy {
-  override def asJson = Json.obj(
-    "type"                 -> "DefaultToken",
-    "strict"               -> strict,
-    "token"                -> token,
-    "verificationSettings" -> verificationSettings.asJson
-  )
+case class DefaultToken(
+    strict: Boolean = true,
+    token: JsValue,
+    verificationSettings: VerificationSettings = VerificationSettings()
+) extends VerifierStrategy {
+  override def asJson =
+    Json.obj(
+      "type"                 -> "DefaultToken",
+      "strict"               -> strict,
+      "token"                -> token,
+      "verificationSettings" -> verificationSettings.asJson
+    )
 }
 
 object PassThrough extends FromJson[VerifierStrategy] {
@@ -833,10 +871,11 @@ object PassThrough extends FromJson[VerifierStrategy] {
 }
 
 case class PassThrough(verificationSettings: VerificationSettings) extends VerifierStrategy {
-  override def asJson = Json.obj(
-    "type"                 -> "PassThrough",
-    "verificationSettings" -> verificationSettings.asJson
-  )
+  override def asJson =
+    Json.obj(
+      "type"                 -> "PassThrough",
+      "verificationSettings" -> verificationSettings.asJson
+    )
 }
 
 object Sign extends FromJson[VerifierStrategy] {
@@ -852,11 +891,12 @@ object Sign extends FromJson[VerifierStrategy] {
 }
 
 case class Sign(verificationSettings: VerificationSettings, algoSettings: AlgoSettings) extends VerifierStrategy {
-  override def asJson = Json.obj(
-    "type"                 -> "Sign",
-    "verificationSettings" -> verificationSettings.asJson,
-    "algoSettings"         -> algoSettings.asJson
-  )
+  override def asJson =
+    Json.obj(
+      "type"                 -> "Sign",
+      "verificationSettings" -> verificationSettings.asJson,
+      "algoSettings"         -> algoSettings.asJson
+    )
 }
 
 object Transform extends FromJson[VerifierStrategy] {
@@ -872,16 +912,18 @@ object Transform extends FromJson[VerifierStrategy] {
     } get
 }
 
-case class Transform(verificationSettings: VerificationSettings,
-                     transformSettings: TransformSettings,
-                     algoSettings: AlgoSettings)
-    extends VerifierStrategy {
-  override def asJson = Json.obj(
-    "type"                 -> "Transform",
-    "verificationSettings" -> verificationSettings.asJson,
-    "transformSettings"    -> transformSettings.asJson,
-    "algoSettings"         -> algoSettings.asJson
-  )
+case class Transform(
+    verificationSettings: VerificationSettings,
+    transformSettings: TransformSettings,
+    algoSettings: AlgoSettings
+) extends VerifierStrategy {
+  override def asJson =
+    Json.obj(
+      "type"                 -> "Transform",
+      "verificationSettings" -> verificationSettings.asJson,
+      "transformSettings"    -> transformSettings.asJson,
+      "algoSettings"         -> algoSettings.asJson
+    )
 }
 
 sealed trait JwtVerifier extends AsJson {
@@ -902,17 +944,20 @@ sealed trait JwtVerifier extends AsJson {
     val header         = ApacheBase64.encodeBase64URLSafeString(Json.stringify(headerJson).getBytes(StandardCharsets.UTF_8))
     val payload        = ApacheBase64.encodeBase64URLSafeString(Json.stringify(token).getBytes(StandardCharsets.UTF_8))
     val content        = String.format("%s.%s", header, payload)
-    val signatureBytes = algorithm.sign(header.getBytes(StandardCharsets.UTF_8), payload.getBytes(StandardCharsets.UTF_8))
+    val signatureBytes =
+      algorithm.sign(header.getBytes(StandardCharsets.UTF_8), payload.getBytes(StandardCharsets.UTF_8))
     val signature      = ApacheBase64.encodeBase64URLSafeString(signatureBytes)
     s"$content.$signature"
   }
 
-  def verifyWs(request: RequestHeader,
-               desc: ServiceDescriptor,
-               apikey: Option[ApiKey],
-               user: Option[PrivateAppsUser],
-               elContext: Map[String, String],
-               attrs: TypedMap)(
+  def verifyWs(
+      request: RequestHeader,
+      desc: ServiceDescriptor,
+      apikey: Option[ApiKey],
+      user: Option[PrivateAppsUser],
+      elContext: Map[String, String],
+      attrs: TypedMap
+  )(
       f: JwtInjection => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
     internalVerify(request, desc, apikey, user, elContext, attrs, sendEvent = true)(f).map {
@@ -921,26 +966,30 @@ sealed trait JwtVerifier extends AsJson {
     }
   }
 
-  def verifyGen[A](request: RequestHeader,
-               desc: ServiceDescriptor,
-               apikey: Option[ApiKey],
-               user: Option[PrivateAppsUser],
-               elContext: Map[String, String],
-               attrs: TypedMap)(
-                f: JwtInjection => Future[Either[Result, A]]
-              )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
+  def verifyGen[A](
+      request: RequestHeader,
+      desc: ServiceDescriptor,
+      apikey: Option[ApiKey],
+      user: Option[PrivateAppsUser],
+      elContext: Map[String, String],
+      attrs: TypedMap
+  )(
+      f: JwtInjection => Future[Either[Result, A]]
+  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
     internalVerify(request, desc, apikey, user, elContext, attrs, sendEvent = true)(f).map {
       case Left(badResult)   => Left[Result, A](badResult)
       case Right(goodResult) => goodResult
     }
   }
 
-  def verify(request: RequestHeader,
-             desc: ServiceDescriptor,
-             apikey: Option[ApiKey],
-             user: Option[PrivateAppsUser],
-             elContext: Map[String, String],
-             attrs: TypedMap)(
+  def verify(
+      request: RequestHeader,
+      desc: ServiceDescriptor,
+      apikey: Option[ApiKey],
+      user: Option[PrivateAppsUser],
+      elContext: Map[String, String],
+      attrs: TypedMap
+  )(
       f: JwtInjection => Future[Result]
   )(implicit ec: ExecutionContext, env: Env): Future[Result] = {
     internalVerify(request, desc, apikey, user, elContext, attrs, sendEvent = true)(f).map {
@@ -949,23 +998,26 @@ sealed trait JwtVerifier extends AsJson {
     }
   }
 
-  private[models] def internalVerify[A](request: RequestHeader,
-                                        desc: ServiceDescriptor,
-                                        apikey: Option[ApiKey],
-                                        user: Option[PrivateAppsUser],
-                                        elContext: Map[String, String],
-                                        attrs: TypedMap, sendEvent: Boolean)(
+  private[models] def internalVerify[A](
+      request: RequestHeader,
+      desc: ServiceDescriptor,
+      apikey: Option[ApiKey],
+      user: Option[PrivateAppsUser],
+      elContext: Map[String, String],
+      attrs: TypedMap,
+      sendEvent: Boolean
+  )(
       f: JwtInjection => Future[A]
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
 
     import Implicits._
 
     source.token(request) match {
-      case None =>
+      case None        =>
         strategy match {
           case DefaultToken(true, newToken, _) => {
             algoSettings.asAlgorithmF(OutputMode) flatMap {
-              case None =>
+              case None                  =>
                 Errors
                   .craftResponseResult(
                     "error.bad.output.algorithm.name",
@@ -998,16 +1050,16 @@ sealed trait JwtVerifier extends AsJson {
                     env
                   )
                   .as[JsObject]
-                val signedToken = sign(interpolatedToken, outputAlgorithm, None)
-                val decodedToken = JWT.decode(signedToken)
-                f(source.asJwtInjection(decodedToken,  signedToken)).right[Result]
+                val signedToken       = sign(interpolatedToken, outputAlgorithm, None)
+                val decodedToken      = JWT.decode(signedToken)
+                f(source.asJwtInjection(decodedToken, signedToken)).right[Result]
               }
             }
           }
-          case DefaultToken(false, _, _) => {
+          case DefaultToken(false, _, _)       => {
             f(JwtInjection()).right[Result]
           }
-          case _ if strict => {
+          case _ if strict                     => {
             Errors
               .craftResponseResult(
                 "error.expected.token.not.found",
@@ -1020,7 +1072,7 @@ sealed trait JwtVerifier extends AsJson {
               )
               .left[A]
           }
-          case _ if !strict => f(JwtInjection()).right[Result]
+          case _ if !strict                    => f(JwtInjection()).right[Result]
         }
       // case None if strict =>
       //   Errors
@@ -1038,7 +1090,7 @@ sealed trait JwtVerifier extends AsJson {
         val kid         = (tokenHeader \ "kid").asOpt[String]
         val alg         = (tokenHeader \ "alg").asOpt[String].getOrElse("RS256")
         algoSettings.asAlgorithmF(InputMode(alg, kid)) flatMap {
-          case None =>
+          case None            =>
             Errors
               .craftResponseResult(
                 "error.bad.input.algorithm.name",
@@ -1052,7 +1104,7 @@ sealed trait JwtVerifier extends AsJson {
           case Some(algorithm) => {
             val verification = strategy.verificationSettings.asVerification(algorithm)
             Try(verification.build().verify(token)) match {
-              case Failure(e) =>
+              case Failure(e)            =>
                 // logger.error("Bad JWT token", e)
                 Errors
                   .craftResponseResult(
@@ -1067,7 +1119,7 @@ sealed trait JwtVerifier extends AsJson {
                   .left[A]
               case Success(decodedToken) =>
                 strategy match {
-                  case s @ DefaultToken(true, _, _) => {
+                  case s @ DefaultToken(true, _, _)           => {
                     Errors
                       .craftResponseResult(
                         "error.token.already.present",
@@ -1080,11 +1132,11 @@ sealed trait JwtVerifier extends AsJson {
                       )
                       .left[A]
                   }
-                  case s @ DefaultToken(false, _, _) => f(JwtInjection(decodedToken.some)).right[Result]
-                  case s @ PassThrough(_)            => f(JwtInjection(decodedToken.some)).right[Result]
-                  case s @ Sign(_, aSettings) =>
+                  case s @ DefaultToken(false, _, _)          => f(JwtInjection(decodedToken.some)).right[Result]
+                  case s @ PassThrough(_)                     => f(JwtInjection(decodedToken.some)).right[Result]
+                  case s @ Sign(_, aSettings)                 =>
                     aSettings.asAlgorithmF(OutputMode) flatMap {
-                      case None =>
+                      case None                  =>
                         Errors
                           .craftResponseResult(
                             "error.bad.output.algorithm.name",
@@ -1097,14 +1149,17 @@ sealed trait JwtVerifier extends AsJson {
                           )
                           .left[A]
                       case Some(outputAlgorithm) => {
-                        val newToken = sign(Json.parse(ApacheBase64.decodeBase64(decodedToken.getPayload)).as[JsObject],
-                                            outputAlgorithm, aSettings.keyId)
+                        val newToken = sign(
+                          Json.parse(ApacheBase64.decodeBase64(decodedToken.getPayload)).as[JsObject],
+                          outputAlgorithm,
+                          aSettings.keyId
+                        )
                         f(source.asJwtInjection(decodedToken, newToken)).right[Result]
                       }
                     }
                   case s @ Transform(_, tSettings, aSettings) =>
                     aSettings.asAlgorithmF(OutputMode) flatMap {
-                      case None =>
+                      case None                  =>
                         Errors
                           .craftResponseResult(
                             "error.bad.output.algorithm.name",
@@ -1117,7 +1172,7 @@ sealed trait JwtVerifier extends AsJson {
                           )
                           .left[A]
                       case Some(outputAlgorithm) => {
-                        val jsonToken = Json.parse(ApacheBase64.decodeBase64(decodedToken.getPayload)).as[JsObject]
+                        val jsonToken                    = Json.parse(ApacheBase64.decodeBase64(decodedToken.getPayload)).as[JsObject]
                         val context: Map[String, String] = jsonToken.value.toSeq.collect {
                           case (key, JsString(str))     => (key, str)
                           case (key, JsBoolean(bool))   => (key, bool.toString)
@@ -1126,32 +1181,36 @@ sealed trait JwtVerifier extends AsJson {
                           case (key, obj @ JsObject(_)) => (key, Json.stringify(obj))
                           case (key, JsNull)            => (key, "null")
                         } toMap
-                        val evaluatedValues: JsObject =
+                        val evaluatedValues: JsObject    =
                           JwtExpressionLanguage
-                            .fromJson(tSettings.mappingSettings.values,
-                                      Some(request),
-                                      Some(desc),
-                                      apikey,
-                                      user,
-                                      context,
-                                      attrs,
-                                      env)
+                            .fromJson(
+                              tSettings.mappingSettings.values,
+                              Some(request),
+                              Some(desc),
+                              apikey,
+                              user,
+                              context,
+                              attrs,
+                              env
+                            )
                             .as[JsObject]
-                        val newJsonToken: JsObject = JsObject(
+                        val newJsonToken: JsObject       = JsObject(
                           (tSettings.mappingSettings.map
                             .filter(a => (jsonToken \ a._1).isDefined)
-                            .foldLeft(jsonToken)(
-                              (a, b) =>
-                                a.+(b._2,
-                                     JwtExpressionLanguage.fromJson((a \ b._1).as[JsValue],
-                                                                    Some(request),
-                                                                    Some(desc),
-                                                                    apikey,
-                                                                    user,
-                                                                    context,
-                                                                    attrs,
-                                                                    env))
-                                  .-(b._1)
+                            .foldLeft(jsonToken)((a, b) =>
+                              a.+(
+                                b._2,
+                                JwtExpressionLanguage.fromJson(
+                                  (a \ b._1).as[JsValue],
+                                  Some(request),
+                                  Some(desc),
+                                  apikey,
+                                  user,
+                                  context,
+                                  attrs,
+                                  env
+                                )
+                              ).-(b._1)
                             ) ++ evaluatedValues).fields
                             .filterNot {
                               case (_, JsNull)           => true
@@ -1161,17 +1220,19 @@ sealed trait JwtVerifier extends AsJson {
                             .filterNot(f => tSettings.mappingSettings.remove.contains(f._1))
                             .toMap
                         )
-                        val newToken = sign(newJsonToken, outputAlgorithm, aSettings.keyId)
+                        val newToken                     = sign(newJsonToken, outputAlgorithm, aSettings.keyId)
                         source match {
-                          case _: InQueryParam => f(tSettings.location.asJwtInjection(decodedToken, newToken)).right[Result]
-                          case InHeader(n, _) =>
+                          case _: InQueryParam =>
+                            f(tSettings.location.asJwtInjection(decodedToken, newToken)).right[Result]
+                          case InHeader(n, _)  =>
                             val inj = tSettings.location.asJwtInjection(decodedToken, newToken)
                             tSettings.location match {
                               case InHeader(nn, _) if nn == n => f(inj).right[Result]
                               case _                          => f(inj.copy(removeHeaders = Seq(n))).right[Result]
                             }
-                          case InCookie(n) =>
-                            f(tSettings.location.asJwtInjection(decodedToken, newToken).copy(removeCookies = Seq(n))).right[Result]
+                          case InCookie(n)     =>
+                            f(tSettings.location.asJwtInjection(decodedToken, newToken).copy(removeCookies = Seq(n)))
+                              .right[Result]
                         }
                       }
                     }
@@ -1193,15 +1254,16 @@ case class LocalJwtVerifier(
 ) extends JwtVerifier
     with AsJson {
 
-  def asJson: JsValue = Json.obj(
-    "type"             -> "local",
-    "enabled"          -> this.enabled,
-    "strict"           -> this.strict,
-    "excludedPatterns" -> JsArray(this.excludedPatterns.map(JsString.apply)),
-    "source"           -> this.source.asJson,
-    "algoSettings"     -> this.algoSettings.asJson,
-    "strategy"         -> this.strategy.asJson
-  )
+  def asJson: JsValue =
+    Json.obj(
+      "type"             -> "local",
+      "enabled"          -> this.enabled,
+      "strict"           -> this.strict,
+      "excludedPatterns" -> JsArray(this.excludedPatterns.map(JsString.apply)),
+      "source"           -> this.source.asJson,
+      "algoSettings"     -> this.algoSettings.asJson,
+      "strategy"         -> this.strategy.asJson
+    )
 
   override def isRef = false
 
@@ -1216,13 +1278,14 @@ case class RefJwtVerifier(
 ) extends JwtVerifier
     with AsJson {
 
-  def asJson: JsValue = Json.obj(
-    "type"             -> "ref",
-    "ids"              -> JsArray(this.ids.map(JsString.apply)),
-    "id"               -> this.ids.headOption.map(JsString.apply).getOrElse(JsNull).as[JsValue], // for compat only
-    "enabled"          -> this.enabled,
-    "excludedPatterns" -> JsArray(this.excludedPatterns.map(JsString.apply))
-  )
+  def asJson: JsValue =
+    Json.obj(
+      "type"             -> "ref",
+      "ids"              -> JsArray(this.ids.map(JsString.apply)),
+      "id"               -> this.ids.headOption.map(JsString.apply).getOrElse(JsNull).as[JsValue], // for compat only
+      "enabled"          -> this.enabled,
+      "excludedPatterns" -> JsArray(this.excludedPatterns.map(JsString.apply))
+    )
 
   override def isRef        = true
   override def strict       = throw new RuntimeException("Should never be called ...")
@@ -1232,55 +1295,61 @@ case class RefJwtVerifier(
 
   private def id: Option[String] = ids.headOption
 
-  override def verify(request: RequestHeader,
-                      desc: ServiceDescriptor,
-                      apikey: Option[ApiKey],
-                      user: Option[PrivateAppsUser],
-                      elContext: Map[String, String],
-                      attrs: TypedMap)(
+  override def verify(
+      request: RequestHeader,
+      desc: ServiceDescriptor,
+      apikey: Option[ApiKey],
+      user: Option[PrivateAppsUser],
+      elContext: Map[String, String],
+      attrs: TypedMap
+  )(
       f: JwtInjection => Future[Result]
   )(implicit ec: ExecutionContext, env: Env): Future[Result] = {
     verifyGen(request, desc, apikey, user, elContext, attrs)(c => f(c).map(Right.apply)).map {
-      case Left(r) => r
+      case Left(r)  => r
       case Right(r) => r
     }
   }
 
-  override def verifyWs(request: RequestHeader,
-                        desc: ServiceDescriptor,
-                        apikey: Option[ApiKey],
-                        user: Option[PrivateAppsUser],
-                        elContext: Map[String, String],
-                        attrs: TypedMap)(
+  override def verifyWs(
+      request: RequestHeader,
+      desc: ServiceDescriptor,
+      apikey: Option[ApiKey],
+      user: Option[PrivateAppsUser],
+      elContext: Map[String, String],
+      attrs: TypedMap
+  )(
       f: JwtInjection => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
     verifyGen(request, desc, apikey, user, elContext, attrs)(f)
   }
 
-  override def verifyGen[A](request: RequestHeader,
-                   desc: ServiceDescriptor,
-                   apikey: Option[ApiKey],
-                   user: Option[PrivateAppsUser],
-                   elContext: Map[String, String],
-                   attrs: TypedMap)(
-                    f: JwtInjection => Future[Either[Result, A]]
-                  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
+  override def verifyGen[A](
+      request: RequestHeader,
+      desc: ServiceDescriptor,
+      apikey: Option[ApiKey],
+      user: Option[PrivateAppsUser],
+      elContext: Map[String, String],
+      attrs: TypedMap
+  )(
+      f: JwtInjection => Future[Either[Result, A]]
+  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
     implicit val mat = env.otoroshiMaterializer
     ids match {
       case s if s.isEmpty => f(JwtInjection())
-      case _ => {
+      case _              => {
 
-        val promise = Promise[Either[Result, A]]
-        val last = new AtomicReference[Either[Result, A]](
+        val promise                                       = Promise[Either[Result, A]]
+        val last                                          = new AtomicReference[Either[Result, A]](
           Left(Results.InternalServerError(Json.obj("Otoroshi-Error" -> "error.bad.globaljwtverifier.id")))
         )
         val queue: scala.collection.mutable.Queue[String] = scala.collection.mutable.Queue(ids: _*)
 
         def dequeueNext(): Unit = {
           queue.dequeueFirst(_ => true) match {
-            case None =>
+            case None      =>
               Option(last.get()) match {
-                case None =>
+                case None         =>
                   promise.tryFailure(new RuntimeException("Should have last result set ..."))
                 case Some(result) =>
                   promise.trySuccess(result)
@@ -1293,7 +1362,7 @@ case class RefJwtVerifier(
                     verifier
                       .internalVerify(request, desc, apikey, user, elContext, attrs, queue.isEmpty)(f)
                       .map {
-                        case Left(result) =>
+                        case Left(result)  =>
                           last.set(Left(result))
                           dequeueNext()
                         case Right(result) =>
@@ -1301,13 +1370,13 @@ case class RefJwtVerifier(
                             case Left(result) =>
                               last.set(Left(result))
                               dequeueNext()
-                            case Right(flow) =>
+                            case Right(flow)  =>
                               // the first that passes win !
                               promise.trySuccess(result)
                           }
                       }
                       .andThen { case Failure(e) => promise.tryFailure(e) }
-                  case None =>
+                  case None           =>
                     Errors
                       .craftResponseResult(
                         "error.bad.globaljwtverifier.id",
@@ -1395,22 +1464,24 @@ case class GlobalJwtVerifier(
     metadata: Map[String, String] = Map.empty,
     location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation()
 ) extends JwtVerifier
-    with AsJson with otoroshi.models.EntityLocationSupport {
+    with AsJson
+    with otoroshi.models.EntityLocationSupport {
 
-  def json: JsValue = asJson
+  def json: JsValue      = asJson
   def internalId: String = id
 
-  def asJson: JsValue = location.jsonWithKey ++ Json.obj(
-    "type"         -> "global",
-    "id"           -> this.id,
-    "name"         -> this.name,
-    "desc"         -> this.desc,
-    "strict"       -> this.strict,
-    "source"       -> this.source.asJson,
-    "algoSettings" -> this.algoSettings.asJson,
-    "strategy"     -> this.strategy.asJson,
-    "metadata"     -> this.metadata
-  )
+  def asJson: JsValue =
+    location.jsonWithKey ++ Json.obj(
+      "type"         -> "global",
+      "id"           -> this.id,
+      "name"         -> this.name,
+      "desc"         -> this.desc,
+      "strict"       -> this.strict,
+      "source"       -> this.source.asJson,
+      "algoSettings" -> this.algoSettings.asJson,
+      "strategy"     -> this.strategy.asJson,
+      "metadata"     -> this.metadata
+    )
 
   override def isRef = false
 
@@ -1439,10 +1510,11 @@ object GlobalJwtVerifier extends FromJson[GlobalJwtVerifier] {
 
   val _fmt = new Format[GlobalJwtVerifier] {
 
-    override def reads(json: JsValue) = fromJson(json) match {
-      case Left(e)  => JsError(e.getMessage)
-      case Right(v) => JsSuccess(v)
-    }
+    override def reads(json: JsValue) =
+      fromJson(json) match {
+        case Left(e)  => JsError(e.getMessage)
+        case Right(v) => JsSuccess(v)
+      }
 
     override def writes(o: GlobalJwtVerifier) = o.asJson
   }
@@ -1474,11 +1546,12 @@ object GlobalJwtVerifier extends FromJson[GlobalJwtVerifier] {
 object JwtVerifier extends FromJson[JwtVerifier] {
 
   val fmt = new Format[JwtVerifier] {
-    override def writes(o: JwtVerifier): JsValue = o.asJson
-    override def reads(json: JsValue): JsResult[JwtVerifier] = fromJson(json) match {
-      case Left(e) => JsError(e.getMessage)
-      case Right(j) => JsSuccess(j)
-    }
+    override def writes(o: JwtVerifier): JsValue             = o.asJson
+    override def reads(json: JsValue): JsResult[JwtVerifier] =
+      fromJson(json) match {
+        case Left(e)  => JsError(e.getMessage)
+        case Right(j) => JsSuccess(j)
+      }
   }
 
   override def fromJson(json: JsValue): Either[Throwable, JwtVerifier] = {
@@ -1493,79 +1566,80 @@ object JwtVerifier extends FromJson[JwtVerifier] {
     } get
   }
 
-  def mock1: JwtVerifier = LocalJwtVerifier(
-    strict = true,
-    source = InHeader("Authorization", "Bearer "),
-    algoSettings = HSAlgoSettings(256, "secret", false),
-    strategy = Transform(
-      transformSettings = TransformSettings(
-        location = InHeader("X-Fuuuuu"),
-        mappingSettings = MappingSettings(
-          map = Map("name" -> "MyNameIs"),
-          values = Json.obj(
-            "foo" -> 123
+  def mock1: JwtVerifier =
+    LocalJwtVerifier(
+      strict = true,
+      source = InHeader("Authorization", "Bearer "),
+      algoSettings = HSAlgoSettings(256, "secret", false),
+      strategy = Transform(
+        transformSettings = TransformSettings(
+          location = InHeader("X-Fuuuuu"),
+          mappingSettings = MappingSettings(
+            map = Map("name" -> "MyNameIs"),
+            values = Json.obj(
+              "foo" -> 123
+            )
           )
-        )
-      ),
-      verificationSettings = VerificationSettings(
-        Map(
-          "iss" -> "Billy"
-        )
-      ),
-      //algoSettings = RSAlgoSettings(
-      //  512,
-      //  """MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuGbXWiK3dQTyCbX5xdE4
-      //    |yCuYp0AF2d15Qq1JSXT/lx8CEcXb9RbDddl8jGDv+spi5qPa8qEHiK7FwV2KpRE9
-      //    |83wGPnYsAm9BxLFb4YrLYcDFOIGULuk2FtrPS512Qea1bXASuvYXEpQNpGbnTGVs
-      //    |WXI9C+yjHztqyL2h8P6mlThPY9E9ue2fCqdgixfTFIF9Dm4SLHbphUS2iw7w1JgT
-      //    |69s7of9+I9l5lsJ9cozf1rxrXX4V1u/SotUuNB3Fp8oB4C1fLBEhSlMcUJirz1E8
-      //    |AziMCxS+VrRPDM+zfvpIJg3JljAh3PJHDiLu902v9w+Iplu1WyoB2aPfitxEhRN0
-      //    |YwIDAQAB""".stripMargin,
-      //  """MIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQC4ZtdaIrd1BPIJ
-      //    |tfnF0TjIK5inQAXZ3XlCrUlJdP+XHwIRxdv1FsN12XyMYO/6ymLmo9ryoQeIrsXB
-      //    |XYqlET3zfAY+diwCb0HEsVvhisthwMU4gZQu6TYW2s9LnXZB5rVtcBK69hcSlA2k
-      //    |ZudMZWxZcj0L7KMfO2rIvaHw/qaVOE9j0T257Z8Kp2CLF9MUgX0ObhIsdumFRLaL
-      //    |DvDUmBPr2zuh/34j2XmWwn1yjN/WvGtdfhXW79Ki1S40HcWnygHgLV8sESFKUxxQ
-      //    |mKvPUTwDOIwLFL5WtE8Mz7N++kgmDcmWMCHc8kcOIu73Ta/3D4imW7VbKgHZo9+K
-      //    |3ESFE3RjAgMBAAECggEBAJTEIyjMqUT24G2FKiS1TiHvShBkTlQdoR5xvpZMlYbN
-      //    |tVWxUmrAGqCQ/TIjYnfpnzCDMLhdwT48Ab6mQJw69MfiXwc1PvwX1e9hRscGul36
-      //    |ryGPKIVQEBsQG/zc4/L2tZe8ut+qeaK7XuYrPp8bk/X1e9qK5m7j+JpKosNSLgJj
-      //    |NIbYsBkG2Mlq671irKYj2hVZeaBQmWmZxK4fw0Istz2WfN5nUKUeJhTwpR+JLUg4
-      //    |ELYYoB7EO0Cej9UBG30hbgu4RyXA+VbptJ+H042K5QJROUbtnLWuuWosZ5ATldwO
-      //    |u03dIXL0SH0ao5NcWBzxU4F2sBXZRGP2x/jiSLHcqoECgYEA4qD7mXQpu1b8XO8U
-      //    |6abpKloJCatSAHzjgdR2eRDRx5PMvloipfwqA77pnbjTUFajqWQgOXsDTCjcdQui
-      //    |wf5XAaWu+TeAVTytLQbSiTsBhrnoqVrr3RoyDQmdnwHT8aCMouOgcC5thP9vQ8Us
-      //    |rVdjvRRbnJpg3BeSNimH+u9AHgsCgYEA0EzcbOltCWPHRAY7B3Ge/AKBjBQr86Kv
-      //    |TdpTlxePBDVIlH+BM6oct2gaSZZoHbqPjbq5v7yf0fKVcXE4bSVgqfDJ/sZQu9Lp
-      //    |PTeV7wkk0OsAMKk7QukEpPno5q6tOTNnFecpUhVLLlqbfqkB2baYYwLJR3IRzboJ
-      //    |FQbLY93E8gkCgYB+zlC5VlQbbNqcLXJoImqItgQkkuW5PCgYdwcrSov2ve5r/Acz
-      //    |FNt1aRdSlx4176R3nXyibQA1Vw+ztiUFowiP9WLoM3PtPZwwe4bGHmwGNHPIfwVG
-      //    |m+exf9XgKKespYbLhc45tuC08DATnXoYK7O1EnUINSFJRS8cezSI5eHcbQKBgQDC
-      //    |PgqHXZ2aVftqCc1eAaxaIRQhRmY+CgUjumaczRFGwVFveP9I6Gdi+Kca3DE3F9Pq
-      //    |PKgejo0SwP5vDT+rOGHN14bmGJUMsX9i4MTmZUZ5s8s3lXh3ysfT+GAhTd6nKrIE
-      //    |kM3Nh6HWFhROptfc6BNusRh1kX/cspDplK5x8EpJ0QKBgQDWFg6S2je0KtbV5PYe
-      //    |RultUEe2C0jYMDQx+JYxbPmtcopvZQrFEur3WKVuLy5UAy7EBvwMnZwIG7OOohJb
-      //    |vkSpADK6VPn9lbqq7O8cTedEHttm6otmLt8ZyEl3hZMaL3hbuRj6ysjmoFKx6CrX
-      //    |rK0/Ikt5ybqUzKCMJZg2VKGTxg==""".stripMargin
-      //)
-      algoSettings = ESAlgoSettings(
-        512,
-        """MIGbMBAGByqGSM49AgEGBSuBBAAjA4GGAAQAmG8JrpLz14+qUs7oxFX0pCoe90Ah
+        ),
+        verificationSettings = VerificationSettings(
+          Map(
+            "iss" -> "Billy"
+          )
+        ),
+        //algoSettings = RSAlgoSettings(
+        //  512,
+        //  """MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuGbXWiK3dQTyCbX5xdE4
+        //    |yCuYp0AF2d15Qq1JSXT/lx8CEcXb9RbDddl8jGDv+spi5qPa8qEHiK7FwV2KpRE9
+        //    |83wGPnYsAm9BxLFb4YrLYcDFOIGULuk2FtrPS512Qea1bXASuvYXEpQNpGbnTGVs
+        //    |WXI9C+yjHztqyL2h8P6mlThPY9E9ue2fCqdgixfTFIF9Dm4SLHbphUS2iw7w1JgT
+        //    |69s7of9+I9l5lsJ9cozf1rxrXX4V1u/SotUuNB3Fp8oB4C1fLBEhSlMcUJirz1E8
+        //    |AziMCxS+VrRPDM+zfvpIJg3JljAh3PJHDiLu902v9w+Iplu1WyoB2aPfitxEhRN0
+        //    |YwIDAQAB""".stripMargin,
+        //  """MIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQC4ZtdaIrd1BPIJ
+        //    |tfnF0TjIK5inQAXZ3XlCrUlJdP+XHwIRxdv1FsN12XyMYO/6ymLmo9ryoQeIrsXB
+        //    |XYqlET3zfAY+diwCb0HEsVvhisthwMU4gZQu6TYW2s9LnXZB5rVtcBK69hcSlA2k
+        //    |ZudMZWxZcj0L7KMfO2rIvaHw/qaVOE9j0T257Z8Kp2CLF9MUgX0ObhIsdumFRLaL
+        //    |DvDUmBPr2zuh/34j2XmWwn1yjN/WvGtdfhXW79Ki1S40HcWnygHgLV8sESFKUxxQ
+        //    |mKvPUTwDOIwLFL5WtE8Mz7N++kgmDcmWMCHc8kcOIu73Ta/3D4imW7VbKgHZo9+K
+        //    |3ESFE3RjAgMBAAECggEBAJTEIyjMqUT24G2FKiS1TiHvShBkTlQdoR5xvpZMlYbN
+        //    |tVWxUmrAGqCQ/TIjYnfpnzCDMLhdwT48Ab6mQJw69MfiXwc1PvwX1e9hRscGul36
+        //    |ryGPKIVQEBsQG/zc4/L2tZe8ut+qeaK7XuYrPp8bk/X1e9qK5m7j+JpKosNSLgJj
+        //    |NIbYsBkG2Mlq671irKYj2hVZeaBQmWmZxK4fw0Istz2WfN5nUKUeJhTwpR+JLUg4
+        //    |ELYYoB7EO0Cej9UBG30hbgu4RyXA+VbptJ+H042K5QJROUbtnLWuuWosZ5ATldwO
+        //    |u03dIXL0SH0ao5NcWBzxU4F2sBXZRGP2x/jiSLHcqoECgYEA4qD7mXQpu1b8XO8U
+        //    |6abpKloJCatSAHzjgdR2eRDRx5PMvloipfwqA77pnbjTUFajqWQgOXsDTCjcdQui
+        //    |wf5XAaWu+TeAVTytLQbSiTsBhrnoqVrr3RoyDQmdnwHT8aCMouOgcC5thP9vQ8Us
+        //    |rVdjvRRbnJpg3BeSNimH+u9AHgsCgYEA0EzcbOltCWPHRAY7B3Ge/AKBjBQr86Kv
+        //    |TdpTlxePBDVIlH+BM6oct2gaSZZoHbqPjbq5v7yf0fKVcXE4bSVgqfDJ/sZQu9Lp
+        //    |PTeV7wkk0OsAMKk7QukEpPno5q6tOTNnFecpUhVLLlqbfqkB2baYYwLJR3IRzboJ
+        //    |FQbLY93E8gkCgYB+zlC5VlQbbNqcLXJoImqItgQkkuW5PCgYdwcrSov2ve5r/Acz
+        //    |FNt1aRdSlx4176R3nXyibQA1Vw+ztiUFowiP9WLoM3PtPZwwe4bGHmwGNHPIfwVG
+        //    |m+exf9XgKKespYbLhc45tuC08DATnXoYK7O1EnUINSFJRS8cezSI5eHcbQKBgQDC
+        //    |PgqHXZ2aVftqCc1eAaxaIRQhRmY+CgUjumaczRFGwVFveP9I6Gdi+Kca3DE3F9Pq
+        //    |PKgejo0SwP5vDT+rOGHN14bmGJUMsX9i4MTmZUZ5s8s3lXh3ysfT+GAhTd6nKrIE
+        //    |kM3Nh6HWFhROptfc6BNusRh1kX/cspDplK5x8EpJ0QKBgQDWFg6S2je0KtbV5PYe
+        //    |RultUEe2C0jYMDQx+JYxbPmtcopvZQrFEur3WKVuLy5UAy7EBvwMnZwIG7OOohJb
+        //    |vkSpADK6VPn9lbqq7O8cTedEHttm6otmLt8ZyEl3hZMaL3hbuRj6ysjmoFKx6CrX
+        //    |rK0/Ikt5ybqUzKCMJZg2VKGTxg==""".stripMargin
+        //)
+        algoSettings = ESAlgoSettings(
+          512,
+          """MIGbMBAGByqGSM49AgEGBSuBBAAjA4GGAAQAmG8JrpLz14+qUs7oxFX0pCoe90Ah
           |MMB/9ZENy8KZ+us26i/6PiBBc7XaiEi6Q8Icz2tiazwSpyLPeBrFVPFkPgIADyLa
           |T0fp7D2JKHWpdrWQvGLLMwGqYCaaDi79KugPo6V4bnpLBlVtbH4ogg0Hqv89BVyI
           |ZfwWPCBH+Zssei1VlgM=""".stripMargin,
-        Some("""MIHtAgEAMBAGByqGSM49AgEGBSuBBAAjBIHVMIHSAgEBBEHzl1DpZSQJ8YhCbN/u
+          Some("""MIHtAgEAMBAGByqGSM49AgEGBSuBBAAjBIHVMIHSAgEBBEHzl1DpZSQJ8YhCbN/u
           |vo5SOu0BjDDX9Gub6zsBW6B2TxRzb5sBeQaWVscDUZha4Xr1HEWpVtua9+nEQU/9
           |Aq9Pl6GBiQOBhgAEAJhvCa6S89ePqlLO6MRV9KQqHvdAITDAf/WRDcvCmfrrNuov
           |+j4gQXO12ohIukPCHM9rYms8Eqciz3gaxVTxZD4CAA8i2k9H6ew9iSh1qXa1kLxi
           |yzMBqmAmmg4u/SroD6OleG56SwZVbWx+KIINB6r/PQVciGX8FjwgR/mbLHotVZYD""".stripMargin)
+        )
+        //algoSettings = HSAlgoSettings(
+        //  512,
+        //  "secret"
+        //)
       )
-      //algoSettings = HSAlgoSettings(
-      //  512,
-      //  "secret"
-      //)
     )
-  )
 }
 
 object Implicits {
@@ -1576,10 +1650,11 @@ object Implicits {
 }
 
 trait GlobalJwtVerifierDataStore extends BasicStore[GlobalJwtVerifier] {
-  def template: GlobalJwtVerifier = GlobalJwtVerifier(
-    id = IdGenerator.token,
-    name = "New jwt verifier",
-    desc = "New jwt verifier",
-    metadata = Map.empty
-  )
+  def template: GlobalJwtVerifier =
+    GlobalJwtVerifier(
+      id = IdGenerator.token,
+      name = "New jwt verifier",
+      desc = "New jwt verifier",
+      metadata = Map.empty
+    )
 }

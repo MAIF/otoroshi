@@ -31,7 +31,7 @@ case class ExternalHttpValidatorConfig(config: JsValue) {
   lazy val headers: Map[String, String] = (config \ "headers").asOpt[Map[String, String]].getOrElse(Map.empty)
   lazy val proxy: Option[WSProxyServer] =
     (config \ "proxy").asOpt[JsValue].flatMap(p => WSProxyServerJson.proxyFromJson(p))
-  lazy val mtlsConfig: MtlsConfig = MtlsConfig.read((config \ "mtlsConfig").asOpt[JsValue])
+  lazy val mtlsConfig: MtlsConfig       = MtlsConfig.read((config \ "mtlsConfig").asOpt[JsValue])
 }
 
 class ExternalHttpValidator extends AccessValidator {
@@ -54,7 +54,7 @@ class ExternalHttpValidator extends AccessValidator {
           "noCache"           -> false,
           "allowNoClientCert" -> false,
           "headers"           -> Json.obj(),
-          "mtlsConfig" -> Json.obj(
+          "mtlsConfig"        -> Json.obj(
             "certId" -> "...",
             "mtls"   -> false,
             "loose"  -> false
@@ -107,7 +107,7 @@ class ExternalHttpValidator extends AccessValidator {
     super.configSchema.map(
       _ ++ Json.obj(
         "mtlsConfig.certId" -> Json.obj(
-          "type" -> "select",
+          "type"  -> "select",
           "props" -> Json.obj(
             "label"              -> "certId",
             "placeholer"         -> "Client cert used for mTLS call",
@@ -132,13 +132,17 @@ class ExternalHttpValidator extends AccessValidator {
     env.datastores.clientCertificateValidationDataStore.getValidation(key)
   }
 
-  private def setGoodLocalValidation(key: String, goodTtl: Long)(implicit ec: ExecutionContext,
-                                                                 env: Env): Future[Unit] = {
+  private def setGoodLocalValidation(key: String, goodTtl: Long)(implicit
+      ec: ExecutionContext,
+      env: Env
+  ): Future[Unit] = {
     env.datastores.clientCertificateValidationDataStore.setValidation(key, true, goodTtl).map(_ => ())
   }
 
-  private def setBadLocalValidation(key: String, badTtl: Long)(implicit ec: ExecutionContext,
-                                                               env: Env): Future[Unit] = {
+  private def setBadLocalValidation(key: String, badTtl: Long)(implicit
+      ec: ExecutionContext,
+      env: Env
+  ): Future[Unit] = {
     env.datastores.clientCertificateValidationDataStore.setValidation(key, false, badTtl).map(_ => ())
   }
 
@@ -150,17 +154,17 @@ class ExternalHttpValidator extends AccessValidator {
       cfg: ExternalHttpValidatorConfig
   )(implicit ec: ExecutionContext, env: Env): Future[Option[Boolean]] = {
     import otoroshi.ssl.SSLImplicits._
-    val globalConfig = env.datastores.globalConfigDataStore.latest()
-    val certPayload = chain
+    val globalConfig                        = env.datastores.globalConfigDataStore.latest()
+    val certPayload                         = chain
       .map { cert =>
         cert.asPem
       //s"${PemHeaders.BeginCertificate}\n${Base64.getEncoder.encodeToString(cert.getEncoded)}\n${PemHeaders.EndCertificate}"
       }
       .mkString("\n")
-    val payload = Json.obj(
-      "apikey" -> apikey.map(_.toJson.as[JsObject] - "clientSecret").getOrElse(JsNull).as[JsValue],
-      "user"   -> user.map(_.toJson).getOrElse(JsNull).as[JsValue],
-      "service" -> Json.obj(
+    val payload                             = Json.obj(
+      "apikey"       -> apikey.map(_.toJson.as[JsObject] - "clientSecret").getOrElse(JsNull).as[JsValue],
+      "user"         -> user.map(_.toJson).getOrElse(JsNull).as[JsValue],
+      "service"      -> Json.obj(
         "id"        -> desc.id,
         "name"      -> desc.name,
         "groups"    -> desc.groups,
@@ -173,9 +177,8 @@ class ExternalHttpValidator extends AccessValidator {
       "chain"        -> certPayload,
       "fingerprints" -> JsArray(chain.map(computeFingerPrint).map(JsString.apply))
     )
-    val finalHeaders: Seq[(String, String)] = cfg.headers.toSeq ++ Seq("Host" -> cfg.host,
-                                                                       "Content-Type" -> "application/json",
-                                                                       "Accept"       -> "application/json")
+    val finalHeaders: Seq[(String, String)] =
+      cfg.headers.toSeq ++ Seq("Host" -> cfg.host, "Content-Type" -> "application/json", "Accept" -> "application/json")
     env.MtlsWs
       .url(cfg.url + cfg.path, cfg.mtlsConfig)
       .withHttpHeaders(finalHeaders: _*)
@@ -190,7 +193,7 @@ class ExternalHttpValidator extends AccessValidator {
             (resp.json.as[JsObject] \ "status")
               .asOpt[String]
               .map(_.toLowerCase == "good") // TODO: return custom message, also device identification for logging
-          case _ =>
+          case _   =>
             resp.ignore()(env.otoroshiMaterializer)
             None
         }
@@ -205,15 +208,15 @@ class ExternalHttpValidator extends AccessValidator {
   def canAccessWithClientCertChain(
       chain: Seq[X509Certificate],
       context: AccessContext,
-      valCfg: ExternalHttpValidatorConfig,
+      valCfg: ExternalHttpValidatorConfig
   )(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
     val apikey = context.apikey
     val user   = context.user
     val desc   = context.descriptor
-    val key = computeKeyFromChain(chain) + "-" + apikey
-      .map(_.clientId)
-      .orElse(user.map(_.randomId))
-      .getOrElse("none") + "-" + desc.id
+    val key    = computeKeyFromChain(chain) + "-" + apikey
+        .map(_.clientId)
+        .orElse(user.map(_.randomId))
+        .getOrElse("none") + "-" + desc.id
     if (valCfg.noCache) {
       validateCertificateChain(chain, desc, apikey, user, valCfg).map {
         case Some(bool) => bool
@@ -223,7 +226,7 @@ class ExternalHttpValidator extends AccessValidator {
       getLocalValidation(key).flatMap {
         case Some(true)  => FastFuture.successful(true)
         case Some(false) => FastFuture.successful(false)
-        case None => {
+        case None        => {
           validateCertificateChain(chain, desc, apikey, user, valCfg).flatMap {
             case Some(false) => setBadLocalValidation(key, valCfg.badTtl).map(_ => false)
             case Some(true)  => setGoodLocalValidation(key, valCfg.goodTtl).map(_ => true)
@@ -242,11 +245,11 @@ class ExternalHttpValidator extends AccessValidator {
     val valCfg = ExternalHttpValidatorConfig(config)
     context.request.clientCertificateChain match {
       case None if !valCfg.allowNoClientCert => FastFuture.successful(false)
-      case None if valCfg.allowNoClientCert => {
+      case None if valCfg.allowNoClientCert  => {
         val chain: Seq[X509Certificate] = Seq.empty
         canAccessWithClientCertChain(chain, context, valCfg)
       }
-      case Some(chain) => {
+      case Some(chain)                       => {
         canAccessWithClientCertChain(chain, context, valCfg)
       }
     }

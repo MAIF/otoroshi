@@ -31,10 +31,9 @@ class KvBackOfficeUserDataStore(redisCli: RedisLike, _env: Env)
   override def sessions()(implicit ec: ExecutionContext, env: Env): Future[Seq[JsValue]] =
     redisCli
       .keys(s"${env.storageRoot}:users:backoffice:*")
-      .flatMap(
-        keys =>
-          if (keys.isEmpty) FastFuture.successful(Seq.empty[Option[ByteString]])
-          else redisCli.mget(keys: _*)
+      .flatMap(keys =>
+        if (keys.isEmpty) FastFuture.successful(Seq.empty[Option[ByteString]])
+        else redisCli.mget(keys: _*)
       )
       .map { seq =>
         seq

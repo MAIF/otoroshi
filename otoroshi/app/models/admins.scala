@@ -9,12 +9,12 @@ import otoroshi.utils.syntax.implicits._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-trait OtoroshiAdminType {
+trait OtoroshiAdminType  {
   def name: String
   def json: JsValue = name.json
 }
 object OtoroshiAdminType {
-  case object SimpleAdmin extends OtoroshiAdminType {
+  case object SimpleAdmin   extends OtoroshiAdminType {
     def name: String = "SIMPLE"
   }
   case object WebAuthnAdmin extends OtoroshiAdminType {
@@ -22,11 +22,11 @@ object OtoroshiAdminType {
   }
   def fromJson(jsValue: JsValue): Option[OtoroshiAdminType] = {
     jsValue.asOpt[String].flatMap {
-      case "simple" =>   SimpleAdmin.some
-      case "SIMPLE" =>   SimpleAdmin.some
+      case "simple"   => SimpleAdmin.some
+      case "SIMPLE"   => SimpleAdmin.some
       case "webauthn" => WebAuthnAdmin.some
       case "WEBAUTHN" => WebAuthnAdmin.some
-      case _ => None
+      case _          => None
     }
   }
 }
@@ -43,30 +43,31 @@ trait OtoroshiAdmin extends EntityLocationSupport {
 }
 
 case class SimpleOtoroshiAdmin(
-                                username: String,
-                                password: String,
-                                label: String,
-                                createdAt: DateTime,
-                                typ: OtoroshiAdminType,
-                                metadata: Map[String, String],
-                                rights: UserRights,
-                                location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation()
+    username: String,
+    password: String,
+    label: String,
+    createdAt: DateTime,
+    typ: OtoroshiAdminType,
+    metadata: Map[String, String],
+    rights: UserRights,
+    location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation()
 ) extends OtoroshiAdmin {
   def internalId: String = username
-  def json: JsValue = location.jsonWithKey ++ Json.obj(
-    "username" -> username,
-    "password" -> password,
-    "label" -> label,
-    "createdAt" -> createdAt.getMillis,
-    "type" -> typ.json,
-    "metadata" -> metadata,
-    "rights" -> rights.json
-  )
+  def json: JsValue      =
+    location.jsonWithKey ++ Json.obj(
+      "username"  -> username,
+      "password"  -> password,
+      "label"     -> label,
+      "createdAt" -> createdAt.getMillis,
+      "type"      -> typ.json,
+      "metadata"  -> metadata,
+      "rights"    -> rights.json
+    )
 }
 
 object SimpleOtoroshiAdmin {
   val fmt: Format[SimpleOtoroshiAdmin] = new Format[SimpleOtoroshiAdmin] {
-    override def writes(o: SimpleOtoroshiAdmin): JsValue = o.json
+    override def writes(o: SimpleOtoroshiAdmin): JsValue             = o.json
     override def reads(json: JsValue): JsResult[SimpleOtoroshiAdmin] = SimpleOtoroshiAdmin.reads(json)
   }
   def reads(json: JsValue): JsResult[SimpleOtoroshiAdmin] = {
@@ -77,7 +78,8 @@ object SimpleOtoroshiAdmin {
         password = (json \ "password").as[String],
         label = (json \ "label").as[String],
         createdAt = (json \ "createdAt").asOpt[Long].map(l => new DateTime(l)).getOrElse(DateTime.now()),
-        typ = (json \ "typ").asOpt[JsValue].flatMap(OtoroshiAdminType.fromJson).getOrElse(OtoroshiAdminType.SimpleAdmin),
+        typ =
+          (json \ "typ").asOpt[JsValue].flatMap(OtoroshiAdminType.fromJson).getOrElse(OtoroshiAdminType.SimpleAdmin),
         metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
         rights = UserRights.readFromObject(json)
       )
@@ -89,34 +91,35 @@ object SimpleOtoroshiAdmin {
 }
 
 case class WebAuthnOtoroshiAdmin(
-                                  username: String,
-                                  password: String,
-                                  label: String,
-                                  handle: String,
-                                  credentials: Map[String, JsValue],
-                                  createdAt: DateTime,
-                                  typ: OtoroshiAdminType,
-                                  metadata: Map[String, String],
-                                  rights: UserRights,
-                                  location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation()
+    username: String,
+    password: String,
+    label: String,
+    handle: String,
+    credentials: Map[String, JsValue],
+    createdAt: DateTime,
+    typ: OtoroshiAdminType,
+    metadata: Map[String, String],
+    rights: UserRights,
+    location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation()
 ) extends OtoroshiAdmin {
   def internalId: String = username
-  def json: JsValue = location.jsonWithKey ++ Json.obj(
-    "username" -> username,
-    "password" -> password,
-    "label" -> label,
-    "handle" -> handle,
-    "credentials" -> JsObject(credentials),
-    "createdAt" -> createdAt.getMillis,
-    "type" -> typ.json,
-    "metadata" -> metadata,
-    "rights" -> rights.json
-  )
+  def json: JsValue      =
+    location.jsonWithKey ++ Json.obj(
+      "username"    -> username,
+      "password"    -> password,
+      "label"       -> label,
+      "handle"      -> handle,
+      "credentials" -> JsObject(credentials),
+      "createdAt"   -> createdAt.getMillis,
+      "type"        -> typ.json,
+      "metadata"    -> metadata,
+      "rights"      -> rights.json
+    )
 }
 
 object WebAuthnOtoroshiAdmin {
   val fmt: Format[WebAuthnOtoroshiAdmin] = new Format[WebAuthnOtoroshiAdmin] {
-    override def writes(o: WebAuthnOtoroshiAdmin): JsValue = o.json
+    override def writes(o: WebAuthnOtoroshiAdmin): JsValue             = o.json
     override def reads(json: JsValue): JsResult[WebAuthnOtoroshiAdmin] = WebAuthnOtoroshiAdmin.reads(json)
   }
   def reads(json: JsValue): JsResult[WebAuthnOtoroshiAdmin] = {
@@ -127,11 +130,13 @@ object WebAuthnOtoroshiAdmin {
         password = (json \ "password").as[String],
         label = (json \ "label").as[String],
         handle = (json \ "handle").as[String],
-        credentials = (json \ "credentials").asOpt[Map[String, JsValue]]
+        credentials = (json \ "credentials")
+          .asOpt[Map[String, JsValue]]
           .orElse((json \ "credential").asOpt[JsValue].map(v => Map((v \ "keyId" \ "id").as[String] -> v)))
           .getOrElse(Map.empty),
         createdAt = (json \ "createdAt").asOpt[Long].map(l => new DateTime(l)).getOrElse(DateTime.now()),
-        typ = (json \ "typ").asOpt[JsValue].flatMap(OtoroshiAdminType.fromJson).getOrElse(OtoroshiAdminType.WebAuthnAdmin),
+        typ =
+          (json \ "typ").asOpt[JsValue].flatMap(OtoroshiAdminType.fromJson).getOrElse(OtoroshiAdminType.WebAuthnAdmin),
         metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
         rights = UserRights.readFromObject(json)
       )

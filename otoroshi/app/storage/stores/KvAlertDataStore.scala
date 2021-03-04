@@ -13,8 +13,10 @@ class KvAlertDataStore(redisCli: RedisLike) extends AlertDataStore {
   override def count()(implicit ec: ExecutionContext, env: Env): Future[Long] =
     redisCli.llen(s"${env.storageRoot}:events:alerts")
 
-  override def findAllRaw(from: Long = 0, to: Long = 1000)(implicit ec: ExecutionContext,
-                                                           env: Env): Future[Seq[ByteString]] =
+  override def findAllRaw(from: Long = 0, to: Long = 1000)(implicit
+      ec: ExecutionContext,
+      env: Env
+  ): Future[Seq[ByteString]] =
     redisCli.lrange(s"${env.storageRoot}:events:alerts", from, to)
 
   override def push(event: JsValue)(implicit ec: ExecutionContext, env: Env): Future[Long] =

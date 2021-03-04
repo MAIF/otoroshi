@@ -27,25 +27,27 @@ case class LdapAuthUser(
 }
 
 object LdapAuthUser {
-  def fmt = new Format[LdapAuthUser] {
-    override def writes(o: LdapAuthUser) = Json.obj(
-      "name"     -> o.name,
-      "email"    -> o.email,
-      "metadata" -> o.metadata,
-    )
-    override def reads(json: JsValue) =
-      Try {
-        JsSuccess(
-          LdapAuthUser(
-            name = (json \ "name").as[String],
-            email = (json \ "email").as[String],
-            metadata = (json \ "metadata").asOpt[JsObject].getOrElse(Json.obj())
-          )
+  def fmt =
+    new Format[LdapAuthUser] {
+      override def writes(o: LdapAuthUser) =
+        Json.obj(
+          "name"     -> o.name,
+          "email"    -> o.email,
+          "metadata" -> o.metadata
         )
-      } recover {
-        case e => JsError(e.getMessage)
-      } get
-  }
+      override def reads(json: JsValue)    =
+        Try {
+          JsSuccess(
+            LdapAuthUser(
+              name = (json \ "name").as[String],
+              email = (json \ "email").as[String],
+              metadata = (json \ "metadata").asOpt[JsObject].getOrElse(Json.obj())
+            )
+          )
+        } recover {
+          case e => JsError(e.getMessage)
+        } get
+    }
 }
 
 object LdapAuthModuleConfig extends FromJson[AuthModuleConfig] {
@@ -64,10 +66,11 @@ object LdapAuthModuleConfig extends FromJson[AuthModuleConfig] {
 
   val _fmt = new Format[LdapAuthModuleConfig] {
 
-    override def reads(json: JsValue) = fromJson(json) match {
-      case Left(e)  => JsError(e.getMessage)
-      case Right(v) => JsSuccess(v.asInstanceOf[LdapAuthModuleConfig])
-    }
+    override def reads(json: JsValue) =
+      fromJson(json) match {
+        case Left(e)  => JsError(e.getMessage)
+        case Right(v) => JsSuccess(v.asInstanceOf[LdapAuthModuleConfig])
+      }
 
     override def writes(o: LdapAuthModuleConfig) = o.asJson
   }
@@ -95,9 +98,13 @@ object LdapAuthModuleConfig extends FromJson[AuthModuleConfig] {
           metadataField = (json \ "metadataField").asOpt[String].filterNot(_.trim.isEmpty),
           extraMetadata = (json \ "extraMetadata").asOpt[JsObject].getOrElse(Json.obj()),
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-          sessionCookieValues = (json \ "sessionCookieValues").asOpt(SessionCookieValues.fmt).getOrElse(SessionCookieValues()),
+          sessionCookieValues =
+            (json \ "sessionCookieValues").asOpt(SessionCookieValues.fmt).getOrElse(SessionCookieValues()),
           superAdmins = (json \ "superAdmins").asOpt[Boolean].getOrElse(false), // for backward compatibility reasons
-          rightsOverride = (json \ "rightsOverride").asOpt[Map[String, JsArray]].map(_.mapValues(UserRights.readFromArray)).getOrElse(Map.empty),
+          rightsOverride = (json \ "rightsOverride")
+            .asOpt[Map[String, JsArray]]
+            .map(_.mapValues(UserRights.readFromArray))
+            .getOrElse(Map.empty),
           dataOverride = (json \ "dataOverride").asOpt[Map[String, JsObject]].getOrElse(Map.empty)
         )
       )
@@ -109,59 +116,60 @@ object LdapAuthModuleConfig extends FromJson[AuthModuleConfig] {
 }
 
 case class LdapAuthModuleConfig(
-                                 id: String,
-                                 name: String,
-                                 desc: String,
-                                 sessionMaxAge: Int = 86400,
-                                 basicAuth: Boolean = false,
-                                 allowEmptyPassword: Boolean = false,
-                                 serverUrl: String,
-                                 searchBase: String,
-                                 userBase: Option[String] = None,
-                                 groupFilter: Option[String] = None,
-                                 searchFilter: String = "(mail=${username})",
-                                 adminUsername: Option[String] = None,
-                                 adminPassword: Option[String] = None,
-                                 nameField: String = "cn",
-                                 emailField: String = "mail",
-                                 metadataField: Option[String] = None,
-                                 extraMetadata: JsObject = Json.obj(),
-                                 metadata: Map[String, String],
-                                 sessionCookieValues: SessionCookieValues,
-                                 location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation(),
-                                 superAdmins: Boolean = false,
-                                 rightsOverride: Map[String, UserRights] = Map.empty,
-                                 dataOverride: Map[String, JsObject] = Map.empty
+    id: String,
+    name: String,
+    desc: String,
+    sessionMaxAge: Int = 86400,
+    basicAuth: Boolean = false,
+    allowEmptyPassword: Boolean = false,
+    serverUrl: String,
+    searchBase: String,
+    userBase: Option[String] = None,
+    groupFilter: Option[String] = None,
+    searchFilter: String = "(mail=${username})",
+    adminUsername: Option[String] = None,
+    adminPassword: Option[String] = None,
+    nameField: String = "cn",
+    emailField: String = "mail",
+    metadataField: Option[String] = None,
+    extraMetadata: JsObject = Json.obj(),
+    metadata: Map[String, String],
+    sessionCookieValues: SessionCookieValues,
+    location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation(),
+    superAdmins: Boolean = false,
+    rightsOverride: Map[String, UserRights] = Map.empty,
+    dataOverride: Map[String, JsObject] = Map.empty
 ) extends AuthModuleConfig {
   def `type`: String = "ldap"
 
   override def authModule(config: GlobalConfig): AuthModule = LdapAuthModule(this)
 
-  override def asJson = location.jsonWithKey ++ Json.obj(
-    "type"               -> "ldap",
-    "id"                  -> id,
-    "name"                -> name,
-    "desc"                -> desc,
-    "basicAuth"           -> basicAuth,
-    "allowEmptyPassword"  -> allowEmptyPassword,
-    "sessionMaxAge"       -> sessionMaxAge,
-    "serverUrl"           -> serverUrl,
-    "searchBase"          -> searchBase,
-    "userBase"            -> userBase.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-    "groupFilter"         -> groupFilter.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-    "searchFilter"        -> searchFilter,
-    "adminUsername"       -> adminUsername.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-    "adminPassword"       -> adminPassword.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-    "nameField"           -> nameField,
-    "emailField"          -> emailField,
-    "metadataField"       -> metadataField.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-    "extraMetadata"       -> extraMetadata,
-    "metadata"            -> metadata,
-    "sessionCookieValues" -> SessionCookieValues.fmt.writes(this.sessionCookieValues),
-    "superAdmins"         -> superAdmins,
-    "rightsOverride"      -> JsObject(rightsOverride.mapValues(_.json)),
-    "dataOverride"        -> JsObject(dataOverride),
-  )
+  override def asJson =
+    location.jsonWithKey ++ Json.obj(
+      "type"                -> "ldap",
+      "id"                  -> id,
+      "name"                -> name,
+      "desc"                -> desc,
+      "basicAuth"           -> basicAuth,
+      "allowEmptyPassword"  -> allowEmptyPassword,
+      "sessionMaxAge"       -> sessionMaxAge,
+      "serverUrl"           -> serverUrl,
+      "searchBase"          -> searchBase,
+      "userBase"            -> userBase.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      "groupFilter"         -> groupFilter.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      "searchFilter"        -> searchFilter,
+      "adminUsername"       -> adminUsername.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      "adminPassword"       -> adminPassword.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      "nameField"           -> nameField,
+      "emailField"          -> emailField,
+      "metadataField"       -> metadataField.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      "extraMetadata"       -> extraMetadata,
+      "metadata"            -> metadata,
+      "sessionCookieValues" -> SessionCookieValues.fmt.writes(this.sessionCookieValues),
+      "superAdmins"         -> superAdmins,
+      "rightsOverride"      -> JsObject(rightsOverride.mapValues(_.json)),
+      "dataOverride"        -> JsObject(dataOverride)
+    )
 
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.authConfigsDataStore.set(this)
 
@@ -209,11 +217,11 @@ case class LdapAuthModuleConfig(
 
       LdapAuthModuleConfig.logger.debug(s"bind user for ${username}")
 
-      val usersInGroup: Seq[String] = groupFilter
+      val usersInGroup: Seq[String]               = groupFilter
         .map { filter =>
           LdapAuthModuleConfig.logger.debug(s"searching `$searchBase` with filter `$filter` ")
           val groupSearch = ctx.search(searchBase, filter, searchControls)
-          val uids = if (groupSearch.hasMore) {
+          val uids        = if (groupSearch.hasMore) {
             val item  = groupSearch.next()
             val attrs = item.getAttributes
             attrs.getAll.asScala.toSeq.filter(a => a.getID == "uniqueMember" || a.getID == "member").flatMap { attr =>
@@ -230,9 +238,11 @@ case class LdapAuthModuleConfig(
       LdapAuthModuleConfig.logger.debug(
         s"searching user in ${userBase.map(_ + ",").getOrElse("") + searchBase} with filter ${searchFilter.replace("${username}", username)}"
       )
-      val res = ctx.search(userBase.map(_ + ",").getOrElse("") + searchBase,
-                           searchFilter.replace("${username}", username),
-                           searchControls)
+      val res                                     = ctx.search(
+        userBase.map(_ + ",").getOrElse("") + searchBase,
+        searchFilter.replace("${username}", username),
+        searchControls
+      )
       val boundUser: Either[String, LdapAuthUser] = if (res.hasMore) {
         val item = res.next()
         val dn   = item.getNameInNamespace
@@ -279,21 +289,22 @@ case class LdapAuthModuleConfig(
     }
   }
 
-  def checkConnection(): Future[(Boolean, String)] = FastFuture.successful {
-    val env  = new util.Hashtable[String, AnyRef]
-    env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory")
-    env.put(Context.PROVIDER_URL, serverUrl)
-    env.put(Context.SECURITY_AUTHENTICATION, "simple")
-    adminUsername.foreach(u => env.put(Context.SECURITY_PRINCIPAL, u))
-    adminPassword.foreach(p => env.put(Context.SECURITY_CREDENTIALS, p))
-    scala.util.Try {
-      val ctx2 = new InitialDirContext(env)
-      ctx2.close()
-    } match {
-      case Success(_) => (true, "--")
-      case Failure(e) => (false, e.getMessage)
+  def checkConnection(): Future[(Boolean, String)] =
+    FastFuture.successful {
+      val env = new util.Hashtable[String, AnyRef]
+      env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory")
+      env.put(Context.PROVIDER_URL, serverUrl)
+      env.put(Context.SECURITY_AUTHENTICATION, "simple")
+      adminUsername.foreach(u => env.put(Context.SECURITY_PRINCIPAL, u))
+      adminPassword.foreach(p => env.put(Context.SECURITY_CREDENTIALS, p))
+      scala.util.Try {
+        val ctx2 = new InitialDirContext(env)
+        ctx2.close()
+      } match {
+        case Success(_) => (true, "--")
+        case Failure(e) => (false, e.getMessage)
+      }
     }
-  }
 }
 
 case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
@@ -321,13 +332,16 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
             profile = user.asJson,
             realm = authConfig.cookieSuffix(descriptor),
             // otoroshiData = authConfig.dataOverride.get(user.email).map(v => authConfig.extraMetadata.deepMerge(v)).orElse(Some(user.metadata)),
-            otoroshiData = authConfig.dataOverride.get(user.email).map(v => authConfig.extraMetadata.deepMerge(v)).orElse(Some(authConfig.extraMetadata.deepMerge(user.metadata))),
+            otoroshiData = authConfig.dataOverride
+              .get(user.email)
+              .map(v => authConfig.extraMetadata.deepMerge(v))
+              .orElse(Some(authConfig.extraMetadata.deepMerge(user.metadata))),
             authConfigId = authConfig.id,
             metadata = Map.empty,
             location = authConfig.location
           )
         )
-      case None => Left(s"You're not authorized here")
+      case None       => Left(s"You're not authorized here")
     }
   }
 
@@ -343,26 +357,32 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
             simpleLogin = false,
             authConfigId = authConfig.id,
             metadata = Map.empty,
-            rights = if (authConfig.superAdmins) UserRights.superAdmin else {
-              authConfig.rightsOverride.getOrElse(user.email,
-                UserRights(Seq(
-                  UserRight(
-                    TenantAccess(authConfig.location.tenant.value),
-                    authConfig.location.teams.map(t => TeamAccess(t.value))
+            rights =
+              if (authConfig.superAdmins) UserRights.superAdmin
+              else {
+                authConfig.rightsOverride.getOrElse(
+                  user.email,
+                  UserRights(
+                    Seq(
+                      UserRight(
+                        TenantAccess(authConfig.location.tenant.value),
+                        authConfig.location.teams.map(t => TeamAccess(t.value))
+                      )
+                    )
                   )
-                ))
-              )
-            },
+                )
+              },
             location = authConfig.location
           )
         )
-      case None => Left(s"You're not authorized here")
+      case None       => Left(s"You're not authorized here")
     }
   }
 
-  override def paLoginPage(request: RequestHeader,
-                           config: GlobalConfig,
-                           descriptor: ServiceDescriptor)(implicit ec: ExecutionContext, env: Env): Future[Result] = {
+  override def paLoginPage(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
+      ec: ExecutionContext,
+      env: Env
+  ): Future[Result] = {
     implicit val req = request
     val redirect     = request.getQueryString("redirect")
     val hash         = env.sign(s"${authConfig.id}:::${descriptor.id}")
@@ -383,22 +403,23 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
         req.headers.get("Authorization") match {
           case Some(auth) if auth.startsWith("Basic ") =>
             extractUsernamePassword(auth) match {
-              case None => Results.Forbidden(views.html.oto.error("Forbidden access", env)).future
+              case None                       => Results.Forbidden(views.html.oto.error("Forbidden access", env)).future
               case Some((username, password)) =>
                 bindUser(username, password, descriptor) match {
-                  case Left(_) => Results.Forbidden(views.html.oto.error("Forbidden access", env)).future
+                  case Left(_)     => Results.Forbidden(views.html.oto.error("Forbidden access", env)).future
                   case Right(user) =>
                     env.datastores.authConfigsDataStore.setUserForToken(token, user.toJson).map { _ =>
                       Results.Redirect(s"/privateapps/generic/callback?desc=${descriptor.id}&token=$token&hash=$hash")
                     }
                 }
             }
-          case _ => unauthorized()
+          case _                                       => unauthorized()
         }
       } else {
         Results
           .Ok(
-            views.html.oto.login(s"/privateapps/generic/callback?desc=${descriptor.id}&hash=$hash", "POST", token, false, env)
+            views.html.oto
+              .login(s"/privateapps/generic/callback?desc=${descriptor.id}&hash=$hash", "POST", token, false, env)
           )
           .addingToSession(
             s"pa-redirect-after-login-${authConfig.cookieSuffix(descriptor)}" -> redirect.getOrElse(
@@ -410,13 +431,13 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
     }
   }
 
-  override def paLogout(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor)(
-      implicit ec: ExecutionContext,
+  override def paLogout(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
+      ec: ExecutionContext,
       env: Env
   ) = FastFuture.successful(None)
 
-  override def paCallback(request: Request[AnyContent], config: GlobalConfig, descriptor: ServiceDescriptor)(
-      implicit ec: ExecutionContext,
+  override def paCallback(request: Request[AnyContent], config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
+      ec: ExecutionContext,
       env: Env
   ): Future[Either[String, PrivateAppsUser]] = {
     implicit val req = request
@@ -430,11 +451,11 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
               case Some(user) => Right(user)
               case None       => Left("No user found")
             }
-        case _ => FastFuture.successful(Left("Forbidden access"))
+        case _           => FastFuture.successful(Left("Forbidden access"))
       }
     } else {
       request.body.asFormUrlEncoded match {
-        case None => FastFuture.successful(Left("No Authorization form here"))
+        case None       => FastFuture.successful(Left("No Authorization form here"))
         case Some(form) => {
           (form.get("username").map(_.last), form.get("password").map(_.last), form.get("token").map(_.last)) match {
             case (Some(username), Some(password), Some(token)) => {
@@ -443,7 +464,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
                 case true  => bindUser(username, password, descriptor)
               }
             }
-            case _ => {
+            case _                                             => {
               FastFuture.successful(Left("Authorization form is not complete"))
             }
           }
@@ -452,8 +473,10 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
     }
   }
 
-  override def boLoginPage(request: RequestHeader, config: GlobalConfig)(implicit ec: ExecutionContext,
-                                                                         env: Env): Future[Result] = {
+  override def boLoginPage(request: RequestHeader, config: GlobalConfig)(implicit
+      ec: ExecutionContext,
+      env: Env
+  ): Future[Result] = {
     implicit val req = request
     val redirect     = request.getQueryString("redirect")
     val hash         = env.sign(s"${authConfig.id}:::backoffice")
@@ -474,17 +497,17 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
         req.headers.get("Authorization") match {
           case Some(auth) if auth.startsWith("Basic ") =>
             extractUsernamePassword(auth) match {
-              case None => Results.Forbidden(views.html.oto.error("Forbidden access", env)).future
+              case None                       => Results.Forbidden(views.html.oto.error("Forbidden access", env)).future
               case Some((username, password)) =>
                 bindAdminUser(username, password) match {
-                  case Left(_) => Results.Forbidden(views.html.oto.error("Forbidden access", env)).future
+                  case Left(_)     => Results.Forbidden(views.html.oto.error("Forbidden access", env)).future
                   case Right(user) =>
                     env.datastores.authConfigsDataStore.setUserForToken(token, user.toJson).map { _ =>
                       Results.Redirect(s"/backoffice/auth0/callback?token=$token&hash=$hash")
                     }
                 }
             }
-          case _ => unauthorized()
+          case _                                       => unauthorized()
         }
       } else {
         Results
@@ -516,11 +539,11 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
               case Some(user) => Right(user)
               case None       => Left("No user found")
             }
-        case _ => FastFuture.successful(Left("Forbidden access"))
+        case _           => FastFuture.successful(Left("Forbidden access"))
       }
     } else {
       request.body.asFormUrlEncoded match {
-        case None => FastFuture.successful(Left("No Authorization form here"))
+        case None       => FastFuture.successful(Left("No Authorization form here"))
         case Some(form) => {
           (form.get("username").map(_.last), form.get("password").map(_.last), form.get("token").map(_.last)) match {
             case (Some(username), Some(password), Some(token)) => {
@@ -529,7 +552,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
                 case true  => bindAdminUser(username, password)
               }
             }
-            case _ => {
+            case _                                             => {
               FastFuture.successful(Left("Authorization form is not complete"))
             }
           }

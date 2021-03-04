@@ -34,11 +34,12 @@ import otoroshi.utils.syntax.implicits._
 import scala.collection.JavaConverters._
 import scala.concurrent.{ExecutionContext, Future}
 
-class LettuceDataStores(configuration: Configuration,
-                        environment: Environment,
-                        lifecycle: ApplicationLifecycle,
-                        env: Env)
-    extends DataStores {
+class LettuceDataStores(
+    configuration: Configuration,
+    environment: Environment,
+    lifecycle: ApplicationLifecycle,
+    env: Env
+) extends DataStores {
 
   lazy val logger = Logger("otoroshi-redis-lettuce-datastores")
 
@@ -58,9 +59,11 @@ class LettuceDataStores(configuration: Configuration,
 
   lazy val redisDispatcher = redisActorSystem.dispatcher
 
-  lazy val redisConnection = configuration.getOptionalWithFileSupport[String]("app.redis.lettuce.connection").getOrElse("default")
-  lazy val redisReadFrom   = configuration.getOptionalWithFileSupport[String]("app.redis.lettuce.readFrom").getOrElse("MASTER_PREFERRED")
-  lazy val readFrom        = ReadFrom.valueOf(redisReadFrom)
+  lazy val redisConnection        =
+    configuration.getOptionalWithFileSupport[String]("app.redis.lettuce.connection").getOrElse("default")
+  lazy val redisReadFrom          =
+    configuration.getOptionalWithFileSupport[String]("app.redis.lettuce.readFrom").getOrElse("MASTER_PREFERRED")
+  lazy val readFrom               = ReadFrom.valueOf(redisReadFrom)
   lazy val redisUris: Seq[String] = configuration
     .getOptionalWithFileSupport[Seq[String]]("app.redis.lettuce.uris")
     .filter(_.nonEmpty)
@@ -73,22 +76,25 @@ class LettuceDataStores(configuration: Configuration,
       configuration.getOptionalWithFileSupport[String]("app.redis.lettuce.uri").map(v => Seq(v.trim))
     )
     .getOrElse(Seq.empty[String])
-  lazy val startTLS = configuration.getOptionalWithFileSupport[Boolean]("app.redis.lettuce.startTLS").getOrElse(false)
-  lazy val verifyPeers = configuration.getOptionalWithFileSupport[Boolean]("app.redis.lettuce.verifyPeers").getOrElse(true)
-  lazy val nodesRaw = redisUris.map { v =>
+  lazy val startTLS               = configuration.getOptionalWithFileSupport[Boolean]("app.redis.lettuce.startTLS").getOrElse(false)
+  lazy val verifyPeers            =
+    configuration.getOptionalWithFileSupport[Boolean]("app.redis.lettuce.verifyPeers").getOrElse(true)
+  lazy val nodesRaw               = redisUris.map { v =>
     val uri = RedisURI.create(v)
     uri.setStartTls(startTLS)
     uri.setVerifyPeer(verifyPeers)
     uri
   }
-  lazy val nodes    = nodesRaw.asJava
+  lazy val nodes                  = nodesRaw.asJava
   lazy val resources = {
-    val default = DefaultClientResources.builder().build()
+    val default                   = DefaultClientResources.builder().build()
     val computationThreadPoolSize = configuration
       .getOptionalWithFileSupport[Int]("app.redis.lettuce.computationThreadPoolSize")
       .getOrElse(default.computationThreadPoolSize())
-    val ioThreadPoolSize =
-      configuration.getOptionalWithFileSupport[Int]("app.redis.lettuce.ioThreadPoolSize").getOrElse(default.ioThreadPoolSize())
+    val ioThreadPoolSize          =
+      configuration
+        .getOptionalWithFileSupport[Int]("app.redis.lettuce.ioThreadPoolSize")
+        .getOrElse(default.ioThreadPoolSize())
     ClientResources
       .builder()
       .computationThreadPoolSize(computationThreadPoolSize)
@@ -109,7 +115,7 @@ class LettuceDataStores(configuration: Configuration,
       case "default" if redisUris.size == 1 => standardConnection()
       case "standalone"                     => standardConnection()
       case "sentinels"                      => standardConnection()
-      case "default" if redisUris.size > 1 => {
+      case "default" if redisUris.size > 1  => {
         val redisClient = RedisClient.create(resources)
         val connection  = MasterReplica.connect(redisClient, new ByteStringRedisCodec(), nodes)
         connection.setReadFrom(readFrom)
@@ -117,7 +123,7 @@ class LettuceDataStores(configuration: Configuration,
         connectionRef.set(connection)
         new LettuceRedisStandaloneAndSentinels(redisActorSystem, redisClient)
       }
-      case "master-replicas" => {
+      case "master-replicas"                => {
         val redisClient = RedisClient.create(resources)
         val connection  = MasterReplica.connect(redisClient, new ByteStringRedisCodec(), nodes)
         connection.setReadFrom(readFrom)
@@ -125,29 +131,33 @@ class LettuceDataStores(configuration: Configuration,
         connectionRef.set(connection)
         new LettuceRedisStandaloneAndSentinels(redisActorSystem, redisClient)
       }
-      case "cluster" => {
+      case "cluster"                        => {
         // docker run -p '7000-7050:7000-7050' -e "IP=0.0.0.0" grokzen/redis-cluster:latest
         // -Dapp.redis.lettuce.connection=cluster -Dapp.redis.lettuce.uris.0=redis://localhost:7000/0 -Dapp.redis.lettuce.uris.1=redis://localhost:7001/0 -Dapp.redis.lettuce.uris.2=redis://localhost:7002/0
         val redisClient = RedisClusterClient.create(resources, nodes)
         clientRef.set(redisClient)
         new LettuceRedisCluster(redisActorSystem, redisClient)
       }
-      case _ => throw new RuntimeException(s"Bad redis connection type '$redisConnection'")
+      case _                                => throw new RuntimeException(s"Bad redis connection type '$redisConnection'")
     }
   }
 
-  override def before(configuration: Configuration,
-                      environment: Environment,
-                      lifecycle: ApplicationLifecycle): Future[Unit] = {
+  override def before(
+      configuration: Configuration,
+      environment: Environment,
+      lifecycle: ApplicationLifecycle
+  ): Future[Unit] = {
     logger.info("Now using Redis Lettuce DataStores")
     _serviceDescriptorDataStore.startCleanup(env)
     _certificateDataStore.startSync()
     FastFuture.successful(())
   }
 
-  override def after(configuration: Configuration,
-                     environment: Environment,
-                     lifecycle: ApplicationLifecycle): Future[Unit] = {
+  override def after(
+      configuration: Configuration,
+      environment: Environment,
+      lifecycle: ApplicationLifecycle
+  ): Future[Unit] = {
     _serviceDescriptorDataStore.stopCleanup()
     _certificateDataStore.stopSync()
     Option(connectionRef.get()).foreach(_.close())
@@ -177,7 +187,7 @@ class LettuceDataStores(configuration: Configuration,
   private lazy val _clusterStateDataStore                   = new KvClusterStateDataStore(redis, env)
   override def clusterStateDataStore: ClusterStateDataStore = _clusterStateDataStore
 
-  private lazy val _clientCertificateValidationDataStore = new KvClientCertificateValidationDataStore(redis, env)
+  private lazy val _clientCertificateValidationDataStore                                  = new KvClientCertificateValidationDataStore(redis, env)
   override def clientCertificateValidationDataStore: ClientCertificateValidationDataStore =
     _clientCertificateValidationDataStore
 
@@ -196,13 +206,13 @@ class LettuceDataStores(configuration: Configuration,
   private lazy val _webAuthnRegistrationsDataStore                            = new WebAuthnRegistrationsDataStore()
   override def webAuthnRegistrationsDataStore: WebAuthnRegistrationsDataStore = _webAuthnRegistrationsDataStore
 
-  private lazy val _tenantDataStore = new TenantDataStore(redis, env)
+  private lazy val _tenantDataStore             = new TenantDataStore(redis, env)
   override def tenantDataStore: TenantDataStore = _tenantDataStore
 
-  private lazy val _teamDataStore = new TeamDataStore(redis, env)
+  private lazy val _teamDataStore           = new TeamDataStore(redis, env)
   override def teamDataStore: TeamDataStore = _teamDataStore
 
-  private lazy val _dataExporterConfigDataStore = new DataExporterConfigDataStore(redis, env)
+  private lazy val _dataExporterConfigDataStore                         = new DataExporterConfigDataStore(redis, env)
   override def dataExporterConfigDataStore: DataExporterConfigDataStore = _dataExporterConfigDataStore
 
   override def privateAppsUserDataStore: PrivateAppsUserDataStore     = _privateAppsUserDataStore
@@ -238,7 +248,7 @@ class LettuceDataStores(configuration: Configuration,
       .grouped(group)
       .mapAsync(1) {
         case keys if keys.isEmpty => FastFuture.successful(Seq.empty[JsValue])
-        case keys => {
+        case keys                 => {
           Future.sequence(
             keys
               .filterNot { key =>
@@ -262,15 +272,16 @@ class LettuceDataStores(configuration: Configuration,
                   w     <- redis.typ(key)
                   ttl   <- redis.pttl(key)
                   value <- fetchValueForType(w, key)
-                } yield
-                  value match {
-                    case JsNull => JsNull
-                    case _ =>
-                      Json.obj("k" -> key,
-                               "v" -> value,
-                               "t" -> (if (ttl == -1) -1 else (System.currentTimeMillis() + ttl)),
-                               "w" -> w)
-                  }
+                } yield value match {
+                  case JsNull => JsNull
+                  case _      =>
+                    Json.obj(
+                      "k" -> key,
+                      "v" -> value,
+                      "t" -> (if (ttl == -1) -1 else (System.currentTimeMillis() + ttl)),
+                      "w" -> w
+                    )
+                }
               }
           )
         }
@@ -292,22 +303,23 @@ class LettuceDataStores(configuration: Configuration,
         .grouped(10)
         .mapAsync(1) {
           case keys if keys.isEmpty => FastFuture.successful(Seq.empty[JsValue])
-          case keys => {
+          case keys                 => {
             Source(keys.toList)
               .mapAsync(1) { key =>
                 for {
                   w     <- redis.typ(key)
                   ttl   <- redis.pttl(key)
                   value <- fetchValueForType(w, key)
-                } yield
-                  value match {
-                    case JsNull => JsNull
-                    case _ =>
-                      Json.obj("k" -> key,
-                               "v" -> value,
-                               "t" -> (if (ttl == -1) -1 else (System.currentTimeMillis() + ttl)),
-                               "w" -> w)
-                  }
+                } yield value match {
+                  case JsNull => JsNull
+                  case _      =>
+                    Json.obj(
+                      "k" -> key,
+                      "v" -> value,
+                      "t" -> (if (ttl == -1) -1 else (System.currentTimeMillis() + ttl)),
+                      "w" -> w
+                    )
+                }
               }
               .runWith(Sink.seq)
               .map(_.filterNot(_ == JsNull))
@@ -335,14 +347,14 @@ class LettuceDataStores(configuration: Configuration,
             val what  = (json \ "w").as[String]
             (what match {
               case "counter" => redis.set(key, value.as[Long].toString)
-              case "string" => redis.set(key, value.as[String])
-              case "hash" =>
+              case "string"  => redis.set(key, value.as[String])
+              case "hash"    =>
                 Source(value.as[JsObject].value.toList)
                   .mapAsync(1)(v => redis.hset(key, v._1, Json.stringify(v._2)))
                   .runWith(Sink.ignore)
-              case "list" => redis.lpush(key, value.as[JsArray].value.map(Json.stringify): _*)
-              case "set"  => redis.sadd(key, value.as[JsArray].value.map(Json.stringify): _*)
-              case _      => FastFuture.successful(0L)
+              case "list"    => redis.lpush(key, value.as[JsArray].value.map(Json.stringify): _*)
+              case "set"     => redis.sadd(key, value.as[JsArray].value.map(Json.stringify): _*)
+              case _         => FastFuture.successful(0L)
             }).flatMap { _ =>
               if (pttl > -1L) {
                 redis.pexpire(key, pttl)
@@ -358,15 +370,15 @@ class LettuceDataStores(configuration: Configuration,
 
   private def fetchValueForType(typ: String, key: String)(implicit ec: ExecutionContext): Future[JsValue] = {
     typ match {
-      case "hash" => redis.hgetall(key).map(m => JsObject(m.map(t => (t._1, JsString(t._2.utf8String)))))
-      case "list" => redis.lrange(key, 0, Long.MaxValue).map(l => JsArray(l.map(s => JsString(s.utf8String))))
-      case "set"  => redis.smembers(key).map(l => JsArray(l.map(s => JsString(s.utf8String))))
+      case "hash"   => redis.hgetall(key).map(m => JsObject(m.map(t => (t._1, JsString(t._2.utf8String)))))
+      case "list"   => redis.lrange(key, 0, Long.MaxValue).map(l => JsArray(l.map(s => JsString(s.utf8String))))
+      case "set"    => redis.smembers(key).map(l => JsArray(l.map(s => JsString(s.utf8String))))
       case "string" =>
         redis.get(key).map {
           case None    => JsNull
           case Some(a) => JsString(a.utf8String)
         }
-      case _ => FastFuture.successful(JsNull)
+      case _        => FastFuture.successful(JsNull)
     }
   }
 }

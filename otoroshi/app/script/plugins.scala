@@ -18,12 +18,13 @@ import scala.util.Try
 
 object Plugins {
   val format = new Format[Plugins] {
-    override def writes(o: Plugins): JsValue = Json.obj(
-      "enabled"          -> o.enabled,
-      "refs"             -> JsArray(o.refs.map(JsString.apply)),
-      "config"           -> o.config,
-      "excluded" -> JsArray(o.excluded.map(JsString.apply)),
-    )
+    override def writes(o: Plugins): JsValue             =
+      Json.obj(
+        "enabled"  -> o.enabled,
+        "refs"     -> JsArray(o.refs.map(JsString.apply)),
+        "config"   -> o.config,
+        "excluded" -> JsArray(o.excluded.map(JsString.apply))
+      )
     override def reads(json: JsValue): JsResult[Plugins] =
       Try {
         JsSuccess(
@@ -43,36 +44,42 @@ object Plugins {
   }
 }
 
-case class Plugins(name: String,
-                   enabled: Boolean = false,
-                   excluded: Seq[String] = Seq.empty[String],
-                   refs: Seq[String] = Seq.empty,
-                   config: JsValue = Json.obj()) {
+case class Plugins(
+    name: String,
+    enabled: Boolean = false,
+    excluded: Seq[String] = Seq.empty[String],
+    refs: Seq[String] = Seq.empty,
+    config: JsValue = Json.obj()
+) {
 
   private val transformers = new AtomicReference[Seq[String]](null)
 
   private def plugin[A](ref: String)(implicit ec: ExecutionContext, env: Env, ct: ClassTag[A]): Option[A] = {
     env.scriptManager.getAnyScript[NamedPlugin](ref) match {
       case Right(validator) if ct.runtimeClass.isAssignableFrom(validator.getClass) => validator.asInstanceOf[A].some
-      case _ => None
+      case _                                                                        => None
     }
   }
 
-  private def getPlugins[A](req: RequestHeader)(implicit ec: ExecutionContext, env: Env, ct: ClassTag[A]): Seq[String] = {
+  private def getPlugins[A](
+      req: RequestHeader
+  )(implicit ec: ExecutionContext, env: Env, ct: ClassTag[A]): Seq[String] = {
     val globalPlugins = env.datastores.globalConfigDataStore.latestSafe
       .map(_.plugins)
       .filter(p => p.enabled && p.refs.nonEmpty)
       .filter(pls => pls.excluded.isEmpty || !pls.excluded.exists(p => utils.RegexPool.regex(p).matches(req.thePath)))
       .getOrElse(Plugins(s"fake-global-${ct.runtimeClass.getName}"))
-      .refs.map(r => (r, plugin[A](r)))
+      .refs
+      .map(r => (r, plugin[A](r)))
       .collect {
         case (ref, Some(_)) => ref
       }
-    val localPlugins = Some(this)
+    val localPlugins  = Some(this)
       .filter(p => p.enabled && p.refs.nonEmpty)
       .filter(pls => pls.excluded.isEmpty || !pls.excluded.exists(p => RegexPool.regex(p).matches(req.thePath)))
       .getOrElse(Plugins(s"fake-local-${ct.runtimeClass.getName}"))
-      .refs.map(r => (r, plugin[A](r)))
+      .refs
+      .map(r => (r, plugin[A](r)))
       .collect {
         case (ref, Some(_)) => ref
       }

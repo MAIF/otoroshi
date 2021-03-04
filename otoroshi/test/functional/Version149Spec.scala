@@ -19,24 +19,24 @@ import otoroshi.security.IdGenerator
 import scala.math.BigDecimal.RoundingMode
 import scala.util.Try
 
-class Version149Spec(name: String, configurationSpec: => Configuration)
-    extends OtoroshiSpec {
+class Version149Spec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 
-  implicit val system  = ActorSystem("otoroshi-test")
-  implicit val env     = otoroshiComponents.env
+  implicit val system = ActorSystem("otoroshi-test")
+  implicit val env    = otoroshiComponents.env
 
   import scala.concurrent.duration._
 
-  override def getTestConfiguration(configuration: Configuration) = Configuration(
-    ConfigFactory
-      .parseString(s"""
+  override def getTestConfiguration(configuration: Configuration) =
+    Configuration(
+      ConfigFactory
+        .parseString(s"""
            |{
            |  app.instance.region=eu-west-1
            |  app.instance.zone=dc1
            |}
        """.stripMargin)
-      .resolve()
-  ).withFallback(configurationSpec).withFallback(configuration)
+        .resolve()
+    ).withFallback(configurationSpec).withFallback(configuration)
 
   startOtoroshi()
 
@@ -52,7 +52,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
       val (_, port3, counter3, _)    = testServer("service.oto.tools", port)
       val (_, port4, counter4, _)    = testServer("service.oto.tools", port)
       val (_, port5, counter5, _)    = testServer("service.oto.tools", port)
-      val service1 = ServiceDescriptor(
+      val service1                   = ServiceDescriptor(
         id = "service-apk-routing-1",
         name = "service1",
         env = "prod",
@@ -73,7 +73,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
           )
         )
       )
-      val service2 = ServiceDescriptor(
+      val service2                   = ServiceDescriptor(
         id = "service-apk-routing-2",
         name = "service2",
         env = "prod",
@@ -94,7 +94,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
           )
         )
       )
-      val service3 = ServiceDescriptor(
+      val service3                   = ServiceDescriptor(
         id = "service-apk-routing-3",
         name = "service3",
         env = "prod",
@@ -115,7 +115,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
           )
         )
       )
-      val service4 = ServiceDescriptor(
+      val service4                   = ServiceDescriptor(
         id = "service-apk-routing-4",
         name = "service4",
         env = "prod",
@@ -136,7 +136,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
           )
         )
       )
-      val service5 = ServiceDescriptor(
+      val service5                   = ServiceDescriptor(
         id = "service-apk-routing-5",
         name = "service5",
         env = "prod",
@@ -157,27 +157,27 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
           )
         )
       )
-      val apikey1 = ApiKey(
+      val apikey1                    = ApiKey(
         clientName = "apikey1",
         authorizedEntities = Seq(ServiceGroupIdentifier("default")),
         tags = Seq("user", "foo")
       )
-      val apikey2 = ApiKey(
+      val apikey2                    = ApiKey(
         clientName = "apikey2",
         authorizedEntities = Seq(ServiceGroupIdentifier("default")),
         tags = Seq("admin", "bar", "foo")
       )
-      val apikey3 = ApiKey(
+      val apikey3                    = ApiKey(
         clientName = "apikey3",
         authorizedEntities = Seq(ServiceGroupIdentifier("default")),
         metadata = Map("level" -> "1")
       )
-      val apikey4 = ApiKey(
+      val apikey4                    = ApiKey(
         clientName = "apikey4",
         authorizedEntities = Seq(ServiceGroupIdentifier("default")),
         metadata = Map("level" -> "2", "root" -> "true")
       )
-      val apikey5 = ApiKey(
+      val apikey5                    = ApiKey(
         clientName = "apikey5",
         authorizedEntities = Seq(ServiceGroupIdentifier("default")),
         tags = Seq("lkj", "leveled", "root")
@@ -278,10 +278,14 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
     }
 
     "support el in headers manipulation (#308)" in {
-      val (_, port1, counter1, call) = testServer("service-el.oto.tools", port, validate = r => {
-        r.getHeader("X-Api-Key-Name").get().value().startsWith("apikey-service3")
-      })
-      val service = ServiceDescriptor(
+      val (_, port1, counter1, call) = testServer(
+        "service-el.oto.tools",
+        port,
+        validate = r => {
+          r.getHeader("X-Api-Key-Name").get().value().startsWith("apikey-service3")
+        }
+      )
+      val service                    = ServiceDescriptor(
         id = "service-el",
         name = "service-el",
         env = "prod",
@@ -300,7 +304,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
           "X-Api-Key-Name" -> "${apikey.name}"
         )
       )
-      val apikey = ApiKey(
+      val apikey                     = ApiKey(
         clientName = "apikey-service3",
         authorizedEntities = Seq(ServiceGroupIdentifier("default"))
       )
@@ -327,11 +331,16 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
 
     val counter1 = new AtomicInteger(0)
     val body     = """{"message":"hello world"}"""
-    val server1 = TargetService(None, "/api", "application/json", { r =>
-      // println(r.getHeaders())
-      counter1.incrementAndGet()
-      body
-    }).await()
+    val server1  = TargetService(
+      None,
+      "/api",
+      "application/json",
+      { r =>
+        // println(r.getHeaders())
+        counter1.incrementAndGet()
+        body
+      }
+    ).await()
 
     "warm up" in {
       getOtoroshiServices().futureValue // WARM UP
@@ -355,7 +364,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
         publicPatterns = Seq("/.*")
       )
       createOtoroshiService(service).futureValue
-      val config = getOtoroshiConfig().futureValue
+      val config  = getOtoroshiConfig().futureValue
 
       val resp1 = ws
         .url(s"http://127.0.0.1:$port/api")
@@ -397,11 +406,16 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
 
       val counter = new AtomicInteger(0)
       val body    = """{"message":"hello world 1"}"""
-      val server = TargetService(None, "/api", "application/json", { r =>
-        // println(r.getHeaders())
-        counter.incrementAndGet()
-        body
-      }).await()
+      val server  = TargetService(
+        None,
+        "/api",
+        "application/json",
+        { r =>
+          // println(r.getHeaders())
+          counter.incrementAndGet()
+          body
+        }
+      ).await()
 
       val service = ServiceDescriptor(
         id = "array-jwt-test",
@@ -458,7 +472,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
         val r = ws
           .url(s"http://127.0.0.1:$port/api")
           .withHttpHeaders(
-            "Host" -> "array-jwt.oto.tools",
+            "Host"        -> "array-jwt.oto.tools",
             "X-JWT-Token" -> JWT
               .create()
               .withIssuer("mathieu")
@@ -487,17 +501,18 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
   s"[$name] Otoroshi exchange protocol V2" should {
     "enforce token TTL (#290)" in {
       import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
-      val counter = new AtomicInteger(0)
-      val body    = """{"message":"hello world"}"""
-      val server = TargetService
+      val counter  = new AtomicInteger(0)
+      val body     = """{"message":"hello world"}"""
+      val server   = TargetService
         .full(
           None,
           "/api",
-          "application/json", { r =>
-            val state = r.getHeader("Otoroshi-State").get()
-            val tokenBody =
+          "application/json",
+          { r =>
+            val state             = r.getHeader("Otoroshi-State").get()
+            val tokenBody         =
               Try(Json.parse(ApacheBase64.decodeBase64(state.value().split("\\.")(1)))).getOrElse(Json.obj())
-            val stateValue = (tokenBody \ "state").as[String]
+            val stateValue        = (tokenBody \ "state").as[String]
             val respToken: String = JWT
               .create()
               .withJWTId(IdGenerator.uuid)
@@ -511,15 +526,16 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
           }
         )
         .await()
-      val server2 = TargetService
+      val server2  = TargetService
         .full(
           None,
           "/api",
-          "application/json", { r =>
-            val state = r.getHeader("Otoroshi-State").get()
-            val tokenBody =
+          "application/json",
+          { r =>
+            val state             = r.getHeader("Otoroshi-State").get()
+            val tokenBody         =
               Try(Json.parse(ApacheBase64.decodeBase64(state.value().split("\\.")(1)))).getOrElse(Json.obj())
-            val stateValue = (tokenBody \ "state").as[String]
+            val stateValue        = (tokenBody \ "state").as[String]
             val respToken: String = JWT
               .create()
               .withJWTId(IdGenerator.uuid)
@@ -533,7 +549,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
           }
         )
         .await()
-      val service = ServiceDescriptor(
+      val service  = ServiceDescriptor(
         id = "seccom-v1-test",
         name = "seccom-v1-test",
         env = "prod",
@@ -601,10 +617,14 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
       server2.stop()
     }
     "allow disabling token info (#320)" in {
-      val (_, port1, counter1, call) = testServer("service-disabled-info.oto.tools", port, validate = r => {
-        !r.getHeader("Otoroshi-Claim").isPresent
-      })
-      val service = ServiceDescriptor(
+      val (_, port1, counter1, call) = testServer(
+        "service-disabled-info.oto.tools",
+        port,
+        validate = r => {
+          !r.getHeader("Otoroshi-Claim").isPresent
+        }
+      )
+      val service                    = ServiceDescriptor(
         id = "service-disabled-info",
         name = "service-disabled-info",
         env = "prod",
@@ -631,11 +651,11 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
     }
     "allow latest version of info token (#320)" in {
       import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
-      val alg = HSAlgoSettings(
+      val alg                        = HSAlgoSettings(
         512,
         "secret"
       )
-      val apikey1 = ApiKey(
+      val apikey1                    = ApiKey(
         clientName = "apikey1",
         authorizedEntities = Seq(ServiceGroupIdentifier("default"))
       )
@@ -643,8 +663,8 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
         "service-disabled-info.oto.tools",
         port,
         validate = r => {
-          val token = r.getHeader("Otoroshi-Claim").get().value()
-          val valid =
+          val token     = r.getHeader("Otoroshi-Claim").get().value()
+          val valid     =
             Try(JWT.require(alg.asAlgorithm(OutputMode).get).build().verify(token)).map(_ => true).getOrElse(false)
           val tokenBody = Try(Json.parse(ApacheBase64.decodeBase64(token.split("\\.")(1)))).getOrElse(Json.obj())
           val valid2    = (tokenBody \ "apikey" \ "clientId").as[String] == apikey1.clientId
@@ -652,7 +672,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
           valid && valid2
         }
       )
-      val service = ServiceDescriptor(
+      val service                    = ServiceDescriptor(
         id = "service-disabled-info",
         name = "service-disabled-info",
         env = "prod",
@@ -682,10 +702,14 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
       stopServers()
     }
     "allow custom header names (#320)" in {
-      val (_, port1, counter1, call) = testServer("service-custom-headers.oto.tools", port, validate = r => {
-        r.getHeader("claimRequestName").isPresent && r.getHeader("stateRequestName").isPresent
-      })
-      val service = ServiceDescriptor(
+      val (_, port1, counter1, call) = testServer(
+        "service-custom-headers.oto.tools",
+        port,
+        validate = r => {
+          r.getHeader("claimRequestName").isPresent && r.getHeader("stateRequestName").isPresent
+        }
+      )
+      val service                    = ServiceDescriptor(
         id = "service-custom-headers",
         name = "service-custom-headers",
         env = "prod",
@@ -710,7 +734,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
         )
       )
       createOtoroshiService(service).futureValue
-      val r = call(Map.empty)
+      val r                          = call(Map.empty)
       counter1.get() mustBe 1
       r.status mustBe 502
       deleteOtoroshiService(service).futureValue
@@ -728,7 +752,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
       val (server1, port1, counter1, call1) = testServer("weighting.oto.tools", port)
       val (server2, port2, counter2, call2) = testServer("weighting.oto.tools", port)
       val (server3, port3, counter3, call3) = testServer("weighting.oto.tools", port)
-      val serviceweight = ServiceDescriptor(
+      val serviceweight                     = ServiceDescriptor(
         id = "weighting-test",
         name = "weighting-test",
         env = "prod",
@@ -772,7 +796,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
     "allow better timeout management : callTimeout (#301)" in {
       val (_, port1, _, call1) = testServer("calltimeout1.oto.tools", port, 2000.millis)
       val (_, port2, _, call2) = testServer("calltimeout2.oto.tools", port, 200.millis)
-      val service1 = ServiceDescriptor(
+      val service1             = ServiceDescriptor(
         id = "callTimeout1-test",
         name = "callTimeout1-test",
         env = "prod",
@@ -793,7 +817,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
           callTimeout = 1000
         )
       )
-      val service2 = ServiceDescriptor(
+      val service2             = ServiceDescriptor(
         id = "callTimeout2-test",
         name = "callTimeout2-test",
         env = "prod",
@@ -816,8 +840,8 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
       )
       createOtoroshiService(service1).futureValue
       createOtoroshiService(service2).futureValue
-      val resp1 = call1(Map.empty)
-      val resp2 = call2(Map.empty)
+      val resp1                = call1(Map.empty)
+      val resp2                = call2(Map.empty)
       // counter1.get() mustBe 1
       // counter2.get() mustBe 1
       resp1.status mustBe 504
@@ -830,7 +854,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
     "allow better timeout management : callTimeout with akka-http (#301)" in {
       val (_, port1, counter1, call1) = testServer("calltimeoutakka1.oto.tools", port, 2000.millis)
       val (_, port2, counter2, call2) = testServer("calltimeoutakka2.oto.tools", port, 200.millis)
-      val serviceweight1 = ServiceDescriptor(
+      val serviceweight1              = ServiceDescriptor(
         id = "calltimeoutakka1-test",
         name = "calltimeoutakka1-test",
         env = "prod",
@@ -851,7 +875,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
           callTimeout = 1000
         )
       )
-      val serviceweight2 = ServiceDescriptor(
+      val serviceweight2              = ServiceDescriptor(
         id = "calltimeoutakka2-test",
         name = "calltimeoutakka2-test",
         env = "prod",
@@ -874,8 +898,8 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
       )
       createOtoroshiService(serviceweight1).futureValue
       createOtoroshiService(serviceweight2).futureValue
-      val resp1 = call1(Map.empty)
-      val resp2 = call2(Map.empty)
+      val resp1                       = call1(Map.empty)
+      val resp2                       = call2(Map.empty)
       // counter1.get() mustBe 0
       // counter2.get() mustBe 1
       resp1.status mustBe 504
@@ -888,7 +912,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
     "allow better timeout management : idleTimeout (#301)" in {
       val (_, port1, counter1, call1) = testServer("idletimeout1.oto.tools", port, 2000.millis)
       val (_, port2, counter2, call2) = testServer("idletimeout2.oto.tools", port, 200.millis)
-      val serviceweight1 = ServiceDescriptor(
+      val serviceweight1              = ServiceDescriptor(
         id = "idletimeout1-test",
         name = "idletimeout1-test",
         env = "prod",
@@ -909,7 +933,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
           idleTimeout = 1000
         )
       )
-      val serviceweight2 = ServiceDescriptor(
+      val serviceweight2              = ServiceDescriptor(
         id = "idletimeout2-test",
         name = "idletimeout2-test",
         env = "prod",
@@ -932,8 +956,8 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
       )
       createOtoroshiService(serviceweight1).futureValue
       createOtoroshiService(serviceweight2).futureValue
-      val resp1 = call1(Map.empty)
-      val resp2 = call2(Map.empty)
+      val resp1                       = call1(Map.empty)
+      val resp2                       = call2(Map.empty)
       // counter1.get() mustBe 1
       // counter2.get() mustBe 1
       resp1.status mustBe 504
@@ -946,7 +970,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
     "allow better timeout management : callAndStreamTimeout (#301)" in {
       val (_, port1, counter1, call1) = testServer("callandstreamtimeout1.oto.tools", port, 0.millis, 2000.millis)
       val (_, port2, counter2, call2) = testServer("callandstreamtimeout2.oto.tools", port, 0.millis)
-      val serviceweight1 = ServiceDescriptor(
+      val serviceweight1              = ServiceDescriptor(
         id = "callandstreamtimeout1-test",
         name = "callandstreamtimeout1-test",
         env = "prod",
@@ -967,7 +991,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
           callAndStreamTimeout = 1000
         )
       )
-      val serviceweight2 = ServiceDescriptor(
+      val serviceweight2              = ServiceDescriptor(
         id = "callandstreamtimeout2-test",
         name = "callandstreamtimeout2-test",
         env = "prod",
@@ -990,8 +1014,8 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
       )
       createOtoroshiService(serviceweight1).futureValue
       createOtoroshiService(serviceweight2).futureValue
-      val resp1 = call1(Map.empty)
-      val resp2 = call2(Map.empty)
+      val resp1                       = call1(Map.empty)
+      val resp2                       = call2(Map.empty)
       // counter1.get() mustBe 1
       // counter2.get() mustBe 1
       resp1.status mustBe 200
@@ -1005,7 +1029,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
     "allow better timeout management : callAndStreamTimeout with akka-http (#301)" in {
       val (_, port1, counter1, call1) = testServer("callandstreamtimeoutakka1.oto.tools", port, 0.millis, 2000.millis)
       val (_, port2, counter2, call2) = testServer("callandstreamtimeoutakka2.oto.tools", port, 0.millis)
-      val serviceweight1 = ServiceDescriptor(
+      val serviceweight1              = ServiceDescriptor(
         id = "callandstreamtimeoutakka1-test",
         name = "callandstreamtimeoutakka1-test",
         env = "prod",
@@ -1026,7 +1050,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
           callAndStreamTimeout = 1000
         )
       )
-      val serviceweight2 = ServiceDescriptor(
+      val serviceweight2              = ServiceDescriptor(
         id = "callandstreamtimeoutakka2-test",
         name = "callandstreamtimeoutakka2-test",
         env = "prod",
@@ -1049,8 +1073,8 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
       )
       createOtoroshiService(serviceweight1).futureValue
       createOtoroshiService(serviceweight2).futureValue
-      val resp1 = call1(Map.empty)
-      val resp2 = call2(Map.empty)
+      val resp1                       = call1(Map.empty)
+      val resp2                       = call2(Map.empty)
       // counter1.get() mustBe 1
       // counter2.get() mustBe 1
       resp1.status mustBe 200
@@ -1065,7 +1089,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
       val (_, port1, counter1, call1) = testServer("random.oto.tools", port)
       val (_, port2, counter2, _)     = testServer("random.oto.tools", port)
       val (_, port3, counter3, _)     = testServer("random.oto.tools", port)
-      val serviceweight = ServiceDescriptor(
+      val serviceweight               = ServiceDescriptor(
         id = "random-test",
         name = "random-test",
         env = "prod",
@@ -1105,7 +1129,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
       val (_, port1, counter1, call1) = testServer("sticky.oto.tools", port)
       val (_, port2, counter2, _)     = testServer("sticky.oto.tools", port)
       val (_, port3, counter3, _)     = testServer("sticky.oto.tools", port)
-      val serviceweight = ServiceDescriptor(
+      val serviceweight               = ServiceDescriptor(
         id = "sticky-test",
         name = "sticky-test",
         env = "prod",
@@ -1207,7 +1231,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
       val (_, port1, counter1, call1) = testServer("iphash.oto.tools", port)
       val (_, port2, counter2, _)     = testServer("iphash.oto.tools", port)
       val (_, port3, counter3, _)     = testServer("iphash.oto.tools", port)
-      val serviceweight = ServiceDescriptor(
+      val serviceweight               = ServiceDescriptor(
         id = "iphash-test",
         name = "iphash-test",
         env = "prod",
@@ -1266,7 +1290,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
       val (_, port1, counter1, call1) = testServer("bestresponsetime.oto.tools", port, 200.millis)
       val (_, port2, counter2, _)     = testServer("bestresponsetime.oto.tools", port, 300.millis)
       val (_, port3, counter3, _)     = testServer("bestresponsetime.oto.tools", port, 100.millis)
-      val serviceweight = ServiceDescriptor(
+      val serviceweight               = ServiceDescriptor(
         id = "bestresponsetime-test",
         name = "bestresponsetime-test",
         env = "prod",
@@ -1308,7 +1332,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
       val (_, port1, counter1, call1) = testServer("wbestresponsetime.oto.tools", port, 200.millis)
       val (_, port2, counter2, _)     = testServer("wbestresponsetime.oto.tools", port, 300.millis)
       val (_, port3, counter3, _)     = testServer("wbestresponsetime.oto.tools", port, 100.millis)
-      val serviceweight = ServiceDescriptor(
+      val serviceweight               = ServiceDescriptor(
         id = "wbestresponsetime-test",
         name = "wbestresponsetime-test",
         env = "prod",
@@ -1339,7 +1363,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
         await(10.millis)
       }
 
-      val computedRatio = BigDecimal(counter3.get() / 30.0).setScale(1, RoundingMode.HALF_EVEN).toDouble
+      val computedRatio       = BigDecimal(counter3.get() / 30.0).setScale(1, RoundingMode.HALF_EVEN).toDouble
       computedRatio >= 0.7 mustBe true
       computedRatio <= 0.9 mustBe true
       val computedInvertRatio =
@@ -1355,7 +1379,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
       val (_, port1, counter1, call1) = testServer("zones-test.oto.tools", port)
       val (_, port2, counter2, _)     = testServer("zones-test.oto.tools", port)
       val (_, port3, counter3, _)     = testServer("zones-test.oto.tools", port)
-      val serviceweight = ServiceDescriptor(
+      val serviceweight               = ServiceDescriptor(
         id = "zones-test",
         name = "zones-test",
         env = "prod",
@@ -1403,7 +1427,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
       val (_, port1, counter1, call1) = testServer("regions.oto.tools", port)
       val (_, port2, counter2, _)     = testServer("regions.oto.tools", port)
       val (_, port3, counter3, _)     = testServer("regions.oto.tools", port)
-      val serviceweight = ServiceDescriptor(
+      val serviceweight               = ServiceDescriptor(
         id = "regions-test",
         name = "regions-test",
         env = "prod",
@@ -1454,7 +1478,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
       val (_, port4, counter4, _)     = testServer("regionsandzones.oto.tools", port)
       val (_, port5, counter5, _)     = testServer("regionsandzones.oto.tools", port)
       val (_, port6, counter6, _)     = testServer("regionsandzones.oto.tools", port)
-      val serviceweight = ServiceDescriptor(
+      val serviceweight               = ServiceDescriptor(
         id = "regionsandzones-test",
         name = "regionsandzones-test",
         env = "prod",
@@ -1522,10 +1546,11 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
     "allow manual DNS resolution (#309, #310)" in {
       val counter = new AtomicInteger(0)
       val body    = """{"message":"hello world"}"""
-      val server = TargetService(
+      val server  = TargetService(
         None,
         "/api",
-        "application/json", { r =>
+        "application/json",
+        { r =>
           if (r.getHeader("Host").get().value().startsWith("www.google.fr:")) {
             counter.incrementAndGet()
           }
@@ -1553,7 +1578,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
         enforceSecureCommunication = false
       )
       createOtoroshiService(service).futureValue
-      val resp = ws
+      val resp    = ws
         .url(s"http://127.0.0.1:$port/api")
         .withHttpHeaders(
           "Host" -> "target-test.oto.tools"
@@ -1575,7 +1600,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
   s"[$name] Otoroshi ip address features" should {
     "block blacklisted ip addresses (#318)" in {
       val (_, port1, counter1, call1) = testServer("blockblackip.oto.tools", port)
-      val service1 = ServiceDescriptor(
+      val service1                    = ServiceDescriptor(
         id = "blockblackip-test",
         name = "blockblackip-test",
         env = "prod",
@@ -1595,8 +1620,8 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
         )
       )
       createOtoroshiService(service1).futureValue
-      val resp1 = call1(Map("X-Forwarded-For" -> "1.1.1.1"))
-      val resp2 = call1(Map("X-Forwarded-For" -> "1.1.1.2"))
+      val resp1                       = call1(Map("X-Forwarded-For" -> "1.1.1.1"))
+      val resp2                       = call1(Map("X-Forwarded-For" -> "1.1.1.2"))
       resp1.status mustBe 403
       resp2.status mustBe 200
       counter1.get() mustBe 1
@@ -1605,7 +1630,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
     }
     "block blacklisted ip addresses with wildcard (#318)" in {
       val (_, port1, counter1, call1) = testServer("blockblackipwild.oto.tools", port)
-      val service1 = ServiceDescriptor(
+      val service1                    = ServiceDescriptor(
         id = "blockblackipwild-test",
         name = "blockblackipwild-test",
         env = "prod",
@@ -1625,9 +1650,9 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
         )
       )
       createOtoroshiService(service1).futureValue
-      val resp1 = call1(Map("X-Forwarded-For" -> "1.1.1.1"))
-      val resp2 = call1(Map("X-Forwarded-For" -> "1.1.1.2"))
-      val resp3 = call1(Map("X-Forwarded-For" -> "1.1.2.2"))
+      val resp1                       = call1(Map("X-Forwarded-For" -> "1.1.1.1"))
+      val resp2                       = call1(Map("X-Forwarded-For" -> "1.1.1.2"))
+      val resp3                       = call1(Map("X-Forwarded-For" -> "1.1.2.2"))
       resp1.status mustBe 403
       resp2.status mustBe 403
       resp3.status mustBe 200
@@ -1637,7 +1662,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
     }
     "block blacklisted ip addresses from range (#318)" in {
       val (_, port1, counter1, call1) = testServer("blockblackiprange.oto.tools", port)
-      val service1 = ServiceDescriptor(
+      val service1                    = ServiceDescriptor(
         id = "blockblackiprange-test",
         name = "blockblackiprange-test",
         env = "prod",
@@ -1657,9 +1682,9 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
         )
       )
       createOtoroshiService(service1).futureValue
-      val resp1 = call1(Map("X-Forwarded-For" -> "1.1.1.128"))
-      val resp2 = call1(Map("X-Forwarded-For" -> "1.1.1.191"))
-      val resp3 = call1(Map("X-Forwarded-For" -> "1.1.1.192"))
+      val resp1                       = call1(Map("X-Forwarded-For" -> "1.1.1.128"))
+      val resp2                       = call1(Map("X-Forwarded-For" -> "1.1.1.191"))
+      val resp3                       = call1(Map("X-Forwarded-For" -> "1.1.1.192"))
       resp1.status mustBe 403
       resp2.status mustBe 403
       resp3.status mustBe 200
@@ -1669,7 +1694,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
     }
     "allow whitelisted ip addresses (#318)" in {
       val (_, port1, counter1, call1) = testServer("allowwhiteip.oto.tools", port)
-      val service1 = ServiceDescriptor(
+      val service1                    = ServiceDescriptor(
         id = "allowwhiteip-test",
         name = "allowwhiteip-test",
         env = "prod",
@@ -1689,9 +1714,9 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
         )
       )
       createOtoroshiService(service1).futureValue
-      val resp1 = call1(Map("X-Forwarded-For" -> "1.1.1.1"))
-      val resp2 = call1(Map("X-Forwarded-For" -> "1.1.1.2"))
-      val resp3 = call1(Map("X-Forwarded-For" -> "1.1.1.3"))
+      val resp1                       = call1(Map("X-Forwarded-For" -> "1.1.1.1"))
+      val resp2                       = call1(Map("X-Forwarded-For" -> "1.1.1.2"))
+      val resp3                       = call1(Map("X-Forwarded-For" -> "1.1.1.3"))
       resp1.status mustBe 200
       resp2.status mustBe 403
       resp3.status mustBe 403
@@ -1701,7 +1726,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
     }
     "allow whitelisted ip addresses with wildcard (#318)" in {
       val (_, port1, counter1, call1) = testServer("allowwhiteipwild.oto.tools", port)
-      val service1 = ServiceDescriptor(
+      val service1                    = ServiceDescriptor(
         id = "allowwhiteipwild-test",
         name = "allowwhiteipwild-test",
         env = "prod",
@@ -1721,9 +1746,9 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
         )
       )
       createOtoroshiService(service1).futureValue
-      val resp1 = call1(Map("X-Forwarded-For" -> "1.1.1.1"))
-      val resp2 = call1(Map("X-Forwarded-For" -> "1.1.1.2"))
-      val resp3 = call1(Map("X-Forwarded-For" -> "1.1.2.3"))
+      val resp1                       = call1(Map("X-Forwarded-For" -> "1.1.1.1"))
+      val resp2                       = call1(Map("X-Forwarded-For" -> "1.1.1.2"))
+      val resp3                       = call1(Map("X-Forwarded-For" -> "1.1.2.3"))
       resp1.status mustBe 200
       resp2.status mustBe 200
       resp3.status mustBe 403
@@ -1733,7 +1758,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
     }
     "allow whitelisted ip addresses from range (#318)" in {
       val (_, port1, counter1, call1) = testServer("allowwhiteiprange.oto.tools", port)
-      val service1 = ServiceDescriptor(
+      val service1                    = ServiceDescriptor(
         id = "allowwhiteiprange-test",
         name = "allowwhiteiprange-test",
         env = "prod",
@@ -1753,9 +1778,9 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
         )
       )
       createOtoroshiService(service1).futureValue
-      val resp1 = call1(Map("X-Forwarded-For" -> "1.1.1.128"))
-      val resp2 = call1(Map("X-Forwarded-For" -> "1.1.1.191"))
-      val resp3 = call1(Map("X-Forwarded-For" -> "1.1.2.192"))
+      val resp1                       = call1(Map("X-Forwarded-For" -> "1.1.1.128"))
+      val resp2                       = call1(Map("X-Forwarded-For" -> "1.1.1.191"))
+      val resp3                       = call1(Map("X-Forwarded-For" -> "1.1.2.192"))
       resp1.status mustBe 200
       resp2.status mustBe 200
       resp3.status mustBe 403
@@ -1768,7 +1793,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
   s"[$name] Otoroshi Restrictions" should {
     "restrict service access when enabled (#315)" in {
       val (_, port1, counter1, call1) = testServer("restrictionserviceenabled.oto.tools", port)
-      val service1 = ServiceDescriptor(
+      val service1                    = ServiceDescriptor(
         id = "restrictionserviceenabled",
         name = "restrictionserviceenabled",
         env = "prod",
@@ -1786,7 +1811,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
         restrictions = Restrictions(enabled = true)
       )
       createOtoroshiService(service1).futureValue
-      val resp1 = call1(Map.empty)
+      val resp1                       = call1(Map.empty)
       resp1.status mustBe 404
       counter1.get() mustBe 0
       deleteOtoroshiService(service1).futureValue
@@ -1794,7 +1819,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
     }
     "restrict some routes and allow the rest on a service (#315)" in {
       val (_, port1, counter1, call1) = testServerWithClientPath("restrictionservicesome.oto.tools", port)
-      val service1 = ServiceDescriptor(
+      val service1                    = ServiceDescriptor(
         id = "restrictionservicesome",
         name = "restrictionservicesome",
         env = "prod",
@@ -1857,7 +1882,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
     }
     "allow some routes and restrict the rest on a service (#315)" in {
       val (_, port1, counter1, call1) = testServerWithClientPath("restrictionserviceallowsome.oto.tools", port)
-      val service1 = ServiceDescriptor(
+      val service1                    = ServiceDescriptor(
         id = "restrictionserviceallowsome",
         name = "restrictionserviceallowsome",
         env = "prod",
@@ -1918,7 +1943,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
     }
     "restrict some routes and allow the rest on an apikey (#315)" in {
       val (_, port1, counter1, call1) = testServerWithClientPath("restrictionservicesapikey.oto.tools", port)
-      val service1 = ServiceDescriptor(
+      val service1                    = ServiceDescriptor(
         id = "restrictionservicesapikey",
         name = "restrictionservicesapikey",
         env = "prod",
@@ -1933,11 +1958,11 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
         forceHttps = false,
         enforceSecureCommunication = false
       )
-      val apikey1 = ApiKey(
+      val apikey1                     = ApiKey(
         clientName = "apikey1",
         authorizedEntities = Seq(ServiceGroupIdentifier("default"))
       )
-      val apikey2 = ApiKey(
+      val apikey2                     = ApiKey(
         clientName = "apikey2",
         authorizedEntities = Seq(ServiceGroupIdentifier("default")),
         restrictions = Restrictions(
@@ -1976,9 +2001,11 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
 
       val resp1111 = ws
         .url(s"http://127.0.0.1:${port}/api/bar/foo")
-        .withHttpHeaders("Host"                   -> "restrictionservicesome.oto.tools",
-                         "Otoroshi-Client-Id"     -> apikey2.clientId,
-                         "Otoroshi-Client-Secret" -> apikey2.clientSecret)
+        .withHttpHeaders(
+          "Host"                   -> "restrictionservicesome.oto.tools",
+          "Otoroshi-Client-Id"     -> apikey2.clientId,
+          "Otoroshi-Client-Secret" -> apikey2.clientSecret
+        )
         .delete()
         .futureValue
       resp1111.status mustBe 404
@@ -2015,9 +2042,11 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
 
       val resp1_1111 = ws
         .url(s"http://127.0.0.1:${port}/api/bar/foo")
-        .withHttpHeaders("Host"                   -> "restrictionservicesapikey.oto.tools",
-                         "Otoroshi-Client-Id"     -> apikey1.clientId,
-                         "Otoroshi-Client-Secret" -> apikey1.clientSecret)
+        .withHttpHeaders(
+          "Host"                   -> "restrictionservicesapikey.oto.tools",
+          "Otoroshi-Client-Id"     -> apikey1.clientId,
+          "Otoroshi-Client-Secret" -> apikey1.clientSecret
+        )
         .delete()
         .futureValue
       resp1_1111.status mustBe 200
@@ -2042,7 +2071,7 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
     }
     "allow some routes and restrict the rest on an apikey (#315)" in {
       val (_, port1, counter1, call1) = testServerWithClientPath("restrictionservicesapikeyallow.oto.tools", port)
-      val service1 = ServiceDescriptor(
+      val service1                    = ServiceDescriptor(
         id = "restrictionservicesapikeyallow",
         name = "restrictionservicesapikeyallow",
         env = "prod",
@@ -2057,11 +2086,11 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
         forceHttps = false,
         enforceSecureCommunication = false
       )
-      val apikey1 = ApiKey(
+      val apikey1                     = ApiKey(
         clientName = "apikey1",
         authorizedEntities = Seq(ServiceGroupIdentifier("default"))
       )
-      val apikey2 = ApiKey(
+      val apikey2                     = ApiKey(
         clientName = "apikey2",
         authorizedEntities = Seq(ServiceGroupIdentifier("default")),
         restrictions = Restrictions(
@@ -2098,9 +2127,11 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
 
       val resp1111 = ws
         .url(s"http://127.0.0.1:${port}/api/bar/foo")
-        .withHttpHeaders("Host"                   -> "restrictionservicesapikeyallow.oto.tools",
-                         "Otoroshi-Client-Id"     -> apikey2.clientId,
-                         "Otoroshi-Client-Secret" -> apikey2.clientSecret)
+        .withHttpHeaders(
+          "Host"                   -> "restrictionservicesapikeyallow.oto.tools",
+          "Otoroshi-Client-Id"     -> apikey2.clientId,
+          "Otoroshi-Client-Secret" -> apikey2.clientSecret
+        )
         .delete()
         .futureValue
       resp1111.status mustBe 403
@@ -2137,9 +2168,11 @@ class Version149Spec(name: String, configurationSpec: => Configuration)
 
       val resp1_1111 = ws
         .url(s"http://127.0.0.1:${port}/api/bar/foo")
-        .withHttpHeaders("Host"                   -> "restrictionservicesapikeyallow.oto.tools",
-                         "Otoroshi-Client-Id"     -> apikey1.clientId,
-                         "Otoroshi-Client-Secret" -> apikey1.clientSecret)
+        .withHttpHeaders(
+          "Host"                   -> "restrictionservicesapikeyallow.oto.tools",
+          "Otoroshi-Client-Id"     -> apikey1.clientId,
+          "Otoroshi-Client-Secret" -> apikey1.clientSecret
+        )
         .delete()
         .futureValue
       resp1_1111.status mustBe 200

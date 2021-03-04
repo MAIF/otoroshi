@@ -25,10 +25,11 @@ object GenericOauth2ModuleConfig extends FromJson[AuthModuleConfig] {
 
   val _fmt = new Format[GenericOauth2ModuleConfig] {
 
-    override def reads(json: JsValue) = fromJson(json) match {
-      case Left(e)  => JsError(e.getMessage)
-      case Right(v) => JsSuccess(v.asInstanceOf[GenericOauth2ModuleConfig])
-    }
+    override def reads(json: JsValue) =
+      fromJson(json) match {
+        case Left(e)  => JsError(e.getMessage)
+        case Right(v) => JsSuccess(v.asInstanceOf[GenericOauth2ModuleConfig])
+      }
 
     override def writes(o: GenericOauth2ModuleConfig) = o.asJson
   }
@@ -72,9 +73,13 @@ object GenericOauth2ModuleConfig extends FromJson[AuthModuleConfig] {
           extraMetadata = (json \ "extraMetadata").asOpt[JsObject].getOrElse(Json.obj()),
           mtlsConfig = MtlsConfig.read((json \ "mtlsConfig").asOpt[JsValue]),
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
-          sessionCookieValues = (json \ "sessionCookieValues").asOpt(SessionCookieValues.fmt).getOrElse(SessionCookieValues()),
+          sessionCookieValues =
+            (json \ "sessionCookieValues").asOpt(SessionCookieValues.fmt).getOrElse(SessionCookieValues()),
           superAdmins = (json \ "superAdmins").asOpt[Boolean].getOrElse(true), // for backward compatibility reasons
-          rightsOverride = (json \ "rightsOverride").asOpt[Map[String, JsArray]].map(_.mapValues(UserRights.readFromArray)).getOrElse(Map.empty),
+          rightsOverride = (json \ "rightsOverride")
+            .asOpt[Map[String, JsArray]]
+            .map(_.mapValues(UserRights.readFromArray))
+            .getOrElse(Map.empty),
           dataOverride = (json \ "dataOverride").asOpt[Map[String, JsObject]].getOrElse(Map.empty)
         )
       )
@@ -84,83 +89,84 @@ object GenericOauth2ModuleConfig extends FromJson[AuthModuleConfig] {
 }
 
 case class GenericOauth2ModuleConfig(
-                                      id: String,
-                                      name: String,
-                                      desc: String,
-                                      sessionMaxAge: Int = 86400,
-                                      clientId: String = "client",
-                                      clientSecret: String = "secret",
-                                      tokenUrl: String = "http://localhost:8082/oauth/token",
-                                      authorizeUrl: String = "http://localhost:8082/oauth/authorize",
-                                      userInfoUrl: String = "http://localhost:8082/userinfo",
-                                      introspectionUrl: String = "http://localhost:8082/token/introspect",
-                                      loginUrl: String = "http://localhost:8082/login",
-                                      logoutUrl: String = "http://localhost:8082/logout",
-                                      scope: String = "openid profile email name",
-                                      claims: String = "email name",
-                                      useCookie: Boolean = false,
-                                      useJson: Boolean = false,
-                                      readProfileFromToken: Boolean = false,
-                                      jwtVerifier: Option[AlgoSettings] = None,
-                                      accessTokenField: String = "access_token",
-                                      nameField: String = "name",
-                                      emailField: String = "email",
-                                      apiKeyMetaField: String = "apkMeta",
-                                      apiKeyTagsField: String = "apkTags",
-                                      otoroshiDataField: String = "app_metadata|otoroshi_data",
-                                      callbackUrl: String = "http://privateapps.oto.tools:8080/privateapps/generic/callback",
-                                      oidConfig: Option[String] = None,
-                                      proxy: Option[WSProxyServer] = None,
-                                      extraMetadata: JsObject = Json.obj(),
-                                      mtlsConfig: MtlsConfig = MtlsConfig(),
-                                      refreshTokens: Boolean = false,
-                                      metadata: Map[String, String],
-                                      sessionCookieValues: SessionCookieValues,
-                                      location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation(),
-                                      superAdmins: Boolean = false,
-                                      rightsOverride: Map[String, UserRights] = Map.empty,
-                                      dataOverride: Map[String, JsObject] = Map.empty
+    id: String,
+    name: String,
+    desc: String,
+    sessionMaxAge: Int = 86400,
+    clientId: String = "client",
+    clientSecret: String = "secret",
+    tokenUrl: String = "http://localhost:8082/oauth/token",
+    authorizeUrl: String = "http://localhost:8082/oauth/authorize",
+    userInfoUrl: String = "http://localhost:8082/userinfo",
+    introspectionUrl: String = "http://localhost:8082/token/introspect",
+    loginUrl: String = "http://localhost:8082/login",
+    logoutUrl: String = "http://localhost:8082/logout",
+    scope: String = "openid profile email name",
+    claims: String = "email name",
+    useCookie: Boolean = false,
+    useJson: Boolean = false,
+    readProfileFromToken: Boolean = false,
+    jwtVerifier: Option[AlgoSettings] = None,
+    accessTokenField: String = "access_token",
+    nameField: String = "name",
+    emailField: String = "email",
+    apiKeyMetaField: String = "apkMeta",
+    apiKeyTagsField: String = "apkTags",
+    otoroshiDataField: String = "app_metadata|otoroshi_data",
+    callbackUrl: String = "http://privateapps.oto.tools:8080/privateapps/generic/callback",
+    oidConfig: Option[String] = None,
+    proxy: Option[WSProxyServer] = None,
+    extraMetadata: JsObject = Json.obj(),
+    mtlsConfig: MtlsConfig = MtlsConfig(),
+    refreshTokens: Boolean = false,
+    metadata: Map[String, String],
+    sessionCookieValues: SessionCookieValues,
+    location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation(),
+    superAdmins: Boolean = false,
+    rightsOverride: Map[String, UserRights] = Map.empty,
+    dataOverride: Map[String, JsObject] = Map.empty
 ) extends OAuth2ModuleConfig {
-  def `type`: String                                        = "oauth2"
-  override def authModule(config: GlobalConfig): AuthModule = GenericOauth2Module(this)
-  override def asJson = location.jsonWithKey ++ Json.obj(
-    "type"                 -> "oauth2",
-    "id"                   -> this.id,
-    "name"                 -> this.name,
-    "desc"                 -> this.desc,
-    "sessionMaxAge"        -> this.sessionMaxAge,
-    "clientId"             -> this.clientId,
-    "clientSecret"         -> this.clientSecret,
-    "authorizeUrl"         -> this.authorizeUrl,
-    "tokenUrl"             -> this.tokenUrl,
-    "userInfoUrl"          -> this.userInfoUrl,
-    "introspectionUrl"     -> this.introspectionUrl,
-    "loginUrl"             -> this.loginUrl,
-    "logoutUrl"            -> this.logoutUrl,
-    "scope"                -> this.scope,
-    "claims"               -> this.claims,
-    "useCookie"            -> this.useCookie,
-    "useJson"              -> this.useJson,
-    "readProfileFromToken" -> this.readProfileFromToken,
-    "accessTokenField"     -> this.accessTokenField,
-    "jwtVerifier"          -> jwtVerifier.map(_.asJson).getOrElse(JsNull).as[JsValue],
-    "nameField"            -> this.nameField,
-    "emailField"           -> this.emailField,
-    "apiKeyMetaField"      -> this.apiKeyMetaField,
-    "apiKeyTagsField"      -> this.apiKeyTagsField,
-    "otoroshiDataField"    -> this.otoroshiDataField,
-    "callbackUrl"          -> this.callbackUrl,
-    "oidConfig"            -> this.oidConfig.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-    "mtlsConfig"           -> this.mtlsConfig.json,
-    "proxy"                -> WSProxyServerJson.maybeProxyToJson(this.proxy),
-    "extraMetadata"        -> this.extraMetadata,
-    "metadata"             -> this.metadata,
-    "refreshTokens"        -> this.refreshTokens,
-    "sessionCookieValues"  -> SessionCookieValues.fmt.writes(this.sessionCookieValues),
-    "superAdmins"          -> superAdmins,
-    "rightsOverride"       -> JsObject(rightsOverride.mapValues(_.json)),
-    "dataOverride"         -> JsObject(dataOverride),
-  )
+  def `type`: String                                                   = "oauth2"
+  override def authModule(config: GlobalConfig): AuthModule            = GenericOauth2Module(this)
+  override def asJson                                                  =
+    location.jsonWithKey ++ Json.obj(
+      "type"                 -> "oauth2",
+      "id"                   -> this.id,
+      "name"                 -> this.name,
+      "desc"                 -> this.desc,
+      "sessionMaxAge"        -> this.sessionMaxAge,
+      "clientId"             -> this.clientId,
+      "clientSecret"         -> this.clientSecret,
+      "authorizeUrl"         -> this.authorizeUrl,
+      "tokenUrl"             -> this.tokenUrl,
+      "userInfoUrl"          -> this.userInfoUrl,
+      "introspectionUrl"     -> this.introspectionUrl,
+      "loginUrl"             -> this.loginUrl,
+      "logoutUrl"            -> this.logoutUrl,
+      "scope"                -> this.scope,
+      "claims"               -> this.claims,
+      "useCookie"            -> this.useCookie,
+      "useJson"              -> this.useJson,
+      "readProfileFromToken" -> this.readProfileFromToken,
+      "accessTokenField"     -> this.accessTokenField,
+      "jwtVerifier"          -> jwtVerifier.map(_.asJson).getOrElse(JsNull).as[JsValue],
+      "nameField"            -> this.nameField,
+      "emailField"           -> this.emailField,
+      "apiKeyMetaField"      -> this.apiKeyMetaField,
+      "apiKeyTagsField"      -> this.apiKeyTagsField,
+      "otoroshiDataField"    -> this.otoroshiDataField,
+      "callbackUrl"          -> this.callbackUrl,
+      "oidConfig"            -> this.oidConfig.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      "mtlsConfig"           -> this.mtlsConfig.json,
+      "proxy"                -> WSProxyServerJson.maybeProxyToJson(this.proxy),
+      "extraMetadata"        -> this.extraMetadata,
+      "metadata"             -> this.metadata,
+      "refreshTokens"        -> this.refreshTokens,
+      "sessionCookieValues"  -> SessionCookieValues.fmt.writes(this.sessionCookieValues),
+      "superAdmins"          -> superAdmins,
+      "rightsOverride"       -> JsObject(rightsOverride.mapValues(_.json)),
+      "dataOverride"         -> JsObject(dataOverride)
+    )
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.authConfigsDataStore.set(this)
   override def cookieSuffix(desc: ServiceDescriptor)                   = s"global-oauth-$id"
 }
@@ -171,9 +177,10 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
   import otoroshi.utils.http.Implicits._
   import otoroshi.utils.syntax.implicits._
 
-  override def paLoginPage(request: RequestHeader,
-                           config: GlobalConfig,
-                           descriptor: ServiceDescriptor)(implicit ec: ExecutionContext, env: Env): Future[Result] = {
+  override def paLoginPage(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
+      ec: ExecutionContext,
+      env: Env
+  ): Future[Result] = {
     implicit val req = request
 
     val redirect     = request.getQueryString("redirect")
@@ -184,26 +191,27 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
     val queryParam   = if (authConfig.useCookie) "" else s"?desc=${descriptor.id}"
     val hash         = env.sign(s"${authConfig.id}:::${descriptor.id}")
     val redirectUri  = (authConfig.callbackUrl + queryParam).applyOn {
-      case url if !authConfig.useCookie && url.contains("?") => url + s"&hash=$hash"
+      case url if !authConfig.useCookie && url.contains("?")  => url + s"&hash=$hash"
       case url if !authConfig.useCookie && !url.contains("?") => url + s"?hash=$hash"
-      case url => url
+      case url                                                => url
     }
-    val loginUrl =
+    val loginUrl     =
       s"${authConfig.loginUrl}?scope=$scope&${claims}client_id=$clientId&response_type=$responseType&redirect_uri=$redirectUri"
     Redirect(
       loginUrl
     ).addingToSession(
-        s"desc" -> descriptor.id,
-        "hash" -> hash,
-        s"pa-redirect-after-login-${authConfig.cookieSuffix(descriptor)}" -> redirect.getOrElse(
-          routes.PrivateAppsController.home().absoluteURL(env.exposedRootSchemeIsHttps)
-        )
+      s"desc"                                                           -> descriptor.id,
+      "hash"                                                            -> hash,
+      s"pa-redirect-after-login-${authConfig.cookieSuffix(descriptor)}" -> redirect.getOrElse(
+        routes.PrivateAppsController.home().absoluteURL(env.exposedRootSchemeIsHttps)
       )
-      .asFuture
+    ).asFuture
   }
 
-  override def boLoginPage(request: RequestHeader, config: GlobalConfig)(implicit ec: ExecutionContext,
-                                                                         env: Env): Future[Result] = {
+  override def boLoginPage(request: RequestHeader, config: GlobalConfig)(implicit
+      ec: ExecutionContext,
+      env: Env
+  ): Future[Result] = {
     implicit val req = request
 
     val redirect     = request.getQueryString("redirect")
@@ -213,25 +221,24 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
     val claims       = Option(authConfig.claims).filterNot(_.isEmpty).map(v => s"claims=$v&").getOrElse("")
     val hash         = env.sign(s"${authConfig.id}:::backoffice")
     val redirectUri  = authConfig.callbackUrl.applyOn {
-      case url if !authConfig.useCookie && url.contains("?") => url + s"&hash=$hash"
+      case url if !authConfig.useCookie && url.contains("?")  => url + s"&hash=$hash"
       case url if !authConfig.useCookie && !url.contains("?") => url + s"?hash=$hash"
-      case url => url
+      case url                                                => url
     }
-    val loginUrl =
+    val loginUrl     =
       s"${authConfig.loginUrl}?scope=$scope&${claims}client_id=$clientId&response_type=$responseType&redirect_uri=$redirectUri"
     Redirect(
       loginUrl
     ).addingToSession(
-      "hash" -> hash,
+      "hash"                    -> hash,
       "bo-redirect-after-login" -> redirect.getOrElse(
-          routes.BackOfficeController.dashboard().absoluteURL(env.exposedRootSchemeIsHttps)
-        )
+        routes.BackOfficeController.dashboard().absoluteURL(env.exposedRootSchemeIsHttps)
       )
-      .asFuture
+    ).asFuture
   }
 
-  override def paLogout(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor)(
-      implicit ec: ExecutionContext,
+  override def paLogout(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
+      ec: ExecutionContext,
       env: Env
   ): Future[Option[String]] = {
     Option(authConfig.logoutUrl)
@@ -243,8 +250,10 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
       .asFuture
   }
 
-  override def boLogout(request: RequestHeader, config: GlobalConfig)(implicit ec: ExecutionContext,
-                                                                      env: Env): Future[Option[String]] = {
+  override def boLogout(request: RequestHeader, config: GlobalConfig)(implicit
+      ec: ExecutionContext,
+      env: Env
+  ): Future[Option[String]] = {
     Option(authConfig.logoutUrl)
       .filterNot(_.isEmpty)
       .map {
@@ -254,7 +263,11 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
       .asFuture
   }
 
-  def getToken(code: String, clientId: String, clientSecret: Option[String], redirectUri: String, config: GlobalConfig)(implicit env: Env, ec: ExecutionContext): Future[JsValue] = {
+  def getToken(code: String, clientId: String, clientSecret: Option[String], redirectUri: String, config: GlobalConfig)(
+      implicit
+      env: Env,
+      ec: ExecutionContext
+  ): Future[JsValue] = {
     val builder =
       env.MtlsWs
         .url(authConfig.tokenUrl, authConfig.mtlsConfig)
@@ -282,7 +295,13 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
     future1.map(_.json)
   }
 
-  def refreshTheToken(refreshToken: String, clientId: String, clientSecret: Option[String], redirectUri: String, config: GlobalConfig)(implicit env: Env, ec: ExecutionContext): Future[JsValue] = {
+  def refreshTheToken(
+      refreshToken: String,
+      clientId: String,
+      clientSecret: Option[String],
+      redirectUri: String,
+      config: GlobalConfig
+  )(implicit env: Env, ec: ExecutionContext): Future[JsValue] = {
     val builder =
       env.MtlsWs
         .url(authConfig.tokenUrl, authConfig.mtlsConfig)
@@ -290,19 +309,19 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
     val future1 = if (authConfig.useJson) {
       builder.post(
         Json.obj(
-          "refresh_token"         -> refreshToken,
-          "grant_type"   -> "refresh_token",
-          "client_id"    -> clientId,
-          "redirect_uri" -> redirectUri
+          "refresh_token" -> refreshToken,
+          "grant_type"    -> "refresh_token",
+          "client_id"     -> clientId,
+          "redirect_uri"  -> redirectUri
         ) ++ clientSecret.map(s => Json.obj("client_secret" -> s)).getOrElse(Json.obj())
       )
     } else {
       builder.post(
         Map(
-          "refresh_token"         -> refreshToken,
-          "grant_type"   -> "refresh_token",
-          "client_id"    -> clientId,
-          "redirect_uri" -> redirectUri
+          "refresh_token" -> refreshToken,
+          "grant_type"    -> "refresh_token",
+          "client_id"     -> clientId,
+          "redirect_uri"  -> redirectUri
         ) ++ clientSecret.toSeq.map(s => ("client_secret" -> s))
       )(writeableOf_urlEncodedSimpleForm)
     }
@@ -310,11 +329,14 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
     future1.map(_.json)
   }
 
-  def getUserInfoRaw(accessToken: String, config: GlobalConfig)(implicit env: Env, ec: ExecutionContext): Future[WSResponse] = {
+  def getUserInfoRaw(accessToken: String, config: GlobalConfig)(implicit
+      env: Env,
+      ec: ExecutionContext
+  ): Future[WSResponse] = {
     val builder2 = env.MtlsWs
       .url(authConfig.userInfoUrl, authConfig.mtlsConfig)
       .withMaybeProxyServer(authConfig.proxy.orElse(config.proxies.auth))
-    val future2 = if (authConfig.useJson) {
+    val future2  = if (authConfig.useJson) {
       builder2.post(
         Json.obj(
           "access_token" -> accessToken
@@ -330,18 +352,21 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
     future2
   }
 
-  def getUserInfo(accessToken: String, config: GlobalConfig)(implicit env: Env, ec: ExecutionContext): Future[JsValue] = {
+  def getUserInfo(accessToken: String, config: GlobalConfig)(implicit
+      env: Env,
+      ec: ExecutionContext
+  ): Future[JsValue] = {
     getUserInfoRaw(accessToken, config).map(_.json)
   }
 
   def readProfileFromToken(accessToken: String)(implicit env: Env, ec: ExecutionContext): Future[JsValue] = {
     val algoSettings = authConfig.jwtVerifier.get
-    val tokenHeader =
+    val tokenHeader  =
       Try(Json.parse(ApacheBase64.decodeBase64(accessToken.split("\\.")(0)))).getOrElse(Json.obj())
-    val tokenBody =
+    val tokenBody    =
       Try(Json.parse(ApacheBase64.decodeBase64(accessToken.split("\\.")(1)))).getOrElse(Json.obj())
-    val kid = (tokenHeader \ "kid").asOpt[String]
-    val alg = (tokenHeader \ "alg").asOpt[String].getOrElse("RS256")
+    val kid          = (tokenHeader \ "kid").asOpt[String]
+    val alg          = (tokenHeader \ "alg").asOpt[String].getOrElse("RS256")
     algoSettings.asAlgorithmF(InputMode(alg, kid)).flatMap {
       case Some(algo) => {
         Try(JWT.require(algo).acceptLeeway(10).build().verify(accessToken)).map { _ =>
@@ -350,12 +375,12 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
           case e => Success(FastFuture.failed(e))
         } get
       }
-      case None => FastFuture.failed(new RuntimeException("Bad algorithm"))
+      case None       => FastFuture.failed(new RuntimeException("Bad algorithm"))
     }
   }
 
-  override def paCallback(request: Request[AnyContent], config: GlobalConfig, descriptor: ServiceDescriptor)(
-      implicit ec: ExecutionContext,
+  override def paCallback(request: Request[AnyContent], config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
+      ec: ExecutionContext,
       env: Env
   ): Future[Either[String, PrivateAppsUser]] = {
     val clientId     = authConfig.clientId
@@ -364,14 +389,14 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
     val redirectUri  = authConfig.callbackUrl + queryParam
     request.getQueryString("error") match {
       case Some(error) => Left(error).asFuture
-      case None => {
+      case None        => {
         request.getQueryString("code") match {
-          case None => Left("No code :(").asFuture
+          case None       => Left("No code :(").asFuture
           case Some(code) => {
             getToken(code, clientId, clientSecret, redirectUri, config)
               .flatMap { rawToken =>
                 val accessToken = (rawToken \ authConfig.accessTokenField).as[String]
-                val f = if (authConfig.readProfileFromToken && authConfig.jwtVerifier.isDefined) {
+                val f           = if (authConfig.readProfileFromToken && authConfig.jwtVerifier.isDefined) {
                   readProfileFromToken(accessToken)
                 } else {
                   getUserInfo(accessToken, config)
@@ -379,7 +404,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
                 f.map(r => (r, rawToken))
               }
               .map { tuple =>
-                val (user, rawToken) = tuple
+                val (user, rawToken)       = tuple
                 val meta: Option[JsObject] = PrivateAppsUser
                   .select(user, authConfig.otoroshiDataField)
                   .asOpt[String]
@@ -388,7 +413,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
                     Option(PrivateAppsUser.select(user, authConfig.otoroshiDataField))
                   )
                   .map(_.asOpt[JsObject].getOrElse(Json.obj()))
-                val email = (user \ authConfig.emailField).asOpt[String].getOrElse("no.name@oto.tools")
+                val email                  = (user \ authConfig.emailField).asOpt[String].getOrElse("no.name@oto.tools")
                 Right(
                   PrivateAppsUser(
                     randomId = IdGenerator.token(64),
@@ -401,7 +426,10 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
                     token = rawToken,
                     authConfigId = authConfig.id,
                     realm = authConfig.cookieSuffix(descriptor),
-                    otoroshiData = authConfig.dataOverride.get(email).map(v => authConfig.extraMetadata.deepMerge(v)).orElse(Some(authConfig.extraMetadata.deepMerge(meta.getOrElse(Json.obj())))),
+                    otoroshiData = authConfig.dataOverride
+                      .get(email)
+                      .map(v => authConfig.extraMetadata.deepMerge(v))
+                      .orElse(Some(authConfig.extraMetadata.deepMerge(meta.getOrElse(Json.obj())))),
                     metadata = Map.empty,
                     location = authConfig.location
                   )
@@ -422,14 +450,14 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
     val redirectUri  = authConfig.callbackUrl
     request.getQueryString("error") match {
       case Some(error) => Left(error).asFuture
-      case None => {
+      case None        => {
         request.getQueryString("code") match {
-          case None => Left("No code :(").asFuture
+          case None       => Left("No code :(").asFuture
           case Some(code) => {
             getToken(code, clientId, clientSecret, redirectUri, config)
               .flatMap { rawToken =>
                 val accessToken = (rawToken \ authConfig.accessTokenField).as[String]
-                val f = if (authConfig.readProfileFromToken && authConfig.jwtVerifier.isDefined) {
+                val f           = if (authConfig.readProfileFromToken && authConfig.jwtVerifier.isDefined) {
                   readProfileFromToken(accessToken)
                 } else {
                   getUserInfo(accessToken, config)
@@ -438,7 +466,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
               }
               .map { tuple =>
                 val (user, rawToken) = tuple
-                val email = (user \ authConfig.emailField).asOpt[String].getOrElse("no.name@oto.tools")
+                val email            = (user \ authConfig.emailField).asOpt[String].getOrElse("no.name@oto.tools")
                 Right(
                   BackOfficeUser(
                     randomId = IdGenerator.token(64),
@@ -451,16 +479,21 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
                     authConfigId = authConfig.id,
                     simpleLogin = false,
                     metadata = Map.empty,
-                    rights = if (authConfig.superAdmins) UserRights.superAdmin else {
-                      authConfig.rightsOverride.getOrElse(email,
-                        UserRights(Seq(
-                          UserRight(
-                            TenantAccess(authConfig.location.tenant.value),
-                            authConfig.location.teams.map(t => TeamAccess(t.value))
+                    rights =
+                      if (authConfig.superAdmins) UserRights.superAdmin
+                      else {
+                        authConfig.rightsOverride.getOrElse(
+                          email,
+                          UserRights(
+                            Seq(
+                              UserRight(
+                                TenantAccess(authConfig.location.tenant.value),
+                                authConfig.location.teams.map(t => TeamAccess(t.value))
+                              )
+                            )
                           )
-                        ))
-                      )
-                    },
+                        )
+                      },
                     location = authConfig.location
                   )
                 )
@@ -471,33 +504,44 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
     }
   }
 
-  private def isAccessTokenAValidJwtToken(accessToken: String)(f: Option[Boolean] => Future[Unit])(implicit executionContext: ExecutionContext, env: Env): Future[Unit] = {
+  private def isAccessTokenAValidJwtToken(
+      accessToken: String
+  )(f: Option[Boolean] => Future[Unit])(implicit executionContext: ExecutionContext, env: Env): Future[Unit] = {
     Try {
       val algoSettings = authConfig.jwtVerifier.get
-      val tokenHeader =
+      val tokenHeader  =
         Try(Json.parse(ApacheBase64.decodeBase64(accessToken.split("\\.")(0)))).getOrElse(Json.obj())
-      val kid = (tokenHeader \ "kid").asOpt[String]
-      val alg = (tokenHeader \ "alg").asOpt[String].getOrElse("RS256")
+      val kid          = (tokenHeader \ "kid").asOpt[String]
+      val alg          = (tokenHeader \ "alg").asOpt[String].getOrElse("RS256")
       algoSettings.asAlgorithmF(InputMode(alg, kid)).map {
         case Some(algo) => {
           Try(JWT.require(algo).acceptLeeway(10).build().verify(accessToken)).map { _ =>
             Some(true)
           } match {
-            case Failure(e) => Some(false)
+            case Failure(e)   => Some(false)
             case Success(opt) => opt
           }
         }
-        case None => Some(false)
+        case None       => Some(false)
       }
     } match {
-      case Failure(e) => f(None)
+      case Failure(e)    => f(None)
       case Success(fopt) => fopt.flatMap(v => f(v))
     }
   }
 
-  private def renewToken(refreshToken: String, user: RefreshableUser)(implicit executionContext: ExecutionContext, env: Env): Future[Unit] = {
-    refreshTheToken(refreshToken, authConfig.clientId, Option(authConfig.clientSecret).map(_.trim).filterNot(_.isEmpty), authConfig.callbackUrl, env.datastores.globalConfigDataStore.latest()).map { res =>
-      val rtok = (res \ "refresh_token").asOpt[String].getOrElse(refreshToken)
+  private def renewToken(refreshToken: String, user: RefreshableUser)(implicit
+      executionContext: ExecutionContext,
+      env: Env
+  ): Future[Unit] = {
+    refreshTheToken(
+      refreshToken,
+      authConfig.clientId,
+      Option(authConfig.clientSecret).map(_.trim).filterNot(_.isEmpty),
+      authConfig.callbackUrl,
+      env.datastores.globalConfigDataStore.latest()
+    ).map { res =>
+      val rtok  = (res \ "refresh_token").asOpt[String].getOrElse(refreshToken)
       val token = res.as[JsObject] ++ Json.obj("refresh_token" -> rtok)
       user.updateToken(token)
     }
@@ -506,21 +550,27 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
   // https://auth0.com/docs/tokens/guides/get-refresh-tokens
   // https://auth0.com/docs/tokens/guides/use-refresh-tokens
   // https://auth0.com/docs/tokens/concepts/refresh-tokens
-  def handleTokenRefresh(auth: OAuth2ModuleConfig, user: RefreshableUser)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+  def handleTokenRefresh(auth: OAuth2ModuleConfig, user: RefreshableUser)(implicit
+      env: Env,
+      ec: ExecutionContext
+  ): Future[Unit] = {
     if (auth.refreshTokens) {
       (user.token \ "refresh_token").asOpt[String] match { // TODO: config 10 min
-        case Some(refreshToken) if user.lastRefresh.plusMinutes(10).isBefore(DateTime.now()) => (user.token \ auth.accessTokenField).asOpt[String] match {
-          case Some(accessToken) => isAccessTokenAValidJwtToken(accessToken) {
-            case Some(true) => FastFuture.successful(())
-            case Some(false) => renewToken(refreshToken, user)
-            case _ => getUserInfoRaw(accessToken, env.datastores.globalConfigDataStore.latest()).flatMap {
-              case r if r.status != 200 => renewToken(refreshToken, user)
-              case _s => FastFuture.successful(())
-            }
+        case Some(refreshToken) if user.lastRefresh.plusMinutes(10).isBefore(DateTime.now()) =>
+          (user.token \ auth.accessTokenField).asOpt[String] match {
+            case Some(accessToken) =>
+              isAccessTokenAValidJwtToken(accessToken) {
+                case Some(true)  => FastFuture.successful(())
+                case Some(false) => renewToken(refreshToken, user)
+                case _           =>
+                  getUserInfoRaw(accessToken, env.datastores.globalConfigDataStore.latest()).flatMap {
+                    case r if r.status != 200 => renewToken(refreshToken, user)
+                    case _s                   => FastFuture.successful(())
+                  }
+              }
+            case None              => FastFuture.successful(())
           }
-          case None => FastFuture.successful(())
-        }
-        case _ => FastFuture.successful(())
+        case _                                                                               => FastFuture.successful(())
       }
     } else {
       FastFuture.successful(())
@@ -529,13 +579,17 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
 }
 
 object GenericOauth2Module {
-  def handleTokenRefresh(auth: AuthModuleConfig, user: RefreshableUser)(implicit ec: ExecutionContext, env: Env): Future[Unit] = {
+  def handleTokenRefresh(auth: AuthModuleConfig, user: RefreshableUser)(implicit
+      ec: ExecutionContext,
+      env: Env
+  ): Future[Unit] = {
     auth match {
-      case a: OAuth2ModuleConfig => a.authModule(env.datastores.globalConfigDataStore.latest()) match {
-        case m: GenericOauth2Module => m.handleTokenRefresh(a, user)
-        case _ => FastFuture.successful(())
-      }
-      case _ => FastFuture.successful(())
+      case a: OAuth2ModuleConfig =>
+        a.authModule(env.datastores.globalConfigDataStore.latest()) match {
+          case m: GenericOauth2Module => m.handleTokenRefresh(a, user)
+          case _                      => FastFuture.successful(())
+        }
+      case _                     => FastFuture.successful(())
     }
   }
 }

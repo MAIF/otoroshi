@@ -19,7 +19,7 @@ object P12Helper {
       if (kspkcs12.isKeyEntry(strAlias)) {
         val key   = kspkcs12.getKey(strAlias, password.toCharArray)
         val chain = kspkcs12.getCertificateChain(strAlias)
-        val cert = Cert(
+        val cert  = Cert(
           id = IdGenerator.token,
           name = "Client Certificate",
           description = "Client Certificate",

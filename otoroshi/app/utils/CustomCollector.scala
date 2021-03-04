@@ -10,13 +10,13 @@ import java.util.concurrent.TimeUnit
 import scala.jdk.CollectionConverters.mapAsScalaMapConverter
 
 class CustomCollector(registry: SemanticMetricRegistry)
-  extends io.prometheus.client.Collector
+    extends io.prometheus.client.Collector
     with io.prometheus.client.Collector.Describable {
 
   private val sampleBuilder: SampleBuilder = new DefaultSampleBuilder
 
   def fromCounter(entry: util.Map.Entry[MetricId, Counter]): MetricFamilySamples = {
-    val sample = getSample(entry.getKey,  entry.getValue.getCount.doubleValue)
+    val sample = getSample(entry.getKey, entry.getValue.getCount.doubleValue)
     new MetricFamilySamples(sample.name, Type.GAUGE, "", util.Arrays.asList(sample))
   }
 
@@ -31,13 +31,13 @@ class CustomCollector(registry: SemanticMetricRegistry)
   }
 
   def fromGauge(entry: util.Map.Entry[MetricId, Gauge[_]]): MetricFamilySamples = {
-    val obj = entry.getValue.getValue
+    val obj   = entry.getValue.getValue
     var value = .0
 
     obj match {
       case number: Number => value = number.doubleValue
-      case bool: Boolean => value = if (bool) 1 else 0
-      case _ => return null
+      case bool: Boolean  => value = if (bool) 1 else 0
+      case _              => return null
     }
 
     val sample = getSample(entry.getKey, value)
@@ -45,13 +45,19 @@ class CustomCollector(registry: SemanticMetricRegistry)
   }
 
   private def combineValueAndList(value: String, l: util.Collection[String]) = {
-    val half =  new util.ArrayList[String](){{ value }}
+    val half = new util.ArrayList[String]() { { value } }
     half.addAll(new util.ArrayList[String](l))
     half
   }
 
-  def fromSnapshotAndCount(name: String, snapshot: Snapshot, count: Long, factor: Double, tags: util.Map[String, String]): MetricFamilySamples = {
-    val quantile = new util.ArrayList[String](){{ "quantile" }}
+  def fromSnapshotAndCount(
+      name: String,
+      snapshot: Snapshot,
+      count: Long,
+      factor: Double,
+      tags: util.Map[String, String]
+  ): MetricFamilySamples = {
+    val quantile = new util.ArrayList[String]() { { "quantile" } }
     quantile.addAll(new util.ArrayList[String](tags.keySet))
 
     val samples = util.Arrays.asList(
@@ -108,17 +114,23 @@ class CustomCollector(registry: SemanticMetricRegistry)
     new MetricFamilySamples(samples.get(0).name, Type.SUMMARY, "", samples)
   }
 
-  def fromHistogram(entry: util.Map.Entry[MetricId, Histogram]): MetricFamilySamples = fromSnapshotAndCount(
-    entry.getKey.getKey, entry.getValue.getSnapshot, entry.getValue.getCount, 1.0, entry.getKey.getTags
-  )
+  def fromHistogram(entry: util.Map.Entry[MetricId, Histogram]): MetricFamilySamples =
+    fromSnapshotAndCount(
+      entry.getKey.getKey,
+      entry.getValue.getSnapshot,
+      entry.getValue.getCount,
+      1.0,
+      entry.getKey.getTags
+    )
 
-  def fromTimer(entry: util.Map.Entry[MetricId, Timer]): MetricFamilySamples = fromSnapshotAndCount(
-    entry.getKey.getKey,
-    entry.getValue.getSnapshot,
-    entry.getValue.getCount,
-    1.0D / TimeUnit.SECONDS.toNanos(1L),
-    entry.getKey.getTags
-  )
+  def fromTimer(entry: util.Map.Entry[MetricId, Timer]): MetricFamilySamples =
+    fromSnapshotAndCount(
+      entry.getKey.getKey,
+      entry.getValue.getSnapshot,
+      entry.getValue.getCount,
+      1.0d / TimeUnit.SECONDS.toNanos(1L),
+      entry.getKey.getTags
+    )
 
   def fromMeter(entry: util.Map.Entry[MetricId, Meter]): MetricFamilySamples = {
     val sample = getSample(entry.getKey, entry.getValue.getCount, "_count")
@@ -128,31 +140,21 @@ class CustomCollector(registry: SemanticMetricRegistry)
   override def collect: util.List[MetricFamilySamples] = {
     val mfSamplesMap = new util.HashMap[String, MetricFamilySamples]
 
-    registry.getGauges.entrySet.forEach(entry =>
-      addToMap(mfSamplesMap, fromGauge(entry))
-    )
+    registry.getGauges.entrySet.forEach(entry => addToMap(mfSamplesMap, fromGauge(entry)))
 
-    registry.getCounters.entrySet.forEach(entry =>
-      addToMap(mfSamplesMap, fromCounter(entry))
-    )
+    registry.getCounters.entrySet.forEach(entry => addToMap(mfSamplesMap, fromCounter(entry)))
 
-    registry.getHistograms.entrySet.forEach(entry =>
-      addToMap(mfSamplesMap, fromHistogram(entry))
-    )
+    registry.getHistograms.entrySet.forEach(entry => addToMap(mfSamplesMap, fromHistogram(entry)))
 
-    registry.getTimers.entrySet.forEach(entry =>
-      addToMap(mfSamplesMap, fromTimer(entry))
-    )
+    registry.getTimers.entrySet.forEach(entry => addToMap(mfSamplesMap, fromTimer(entry)))
 
-    registry.getMeters.entrySet.forEach(entry =>
-      addToMap(mfSamplesMap, fromMeter(entry))
-    )
+    registry.getMeters.entrySet.forEach(entry => addToMap(mfSamplesMap, fromMeter(entry)))
 
     new util.ArrayList[MetricFamilySamples](mfSamplesMap.values)
   }
 
   def getKeyOrTags(metric: MetricId): String =
-      if (metric.getTags.isEmpty) metric.getKey else metric.getTags.asScala.mkString(",")
+    if (metric.getTags.isEmpty) metric.getKey else metric.getTags.asScala.mkString(",")
 
   private def addToMap(mfSamplesMap: util.Map[String, MetricFamilySamples], newMfSamples: MetricFamilySamples): Unit = {
     if (newMfSamples != null) {
@@ -161,7 +163,10 @@ class CustomCollector(registry: SemanticMetricRegistry)
       else {
         val samples = new util.ArrayList[MetricFamilySamples.Sample](currentMfSamples.samples)
         samples.addAll(newMfSamples.samples)
-        mfSamplesMap.put(newMfSamples.name, new MetricFamilySamples(newMfSamples.name, currentMfSamples.`type`, currentMfSamples.help, samples))
+        mfSamplesMap.put(
+          newMfSamples.name,
+          new MetricFamilySamples(newMfSamples.name, currentMfSamples.`type`, currentMfSamples.help, samples)
+        )
       }
     }
   }

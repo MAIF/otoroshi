@@ -25,8 +25,8 @@ class JWTVerification2Spec(name: String, configurationSpec: => Configuration) ex
         val publicBytes = ApacheBase64.decodeBase64(
           value.replace("-----BEGIN PUBLIC KEY-----\n", "").replace("\n-----END PUBLIC KEY-----", "").trim()
         )
-        val keySpec    = new X509EncodedKeySpec(publicBytes)
-        val keyFactory = KeyFactory.getInstance("EC")
+        val keySpec     = new X509EncodedKeySpec(publicBytes)
+        val keyFactory  = KeyFactory.getInstance("EC")
         keyFactory.generatePublic(keySpec).asInstanceOf[ECPublicKey]
       }
 
@@ -34,8 +34,8 @@ class JWTVerification2Spec(name: String, configurationSpec: => Configuration) ex
         val publicBytes = ApacheBase64.decodeBase64(
           value.replace("-----BEGIN PRIVATE KEY-----\n", "").replace("\n-----END PRIVATE KEY-----", "").trim()
         )
-        val keySpec    = new PKCS8EncodedKeySpec(publicBytes)
-        val keyFactory = KeyFactory.getInstance("EC")
+        val keySpec     = new PKCS8EncodedKeySpec(publicBytes)
+        val keyFactory  = KeyFactory.getInstance("EC")
         keyFactory.generatePrivate(keySpec).asInstanceOf[ECPrivateKey]
       }
 
@@ -90,19 +90,19 @@ object Implicit {
   }
 }
 
-class JWTVerificationSpec(name: String, configurationSpec: => Configuration)
-    extends OtoroshiSpec {
+class JWTVerificationSpec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 
   lazy val serviceHost = "jwt.oto.tools"
 
-  override def getTestConfiguration(configuration: Configuration) = Configuration(
-    ConfigFactory
-      .parseString(s"""
+  override def getTestConfiguration(configuration: Configuration) =
+    Configuration(
+      ConfigFactory
+        .parseString(s"""
                       |{
                       |}
        """.stripMargin)
-      .resolve()
-  ).withFallback(configurationSpec).withFallback(configuration)
+        .resolve()
+    ).withFallback(configurationSpec).withFallback(configuration)
 
   s"[$name] Otoroshi JWT Verifier" should {
 
@@ -115,10 +115,15 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration)
 
       val callCounter1           = new AtomicInteger(0)
       val basicTestExpectedBody1 = """{"message":"hello world 1"}"""
-      val basicTestServer1 = TargetService(Some(serviceHost), "/api", "application/json", { _ =>
-        callCounter1.incrementAndGet()
-        basicTestExpectedBody1
-      }).await()
+      val basicTestServer1       = TargetService(
+        Some(serviceHost),
+        "/api",
+        "application/json",
+        { _ =>
+          callCounter1.incrementAndGet()
+          basicTestExpectedBody1
+        }
+      ).await()
 
       val service = ServiceDescriptor(
         id = "jwt-test",
@@ -163,7 +168,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration)
         val r = ws
           .url(s"http://127.0.0.1:$port/api")
           .withHttpHeaders(
-            "Host" -> serviceHost,
+            "Host"        -> serviceHost,
             "X-JWT-Token" -> JWT
               .create()
               .withIssuer("foo")
@@ -178,7 +183,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration)
         val r = ws
           .url(s"http://127.0.0.1:$port/api")
           .withHttpHeaders(
-            "Host" -> serviceHost,
+            "Host"        -> serviceHost,
             "X-JWT-Token" -> JWT
               .create()
               .withIssuer("mathieu")
@@ -193,7 +198,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration)
         val r = ws
           .url(s"http://127.0.0.1:$port/api")
           .withHttpHeaders(
-            "Host" -> serviceHost,
+            "Host"        -> serviceHost,
             "X-JWT-Token" -> JWT
               .create()
               .withIssuer("foo")
@@ -249,12 +254,13 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration)
 
       val callCounter1           = new AtomicInteger(0)
       val basicTestExpectedBody1 = """{"message":"hello world 1"}"""
-      val basicTestServer1 = TargetService(
+      val basicTestServer1       = TargetService(
         Some(serviceHost),
         "/api",
-        "application/json", { r =>
+        "application/json",
+        { r =>
           r.getHeader("X-JWT-Token").asOption.map(a => a.value()).foreach { a =>
-            val v = JWT
+            val v        = JWT
               .require(algorithm2)
               .withIssuer("foo")
               .build()
@@ -320,7 +326,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration)
         val r = ws
           .url(s"http://127.0.0.1:$port/api")
           .withHttpHeaders(
-            "Host" -> serviceHost,
+            "Host"        -> serviceHost,
             "X-JWT-Token" -> JWT
               .create()
               .withIssuer("mathieu")
@@ -335,7 +341,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration)
         val r = ws
           .url(s"http://127.0.0.1:$port/api")
           .withHttpHeaders(
-            "Host" -> serviceHost,
+            "Host"        -> serviceHost,
             "X-JWT-Token" -> JWT
               .create()
               .withIssuer("foo")
@@ -385,14 +391,17 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration)
 
       val callCounter1           = new AtomicInteger(0)
       val basicTestExpectedBody1 = """{"message":"hello world 1"}"""
-      val basicTestServer1 = TargetService(
+      val basicTestServer1       = TargetService(
         Some(serviceHost),
         "/api",
-        "application/json", { r =>
-          r.getHeader("X-Barrr").asOption.map(a => a.value()).foreach {
-            a =>
+        "application/json",
+        { r =>
+          r.getHeader("X-Barrr")
+            .asOption
+            .map(a => a.value())
+            .foreach { a =>
               import collection.JavaConverters._
-              val v = JWT
+              val v        = JWT
                 .require(algorithm2)
                 .withIssuer("foo")
                 .withClaim("x-bar", "yo")
@@ -406,7 +415,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration)
 
               }.map(_ => true).getOrElse(false)
               verified mustEqual true
-          }
+            }
           callCounter1.incrementAndGet()
           basicTestExpectedBody1
         }
@@ -486,7 +495,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration)
         val r = ws
           .url(s"http://127.0.0.1:$port/api")
           .withHttpHeaders(
-            "Host" -> serviceHost,
+            "Host"        -> serviceHost,
             "X-JWT-Token" -> JWT
               .create()
               .withIssuer("mathieu")
@@ -501,7 +510,7 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration)
         val r = ws
           .url(s"http://127.0.0.1:$port/api")
           .withHttpHeaders(
-            "Host" -> serviceHost,
+            "Host"        -> serviceHost,
             "X-JWT-Token" -> JWT
               .create()
               .withIssuer("foo")
@@ -539,19 +548,19 @@ class JWTVerificationSpec(name: String, configurationSpec: => Configuration)
   }
 }
 
-class JWTVerificationRefSpec(name: String, configurationSpec: => Configuration)
-    extends OtoroshiSpec {
+class JWTVerificationRefSpec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 
   lazy val serviceHost = "jwtref.oto.tools"
 
-  override def getTestConfiguration(configuration: Configuration) = Configuration(
-    ConfigFactory
-      .parseString(s"""
+  override def getTestConfiguration(configuration: Configuration) =
+    Configuration(
+      ConfigFactory
+        .parseString(s"""
                       |{
                       |}
        """.stripMargin)
-      .resolve()
-  ).withFallback(configurationSpec).withFallback(configuration)
+        .resolve()
+    ).withFallback(configurationSpec).withFallback(configuration)
 
   s"[$name] Otoroshi JWT Verifier Ref" should {
 
@@ -564,10 +573,15 @@ class JWTVerificationRefSpec(name: String, configurationSpec: => Configuration)
 
       val callCounter1           = new AtomicInteger(0)
       val basicTestExpectedBody1 = """{"message":"hello world 1"}"""
-      val basicTestServer1 = TargetService(Some(serviceHost), "/api", "application/json", { _ =>
-        callCounter1.incrementAndGet()
-        basicTestExpectedBody1
-      }).await()
+      val basicTestServer1       = TargetService(
+        Some(serviceHost),
+        "/api",
+        "application/json",
+        { _ =>
+          callCounter1.incrementAndGet()
+          basicTestExpectedBody1
+        }
+      ).await()
 
       val verifier1 = GlobalJwtVerifier(
         id = "verifier1",
@@ -641,7 +655,7 @@ class JWTVerificationRefSpec(name: String, configurationSpec: => Configuration)
         val r = ws
           .url(s"http://127.0.0.1:$port/api")
           .withHttpHeaders(
-            "Host" -> serviceHost,
+            "Host"        -> serviceHost,
             "X-JWT-Token" -> JWT
               .create()
               .withIssuer("foo")
@@ -656,7 +670,7 @@ class JWTVerificationRefSpec(name: String, configurationSpec: => Configuration)
         val r = ws
           .url(s"http://127.0.0.1:$port/api")
           .withHttpHeaders(
-            "Host" -> serviceHost,
+            "Host"        -> serviceHost,
             "X-JWT-Token" -> JWT
               .create()
               .withIssuer("mathieu")
@@ -671,7 +685,7 @@ class JWTVerificationRefSpec(name: String, configurationSpec: => Configuration)
         val r = ws
           .url(s"http://127.0.0.1:$port/api")
           .withHttpHeaders(
-            "Host" -> serviceHost,
+            "Host"        -> serviceHost,
             "X-JWT-Token" -> JWT
               .create()
               .withIssuer("foo")

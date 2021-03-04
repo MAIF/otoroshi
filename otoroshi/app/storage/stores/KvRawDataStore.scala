@@ -20,8 +20,10 @@ class KvRawDataStore(redis: RedisLike) extends RawDataStore {
   override def mget(keys: Seq[String])(implicit ec: ExecutionContext, env: Env): Future[Seq[Option[ByteString]]] =
     redis.mget(keys: _*)
 
-  override def set(key: String, value: ByteString, ttl: Option[Long])(implicit ec: ExecutionContext,
-                                                                      env: Env): Future[Boolean] =
+  override def set(key: String, value: ByteString, ttl: Option[Long])(implicit
+      ec: ExecutionContext,
+      env: Env
+  ): Future[Boolean] =
     redis.setBS(key, value, pxMilliseconds = ttl)
 
   override def del(keys: Seq[String])(implicit ec: ExecutionContext, env: Env): Future[Long] = redis.del(keys: _*)
@@ -31,11 +33,13 @@ class KvRawDataStore(redis: RedisLike) extends RawDataStore {
 
   override def keys(pattern: String)(implicit ec: ExecutionContext, env: Env): Future[Seq[String]] = redis.keys(pattern)
 
-  override def setnx(key: String, value: ByteString, ttl: Option[Long])(implicit ec: ExecutionContext,
-                                                                        env: Env): Future[Boolean] =
+  override def setnx(key: String, value: ByteString, ttl: Option[Long])(implicit
+      ec: ExecutionContext,
+      env: Env
+  ): Future[Boolean] =
     redis.setnxBS(key, value, ttl)
 
-  override def sadd(key: String, members: Seq[ByteString]): Future[Long] = redis.saddBS(key, members:_*)
+  override def sadd(key: String, members: Seq[ByteString]): Future[Long] = redis.saddBS(key, members: _*)
 
   override def sismember(key: String, member: ByteString): Future[Boolean] = redis.sismemberBS(key, member)
 

@@ -14,18 +14,18 @@ import play.api.Configuration
 import play.api.libs.json.Json
 import play.core.server.ServerConfig
 
-class ProgrammaticApiSpec(name: String, configurationSpec: => Configuration)
-    extends OtoroshiSpec {
+class ProgrammaticApiSpec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 
   lazy val serviceHost  = "basictest.oto.tools"
   lazy val serviceHost2 = "basictest2.oto.tools"
 
-  override def getTestConfiguration(configuration: Configuration) = Configuration(
-    ConfigFactory
-      .parseString(s"""
+  override def getTestConfiguration(configuration: Configuration) =
+    Configuration(
+      ConfigFactory
+        .parseString(s"""
        """.stripMargin)
-      .resolve()
-  ).withFallback(configurationSpec).withFallback(configuration)
+        .resolve()
+    ).withFallback(configurationSpec).withFallback(configuration)
 
   s"[$name] Otoroshi Programmatic API" should {
 
@@ -38,10 +38,15 @@ class ProgrammaticApiSpec(name: String, configurationSpec: => Configuration)
 
       val callCounter           = new AtomicInteger(0)
       val basicTestExpectedBody = """{"message":"hello world"}"""
-      val basicTestServer = TargetService(None, "/api", "application/json", { _ =>
-        callCounter.incrementAndGet()
-        basicTestExpectedBody
-      }).await()
+      val basicTestServer       = TargetService(
+        None,
+        "/api",
+        "application/json",
+        { _ =>
+          callCounter.incrementAndGet()
+          basicTestExpectedBody
+        }
+      ).await()
 
       val initialDescriptor = ServiceDescriptor(
         id = "basic-test",
@@ -60,7 +65,7 @@ class ProgrammaticApiSpec(name: String, configurationSpec: => Configuration)
         enforceSecureCommunication = false,
         publicPatterns = Seq("/.*")
       )
-      val otherDescriptor = ServiceDescriptor(
+      val otherDescriptor   = ServiceDescriptor(
         id = "basic-test-2",
         name = "basic-test-2",
         env = "prod",

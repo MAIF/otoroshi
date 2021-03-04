@@ -12,8 +12,7 @@ import otoroshi.ssl.DynamicSSLEngineProvider
 import otoroshi.utils.syntax.implicits._
 import scala.concurrent.Future
 
-class HealthController(cc: ControllerComponents)(implicit env: Env)
-  extends AbstractController(cc) {
+class HealthController(cc: ControllerComponents)(implicit env: Env) extends AbstractController(cc) {
 
   implicit lazy val ec  = env.otoroshiExecutionContext
   implicit lazy val mat = env.otoroshiMaterializer
@@ -47,23 +46,25 @@ class HealthController(cc: ControllerComponents)(implicit env: Env)
       overhead <- env.datastores.serviceDescriptorDataStore.globalCallsOverhead()
       members  <- membersF
     } yield {
-      val workerReady = if (env.clusterConfig.mode == ClusterMode.Worker) !env.clusterAgent.cannotServeRequests() else true
-      val workerReadyStr = workerReady match {
-        case true => "loaded"
+      val workerReady     =
+        if (env.clusterConfig.mode == ClusterMode.Worker) !env.clusterAgent.cannotServeRequests() else true
+      val workerReadyStr  = workerReady match {
+        case true  => "loaded"
         case false => "loading"
       }
-      val cluster = env.clusterConfig.mode match {
-        case ClusterMode.Off => Json.obj()
-        case ClusterMode.Worker => Json.obj(
-          "cluster" -> Json.obj(
-            "status" -> "healthy",
-            "lastSync" -> env.clusterAgent.lastSync.toString(),
-            "worker" -> Json.obj(
-              "status" -> workerReadyStr,
-              "initialized" -> workerReady
+      val cluster         = env.clusterConfig.mode match {
+        case ClusterMode.Off    => Json.obj()
+        case ClusterMode.Worker =>
+          Json.obj(
+            "cluster" -> Json.obj(
+              "status"   -> "healthy",
+              "lastSync" -> env.clusterAgent.lastSync.toString(),
+              "worker"   -> Json.obj(
+                "status"      -> workerReadyStr,
+                "initialized" -> workerReady
+              )
             )
           )
-        )
         case ClusterMode.Leader => {
           val healths     = members.map(_.health)
           val foundOrange = healths.contains("orange")
@@ -72,15 +73,15 @@ class HealthController(cc: ControllerComponents)(implicit env: Env)
           Json.obj("cluster" -> Json.obj("health" -> health))
         }
       }
-      val certificates = DynamicSSLEngineProvider.isFirstSetupDone match {
+      val certificates    = DynamicSSLEngineProvider.isFirstSetupDone match {
         case true  => "loaded"
         case false => "loading"
       }
-      val scriptsReady = scripts.initialized match {
-        case true => "loaded"
+      val scriptsReady    = scripts.initialized match {
+        case true  => "loaded"
         case false => "loading"
       }
-      val otoroshiStatus = JsString(_health match {
+      val otoroshiStatus  = JsString(_health match {
         case Healthy if overhead <= env.healthLimit => "healthy"
         case Healthy if overhead > env.healthLimit  => "unhealthy"
         case Unhealthy                              => "unhealthy"
@@ -91,24 +92,24 @@ class HealthController(cc: ControllerComponents)(implicit env: Env)
         case Unhealthy   => "unhealthy"
         case Unreachable => "unreachable"
       })
-      val payload = Json.obj(
-        "otoroshi" -> otoroshiStatus,
-        "datastore" -> dataStoreStatus,
-        "proxy" -> Json.obj(
-          "initialized" -> true,
-          "status" -> otoroshiStatus
-        ),
-        "storage" -> Json.obj(
-          "initialized" -> true,
-          "status" -> dataStoreStatus
-        ),
-        "certificates" -> Json.obj(
-          "initialized" -> DynamicSSLEngineProvider.isFirstSetupDone,
-          "status" -> certificates
-        ),
-        "scripts"      -> (scripts.json.as[JsObject] ++ Json.obj("status" -> scriptsReady)),
-      ) ++ cluster
-      val err = (payload \ "otoroshi").asOpt[String].exists(_ != "healthy") ||
+      val payload         = Json.obj(
+          "otoroshi"     -> otoroshiStatus,
+          "datastore"    -> dataStoreStatus,
+          "proxy"        -> Json.obj(
+            "initialized" -> true,
+            "status"      -> otoroshiStatus
+          ),
+          "storage"      -> Json.obj(
+            "initialized" -> true,
+            "status"      -> dataStoreStatus
+          ),
+          "certificates" -> Json.obj(
+            "initialized" -> DynamicSSLEngineProvider.isFirstSetupDone,
+            "status"      -> certificates
+          ),
+          "scripts"      -> (scripts.json.as[JsObject] ++ Json.obj("status" -> scriptsReady))
+        ) ++ cluster
+      val err             = (payload \ "otoroshi").asOpt[String].exists(_ != "healthy") ||
         (payload \ "datastore").asOpt[String].exists(_ != "healthy") ||
         (payload \ "cluster").asOpt[String].orElse(Some("healthy")).exists(v => v != "healthy") ||
         !scripts.initialized ||
@@ -122,67 +123,72 @@ class HealthController(cc: ControllerComponents)(implicit env: Env)
     }
   }
 
-  def processMetrics() = Action.async { req =>
-    val format = req.getQueryString("format")
+  def processMetrics() =
+    Action.async { req =>
+      val format = req.getQueryString("format")
 
-    def transformToArray(input: String): JsValue = {
-      val metrics = Json.parse(input)
-      metrics.as[JsObject].value.toSeq.foldLeft(Json.arr()) {
-        case (arr, (key, JsObject(value))) =>
-          arr ++ value.toSeq.foldLeft(Json.arr()) {
-            case (arr2, (key2, value2 @ JsObject(_))) =>
-              arr2 ++ Json.arr(value2 ++ Json.obj("name" -> key2, "type" -> key))
-            case (arr2, (key2, value2)) =>
-              arr2
-          }
-        case (arr, (key, value)) => arr
+      def transformToArray(input: String): JsValue = {
+        val metrics = Json.parse(input)
+        metrics.as[JsObject].value.toSeq.foldLeft(Json.arr()) {
+          case (arr, (key, JsObject(value))) =>
+            arr ++ value.toSeq.foldLeft(Json.arr()) {
+              case (arr2, (key2, value2 @ JsObject(_))) =>
+                arr2 ++ Json.arr(value2 ++ Json.obj("name" -> key2, "type" -> key))
+              case (arr2, (key2, value2))               =>
+                arr2
+            }
+          case (arr, (key, value))           => arr
+        }
       }
-    }
 
-    def fetchMetrics(): Result = {
-      if (format.contains("old_json") || format.contains("old")) {
-        Ok(env.metrics.jsonExport(None)).as("application/json")
-      } else if (format.contains("json")) {
-        Ok(transformToArray(env.metrics.jsonExport(None))).as("application/json")
-      } else if (format.contains("prometheus") || format.contains("prom")) {
-        Ok(env.metrics.prometheusExport(None)).as("text/plain")
-      } else if (req.accepts("application/json")) {
-        Ok(transformToArray(env.metrics.jsonExport(None))).as("application/json")
-      } else if (req.accepts("application/prometheus")) {
-        Ok(env.metrics.prometheusExport(None)).as("text/plain")
+      def fetchMetrics(): Result = {
+        if (format.contains("old_json") || format.contains("old")) {
+          Ok(env.metrics.jsonExport(None)).as("application/json")
+        } else if (format.contains("json")) {
+          Ok(transformToArray(env.metrics.jsonExport(None))).as("application/json")
+        } else if (format.contains("prometheus") || format.contains("prom")) {
+          Ok(env.metrics.prometheusExport(None)).as("text/plain")
+        } else if (req.accepts("application/json")) {
+          Ok(transformToArray(env.metrics.jsonExport(None))).as("application/json")
+        } else if (req.accepts("application/prometheus")) {
+          Ok(env.metrics.prometheusExport(None)).as("text/plain")
+        } else {
+          Ok(transformToArray(env.metrics.jsonExport(None))).as("application/json")
+        }
+      }
+
+      if (env.metricsEnabled) {
+        withSecurity(req, env.metricsAccessKey)(fetchMetrics().future)
       } else {
-        Ok(transformToArray(env.metrics.jsonExport(None))).as("application/json")
+        FastFuture.successful(NotFound(Json.obj("error" -> "metrics not enabled")))
       }
     }
 
-    if (env.metricsEnabled) {
-      withSecurity(req, env.metricsAccessKey)(fetchMetrics().future)
-    } else {
-      FastFuture.successful(NotFound(Json.obj("error" -> "metrics not enabled")))
+  def health() =
+    Action.async { req =>
+      withSecurity(req, env.healthAccessKey)(fetchHealth())
     }
-  }
 
-  def health() = Action.async { req =>
-    withSecurity(req, env.healthAccessKey)(fetchHealth())
-  }
-
-  def live() = Action.async  { req =>
-    withSecurity(req, env.healthAccessKey) {
-      Ok(Json.obj("live" -> true)).future
+  def live() =
+    Action.async { req =>
+      withSecurity(req, env.healthAccessKey) {
+        Ok(Json.obj("live" -> true)).future
+      }
     }
-  }
 
-  def ready() = Action.async  { req =>
-    withSecurity(req, env.healthAccessKey)(fetchHealth().map {
-      case r if r.header.status == 200 => Ok(Json.obj("ready" -> true))
-      case r => ServiceUnavailable(Json.obj("ready" -> false))
-    })
-  }
+  def ready() =
+    Action.async { req =>
+      withSecurity(req, env.healthAccessKey)(fetchHealth().map {
+        case r if r.header.status == 200 => Ok(Json.obj("ready" -> true))
+        case r                           => ServiceUnavailable(Json.obj("ready" -> false))
+      })
+    }
 
-  def startup() = Action.async  { req =>
-    withSecurity(req, env.healthAccessKey)(fetchHealth().map {
-      case r if r.header.status == 200 => Ok(Json.obj("started" -> true))
-      case r => ServiceUnavailable(Json.obj("started" -> false))
-    })
-  }
+  def startup() =
+    Action.async { req =>
+      withSecurity(req, env.healthAccessKey)(fetchHealth().map {
+        case r if r.header.status == 200 => Ok(Json.obj("started" -> true))
+        case r                           => ServiceUnavailable(Json.obj("started" -> false))
+      })
+    }
 }

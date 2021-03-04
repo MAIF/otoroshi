@@ -20,7 +20,7 @@ class InternalEventListenerActor(listener: InternalEventListener, env: Env) exte
       } catch {
         case e: Throwable => InternalEventListenerActor.logger.error("Error while dispatching event", e)
       }
-    case _ =>
+    case _                  =>
   }
 }
 

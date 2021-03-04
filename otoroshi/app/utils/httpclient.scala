@@ -46,7 +46,7 @@ case class DNPart(raw: String) {
       head
     }
   }
-  val value = parts.last
+  val value         = parts.last
 }
 
 case class DN(raw: String) {
@@ -55,20 +55,25 @@ case class DN(raw: String) {
     parts.size == other.parts.size && parts.forall(p => other.parts.exists(o => o.name == p.name && o.value == p.value))
   }
   def stringify: String = {
-    parts.sortWith((a, b) => a.name.compareTo(b.name) > 0).map(p => s"${p.name.toUpperCase()}=${p.value}").mkString(", ")
+    parts
+      .sortWith((a, b) => a.name.compareTo(b.name) > 0)
+      .map(p => s"${p.name.toUpperCase()}=${p.value}")
+      .mkString(", ")
   }
 }
 
-case class MtlsConfig(certs: Seq[String] = Seq.empty,
-                      trustedCerts: Seq[String] = Seq.empty,
-                      mtls: Boolean = false,
-                      loose: Boolean = false,
-                      trustAll: Boolean = false) {
+case class MtlsConfig(
+    certs: Seq[String] = Seq.empty,
+    trustedCerts: Seq[String] = Seq.empty,
+    mtls: Boolean = false,
+    loose: Boolean = false,
+    trustAll: Boolean = false
+) {
   lazy val actualCerts: Seq[Cert] = {
     certs.flatMap { id =>
       DynamicSSLEngineProvider.certificates.get(id) match {
         case a @ Some(_) => a
-        case None =>
+        case None        =>
           val dn = DN(id)
           DynamicSSLEngineProvider.certificates.values.toSeq.filter { cert =>
             cert.certificate.exists { c =>
@@ -87,7 +92,7 @@ case class MtlsConfig(certs: Seq[String] = Seq.empty,
     trustedCerts.flatMap { id =>
       DynamicSSLEngineProvider.certificates.get(id) match {
         case a @ Some(_) => a
-        case None =>
+        case None        =>
           val dn = DN(id)
           DynamicSSLEngineProvider.certificates.values.toSeq.filter { cert =>
             cert.certificate.exists { c =>
@@ -111,7 +116,7 @@ case class MtlsConfig(certs: Seq[String] = Seq.empty,
     val certificates2 = trustedCerts.flatMap(DynamicSSLEngineProvider.certificates.get)
     val keystore1     = DynamicSSLEngineProvider.createKeyStore(certificates1)
     keystore1.store(new FileOutputStream(path1.toFile), password.toCharArray)
-    val keystore2 = DynamicSSLEngineProvider.createKeyStore(certificates2)
+    val keystore2     = DynamicSSLEngineProvider.createKeyStore(certificates2)
     keystore2.store(new FileOutputStream(path2.toFile), password.toCharArray)
     env.lifecycle.addStopHook { () =>
       path1.toFile.delete()
@@ -131,7 +136,7 @@ case class MtlsConfig(certs: Seq[String] = Seq.empty,
 object MtlsConfig {
   val default                                = MtlsConfig()
   def read(opt: Option[JsValue]): MtlsConfig = opt.flatMap(json => format.reads(json).asOpt).getOrElse(default)
-  val format = new Format[MtlsConfig] {
+  val format                                 = new Format[MtlsConfig] {
     override def reads(json: JsValue): JsResult[MtlsConfig] =
       Try {
         MtlsConfig(
@@ -152,25 +157,27 @@ object MtlsConfig {
         case Failure(e) => JsError(e.getMessage())
         case Success(v) => JsSuccess(v)
       }
-    override def writes(o: MtlsConfig): JsValue = Json.obj(
-      "certs"        -> JsArray(o.certs.map(JsString.apply)),
-      "trustedCerts" -> JsArray(o.trustedCerts.map(JsString.apply)),
-      "mtls"         -> o.mtls,
-      "loose"        -> o.loose,
-      "trustAll"     -> o.trustAll
-    )
+    override def writes(o: MtlsConfig): JsValue             =
+      Json.obj(
+        "certs"        -> JsArray(o.certs.map(JsString.apply)),
+        "trustedCerts" -> JsArray(o.trustedCerts.map(JsString.apply)),
+        "mtls"         -> o.mtls,
+        "loose"        -> o.loose,
+        "trustAll"     -> o.trustAll
+      )
   }
 }
 
 class MtlsWs(chooser: WsClientChooser) {
   @inline
-  def url(url: String, config: MtlsConfig): WSRequest = config match {
-    case MtlsConfig(_, _, false, _, _)   => chooser.url(url)
-    case m@MtlsConfig(_, _, true, _, _)  => chooser.urlWithCert(url, Some(m))
-    // case MtlsConfig(seq, seq2, _, _, _) if (seq ++ seq2).isEmpty         => chooser.url(url)
-    // case MtlsConfig(seq, seq2, false, _, _) if (seq ++ seq2).nonEmpty    => chooser.url(url)
-    // case m @ MtlsConfig(seq, seq2, true, _, _) if (seq ++ seq2).nonEmpty => chooser.urlWithCert(url, Some(m))
-  }
+  def url(url: String, config: MtlsConfig): WSRequest =
+    config match {
+      case MtlsConfig(_, _, false, _, _)    => chooser.url(url)
+      case m @ MtlsConfig(_, _, true, _, _) => chooser.urlWithCert(url, Some(m))
+      // case MtlsConfig(seq, seq2, _, _, _) if (seq ++ seq2).isEmpty         => chooser.url(url)
+      // case MtlsConfig(seq, seq2, false, _, _) if (seq ++ seq2).nonEmpty    => chooser.url(url)
+      // case m @ MtlsConfig(seq, seq2, true, _, _) if (seq ++ seq2).nonEmpty => chooser.urlWithCert(url, Some(m))
+    }
 }
 
 object MtlsWs {
@@ -178,19 +185,22 @@ object MtlsWs {
 }
 
 object WsClientChooser {
-  def apply(standardClient: WSClient,
-            akkaClient: AkkWsClient,
-            // ahcCreator: SSLConfigSettings => WSClient,
-            fullAkka: Boolean,
-            env: Env): WsClientChooser = new WsClientChooser(standardClient, akkaClient, /*ahcCreator, */fullAkka, env)
+  def apply(
+      standardClient: WSClient,
+      akkaClient: AkkWsClient,
+      // ahcCreator: SSLConfigSettings => WSClient,
+      fullAkka: Boolean,
+      env: Env
+  ): WsClientChooser = new WsClientChooser(standardClient, akkaClient, /*ahcCreator, */ fullAkka, env)
 }
 
-class WsClientChooser(standardClient: WSClient,
-                      akkaClient: AkkWsClient,
-                      // ahcCreator: SSLConfigSettings => WSClient,
-                      fullAkka: Boolean,
-                      env: Env)
-    extends WSClient {
+class WsClientChooser(
+    standardClient: WSClient,
+    akkaClient: AkkWsClient,
+    // ahcCreator: SSLConfigSettings => WSClient,
+    fullAkka: Boolean,
+    env: Env
+) extends WSClient {
 
   private[utils] val logger                  = Logger("otoroshi-ws-client-chooser")
   private[utils] val lastSslConfig           = new AtomicReference[SSLConfigSettings](null)
@@ -207,20 +217,22 @@ class WsClientChooser(standardClient: WSClient,
   //   connectionContextHolder.get()
   // }
 
-  def ws[T](request: WebSocketRequest,
-            targetOpt: Option[Target],
-            clientFlow: Flow[Message, Message, T],
-            customizer: ClientConnectionSettings => ClientConnectionSettings): (Future[WebSocketUpgradeResponse], T) = {
-    val certs: Seq[Cert] = targetOpt
+  def ws[T](
+      request: WebSocketRequest,
+      targetOpt: Option[Target],
+      clientFlow: Flow[Message, Message, T],
+      customizer: ClientConnectionSettings => ClientConnectionSettings
+  ): (Future[WebSocketUpgradeResponse], T) = {
+    val certs: Seq[Cert]        = targetOpt
       .filter(_.mtlsConfig.mtls)
       .toSeq
       .flatMap(_.mtlsConfig.actualCerts)
-      //.flatMap(DynamicSSLEngineProvider.certificates.get)
+    //.flatMap(DynamicSSLEngineProvider.certificates.get)
     val trustedCerts: Seq[Cert] = targetOpt
       .filter(_.mtlsConfig.mtls)
       .toSeq
       .flatMap(_.mtlsConfig.actualTrustedCerts)
-      // .flatMap(DynamicSSLEngineProvider.certificates.get)
+    // .flatMap(DynamicSSLEngineProvider.certificates.get)
     akkaClient.executeWsRequest(
       request,
       targetOpt.exists(_.mtlsConfig.loose),
@@ -263,28 +275,31 @@ class WsClientChooser(standardClient: WSClient,
   // }
 
   def urlWithCert(url: String, mtlsConfig: Option[MtlsConfig]): WSRequest = {
-    new AkkaWsClientRequest(akkaClient,
-                            url,
-                            mtlsConfig.map(
-                              c =>
-                                Target(
-                                  host = "####",
-                                  mtlsConfig = c
-                              )
-                            ),
-                            HttpProtocols.`HTTP/1.1`,
-                            clientConfig = ClientConfig(),
-                            env = env)(
+    new AkkaWsClientRequest(
+      akkaClient,
+      url,
+      mtlsConfig.map(c =>
+        Target(
+          host = "####",
+          mtlsConfig = c
+        )
+      ),
+      HttpProtocols.`HTTP/1.1`,
+      clientConfig = ClientConfig(),
+      env = env
+    )(
       akkaClient.mat
     )
   }
   def akkaUrlWithTarget(url: String, target: Target, clientConfig: ClientConfig = ClientConfig()): WSRequest = {
-    new AkkaWsClientRequest(akkaClient,
-                            url,
-                            Some(target),
-                            HttpProtocols.`HTTP/1.1`,
-                            clientConfig = clientConfig,
-                            env = env)(
+    new AkkaWsClientRequest(
+      akkaClient,
+      url,
+      Some(target),
+      HttpProtocols.`HTTP/1.1`,
+      clientConfig = clientConfig,
+      env = env
+    )(
       akkaClient.mat
     )
   }
@@ -301,12 +316,14 @@ class WsClientChooser(standardClient: WSClient,
   def urlWithTarget(url: String, target: Target, clientConfig: ClientConfig = ClientConfig()): WSRequest = {
     val useAkkaHttpClient = env.datastores.globalConfigDataStore.latestSafe.map(_.useAkkaHttpClient).getOrElse(false)
     if (useAkkaHttpClient || fullAkka) {
-      new AkkaWsClientRequest(akkaClient,
-                              url,
-                              Some(target),
-                              HttpProtocols.`HTTP/1.1`,
-                              clientConfig = clientConfig,
-                              env = env)(
+      new AkkaWsClientRequest(
+        akkaClient,
+        url,
+        Some(target),
+        HttpProtocols.`HTTP/1.1`,
+        clientConfig = clientConfig,
+        env = env
+      )(
         akkaClient.mat
       )
     } else {
@@ -318,27 +335,31 @@ class WsClientChooser(standardClient: WSClient,
     val useAkkaHttpClient = env.datastores.globalConfigDataStore.latestSafe.map(_.useAkkaHttpClient).getOrElse(false)
     protocol.toLowerCase() match {
 
-      case "http" if useAkkaHttpClient || fullAkka =>
-        new AkkaWsClientRequest(akkaClient,
-                                url,
-                                None,
-                                HttpProtocols.`HTTP/1.1`,
-                                clientConfig = clientConfig,
-                                env = env)(
+      case "http" if useAkkaHttpClient || fullAkka  =>
+        new AkkaWsClientRequest(
+          akkaClient,
+          url,
+          None,
+          HttpProtocols.`HTTP/1.1`,
+          clientConfig = clientConfig,
+          env = env
+        )(
           akkaClient.mat
         )
       case "https" if useAkkaHttpClient || fullAkka =>
-        new AkkaWsClientRequest(akkaClient,
-                                url,
-                                None,
-                                HttpProtocols.`HTTP/1.1`,
-                                clientConfig = clientConfig,
-                                env = env)(
+        new AkkaWsClientRequest(
+          akkaClient,
+          url,
+          None,
+          HttpProtocols.`HTTP/1.1`,
+          clientConfig = clientConfig,
+          env = env
+        )(
           akkaClient.mat
         )
 
-      case "http" if !useAkkaHttpClient  => standardClient.url(url)
-      case "https" if !useAkkaHttpClient => standardClient.url(url)
+      case "http" if !useAkkaHttpClient             => standardClient.url(url)
+      case "https" if !useAkkaHttpClient            => standardClient.url(url)
 
       case "standard:http"  => standardClient.url(url.replace("standard:http://", "http://"))
       case "standard:https" => standardClient.url(url.replace("standard:https://", "https://"))
@@ -346,65 +367,77 @@ class WsClientChooser(standardClient: WSClient,
       // case "ahc:http"  => getAhcInstance().url(url.replace("ahc:http://", "http://"))
       // case "ahc:https" => getAhcInstance().url(url.replace("ahc:https://", "https://"))
 
-      case "ahc:http" =>
-        new AkkaWsClientRequest(akkaClient,
-                                url.replace("ahc:http://", "http://"),
-                                None,
-                                HttpProtocols.`HTTP/1.1`,
-                                clientConfig = clientConfig,
-                                env = env)(
+      case "ahc:http"                            =>
+        new AkkaWsClientRequest(
+          akkaClient,
+          url.replace("ahc:http://", "http://"),
+          None,
+          HttpProtocols.`HTTP/1.1`,
+          clientConfig = clientConfig,
+          env = env
+        )(
           akkaClient.mat
         )
-      case "ahc:https" =>
-        new AkkaWsClientRequest(akkaClient,
-                                url.replace("ahc:https://", "http://"),
-                                None,
-                                HttpProtocols.`HTTP/1.1`,
-                                clientConfig = clientConfig,
-                                env = env)(
+      case "ahc:https"                           =>
+        new AkkaWsClientRequest(
+          akkaClient,
+          url.replace("ahc:https://", "http://"),
+          None,
+          HttpProtocols.`HTTP/1.1`,
+          clientConfig = clientConfig,
+          env = env
+        )(
           akkaClient.mat
         )
 
-      case "ahttp" =>
-        new AkkaWsClientRequest(akkaClient,
-                                url.replace("ahttp://", "http://"),
-                                None,
-                                HttpProtocols.`HTTP/1.1`,
-                                clientConfig = clientConfig,
-                                env = env)(
+      case "ahttp"                               =>
+        new AkkaWsClientRequest(
+          akkaClient,
+          url.replace("ahttp://", "http://"),
+          None,
+          HttpProtocols.`HTTP/1.1`,
+          clientConfig = clientConfig,
+          env = env
+        )(
           akkaClient.mat
         )
-      case "ahttps" =>
-        new AkkaWsClientRequest(akkaClient,
-                                url.replace("ahttps://", "https://"),
-                                None,
-                                HttpProtocols.`HTTP/1.1`,
-                                clientConfig = clientConfig,
-                                env = env)(
+      case "ahttps"                              =>
+        new AkkaWsClientRequest(
+          akkaClient,
+          url.replace("ahttps://", "https://"),
+          None,
+          HttpProtocols.`HTTP/1.1`,
+          clientConfig = clientConfig,
+          env = env
+        )(
           akkaClient.mat
         )
-      case "mtls:https" =>
-        new AkkaWsClientRequest(akkaClient,
-                                url.replace("mtls:https://", "https://"),
-                                None,
-                                HttpProtocols.`HTTP/1.1`,
-                                clientConfig = clientConfig,
-                                env = env)(
+      case "mtls:https"                          =>
+        new AkkaWsClientRequest(
+          akkaClient,
+          url.replace("mtls:https://", "https://"),
+          None,
+          HttpProtocols.`HTTP/1.1`,
+          clientConfig = clientConfig,
+          env = env
+        )(
           akkaClient.mat
         )
-      case "mtls" =>
-        new AkkaWsClientRequest(akkaClient,
-                                url.replace("mtls://", "https://"),
-                                None,
-                                HttpProtocols.`HTTP/1.1`,
-                                clientConfig = clientConfig,
-                                env = env)(
+      case "mtls"                                =>
+        new AkkaWsClientRequest(
+          akkaClient,
+          url.replace("mtls://", "https://"),
+          None,
+          HttpProtocols.`HTTP/1.1`,
+          clientConfig = clientConfig,
+          env = env
+        )(
           akkaClient.mat
         )
-      case p if p.startsWith("mtls#") => {
-        val parts         = url.split("://")
-        val mtlsConfigRaw = parts.apply(0).replace("mtls#", "")
-        val urlEnds       = parts.apply(1)
+      case p if p.startsWith("mtls#")            => {
+        val parts           = url.split("://")
+        val mtlsConfigRaw   = parts.apply(0).replace("mtls#", "")
+        val urlEnds         = parts.apply(1)
         val (loose, certId) = if (mtlsConfigRaw.contains("loose#")) {
           (true, mtlsConfigRaw.replace("loose#", ""))
         } else {
@@ -429,32 +462,38 @@ class WsClientChooser(standardClient: WSClient,
           akkaClient.mat
         )
       }
-      case "http2" =>
-        new AkkaWsClientRequest(akkaClient,
-                                url.replace("http2://", "http://"),
-                                None,
-                                HttpProtocols.`HTTP/2.0`,
-                                clientConfig = clientConfig,
-                                env = env)(
+      case "http2"                               =>
+        new AkkaWsClientRequest(
+          akkaClient,
+          url.replace("http2://", "http://"),
+          None,
+          HttpProtocols.`HTTP/2.0`,
+          clientConfig = clientConfig,
+          env = env
+        )(
           akkaClient.mat
         )
-      case "http2s" =>
-        new AkkaWsClientRequest(akkaClient,
-                                url.replace("http2s://", "https://"),
-                                None,
-                                HttpProtocols.`HTTP/2.0`,
-                                clientConfig = clientConfig,
-                                env = env)(
+      case "http2s"                              =>
+        new AkkaWsClientRequest(
+          akkaClient,
+          url.replace("http2s://", "https://"),
+          None,
+          HttpProtocols.`HTTP/2.0`,
+          clientConfig = clientConfig,
+          env = env
+        )(
           akkaClient.mat
         )
 
-      case _ if useAkkaHttpClient || fullAkka =>
-        new AkkaWsClientRequest(akkaClient,
-                                url,
-                                None,
-                                HttpProtocols.`HTTP/1.1`,
-                                clientConfig = clientConfig,
-                                env = env)(
+      case _ if useAkkaHttpClient || fullAkka    =>
+        new AkkaWsClientRequest(
+          akkaClient,
+          url,
+          None,
+          HttpProtocols.`HTTP/1.1`,
+          clientConfig = clientConfig,
+          env = env
+        )(
           akkaClient.mat
         )
       case _ if !(useAkkaHttpClient || fullAkka) => standardClient.url(url)
@@ -481,21 +520,25 @@ object AkkWsClient {
           maxAge = c.maxAge,
           secure = c.secure,
           httpOnly = c.httpOnly,
-          sameSite = c.`extension`.filter(_.startsWith("SameSite=")).map(_.replace("SameSite=", "")).flatMap(play.api.mvc.Cookie.SameSite.parse)
+          sameSite = c.`extension`
+            .filter(_.startsWith("SameSite="))
+            .map(_.replace("SameSite=", ""))
+            .flatMap(play.api.mvc.Cookie.SameSite.parse)
         )
       }
   }
 }
 
 case class WSCookieWithSameSite(
-  name: String,
-  value: String,
-  domain: Option[String] = None,
-  path: Option[String] = None,
-  maxAge: Option[Long] = None,
-  secure: Boolean = false,
-  httpOnly: Boolean = false,
-  sameSite: Option[play.api.mvc.Cookie.SameSite] = None) extends WSCookie
+    name: String,
+    value: String,
+    domain: Option[String] = None,
+    path: Option[String] = None,
+    maxAge: Option[Long] = None,
+    secure: Boolean = false,
+    httpOnly: Boolean = false,
+    sameSite: Option[play.api.mvc.Cookie.SameSite] = None
+) extends WSCookie
 
 /*
 // huge workaround for https://github.com/akka/akka-http/issues/92,  can be disabled by setting otoroshi.options.manualDnsResolve to false
@@ -547,7 +590,7 @@ class CustomHostnameVerifier(mkLogger: LoggerFactory) extends HostnameVerifier {
     }
   }
 }
-*/
+ */
 
 object SSLConfigSettingsCustomizer {
   implicit class BetterSSLConfigSettings(val sslc: SSLConfigSettings) extends AnyVal {
@@ -579,7 +622,7 @@ class AkkWsClient(config: WSClientConfig, env: Env)(implicit system: ActorSystem
 
   private[utils] val logger                         = Logger("otoroshi-akka-ws-client")
   private[utils] val wsClientConfig: WSClientConfig = config
-  private[utils] val akkaSSLConfig: AkkaSSLConfig = AkkaSSLConfig(system).withSettings(
+  private[utils] val akkaSSLConfig: AkkaSSLConfig   = AkkaSSLConfig(system).withSettings(
     config.ssl
       // huge workaround for https://github.com/akka/akka-http/issues/92,  can be disabled by setting otoroshi.options.manualDnsResolve to false
       // .callIf(env.manualDnsResolve, _.withHostnameVerifierClass(classOf[CustomHostnameVerifier]))
@@ -601,8 +644,8 @@ class AkkWsClient(config: WSClientConfig, env: Env)(implicit system: ActorSystem
       .withDefault(false)
   )
 
-  private[utils] val lastSslContext = new AtomicReference[SSLContext](null)
-  private[utils] val connectionContextHolder =
+  private[utils] val lastSslContext               = new AtomicReference[SSLContext](null)
+  private[utils] val connectionContextHolder      =
     new AtomicReference[HttpsConnectionContext](client.createClientHttpsContext(akkaSSLConfig))
   private[utils] val connectionContextLooseHolder =
     new AtomicReference[HttpsConnectionContext](connectionContextHolder.get())
@@ -637,24 +680,28 @@ class AkkWsClient(config: WSClientConfig, env: Env)(implicit system: ActorSystem
     // https://github.com/akka/akka/blob/master/akka-stream/src/main/scala/com/typesafe/sslconfig/akka/AkkaSSLConfig.scala#L83-L109
     // https://github.com/lightbend/ssl-config/blob/master/ssl-config-core/src/main/scala/com/typesafe/sslconfig/ssl/SSLContextBuilder.scala#L99-L127
     clientCerts match {
-      case certs if (clientCerts ++ trustedCerts).isEmpty => {
+      case certs if (clientCerts ++ trustedCerts).isEmpty  => {
         val currentSslContext = DynamicSSLEngineProvider.current
         if (currentSslContext != null && !currentSslContext.equals(lastSslContext.get())) {
           lastSslContext.set(currentSslContext)
-          val connectionContext: HttpsConnectionContext =
+          val connectionContext: HttpsConnectionContext      =
             ConnectionContext.https(currentSslContext, sslConfig = Some(akkaSSLConfig))
           val connectionContextLoose: HttpsConnectionContext =
             ConnectionContext.https(currentSslContext, sslConfig = Some(akkaSSLLooseConfig))
           connectionContextHolder.set(connectionContext)
           connectionContextLooseHolder.set(connectionContextLoose)
         }
-        val pool = customizer(connectionPoolSettings).withMaxConnections(512)
-        client.singleRequest(request,
-                             if (loose) connectionContextLooseHolder.get() else connectionContextHolder.get(),
-                             pool)
+        val pool              = customizer(connectionPoolSettings).withMaxConnections(512)
+        client.singleRequest(
+          request,
+          if (loose) connectionContextLooseHolder.get() else connectionContextHolder.get(),
+          pool
+        )
       }
       case certs if (clientCerts ++ trustedCerts).nonEmpty => {
-        logger.debug(s"Calling ${request.uri} with mTLS context of ${clientCerts.size} client certificates and ${trustedCerts.size} trusted certificates")
+        logger.debug(
+          s"Calling ${request.uri} with mTLS context of ${clientCerts.size} client certificates and ${trustedCerts.size} trusted certificates"
+        )
         // logger.info(s"Calling ${request.uri} with mTLS context of ${clientCerts.size} client certificates and ${trustedCerts.size} trusted certificates: ${Json.prettyPrint(Json.obj(
         //   "clientCerts" -> JsArray(clientCerts.map(c => JsString(c.name + " - " + c.enrich().certificates.head.getSubjectDN.getName))),
         //   "trustedCerts" -> JsArray(trustedCerts.map(c => JsString(c.name + " - " + c.enrich().certificates.head.getSubjectDN.getName))),
@@ -690,11 +737,11 @@ class AkkWsClient(config: WSClientConfig, env: Env)(implicit system: ActorSystem
       customizer: ClientConnectionSettings => ClientConnectionSettings
   ): (Future[WebSocketUpgradeResponse], T) = {
     clientCerts match {
-      case certs if (clientCerts ++ trustedCerts).isEmpty => {
+      case certs if (clientCerts ++ trustedCerts).isEmpty  => {
         val currentSslContext = DynamicSSLEngineProvider.current
         if (currentSslContext != null && !currentSslContext.equals(lastSslContext.get())) {
           lastSslContext.set(currentSslContext)
-          val connectionContext: HttpsConnectionContext =
+          val connectionContext: HttpsConnectionContext      =
             ConnectionContext.https(currentSslContext, sslConfig = Some(akkaSSLConfig))
           val connectionContextLoose: HttpsConnectionContext =
             ConnectionContext.https(currentSslContext, sslConfig = Some(akkaSSLLooseConfig))
@@ -736,16 +783,17 @@ class AkkWsClient(config: WSClientConfig, env: Env)(implicit system: ActorSystem
   }
 }
 
-case class AkkWsClientStreamedResponse(httpResponse: HttpResponse,
-                                       underlyingUrl: String,
-                                       mat: Materializer,
-                                       requestTimeout: FiniteDuration)
-    extends WSResponse {
+case class AkkWsClientStreamedResponse(
+    httpResponse: HttpResponse,
+    underlyingUrl: String,
+    mat: Materializer,
+    requestTimeout: FiniteDuration
+) extends WSResponse {
 
   lazy val allHeaders: Map[String, Seq[String]] = {
     val headers = httpResponse.headers.groupBy(_.name()).mapValues(_.map(_.value())).toSeq ++ Seq(
-      ("Content-Type" -> Seq(contentType))
-    ) /* ++ (if (httpResponse.entity.isChunked()) {
+        ("Content-Type" -> Seq(contentType))
+      ) /* ++ (if (httpResponse.entity.isChunked()) {
       Seq(("Transfer-Encoding" -> Seq("chunked")))
     } else {
       Seq.empty
@@ -754,14 +802,14 @@ case class AkkWsClientStreamedResponse(httpResponse: HttpResponse,
   }
 
   private lazy val _charset: Option[HttpCharset] = httpResponse.entity.contentType.charsetOption
-  private lazy val _contentType: String = httpResponse.entity.contentType.mediaType
-    .toString() + _charset.map(v => ";charset=" + v.value).getOrElse("")
-  private lazy val _bodyAsBytes: ByteString =
+  private lazy val _contentType: String          = httpResponse.entity.contentType.mediaType
+      .toString() + _charset.map(v => ";charset=" + v.value).getOrElse("")
+  private lazy val _bodyAsBytes: ByteString      =
     Await.result(bodyAsSource.runFold(ByteString.empty)(_ ++ _)(mat), FiniteDuration(10, TimeUnit.MINUTES))
-  private lazy val _bodyAsString: String   = _bodyAsBytes.utf8String
-  private lazy val _bodyAsXml: Elem        = XML.loadString(_bodyAsString)
-  private lazy val _bodyAsJson: JsValue    = Json.parse(_bodyAsString)
-  private lazy val _cookies: Seq[WSCookie] = AkkWsClient.cookies(httpResponse)
+  private lazy val _bodyAsString: String         = _bodyAsBytes.utf8String
+  private lazy val _bodyAsXml: Elem              = XML.loadString(_bodyAsString)
+  private lazy val _bodyAsJson: JsValue          = Json.parse(_bodyAsString)
+  private lazy val _cookies: Seq[WSCookie]       = AkkWsClient.cookies(httpResponse)
 
   def status: Int                                      = httpResponse.status.intValue()
   def statusText: String                               = httpResponse.status.defaultMessage()
@@ -772,7 +820,7 @@ case class AkkWsClientStreamedResponse(httpResponse: HttpResponse,
   override def headerValues(name: String): Seq[String] = headers.getOrElse(name, Seq.empty)
   override def contentType: String                     = _contentType
 
-  override def body[T: BodyReadable]: T =
+  override def body[T: BodyReadable]: T      =
     throw new RuntimeException("Not supported on this WSClient !!! (StreamedResponse.body)")
   def body: String                           = _bodyAsString
   def bodyAsBytes: ByteString                = _bodyAsBytes
@@ -780,7 +828,7 @@ case class AkkWsClientStreamedResponse(httpResponse: HttpResponse,
   def cookie(name: String): Option[WSCookie] = _cookies.find(_.name == name)
   override def xml: Elem                     = _bodyAsXml
   override def json: JsValue                 = _bodyAsJson
-  override def uri: URI = new URI(underlyingUrl)
+  override def uri: URI                      = new URI(underlyingUrl)
 }
 
 case class AkkWsClientRawResponse(httpResponse: HttpResponse, underlyingUrl: String, rawbody: ByteString)
@@ -788,8 +836,8 @@ case class AkkWsClientRawResponse(httpResponse: HttpResponse, underlyingUrl: Str
 
   lazy val allHeaders: Map[String, Seq[String]] = {
     val headers = httpResponse.headers.groupBy(_.name()).mapValues(_.map(_.value())).toSeq ++ Seq(
-      ("Content-Type" -> Seq(contentType))
-    ) /*++ (if (httpResponse.entity.isChunked()) {
+        ("Content-Type" -> Seq(contentType))
+      ) /*++ (if (httpResponse.entity.isChunked()) {
       Seq(("Transfer-Encoding" -> Seq("chunked")))
     } else {
       Seq.empty
@@ -798,13 +846,13 @@ case class AkkWsClientRawResponse(httpResponse: HttpResponse, underlyingUrl: Str
   }
 
   private lazy val _charset: Option[HttpCharset] = httpResponse.entity.contentType.charsetOption
-  private lazy val _contentType: String = httpResponse.entity.contentType.mediaType
-    .toString() + _charset.map(v => ";charset=" + v.value).getOrElse("")
-  private lazy val _bodyAsBytes: ByteString = rawbody
-  private lazy val _bodyAsString: String    = rawbody.utf8String
-  private lazy val _bodyAsXml: Elem         = XML.loadString(_bodyAsString)
-  private lazy val _bodyAsJson: JsValue     = Json.parse(_bodyAsString)
-  private lazy val _cookies: Seq[WSCookie]  = AkkWsClient.cookies(httpResponse)
+  private lazy val _contentType: String          = httpResponse.entity.contentType.mediaType
+      .toString() + _charset.map(v => ";charset=" + v.value).getOrElse("")
+  private lazy val _bodyAsBytes: ByteString      = rawbody
+  private lazy val _bodyAsString: String         = rawbody.utf8String
+  private lazy val _bodyAsXml: Elem              = XML.loadString(_bodyAsString)
+  private lazy val _bodyAsJson: JsValue          = Json.parse(_bodyAsString)
+  private lazy val _cookies: Seq[WSCookie]       = AkkWsClient.cookies(httpResponse)
 
   def status: Int                                      = httpResponse.status.intValue()
   def statusText: String                               = httpResponse.status.defaultMessage()
@@ -819,10 +867,10 @@ case class AkkWsClientRawResponse(httpResponse: HttpResponse, underlyingUrl: Str
   override def json: JsValue                           = _bodyAsJson
   override def contentType: String                     = _contentType
   def cookies: Seq[WSCookie]                           = _cookies
-  override def body[T: BodyReadable]: T =
+  override def body[T: BodyReadable]: T                =
     throw new RuntimeException("Not supported on this WSClient !!! (RawResponse.body)")
-  def cookie(name: String): Option[WSCookie] = _cookies.find(_.name == name)
-  override def uri: URI = new URI(underlyingUrl)
+  def cookie(name: String): Option[WSCookie]           = _cookies.find(_.name == name)
+  override def uri: URI                                = new URI(underlyingUrl)
 }
 
 object CaseInsensitiveOrdered extends Ordering[String] {
@@ -852,11 +900,13 @@ object WSProxyServerUtils {
   private def matchNonProxyHost(targetHost: String, nonProxyHost: String): Boolean = {
     if (nonProxyHost.length > 1) {
       if (nonProxyHost.charAt(0) == '*')
-        return targetHost.regionMatches(true,
-                                        targetHost.length - nonProxyHost.length + 1,
-                                        nonProxyHost,
-                                        1,
-                                        nonProxyHost.length - 1)
+        return targetHost.regionMatches(
+          true,
+          targetHost.length - nonProxyHost.length + 1,
+          nonProxyHost,
+          1,
+          nonProxyHost.length - 1
+        )
       if (nonProxyHost.charAt(nonProxyHost.length - 1) == '*')
         return targetHost.regionMatches(true, 0, nonProxyHost, 0, nonProxyHost.length - 1)
     }
@@ -886,15 +936,15 @@ case class AkkaWsClientRequest(
   private val _uri = {
     val u = Uri(rawUrl)
     targetOpt match {
-      case None => u
+      case None         => u
       case Some(target) => {
         target.ipAddress match {
-          case None => u // TODO: fix it
+          case None                                                                       => u // TODO: fix it
           // huge workaround for https://github.com/akka/akka-http/issues/92,  can be disabled by setting otoroshi.options.manualDnsResolve to false
-          case Some(ipAddress) if env.manualDnsResolve && u.authority.host.isNamedHost() => {
+          case Some(ipAddress) if env.manualDnsResolve && u.authority.host.isNamedHost()  => {
             u.copy(
               authority = u.authority.copy(
-                port = target.thePort,
+                port = target.thePort
                 // host = akka.http.scaladsl.model.Uri.Host(s"${ipAddress}&${u.authority.host.address()}")
               )
             )
@@ -908,7 +958,7 @@ case class AkkaWsClientRequest(
               )
             )
           }
-          case Some(ipAddress) => {
+          case Some(ipAddress)                                                            => {
             u.copy(
               authority = u.authority.copy(
                 port = target.thePort,
@@ -926,13 +976,11 @@ case class AkkaWsClientRequest(
     val idleTimeout       = clientConfig.extractTimeout(relUri, _.idleTimeout, _.idleTimeout)
     val connectionTimeout = clientConfig.extractTimeout(relUri, _.connectionTimeout, _.connectionTimeout)
     proxy
-      .filter(
-        p =>
-          WSProxyServerUtils.isIgnoredForHost(Uri(rawUrl).authority.host.toString(),
-                                              p.nonProxyHosts.getOrElse(Seq.empty))
+      .filter(p =>
+        WSProxyServerUtils.isIgnoredForHost(Uri(rawUrl).authority.host.toString(), p.nonProxyHosts.getOrElse(Seq.empty))
       )
       .map { proxySettings =>
-        val proxyAddress = InetSocketAddress.createUnresolved(proxySettings.host, proxySettings.port)
+        val proxyAddress        = InetSocketAddress.createUnresolved(proxySettings.host, proxySettings.port)
         val httpsProxyTransport = (proxySettings.principal, proxySettings.password) match {
           case (Some(principal), Some(password)) => {
             val auth = akka.http.scaladsl.model.headers.BasicHttpCredentials(principal, password)
@@ -947,22 +995,21 @@ case class AkkaWsClientRequest(
             //realmBuilder.setScheme(scheme)
             ClientTransport.httpsProxy(proxyAddress, auth)
           }
-          case _ => ClientTransport.httpsProxy(proxyAddress)
+          case _                                 => ClientTransport.httpsProxy(proxyAddress)
         }
-        a: ConnectionPoolSettings =>
-          {
-            a.withTransport(httpsProxyTransport)
-              .withIdleTimeout(idleTimeout)
-              .withConnectionSettings(
-                a.connectionSettings
-                  .withTransport(httpsProxyTransport)
-                  .withConnectingTimeout(connectionTimeout)
-                  .withIdleTimeout(idleTimeout)
-              )
-          }
+        a: ConnectionPoolSettings => {
+          a.withTransport(httpsProxyTransport)
+            .withIdleTimeout(idleTimeout)
+            .withConnectionSettings(
+              a.connectionSettings
+                .withTransport(httpsProxyTransport)
+                .withConnectingTimeout(connectionTimeout)
+                .withIdleTimeout(idleTimeout)
+            )
+        }
       } getOrElse { a: ConnectionPoolSettings =>
       val maybeIpAddress = targetOpt match {
-        case None => None
+        case None         => None
         case Some(target) =>
           target.ipAddress.map(addr => InetSocketAddress.createUnresolved(addr, target.thePort))
       }
@@ -992,10 +1039,9 @@ case class AkkaWsClientRequest(
 
   def withHttpHeaders(headers: (String, String)*): WSRequest = {
     copy(
-      headers = headers.foldLeft(this.headers)(
-        (m, hdr) =>
-          if (m.contains(hdr._1)) m.updated(hdr._1, m(hdr._1) :+ hdr._2)
-          else m + (hdr._1 -> Seq(hdr._2))
+      headers = headers.foldLeft(this.headers)((m, hdr) =>
+        if (m.contains(hdr._1)) m.updated(hdr._1, m(hdr._1) :+ hdr._2)
+        else m + (hdr._1 -> Seq(hdr._2))
       )
     )
   }
@@ -1008,27 +1054,31 @@ case class AkkaWsClientRequest(
   override def withHeaders(headers: (String, String)*): WSRequest = withHttpHeaders(headers: _*)
 
   def stream(): Future[WSResponse] = {
-    val certs: Seq[Cert] = targetOpt
+    val certs: Seq[Cert]        = targetOpt
       .filter(_.mtlsConfig.mtls)
       .toSeq
       .flatMap(_.mtlsConfig.actualCerts)
-      //.flatMap(DynamicSSLEngineProvider.certificates.get)
+    //.flatMap(DynamicSSLEngineProvider.certificates.get)
     val trustedCerts: Seq[Cert] = targetOpt
       .filter(_.mtlsConfig.mtls)
       .toSeq
       .flatMap(_.mtlsConfig.actualTrustedCerts)
-      //.flatMap(DynamicSSLEngineProvider.certificates.get)
-    val trustAll: Boolean = targetOpt
+    //.flatMap(DynamicSSLEngineProvider.certificates.get)
+    val trustAll: Boolean       = targetOpt
       .filter(_.mtlsConfig.mtls)
       .exists(_.mtlsConfig.trustAll)
-    val req = buildRequest()
+    val req                     = buildRequest()
     client
       .executeRequest(req, targetOpt.exists(_.mtlsConfig.loose), trustAll, certs, trustedCerts, customizer)
       .map { resp =>
-        AkkWsClientStreamedResponse(resp,
-                                    rawUrl,
-                                    client.mat,
-                                    requestTimeout.map(v => FiniteDuration(v.toMillis, TimeUnit.MILLISECONDS)).getOrElse(FiniteDuration(30, TimeUnit.DAYS))) // yeah that's infinity ...
+        AkkWsClientStreamedResponse(
+          resp,
+          rawUrl,
+          client.mat,
+          requestTimeout
+            .map(v => FiniteDuration(v.toMillis, TimeUnit.MILLISECONDS))
+            .getOrElse(FiniteDuration(30, TimeUnit.DAYS))
+        ) // yeah that's infinity ...
       }(client.ec)
   }
 
@@ -1037,17 +1087,17 @@ case class AkkaWsClientRequest(
   }
 
   override def execute(): Future[WSResponse] = {
-    val certs: Seq[Cert] = targetOpt
+    val certs: Seq[Cert]        = targetOpt
       .filter(_.mtlsConfig.mtls)
       .toSeq
       .flatMap(_.mtlsConfig.actualCerts)
-      //.flatMap(DynamicSSLEngineProvider.certificates.get)
+    //.flatMap(DynamicSSLEngineProvider.certificates.get)
     val trustedCerts: Seq[Cert] = targetOpt
       .filter(_.mtlsConfig.mtls)
       .toSeq
       .flatMap(_.mtlsConfig.actualTrustedCerts)
-      //.flatMap(DynamicSSLEngineProvider.certificates.get)
-    val trustAll: Boolean = targetOpt
+    //.flatMap(DynamicSSLEngineProvider.certificates.get)
+    val trustAll: Boolean       = targetOpt
       .filter(_.mtlsConfig.mtls)
       .exists(_.mtlsConfig.trustAll)
     client
@@ -1095,8 +1145,8 @@ case class AkkaWsClientRequest(
 
   def buildRequest(): HttpRequest = {
     // val internalUri = Uri(rawUrl)
-    val ct = realContentType.getOrElse(ContentTypes.`application/octet-stream`)
-    val cl = realContentLength
+    val ct                               = realContentType.getOrElse(ContentTypes.`application/octet-stream`)
+    val cl                               = realContentLength
     // val ua = realUserAgent.flatMap(s => Try(`User-Agent`(s)).toOption)
     val (akkaHttpEntity, updatedHeaders) = body match {
       case EmptyBody                         => (HttpEntity.Empty, headers)
@@ -1104,7 +1154,7 @@ case class AkkaWsClientRequest(
       case SourceBody(bytes) if cl.isDefined => (HttpEntity(ct, cl.get, bytes), headers)
       case SourceBody(bytes)                 => (HttpEntity(ct, bytes), headers)
     }
-    val akkaHeaders: List[HttpHeader] = updatedHeaders
+    val akkaHeaders: List[HttpHeader]    = updatedHeaders
       .flatMap {
         case (key, values) =>
           values.distinct.map(value => HttpHeader.parse(key, value))
@@ -1136,56 +1186,56 @@ case class AkkaWsClientRequest(
   override def withCookies(cookies: WSCookie*): WSRequest = {
     val oldCookies = headers.get("Cookie").getOrElse(Seq.empty[String])
     val newCookies = oldCookies :+ cookies.toList
-      .map { c =>
-        s"${c.name}=${c.value}"
-      }
-      .mkString(";")
+        .map { c =>
+          s"${c.name}=${c.value}"
+        }
+        .mkString(";")
     copy(
       headers = headers + ("Cookie" -> newCookies)
     )
   }
 
-  override lazy val followRedirects: Option[Boolean]      = Some(false)
-  override def withFollowRedirects(follow: Boolean): Self = this
-  override def method: String                             = _method.value
-  override def queryString: Map[String, Seq[String]]      = _uri.query().toMultiMap
-  override def get(): Future[WSResponse]                  = withMethod("GET").execute()
-  override def post[T](body: T)(implicit evidence$2: BodyWritable[T]): Future[WSResponse] =
+  override lazy val followRedirects: Option[Boolean]                                                     = Some(false)
+  override def withFollowRedirects(follow: Boolean): Self                                                = this
+  override def method: String                                                                            = _method.value
+  override def queryString: Map[String, Seq[String]]                                                     = _uri.query().toMultiMap
+  override def get(): Future[WSResponse]                                                                 = withMethod("GET").execute()
+  override def post[T](body: T)(implicit evidence$2: BodyWritable[T]): Future[WSResponse]                =
     withMethod("POST")
       .withBody(evidence$2.transform(body))
       .addHttpHeaders("Content-Type" -> evidence$2.contentType)
       .execute()
-  override def post(body: File): Future[WSResponse] =
+  override def post(body: File): Future[WSResponse]                                                      =
     withMethod("POST")
       .withBody(InMemoryBody(ByteString(scala.io.Source.fromFile(body).mkString)))
       .addHttpHeaders("Content-Type" -> "application/octet-stream")
       .execute()
-  override def patch[T](body: T)(implicit evidence$3: BodyWritable[T]): Future[WSResponse] =
+  override def patch[T](body: T)(implicit evidence$3: BodyWritable[T]): Future[WSResponse]               =
     withMethod("PATCH")
       .withBody(evidence$3.transform(body))
       .addHttpHeaders("Content-Type" -> evidence$3.contentType)
       .execute()
-  override def patch(body: File): Future[WSResponse] =
+  override def patch(body: File): Future[WSResponse]                                                     =
     withMethod("PATCH")
       .withBody(InMemoryBody(ByteString(scala.io.Source.fromFile(body).mkString)))
       .addHttpHeaders("Content-Type" -> "application/octet-stream")
       .execute()
-  override def put[T](body: T)(implicit evidence$4: BodyWritable[T]): Future[WSResponse] =
+  override def put[T](body: T)(implicit evidence$4: BodyWritable[T]): Future[WSResponse]                 =
     withMethod("PUT")
       .withBody(evidence$4.transform(body))
       .addHttpHeaders("Content-Type" -> evidence$4.contentType)
       .execute()
-  override def put(body: File): Future[WSResponse] =
+  override def put(body: File): Future[WSResponse]                                                       =
     withMethod("PUT")
       .withBody(InMemoryBody(ByteString(scala.io.Source.fromFile(body).mkString)))
       .addHttpHeaders("Content-Type" -> "application/octet-stream")
       .execute()
-  override def delete(): Future[WSResponse]     = withMethod("DELETE").execute()
-  override def head(): Future[WSResponse]       = withMethod("HEAD").execute()
-  override def options(): Future[WSResponse]    = withMethod("OPTIONS").execute()
-  override lazy val url: String                 = _uri.toString()
-  override lazy val uri: URI                    = new URI(_uri.toRelative.toString())
-  override lazy val contentType: Option[String] = realContentType.map(_.value)
+  override def delete(): Future[WSResponse]                                                              = withMethod("DELETE").execute()
+  override def head(): Future[WSResponse]                                                                = withMethod("HEAD").execute()
+  override def options(): Future[WSResponse]                                                             = withMethod("OPTIONS").execute()
+  override lazy val url: String                                                                          = _uri.toString()
+  override lazy val uri: URI                                                                             = new URI(_uri.toRelative.toString())
+  override lazy val contentType: Option[String]                                                          = realContentType.map(_.value)
   override lazy val cookies: Seq[WSCookie] = {
     headers.get("Cookie").map { headers =>
       headers.flatMap { header =>
@@ -1199,32 +1249,32 @@ case class AkkaWsClientRequest(
       }
     } getOrElse Seq.empty
   }
-  override def withQueryString(parameters: (String, String)*): WSRequest = addQueryStringParameters(parameters: _*)
-  override def withQueryStringParameters(parameters: (String, String)*): WSRequest =
+  override def withQueryString(parameters: (String, String)*): WSRequest                                 = addQueryStringParameters(parameters: _*)
+  override def withQueryStringParameters(parameters: (String, String)*): WSRequest                       =
     copy(rawUrl = _uri.withQuery(Uri.Query.apply(parameters: _*)).toString())
   override def addQueryStringParameters(parameters: (String, String)*): WSRequest = {
-    val params
-      : Seq[(String, String)] = _uri.query().toMultiMap.toSeq.flatMap(t => t._2.map(t2 => (t._1, t2))) ++ parameters
+    val params: Seq[(String, String)] =
+      _uri.query().toMultiMap.toSeq.flatMap(t => t._2.map(t2 => (t._1, t2))) ++ parameters
     copy(rawUrl = _uri.withQuery(Uri.Query.apply(params: _*)).toString())
   }
-  override def withProxyServer(proxyServer: WSProxyServer): WSRequest = copy(proxy = Option(proxyServer))
-  override def proxyServer: Option[WSProxyServer]                     = proxy
-  override def post(body: Source[MultipartFormData.Part[Source[ByteString, _]], _]): Future[WSResponse] =
+  override def withProxyServer(proxyServer: WSProxyServer): WSRequest                                    = copy(proxy = Option(proxyServer))
+  override def proxyServer: Option[WSProxyServer]                                                        = proxy
+  override def post(body: Source[MultipartFormData.Part[Source[ByteString, _]], _]): Future[WSResponse]  =
     post[Source[MultipartFormData.Part[Source[ByteString, _]], _]](body)
   override def patch(body: Source[MultipartFormData.Part[Source[ByteString, _]], _]): Future[WSResponse] =
     patch[Source[MultipartFormData.Part[Source[ByteString, _]], _]](body)
-  override def put(body: Source[MultipartFormData.Part[Source[ByteString, _]], _]): Future[WSResponse] =
+  override def put(body: Source[MultipartFormData.Part[Source[ByteString, _]], _]): Future[WSResponse]   =
     put[Source[MultipartFormData.Part[Source[ByteString, _]], _]](body)
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  override def auth: Option[(String, String, WSAuthScheme)] =
+  override def auth: Option[(String, String, WSAuthScheme)]          =
     throw new RuntimeException("Not supported on this WSClient !!! (Request.auth)")
-  override def calc: Option[WSSignatureCalculator] =
+  override def calc: Option[WSSignatureCalculator]                   =
     throw new RuntimeException("Not supported on this WSClient !!! (Request.calc)")
-  override def virtualHost: Option[String] =
+  override def virtualHost: Option[String]                           =
     throw new RuntimeException("Not supported on this WSClient !!! (Request.virtualHost)")
-  override def sign(calc: WSSignatureCalculator): WSRequest =
+  override def sign(calc: WSSignatureCalculator): WSRequest          =
     throw new RuntimeException("Not supported on this WSClient !!! (Request.sign)")
   override def withAuth(username: String, password: String, scheme: WSAuthScheme): WSRequest = {
     scheme match {
@@ -1232,12 +1282,12 @@ case class AkkaWsClientRequest(
         addHttpHeaders(
           "Authorization" -> s"Basic ${Base64.encodeBase64String(s"${username}:${password}".getBytes(Charsets.UTF_8))}"
         )
-      case _ => throw new RuntimeException("Not supported on this WSClient !!! (Request.withAuth)")
+      case _                  => throw new RuntimeException("Not supported on this WSClient !!! (Request.withAuth)")
     }
   }
   override def withRequestFilter(filter: WSRequestFilter): WSRequest =
     throw new RuntimeException("Not supported on this WSClient !!! (Request.withRequestFilter)")
-  override def withVirtualHost(vh: String): WSRequest =
+  override def withVirtualHost(vh: String): WSRequest                =
     throw new RuntimeException("Not supported on this WSClient !!! (Request.withVirtualHost)")
 
   override def withUrl(url: String): WSRequest = copy(rawUrl = url)
@@ -1247,7 +1297,7 @@ object Implicits {
 
   private val logger = Logger("otoroshi-http-implicits")
 
-  implicit class BetterStandaloneWSRequest[T <: StandaloneWSRequest](val req: T) extends AnyVal {
+  implicit class BetterStandaloneWSRequest[T <: StandaloneWSRequest](val req: T)    extends AnyVal {
     def withMaybeProxyServer(opt: Option[WSProxyServer]): req.Self = {
       opt match {
         case Some(proxy) => req.withProxyServer(proxy)
@@ -1285,7 +1335,7 @@ object Implicits {
         //  //HttpHeaders.isTransferEncodingChunked(responsePublisher)
         //  None
         //}
-        case _ => None
+        case _                          => None
       }
     }
     def ignore()(implicit mat: Materializer): StandaloneWSResponse = {
@@ -1296,7 +1346,7 @@ object Implicits {
             case _          => ()
           }
           resp
-        case _ => resp
+        case _                          => resp
       }
     }
     def ignoreIf(predicate: => Boolean)(implicit mat: Materializer): StandaloneWSResponse = {
@@ -1308,7 +1358,7 @@ object Implicits {
               case _          => ()
             }
             resp
-          case _ => resp
+          case _                          => resp
         }
       } else {
         resp
@@ -1321,7 +1371,9 @@ object ManualResolveTransport {
 
   def resolveTo(address: InetSocketAddress): ClientTransport = {
     new ClientTransport {
-      override def connectTo(host: String, port: Int, settings: ClientConnectionSettings)(implicit system: ActorSystem): Flow[ByteString, ByteString, Future[Http.OutgoingConnection]] =
+      override def connectTo(host: String, port: Int, settings: ClientConnectionSettings)(implicit
+          system: ActorSystem
+      ): Flow[ByteString, ByteString, Future[Http.OutgoingConnection]] =
         ClientTransport.TCP.connectTo(address.getHostString, address.getPort, settings)
     }
   }

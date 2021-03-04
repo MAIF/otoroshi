@@ -23,25 +23,27 @@ object Errors {
     404 -> ("The page you're looking for does not exist", "notFound.gif")
   )
 
-  def craftResponseResult(message: String,
-                          status: Status,
-                          req: RequestHeader,
-                          maybeDescriptor: Option[ServiceDescriptor] = None,
-                          maybeCauseId: Option[String] = None,
-                          duration: Long = 0L,
-                          overhead: Long = 0L,
-                          cbDuration: Long = 0L,
-                          callAttempts: Int = 0,
-                          emptyBody: Boolean = false,
-                          sendEvent: Boolean = true,
-                          attrs: TypedMap)(implicit ec: ExecutionContext, env: Env): Future[Result] = {
+  def craftResponseResult(
+      message: String,
+      status: Status,
+      req: RequestHeader,
+      maybeDescriptor: Option[ServiceDescriptor] = None,
+      maybeCauseId: Option[String] = None,
+      duration: Long = 0L,
+      overhead: Long = 0L,
+      cbDuration: Long = 0L,
+      callAttempts: Int = 0,
+      emptyBody: Boolean = false,
+      sendEvent: Boolean = true,
+      attrs: TypedMap
+  )(implicit ec: ExecutionContext, env: Env): Future[Result] = {
 
     val errorId = env.snowflakeGenerator.nextIdStr()
 
     def sendAnalytics(headers: Seq[Header]): Unit = {
       maybeDescriptor match {
         case Some(descriptor) => {
-          val fromLbl = req.headers.get(env.Headers.OtoroshiVizFromLabel).getOrElse("internet")
+          val fromLbl          = req.headers.get(env.Headers.OtoroshiVizFromLabel).getOrElse("internet")
           // TODO : mark as error ???
           val viz: OtoroshiViz = OtoroshiViz(
             to = descriptor.id,
@@ -50,10 +52,10 @@ object Errors {
             fromLbl = fromLbl,
             fromTo = s"$fromLbl###${descriptor.name}"
           )
-          val _target = attrs.get(otoroshi.plugins.Keys.RequestTargetKey).getOrElse(descriptor.target)
-          val scheme =
+          val _target          = attrs.get(otoroshi.plugins.Keys.RequestTargetKey).getOrElse(descriptor.target)
+          val scheme           =
             if (descriptor.redirectToLocal) descriptor.localScheme else _target.scheme
-          val host = TargetExpressionLanguage(
+          val host             = TargetExpressionLanguage(
             if (descriptor.redirectToLocal)
               descriptor.localHost
             else _target.host,
@@ -65,9 +67,9 @@ object Errors {
             attrs,
             env
           )
-          val rawUri      = req.relativeUri.substring(1)
-          val uri: String = descriptor.maybeStrippedUri(req, rawUri)
-          val url = TargetExpressionLanguage(
+          val rawUri           = req.relativeUri.substring(1)
+          val uri: String      = descriptor.maybeStrippedUri(req, rawUri)
+          val url              = TargetExpressionLanguage(
             s"$scheme://$host${descriptor.root}$uri",
             Some(req),
             Some(descriptor),
@@ -128,7 +130,7 @@ object Errors {
             extraAnalyticsData = attrs.get[JsValue](otoroshi.plugins.Keys.ExtraAnalyticsDataKey)
           ).toAnalytics()(env)
         }
-        case None => {
+        case None             => {
           val fromLbl = req.headers.get(env.Headers.OtoroshiVizFromLabel).getOrElse("internet")
           GatewayEvent(
             `@id` = errorId,
@@ -242,7 +244,7 @@ object Errors {
 
     def customResult(descriptor: ServiceDescriptor): Future[Result] = {
       env.datastores.errorTemplateDataStore.findById(descriptor.id).flatMap {
-        case None => standardResult()
+        case None                => standardResult()
         case Some(errorTemplate) => {
           val accept = req.headers.get("Accept").getOrElse("text/html").split(",").toSeq
           if (accept.contains("text/html")) { // in a browser
@@ -287,16 +289,15 @@ object Errors {
             otoroshiResponse = HttpResponse(
               res.header.status,
               res.header.headers,
-              res.newCookies.map(
-                c =>
-                  DefaultWSCookie(
-                    name = c.name,
-                    value = c.value,
-                    domain = c.domain,
-                    path = Option(c.path),
-                    maxAge = c.maxAge.map(_.toLong),
-                    secure = c.secure,
-                    httpOnly = c.httpOnly
+              res.newCookies.map(c =>
+                DefaultWSCookie(
+                  name = c.name,
+                  value = c.value,
+                  domain = c.domain,
+                  path = Option(c.path),
+                  maxAge = c.maxAge.map(_.toLong),
+                  secure = c.secure,
+                  httpOnly = c.httpOnly
                 )
               )
             ),
@@ -311,7 +312,7 @@ object Errors {
           )
           desc.transformError(ctx)(env, ec, env.otoroshiMaterializer)
         }
-      case None => standardResult()
+      case None       => standardResult()
     }) andThen {
       case scala.util.Success(resp) if sendEvent => sendAnalytics(resp.header.headers.toSeq.map(Header.apply))
     }

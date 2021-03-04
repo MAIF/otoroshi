@@ -24,7 +24,8 @@ class KvCanaryDataStore(redisCli: RedisLike, _env: Env) extends CanaryDataStore 
   }
 
   override def isCanary(serviceId: String, trackingId: String, traffic: Double, reqNumber: Int, config: GlobalConfig)(
-      implicit ec: ExecutionContext,
+      implicit
+      ec: ExecutionContext,
       env: Env
   ): Future[Boolean] = {
     val hash: Int = Math.abs(scala.util.hashing.MurmurHash3.stringHash(trackingId))

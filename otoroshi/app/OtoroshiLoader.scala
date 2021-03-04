@@ -38,12 +38,16 @@ class OtoroshiLoader extends ApplicationLoader {
 
 package object modules {
 
-  class OtoroshiComponentsInstances(context: Context, getHttpPort: => Option[Int], getHttpsPort: => Option[Int], testing: Boolean)
-      extends BuiltInComponentsFromContext(context)
+  class OtoroshiComponentsInstances(
+      context: Context,
+      getHttpPort: => Option[Int],
+      getHttpsPort: => Option[Int],
+      testing: Boolean
+  ) extends BuiltInComponentsFromContext(context)
       with AssetsComponents
       with HttpFiltersComponents
       with AhcWSComponents
-      with EnvContainer{
+      with EnvContainer {
 
     // lazy val gzipFilterConfig                           = GzipFilterConfig.fromConfiguration(configuration)
     // lazy val gzipFilter                                 = wire[GzipFilter]
@@ -63,9 +67,9 @@ package object modules {
     )
 
     lazy val reverseProxyAction: ReverseProxyAction = wire[ReverseProxyAction]
-    lazy val httpHandler: HttpHandler = wire[HttpHandler]
-    lazy val webSocketHandler: WebSocketHandler = wire[WebSocketHandler]
-    lazy val filters                            = new DefaultHttpFilters(httpFilters: _*)
+    lazy val httpHandler: HttpHandler               = wire[HttpHandler]
+    lazy val webSocketHandler: WebSocketHandler     = wire[WebSocketHandler]
+    lazy val filters                                = new DefaultHttpFilters(httpFilters: _*)
 
     override lazy val httpRequestHandler: HttpRequestHandler = wire[GatewayRequestHandler]
     override lazy val httpErrorHandler: HttpErrorHandler     = wire[ErrorHandler]
@@ -92,9 +96,9 @@ package object modules {
     lazy val usersController           = wire[UsersController]
     lazy val templatesController       = wire[TemplatesController]
 
-    lazy val healthController          = wire[HealthController]
-    lazy val eventsController          = wire[EventsController]
-    lazy val statsController           = wire[StatsController]
+    lazy val healthController = wire[HealthController]
+    lazy val eventsController = wire[EventsController]
+    lazy val statsController  = wire[StatsController]
 
     lazy val servicesController           = wire[ServicesController]
     lazy val serviceGroupController       = wire[ServiceGroupController]

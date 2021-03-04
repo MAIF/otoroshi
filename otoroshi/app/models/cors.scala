@@ -44,16 +44,16 @@ case class CorsSettings(
   }
 
   def shouldNotPass(req: RequestHeader): Boolean = {
-    val originOpt  = req.headers.get("Origin")
-    val headersOpt = req.headers.get("Access-Control-Request-Headers")
-    val methodOpt  = req.headers.get("Access-Control-Request-Method")
-    val passOrigin: Boolean =
+    val originOpt                          = req.headers.get("Origin")
+    val headersOpt                         = req.headers.get("Access-Control-Request-Headers")
+    val methodOpt                          = req.headers.get("Access-Control-Request-Method")
+    val passOrigin: Boolean                =
       originOpt.map(_.toLowerCase()).map(o => allowOrigin == "*" || o == allowOrigin).getOrElse(allowOrigin == "*")
     val passAllowedRequestHeaders: Boolean = headersOpt
       .map(h => h.split(",").map(_.trim.toLowerCase()))
       .map(headers => headers.map(h => allowHeaders.map(n => n.trim.toLowerCase()).contains(h)).foldLeft(true)(_ && _))
       .getOrElse(!headersOpt.isDefined)
-    val passAllowedRequestMethod: Boolean = methodOpt
+    val passAllowedRequestMethod: Boolean  = methodOpt
       .map(_.trim.toLowerCase())
       .map(m => allowMethods.map(n => n.trim.toLowerCase()).contains(m.trim.toLowerCase()))
       .getOrElse(!methodOpt.isDefined)
@@ -64,16 +64,17 @@ case class CorsSettings(
     !excludedPatterns.exists(p => RegexPool.regex(p).matches(path))
   }
 
-  override def asJson: JsValue = Json.obj(
-    "enabled"          -> enabled,
-    "allowOrigin"      -> allowOrigin,
-    "exposeHeaders"    -> JsArray(exposeHeaders.map(_.toLowerCase().trim).map(JsString.apply)),
-    "allowHeaders"     -> JsArray(allowHeaders.map(_.toLowerCase().trim).map(JsString.apply)),
-    "allowMethods"     -> JsArray(allowMethods.map(JsString.apply)),
-    "excludedPatterns" -> JsArray(excludedPatterns.map(JsString.apply)),
-    "maxAge"           -> maxAge.map(a => JsNumber(BigDecimal(a.toSeconds))).getOrElse(JsNull).as[JsValue],
-    "allowCredentials" -> allowCredentials
-  )
+  override def asJson: JsValue =
+    Json.obj(
+      "enabled"          -> enabled,
+      "allowOrigin"      -> allowOrigin,
+      "exposeHeaders"    -> JsArray(exposeHeaders.map(_.toLowerCase().trim).map(JsString.apply)),
+      "allowHeaders"     -> JsArray(allowHeaders.map(_.toLowerCase().trim).map(JsString.apply)),
+      "allowMethods"     -> JsArray(allowMethods.map(JsString.apply)),
+      "excludedPatterns" -> JsArray(excludedPatterns.map(JsString.apply)),
+      "maxAge"           -> maxAge.map(a => JsNumber(BigDecimal(a.toSeconds))).getOrElse(JsNull).as[JsValue],
+      "allowCredentials" -> allowCredentials
+    )
 }
 
 object CorsSettings extends FromJson[CorsSettings] {

@@ -16,45 +16,51 @@ import scala.util.Try
 
 trait AuthModule {
 
-  def paLoginPage(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor)(
-      implicit ec: ExecutionContext,
+  def paLoginPage(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
+      ec: ExecutionContext,
       env: Env
   ): Future[Result]
-  def paLogout(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor)(
-      implicit ec: ExecutionContext,
+  def paLogout(request: RequestHeader, config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
+      ec: ExecutionContext,
       env: Env
   ): Future[Option[String]]
-  def paCallback(request: Request[AnyContent], config: GlobalConfig, descriptor: ServiceDescriptor)(
-      implicit ec: ExecutionContext,
+  def paCallback(request: Request[AnyContent], config: GlobalConfig, descriptor: ServiceDescriptor)(implicit
+      ec: ExecutionContext,
       env: Env
   ): Future[Either[String, PrivateAppsUser]]
 
   def boLoginPage(request: RequestHeader, config: GlobalConfig)(implicit ec: ExecutionContext, env: Env): Future[Result]
-  def boLogout(request: RequestHeader, config: GlobalConfig)(implicit ec: ExecutionContext,
-                                                             env: Env): Future[Option[String]]
-  def boCallback(request: Request[AnyContent], config: GlobalConfig)(implicit ec: ExecutionContext,
-                                                                     env: Env): Future[Either[String, BackOfficeUser]]
+  def boLogout(request: RequestHeader, config: GlobalConfig)(implicit
+      ec: ExecutionContext,
+      env: Env
+  ): Future[Option[String]]
+  def boCallback(request: Request[AnyContent], config: GlobalConfig)(implicit
+      ec: ExecutionContext,
+      env: Env
+  ): Future[Either[String, BackOfficeUser]]
 }
 
 object SessionCookieValues {
-  def fmt = new Format[SessionCookieValues] {
-    override def writes(o: SessionCookieValues) = Json.obj(
-      "httpOnly" -> o.httpOnly,
-      "secure" -> o.secure
-    )
-
-    override def reads(json: JsValue) =
-      Try {
-        JsSuccess(
-          SessionCookieValues(
-            httpOnly = (json \ "httpOnly").asOpt[Boolean].getOrElse(true),
-            secure = (json \ "secure").asOpt[Boolean].getOrElse(true)
-          )
+  def fmt =
+    new Format[SessionCookieValues] {
+      override def writes(o: SessionCookieValues) =
+        Json.obj(
+          "httpOnly" -> o.httpOnly,
+          "secure"   -> o.secure
         )
-      } recover {
-        case e => JsError(e.getMessage)
-      } get
-  }
+
+      override def reads(json: JsValue) =
+        Try {
+          JsSuccess(
+            SessionCookieValues(
+              httpOnly = (json \ "httpOnly").asOpt[Boolean].getOrElse(true),
+              secure = (json \ "secure").asOpt[Boolean].getOrElse(true)
+            )
+          )
+        } recover {
+          case e => JsError(e.getMessage)
+        } get
+    }
 }
 
 //todo: move max-age here when it won't be a problem
@@ -74,7 +80,7 @@ trait AuthModuleConfig extends AsJson with otoroshi.models.EntityLocationSupport
   def sessionCookieValues: SessionCookieValues
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean]
   override def internalId: String = id
-  override def json: JsValue = asJson
+  override def json: JsValue      = asJson
 }
 
 object AuthModuleConfig {
@@ -92,14 +98,15 @@ object AuthModuleConfig {
     }
 
   val _fmt: Format[AuthModuleConfig] = new Format[AuthModuleConfig] {
-    override def reads(json: JsValue): JsResult[AuthModuleConfig] = (json \ "type").as[String] match {
-      case "oauth2"        => GenericOauth2ModuleConfig._fmt.reads(json)
-      case "oauth2-global" => GenericOauth2ModuleConfig._fmt.reads(json)
-      case "basic"         => BasicAuthModuleConfig._fmt.reads(json)
-      case "ldap"          => LdapAuthModuleConfig._fmt.reads(json)
-      case _               => JsError("Unknown auth. config type")
-    }
-    override def writes(o: AuthModuleConfig): JsValue = o.asJson
+    override def reads(json: JsValue): JsResult[AuthModuleConfig] =
+      (json \ "type").as[String] match {
+        case "oauth2"        => GenericOauth2ModuleConfig._fmt.reads(json)
+        case "oauth2-global" => GenericOauth2ModuleConfig._fmt.reads(json)
+        case "basic"         => BasicAuthModuleConfig._fmt.reads(json)
+        case "ldap"          => LdapAuthModuleConfig._fmt.reads(json)
+        case _               => JsError("Unknown auth. config type")
+      }
+    override def writes(o: AuthModuleConfig): JsValue             = o.asJson
   }
 }
 
@@ -144,7 +151,7 @@ trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {
 
   def template(modType: Option[String]): AuthModuleConfig = {
     modType match {
-      case Some("oauth2") =>
+      case Some("oauth2")        =>
         GenericOauth2ModuleConfig(
           id = IdGenerator.token,
           name = "New auth. module",
@@ -160,7 +167,7 @@ trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {
           metadata = Map.empty,
           sessionCookieValues = SessionCookieValues()
         )
-      case Some("basic") =>
+      case Some("basic")         =>
         BasicAuthModuleConfig(
           id = IdGenerator.token,
           name = "New auth. module",
@@ -168,7 +175,7 @@ trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {
           metadata = Map.empty,
           sessionCookieValues = SessionCookieValues()
         )
-      case Some("ldap") =>
+      case Some("ldap")          =>
         LdapAuthModuleConfig(
           id = IdGenerator.token,
           name = "New auth. module",
@@ -181,7 +188,7 @@ trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {
           metadata = Map.empty,
           sessionCookieValues = SessionCookieValues()
         )
-      case _ =>
+      case _                     =>
         BasicAuthModuleConfig(
           id = IdGenerator.token,
           name = "New auth. module",

@@ -7,6 +7,6 @@ object DefaultPlugins {
     s"cp:${classOf[ClientIdApikeyExtractor].getName}",
     s"cp:${classOf[CustomHeadersApikeyExtractor].getName}",
     s"cp:${classOf[JwtApikeyExtractor].getName}",
-    s"cp:${classOf[BasicAuthApikeyExtractor].getName}",
+    s"cp:${classOf[BasicAuthApikeyExtractor].getName}"
   )
 }

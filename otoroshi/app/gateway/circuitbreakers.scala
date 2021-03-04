@@ -20,14 +20,16 @@ import play.api.mvc.{RequestHeader, Result}
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future, Promise, duration}
+import scala.concurrent.{duration, ExecutionContext, Future, Promise}
 import scala.util.control.NoStackTrace
 import scala.util.{Failure, Success}
 
 object Timeout {
 
-  def timeout[A](message: => A, duration: FiniteDuration)(implicit ec: ExecutionContext,
-                                                          scheduler: Scheduler): Future[A] = {
+  def timeout[A](message: => A, duration: FiniteDuration)(implicit
+      ec: ExecutionContext,
+      scheduler: Scheduler
+  ): Future[A] = {
     val p = Promise[A]()
     scheduler.scheduleOnce(duration) {
       p.success(message)
@@ -56,10 +58,10 @@ object Retry {
         case (0, Some(e)) =>
           logger.warn(s"Retry failure ($totalCalls attemps) for $ctx => ${e.getMessage}")
           promise.tryFailure(e)
-        case (0, None) =>
+        case (0, None)    =>
           logger.warn(s"Retry failure ($totalCalls attemps) for $ctx => lost exception")
           promise.tryFailure(new RuntimeException("Failure, but lost track of exception :-("))
-        case (i, _) =>
+        case (i, _)       =>
           if (totalCalls > 1 && (times < totalCalls)) {
             logger.warn(s"Retrying call for $ctx ($times/$totalCalls attemps)")
           }
@@ -84,11 +86,13 @@ object Retry {
     }
   }
 
-  def retry[T](times: Int,
-               delay: Long = 0,
-               factor: Long = 2L,
-               ctx: String,
-               counter: AtomicInteger = new AtomicInteger(0))(
+  def retry[T](
+      times: Int,
+      delay: Long = 0,
+      factor: Long = 2L,
+      ctx: String,
+      counter: AtomicInteger = new AtomicInteger(0)
+  )(
       f: Int => Future[T]
   )(implicit ec: ExecutionContext, scheduler: Scheduler): Future[T] = {
     val promise = Promise[T]()
@@ -116,12 +120,14 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
 
   def clear(): Unit = breakers.clear()
 
-  def chooseTarget(descriptor: ServiceDescriptor,
-                   path: String,
-                   reqId: String,
-                   trackingId: String,
-                   requestHeader: RequestHeader,
-                   attrs: TypedMap): Option[(Target, AkkaCircuitBreaker)] = {
+  def chooseTarget(
+      descriptor: ServiceDescriptor,
+      path: String,
+      reqId: String,
+      trackingId: String,
+      requestHeader: RequestHeader,
+      attrs: TypedMap
+  ): Option[(Target, AkkaCircuitBreaker)] = {
     val targets = descriptor.targets
       .filter(_.predicate.matches(reqId, requestHeader, attrs))
       .filterNot(t => HealthCheck.badHealth.contains(t.asCleanTarget)) // health check can disable targets
@@ -132,7 +138,7 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
     if (targets.isEmpty) {
       None
     } else {
-      val target = descriptor.targetsLoadBalancing.select(reqId, trackingId, requestHeader, targets, descriptor)
+      val target  = descriptor.targetsLoadBalancing.select(reqId, trackingId, requestHeader, targets, descriptor)
       //val target = targets.apply(index.toInt)
       if (!breakers.contains(target.host)) {
         val cb = new AkkaCircuitBreaker(
@@ -190,27 +196,31 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
     }
   }
 
-  def callGen[A](descriptor: ServiceDescriptor,
-     reqId: String,
-     trackingId: String,
-     path: String,
-     requestHeader: RequestHeader,
-     bodyAlreadyConsumed: AtomicBoolean,
-     ctx: String,
-     counter: AtomicInteger,
-     attrs: TypedMap,
-     f: (Target, Int) => Future[Either[Result, A]])(
-      implicit env: Env
-    ): Future[Either[Result, A]] = {
+  def callGen[A](
+      descriptor: ServiceDescriptor,
+      reqId: String,
+      trackingId: String,
+      path: String,
+      requestHeader: RequestHeader,
+      bodyAlreadyConsumed: AtomicBoolean,
+      ctx: String,
+      counter: AtomicInteger,
+      attrs: TypedMap,
+      f: (Target, Int) => Future[Either[Result, A]]
+  )(implicit
+      env: Env
+  ): Future[Either[Result, A]] = {
 
-    val failure = Timeout
+    val failure      = Timeout
       .timeout(Done, descriptor.clientConfig.extractTimeout(path, _.globalTimeout, _.globalTimeout))
       .flatMap(_ => FastFuture.failed(RequestTimeoutException))
-    val maybeSuccess = Retry.retry(descriptor.clientConfig.retries,
-                                   descriptor.clientConfig.retryInitialDelay,
-                                   descriptor.clientConfig.backoffFactor,
-                                   descriptor.name + " : " + ctx,
-                                   counter) { attempts =>
+    val maybeSuccess = Retry.retry(
+      descriptor.clientConfig.retries,
+      descriptor.clientConfig.retryInitialDelay,
+      descriptor.clientConfig.backoffFactor,
+      descriptor.name + " : " + ctx,
+      counter
+    ) { attempts =>
       if (bodyAlreadyConsumed.get) {
         FastFuture.failed(BodyAlreadyConsumedException)
       } else {
@@ -220,7 +230,7 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
               logger.debug(s"Try to call target : $target")
               f(target, attempts)
             }
-          case None => FastFuture.failed(AllCircuitBreakersOpenException)
+          case None                    => FastFuture.failed(AllCircuitBreakersOpenException)
         }
       }
     }

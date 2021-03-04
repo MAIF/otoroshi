@@ -102,7 +102,7 @@ class AccessLog extends RequestTransformer {
           "statuses"   -> Json.arr(),
           "paths"      -> Json.arr(),
           "methods"    -> Json.arr(),
-          "identities" -> Json.arr(),
+          "identities" -> Json.arr()
         )
       )
     )
@@ -143,19 +143,19 @@ class AccessLog extends RequestTransformer {
     val userId    = ctx.user.map(_.name).orElse(ctx.apikey.map(_.clientName)).getOrElse("-")
 
     val (matchPath, methodMatch, statusMatch, identityMatch, enabled) = if (ctx.configExists("AccessLog")) {
-      val config                  = ctx.configFor("AccessLog")
-      val enabled: Boolean        = (config \ "enabled").asOpt[Boolean].getOrElse(true)
-      val validPaths: Seq[String] = (config \ "paths").asOpt[Seq[String]].getOrElse(Seq.empty)
-      val validStatuses: Seq[Int] = (config \ "statuses")
+      val config                       = ctx.configFor("AccessLog")
+      val enabled: Boolean             = (config \ "enabled").asOpt[Boolean].getOrElse(true)
+      val validPaths: Seq[String]      = (config \ "paths").asOpt[Seq[String]].getOrElse(Seq.empty)
+      val validStatuses: Seq[Int]      = (config \ "statuses")
         .asOpt[Seq[Int]]
         .orElse((config \ "statuses").asOpt[Seq[String]].map(_.map(_.toInt)))
         .getOrElse(Seq.empty)
-      val validMethods: Seq[String] = (config \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty)
+      val validMethods: Seq[String]    = (config \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty)
       val validIdentities: Seq[String] =
         (config \ "identities").asOpt[Seq[String]].getOrElse(Seq.empty)
 
-      val matchPath = if (validPaths.isEmpty) true else validPaths.exists(p => RegexPool.regex(p).matches(path))
-      val methodMatch =
+      val matchPath     = if (validPaths.isEmpty) true else validPaths.exists(p => RegexPool.regex(p).matches(path))
+      val methodMatch   =
         if (validMethods.isEmpty) true else validMethods.map(_.toLowerCase()).contains(method.toLowerCase())
       val statusMatch   = if (validStatuses.isEmpty) true else validStatuses.contains(status)
       val identityMatch = if (validIdentities.isEmpty) true else validIdentities.contains(userId)
@@ -171,17 +171,17 @@ class AccessLog extends RequestTransformer {
         .get(otoroshi.plugins.Keys.RequestTimestampKey)
         .getOrElse(DateTime.now())
         .toString("yyyy-MM-dd HH:mm:ss.SSS z")
-      val duration =
+      val duration  =
         ctx.attrs.get(otoroshi.plugins.Keys.RequestStartKey).map(v => System.currentTimeMillis() - v).getOrElse(0L)
-      val to       = ctx.attrs.get(otoroshi.plugins.Keys.RequestTargetKey).map(_.asCleanTarget).getOrElse("-")
-      val http     = ctx.request.theProtocol
-      val protocol = ctx.request.version
-      val size = ctx.rawResponse.headers
+      val to        = ctx.attrs.get(otoroshi.plugins.Keys.RequestTargetKey).map(_.asCleanTarget).getOrElse("-")
+      val http      = ctx.request.theProtocol
+      val protocol  = ctx.request.version
+      val size      = ctx.rawResponse.headers
         .get("Content-Length")
         .orElse(ctx.rawResponse.headers.get("content-length"))
         .getOrElse("-")
-      val referer =
-       ctx.request.headers.get("Referer").orElse(ctx.request.headers.get("referer")).getOrElse("-")
+      val referer   =
+        ctx.request.headers.get("Referer").orElse(ctx.request.headers.get("referer")).getOrElse("-")
       val userAgent = ctx.request.headers.get("User-Agent").orElse(ctx.request.headers.get("user-agent")).getOrElse("-")
       val service   = ctx.descriptor.name
       val host      = ctx.request.theHost
@@ -204,19 +204,19 @@ class AccessLog extends RequestTransformer {
     val userId    = ctx.user.map(_.name).orElse(ctx.apikey.map(_.clientName)).getOrElse("-")
 
     val (matchPath, methodMatch, statusMatch, identityMatch, enabled) = if (ctx.configExists("AccessLog")) {
-      val config                  = ctx.configFor("AccessLog")
-      val enabled: Boolean        = (config \ "enabled").asOpt[Boolean].getOrElse(true)
-      val validPaths: Seq[String] = (config \ "paths").asOpt[Seq[String]].getOrElse(Seq.empty)
-      val validStatuses: Seq[Int] = (config \ "statuses")
+      val config                       = ctx.configFor("AccessLog")
+      val enabled: Boolean             = (config \ "enabled").asOpt[Boolean].getOrElse(true)
+      val validPaths: Seq[String]      = (config \ "paths").asOpt[Seq[String]].getOrElse(Seq.empty)
+      val validStatuses: Seq[Int]      = (config \ "statuses")
         .asOpt[Seq[Int]]
         .orElse((config \ "statuses").asOpt[Seq[String]].map(_.map(_.toInt)))
         .getOrElse(Seq.empty)
-      val validMethods: Seq[String] = (config \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty)
+      val validMethods: Seq[String]    = (config \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty)
       val validIdentities: Seq[String] =
         (config \ "identities").asOpt[Seq[String]].getOrElse(Seq.empty)
 
-      val matchPath = if (validPaths.isEmpty) true else validPaths.exists(p => RegexPool.regex(p).matches(path))
-      val methodMatch =
+      val matchPath     = if (validPaths.isEmpty) true else validPaths.exists(p => RegexPool.regex(p).matches(path))
+      val methodMatch   =
         if (validMethods.isEmpty) true else validMethods.map(_.toLowerCase()).contains(method.toLowerCase())
       val statusMatch   = if (validStatuses.isEmpty) true else validStatuses.contains(status)
       val identityMatch = if (validIdentities.isEmpty) true else validIdentities.contains(userId)
@@ -232,16 +232,16 @@ class AccessLog extends RequestTransformer {
         .get(otoroshi.plugins.Keys.RequestTimestampKey)
         .getOrElse(DateTime.now())
         .toString("yyyy-MM-dd HH:mm:ss.SSS z")
-      val duration =
+      val duration  =
         ctx.attrs.get(otoroshi.plugins.Keys.RequestStartKey).map(v => System.currentTimeMillis() - v).getOrElse(0L)
-      val to       = ctx.attrs.get(otoroshi.plugins.Keys.RequestTargetKey).map(_.asCleanTarget).getOrElse("-")
-      val http     = ctx.request.theProtocol
-      val protocol = ctx.request.version
-      val size = ctx.otoroshiResponse.headers
+      val to        = ctx.attrs.get(otoroshi.plugins.Keys.RequestTargetKey).map(_.asCleanTarget).getOrElse("-")
+      val http      = ctx.request.theProtocol
+      val protocol  = ctx.request.version
+      val size      = ctx.otoroshiResponse.headers
         .get("Content-Length")
         .orElse(ctx.otoroshiResponse.headers.get("content-length"))
         .getOrElse("-")
-      val referer =
+      val referer   =
         ctx.request.headers.get("Referer").orElse(ctx.request.headers.get("referer")).getOrElse("-")
       val userAgent = ctx.request.headers.get("User-Agent").orElse(ctx.request.headers.get("user-agent")).getOrElse("-")
       val service   = ctx.descriptor.name
@@ -268,7 +268,7 @@ class AccessLogJson extends RequestTransformer {
           "statuses"   -> Json.arr(),
           "paths"      -> Json.arr(),
           "methods"    -> Json.arr(),
-          "identities" -> Json.arr(),
+          "identities" -> Json.arr()
         )
       )
     )
@@ -303,19 +303,19 @@ class AccessLogJson extends RequestTransformer {
     val userId    = ctx.user.map(_.name).orElse(ctx.apikey.map(_.clientName)).getOrElse("-")
 
     val (matchPath, methodMatch, statusMatch, identityMatch, enabled) = if (ctx.configExists("AccessLog")) {
-      val config                  = ctx.configFor("AccessLog")
-      val enabled: Boolean        = (config \ "enabled").asOpt[Boolean].getOrElse(true)
-      val validPaths: Seq[String] = (config \ "paths").asOpt[Seq[String]].getOrElse(Seq.empty)
-      val validStatuses: Seq[Int] = (config \ "statuses")
+      val config                       = ctx.configFor("AccessLog")
+      val enabled: Boolean             = (config \ "enabled").asOpt[Boolean].getOrElse(true)
+      val validPaths: Seq[String]      = (config \ "paths").asOpt[Seq[String]].getOrElse(Seq.empty)
+      val validStatuses: Seq[Int]      = (config \ "statuses")
         .asOpt[Seq[Int]]
         .orElse((config \ "statuses").asOpt[Seq[String]].map(_.map(_.toInt)))
         .getOrElse(Seq.empty)
-      val validMethods: Seq[String] = (config \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty)
+      val validMethods: Seq[String]    = (config \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty)
       val validIdentities: Seq[String] =
         (config \ "identities").asOpt[Seq[String]].getOrElse(Seq.empty)
 
-      val matchPath = if (validPaths.isEmpty) true else validPaths.exists(p => RegexPool.regex(p).matches(path))
-      val methodMatch =
+      val matchPath     = if (validPaths.isEmpty) true else validPaths.exists(p => RegexPool.regex(p).matches(path))
+      val methodMatch   =
         if (validMethods.isEmpty) true else validMethods.map(_.toLowerCase()).contains(method.toLowerCase())
       val statusMatch   = if (validStatuses.isEmpty) true else validStatuses.contains(status)
       val identityMatch = if (validIdentities.isEmpty) true else validIdentities.contains(userId)
@@ -331,17 +331,17 @@ class AccessLogJson extends RequestTransformer {
         .get(otoroshi.plugins.Keys.RequestTimestampKey)
         .getOrElse(DateTime.now())
         .toString("yyyy-MM-dd HH:mm:ss.SSS z")
-      val duration =
+      val duration  =
         ctx.attrs.get(otoroshi.plugins.Keys.RequestStartKey).map(v => System.currentTimeMillis() - v).getOrElse(0L)
-      val to       = ctx.attrs.get(otoroshi.plugins.Keys.RequestTargetKey).map(_.asCleanTarget).getOrElse("-")
-      val http     = ctx.request.theProtocol
-      val protocol = ctx.request.version
-      val size = ctx.rawResponse.headers
+      val to        = ctx.attrs.get(otoroshi.plugins.Keys.RequestTargetKey).map(_.asCleanTarget).getOrElse("-")
+      val http      = ctx.request.theProtocol
+      val protocol  = ctx.request.version
+      val size      = ctx.rawResponse.headers
         .get("Content-Length")
         .orElse(ctx.rawResponse.headers.get("content-length"))
         .getOrElse("-")
-      val referer =
-       ctx.request.headers.get("Referer").orElse(ctx.request.headers.get("referer")).getOrElse("-")
+      val referer   =
+        ctx.request.headers.get("Referer").orElse(ctx.request.headers.get("referer")).getOrElse("-")
       val userAgent = ctx.request.headers.get("User-Agent").orElse(ctx.request.headers.get("user-agent")).getOrElse("-")
       val service   = ctx.descriptor.name
       val host      = ctx.request.theHost
@@ -390,19 +390,19 @@ class AccessLogJson extends RequestTransformer {
     val userId    = ctx.user.map(_.name).orElse(ctx.apikey.map(_.clientName)).getOrElse("-")
 
     val (matchPath, methodMatch, statusMatch, identityMatch, enabled) = if (ctx.configExists("AccessLog")) {
-      val config                  = ctx.configFor("AccessLog")
-      val enabled: Boolean        = (config \ "enabled").asOpt[Boolean].getOrElse(true)
-      val validPaths: Seq[String] = (config \ "paths").asOpt[Seq[String]].getOrElse(Seq.empty)
-      val validStatuses: Seq[Int] = (config \ "statuses")
+      val config                       = ctx.configFor("AccessLog")
+      val enabled: Boolean             = (config \ "enabled").asOpt[Boolean].getOrElse(true)
+      val validPaths: Seq[String]      = (config \ "paths").asOpt[Seq[String]].getOrElse(Seq.empty)
+      val validStatuses: Seq[Int]      = (config \ "statuses")
         .asOpt[Seq[Int]]
         .orElse((config \ "statuses").asOpt[Seq[String]].map(_.map(_.toInt)))
         .getOrElse(Seq.empty)
-      val validMethods: Seq[String] = (config \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty)
+      val validMethods: Seq[String]    = (config \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty)
       val validIdentities: Seq[String] =
         (config \ "identities").asOpt[Seq[String]].getOrElse(Seq.empty)
 
-      val matchPath = if (validPaths.isEmpty) true else validPaths.exists(p => RegexPool.regex(p).matches(path))
-      val methodMatch =
+      val matchPath     = if (validPaths.isEmpty) true else validPaths.exists(p => RegexPool.regex(p).matches(path))
+      val methodMatch   =
         if (validMethods.isEmpty) true else validMethods.map(_.toLowerCase()).contains(method.toLowerCase())
       val statusMatch   = if (validStatuses.isEmpty) true else validStatuses.contains(status)
       val identityMatch = if (validIdentities.isEmpty) true else validIdentities.contains(userId)
@@ -418,16 +418,16 @@ class AccessLogJson extends RequestTransformer {
         .get(otoroshi.plugins.Keys.RequestTimestampKey)
         .getOrElse(DateTime.now())
         .toString("yyyy-MM-dd HH:mm:ss.SSS z")
-      val duration =
+      val duration  =
         ctx.attrs.get(otoroshi.plugins.Keys.RequestStartKey).map(v => System.currentTimeMillis() - v).getOrElse(0L)
-      val to       = ctx.attrs.get(otoroshi.plugins.Keys.RequestTargetKey).map(_.asCleanTarget).getOrElse("-")
-      val http     = ctx.request.theProtocol
-      val protocol = ctx.request.version
-      val size = ctx.otoroshiResponse.headers
+      val to        = ctx.attrs.get(otoroshi.plugins.Keys.RequestTargetKey).map(_.asCleanTarget).getOrElse("-")
+      val http      = ctx.request.theProtocol
+      val protocol  = ctx.request.version
+      val size      = ctx.otoroshiResponse.headers
         .get("Content-Length")
         .orElse(ctx.otoroshiResponse.headers.get("content-length"))
         .getOrElse("-")
-      val referer =
+      val referer   =
         ctx.request.headers.get("Referer").orElse(ctx.request.headers.get("referer")).getOrElse("-")
       val userAgent = ctx.request.headers.get("User-Agent").orElse(ctx.request.headers.get("user-agent")).getOrElse("-")
       val service   = ctx.descriptor.name
@@ -483,7 +483,7 @@ class KafkaAccessLog extends RequestTransformer {
           "statuses"   -> Json.arr(),
           "paths"      -> Json.arr(),
           "methods"    -> Json.arr(),
-          "identities" -> Json.arr(),
+          "identities" -> Json.arr()
         )
       )
     )
@@ -517,10 +517,10 @@ class KafkaAccessLog extends RequestTransformer {
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] = {
 
     env.datastores.globalConfigDataStore.latestSafe match {
-      case None => Right(ctx.otoroshiResponse).future
+      case None               => Right(ctx.otoroshiResponse).future
       case Some(globalConfig) =>
         globalConfig.kafkaConfig match {
-          case None => Right(ctx.otoroshiResponse).future
+          case None              => Right(ctx.otoroshiResponse).future
           case Some(kafkaConfig) => {
 
             val snowflake = ctx.snowflake
@@ -532,25 +532,25 @@ class KafkaAccessLog extends RequestTransformer {
 
             val (matchPath, methodMatch, statusMatch, identityMatch, enabled, topic) =
               if (ctx.configExists("KafkaAccessLog")) {
-                val config           = ctx.configFor("KafkaAccessLog")
-                val enabled: Boolean = (config \ "enabled").asOpt[Boolean].getOrElse(true)
-                val topic: String =
+                val config                       = ctx.configFor("KafkaAccessLog")
+                val enabled: Boolean             = (config \ "enabled").asOpt[Boolean].getOrElse(true)
+                val topic: String                =
                   (config \ "topic").asOpt[String].getOrElse("otoroshi-access-log")
-                val validPaths: Seq[String] =
+                val validPaths: Seq[String]      =
                   (config \ "paths").asOpt[Seq[String]].getOrElse(Seq.empty)
-                val validStatuses: Seq[Int] =
+                val validStatuses: Seq[Int]      =
                   (config \ "statuses")
                     .asOpt[Seq[Int]]
                     .orElse((config \ "statuses").asOpt[Seq[String]].map(_.map(_.toInt)))
                     .getOrElse(Seq.empty)
-                val validMethods: Seq[String] =
+                val validMethods: Seq[String]    =
                   (config \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty)
                 val validIdentities: Seq[String] =
                   (config \ "identities").asOpt[Seq[String]].getOrElse(Seq.empty)
 
-                val matchPath =
+                val matchPath     =
                   if (validPaths.isEmpty) true else validPaths.exists(p => RegexPool.regex(p).matches(path))
-                val methodMatch =
+                val methodMatch   =
                   if (validMethods.isEmpty) true else validMethods.map(_.toLowerCase()).contains(method.toLowerCase())
                 val statusMatch   = if (validStatuses.isEmpty) true else validStatuses.contains(status)
                 val identityMatch = if (validIdentities.isEmpty) true else validIdentities.contains(userId)
@@ -562,28 +562,31 @@ class KafkaAccessLog extends RequestTransformer {
 
             if (matchPath && methodMatch && statusMatch && identityMatch && enabled) {
               val ipAddress = ctx.request.theIpAddress
-              val timestamp = ctx.attrs.get(otoroshi.plugins.Keys.RequestTimestampKey).getOrElse(DateTime.now()) //.toString("yyyy-MM-dd HH:mm:ss.SSS z")
-              val duration = ctx.attrs
+              val timestamp =
+                ctx.attrs
+                  .get(otoroshi.plugins.Keys.RequestTimestampKey)
+                  .getOrElse(DateTime.now()) //.toString("yyyy-MM-dd HH:mm:ss.SSS z")
+              val duration                    = ctx.attrs
                 .get(otoroshi.plugins.Keys.RequestStartKey)
                 .map(v => System.currentTimeMillis() - v)
                 .getOrElse(0L)
-              val to       = ctx.attrs.get(otoroshi.plugins.Keys.RequestTargetKey).map(_.asCleanTarget).getOrElse("-")
-              val http     = ctx.request.theProtocol
-              val protocol = ctx.request.version
-              val size = ctx.rawResponse.headers
+              val to                          = ctx.attrs.get(otoroshi.plugins.Keys.RequestTargetKey).map(_.asCleanTarget).getOrElse("-")
+              val http                        = ctx.request.theProtocol
+              val protocol                    = ctx.request.version
+              val size                        = ctx.rawResponse.headers
                 .get("Content-Length")
                 .orElse(ctx.rawResponse.headers.get("content-length"))
                 .getOrElse("-")
-              val referer =
+              val referer                     =
                 ctx.request.headers.get("Referer").orElse(ctx.request.headers.get("referer")).getOrElse("-")
-              val userAgent =
+              val userAgent                   =
                 ctx.request.headers.get("User-Agent").orElse(ctx.request.headers.get("user-agent")).getOrElse("-")
-              val service                   = ctx.descriptor.name
-              val host                      = ctx.request.theHost
-              val userAgentDetails: JsValue = ctx.attrs.get(otoroshi.plugins.Keys.UserAgentInfoKey).getOrElse(JsNull)
+              val service                     = ctx.descriptor.name
+              val host                        = ctx.request.theHost
+              val userAgentDetails: JsValue   = ctx.attrs.get(otoroshi.plugins.Keys.UserAgentInfoKey).getOrElse(JsNull)
               val geolocationDetails: JsValue =
                 ctx.attrs.get(otoroshi.plugins.Keys.GeolocationInfoKey).getOrElse(JsNull)
-              val kafkaWrapper =
+              val kafkaWrapper                =
                 kafkaWrapperCache.getOrElseUpdate(topic, new KafkaWrapper(env.analyticsActorSystem, env, _ => topic))
               kafkaWrapper.publish(
                 Json.obj(
@@ -621,7 +624,7 @@ class KafkaAccessLog extends RequestTransformer {
                   "instance-provider"  -> env.infraProvider,
                   "instance-rack"      -> env.rack,
                   "cluster-mode"       -> env.clusterConfig.mode.name,
-                  "cluster-name" -> (env.clusterConfig.mode match {
+                  "cluster-name"       -> (env.clusterConfig.mode match {
                     case ClusterMode.Worker => env.clusterConfig.worker.name
                     case ClusterMode.Leader => env.clusterConfig.leader.name
                     case _                  => "none"
@@ -641,10 +644,10 @@ class KafkaAccessLog extends RequestTransformer {
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Result] = {
 
     env.datastores.globalConfigDataStore.latestSafe match {
-      case None => ctx.otoroshiResult.future
+      case None               => ctx.otoroshiResult.future
       case Some(globalConfig) =>
         globalConfig.kafkaConfig match {
-          case None => ctx.otoroshiResult.future
+          case None              => ctx.otoroshiResult.future
           case Some(kafkaConfig) => {
 
             val snowflake = ctx.snowflake
@@ -656,25 +659,25 @@ class KafkaAccessLog extends RequestTransformer {
 
             val (matchPath, methodMatch, statusMatch, identityMatch, enabled, topic) =
               if (ctx.configExists("KafkaAccessLog")) {
-                val config           = ctx.configFor("KafkaAccessLog")
-                val enabled: Boolean = (config \ "enabled").asOpt[Boolean].getOrElse(true)
-                val topic: String =
+                val config                       = ctx.configFor("KafkaAccessLog")
+                val enabled: Boolean             = (config \ "enabled").asOpt[Boolean].getOrElse(true)
+                val topic: String                =
                   (config \ "topic").asOpt[String].getOrElse("otoroshi-access-log")
-                val validPaths: Seq[String] =
+                val validPaths: Seq[String]      =
                   (config \ "paths").asOpt[Seq[String]].getOrElse(Seq.empty)
-                val validStatuses: Seq[Int] =
+                val validStatuses: Seq[Int]      =
                   (config \ "statuses")
                     .asOpt[Seq[Int]]
                     .orElse((config \ "statuses").asOpt[Seq[String]].map(_.map(_.toInt)))
                     .getOrElse(Seq.empty)
-                val validMethods: Seq[String] =
+                val validMethods: Seq[String]    =
                   (config \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty)
                 val validIdentities: Seq[String] =
                   (config \ "identities").asOpt[Seq[String]].getOrElse(Seq.empty)
 
-                val matchPath =
+                val matchPath     =
                   if (validPaths.isEmpty) true else validPaths.exists(p => RegexPool.regex(p).matches(path))
-                val methodMatch =
+                val methodMatch   =
                   if (validMethods.isEmpty) true else validMethods.map(_.toLowerCase()).contains(method.toLowerCase())
                 val statusMatch   = if (validStatuses.isEmpty) true else validStatuses.contains(status)
                 val identityMatch = if (validIdentities.isEmpty) true else validIdentities.contains(userId)
@@ -689,27 +692,30 @@ class KafkaAccessLog extends RequestTransformer {
 
             if (matchPath && methodMatch && statusMatch && identityMatch && enabled) {
               val ipAddress = ctx.request.theIpAddress
-              val timestamp = ctx.attrs.get(otoroshi.plugins.Keys.RequestTimestampKey).getOrElse(DateTime.now()) //.toString("yyyy-MM-dd HH:mm:ss.SSS z")
-              val duration = ctx.attrs
+              val timestamp =
+                ctx.attrs
+                  .get(otoroshi.plugins.Keys.RequestTimestampKey)
+                  .getOrElse(DateTime.now()) //.toString("yyyy-MM-dd HH:mm:ss.SSS z")
+              val duration                    = ctx.attrs
                 .get(otoroshi.plugins.Keys.RequestStartKey)
                 .map(v => System.currentTimeMillis() - v)
                 .getOrElse(0L)
-              val to       = ctx.attrs.get(otoroshi.plugins.Keys.RequestTargetKey).map(_.asCleanTarget).getOrElse("-")
-              val http     = ctx.request.theProtocol
-              val protocol = ctx.request.version
-              val size = ctx.otoroshiResponse.headers
+              val to                          = ctx.attrs.get(otoroshi.plugins.Keys.RequestTargetKey).map(_.asCleanTarget).getOrElse("-")
+              val http                        = ctx.request.theProtocol
+              val protocol                    = ctx.request.version
+              val size                        = ctx.otoroshiResponse.headers
                 .get("Content-Length")
                 .orElse(ctx.otoroshiResponse.headers.get("content-length"))
                 .getOrElse("-")
-              val referer = ctx.request.headers
+              val referer                     = ctx.request.headers
                 .get("Referer")
                 .orElse(ctx.request.headers.get("referer"))
                 .getOrElse("-")
-              val userAgent =
+              val userAgent                   =
                 ctx.request.headers.get("User-Agent").orElse(ctx.request.headers.get("user-agent")).getOrElse("-")
-              val service                   = ctx.descriptor.name
-              val host                      = ctx.request.theHost
-              val userAgentDetails: JsValue = ctx.attrs.get(otoroshi.plugins.Keys.UserAgentInfoKey).getOrElse(JsNull)
+              val service                     = ctx.descriptor.name
+              val host                        = ctx.request.theHost
+              val userAgentDetails: JsValue   = ctx.attrs.get(otoroshi.plugins.Keys.UserAgentInfoKey).getOrElse(JsNull)
               val geolocationDetails: JsValue =
                 ctx.attrs.get(otoroshi.plugins.Keys.GeolocationInfoKey).getOrElse(JsNull)
               kafkaWrapper.publish(
@@ -748,7 +754,7 @@ class KafkaAccessLog extends RequestTransformer {
                   "instance-provider"  -> env.infraProvider,
                   "instance-rack"      -> env.rack,
                   "cluster-mode"       -> env.clusterConfig.mode.name,
-                  "cluster-name" -> (env.clusterConfig.mode match {
+                  "cluster-name"       -> (env.clusterConfig.mode match {
                     case ClusterMode.Worker => env.clusterConfig.worker.name
                     case ClusterMode.Leader => env.clusterConfig.leader.name
                     case _                  => "none"

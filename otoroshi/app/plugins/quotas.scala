@@ -26,7 +26,7 @@ class InstanceQuotas extends AccessValidator {
           "maxScripts"      -> -1,
           "maxCertificates" -> -1,
           "maxVerifiers"    -> -1,
-          "maxAuthModules"  -> -1,
+          "maxAuthModules"  -> -1
         )
       )
     )
@@ -55,43 +55,45 @@ class InstanceQuotas extends AccessValidator {
   override def canAccess(ctx: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
     val config = ctx.configFor("InstanceQuotas")
     if (ctx.descriptor.id == env.backOfficeServiceId) {
-      if (ctx.request.method.toLowerCase == "POST".toLowerCase || ctx.request.method.toLowerCase == "PUT".toLowerCase || ctx.request.method.toLowerCase == "PATCH".toLowerCase) {
+      if (
+        ctx.request.method.toLowerCase == "POST".toLowerCase || ctx.request.method.toLowerCase == "PUT".toLowerCase || ctx.request.method.toLowerCase == "PATCH".toLowerCase
+      ) {
         for {
-          maxDescriptors <- (config \ "maxDescriptors")
-                             .asOpt[Int]
-                             .filter(_ > 0)
-                             .map(v => env.datastores.serviceDescriptorDataStore.countAll().map(c => c <= v))
-                             .getOrElse(FastFuture.successful(true))
-          maxApiKeys <- (config \ "maxApiKeys")
-                         .asOpt[Int]
-                         .filter(_ > 0)
-                         .map(v => env.datastores.apiKeyDataStore.countAll().map(c => c <= v))
-                         .getOrElse(FastFuture.successful(true))
-          maxGroups <- (config \ "maxGroups")
-                        .asOpt[Int]
-                        .filter(_ > 0)
-                        .map(v => env.datastores.serviceGroupDataStore.countAll().map(c => c <= v))
-                        .getOrElse(FastFuture.successful(true))
-          maxScripts <- (config \ "maxScripts")
-                         .asOpt[Int]
-                         .filter(_ > 0)
-                         .map(v => env.datastores.scriptDataStore.countAll().map(c => c <= v))
-                         .getOrElse(FastFuture.successful(true))
+          maxDescriptors  <- (config \ "maxDescriptors")
+                               .asOpt[Int]
+                               .filter(_ > 0)
+                               .map(v => env.datastores.serviceDescriptorDataStore.countAll().map(c => c <= v))
+                               .getOrElse(FastFuture.successful(true))
+          maxApiKeys      <- (config \ "maxApiKeys")
+                               .asOpt[Int]
+                               .filter(_ > 0)
+                               .map(v => env.datastores.apiKeyDataStore.countAll().map(c => c <= v))
+                               .getOrElse(FastFuture.successful(true))
+          maxGroups       <- (config \ "maxGroups")
+                               .asOpt[Int]
+                               .filter(_ > 0)
+                               .map(v => env.datastores.serviceGroupDataStore.countAll().map(c => c <= v))
+                               .getOrElse(FastFuture.successful(true))
+          maxScripts      <- (config \ "maxScripts")
+                               .asOpt[Int]
+                               .filter(_ > 0)
+                               .map(v => env.datastores.scriptDataStore.countAll().map(c => c <= v))
+                               .getOrElse(FastFuture.successful(true))
           maxCertificates <- (config \ "maxCertificates")
-                              .asOpt[Int]
-                              .filter(_ > 0)
-                              .map(v => env.datastores.certificatesDataStore.countAll().map(c => c <= v))
-                              .getOrElse(FastFuture.successful(true))
-          maxVerifiers <- (config \ "maxVerifiers")
-                           .asOpt[Int]
-                           .filter(_ > 0)
-                           .map(v => env.datastores.globalJwtVerifierDataStore.countAll().map(c => c <= v))
-                           .getOrElse(FastFuture.successful(true))
-          maxAuthModules <- (config \ "maxAuthModules")
-                             .asOpt[Int]
-                             .filter(_ > 0)
-                             .map(v => env.datastores.authConfigsDataStore.countAll().map(c => c <= v))
-                             .getOrElse(FastFuture.successful(true))
+                               .asOpt[Int]
+                               .filter(_ > 0)
+                               .map(v => env.datastores.certificatesDataStore.countAll().map(c => c <= v))
+                               .getOrElse(FastFuture.successful(true))
+          maxVerifiers    <- (config \ "maxVerifiers")
+                               .asOpt[Int]
+                               .filter(_ > 0)
+                               .map(v => env.datastores.globalJwtVerifierDataStore.countAll().map(c => c <= v))
+                               .getOrElse(FastFuture.successful(true))
+          maxAuthModules  <- (config \ "maxAuthModules")
+                               .asOpt[Int]
+                               .filter(_ > 0)
+                               .map(v => env.datastores.authConfigsDataStore.countAll().map(c => c <= v))
+                               .getOrElse(FastFuture.successful(true))
         } yield {
           maxDescriptors &&
           maxApiKeys &&
@@ -160,38 +162,39 @@ class ServiceQuotas extends AccessValidator {
                                                      |}
                                                      |```""")
 
-  private def totalCallsKey(name: String)(implicit env: Env): String =
+  private def totalCallsKey(name: String)(implicit env: Env): String   =
     s"${env.storageRoot}:plugins:services-public-quotas:global:$name"
-  private def dailyQuotaKey(name: String)(implicit env: Env): String =
+  private def dailyQuotaKey(name: String)(implicit env: Env): String   =
     s"${env.storageRoot}:plugins:services-public-quotas:daily:$name"
   private def monthlyQuotaKey(name: String)(implicit env: Env): String =
     s"${env.storageRoot}:plugins:services-public-quotas:monthly:$name"
-  private def throttlingKey(name: String)(implicit env: Env): String =
+  private def throttlingKey(name: String)(implicit env: Env): String   =
     s"${env.storageRoot}:plugins:services-public-quotas:second:$name"
 
-  private def updateQuotas(descriptor: ServiceDescriptor,
-                           qconf: ServiceQuotasConfig,
-                           increment: Long = 1L)(implicit ec: ExecutionContext, env: Env): Future[Unit] = {
+  private def updateQuotas(descriptor: ServiceDescriptor, qconf: ServiceQuotasConfig, increment: Long = 1L)(implicit
+      ec: ExecutionContext,
+      env: Env
+  ): Future[Unit] = {
     val dayEnd     = DateTime.now().secondOfDay().withMaximumValue()
     val toDayEnd   = dayEnd.getMillis - DateTime.now().getMillis
     val monthEnd   = DateTime.now().dayOfMonth().withMaximumValue().secondOfDay().withMaximumValue()
     val toMonthEnd = monthEnd.getMillis - DateTime.now().getMillis
     env.clusterAgent.incrementApi(descriptor.id, increment)
     for {
-      _        <- env.datastores.rawDataStore.incrby(totalCallsKey(descriptor.id), increment)
-      secCalls <- env.datastores.rawDataStore.incrby(throttlingKey(descriptor.id), increment)
-      secTtl <- env.datastores.rawDataStore.pttl(throttlingKey(descriptor.id)).filter(_ > -1).recoverWith {
-                 case _ =>
-                   env.datastores.rawDataStore.pexpire(throttlingKey(descriptor.id), env.throttlingWindow * 1000)
-               }
-      dailyCalls <- env.datastores.rawDataStore.incrby(dailyQuotaKey(descriptor.id), increment)
-      dailyTtl <- env.datastores.rawDataStore.pttl(dailyQuotaKey(descriptor.id)).filter(_ > -1).recoverWith {
-                   case _ => env.datastores.rawDataStore.pexpire(dailyQuotaKey(descriptor.id), toDayEnd.toInt)
-                 }
+      _            <- env.datastores.rawDataStore.incrby(totalCallsKey(descriptor.id), increment)
+      secCalls     <- env.datastores.rawDataStore.incrby(throttlingKey(descriptor.id), increment)
+      secTtl       <- env.datastores.rawDataStore.pttl(throttlingKey(descriptor.id)).filter(_ > -1).recoverWith {
+                        case _ =>
+                          env.datastores.rawDataStore.pexpire(throttlingKey(descriptor.id), env.throttlingWindow * 1000)
+                      }
+      dailyCalls   <- env.datastores.rawDataStore.incrby(dailyQuotaKey(descriptor.id), increment)
+      dailyTtl     <- env.datastores.rawDataStore.pttl(dailyQuotaKey(descriptor.id)).filter(_ > -1).recoverWith {
+                        case _ => env.datastores.rawDataStore.pexpire(dailyQuotaKey(descriptor.id), toDayEnd.toInt)
+                      }
       monthlyCalls <- env.datastores.rawDataStore.incrby(monthlyQuotaKey(descriptor.id), increment)
-      monthlyTtl <- env.datastores.rawDataStore.pttl(monthlyQuotaKey(descriptor.id)).filter(_ > -1).recoverWith {
-                     case _ => env.datastores.rawDataStore.pexpire(monthlyQuotaKey(descriptor.id), toMonthEnd.toInt)
-                   }
+      monthlyTtl   <- env.datastores.rawDataStore.pttl(monthlyQuotaKey(descriptor.id)).filter(_ > -1).recoverWith {
+                        case _ => env.datastores.rawDataStore.pexpire(monthlyQuotaKey(descriptor.id), toMonthEnd.toInt)
+                      }
     } yield ()
     // RemainingQuotas(
     //   authorizedCallsPerSec = qconf.throttlingQuota,
@@ -206,8 +209,10 @@ class ServiceQuotas extends AccessValidator {
     // )
   }
 
-  private def withingQuotas(descriptor: ServiceDescriptor, qconf: ServiceQuotasConfig)(implicit ec: ExecutionContext,
-                                                                                       env: Env): Future[Boolean] =
+  private def withingQuotas(descriptor: ServiceDescriptor, qconf: ServiceQuotasConfig)(implicit
+      ec: ExecutionContext,
+      env: Env
+  ): Future[Boolean] =
     for {
       sec <- withinThrottlingQuota(descriptor, qconf)
       day <- withinDailyQuota(descriptor, qconf)
@@ -223,15 +228,19 @@ class ServiceQuotas extends AccessValidator {
       .fast
       .map(_.map(_.utf8String.toLong).getOrElse(0L) <= (qconf.throttlingQuota * env.throttlingWindow))
 
-  private def withinDailyQuota(descriptor: ServiceDescriptor, qconf: ServiceQuotasConfig)(implicit ec: ExecutionContext,
-                                                                                          env: Env): Future[Boolean] =
+  private def withinDailyQuota(descriptor: ServiceDescriptor, qconf: ServiceQuotasConfig)(implicit
+      ec: ExecutionContext,
+      env: Env
+  ): Future[Boolean] =
     env.datastores.rawDataStore
       .get(dailyQuotaKey(descriptor.id))
       .fast
       .map(_.map(_.utf8String.toLong).getOrElse(0L) < qconf.dailyQuota)
 
-  private def withinMonthlyQuota(descriptor: ServiceDescriptor,
-                                 qconf: ServiceQuotasConfig)(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
+  private def withinMonthlyQuota(descriptor: ServiceDescriptor, qconf: ServiceQuotasConfig)(implicit
+      ec: ExecutionContext,
+      env: Env
+  ): Future[Boolean] =
     env.datastores.rawDataStore
       .get(monthlyQuotaKey(descriptor.id))
       .fast
@@ -239,7 +248,7 @@ class ServiceQuotas extends AccessValidator {
 
   override def canAccess(ctx: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
     val config = ctx.configFor("ServiceQuotas")
-    val qconf = ServiceQuotasConfig(
+    val qconf  = ServiceQuotasConfig(
       throttlingQuota = (config \ "throttlingQuota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
       dailyQuota = (config \ "dailyQuota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue),
       monthlyQuota = (config \ "monthlyQuota").asOpt[Long].getOrElse(RemainingQuotas.MaxValue)

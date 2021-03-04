@@ -18,7 +18,7 @@ object GzipConfig {
 
   lazy val logger = Logger("otoroshi-gzip-config")
 
-  val _fmt: Format[GzipConfig] = new Format[GzipConfig] {
+  val _fmt: Format[GzipConfig]                           = new Format[GzipConfig] {
     override def reads(json: JsValue): JsResult[GzipConfig] =
       Try {
         GzipConfig(
@@ -38,18 +38,19 @@ object GzipConfig {
           JsError(t.getMessage)
       } get
 
-    override def writes(o: GzipConfig): JsValue = Json.obj(
-      "enabled"          -> o.enabled,
-      "excludedPatterns" -> o.excludedPatterns,
-      "whiteList"        -> o.whiteList,
-      "blackList"        -> o.blackList,
-      "bufferSize"       -> o.bufferSize,
-      "chunkedThreshold" -> o.chunkedThreshold,
-      "compressionLevel" -> o.compressionLevel,
-    )
+    override def writes(o: GzipConfig): JsValue =
+      Json.obj(
+        "enabled"          -> o.enabled,
+        "excludedPatterns" -> o.excludedPatterns,
+        "whiteList"        -> o.whiteList,
+        "blackList"        -> o.blackList,
+        "bufferSize"       -> o.bufferSize,
+        "chunkedThreshold" -> o.chunkedThreshold,
+        "compressionLevel" -> o.compressionLevel
+      )
   }
-  def toJson(value: GzipConfig): JsValue = _fmt.writes(value)
-  def fromJsons(value: JsValue): GzipConfig =
+  def toJson(value: GzipConfig): JsValue                 = _fmt.writes(value)
+  def fromJsons(value: JsValue): GzipConfig              =
     try {
       _fmt.reads(value).get
     } catch {
@@ -78,8 +79,10 @@ case class GzipConfig(
 
   private def createGzipFlow: Flow[ByteString, ByteString, _] = GzipFlow.gzip(bufferSize, compressionLevel)
 
-  def handleResult(request: RequestHeader, result: Result)(implicit ec: ExecutionContext,
-                                                           mat: Materializer): Future[Result] = {
+  def handleResult(request: RequestHeader, result: Result)(implicit
+      ec: ExecutionContext,
+      mat: Materializer
+  ): Future[Result] = {
     implicit val ec = mat.executionContext
 
     if (enabled && (!excludedPatterns.exists(p => RegexPool.regex(p).matches(request.relativeUri)))) {
@@ -89,7 +92,7 @@ case class GzipConfig(
 
         result.body match {
 
-          case HttpEntity.Strict(data, contentType) =>
+          case HttpEntity.Strict(data, contentType)                                                                   =>
             compressStrictEntity(Source.single(data), contentType)
               .map(entity => result.copy(header = header, body = entity))
 
@@ -98,7 +101,7 @@ case class GzipConfig(
             compressStrictEntity(entity.data, contentType)
               .map(strictEntity => result.copy(header = header, body = strictEntity))
 
-          case HttpEntity.Streamed(data, _, contentType) if request.version == HttpProtocol.HTTP_1_0 =>
+          case HttpEntity.Streamed(data, _, contentType) if request.version == HttpProtocol.HTTP_1_0                  =>
             // It's above the chunked threshold, but we can't chunk it because we're using HTTP 1.0.
             // Instead, we use a close delimited body (ie, regular body with no content length)
             val gzipped = data.via(createGzipFlow)
@@ -106,19 +109,19 @@ case class GzipConfig(
               result.copy(header = header, body = HttpEntity.Streamed(gzipped, None, contentType))
             )
 
-          case HttpEntity.Streamed(data, _, contentType) =>
+          case HttpEntity.Streamed(data, _, contentType)                                                              =>
             // It's above the chunked threshold, compress through the gzip flow, and send as chunked
             val gzipped = data.via(createGzipFlow).map(d => HttpChunk.Chunk(d))
             FastFuture.successful(
               result.copy(header = header, body = HttpEntity.Chunked(gzipped, contentType))
             )
 
-          case HttpEntity.Chunked(chunks, contentType) =>
+          case HttpEntity.Chunked(chunks, contentType)                                                                =>
             val gzipFlow = Flow.fromGraph(GraphDSL.create[FlowShape[HttpChunk, HttpChunk]]() { implicit builder =>
               import GraphDSL.Implicits._
 
-              val extractChunks = Flow[HttpChunk].collect { case HttpChunk.Chunk(data) => data }
-              val createChunks  = Flow[ByteString].map[HttpChunk](HttpChunk.Chunk.apply)
+              val extractChunks   = Flow[HttpChunk].collect { case HttpChunk.Chunk(data) => data }
+              val createChunks    = Flow[ByteString].map[HttpChunk](HttpChunk.Chunk.apply)
               val filterLastChunk = Flow[HttpChunk]
                 .filter(_.isInstanceOf[HttpChunk.LastChunk])
                 // Since we're doing a merge by concatenating, the filter last chunk won't receive demand until the gzip
@@ -150,8 +153,8 @@ case class GzipConfig(
     }
   }
 
-  private def compressStrictEntity(source: Source[ByteString, Any], contentType: Option[String])(
-      implicit ec: ExecutionContext,
+  private def compressStrictEntity(source: Source[ByteString, Any], contentType: Option[String])(implicit
+      ec: ExecutionContext,
       mat: Materializer
   ) = {
     val compressed = source.via(createGzipFlow).runFold(ByteString.empty)(_ ++ _)
@@ -165,7 +168,7 @@ case class GzipConfig(
     for {
       header <- headers.get(headerName).toList
       value0 <- header.split(',')
-      value  = value0.trim
+      value   = value0.trim
     } yield {
       RequestHeader.qPattern.findFirstMatchIn(value) match {
         case Some(m) => (m.group(1).toDouble, m.before.toString)
@@ -199,7 +202,7 @@ case class GzipConfig(
         val existingSet: Set[String] = existing.split(",").map(_.trim.toLowerCase)(collection.breakOut)
         val newValuesToAdd           = headerValues.filterNot(v => existingSet.contains(v.trim.toLowerCase))
         s"$existing${newValuesToAdd.map(v => s",$v").mkString}"
-      case _ =>
+      case _                                   =>
         headerValues.mkString(",")
     }
     VARY -> newValue
@@ -213,7 +216,7 @@ case class GzipConfig(
     val mediaTypes = types.flatMap {
       case "*"                        => Some(MediaType("*", "*", Seq.empty))
       case MediaType.parse(mediaType) => Some(mediaType)
-      case invalid =>
+      case invalid                    =>
         GzipConfig.logger.error(s"Failed to parse the configured MediaType mask '$invalid'")
         None
     }
@@ -266,46 +269,50 @@ object GzipFlow {
     private val in  = Inlet[ByteString]("Chunker.in")
     private val out = Outlet[ByteString]("Chunker.out")
 
-    override val shape: FlowShape[ByteString, ByteString] = FlowShape.of(in, out)
-    override def createLogic(inheritedAttributes: Attributes): GraphStageLogic = new GraphStageLogic(shape) {
-      private var buffer = ByteString.empty
+    override val shape: FlowShape[ByteString, ByteString]                      = FlowShape.of(in, out)
+    override def createLogic(inheritedAttributes: Attributes): GraphStageLogic =
+      new GraphStageLogic(shape) {
+        private var buffer = ByteString.empty
 
-      setHandler(out, new OutHandler {
-        override def onPull(): Unit = {
-          if (isClosed(in)) emitChunk()
-          else pull(in)
-        }
-      })
-      setHandler(
-        in,
-        new InHandler {
-          override def onPush(): Unit = {
-            val elem = grab(in)
-            buffer ++= elem
-            emitChunk()
-          }
-
-          override def onUpstreamFinish(): Unit = {
-            if (buffer.isEmpty) completeStage()
-            else {
-              if (isAvailable(out)) emitChunk()
+        setHandler(
+          out,
+          new OutHandler {
+            override def onPull(): Unit = {
+              if (isClosed(in)) emitChunk()
+              else pull(in)
             }
           }
-        }
-      )
+        )
+        setHandler(
+          in,
+          new InHandler {
+            override def onPush(): Unit = {
+              val elem = grab(in)
+              buffer ++= elem
+              emitChunk()
+            }
 
-      private def emitChunk(): Unit = {
-        if (buffer.isEmpty) {
-          if (isClosed(in)) completeStage()
-          else pull(in)
-        } else {
-          val (chunk, nextBuffer) = buffer.splitAt(chunkSize)
-          buffer = nextBuffer
-          push(out, chunk)
+            override def onUpstreamFinish(): Unit = {
+              if (buffer.isEmpty) completeStage()
+              else {
+                if (isAvailable(out)) emitChunk()
+              }
+            }
+          }
+        )
+
+        private def emitChunk(): Unit = {
+          if (buffer.isEmpty) {
+            if (isClosed(in)) completeStage()
+            else pull(in)
+          } else {
+            val (chunk, nextBuffer) = buffer.splitAt(chunkSize)
+            buffer = nextBuffer
+            push(out, chunk)
+          }
         }
+
       }
-
-    }
   }
 
 }

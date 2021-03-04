@@ -10,5 +10,3 @@ package otoroshi.plugins.jobs.kubernetes
 // https://kubernetes.io/fr/docs/concepts/services-networking/service/
 // https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.17/#servicespec-v1-core
 // https://kubernetes.io/fr/docs/concepts/services-networking/ingress/
-
-

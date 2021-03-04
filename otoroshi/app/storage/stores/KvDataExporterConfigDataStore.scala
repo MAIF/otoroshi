@@ -2,11 +2,25 @@ package otoroshi.storage.stores
 
 import otoroshi.env.Env
 import otoroshi.events.{KafkaConfig, PulsarConfig}
-import otoroshi.models.{DataExporterConfig, DataExporterConfigFiltering, DataExporterConfigType, EntityLocation, FileSettings, MetricsSettings}
+import otoroshi.models.{
+  DataExporterConfig,
+  DataExporterConfigFiltering,
+  DataExporterConfigType,
+  EntityLocation,
+  FileSettings,
+  MetricsSettings
+}
 import otoroshi.models._
 import otoroshi.storage.{RedisLike, RedisLikeStore}
 import otoroshi.utils.http.MtlsConfig
-import otoroshi.utils.mailer.{ConsoleMailerSettings, GenericMailerSettings, MailgunSettings, MailjetSettings, NoneMailerSettings, SendgridSettings}
+import otoroshi.utils.mailer.{
+  ConsoleMailerSettings,
+  GenericMailerSettings,
+  MailgunSettings,
+  MailjetSettings,
+  NoneMailerSettings,
+  SendgridSettings
+}
 import play.api.libs.json.{Format, Json}
 import otoroshi.security.IdGenerator
 
@@ -23,7 +37,7 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
 
   def template(modType: Option[String]): DataExporterConfig = {
     modType match {
-      case Some("webhook") =>
+      case Some("webhook")        =>
         DataExporterConfig(
           typ = DataExporterConfigType.Webhook,
           id = IdGenerator.token,
@@ -40,7 +54,7 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
             mtlsConfig = MtlsConfig.default
           )
         )
-      case Some("elastic") =>
+      case Some("elastic")        =>
         DataExporterConfig(
           typ = DataExporterConfigType.Elastic,
           id = IdGenerator.token,
@@ -55,7 +69,7 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
             clusterUri = "http://localhost:9200"
           )
         )
-      case Some("pulsar") =>
+      case Some("pulsar")         =>
         DataExporterConfig(
           typ = DataExporterConfigType.Pulsar,
           id = IdGenerator.token,
@@ -74,7 +88,7 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
             topic = "otoroshi"
           )
         )
-      case Some("kafka") =>
+      case Some("kafka")          =>
         DataExporterConfig(
           typ = DataExporterConfigType.Kafka,
           id = IdGenerator.token,
@@ -89,7 +103,7 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
             servers = Seq("http://localhost:9092")
           )
         )
-      case Some("mailer") =>
+      case Some("mailer")         =>
         DataExporterConfig(
           typ = DataExporterConfigType.Mailer,
           id = IdGenerator.token,
@@ -123,7 +137,7 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
             to = Seq.empty
           )
         )
-      case Some("mailgun") =>
+      case Some("mailgun")        =>
         DataExporterConfig(
           typ = DataExporterConfigType.Mailer,
           id = IdGenerator.token,
@@ -143,7 +157,7 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
             to = Seq.empty
           )
         )
-      case Some("mailjet") =>
+      case Some("mailjet")        =>
         DataExporterConfig(
           typ = DataExporterConfigType.Mailer,
           id = IdGenerator.token,
@@ -162,7 +176,7 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
             to = Seq.empty
           )
         )
-      case Some("none-mailer") =>
+      case Some("none-mailer")    =>
         DataExporterConfig(
           typ = DataExporterConfigType.Mailer,
           id = IdGenerator.token,
@@ -175,7 +189,7 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
           filtering = DataExporterConfigFiltering(),
           config = NoneMailerSettings()
         )
-      case Some("sendgrid") =>
+      case Some("sendgrid")       =>
         DataExporterConfig(
           typ = DataExporterConfigType.Mailer,
           id = IdGenerator.token,
@@ -193,7 +207,7 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
             to = Seq.empty
           )
         )
-      case Some("file") =>
+      case Some("file")           =>
         DataExporterConfig(
           typ = DataExporterConfigType.File,
           id = IdGenerator.token,
@@ -207,7 +221,7 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
           filtering = DataExporterConfigFiltering(),
           config = FileSettings(path = "/tmp/otoroshi-events.log")
         )
-      case Some("metrics") =>
+      case Some("metrics")        =>
         DataExporterConfig(
           typ = DataExporterConfigType.Metrics,
           id = IdGenerator.token,
@@ -220,18 +234,19 @@ class DataExporterConfigDataStore(redisCli: RedisLike, env: Env) extends RedisLi
           filtering = DataExporterConfigFiltering(),
           config = MetricsSettings()
         )
-      case _ => DataExporterConfig(
-        typ = DataExporterConfigType.Mailer,
-        id = IdGenerator.token,
-        name = "New console exporter config",
-        desc = "New console exporter config",
-        metadata = Map.empty,
-        enabled = false,
-        location = EntityLocation(),
-        projection = Json.obj(),
-        filtering = DataExporterConfigFiltering(),
-        config = ConsoleMailerSettings()
-      )
+      case _                      =>
+        DataExporterConfig(
+          typ = DataExporterConfigType.Mailer,
+          id = IdGenerator.token,
+          name = "New console exporter config",
+          desc = "New console exporter config",
+          metadata = Map.empty,
+          enabled = false,
+          location = EntityLocation(),
+          projection = Json.obj(),
+          filtering = DataExporterConfigFiltering(),
+          config = ConsoleMailerSettings()
+        )
     }
   }
 }

@@ -20,16 +20,17 @@ object Configurations {
       .resolve()
   )
 
-  def LevelDBConfiguration = Configuration(
-    ConfigFactory
-      .parseString(s"""
+  def LevelDBConfiguration =
+    Configuration(
+      ConfigFactory
+        .parseString(s"""
          |{
          |  app.storage = "leveldb"
          |  app.leveldb.path = "./target/leveldbs/test-${System.currentTimeMillis()}"
          |}
        """.stripMargin)
-      .resolve()
-  )
+        .resolve()
+    )
 
   val RedisConfiguration = Configuration(
     ConfigFactory
@@ -101,7 +102,7 @@ object OtoroshiTests {
 
   def getSuites(): Seq[Suite] = {
     val (name, config) = getNameAndConfig()
-    val suites = if (name == "LevelDB") {
+    val suites         = if (name == "LevelDB") {
       Seq(
         new BasicSpec(name, Configurations.LevelDBConfiguration),
         new AdminApiSpec(name, Configurations.LevelDBConfiguration),
@@ -130,7 +131,7 @@ object OtoroshiTests {
         new ServicesApiSpec(name, config),
         new ApikeyGroupApiSpec(name, config),
         new ApikeyServiceApiSpec(name, config),
-        new ApikeyApiSpec(name, config),
+        new ApikeyApiSpec(name, config)
       )
     } else {
       Seq(
@@ -161,7 +162,7 @@ object OtoroshiTests {
         new ServicesApiSpec(name, config),
         new ApikeyGroupApiSpec(name, config),
         new ApikeyServiceApiSpec(name, config),
-        new ApikeyApiSpec(name, config),
+        new ApikeyApiSpec(name, config)
       )
     }
     Option(System.getenv("TEST_ANALYTICS")) match {
@@ -186,7 +187,7 @@ class OtoroshiTests extends Suites(OtoroshiTests.getSuites(): _*) with BeforeAnd
 class DevOtoroshiTests
     extends Suites(
       // new TeamsSpec("DEV", Configurations.InMemoryConfiguration),
-      new BasicSpec("DEV", Configurations.PgConfiguration),
+      new BasicSpec("DEV", Configurations.PgConfiguration)
       // new MapFilterSpec(),
       // new VersionSpec(),
     )

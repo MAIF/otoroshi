@@ -19,23 +19,25 @@ trait RefreshableUser {
   def updateToken(tok: JsValue)(implicit ec: ExecutionContext, env: Env): Future[Boolean]
 }
 
-case class BackOfficeUser(randomId: String,
-                          name: String,
-                          email: String,
-                          profile: JsValue,
-                          token: JsValue = Json.obj(),
-                          authConfigId: String,
-                          simpleLogin: Boolean,
-                          createdAt: DateTime = DateTime.now(),
-                          expiredAt: DateTime = DateTime.now(),
-                          lastRefresh: DateTime = DateTime.now(),
-                          metadata: Map[String, String],
-                          rights: UserRights,
-                          location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation()
-                         ) extends RefreshableUser with EntityLocationSupport {
+case class BackOfficeUser(
+    randomId: String,
+    name: String,
+    email: String,
+    profile: JsValue,
+    token: JsValue = Json.obj(),
+    authConfigId: String,
+    simpleLogin: Boolean,
+    createdAt: DateTime = DateTime.now(),
+    expiredAt: DateTime = DateTime.now(),
+    lastRefresh: DateTime = DateTime.now(),
+    metadata: Map[String, String],
+    rights: UserRights,
+    location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation()
+) extends RefreshableUser
+    with EntityLocationSupport {
 
   def internalId: String = randomId
-  def json: JsValue = toJson
+  def json: JsValue      = toJson
 
   def save(duration: Duration)(implicit ec: ExecutionContext, env: Env): Future[BackOfficeUser] = {
     val withDuration = this.copy(expiredAt = expiredAt.plus(duration.toMillis))
@@ -49,16 +51,19 @@ case class BackOfficeUser(randomId: String,
 
   def withAuthModuleConfig[A](f: AuthModuleConfig => A)(implicit ec: ExecutionContext, env: Env): Unit = {
     env.datastores.authConfigsDataStore.findById(authConfigId).map {
-      case None => ()
+      case None       => ()
       case Some(auth) => f(auth)
     }
   }
 
   override def updateToken(tok: JsValue)(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
-    env.datastores.backOfficeUserDataStore.set(copy(
-      token = tok,
-      lastRefresh = DateTime.now()
-    ), Some((expiredAt.toDate.getTime - System.currentTimeMillis()).millis))
+    env.datastores.backOfficeUserDataStore.set(
+      copy(
+        token = tok,
+        lastRefresh = DateTime.now()
+      ),
+      Some((expiredAt.toDate.getTime - System.currentTimeMillis()).millis)
+    )
   }
 }
 
@@ -89,20 +94,21 @@ object BackOfficeUser {
         case e => JsError(e.getMessage)
       } get
 
-    override def writes(o: BackOfficeUser): JsValue = o.location.jsonWithKey ++ Json.obj(
-      "randomId"        -> o.randomId,
-      "name"            -> o.name,
-      "email"           -> o.email,
-      "authConfigId"    -> o.authConfigId,
-      "profile"         -> o.profile,
-      "token"           -> o.token,
-      "simpleLogin"     -> o.simpleLogin,
-      "createdAt"       -> o.createdAt.getMillis,
-      "expiredAt"       -> o.expiredAt.getMillis,
-      "lastRefresh"     -> o.lastRefresh.getMillis,
-      "metadata"        -> o.metadata,
-      "rights"          -> o.rights.json
-    )
+    override def writes(o: BackOfficeUser): JsValue =
+      o.location.jsonWithKey ++ Json.obj(
+        "randomId"     -> o.randomId,
+        "name"         -> o.name,
+        "email"        -> o.email,
+        "authConfigId" -> o.authConfigId,
+        "profile"      -> o.profile,
+        "token"        -> o.token,
+        "simpleLogin"  -> o.simpleLogin,
+        "createdAt"    -> o.createdAt.getMillis,
+        "expiredAt"    -> o.expiredAt.getMillis,
+        "lastRefresh"  -> o.lastRefresh.getMillis,
+        "metadata"     -> o.metadata,
+        "rights"       -> o.rights.json
+      )
   }
 }
 

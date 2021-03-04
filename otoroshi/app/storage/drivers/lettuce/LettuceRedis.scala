@@ -55,10 +55,11 @@ class LettuceRedisStandaloneAndSentinels(actorSystem: ActorSystem, client: Redis
 
   override def stop(): Unit = redis.shutdown(true)
 
-  override def flushall(): Future[Boolean] = redis.flushall().toScala.map {
-    case "OK" => true
-    case _    => false
-  }
+  override def flushall(): Future[Boolean] =
+    redis.flushall().toScala.map {
+      case "OK" => true
+      case _    => false
+    }
 
   override def get(key: String): Future[Option[ByteString]] = redis.get(key).toScala.map(Option.apply)
 
@@ -68,16 +69,18 @@ class LettuceRedisStandaloneAndSentinels(actorSystem: ActorSystem, client: Redis
   override def set(key: String, value: String, exSeconds: Option[Long], pxMilliseconds: Option[Long]): Future[Boolean] =
     setBS(key, ByteString(value), exSeconds, pxMilliseconds)
 
-  override def setBS(key: String,
-                     value: ByteString,
-                     exSeconds: Option[Long],
-                     pxMilliseconds: Option[Long]): Future[Boolean] = {
+  override def setBS(
+      key: String,
+      value: ByteString,
+      exSeconds: Option[Long],
+      pxMilliseconds: Option[Long]
+  ): Future[Boolean] = {
     exSeconds
       .map(v => SetArgs.Builder.ex(v))
       .orElse(
         pxMilliseconds.map(v => SetArgs.Builder.px(v))
       ) match {
-      case None =>
+      case None       =>
         redis.set(key, value).toScala.map {
           case "OK" => true
           case _    => false
@@ -160,8 +163,10 @@ class LettuceRedisStandaloneAndSentinels(actorSystem: ActorSystem, client: Redis
 
   override def rawGet(key: String): Future[Option[Any]] = redis.get(key).toScala.map(Option.apply)
 
-  override def setnxBS(key: String, value: ByteString, ttl: Option[Long])(implicit ec: ExecutionContext,
-                                                                          env: Env): Future[Boolean] = {
+  override def setnxBS(key: String, value: ByteString, ttl: Option[Long])(implicit
+      ec: ExecutionContext,
+      env: Env
+  ): Future[Boolean] = {
     val args = SetArgs.Builder.nx()
     redis.set(key, value, ttl.map(v => args.px(v)).getOrElse(args)).toScala.map {
       case "OK" => true
@@ -194,10 +199,11 @@ class LettuceRedisCluster(actorSystem: ActorSystem, client: RedisClusterClient) 
     redis.shutdown(true)
   }
 
-  override def flushall(): Future[Boolean] = redis.flushall().toScala.map {
-    case "OK" => true
-    case _    => false
-  }
+  override def flushall(): Future[Boolean] =
+    redis.flushall().toScala.map {
+      case "OK" => true
+      case _    => false
+    }
 
   override def get(key: String): Future[Option[ByteString]] = redis.get(key).toScala.map(Option.apply)
 
@@ -207,16 +213,18 @@ class LettuceRedisCluster(actorSystem: ActorSystem, client: RedisClusterClient) 
   override def set(key: String, value: String, exSeconds: Option[Long], pxMilliseconds: Option[Long]): Future[Boolean] =
     setBS(key, ByteString(value), exSeconds, pxMilliseconds)
 
-  override def setBS(key: String,
-                     value: ByteString,
-                     exSeconds: Option[Long],
-                     pxMilliseconds: Option[Long]): Future[Boolean] = {
+  override def setBS(
+      key: String,
+      value: ByteString,
+      exSeconds: Option[Long],
+      pxMilliseconds: Option[Long]
+  ): Future[Boolean] = {
     exSeconds
       .map(v => SetArgs.Builder.ex(v))
       .orElse(
         pxMilliseconds.map(v => SetArgs.Builder.px(v))
       ) match {
-      case None =>
+      case None       =>
         redis.set(key, value).toScala.map {
           case "OK" => true
           case _    => false
@@ -299,8 +307,10 @@ class LettuceRedisCluster(actorSystem: ActorSystem, client: RedisClusterClient) 
 
   override def rawGet(key: String): Future[Option[Any]] = redis.get(key).toScala.map(Option.apply)
 
-  override def setnxBS(key: String, value: ByteString, ttl: Option[Long])(implicit ec: ExecutionContext,
-                                                                          env: Env): Future[Boolean] = {
+  override def setnxBS(key: String, value: ByteString, ttl: Option[Long])(implicit
+      ec: ExecutionContext,
+      env: Env
+  ): Future[Boolean] = {
     val args = SetArgs.Builder.nx()
     redis.set(key, value, ttl.map(v => args.px(v)).getOrElse(args)).toScala.map {
       case "OK" => true

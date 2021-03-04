@@ -30,11 +30,12 @@ object BadResponse {
       } recover {
         case t => JsError(t.getMessage)
       } get
-    override def writes(o: BadResponse): JsValue = Json.obj(
-      "status"  -> o.status,
-      "body"    -> o.body,
-      "headers" -> o.headers
-    )
+    override def writes(o: BadResponse): JsValue             =
+      Json.obj(
+        "status"  -> o.status,
+        "body"    -> o.body,
+        "headers" -> o.headers
+      )
   }
 }
 
@@ -42,7 +43,7 @@ sealed trait FaultConfig {
   def ratio: Double
   def asJson: JsValue
 }
-case class LargeRequestFaultConfig(ratio: Double, additionalRequestSize: Int) extends FaultConfig {
+case class LargeRequestFaultConfig(ratio: Double, additionalRequestSize: Int)                   extends FaultConfig {
   def asJson: JsValue = LargeRequestFaultConfig.fmt.writes(this)
 }
 object LargeRequestFaultConfig {
@@ -62,13 +63,14 @@ object LargeRequestFaultConfig {
       } recover {
         case t => JsError(t.getMessage)
       } get
-    override def writes(o: LargeRequestFaultConfig): JsValue = Json.obj(
-      "ratio"                 -> o.ratio,
-      "additionalRequestSize" -> o.additionalRequestSize
-    )
+    override def writes(o: LargeRequestFaultConfig): JsValue             =
+      Json.obj(
+        "ratio"                 -> o.ratio,
+        "additionalRequestSize" -> o.additionalRequestSize
+      )
   }
 }
-case class LargeResponseFaultConfig(ratio: Double, additionalResponseSize: Int) extends FaultConfig {
+case class LargeResponseFaultConfig(ratio: Double, additionalResponseSize: Int)                 extends FaultConfig {
   def asJson: JsValue = LargeResponseFaultConfig.fmt.writes(this)
 }
 object LargeResponseFaultConfig {
@@ -88,10 +90,11 @@ object LargeResponseFaultConfig {
       } recover {
         case t => JsError(t.getMessage)
       } get
-    override def writes(o: LargeResponseFaultConfig): JsValue = Json.obj(
-      "ratio"                  -> o.ratio,
-      "additionalResponseSize" -> o.additionalResponseSize
-    )
+    override def writes(o: LargeResponseFaultConfig): JsValue             =
+      Json.obj(
+        "ratio"                  -> o.ratio,
+        "additionalResponseSize" -> o.additionalResponseSize
+      )
   }
 }
 case class LatencyInjectionFaultConfig(ratio: Double, from: FiniteDuration, to: FiniteDuration) extends FaultConfig {
@@ -110,22 +113,22 @@ object LatencyInjectionFaultConfig {
           // )
           LatencyInjectionFaultConfig(
             ratio = (json \ "ratio").as[Double],
-            from =
-              (json \ "from").as(SnowMonkeyConfig.durationFmt),
+            from = (json \ "from").as(SnowMonkeyConfig.durationFmt),
             to = (json \ "to").as(SnowMonkeyConfig.durationFmt)
           )
         )
       } recover {
         case t => JsError(t.getMessage)
       } get
-    override def writes(o: LatencyInjectionFaultConfig): JsValue = Json.obj(
-      "ratio" -> o.ratio,
-      "from"  -> SnowMonkeyConfig.durationFmt.writes(o.from),
-      "to"    -> SnowMonkeyConfig.durationFmt.writes(o.to)
-    )
+    override def writes(o: LatencyInjectionFaultConfig): JsValue             =
+      Json.obj(
+        "ratio" -> o.ratio,
+        "from"  -> SnowMonkeyConfig.durationFmt.writes(o.from),
+        "to"    -> SnowMonkeyConfig.durationFmt.writes(o.to)
+      )
   }
 }
-case class BadResponsesFaultConfig(ratio: Double, responses: Seq[BadResponse]) extends FaultConfig {
+case class BadResponsesFaultConfig(ratio: Double, responses: Seq[BadResponse])                  extends FaultConfig {
   def asJson: JsValue = BadResponsesFaultConfig.fmt.writes(this)
 }
 object BadResponsesFaultConfig {
@@ -145,10 +148,11 @@ object BadResponsesFaultConfig {
       } recover {
         case t => JsError(t.getMessage)
       } get
-    override def writes(o: BadResponsesFaultConfig): JsValue = Json.obj(
-      "ratio"     -> o.ratio,
-      "responses" -> JsArray(o.responses.map(_.asJson))
-    )
+    override def writes(o: BadResponsesFaultConfig): JsValue             =
+      Json.obj(
+        "ratio"     -> o.ratio,
+        "responses" -> JsArray(o.responses.map(_.asJson))
+      )
   }
 }
 
@@ -157,7 +161,7 @@ case class ChaosConfig(
     largeRequestFaultConfig: Option[LargeRequestFaultConfig] = None,
     largeResponseFaultConfig: Option[LargeResponseFaultConfig] = None,
     latencyInjectionFaultConfig: Option[LatencyInjectionFaultConfig] = None,
-    badResponsesFaultConfig: Option[BadResponsesFaultConfig] = None,
+    badResponsesFaultConfig: Option[BadResponsesFaultConfig] = None
 ) {
   def asJson: JsValue = ChaosConfig._fmt.writes(this)
 }
@@ -191,7 +195,7 @@ object ChaosConfig {
         "largeRequestFaultConfig"     -> o.largeRequestFaultConfig.map(_.asJson).getOrElse(JsNull).as[JsValue],
         "largeResponseFaultConfig"    -> o.largeResponseFaultConfig.map(_.asJson).getOrElse(JsNull).as[JsValue],
         "latencyInjectionFaultConfig" -> o.latencyInjectionFaultConfig.map(_.asJson).getOrElse(JsNull).as[JsValue],
-        "badResponsesFaultConfig"     -> o.badResponsesFaultConfig.map(_.asJson).getOrElse(JsNull).as[JsValue],
+        "badResponsesFaultConfig"     -> o.badResponsesFaultConfig.map(_.asJson).getOrElse(JsNull).as[JsValue]
       )
     }
   }
@@ -218,18 +222,20 @@ case class SnowMonkeyConfig(
       largeResponseFaultConfig = None,
       latencyInjectionFaultConfig = Some(LatencyInjectionFaultConfig(0.2, 500.millis, 5000.millis)),
       badResponsesFaultConfig = Some(
-        BadResponsesFaultConfig(0.2,
-                                Seq(
-                                  BadResponse(
-                                    502,
-                                    """{"error":"Nihonzaru everywhere ..."}""",
-                                    headers = Map("Content-Type" -> "application/json")
-                                  )
-                                ))
+        BadResponsesFaultConfig(
+          0.2,
+          Seq(
+            BadResponse(
+              502,
+              """{"error":"Nihonzaru everywhere ..."}""",
+              headers = Map("Content-Type" -> "application/json")
+            )
+          )
+        )
       )
     )
 ) {
-  def asJson: JsValue = SnowMonkeyConfig._fmt.writes(this)
+  def asJson: JsValue                                                  = SnowMonkeyConfig._fmt.writes(this)
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
     env.datastores.globalConfigDataStore.singleton().flatMap { conf =>
       conf.copy(snowMonkeyConfig = this).save()
@@ -246,7 +252,7 @@ object SnowMonkeyConfig {
         .asOpt[Long]
         .map(l => JsSuccess(FiniteDuration(l, TimeUnit.MILLISECONDS)))
         .getOrElse(JsError("Not a valid duration"))
-    override def writes(o: FiniteDuration): JsValue = JsNumber(o.toMillis)
+    override def writes(o: FiniteDuration): JsValue             = JsNumber(o.toMillis)
   }
 
   val outageStrategyFmt = new Format[OutageStrategy] {
@@ -259,10 +265,11 @@ object SnowMonkeyConfig {
           case _                     => JsSuccess(OneServicePerGroup)
         }
         .getOrElse(JsSuccess(OneServicePerGroup))
-    override def writes(o: OutageStrategy): JsValue = o match {
-      case OneServicePerGroup  => JsString("OneServicePerGroup")
-      case AllServicesPerGroup => JsString("AllServicesPerGroup")
-    }
+    override def writes(o: OutageStrategy): JsValue             =
+      o match {
+        case OneServicePerGroup  => JsString("OneServicePerGroup")
+        case AllServicesPerGroup => JsString("AllServicesPerGroup")
+      }
   }
 
   val _fmt: Format[SnowMonkeyConfig] = new Format[SnowMonkeyConfig] {
@@ -319,8 +326,8 @@ object SnowMonkeyConfig {
     }
   }
 
-  def toJson(value: SnowMonkeyConfig): JsValue = _fmt.writes(value)
-  def fromJsons(value: JsValue): SnowMonkeyConfig =
+  def toJson(value: SnowMonkeyConfig): JsValue                 = _fmt.writes(value)
+  def fromJsons(value: JsValue): SnowMonkeyConfig              =
     try {
       _fmt.reads(value).get
     } catch {
@@ -332,23 +339,26 @@ object SnowMonkeyConfig {
   def fromJsonSafe(value: JsValue): JsResult[SnowMonkeyConfig] = _fmt.reads(value)
 }
 
-case class Outage(descriptorId: String,
-                  descriptorName: String,
-                  startedAt: DateTime,
-                  until: LocalTime,
-                  duration: FiniteDuration) {
+case class Outage(
+    descriptorId: String,
+    descriptorName: String,
+    startedAt: DateTime,
+    until: LocalTime,
+    duration: FiniteDuration
+) {
   def asJson: JsValue = Outage.fmt.writes(this)
 }
 
 object Outage {
   val fmt = new Format[Outage] {
-    override def writes(o: Outage) = Json.obj(
-      "descriptorId"   -> o.descriptorId,
-      "descriptorName" -> o.descriptorName,
-      "until"          -> o.until.toString(),
-      "duration"       -> o.duration.toMillis,
-      "startedAt"      -> o.startedAt.toString
-    )
+    override def writes(o: Outage)    =
+      Json.obj(
+        "descriptorId"   -> o.descriptorId,
+        "descriptorName" -> o.descriptorName,
+        "until"          -> o.until.toString(),
+        "duration"       -> o.duration.toMillis,
+        "startedAt"      -> o.startedAt.toString
+      )
     override def reads(json: JsValue) =
       Try {
         JsSuccess(
@@ -370,8 +380,10 @@ trait ChaosDataStore {
   def serviceAlreadyOutage(serviceId: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean]
   def serviceOutages(serviceId: String)(implicit ec: ExecutionContext, env: Env): Future[Int]
   def groupOutages(groupId: String)(implicit ec: ExecutionContext, env: Env): Future[Int]
-  def registerOutage(descriptor: ServiceDescriptor, conf: SnowMonkeyConfig)(implicit ec: ExecutionContext,
-                                                                            env: Env): Future[FiniteDuration]
+  def registerOutage(descriptor: ServiceDescriptor, conf: SnowMonkeyConfig)(implicit
+      ec: ExecutionContext,
+      env: Env
+  ): Future[FiniteDuration]
   def resetOutages()(implicit ec: ExecutionContext, env: Env): Future[Unit]
   def startSnowMonkey()(implicit ec: ExecutionContext, env: Env): Future[Unit]
   def stopSnowMonkey()(implicit ec: ExecutionContext, env: Env): Future[Unit]

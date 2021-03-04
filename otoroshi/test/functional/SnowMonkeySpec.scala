@@ -13,20 +13,20 @@ import play.api.libs.json.Json
 
 import scala.concurrent.duration._
 
-class SnowMonkeySpec(name: String, configurationSpec: => Configuration)
-    extends OtoroshiSpec {
+class SnowMonkeySpec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 
   lazy val serviceHost = "monkey.oto.tools"
   implicit val mat     = otoroshiComponents.materializer
 
-  override def getTestConfiguration(configuration: Configuration) = Configuration(
-    ConfigFactory
-      .parseString(s"""
+  override def getTestConfiguration(configuration: Configuration) =
+    Configuration(
+      ConfigFactory
+        .parseString(s"""
                       |{
                       |}
        """.stripMargin)
-      .resolve()
-  ).withFallback(configurationSpec).withFallback(configuration)
+        .resolve()
+    ).withFallback(configurationSpec).withFallback(configuration)
 
   s"[$name] Otoroshi Snow Monkey" should {
 
@@ -45,7 +45,7 @@ class SnowMonkeySpec(name: String, configurationSpec: => Configuration)
     //     })
     //   basicTestExpectedBody
     // }).await()
-    val basicTestServer = new BodySizeService()
+    val basicTestServer   = new BodySizeService()
     val initialDescriptor = ServiceDescriptor(
       id = "basic-sm-test",
       name = "basic-sm-test",
@@ -67,27 +67,26 @@ class SnowMonkeySpec(name: String, configurationSpec: => Configuration)
     "Setup the monkey" in {
       (for {
         _ <- createOtoroshiService(initialDescriptor)
-        _ <- updateSnowMonkey(
-              c =>
-                SnowMonkeyConfig(
-                  enabled = true,
-                  dryRun = false,
-                  timesPerDay = 1000,
-                  includeUserFacingDescriptors = true,
-                  outageDurationFrom = 3600000.millis,
-                  outageDurationTo = 3600000.millis,
-                  startTime = LocalTime.now(), // parse("00:00:00.000"),
-                  stopTime = LocalTime.now().plusMillis(10000), //.parse("23:59:59.999"),
-                  targetGroups = Seq("default"),
-                  chaosConfig = ChaosConfig(
-                    enabled = true,
-                    badResponsesFaultConfig = None,
-                    largeRequestFaultConfig = None,
-                    largeResponseFaultConfig = None,
-                    latencyInjectionFaultConfig = None
-                  )
-              )
-            )
+        _ <- updateSnowMonkey(c =>
+               SnowMonkeyConfig(
+                 enabled = true,
+                 dryRun = false,
+                 timesPerDay = 1000,
+                 includeUserFacingDescriptors = true,
+                 outageDurationFrom = 3600000.millis,
+                 outageDurationTo = 3600000.millis,
+                 startTime = LocalTime.now(),                  // parse("00:00:00.000"),
+                 stopTime = LocalTime.now().plusMillis(10000), //.parse("23:59:59.999"),
+                 targetGroups = Seq("default"),
+                 chaosConfig = ChaosConfig(
+                   enabled = true,
+                   badResponsesFaultConfig = None,
+                   largeRequestFaultConfig = None,
+                   largeResponseFaultConfig = None,
+                   latencyInjectionFaultConfig = None
+                 )
+               )
+             )
         _ <- startSnowMonkey()
       } yield ()).futureValue
       ws.url(s"http://127.0.0.1:$port/api")
@@ -101,18 +100,17 @@ class SnowMonkeySpec(name: String, configurationSpec: => Configuration)
     }
 
     "Inject latency" in {
-      updateSnowMonkey(
-        c =>
-          c.copy(
-            chaosConfig = c.chaosConfig.copy(
-              latencyInjectionFaultConfig = Some(
-                LatencyInjectionFaultConfig(
-                  ratio = 1.0,
-                  from = 500.millis,
-                  to = 500.millis
-                )
+      updateSnowMonkey(c =>
+        c.copy(
+          chaosConfig = c.chaosConfig.copy(
+            latencyInjectionFaultConfig = Some(
+              LatencyInjectionFaultConfig(
+                ratio = 1.0,
+                from = 500.millis,
+                to = 500.millis
               )
             )
+          )
         )
       ).futureValue
       val start = System.currentTimeMillis()
@@ -122,36 +120,34 @@ class SnowMonkeySpec(name: String, configurationSpec: => Configuration)
         )
         .get()
         .futureValue
-      val stop = System.currentTimeMillis()
+      val stop  = System.currentTimeMillis()
       (stop - start) >= 500 mustBe true
-      updateSnowMonkey(
-        c =>
-          c.copy(
-            chaosConfig = c.chaosConfig.copy(
-              latencyInjectionFaultConfig = None
-            )
+      updateSnowMonkey(c =>
+        c.copy(
+          chaosConfig = c.chaosConfig.copy(
+            latencyInjectionFaultConfig = None
+          )
         )
       ).futureValue
     }
 
     "Inject bad responses" in {
-      updateSnowMonkey(
-        c =>
-          c.copy(
-            chaosConfig = c.chaosConfig.copy(
-              badResponsesFaultConfig = Some(
-                BadResponsesFaultConfig(
-                  ratio = 1.0,
-                  responses = Seq(
-                    BadResponse(
-                      status = 502,
-                      body = """{"error":"yes"}""",
-                      headers = Map("Content-Type" -> "application/json")
-                    )
+      updateSnowMonkey(c =>
+        c.copy(
+          chaosConfig = c.chaosConfig.copy(
+            badResponsesFaultConfig = Some(
+              BadResponsesFaultConfig(
+                ratio = 1.0,
+                responses = Seq(
+                  BadResponse(
+                    status = 502,
+                    body = """{"error":"yes"}""",
+                    headers = Map("Content-Type" -> "application/json")
                   )
                 )
               )
             )
+          )
         )
       ).futureValue
       val res = ws
@@ -163,28 +159,26 @@ class SnowMonkeySpec(name: String, configurationSpec: => Configuration)
         .futureValue
       res.status mustBe 502
       res.json mustBe Json.parse("""{"error":"yes"}""")
-      updateSnowMonkey(
-        c =>
-          c.copy(
-            chaosConfig = c.chaosConfig.copy(
-              badResponsesFaultConfig = None
-            )
+      updateSnowMonkey(c =>
+        c.copy(
+          chaosConfig = c.chaosConfig.copy(
+            badResponsesFaultConfig = None
+          )
         )
       ).futureValue
     }
 
     "Inject big response body" in {
-      updateSnowMonkey(
-        c =>
-          c.copy(
-            chaosConfig = c.chaosConfig.copy(
-              largeResponseFaultConfig = Some(
-                LargeResponseFaultConfig(
-                  ratio = 1.0,
-                  additionalResponseSize = 1024
-                )
+      updateSnowMonkey(c =>
+        c.copy(
+          chaosConfig = c.chaosConfig.copy(
+            largeResponseFaultConfig = Some(
+              LargeResponseFaultConfig(
+                ratio = 1.0,
+                additionalResponseSize = 1024
               )
             )
+          )
         )
       ).futureValue
       val res = ws
@@ -195,28 +189,26 @@ class SnowMonkeySpec(name: String, configurationSpec: => Configuration)
         .get()
         .futureValue
       res.bodyAsBytes.size > 1024 mustBe true
-      updateSnowMonkey(
-        c =>
-          c.copy(
-            chaosConfig = c.chaosConfig.copy(
-              largeResponseFaultConfig = None
-            )
+      updateSnowMonkey(c =>
+        c.copy(
+          chaosConfig = c.chaosConfig.copy(
+            largeResponseFaultConfig = None
+          )
         )
       ).futureValue
     }
 
     "Inject big request body" in {
-      updateSnowMonkey(
-        c =>
-          c.copy(
-            chaosConfig = c.chaosConfig.copy(
-              largeRequestFaultConfig = Some(
-                LargeRequestFaultConfig(
-                  ratio = 1.0,
-                  additionalRequestSize = 1024
-                )
+      updateSnowMonkey(c =>
+        c.copy(
+          chaosConfig = c.chaosConfig.copy(
+            largeRequestFaultConfig = Some(
+              LargeRequestFaultConfig(
+                ratio = 1.0,
+                additionalRequestSize = 1024
               )
             )
+          )
         )
       ).futureValue
       //ref.get() mustBe 0
@@ -231,13 +223,12 @@ class SnowMonkeySpec(name: String, configurationSpec: => Configuration)
         .futureValue
       await(10.millis)
       (res.json \ "bodySize").as[Int] > 1024 mustBe true
-      updateSnowMonkey(
-        c =>
-          c.copy(
-            enabled = false,
-            chaosConfig = c.chaosConfig.copy(
-              largeRequestFaultConfig = None
-            )
+      updateSnowMonkey(c =>
+        c.copy(
+          enabled = false,
+          chaosConfig = c.chaosConfig.copy(
+            largeRequestFaultConfig = None
+          )
         )
       ).futureValue
       stopSnowMonkey().futureValue

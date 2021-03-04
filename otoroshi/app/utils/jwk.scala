@@ -41,7 +41,7 @@ class StringJwkProvider(jwkRaw: String) extends JwkProvider {
     .map { js =>
       val map: java.util.Map[String, AnyRef] =
         js.as[Map[String, String]].asJava.asInstanceOf[java.util.Map[String, AnyRef]]
-      val jwk = StringJwkProvider.fromValues(map)
+      val jwk                                = StringJwkProvider.fromValues(map)
       (jwk.getId, jwk)
     }
     .toMap

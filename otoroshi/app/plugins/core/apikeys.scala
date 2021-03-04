@@ -25,9 +25,9 @@ class JwtApikeyExtractor extends PreRouting {
   override def preRoute(ctx: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     ctx.attrs.get(otoroshi.plugins.Keys.ApiKeyKey) match {
       case Some(_) => ().future
-      case None => {
-        val req = ctx.request
-        val descriptor = ctx.descriptor
+      case None    => {
+        val req            = ctx.request
+        val descriptor     = ctx.descriptor
         val authByJwtToken = req.headers
           .get(
             descriptor.apiKeyConstraints.jwtAuth.headerName
@@ -59,7 +59,8 @@ class JwtApikeyExtractor extends PreRouting {
           Try {
             JWT.decode(jwtTokenValue)
           } map { jwt =>
-            jwt.claimStr("clientId")
+            jwt
+              .claimStr("clientId")
               .orElse(jwt.claimStr("client_id"))
               .orElse(jwt.claimStr("cid"))
               .orElse(jwt.claimStr("iss")) match {
@@ -68,47 +69,75 @@ class JwtApikeyExtractor extends PreRouting {
                   .findAuthorizeKeyFor(clientId, descriptor.id)
                   .flatMap {
                     case Some(apiKey) => {
-                      val possibleKeyPairId = apiKey.metadata.get("jwt-sign-keypair")
-                      val kid = Option(jwt.getKeyId)
+                      val possibleKeyPairId               = apiKey.metadata.get("jwt-sign-keypair")
+                      val kid                             = Option(jwt.getKeyId)
                         .orElse(possibleKeyPairId)
                         .filter(_ => descriptor.apiKeyConstraints.jwtAuth.keyPairSigned)
                         .filter(id => if (possibleKeyPairId.isDefined) possibleKeyPairId.get == id else true)
                         .flatMap(id => DynamicSSLEngineProvider.certificates.get(id))
-                      val kp = kid.map(_.cryptoKeyPair)
+                      val kp                              = kid.map(_.cryptoKeyPair)
                       val algorithmOpt: Option[Algorithm] = Option(jwt.getAlgorithm).collect {
-                        case "HS256" if descriptor.apiKeyConstraints.jwtAuth.secretSigned => Algorithm.HMAC256(apiKey.clientSecret)
-                        case "HS384" if descriptor.apiKeyConstraints.jwtAuth.secretSigned => Algorithm.HMAC384(apiKey.clientSecret)
-                        case "HS512" if descriptor.apiKeyConstraints.jwtAuth.secretSigned => Algorithm.HMAC512(apiKey.clientSecret)
-                        case "ES256" if kid.isDefined => Algorithm.ECDSA256(kp.get.getPublic.asInstanceOf[ECPublicKey], kp.get.getPrivate.asInstanceOf[ECPrivateKey])
-                        case "ES384" if kid.isDefined => Algorithm.ECDSA384(kp.get.getPublic.asInstanceOf[ECPublicKey], kp.get.getPrivate.asInstanceOf[ECPrivateKey])
-                        case "ES512" if kid.isDefined => Algorithm.ECDSA512(kp.get.getPublic.asInstanceOf[ECPublicKey], kp.get.getPrivate.asInstanceOf[ECPrivateKey])
-                        case "RS256" if kid.isDefined => Algorithm.RSA256(kp.get.getPublic.asInstanceOf[RSAPublicKey], kp.get.getPrivate.asInstanceOf[RSAPrivateKey])
-                        case "RS384" if kid.isDefined => Algorithm.RSA384(kp.get.getPublic.asInstanceOf[RSAPublicKey], kp.get.getPrivate.asInstanceOf[RSAPrivateKey])
-                        case "RS512" if kid.isDefined => Algorithm.RSA512(kp.get.getPublic.asInstanceOf[RSAPublicKey], kp.get.getPrivate.asInstanceOf[RSAPrivateKey])
+                        case "HS256" if descriptor.apiKeyConstraints.jwtAuth.secretSigned =>
+                          Algorithm.HMAC256(apiKey.clientSecret)
+                        case "HS384" if descriptor.apiKeyConstraints.jwtAuth.secretSigned =>
+                          Algorithm.HMAC384(apiKey.clientSecret)
+                        case "HS512" if descriptor.apiKeyConstraints.jwtAuth.secretSigned =>
+                          Algorithm.HMAC512(apiKey.clientSecret)
+                        case "ES256" if kid.isDefined                                     =>
+                          Algorithm.ECDSA256(
+                            kp.get.getPublic.asInstanceOf[ECPublicKey],
+                            kp.get.getPrivate.asInstanceOf[ECPrivateKey]
+                          )
+                        case "ES384" if kid.isDefined                                     =>
+                          Algorithm.ECDSA384(
+                            kp.get.getPublic.asInstanceOf[ECPublicKey],
+                            kp.get.getPrivate.asInstanceOf[ECPrivateKey]
+                          )
+                        case "ES512" if kid.isDefined                                     =>
+                          Algorithm.ECDSA512(
+                            kp.get.getPublic.asInstanceOf[ECPublicKey],
+                            kp.get.getPrivate.asInstanceOf[ECPrivateKey]
+                          )
+                        case "RS256" if kid.isDefined                                     =>
+                          Algorithm.RSA256(
+                            kp.get.getPublic.asInstanceOf[RSAPublicKey],
+                            kp.get.getPrivate.asInstanceOf[RSAPrivateKey]
+                          )
+                        case "RS384" if kid.isDefined                                     =>
+                          Algorithm.RSA384(
+                            kp.get.getPublic.asInstanceOf[RSAPublicKey],
+                            kp.get.getPrivate.asInstanceOf[RSAPrivateKey]
+                          )
+                        case "RS512" if kid.isDefined                                     =>
+                          Algorithm.RSA512(
+                            kp.get.getPublic.asInstanceOf[RSAPublicKey],
+                            kp.get.getPrivate.asInstanceOf[RSAPrivateKey]
+                          )
                       } // getOrElse Algorithm.HMAC512(apiKey.clientSecret)
-                      val exp =
+                      val exp                             =
                         Option(jwt.getClaim("exp")).filterNot(_.isNull).map(_.asLong())
-                      val iat =
+                      val iat                             =
                         Option(jwt.getClaim("iat")).filterNot(_.isNull).map(_.asLong())
-                      val httpPath = Option(jwt.getClaim("httpPath"))
+                      val httpPath                        = Option(jwt.getClaim("httpPath"))
                         .filterNot(_.isNull)
                         .map(_.asString())
-                      val httpVerb = Option(jwt.getClaim("httpVerb"))
+                      val httpVerb                        = Option(jwt.getClaim("httpVerb"))
                         .filterNot(_.isNull)
                         .map(_.asString())
-                      val httpHost = Option(jwt.getClaim("httpHost"))
+                      val httpHost                        = Option(jwt.getClaim("httpHost"))
                         .filterNot(_.isNull)
                         .map(_.asString())
                       algorithmOpt match {
                         case Some(algorithm) => {
                           val verifier =
-                            JWT.require(algorithm)
+                            JWT
+                              .require(algorithm)
                               //.withIssuer(clientId)
                               .acceptLeeway(10)
                               .build
                           Try(verifier.verify(jwtTokenValue))
                             .filter { token =>
-                              val xsrfToken = token.getClaim("xsrfToken")
+                              val xsrfToken       = token.getClaim("xsrfToken")
                               val xsrfTokenHeader = req.headers.get("X-XSRF-TOKEN")
                               if (!xsrfToken.isNull && xsrfTokenHeader.isDefined) {
                                 xsrfToken.asString() == xsrfTokenHeader.get
@@ -151,12 +180,12 @@ class JwtApikeyExtractor extends PreRouting {
                             case Failure(e) => ().future
                           }
                         }
-                        case None => ().future
+                        case None            => ().future
                       }
                     }
-                    case None => ().future
+                    case None         => ().future
                   }
-              case None => ().future
+              case None           => ().future
             }
           } getOrElse ().future
         } else {
@@ -178,10 +207,10 @@ class BasicAuthApikeyExtractor extends PreRouting {
   override def preRoute(ctx: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     ctx.attrs.get(otoroshi.plugins.Keys.ApiKeyKey) match {
       case Some(_) => ().future
-      case None => {
-        val req = ctx.request
+      case None    => {
+        val req        = ctx.request
         val descriptor = ctx.descriptor
-        val authBasic = req.headers
+        val authBasic  = req.headers
           .get(
             descriptor.apiKeyConstraints.basicAuth.headerName
               .getOrElse(env.Headers.OtoroshiAuthorization)
@@ -201,22 +230,22 @@ class BasicAuthApikeyExtractor extends PreRouting {
               .flatMap(e => Try(decodeBase64(e)).toOption)
           )
         if (authBasic.isDefined && descriptor.apiKeyConstraints.basicAuth.enabled) {
-          val auth = authBasic.get
-          val id = auth.split(":").headOption.map(_.trim)
+          val auth   = authBasic.get
+          val id     = auth.split(":").headOption.map(_.trim)
           val secret = auth.split(":").lastOption.map(_.trim)
           (id, secret) match {
             case (Some(apiKeyClientId), Some(apiKeySecret)) => {
               env.datastores.apiKeyDataStore
                 .findAuthorizeKeyFor(apiKeyClientId, descriptor.id)
                 .flatMap {
-                  case None => ().future
+                  case None                                     => ().future
                   case Some(key) if key.isInvalid(apiKeySecret) => ().future
-                  case Some(key) if key.isValid(apiKeySecret) =>
+                  case Some(key) if key.isValid(apiKeySecret)   =>
                     ctx.attrs.put(otoroshi.plugins.Keys.ApiKeyKey -> key)
                     ().future
                 }
             }
-            case _ => ().future
+            case _                                          => ().future
           }
         } else {
           ().future
@@ -237,31 +266,30 @@ class CustomHeadersApikeyExtractor extends PreRouting {
   override def preRoute(ctx: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     ctx.attrs.get(otoroshi.plugins.Keys.ApiKeyKey) match {
       case Some(_) => ().future
-      case None => {
-        val req = ctx.request
-        val descriptor = ctx.descriptor
+      case None    => {
+        val req                 = ctx.request
+        val descriptor          = ctx.descriptor
         val authByCustomHeaders = req.headers
           .get(
             descriptor.apiKeyConstraints.customHeadersAuth.clientIdHeaderName
               .getOrElse(env.Headers.OtoroshiClientId)
           )
-          .flatMap(
-            id =>
-              req.headers
-                .get(
-                  descriptor.apiKeyConstraints.customHeadersAuth.clientSecretHeaderName
-                    .getOrElse(env.Headers.OtoroshiClientSecret)
-                )
-                .map(s => (id, s))
+          .flatMap(id =>
+            req.headers
+              .get(
+                descriptor.apiKeyConstraints.customHeadersAuth.clientSecretHeaderName
+                  .getOrElse(env.Headers.OtoroshiClientSecret)
+              )
+              .map(s => (id, s))
           )
         if (authByCustomHeaders.isDefined && descriptor.apiKeyConstraints.customHeadersAuth.enabled) {
           val (clientId, clientSecret) = authByCustomHeaders.get
           env.datastores.apiKeyDataStore
             .findAuthorizeKeyFor(clientId, descriptor.id)
             .flatMap {
-              case None => ().future
+              case None                                     => ().future
               case Some(key) if key.isInvalid(clientSecret) => ().future
-              case Some(key) if key.isValid(clientSecret) =>
+              case Some(key) if key.isValid(clientSecret)   =>
                 ctx.attrs.put(otoroshi.plugins.Keys.ApiKeyKey -> key)
                 ().future
             }
@@ -284,9 +312,9 @@ class ClientIdApikeyExtractor extends PreRouting {
   override def preRoute(ctx: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     ctx.attrs.get(otoroshi.plugins.Keys.ApiKeyKey) match {
       case Some(_) => ().future
-      case None => {
-        val req = ctx.request
-        val descriptor = ctx.descriptor
+      case None    => {
+        val req                        = ctx.request
+        val descriptor                 = ctx.descriptor
         val authBySimpleApiKeyClientId = req.headers
           .get(
             descriptor.apiKeyConstraints.clientIdAuth.headerName
@@ -305,9 +333,9 @@ class ClientIdApikeyExtractor extends PreRouting {
           env.datastores.apiKeyDataStore
             .findAuthorizeKeyFor(clientId, descriptor.id)
             .flatMap {
-              case None => ().future
+              case None                                => ().future
               case Some(key) if !key.allowClientIdOnly => ().future
-              case Some(key) if key.allowClientIdOnly =>
+              case Some(key) if key.allowClientIdOnly  =>
                 ctx.attrs.put(otoroshi.plugins.Keys.ApiKeyKey -> key)
                 ().future
             }

@@ -21,11 +21,11 @@ class JwtUserExtractor extends PreRouting {
     Some(
       Json.obj(
         "JwtUserExtractor" -> Json.obj(
-          "verifier" -> "",
-          "strict"  -> true,
+          "verifier"  -> "",
+          "strict"    -> true,
           "namePath"  -> "name",
-          "emailPath"  -> "email",
-          "metaPath"  -> JsNull,
+          "emailPath" -> "email",
+          "metaPath"  -> JsNull
         )
       )
     )
@@ -34,7 +34,7 @@ class JwtUserExtractor extends PreRouting {
     super.configSchema.map(
       _ ++ Json.obj(
         "verifier" -> Json.obj(
-          "type" -> "select",
+          "type"  -> "select",
           "props" -> Json.obj(
             "label"              -> "JWT Verifier",
             "placeholer"         -> "JWT verifier to use to validate token",
@@ -58,71 +58,98 @@ class JwtUserExtractor extends PreRouting {
     )
 
   private val registeredClaims = Seq(
-    "iss", "sub", "aud", "exp", "nbf", "iat", "jti"
+    "iss",
+    "sub",
+    "aud",
+    "exp",
+    "nbf",
+    "iat",
+    "jti"
   )
 
   override def preRoute(ctx: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
-    val config = ctx.configFor("JwtUserExtractor")
+    val config        = ctx.configFor("JwtUserExtractor")
     val jwtVerifierId = (config \ "verifier").as[String]
-    val strict = (config \ "strict").asOpt[Boolean].getOrElse(true)
-    val strip = (config \ "strip").asOpt[Boolean].getOrElse(false)
-    val namePath = (config \ "namePath").asOpt[String].getOrElse("name")
-    val emailPath = (config \ "emailPath").asOpt[String].getOrElse("email")
-    val metaPath = (config \ "metaPath").asOpt[String]
+    val strict        = (config \ "strict").asOpt[Boolean].getOrElse(true)
+    val strip         = (config \ "strip").asOpt[Boolean].getOrElse(false)
+    val namePath      = (config \ "namePath").asOpt[String].getOrElse("name")
+    val emailPath     = (config \ "emailPath").asOpt[String].getOrElse("email")
+    val metaPath      = (config \ "metaPath").asOpt[String]
     env.datastores.globalJwtVerifierDataStore.findById(jwtVerifierId).flatMap {
       case None if !strict =>
         ().future
-      case None if strict =>
-        Future.failed(PreRoutingError.fromJson(Json.obj("error" -> "unauthorized", "error_description" -> "You have to provide a valid user"), 401))
-      case Some(verifier) => {
-        verifier.verify(ctx.request, ctx.descriptor, None, None, ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).get, ctx.attrs) { jwtInjection =>
-          jwtInjection.decodedToken match {
-            case None if !strict => Results.Unauthorized(Json.obj()).future
-            case None if strict => Results.Ok(Json.obj()).future
-            case Some(token) => {
-              val jsonToken = new String(OtoroshiClaim.decoder.decode(token.getPayload))
-              val parsedJsonToken = Json.parse(jsonToken).as[JsObject]
-              val strippedJsonToken = JsObject(parsedJsonToken.value.filter {
-                case (key, _) if registeredClaims.contains(key) => false
-                case _ => true
-              })
-              val tokenMap: Map[String, String] = parsedJsonToken.value.collect {
-                case (key, JsNumber(number)) => (key, number.toString())
-                case (key, JsString(value))  => (key, value)
-                case (key, JsBoolean(value)) => (key, value.toString)
-              }.toMap
-              val meta: Option[JsValue] = metaPath.flatMap(path => Try(JsonPathUtils.getAt[JsObject](jsonToken, path)).toOption.flatten)
-              val user: PrivateAppsUser = PrivateAppsUser(
-                randomId = IdGenerator.uuid,
-                name = JsonPathUtils.getAt[String](jsonToken, namePath).getOrElse("--"),
-                email = JsonPathUtils.getAt[String](jsonToken, emailPath).getOrElse("--"),
-                profile = if (strip) strippedJsonToken else parsedJsonToken,
-                token = Json.obj("jwt" -> token.getToken, "payload" -> parsedJsonToken),
-                realm = s"JwtUserExtractor@${ctx.descriptor.id}",
-                authConfigId = s"JwtUserExtractor@${ctx.descriptor.id}",
-                otoroshiData = meta,
-                createdAt = DateTime.now(),
-                expiredAt = DateTime.now().plusHours(1),
-                lastRefresh = DateTime.now(),
-                metadata = Map.empty,
-                location = ctx.descriptor.location
-              )
-              ctx.attrs.put(otoroshi.plugins.Keys.UserKey -> user)
-              val newElContext: Map[String, String] = ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).get ++ tokenMap
-              ctx.attrs.put(otoroshi.plugins.Keys.ElCtxKey -> newElContext)
-              Results.Ok(Json.obj()).future
+      case None if strict  =>
+        Future.failed(
+          PreRoutingError.fromJson(
+            Json.obj("error" -> "unauthorized", "error_description" -> "You have to provide a valid user"),
+            401
+          )
+        )
+      case Some(verifier)  => {
+        verifier
+          .verify(
+            ctx.request,
+            ctx.descriptor,
+            None,
+            None,
+            ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).get,
+            ctx.attrs
+          ) { jwtInjection =>
+            jwtInjection.decodedToken match {
+              case None if !strict => Results.Unauthorized(Json.obj()).future
+              case None if strict  => Results.Ok(Json.obj()).future
+              case Some(token)     => {
+                val jsonToken                         = new String(OtoroshiClaim.decoder.decode(token.getPayload))
+                val parsedJsonToken                   = Json.parse(jsonToken).as[JsObject]
+                val strippedJsonToken                 = JsObject(parsedJsonToken.value.filter {
+                  case (key, _) if registeredClaims.contains(key) => false
+                  case _                                          => true
+                })
+                val tokenMap: Map[String, String]     = parsedJsonToken.value.collect {
+                  case (key, JsNumber(number)) => (key, number.toString())
+                  case (key, JsString(value))  => (key, value)
+                  case (key, JsBoolean(value)) => (key, value.toString)
+                }.toMap
+                val meta: Option[JsValue]             =
+                  metaPath.flatMap(path => Try(JsonPathUtils.getAt[JsObject](jsonToken, path)).toOption.flatten)
+                val user: PrivateAppsUser             = PrivateAppsUser(
+                  randomId = IdGenerator.uuid,
+                  name = JsonPathUtils.getAt[String](jsonToken, namePath).getOrElse("--"),
+                  email = JsonPathUtils.getAt[String](jsonToken, emailPath).getOrElse("--"),
+                  profile = if (strip) strippedJsonToken else parsedJsonToken,
+                  token = Json.obj("jwt" -> token.getToken, "payload" -> parsedJsonToken),
+                  realm = s"JwtUserExtractor@${ctx.descriptor.id}",
+                  authConfigId = s"JwtUserExtractor@${ctx.descriptor.id}",
+                  otoroshiData = meta,
+                  createdAt = DateTime.now(),
+                  expiredAt = DateTime.now().plusHours(1),
+                  lastRefresh = DateTime.now(),
+                  metadata = Map.empty,
+                  location = ctx.descriptor.location
+                )
+                ctx.attrs.put(otoroshi.plugins.Keys.UserKey -> user)
+                val newElContext: Map[String, String] = ctx.attrs.get(otoroshi.plugins.Keys.ElCtxKey).get ++ tokenMap
+                ctx.attrs.put(otoroshi.plugins.Keys.ElCtxKey -> newElContext)
+                Results.Ok(Json.obj()).future
+              }
             }
           }
-        }.recover {
-          case e: Throwable => Results.Unauthorized(Json.obj())
-        }.flatMap { result =>
-          result.header.status match {
-            case 200 =>
-              ().future
-            case _ =>
-              Future.failed(PreRoutingError.fromJson(Json.obj("error" -> "unauthorized", "error_description" -> "You have to provide a valid user"), 401))
+          .recover {
+            case e: Throwable => Results.Unauthorized(Json.obj())
           }
-        }
+          .flatMap { result =>
+            result.header.status match {
+              case 200 =>
+                ().future
+              case _   =>
+                Future.failed(
+                  PreRoutingError.fromJson(
+                    Json.obj("error" -> "unauthorized", "error_description" -> "You have to provide a valid user"),
+                    401
+                  )
+                )
+            }
+          }
       }
     }
   }

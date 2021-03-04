@@ -15,18 +15,21 @@ object JsonPathUtils {
 
   private val logger = Logger("otoroshi-plugins-jsonpath-helper")
 
-  def matchWith(payload: JsValue, what: String): String => Boolean = { query: String => {
-    getAtPolyJson(payload, query).isDefined
-    // Try(JsonPath.parse(Json.stringify(payload)).read[JSONArray](query)) match {
-    //   case Failure(err) =>
-    //     logger.error(s"error while matching query '$query' against $what: $err")
-    //     false
-    //   case Success(res) =>
-    //     res.size() > 0
-    // }
-  }}
+  def matchWith(payload: JsValue, what: String): String => Boolean = { query: String =>
+    {
+      getAtPolyJson(payload, query).isDefined
+      // Try(JsonPath.parse(Json.stringify(payload)).read[JSONArray](query)) match {
+      //   case Failure(err) =>
+      //     logger.error(s"error while matching query '$query' against $what: $err")
+      //     false
+      //   case Success(res) =>
+      //     res.size() > 0
+      // }
+    }
+  }
 
-  def getAtJson[T](payload: JsValue, path: String)(implicit r: Reads[T]): Option[T] = getAt[T](Json.stringify(payload), path)(r)
+  def getAtJson[T](payload: JsValue, path: String)(implicit r: Reads[T]): Option[T] =
+    getAt[T](Json.stringify(payload), path)(r)
 
   def getAt[T](payload: String, path: String)(implicit r: Reads[T]): Option[T] = {
     getAtPoly(payload, path).map(_.as[T](r))
@@ -62,18 +65,19 @@ object JsonPathUtils {
 
   def getAtPolyJsonStr(payload: JsValue, path: String): String = {
     (getAtPoly(Json.stringify(payload), path) match {
-      case Some(JsString(value)) => value.some
+      case Some(JsString(value))  => value.some
       case Some(JsBoolean(value)) => value.toString.some
-      case Some(JsNumber(value)) => value.toString.some
-      case Some(o@JsObject(_)) => o.stringify.some
-      case Some(o@JsArray(_)) => o.stringify.some
-      case _ => "null".some
-    }) getOrElse("null")
+      case Some(JsNumber(value))  => value.toString.some
+      case Some(o @ JsObject(_))  => o.stringify.some
+      case Some(o @ JsArray(_))   => o.stringify.some
+      case _                      => "null".some
+    }).getOrElse("null")
   }
 
   private val config: Configuration = {
     val default = Configuration.defaultConfiguration()
-    Configuration.builder()
+    Configuration
+      .builder()
       .evaluationListener(default.getEvaluationListeners)
       .options(default.getOptions)
       .jsonProvider(new JacksonJsonNodeJsonProvider())

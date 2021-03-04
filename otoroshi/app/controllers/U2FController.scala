@@ -29,9 +29,11 @@ import otoroshi.utils.syntax.implicits._
 import scala.concurrent.duration.Duration
 import scala.util.{Failure, Success, Try}
 
-class U2FController(BackOfficeAction: BackOfficeAction,
-                    BackOfficeActionAuth: BackOfficeActionAuth,
-                    cc: ControllerComponents)(implicit env: Env)
+class U2FController(
+    BackOfficeAction: BackOfficeAction,
+    BackOfficeActionAuth: BackOfficeActionAuth,
+    cc: ControllerComponents
+)(implicit env: Env)
     extends AbstractController(cc) {
 
   implicit lazy val ec = env.otoroshiExecutionContext
@@ -41,73 +43,78 @@ class U2FController(BackOfficeAction: BackOfficeAction,
   private val base64Encoder = java.util.Base64.getUrlEncoder
   private val base64Decoder = java.util.Base64.getUrlDecoder
   private val random        = new SecureRandom()
-  private val jsonMapper = new ObjectMapper()
+  private val jsonMapper    = new ObjectMapper()
     .configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
     .setSerializationInclusion(Include.NON_ABSENT)
     .registerModule(new Jdk8Module())
 
-  def loginPage() = BackOfficeAction { ctx =>
-    Ok(views.html.backoffice.u2flogin(env))
-  }
+  def loginPage() =
+    BackOfficeAction { ctx =>
+      Ok(views.html.backoffice.u2flogin(env))
+    }
 
   /////////// Simple admins ////////////////////////////////////////////////////////////////////////////////////////////
 
-  def simpleLogin = BackOfficeAction.async(parse.json) { ctx =>
-    implicit val req = ctx.request
-    val usernameOpt  = (ctx.request.body \ "username").asOpt[String]
-    val passwordOpt  = (ctx.request.body \ "password").asOpt[String]
-    (usernameOpt, passwordOpt) match {
-      case (Some(username), Some(pass)) => {
-        env.datastores.simpleAdminDataStore.findByUsername(username).flatMap {
-          case Some(user) => {
-            val password        = user.password
-            val label           = user.label
-            if (BCrypt.checkpw(pass, password)) {
-              logger.debug(s"Login successful for simple admin '$username'")
-              BackOfficeUser(
-                randomId = IdGenerator.token(64),
-                name = username,
-                email = username,
-                profile = Json.obj(
-                  "name"  -> label,
-                  "email" -> username
-                ),
-                token = Json.obj(),
-                authConfigId = "none",
-                simpleLogin = true,
-                metadata = Map.empty,
-                rights = user.rights,
-                location = user.location
-              ).save(Duration(env.backOfficeSessionExp, TimeUnit.MILLISECONDS)).map { boUser =>
-                env.datastores.simpleAdminDataStore.hasAlreadyLoggedIn(username).map {
-                  case false => {
-                    env.datastores.simpleAdminDataStore.alreadyLoggedIn(username)
-                    Alerts.send(AdminFirstLogin(env.snowflakeGenerator.nextIdStr(), env.env, boUser, ctx.from, ctx.ua))
+  def simpleLogin =
+    BackOfficeAction.async(parse.json) { ctx =>
+      implicit val req = ctx.request
+      val usernameOpt  = (ctx.request.body \ "username").asOpt[String]
+      val passwordOpt  = (ctx.request.body \ "password").asOpt[String]
+      (usernameOpt, passwordOpt) match {
+        case (Some(username), Some(pass)) => {
+          env.datastores.simpleAdminDataStore.findByUsername(username).flatMap {
+            case Some(user) => {
+              val password = user.password
+              val label    = user.label
+              if (BCrypt.checkpw(pass, password)) {
+                logger.debug(s"Login successful for simple admin '$username'")
+                BackOfficeUser(
+                  randomId = IdGenerator.token(64),
+                  name = username,
+                  email = username,
+                  profile = Json.obj(
+                    "name"  -> label,
+                    "email" -> username
+                  ),
+                  token = Json.obj(),
+                  authConfigId = "none",
+                  simpleLogin = true,
+                  metadata = Map.empty,
+                  rights = user.rights,
+                  location = user.location
+                ).save(Duration(env.backOfficeSessionExp, TimeUnit.MILLISECONDS)).map { boUser =>
+                  env.datastores.simpleAdminDataStore.hasAlreadyLoggedIn(username).map {
+                    case false => {
+                      env.datastores.simpleAdminDataStore.alreadyLoggedIn(username)
+                      Alerts
+                        .send(AdminFirstLogin(env.snowflakeGenerator.nextIdStr(), env.env, boUser, ctx.from, ctx.ua))
+                    }
+                    case true  => {
+                      Alerts
+                        .send(
+                          AdminLoggedInAlert(
+                            env.snowflakeGenerator.nextIdStr(),
+                            env.env,
+                            boUser,
+                            ctx.from,
+                            ctx.ua,
+                            "local"
+                          )
+                        )
+                    }
                   }
-                  case true => {
-                    Alerts
-                      .send(
-                        AdminLoggedInAlert(env.snowflakeGenerator.nextIdStr(),
-                                           env.env,
-                                           boUser,
-                                           ctx.from,
-                                           ctx.ua,
-                                           "local")
-                      )
-                  }
+                  Ok(Json.obj("username" -> username)).addingToSession("bousr" -> boUser.randomId)
                 }
-                Ok(Json.obj("username" -> username)).addingToSession("bousr" -> boUser.randomId)
+              } else {
+                Unauthorized(Json.obj("error" -> "not authorized")).future
               }
-            } else {
-              Unauthorized(Json.obj("error" -> "not authorized")).future
             }
+            case None       => Unauthorized(Json.obj("error" -> "not authorized")).future
           }
-          case None => Unauthorized(Json.obj("error" -> "not authorized")).future
         }
+        case _                            => Unauthorized(Json.obj("error" -> "not authorized")).future
       }
-      case _ => Unauthorized(Json.obj("error" -> "not authorized")).future
     }
-  }
 
   /*
   def registerSimpleAdmin = BackOfficeActionAuth.async(parse.json) { ctx =>
@@ -174,7 +181,7 @@ class U2FController(BackOfficeAction: BackOfficeAction,
       }
     }
   }
-  */
+   */
 
   /////////// WebAuthn admins ////////////////////////////////////////////////////////////////////////////////////////////
   /*
@@ -216,143 +223,160 @@ class U2FController(BackOfficeAction: BackOfficeAction,
       }
     }
   }
-  */
-  def webAuthnRegistrationStart() = BackOfficeActionAuth.async(parse.json) { ctx =>
-    ctx.checkRights(TenantAdminOnly) {
-      import collection.JavaConverters._
+   */
+  def webAuthnRegistrationStart() =
+    BackOfficeActionAuth.async(parse.json) { ctx =>
+      ctx.checkRights(TenantAdminOnly) {
+        import collection.JavaConverters._
 
-      val username = (ctx.request.body \ "username").as[String]
-      val label = (ctx.request.body \ "label").as[String]
-      val reqOrigin = (ctx.request.body \ "origin").as[String]
-      val reqOriginHost = Uri(reqOrigin).authority.host.address()
-      val reqOriginDomain: String = reqOriginHost.split("\\.").toList.reverse match {
-        case tld :: domain :: _ => s"$domain.$tld"
-        case value => value.mkString(".")
-      }
+        val username                = (ctx.request.body \ "username").as[String]
+        val label                   = (ctx.request.body \ "label").as[String]
+        val reqOrigin               = (ctx.request.body \ "origin").as[String]
+        val reqOriginHost           = Uri(reqOrigin).authority.host.address()
+        val reqOriginDomain: String = reqOriginHost.split("\\.").toList.reverse match {
+          case tld :: domain :: _ => s"$domain.$tld"
+          case value              => value.mkString(".")
+        }
 
-      env.datastores.webAuthnAdminDataStore.findAll().flatMap { users =>
-        val rpIdentity: RelyingPartyIdentity = RelyingPartyIdentity.builder.id(reqOriginDomain).name("Otoroshi").build
-        val rp: RelyingParty = RelyingParty.builder
-          .identity(rpIdentity)
-          .credentialRepository(new LocalCredentialRepository(users, jsonMapper, base64Decoder))
-          .origins(Seq(reqOrigin, reqOriginDomain).toSet.asJava)
-          .build
-
-        val userHandle = new Array[Byte](64)
-        random.nextBytes(userHandle)
-
-        val registrationRequestId = IdGenerator.token(32)
-        val request: PublicKeyCredentialCreationOptions = rp.startRegistration(
-          StartRegistrationOptions.builder
-            .user(
-              UserIdentity.builder
-                .name(username)
-                .displayName(label)
-                .id(new ByteArray(userHandle))
-                .build
-            )
+        env.datastores.webAuthnAdminDataStore.findAll().flatMap { users =>
+          val rpIdentity: RelyingPartyIdentity = RelyingPartyIdentity.builder.id(reqOriginDomain).name("Otoroshi").build
+          val rp: RelyingParty                 = RelyingParty.builder
+            .identity(rpIdentity)
+            .credentialRepository(new LocalCredentialRepository(users, jsonMapper, base64Decoder))
+            .origins(Seq(reqOrigin, reqOriginDomain).toSet.asJava)
             .build
-        )
 
-        val jsonRequest = jsonMapper.writeValueAsString(request)
-        val finalRequest = Json.obj(
-          "requestId" -> registrationRequestId,
-          "request" -> Json.parse(jsonRequest),
-          "username" -> username,
-          "label" -> label,
-          "handle" -> base64Encoder.encodeToString(userHandle)
-        )
+          val userHandle = new Array[Byte](64)
+          random.nextBytes(userHandle)
 
-        env.datastores.webAuthnRegistrationsDataStore.setRegistrationRequest(registrationRequestId, finalRequest).map {
-          _ =>
-            Ok(finalRequest)
+          val registrationRequestId                       = IdGenerator.token(32)
+          val request: PublicKeyCredentialCreationOptions = rp.startRegistration(
+            StartRegistrationOptions.builder
+              .user(
+                UserIdentity.builder
+                  .name(username)
+                  .displayName(label)
+                  .id(new ByteArray(userHandle))
+                  .build
+              )
+              .build
+          )
+
+          val jsonRequest  = jsonMapper.writeValueAsString(request)
+          val finalRequest = Json.obj(
+            "requestId" -> registrationRequestId,
+            "request"   -> Json.parse(jsonRequest),
+            "username"  -> username,
+            "label"     -> label,
+            "handle"    -> base64Encoder.encodeToString(userHandle)
+          )
+
+          env.datastores.webAuthnRegistrationsDataStore
+            .setRegistrationRequest(registrationRequestId, finalRequest)
+            .map { _ =>
+              Ok(finalRequest)
+            }
         }
       }
     }
-  }
 
-  def webAuthnRegistrationFinish() = BackOfficeActionAuth.async(parse.json) { ctx =>
-    ctx.checkRights(SuperAdminOnly) {
-      import collection.JavaConverters._
+  def webAuthnRegistrationFinish() =
+    BackOfficeActionAuth.async(parse.json) { ctx =>
+      ctx.checkRights(SuperAdminOnly) {
+        import collection.JavaConverters._
 
-      val json = ctx.request.body
-      val responseJson = Json.stringify((json \ "webauthn").as[JsValue])
-      val otoroshi = (json \ "otoroshi").as[JsObject]
-      val reqOrigin = (otoroshi \ "origin").as[String]
-      val reqId = (json \ "requestId").as[String]
-      val handle = (otoroshi \ "handle").as[String]
-      val reqOriginHost = Uri(reqOrigin).authority.host.address()
-      val reqOriginDomain: String = reqOriginHost.split("\\.").toList.reverse match {
-        case tld :: domain :: _ => s"$domain.$tld"
-        case value => value.mkString(".")
-      }
+        val json                    = ctx.request.body
+        val responseJson            = Json.stringify((json \ "webauthn").as[JsValue])
+        val otoroshi                = (json \ "otoroshi").as[JsObject]
+        val reqOrigin               = (otoroshi \ "origin").as[String]
+        val reqId                   = (json \ "requestId").as[String]
+        val handle                  = (otoroshi \ "handle").as[String]
+        val reqOriginHost           = Uri(reqOrigin).authority.host.address()
+        val reqOriginDomain: String = reqOriginHost.split("\\.").toList.reverse match {
+          case tld :: domain :: _ => s"$domain.$tld"
+          case value              => value.mkString(".")
+        }
 
-      env.datastores.webAuthnAdminDataStore.findAll().flatMap { users =>
-        env.datastores.webAuthnRegistrationsDataStore.getRegistrationRequest(reqId).flatMap {
-          case None => FastFuture.successful(BadRequest(Json.obj("error" -> "bad request")))
-          case Some(rawRequest) => {
-            Try {
-              val request = jsonMapper.readValue(Json.stringify((rawRequest \ "request").as[JsValue]),
-                classOf[PublicKeyCredentialCreationOptions])
-              val rpIdentity: RelyingPartyIdentity = RelyingPartyIdentity.builder.id(reqOriginDomain).name("Otoroshi").build
-              val rp: RelyingParty = RelyingParty.builder
-                .identity(rpIdentity)
-                .credentialRepository(new LocalCredentialRepository(users, jsonMapper, base64Decoder))
-                .origins(Seq(reqOrigin, reqOriginDomain).toSet.asJava)
-                .build
-              val pkc = PublicKeyCredential.parseRegistrationResponseJson(responseJson)
+        env.datastores.webAuthnAdminDataStore.findAll().flatMap { users =>
+          env.datastores.webAuthnRegistrationsDataStore.getRegistrationRequest(reqId).flatMap {
+            case None             => FastFuture.successful(BadRequest(Json.obj("error" -> "bad request")))
+            case Some(rawRequest) => {
+              Try {
+                val request                          = jsonMapper.readValue(
+                  Json.stringify((rawRequest \ "request").as[JsValue]),
+                  classOf[PublicKeyCredentialCreationOptions]
+                )
+                val rpIdentity: RelyingPartyIdentity =
+                  RelyingPartyIdentity.builder.id(reqOriginDomain).name("Otoroshi").build
+                val rp: RelyingParty                 = RelyingParty.builder
+                  .identity(rpIdentity)
+                  .credentialRepository(new LocalCredentialRepository(users, jsonMapper, base64Decoder))
+                  .origins(Seq(reqOrigin, reqOriginDomain).toSet.asJava)
+                  .build
+                val pkc                              = PublicKeyCredential.parseRegistrationResponseJson(responseJson)
 
-              rp.finishRegistration(
-                FinishRegistrationOptions
-                  .builder()
-                  .request(request)
-                  .response(pkc)
-                  .build()
-              )
-            } match {
-              case Failure(e) =>
-                e.printStackTrace()
-                FastFuture.successful(BadRequest(Json.obj("error" -> "bad request 111")))
-              case Success(result) => {
-                val username = (otoroshi \ "username").as[String]
-                val password = (otoroshi \ "password").as[String]
-                val label = (otoroshi \ "label").as[String]
-                val rights = UserRights(Seq(UserRight(TenantAccess(ctx.currentTenant.value), Seq(TeamAccess("*"))))) // UserRights.readFromObject(otoroshi)
-                val saltedPassword = BCrypt.hashpw(password, BCrypt.gensalt())
-                val credential = Json.parse(jsonMapper.writeValueAsString(result))
+                rp.finishRegistration(
+                  FinishRegistrationOptions
+                    .builder()
+                    .request(request)
+                    .response(pkc)
+                    .build()
+                )
+              } match {
+                case Failure(e)      =>
+                  e.printStackTrace()
+                  FastFuture.successful(BadRequest(Json.obj("error" -> "bad request 111")))
+                case Success(result) => {
+                  val username = (otoroshi \ "username").as[String]
+                  val password = (otoroshi \ "password").as[String]
+                  val label    = (otoroshi \ "label").as[String]
+                  val rights   =
+                    UserRights(
+                      Seq(UserRight(TenantAccess(ctx.currentTenant.value), Seq(TeamAccess("*"))))
+                    ) // UserRights.readFromObject(otoroshi)
+                  val saltedPassword = BCrypt.hashpw(password, BCrypt.gensalt())
+                  val credential     = Json.parse(jsonMapper.writeValueAsString(result))
 
-                env.datastores.webAuthnAdminDataStore.findByUsername(username).flatMap {
-                  case None => {
-                    env.datastores.webAuthnAdminDataStore
-                      .registerUser(WebAuthnOtoroshiAdmin(
-                        username = username,
-                        password = saltedPassword,
-                        label = label,
-                        handle = handle,
-                        credentials = Map((credential \ "keyId" \ "id").as[String] -> credential),
-                        createdAt = DateTime.now(),
-                        typ = OtoroshiAdminType.WebAuthnAdmin,
-                        metadata = Map.empty,
-                        rights = rights,
-                        location = EntityLocation(ctx.currentTenant, Seq(TeamId.all)) //EntityLocation.readFromKey(ctx.request.body)
-                      ))
-                      .map { _ =>
-                        Ok(Json.obj("username" -> username))
-                      }
-                  }
-                  case Some(user) if BCrypt.checkpw(password, user.password) => {
-                    // update usrer
-                    env.datastores.webAuthnAdminDataStore
-                      .registerUser(user.copy(
-                        credentials = user.credentials + (
-                          (credential \ "keyId" \ "id").as[String] -> credential
+                  env.datastores.webAuthnAdminDataStore.findByUsername(username).flatMap {
+                    case None                                                  => {
+                      env.datastores.webAuthnAdminDataStore
+                        .registerUser(
+                          WebAuthnOtoroshiAdmin(
+                            username = username,
+                            password = saltedPassword,
+                            label = label,
+                            handle = handle,
+                            credentials = Map((credential \ "keyId" \ "id").as[String] -> credential),
+                            createdAt = DateTime.now(),
+                            typ = OtoroshiAdminType.WebAuthnAdmin,
+                            metadata = Map.empty,
+                            rights = rights,
+                            location = EntityLocation(
+                              ctx.currentTenant,
+                              Seq(TeamId.all)
+                            ) //EntityLocation.readFromKey(ctx.request.body)
                           )
-                      ))
-                      .map { _ =>
-                        Ok(Json.obj("username" -> username))
-                      }
+                        )
+                        .map { _ =>
+                          Ok(Json.obj("username" -> username))
+                        }
+                    }
+                    case Some(user) if BCrypt.checkpw(password, user.password) => {
+                      // update usrer
+                      env.datastores.webAuthnAdminDataStore
+                        .registerUser(
+                          user.copy(
+                            credentials = user.credentials + (
+                                (credential \ "keyId" \ "id").as[String] -> credential
+                              )
+                          )
+                        )
+                        .map { _ =>
+                          Ok(Json.obj("username" -> username))
+                        }
+                    }
+                    case Some(user)                                            => Unauthorized(Json.obj("error" -> "bad credentials")).future
                   }
-                  case Some(user) => Unauthorized(Json.obj("error" -> "bad credentials")).future
                 }
               }
             }
@@ -360,172 +384,178 @@ class U2FController(BackOfficeAction: BackOfficeAction,
         }
       }
     }
-  }
 
-  def webAuthnLoginStart() = BackOfficeAction.async(parse.json) { ctx =>
-    import collection.JavaConverters._
+  def webAuthnLoginStart() =
+    BackOfficeAction.async(parse.json) { ctx =>
+      import collection.JavaConverters._
 
-    val usernameOpt   = (ctx.request.body \ "username").asOpt[String]
-    val passwordOpt   = (ctx.request.body \ "password").asOpt[String]
-    val reqOrigin     = (ctx.request.body \ "origin").as[String]
-    val reqOriginHost = Uri(reqOrigin).authority.host.address()
-    val reqOriginDomain: String = reqOriginHost.split("\\.").toList.reverse match {
-      case tld :: domain :: _ => s"$domain.$tld"
-      case value              => value.mkString(".")
-    }
+      val usernameOpt             = (ctx.request.body \ "username").asOpt[String]
+      val passwordOpt             = (ctx.request.body \ "password").asOpt[String]
+      val reqOrigin               = (ctx.request.body \ "origin").as[String]
+      val reqOriginHost           = Uri(reqOrigin).authority.host.address()
+      val reqOriginDomain: String = reqOriginHost.split("\\.").toList.reverse match {
+        case tld :: domain :: _ => s"$domain.$tld"
+        case value              => value.mkString(".")
+      }
 
-    (usernameOpt, passwordOpt) match {
-      case (Some(username), Some(password)) => {
-        env.datastores.webAuthnAdminDataStore.findAll().flatMap { users =>
-          users.find(u => u.username == username) match {
-            case Some(user) if BCrypt.checkpw(password, user.password) => {
+      (usernameOpt, passwordOpt) match {
+        case (Some(username), Some(password)) => {
+          env.datastores.webAuthnAdminDataStore.findAll().flatMap { users =>
+            users.find(u => u.username == username) match {
+              case Some(user) if BCrypt.checkpw(password, user.password) => {
 
-              val rpIdentity: RelyingPartyIdentity =
-                RelyingPartyIdentity.builder.id(reqOriginDomain).name("Otoroshi").build
-              val rp: RelyingParty = RelyingParty.builder
-                .identity(rpIdentity)
-                .credentialRepository(new LocalCredentialRepository(users, jsonMapper, base64Decoder))
-                .origins(Seq(reqOrigin, reqOriginDomain).toSet.asJava)
-                .build
-              val request: AssertionRequest =
-                rp.startAssertion(StartAssertionOptions.builder.username(Optional.of(username)).build)
+                val rpIdentity: RelyingPartyIdentity =
+                  RelyingPartyIdentity.builder.id(reqOriginDomain).name("Otoroshi").build
+                val rp: RelyingParty                 = RelyingParty.builder
+                  .identity(rpIdentity)
+                  .credentialRepository(new LocalCredentialRepository(users, jsonMapper, base64Decoder))
+                  .origins(Seq(reqOrigin, reqOriginDomain).toSet.asJava)
+                  .build
+                val request: AssertionRequest        =
+                  rp.startAssertion(StartAssertionOptions.builder.username(Optional.of(username)).build)
 
-              val registrationRequestId = IdGenerator.token(32)
-              val jsonRequest: String   = jsonMapper.writeValueAsString(request)
-              val finalRequest = Json.obj(
-                "requestId" -> registrationRequestId,
-                "request"   -> Json.parse(jsonRequest),
-                "username"  -> username,
-                "label"     -> "--"
-              )
+                val registrationRequestId = IdGenerator.token(32)
+                val jsonRequest: String   = jsonMapper.writeValueAsString(request)
+                val finalRequest          = Json.obj(
+                  "requestId" -> registrationRequestId,
+                  "request"   -> Json.parse(jsonRequest),
+                  "username"  -> username,
+                  "label"     -> "--"
+                )
 
-              env.datastores.webAuthnRegistrationsDataStore
-                .setRegistrationRequest(registrationRequestId, finalRequest)
-                .map { _ =>
-                  Ok(finalRequest)
-                }
+                env.datastores.webAuthnRegistrationsDataStore
+                  .setRegistrationRequest(registrationRequestId, finalRequest)
+                  .map { _ =>
+                    Ok(finalRequest)
+                  }
+              }
+              case _ => FastFuture.successful(BadRequest(Json.obj("error" -> "bad request")))
             }
-            case _ => FastFuture.successful(BadRequest(Json.obj("error" -> "bad request")))
           }
         }
-      }
-      case (_, _) => {
-        FastFuture.successful(BadRequest(Json.obj("error" -> "bad request")))
+        case (_, _)                           => {
+          FastFuture.successful(BadRequest(Json.obj("error" -> "bad request")))
+        }
       }
     }
-  }
 
-  def webAuthnLoginFinish() = BackOfficeAction.async(parse.json) { ctx =>
-    import collection.JavaConverters._
+  def webAuthnLoginFinish() =
+    BackOfficeAction.async(parse.json) { ctx =>
+      import collection.JavaConverters._
 
-    implicit val req = ctx.request
+      implicit val req = ctx.request
 
-    val json          = ctx.request.body
-    val webauthn      = (json \ "webauthn").as[JsObject]
-    val otoroshi      = (json \ "otoroshi").as[JsObject]
-    val reqOrigin     = (otoroshi \ "origin").as[String]
-    val reqId         = (json \ "requestId").as[String]
-    val reqOriginHost = Uri(reqOrigin).authority.host.address()
-    val reqOriginDomain: String = reqOriginHost.split("\\.").toList.reverse match {
-      case tld :: domain :: _ => s"$domain.$tld"
-      case value              => value.mkString(".")
-    }
+      val json                    = ctx.request.body
+      val webauthn                = (json \ "webauthn").as[JsObject]
+      val otoroshi                = (json \ "otoroshi").as[JsObject]
+      val reqOrigin               = (otoroshi \ "origin").as[String]
+      val reqId                   = (json \ "requestId").as[String]
+      val reqOriginHost           = Uri(reqOrigin).authority.host.address()
+      val reqOriginDomain: String = reqOriginHost.split("\\.").toList.reverse match {
+        case tld :: domain :: _ => s"$domain.$tld"
+        case value              => value.mkString(".")
+      }
 
-    val usernameOpt = (otoroshi \ "username").asOpt[String]
-    val passwordOpt = (otoroshi \ "password").asOpt[String]
-    (usernameOpt, passwordOpt) match {
-      case (Some(username), Some(pass)) => {
-        env.datastores.webAuthnAdminDataStore.findAll().flatMap { users =>
-          users.find(u => u.username == username) match {
-            case None => FastFuture.successful(BadRequest(Json.obj("error" -> "Bad user")))
-            case Some(user) => {
-              env.datastores.webAuthnRegistrationsDataStore.getRegistrationRequest(reqId).flatMap {
-                case None => FastFuture.successful(BadRequest(Json.obj("error" -> "bad request")))
-                case Some(rawRequest) => {
-                  val request = jsonMapper.readValue(Json.stringify((rawRequest \ "request").as[JsValue]),
-                                                     classOf[AssertionRequest])
-                  val password        = user.password
-                  val label           = user.label
+      val usernameOpt = (otoroshi \ "username").asOpt[String]
+      val passwordOpt = (otoroshi \ "password").asOpt[String]
+      (usernameOpt, passwordOpt) match {
+        case (Some(username), Some(pass)) => {
+          env.datastores.webAuthnAdminDataStore.findAll().flatMap { users =>
+            users.find(u => u.username == username) match {
+              case None       => FastFuture.successful(BadRequest(Json.obj("error" -> "Bad user")))
+              case Some(user) => {
+                env.datastores.webAuthnRegistrationsDataStore.getRegistrationRequest(reqId).flatMap {
+                  case None             => FastFuture.successful(BadRequest(Json.obj("error" -> "bad request")))
+                  case Some(rawRequest) => {
+                    val request  = jsonMapper
+                      .readValue(Json.stringify((rawRequest \ "request").as[JsValue]), classOf[AssertionRequest])
+                    val password = user.password
+                    val label    = user.label
 
-                  if (BCrypt.checkpw(pass, password)) {
-                    Try {
-                      val rpIdentity: RelyingPartyIdentity =
-                        RelyingPartyIdentity.builder.id(reqOriginDomain).name("Otoroshi").build
-                      val rp: RelyingParty = RelyingParty.builder
-                        .identity(rpIdentity)
-                        .credentialRepository(new LocalCredentialRepository(users, jsonMapper, base64Decoder))
-                        .origins(Seq(reqOrigin, reqOriginDomain).toSet.asJava)
-                        .build
-                      val pkc = PublicKeyCredential.parseAssertionResponseJson(Json.stringify(webauthn))
-                      rp.finishAssertion(
-                        FinishAssertionOptions
-                          .builder()
-                          .request(request)
-                          .response(pkc)
-                          .build()
-                      )
-                    } match {
-                      case Failure(e) =>
-                        FastFuture.successful(BadRequest(Json.obj("error" -> "bad request")))
-                      case Success(result) if !result.isSuccess =>
-                        FastFuture.successful(BadRequest(Json.obj("error" -> "bad request")))
-                      case Success(result) if result.isSuccess => {
-                        logger.debug(s"Login successful for user '$username'")
-                        BackOfficeUser(
-                          randomId = IdGenerator.token(64),
-                          name = username,
-                          email = username,
-                          profile = Json.obj(
-                            "name"  -> label,
-                            "email" -> username
-                          ),
-                          token = Json.obj(),
-                          authConfigId = "none",
-                          simpleLogin = false,
-                          metadata = Map.empty,
-                          rights = user.rights,
-                          location = user.location
-                        ).save(Duration(env.backOfficeSessionExp, TimeUnit.MILLISECONDS)).map { boUser =>
-                          env.datastores.webAuthnAdminDataStore.hasAlreadyLoggedIn(username).map {
-                            case false => {
-                              env.datastores.webAuthnAdminDataStore.alreadyLoggedIn(username)
-                              Alerts.send(
-                                AdminFirstLogin(env.snowflakeGenerator.nextIdStr(), env.env, boUser, ctx.from, ctx.ua)
-                              )
+                    if (BCrypt.checkpw(pass, password)) {
+                      Try {
+                        val rpIdentity: RelyingPartyIdentity =
+                          RelyingPartyIdentity.builder.id(reqOriginDomain).name("Otoroshi").build
+                        val rp: RelyingParty                 = RelyingParty.builder
+                          .identity(rpIdentity)
+                          .credentialRepository(new LocalCredentialRepository(users, jsonMapper, base64Decoder))
+                          .origins(Seq(reqOrigin, reqOriginDomain).toSet.asJava)
+                          .build
+                        val pkc                              = PublicKeyCredential.parseAssertionResponseJson(Json.stringify(webauthn))
+                        rp.finishAssertion(
+                          FinishAssertionOptions
+                            .builder()
+                            .request(request)
+                            .response(pkc)
+                            .build()
+                        )
+                      } match {
+                        case Failure(e)                           =>
+                          FastFuture.successful(BadRequest(Json.obj("error" -> "bad request")))
+                        case Success(result) if !result.isSuccess =>
+                          FastFuture.successful(BadRequest(Json.obj("error" -> "bad request")))
+                        case Success(result) if result.isSuccess  => {
+                          logger.debug(s"Login successful for user '$username'")
+                          BackOfficeUser(
+                            randomId = IdGenerator.token(64),
+                            name = username,
+                            email = username,
+                            profile = Json.obj(
+                              "name"  -> label,
+                              "email" -> username
+                            ),
+                            token = Json.obj(),
+                            authConfigId = "none",
+                            simpleLogin = false,
+                            metadata = Map.empty,
+                            rights = user.rights,
+                            location = user.location
+                          ).save(Duration(env.backOfficeSessionExp, TimeUnit.MILLISECONDS)).map { boUser =>
+                            env.datastores.webAuthnAdminDataStore.hasAlreadyLoggedIn(username).map {
+                              case false => {
+                                env.datastores.webAuthnAdminDataStore.alreadyLoggedIn(username)
+                                Alerts.send(
+                                  AdminFirstLogin(env.snowflakeGenerator.nextIdStr(), env.env, boUser, ctx.from, ctx.ua)
+                                )
+                              }
+                              case true  => {
+                                Alerts.send(
+                                  AdminLoggedInAlert(
+                                    env.snowflakeGenerator.nextIdStr(),
+                                    env.env,
+                                    boUser,
+                                    ctx.from,
+                                    ctx.ua,
+                                    "local"
+                                  )
+                                )
+                              }
                             }
-                            case true => {
-                              Alerts.send(
-                                AdminLoggedInAlert(env.snowflakeGenerator.nextIdStr(),
-                                                   env.env,
-                                                   boUser,
-                                                   ctx.from,
-                                                   ctx.ua,
-                                                   "local")
-                              )
-                            }
+                            Ok(
+                              Json.obj("username" -> username)
+                            ).addingToSession("bousr" -> boUser.randomId)
                           }
-                          Ok(
-                            Json.obj("username" -> username)
-                          ).addingToSession("bousr" -> boUser.randomId)
                         }
                       }
+                    } else {
+                      FastFuture.successful(Unauthorized(Json.obj("error" -> "Not Authorized")))
                     }
-                  } else {
-                    FastFuture.successful(Unauthorized(Json.obj("error" -> "Not Authorized")))
                   }
                 }
               }
             }
           }
         }
+        case (_, _)                       => FastFuture.successful(Unauthorized(Json.obj("error" -> "Not Authorized")))
       }
-      case (_, _) => FastFuture.successful(Unauthorized(Json.obj("error" -> "Not Authorized")))
     }
-  }
 }
 
-class LocalCredentialRepository(users: Seq[WebAuthnOtoroshiAdmin], jsonMapper: ObjectMapper, base64Decoder: java.util.Base64.Decoder)
-    extends CredentialRepository {
+class LocalCredentialRepository(
+    users: Seq[WebAuthnOtoroshiAdmin],
+    jsonMapper: ObjectMapper,
+    base64Decoder: java.util.Base64.Decoder
+) extends CredentialRepository {
 
   import collection.JavaConverters._
 
@@ -534,7 +564,7 @@ class LocalCredentialRepository(users: Seq[WebAuthnOtoroshiAdmin], jsonMapper: O
       .filter(_.username == username)
       .flatMap { user =>
         user.credentials.values.map { credential =>
-          val regResult  = jsonMapper.readValue(credential.stringify, classOf[RegistrationResult])
+          val regResult = jsonMapper.readValue(credential.stringify, classOf[RegistrationResult])
           regResult.getKeyId
         }
       }
@@ -560,9 +590,9 @@ class LocalCredentialRepository(users: Seq[WebAuthnOtoroshiAdmin], jsonMapper: O
         handle.equals(userHandle)
       }
       .map(_.username) match {
-        case None    => Optional.empty()
-        case Some(r) => Optional.of(r)
-      }
+      case None    => Optional.empty()
+      case Some(r) => Optional.of(r)
+    }
   }
 
   override def lookup(credentialId: ByteArray, userHandle: ByteArray): Optional[RegisteredCredential] = {
@@ -570,8 +600,8 @@ class LocalCredentialRepository(users: Seq[WebAuthnOtoroshiAdmin], jsonMapper: O
       .flatMap { user =>
         user.credentials.map {
           case (id, reg) =>
-            val handle  = new ByteArray(base64Decoder.decode(user.handle))
-            val regResult  = jsonMapper.readValue(reg.stringify, classOf[RegistrationResult])
+            val handle    = new ByteArray(base64Decoder.decode(user.handle))
+            val regResult = jsonMapper.readValue(reg.stringify, classOf[RegistrationResult])
             (handle, regResult.getKeyId.getId, regResult)
         }.toSeq
       }
@@ -598,8 +628,8 @@ class LocalCredentialRepository(users: Seq[WebAuthnOtoroshiAdmin], jsonMapper: O
       .flatMap { user =>
         user.credentials.map {
           case (id, reg) =>
-            val handle  = new ByteArray(base64Decoder.decode(user.handle))
-            val regResult  = jsonMapper.readValue(reg.stringify, classOf[RegistrationResult])
+            val handle    = new ByteArray(base64Decoder.decode(user.handle))
+            val regResult = jsonMapper.readValue(reg.stringify, classOf[RegistrationResult])
             (handle, regResult.getKeyId.getId, regResult)
         }.toSeq
       }

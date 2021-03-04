@@ -26,31 +26,33 @@ import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-case class LetsEncryptSettings(enabled: Boolean = false,
-                               server: String = "acme://letsencrypt.org/staging",
-                               emails: Seq[String] = Seq.empty,
-                               contacts: Seq[String] = Seq.empty,
-                               publicKey: String = "",
-                               privateKey: String = "") {
+case class LetsEncryptSettings(
+    enabled: Boolean = false,
+    server: String = "acme://letsencrypt.org/staging",
+    emails: Seq[String] = Seq.empty,
+    contacts: Seq[String] = Seq.empty,
+    publicKey: String = "",
+    privateKey: String = ""
+) {
 
   def json: JsValue = LetsEncryptSettings.format.writes(this)
 
   def keyPair: Option[KeyPair] = {
     for {
       privko <- Option(privateKey)
-                 .filter(_.trim.nonEmpty)
-                 .map(_.replace(PemHeaders.BeginPrivateKey, "").replace(PemHeaders.EndPrivateKey, "").trim())
-                 .map { content =>
-                   val encodedKey: Array[Byte] = base64Decode(content)
-                   new PKCS8EncodedKeySpec(encodedKey)
-                 }
-      pubko <- Option(publicKey)
-                .filter(_.trim.nonEmpty)
-                .map(_.replace(PemHeaders.BeginPublicKey, "").replace(PemHeaders.EndPublicKey, "").trim)
-                .map { content =>
-                  val encodedKey: Array[Byte] = base64Decode(content)
-                  new X509EncodedKeySpec(encodedKey)
-                }
+                  .filter(_.trim.nonEmpty)
+                  .map(_.replace(PemHeaders.BeginPrivateKey, "").replace(PemHeaders.EndPrivateKey, "").trim())
+                  .map { content =>
+                    val encodedKey: Array[Byte] = base64Decode(content)
+                    new PKCS8EncodedKeySpec(encodedKey)
+                  }
+      pubko  <- Option(publicKey)
+                  .filter(_.trim.nonEmpty)
+                  .map(_.replace(PemHeaders.BeginPublicKey, "").replace(PemHeaders.EndPublicKey, "").trim)
+                  .map { content =>
+                    val encodedKey: Array[Byte] = base64Decode(content)
+                    new X509EncodedKeySpec(encodedKey)
+                  }
     } yield {
       Try(KeyFactory.getInstance("RSA"))
         .orElse(Try(KeyFactory.getInstance("DSA")))
@@ -71,8 +73,16 @@ object LetsEncryptSettings {
         LetsEncryptSettings(
           enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
           server = (json \ "server").asOpt[String].getOrElse("acme://letsencrypt.org/staging"),
-          emails = (json \ "emails").asOpt[Seq[String]].map(_.map(_.trim).filter(_.nonEmpty)).filter(_.nonEmpty).getOrElse(Seq.empty),
-          contacts = (json \ "contacts").asOpt[Seq[String]].map(_.map(_.trim).filter(_.nonEmpty)).filter(_.nonEmpty).getOrElse(Seq.empty),
+          emails = (json \ "emails")
+            .asOpt[Seq[String]]
+            .map(_.map(_.trim).filter(_.nonEmpty))
+            .filter(_.nonEmpty)
+            .getOrElse(Seq.empty),
+          contacts = (json \ "contacts")
+            .asOpt[Seq[String]]
+            .map(_.map(_.trim).filter(_.nonEmpty))
+            .filter(_.nonEmpty)
+            .getOrElse(Seq.empty),
           publicKey = (json \ "publicKey").asOpt[String].getOrElse(""),
           privateKey = (json \ "privateKey").asOpt[String].getOrElse("")
         )
@@ -81,14 +91,15 @@ object LetsEncryptSettings {
         case Failure(e) => JsError(e.getMessage)
       }
 
-    override def writes(o: LetsEncryptSettings): JsValue = Json.obj(
-      "enabled"    -> o.enabled,
-      "server"     -> o.server,
-      "emails"     -> JsArray(o.emails.map(JsString.apply)),
-      "contacts"     -> JsArray(o.emails.map(JsString.apply)),
-      "publicKey"  -> o.publicKey,
-      "privateKey" -> o.privateKey,
-    )
+    override def writes(o: LetsEncryptSettings): JsValue =
+      Json.obj(
+        "enabled"    -> o.enabled,
+        "server"     -> o.server,
+        "emails"     -> JsArray(o.emails.map(JsString.apply)),
+        "contacts"   -> JsArray(o.emails.map(JsString.apply)),
+        "publicKey"  -> o.publicKey,
+        "privateKey" -> o.privateKey
+      )
   }
 }
 
@@ -108,8 +119,8 @@ object LetsEncryptHelper {
       val session = new Session(letsEncryptSettings.server)
 
       (letsEncryptSettings.keyPair match {
-        case None =>
-          val kp = KeyPairUtils.createKeyPair(2048)
+        case None     =>
+          val kp          = KeyPairUtils.createKeyPair(2048)
           val newSettings = letsEncryptSettings.copy(
             privateKey =
               s"${PemHeaders.BeginPrivateKey}\n${Base64.getEncoder.encodeToString(kp.getPrivate.getEncoded)}\n${PemHeaders.EndPrivateKey}",
@@ -123,7 +134,8 @@ object LetsEncryptHelper {
           .agreeToTermsOfService()
           .useKeyPair(userKeyPair)
 
-        val account = (letsEncryptSettings.emails.map(e => s"mailto:$e") ++ letsEncryptSettings.contacts).foldLeft(_account)((a, e) => a.addContact(e))
+        val account = (letsEncryptSettings.emails.map(e => s"mailto:$e") ++ letsEncryptSettings.contacts)
+          .foldLeft(_account)((a, e) => a.addContact(e))
           .create(session)
 
         logger.debug(s"ordering lets encrypt certificate for $domain")
@@ -133,7 +145,7 @@ object LetsEncryptHelper {
             case Left(err) =>
               logger.error(s"challenges failed: $err")
               FastFuture.successful(Left(err))
-            case Right(_) => {
+            case Right(_)  => {
 
               logger.debug(s"building csr for $domain")
               val keyPair       = KeyPairUtils.createKeyPair(2048)
@@ -142,20 +154,20 @@ object LetsEncryptHelper {
               logger.debug(s"ordering certificate for $domain")
 
               orderCertificate(order, csrByteString).flatMap {
-                case Left(err) =>
+                case Left(err)       =>
                   logger.error(s"ordering certificate failed: $err")
                   FastFuture.successful(Left(err))
                 case Right(newOrder) => {
                   logger.debug(s"storing certificate for $domain")
                   Option(newOrder.getCertificate) match {
-                    case None =>
+                    case None    =>
                       logger.error(s"storing certificate failed: No certificate found !")
                       FastFuture.successful(Left("No certificate found !"))
                     case Some(c) => {
                       // env.datastores.rawDataStore.del(Seq(s"${env.storageRoot}:letsencrypt:challenges:$domain:$token"))
                       val ca: X509Certificate          = c.getCertificateChain.get(1)
                       val certificate: X509Certificate = c.getCertificate
-                      val cert =
+                      val cert                         =
                         Cert.apply(certificate, keyPair, ca, false).copy(letsEncrypt = true, autoRenew = true).enrich()
                       cert.save().map(_ => Right(cert))
                     }
@@ -169,11 +181,13 @@ object LetsEncryptHelper {
     }
   }
 
-  def getChallengeForToken(domain: String, token: String)(implicit ec: ExecutionContext,
-                                                          env: Env,
-                                                          mat: Materializer): Future[Option[ByteString]] = {
+  def getChallengeForToken(domain: String, token: String)(implicit
+      ec: ExecutionContext,
+      env: Env,
+      mat: Materializer
+  ): Future[Option[ByteString]] = {
     env.datastores.rawDataStore.get(s"${env.storageRoot}:letsencrypt:challenges:$domain:$token").map {
-      case None =>
+      case None        =>
         logger.debug(s"Trying to access token ${token} for domain ${domain} but none found")
         None
       case s @ Some(_) =>
@@ -187,7 +201,7 @@ object LetsEncryptHelper {
       case Some(_) =>
         logger.warn(s"Certificate already in renewing process: ${cert.id} for ${cert.domain}")
         FastFuture.successful(cert)
-      case None => {
+      case None    => {
         val enriched = cert.enrich()
         env.datastores.rawDataStore
           .set(s"${env.storageRoot}:letsencrypt:renew:${cert.id}", ByteString("true"), Some(10.minutes.toMillis))
@@ -197,7 +211,7 @@ object LetsEncryptHelper {
                 case Left(err) =>
                   logger.error(s"Error while renewing certificate ${cert.id} for ${enriched.domain}: $err")
                   FastFuture.successful(enriched)
-                case Right(c) =>
+                case Right(c)  =>
                   val cenriched = c.enrich()
                   Alerts.send(
                     CertRenewalAlert(
@@ -207,10 +221,12 @@ object LetsEncryptHelper {
                     )
                   )
                   enriched
-                    .copy(chain = cenriched.chain,
-                          privateKey = cenriched.privateKey,
-                          autoRenew = true,
-                          letsEncrypt = true)
+                    .copy(
+                      chain = cenriched.chain,
+                      privateKey = cenriched.privateKey,
+                      autoRenew = true,
+                      letsEncrypt = true
+                    )
                     .save()
                     .map(_ => cenriched)
               }
@@ -225,7 +241,7 @@ object LetsEncryptHelper {
   def createFromServices()(implicit ec: ExecutionContext, env: Env, mat: Materializer): Future[Unit] = {
     env.datastores.certificatesDataStore.findAll().flatMap { certificates =>
       env.datastores.serviceDescriptorDataStore.findAll().flatMap { services =>
-        val letsEncryptCertificates = certificates.filter(_.letsEncrypt)
+        val letsEncryptCertificates  = certificates.filter(_.letsEncrypt)
         val letsEncryptServicesHosts = services
           .filter(_.letsEncrypt)
           .flatMap(_.allHosts)
@@ -236,11 +252,13 @@ object LetsEncryptHelper {
               case Some(_) =>
                 logger.warn(s"Certificate already in creating process: $host")
                 FastFuture.successful(())
-              case None => {
+              case None    => {
                 env.datastores.rawDataStore
-                  .set(s"${env.storageRoot}:certs-issuer:letsencrypt:create:$host",
-                       ByteString("true"),
-                       Some(4.minutes.toMillis))
+                  .set(
+                    s"${env.storageRoot}:certs-issuer:letsencrypt:create:$host",
+                    ByteString("true"),
+                    Some(4.minutes.toMillis)
+                  )
                   .flatMap { _ =>
                     createCertificate(host).map(e => (host, e))
                   }
@@ -261,24 +279,30 @@ object LetsEncryptHelper {
     }
   }
 
-  private def orderLetsEncryptCertificate(account: Account, domain: String)(implicit ec: ExecutionContext,
-                                                                            env: Env,
-                                                                            mat: Materializer): Future[Order] = {
+  private def orderLetsEncryptCertificate(account: Account, domain: String)(implicit
+      ec: ExecutionContext,
+      env: Env,
+      mat: Materializer
+  ): Future[Order] = {
     Future {
       account.newOrder().domains(domain).create()
     }(blockingEc)
   }
 
-  private def doChallenges(order: Order, domain: String)(implicit ec: ExecutionContext,
-                                                         env: Env,
-                                                         mat: Materializer): Future[Either[String, Seq[Status]]] = {
+  private def doChallenges(order: Order, domain: String)(implicit
+      ec: ExecutionContext,
+      env: Env,
+      mat: Materializer
+  ): Future[Either[String, Seq[Status]]] = {
     Source(order.getAuthorizations.asScala.toList)
       .mapAsync(1) { authorization =>
         val challenge = authorization.findChallenge(classOf[Http01Challenge])
         logger.info("setting challenge content in datastore")
-        env.datastores.rawDataStore.set(s"${env.storageRoot}:letsencrypt:challenges:$domain:${challenge.getToken}",
-                                        ByteString(challenge.getAuthorization),
-                                        Some(10.minutes.toMillis))
+        env.datastores.rawDataStore.set(
+          s"${env.storageRoot}:letsencrypt:challenges:$domain:${challenge.getToken}",
+          ByteString(challenge.getAuthorization),
+          Some(10.minutes.toMillis)
+        )
         authorizeOrder(domain, authorization.getStatus, challenge)
       }
       .toMat(Sink.seq)(Keep.right)
@@ -324,9 +348,11 @@ object LetsEncryptHelper {
     }
   }
 
-  private def orderCertificate(order: Order, csr: Array[Byte])(implicit ec: ExecutionContext,
-                                                               env: Env,
-                                                               mat: Materializer): Future[Either[String, Order]] = {
+  private def orderCertificate(order: Order, csr: Array[Byte])(implicit
+      ec: ExecutionContext,
+      env: Env,
+      mat: Materializer
+  ): Future[Either[String, Order]] = {
     Future {
       order.execute(csr)
     }(blockingEc).flatMap { _ =>
@@ -353,7 +379,7 @@ object LetsEncryptHelper {
   }
 
   private def buildCsr(domain: String, keyPair: KeyPair): Array[Byte] = {
-    val csrb = new CSRBuilder()
+    val csrb         = new CSRBuilder()
     csrb.addDomains(domain)
     csrb.sign(keyPair)
     val stringWriter = new StringWriter()

@@ -55,22 +55,23 @@ private[utils] final class UdpBindLogic(localAddress: InetSocketAddress, boundPr
     unbindListener()
   }
 
-  private def processIncoming(event: (ActorRef, Any)): Unit = event match {
-    case (sender, Udp.Bound(boundAddress)) ⇒
-      boundPromise.success(boundAddress)
-      listener = sender
-      pull(in)
-    case (_, Udp.CommandFailed(cmd: Udp.Bind)) =>
-      val ex = new IllegalArgumentException(s"Unable to bind to [${cmd.localAddress}]")
-      boundPromise.failure(ex)
-      failStage(ex)
-    case (s, Udp.Received(data, sender)) =>
-      if (isAvailable(out)) {
-        // println("received: " + data.utf8String)
-        push(out, Datagram(data, sender))
-      }
-    case _ =>
-  }
+  private def processIncoming(event: (ActorRef, Any)): Unit =
+    event match {
+      case (sender, Udp.Bound(boundAddress))      ⇒
+        boundPromise.success(boundAddress)
+        listener = sender
+        pull(in)
+      case (_, Udp.CommandFailed(cmd: Udp.Bind)) =>
+        val ex = new IllegalArgumentException(s"Unable to bind to [${cmd.localAddress}]")
+        boundPromise.failure(ex)
+        failStage(ex)
+      case (s, Udp.Received(data, sender))       =>
+        if (isAvailable(out)) {
+          // println("received: " + data.utf8String)
+          push(out, Datagram(data, sender))
+        }
+      case _                                     =>
+    }
 
   private def unbindListener() =
     if (listener != null) {

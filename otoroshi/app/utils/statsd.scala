@@ -37,11 +37,13 @@ import akka.actor._
  * @param multiMetrics If true, multiple stats will be sent in a single UDP packet
  * @param packetBufferSize If multiMetrics is true, this is the max buffer size before sending the UDP packet
  */
-class StatsD(context: ActorContext,
-             host: String,
-             port: Int,
-             multiMetrics: Boolean = true,
-             packetBufferSize: Int = 1024) {
+class StatsD(
+    context: ActorContext,
+    host: String,
+    port: Int,
+    multiMetrics: Boolean = true,
+    packetBufferSize: Int = 1024
+) {
 
   private val rand = new Random()
 
@@ -181,11 +183,13 @@ private class StatsDActor(host: String, port: Int, multiMetrics: Boolean, packet
 
     } catch {
       case e: IOException => {
-        log.error("Could not send stat {} to host {}:{}",
-                  sendBuffer.toString,
-                  address.getHostName(),
-                  address.getPort().toString,
-                  e)
+        log.error(
+          "Could not send stat {} to host {}:{}",
+          sendBuffer.toString,
+          address.getHostName(),
+          address.getPort().toString,
+          e
+        )
       }
     }
 
@@ -217,11 +221,13 @@ private class StatsDActor(host: String, port: Int, multiMetrics: Boolean, packet
 
     } catch {
       case e: IOException => {
-        log.error("Could not send stat {} to host {}:{}",
-                  sendBuffer.toString,
-                  address.getHostName(),
-                  address.getPort().toString,
-                  e)
+        log.error(
+          "Could not send stat {} to host {}:{}",
+          sendBuffer.toString,
+          address.getHostName(),
+          address.getPort().toString,
+          e
+        )
       }
     }
 }

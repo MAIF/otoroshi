@@ -28,11 +28,12 @@ import scala.concurrent.{ExecutionContext, Future}
 import otoroshi.utils.syntax.implicits._
 
 @deprecated(message = "Use FileDb instead", since = "1.5.0")
-class LevelDbDataStores(configuration: Configuration,
-                        environment: Environment,
-                        lifecycle: ApplicationLifecycle,
-                        env: Env)
-    extends DataStores {
+class LevelDbDataStores(
+    configuration: Configuration,
+    environment: Environment,
+    lifecycle: ApplicationLifecycle,
+    env: Env
+) extends DataStores {
 
   lazy val logger = Logger("otoroshi-leveldb-datastores")
 
@@ -40,7 +41,7 @@ class LevelDbDataStores(configuration: Configuration,
 
   lazy val dbPath: String       = configuration.getOptionalWithFileSupport[String]("app.leveldb.path").getOrElse("./leveldb")
   lazy val redisStatsItems: Int = configuration.getOptionalWithFileSupport[Int]("app.leveldb.windowSize").getOrElse(99)
-  lazy val actorSystem =
+  lazy val actorSystem          =
     ActorSystem(
       "otoroshi-leveldb-system",
       configuration
@@ -48,11 +49,13 @@ class LevelDbDataStores(configuration: Configuration,
         .map(_.underlying)
         .getOrElse(ConfigFactory.empty)
     )
-  lazy val redis = new LevelDbRedis(actorSystem, dbPath)
+  lazy val redis                = new LevelDbRedis(actorSystem, dbPath)
 
-  override def before(configuration: Configuration,
-                      environment: Environment,
-                      lifecycle: ApplicationLifecycle): Future[Unit] = {
+  override def before(
+      configuration: Configuration,
+      environment: Environment,
+      lifecycle: ApplicationLifecycle
+  ): Future[Unit] = {
     logger.info("Now using LevelDB DataStores")
     logger.warn(s"LevelDB DataStores is deprecated and will be removed in a future release")
     redis.start()
@@ -61,9 +64,11 @@ class LevelDbDataStores(configuration: Configuration,
     FastFuture.successful(())
   }
 
-  override def after(configuration: Configuration,
-                     environment: Environment,
-                     lifecycle: ApplicationLifecycle): Future[Unit] = {
+  override def after(
+      configuration: Configuration,
+      environment: Environment,
+      lifecycle: ApplicationLifecycle
+  ): Future[Unit] = {
     _serviceDescriptorDataStore.stopCleanup()
     _certificateDataStore.stopSync()
     redis.stop()
@@ -92,7 +97,7 @@ class LevelDbDataStores(configuration: Configuration,
   private lazy val _clusterStateDataStore                   = new KvClusterStateDataStore(redis, env)
   override def clusterStateDataStore: ClusterStateDataStore = _clusterStateDataStore
 
-  private lazy val _clientCertificateValidationDataStore = new KvClientCertificateValidationDataStore(redis, env)
+  private lazy val _clientCertificateValidationDataStore                                  = new KvClientCertificateValidationDataStore(redis, env)
   override def clientCertificateValidationDataStore: ClientCertificateValidationDataStore =
     _clientCertificateValidationDataStore
 
@@ -111,13 +116,13 @@ class LevelDbDataStores(configuration: Configuration,
   private lazy val _webAuthnRegistrationsDataStore                            = new WebAuthnRegistrationsDataStore()
   override def webAuthnRegistrationsDataStore: WebAuthnRegistrationsDataStore = _webAuthnRegistrationsDataStore
 
-  private lazy val _tenantDataStore = new TenantDataStore(redis, env)
+  private lazy val _tenantDataStore             = new TenantDataStore(redis, env)
   override def tenantDataStore: TenantDataStore = _tenantDataStore
 
-  private lazy val _teamDataStore = new TeamDataStore(redis, env)
+  private lazy val _teamDataStore           = new TeamDataStore(redis, env)
   override def teamDataStore: TeamDataStore = _teamDataStore
 
-  private lazy val _dataExporterConfigDataStore = new DataExporterConfigDataStore(redis, env)
+  private lazy val _dataExporterConfigDataStore                         = new DataExporterConfigDataStore(redis, env)
   override def dataExporterConfigDataStore: DataExporterConfigDataStore = _dataExporterConfigDataStore
 
   override def privateAppsUserDataStore: PrivateAppsUserDataStore               = _privateAppsUserDataStore
@@ -149,7 +154,7 @@ class LevelDbDataStores(configuration: Configuration,
       .grouped(group)
       .mapAsync(1) {
         case keys if keys.isEmpty => FastFuture.successful(Seq.empty[JsValue])
-        case keys => {
+        case keys                 => {
           Future.sequence(
             keys
               .filterNot { key =>
@@ -170,14 +175,16 @@ class LevelDbDataStores(configuration: Configuration,
               }
               .map { key =>
                 redis.get(key).flatMap {
-                  case None => FastFuture.successful(JsNull)
+                  case None        => FastFuture.successful(JsNull)
                   case Some(value) => {
                     val (what, jsonValue) = toJson(value)
                     redis.pttl(key).map { ttl =>
-                      Json.obj("k" -> key,
-                               "v" -> jsonValue,
-                               "t" -> (if (ttl == -1) -1 else (System.currentTimeMillis() + ttl)),
-                               "w" -> what)
+                      Json.obj(
+                        "k" -> key,
+                        "v" -> jsonValue,
+                        "t" -> (if (ttl == -1) -1 else (System.currentTimeMillis() + ttl)),
+                        "w" -> what
+                      )
                     }
                   }
                 }
@@ -202,14 +209,14 @@ class LevelDbDataStores(configuration: Configuration,
         .grouped(10)
         .mapAsync(1) {
           case keys if keys.isEmpty => FastFuture.successful(Seq.empty[JsValue])
-          case keys => {
+          case keys                 => {
             Source(keys.toList)
               .mapAsync(1) { key =>
                 redis.rawGet(key).flatMap {
-                  case None => FastFuture.successful(JsNull)
+                  case None        => FastFuture.successful(JsNull)
                   case Some(value) => {
                     toJson(value) match {
-                      case (_, JsNull) => FastFuture.successful(JsNull)
+                      case (_, JsNull)       => FastFuture.successful(JsNull)
                       case (what, jsonValue) =>
                         redis.pttl(key).map { ttl =>
                           Json.obj(
@@ -249,14 +256,14 @@ class LevelDbDataStores(configuration: Configuration,
             val what  = (json \ "w").as[String]
             (what match {
               case "counter" => redis.set(key, value.as[Long].toString)
-              case "string" => redis.set(key, value.as[String])
-              case "hash" =>
+              case "string"  => redis.set(key, value.as[String])
+              case "hash"    =>
                 Source(value.as[JsObject].value.toList)
                   .mapAsync(1)(v => redis.hset(key, v._1, Json.stringify(v._2)))
                   .runWith(Sink.ignore)
-              case "list" => redis.lpush(key, value.as[JsArray].value.map(Json.stringify): _*)
-              case "set"  => redis.sadd(key, value.as[JsArray].value.map(Json.stringify): _*)
-              case _      => FastFuture.successful(0L)
+              case "list"    => redis.lpush(key, value.as[JsArray].value.map(Json.stringify): _*)
+              case "set"     => redis.sadd(key, value.as[JsArray].value.map(Json.stringify): _*)
+              case _         => FastFuture.successful(0L)
             }).flatMap { _ =>
               if (pttl > -1L) {
                 redis.pexpire(key, pttl)
@@ -284,8 +291,8 @@ class LevelDbDataStores(configuration: Configuration,
         ("list", JsArray(str.utf8String.split(";;;").toSeq.map(JsString.apply)))
       case str: ByteString if str.containsSlice(ByteString(";;>")) =>
         ("set", JsArray(str.utf8String.split(";;>").toSeq.map(JsString.apply)))
-      case str: ByteString => ("string", JsString(str.utf8String))
-      case e               => throw new RuntimeException(s"Unkown type for ${value}")
+      case str: ByteString                                         => ("string", JsString(str.utf8String))
+      case e                                                       => throw new RuntimeException(s"Unkown type for ${value}")
     }
   }
 }

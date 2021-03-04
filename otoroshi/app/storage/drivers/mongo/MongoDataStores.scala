@@ -36,7 +36,8 @@ class MongoDataStores(configuration: Configuration, environment: Environment, li
   lazy val logger = Logger("otoroshi-mongo-datastores")
 
   lazy val uri: String         = configuration.getOptionalWithFileSupport[String]("app.mongo.uri").get
-  lazy val database: String    = configuration.getOptionalWithFileSupport[String]("app.mongo.database").getOrElse("default")
+  lazy val database: String    =
+    configuration.getOptionalWithFileSupport[String]("app.mongo.database").getOrElse("default")
   lazy val strictMode: Boolean = configuration.getOptionalWithFileSupport[Boolean]("app.mongo.strict").getOrElse(false)
 
   lazy val parsedUri      = MongoConnection.parseURI(uri).get
@@ -63,8 +64,10 @@ class MongoDataStores(configuration: Configuration, environment: Environment, li
     redis.start()
     if (configuration.getOptionalWithFileSupport[Boolean]("app.mongo.testMode").getOrElse(false)) {
       logger.warn("Flushing DB as in test mode")
-      Await.result(redis.keys(s"${env.storageRoot}:*").flatMap(keys => redis.del(keys: _*))(actorSystem.dispatcher),
-                   5.second)
+      Await.result(
+        redis.keys(s"${env.storageRoot}:*").flatMap(keys => redis.del(keys: _*))(actorSystem.dispatcher),
+        5.second
+      )
     }
     Await.result(redis.initIndexes(), 5.second)
     _serviceDescriptorDataStore.startCleanup(env)
@@ -88,7 +91,7 @@ class MongoDataStores(configuration: Configuration, environment: Environment, li
           case Failure(reason) =>
             reason.printStackTrace()
             driver.close() // Close anyway
-          case _ => driver.close()
+          case _               => driver.close()
         },
       12.seconds
     )
@@ -118,7 +121,7 @@ class MongoDataStores(configuration: Configuration, environment: Environment, li
   private lazy val _clusterStateDataStore                   = new KvClusterStateDataStore(redis, env)
   override def clusterStateDataStore: ClusterStateDataStore = _clusterStateDataStore
 
-  private lazy val _clientCertificateValidationDataStore = new KvClientCertificateValidationDataStore(redis, env)
+  private lazy val _clientCertificateValidationDataStore                                  = new KvClientCertificateValidationDataStore(redis, env)
   override def clientCertificateValidationDataStore: ClientCertificateValidationDataStore =
     _clientCertificateValidationDataStore
 
@@ -137,13 +140,13 @@ class MongoDataStores(configuration: Configuration, environment: Environment, li
   private lazy val _webAuthnRegistrationsDataStore                            = new WebAuthnRegistrationsDataStore()
   override def webAuthnRegistrationsDataStore: WebAuthnRegistrationsDataStore = _webAuthnRegistrationsDataStore
 
-  private lazy val _tenantDataStore = new TenantDataStore(redis, env)
+  private lazy val _tenantDataStore             = new TenantDataStore(redis, env)
   override def tenantDataStore: TenantDataStore = _tenantDataStore
 
-  private lazy val _teamDataStore = new TeamDataStore(redis, env)
+  private lazy val _teamDataStore           = new TeamDataStore(redis, env)
   override def teamDataStore: TeamDataStore = _teamDataStore
 
-  private lazy val _dataExporterConfigDataStore = new DataExporterConfigDataStore(redis, env)
+  private lazy val _dataExporterConfigDataStore                         = new DataExporterConfigDataStore(redis, env)
   override def dataExporterConfigDataStore: DataExporterConfigDataStore = _dataExporterConfigDataStore
 
   override def privateAppsUserDataStore: PrivateAppsUserDataStore               = _privateAppsUserDataStore
@@ -175,7 +178,7 @@ class MongoDataStores(configuration: Configuration, environment: Environment, li
       .grouped(group)
       .mapAsync(1) {
         case keys if keys.isEmpty => FastFuture.successful(Seq.empty[JsValue])
-        case keys => {
+        case keys                 => {
           Future.sequence(
             keys
               .filterNot { key =>
@@ -196,14 +199,14 @@ class MongoDataStores(configuration: Configuration, environment: Environment, li
               }
               .map { key =>
                 redis.rawGet(key).flatMap {
-                  case None => FastFuture.successful(JsNull)
+                  case None         => FastFuture.successful(JsNull)
                   case Some(rawDoc) => {
                     val currentTime = System.currentTimeMillis()
                     val ttl         = rawDoc.getAs[Long]("ttl").getOrElse(currentTime - 1) - currentTime
                     val typ         = rawDoc.getAs[String]("type").get
                     fetchValueForType(typ, key).map {
                       case JsNull => JsNull
-                      case value =>
+                      case value  =>
                         Json.obj(
                           "k" -> key,
                           "v" -> value,
@@ -235,29 +238,28 @@ class MongoDataStores(configuration: Configuration, environment: Environment, li
         .grouped(10)
         .mapAsync(1) {
           case keys if keys.isEmpty => FastFuture.successful(Seq.empty[JsValue])
-          case keys => {
+          case keys                 => {
             Source(keys.toList)
-              .mapAsync(1) {
-                key =>
-                  redis.rawGet(key).flatMap {
-                    case None => FastFuture.successful(JsNull)
-                    case Some(rawDoc) => {
-                      val currentTime = System.currentTimeMillis()
-                      val ttl         = rawDoc.getAs[Long]("ttl").getOrElse(currentTime - 1) - currentTime
-                      val typ         = rawDoc.getAs[String]("type").get
-                      fetchValueForType(typ, key).map {
-                        case JsNull => JsNull
-                        case value =>
-                          Json.obj(
-                            "k" -> key,
-                            "v" -> value,
-                            "t" -> (if (ttl == -1) -1 else (System.currentTimeMillis() + ttl)),
-                            "w" -> typ
-                          )
+              .mapAsync(1) { key =>
+                redis.rawGet(key).flatMap {
+                  case None         => FastFuture.successful(JsNull)
+                  case Some(rawDoc) => {
+                    val currentTime = System.currentTimeMillis()
+                    val ttl         = rawDoc.getAs[Long]("ttl").getOrElse(currentTime - 1) - currentTime
+                    val typ         = rawDoc.getAs[String]("type").get
+                    fetchValueForType(typ, key).map {
+                      case JsNull => JsNull
+                      case value  =>
+                        Json.obj(
+                          "k" -> key,
+                          "v" -> value,
+                          "t" -> (if (ttl == -1) -1 else (System.currentTimeMillis() + ttl)),
+                          "w" -> typ
+                        )
 
-                      }
                     }
                   }
+                }
               }
               .runWith(Sink.seq)
               .map(_.filterNot(_ == JsNull))
@@ -285,14 +287,14 @@ class MongoDataStores(configuration: Configuration, environment: Environment, li
             val what  = (json \ "w").as[String]
             (what match {
               case "counter" => redis.set(key, value.as[Long].toString)
-              case "string" => redis.set(key, value.as[String])
-              case "hash" =>
+              case "string"  => redis.set(key, value.as[String])
+              case "hash"    =>
                 Source(value.as[JsObject].value.toList)
                   .mapAsync(1)(v => redis.hset(key, v._1, Json.stringify(v._2)))
                   .runWith(Sink.ignore)
-              case "list" => redis.lpush(key, value.as[JsArray].value.map(Json.stringify): _*)
-              case "set"  => redis.sadd(key, value.as[JsArray].value.map(Json.stringify): _*)
-              case _      => FastFuture.successful(0L)
+              case "list"    => redis.lpush(key, value.as[JsArray].value.map(Json.stringify): _*)
+              case "set"     => redis.sadd(key, value.as[JsArray].value.map(Json.stringify): _*)
+              case _         => FastFuture.successful(0L)
             }).flatMap { _ =>
               if (pttl > -1L) {
                 redis.pexpire(key, pttl)
@@ -308,15 +310,15 @@ class MongoDataStores(configuration: Configuration, environment: Environment, li
 
   private def fetchValueForType(typ: String, key: String)(implicit ec: ExecutionContext): Future[JsValue] = {
     typ match {
-      case "hash" => redis.hgetall(key).map(m => JsObject(m.map(t => (t._1, JsString(t._2.utf8String)))))
-      case "list" => redis.lrange(key, 0, Long.MaxValue).map(l => JsArray(l.map(s => JsString(s.utf8String))))
-      case "set"  => redis.smembers(key).map(l => JsArray(l.map(s => JsString(s.utf8String))))
+      case "hash"   => redis.hgetall(key).map(m => JsObject(m.map(t => (t._1, JsString(t._2.utf8String)))))
+      case "list"   => redis.lrange(key, 0, Long.MaxValue).map(l => JsArray(l.map(s => JsString(s.utf8String))))
+      case "set"    => redis.smembers(key).map(l => JsArray(l.map(s => JsString(s.utf8String))))
       case "string" =>
         redis.get(key).map {
           case None    => JsNull
           case Some(a) => JsString(a.utf8String)
         }
-      case _ => FastFuture.successful(JsNull)
+      case _        => FastFuture.successful(JsNull)
     }
   }
 }

@@ -17,8 +17,7 @@ import otoroshi.security.IdGenerator
 
 import scala.util.{Failure, Try}
 
-class BasicSpec(name: String, configurationSpec: => Configuration)
-    extends OtoroshiSpec {
+class BasicSpec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 
   lazy val serviceHost = "basictest.oto.tools"
 
@@ -34,11 +33,16 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
 
     val callCounter           = new AtomicInteger(0)
     val basicTestExpectedBody = """{"message":"hello world"}"""
-    val basicTestServer = TargetService(Some(serviceHost), "/api", "application/json", { _ =>
-      callCounter.incrementAndGet()
-      basicTestExpectedBody
-    }).await()
-    val initialDescriptor = ServiceDescriptor(
+    val basicTestServer       = TargetService(
+      Some(serviceHost),
+      "/api",
+      "application/json",
+      { _ =>
+        callCounter.incrementAndGet()
+        basicTestExpectedBody
+      }
+    ).await()
+    val initialDescriptor     = ServiceDescriptor(
       id = "basic-test",
       name = "basic-test",
       env = "prod",
@@ -249,11 +253,16 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
     "Send additionnal headers to target" in {
       val counter = new AtomicInteger(0)
       val body    = """{"message":"hello world"}"""
-      val server = TargetService(None, "/api", "application/json", { r =>
-        r.headers.find(_.name() == "X-Foo").map(_.value()) mustBe Some("Bar")
-        counter.incrementAndGet()
-        body
-      }).await()
+      val server  = TargetService(
+        None,
+        "/api",
+        "application/json",
+        { r =>
+          r.headers.find(_.name() == "X-Foo").map(_.value()) mustBe Some("Bar")
+          counter.incrementAndGet()
+          body
+        }
+      ).await()
       val service = ServiceDescriptor(
         id = "header-test",
         name = "header-test",
@@ -291,10 +300,15 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
     "Route only if header is present" in {
       val counter = new AtomicInteger(0)
       val body    = """{"message":"hello world"}"""
-      val server = TargetService(None, "/api", "application/json", { _ =>
-        counter.incrementAndGet()
-        body
-      }).await()
+      val server  = TargetService(
+        None,
+        "/api",
+        "application/json",
+        { _ =>
+          counter.incrementAndGet()
+          body
+        }
+      ).await()
       val service = ServiceDescriptor(
         id = "match-test",
         name = "match-test",
@@ -832,14 +846,24 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
       val counter2 = new AtomicInteger(0)
       val body1    = """{"message":"hello world1"}"""
       val body2    = """{"message":"hello world2"}"""
-      val server1 = TargetService(None, "/api", "application/json", { _ =>
-        counter1.incrementAndGet()
-        body1
-      }).await()
-      val server2 = TargetService(None, "/api", "application/json", { _ =>
-        counter2.incrementAndGet()
-        body2
-      }).await()
+      val server1  = TargetService(
+        None,
+        "/api",
+        "application/json",
+        { _ =>
+          counter1.incrementAndGet()
+          body1
+        }
+      ).await()
+      val server2  = TargetService(
+        None,
+        "/api",
+        "application/json",
+        { _ =>
+          counter2.incrementAndGet()
+          body2
+        }
+      ).await()
       val service1 = ServiceDescriptor(
         id = "match-test-bot",
         name = "match-test",
@@ -914,10 +938,15 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
     "Route only if header is present and matches regex" in {
       val counter = new AtomicInteger(0)
       val body    = """{"message":"hello world"}"""
-      val server = TargetService(None, "/api", "application/json", { _ =>
-        counter.incrementAndGet()
-        body
-      }).await()
+      val server  = TargetService(
+        None,
+        "/api",
+        "application/json",
+        { _ =>
+          counter.incrementAndGet()
+          body
+        }
+      ).await()
       val service = ServiceDescriptor(
         id = "match-test",
         name = "match-test",
@@ -973,10 +1002,15 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
     "Route only if matching root is present" in {
       val counter = new AtomicInteger(0)
       val body    = """{"message":"hello world"}"""
-      val server = TargetService(None, "/api", "application/json", { _ =>
-        counter.incrementAndGet()
-        body
-      }).await()
+      val server  = TargetService(
+        None,
+        "/api",
+        "application/json",
+        { _ =>
+          counter.incrementAndGet()
+          body
+        }
+      ).await()
       val service = ServiceDescriptor(
         id = "matchroot-test",
         name = "matchroot-test",
@@ -1014,10 +1048,15 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
     "Add root to target call" in {
       val counter = new AtomicInteger(0)
       val body    = """{"message":"hello world"}"""
-      val server = TargetService(None, "/api", "application/json", { _ =>
-        counter.incrementAndGet()
-        body
-      }).await()
+      val server  = TargetService(
+        None,
+        "/api",
+        "application/json",
+        { _ =>
+          counter.incrementAndGet()
+          body
+        }
+      ).await()
       val service = ServiceDescriptor(
         id = "root-test",
         name = "root-test",
@@ -1055,10 +1094,15 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
     "Match wildcard domains" in {
       val counter = new AtomicInteger(0)
       val body    = """{"message":"hello world"}"""
-      val server = TargetService(None, "/api", "application/json", { _ =>
-        counter.incrementAndGet()
-        body
-      }).await()
+      val server  = TargetService(
+        None,
+        "/api",
+        "application/json",
+        { _ =>
+          counter.incrementAndGet()
+          body
+        }
+      ).await()
       val service = ServiceDescriptor(
         id = "wildcard-test",
         name = "wildcard-test",
@@ -1113,11 +1157,12 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
     "Validate sec. communication in V1" in {
       val counter = new AtomicInteger(0)
       val body    = """{"message":"hello world"}"""
-      val server = TargetService
+      val server  = TargetService
         .full(
           None,
           "/api",
-          "application/json", { r =>
+          "application/json",
+          { r =>
             val state = r.getHeader("Otoroshi-State").get()
             counter.incrementAndGet()
             (200, body, List(RawHeader("Otoroshi-State-Resp", state.value())))
@@ -1161,15 +1206,16 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
       import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
       val counter = new AtomicInteger(0)
       val body    = """{"message":"hello world"}"""
-      val server = TargetService
+      val server  = TargetService
         .full(
           None,
           "/api",
-          "application/json", { r =>
-            val state = r.getHeader("Otoroshi-State").get()
-            val tokenBody =
+          "application/json",
+          { r =>
+            val state             = r.getHeader("Otoroshi-State").get()
+            val tokenBody         =
               Try(Json.parse(ApacheBase64.decodeBase64(state.value().split("\\.")(1)))).getOrElse(Json.obj())
-            val stateValue = (tokenBody \ "state").as[String]
+            val stateValue        = (tokenBody \ "state").as[String]
             val respToken: String = JWT
               .create()
               .withJWTId(IdGenerator.uuid)
@@ -1220,11 +1266,12 @@ class BasicSpec(name: String, configurationSpec: => Configuration)
     "Deny sec. communication in V2" in {
       val counter = new AtomicInteger(0)
       val body    = """{"message":"hello world"}"""
-      val server = TargetService
+      val server  = TargetService
         .full(
           None,
           "/api",
-          "application/json", { r =>
+          "application/json",
+          { r =>
             val state = r.getHeader("Otoroshi-State").get()
             counter.incrementAndGet()
             (200, body, List(RawHeader("Otoroshi-State-Resp", state.value())))

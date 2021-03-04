@@ -22,20 +22,20 @@ import play.api.mvc.{Result, Results}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-class Version1413Spec(name: String, configurationSpec: => Configuration)
-    extends OtoroshiSpec {
+class Version1413Spec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 
-  implicit val system  = ActorSystem("otoroshi-test")
-  implicit val env     = otoroshiComponents.env
+  implicit val system = ActorSystem("otoroshi-test")
+  implicit val env    = otoroshiComponents.env
 
-  override def getTestConfiguration(configuration: Configuration) = Configuration(
-    ConfigFactory
-      .parseString(s"""
+  override def getTestConfiguration(configuration: Configuration) =
+    Configuration(
+      ConfigFactory
+        .parseString(s"""
                       |{
                       |}
        """.stripMargin)
-      .resolve()
-  ).withFallback(configurationSpec).withFallback(configuration)
+        .resolve()
+    ).withFallback(configurationSpec).withFallback(configuration)
 
   s"[$name] Otoroshi service descriptors" should {
 
@@ -235,7 +235,7 @@ class Version1413Spec(name: String, configurationSpec: => Configuration)
 
     "be able to validate access (#360)" in {
       val (_, port1, counter1, call1) = testServer("accessvalidator.oto.tools", port)
-      val service1 = ServiceDescriptor(
+      val service1                    = ServiceDescriptor(
         id = "accessvalidator",
         name = "accessvalidator",
         env = "prod",
@@ -260,12 +260,12 @@ class Version1413Spec(name: String, configurationSpec: => Configuration)
           )
         )
       )
-      val validApiKey = ApiKey(
+      val validApiKey                 = ApiKey(
         clientName = "apikey1",
         authorizedEntities = Seq(ServiceGroupIdentifier("default")),
         tags = Seq("foo", "bar")
       )
-      val invalidApiKey = ApiKey(
+      val invalidApiKey               = ApiKey(
         clientName = "apikey2",
         authorizedEntities = Seq(ServiceGroupIdentifier("default")),
         tags = Seq("kix")
@@ -310,7 +310,7 @@ class Version1413Spec(name: String, configurationSpec: => Configuration)
 
     "be able to chain transformers (#366)" in {
       val (_, port1, counter1, call1) = testServer("reqtrans.oto.tools", port)
-      val service1 = ServiceDescriptor(
+      val service1                    = ServiceDescriptor(
         id = "reqtrans",
         name = "reqtrans",
         env = "prod",
@@ -414,13 +414,15 @@ class Version1413Spec(name: String, configurationSpec: => Configuration)
           strict = true,
           source = InHeader(name = "X-JWT-Token"),
           algoSettings = HSAlgoSettings(512, "secret"),
-          strategy = DefaultToken(true,
-                                  Json.obj(
-                                    "user" -> "bobby",
-                                    "rights" -> Json.arr(
-                                      "admin"
-                                    )
-                                  ))
+          strategy = DefaultToken(
+            true,
+            Json.obj(
+              "user"   -> "bobby",
+              "rights" -> Json.arr(
+                "admin"
+              )
+            )
+          )
         )
       )
 
@@ -444,13 +446,15 @@ class Version1413Spec(name: String, configurationSpec: => Configuration)
           strict = true,
           source = InHeader(name = "X-JWT-Token"),
           algoSettings = HSAlgoSettings(512, "secret"),
-          strategy = DefaultToken(false,
-                                  Json.obj(
-                                    "user" -> "bobby",
-                                    "rights" -> Json.arr(
-                                      "admin"
-                                    )
-                                  ))
+          strategy = DefaultToken(
+            false,
+            Json.obj(
+              "user"   -> "bobby",
+              "rights" -> Json.arr(
+                "admin"
+              )
+            )
+          )
         )
       )
 
@@ -531,8 +535,8 @@ class Transformer1 extends RequestTransformer {
       Right(
         context.otoroshiRequest.copy(
           headers = context.otoroshiRequest.headers ++ Map(
-            "foo" -> "bar"
-          )
+              "foo" -> "bar"
+            )
         )
       )
     )

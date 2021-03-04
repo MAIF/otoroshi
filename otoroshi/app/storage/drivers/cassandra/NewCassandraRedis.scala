@@ -40,10 +40,11 @@ object CassImplicits {
     import scala.compat.java8.FutureConverters._
 
     def list()(implicit mat: Materializer): Future[Seq[Row]] = {
-      val ref = new AtomicReference[AsyncResultSet](rsf)
+      val ref  = new AtomicReference[AsyncResultSet](rsf)
       val base = Source(ref.get().currentPage().asScala.toList)
       if (ref.get().hasMorePages) {
-        val more = Source.repeat(())
+        val more = Source
+          .repeat(())
           .takeWhile(_ => ref.get().hasMorePages, true)
           .mapAsync(1) { _ =>
             ref.get().fetchNextPage().toScala
@@ -60,10 +61,11 @@ object CassImplicits {
   }
 
   implicit class ConditionalEffect[T](val any: T) extends AnyVal {
-    def withCondition(p: => Boolean)(f: T => T): T = p match {
-      case true  => f(any)
-      case false => any
-    }
+    def withCondition(p: => Boolean)(f: T => T): T =
+      p match {
+        case true  => f(any)
+        case false => any
+      }
   }
 }
 
@@ -71,55 +73,62 @@ object NewCassandraRedis {
   val logger = Logger("otoroshi-cassandra-datastores")
 }
 
-class NewCassandraRedis(actorSystem: ActorSystem, configuration: Configuration)(implicit ec: ExecutionContext, mat: Materializer, env: Env) extends RedisLike with RawGetRedis {
+class NewCassandraRedis(actorSystem: ActorSystem, configuration: Configuration)(implicit
+    ec: ExecutionContext,
+    mat: Materializer,
+    env: Env
+) extends RedisLike
+    with RawGetRedis {
 
   import CassImplicits._
 
   import collection.JavaConverters._
   import scala.compat.java8.FutureConverters._
 
-
   private val metrics = new MetricRegistry()
 
   private val patterns = new ConcurrentHashMap[String, Pattern]()
 
-  private val cassandraDurableWrites: String =
+  private val cassandraDurableWrites: String       =
     configuration.getOptionalWithFileSupport[Boolean]("app.cassandra.durableWrites").map(_.toString).getOrElse("true")
   private val cassandraReplicationStrategy: String =
     configuration.getOptionalWithFileSupport[String]("app.cassandra.replicationStrategy").getOrElse("none")
-  private val cassandraReplicationOptions: String =
+  private val cassandraReplicationOptions: String  =
     configuration.getOptionalWithFileSupport[String]("app.cassandra.replicationOptions").getOrElse("'dc0': 1")
-  private val cassandraReplicationFactor: Int =
+  private val cassandraReplicationFactor: Int      =
     configuration.getOptionalWithFileSupport[Int]("app.cassandra.replicationFactor").getOrElse(1)
-
 
   private val maybeUsername: Option[String] = configuration.getOptionalWithFileSupport[String]("app.cassandra.username")
   private val maybePassword: Option[String] = configuration.getOptionalWithFileSupport[String]("app.cassandra.password")
-  private val maybeAuthId: Option[String] = configuration.getOptionalWithFileSupport[String]("app.cassandra.authorizationId")
+  private val maybeAuthId: Option[String]   =
+    configuration.getOptionalWithFileSupport[String]("app.cassandra.authorizationId")
 
   private val sessionBuilder = {
     val loader = new DefaultDriverConfigLoader(() => {
-        ConfigFactory.invalidateCaches()
-        val config = configuration.getOptionalWithFileSupport[Configuration]("app.cassandra")
-          .map(_.underlying)
-          .getOrElse(Configuration.empty.underlying)
-          .withFallback(ConfigFactory.defaultReference())
-          .resolve()
-        config
+      ConfigFactory.invalidateCaches()
+      val config = configuration
+        .getOptionalWithFileSupport[Configuration]("app.cassandra")
+        .map(_.underlying)
+        .getOrElse(Configuration.empty.underlying)
+        .withFallback(ConfigFactory.defaultReference())
+        .resolve()
+      config
     })
     //val loader2 =
     //  DriverConfigLoader.programmaticBuilder()
     //    .withDuration(DefaultDriverOption.REQUEST_TIMEOUT, java.time.Duration.ofSeconds(10))
     //    .build()
-    CqlSession.builder()
+    CqlSession
+      .builder()
       .withConfigLoader(loader)
   }
 
   private val _session = {
     (maybeUsername, maybePassword, maybeAuthId) match {
-      case (Some(username), Some(password), Some(authId)) => sessionBuilder.withAuthCredentials(username, password, authId).build()
-      case (Some(username), Some(password), None) => sessionBuilder.withAuthCredentials(username, password).build()
-      case _ => sessionBuilder.build()
+      case (Some(username), Some(password), Some(authId)) =>
+        sessionBuilder.withAuthCredentials(username, password, authId).build()
+      case (Some(username), Some(password), None)         => sessionBuilder.withAuthCredentials(username, password).build()
+      case _                                              => sessionBuilder.build()
     }
   }
 
@@ -146,14 +155,15 @@ class NewCassandraRedis(actorSystem: ActorSystem, configuration: Configuration)(
     cancel.set(actorSystem.scheduler.scheduleAtFixedRate(1.second, 5.seconds)(SchedulerHelper.runnable {
       val time = System.currentTimeMillis()
       executeAsync("SELECT key, value from otoroshi.expirations;").flatMap { rs =>
-        rs.list()map(_.foreach { row =>
-          val key   = row.getString("key")
-          val value = row.getLong("value")
-          if (value < time) {
-            executeAsync(s"DELETE FROM otoroshi.counters where key = '$key';")
-            executeAsync(s"DELETE FROM otoroshi.expirations where key = '$key';")
-          }
-        })
+        rs.list()
+          .map(_.foreach { row =>
+            val key   = row.getString("key")
+            val value = row.getLong("value")
+            if (value < time) {
+              executeAsync(s"DELETE FROM otoroshi.counters where key = '$key';")
+              executeAsync(s"DELETE FROM otoroshi.expirations where key = '$key';")
+            }
+          })
       }
     }))
     NewCassandraRedis.logger.info("Keyspace and table creation done !")
@@ -179,8 +189,9 @@ class NewCassandraRedis(actorSystem: ActorSystem, configuration: Configuration)(
         val rsf = if (params.isEmpty) {
           _session.executeAsync(query).toScala
         } else {
-          val preparedStatement = _session.prepare(query) // preparedStatements.getOrElseUpdate(query, _session.prepare(query))
-          var bound             = preparedStatement.bind()
+          val preparedStatement =
+            _session.prepare(query) // preparedStatements.getOrElseUpdate(query, _session.prepare(query))
+          var bound = preparedStatement.bind()
           params.foreach { tuple =>
             val key = tuple._1
             tuple._2 match {
@@ -189,7 +200,7 @@ class NewCassandraRedis(actorSystem: ActorSystem, configuration: Configuration)(
               case value: Boolean => bound = bound.setBoolean(key, value)
               case value: Long    => bound = bound.setLong(key, value)
               case value: Double  => bound = bound.setDouble(key, value)
-              case value =>
+              case value          =>
                 NewCassandraRedis.logger.warn(s"Unknown type for parameter '${key}' of type ${value.getClass.getName}")
             }
           }
@@ -211,17 +222,17 @@ class NewCassandraRedis(actorSystem: ActorSystem, configuration: Configuration)(
 
   private def getAllKeys(): Future[Seq[String]] =
     for {
-      values <- executeAsync("SELECT key from otoroshi.values;")
-        .flatMap(_.list().map(_.map(_.getString("key")).toSeq))
+      values   <- executeAsync("SELECT key from otoroshi.values;")
+                    .flatMap(_.list().map(_.map(_.getString("key")).toSeq))
       counters <- executeAsync("SELECT key from otoroshi.counters;")
-        .flatMap(_.list().map(_.map(_.getString("key")).toSeq))
+                    .flatMap(_.list().map(_.map(_.getString("key")).toSeq))
     } yield values ++ counters
 
   private def getValueAt(key: String): Future[Option[String]] =
     executeAsync(s"SELECT value from otoroshi.values where key = '$key';").flatMap { rs =>
       Try(rs.one().getString("value")).toOption.flatMap(o => Option(o)) match {
         case Some(v) => FastFuture.successful(Some(v))
-        case None =>
+        case None    =>
           executeAsync(s"SELECT cvalue from otoroshi.counters where key = '$key';").map { r =>
             Try(r.one().getLong("cvalue")).toOption.flatMap(o => Option(o)).map(_.toString)
           }
@@ -237,7 +248,7 @@ class NewCassandraRedis(actorSystem: ActorSystem, configuration: Configuration)(
         Option(typ).flatMap(t => Option(value).map(v => (t, v)))
       }.toOption.flatten match {
         case Some(v) => FastFuture.successful(Some(v))
-        case None =>
+        case None    =>
           executeAsync(s"SELECT cvalue from otoroshi.counters where key = '$key';").map { r =>
             Try(r.one().getLong("cvalue")).toOption.flatMap(o => Option(o)).map(v => ("counter", v.toString))
           }
@@ -249,10 +260,11 @@ class NewCassandraRedis(actorSystem: ActorSystem, configuration: Configuration)(
       Try(rs.one().getLong("cvalue")).toOption.flatMap(o => Option(o)).getOrElse(0L)
     }
 
-  private def getExpirationAt(key: String): Future[Long] = ttl(key).map {
-    case -1L => -1L
-    case ttl => System.currentTimeMillis() + ttl
-  }
+  private def getExpirationAt(key: String): Future[Long] =
+    ttl(key).map {
+      case -1L => -1L
+      case ttl => System.currentTimeMillis() + ttl
+    }
 
   private def getExpirationFromExpirationsTableAt(key: String): Future[Long] =
     executeAsync(s"SELECT value from otoroshi.expirations where key = '$key';").map { rs =>
@@ -322,33 +334,38 @@ class NewCassandraRedis(actorSystem: ActorSystem, configuration: Configuration)(
     for {
       exp         <- getExpirationAt(key)
       typAndValue <- getTypeAndValueAt(key)
-    } yield
-      (exp, typAndValue) match {
-        case (e, Some((t, v))) => Some((t, e, v))
-        case _                 => None
-      }
+    } yield (exp, typAndValue) match {
+      case (e, Some((t, v))) => Some((t, e, v))
+      case _                 => None
+    }
   }
 
   override def get(key: String): Future[Option[ByteString]] = getValueAt(key).map(_.map(ByteString.apply))
 
-  override def set(key: String,
-                   value: String,
-                   exSeconds: Option[Long] = None,
-                   pxMilliseconds: Option[Long] = None): Future[Boolean] =
+  override def set(
+      key: String,
+      value: String,
+      exSeconds: Option[Long] = None,
+      pxMilliseconds: Option[Long] = None
+  ): Future[Boolean] =
     setBS(key, ByteString(value), exSeconds, pxMilliseconds)
 
-  override def setBS(key: String,
-                     value: ByteString,
-                     exSeconds: Option[Long] = None,
-                     pxMilliseconds: Option[Long] = None): Future[Boolean] = {
+  override def setBS(
+      key: String,
+      value: ByteString,
+      exSeconds: Option[Long] = None,
+      pxMilliseconds: Option[Long] = None
+  ): Future[Boolean] = {
     for {
-      a <- executeAsync(s"INSERT INTO otoroshi.values (key, type, value) values ('$key', 'string', :value);",
-        Map("value" -> value.utf8String))
+      a <- executeAsync(
+             s"INSERT INTO otoroshi.values (key, type, value) values ('$key', 'string', :value);",
+             Map("value" -> value.utf8String)
+           )
       b <- exSeconds
-        .map(_ * 1000)
-        .orElse(pxMilliseconds)
-        .map(ttl => pexpire(key, ttl))
-        .getOrElse(FastFuture.successful(true))
+             .map(_ * 1000)
+             .orElse(pxMilliseconds)
+             .map(ttl => pexpire(key, ttl))
+             .getOrElse(FastFuture.successful(true))
     } yield a.wasApplied() && b
     //((exSeconds, pxMilliseconds) match {
     //  case (Some(seconds), Some(_)) => executeAsync(s"INSERT INTO otoroshi.values (key, type, value) values ('$key', 'string','${value.utf8String}') USING TTL $seconds;")
@@ -395,12 +412,14 @@ class NewCassandraRedis(actorSystem: ActorSystem, configuration: Configuration)(
       .flatMap(_ => getCounterAt(key))
 
   override def exists(key: String): Future[Boolean] = {
-    executeAsync(s"SELECT key FROM otoroshi.values WHERE key = '$key' LIMIT 1").flatMap(rs => rs.list().map(_.nonEmpty)).flatMap {
-      case true => FastFuture.successful(true)
-      case false =>
-        executeAsync(s"SELECT key FROM otoroshi.counters WHERE key = '$key' LIMIT 1")
-          .flatMap(rs => rs.list().map(_.nonEmpty))
-    }
+    executeAsync(s"SELECT key FROM otoroshi.values WHERE key = '$key' LIMIT 1")
+      .flatMap(rs => rs.list().map(_.nonEmpty))
+      .flatMap {
+        case true  => FastFuture.successful(true)
+        case false =>
+          executeAsync(s"SELECT key FROM otoroshi.counters WHERE key = '$key' LIMIT 1")
+            .flatMap(rs => rs.list().map(_.nonEmpty))
+      }
   }
 
   override def mget(keys: String*): Future[Seq[Option[ByteString]]] =
@@ -485,7 +504,7 @@ class NewCassandraRedis(actorSystem: ActorSystem, configuration: Configuration)(
     // }
     getExpirationFromExpirationsTableAt(key).map {
       case -1L => -1L
-      case v =>
+      case v   =>
         val ttlValue: Long = v - System.currentTimeMillis()
         if (ttlValue < 0) -1L else ttlValue
     }

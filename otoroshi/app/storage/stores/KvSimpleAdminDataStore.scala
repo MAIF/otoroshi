@@ -21,22 +21,27 @@ class KvSimpleAdminDataStore(redisCli: RedisLike, _env: Env) extends SimpleAdmin
 
   def key(id: String): String = s"${_env.storageRoot}:admins:$id"
 
-  override def findByUsername(username: String)(implicit ec: ExecutionContext, env: Env): Future[Option[SimpleOtoroshiAdmin]] =
-    redisCli.get(key(username)).map(_.map(v => Json.parse(v.utf8String)).flatMap { user =>
-      SimpleOtoroshiAdmin.reads(user).asOpt
-    })
+  override def findByUsername(
+      username: String
+  )(implicit ec: ExecutionContext, env: Env): Future[Option[SimpleOtoroshiAdmin]] =
+    redisCli
+      .get(key(username))
+      .map(_.map(v => Json.parse(v.utf8String)).flatMap { user =>
+        SimpleOtoroshiAdmin.reads(user).asOpt
+      })
 
   override def findAll()(implicit ec: ExecutionContext, env: Env): Future[Seq[SimpleOtoroshiAdmin]] =
     redisCli
       .keys(key("*"))
-      .flatMap(
-        keys =>
-          if (keys.isEmpty) FastFuture.successful(Seq.empty[Option[ByteString]])
-          else redisCli.mget(keys: _*)
+      .flatMap(keys =>
+        if (keys.isEmpty) FastFuture.successful(Seq.empty[Option[ByteString]])
+        else redisCli.mget(keys: _*)
       )
-      .map(seq => seq.filter(_.isDefined).map(_.get).map(v => Json.parse(v.utf8String)).flatMap { user =>
-        SimpleOtoroshiAdmin.reads(user).asOpt
-      })
+      .map(seq =>
+        seq.filter(_.isDefined).map(_.get).map(v => Json.parse(v.utf8String)).flatMap { user =>
+          SimpleOtoroshiAdmin.reads(user).asOpt
+        }
+      )
 
   override def deleteUser(username: String)(implicit ec: ExecutionContext, env: Env): Future[Long] =
     redisCli.del(key(username))
@@ -49,9 +54,9 @@ class KvSimpleAdminDataStore(redisCli: RedisLike, _env: Env) extends SimpleAdmin
     }
   }
 
-  override def registerUser(user: SimpleOtoroshiAdmin)(
-    implicit ec: ExecutionContext,
-    env: Env
+  override def registerUser(user: SimpleOtoroshiAdmin)(implicit
+      ec: ExecutionContext,
+      env: Env
   ): Future[Boolean] = {
     redisCli.set(
       key(user.username),

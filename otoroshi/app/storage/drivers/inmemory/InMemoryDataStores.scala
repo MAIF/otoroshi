@@ -27,16 +27,17 @@ import otoroshi.storage.stores.{DataExporterConfigDataStore, KvRawDataStore, Tea
 import scala.concurrent.{ExecutionContext, Future}
 import otoroshi.utils.syntax.implicits._
 
-class InMemoryDataStores(configuration: Configuration,
-                         environment: Environment,
-                         lifecycle: ApplicationLifecycle,
-                         persistenceKind: PersistenceKind,
-                         env: Env)
-    extends DataStores {
+class InMemoryDataStores(
+    configuration: Configuration,
+    environment: Environment,
+    lifecycle: ApplicationLifecycle,
+    persistenceKind: PersistenceKind,
+    env: Env
+) extends DataStores {
 
   lazy val logger = Logger("otoroshi-datastores")
 
-  lazy val redisStatsItems: Int  = configuration.get[Option[Int]]("app.inmemory.windowSize").getOrElse(99)
+  lazy val redisStatsItems: Int = configuration.get[Option[Int]]("app.inmemory.windowSize").getOrElse(99)
 
   lazy val actorSystem =
     ActorSystem(
@@ -46,9 +47,9 @@ class InMemoryDataStores(configuration: Configuration,
         .map(_.underlying)
         .getOrElse(ConfigFactory.empty)
     )
-  val materializer = Materializer(actorSystem)
-  val _optimized = configuration.getOptional[Boolean]("app.inmemory.optimized").getOrElse(false)
-  lazy val redis = new SwappableInMemoryRedis(_optimized, env, actorSystem)
+  val materializer     = Materializer(actorSystem)
+  val _optimized       = configuration.getOptional[Boolean]("app.inmemory.optimized").getOrElse(false)
+  lazy val redis       = new SwappableInMemoryRedis(_optimized, env, actorSystem)
 
   lazy val persistence = persistenceKind match {
     case PersistenceKind.HttpPersistenceKind => new HttpPersistence(this, env)
@@ -56,29 +57,37 @@ class InMemoryDataStores(configuration: Configuration,
     case _                                   => new NoopPersistence(this, env)
   }
 
-  override def before(configuration: Configuration,
-                      environment: Environment,
-                      lifecycle: ApplicationLifecycle): Future[Unit] = {
+  override def before(
+      configuration: Configuration,
+      environment: Environment,
+      lifecycle: ApplicationLifecycle
+  ): Future[Unit] = {
     // logger.info("Now using InMemory DataStores")
     logger.info(persistence.message)
-    persistence.onStart().flatMap { _ =>
-      redis.start()
-      _serviceDescriptorDataStore.startCleanup(env)
-      _certificateDataStore.startSync()
-      FastFuture.successful(())
-    }(actorSystem.dispatcher)
+    persistence
+      .onStart()
+      .flatMap { _ =>
+        redis.start()
+        _serviceDescriptorDataStore.startCleanup(env)
+        _certificateDataStore.startSync()
+        FastFuture.successful(())
+      }(actorSystem.dispatcher)
   }
 
-  override def after(configuration: Configuration,
-                     environment: Environment,
-                     lifecycle: ApplicationLifecycle): Future[Unit] = {
+  override def after(
+      configuration: Configuration,
+      environment: Environment,
+      lifecycle: ApplicationLifecycle
+  ): Future[Unit] = {
     _certificateDataStore.stopSync()
     _serviceDescriptorDataStore.stopCleanup()
     redis.stop()
-    persistence.onStop().flatMap { _ =>
-      actorSystem.terminate()
-      FastFuture.successful(())
-    }(actorSystem.dispatcher)
+    persistence
+      .onStop()
+      .flatMap { _ =>
+        actorSystem.terminate()
+        FastFuture.successful(())
+      }(actorSystem.dispatcher)
   }
 
   private lazy val _privateAppsUserDataStore   = new KvPrivateAppsUserDataStore(redis, env)
@@ -102,7 +111,7 @@ class InMemoryDataStores(configuration: Configuration,
   private lazy val _clusterStateDataStore                   = new KvClusterStateDataStore(redis, env)
   override def clusterStateDataStore: ClusterStateDataStore = _clusterStateDataStore
 
-  private lazy val _clientCertificateValidationDataStore = new KvClientCertificateValidationDataStore(redis, env)
+  private lazy val _clientCertificateValidationDataStore                                  = new KvClientCertificateValidationDataStore(redis, env)
   override def clientCertificateValidationDataStore: ClientCertificateValidationDataStore =
     _clientCertificateValidationDataStore
 
@@ -121,13 +130,13 @@ class InMemoryDataStores(configuration: Configuration,
   private lazy val _webAuthnRegistrationsDataStore                            = new WebAuthnRegistrationsDataStore()
   override def webAuthnRegistrationsDataStore: WebAuthnRegistrationsDataStore = _webAuthnRegistrationsDataStore
 
-  private lazy val _tenantDataStore = new TenantDataStore(redis, env)
+  private lazy val _tenantDataStore             = new TenantDataStore(redis, env)
   override def tenantDataStore: TenantDataStore = _tenantDataStore
 
-  private lazy val _teamDataStore = new TeamDataStore(redis, env)
+  private lazy val _teamDataStore           = new TeamDataStore(redis, env)
   override def teamDataStore: TeamDataStore = _teamDataStore
 
-  private lazy val _dataExporterConfigDataStore = new DataExporterConfigDataStore(redis, env)
+  private lazy val _dataExporterConfigDataStore                         = new DataExporterConfigDataStore(redis, env)
   override def dataExporterConfigDataStore: DataExporterConfigDataStore = _dataExporterConfigDataStore
 
   override def privateAppsUserDataStore: PrivateAppsUserDataStore               = _privateAppsUserDataStore
@@ -159,7 +168,7 @@ class InMemoryDataStores(configuration: Configuration,
       .grouped(group)
       .mapAsync(1) {
         case keys if keys.isEmpty => FastFuture.successful(Seq.empty[JsValue])
-        case keys => {
+        case keys                 => {
           Future.sequence(
             keys
               .filterNot { key =>
@@ -180,16 +189,18 @@ class InMemoryDataStores(configuration: Configuration,
               }
               .map { key =>
                 redis.rawGet(key).flatMap {
-                  case None => FastFuture.successful(JsNull)
+                  case None        => FastFuture.successful(JsNull)
                   case Some(value) => {
                     toJson(value) match {
-                      case (_, JsNull) => FastFuture.successful(JsNull)
+                      case (_, JsNull)       => FastFuture.successful(JsNull)
                       case (what, jsonValue) =>
                         redis.pttl(key).map { ttl =>
-                          Json.obj("k" -> key,
-                                   "v" -> jsonValue,
-                                   "t" -> (if (ttl == -1) -1 else (System.currentTimeMillis() + ttl)),
-                                   "w" -> what)
+                          Json.obj(
+                            "k" -> key,
+                            "v" -> jsonValue,
+                            "t" -> (if (ttl == -1) -1 else (System.currentTimeMillis() + ttl)),
+                            "w" -> what
+                          )
                         }
                     }
                   }
@@ -215,14 +226,14 @@ class InMemoryDataStores(configuration: Configuration,
         .grouped(10)
         .mapAsync(1) {
           case keys if keys.isEmpty => FastFuture.successful(Seq.empty[JsValue])
-          case keys => {
+          case keys                 => {
             Source(keys.toList)
               .mapAsync(1) { key =>
                 redis.rawGet(key).flatMap {
-                  case None => FastFuture.successful(JsNull)
+                  case None        => FastFuture.successful(JsNull)
                   case Some(value) => {
                     toJson(value) match {
-                      case (_, JsNull) => FastFuture.successful(JsNull)
+                      case (_, JsNull)       => FastFuture.successful(JsNull)
                       case (what, jsonValue) =>
                         redis.pttl(key).map { ttl =>
                           Json.obj(
@@ -262,14 +273,14 @@ class InMemoryDataStores(configuration: Configuration,
             val what  = (json \ "w").as[String]
             (what match {
               case "counter" => redis.set(key, value.as[Long].toString)
-              case "string" => redis.set(key, value.as[String])
-              case "hash" =>
+              case "string"  => redis.set(key, value.as[String])
+              case "hash"    =>
                 Source(value.as[JsObject].value.toList)
                   .mapAsync(1)(v => redis.hset(key, v._1, Json.stringify(v._2)))
                   .runWith(Sink.ignore)
-              case "list" => redis.lpush(key, value.as[JsArray].value.map(Json.stringify): _*)
-              case "set"  => redis.sadd(key, value.as[JsArray].value.map(Json.stringify): _*)
-              case _      => FastFuture.successful(0L)
+              case "list"    => redis.lpush(key, value.as[JsArray].value.map(Json.stringify): _*)
+              case "set"     => redis.sadd(key, value.as[JsArray].value.map(Json.stringify): _*)
+              case _         => FastFuture.successful(0L)
             }).flatMap { _ =>
               if (pttl > -1L) {
                 redis.pexpire(key, pttl)
@@ -288,16 +299,16 @@ class InMemoryDataStores(configuration: Configuration,
     import collection.JavaConverters._
 
     value match {
-      case str: String     => ("string", JsString(str))
-      case str: ByteString => ("string", JsString(str.utf8String))
-      case lng: Long       => ("string", JsString(lng.toString))
+      case str: String                                                     => ("string", JsString(str))
+      case str: ByteString                                                 => ("string", JsString(str.utf8String))
+      case lng: Long                                                       => ("string", JsString(lng.toString))
       case map: java.util.concurrent.ConcurrentHashMap[String, ByteString] =>
         ("hash", JsObject(map.asScala.toSeq.map(t => (t._1, JsString(t._2.utf8String)))))
-      case list: java.util.concurrent.CopyOnWriteArrayList[ByteString] =>
+      case list: java.util.concurrent.CopyOnWriteArrayList[ByteString]     =>
         ("list", JsArray(list.asScala.toSeq.map(a => JsString(a.utf8String))))
-      case set: java.util.concurrent.CopyOnWriteArraySet[ByteString] =>
+      case set: java.util.concurrent.CopyOnWriteArraySet[ByteString]       =>
         ("set", JsArray(set.asScala.toSeq.map(a => JsString(a.utf8String))))
-      case _ => ("none", JsNull)
+      case _                                                               => ("none", JsNull)
     }
   }
 }

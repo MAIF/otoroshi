@@ -11,42 +11,57 @@ import play.api.Configuration
 
 import scala.concurrent.duration._
 
-class CircuitBreakerSpec(name: String, configurationSpec: => Configuration)
-    extends OtoroshiSpec {
+class CircuitBreakerSpec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 
   lazy val serviceHost = "cb.oto.tools"
   implicit val system  = ActorSystem("otoroshi-test")
 
-  override def getTestConfiguration(configuration: Configuration) = Configuration(
-    ConfigFactory
-      .parseString(s"""
+  override def getTestConfiguration(configuration: Configuration) =
+    Configuration(
+      ConfigFactory
+        .parseString(s"""
                       |{
                       |}
        """.stripMargin)
-      .resolve()
-  ).withFallback(configurationSpec).withFallback(configuration)
+        .resolve()
+    ).withFallback(configurationSpec).withFallback(configuration)
 
   s"[$name] Otoroshi Circuit Breaker" should {
 
     val callCounter1          = new AtomicInteger(0)
     val basicTestExpectedBody = """{"message":"hello world"}"""
-    val basicTestServer1 = TargetService(Some(serviceHost), "/api", "application/json", { _ =>
-      callCounter1.incrementAndGet()
-      basicTestExpectedBody
-    }).await()
+    val basicTestServer1      = TargetService(
+      Some(serviceHost),
+      "/api",
+      "application/json",
+      { _ =>
+        callCounter1.incrementAndGet()
+        basicTestExpectedBody
+      }
+    ).await()
 
-    val callCounter2 = new AtomicInteger(0)
-    val basicTestServer2 = TargetService(Some(serviceHost), "/api", "application/json", { _ =>
-      callCounter2.incrementAndGet()
-      basicTestExpectedBody
-    }).await()
+    val callCounter2     = new AtomicInteger(0)
+    val basicTestServer2 = TargetService(
+      Some(serviceHost),
+      "/api",
+      "application/json",
+      { _ =>
+        callCounter2.incrementAndGet()
+        basicTestExpectedBody
+      }
+    ).await()
 
-    val callCounter3 = new AtomicInteger(0)
-    val basicTestServer3 = TargetService(Some(serviceHost), "/api", "application/json", { _ =>
-      awaitF(2.seconds).futureValue
-      callCounter3.incrementAndGet()
-      basicTestExpectedBody
-    }).await()
+    val callCounter3     = new AtomicInteger(0)
+    val basicTestServer3 = TargetService(
+      Some(serviceHost),
+      "/api",
+      "application/json",
+      { _ =>
+        awaitF(2.seconds).futureValue
+        callCounter3.incrementAndGet()
+        basicTestExpectedBody
+      }
+    ).await()
 
     "warm up" in {
       startOtoroshi()
@@ -55,7 +70,7 @@ class CircuitBreakerSpec(name: String, configurationSpec: => Configuration)
 
     "Open if too many failures" in {
       val fakePort = TargetService.freePort
-      val service = ServiceDescriptor(
+      val service  = ServiceDescriptor(
         id = "cb-test",
         name = "cb-test",
         env = "prod",
@@ -104,7 +119,7 @@ class CircuitBreakerSpec(name: String, configurationSpec: => Configuration)
 
     "Open if too many failures and close back" in {
       val fakePort = TargetService.freePort
-      val service = ServiceDescriptor(
+      val service  = ServiceDescriptor(
         id = "cb-test",
         name = "cb-test",
         env = "prod",
@@ -158,7 +173,7 @@ class CircuitBreakerSpec(name: String, configurationSpec: => Configuration)
 
     "Retry on failures" in {
       val fakePort = TargetService.freePort
-      val service = ServiceDescriptor(
+      val service  = ServiceDescriptor(
         id = "cb-test",
         name = "cb-test",
         env = "prod",

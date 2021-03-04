@@ -12,30 +12,35 @@ import org.scalatest.concurrent.IntegrationPatience
 import org.scalatestplus.play.PlaySpec
 import play.api.Configuration
 
-class ApiKeysSpec(name: String, configurationSpec: => Configuration)
-    extends OtoroshiSpec {
+class ApiKeysSpec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 
   lazy val serviceHost = "auth.oto.tools"
   implicit val system  = ActorSystem("otoroshi-test")
 
-  override def getTestConfiguration(configuration: Configuration) = Configuration(
-    ConfigFactory
-      .parseString(s"""
+  override def getTestConfiguration(configuration: Configuration) =
+    Configuration(
+      ConfigFactory
+        .parseString(s"""
                       |{
                       |}
        """.stripMargin)
-      .resolve()
-  ).withFallback(configurationSpec).withFallback(configuration)
+        .resolve()
+    ).withFallback(configurationSpec).withFallback(configuration)
 
   s"[$name] Otoroshi ApiKeys" should {
 
-    val callCounter1          = new AtomicInteger(0)
-    val basicTestExpectedBody = """{"message":"hello world"}"""
-    val basicTestServer1 = TargetService(Some(serviceHost), "/api", "application/json", { _ =>
-      callCounter1.incrementAndGet()
-      basicTestExpectedBody
-    }).await()
-    val privateByDefaultService = ServiceDescriptor(
+    val callCounter1              = new AtomicInteger(0)
+    val basicTestExpectedBody     = """{"message":"hello world"}"""
+    val basicTestServer1          = TargetService(
+      Some(serviceHost),
+      "/api",
+      "application/json",
+      { _ =>
+        callCounter1.incrementAndGet()
+        basicTestExpectedBody
+      }
+    ).await()
+    val privateByDefaultService   = ServiceDescriptor(
       id = "auth-test",
       name = "auth-test",
       env = "prod",
@@ -50,7 +55,7 @@ class ApiKeysSpec(name: String, configurationSpec: => Configuration)
       forceHttps = false,
       enforceSecureCommunication = false
     )
-    val privateByPatternService = ServiceDescriptor(
+    val privateByPatternService   = ServiceDescriptor(
       id = "auth-test",
       name = "auth-test",
       env = "prod",
@@ -83,7 +88,7 @@ class ApiKeysSpec(name: String, configurationSpec: => Configuration)
       enforceSecureCommunication = false,
       publicPatterns = Seq("/foo/.*")
     )
-    val service = ServiceDescriptor(
+    val service                   = ServiceDescriptor(
       id = "auth-test",
       name = "auth-test",
       env = "prod",
@@ -96,30 +101,30 @@ class ApiKeysSpec(name: String, configurationSpec: => Configuration)
         )
       ),
       forceHttps = false,
-      enforceSecureCommunication = false,
+      enforceSecureCommunication = false
     )
-    val apiKey = ApiKey(
+    val apiKey                    = ApiKey(
       clientId = "apikey-test",
       clientSecret = "1234",
       clientName = "apikey-test",
       authorizedEntities = Seq(ServiceGroupIdentifier("default"))
     )
-    val apiKey2 = ApiKey(
+    val apiKey2                   = ApiKey(
       clientId = "apikey-test-2",
       clientSecret = "1234",
       clientName = "apikey-test-2",
       authorizedEntities = Seq(ServiceGroupIdentifier("default")),
       allowClientIdOnly = true
     )
-    val basicAuth = Base64.getUrlEncoder.encodeToString(s"apikey-test:1234".getBytes)
-    val algorithm = Algorithm.HMAC256("1234")
-    val bearerAuth = JWT
+    val basicAuth                 = Base64.getUrlEncoder.encodeToString(s"apikey-test:1234".getBytes)
+    val algorithm                 = Algorithm.HMAC256("1234")
+    val bearerAuth                = JWT
       .create()
       .withIssuer("apikey-test")
       .withClaim("name", "John Doe")
       .withClaim("admin", true)
       .sign(algorithm)
-    val bearerAuthXsrf = JWT
+    val bearerAuthXsrf            = JWT
       .create()
       .withIssuer("apikey-test")
       .withClaim("name", "John Doe")

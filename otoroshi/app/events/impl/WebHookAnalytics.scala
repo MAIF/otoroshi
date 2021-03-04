@@ -17,22 +17,24 @@ class WebHookAnalytics(webhook: Webhook, config: GlobalConfig) extends Analytics
 
   lazy val logger = Logger("otoroshi-analytics-webhook")
 
-  private def defaultParams(service: Option[String],
-                            from: Option[DateTime],
-                            to: Option[DateTime],
-                            page: Option[Int] = None,
-                            size: Option[Int] = None): Seq[(String, String)] =
+  private def defaultParams(
+      service: Option[String],
+      from: Option[DateTime],
+      to: Option[DateTime],
+      page: Option[Int] = None,
+      size: Option[Int] = None
+  ): Seq[(String, String)] =
     Seq(
       service.map(s => "services" -> s),
-      page.map(s => "page"        -> s.toString),
-      size.map(s => "size"        -> s.toString),
+      page.map(s => "page" -> s.toString),
+      size.map(s => "size" -> s.toString),
       Some(
         "from" -> from
           .getOrElse(DateTime.now().minusHours(1))
           .toString("yyyy-MM-dd'T'HH:mm:ss.SSSZ")
       ),
       Some(
-        "to" -> to
+        "to"   -> to
           .getOrElse(DateTime.now())
           .toString("yyyy-MM-dd'T'HH:mm:ss.SSSZ")
       )
@@ -47,21 +49,22 @@ class WebHookAnalytics(webhook: Webhook, config: GlobalConfig) extends Analytics
       exp = DateTime.now().plusSeconds(30).toDate.getTime,
       iat = DateTime.now().toDate.getTime,
       jti = IdGenerator.uuid
-    ).serialize(HSAlgoSettings(512, "${config.app.claim.sharedKey}", false))(env) // TODO : maybe we need some config here ?
+    ).serialize(HSAlgoSettings(512, "${config.app.claim.sharedKey}", false))(
+      env
+    ) // TODO : maybe we need some config here ?
     val headers: Seq[(String, String)] = webhook.headers.toSeq ++ Seq(
-      env.Headers.OtoroshiState -> state,
-      env.Headers.OtoroshiClaim -> claim
-    )
+        env.Headers.OtoroshiState -> state,
+        env.Headers.OtoroshiClaim -> claim
+      )
 
-    val url = event.headOption
-      .map(
-        evt =>
-          webhook.url
+    val url          = event.headOption
+      .map(evt =>
+        webhook.url
           //.replace("@product", env.eventsName)
-            .replace("@service", (evt \ "@service").as[String])
-            .replace("@serviceId", (evt \ "@serviceId").as[String])
-            .replace("@id", (evt \ "@id").as[String])
-            .replace("@messageType", (evt \ "@type").as[String])
+          .replace("@service", (evt \ "@service").as[String])
+          .replace("@serviceId", (evt \ "@serviceId").as[String])
+          .replace("@id", (evt \ "@id").as[String])
+          .replace("@messageType", (evt \ "@type").as[String])
       )
       .getOrElse(webhook.url)
     val postResponse = env.MtlsWs
@@ -73,7 +76,7 @@ class WebHookAnalytics(webhook: Webhook, config: GlobalConfig) extends Analytics
       case Success(resp) => {
         logger.debug(s"SEND_TO_ANALYTICS_SUCCESS: ${resp.status} - ${resp.headers} - ${resp.body}")
       }
-      case Failure(e) => {
+      case Failure(e)    => {
         logger.error("SEND_TO_ANALYTICS_FAILURE: Error while sending AnalyticEvent", e)
       }
     }

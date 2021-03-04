@@ -26,33 +26,33 @@ import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
 case class BodyLoggerFilterConfig(json: JsValue) {
-  lazy val statuses: Seq[Int] = (json \ "statuses")
+  lazy val statuses: Seq[Int]      = (json \ "statuses")
     .asOpt[Seq[Int]]
     .orElse((json \ "statuses").asOpt[Seq[String]].map(_.map(_.toInt)))
     .getOrElse(Seq.empty)
-  lazy val methods: Seq[String] = (json \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty)
-  lazy val paths: Seq[String]   = (json \ "paths").asOpt[Seq[String]].getOrElse(Seq.empty)
-  lazy val notStatuses: Seq[Int] = (json \ "not" \ "statuses")
+  lazy val methods: Seq[String]    = (json \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty)
+  lazy val paths: Seq[String]      = (json \ "paths").asOpt[Seq[String]].getOrElse(Seq.empty)
+  lazy val notStatuses: Seq[Int]   = (json \ "not" \ "statuses")
     .asOpt[Seq[Int]]
     .orElse((json \ "not" \ "statuses").asOpt[Seq[String]].map(_.map(_.toInt)))
     .getOrElse(Seq.empty)
   lazy val notMethods: Seq[String] = (json \ "not" \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty)
-  lazy val notPaths: Seq[String] = (json \ "not" \ "paths")
-    .asOpt[Seq[String]]
-    .getOrElse(Seq.empty) :+ "\\/\\.well-known\\/otoroshi\\/bodylogge.*"
+  lazy val notPaths: Seq[String]   = (json \ "not" \ "paths")
+      .asOpt[Seq[String]]
+      .getOrElse(Seq.empty) :+ "\\/\\.well-known\\/otoroshi\\/bodylogge.*"
 }
 
 case class BodyLoggerConfig(json: JsValue) {
-  lazy val enabled: Boolean         = (json \ "enabled").asOpt[Boolean].getOrElse(true)
-  lazy val log: Boolean             = (json \ "log").asOpt[Boolean].getOrElse(true)
-  lazy val store: Boolean           = (json \ "store").asOpt[Boolean].getOrElse(false)
-  lazy val ttl: Long                = (json \ "ttl").asOpt[Long].getOrElse(5.minutes.toMillis)
-  lazy val sendToAnalytics: Boolean = (json \ "sendToAnalytics").asOpt[Boolean].getOrElse(false)
+  lazy val enabled: Boolean                       = (json \ "enabled").asOpt[Boolean].getOrElse(true)
+  lazy val log: Boolean                           = (json \ "log").asOpt[Boolean].getOrElse(true)
+  lazy val store: Boolean                         = (json \ "store").asOpt[Boolean].getOrElse(false)
+  lazy val ttl: Long                              = (json \ "ttl").asOpt[Long].getOrElse(5.minutes.toMillis)
+  lazy val sendToAnalytics: Boolean               = (json \ "sendToAnalytics").asOpt[Boolean].getOrElse(false)
   lazy val filter: Option[BodyLoggerFilterConfig] =
     (json \ "filter").asOpt[JsObject].map(o => BodyLoggerFilterConfig(o))
-  lazy val hasFilter: Boolean = filter.isDefined
-  lazy val maxSize: Long      = (json \ "maxSize").asOpt[Long].getOrElse(5L * 1024L * 1024L)
-  lazy val password: String   = (json \ "password").asOpt[String].getOrElse("password")
+  lazy val hasFilter: Boolean                     = filter.isDefined
+  lazy val maxSize: Long                          = (json \ "maxSize").asOpt[Long].getOrElse(5L * 1024L * 1024L)
+  lazy val password: String                       = (json \ "password").asOpt[String].getOrElse("password")
 }
 
 case class RequestBodyEvent(
@@ -74,18 +74,19 @@ case class RequestBodyEvent(
   override def fromOrigin: Option[String]    = Some(from)
   override def fromUserAgent: Option[String] = Some(ua)
 
-  def toJson(implicit _env: Env): JsValue = Json.obj(
-    "@type"      -> "RequestBodyEvent",
-    "@id"        -> `@id`,
-    "@timestamp" -> `@timestamp`,
-    "@serviceId" -> `@serviceId`,
-    "@service"   -> `@service`,
-    "reqId"      -> reqId,
-    "method"     -> method,
-    "url"        -> url,
-    "headers"    -> headers,
-    "body"       -> BodyLogger.base64Encoder.encodeToString(body.toArray)
-  )
+  def toJson(implicit _env: Env): JsValue =
+    Json.obj(
+      "@type"      -> "RequestBodyEvent",
+      "@id"        -> `@id`,
+      "@timestamp" -> `@timestamp`,
+      "@serviceId" -> `@serviceId`,
+      "@service"   -> `@service`,
+      "reqId"      -> reqId,
+      "method"     -> method,
+      "url"        -> url,
+      "headers"    -> headers,
+      "body"       -> BodyLogger.base64Encoder.encodeToString(body.toArray)
+    )
 }
 
 case class ResponseBodyEvent(
@@ -108,19 +109,20 @@ case class ResponseBodyEvent(
   override def fromOrigin: Option[String]    = Some(from)
   override def fromUserAgent: Option[String] = Some(ua)
 
-  def toJson(implicit _env: Env): JsValue = Json.obj(
-    "@type"      -> "ResponseBodyEvent",
-    "@id"        -> `@id`,
-    "@timestamp" -> `@timestamp`,
-    "@serviceId" -> `@serviceId`,
-    "@service"   -> `@service`,
-    "reqId"      -> reqId,
-    "method"     -> method,
-    "url"        -> url,
-    "headers"    -> headers,
-    "status"     -> status,
-    "body"       -> BodyLogger.base64Encoder.encodeToString(body.toArray)
-  )
+  def toJson(implicit _env: Env): JsValue =
+    Json.obj(
+      "@type"      -> "ResponseBodyEvent",
+      "@id"        -> `@id`,
+      "@timestamp" -> `@timestamp`,
+      "@serviceId" -> `@serviceId`,
+      "@service"   -> `@service`,
+      "reqId"      -> reqId,
+      "method"     -> method,
+      "url"        -> url,
+      "headers"    -> headers,
+      "status"     -> status,
+      "body"       -> BodyLogger.base64Encoder.encodeToString(body.toArray)
+    )
 }
 
 object BodyLogger {
@@ -142,14 +144,14 @@ class BodyLogger extends RequestTransformer {
           "sendToAnalytics" -> false,
           "maxSize"         -> 5L * 1024L * 1024L,
           "password"        -> "password",
-          "filter" -> Json.obj(
+          "filter"          -> Json.obj(
             "statuses" -> Json.arr(),
             "methods"  -> Json.arr(),
             "paths"    -> Json.arr(),
-            "not" -> Json.obj(
+            "not"      -> Json.obj(
               "statuses" -> Json.arr(),
               "methods"  -> Json.arr(),
-              "paths"    -> Json.arr(),
+              "paths"    -> Json.arr()
             )
           )
         )
@@ -236,19 +238,23 @@ class BodyLogger extends RequestTransformer {
       .flatMap(a => a.headOption.flatMap(head => a.lastOption.map(last => (head, last))))
   }
 
-  private def set(key: String, value: ByteString, ttl: Option[Long])(implicit ec: ExecutionContext,
-                                                                     env: Env): Future[Boolean] = {
+  private def set(key: String, value: ByteString, ttl: Option[Long])(implicit
+      ec: ExecutionContext,
+      env: Env
+  ): Future[Boolean] = {
     ref.get() match {
       case null  => env.datastores.rawDataStore.set(key, value, ttl)
       case redis => redis._1.set(key, value, pxMilliseconds = ttl)
     }
   }
 
-  private def getAllKeys(pattern: String, desc: ServiceDescriptor)(implicit ec: ExecutionContext,
-                                                                   env: Env,
-                                                                   mat: Materializer): Future[Seq[JsValue]] = {
+  private def getAllKeys(pattern: String, desc: ServiceDescriptor)(implicit
+      ec: ExecutionContext,
+      env: Env,
+      mat: Materializer
+  ): Future[Seq[JsValue]] = {
     ref.get() match {
-      case null =>
+      case null  =>
         Source
           .future(env.datastores.rawDataStore.keys(pattern))
           .flatMapConcat(keys => Source(keys.toList))
@@ -260,7 +266,7 @@ class BodyLogger extends RequestTransformer {
                   .replace(s"${env.storageRoot}:bodies:${desc.id}:", "")
                   .replace(":request", "")
                   .replace(":response", ""),
-                "ttl" -> ttl
+                "ttl"   -> ttl
               )
           }
           .toMat(Sink.seq)(Keep.right)
@@ -277,7 +283,7 @@ class BodyLogger extends RequestTransformer {
                   .replace(s"${env.storageRoot}:bodies:${desc.id}:", "")
                   .replace(":request", "")
                   .replace(":response", ""),
-                "ttl" -> ttl
+                "ttl"   -> ttl
               )
           }
           .toMat(Sink.seq)(Keep.right)
@@ -287,7 +293,7 @@ class BodyLogger extends RequestTransformer {
 
   private def deleteAll(pattern: String)(implicit ec: ExecutionContext, env: Env, mat: Materializer): Future[Unit] = {
     ref.get() match {
-      case null =>
+      case null  =>
         env.datastores.rawDataStore.keys(pattern).flatMap(keys => env.datastores.rawDataStore.del(keys)).map(_ => ())
       case redis => redis._1.keys(pattern).flatMap(keys => redis._1.del(keys: _*)).map(_ => ())
     }
@@ -295,7 +301,7 @@ class BodyLogger extends RequestTransformer {
 
   private def getAll(pattern: String)(implicit ec: ExecutionContext, env: Env): Future[Seq[JsValue]] = {
     ref.get() match {
-      case null =>
+      case null  =>
         env.datastores.rawDataStore
           .keys(pattern)
           .flatMap { keys =>
@@ -320,7 +326,7 @@ class BodyLogger extends RequestTransformer {
 
   private def getOne(key: String)(implicit ec: ExecutionContext, env: Env): Future[JsValue] = {
     ref.get() match {
-      case null =>
+      case null  =>
         env.datastores.rawDataStore.get(key).map {
           case Some(value) => Json.parse(value.utf8String)
           case None        => JsNull
@@ -335,19 +341,19 @@ class BodyLogger extends RequestTransformer {
 
   private def filter(req: RequestHeader, config: BodyLoggerConfig, statusOpt: Option[Int] = None): Boolean = {
     config.filter match {
-      case None => true
+      case None         => true
       case Some(filter) => {
-        val matchPath =
+        val matchPath      =
           if (filter.paths.isEmpty) true else filter.paths.exists(p => RegexPool.regex(p).matches(req.relativeUri))
-        val matchNotPath =
+        val matchNotPath   =
           if (filter.notPaths.isEmpty) true
           else filter.notPaths.exists(p => RegexPool.regex(p).matches(req.relativeUri))
-        val methodMatch =
+        val methodMatch    =
           if (filter.methods.isEmpty) true else filter.methods.map(_.toLowerCase()).contains(req.method.toLowerCase())
         val methodNotMatch =
           if (filter.notMethods.isEmpty) true
           else filter.notMethods.map(_.toLowerCase()).contains(req.method.toLowerCase())
-        val statusMatch =
+        val statusMatch    =
           if (filter.statuses.isEmpty) true
           else
             statusOpt match {
@@ -373,7 +379,7 @@ class BodyLogger extends RequestTransformer {
       case Some(auth) if auth.startsWith("Basic ") =>
         extractUsernamePassword(auth) match {
           case Some((username, password)) if username == "user" && password == config.password => f
-          case _ =>
+          case _                                                                               =>
             Left(
               Results
                 .Unauthorized(views.html.oto.error("You are not authorized here", env))
@@ -381,7 +387,7 @@ class BodyLogger extends RequestTransformer {
             ).future
           //Left(Results.Forbidden(views.html.oto.error("Forbidden access", env))).future
         }
-      case _ =>
+      case _                                       =>
         Left(
           Results
             .Unauthorized(views.html.oto.error("You are not authorized here", env))
@@ -395,9 +401,12 @@ class BodyLogger extends RequestTransformer {
   )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
     val config = BodyLoggerConfig(ctx.configFor("BodyLogger"))
     (ctx.rawRequest.method.toLowerCase(), ctx.rawRequest.path) match {
-      case ("get", "/.well-known/otoroshi/plugins/bodylogger") =>
+      case ("get", "/.well-known/otoroshi/plugins/bodylogger")                           =>
         passWithAuth(config, ctx) {
-          FastFuture.successful(Left(Results.Ok(s"""<html>
+          FastFuture.successful(
+            Left(
+              Results
+                .Ok(s"""<html>
            |  <head>
            |    <link rel="stylesheet" media="screen" href="/__otoroshi_assets/javascripts/bundle/backoffice.css">
            |    <style>
@@ -544,9 +553,12 @@ class BodyLogger extends RequestTransformer {
            |    </script>
            |  </body>
            |</html>
-          """.stripMargin).as("text/html")))
+          """.stripMargin)
+                .as("text/html")
+            )
+          )
         }
-      case ("get", "/.well-known/otoroshi/plugins/bodylogger/requests.json") =>
+      case ("get", "/.well-known/otoroshi/plugins/bodylogger/requests.json")             =>
         passWithAuth(config, ctx) {
           for {
             requests  <- getAllKeys(s"${env.storageRoot}:bodies:${ctx.descriptor.id}:*:request", ctx.descriptor)
@@ -556,7 +568,7 @@ class BodyLogger extends RequestTransformer {
             Left(Results.Ok(JsArray(all)))
           }
         }
-      case ("delete", "/.well-known/otoroshi/plugins/bodylogger/requests.json") =>
+      case ("delete", "/.well-known/otoroshi/plugins/bodylogger/requests.json")          =>
         passWithAuth(config, ctx) {
           for {
             _ <- deleteAll(s"${env.storageRoot}:bodies:${ctx.descriptor.id}:*:request")
@@ -565,7 +577,7 @@ class BodyLogger extends RequestTransformer {
             Left(Results.Ok(Json.obj("done" -> true)))
           }
         }
-      case ("get", "/.well-known/otoroshi/plugins/bodylogger/bodies.json") =>
+      case ("get", "/.well-known/otoroshi/plugins/bodylogger/bodies.json")               =>
         passWithAuth(config, ctx) {
           for {
             requests  <- getAll(s"${env.storageRoot}:bodies:${ctx.descriptor.id}:*:request")
@@ -590,7 +602,7 @@ class BodyLogger extends RequestTransformer {
             )
           }
         }
-      case _ => FastFuture.successful(Right(ctx.otoroshiRequest))
+      case _                                                                             => FastFuture.successful(Right(ctx.otoroshiRequest))
     }
   }
 
@@ -602,15 +614,14 @@ class BodyLogger extends RequestTransformer {
       val size = new AtomicLong(0L)
       val ref  = new AtomicReference[ByteString](ByteString.empty)
       ctx.body
-        .wireTap(
-          bs =>
-            ref.updateAndGet { (t: ByteString) =>
-              val currentSize = size.addAndGet(bs.size.toLong)
-              if (currentSize <= config.maxSize) {
-                t ++ bs
-              } else {
-                t
-              }
+        .wireTap(bs =>
+          ref.updateAndGet { (t: ByteString) =>
+            val currentSize = size.addAndGet(bs.size.toLong)
+            if (currentSize <= config.maxSize) {
+              t ++ bs
+            } else {
+              t
+            }
           }
         )
         .alsoTo(Sink.onComplete {
@@ -635,9 +646,11 @@ class BodyLogger extends RequestTransformer {
               event.toAnalytics()
             }
             if (config.store) {
-              set(s"${env.storageRoot}:bodies:${ctx.descriptor.id}:${ctx.snowflake}:request",
-                  ByteString(Json.stringify(event.toJson)),
-                  Some(config.ttl))
+              set(
+                s"${env.storageRoot}:bodies:${ctx.descriptor.id}:${ctx.snowflake}:request",
+                ByteString(Json.stringify(event.toJson)),
+                Some(config.ttl)
+              )
             }
           }
         })
@@ -654,15 +667,14 @@ class BodyLogger extends RequestTransformer {
       val size = new AtomicLong(0L)
       val ref  = new AtomicReference[ByteString](ByteString.empty)
       ctx.body
-        .wireTap(
-          bs =>
-            ref.updateAndGet { (t: ByteString) =>
-              val currentSize = size.addAndGet(bs.size.toLong)
-              if (currentSize <= config.maxSize) {
-                t ++ bs
-              } else {
-                t
-              }
+        .wireTap(bs =>
+          ref.updateAndGet { (t: ByteString) =>
+            val currentSize = size.addAndGet(bs.size.toLong)
+            if (currentSize <= config.maxSize) {
+              t ++ bs
+            } else {
+              t
+            }
           }
         )
         .alsoTo(Sink.onComplete {
@@ -688,9 +700,11 @@ class BodyLogger extends RequestTransformer {
               event.toAnalytics()
             }
             if (config.store) {
-              set(s"${env.storageRoot}:bodies:${ctx.descriptor.id}:${ctx.snowflake}:response",
-                  ByteString(Json.stringify(event.toJson)),
-                  Some(config.ttl))
+              set(
+                s"${env.storageRoot}:bodies:${ctx.descriptor.id}:${ctx.snowflake}:response",
+                ByteString(Json.stringify(event.toJson)),
+                Some(config.ttl)
+              )
             }
           }
         })

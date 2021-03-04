@@ -22,7 +22,7 @@ object HeadersHelperImplicits {
       }
     }
     @inline
-    def appendIf(f: => Boolean, header: => (String, String)): Seq[(String, String)] =
+    def appendIf(f: => Boolean, header: => (String, String)): Seq[(String, String)]                      =
       if (f) {
         seq :+ header
       } else {
@@ -36,10 +36,10 @@ object HeadersHelperImplicits {
         seq :+ (name, els)
       }
     @inline
-    def removeIf(name: String, f: => Boolean): Seq[(String, String)] =
+    def removeIf(name: String, f: => Boolean): Seq[(String, String)]                                     =
       if (f) seq.filterNot(_._1.toLowerCase() == name.toLowerCase()) else seq
     @inline
-    def remove(name: String): Seq[(String, String)] = seq.filterNot(_._1.toLowerCase() == name.toLowerCase())
+    def remove(name: String): Seq[(String, String)]                                                      = seq.filterNot(_._1.toLowerCase() == name.toLowerCase())
     @inline
     def removeAll(names: Seq[String]): Seq[(String, String)] = {
       val lowerNames = names.map(_.toLowerCase)
@@ -51,13 +51,13 @@ object HeadersHelperImplicits {
       seq.filterNot(h => lowerNames.contains(h._1.toLowerCase()))
     }
     @inline
-    def appendAll(other: Seq[(String, String)]): Seq[(String, String)] = seq ++ other
+    def appendAll(other: Seq[(String, String)]): Seq[(String, String)]                                   = seq ++ other
     @inline
-    def appendAllArgs(other: (String, String)*): Seq[(String, String)] = seq ++ other
+    def appendAllArgs(other: (String, String)*): Seq[(String, String)]                                   = seq ++ other
     @inline
-    def appendAllArgsIf(f: => Boolean)(other: (String, String)*): Seq[(String, String)] = if (f) seq ++ other else seq
+    def appendAllArgsIf(f: => Boolean)(other: (String, String)*): Seq[(String, String)]                  = if (f) seq ++ other else seq
     @inline
-    def lazyAppendAllArgsIf(f: => Boolean)(other: => Seq[(String, String)]): Seq[(String, String)] =
+    def lazyAppendAllArgsIf(f: => Boolean)(other: => Seq[(String, String)]): Seq[(String, String)]       =
       if (f) seq ++ other else seq
 
     def debug(name: String): Seq[(String, String)] = {
@@ -74,22 +74,26 @@ object HeadersHelper {
   @inline
   def xForwardedHeader(desc: ServiceDescriptor, request: RequestHeader)(implicit env: Env): Seq[(String, String)] = {
     if (desc.xForwardedHeaders && env.trustXForwarded) {
-      val xForwardedFor = request.headers
+      val xForwardedFor   = request.headers
         .get("X-Forwarded-For")
         .map(v => v + ", " + request.remoteAddress)
         .getOrElse(request.remoteAddress)
       val xForwardedProto = request.theProtocol
       val xForwardedHost  = request.theHost
-      Seq("X-Forwarded-For"   -> xForwardedFor,
-          "X-Forwarded-Host"  -> xForwardedHost,
-          "X-Forwarded-Proto" -> xForwardedProto)
+      Seq(
+        "X-Forwarded-For"   -> xForwardedFor,
+        "X-Forwarded-Host"  -> xForwardedHost,
+        "X-Forwarded-Proto" -> xForwardedProto
+      )
     } else if (desc.xForwardedHeaders && !env.trustXForwarded) {
       val xForwardedFor   = request.remoteAddress
       val xForwardedProto = request.theProtocol
       val xForwardedHost  = request.theHost
-      Seq("X-Forwarded-For"   -> xForwardedFor,
-          "X-Forwarded-Host"  -> xForwardedHost,
-          "X-Forwarded-Proto" -> xForwardedProto)
+      Seq(
+        "X-Forwarded-For"   -> xForwardedFor,
+        "X-Forwarded-Host"  -> xForwardedHost,
+        "X-Forwarded-Proto" -> xForwardedProto
+      )
     } else {
       Seq.empty[(String, String)]
     }
@@ -194,13 +198,18 @@ object HeadersHelper {
         //       JsArray(chain.map(c => JsString(c.getSubjectDN.getName)))
         //   )
         // )
-        .appendIf(descriptor.enforceSecureCommunication && descriptor.sendInfoToken,
-                  claimRequestHeaderName -> claim.serialize(descriptor.algoInfoFromOtoToBack)(env))
-        .appendIf(descriptor.enforceSecureCommunication && descriptor.sendStateChallenge,
-                  stateRequestHeaderName -> stateToken)
-        .appendOpt(req.headers.get("Content-Length"),
-                   (value: String) =>
-                     "Content-Length" -> (value.toInt + snowMonkeyContext.trailingRequestBodySize).toString)
+        .appendIf(
+          descriptor.enforceSecureCommunication && descriptor.sendInfoToken,
+          claimRequestHeaderName -> claim.serialize(descriptor.algoInfoFromOtoToBack)(env)
+        )
+        .appendIf(
+          descriptor.enforceSecureCommunication && descriptor.sendStateChallenge,
+          stateRequestHeaderName -> stateToken
+        )
+        .appendOpt(
+          req.headers.get("Content-Length"),
+          (value: String) => "Content-Length" -> (value.toInt + snowMonkeyContext.trailingRequestBodySize).toString
+        )
         .removeAll(additionalHeaders.map(_._1))
         .removeAll(jwtAdditionalHeaders.map(_._1))
         .appendAll(additionalHeaders)
@@ -218,7 +227,7 @@ object HeadersHelper {
   )(implicit env: Env, ec: ExecutionContext): Seq[(String, String)] = {
     val claimRequestHeaderName =
       descriptor.secComHeaders.claimRequestName.getOrElse(env.Headers.OtoroshiClaim)
-    val doIt = descriptor.enforceSecureCommunication && descriptor.sendInfoToken
+    val doIt                   = descriptor.enforceSecureCommunication && descriptor.sendInfoToken
     headers.toSeq
       .removeIf(claimRequestHeaderName, doIt)
       .appendIf(doIt, claimRequestHeaderName -> claim.serialize(descriptor.algoInfoFromOtoToBack)(env))
@@ -285,8 +294,8 @@ object HeadersHelper {
       val corsHeaders = descriptor.cors
         .asHeaders(req)
         .filter(t => t._1.trim.nonEmpty && t._2.trim.nonEmpty)
-        .map(
-          v => (v._1, HeadersExpressionLanguage(v._2, Some(req), Some(descriptor), apiKey, paUsr, elCtx, attrs, env))
+        .map(v =>
+          (v._1, HeadersExpressionLanguage(v._2, Some(req), Some(descriptor), apiKey, paUsr, elCtx, attrs, env))
         )
         .filterNot(h => h._2 == "null")
 
@@ -320,7 +329,7 @@ object HeadersHelper {
             .isDefined
         )(
           Seq(
-            "Otoroshi-ApiKey-Rotation-At" -> attrs
+            "Otoroshi-ApiKey-Rotation-At"        -> attrs
               .get(otoroshi.plugins.Keys.ApiKeyRotationKey)
               .get
               .rotationAt
@@ -400,8 +409,8 @@ object HeadersHelper {
       val corsHeaders = descriptor.cors
         .asHeaders(req)
         .filter(t => t._1.trim.nonEmpty && t._2.trim.nonEmpty)
-        .map(
-          v => (v._1, HeadersExpressionLanguage(v._2, Some(req), Some(descriptor), apiKey, paUsr, elCtx, attrs, env))
+        .map(v =>
+          (v._1, HeadersExpressionLanguage(v._2, Some(req), Some(descriptor), apiKey, paUsr, elCtx, attrs, env))
         )
         .filterNot(h => h._2 == "null")
 
@@ -464,27 +473,25 @@ object HeadersHelper {
     val headersIn: Seq[(String, String)] = {
       (descriptor.missingOnlyHeadersIn
         .filter(t => t._1.trim.nonEmpty && t._2.trim.nonEmpty)
-        .mapValues(
-          v => HeadersExpressionLanguage.apply(v, Some(req), Some(descriptor), apiKey, paUsr, elCtx, attrs, env)
+        .mapValues(v =>
+          HeadersExpressionLanguage.apply(v, Some(req), Some(descriptor), apiKey, paUsr, elCtx, attrs, env)
         )
         .filterNot(h => h._2 == "null") ++
       req.headers.toMap.toSeq
         .flatMap(c => c._2.map(v => (c._1, v))) //.map(tuple => (tuple._1, tuple._2.mkString(","))) //.toSimpleMap
-        .filterNot(
-          t =>
-            if (t._1.toLowerCase == "content-type" && !currentReqHasBody) true
-            else if (t._1.toLowerCase == "content-length") true
-            else false
+        .filterNot(t =>
+          if (t._1.toLowerCase == "content-type" && !currentReqHasBody) true
+          else if (t._1.toLowerCase == "content-length") true
+          else false
         )
         .filterNot(t => descriptor.removeHeadersIn.contains(t._1))
-        .filterNot(
-          t =>
-            (headersInFiltered ++ Seq(stateRequestHeaderName, claimRequestHeaderName))
-              .contains(t._1.toLowerCase)
+        .filterNot(t =>
+          (headersInFiltered ++ Seq(stateRequestHeaderName, claimRequestHeaderName))
+            .contains(t._1.toLowerCase)
         ) ++ Map(
-        env.Headers.OtoroshiProxiedHost -> req.headers.get("Host").getOrElse("--"),
+        env.Headers.OtoroshiProxiedHost      -> req.headers.get("Host").getOrElse("--"),
         //"Host"                               -> host,
-        "Host" -> (if (descriptor.overrideHost) host
+        "Host"                               -> (if (descriptor.overrideHost) host
                    else req.headers.get("Host").getOrElse("--")),
         env.Headers.OtoroshiRequestId        -> snowflake,
         env.Headers.OtoroshiRequestTimestamp -> requestTimestamp
@@ -503,7 +510,7 @@ object HeadersHelper {
                    }) ++ (req.clientCertificateChain match {
         case Some(chain) =>
           Map(env.Headers.OtoroshiClientCertChain -> req.clientCertChainPemString)
-        case None => Map.empty[String, String]
+        case None        => Map.empty[String, String]
       }) ++ req.headers
         .get("Content-Length")
         .map(l => {
@@ -514,8 +521,8 @@ object HeadersHelper {
         .getOrElse(Map.empty[String, String]) ++
       descriptor.additionalHeaders
         .filter(t => t._1.trim.nonEmpty)
-        .mapValues(
-          v => HeadersExpressionLanguage.apply(v, Some(req), Some(descriptor), apiKey, paUsr, elCtx, attrs, env)
+        .mapValues(v =>
+          HeadersExpressionLanguage.apply(v, Some(req), Some(descriptor), apiKey, paUsr, elCtx, attrs, env)
         )
         .filterNot(h => h._2 == "null") ++ fromOtoroshi
         .map(v => Map(env.Headers.OtoroshiGatewayParentRequest -> fromOtoroshi.get))
@@ -544,14 +551,12 @@ object HeadersHelper {
       attrs: TypedMap
   )(implicit env: Env, ec: ExecutionContext): Seq[(String, String)] = {
 
-    val _headersForOut: Seq[(String, String)] = resp.headers.toSeq.flatMap(
-      c => c._2.map(v => (c._1, v))
-    )
+    val _headersForOut: Seq[(String, String)] = resp.headers.toSeq.flatMap(c => c._2.map(v => (c._1, v)))
     val _headersOut: Seq[(String, String)] = {
       descriptor.missingOnlyHeadersOut
         .filter(t => t._1.trim.nonEmpty && t._2.trim.nonEmpty)
-        .mapValues(
-          v => HeadersExpressionLanguage.apply(v, Some(req), Some(descriptor), apiKey, paUsr, elCtx, attrs, env)
+        .mapValues(v =>
+          HeadersExpressionLanguage.apply(v, Some(req), Some(descriptor), apiKey, paUsr, elCtx, attrs, env)
         )
         .filterNot(h => h._2 == "null")
         .toSeq ++
@@ -571,19 +576,20 @@ object HeadersHelper {
         }
       ) ++ Some(canaryId)
         .filter(_ => descriptor.canary.enabled)
-        .map(
-          _ => env.Headers.OtoroshiTrackerId -> s"${env.sign(canaryId)}::$canaryId"
-        ) ++ (if (descriptor.sendOtoroshiHeadersBack && apiKey.isDefined) {
-                Seq(
-                  env.Headers.OtoroshiDailyCallsRemaining   -> remainingQuotas.remainingCallsPerDay.toString,
-                  env.Headers.OtoroshiMonthlyCallsRemaining -> remainingQuotas.remainingCallsPerMonth.toString
-                )
-              } else {
-                Seq.empty[(String, String)]
-              }) ++ descriptor.cors
+        .map(_ => env.Headers.OtoroshiTrackerId -> s"${env.sign(canaryId)}::$canaryId") ++ (if (
+                                                                                              descriptor.sendOtoroshiHeadersBack && apiKey.isDefined
+                                                                                            ) {
+                                                                                              Seq(
+                                                                                                env.Headers.OtoroshiDailyCallsRemaining   -> remainingQuotas.remainingCallsPerDay.toString,
+                                                                                                env.Headers.OtoroshiMonthlyCallsRemaining -> remainingQuotas.remainingCallsPerMonth.toString
+                                                                                              )
+                                                                                            } else {
+                                                                                              Seq
+                                                                                                .empty[(String, String)]
+                                                                                            }) ++ descriptor.cors
         .asHeaders(req) ++ descriptor.additionalHeadersOut
-        .mapValues(
-          v => HeadersExpressionLanguage.apply(v, Some(req), Some(descriptor), apiKey, paUsr, elCtx, attrs, env)
+        .mapValues(v =>
+          HeadersExpressionLanguage.apply(v, Some(req), Some(descriptor), apiKey, paUsr, elCtx, attrs, env)
         )
         .filterNot(h => h._2 == "null")
         .toSeq
@@ -612,17 +618,16 @@ object HeadersHelper {
     val _headersOut: Seq[(String, String)] = {
       descriptor.missingOnlyHeadersOut
         .filter(t => t._1.trim.nonEmpty && t._2.trim.nonEmpty)
-        .mapValues(
-          v => HeadersExpressionLanguage.apply(v, Some(req), Some(descriptor), apiKey, paUsr, elCtx, attrs, env)
+        .mapValues(v =>
+          HeadersExpressionLanguage.apply(v, Some(req), Some(descriptor), apiKey, paUsr, elCtx, attrs, env)
         )
         .filterNot(h => h._2 == "null")
         .toSeq ++
       badResult.header.headers.toSeq
         .filterNot(t => descriptor.removeHeadersOut.contains(t._1))
-        .filterNot(
-          t =>
-            (headersOutFiltered :+ stateResponseHeaderName)
-              .contains(t._1.toLowerCase)
+        .filterNot(t =>
+          (headersOutFiltered :+ stateResponseHeaderName)
+            .contains(t._1.toLowerCase)
         ) ++ (
         if (descriptor.sendOtoroshiHeadersBack) {
           Seq(
@@ -636,19 +641,21 @@ object HeadersHelper {
         }
       ) ++ Some(canaryId)
         .filter(_ => descriptor.canary.enabled)
-        .map(
-          _ => env.Headers.OtoroshiTrackerId -> s"${env.sign(canaryId)}::$canaryId"
-        ) ++ (if (descriptor.sendOtoroshiHeadersBack && apiKey.isDefined) {
-                Seq(
-                  env.Headers.OtoroshiDailyCallsRemaining   -> remainingQuotas.remainingCallsPerDay.toString,
-                  env.Headers.OtoroshiMonthlyCallsRemaining -> remainingQuotas.remainingCallsPerMonth.toString
-                )
-              } else {
-                Seq.empty[(String, String)]
-              }) ++ descriptor.cors.asHeaders(req) ++ descriptor.additionalHeadersOut
+        .map(_ => env.Headers.OtoroshiTrackerId -> s"${env.sign(canaryId)}::$canaryId") ++ (if (
+                                                                                              descriptor.sendOtoroshiHeadersBack && apiKey.isDefined
+                                                                                            ) {
+                                                                                              Seq(
+                                                                                                env.Headers.OtoroshiDailyCallsRemaining   -> remainingQuotas.remainingCallsPerDay.toString,
+                                                                                                env.Headers.OtoroshiMonthlyCallsRemaining -> remainingQuotas.remainingCallsPerMonth.toString
+                                                                                              )
+                                                                                            } else {
+                                                                                              Seq
+                                                                                                .empty[(String, String)]
+                                                                                            }) ++ descriptor.cors
+        .asHeaders(req) ++ descriptor.additionalHeadersOut
         .filter(t => t._1.trim.nonEmpty && t._2.trim.nonEmpty)
-        .mapValues(
-          v => HeadersExpressionLanguage.apply(v, Some(req), Some(descriptor), apiKey, paUsr, elCtx, attrs, env)
+        .mapValues(v =>
+          HeadersExpressionLanguage.apply(v, Some(req), Some(descriptor), apiKey, paUsr, elCtx, attrs, env)
         )
         .filterNot(h => h._2 == "null")
         .toSeq

@@ -8,19 +8,19 @@ import org.scalatest.concurrent.IntegrationPatience
 import org.scalatestplus.play.PlaySpec
 import play.api.Configuration
 
-class CanarySpec(name: String, configurationSpec: => Configuration)
-    extends OtoroshiSpec {
+class CanarySpec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 
   lazy val serviceHost = "canary.oto.tools"
 
-  override def getTestConfiguration(configuration: Configuration) = Configuration(
-    ConfigFactory
-      .parseString(s"""
+  override def getTestConfiguration(configuration: Configuration) =
+    Configuration(
+      ConfigFactory
+        .parseString(s"""
                       |{
                       |}
        """.stripMargin)
-      .resolve()
-  ).withFallback(configurationSpec).withFallback(configuration)
+        .resolve()
+    ).withFallback(configurationSpec).withFallback(configuration)
 
   s"[$name] Otoroshi Canary Mode" should {
 
@@ -33,17 +33,27 @@ class CanarySpec(name: String, configurationSpec: => Configuration)
 
       val callCounter1           = new AtomicInteger(0)
       val basicTestExpectedBody1 = """{"message":"hello world 1"}"""
-      val basicTestServer1 = TargetService(Some(serviceHost), "/api", "application/json", { _ =>
-        callCounter1.incrementAndGet()
-        basicTestExpectedBody1
-      }).await()
+      val basicTestServer1       = TargetService(
+        Some(serviceHost),
+        "/api",
+        "application/json",
+        { _ =>
+          callCounter1.incrementAndGet()
+          basicTestExpectedBody1
+        }
+      ).await()
 
       val callCounter2           = new AtomicInteger(0)
       val basicTestExpectedBody2 = """{"message":"hello world 2"}"""
-      val basicTestServer2 = TargetService(Some(serviceHost), "/api", "application/json", { _ =>
-        callCounter2.incrementAndGet()
-        basicTestExpectedBody2
-      }).await()
+      val basicTestServer2       = TargetService(
+        Some(serviceHost),
+        "/api",
+        "application/json",
+        { _ =>
+          callCounter2.incrementAndGet()
+          basicTestExpectedBody2
+        }
+      ).await()
 
       val service = ServiceDescriptor(
         id = "cb-test",
@@ -107,17 +117,27 @@ class CanarySpec(name: String, configurationSpec: => Configuration)
 
       val callCounter1           = new AtomicInteger(0)
       val basicTestExpectedBody1 = """{"message":"hello world 1"}"""
-      val basicTestServer1 = new SimpleTargetService(Some(serviceHost), "/api", "application/json", { _ =>
-        callCounter1.incrementAndGet()
-        basicTestExpectedBody1
-      }).await()
+      val basicTestServer1       = new SimpleTargetService(
+        Some(serviceHost),
+        "/api",
+        "application/json",
+        { _ =>
+          callCounter1.incrementAndGet()
+          basicTestExpectedBody1
+        }
+      ).await()
 
       val callCounter2           = new AtomicInteger(0)
       val basicTestExpectedBody2 = """{"message":"hello world 2"}"""
-      val basicTestServer2 = new SimpleTargetService(Some(serviceHost), "/api", "application/json", { _ =>
-        callCounter2.incrementAndGet()
-        basicTestExpectedBody2
-      }).await()
+      val basicTestServer2       = new SimpleTargetService(
+        Some(serviceHost),
+        "/api",
+        "application/json",
+        { _ =>
+          callCounter2.incrementAndGet()
+          basicTestExpectedBody2
+        }
+      ).await()
 
       val service = ServiceDescriptor(
         id = "cb-test-2",

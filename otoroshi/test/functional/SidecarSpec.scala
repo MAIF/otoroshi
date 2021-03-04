@@ -13,8 +13,7 @@ import org.scalatestplus.play.PlaySpec
 import play.api.Configuration
 import play.api.libs.ws.WSResponse
 
-class SidecarSpec(name: String, configurationSpec: => Configuration)
-    extends OtoroshiSpec {
+class SidecarSpec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 
   lazy val serviceHost = "sidecar.oto.tools"
   implicit val system  = ActorSystem("otoroshi-test")
@@ -27,9 +26,10 @@ class SidecarSpec(name: String, configurationSpec: => Configuration)
     resp
   }
 
-  override def getTestConfiguration(configuration: Configuration) = Configuration(
-    ConfigFactory
-      .parseString(s"""
+  override def getTestConfiguration(configuration: Configuration) =
+    Configuration(
+      ConfigFactory
+        .parseString(s"""
                       |{
                       |  app.sidecar.serviceId = "sidecar-service1-test"
                       |  app.sidecar.target = "http://127.0.0.1:$fakePort"
@@ -38,27 +38,43 @@ class SidecarSpec(name: String, configurationSpec: => Configuration)
                       |  app.sidecar.apikey.clientId = "sidecar-apikey-test"
                       |}
        """.stripMargin)
-      .resolve()
-  ).withFallback(configurationSpec).withFallback(configuration)
+        .resolve()
+    ).withFallback(configurationSpec).withFallback(configuration)
 
   s"[$name] Otoroshi Sidecar" should {
 
     val basicTestExpectedBody = """{"message":"hello world"}"""
-    val basicTestServer1 = TargetService
-      .withPort(fakePort, Some(serviceHost), "/api", "application/json", { _ =>
-        basicTestExpectedBody
-      })
+    val basicTestServer1      = TargetService
+      .withPort(
+        fakePort,
+        Some(serviceHost),
+        "/api",
+        "application/json",
+        { _ =>
+          basicTestExpectedBody
+        }
+      )
       .await()
 
     val basicTestExpectedBody2 = """{"message":"bye world"}"""
-    val basicTestServer2 = TargetService(Some(serviceHost), "/api", "application/json", { _ =>
-      basicTestExpectedBody2
-    }).await()
+    val basicTestServer2       = TargetService(
+      Some(serviceHost),
+      "/api",
+      "application/json",
+      { _ =>
+        basicTestExpectedBody2
+      }
+    ).await()
 
     val basicTestExpectedBody3 = """{"message":"yeah world"}"""
-    val basicTestServer3 = TargetService(Some("sidecar2.oto.tools"), "/api", "application/json", { _ =>
-      basicTestExpectedBody3
-    }).await()
+    val basicTestServer3       = TargetService(
+      Some("sidecar2.oto.tools"),
+      "/api",
+      "application/json",
+      { _ =>
+        basicTestExpectedBody3
+      }
+    ).await()
 
     val service1 = ServiceDescriptor(
       id = "sidecar-service1-test",

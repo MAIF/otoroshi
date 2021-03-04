@@ -27,16 +27,18 @@ import otoroshi.storage.stores.{DataExporterConfigDataStore, KvRawDataStore, Tea
 import scala.concurrent.{ExecutionContext, Future}
 import otoroshi.utils.syntax.implicits._
 
-class CassandraDataStores(naive: Boolean,
-                          configuration: Configuration,
-                          environment: Environment,
-                          lifecycle: ApplicationLifecycle,
-                          env: Env)
-    extends DataStores {
+class CassandraDataStores(
+    naive: Boolean,
+    configuration: Configuration,
+    environment: Environment,
+    lifecycle: ApplicationLifecycle,
+    env: Env
+) extends DataStores {
 
   lazy val logger = Logger("otoroshi-cassandra-datastores")
 
-  lazy val redisStatsItems: Int = configuration.getOptionalWithFileSupport[Int]("app.cassandra.windowSize").getOrElse(99)
+  lazy val redisStatsItems: Int =
+    configuration.getOptionalWithFileSupport[Int]("app.cassandra.windowSize").getOrElse(99)
 
   lazy val actorSystem =
     ActorSystem(
@@ -54,9 +56,11 @@ class CassandraDataStores(naive: Boolean,
     configuration
   )(actorSystem.dispatcher, mat, env)
 
-  override def before(configuration: Configuration,
-                      environment: Environment,
-                      lifecycle: ApplicationLifecycle): Future[Unit] = {
+  override def before(
+      configuration: Configuration,
+      environment: Environment,
+      lifecycle: ApplicationLifecycle
+  ): Future[Unit] = {
     logger.info("Now using Cassandra DataStores")
     redis.start()
     _serviceDescriptorDataStore.startCleanup(env)
@@ -64,9 +68,11 @@ class CassandraDataStores(naive: Boolean,
     FastFuture.successful(())
   }
 
-  override def after(configuration: Configuration,
-                     environment: Environment,
-                     lifecycle: ApplicationLifecycle): Future[Unit] = {
+  override def after(
+      configuration: Configuration,
+      environment: Environment,
+      lifecycle: ApplicationLifecycle
+  ): Future[Unit] = {
     _serviceDescriptorDataStore.stopCleanup()
     _certificateDataStore.stopSync()
     redis.stop()
@@ -95,7 +101,7 @@ class CassandraDataStores(naive: Boolean,
   private lazy val _clusterStateDataStore                   = new KvClusterStateDataStore(redis, env)
   override def clusterStateDataStore: ClusterStateDataStore = _clusterStateDataStore
 
-  private lazy val _clientCertificateValidationDataStore = new KvClientCertificateValidationDataStore(redis, env)
+  private lazy val _clientCertificateValidationDataStore                                  = new KvClientCertificateValidationDataStore(redis, env)
   override def clientCertificateValidationDataStore: ClientCertificateValidationDataStore =
     _clientCertificateValidationDataStore
 
@@ -114,13 +120,13 @@ class CassandraDataStores(naive: Boolean,
   private lazy val _webAuthnRegistrationsDataStore                            = new WebAuthnRegistrationsDataStore()
   override def webAuthnRegistrationsDataStore: WebAuthnRegistrationsDataStore = _webAuthnRegistrationsDataStore
 
-  private lazy val _tenantDataStore = new TenantDataStore(redis, env)
+  private lazy val _tenantDataStore             = new TenantDataStore(redis, env)
   override def tenantDataStore: TenantDataStore = _tenantDataStore
 
-  private lazy val _teamDataStore = new TeamDataStore(redis, env)
+  private lazy val _teamDataStore           = new TeamDataStore(redis, env)
   override def teamDataStore: TeamDataStore = _teamDataStore
 
-  private lazy val _dataExporterConfigDataStore = new DataExporterConfigDataStore(redis, env)
+  private lazy val _dataExporterConfigDataStore                         = new DataExporterConfigDataStore(redis, env)
   override def dataExporterConfigDataStore: DataExporterConfigDataStore = _dataExporterConfigDataStore
 
   override def privateAppsUserDataStore: PrivateAppsUserDataStore               = _privateAppsUserDataStore
@@ -152,7 +158,7 @@ class CassandraDataStores(naive: Boolean,
       .grouped(group)
       .mapAsync(1) {
         case keys if keys.isEmpty => FastFuture.successful(Seq.empty[JsValue])
-        case keys => {
+        case keys                 => {
           Future.sequence(
             keys
               .filterNot { key =>
@@ -173,11 +179,11 @@ class CassandraDataStores(naive: Boolean,
               }
               .map { key =>
                 redis.rawGet(key).flatMap {
-                  case None => FastFuture.successful(JsNull)
+                  case None                    => FastFuture.successful(JsNull)
                   case Some((typ, ttl, value)) => {
                     fetchValueForType(key, typ, value).map {
                       case JsNull => JsNull
-                      case value =>
+                      case value  =>
                         Json.obj(
                           "k" -> key,
                           "v" -> value,
@@ -209,15 +215,15 @@ class CassandraDataStores(naive: Boolean,
         .grouped(10)
         .mapAsync(1) {
           case keys if keys.isEmpty => FastFuture.successful(Seq.empty[JsValue])
-          case keys => {
+          case keys                 => {
             Source(keys.toList)
               .mapAsync(1) { key =>
                 redis.rawGet(key).flatMap {
-                  case None => FastFuture.successful(JsNull)
+                  case None                    => FastFuture.successful(JsNull)
                   case Some((typ, ttl, value)) => {
                     fetchValueForType(key, typ, value).map {
                       case JsNull => JsNull
-                      case value =>
+                      case value  =>
                         Json.obj(
                           "k" -> key,
                           "v" -> value,
@@ -255,14 +261,14 @@ class CassandraDataStores(naive: Boolean,
             val what  = (json \ "w").as[String]
             (what match {
               case "counter" => redis.set(key, value.as[Long].toString)
-              case "string" => redis.set(key, value.as[String])
-              case "hash" =>
+              case "string"  => redis.set(key, value.as[String])
+              case "hash"    =>
                 Source(value.as[JsObject].value.toList)
                   .mapAsync(1)(v => redis.hset(key, v._1, Json.stringify(v._2)))
                   .runWith(Sink.ignore)
-              case "list" => redis.lpush(key, value.as[JsArray].value.map(Json.stringify): _*)
-              case "set"  => redis.sadd(key, value.as[JsArray].value.map(Json.stringify): _*)
-              case _      => FastFuture.successful(0L)
+              case "list"    => redis.lpush(key, value.as[JsArray].value.map(Json.stringify): _*)
+              case "set"     => redis.sadd(key, value.as[JsArray].value.map(Json.stringify): _*)
+              case _         => FastFuture.successful(0L)
             }).flatMap { _ =>
               if (pttl > -1L) {
                 redis.pexpire(key, pttl)
@@ -276,20 +282,20 @@ class CassandraDataStores(naive: Boolean,
       }
   }
 
-  private def fetchValueForType(key: String, typ: String, value: Any)(
-      implicit ec: ExecutionContext
+  private def fetchValueForType(key: String, typ: String, value: Any)(implicit
+      ec: ExecutionContext
   ): Future[JsValue] = {
     (typ, value) match {
       case ("hash", v: Map[String, ByteString]) =>
         FastFuture.successful(JsObject(v.map(t => (t._1, JsString(t._2.utf8String)))))
-      case ("list", v: Seq[ByteString]) => FastFuture.successful(JsArray(v.map(s => JsString(s.utf8String))))
-      case ("set", v: Set[ByteString])  => FastFuture.successful(JsArray(v.toSeq.map(s => JsString(s.utf8String))))
-      case ("string", v: ByteString) =>
+      case ("list", v: Seq[ByteString])         => FastFuture.successful(JsArray(v.map(s => JsString(s.utf8String))))
+      case ("set", v: Set[ByteString])          => FastFuture.successful(JsArray(v.toSeq.map(s => JsString(s.utf8String))))
+      case ("string", v: ByteString)            =>
         Option(v) match {
           case None    => FastFuture.successful(JsNull)
           case Some(a) => FastFuture.successful(JsString(a.utf8String))
         }
-      case _ => FastFuture.successful(JsNull)
+      case _                                    => FastFuture.successful(JsNull)
     }
   }
 }

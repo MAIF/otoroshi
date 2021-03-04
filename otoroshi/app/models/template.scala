@@ -9,14 +9,16 @@ import otoroshi.storage.BasicStore
 
 import scala.concurrent.ExecutionContext
 
-case class ErrorTemplate(serviceId: String,
-                         template40x: String,
-                         template50x: String,
-                         templateBuild: String,
-                         templateMaintenance: String,
-                         messages: Map[String, String] = Map.empty[String, String]) {
+case class ErrorTemplate(
+    serviceId: String,
+    template40x: String,
+    template50x: String,
+    templateBuild: String,
+    templateMaintenance: String,
+    messages: Map[String, String] = Map.empty[String, String]
+) {
   def renderHtml(status: Int, causeId: String, otoroshiMessage: String, errorId: String): String = {
-    val template = (status, causeId) match {
+    val template   = (status, causeId) match {
       case (_, "errors.service.in.maintenance")     => templateMaintenance
       case (_, "errors.service.under.construction") => templateBuild
       case (s, _) if s > 399 && s < 500             => template40x
@@ -49,11 +51,11 @@ case class ErrorTemplate(serviceId: String,
 }
 
 object ErrorTemplate {
-  lazy val logger                           = Logger("otoroshi-error-template")
-  val format                                = Json.format[ErrorTemplate]
-  val base64decoder                         = Base64.getUrlDecoder
-  def toJson(value: ErrorTemplate): JsValue = format.writes(value)
-  def fromJsons(value: JsValue): ErrorTemplate =
+  lazy val logger                                           = Logger("otoroshi-error-template")
+  val format                                                = Json.format[ErrorTemplate]
+  val base64decoder                                         = Base64.getUrlDecoder
+  def toJson(value: ErrorTemplate): JsValue                 = format.writes(value)
+  def fromJsons(value: JsValue): ErrorTemplate              =
     try {
       format.reads(value).get
     } catch {

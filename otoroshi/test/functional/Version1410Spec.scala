@@ -19,22 +19,22 @@ import otoroshi.security.IdGenerator
 import scala.math.BigDecimal.RoundingMode
 import scala.util.Try
 
-class Version1410Spec(name: String, configurationSpec: => Configuration)
-    extends OtoroshiSpec {
+class Version1410Spec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 
-  implicit val system  = ActorSystem("otoroshi-test")
-  implicit val env     = otoroshiComponents.env
+  implicit val system = ActorSystem("otoroshi-test")
+  implicit val env    = otoroshiComponents.env
 
   import scala.concurrent.duration._
 
-  override def getTestConfiguration(configuration: Configuration) = Configuration(
-    ConfigFactory
-      .parseString(s"""
+  override def getTestConfiguration(configuration: Configuration) =
+    Configuration(
+      ConfigFactory
+        .parseString(s"""
                       |{
                       |}
        """.stripMargin)
-      .resolve()
-  ).withFallback(configurationSpec).withFallback(configuration)
+        .resolve()
+    ).withFallback(configurationSpec).withFallback(configuration)
 
   s"[$name] Otoroshi service descriptors" should {
 
@@ -44,14 +44,18 @@ class Version1410Spec(name: String, configurationSpec: => Configuration)
     }
 
     "allow to remove headers from incoming request (#326)" in {
-      val (_, port1, counter1, call) = testServer("removeincomingheaders.oto.tools", port, validate = (req) => {
-        if (req.getHeader("X-Foo").isPresent) {
-          false
-        } else {
-          req.getHeader("X-Bar").isPresent
+      val (_, port1, counter1, call) = testServer(
+        "removeincomingheaders.oto.tools",
+        port,
+        validate = req => {
+          if (req.getHeader("X-Foo").isPresent) {
+            false
+          } else {
+            req.getHeader("X-Bar").isPresent
+          }
         }
-      })
-      val service1 = ServiceDescriptor(
+      )
+      val service1                   = ServiceDescriptor(
         id = "removeincomingheaders",
         name = "removeincomingheaders",
         env = "prod",
@@ -82,10 +86,10 @@ class Version1410Spec(name: String, configurationSpec: => Configuration)
   }
 
   "allow to remove headers from outgoing response (#326)" in {
-    val additionalHeadersOut = List(RawHeader("X-Foo", "Bar"))
+    val additionalHeadersOut        = List(RawHeader("X-Foo", "Bar"))
     val (_, port1, counter1, call1) =
       testServer("removeoutgoingheaders.oto.tools", port, additionalHeadersOut = additionalHeadersOut)
-    val service1 = ServiceDescriptor(
+    val service1                    = ServiceDescriptor(
       id = "removeoutgoingheaders",
       name = "removeoutgoingheaders",
       env = "prod",
@@ -119,7 +123,7 @@ class Version1410Spec(name: String, configurationSpec: => Configuration)
 
   "allow apikeys to have ttl (#328)" in {
     val (_, port1, counter1, call1) = testServer("apikeyswithttl.oto.tools", port)
-    val service1 = ServiceDescriptor(
+    val service1                    = ServiceDescriptor(
       id = "apikeyswithttl",
       name = "apikeyswithttl",
       env = "prod",
@@ -132,14 +136,14 @@ class Version1410Spec(name: String, configurationSpec: => Configuration)
         )
       ),
       forceHttps = false,
-      enforceSecureCommunication = false,
+      enforceSecureCommunication = false
     )
-    val validApiKey = ApiKey(
+    val validApiKey                 = ApiKey(
       clientName = "apikey1",
       authorizedEntities = Seq(ServiceGroupIdentifier("default")),
       validUntil = Some(DateTime.now().plusDays(1))
     )
-    val invalidApiKey = ApiKey(
+    val invalidApiKey               = ApiKey(
       clientName = "apikey2",
       authorizedEntities = Seq(ServiceGroupIdentifier("default")),
       validUntil = Some(DateTime.now().minusDays(1))

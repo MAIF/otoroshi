@@ -43,21 +43,30 @@ object OtoroshiLoaderHelper {
 
     import scala.concurrent.duration._
 
-    implicit val ec = components.env.otoroshiExecutionContext
+    implicit val ec        = components.env.otoroshiExecutionContext
     implicit val scheduler = components.env.otoroshiScheduler
-    implicit val mat = components.env.otoroshiMaterializer
+    implicit val mat       = components.env.otoroshiMaterializer
 
-    val globalWait = components.env.configuration.getOptional[Boolean]("app.boot.globalWait").getOrElse(true)
-    val waitForTlsInitEnabled = components.env.configuration.getOptional[Boolean]("app.boot.waitForTlsInit").getOrElse(true)
-    val waitForPluginsSearch = components.env.configuration.getOptional[Boolean]("app.boot.waitForPluginsSearch").getOrElse(true)
-    val waitForScriptsCompilation = components.env.configuration.getOptional[Boolean]("app.boot.waitForScriptsCompilation").getOrElse(true)
-    val waitForFirstClusterFetchEnabled = components.env.configuration.getOptional[Boolean]("app.boot.waitForFirstClusterFetch").getOrElse(true)
+    val globalWait                      = components.env.configuration.getOptional[Boolean]("app.boot.globalWait").getOrElse(true)
+    val waitForTlsInitEnabled           =
+      components.env.configuration.getOptional[Boolean]("app.boot.waitForTlsInit").getOrElse(true)
+    val waitForPluginsSearch            =
+      components.env.configuration.getOptional[Boolean]("app.boot.waitForPluginsSearch").getOrElse(true)
+    val waitForScriptsCompilation       =
+      components.env.configuration.getOptional[Boolean]("app.boot.waitForScriptsCompilation").getOrElse(true)
+    val waitForFirstClusterFetchEnabled =
+      components.env.configuration.getOptional[Boolean]("app.boot.waitForFirstClusterFetch").getOrElse(true)
 
-    val globalWaitTimeout: Long = components.env.configuration.getOptional[Long]("app.boot.waitTimeout").getOrElse(60000)
-    val waitForPluginsSearchTimeout: Long = components.env.configuration.getOptional[Long]("app.boot.waitForPluginsSearchTimeout").getOrElse(20000)
-    val waitForScriptsCompilationTimeout: Long = components.env.configuration.getOptional[Long]("app.boot.waitForScriptsCompilationTimeout").getOrElse(30000)
-    val waitForTlsInitTimeout: Long = components.env.configuration.getOptional[Long]("app.boot.waitForTlsInitTimeout").getOrElse(10000)
-    val waitForFirstClusterFetchTimeout: Long = components.env.configuration.getOptional[Long]("app.boot.waitForFirstClusterFetchTimeout").getOrElse(10000)
+    val globalWaitTimeout: Long                =
+      components.env.configuration.getOptional[Long]("app.boot.waitTimeout").getOrElse(60000)
+    val waitForPluginsSearchTimeout: Long      =
+      components.env.configuration.getOptional[Long]("app.boot.waitForPluginsSearchTimeout").getOrElse(20000)
+    val waitForScriptsCompilationTimeout: Long =
+      components.env.configuration.getOptional[Long]("app.boot.waitForScriptsCompilationTimeout").getOrElse(30000)
+    val waitForTlsInitTimeout: Long            =
+      components.env.configuration.getOptional[Long]("app.boot.waitForTlsInitTimeout").getOrElse(10000)
+    val waitForFirstClusterFetchTimeout: Long  =
+      components.env.configuration.getOptional[Long]("app.boot.waitForFirstClusterFetchTimeout").getOrElse(10000)
 
     def timeout(duration: FiniteDuration): Future[Unit] = {
       val promise = Promise[Unit]
@@ -70,17 +79,22 @@ object OtoroshiLoaderHelper {
     def waitForFirstClusterFetch(): Future[Unit] = {
       if (components.env.clusterConfig.mode == ClusterMode.Worker && waitForFirstClusterFetchEnabled) {
         logger.info("waiting for first cluster fetch ...")
-        Future.firstCompletedOf(Seq(
-          timeout(waitForFirstClusterFetchTimeout.millis),
-          Source.tick(1.second, 1.second, ())
-            .map { _ =>
-              if (components.env.clusterConfig.mode == ClusterMode.Worker) !components.env.clusterAgent.cannotServeRequests() else true
-            }
-            .filter(identity)
-            .take(1)
-            .runWith(Sink.head)(mat)
-            .map(_ => ())
-        ))
+        Future.firstCompletedOf(
+          Seq(
+            timeout(waitForFirstClusterFetchTimeout.millis),
+            Source
+              .tick(1.second, 1.second, ())
+              .map { _ =>
+                if (components.env.clusterConfig.mode == ClusterMode.Worker)
+                  !components.env.clusterAgent.cannotServeRequests()
+                else true
+              }
+              .filter(identity)
+              .take(1)
+              .runWith(Sink.head)(mat)
+              .map(_ => ())
+          )
+        )
       } else {
         FastFuture.successful(())
       }
@@ -89,17 +103,20 @@ object OtoroshiLoaderHelper {
     def waitForPluginSearch(): Future[Unit] = {
       if (waitForPluginsSearch) {
         logger.info("waiting for plugins search and start ...")
-        Future.firstCompletedOf(Seq(
-          timeout(waitForPluginsSearchTimeout.millis),
-          Source.tick(1.second, 1.second, ())
-            .map { _ =>
-              components.env.scriptManager.firstPluginsSearchDone()
-            }
-            .filter(identity)
-            .take(1)
-            .runWith(Sink.head)(mat)
-            .map(_ => ())
-        ))
+        Future.firstCompletedOf(
+          Seq(
+            timeout(waitForPluginsSearchTimeout.millis),
+            Source
+              .tick(1.second, 1.second, ())
+              .map { _ =>
+                components.env.scriptManager.firstPluginsSearchDone()
+              }
+              .filter(identity)
+              .take(1)
+              .runWith(Sink.head)(mat)
+              .map(_ => ())
+          )
+        )
       } else {
         FastFuture.successful(())
       }
@@ -108,18 +125,21 @@ object OtoroshiLoaderHelper {
     def waitForTlsInit(): Future[Unit] = {
       if (waitForTlsInitEnabled) {
         logger.info("waiting for TLS initialization ...")
-        Future.firstCompletedOf(Seq(
-          timeout(waitForTlsInitTimeout.millis),
-          Source.tick(1.second, 1.second, ())
-            .map { _ =>
-              DynamicSSLEngineProvider.isFirstSetupDone &&
+        Future.firstCompletedOf(
+          Seq(
+            timeout(waitForTlsInitTimeout.millis),
+            Source
+              .tick(1.second, 1.second, ())
+              .map { _ =>
+                DynamicSSLEngineProvider.isFirstSetupDone &&
                 DynamicSSLEngineProvider.getCurrentEnv() != null
-            }
-            .filter(identity)
-            .take(1)
-            .runWith(Sink.head)(mat)
-            .map(_ => ())
-        ))
+              }
+              .filter(identity)
+              .take(1)
+              .runWith(Sink.head)(mat)
+              .map(_ => ())
+          )
+        )
       } else {
         FastFuture.successful(())
       }
@@ -128,25 +148,28 @@ object OtoroshiLoaderHelper {
     def waitForPluginsCompilation(): Future[Unit] = {
       if (waitForScriptsCompilation) {
         logger.info("waiting for scripts initialization ...")
-        Future.firstCompletedOf(Seq(
-          timeout(waitForScriptsCompilationTimeout.millis),
-          Source.tick(1.second, 1.second, ())
-            .mapAsync(1) { _ =>
-              components.env.scriptManager.state()
-            }
-            .map(_.initialized)
-            .filter(identity)
-            .take(1)
-            .runWith(Sink.head)(mat)
-            .map(_ => ())
-        ))
+        Future.firstCompletedOf(
+          Seq(
+            timeout(waitForScriptsCompilationTimeout.millis),
+            Source
+              .tick(1.second, 1.second, ())
+              .mapAsync(1) { _ =>
+                components.env.scriptManager.state()
+              }
+              .map(_.initialized)
+              .filter(identity)
+              .take(1)
+              .runWith(Sink.head)(mat)
+              .map(_ => ())
+          )
+        )
       } else {
         FastFuture.successful(())
       }
     }
 
     if (globalWait) {
-      val start = System.currentTimeMillis()
+      val start   = System.currentTimeMillis()
       logger.info("waiting for subsystems initialization ...")
       val waiting = for {
         _ <- waitForFirstClusterFetch()
@@ -171,7 +194,7 @@ class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfi
     with EnvContainer {
 
   override lazy val configuration: Configuration = {
-    val sslConfig = serverConfig.sslPort
+    val sslConfig  = serverConfig.sslPort
       .map { sslPort =>
         s"""
         |https.port=$sslPort
@@ -228,8 +251,8 @@ class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfi
   lazy val filters = new DefaultHttpFilters(httpFilters: _*)
 
   lazy val reverseProxyAction: ReverseProxyAction = wire[ReverseProxyAction]
-  lazy val httpHandler: HttpHandler = wire[HttpHandler]
-  lazy val webSocketHandler: WebSocketHandler = wire[WebSocketHandler]
+  lazy val httpHandler: HttpHandler               = wire[HttpHandler]
+  lazy val webSocketHandler: WebSocketHandler     = wire[WebSocketHandler]
 
   override lazy val httpRequestHandler: HttpRequestHandler = wire[GatewayRequestHandler]
   override lazy val httpErrorHandler: HttpErrorHandler     = wire[ErrorHandler]
@@ -258,9 +281,9 @@ class ProgrammaticOtoroshiComponents(_serverConfig: play.core.server.ServerConfi
   lazy val usersController           = wire[UsersController]
   lazy val templatesController       = wire[TemplatesController]
 
-  lazy val healthController          = wire[HealthController]
-  lazy val eventsController          = wire[EventsController]
-  lazy val statsController           = wire[StatsController]
+  lazy val healthController = wire[HealthController]
+  lazy val eventsController = wire[EventsController]
+  lazy val statsController  = wire[StatsController]
 
   lazy val servicesController           = wire[ServicesController]
   lazy val serviceGroupController       = wire[ServiceGroupController]

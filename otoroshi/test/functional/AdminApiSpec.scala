@@ -7,19 +7,19 @@ import org.scalatestplus.play.PlaySpec
 import play.api.Configuration
 import play.api.libs.json.{JsArray, JsSuccess, Json, Reads}
 
-class AdminApiSpec(name: String, configurationSpec: => Configuration)
-    extends OtoroshiSpec {
+class AdminApiSpec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 
   lazy val serviceHost = "api.oto.tools"
 
-  override def getTestConfiguration(configuration: Configuration) = Configuration(
-    ConfigFactory
-      .parseString(s"""
+  override def getTestConfiguration(configuration: Configuration) =
+    Configuration(
+      ConfigFactory
+        .parseString(s"""
                       |{
                       |}
        """.stripMargin)
-      .resolve()
-  ).withFallback(configurationSpec).withFallback(configuration)
+        .resolve()
+    ).withFallback(configurationSpec).withFallback(configuration)
 
   s"[$name] Otoroshi admin API" should {
 
@@ -53,7 +53,8 @@ class AdminApiSpec(name: String, configurationSpec: => Configuration)
       ),
       enabled = true,
       metadata = Map.empty,
-      chaosConfig = ChaosConfig._fmt.reads(Json.parse("""{
+      chaosConfig = ChaosConfig._fmt
+        .reads(Json.parse("""{
           |  "enabled" : false,
           |  "largeRequestFaultConfig" : {
           |    "ratio" : 0.2,
@@ -72,14 +73,16 @@ class AdminApiSpec(name: String, configurationSpec: => Configuration)
           |    "ratio" : 0.2,
           |    "responses" : [ ]
           |  }
-          |}""".stripMargin)).get
+          |}""".stripMargin))
+        .get
     )
 
     val testApiKey2 = new ApiKey(
       clientId = "4321",
       clientSecret = "0987654321",
       clientName = "test apikey 2",
-      authorizedEntities = Seq(ServiceGroupIdentifier(testGroup.id), ServiceDescriptorIdentifier(testServiceDescriptor.id)),
+      authorizedEntities =
+        Seq(ServiceGroupIdentifier(testGroup.id), ServiceDescriptorIdentifier(testServiceDescriptor.id)),
       enabled = true,
       throttlingQuota = 10,
       dailyQuota = 10,
@@ -117,9 +120,11 @@ class AdminApiSpec(name: String, configurationSpec: => Configuration)
         val (_, status2) = otoroshiApiCall("POST", "/api/services", Some(testServiceDescriptor.toJson)).futureValue
         val (_, status3) =
           otoroshiApiCall("POST", s"/api/groups/${testGroup.id}/apikeys", Some(testApiKey.toJson)).futureValue
-        val (_, status4) = otoroshiApiCall("POST",
-                                           s"/api/services/${testServiceDescriptor.id}/apikeys",
-                                           Some(testApiKey2.toJson)).futureValue
+        val (_, status4) = otoroshiApiCall(
+          "POST",
+          s"/api/services/${testServiceDescriptor.id}/apikeys",
+          Some(testApiKey2.toJson)
+        ).futureValue
 
         status1 mustBe 201
         status2 mustBe 201
@@ -200,7 +205,11 @@ class AdminApiSpec(name: String, configurationSpec: => Configuration)
         val (res1, status1) = otoroshiApiCall("GET", s"/api/groups/${testGroup.id}").futureValue
         status1 mustBe 200
         ServiceGroup.fromJsons(res1).description mustBe testGroup.description
-        otoroshiApiCall("PUT", s"/api/groups/${testGroup.id}", Some(testGroup.copy(description = "foo").toJson)).futureValue
+        otoroshiApiCall(
+          "PUT",
+          s"/api/groups/${testGroup.id}",
+          Some(testGroup.copy(description = "foo").toJson)
+        ).futureValue
         val (res2, status2) = otoroshiApiCall("GET", s"/api/groups/${testGroup.id}").futureValue
         status2 mustBe 200
         ServiceGroup.fromJsons(res2).description mustBe "foo"
@@ -217,15 +226,19 @@ class AdminApiSpec(name: String, configurationSpec: => Configuration)
         val (res1, status1) = otoroshiApiCall("GET", s"/api/services/${testServiceDescriptor.id}").futureValue
         status1 mustBe 200
         ServiceDescriptor.fromJsons(res1).name mustBe testServiceDescriptor.name
-        otoroshiApiCall("PUT",
-                        s"/api/services/${testServiceDescriptor.id}",
-                        Some(testServiceDescriptor.copy(name = "foo").toJson)).futureValue
+        otoroshiApiCall(
+          "PUT",
+          s"/api/services/${testServiceDescriptor.id}",
+          Some(testServiceDescriptor.copy(name = "foo").toJson)
+        ).futureValue
         val (res2, status2) = otoroshiApiCall("GET", s"/api/services/${testServiceDescriptor.id}").futureValue
         status2 mustBe 200
         ServiceDescriptor.fromJsons(res2).name mustBe "foo"
-        otoroshiApiCall("PATCH",
-                        s"/api/services/${testServiceDescriptor.id}",
-                        Some(Json.arr(Json.obj("op" -> "replace", "path" -> "/name", "value" -> "bar")))).futureValue
+        otoroshiApiCall(
+          "PATCH",
+          s"/api/services/${testServiceDescriptor.id}",
+          Some(Json.arr(Json.obj("op" -> "replace", "path" -> "/name", "value" -> "bar")))
+        ).futureValue
         val (res3, status3) = otoroshiApiCall("GET", s"/api/services/${testServiceDescriptor.id}").futureValue
         status3 mustBe 200
         ServiceDescriptor.fromJsons(res3).name mustBe "bar"
@@ -238,9 +251,11 @@ class AdminApiSpec(name: String, configurationSpec: => Configuration)
         ).futureValue
         status1 mustBe 200
         ApiKey.fromJsons(res1).clientName mustBe testApiKey.clientName
-        otoroshiApiCall("PUT",
-                        s"/api/services/${testServiceDescriptor.id}/apikeys/${testApiKey.clientId}",
-                        Some(testApiKey.copy(clientName = "foo").toJson)).futureValue
+        otoroshiApiCall(
+          "PUT",
+          s"/api/services/${testServiceDescriptor.id}/apikeys/${testApiKey.clientId}",
+          Some(testApiKey.copy(clientName = "foo").toJson)
+        ).futureValue
         val (res2, status2) = otoroshiApiCall(
           "GET",
           s"/api/services/${testServiceDescriptor.id}/apikeys/${testApiKey.clientId}"
@@ -284,8 +299,14 @@ class AdminApiSpec(name: String, configurationSpec: => Configuration)
       // }
 
       {
-        otoroshiApiCall("DELETE", s"/api/services/${testServiceDescriptor.id}/apikeys/${testApiKey.clientId}").futureValue
-        otoroshiApiCall("DELETE", s"/api/services/${testServiceDescriptor.id}/apikeys/${testApiKey2.clientId}").futureValue
+        otoroshiApiCall(
+          "DELETE",
+          s"/api/services/${testServiceDescriptor.id}/apikeys/${testApiKey.clientId}"
+        ).futureValue
+        otoroshiApiCall(
+          "DELETE",
+          s"/api/services/${testServiceDescriptor.id}/apikeys/${testApiKey2.clientId}"
+        ).futureValue
         otoroshiApiCall("DELETE", s"/api/services/${testServiceDescriptor.id}").futureValue
         otoroshiApiCall("DELETE", s"/api/groups/${testGroup.id}").futureValue
 
@@ -306,7 +327,6 @@ class AdminApiSpec(name: String, configurationSpec: => Configuration)
         status4 mustBe 404
       }
     }
-
 
     "shutdown" in {
       stopAll()

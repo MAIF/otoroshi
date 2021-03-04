@@ -12,31 +12,36 @@ import play.api.Configuration
 
 import scala.concurrent.duration._
 
-class QuotasSpec(name: String, configurationSpec: => Configuration)
-    extends OtoroshiSpec {
+class QuotasSpec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 
   lazy val serviceHost = "quotas.oto.tools"
   implicit val system  = ActorSystem("otoroshi-test")
 
-  override def getTestConfiguration(configuration: Configuration) = Configuration(
-    ConfigFactory
-      .parseString(s"""
+  override def getTestConfiguration(configuration: Configuration) =
+    Configuration(
+      ConfigFactory
+        .parseString(s"""
                       |{
                       |  throttlingWindow = 2
                       |}
        """.stripMargin)
-      .resolve()
-  ).withFallback(configurationSpec).withFallback(configuration)
+        .resolve()
+    ).withFallback(configurationSpec).withFallback(configuration)
 
   s"[$name] Otoroshi Quotas" should {
 
-    val counter = new AtomicInteger(0)
-    val body    = """{"message":"hello world"}"""
-    val server = TargetService(None, "/api", "application/json", { _ =>
-      counter.incrementAndGet()
-      body
-    }).await()
-    val service = ServiceDescriptor(
+    val counter                  = new AtomicInteger(0)
+    val body                     = """{"message":"hello world"}"""
+    val server                   = TargetService(
+      None,
+      "/api",
+      "application/json",
+      { _ =>
+        counter.incrementAndGet()
+        body
+      }
+    ).await()
+    val service                  = ServiceDescriptor(
       id = "1-quotas-test",
       name = "quotas-test",
       env = "prod",
@@ -60,7 +65,7 @@ class QuotasSpec(name: String, configurationSpec: => Configuration)
       // dailyQuota = 3
       // monthlyQuota = 3
     )
-    val apiKeyLowDailyQuota = ApiKey(
+    val apiKeyLowDailyQuota      = ApiKey(
       clientId = "1-apikey-daily",
       clientSecret = "1234",
       clientName = "apikey-test",
@@ -69,7 +74,7 @@ class QuotasSpec(name: String, configurationSpec: => Configuration)
       dailyQuota = 3
       // monthlyQuota = 3
     )
-    val apiKeyLowDMonthlyQuota = ApiKey(
+    val apiKeyLowDMonthlyQuota   = ApiKey(
       clientId = "1-apikey-monthly",
       clientSecret = "1234",
       clientName = "apikey-test",
@@ -78,9 +83,9 @@ class QuotasSpec(name: String, configurationSpec: => Configuration)
       // dailyQuota = 3
       monthlyQuota = 3
     )
-    val basicAuthThrottling = Base64.getUrlEncoder.encodeToString(s"1-apikey-throttling:1234".getBytes)
-    val basicAuthDaily      = Base64.getUrlEncoder.encodeToString(s"1-apikey-daily:1234".getBytes)
-    val basicAuthMonthly    = Base64.getUrlEncoder.encodeToString(s"1-apikey-monthly:1234".getBytes)
+    val basicAuthThrottling      = Base64.getUrlEncoder.encodeToString(s"1-apikey-throttling:1234".getBytes)
+    val basicAuthDaily           = Base64.getUrlEncoder.encodeToString(s"1-apikey-daily:1234".getBytes)
+    val basicAuthMonthly         = Base64.getUrlEncoder.encodeToString(s"1-apikey-monthly:1234".getBytes)
 
     "warm up" in {
       startOtoroshi()

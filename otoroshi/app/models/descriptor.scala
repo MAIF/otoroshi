@@ -40,20 +40,23 @@ import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
 import otoroshi.utils.http.RequestImplicits._
 
-case class ServiceDescriptorQuery(subdomain: String,
-                                  line: String = "prod",
-                                  domain: String,
-                                  root: String = "/",
-                                  matchingHeaders: Map[String, String] = Map.empty[String, String]) {
+case class ServiceDescriptorQuery(
+    subdomain: String,
+    line: String = "prod",
+    domain: String,
+    root: String = "/",
+    matchingHeaders: Map[String, String] = Map.empty[String, String]
+) {
 
   def asKey(implicit _env: Env): String = s"${_env.storageRoot}:desclookup:$line:$domain:$subdomain:$root"
 
-  def toHost: String = subdomain match {
-    case s if s.isEmpty && line == "prod" => s"$domain"
-    case s if s.isEmpty                   => s"$line.$domain"
-    case s if line == "prod"              => s"$subdomain.$domain"
-    case s                                => s"$subdomain.$line.$domain"
-  }
+  def toHost: String =
+    subdomain match {
+      case s if s.isEmpty && line == "prod" => s"$domain"
+      case s if s.isEmpty                   => s"$line.$domain"
+      case s if line == "prod"              => s"$subdomain.$domain"
+      case s                                => s"$subdomain.$line.$domain"
+    }
 
   private val existsCache     = new java.util.concurrent.ConcurrentHashMap[String, Boolean]
   private val serviceIdsCache = new java.util.concurrent.ConcurrentHashMap[String, Seq[String]]
@@ -118,7 +121,7 @@ case class ServiceDescriptorQuery(subdomain: String,
   def remServices(services: Seq[ServiceDescriptor])(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
     val key        = this.asKey
     val servicesId = services.map(_.id)
-    val resulting =
+    val resulting  =
       if (servicesCache.containsKey(key)) servicesCache.get(key).filterNot(s => servicesId.contains(s.id))
       else Seq.empty[ServiceDescriptor]
     if (resulting.isEmpty) {
@@ -143,11 +146,11 @@ object ServiceLocation {
     hostName.split("\\.").toSeq.reverse match {
       case Seq(tld, domain, env, tail @ _*) if tail.nonEmpty && config.lines.contains(env) =>
         Some(ServiceLocation(s"$domain.$tld", env, tail.reverse.mkString(".")))
-      case Seq(tld, domain, tail @ _*) if tail.nonEmpty =>
+      case Seq(tld, domain, tail @ _*) if tail.nonEmpty                                    =>
         Some(ServiceLocation(s"$domain.$tld", "prod", tail.reverse.mkString(".")))
-      case Seq(domain, subdomain) => Some(ServiceLocation(s"$domain", "prod", subdomain))
-      case Seq(domain)            => Some(ServiceLocation(s"$domain", "prod", ""))
-      case _                      => None
+      case Seq(domain, subdomain)                                                          => Some(ServiceLocation(s"$domain", "prod", subdomain))
+      case Seq(domain)                                                                     => Some(ServiceLocation(s"$domain", "prod", ""))
+      case _                                                                               => None
     }
   }
 
@@ -162,9 +165,11 @@ object ApiDescriptor {
   implicit val format = Json.format[ApiDescriptor]
 }
 
-case class BaseQuotas(throttlingQuota: Long = BaseQuotas.MaxValue,
-                      dailyQuota: Long = BaseQuotas.MaxValue,
-                      monthlyQuota: Long = BaseQuotas.MaxValue) {
+case class BaseQuotas(
+    throttlingQuota: Long = BaseQuotas.MaxValue,
+    dailyQuota: Long = BaseQuotas.MaxValue,
+    monthlyQuota: Long = BaseQuotas.MaxValue
+) {
   def toJson = BaseQuotas.format.writes(this)
 }
 
@@ -176,26 +181,29 @@ object BaseQuotas {
 trait LoadBalancing {
   def needTrackingCookie: Boolean
   def toJson: JsValue
-  def select(reqId: String,
-             trackingId: String,
-             requestHeader: RequestHeader,
-             targets: Seq[Target],
-             desc: ServiceDescriptor)(implicit env: Env): Target
+  def select(
+      reqId: String,
+      trackingId: String,
+      requestHeader: RequestHeader,
+      targets: Seq[Target],
+      desc: ServiceDescriptor
+  )(implicit env: Env): Target
 }
 
 object LoadBalancing {
   val format: Format[LoadBalancing] = new Format[LoadBalancing] {
-    override def writes(o: LoadBalancing): JsValue = o.toJson
-    override def reads(json: JsValue): JsResult[LoadBalancing] = (json \ "type").as[String] match {
-      case "RoundRobin"       => JsSuccess(RoundRobin)
-      case "Random"           => JsSuccess(Random)
-      case "Sticky"           => JsSuccess(Sticky)
-      case "IpAddressHash"    => JsSuccess(IpAddressHash)
-      case "BestResponseTime" => JsSuccess(BestResponseTime)
-      case "WeightedBestResponseTime" =>
-        JsSuccess(WeightedBestResponseTime((json \ "ratio").asOpt[Double].getOrElse(0.5)))
-      case _ => JsSuccess(RoundRobin)
-    }
+    override def writes(o: LoadBalancing): JsValue             = o.toJson
+    override def reads(json: JsValue): JsResult[LoadBalancing] =
+      (json \ "type").as[String] match {
+        case "RoundRobin"               => JsSuccess(RoundRobin)
+        case "Random"                   => JsSuccess(Random)
+        case "Sticky"                   => JsSuccess(Sticky)
+        case "IpAddressHash"            => JsSuccess(IpAddressHash)
+        case "BestResponseTime"         => JsSuccess(BestResponseTime)
+        case "WeightedBestResponseTime" =>
+          JsSuccess(WeightedBestResponseTime((json \ "ratio").asOpt[Double].getOrElse(0.5)))
+        case _                          => JsSuccess(RoundRobin)
+      }
   }
 }
 
@@ -203,11 +211,13 @@ object RoundRobin extends LoadBalancing {
   private val reqCounter                   = new AtomicInteger(0)
   override def needTrackingCookie: Boolean = false
   override def toJson: JsValue             = Json.obj("type" -> "RoundRobin")
-  override def select(reqId: String,
-                      trackingId: String,
-                      req: RequestHeader,
-                      targets: Seq[Target],
-                      desc: ServiceDescriptor)(implicit env: Env): Target = {
+  override def select(
+      reqId: String,
+      trackingId: String,
+      req: RequestHeader,
+      targets: Seq[Target],
+      desc: ServiceDescriptor
+  )(implicit env: Env): Target = {
     val index: Int = reqCounter.incrementAndGet() % (if (targets.nonEmpty) targets.size else 1)
     targets.apply(index)
   }
@@ -218,11 +228,13 @@ object Random extends LoadBalancing {
   private val random                       = new scala.util.Random
   override def needTrackingCookie: Boolean = false
   override def toJson: JsValue             = Json.obj("type" -> "Random")
-  override def select(reqId: String,
-                      trackingId: String,
-                      req: RequestHeader,
-                      targets: Seq[Target],
-                      desc: ServiceDescriptor)(implicit env: Env): Target = {
+  override def select(
+      reqId: String,
+      trackingId: String,
+      req: RequestHeader,
+      targets: Seq[Target],
+      desc: ServiceDescriptor
+  )(implicit env: Env): Target = {
     val index = random.nextInt(targets.length)
     targets.apply(index)
   }
@@ -231,11 +243,13 @@ object Random extends LoadBalancing {
 object Sticky extends LoadBalancing {
   override def needTrackingCookie: Boolean = true
   override def toJson: JsValue             = Json.obj("type" -> "Sticky")
-  override def select(reqId: String,
-                      trackingId: String,
-                      req: RequestHeader,
-                      targets: Seq[Target],
-                      desc: ServiceDescriptor)(implicit env: Env): Target = {
+  override def select(
+      reqId: String,
+      trackingId: String,
+      req: RequestHeader,
+      targets: Seq[Target],
+      desc: ServiceDescriptor
+  )(implicit env: Env): Target = {
     val hash: Int  = Math.abs(scala.util.hashing.MurmurHash3.stringHash(trackingId))
     val index: Int = Hashing.consistentHash(hash, targets.size)
     targets.apply(index)
@@ -245,11 +259,13 @@ object Sticky extends LoadBalancing {
 object IpAddressHash extends LoadBalancing {
   override def needTrackingCookie: Boolean = false
   override def toJson: JsValue             = Json.obj("type" -> "IpAddressHash")
-  override def select(reqId: String,
-                      trackingId: String,
-                      req: RequestHeader,
-                      targets: Seq[Target],
-                      desc: ServiceDescriptor)(implicit env: Env): Target = {
+  override def select(
+      reqId: String,
+      trackingId: String,
+      req: RequestHeader,
+      targets: Seq[Target],
+      desc: ServiceDescriptor
+  )(implicit env: Env): Target = {
     val remoteAddress = req.theIpAddress
     val hash: Int     = Math.abs(scala.util.hashing.MurmurHash3.stringHash(remoteAddress))
     val index: Int    = Hashing.consistentHash(hash, targets.size)
@@ -278,11 +294,13 @@ object BestResponseTime extends LoadBalancing {
 
   override def needTrackingCookie: Boolean = false
   override def toJson: JsValue             = Json.obj("type" -> "BestResponseTime")
-  override def select(reqId: String,
-                      trackingId: String,
-                      req: RequestHeader,
-                      targets: Seq[Target],
-                      desc: ServiceDescriptor)(implicit env: Env): Target = {
+  override def select(
+      reqId: String,
+      trackingId: String,
+      req: RequestHeader,
+      targets: Seq[Target],
+      desc: ServiceDescriptor
+  )(implicit env: Env): Target = {
     val keys                     = targets.map(t => s"${desc.id}-${t.asKey}")
     val existing                 = responseTimes.toSeq.filter(t => keys.exists(k => t._1 == k))
     val nonExisting: Seq[String] = keys.filterNot(k => responseTimes.contains(k))
@@ -305,11 +323,13 @@ object BestResponseTime extends LoadBalancing {
 case class WeightedBestResponseTime(ratio: Double) extends LoadBalancing {
   override def needTrackingCookie: Boolean = false
   override def toJson: JsValue             = Json.obj("type" -> "WeightedBestResponseTime", "ratio" -> ratio)
-  override def select(reqId: String,
-                      trackingId: String,
-                      req: RequestHeader,
-                      targets: Seq[Target],
-                      desc: ServiceDescriptor)(implicit env: Env): Target = {
+  override def select(
+      reqId: String,
+      trackingId: String,
+      req: RequestHeader,
+      targets: Seq[Target],
+      desc: ServiceDescriptor
+  )(implicit env: Env): Target = {
     val keys                     = targets.map(t => s"${desc.id}-${t.asKey}")
     val existing                 = BestResponseTime.responseTimes.toSeq.filter(t => keys.exists(k => t._1 == k))
     val nonExisting: Seq[String] = keys.filterNot(k => BestResponseTime.responseTimes.contains(k))
@@ -357,8 +377,8 @@ object TargetPredicate {
         // case "RackMatch" => JsSuccess(ZoneMatch(
         //   zone = (json \ "rack").asOpt[String].getOrElse("local")
         // ))
-        case "AlwaysMatch" => JsSuccess(AlwaysMatch)
-        case "GeolocationMatch" =>
+        case "AlwaysMatch"          => JsSuccess(AlwaysMatch)
+        case "GeolocationMatch"     =>
           JsSuccess(
             GeolocationMatch(
               positions = (json \ "positions")
@@ -379,23 +399,25 @@ object TargetPredicate {
               rack = (json \ "rack").asOpt[String].filterNot(_.trim.isEmpty).getOrElse("*")
             )
           )
-        case _ => JsSuccess(AlwaysMatch)
+        case _                      => JsSuccess(AlwaysMatch)
       }
     }
   }
 }
 
 case class GeoPositionRadius(latitude: Double, longitude: Double, radius: Double) {
-  def toJson: JsValue = JsString(s"$latitude:$longitude:$radius")
+  def toJson: JsValue                         = JsString(s"$latitude:$longitude:$radius")
   def near(lat: Double, lng: Double): Boolean =
-    Math.acos(Math.sin(latitude) * Math.sin(lat) + Math.cos(latitude) * Math.cos(lat) * Math.cos(lng - longitude)) * 6371 <= radius
+    Math.acos(
+      Math.sin(latitude) * Math.sin(lat) + Math.cos(latitude) * Math.cos(lat) * Math.cos(lng - longitude)
+    ) * 6371 <= radius
 }
 
 case class GeolocationMatch(positions: Seq[GeoPositionRadius]) extends TargetPredicate {
   def toJson: JsValue = Json.obj("type" -> "GeolocationMatch", "positions" -> JsArray(positions.map(_.toJson)))
   override def matches(reqId: String, req: RequestHeader, attrs: TypedMap)(implicit env: Env): Boolean = {
     attrs.get(otoroshi.plugins.Keys.GeolocationInfoKey) match {
-      case None => true
+      case None         => true
       case Some(geoloc) => {
         val lat = ((geoloc \ "latitude").as[Double] * Math.PI) / 180.0
         val lng = ((geoloc \ "longitude").as[Double] * Math.PI) / 180.0
@@ -450,16 +472,17 @@ case class NetworkLocationMatch(
     region: String = "*",
     zone: String = "*",
     dataCenter: String = "*",
-    rack: String = "*",
+    rack: String = "*"
 ) extends TargetPredicate {
-  def toJson: JsValue = Json.obj(
-    "type"     -> "NetworkLocationMatch",
-    "provider" -> provider,
-    "region"   -> region,
-    "zone"     -> zone,
-    "dc"       -> dataCenter,
-    "rack"     -> rack,
-  )
+  def toJson: JsValue =
+    Json.obj(
+      "type"     -> "NetworkLocationMatch",
+      "provider" -> provider,
+      "region"   -> region,
+      "zone"     -> zone,
+      "dc"       -> dataCenter,
+      "rack"     -> rack
+    )
   override def matches(reqId: String, req: RequestHeader, attrs: TypedMap)(implicit env: Env): Boolean = {
     otoroshi.utils.RegexPool(provider.trim.toLowerCase).matches(env.infraProvider.trim.toLowerCase) &&
     otoroshi.utils.RegexPool(region.trim.toLowerCase).matches(env.region.trim.toLowerCase) &&
@@ -501,18 +524,19 @@ case class Target(
 
 object Target {
   val format = new Format[Target] {
-    override def writes(o: Target): JsValue = Json.obj(
-      "host"       -> o.host,
-      "scheme"     -> o.scheme,
-      "weight"     -> o.weight,
-      "mtlsConfig" -> o.mtlsConfig.json,
-      // "loose"     -> o.loose,
-      // "mtls"      -> o.mtls,
-      // "certId"    -> o.certId.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-      "protocol"  -> o.protocol.value,
-      "predicate" -> o.predicate.toJson,
-      "ipAddress" -> o.ipAddress.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-    )
+    override def writes(o: Target): JsValue             =
+      Json.obj(
+        "host"       -> o.host,
+        "scheme"     -> o.scheme,
+        "weight"     -> o.weight,
+        "mtlsConfig" -> o.mtlsConfig.json,
+        // "loose"     -> o.loose,
+        // "mtls"      -> o.mtls,
+        // "certId"    -> o.certId.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+        "protocol"   -> o.protocol.value,
+        "predicate"  -> o.predicate.toJson,
+        "ipAddress"  -> o.ipAddress.map(JsString.apply).getOrElse(JsNull).as[JsValue]
+      )
     override def reads(json: JsValue): JsResult[Target] =
       Try {
         Target(
@@ -605,7 +629,7 @@ case class CustomTimeouts(
     idleTimeout: Long = 60000,
     callAndStreamTimeout: Long = 1.hour.toMillis,
     callTimeout: Long = 30000,
-    globalTimeout: Long = 30000,
+    globalTimeout: Long = 30000
 ) {
   def toJson: JsValue = CustomTimeouts.format.writes(this)
 }
@@ -634,14 +658,15 @@ object CustomTimeouts {
           JsError(t.getMessage)
       } get
 
-    override def writes(o: CustomTimeouts): JsValue = Json.obj(
-      "path"                 -> o.path,
-      "callTimeout"          -> o.callTimeout,
-      "callAndStreamTimeout" -> o.callAndStreamTimeout,
-      "connectionTimeout"    -> o.connectionTimeout,
-      "idleTimeout"          -> o.idleTimeout,
-      "globalTimeout"        -> o.globalTimeout
-    )
+    override def writes(o: CustomTimeouts): JsValue =
+      Json.obj(
+        "path"                 -> o.path,
+        "callTimeout"          -> o.callTimeout,
+        "callAndStreamTimeout" -> o.callAndStreamTimeout,
+        "connectionTimeout"    -> o.connectionTimeout,
+        "idleTimeout"          -> o.idleTimeout,
+        "globalTimeout"        -> o.globalTimeout
+      )
   }
 }
 
@@ -653,42 +678,47 @@ case class ClientConfig(
     backoffFactor: Long = 2,
     connectionTimeout: Long = 10000,
     idleTimeout: Long = 60000,
-    callAndStreamTimeout: Long = 120000, // http client timeout per call with streaming from otoroshi to client included (actually end the call)
-    callTimeout: Long = 30000, // circuit breaker timeout per call (soft, streaming from otoroshi to client not included)
-    globalTimeout: Long = 30000, // circuit breaker timeout around all calls (soft, streaming from otoroshi to client not included)
+    callAndStreamTimeout: Long =
+      120000, // http client timeout per call with streaming from otoroshi to client included (actually end the call)
+    callTimeout: Long =
+      30000,  // circuit breaker timeout per call (soft, streaming from otoroshi to client not included)
+    globalTimeout: Long =
+      30000,  // circuit breaker timeout around all calls (soft, streaming from otoroshi to client not included)
     sampleInterval: Long = 2000,
     proxy: Option[WSProxyServer] = None,
     customTimeouts: Seq[CustomTimeouts] = Seq.empty[CustomTimeouts]
 ) {
-  def toJson = ClientConfig.format.writes(this)
+  def toJson                                                                                            = ClientConfig.format.writes(this)
   def timeouts(path: String): Option[CustomTimeouts] = {
     if (customTimeouts.isEmpty) None
     else customTimeouts.find(c => otoroshi.utils.RegexPool(c.path).matches(path))
   }
   def extractTimeout(path: String, f: CustomTimeouts => Long, f2: ClientConfig => Long): FiniteDuration =
     timeouts(path).map(f).getOrElse(f2(this)).millis
-  def extractTimeoutLong(path: String, f: CustomTimeouts => Long, f2: ClientConfig => Long): Long =
+  def extractTimeoutLong(path: String, f: CustomTimeouts => Long, f2: ClientConfig => Long): Long       =
     timeouts(path).map(f).getOrElse(f2(this))
 }
 
 object WSProxyServerJson {
-  def maybeProxyToJson(p: Option[WSProxyServer]): JsValue = p match {
-    case Some(proxy) => proxyToJson(proxy)
-    case None        => JsNull
-  }
-  def proxyToJson(p: WSProxyServer): JsValue = Json.obj(
-    "host"       -> p.host, // host: String
-    "port"       -> p.port, // port: Int
-    "protocol"   -> p.protocol.map(JsString.apply).getOrElse(JsNull).as[JsValue], // protocol: Option[String]
-    "principal"  -> p.principal.map(JsString.apply).getOrElse(JsNull).as[JsValue], // principal: Option[String]
-    "password"   -> p.password.map(JsString.apply).getOrElse(JsNull).as[JsValue], // password: Option[String]
-    "ntlmDomain" -> p.ntlmDomain.map(JsString.apply).getOrElse(JsNull).as[JsValue], // ntlmDomain: Option[String]
-    "encoding"   -> p.encoding.map(JsString.apply).getOrElse(JsNull).as[JsValue], // encoding: Option[String]
-    "nonProxyHosts" -> p.nonProxyHosts
-      .map(nph => JsArray(nph.map(JsString.apply)))
-      .getOrElse(JsNull)
-      .as[JsValue] // nonProxyHosts: Option[Seq[String]]
-  )
+  def maybeProxyToJson(p: Option[WSProxyServer]): JsValue =
+    p match {
+      case Some(proxy) => proxyToJson(proxy)
+      case None        => JsNull
+    }
+  def proxyToJson(p: WSProxyServer): JsValue              =
+    Json.obj(
+      "host"          -> p.host, // host: String
+      "port"          -> p.port, // port: Int
+      "protocol"      -> p.protocol.map(JsString.apply).getOrElse(JsNull).as[JsValue], // protocol: Option[String]
+      "principal"     -> p.principal.map(JsString.apply).getOrElse(JsNull).as[JsValue], // principal: Option[String]
+      "password"      -> p.password.map(JsString.apply).getOrElse(JsNull).as[JsValue], // password: Option[String]
+      "ntlmDomain"    -> p.ntlmDomain.map(JsString.apply).getOrElse(JsNull).as[JsValue], // ntlmDomain: Option[String]
+      "encoding"      -> p.encoding.map(JsString.apply).getOrElse(JsNull).as[JsValue], // encoding: Option[String]
+      "nonProxyHosts" -> p.nonProxyHosts
+        .map(nph => JsArray(nph.map(JsString.apply)))
+        .getOrElse(JsNull)
+        .as[JsValue] // nonProxyHosts: Option[Seq[String]]
+    )
   def proxyFromJson(json: JsValue): Option[WSProxyServer] = {
     val maybeHost = (json \ "host").asOpt[String].filterNot(_.trim.isEmpty)
     val maybePort = (json \ "port").asOpt[Int]
@@ -734,7 +764,7 @@ object WSProxyServerJson {
             (json \ "nonProxyHosts").asOpt[Seq[String]].map(v => proxy.copy(nonProxyHosts = Some(v))).getOrElse(proxy)
           }
       }
-      case _ => None
+      case _                        => None
     }
   }
 }
@@ -773,21 +803,22 @@ object ClientConfig {
           JsError(t.getMessage)
       } get
 
-    override def writes(o: ClientConfig): JsValue = Json.obj(
-      "useCircuitBreaker"    -> o.useCircuitBreaker,
-      "retries"              -> o.retries,
-      "maxErrors"            -> o.maxErrors,
-      "retryInitialDelay"    -> o.retryInitialDelay,
-      "backoffFactor"        -> o.backoffFactor,
-      "callTimeout"          -> o.callTimeout,
-      "callAndStreamTimeout" -> o.callAndStreamTimeout,
-      "connectionTimeout"    -> o.connectionTimeout,
-      "idleTimeout"          -> o.idleTimeout,
-      "globalTimeout"        -> o.globalTimeout,
-      "sampleInterval"       -> o.sampleInterval,
-      "proxy"                -> o.proxy.map(p => WSProxyServerJson.proxyToJson(p)).getOrElse(Json.obj()).as[JsValue],
-      "customTimeouts"       -> JsArray(o.customTimeouts.map(_.toJson))
-    )
+    override def writes(o: ClientConfig): JsValue =
+      Json.obj(
+        "useCircuitBreaker"    -> o.useCircuitBreaker,
+        "retries"              -> o.retries,
+        "maxErrors"            -> o.maxErrors,
+        "retryInitialDelay"    -> o.retryInitialDelay,
+        "backoffFactor"        -> o.backoffFactor,
+        "callTimeout"          -> o.callTimeout,
+        "callAndStreamTimeout" -> o.callAndStreamTimeout,
+        "connectionTimeout"    -> o.connectionTimeout,
+        "idleTimeout"          -> o.idleTimeout,
+        "globalTimeout"        -> o.globalTimeout,
+        "sampleInterval"       -> o.sampleInterval,
+        "proxy"                -> o.proxy.map(p => WSProxyServerJson.proxyToJson(p)).getOrElse(Json.obj()).as[JsValue],
+        "customTimeouts"       -> JsArray(o.customTimeouts.map(_.toJson))
+      )
   }
 }
 
@@ -824,23 +855,26 @@ object Canary {
           JsError(t.getMessage)
       } get
 
-    override def writes(o: Canary): JsValue = Json.obj(
-      "enabled" -> o.enabled,
-      "traffic" -> o.traffic,
-      "targets" -> JsArray(o.targets.map(_.toJson)),
-      "root"    -> o.root
-    )
+    override def writes(o: Canary): JsValue =
+      Json.obj(
+        "enabled" -> o.enabled,
+        "traffic" -> o.traffic,
+        "targets" -> JsArray(o.targets.map(_.toJson)),
+        "root"    -> o.root
+      )
   }
 }
 
 case class RedirectionSettings(enabled: Boolean = false, code: Int = 303, to: String = "https://www.otoroshi.io") {
   def toJson       = RedirectionSettings.format.writes(this)
   def hasValidCode = RedirectionSettings.validRedirectionCodes.contains(code)
-  def formattedTo(request: RequestHeader,
-                  descriptor: ServiceDescriptor,
-                  ctx: Map[String, String],
-                  attrs: TypedMap,
-                  env: Env): String =
+  def formattedTo(
+      request: RequestHeader,
+      descriptor: ServiceDescriptor,
+      ctx: Map[String, String],
+      attrs: TypedMap,
+      env: Env
+  ): String        =
     RedirectionExpressionLanguage(to, Some(request), Some(descriptor), None, None, ctx, attrs, env)
 }
 
@@ -866,11 +900,12 @@ object RedirectionSettings {
           JsError(t.getMessage)
       } get
 
-    override def writes(o: RedirectionSettings): JsValue = Json.obj(
-      "enabled" -> o.enabled,
-      "code"    -> o.code,
-      "to"      -> o.to
-    )
+    override def writes(o: RedirectionSettings): JsValue =
+      Json.obj(
+        "enabled" -> o.enabled,
+        "code"    -> o.code,
+        "to"      -> o.to
+      )
   }
 }
 
@@ -878,16 +913,17 @@ case class BasicAuthConstraints(
     enabled: Boolean = true,
     headerName: Option[String] = None,
     queryName: Option[String] = None
-) {
-  def json: JsValue = Json.obj(
-    "enabled"    -> enabled,
-    "headerName" -> headerName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-    "queryName"  -> queryName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-  )
+)                                   {
+  def json: JsValue =
+    Json.obj(
+      "enabled"    -> enabled,
+      "headerName" -> headerName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      "queryName"  -> queryName.map(JsString.apply).getOrElse(JsNull).as[JsValue]
+    )
 }
-object BasicAuthConstraints {
+object BasicAuthConstraints         {
   val format = new Format[BasicAuthConstraints] {
-    override def writes(o: BasicAuthConstraints): JsValue = o.json
+    override def writes(o: BasicAuthConstraints): JsValue             = o.json
     override def reads(json: JsValue): JsResult[BasicAuthConstraints] =
       Try {
         JsSuccess(
@@ -906,16 +942,17 @@ case class ClientIdAuthConstraints(
     enabled: Boolean = true,
     headerName: Option[String] = None,
     queryName: Option[String] = None
-) {
-  def json: JsValue = Json.obj(
-    "enabled"    -> enabled,
-    "headerName" -> headerName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-    "queryName"  -> queryName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-  )
+)                                   {
+  def json: JsValue =
+    Json.obj(
+      "enabled"    -> enabled,
+      "headerName" -> headerName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      "queryName"  -> queryName.map(JsString.apply).getOrElse(JsNull).as[JsValue]
+    )
 }
-object ClientIdAuthConstraints {
+object ClientIdAuthConstraints      {
   val format = new Format[ClientIdAuthConstraints] {
-    override def writes(o: ClientIdAuthConstraints): JsValue = o.json
+    override def writes(o: ClientIdAuthConstraints): JsValue             = o.json
     override def reads(json: JsValue): JsResult[ClientIdAuthConstraints] =
       Try {
         JsSuccess(
@@ -934,16 +971,17 @@ case class CustomHeadersAuthConstraints(
     enabled: Boolean = true,
     clientIdHeaderName: Option[String] = None,
     clientSecretHeaderName: Option[String] = None
-) {
-  def json: JsValue = Json.obj(
-    "enabled"                -> enabled,
-    "clientIdHeaderName"     -> clientIdHeaderName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-    "clientSecretHeaderName" -> clientSecretHeaderName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-  )
+)                                   {
+  def json: JsValue =
+    Json.obj(
+      "enabled"                -> enabled,
+      "clientIdHeaderName"     -> clientIdHeaderName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      "clientSecretHeaderName" -> clientSecretHeaderName.map(JsString.apply).getOrElse(JsNull).as[JsValue]
+    )
 }
 object CustomHeadersAuthConstraints {
   val format = new Format[CustomHeadersAuthConstraints] {
-    override def writes(o: CustomHeadersAuthConstraints): JsValue = o.json
+    override def writes(o: CustomHeadersAuthConstraints): JsValue             = o.json
     override def reads(json: JsValue): JsResult[CustomHeadersAuthConstraints] =
       Try {
         JsSuccess(
@@ -967,21 +1005,22 @@ case class JwtAuthConstraints(
     headerName: Option[String] = None,
     queryName: Option[String] = None,
     cookieName: Option[String] = None
-) {
-  def json: JsValue = Json.obj(
-    "enabled"                  -> enabled,
-    "secretSigned"                  -> secretSigned,
-    "keyPairSigned"                  -> keyPairSigned,
-    "includeRequestAttributes" -> includeRequestAttributes,
-    "maxJwtLifespanSecs"       -> maxJwtLifespanSecs.map(l => JsNumber(BigDecimal.exact(l))).getOrElse(JsNull).as[JsValue],
-    "headerName"               -> headerName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-    "queryName"                -> queryName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-    "cookieName"               -> cookieName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-  )
+)                                   {
+  def json: JsValue =
+    Json.obj(
+      "enabled"                  -> enabled,
+      "secretSigned"             -> secretSigned,
+      "keyPairSigned"            -> keyPairSigned,
+      "includeRequestAttributes" -> includeRequestAttributes,
+      "maxJwtLifespanSecs"       -> maxJwtLifespanSecs.map(l => JsNumber(BigDecimal.exact(l))).getOrElse(JsNull).as[JsValue],
+      "headerName"               -> headerName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      "queryName"                -> queryName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      "cookieName"               -> cookieName.map(JsString.apply).getOrElse(JsNull).as[JsValue]
+    )
 }
-object JwtAuthConstraints {
+object JwtAuthConstraints           {
   val format = new Format[JwtAuthConstraints] {
-    override def writes(o: JwtAuthConstraints): JsValue = o.json
+    override def writes(o: JwtAuthConstraints): JsValue             = o.json
     override def reads(json: JsValue): JsResult[JwtAuthConstraints] =
       Try {
         JsSuccess(
@@ -990,7 +1029,8 @@ object JwtAuthConstraints {
             secretSigned = (json \ "secretSigned").asOpt[Boolean].getOrElse(true),
             keyPairSigned = (json \ "keyPairSigned").asOpt[Boolean].getOrElse(true),
             includeRequestAttributes = (json \ "includeRequestAttributes").asOpt[Boolean].getOrElse(false),
-            maxJwtLifespanSecs = (json \ "maxJwtLifespanSecs").asOpt[Long].filter(_ > -1), //.getOrElse(10 * 365 * 24 * 60 * 60),
+            maxJwtLifespanSecs =
+              (json \ "maxJwtLifespanSecs").asOpt[Long].filter(_ > -1), //.getOrElse(10 * 365 * 24 * 60 * 60),
             headerName = (json \ "headerName").asOpt[String].filterNot(_.trim.isEmpty),
             queryName = (json \ "queryName").asOpt[String].filterNot(_.trim.isEmpty),
             cookieName = (json \ "cookieName").asOpt[String].filterNot(_.trim.isEmpty)
@@ -1011,24 +1051,25 @@ case class ApiKeyRouteMatcher(
     allMetaIn: Map[String, String] = Map.empty,
     noneMetaKeysIn: Seq[String] = Seq.empty,
     oneMetaKeyIn: Seq[String] = Seq.empty,
-    allMetaKeysIn: Seq[String] = Seq.empty,
+    allMetaKeysIn: Seq[String] = Seq.empty
 ) extends {
   def json: JsValue = ApiKeyRouteMatcher.format.writes(this)
 }
 
 object ApiKeyRouteMatcher {
   val format = new Format[ApiKeyRouteMatcher] {
-    override def writes(o: ApiKeyRouteMatcher): JsValue = Json.obj(
-      "noneTagIn"  -> JsArray(o.noneTagIn.map(JsString.apply)),
-      "oneTagIn"   -> JsArray(o.oneTagIn.map(JsString.apply)),
-      "allTagsIn"  -> JsArray(o.allTagsIn.map(JsString.apply)),
-      "noneMetaIn" -> JsObject(o.noneMetaIn.mapValues(JsString.apply)),
-      "oneMetaIn"  -> JsObject(o.oneMetaIn.mapValues(JsString.apply)),
-      "allMetaIn"  -> JsObject(o.allMetaIn.mapValues(JsString.apply)),
-      "noneMetaKeysIn" -> JsArray(o.noneMetaKeysIn.map(JsString.apply)),
-      "oneMetaKeyIn"  -> JsArray(o.oneMetaKeyIn.map(JsString.apply)),
-      "allMetaKeysIn"  -> JsArray(o.allMetaKeysIn.map(JsString.apply)),
-    )
+    override def writes(o: ApiKeyRouteMatcher): JsValue             =
+      Json.obj(
+        "noneTagIn"      -> JsArray(o.noneTagIn.map(JsString.apply)),
+        "oneTagIn"       -> JsArray(o.oneTagIn.map(JsString.apply)),
+        "allTagsIn"      -> JsArray(o.allTagsIn.map(JsString.apply)),
+        "noneMetaIn"     -> JsObject(o.noneMetaIn.mapValues(JsString.apply)),
+        "oneMetaIn"      -> JsObject(o.oneMetaIn.mapValues(JsString.apply)),
+        "allMetaIn"      -> JsObject(o.allMetaIn.mapValues(JsString.apply)),
+        "noneMetaKeysIn" -> JsArray(o.noneMetaKeysIn.map(JsString.apply)),
+        "oneMetaKeyIn"   -> JsArray(o.oneMetaKeyIn.map(JsString.apply)),
+        "allMetaKeysIn"  -> JsArray(o.allMetaKeysIn.map(JsString.apply))
+      )
     override def reads(json: JsValue): JsResult[ApiKeyRouteMatcher] =
       Try {
         JsSuccess(
@@ -1041,7 +1082,7 @@ object ApiKeyRouteMatcher {
             allMetaIn = (json \ "allMetaIn").asOpt[Map[String, String]].getOrElse(Map.empty[String, String]),
             noneMetaKeysIn = (json \ "noneMetaKeysIn").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
             oneMetaKeyIn = (json \ "oneMetaKeyIn").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-            allMetaKeysIn = (json \ "allMetaKeysIn").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+            allMetaKeysIn = (json \ "allMetaKeysIn").asOpt[Seq[String]].getOrElse(Seq.empty[String])
           )
         )
       } recover {
@@ -1056,18 +1097,19 @@ case class ApiKeyConstraints(
     clientIdAuth: ClientIdAuthConstraints = ClientIdAuthConstraints(),
     jwtAuth: JwtAuthConstraints = JwtAuthConstraints(),
     routing: ApiKeyRouteMatcher = ApiKeyRouteMatcher()
-) {
-  def json: JsValue = Json.obj(
-    "basicAuth"         -> basicAuth.json,
-    "customHeadersAuth" -> customHeadersAuth.json,
-    "clientIdAuth"      -> clientIdAuth.json,
-    "jwtAuth"           -> jwtAuth.json,
-    "routing"           -> routing.json
-  )
+)                        {
+  def json: JsValue =
+    Json.obj(
+      "basicAuth"         -> basicAuth.json,
+      "customHeadersAuth" -> customHeadersAuth.json,
+      "clientIdAuth"      -> clientIdAuth.json,
+      "jwtAuth"           -> jwtAuth.json,
+      "routing"           -> routing.json
+    )
 }
 object ApiKeyConstraints {
   val format = new Format[ApiKeyConstraints] {
-    override def writes(o: ApiKeyConstraints): JsValue = o.json
+    override def writes(o: ApiKeyConstraints): JsValue             = o.json
     override def reads(json: JsValue): JsResult[ApiKeyConstraints] =
       Try {
         JsSuccess(
@@ -1089,7 +1131,7 @@ sealed trait SecComVersion {
   def version: Int
   def json: JsValue
 }
-object SecComVersion {
+object SecComVersion       {
   object V1 extends SecComVersion {
     def version: Int  = 1
     def json: JsValue = JsNumber(1)
@@ -1098,36 +1140,39 @@ object SecComVersion {
     def version: Int  = 2
     def json: JsValue = JsNumber(2)
   }
-  def apply(version: Int): Option[SecComVersion] = version match {
-    case 1 => Some(V1)
-    case 2 => Some(V2)
-    case _ => None
-  }
-  def apply(version: String): Option[SecComVersion] = version match {
-    case "V1" => Some(V1)
-    case "V2" => Some(V2)
-    case _ => None
-  }
+  def apply(version: Int): Option[SecComVersion] =
+    version match {
+      case 1 => Some(V1)
+      case 2 => Some(V2)
+      case _ => None
+    }
+  def apply(version: String): Option[SecComVersion] =
+    version match {
+      case "V1" => Some(V1)
+      case "V2" => Some(V2)
+      case _    => None
+    }
 }
 
 sealed trait SecComInfoTokenVersion {
   def version: String
   def json: JsValue = JsString(version)
 }
-object SecComInfoTokenVersion {
+object SecComInfoTokenVersion       {
   object Legacy extends SecComInfoTokenVersion {
     def version: String = "Legacy"
   }
   object Latest extends SecComInfoTokenVersion {
     def version: String = "Latest"
   }
-  def apply(version: String): Option[SecComInfoTokenVersion] = version match {
-    case "Legacy" => Some(Legacy)
-    case "legacy" => Some(Legacy)
-    case "Latest" => Some(Latest)
-    case "latest" => Some(Latest)
-    case _        => None
-  }
+  def apply(version: String): Option[SecComInfoTokenVersion] =
+    version match {
+      case "Legacy" => Some(Legacy)
+      case "legacy" => Some(Legacy)
+      case "Latest" => Some(Latest)
+      case "latest" => Some(Latest)
+      case _        => None
+    }
 }
 
 case class SecComHeaders(
@@ -1135,16 +1180,17 @@ case class SecComHeaders(
     stateRequestName: Option[String] = None,
     stateResponseName: Option[String] = None
 ) {
-  def json: JsValue = Json.obj(
-    "claimRequestName"  -> claimRequestName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-    "stateRequestName"  -> stateRequestName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-    "stateResponseName" -> stateResponseName.map(JsString.apply).getOrElse(JsNull).as[JsValue]
-  )
+  def json: JsValue =
+    Json.obj(
+      "claimRequestName"  -> claimRequestName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      "stateRequestName"  -> stateRequestName.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+      "stateResponseName" -> stateResponseName.map(JsString.apply).getOrElse(JsNull).as[JsValue]
+    )
 }
 
 object SecComHeaders {
   val format = new Format[SecComHeaders] {
-    override def writes(o: SecComHeaders): JsValue = o.json
+    override def writes(o: SecComHeaders): JsValue             = o.json
     override def reads(json: JsValue): JsResult[SecComHeaders] =
       Try {
         JsSuccess(
@@ -1166,10 +1212,11 @@ case class RestrictionPath(method: String, path: String) {
 
 object RestrictionPath {
   val format = new Format[RestrictionPath] {
-    override def writes(o: RestrictionPath): JsValue = Json.obj(
-      "method" -> o.method,
-      "path"   -> o.path,
-    )
+    override def writes(o: RestrictionPath): JsValue             =
+      Json.obj(
+        "method" -> o.method,
+        "path"   -> o.path
+      )
     override def reads(json: JsValue): JsResult[RestrictionPath] =
       Try {
         JsSuccess(
@@ -1189,7 +1236,7 @@ case class Restrictions(
     allowLast: Boolean = true,
     allowed: Seq[RestrictionPath] = Seq.empty,
     forbidden: Seq[RestrictionPath] = Seq.empty,
-    notFound: Seq[RestrictionPath] = Seq.empty,
+    notFound: Seq[RestrictionPath] = Seq.empty
 ) {
 
   def json: JsValue = Restrictions.format.writes(this)
@@ -1243,7 +1290,8 @@ case class Restrictions(
   private val cache = new TrieMap[String, (Boolean, Future[Result])]() // Not that clean but perfs matters
 
   def handleRestrictions(descriptor: ServiceDescriptor, apk: Option[ApiKey], req: RequestHeader, attrs: TypedMap)(
-      implicit ec: ExecutionContext,
+      implicit
+      ec: ExecutionContext,
       env: Env
   ): (Boolean, Future[Result]) = {
 
@@ -1258,76 +1306,88 @@ case class Restrictions(
         key, {
           if (allowLast) {
             if (isNotFound(method, domain, path)) {
-              (true,
-               Errors.craftResponseResult(
-                 "Not Found",
-                 Results.NotFound,
-                 req,
-                 Some(descriptor),
-                 Some("errors.not.found"),
-                 emptyBody = true,
-                 attrs = attrs
-               ))
+              (
+                true,
+                Errors.craftResponseResult(
+                  "Not Found",
+                  Results.NotFound,
+                  req,
+                  Some(descriptor),
+                  Some("errors.not.found"),
+                  emptyBody = true,
+                  attrs = attrs
+                )
+              )
             } else if (isForbidden(method, domain, path)) {
-              (true,
-               Errors.craftResponseResult(
-                 "Forbidden",
-                 Results.Forbidden,
-                 req,
-                 Some(descriptor),
-                 Some("errors.forbidden"),
-                 emptyBody = true,
-                 attrs = attrs
-               ))
+              (
+                true,
+                Errors.craftResponseResult(
+                  "Forbidden",
+                  Results.Forbidden,
+                  req,
+                  Some(descriptor),
+                  Some("errors.forbidden"),
+                  emptyBody = true,
+                  attrs = attrs
+                )
+              )
             } else if (isNotAllowed(method, domain, path)) {
-              (true,
-               Errors.craftResponseResult(
-                 "Not Found", // TODO: is it the right response ?
-                 Results.NotFound,
-                 req,
-                 Some(descriptor),
-                 Some("errors.not.found"),
-                 emptyBody = true,
-                 attrs = attrs
-               ))
+              (
+                true,
+                Errors.craftResponseResult(
+                  "Not Found", // TODO: is it the right response ?
+                  Results.NotFound,
+                  req,
+                  Some(descriptor),
+                  Some("errors.not.found"),
+                  emptyBody = true,
+                  attrs = attrs
+                )
+              )
             } else {
               Restrictions.failedFutureResp
             }
           } else {
             val allowed = isAllowed(method, domain, path)
             if (!allowed && isNotFound(method, domain, path)) {
-              (true,
-               Errors.craftResponseResult(
-                 "Not Found",
-                 Results.NotFound,
-                 req,
-                 Some(descriptor),
-                 Some("errors.not.found"),
-                 emptyBody = true,
-                 attrs = attrs
-               ))
+              (
+                true,
+                Errors.craftResponseResult(
+                  "Not Found",
+                  Results.NotFound,
+                  req,
+                  Some(descriptor),
+                  Some("errors.not.found"),
+                  emptyBody = true,
+                  attrs = attrs
+                )
+              )
             } else if (!allowed && isForbidden(method, domain, path)) {
-              (true,
-               Errors.craftResponseResult(
-                 "Forbidden",
-                 Results.Forbidden,
-                 req,
-                 Some(descriptor),
-                 Some("errors.forbidden"),
-                 emptyBody = true,
-                 attrs = attrs
-               ))
+              (
+                true,
+                Errors.craftResponseResult(
+                  "Forbidden",
+                  Results.Forbidden,
+                  req,
+                  Some(descriptor),
+                  Some("errors.forbidden"),
+                  emptyBody = true,
+                  attrs = attrs
+                )
+              )
             } else if (isNotAllowed(method, domain, path)) {
-              (true,
-               Errors.craftResponseResult(
-                 "Not Found", // TODO: is it the right response ?
-                 Results.NotFound,
-                 req,
-                 Some(descriptor),
-                 Some("errors.not.found"),
-                 emptyBody = true,
-                 attrs = attrs
-               ))
+              (
+                true,
+                Errors.craftResponseResult(
+                  "Not Found", // TODO: is it the right response ?
+                  Results.NotFound,
+                  req,
+                  Some(descriptor),
+                  Some("errors.not.found"),
+                  emptyBody = true,
+                  attrs = attrs
+                )
+              )
             } else {
               Restrictions.failedFutureResp
             }
@@ -1345,13 +1405,14 @@ object Restrictions {
   private val failedFutureResp = (false, FastFuture.failed(new RuntimeException("Should never happen")))
 
   val format = new Format[Restrictions] {
-    override def writes(o: Restrictions): JsValue = Json.obj(
-      "enabled"   -> o.enabled,
-      "allowLast" -> o.allowLast,
-      "allowed"   -> JsArray(o.allowed.map(_.json)),
-      "forbidden" -> JsArray(o.forbidden.map(_.json)),
-      "notFound"  -> JsArray(o.notFound.map(_.json)),
-    )
+    override def writes(o: Restrictions): JsValue             =
+      Json.obj(
+        "enabled"   -> o.enabled,
+        "allowLast" -> o.allowLast,
+        "allowed"   -> JsArray(o.allowed.map(_.json)),
+        "forbidden" -> JsArray(o.forbidden.map(_.json)),
+        "notFound"  -> JsArray(o.notFound.map(_.json))
+      )
     override def reads(json: JsValue): JsResult[Restrictions] =
       Try {
         JsSuccess(
@@ -1477,7 +1538,7 @@ case class ServiceDescriptor(
     location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation()
 ) extends otoroshi.models.EntityLocationSupport {
 
-  def json: JsValue = toJson
+  def json: JsValue      = toJson
   def internalId: String = id
 
   def algoChallengeFromOtoToBack: AlgoSettings = if (secComUseSameAlgo) secComSettings else secComAlgoChallengeOtoToBack
@@ -1495,7 +1556,7 @@ case class ServiceDescriptor(
   lazy val allPaths: Seq[String] = paths ++ matchingRoot.toSeq
 
   def maybeStrippedUri(req: RequestHeader, rawUri: String): String = {
-    val root = req.relativeUri
+    val root        = req.relativeUri
     val rootMatched = allPaths match { //rootMatched was this.matchingRoot
       case ps if ps.isEmpty => None
       case ps               => ps.find(p => root.startsWith(p))
@@ -1506,64 +1567,66 @@ case class ServiceDescriptor(
       .getOrElse(rawUri)
   }
 
-  def target: Target                                    = targets.head
-  def save()(implicit ec: ExecutionContext, env: Env)   = env.datastores.serviceDescriptorDataStore.set(this)
-  def delete()(implicit ec: ExecutionContext, env: Env) = env.datastores.serviceDescriptorDataStore.delete(this)
-  def exists()(implicit ec: ExecutionContext, env: Env) = env.datastores.serviceDescriptorDataStore.exists(this)
-  def toJson                                            = ServiceDescriptor.toJson(this)
+  def target: Target                                                 = targets.head
+  def save()(implicit ec: ExecutionContext, env: Env)                = env.datastores.serviceDescriptorDataStore.set(this)
+  def delete()(implicit ec: ExecutionContext, env: Env)              = env.datastores.serviceDescriptorDataStore.delete(this)
+  def exists()(implicit ec: ExecutionContext, env: Env)              = env.datastores.serviceDescriptorDataStore.exists(this)
+  def toJson                                                         = ServiceDescriptor.toJson(this)
   def isUp(implicit ec: ExecutionContext, env: Env): Future[Boolean] = FastFuture.successful(true)
   // not useful anymore as circuit breakers should do the work
   // env.datastores.healthCheckDataStore.findLast(this).map(_.map(_.isUp).getOrElse(true))
   // TODO : check perfs
   // def isUriPublic(uri: String): Boolean = !privatePatterns.exists(p => uri.matches(p)) && publicPatterns.exists(p => uri.matches(p))
-  def authorizedOnGroup(id: String): Boolean = groups.contains(id)
+  def authorizedOnGroup(id: String): Boolean                         = groups.contains(id)
 
   lazy val hasNoRoutingConstraints: Boolean =
-  this.apiKeyConstraints.routing.oneMetaIn.isEmpty &&
-  this.apiKeyConstraints.routing.allMetaIn.isEmpty &&
-  this.apiKeyConstraints.routing.oneTagIn.isEmpty &&
-  this.apiKeyConstraints.routing.allTagsIn.isEmpty &&
-  this.apiKeyConstraints.routing.noneTagIn.isEmpty &&
-  this.apiKeyConstraints.routing.noneMetaIn.isEmpty &&
-  this.apiKeyConstraints.routing.oneMetaKeyIn.isEmpty &&
-  this.apiKeyConstraints.routing.allMetaKeysIn.isEmpty &&
-  this.apiKeyConstraints.routing.noneMetaKeysIn.isEmpty
+    this.apiKeyConstraints.routing.oneMetaIn.isEmpty &&
+    this.apiKeyConstraints.routing.allMetaIn.isEmpty &&
+    this.apiKeyConstraints.routing.oneTagIn.isEmpty &&
+    this.apiKeyConstraints.routing.allTagsIn.isEmpty &&
+    this.apiKeyConstraints.routing.noneTagIn.isEmpty &&
+    this.apiKeyConstraints.routing.noneMetaIn.isEmpty &&
+    this.apiKeyConstraints.routing.oneMetaKeyIn.isEmpty &&
+    this.apiKeyConstraints.routing.allMetaKeysIn.isEmpty &&
+    this.apiKeyConstraints.routing.noneMetaKeysIn.isEmpty
 
   def isUriPublic(uri: String): Boolean =
-    !privatePatterns.exists(p => otoroshi.utils.RegexPool.regex(p).matches(uri)) && publicPatterns.exists(
-      p => otoroshi.utils.RegexPool.regex(p).matches(uri)
+    !privatePatterns.exists(p => otoroshi.utils.RegexPool.regex(p).matches(uri)) && publicPatterns.exists(p =>
+      otoroshi.utils.RegexPool.regex(p).matches(uri)
     )
 
   def isExcludedFromSecurity(uri: String): Boolean = {
-    securityExcludedPatterns.exists(
-      p => otoroshi.utils.RegexPool.regex(p).matches(uri)
-    )
+    securityExcludedPatterns.exists(p => otoroshi.utils.RegexPool.regex(p).matches(uri))
   }
 
   def isUriExcludedFromSecuredCommunication(uri: String): Boolean =
     secComExcludedPatterns.exists(p => otoroshi.utils.RegexPool.regex(p).matches(uri))
-  def isPrivate = privateApp
-  def updateMetrics(callDuration: Long,
-                    callOverhead: Long,
-                    dataIn: Long,
-                    dataOut: Long,
-                    upstreamLatency: Long,
-                    config: otoroshi.models.GlobalConfig)(
-      implicit ec: ExecutionContext,
+  def isPrivate                                                   = privateApp
+  def updateMetrics(
+      callDuration: Long,
+      callOverhead: Long,
+      dataIn: Long,
+      dataOut: Long,
+      upstreamLatency: Long,
+      config: otoroshi.models.GlobalConfig
+  )(implicit
+      ec: ExecutionContext,
       env: Env
-  ): Future[Unit] =
-    env.datastores.serviceDescriptorDataStore.updateMetrics(id,
-                                                            callDuration,
-                                                            callOverhead,
-                                                            dataIn,
-                                                            dataOut,
-                                                            upstreamLatency,
-                                                            config)
-  def theScheme: String     = if (forceHttps) "https://" else "http://"
-  def theLine: String       = if (env == "prod") "" else s".$env"
-  def theDomain             = if (s"$subdomain$theLine".isEmpty) domain else s".$subdomain$theLine"
-  def exposedDomain: String = s"$theScheme://$subdomain$theLine.$domain"
-  lazy val _domain: String  = s"$subdomain$theLine.$domain"
+  ): Future[Unit]                                                 =
+    env.datastores.serviceDescriptorDataStore.updateMetrics(
+      id,
+      callDuration,
+      callOverhead,
+      dataIn,
+      dataOut,
+      upstreamLatency,
+      config
+    )
+  def theScheme: String                                           = if (forceHttps) "https://" else "http://"
+  def theLine: String                                             = if (env == "prod") "" else s".$env"
+  def theDomain                                                   = if (s"$subdomain$theLine".isEmpty) domain else s".$subdomain$theLine"
+  def exposedDomain: String                                       = s"$theScheme://$subdomain$theLine.$domain"
+  lazy val _domain: String                                        = s"$subdomain$theLine.$domain"
 
   def validateClientCertificates(
       snowflake: String,
@@ -1574,49 +1637,54 @@ case class ServiceDescriptor(
       attrs: TypedMap
   )(f: => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
     validateClientCertificatesGen(snowflake, req, apikey, user, config, attrs)(f.map(Right.apply)).map {
-      case Left(r) => r
+      case Left(r)  => r
       case Right(r) => r
     }
   }
 
   import play.api.http.websocket.{Message => PlayWSMessage}
 
-  def wsValidateClientCertificates(snowflake: String,
-                                   req: RequestHeader,
-                                   apikey: Option[ApiKey] = None,
-                                   user: Option[PrivateAppsUser] = None,
-                                   config: GlobalConfig,
-                                   attrs: TypedMap)(
+  def wsValidateClientCertificates(
+      snowflake: String,
+      req: RequestHeader,
+      apikey: Option[ApiKey] = None,
+      user: Option[PrivateAppsUser] = None,
+      config: GlobalConfig,
+      attrs: TypedMap
+  )(
       f: => Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]]
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, Flow[PlayWSMessage, PlayWSMessage, _]]] = {
     validateClientCertificatesGen(snowflake, req, apikey, user, config, attrs)(f)
   }
 
-  def validateClientCertificatesGen[A](snowflake: String,
-                                   req: RequestHeader,
-                                   apikey: Option[ApiKey] = None,
-                                   user: Option[PrivateAppsUser] = None,
-                                   config: GlobalConfig,
-                                   attrs: TypedMap)(
-                                    f: => Future[Either[Result, A]]
-                                  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
+  def validateClientCertificatesGen[A](
+      snowflake: String,
+      req: RequestHeader,
+      apikey: Option[ApiKey] = None,
+      user: Option[PrivateAppsUser] = None,
+      config: GlobalConfig,
+      attrs: TypedMap
+  )(
+      f: => Future[Either[Result, A]]
+  )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
 
-    val plugs = plugins.accessValidators(req)
+    val plugs    = plugins.accessValidators(req)
     val gScripts = env.datastores.globalConfigDataStore.latestSafe
       .filter(_.scripts.enabled)
       .map(_.scripts)
       .getOrElse(GlobalScripts())
 
-    if (plugs.nonEmpty || (gScripts.enabled && gScripts.validatorRefs.nonEmpty) || (accessValidator.enabled && accessValidator.refs.nonEmpty)) {
+    if (
+      plugs.nonEmpty || (gScripts.enabled && gScripts.validatorRefs.nonEmpty) || (accessValidator.enabled && accessValidator.refs.nonEmpty)
+    ) {
       val lScripts: Seq[String] = Some(accessValidator)
-        .filter(
-          pr =>
-            pr.enabled && (pr.excludedPatterns.isEmpty || pr.excludedPatterns
-              .exists(p => otoroshi.utils.RegexPool.regex(p).matches(req.path)))
+        .filter(pr =>
+          pr.enabled && (pr.excludedPatterns.isEmpty || pr.excludedPatterns
+            .exists(p => otoroshi.utils.RegexPool.regex(p).matches(req.path)))
         )
         .map(_.refs)
         .getOrElse(Seq.empty)
-      val refs = (plugs ++ gScripts.validatorRefs ++ lScripts).distinct
+      val refs                  = (plugs ++ gScripts.validatorRefs ++ lScripts).distinct
       if (refs.nonEmpty) {
         env.metrics
           .withTimerAsync("otoroshi.core.proxy.validate-access") {
@@ -1637,17 +1705,22 @@ case class ServiceDescriptor(
                       user = user,
                       apikey = apikey,
                       attrs = attrs,
-                      globalConfig = ConfigUtils.mergeOpt(gScripts.validatorConfig, env.datastores.globalConfigDataStore.latestSafe.map(_.plugins.config)),
+                      globalConfig = ConfigUtils.mergeOpt(
+                        gScripts.validatorConfig,
+                        env.datastores.globalConfigDataStore.latestSafe.map(_.plugins.config)
+                      ),
                       config = ConfigUtils.merge(accessValidator.config, plugins.config)
                     )
                   )
               }
-              .takeWhile(a =>
-                a match {
-                  case Allowed   => true
-                  case Denied(_) => false
-                },
-                true)
+              .takeWhile(
+                a =>
+                  a match {
+                    case Allowed   => true
+                    case Denied(_) => false
+                  },
+                true
+              )
               .toMat(Sink.last)(Keep.right)
               .run()(env.otoroshiMaterializer)
           }
@@ -1662,7 +1735,7 @@ case class ServiceDescriptor(
       clientValidatorRef.map { ref =>
         env.datastores.clientCertificateValidationDataStore.findById(ref).flatMap {
           case Some(validator) => validator.validateClientCertificatesGen[A](req, this, apikey, user, config, attrs)(f)
-          case None =>
+          case None            =>
             Errors
               .craftResponseResult(
                 "Validator not found",
@@ -1678,20 +1751,21 @@ case class ServiceDescriptor(
     }
   }
 
-  def generateInfoToken(apiKey: Option[ApiKey],
-                        paUsr: Option[PrivateAppsUser],
-                        requestHeader: Option[RequestHeader],
-                        issuer: Option[String] = None,
-                        sub: Option[String] = None)(
-      implicit env: Env
+  def generateInfoToken(
+      apiKey: Option[ApiKey],
+      paUsr: Option[PrivateAppsUser],
+      requestHeader: Option[RequestHeader],
+      issuer: Option[String] = None,
+      sub: Option[String] = None
+  )(implicit
+      env: Env
   ): OtoroshiClaim = {
     import otoroshi.ssl.SSLImplicits._
     val clientCertChain = requestHeader
       .flatMap(_.clientCertificateChain)
-      .map(
-        chain =>
-          JsArray(
-            chain.map(c => c.asJson)
+      .map(chain =>
+        JsArray(
+          chain.map(c => c.asJson)
         )
       )
     secComInfoTokenVersion match {
@@ -1720,11 +1794,13 @@ case class ServiceDescriptor(
           .withClaim("nickname", paUsr.flatMap(_.field("nickname")))
           .withClaims(paUsr.flatMap(_.otoroshiData).orElse(apiKey.map(_.metadataJson)))
           .withJsArrayClaim("clientCertChain", clientCertChain)
-          .withClaim("metadata",
-                     paUsr
-                       .flatMap(_.otoroshiData)
-                       .orElse(apiKey.map(_.metadataJson))
-                       .map(m => Json.stringify(Json.toJson(m))))
+          .withClaim(
+            "metadata",
+            paUsr
+              .flatMap(_.otoroshiData)
+              .orElse(apiKey.map(_.metadataJson))
+              .map(m => Json.stringify(Json.toJson(m)))
+          )
           .withClaim("tags", apiKey.map(a => Json.stringify(JsArray(a.tags.map(JsString.apply)))))
           .withClaim("user", paUsr.map(u => Json.stringify(u.asJsonCleaned)))
           .withClaim("apikey", apiKey.map(ak => Json.stringify(ak.lightJson)))
@@ -1754,15 +1830,14 @@ case class ServiceDescriptor(
           iat = DateTime.now().toDate.getTime,
           jti = IdGenerator.uuid
         ).withClaim(
-            "access_type",
-            (apiKey, paUsr) match {
-              case (Some(_), Some(_)) => "both" // should never happen
-              case (None, Some(_))    => "user"
-              case (Some(_), None)    => "apikey"
-              case (None, None)       => "public"
-            }
-          )
-          .withJsObjectClaim("user", paUsr.map(_.asJsonCleaned.as[JsObject]))
+          "access_type",
+          (apiKey, paUsr) match {
+            case (Some(_), Some(_)) => "both" // should never happen
+            case (None, Some(_))    => "user"
+            case (Some(_), None)    => "apikey"
+            case (None, None)       => "public"
+          }
+        ).withJsObjectClaim("user", paUsr.map(_.asJsonCleaned.as[JsObject]))
           .withJsObjectClaim("apikey", apiKey.map(ak => ak.lightJson))
         // Json.obj(
         //    "clientId"   -> ak.clientId,
@@ -1785,7 +1860,7 @@ case class ServiceDescriptor(
       attrs: TypedMap
   )(f: => Future[Result])(implicit ec: ExecutionContext, env: Env): Future[Result] = {
     preRouteGen(snowflake, req, attrs)(f.map(Right.apply)).map {
-      case Left(r) => r
+      case Left(r)  => r
       case Right(r) => r
     }
   }
@@ -1797,26 +1872,27 @@ case class ServiceDescriptor(
   }
 
   def preRouteGen[A](snowflake: String, req: RequestHeader, attrs: TypedMap)(
-    f: => Future[Either[Result, A]]
+      f: => Future[Either[Result, A]]
   )(implicit ec: ExecutionContext, env: Env): Future[Either[Result, A]] = {
 
     import otoroshi.utils.future.Implicits._
 
-    val plugs = plugins.preRoutings(req)
+    val plugs    = plugins.preRoutings(req)
     val gScripts = env.datastores.globalConfigDataStore.latestSafe
       .filter(_.scripts.enabled)
       .map(_.scripts)
       .getOrElse(GlobalScripts())
-    if (plugs.nonEmpty || (gScripts.enabled && gScripts.preRouteRefs.nonEmpty) || (preRouting.enabled && preRouting.refs.nonEmpty)) {
+    if (
+      plugs.nonEmpty || (gScripts.enabled && gScripts.preRouteRefs.nonEmpty) || (preRouting.enabled && preRouting.refs.nonEmpty)
+    ) {
       val lScripts: Seq[String] = Some(preRouting)
-        .filter(
-          pr =>
-            pr.enabled && (pr.excludedPatterns.isEmpty || pr.excludedPatterns
-              .exists(p => otoroshi.utils.RegexPool.regex(p).matches(req.path)))
+        .filter(pr =>
+          pr.enabled && (pr.excludedPatterns.isEmpty || pr.excludedPatterns
+            .exists(p => otoroshi.utils.RegexPool.regex(p).matches(req.path)))
         )
         .map(_.refs)
         .getOrElse(Seq.empty)
-      val refs = (plugs ++ gScripts.preRouteRefs ++ lScripts).distinct
+      val refs                  = (plugs ++ gScripts.preRouteRefs ++ lScripts).distinct
       if (refs.nonEmpty) {
         env.metrics
           .withTimerAsync("otoroshi.core.proxy.pre-routing") {
@@ -1835,7 +1911,10 @@ case class ServiceDescriptor(
                       request = req,
                       descriptor = this,
                       attrs = attrs,
-                      globalConfig = ConfigUtils.mergeOpt(gScripts.preRouteConfig, env.datastores.globalConfigDataStore.latestSafe.map(_.plugins.config)),
+                      globalConfig = ConfigUtils.mergeOpt(
+                        gScripts.preRouteConfig,
+                        env.datastores.globalConfigDataStore.latestSafe.map(_.plugins.config)
+                      ),
                       config = ConfigUtils.merge(preRouting.config, plugins.config)
                     )
                   )
@@ -1847,9 +1926,9 @@ case class ServiceDescriptor(
           .recoverWith {
             case PreRoutingError(body, code, ctype) =>
               FastFuture.successful(Results.Status(code)(body).as(ctype)).map(Left.apply)
-            case PreRoutingErrorWithResult(result) =>
+            case PreRoutingErrorWithResult(result)  =>
               FastFuture.successful(result).map(Left.apply)
-            case e =>
+            case e                                  =>
               Errors
                 .craftResponseResult(
                   message = e.getMessage,
@@ -1884,7 +1963,7 @@ object ServiceDescriptor {
           groups = {
             val groupId: Seq[String] =
               (json \ "groupId").asOpt[String].toSeq
-            val groups: Seq[String] =
+            val groups: Seq[String]  =
               (json \ "groups").asOpt[Seq[String]].getOrElse(Seq.empty[String])
             (groupId ++ groups).distinct
           },
@@ -1934,7 +2013,8 @@ object ServiceDescriptor {
             .flatMap(SecComInfoTokenVersion.apply)
             .getOrElse(SecComInfoTokenVersion.Legacy),
           secComExcludedPatterns = (json \ "secComExcludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
-          securityExcludedPatterns = (json \ "securityExcludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+          securityExcludedPatterns =
+            (json \ "securityExcludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
           publicPatterns = (json \ "publicPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
           privatePatterns = (json \ "privatePatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
           additionalHeaders =
@@ -2010,7 +2090,7 @@ object ServiceDescriptor {
           hosts = (json \ "hosts").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
           paths = (json \ "paths").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
           issueCert = (json \ "issueCert").asOpt[Boolean].getOrElse(false),
-          issueCertCA = (json \ "issueCertCA").asOpt[String],
+          issueCertCA = (json \ "issueCertCA").asOpt[String]
         )
       } map {
         case sd => JsSuccess(sd)
@@ -2105,12 +2185,12 @@ object ServiceDescriptor {
         "hosts"                        -> JsArray(sd.hosts.map(JsString.apply)),
         "paths"                        -> JsArray(sd.paths.map(JsString.apply)),
         "issueCert"                    -> sd.issueCert,
-        "issueCertCA"                  -> sd.issueCertCA.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+        "issueCertCA"                  -> sd.issueCertCA.map(JsString.apply).getOrElse(JsNull).as[JsValue]
       )
     }
   }
-  def toJson(value: ServiceDescriptor): JsValue = _fmt.writes(value)
-  def fromJsons(value: JsValue): ServiceDescriptor =
+  def toJson(value: ServiceDescriptor): JsValue                 = _fmt.writes(value)
+  def fromJsons(value: JsValue): ServiceDescriptor              =
     try {
       _fmt.reads(value).get
     } catch {
@@ -2132,11 +2212,14 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
 
   def initiateNewDescriptor()(implicit env: Env): ServiceDescriptor = {
     val (subdomain, envir, domain) = env.staticExposedDomain.map { v =>
-      ServiceLocation.fullQuery(v, env.datastores.globalConfigDataStore.latest()(env.otoroshiExecutionContext, env)) match {
-        case None           => ("myservice", "prod", env.domain)
-        case Some(location) => (location.subdomain, location.env, location.domain)
-      }
-    } getOrElse ("myservice", "prod", env.domain)
+        ServiceLocation.fullQuery(
+          v,
+          env.datastores.globalConfigDataStore.latest()(env.otoroshiExecutionContext, env)
+        ) match {
+          case None           => ("myservice", "prod", env.domain)
+          case Some(location) => (location.subdomain, location.env, location.domain)
+        }
+      } getOrElse ("myservice", "prod", env.domain)
     ServiceDescriptor(
       id = IdGenerator.token(64),
       name = "my-service",
@@ -2166,19 +2249,27 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
       stripPath = true
     )
   }
-  def updateMetrics(id: String,
-                    callDuration: Long,
-                    callOverhead: Long,
-                    dataIn: Long,
-                    dataOut: Long,
-                    upstreamLatency: Long,
-                    config: otoroshi.models.GlobalConfig)(
-      implicit ec: ExecutionContext,
+  def updateMetrics(
+      id: String,
+      callDuration: Long,
+      callOverhead: Long,
+      dataIn: Long,
+      dataOut: Long,
+      upstreamLatency: Long,
+      config: otoroshi.models.GlobalConfig
+  )(implicit
+      ec: ExecutionContext,
       env: Env
   ): Future[Unit]
   def updateMetricsOnError(config: otoroshi.models.GlobalConfig)(implicit ec: ExecutionContext, env: Env): Future[Unit]
-  def updateIncrementableMetrics(id: String, calls: Long, dataIn: Long, dataOut: Long, config: otoroshi.models.GlobalConfig)(
-      implicit ec: ExecutionContext,
+  def updateIncrementableMetrics(
+      id: String,
+      calls: Long,
+      dataIn: Long,
+      dataOut: Long,
+      config: otoroshi.models.GlobalConfig
+  )(implicit
+      ec: ExecutionContext,
       env: Env
   ): Future[Unit]
   def count()(implicit ec: ExecutionContext, env: Env): Future[Long]
@@ -2201,17 +2292,21 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
 
   def getFastLookups(query: ServiceDescriptorQuery)(implicit ec: ExecutionContext, env: Env): Future[Seq[String]]
   def fastLookupExists(query: ServiceDescriptorQuery)(implicit ec: ExecutionContext, env: Env): Future[Boolean]
-  def addFastLookups(query: ServiceDescriptorQuery, services: Seq[ServiceDescriptor])(implicit ec: ExecutionContext,
-                                                                                      env: Env): Future[Boolean]
-  def removeFastLookups(query: ServiceDescriptorQuery, services: Seq[ServiceDescriptor])(implicit ec: ExecutionContext,
-                                                                                         env: Env): Future[Boolean]
+  def addFastLookups(query: ServiceDescriptorQuery, services: Seq[ServiceDescriptor])(implicit
+      ec: ExecutionContext,
+      env: Env
+  ): Future[Boolean]
+  def removeFastLookups(query: ServiceDescriptorQuery, services: Seq[ServiceDescriptor])(implicit
+      ec: ExecutionContext,
+      env: Env
+  ): Future[Boolean]
 
   def cleanupFastLookups()(implicit ec: ExecutionContext, mat: Materializer, env: Env): Future[Long]
 
   @inline
   def matchAllHeaders(sr: ServiceDescriptor, query: ServiceDescriptorQuery): Boolean = {
     val headersSeq: Map[String, String] = query.matchingHeaders.filterNot(_._1.trim.isEmpty)
-    val allHeadersMatched: Boolean =
+    val allHeadersMatched: Boolean      =
       sr.matchingHeaders.filterNot(_._1.trim.isEmpty).forall {
         case (key, value) =>
           val regex = RegexPool.regex(value)
@@ -2221,11 +2316,13 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
   }
 
   @inline
-  def sortServices(services: Seq[ServiceDescriptor],
-                   query: ServiceDescriptorQuery,
-                   requestHeader: RequestHeader,
-                   attrs: TypedMap)(
-      implicit ec: ExecutionContext,
+  def sortServices(
+      services: Seq[ServiceDescriptor],
+      query: ServiceDescriptorQuery,
+      requestHeader: RequestHeader,
+      attrs: TypedMap
+  )(implicit
+      ec: ExecutionContext,
       env: Env
   ): Future[Seq[ServiceDescriptor]] = {
 
@@ -2307,12 +2404,12 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
       }
      */
 
-    val matched = new TrieMap[String, String]()
-    val filtered1 = services.filter { sr =>
+    val matched                 = new TrieMap[String, String]()
+    val filtered1               = services.filter { sr =>
       val allHeadersMatched = matchAllHeaders(sr, query)
-      val rootMatched = sr.allPaths match {
+      val rootMatched       = sr.allPaths match {
         case ps if ps.isEmpty => true
-        case ps =>
+        case ps               =>
           val found = sr.allPaths.find(p => query.root.startsWith(p))
           found.foreach(p => matched.putIfAbsent(sr.id, p))
           found.isDefined
@@ -2320,20 +2417,20 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
       sr.enabled && allHeadersMatched && rootMatched
     }
     val sersWithoutMatchingRoot = filtered1.filter(_.allPaths.isEmpty)
-    val sersWithMatchingRoot = filtered1.filter(_.allPaths.nonEmpty).sortWith {
+    val sersWithMatchingRoot    = filtered1.filter(_.allPaths.nonEmpty).sortWith {
       case (a, b) =>
         val aMatchedSize = matched.get(a.id).map(_.size).getOrElse(0)
         val bMatchedSize = matched.get(b.id).map(_.size).getOrElse(0)
         aMatchedSize > bMatchedSize
     }
-    val filtered = sersWithMatchingRoot ++ sersWithoutMatchingRoot
+    val filtered                = sersWithMatchingRoot ++ sersWithoutMatchingRoot
     FastFuture
       .sequence(filtered.map { sr =>
         matchApiKeyRouting(sr, requestHeader, attrs).map(m => (sr, m))
       })
       .map { s =>
         val allSers = s.filter(_._2).map(_._1)
-        val res1 = if (filtered.size > 0 && filtered.size > allSers.size && allSers.size == 0) {
+        val res1    = if (filtered.size > 0 && filtered.size > allSers.size && allSers.size == 0) {
           // let apikey check in handler produce an Unauthorized response instead of service not found
           Seq(filtered.last)
         } else {
@@ -2346,9 +2443,10 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
   }
 
   @inline
-  def matchApiKeyRouting(sr: ServiceDescriptor,
-                         requestHeader: RequestHeader,
-                         attrs: TypedMap)(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
+  def matchApiKeyRouting(sr: ServiceDescriptor, requestHeader: RequestHeader, attrs: TypedMap)(implicit
+      ec: ExecutionContext,
+      env: Env
+  ): Future[Boolean] = {
 
     lazy val shouldSearchForAndApiKey =
       if (sr.isPrivate && sr.authConfigRef.isDefined && !sr.isExcludedFromSecurity(requestHeader.path)) {
@@ -2378,9 +2476,10 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
   }
 
   @inline
-  def rawFind(query: ServiceDescriptorQuery,
-              requestHeader: RequestHeader,
-              attrs: TypedMap)(implicit ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] = {
+  def rawFind(query: ServiceDescriptorQuery, requestHeader: RequestHeader, attrs: TypedMap)(implicit
+      ec: ExecutionContext,
+      env: Env
+  ): Future[Seq[ServiceDescriptor]] = {
     ServiceDescriptorDataStore.logger.debug("Full scan of services, should not pass here anymore ...")
     // val redisCli = this.asInstanceOf[KvServiceDescriptorDataStore].redisLike
     // val all = if (redisCli.optimized) {
@@ -2394,9 +2493,9 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
           false
         } else {
           sr.allHosts match {
-            case hosts if hosts.isEmpty => false
+            case hosts if hosts.isEmpty   => false
             case hosts if hosts.size == 1 => otoroshi.utils.RegexPool(hosts.head).matches(query.toHost)
-            case hosts => {
+            case hosts                    => {
               hosts.exists(host => RegexPool(host).matches(query.toHost))
             }
           }
@@ -2408,12 +2507,13 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
   }
 
   // TODO : prefill ServiceDescriptorQuery lookup set when crud service descriptors
-  def find(query: ServiceDescriptorQuery,
-           requestHeader: RequestHeader,
-           attrs: TypedMap)(implicit ec: ExecutionContext, env: Env): Future[Option[ServiceDescriptor]] = {
+  def find(query: ServiceDescriptorQuery, requestHeader: RequestHeader, attrs: TypedMap)(implicit
+      ec: ExecutionContext,
+      env: Env
+  ): Future[Option[ServiceDescriptor]] = {
     val start = System.currentTimeMillis()
     query.exists().flatMap {
-      case true => {
+      case true  => {
         ServiceDescriptorDataStore.logger.debug(s"Service descriptors exists for fast lookups ${query.asKey}")
         query
           .getServices(false)
@@ -2425,7 +2525,7 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
                 .debug(s"FastLookup false positive for ${query.toHost}, doing a fullscan instead ...")
               rawFind(query, requestHeader, attrs)
             }
-            case services => sortServices(services, query, requestHeader, attrs)
+            case services                     => sortServices(services, query, requestHeader, attrs)
           }
       }
       case false => {

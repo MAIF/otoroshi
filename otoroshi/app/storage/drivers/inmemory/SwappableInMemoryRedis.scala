@@ -28,7 +28,9 @@ object SwappableInMemoryRedis {
   lazy val logger = Logger("otoroshi-atomic-in-memory-datastore")
 }
 
-class SwappableInMemoryRedis(_optimized: Boolean, env: Env, actorSystem: ActorSystem) extends RedisLike with OptimizedRedisLike {
+class SwappableInMemoryRedis(_optimized: Boolean, env: Env, actorSystem: ActorSystem)
+    extends RedisLike
+    with OptimizedRedisLike {
 
   import actorSystem.dispatcher
 
@@ -89,7 +91,8 @@ class SwappableInMemoryRedis(_optimized: Boolean, env: Env, actorSystem: ActorSy
   override def findAllOptimized(kind: String, kindKey: String): Future[Seq[JsValue]] = {
     FastFuture.successful(
       store.asScala.toSeq.collect {
-        case (key, value) if key.startsWith(kindKey) && value.isInstanceOf[ByteString] => Json.parse(value.asInstanceOf[ByteString].utf8String)
+        case (key, value) if key.startsWith(kindKey) && value.isInstanceOf[ByteString] =>
+          Json.parse(value.asInstanceOf[ByteString].utf8String)
       }
     )
   }
@@ -106,16 +109,20 @@ class SwappableInMemoryRedis(_optimized: Boolean, env: Env, actorSystem: ActorSy
     FastFuture.successful(value)
   }
 
-  override def set(key: String,
-                   value: String,
-                   exSeconds: Option[Long] = None,
-                   pxMilliseconds: Option[Long] = None): Future[Boolean] =
+  override def set(
+      key: String,
+      value: String,
+      exSeconds: Option[Long] = None,
+      pxMilliseconds: Option[Long] = None
+  ): Future[Boolean] =
     setBS(key, ByteString(value), exSeconds, pxMilliseconds)
 
-  override def setBS(key: String,
-                     value: ByteString,
-                     exSeconds: Option[Long] = None,
-                     pxMilliseconds: Option[Long] = None): Future[Boolean] = {
+  override def setBS(
+      key: String,
+      value: ByteString,
+      exSeconds: Option[Long] = None,
+      pxMilliseconds: Option[Long] = None
+  ): Future[Boolean] = {
     store.put(key, value)
     if (exSeconds.isDefined) {
       expire(key, exSeconds.get.toInt)
@@ -166,7 +173,7 @@ class SwappableInMemoryRedis(_optimized: Boolean, env: Env, actorSystem: ActorSy
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   override def hdel(key: String, fields: String*): Future[Long] = {
-    val hash = if (!store.containsKey(key)) {
+    val hash  = if (!store.containsKey(key)) {
       new ConcurrentHashMap[String, ByteString]()
     } else {
       store.get(key).asInstanceOf[ConcurrentHashMap[String, ByteString]]

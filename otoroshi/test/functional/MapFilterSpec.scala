@@ -5,8 +5,7 @@ import play.api.libs.json.{JsNumber, JsObject, Json}
 
 class MapFilterSpec extends WordSpec with MustMatchers with OptionValues {
 
-  val source = Json.parse(
-    """
+  val source = Json.parse("""
       |{
       |  "foo": "bar",
       |  "type": "AlertEvent",
@@ -22,12 +21,20 @@ class MapFilterSpec extends WordSpec with MustMatchers with OptionValues {
 
   "Match and Project utils" should {
     "match objects" in {
-      otoroshi.utils.Match.matches(source, Json.obj("foo"    -> "bar")) mustBe true
-      otoroshi.utils.Match.matches(source, Json.obj("foo"    -> "baz")) mustBe false
-      otoroshi.utils.Match.matches(source, Json.obj("foo"    -> "bar", "type" -> Json.obj("$wildcard" -> "Alert*"))) mustBe true
-      otoroshi.utils.Match.matches(source, Json.obj("foo"    -> "bar", "type" -> Json.obj("$wildcard" -> "Foo*"))) mustBe false
-      otoroshi.utils.Match.matches(source, Json.obj("foo"    -> "bar", "inner" -> Json.obj("foo" -> "bar"), "type" -> Json.obj("$wildcard" -> "Alert*"))) mustBe true
-      otoroshi.utils.Match.matches(source, Json.obj("foo"    -> "bar", "inner" -> Json.obj("foo" -> "baz"), "type" -> Json.obj("$wildcard" -> "Alert*"))) mustBe false
+      otoroshi.utils.Match.matches(source, Json.obj("foo" -> "bar")) mustBe true
+      otoroshi.utils.Match.matches(source, Json.obj("foo" -> "baz")) mustBe false
+      otoroshi.utils.Match
+        .matches(source, Json.obj("foo" -> "bar", "type" -> Json.obj("$wildcard" -> "Alert*"))) mustBe true
+      otoroshi.utils.Match
+        .matches(source, Json.obj("foo" -> "bar", "type" -> Json.obj("$wildcard" -> "Foo*"))) mustBe false
+      otoroshi.utils.Match.matches(
+        source,
+        Json.obj("foo" -> "bar", "inner" -> Json.obj("foo" -> "bar"), "type" -> Json.obj("$wildcard" -> "Alert*"))
+      ) mustBe true
+      otoroshi.utils.Match.matches(
+        source,
+        Json.obj("foo" -> "bar", "inner" -> Json.obj("foo" -> "baz"), "type" -> Json.obj("$wildcard" -> "Alert*"))
+      ) mustBe false
       otoroshi.utils.Match.matches(source, Json.obj("status" -> 200)) mustBe true
       otoroshi.utils.Match.matches(source, Json.obj("status" -> 201)) mustBe false
       otoroshi.utils.Match.matches(source, Json.obj("status" -> Json.obj("$gt" -> 100))) mustBe true
@@ -36,25 +43,47 @@ class MapFilterSpec extends WordSpec with MustMatchers with OptionValues {
       otoroshi.utils.Match.matches(source, Json.obj("status" -> Json.obj("$lt" -> 201))) mustBe true
       otoroshi.utils.Match.matches(source, Json.obj("status" -> Json.obj("$lt" -> 200))) mustBe false
       otoroshi.utils.Match.matches(source, Json.obj("status" -> Json.obj("$lte" -> 200))) mustBe true
-      otoroshi.utils.Match.matches(source, Json.obj("status" -> Json.obj("$between" -> Json.obj("min" -> 100, "max" -> 300)))) mustBe true
-      otoroshi.utils.Match.matches(source, Json.obj("inner"  -> Json.obj("$and" -> Json.arr(Json.obj("foo" -> "bar"), Json.obj("bar" -> "foo" ))))) mustBe true
-      otoroshi.utils.Match.matches(source, Json.obj("inner"  -> Json.obj("$and" -> Json.arr(Json.obj("foo" -> "bar"), Json.obj("bar" -> "fooo" ))))) mustBe false
-      otoroshi.utils.Match.matches(source, Json.obj("inner"  -> Json.obj("$or" -> Json.arr(Json.obj("foo" -> "bar"), Json.obj("bar" -> "fooo" ))))) mustBe true
-      otoroshi.utils.Match.matches(source, Json.obj("status" -> Json.obj("$or" -> Json.arr(JsNumber(200), JsNumber(201))))) mustBe true
-      otoroshi.utils.Match.matches(source, Json.obj("status" -> Json.obj("$or" -> Json.arr(JsNumber(202), JsNumber(201))))) mustBe false
+      otoroshi.utils.Match
+        .matches(source, Json.obj("status" -> Json.obj("$between" -> Json.obj("min" -> 100, "max" -> 300)))) mustBe true
+      otoroshi.utils.Match.matches(
+        source,
+        Json.obj("inner" -> Json.obj("$and" -> Json.arr(Json.obj("foo" -> "bar"), Json.obj("bar" -> "foo"))))
+      ) mustBe true
+      otoroshi.utils.Match.matches(
+        source,
+        Json.obj("inner" -> Json.obj("$and" -> Json.arr(Json.obj("foo" -> "bar"), Json.obj("bar" -> "fooo"))))
+      ) mustBe false
+      otoroshi.utils.Match.matches(
+        source,
+        Json.obj("inner" -> Json.obj("$or" -> Json.arr(Json.obj("foo" -> "bar"), Json.obj("bar" -> "fooo"))))
+      ) mustBe true
+      otoroshi.utils.Match
+        .matches(source, Json.obj("status" -> Json.obj("$or" -> Json.arr(JsNumber(200), JsNumber(201))))) mustBe true
+      otoroshi.utils.Match
+        .matches(source, Json.obj("status" -> Json.obj("$or" -> Json.arr(JsNumber(202), JsNumber(201))))) mustBe false
       otoroshi.utils.Match.matches(source, Json.obj("codes" -> Json.arr("a", "b"))) mustBe true
       otoroshi.utils.Match.matches(source, Json.obj("codes" -> Json.obj("$contains" -> "a"))) mustBe true
       otoroshi.utils.Match.matches(source, Json.obj("codes" -> Json.obj("$all" -> Json.arr("a", "b")))) mustBe true
-      otoroshi.utils.Match.matches(source, Json.obj("codes" -> Json.obj("$all" -> Json.arr("a", "b", "c")))) mustBe false
+      otoroshi.utils.Match
+        .matches(source, Json.obj("codes" -> Json.obj("$all" -> Json.arr("a", "b", "c")))) mustBe false
     }
     "project objects" in {
-      otoroshi.utils.Projection.project(source, Json.obj("foo"  -> true, "status" -> true), identity) mustBe Json.obj("foo" -> "bar", "status" -> 200)
-      otoroshi.utils.Projection.project(source, Json.obj("foo"  -> true, "inner" -> true), identity) mustBe Json.obj("foo" -> "bar", "inner" -> Json.obj("foo" -> "bar", "bar" -> "foo"))
-      otoroshi.utils.Projection.project(source, Json.obj("foo"  -> true, "inner" -> Json.obj("foo" -> true)), identity) mustBe Json.obj("foo" -> "bar", "inner" -> Json.obj("foo" -> "bar"))
+      otoroshi.utils.Projection.project(source, Json.obj("foo" -> true, "status" -> true), identity) mustBe Json.obj(
+        "foo"    -> "bar",
+        "status" -> 200
+      )
+      otoroshi.utils.Projection.project(source, Json.obj("foo" -> true, "inner" -> true), identity) mustBe Json.obj(
+        "foo"   -> "bar",
+        "inner" -> Json.obj("foo" -> "bar", "bar" -> "foo")
+      )
+      otoroshi.utils.Projection.project(
+        source,
+        Json.obj("foo" -> true, "inner" -> Json.obj("foo" -> true)),
+        identity
+      ) mustBe Json.obj("foo" -> "bar", "inner" -> Json.obj("foo" -> "bar"))
     }
     "work on actual otoroshi event" in {
-      val source = Json.parse(
-        """
+      val source = Json.parse("""
           |{
           |    "method": "GET",
           |    "instance-name": "otoroshi",
@@ -514,11 +543,21 @@ class MapFilterSpec extends WordSpec with MustMatchers with OptionValues {
         "@timestamp"         -> true,
         "@service"           -> true,
         "@serviceId"         -> true,
-        "client"             -> Json.obj("$atIf" -> Json.obj("path" -> "identity.identity", "predicate" -> Json.obj("at" -> "identity.identityType", "value" -> "PRIVATEAPP"))),
+        "client"             -> Json.obj(
+          "$atIf" -> Json.obj(
+            "path"      -> "identity.identity",
+            "predicate" -> Json.obj("at" -> "identity.identityType", "value" -> "PRIVATEAPP")
+          )
+        ),
         "status"             -> true,
         "path"               -> Json.obj("$at" -> "to.uri"),
         "method"             -> true,
-        "user"               -> Json.obj("$atIf" -> Json.obj("path" -> "identity.identity", "predicate" -> Json.obj("at" -> "identity.identityType", "value" -> "APIKEY"))),
+        "user"               -> Json.obj(
+          "$atIf" -> Json.obj(
+            "path"      -> "identity.identity",
+            "predicate" -> Json.obj("at" -> "identity.identityType", "value" -> "APIKEY")
+          )
+        ),
         "from"               -> true,
         "duration"           -> true,
         "to"                 -> Json.obj("$at" -> "target"),
@@ -540,20 +579,30 @@ class MapFilterSpec extends WordSpec with MustMatchers with OptionValues {
         "instance-dc"        -> true,
         "instance-provider"  -> true,
         "instance-rack"      -> true,
-        "product-headers"     -> Json.obj(
-          "x-product-userid"   -> Json.obj("$header" -> Json.obj("path" -> "headers", "name" -> "x-product-userid")),
-          "x-productclient-version"   -> Json.obj("$header" -> Json.obj("path" -> "headers", "name" -> "x-productclient-version")),
-          "x-productfrontend-version" -> Json.obj("$header" -> Json.obj("path" -> "headers", "name" -> "x-productfrontend-version")),
-          "x-product-host-appid"      -> Json.obj("$header" -> Json.obj("path" -> "headers", "name" -> "x-product-host-appid")),
-          "x-product-extrainfo1"      -> Json.obj("$header" -> Json.obj("path" -> "headers", "name" -> "x-product-extrainfo1")),
-          "x-product-extrainfo2"      -> Json.obj("$header" -> Json.obj("path" -> "headers", "name" -> "x-product-extrainfo2"))
+        "product-headers"    -> Json.obj(
+          "x-product-userid"          -> Json.obj("$header" -> Json.obj("path" -> "headers", "name" -> "x-product-userid")),
+          "x-productclient-version"   -> Json.obj(
+            "$header" -> Json.obj("path" -> "headers", "name" -> "x-productclient-version")
+          ),
+          "x-productfrontend-version" -> Json.obj(
+            "$header" -> Json.obj("path" -> "headers", "name" -> "x-productfrontend-version")
+          ),
+          "x-product-host-appid"      -> Json.obj(
+            "$header" -> Json.obj("path" -> "headers", "name" -> "x-product-host-appid")
+          ),
+          "x-product-extrainfo1"      -> Json.obj(
+            "$header" -> Json.obj("path" -> "headers", "name" -> "x-product-extrainfo1")
+          ),
+          "x-product-extrainfo2"      -> Json.obj(
+            "$header" -> Json.obj("path" -> "headers", "name" -> "x-product-extrainfo2")
+          )
         ),
         "cluster-mode"       -> true,
         "cluster-name"       -> true
       )
 
       val predicate = Json.obj(
-        "@type" -> "GatewayEvent",
+        "@type"      -> "GatewayEvent",
         "@serviceId" -> "service-id"
       )
 

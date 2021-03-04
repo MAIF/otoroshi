@@ -18,19 +18,19 @@ import play.api.Configuration
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-class WebsocketSpec(name: String, configurationSpec: => Configuration)
-  extends OtoroshiSpec {
+class WebsocketSpec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 
   lazy val serviceHost = "websocket.oto.tools"
 
-  override def getTestConfiguration(configuration: Configuration) = Configuration(
-    ConfigFactory
-      .parseString(s"""
+  override def getTestConfiguration(configuration: Configuration) =
+    Configuration(
+      ConfigFactory
+        .parseString(s"""
                       |{
                       |}
        """.stripMargin)
-      .resolve()
-  ).withFallback(configurationSpec).withFallback(configuration)
+        .resolve()
+    ).withFallback(configurationSpec).withFallback(configuration)
 
   s"[$name] Otoroshi" should {
 
@@ -68,7 +68,7 @@ class WebsocketSpec(name: String, configurationSpec: => Configuration)
 
       val printSink: Sink[Message, Future[Done]] = Sink.foreach { message =>
         clientCounter.incrementAndGet()
-        // println("client received: " + message.asScala.asTextMessage.getStrictText)
+      // println("client received: " + message.asScala.asTextMessage.getStrictText)
       }
 
       val names = List(
@@ -114,4 +114,3 @@ class WebsocketSpec(name: String, configurationSpec: => Configuration)
     }
   }
 }
-

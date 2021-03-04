@@ -44,16 +44,17 @@ case class ElasticAnalyticsConfig(
 
 object ElasticAnalyticsConfig {
   val format = new Format[ElasticAnalyticsConfig] {
-    override def writes(o: ElasticAnalyticsConfig) = Json.obj(
-      "clusterUri" -> o.clusterUri,
-      "index"      -> o.index.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-      "type"       -> o.`type`.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-      "user"       -> o.user.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-      "password"   -> o.password.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-      "headers"    -> JsObject(o.headers.mapValues(JsString.apply)),
-      "mtlsConfig" -> o.mtlsConfig.json
-    )
-    override def reads(json: JsValue) =
+    override def writes(o: ElasticAnalyticsConfig) =
+      Json.obj(
+        "clusterUri" -> o.clusterUri,
+        "index"      -> o.index.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+        "type"       -> o.`type`.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+        "user"       -> o.user.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+        "password"   -> o.password.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+        "headers"    -> JsObject(o.headers.mapValues(JsString.apply)),
+        "mtlsConfig" -> o.mtlsConfig.json
+      )
+    override def reads(json: JsValue)              =
       Try {
         JsSuccess(
           ElasticAnalyticsConfig(
@@ -72,9 +73,11 @@ object ElasticAnalyticsConfig {
   }
 }
 
-case class Webhook(url: String,
-                   headers: Map[String, String] = Map.empty[String, String],
-                   mtlsConfig: MtlsConfig = MtlsConfig.default) extends Exporter {
+case class Webhook(
+    url: String,
+    headers: Map[String, String] = Map.empty[String, String],
+    mtlsConfig: MtlsConfig = MtlsConfig.default
+) extends Exporter {
   def toJson: JsValue = Webhook.format.writes(this)
 }
 
@@ -92,19 +95,22 @@ object Webhook {
         case Success(v) => JsSuccess(v)
       }
 
-    override def writes(o: Webhook): JsValue = Json.obj(
-      "url"        -> o.url,
-      "headers"    -> o.headers,
-      "mtlsConfig" -> o.mtlsConfig.json
-    )
+    override def writes(o: Webhook): JsValue =
+      Json.obj(
+        "url"        -> o.url,
+        "headers"    -> o.headers,
+        "mtlsConfig" -> o.mtlsConfig.json
+      )
   }
 }
 
-case class CleverCloudSettings(consumerKey: String,
-                               consumerSecret: String,
-                               token: String,
-                               secret: String,
-                               orgaId: String)
+case class CleverCloudSettings(
+    consumerKey: String,
+    consumerSecret: String,
+    token: String,
+    secret: String,
+    orgaId: String
+)
 
 object CleverCloudSettings {
   implicit val format = Json.format[CleverCloudSettings]
@@ -118,7 +124,7 @@ case class Proxies(
     auth: Option[WSProxyServer] = None,
     authority: Option[WSProxyServer] = None,
     jwk: Option[WSProxyServer] = None,
-    elastic: Option[WSProxyServer] = None,
+    elastic: Option[WSProxyServer] = None
 ) {
   def toJson: JsValue = Proxies.format.writes(this)
 }
@@ -126,16 +132,17 @@ case class Proxies(
 object Proxies {
 
   val format = new Format[Proxies] {
-    override def writes(o: Proxies) = Json.obj(
-      "alertEmails"    -> WSProxyServerJson.maybeProxyToJson(o.alertEmails),
-      "eventsWebhooks" -> WSProxyServerJson.maybeProxyToJson(o.eventsWebhooks),
-      "clevercloud"    -> WSProxyServerJson.maybeProxyToJson(o.clevercloud),
-      "services"       -> WSProxyServerJson.maybeProxyToJson(o.services),
-      "auth"           -> WSProxyServerJson.maybeProxyToJson(o.auth),
-      "authority"      -> WSProxyServerJson.maybeProxyToJson(o.authority),
-      "jwk"            -> WSProxyServerJson.maybeProxyToJson(o.jwk),
-      "elastic"        -> WSProxyServerJson.maybeProxyToJson(o.elastic),
-    )
+    override def writes(o: Proxies)   =
+      Json.obj(
+        "alertEmails"    -> WSProxyServerJson.maybeProxyToJson(o.alertEmails),
+        "eventsWebhooks" -> WSProxyServerJson.maybeProxyToJson(o.eventsWebhooks),
+        "clevercloud"    -> WSProxyServerJson.maybeProxyToJson(o.clevercloud),
+        "services"       -> WSProxyServerJson.maybeProxyToJson(o.services),
+        "auth"           -> WSProxyServerJson.maybeProxyToJson(o.auth),
+        "authority"      -> WSProxyServerJson.maybeProxyToJson(o.authority),
+        "jwk"            -> WSProxyServerJson.maybeProxyToJson(o.jwk),
+        "elastic"        -> WSProxyServerJson.maybeProxyToJson(o.elastic)
+      )
     override def reads(json: JsValue) =
       Try {
         JsSuccess(
@@ -147,7 +154,7 @@ object Proxies {
             auth = (json \ "auth").asOpt[JsValue].flatMap(p => WSProxyServerJson.proxyFromJson(p)),
             authority = (json \ "authority").asOpt[JsValue].flatMap(p => WSProxyServerJson.proxyFromJson(p)),
             jwk = (json \ "jwk").asOpt[JsValue].flatMap(p => WSProxyServerJson.proxyFromJson(p)),
-            elastic = (json \ "elastic").asOpt[JsValue].flatMap(p => WSProxyServerJson.proxyFromJson(p)),
+            elastic = (json \ "elastic").asOpt[JsValue].flatMap(p => WSProxyServerJson.proxyFromJson(p))
           )
         )
       } recover {
@@ -167,26 +174,27 @@ case class GlobalScripts(
     sinkRefs: Seq[String] = Seq.empty,
     sinkConfig: JsValue = Json.obj(),
     jobRefs: Seq[String] = Seq.empty,
-    jobConfig: JsValue = Json.obj(),
+    jobConfig: JsValue = Json.obj()
 ) {
   def json: JsValue = GlobalScripts.format.writes(this)
 }
 
 object GlobalScripts {
   val format = new Format[GlobalScripts] {
-    override def writes(o: GlobalScripts): JsValue = Json.obj(
-      "enabled"            -> o.enabled,
-      "transformersRefs"   -> JsArray(o.transformersRefs.map(JsString.apply)),
-      "transformersConfig" -> o.transformersConfig,
-      "validatorRefs"      -> JsArray(o.validatorRefs.map(JsString.apply)),
-      "validatorConfig"    -> o.validatorConfig,
-      "preRouteRefs"       -> JsArray(o.preRouteRefs.map(JsString.apply)),
-      "preRouteConfig"     -> o.preRouteConfig,
-      "sinkRefs"           -> JsArray(o.sinkRefs.map(JsString.apply)),
-      "sinkConfig"         -> o.sinkConfig,
-      "jobRefs"            -> JsArray(o.jobRefs.map(JsString.apply)),
-      "jobConfig"          -> o.jobConfig,
-    )
+    override def writes(o: GlobalScripts): JsValue             =
+      Json.obj(
+        "enabled"            -> o.enabled,
+        "transformersRefs"   -> JsArray(o.transformersRefs.map(JsString.apply)),
+        "transformersConfig" -> o.transformersConfig,
+        "validatorRefs"      -> JsArray(o.validatorRefs.map(JsString.apply)),
+        "validatorConfig"    -> o.validatorConfig,
+        "preRouteRefs"       -> JsArray(o.preRouteRefs.map(JsString.apply)),
+        "preRouteConfig"     -> o.preRouteConfig,
+        "sinkRefs"           -> JsArray(o.sinkRefs.map(JsString.apply)),
+        "sinkConfig"         -> o.sinkConfig,
+        "jobRefs"            -> JsArray(o.jobRefs.map(JsString.apply)),
+        "jobConfig"          -> o.jobConfig
+      )
     override def reads(json: JsValue): JsResult[GlobalScripts] =
       Try {
         JsSuccess(
@@ -212,12 +220,12 @@ object GlobalScripts {
 
 object GeolocationSettings {
   val format = new Format[GeolocationSettings] {
-    override def writes(o: GeolocationSettings): JsValue = o.json
+    override def writes(o: GeolocationSettings): JsValue             = o.json
     override def reads(json: JsValue): JsResult[GeolocationSettings] =
       Try {
         JsSuccess(
           (json \ "type").as[String] match {
-            case "none" => NoneGeolocationSettings
+            case "none"    => NoneGeolocationSettings
             case "maxmind" =>
               MaxmindGeolocationSettings(
                 enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
@@ -229,7 +237,7 @@ object GeolocationSettings {
                 apikey = (json \ "apikey").asOpt[String].filter(_.trim.nonEmpty).get,
                 timeout = (json \ "timeout").asOpt[Long].getOrElse(2000L)
               )
-            case _ => NoneGeolocationSettings
+            case _         => NoneGeolocationSettings
           }
         )
       } recover {
@@ -272,7 +280,7 @@ case class IpStackGeolocationSettings(enabled: Boolean, apikey: String, timeout:
 
 object UserAgentSettings {
   val format = new Format[UserAgentSettings] {
-    override def writes(o: UserAgentSettings): JsValue = o.json
+    override def writes(o: UserAgentSettings): JsValue             = o.json
     override def reads(json: JsValue): JsResult[UserAgentSettings] =
       Try {
         JsSuccess(
@@ -296,27 +304,30 @@ case class UserAgentSettings(enabled: Boolean) {
   }
 }
 
-case class AutoCert(enabled: Boolean = false,
-                    caRef: Option[String] = None,
-                    allowed: Seq[String] = Seq.empty,
-                    notAllowed: Seq[String] = Seq.empty,
-                    replyNicely: Boolean = false) {
+case class AutoCert(
+    enabled: Boolean = false,
+    caRef: Option[String] = None,
+    allowed: Seq[String] = Seq.empty,
+    notAllowed: Seq[String] = Seq.empty,
+    replyNicely: Boolean = false
+) {
   def json: JsValue = AutoCert.format.writes(this)
   def matches(domain: String): Boolean = {
     !notAllowed.exists(p => otoroshi.utils.RegexPool.apply(p).matches(domain)) &&
-      allowed.exists(p => otoroshi.utils.RegexPool.apply(p).matches(domain))
+    allowed.exists(p => otoroshi.utils.RegexPool.apply(p).matches(domain))
   }
 }
 
 object AutoCert {
   val format = new Format[AutoCert] {
-    override def writes(o: AutoCert): JsValue = Json.obj(
-      "enabled"     -> o.enabled,
-      "replyNicely" -> o.replyNicely,
-      "caRef"       -> o.caRef.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-      "allowed"     -> JsArray(o.allowed.map(JsString.apply)),
-      "notAllowed"  -> JsArray(o.notAllowed.map(JsString.apply)),
-    )
+    override def writes(o: AutoCert): JsValue =
+      Json.obj(
+        "enabled"     -> o.enabled,
+        "replyNicely" -> o.replyNicely,
+        "caRef"       -> o.caRef.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+        "allowed"     -> JsArray(o.allowed.map(JsString.apply)),
+        "notAllowed"  -> JsArray(o.notAllowed.map(JsString.apply))
+      )
 
     override def reads(json: JsValue): JsResult[AutoCert] =
       Try {
@@ -337,12 +348,13 @@ object AutoCert {
 case class TlsSettings(defaultDomain: Option[String] = None, randomIfNotFound: Boolean = false) {
   def json: JsValue = TlsSettings.format.writes(this)
 }
-object TlsSettings {
+object TlsSettings                                                                              {
   val format = new Format[TlsSettings] {
-    override def writes(o: TlsSettings): JsValue = Json.obj(
-      "defaultDomain"     -> o.defaultDomain.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-      "randomIfNotFound" -> o.randomIfNotFound
-    )
+    override def writes(o: TlsSettings): JsValue =
+      Json.obj(
+        "defaultDomain"    -> o.defaultDomain.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+        "randomIfNotFound" -> o.randomIfNotFound
+      )
 
     override def reads(json: JsValue): JsResult[TlsSettings] =
       Try {
@@ -401,15 +413,15 @@ case class GlobalConfig(
     plugins: Plugins = Plugins("default-config-plugins"),
     metadata: Map[String, String] = Map.empty
 ) {
-  def save()(implicit ec: ExecutionContext, env: Env)   = env.datastores.globalConfigDataStore.set(this)
-  def delete()(implicit ec: ExecutionContext, env: Env) = env.datastores.globalConfigDataStore.delete(this)
-  def exists()(implicit ec: ExecutionContext, env: Env) = env.datastores.globalConfigDataStore.exists(this)
-  def toJson                                            = GlobalConfig.toJson(this)
+  def save()(implicit ec: ExecutionContext, env: Env)                                   = env.datastores.globalConfigDataStore.set(this)
+  def delete()(implicit ec: ExecutionContext, env: Env)                                 = env.datastores.globalConfigDataStore.delete(this)
+  def exists()(implicit ec: ExecutionContext, env: Env)                                 = env.datastores.globalConfigDataStore.exists(this)
+  def toJson                                                                            = GlobalConfig.toJson(this)
   def withinThrottlingQuota()(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
     env.datastores.globalConfigDataStore.withinThrottlingQuota()
-  def cleverClient(implicit env: Env): Option[CleverCloudClient] =
+  def cleverClient(implicit env: Env): Option[CleverCloudClient]                        =
     cleverSettings match {
-      case None => None
+      case None           => None
       case Some(settings) => {
         val cleverSetting = CleverSettings(
           apiConsumerKey = settings.consumerKey,
@@ -448,7 +460,7 @@ object GlobalConfig {
         case Some(config) => config.json
       }
       val cleverSettings: JsValue = o.cleverSettings match {
-        case None => JsNull
+        case None         => JsNull
         case Some(config) =>
           Json.obj(
             "consumerKey"    -> config.consumerKey,
@@ -458,7 +470,7 @@ object GlobalConfig {
             "orgaId"         -> config.orgaId
           )
       }
-      val kafkaConfig: JsValue = o.kafkaConfig match {
+      val kafkaConfig: JsValue    = o.kafkaConfig match {
         case None         => JsNull
         case Some(config) => config.json
         // Json.obj(
@@ -472,8 +484,8 @@ object GlobalConfig {
         //   "sendEvents"     -> config.sendEvents
         // )
       }
-      val statsdConfig: JsValue = o.statsdConfig match {
-        case None => JsNull
+      val statsdConfig: JsValue   = o.statsdConfig match {
+        case None         => JsNull
         case Some(config) =>
           Json.obj(
             "host"    -> config.host,
@@ -482,7 +494,7 @@ object GlobalConfig {
           )
       }
       Json.obj(
-        "letsEncryptSettings"     -> o.letsEncryptSettings.json,
+        "letsEncryptSettings" -> o.letsEncryptSettings.json,
         "lines"                   -> JsArray(o.lines.map(JsString.apply)),
         "maintenanceMode"         -> o.maintenanceMode,
         "enableEmbeddedMetrics"   -> o.enableEmbeddedMetrics,
@@ -532,7 +544,10 @@ object GlobalConfig {
           streamEntityOnly = (json \ "streamEntityOnly").asOpt[Boolean].getOrElse(true),
           maintenanceMode = (json \ "maintenanceMode").asOpt[Boolean].getOrElse(false),
           autoLinkToDefaultGroup = (json \ "autoLinkToDefaultGroup").asOpt[Boolean].getOrElse(true),
-          limitConcurrentRequests = (json \ "limitConcurrentRequests").asOpt[Boolean].getOrElse(false), // TODO : true by default after prod monitoring
+          limitConcurrentRequests =
+            (json \ "limitConcurrentRequests")
+              .asOpt[Boolean]
+              .getOrElse(false), // TODO : true by default after prod monitoring
           maxConcurrentRequests = (json \ "maxConcurrentRequests").asOpt[Long].getOrElse(1000),
           maxHttp10ResponseSize = (json \ "maxHttp10ResponseSize").asOpt[Long].getOrElse(4 * (1024 * 1024)),
           useCircuitBreakers = (json \ "useCircuitBreakers").asOpt[Boolean].getOrElse(true),
@@ -578,7 +593,7 @@ object GlobalConfig {
             ) match {
               case (Some(host), Some(port), datadog) =>
                 Some(StatsdConfig(datadog, host, port))
-              case e => None
+              case e                                 => None
             }
           },
           kafkaConfig = (json \ "kafkaConfig").asOpt[JsValue].flatMap { config =>
@@ -619,7 +634,7 @@ object GlobalConfig {
             ) match {
               case (Some(consumerKey), Some(consumerSecret), Some(token), Some(secret), Some(orgaId)) =>
                 Some(CleverCloudSettings(consumerKey, consumerSecret, token, secret, orgaId))
-              case _ => None
+              case _                                                                                  => None
             }
           },
           snowMonkeyConfig = (json \ "snowMonkeyConfig").asOpt(SnowMonkeyConfig._fmt).getOrElse(SnowMonkeyConfig()),
@@ -655,8 +670,8 @@ object GlobalConfig {
       } get
   }
 
-  def toJson(value: GlobalConfig): JsValue = _fmt.writes(value)
-  def fromJsons(value: JsValue): GlobalConfig =
+  def toJson(value: GlobalConfig): JsValue                 = _fmt.writes(value)
+  def fromJsons(value: JsValue): GlobalConfig              =
     try {
       _fmt.reads(value).get
     } catch {
@@ -686,102 +701,194 @@ trait GlobalConfigDataStore extends BasicStore[GlobalConfig] {
 }
 
 case class OtoroshiExport(
-   config: GlobalConfig,
-   descs: Seq[ServiceDescriptor] = Seq.empty,
-   apikeys: Seq[ApiKey] = Seq.empty,
-   groups: Seq[ServiceGroup] = Seq.empty,
-   tmplts: Seq[ErrorTemplate] = Seq.empty,
-   calls: Long = 0,
-   dataIn: Long = 0,
-   dataOut: Long = 0,
-   admins: Seq[WebAuthnOtoroshiAdmin] = Seq.empty,
-   simpleAdmins: Seq[SimpleOtoroshiAdmin] = Seq.empty,
-   jwtVerifiers: Seq[GlobalJwtVerifier] = Seq.empty,
-   authConfigs: Seq[AuthModuleConfig] = Seq.empty,
-   certificates: Seq[Cert] = Seq.empty,
-   clientValidators: Seq[ClientCertificateValidator] = Seq.empty,
-   scripts: Seq[Script] = Seq.empty,
-   tcpServices: Seq[TcpService] = Seq.empty,
-   dataExporters: Seq[DataExporterConfig] = Seq.empty,
-   tenants: Seq[Tenant] = Seq.empty,
-   teams: Seq[Team] = Seq.empty,
+    config: GlobalConfig,
+    descs: Seq[ServiceDescriptor] = Seq.empty,
+    apikeys: Seq[ApiKey] = Seq.empty,
+    groups: Seq[ServiceGroup] = Seq.empty,
+    tmplts: Seq[ErrorTemplate] = Seq.empty,
+    calls: Long = 0,
+    dataIn: Long = 0,
+    dataOut: Long = 0,
+    admins: Seq[WebAuthnOtoroshiAdmin] = Seq.empty,
+    simpleAdmins: Seq[SimpleOtoroshiAdmin] = Seq.empty,
+    jwtVerifiers: Seq[GlobalJwtVerifier] = Seq.empty,
+    authConfigs: Seq[AuthModuleConfig] = Seq.empty,
+    certificates: Seq[Cert] = Seq.empty,
+    clientValidators: Seq[ClientCertificateValidator] = Seq.empty,
+    scripts: Seq[Script] = Seq.empty,
+    tcpServices: Seq[TcpService] = Seq.empty,
+    dataExporters: Seq[DataExporterConfig] = Seq.empty,
+    tenants: Seq[Tenant] = Seq.empty,
+    teams: Seq[Team] = Seq.empty
 ) {
 
   import otoroshi.utils.syntax.implicits._
   import otoroshi.utils.json.JsonImplicits._
 
-  private def customizeAndMergeArray[A](entities: Seq[A], arr: JsArray, fmt: Format[A], extractIdFromJs: JsValue => String, extractIdFromEntity: A => String): Seq[A] = {
-    val arrWithId = arr.value.map { item =>
+  private def customizeAndMergeArray[A](
+      entities: Seq[A],
+      arr: JsArray,
+      fmt: Format[A],
+      extractIdFromJs: JsValue => String,
+      extractIdFromEntity: A => String
+  ): Seq[A] = {
+    val arrWithId              = arr.value.map { item =>
       val id = extractIdFromJs(item)
       (id, item)
     }
     val (existing, additional) = arrWithId.partition {
       case (id, item) => entities.exists(v => extractIdFromEntity(v) == id)
     }
-    val ex = existing.map {
-      case (id, item) =>
-        val entity = entities.find(v => extractIdFromEntity(v) == id).get
-        val newEntity = fmt.writes(entity).asObject.deepMerge(item.asObject)
-        fmt.reads(newEntity)
-    }.collect {
+    val ex                     = existing
+      .map {
+        case (id, item) =>
+          val entity    = entities.find(v => extractIdFromEntity(v) == id).get
+          val newEntity = fmt.writes(entity).asObject.deepMerge(item.asObject)
+          fmt.reads(newEntity)
+      }
+      .collect {
+        case JsSuccess(s, _) => s
+      }
+    val add                    = additional.map(t => fmt.reads(t._2)).collect {
       case JsSuccess(s, _) => s
     }
-    val add = additional.map(t => fmt.reads(t._2)).collect {
-      case JsSuccess(s, _) => s
-    }
-    val eid = existing.map(_._1)
-    val already = entities.filterNot(e => eid.contains(extractIdFromEntity(e)))
+    val eid                    = existing.map(_._1)
+    val already                = entities.filterNot(e => eid.contains(extractIdFromEntity(e)))
     already ++ ex ++ add
   }
 
   def customizeWith(customization: JsObject): OtoroshiExport = {
-    val cconfig = customization.select("config").asOpt[JsObject].getOrElse(Json.obj())
+    val cconfig     = customization.select("config").asOpt[JsObject].getOrElse(Json.obj())
     val finalConfig = GlobalConfig.fromJsons(config.toJson.asObject.deepMerge(cconfig))
     copy(
       config = finalConfig,
-      descs = customizeAndMergeArray[ServiceDescriptor](descs, customization.select("descs").asOpt[JsArray].getOrElse(Json.arr()), ServiceDescriptor._fmt, _.select("id").asString, _.id),
-      apikeys = customizeAndMergeArray[ApiKey](apikeys, customization.select("apikeys").asOpt[JsArray].getOrElse(Json.arr()), ApiKey._fmt, _.select("id").asString, _.clientId),
-      groups = customizeAndMergeArray[ServiceGroup](groups, customization.select("groups").asOpt[JsArray].getOrElse(Json.arr()), ServiceGroup._fmt, _.select("id").asString, _.id),
-      tmplts = customizeAndMergeArray[ErrorTemplate](tmplts, customization.select("tmplts").asOpt[JsArray].getOrElse(Json.arr()), ErrorTemplate.format, _.select("id").asString, _.serviceId),
-      jwtVerifiers = customizeAndMergeArray[GlobalJwtVerifier](jwtVerifiers, customization.select("jwtVerifiers").asOpt[JsArray].getOrElse(Json.arr()), GlobalJwtVerifier._fmt, _.select("id").asString, _.id),
-      authConfigs = customizeAndMergeArray[AuthModuleConfig](authConfigs, customization.select("authConfigs").asOpt[JsArray].getOrElse(Json.arr()), AuthModuleConfig._fmt, _.select("id").asString, _.id),
-      certificates = customizeAndMergeArray[Cert](certificates, customization.select("certificates").asOpt[JsArray].getOrElse(Json.arr()), Cert._fmt, _.select("id").asString, _.id),
-      scripts = customizeAndMergeArray[Script](scripts, customization.select("scripts").asOpt[JsArray].getOrElse(Json.arr()), Script._fmt, _.select("id").asString, _.id),
-      tcpServices = customizeAndMergeArray[TcpService](tcpServices, customization.select("tcpServices").asOpt[JsArray].getOrElse(Json.arr()), TcpService.fmt, _.select("id").asString, _.id),
-      dataExporters = customizeAndMergeArray[DataExporterConfig](dataExporters, customization.select("dataExporters").asOpt[JsArray].getOrElse(Json.arr()), DataExporterConfig.format, _.select("id").asString, _.id),
-      tenants = customizeAndMergeArray[Tenant](tenants, customization.select("tenants").asOpt[JsArray].getOrElse(Json.arr()), Tenant.format, _.select("id").asString, _.id.value),
-      teams = customizeAndMergeArray[Team](teams, customization.select("teams").asOpt[JsArray].getOrElse(Json.arr()), Team.format, _.select("id").asString, _.id.value),
-      admins = customizeAndMergeArray[WebAuthnOtoroshiAdmin](admins, customization.select("admins").asOpt[JsArray].getOrElse(Json.arr()), WebAuthnOtoroshiAdmin.fmt, _.select("username").asString, _.username),
-      simpleAdmins = customizeAndMergeArray[SimpleOtoroshiAdmin](simpleAdmins, customization.select("simpleAdmins").asOpt[JsArray].getOrElse(Json.arr()), SimpleOtoroshiAdmin.fmt, _.select("username").asString, _.username),
+      descs = customizeAndMergeArray[ServiceDescriptor](
+        descs,
+        customization.select("descs").asOpt[JsArray].getOrElse(Json.arr()),
+        ServiceDescriptor._fmt,
+        _.select("id").asString,
+        _.id
+      ),
+      apikeys = customizeAndMergeArray[ApiKey](
+        apikeys,
+        customization.select("apikeys").asOpt[JsArray].getOrElse(Json.arr()),
+        ApiKey._fmt,
+        _.select("id").asString,
+        _.clientId
+      ),
+      groups = customizeAndMergeArray[ServiceGroup](
+        groups,
+        customization.select("groups").asOpt[JsArray].getOrElse(Json.arr()),
+        ServiceGroup._fmt,
+        _.select("id").asString,
+        _.id
+      ),
+      tmplts = customizeAndMergeArray[ErrorTemplate](
+        tmplts,
+        customization.select("tmplts").asOpt[JsArray].getOrElse(Json.arr()),
+        ErrorTemplate.format,
+        _.select("id").asString,
+        _.serviceId
+      ),
+      jwtVerifiers = customizeAndMergeArray[GlobalJwtVerifier](
+        jwtVerifiers,
+        customization.select("jwtVerifiers").asOpt[JsArray].getOrElse(Json.arr()),
+        GlobalJwtVerifier._fmt,
+        _.select("id").asString,
+        _.id
+      ),
+      authConfigs = customizeAndMergeArray[AuthModuleConfig](
+        authConfigs,
+        customization.select("authConfigs").asOpt[JsArray].getOrElse(Json.arr()),
+        AuthModuleConfig._fmt,
+        _.select("id").asString,
+        _.id
+      ),
+      certificates = customizeAndMergeArray[Cert](
+        certificates,
+        customization.select("certificates").asOpt[JsArray].getOrElse(Json.arr()),
+        Cert._fmt,
+        _.select("id").asString,
+        _.id
+      ),
+      scripts = customizeAndMergeArray[Script](
+        scripts,
+        customization.select("scripts").asOpt[JsArray].getOrElse(Json.arr()),
+        Script._fmt,
+        _.select("id").asString,
+        _.id
+      ),
+      tcpServices = customizeAndMergeArray[TcpService](
+        tcpServices,
+        customization.select("tcpServices").asOpt[JsArray].getOrElse(Json.arr()),
+        TcpService.fmt,
+        _.select("id").asString,
+        _.id
+      ),
+      dataExporters = customizeAndMergeArray[DataExporterConfig](
+        dataExporters,
+        customization.select("dataExporters").asOpt[JsArray].getOrElse(Json.arr()),
+        DataExporterConfig.format,
+        _.select("id").asString,
+        _.id
+      ),
+      tenants = customizeAndMergeArray[Tenant](
+        tenants,
+        customization.select("tenants").asOpt[JsArray].getOrElse(Json.arr()),
+        Tenant.format,
+        _.select("id").asString,
+        _.id.value
+      ),
+      teams = customizeAndMergeArray[Team](
+        teams,
+        customization.select("teams").asOpt[JsArray].getOrElse(Json.arr()),
+        Team.format,
+        _.select("id").asString,
+        _.id.value
+      ),
+      admins = customizeAndMergeArray[WebAuthnOtoroshiAdmin](
+        admins,
+        customization.select("admins").asOpt[JsArray].getOrElse(Json.arr()),
+        WebAuthnOtoroshiAdmin.fmt,
+        _.select("username").asString,
+        _.username
+      ),
+      simpleAdmins = customizeAndMergeArray[SimpleOtoroshiAdmin](
+        simpleAdmins,
+        customization.select("simpleAdmins").asOpt[JsArray].getOrElse(Json.arr()),
+        SimpleOtoroshiAdmin.fmt,
+        _.select("username").asString,
+        _.username
+      )
     )
   }
 
   def json: JsObject = {
     Json.obj(
-      "label" -> "Otoroshi export",
-      "dateRaw" -> DateTime.now(),
-      "date" -> DateTime.now().toString("yyyy-MM-dd hh:mm:ss"),
-      "stats" -> Json.obj(
-        "calls" -> calls,
-        "dataIn" -> dataIn,
+      "label"              -> "Otoroshi export",
+      "dateRaw"            -> DateTime.now(),
+      "date"               -> DateTime.now().toString("yyyy-MM-dd hh:mm:ss"),
+      "stats"              -> Json.obj(
+        "calls"   -> calls,
+        "dataIn"  -> dataIn,
         "dataOut" -> dataOut
       ),
-      "config" -> config.toJson,
-      "admins" -> JsArray(admins.map(_.json)),
-      "simpleAdmins" -> JsArray(simpleAdmins.map(_.json)),
-      "serviceGroups" -> JsArray(groups.map(_.toJson)),
-      "apiKeys" -> JsArray(apikeys.map(_.toJson)),
+      "config"             -> config.toJson,
+      "admins"             -> JsArray(admins.map(_.json)),
+      "simpleAdmins"       -> JsArray(simpleAdmins.map(_.json)),
+      "serviceGroups"      -> JsArray(groups.map(_.toJson)),
+      "apiKeys"            -> JsArray(apikeys.map(_.toJson)),
       "serviceDescriptors" -> JsArray(descs.map(_.toJson)),
-      "errorTemplates" -> JsArray(tmplts.map(_.toJson)),
-      "jwtVerifiers" -> JsArray(jwtVerifiers.map(_.asJson)),
-      "authConfigs" -> JsArray(authConfigs.map(_.asJson)),
-      "certificates" -> JsArray(certificates.map(_.toJson)),
-      "clientValidators" -> JsArray(clientValidators.map(_.asJson)),
-      "scripts" -> JsArray(scripts.map(_.toJson)),
-      "tcpServices" -> JsArray(tcpServices.map(_.json)),
-      "dataExporters" -> JsArray(dataExporters.map(_.json)),
-      "tenants" -> JsArray(tenants.map(_.json)),
-      "teams" -> JsArray(teams.map(_.json)),
+      "errorTemplates"     -> JsArray(tmplts.map(_.toJson)),
+      "jwtVerifiers"       -> JsArray(jwtVerifiers.map(_.asJson)),
+      "authConfigs"        -> JsArray(authConfigs.map(_.asJson)),
+      "certificates"       -> JsArray(certificates.map(_.toJson)),
+      "clientValidators"   -> JsArray(clientValidators.map(_.asJson)),
+      "scripts"            -> JsArray(scripts.map(_.toJson)),
+      "tcpServices"        -> JsArray(tcpServices.map(_.json)),
+      "dataExporters"      -> JsArray(dataExporters.map(_.json)),
+      "tenants"            -> JsArray(tenants.map(_.json)),
+      "teams"              -> JsArray(teams.map(_.json))
     )
   }
 }

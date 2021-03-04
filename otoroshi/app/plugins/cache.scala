@@ -19,13 +19,13 @@ import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
 case class ResponseCacheFilterConfig(json: JsValue) {
-  lazy val statuses: Seq[Int] = (json \ "statuses")
+  lazy val statuses: Seq[Int]      = (json \ "statuses")
     .asOpt[Seq[Int]]
     .orElse((json \ "statuses").asOpt[Seq[String]].map(_.map(_.toInt)))
     .getOrElse(Seq(200))
-  lazy val methods: Seq[String] = (json \ "methods").asOpt[Seq[String]].getOrElse(Seq("GET"))
-  lazy val paths: Seq[String]   = (json \ "paths").asOpt[Seq[String]].getOrElse(Seq("/.*"))
-  lazy val notStatuses: Seq[Int] = (json \ "not" \ "statuses")
+  lazy val methods: Seq[String]    = (json \ "methods").asOpt[Seq[String]].getOrElse(Seq("GET"))
+  lazy val paths: Seq[String]      = (json \ "paths").asOpt[Seq[String]].getOrElse(Seq("/.*"))
+  lazy val notStatuses: Seq[Int]   = (json \ "not" \ "statuses")
     .asOpt[Seq[Int]]
     .orElse((json \ "not" \ "statuses").asOpt[Seq[String]].map(_.map(_.toInt)))
     .getOrElse(Seq.empty)
@@ -34,12 +34,12 @@ case class ResponseCacheFilterConfig(json: JsValue) {
 }
 
 case class ResponseCacheConfig(json: JsValue) {
-  lazy val enabled: Boolean = (json \ "enabled").asOpt[Boolean].getOrElse(true)
-  lazy val ttl: Long        = (json \ "ttl").asOpt[Long].getOrElse(60.minutes.toMillis)
+  lazy val enabled: Boolean                          = (json \ "enabled").asOpt[Boolean].getOrElse(true)
+  lazy val ttl: Long                                 = (json \ "ttl").asOpt[Long].getOrElse(60.minutes.toMillis)
   lazy val filter: Option[ResponseCacheFilterConfig] =
     (json \ "filter").asOpt[JsObject].map(o => ResponseCacheFilterConfig(o))
-  lazy val hasFilter: Boolean = filter.isDefined
-  lazy val maxSize: Long      = (json \ "maxSize").asOpt[Long].getOrElse(5L * 1024L * 1024L)
+  lazy val hasFilter: Boolean                        = filter.isDefined
+  lazy val maxSize: Long                             = (json \ "maxSize").asOpt[Long].getOrElse(5L * 1024L * 1024L)
 }
 
 object ResponseCache {
@@ -59,14 +59,14 @@ class ResponseCache extends RequestTransformer {
           "enabled" -> true,
           "ttl"     -> 60.minutes.toMillis,
           "maxSize" -> 5L * 1024L * 1024L,
-          "filter" -> Json.obj(
+          "filter"  -> Json.obj(
             "statuses" -> Json.arr(),
             "methods"  -> Json.arr(),
             "paths"    -> Json.arr(),
-            "not" -> Json.obj(
+            "not"      -> Json.obj(
               "statuses" -> Json.arr(),
               "methods"  -> Json.arr(),
-              "paths"    -> Json.arr(),
+              "paths"    -> Json.arr()
             )
           )
         )
@@ -145,8 +145,10 @@ class ResponseCache extends RequestTransformer {
     }
   }
 
-  private def set(key: String, value: ByteString, ttl: Option[Long])(implicit ec: ExecutionContext,
-                                                                     env: Env): Future[Boolean] = {
+  private def set(key: String, value: ByteString, ttl: Option[Long])(implicit
+      ec: ExecutionContext,
+      env: Env
+  ): Future[Boolean] = {
     ref.get() match {
       case null  => env.datastores.rawDataStore.set(key, value, ttl)
       case redis => redis._1.set(key, value, pxMilliseconds = ttl)
@@ -155,19 +157,19 @@ class ResponseCache extends RequestTransformer {
 
   private def filter(req: RequestHeader, config: ResponseCacheConfig, statusOpt: Option[Int] = None): Boolean = {
     config.filter match {
-      case None => true
+      case None         => true
       case Some(filter) => {
-        val matchPath =
+        val matchPath      =
           if (filter.paths.isEmpty) true else filter.paths.exists(p => RegexPool.regex(p).matches(req.relativeUri))
-        val matchNotPath =
+        val matchNotPath   =
           if (filter.notPaths.isEmpty) true
           else filter.notPaths.exists(p => RegexPool.regex(p).matches(req.relativeUri))
-        val methodMatch =
+        val methodMatch    =
           if (filter.methods.isEmpty) true else filter.methods.map(_.toLowerCase()).contains(req.method.toLowerCase())
         val methodNotMatch =
           if (filter.notMethods.isEmpty) true
           else filter.notMethods.map(_.toLowerCase()).contains(req.method.toLowerCase())
-        val statusMatch =
+        val statusMatch    =
           if (filter.statuses.isEmpty) true
           else
             statusOpt match {
@@ -223,8 +225,8 @@ class ResponseCache extends RequestTransformer {
     val config = ResponseCacheConfig(ctx.configFor("ResponseCache"))
     if (config.enabled) {
       cachedResponse(ctx, config).map {
-        case Left(_) => Right(ctx.otoroshiRequest)
-        case Right(None) =>
+        case Left(_)          => Right(ctx.otoroshiRequest)
+        case Right(None)      =>
           Right(
             ctx.otoroshiRequest.copy(
               headers = ctx.otoroshiRequest.headers ++ Map("X-Otoroshi-Cache" -> "MISS")
@@ -254,21 +256,20 @@ class ResponseCache extends RequestTransformer {
       val size = new AtomicLong(0L)
       val ref  = new AtomicReference[ByteString](ByteString.empty)
       ctx.body
-        .wireTap(
-          bs =>
-            ref.updateAndGet { (t: ByteString) =>
-              val currentSize = size.addAndGet(bs.size.toLong)
-              if (currentSize <= config.maxSize) {
-                t ++ bs
-              } else {
-                t
-              }
+        .wireTap(bs =>
+          ref.updateAndGet { (t: ByteString) =>
+            val currentSize = size.addAndGet(bs.size.toLong)
+            if (currentSize <= config.maxSize) {
+              t ++ bs
+            } else {
+              t
+            }
           }
         )
         .alsoTo(Sink.onComplete {
           case _ => {
             if (size.get() < config.maxSize) {
-              val ctype: String = ctx.rawResponse.headers
+              val ctype: String                = ctx.rawResponse.headers
                 .get("Content-Type")
                 .orElse(ctx.rawResponse.headers.get("content-type"))
                 .getOrElse("text/plain")
@@ -276,7 +277,7 @@ class ResponseCache extends RequestTransformer {
                 val name = tuple._1.toLowerCase()
                 name == "content-type" || name == "transfer-encoding" || name == "content-length"
               }
-              val event = Json.obj(
+              val event                        = Json.obj(
                 "status"  -> ctx.rawResponse.status,
                 "headers" -> headers,
                 "ctype"   -> ctype,
