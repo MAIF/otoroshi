@@ -3,7 +3,7 @@ package functional
 import java.util.concurrent.atomic.AtomicInteger
 
 import com.typesafe.config.ConfigFactory
-import models.{ServiceDescriptor, Target}
+import otoroshi.models.{ServiceDescriptor, Target}
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatestplus.play.PlaySpec
 import play.api.Configuration

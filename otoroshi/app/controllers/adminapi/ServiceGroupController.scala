@@ -3,7 +3,7 @@ package controllers.adminapi
 import otoroshi.actions.ApiAction
 import otoroshi.env.Env
 import otoroshi.events._
-import models.ServiceGroup
+import otoroshi.models.ServiceGroup
 import otoroshi.utils.controllers.{ApiError, BulkControllerHelper, CrudControllerHelper, EntityAndContext, JsonApiError, NoEntityAndContext, OptionalEntityAndContext, SeqEntityAndContext}
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._

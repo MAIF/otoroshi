@@ -12,7 +12,7 @@ import com.google.common.base.Charsets
 import controllers.HealthController
 import otoroshi.env.Env
 import otoroshi.events._
-import models._
+import otoroshi.models._
 import otoroshi.script._
 import otoroshi.ssl.OcspResponder
 import otoroshi.utils.{RegexPool, TypedMap}
@@ -118,7 +118,7 @@ case class AnalyticsQueueEvent(descriptor: ServiceDescriptor,
                                dataIn: Long,
                                dataOut: Long,
                                upstreamLatency: Long,
-                               config: models.GlobalConfig)
+                               config: otoroshi.models.GlobalConfig)
 
 object AnalyticsQueue {
   def props(env: Env) = Props(new AnalyticsQueue(env))

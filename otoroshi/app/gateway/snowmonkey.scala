@@ -5,7 +5,7 @@ import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import otoroshi.env.Env
 import otoroshi.events._
-import models._
+import otoroshi.models._
 import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.json.Json

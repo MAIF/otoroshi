@@ -7,7 +7,7 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
 import otoroshi.env.Env
-import models.ServiceDescriptor
+import otoroshi.models.ServiceDescriptor
 import otoroshi.script.{AfterRequestContext, BeforeRequestContext, HttpRequest, RequestTransformer, TransformerRequestBodyContext, TransformerRequestContext}
 import play.api.libs.json.{JsArray, JsNull, JsObject, JsString, JsValue, Json}
 import play.api.mvc.{Result, Results}

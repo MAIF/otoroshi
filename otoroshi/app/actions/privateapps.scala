@@ -7,7 +7,7 @@ import akka.http.scaladsl.util.FastFuture._
 import otoroshi.auth.GenericOauth2Module
 import otoroshi.cluster._
 import otoroshi.env.Env
-import models.PrivateAppsUser
+import otoroshi.models.PrivateAppsUser
 import play.api.mvc._
 
 import scala.concurrent.duration._
@@ -16,7 +16,7 @@ import otoroshi.utils.http.RequestImplicits._
 
 case class PrivateAppsActionContext[A](request: Request[A],
                                        user: Option[PrivateAppsUser],
-                                       globalConfig: models.GlobalConfig) {
+                                       globalConfig: otoroshi.models.GlobalConfig) {
   def connected: Boolean              = user.isDefined
   def from(implicit env: Env): String = request.theIpAddress
   def ua: String                      = request.theUserAgent

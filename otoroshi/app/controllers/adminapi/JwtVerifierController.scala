@@ -2,7 +2,7 @@ package controllers.adminapi
 
 import otoroshi.actions.ApiAction
 import otoroshi.env.Env
-import models.GlobalJwtVerifier
+import otoroshi.models.GlobalJwtVerifier
 import otoroshi.utils.controllers.{ApiError, BulkControllerHelper, CrudControllerHelper, EntityAndContext, JsonApiError, NoEntityAndContext, OptionalEntityAndContext, SeqEntityAndContext}
 import play.api.libs.json._
 import play.api.mvc.{AbstractController, ControllerComponents, RequestHeader}

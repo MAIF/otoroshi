@@ -1,7 +1,7 @@
 package otoroshi.models
 
 import otoroshi.env.Env
-import models._
+import otoroshi.models._
 import otoroshi.utils.RegexPool
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._

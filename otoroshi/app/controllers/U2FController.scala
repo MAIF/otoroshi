@@ -15,7 +15,7 @@ import com.yubico.webauthn._
 import com.yubico.webauthn.data._
 import otoroshi.env.Env
 import otoroshi.events._
-import models.BackOfficeUser
+import otoroshi.models.BackOfficeUser
 import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
 import otoroshi.models.RightsChecker.{SuperAdminOnly, TenantAdminOnly}

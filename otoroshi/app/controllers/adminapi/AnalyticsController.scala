@@ -5,7 +5,7 @@ import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
 import otoroshi.env.Env
 import otoroshi.events._
-import models.ServiceDescriptor
+import otoroshi.models.ServiceDescriptor
 import org.joda.time.DateTime
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger

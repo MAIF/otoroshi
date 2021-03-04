@@ -2,8 +2,8 @@ package  otoroshi.utils.misc;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import models.ServiceDescriptor;
-import models.ServiceDescriptorQuery;
+import otoroshi.models.ServiceDescriptor;
+import otoroshi.models.ServiceDescriptorQuery;
 import scala.Option;
 
 import java.util.concurrent.TimeUnit;

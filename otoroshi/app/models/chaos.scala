@@ -1,9 +1,9 @@
-package models
+package otoroshi.models
 
 import java.util.concurrent.TimeUnit
 
 import otoroshi.env.Env
-import models.SnowMonkeyConfig.logger
+import otoroshi.models.SnowMonkeyConfig.logger
 import org.joda.time.{DateTime, LocalTime}
 import play.api.Logger
 import play.api.libs.json._

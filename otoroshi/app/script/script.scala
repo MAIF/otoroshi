@@ -19,7 +19,7 @@ import otoroshi.events._
 import otoroshi.events.{AnalyticEvent, OtoroshiEvent}
 
 import javax.script._
-import models._
+import otoroshi.models._
 import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.streams.Accumulator
@@ -1416,7 +1416,7 @@ trait ScriptDataStore extends BasicStore[Script] {
     desc = "New request transformer",
     code = """import akka.stream.Materializer
              |import otoroshi.env.Env
-             |import models.{ApiKey, PrivateAppsUser, ServiceDescriptor}
+             |import otoroshi.models.{ApiKey, PrivateAppsUser, ServiceDescriptor}
              |import otoroshi.script._
              |import play.api.Logger
              |import play.api.mvc.{Result, Results}

@@ -5,7 +5,7 @@ import java.security.interfaces.{ECPrivateKey, ECPublicKey, RSAPrivateKey, RSAPu
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import otoroshi.env.Env
-import models.ApiKeyHelper.decodeBase64
+import otoroshi.models.ApiKeyHelper.decodeBase64
 import otoroshi.script.{PreRouting, PreRoutingContext}
 import otoroshi.utils.syntax.implicits._
 import otoroshi.ssl.DynamicSSLEngineProvider

@@ -1,7 +1,7 @@
 package otoroshi.el
 
 import otoroshi.env.Env
-import models.{ApiKey, PrivateAppsUser, ServiceDescriptor}
+import otoroshi.models.{ApiKey, PrivateAppsUser, ServiceDescriptor}
 import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.json._

@@ -9,7 +9,7 @@ import otoroshi.auth.{AuthModuleConfig, BasicAuthModule, BasicAuthModuleConfig, 
 import otoroshi.env.Env
 import otoroshi.events._
 import otoroshi.gateway.Errors
-import models.{BackOfficeUser, CorsSettings, PrivateAppsUser, ServiceDescriptor}
+import otoroshi.models.{BackOfficeUser, CorsSettings, PrivateAppsUser, ServiceDescriptor}
 import otoroshi.utils.TypedMap
 import play.api.Logger
 import play.api.libs.json.Json

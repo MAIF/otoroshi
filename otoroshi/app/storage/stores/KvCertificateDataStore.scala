@@ -3,7 +3,7 @@ package otoroshi.storage.stores
 import java.util.concurrent.atomic.AtomicReference
 import akka.actor.Cancellable
 import otoroshi.env.Env
-import models.Key
+import otoroshi.models.Key
 import otoroshi.storage.{RedisLike, RedisLikeStore}
 import otoroshi.utils
 import otoroshi.utils.{SchedulerHelper, future}

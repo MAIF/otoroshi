@@ -23,7 +23,7 @@ import otoroshi.events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
 import otoroshi.gateway.{InMemoryRequestsDataStore, RequestsDataStore, Retry}
 
 import javax.management.{Attribute, ObjectName}
-import models._
+import otoroshi.models._
 import org.apache.commons.codec.binary.Hex
 import org.joda.time.DateTime
 import otoroshi.models.{SimpleAdminDataStore, TenantId, WebAuthnAdminDataStore}

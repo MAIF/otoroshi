@@ -1,10 +1,9 @@
-package models
+package otoroshi.models
 
 import akka.http.scaladsl.util.FastFuture._
 import otoroshi.auth.AuthModuleConfig
 import otoroshi.env.Env
 import org.joda.time.DateTime
-import otoroshi.models.{EntityLocationSupport, TeamAccess, TenantAccess, UserRight, UserRights}
 import play.api.libs.json._
 import otoroshi.storage.BasicStore
 import otoroshi.utils.syntax.implicits._

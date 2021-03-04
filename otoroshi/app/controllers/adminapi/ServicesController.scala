@@ -4,7 +4,7 @@ import otoroshi.actions.{ApiAction, ApiActionContext}
 import akka.util.ByteString
 import otoroshi.env.Env
 import otoroshi.events._
-import models.{ErrorTemplate, ServiceDescriptor, ServiceDescriptorQuery, Target}
+import otoroshi.models.{ErrorTemplate, ServiceDescriptor, ServiceDescriptorQuery, Target}
 import otoroshi.utils.controllers.{AdminApiHelper, ApiError, BulkControllerHelper, CrudControllerHelper, EntityAndContext, JsonApiError, NoEntityAndContext, OptionalEntityAndContext, SendAuditAndAlert, SeqEntityAndContext}
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger

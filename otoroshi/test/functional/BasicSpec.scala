@@ -7,7 +7,7 @@ import akka.http.scaladsl.model.headers.RawHeader
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.typesafe.config.ConfigFactory
-import models.{SecComVersion, ServiceDescriptor, Target}
+import otoroshi.models.{SecComVersion, ServiceDescriptor, Target}
 import org.joda.time.DateTime
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatestplus.play.PlaySpec

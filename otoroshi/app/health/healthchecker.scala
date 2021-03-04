@@ -10,7 +10,7 @@ import akka.util.ByteString
 import otoroshi.env.Env
 import otoroshi.events.HealthCheckEvent
 import otoroshi.gateway.Retry
-import models.{SecComVersion, ServiceDescriptor, Target}
+import otoroshi.models.{SecComVersion, ServiceDescriptor, Target}
 import org.joda.time.DateTime
 import otoroshi.script.{Job, JobContext, JobId, JobInstantiation, JobKind, JobStarting, JobVisibility}
 import play.api.Logger

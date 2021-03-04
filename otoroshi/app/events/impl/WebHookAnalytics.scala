@@ -2,7 +2,7 @@ package otoroshi.events.impl
 
 import otoroshi.env.Env
 import otoroshi.events.{AnalyticEvent, AnalyticsWritesService}
-import models.{GlobalConfig, HSAlgoSettings, Webhook}
+import otoroshi.models.{GlobalConfig, HSAlgoSettings, Webhook}
 import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.json.{JsArray, JsValue, Json}

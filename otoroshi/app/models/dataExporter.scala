@@ -2,7 +2,6 @@ package otoroshi.models
 
 import akka.stream.scaladsl.{Sink, Source}
 import otoroshi.env.Env
-import models.{ElasticAnalyticsConfig, Webhook}
 import otoroshi.events.Exporters.{ConsoleExporter, CustomExporter, ElasticExporter, FileAppenderExporter, GenericMailerExporter, KafkaExporter, MetricsExporter, PulsarExporter, WebhookExporter}
 import otoroshi.events._
 import otoroshi.script._

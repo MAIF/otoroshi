@@ -5,7 +5,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 import akka.actor.ActorSystem
 import com.typesafe.config.ConfigFactory
-import models.{ApiKey, ServiceDescriptor, ServiceGroupIdentifier, Target}
+import otoroshi.models.{ApiKey, ServiceDescriptor, ServiceGroupIdentifier, Target}
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatestplus.play.PlaySpec
 import play.api.Configuration

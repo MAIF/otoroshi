@@ -2,7 +2,7 @@ package otoroshi.events
 
 import akka.util.ByteString
 import otoroshi.env.Env
-import models._
+import otoroshi.models._
 import org.joda.time.DateTime
 import otoroshi.script.{Job, JobContext}
 import play.api.libs.json._

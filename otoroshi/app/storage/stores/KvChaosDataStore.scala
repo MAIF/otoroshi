@@ -2,7 +2,7 @@ package otoroshi.storage.stores
 
 import akka.http.scaladsl.util.FastFuture
 import otoroshi.env.Env
-import models.{ChaosDataStore, Outage, ServiceDescriptor, SnowMonkeyConfig}
+import otoroshi.models.{ChaosDataStore, Outage, ServiceDescriptor, SnowMonkeyConfig}
 import org.joda.time.DateTime
 import play.api.libs.json.{JsSuccess, Json}
 import otoroshi.storage.RedisLike

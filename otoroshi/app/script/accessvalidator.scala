@@ -8,7 +8,7 @@ import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.util.FastFuture
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
-import models._
+import otoroshi.models._
 import org.apache.commons.codec.binary.Hex
 import otoroshi.utils.{RegexPool, TypedMap}
 import play.api.libs.json._

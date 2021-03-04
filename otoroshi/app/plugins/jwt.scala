@@ -1,7 +1,7 @@
 package otoroshi.plugins.jwt
 
 import otoroshi.env.Env
-import models.PrivateAppsUser
+import otoroshi.models.PrivateAppsUser
 import org.joda.time.DateTime
 import otoroshi.plugins.JsonPathUtils
 import otoroshi.script.{PreRouting, PreRoutingContext, PreRoutingError}

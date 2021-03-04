@@ -3,7 +3,7 @@ package otoroshi.storage.stores
 import akka.http.scaladsl.util.FastFuture
 import otoroshi.auth.{AuthModuleConfig, GenericOauth2ModuleConfig, SessionCookieValues}
 import otoroshi.env.Env
-import models._
+import otoroshi.models._
 import org.joda.time.DateTime
 import otoroshi.models.{DataExporterConfig, SimpleOtoroshiAdmin, Team, Tenant, WebAuthnOtoroshiAdmin}
 import otoroshi.script.Script
@@ -115,7 +115,7 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
     } yield (within, secCalls, maybeQuota)
   }
 
-  override def updateQuotas(config: models.GlobalConfig)(implicit ec: ExecutionContext, env: Env): Future[Unit] =
+  override def updateQuotas(config: otoroshi.models.GlobalConfig)(implicit ec: ExecutionContext, env: Env): Future[Unit] =
     for {
       secCalls <- redisCli.incrby(throttlingKey(), 1L)
       _        <- redisCli.ttl(throttlingKey()).filter(_ > -1).recoverWith { case _ => redisCli.expire(throttlingKey(), 10) }

@@ -11,7 +11,7 @@ import akka.stream.{OverflowStrategy, QueueOfferResult}
 import otoroshi.cluster.ClusterMode
 import otoroshi.env.Env
 import otoroshi.events.impl.{ElasticReadsAnalytics, ElasticWritesAnalytics, WebHookAnalytics}
-import models._
+import otoroshi.models._
 import org.joda.time.DateTime
 import otoroshi.plugins.useragent.UserAgentHelper
 import otoroshi.tcp.TcpService

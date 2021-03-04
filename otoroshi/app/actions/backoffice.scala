@@ -7,7 +7,7 @@ import otoroshi.auth.GenericOauth2Module
 import otoroshi.env.Env
 import otoroshi.events.{Alerts, BlackListedBackOfficeUserAlert}
 import otoroshi.gateway.Errors
-import models.BackOfficeUser
+import otoroshi.models.BackOfficeUser
 import otoroshi.models.RightsChecker.{SuperAdminOnly, TenantAdminOnly}
 import otoroshi.models.{EntityLocationSupport, RightsChecker, TenantId}
 import otoroshi.utils.TypedMap

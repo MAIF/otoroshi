@@ -15,7 +15,7 @@ import akka.stream.scaladsl.{Flow, Framing, Sink, Source}
 import akka.util.ByteString
 import com.typesafe.config.ConfigFactory
 import otoroshi.env.Env
-import models._
+import otoroshi.models._
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.{MustMatchers, OptionValues, TestSuite, WordSpec}
 import org.scalatestplus.play.components.{OneServerPerSuiteWithComponents, OneServerPerTestWithComponents}

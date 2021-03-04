@@ -2,7 +2,7 @@ package otoroshi.utils.http
 
 import otoroshi.env.Env
 import otoroshi.gateway.SnowMonkeyContext
-import models._
+import otoroshi.models._
 import otoroshi.el.HeadersExpressionLanguage
 import otoroshi.utils.TypedMap
 import otoroshi.utils.http.RequestImplicits._

@@ -21,7 +21,7 @@ import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import com.google.protobuf.Descriptors.ServiceDescriptor
 import com.nimbusds.jose.jwk.{Curve, ECKey, RSAKey}
 import otoroshi.env.Env
-import models.{ApiKey, RemainingQuotas, ServiceDescriptorIdentifier, ServiceGroupIdentifier}
+import otoroshi.models.{ApiKey, RemainingQuotas, ServiceDescriptorIdentifier, ServiceGroupIdentifier}
 import org.apache.commons.codec.binary.Base64
 import org.joda.time.DateTime
 import otoroshi.plugins.JsonPathUtils

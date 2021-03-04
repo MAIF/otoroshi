@@ -7,7 +7,7 @@ import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.google.common.base.Charsets
 import com.typesafe.config.ConfigFactory
-import models.{ApiKey, BackOfficeUser, GlobalJwtVerifier, ServiceDescriptor, ServiceDescriptorIdentifier, ServiceGroup, Target}
+import otoroshi.models.{ApiKey, BackOfficeUser, GlobalJwtVerifier, ServiceDescriptor, ServiceDescriptorIdentifier, ServiceGroup, Target}
 import otoroshi.models.{TeamAccess, TeamId, TenantAccess, TenantId, UserRight, UserRights}
 import otoroshi.script.{AccessValidatorRef, Script}
 import otoroshi.tcp.TcpService

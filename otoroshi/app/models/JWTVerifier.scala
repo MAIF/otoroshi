@@ -1,4 +1,4 @@
-package models
+package otoroshi.models
 
 import java.nio.charset.StandardCharsets
 import java.security.interfaces.{ECPrivateKey, ECPublicKey, RSAPrivateKey, RSAPublicKey}

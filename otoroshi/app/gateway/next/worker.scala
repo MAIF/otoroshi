@@ -19,7 +19,7 @@ import otoroshi.env.Env
 import otoroshi.gateway._
 
 import javax.net.ssl._
-import models._
+import otoroshi.models._
 import otoroshi.utils.letsencrypt._
 import otoroshi.utils.{RegexPool, TypedMap}
 import otoroshi.utils.syntax.implicits._

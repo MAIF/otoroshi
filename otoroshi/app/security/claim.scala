@@ -5,7 +5,7 @@ import java.util.{Base64, Date}
 
 import com.auth0.jwt.algorithms.Algorithm
 import otoroshi.env.Env
-import models.AlgoSettings
+import otoroshi.models.AlgoSettings
 import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.json._
@@ -51,7 +51,7 @@ object OtoroshiClaim {
   lazy val logger = Logger("otoroshi-claim")
 
   def serialize(claim: OtoroshiClaim, jwtSettings: AlgoSettings)(implicit env: Env): String = {
-    val algorithm = jwtSettings.asAlgorithm(models.OutputMode).get
+    val algorithm = jwtSettings.asAlgorithm(otoroshi.models.OutputMode).get
     // Here we bypass JWT lib limitations ...
     val header = Json.obj(
       "typ" -> "JWT",

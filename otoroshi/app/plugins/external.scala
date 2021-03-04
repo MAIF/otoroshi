@@ -7,7 +7,7 @@ import java.util.concurrent.TimeUnit
 import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.util.FastFuture
 import otoroshi.env.Env
-import models.{ApiKey, PrivateAppsUser, ServiceDescriptor, WSProxyServerJson}
+import otoroshi.models.{ApiKey, PrivateAppsUser, ServiceDescriptor, WSProxyServerJson}
 import org.apache.commons.codec.binary.Hex
 import otoroshi.script.{AccessContext, AccessValidator}
 import otoroshi.utils.http.MtlsConfig

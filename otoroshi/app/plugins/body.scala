@@ -9,7 +9,7 @@ import akka.util.ByteString
 import com.google.common.base.Charsets
 import otoroshi.env.Env
 import otoroshi.events._
-import models.ServiceDescriptor
+import otoroshi.models.ServiceDescriptor
 import org.joda.time.DateTime
 import otoroshi.script._
 import play.api.libs.json._

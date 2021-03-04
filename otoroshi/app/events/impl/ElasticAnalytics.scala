@@ -9,7 +9,7 @@ import akka.stream.{ActorMaterializer, Materializer}
 import akka.stream.scaladsl.{Sink, Source}
 import otoroshi.env.Env
 import otoroshi.events._
-import models.{ApiKey, ElasticAnalyticsConfig, ServiceDescriptor, ServiceGroup}
+import otoroshi.models.{ApiKey, ElasticAnalyticsConfig, ServiceDescriptor, ServiceGroup}
 import org.joda.time.format.ISODateTimeFormat
 import org.joda.time.{DateTime, Interval}
 import play.api.libs.json.Json.JsValueWrapper

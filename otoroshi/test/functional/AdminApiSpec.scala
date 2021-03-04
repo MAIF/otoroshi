@@ -1,7 +1,7 @@
 package functional
 
 import com.typesafe.config.ConfigFactory
-import models._
+import otoroshi.models._
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatestplus.play.PlaySpec
 import play.api.Configuration

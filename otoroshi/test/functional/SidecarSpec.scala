@@ -7,7 +7,7 @@ import akka.actor.ActorSystem
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.typesafe.config.ConfigFactory
-import models.{ApiKey, ServiceDescriptor, ServiceGroupIdentifier, Target}
+import otoroshi.models.{ApiKey, ServiceDescriptor, ServiceGroupIdentifier, Target}
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatestplus.play.PlaySpec
 import play.api.Configuration

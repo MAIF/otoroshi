@@ -11,7 +11,7 @@ import com.cronutils.model.definition.CronDefinitionBuilder
 import com.cronutils.model.time.ExecutionTime
 import otoroshi.env.Env
 import otoroshi.events.{JobErrorEvent, JobRunEvent, JobStartedEvent, JobStoppedEvent}
-import models.GlobalConfig
+import otoroshi.models.GlobalConfig
 import otoroshi.utils
 import otoroshi.utils.{SchedulerHelper, TypedMap, future}
 import play.api.Logger

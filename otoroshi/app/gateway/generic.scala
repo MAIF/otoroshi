@@ -10,7 +10,7 @@ import akka.util.ByteString
 import com.auth0.jwt.JWT
 import otoroshi.env.{Env, SidecarConfig}
 import otoroshi.events._
-import models._
+import otoroshi.models._
 import org.joda.time.DateTime
 import otoroshi.el.HeadersExpressionLanguage
 import otoroshi.script.Implicits._
@@ -195,7 +195,7 @@ object ReverseProxyActionHelper {
         descriptor.secComVersion match {
           case SecComVersion.V1 => stateValue == resp
           case SecComVersion.V2 =>
-            descriptor.algoChallengeFromBackToOto.asAlgorithm(models.OutputMode)(env) match {
+            descriptor.algoChallengeFromBackToOto.asAlgorithm(otoroshi.models.OutputMode)(env) match {
               case None => false
               case Some(algo) => {
                 Try {

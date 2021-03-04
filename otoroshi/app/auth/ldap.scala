@@ -8,7 +8,7 @@ import controllers.routes
 import otoroshi.env.Env
 import javax.naming.Context
 import javax.naming.directory.InitialDirContext
-import models._
+import otoroshi.models._
 import otoroshi.models.{TeamAccess, TenantAccess, UserRight, UserRights}
 import play.api.Logger
 import play.api.libs.json._

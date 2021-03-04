@@ -12,7 +12,7 @@ import com.clevercloud.biscuit.token.builder.Utils.{fact, s, string}
 import com.clevercloud.biscuit.token.builder.parser.Parser
 import com.clevercloud.biscuit.token.{Biscuit, Verifier}
 import otoroshi.env.Env
-import models.{ApiKey, PrivateAppsUser, ServiceDescriptor}
+import otoroshi.models.{ApiKey, PrivateAppsUser, ServiceDescriptor}
 import otoroshi.script._
 import otoroshi.utils.crypto.Signatures
 import otoroshi.utils.syntax.implicits._

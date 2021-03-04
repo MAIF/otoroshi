@@ -3,7 +3,7 @@ package otoroshi.storage.stores
 import akka.http.scaladsl.util.FastFuture
 import otoroshi.env.Env
 import otoroshi.storage.RedisLike
-import models._
+import otoroshi.models._
 import otoroshi.utils.future.Implicits._
 import play.api.Logger
 

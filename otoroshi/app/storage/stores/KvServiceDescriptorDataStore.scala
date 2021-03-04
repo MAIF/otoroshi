@@ -7,7 +7,7 @@ import akka.http.scaladsl.util.FastFuture._
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import otoroshi.env.Env
-import models._
+import otoroshi.models._
 import play.api.Logger
 import play.api.libs.json.Format
 import play.api.mvc.RequestHeader
@@ -128,7 +128,7 @@ class KvServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int, _env:
       r <- redisCli.srem(query.asKey, services.map(_.id): _*)
     } yield r > 0L
 
-  override def updateMetricsOnError(config: models.GlobalConfig)(implicit ec: ExecutionContext,
+  override def updateMetricsOnError(config: otoroshi.models.GlobalConfig)(implicit ec: ExecutionContext,
                                                                  env: Env): Future[Unit] = {
     if (config.enableEmbeddedMetrics) {
       val time = System.currentTimeMillis()
@@ -155,7 +155,7 @@ class KvServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int, _env:
                              dataIn: Long,
                              dataOut: Long,
                              upstreamLatency: Long,
-                             config: models.GlobalConfig)(
+                             config: otoroshi.models.GlobalConfig)(
       implicit ec: ExecutionContext,
       env: Env
   ): Future[Unit] = {
@@ -270,7 +270,7 @@ class KvServiceDescriptorDataStore(redisCli: RedisLike, maxQueueSize: Int, _env:
                                           calls: Long,
                                           dataIn: Long,
                                           dataOut: Long,
-                                          config: models.GlobalConfig)(
+                                          config: otoroshi.models.GlobalConfig)(
       implicit ec: ExecutionContext,
       env: Env
   ): Future[Unit] = {

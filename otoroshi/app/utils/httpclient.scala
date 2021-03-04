@@ -15,7 +15,7 @@ import com.google.common.base.Charsets
 import com.typesafe.sslconfig.akka.AkkaSSLConfig
 import com.typesafe.sslconfig.ssl.SSLConfigSettings
 import otoroshi.env.Env
-import models.{ClientConfig, Target}
+import otoroshi.models.{ClientConfig, Target}
 import org.apache.commons.codec.binary.Base64
 import play.api.Logger
 import play.api.libs.json._

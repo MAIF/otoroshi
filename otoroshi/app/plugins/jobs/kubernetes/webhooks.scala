@@ -3,7 +3,7 @@ package otoroshi.plugins.jobs.kubernetes
 import akka.util.ByteString
 import otoroshi.auth.AuthModuleConfig
 import otoroshi.env.Env
-import models._
+import otoroshi.models._
 import otoroshi.models.{DataExporterConfig, SimpleOtoroshiAdmin, Team, Tenant}
 import otoroshi.script.{RequestOrigin, RequestSink, RequestSinkContext, Script}
 import otoroshi.tcp.TcpService

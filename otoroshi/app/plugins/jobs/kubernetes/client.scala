@@ -8,7 +8,7 @@ import akka.http.scaladsl.model.Uri
 import akka.stream.scaladsl.{Framing, Sink, Source}
 import akka.util.ByteString
 import otoroshi.env.Env
-import models._
+import otoroshi.models._
 import org.joda.time.DateTime
 import otoroshi.utils.UrlSanitizer
 import otoroshi.utils.http.MtlsConfig

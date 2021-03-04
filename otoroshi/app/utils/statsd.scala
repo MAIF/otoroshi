@@ -1,3 +1,5 @@
+package otoroshi.utils.statsd
+
 /*
 Scala implementation of Andrew Gwozdziewycz's StatsdClient.java
 Copyright (c) 2013 Joshua Garnett
@@ -17,8 +19,6 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
  */
-
-package otoroshi.utils.statsd
 
 import java.io.IOException
 import java.net._

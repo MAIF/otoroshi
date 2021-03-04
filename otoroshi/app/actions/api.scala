@@ -9,7 +9,7 @@ import com.auth0.jwt.algorithms.Algorithm
 import com.google.common.base.Charsets
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
-import models.{ApiKey, BackOfficeUser}
+import otoroshi.models.{ApiKey, BackOfficeUser}
 import otoroshi.models.RightsChecker.{SuperAdminOnly, TenantAdminOnly}
 import otoroshi.models._
 import otoroshi.utils.syntax.implicits._

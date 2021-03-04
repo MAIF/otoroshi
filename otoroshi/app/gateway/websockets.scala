@@ -15,7 +15,7 @@ import akka.stream.{FlowShape, Materializer, OverflowStrategy}
 import akka.util.ByteString
 import otoroshi.env.Env
 import otoroshi.events._
-import models._
+import otoroshi.models._
 import org.joda.time.DateTime
 import otoroshi.el.TargetExpressionLanguage
 import otoroshi.script.Implicits._

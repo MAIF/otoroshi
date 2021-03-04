@@ -10,7 +10,7 @@ import akka.http.scaladsl.model.ws.{Message, TextMessage, WebSocketRequest}
 import akka.stream.{ActorMaterializer, Materializer}
 import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
 import com.typesafe.config.ConfigFactory
-import models.{ServiceDescriptor, Target}
+import otoroshi.models.{ServiceDescriptor, Target}
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatestplus.play.PlaySpec
 import play.api.Configuration

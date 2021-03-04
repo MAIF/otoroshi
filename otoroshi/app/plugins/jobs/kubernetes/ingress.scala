@@ -11,7 +11,7 @@ import io.kubernetes.client.extended.leaderelection.{LeaderElectionConfig, Leade
 import io.kubernetes.client.openapi.ApiClient
 import io.kubernetes.client.util.ClientBuilder
 import io.kubernetes.client.util.credentials.AccessTokenAuthentication
-import models._
+import otoroshi.models._
 import org.joda.time.DateTime
 import otoroshi.plugins.jobs.kubernetes.IngressSupport.IntOrString
 import otoroshi.script._

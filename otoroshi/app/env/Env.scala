@@ -16,7 +16,7 @@ import otoroshi.gateway.CircuitBreakersHolder
 import otoroshi.health.{HealthCheckerActor, StartHealthCheck}
 
 import javax.management.remote.{JMXConnectorServerFactory, JMXServiceURL}
-import models._
+import otoroshi.models._
 import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory

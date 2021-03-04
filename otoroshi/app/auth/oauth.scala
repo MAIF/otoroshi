@@ -4,7 +4,7 @@ import akka.http.scaladsl.util.FastFuture
 import com.auth0.jwt.JWT
 import controllers.routes
 import otoroshi.env.Env
-import models._
+import otoroshi.models._
 import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
 import org.joda.time.DateTime
 import otoroshi.models.{TeamAccess, TenantAccess, UserRight, UserRights}

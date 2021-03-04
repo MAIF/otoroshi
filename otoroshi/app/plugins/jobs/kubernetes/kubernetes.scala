@@ -1,3 +1,5 @@
+package otoroshi.plugins.jobs.kubernetes
+
 // https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/
 // https://github.com/containous/traefik-helm-chart/tree/master/traefik/crds
 // https://github.com/containous/traefik/blob/v1.7.24/examples/k8s/traefik-deployment.yaml

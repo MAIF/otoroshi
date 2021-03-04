@@ -3,7 +3,7 @@ package otoroshi.gateway
 import akka.http.scaladsl.util.FastFuture
 import otoroshi.env.Env
 import otoroshi.events._
-import models.{RemainingQuotas, ServiceDescriptor}
+import otoroshi.models.{RemainingQuotas, ServiceDescriptor}
 import org.joda.time.DateTime
 import otoroshi.el.TargetExpressionLanguage
 import otoroshi.script.Implicits._

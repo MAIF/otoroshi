@@ -7,7 +7,7 @@ import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
 import otoroshi.env.Env
 import otoroshi.events.AuditEvent
-import models.{ServiceDescriptor, Target}
+import otoroshi.models.{ServiceDescriptor, Target}
 import org.joda.time.DateTime
 import otoroshi.script._
 import otoroshi.utils.UrlSanitizer

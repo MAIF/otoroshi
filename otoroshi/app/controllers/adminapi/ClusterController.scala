@@ -13,7 +13,7 @@ import akka.util.ByteString
 import otoroshi.cluster.{Cluster, ClusterAgent, ClusterMode, MemberView}
 import com.google.common.io.Files
 import otoroshi.env.Env
-import models.PrivateAppsUser
+import otoroshi.models.PrivateAppsUser
 import org.apache.commons.codec.binary.Hex
 import org.joda.time.DateTime
 import otoroshi.models.RightsChecker

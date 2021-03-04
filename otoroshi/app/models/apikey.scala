@@ -1,4 +1,4 @@
-package models
+package otoroshi.models
 
 import java.security.interfaces.{ECPrivateKey, ECPublicKey, RSAPrivateKey, RSAPublicKey}
 import akka.http.scaladsl.util.FastFuture

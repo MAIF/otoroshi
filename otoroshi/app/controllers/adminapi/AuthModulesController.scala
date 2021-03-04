@@ -3,7 +3,7 @@ package controllers.adminapi
 import otoroshi.actions.ApiAction
 import otoroshi.auth.{AuthModuleConfig, BasicAuthModule}
 import otoroshi.env.Env
-import models.ApiKey
+import otoroshi.models.ApiKey
 import otoroshi.utils.controllers.{ApiError, BulkControllerHelper, CrudControllerHelper, EntityAndContext, JsonApiError, NoEntityAndContext, OptionalEntityAndContext, SeqEntityAndContext}
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger

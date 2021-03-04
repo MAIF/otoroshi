@@ -12,7 +12,7 @@ import akka.stream.scaladsl.Flow
 import otoroshi.env.Env
 import otoroshi.events._
 import otoroshi.health.HealthCheck
-import models.{ApiKey, GlobalConfig, ServiceDescriptor, Target}
+import otoroshi.models.{ApiKey, GlobalConfig, ServiceDescriptor, Target}
 import otoroshi.utils.TypedMap
 import play.api.Logger
 import play.api.http.websocket.{Message => PlayWSMessage}

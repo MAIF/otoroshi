@@ -7,7 +7,7 @@ import com.github.blemale.scaffeine._
 import otoroshi.env.Env
 
 import javax.net.ssl.{KeyManager, SSLEngine, SSLSession, X509ExtendedKeyManager, X509KeyManager}
-import models.{GlobalConfig, TlsSettings}
+import otoroshi.models.{GlobalConfig, TlsSettings}
 import otoroshi.utils.http.DN
 
 import scala.concurrent.duration._

@@ -4,7 +4,7 @@ import otoroshi.actions.ApiAction
 import akka.http.scaladsl.util.FastFuture
 import otoroshi.env.Env
 import otoroshi.events.{AdminApiEvent, Alerts, Audit, GlobalConfigModification}
-import models.GlobalConfig
+import otoroshi.models.GlobalConfig
 import otoroshi.models.RightsChecker
 import play.api.Logger
 import play.api.libs.json._

@@ -9,7 +9,7 @@ import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
 import akka.{Done, NotUsed}
 import com.typesafe.config.ConfigFactory
 import functional.OtoroshiSpec
-import models._
+import otoroshi.models._
 import play.api.Configuration
 import play.api.libs.json.{Json, Reads}
 

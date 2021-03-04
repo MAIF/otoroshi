@@ -7,7 +7,7 @@ import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
 import otoroshi.env.Env
 import otoroshi.events._
-import models.{BestResponseTime, RemainingQuotas, SecComVersion, WeightedBestResponseTime}
+import otoroshi.models.{BestResponseTime, RemainingQuotas, SecComVersion, WeightedBestResponseTime}
 import org.joda.time.DateTime
 import otoroshi.el.TargetExpressionLanguage
 import otoroshi.script.Implicits._

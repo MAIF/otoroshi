@@ -13,7 +13,7 @@ import com.yubico.webauthn._
 import com.yubico.webauthn.data._
 import controllers.{LocalCredentialRepository, routes}
 import otoroshi.env.Env
-import models._
+import otoroshi.models._
 import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt
 import otoroshi.models.{OtoroshiAdminType, UserRight, UserRights, WebAuthnOtoroshiAdmin}

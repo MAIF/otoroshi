@@ -4,7 +4,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 import akka.util.ByteString
 import com.typesafe.config.ConfigFactory
-import models._
+import otoroshi.models._
 import org.joda.time.LocalTime
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatestplus.play.PlaySpec

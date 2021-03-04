@@ -33,6 +33,7 @@ function walkSync(dir, recursive, filelist = []) {
 //console.log(__dirname, process.cwd())
 
 const files = walkSync(path.join(process.cwd(), 'otoroshi', 'app'), true, []);
+const noPackage = [];
 const packages = {};
 const packagesFirstLevel = {};
 
@@ -53,6 +54,7 @@ const lines = files.map(file => {
       return '';
     }
   } else {
+    noPackage.push(file.path)
     return '';
   }
 }).filter(i => i.length > 0)
@@ -60,3 +62,4 @@ const lines = files.map(file => {
 console.log(lines.join('\n'))
 console.log(files.length, lines.length / 3)
 console.log(Object.keys(packagesFirstLevel))
+console.log(noPackage)

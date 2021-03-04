@@ -10,7 +10,7 @@ import otoroshi.cluster.ClusterAgent
 import com.auth0.jwt.JWT
 import otoroshi.env.Env
 import otoroshi.gateway.Errors
-import models._
+import otoroshi.models._
 import otoroshi.script._
 import otoroshi.utils.{RegexPool, TypedMap}
 import otoroshi.utils.syntax.implicits._

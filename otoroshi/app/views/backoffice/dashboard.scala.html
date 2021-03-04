@@ -1,5 +1,5 @@
-@import models.BackOfficeUser
-@import models.GlobalConfig
+@import otoroshi.models.BackOfficeUser
+@import otoroshi.models.GlobalConfig
 @import play.api.libs.json.Json
 
 @(user: BackOfficeUser, config: GlobalConfig, _env: otoroshi.env.Env, version: String, possibleTenants: Seq[String])

@@ -14,7 +14,7 @@ import com.spotify.metrics.core.MetricId
 import otoroshi.env.Env
 import otoroshi.events.DataExporter.DefaultDataExporter
 import otoroshi.events.impl.{ElasticWritesAnalytics, WebHookAnalytics}
-import models._
+import otoroshi.models._
 import org.joda.time.DateTime
 import otoroshi.models.{DataExporterConfig, Exporter, ExporterRef, FileSettings}
 import otoroshi.script._

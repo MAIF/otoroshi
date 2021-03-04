@@ -1,4 +1,4 @@
-package models
+package otoroshi.models
 
 import otoroshi.env.Env
 import scala.concurrent.{ExecutionContext, Future}

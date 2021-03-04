@@ -18,7 +18,7 @@ import io.lettuce.core.cluster.RedisClusterClient
 import io.lettuce.core.masterreplica.{MasterReplica, StatefulRedisMasterReplicaConnection}
 import io.lettuce.core.resource.{ClientResources, DefaultClientResources}
 import io.lettuce.core.{AbstractRedisClient, ReadFrom, RedisClient, RedisURI}
-import models._
+import otoroshi.models._
 import otoroshi.models.{SimpleAdminDataStore, WebAuthnAdminDataStore}
 import otoroshi.script.{KvScriptDataStore, ScriptDataStore}
 import otoroshi.storage._

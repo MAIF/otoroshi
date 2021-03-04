@@ -1,4 +1,4 @@
-package models
+package otoroshi.models
 
 import akka.http.scaladsl.util.FastFuture
 import otoroshi.auth.AuthModuleConfig
@@ -7,7 +7,6 @@ import otoroshi.events.Exporters._
 import otoroshi.events._
 import org.joda.time.DateTime
 import otoroshi.events.KafkaConfig
-import otoroshi.models.{DataExporterConfig, Exporter, SimpleOtoroshiAdmin, Team, Tenant, WebAuthnOtoroshiAdmin}
 import otoroshi.plugins.geoloc.{IpStackGeolocationHelper, MaxMindGeolocationHelper}
 import otoroshi.plugins.useragent.UserAgentHelper
 import otoroshi.script.Script
@@ -674,7 +673,7 @@ trait GlobalConfigDataStore extends BasicStore[GlobalConfig] {
   def quotaForIpAddress(ip: String)(implicit ec: ExecutionContext): Future[Option[Long]]
   def isOtoroshiEmpty()(implicit ec: ExecutionContext): Future[Boolean]
   def withinThrottlingQuota()(implicit ec: ExecutionContext, env: Env): Future[Boolean]
-  def updateQuotas(config: models.GlobalConfig)(implicit ec: ExecutionContext, env: Env): Future[Unit]
+  def updateQuotas(config: otoroshi.models.GlobalConfig)(implicit ec: ExecutionContext, env: Env): Future[Unit]
   def singleton()(implicit ec: ExecutionContext, env: Env): Future[GlobalConfig]
   def latest()(implicit ec: ExecutionContext, env: Env): GlobalConfig
   def latestSafe: Option[GlobalConfig]

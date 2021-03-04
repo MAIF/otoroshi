@@ -29,7 +29,7 @@ import javax.crypto.Cipher.DECRYPT_MODE
 import javax.crypto.spec.PBEKeySpec
 import javax.crypto.{Cipher, EncryptedPrivateKeyInfo, SecretKey, SecretKeyFactory}
 import javax.net.ssl._
-import models._
+import otoroshi.models._
 import org.apache.commons.codec.binary.Hex
 import org.apache.commons.codec.digest.DigestUtils
 import org.bouncycastle.asn1.x509.{ExtendedKeyUsage, KeyPurposeId}
@@ -1956,7 +1956,7 @@ class KvClientCertificateValidationDataStore(redisCli: RedisLike, env: Env)
 
   override def fmt: Format[ClientCertificateValidator]              = ClientCertificateValidator.fmt
   override def redisLike(implicit env: Env): RedisLike              = redisCli
-  override def key(id: String): models.Key                          = models.Key(s"${env.storageRoot}:certificates:validators:$id")
+  override def key(id: String): otoroshi.models.Key                 = otoroshi.models.Key(s"${env.storageRoot}:certificates:validators:$id")
   override def extractId(value: ClientCertificateValidator): String = value.id
 }
 

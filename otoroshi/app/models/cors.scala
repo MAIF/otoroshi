@@ -1,4 +1,4 @@
-package models
+package otoroshi.models
 
 import otoroshi.utils.RegexPool
 

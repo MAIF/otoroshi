@@ -3,7 +3,7 @@ package functional
 import java.util.concurrent.atomic.AtomicInteger
 import akka.actor.ActorSystem
 import com.typesafe.config.ConfigFactory
-import models.{ApiKey, GlobalConfig, ServiceGroupIdentifier, Webhook}
+import otoroshi.models.{ApiKey, GlobalConfig, ServiceGroupIdentifier, Webhook}
 import otoroshi.models.{DataExporterConfig, DataExporterConfigFiltering, DataExporterConfigType}
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatestplus.play.PlaySpec

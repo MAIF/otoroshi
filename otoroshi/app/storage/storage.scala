@@ -10,7 +10,7 @@ import otoroshi.cluster.ClusterStateDataStore
 import otoroshi.env.Env
 import otoroshi.events._
 import otoroshi.gateway.RequestsDataStore
-import models._
+import otoroshi.models._
 import otoroshi.models.{SimpleAdminDataStore, WebAuthnAdminDataStore}
 import otoroshi.script.ScriptDataStore
 import otoroshi.storage.stores._

@@ -3,7 +3,7 @@ package controllers.adminapi
 import otoroshi.actions.ApiAction
 import otoroshi.env.Env
 import otoroshi.events._
-import models.SnowMonkeyConfig
+import otoroshi.models.SnowMonkeyConfig
 import otoroshi.models.RightsChecker
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger

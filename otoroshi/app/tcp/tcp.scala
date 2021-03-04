@@ -16,7 +16,7 @@ import otoroshi.env.Env
 import otoroshi.events.{DataInOut, Location, TcpEvent}
 
 import javax.net.ssl._
-import models.IpFiltering
+import otoroshi.models.IpFiltering
 import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.json._
@@ -948,7 +948,7 @@ class KvTcpServiceDataStoreDataStore(redisCli: RedisLike, env: Env)
 
   override def fmt: Format[TcpService]                 = TcpService.fmt
   override def redisLike(implicit env: Env): RedisLike = redisCli
-  override def key(id: String): models.Key             = models.Key(s"${env.storageRoot}:tcp:services:$id")
+  override def key(id: String): otoroshi.models.Key    = otoroshi.models.Key(s"${env.storageRoot}:tcp:services:$id")
   override def extractId(value: TcpService): String    = value.id
 }
 

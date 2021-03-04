@@ -1,7 +1,7 @@
 package otoroshi.plugins.jobs.kubernetes
 
 import otoroshi.env.Env
-import models.ServiceDescriptor
+import otoroshi.models.ServiceDescriptor
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json.{JsArray, JsObject, JsValue, Json}

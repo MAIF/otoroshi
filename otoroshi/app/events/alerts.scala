@@ -9,7 +9,7 @@ import akka.stream.scaladsl.{Keep, Sink, Source}
 import akka.stream.{OverflowStrategy, QueueOfferResult, ThrottleMode}
 import akka.util.ByteString
 import otoroshi.env.Env
-import models._
+import otoroshi.models._
 import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.json.{JsArray, JsValue, Json, Writes}

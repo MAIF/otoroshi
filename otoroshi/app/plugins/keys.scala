@@ -2,7 +2,7 @@ package otoroshi.plugins
 
 import java.util.concurrent.atomic.AtomicLong
 
-import models.{ApiKey, ApiKeyRotationInfo, PrivateAppsUser, Target}
+import otoroshi.models.{ApiKey, ApiKeyRotationInfo, PrivateAppsUser, Target}
 import org.joda.time.DateTime
 import play.api.libs.json.JsValue
 import play.api.libs.typedmap.TypedKey

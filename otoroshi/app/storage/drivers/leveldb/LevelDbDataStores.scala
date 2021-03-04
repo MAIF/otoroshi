@@ -12,7 +12,7 @@ import com.typesafe.config.ConfigFactory
 import otoroshi.env.Env
 import otoroshi.events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
 import otoroshi.gateway.{InMemoryRequestsDataStore, RequestsDataStore}
-import models._
+import otoroshi.models._
 import otoroshi.models._
 import otoroshi.script.{KvScriptDataStore, ScriptDataStore}
 import play.api.inject.ApplicationLifecycle

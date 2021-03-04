@@ -3,7 +3,7 @@ package otoroshi.storage.stores
 import akka.http.scaladsl.util.FastFuture._
 import akka.http.scaladsl.util.FastFuture
 import otoroshi.env.Env
-import models._
+import otoroshi.models._
 import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.json.Format

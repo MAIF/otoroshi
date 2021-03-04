@@ -1,4 +1,4 @@
-package models
+package otoroshi.models
 
 import java.util.Base64
 

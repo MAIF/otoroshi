@@ -3,7 +3,7 @@ package otoroshi.storage.stores
 import otoroshi.env.Env
 import otoroshi.events.{KafkaConfig, PulsarConfig}
 import otoroshi.models.{DataExporterConfig, DataExporterConfigFiltering, DataExporterConfigType, EntityLocation, FileSettings, MetricsSettings}
-import models._
+import otoroshi.models._
 import otoroshi.storage.{RedisLike, RedisLikeStore}
 import otoroshi.utils.http.MtlsConfig
 import otoroshi.utils.mailer.{ConsoleMailerSettings, GenericMailerSettings, MailgunSettings, MailjetSettings, NoneMailerSettings, SendgridSettings}

@@ -1,4 +1,4 @@
-package models
+package otoroshi.models
 
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.{AtomicInteger, AtomicLong, AtomicReference}
@@ -1548,7 +1548,7 @@ case class ServiceDescriptor(
                     dataIn: Long,
                     dataOut: Long,
                     upstreamLatency: Long,
-                    config: models.GlobalConfig)(
+                    config: otoroshi.models.GlobalConfig)(
       implicit ec: ExecutionContext,
       env: Env
   ): Future[Unit] =
@@ -2172,12 +2172,12 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
                     dataIn: Long,
                     dataOut: Long,
                     upstreamLatency: Long,
-                    config: models.GlobalConfig)(
+                    config: otoroshi.models.GlobalConfig)(
       implicit ec: ExecutionContext,
       env: Env
   ): Future[Unit]
-  def updateMetricsOnError(config: models.GlobalConfig)(implicit ec: ExecutionContext, env: Env): Future[Unit]
-  def updateIncrementableMetrics(id: String, calls: Long, dataIn: Long, dataOut: Long, config: models.GlobalConfig)(
+  def updateMetricsOnError(config: otoroshi.models.GlobalConfig)(implicit ec: ExecutionContext, env: Env): Future[Unit]
+  def updateIncrementableMetrics(id: String, calls: Long, dataIn: Long, dataOut: Long, config: otoroshi.models.GlobalConfig)(
       implicit ec: ExecutionContext,
       env: Env
   ): Future[Unit]

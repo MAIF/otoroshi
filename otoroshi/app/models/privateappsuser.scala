@@ -1,4 +1,4 @@
-package models
+package otoroshi.models
 
 import java.util.concurrent.TimeUnit
 import akka.http.scaladsl.util.FastFuture

@@ -5,7 +5,7 @@ import com.typesafe.config.ConfigFactory
 import otoroshi.env.Env
 import otoroshi.events._
 import otoroshi.events.impl.ElasticWritesAnalytics
-import models._
+import otoroshi.models._
 import org.joda.time.DateTime
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatestplus.play.PlaySpec
