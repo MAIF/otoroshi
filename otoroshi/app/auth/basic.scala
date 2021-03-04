@@ -11,7 +11,7 @@ import com.fasterxml.jackson.datatype.jdk8.Jdk8Module
 import com.google.common.base.Charsets
 import com.yubico.webauthn._
 import com.yubico.webauthn.data._
-import controllers.{LocalCredentialRepository, routes}
+import otoroshi.controllers.{LocalCredentialRepository, routes}
 import otoroshi.env.Env
 import otoroshi.models._
 import org.joda.time.DateTime

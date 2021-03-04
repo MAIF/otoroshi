@@ -60,6 +60,5 @@ const lines = files.map(file => {
 }).filter(i => i.length > 0)
 
 console.log(lines.join('\n'))
-console.log(files.length, lines.length / 3)
+console.log(files.length, 'files total,', noPackage.length, 'with no packages')
 console.log(Object.keys(packagesFirstLevel))
-console.log(noPackage)

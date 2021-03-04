@@ -203,7 +203,7 @@ object PrivateAppsUserHelper {
           .getOrElse(s"${req.theProtocol}://${req.theHost}${req.relativeUri}")
         val redirectTo = env.rootScheme + env.privateAppsHost + env.privateAppsPort
           .map(a => s":$a")
-          .getOrElse("") + controllers.routes.AuthController
+          .getOrElse("") + otoroshi.controllers.routes.AuthController
           .confidentialAppLoginPage()
           .url + s"?desc=${descriptor.id}&redirect=${redirect}"
         logger.trace("should redirect to " + redirectTo)

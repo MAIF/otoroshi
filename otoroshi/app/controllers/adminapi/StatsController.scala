@@ -1,4 +1,4 @@
-package controllers.adminapi
+package otoroshi.controllers.adminapi
 
 import java.lang.management.ManagementFactory
 import java.util.concurrent.TimeUnit

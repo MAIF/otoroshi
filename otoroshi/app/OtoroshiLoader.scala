@@ -1,25 +1,26 @@
-package otoroshi
+package otoroshi.loader
 
 import otoroshi.actions._
 import akka.stream.scaladsl.{Sink, Source}
 import otoroshi.cluster.ClusterMode
 import com.softwaremill.macwire._
-import controllers._
-import controllers.adminapi._
+import otoroshi.controllers._
+import otoroshi.controllers.adminapi._
 import otoroshi.env.Env
 import otoroshi.gateway._
-import modules._
+import otoroshi.loader.modules._
 import otoroshi.api.OtoroshiLoaderHelper
 import otoroshi.api.OtoroshiLoaderHelper.EnvContainer
 import play.api.ApplicationLoader.Context
-import play.api._
+import controllers.{Assets, AssetsComponents}
 import play.api.http.{DefaultHttpFilters, HttpErrorHandler, HttpRequestHandler}
 import play.api.libs.ws.ahc.AhcWSComponents
 import play.api.mvc.EssentialFilter
 import play.api.routing.Router
 import play.filters.HttpFiltersComponents
 import router.Routes
-import ssl.DynamicSSLEngineProvider
+import otoroshi.ssl.DynamicSSLEngineProvider
+import play.api.{Application, ApplicationLoader, BuiltInComponentsFromContext, LoggerConfigurator}
 
 import scala.concurrent.{Await, Future}
 

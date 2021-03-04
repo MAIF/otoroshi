@@ -632,7 +632,7 @@ class OtoroshiRequestHandler(snowMonkey: SnowMonkey,
                       val finalRedirect = req.getQueryString("redirect").getOrElse(s"http://${req.theHost}")
                       val redirectTo = env.rootScheme + env.privateAppsHost + env.privateAppsPort
                         .map(a => s":$a")
-                        .getOrElse("") + controllers.routes.AuthController
+                        .getOrElse("") + otoroshi.controllers.routes.AuthController
                         .confidentialAppLogout()
                         .url + s"?redirectTo=${finalRedirect}&host=${req.theHost}&cp=${auth.cookieSuffix(descriptor)}"
                       logger.trace("should redirect to " + redirectTo)
@@ -647,7 +647,7 @@ class OtoroshiRequestHandler(snowMonkey: SnowMonkey,
                       val finalRedirect = req.getQueryString("redirect").getOrElse(s"http://${req.theHost}")
                       val redirectTo = env.rootScheme + env.privateAppsHost + env.privateAppsPort
                         .map(a => s":$a")
-                        .getOrElse("") + controllers.routes.AuthController
+                        .getOrElse("") + otoroshi.controllers.routes.AuthController
                         .confidentialAppLogout()
                         .url + s"?redirectTo=${finalRedirect}&host=${req.theHost}&cp=${auth.cookieSuffix(descriptor)}"
                       val actualRedirectUrl = logoutUrl.replace("${redirect}", URLEncoder.encode(redirectTo, "UTF-8"))

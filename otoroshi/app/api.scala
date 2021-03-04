@@ -8,11 +8,11 @@ import akka.stream.scaladsl.{Sink, Source}
 import otoroshi.cluster.ClusterMode
 import com.softwaremill.macwire.wire
 import com.typesafe.config.{Config, ConfigFactory}
-import controllers._
-import controllers.adminapi.{ApiKeysFromGroupController, _}
+import controllers.{Assets, AssetsComponents}
+import otoroshi.controllers._
+import otoroshi.controllers.adminapi.{ApiKeysFromGroupController, _}
 import otoroshi.env._
 import otoroshi.gateway._
-import otoroshi.modules.OtoroshiComponentsInstances
 import otoroshi.api.OtoroshiLoaderHelper.EnvContainer
 import otoroshi.storage.DataStores
 import otoroshi.utils.metrics.Metrics

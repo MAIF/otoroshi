@@ -2,7 +2,7 @@ package otoroshi.auth
 
 import akka.http.scaladsl.util.FastFuture
 import com.auth0.jwt.JWT
-import controllers.routes
+import otoroshi.controllers.routes
 import otoroshi.env.Env
 import otoroshi.models._
 import org.apache.commons.codec.binary.{Base64 => ApacheBase64}

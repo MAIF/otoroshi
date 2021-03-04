@@ -4,7 +4,7 @@ import java.util
 
 import akka.http.scaladsl.util.FastFuture
 import com.google.common.base.Charsets
-import controllers.routes
+import otoroshi.controllers.routes
 import otoroshi.env.Env
 import javax.naming.Context
 import javax.naming.directory.InitialDirContext

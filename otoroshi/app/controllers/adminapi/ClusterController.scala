@@ -1,4 +1,4 @@
-package controllers.adminapi
+package otoroshi.controllers.adminapi
 
 import java.io.File
 import java.security.MessageDigest

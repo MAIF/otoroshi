@@ -1,4 +1,4 @@
-package controllers
+package otoroshi.controllers
 
 import java.security.SecureRandom
 import java.util

@@ -131,14 +131,14 @@ class IpStackGeolocationInfoExtractor extends PreRouting {
     val log           = (config \ "log").asOpt[Boolean].getOrElse(false)
     val from          = ctx.request.theIpAddress
     apiKeyOpt match {
-      case None => funit
+      case None => FastFuture.successful(())
       case Some(apiKey) =>
         IpStackGeolocationHelper.find(from, apiKey, timeout).map {
-          case None => funit
+          case None => FastFuture.successful(())
           case Some(location) => {
             if (log) logger.info(s"Ip-Address: $from, ${Json.prettyPrint(location)}")
             ctx.attrs.putIfAbsent(Keys.GeolocationInfoKey -> location)
-            funit
+            FastFuture.successful(())
           }
         }
     }

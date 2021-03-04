@@ -1,4 +1,4 @@
-package controllers.adminapi
+package otoroshi.controllers.adminapi
 
 import otoroshi.actions.{ApiAction, UnAuthApiAction}
 import akka.util.ByteString

@@ -1,4 +1,4 @@
-package controllers
+package otoroshi.controllers
 
 import otoroshi.actions.{ApiAction, PrivateAppsAction}
 import akka.http.scaladsl.util.FastFuture

@@ -1,4 +1,4 @@
-package controllers
+package otoroshi.controllers
 
 import otoroshi.env.Env
 import play.api.Logger

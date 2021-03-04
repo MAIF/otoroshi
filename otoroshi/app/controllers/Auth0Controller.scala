@@ -1,4 +1,4 @@
-package controllers
+package otoroshi.controllers
 
 import java.net.URLEncoder
 import java.util.concurrent.TimeUnit
@@ -324,7 +324,7 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
     env.datastores.globalConfigDataStore.singleton().flatMap {
       case config if !(config.u2fLoginOnly || config.backOfficeAuthRef.isEmpty) => {
         config.backOfficeAuthRef match {
-          case None => FastFuture.successful(Redirect(controllers.routes.BackOfficeController.index()))
+          case None => FastFuture.successful(Redirect(otoroshi.controllers.routes.BackOfficeController.index()))
           case Some(aconf) => {
             env.datastores.authConfigsDataStore.findById(aconf).flatMap {
               case None =>
@@ -335,7 +335,7 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
         }
       }
       case config if config.u2fLoginOnly || config.backOfficeAuthRef.isEmpty =>
-        FastFuture.successful(Redirect(controllers.routes.BackOfficeController.index()))
+        FastFuture.successful(Redirect(otoroshi.controllers.routes.BackOfficeController.index()))
     }
   }
 
@@ -436,7 +436,7 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
         case None => {
           env.datastores.globalConfigDataStore.singleton().flatMap {
             case config if (config.u2fLoginOnly || config.backOfficeAuthRef.isEmpty) =>
-              FastFuture.successful(Redirect(controllers.routes.BackOfficeController.index()))
+              FastFuture.successful(Redirect(otoroshi.controllers.routes.BackOfficeController.index()))
             case config if !(config.u2fLoginOnly || config.backOfficeAuthRef.isEmpty) => {
 
               config.backOfficeAuthRef match {

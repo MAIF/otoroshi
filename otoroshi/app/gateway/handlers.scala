@@ -9,7 +9,7 @@ import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import otoroshi.auth.{AuthModuleConfig, SessionCookieValues}
 import com.google.common.base.Charsets
-import controllers.HealthController
+import otoroshi.controllers.HealthController
 import otoroshi.env.Env
 import otoroshi.events._
 import otoroshi.models._
@@ -575,7 +575,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                       val finalRedirect = req.getQueryString("redirect").getOrElse(s"http://${req.theHost}")
                       val redirectTo = env.rootScheme + env.privateAppsHost + env.privateAppsPort
                         .map(a => s":$a")
-                        .getOrElse("") + controllers.routes.AuthController
+                        .getOrElse("") + otoroshi.controllers.routes.AuthController
                         .confidentialAppLogout()
                         .url + s"?redirectTo=${finalRedirect}&host=${req.theHost}&cp=${auth.cookieSuffix(descriptor)}"
                       logger.trace("should redirect to " + redirectTo)
@@ -590,7 +590,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
                       val finalRedirect = req.getQueryString("redirect").getOrElse(s"http://${req.theHost}")
                       val redirectTo = env.rootScheme + env.privateAppsHost + env.privateAppsPort
                         .map(a => s":$a")
-                        .getOrElse("") + controllers.routes.AuthController
+                        .getOrElse("") + otoroshi.controllers.routes.AuthController
                         .confidentialAppLogout()
                         .url + s"?redirectTo=${finalRedirect}&host=${req.theHost}&cp=${auth.cookieSuffix(descriptor)}"
                       val actualRedirectUrl = logoutUrl.replace("${redirect}", URLEncoder.encode(redirectTo, "UTF-8"))
