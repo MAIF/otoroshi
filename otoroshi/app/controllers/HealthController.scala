@@ -1,6 +1,6 @@
 package controllers
 
-import actions.{ApiAction, UnAuthApiAction}
+import otoroshi.actions.{ApiAction, UnAuthApiAction}
 import akka.http.scaladsl.util.FastFuture
 import otoroshi.cluster.{ClusterMode, MemberView}
 import env.Env

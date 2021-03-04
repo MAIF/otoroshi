@@ -2,7 +2,7 @@ package controllers
 
 import java.util.Base64
 import java.util.concurrent.TimeUnit
-import actions.{ApiActionContext, BackOfficeAction, BackOfficeActionAuth}
+import otoroshi.actions.{ApiActionContext, BackOfficeAction, BackOfficeActionAuth}
 import akka.http.scaladsl.util.FastFuture
 import akka.http.scaladsl.util.FastFuture._
 import akka.stream.scaladsl.{Sink, Source}

@@ -5,7 +5,7 @@ import java.security.MessageDigest
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong, AtomicReference}
 
-import actions.ApiAction
+import otoroshi.actions.ApiAction
 import akka.NotUsed
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.{Framing, Sink, Source}

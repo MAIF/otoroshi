@@ -5,7 +5,7 @@ import java.security.MessageDigest
 import java.security.cert.X509Certificate
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
-import actions.ApiAction
+import otoroshi.actions.ApiAction
 import akka.{Done, NotUsed}
 import akka.actor.{Actor, ActorRef, Cancellable, Props}
 import akka.http.scaladsl.model.Uri

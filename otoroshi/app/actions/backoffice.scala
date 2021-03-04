@@ -1,4 +1,4 @@
-package actions
+package otoroshi.actions
 
 import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.model.Uri.Path

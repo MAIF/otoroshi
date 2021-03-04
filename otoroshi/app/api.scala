@@ -1,6 +1,6 @@
 package otoroshi.api
 
-import actions._
+import otoroshi.actions._
 import akka.actor.ActorSystem
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer

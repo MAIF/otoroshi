@@ -1,6 +1,6 @@
 package otoroshi.utils.controllers
 
-import actions.{ApiAction, ApiActionContext}
+import otoroshi.actions.{ApiAction, ApiActionContext}
 import akka.stream.scaladsl.{Framing, Source}
 import akka.util.ByteString
 import env.Env

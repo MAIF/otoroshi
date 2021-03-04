@@ -2,7 +2,7 @@ package controllers
 
 import java.net.URLEncoder
 import java.util.concurrent.TimeUnit
-import actions.{BackOfficeAction, BackOfficeActionAuth, PrivateAppsAction}
+import otoroshi.actions.{BackOfficeAction, BackOfficeActionAuth, PrivateAppsAction}
 import akka.http.scaladsl.util.FastFuture
 import akka.util.ByteString
 import auth.{AuthModuleConfig, BasicAuthModule, BasicAuthModuleConfig, GenericOauth2ModuleConfig}

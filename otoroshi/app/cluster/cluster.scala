@@ -7,7 +7,7 @@ import java.security.MessageDigest
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, AtomicLong, AtomicReference}
 import java.util.concurrent.{ConcurrentHashMap, TimeUnit}
 import java.util.regex.Pattern
-import actions.ApiAction
+import otoroshi.actions.ApiAction
 import akka.{Done, NotUsed}
 import akka.actor.{ActorSystem, Cancellable}
 import akka.http.scaladsl.model.HttpResponse

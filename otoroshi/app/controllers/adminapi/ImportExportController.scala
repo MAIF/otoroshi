@@ -1,6 +1,6 @@
 package controllers.adminapi
 
-import actions.ApiAction
+import otoroshi.actions.ApiAction
 import akka.stream.scaladsl.{FileIO, Framing}
 import akka.util.ByteString
 import env.Env

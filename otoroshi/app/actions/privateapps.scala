@@ -1,4 +1,4 @@
-package actions
+package otoroshi.actions
 
 import java.util.concurrent.TimeUnit
 

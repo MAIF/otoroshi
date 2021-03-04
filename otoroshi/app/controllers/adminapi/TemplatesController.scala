@@ -1,6 +1,6 @@
 package controllers.adminapi
 
-import actions.ApiAction
+import otoroshi.actions.ApiAction
 import akka.http.scaladsl.util.FastFuture
 import auth.{AuthModuleConfig, BasicAuthModuleConfig, GenericOauth2ModuleConfig, LdapAuthModuleConfig}
 import env.Env

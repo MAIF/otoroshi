@@ -1,6 +1,6 @@
 package controllers.adminapi
 
-import actions.ApiAction
+import otoroshi.actions.ApiAction
 import env.Env
 import otoroshi.events._
 import models.ServiceGroup

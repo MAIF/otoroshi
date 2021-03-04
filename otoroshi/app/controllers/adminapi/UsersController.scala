@@ -1,6 +1,6 @@
 package controllers.adminapi
 
-import actions.{ApiAction, ApiActionContext}
+import otoroshi.actions.{ApiAction, ApiActionContext}
 import akka.http.scaladsl.util.FastFuture
 import env.Env
 import otoroshi.events._

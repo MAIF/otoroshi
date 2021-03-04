@@ -1,6 +1,6 @@
 package controllers.adminapi
 
-import actions.{ApiAction, UnAuthApiAction}
+import otoroshi.actions.{ApiAction, UnAuthApiAction}
 import akka.util.ByteString
 import env.Env
 import otoroshi.models.RightsChecker

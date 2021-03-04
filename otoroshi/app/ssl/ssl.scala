@@ -14,7 +14,7 @@ import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong, AtomicReference}
 import java.util.regex.Pattern.CASE_INSENSITIVE
 import java.util.regex.{Matcher, Pattern}
 import java.util.{Base64, Date}
-import actions.ApiAction
+import otoroshi.actions.ApiAction
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.{Materializer, TLSClientAuth}
 import akka.stream.scaladsl.{Flow, Sink, Source}

@@ -5,7 +5,7 @@ import java.util
 import java.util.Optional
 import java.util.concurrent.TimeUnit
 
-import actions.{BackOfficeAction, BackOfficeActionAuth}
+import otoroshi.actions.{BackOfficeAction, BackOfficeActionAuth}
 import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.util.FastFuture
 import com.fasterxml.jackson.annotation.JsonInclude.Include

@@ -3,7 +3,7 @@ package controllers.adminapi
 import java.lang.management.ManagementFactory
 import java.util.concurrent.TimeUnit
 
-import actions.ApiAction
+import otoroshi.actions.ApiAction
 import akka.NotUsed
 import akka.stream.scaladsl.Source
 import otoroshi.cluster.StatsView

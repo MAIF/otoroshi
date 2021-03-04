@@ -1,6 +1,6 @@
 package otoroshi
 
-import actions._
+import otoroshi.actions._
 import akka.stream.scaladsl.{Sink, Source}
 import otoroshi.cluster.ClusterMode
 import com.softwaremill.macwire._

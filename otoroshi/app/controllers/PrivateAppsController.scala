@@ -1,6 +1,6 @@
 package controllers
 
-import actions.{ApiAction, PrivateAppsAction}
+import otoroshi.actions.{ApiAction, PrivateAppsAction}
 import akka.http.scaladsl.util.FastFuture
 import akka.util.ByteString
 import auth.{BasicAuthModule, BasicAuthUser}
