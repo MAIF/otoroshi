@@ -535,8 +535,8 @@ class Transformer1 extends RequestTransformer {
       Right(
         context.otoroshiRequest.copy(
           headers = context.otoroshiRequest.headers ++ Map(
-              "foo" -> "bar"
-            )
+            "foo" -> "bar"
+          )
         )
       )
     )

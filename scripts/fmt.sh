@@ -32,7 +32,7 @@ fmt_connectors () {
 
 fmt_server () {
   cd $LOCATION/otoroshi
-  sbt ';scalafmt;sbt:scalafmt;test:scalafmt'
+  sbt ';scalafmt;scalafmtSbt;test:scalafmt'
 }
 
 case "${1}" in

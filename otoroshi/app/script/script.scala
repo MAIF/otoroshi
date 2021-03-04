@@ -582,8 +582,8 @@ trait NanoApp extends RequestTransformer {
       val bodySource: Source[ByteString, _] = Source
         .future(promise.future)
         .flatMapConcat(s => s)
-        .alsoTo(Sink.onComplete {
-          case _ => consumed.set(true)
+        .alsoTo(Sink.onComplete { case _ =>
+          consumed.set(true)
         })
       route(ctx.rawRequest, bodySource).map { r =>
         if (!consumed.get()) bodySource.runWith(Sink.ignore)
@@ -674,8 +674,8 @@ class ScriptCompiler(env: Env) {
             )
         }
       }(scriptExec)
-      .andThen {
-        case _ => logger.debug(s"Compilation process took ${(System.currentTimeMillis() - start).millis}")
+      .andThen { case _ =>
+        logger.debug(s"Compilation process took ${(System.currentTimeMillis() - start).millis}")
       }(scriptExec)
   }
 }
@@ -856,31 +856,33 @@ class ScriptManager(env: Env) {
           c.getName == "otoroshi.script.NanoApp$"
 
         val requestTransformers: Seq[String] = (scanResult.getSubclasses(classOf[RequestTransformer].getName).asScala ++
-        scanResult.getClassesImplementing(classOf[RequestTransformer].getName).asScala)
+          scanResult.getClassesImplementing(classOf[RequestTransformer].getName).asScala)
           .filterNot(predicate)
           .map(_.getName)
 
         val validators: Seq[String] = (scanResult.getSubclasses(classOf[AccessValidator].getName).asScala ++
-        scanResult.getClassesImplementing(classOf[AccessValidator].getName).asScala).filterNot(predicate).map(_.getName)
+          scanResult.getClassesImplementing(classOf[AccessValidator].getName).asScala)
+          .filterNot(predicate)
+          .map(_.getName)
 
         val preRoutes: Seq[String] = (scanResult.getSubclasses(classOf[PreRouting].getName).asScala ++
-        scanResult.getClassesImplementing(classOf[PreRouting].getName).asScala).filterNot(predicate).map(_.getName)
+          scanResult.getClassesImplementing(classOf[PreRouting].getName).asScala).filterNot(predicate).map(_.getName)
 
         val reqSinks: Seq[String] = (scanResult.getSubclasses(classOf[RequestSink].getName).asScala ++
-        scanResult.getClassesImplementing(classOf[RequestSink].getName).asScala).filterNot(predicate).map(_.getName)
+          scanResult.getClassesImplementing(classOf[RequestSink].getName).asScala).filterNot(predicate).map(_.getName)
 
         val listenerNames: Seq[String] = (scanResult.getSubclasses(classOf[OtoroshiEventListener].getName).asScala ++
-        scanResult.getClassesImplementing(classOf[OtoroshiEventListener].getName).asScala)
+          scanResult.getClassesImplementing(classOf[OtoroshiEventListener].getName).asScala)
           .filterNot(predicate)
           .map(_.getName)
 
         val jobNames: Seq[String] = (scanResult.getSubclasses(classOf[Job].getName).asScala ++
-        scanResult.getClassesImplementing(classOf[Job].getName).asScala)
+          scanResult.getClassesImplementing(classOf[Job].getName).asScala)
           .filterNot(predicate)
           .map(_.getName)
 
         val customExporters: Seq[String] = (scanResult.getSubclasses(classOf[CustomDataExporter].getName).asScala ++
-        scanResult.getClassesImplementing(classOf[CustomDataExporter].getName).asScala)
+          scanResult.getClassesImplementing(classOf[CustomDataExporter].getName).asScala)
           .filterNot(predicate)
           .map(_.getName)
 
@@ -960,8 +962,8 @@ class ScriptManager(env: Env) {
         val start   = System.currentTimeMillis()
         val plugins = (transformersNames ++ validatorsNames ++ preRouteNames)
           .map(c => env.scriptManager.getAnyScript[NamedPlugin](s"cp:$c"))
-          .collect {
-            case Right(plugin) => plugin
+          .collect { case Right(plugin) =>
+            plugin
           }
         listeningCpScripts.set(plugins.collect {
           case listener: InternalEventListener if listener.listening => listener
@@ -1136,20 +1138,19 @@ object Implicits {
               .getOrElse(GlobalScripts(transformersConfig = Json.obj()))
             val refs     = (plugs ++ gScripts.transformersRefs ++ desc.transformerRefs).distinct
             if (refs.nonEmpty) {
-              Source(refs.toList.zipWithIndex).runForeach {
-                case (ref, index) =>
-                  env.scriptManager
-                    .getScript(ref)
-                    .beforeRequest(
-                      ctx.copy(
-                        index = index,
-                        globalConfig = ConfigUtils.mergeOpt(
-                          gScripts.transformersConfig,
-                          env.datastores.globalConfigDataStore.latestSafe.map(_.plugins.config)
-                        ),
-                        config = ConfigUtils.merge(ctx.config, desc.plugins.config)
-                      )
-                    )(env, ec, mat)
+              Source(refs.toList.zipWithIndex).runForeach { case (ref, index) =>
+                env.scriptManager
+                  .getScript(ref)
+                  .beforeRequest(
+                    ctx.copy(
+                      index = index,
+                      globalConfig = ConfigUtils.mergeOpt(
+                        gScripts.transformersConfig,
+                        env.datastores.globalConfigDataStore.latestSafe.map(_.plugins.config)
+                      ),
+                      config = ConfigUtils.merge(ctx.config, desc.plugins.config)
+                    )
+                  )(env, ec, mat)
               }
             } else {
               FastFuture.successful(Done)
@@ -1172,20 +1173,19 @@ object Implicits {
               .getOrElse(GlobalScripts(transformersConfig = Json.obj()))
             val refs     = (plugs ++ gScripts.transformersRefs ++ desc.transformerRefs).distinct
             if (refs.nonEmpty) {
-              Source(refs.toList.zipWithIndex).runForeach {
-                case (ref, index) =>
-                  env.scriptManager
-                    .getScript(ref)
-                    .afterRequest(
-                      ctx.copy(
-                        index = index,
-                        globalConfig = ConfigUtils.mergeOpt(
-                          gScripts.transformersConfig,
-                          env.datastores.globalConfigDataStore.latestSafe.map(_.plugins.config)
-                        ),
-                        config = ConfigUtils.merge(ctx.config, desc.plugins.config)
-                      )
-                    )(env, ec, mat)
+              Source(refs.toList.zipWithIndex).runForeach { case (ref, index) =>
+                env.scriptManager
+                  .getScript(ref)
+                  .afterRequest(
+                    ctx.copy(
+                      index = index,
+                      globalConfig = ConfigUtils.mergeOpt(
+                        gScripts.transformersConfig,
+                        env.datastores.globalConfigDataStore.latestSafe.map(_.plugins.config)
+                      ),
+                      config = ConfigUtils.merge(ctx.config, desc.plugins.config)
+                    )
+                  )(env, ec, mat)
               }
             } else {
               FastFuture.successful(Done)
@@ -1285,36 +1285,35 @@ object Implicits {
             val refs     = (plugs ++ gScripts.transformersRefs ++ desc.transformerRefs).distinct
             if (refs.nonEmpty) {
               val result: Result = context.otoroshiResult
-              Source(refs.toList.zipWithIndex).runFoldAsync(result) {
-                case (lastResult, (ref, index)) =>
-                  env.scriptManager
-                    .getScript(ref)
-                    .transformErrorWithCtx(
-                      context.copy(
-                        otoroshiResult = lastResult,
-                        otoroshiResponse = HttpResponse(
-                          lastResult.header.status,
-                          lastResult.header.headers,
-                          lastResult.newCookies.map(c =>
-                            DefaultWSCookie(
-                              name = c.name,
-                              value = c.value,
-                              domain = c.domain,
-                              path = Option(c.path),
-                              maxAge = c.maxAge.map(_.toLong),
-                              secure = c.secure,
-                              httpOnly = c.httpOnly
-                            )
+              Source(refs.toList.zipWithIndex).runFoldAsync(result) { case (lastResult, (ref, index)) =>
+                env.scriptManager
+                  .getScript(ref)
+                  .transformErrorWithCtx(
+                    context.copy(
+                      otoroshiResult = lastResult,
+                      otoroshiResponse = HttpResponse(
+                        lastResult.header.status,
+                        lastResult.header.headers,
+                        lastResult.newCookies.map(c =>
+                          DefaultWSCookie(
+                            name = c.name,
+                            value = c.value,
+                            domain = c.domain,
+                            path = Option(c.path),
+                            maxAge = c.maxAge.map(_.toLong),
+                            secure = c.secure,
+                            httpOnly = c.httpOnly
                           )
-                        ),
-                        index = index,
-                        globalConfig = ConfigUtils.mergeOpt(
-                          gScripts.transformersConfig,
-                          env.datastores.globalConfigDataStore.latestSafe.map(_.plugins.config)
-                        ),
-                        config = ConfigUtils.merge(context.config, desc.plugins.config)
-                      )
-                    )(env, ec, mat)
+                        )
+                      ),
+                      index = index,
+                      globalConfig = ConfigUtils.mergeOpt(
+                        gScripts.transformersConfig,
+                        env.datastores.globalConfigDataStore.latestSafe.map(_.plugins.config)
+                      ),
+                      config = ConfigUtils.merge(context.config, desc.plugins.config)
+                    )
+                  )(env, ec, mat)
               }
             } else {
               FastFuture.successful(context.otoroshiResult)
@@ -1336,21 +1335,20 @@ object Implicits {
               .getOrElse(GlobalScripts(transformersConfig = Json.obj()))
             val refs     = (plugs ++ gScripts.transformersRefs ++ desc.transformerRefs).distinct
             if (refs.nonEmpty) {
-              Source.futureSource(Source(refs.toList.zipWithIndex).runFold(context.body) {
-                case (body, (ref, index)) =>
-                  env.scriptManager
-                    .getScript(ref)
-                    .transformRequestBodyWithCtx(
-                      context.copy(
-                        body = body,
-                        index = index,
-                        globalConfig = ConfigUtils.mergeOpt(
-                          gScripts.transformersConfig,
-                          env.datastores.globalConfigDataStore.latestSafe.map(_.plugins.config)
-                        ),
-                        config = ConfigUtils.merge(context.config, desc.plugins.config)
-                      )
-                    )(env, ec, mat)
+              Source.futureSource(Source(refs.toList.zipWithIndex).runFold(context.body) { case (body, (ref, index)) =>
+                env.scriptManager
+                  .getScript(ref)
+                  .transformRequestBodyWithCtx(
+                    context.copy(
+                      body = body,
+                      index = index,
+                      globalConfig = ConfigUtils.mergeOpt(
+                        gScripts.transformersConfig,
+                        env.datastores.globalConfigDataStore.latestSafe.map(_.plugins.config)
+                      ),
+                      config = ConfigUtils.merge(context.config, desc.plugins.config)
+                    )
+                  )(env, ec, mat)
               })
             } else {
               context.body
@@ -1372,21 +1370,20 @@ object Implicits {
               .getOrElse(GlobalScripts(transformersConfig = Json.obj()))
             val refs     = (plugs ++ gScripts.transformersRefs ++ desc.transformerRefs).distinct
             if (refs.nonEmpty) {
-              Source.futureSource(Source(refs.toList.zipWithIndex).runFold(context.body) {
-                case (body, (ref, index)) =>
-                  env.scriptManager
-                    .getScript(ref)
-                    .transformResponseBodyWithCtx(
-                      context.copy(
-                        body = body,
-                        index = index,
-                        globalConfig = ConfigUtils.mergeOpt(
-                          gScripts.transformersConfig,
-                          env.datastores.globalConfigDataStore.latestSafe.map(_.plugins.config)
-                        ),
-                        config = ConfigUtils.merge(context.config, desc.plugins.config)
-                      )
-                    )(env, ec, mat)
+              Source.futureSource(Source(refs.toList.zipWithIndex).runFold(context.body) { case (body, (ref, index)) =>
+                env.scriptManager
+                  .getScript(ref)
+                  .transformResponseBodyWithCtx(
+                    context.copy(
+                      body = body,
+                      index = index,
+                      globalConfig = ConfigUtils.mergeOpt(
+                        gScripts.transformersConfig,
+                        env.datastores.globalConfigDataStore.latestSafe.map(_.plugins.config)
+                      ),
+                      config = ConfigUtils.merge(context.config, desc.plugins.config)
+                    )
+                  )(env, ec, mat)
               })
             } else {
               context.body
@@ -1452,12 +1449,11 @@ object Script {
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
           `type` = scriptType
         )
-      } map {
-        case sd => JsSuccess(sd)
-      } recover {
-        case t =>
-          logger.error("Error while reading Script", t)
-          JsError(t.getMessage)
+      } map { case sd =>
+        JsSuccess(sd)
+      } recover { case t =>
+        logger.error("Error while reading Script", t)
+        JsError(t.getMessage)
       } get
   }
   def toJson(value: Script): JsValue                                                        = _fmt.writes(value)

@@ -180,22 +180,22 @@ class StatsdActor(env: Env) extends Actor {
     case StatsdEvent("set", name, _, value, sampleRate, bypassSampler, StatsdConfig(false, _, _))       =>
       statsdclient.get.set(name, value)
 
-    case StatsdEvent("counter", name, value, _, sampleRate, bypassSampler, StatsdConfig(true, _, _))    =>
+    case StatsdEvent("counter", name, value, _, sampleRate, bypassSampler, StatsdConfig(true, _, _))   =>
       datadogclient.get.counter(name, value, sampleRate, Seq.empty[String], bypassSampler)
-    case StatsdEvent("decrement", name, value, _, sampleRate, bypassSampler, StatsdConfig(true, _, _))  =>
+    case StatsdEvent("decrement", name, value, _, sampleRate, bypassSampler, StatsdConfig(true, _, _)) =>
       datadogclient.get.decrement(name, value, sampleRate, Seq.empty[String], bypassSampler)
-    case StatsdEvent("gauge", name, value, _, sampleRate, bypassSampler, StatsdConfig(true, _, _))      =>
+    case StatsdEvent("gauge", name, value, _, sampleRate, bypassSampler, StatsdConfig(true, _, _))     =>
       datadogclient.get.gauge(name, value, sampleRate, Seq.empty[String], bypassSampler)
-    case StatsdEvent("increment", name, value, _, sampleRate, bypassSampler, StatsdConfig(true, _, _))  =>
+    case StatsdEvent("increment", name, value, _, sampleRate, bypassSampler, StatsdConfig(true, _, _)) =>
       datadogclient.get.increment(name, value, sampleRate, Seq.empty[String], bypassSampler)
-    case StatsdEvent("meter", name, value, _, sampleRate, bypassSampler, StatsdConfig(true, _, _))      =>
+    case StatsdEvent("meter", name, value, _, sampleRate, bypassSampler, StatsdConfig(true, _, _))     =>
       datadogclient.get.histogram(name, value, sampleRate, Seq.empty[String], bypassSampler)
-    case StatsdEvent("timer", name, value, _, sampleRate, bypassSampler, StatsdConfig(true, _, _))      =>
+    case StatsdEvent("timer", name, value, _, sampleRate, bypassSampler, StatsdConfig(true, _, _))     =>
       datadogclient.get.timer(name, value, sampleRate, Seq.empty[String], bypassSampler)
-    case StatsdEvent("set", name, _, value, sampleRate, bypassSampler, StatsdConfig(true, _, _))        =>
+    case StatsdEvent("set", name, _, value, sampleRate, bypassSampler, StatsdConfig(true, _, _))       =>
       datadogclient.get.set(name, value, Seq.empty[String])
 
-    case _                                                                                              =>
+    case _ =>
   }
 }
 

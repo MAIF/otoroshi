@@ -960,8 +960,8 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
           .withRequestTimeout(1.second)
           .get()
           .map(r => r.status)
-          .recover {
-            case e => 0
+          .recover { case e =>
+            0
           }
       }
       .filter(_ == 200)
@@ -980,8 +980,8 @@ trait OtoroshiSpec extends WordSpec with MustMatchers with OptionValues with Sca
           .withRequestTimeout(1.second)
           .get()
           .map(r => r.status)
-          .recover {
-            case e => 0
+          .recover { case e =>
+            0
           }
       }
       .filter(_ != 200)
@@ -1853,12 +1853,11 @@ trait ApiTester[Entity] {
         .map(_.toMap),
       30.seconds
     )
-    indexedEntities.forall {
-      case (k, v) =>
-        indexedResultEntities.get(k) match {
-          case Some(i) => checker(i)
-          case None    => false
-        }
+    indexedEntities.forall { case (k, v) =>
+      indexedResultEntities.get(k) match {
+        case Some(i) => checker(i)
+        case None    => false
+      }
     }
   }
 

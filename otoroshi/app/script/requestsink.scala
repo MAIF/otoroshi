@@ -47,8 +47,8 @@ object RequestSink {
             body = body
           )
           val rss = (config.scripts.sinkRefs ++ config.plugins
-            .sinks(req)).distinct.map(r => env.scriptManager.getAnyScript[RequestSink](r)).collect {
-            case Right(rs) => rs
+            .sinks(req)).distinct.map(r => env.scriptManager.getAnyScript[RequestSink](r)).collect { case Right(rs) =>
+            rs
           }
           rss.find(_.matches(ctx)) match {
             case None     => err

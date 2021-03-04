@@ -191,9 +191,8 @@ class WebSocketHandler()(implicit env: Env) {
         // logger.trace(s"[$snowflake] Call forwarded in $duration ms. with $overhead ms overhead for (${req.version}, http://${req.host}${req.relativeUri} => $url, $from)")
         descriptor
           .updateMetrics(duration, overhead, counterIn.get(), counterOut.get(), 0, globalConfig)
-          .andThen {
-            case Failure(e) =>
-              logger.error("Error while updating call metrics reporting", e)
+          .andThen { case Failure(e) =>
+            logger.error("Error while updating call metrics reporting", e)
           }
         env.datastores.globalConfigDataStore.updateQuotas(globalConfig)
         quotas.andThen {
@@ -424,18 +423,17 @@ class WebSocketHandler()(implicit env: Env) {
                       )
                       .map(bs => PlayWSBinaryMessage(bs))
                   )
-                  .alsoTo(Sink.onComplete {
-                    case _ =>
-                      promise.trySuccess(
-                        ProxyDone(
-                          200,
-                          false,
-                          0,
-                          Seq.empty[Header],
-                          Seq.empty[Header],
-                          Seq.empty[Header]
-                        )
+                  .alsoTo(Sink.onComplete { case _ =>
+                    promise.trySuccess(
+                      ProxyDone(
+                        200,
+                        false,
+                        0,
+                        Seq.empty[Header],
+                        Seq.empty[Header],
+                        Seq.empty[Header]
                       )
+                    )
                   })
               FastFuture.successful(Right(flow))
             }
@@ -453,18 +451,17 @@ class WebSocketHandler()(implicit env: Env) {
                       .flow(new InetSocketAddress("0.0.0.0", 0))
                       .map(dg => PlayWSBinaryMessage(dg.data))
                   )
-                  .alsoTo(Sink.onComplete {
-                    case _ =>
-                      promise.trySuccess(
-                        ProxyDone(
-                          200,
-                          false,
-                          0,
-                          Seq.empty[Header],
-                          Seq.empty[Header],
-                          Seq.empty[Header]
-                        )
+                  .alsoTo(Sink.onComplete { case _ =>
+                    promise.trySuccess(
+                      ProxyDone(
+                        200,
+                        false,
+                        0,
+                        Seq.empty[Header],
+                        Seq.empty[Header],
+                        Seq.empty[Header]
                       )
+                    )
                   })
               FastFuture.successful(Right(flow))
             }
@@ -498,45 +495,43 @@ class WebSocketHandler()(implicit env: Env) {
               def nothing[T]: Flow[T, T, NotUsed] = Flow[T].map(identity)
 
               val flow: Flow[PlayWSMessage, PlayWSBinaryMessage, NotUsed] = fromJson via Flow
-                  .fromGraph(GraphDSL.create() { implicit builder =>
-                    val dispatch = builder.add(
-                      UnzipWith[(Int, String, Datagram), Int, String, Datagram](a => a)
-                    )
-                    val merge    = builder.add(
-                      ZipWith[Int, String, Datagram, (Int, String, Datagram)]((a, b, c) => (a, b, c))
-                    )
-                    dispatch.out2 ~> updFlow.async ~> merge.in2
-                    dispatch.out1 ~> nothing[String].async ~> merge.in1
-                    dispatch.out0 ~> nothing[Int].async ~> merge.in0
-                    FlowShape(dispatch.in, merge.out)
-                  })
-                  .map {
-                    case (port, address, dg) =>
-                      PlayWSBinaryMessage(
-                        ByteString(
-                          Json.stringify(
-                            Json.obj(
-                              "port"    -> port,
-                              "address" -> address,
-                              "data"    -> base64encoder.encodeToString(dg.data.toArray)
-                            )
-                          )
+                .fromGraph(GraphDSL.create() { implicit builder =>
+                  val dispatch = builder.add(
+                    UnzipWith[(Int, String, Datagram), Int, String, Datagram](a => a)
+                  )
+                  val merge    = builder.add(
+                    ZipWith[Int, String, Datagram, (Int, String, Datagram)]((a, b, c) => (a, b, c))
+                  )
+                  dispatch.out2 ~> updFlow.async ~> merge.in2
+                  dispatch.out1 ~> nothing[String].async ~> merge.in1
+                  dispatch.out0 ~> nothing[Int].async ~> merge.in0
+                  FlowShape(dispatch.in, merge.out)
+                })
+                .map { case (port, address, dg) =>
+                  PlayWSBinaryMessage(
+                    ByteString(
+                      Json.stringify(
+                        Json.obj(
+                          "port"    -> port,
+                          "address" -> address,
+                          "data"    -> base64encoder.encodeToString(dg.data.toArray)
                         )
                       )
-                  }
-                  .alsoTo(Sink.onComplete {
-                    case _ =>
-                      promise.trySuccess(
-                        ProxyDone(
-                          200,
-                          false,
-                          0,
-                          Seq.empty[Header],
-                          Seq.empty[Header],
-                          Seq.empty[Header]
-                        )
-                      )
-                  })
+                    )
+                  )
+                }
+                .alsoTo(Sink.onComplete { case _ =>
+                  promise.trySuccess(
+                    ProxyDone(
+                      200,
+                      false,
+                      0,
+                      Seq.empty[Header],
+                      Seq.empty[Header],
+                      Seq.empty[Header]
+                    )
+                  )
+                })
               FastFuture.successful(Right(flow))
             }
           }
@@ -573,18 +568,17 @@ class WebSocketHandler()(implicit env: Env) {
                       env
                     )
                   )
-                  .alsoTo(Sink.onComplete {
-                    case _ =>
-                      promise.trySuccess(
-                        ProxyDone(
-                          200,
-                          false,
-                          0,
-                          headersOut = Seq.empty[Header],
-                          otoroshiHeadersOut = Seq.empty[Header],
-                          otoroshiHeadersIn = req.headers.toSimpleMap.map(Header.apply).toSeq
-                        )
+                  .alsoTo(Sink.onComplete { case _ =>
+                    promise.trySuccess(
+                      ProxyDone(
+                        200,
+                        false,
+                        0,
+                        headersOut = Seq.empty[Header],
+                        otoroshiHeadersOut = Seq.empty[Header],
+                        otoroshiHeadersIn = req.headers.toSimpleMap.map(Header.apply).toSeq
                       )
+                    )
                   })
               )
             )

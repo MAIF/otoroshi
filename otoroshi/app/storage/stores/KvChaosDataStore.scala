@@ -89,8 +89,8 @@ class KvChaosDataStore(redisCli: RedisLike, _env: Env) extends ChaosDataStore {
       keys       <- redisCli.keys(s"${env.storageRoot}:outage:bydesc:until:*")
       outagesBS  <- if (keys.isEmpty) FastFuture.successful(Seq.empty) else redisCli.mget(keys: _*)
       outagesJson = outagesBS.filter(_.isDefined).map(_.get).map(v => v.utf8String)
-      outages     = outagesJson.map(v => Outage.fmt.reads(Json.parse(v))).collect {
-                      case JsSuccess(i, _) => i
+      outages     = outagesJson.map(v => Outage.fmt.reads(Json.parse(v))).collect { case JsSuccess(i, _) =>
+                      i
                     }
     } yield outages
   }

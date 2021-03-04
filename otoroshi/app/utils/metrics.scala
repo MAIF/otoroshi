@@ -202,17 +202,16 @@ class Metrics(env: Env, applicationLifecycle: ApplicationLifecycle) extends Time
   )(implicit ec: ExecutionContext): Future[T] = {
     val jmxCtx = metricRegistry.timer(MetricId.build(name)).time()
     val ctx    = metricRegistry.timer(MetricId.build(name)).time()
-    f.andThen {
-      case r =>
-        val elapsed = ctx.stop()
-        if (display) {
-          logger.info(s"elapsed time for $name: ${elapsed} nanoseconds.")
-        }
-        jmxCtx.close()
-        if (r.isFailure) {
-          metricRegistry.counter(MetricId.build(name + ".errors")).inc()
-          jmxRegistry.counter(name + ".errors").inc()
-        }
+    f.andThen { case r =>
+      val elapsed = ctx.stop()
+      if (display) {
+        logger.info(s"elapsed time for $name: ${elapsed} nanoseconds.")
+      }
+      jmxCtx.close()
+      if (r.isFailure) {
+        metricRegistry.counter(MetricId.build(name + ".errors")).inc()
+        jmxRegistry.counter(name + ".errors").inc()
+      }
     }
   }
 

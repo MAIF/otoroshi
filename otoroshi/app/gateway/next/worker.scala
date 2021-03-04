@@ -703,10 +703,10 @@ class OtoroshiRequestHandler(
                         }
                         val finalRedirect = req.getQueryString("redirect").getOrElse(s"http://${req.theHost}")
                         val redirectTo    = env.rootScheme + env.privateAppsHost + env.privateAppsPort
-                            .map(a => s":$a")
-                            .getOrElse("") + otoroshi.controllers.routes.AuthController
-                            .confidentialAppLogout()
-                            .url + s"?redirectTo=${finalRedirect}&host=${req.theHost}&cp=${auth.cookieSuffix(descriptor)}"
+                          .map(a => s":$a")
+                          .getOrElse("") + otoroshi.controllers.routes.AuthController
+                          .confidentialAppLogout()
+                          .url + s"?redirectTo=${finalRedirect}&host=${req.theHost}&cp=${auth.cookieSuffix(descriptor)}"
                         logger.trace("should redirect to " + redirectTo)
                         Redirect(redirectTo)
                           .discardingCookies(env.removePrivateSessionCookies(req.theHost, descriptor, auth): _*)
@@ -718,10 +718,10 @@ class OtoroshiRequestHandler(
                         }
                         val finalRedirect     = req.getQueryString("redirect").getOrElse(s"http://${req.theHost}")
                         val redirectTo        = env.rootScheme + env.privateAppsHost + env.privateAppsPort
-                            .map(a => s":$a")
-                            .getOrElse("") + otoroshi.controllers.routes.AuthController
-                            .confidentialAppLogout()
-                            .url + s"?redirectTo=${finalRedirect}&host=${req.theHost}&cp=${auth.cookieSuffix(descriptor)}"
+                          .map(a => s":$a")
+                          .getOrElse("") + otoroshi.controllers.routes.AuthController
+                          .confidentialAppLogout()
+                          .url + s"?redirectTo=${finalRedirect}&host=${req.theHost}&cp=${auth.cookieSuffix(descriptor)}"
                         val actualRedirectUrl = logoutUrl.replace("${redirect}", URLEncoder.encode(redirectTo, "UTF-8"))
                         logger.trace("should redirect to " + actualRedirectUrl)
                         Redirect(actualRedirectUrl)

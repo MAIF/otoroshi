@@ -356,10 +356,9 @@ case class Cert(
             true
           }
       }
-    } recover {
-      case e =>
-        DynamicSSLEngineProvider.logger.error(s"Error while checking certificate validity (${name})")
-        false
+    } recover { case e =>
+      DynamicSSLEngineProvider.logger.error(s"Error while checking certificate validity (${name})")
+      false
     } getOrElse false
   }
   lazy val cryptoKeyPair: KeyPair = {
@@ -534,12 +533,11 @@ object Cert {
           to = (json \ "to").asOpt[Long].map(v => new DateTime(v)).getOrElse(DateTime.now()),
           entityMetadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty)
         )
-      } map {
-        case sd => JsSuccess(sd)
-      } recover {
-        case t =>
-          logger.error("Error while reading Cert", t)
-          JsError(t.getMessage)
+      } map { case sd =>
+        JsSuccess(sd)
+      } recover { case t =>
+        logger.error("Error while reading Cert", t)
+        JsError(t.getMessage)
       } get
   }
   def toJson(value: Cert): JsValue                 = _fmt.writes(value)
@@ -563,33 +561,31 @@ object Cert {
           .flatMap(s => s.allHosts.map(h => (s, h)))
           .filterNot(s => certs.exists(c => RegexPool(c.domain).matches(s._2)))
         Source(letsEncryptServicesHosts.toList)
-          .mapAsync(1) {
-            case (service, host) =>
-              env.datastores.rawDataStore.get(s"${env.storageRoot}:certs-issuer:local:create:$host").flatMap {
-                case Some(_) =>
-                  logger.warn(s"Certificate already in creating process: $host")
-                  FastFuture.successful(())
-                case None    => {
-                  env.datastores.rawDataStore
-                    .set(
-                      s"${env.storageRoot}:certs-issuer:local:create:$host",
-                      ByteString("true"),
-                      Some(1.minutes.toMillis)
-                    )
-                    .flatMap { _ =>
-                      val cert = certs.find(c => RegexPool(c.domain).matches(host)).get
-                      if (cert.autoRenew) {
-                        cert.renew()
-                      } else {
-                        FastFuture.successful(cert)
-                      }
+          .mapAsync(1) { case (service, host) =>
+            env.datastores.rawDataStore.get(s"${env.storageRoot}:certs-issuer:local:create:$host").flatMap {
+              case Some(_) =>
+                logger.warn(s"Certificate already in creating process: $host")
+                FastFuture.successful(())
+              case None    => {
+                env.datastores.rawDataStore
+                  .set(
+                    s"${env.storageRoot}:certs-issuer:local:create:$host",
+                    ByteString("true"),
+                    Some(1.minutes.toMillis)
+                  )
+                  .flatMap { _ =>
+                    val cert = certs.find(c => RegexPool(c.domain).matches(host)).get
+                    if (cert.autoRenew) {
+                      cert.renew()
+                    } else {
+                      FastFuture.successful(cert)
                     }
-                    .andThen {
-                      case _ =>
-                        env.datastores.rawDataStore.del(Seq(s"${env.storageRoot}:certs-issuer:local:create:$host"))
-                    }
-                }
+                  }
+                  .andThen { case _ =>
+                    env.datastores.rawDataStore.del(Seq(s"${env.storageRoot}:certs-issuer:local:create:$host"))
+                  }
               }
+            }
           }
           .map {
             case (host, Left(err)) => logger.error(s"Error while creating certificate for $host. $err")
@@ -637,21 +633,20 @@ trait CertificateDataStore extends BasicStore[Cert] {
           c.entityMetadata.get("untilExpiration").contains("true") || c.name.startsWith("[UNTIL EXPIRATION] ")
         )
       Source(renewableCas.toList)
-        .mapAsync(1) {
-          case c =>
-            c.renew()
-              .flatMap(d =>
-                c.copy(
-                  id = IdGenerator.token,
-                  name = "[UNTIL EXPIRATION] " + c.name,
-                  entityMetadata = c.entityMetadata ++ Map(
-                      "untilExpiration" -> "true",
-                      "nextCertificate" -> c.id
-                    )
-                ).save()
-                  .map(_ => d)
-              )
-              .flatMap(c => c.save().map(_ => c))
+        .mapAsync(1) { case c =>
+          c.renew()
+            .flatMap(d =>
+              c.copy(
+                id = IdGenerator.token,
+                name = "[UNTIL EXPIRATION] " + c.name,
+                entityMetadata = c.entityMetadata ++ Map(
+                  "untilExpiration" -> "true",
+                  "nextCertificate" -> c.id
+                )
+              ).save()
+                .map(_ => d)
+            )
+            .flatMap(c => c.save().map(_ => c))
         }
         .map { c =>
           Alerts.send(
@@ -676,21 +671,20 @@ trait CertificateDataStore extends BasicStore[Cert] {
           c.entityMetadata.get("untilExpiration").contains("true") || c.name.startsWith("[UNTIL EXPIRATION] ")
         )
       Source(renewableCertificates.toList)
-        .mapAsync(1) {
-          case c =>
-            c.renew()
-              .flatMap(d =>
-                c.copy(
-                  id = IdGenerator.token,
-                  name = "[UNTIL EXPIRATION] " + c.name,
-                  entityMetadata = c.entityMetadata ++ Map(
-                      "untilExpiration" -> "true",
-                      "nextCertificate" -> c.id
-                    )
-                ).save()
-                  .map(_ => d)
-              )
-              .flatMap(c => c.save().map(_ => c))
+        .mapAsync(1) { case c =>
+          c.renew()
+            .flatMap(d =>
+              c.copy(
+                id = IdGenerator.token,
+                name = "[UNTIL EXPIRATION] " + c.name,
+                entityMetadata = c.entityMetadata ++ Map(
+                  "untilExpiration" -> "true",
+                  "nextCertificate" -> c.id
+                )
+              ).save()
+                .map(_ => d)
+            )
+            .flatMap(c => c.save().map(_ => c))
         }
         .map { c =>
           Alerts.send(
@@ -874,8 +868,8 @@ trait CertificateDataStore extends BasicStore[Cert] {
       env.configuration.has("otoroshi.ssl.initialCertKey")
     val hasInitialCerts = env.configuration.has("otoroshi.ssl.initialCerts")
     val hasRootCA       = env.configuration.has("otoroshi.ssl.rootCa.cert") && env.configuration.has(
-        "otoroshi.ssl.rootCa.key"
-      )
+      "otoroshi.ssl.rootCa.key"
+    )
     hasInitialCert || hasInitialCerts || hasRootCA
   }
 
@@ -1081,22 +1075,22 @@ object DynamicSSLEngineProvider {
         ) // new X509KeyManagerSnitch(m.asInstanceOf[X509KeyManager]).asInstanceOf[KeyManager]
       )
       val tm: Array[TrustManager] =
-      optEnv
-        .flatMap(e =>
-          e.configuration.getOptionalWithFileSupport[Boolean]("play.server.https.trustStore.noCaVerification")
-        )
-        .map {
-          case true  => Array[TrustManager](noCATrustManager)
-          case false => createTrustStore(keyStore, cacertPath, cacertPassword)
-        } getOrElse {
-        if (trustAll) {
-          Array[TrustManager](
-            new VeryNiceTrustManager(Seq.empty[X509TrustManager])
+        optEnv
+          .flatMap(e =>
+            e.configuration.getOptionalWithFileSupport[Boolean]("play.server.https.trustStore.noCaVerification")
           )
-        } else {
-          createTrustStore(keyStore, cacertPath, cacertPassword)
+          .map {
+            case true  => Array[TrustManager](noCATrustManager)
+            case false => createTrustStore(keyStore, cacertPath, cacertPassword)
+          } getOrElse {
+          if (trustAll) {
+            Array[TrustManager](
+              new VeryNiceTrustManager(Seq.empty[X509TrustManager])
+            )
+          } else {
+            createTrustStore(keyStore, cacertPath, cacertPassword)
+          }
         }
-      }
 
       sslContext.init(keyManagers, tm, null)
       // dumpPath match {
@@ -1245,22 +1239,22 @@ object DynamicSSLEngineProvider {
 
       val keyStore2: KeyStore     = if (trustedCerts.nonEmpty) createKeyStore(trustedCerts) else keyStore1
       val tm: Array[TrustManager] =
-      optEnv
-        .flatMap(e =>
-          e.configuration.getOptionalWithFileSupport[Boolean]("play.server.https.trustStore.noCaVerification")
-        )
-        .map {
-          case true  => Array[TrustManager](noCATrustManager)
-          case false => createTrustStore(keyStore2, cacertPath, cacertPassword)
-        } getOrElse {
-        if (trustAll) {
-          Array[TrustManager](
-            new VeryNiceTrustManager(Seq.empty[X509TrustManager])
+        optEnv
+          .flatMap(e =>
+            e.configuration.getOptionalWithFileSupport[Boolean]("play.server.https.trustStore.noCaVerification")
           )
-        } else {
-          createTrustStore(keyStore2, cacertPath, cacertPassword)
+          .map {
+            case true  => Array[TrustManager](noCATrustManager)
+            case false => createTrustStore(keyStore2, cacertPath, cacertPassword)
+          } getOrElse {
+          if (trustAll) {
+            Array[TrustManager](
+              new VeryNiceTrustManager(Seq.empty[X509TrustManager])
+            )
+          } else {
+            createTrustStore(keyStore2, cacertPath, cacertPassword)
+          }
         }
-      }
 
       sslContext.init(keyManagers, tm, null)
       logger.debug(s"SSL Context init done ! (${keyStore1.size()} - ${keyStore2.size()})")
@@ -1425,8 +1419,8 @@ object DynamicSSLEngineProvider {
     while ({ matcher.find(start) }) {
       val buffer: Array[Byte] = base64Decode(matcher.group(1))
       certificates = certificates :+ certificateFactory
-          .generateCertificate(new ByteArrayInputStream(buffer))
-          .asInstanceOf[X509Certificate]
+        .generateCertificate(new ByteArrayInputStream(buffer))
+        .asInstanceOf[X509Certificate]
       start = matcher.end
     }
     certificates
@@ -1523,8 +1517,8 @@ object DynamicSSLEngineProvider {
       val key: PublicKey = cert.getPublicKey
       cert.verify(key)
       true
-    } recover {
-      case e => false
+    } recover { case e =>
+      false
     } get
   }
 
@@ -2111,8 +2105,8 @@ object ClientCertificateValidator {
             proxy = (json \ "proxy").asOpt[JsValue].flatMap(p => WSProxyServerJson.proxyFromJson(p))
           )
         )
-      } recover {
-        case e => JsError(e.getMessage)
+      } recover { case e =>
+        JsError(e.getMessage)
       } get
 
     override def writes(o: ClientCertificateValidator): JsValue =
@@ -2258,10 +2252,9 @@ case class ClientCertificateValidator(
             None
         }
       }
-      .recover {
-        case e =>
-          ClientCertificateValidator.logger.error("Error while validating client certificate chain", e)
-          None
+      .recover { case e =>
+        ClientCertificateValidator.logger.error("Error while validating client certificate chain", e)
+        None
       }
   }
 
@@ -2293,9 +2286,9 @@ case class ClientCertificateValidator(
       config: GlobalConfig
   )(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
     val key = computeKeyFromChain(chain) + "-" + apikey
-        .map(_.clientId)
-        .orElse(user.map(_.randomId))
-        .getOrElse("none") + "-" + desc.id
+      .map(_.clientId)
+      .orElse(user.map(_.randomId))
+      .getOrElse("none") + "-" + desc.id
     if (noCache) {
       validateCertificateChain(chain, desc, apikey, user, config).map {
         case Some(bool) => bool

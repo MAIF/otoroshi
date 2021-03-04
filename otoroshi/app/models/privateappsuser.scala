@@ -107,8 +107,8 @@ object PrivateAppsUser {
             location = otoroshi.models.EntityLocation.readFromKey(json)
           )
         )
-      } recover {
-        case e => JsError(e.getMessage)
+      } recover { case e =>
+        JsError(e.getMessage)
       } get
 
     override def writes(o: PrivateAppsUser) =
@@ -213,10 +213,10 @@ object PrivateAppsUserHelper {
           .getQueryString("redirect")
           .getOrElse(s"${req.theProtocol}://${req.theHost}${req.relativeUri}")
         val redirectTo = env.rootScheme + env.privateAppsHost + env.privateAppsPort
-            .map(a => s":$a")
-            .getOrElse("") + otoroshi.controllers.routes.AuthController
-            .confidentialAppLoginPage()
-            .url + s"?desc=${descriptor.id}&redirect=${redirect}"
+          .map(a => s":$a")
+          .getOrElse("") + otoroshi.controllers.routes.AuthController
+          .confidentialAppLoginPage()
+          .url + s"?desc=${descriptor.id}&redirect=${redirect}"
         logger.trace("should redirect to " + redirectTo)
         descriptor.authConfigRef match {
           case None      =>

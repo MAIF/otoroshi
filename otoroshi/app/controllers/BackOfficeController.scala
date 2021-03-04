@@ -81,25 +81,25 @@ class BackOfficeController(
           lazy val currentReqHasBody = ctx.request.theHasBody
           logger.debug(s"Calling ${ctx.request.method} $url/$path with Host = $host")
           val headers                = Seq(
-              "Host"                           -> host,
-              "X-Forwarded-For"                -> ctx.request.theIpAddress,
-              env.Headers.OtoroshiVizFromLabel -> "Otoroshi Admin UI",
-              env.Headers.OtoroshiVizFrom      -> "otoroshi-admin-ui",
-              env.Headers.OtoroshiClientId     -> apikey.clientId,
-              env.Headers.OtoroshiClientSecret -> apikey.clientSecret,
-              env.Headers.OtoroshiAdminProfile -> Base64.getUrlEncoder.encodeToString(
-                Json.stringify(ctx.user.profile).getBytes(Charsets.UTF_8)
-              ),
-              "Otoroshi-Tenant"                -> ctx.request.headers.get("Otoroshi-Tenant").getOrElse("default"),
-              "Otoroshi-BackOffice-User"       -> JWT
-                .create()
-                .withClaim("user", Json.stringify(ctx.user.toJson))
-                .sign(Algorithm.HMAC512(apikey.clientSecret))
-            ) ++ ctx.request.headers.get("Content-Type").filter(_ => currentReqHasBody).map { ctype =>
-              "Content-Type" -> ctype
-            } ++ ctx.request.headers.get("Accept").map { accept =>
-              "Accept" -> accept
-            } ++ ctx.request.headers.get("X-Content-Type").map(v => "X-Content-Type" -> v)
+            "Host"                           -> host,
+            "X-Forwarded-For"                -> ctx.request.theIpAddress,
+            env.Headers.OtoroshiVizFromLabel -> "Otoroshi Admin UI",
+            env.Headers.OtoroshiVizFrom      -> "otoroshi-admin-ui",
+            env.Headers.OtoroshiClientId     -> apikey.clientId,
+            env.Headers.OtoroshiClientSecret -> apikey.clientSecret,
+            env.Headers.OtoroshiAdminProfile -> Base64.getUrlEncoder.encodeToString(
+              Json.stringify(ctx.user.profile).getBytes(Charsets.UTF_8)
+            ),
+            "Otoroshi-Tenant"                -> ctx.request.headers.get("Otoroshi-Tenant").getOrElse("default"),
+            "Otoroshi-BackOffice-User"       -> JWT
+              .create()
+              .withClaim("user", Json.stringify(ctx.user.toJson))
+              .sign(Algorithm.HMAC512(apikey.clientSecret))
+          ) ++ ctx.request.headers.get("Content-Type").filter(_ => currentReqHasBody).map { ctype =>
+            "Content-Type" -> ctype
+          } ++ ctx.request.headers.get("Accept").map { accept =>
+            "Accept" -> accept
+          } ++ ctx.request.headers.get("X-Content-Type").map(v => "X-Content-Type" -> v)
 
           val builder                = env.Ws // MTLS needed here ???
             .akkaUrl(s"$url/$path")
@@ -379,8 +379,8 @@ class BackOfficeController(
           Audit.send(event)
           Alerts.send(PanicModeAlert(env.snowflakeGenerator.nextIdStr(), env.env, ctx.user, event, ctx.from, ctx.ua))
           Ok(Json.obj("done" -> true))
-        } recover {
-          case _ => Ok(Json.obj("done" -> false))
+        } recover { case _ =>
+          Ok(Json.obj("done" -> false))
         }
       }
     }
@@ -532,15 +532,14 @@ class BackOfficeController(
               case services if services.nonEmpty =>
                 Json.obj(
                   "name"     -> group.name,
-                  "children" -> JsArray(services.map {
-                    case (service, cps) =>
-                      val size: Int = ((1.0 + cps) * 1000.0).toInt
-                      Json.obj(
-                        "name" -> service.name,
-                        "env"  -> service.env,
-                        "id"   -> service.id,
-                        "size" -> size
-                      )
+                  "children" -> JsArray(services.map { case (service, cps) =>
+                    val size: Int = ((1.0 + cps) * 1000.0).toInt
+                    Json.obj(
+                      "name" -> service.name,
+                      "env"  -> service.env,
+                      "id"   -> service.id,
+                      "size" -> size
+                    )
                   })
                 )
             }
@@ -930,10 +929,9 @@ class BackOfficeController(
             }
             case None       => FastFuture.successful(BadRequest(Json.obj("error" -> s"No host provided")))
           }
-        } recover {
-          case e =>
-            e.printStackTrace()
-            FastFuture.successful(BadRequest(Json.obj("error" -> s"Bad certificate : $e")))
+        } recover { case e =>
+          e.printStackTrace()
+          FastFuture.successful(BadRequest(Json.obj("error" -> s"Bad certificate : $e")))
         } get
       }
     }
@@ -970,10 +968,9 @@ class BackOfficeController(
             }
             case None     => FastFuture.successful(BadRequest(Json.obj("error" -> s"No cn provided")))
           }
-        } recover {
-          case e =>
-            e.printStackTrace()
-            FastFuture.successful(BadRequest(Json.obj("error" -> s"Bad certificate : $e")))
+        } recover { case e =>
+          e.printStackTrace()
+          FastFuture.successful(BadRequest(Json.obj("error" -> s"Bad certificate : $e")))
         } get
       }
     }
@@ -994,10 +991,9 @@ class BackOfficeController(
           //   .map { _ =>
           //     Ok(Json.obj("done" -> true))
           //   }
-        } recover {
-          case e =>
-            e.printStackTrace()
-            FastFuture.successful(BadRequest(Json.obj("error" -> s"Bad p12 : $e")))
+        } recover { case e =>
+          e.printStackTrace()
+          FastFuture.successful(BadRequest(Json.obj("error" -> s"Bad p12 : $e")))
         } get
       }
     }
@@ -1031,10 +1027,9 @@ class BackOfficeController(
             }
             case None     => BadRequest(Json.obj("error" -> s"No host provided"))
           }
-        } recover {
-          case e =>
-            e.printStackTrace()
-            BadRequest(Json.obj("error" -> s"Bad certificate : $e"))
+        } recover { case e =>
+          e.printStackTrace()
+          BadRequest(Json.obj("error" -> s"Bad certificate : $e"))
         } get
       }
     }
@@ -1069,10 +1064,9 @@ class BackOfficeController(
             }
             case _                      => FastFuture.successful(BadRequest(Json.obj("error" -> s"No host provided")))
           }
-        } recover {
-          case e =>
-            e.printStackTrace()
-            FastFuture.successful(BadRequest(Json.obj("error" -> s"Bad certificate : $e")))
+        } recover { case e =>
+          e.printStackTrace()
+          FastFuture.successful(BadRequest(Json.obj("error" -> s"Bad certificate : $e")))
         } get
       }
     }
@@ -1101,10 +1095,9 @@ class BackOfficeController(
             }
             case _                    => FastFuture.successful(BadRequest(Json.obj("error" -> s"No host provided")))
           }
-        } recover {
-          case e =>
-            e.printStackTrace()
-            FastFuture.successful(BadRequest(Json.obj("error" -> s"Bad certificate : $e")))
+        } recover { case e =>
+          e.printStackTrace()
+          FastFuture.successful(BadRequest(Json.obj("error" -> s"Bad certificate : $e")))
         } get
       }
     }
@@ -1232,16 +1225,14 @@ class BackOfficeController(
               val content: String =
                 body.utf8String.replace("-----BEGIN CERTIFICATE-----", "").replace("-----END CERTIFICATE-----", "")
               Ok(CertificateData(content))
-            } recover {
-              case e =>
-                // e.printStackTrace()
-                BadRequest(Json.obj("error" -> s"Bad certificate : $e"))
+            } recover { case e =>
+              // e.printStackTrace()
+              BadRequest(Json.obj("error" -> s"Bad certificate : $e"))
             } get
           }
-        } recover {
-          case e =>
-            // e.printStackTrace()
-            BadRequest(Json.obj("error" -> s"Bad certificate : $e"))
+        } recover { case e =>
+          // e.printStackTrace()
+          BadRequest(Json.obj("error" -> s"Bad certificate : $e"))
         } get
       }
     }
@@ -1254,10 +1245,9 @@ class BackOfficeController(
             case JsSuccess(cert, _) => Ok(Json.obj("valid" -> cert.isValid))
             case JsError(e)         => BadRequest(Json.obj("error" -> s"Bad certificate : $e"))
           }
-        } recover {
-          case e =>
-            e.printStackTrace()
-            BadRequest(Json.obj("error" -> s"Bad certificate : $e"))
+        } recover { case e =>
+          e.printStackTrace()
+          BadRequest(Json.obj("error" -> s"Bad certificate : $e"))
         } get
       }
     }

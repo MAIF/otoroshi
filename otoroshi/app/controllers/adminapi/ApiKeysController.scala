@@ -88,12 +88,12 @@ class ApiKeysFromServiceController(val ApiAction: ApiAction, val cc: ControllerC
   def createApiKey(serviceId: String) =
     ApiAction.async(parse.json) { ctx =>
       val body: JsObject = ((ctx.request.body \ "clientId").asOpt[String] match {
-          case None    => ctx.request.body.as[JsObject] ++ Json.obj("clientId" -> IdGenerator.token(16))
-          case Some(b) => ctx.request.body.as[JsObject]
-        }) ++ ((ctx.request.body \ "clientSecret").asOpt[String] match {
-          case None    => Json.obj("clientSecret" -> IdGenerator.token(64))
-          case Some(b) => Json.obj()
-        })
+        case None    => ctx.request.body.as[JsObject] ++ Json.obj("clientId" -> IdGenerator.token(16))
+        case Some(b) => ctx.request.body.as[JsObject]
+      }) ++ ((ctx.request.body \ "clientSecret").asOpt[String] match {
+        case None    => Json.obj("clientSecret" -> IdGenerator.token(64))
+        case Some(b) => Json.obj()
+      })
       env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
         case None                                  => NotFound(Json.obj("error" -> s"Service with id $serviceId not found")).asFuture
         case Some(desc) if !ctx.canUserWrite(desc) => ctx.fforbidden
@@ -101,12 +101,12 @@ class ApiKeysFromServiceController(val ApiAction: ApiAction, val cc: ControllerC
           val oldGroup   = (body \ "authorizedGroup").asOpt[String].map(g => "group_" + g).toSeq
           val entities   = (Seq("service_" + serviceId) ++ oldGroup).distinct
           val apiKeyJson = ((body \ "authorizedEntities").asOpt[Seq[String]] match {
-              case None                                                => body ++ Json.obj("authorizedEntities" -> Json.arr("service_" + serviceId))
-              case Some(sid) if !sid.contains(s"service_${serviceId}") =>
-                body ++ Json.obj("authorizedEntities" -> (entities ++ sid).distinct)
-              case Some(sid) if sid.contains(s"service_${serviceId}")  => body
-              case Some(_)                                             => body
-            }) - "authorizedGroup"
+            case None                                                => body ++ Json.obj("authorizedEntities" -> Json.arr("service_" + serviceId))
+            case Some(sid) if !sid.contains(s"service_${serviceId}") =>
+              body ++ Json.obj("authorizedEntities" -> (entities ++ sid).distinct)
+            case Some(sid) if sid.contains(s"service_${serviceId}")  => body
+            case Some(_)                                             => body
+          }) - "authorizedGroup"
           ApiKey.fromJsonSafe(apiKeyJson) match {
             case JsError(e)                                        => BadRequest(Json.obj("error" -> "Bad ApiKey format")).asFuture
             case JsSuccess(apiKey, _) if !ctx.canUserWrite(apiKey) => ctx.fforbidden
@@ -484,12 +484,12 @@ class ApiKeysFromGroupController(val ApiAction: ApiAction, val cc: ControllerCom
   def createApiKeyFromGroup(groupId: String) =
     ApiAction.async(parse.json) { ctx =>
       val body: JsObject = ((ctx.request.body \ "clientId").asOpt[String] match {
-          case None    => ctx.request.body.as[JsObject] ++ Json.obj("clientId" -> IdGenerator.token(16))
-          case Some(b) => ctx.request.body.as[JsObject]
-        }) ++ ((ctx.request.body \ "clientSecret").asOpt[String] match {
-          case None    => Json.obj("clientSecret" -> IdGenerator.token(64))
-          case Some(b) => Json.obj()
-        })
+        case None    => ctx.request.body.as[JsObject] ++ Json.obj("clientId" -> IdGenerator.token(16))
+        case Some(b) => ctx.request.body.as[JsObject]
+      }) ++ ((ctx.request.body \ "clientSecret").asOpt[String] match {
+        case None    => Json.obj("clientSecret" -> IdGenerator.token(64))
+        case Some(b) => Json.obj()
+      })
       env.datastores.serviceGroupDataStore.findById(groupId).flatMap {
         case None                                    => NotFound(Json.obj("error" -> s"Service group not found")).asFuture
         case Some(group) if !ctx.canUserWrite(group) => ctx.fforbidden
@@ -497,11 +497,11 @@ class ApiKeysFromGroupController(val ApiAction: ApiAction, val cc: ControllerCom
           val oldGroup   = (body \ "authorizedGroup").asOpt[String].map(g => "group_" + g).toSeq
           val entities   = (Seq("group_" + group.id) ++ oldGroup).distinct
           val apiKeyJson = ((body \ "authorizedEntities").asOpt[Seq[String]] match {
-              case None                                                     => body ++ Json.obj("authorizedEntities" -> Json.arr("group_" + group.id))
-              case Some(groupId) if !groupId.contains(s"group_${group.id}") =>
-                body ++ Json.obj("authorizedEntities" -> (entities ++ groupId).distinct)
-              case Some(groupId) if groupId.contains(s"group_${group.id}")  => body
-            }) - "authorizedGroup"
+            case None                                                     => body ++ Json.obj("authorizedEntities" -> Json.arr("group_" + group.id))
+            case Some(groupId) if !groupId.contains(s"group_${group.id}") =>
+              body ++ Json.obj("authorizedEntities" -> (entities ++ groupId).distinct)
+            case Some(groupId) if groupId.contains(s"group_${group.id}")  => body
+          }) - "authorizedGroup"
           ApiKey.fromJsonSafe(apiKeyJson) match {
             case JsError(e)                                        => BadRequest(Json.obj("error" -> "Bad ApiKey format")).asFuture
             case JsSuccess(apiKey, _) if !ctx.canUserWrite(apiKey) => ctx.fforbidden

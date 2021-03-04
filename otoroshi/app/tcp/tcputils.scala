@@ -29,9 +29,9 @@ object TcpUtils {
   private val tlsWrapping: BidiFlow[ByteString, TLSProtocol.SendBytes, TLSProtocol.SslTlsInbound, ByteString, NotUsed] =
     BidiFlow.fromFlows(
       Flow[ByteString].map(TLSProtocol.SendBytes),
-      Flow[TLSProtocol.SslTlsInbound].collect {
-        case sb: TLSProtocol.SessionBytes => sb.bytes
-        // ignore other kinds of inbounds (currently only Truncated)
+      Flow[TLSProtocol.SslTlsInbound].collect { case sb: TLSProtocol.SessionBytes =>
+        sb.bytes
+      // ignore other kinds of inbounds (currently only Truncated)
       }
     )
   def bindTlsWithSSLEngine(

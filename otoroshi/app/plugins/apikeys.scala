@@ -371,8 +371,8 @@ class ClientCredentialFlow extends RequestTransformer {
         val bodySource: Source[ByteString, _] = Source
           .future(promise.future)
           .flatMapConcat(s => s)
-          .alsoTo(Sink.onComplete {
-            case _ => consumed.set(true)
+          .alsoTo(Sink.onComplete { case _ =>
+            consumed.set(true)
           })
 
         bodySource.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
@@ -383,42 +383,41 @@ class ClientCredentialFlow extends RequestTransformer {
               val urlEncodedString         = bodyRaw.utf8String
               val body                     = FormUrlEncodedParser.parse(urlEncodedString, charset).mapValues(_.head)
               val map: Map[String, String] = body ++ ctx.request.headers
-                  .get("Authorization")
-                  .filter(_.startsWith("Basic "))
-                  .map(_.replace("Basic ", ""))
-                  .map(v => org.apache.commons.codec.binary.Base64.decodeBase64(v))
-                  .map(v => new String(v))
-                  .filter(_.contains(":"))
-                  .map(_.split(":").toSeq)
-                  .map(v => Map("client_id" -> v.head, "client_secret" -> v.last))
-                  .getOrElse(Map.empty[String, String])
+                .get("Authorization")
+                .filter(_.startsWith("Basic "))
+                .map(_.replace("Basic ", ""))
+                .map(v => org.apache.commons.codec.binary.Base64.decodeBase64(v))
+                .map(v => new String(v))
+                .filter(_.contains(":"))
+                .map(_.split(":").toSeq)
+                .map(v => Map("client_id" -> v.head, "client_secret" -> v.last))
+                .getOrElse(Map.empty[String, String])
               f(map)
             }
             case Some(ctype) if ctype.toLowerCase().contains("application/json") => {
               val json                     = Json.parse(bodyRaw.utf8String).as[JsObject]
               val map: Map[String, String] = json.value.toSeq.collect {
-                  case (key, JsString(v))  => (key, v)
-                  case (key, JsNumber(v))  => (key, v.toString())
-                  case (key, JsBoolean(v)) => (key, v.toString)
-                }.toMap ++ ctx.request.headers
-                  .get("Authorization")
-                  .filter(_.startsWith("Basic "))
-                  .map(_.replace("Basic ", ""))
-                  .map(v => org.apache.commons.codec.binary.Base64.decodeBase64(v))
-                  .map(v => new String(v))
-                  .filter(_.contains(":"))
-                  .map(_.split(":").toSeq)
-                  .map(v => Map("client_id" -> v.head, "client_secret" -> v.last))
-                  .getOrElse(Map.empty[String, String])
+                case (key, JsString(v))  => (key, v)
+                case (key, JsNumber(v))  => (key, v.toString())
+                case (key, JsBoolean(v)) => (key, v.toString)
+              }.toMap ++ ctx.request.headers
+                .get("Authorization")
+                .filter(_.startsWith("Basic "))
+                .map(_.replace("Basic ", ""))
+                .map(v => org.apache.commons.codec.binary.Base64.decodeBase64(v))
+                .map(v => new String(v))
+                .filter(_.contains(":"))
+                .map(_.split(":").toSeq)
+                .map(v => Map("client_id" -> v.head, "client_secret" -> v.last))
+                .getOrElse(Map.empty[String, String])
               f(map)
             }
             case _                                                               =>
               // bad content type
               Results.Unauthorized(Json.obj("error" -> "access_denied", "error_description" -> s"Unauthorized")).leftf
           }
-        } andThen {
-          case _ =>
-            if (!consumed.get()) bodySource.runWith(Sink.ignore)
+        } andThen { case _ =>
+          if (!consumed.get()) bodySource.runWith(Sink.ignore)
         }
       } getOrElse {
         // no body
@@ -569,8 +568,8 @@ class ClientCredentialFlow extends RequestTransformer {
           val bodySource: Source[ByteString, _] = Source
             .future(promise.future)
             .flatMapConcat(s => s)
-            .alsoTo(Sink.onComplete {
-              case _ => consumed.set(true)
+            .alsoTo(Sink.onComplete { case _ =>
+              consumed.set(true)
             })
 
           def handleTokenRequest(ccfb: ClientCredentialFlowBody): Future[Either[Result, HttpRequest]] =
@@ -744,17 +743,16 @@ class ClientCredentialFlow extends RequestTransformer {
                       .filter(_.contains(":"))
                       .map(_.split(":").toSeq)
                       .map(v => (v.head, v.last))
-                      .map {
-                        case (clientId, clientSecret) =>
-                          handleTokenRequest(
-                            ClientCredentialFlowBody(
-                              body.getOrElse("grant_type", "--"),
-                              clientId,
-                              clientSecret,
-                              None,
-                              body.getOrElse("bearer_kind", "jwt")
-                            )
+                      .map { case (clientId, clientSecret) =>
+                        handleTokenRequest(
+                          ClientCredentialFlowBody(
+                            body.getOrElse("grant_type", "--"),
+                            clientId,
+                            clientSecret,
+                            None,
+                            body.getOrElse("bearer_kind", "jwt")
                           )
+                        )
                       }
                       .getOrElse {
                         // bad credentials
@@ -787,17 +785,16 @@ class ClientCredentialFlow extends RequestTransformer {
                       .filter(_.contains(":"))
                       .map(_.split(":").toSeq)
                       .map(v => (v.head, v.last))
-                      .map {
-                        case (clientId, clientSecret) =>
-                          handleTokenRequest(
-                            ClientCredentialFlowBody(
-                              (json \ "grant_type").asOpt[String].getOrElse("--"),
-                              clientId,
-                              clientSecret,
-                              None,
-                              (json \ "bearer_kind").asOpt[String].getOrElse("jwt")
-                            )
+                      .map { case (clientId, clientSecret) =>
+                        handleTokenRequest(
+                          ClientCredentialFlowBody(
+                            (json \ "grant_type").asOpt[String].getOrElse("--"),
+                            clientId,
+                            clientSecret,
+                            None,
+                            (json \ "bearer_kind").asOpt[String].getOrElse("jwt")
                           )
+                        )
                       }
                       .getOrElse {
                         // bad credentials
@@ -811,9 +808,8 @@ class ClientCredentialFlow extends RequestTransformer {
                 // bad content type
                 Results.Unauthorized(Json.obj("error" -> "access_denied", "error_description" -> s"Unauthorized")).leftf
             }
-          } andThen {
-            case _ =>
-              if (!consumed.get()) bodySource.runWith(Sink.ignore)
+          } andThen { case _ =>
+            if (!consumed.get()) bodySource.runWith(Sink.ignore)
           }
         } getOrElse {
           // no body
@@ -871,8 +867,8 @@ class ClientCredentialFlow extends RequestTransformer {
                     env.datastores.rawDataStore
                       .get(s"${env.storageRoot}:plugins:client-credentials-flow:revoked-tokens:$jti")
                       .map(_.map(_.utf8String.toBoolean).getOrElse(false))
-                      .andThen {
-                        case Success(b) => revokedCache.put(jti, b)
+                      .andThen { case Success(b) =>
+                        revokedCache.put(jti, b)
                       }
                   )
                   .flatMap {
@@ -894,8 +890,8 @@ class ClientCredentialFlow extends RequestTransformer {
                 env.datastores.rawDataStore
                   .get(s"${env.storageRoot}:plugins:client-credentials-flow:revoked-tokens:$token")
                   .map(_.map(_.utf8String.toBoolean).getOrElse(false))
-                  .andThen {
-                    case Success(b) => revokedCache.put(token, b)
+                  .andThen { case Success(b) =>
+                    revokedCache.put(token, b)
                   }
               )
               .flatMap {
@@ -1004,33 +1000,33 @@ class ClientCredentialService extends RequestSink {
           val urlEncodedString         = bodyRaw.utf8String
           val body                     = FormUrlEncodedParser.parse(urlEncodedString, charset).mapValues(_.head)
           val map: Map[String, String] = body ++ ctx.request.headers
-              .get("Authorization")
-              .filter(_.startsWith("Basic "))
-              .map(_.replace("Basic ", ""))
-              .map(v => org.apache.commons.codec.binary.Base64.decodeBase64(v))
-              .map(v => new String(v))
-              .filter(_.contains(":"))
-              .map(_.split(":").toSeq)
-              .map(v => Map("client_id" -> v.head, "client_secret" -> v.last))
-              .getOrElse(Map.empty[String, String])
+            .get("Authorization")
+            .filter(_.startsWith("Basic "))
+            .map(_.replace("Basic ", ""))
+            .map(v => org.apache.commons.codec.binary.Base64.decodeBase64(v))
+            .map(v => new String(v))
+            .filter(_.contains(":"))
+            .map(_.split(":").toSeq)
+            .map(v => Map("client_id" -> v.head, "client_secret" -> v.last))
+            .getOrElse(Map.empty[String, String])
           f(map)
         }
         case Some(ctype) if ctype.toLowerCase().contains("application/json")                  => {
           val json                     = Json.parse(bodyRaw.utf8String).as[JsObject]
           val map: Map[String, String] = json.value.toSeq.collect {
-              case (key, JsString(v))  => (key, v)
-              case (key, JsNumber(v))  => (key, v.toString())
-              case (key, JsBoolean(v)) => (key, v.toString)
-            }.toMap ++ ctx.request.headers
-              .get("Authorization")
-              .filter(_.startsWith("Basic "))
-              .map(_.replace("Basic ", ""))
-              .map(v => org.apache.commons.codec.binary.Base64.decodeBase64(v))
-              .map(v => new String(v))
-              .filter(_.contains(":"))
-              .map(_.split(":").toSeq)
-              .map(v => Map("client_id" -> v.head, "client_secret" -> v.last))
-              .getOrElse(Map.empty[String, String])
+            case (key, JsString(v))  => (key, v)
+            case (key, JsNumber(v))  => (key, v.toString())
+            case (key, JsBoolean(v)) => (key, v.toString)
+          }.toMap ++ ctx.request.headers
+            .get("Authorization")
+            .filter(_.startsWith("Basic "))
+            .map(_.replace("Basic ", ""))
+            .map(v => org.apache.commons.codec.binary.Base64.decodeBase64(v))
+            .map(v => new String(v))
+            .filter(_.contains(":"))
+            .map(_.split(":").toSeq)
+            .map(v => Map("client_id" -> v.head, "client_secret" -> v.last))
+            .getOrElse(Map.empty[String, String])
           f(map)
         }
         case _                                                                                =>
@@ -1328,19 +1324,18 @@ class ClientCredentialService extends RequestSink {
             .filter(_.contains(":"))
             .map(_.split(":").toSeq)
             .map(v => (v.head, v.last))
-            .map {
-              case (clientId, clientSecret) =>
-                handleTokenRequest(
-                  ClientCredentialFlowBody(
-                    body.getOrElse("grant_type", "--"),
-                    clientId,
-                    clientSecret,
-                    None,
-                    body.getOrElse("bearer_kind", "jwt")
-                  ),
-                  conf,
-                  ctx
-                )
+            .map { case (clientId, clientSecret) =>
+              handleTokenRequest(
+                ClientCredentialFlowBody(
+                  body.getOrElse("grant_type", "--"),
+                  clientId,
+                  clientSecret,
+                  None,
+                  body.getOrElse("bearer_kind", "jwt")
+                ),
+                conf,
+                ctx
+              )
             }
             .getOrElse {
               // bad credentials

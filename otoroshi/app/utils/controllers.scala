@@ -161,17 +161,15 @@ trait AdminApiHelper {
           entities.slice(paginationPosition, paginationPosition + paginationPageSize).map(e => (e, writeEntity(e)))
         if (hasFilters) {
           jsonElements
-            .filter {
-              case (_, elem) =>
-                filters.forall {
-                  case (key, value) =>
-                    (elem \ key).as[JsValue] match {
-                      case JsString(v)  => v == value
-                      case JsBoolean(v) => v == value.toBoolean
-                      case JsNumber(v)  => v.toDouble == value.toDouble
-                      case _            => false
-                    }
+            .filter { case (_, elem) =>
+              filters.forall { case (key, value) =>
+                (elem \ key).as[JsValue] match {
+                  case JsString(v)  => v == value
+                  case JsBoolean(v) => v == value.toBoolean
+                  case JsNumber(v)  => v.toDouble == value.toDouble
+                  case _            => false
                 }
+              }
             }
             .map(_._1)
             .right
@@ -754,14 +752,13 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
           entities.filter(ctx.canUserRead).drop(paginationPosition).take(paginationPageSize).map(writeEntity)
         val finalItems                 = if (hasFilters) {
           val items: Seq[JsValue] = jsonElements.filter { elem =>
-            filters.forall {
-              case (key, value) =>
-                (elem \ key).as[JsValue] match {
-                  case JsString(v)  => v == value
-                  case JsBoolean(v) => v == value.toBoolean
-                  case JsNumber(v)  => v.toDouble == value.toDouble
-                  case _            => false
-                }
+            filters.forall { case (key, value) =>
+              (elem \ key).as[JsValue] match {
+                case JsString(v)  => v == value
+                case JsBoolean(v) => v == value.toBoolean
+                case JsNumber(v)  => v.toDouble == value.toDouble
+                case _            => false
+              }
             }
           }
           items
@@ -971,8 +968,8 @@ trait CrudHelper[Entity <: EntityLocationSupport, Error] extends EntityHelper[En
             }
         }
       }
-      .runFold(Seq.empty[(String, Option[ApiError[Error]])]) {
-        case (seq, (id, done)) => seq :+ (id, done)
+      .runFold(Seq.empty[(String, Option[ApiError[Error]])]) { case (seq, (id, done)) =>
+        seq :+ (id, done)
       }
       .map { seq =>
         if (seq.size == 1) {

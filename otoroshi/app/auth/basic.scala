@@ -46,8 +46,8 @@ object WebAuthnDetails {
               credentials = (json \ "credentials").asOpt[Map[String, JsValue]].getOrElse(Map.empty)
             )
           )
-        } recover {
-          case e => JsError(e.getMessage)
+        } recover { case e =>
+          JsError(e.getMessage)
         } get
     }
 }
@@ -87,8 +87,8 @@ object BasicAuthUser {
               rights = UserRights.readFromObject(json)
             )
           )
-        } recover {
-          case e => JsError(e.getMessage)
+        } recover { case e =>
+          JsError(e.getMessage)
         } get
     }
 }
@@ -135,8 +135,8 @@ object BasicAuthModuleConfig extends FromJson[AuthModuleConfig] {
             (json \ "sessionCookieValues").asOpt(SessionCookieValues.fmt).getOrElse(SessionCookieValues())
         )
       )
-    } recover {
-      case e => Left(e)
+    } recover { case e =>
+      Left(e)
     } get
 }
 

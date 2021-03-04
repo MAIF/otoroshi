@@ -70,22 +70,20 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
   override def instantiation(ctx: JobContext, env: Env): JobInstantiation = {
     Option(env)
       .flatMap(env => env.datastores.globalConfigDataStore.latestSafe.map(c => (env, c)))
-      .map {
-        case (env, c) =>
-          (
-            env,
-            KubernetesConfig
-              .theConfig((c.scripts.jobConfig \ "KubernetesConfig").as[JsValue])(env, env.otoroshiExecutionContext)
-          )
+      .map { case (env, c) =>
+        (
+          env,
+          KubernetesConfig
+            .theConfig((c.scripts.jobConfig \ "KubernetesConfig").as[JsValue])(env, env.otoroshiExecutionContext)
+        )
       }
-      .map {
-        case (env, cfg) =>
-          env.clusterConfig.mode match {
-            case ClusterMode.Off if !cfg.kubeLeader => JobInstantiation.OneInstancePerOtoroshiCluster
-            case ClusterMode.Off if cfg.kubeLeader  => JobInstantiation.OneInstancePerOtoroshiInstance
-            case _ if cfg.kubeLeader                => JobInstantiation.OneInstancePerOtoroshiLeaderInstance
-            case _                                  => JobInstantiation.OneInstancePerOtoroshiCluster
-          }
+      .map { case (env, cfg) =>
+        env.clusterConfig.mode match {
+          case ClusterMode.Off if !cfg.kubeLeader => JobInstantiation.OneInstancePerOtoroshiCluster
+          case ClusterMode.Off if cfg.kubeLeader  => JobInstantiation.OneInstancePerOtoroshiInstance
+          case _ if cfg.kubeLeader                => JobInstantiation.OneInstancePerOtoroshiLeaderInstance
+          case _                                  => JobInstantiation.OneInstancePerOtoroshiCluster
+        }
       }
       .getOrElse(JobInstantiation.OneInstancePerOtoroshiCluster)
   }
@@ -198,8 +196,8 @@ class KubernetesOtoroshiCRDsControllerJob extends Job {
       source
         .takeWhile(_ => !watchCommand.get())
         .filterNot(_.isEmpty)
-        .alsoTo(Sink.onComplete {
-          case _ => lastWatchStopped.set(true)
+        .alsoTo(Sink.onComplete { case _ =>
+          lastWatchStopped.set(true)
         })
         .runWith(Sink.foreach { group =>
           val now = System.currentTimeMillis()
@@ -695,9 +693,8 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
             val caOpt     = (csrJson \ "issuer").asOpt[String] match {
               case None     => None
               case Some(dn) =>
-                DynamicSSLEngineProvider.certificates.find {
-                  case (_, cert) =>
-                    cert.id == dn || cert.certificate.exists(c => DN(c.getSubjectDN.getName).isEqualsTo(DN(dn)))
+                DynamicSSLEngineProvider.certificates.find { case (_, cert) =>
+                  cert.id == dn || cert.certificate.exists(c => DN(c.getSubjectDN.getName).isEqualsTo(DN(dn)))
                 }
             }
             val maybeCert = foundACertWithSameIdAndCsr(id, csrJson, caOpt.map(_._2), certs)
@@ -996,15 +993,14 @@ object KubernetesCRDsJob {
   )(all: => Seq[T], id: T => String, save: T => Future[Boolean]): Seq[(T, () => Future[Boolean])] = {
     val existing = all.map(v => (id(v), v)).toMap
     val kube     = entities.map(_.typed).map(v => (id(v), v))
-    kube.filter {
-      case (key, value) =>
-        existing.get(key) match {
-          case None                                          => true
-          case Some(existingValue) if value == existingValue => false
-          case Some(existingValue) if value != existingValue => true
-        }
-    } map {
-      case (_, value) => (value, () => save(value))
+    kube.filter { case (key, value) =>
+      existing.get(key) match {
+        case None                                          => true
+        case Some(existingValue) if value == existingValue => false
+        case Some(existingValue) if value != existingValue => true
+      }
+    } map { case (_, value) =>
+      (value, () => save(value))
     }
   }
 
@@ -1141,22 +1137,22 @@ object KubernetesCRDsJob {
     } else {
       val entities = (
         compareAndSave(globalConfigs)(otoglobalConfigs, _ => "global", _.save()) ++
-        compareAndSave(simpleAdmins)(
-          otosimpleAdmins,
-          v => v.username,
-          v => env.datastores.simpleAdminDataStore.registerUser(v)
-        ) ++
-        compareAndSave(dataExporters)(otodataexporters, _.id, _.save()) ++
-        compareAndSave(tenants)(ototenants, _.id.value, _.save()) ++
-        compareAndSave(teams)(ototeams, _.id.value, _.save()) ++
-        compareAndSave(serviceGroups)(otoserviceGroups, _.id, _.save()) ++
-        compareAndSave(certificates)(otocertificates, _.id, _.save()) ++
-        compareAndSave(jwtVerifiers)(otojwtVerifiers, _.asGlobal.id, _.asGlobal.save()) ++
-        compareAndSave(authModules)(otoauthModules, _.id, _.save()) ++
-        compareAndSave(scripts)(otoscripts, _.id, _.save()) ++
-        compareAndSave(tcpServices)(ototcpServices, _.id, _.save()) ++
-        compareAndSave(serviceDescriptors)(otoserviceDescriptors, _.id, _.save()) ++
-        compareAndSave(apiKeys)(otoapiKeys, _.clientId, _.save())
+          compareAndSave(simpleAdmins)(
+            otosimpleAdmins,
+            v => v.username,
+            v => env.datastores.simpleAdminDataStore.registerUser(v)
+          ) ++
+          compareAndSave(dataExporters)(otodataexporters, _.id, _.save()) ++
+          compareAndSave(tenants)(ototenants, _.id.value, _.save()) ++
+          compareAndSave(teams)(ototeams, _.id.value, _.save()) ++
+          compareAndSave(serviceGroups)(otoserviceGroups, _.id, _.save()) ++
+          compareAndSave(certificates)(otocertificates, _.id, _.save()) ++
+          compareAndSave(jwtVerifiers)(otojwtVerifiers, _.asGlobal.id, _.asGlobal.save()) ++
+          compareAndSave(authModules)(otoauthModules, _.id, _.save()) ++
+          compareAndSave(scripts)(otoscripts, _.id, _.save()) ++
+          compareAndSave(tcpServices)(ototcpServices, _.id, _.save()) ++
+          compareAndSave(serviceDescriptors)(otoserviceDescriptors, _.id, _.save()) ++
+          compareAndSave(apiKeys)(otoapiKeys, _.clientId, _.save())
       ).toList
       logger.info(s"Will now sync ${entities.size} entities !")
       Source(entities)
@@ -1308,13 +1304,32 @@ object KubernetesCRDsJob {
     logger.info(s"will export ${apikeys.size} apikeys as secrets")
     implicit val mat = env.otoroshiMaterializer
     Source(apikeys.toList)
-      .mapAsync(1) {
-        case (namespace, name, apikey) =>
-          clientSupport.client.fetchSecret(namespace, name).flatMap {
-            case None         =>
-              // println(s"create $namespace/$name with ${apikey.clientId} and ${apikey.clientSecret}")
+      .mapAsync(1) { case (namespace, name, apikey) =>
+        clientSupport.client.fetchSecret(namespace, name).flatMap {
+          case None         =>
+            // println(s"create $namespace/$name with ${apikey.clientId} and ${apikey.clientSecret}")
+            updatedSecrets.updateAndGet(seq => seq :+ (namespace, name))
+            clientSupport.client.createSecret(
+              namespace,
+              name,
+              "otoroshi.io/apikey-secret",
+              Json.obj(
+                "clientId"        -> apikey.clientId.base64,
+                "clientSecret"    -> apikey.clientSecret.base64,
+                "userPwd"         -> s"${apikey.clientId}:${apikey.clientSecret}".base64,
+                "basicAuth"       -> s"${apikey.clientId}:${apikey.clientSecret}".base64.base64,
+                "basicAuthHeader" -> ("Basic " + s"${apikey.clientId}:${apikey.clientSecret}".base64).base64
+              ),
+              "crd/apikey",
+              apikey.clientId
+            )
+          case Some(secret) =>
+            val clientId     = (secret.raw \ "data" \ "clientId").as[String].applyOn(s => s.fromBase64)
+            val clientSecret = (secret.raw \ "data" \ "clientSecret").as[String].applyOn(s => s.fromBase64)
+            if ((clientId != apikey.clientId) || (clientSecret != apikey.clientSecret)) {
+              // println(s"updating $namespace/$name  with ${apikey.clientId} and ${apikey.clientSecret}")
               updatedSecrets.updateAndGet(seq => seq :+ (namespace, name))
-              clientSupport.client.createSecret(
+              clientSupport.client.updateSecret(
                 namespace,
                 name,
                 "otoroshi.io/apikey-secret",
@@ -1328,30 +1343,10 @@ object KubernetesCRDsJob {
                 "crd/apikey",
                 apikey.clientId
               )
-            case Some(secret) =>
-              val clientId     = (secret.raw \ "data" \ "clientId").as[String].applyOn(s => s.fromBase64)
-              val clientSecret = (secret.raw \ "data" \ "clientSecret").as[String].applyOn(s => s.fromBase64)
-              if ((clientId != apikey.clientId) || (clientSecret != apikey.clientSecret)) {
-                // println(s"updating $namespace/$name  with ${apikey.clientId} and ${apikey.clientSecret}")
-                updatedSecrets.updateAndGet(seq => seq :+ (namespace, name))
-                clientSupport.client.updateSecret(
-                  namespace,
-                  name,
-                  "otoroshi.io/apikey-secret",
-                  Json.obj(
-                    "clientId"        -> apikey.clientId.base64,
-                    "clientSecret"    -> apikey.clientSecret.base64,
-                    "userPwd"         -> s"${apikey.clientId}:${apikey.clientSecret}".base64,
-                    "basicAuth"       -> s"${apikey.clientId}:${apikey.clientSecret}".base64.base64,
-                    "basicAuthHeader" -> ("Basic " + s"${apikey.clientId}:${apikey.clientSecret}".base64).base64
-                  ),
-                  "crd/apikey",
-                  apikey.clientId
-                )
-              } else {
-                ().future
-              }
-          }
+            } else {
+              ().future
+            }
+        }
       }
       .runWith(Sink.ignore)
       .map(_ => ())
@@ -1371,12 +1366,32 @@ object KubernetesCRDsJob {
     logger.info(s"will export ${certs.size} certificates as secrets")
     implicit val mat = env.otoroshiMaterializer
     Source(certs.toList)
-      .mapAsync(1) {
-        case (namespace, name, cert) =>
-          clientSupport.client.fetchSecret(namespace, name).flatMap {
-            case None         =>
-              updatedSecrets.updateAndGet(seq => seq :+ (namespace, name))
-              clientSupport.client.createSecret(
+      .mapAsync(1) { case (namespace, name, cert) =>
+        clientSupport.client.fetchSecret(namespace, name).flatMap {
+          case None         =>
+            updatedSecrets.updateAndGet(seq => seq :+ (namespace, name))
+            clientSupport.client.createSecret(
+              namespace,
+              name,
+              "kubernetes.io/tls",
+              Json.obj(
+                "tls.crt"      -> cert.chain.base64,
+                "tls.key"      -> cert.privateKey.base64,
+                "cert.crt"     -> cert.certificates.head.asPem.base64,
+                "ca-chain.crt" -> cert.certificates.tail.map(_.asPem).mkString("\n\n").base64,
+                "ca.crt"       -> cert.certificates.last.asPem.base64
+              ),
+              "crd/cert",
+              cert.id
+            )
+          case Some(secret) =>
+            val chain      = (secret.raw \ "data" \ "tls.crt").as[String].applyOn(s => s.fromBase64)
+            val privateKey = (secret.raw \ "data" \ "tls.key").as[String].applyOn(s => s.fromBase64)
+            //if ((chain != cert.chain) || (privateKey != cert.privateKey)) {
+            updatedSecrets.updateAndGet(seq => seq :+ (namespace, name))
+            if (!(chain == cert.chain && privateKey == cert.privateKey)) {
+              logger.info(s"updating secret: $namespace/$name")
+              clientSupport.client.updateSecret(
                 namespace,
                 name,
                 "kubernetes.io/tls",
@@ -1390,31 +1405,10 @@ object KubernetesCRDsJob {
                 "crd/cert",
                 cert.id
               )
-            case Some(secret) =>
-              val chain      = (secret.raw \ "data" \ "tls.crt").as[String].applyOn(s => s.fromBase64)
-              val privateKey = (secret.raw \ "data" \ "tls.key").as[String].applyOn(s => s.fromBase64)
-              //if ((chain != cert.chain) || (privateKey != cert.privateKey)) {
-              updatedSecrets.updateAndGet(seq => seq :+ (namespace, name))
-              if (!(chain == cert.chain && privateKey == cert.privateKey)) {
-                logger.info(s"updating secret: $namespace/$name")
-                clientSupport.client.updateSecret(
-                  namespace,
-                  name,
-                  "kubernetes.io/tls",
-                  Json.obj(
-                    "tls.crt"      -> cert.chain.base64,
-                    "tls.key"      -> cert.privateKey.base64,
-                    "cert.crt"     -> cert.certificates.head.asPem.base64,
-                    "ca-chain.crt" -> cert.certificates.tail.map(_.asPem).mkString("\n\n").base64,
-                    "ca.crt"       -> cert.certificates.last.asPem.base64
-                  ),
-                  "crd/cert",
-                  cert.id
-                )
-              } else {
-                ().future
-              }
-          }
+            } else {
+              ().future
+            }
+        }
       }
       .runWith(Sink.ignore)
       .map(_ => ())
@@ -1801,14 +1795,13 @@ object KubernetesCRDsJob {
         _                   <- if (service.isDefined && kubeDnsDep.isDefined && kubeDnsCm.isDefined && !hasOtoroshiDnsServer) {
                                  val cm          = kubeDnsCm.get
                                  val stubDomains = cm.stubDomains ++ Json.obj(
-                                     otoDomain -> Json.arr(s"${service.get.clusterIP}:${conf.kubeDnsOperatorCoreDnsPort}")
-                                   )
+                                   otoDomain -> Json.arr(s"${service.get.clusterIP}:${conf.kubeDnsOperatorCoreDnsPort}")
+                                 )
                                  val newCm       = KubernetesConfigMap(
                                    cm.rawObj ++ Json.obj("data" -> (cm.data ++ Json.obj("stubDomains" -> stubDomains)))
                                  )
-                                 client.updateConfigMap(conf.kubeSystemNamespace, "kube-dns", newCm).andThen {
-                                   case Success(Right(_)) =>
-                                     logger.info("Successfully patched kube-dns Operator to add coredns as upstream server")
+                                 client.updateConfigMap(conf.kubeSystemNamespace, "kube-dns", newCm).andThen { case Success(Right(_)) =>
+                                   logger.info("Successfully patched kube-dns Operator to add coredns as upstream server")
                                  }
                                } else ().future
         _                   <-
@@ -1817,14 +1810,13 @@ object KubernetesCRDsJob {
           ) {
             val cm          = kubeDnsCm.get
             val stubDomains = cm.stubDomains ++ Json.obj(
-                otoDomain -> Json.arr(s"${service.get.clusterIP}:${conf.kubeDnsOperatorCoreDnsPort}")
-              )
+              otoDomain -> Json.arr(s"${service.get.clusterIP}:${conf.kubeDnsOperatorCoreDnsPort}")
+            )
             val newCm       = KubernetesConfigMap(
               cm.rawObj ++ Json.obj("data" -> (cm.data ++ Json.obj("stubDomains" -> stubDomains)))
             )
-            client.updateConfigMap(conf.kubeSystemNamespace, "kube-dns", newCm).andThen {
-              case Success(Right(_)) =>
-                logger.info("Successfully patched kube-dns Operator to add coredns as upstream server")
+            client.updateConfigMap(conf.kubeSystemNamespace, "kube-dns", newCm).andThen { case Success(Right(_)) =>
+              logger.info("Successfully patched kube-dns Operator to add coredns as upstream server")
             }
           } else ().future
       } yield ()
@@ -1860,25 +1852,24 @@ object KubernetesCRDsJob {
         _                    = logger.debug(s"Otoroshi CoreDNS config: ${service.map(_.spec.prettify).getOrElse("--")}")
         _                   <- if (service.isDefined && dnsOperator.isDefined && !hasOtoroshiDnsServer) {
                                  val servers = dnsOperator.get.servers.map(_.raw) :+ Json.obj(
-                                     "name"          -> conf.openshiftDnsOperatorCoreDnsName,
-                                     "zones"         -> Json.arr(
-                                       s"${conf.coreDnsEnv.map(e => s"$e.").getOrElse("")}otoroshi.mesh"
-                                     ),
-                                     "forwardPlugin" -> Json.obj(
-                                       "upstreams" -> Json.arr(
-                                         s"${service.get.clusterIP}:${conf.openshiftDnsOperatorCoreDnsPort}"
-                                       )
+                                   "name"          -> conf.openshiftDnsOperatorCoreDnsName,
+                                   "zones"         -> Json.arr(
+                                     s"${conf.coreDnsEnv.map(e => s"$e.").getOrElse("")}otoroshi.mesh"
+                                   ),
+                                   "forwardPlugin" -> Json.obj(
+                                     "upstreams" -> Json.arr(
+                                       s"${service.get.clusterIP}:${conf.openshiftDnsOperatorCoreDnsPort}"
                                      )
                                    )
+                                 )
                                  client
                                    .updateOpenshiftDnsOperator(
                                      KubernetesOpenshiftDnsOperator(
                                        Json.obj("spec" -> dnsOperator.get.spec.++(Json.obj("servers" -> servers)))
                                      )
                                    )
-                                   .andThen {
-                                     case Success(Some(_)) =>
-                                       logger.info("Successfully patched Openshift DNS Operator to add coredns as upstream server")
+                                   .andThen { case Success(Some(_)) =>
+                                     logger.info("Successfully patched Openshift DNS Operator to add coredns as upstream server")
                                    }
                                } else ().future
         _                   <- if (service.isDefined && dnsOperator.isDefined && hasOtoroshiDnsServer && !shouldNotUpdate) {
@@ -1905,9 +1896,8 @@ object KubernetesCRDsJob {
                                        Json.obj("spec" -> dnsOperator.get.spec.++(Json.obj("servers" -> servers)))
                                      )
                                    )
-                                   .andThen {
-                                     case Success(Some(_)) =>
-                                       logger.info("Successfully patched Openshift DNS Operator to update coredns as upstream server")
+                                   .andThen { case Success(Some(_)) =>
+                                     logger.info("Successfully patched Openshift DNS Operator to update coredns as upstream server")
                                    }
                                } else ().future
       } yield ()

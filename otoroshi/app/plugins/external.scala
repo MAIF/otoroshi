@@ -198,10 +198,9 @@ class ExternalHttpValidator extends AccessValidator {
             None
         }
       }
-      .recover {
-        case e =>
-          ClientCertificateValidator.logger.error("Error while validating client certificate chain", e)
-          None
+      .recover { case e =>
+        ClientCertificateValidator.logger.error("Error while validating client certificate chain", e)
+        None
       }
   }
 
@@ -214,9 +213,9 @@ class ExternalHttpValidator extends AccessValidator {
     val user   = context.user
     val desc   = context.descriptor
     val key    = computeKeyFromChain(chain) + "-" + apikey
-        .map(_.clientId)
-        .orElse(user.map(_.randomId))
-        .getOrElse("none") + "-" + desc.id
+      .map(_.clientId)
+      .orElse(user.map(_.randomId))
+      .getOrElse("none") + "-" + desc.id
     if (valCfg.noCache) {
       validateCertificateChain(chain, desc, apikey, user, valCfg).map {
         case Some(bool) => bool

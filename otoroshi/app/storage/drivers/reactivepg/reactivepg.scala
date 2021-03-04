@@ -382,8 +382,8 @@ class ReactivePgDataStores(
   override def authConfigsDataStore: AuthConfigsDataStore             = _authConfigsDataStore
   override def certificatesDataStore: CertificateDataStore            = _certificateDataStore
   override def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] = {
-    redis.info().map(_ => Healthy).recover {
-      case _ => Unreachable
+    redis.info().map(_ => Healthy).recover { case _ =>
+      Unreachable
     }
   }
   def fromRawGetToExport(v: JsValue): JsValue = {
@@ -564,8 +564,8 @@ class ReactivePgRedis(
         case Success(value) => FastFuture.successful(value)
         case Failure(e)     => FastFuture.failed(e)
       }
-    }.andThen {
-      case Failure(e) => logger.error(s"""Failed to apply query: "$query" with params: "${params.mkString(", ")}"""", e)
+    }.andThen { case Failure(e) =>
+      logger.error(s"""Failed to apply query: "$query" with params: "${params.mkString(", ")}"""", e)
     }
   }
 
@@ -636,9 +636,9 @@ class ReactivePgRedis(
     if (key == "service-descriptor") {
       val desc     = ServiceDescriptor.fromJsons(Json.parse(value.utf8String))
       val jsonDesc = desc.json.asObject ++ Json.obj(
-          "__allHosts" -> desc.allHosts,
-          "__allPaths" -> desc.allPaths
-        )
+        "__allHosts" -> desc.allHosts,
+        "__allPaths" -> desc.allPaths
+      )
       jsonDesc.stringify
     } else {
       value.utf8String
@@ -661,8 +661,8 @@ class ReactivePgRedis(
       querySeq(
         s"select value from $schemaDotTable, jsonb_array_elements_text(jvalue->'__allHosts') many(elem) where (jvalue->'enabled')::boolean = true and kind = 'service-descriptor' and elem ~ '$queryRegex' and (ttl_starting_at + ttl) > NOW();"
       ) { row =>
-        row.optJsObject("value").map(ServiceDescriptor.fromJsonSafe).collect {
-          case JsSuccess(service, _) => service
+        row.optJsObject("value").map(ServiceDescriptor.fromJsonSafe).collect { case JsSuccess(service, _) =>
+          service
         }
       }
     }
@@ -674,8 +674,8 @@ class ReactivePgRedis(
       querySeq(
         s"select value from $schemaDotTable where kind = 'service-descriptor' and jvalue -> 'env' = '${ev}' and (ttl_starting_at + ttl) > NOW();"
       ) { row =>
-        row.optJsObject("value").map(ServiceDescriptor.fromJsonSafe).collect {
-          case JsSuccess(service, _) => service
+        row.optJsObject("value").map(ServiceDescriptor.fromJsonSafe).collect { case JsSuccess(service, _) =>
+          service
         }
       }
     }
@@ -687,8 +687,8 @@ class ReactivePgRedis(
       querySeq(
         s"select value from $schemaDotTable where kind = 'service-descriptor' and jvalue -> 'groups' ? '${id}' and (ttl_starting_at + ttl) > NOW();"
       ) { row =>
-        row.optJsObject("value").map(ServiceDescriptor.fromJsonSafe).collect {
-          case JsSuccess(service, _) => service
+        row.optJsObject("value").map(ServiceDescriptor.fromJsonSafe).collect { case JsSuccess(service, _) =>
+          service
         }
       }
     }
@@ -699,13 +699,13 @@ class ReactivePgRedis(
     measure("pg.ops.optm.apikeys-find-by-service") {
       val predicates = (
         Seq(s"jvalue -> 'authorizedEntities' ? '${ServiceDescriptorIdentifier(service.id).str}'") ++
-        service.groups.map(g => s"jvalue -> 'authorizedEntities' ? '${ServiceGroupIdentifier(g).str}'")
+          service.groups.map(g => s"jvalue -> 'authorizedEntities' ? '${ServiceGroupIdentifier(g).str}'")
       ).mkString(" or ")
       querySeq(
         s"""select value from $schemaDotTable where kind = 'apikey' and ($predicates) and (ttl_starting_at + ttl) > NOW();""".stripMargin
       ) { row =>
-        row.optJsObject("value").map(ApiKey.fromJsonSafe).collect {
-          case JsSuccess(apikey, _) => apikey
+        row.optJsObject("value").map(ApiKey.fromJsonSafe).collect { case JsSuccess(apikey, _) =>
+          apikey
         }
       }
     }
@@ -715,8 +715,8 @@ class ReactivePgRedis(
       querySeq(
         s"select value from $schemaDotTable where kind = 'apikey' and jvalue -> 'authorizedEntities' ? '${ServiceGroupIdentifier(groupId).str}' and (ttl_starting_at + ttl) > NOW();"
       ) { row =>
-        row.optJsObject("value").map(ApiKey.fromJsonSafe).collect {
-          case JsSuccess(apikey, _) => apikey
+        row.optJsObject("value").map(ApiKey.fromJsonSafe).collect { case JsSuccess(apikey, _) =>
+          apikey
         }
       }
     }

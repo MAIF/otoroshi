@@ -57,8 +57,8 @@ object SessionCookieValues {
               secure = (json \ "secure").asOpt[Boolean].getOrElse(true)
             )
           )
-        } recover {
-          case e => JsError(e.getMessage)
+        } recover { case e =>
+          JsError(e.getMessage)
         } get
     }
 }

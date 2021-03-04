@@ -233,8 +233,8 @@ class LettuceDataStores(
   override def authConfigsDataStore: AuthConfigsDataStore             = _authConfigsDataStore
   override def certificatesDataStore: CertificateDataStore            = _certificateDataStore
   override def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] = {
-    redis.info().map(_ => Healthy).recover {
-      case _ => Unreachable
+    redis.info().map(_ => Healthy).recover { case _ =>
+      Unreachable
     }
   }
   override def rawExport(

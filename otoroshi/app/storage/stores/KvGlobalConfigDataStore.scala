@@ -53,8 +53,8 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
         } else {
           callsForIpAddressCache.get(ipAddress).set(secCalls)
         }
-        redisCli.pttl(s"${_env.storageRoot}:throttling:perip:$ipAddress").filter(_ > -1).recoverWith {
-          case _ => redisCli.expire(s"${_env.storageRoot}:throttling:perip:$ipAddress", ttl)
+        redisCli.pttl(s"${_env.storageRoot}:throttling:perip:$ipAddress").filter(_ > -1).recoverWith { case _ =>
+          redisCli.expire(s"${_env.storageRoot}:throttling:perip:$ipAddress", ttl)
         } map (_ => secCalls)
       }
 
@@ -143,10 +143,10 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
               enabled = true,
               transformersRefs = staticGlobalScripts.transformersRefs ++ c.scripts.transformersRefs,
               transformersConfig = staticGlobalScripts.transformersConfig.as[JsObject] ++ c.scripts.transformersConfig
-                  .as[JsObject],
+                .as[JsObject],
               validatorRefs = staticGlobalScripts.validatorRefs ++ c.scripts.validatorRefs,
               validatorConfig = staticGlobalScripts.validatorConfig.as[JsObject] ++ c.scripts.validatorConfig
-                  .as[JsObject],
+                .as[JsObject],
               preRouteRefs = staticGlobalScripts.preRouteRefs ++ c.scripts.preRouteRefs,
               preRouteConfig = staticGlobalScripts.preRouteConfig.as[JsObject] ++ c.scripts.preRouteConfig.as[JsObject],
               sinkRefs = staticGlobalScripts.sinkRefs ++ c.scripts.sinkRefs,
@@ -178,10 +178,9 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
 
     @inline
     def actualCall() =
-      findById("global").map(_.get).andThen {
-        case Success(conf) =>
-          lastConfigCache.set(time)
-          configCache.set(conf)
+      findById("global").map(_.get).andThen { case Success(conf) =>
+        lastConfigCache.set(time)
+        configCache.set(conf)
       }
 
     if (ref == null) {
@@ -206,8 +205,8 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
       ec: ExecutionContext,
       env: Env
   ): Future[Boolean] = {
-    super.set(value, pxMilliseconds)(ec, env).andThen {
-      case Success(_) => configCache.set(value)
+    super.set(value, pxMilliseconds)(ec, env).andThen { case Success(_) =>
+      configCache.set(value)
     }
   }
 

@@ -454,11 +454,10 @@ class BouncyCastlePki(generator: IdGenerator, env: Env) extends Pki {
       val to      = new java.util.Date(System.currentTimeMillis + validity.toMillis)
       val certgen = new X509v3CertificateBuilder(issuer, serial, from, to, csr.getSubject, csr.getSubjectPublicKeyInfo)
       csr.getAttributes.foreach(attr => {
-        attr.getAttributeValues.collect {
-          case exts: Extensions =>
-            exts.getExtensionOIDs.map(id => exts.getExtension(id)).filter(_ != null).foreach { ext =>
-              certgen.addExtension(ext.getExtnId, ext.isCritical, ext.getParsedValue)
-            }
+        attr.getAttributeValues.collect { case exts: Extensions =>
+          exts.getExtensionOIDs.map(id => exts.getExtension(id)).filter(_ != null).foreach { ext =>
+            certgen.addExtension(ext.getExtnId, ext.isCritical, ext.getParsedValue)
+          }
         }
       })
 

@@ -22,8 +22,8 @@ object KubernetesCertSyncJob {
 
   def importCerts(certs: Seq[KubernetesCertSecret])(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
 
-    val hashs = DynamicSSLEngineProvider.certificates.map {
-      case (_, value) => (value.contentHash, value)
+    val hashs = DynamicSSLEngineProvider.certificates.map { case (_, value) =>
+      (value.contentHash, value)
     }
 
     Future
@@ -124,9 +124,8 @@ object KubernetesCertSyncJob {
               ().future
             }
           }
-          .andThen {
-            case e =>
-              running.set(false)
+          .andThen { case e =>
+            running.set(false)
           }
       } else {
         logger.info("Job already running, scheduling after ")
@@ -304,8 +303,8 @@ class KubernetesToOtoroshiCertSyncJob extends Job {
       source
         .takeWhile(_ => !watchCommand.get())
         .filterNot(_.isEmpty)
-        .alsoTo(Sink.onComplete {
-          case _ => lastWatchStopped.set(true)
+        .alsoTo(Sink.onComplete { case _ =>
+          lastWatchStopped.set(true)
         })
         .runWith(Sink.foreach { group =>
           val now = System.currentTimeMillis()

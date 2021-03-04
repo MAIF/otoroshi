@@ -111,8 +111,8 @@ object SniSettings {
                 (json \ "forwardsTo").asOpt(TcpTarget.fmt).getOrElse(TcpTarget("127.0.0.1", None, 8080, false))
             )
           )
-        } recover {
-          case e => JsError(e.getMessage)
+        } recover { case e =>
+          JsError(e.getMessage)
         } get
     }
 }
@@ -140,8 +140,8 @@ object TcpTarget {
               tls = (json \ "tls").asOpt[Boolean].getOrElse(false)
             )
           )
-        } recover {
-          case e => JsError(e.getMessage)
+        } recover { case e =>
+          JsError(e.getMessage)
         } get
     }
 }
@@ -164,8 +164,8 @@ object TcpRule {
               targets = (json \ "targets").asOpt(Reads.seq(TcpTarget.fmt)).getOrElse(Seq.empty)
             )
           )
-        } recover {
-          case e => JsError(e.getMessage)
+        } recover { case e =>
+          JsError(e.getMessage)
         } get
     }
 }
@@ -230,8 +230,8 @@ object TcpService {
             metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty)
           )
         )
-      } recover {
-        case e => JsError(e.getMessage)
+      } recover { case e =>
+        JsError(e.getMessage)
       } get
 
     override def writes(o: TcpService): JsValue =
@@ -346,28 +346,27 @@ object TcpService {
                 service = Some(service)
               )
             })
-            .recover {
-              case NonFatal(ex) =>
-                val target    = Option(targetRef.get()).map(t => t.toAnalyticsString).getOrElse("--")
-                val targetTls = Option(targetRef.get()).map(t => t.tls).getOrElse(false)
-                TcpEvent(
-                  `@id` = env.snowflakeGenerator.nextIdStr(),
-                  `@timestamp` = DateTime.now(),
-                  reqId = id,
-                  protocol = if (tls) "Tcp/Tls" else "Tcp",
-                  to = Location("*", if (tls) "Tcp/Tls" else "Tcp", ""),
-                  target = Location(target, if (targetTls) "Tcp/Tls" else "Tcp", ""),
-                  remote = incoming.remoteAddress.toString,
-                  local = incoming.localAddress.toString,
-                  duration = 0L,
-                  overhead = overhead,
-                  data = DataInOut(dataIn.get(), dataOut.get()),
-                  gwError = Some(ex.getMessage),
-                  `@serviceId` = service.id,
-                  `@service` = service.name,
-                  port = port,
-                  service = Some(service)
-                )
+            .recover { case NonFatal(ex) =>
+              val target    = Option(targetRef.get()).map(t => t.toAnalyticsString).getOrElse("--")
+              val targetTls = Option(targetRef.get()).map(t => t.tls).getOrElse(false)
+              TcpEvent(
+                `@id` = env.snowflakeGenerator.nextIdStr(),
+                `@timestamp` = DateTime.now(),
+                reqId = id,
+                protocol = if (tls) "Tcp/Tls" else "Tcp",
+                to = Location("*", if (tls) "Tcp/Tls" else "Tcp", ""),
+                target = Location(target, if (targetTls) "Tcp/Tls" else "Tcp", ""),
+                remote = incoming.remoteAddress.toString,
+                local = incoming.localAddress.toString,
+                duration = 0L,
+                overhead = overhead,
+                data = DataInOut(dataIn.get(), dataOut.get()),
+                gwError = Some(ex.getMessage),
+                `@serviceId` = service.id,
+                `@service` = service.name,
+                port = port,
+                service = Some(service)
+              )
             }
         } catch {
           case NonFatal(e) =>
@@ -496,10 +495,9 @@ object TcpService {
                   Flow[ByteString].flatMapConcat(_ => Source.failed(new RuntimeException("No domain matches")))
                 }
               }
-            } recover {
-              case e =>
-                log.error("SNI failed", e)
-                Flow[ByteString].flatMapConcat(_ => Source.failed(e))
+            } recover { case e =>
+              log.error("SNI failed", e)
+              Flow[ByteString].flatMapConcat(_ => Source.failed(e))
             }
           }
           val overhead                                           = System.currentTimeMillis() - start
@@ -532,28 +530,27 @@ object TcpService {
                 service = Some(service)
               )
             })
-            .recover {
-              case NonFatal(ex) =>
-                val target    = Option(targetRef.get()).map(t => t.toAnalyticsString).getOrElse("--")
-                val targetTls = Option(targetRef.get()).map(t => t.tls).getOrElse(false)
-                TcpEvent(
-                  `@id` = env.snowflakeGenerator.nextIdStr(),
-                  `@timestamp` = DateTime.now(),
-                  reqId = id,
-                  protocol = if (tls) "Tcp/Tls" else "Tcp",
-                  to = Location(Option(ref.get()).getOrElse("no-sni"), if (tls) "Tcp/Tls" else "Tcp", ""),
-                  target = Location(target, if (targetTls) "Tcp/Tls" else "Tcp", ""),
-                  remote = incoming.remoteAddress.toString,
-                  local = incoming.localAddress.toString,
-                  duration = 0L,
-                  overhead = overhead,
-                  data = DataInOut(dataIn.get(), dataOut.get()),
-                  gwError = Some(ex.getMessage),
-                  `@serviceId` = service.id,
-                  `@service` = service.name,
-                  port = port,
-                  service = Some(service)
-                )
+            .recover { case NonFatal(ex) =>
+              val target    = Option(targetRef.get()).map(t => t.toAnalyticsString).getOrElse("--")
+              val targetTls = Option(targetRef.get()).map(t => t.tls).getOrElse(false)
+              TcpEvent(
+                `@id` = env.snowflakeGenerator.nextIdStr(),
+                `@timestamp` = DateTime.now(),
+                reqId = id,
+                protocol = if (tls) "Tcp/Tls" else "Tcp",
+                to = Location(Option(ref.get()).getOrElse("no-sni"), if (tls) "Tcp/Tls" else "Tcp", ""),
+                target = Location(target, if (targetTls) "Tcp/Tls" else "Tcp", ""),
+                remote = incoming.remoteAddress.toString,
+                local = incoming.localAddress.toString,
+                duration = 0L,
+                overhead = overhead,
+                data = DataInOut(dataIn.get(), dataOut.get()),
+                gwError = Some(ex.getMessage),
+                `@serviceId` = service.id,
+                `@service` = service.name,
+                port = port,
+                service = Some(service)
+              )
             }
         } catch {
           case NonFatal(e) =>
@@ -709,16 +706,14 @@ class TcpProxy(
         val start = System.currentTimeMillis()
         val ref   = new AtomicReference[TcpEvent]()
         TcpService
-          .routeWithSNI(incoming, port, id, true, start, debugger) {
-            case (in, out) =>
-              ref
-                .get()
-                .copy(duration = System.currentTimeMillis() - start, data = DataInOut(in, out))
-                .toAnalytics()(env)
+          .routeWithSNI(incoming, port, id, true, start, debugger) { case (in, out) =>
+            ref
+              .get()
+              .copy(duration = System.currentTimeMillis() - start, data = DataInOut(in, out))
+              .toAnalytics()(env)
           }(ec, system, mat, env)
-          .andThen {
-            case Success(evt) =>
-              ref.set(evt) //evt.copy(duration = System.currentTimeMillis() - start).toAnalytics()(env)
+          .andThen { case Success(evt) =>
+            ref.set(evt) //evt.copy(duration = System.currentTimeMillis() - start).toAnalytics()(env)
           }
       }
       .to(Sink.ignore)
@@ -746,16 +741,14 @@ class TcpProxy(
         val start = System.currentTimeMillis()
         val ref   = new AtomicReference[TcpEvent]()
         TcpService
-          .routeWithoutSNI(incoming, port, id, true, start, debugger) {
-            case (in, out) =>
-              ref
-                .get()
-                .copy(duration = System.currentTimeMillis() - start, data = DataInOut(in, out))
-                .toAnalytics()(env)
+          .routeWithoutSNI(incoming, port, id, true, start, debugger) { case (in, out) =>
+            ref
+              .get()
+              .copy(duration = System.currentTimeMillis() - start, data = DataInOut(in, out))
+              .toAnalytics()(env)
           }(ec, system, mat, env)
-          .andThen {
-            case Success(evt) =>
-              ref.set(evt) //evt.copy(duration = System.currentTimeMillis() - start).toAnalytics()(env)
+          .andThen { case Success(evt) =>
+            ref.set(evt) //evt.copy(duration = System.currentTimeMillis() - start).toAnalytics()(env)
           }
       }
       .to(Sink.ignore)
@@ -777,16 +770,14 @@ class TcpProxy(
         val start = System.currentTimeMillis()
         val ref   = new AtomicReference[TcpEvent]()
         TcpService
-          .routeWithoutSNI(incoming, port, id, false, start, debugger) {
-            case (in, out) =>
-              ref
-                .get()
-                .copy(duration = System.currentTimeMillis() - start, data = DataInOut(in, out))
-                .toAnalytics()(env)
+          .routeWithoutSNI(incoming, port, id, false, start, debugger) { case (in, out) =>
+            ref
+              .get()
+              .copy(duration = System.currentTimeMillis() - start, data = DataInOut(in, out))
+              .toAnalytics()(env)
           }(ec, system, mat, env)
-          .andThen {
-            case Success(evt) =>
-              ref.set(evt) //evt.copy(duration = System.currentTimeMillis() - start).toAnalytics()(env)
+          .andThen { case Success(evt) =>
+            ref.set(evt) //evt.copy(duration = System.currentTimeMillis() - start).toAnalytics()(env)
           }
       }
       .to(Sink.ignore)
@@ -831,15 +822,13 @@ class TcpProxy(
         val start = System.currentTimeMillis()
         val ref   = new AtomicReference[TcpEvent]()
         TcpService
-          .routeWithSNI(incoming, port, id, false, start, debugger) {
-            case (in, out) =>
-              val e = ref.get().copy(duration = System.currentTimeMillis() - start, data = DataInOut(in, out))
-              // println(Json.prettyPrint(e.toJson(env)))
-              e.toAnalytics()(env)
+          .routeWithSNI(incoming, port, id, false, start, debugger) { case (in, out) =>
+            val e = ref.get().copy(duration = System.currentTimeMillis() - start, data = DataInOut(in, out))
+            // println(Json.prettyPrint(e.toJson(env)))
+            e.toAnalytics()(env)
           }(ec, system, mat, env)
-          .andThen {
-            case Success(evt) =>
-              ref.set(evt) //evt.copy(duration = System.currentTimeMillis() - start).toAnalytics()(env)
+          .andThen { case Success(evt) =>
+            ref.set(evt) //evt.copy(duration = System.currentTimeMillis() - start).toAnalytics()(env)
           }
       }
       .to(Sink.ignore)
@@ -929,8 +918,8 @@ class RunningServers(env: Env) {
             runningServers.set(stayServers ++ running1 ++ running2)
           }
         }
-        .andThen {
-          case _ => syncing.compareAndSet(true, false)
+        .andThen { case _ =>
+          syncing.compareAndSet(true, false)
         }
     }
   }

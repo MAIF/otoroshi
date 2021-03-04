@@ -632,20 +632,19 @@ class ElasticReadsAnalytics(config: ElasticAnalyticsConfig, env: Env) extends An
     ).map { res =>
       val buckets: JsObject = (res \ "aggregations" \ "codes" \ "buckets").asOpt[JsObject].getOrElse(Json.obj())
       val series            = buckets.value
-        .map {
-          case (k, v) =>
-            Json.obj(
-              "name"  -> k,
-              "count" -> (v \ "doc_count").asOpt[Int],
-              "data"  -> (v \ "codesOverTime" \ "buckets")
-                .asOpt[Seq[JsValue]]
-                .map(_.flatMap { j =>
-                  for {
-                    k <- (j \ "key").asOpt[JsValue]
-                    v <- (j \ "doc_count").asOpt[Int]
-                  } yield Json.arr(k, v)
-                })
-            )
+        .map { case (k, v) =>
+          Json.obj(
+            "name"  -> k,
+            "count" -> (v \ "doc_count").asOpt[Int],
+            "data"  -> (v \ "codesOverTime" \ "buckets")
+              .asOpt[Seq[JsValue]]
+              .map(_.flatMap { j =>
+                for {
+                  k <- (j \ "key").asOpt[JsValue]
+                  v <- (j \ "doc_count").asOpt[Int]
+                } yield Json.arr(k, v)
+              })
+          )
         }
       Json.obj(
         "chart" -> Json.obj("type" -> "areaspline"),

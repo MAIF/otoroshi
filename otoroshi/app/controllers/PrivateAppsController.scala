@@ -120,156 +120,150 @@ class PrivateAppsController(ApiAction: ApiAction, PrivateAppsAction: PrivateApps
   def registerSession(authModuleId: String, username: String) =
     ApiAction.async { ctx =>
       ctx.canWriteAuthModule(authModuleId) {
-        registerSessionForUser(authModuleId, username).map {
-          case (cipheredSessionId, host) => Ok(Json.obj("sessionId" -> cipheredSessionId, "host" -> host))
+        registerSessionForUser(authModuleId, username).map { case (cipheredSessionId, host) =>
+          Ok(Json.obj("sessionId" -> cipheredSessionId, "host" -> host))
         }
       }
     }
 
   def selfRegistrationStart() =
     Action.async { req =>
-      withShortSession(req) {
-        case (bam, _, _) =>
-          bam.webAuthnRegistrationStart(req.body.asJson.get).map {
-            case Left(err)  => BadRequest(err)
-            case Right(reg) => Ok(reg)
-          }
+      withShortSession(req) { case (bam, _, _) =>
+        bam.webAuthnRegistrationStart(req.body.asJson.get).map {
+          case Left(err)  => BadRequest(err)
+          case Right(reg) => Ok(reg)
+        }
       }
     }
 
   def selfRegistrationFinish() =
     Action.async { req =>
-      withShortSession(req) {
-        case (bam, _, _) =>
-          bam.webAuthnRegistrationFinish(req.body.asJson.get).map {
-            case Left(err)  => BadRequest(err)
-            case Right(reg) => Ok(reg)
-          }
+      withShortSession(req) { case (bam, _, _) =>
+        bam.webAuthnRegistrationFinish(req.body.asJson.get).map {
+          case Left(err)  => BadRequest(err)
+          case Right(reg) => Ok(reg)
+        }
       }
     }
 
   def selfRegistrationDelete() =
     Action.async { req =>
-      withShortSession(req) {
-        case (bam, user, _) =>
-          bam.webAuthnRegistrationDelete(user).map {
-            case Left(err)  => BadRequest(err)
-            case Right(reg) => Ok(reg)
-          }
+      withShortSession(req) { case (bam, user, _) =>
+        bam.webAuthnRegistrationDelete(user).map {
+          case Left(err)  => BadRequest(err)
+          case Right(reg) => Ok(reg)
+        }
       }
     }
 
   def selfUpdateProfilePage() =
     Action.async { req =>
-      withShortSession(req) {
-        case (bam, user, ttl) =>
-          Ok(
-            views.html.oto.selfUpdate(
-              Json.obj(
-                "name"                  -> user.name,
-                "email"                 -> user.email,
-                "hasWebauthnDeviceReg"  -> user.webauthn.isDefined,
-                "mustRegWebauthnDevice" -> bam.authConfig.webauthn
-              ),
-              req.getQueryString("session").get,
-              ttl,
-              bam.authConfig.webauthn,
-              env
-            )
-          ).future
+      withShortSession(req) { case (bam, user, ttl) =>
+        Ok(
+          views.html.oto.selfUpdate(
+            Json.obj(
+              "name"                  -> user.name,
+              "email"                 -> user.email,
+              "hasWebauthnDeviceReg"  -> user.webauthn.isDefined,
+              "mustRegWebauthnDevice" -> bam.authConfig.webauthn
+            ),
+            req.getQueryString("session").get,
+            ttl,
+            bam.authConfig.webauthn,
+            env
+          )
+        ).future
       }
     }
 
   def selfUpdateProfile() =
     Action.async(parse.json) { req =>
-      withShortSession(req) {
-        case (bam, user, _) =>
-          var newUser = user
-          (req.body \ "password").asOpt[String] match {
-            case Some(pass) if BCrypt.checkpw(pass, user.password) => {
-              val name          = (req.body \ "name").asOpt[String].getOrElse(user.name)
-              val newPassword   = (req.body \ "newPassword").asOpt[String]
-              val reNewPassword = (req.body \ "reNewPassword").asOpt[String]
-              (newPassword, reNewPassword) match {
-                case (Some(p1), Some(p2)) if p1 == p2 =>
-                  val password = BCrypt.hashpw(p1, BCrypt.gensalt(10))
-                  newUser = newUser.copy(name = name, password = password)
-                  val conf     =
-                    bam.authConfig.copy(users = bam.authConfig.users.filterNot(_.email == user.email) :+ newUser)
-                  conf.save().map { _ =>
-                    Ok(
-                      Json.obj(
-                        "name"                  -> newUser.name,
-                        "email"                 -> newUser.email,
-                        "hasWebauthnDeviceReg"  -> newUser.webauthn.isDefined,
-                        "mustRegWebauthnDevice" -> bam.authConfig.webauthn
-                      )
+      withShortSession(req) { case (bam, user, _) =>
+        var newUser = user
+        (req.body \ "password").asOpt[String] match {
+          case Some(pass) if BCrypt.checkpw(pass, user.password) => {
+            val name          = (req.body \ "name").asOpt[String].getOrElse(user.name)
+            val newPassword   = (req.body \ "newPassword").asOpt[String]
+            val reNewPassword = (req.body \ "reNewPassword").asOpt[String]
+            (newPassword, reNewPassword) match {
+              case (Some(p1), Some(p2)) if p1 == p2 =>
+                val password = BCrypt.hashpw(p1, BCrypt.gensalt(10))
+                newUser = newUser.copy(name = name, password = password)
+                val conf     =
+                  bam.authConfig.copy(users = bam.authConfig.users.filterNot(_.email == user.email) :+ newUser)
+                conf.save().map { _ =>
+                  Ok(
+                    Json.obj(
+                      "name"                  -> newUser.name,
+                      "email"                 -> newUser.email,
+                      "hasWebauthnDeviceReg"  -> newUser.webauthn.isDefined,
+                      "mustRegWebauthnDevice" -> bam.authConfig.webauthn
                     )
-                  }
-                case (None, None)                     =>
-                  val password = user.password
-                  newUser = newUser.copy(name = name, password = password)
-                  val conf     =
-                    bam.authConfig.copy(users = bam.authConfig.users.filterNot(_.email == user.email) :+ newUser)
-                  conf.save().map { _ =>
-                    Ok(
-                      Json.obj(
-                        "name"                  -> newUser.name,
-                        "email"                 -> newUser.email,
-                        "hasWebauthnDeviceReg"  -> newUser.webauthn.isDefined,
-                        "mustRegWebauthnDevice" -> bam.authConfig.webauthn
-                      )
+                  )
+                }
+              case (None, None)                     =>
+                val password = user.password
+                newUser = newUser.copy(name = name, password = password)
+                val conf     =
+                  bam.authConfig.copy(users = bam.authConfig.users.filterNot(_.email == user.email) :+ newUser)
+                conf.save().map { _ =>
+                  Ok(
+                    Json.obj(
+                      "name"                  -> newUser.name,
+                      "email"                 -> newUser.email,
+                      "hasWebauthnDeviceReg"  -> newUser.webauthn.isDefined,
+                      "mustRegWebauthnDevice" -> bam.authConfig.webauthn
                     )
-                  }
-                case _                                => FastFuture.successful(BadRequest(Json.obj("error" -> "bad password 1")))
-              }
+                  )
+                }
+              case _                                => FastFuture.successful(BadRequest(Json.obj("error" -> "bad password 1")))
             }
-            case _                                                 => FastFuture.successful(BadRequest(Json.obj("error" -> "bad password 2")))
           }
+          case _                                                 => FastFuture.successful(BadRequest(Json.obj("error" -> "bad password 2")))
+        }
       }
     }
 
   def sendSelfUpdateLink(authModuleId: String, username: String) =
     ApiAction.async { ctx =>
-      registerSessionForUser(authModuleId, username).flatMap {
-        case (sessionId, host) =>
-          env.datastores.authConfigsDataStore.findById(authModuleId).flatMap {
-            case Some(auth) => {
-              auth.authModule(env.datastores.globalConfigDataStore.latest()) match {
-                case bam: BasicAuthModule if bam.authConfig.webauthn => {
-                  bam.authConfig.users.find(_.email == username) match {
-                    case None       => NotFound(Json.obj("error" -> s"user not found")).future
-                    case Some(user) => {
-                      env.datastores.globalConfigDataStore
-                        .singleton()
-                        .flatMap { config =>
-                          config.mailerSettings
-                            .map(
-                              _.asMailer(config, env).send(
-                                from = EmailLocation("Otoroshi", s"otoroshi@${env.domain}"),
-                                to = Seq(EmailLocation(user.name, user.email)),
-                                subject = s"Otoroshi - update your profile",
-                                html = s"""
+      registerSessionForUser(authModuleId, username).flatMap { case (sessionId, host) =>
+        env.datastores.authConfigsDataStore.findById(authModuleId).flatMap {
+          case Some(auth) => {
+            auth.authModule(env.datastores.globalConfigDataStore.latest()) match {
+              case bam: BasicAuthModule if bam.authConfig.webauthn => {
+                bam.authConfig.users.find(_.email == username) match {
+                  case None       => NotFound(Json.obj("error" -> s"user not found")).future
+                  case Some(user) => {
+                    env.datastores.globalConfigDataStore
+                      .singleton()
+                      .flatMap { config =>
+                        config.mailerSettings
+                          .map(
+                            _.asMailer(config, env).send(
+                              from = EmailLocation("Otoroshi", s"otoroshi@${env.domain}"),
+                              to = Seq(EmailLocation(user.name, user.email)),
+                              subject = s"Otoroshi - update your profile",
+                              html = s"""
                                         |You can update your user profile at the following <a href="${host}/privateapps/profile?session=${sessionId}">link</a>
                                       """.stripMargin
-                              )
                             )
-                            .getOrElse(FastFuture.successful(()))
-                        }
-                        .map { _ =>
-                          Ok(Json.obj("done" -> true))
-                        }
-                    }
+                          )
+                          .getOrElse(FastFuture.successful(()))
+                      }
+                      .map { _ =>
+                        Ok(Json.obj("done" -> true))
+                      }
                   }
                 }
-                case _                                               => BadRequest(Json.obj("error" -> s"Not supported")).future
               }
+              case _                                               => BadRequest(Json.obj("error" -> s"Not supported")).future
             }
-            case None       =>
-              NotFound(
-                Json.obj("error" -> s"GlobalAuthModule with id $authModuleId not found")
-              ).future
           }
+          case None       =>
+            NotFound(
+              Json.obj("error" -> s"GlobalAuthModule with id $authModuleId not found")
+            ).future
+        }
       }
     }
 }

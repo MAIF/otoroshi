@@ -62,14 +62,14 @@ object OtoroshiClaim {
       "alg" -> algorithm.getName
     )
     val payload   = Json.obj(
-        "iss" -> env.Headers.OtoroshiIssuer,
-        "sub" -> claim.sub,
-        "aud" -> claim.aud,
-        "exp" -> new Date(claim.exp).getTime / 1000,
-        "iat" -> new Date(claim.iat).getTime / 1000,
-        "nbr" -> new Date(claim.iat).getTime / 1000,
-        "jti" -> claim.jti
-      ) ++ claim.metadata
+      "iss" -> env.Headers.OtoroshiIssuer,
+      "sub" -> claim.sub,
+      "aud" -> claim.aud,
+      "exp" -> new Date(claim.exp).getTime / 1000,
+      "iat" -> new Date(claim.iat).getTime / 1000,
+      "nbr" -> new Date(claim.iat).getTime / 1000,
+      "jti" -> claim.jti
+    ) ++ claim.metadata
     val signed    = sign(algorithm, header, payload)
     logger.debug(s"signed: $signed")
     signed

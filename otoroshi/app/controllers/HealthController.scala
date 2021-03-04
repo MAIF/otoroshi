@@ -93,22 +93,22 @@ class HealthController(cc: ControllerComponents)(implicit env: Env) extends Abst
         case Unreachable => "unreachable"
       })
       val payload         = Json.obj(
-          "otoroshi"     -> otoroshiStatus,
-          "datastore"    -> dataStoreStatus,
-          "proxy"        -> Json.obj(
-            "initialized" -> true,
-            "status"      -> otoroshiStatus
-          ),
-          "storage"      -> Json.obj(
-            "initialized" -> true,
-            "status"      -> dataStoreStatus
-          ),
-          "certificates" -> Json.obj(
-            "initialized" -> DynamicSSLEngineProvider.isFirstSetupDone,
-            "status"      -> certificates
-          ),
-          "scripts"      -> (scripts.json.as[JsObject] ++ Json.obj("status" -> scriptsReady))
-        ) ++ cluster
+        "otoroshi"     -> otoroshiStatus,
+        "datastore"    -> dataStoreStatus,
+        "proxy"        -> Json.obj(
+          "initialized" -> true,
+          "status"      -> otoroshiStatus
+        ),
+        "storage"      -> Json.obj(
+          "initialized" -> true,
+          "status"      -> dataStoreStatus
+        ),
+        "certificates" -> Json.obj(
+          "initialized" -> DynamicSSLEngineProvider.isFirstSetupDone,
+          "status"      -> certificates
+        ),
+        "scripts"      -> (scripts.json.as[JsObject] ++ Json.obj("status" -> scriptsReady))
+      ) ++ cluster
       val err             = (payload \ "otoroshi").asOpt[String].exists(_ != "healthy") ||
         (payload \ "datastore").asOpt[String].exists(_ != "healthy") ||
         (payload \ "cluster").asOpt[String].orElse(Some("healthy")).exists(v => v != "healthy") ||

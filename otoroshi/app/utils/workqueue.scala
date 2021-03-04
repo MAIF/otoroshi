@@ -28,8 +28,8 @@ final class WorkQueue[A](buffer: Int)(implicit mat: Materializer) {
         rf
       }
     }
-    .recover {
-      case _: Exception => () // keep processing tasks
+    .recover { case _: Exception =>
+      () // keep processing tasks
     }
     .toMat(Sink.ignore)(Keep.left)
     .run

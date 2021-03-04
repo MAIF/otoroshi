@@ -206,10 +206,9 @@ class NewCassandraRedis(actorSystem: ActorSystem, configuration: Configuration)(
           }
           _session.executeAsync(bound).toScala
         }
-        rsf.andThen {
-          case r =>
-            timer.close()
-            timerOp.close()
+        rsf.andThen { case r =>
+          timer.close()
+          timerOp.close()
         }
       } catch {
         case e: Throwable =>
@@ -557,8 +556,8 @@ class NewCassandraRedis(actorSystem: ActorSystem, configuration: Configuration)(
   }
 
   def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] = {
-    executeAsync("SHOW VERSION").map(_ => Healthy).recover {
-      case _ => Unreachable
+    executeAsync("SHOW VERSION").map(_ => Healthy).recover { case _ =>
+      Unreachable
     }
   }
 }

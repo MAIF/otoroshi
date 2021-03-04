@@ -27,8 +27,8 @@ object BadResponse {
             headers = (json \ "headers").asOpt[Map[String, String]].getOrElse(Map.empty[String, String])
           )
         )
-      } recover {
-        case t => JsError(t.getMessage)
+      } recover { case t =>
+        JsError(t.getMessage)
       } get
     override def writes(o: BadResponse): JsValue             =
       Json.obj(
@@ -60,8 +60,8 @@ object LargeRequestFaultConfig {
             additionalRequestSize = (json \ "additionalRequestSize").as[Int]
           )
         )
-      } recover {
-        case t => JsError(t.getMessage)
+      } recover { case t =>
+        JsError(t.getMessage)
       } get
     override def writes(o: LargeRequestFaultConfig): JsValue             =
       Json.obj(
@@ -87,8 +87,8 @@ object LargeResponseFaultConfig {
             additionalResponseSize = (json \ "additionalResponseSize").as[Int]
           )
         )
-      } recover {
-        case t => JsError(t.getMessage)
+      } recover { case t =>
+        JsError(t.getMessage)
       } get
     override def writes(o: LargeResponseFaultConfig): JsValue             =
       Json.obj(
@@ -117,8 +117,8 @@ object LatencyInjectionFaultConfig {
             to = (json \ "to").as(SnowMonkeyConfig.durationFmt)
           )
         )
-      } recover {
-        case t => JsError(t.getMessage)
+      } recover { case t =>
+        JsError(t.getMessage)
       } get
     override def writes(o: LatencyInjectionFaultConfig): JsValue             =
       Json.obj(
@@ -145,8 +145,8 @@ object BadResponsesFaultConfig {
             responses = (json \ "responses").as(Reads.seq(BadResponse.fmt))
           )
         )
-      } recover {
-        case t => JsError(t.getMessage)
+      } recover { case t =>
+        JsError(t.getMessage)
       } get
     override def writes(o: BadResponsesFaultConfig): JsValue             =
       Json.obj(
@@ -181,12 +181,11 @@ object ChaosConfig {
           badResponsesFaultConfig =
             (json \ "badResponsesFaultConfig").asOpt[BadResponsesFaultConfig](BadResponsesFaultConfig.fmt)
         )
-      } map {
-        case sd => JsSuccess(sd)
-      } recover {
-        case t =>
-          logger.error("Error while reading SnowMonkeyConfig", t)
-          JsError(t.getMessage)
+      } map { case sd =>
+        JsSuccess(sd)
+      } recover { case t =>
+        logger.error("Error while reading SnowMonkeyConfig", t)
+        JsError(t.getMessage)
       } get
     }
     override def writes(o: ChaosConfig): JsValue = {
@@ -316,12 +315,11 @@ object SnowMonkeyConfig {
             .asOpt[ChaosConfig](ChaosConfig._fmt)
             .getOrElse(ChaosConfig(true, None, None, None, None))
         )
-      } map {
-        case sd => JsSuccess(sd)
-      } recover {
-        case t =>
-          logger.error("Error while reading SnowMonkeyConfig", t)
-          JsError(t.getMessage)
+      } map { case sd =>
+        JsSuccess(sd)
+      } recover { case t =>
+        logger.error("Error while reading SnowMonkeyConfig", t)
+        JsError(t.getMessage)
       } get
     }
   }
@@ -370,8 +368,8 @@ object Outage {
             startedAt = (json \ "startedAt").asOpt[String].map(v => DateTime.parse(v)).getOrElse(DateTime.now())
           )
         )
-      } recover {
-        case e => JsError(e.getMessage)
+      } recover { case e =>
+        JsError(e.getMessage)
       } get
   }
 }

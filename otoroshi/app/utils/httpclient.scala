@@ -358,8 +358,8 @@ class WsClientChooser(
           akkaClient.mat
         )
 
-      case "http" if !useAkkaHttpClient             => standardClient.url(url)
-      case "https" if !useAkkaHttpClient            => standardClient.url(url)
+      case "http" if !useAkkaHttpClient  => standardClient.url(url)
+      case "https" if !useAkkaHttpClient => standardClient.url(url)
 
       case "standard:http"  => standardClient.url(url.replace("standard:http://", "http://"))
       case "standard:https" => standardClient.url(url.replace("standard:https://", "https://"))
@@ -367,7 +367,7 @@ class WsClientChooser(
       // case "ahc:http"  => getAhcInstance().url(url.replace("ahc:http://", "http://"))
       // case "ahc:https" => getAhcInstance().url(url.replace("ahc:https://", "https://"))
 
-      case "ahc:http"                            =>
+      case "ahc:http"  =>
         new AkkaWsClientRequest(
           akkaClient,
           url.replace("ahc:http://", "http://"),
@@ -378,7 +378,7 @@ class WsClientChooser(
         )(
           akkaClient.mat
         )
-      case "ahc:https"                           =>
+      case "ahc:https" =>
         new AkkaWsClientRequest(
           akkaClient,
           url.replace("ahc:https://", "http://"),
@@ -390,7 +390,7 @@ class WsClientChooser(
           akkaClient.mat
         )
 
-      case "ahttp"                               =>
+      case "ahttp"                    =>
         new AkkaWsClientRequest(
           akkaClient,
           url.replace("ahttp://", "http://"),
@@ -401,7 +401,7 @@ class WsClientChooser(
         )(
           akkaClient.mat
         )
-      case "ahttps"                              =>
+      case "ahttps"                   =>
         new AkkaWsClientRequest(
           akkaClient,
           url.replace("ahttps://", "https://"),
@@ -412,7 +412,7 @@ class WsClientChooser(
         )(
           akkaClient.mat
         )
-      case "mtls:https"                          =>
+      case "mtls:https"               =>
         new AkkaWsClientRequest(
           akkaClient,
           url.replace("mtls:https://", "https://"),
@@ -423,7 +423,7 @@ class WsClientChooser(
         )(
           akkaClient.mat
         )
-      case "mtls"                                =>
+      case "mtls"                     =>
         new AkkaWsClientRequest(
           akkaClient,
           url.replace("mtls://", "https://"),
@@ -434,7 +434,7 @@ class WsClientChooser(
         )(
           akkaClient.mat
         )
-      case p if p.startsWith("mtls#")            => {
+      case p if p.startsWith("mtls#") => {
         val parts           = url.split("://")
         val mtlsConfigRaw   = parts.apply(0).replace("mtls#", "")
         val urlEnds         = parts.apply(1)
@@ -462,7 +462,7 @@ class WsClientChooser(
           akkaClient.mat
         )
       }
-      case "http2"                               =>
+      case "http2"                    =>
         new AkkaWsClientRequest(
           akkaClient,
           url.replace("http2://", "http://"),
@@ -473,7 +473,7 @@ class WsClientChooser(
         )(
           akkaClient.mat
         )
-      case "http2s"                              =>
+      case "http2s"                   =>
         new AkkaWsClientRequest(
           akkaClient,
           url.replace("http2s://", "https://"),
@@ -508,8 +508,8 @@ class WsClientChooser(
 object AkkWsClient {
   def cookies(httpResponse: HttpResponse): Seq[WSCookie] = {
     httpResponse.headers
-      .collect {
-        case c: `Set-Cookie` => c.cookie
+      .collect { case c: `Set-Cookie` =>
+        c.cookie
       }
       .map { c =>
         WSCookieWithSameSite(
@@ -792,8 +792,8 @@ case class AkkWsClientStreamedResponse(
 
   lazy val allHeaders: Map[String, Seq[String]] = {
     val headers = httpResponse.headers.groupBy(_.name()).mapValues(_.map(_.value())).toSeq ++ Seq(
-        ("Content-Type" -> Seq(contentType))
-      ) /* ++ (if (httpResponse.entity.isChunked()) {
+      ("Content-Type" -> Seq(contentType))
+    ) /* ++ (if (httpResponse.entity.isChunked()) {
       Seq(("Transfer-Encoding" -> Seq("chunked")))
     } else {
       Seq.empty
@@ -803,7 +803,7 @@ case class AkkWsClientStreamedResponse(
 
   private lazy val _charset: Option[HttpCharset] = httpResponse.entity.contentType.charsetOption
   private lazy val _contentType: String          = httpResponse.entity.contentType.mediaType
-      .toString() + _charset.map(v => ";charset=" + v.value).getOrElse("")
+    .toString() + _charset.map(v => ";charset=" + v.value).getOrElse("")
   private lazy val _bodyAsBytes: ByteString      =
     Await.result(bodyAsSource.runFold(ByteString.empty)(_ ++ _)(mat), FiniteDuration(10, TimeUnit.MINUTES))
   private lazy val _bodyAsString: String         = _bodyAsBytes.utf8String
@@ -836,8 +836,8 @@ case class AkkWsClientRawResponse(httpResponse: HttpResponse, underlyingUrl: Str
 
   lazy val allHeaders: Map[String, Seq[String]] = {
     val headers = httpResponse.headers.groupBy(_.name()).mapValues(_.map(_.value())).toSeq ++ Seq(
-        ("Content-Type" -> Seq(contentType))
-      ) /*++ (if (httpResponse.entity.isChunked()) {
+      ("Content-Type" -> Seq(contentType))
+    ) /*++ (if (httpResponse.entity.isChunked()) {
       Seq(("Transfer-Encoding" -> Seq("chunked")))
     } else {
       Seq.empty
@@ -847,7 +847,7 @@ case class AkkWsClientRawResponse(httpResponse: HttpResponse, underlyingUrl: Str
 
   private lazy val _charset: Option[HttpCharset] = httpResponse.entity.contentType.charsetOption
   private lazy val _contentType: String          = httpResponse.entity.contentType.mediaType
-      .toString() + _charset.map(v => ";charset=" + v.value).getOrElse("")
+    .toString() + _charset.map(v => ";charset=" + v.value).getOrElse("")
   private lazy val _bodyAsBytes: ByteString      = rawbody
   private lazy val _bodyAsString: String         = rawbody.utf8String
   private lazy val _bodyAsXml: Elem              = XML.loadString(_bodyAsString)
@@ -1107,8 +1107,8 @@ case class AkkaWsClientRequest(
           .toStrict(FiniteDuration(client.wsClientConfig.requestTimeout._1, client.wsClientConfig.requestTimeout._2))
           .map(a => (response, a))
       }
-      .map {
-        case (response: HttpResponse, body: HttpEntity.Strict) => AkkWsClientRawResponse(response, rawUrl, body.data)
+      .map { case (response: HttpResponse, body: HttpEntity.Strict) =>
+        AkkWsClientRawResponse(response, rawUrl, body.data)
       }
   }
 
@@ -1155,9 +1155,8 @@ case class AkkaWsClientRequest(
       case SourceBody(bytes)                 => (HttpEntity(ct, bytes), headers)
     }
     val akkaHeaders: List[HttpHeader]    = updatedHeaders
-      .flatMap {
-        case (key, values) =>
-          values.distinct.map(value => HttpHeader.parse(key, value))
+      .flatMap { case (key, values) =>
+        values.distinct.map(value => HttpHeader.parse(key, value))
       }
       .flatMap {
         case ParsingResult.Ok(header, _) => Option(header)
@@ -1186,10 +1185,10 @@ case class AkkaWsClientRequest(
   override def withCookies(cookies: WSCookie*): WSRequest = {
     val oldCookies = headers.get("Cookie").getOrElse(Seq.empty[String])
     val newCookies = oldCookies :+ cookies.toList
-        .map { c =>
-          s"${c.name}=${c.value}"
-        }
-        .mkString(";")
+      .map { c =>
+        s"${c.name}=${c.value}"
+      }
+      .mkString(";")
     copy(
       headers = headers + ("Cookie" -> newCookies)
     )

@@ -32,8 +32,8 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
 
   config.caCert.foreach { cert =>
     val caCert = Cert.apply("kubernetes-ca-cert", cert, "").copy(id = "kubernetes-ca-cert")
-    DynamicSSLEngineProvider.certificates.find {
-      case (k, c) => c.id == "kubernetes-ca-cert"
+    DynamicSSLEngineProvider.certificates.find { case (k, c) =>
+      c.id == "kubernetes-ca-cert"
     } match {
       case None                                                => caCert.enrich().save()(ec, env)
       case Some((k, c)) if c.contentHash == caCert.contentHash => ()
@@ -452,8 +452,8 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
                         logger.error(s"error while reading entity of type $pluralName", e)
                     }
                   }
-                  .collect {
-                    case Success((JsSuccess(item, _), raw)) => OtoResHolder(raw, item)
+                  .collect { case Success((JsSuccess(item, _), raw)) =>
+                    OtoResHolder(raw, item)
                   }
               } else {
                 logger.debug(s"fetchOtoroshiResources ${pluralName}: bad status ${resp.status}")
@@ -850,10 +850,9 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
                       Source.empty
                     }
                   }
-                  .recover {
-                    case e =>
-                      logger.error(s"error while watching ${api}/${namespace}/${resource}", e)
-                      Source.empty
+                  .recover { case e =>
+                    logger.error(s"error while watching ${api}/${namespace}/${resource}", e)
+                    Source.empty
                   }
               } else if (list.status == 404) {
                 list.ignore()
@@ -867,10 +866,9 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
                 Source.empty.future
               }
             }
-            .recover {
-              case e =>
-                logger.error(s"error while fetching latest version of ${api}/${namespace}/${resource}", e)
-                Source.empty
+            .recover { case e =>
+              logger.error(s"error while fetching latest version of ${api}/${namespace}/${resource}", e)
+              Source.empty
             }
           Source.future(f).flatMapConcat(v => v)
         }

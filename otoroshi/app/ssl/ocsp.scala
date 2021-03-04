@@ -153,10 +153,9 @@ class OcspResponder(env: Env, implicit val ec: ExecutionContext) {
         } else {
           manageRequest(ocspReq).map { response =>
             Results.Ok(response.getEncoded)
-          } recover {
-            case e: Throwable =>
-              logger.error("error while checking certificate", e)
-              Results.BadRequest(new OCSPRespBuilder().build(OCSPRespBuilder.INTERNAL_ERROR, null).getEncoded)
+          } recover { case e: Throwable =>
+            logger.error("error while checking certificate", e)
+            Results.BadRequest(new OCSPRespBuilder().build(OCSPRespBuilder.INTERNAL_ERROR, null).getEncoded)
           }
         }
       }
@@ -194,10 +193,10 @@ class OcspResponder(env: Env, implicit val ec: ExecutionContext) {
 
           if (rejectUnknown)
             responseExtensions = responseExtensions :+ new Extension(
-                OCSPObjectIdentifiers.id_pkix_ocsp_extended_revoke,
-                false,
-                Array[Byte]()
-              )
+              OCSPObjectIdentifiers.id_pkix_ocsp_extended_revoke,
+              false,
+              Array[Byte]()
+            )
 
           responseBuilder.setResponseExtensions(new Extensions(responseExtensions.toArray))
 
@@ -216,7 +215,7 @@ class OcspResponder(env: Env, implicit val ec: ExecutionContext) {
               responseBuilder.build(contentSigner, signingCertificateChain, new Date())
             )
 
-        case (None, None)                                                                 => throw new RuntimeException(s"Missing root CA, intermediate CA or intermediate CA chain")
+        case (None, None) => throw new RuntimeException(s"Missing root CA, intermediate CA or intermediate CA chain")
       }
     }
   }

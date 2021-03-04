@@ -44,8 +44,8 @@ object LdapAuthUser {
               metadata = (json \ "metadata").asOpt[JsObject].getOrElse(Json.obj())
             )
           )
-        } recover {
-          case e => JsError(e.getMessage)
+        } recover { case e =>
+          JsError(e.getMessage)
         } get
     }
 }
@@ -108,10 +108,9 @@ object LdapAuthModuleConfig extends FromJson[AuthModuleConfig] {
           dataOverride = (json \ "dataOverride").asOpt[Map[String, JsObject]].getOrElse(Map.empty)
         )
       )
-    } recover {
-      case e =>
-        e.printStackTrace()
-        Left(e)
+    } recover { case e =>
+      e.printStackTrace()
+      Left(e)
     } get
 }
 
@@ -270,10 +269,9 @@ case class LdapAuthModuleConfig(
                 )
               )
             )
-          } recover {
-            case e =>
-              LdapAuthModuleConfig.logger.error(s"bind failed", e)
-              Left(s"bind failed ${e.getMessage}")
+          } recover { case e =>
+            LdapAuthModuleConfig.logger.error(s"bind failed", e)
+            Left(s"bind failed ${e.getMessage}")
           } get
         } else {
           LdapAuthModuleConfig.logger.debug(s"user not found in group")

@@ -64,22 +64,20 @@ class KubernetesIngressControllerJob extends Job {
   override def instantiation(ctx: JobContext, env: Env): JobInstantiation = {
     Option(env)
       .flatMap(env => env.datastores.globalConfigDataStore.latestSafe.map(c => (env, c)))
-      .map {
-        case (env, c) =>
-          (
-            env,
-            KubernetesConfig
-              .theConfig((c.scripts.jobConfig \ "KubernetesConfig").as[JsValue])(env, env.otoroshiExecutionContext)
-          )
+      .map { case (env, c) =>
+        (
+          env,
+          KubernetesConfig
+            .theConfig((c.scripts.jobConfig \ "KubernetesConfig").as[JsValue])(env, env.otoroshiExecutionContext)
+        )
       }
-      .map {
-        case (env, cfg) =>
-          env.clusterConfig.mode match {
-            case ClusterMode.Off if !cfg.kubeLeader => JobInstantiation.OneInstancePerOtoroshiCluster
-            case ClusterMode.Off if cfg.kubeLeader  => JobInstantiation.OneInstancePerOtoroshiInstance
-            case _ if cfg.kubeLeader                => JobInstantiation.OneInstancePerOtoroshiLeaderInstance
-            case _                                  => JobInstantiation.OneInstancePerOtoroshiCluster
-          }
+      .map { case (env, cfg) =>
+        env.clusterConfig.mode match {
+          case ClusterMode.Off if !cfg.kubeLeader => JobInstantiation.OneInstancePerOtoroshiCluster
+          case ClusterMode.Off if cfg.kubeLeader  => JobInstantiation.OneInstancePerOtoroshiInstance
+          case _ if cfg.kubeLeader                => JobInstantiation.OneInstancePerOtoroshiLeaderInstance
+          case _                                  => JobInstantiation.OneInstancePerOtoroshiCluster
+        }
       }
       .getOrElse(JobInstantiation.OneInstancePerOtoroshiCluster)
   }
@@ -210,8 +208,8 @@ class KubernetesIngressControllerJob extends Job {
       source
         .takeWhile(_ => !watchCommand.get())
         .filterNot(_.isEmpty)
-        .alsoTo(Sink.onComplete {
-          case _ => lastWatchStopped.set(true)
+        .alsoTo(Sink.onComplete { case _ =>
+          lastWatchStopped.set(true)
         })
         .runWith(Sink.foreach { group =>
           val now = System.currentTimeMillis()
@@ -281,120 +279,117 @@ case class OtoAnnotationConfig(annotations: Map[String, String]) {
         case (key, _) if key.startsWith("ingress.otoroshi.io/") => true
         case _                                                  => false
       }
-      .map {
-        case (key, value) => (key.replace("ingress.otoroshi.io/", ""), value)
+      .map { case (key, value) =>
+        (key.replace("ingress.otoroshi.io/", ""), value)
       }
-      .foldLeft(desc) {
-        case (d, (key, value)) =>
-          toCamelCase(key) match {
-            case "raw"                     => {
-              val raw     = Json.parse(value).as[JsObject]
-              val current = desc.toJson.as[JsObject]
-              ServiceDescriptor.fromJsonSafe(current.deepMerge(raw)).get
-            }
-            case "group"                   => d.copy(groups = Seq(value))
-            case "groupId"                 => d.copy(groups = Seq(value))
-            case "groups"                  => d.copy(groups = value.split(",").map(_.trim).toSeq)
-            case "name"                    => d.copy(name = value)
-            // case "env" =>
-            // case "domain" =>
-            // case "subdomain" =>
-            case "targetsLoadBalancing"    =>
-              d.copy(targetsLoadBalancing = value match {
-                case "RoundRobin"       => RoundRobin
-                case "Random"           => Random
-                case "Sticky"           => Sticky
-                case "IpAddressHash"    => IpAddressHash
-                case "BestResponseTime" => BestResponseTime
-                case _                  => RoundRobin
-              })
-            // case "targets" =>
-            // case "root" =>
-            // case "matchingRoot" =>
-            case "stripPath"               => d.copy(stripPath = value.toBoolean)
-            // case "localHost" =>
-            // case "localScheme" =>
-            // case "redirectToLocal" =>
-            case "enabled"                 => d.copy(enabled = value.toBoolean)
-            case "userFacing"              => d.copy(userFacing = value.toBoolean)
-            case "privateApp"              => d.copy(privateApp = value.toBoolean)
-            case "forceHttps"              => d.copy(forceHttps = value.toBoolean)
-            case "maintenanceMode"         => d.copy(maintenanceMode = value.toBoolean)
-            case "buildMode"               => d.copy(buildMode = value.toBoolean)
-            case "strictlyPrivate"         => d.copy(strictlyPrivate = value.toBoolean)
-            case "sendOtoroshiHeadersBack" => d.copy(sendOtoroshiHeadersBack = value.toBoolean)
-            case "readOnly"                => d.copy(readOnly = value.toBoolean)
-            case "xForwardedHeaders"       => d.copy(xForwardedHeaders = value.toBoolean)
-            case "overrideHost"            => d.copy(overrideHost = value.toBoolean)
-            case "allowHttp10"             => d.copy(allowHttp10 = value.toBoolean)
-            case "logAnalyticsOnServer"    => d.copy(logAnalyticsOnServer = value.toBoolean)
-            case "useAkkaHttpClient"       => d.copy(useAkkaHttpClient = value.toBoolean)
-            case "useNewWSClient"          => d.copy(useNewWSClient = value.toBoolean)
-            case "tcpUdpTunneling"         => d.copy(tcpUdpTunneling = value.toBoolean)
-            case "detectApiKeySooner"      => d.copy(detectApiKeySooner = value.toBoolean)
-            case "letsEncrypt"             => d.copy(letsEncrypt = value.toBoolean)
+      .foldLeft(desc) { case (d, (key, value)) =>
+        toCamelCase(key) match {
+          case "raw"                     => {
+            val raw     = Json.parse(value).as[JsObject]
+            val current = desc.toJson.as[JsObject]
+            ServiceDescriptor.fromJsonSafe(current.deepMerge(raw)).get
+          }
+          case "group"                   => d.copy(groups = Seq(value))
+          case "groupId"                 => d.copy(groups = Seq(value))
+          case "groups"                  => d.copy(groups = value.split(",").map(_.trim).toSeq)
+          case "name"                    => d.copy(name = value)
+          // case "env" =>
+          // case "domain" =>
+          // case "subdomain" =>
+          case "targetsLoadBalancing"    =>
+            d.copy(targetsLoadBalancing = value match {
+              case "RoundRobin"       => RoundRobin
+              case "Random"           => Random
+              case "Sticky"           => Sticky
+              case "IpAddressHash"    => IpAddressHash
+              case "BestResponseTime" => BestResponseTime
+              case _                  => RoundRobin
+            })
+          // case "targets" =>
+          // case "root" =>
+          // case "matchingRoot" =>
+          case "stripPath"               => d.copy(stripPath = value.toBoolean)
+          // case "localHost" =>
+          // case "localScheme" =>
+          // case "redirectToLocal" =>
+          case "enabled"                 => d.copy(enabled = value.toBoolean)
+          case "userFacing"              => d.copy(userFacing = value.toBoolean)
+          case "privateApp"              => d.copy(privateApp = value.toBoolean)
+          case "forceHttps"              => d.copy(forceHttps = value.toBoolean)
+          case "maintenanceMode"         => d.copy(maintenanceMode = value.toBoolean)
+          case "buildMode"               => d.copy(buildMode = value.toBoolean)
+          case "strictlyPrivate"         => d.copy(strictlyPrivate = value.toBoolean)
+          case "sendOtoroshiHeadersBack" => d.copy(sendOtoroshiHeadersBack = value.toBoolean)
+          case "readOnly"                => d.copy(readOnly = value.toBoolean)
+          case "xForwardedHeaders"       => d.copy(xForwardedHeaders = value.toBoolean)
+          case "overrideHost"            => d.copy(overrideHost = value.toBoolean)
+          case "allowHttp10"             => d.copy(allowHttp10 = value.toBoolean)
+          case "logAnalyticsOnServer"    => d.copy(logAnalyticsOnServer = value.toBoolean)
+          case "useAkkaHttpClient"       => d.copy(useAkkaHttpClient = value.toBoolean)
+          case "useNewWSClient"          => d.copy(useNewWSClient = value.toBoolean)
+          case "tcpUdpTunneling"         => d.copy(tcpUdpTunneling = value.toBoolean)
+          case "detectApiKeySooner"      => d.copy(detectApiKeySooner = value.toBoolean)
+          case "letsEncrypt"             => d.copy(letsEncrypt = value.toBoolean)
 
-            case _
-                if key.startsWith("secCom") || key == "enforceSecureCommunication"
+          case _
+              if key.startsWith("secCom") || key == "enforceSecureCommunication"
                 || key == "sendInfoToken"
                 || key == "sendStateChallenge"
                 || key == "securityExcludedPatterns" =>
-              securityOptions(key, value, d)
+            securityOptions(key, value, d)
 
-            case "publicPatterns"                     => d.copy(publicPatterns = asSeqString(value))
-            case "privatePatterns"                    => d.copy(privatePatterns = asSeqString(value))
-            case "additionalHeaders"                  => d.copy(additionalHeaders = asMapString(value))
-            case "additionalHeadersOut"               => d.copy(additionalHeadersOut = asMapString(value))
-            case "missingOnlyHeadersIn"               => d.copy(missingOnlyHeadersIn = asMapString(value))
-            case "missingOnlyHeadersOut"              => d.copy(missingOnlyHeadersOut = asMapString(value))
-            case "removeHeadersIn"                    => d.copy(removeHeadersIn = asSeqString(value))
-            case "removeHeadersOut"                   => d.copy(removeHeadersOut = asSeqString(value))
-            case "headersVerification"                => d.copy(headersVerification = asMapString(value))
-            case "matchingHeaders"                    => d.copy(matchingHeaders = asMapString(value))
-            case "ipFiltering.whitelist"              => d.copy(ipFiltering = d.ipFiltering.copy(whitelist = asSeqString(value)))
-            case "ipFiltering.blacklist"              => d.copy(ipFiltering = d.ipFiltering.copy(blacklist = asSeqString(value)))
-            case "api.exposeApi"                      => d.copy(api = d.api.copy(exposeApi = value.toBoolean))
-            case "api.openApiDescriptorUrl"           => d.copy(api = d.api.copy(openApiDescriptorUrl = value.some))
-            case "healthCheck.enabled"                => d.copy(healthCheck = d.healthCheck.copy(enabled = value.toBoolean))
-            case "healthCheck.url"                    => d.copy(healthCheck = d.healthCheck.copy(url = value))
-            case _ if key.startsWith("clientConfig.") => clientConfigOptions(key, value, d)
-            case _ if key.startsWith("cors.")         => corsConfigOptions(key, value, d)
-            case _ if key.startsWith("gzip.")         => gzipConfigOptions(key, value, d)
-            // case "canary" =>
-            // case "metadata" =>
-            // case "chaosConfig" =>
-            case "jwtVerifier.ids"                    =>
-              d.copy(jwtVerifier = d.jwtVerifier.asInstanceOf[RefJwtVerifier].copy(ids = asSeqString(value)))
-            case "jwtVerifier.enabled"                =>
-              d.copy(jwtVerifier = d.jwtVerifier.asInstanceOf[RefJwtVerifier].copy(enabled = value.toBoolean))
-            case "jwtVerifier.excludedPatterns"       =>
-              d.copy(jwtVerifier =
-                d.jwtVerifier.asInstanceOf[RefJwtVerifier].copy(excludedPatterns = asSeqString(value))
-              )
-            case "authConfigRef"                      => d.copy(authConfigRef = value.some)
-            case "redirection.enabled"                => d.copy(redirection = d.redirection.copy(enabled = value.toBoolean))
-            case "redirection.code"                   => d.copy(redirection = d.redirection.copy(code = value.toInt))
-            case "redirection.to"                     => d.copy(redirection = d.redirection.copy(to = value))
-            // case "clientValidatorRef" => d.copy(authConfigRef = value.some)
-            // case "transformerRefs" => d.copy(transformerRefs = asSeqString(value))
-            // case "transformerConfig" => d.copy(transformerConfig = Json.parse(value))
-            // case "accessValidator.enabled" => d.copy(accessValidator = d.accessValidator.copy(enabled = value.toBoolean))
-            // case "accessValidator.excludedPatterns" => d.copy(accessValidator = d.accessValidator.copy(excludedPatterns = asSeqString(value)))
-            // case "accessValidator.refs" => d.copy(accessValidator = d.accessValidator.copy(refs = asSeqString(value)))
-            // case "accessValidator.config" => d.copy(accessValidator = d.accessValidator.copy(config = Json.parse(value)))
-            // case "preRouting.enabled" => d.copy(preRouting = d.preRouting.copy(enabled = value.toBoolean))
-            // case "preRouting.excludedPatterns" => d.copy(preRouting = d.preRouting.copy(excludedPatterns = asSeqString(value)))
-            // case "preRouting.refs" => d.copy(preRouting = d.preRouting.copy(refs = asSeqString(value)))
-            // case "preRouting.config" => d.copy(preRouting = d.preRouting.copy(config = Json.parse(value)))
-            // case "thirdPartyApiKey" =>
-            // case "apiKeyConstraints" =>
-            // case "restrictions" =>
-            // case "hosts" => d.copy(hosts = asSeqString(value))
-            // case "paths" => d.copy(paths = asSeqString(value))
-            case "issueCert"                          => d.copy(issueCert = value.toBoolean)
-            case "issueCertCA"                        => d.copy(issueCertCA = value.some)
-            case _                                    => d
-          }
+          case "publicPatterns"                     => d.copy(publicPatterns = asSeqString(value))
+          case "privatePatterns"                    => d.copy(privatePatterns = asSeqString(value))
+          case "additionalHeaders"                  => d.copy(additionalHeaders = asMapString(value))
+          case "additionalHeadersOut"               => d.copy(additionalHeadersOut = asMapString(value))
+          case "missingOnlyHeadersIn"               => d.copy(missingOnlyHeadersIn = asMapString(value))
+          case "missingOnlyHeadersOut"              => d.copy(missingOnlyHeadersOut = asMapString(value))
+          case "removeHeadersIn"                    => d.copy(removeHeadersIn = asSeqString(value))
+          case "removeHeadersOut"                   => d.copy(removeHeadersOut = asSeqString(value))
+          case "headersVerification"                => d.copy(headersVerification = asMapString(value))
+          case "matchingHeaders"                    => d.copy(matchingHeaders = asMapString(value))
+          case "ipFiltering.whitelist"              => d.copy(ipFiltering = d.ipFiltering.copy(whitelist = asSeqString(value)))
+          case "ipFiltering.blacklist"              => d.copy(ipFiltering = d.ipFiltering.copy(blacklist = asSeqString(value)))
+          case "api.exposeApi"                      => d.copy(api = d.api.copy(exposeApi = value.toBoolean))
+          case "api.openApiDescriptorUrl"           => d.copy(api = d.api.copy(openApiDescriptorUrl = value.some))
+          case "healthCheck.enabled"                => d.copy(healthCheck = d.healthCheck.copy(enabled = value.toBoolean))
+          case "healthCheck.url"                    => d.copy(healthCheck = d.healthCheck.copy(url = value))
+          case _ if key.startsWith("clientConfig.") => clientConfigOptions(key, value, d)
+          case _ if key.startsWith("cors.")         => corsConfigOptions(key, value, d)
+          case _ if key.startsWith("gzip.")         => gzipConfigOptions(key, value, d)
+          // case "canary" =>
+          // case "metadata" =>
+          // case "chaosConfig" =>
+          case "jwtVerifier.ids"                    =>
+            d.copy(jwtVerifier = d.jwtVerifier.asInstanceOf[RefJwtVerifier].copy(ids = asSeqString(value)))
+          case "jwtVerifier.enabled"                =>
+            d.copy(jwtVerifier = d.jwtVerifier.asInstanceOf[RefJwtVerifier].copy(enabled = value.toBoolean))
+          case "jwtVerifier.excludedPatterns"       =>
+            d.copy(jwtVerifier = d.jwtVerifier.asInstanceOf[RefJwtVerifier].copy(excludedPatterns = asSeqString(value)))
+          case "authConfigRef"                      => d.copy(authConfigRef = value.some)
+          case "redirection.enabled"                => d.copy(redirection = d.redirection.copy(enabled = value.toBoolean))
+          case "redirection.code"                   => d.copy(redirection = d.redirection.copy(code = value.toInt))
+          case "redirection.to"                     => d.copy(redirection = d.redirection.copy(to = value))
+          // case "clientValidatorRef" => d.copy(authConfigRef = value.some)
+          // case "transformerRefs" => d.copy(transformerRefs = asSeqString(value))
+          // case "transformerConfig" => d.copy(transformerConfig = Json.parse(value))
+          // case "accessValidator.enabled" => d.copy(accessValidator = d.accessValidator.copy(enabled = value.toBoolean))
+          // case "accessValidator.excludedPatterns" => d.copy(accessValidator = d.accessValidator.copy(excludedPatterns = asSeqString(value)))
+          // case "accessValidator.refs" => d.copy(accessValidator = d.accessValidator.copy(refs = asSeqString(value)))
+          // case "accessValidator.config" => d.copy(accessValidator = d.accessValidator.copy(config = Json.parse(value)))
+          // case "preRouting.enabled" => d.copy(preRouting = d.preRouting.copy(enabled = value.toBoolean))
+          // case "preRouting.excludedPatterns" => d.copy(preRouting = d.preRouting.copy(excludedPatterns = asSeqString(value)))
+          // case "preRouting.refs" => d.copy(preRouting = d.preRouting.copy(refs = asSeqString(value)))
+          // case "preRouting.config" => d.copy(preRouting = d.preRouting.copy(config = Json.parse(value)))
+          // case "thirdPartyApiKey" =>
+          // case "apiKeyConstraints" =>
+          // case "restrictions" =>
+          // case "hosts" => d.copy(hosts = asSeqString(value))
+          // case "paths" => d.copy(paths = asSeqString(value))
+          case "issueCert"                          => d.copy(issueCert = value.toBoolean)
+          case "issueCertCA"                        => d.copy(issueCertCA = value.some)
+          case _                                    => d
+        }
       }
   }
 
@@ -603,8 +598,8 @@ object KubernetesIngressSyncJob {
                                 }
                               }
                             }
-                          }) andThen {
-                            case _ => KubernetesCertSyncJob.importCerts(certsToImport)
+                          }) andThen { case _ =>
+                            KubernetesCertSyncJob.importCerts(certsToImport)
                           }
                         } else {
                           ().future
@@ -634,14 +629,14 @@ object KubernetesIngressSyncJob {
                           .map { service =>
                             (service.metadata.getOrElse("kubernetes-ingress-id", "--"), service.id, service.name)
                           }
-                          .filterNot {
-                            case (ingressId, _, _) => existingInKube.contains(ingressId)
+                          .filterNot { case (ingressId, _, _) =>
+                            existingInKube.contains(ingressId)
                           }
                         logger.info(s"Deleting services: ${toDelete.map(_._3).mkString(", ")}")
                         env.datastores.serviceDescriptorDataStore
                           .deleteByIds(toDelete.map(_._2))
-                          .andThen {
-                            case Failure(e) => e.printStackTrace()
+                          .andThen { case Failure(e) =>
+                            e.printStackTrace()
                           }
                           .map { _ =>
                             ()
@@ -786,46 +781,45 @@ object KubernetesIngressToDescriptor {
                         case None       => ("create", env.datastores.serviceDescriptorDataStore.initiateNewDescriptor())
                         case Some(desc) => ("update", desc)
                       }
-                      .map {
-                        case (action, desc) =>
-                          val creationDate: String =
-                            if (action == "create") DateTime.now().toString
-                            else desc.metadata.getOrElse("created-at", DateTime.now().toString)
-                          val newDesc              = desc.copy(
-                            id = id,
-                            groups = Seq(conf.defaultGroup),
-                            name = "kubernetes - " + name + " - " + rule.host.getOrElse("*") + " - " + path.path
-                                .getOrElse("/"),
-                            env = "prod",
-                            domain = "otoroshi.internal.kube.cluster",
-                            subdomain = id,
-                            targets = targets,
-                            root = path.path.getOrElse("/"),
-                            matchingRoot = path.path,
-                            hosts = Seq(rule.host.getOrElse("*")),
-                            paths = path.path.toSeq,
-                            publicPatterns = Seq("/.*"),
-                            useAkkaHttpClient = true,
-                            metadata = Map(
-                              "otoroshi-provider"     -> "kubernetes-ingress",
-                              "created-at"            -> creationDate,
-                              "updated-at"            -> DateTime.now().toString,
-                              "kubernetes-name"       -> name,
-                              "kubernetes-namespace"  -> namespace,
-                              "kubernetes-path"       -> s"$namespace/$name",
-                              "kubernetes-ingress-id" -> s"$namespace-$name-${rule.host.getOrElse("*")}-${path.path
-                                .getOrElse("/")}".slugifyWithSlash,
-                              "kubernetes-uid"        -> uid
-                            )
+                      .map { case (action, desc) =>
+                        val creationDate: String =
+                          if (action == "create") DateTime.now().toString
+                          else desc.metadata.getOrElse("created-at", DateTime.now().toString)
+                        val newDesc              = desc.copy(
+                          id = id,
+                          groups = Seq(conf.defaultGroup),
+                          name = "kubernetes - " + name + " - " + rule.host.getOrElse("*") + " - " + path.path
+                            .getOrElse("/"),
+                          env = "prod",
+                          domain = "otoroshi.internal.kube.cluster",
+                          subdomain = id,
+                          targets = targets,
+                          root = path.path.getOrElse("/"),
+                          matchingRoot = path.path,
+                          hosts = Seq(rule.host.getOrElse("*")),
+                          paths = path.path.toSeq,
+                          publicPatterns = Seq("/.*"),
+                          useAkkaHttpClient = true,
+                          metadata = Map(
+                            "otoroshi-provider"     -> "kubernetes-ingress",
+                            "created-at"            -> creationDate,
+                            "updated-at"            -> DateTime.now().toString,
+                            "kubernetes-name"       -> name,
+                            "kubernetes-namespace"  -> namespace,
+                            "kubernetes-path"       -> s"$namespace/$name",
+                            "kubernetes-ingress-id" -> s"$namespace-$name-${rule.host.getOrElse("*")}-${path.path
+                              .getOrElse("/")}".slugifyWithSlash,
+                            "kubernetes-uid"        -> uid
                           )
-                          action match {
-                            case "create" =>
-                              logger.info(s"""Creating service "${newDesc.name}" from "$namespace/$name"""")
-                            case "update" =>
-                              logger.info(s"""Updating service "${newDesc.name}" from "$namespace/$name"""")
-                            case _        =>
-                          }
-                          newDesc
+                        )
+                        action match {
+                          case "create" =>
+                            logger.info(s"""Creating service "${newDesc.name}" from "$namespace/$name"""")
+                          case "update" =>
+                            logger.info(s"""Updating service "${newDesc.name}" from "$namespace/$name"""")
+                          case _        =>
+                        }
+                        newDesc
                       }
                       .map { desc =>
                         otoConfig.apply(desc).some

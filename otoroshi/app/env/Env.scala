@@ -88,16 +88,16 @@ class Env(
   val logger = Logger("otoroshi-env")
 
   val otoroshiConfig: Configuration = (for {
-      appConfig <- configuration.getOptionalWithFileSupport[Configuration]("app")
-      otoConfig <- configuration.getOptionalWithFileSupport[Configuration]("otoroshi")
-    } yield {
-      val appConfigJson: JsObject    =
-        Json.parse(appConfig.underlying.root().render(ConfigRenderOptions.concise())).as[JsObject]
-      val otoConfigJson: JsObject    =
-        Json.parse(otoConfig.underlying.root().render(ConfigRenderOptions.concise())).as[JsObject]
-      val finalConfigJson1: JsObject = appConfigJson ++ otoConfigJson
-      Configuration(ConfigFactory.parseString(Json.stringify(finalConfigJson1)))
-    }) getOrElse configuration
+    appConfig <- configuration.getOptionalWithFileSupport[Configuration]("app")
+    otoConfig <- configuration.getOptionalWithFileSupport[Configuration]("otoroshi")
+  } yield {
+    val appConfigJson: JsObject    =
+      Json.parse(appConfig.underlying.root().render(ConfigRenderOptions.concise())).as[JsObject]
+    val otoConfigJson: JsObject    =
+      Json.parse(otoConfig.underlying.root().render(ConfigRenderOptions.concise())).as[JsObject]
+    val finalConfigJson1: JsObject = appConfigJson ++ otoConfigJson
+    Configuration(ConfigFactory.parseString(Json.stringify(finalConfigJson1)))
+  }) getOrElse configuration
 
   private lazy val xmasStart =
     DateTime.now().withMonthOfYear(12).withDayOfMonth(20).withMillisOfDay(0)
@@ -503,11 +503,10 @@ class Env(
         metrics.histogram("ahc-total-active-connections").update(stats.getTotalActiveConnectionCount)
         metrics.histogram("ahc-total-connections").update(stats.getTotalConnectionCount)
         metrics.histogram("ahc-total-idle-connections").update(stats.getTotalIdleConnectionCount)
-        stats.getStatsPerHost.asScala.foreach {
-          case (key, value) =>
-            metrics.histogram(key + "-ahc-total-active-connections").update(value.getHostActiveConnectionCount)
-            metrics.histogram(key + "-ahc-total-connections").update(value.getHostConnectionCount)
-            metrics.histogram(key + "-ahc-total-idle-connections").update(value.getHostIdleConnectionCount)
+        stats.getStatsPerHost.asScala.foreach { case (key, value) =>
+          metrics.histogram(key + "-ahc-total-active-connections").update(value.getHostActiveConnectionCount)
+          metrics.histogram(key + "-ahc-total-connections").update(value.getHostConnectionCount)
+          metrics.histogram(key + "-ahc-total-idle-connections").update(value.getHostIdleConnectionCount)
         }
       } match {
         case Success(_) => ()
@@ -549,11 +548,10 @@ class Env(
         metrics.histogram("ahc-total-active-connections").update(stats.getTotalActiveConnectionCount)
         metrics.histogram("ahc-total-connections").update(stats.getTotalConnectionCount)
         metrics.histogram("ahc-total-idle-connections").update(stats.getTotalIdleConnectionCount)
-        stats.getStatsPerHost.asScala.foreach {
-          case (key, value) =>
-            metrics.histogram(key + "-ahc-total-active-connections").update(value.getHostActiveConnectionCount)
-            metrics.histogram(key + "-ahc-total-connections").update(value.getHostConnectionCount)
-            metrics.histogram(key + "-ahc-total-idle-connections").update(value.getHostIdleConnectionCount)
+        stats.getStatsPerHost.asScala.foreach { case (key, value) =>
+          metrics.histogram(key + "-ahc-total-active-connections").update(value.getHostActiveConnectionCount)
+          metrics.histogram(key + "-ahc-total-connections").update(value.getHostConnectionCount)
+          metrics.histogram(key + "-ahc-total-idle-connections").update(value.getHostIdleConnectionCount)
         }
       } match {
         case Success(_) => ()
@@ -898,8 +896,8 @@ class Env(
     val loggersAndLevel: Seq[(String, String)] = configuration
       .getOptionalWithFileSupport[Configuration]("otoroshi.loggers")
       .map { loggers =>
-        loggers.entrySet.map {
-          case (key, value) => (key, value.unwrapped().asInstanceOf[String])
+        loggers.entrySet.map { case (key, value) =>
+          (key, value.unwrapped().asInstanceOf[String])
         }.toSeq
       }
       .getOrElse(Seq.empty) ++ {
@@ -908,80 +906,66 @@ class Env(
           case (key, _) if key.toLowerCase().startsWith("otoroshi_loggers_") => true
           case _                                                             => false
         }
-        .map {
-          case (key, value) => (key.toLowerCase.replace("otoroshi_loggers_", "").replaceAll("_", "-"), value)
+        .map { case (key, value) =>
+          (key.toLowerCase.replace("otoroshi_loggers_", "").replaceAll("_", "-"), value)
         }
     }
-    loggersAndLevel.foreach {
-      case (logName, level) =>
-        logger.info(s"Setting logger $logName to level $level")
-        val _logger = loggerContext.getLogger(logName)
-        _logger.setLevel(Level.valueOf(level))
+    loggersAndLevel.foreach { case (logName, level) =>
+      logger.info(s"Setting logger $logName to level $level")
+      val _logger = loggerContext.getLogger(logName)
+      _logger.setLevel(Level.valueOf(level))
     }
   }
 
-  timeout(300.millis).andThen {
-    case _ =>
-      implicit val ec = otoroshiExecutionContext // internalActorSystem.dispatcher
+  timeout(300.millis).andThen { case _ =>
+    implicit val ec = otoroshiExecutionContext // internalActorSystem.dispatcher
 
-      setupLoggers()
+    setupLoggers()
 
-      DynamicSSLEngineProvider.setCurrentEnv(this)
+    DynamicSSLEngineProvider.setCurrentEnv(this)
 
-      clusterAgent.warnAboutHttpLeaderUrls()
-      if (clusterConfig.mode == ClusterMode.Leader) {
-        logger.info(s"Running Otoroshi Leader agent !")
-        clusterLeaderAgent.start()
-      } else if (clusterConfig.mode == ClusterMode.Worker) {
-        logger.info(s"Running Otoroshi Worker agent !")
-        clusterAgent.startF()
-      } else {
-        configuration
-          .getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.cipherSuites")
-          .filterNot(_.isEmpty)
-          .foreach { s =>
-            DynamicSSLEngineProvider.logger.warn(s"Using custom SSL cipher suites: ${s.mkString(", ")}")
-          }
-        configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.protocols").filterNot(_.isEmpty).foreach {
-          p =>
-            DynamicSSLEngineProvider.logger.warn(s"Using custom SSL protocols: ${p.mkString(", ")}")
+    clusterAgent.warnAboutHttpLeaderUrls()
+    if (clusterConfig.mode == ClusterMode.Leader) {
+      logger.info(s"Running Otoroshi Leader agent !")
+      clusterLeaderAgent.start()
+    } else if (clusterConfig.mode == ClusterMode.Worker) {
+      logger.info(s"Running Otoroshi Worker agent !")
+      clusterAgent.startF()
+    } else {
+      configuration
+        .getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.cipherSuites")
+        .filterNot(_.isEmpty)
+        .foreach { s =>
+          DynamicSSLEngineProvider.logger.warn(s"Using custom SSL cipher suites: ${s.mkString(", ")}")
         }
+      configuration.getOptionalWithFileSupport[Seq[String]]("otoroshi.ssl.protocols").filterNot(_.isEmpty).foreach {
+        p =>
+          DynamicSSLEngineProvider.logger.warn(s"Using custom SSL protocols: ${p.mkString(", ")}")
       }
-      datastores.globalConfigDataStore
-        .isOtoroshiEmpty()
-        .andThen {
-          case Success(true) if clusterConfig.mode == ClusterMode.Worker => {
-            logger.info(s"The main datastore seems to be empty, registering default config.")
-            defaultConfig.save()(ec, this)
-          }
-          case Success(true) if clusterConfig.mode != ClusterMode.Worker => {
-            logger.info(s"The main datastore seems to be empty, registering some basic services")
-            val login                          =
-              configuration.getOptionalWithFileSupport[String]("app.adminLogin").getOrElse("admin@otoroshi.io")
-            val password                       =
-              configuration.getOptionalWithFileSupport[String]("app.adminPassword").getOrElse(IdGenerator.token(32))
-            val headers: Seq[(String, String)] = configuration
-              .getOptionalWithFileSupport[Seq[String]]("app.importFromHeaders")
-              .map(headers => headers.toSeq.map(h => h.split(":")).map(h => (h(0).trim, h(1).trim)))
-              .getOrElse(Seq.empty[(String, String)])
-            if (configuration.has("app.importFrom")) {
-              configuration.getOptionalWithFileSupport[String]("app.importFrom") match {
-                case Some(url) if url.startsWith("http://") || url.startsWith("https://") => {
-                  logger.info(s"Importing from URL: $url")
-                  _internalClient.url(url).withHttpHeaders(headers: _*).get().fast.map { resp =>
-                    val json = resp.json.as[JsObject]
-                    datastores.globalConfigDataStore
-                      .fullImport(json)(ec, this)
-                      .andThen {
-                        case Success(_) => logger.info("Successful import !")
-                        case Failure(e) => logger.error("Error while importing initial data !", e)
-                      }(ec)
-                  }
-                }
-                case Some(path)                                                           => {
-                  logger.info(s"Importing from: $path")
-                  val source = Source.fromFile(path).getLines().mkString("\n")
-                  val json   = Json.parse(source).as[JsObject]
+    }
+    datastores.globalConfigDataStore
+      .isOtoroshiEmpty()
+      .andThen {
+        case Success(true) if clusterConfig.mode == ClusterMode.Worker => {
+          logger.info(s"The main datastore seems to be empty, registering default config.")
+          defaultConfig.save()(ec, this)
+        }
+        case Success(true) if clusterConfig.mode != ClusterMode.Worker => {
+          logger.info(s"The main datastore seems to be empty, registering some basic services")
+          val login                          =
+            configuration.getOptionalWithFileSupport[String]("app.adminLogin").getOrElse("admin@otoroshi.io")
+          val password                       =
+            configuration.getOptionalWithFileSupport[String]("app.adminPassword").getOrElse(IdGenerator.token(32))
+          val headers: Seq[(String, String)] = configuration
+            .getOptionalWithFileSupport[Seq[String]]("app.importFromHeaders")
+            .map(headers => headers.toSeq.map(h => h.split(":")).map(h => (h(0).trim, h(1).trim)))
+            .getOrElse(Seq.empty[(String, String)])
+          if (configuration.has("app.importFrom")) {
+            configuration.getOptionalWithFileSupport[String]("app.importFrom") match {
+              case Some(url) if url.startsWith("http://") || url.startsWith("https://") => {
+                logger.info(s"Importing from URL: $url")
+                _internalClient.url(url).withHttpHeaders(headers: _*).get().fast.map { resp =>
+                  val json = resp.json.as[JsObject]
                   datastores.globalConfigDataStore
                     .fullImport(json)(ec, this)
                     .andThen {
@@ -990,142 +974,153 @@ class Env(
                     }(ec)
                 }
               }
-            } else {
-              configuration.getOptionalWithFileSupport[play.api.Configuration]("app.initialData") match {
-                case Some(obj) => {
-                  val importJson = Json
-                    .parse(
-                      obj.underlying
-                        .root()
-                        .render(ConfigRenderOptions.concise())
-                    )
-                    .as[JsObject]
-                  logger.info(s"Importing from config file")
-                  datastores.globalConfigDataStore
-                    .fullImport(importJson)(ec, this)
-                    .andThen {
-                      case Success(_) => logger.info("Successful import !")
-                      case Failure(e) => logger.error("Error while importing initial data !", e)
-                    }(ec)
-                }
-                case _         => {
-
-                  val defaultGroup       = ServiceGroup("default", "default-group", "The default service group", Map.empty)
-                  val defaultGroupApiKey = ApiKey(
-                    IdGenerator.token(16),
-                    IdGenerator.token(64),
-                    "default-apikey",
-                    Seq(ServiceGroupIdentifier("default")),
-                    validUntil = None
+              case Some(path)                                                           => {
+                logger.info(s"Importing from: $path")
+                val source = Source.fromFile(path).getLines().mkString("\n")
+                val json   = Json.parse(source).as[JsObject]
+                datastores.globalConfigDataStore
+                  .fullImport(json)(ec, this)
+                  .andThen {
+                    case Success(_) => logger.info("Successful import !")
+                    case Failure(e) => logger.error("Error while importing initial data !", e)
+                  }(ec)
+              }
+            }
+          } else {
+            configuration.getOptionalWithFileSupport[play.api.Configuration]("app.initialData") match {
+              case Some(obj) => {
+                val importJson = Json
+                  .parse(
+                    obj.underlying
+                      .root()
+                      .render(ConfigRenderOptions.concise())
                   )
+                  .as[JsObject]
+                logger.info(s"Importing from config file")
+                datastores.globalConfigDataStore
+                  .fullImport(importJson)(ec, this)
+                  .andThen {
+                    case Success(_) => logger.info("Successful import !")
+                    case Failure(e) => logger.error("Error while importing initial data !", e)
+                  }(ec)
+              }
+              case _         => {
 
-                  import otoroshi.utils.json.JsonImplicits._
+                val defaultGroup       = ServiceGroup("default", "default-group", "The default service group", Map.empty)
+                val defaultGroupApiKey = ApiKey(
+                  IdGenerator.token(16),
+                  IdGenerator.token(64),
+                  "default-apikey",
+                  Seq(ServiceGroupIdentifier("default")),
+                  validUntil = None
+                )
 
-                  val admin = SimpleOtoroshiAdmin(
-                    username = login,
-                    password = BCrypt.hashpw(password, BCrypt.gensalt()),
-                    label = "Otoroshi Admin",
-                    createdAt = DateTime.now(),
-                    typ = OtoroshiAdminType.SimpleAdmin,
-                    metadata = Map.empty,
-                    rights = UserRights.varargs(UserRight(TenantAccess("*"), Seq(TeamAccess("*")))),
-                    location = EntityLocation()
+                import otoroshi.utils.json.JsonImplicits._
+
+                val admin = SimpleOtoroshiAdmin(
+                  username = login,
+                  password = BCrypt.hashpw(password, BCrypt.gensalt()),
+                  label = "Otoroshi Admin",
+                  createdAt = DateTime.now(),
+                  typ = OtoroshiAdminType.SimpleAdmin,
+                  metadata = Map.empty,
+                  rights = UserRights.varargs(UserRight(TenantAccess("*"), Seq(TeamAccess("*")))),
+                  location = EntityLocation()
+                )
+
+                val defaultTenant = Tenant(
+                  id = TenantId("default"),
+                  name = "Default organization",
+                  description = "The default organization",
+                  metadata = Map.empty[String, String]
+                )
+
+                val defaultTeam = Team(
+                  id = TeamId("default"),
+                  tenant = TenantId("default"),
+                  name = "Default Team",
+                  description = "The default Team of the default organization",
+                  metadata = Map.empty[String, String]
+                )
+
+                val baseExport = OtoroshiExport(
+                  config = defaultConfig,
+                  descs = Seq(backOfficeDescriptor),
+                  apikeys = Seq(backOfficeApiKey, defaultGroupApiKey),
+                  groups = Seq(backOfficeGroup, defaultGroup),
+                  simpleAdmins = Seq(admin),
+                  teams = Seq(defaultTeam),
+                  tenants = Seq(defaultTenant)
+                )
+
+                val initialCustomization = configuration
+                  .getOptionalWithFileSupport[String]("app.initialCustomization")
+                  .map(Json.parse)
+                  .map(_.asObject)
+                  .orElse(
+                    configuration
+                      .getOptionalWithFileSupport[play.api.Configuration]("app.initialCustomization")
+                      .map(v => Json.parse(v.underlying.root().render(ConfigRenderOptions.concise())).asObject)
                   )
+                  .getOrElse(Json.obj())
 
-                  val defaultTenant = Tenant(
-                    id = TenantId("default"),
-                    name = "Default organization",
-                    description = "The default organization",
-                    metadata = Map.empty[String, String]
-                  )
+                val finalConfig = baseExport.customizeWith(initialCustomization)
 
-                  val defaultTeam = Team(
-                    id = TeamId("default"),
-                    tenant = TenantId("default"),
-                    name = "Default Team",
-                    description = "The default Team of the default organization",
-                    metadata = Map.empty[String, String]
-                  )
+                logger.info(
+                  s"You can log into the Otoroshi admin console with the following credentials: $login / $password"
+                )
 
-                  val baseExport = OtoroshiExport(
-                    config = defaultConfig,
-                    descs = Seq(backOfficeDescriptor),
-                    apikeys = Seq(backOfficeApiKey, defaultGroupApiKey),
-                    groups = Seq(backOfficeGroup, defaultGroup),
-                    simpleAdmins = Seq(admin),
-                    teams = Seq(defaultTeam),
-                    tenants = Seq(defaultTenant)
-                  )
-
-                  val initialCustomization = configuration
-                    .getOptionalWithFileSupport[String]("app.initialCustomization")
-                    .map(Json.parse)
-                    .map(_.asObject)
-                    .orElse(
-                      configuration
-                        .getOptionalWithFileSupport[play.api.Configuration]("app.initialCustomization")
-                        .map(v => Json.parse(v.underlying.root().render(ConfigRenderOptions.concise())).asObject)
-                    )
-                    .getOrElse(Json.obj())
-
-                  val finalConfig = baseExport.customizeWith(initialCustomization)
-
-                  logger.info(
-                    s"You can log into the Otoroshi admin console with the following credentials: $login / $password"
-                  )
-
-                  datastores.globalConfigDataStore.fullImport(finalConfig.json)(ec, this)
-                }
+                datastores.globalConfigDataStore.fullImport(finalConfig.json)(ec, this)
               }
             }
           }
         }
-        .map { _ =>
-          datastores.serviceDescriptorDataStore.findById(backOfficeServiceId)(ec, this).map {
-            case Some(s) if !s.publicPatterns.contains("/health")  =>
-              logger.info("Updating BackOffice service to handle health check ...")
-              s.copy(publicPatterns = s.publicPatterns :+ "/health").save()(ec, this)
-            case Some(s) if !s.publicPatterns.contains("/metrics") =>
-              logger.info("Updating BackOffice service to handle metrics ...")
-              s.copy(publicPatterns = s.publicPatterns :+ "/metrics").save()(ec, this)
-            case _                                                 =>
-          }
-        }
-
-      {
-        datastores.tenantDataStore.findById("default")(ec, this).map {
-          case None    =>
-            datastores.tenantDataStore.set(
-              Tenant(
-                id = TenantId("default"),
-                name = "Default organization",
-                description = "Default organization created for any otoroshi instance",
-                metadata = Map.empty
-              )
-            )(ec, this)
-          case Some(_) =>
-        }
-        datastores.teamDataStore.findById("default")(ec, this).map {
-          case None    =>
-            datastores.teamDataStore.set(
-              Team(
-                id = TeamId("default"),
-                tenant = TenantId("default"),
-                name = "Default team",
-                description = "Default team created for any otoroshi instance",
-                metadata = Map.empty
-              )
-            )(ec, this)
-          case Some(_) =>
+      }
+      .map { _ =>
+        datastores.serviceDescriptorDataStore.findById(backOfficeServiceId)(ec, this).map {
+          case Some(s) if !s.publicPatterns.contains("/health")  =>
+            logger.info("Updating BackOffice service to handle health check ...")
+            s.copy(publicPatterns = s.publicPatterns :+ "/health").save()(ec, this)
+          case Some(s) if !s.publicPatterns.contains("/metrics") =>
+            logger.info("Updating BackOffice service to handle metrics ...")
+            s.copy(publicPatterns = s.publicPatterns :+ "/metrics").save()(ec, this)
+          case _                                                 =>
         }
       }
-      ()
+
+    {
+      datastores.tenantDataStore.findById("default")(ec, this).map {
+        case None    =>
+          datastores.tenantDataStore.set(
+            Tenant(
+              id = TenantId("default"),
+              name = "Default organization",
+              description = "Default organization created for any otoroshi instance",
+              metadata = Map.empty
+            )
+          )(ec, this)
+        case Some(_) =>
+      }
+      datastores.teamDataStore.findById("default")(ec, this).map {
+        case None    =>
+          datastores.teamDataStore.set(
+            Team(
+              id = TeamId("default"),
+              tenant = TenantId("default"),
+              name = "Default team",
+              description = "Default team created for any otoroshi instance",
+              metadata = Map.empty
+            )
+          )(ec, this)
+        case Some(_) =>
+      }
+    }
+    ()
   }(otoroshiExecutionContext)
 
-  timeout(1000.millis).andThen {
-    case _ =>
-      jobManager.start()
-      otoroshiEventsActor ! StartExporters
+  timeout(1000.millis).andThen { case _ =>
+    jobManager.start()
+    otoroshiEventsActor ! StartExporters
   }(otoroshiExecutionContext)
 
   timeout(5000.millis).andThen {

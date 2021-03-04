@@ -92,7 +92,7 @@ object CorsSettings extends FromJson[CorsSettings] {
           allowCredentials = (json \ "allowCredentials").asOpt[Boolean].getOrElse(true)
         )
       )
-    } recover {
-      case e => Left(e)
+    } recover { case e =>
+      Left(e)
     } get
 }

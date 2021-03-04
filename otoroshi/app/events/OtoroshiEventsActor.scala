@@ -333,12 +333,11 @@ object Exporters {
 
     override def send(events: Seq[JsValue]): Future[ExportResult] = {
       env.datastores.globalConfigDataStore.singleton().flatMap { globalConfig =>
-        Option(clientRef.get()).flatMap(cli => exporter[KafkaConfig].map(conf => (cli, conf))).map {
-          case (cli, conf) =>
-            Source(events.toList)
-              .mapAsync(10)(evt => cli.publish(evt)(env, conf))
-              .runWith(Sink.ignore)(env.analyticsMaterializer)
-              .map(_ => ExportResult.ExportResultSuccess)
+        Option(clientRef.get()).flatMap(cli => exporter[KafkaConfig].map(conf => (cli, conf))).map { case (cli, conf) =>
+          Source(events.toList)
+            .mapAsync(10)(evt => cli.publish(evt)(env, conf))
+            .runWith(Sink.ignore)(env.analyticsMaterializer)
+            .map(_ => ExportResult.ExportResultSuccess)
         } getOrElse {
           FastFuture.successful(ExportResult.ExportResultFailure("Bad config type !"))
         }
@@ -462,16 +461,16 @@ object Exporters {
 
             sortedLabels._1.foreach(objectlabel => {
               tags += (objectlabel._2.trim -> getValueAt(
-                  event,
-                  objectlabel._1.trim.replace("$at", "@")
-                )) // getValueWithPath(objectlabel._1.trim.replace("$at", "@"), event))
+                event,
+                objectlabel._1.trim.replace("$at", "@")
+              )) // getValueWithPath(objectlabel._1.trim.replace("$at", "@"), event))
             })
 
             sortedLabels._2.foreach(primitiveLabel => {
               tags += (primitiveLabel._2.trim -> getValueAt(
-                  event,
-                  primitiveLabel._1.trim.replace("$at", "@")
-                )) // getStringOrJsObject(event, primitiveLabel._1.trim.replace("$at", "@")))
+                event,
+                primitiveLabel._1.trim.replace("$at", "@")
+              )) // getStringOrJsObject(event, primitiveLabel._1.trim.replace("$at", "@")))
             })
 
             incGlobalOtoroshiMetrics(duration, overheadWoCb, cbDuration, overhead, dataIn, dataOut)

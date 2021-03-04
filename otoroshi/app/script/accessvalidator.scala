@@ -52,8 +52,8 @@ object AccessValidatorRef {
             excludedPatterns = (json \ "excludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String])
           )
         )
-      } recover {
-        case e => JsError(e.getMessage)
+      } recover { case e =>
+        JsError(e.getMessage)
       } get
   }
 }

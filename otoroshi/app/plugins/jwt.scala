@@ -134,8 +134,8 @@ class JwtUserExtractor extends PreRouting {
               }
             }
           }
-          .recover {
-            case e: Throwable => Results.Unauthorized(Json.obj())
+          .recover { case e: Throwable =>
+            Results.Unauthorized(Json.obj())
           }
           .flatMap { result =>
             result.header.status match {

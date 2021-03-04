@@ -214,8 +214,8 @@ class OIDCAccessTokenValidator extends AccessValidator {
               .map(o => Seq(o))
               .orElse((conf \ "config").asOpt[JsArray].map(_.value))
               .map(seq =>
-                seq.map(v => ThirdPartyApiKeyConfig.format.reads(v)).collect {
-                  case JsSuccess(c, _) => c
+                seq.map(v => ThirdPartyApiKeyConfig.format.reads(v)).collect { case JsSuccess(c, _) =>
+                  c
                 }
               )
               .getOrElse(Seq.empty)
@@ -313,8 +313,8 @@ class OIDCAccessTokenAsApikey extends PreRouting {
               .map(o => Seq(o))
               .orElse((conf \ "config").asOpt[JsArray].map(_.value))
               .map(seq =>
-                seq.map(v => ThirdPartyApiKeyConfig.format.reads(v)).collect {
-                  case JsSuccess(c, _) => c
+                seq.map(v => ThirdPartyApiKeyConfig.format.reads(v)).collect { case JsSuccess(c, _) =>
+                  c
                 }
               )
               .getOrElse(Seq.empty)
@@ -602,14 +602,14 @@ case class OIDCThirdPartyApiKeyConfig(
                                   validUntil = None,
                                   tags = possibleMoreTags,
                                   metadata = Map(
-                                      "type"     -> "Auto generated apikey corresponding to an OIDC JWT token. Please do not enable it !",
-                                      "iss"      -> iss,
-                                      "sub"      -> subject,
-                                      "desc"     -> descriptor.id,
-                                      "descName" -> descriptor.name,
-                                      "auth"     -> oidcAuth.id,
-                                      "authName" -> oidcAuth.name
-                                    ) ++ possibleMoreMeta
+                                    "type"     -> "Auto generated apikey corresponding to an OIDC JWT token. Please do not enable it !",
+                                    "iss"      -> iss,
+                                    "sub"      -> subject,
+                                    "desc"     -> descriptor.id,
+                                    "descName" -> descriptor.name,
+                                    "auth"     -> oidcAuth.id,
+                                    "authName" -> oidcAuth.name
+                                  ) ++ possibleMoreMeta
                                 )
                                 val tokenScopes                             = (tokenBody \ "scope")
                                   .asOpt[String]
@@ -783,12 +783,11 @@ object OIDCThirdPartyApiKeyConfig {
           rolesPath = (json \ "rolesPath").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
           roles = (json \ "roles").asOpt[Seq[String]].getOrElse(Seq.empty[String])
         )
-      } map {
-        case sd => JsSuccess(sd)
-      } recover {
-        case t =>
-          logger.error("Error while reading OIDCThirdPartyApiKeyConfig", t)
-          JsError(t.getMessage)
+      } map { case sd =>
+        JsSuccess(sd)
+      } recover { case t =>
+        logger.error("Error while reading OIDCThirdPartyApiKeyConfig", t)
+        JsError(t.getMessage)
       } get
 
     override def writes(o: OIDCThirdPartyApiKeyConfig): JsValue =
@@ -822,8 +821,8 @@ object ThirdPartyApiKeyConfig {
         (json \ "type").as[String] match {
           case "OIDC" => OIDCThirdPartyApiKeyConfig.format.reads(json)
         }
-      } recover {
-        case e => JsError(e.getMessage)
+      } recover { case e =>
+        JsError(e.getMessage)
       } get
 
     override def writes(o: ThirdPartyApiKeyConfig): JsValue = o.toJson

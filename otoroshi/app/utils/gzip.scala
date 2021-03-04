@@ -30,12 +30,11 @@ object GzipConfig {
           chunkedThreshold = (json \ "chunkedThreshold").asOpt[Int].getOrElse(102400),
           compressionLevel = (json \ "compressionLevel").asOpt[Int].getOrElse(5)
         )
-      } map {
-        case sd => JsSuccess(sd)
-      } recover {
-        case t =>
-          logger.error("Error while reading ServiceDescriptor", t)
-          JsError(t.getMessage)
+      } map { case sd =>
+        JsSuccess(sd)
+      } recover { case t =>
+        logger.error("Error while reading ServiceDescriptor", t)
+        JsError(t.getMessage)
       } get
 
     override def writes(o: GzipConfig): JsValue =
@@ -92,7 +91,7 @@ case class GzipConfig(
 
         result.body match {
 
-          case HttpEntity.Strict(data, contentType)                                                                   =>
+          case HttpEntity.Strict(data, contentType) =>
             compressStrictEntity(Source.single(data), contentType)
               .map(entity => result.copy(header = header, body = entity))
 
@@ -101,7 +100,7 @@ case class GzipConfig(
             compressStrictEntity(entity.data, contentType)
               .map(strictEntity => result.copy(header = header, body = strictEntity))
 
-          case HttpEntity.Streamed(data, _, contentType) if request.version == HttpProtocol.HTTP_1_0                  =>
+          case HttpEntity.Streamed(data, _, contentType) if request.version == HttpProtocol.HTTP_1_0 =>
             // It's above the chunked threshold, but we can't chunk it because we're using HTTP 1.0.
             // Instead, we use a close delimited body (ie, regular body with no content length)
             val gzipped = data.via(createGzipFlow)
@@ -109,14 +108,14 @@ case class GzipConfig(
               result.copy(header = header, body = HttpEntity.Streamed(gzipped, None, contentType))
             )
 
-          case HttpEntity.Streamed(data, _, contentType)                                                              =>
+          case HttpEntity.Streamed(data, _, contentType) =>
             // It's above the chunked threshold, compress through the gzip flow, and send as chunked
             val gzipped = data.via(createGzipFlow).map(d => HttpChunk.Chunk(d))
             FastFuture.successful(
               result.copy(header = header, body = HttpEntity.Chunked(gzipped, contentType))
             )
 
-          case HttpEntity.Chunked(chunks, contentType)                                                                =>
+          case HttpEntity.Chunked(chunks, contentType) =>
             val gzipFlow = Flow.fromGraph(GraphDSL.create[FlowShape[HttpChunk, HttpChunk]]() { implicit builder =>
               import GraphDSL.Implicits._
 

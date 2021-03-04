@@ -50,9 +50,9 @@ class DeferPlugin extends RequestTransformer {
     val queryTimeout   = ctx.request.getQueryString("defer").map(_.toLong)
     val timeout        = headerTimeout.orElse(queryTimeout).getOrElse(defaultTimeout)
     val elapsed        = System.currentTimeMillis() - ctx.attrs
-        .get(otoroshi.plugins.Keys.RequestTimestampKey)
-        .getOrElse(DateTime.now())
-        .getMillis
+      .get(otoroshi.plugins.Keys.RequestTimestampKey)
+      .getOrElse(DateTime.now())
+      .getMillis
     if (timeout - elapsed <= 0L) {
       FastFuture.successful(Right(ctx.otoroshiRequest))
     } else {

@@ -74,8 +74,8 @@ object JwtTokenLocation                                extends FromJson[JwtToken
         case "InHeader"     => InHeader.fromJson(json)
         case "InCookie"     => InCookie.fromJson(json)
       }
-    } recover {
-      case e => Left(e)
+    } recover { case e =>
+      Left(e)
     } get
 }
 object InQueryParam                                    extends FromJson[InQueryParam]     {
@@ -86,8 +86,8 @@ object InQueryParam                                    extends FromJson[InQueryP
           (json \ "name").as[String]
         )
       )
-    } recover {
-      case e => Left(e)
+    } recover { case e =>
+      Left(e)
     } get
 }
 case class InQueryParam(name: String)                  extends JwtTokenLocation           {
@@ -104,8 +104,8 @@ object InHeader                                        extends FromJson[InHeader
           (json \ "remove").as[String]
         )
       )
-    } recover {
-      case e => Left(e)
+    } recover { case e =>
+      Left(e)
     } get
 }
 case class InHeader(name: String, remove: String = "") extends JwtTokenLocation           {
@@ -126,8 +126,8 @@ object InCookie                                        extends FromJson[InCookie
           (json \ "name").as[String]
         )
       )
-    } recover {
-      case e => Left(e)
+    } recover { case e =>
+      Left(e)
     } get
 }
 case class InCookie(name: String)                      extends JwtTokenLocation           {
@@ -190,8 +190,8 @@ object AlgoSettings                                                           ex
         case "ESKPAlgoSettings"  => ESKPAlgoSettings.fromJson(json)
         case "KidAlgoSettings"   => KidAlgoSettings.fromJson(json)
       }
-    } recover {
-      case e => Left(e)
+    } recover { case e =>
+      Left(e)
     } get
 
   private val cache = new TrieMap[String, String]()
@@ -213,8 +213,8 @@ object HSAlgoSettings                                                         ex
           (json \ "base64").asOpt[Boolean].getOrElse(false)
         )
       )
-    } recover {
-      case e => Left(e)
+    } recover { case e =>
+      Left(e)
     } get
 }
 case class HSAlgoSettings(size: Int, secret: String, base64: Boolean = false) extends AlgoSettings             {
@@ -249,8 +249,8 @@ object RSAlgoSettings                                                           
           (json \ "privateKey").asOpt[String]
         )
       )
-    } recover {
-      case e => Left(e)
+    } recover { case e =>
+      Left(e)
     } get
 }
 case class RSAlgoSettings(size: Int, publicKey: String, privateKey: Option[String]) extends AlgoSettings             {
@@ -325,8 +325,8 @@ object ESAlgoSettings                                                           
           (json \ "privateKey").asOpt[String]
         )
       )
-    } recover {
-      case e => Left(e)
+    } recover { case e =>
+      Left(e)
     } get
 }
 case class ESAlgoSettings(size: Int, publicKey: String, privateKey: Option[String]) extends AlgoSettings             {
@@ -415,8 +415,8 @@ object JWKSAlgoSettings extends FromJson[JWKSAlgoSettings] {
           MtlsConfig.read((json \ "mtlsConfig").asOpt[JsValue])
         )
       )
-    } recover {
-      case e => Left(e)
+    } recover { case e =>
+      Left(e)
     } get
   }
 }
@@ -497,10 +497,9 @@ case class JWKSAlgoSettings(
                   case None         => None
                 }
               }
-              .recover {
-                case e =>
-                  logger.error(s"Error while reading JWKS $url", e)
-                  None
+              .recover { case e =>
+                logger.error(s"Error while reading JWKS $url", e)
+                None
               }
           }
         }
@@ -531,8 +530,8 @@ object RSAKPAlgoSettings                                extends FromJson[RSAKPAl
           (json \ "certId").as[String]
         )
       )
-    } recover {
-      case e => Left(e)
+    } recover { case e =>
+      Left(e)
     } get
 }
 case class RSAKPAlgoSettings(size: Int, certId: String) extends AlgoSettings                {
@@ -587,8 +586,8 @@ object ESKPAlgoSettings                                extends FromJson[ESKPAlgo
           (json \ "certId").as[String]
         )
       )
-    } recover {
-      case e => Left(e)
+    } recover { case e =>
+      Left(e)
     } get
 }
 case class ESKPAlgoSettings(size: Int, certId: String) extends AlgoSettings               {
@@ -642,8 +641,8 @@ object KidAlgoSettings extends FromJson[KidAlgoSettings] {
           (json \ "onlyExposedCerts").asOpt[Boolean].getOrElse(false)
         )
       )
-    } recover {
-      case e => Left(e)
+    } recover { case e =>
+      Left(e)
     } get
 }
 
@@ -708,8 +707,8 @@ object MappingSettings                                                          
           (json \ "remove").asOpt[Seq[String]].getOrElse(Seq.empty[String])
         )
       )
-    } recover {
-      case e => Left(e)
+    } recover { case e =>
+      Left(e)
     } get
 }
 case class MappingSettings(
@@ -731,8 +730,8 @@ object TransformSettings                                                        
         location        <- JwtTokenLocation.fromJson((json \ "location").as[JsValue])
         mappingSettings <- MappingSettings.fromJson((json \ "mappingSettings").as[JsValue])
       } yield TransformSettings(location, mappingSettings)
-    } recover {
-      case e => Left(e)
+    } recover { case e =>
+      Left(e)
     } get
 }
 case class TransformSettings(location: JwtTokenLocation, mappingSettings: MappingSettings) extends AsJson                      {
@@ -752,8 +751,8 @@ object VerificationSettings extends FromJson[VerificationSettings] {
           (json \ "arrayFields").as[Map[String, String]]
         )
       )
-    } recover {
-      case e => Left(e)
+    } recover { case e =>
+      Left(e)
     } get
 }
 
@@ -818,8 +817,8 @@ object VerifierStrategy extends FromJson[VerifierStrategy] {
         case "Transform"    => Transform.fromJson(json)
         case "DefaultToken" => DefaultToken.fromJson(json)
       }
-    } recover {
-      case e => Left(e)
+    } recover { case e =>
+      Left(e)
     } get
 }
 
@@ -840,8 +839,8 @@ object DefaultToken extends FromJson[VerifierStrategy] {
             .getOrElse(VerificationSettings())
         )
       )
-    } recover {
-      case e => Left(e)
+    } recover { case e =>
+      Left(e)
     } get
 }
 
@@ -865,8 +864,8 @@ object PassThrough extends FromJson[VerifierStrategy] {
       for {
         verificationSettings <- VerificationSettings.fromJson((json \ "verificationSettings").as[JsValue])
       } yield PassThrough(verificationSettings)
-    } recover {
-      case e => Left(e)
+    } recover { case e =>
+      Left(e)
     } get
 }
 
@@ -885,8 +884,8 @@ object Sign extends FromJson[VerifierStrategy] {
         verificationSettings <- VerificationSettings.fromJson((json \ "verificationSettings").as[JsValue])
         algoSettings         <- AlgoSettings.fromJson((json \ "algoSettings").as[JsValue])
       } yield Sign(verificationSettings, algoSettings)
-    } recover {
-      case e => Left(e)
+    } recover { case e =>
+      Left(e)
     } get
 }
 
@@ -907,8 +906,8 @@ object Transform extends FromJson[VerifierStrategy] {
         transformSettings    <- TransformSettings.fromJson((json \ "transformSettings").as[JsValue])
         algoSettings         <- AlgoSettings.fromJson((json \ "algoSettings").as[JsValue])
       } yield Transform(verificationSettings, transformSettings, algoSettings)
-    } recover {
-      case e => Left(e)
+    } recover { case e =>
+      Left(e)
     } get
 }
 
@@ -1426,8 +1425,8 @@ object RefJwtVerifier extends FromJson[RefJwtVerifier] {
           excludedPatterns = (json \ "excludedPatterns").asOpt[Seq[String]].getOrElse(Seq.empty[String])
         )
       )
-    } recover {
-      case e => Left[Throwable, RefJwtVerifier](e)
+    } recover { case e =>
+      Left[Throwable, RefJwtVerifier](e)
     } get
 }
 
@@ -1448,8 +1447,8 @@ object LocalJwtVerifier extends FromJson[LocalJwtVerifier] {
           strategy = strategy
         )
       }
-    } recover {
-      case e => Left.apply[Throwable, LocalJwtVerifier](e)
+    } recover { case e =>
+      Left.apply[Throwable, LocalJwtVerifier](e)
     } get
 }
 
@@ -1538,8 +1537,8 @@ object GlobalJwtVerifier extends FromJson[GlobalJwtVerifier] {
           strategy = strategy
         )
       }
-    } recover {
-      case e => Left.apply[Throwable, GlobalJwtVerifier](e)
+    } recover { case e =>
+      Left.apply[Throwable, GlobalJwtVerifier](e)
     } get
 }
 
@@ -1561,8 +1560,8 @@ object JwtVerifier extends FromJson[JwtVerifier] {
         case "local"  => LocalJwtVerifier.fromJson(json)
         case "ref"    => RefJwtVerifier.fromJson(json)
       }
-    } recover {
-      case e => Left(e)
+    } recover { case e =>
+      Left(e)
     } get
   }
 

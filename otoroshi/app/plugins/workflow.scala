@@ -159,8 +159,8 @@ class WorkflowEndpoint extends RequestTransformer {
       val bodySource: Source[ByteString, _] = Source
         .future(promise.future)
         .flatMapConcat(s => s)
-        .alsoTo(Sink.onComplete {
-          case _ => consumed.set(true)
+        .alsoTo(Sink.onComplete { case _ =>
+          consumed.set(true)
         })
 
       bodySource.runFold(ByteString.empty)(_ ++ _).flatMap { bodyRaw =>
@@ -195,9 +195,8 @@ class WorkflowEndpoint extends RequestTransformer {
             Left(Results.InternalServerError(Json.obj("error" -> "workflow failed")))
           }
         }
-      } andThen {
-        case _ =>
-          if (!consumed.get()) bodySource.runWith(Sink.ignore)
+      } andThen { case _ =>
+        if (!consumed.get()) bodySource.runWith(Sink.ignore)
       }
     } getOrElse {
       Results.InternalServerError(Json.obj("error" -> "body_error")).leftf

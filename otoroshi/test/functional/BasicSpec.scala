@@ -62,8 +62,8 @@ class BasicSpec(name: String, configurationSpec: => Configuration) extends Otoro
 
     "warm up" in {
       startOtoroshi()
-      getOtoroshiServices().andThen {
-        case Failure(e) => e.printStackTrace()
+      getOtoroshiServices().andThen { case Failure(e) =>
+        e.printStackTrace()
       }.futureValue // WARM UP
     }
 

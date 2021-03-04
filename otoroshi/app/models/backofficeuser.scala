@@ -90,8 +90,8 @@ object BackOfficeUser {
             rights = UserRights.readFromObject(json)
           )
         )
-      } recover {
-        case e => JsError(e.getMessage)
+      } recover { case e =>
+        JsError(e.getMessage)
       } get
 
     override def writes(o: BackOfficeUser): JsValue =

@@ -67,25 +67,23 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
                   inOut   <- env.datastores.clusterStateDataStore.dataInAndOut()
                 } yield (members, inOut)
               }
-              .recover {
-                case e =>
-                  Cluster.logger.error("Error", e)
-                  (Seq.empty[MemberView], (0L, 0L))
+              .recover { case e =>
+                Cluster.logger.error("Error", e)
+                (Seq.empty[MemberView], (0L, 0L))
               }
-              .map {
-                case (members, inOut) =>
-                  val payloadIn: Long  = inOut._1
-                  val payloadOut: Long = inOut._2
-                  val healths          = members.map(healthOf)
-                  val foundOrange      = healths.contains("orange")
-                  val foundRed         = healths.contains("red")
-                  val health           = if (foundRed) "red" else (if (foundOrange) "orange" else "green")
-                  Json.obj(
-                    "workers"    -> members.size,
-                    "health"     -> health,
-                    "payloadIn"  -> payloadIn,
-                    "payloadOut" -> payloadOut
-                  )
+              .map { case (members, inOut) =>
+                val payloadIn: Long  = inOut._1
+                val payloadOut: Long = inOut._2
+                val healths          = members.map(healthOf)
+                val foundOrange      = healths.contains("orange")
+                val foundRed         = healths.contains("red")
+                val health           = if (foundRed) "red" else (if (foundOrange) "orange" else "green")
+                Json.obj(
+                  "workers"    -> members.size,
+                  "health"     -> health,
+                  "payloadIn"  -> payloadIn,
+                  "payloadOut" -> payloadOut
+                )
               }
               .map(Json.stringify)
               .map(slug => s"data: $slug\n\n")
@@ -327,10 +325,9 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
               .map { _ =>
                 Ok(Json.obj("done" -> true))
               }
-              .recover {
-                case e =>
-                  Cluster.logger.error("Error while updating quotas", e)
-                  InternalServerError(Json.obj("error" -> e.getMessage))
+              .recover { case e =>
+                Cluster.logger.error("Error while updating quotas", e)
+                InternalServerError(Json.obj("error" -> e.getMessage))
               }
           }
           case Leader => {
@@ -395,21 +392,19 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(implicit
 
                 }
                 .runWith(Sink.ignore)
-                .andThen {
-                  case _ =>
-                    Cluster.logger.trace(s"[${env.clusterConfig.mode.name}] updated quotas (${bytesCounter.get()} b)")
-                    env.datastores.clusterStateDataStore.updateDataIn(bytesCounter.get())
-                    if ((System.currentTimeMillis() - start) > budget) {
-                      Cluster.logger.warn(
-                        s"[${env.clusterConfig.mode.name}] Quotas update from worker ran over time budget, maybe the datastore is slow ?"
-                      )
-                    }
+                .andThen { case _ =>
+                  Cluster.logger.trace(s"[${env.clusterConfig.mode.name}] updated quotas (${bytesCounter.get()} b)")
+                  env.datastores.clusterStateDataStore.updateDataIn(bytesCounter.get())
+                  if ((System.currentTimeMillis() - start) > budget) {
+                    Cluster.logger.warn(
+                      s"[${env.clusterConfig.mode.name}] Quotas update from worker ran over time budget, maybe the datastore is slow ?"
+                    )
+                  }
                 }
                 .map(_ => Ok(Json.obj("done" -> true)))
-                .recover {
-                  case e =>
-                    Cluster.logger.error("Error while updating quotas", e)
-                    InternalServerError(Json.obj("error" -> e.getMessage))
+                .recover { case e =>
+                  Cluster.logger.error("Error while updating quotas", e)
+                  InternalServerError(Json.obj("error" -> e.getMessage))
                 }
             }
           }

@@ -434,8 +434,8 @@ class IzanamiCanary extends RequestTransformer {
 
   def withCache(key: String)(f: String => Future[JsValue])(implicit ec: ExecutionContext): Future[JsValue] = {
     cache.getIfPresent(key).map(_.future).getOrElse {
-      f(key).andThen {
-        case Success(v) => cache.put(key, v)
+      f(key).andThen { case Success(v) =>
+        cache.put(key, v)
       }
     }
   }

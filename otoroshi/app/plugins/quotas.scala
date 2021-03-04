@@ -183,13 +183,12 @@ class ServiceQuotas extends AccessValidator {
     for {
       _            <- env.datastores.rawDataStore.incrby(totalCallsKey(descriptor.id), increment)
       secCalls     <- env.datastores.rawDataStore.incrby(throttlingKey(descriptor.id), increment)
-      secTtl       <- env.datastores.rawDataStore.pttl(throttlingKey(descriptor.id)).filter(_ > -1).recoverWith {
-                        case _ =>
-                          env.datastores.rawDataStore.pexpire(throttlingKey(descriptor.id), env.throttlingWindow * 1000)
+      secTtl       <- env.datastores.rawDataStore.pttl(throttlingKey(descriptor.id)).filter(_ > -1).recoverWith { case _ =>
+                        env.datastores.rawDataStore.pexpire(throttlingKey(descriptor.id), env.throttlingWindow * 1000)
                       }
       dailyCalls   <- env.datastores.rawDataStore.incrby(dailyQuotaKey(descriptor.id), increment)
-      dailyTtl     <- env.datastores.rawDataStore.pttl(dailyQuotaKey(descriptor.id)).filter(_ > -1).recoverWith {
-                        case _ => env.datastores.rawDataStore.pexpire(dailyQuotaKey(descriptor.id), toDayEnd.toInt)
+      dailyTtl     <- env.datastores.rawDataStore.pttl(dailyQuotaKey(descriptor.id)).filter(_ > -1).recoverWith { case _ =>
+                        env.datastores.rawDataStore.pexpire(dailyQuotaKey(descriptor.id), toDayEnd.toInt)
                       }
       monthlyCalls <- env.datastores.rawDataStore.incrby(monthlyQuotaKey(descriptor.id), increment)
       monthlyTtl   <- env.datastores.rawDataStore.pttl(monthlyQuotaKey(descriptor.id)).filter(_ > -1).recoverWith {

@@ -185,8 +185,8 @@ class GeolocationInfoHeader extends RequestTransformer {
         Right(
           ctx.otoroshiRequest.copy(
             headers = ctx.otoroshiRequest.headers ++ Map(
-                headerName -> Json.stringify(location)
-              )
+              headerName -> Json.stringify(location)
+            )
           )
         ).future
       }

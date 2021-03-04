@@ -283,11 +283,10 @@ class HasClientCertMatchingHttpValidator extends AccessValidator {
           cache.put(url, (System.currentTimeMillis(), Json.obj()))
           Json.obj()
       }
-      .recover {
-        case e =>
-          e.printStackTrace()
-          cache.put(url, (System.currentTimeMillis(), Json.obj()))
-          Json.obj()
+      .recover { case e =>
+        e.printStackTrace()
+        cache.put(url, (System.currentTimeMillis(), Json.obj()))
+        Json.obj()
       }
   }
 

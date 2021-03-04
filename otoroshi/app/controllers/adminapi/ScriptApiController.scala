@@ -113,42 +113,42 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
         }
         env.datastores.scriptDataStore.findAll().map { all =>
           val allClasses = all
-              .filter(ctx.canUserRead)
-              .filter { script =>
-                typ match {
-                  case None                                                      => true
-                  case Some("transformer") if script.`type` == TransformerType   => true
-                  case Some("transformer") if script.`type` == AppType           => true
-                  case Some("app") if script.`type` == AppType                   => true
-                  case Some("validator") if script.`type` == AccessValidatorType => true
-                  case Some("preroute") if script.`type` == PreRoutingType       => true
-                  case Some("sink") if script.`type` == RequestSinkType          => true
-                  case Some("listener") if script.`type` == EventListenerType    => true
-                  case Some("job") if script.`type` == JobType                   => true
-                  case Some("exporter") if script.`type` == DataExporterType     => true
-                  case _                                                         => false
-                }
+            .filter(ctx.canUserRead)
+            .filter { script =>
+              typ match {
+                case None                                                      => true
+                case Some("transformer") if script.`type` == TransformerType   => true
+                case Some("transformer") if script.`type` == AppType           => true
+                case Some("app") if script.`type` == AppType                   => true
+                case Some("validator") if script.`type` == AccessValidatorType => true
+                case Some("preroute") if script.`type` == PreRoutingType       => true
+                case Some("sink") if script.`type` == RequestSinkType          => true
+                case Some("listener") if script.`type` == EventListenerType    => true
+                case Some("job") if script.`type` == JobType                   => true
+                case Some("exporter") if script.`type` == DataExporterType     => true
+                case _                                                         => false
               }
-              .map(c => (c, env.scriptManager.getAnyScript[NamedPlugin](c.id)))
-              .map {
-                case (c, Left(_))         => Json.obj("id" -> c.id, "name" -> c.name, "description" -> c.desc)
-                case (c, Right(instance)) =>
-                  Json.obj(
-                    "id"            -> c.id,
-                    "name"          -> JsString(Option(c.name).map(_.trim).filter(_.nonEmpty).getOrElse(instance.name)),
-                    "description"   -> Option(c.desc)
-                      .map(_.trim)
-                      .filter(_.nonEmpty)
-                      .orElse(instance.description)
-                      .map(JsString.apply)
-                      .getOrElse(JsNull)
-                      .as[JsValue],
-                    "defaultConfig" -> instance.defaultConfig.getOrElse(JsNull).as[JsValue],
-                    "configRoot"    -> instance.configRoot.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-                    "configSchema"  -> instance.configSchema.getOrElse(JsNull).as[JsValue],
-                    "configFlow"    -> JsArray(instance.configFlow.map(JsString.apply))
-                  )
-              } ++
+            }
+            .map(c => (c, env.scriptManager.getAnyScript[NamedPlugin](c.id)))
+            .map {
+              case (c, Left(_))         => Json.obj("id" -> c.id, "name" -> c.name, "description" -> c.desc)
+              case (c, Right(instance)) =>
+                Json.obj(
+                  "id"            -> c.id,
+                  "name"          -> JsString(Option(c.name).map(_.trim).filter(_.nonEmpty).getOrElse(instance.name)),
+                  "description"   -> Option(c.desc)
+                    .map(_.trim)
+                    .filter(_.nonEmpty)
+                    .orElse(instance.description)
+                    .map(JsString.apply)
+                    .getOrElse(JsNull)
+                    .as[JsValue],
+                  "defaultConfig" -> instance.defaultConfig.getOrElse(JsNull).as[JsValue],
+                  "configRoot"    -> instance.configRoot.map(JsString.apply).getOrElse(JsNull).as[JsValue],
+                  "configSchema"  -> instance.configSchema.getOrElse(JsNull).as[JsValue],
+                  "configFlow"    -> JsArray(instance.configFlow.map(JsString.apply))
+                )
+            } ++
             cpTransformers.map(extractInfos) ++
             cpValidators.map(extractInfos) ++
             cpPreRoutes.map(extractInfos) ++

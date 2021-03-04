@@ -174,8 +174,8 @@ class HttpPersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
         Source
           .tick(1.second, statePoll, ())
           .mapAsync(1)(_ => writeStateToHttp())
-          .recover {
-            case t => logger.error(s"Error while scheduling writeStateToHttp: $t")
+          .recover { case t =>
+            logger.error(s"Error while scheduling writeStateToHttp: $t")
           }
           .toMat(Sink.ignore)(Keep.left)
           .run()
@@ -195,8 +195,8 @@ class HttpPersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
     val store        = new ConcurrentHashMap[String, Any]()
     val expirations  = new ConcurrentHashMap[String, Long]()
     val headers      = stateHeaders.toSeq ++ Seq(
-        "Accept" -> "application/x-ndjson"
-      )
+      "Accept" -> "application/x-ndjson"
+    )
     env.Ws // no need for mtls here
       .url(stateUrl)
       .withRequestTimeout(stateTimeout)
@@ -262,8 +262,8 @@ class HttpPersistence(ds: InMemoryDataStores, env: Env) extends Persistence {
     }
     ds.logger.debug("Writing state to http db ...")
     val headers      = stateHeaders.toSeq ++ Seq(
-        "Content-Type" -> "application/x-ndjson"
-      )
+      "Content-Type" -> "application/x-ndjson"
+    )
     env.Ws // no need for mtls here
       .url(stateUrl)
       .withRequestTimeout(stateTimeout)

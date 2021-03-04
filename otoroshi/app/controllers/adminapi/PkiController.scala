@@ -219,9 +219,8 @@ class PkiController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env
               .map { _ =>
                 Ok(Json.obj("done" -> true))
               }
-          } recover {
-            case e =>
-              FastFuture.successful(BadRequest(Json.obj("error" -> s"Bad p12 : $e")))
+          } recover { case e =>
+            FastFuture.successful(BadRequest(Json.obj("error" -> s"Bad p12 : $e")))
           } get
         }
       }
@@ -241,16 +240,14 @@ class PkiController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env
                 val content: String =
                   body.utf8String.replace("-----BEGIN CERTIFICATE-----", "").replace("-----END CERTIFICATE-----", "")
                 Ok(CertificateData(content))
-              } recover {
-                case e =>
-                  // e.printStackTrace()
-                  BadRequest(Json.obj("error" -> s"Bad certificate : $e"))
+              } recover { case e =>
+                // e.printStackTrace()
+                BadRequest(Json.obj("error" -> s"Bad certificate : $e"))
               } get
             }
-          } recover {
-            case e =>
-              // e.printStackTrace()
-              BadRequest(Json.obj("error" -> s"Bad certificate : $e"))
+          } recover { case e =>
+            // e.printStackTrace()
+            BadRequest(Json.obj("error" -> s"Bad certificate : $e"))
           } get
         }
       }
@@ -265,10 +262,9 @@ class PkiController(ApiAction: ApiAction, cc: ControllerComponents)(implicit env
               case JsSuccess(cert, _) => Ok(Json.obj("valid" -> cert.isValid))
               case JsError(e)         => BadRequest(Json.obj("error" -> s"Bad certificate : $e"))
             }
-          } recover {
-            case e =>
-              e.printStackTrace()
-              BadRequest(Json.obj("error" -> s"Bad certificate : $e"))
+          } recover { case e =>
+            e.printStackTrace()
+            BadRequest(Json.obj("error" -> s"Bad certificate : $e"))
           } get
         }
       }

@@ -82,8 +82,8 @@ class SoftwareUpdatesJobs extends Job {
               }
             }
         }
-        .andThen {
-          case Failure(e) => e.printStackTrace()
+        .andThen { case Failure(e) =>
+          e.printStackTrace()
         }
     } else {
       ().future

@@ -367,8 +367,8 @@ class U2FController(
                         .registerUser(
                           user.copy(
                             credentials = user.credentials + (
-                                (credential \ "keyId" \ "id").as[String] -> credential
-                              )
+                              (credential \ "keyId" \ "id").as[String] -> credential
+                            )
                           )
                         )
                         .map { _ =>
@@ -598,25 +598,23 @@ class LocalCredentialRepository(
   override def lookup(credentialId: ByteArray, userHandle: ByteArray): Optional[RegisteredCredential] = {
     users
       .flatMap { user =>
-        user.credentials.map {
-          case (id, reg) =>
-            val handle    = new ByteArray(base64Decoder.decode(user.handle))
-            val regResult = jsonMapper.readValue(reg.stringify, classOf[RegistrationResult])
-            (handle, regResult.getKeyId.getId, regResult)
+        user.credentials.map { case (id, reg) =>
+          val handle    = new ByteArray(base64Decoder.decode(user.handle))
+          val regResult = jsonMapper.readValue(reg.stringify, classOf[RegistrationResult])
+          (handle, regResult.getKeyId.getId, regResult)
         }.toSeq
       }
-      .find {
-        case (handle, id, reg) => handle.equals(userHandle) && credentialId.equals(id)
+      .find { case (handle, id, reg) =>
+        handle.equals(userHandle) && credentialId.equals(id)
       }
-      .map {
-        case (handle, id, regResult) =>
-          RegisteredCredential
-            .builder()
-            .credentialId(regResult.getKeyId.getId)
-            .userHandle(handle)
-            .publicKeyCose(regResult.getPublicKeyCose)
-            .signatureCount(0L)
-            .build()
+      .map { case (handle, id, regResult) =>
+        RegisteredCredential
+          .builder()
+          .credentialId(regResult.getKeyId.getId)
+          .userHandle(handle)
+          .publicKeyCose(regResult.getPublicKeyCose)
+          .signatureCount(0L)
+          .build()
       } match {
       case None    => Optional.empty()
       case Some(r) => Optional.of(r)
@@ -626,25 +624,23 @@ class LocalCredentialRepository(
   override def lookupAll(credentialId: ByteArray): util.Set[RegisteredCredential] = {
     users
       .flatMap { user =>
-        user.credentials.map {
-          case (id, reg) =>
-            val handle    = new ByteArray(base64Decoder.decode(user.handle))
-            val regResult = jsonMapper.readValue(reg.stringify, classOf[RegistrationResult])
-            (handle, regResult.getKeyId.getId, regResult)
+        user.credentials.map { case (id, reg) =>
+          val handle    = new ByteArray(base64Decoder.decode(user.handle))
+          val regResult = jsonMapper.readValue(reg.stringify, classOf[RegistrationResult])
+          (handle, regResult.getKeyId.getId, regResult)
         }.toSeq
       }
-      .filter {
-        case (handle, id, reg) => credentialId.equals(id)
+      .filter { case (handle, id, reg) =>
+        credentialId.equals(id)
       }
-      .map {
-        case (handle, id, regResult) =>
-          RegisteredCredential
-            .builder()
-            .credentialId(regResult.getKeyId.getId)
-            .userHandle(handle)
-            .publicKeyCose(regResult.getPublicKeyCose)
-            .signatureCount(0L)
-            .build()
+      .map { case (handle, id, regResult) =>
+        RegisteredCredential
+          .builder()
+          .credentialId(regResult.getKeyId.getId)
+          .userHandle(handle)
+          .publicKeyCose(regResult.getPublicKeyCose)
+          .signatureCount(0L)
+          .build()
       }
       .toSet
       .asJava

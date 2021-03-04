@@ -95,9 +95,8 @@ trait Job extends NamedPlugin with StartableAndStoppable with InternalEventListe
   private[script] def jobRunHook(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     JobRunEvent(env.snowflakeGenerator.nextIdStr(), env.env, this, ctx).toAnalytics()
     try {
-      jobRun(ctx)(env, ec).andThen {
-        case Failure(e) =>
-          JobErrorEvent(env.snowflakeGenerator.nextIdStr(), env.env, this, ctx, e)
+      jobRun(ctx)(env, ec).andThen { case Failure(e) =>
+        JobErrorEvent(env.snowflakeGenerator.nextIdStr(), env.env, this, ctx, e)
       }
     } catch {
       case e: Throwable =>
@@ -133,8 +132,8 @@ trait Job extends NamedPlugin with StartableAndStoppable with InternalEventListe
     val manager = env.jobManager
     manager.registerJob(this)
     manager.startIfPossible(this)
-    promise.future.andThen {
-      case _ => manager.unregisterJob(this)
+    promise.future.andThen { case _ =>
+      manager.unregisterJob(this)
     }(manager.jobExecutor)
   }
 
@@ -246,11 +245,10 @@ case class RegisteredJobContext(
         ref.set(Some(actorSystem.scheduler.scheduleOnce(job.initialDelay(ctx, env).getOrElse(0.millisecond)) {
           try {
             if (!stopped.get()) {
-              job.jobRunHook(ctx).andThen {
-                case _ =>
-                  ref.set(None)
-                // runStopHook()
-                // releaseLock()
+              job.jobRunHook(ctx).andThen { case _ =>
+                ref.set(None)
+              // runStopHook()
+              // releaseLock()
               }
             }
           } catch {
@@ -265,11 +263,10 @@ case class RegisteredJobContext(
         ref.set(Some(actorSystem.scheduler.scheduleOnce(job.initialDelay(ctx, env).getOrElse(0.millisecond)) {
           try {
             if (!stopped.get()) {
-              job.jobRunHook(ctx).andThen {
-                case _ =>
-                  ref.set(None)
-                  runStopHook()
-                // releaseLock()
+              job.jobRunHook(ctx).andThen { case _ =>
+                ref.set(None)
+                runStopHook()
+              // releaseLock()
               }
             }
           } catch {
@@ -284,10 +281,9 @@ case class RegisteredJobContext(
         ref.set(Some(actorSystem.scheduler.scheduleOnce(job.initialDelay(ctx, env).getOrElse(0.millisecond)) {
           try {
             if (!stopped.get()) {
-              job.jobRunHook(ctx).andThen {
-                case _ =>
-                  ref.set(None)
-                // releaseLock()
+              job.jobRunHook(ctx).andThen { case _ =>
+                ref.set(None)
+              // releaseLock()
               }
             }
           } catch {
@@ -304,10 +300,9 @@ case class RegisteredJobContext(
             ref.set(Some(actorSystem.scheduler.scheduleOnce(interval) {
               try {
                 if (!stopped.get()) {
-                  job.jobRunHook(ctx).andThen {
-                    case _ =>
-                      ref.set(None)
-                    // releaseLock()
+                  job.jobRunHook(ctx).andThen { case _ =>
+                    ref.set(None)
+                  // releaseLock()
                   }
                 }
               } catch {
@@ -337,10 +332,9 @@ case class RegisteredJobContext(
               ref.set(Some(actorSystem.scheduler.scheduleOnce(duration.get().toMillis.milliseconds) {
                 if (!stopped.get()) {
                   try {
-                    job.jobRunHook(ctx).andThen {
-                      case _ =>
-                        ref.set(None)
-                      // releaseLock()
+                    job.jobRunHook(ctx).andThen { case _ =>
+                      ref.set(None)
+                    // releaseLock()
                     }
                   } catch {
                     case e: Throwable =>
@@ -505,20 +499,19 @@ class JobManager(env: Env) {
   }
 
   private def updateLocks(): Unit = {
-    registeredLocks.foreach {
-      case (id, (key, value)) =>
-        env.datastores.rawDataStore.get(key).map {
-          case Some(v) if v.utf8String == value =>
-            env.datastores.rawDataStore.set(key, ByteString(value), Some(30 * 1000))
-          case _                                => ()
-        }
+    registeredLocks.foreach { case (id, (key, value)) =>
+      env.datastores.rawDataStore.get(key).map {
+        case Some(v) if v.utf8String == value =>
+          env.datastores.rawDataStore.set(key, ByteString(value), Some(30 * 1000))
+        case _                                => ()
+      }
     }
   }
 
   private def scanRegisteredJobs(): Unit = {
     env.datastores.globalConfigDataStore.singleton().map { config =>
-      registeredJobs.foreach {
-        case (id, ctx) => ctx.startIfPossible(config, env)
+      registeredJobs.foreach { case (id, ctx) =>
+        ctx.startIfPossible(config, env)
       }
     }
   }
@@ -531,8 +524,8 @@ class JobManager(env: Env) {
 
   private def stopAllJobs(): Unit = {
     env.datastores.globalConfigDataStore.singleton().map { config =>
-      registeredJobs.foreach {
-        case (id, ctx) => ctx.stop(config, env)
+      registeredJobs.foreach { case (id, ctx) =>
+        ctx.stop(config, env)
       }
     }
   }

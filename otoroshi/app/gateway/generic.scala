@@ -110,10 +110,10 @@ object ReverseProxyActionHelper {
                 publicPatterns = Seq("/.*"),
                 privatePatterns = Seq.empty,
                 additionalHeaders = service.additionalHeaders ++ Map(
-                    "Host"                           -> req.headers.get("Host").get,
-                    env.Headers.OtoroshiClientId     -> ak.clientId,
-                    env.Headers.OtoroshiClientSecret -> ak.clientSecret
-                  )
+                  "Host"                           -> req.headers.get("Host").get,
+                  env.Headers.OtoroshiClientId     -> ak.clientId,
+                  env.Headers.OtoroshiClientSecret -> ak.clientSecret
+                )
               )
             )
           case None     =>
@@ -456,7 +456,7 @@ class ReverseProxyAction(env: Env) {
       } else {
 
         ServiceLocation(req.theHost, globalConfig) match {
-          case None                                                 =>
+          case None =>
             val err = Errors.craftResponseResult(
               s"Service not found: invalid host",
               NotFound,
@@ -599,19 +599,19 @@ class ReverseProxyAction(env: Env) {
                                       snowMonkeyContext =>
                                         val secondStart                   = System.currentTimeMillis()
                                         val maybeCanaryId: Option[String] = req.cookies
-                                            .get("otoroshi-canary")
-                                            .map(_.value)
-                                            .orElse(req.headers.get(env.Headers.OtoroshiTrackerId))
-                                            .filter { value =>
-                                              if (value.contains("::")) {
-                                                value.split("::").toList match {
-                                                  case signed :: id :: Nil if env.sign(id) == signed => true
-                                                  case _                                             => false
-                                                }
-                                              } else {
-                                                false
+                                          .get("otoroshi-canary")
+                                          .map(_.value)
+                                          .orElse(req.headers.get(env.Headers.OtoroshiTrackerId))
+                                          .filter { value =>
+                                            if (value.contains("::")) {
+                                              value.split("::").toList match {
+                                                case signed :: id :: Nil if env.sign(id) == signed => true
+                                                case _                                             => false
                                               }
-                                            } map (value => value.split("::")(1))
+                                            } else {
+                                              false
+                                            }
+                                          } map (value => value.split("::")(1))
                                         val canaryId: String              =
                                           maybeCanaryId.getOrElse(IdGenerator.uuid + "-" + reqNumber)
                                         attrs.put(otoroshi.plugins.Keys.RequestCanaryIdKey -> canaryId)
@@ -788,7 +788,7 @@ class ReverseProxyAction(env: Env) {
                                                               Some("errors.request.timeout"),
                                                               duration = System.currentTimeMillis - start,
                                                               overhead = (System
-                                                                  .currentTimeMillis() - secondStart) + firstOverhead,
+                                                                .currentTimeMillis() - secondStart) + firstOverhead,
                                                               cbDuration = System.currentTimeMillis - cbStart,
                                                               callAttempts = counter.get(),
                                                               attrs = attrs
@@ -804,7 +804,7 @@ class ReverseProxyAction(env: Env) {
                                                               Some("errors.request.timeout"),
                                                               duration = System.currentTimeMillis - start,
                                                               overhead = (System
-                                                                  .currentTimeMillis() - secondStart) + firstOverhead,
+                                                                .currentTimeMillis() - secondStart) + firstOverhead,
                                                               cbDuration = System.currentTimeMillis - cbStart,
                                                               callAttempts = counter.get(),
                                                               attrs = attrs
@@ -820,7 +820,7 @@ class ReverseProxyAction(env: Env) {
                                                               Some("errors.request.timeout"),
                                                               duration = System.currentTimeMillis - start,
                                                               overhead = (System
-                                                                  .currentTimeMillis() - secondStart) + firstOverhead,
+                                                                .currentTimeMillis() - secondStart) + firstOverhead,
                                                               cbDuration = System.currentTimeMillis - cbStart,
                                                               callAttempts = counter.get(),
                                                               attrs = attrs
@@ -836,7 +836,7 @@ class ReverseProxyAction(env: Env) {
                                                               Some("errors.circuit.breaker.open"),
                                                               duration = System.currentTimeMillis - start,
                                                               overhead = (System
-                                                                  .currentTimeMillis() - secondStart) + firstOverhead,
+                                                                .currentTimeMillis() - secondStart) + firstOverhead,
                                                               cbDuration = System.currentTimeMillis - cbStart,
                                                               callAttempts = counter.get(),
                                                               attrs = attrs
@@ -855,7 +855,7 @@ class ReverseProxyAction(env: Env) {
                                                               Some("errors.connection.refused"),
                                                               duration = System.currentTimeMillis - start,
                                                               overhead = (System
-                                                                  .currentTimeMillis() - secondStart) + firstOverhead,
+                                                                .currentTimeMillis() - secondStart) + firstOverhead,
                                                               cbDuration = System.currentTimeMillis - cbStart,
                                                               callAttempts = counter.get(),
                                                               attrs = attrs
@@ -875,7 +875,7 @@ class ReverseProxyAction(env: Env) {
                                                               Some("errors.proxy.error"),
                                                               duration = System.currentTimeMillis - start,
                                                               overhead = (System
-                                                                  .currentTimeMillis() - secondStart) + firstOverhead,
+                                                                .currentTimeMillis() - secondStart) + firstOverhead,
                                                               cbDuration = System.currentTimeMillis - cbStart,
                                                               callAttempts = counter.get(),
                                                               attrs = attrs
@@ -895,7 +895,7 @@ class ReverseProxyAction(env: Env) {
                                                               Some("errors.proxy.error"),
                                                               duration = System.currentTimeMillis - start,
                                                               overhead = (System
-                                                                  .currentTimeMillis() - secondStart) + firstOverhead,
+                                                                .currentTimeMillis() - secondStart) + firstOverhead,
                                                               cbDuration = System.currentTimeMillis - cbStart,
                                                               callAttempts = counter.get(),
                                                               attrs = attrs
@@ -934,7 +934,7 @@ class ReverseProxyAction(env: Env) {
                                                   Some(code),
                                                   duration = System.currentTimeMillis - start,
                                                   overhead = (System
-                                                      .currentTimeMillis() - secondStart) + firstOverhead,
+                                                    .currentTimeMillis() - secondStart) + firstOverhead,
                                                   attrs = attrs
                                                 )
                                                 .map(Left.apply)
@@ -962,18 +962,17 @@ class ReverseProxyAction(env: Env) {
                           }
                         }
                       }
-                      .andThen {
-                        case _ =>
-                          rawDesc.afterRequest(
-                            AfterRequestContext(
-                              index = -1,
-                              snowflake = snowflake,
-                              descriptor = rawDesc,
-                              request = req,
-                              config = rawDesc.transformerConfig,
-                              attrs = attrs
-                            )
+                      .andThen { case _ =>
+                        rawDesc.afterRequest(
+                          AfterRequestContext(
+                            index = -1,
+                            snowflake = snowflake,
+                            descriptor = rawDesc,
+                            request = req,
+                            config = rawDesc.transformerConfig,
+                            attrs = attrs
                           )
+                        )
                       }
                   }
                 }
@@ -984,10 +983,9 @@ class ReverseProxyAction(env: Env) {
     }
     env.metrics
       .withTimerAsync("otoroshi.core.proxy.handle-http-request")(finalResult) // TODO: ws name
-      .andThen {
-        case _ =>
-          val requests = env.datastores.requestsDataStore.decrementHandledRequests()
-          env.metrics.markLong(s"${env.snowflakeSeed}.concurrent-requests", requests)
+      .andThen { case _ =>
+        val requests = env.datastores.requestsDataStore.decrementHandledRequests()
+        env.metrics.markLong(s"${env.snowflakeSeed}.concurrent-requests", requests)
       }(env.otoroshiExecutionContext)
   }
 }

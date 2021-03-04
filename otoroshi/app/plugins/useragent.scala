@@ -49,8 +49,8 @@ object UserAgentHelper {
             case Failure(e)            =>
               cache.putIfAbsent(ua, None)
             case Success(capabilities) => {
-              val details = Some(JsObject(capabilities.getValues.asScala.map {
-                case (field, value) => (field.name().toLowerCase(), JsString(value))
+              val details = Some(JsObject(capabilities.getValues.asScala.map { case (field, value) =>
+                (field.name().toLowerCase(), JsString(value))
               }.toMap))
               cache.putIfAbsent(ua, details)
             }
@@ -179,8 +179,8 @@ class UserAgentInfoHeader extends RequestTransformer {
         Right(
           ctx.otoroshiRequest.copy(
             headers = ctx.otoroshiRequest.headers ++ Map(
-                headerName -> Json.stringify(info)
-              )
+              headerName -> Json.stringify(info)
+            )
           )
         ).future
       }

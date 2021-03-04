@@ -72,7 +72,7 @@ object DynamicSSLContext {
               // assuming that it's actually possible in the SSL context.
               configuredProtocols.filter(existingProtocols.contains).toArray
 
-            case None                      =>
+            case None =>
               // Otherwise, we return the default protocols in the given list.
               Protocols.recommendedProtocols.filter(existingProtocols.contains)
           }
@@ -98,7 +98,7 @@ object DynamicSSLContext {
               // If we are given a specific list of ciphers, return it in that order.
               configuredCiphers.filter(existingCiphers.contains(_)).toArray
 
-            case None                    =>
+            case None =>
               Ciphers.recommendedCiphers.filter(existingCiphers.contains(_)).toArray
           }
 

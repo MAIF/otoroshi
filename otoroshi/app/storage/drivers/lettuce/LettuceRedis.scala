@@ -49,8 +49,8 @@ class LettuceRedisStandaloneAndSentinels(actorSystem: ActorSystem, client: Redis
   def info(): Future[String] = redis.info().toScala
 
   override def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] =
-    redis.info().toScala.map(_ => Healthy).recover {
-      case _ => Unreachable
+    redis.info().toScala.map(_ => Healthy).recover { case _ =>
+      Unreachable
     }
 
   override def stop(): Unit = redis.shutdown(true)
@@ -191,8 +191,8 @@ class LettuceRedisCluster(actorSystem: ActorSystem, client: RedisClusterClient) 
   def info(): Future[String] = redis.info().toScala
 
   override def health()(implicit ec: ExecutionContext): Future[DataStoreHealth] =
-    redis.info().toScala.map(_ => Healthy).recover {
-      case _ => Unreachable
+    redis.info().toScala.map(_ => Healthy).recover { case _ =>
+      Unreachable
     }
 
   override def stop(): Unit = {

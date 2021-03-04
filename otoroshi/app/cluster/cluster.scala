@@ -293,8 +293,8 @@ object MemberView {
           stats = (value \ "stats").asOpt[JsObject].getOrElse(Json.obj())
         )
       )
-    } recover {
-      case e => JsError(e.getMessage)
+    } recover { case e =>
+      JsError(e.getMessage)
     } get
 }
 
@@ -402,23 +402,23 @@ class KvClusterStateDataStore(redisLike: RedisLike, env: Env) extends ClusterSta
                    )
                    .map(a => a.fold(0L)(_ + _) / (if (a.isEmpty) 1 else a.size))
 
-      out     <- Future
-                   .sequence(
-                     keysOut.map(key =>
-                       redisLike.lrange(key, 0, 100).map { values =>
-                         if (values.isEmpty) 0L
-                         else {
-                           val items    = values.map { v =>
-                             v.utf8String.toLong
-                           }
-                           val total    = items.fold(0L)(_ + _)
-                           val itemSize = if (items.isEmpty) 1 else items.size
-                           (total / itemSize).toLong
-                         }
+      out <- Future
+               .sequence(
+                 keysOut.map(key =>
+                   redisLike.lrange(key, 0, 100).map { values =>
+                     if (values.isEmpty) 0L
+                     else {
+                       val items    = values.map { v =>
+                         v.utf8String.toLong
                        }
-                     )
-                   )
-                   .map(a => a.fold(0L)(_ + _) / (if (a.isEmpty) 1 else a.size))
+                       val total    = items.fold(0L)(_ + _)
+                       val itemSize = if (items.isEmpty) 1 else items.size
+                       (total / itemSize).toLong
+                     }
+                   }
+                 )
+               )
+               .map(a => a.fold(0L)(_ + _) / (if (a.isEmpty) 1 else a.size))
     } yield (in, out)
   }
 }
@@ -518,23 +518,23 @@ class RedisClusterStateDataStore(redisLike: RedisClientMasterSlaves, env: Env) e
                    )
                    .map(a => a.fold(0L)(_ + _) / (if (a.isEmpty) 1 else a.size))
 
-      out     <- Future
-                   .sequence(
-                     keysOut.map(key =>
-                       redisLike.lrange(key, 0, 100).map { values =>
-                         if (values.isEmpty) 0L
-                         else {
-                           val items    = values.map { v =>
-                             v.utf8String.toLong
-                           }
-                           val itemSize = if (items.isEmpty) 1 else items.size
-                           val total    = items.fold(0L)(_ + _)
-                           (total / itemSize).toLong
-                         }
+      out <- Future
+               .sequence(
+                 keysOut.map(key =>
+                   redisLike.lrange(key, 0, 100).map { values =>
+                     if (values.isEmpty) 0L
+                     else {
+                       val items    = values.map { v =>
+                         v.utf8String.toLong
                        }
-                     )
-                   )
-                   .map(a => a.fold(0L)(_ + _) / (if (a.isEmpty) 1 else a.size))
+                       val itemSize = if (items.isEmpty) 1 else items.size
+                       val total    = items.fold(0L)(_ + _)
+                       (total / itemSize).toLong
+                     }
+                   }
+                 )
+               )
+               .map(a => a.fold(0L)(_ + _) / (if (a.isEmpty) 1 else a.size))
     } yield (in, out)
   }
 }
@@ -863,12 +863,11 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             }
             .map(resp => true)
         }
-        .recover {
-          case e =>
-            Cluster.logger.debug(
-              s"[${env.clusterConfig.mode.name}] Error while checking login token with Otoroshi leader cluster"
-            )
-            false
+        .recover { case e =>
+          Cluster.logger.debug(
+            s"[${env.clusterConfig.mode.name}] Error while checking login token with Otoroshi leader cluster"
+          )
+          false
         }
     } else {
       FastFuture.successful(false)
@@ -898,12 +897,11 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             }
             .map(resp => Some(Json.parse(resp.body)))
         }
-        .recover {
-          case e =>
-            Cluster.logger.debug(
-              s"[${env.clusterConfig.mode.name}] Error while checking user token with Otoroshi leader cluster"
-            )
-            None
+        .recover { case e =>
+          Cluster.logger.debug(
+            s"[${env.clusterConfig.mode.name}] Error while checking user token with Otoroshi leader cluster"
+          )
+          None
         }
     } else {
       FastFuture.successful(None)
@@ -991,12 +989,11 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             }
             .map(resp => PrivateAppsUser.fmt.reads(Json.parse(resp.body)).asOpt)
         }
-        .recover {
-          case e =>
-            Cluster.logger.debug(
-              s"[${env.clusterConfig.mode.name}] Error while checking session with Otoroshi leader cluster"
-            )
-            None
+        .recover { case e =>
+          Cluster.logger.debug(
+            s"[${env.clusterConfig.mode.name}] Error while checking session with Otoroshi leader cluster"
+          )
+          None
         }
     } else {
       FastFuture.successful(None)
@@ -1048,20 +1045,18 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
       if (!servicesIncrementsRef.get().contains("global")) {
         servicesIncrementsRef.get().putIfAbsent("global", (new AtomicLong(0L), new AtomicLong(0L), new AtomicLong(0L)))
       }
-      servicesIncrementsRef.get().get("global").foreach {
-        case (calls, dataInCounter, dataOutCounter) =>
-          calls.incrementAndGet()
-          dataInCounter.addAndGet(dataIn)
-          dataOutCounter.addAndGet(dataOut)
+      servicesIncrementsRef.get().get("global").foreach { case (calls, dataInCounter, dataOutCounter) =>
+        calls.incrementAndGet()
+        dataInCounter.addAndGet(dataIn)
+        dataOutCounter.addAndGet(dataOut)
       }
       if (!servicesIncrementsRef.get().contains(id)) {
         servicesIncrementsRef.get().putIfAbsent(id, (new AtomicLong(0L), new AtomicLong(0L), new AtomicLong(0L)))
       }
-      servicesIncrementsRef.get().get(id).foreach {
-        case (calls, dataInCounter, dataOutCounter) =>
-          calls.incrementAndGet()
-          dataInCounter.addAndGet(dataIn)
-          dataOutCounter.addAndGet(dataOut)
+      servicesIncrementsRef.get().get(id).foreach { case (calls, dataInCounter, dataOutCounter) =>
+        calls.incrementAndGet()
+        dataInCounter.addAndGet(dataIn)
+        dataOutCounter.addAndGet(dataOut)
       }
     }
   }
@@ -1185,15 +1180,14 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
                   }
               }
           }
-          .recover {
-            case e =>
-              Cluster.logger.error(
-                s"[${env.clusterConfig.mode.name}] Error while trying to fetch state from Otoroshi leader cluster",
-                e
-              )
+          .recover { case e =>
+            Cluster.logger.error(
+              s"[${env.clusterConfig.mode.name}] Error while trying to fetch state from Otoroshi leader cluster",
+              e
+            )
           }
-          .andThen {
-            case _ => isPollingState.compareAndSet(true, false)
+          .andThen { case _ =>
+            isPollingState.compareAndSet(true, false)
           }
       } else {
         Cluster.logger.debug(
@@ -1273,23 +1267,21 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
                 )
               ) + "\n"
             )) flatMap { stats =>
-              val apiIncrSource     = Source(oldApiIncr.toList.map {
-                case (key, inc) =>
-                  ByteString(Json.stringify(Json.obj("typ" -> "apkincr", "apk" -> key, "i" -> inc.get())) + "\n")
+              val apiIncrSource     = Source(oldApiIncr.toList.map { case (key, inc) =>
+                ByteString(Json.stringify(Json.obj("typ" -> "apkincr", "apk" -> key, "i" -> inc.get())) + "\n")
               })
-              val serviceIncrSource = Source(oldServiceIncr.toList.map {
-                case (key, (calls, dataIn, dataOut)) =>
-                  ByteString(
-                    Json.stringify(
-                      Json.obj(
-                        "typ" -> "srvincr",
-                        "srv" -> key,
-                        "c"   -> calls.get(),
-                        "di"  -> dataIn.get(),
-                        "do"  -> dataOut.get()
-                      )
-                    ) + "\n"
-                  )
+              val serviceIncrSource = Source(oldServiceIncr.toList.map { case (key, (calls, dataIn, dataOut)) =>
+                ByteString(
+                  Json.stringify(
+                    Json.obj(
+                      "typ" -> "srvincr",
+                      "srv" -> key,
+                      "c"   -> calls.get(),
+                      "di"  -> dataIn.get(),
+                      "do"  -> dataOut.get()
+                    )
+                  ) + "\n"
+                )
               })
               val globalSource      = Source.single(stats)
               val body              = apiIncrSource.concat(serviceIncrSource).concat(globalSource).via(env.clusterConfig.gzip())
@@ -1322,29 +1314,27 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
                 }
             }
           }
-          .recover {
-            case e =>
-              e.printStackTrace()
-              oldApiIncr.foreach {
-                case (key, c) => apiIncrementsRef.get().getOrElseUpdate(key, new AtomicLong(0L)).addAndGet(c.get())
-              }
-              oldServiceIncr.foreach {
-                case (key, (counter1, counter2, counter3)) =>
-                  val (c1, c2, c3) = servicesIncrementsRef
-                    .get()
-                    .getOrElseUpdate(key, (new AtomicLong(0L), new AtomicLong(0L), new AtomicLong(0L)))
-                  c1.addAndGet(counter1.get())
-                  c2.addAndGet(counter2.get())
-                  c3.addAndGet(counter3.get())
-              }
+          .recover { case e =>
+            e.printStackTrace()
+            oldApiIncr.foreach { case (key, c) =>
+              apiIncrementsRef.get().getOrElseUpdate(key, new AtomicLong(0L)).addAndGet(c.get())
+            }
+            oldServiceIncr.foreach { case (key, (counter1, counter2, counter3)) =>
+              val (c1, c2, c3) = servicesIncrementsRef
+                .get()
+                .getOrElseUpdate(key, (new AtomicLong(0L), new AtomicLong(0L), new AtomicLong(0L)))
+              c1.addAndGet(counter1.get())
+              c2.addAndGet(counter2.get())
+              c3.addAndGet(counter3.get())
+            }
 
-              Cluster.logger.error(
-                s"[${env.clusterConfig.mode.name}] Error while trying to push api quotas updates to Otoroshi leader cluster",
-                e
-              )
+            Cluster.logger.error(
+              s"[${env.clusterConfig.mode.name}] Error while trying to push api quotas updates to Otoroshi leader cluster",
+              e
+            )
           }
-          .andThen {
-            case _ => isPushingQuotas.compareAndSet(true, false)
+          .andThen { case _ =>
+            isPushingQuotas.compareAndSet(true, false)
           }
         //} else {
         //  isPushingQuotas.compareAndSet(true, false)
@@ -1363,8 +1353,8 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
 
   def warnAboutHttpLeaderUrls(): Unit = {
     if (env.clusterConfig.mode == ClusterMode.Worker) {
-      config.leader.urls.filter(_.toLowerCase.contains("http://")) foreach {
-        case url => Cluster.logger.warn(s"A leader url uses unsecured transport ($url), you should use https instead")
+      config.leader.urls.filter(_.toLowerCase.contains("http://")) foreach { case url =>
+        Cluster.logger.warn(s"A leader url uses unsecured transport ($url), you should use https instead")
       }
     }
   }

@@ -544,7 +544,7 @@ class HttpHandler()(implicit env: Env) {
                     Some("errors.no.service.found"),
                     duration = System.currentTimeMillis - start,
                     overhead = (System
-                        .currentTimeMillis() - secondStart) + firstOverhead,
+                      .currentTimeMillis() - secondStart) + firstOverhead,
                     cbDuration = cbDuration,
                     callAttempts = callAttempts,
                     attrs = attrs
@@ -585,7 +585,7 @@ class HttpHandler()(implicit env: Env) {
                     Some("errors.service.not.secured"),
                     duration = System.currentTimeMillis - start,
                     overhead = (System
-                        .currentTimeMillis() - secondStart) + firstOverhead,
+                      .currentTimeMillis() - secondStart) + firstOverhead,
                     cbDuration = cbDuration,
                     callAttempts = callAttempts,
                     attrs = attrs
@@ -599,7 +599,7 @@ class HttpHandler()(implicit env: Env) {
                     Some("errors.service.down"),
                     duration = System.currentTimeMillis - start,
                     overhead = (System
-                        .currentTimeMillis() - secondStart) + firstOverhead,
+                      .currentTimeMillis() - secondStart) + firstOverhead,
                     cbDuration = cbDuration,
                     callAttempts = callAttempts,
                     attrs = attrs
@@ -800,7 +800,7 @@ class HttpHandler()(implicit env: Env) {
                             Some("errors.http.10.not.allowed"),
                             duration = System.currentTimeMillis - start,
                             overhead = (System
-                                .currentTimeMillis() - secondStart) + firstOverhead,
+                              .currentTimeMillis() - secondStart) + firstOverhead,
                             cbDuration = cbDuration,
                             callAttempts = callAttempts,
                             attrs = attrs

@@ -35,8 +35,8 @@ object WorkFlowSpec                                                             
       .map(
         _.value
           .map(WorkFlowTask.format.reads)
-          .collect {
-            case JsSuccess(value, _) => value
+          .collect { case JsSuccess(value, _) =>
+            value
           }
       )
       .getOrElse(Seq.empty)
@@ -125,8 +125,8 @@ trait WorkFlowTask {
         case JsNull                           => JsNull
         case v @ JsObject(_) if isOperator(v) => transform(WorkFlowOperator.apply(v, ctx))
         case JsObject(values)                 =>
-          JsObject(values.map {
-            case (key, value) => (key, transform(value))
+          JsObject(values.map { case (key, value) =>
+            (key, transform(value))
           })
         case JsArray(values)                  => JsArray(values.map(transform))
       }
@@ -168,12 +168,12 @@ object WorkFlowEl {
             case r"responses.$field@(.*)\[$path@(.*)\]" =>
               ctx.responses.get(field).map(f => JsonPathUtils.getAtPolyJsonStr(f, path)).getOrElse("null")
 
-            case r"file://$path@(.*)"                   =>
+            case r"file://$path@(.*)"        =>
               Try(Files.readAllLines(new File(path).toPath).asScala.mkString("\n").trim()).getOrElse("null")
-            case r"file:$path@(.*)"                     =>
+            case r"file:$path@(.*)"          =>
               Try(Files.readAllLines(new File(path).toPath).asScala.mkString("\n").trim()).getOrElse("null")
-            case r"env.$field@(.*):$dv@(.*)"            => Option(System.getenv(field)).getOrElse(dv)
-            case r"env.$field@(.*)"                     => Option(System.getenv(field)).getOrElse(s"no-env-var-$field")
+            case r"env.$field@(.*):$dv@(.*)" => Option(System.getenv(field)).getOrElse(dv)
+            case r"env.$field@(.*)"          => Option(System.getenv(field)).getOrElse(s"no-env-var-$field")
 
             case r"config.$field@(.*):$dv@(.*)" =>
               env.configuration
@@ -208,10 +208,9 @@ object WorkFlowEl {
                 )
                 .getOrElse(s"no-config-$field")
           }
-        } recover {
-          case e =>
-            logger.error(s"Error while parsing expression, returning raw value: $value", e)
-            value
+        } recover { case e =>
+          logger.error(s"Error while parsing expression, returning raw value: $value", e)
+          value
         } get
       }
       case _                     => value
@@ -271,8 +270,8 @@ class WorkFlow(spec: WorkFlowSpec) {
         log(s"running task '${task.name}'")
         task
           .run(ctx)
-          .recover {
-            case e => WorkFlowResult.WorkFlowFailure(task, e)
+          .recover { case e =>
+            WorkFlowResult.WorkFlowFailure(task, e)
           }
           .andThen {
             case Failure(e)                                    => log(s"task '${task.name}' completed with failure: ${e.getMessage}")

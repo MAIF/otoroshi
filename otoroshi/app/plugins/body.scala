@@ -38,8 +38,8 @@ case class BodyLoggerFilterConfig(json: JsValue) {
     .getOrElse(Seq.empty)
   lazy val notMethods: Seq[String] = (json \ "not" \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty)
   lazy val notPaths: Seq[String]   = (json \ "not" \ "paths")
-      .asOpt[Seq[String]]
-      .getOrElse(Seq.empty) :+ "\\/\\.well-known\\/otoroshi\\/bodylogge.*"
+    .asOpt[Seq[String]]
+    .getOrElse(Seq.empty) :+ "\\/\\.well-known\\/otoroshi\\/bodylogge.*"
 }
 
 case class BodyLoggerConfig(json: JsValue) {
@@ -259,15 +259,14 @@ class BodyLogger extends RequestTransformer {
           .future(env.datastores.rawDataStore.keys(pattern))
           .flatMapConcat(keys => Source(keys.toList))
           .mapAsync(1)(key => env.datastores.rawDataStore.pttl(key).map(ttl => (key, ttl)))
-          .map {
-            case (key, ttl) =>
-              Json.obj(
-                "reqId" -> key
-                  .replace(s"${env.storageRoot}:bodies:${desc.id}:", "")
-                  .replace(":request", "")
-                  .replace(":response", ""),
-                "ttl"   -> ttl
-              )
+          .map { case (key, ttl) =>
+            Json.obj(
+              "reqId" -> key
+                .replace(s"${env.storageRoot}:bodies:${desc.id}:", "")
+                .replace(":request", "")
+                .replace(":response", ""),
+              "ttl"   -> ttl
+            )
           }
           .toMat(Sink.seq)(Keep.right)
           .run()
@@ -276,15 +275,14 @@ class BodyLogger extends RequestTransformer {
           .future(redis._1.keys(pattern))
           .flatMapConcat(keys => Source(keys.toList))
           .mapAsync(1)(key => redis._1.pttl(key).map(ttl => (key, ttl)))
-          .map {
-            case (key, ttl) =>
-              Json.obj(
-                "reqId" -> key
-                  .replace(s"${env.storageRoot}:bodies:${desc.id}:", "")
-                  .replace(":request", "")
-                  .replace(":response", ""),
-                "ttl"   -> ttl
-              )
+          .map { case (key, ttl) =>
+            Json.obj(
+              "reqId" -> key
+                .replace(s"${env.storageRoot}:bodies:${desc.id}:", "")
+                .replace(":request", "")
+                .replace(":response", ""),
+              "ttl"   -> ttl
+            )
           }
           .toMat(Sink.seq)(Keep.right)
           .run()

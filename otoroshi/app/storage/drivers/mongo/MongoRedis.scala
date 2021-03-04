@@ -96,8 +96,8 @@ class MongoRedis(actorSystem: ActorSystem, connection: MongoConnection, dbName: 
     database
       .map(_.collection("values"))
       .flatMap(c =>
-        f(c).andThen {
-          case Failure(e) => logger.error("Error in DB query", e)
+        f(c).andThen { case Failure(e) =>
+          logger.error("Error in DB query", e)
         }
       )
   }

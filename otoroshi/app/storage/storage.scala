@@ -322,8 +322,8 @@ trait RedisLikeStore[T] extends BasicStore[T] {
           val kindKey  = keyStr("")
           optRedis.extractKind(kindKey, env).map { kind =>
             optRedis.findAllOptimized(kind, kindKey).map { seq =>
-              seq.map(v => fromJsonSafe(v)).collect {
-                case JsSuccess(i, _) => i
+              seq.map(v => fromJsonSafe(v)).collect { case JsSuccess(i, _) =>
+                i
               }
             }
           } getOrElse {
@@ -339,19 +339,19 @@ trait RedisLikeStore[T] extends BasicStore[T] {
         val ref  = findAllCache.get()
         if (ref == null) {
           lastFindAllCache.set(time)
-          actualFindAll().andThen {
-            case Success(services) => findAllCache.set(services)
+          actualFindAll().andThen { case Success(services) =>
+            findAllCache.set(services)
           }
         } else {
           if (force || (lastFindAllCache.get() + env.cacheTtl) < time) {
             lastFindAllCache.set(time)
-            actualFindAll().andThen {
-              case Success(services) => findAllCache.set(services)
+            actualFindAll().andThen { case Success(services) =>
+              findAllCache.set(services)
             }
           } else if ((lastFindAllCache.get() + (env.cacheTtl - 1000)) < time) {
             lastFindAllCache.set(time)
-            actualFindAll().andThen {
-              case Success(services) => findAllCache.set(services)
+            actualFindAll().andThen { case Success(services) =>
+              findAllCache.set(services)
             }
             FastFuture.successful(ref)
           } else {

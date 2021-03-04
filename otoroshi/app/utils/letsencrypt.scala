@@ -230,8 +230,8 @@ object LetsEncryptHelper {
                     .save()
                     .map(_ => cenriched)
               }
-              .andThen {
-                case _ => env.datastores.rawDataStore.del(Seq(s"${env.storageRoot}:letsencrypt:renew:${cert.id}"))
+              .andThen { case _ =>
+                env.datastores.rawDataStore.del(Seq(s"${env.storageRoot}:letsencrypt:renew:${cert.id}"))
               }
           }
       }
@@ -262,9 +262,8 @@ object LetsEncryptHelper {
                   .flatMap { _ =>
                     createCertificate(host).map(e => (host, e))
                   }
-                  .andThen {
-                    case _ =>
-                      env.datastores.rawDataStore.del(Seq(s"${env.storageRoot}:certs-issuer:letsencrypt:create:$host"))
+                  .andThen { case _ =>
+                    env.datastores.rawDataStore.del(Seq(s"${env.storageRoot}:certs-issuer:letsencrypt:create:$host"))
                   }
               }
             }

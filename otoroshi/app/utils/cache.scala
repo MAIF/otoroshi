@@ -32,8 +32,8 @@ class SimpleCache[K, V](initialValue: Map[K, (Long, V)] = Map.empty) {
 
   def ttl(k: K): Option[Duration] =
     cleanup { _ =>
-      Option(cache.get(k)).map {
-        case (time, _) => (time - System.currentTimeMillis()).millis
+      Option(cache.get(k)).map { case (time, _) =>
+        (time - System.currentTimeMillis()).millis
       }
     }
 

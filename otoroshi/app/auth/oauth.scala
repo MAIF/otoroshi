@@ -83,8 +83,8 @@ object GenericOauth2ModuleConfig extends FromJson[AuthModuleConfig] {
           dataOverride = (json \ "dataOverride").asOpt[Map[String, JsObject]].getOrElse(Map.empty)
         )
       )
-    } recover {
-      case e => Left(e)
+    } recover { case e =>
+      Left(e)
     } get
 }
 
@@ -371,8 +371,8 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
       case Some(algo) => {
         Try(JWT.require(algo).acceptLeeway(10).build().verify(accessToken)).map { _ =>
           FastFuture.successful(tokenBody)
-        } recoverWith {
-          case e => Success(FastFuture.failed(e))
+        } recoverWith { case e =>
+          Success(FastFuture.failed(e))
         } get
       }
       case None       => FastFuture.failed(new RuntimeException("Bad algorithm"))

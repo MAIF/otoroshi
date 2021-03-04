@@ -102,8 +102,8 @@ class ImportExportController(ApiAction: ApiAction, cc: ControllerComponents)(imp
               .map(v => Json.parse(v.utf8String))
             env.datastores
               .fullNdJsonImport(source)
-              .map(_ => Ok(Json.obj("done" -> true))) recover {
-              case e => InternalServerError(Json.obj("error" -> e.getMessage))
+              .map(_ => Ok(Json.obj("done" -> true))) recover { case e =>
+              InternalServerError(Json.obj("error" -> e.getMessage))
             }
           }
           case _                            => {
@@ -112,8 +112,8 @@ class ImportExportController(ApiAction: ApiAction, cc: ControllerComponents)(imp
             env.datastores.globalConfigDataStore
               .fullImport(json)
               .map(_ => Ok(Json.obj("done" -> true)))
-              .recover {
-                case e => InternalServerError(Json.obj("error" -> e.getMessage))
+              .recover { case e =>
+                InternalServerError(Json.obj("error" -> e.getMessage))
               }
           }
         }
@@ -130,8 +130,8 @@ class ImportExportController(ApiAction: ApiAction, cc: ControllerComponents)(imp
               .map(v => Json.parse(v.utf8String))
             env.datastores
               .fullNdJsonImport(source)
-              .map(_ => Ok(Json.obj("done" -> true))) recover {
-              case e => InternalServerError(Json.obj("error" -> e.getMessage))
+              .map(_ => Ok(Json.obj("done" -> true))) recover { case e =>
+              InternalServerError(Json.obj("error" -> e.getMessage))
             }
           }
           case _                            => {
@@ -140,8 +140,8 @@ class ImportExportController(ApiAction: ApiAction, cc: ControllerComponents)(imp
               env.datastores.globalConfigDataStore
                 .fullImport(json)
                 .map(_ => Ok(Json.obj("done" -> true)))
-            } recover {
-              case e => InternalServerError(Json.obj("error" -> e.getMessage))
+            } recover { case e =>
+              InternalServerError(Json.obj("error" -> e.getMessage))
             }
           }
         }

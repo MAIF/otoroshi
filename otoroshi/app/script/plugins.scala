@@ -38,8 +38,8 @@ object Plugins {
             excluded = (json \ "excluded").asOpt[Seq[String]].getOrElse(Seq.empty[String])
           )
         )
-      } recover {
-        case e => JsError(e.getMessage)
+      } recover { case e =>
+        JsError(e.getMessage)
       } get
   }
 }
@@ -71,8 +71,8 @@ case class Plugins(
       .getOrElse(Plugins(s"fake-global-${ct.runtimeClass.getName}"))
       .refs
       .map(r => (r, plugin[A](r)))
-      .collect {
-        case (ref, Some(_)) => ref
+      .collect { case (ref, Some(_)) =>
+        ref
       }
     val localPlugins  = Some(this)
       .filter(p => p.enabled && p.refs.nonEmpty)
@@ -80,8 +80,8 @@ case class Plugins(
       .getOrElse(Plugins(s"fake-local-${ct.runtimeClass.getName}"))
       .refs
       .map(r => (r, plugin[A](r)))
-      .collect {
-        case (ref, Some(_)) => ref
+      .collect { case (ref, Some(_)) =>
+        ref
       }
     (globalPlugins ++ localPlugins).distinct
   }

@@ -86,8 +86,8 @@ object UserRights {
         .map { ur =>
           UserRight.format.reads(ur).asOpt
         }
-        .collect {
-          case Some(ur) => ur
+        .collect { case Some(ur) =>
+          ur
         }
     )
   }

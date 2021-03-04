@@ -65,12 +65,12 @@ case class ServiceDescriptorQuery(
   def exists()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
     val key = this.asKey
     if (!existsCache.containsKey(key)) {
-      env.datastores.serviceDescriptorDataStore.fastLookupExists(this).andThen {
-        case scala.util.Success(ex) => existsCache.put(key, ex)
+      env.datastores.serviceDescriptorDataStore.fastLookupExists(this).andThen { case scala.util.Success(ex) =>
+        existsCache.put(key, ex)
       }
     } else {
-      env.datastores.serviceDescriptorDataStore.fastLookupExists(this).andThen {
-        case scala.util.Success(ex) => existsCache.put(key, ex)
+      env.datastores.serviceDescriptorDataStore.fastLookupExists(this).andThen { case scala.util.Success(ex) =>
+        existsCache.put(key, ex)
       }
       FastFuture.successful(existsCache.get(key))
     }
@@ -79,12 +79,12 @@ case class ServiceDescriptorQuery(
   def get()(implicit ec: ExecutionContext, env: Env): Future[Seq[String]] = {
     val key = this.asKey
     if (!serviceIdsCache.containsKey(key)) {
-      env.datastores.serviceDescriptorDataStore.getFastLookups(this).andThen {
-        case scala.util.Success(ex) => serviceIdsCache.put(key, ex)
+      env.datastores.serviceDescriptorDataStore.getFastLookups(this).andThen { case scala.util.Success(ex) =>
+        serviceIdsCache.put(key, ex)
       }
     } else {
-      env.datastores.serviceDescriptorDataStore.getFastLookups(this).andThen {
-        case scala.util.Success(ex) => serviceIdsCache.put(key, ex)
+      env.datastores.serviceDescriptorDataStore.getFastLookups(this).andThen { case scala.util.Success(ex) =>
+        serviceIdsCache.put(key, ex)
       }
       FastFuture.successful(serviceIdsCache.get(key))
     }
@@ -94,12 +94,12 @@ case class ServiceDescriptorQuery(
     val key = this.asKey
     get().flatMap { ids =>
       if (!servicesCache.containsKey(key)) {
-        env.datastores.serviceDescriptorDataStore.findAllById(ids, force).andThen {
-          case scala.util.Success(ex) => servicesCache.put(key, ex)
+        env.datastores.serviceDescriptorDataStore.findAllById(ids, force).andThen { case scala.util.Success(ex) =>
+          servicesCache.put(key, ex)
         }
       } else {
-        env.datastores.serviceDescriptorDataStore.findAllById(ids, force).andThen {
-          case scala.util.Success(ex) => servicesCache.put(key, ex)
+        env.datastores.serviceDescriptorDataStore.findAllById(ids, force).andThen { case scala.util.Success(ex) =>
+          servicesCache.put(key, ex)
         }
         FastFuture.successful(servicesCache.get(key))
       }
@@ -383,8 +383,8 @@ object TargetPredicate {
             GeolocationMatch(
               positions = (json \ "positions")
                 .asOpt[Seq[String]]
-                .map(_.map(_.split(";").toList.map(_.trim)).collect {
-                  case lat :: lng :: radius :: Nil => GeoPositionRadius(lat.toDouble, lng.toDouble, radius.toDouble)
+                .map(_.map(_.split(";").toList.map(_.trim)).collect { case lat :: lng :: radius :: Nil =>
+                  GeoPositionRadius(lat.toDouble, lng.toDouble, radius.toDouble)
                 })
                 .getOrElse(Seq.empty)
             )
@@ -555,11 +555,10 @@ object Target {
           predicate = (json \ "predicate").asOpt(TargetPredicate.format).getOrElse(AlwaysMatch),
           ipAddress = (json \ "ipAddress").asOpt[String].filterNot(_.trim.isEmpty)
         )
-      } map {
-        case sd => JsSuccess(sd)
-      } recover {
-        case t =>
-          JsError(t.getMessage)
+      } map { case sd =>
+        JsSuccess(sd)
+      } recover { case t =>
+        JsError(t.getMessage)
       } get
   }
 }
@@ -650,12 +649,11 @@ object CustomTimeouts {
           callTimeout = (json \ "callTimeout").asOpt[Long].getOrElse(30000),
           globalTimeout = (json \ "globalTimeout").asOpt[Long].getOrElse(30000)
         )
-      } map {
-        case sd => JsSuccess(sd)
-      } recover {
-        case t =>
-          logger.error("Error while reading CustomTimeouts", t)
-          JsError(t.getMessage)
+      } map { case sd =>
+        JsSuccess(sd)
+      } recover { case t =>
+        logger.error("Error while reading CustomTimeouts", t)
+        JsError(t.getMessage)
       } get
 
     override def writes(o: CustomTimeouts): JsValue =
@@ -795,12 +793,11 @@ object ClientConfig {
             .map(_.value.map(e => CustomTimeouts.format.reads(e).get))
             .getOrElse(Seq.empty[CustomTimeouts])
         )
-      } map {
-        case sd => JsSuccess(sd)
-      } recover {
-        case t =>
-          logger.error("Error while reading ClientConfig", t)
-          JsError(t.getMessage)
+      } map { case sd =>
+        JsSuccess(sd)
+      } recover { case t =>
+        logger.error("Error while reading ClientConfig", t)
+        JsError(t.getMessage)
       } get
 
     override def writes(o: ClientConfig): JsValue =
@@ -847,12 +844,11 @@ object Canary {
             .getOrElse(Seq.empty[Target]),
           root = (json \ "root").asOpt[String].getOrElse("/")
         )
-      } map {
-        case sd => JsSuccess(sd)
-      } recover {
-        case t =>
-          logger.error("Error while reading Canary", t)
-          JsError(t.getMessage)
+      } map { case sd =>
+        JsSuccess(sd)
+      } recover { case t =>
+        logger.error("Error while reading Canary", t)
+        JsError(t.getMessage)
       } get
 
     override def writes(o: Canary): JsValue =
@@ -892,12 +888,11 @@ object RedirectionSettings {
           code = (json \ "code").asOpt[Int].getOrElse(303),
           to = (json \ "to").asOpt[String].filterNot(_.trim.isEmpty).getOrElse("https://www.otoroshi.io")
         )
-      } map {
-        case sd => JsSuccess(sd)
-      } recover {
-        case t =>
-          logger.error("Error while reading RedirectionSettings", t)
-          JsError(t.getMessage)
+      } map { case sd =>
+        JsSuccess(sd)
+      } recover { case t =>
+        logger.error("Error while reading RedirectionSettings", t)
+        JsError(t.getMessage)
       } get
 
     override def writes(o: RedirectionSettings): JsValue =
@@ -933,8 +928,8 @@ object BasicAuthConstraints         {
             queryName = (json \ "queryName").asOpt[String].filterNot(_.trim.isEmpty)
           )
         )
-      } recover {
-        case e => JsError(e.getMessage)
+      } recover { case e =>
+        JsError(e.getMessage)
       } get
   }
 }
@@ -962,8 +957,8 @@ object ClientIdAuthConstraints      {
             queryName = (json \ "queryName").asOpt[String].filterNot(_.trim.isEmpty)
           )
         )
-      } recover {
-        case e => JsError(e.getMessage)
+      } recover { case e =>
+        JsError(e.getMessage)
       } get
   }
 }
@@ -991,8 +986,8 @@ object CustomHeadersAuthConstraints {
             clientSecretHeaderName = (json \ "clientSecretHeaderName").asOpt[String].filterNot(_.trim.isEmpty)
           )
         )
-      } recover {
-        case e => JsError(e.getMessage)
+      } recover { case e =>
+        JsError(e.getMessage)
       } get
   }
 }
@@ -1036,8 +1031,8 @@ object JwtAuthConstraints           {
             cookieName = (json \ "cookieName").asOpt[String].filterNot(_.trim.isEmpty)
           )
         )
-      } recover {
-        case e => JsError(e.getMessage)
+      } recover { case e =>
+        JsError(e.getMessage)
       } get
   }
 }
@@ -1085,8 +1080,8 @@ object ApiKeyRouteMatcher {
             allMetaKeysIn = (json \ "allMetaKeysIn").asOpt[Seq[String]].getOrElse(Seq.empty[String])
           )
         )
-      } recover {
-        case e => JsError(e.getMessage)
+      } recover { case e =>
+        JsError(e.getMessage)
       } get
   }
 }
@@ -1121,8 +1116,8 @@ object ApiKeyConstraints {
             routing = (json \ "routing").as(ApiKeyRouteMatcher.format)
           )
         )
-      } recover {
-        case e => JsError(e.getMessage)
+      } recover { case e =>
+        JsError(e.getMessage)
       } get
   }
 }
@@ -1200,8 +1195,8 @@ object SecComHeaders {
             stateResponseName = (json \ "stateResponseName").asOpt[String].filterNot(_.trim.isEmpty)
           )
         )
-      } recover {
-        case e => JsError(e.getMessage)
+      } recover { case e =>
+        JsError(e.getMessage)
       } get
   }
 }
@@ -1225,8 +1220,8 @@ object RestrictionPath {
             path = (json \ "path").as[String]
           )
         )
-      } recover {
-        case e => JsError(e.getMessage)
+      } recover { case e =>
+        JsError(e.getMessage)
       } get
   }
 }
@@ -1421,26 +1416,26 @@ object Restrictions {
             allowLast = (json \ "allowLast").asOpt[Boolean].getOrElse(true),
             allowed = (json \ "allowed")
               .asOpt[JsArray]
-              .map(_.value.map(p => RestrictionPath.format.reads(p)).collect {
-                case JsSuccess(rp, _) => rp
+              .map(_.value.map(p => RestrictionPath.format.reads(p)).collect { case JsSuccess(rp, _) =>
+                rp
               })
               .getOrElse(Seq.empty),
             forbidden = (json \ "forbidden")
               .asOpt[JsArray]
-              .map(_.value.map(p => RestrictionPath.format.reads(p)).collect {
-                case JsSuccess(rp, _) => rp
+              .map(_.value.map(p => RestrictionPath.format.reads(p)).collect { case JsSuccess(rp, _) =>
+                rp
               })
               .getOrElse(Seq.empty),
             notFound = (json \ "notFound")
               .asOpt[JsArray]
-              .map(_.value.map(p => RestrictionPath.format.reads(p)).collect {
-                case JsSuccess(rp, _) => rp
+              .map(_.value.map(p => RestrictionPath.format.reads(p)).collect { case JsSuccess(rp, _) =>
+                rp
               })
               .getOrElse(Seq.empty)
           )
         )
-      } recover {
-        case e => JsError(e.getMessage)
+      } recover { case e =>
+        JsError(e.getMessage)
       } get
   }
 }
@@ -1689,29 +1684,28 @@ case class ServiceDescriptor(
         env.metrics
           .withTimerAsync("otoroshi.core.proxy.validate-access") {
             Source(refs.toList.zipWithIndex)
-              .mapAsync(1) {
-                case (ref, index) =>
-                  val validator = env.scriptManager.getAnyScript[AccessValidator](ref) match {
-                    case Left("compiling") => CompilingValidator
-                    case Left(_)           => DefaultValidator
-                    case Right(validator)  => validator
-                  }
-                  validator.access(
-                    AccessContext(
-                      snowflake = snowflake,
-                      index = index,
-                      request = req,
-                      descriptor = this,
-                      user = user,
-                      apikey = apikey,
-                      attrs = attrs,
-                      globalConfig = ConfigUtils.mergeOpt(
-                        gScripts.validatorConfig,
-                        env.datastores.globalConfigDataStore.latestSafe.map(_.plugins.config)
-                      ),
-                      config = ConfigUtils.merge(accessValidator.config, plugins.config)
-                    )
+              .mapAsync(1) { case (ref, index) =>
+                val validator = env.scriptManager.getAnyScript[AccessValidator](ref) match {
+                  case Left("compiling") => CompilingValidator
+                  case Left(_)           => DefaultValidator
+                  case Right(validator)  => validator
+                }
+                validator.access(
+                  AccessContext(
+                    snowflake = snowflake,
+                    index = index,
+                    request = req,
+                    descriptor = this,
+                    user = user,
+                    apikey = apikey,
+                    attrs = attrs,
+                    globalConfig = ConfigUtils.mergeOpt(
+                      gScripts.validatorConfig,
+                      env.datastores.globalConfigDataStore.latestSafe.map(_.plugins.config)
+                    ),
+                    config = ConfigUtils.merge(accessValidator.config, plugins.config)
                   )
+                )
               }
               .takeWhile(
                 a =>
@@ -1897,27 +1891,26 @@ case class ServiceDescriptor(
         env.metrics
           .withTimerAsync("otoroshi.core.proxy.pre-routing") {
             Source(refs.toList.zipWithIndex)
-              .mapAsync(1) {
-                case (ref, index) =>
-                  val route = env.scriptManager.getAnyScript[PreRouting](ref) match {
-                    case Left("compiling") => CompilingPreRouting
-                    case Left(_)           => DefaultPreRouting
-                    case Right(r)          => r
-                  }
-                  route.preRoute(
-                    PreRoutingContext(
-                      snowflake = snowflake,
-                      index = index,
-                      request = req,
-                      descriptor = this,
-                      attrs = attrs,
-                      globalConfig = ConfigUtils.mergeOpt(
-                        gScripts.preRouteConfig,
-                        env.datastores.globalConfigDataStore.latestSafe.map(_.plugins.config)
-                      ),
-                      config = ConfigUtils.merge(preRouting.config, plugins.config)
-                    )
+              .mapAsync(1) { case (ref, index) =>
+                val route = env.scriptManager.getAnyScript[PreRouting](ref) match {
+                  case Left("compiling") => CompilingPreRouting
+                  case Left(_)           => DefaultPreRouting
+                  case Right(r)          => r
+                }
+                route.preRoute(
+                  PreRoutingContext(
+                    snowflake = snowflake,
+                    index = index,
+                    request = req,
+                    descriptor = this,
+                    attrs = attrs,
+                    globalConfig = ConfigUtils.mergeOpt(
+                      gScripts.preRouteConfig,
+                      env.datastores.globalConfigDataStore.latestSafe.map(_.plugins.config)
+                    ),
+                    config = ConfigUtils.merge(preRouting.config, plugins.config)
                   )
+                )
               }
               .toMat(Sink.last)(Keep.right)
               .run()(env.otoroshiMaterializer)
@@ -2092,12 +2085,11 @@ object ServiceDescriptor {
           issueCert = (json \ "issueCert").asOpt[Boolean].getOrElse(false),
           issueCertCA = (json \ "issueCertCA").asOpt[String]
         )
-      } map {
-        case sd => JsSuccess(sd)
-      } recover {
-        case t =>
-          logger.error("Error while reading ServiceDescriptor", t)
-          JsError(t.getMessage)
+      } map { case sd =>
+        JsSuccess(sd)
+      } recover { case t =>
+        logger.error("Error while reading ServiceDescriptor", t)
+        JsError(t.getMessage)
       } get
 
     override def writes(sd: ServiceDescriptor): JsValue = {
@@ -2212,14 +2204,14 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
 
   def initiateNewDescriptor()(implicit env: Env): ServiceDescriptor = {
     val (subdomain, envir, domain) = env.staticExposedDomain.map { v =>
-        ServiceLocation.fullQuery(
-          v,
-          env.datastores.globalConfigDataStore.latest()(env.otoroshiExecutionContext, env)
-        ) match {
-          case None           => ("myservice", "prod", env.domain)
-          case Some(location) => (location.subdomain, location.env, location.domain)
-        }
-      } getOrElse ("myservice", "prod", env.domain)
+      ServiceLocation.fullQuery(
+        v,
+        env.datastores.globalConfigDataStore.latest()(env.otoroshiExecutionContext, env)
+      ) match {
+        case None           => ("myservice", "prod", env.domain)
+        case Some(location) => (location.subdomain, location.env, location.domain)
+      }
+    } getOrElse ("myservice", "prod", env.domain)
     ServiceDescriptor(
       id = IdGenerator.token(64),
       name = "my-service",
@@ -2307,10 +2299,9 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
   def matchAllHeaders(sr: ServiceDescriptor, query: ServiceDescriptorQuery): Boolean = {
     val headersSeq: Map[String, String] = query.matchingHeaders.filterNot(_._1.trim.isEmpty)
     val allHeadersMatched: Boolean      =
-      sr.matchingHeaders.filterNot(_._1.trim.isEmpty).forall {
-        case (key, value) =>
-          val regex = RegexPool.regex(value)
-          headersSeq.get(key).exists(h => regex.matches(h))
+      sr.matchingHeaders.filterNot(_._1.trim.isEmpty).forall { case (key, value) =>
+        val regex = RegexPool.regex(value)
+        headersSeq.get(key).exists(h => regex.matches(h))
       }
     allHeadersMatched
   }
@@ -2417,11 +2408,10 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
       sr.enabled && allHeadersMatched && rootMatched
     }
     val sersWithoutMatchingRoot = filtered1.filter(_.allPaths.isEmpty)
-    val sersWithMatchingRoot    = filtered1.filter(_.allPaths.nonEmpty).sortWith {
-      case (a, b) =>
-        val aMatchedSize = matched.get(a.id).map(_.size).getOrElse(0)
-        val bMatchedSize = matched.get(b.id).map(_.size).getOrElse(0)
-        aMatchedSize > bMatchedSize
+    val sersWithMatchingRoot    = filtered1.filter(_.allPaths.nonEmpty).sortWith { case (a, b) =>
+      val aMatchedSize = matched.get(a.id).map(_.size).getOrElse(0)
+      val bMatchedSize = matched.get(b.id).map(_.size).getOrElse(0)
+      aMatchedSize > bMatchedSize
     }
     val filtered                = sersWithMatchingRoot ++ sersWithoutMatchingRoot
     FastFuture
@@ -2436,8 +2426,8 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
         } else {
           allSers
         }
-        res1.sortWith {
-          case (a, b) => b.toHost.contains("*") && !a.toHost.contains("*")
+        res1.sortWith { case (a, b) =>
+          b.toHost.contains("*") && !a.toHost.contains("*")
         }
       }
   }

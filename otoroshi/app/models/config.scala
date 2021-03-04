@@ -67,8 +67,8 @@ object ElasticAnalyticsConfig {
             mtlsConfig = MtlsConfig.read((json \ "mtlsConfig").asOpt[JsValue])
           )
         )
-      } recover {
-        case e => JsError(e.getMessage)
+      } recover { case e =>
+        JsError(e.getMessage)
       } get
   }
 }
@@ -157,8 +157,8 @@ object Proxies {
             elastic = (json \ "elastic").asOpt[JsValue].flatMap(p => WSProxyServerJson.proxyFromJson(p))
           )
         )
-      } recover {
-        case e => JsError(e.getMessage)
+      } recover { case e =>
+        JsError(e.getMessage)
       } get
   }
 }
@@ -212,8 +212,8 @@ object GlobalScripts {
             jobRefs = (json \ "jobRefs").asOpt[Seq[String]].getOrElse(Seq.empty)
           )
         )
-      } recover {
-        case e => JsError(e.getMessage)
+      } recover { case e =>
+        JsError(e.getMessage)
       } get
   }
 }
@@ -240,8 +240,8 @@ object GeolocationSettings {
             case _         => NoneGeolocationSettings
           }
         )
-      } recover {
-        case e => JsError(e.getMessage)
+      } recover { case e =>
+        JsError(e.getMessage)
       } get
   }
 }
@@ -288,8 +288,8 @@ object UserAgentSettings {
             enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false)
           )
         )
-      } recover {
-        case e => JsError(e.getMessage)
+      } recover { case e =>
+        JsError(e.getMessage)
       } get
   }
 }
@@ -544,10 +544,9 @@ object GlobalConfig {
           streamEntityOnly = (json \ "streamEntityOnly").asOpt[Boolean].getOrElse(true),
           maintenanceMode = (json \ "maintenanceMode").asOpt[Boolean].getOrElse(false),
           autoLinkToDefaultGroup = (json \ "autoLinkToDefaultGroup").asOpt[Boolean].getOrElse(true),
-          limitConcurrentRequests =
-            (json \ "limitConcurrentRequests")
-              .asOpt[Boolean]
-              .getOrElse(false), // TODO : true by default after prod monitoring
+          limitConcurrentRequests = (json \ "limitConcurrentRequests")
+            .asOpt[Boolean]
+            .getOrElse(false), // TODO : true by default after prod monitoring
           maxConcurrentRequests = (json \ "maxConcurrentRequests").asOpt[Long].getOrElse(1000),
           maxHttp10ResponseSize = (json \ "maxHttp10ResponseSize").asOpt[Long].getOrElse(4 * (1024 * 1024)),
           useCircuitBreakers = (json \ "useCircuitBreakers").asOpt[Boolean].getOrElse(true),
@@ -661,12 +660,11 @@ object GlobalConfig {
             .getOrElse(Plugins("config-plugins")),
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty)
         )
-      } map {
-        case sd => JsSuccess(sd)
-      } recover {
-        case t =>
-          logger.error("Error while reading GlobalConfig", t)
-          JsError(t.getMessage)
+      } map { case sd =>
+        JsSuccess(sd)
+      } recover { case t =>
+        logger.error("Error while reading GlobalConfig", t)
+        JsError(t.getMessage)
       } get
   }
 
@@ -736,21 +734,20 @@ case class OtoroshiExport(
       val id = extractIdFromJs(item)
       (id, item)
     }
-    val (existing, additional) = arrWithId.partition {
-      case (id, item) => entities.exists(v => extractIdFromEntity(v) == id)
+    val (existing, additional) = arrWithId.partition { case (id, item) =>
+      entities.exists(v => extractIdFromEntity(v) == id)
     }
     val ex                     = existing
-      .map {
-        case (id, item) =>
-          val entity    = entities.find(v => extractIdFromEntity(v) == id).get
-          val newEntity = fmt.writes(entity).asObject.deepMerge(item.asObject)
-          fmt.reads(newEntity)
+      .map { case (id, item) =>
+        val entity    = entities.find(v => extractIdFromEntity(v) == id).get
+        val newEntity = fmt.writes(entity).asObject.deepMerge(item.asObject)
+        fmt.reads(newEntity)
       }
-      .collect {
-        case JsSuccess(s, _) => s
+      .collect { case JsSuccess(s, _) =>
+        s
       }
-    val add                    = additional.map(t => fmt.reads(t._2)).collect {
-      case JsSuccess(s, _) => s
+    val add                    = additional.map(t => fmt.reads(t._2)).collect { case JsSuccess(s, _) =>
+      s
     }
     val eid                    = existing.map(_._1)
     val already                = entities.filterNot(e => eid.contains(extractIdFromEntity(e)))

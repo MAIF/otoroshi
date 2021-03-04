@@ -81,8 +81,8 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
               }
             }
           }
-        } recover {
-          case _ => Ok(Json.obj("done" -> false))
+        } recover { case _ =>
+          Ok(Json.obj("done" -> false))
         }
       }
     }
@@ -117,8 +117,8 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
               )
             Ok(Json.obj("done" -> true))
           }
-        } recover {
-          case _ => Ok(Json.obj("done" -> false))
+        } recover { case _ =>
+          Ok(Json.obj("done" -> false))
         }
       }
     }
@@ -175,8 +175,8 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
               }
             }
           }
-        } recover {
-          case _ => Ok(Json.obj("done" -> false))
+        } recover { case _ =>
+          Ok(Json.obj("done" -> false))
         }
       }
     }
@@ -211,8 +211,8 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
               )
             Ok(Json.obj("done" -> true))
           }
-        } recover {
-          case _ => Ok(Json.obj("done" -> false))
+        } recover { case _ =>
+          Ok(Json.obj("done" -> false))
         }
       }
     }

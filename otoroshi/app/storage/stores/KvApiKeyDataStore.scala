@@ -99,16 +99,16 @@ class KvApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyDataStore 
     val toMonthEnd = monthEnd.getMillis - DateTime.now().getMillis
     for {
       _ <- redisCli.set(totalCallsKey(apiKey.clientId), "0")
-      _ <- redisCli.pttl(throttlingKey(apiKey.clientId)).filter(_ > -1).recoverWith {
-             case _ => redisCli.expire(throttlingKey(apiKey.clientId), env.throttlingWindow)
+      _ <- redisCli.pttl(throttlingKey(apiKey.clientId)).filter(_ > -1).recoverWith { case _ =>
+             redisCli.expire(throttlingKey(apiKey.clientId), env.throttlingWindow)
            }
       _ <- redisCli.set(dailyQuotaKey(apiKey.clientId), "0")
-      _ <- redisCli.pttl(dailyQuotaKey(apiKey.clientId)).filter(_ > -1).recoverWith {
-             case _ => redisCli.expire(dailyQuotaKey(apiKey.clientId), (toDayEnd / 1000).toInt)
+      _ <- redisCli.pttl(dailyQuotaKey(apiKey.clientId)).filter(_ > -1).recoverWith { case _ =>
+             redisCli.expire(dailyQuotaKey(apiKey.clientId), (toDayEnd / 1000).toInt)
            }
       _ <- redisCli.set(monthlyQuotaKey(apiKey.clientId), "0")
-      _ <- redisCli.pttl(monthlyQuotaKey(apiKey.clientId)).filter(_ > -1).recoverWith {
-             case _ => redisCli.expire(monthlyQuotaKey(apiKey.clientId), (toMonthEnd / 1000).toInt)
+      _ <- redisCli.pttl(monthlyQuotaKey(apiKey.clientId)).filter(_ > -1).recoverWith { case _ =>
+             redisCli.expire(monthlyQuotaKey(apiKey.clientId), (toMonthEnd / 1000).toInt)
            }
     } yield RemainingQuotas(
       authorizedCallsPerSec = apiKey.throttlingQuota,
@@ -135,16 +135,16 @@ class KvApiKeyDataStore(redisCli: RedisLike, _env: Env) extends ApiKeyDataStore 
     for {
       _            <- redisCli.incrby(totalCallsKey(apiKey.clientId), increment)
       secCalls     <- redisCli.incrby(throttlingKey(apiKey.clientId), increment)
-      secTtl       <- redisCli.pttl(throttlingKey(apiKey.clientId)).filter(_ > -1).recoverWith {
-                        case _ => redisCli.expire(throttlingKey(apiKey.clientId), env.throttlingWindow)
+      secTtl       <- redisCli.pttl(throttlingKey(apiKey.clientId)).filter(_ > -1).recoverWith { case _ =>
+                        redisCli.expire(throttlingKey(apiKey.clientId), env.throttlingWindow)
                       }
       dailyCalls   <- redisCli.incrby(dailyQuotaKey(apiKey.clientId), increment)
-      dailyTtl     <- redisCli.pttl(dailyQuotaKey(apiKey.clientId)).filter(_ > -1).recoverWith {
-                        case _ => redisCli.expire(dailyQuotaKey(apiKey.clientId), (toDayEnd / 1000).toInt)
+      dailyTtl     <- redisCli.pttl(dailyQuotaKey(apiKey.clientId)).filter(_ > -1).recoverWith { case _ =>
+                        redisCli.expire(dailyQuotaKey(apiKey.clientId), (toDayEnd / 1000).toInt)
                       }
       monthlyCalls <- redisCli.incrby(monthlyQuotaKey(apiKey.clientId), increment)
-      monthlyTtl   <- redisCli.pttl(monthlyQuotaKey(apiKey.clientId)).filter(_ > -1).recoverWith {
-                        case _ => redisCli.expire(monthlyQuotaKey(apiKey.clientId), (toMonthEnd / 1000).toInt)
+      monthlyTtl   <- redisCli.pttl(monthlyQuotaKey(apiKey.clientId)).filter(_ > -1).recoverWith { case _ =>
+                        redisCli.expire(monthlyQuotaKey(apiKey.clientId), (toMonthEnd / 1000).toInt)
                       }
     } yield RemainingQuotas(
       authorizedCallsPerSec = apiKey.throttlingQuota,

@@ -44,8 +44,8 @@ class KvAuthConfigsDataStore(redisCli: RedisLike, _env: Env)
         case false => _env.clusterAgent.isLoginTokenValid(token)
       }
     } else {
-      redisCli.exists(s"${_env.storageRoot}:auth:tokens:$token").andThen {
-        case _ => redisCli.del(s"${_env.storageRoot}:auth:tokens:$token")
+      redisCli.exists(s"${_env.storageRoot}:auth:tokens:$token").andThen { case _ =>
+        redisCli.del(s"${_env.storageRoot}:auth:tokens:$token")
       }
     }
   }
@@ -90,8 +90,8 @@ class KvAuthConfigsDataStore(redisCli: RedisLike, _env: Env)
         .map { bs =>
           bs.map(a => Json.parse(a.utf8String))
         }
-        .andThen {
-          case _ => redisCli.del(s"${_env.storageRoot}:auth:tokens:$token:user")
+        .andThen { case _ =>
+          redisCli.del(s"${_env.storageRoot}:auth:tokens:$token:user")
         }
     }
   }

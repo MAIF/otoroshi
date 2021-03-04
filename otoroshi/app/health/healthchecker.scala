@@ -153,8 +153,8 @@ object HealthCheck {
           }
         }
         .map(_ => ())
-        .recover {
-          case e => ()
+        .recover { case e =>
+          ()
         }
     }(ec, env.otoroshiActorSystem.scheduler)
 }
@@ -265,8 +265,8 @@ class HealthCheckJob extends Job {
         .flatMap(s => s.targets.map(t => (t, s)))
         .toList
       Source(targets)
-        .mapAsync(parallelChecks) {
-          case (target, service) => HealthCheck.checkTarget(service, target, logger)
+        .mapAsync(parallelChecks) { case (target, service) =>
+          HealthCheck.checkTarget(service, target, logger)
         }
         .runWith(Sink.ignore)
         .map(_ => ())

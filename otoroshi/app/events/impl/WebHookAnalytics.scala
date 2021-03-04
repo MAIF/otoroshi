@@ -53,9 +53,9 @@ class WebHookAnalytics(webhook: Webhook, config: GlobalConfig) extends Analytics
       env
     ) // TODO : maybe we need some config here ?
     val headers: Seq[(String, String)] = webhook.headers.toSeq ++ Seq(
-        env.Headers.OtoroshiState -> state,
-        env.Headers.OtoroshiClaim -> claim
-      )
+      env.Headers.OtoroshiState -> state,
+      env.Headers.OtoroshiClaim -> claim
+    )
 
     val url          = event.headOption
       .map(evt =>

@@ -53,54 +53,54 @@ object GlobalExpressionLanguage {
             case r"service.metadata.$field@(.*)" if service.isDefined             =>
               service.get.metadata.get(field).getOrElse(s"no-meta-$field")
 
-            case "req.fullUrl" if req.isDefined                                   =>
+            case "req.fullUrl" if req.isDefined                                 =>
               s"${req.get.theProtocol(env)}://${req.get.theHost(env)}${req.get.relativeUri}"
-            case "req.path" if req.isDefined                                      => req.get.path
-            case "req.uri" if req.isDefined                                       => req.get.relativeUri
-            case "req.host" if req.isDefined                                      => req.get.theHost(env)
-            case "req.domain" if req.isDefined                                    => req.get.theDomain(env)
-            case "req.method" if req.isDefined                                    => req.get.method
-            case "req.protocol" if req.isDefined                                  => req.get.theProtocol(env)
-            case r"req.headers.$field@(.*):$defaultValue@(.*)" if req.isDefined   =>
+            case "req.path" if req.isDefined                                    => req.get.path
+            case "req.uri" if req.isDefined                                     => req.get.relativeUri
+            case "req.host" if req.isDefined                                    => req.get.theHost(env)
+            case "req.domain" if req.isDefined                                  => req.get.theDomain(env)
+            case "req.method" if req.isDefined                                  => req.get.method
+            case "req.protocol" if req.isDefined                                => req.get.theProtocol(env)
+            case r"req.headers.$field@(.*):$defaultValue@(.*)" if req.isDefined =>
               req.get.headers.get(field).getOrElse(defaultValue)
-            case r"req.headers.$field@(.*)" if req.isDefined                      =>
+            case r"req.headers.$field@(.*)" if req.isDefined                    =>
               req.get.headers.get(field).getOrElse(s"no-header-$field")
-            case r"req.query.$field@(.*):$defaultValue@(.*)" if req.isDefined     =>
+            case r"req.query.$field@(.*):$defaultValue@(.*)" if req.isDefined   =>
               req.get.getQueryString(field).getOrElse(defaultValue)
-            case r"req.query.$field@(.*)" if req.isDefined                        =>
+            case r"req.query.$field@(.*)" if req.isDefined                      =>
               req.get.getQueryString(field).getOrElse(s"no-query-$field")
 
-            case "apikey.name" if apiKey.isDefined                                => apiKey.get.clientName
-            case "apikey.id" if apiKey.isDefined                                  => apiKey.get.clientId
-            case r"apikey.metadata.$field@(.*):$dv@(.*)" if apiKey.isDefined      =>
+            case "apikey.name" if apiKey.isDefined                            => apiKey.get.clientName
+            case "apikey.id" if apiKey.isDefined                              => apiKey.get.clientId
+            case r"apikey.metadata.$field@(.*):$dv@(.*)" if apiKey.isDefined  =>
               apiKey.get.metadata.get(field).getOrElse(dv)
-            case r"apikey.metadata.$field@(.*)" if apiKey.isDefined               =>
+            case r"apikey.metadata.$field@(.*)" if apiKey.isDefined           =>
               apiKey.get.metadata.get(field).getOrElse(s"no-meta-$field")
-            case r"apikey.tags\\[$field@(.*):$dv@(.*)\\]" if apiKey.isDefined     =>
+            case r"apikey.tags\\[$field@(.*):$dv@(.*)\\]" if apiKey.isDefined =>
               Option(apiKey.get.tags.apply(field.toInt)).getOrElse(dv)
-            case r"apikey.tags\\[$field@(.*)\\]" if apiKey.isDefined              =>
+            case r"apikey.tags\\[$field@(.*)\\]" if apiKey.isDefined          =>
               Option(apiKey.get.tags.apply(field.toInt)).getOrElse(s"no-tag-$field")
 
             // for jwt comptab only
-            case r"token.$field@(.*).replace\('$a@(.*)', '$b@(.*)'\)"             =>
+            case r"token.$field@(.*).replace\('$a@(.*)', '$b@(.*)'\)"         =>
               context.get(field).map(v => v.replace(a, b)).getOrElse(s"no-token-$field")
-            case r"token.$field@(.*).replace\('$a@(.*)','$b@(.*)'\)"              =>
+            case r"token.$field@(.*).replace\('$a@(.*)','$b@(.*)'\)"          =>
               context.get(field).map(v => v.replace(a, b)).getOrElse(s"no-token-$field")
-            case r"token.$field@(.*).replaceAll\('$a@(.*)','$b@(.*)'\)"           =>
+            case r"token.$field@(.*).replaceAll\('$a@(.*)','$b@(.*)'\)"       =>
               context.get(field).map(v => v.replaceAll(a, b)).getOrElse(s"no-token-$field")
-            case r"token.$field@(.*).replaceAll\('$a@(.*)','$b@(.*)'\)"           =>
+            case r"token.$field@(.*).replaceAll\('$a@(.*)','$b@(.*)'\)"       =>
               context.get(field).map(v => v.replaceAll(a, b)).getOrElse(s"no-token-$field")
-            case r"token.$field@(.*)\|token.$field2@(.*):$dv@(.*)"                =>
+            case r"token.$field@(.*)\|token.$field2@(.*):$dv@(.*)"            =>
               context.get(field).orElse(context.get(field2)).getOrElse(dv)
-            case r"token.$field@(.*)\|token.$field2@(.*)"                         =>
+            case r"token.$field@(.*)\|token.$field2@(.*)"                     =>
               context.get(field).orElse(context.get(field2)).getOrElse(s"no-token-$field-$field2")
-            case r"token.$field@(.*):$dv@(.*)"                                    => context.getOrElse(field, dv)
-            case r"token.$field@(.*)"                                             => context.getOrElse(field, s"no-token-$field")
+            case r"token.$field@(.*):$dv@(.*)"                                => context.getOrElse(field, dv)
+            case r"token.$field@(.*)"                                         => context.getOrElse(field, s"no-token-$field")
 
             case r"env.$field@(.*):$dv@(.*)" => Option(System.getenv(field)).getOrElse(dv)
             case r"env.$field@(.*)"          => Option(System.getenv(field)).getOrElse(s"no-env-var-$field")
 
-            case r"config.$field@(.*):$dv@(.*)"                             =>
+            case r"config.$field@(.*):$dv@(.*)" =>
               env.configuration
                 .getOptionalWithFileSupport[String](field)
                 .orElse(
@@ -116,7 +116,7 @@ object GlobalExpressionLanguage {
                   env.configuration.getOptionalWithFileSupport[Boolean](field).map(_.toString)
                 )
                 .getOrElse(dv)
-            case r"config.$field@(.*)"                                      =>
+            case r"config.$field@(.*)"          =>
               env.configuration
                 .getOptionalWithFileSupport[String](field)
                 .orElse(
@@ -215,10 +215,9 @@ object GlobalExpressionLanguage {
                 .getOrElse(s"no-profile-$field")
             case expr                                                       => "bad-expr" //s"$${$expr}"
           }
-        } recover {
-          case e =>
-            logger.error(s"Error while parsing expression, returning raw value: $value", e)
-            value
+        } recover { case e =>
+          logger.error(s"Error while parsing expression, returning raw value: $value", e)
+          value
         } get
       case _                     => value
     }

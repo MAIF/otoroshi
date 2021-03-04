@@ -70,35 +70,35 @@ class KvCertificateDataStore(redisCli: RedisLike, _env: Env) extends Certificate
   }
 
   override def delete(id: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
-    super.delete(id).andThen {
-      case _ => redisCli.set(lastUpdatedKey, System.currentTimeMillis().toString)
+    super.delete(id).andThen { case _ =>
+      redisCli.set(lastUpdatedKey, System.currentTimeMillis().toString)
     }
 
   override def delete(value: Cert)(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
-    super.delete(value).andThen {
-      case _ => redisCli.set(lastUpdatedKey, System.currentTimeMillis().toString)
+    super.delete(value).andThen { case _ =>
+      redisCli.set(lastUpdatedKey, System.currentTimeMillis().toString)
     }
 
   override def deleteAll()(implicit ec: ExecutionContext, env: Env): Future[Long] =
-    super.deleteAll().andThen {
-      case _ => redisCli.set(lastUpdatedKey, System.currentTimeMillis().toString)
+    super.deleteAll().andThen { case _ =>
+      redisCli.set(lastUpdatedKey, System.currentTimeMillis().toString)
     }
 
   override def set(value: Cert, pxMilliseconds: Option[Duration] = None)(implicit
       ec: ExecutionContext,
       env: Env
   ): Future[Boolean] =
-    super.set(value, pxMilliseconds).andThen {
-      case _ => redisCli.set(lastUpdatedKey, System.currentTimeMillis().toString)
+    super.set(value, pxMilliseconds).andThen { case _ =>
+      redisCli.set(lastUpdatedKey, System.currentTimeMillis().toString)
     }
 
   override def exists(id: String)(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
-    super.exists(id).andThen {
-      case _ => redisCli.set(lastUpdatedKey, System.currentTimeMillis().toString)
+    super.exists(id).andThen { case _ =>
+      redisCli.set(lastUpdatedKey, System.currentTimeMillis().toString)
     }
 
   override def exists(value: Cert)(implicit ec: ExecutionContext, env: Env): Future[Boolean] =
-    super.exists(value).andThen {
-      case _ => redisCli.set(lastUpdatedKey, System.currentTimeMillis().toString)
+    super.exists(value).andThen { case _ =>
+      redisCli.set(lastUpdatedKey, System.currentTimeMillis().toString)
     }
 }

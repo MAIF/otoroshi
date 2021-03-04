@@ -313,8 +313,8 @@ object ApiKey {
               (json \ "authorizedEntities")
                 .asOpt[Seq[String]]
                 .map { identifiers =>
-                  identifiers.map(EntityIdentifier.apply).collect {
-                    case Some(id) => id
+                  identifiers.map(EntityIdentifier.apply).collect { case Some(id) =>
+                    id
                   }
                 }
                 .getOrElse(Seq.empty[EntityIdentifier])
@@ -340,12 +340,11 @@ object ApiKey {
             .map(m => m.filter(_._1.nonEmpty))
             .getOrElse(Map.empty[String, String])
         )
-      } map {
-        case sd => JsSuccess(sd)
-      } recover {
-        case t =>
-          logger.error("Error while reading ApiKey", t)
-          JsError(t.getMessage)
+      } map { case sd =>
+        JsSuccess(sd)
+      } recover { case t =>
+        logger.error("Error while reading ApiKey", t)
+        JsError(t.getMessage)
       } get
   }
   def toJson(value: ApiKey): JsValue                 = _fmt.writes(value)

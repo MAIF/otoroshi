@@ -138,8 +138,8 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implic
                   "dataOut"             -> dataout,
                   "avgDuration"         -> avgduration,
                   "avgOverhead"         -> avgoverhead
-                ).collect {
-                  case (key, Some(jsv)) => (key, jsv)
+                ).collect { case (key, Some(jsv)) =>
+                  (key, jsv)
                 }
               )
               Ok(resp)
@@ -235,8 +235,8 @@ class AnalyticsController(ApiAction: ApiAction, cc: ControllerComponents)(implic
                 "servicePiechart"     -> servicePiechart,
                 "apiKeyPiechart"      -> apiKeyPiechart,
                 "userPiechart"        -> userPiechart
-              ).collect {
-                case (key, Some(jsv)) => (key, jsv)
+              ).collect { case (key, Some(jsv)) =>
+                (key, jsv)
               }
             )
             Ok(resp)

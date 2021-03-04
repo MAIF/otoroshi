@@ -148,8 +148,8 @@ class KafkaWrapperActor(env: Env, topicFunction: KafkaConfig => String) extends 
       eventProducer.foreach(_.close())
       eventProducer = Some(new KafkaEventProducer(event.env, event.config, topicFunction))
       if (event.config.sendEvents) {
-        eventProducer.get.publish(event.event).andThen {
-          case Failure(e) => logger.error("Error while pushing event to kafka", e)
+        eventProducer.get.publish(event.event).andThen { case Failure(e) =>
+          logger.error("Error while pushing event to kafka", e)
         }
       }
     }
@@ -158,15 +158,15 @@ class KafkaWrapperActor(env: Env, topicFunction: KafkaConfig => String) extends 
       eventProducer.foreach(_.close())
       eventProducer = Some(new KafkaEventProducer(event.env, event.config, topicFunction))
       if (event.config.sendEvents) {
-        eventProducer.get.publish(event.event).andThen {
-          case Failure(e) => logger.error("Error while pushing event to kafka", e)
+        eventProducer.get.publish(event.event).andThen { case Failure(e) =>
+          logger.error("Error while pushing event to kafka", e)
         }
       }
     }
     case event: KafkaWrapperEvent                                                                              =>
       if (event.config.sendEvents) {
-        eventProducer.get.publish(event.event).andThen {
-          case Failure(e) => logger.error("Error while pushing event to kafka", e)
+        eventProducer.get.publish(event.event).andThen { case Failure(e) =>
+          logger.error("Error while pushing event to kafka", e)
         }
       }
     case KafkaWrapperEventClose()                                                                              =>

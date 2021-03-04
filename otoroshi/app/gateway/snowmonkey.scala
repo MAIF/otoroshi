@@ -132,10 +132,9 @@ class SnowMonkey(implicit env: Env) {
                 case Right(response: Result) => Left(response.withHeaders("SnowMonkey-Latency" -> latency.toString))
                 case Right(response)         => Right(response)
               }
-              .recover {
-                case e =>
-                  e.printStackTrace()
-                  Left(Results.InternalServerError(Json.obj("error" -> e.getMessage)))
+              .recover { case e =>
+                e.printStackTrace()
+                Left(Results.InternalServerError(Json.obj("error" -> e.getMessage)))
               }
           }
       }
@@ -159,34 +158,33 @@ class SnowMonkey(implicit env: Env) {
         env.datastores.chaosDataStore.groupOutages(group).flatMap {
           case count
               if count < conf.timesPerDay
-              && (conf.startTime.getMillisOfDay + ((count + 1) * shouldAwait)) < DateTime.now().getMillisOfDay
-              && (conf.targetGroups.isEmpty || conf.targetGroups.contains(group))
-              && descriptor.id != env.backOfficeServiceId =>
+                && (conf.startTime.getMillisOfDay + ((count + 1) * shouldAwait)) < DateTime.now().getMillisOfDay
+                && (conf.targetGroups.isEmpty || conf.targetGroups.contains(group))
+                && descriptor.id != env.backOfficeServiceId =>
             env.datastores.chaosDataStore
               .registerOutage(descriptor, conf)
-              .andThen {
-                case Success(duration) =>
-                  val event = SnowMonkeyOutageRegisteredEvent(
+              .andThen { case Success(duration) =>
+                val event = SnowMonkeyOutageRegisteredEvent(
+                  env.snowflakeGenerator.nextIdStr(),
+                  env.env,
+                  "SNOWMONKEY_OUTAGE_REGISTERED",
+                  s"Snow monkey outage registered",
+                  conf,
+                  descriptor,
+                  conf.dryRun
+                )
+                Audit.send(event)
+                Alerts.send(
+                  SnowMonkeyOutageRegisteredAlert(
                     env.snowflakeGenerator.nextIdStr(),
                     env.env,
-                    "SNOWMONKEY_OUTAGE_REGISTERED",
-                    s"Snow monkey outage registered",
-                    conf,
-                    descriptor,
-                    conf.dryRun
+                    event
                   )
-                  Audit.send(event)
-                  Alerts.send(
-                    SnowMonkeyOutageRegisteredAlert(
-                      env.snowflakeGenerator.nextIdStr(),
-                      env.env,
-                      event
-                    )
-                  )
-                  logger.info(
-                    s"Registering outage on ${descriptor.name} (${descriptor.id}) for ${durationToHumanReadable(duration)} - from ${DateTime
-                      .now()} to ${DateTime.now().plus(duration.toMillis)}"
-                  )
+                )
+                logger.info(
+                  s"Registering outage on ${descriptor.name} (${descriptor.id}) for ${durationToHumanReadable(duration)} - from ${DateTime
+                    .now()} to ${DateTime.now().plus(duration.toMillis)}"
+                )
               }
               .map(_ => true)
           case _ => FastFuture.successful(false)
@@ -204,34 +202,33 @@ class SnowMonkey(implicit env: Env) {
           env.datastores.chaosDataStore.serviceOutages(descriptor.id).flatMap {
             case count
                 if count < conf.timesPerDay
-                && (conf.startTime.getMillisOfDay + ((count + 1) * shouldAwait)) < DateTime.now().getMillisOfDay
-                && (conf.targetGroups.isEmpty || conf.targetGroups.exists(g => descriptor.groups.contains(g)))
-                && descriptor.id != env.backOfficeServiceId =>
+                  && (conf.startTime.getMillisOfDay + ((count + 1) * shouldAwait)) < DateTime.now().getMillisOfDay
+                  && (conf.targetGroups.isEmpty || conf.targetGroups.exists(g => descriptor.groups.contains(g)))
+                  && descriptor.id != env.backOfficeServiceId =>
               env.datastores.chaosDataStore
                 .registerOutage(descriptor, conf)
-                .andThen {
-                  case Success(duration) =>
-                    val event = SnowMonkeyOutageRegisteredEvent(
+                .andThen { case Success(duration) =>
+                  val event = SnowMonkeyOutageRegisteredEvent(
+                    env.snowflakeGenerator.nextIdStr(),
+                    env.env,
+                    "SNOWMONKEY_OUTAGE_REGISTERED",
+                    s"User started snowmonkey",
+                    conf,
+                    descriptor,
+                    conf.dryRun
+                  )
+                  Audit.send(event)
+                  Alerts.send(
+                    SnowMonkeyOutageRegisteredAlert(
                       env.snowflakeGenerator.nextIdStr(),
                       env.env,
-                      "SNOWMONKEY_OUTAGE_REGISTERED",
-                      s"User started snowmonkey",
-                      conf,
-                      descriptor,
-                      conf.dryRun
+                      event
                     )
-                    Audit.send(event)
-                    Alerts.send(
-                      SnowMonkeyOutageRegisteredAlert(
-                        env.snowflakeGenerator.nextIdStr(),
-                        env.env,
-                        event
-                      )
-                    )
-                    logger.info(
-                      s"Registering outage on ${descriptor.name} (${descriptor.id}) for ${durationToHumanReadable(duration)} - from ${DateTime
-                        .now()} to ${DateTime.now().plus(duration.toMillis)}"
-                    )
+                  )
+                  logger.info(
+                    s"Registering outage on ${descriptor.name} (${descriptor.id}) for ${durationToHumanReadable(duration)} - from ${DateTime
+                      .now()} to ${DateTime.now().plus(duration.toMillis)}"
+                  )
                 }
                 .map(_ => true)
             case _ => FastFuture.successful(false)

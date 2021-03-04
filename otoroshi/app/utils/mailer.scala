@@ -135,8 +135,8 @@ object MailgunSettings {
               .getOrElse(Seq.empty)
           )
         )
-      } recover {
-        case e => JsError(e.getMessage)
+      } recover { case e =>
+        JsError(e.getMessage)
       } get
   }
 }
@@ -162,8 +162,8 @@ object MailjetSettings {
               .getOrElse(Seq.empty)
           )
         )
-      } recover {
-        case e => JsError(e.getMessage)
+      } recover { case e =>
+        JsError(e.getMessage)
       } get
   }
 }
@@ -187,8 +187,8 @@ object SendgridSettings {
               .getOrElse(Seq.empty)
           )
         )
-      } recover {
-        case e => JsError(e.getMessage)
+      } recover { case e =>
+        JsError(e.getMessage)
       } get
   }
 }
@@ -214,8 +214,8 @@ object GenericMailerSettings {
               .getOrElse(Seq.empty)
           )
         )
-      } recover {
-        case e => JsError(e.getMessage)
+      } recover { case e =>
+        JsError(e.getMessage)
       } get
   }
 }
@@ -231,8 +231,8 @@ object ConsoleMailerSettings {
         JsSuccess(
           ConsoleMailerSettings()
         )
-      } recover {
-        case e => JsError(e.getMessage)
+      } recover { case e =>
+        JsError(e.getMessage)
       } get
   }
 }
@@ -248,8 +248,8 @@ object NoneMailerSettings {
         JsSuccess(
           NoneMailerSettings()
         )
-      } recover {
-        case e => JsError(e.getMessage)
+      } recover { case e =>
+        JsError(e.getMessage)
       } get
   }
 }

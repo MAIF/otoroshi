@@ -220,8 +220,8 @@ object Composition {
         case JsNull                                 => JsNull
         case spec @ JsObject(_) if isOperator(spec) => transform(CompositionOperator(spec, source))
         case JsObject(values)                       =>
-          JsObject(values.map {
-            case (key, value) => (key, transform(value))
+          JsObject(values.map { case (key, value) =>
+            (key, transform(value))
           })
         case JsArray(values)                        => JsArray(values.map(transform))
       }
