@@ -24,7 +24,7 @@ import otoroshi.ssl.{CertificateDataStore, ClientCertificateValidationDataStore,
 import otoroshi.storage._
 import otoroshi.storage.stores._
 import otoroshi.tcp.{KvTcpServiceDataStoreDataStore, TcpServiceDataStore}
-import storage.stores.{DataExporterConfigDataStore, KvRawDataStore, TeamDataStore, TenantDataStore}
+import otoroshi.storage.stores.{DataExporterConfigDataStore, KvRawDataStore, TeamDataStore, TenantDataStore}
 import otoroshi.utils.syntax.implicits._
 
 import scala.concurrent.{ExecutionContext, Future}

@@ -22,8 +22,8 @@ import play.api.inject.ApplicationLifecycle
 import play.api.libs.json._
 import play.api.{Configuration, Environment, Logger}
 import otoroshi.ssl.{CertificateDataStore, ClientCertificateValidationDataStore, KvClientCertificateValidationDataStore}
-import storage.drivers.inmemory.SwappableInMemoryRedis
-import storage.stores.{DataExporterConfigDataStore, KvRawDataStore, TeamDataStore, TenantDataStore}
+import otoroshi.storage.drivers.inmemory.SwappableInMemoryRedis
+import otoroshi.storage.stores.{DataExporterConfigDataStore, KvRawDataStore, TeamDataStore, TenantDataStore}
 
 import scala.concurrent.{ExecutionContext, Future}
 import otoroshi.utils.syntax.implicits._

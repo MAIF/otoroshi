@@ -15,7 +15,7 @@ import otoroshi.utils.SchedulerHelper
 import play.api.Logger
 import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
 import play.api.libs.ws.SourceBody
-import storage.drivers.inmemory.Memory
+import otoroshi.storage.drivers.inmemory.Memory
 import otoroshi.utils.http.Implicits._
 
 import scala.concurrent.{Await, ExecutionContext, Future}

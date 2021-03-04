@@ -1,4 +1,4 @@
-package storage.drivers.inmemory
+package otoroshi.storage.drivers.inmemory
 
 import java.util.concurrent.atomic.AtomicReference
 import java.util.concurrent.{ConcurrentHashMap, TimeUnit}

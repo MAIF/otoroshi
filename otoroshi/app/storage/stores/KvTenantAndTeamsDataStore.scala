@@ -1,4 +1,4 @@
-package storage.stores
+package otoroshi.storage.stores
 
 import env.Env
 import models.Key

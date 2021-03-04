@@ -1,4 +1,4 @@
-package storage.stores
+package otoroshi.storage.stores
 
 import akka.util.ByteString
 import env.Env

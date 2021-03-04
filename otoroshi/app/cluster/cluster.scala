@@ -44,8 +44,8 @@ import play.api.{Configuration, Environment, Logger}
 import redis.RedisClientMasterSlaves
 import otoroshi.security.IdGenerator
 import otoroshi.ssl._
-import storage.drivers.inmemory.{Memory, SwappableInMemoryRedis}
-import storage.stores.{DataExporterConfigDataStore, KvRawDataStore, TeamDataStore, TenantDataStore}
+import otoroshi.storage.drivers.inmemory.{Memory, SwappableInMemoryRedis}
+import otoroshi.storage.stores.{DataExporterConfigDataStore, KvRawDataStore, TeamDataStore, TenantDataStore}
 import otoroshi.utils.http.Implicits._
 import otoroshi.utils.http.MtlsConfig
 import otoroshi.utils.syntax.implicits._
