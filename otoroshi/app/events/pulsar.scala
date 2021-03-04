@@ -50,7 +50,7 @@ object PulsarConfig {
 }
 
 object PulsarSetting {
-  def client(_env: env.Env, config: PulsarConfig): PulsarClient = {
+  def client(_env: otoroshi.env.Env, config: PulsarConfig): PulsarClient = {
     if (config.mtlsConfig.mtls) {
       val (_, jks, password) = config.mtlsConfig.toJKS(_env)
 
@@ -72,7 +72,7 @@ object PulsarSetting {
     }
   }
 
-  def producer(_env: env.Env, config: PulsarConfig): Producer[JsValue] = {
+  def producer(_env: otoroshi.env.Env, config: PulsarConfig): Producer[JsValue] = {
 
     val topic = Topic(s"persistent://${config.tenant}/${config.namespace}/${config.topic}")
     val producerConfig = ProducerConfig(topic)
@@ -80,7 +80,7 @@ object PulsarSetting {
     cli.producer[JsValue](producerConfig)
   }
 
-  def consumer(_env: env.Env, config: PulsarConfig): Consumer[JsValue] = {
+  def consumer(_env: otoroshi.env.Env, config: PulsarConfig): Consumer[JsValue] = {
     val topic = Topic(s"persistent://${config.tenant}/${config.namespace}/${config.topic}")
     val consumerConfig = ConsumerConfig(topics = Seq(topic), subscriptionName = Subscription("otoroshi"))
     val cli = client(_env, config)

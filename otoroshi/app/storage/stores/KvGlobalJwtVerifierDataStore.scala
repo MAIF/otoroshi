@@ -1,6 +1,6 @@
 package otoroshi.storage.stores
 
-import env.Env
+import otoroshi.env.Env
 import models._
 import play.api.libs.json.Format
 import otoroshi.storage.{RedisLike, RedisLikeStore}

@@ -2,7 +2,7 @@ package otoroshi.plugins.metrics
 
 import java.io.StringWriter
 import akka.stream.Materializer
-import env.Env
+import otoroshi.env.Env
 import io.prometheus.client.{Collector, CollectorRegistry}
 import io.prometheus.client.exporter.common.TextFormat
 import otoroshi.script._

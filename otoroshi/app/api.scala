@@ -10,7 +10,7 @@ import com.softwaremill.macwire.wire
 import com.typesafe.config.{Config, ConfigFactory}
 import controllers._
 import controllers.adminapi.{ApiKeysFromGroupController, _}
-import env._
+import otoroshi.env._
 import otoroshi.gateway._
 import otoroshi.modules.OtoroshiComponentsInstances
 import otoroshi.api.OtoroshiLoaderHelper.EnvContainer

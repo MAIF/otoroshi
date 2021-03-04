@@ -7,7 +7,7 @@ import akka.stream.scaladsl._
 import akka.util.ByteString
 import otoroshi.auth.AuthConfigsDataStore
 import otoroshi.cluster.ClusterStateDataStore
-import env.Env
+import otoroshi.env.Env
 import otoroshi.events._
 import otoroshi.gateway.RequestsDataStore
 import models._

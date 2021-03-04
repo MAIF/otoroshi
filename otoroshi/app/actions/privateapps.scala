@@ -6,7 +6,7 @@ import akka.http.scaladsl.util.FastFuture
 import akka.http.scaladsl.util.FastFuture._
 import otoroshi.auth.GenericOauth2Module
 import otoroshi.cluster._
-import env.Env
+import otoroshi.env.Env
 import models.PrivateAppsUser
 import play.api.mvc._
 
@@ -69,7 +69,7 @@ class PrivateAppsAction(val parser: BodyParser[AnyContent])(implicit env: Env)
       }
       case _ => {
         // TODO : based on Accept header
-        FastFuture.successful(Results.NotFound(views.html.otoroshi.error("Not found", env)))
+        FastFuture.successful(Results.NotFound(views.html.oto.error("Not found", env)))
       }
     }
   }

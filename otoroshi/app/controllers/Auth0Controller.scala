@@ -6,7 +6,7 @@ import otoroshi.actions.{BackOfficeAction, BackOfficeActionAuth, PrivateAppsActi
 import akka.http.scaladsl.util.FastFuture
 import akka.util.ByteString
 import otoroshi.auth.{AuthModuleConfig, BasicAuthModule, BasicAuthModuleConfig, GenericOauth2ModuleConfig}
-import env.Env
+import otoroshi.env.Env
 import otoroshi.events._
 import otoroshi.gateway.Errors
 import models.{BackOfficeUser, CorsSettings, PrivateAppsUser, ServiceDescriptor}
@@ -105,12 +105,12 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
     implicit val req = ctx.request
 
     ctx.request.getQueryString("desc") match {
-      case None => NotFound(views.html.otoroshi.error("Service not found", env)).asFuture
+      case None => NotFound(views.html.oto.error("Service not found", env)).asFuture
       case Some(serviceId) => {
         env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
-          case None => NotFound(views.html.otoroshi.error("Service not found", env)).asFuture
+          case None => NotFound(views.html.oto.error("Service not found", env)).asFuture
           case Some(descriptor) if !descriptor.privateApp =>
-            NotFound(views.html.otoroshi.error("Private apps are not configured", env)).asFuture
+            NotFound(views.html.oto.error("Private apps are not configured", env)).asFuture
           case Some(descriptor) if descriptor.privateApp && descriptor.id != env.backOfficeDescriptor.id => {
             withAuthConfig(descriptor, ctx.request) { auth =>
               val expectedCookieName = s"oto-papps-${auth.cookieSuffix(descriptor)}"
@@ -174,7 +174,7 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
               }
             }
           }
-          case _ => NotFound(views.html.otoroshi.error("Private apps are not configured", env)).asFuture
+          case _ => NotFound(views.html.oto.error("Private apps are not configured", env)).asFuture
         }
       }
     }
@@ -260,12 +260,12 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
     }
 
     ctx.request.getQueryString("desc").orElse(ctx.request.session.get("desc")) match {
-      case None => NotFound(views.html.otoroshi.error("Service not found", env)).asFuture
+      case None => NotFound(views.html.oto.error("Service not found", env)).asFuture
       case Some(serviceId) => {
         env.datastores.serviceDescriptorDataStore.findById(serviceId).flatMap {
-          case None => NotFound(views.html.otoroshi.error("Service not found", env)).asFuture
+          case None => NotFound(views.html.oto.error("Service not found", env)).asFuture
           case Some(descriptor) if !descriptor.privateApp =>
-            NotFound(views.html.otoroshi.error("Private apps are not configured", env)).asFuture
+            NotFound(views.html.oto.error("Private apps are not configured", env)).asFuture
           case Some(descriptor) if descriptor.privateApp && descriptor.id != env.backOfficeDescriptor.id => {
             withAuthConfig(descriptor, ctx.request) { _auth =>
               verifyHash(descriptor.id, _auth, ctx.request) {
@@ -286,7 +286,7 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
                     }
                     case _ =>
                       BadRequest(
-                        views.html.otoroshi
+                        views.html.oto
                           .error(message = s"Missing step", _env = env, title = "Authorization error")
                       ).asFuture
                   }
@@ -295,7 +295,7 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
                   auth.authModule(ctx.globalConfig).paCallback(ctx.request, ctx.globalConfig, descriptor).flatMap {
                     case Left(error) => {
                       BadRequest(
-                        views.html.otoroshi
+                        views.html.oto
                           .error(message = s"You're not authorized here: ${error}",
                             _env = env,
                             title = "Authorization error")
@@ -307,7 +307,7 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
               }
             }
           }
-          case _ => NotFound(views.html.otoroshi.error("Private apps are not configured", env)).asFuture
+          case _ => NotFound(views.html.oto.error("Private apps are not configured", env)).asFuture
         }
       }
     }
@@ -328,7 +328,7 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
           case Some(aconf) => {
             env.datastores.authConfigsDataStore.findById(aconf).flatMap {
               case None =>
-                FastFuture.successful(NotFound(views.html.otoroshi.error("BackOffice Oauth is not configured", env)))
+                FastFuture.successful(NotFound(views.html.oto.error("BackOffice Oauth is not configured", env)))
               case Some(oauth) => oauth.authModule(config).boLoginPage(ctx.request, config)
             }
           }
@@ -365,7 +365,7 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
               env.datastores.authConfigsDataStore.findById(aconf).flatMap {
                 case None =>
                   FastFuture.successful(
-                    NotFound(views.html.otoroshi.error("BackOffice auth is not configured", env))
+                    NotFound(views.html.oto.error("BackOffice auth is not configured", env))
                       .removingFromSession("bousr", "bo-redirect-after-login")
                   )
                 case Some(oauth) =>
@@ -441,11 +441,11 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
 
               config.backOfficeAuthRef match {
                 case None =>
-                  FastFuture.successful(NotFound(views.html.otoroshi.error("BackOffice OAuth is not configured", env)))
+                  FastFuture.successful(NotFound(views.html.oto.error("BackOffice OAuth is not configured", env)))
                 case Some(backOfficeAuth0Config) => {
                   env.datastores.authConfigsDataStore.findById(backOfficeAuth0Config).flatMap {
                     case None =>
-                      FastFuture.successful(NotFound(views.html.otoroshi.error("BackOffice OAuth is not found", env)))
+                      FastFuture.successful(NotFound(views.html.oto.error("BackOffice OAuth is not found", env)))
                     case Some(oauth) =>
                       verifyHash("backoffice", oauth, ctx.request) {
 
@@ -466,7 +466,7 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
                             }
                             case _ =>
                               BadRequest(
-                                views.html.otoroshi
+                                views.html.oto
                                   .error(message = s"Missing step", _env = env, title = "Authorization error")
                               ).asFuture
                           }
@@ -476,7 +476,7 @@ class AuthController(BackOfficeActionAuth: BackOfficeActionAuth,
                             case Left(err) => {
                               FastFuture.successful(
                                 BadRequest(
-                                  views.html.otoroshi
+                                  views.html.oto
                                     .error(message = s"You're not authorized here: ${error}",
                                            _env = env,
                                            title = "Authorization error")

@@ -1,7 +1,7 @@
 package otoroshi.plugins.users
 
 import akka.http.scaladsl.util.FastFuture
-import env.Env
+import otoroshi.env.Env
 import otoroshi.plugins.JsonPathUtils
 import otoroshi.script.{AccessContext, AccessValidator}
 import play.api.Logger

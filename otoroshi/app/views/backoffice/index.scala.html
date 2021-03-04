@@ -1,6 +1,6 @@
 @import models.BackOfficeUser
 
-@(thridPartyLoginEnabled: Boolean, userOpt: Option[BackOfficeUser], request: Request[AnyContent], _env: env.Env)
+@(thridPartyLoginEnabled: Boolean, userOpt: Option[BackOfficeUser], request: Request[AnyContent], _env: otoroshi.env.Env)
 
 @unauthmain(s"Otoroshi Dashboard", _env) {
     <div class="jumbotron">

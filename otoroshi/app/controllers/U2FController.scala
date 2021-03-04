@@ -13,7 +13,7 @@ import com.fasterxml.jackson.databind.{ObjectMapper, SerializationFeature}
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module
 import com.yubico.webauthn._
 import com.yubico.webauthn.data._
-import env.Env
+import otoroshi.env.Env
 import otoroshi.events._
 import models.BackOfficeUser
 import org.joda.time.DateTime

@@ -2,7 +2,7 @@ package models
 
 import java.util.Base64
 
-import env.Env
+import otoroshi.env.Env
 import play.api.Logger
 import play.api.libs.json.{JsResult, JsValue, Json}
 import otoroshi.storage.BasicStore

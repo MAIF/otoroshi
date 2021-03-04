@@ -3,7 +3,7 @@ package otoroshi.script
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
-import env.Env
+import otoroshi.env.Env
 import otoroshi.utils.TypedMap
 import otoroshi.utils.config.ConfigUtils
 import play.api.libs.json._

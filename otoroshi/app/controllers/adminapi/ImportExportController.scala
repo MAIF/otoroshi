@@ -3,7 +3,7 @@ package controllers.adminapi
 import otoroshi.actions.ApiAction
 import akka.stream.scaladsl.{FileIO, Framing}
 import akka.util.ByteString
-import env.Env
+import otoroshi.env.Env
 import otoroshi.events.{AdminApiEvent, Alerts, Audit, OtoroshiExportAlert}
 import otoroshi.models.RightsChecker
 import play.api.Logger

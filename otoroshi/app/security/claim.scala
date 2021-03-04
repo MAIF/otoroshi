@@ -4,7 +4,7 @@ import java.nio.charset.StandardCharsets
 import java.util.{Base64, Date}
 
 import com.auth0.jwt.algorithms.Algorithm
-import env.Env
+import otoroshi.env.Env
 import models.AlgoSettings
 import org.joda.time.DateTime
 import play.api.Logger

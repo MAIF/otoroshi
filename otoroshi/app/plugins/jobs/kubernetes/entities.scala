@@ -1,6 +1,6 @@
 package otoroshi.plugins.jobs.kubernetes
 
-import env.Env
+import otoroshi.env.Env
 import models.ServiceDescriptor
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger

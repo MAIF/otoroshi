@@ -2,7 +2,7 @@ package models
 
 import java.util.concurrent.TimeUnit
 
-import env.Env
+import otoroshi.env.Env
 import models.SnowMonkeyConfig.logger
 import org.joda.time.{DateTime, LocalTime}
 import play.api.Logger

@@ -1,7 +1,7 @@
 package otoroshi.utils.http
 
 import akka.http.scaladsl.model.Uri
-import env.Env
+import otoroshi.env.Env
 import play.api.mvc.RequestHeader
 
 import java.util.concurrent.ConcurrentHashMap

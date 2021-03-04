@@ -2,7 +2,7 @@ package otoroshi.plugins.defer
 
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
-import env.Env
+import otoroshi.env.Env
 import org.joda.time.DateTime
 import otoroshi.script.{RequestTransformer, TransformerRequestContext, _}
 import play.api.libs.json.{JsObject, Json}

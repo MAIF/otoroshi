@@ -3,7 +3,7 @@ package otoroshi.plugins.jsoup
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
-import env.Env
+import otoroshi.env.Env
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
 import otoroshi.script.{HttpResponse, RequestTransformer, TransformerResponseBodyContext, TransformerResponseContext}

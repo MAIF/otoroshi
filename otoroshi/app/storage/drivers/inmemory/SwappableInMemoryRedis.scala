@@ -6,7 +6,7 @@ import java.util.regex.Pattern
 import akka.actor.ActorSystem
 import akka.http.scaladsl.util.FastFuture
 import akka.util.ByteString
-import env.Env
+import otoroshi.env.Env
 import otoroshi.storage._
 import otoroshi.utils.SchedulerHelper
 import play.api.Logger

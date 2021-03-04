@@ -1,6 +1,6 @@
 @import models.PrivateAppsUser
 
-@(userOpt: Option[PrivateAppsUser], _env: env.Env)
+@(userOpt: Option[PrivateAppsUser], _env: otoroshi.env.Env)
 
 @main(s"Otoroshi private apps (${_env.env})", _env, userOpt) {
     <div class="jumbotron">

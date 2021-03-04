@@ -3,7 +3,7 @@ package controllers
 import otoroshi.actions.{ApiAction, UnAuthApiAction}
 import akka.http.scaladsl.util.FastFuture
 import otoroshi.cluster.{ClusterMode, MemberView}
-import env.Env
+import otoroshi.env.Env
 import otoroshi.storage.{Healthy, Unhealthy, Unreachable}
 import play.api.Logger
 import play.api.libs.json.{JsObject, JsString, JsValue, Json}

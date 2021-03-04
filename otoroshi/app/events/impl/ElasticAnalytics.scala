@@ -7,7 +7,7 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.{ActorMaterializer, Materializer}
 import akka.stream.scaladsl.{Sink, Source}
-import env.Env
+import otoroshi.env.Env
 import otoroshi.events._
 import models.{ApiKey, ElasticAnalyticsConfig, ServiceDescriptor, ServiceGroup}
 import org.joda.time.format.ISODateTimeFormat

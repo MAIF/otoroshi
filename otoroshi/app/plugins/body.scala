@@ -7,7 +7,7 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.{Keep, Sink, Source}
 import akka.util.ByteString
 import com.google.common.base.Charsets
-import env.Env
+import otoroshi.env.Env
 import otoroshi.events._
 import models.ServiceDescriptor
 import org.joda.time.DateTime
@@ -376,15 +376,15 @@ class BodyLogger extends RequestTransformer {
           case _ =>
             Left(
               Results
-                .Unauthorized(views.html.otoroshi.error("You are not authorized here", env))
+                .Unauthorized(views.html.oto.error("You are not authorized here", env))
                 .withHeaders("WWW-Authenticate" -> s"""Basic realm="bodies-${ctx.descriptor.id}"""")
             ).future
-          //Left(Results.Forbidden(views.html.otoroshi.error("Forbidden access", env))).future
+          //Left(Results.Forbidden(views.html.oto.error("Forbidden access", env))).future
         }
       case _ =>
         Left(
           Results
-            .Unauthorized(views.html.otoroshi.error("You are not authorized here", env))
+            .Unauthorized(views.html.oto.error("You are not authorized here", env))
             .withHeaders("WWW-Authenticate" -> s"""Basic realm="bodies-${ctx.descriptor.id}"""")
         ).future
     }

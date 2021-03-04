@@ -1,7 +1,7 @@
 package controllers.adminapi
 
 import otoroshi.actions.ApiAction
-import env.Env
+import otoroshi.env.Env
 import otoroshi.events._
 import models.SnowMonkeyConfig
 import otoroshi.models.RightsChecker

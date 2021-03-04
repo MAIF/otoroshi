@@ -21,7 +21,7 @@ import akka.stream.scaladsl.{Flow, Sink, Source}
 import akka.util.ByteString
 import com.google.common.hash.Hashing
 import com.typesafe.sslconfig.ssl.SSLConfigSettings
-import env.Env
+import otoroshi.env.Env
 import otoroshi.events.{Alerts, CertExpiredAlert, CertRenewalAlert}
 import otoroshi.gateway.Errors
 

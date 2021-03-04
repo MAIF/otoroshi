@@ -3,7 +3,7 @@ package controllers.adminapi
 import otoroshi.actions.ApiAction
 import akka.http.scaladsl.util.FastFuture
 import otoroshi.auth.{AuthModuleConfig, BasicAuthModuleConfig, GenericOauth2ModuleConfig, LdapAuthModuleConfig}
-import env.Env
+import otoroshi.env.Env
 import otoroshi.events.GatewayEvent
 import models._
 import org.mindrot.jbcrypt.BCrypt

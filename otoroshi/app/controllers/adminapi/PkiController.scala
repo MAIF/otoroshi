@@ -4,7 +4,7 @@ import otoroshi.actions.ApiAction
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
-import env.Env
+import otoroshi.env.Env
 import otoroshi.models.RightsChecker
 import otoroshi.ssl.pki.models.GenCsrQuery
 import play.api.Logger

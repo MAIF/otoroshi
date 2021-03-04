@@ -2,7 +2,7 @@ package otoroshi.script
 
 import akka.http.scaladsl.util.FastFuture
 import akka.util.ByteString
-import env.Env
+import otoroshi.env.Env
 import models.ServiceDescriptor
 import otoroshi.script.CompilingPreRouting.funit
 import otoroshi.utils.TypedMap

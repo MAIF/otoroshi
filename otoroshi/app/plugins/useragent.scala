@@ -5,7 +5,7 @@ import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 
 import akka.stream.Materializer
 import com.blueconic.browscap.{UserAgentParser, UserAgentService}
-import env.Env
+import otoroshi.env.Env
 import otoroshi.plugins.Keys
 import otoroshi.script._
 import play.api.Logger

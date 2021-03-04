@@ -3,7 +3,7 @@ package otoroshi.utils.controllers
 import otoroshi.actions.{ApiAction, ApiActionContext}
 import akka.stream.scaladsl.{Framing, Source}
 import akka.util.ByteString
-import env.Env
+import otoroshi.env.Env
 import otoroshi.events._
 import org.joda.time.DateTime
 import otoroshi.models.EntityLocationSupport

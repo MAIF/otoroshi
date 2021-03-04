@@ -1,7 +1,7 @@
 package otoroshi.storage.stores
 
 import akka.http.scaladsl.util.FastFuture
-import env.Env
+import otoroshi.env.Env
 import otoroshi.storage.RedisLike
 import models._
 import otoroshi.utils.future.Implicits._

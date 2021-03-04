@@ -3,7 +3,7 @@ package otoroshi.auth
 import akka.http.scaladsl.util.FastFuture
 import com.auth0.jwt.JWT
 import controllers.routes
-import env.Env
+import otoroshi.env.Env
 import models._
 import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
 import org.joda.time.DateTime

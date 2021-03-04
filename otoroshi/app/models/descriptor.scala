@@ -11,7 +11,7 @@ import otoroshi.auth._
 import com.auth0.jwt.JWT
 import com.google.common.hash.Hashing
 import com.risksense.ipaddr.IpNetwork
-import env.Env
+import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import org.joda.time.DateTime
 import otoroshi.el.RedirectionExpressionLanguage

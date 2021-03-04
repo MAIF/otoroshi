@@ -11,7 +11,7 @@ import com.clevercloud.biscuit.token.builder.Term.Str
 import com.clevercloud.biscuit.token.builder.Utils.{fact, s, string}
 import com.clevercloud.biscuit.token.builder.parser.Parser
 import com.clevercloud.biscuit.token.{Biscuit, Verifier}
-import env.Env
+import otoroshi.env.Env
 import models.{ApiKey, PrivateAppsUser, ServiceDescriptor}
 import otoroshi.script._
 import otoroshi.utils.crypto.Signatures

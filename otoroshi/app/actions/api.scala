@@ -7,7 +7,7 @@ import akka.http.scaladsl.util.FastFuture
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.google.common.base.Charsets
-import env.Env
+import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import models.{ApiKey, BackOfficeUser}
 import otoroshi.models.RightsChecker.{SuperAdminOnly, TenantAdminOnly}

@@ -2,7 +2,7 @@ package controllers.adminapi
 
 import otoroshi.actions.ApiAction
 import akka.util.ByteString
-import env.Env
+import otoroshi.env.Env
 import play.api.Logger
 import play.api.libs.streams.Accumulator
 import play.api.mvc._

@@ -1,6 +1,6 @@
 package models
 
-import env.Env
+import otoroshi.env.Env
 import play.api.Logger
 import play.api.libs.json._
 import otoroshi.security.IdGenerator

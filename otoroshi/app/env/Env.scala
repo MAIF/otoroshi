@@ -1,4 +1,4 @@
-package env
+package otoroshi.env
 
 import java.lang.management.ManagementFactory
 import java.rmi.registry.LocateRegistry

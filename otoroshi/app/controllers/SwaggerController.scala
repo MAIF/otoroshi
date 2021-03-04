@@ -1,6 +1,6 @@
 package controllers
 
-import env.Env
+import otoroshi.env.Env
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc._
@@ -29,7 +29,7 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
   }
 
   def swaggerUi = Action { req =>
-    Ok(views.html.otoroshi.documentationframe(s"${env.exposedRootScheme}://${env.backOfficeHost}/api/swagger.json"))
+    Ok(views.html.oto.documentationframe(s"${env.exposedRootScheme}://${env.backOfficeHost}/api/swagger.json"))
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -8,7 +8,7 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import com.auth0.jwt.JWT
-import env.{Env, SidecarConfig}
+import otoroshi.env.{Env, SidecarConfig}
 import otoroshi.events._
 import models._
 import org.joda.time.DateTime
@@ -257,7 +257,7 @@ object ReverseProxyActionHelper {
             if (desc.tcpUdpTunneling) {
               req.getQueryString("redirect") match {
                 case Some("urn:ietf:wg:oauth:2.0:oob") =>
-                  FastFuture.successful(Ok(views.html.otoroshi.token(env.signPrivateSessionId(user.randomId), env))).map(Left.apply)
+                  FastFuture.successful(Ok(views.html.oto.token(env.signPrivateSessionId(user.randomId), env))).map(Left.apply)
                 case _ =>
                   Errors
                     .craftResponseResult(s"Resource not found",

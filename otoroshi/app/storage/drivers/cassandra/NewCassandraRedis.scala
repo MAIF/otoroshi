@@ -13,7 +13,7 @@ import com.datastax.oss.driver.api.core.CqlSession
 import com.datastax.oss.driver.api.core.cql.{AsyncResultSet, Row}
 import com.datastax.oss.driver.internal.core.config.typesafe.DefaultDriverConfigLoader
 import com.typesafe.config.ConfigFactory
-import env.Env
+import otoroshi.env.Env
 import play.api.{Configuration, Logger}
 import otoroshi.storage._
 import otoroshi.utils.SchedulerHelper

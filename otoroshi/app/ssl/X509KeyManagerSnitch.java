@@ -138,7 +138,7 @@ public class X509KeyManagerSnitch extends X509ExtendedKeyManager {
                             });
                             return key;
                         } else {
-                            env.Env env = DynamicSSLEngineProvider.getCurrentEnv();
+                            otoroshi.env.Env env = DynamicSSLEngineProvider.getCurrentEnv();
                             if (env != null) {
                                 Option<Cert> certOpt = env.datastores().certificatesDataStore().jautoGenerateCertificateForDomain(host, env);
                                 if (certOpt.isDefined()) {
@@ -162,7 +162,7 @@ public class X509KeyManagerSnitch extends X509ExtendedKeyManager {
                     }
                 } else {
                     Cert c = cache.getIfPresent(key);
-                    env.Env env = DynamicSSLEngineProvider.getCurrentEnv();
+                    otoroshi.env.Env env = DynamicSSLEngineProvider.getCurrentEnv();
                     if (c != null) {
                         sessionKey.foreach(skey -> {
                             _sslSessions.put(skey, Tuple3.apply(ssl.getSession(), c.cryptoKeyPair().getPrivate(), c.certificatesChain()));

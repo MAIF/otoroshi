@@ -8,7 +8,7 @@ import akka.stream.scaladsl.{Sink, Source}
 import otoroshi.auth.AuthConfigsDataStore
 import otoroshi.cluster.{ClusterStateDataStore, KvClusterStateDataStore}
 import com.typesafe.config.ConfigFactory
-import env.Env
+import otoroshi.env.Env
 import otoroshi.events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
 import otoroshi.gateway.{InMemoryRequestsDataStore, RequestsDataStore}
 import models._

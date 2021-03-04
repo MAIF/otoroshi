@@ -6,7 +6,7 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
-import env.Env
+import otoroshi.env.Env
 import otoroshi.script.{AfterRequestContext, BeforeRequestContext, HttpRequest, HttpResponse, RequestTransformer, TransformerRequestBodyContext, TransformerRequestContext, TransformerResponseContext}
 import otoroshi.utils.{RegexPool, TypedMap}
 import play.api.libs.json.{JsNull, JsObject, JsValue, Json}

@@ -1,7 +1,7 @@
 package controllers.adminapi
 
 import otoroshi.actions.ApiAction
-import env.Env
+import otoroshi.env.Env
 import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc.{AbstractController, ControllerComponents}

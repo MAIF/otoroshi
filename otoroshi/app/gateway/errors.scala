@@ -1,7 +1,7 @@
 package otoroshi.gateway
 
 import akka.http.scaladsl.util.FastFuture
-import env.Env
+import otoroshi.env.Env
 import otoroshi.events._
 import models.{RemainingQuotas, ServiceDescriptor}
 import org.joda.time.DateTime
@@ -191,7 +191,7 @@ object Errors {
         if (maybeCauseId.contains("errors.service.in.maintenance")) {
           FastFuture.successful(
             status
-              .apply(views.html.otoroshi.maintenance(env))
+              .apply(views.html.oto.maintenance(env))
               .withHeaders(
                 env.Headers.OtoroshiGatewayError -> "true",
                 env.Headers.OtoroshiErrorMsg     -> message,
@@ -201,7 +201,7 @@ object Errors {
         } else if (maybeCauseId.contains("errors.service.under.construction")) {
           FastFuture.successful(
             status
-              .apply(views.html.otoroshi.build(env))
+              .apply(views.html.oto.build(env))
               .withHeaders(
                 env.Headers.OtoroshiGatewayError -> "true",
                 env.Headers.OtoroshiErrorMsg     -> message,
@@ -213,7 +213,7 @@ object Errors {
             if (emptyBody) status.apply("")
             else
               status.apply(
-                views.html.otoroshi.error(
+                views.html.oto.error(
                   message = message,
                   _env = env
                 )

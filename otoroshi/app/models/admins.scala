@@ -1,6 +1,6 @@
 package otoroshi.models
 
-import env.Env
+import otoroshi.env.Env
 import org.joda.time.DateTime
 import otoroshi.models._
 import play.api.libs.json._

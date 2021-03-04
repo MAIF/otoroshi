@@ -10,7 +10,7 @@ import com.codahale.metrics.{MetricRegistry, _}
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.spotify.metrics.core.{MetricId, SemanticMetricRegistry}
 import com.spotify.metrics.jvm.{CpuGaugeSet, FileDescriptorGaugeSet}
-import env.Env
+import otoroshi.env.Env
 import otoroshi.events.StatsDReporter
 import io.prometheus.client.exporter.common.TextFormat
 import otoroshi.utils.RegexPool

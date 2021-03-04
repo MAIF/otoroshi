@@ -2,7 +2,7 @@ package otoroshi.jobs.updates
 
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 
-import env.Env
+import otoroshi.env.Env
 import otoroshi.plugins.jobs.kubernetes.KubernetesConfig
 import otoroshi.script.{Job, JobContext, JobId, JobInstantiation, JobKind, JobStarting, JobVisibility}
 import play.api.Logger

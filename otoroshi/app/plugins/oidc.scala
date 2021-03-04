@@ -8,7 +8,7 @@ import akka.stream.scaladsl.{Sink, Source}
 import otoroshi.auth.GenericOauth2ModuleConfig
 import otoroshi.cluster.ClusterAgent
 import com.auth0.jwt.JWT
-import env.Env
+import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import models._
 import otoroshi.script._

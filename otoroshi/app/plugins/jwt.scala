@@ -1,6 +1,6 @@
 package otoroshi.plugins.jwt
 
-import env.Env
+import otoroshi.env.Env
 import models.PrivateAppsUser
 import org.joda.time.DateTime
 import otoroshi.plugins.JsonPathUtils

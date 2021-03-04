@@ -2,7 +2,7 @@ package otoroshi.utils.mailer
 
 import akka.http.scaladsl.util.FastFuture
 import akka.http.scaladsl.util.FastFuture._
-import env.Env
+import otoroshi.env.Env
 import models.GlobalConfig
 import otoroshi.models.Exporter
 import play.api.Logger

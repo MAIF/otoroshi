@@ -5,7 +5,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
-import env.Env
+import otoroshi.env.Env
 import otoroshi.script._
 import otoroshi.utils.syntax.implicits._
 import otoroshi.utils.workflow.{WorkFlow, WorkFlowRequest, WorkFlowSpec}

@@ -1,7 +1,7 @@
 package otoroshi.plugins.security
 
 import akka.stream.Materializer
-import env.Env
+import otoroshi.env.Env
 import otoroshi.script.{HttpRequest, RequestTransformer, TransformerRequestContext}
 import play.api.libs.json.{JsNull, JsObject, JsValue, Json}
 import play.api.mvc.{Result, Results}

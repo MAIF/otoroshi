@@ -4,7 +4,7 @@ import java.net.Socket
 import java.security.{Principal, PrivateKey}
 import java.security.cert.X509Certificate
 import com.github.blemale.scaffeine._
-import env.Env
+import otoroshi.env.Env
 
 import javax.net.ssl.{KeyManager, SSLEngine, SSLSession, X509ExtendedKeyManager, X509KeyManager}
 import models.{GlobalConfig, TlsSettings}

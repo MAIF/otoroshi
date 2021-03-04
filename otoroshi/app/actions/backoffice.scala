@@ -4,7 +4,7 @@ import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.model.Uri.Path
 import akka.http.scaladsl.util.FastFuture
 import otoroshi.auth.GenericOauth2Module
-import env.Env
+import otoroshi.env.Env
 import otoroshi.events.{Alerts, BlackListedBackOfficeUserAlert}
 import otoroshi.gateway.Errors
 import models.BackOfficeUser
@@ -139,7 +139,7 @@ class BackOfficeActionAuth(val parser: BodyParser[AnyContent])(implicit env: Env
                       )
                     )
                     FastFuture.successful(
-                      Results.NotFound(views.html.otoroshi.error("Error", env)).removingFromSession("bousr")(request)
+                      Results.NotFound(views.html.oto.error("Error", env)).removingFromSession("bousr")(request)
                     )
                   }
                   case false =>

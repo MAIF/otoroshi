@@ -2,7 +2,7 @@ package controllers.adminapi
 
 import otoroshi.actions.ApiAction
 import otoroshi.auth.{AuthModuleConfig, BasicAuthModule}
-import env.Env
+import otoroshi.env.Env
 import models.ApiKey
 import otoroshi.utils.controllers.{ApiError, BulkControllerHelper, CrudControllerHelper, EntityAndContext, JsonApiError, NoEntityAndContext, OptionalEntityAndContext, SeqEntityAndContext}
 import otoroshi.utils.syntax.implicits._

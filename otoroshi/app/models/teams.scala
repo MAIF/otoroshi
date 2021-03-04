@@ -1,6 +1,6 @@
 package otoroshi.models
 
-import env.Env
+import otoroshi.env.Env
 import models._
 import otoroshi.utils.RegexPool
 import otoroshi.utils.syntax.implicits._

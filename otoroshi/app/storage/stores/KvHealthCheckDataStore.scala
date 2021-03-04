@@ -1,6 +1,6 @@
 package otoroshi.storage.stores
 
-import env.Env
+import otoroshi.env.Env
 import otoroshi.events.{HealthCheckDataStore, HealthCheckEvent}
 import models.ServiceDescriptor
 import play.api.libs.json.{JsValue, Json}

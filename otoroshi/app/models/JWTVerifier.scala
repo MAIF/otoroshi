@@ -12,7 +12,7 @@ import com.auth0.jwt.exceptions.InvalidClaimException
 import com.auth0.jwt.impl.PublicClaims
 import com.auth0.jwt.interfaces.{DecodedJWT, Verification}
 import com.nimbusds.jose.jwk.{ECKey, JWK, KeyType, RSAKey}
-import env.Env
+import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import org.apache.commons.codec.binary.{Base64 => ApacheBase64}
 import otoroshi.el.{GlobalExpressionLanguage, JwtExpressionLanguage}

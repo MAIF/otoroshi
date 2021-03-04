@@ -2,7 +2,7 @@ package models
 
 import akka.http.scaladsl.util.FastFuture
 import otoroshi.auth.AuthModuleConfig
-import env.Env
+import otoroshi.env.Env
 import otoroshi.events.Exporters._
 import otoroshi.events._
 import org.joda.time.DateTime

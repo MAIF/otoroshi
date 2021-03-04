@@ -6,7 +6,7 @@ import otoroshi.cluster.ClusterMode
 import com.softwaremill.macwire._
 import controllers._
 import controllers.adminapi._
-import env.Env
+import otoroshi.env.Env
 import otoroshi.gateway._
 import modules._
 import otoroshi.api.OtoroshiLoaderHelper

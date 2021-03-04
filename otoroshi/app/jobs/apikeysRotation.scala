@@ -2,7 +2,7 @@ package otoroshi.jobs.apikeys
 
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.{Sink, Source}
-import env.Env
+import otoroshi.env.Env
 import otoroshi.script.{Job, JobContext, JobId, JobInstantiation, JobKind, JobStarting, JobVisibility}
 import play.api.Logger
 import otoroshi.utils.syntax.implicits._

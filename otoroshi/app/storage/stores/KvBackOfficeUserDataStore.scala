@@ -2,7 +2,7 @@ package otoroshi.storage.stores
 
 import akka.http.scaladsl.util.FastFuture
 import akka.util.ByteString
-import env.Env
+import otoroshi.env.Env
 import models.{BackOfficeUser, BackOfficeUserDataStore, Key}
 import play.api.libs.json.{Format, JsSuccess, JsValue, Json}
 import otoroshi.utils.json.JsonImplicits._

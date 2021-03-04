@@ -3,7 +3,7 @@ package otoroshi.plugins.clientcert
 import java.security.cert.X509Certificate
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
-import env.Env
+import otoroshi.env.Env
 import otoroshi.script._
 import otoroshi.utils.RegexPool
 import otoroshi.utils.http.{DN, MtlsConfig}

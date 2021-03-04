@@ -4,7 +4,7 @@ import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong}
 
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.{Sink, Source}
-import env.Env
+import otoroshi.env.Env
 import otoroshi.script._
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger

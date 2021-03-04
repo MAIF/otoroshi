@@ -3,7 +3,7 @@ package controllers.adminapi
 import otoroshi.actions.ApiAction
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
-import env.Env
+import otoroshi.env.Env
 import otoroshi.events._
 import models.ServiceDescriptor
 import org.joda.time.DateTime

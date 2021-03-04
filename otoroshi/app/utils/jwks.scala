@@ -3,7 +3,7 @@ package otoroshi.utils.jwk
 import java.security.interfaces.{ECPublicKey, RSAPublicKey}
 
 import com.nimbusds.jose.jwk.{Curve, ECKey, RSAKey}
-import env.Env
+import otoroshi.env.Env
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json.{JsArray, JsValue, Json}
 import play.api.mvc.RequestHeader

@@ -4,7 +4,7 @@ import otoroshi.actions.{ApiAction, PrivateAppsAction}
 import akka.http.scaladsl.util.FastFuture
 import akka.util.ByteString
 import otoroshi.auth.{BasicAuthModule, BasicAuthUser}
-import env.Env
+import otoroshi.env.Env
 
 import javax.crypto.Cipher
 import javax.crypto.spec.SecretKeySpec
@@ -42,7 +42,7 @@ class PrivateAppsController(ApiAction: ApiAction, PrivateAppsAction: PrivateApps
   }
 
   def error(message: Option[String] = None) = PrivateAppsAction { ctx =>
-    Ok(views.html.otoroshi.error(message.getOrElse(""), env))
+    Ok(views.html.oto.error(message.getOrElse(""), env))
   }
 
   def withShortSession(
@@ -156,7 +156,7 @@ class PrivateAppsController(ApiAction: ApiAction, PrivateAppsAction: PrivateApps
     withShortSession(req) {
       case (bam, user, ttl) =>
         Ok(
-          views.html.otoroshi.selfUpdate(
+          views.html.oto.selfUpdate(
             Json.obj(
               "name"                  -> user.name,
               "email"                 -> user.email,

@@ -6,7 +6,7 @@ import akka.http.scaladsl.util.FastFuture
 import akka.http.scaladsl.util.FastFuture._
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
-import env.Env
+import otoroshi.env.Env
 import models._
 import play.api.Logger
 import play.api.libs.json.Format

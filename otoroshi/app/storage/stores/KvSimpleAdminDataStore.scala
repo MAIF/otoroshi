@@ -1,7 +1,7 @@
 package otoroshi.storage.stores
 
 import akka.http.scaladsl.util.FastFuture
-import env.Env
+import otoroshi.env.Env
 import otoroshi.models._
 import play.api.libs.json._
 import otoroshi.utils.json.JsonImplicits._

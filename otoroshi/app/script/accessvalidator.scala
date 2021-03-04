@@ -6,7 +6,7 @@ import java.util.Base64
 import java.util.concurrent.TimeUnit
 import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.util.FastFuture
-import env.Env
+import otoroshi.env.Env
 import otoroshi.gateway.Errors
 import models._
 import org.apache.commons.codec.binary.Hex

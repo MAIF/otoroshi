@@ -2,7 +2,7 @@ package otoroshi.jobs.certs
 
 import java.util.concurrent.TimeUnit
 
-import env.Env
+import otoroshi.env.Env
 import otoroshi.script.{Job, JobContext, JobId, JobInstantiation, JobKind, JobStarting, JobVisibility}
 import otoroshi.ssl.pki.models.{GenCertResponse, GenCsrQuery, GenKeyPairQuery}
 import play.api.Logger
@@ -32,7 +32,7 @@ class InitialCertsJob extends Job {
 
   override def interval(ctx: JobContext, env: Env): Option[FiniteDuration] = 24.hours.some
 
-  @deprecated
+  @deprecated(message = "this way of generating certs is deprecated, use the new pki", since = "1.5.0")
   def runWithOldSchoolPki(ctx: JobContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
     env.datastores.certificatesDataStore
       .findAll()

@@ -2,7 +2,7 @@ package functional
 
 import akka.actor.ActorSystem
 import com.typesafe.config.ConfigFactory
-import env.Env
+import otoroshi.env.Env
 import otoroshi.events._
 import otoroshi.events.impl.ElasticWritesAnalytics
 import models._

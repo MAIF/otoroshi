@@ -12,7 +12,7 @@ import akka.stream.scaladsl.{Framing, Sink, Source}
 import akka.util.ByteString
 import otoroshi.cluster.{Cluster, ClusterAgent, ClusterMode, MemberView}
 import com.google.common.io.Files
-import env.Env
+import otoroshi.env.Env
 import models.PrivateAppsUser
 import org.apache.commons.codec.binary.Hex
 import org.joda.time.DateTime

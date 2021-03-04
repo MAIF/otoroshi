@@ -5,7 +5,7 @@ import akka.http.scaladsl.model.Uri
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
-import env.Env
+import otoroshi.env.Env
 import otoroshi.events.AuditEvent
 import models.{ServiceDescriptor, Target}
 import org.joda.time.DateTime

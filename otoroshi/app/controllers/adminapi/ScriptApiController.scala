@@ -2,7 +2,7 @@ package controllers.adminapi
 
 import otoroshi.actions.ApiAction
 import akka.util.ByteString
-import env.Env
+import otoroshi.env.Env
 import otoroshi.models.RightsChecker.Anyone
 import otoroshi.script._
 import otoroshi.utils.controllers.{ApiError, BulkControllerHelper, CrudControllerHelper, EntityAndContext, JsonApiError, NoEntityAndContext, OptionalEntityAndContext, SeqEntityAndContext}

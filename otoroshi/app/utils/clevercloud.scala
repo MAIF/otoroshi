@@ -8,7 +8,7 @@ import akka.NotUsed
 import akka.http.scaladsl.util.FastFuture
 import akka.http.scaladsl.util.FastFuture._
 import com.google.common.base.Charsets
-import env.Env
+import otoroshi.env.Env
 import models.GlobalConfig
 import play.api.Logger
 import play.api.libs.json.{JsArray, JsObject, JsValue}

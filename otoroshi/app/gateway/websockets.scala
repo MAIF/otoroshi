@@ -13,7 +13,7 @@ import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.{Flow, Keep, Sink, Source, SourceQueueWithComplete, Tcp}
 import akka.stream.{FlowShape, Materializer, OverflowStrategy}
 import akka.util.ByteString
-import env.Env
+import otoroshi.env.Env
 import otoroshi.events._
 import models._
 import org.joda.time.DateTime

@@ -12,7 +12,7 @@ import akka.stream.scaladsl.{Flow, Keep, Sink, Source, Tcp}
 import akka.stream.{IgnoreComplete, Materializer}
 import akka.util.ByteString
 import akka.{AwesomeIncomingConnection, Done, TcpUtils}
-import env.Env
+import otoroshi.env.Env
 import otoroshi.events.{DataInOut, Location, TcpEvent}
 
 import javax.net.ssl._

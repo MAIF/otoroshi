@@ -9,7 +9,7 @@ import akka.actor.Scheduler
 import akka.http.scaladsl.util.FastFuture
 import akka.pattern.{CircuitBreaker => AkkaCircuitBreaker}
 import akka.stream.scaladsl.Flow
-import env.Env
+import otoroshi.env.Env
 import otoroshi.events._
 import otoroshi.health.HealthCheck
 import models.{ApiKey, GlobalConfig, ServiceDescriptor, Target}

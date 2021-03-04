@@ -6,7 +6,7 @@ import java.util.concurrent.atomic.AtomicReference
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
-import env.Env
+import otoroshi.env.Env
 import otoroshi.plugins.JsonPathUtils
 import otoroshi.utils.ReplaceAllWith
 import otoroshi.utils.http.MtlsConfig

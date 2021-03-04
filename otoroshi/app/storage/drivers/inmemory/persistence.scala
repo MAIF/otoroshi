@@ -10,12 +10,11 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.{Framing, Keep, Sink, Source}
 import akka.util.ByteString
 import com.google.common.base.Charsets
-import env.Env
+import otoroshi.env.Env
 import otoroshi.utils.SchedulerHelper
 import play.api.Logger
 import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
 import play.api.libs.ws.SourceBody
-import otoroshi.storage.drivers.inmemory.Memory
 import otoroshi.utils.http.Implicits._
 
 import scala.concurrent.{Await, ExecutionContext, Future}

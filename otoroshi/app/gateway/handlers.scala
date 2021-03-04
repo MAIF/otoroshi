@@ -10,7 +10,7 @@ import akka.util.ByteString
 import otoroshi.auth.{AuthModuleConfig, SessionCookieValues}
 import com.google.common.base.Charsets
 import controllers.HealthController
-import env.Env
+import otoroshi.env.Env
 import otoroshi.events._
 import models._
 import otoroshi.script._
@@ -368,7 +368,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
         (redirectToOpt, sessionIdOpt, hostOpt, cookiePrefOpt, maOpt, httpOnlyOpt, secureOpt) match {
           case (Some("urn:ietf:wg:oauth:2.0:oob"), Some(sessionId), Some(host), Some(cp), ma, httpOnly, secure) =>
             FastFuture.successful(
-              Ok(views.html.otoroshi.token(env.signPrivateSessionId(sessionId), env)).withCookies(
+              Ok(views.html.oto.token(env.signPrivateSessionId(sessionId), env)).withCookies(
                 env.createPrivateSessionCookiesWithSuffix(host, sessionId, cp, ma.getOrElse(86400), SessionCookieValues(httpOnly.getOrElse(true), secure.getOrElse(true))): _*
               )
             )

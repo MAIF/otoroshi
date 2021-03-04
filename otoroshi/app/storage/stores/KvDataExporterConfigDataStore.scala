@@ -1,6 +1,6 @@
 package otoroshi.storage.stores
 
-import env.Env
+import otoroshi.env.Env
 import otoroshi.events.{KafkaConfig, PulsarConfig}
 import otoroshi.models.{DataExporterConfig, DataExporterConfigFiltering, DataExporterConfigType, EntityLocation, FileSettings, MetricsSettings}
 import models._

@@ -2,7 +2,7 @@ package otoroshi.storage.stores
 
 import java.util.concurrent.atomic.AtomicReference
 import akka.actor.Cancellable
-import env.Env
+import otoroshi.env.Env
 import models.Key
 import otoroshi.storage.{RedisLike, RedisLikeStore}
 import otoroshi.utils

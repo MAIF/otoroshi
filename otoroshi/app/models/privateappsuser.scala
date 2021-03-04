@@ -3,7 +3,7 @@ package models
 import java.util.concurrent.TimeUnit
 import akka.http.scaladsl.util.FastFuture
 import otoroshi.auth.{AuthModuleConfig, GenericOauth2Module}
-import env.Env
+import otoroshi.env.Env
 import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.json._

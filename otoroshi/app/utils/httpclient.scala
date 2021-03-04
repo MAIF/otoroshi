@@ -14,7 +14,7 @@ import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import com.google.common.base.Charsets
 import com.typesafe.sslconfig.akka.AkkaSSLConfig
 import com.typesafe.sslconfig.ssl.SSLConfigSettings
-import env.Env
+import otoroshi.env.Env
 import models.{ClientConfig, Target}
 import org.apache.commons.codec.binary.Base64
 import play.api.Logger

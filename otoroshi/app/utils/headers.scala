@@ -1,6 +1,6 @@
 package otoroshi.utils.http
 
-import env.Env
+import otoroshi.env.Env
 import otoroshi.gateway.SnowMonkeyContext
 import models._
 import otoroshi.el.HeadersExpressionLanguage

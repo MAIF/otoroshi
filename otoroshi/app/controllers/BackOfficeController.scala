@@ -13,7 +13,7 @@ import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.google.common.base.Charsets
 import com.nimbusds.jose.jwk.KeyType
-import env.Env
+import otoroshi.env.Env
 import otoroshi.events._
 import models._
 import org.joda.time.DateTime
@@ -234,7 +234,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
   }
 
   def error(message: Option[String]) = BackOfficeAction { ctx =>
-    Ok(views.html.otoroshi.error(message.getOrElse("Error message"), env))
+    Ok(views.html.oto.error(message.getOrElse("Error message"), env))
   }
 
   def documentationFrame(lineId: String, serviceId: String) = BackOfficeActionAuth.async { ctx =>
@@ -279,14 +279,14 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
                 case "2.0" => Ok(Json.prettyPrint(resp.json)).as("application/json")
                 case "3.0" => Ok(Json.prettyPrint(resp.json)).as("application/json")
                 case _ =>
-                  InternalServerError(views.html.otoroshi.error(s"Swagger version $swagger not supported", env))
+                  InternalServerError(views.html.oto.error(s"Swagger version $swagger not supported", env))
               }
             } catch {
               case e: Throwable => InternalServerError(Json.obj("error" -> e.getMessage))
             }
           }
       }
-      case _ => FastFuture.successful(NotFound(views.html.otoroshi.error("Service not found", env)))
+      case _ => FastFuture.successful(NotFound(views.html.oto.error("Service not found", env)))
     }
   }
 

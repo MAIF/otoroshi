@@ -2,7 +2,7 @@ package controllers.adminapi
 
 import otoroshi.actions.{ApiAction, UnAuthApiAction}
 import akka.util.ByteString
-import env.Env
+import otoroshi.env.Env
 import otoroshi.models.RightsChecker
 import otoroshi.utils.controllers.{AdminApiHelper, JsonApiError, SendAuditAndAlert}
 import otoroshi.utils.syntax.implicits._

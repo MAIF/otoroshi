@@ -11,7 +11,7 @@ import akka.util.ByteString
 import otoroshi.auth.AuthConfigsDataStore
 import otoroshi.cluster.{ClusterStateDataStore, KvClusterStateDataStore}
 import com.typesafe.config.ConfigFactory
-import env.Env
+import otoroshi.env.Env
 import otoroshi.events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
 import otoroshi.gateway.{InMemoryRequestsDataStore, RequestsDataStore}
 import io.vertx.core.buffer.Buffer

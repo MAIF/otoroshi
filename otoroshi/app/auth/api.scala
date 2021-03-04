@@ -1,6 +1,6 @@
 package otoroshi.auth
 
-import env.Env
+import otoroshi.env.Env
 import models._
 import otoroshi.models.{UserRight, UserRights}
 import play.api.Logger

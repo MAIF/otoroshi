@@ -1,6 +1,6 @@
 package otoroshi.events.impl
 
-import env.Env
+import otoroshi.env.Env
 import otoroshi.events.{AnalyticEvent, AnalyticsWritesService}
 import models.{GlobalConfig, HSAlgoSettings, Webhook}
 import org.joda.time.DateTime

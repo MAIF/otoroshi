@@ -3,7 +3,7 @@ package otoroshi.script
 import java.util.concurrent.atomic.AtomicReference
 
 import akka.actor.{Actor, ActorRef, Props}
-import env.Env
+import otoroshi.env.Env
 import otoroshi.events.{AnalyticEvent, OtoroshiEvent}
 import play.api.Logger
 

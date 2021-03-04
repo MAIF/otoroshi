@@ -1,7 +1,7 @@
 package otoroshi.events
 
 import akka.util.ByteString
-import env.Env
+import otoroshi.env.Env
 import models._
 import org.joda.time.DateTime
 import otoroshi.script.{Job, JobContext}

@@ -14,7 +14,7 @@ import akka.kafka.ProducerSettings
 import akka.stream.scaladsl.{Sink, Source}
 import org.apache.kafka.common.config.SslConfigs
 import play.api.libs.json._
-import env.Env
+import otoroshi.env.Env
 import otoroshi.models.Exporter
 import org.apache.kafka.common.config.internals.BrokerSecurityConfigs
 import otoroshi.models.Exporter
@@ -75,7 +75,7 @@ object KafkaSettings {
       .runWith(Sink.head)(env.otoroshiMaterializer)
   }
 
-  def producerSettings(_env: env.Env, config: KafkaConfig): ProducerSettings[Array[Byte], String] = {
+  def producerSettings(_env: otoroshi.env.Env, config: KafkaConfig): ProducerSettings[Array[Byte], String] = {
 
     val settings = ProducerSettings
       .create(_env.analyticsActorSystem, new ByteArraySerializer(), new StringSerializer())
@@ -178,7 +178,7 @@ object KafkaWrapperActor {
   def props(env: Env, topicFunction: KafkaConfig => String) = Props(new KafkaWrapperActor(env, topicFunction))
 }
 
-class KafkaEventProducer(_env: env.Env, config: KafkaConfig, topicFunction: KafkaConfig => String) {
+class KafkaEventProducer(_env: otoroshi.env.Env, config: KafkaConfig, topicFunction: KafkaConfig => String) {
 
   implicit val ec = _env.analyticsExecutionContext
 

@@ -5,7 +5,7 @@ import java.nio.file.Files
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
-import env.Env
+import otoroshi.env.Env
 import otoroshi.script._
 import otoroshi.utils.syntax.implicits._
 import otoroshi.utils.yaml.Yaml

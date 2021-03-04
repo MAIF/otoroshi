@@ -6,7 +6,7 @@ import java.util.concurrent.atomic.AtomicReference
 import akka.actor.{Actor, ActorSystem, Cancellable, Props}
 import com.codahale.metrics.{Counter, Gauge, Reporter}
 import com.spotify.metrics.core.{MetricId, SemanticMetricRegistry}
-import env.Env
+import otoroshi.env.Env
 import github.gphat.censorinus._
 
 import scala.concurrent.duration.FiniteDuration

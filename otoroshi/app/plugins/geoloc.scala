@@ -9,7 +9,7 @@ import akka.http.scaladsl.util.FastFuture
 import akka.stream.{IOResult, Materializer}
 import akka.stream.scaladsl.FileIO
 import com.maxmind.geoip2.DatabaseReader
-import env.Env
+import otoroshi.env.Env
 import otoroshi.plugins.Keys
 import otoroshi.script._
 import play.api.Logger
@@ -62,28 +62,28 @@ class MaxMindGeolocationInfoExtractor extends PreRouting {
     val log     = (config \ "log").asOpt[Boolean].getOrElse(false)
     val from    = ctx.request.theIpAddress
     pathOpt match {
-      case None => funit
+      case None => FastFuture.successful(())
       case Some("global") =>
         env.datastores.globalConfigDataStore.latestSafe match {
-          case None                                      => funit
-          case Some(c) if !c.geolocationSettings.enabled => funit
+          case None                                      => FastFuture.successful(())
+          case Some(c) if !c.geolocationSettings.enabled => FastFuture.successful(())
           case Some(c) =>
             c.geolocationSettings.find(from).map {
-              case None => funit
+              case None => FastFuture.successful(())
               case Some(location) => {
                 if (log) logger.info(s"Ip-Address: $from, ${Json.prettyPrint(location)}")
                 ctx.attrs.putIfAbsent(Keys.GeolocationInfoKey -> location)
-                funit
+                FastFuture.successful(())
               }
             }
         }
       case Some(path) =>
         MaxMindGeolocationHelper.find(from, path).map {
-          case None => funit
+          case None => FastFuture.successful(())
           case Some(location) => {
             if (log) logger.info(s"Ip-Address: $from, ${Json.prettyPrint(location)}")
             ctx.attrs.putIfAbsent(Keys.GeolocationInfoKey -> location)
-            funit
+            FastFuture.successful(())
           }
         }
     }

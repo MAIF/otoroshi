@@ -1,7 +1,7 @@
 package otoroshi.storage.stores
 
 import akka.util.ByteString
-import env.Env
+import otoroshi.env.Env
 import otoroshi.storage.{RawDataStore, RedisLike}
 
 import scala.concurrent.{ExecutionContext, Future}

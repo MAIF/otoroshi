@@ -14,7 +14,7 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.{Keep, Sink, Source}
 import akka.util.ByteString
 import com.google.common.hash.Hashing
-import env.Env
+import otoroshi.env.Env
 import otoroshi.events._
 import otoroshi.events.{AnalyticEvent, OtoroshiEvent}
 
@@ -1415,7 +1415,7 @@ trait ScriptDataStore extends BasicStore[Script] {
     name = "New request transformer",
     desc = "New request transformer",
     code = """import akka.stream.Materializer
-             |import env.Env
+             |import otoroshi.env.Env
              |import models.{ApiKey, PrivateAppsUser, ServiceDescriptor}
              |import otoroshi.script._
              |import play.api.Logger

@@ -8,7 +8,7 @@ import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.{Keep, Sink, Source}
 import akka.stream.{OverflowStrategy, QueueOfferResult, ThrottleMode}
 import akka.util.ByteString
-import env.Env
+import otoroshi.env.Env
 import models._
 import org.joda.time.DateTime
 import play.api.Logger

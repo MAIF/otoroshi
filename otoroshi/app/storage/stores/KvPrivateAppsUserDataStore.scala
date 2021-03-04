@@ -1,6 +1,6 @@
 package otoroshi.storage.stores
 
-import env.Env
+import otoroshi.env.Env
 import models.{Key, PrivateAppsUser, PrivateAppsUserDataStore}
 import play.api.libs.json.{Format, Json}
 import otoroshi.utils.json.JsonImplicits._

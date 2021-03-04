@@ -2,7 +2,7 @@ package otoroshi.storage.stores
 
 import akka.http.scaladsl.util.FastFuture
 import otoroshi.auth.{AuthModuleConfig, GenericOauth2ModuleConfig, SessionCookieValues}
-import env.Env
+import otoroshi.env.Env
 import models._
 import org.joda.time.DateTime
 import otoroshi.models.{DataExporterConfig, SimpleOtoroshiAdmin, Team, Tenant, WebAuthnOtoroshiAdmin}

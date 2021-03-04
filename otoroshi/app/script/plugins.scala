@@ -2,7 +2,7 @@ package otoroshi.script.plugins
 
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
-import env.Env
+import otoroshi.env.Env
 import otoroshi.script._
 import otoroshi.utils.RegexPool
 import play.api.libs.json.{Format, JsArray, JsError, JsResult, JsString, JsSuccess, JsValue, Json}
