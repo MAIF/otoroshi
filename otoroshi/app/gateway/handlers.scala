@@ -406,7 +406,7 @@ class GatewayRequestHandler(
           (redirectToOpt, sessionIdOpt, hostOpt, cookiePrefOpt, maOpt, httpOnlyOpt, secureOpt) match {
             case (Some("urn:ietf:wg:oauth:2.0:oob"), Some(sessionId), Some(host), Some(cp), ma, httpOnly, secure) =>
               FastFuture.successful(
-                Ok(views.html.oto.token(env.signPrivateSessionId(sessionId), env)).withCookies(
+                Ok(otoroshi.views.html.oto.token(env.signPrivateSessionId(sessionId), env)).withCookies(
                   env.createPrivateSessionCookiesWithSuffix(
                     host,
                     sessionId,

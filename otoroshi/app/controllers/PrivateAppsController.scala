@@ -28,7 +28,7 @@ class PrivateAppsController(ApiAction: ApiAction, PrivateAppsAction: PrivateApps
 
   def home =
     PrivateAppsAction { ctx =>
-      Ok(views.html.privateapps.home(ctx.user, env))
+      Ok(otoroshi.views.html.privateapps.home(ctx.user, env))
     }
 
   def redirect =
@@ -45,7 +45,7 @@ class PrivateAppsController(ApiAction: ApiAction, PrivateAppsAction: PrivateApps
 
   def error(message: Option[String] = None) =
     PrivateAppsAction { ctx =>
-      Ok(views.html.oto.error(message.getOrElse(""), env))
+      Ok(otoroshi.views.html.oto.error(message.getOrElse(""), env))
     }
 
   def withShortSession(
@@ -160,7 +160,7 @@ class PrivateAppsController(ApiAction: ApiAction, PrivateAppsAction: PrivateApps
     Action.async { req =>
       withShortSession(req) { case (bam, user, ttl) =>
         Ok(
-          views.html.oto.selfUpdate(
+          otoroshi.views.html.oto.selfUpdate(
             Json.obj(
               "name"                  -> user.name,
               "email"                 -> user.email,

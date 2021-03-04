@@ -389,7 +389,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
 
         def unauthorized() =
           Results
-            .Unauthorized(views.html.oto.error("You are not authorized here", env))
+            .Unauthorized(otoroshi.views.html.oto.error("You are not authorized here", env))
             .withHeaders("WWW-Authenticate" -> s"""Basic realm="${authConfig.cookieSuffix(descriptor)}"""")
             .addingToSession(
               s"pa-redirect-after-login-${authConfig.cookieSuffix(descriptor)}" -> redirect.getOrElse(
@@ -401,10 +401,10 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
         req.headers.get("Authorization") match {
           case Some(auth) if auth.startsWith("Basic ") =>
             extractUsernamePassword(auth) match {
-              case None                       => Results.Forbidden(views.html.oto.error("Forbidden access", env)).future
+              case None                       => Results.Forbidden(otoroshi.views.html.oto.error("Forbidden access", env)).future
               case Some((username, password)) =>
                 bindUser(username, password, descriptor) match {
-                  case Left(_)     => Results.Forbidden(views.html.oto.error("Forbidden access", env)).future
+                  case Left(_)     => Results.Forbidden(otoroshi.views.html.oto.error("Forbidden access", env)).future
                   case Right(user) =>
                     env.datastores.authConfigsDataStore.setUserForToken(token, user.toJson).map { _ =>
                       Results.Redirect(s"/privateapps/generic/callback?desc=${descriptor.id}&token=$token&hash=$hash")
@@ -416,7 +416,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
       } else {
         Results
           .Ok(
-            views.html.oto
+            otoroshi.views.html.oto
               .login(s"/privateapps/generic/callback?desc=${descriptor.id}&hash=$hash", "POST", token, false, env)
           )
           .addingToSession(
@@ -483,7 +483,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
 
         def unauthorized() =
           Results
-            .Unauthorized(views.html.oto.error("You are not authorized here", env))
+            .Unauthorized(otoroshi.views.html.oto.error("You are not authorized here", env))
             .withHeaders("WWW-Authenticate" -> "otoroshi-admin-realm")
             .addingToSession(
               "bo-redirect-after-login" -> redirect.getOrElse(
@@ -495,10 +495,10 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
         req.headers.get("Authorization") match {
           case Some(auth) if auth.startsWith("Basic ") =>
             extractUsernamePassword(auth) match {
-              case None                       => Results.Forbidden(views.html.oto.error("Forbidden access", env)).future
+              case None                       => Results.Forbidden(otoroshi.views.html.oto.error("Forbidden access", env)).future
               case Some((username, password)) =>
                 bindAdminUser(username, password) match {
-                  case Left(_)     => Results.Forbidden(views.html.oto.error("Forbidden access", env)).future
+                  case Left(_)     => Results.Forbidden(otoroshi.views.html.oto.error("Forbidden access", env)).future
                   case Right(user) =>
                     env.datastores.authConfigsDataStore.setUserForToken(token, user.toJson).map { _ =>
                       Results.Redirect(s"/backoffice/auth0/callback?token=$token&hash=$hash")
@@ -509,7 +509,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
         }
       } else {
         Results
-          .Ok(views.html.oto.login(s"/backoffice/auth0/callback?hash=$hash", "POST", token, false, env))
+          .Ok(otoroshi.views.html.oto.login(s"/backoffice/auth0/callback?hash=$hash", "POST", token, false, env))
           .addingToSession(
             "bo-redirect-after-login" -> redirect.getOrElse(
               routes.BackOfficeController.dashboard().absoluteURL(env.exposedRootSchemeIsHttps)

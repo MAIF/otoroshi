@@ -193,7 +193,7 @@ object Errors {
         if (maybeCauseId.contains("errors.service.in.maintenance")) {
           FastFuture.successful(
             status
-              .apply(views.html.oto.maintenance(env))
+              .apply(otoroshi.views.html.oto.maintenance(env))
               .withHeaders(
                 env.Headers.OtoroshiGatewayError -> "true",
                 env.Headers.OtoroshiErrorMsg     -> message,
@@ -203,7 +203,7 @@ object Errors {
         } else if (maybeCauseId.contains("errors.service.under.construction")) {
           FastFuture.successful(
             status
-              .apply(views.html.oto.build(env))
+              .apply(otoroshi.views.html.oto.build(env))
               .withHeaders(
                 env.Headers.OtoroshiGatewayError -> "true",
                 env.Headers.OtoroshiErrorMsg     -> message,
@@ -215,7 +215,7 @@ object Errors {
             if (emptyBody) status.apply("")
             else
               status.apply(
-                views.html.oto.error(
+                otoroshi.views.html.oto.error(
                   message = message,
                   _env = env
                 )

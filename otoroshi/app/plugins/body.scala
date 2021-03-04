@@ -380,15 +380,15 @@ class BodyLogger extends RequestTransformer {
           case _                                                                               =>
             Left(
               Results
-                .Unauthorized(views.html.oto.error("You are not authorized here", env))
+                .Unauthorized(otoroshi.views.html.oto.error("You are not authorized here", env))
                 .withHeaders("WWW-Authenticate" -> s"""Basic realm="bodies-${ctx.descriptor.id}"""")
             ).future
-          //Left(Results.Forbidden(views.html.oto.error("Forbidden access", env))).future
+          //Left(Results.Forbidden(otoroshi.views.html.oto.error("Forbidden access", env))).future
         }
       case _                                       =>
         Left(
           Results
-            .Unauthorized(views.html.oto.error("You are not authorized here", env))
+            .Unauthorized(otoroshi.views.html.oto.error("You are not authorized here", env))
             .withHeaders("WWW-Authenticate" -> s"""Basic realm="bodies-${ctx.descriptor.id}"""")
         ).future
     }

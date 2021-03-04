@@ -73,7 +73,7 @@ class PrivateAppsAction(val parser: BodyParser[AnyContent])(implicit env: Env)
       }
       case _                   => {
         // TODO : based on Accept header
-        FastFuture.successful(Results.NotFound(views.html.oto.error("Not found", env)))
+        FastFuture.successful(Results.NotFound(otoroshi.views.html.oto.error("Not found", env)))
       }
     }
   }

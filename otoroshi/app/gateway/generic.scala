@@ -283,7 +283,7 @@ object ReverseProxyActionHelper {
               req.getQueryString("redirect") match {
                 case Some("urn:ietf:wg:oauth:2.0:oob") =>
                   FastFuture
-                    .successful(Ok(views.html.oto.token(env.signPrivateSessionId(user.randomId), env)))
+                    .successful(Ok(otoroshi.views.html.oto.token(env.signPrivateSessionId(user.randomId), env)))
                     .map(Left.apply)
                 case _                                 =>
                   Errors

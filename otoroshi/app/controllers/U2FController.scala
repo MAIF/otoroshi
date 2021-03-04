@@ -50,7 +50,7 @@ class U2FController(
 
   def loginPage() =
     BackOfficeAction { ctx =>
-      Ok(views.html.backoffice.u2flogin(env))
+      Ok(otoroshi.views.html.backoffice.u2flogin(env))
     }
 
   /////////// Simple admins ////////////////////////////////////////////////////////////////////////////////////////////

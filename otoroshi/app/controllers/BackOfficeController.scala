@@ -220,7 +220,7 @@ class BackOfficeController(
           case Some(user)                      => Redirect("/bo/dashboard")
           case None if config.u2fLoginOnly     => Redirect(routes.U2FController.loginPage())
           case None if thridPartyLoginEnabled  =>
-            Ok(views.html.backoffice.index(thridPartyLoginEnabled, ctx.user, ctx.request, env))
+            Ok(otoroshi.views.html.backoffice.index(thridPartyLoginEnabled, ctx.user, ctx.request, env))
           case None if !thridPartyLoginEnabled => Redirect(routes.U2FController.loginPage())
         }
       }
@@ -234,7 +234,7 @@ class BackOfficeController(
             .filter(t => ctx.user.rights.rights.exists(r => r.tenant.canRead && r.tenant.matches(t.id)))
             .filterNot(_.id == TenantId.all)
             .map(_.id.value)
-          Ok(views.html.backoffice.dashboard(ctx.user, config, env, env.otoroshiVersion, userTenants))
+          Ok(otoroshi.views.html.backoffice.dashboard(ctx.user, config, env, env.otoroshiVersion, userTenants))
         }
       }
     }
@@ -247,21 +247,21 @@ class BackOfficeController(
             .filter(t => ctx.user.rights.rights.exists(r => r.tenant.canRead && r.tenant.matches(t.id)))
             .filterNot(_.id == TenantId.all)
             .map(_.id.value)
-          Ok(views.html.backoffice.dashboard(ctx.user, config, env, env.otoroshiVersion, userTenants))
+          Ok(otoroshi.views.html.backoffice.dashboard(ctx.user, config, env, env.otoroshiVersion, userTenants))
         }
       }
     }
 
   def error(message: Option[String]) =
     BackOfficeAction { ctx =>
-      Ok(views.html.oto.error(message.getOrElse("Error message"), env))
+      Ok(otoroshi.views.html.oto.error(message.getOrElse("Error message"), env))
     }
 
   def documentationFrame(lineId: String, serviceId: String) =
     BackOfficeActionAuth.async { ctx =>
       env.datastores.serviceDescriptorDataStore.findById(serviceId).map {
         case Some(descriptor) if !ctx.canUserRead(descriptor) => ApiActionContext.forbidden
-        case Some(descriptor)                                 => Ok(views.html.backoffice.documentationframe(descriptor, env))
+        case Some(descriptor)                                 => Ok(otoroshi.views.html.backoffice.documentationframe(descriptor, env))
         case None                                             => NotFound(Json.obj("error" -> s"Service with id $serviceId not found"))
       }
     }
@@ -301,14 +301,14 @@ class BackOfficeController(
                   case "2.0" => Ok(Json.prettyPrint(resp.json)).as("application/json")
                   case "3.0" => Ok(Json.prettyPrint(resp.json)).as("application/json")
                   case _     =>
-                    InternalServerError(views.html.oto.error(s"Swagger version $swagger not supported", env))
+                    InternalServerError(otoroshi.views.html.oto.error(s"Swagger version $swagger not supported", env))
                 }
               } catch {
                 case e: Throwable => InternalServerError(Json.obj("error" -> e.getMessage))
               }
             }
         }
-        case _                                                           => FastFuture.successful(NotFound(views.html.oto.error("Service not found", env)))
+        case _                                                           => FastFuture.successful(NotFound(otoroshi.views.html.oto.error("Service not found", env)))
       }
     }
 
