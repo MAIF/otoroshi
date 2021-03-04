@@ -258,7 +258,7 @@ class GatewayRequestHandler(snowMonkey: SnowMonkey,
       lazy val cookies = request.cookies.map(_.value).map(ByteString.apply)
       lazy val headers = request.headers.toSimpleMap.map(t => (ByteString.apply(t._1), ByteString.apply(t._2)))
       // logger.trace(s"[SIZE] url: ${url.size} bytes, cookies: ${cookies.map(_.size).mkString(", ")}, headers: ${headers.map(_.size).mkString(", ")}")
-      if (env.clusterConfig.mode == cluster.ClusterMode.Worker && env.clusterAgent.cannotServeRequests()) {
+      if (env.clusterConfig.mode == otoroshi.cluster.ClusterMode.Worker && env.clusterAgent.cannotServeRequests()) {
         Some(clusterError("Waiting for first Otoroshi leader sync."))
       } else if (env.validateRequests && url.size > env.maxUrlLength) {
         Some(tooBig("URL should be smaller", UriTooLong))

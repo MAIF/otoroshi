@@ -8,7 +8,7 @@ import akka.http.scaladsl.util.FastFuture
 import akka.http.scaladsl.util.FastFuture._
 import akka.stream.scaladsl.{Keep, Sink, Source}
 import akka.stream.{OverflowStrategy, QueueOfferResult}
-import cluster.ClusterMode
+import otoroshi.cluster.ClusterMode
 import env.Env
 import events.impl.{ElasticReadsAnalytics, ElasticWritesAnalytics, WebHookAnalytics}
 import models._

@@ -3,7 +3,7 @@ package otoroshi.plugins.jobs.kubernetes
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong, AtomicReference}
 import akka.stream.scaladsl.{Sink, Source}
-import cluster.ClusterMode
+import otoroshi.cluster.ClusterMode
 import com.google.common.base.CaseFormat
 import env.Env
 import io.kubernetes.client.extended.leaderelection.resourcelock.EndpointsLock

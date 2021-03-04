@@ -6,7 +6,7 @@ import java.util.concurrent.TimeUnit
 import actions.ApiAction
 import akka.NotUsed
 import akka.stream.scaladsl.Source
-import cluster.StatsView
+import otoroshi.cluster.StatsView
 import env.Env
 import events.{AdminApiEvent, Audit}
 import javax.management.{Attribute, ObjectName}

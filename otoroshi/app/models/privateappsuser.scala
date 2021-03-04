@@ -11,7 +11,7 @@ import play.api.mvc.Results.InternalServerError
 import play.api.mvc.{RequestHeader, Result, Results}
 import otoroshi.storage.BasicStore
 import otoroshi.utils.json.JsonImplicits._
-import cluster._
+import otoroshi.cluster._
 import otoroshi.utils.TypedMap
 
 import scala.concurrent.duration._

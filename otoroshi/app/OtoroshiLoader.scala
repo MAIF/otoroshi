@@ -2,7 +2,7 @@ package otoroshi
 
 import actions._
 import akka.stream.scaladsl.{Sink, Source}
-import cluster.ClusterMode
+import otoroshi.cluster.ClusterMode
 import com.softwaremill.macwire._
 import controllers._
 import controllers.adminapi._

@@ -10,7 +10,7 @@ import akka.NotUsed
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.{Framing, Sink, Source}
 import akka.util.ByteString
-import cluster.{Cluster, ClusterAgent, ClusterMode, MemberView}
+import otoroshi.cluster.{Cluster, ClusterAgent, ClusterMode, MemberView}
 import com.google.common.io.Files
 import env.Env
 import models.PrivateAppsUser
@@ -31,7 +31,7 @@ class ClusterController(ApiAction: ApiAction, cc: ControllerComponents)(
   implicit env: Env
 ) extends AbstractController(cc) {
 
-  import cluster.ClusterMode.{Leader, Off, Worker}
+  import otoroshi.cluster.ClusterMode.{Leader, Off, Worker}
 
   implicit lazy val ec  = env.otoroshiExecutionContext
   implicit lazy val mat = env.otoroshiMaterializer

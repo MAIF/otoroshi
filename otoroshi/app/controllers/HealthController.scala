@@ -2,7 +2,7 @@ package controllers
 
 import actions.{ApiAction, UnAuthApiAction}
 import akka.http.scaladsl.util.FastFuture
-import cluster.{ClusterMode, MemberView}
+import otoroshi.cluster.{ClusterMode, MemberView}
 import env.Env
 import otoroshi.storage.{Healthy, Unhealthy, Unreachable}
 import play.api.Logger

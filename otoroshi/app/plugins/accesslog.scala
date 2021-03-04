@@ -2,7 +2,7 @@ package otoroshi.plugins.accesslog
 
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
-import cluster.ClusterMode
+import otoroshi.cluster.ClusterMode
 import env.Env
 import events._
 import org.joda.time.DateTime

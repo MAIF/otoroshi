@@ -5,7 +5,7 @@ import java.util.concurrent.TimeUnit
 import akka.http.scaladsl.util.FastFuture
 import akka.http.scaladsl.util.FastFuture._
 import auth.GenericOauth2Module
-import cluster._
+import otoroshi.cluster._
 import env.Env
 import models.PrivateAppsUser
 import play.api.mvc._

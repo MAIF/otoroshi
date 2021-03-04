@@ -9,7 +9,7 @@ import akka.http.scaladsl.util.FastFuture._
 import akka.stream.Materializer
 import auth.{AuthModuleConfig, SessionCookieValues}
 import ch.qos.logback.classic.{Level, LoggerContext}
-import cluster._
+import otoroshi.cluster._
 import com.typesafe.config.{ConfigFactory, ConfigRenderOptions}
 import events._
 import gateway.CircuitBreakersHolder

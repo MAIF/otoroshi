@@ -7,7 +7,7 @@ import akka.util.ByteString
 import akka.http.scaladsl.model.Uri
 import akka.stream.scaladsl.{Sink, Source}
 import auth.AuthModuleConfig
-import cluster.ClusterMode
+import otoroshi.cluster.ClusterMode
 import env.Env
 import io.kubernetes.client.extended.leaderelection.resourcelock.EndpointsLock
 import io.kubernetes.client.extended.leaderelection.{LeaderElectionConfig, LeaderElector}

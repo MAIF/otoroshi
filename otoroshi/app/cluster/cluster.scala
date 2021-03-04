@@ -1,4 +1,4 @@
-package cluster
+package otoroshi.cluster
 
 import java.io.File
 import java.lang.management.ManagementFactory

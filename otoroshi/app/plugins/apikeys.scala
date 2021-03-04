@@ -10,7 +10,7 @@ import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
-import cluster.ClusterAgent
+import otoroshi.cluster.ClusterAgent
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.clevercloud.biscuit.token

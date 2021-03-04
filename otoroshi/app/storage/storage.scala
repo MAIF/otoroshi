@@ -6,7 +6,7 @@ import akka.stream._
 import akka.stream.scaladsl._
 import akka.util.ByteString
 import auth.AuthConfigsDataStore
-import cluster.ClusterStateDataStore
+import otoroshi.cluster.ClusterStateDataStore
 import env.Env
 import events._
 import gateway.RequestsDataStore

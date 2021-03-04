@@ -2,7 +2,7 @@ package otoroshi.utils.metrics
 
 import akka.actor.Cancellable
 import akka.http.scaladsl.util.FastFuture
-import cluster.{ClusterMode, StatsView}
+import otoroshi.cluster.{ClusterMode, StatsView}
 import com.codahale.metrics.jmx.JmxReporter
 import com.codahale.metrics.json.MetricsModule
 import com.codahale.metrics.jvm.{GarbageCollectorMetricSet, JvmAttributeGaugeSet, MemoryUsageGaugeSet, ThreadStatesGaugeSet}

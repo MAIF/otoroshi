@@ -5,7 +5,7 @@ import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 import akka.actor.{ActorSystem, Cancellable, Scheduler}
 import akka.http.scaladsl.util.FastFuture
 import akka.util.ByteString
-import cluster.ClusterMode
+import otoroshi.cluster.ClusterMode
 import com.cronutils.model.CronType
 import com.cronutils.model.definition.CronDefinitionBuilder
 import com.cronutils.model.time.ExecutionTime

@@ -6,7 +6,7 @@ import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Sink, Source}
 import auth.GenericOauth2ModuleConfig
-import cluster.ClusterAgent
+import otoroshi.cluster.ClusterAgent
 import com.auth0.jwt.JWT
 import env.Env
 import gateway.Errors
