@@ -4,7 +4,7 @@ import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
 import otoroshi.cluster.ClusterMode
 import env.Env
-import events._
+import otoroshi.events._
 import org.joda.time.DateTime
 import otoroshi.events.KafkaWrapper
 import otoroshi.script.{HttpResponse, RequestTransformer, TransformerErrorContext, TransformerResponseContext}

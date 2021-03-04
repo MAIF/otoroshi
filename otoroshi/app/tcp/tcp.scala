@@ -13,7 +13,7 @@ import akka.stream.{IgnoreComplete, Materializer}
 import akka.util.ByteString
 import akka.{AwesomeIncomingConnection, Done, TcpUtils}
 import env.Env
-import events.{DataInOut, Location, TcpEvent}
+import otoroshi.events.{DataInOut, Location, TcpEvent}
 
 import javax.net.ssl._
 import models.IpFiltering

@@ -2,7 +2,7 @@ package controllers.adminapi
 
 import actions.ApiAction
 import env.Env
-import events._
+import otoroshi.events._
 import models.SnowMonkeyConfig
 import otoroshi.models.RightsChecker
 import otoroshi.utils.syntax.implicits._

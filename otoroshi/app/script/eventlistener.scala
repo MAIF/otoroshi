@@ -4,7 +4,7 @@ import java.util.concurrent.atomic.AtomicReference
 
 import akka.actor.{Actor, ActorRef, Props}
 import env.Env
-import events.{AnalyticEvent, OtoroshiEvent}
+import otoroshi.events.{AnalyticEvent, OtoroshiEvent}
 import play.api.Logger
 
 object InternalEventListenerActor {

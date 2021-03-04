@@ -6,7 +6,7 @@ import akka.http.scaladsl.util.FastFuture._
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
 import env.Env
-import events._
+import otoroshi.events._
 import models.{BestResponseTime, RemainingQuotas, SecComVersion, WeightedBestResponseTime}
 import org.joda.time.DateTime
 import otoroshi.el.TargetExpressionLanguage

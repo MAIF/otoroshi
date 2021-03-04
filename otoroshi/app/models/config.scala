@@ -4,7 +4,7 @@ import akka.http.scaladsl.util.FastFuture
 import auth.AuthModuleConfig
 import env.Env
 import otoroshi.events.Exporters._
-import events._
+import otoroshi.events._
 import org.joda.time.DateTime
 import otoroshi.events.KafkaConfig
 import otoroshi.models.{DataExporterConfig, Exporter, SimpleOtoroshiAdmin, Team, Tenant, WebAuthnOtoroshiAdmin}

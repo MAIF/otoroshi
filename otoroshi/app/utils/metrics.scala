@@ -11,7 +11,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.spotify.metrics.core.{MetricId, SemanticMetricRegistry}
 import com.spotify.metrics.jvm.{CpuGaugeSet, FileDescriptorGaugeSet}
 import env.Env
-import events.StatsDReporter
+import otoroshi.events.StatsDReporter
 import io.prometheus.client.exporter.common.TextFormat
 import otoroshi.utils.RegexPool
 import otoroshi.utils.prometheus.CustomCollector

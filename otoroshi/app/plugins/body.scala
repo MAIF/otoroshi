@@ -8,7 +8,7 @@ import akka.stream.scaladsl.{Keep, Sink, Source}
 import akka.util.ByteString
 import com.google.common.base.Charsets
 import env.Env
-import events._
+import otoroshi.events._
 import models.ServiceDescriptor
 import org.joda.time.DateTime
 import otoroshi.script._

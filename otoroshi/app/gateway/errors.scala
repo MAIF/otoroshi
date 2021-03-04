@@ -2,7 +2,7 @@ package gateway
 
 import akka.http.scaladsl.util.FastFuture
 import env.Env
-import events._
+import otoroshi.events._
 import models.{RemainingQuotas, ServiceDescriptor}
 import org.joda.time.DateTime
 import otoroshi.el.TargetExpressionLanguage

@@ -4,7 +4,7 @@ import akka.http.scaladsl.util.FastFuture
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import env.Env
-import events._
+import otoroshi.events._
 import models._
 import org.joda.time.DateTime
 import play.api.Logger

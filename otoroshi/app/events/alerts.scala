@@ -1,4 +1,4 @@
-package events
+package otoroshi.events
 
 import java.util.concurrent.{Executors, TimeUnit}
 import akka.actor.{Actor, Cancellable, OneForOneStrategy, PoisonPill, Props, SupervisorStrategy, Terminated}
@@ -1129,7 +1129,7 @@ object AlertsActor {
 class AlertsActor(implicit env: Env) extends Actor {
 
   import org.joda.time.DateTime
-  import events.KafkaWrapper
+  import otoroshi.events.KafkaWrapper
   import otoroshi.utils.http.Implicits._
 
   implicit val ec  = env.analyticsExecutionContext

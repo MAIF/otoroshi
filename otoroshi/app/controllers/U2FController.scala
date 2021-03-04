@@ -14,7 +14,7 @@ import com.fasterxml.jackson.datatype.jdk8.Jdk8Module
 import com.yubico.webauthn._
 import com.yubico.webauthn.data._
 import env.Env
-import events._
+import otoroshi.events._
 import models.BackOfficeUser
 import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt

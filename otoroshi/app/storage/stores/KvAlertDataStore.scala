@@ -2,7 +2,7 @@ package otoroshi.storage.stores
 
 import akka.util.ByteString
 import env.Env
-import events.{AlertDataStore, AlertEvent}
+import otoroshi.events.{AlertDataStore, AlertEvent}
 import play.api.libs.json.{JsValue, Json}
 import otoroshi.storage.RedisLike
 

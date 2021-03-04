@@ -4,7 +4,7 @@ import actions.{ApiAction, ApiActionContext}
 import akka.stream.scaladsl.{Framing, Source}
 import akka.util.ByteString
 import env.Env
-import events._
+import otoroshi.events._
 import org.joda.time.DateTime
 import otoroshi.models.EntityLocationSupport
 import otoroshi.utils.json.JsonPatchHelpers.patchJson

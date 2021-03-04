@@ -8,7 +8,7 @@ import akka.NotUsed
 import akka.stream.scaladsl.Source
 import otoroshi.cluster.StatsView
 import env.Env
-import events.{AdminApiEvent, Audit}
+import otoroshi.events.{AdminApiEvent, Audit}
 import javax.management.{Attribute, ObjectName}
 import otoroshi.models.RightsChecker.Anyone
 import play.api.Logger

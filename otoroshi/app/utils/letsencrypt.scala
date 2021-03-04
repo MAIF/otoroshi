@@ -11,7 +11,7 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.{Keep, Sink, Source}
 import akka.util.ByteString
 import env.Env
-import events.{Alerts, CertRenewalAlert}
+import otoroshi.events.{Alerts, CertRenewalAlert}
 import org.shredzone.acme4j._
 import org.shredzone.acme4j.challenge._
 import org.shredzone.acme4j.util._

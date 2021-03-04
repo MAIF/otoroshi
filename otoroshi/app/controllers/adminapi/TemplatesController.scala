@@ -4,7 +4,7 @@ import actions.ApiAction
 import akka.http.scaladsl.util.FastFuture
 import auth.{AuthModuleConfig, BasicAuthModuleConfig, GenericOauth2ModuleConfig, LdapAuthModuleConfig}
 import env.Env
-import events.GatewayEvent
+import otoroshi.events.GatewayEvent
 import models._
 import org.mindrot.jbcrypt.BCrypt
 import otoroshi.models.RightsChecker

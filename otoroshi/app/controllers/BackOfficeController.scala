@@ -14,7 +14,7 @@ import com.auth0.jwt.algorithms.Algorithm
 import com.google.common.base.Charsets
 import com.nimbusds.jose.jwk.KeyType
 import env.Env
-import events._
+import otoroshi.events._
 import models._
 import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt

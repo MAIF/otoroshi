@@ -10,7 +10,7 @@ import com.cronutils.model.CronType
 import com.cronutils.model.definition.CronDefinitionBuilder
 import com.cronutils.model.time.ExecutionTime
 import env.Env
-import events.{JobErrorEvent, JobRunEvent, JobStartedEvent, JobStoppedEvent}
+import otoroshi.events.{JobErrorEvent, JobRunEvent, JobStartedEvent, JobStoppedEvent}
 import models.GlobalConfig
 import otoroshi.utils
 import otoroshi.utils.{SchedulerHelper, TypedMap, future}

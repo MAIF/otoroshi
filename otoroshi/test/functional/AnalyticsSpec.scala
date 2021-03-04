@@ -3,8 +3,8 @@ package functional
 import akka.actor.ActorSystem
 import com.typesafe.config.ConfigFactory
 import env.Env
-import events._
-import events.impl.ElasticWritesAnalytics
+import otoroshi.events._
+import otoroshi.events.impl.ElasticWritesAnalytics
 import models._
 import org.joda.time.DateTime
 import org.scalatest.concurrent.IntegrationPatience

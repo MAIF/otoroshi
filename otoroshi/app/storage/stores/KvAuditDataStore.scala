@@ -2,7 +2,7 @@ package otoroshi.storage.stores
 
 import akka.util.ByteString
 import env.Env
-import events.{AuditDataStore, AuditEvent}
+import otoroshi.events.{AuditDataStore, AuditEvent}
 import play.api.libs.json.{JsValue, Json}
 import otoroshi.storage.RedisLike
 

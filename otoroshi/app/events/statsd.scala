@@ -1,4 +1,4 @@
-package events
+package otoroshi.events
 
 import java.io.Closeable
 import java.util.concurrent.TimeUnit

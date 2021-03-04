@@ -16,7 +16,7 @@ import akka.util.ByteString
 import com.google.common.hash.Hashing
 import env.Env
 import otoroshi.events._
-import events.{AnalyticEvent, OtoroshiEvent}
+import otoroshi.events.{AnalyticEvent, OtoroshiEvent}
 
 import javax.script._
 import models._

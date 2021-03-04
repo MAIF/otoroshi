@@ -14,7 +14,7 @@ import akka.stream.scaladsl.{Flow, Keep, Sink, Source, SourceQueueWithComplete, 
 import akka.stream.{FlowShape, Materializer, OverflowStrategy}
 import akka.util.ByteString
 import env.Env
-import events._
+import otoroshi.events._
 import models._
 import org.joda.time.DateTime
 import otoroshi.el.TargetExpressionLanguage

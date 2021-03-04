@@ -22,7 +22,7 @@ import akka.util.ByteString
 import com.google.common.hash.Hashing
 import com.typesafe.sslconfig.ssl.SSLConfigSettings
 import env.Env
-import events.{Alerts, CertExpiredAlert, CertRenewalAlert}
+import otoroshi.events.{Alerts, CertExpiredAlert, CertRenewalAlert}
 import gateway.Errors
 
 import javax.crypto.Cipher.DECRYPT_MODE

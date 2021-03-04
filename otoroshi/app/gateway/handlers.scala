@@ -11,7 +11,7 @@ import auth.{AuthModuleConfig, SessionCookieValues}
 import com.google.common.base.Charsets
 import controllers.HealthController
 import env.Env
-import events._
+import otoroshi.events._
 import models._
 import otoroshi.script._
 import otoroshi.ssl.OcspResponder

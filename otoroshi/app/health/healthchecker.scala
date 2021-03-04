@@ -8,7 +8,7 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.{Keep, Sink, Source}
 import akka.util.ByteString
 import env.Env
-import events.HealthCheckEvent
+import otoroshi.events.HealthCheckEvent
 import gateway.Retry
 import models.{SecComVersion, ServiceDescriptor, Target}
 import org.joda.time.DateTime

@@ -1,4 +1,4 @@
-package events
+package otoroshi.events
 
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
@@ -10,7 +10,7 @@ import akka.stream.scaladsl.{Keep, Sink, Source}
 import akka.stream.{OverflowStrategy, QueueOfferResult}
 import otoroshi.cluster.ClusterMode
 import env.Env
-import events.impl.{ElasticReadsAnalytics, ElasticWritesAnalytics, WebHookAnalytics}
+import otoroshi.events.impl.{ElasticReadsAnalytics, ElasticWritesAnalytics, WebHookAnalytics}
 import models._
 import org.joda.time.DateTime
 import otoroshi.plugins.useragent.UserAgentHelper

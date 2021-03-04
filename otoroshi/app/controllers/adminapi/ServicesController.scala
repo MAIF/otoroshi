@@ -3,7 +3,7 @@ package controllers.adminapi
 import actions.{ApiAction, ApiActionContext}
 import akka.util.ByteString
 import env.Env
-import events._
+import otoroshi.events._
 import models.{ErrorTemplate, ServiceDescriptor, ServiceDescriptorQuery, Target}
 import otoroshi.utils.controllers.{AdminApiHelper, ApiError, BulkControllerHelper, CrudControllerHelper, EntityAndContext, JsonApiError, NoEntityAndContext, OptionalEntityAndContext, SendAuditAndAlert, SeqEntityAndContext}
 import otoroshi.utils.syntax.implicits._

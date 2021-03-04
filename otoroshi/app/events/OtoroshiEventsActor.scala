@@ -12,9 +12,9 @@ import akka.stream.{OverflowStrategy, QueueOfferResult}
 import com.sksamuel.pulsar4s.Producer
 import com.spotify.metrics.core.MetricId
 import env.Env
-import events.OtoroshiEvent
+import otoroshi.events.OtoroshiEvent
 import otoroshi.events.DataExporter.DefaultDataExporter
-import events.impl.{ElasticWritesAnalytics, WebHookAnalytics}
+import otoroshi.events.impl.{ElasticWritesAnalytics, WebHookAnalytics}
 import models._
 import org.joda.time.DateTime
 import otoroshi.models.{DataExporterConfig, Exporter, ExporterRef, FileSettings}

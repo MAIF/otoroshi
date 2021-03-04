@@ -1,7 +1,7 @@
 package otoroshi.storage.stores
 
 import env.Env
-import events.{HealthCheckDataStore, HealthCheckEvent}
+import otoroshi.events.{HealthCheckDataStore, HealthCheckEvent}
 import models.ServiceDescriptor
 import play.api.libs.json.{JsValue, Json}
 import otoroshi.storage.RedisLike

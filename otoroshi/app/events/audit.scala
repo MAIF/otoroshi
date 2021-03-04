@@ -1,4 +1,4 @@
-package events
+package otoroshi.events
 
 import akka.util.ByteString
 import env.Env

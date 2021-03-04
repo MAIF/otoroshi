@@ -2,7 +2,7 @@ package controllers.adminapi
 
 import actions.ApiAction
 import env.Env
-import events._
+import otoroshi.events._
 import models.ServiceGroup
 import otoroshi.utils.controllers.{ApiError, BulkControllerHelper, CrudControllerHelper, EntityAndContext, JsonApiError, NoEntityAndContext, OptionalEntityAndContext, SeqEntityAndContext}
 import otoroshi.utils.syntax.implicits._

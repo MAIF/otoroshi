@@ -3,7 +3,7 @@ package controllers.adminapi
 import actions.ApiAction
 import akka.http.scaladsl.util.FastFuture
 import env.Env
-import events.{AdminApiEvent, Alerts, Audit, GlobalConfigModification}
+import otoroshi.events.{AdminApiEvent, Alerts, Audit, GlobalConfigModification}
 import models.GlobalConfig
 import otoroshi.models.RightsChecker
 import play.api.Logger

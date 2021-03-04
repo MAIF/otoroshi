@@ -1,4 +1,4 @@
-package events.impl
+package otoroshi.events.impl
 
 import java.util.Base64
 import java.util.concurrent.ConcurrentHashMap
@@ -8,7 +8,7 @@ import akka.http.scaladsl.util.FastFuture
 import akka.stream.{ActorMaterializer, Materializer}
 import akka.stream.scaladsl.{Sink, Source}
 import env.Env
-import events._
+import otoroshi.events._
 import models.{ApiKey, ElasticAnalyticsConfig, ServiceDescriptor, ServiceGroup}
 import org.joda.time.format.ISODateTimeFormat
 import org.joda.time.{DateTime, Interval}

@@ -12,7 +12,7 @@ import auth.AuthConfigsDataStore
 import otoroshi.cluster.{ClusterStateDataStore, KvClusterStateDataStore}
 import com.typesafe.config.ConfigFactory
 import env.Env
-import events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
+import otoroshi.events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
 import gateway.{InMemoryRequestsDataStore, RequestsDataStore}
 import io.vertx.core.buffer.Buffer
 import io.vertx.core.net.{PemKeyCertOptions, PemTrustOptions}

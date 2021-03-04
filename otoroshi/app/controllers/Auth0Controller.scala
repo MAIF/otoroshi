@@ -7,7 +7,7 @@ import akka.http.scaladsl.util.FastFuture
 import akka.util.ByteString
 import auth.{AuthModuleConfig, BasicAuthModule, BasicAuthModuleConfig, GenericOauth2ModuleConfig}
 import env.Env
-import events._
+import otoroshi.events._
 import gateway.Errors
 import models.{BackOfficeUser, CorsSettings, PrivateAppsUser, ServiceDescriptor}
 import otoroshi.utils.TypedMap

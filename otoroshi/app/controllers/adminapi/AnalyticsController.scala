@@ -4,7 +4,7 @@ import actions.ApiAction
 import akka.http.scaladsl.util.FastFuture
 import akka.stream.Materializer
 import env.Env
-import events._
+import otoroshi.events._
 import models.ServiceDescriptor
 import org.joda.time.DateTime
 import otoroshi.utils.syntax.implicits._

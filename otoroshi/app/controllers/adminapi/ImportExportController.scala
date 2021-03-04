@@ -4,7 +4,7 @@ import actions.ApiAction
 import akka.stream.scaladsl.{FileIO, Framing}
 import akka.util.ByteString
 import env.Env
-import events.{AdminApiEvent, Alerts, Audit, OtoroshiExportAlert}
+import otoroshi.events.{AdminApiEvent, Alerts, Audit, OtoroshiExportAlert}
 import otoroshi.models.RightsChecker
 import play.api.Logger
 import play.api.http.HttpEntity

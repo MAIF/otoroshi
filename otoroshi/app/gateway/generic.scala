@@ -9,7 +9,7 @@ import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import com.auth0.jwt.JWT
 import env.{Env, SidecarConfig}
-import events._
+import otoroshi.events._
 import models._
 import org.joda.time.DateTime
 import otoroshi.el.HeadersExpressionLanguage

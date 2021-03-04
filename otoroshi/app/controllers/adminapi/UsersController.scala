@@ -3,7 +3,7 @@ package controllers.adminapi
 import actions.{ApiAction, ApiActionContext}
 import akka.http.scaladsl.util.FastFuture
 import env.Env
-import events._
+import otoroshi.events._
 import models.{BackOfficeUser, PrivateAppsUser}
 import org.joda.time.DateTime
 import org.mindrot.jbcrypt.BCrypt

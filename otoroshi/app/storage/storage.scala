@@ -8,7 +8,7 @@ import akka.util.ByteString
 import auth.AuthConfigsDataStore
 import otoroshi.cluster.ClusterStateDataStore
 import env.Env
-import events._
+import otoroshi.events._
 import gateway.RequestsDataStore
 import models._
 import otoroshi.models.{SimpleAdminDataStore, WebAuthnAdminDataStore}
