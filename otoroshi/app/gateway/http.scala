@@ -20,7 +20,7 @@ import play.api.libs.streams.Accumulator
 import play.api.libs.ws.{DefaultWSCookie, EmptyBody, SourceBody}
 import play.api.mvc.Results.{BadGateway, Forbidden, HttpVersionNotSupported, NotFound, Status}
 import play.api.mvc._
-import security.{IdGenerator, OtoroshiClaim}
+import otoroshi.security.{IdGenerator, OtoroshiClaim}
 import otoroshi.utils.http.RequestImplicits._
 import otoroshi.utils.http.{HeadersHelper, WSCookieWithSameSite}
 import otoroshi.utils.http.Implicits._

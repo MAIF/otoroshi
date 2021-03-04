@@ -14,10 +14,10 @@ import otoroshi.tcp.TcpService
 import otoroshi.utils.http.MtlsConfig
 import play.api.Configuration
 import play.api.libs.json.{JsArray, JsValue, Json}
-import security.IdGenerator
+import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.ws.WSAuthScheme
-import ssl.{Cert, ClientCertificateValidator}
+import otoroshi.ssl.{Cert, ClientCertificateValidator}
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}

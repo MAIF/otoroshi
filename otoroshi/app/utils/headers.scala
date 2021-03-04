@@ -8,7 +8,7 @@ import otoroshi.utils.TypedMap
 import otoroshi.utils.http.RequestImplicits._
 import play.api.libs.ws.WSResponse
 import play.api.mvc.{RequestHeader, Result}
-import security.OtoroshiClaim
+import otoroshi.security.OtoroshiClaim
 
 import scala.concurrent.ExecutionContext
 

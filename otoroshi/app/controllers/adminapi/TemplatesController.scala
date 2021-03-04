@@ -14,8 +14,8 @@ import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents, RequestHeader, Result}
-import security.IdGenerator
-import ssl.Cert
+import otoroshi.security.IdGenerator
+import otoroshi.ssl.Cert
 
 import scala.reflect.runtime.universe._
 import scala.concurrent.Future

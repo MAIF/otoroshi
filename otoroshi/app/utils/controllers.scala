@@ -14,7 +14,7 @@ import play.api.libs.json._
 import play.api.libs.streams.Accumulator
 import play.api.mvc.Results.Ok
 import play.api.mvc._
-import security.IdGenerator
+import otoroshi.security.IdGenerator
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Success, Try}

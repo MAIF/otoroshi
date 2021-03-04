@@ -12,7 +12,7 @@ import otoroshi.utils.yaml.Yaml
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc.{Result, Results}
-import ssl.Cert
+import otoroshi.ssl.Cert
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}

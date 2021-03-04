@@ -7,7 +7,7 @@ import otoroshi.script.{Job, JobContext, JobId, JobInstantiation, JobKind, JobSt
 import otoroshi.ssl.pki.models.{GenCertResponse, GenCsrQuery, GenKeyPairQuery}
 import play.api.Logger
 import otoroshi.utils.syntax.implicits._
-import ssl.{Cert, FakeKeyStore}
+import otoroshi.ssl.{Cert, FakeKeyStore}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._

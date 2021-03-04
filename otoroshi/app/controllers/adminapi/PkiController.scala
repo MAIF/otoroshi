@@ -11,7 +11,7 @@ import play.api.Logger
 import play.api.libs.json.{JsError, JsObject, JsSuccess, Json}
 import play.api.libs.streams.Accumulator
 import play.api.mvc.{AbstractController, Action, BodyParser, ControllerComponents}
-import ssl.{Cert, CertificateData, P12Helper}
+import otoroshi.ssl.{Cert, CertificateData, P12Helper}
 import otoroshi.utils.future.Implicits._
 
 import scala.concurrent.Future

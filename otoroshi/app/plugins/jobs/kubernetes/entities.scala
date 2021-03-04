@@ -5,8 +5,8 @@ import models.ServiceDescriptor
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
-import security.OtoroshiClaim
-import ssl.{Cert, DynamicSSLEngineProvider}
+import otoroshi.security.OtoroshiClaim
+import otoroshi.ssl.{Cert, DynamicSSLEngineProvider}
 import otoroshi.utils.syntax.implicits._
 
 import scala.concurrent.{ExecutionContext, Future}

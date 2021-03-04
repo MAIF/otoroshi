@@ -14,7 +14,7 @@ import play.api.libs.json._
 import play.api.libs.ws.{WSProxyServer, WSResponse}
 import play.api.mvc.Results.Redirect
 import play.api.mvc.{AnyContent, Request, RequestHeader, Result}
-import security.IdGenerator
+import otoroshi.security.IdGenerator
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}

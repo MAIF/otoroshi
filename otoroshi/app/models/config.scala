@@ -20,13 +20,13 @@ import otoroshi.utils.clevercloud.CleverCloudClient
 import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.ws.WSProxyServer
-import security.IdGenerator
-import ssl.{Cert, ClientCertificateValidator}
+import otoroshi.security.IdGenerator
+import otoroshi.ssl.{Cert, ClientCertificateValidator}
 import otoroshi.utils.clevercloud.CleverCloudClient.{CleverSettings, UserTokens}
 import otoroshi.utils.http.MtlsConfig
 import otoroshi.utils.letsencrypt.LetsEncryptSettings
 import otoroshi.utils.mailer.MailerSettings
-import utils._
+import otoroshi.utils._
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}

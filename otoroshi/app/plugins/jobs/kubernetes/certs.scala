@@ -9,7 +9,7 @@ import otoroshi.script._
 import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json.{JsObject, Json}
-import ssl.DynamicSSLEngineProvider
+import otoroshi.ssl.DynamicSSLEngineProvider
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
@@ -115,7 +115,7 @@ object KubernetesCertSyncJob {
 
   def syncOtoroshiCertToKubernetesSecrets(client: KubernetesClient, jobRunning: => Boolean)(implicit env: Env, ec: ExecutionContext): Future[Unit] = env.metrics.withTimerAsync("otoroshi.plugins.kubernetes.oto-certs.sync") {
 
-    import ssl.SSLImplicits._
+    import otoroshi.ssl.SSLImplicits._
 
     implicit val mat = env.otoroshiMaterializer
     if (!jobRunning) {

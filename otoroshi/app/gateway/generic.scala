@@ -20,9 +20,9 @@ import play.api.Logger
 import play.api.http.HttpEntity
 import play.api.mvc.Results._
 import play.api.mvc.{Cookie, RequestHeader, Result, Results}
-import security.IdGenerator
+import otoroshi.security.IdGenerator
 import otoroshi.utils.http.RequestImplicits._
-import utils._
+import otoroshi.utils._
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}

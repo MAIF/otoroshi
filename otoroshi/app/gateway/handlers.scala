@@ -27,10 +27,9 @@ import play.api.mvc.Results._
 import play.api.mvc._
 import play.api.routing.Router
 import play.core.WebCommands
-import security.OtoroshiClaim
-import ssl.{KeyManagerCompatibility, SSLSessionJavaHelper}
+import otoroshi.security.OtoroshiClaim
+import otoroshi.ssl.{KeyManagerCompatibility, SSLSessionJavaHelper}
 import otoroshi.utils.http.RequestImplicits._
-import utils._
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NoStackTrace

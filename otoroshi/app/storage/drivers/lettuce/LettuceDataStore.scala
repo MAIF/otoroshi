@@ -27,7 +27,7 @@ import otoroshi.tcp.{KvTcpServiceDataStoreDataStore, TcpServiceDataStore}
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.json._
 import play.api.{Configuration, Environment, Logger}
-import ssl.{CertificateDataStore, ClientCertificateValidationDataStore, KvClientCertificateValidationDataStore}
+import otoroshi.ssl.{CertificateDataStore, ClientCertificateValidationDataStore, KvClientCertificateValidationDataStore}
 import storage.stores.{DataExporterConfigDataStore, KvRawDataStore, TeamDataStore, TenantDataStore}
 import otoroshi.utils.syntax.implicits._
 

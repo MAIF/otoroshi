@@ -7,7 +7,7 @@ import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.ws.WSProxyServer
 import play.api.mvc.{AnyContent, Request, RequestHeader, Result}
-import security.IdGenerator
+import otoroshi.security.IdGenerator
 import otoroshi.storage.BasicStore
 import otoroshi.utils.http.MtlsConfig
 

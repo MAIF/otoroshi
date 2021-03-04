@@ -8,7 +8,7 @@ import env.Env
 import models.ApiKeyHelper.decodeBase64
 import otoroshi.script.{PreRouting, PreRoutingContext}
 import otoroshi.utils.syntax.implicits._
-import ssl.DynamicSSLEngineProvider
+import otoroshi.ssl.DynamicSSLEngineProvider
 import otoroshi.utils.http.RequestImplicits._
 
 import scala.concurrent.{ExecutionContext, Future}

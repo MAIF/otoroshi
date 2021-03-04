@@ -15,10 +15,10 @@ import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc.Results.{BadGateway, BadRequest, NotFound, TooManyRequests, Unauthorized}
 import play.api.mvc.{RequestHeader, Result, Results}
-import security.{IdGenerator, OtoroshiClaim}
+import otoroshi.security.{IdGenerator, OtoroshiClaim}
 import otoroshi.storage.BasicStore
 import otoroshi.utils.TypedMap
-import ssl.DynamicSSLEngineProvider
+import otoroshi.ssl.DynamicSSLEngineProvider
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}

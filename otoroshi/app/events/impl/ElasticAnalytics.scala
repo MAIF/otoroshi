@@ -1,4 +1,5 @@
 package events.impl
+
 import java.util.Base64
 import java.util.concurrent.ConcurrentHashMap
 
@@ -20,7 +21,6 @@ import otoroshi.utils.syntax.implicits._
 import scala.concurrent.duration.DurationLong
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.{Failure, Success}
-
 
 object ElasticTemplates {
   val indexTemplate_v6 =

@@ -18,7 +18,7 @@ import otoroshi.tcp.TcpServiceDataStore
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.json._
 import play.api.{Configuration, Environment, Logger}
-import ssl.{CertificateDataStore, ClientCertificateValidationDataStore}
+import otoroshi.ssl.{CertificateDataStore, ClientCertificateValidationDataStore}
 import storage.stores.{DataExporterConfigDataStore, TeamDataStore, TenantDataStore}
 
 import scala.concurrent.duration.Duration

@@ -1,11 +1,12 @@
 package events.impl
+
 import env.Env
 import events.{AnalyticEvent, AnalyticsWritesService}
 import models.{GlobalConfig, HSAlgoSettings, Webhook}
 import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.json.{JsArray, JsValue, Json}
-import security.{IdGenerator, OtoroshiClaim}
+import otoroshi.security.{IdGenerator, OtoroshiClaim}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}

@@ -27,8 +27,8 @@ import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc.{Result, Results}
-import security.IdGenerator
-import ssl.{Cert, DynamicSSLEngineProvider}
+import otoroshi.security.IdGenerator
+import otoroshi.ssl.{Cert, DynamicSSLEngineProvider}
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -1043,7 +1043,7 @@ object KubernetesCRDsJob {
 
   def exportCerts(conf: KubernetesConfig, attrs: TypedMap, clientSupport: ClientSupport, ctx: CRDContext, certs: Seq[(String, String, Cert)], updatedSecrets: AtomicReference[Seq[(String, String)]])(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
 
-    import ssl.SSLImplicits._
+    import otoroshi.ssl.SSLImplicits._
 
     logger.info(s"will export ${certs.size} certificates as secrets")
     implicit val mat = env.otoroshiMaterializer

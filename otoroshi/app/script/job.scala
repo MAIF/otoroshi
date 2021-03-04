@@ -16,7 +16,7 @@ import otoroshi.utils
 import otoroshi.utils.{SchedulerHelper, TypedMap, future}
 import play.api.Logger
 import play.api.libs.json._
-import security.IdGenerator
+import otoroshi.security.IdGenerator
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration._

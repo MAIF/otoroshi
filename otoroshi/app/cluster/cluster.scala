@@ -42,8 +42,8 @@ import play.api.libs.ws.{DefaultWSProxyServer, SourceBody, WSAuthScheme, WSProxy
 import play.api.mvc.{AbstractController, BodyParser, ControllerComponents, Result}
 import play.api.{Configuration, Environment, Logger}
 import redis.RedisClientMasterSlaves
-import security.IdGenerator
-import ssl._
+import otoroshi.security.IdGenerator
+import otoroshi.ssl._
 import storage.drivers.inmemory.{Memory, SwappableInMemoryRedis}
 import storage.stores.{DataExporterConfigDataStore, KvRawDataStore, TeamDataStore, TenantDataStore}
 import otoroshi.utils.http.Implicits._

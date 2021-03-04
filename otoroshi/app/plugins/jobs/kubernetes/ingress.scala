@@ -20,7 +20,7 @@ import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc.{Result, Results}
-import ssl.DynamicSSLEngineProvider
+import otoroshi.ssl.DynamicSSLEngineProvider
 import otoroshi.utils.http.RequestImplicits._
 
 import scala.concurrent.duration._

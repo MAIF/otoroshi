@@ -9,7 +9,7 @@ import otoroshi.script._
 import otoroshi.utils.mailer.{ConsoleMailerSettings, GenericMailerSettings, MailerSettings, MailgunSettings, MailjetSettings, NoneMailerSettings, SendgridSettings}
 import play.api.Logger
 import play.api.libs.json._
-import security.IdGenerator
+import otoroshi.security.IdGenerator
 import otoroshi.utils.mailer.MailerSettings
 
 import scala.concurrent.duration.{DurationInt, FiniteDuration}

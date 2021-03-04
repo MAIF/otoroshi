@@ -8,7 +8,7 @@ import otoroshi.storage.{Healthy, Unhealthy, Unreachable}
 import play.api.Logger
 import play.api.libs.json.{JsObject, JsString, JsValue, Json}
 import play.api.mvc.{AbstractController, ControllerComponents, RequestHeader, Result}
-import ssl.DynamicSSLEngineProvider
+import otoroshi.ssl.DynamicSSLEngineProvider
 import otoroshi.utils.syntax.implicits._
 import scala.concurrent.Future
 

@@ -11,8 +11,8 @@ import otoroshi.storage.{RedisLike, RedisLikeStore}
 import otoroshi.tcp.TcpService
 import play.api.Logger
 import play.api.libs.json._
-import security.Auth0Config
-import ssl.{Cert, ClientCertificateValidator}
+import otoroshi.security.Auth0Config
+import otoroshi.ssl.{Cert, ClientCertificateValidator}
 import otoroshi.utils.json.JsonImplicits._
 
 import scala.concurrent.duration._

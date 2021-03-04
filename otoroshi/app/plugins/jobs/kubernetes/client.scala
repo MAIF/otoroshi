@@ -16,7 +16,7 @@ import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.ws.WSRequest
-import ssl.{Cert, DynamicSSLEngineProvider}
+import otoroshi.ssl.{Cert, DynamicSSLEngineProvider}
 
 import scala.concurrent.Future
 import scala.concurrent.duration._

@@ -1,4 +1,5 @@
 package models
+
 import otoroshi.utils.RegexPool
 
 import java.util.concurrent.TimeUnit

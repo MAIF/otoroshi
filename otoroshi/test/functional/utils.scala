@@ -4,7 +4,6 @@ import java.net.ServerSocket
 import java.nio.file.Files
 import java.util.Optional
 import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
-
 import akka.NotUsed
 import akka.actor.{ActorSystem, Scheduler}
 import akka.http.scaladsl.Http
@@ -17,12 +16,13 @@ import akka.util.ByteString
 import com.typesafe.config.ConfigFactory
 import env.Env
 import models._
-import modules.OtoroshiComponentsInstances
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.{MustMatchers, OptionValues, TestSuite, WordSpec}
 import org.scalatestplus.play.components.{OneServerPerSuiteWithComponents, OneServerPerTestWithComponents}
 import org.slf4j.LoggerFactory
 import otoroshi.api.Otoroshi
+import otoroshi.models.DataExporterConfig
+import otoroshi.modules.OtoroshiComponentsInstances
 import play.api.ApplicationLoader.Context
 import play.api.libs.json._
 import play.api.libs.ws._

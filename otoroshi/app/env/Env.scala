@@ -41,8 +41,8 @@ import play.api.libs.json.{JsArray, JsNull, JsObject, JsValue, Json}
 import play.api.libs.ws._
 import play.api.libs.ws.ahc._
 import play.twirl.api.Html
-import security.{ClaimCrypto, IdGenerator}
-import ssl.{Cert, DynamicSSLEngineProvider}
+import otoroshi.security.{ClaimCrypto, IdGenerator}
+import otoroshi.ssl.{Cert, DynamicSSLEngineProvider}
 import otoroshi.utils.http._
 import otoroshi.utils.metrics.Metrics
 import otoroshi.utils.syntax.implicits._

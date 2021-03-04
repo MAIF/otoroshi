@@ -23,7 +23,7 @@ import otoroshi.models._
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc._
-import security.IdGenerator
+import otoroshi.security.IdGenerator
 import otoroshi.utils.syntax.implicits._
 
 import scala.concurrent.duration.Duration

@@ -12,7 +12,7 @@ import org.mindrot.jbcrypt.BCrypt
 import otoroshi.utils.mailer.EmailLocation
 import play.api.libs.json.Json
 import play.api.mvc._
-import security.IdGenerator
+import otoroshi.security.IdGenerator
 import otoroshi.utils.future.Implicits._
 
 import scala.concurrent.Future

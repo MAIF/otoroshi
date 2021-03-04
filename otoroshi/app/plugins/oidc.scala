@@ -20,13 +20,12 @@ import play.api.libs.ws.DefaultBodyWritables.writeableOf_urlEncodedSimpleForm
 import play.api.libs.ws.WSAuthScheme
 import play.api.mvc.Results.TooManyRequests
 import play.api.mvc.{RequestHeader, Result, Results}
-import security.IdGenerator
+import otoroshi.security.IdGenerator
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
-
 
 class OIDCHeaders extends RequestTransformer {
 

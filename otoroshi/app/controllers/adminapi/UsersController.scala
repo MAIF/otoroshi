@@ -13,7 +13,7 @@ import otoroshi.utils.controllers.{AdminApiHelper, JsonApiError, SendAuditAndAle
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc._
-import security.IdGenerator
+import otoroshi.security.IdGenerator
 
 import scala.concurrent.Future
 

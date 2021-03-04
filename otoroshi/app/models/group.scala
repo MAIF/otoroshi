@@ -3,7 +3,7 @@ package models
 import env.Env
 import play.api.Logger
 import play.api.libs.json._
-import security.IdGenerator
+import otoroshi.security.IdGenerator
 import otoroshi.storage.BasicStore
 
 import scala.concurrent.{ExecutionContext, Future}

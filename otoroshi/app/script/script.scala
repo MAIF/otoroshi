@@ -26,7 +26,7 @@ import play.api.libs.streams.Accumulator
 import play.api.libs.ws.{DefaultWSCookie, WSCookie}
 import play.api.mvc._
 import redis.RedisClientMasterSlaves
-import security.{IdGenerator, OtoroshiClaim}
+import otoroshi.security.{IdGenerator, OtoroshiClaim}
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import otoroshi.utils.{SchedulerHelper, TypedMap}
 import otoroshi.utils.config.ConfigUtils

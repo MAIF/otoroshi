@@ -1,5 +1,4 @@
-package ssl;
-
+package otoroshi.ssl;
 
 import org.bouncycastle.util.io.pem.PemObject;
 import org.bouncycastle.util.io.pem.PemReader;

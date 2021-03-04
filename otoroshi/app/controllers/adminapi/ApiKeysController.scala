@@ -8,7 +8,7 @@ import otoroshi.utils.syntax.implicits._
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc.{AbstractController, ControllerComponents, RequestHeader, Results}
-import security.IdGenerator
+import otoroshi.security.IdGenerator
 import otoroshi.utils.json.JsonPatchHelpers.patchJson
 
 import scala.concurrent.{ExecutionContext, Future}

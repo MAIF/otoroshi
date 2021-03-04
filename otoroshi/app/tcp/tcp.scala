@@ -22,8 +22,8 @@ import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc.{AbstractController, ControllerComponents}
 import redis.RedisClientMasterSlaves
-import security.IdGenerator
-import ssl.{ClientAuth, CustomSSLEngine, DynamicSSLEngineProvider}
+import otoroshi.security.IdGenerator
+import otoroshi.ssl.{ClientAuth, CustomSSLEngine, DynamicSSLEngineProvider}
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import otoroshi.utils.{RegexPool, SchedulerHelper}
 

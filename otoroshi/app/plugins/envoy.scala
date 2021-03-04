@@ -12,7 +12,7 @@ import otoroshi.script.{AfterRequestContext, BeforeRequestContext, HttpRequest, 
 import play.api.libs.json.{JsArray, JsNull, JsObject, JsString, JsValue, Json}
 import play.api.mvc.{Result, Results}
 import otoroshi.utils.syntax.implicits._
-import ssl.Cert
+import otoroshi.ssl.Cert
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.{ExecutionContext, Future, Promise}

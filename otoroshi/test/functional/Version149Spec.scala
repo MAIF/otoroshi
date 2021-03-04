@@ -14,7 +14,7 @@ import org.scalatest.concurrent.IntegrationPatience
 import org.scalatestplus.play.PlaySpec
 import play.api.Configuration
 import play.api.libs.json.Json
-import security.IdGenerator
+import otoroshi.security.IdGenerator
 
 import scala.math.BigDecimal.RoundingMode
 import scala.util.Try

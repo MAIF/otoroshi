@@ -31,8 +31,8 @@ import play.api.mvc.Results._
 import play.api.mvc._
 import play.api.mvc.request.{Cell, RequestAttrKey}
 import play.api.{Configuration, Environment, Logger, Mode}
-import security.OtoroshiClaim
-import ssl.{ClientAuth, DynamicSSLEngineProvider, KeyManagerCompatibility, SSLSessionJavaHelper}
+import otoroshi.security.OtoroshiClaim
+import otoroshi.ssl.{ClientAuth, DynamicSSLEngineProvider, KeyManagerCompatibility, SSLSessionJavaHelper}
 
 import scala.concurrent.Future
 import scala.concurrent.duration._

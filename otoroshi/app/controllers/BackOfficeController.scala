@@ -31,8 +31,8 @@ import play.api.libs.json._
 import play.api.libs.streams.Accumulator
 import play.api.libs.ws.SourceBody
 import play.api.mvc._
-import security._
-import ssl._
+import otoroshi.security._
+import otoroshi.ssl._
 import otoroshi.utils.misc.LocalCache
 import otoroshi.utils.http.RequestImplicits._
 
@@ -950,7 +950,7 @@ class BackOfficeController(BackOfficeAction: BackOfficeAction,
     }
   }
 
-  import ssl.SSLImplicits._
+  import otoroshi.ssl.SSLImplicits._
 
   def caCert(): Action[Source[ByteString, _]] = BackOfficeActionAuth.async(sourceBodyParser) { ctx =>
     ctx.request.body.runFold(ByteString.empty)(_ ++ _).map { body =>

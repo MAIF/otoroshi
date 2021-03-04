@@ -1,3 +1,5 @@
+package otoroshi
+
 import actions._
 import akka.stream.scaladsl.{Sink, Source}
 import cluster.ClusterMode

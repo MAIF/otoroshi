@@ -21,8 +21,8 @@ import play.api.http.websocket.{Message => PlayWSMessage}
 import play.api.libs.json._
 import play.api.libs.ws.WSProxyServer
 import play.api.mvc.{RequestHeader, Result, Results}
-import security.IdGenerator
-import ssl.{DynamicSSLEngineProvider, PemUtils}
+import otoroshi.security.IdGenerator
+import otoroshi.ssl.{DynamicSSLEngineProvider, PemUtils}
 import otoroshi.storage.BasicStore
 import otoroshi.utils.{RegexPool, TypedMap}
 import otoroshi.utils

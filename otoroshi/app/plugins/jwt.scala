@@ -8,7 +8,7 @@ import otoroshi.script.{PreRouting, PreRoutingContext, PreRoutingError}
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json.{JsBoolean, JsNull, JsNumber, JsObject, JsString, JsValue, Json}
 import play.api.mvc.Results
-import security.{IdGenerator, OtoroshiClaim}
+import otoroshi.security.{IdGenerator, OtoroshiClaim}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try

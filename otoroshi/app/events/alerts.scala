@@ -15,7 +15,7 @@ import play.api.Logger
 import play.api.libs.json.{JsArray, JsValue, Json, Writes}
 import play.api.libs.ws.WSAuthScheme
 import play.api.mvc.RequestHeader
-import ssl.Cert
+import otoroshi.ssl.Cert
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future}

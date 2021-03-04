@@ -12,7 +12,7 @@ import controllers._
 import controllers.adminapi.{ApiKeysFromGroupController, _}
 import env._
 import gateway._
-import modules.OtoroshiComponentsInstances
+import otoroshi.modules.OtoroshiComponentsInstances
 import otoroshi.api.OtoroshiLoaderHelper.EnvContainer
 import otoroshi.storage.DataStores
 import otoroshi.utils.metrics.Metrics
@@ -26,7 +26,7 @@ import play.api.{BuiltInComponents, Configuration, Logger, LoggerConfigurator}
 import play.core.server.{AkkaHttpServerComponents, ServerConfig}
 import play.filters.HttpFiltersComponents
 import router.Routes
-import ssl.DynamicSSLEngineProvider
+import otoroshi.ssl.DynamicSSLEngineProvider
 
 import scala.concurrent.{Await, ExecutionContext, Future, Promise}
 import scala.concurrent.duration._

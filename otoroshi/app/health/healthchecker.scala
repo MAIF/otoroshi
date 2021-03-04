@@ -14,7 +14,7 @@ import models.{SecComVersion, ServiceDescriptor, Target}
 import org.joda.time.DateTime
 import otoroshi.script.{Job, JobContext, JobId, JobInstantiation, JobKind, JobStarting, JobVisibility}
 import play.api.Logger
-import security.{IdGenerator, OtoroshiClaim}
+import otoroshi.security.{IdGenerator, OtoroshiClaim}
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.{ExecutionContext, Future}

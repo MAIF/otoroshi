@@ -28,7 +28,7 @@ import play.api.libs.streams.ActorFlow
 import play.api.libs.ws.DefaultWSCookie
 import play.api.mvc.Results.NotFound
 import play.api.mvc._
-import security.{IdGenerator, OtoroshiClaim}
+import otoroshi.security.{IdGenerator, OtoroshiClaim}
 import otoroshi.utils.http.RequestImplicits._
 import otoroshi.utils.http.{HeadersHelper, ManualResolveTransport, WSCookieWithSameSite, WSProxyServerUtils}
 import otoroshi.utils.udp._

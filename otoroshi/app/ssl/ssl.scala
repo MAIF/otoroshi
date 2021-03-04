@@ -1,4 +1,4 @@
-package ssl
+package otoroshi.ssl
 
 import java.io._
 import java.lang.reflect.Field
@@ -38,7 +38,6 @@ import org.bouncycastle.openssl.{PEMEncryptedKeyPair, PEMKeyPair, PEMParser}
 import org.bouncycastle.pkcs.PKCS10CertificationRequest
 import org.bouncycastle.util.io.pem.PemReader
 import org.joda.time.{DateTime, Interval}
-import otoroshi.ssl.CertParentHelper
 import otoroshi.ssl.pki.models.{GenCertResponse, GenCsrQuery, GenKeyPairQuery}
 import otoroshi.utils.letsencrypt.LetsEncryptHelper
 import otoroshi.utils.{RegexPool, TypedMap}
@@ -49,7 +48,7 @@ import play.api.{Configuration, Logger}
 import play.core.ApplicationProvider
 import play.server.api.SSLEngineProvider
 import redis.RedisClientMasterSlaves
-import security.IdGenerator
+import otoroshi.security.IdGenerator
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import otoroshi.utils.http.DN
 import otoroshi.utils.metrics.{FakeHasMetrics, HasMetrics}
@@ -1539,7 +1538,7 @@ object noCATrustManager extends X509TrustManager {
 
 object CertificateData {
 
-  import ssl.SSLImplicits._
+  import otoroshi.ssl.SSLImplicits._
 
   import collection.JavaConverters._
 
@@ -1629,7 +1628,7 @@ object PemHeaders {
 
 object FakeKeyStore {
 
-  import ssl.SSLImplicits._
+  import otoroshi.ssl.SSLImplicits._
 
   private val EMPTY_PASSWORD = Array.emptyCharArray
   private val encoder        = Base64.getEncoder
@@ -2081,7 +2080,7 @@ case class ClientCertificateValidator(
    */
 
   import play.api.http.websocket.{Message => PlayWSMessage}
-  import ssl.SSLImplicits._
+  import otoroshi.ssl.SSLImplicits._
 
   import scala.concurrent.duration._
 

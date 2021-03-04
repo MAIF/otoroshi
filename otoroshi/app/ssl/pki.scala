@@ -23,11 +23,11 @@ import org.bouncycastle.util.io.pem.PemReader
 import otoroshi.ssl.pki.models._
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.json._
-import security.IdGenerator
-import ssl.Cert
-import ssl.SSLImplicits._
+import otoroshi.security.IdGenerator
+import otoroshi.ssl.Cert
+import otoroshi.ssl.SSLImplicits._
 
-import scala.concurrent.duration.{FiniteDuration, _}
+import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 import org.bouncycastle.jce.ECNamedCurveTable

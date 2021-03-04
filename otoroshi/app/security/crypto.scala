@@ -1,4 +1,4 @@
-package security
+package otoroshi.security
 
 import java.util.{Base64, UUID}
 import javax.crypto.Mac

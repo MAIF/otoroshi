@@ -12,7 +12,7 @@ import org.scalatestplus.play.PlaySpec
 import play.api.Configuration
 import play.api.libs.json.{JsArray, JsValue, Json, Reads}
 import play.api.libs.ws.WSClient
-import security.IdGenerator
+import otoroshi.security.IdGenerator
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._

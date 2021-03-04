@@ -13,7 +13,7 @@ import org.bouncycastle.operator.{ContentSigner, DefaultDigestAlgorithmIdentifie
 import org.bouncycastle.operator.jcajce.{JcaContentSignerBuilder, JcaContentVerifierProviderBuilder, JcaDigestCalculatorProviderBuilder}
 import play.api.mvc.{RequestHeader, Result, Results}
 import play.api.libs.json.Json
-import ssl.{Cert, DynamicSSLEngineProvider, OCSPCertProjection}
+import otoroshi.ssl._
 import org.joda.time.DateTime
 import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder
 import play.api.Logger
@@ -22,7 +22,7 @@ import java.util.Date
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
 import otoroshi.utils.http.DN
 import otoroshi.utils.syntax.implicits._
-import ssl.SSLImplicits.EnhancedX509Certificate
+import otoroshi.ssl.SSLImplicits.EnhancedX509Certificate
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}

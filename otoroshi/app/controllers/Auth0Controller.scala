@@ -14,7 +14,7 @@ import otoroshi.utils.TypedMap
 import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc._
-import security.IdGenerator
+import otoroshi.security.IdGenerator
 import otoroshi.utils.future.Implicits._
 
 import scala.concurrent.Future

@@ -5,7 +5,7 @@ import auth.{AuthConfigsDataStore, AuthModuleConfig}
 import env.Env
 import models._
 import play.api.libs.json.{Format, JsValue, Json}
-import security.IdGenerator
+import otoroshi.security.IdGenerator
 import otoroshi.storage.{RedisLike, RedisLikeStore}
 
 import scala.concurrent.{ExecutionContext, Future}

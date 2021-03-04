@@ -25,7 +25,7 @@ import play.api.mvc.Results.{NotFound, TooManyRequests}
 import play.api.mvc.{RequestHeader, Result, Results}
 import otoroshi.script._
 import otoroshi.script.plugins.Plugins
-import security.{IdGenerator, OtoroshiClaim}
+import otoroshi.security.{IdGenerator, OtoroshiClaim}
 import otoroshi.storage.BasicStore
 import otoroshi.storage.stores.KvServiceDescriptorDataStore
 import otoroshi.utils.{RegexPool, TypedMap}
@@ -1685,7 +1685,7 @@ case class ServiceDescriptor(
                         sub: Option[String] = None)(
       implicit env: Env
   ): OtoroshiClaim = {
-    import ssl.SSLImplicits._
+    import otoroshi.ssl.SSLImplicits._
     val clientCertChain = requestHeader
       .flatMap(_.clientCertificateChain)
       .map(

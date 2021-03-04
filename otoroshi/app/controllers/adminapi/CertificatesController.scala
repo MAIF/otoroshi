@@ -7,7 +7,7 @@ import otoroshi.utils.controllers.{ApiError, BulkControllerHelper, CrudControlle
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc.{AbstractController, ControllerComponents, RequestHeader}
-import ssl.Cert
+import otoroshi.ssl.Cert
 
 import scala.concurrent.{ExecutionContext, Future}
 

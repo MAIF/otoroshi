@@ -10,7 +10,7 @@ import otoroshi.utils.{SchedulerHelper, future}
 import otoroshi.utils.letsencrypt.LetsEncryptHelper
 import play.api.Logger
 import play.api.libs.json.Format
-import ssl.{Cert, CertificateDataStore, DynamicSSLEngineProvider}
+import otoroshi.ssl.{Cert, CertificateDataStore, DynamicSSLEngineProvider}
 
 import scala.concurrent.duration.{Duration, _}
 import scala.concurrent.{ExecutionContext, Future}

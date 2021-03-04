@@ -15,7 +15,7 @@ import otoroshi.script._
 import play.api.libs.json._
 import play.api.mvc.{RequestHeader, Result, Results}
 import redis.{RedisClientMasterSlaves, RedisServer}
-import security.OtoroshiClaim
+import otoroshi.security.OtoroshiClaim
 import otoroshi.utils.json.JsonImplicits._
 import otoroshi.utils.http.RequestImplicits._
 import otoroshi.utils.future.Implicits._

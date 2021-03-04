@@ -1,4 +1,4 @@
-package ssl;
+package otoroshi.ssl;
 
 import org.bouncycastle.asn1.*;
 import play.api.Logger;

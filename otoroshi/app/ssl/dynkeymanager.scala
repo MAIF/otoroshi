@@ -1,4 +1,4 @@
-package ssl
+package otoroshi.ssl
 
 import java.net.Socket
 import java.security.{Principal, PrivateKey}

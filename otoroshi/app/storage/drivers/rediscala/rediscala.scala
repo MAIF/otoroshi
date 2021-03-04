@@ -20,7 +20,7 @@ import play.api.libs.json._
 import play.api.{Configuration, Environment, Logger}
 import redis._
 import redis.util.CRC16
-import ssl.{CertificateDataStore, ClientCertificateValidationDataStore, KvClientCertificateValidationDataStore}
+import otoroshi.ssl.{CertificateDataStore, ClientCertificateValidationDataStore, KvClientCertificateValidationDataStore}
 import otoroshi.storage._
 import otoroshi.storage.stores._
 import otoroshi.tcp.{KvTcpServiceDataStoreDataStore, TcpServiceDataStore}

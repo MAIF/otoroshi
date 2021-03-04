@@ -14,7 +14,7 @@ import otoroshi.utils.{RegexPool, TypedMap}
 import play.api.libs.json._
 import play.api.libs.ws.WSProxyServer
 import play.api.mvc.{RequestHeader, Result, Results}
-import ssl.{ClientCertificateValidator, PemHeaders}
+import otoroshi.ssl.{ClientCertificateValidator, PemHeaders}
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.Duration

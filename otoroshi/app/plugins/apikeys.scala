@@ -32,8 +32,8 @@ import otoroshi.utils.jwk.JWKSHelper
 import play.api.libs.json._
 import play.api.mvc.{Result, Results}
 import play.core.parsers.FormUrlEncodedParser
-import security.IdGenerator
-import ssl.{Cert, DynamicSSLEngineProvider}
+import otoroshi.security.IdGenerator
+import otoroshi.ssl.{Cert, DynamicSSLEngineProvider}
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration._

@@ -13,7 +13,7 @@ import otoroshi.script.{AccessContext, AccessValidator}
 import otoroshi.utils.http.MtlsConfig
 import play.api.libs.json._
 import play.api.libs.ws.WSProxyServer
-import ssl.{ClientCertificateValidator, PemHeaders}
+import otoroshi.ssl.{ClientCertificateValidator, PemHeaders}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.Duration
@@ -149,7 +149,7 @@ class ExternalHttpValidator extends AccessValidator {
       user: Option[PrivateAppsUser] = None,
       cfg: ExternalHttpValidatorConfig
   )(implicit ec: ExecutionContext, env: Env): Future[Option[Boolean]] = {
-    import ssl.SSLImplicits._
+    import otoroshi.ssl.SSLImplicits._
     val globalConfig = env.datastores.globalConfigDataStore.latest()
     val certPayload = chain
       .map { cert =>

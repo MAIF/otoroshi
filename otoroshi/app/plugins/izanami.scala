@@ -13,7 +13,7 @@ import play.api.libs.json.{JsNull, JsObject, JsValue, Json}
 import play.api.mvc.{Cookie, RequestHeader, Result, Results}
 import otoroshi.utils.syntax.implicits._
 import play.api.libs.ws.{DefaultWSCookie, WSAuthScheme, WSCookie}
-import security.IdGenerator
+import otoroshi.security.IdGenerator
 import otoroshi.utils.http.RequestImplicits._
 import otoroshi.utils.http.{MtlsConfig, WSCookieWithSameSite}
 import otoroshi.utils.http.WSCookieWithSameSite

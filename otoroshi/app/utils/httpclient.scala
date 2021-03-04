@@ -22,8 +22,8 @@ import play.api.libs.json._
 import play.api.libs.ws._
 import play.api.mvc.MultipartFormData
 import play.shaded.ahc.org.asynchttpclient.util.Assertions
-import security.IdGenerator
-import ssl.{Cert, DynamicSSLEngineProvider}
+import otoroshi.security.IdGenerator
+import otoroshi.ssl.{Cert, DynamicSSLEngineProvider}
 
 import java.io.{File, FileOutputStream}
 import java.net.{InetAddress, InetSocketAddress, URI}

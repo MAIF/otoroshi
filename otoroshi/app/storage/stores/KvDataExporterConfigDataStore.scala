@@ -8,7 +8,7 @@ import otoroshi.storage.{RedisLike, RedisLikeStore}
 import otoroshi.utils.http.MtlsConfig
 import otoroshi.utils.mailer.{ConsoleMailerSettings, GenericMailerSettings, MailgunSettings, MailjetSettings, NoneMailerSettings, SendgridSettings}
 import play.api.libs.json.{Format, Json}
-import security.IdGenerator
+import otoroshi.security.IdGenerator
 
 import scala.concurrent.duration.DurationInt
 

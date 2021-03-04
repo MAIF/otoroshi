@@ -1,11 +1,11 @@
-package ssl
+package otoroshi.ssl
 
 import java.io.ByteArrayInputStream
 import java.security.KeyStore
 
 import akka.util.ByteString
-import security.IdGenerator
-import ssl.SSLImplicits._
+import otoroshi.security.IdGenerator
+import otoroshi.ssl.SSLImplicits._
 
 object P12Helper {
 
