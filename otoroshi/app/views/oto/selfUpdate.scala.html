@@ -1,0 +1,33 @@
+@import otoroshi.env.Env
+
+@import play.api.libs.json._
+
+@(user: JsValue, session: String, expires: Long, webauthn: Boolean, _env: Env)
+
+@authScript = {
+@if(_env.liveJs) {
+    <script src="//localhost:3040/assets/javascripts/bundle/genericlogin.js" type="text/javascript"></script>
+} else {
+    <script type="text/javascript" src="@routes.Assets.versioned(s"javascripts/bundle/genericlogin.js?v=${_env.hash}")"></script>
+}
+    <script>
+        Otoroshi.selfUpdate({
+          expires: @expires,
+          webauthn: @webauthn,
+          session: '@session',
+          user: @Html(Json.stringify(user))
+        }, document.getElementById("app"));
+    </script>
+}
+
+@authStyle = {
+    @if(_env.liveJs) {
+        <link rel="stylesheet" href="//localhost:3040/assets/javascripts/bundle/genericlogin.css">
+    } else {
+        <link rel="stylesheet" href="@routes.Assets.versioned(s"javascripts/bundle/genericlogin.css?v=${_env.hash}")">
+    }
+}
+
+@main("Update your profile", _env, moreScripts = authScript, moreStyles = authStyle) {
+    <div id="app"></div>
+}
