@@ -694,7 +694,7 @@ class ClusterLeaderAgent(config: ClusterConfig, env: Env) {
         MemberView(
           name = env.clusterConfig.leader.name,
           memberType = ClusterMode.Leader,
-          location = s"$hostAddress:${env.port}/${env.httpsPort}",
+          location = s"$hostAddress:${env.exposedHttpPort}/${env.exposedHttpsPort}",
           lastSeen = DateTime.now(),
           timeout = 120.seconds,
           stats = stats
@@ -850,7 +850,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             .withHttpHeaders(
               "Host"                                    -> config.leader.host,
               ClusterAgent.OtoroshiWorkerNameHeader     -> config.worker.name,
-              ClusterAgent.OtoroshiWorkerLocationHeader -> s"$hostAddress:${env.port}/${env.httpsPort}"
+              ClusterAgent.OtoroshiWorkerLocationHeader -> s"$hostAddress:${env.exposedHttpPort}/${env.exposedHttpsPort}"
             )
             .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
             .withRequestTimeout(Duration(config.worker.timeout, TimeUnit.MILLISECONDS))
@@ -884,7 +884,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             .withHttpHeaders(
               "Host"                                    -> config.leader.host,
               ClusterAgent.OtoroshiWorkerNameHeader     -> config.worker.name,
-              ClusterAgent.OtoroshiWorkerLocationHeader -> s"$hostAddress:${env.port}/${env.httpsPort}"
+              ClusterAgent.OtoroshiWorkerLocationHeader -> s"$hostAddress:${env.exposedHttpPort}/${env.exposedHttpsPort}"
             )
             .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
             .withRequestTimeout(Duration(config.worker.timeout, TimeUnit.MILLISECONDS))
@@ -919,7 +919,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
               "Host"                                    -> config.leader.host,
               "Content-Type"                            -> "application/json",
               ClusterAgent.OtoroshiWorkerNameHeader     -> config.worker.name,
-              ClusterAgent.OtoroshiWorkerLocationHeader -> s"$hostAddress:${env.port}/${env.httpsPort}"
+              ClusterAgent.OtoroshiWorkerLocationHeader -> s"$hostAddress:${env.exposedHttpPort}/${env.exposedHttpsPort}"
             )
             .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
             .withRequestTimeout(Duration(config.worker.timeout, TimeUnit.MILLISECONDS))
@@ -948,7 +948,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
               "Host"                                    -> config.leader.host,
               "Content-Type"                            -> "application/json",
               ClusterAgent.OtoroshiWorkerNameHeader     -> config.worker.name,
-              ClusterAgent.OtoroshiWorkerLocationHeader -> s"$hostAddress:${env.port}/${env.httpsPort}"
+              ClusterAgent.OtoroshiWorkerLocationHeader -> s"$hostAddress:${env.exposedHttpPort}/${env.exposedHttpsPort}"
             )
             .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
             .withRequestTimeout(Duration(config.worker.timeout, TimeUnit.MILLISECONDS))
@@ -976,7 +976,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
             .withHttpHeaders(
               "Host"                                    -> config.leader.host,
               ClusterAgent.OtoroshiWorkerNameHeader     -> config.worker.name,
-              ClusterAgent.OtoroshiWorkerLocationHeader -> s"$hostAddress:${env.port}/${env.httpsPort}"
+              ClusterAgent.OtoroshiWorkerLocationHeader -> s"$hostAddress:${env.exposedHttpPort}/${env.exposedHttpsPort}"
             )
             .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
             .withRequestTimeout(Duration(config.worker.timeout, TimeUnit.MILLISECONDS))
@@ -1011,7 +1011,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
               "Host"                                    -> config.leader.host,
               "Content-Type"                            -> "application/json",
               ClusterAgent.OtoroshiWorkerNameHeader     -> config.worker.name,
-              ClusterAgent.OtoroshiWorkerLocationHeader -> s"$hostAddress:${env.port}/${env.httpsPort}"
+              ClusterAgent.OtoroshiWorkerLocationHeader -> s"$hostAddress:${env.exposedHttpPort}/${env.exposedHttpsPort}"
             )
             .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
             .withRequestTimeout(Duration(config.worker.timeout, TimeUnit.MILLISECONDS))
@@ -1105,7 +1105,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
                 "Accept"                                  -> "application/x-ndjson",
                 // "Accept-Encoding" -> "gzip",
                 ClusterAgent.OtoroshiWorkerNameHeader     -> config.worker.name,
-                ClusterAgent.OtoroshiWorkerLocationHeader -> s"$hostAddress:${env.port}/${env.httpsPort}"
+                ClusterAgent.OtoroshiWorkerLocationHeader -> s"$hostAddress:${env.exposedHttpPort}/${env.exposedHttpsPort}"
               )
               .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
               .withRequestTimeout(Duration(config.worker.state.timeout, TimeUnit.MILLISECONDS))
@@ -1293,7 +1293,7 @@ class ClusterAgent(config: ClusterConfig, env: Env) {
                   "Content-Type"                            -> "application/x-ndjson",
                   // "Content-Encoding" -> "gzip",
                   ClusterAgent.OtoroshiWorkerNameHeader     -> config.worker.name,
-                  ClusterAgent.OtoroshiWorkerLocationHeader -> s"$hostAddress:${env.port}/${env.httpsPort}"
+                  ClusterAgent.OtoroshiWorkerLocationHeader -> s"$hostAddress:${env.exposedHttpPort}/${env.exposedHttpsPort}"
                 )
                 .withAuth(config.leader.clientId, config.leader.clientSecret, WSAuthScheme.BASIC)
                 .withRequestTimeout(Duration(config.worker.quotas.timeout, TimeUnit.MILLISECONDS))

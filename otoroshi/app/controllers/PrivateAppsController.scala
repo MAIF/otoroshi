@@ -108,7 +108,7 @@ class PrivateAppsController(ApiAction: ApiAction, PrivateAppsAction: PrivateApps
         Some(10.minutes.toMillis)
       )
       .map { _ =>
-        val host              = "http://" + env.privateAppsHost + env.privateAppsPort.map(p => ":" + p).getOrElse("")
+        val host              = env.rootScheme + env.privateAppsHost + env.privateAppsPort
         val cipher: Cipher    = Cipher.getInstance("AES")
         cipher.init(Cipher.ENCRYPT_MODE, secret)
         val bytes             = cipher.doFinal(sessionId.getBytes)

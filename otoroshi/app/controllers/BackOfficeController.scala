@@ -76,8 +76,8 @@ class BackOfficeController(
         case Some(apikey) => {
           val host                   = env.adminApiExposedHost
           val localUrl               =
-            if (env.adminApiProxyHttps) s"https://127.0.0.1:${env.port}" else s"http://127.0.0.1:${env.port}"
-          val url                    = if (env.adminApiProxyUseLocal) localUrl else s"https://${env.adminApiExposedHost}"
+            if (env.adminApiProxyHttps) s"https://127.0.0.1:${env.httpsPort}" else s"http://127.0.0.1:${env.port}"
+          val url                    = if (env.adminApiProxyUseLocal) localUrl else s"https://${env.adminApiExposedHost}${env.exposedHttpsPort}"
           lazy val currentReqHasBody = ctx.request.theHasBody
           logger.debug(s"Calling ${ctx.request.method} $url/$path with Host = $host")
           val headers                = Seq(
@@ -628,7 +628,7 @@ class BackOfficeController(
                         loginUrl = loginUrl,
                         logoutUrl = logoutUrl,
                         callbackUrl =
-                          s"${env.rootScheme}${env.privateAppsHost}${env.privateAppsPort.map(v => ":" + v).getOrElse("")}/privateapps/generic/callback",
+                          s"${env.rootScheme}${env.privateAppsHost}${env.privateAppsPort}/privateapps/generic/callback",
                         scope = scope,
                         claims = "",
                         accessTokenField = "access_token", // jwksUri.map(_ => "id_token").getOrElse("access_token"),

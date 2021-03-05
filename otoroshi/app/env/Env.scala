@@ -428,8 +428,6 @@ class Env(
     configuration.getOptionalWithFileSupport[String]("app.backoffice.subdomain").getOrElse("otoroshi")
   lazy val privateAppsSubDomain: String                    =
     configuration.getOptionalWithFileSupport[String]("app.privateapps.subdomain").getOrElse("privateapps")
-  lazy val privateAppsPort: Option[Int]                    =
-    configuration.getOptionalWithFileSupport[Int]("app.privateapps.port")
   lazy val retries: Int                                    = configuration.getOptionalWithFileSupport[Int]("app.retries").getOrElse(5)
 
   lazy val backOfficeServiceId          =
@@ -447,24 +445,6 @@ class Env(
   lazy val adminApiHost        = composeMainUrl(adminApiSubDomain)
   lazy val backOfficeHost      = composeMainUrl(backOfficeSubDomain)
   lazy val privateAppsHost     = composeMainUrl(privateAppsSubDomain)
-
-  lazy val exposedHttpPort: String = configuration
-    .getOptionalWithFileSupport[Int]("app.exposed-ports.http")
-    .orElse(port.some)
-    .map {
-      case 80 => ""
-      case v  => s":$v"
-    }
-    .getOrElse("")
-
-  lazy val exposedHttpsPort: String = configuration
-    .getOptionalWithFileSupport[Int]("app.exposed-ports.https")
-    .orElse(httpsPort.some)
-    .map {
-      case 443 => ""
-      case v   => s":$v"
-    }
-    .getOrElse("")
 
   lazy val procNbr = Runtime.getRuntime.availableProcessors()
 
@@ -807,6 +787,34 @@ class Env(
       .getOrElse(9998)
   )
 
+  lazy val privateAppsPort: String = {
+    if (exposedRootSchemeIsHttps) {
+      exposedHttpsPort
+    } else {
+      exposedHttpPort
+    }
+  }
+  // lazy val privateAppsPort: Option[Int]                    =
+  //   configuration.getOptionalWithFileSupport[Int]("app.privateapps.port")
+
+  lazy val exposedHttpPort: String = configuration
+    .getOptionalWithFileSupport[Int]("app.exposed-ports.http")
+    .orElse(port.some)
+    .map {
+      case 80 => ""
+      case v  => s":$v"
+    }
+    .getOrElse("")
+
+  lazy val exposedHttpsPort: String = configuration
+    .getOptionalWithFileSupport[Int]("app.exposed-ports.https")
+    .orElse(httpsPort.some)
+    .map {
+      case 443 => ""
+      case v   => s":$v"
+    }
+    .getOrElse("")
+
   lazy val defaultConfig = GlobalConfig(
     perIpThrottlingQuota = 500,
     throttlingQuota = 100000,
@@ -853,7 +861,7 @@ class Env(
     domain = domain,
     targets = Seq(
       Target(
-        host = if (adminApiProxyUseLocal) s"127.0.0.1:$port" else s"$adminApiHost:$port",
+        host = if (adminApiProxyUseLocal) s"127.0.0.1:$port" else s"$adminApiHost:$exposedHttpPort",
         scheme = if (adminApiProxyHttps) "https" else "http"
       )
     ),
