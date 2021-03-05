@@ -1233,12 +1233,19 @@ don't forget to update the otoroshi `ClusterRole`
     - update
 ```
 
+## CRD validation in kubectl
+
+In order to get CRD validation before manifest deployments right inside kubectl, you can deploy a validation webhook that will do the trick. Also check that you have `otoroshi.plugins.jobs.kubernetes.KubernetesAdmissionWebhookCRDValidator` request sink enabled.
+
+validation-webhook.yaml
+:   @@snip [validation-webhook.yaml](../snippets/kubernetes/kustomize/base/validation-webhook.yaml)
+
 ## Easier integration with otoroshi-sidecar
 
-Otoroshi can help you to easily use existing services without modifications while gettings all the perks of otoroshi like apikeys, mTLS, exchange protocol, etc. To do so, otoroshi will inject a sidecar container in the pod of your deployment that will handle call coming from otoroshi and going to otoroshi. To enable otoroshi-sidecar, you need to deploy the following admission webhooks
+Otoroshi can help you to easily use existing services without modifications while gettings all the perks of otoroshi like apikeys, mTLS, exchange protocol, etc. To do so, otoroshi will inject a sidecar container in the pod of your deployment that will handle call coming from otoroshi and going to otoroshi. To enable otoroshi-sidecar, you need to deploy the following admission webhook. Also check that you have `otoroshi.plugins.jobs.kubernetes.KubernetesAdmissionWebhookSidecarInjector` request sink enabled.
 
-webhooks.yaml
-:   @@snip [webhooks.yaml](../snippets/kubernetes/kustomize/base/webhooks.yaml)
+sidecar-webhook.yaml
+:   @@snip [sidecar-webhook.yaml](../snippets/kubernetes/kustomize/base/sidecar-webhook.yaml)
 
 then it's quite easy to add the sidecar, just add the following label to your pod `otoroshi.io/sidecar: inject` and some annotations to tell otoroshi what certificates and apikeys to use.
 

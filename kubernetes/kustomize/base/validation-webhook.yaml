@@ -1,0 +1,32 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: otoroshi-admission-webhook-validation
+  labels:
+    app: otoroshi
+    component: otoroshi-validation-webhook
+webhooks:
+  - name: otoroshi-admission-webhook.otoroshi.io
+    rules:
+      - operations: 
+          - "CREATE"
+          - "UPDATE"
+        apiGroups: 
+          - "proxy.otoroshi.io"
+        apiVersions: 
+          - "*"
+        resources: 
+          - "*"
+        scope: "Namespaced"
+    clientConfig:
+      # url: "https://otoroshi-kubernetes-admission-webhook.otoroshi.svc.cluster.local:8443/apis/webhooks/validation"
+      service:
+        name: otoroshi-service
+        namespace: otoroshi
+        path: "/apis/webhooks/validation"
+        port: 8443
+      caBundle: "" # injected at runtime
+    failurePolicy: Ignore # inject at runtime
+    sideEffects: None
+    admissionReviewVersions: 
+      - "v1"
