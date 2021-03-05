@@ -4383,14 +4383,13 @@ spec:
     - watch
     - update
 </code></pre>
-<h2><a href="#easier-integration-with-otoroshi-sidecar" name="easier-integration-with-otoroshi-sidecar" class="anchor"><span class="anchor-link"></span></a>Easier integration with otoroshi-sidecar</h2>
-<p>Otoroshi can help you to easily use existing services without modifications while gettings all the perks of otoroshi like apikeys, mTLS, exchange protocol, etc. To do so, otoroshi will inject a sidecar container in the pod of your deployment that will handle call coming from otoroshi and going to otoroshi. To enable otoroshi-sidecar, you need to deploy the following admission webhooks</p>
+<h2><a href="#crd-validation-in-kubectl" name="crd-validation-in-kubectl" class="anchor"><span class="anchor-link"></span></a>CRD validation in kubectl</h2>
+<p>In order to get CRD validation before manifest deployments right inside kubectl, you can deploy a validation webhook that will do the trick. Also check that you have <code>otoroshi.plugins.jobs.kubernetes.KubernetesAdmissionWebhookCRDValidator</code> request sink enabled.</p>
 <dl>
-  <dt>webhooks.yaml
+  <dt>validation-webhook.yaml
   </dt>
   <dd>
-  <pre class="prettyprint"><code class="language-yaml">---
-apiVersion: admissionregistration.k8s.io/v1
+  <pre class="prettyprint"><code class="language-yaml">apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   name: otoroshi-admission-webhook-validation
@@ -4421,9 +4420,15 @@ webhooks:
     failurePolicy: Ignore # inject at runtime
     sideEffects: None
     admissionReviewVersions: 
-      - &quot;v1&quot;
----
-apiVersion: admissionregistration.k8s.io/v1
+      - &quot;v1&quot;</code></pre></dd>
+</dl>
+<h2><a href="#easier-integration-with-otoroshi-sidecar" name="easier-integration-with-otoroshi-sidecar" class="anchor"><span class="anchor-link"></span></a>Easier integration with otoroshi-sidecar</h2>
+<p>Otoroshi can help you to easily use existing services without modifications while gettings all the perks of otoroshi like apikeys, mTLS, exchange protocol, etc. To do so, otoroshi will inject a sidecar container in the pod of your deployment that will handle call coming from otoroshi and going to otoroshi. To enable otoroshi-sidecar, you need to deploy the following admission webhook. Also check that you have <code>otoroshi.plugins.jobs.kubernetes.KubernetesAdmissionWebhookSidecarInjector</code> request sink enabled.</p>
+<dl>
+  <dt>sidecar-webhook.yaml
+  </dt>
+  <dd>
+  <pre class="prettyprint"><code class="language-yaml">apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   name: otoroshi-admission-webhook-injector
@@ -4715,6 +4720,7 @@ spec:
     <li><a href="../deploy/kubernetes.html#full-crd-example" class="header">Full CRD example</a></li>
     <li><a href="../deploy/kubernetes.html#expose-otoroshi-to-outside-world" class="header">Expose Otoroshi to outside world</a></li>
     <li><a href="../deploy/kubernetes.html#access-a-service-from-inside-the-k8s-cluster" class="header">Access a service from inside the k8s cluster</a></li>
+    <li><a href="../deploy/kubernetes.html#crd-validation-in-kubectl" class="header">CRD validation in kubectl</a></li>
     <li><a href="../deploy/kubernetes.html#easier-integration-with-otoroshi-sidecar" class="header">Easier integration with otoroshi-sidecar</a></li>
     <li><a href="../deploy/kubernetes.html#daikoku-integration" class="header">Daikoku integration</a></li>
   </ul></li>
