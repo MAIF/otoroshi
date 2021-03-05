@@ -10,6 +10,7 @@ import akka.util.ByteString
 import otoroshi.env.Env
 import otoroshi.models._
 import org.joda.time.DateTime
+import otoroshi.security.IdGenerator
 import otoroshi.utils.UrlSanitizer
 import otoroshi.utils.http.MtlsConfig
 import otoroshi.utils.syntax.implicits._
@@ -445,11 +446,37 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
                 filterLabels((resp.json \ "items").as[JsArray].value.map(v => KubernetesOtoroshiResource(v)))
                   .map { item =>
                     val spec       = (item.raw \ "spec").as[JsValue]
-                    val customSpec = customize(spec, item)
-                    Try((reader.reads(customSpec), item.raw)).debug {
+                    val (failed, err, customSpec) = Try(customize(spec, item)) match {
+                      case Success(value) => (false, None, value)
+                      case Failure(e) => (true, e.some, spec)
+                    }
+                    Try {
+                      (reader.reads(customSpec), item.raw)
+                    }.debug {
                       case Success(_) => ()
+                      case Success(_) if failed =>  {
+                        logger.error(s"error while customizing spec entity of type $pluralName", err.get)
+                        FailedCrdParsing(
+                          `@id` = env.snowflakeGenerator.nextIdStr(),
+                          `@env` = env.env,
+                          namespace = namespace,
+                          pluralName = pluralName,
+                          crd = item.raw,
+                          customizedSpec = customSpec,
+                          error = err.map(_.getMessage).getOrElse("--")
+                        ).toAnalytics()(env)
+                      }
                       case Failure(e) =>
                         logger.error(s"error while reading entity of type $pluralName", e)
+                        FailedCrdParsing(
+                          `@id` = env.snowflakeGenerator.nextIdStr(),
+                          `@env` = env.env,
+                          namespace = namespace,
+                          pluralName = pluralName,
+                          crd = item.raw,
+                          customizedSpec = customSpec,
+                          error = e.getMessage
+                        ).toAnalytics()(env)
                     }
                   }
                   .collect { case Success((JsSuccess(item, _), raw)) =>
