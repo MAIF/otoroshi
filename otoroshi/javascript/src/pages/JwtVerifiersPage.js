@@ -15,9 +15,7 @@ export class JwtVerifiersPage extends Component {
   }
 
   gotoVerifier = (verifier) => {
-    this.props.history.push({
-      pathname: `jwt-verifiers/edit/${verifier.id}`,
-    });
+    window.location = `/bo/dashboard/jwt-verifiers/edit/${verifier.id}`;
   };
 
   render() {
