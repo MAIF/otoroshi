@@ -1134,6 +1134,7 @@ class ClientCredentialService extends RequestSink {
             )
 
             biscuitConf.caveats
+              .map(v => " " + v)
               .map(Parser.rule)
               .filter(_.isRight)
               .map(_.get()._2)
@@ -1145,6 +1146,7 @@ class ClientCredentialService extends RequestSink {
               .map(_.get()._2)
               .foreach(r => authority_builder.add_fact(r))
             biscuitConf.rules
+              .map(v => " " + v)
               .map(Parser.rule)
               .filter(_.isRight)
               .map(_.get()._2)
@@ -1154,6 +1156,7 @@ class ClientCredentialService extends RequestSink {
               apiKey.metadata.get(name).map(Json.parse).map(_.asArray.value.map(_.asString)).getOrElse(Seq.empty)
 
             fromApiKey("biscuit_caveats")
+              .map(v => " " + v)
               .map(Parser.rule)
               .filter(_.isRight)
               .map(_.get()._2)
@@ -1165,6 +1168,7 @@ class ClientCredentialService extends RequestSink {
               .map(_.get()._2)
               .foreach(r => authority_builder.add_fact(r))
             fromApiKey("biscuit_rules")
+              .map(v => " " + v)
               .map(Parser.rule)
               .filter(_.isRight)
               .map(_.get()._2)

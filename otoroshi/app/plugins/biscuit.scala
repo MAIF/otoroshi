@@ -184,13 +184,19 @@ object BiscuitHelper {
     // TODO: change when implemented
     // config.caveats.map(Parser.caveat).filter(_.isRight).map(_.get()._2).foreach(r => verifier.add_caveat(r))
     config.caveats
+      .map(v => " " + v)
       .map(Parser.rule)
       .filter(_.isRight)
       .map(_.get()._2)
       .map(r => new Caveat(r))
       .foreach(r => verifier.add_caveat(r))
     config.facts.map(Parser.fact).filter(_.isRight).map(_.get()._2).foreach(r => verifier.add_fact(r))
-    config.rules.map(Parser.rule).filter(_.isRight).map(_.get()._2).foreach(r => verifier.add_rule(r))
+    config.rules
+      .map(v => " " + v)
+      .map(Parser.rule)
+      .filter(_.isRight)
+      .map(_.get()._2)
+      .foreach(r => verifier.add_rule(r))
     if (config.revocation_ids.nonEmpty) {
       verifier.revocation_check(config.revocation_ids.toList.map(_.asInstanceOf[java.lang.Long]).asJava)
     }
