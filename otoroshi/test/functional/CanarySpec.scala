@@ -70,7 +70,7 @@ class CanarySpec(name: String, configurationSpec: => Configuration) extends Otor
         forceHttps = false,
         enforceSecureCommunication = false,
         publicPatterns = Seq("/.*"),
-        canary = models.Canary(
+        canary = otoroshi.models.Canary(
           enabled = true,
           targets = Seq(
             Target(
@@ -154,7 +154,7 @@ class CanarySpec(name: String, configurationSpec: => Configuration) extends Otor
         forceHttps = false,
         enforceSecureCommunication = false,
         publicPatterns = Seq("/.*"),
-        canary = models.Canary(
+        canary = otoroshi.models.Canary(
           enabled = true,
           targets = Seq(
             Target(

@@ -22,7 +22,7 @@ import org.scalatestplus.play.components.{OneServerPerSuiteWithComponents, OneSe
 import org.slf4j.LoggerFactory
 import otoroshi.api.Otoroshi
 import otoroshi.models.DataExporterConfig
-import otoroshi.modules.OtoroshiComponentsInstances
+import otoroshi.loader.modules.OtoroshiComponentsInstances
 import play.api.ApplicationLoader.Context
 import play.api.libs.json._
 import play.api.libs.ws._
