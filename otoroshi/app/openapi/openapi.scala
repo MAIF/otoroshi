@@ -286,21 +286,28 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFile: Str
             val pathParts = path.split("/").toList
             val tag = pathParts.tail.tail.head match {
               case "data-exporter-configs" => "data-exporters"
-              case "tenants" => "organizations"
-              case "verifier" => "jwt-verifiers"
-              case "import" => "import / export"
-              case "otoroshi.json" => "import-export"
-              case ":entity" => "tempaltes"
-              case v => v
+              case "tenants"               => "organizations"
+              case "verifiers"             => "jwt-verifiers"
+              case "import"                => "import-export"
+              case "otoroshi.json"         => "import-export"
+              case ":entity"               => "templates"
+              case "new"                   => "templates"
+              case "auths"                 => "auth-modules"
+              case "stats"                 => "analytics"
+              case "events"                => "analytics"
+              case "status"                => "analytics"
+              case "audit"                 => "events"
+              case "alert"                 => "events"
+              case v                       => v
             }
             val operationId = s"$controllerName.$methodName" match {
-              case "otoroshi.controllers.adminapi.StatsController.serviceLiveStats" => s"$controllerName.${methodName}_${tag}"
-              case "otoroshi.controllers.adminapi.TemplatesController.initiateTcpService" => s"$controllerName.${methodName}_${tag}"
-              case "otoroshi.controllers.adminapi.TemplatesController.initiateApiKey" => s"$controllerName.${methodName}_${tag}"
-              case "otoroshi.controllers.adminapi.TemplatesController.initiateService" => s"$controllerName.${methodName}_${tag}"
-              case "otoroshi.controllers.adminapi.TemplatesController.initiateServiceGroup" => s"$controllerName.${methodName}_${tag}"
+              case "otoroshi.controllers.adminapi.StatsController.serviceLiveStats"                          => s"$controllerName.${methodName}_${tag}"
+              case "otoroshi.controllers.adminapi.TemplatesController.initiateTcpService"                    => s"$controllerName.${methodName}_${tag}"
+              case "otoroshi.controllers.adminapi.TemplatesController.initiateApiKey"                        => s"$controllerName.${methodName}_${tag}"
+              case "otoroshi.controllers.adminapi.TemplatesController.initiateService"                       => s"$controllerName.${methodName}_${tag}"
+              case "otoroshi.controllers.adminapi.TemplatesController.initiateServiceGroup"                  => s"$controllerName.${methodName}_${tag}"
               case "otoroshi.controllers.adminapi.TemplatesController.createFromTemplate" if tag == "admins" => s"$controllerName.${methodName}_${pathParts.apply(3)}"
-              case "otoroshi.controllers.adminapi.TemplatesController.createFromTemplate" => s"$controllerName.${methodName}_${tag}"
+              case "otoroshi.controllers.adminapi.TemplatesController.createFromTemplate"                    => s"$controllerName.${methodName}_${tag}"
               case v => v
             }
             tags = tags :+ tag

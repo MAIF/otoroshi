@@ -28,7 +28,7 @@
     "name" : "admins",
     "description" : "???"
   }, {
-    "name" : "alert",
+    "name" : "analytics",
     "description" : "???"
   }, {
     "name" : "apikeys",
@@ -37,10 +37,7 @@
     "name" : "apps-sessions",
     "description" : "???"
   }, {
-    "name" : "audit",
-    "description" : "???"
-  }, {
-    "name" : "auths",
+    "name" : "auth-modules",
     "description" : "???"
   }, {
     "name" : "certificates",
@@ -61,19 +58,16 @@
     "name" : "groups",
     "description" : "???"
   }, {
-    "name" : "import / export",
+    "name" : "import-export",
     "description" : "???"
   }, {
-    "name" : "import-export",
+    "name" : "jwt-verifiers",
     "description" : "???"
   }, {
     "name" : "lines",
     "description" : "???"
   }, {
     "name" : "live",
-    "description" : "???"
-  }, {
-    "name" : "new",
     "description" : "???"
   }, {
     "name" : "organizations",
@@ -94,22 +88,13 @@
     "name" : "snowmonkey",
     "description" : "???"
   }, {
-    "name" : "stats",
-    "description" : "???"
-  }, {
-    "name" : "status",
-    "description" : "???"
-  }, {
     "name" : "tcp",
     "description" : "???"
   }, {
     "name" : "teams",
     "description" : "???"
   }, {
-    "name" : "tempaltes",
-    "description" : "???"
-  }, {
-    "name" : "verifiers",
+    "name" : "templates",
     "description" : "???"
   } ],
   "paths" : {
@@ -168,7 +153,7 @@
     },
     "/api/stats" : {
       "get" : {
-        "tags" : [ "stats" ],
+        "tags" : [ "analytics" ],
         "summary" : "???",
         "operationId" : "otoroshi.controllers.adminapi.AnalyticsController.filterableStats",
         "parameters" : [ ],
@@ -336,7 +321,7 @@
     },
     "/api/stats/global" : {
       "get" : {
-        "tags" : [ "stats" ],
+        "tags" : [ "analytics" ],
         "summary" : "???",
         "operationId" : "otoroshi.controllers.adminapi.AnalyticsController.globalStats",
         "parameters" : [ ],
@@ -1413,7 +1398,7 @@
     },
     "/api/verifiers/:id" : {
       "patch" : {
-        "tags" : [ "verifiers" ],
+        "tags" : [ "jwt-verifiers" ],
         "summary" : "???",
         "operationId" : "otoroshi.controllers.adminapi.JwtVerifierController.patchEntityAction",
         "parameters" : [ ],
@@ -1475,7 +1460,7 @@
         }
       },
       "get" : {
-        "tags" : [ "verifiers" ],
+        "tags" : [ "jwt-verifiers" ],
         "summary" : "???",
         "operationId" : "otoroshi.controllers.adminapi.JwtVerifierController.findEntityByIdAction",
         "parameters" : [ ],
@@ -1526,7 +1511,7 @@
         }
       },
       "delete" : {
-        "tags" : [ "verifiers" ],
+        "tags" : [ "jwt-verifiers" ],
         "summary" : "???",
         "operationId" : "otoroshi.controllers.adminapi.JwtVerifierController.deleteEntityAction",
         "parameters" : [ ],
@@ -1577,7 +1562,7 @@
         }
       },
       "put" : {
-        "tags" : [ "verifiers" ],
+        "tags" : [ "jwt-verifiers" ],
         "summary" : "???",
         "operationId" : "otoroshi.controllers.adminapi.JwtVerifierController.updateEntityAction",
         "parameters" : [ ],
@@ -1694,7 +1679,7 @@
     },
     "/api/auths/:id/register/start" : {
       "post" : {
-        "tags" : [ "auths" ],
+        "tags" : [ "auth-modules" ],
         "summary" : "???",
         "operationId" : "otoroshi.controllers.adminapi.AuthModulesController.startRegistration",
         "parameters" : [ ],
@@ -1915,7 +1900,7 @@
     },
     "/api/auths/_bulk" : {
       "patch" : {
-        "tags" : [ "auths" ],
+        "tags" : [ "auth-modules" ],
         "summary" : "???",
         "operationId" : "otoroshi.controllers.adminapi.AuthModulesController.bulkPatchAction",
         "parameters" : [ ],
@@ -1977,7 +1962,7 @@
         }
       },
       "post" : {
-        "tags" : [ "auths" ],
+        "tags" : [ "auth-modules" ],
         "summary" : "???",
         "operationId" : "otoroshi.controllers.adminapi.AuthModulesController.bulkCreateAction",
         "parameters" : [ ],
@@ -2039,7 +2024,7 @@
         }
       },
       "delete" : {
-        "tags" : [ "auths" ],
+        "tags" : [ "auth-modules" ],
         "summary" : "???",
         "operationId" : "otoroshi.controllers.adminapi.AuthModulesController.bulkDeleteAction",
         "parameters" : [ ],
@@ -2090,7 +2075,7 @@
         }
       },
       "put" : {
-        "tags" : [ "auths" ],
+        "tags" : [ "auth-modules" ],
         "summary" : "???",
         "operationId" : "otoroshi.controllers.adminapi.AuthModulesController.bulkUpdateAction",
         "parameters" : [ ],
@@ -3258,9 +3243,9 @@
     },
     "/api/new/service" : {
       "get" : {
-        "tags" : [ "new" ],
+        "tags" : [ "templates" ],
         "summary" : "???",
-        "operationId" : "otoroshi.controllers.adminapi.TemplatesController.initiateService_new",
+        "operationId" : "otoroshi.controllers.adminapi.TemplatesController.initiateService_templates",
         "parameters" : [ ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -3541,7 +3526,7 @@
     },
     "/api/alert/events" : {
       "get" : {
-        "tags" : [ "alert" ],
+        "tags" : [ "events" ],
         "summary" : "???",
         "operationId" : "otoroshi.controllers.adminapi.EventsController.alertEvents",
         "parameters" : [ ],
@@ -4264,7 +4249,7 @@
     },
     "/api/status/global" : {
       "get" : {
-        "tags" : [ "status" ],
+        "tags" : [ "analytics" ],
         "summary" : "???",
         "operationId" : "otoroshi.controllers.adminapi.AnalyticsController.globalStatus",
         "parameters" : [ ],
@@ -5828,9 +5813,9 @@
     },
     "/api/:entity/_template" : {
       "post" : {
-        "tags" : [ "tempaltes" ],
+        "tags" : [ "templates" ],
         "summary" : "???",
-        "operationId" : "otoroshi.controllers.adminapi.TemplatesController.createFromTemplate_tempaltes",
+        "operationId" : "otoroshi.controllers.adminapi.TemplatesController.createFromTemplate_templates",
         "parameters" : [ ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -6060,7 +6045,7 @@
     },
     "/api/auths" : {
       "post" : {
-        "tags" : [ "auths" ],
+        "tags" : [ "auth-modules" ],
         "summary" : "???",
         "operationId" : "otoroshi.controllers.adminapi.AuthModulesController.createAction",
         "parameters" : [ ],
@@ -6122,7 +6107,7 @@
         }
       },
       "get" : {
-        "tags" : [ "auths" ],
+        "tags" : [ "auth-modules" ],
         "summary" : "???",
         "operationId" : "otoroshi.controllers.adminapi.AuthModulesController.findAllEntitiesAction",
         "parameters" : [ ],
@@ -6343,7 +6328,7 @@
     },
     "/api/auths/:id" : {
       "patch" : {
-        "tags" : [ "auths" ],
+        "tags" : [ "auth-modules" ],
         "summary" : "???",
         "operationId" : "otoroshi.controllers.adminapi.AuthModulesController.patchEntityAction",
         "parameters" : [ ],
@@ -6405,7 +6390,7 @@
         }
       },
       "get" : {
-        "tags" : [ "auths" ],
+        "tags" : [ "auth-modules" ],
         "summary" : "???",
         "operationId" : "otoroshi.controllers.adminapi.AuthModulesController.findEntityByIdAction",
         "parameters" : [ ],
@@ -6456,7 +6441,7 @@
         }
       },
       "delete" : {
-        "tags" : [ "auths" ],
+        "tags" : [ "auth-modules" ],
         "summary" : "???",
         "operationId" : "otoroshi.controllers.adminapi.AuthModulesController.deleteEntityAction",
         "parameters" : [ ],
@@ -6507,7 +6492,7 @@
         }
       },
       "put" : {
-        "tags" : [ "auths" ],
+        "tags" : [ "auth-modules" ],
         "summary" : "???",
         "operationId" : "otoroshi.controllers.adminapi.AuthModulesController.updateEntityAction",
         "parameters" : [ ],
@@ -6852,7 +6837,7 @@
     },
     "/api/import" : {
       "post" : {
-        "tags" : [ "import / export" ],
+        "tags" : [ "import-export" ],
         "summary" : "???",
         "operationId" : "otoroshi.controllers.adminapi.ImportExportController.fullImportFromFile",
         "parameters" : [ ],
@@ -7033,7 +7018,7 @@
     },
     "/api/events" : {
       "get" : {
-        "tags" : [ "events" ],
+        "tags" : [ "analytics" ],
         "summary" : "???",
         "operationId" : "otoroshi.controllers.adminapi.AnalyticsController.filterableEvents",
         "parameters" : [ ],
@@ -7150,9 +7135,9 @@
     },
     "/api/new/tcp/service" : {
       "get" : {
-        "tags" : [ "new" ],
+        "tags" : [ "templates" ],
         "summary" : "???",
-        "operationId" : "otoroshi.controllers.adminapi.TemplatesController.initiateTcpService_new",
+        "operationId" : "otoroshi.controllers.adminapi.TemplatesController.initiateTcpService_templates",
         "parameters" : [ ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -7203,9 +7188,9 @@
     },
     "/api/new/group" : {
       "get" : {
-        "tags" : [ "new" ],
+        "tags" : [ "templates" ],
         "summary" : "???",
-        "operationId" : "otoroshi.controllers.adminapi.TemplatesController.initiateServiceGroup_new",
+        "operationId" : "otoroshi.controllers.adminapi.TemplatesController.initiateServiceGroup_templates",
         "parameters" : [ ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -7559,7 +7544,7 @@
     },
     "/api/auths/_template" : {
       "get" : {
-        "tags" : [ "auths" ],
+        "tags" : [ "auth-modules" ],
         "summary" : "???",
         "operationId" : "otoroshi.controllers.adminapi.TemplatesController.initiateAuthModule",
         "parameters" : [ ],
@@ -7780,7 +7765,7 @@
     },
     "/api/verifiers/_template" : {
       "get" : {
-        "tags" : [ "verifiers" ],
+        "tags" : [ "jwt-verifiers" ],
         "summary" : "???",
         "operationId" : "otoroshi.controllers.adminapi.TemplatesController.initiateJwtVerifier",
         "parameters" : [ ],
@@ -8010,9 +7995,9 @@
     },
     "/api/new/apikey" : {
       "get" : {
-        "tags" : [ "new" ],
+        "tags" : [ "templates" ],
         "summary" : "???",
-        "operationId" : "otoroshi.controllers.adminapi.TemplatesController.initiateApiKey_new",
+        "operationId" : "otoroshi.controllers.adminapi.TemplatesController.initiateApiKey_templates",
         "parameters" : [ ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -9182,7 +9167,7 @@
     },
     "/api/verifiers" : {
       "post" : {
-        "tags" : [ "verifiers" ],
+        "tags" : [ "jwt-verifiers" ],
         "summary" : "???",
         "operationId" : "otoroshi.controllers.adminapi.JwtVerifierController.createAction",
         "parameters" : [ ],
@@ -9244,7 +9229,7 @@
         }
       },
       "get" : {
-        "tags" : [ "verifiers" ],
+        "tags" : [ "jwt-verifiers" ],
         "summary" : "???",
         "operationId" : "otoroshi.controllers.adminapi.JwtVerifierController.findAllEntitiesAction",
         "parameters" : [ ],
@@ -10728,7 +10713,7 @@
     },
     "/api/events/_template" : {
       "get" : {
-        "tags" : [ "events" ],
+        "tags" : [ "analytics" ],
         "summary" : "???",
         "operationId" : "otoroshi.controllers.adminapi.TemplatesController.templateSpec",
         "parameters" : [ ],
@@ -10949,7 +10934,7 @@
     },
     "/api/audit/events" : {
       "get" : {
-        "tags" : [ "audit" ],
+        "tags" : [ "events" ],
         "summary" : "???",
         "operationId" : "otoroshi.controllers.adminapi.EventsController.auditEvents",
         "parameters" : [ ],
@@ -11305,7 +11290,7 @@
     },
     "/api/auths/:id/register/finish" : {
       "post" : {
-        "tags" : [ "auths" ],
+        "tags" : [ "auth-modules" ],
         "summary" : "???",
         "operationId" : "otoroshi.controllers.adminapi.AuthModulesController.finishRegistration",
         "parameters" : [ ],
@@ -12045,7 +12030,7 @@
     },
     "/api/verifiers/_bulk" : {
       "patch" : {
-        "tags" : [ "verifiers" ],
+        "tags" : [ "jwt-verifiers" ],
         "summary" : "???",
         "operationId" : "otoroshi.controllers.adminapi.JwtVerifierController.bulkPatchAction",
         "parameters" : [ ],
@@ -12107,7 +12092,7 @@
         }
       },
       "post" : {
-        "tags" : [ "verifiers" ],
+        "tags" : [ "jwt-verifiers" ],
         "summary" : "???",
         "operationId" : "otoroshi.controllers.adminapi.JwtVerifierController.bulkCreateAction",
         "parameters" : [ ],
@@ -12169,7 +12154,7 @@
         }
       },
       "delete" : {
-        "tags" : [ "verifiers" ],
+        "tags" : [ "jwt-verifiers" ],
         "summary" : "???",
         "operationId" : "otoroshi.controllers.adminapi.JwtVerifierController.bulkDeleteAction",
         "parameters" : [ ],
@@ -12220,7 +12205,7 @@
         }
       },
       "put" : {
-        "tags" : [ "verifiers" ],
+        "tags" : [ "jwt-verifiers" ],
         "summary" : "???",
         "operationId" : "otoroshi.controllers.adminapi.JwtVerifierController.bulkUpdateAction",
         "parameters" : [ ],
@@ -12839,7 +12824,7 @@
     },
     "/api/status" : {
       "post" : {
-        "tags" : [ "status" ],
+        "tags" : [ "analytics" ],
         "summary" : "???",
         "operationId" : "otoroshi.controllers.adminapi.AnalyticsController.servicesStatus",
         "parameters" : [ ],
