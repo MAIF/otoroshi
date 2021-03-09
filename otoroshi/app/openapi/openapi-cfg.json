@@ -1403,6 +1403,10 @@
       "type" : "object",
       "description" : "no value object, used to represent a None option value"
     },
+    "Empty" : {
+      "type" : "object",
+      "description" : "an empty body. Useful for RPC like endpoints"
+    },
     "ErrorResponse" : {
       "type" : "object",
       "description" : "Typical error returned by otoroshi",
