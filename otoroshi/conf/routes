@@ -448,6 +448,7 @@ DELETE  /api/admins/webauthn/:username/:id                    otoroshi.controlle
 
 GET     /api/swagger.json                                     otoroshi.controllers.SwaggerController.swagger()
 GET     /api/swagger/ui                                       otoroshi.controllers.SwaggerController.swaggerUi()
+GET     /api/openapi/ui                                       otoroshi.controllers.SwaggerController.openapiUi()
 
 ########################################################################################################################
 
