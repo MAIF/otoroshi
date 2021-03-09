@@ -101,7 +101,7 @@
     "/api/stats" : {
       "get" : {
         "tags" : [ "analytics" ],
-        "summary" : "???",
+        "summary" : "Statistic for a service, apikey or group",
         "operationId" : "otoroshi.controllers.adminapi.AnalyticsController.filterableStats",
         "parameters" : [ ],
         "security" : [ {
@@ -154,7 +154,7 @@
     "/api/stats/global" : {
       "get" : {
         "tags" : [ "analytics" ],
-        "summary" : "???",
+        "summary" : "Global statistic for your services",
         "operationId" : "otoroshi.controllers.adminapi.AnalyticsController.globalStats",
         "parameters" : [ ],
         "security" : [ {
@@ -207,7 +207,7 @@
     "/api/services/{serviceId}/stats" : {
       "get" : {
         "tags" : [ "services" ],
-        "summary" : "???",
+        "summary" : "Statistics for a service",
         "operationId" : "otoroshi.controllers.adminapi.AnalyticsController.serviceStats",
         "parameters" : [ {
           "name" : "serviceId",
@@ -321,7 +321,7 @@
     "/api/scripts/_list" : {
       "get" : {
         "tags" : [ "scripts" ],
-        "summary" : "???",
+        "summary" : "Search plugins based on type of plugin",
         "operationId" : "otoroshi.controllers.adminapi.ScriptApiController.findAllScriptsList",
         "parameters" : [ ],
         "security" : [ {
@@ -489,7 +489,7 @@
     "/api/groups/{groupId}/status" : {
       "get" : {
         "tags" : [ "groups" ],
-        "summary" : "???",
+        "summary" : "Statis for a group of services over time",
         "operationId" : "otoroshi.controllers.adminapi.AnalyticsController.groupStatus",
         "parameters" : [ {
           "name" : "groupId",
@@ -1167,7 +1167,7 @@
     "/api/services/{serviceId}/targets" : {
       "patch" : {
         "tags" : [ "services" ],
-        "summary" : "???",
+        "summary" : "Update the target of the current service",
         "operationId" : "otoroshi.controllers.adminapi.ServicesController.updateServiceTargets",
         "parameters" : [ {
           "name" : "serviceId",
@@ -1237,7 +1237,7 @@
       },
       "post" : {
         "tags" : [ "services" ],
-        "summary" : "???",
+        "summary" : "Adds a target to the current service",
         "operationId" : "otoroshi.controllers.adminapi.ServicesController.serviceAddTarget",
         "parameters" : [ {
           "name" : "serviceId",
@@ -1307,7 +1307,7 @@
       },
       "get" : {
         "tags" : [ "services" ],
-        "summary" : "???",
+        "summary" : "Get targets of the current service",
         "operationId" : "otoroshi.controllers.adminapi.ServicesController.serviceTargets",
         "parameters" : [ {
           "name" : "serviceId",
@@ -1366,7 +1366,7 @@
       },
       "delete" : {
         "tags" : [ "services" ],
-        "summary" : "???",
+        "summary" : "Deletes a target to the current service",
         "operationId" : "otoroshi.controllers.adminapi.ServicesController.serviceDeleteTarget",
         "parameters" : [ {
           "name" : "serviceId",
@@ -1687,7 +1687,7 @@
     "/api/cluster/members" : {
       "get" : {
         "tags" : [ "cluster" ],
-        "summary" : "???",
+        "summary" : "Get cluster members statistics",
         "operationId" : "otoroshi.controllers.adminapi.ClusterController.getClusterMembers",
         "parameters" : [ ],
         "security" : [ {
@@ -1738,7 +1738,7 @@
       },
       "delete" : {
         "tags" : [ "cluster" ],
-        "summary" : "???",
+        "summary" : "Clear cluster members from members statistics",
         "operationId" : "otoroshi.controllers.adminapi.ClusterController.clearClusterMembers",
         "parameters" : [ ],
         "security" : [ {
@@ -2148,7 +2148,7 @@
     "/api/privateapps/sessions/{id}/{username}" : {
       "post" : {
         "tags" : [ "privateapps" ],
-        "summary" : "???",
+        "summary" : "Registers a private app session",
         "operationId" : "otoroshi.controllers.PrivateAppsController.registerSession",
         "parameters" : [ {
           "name" : "id",
@@ -2228,7 +2228,7 @@
     "/api/cluster/sessions/{id}" : {
       "get" : {
         "tags" : [ "cluster" ],
-        "summary" : "???",
+        "summary" : "Api to create a distributed private apps session between worker and leader",
         "operationId" : "otoroshi.controllers.adminapi.ClusterController.isSessionValid",
         "parameters" : [ {
           "name" : "id",
@@ -2878,7 +2878,7 @@
     "/api/snowmonkey/config" : {
       "patch" : {
         "tags" : [ "snowmonkey" ],
-        "summary" : "???",
+        "summary" : "Updates (using json-patch) the snowmonkey configuration",
         "operationId" : "otoroshi.controllers.adminapi.SnowMonkeyController.patchSnowMonkey",
         "parameters" : [ ],
         "security" : [ {
@@ -2940,7 +2940,7 @@
       },
       "get" : {
         "tags" : [ "snowmonkey" ],
-        "summary" : "???",
+        "summary" : "Get the snowmonkey config",
         "operationId" : "otoroshi.controllers.adminapi.SnowMonkeyController.getSnowMonkeyConfig",
         "parameters" : [ ],
         "security" : [ {
@@ -2991,7 +2991,7 @@
       },
       "put" : {
         "tags" : [ "snowmonkey" ],
-        "summary" : "???",
+        "summary" : "Updates the snowmonkey configuration",
         "operationId" : "otoroshi.controllers.adminapi.SnowMonkeyController.updateSnowMonkey",
         "parameters" : [ ],
         "security" : [ {
@@ -3108,7 +3108,7 @@
     "/api/alert/events" : {
       "get" : {
         "tags" : [ "events" ],
-        "summary" : "???",
+        "summary" : "Get all events of type AlertEvent",
         "operationId" : "otoroshi.controllers.adminapi.EventsController.alertEvents",
         "parameters" : [ ],
         "security" : [ {
@@ -3161,7 +3161,7 @@
     "/api/lines/{line}/services" : {
       "get" : {
         "tags" : [ "lines" ],
-        "summary" : "???",
+        "summary" : "Get all service for a line of work",
         "operationId" : "otoroshi.controllers.adminapi.ServicesController.servicesForALine",
         "parameters" : [ {
           "name" : "line",
@@ -3412,7 +3412,7 @@
     "/api/pki/cas/{ca}/cas" : {
       "post" : {
         "tags" : [ "pki" ],
-        "summary" : "???",
+        "summary" : "Generates a sub-CA",
         "operationId" : "otoroshi.controllers.adminapi.PkiController.genSubCA",
         "parameters" : [ {
           "name" : "ca",
@@ -3858,7 +3858,7 @@
     "/api/status/global" : {
       "get" : {
         "tags" : [ "analytics" ],
-        "summary" : "???",
+        "summary" : "Global status of your services",
         "operationId" : "otoroshi.controllers.adminapi.AnalyticsController.globalStatus",
         "parameters" : [ ],
         "security" : [ {
@@ -4150,7 +4150,7 @@
     "/api/snowmonkey/outages" : {
       "get" : {
         "tags" : [ "snowmonkey" ],
-        "summary" : "???",
+        "summary" : "Get the current snowmonkey outages",
         "operationId" : "otoroshi.controllers.adminapi.SnowMonkeyController.getSnowMonkeyOutages",
         "parameters" : [ ],
         "security" : [ {
@@ -4201,7 +4201,7 @@
       },
       "delete" : {
         "tags" : [ "snowmonkey" ],
-        "summary" : "???",
+        "summary" : "Reset the snowmonkey outages",
         "operationId" : "otoroshi.controllers.adminapi.SnowMonkeyController.resetSnowMonkey",
         "parameters" : [ ],
         "security" : [ {
@@ -4732,7 +4732,7 @@
     "/api/cluster/state" : {
       "get" : {
         "tags" : [ "cluster" ],
-        "summary" : "???",
+        "summary" : "Api to get internal state from a leader",
         "operationId" : "otoroshi.controllers.adminapi.ClusterController.internalState",
         "parameters" : [ ],
         "security" : [ {
@@ -4785,7 +4785,7 @@
     "/api/pki/keys" : {
       "post" : {
         "tags" : [ "pki" ],
-        "summary" : "???",
+        "summary" : "Generates a keypair",
         "operationId" : "otoroshi.controllers.adminapi.PkiController.genKeyPair",
         "parameters" : [ ],
         "security" : [ {
@@ -4849,7 +4849,7 @@
     "/api/pki/certs/_p12" : {
       "post" : {
         "tags" : [ "pki" ],
-        "summary" : "???",
+        "summary" : "Import de .p12 file as client certificates",
         "operationId" : "otoroshi.controllers.adminapi.PkiController.importCertFromP12",
         "parameters" : [ ],
         "security" : [ {
@@ -4913,7 +4913,7 @@
     "/api/otoroshi.json" : {
       "post" : {
         "tags" : [ "import-export" ],
-        "summary" : "???",
+        "summary" : "Import the content of the otoroshi datastore (json)",
         "operationId" : "otoroshi.controllers.adminapi.ImportExportController.fullImport",
         "parameters" : [ ],
         "security" : [ {
@@ -4975,7 +4975,7 @@
       },
       "get" : {
         "tags" : [ "import-export" ],
-        "summary" : "???",
+        "summary" : "Export all the content of the otoroshi datastore",
         "operationId" : "otoroshi.controllers.adminapi.ImportExportController.fullExport",
         "parameters" : [ ],
         "security" : [ {
@@ -5781,7 +5781,7 @@
     "/api/live" : {
       "get" : {
         "tags" : [ "live" ],
-        "summary" : "???",
+        "summary" : "Get global live statis",
         "operationId" : "otoroshi.controllers.adminapi.StatsController.globalLiveStats",
         "parameters" : [ ],
         "security" : [ {
@@ -5903,7 +5903,7 @@
     "/api/import" : {
       "post" : {
         "tags" : [ "import-export" ],
-        "summary" : "???",
+        "summary" : "Import the content of the otoroshi datastore (file)",
         "operationId" : "otoroshi.controllers.adminapi.ImportExportController.fullImportFromFile",
         "parameters" : [ ],
         "security" : [ {
@@ -5967,7 +5967,7 @@
     "/api/pki/cas" : {
       "post" : {
         "tags" : [ "pki" ],
-        "summary" : "???",
+        "summary" : "Generates a self signed CA",
         "operationId" : "otoroshi.controllers.adminapi.PkiController.genSelfSignedCA",
         "parameters" : [ ],
         "security" : [ {
@@ -6291,7 +6291,7 @@
     "/api/events" : {
       "get" : {
         "tags" : [ "analytics" ],
-        "summary" : "???",
+        "summary" : "Events for a service, apikey or group",
         "operationId" : "otoroshi.controllers.adminapi.AnalyticsController.filterableEvents",
         "parameters" : [ ],
         "security" : [ {
@@ -6344,7 +6344,7 @@
     "/api/pki/certs" : {
       "post" : {
         "tags" : [ "pki" ],
-        "summary" : "???",
+        "summary" : "Generates a self signed certificates",
         "operationId" : "otoroshi.controllers.adminapi.PkiController.genSelfSignedCert",
         "parameters" : [ ],
         "security" : [ {
@@ -6461,7 +6461,7 @@
     "/api/auths/{id}/register/finish" : {
       "post" : {
         "tags" : [ "auth-modules" ],
-        "summary" : "???",
+        "summary" : "Finishes the registration of a user",
         "operationId" : "otoroshi.controllers.adminapi.AuthModulesController.finishRegistration",
         "parameters" : [ {
           "name" : "id",
@@ -7113,7 +7113,7 @@
     "/api/globalconfig" : {
       "patch" : {
         "tags" : [ "globalconfig" ],
-        "summary" : "???",
+        "summary" : "Update (with json-patch) the global config",
         "operationId" : "otoroshi.controllers.adminapi.GlobalConfigController.patchGlobalConfig",
         "parameters" : [ ],
         "security" : [ {
@@ -7175,7 +7175,7 @@
       },
       "get" : {
         "tags" : [ "globalconfig" ],
-        "summary" : "???",
+        "summary" : "Get the global config",
         "operationId" : "otoroshi.controllers.adminapi.GlobalConfigController.globalConfig",
         "parameters" : [ ],
         "security" : [ {
@@ -7226,7 +7226,7 @@
       },
       "put" : {
         "tags" : [ "globalconfig" ],
-        "summary" : "???",
+        "summary" : "Update the global config",
         "operationId" : "otoroshi.controllers.adminapi.GlobalConfigController.updateGlobalConfig",
         "parameters" : [ ],
         "security" : [ {
@@ -7290,7 +7290,7 @@
     "/api/services/{serviceId}/response" : {
       "get" : {
         "tags" : [ "services" ],
-        "summary" : "???",
+        "summary" : "Response time statistics for a service",
         "operationId" : "otoroshi.controllers.adminapi.AnalyticsController.serviceResponseTime",
         "parameters" : [ {
           "name" : "serviceId",
@@ -7664,7 +7664,7 @@
     "/api/pki/certs/_data" : {
       "post" : {
         "tags" : [ "pki" ],
-        "summary" : "???",
+        "summary" : "Extract data from a certificate",
         "operationId" : "otoroshi.controllers.adminapi.PkiController.certificateData",
         "parameters" : [ ],
         "security" : [ {
@@ -7728,7 +7728,7 @@
     "/api/cluster/quotas" : {
       "put" : {
         "tags" : [ "cluster" ],
-        "summary" : "???",
+        "summary" : "Api to push quotas usage from a worker to a leader",
         "operationId" : "otoroshi.controllers.adminapi.ClusterController.updateQuotas",
         "parameters" : [ ],
         "security" : [ {
@@ -8103,7 +8103,7 @@
     "/api/services/{serviceId}/live" : {
       "get" : {
         "tags" : [ "services" ],
-        "summary" : "???",
+        "summary" : "Get live stats for a specific service",
         "operationId" : "otoroshi.controllers.adminapi.StatsController.serviceLiveStats_services",
         "parameters" : [ {
           "name" : "serviceId",
@@ -8663,7 +8663,7 @@
     "/api/pki/csrs" : {
       "post" : {
         "tags" : [ "pki" ],
-        "summary" : "???",
+        "summary" : "Generates a CSR",
         "operationId" : "otoroshi.controllers.adminapi.PkiController.genCsr",
         "parameters" : [ ],
         "security" : [ {
@@ -9732,7 +9732,7 @@
     "/api/cluster/user-tokens/{id}" : {
       "get" : {
         "tags" : [ "cluster" ],
-        "summary" : "???",
+        "summary" : "Api to get a distributed login token between worker and leader",
         "operationId" : "otoroshi.controllers.adminapi.ClusterController.getUserToken",
         "parameters" : [ {
           "name" : "id",
@@ -9793,7 +9793,7 @@
     "/api/snowmonkey/_start" : {
       "post" : {
         "tags" : [ "snowmonkey" ],
-        "summary" : "???",
+        "summary" : "Start the snowmonkey of all otoroshi instances",
         "operationId" : "otoroshi.controllers.adminapi.SnowMonkeyController.startSnowMonkey",
         "parameters" : [ ],
         "security" : [ {
@@ -10288,7 +10288,7 @@
     "/api/pki/cas/{ca}/certs" : {
       "post" : {
         "tags" : [ "pki" ],
-        "summary" : "???",
+        "summary" : "Generates a certificate",
         "operationId" : "otoroshi.controllers.adminapi.PkiController.genCert",
         "parameters" : [ {
           "name" : "ca",
@@ -10360,7 +10360,7 @@
     "/api/services/{serviceId}/events" : {
       "get" : {
         "tags" : [ "services" ],
-        "summary" : "???",
+        "summary" : "Events for a service",
         "operationId" : "otoroshi.controllers.adminapi.AnalyticsController.serviceEvents",
         "parameters" : [ {
           "name" : "serviceId",
@@ -10474,7 +10474,7 @@
     "/api/audit/events" : {
       "get" : {
         "tags" : [ "events" ],
-        "summary" : "???",
+        "summary" : "Get all events of type AuditEvent",
         "operationId" : "otoroshi.controllers.adminapi.EventsController.auditEvents",
         "parameters" : [ ],
         "security" : [ {
@@ -10527,7 +10527,7 @@
     "/api/snowmonkey/_stop" : {
       "post" : {
         "tags" : [ "snowmonkey" ],
-        "summary" : "???",
+        "summary" : "Stop the snowmonkey of all otoroshi instances",
         "operationId" : "otoroshi.controllers.adminapi.SnowMonkeyController.stopSnowMonkey",
         "parameters" : [ ],
         "security" : [ {
@@ -10883,7 +10883,7 @@
     "/api/services/{serviceId}/health" : {
       "get" : {
         "tags" : [ "services" ],
-        "summary" : "???",
+        "summary" : "Get healthcheck status for the current service",
         "operationId" : "otoroshi.controllers.adminapi.ServicesController.serviceHealth",
         "parameters" : [ {
           "name" : "serviceId",
@@ -10944,7 +10944,7 @@
     "/api/services/{serviceId}/canary" : {
       "get" : {
         "tags" : [ "services" ],
-        "summary" : "???",
+        "summary" : "Get members of a canary campaign",
         "operationId" : "otoroshi.controllers.adminapi.CanaryController.serviceCanaryMembers",
         "parameters" : [ {
           "name" : "serviceId",
@@ -11003,7 +11003,7 @@
       },
       "delete" : {
         "tags" : [ "services" ],
-        "summary" : "???",
+        "summary" : "Reset members of a canary campaign",
         "operationId" : "otoroshi.controllers.adminapi.CanaryController.resetServiceCanaryMembers",
         "parameters" : [ {
           "name" : "serviceId",
@@ -11064,7 +11064,7 @@
     "/api/live/host" : {
       "get" : {
         "tags" : [ "live" ],
-        "summary" : "???",
+        "summary" : "Get local host metrics",
         "operationId" : "otoroshi.controllers.adminapi.StatsController.hostMetrics",
         "parameters" : [ ],
         "security" : [ {
@@ -11117,7 +11117,7 @@
     "/api/pki/certs/_valid" : {
       "post" : {
         "tags" : [ "pki" ],
-        "summary" : "???",
+        "summary" : "Check if a certificate is valid (based on its own data)",
         "operationId" : "otoroshi.controllers.adminapi.PkiController.certificateIsValid",
         "parameters" : [ ],
         "security" : [ {
@@ -11181,7 +11181,7 @@
     "/api/cluster/live" : {
       "get" : {
         "tags" : [ "cluster" ],
-        "summary" : "???",
+        "summary" : "Api to get cluster statistics",
         "operationId" : "otoroshi.controllers.adminapi.ClusterController.liveCluster",
         "parameters" : [ ],
         "security" : [ {
@@ -11352,7 +11352,7 @@
     "/api/apikeys/{id}/quotas" : {
       "get" : {
         "tags" : [ "apikeys" ],
-        "summary" : "???",
+        "summary" : "Consumed quotas for a specific apikey",
         "operationId" : "otoroshi.controllers.adminapi.ApiKeysController.apiKeyQuotas",
         "parameters" : [ {
           "name" : "id",
@@ -11411,7 +11411,7 @@
       },
       "delete" : {
         "tags" : [ "apikeys" ],
-        "summary" : "???",
+        "summary" : "Reset quotas consumption for an apikey",
         "operationId" : "otoroshi.controllers.adminapi.ApiKeysController.resetApiKeyQuotas",
         "parameters" : [ {
           "name" : "id",
@@ -11472,7 +11472,7 @@
     "/api/cluster/user-tokens" : {
       "post" : {
         "tags" : [ "cluster" ],
-        "summary" : "???",
+        "summary" : "Api to set a distributed login token between worker and leader",
         "operationId" : "otoroshi.controllers.adminapi.ClusterController.setUserToken",
         "parameters" : [ ],
         "security" : [ {
@@ -11536,7 +11536,7 @@
     "/api/pki/certs/_letencrypt" : {
       "post" : {
         "tags" : [ "pki" ],
-        "summary" : "???",
+        "summary" : "Generates a certificates using Let's Encrypt or any ACME compatible system",
         "operationId" : "otoroshi.controllers.adminapi.PkiController.genLetsEncryptCert",
         "parameters" : [ ],
         "security" : [ {
@@ -11600,7 +11600,7 @@
     "/api/live/{id}" : {
       "get" : {
         "tags" : [ "live" ],
-        "summary" : "???",
+        "summary" : "Get live stats for a specific service",
         "operationId" : "otoroshi.controllers.adminapi.StatsController.serviceLiveStats_live",
         "parameters" : [ {
           "name" : "id",
@@ -11900,7 +11900,7 @@
     "/api/lines" : {
       "get" : {
         "tags" : [ "lines" ],
-        "summary" : "???",
+        "summary" : "Get all lines of work (prod, preprod, etc)",
         "operationId" : "otoroshi.controllers.adminapi.ServicesController.allLines",
         "parameters" : [ ],
         "security" : [ {
@@ -12110,7 +12110,7 @@
     "/api/groups/{id}/services" : {
       "get" : {
         "tags" : [ "groups" ],
-        "summary" : "???",
+        "summary" : "Get the services from a service group",
         "operationId" : "otoroshi.controllers.adminapi.ServiceGroupController.serviceGroupServices",
         "parameters" : [ {
           "name" : "id",
@@ -12171,7 +12171,7 @@
     "/api/services/{serviceId}/template" : {
       "post" : {
         "tags" : [ "services" ],
-        "summary" : "???",
+        "summary" : "Creates an error template for the current service",
         "operationId" : "otoroshi.controllers.adminapi.ServicesController.createServiceTemplate",
         "parameters" : [ {
           "name" : "serviceId",
@@ -12241,7 +12241,7 @@
       },
       "get" : {
         "tags" : [ "services" ],
-        "summary" : "???",
+        "summary" : "Get the error template for the current service",
         "operationId" : "otoroshi.controllers.adminapi.ServicesController.serviceTemplate",
         "parameters" : [ {
           "name" : "serviceId",
@@ -12300,7 +12300,7 @@
       },
       "delete" : {
         "tags" : [ "services" ],
-        "summary" : "???",
+        "summary" : "Deletes the error template for the current service",
         "operationId" : "otoroshi.controllers.adminapi.ServicesController.deleteServiceTemplate",
         "parameters" : [ {
           "name" : "serviceId",
@@ -12359,7 +12359,7 @@
       },
       "put" : {
         "tags" : [ "services" ],
-        "summary" : "???",
+        "summary" : "Update the error template of the current service",
         "operationId" : "otoroshi.controllers.adminapi.ServicesController.updateServiceTemplate",
         "parameters" : [ {
           "name" : "serviceId",
@@ -12431,7 +12431,7 @@
     "/api/status" : {
       "post" : {
         "tags" : [ "analytics" ],
-        "summary" : "???",
+        "summary" : "Status for some/all services over time",
         "operationId" : "otoroshi.controllers.adminapi.AnalyticsController.servicesStatus",
         "parameters" : [ ],
         "security" : [ {
@@ -12495,7 +12495,7 @@
     "/api/privateapps/sessions/send/{id}/{username}" : {
       "post" : {
         "tags" : [ "privateapps" ],
-        "summary" : "???",
+        "summary" : "Send an email to a user to update its own settings",
         "operationId" : "otoroshi.controllers.PrivateAppsController.sendSelfUpdateLink",
         "parameters" : [ {
           "name" : "id",
@@ -12690,7 +12690,7 @@
     "/api/auths/{id}/register/start" : {
       "post" : {
         "tags" : [ "auth-modules" ],
-        "summary" : "???",
+        "summary" : "Stats the registration of a user",
         "operationId" : "otoroshi.controllers.adminapi.AuthModulesController.startRegistration",
         "parameters" : [ {
           "name" : "id",
@@ -12762,7 +12762,7 @@
     "/api/services/{serviceId}/status" : {
       "get" : {
         "tags" : [ "services" ],
-        "summary" : "???",
+        "summary" : "Status of a service over time",
         "operationId" : "otoroshi.controllers.adminapi.AnalyticsController.serviceStatus",
         "parameters" : [ {
           "name" : "serviceId",
@@ -12823,7 +12823,7 @@
     "/api/scripts/_compile" : {
       "post" : {
         "tags" : [ "scripts" ],
-        "summary" : "???",
+        "summary" : "Trigger script compilation of the server",
         "operationId" : "otoroshi.controllers.adminapi.ScriptApiController.compileScript",
         "parameters" : [ ],
         "security" : [ {
@@ -12887,7 +12887,7 @@
     "/api/pki/cas/{ca}/certs/_sign" : {
       "post" : {
         "tags" : [ "pki" ],
-        "summary" : "???",
+        "summary" : "Sign a certificate based on a CSR",
         "operationId" : "otoroshi.controllers.adminapi.PkiController.signCert",
         "parameters" : [ {
           "name" : "ca",
@@ -12959,7 +12959,7 @@
     "/api/cluster/login-tokens/{id}" : {
       "post" : {
         "tags" : [ "cluster" ],
-        "summary" : "???",
+        "summary" : "Api to create a distributed login token between worker and leader",
         "operationId" : "otoroshi.controllers.adminapi.ClusterController.createLoginToken",
         "parameters" : [ {
           "name" : "id",
@@ -13029,7 +13029,7 @@
       },
       "get" : {
         "tags" : [ "cluster" ],
-        "summary" : "???",
+        "summary" : "Api to check a distributed login token between worker and leader",
         "operationId" : "otoroshi.controllers.adminapi.ClusterController.isLoginTokenValid",
         "parameters" : [ {
           "name" : "id",
@@ -13090,7 +13090,7 @@
     "/api/certificates/{certId}/_renew" : {
       "post" : {
         "tags" : [ "certificates" ],
-        "summary" : "???",
+        "summary" : "Renew a certificates with the same attributes as the original one",
         "operationId" : "otoroshi.controllers.adminapi.CertificatesController.renewCert",
         "parameters" : [ {
           "name" : "certId",
@@ -13475,7 +13475,7 @@
     "/api/cluster/sessions" : {
       "post" : {
         "tags" : [ "cluster" ],
-        "summary" : "???",
+        "summary" : "Api to create a distributed private apps session between worker and leader",
         "operationId" : "otoroshi.controllers.adminapi.ClusterController.createSession",
         "parameters" : [ ],
         "security" : [ {
