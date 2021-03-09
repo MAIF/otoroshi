@@ -105,13 +105,7 @@ class PluginsDescription extends Component {
             this.findNode(
               script,
               <div
-                className="form-group"
-                style={{
-                  marginLeft: 10,
-                  marginRight: 50,
-                }}>
-                <label className="col-xs-12 col-sm-2 control-label" />
-                <div className="col-sm-10">
+                className="form__group mb-20">
                   <div
                     className="plugin-doc"
                     style={{
@@ -121,20 +115,17 @@ class PluginsDescription extends Component {
                       backgroundColor: '#494948',
                       width: '100%',
                     }}>
-                    <h3>{script.name}</h3>
-                    {!!script.defaultConfig && (
-                      <button
-                        type="button"
-                        className="btn btn-xs btn-info"
-                        onClick={(e) => this.inject(script)}
-                        style={{
-                          position: 'absolute',
-                          right: 20,
-                          top: 20,
-                        }}>
-                        Inject default config.
-                      </button>
-                    )}
+                  <div className="display--flex justify-content--between">
+                      <h3 className="display--inline-block">{script.name}</h3>
+                      {!!script.defaultConfig && (
+                        <button
+                          type="button"
+                          className="btn-xs btn-info ml-5"
+                          onClick={(e) => this.inject(script)}>
+                          Inject default config.
+                        </button>
+                      )}
+                    </div>
                     <p
                       style={{ textAlign: 'justify', marginBottom: 10 }}
                       dangerouslySetInnerHTML={{ __html: converter.makeHtml(script.description) }}
@@ -164,7 +155,6 @@ class PluginsDescription extends Component {
                       />
                     )}
                   </div>
-                </div>
               </div>
             )
           )}
@@ -191,16 +181,16 @@ export class Scripts extends Component {
           config={this.props.config}
           onChangeConfig={this.props.onChangeConfig}
         />
-        <div className="form-group">
-          <label className="col-xs-12 col-sm-2 control-label" />
-          <div className="col-sm-10">
+        <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
+          <label />
+          <div>
             {this.props.refs && this.props.refs.length === 0 && (
-              <a href={`/bo/dashboard/plugins/add`} className="btn btn-sm btn-primary">
-                <i className="fas fa-plus" /> Create a new plugin.
+              <a href={`/bo/dashboard/plugins/add`} className="button btn-sm btn-info">
+                <i className="fas fa-plus" /> Create a new plugin
               </a>
             )}
-            <a href={`/bo/dashboard/plugins`} className="btn btn-sm btn-primary">
-              <i className="fas fa-link" /> all plugins.
+            <a href={`/bo/dashboard/plugins`} className="button btn-sm btn-info ml-5">
+              <i className="fas fa-link" /> all plugins
             </a>
           </div>
         </div>

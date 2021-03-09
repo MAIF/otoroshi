@@ -274,12 +274,11 @@ export class Oauth2ModuleConfig extends Component {
     }
     return (
       <div>
-        <div className="form-group">
+        <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
           <label
             htmlFor={`input-${this.props.label}`}
-            className="col-xs-12 col-sm-2 control-label"
           />
-          <div className="col-sm-10">
+          <div>
             <button type="button" className="btn btn-success" onClick={this.fetchConfig}>
               Get from OIDC config
             </button>
@@ -511,7 +510,7 @@ export class Oauth2ModuleConfig extends Component {
             value: a.id,
             label: (
               <span>
-                <span className="label label-success" style={{ minWidth: 63 }}>
+                <span className="label bg__success" style={{ minWidth: 63 }}>
                   {a.certType}
                 </span>{' '}
                 {a.name} - {a.description}
@@ -530,7 +529,7 @@ export class Oauth2ModuleConfig extends Component {
             value: a.id,
             label: (
               <span>
-                <span className="label label-success" style={{ minWidth: 63 }}>
+                <span className="label bg__success" style={{ minWidth: 63 }}>
                   {a.certType}
                 </span>{' '}
                 {a.name} - {a.description}
@@ -640,29 +639,24 @@ export class User extends Component {
   render() {
     return (
       <div
-        style={{
-          display: 'flex',
-          marginTop: 10,
-        }}>
-        <div className="csol-sm-10 row" style={{ width: '80%', paddingLeft: 15, paddingRight: 20 }}>
+      className="display--flex mt-10"
+        >
+        <div className="" style={{ width: '80%', paddingLeft: 15, paddingRight: 20 }}>
           <input
             type="text"
             placeholder="User name"
-            className="form-control"
             value={this.props.user.name}
             onChange={(e) => this.props.onChange(this.props.user.email, 'name', e.target.value)}
           />
           <input
             type="text"
             placeholder="User email"
-            className="form-control"
             value={this.props.user.email}
             onChange={(e) => this.props.onChange(this.props.user.email, 'email', e.target.value)}
           />
           <input
             type="text"
             placeholder="User metadata"
-            className="form-control"
             value={
               this.state.rawUser !== JSON.stringify(this.props.user.metadata)
                 ? this.state.rawUser
@@ -679,10 +673,10 @@ export class User extends Component {
             }}
           />
         </div>
-        <div className="btn-group" style={{ marginLeft: 0 }}>
+        <div className="btn__group" style={{ marginLeft: 0 }}>
           <button
             type="button"
-            className="btn btn-sm btn-success"
+            className="btn-sm btn-success mr-5 mb-5"
             title="Set password"
             onClick={(e) => {
               window.newPrompt('Type password', { type: 'password' }).then((value1) => {
@@ -694,26 +688,24 @@ export class User extends Component {
                   }
                 });
               });
-            }}
-            style={{ marginRight: 0 }}>
+            }}>
             <i className="fas fa-edit" />
           </button>
           <button
             type="button"
-            className="btn btn-sm btn-success"
+            className="btn-sm btn-success mr-5 mb-5"
             title="Generate password"
             onClick={(e) => {
               const password = faker.random.alphaNumeric(16);
               this.props.hashPassword(this.props.user.email, password);
               window.newAlert(`The generated password is: ${password}`, 'Generated password');
-            }}
-            style={{ marginRight: 0 }}>
+            }}>
             <i className="fas fa-redo" />
           </button>
           {this.props.webauthn && (
             <button
               type="button"
-              className="btn btn-sm btn-info"
+              className="btn-sm btn-info mb-5"
               title="Update profile link"
               onClick={(e) => {
                 return fetch(
@@ -732,12 +724,8 @@ export class User extends Component {
                     const sessionId = r.sessionId;
                     window.newAlert(
                       <div
-                        style={{
-                          display: 'flex',
-                          flexDirection: 'column',
-                          justifyContent: 'center',
-                          alignItems: 'center',
-                        }}>
+                        className="display--flex flex-direction--column justify-content--center align-items--center"
+                      >
                         <p>The link to update user profile is usable for the next 10 minutes</p>
                         <a
                           target="_blank"
@@ -746,8 +734,7 @@ export class User extends Component {
                       'Profile updates'
                     );
                   });
-              }}
-              style={{ marginRight: 0 }}>
+              }}>
               <i className="fas fa-link" />
             </button>
           )}
@@ -914,11 +901,11 @@ export class BasicModuleConfig extends Component {
           help="..."
           onChange={(v) => changeTheValue(path + '.webauthn', v)}
         />
-        <div className="form-group">
-          <label htmlFor={`input-users`} className="col-sm-2 control-label">
+        <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
+          <label htmlFor={`input-users`}>
             Users
           </label>
-          <div className="col-sm-10">
+          <div>
             {this.props.value.users.map((user) => (
               <User
                 user={user}
@@ -941,9 +928,9 @@ export class BasicModuleConfig extends Component {
           </div>
         </div>
         {!this.state.showRaw && (
-          <div className="form-group">
-            <label className="col-sm-2 control-label">Users raw</label>
-            <div className="col-sm-10">
+          <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
+            <label>Users raw</label>
+            <div>
               <button
                 type="button"
                 className="btn btn-info"
@@ -954,9 +941,9 @@ export class BasicModuleConfig extends Component {
           </div>
         )}
         {this.state.showRaw && (
-          <div className="form-group">
-            <label className="col-sm-2 control-label">Users raw</label>
-            <div className="col-sm-10">
+          <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
+            <label>Users raw</label>
+            <div>
               <button
                 type="button"
                 className="btn btn-info"
@@ -1118,9 +1105,9 @@ export class LdapModuleConfig extends Component {
           help="if one"
           onChange={(v) => changeTheValue(path + '.adminPassword', v)}
         />
-        <div className="form-group">
-          <label className="col-xs-12 col-sm-2 control-label"></label>
-          <div className="col-sm-10" style={{ display: 'flex' }}>
+        <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
+          <label></label>
+          <div className="display--flex">
             <button type="button" className="btn btn-success" onClick={this.check}>
               Test admin. connection
             </button>
@@ -1209,39 +1196,37 @@ class LdapUserLoginTest extends Component {
 
   render() {
     return (
-      <form className="form-horizontal">
-        <div className="form-group">
-          <label className="col-sm-2">Username</label>
-          <div className="col-sm-10">
+      <form>
+        <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
+          <label>Username</label>
+          <div>
             <input
               type="email"
               value={this.state.username}
               onChange={(e) => this.setState({ username: e.target.value })}
-              className="form-control"
               placeholder="Username"
             />
           </div>
         </div>
-        <div className="form-group">
-          <label className="col-sm-2">Password</label>
-          <div className="col-sm-10">
+        <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
+          <label>Password</label>
+          <div>
             <input
               type="password"
               value={this.state.password}
               onChange={(e) => this.setState({ password: e.target.value })}
-              className="form-control"
               placeholder="Password"
             />
           </div>
         </div>
-        <div className="form-group">
-          <label className="col-sm-2"></label>
-          <div className="col-sm-10">
+        <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
+          <label></label>
+          <div>
             <button type="button" className="btn btn-success" onClick={this.check}>
               Test login
             </button>
-            <span className="label label-success">{this.state.message}</span>
-            <span className="label label-danger">{this.state.error}</span>
+            <span className="label bg__success">{this.state.message}</span>
+            <span className="label bg__alert">{this.state.error}</span>
           </div>
         </div>
       </form>

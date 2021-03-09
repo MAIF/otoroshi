@@ -234,64 +234,58 @@ export class U2FLoginPage extends Component {
 
   render() {
     return (
-      <div className="jumbotron">
-        <h3 style={{ marginBottom: 40 }}>Admin login</h3>
-        <form className="form-horizontal" style={{ textAlign: 'left' }} onSubmit={this.simpleLogin}>
-          <div className="form-group">
-            <label className="col-sm-2 control-label">Username</label>
-            <div className="col-sm-10">
+      <div className="jumbotron m-20">
+        <h1 className="mb-20">Admin login</h1>
+        <form onSubmit={this.simpleLogin}>
+          <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
+            <label >Username</label>
+            <div>
               <input
                 type="text"
                 name="email"
-                className="form-control"
                 value={this.props.email}
                 onChange={this.onChange}
               />
             </div>
           </div>
-          <div className="form-group">
-            <label className="col-sm-2 control-label">Password</label>
-            <div className="col-sm-10">
+          <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
+            <label >Password</label>
+            <div>
               <input
                 type="password"
                 name="password"
-                className="form-control"
                 value={this.props.password}
                 onChange={this.onChange}
               />
             </div>
           </div>
-          <div className="form-group">
-            <label className="col-sm-2 control-label" />
-            <div className="col-sm-10">
+          <div className="btn__group--right">
+            <label />
+            <div>
               <button
                 type="submit"
                 className="btn"
-                style={{ marginLeft: 0 }}
                 onClick={this.simpleLogin}>
                 Login
               </button>
               <button
                 type="button"
-                className="btn hide"
-                style={{ marginLeft: 10 }}
+                className="btn display--none ml-10"
                 onClick={this.webAuthnLogin}>
                 Login with WebAuthn
               </button>
             </div>
           </div>
-          <div className="form-group">
-            <label className="col-sm-2 control-label" />
-            <div className="col-sm-10">
+          <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
+            <label />
+            <div>
               <p>{!this.state.error && this.state.message}</p>
-              <p style={{ color: 'red', width: '100%', textAlign: 'left' }}>
-                {!!this.state.error && this.state.error}
-              </p>
+              {!!this.state.error && (<p className="label-xl mb-20 bg__alert text__white mt-10" >{this.state.error}</p>)}
             </div>
           </div>
         </form>
         <p>
-          <img src={this.props.otoroshiLogo} style={{ width: 300 }} />
+          <img src={this.props.otoroshiLogo} className="logo"/>
         </p>
       </div>
     );

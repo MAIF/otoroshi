@@ -24,6 +24,11 @@ export class TopBar extends Component {
     env: {
       clusterRole: 'off',
     },
+    isActive: false
+  };
+  
+  handleToggle = () => {
+    this.setState({ isActive: !this.state.isActive });
   };
 
   searchServicesOptions = (query) => {
@@ -404,15 +409,15 @@ export class TopBar extends Component {
 
   color(env) {
     if (env === 'prod') {
-      return 'label-success';
+      return 'bg__success';
     } else if (env === 'preprod') {
-      return 'label-primary';
+      return 'bg__primary';
     } else if (env === 'experiments') {
-      return 'label-warning';
+      return 'bg__warning';
     } else if (env === 'dev') {
-      return 'label-info';
+      return 'bg__info';
     } else {
-      return 'label-default';
+      return 'bg__dark';
     }
   }
 
@@ -446,66 +451,127 @@ export class TopBar extends Component {
 
   render() {
     const selected = (this.props.params || {}).lineId;
+    const isActive = this.state.isActive;
     return (
-      <nav className="navbar navbar-inverse navbar-fixed-top">
-        <div className="container-fluid">
-          <div className="row">
-            <div className="navbar-header col-sm-2">
+      <nav className={isActive ? "active" : "inactive"}>
+              <a className="brand text__white--important" href="/bo/dashboard">
+                <span>おとろし</span> &nbsp; {window.__title || 'Otoroshi'}
+              </a>
               <button
-                id="toggle-sidebar"
+                id="btn_sidebar"
                 type="button"
-                className="navbar-toggle collapsed menu"
+                className="btn-black"
                 data-toggle="collapse"
                 data-target="#sidebar"
                 aria-expanded="false"
-                aria-controls="sidebar">
+                aria-controls="sidebar"
+                onClick={this.handleToggle}>
                 <span className="sr-only">Toggle sidebar</span>
                 <span>Menu</span>
               </button>
-              <a className="navbar-brand" href="/bo/dashboard" style={{ display: 'flex' }}>
-                <span>おとろし</span> &nbsp; {window.__title || 'Otoroshi'}
-              </a>
-            </div>
-            <ul className="nav navbar-nav navbar-right">
+            
+            <form id="navbar" className="display--flex grow--1">
+              {selected && (
+                <div className="mr-10">
+                  <span
+                    title="Current line"
+                    className="label bg__success"
+                    style={{ fontSize: 20, cursor: 'pointer' }}>
+                    {selected}
+                  </span>
+                </div>
+              )}
+              <div className="mr-10 ml-10 display--inline-block">
+                <Async
+                  ref={(r) => (this.selector = r)}
+                  name="service-search"
+                  value="one"
+                  placeholder="Search service, line, etc ..."
+                  loadOptions={this.searchServicesOptions}
+                  openOnFocus={true}
+                  onChange={(i) => i.action()}
+                  arrowRenderer={(a) => {
+                    return (
+                      <span
+                        style={{ display: 'flex', height: 20 }}
+                        title="You can jump directly into the search bar from anywhere just by typing '/'">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="19" height="20">
+                          <defs>
+                            <rect id="a" width="19" height="20" rx="3" />
+                          </defs>
+                          <g fill="none" fillRule="evenodd">
+                            <rect stroke="#5F6165" x=".5" y=".5" width="18" height="19" rx="3" />
+                            <path fill="#979A9C" d="M11.76 5.979l-3.8 9.079h-.91l3.78-9.08z" />
+                          </g>
+                        </svg>
+                      </span>
+                    );
+                  }}
+                  filterOptions={(opts, value, excluded, conf) => {
+                    const [env, searched] = extractEnv(value);
+                    const filteredOpts = !!env ? opts.filter((i) => i.env === env) : opts;
+                    const matched = fuzzy.filter(searched, filteredOpts, {
+                      extract: (i) => i.label,
+                      pre: '<',
+                      post: '>',
+                    });
+                    return matched.map((i) => i.original);
+                  }}
+                  optionRenderer={(p) => {
+                    const env =
+                      p.env && _.isString(p.env)
+                        ? p.env.length > 4
+                          ? p.env.substring(0, 4) + '.'
+                          : p.env
+                        : null;
+                    return (
+                      <div style={{ display: 'flex' }}>
+                        <div
+                          style={{
+                            width: 60,
+                            display: 'flex',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                          }}>
+                          {p.env && _.isString(p.env) && (
+                            <span className={`label ${this.color(p.env)}`}>{env}</span>
+                          )}
+                          {p.env && !_.isString(p.env) && p.env}
+                        </div>
+                        <span>{p.label}</span>
+                      </div>
+                    );
+                  }}
+                  style={{ width: 400 }}
+                />
+              </div>
+            </form>
+            <div className="position--fixed display--flex align-items--center" style={{right:0, top:0}}>
               {window.__apiReadOnly && (
-                <li>
-                  <a style={{ color: '#c44141' }} title="Admin API in read-only mode">
+                  <a className="text__alert mr-10" title="Admin API in read-only mode">
                     <span className="fas fa-lock fa-lg" />
                   </a>
-                </li>
               )}
               {this.props.changePassword && (
-                <li
-                  onClick={(e) => (window.location = '/bo/dashboard/admins')}
-                  style={{ verticalAlign: 'top' }}>
                   <a
                     href="/bo/dashboard/admins"
-                    className="dropdown-toggle"
+                    onClick={(e) => (window.location = '/bo/dashboard/admins')}
                     data-toggle="dropdown"
                     role="button"
                     aria-haspopup="true"
                     aria-expanded="false">
                     <span
-                      className="badge"
+                      className="badge bg__alert mr-10"
                       data-toggle="tooltip"
                       data-placement="bottom"
-                      title="You are using the default admin account. You should create a new admin account quickly and delete the default one."
-                      style={{ backgroundColor: '#c9302c', marginBottom: 5 }}>
+                      title="You are using the default admin account. You should create a new admin account quickly and delete the default one.">
                       <i className="fas fa-exclamation-triangle" />
                     </span>
                   </a>
-                </li>
               )}
-              <li className="dropdown userManagement">
-                <a
-                  href="#"
-                  className="dropdown-toggle"
-                  data-toggle="dropdown"
-                  role="button"
-                  aria-haspopup="true"
-                  aria-expanded="false">
-                  <i className="fas fa-cog" aria-hidden="true" />
-                </a>
+              <div className="dropdown">
+                <i className="fas fa-cog" aria-hidden="true" />
+                <div className="dropdown-content">
                 <ul className="dropdown-menu">
                   {/*<li>
                     <a href="/bo/dashboard/users"><span className="fas fa-user" /> All users</a>
@@ -554,7 +620,7 @@ export class TopBar extends Component {
                     <a href="/bo/dashboard/certificates">
                       <span className="fas fa-certificate" /> SSL/TLS Certificates
                     </a>
-                    <a className="hide" href="/bo/dashboard/validation-authorities">
+                    <a className="display--none" href="/bo/dashboard/validation-authorities">
                       <span className="fas fa-gavel" /> Validation authorities
                     </a>
                     {this.state.env.scriptingEnabled === true && (
@@ -595,18 +661,18 @@ export class TopBar extends Component {
                               <i className="fas fa-list" /> Events log
                             </a>
                           </li>
-                          <li className="hide">
+                          <li className="display--none">
                             <a href="/bo/dashboard/top10">
                               <span className="fas fa-fire" /> Top 10 services
                             </a>
                           </li>
-                          <li className="hide">
+                          <li className="display--none">
                             <a href="/bo/dashboard/map">
                               <span className="fas fa-globe" /> Services map
                             </a>
                           </li>
-                          <li role="separator" className="divider hide" />
-                          <li className="hide">
+                          <li role="separator" className="divider display--none" />
+                          <li className="display--none">
                             <a href="/bo/dashboard/loggers">
                               <span className="fas fa-book" /> Loggers level
                             </a>
@@ -852,84 +918,7 @@ export class TopBar extends Component {
                     </a>
                   </li>
                 </ul>
-              </li>
-            </ul>
-            <form id="navbar" className="navbar-form navbar-left">
-              {selected && (
-                <div className="form-group" style={{ marginRight: 10 }}>
-                  <span
-                    title="Current line"
-                    className="label label-success"
-                    style={{ fontSize: 20, cursor: 'pointer' }}>
-                    {selected}
-                  </span>
-                </div>
-              )}
-              <div className="form-group" style={{ marginLeft: 10, marginRight: 10 }}>
-                <Async
-                  ref={(r) => (this.selector = r)}
-                  name="service-search"
-                  value="one"
-                  placeholder="Search service, line, etc ..."
-                  loadOptions={this.searchServicesOptions}
-                  openOnFocus={true}
-                  onChange={(i) => i.action()}
-                  arrowRenderer={(a) => {
-                    return (
-                      <span
-                        style={{ display: 'flex', height: 20 }}
-                        title="You can jump directly into the search bar from anywhere just by typing '/'">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="19" height="20">
-                          <defs>
-                            <rect id="a" width="19" height="20" rx="3" />
-                          </defs>
-                          <g fill="none" fillRule="evenodd">
-                            <rect stroke="#5F6165" x=".5" y=".5" width="18" height="19" rx="3" />
-                            <path fill="#979A9C" d="M11.76 5.979l-3.8 9.079h-.91l3.78-9.08z" />
-                          </g>
-                        </svg>
-                      </span>
-                    );
-                  }}
-                  filterOptions={(opts, value, excluded, conf) => {
-                    const [env, searched] = extractEnv(value);
-                    const filteredOpts = !!env ? opts.filter((i) => i.env === env) : opts;
-                    const matched = fuzzy.filter(searched, filteredOpts, {
-                      extract: (i) => i.label,
-                      pre: '<',
-                      post: '>',
-                    });
-                    return matched.map((i) => i.original);
-                  }}
-                  optionRenderer={(p) => {
-                    const env =
-                      p.env && _.isString(p.env)
-                        ? p.env.length > 4
-                          ? p.env.substring(0, 4) + '.'
-                          : p.env
-                        : null;
-                    return (
-                      <div style={{ display: 'flex' }}>
-                        <div
-                          style={{
-                            width: 60,
-                            display: 'flex',
-                            justifyContent: 'center',
-                            alignItems: 'center',
-                          }}>
-                          {p.env && _.isString(p.env) && (
-                            <span className={`label ${this.color(p.env)}`}>{env}</span>
-                          )}
-                          {p.env && !_.isString(p.env) && p.env}
-                        </div>
-                        <span>{p.label}</span>
-                      </div>
-                    );
-                  }}
-                  style={{ width: 400 }}
-                />
               </div>
-            </form>
           </div>
         </div>
       </nav>

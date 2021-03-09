@@ -164,13 +164,13 @@ export class U2FRegisterPage extends Component {
           <>
             <button
               type="button"
-              className="btn btn-success btn-xs"
+              className="btn-success btn-xs mr-5"
               onClick={(e) => this.updateOtherUser(item)}>
               <i className="fas fa-edit" /> Edit User
             </button>
             <button
               type="button"
-              className="btn btn-danger btn-xs"
+              className="btn-danger btn-xs"
               onClick={(e) =>
                 this.discardAdmin(
                   e,
@@ -290,59 +290,55 @@ export class U2FRegisterPage extends Component {
             delete the default one.
           </div>
         )}
-        <form className="form-horizontal hide">
-          <div className="form-group">
-            <label className="col-sm-2 control-label">Label</label>
-            <div className="col-sm-10">
+        <form className="display--none">
+          <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
+            <label >Label</label>
+            <div>
               <input
                 type="text"
-                className="form-control"
                 name="label"
                 value={this.state.label}
                 onChange={this.onChange}
               />
             </div>
           </div>
-          <div className="form-group">
-            <label className="col-sm-2 control-label">Email</label>
-            <div className="col-sm-10">
+          <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
+            <label >Email</label>
+            <div>
               <input
                 type="text"
-                className="form-control"
                 name="email"
                 value={this.state.email}
                 onChange={this.onChange}
               />
             </div>
           </div>
-          <div className="form-group">
-            <label className="col-sm-2 control-label">Password</label>
-            <div className="col-sm-10">
+          <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
+            <label >Password</label>
+            <div>
               <input
                 type="password"
-                className="form-control"
                 name="password"
                 value={this.state.password}
                 onChange={this.onChange}
               />
             </div>
           </div>
-          <div className="form-group">
-            <label className="col-sm-2 control-label">Re-type Password</label>
-            <div className="col-sm-10">
+          <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
+            <label >Re-type Password</label>
+            <div>
               <input
                 type="password"
-                className="form-control"
                 name="passwordcheck"
                 value={this.state.passwordcheck}
                 onChange={this.onChange}
               />
             </div>
           </div>
-          <div className="form-group">
-            <label className="col-sm-2 control-label" />
-            <div className="col-sm-10">
-              <button type="button" className="btn btn-success" onClick={this.simpleRegister}>
+          <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
+            <label  />
+            <div>
+              <button type="button" className="btn-success" onClick={this.simpleRegister}>
                 Register Admin
               </button>
               <button
@@ -354,15 +350,15 @@ export class U2FRegisterPage extends Component {
               </button>
             </div>
           </div>
-          <div className="form-group">
-            <label className="col-sm-2 control-label" />
-            <div className="col-sm-10">
+          <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
+            <label  />
+            <div>
               <p>{!this.state.error && this.state.message}</p>
               <p style={{ color: 'red' }}>{!!this.state.error && this.state.error}</p>
             </div>
           </div>
         </form>
-        <hr className="hide" />
+        <hr className="display--none" />
         <Table
           parentProps={this.props}
           selfUrl="admins"
@@ -377,8 +373,8 @@ export class U2FRegisterPage extends Component {
           extractKey={(item) => (item.registration ? item.registration.keyHandle : item.username)}
           injectTopBar={() => (
             <>
-              <div className="btn-group">
-                <button type="button" className="btn btn-primary" onClick={this.createAdmin}>
+              <div className="btn__group">
+                <button type="button" className="btn-info mt-5" onClick={this.createAdmin}>
                   <i className="fas fa-plus-circle" /> Register admin.
                 </button>
               </div>
@@ -586,25 +582,23 @@ export class RegisterAdminModal extends Component {
     return (
       <>
         <div className="modal-body">
-          <form className="form-horizontal">
-            <div className="form-group">
-              <label className="col-sm-2 control-label">Label</label>
-              <div className="col-sm-10">
+          <form>
+            <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
+              <label >Label</label>
+              <div>
                 <input
                   type="text"
-                  className="form-control"
                   name="label"
                   value={this.state.label}
                   onChange={this.onChange}
                 />
               </div>
             </div>
-            <div className="form-group">
-              <label className="col-sm-2 control-label">Username</label>
-              <div className="col-sm-10">
+            <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
+              <label >Username</label>
+              <div>
                 <input
                   type="text"
-                  className="form-control"
                   name="email"
                   disabled={this.props.mode === 'update'}
                   value={this.state.email}
@@ -613,12 +607,11 @@ export class RegisterAdminModal extends Component {
               </div>
             </div>
             {this.props.mode === 'update' && (
-              <div className="form-group">
-                <label className="col-sm-2 control-label">Old Password</label>
-                <div className="col-sm-10">
+              <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
+                <label >Old Password</label>
+                <div>
                   <input
                     type="password"
-                    className="form-control"
                     name="oldPassword"
                     placeholder="type your current password (required)"
                     value={this.state.oldPassword}
@@ -627,12 +620,11 @@ export class RegisterAdminModal extends Component {
                 </div>
               </div>
             )}
-            <div className="form-group">
-              <label className="col-sm-2 control-label">Password</label>
-              <div className="col-sm-10">
+            <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
+              <label >Password</label>
+              <div>
                 <input
                   type="password"
-                  className="form-control"
                   name="password"
                   placeholder={
                     this.props.mode === 'update' ? 'type your new password' : 'type your password'
@@ -642,12 +634,11 @@ export class RegisterAdminModal extends Component {
                 />
               </div>
             </div>
-            <div className="form-group">
-              <label className="col-sm-2 control-label">Re-type Password</label>
-              <div className="col-sm-10">
+            <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
+              <label >Re-type Password</label>
+              <div>
                 <input
                   type="password"
-                  className="form-control"
                   name="passwordcheck"
                   placeholder={
                     this.props.mode === 'update'
@@ -659,13 +650,13 @@ export class RegisterAdminModal extends Component {
                 />
               </div>
             </div>
-            <div className="form-group hide">
-              <label className="col-sm-2 control-label" />
-              <div className="col-sm-10"></div>
+            <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr display--none">
+              <label  />
+              <div></div>
             </div>
-            <div className="form-group">
-              <label className="col-sm-2 control-label" />
-              <div className="col-sm-10">
+            <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
+              <label  />
+              <div>
                 <p>{!this.state.error && this.state.message}</p>
                 <p style={{ color: 'red' }}>{!!this.state.error && this.state.error}</p>
               </div>
@@ -673,22 +664,22 @@ export class RegisterAdminModal extends Component {
           </form>
         </div>
         <div className="modal-footer">
-          <button type="button" className="btn btn-danger" onClick={this.props.cancel}>
+          <button type="button" className="btn-danger mr-5 mb-5" onClick={this.props.cancel}>
             Cancel
           </button>
-          <button type="button" className="btn btn-success" onClick={this.simpleRegister}>
+          <button type="button" className="btn-success mr-5 mb-5" onClick={this.simpleRegister}>
             {this.props.mode === 'update' ? 'Update' : 'Register'} Admin
           </button>
           <button
             type="button"
-            className="btn btn-success"
+            className="btn-success mb-5"
             style={{ marginLeft: 10 }}
             onClick={this.registerWebAuthn}>
             {this.props.mode === 'update' ? 'Update' : 'Register'} Admin with WebAuthn
           </button>
           <button
             type="button"
-            className="btn btn-success hide"
+            className="btn btn-success display--none"
             ref={(r) => (this.okRef = r)}
             onClick={(e) => this.props.ok(this.state)}>
             Create
@@ -821,7 +812,7 @@ export class AdminEditionModal extends Component {
           />
           <Separator />
           <div style={{ height: 10 }} />
-          <form className="form-horizontal">
+          <form>
             <TextInput
               label="New password"
               type="password"
@@ -834,9 +825,9 @@ export class AdminEditionModal extends Component {
               value={this.state.password2}
               onChange={(e) => this.setState({ password2: e })}
             />
-            <div className="form-group">
-              <label className="col-xs-12 col-sm-2 control-label"></label>
-              <div className="col-sm-10" style={{ display: 'flex' }}>
+            <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
+              <label ></label>
+              <div style={{ display: 'flex' }}>
                 <button type="button" className="btn btn-success" onClick={this.setPassword}>
                   Change password
                 </button>

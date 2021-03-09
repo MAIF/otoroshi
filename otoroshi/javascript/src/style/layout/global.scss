@@ -1,0 +1,249 @@
+// GENERAL STYLE //
+
+body {
+  font-family: Raleway, Helvetica, sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  background-color: $primaryBgColor;
+  color: $textColor;
+  line-height: 1.5rem;
+}
+
+// HTML elements
+%color-h {
+  color: $primaryColor;
+}
+h1{
+  @extend %color-h;
+  font-size: 24px;
+}
+
+h2{
+  @extend %color-h;
+  font-size: 20px;
+}
+
+h3{
+  @extend %color-h;
+  font-size: 16px;
+}
+
+h4{
+  @extend %color-h;
+  font-size: 12px;
+}
+
+a {
+  text-decoration: none;
+  color: $linkColor;
+}
+
+hr {
+  color:$secondaryBgColor;
+}
+
+strong{
+  font-weight: bolder;
+}
+
+pre {
+  display: block;
+  padding: 9.5px;
+  margin: 0 0 10px;
+  font-size: 13px;
+  line-height: 1.42857143;
+  color: #333;
+  word-break: break-all;
+  word-wrap: break-word;
+  background-color: #f5f5f5;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  overflow: auto;
+}
+
+code {
+  padding: 2px 4px;
+  font-size: 90%;
+  color: #c7254e;
+  background-color: #f9f2f4;
+  border-radius: 4px;
+  white-space: break-spaces;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+// LAYOUT //
+
+// display
+.display--none{
+  display: none !important;
+}
+.display--block{
+  display:block !important;
+}
+.display--inline-block{
+  display:inline-block;
+}
+
+.display--flex {
+  display: flex;
+}
+
+.display--inline-flex {
+  display: inline-flex;
+}
+
+.display--grid{
+  display: grid;
+}
+
+//positions
+.position--fixed {
+  position: fixed;
+}
+
+.position--relative{
+  position: relative;
+}
+
+//flex
+
+.flex-direction--column{
+  flex-direction: column;
+}
+.flex-wrap--wrap{
+  flex-wrap: wrap;
+}
+
+.justify-content--between{
+  justify-content: space-between;
+}
+.justify-content--around{
+  justify-content: space-around;
+}
+.justify-content--center{
+  justify-content: center;
+}
+.justify-content--start{
+  justify-content: flex-start;
+}
+.justify-content--end{
+  justify-content: flex-end;
+}
+
+.grow--1{
+  flex-grow: 1;
+}
+
+
+//grid
+
+.grid-template-col__2fr-3fr{
+  grid-template-columns: 2fr 3fr;
+}
+
+.grid-template-col__1fr-auto{
+  grid-template-columns: 1fr auto;
+}
+.grid-template-col_1fr-1fr-auto {
+  grid-template-columns: 1fr 1fr auto;
+}
+.grid-template-col-xs-up__1fr-5fr{
+  @media screen and (min-width: $bp-xs-up) {
+    grid-template-columns: 1fr 5fr;
+  }
+}
+//align-items
+.align-items--start{
+  align-items: start;
+}
+.align-items--center{
+  align-items: center;
+}
+
+.align-items--baseline {
+  align-items: baseline;
+}
+// cursors
+.cursor--pointer{
+  cursor: pointer;
+}
+
+// COLORS (text, background, border)
+$colors : ("white": #FFF,"black": #000, "dark":$darkColor, "warning":$warningColor, "alert":$alertColor,"success":$successColor,"info":$infoColor,"primary":$primaryColor);
+
+//  colors for text, bg, border. --important optionnal
+@each $shortcut, $color in $colors{
+  .text__#{$shortcut} {
+    color: $color;
+  }
+  .text__#{$shortcut}--important {
+    color: $color!important;
+  }
+  .bg__#{$shortcut} {
+    background-color: $color;
+  }
+  .bg__#{$shortcut}--important {
+    background-color: $color!important;
+  }
+  .border__#{$shortcut} {
+    border-color: $color;
+  }
+  .border__#{$shortcut}--important {
+    border-color: $color!important;
+  }
+}
+
+// background
+.bg--none{
+  background: none;
+}
+
+//margins & paddings
+$marginSizes : 5, 10, 20;
+$target : ("m":"margin","mt":"margin-top", "mr":"margin-right", "mb":"margin-bottom","ml":"margin-left", "p":"padding","pt":"padding-top", "pr":"padding-right", "pb":"padding-bottom","pl":"padding-left"  );
+@each $size in $marginSizes{
+  @each $shortcut, $property in $target{
+    .#{$shortcut}-#{$size} {
+      #{$property}: #{$size+'px'};
+    }
+  }
+}
+
+//w-[]   width sizes
+$widthSizes : 25, 33, 50, 100;
+@each $size in $widthSizes{
+    .w-#{$size} {
+      width: #{$size+'%'};
+  }
+}
+
+//Media queries, breakpoint
+@media screen and (max-width: $bp-xs) {
+  @each $size in $marginSizes{
+    @each $shortcut, $property in $target{
+      .#{$shortcut}-xs-#{$size} {
+        #{$property}: #{$size+'px'};
+      }
+    }
+  }
+
+  @each $size in $widthSizes{
+    .w-xs-#{$size} {
+      width: #{$size+'%'};
+    }
+  }
+
+  // alignement
+  .flex-wrap-xs--wrap{
+    flex-wrap: wrap;
+  }
+  .flex-direction-xs--column{
+    flex-direction: column;
+  }
+  .align-items-xs--start{
+    align-items: flex-start;
+  }
+}

@@ -1,0 +1,57 @@
+.aside {
+  display: flex;
+  width: 100%;
+  @media screen and (min-width: $bp-xs-up) {
+    width: 20%;
+  }
+  @media screen and (max-width: $bp-xs) {
+    display: none;
+  }
+
+  background: -moz-linear-gradient(top, $primaryBgColor 1%, $secondaryBgColor 100%);
+  background: -webkit-linear-gradient(top, $primaryBgColor 1%, $secondaryBgColor);
+  background: linear-gradient(180deg, $primaryBgColor 1%, $secondaryBgColor);
+  position: fixed;
+  flex-direction: column;
+  height: 100vh;
+  z-index: 1000;
+}
+
+.sidebar-content {
+  h2 {
+    color: $primaryColor;
+    font-size: 15px;
+    text-transform: uppercase;
+    margin-left: 10px;
+    margin-top: 20px;
+  }
+
+  li {
+    position: relative;
+    display: block;
+
+    a {
+      transition-duration: 1s;
+      padding: 5px 10px 5px 36px;
+      position: relative;
+      display: block;
+      &:focus,
+      &:hover {
+        background-color: $tertiaryBgColor;
+        color: #fff;
+        border-color: $primaryColor;
+      }
+      i {
+        margin-right: 5px;
+      }
+      &.active {
+        color: $primaryColor;
+      }
+    }
+
+    h2 a {
+      margin-left: -40px;
+      color: $primaryColor;
+    }
+  }
+}
