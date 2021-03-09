@@ -9,7 +9,7 @@ class OpenApiSpec extends WordSpec with MustMatchers with OptionValues {
 
   val generator = new OpenApiGenerator(
     "./conf/routes",
-    "./app/openapi/openapi.cfg",
+    "./app/openapi/openapi-cfg.json",
     Seq("./public/openapi.json"),
     "../release-1.5.0-alpha.8/swagger.json"
   )

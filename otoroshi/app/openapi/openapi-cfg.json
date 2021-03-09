@@ -747,6 +747,12 @@
     "otoroshi.events.KafkaConfig.servers": "URLs of the kafka servers",
     "otoroshi.events.KafkaConfig.topic": "Optional kafka topic (otoroshi-events by default)",
     "otoroshi.events.KafkaConfig.truststore": "???",
+    "otoroshi.events.PulsarConfig.mtlsConfig": "???",
+    "otoroshi.events.PulsarConfig.namespace": "???",
+    "otoroshi.events.PulsarConfig.tenant": "???",
+    "otoroshi.events.PulsarConfig.tlsTrustCertsFilePath": "???",
+    "otoroshi.events.PulsarConfig.topic": "???",
+    "otoroshi.events.PulsarConfig.uri": "???",
     "otoroshi.events.StatsdConfig.datadog": "Datadog agent",
     "otoroshi.events.StatsdConfig.host": "The host of the StatsD agent",
     "otoroshi.events.StatsdConfig.port": "The port of the StatsD agent",
@@ -860,6 +866,7 @@
     "otoroshi.models.CustomTimeouts.globalTimeout": "???",
     "otoroshi.models.CustomTimeouts.idleTimeout": "???",
     "otoroshi.models.CustomTimeouts.path": "???",
+    "otoroshi.models.DataCenterMatch.dc": "???",
     "otoroshi.models.DataExporterConfig.bufferSize": "buffer size",
     "otoroshi.models.DataExporterConfig.config": "Data Exporter config",
     "otoroshi.models.DataExporterConfig.desc": "Description",
@@ -877,6 +884,14 @@
     "otoroshi.models.DataExporterConfig.typ": "Type of data exporter",
     "otoroshi.models.DataExporterConfigFiltering.exclude": "???",
     "otoroshi.models.DataExporterConfigFiltering.include": "???",
+    "otoroshi.models.DefaultToken.strict": "???",
+    "otoroshi.models.DefaultToken.token": "???",
+    "otoroshi.models.DefaultToken.verificationSettings": "???",
+    "otoroshi.models.ESAlgoSettings.privateKey": "???",
+    "otoroshi.models.ESAlgoSettings.publicKey": "???",
+    "otoroshi.models.ESAlgoSettings.size": "???",
+    "otoroshi.models.ESKPAlgoSettings.certId": "???",
+    "otoroshi.models.ESKPAlgoSettings.size": "???",
     "otoroshi.models.ElasticAnalyticsConfig.clusterUri": "???",
     "otoroshi.models.ElasticAnalyticsConfig.headers": "???",
     "otoroshi.models.ElasticAnalyticsConfig.index": "???",
@@ -886,6 +901,14 @@
     "otoroshi.models.ElasticAnalyticsConfig.user": "???",
     "otoroshi.models.EntityLocation.teams": "???",
     "otoroshi.models.EntityLocation.tenant": "???",
+    "otoroshi.models.ExporterRef.config": "???",
+    "otoroshi.models.ExporterRef.ref": "???",
+    "otoroshi.models.FileSettings.maxFileSize": "???",
+    "otoroshi.models.FileSettings.path": "???",
+    "otoroshi.models.GeoPositionRadius.latitude": "???",
+    "otoroshi.models.GeoPositionRadius.longitude": "???",
+    "otoroshi.models.GeoPositionRadius.radius": "???",
+    "otoroshi.models.GeolocationMatch.positions": "???",
     "otoroshi.models.GlobalConfig.alertsEmails": "Email addresses that will receive all Otoroshi alert events",
     "otoroshi.models.GlobalConfig.alertsWebhooks": "Webhook that will receive all Otoroshi alert events",
     "otoroshi.models.GlobalConfig.analyticsWebhooks": "Webhook that will receive all internal Otoroshi events",
@@ -947,10 +970,27 @@
     "otoroshi.models.GlobalScripts.transformersRefs": "???",
     "otoroshi.models.GlobalScripts.validatorConfig": "???",
     "otoroshi.models.GlobalScripts.validatorRefs": "???",
+    "otoroshi.models.HSAlgoSettings.base64": "???",
+    "otoroshi.models.HSAlgoSettings.secret": "???",
+    "otoroshi.models.HSAlgoSettings.size": "???",
     "otoroshi.models.HealthCheck.enabled": "Whether or not healthcheck is enabled on the current service descriptor",
     "otoroshi.models.HealthCheck.url": "The URL to check",
+    "otoroshi.models.InCookie.name": "???",
+    "otoroshi.models.InHeader.name": "???",
+    "otoroshi.models.InHeader.remove": "???",
+    "otoroshi.models.InQueryParam.name": "???",
+    "otoroshi.models.InfraProviderMatch.provider": "???",
     "otoroshi.models.IpFiltering.blacklist": "Blacklisted IP addresses",
     "otoroshi.models.IpFiltering.whitelist": "Whitelisted IP addresses",
+    "otoroshi.models.IpStackGeolocationSettings.apikey": "???",
+    "otoroshi.models.IpStackGeolocationSettings.enabled": "???",
+    "otoroshi.models.IpStackGeolocationSettings.timeout": "???",
+    "otoroshi.models.JWKSAlgoSettings.headers": "???",
+    "otoroshi.models.JWKSAlgoSettings.mtlsConfig": "???",
+    "otoroshi.models.JWKSAlgoSettings.proxy": "???",
+    "otoroshi.models.JWKSAlgoSettings.timeout": "???",
+    "otoroshi.models.JWKSAlgoSettings.ttl": "???",
+    "otoroshi.models.JWKSAlgoSettings.url": "???",
     "otoroshi.models.JwtAuthConstraints.cookieName": "???",
     "otoroshi.models.JwtAuthConstraints.enabled": "???",
     "otoroshi.models.JwtAuthConstraints.headerName": "???",
@@ -959,6 +999,7 @@
     "otoroshi.models.JwtAuthConstraints.maxJwtLifespanSecs": "???",
     "otoroshi.models.JwtAuthConstraints.queryName": "???",
     "otoroshi.models.JwtAuthConstraints.secretSigned": "???",
+    "otoroshi.models.KidAlgoSettings.onlyExposedCerts": "???",
     "otoroshi.models.LargeRequestFaultConfig.additionalRequestSize": "The size added to the request body in bytes. Added payload will be spaces only.",
     "otoroshi.models.LargeRequestFaultConfig.ratio": "The percentage of requests affected by this fault. Value should be between 0.0 and 1.0",
     "otoroshi.models.LargeResponseFaultConfig.additionalResponseSize": "???",
@@ -966,6 +1007,24 @@
     "otoroshi.models.LatencyInjectionFaultConfig.from": "The start range of latency added to the request",
     "otoroshi.models.LatencyInjectionFaultConfig.ratio": "The percentage of requests affected by this fault. Value should be between 0.0 and 1.0",
     "otoroshi.models.LatencyInjectionFaultConfig.to": "The end range of latency added to the request",
+    "otoroshi.models.LocalJwtVerifier.algoSettings": "???",
+    "otoroshi.models.LocalJwtVerifier.enabled": "???",
+    "otoroshi.models.LocalJwtVerifier.excludedPatterns": "???",
+    "otoroshi.models.LocalJwtVerifier.source": "???",
+    "otoroshi.models.LocalJwtVerifier.strategy": "???",
+    "otoroshi.models.LocalJwtVerifier.strict": "???",
+    "otoroshi.models.MappingSettings.map": "???",
+    "otoroshi.models.MappingSettings.remove": "???",
+    "otoroshi.models.MappingSettings.values": "???",
+    "otoroshi.models.MaxmindGeolocationSettings.enabled": "???",
+    "otoroshi.models.MaxmindGeolocationSettings.path": "???",
+    "otoroshi.models.MetricsSettings.labels": "???",
+    "otoroshi.models.NetworkLocationMatch.dataCenter": "???",
+    "otoroshi.models.NetworkLocationMatch.provider": "???",
+    "otoroshi.models.NetworkLocationMatch.rack": "???",
+    "otoroshi.models.NetworkLocationMatch.region": "???",
+    "otoroshi.models.NetworkLocationMatch.zone": "???",
+    "otoroshi.models.PassThrough.verificationSettings": "???",
     "otoroshi.models.PrivateAppsUser.authConfigId": "???",
     "otoroshi.models.PrivateAppsUser.createdAt": "???",
     "otoroshi.models.PrivateAppsUser.email": "???",
@@ -987,9 +1046,19 @@
     "otoroshi.models.Proxies.eventsWebhooks": "???",
     "otoroshi.models.Proxies.jwk": "???",
     "otoroshi.models.Proxies.services": "???",
+    "otoroshi.models.RSAKPAlgoSettings.certId": "???",
+    "otoroshi.models.RSAKPAlgoSettings.size": "???",
+    "otoroshi.models.RSAlgoSettings.privateKey": "???",
+    "otoroshi.models.RSAlgoSettings.publicKey": "???",
+    "otoroshi.models.RSAlgoSettings.size": "???",
+    "otoroshi.models.RackMatch.rack": "???",
     "otoroshi.models.RedirectionSettings.code": "The http redirect code",
     "otoroshi.models.RedirectionSettings.enabled": "Whether or not redirection is enabled",
     "otoroshi.models.RedirectionSettings.to": "The location for redirection",
+    "otoroshi.models.RefJwtVerifier.enabled": "???",
+    "otoroshi.models.RefJwtVerifier.excludedPatterns": "???",
+    "otoroshi.models.RefJwtVerifier.ids": "???",
+    "otoroshi.models.RegionMatch.region": "???",
     "otoroshi.models.RestrictionPath.method": "???",
     "otoroshi.models.RestrictionPath.path": "???",
     "otoroshi.models.Restrictions.allowLast": "???",
@@ -1086,6 +1155,8 @@
     "otoroshi.models.ServiceGroup.location": "???",
     "otoroshi.models.ServiceGroup.metadata": "Just a bunch of random properties",
     "otoroshi.models.ServiceGroup.name": "The name of your service. Only for debug and human readability purposes",
+    "otoroshi.models.Sign.algoSettings": "???",
+    "otoroshi.models.Sign.verificationSettings": "???",
     "otoroshi.models.SimpleOtoroshiAdmin.createdAt": "???",
     "otoroshi.models.SimpleOtoroshiAdmin.label": "???",
     "otoroshi.models.SimpleOtoroshiAdmin.location": "???",
@@ -1120,7 +1191,6 @@
     "otoroshi.models.TeamAccess.canRead": "???",
     "otoroshi.models.TeamAccess.canWrite": "???",
     "otoroshi.models.TeamAccess.value": "???",
-    "otoroshi.models.TeamId.rawValue": "???",
     "otoroshi.models.Tenant.description": "???",
     "otoroshi.models.Tenant.id": "???",
     "otoroshi.models.Tenant.metadata": "???",
@@ -1128,13 +1198,19 @@
     "otoroshi.models.TenantAccess.canRead": "???",
     "otoroshi.models.TenantAccess.canWrite": "???",
     "otoroshi.models.TenantAccess.value": "???",
-    "otoroshi.models.TenantId.rawValue": "???",
     "otoroshi.models.TlsSettings.defaultDomain": "???",
     "otoroshi.models.TlsSettings.randomIfNotFound": "???",
+    "otoroshi.models.Transform.algoSettings": "???",
+    "otoroshi.models.Transform.transformSettings": "???",
+    "otoroshi.models.Transform.verificationSettings": "???",
+    "otoroshi.models.TransformSettings.location": "???",
+    "otoroshi.models.TransformSettings.mappingSettings": "???",
     "otoroshi.models.UserAgentSettings.enabled": "???",
     "otoroshi.models.UserRight.teams": "???",
     "otoroshi.models.UserRight.tenant": "???",
     "otoroshi.models.UserRights.rights": "???",
+    "otoroshi.models.VerificationSettings.arrayFields": "???",
+    "otoroshi.models.VerificationSettings.fields": "???",
     "otoroshi.models.WebAuthnOtoroshiAdmin.createdAt": "???",
     "otoroshi.models.WebAuthnOtoroshiAdmin.credentials": "???",
     "otoroshi.models.WebAuthnOtoroshiAdmin.handle": "???",
@@ -1148,6 +1224,8 @@
     "otoroshi.models.Webhook.headers": "Headers to authorize the call or whatever",
     "otoroshi.models.Webhook.mtlsConfig": "???",
     "otoroshi.models.Webhook.url": "The URL where events are posted",
+    "otoroshi.models.WeightedBestResponseTime.ratio": "???",
+    "otoroshi.models.ZoneMatch.zone": "???",
     "otoroshi.script.AccessValidatorRef.config": "???",
     "otoroshi.script.AccessValidatorRef.enabled": "???",
     "otoroshi.script.AccessValidatorRef.excludedPatterns": "???",
@@ -1229,6 +1307,20 @@
     "otoroshi.utils.letsencrypt.LetsEncryptSettings.privateKey": "???",
     "otoroshi.utils.letsencrypt.LetsEncryptSettings.publicKey": "???",
     "otoroshi.utils.letsencrypt.LetsEncryptSettings.server": "???",
+    "otoroshi.utils.mailer.EmailLocation.email": "???",
+    "otoroshi.utils.mailer.EmailLocation.name": "???",
+    "otoroshi.utils.mailer.GenericMailerSettings.headers": "???",
+    "otoroshi.utils.mailer.GenericMailerSettings.to": "???",
+    "otoroshi.utils.mailer.GenericMailerSettings.url": "???",
+    "otoroshi.utils.mailer.MailgunSettings.apiKey": "???",
+    "otoroshi.utils.mailer.MailgunSettings.domain": "???",
+    "otoroshi.utils.mailer.MailgunSettings.eu": "???",
+    "otoroshi.utils.mailer.MailgunSettings.to": "???",
+    "otoroshi.utils.mailer.MailjetSettings.apiKeyPrivate": "???",
+    "otoroshi.utils.mailer.MailjetSettings.apiKeyPublic": "???",
+    "otoroshi.utils.mailer.MailjetSettings.to": "???",
+    "otoroshi.utils.mailer.SendgridSettings.apiKey": "???",
+    "otoroshi.utils.mailer.SendgridSettings.to": "???",
     "tags.admin-sessions": "All api endpoints about admin-session",
     "tags.admins": "All api endpoints about admins",
     "tags.analytics": "All api endpoints about analytics",
@@ -1315,10 +1407,22 @@
       "type" : "object",
       "description" : "Typical error returned by otoroshi",
       "properties" : {
-        "error" : "the error name",
-        "error_description" : "A short description of the error if one",
-        "Otoroshi-Error" : "sometimes, the error name is here",
-        "Otoroshi-Error-Msg" : "sometimes, the error description is here"
+        "error" : {
+          "type" : "string",
+          "description" : "the error name"
+        },
+        "error_description" : {
+          "type" : "string",
+          "description" : "A short description of the error if one"
+        },
+        "Otoroshi-Error" : {
+          "type" : "string",
+          "description" : "sometimes, the error name is here"
+        },
+        "Otoroshi-Error-Msg" : {
+          "type" : "string",
+          "description" : "sometimes, the error description is here"
+        }
       }
     },
     "BulkResponseBody" : {
@@ -1375,27 +1479,8 @@
       } ]
     },
     "otoroshi.models.DataExporterConfigType" : {
-      "oneOf" : [ {
-        "$ref" : "#/components/schemas/otoroshi.models.DataExporterConfigType$Console$"
-      }, {
-        "$ref" : "#/components/schemas/otoroshi.models.DataExporterConfigType$Custom$"
-      }, {
-        "$ref" : "#/components/schemas/otoroshi.models.DataExporterConfigType$Elastic$"
-      }, {
-        "$ref" : "#/components/schemas/otoroshi.models.DataExporterConfigType$File$"
-      }, {
-        "$ref" : "#/components/schemas/otoroshi.models.DataExporterConfigType$Kafka$"
-      }, {
-        "$ref" : "#/components/schemas/otoroshi.models.DataExporterConfigType$Mailer$"
-      }, {
-        "$ref" : "#/components/schemas/otoroshi.models.DataExporterConfigType$Metrics$"
-      }, {
-        "$ref" : "#/components/schemas/otoroshi.models.DataExporterConfigType$None$"
-      }, {
-        "$ref" : "#/components/schemas/otoroshi.models.DataExporterConfigType$Pulsar$"
-      }, {
-        "$ref" : "#/components/schemas/otoroshi.models.DataExporterConfigType$Webhook$"
-      } ]
+      "type" : "string",
+      "enum" : [ "kafka", "pulsar", "elastic", "webhook", "file", "mailer", "custom", "none", "console", "metrics" ]
     },
     "otoroshi.models.Exporter" : {
       "oneOf" : [ {
@@ -1407,7 +1492,7 @@
       }, {
         "$ref" : "#/components/schemas/otoroshi.models.ElasticAnalyticsConfig"
       }, {
-        "$ref" : "#/components/schemas/otoroshi.models.Exporter$NoneExporter$"
+        "$ref" : "#/components/schemas/Null"
       }, {
         "$ref" : "#/components/schemas/otoroshi.models.ExporterRef"
       }, {
@@ -1461,7 +1546,7 @@
     },
     "otoroshi.models.TargetPredicate" : {
       "oneOf" : [ {
-        "$ref" : "#/components/schemas/otoroshi.models.AlwaysMatch$"
+        "$ref" : "#/components/schemas/otoroshi.models.AlwaysMatch"
       }, {
         "$ref" : "#/components/schemas/otoroshi.models.DataCenterMatch"
       }, {
@@ -1478,31 +1563,41 @@
         "$ref" : "#/components/schemas/otoroshi.models.ZoneMatch"
       } ]
     },
+    "otoroshi.models.TenantId" : {
+      "type" : "string"
+    },
+    "otoroshi.models.TeamId" : {
+      "type" : "string"
+    },
+    "otoroshi.models.AlwaysMatch" : {
+      "type" : "object",
+      "properties" : {
+        "type" : {
+          "type" : "string",
+          "enum" : [ "Always" ]
+        }
+      }
+    },
     "otoroshi.models.SecComInfoTokenVersion" : {
       "type" : "string",
       "enum" : [ "Legacy", "Latest" ]
     },
     "otoroshi.models.SecComVersion" : {
-      "oneOf" : [ {
-        "$ref" : "#/components/schemas/otoroshi.models.SecComVersion$V1$"
-      }, {
-        "$ref" : "#/components/schemas/otoroshi.models.SecComVersion$V2$"
-      } ]
+      "type" : "string",
+      "enum" : [ "V1", "v2" ]
     },
     "otoroshi.models.LoadBalancing" : {
-      "oneOf" : [ {
-        "$ref" : "#/components/schemas/otoroshi.models.BestResponseTime$"
-      }, {
-        "$ref" : "#/components/schemas/otoroshi.models.IpAddressHash$"
-      }, {
-        "$ref" : "#/components/schemas/otoroshi.models.Random$"
-      }, {
-        "$ref" : "#/components/schemas/otoroshi.models.RoundRobin$"
-      }, {
-        "$ref" : "#/components/schemas/otoroshi.models.Sticky$"
-      }, {
-        "$ref" : "#/components/schemas/otoroshi.models.WeightedBestResponseTime"
-      } ]
+      "type" : "object",
+      "properties" : {
+        "type" : {
+          "type" : "string",
+          "enum" : [ "BestResponseTime", "IpAddressHash", "Random", "RoundRobin", "Sticky", "WeightedBestResponseTime" ]
+        },
+        "ratio" : {
+          "type" : "number",
+          "format" : "double"
+        }
+      }
     },
     "otoroshi.models.JwtVerifier" : {
       "oneOf" : [ {
@@ -1514,39 +1609,16 @@
       } ]
     },
     "otoroshi.models.OtoroshiAdminType" : {
-      "oneOf" : [ {
-        "$ref" : "#/components/schemas/otoroshi.models.OtoroshiAdminType$SimpleAdmin$"
-      }, {
-        "$ref" : "#/components/schemas/otoroshi.models.OtoroshiAdminType$WebAuthnAdmin$"
-      } ]
+      "type" : "string",
+      "enum" : [ "SIMPLE", "WEBAUTHN" ]
     },
     "otoroshi.script.PluginType" : {
-      "oneOf" : [ {
-        "$ref" : "#/components/schemas/otoroshi.script.AccessValidatorType$"
-      }, {
-        "$ref" : "#/components/schemas/otoroshi.script.AppType$"
-      }, {
-        "$ref" : "#/components/schemas/otoroshi.script.DataExporterType$"
-      }, {
-        "$ref" : "#/components/schemas/otoroshi.script.EventListenerType$"
-      }, {
-        "$ref" : "#/components/schemas/otoroshi.script.JobType$"
-      }, {
-        "$ref" : "#/components/schemas/otoroshi.script.PreRoutingType$"
-      }, {
-        "$ref" : "#/components/schemas/otoroshi.script.RequestSinkType$"
-      }, {
-        "$ref" : "#/components/schemas/otoroshi.script.TransformerType$"
-      } ]
+      "type" : "string",
+      "enum" : [ "app", "transformer", "validator", "preroute", "sink", "listener", "job", "exporter" ]
     },
     "otoroshi.ssl.ClientAuth" : {
-      "oneOf" : [ {
-        "$ref" : "#/components/schemas/otoroshi.ssl.ClientAuth$Need$"
-      }, {
-        "$ref" : "#/components/schemas/otoroshi.ssl.ClientAuth$None$"
-      }, {
-        "$ref" : "#/components/schemas/otoroshi.ssl.ClientAuth$Want$"
-      } ]
+      "type" : "string",
+      "enum" : [ "Need", "None", "Want" ]
     },
     "otoroshi.tcp.TlsMode" : {
       "type" : "string",
@@ -1558,8 +1630,17 @@
       }, {
         "$ref" : "#/components/schemas/otoroshi.models.MaxmindGeolocationSettings"
       }, {
-        "$ref" : "#/components/schemas/otoroshi.models.NoneGeolocationSettings$"
+        "$ref" : "#/components/schemas/otoroshi.models.NoneGeolocationSettings"
       } ]
+    },
+    "otoroshi.models.NoneGeolocationSettings" : {
+      "type" : "object",
+      "properties" : {
+        "type" : {
+          "type" : "string",
+          "enum" : [ "none" ]
+        }
+      }
     },
     "otoroshi.utils.mailer.MailerSettings" : {
       "oneOf" : [ {
@@ -1578,7 +1659,7 @@
     },
     "otoroshi.models.OutageStrategy" : {
       "type" : "string",
-      "enum" : [ "AllServicesPerGroup$", "OneServicePerGroup$" ]
+      "enum" : [ "AllServicesPerGroup", "OneServicePerGroup" ]
     }
   }
 }

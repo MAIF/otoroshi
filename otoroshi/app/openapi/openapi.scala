@@ -72,9 +72,10 @@ $descs
   }
 }
 
-// TODO: fix traits/enum issues
 // TODO: validate weird generated stuff
-// TODO: handle Unknown data type
+// TODO: handle all Unknown data type
+// TODO: handle all ???
+// TODO: handle adt with type field
 class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Seq[String], oldSpecPath: String) {
 
   val nullType = Json.obj("$ref" -> s"#/components/schemas/Null") // Json.obj("type" -> "null") needs openapi 3.1.0 support :(
@@ -180,16 +181,21 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
 
   def visitEntity(clazz: ClassInfo, result: TrieMap[String, JsValue], config: OpenApiGeneratorConfig): Unit = {
 
-    if (!result.contains(clazz.getName)) {
+    if (clazz.getName.contains("$")) {
+      return ()
+    }
 
-      if (clazz.getName.startsWith("otoroshi.")) {
-        if (clazz.isInterface) {
-          val children = scanResult.getClassesImplementing(clazz.getName).asScala.map(_.getName)
-          adts = adts :+ Json.obj(clazz.getName -> Json.obj(
-            "oneOf" -> JsArray(children.map(c => Json.obj("$ref" -> s"#/components/schemas/$c")))
-          ))
-        }
+    if (clazz.getName.startsWith("otoroshi.")) {
+      if (clazz.isInterface) {
+        val children = scanResult.getClassesImplementing(clazz.getName).asScala.map(_.getName)
+        children.flatMap(cl => world.get(cl)).map(cl => visitEntity(cl, result, config))
+        adts = adts :+ Json.obj(clazz.getName -> Json.obj(
+          "oneOf" -> JsArray(children.map(c => Json.obj("$ref" -> s"#/components/schemas/$c")))
+        ))
       }
+    }
+
+    if (!result.contains(clazz.getName)) {
 
       val ctrInfo = clazz.getDeclaredConstructorInfo.asScala.headOption
       val params = ctrInfo.map(_.getParameterInfo.toSeq).getOrElse(Seq.empty)
@@ -340,7 +346,9 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
         Json.obj(
           "name" -> paramName,
           "in" -> "path",
-          "type" -> "string",
+          "schema" -> Json.obj(
+            "type" -> "string",
+          ),
           "required" -> true,
           "description" -> s"The ${paramName} param of the target entity"
         )
@@ -348,7 +356,9 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
         Json.obj(
           "name" -> paramName,
           "in" -> "path",
-          "type" -> "string",
+          "schema" -> Json.obj(
+            "type" -> "string",
+          ),
           "required" -> true,
           "description" -> s"the ${paramName} parameter"
         )
@@ -497,8 +507,12 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
             tags = tags :+ tag
             val (resCode, resBody) = extractResBody(verb, path, operationId, tag, controllerName, methodName, isCrud, isBulk, entity, rawTag, config)
             val reqBody = extractReqBody(verb, path, operationId, tag, controllerName, methodName, isCrud, isBulk, entity, rawTag, config)
+            val customizedPath = path.split("/").map {
+              case part if part.startsWith(":") => s"{${part.substring(1)}}"
+              case part => part
+            }.mkString("/")
             Json.obj(
-              path -> Json.obj(
+              customizedPath -> Json.obj(
                 verb.toLowerCase() -> Json.obj(
                   "tags" -> Json.arr(tag),
                   "summary" -> getOperationDescription(verb, path, operationId, tag, controllerName, methodName, isCrud, isBulk, entity, rawTag, config),
@@ -549,7 +563,11 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
                   c ++ Json.obj("requestBody" -> Json.obj(
                     "description" -> "request body",
                     "required" -> true,
-                    "content" -> reqBody
+                    "content" -> Json.obj(
+                      "application/json" -> Json.obj(
+                        "schema" -> reqBody
+                      )
+                    )
                   ))
                 }
               )
@@ -672,7 +690,7 @@ class OpenApiGeneratorRunner extends App {
 
   val generator = new OpenApiGenerator(
     "./conf/routes",
-    "./app/openapi/openapi.cfg",
+    "./app/openapi/openapi-cfg.json",
     Seq("./public/openapi.json"),
     "../release-1.5.0-alpha.8/swagger.json"
   )
