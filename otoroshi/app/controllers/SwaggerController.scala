@@ -1,5 +1,6 @@
 package otoroshi.controllers
 
+import controllers.{Assets, AssetsBuilder}
 import otoroshi.env.Env
 import play.api.Logger
 import play.api.libs.json._
@@ -16,7 +17,7 @@ object Implicits {
 
 }
 
-class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends AbstractController(cc) {
+class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(implicit env: Env) extends AbstractController(cc) {
 
   import Implicits._
 
@@ -33,6 +34,8 @@ class SwaggerController(cc: ControllerComponents)(implicit env: Env) extends Abs
     Action { req =>
       Ok(otoroshi.views.html.oto.documentationframe(s"${env.exposedRootScheme}://${env.backOfficeHost}${env.privateAppsPort}/api/swagger.json"))
     }
+
+  def openapi = assetsBuilder.at("openapi.json")
 
   def openapiUi =
     Action { req =>

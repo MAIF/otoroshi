@@ -184,6 +184,11 @@ class OtoroshiTests extends Suites(OtoroshiTests.getSuites(): _*) with BeforeAnd
   }
 }
 
+class OpenapiGeneratorTests
+  extends Suites(
+    new OpenApiSpec()
+  )
+
 class DevOtoroshiTests
     extends Suites(
       new OpenApiSpec()

@@ -10,11 +10,11 @@ Otoroshi also provides some connectors that uses the Otoroshi admin API to autom
 
 The Otoroshi admin API is described using OpenAPI format and is available at :
 
-https://maif.github.io/otoroshi/manual/code/swagger.json
+https://maif.github.io/otoroshi/manual/code/openapi.json
 
 Every Otoroshi instance provides its own embedded OpenAPI descriptor at :
 
-http://otoroshi.oto.tools:8080/api/swagger.json
+http://otoroshi.oto.tools:8080/api/openapi.json
 
 ## Swagger documentation
 

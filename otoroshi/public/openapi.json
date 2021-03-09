@@ -13541,6 +13541,7 @@
     "schemas" : {
       "otoroshi.models.ElasticAnalyticsConfig" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "headers" : {
             "type" : "object",
@@ -13593,6 +13594,7 @@
       },
       "otoroshi.models.CorsSettings" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "enabled" : {
             "description" : "Whether or not cors is enabled",
@@ -13646,6 +13648,7 @@
       },
       "otoroshi.models.LargeResponseFaultConfig" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "ratio" : {
             "format" : "double",
@@ -13661,6 +13664,7 @@
       },
       "otoroshi.models.MappingSettings" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "map" : {
             "type" : "object",
@@ -13684,6 +13688,7 @@
       },
       "otoroshi.models.VerificationSettings" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "fields" : {
             "type" : "object",
@@ -13706,6 +13711,7 @@
       },
       "otoroshi.models.RegionMatch" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "region" : {
             "description" : "???",
@@ -13715,6 +13721,7 @@
       },
       "otoroshi.utils.http.MtlsConfig" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "mtls" : {
             "description" : "???",
@@ -13746,6 +13753,7 @@
       },
       "otoroshi.models.RefJwtVerifier" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "excludedPatterns" : {
             "type" : "array",
@@ -13769,6 +13777,7 @@
       },
       "otoroshi.models.WeightedBestResponseTime" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "ratio" : {
             "format" : "double",
@@ -13779,6 +13788,7 @@
       },
       "otoroshi.models.CustomTimeouts" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "path" : {
             "description" : "???",
@@ -13813,6 +13823,7 @@
       },
       "otoroshi.models.BasicAuthConstraints" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "enabled" : {
             "description" : "???",
@@ -13838,6 +13849,7 @@
       },
       "otoroshi.models.Transform" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "verificationSettings" : {
             "description" : "???",
@@ -13855,6 +13867,7 @@
       },
       "otoroshi.models.KidAlgoSettings" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "onlyExposedCerts" : {
             "description" : "???",
@@ -13876,6 +13889,7 @@
       },
       "otoroshi.utils.mailer.MailgunSettings" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "eu" : {
             "description" : "???",
@@ -13900,6 +13914,7 @@
       },
       "otoroshi.models.FileSettings" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "path" : {
             "description" : "???",
@@ -13914,6 +13929,7 @@
       },
       "otoroshi.models.InfraProviderMatch" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "provider" : {
             "description" : "???",
@@ -13958,6 +13974,7 @@
       },
       "otoroshi.auth.LdapAuthModuleConfig" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "rightsOverride" : {
             "type" : "object",
@@ -14085,6 +14102,7 @@
       },
       "otoroshi.models.Team" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "name" : {
             "description" : "???",
@@ -14113,6 +14131,7 @@
       },
       "otoroshi.models.ChaosConfig" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "badResponsesFaultConfig" : {
             "oneOf" : [ {
@@ -14174,6 +14193,7 @@
       },
       "otoroshi.models.TransformSettings" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "location" : {
             "description" : "???",
@@ -14187,6 +14207,7 @@
       },
       "otoroshi.models.ApiKey" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "dailyQuota" : {
             "format" : "int64",
@@ -14276,6 +14297,7 @@
       },
       "otoroshi.models.UserRight" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "tenant" : {
             "description" : "???",
@@ -14292,6 +14314,7 @@
       },
       "otoroshi.models.InHeader" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "name" : {
             "description" : "???",
@@ -14305,6 +14328,7 @@
       },
       "otoroshi.auth.GenericOauth2ModuleConfig" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "superAdmins" : {
             "description" : "???",
@@ -14484,6 +14508,7 @@
       },
       "otoroshi.models.GlobalJwtVerifier" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "id" : {
             "description" : "Verifier id",
@@ -14528,10 +14553,12 @@
       },
       "otoroshi.models.ConsoleSettings" : {
         "type" : "object",
+        "description" : "???",
         "properties" : { }
       },
       "otoroshi.models.TenantAccess" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "canWrite" : {
             "description" : "???",
@@ -14568,6 +14595,7 @@
       },
       "otoroshi.models.IpStackGeolocationSettings" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "enabled" : {
             "description" : "???",
@@ -14586,6 +14614,7 @@
       },
       "otoroshi.models.DataExporterConfigFiltering" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "include" : {
             "type" : "array",
@@ -14605,6 +14634,7 @@
       },
       "otoroshi.models.ServiceGroup" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "id" : {
             "description" : "A unique random string to identify your service",
@@ -14633,6 +14663,7 @@
       },
       "otoroshi.models.NetworkLocationMatch" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "dataCenter" : {
             "description" : "???",
@@ -14662,6 +14693,7 @@
       },
       "otoroshi.utils.mailer.ConsoleMailerSettings" : {
         "type" : "object",
+        "description" : "???",
         "properties" : { }
       },
       "otoroshi.models.DataExporterConfigType" : {
@@ -14670,6 +14702,7 @@
       },
       "otoroshi.script.Script" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "name" : {
             "description" : "The name of the script",
@@ -14706,6 +14739,7 @@
       },
       "otoroshi.utils.mailer.MailjetSettings" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "apiKeyPublic" : {
             "description" : "???",
@@ -14734,6 +14768,7 @@
       },
       "otoroshi.models.SecComHeaders" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "claimRequestName" : {
             "oneOf" : [ {
@@ -14767,6 +14802,7 @@
       },
       "otoroshi.models.ESKPAlgoSettings" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "size" : {
             "format" : "int32",
@@ -14781,6 +14817,7 @@
       },
       "otoroshi.models.ServiceDescriptor" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "buildMode" : {
             "description" : "Display a construction page when a user try to use the service",
@@ -15180,6 +15217,7 @@
       },
       "otoroshi.models.TeamAccess" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "canRead" : {
             "description" : "???",
@@ -15201,6 +15239,7 @@
       },
       "otoroshi.ssl.Cert" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "letsEncrypt" : {
             "description" : "???",
@@ -15329,6 +15368,7 @@
       },
       "otoroshi.tcp.TcpRule" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "domain" : {
             "description" : "???",
@@ -15345,6 +15385,7 @@
       },
       "otoroshi.models.CleverCloudSettings" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "consumerSecret" : {
             "description" : "???",
@@ -15370,6 +15411,7 @@
       },
       "otoroshi.models.Canary" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "enabled" : {
             "description" : "Use canary mode for this service",
@@ -15395,6 +15437,7 @@
       },
       "otoroshi.models.BadResponse" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "status" : {
             "format" : "int32",
@@ -15416,6 +15459,7 @@
       },
       "otoroshi.models.GlobalConfig" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "geolocationSettings" : {
             "description" : "???",
@@ -15656,6 +15700,7 @@
       },
       "otoroshi.models.ExporterRef" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "ref" : {
             "description" : "???",
@@ -15673,6 +15718,7 @@
       },
       "otoroshi.models.ClientIdAuthConstraints" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "enabled" : {
             "description" : "???",
@@ -15698,6 +15744,7 @@
       },
       "otoroshi.auth.BasicAuthUser" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "metadata" : {
             "description" : "???",
@@ -15735,6 +15782,7 @@
       },
       "otoroshi.models.ClientConfig" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "connectionTimeout" : {
             "format" : "int64",
@@ -15813,6 +15861,7 @@
       },
       "otoroshi.models.ApiKeyConstraints" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "customHeadersAuth" : {
             "description" : "???",
@@ -15842,6 +15891,7 @@
       },
       "otoroshi.models.SimpleOtoroshiAdmin" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "username" : {
             "description" : "???",
@@ -15889,6 +15939,7 @@
       },
       "otoroshi.events.KafkaConfig" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "keyPass" : {
             "oneOf" : [ {
@@ -15937,6 +15988,7 @@
       },
       "otoroshi.models.UserRights" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "rights" : {
             "type" : "array",
@@ -15949,6 +16001,7 @@
       },
       "otoroshi.script.plugins.Plugins" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "name" : {
             "description" : "???",
@@ -15980,6 +16033,7 @@
       },
       "otoroshi.auth.WebAuthnDetails" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "handle" : {
             "description" : "???",
@@ -15996,6 +16050,7 @@
       },
       "otoroshi.tcp.TcpTarget" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "host" : {
             "description" : "???",
@@ -16022,6 +16077,7 @@
       },
       "otoroshi.models.GeoPositionRadius" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "latitude" : {
             "format" : "double",
@@ -16042,6 +16098,7 @@
       },
       "otoroshi.models.InCookie" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "name" : {
             "description" : "???",
@@ -16051,6 +16108,7 @@
       },
       "otoroshi.models.RSAlgoSettings" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "size" : {
             "format" : "int32",
@@ -16073,6 +16131,7 @@
       },
       "otoroshi.tcp.TcpService" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "enabled" : {
             "description" : "???",
@@ -16129,6 +16188,7 @@
       },
       "otoroshi.models.LocalJwtVerifier" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "strategy" : {
             "description" : "???",
@@ -16161,6 +16221,7 @@
       },
       "otoroshi.utils.gzip.GzipConfig" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "compressionLevel" : {
             "format" : "int32",
@@ -16206,6 +16267,7 @@
       },
       "otoroshi.models.Webhook" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "url" : {
             "description" : "The URL where events are posted",
@@ -16237,6 +16299,7 @@
       },
       "otoroshi.models.DefaultToken" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "strict" : {
             "description" : "???",
@@ -16254,6 +16317,7 @@
       },
       "otoroshi.models.GlobalScripts" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "jobConfig" : {
             "description" : "???",
@@ -16340,6 +16404,7 @@
       },
       "otoroshi.models.JwtAuthConstraints" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "keyPairSigned" : {
             "description" : "???",
@@ -16392,12 +16457,17 @@
           }
         }
       },
+      "Empty" : {
+        "type" : "object",
+        "description" : "an empty body. Useful for RPC like endpoints"
+      },
       "otoroshi.models.ServiceGroupIdentifier" : {
         "type" : "string",
         "description" : "the id of a group prefixed by 'group_'"
       },
       "otoroshi.script.AccessValidatorRef" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "enabled" : {
             "description" : "???",
@@ -16425,6 +16495,7 @@
       },
       "otoroshi.models.PrivateAppsUser" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "realm" : {
             "description" : "???",
@@ -16489,6 +16560,7 @@
       },
       "otoroshi.models.HealthCheck" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "enabled" : {
             "description" : "Whether or not healthcheck is enabled on the current service descriptor",
@@ -16502,6 +16574,7 @@
       },
       "otoroshi.models.SnowMonkeyConfig" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "dryRun" : {
             "description" : "Whether or not outages will actualy impact requests",
@@ -16555,6 +16628,7 @@
       },
       "otoroshi.models.ZoneMatch" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "zone" : {
             "description" : "???",
@@ -16564,6 +16638,7 @@
       },
       "otoroshi.models.AutoCert" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "allowed" : {
             "type" : "array",
@@ -16599,6 +16674,7 @@
       },
       "otoroshi.models.RestrictionPath" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "method" : {
             "description" : "???",
@@ -16612,6 +16688,7 @@
       },
       "otoroshi.models.GeolocationMatch" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "positions" : {
             "type" : "array",
@@ -16645,6 +16722,7 @@
       },
       "otoroshi.models.BadResponsesFaultConfig" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "ratio" : {
             "format" : "double",
@@ -16662,6 +16740,7 @@
       },
       "otoroshi.models.Target" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "host" : {
             "description" : "The host on which the HTTP call will be forwarded. Can be a domain name, or an IP address. Can also have a port",
@@ -16700,6 +16779,7 @@
       },
       "otoroshi.models.Proxies" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "elastic" : {
             "oneOf" : [ {
@@ -16801,6 +16881,7 @@
       },
       "otoroshi.models.ApiKeyRotation" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "enabled" : {
             "description" : "???",
@@ -16828,6 +16909,7 @@
       },
       "otoroshi.tcp.SniSettings" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "enabled" : {
             "description" : "???",
@@ -16858,6 +16940,7 @@
       },
       "otoroshi.models.RedirectionSettings" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "enabled" : {
             "description" : "Whether or not redirection is enabled",
@@ -16892,6 +16975,7 @@
       },
       "otoroshi.auth.BasicAuthModuleConfig" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "sessionMaxAge" : {
             "format" : "int32",
@@ -16944,6 +17028,7 @@
       },
       "otoroshi.utils.mailer.EmailLocation" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "name" : {
             "description" : "???",
@@ -16957,6 +17042,7 @@
       },
       "otoroshi.models.RackMatch" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "rack" : {
             "description" : "???",
@@ -16966,6 +17052,7 @@
       },
       "otoroshi.models.ESAlgoSettings" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "size" : {
             "format" : "int32",
@@ -17021,6 +17108,7 @@
       },
       "otoroshi.models.Tenant" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "id" : {
             "description" : "???",
@@ -17045,6 +17133,7 @@
       },
       "otoroshi.models.BackOfficeUser" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "randomId" : {
             "description" : "???",
@@ -17114,6 +17203,7 @@
       },
       "otoroshi.models.ApiDescriptor" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "exposeApi" : {
             "description" : "???",
@@ -17131,6 +17221,7 @@
       },
       "otoroshi.auth.SessionCookieValues" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "httpOnly" : {
             "description" : "???",
@@ -17144,6 +17235,7 @@
       },
       "otoroshi.utils.letsencrypt.LetsEncryptSettings" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "privateKey" : {
             "description" : "???",
@@ -17179,6 +17271,7 @@
       },
       "otoroshi.models.ApiKeyRouteMatcher" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "oneTagIn" : {
             "type" : "array",
@@ -17247,6 +17340,7 @@
       },
       "otoroshi.utils.mailer.SendgridSettings" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "apiKey" : {
             "description" : "???",
@@ -17263,6 +17357,7 @@
       },
       "otoroshi.models.LargeRequestFaultConfig" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "ratio" : {
             "format" : "double",
@@ -17278,6 +17373,7 @@
       },
       "otoroshi.script.PreRoutingRef" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "enabled" : {
             "description" : "???",
@@ -17305,6 +17401,7 @@
       },
       "otoroshi.models.DataExporterConfig" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "desc" : {
             "description" : "Description",
@@ -17385,6 +17482,7 @@
       },
       "otoroshi.models.CustomHeadersAuthConstraints" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "enabled" : {
             "description" : "???",
@@ -17410,6 +17508,7 @@
       },
       "otoroshi.models.TlsSettings" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "defaultDomain" : {
             "oneOf" : [ {
@@ -17427,6 +17526,7 @@
       },
       "otoroshi.models.MetricsSettings" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "labels" : {
             "type" : "object",
@@ -17439,6 +17539,7 @@
       },
       "otoroshi.models.Sign" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "verificationSettings" : {
             "description" : "???",
@@ -17452,6 +17553,7 @@
       },
       "otoroshi.models.PassThrough" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "verificationSettings" : {
             "description" : "???",
@@ -17461,6 +17563,7 @@
       },
       "otoroshi.events.PulsarConfig" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "namespace" : {
             "description" : "???",
@@ -17494,6 +17597,7 @@
       },
       "otoroshi.models.Restrictions" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "forbidden" : {
             "type" : "array",
@@ -17528,6 +17632,7 @@
       },
       "otoroshi.events.StatsdConfig" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "datadog" : {
             "description" : "Datadog agent",
@@ -17546,6 +17651,7 @@
       },
       "otoroshi.models.JWKSAlgoSettings" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "mtlsConfig" : {
             "description" : "???",
@@ -17586,6 +17692,7 @@
       },
       "otoroshi.models.IpFiltering" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "whitelist" : {
             "type" : "array",
@@ -17605,6 +17712,7 @@
       },
       "otoroshi.models.MaxmindGeolocationSettings" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "enabled" : {
             "description" : "???",
@@ -17618,6 +17726,7 @@
       },
       "otoroshi.models.LatencyInjectionFaultConfig" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "ratio" : {
             "format" : "double",
@@ -17636,6 +17745,7 @@
       },
       "otoroshi.models.RSAKPAlgoSettings" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "size" : {
             "format" : "int32",
@@ -17665,6 +17775,7 @@
       },
       "otoroshi.models.InQueryParam" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "name" : {
             "description" : "???",
@@ -17674,6 +17785,7 @@
       },
       "otoroshi.models.EntityLocation" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "tenant" : {
             "description" : "???",
@@ -17690,6 +17802,7 @@
       },
       "otoroshi.utils.mailer.NoneMailerSettings" : {
         "type" : "object",
+        "description" : "???",
         "properties" : { }
       },
       "otoroshi.models.SecComInfoTokenVersion" : {
@@ -17707,6 +17820,7 @@
       },
       "otoroshi.utils.mailer.GenericMailerSettings" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "url" : {
             "description" : "???",
@@ -17734,6 +17848,7 @@
       },
       "otoroshi.models.WebAuthnOtoroshiAdmin" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "label" : {
             "description" : "???",
@@ -17791,6 +17906,7 @@
       },
       "otoroshi.models.DataCenterMatch" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "dc" : {
             "description" : "???",
@@ -17809,6 +17925,7 @@
       },
       "otoroshi.models.HSAlgoSettings" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "size" : {
             "format" : "int32",
@@ -17827,6 +17944,7 @@
       },
       "otoroshi.models.UserAgentSettings" : {
         "type" : "object",
+        "description" : "???",
         "properties" : {
           "enabled" : {
             "description" : "???",

@@ -446,8 +446,9 @@ POST    /api/admins/webauthn                                  otoroshi.controlle
 PUT     /api/admins/webauthn/:username                        otoroshi.controllers.adminapi.UsersController.updateWebAuthnAdmin(username)
 DELETE  /api/admins/webauthn/:username/:id                    otoroshi.controllers.adminapi.UsersController.webAuthnDeleteAdmin(username, id)
 
-GET     /api/swagger.json                                     otoroshi.controllers.SwaggerController.swagger()
-GET     /api/swagger/ui                                       otoroshi.controllers.SwaggerController.swaggerUi()
+# GET     /api/swagger.json                                     otoroshi.controllers.SwaggerController.swagger()
+# GET     /api/swagger/ui                                       otoroshi.controllers.SwaggerController.swaggerUi()
+GET     /api/openapi.json                                     otoroshi.controllers.SwaggerController.openapi()
 GET     /api/openapi/ui                                       otoroshi.controllers.SwaggerController.openapiUi()
 
 ########################################################################################################################

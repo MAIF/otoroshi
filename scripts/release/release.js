@@ -49,7 +49,7 @@ const files = [
   { file: './demos/service-mesh/docker-compose.yml' },
   { file: './docker/build/build.sh' },
   { file: './manual/build.sbt' },
-  { file: './manual/src/main/paradox/code/swagger.json' },
+  { file: './manual/src/main/paradox/code/openapi.json' },
   { file: './manual/src/main/paradox/getotoroshi/frombinaries.md' },
   { file: './manual/src/main/paradox/getotoroshi/fromdocker.md' },
   { file: './manual/src/main/paradox/index.md' },
@@ -57,6 +57,7 @@ const files = [
   { file: './manual/src/main/paradox/snippets/build.gradle' },
   { file: './manual/src/main/paradox/snippets/build.sbt' },
   { file: './otoroshi/app/controllers/SwaggerController.scala' },
+  { file: './otoroshi/app/openapi/openapi.scala' },
   { file: './otoroshi/app/env/Env.scala' },
   { file: './otoroshi/build.sbt', replace: (from, to, source) => source.replace(`version := "${from}"`, `version := "${to}"`) },
   { file: './readme.md' },
@@ -132,18 +133,22 @@ async function buildVersion(version, where, releaseDir) {
   // build bootstrap server
   await runScript(`
     cd ${where}/otoroshi
-    sbt ";clean;compile;assembly"
+    sbt ";clean;compile;testOnly OpenapiGeneratorTests"
   `, where);
-  await runScript(`
-    cd ${where}/otoroshi/target/scala-2.12/
-    java -jar otoroshi.jar &
-    sleep 20
-    curl http://otoroshi.oto.tools:8080/api/swagger.json > ${releaseDir}/swagger.json
-    cp ${releaseDir}/swagger.json ${where}/manual/src/main/paradox/code/
-    ps aux | grep java | grep otoroshi.jar | awk '{print $2}' | xargs kill  >> /dev/null
-    rm -f ./RUNNING_PID
-  `, where, {}, true);
-  await runSystemCommand('git', ['commit', '-am', `Update swagger file before release`], location);
+  // await runScript(`
+  //   cd ${where}/otoroshi/target/scala-2.12/
+  //   java -jar otoroshi.jar &
+  //   sleep 20
+  //   curl http://otoroshi.oto.tools:8080/api/swagger.json > ${releaseDir}/swagger.json
+  //   cp ${releaseDir}/swagger.json ${where}/manual/src/main/paradox/code/
+  //   ps aux | grep java | grep otoroshi.jar | awk '{print $2}' | xargs kill  >> /dev/null
+  //   rm -f ./RUNNING_PID
+  // `, where, {}, true);
+  await runSystemCommand('cp', [`${where}/otoroshi/public/openapi.json`, `${releaseDir}/openapi.json`], location);
+  await runSystemCommand('cp', [`${releaseDir}/openapi.json`, `${where}/manual/src/main/paradox/code/`], location);
+  await runSystemCommand('git', ['add', `${releaseDir}/openapi.json`], location);
+  await runSystemCommand('git', ['add', `${where}/manual/src/main/paradox/code/openapi.json`], location);
+  await runSystemCommand('git', ['commit', '-am', `Update openapi file before release`], location);
   // build doc with schemas
   await runSystemCommand('/bin/sh', [path.resolve(where, './scripts/doc.sh'), 'all'], where);
   await runSystemCommand('zip', ['-r', path.resolve(releaseDir, `otoroshi-manual-${version}.zip`), path.resolve(where, 'docs/manual'), '-x', '*.DS_Store'], where);

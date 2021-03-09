@@ -126,6 +126,20 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
     }
   }
 
+  def entityDescription(clazz: String, config: OpenApiGeneratorConfig): JsValue = {
+    val finalPath = s"entity_description.${clazz}"
+    config.descriptions.get(finalPath).filterNot(_ == unknownValue) match {
+      case None =>
+        notFound.incrementAndGet()
+        foundDescriptions.put(finalPath,unknownValue)
+        unknownValue.json
+      case Some(value) =>
+        found.incrementAndGet()
+        foundDescriptions.put(finalPath, value)
+        value.json
+    }
+  }
+
   def getTagDescription(tagName: String, config: OpenApiGeneratorConfig): JsValue = {
     val finalPath = s"tags.$tagName"
     config.descriptions.get(finalPath).filterNot(_ == unknownValue) match {
@@ -326,7 +340,7 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
             println(s"${clazz.getName}.$name: $typ (unexpected 2)")
         }
       }
-      result.put(clazz.getName, Json.obj("type" -> "object", "properties" -> properties))
+      result.put(clazz.getName, Json.obj("type" -> "object", "description" -> entityDescription(clazz.getName, config), "properties" -> properties))
     }
   }
 
@@ -612,7 +626,7 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
       "info" -> Json.obj(
         "title" -> "otoroshi api",
         "description" -> "otoroshi api",
-        "version" -> "1.5.0",
+        "version" -> "1.5.0-dev",
         "contact" -> Json.obj(
           "name" -> "Otoroshi Team",
           "email" -> "oss@maif.fr",
@@ -692,7 +706,7 @@ class OpenApiGeneratorRunner extends App {
     "./conf/routes",
     "./app/openapi/openapi-cfg.json",
     Seq("./public/openapi.json"),
-    "../release-1.5.0-alpha.8/swagger.json"
+    ""
   )
 
   generator.run()
