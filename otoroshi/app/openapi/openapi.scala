@@ -95,6 +95,7 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
       world.get("otoroshi.models.GlobalConfig")
     ).toSeq.distinct
 
+  var adts = Seq.empty[JsObject]
   val foundDescriptions = new TrieMap[String, String]()
   val found = new AtomicLong(0L)
   val notFound = new AtomicLong(0L)
@@ -178,136 +179,149 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
   }
 
   def visitEntity(clazz: ClassInfo, result: TrieMap[String, JsValue], config: OpenApiGeneratorConfig): Unit = {
-    val ctrInfo = clazz.getDeclaredConstructorInfo.asScala.headOption
-    val params = ctrInfo.map(_.getParameterInfo.toSeq).getOrElse(Seq.empty)
-    val paramNames = params.map { param =>
-      param.getName
-    }
-    val fields = (clazz.getFieldInfo.asScala ++ clazz.getDeclaredFieldInfo.asScala).toSet.filter(_.isFinal).filter(i => paramNames.contains(i.getName))
-    var properties = Json.obj()
-    var required = Json.arr()
 
-    def handleType(name: String, valueName: String, typ: TypeSignature): Option[JsObject] = {
-      valueName match {
-        case "java.security.KeyPair"                    => None
-        case "play.api.Logger"                          => None
-        case "byte"                                     => None
-        case "java.security.cert.X509Certificate[]"     => None
-        case _ if typ.toString == "byte"                => None
-        case _ if typ.toString == "java.security.cert.X509Certificate[]" => None
-        case "int"                                      => Json.obj("type" -> "integer", "format" -> "int32").some
-        case "long"                                     => Json.obj("type" -> "integer", "format" -> "int64").some
-        case "double"                                   => Json.obj("type" -> "number", "format" -> "double").some
-        case "float"                                    => Json.obj("type" -> "number", "format" -> "float").some
+    if (!result.contains(clazz.getName)) {
 
-        case "java.math.BigInteger"                     => Json.obj("type" -> "integer", "format" -> "int64").some
-        case "java.math.BigDecimal"                     => Json.obj("type" -> "number", "format" -> "double").some
-        case "java.lang.Integer"                        => Json.obj("type" -> "integer", "format" -> "int32").some
-        case "java.lang.Long"                           => Json.obj("type" -> "integer", "format" -> "int64").some
-        case "java.lang.Double"                         => Json.obj("type" -> "number", "format" -> "double").some
-        case "java.lang.Float"                          => Json.obj("type" -> "number", "format" -> "float").some
-
-        case "scala.math.BigInt"                        => Json.obj("type" -> "integer", "format" -> "int64").some
-        case "scala.math.BigDecimal"                    => Json.obj("type" -> "number", "format" -> "double").some
-        case "scala.Int"                                => Json.obj("type" -> "integer", "format" -> "int32").some
-        case "scala.Long"                               => Json.obj("type" -> "integer", "format" -> "int64").some
-        case "scala.Double"                             => Json.obj("type" -> "number", "format" -> "double").some
-        case "scala.Float"                              => Json.obj("type" -> "number", "format" -> "float").some
-
-        case "boolean"                                  => Json.obj("type" -> "boolean").some
-        case "java.lang.Boolean"                        => Json.obj("type" -> "boolean").some
-        case "scala.Boolean"                            => Json.obj("type" -> "boolean").some
-        case "java.lang.String"                         => Json.obj("type" -> "string").some
-        case "org.joda.time.DateTime"                   => Json.obj("type" -> "number").some
-        case "scala.concurrent.duration.FiniteDuration" => Json.obj("type" -> "number").some
-        case "org.joda.time.LocalTime"                  => Json.obj("type" -> "string").some
-        case "play.api.libs.json.JsValue"               => Json.obj("type" -> "object").some
-        case "play.api.libs.json.JsObject"              => Json.obj("type" -> "object").some
-        case "play.api.libs.json.JsArray"               => Json.obj("type" -> "array").some
-        case "akka.http.scaladsl.model.HttpProtocol"    => Json.obj("type" -> "string").some
-        case _ if typ.toString.startsWith("scala.Option<") => {
-          world.get(valueName).map(cl => visitEntity(cl, result, config))
-          result.get(valueName) match {
-            case None if valueName == "java.lang.Object" && name == "maxJwtLifespanSecs" => Json.obj("type" -> "integer", "format" -> "int64").some
-            case Some(v) => Json.obj("oneOf" -> Json.arr(nullType, Json.obj("$ref" -> s"#/components/schemas/$valueName"))).some
-            case _ =>
-              println("fuuuuu opt", name, valueName)
-              None
-          }
+      if (clazz.getName.startsWith("otoroshi.")) {
+        if (clazz.isInterface) {
+          val children = scanResult.getClassesImplementing(clazz.getName).asScala.map(_.getName)
+          adts = adts :+ Json.obj(clazz.getName -> Json.obj(
+            "oneOf" -> JsArray(children.map(c => Json.obj("$ref" -> s"#/components/schemas/$c")))
+          ))
         }
-        case vn if valueName.startsWith("otoroshi")     => {
-          world.get(valueName).map(cl => visitEntity(cl, result, config))
-          Json.obj("$ref" -> s"#/components/schemas/$valueName").some
-        }
-        case _ =>
-          println(s"${clazz.getName}.$name: $typ (unexpected 1)")
-          None
       }
-    }
 
-    fields.foreach { field =>
-      val name = field.getName
-      val typ = field.getTypeSignatureOrTypeDescriptor
-      typ match {
-        case c: BaseTypeSignature => handleType(name, c.getTypeStr, typ).foreach { r =>
-          properties = properties ++ Json.obj(
-            name -> r.deepMerge(Json.obj(
-              "description" -> getFieldDescription(clazz, name, typ, config)
-            ))
-          )
+      val ctrInfo = clazz.getDeclaredConstructorInfo.asScala.headOption
+      val params = ctrInfo.map(_.getParameterInfo.toSeq).getOrElse(Seq.empty)
+      val paramNames = params.map { param =>
+        param.getName
+      }
+      val fields = (clazz.getFieldInfo.asScala ++ clazz.getDeclaredFieldInfo.asScala).toSet.filter(_.isFinal).filter(i => paramNames.contains(i.getName))
+      var properties = Json.obj()
+      var required = Json.arr()
+
+      def handleType(name: String, valueName: String, typ: TypeSignature): Option[JsObject] = {
+        valueName match {
+          case "java.security.KeyPair" => None
+          case "play.api.Logger" => None
+          case "byte" => None
+          case "java.security.cert.X509Certificate[]" => None
+          case _ if typ.toString == "byte" => None
+          case _ if typ.toString == "java.security.cert.X509Certificate[]" => None
+          case "int" => Json.obj("type" -> "integer", "format" -> "int32").some
+          case "long" => Json.obj("type" -> "integer", "format" -> "int64").some
+          case "double" => Json.obj("type" -> "number", "format" -> "double").some
+          case "float" => Json.obj("type" -> "number", "format" -> "float").some
+
+          case "java.math.BigInteger" => Json.obj("type" -> "integer", "format" -> "int64").some
+          case "java.math.BigDecimal" => Json.obj("type" -> "number", "format" -> "double").some
+          case "java.lang.Integer" => Json.obj("type" -> "integer", "format" -> "int32").some
+          case "java.lang.Long" => Json.obj("type" -> "integer", "format" -> "int64").some
+          case "java.lang.Double" => Json.obj("type" -> "number", "format" -> "double").some
+          case "java.lang.Float" => Json.obj("type" -> "number", "format" -> "float").some
+
+          case "scala.math.BigInt" => Json.obj("type" -> "integer", "format" -> "int64").some
+          case "scala.math.BigDecimal" => Json.obj("type" -> "number", "format" -> "double").some
+          case "scala.Int" => Json.obj("type" -> "integer", "format" -> "int32").some
+          case "scala.Long" => Json.obj("type" -> "integer", "format" -> "int64").some
+          case "scala.Double" => Json.obj("type" -> "number", "format" -> "double").some
+          case "scala.Float" => Json.obj("type" -> "number", "format" -> "float").some
+
+          case "boolean" => Json.obj("type" -> "boolean").some
+          case "java.lang.Boolean" => Json.obj("type" -> "boolean").some
+          case "scala.Boolean" => Json.obj("type" -> "boolean").some
+          case "java.lang.String" => Json.obj("type" -> "string").some
+          case "org.joda.time.DateTime" => Json.obj("type" -> "number").some
+          case "scala.concurrent.duration.FiniteDuration" => Json.obj("type" -> "number").some
+          case "org.joda.time.LocalTime" => Json.obj("type" -> "string").some
+          case "play.api.libs.json.JsValue" => Json.obj("type" -> "object").some
+          case "play.api.libs.json.JsObject" => Json.obj("type" -> "object").some
+          case "play.api.libs.json.JsArray" => Json.obj("type" -> "array").some
+          case "akka.http.scaladsl.model.HttpProtocol" => Json.obj("type" -> "string").some
+          case _ if typ.toString.startsWith("scala.Option<") => {
+            world.get(valueName).map(cl => visitEntity(cl, result, config))
+            result.get(valueName) match {
+              case None if valueName == "java.lang.Object" && name == "maxJwtLifespanSecs" => Json.obj("type" -> "integer", "format" -> "int64").some
+              case Some(v) => Json.obj("oneOf" -> Json.arr(nullType, Json.obj("$ref" -> s"#/components/schemas/$valueName"))).some
+              case _ =>
+                println("fuuuuu opt", name, valueName)
+                None
+            }
+          }
+          case vn if valueName.startsWith("otoroshi") => {
+            world.get(valueName).map(cl => visitEntity(cl, result, config))
+            Json.obj("$ref" -> s"#/components/schemas/$valueName").some
+          }
+          case _ =>
+            println(s"${clazz.getName}.$name: $typ (unexpected 1)")
+            None
         }
-        case c: ClassRefTypeSignature if c.getTypeArguments.size() > 0 && c.getBaseClassName == "scala.collection.immutable.Map" =>
-          val valueName = c.getTypeArguments.asScala.tail.head.toString
-          handleType(name, valueName, typ).foreach { r =>
-            properties = properties ++ Json.obj(
-              name -> Json.obj(
-                "type" -> "object",
-                "additionalProperties" -> r,
-                "description" -> getFieldDescription(clazz, name, typ, config)
-              )
-            )
-          }
-        case c: ClassRefTypeSignature if c.getTypeArguments.size() > 0 && c.getBaseClassName == "scala.collection.Seq" =>
-          val valueName = c.getTypeArguments.asScala.head.toString
-          handleType(name, valueName, typ).foreach { r =>
-            properties = properties ++ Json.obj(
-              name -> Json.obj(
-                "type" -> "array",
-                "items" -> r,
-                "description" -> getFieldDescription(clazz, name, typ, config)
-              )
-            )
-          }
-        case c: ClassRefTypeSignature if c.getTypeArguments.size() > 0 && c.getBaseClassName == "scala.Option" =>
-          val valueName = c.getTypeArguments.asScala.head.toString
-          handleType(name, valueName, typ).foreach { r =>
-            properties = properties ++ Json.obj(
-              name -> Json.obj(
-                "oneOf" -> Json.arr(
-                  nullType,
-                  r
-                ),
-              "description" -> getFieldDescription(clazz, name, typ, config)
-            ),
-            )
-          }
-        case c: ClassRefTypeSignature =>
-          val valueName = c.getBaseClassName
-          handleType(name, valueName, typ).map { r =>
+      }
+
+      fields.foreach { field =>
+        val name = field.getName
+        val typ = field.getTypeSignatureOrTypeDescriptor
+        typ match {
+          case c: BaseTypeSignature => handleType(name, c.getTypeStr, typ).foreach { r =>
             properties = properties ++ Json.obj(
               name -> r.deepMerge(Json.obj(
-                "description" -> getFieldDescription(clazz, name, typ, config))
-              )
+                "description" -> getFieldDescription(clazz, name, typ, config)
+              ))
             )
           }
-        // case c: TypeVariableSignature => println(s"  $name: $typ ${c.toStringWithTypeBound} (var)")
-        // case c: ArrayTypeSignature    => println(s"  $name: $typ ${c.getTypeSignatureStr} ${c.getElementTypeSignature.toString} (arr)")
-        // case c: ReferenceTypeSignature => println(s"  $name: $typ (ref)")
-        case _ =>
-          println(s"${clazz.getName}.$name: $typ (unexpected 2)")
+          case c: ClassRefTypeSignature if c.getTypeArguments.size() > 0 && c.getBaseClassName == "scala.collection.immutable.Map" =>
+            val valueName = c.getTypeArguments.asScala.tail.head.toString
+            handleType(name, valueName, typ).foreach { r =>
+              properties = properties ++ Json.obj(
+                name -> Json.obj(
+                  "type" -> "object",
+                  "additionalProperties" -> r,
+                  "description" -> getFieldDescription(clazz, name, typ, config)
+                )
+              )
+            }
+          case c: ClassRefTypeSignature if c.getTypeArguments.size() > 0 && c.getBaseClassName == "scala.collection.Seq" =>
+            val valueName = c.getTypeArguments.asScala.head.toString
+            handleType(name, valueName, typ).foreach { r =>
+              properties = properties ++ Json.obj(
+                name -> Json.obj(
+                  "type" -> "array",
+                  "items" -> r,
+                  "description" -> getFieldDescription(clazz, name, typ, config)
+                )
+              )
+            }
+          case c: ClassRefTypeSignature if c.getTypeArguments.size() > 0 && c.getBaseClassName == "scala.Option" =>
+            val valueName = c.getTypeArguments.asScala.head.toString
+            handleType(name, valueName, typ).foreach { r =>
+              properties = properties ++ Json.obj(
+                name -> Json.obj(
+                  "oneOf" -> Json.arr(
+                    nullType,
+                    r
+                  ),
+                  "description" -> getFieldDescription(clazz, name, typ, config)
+                ),
+              )
+            }
+          case c: ClassRefTypeSignature =>
+            val valueName = c.getBaseClassName
+            handleType(name, valueName, typ).map { r =>
+              properties = properties ++ Json.obj(
+                name -> r.deepMerge(Json.obj(
+                  "description" -> getFieldDescription(clazz, name, typ, config))
+                )
+              )
+            }
+          // case c: TypeVariableSignature => println(s"  $name: $typ ${c.toStringWithTypeBound} (var)")
+          // case c: ArrayTypeSignature    => println(s"  $name: $typ ${c.getTypeSignatureStr} ${c.getElementTypeSignature.toString} (arr)")
+          // case c: ReferenceTypeSignature => println(s"  $name: $typ (ref)")
+          case _ =>
+            println(s"${clazz.getName}.$name: $typ (unexpected 2)")
+        }
       }
+      result.put(clazz.getName, Json.obj("type" -> "object", "properties" -> properties))
     }
-    result.put(clazz.getName, Json.obj("type" -> "object", "properties" -> properties))
   }
 
   def getConfig(): OpenApiGeneratorConfig = {
@@ -437,7 +451,7 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
       val pathes: JsObject = lines.map { line =>
         val parts = line.split(" ").toSeq.map(_.trim).filterNot(_.isEmpty).toList
         parts match {
-          case verb :: path :: rest if path.startsWith("/api") && !path.startsWith("/api/client-validators") && !path.startsWith("/api/swagger") && !path.startsWith("/api/openapi") => {
+          case verb :: path :: rest if path.startsWith("/api") && !path.startsWith("/api/client-validators") && !path.startsWith("/api/swagger") && !path.startsWith("/api/openapi") && !path.startsWith("/api/services/:serviceId/apikeys") && !path.startsWith("/api/groups/:groupId/apikeys") => {
             val name = rest.mkString(" ").split("\\(").head
             val methodName = name.split("\\.").reverse.head
             val controllerName = name.split("\\.").reverse.tail.reverse.mkString(".")
@@ -619,6 +633,7 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
 
     OpenApiGeneratorConfig(config.filePath, config.raw.asObject ++ Json.obj(
       "descriptions" -> JsObject(foundDescriptions.mapValues(JsString.apply)),
+      // "add_schemas" -> (config.add_schemas ++ adts.foldLeft(Json.obj())(_ ++ _))
     )).write()
     println("")
   }

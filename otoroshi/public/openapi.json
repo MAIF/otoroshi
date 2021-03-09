@@ -105,9 +105,10 @@
         "operationId" : "otoroshi.controllers.adminapi.AnalyticsController.serviceResponseTime",
         "parameters" : [ {
           "name" : "serviceId",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "the serviceId parameter"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -162,127 +163,6 @@
         "summary" : "???",
         "operationId" : "otoroshi.controllers.adminapi.AnalyticsController.filterableStats",
         "parameters" : [ ],
-        "security" : [ {
-          "otoroshi_auth" : [ ]
-        } ],
-        "responses" : {
-          "401" : {
-            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404" : {
-            "description" : "Resource not found or does not exist",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "200" : {
-            "description" : "Successful operation",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Unknown"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/groups/:groupId/apikeys" : {
-      "post" : {
-        "tags" : [ "groups" ],
-        "summary" : "???",
-        "operationId" : "otoroshi.controllers.adminapi.ApiKeysFromGroupController.createApiKeyFromGroup",
-        "parameters" : [ {
-          "name" : "groupId",
-          "in" : "query",
-          "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
-        } ],
-        "security" : [ {
-          "otoroshi_auth" : [ ]
-        } ],
-        "responses" : {
-          "401" : {
-            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404" : {
-            "description" : "Resource not found or does not exist",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "200" : {
-            "description" : "Successful operation",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Unknown"
-                }
-              }
-            }
-          }
-        },
-        "requestBody" : {
-          "description" : "request body",
-          "required" : true,
-          "content" : {
-            "$ref" : "#/components/schemas/Unknown"
-          }
-        }
-      },
-      "get" : {
-        "tags" : [ "groups" ],
-        "summary" : "???",
-        "operationId" : "otoroshi.controllers.adminapi.ApiKeysFromGroupController.apiKeysFromGroup",
-        "parameters" : [ {
-          "name" : "groupId",
-          "in" : "query",
-          "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
-        } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
         } ],
@@ -390,9 +270,10 @@
         "operationId" : "otoroshi.controllers.adminapi.ApiKeysController.apiKeyQuotas",
         "parameters" : [ {
           "name" : "id",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "The id param of the target entity"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -446,9 +327,10 @@
         "operationId" : "otoroshi.controllers.adminapi.ApiKeysController.resetApiKeyQuotas",
         "parameters" : [ {
           "name" : "id",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "The id param of the target entity"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -557,9 +439,10 @@
         "operationId" : "otoroshi.controllers.adminapi.CertificatesController.patchEntityAction",
         "parameters" : [ {
           "name" : "id",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "The id param of the target entity"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -620,9 +503,10 @@
         "operationId" : "otoroshi.controllers.adminapi.CertificatesController.findEntityByIdAction",
         "parameters" : [ {
           "name" : "id",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "The id param of the target entity"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -676,9 +560,10 @@
         "operationId" : "otoroshi.controllers.adminapi.CertificatesController.deleteEntityAction",
         "parameters" : [ {
           "name" : "id",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "The id param of the target entity"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -732,9 +617,10 @@
         "operationId" : "otoroshi.controllers.adminapi.CertificatesController.updateEntityAction",
         "parameters" : [ {
           "name" : "id",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "The id param of the target entity"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -961,14 +847,16 @@
         "operationId" : "otoroshi.controllers.PrivateAppsController.sendSelfUpdateLink",
         "parameters" : [ {
           "name" : "id",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "the id parameter"
         }, {
           "name" : "username",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "the username parameter"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -1031,9 +919,10 @@
         "operationId" : "otoroshi.controllers.adminapi.ClusterController.getUserToken",
         "parameters" : [ {
           "name" : "id",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "the id parameter"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -1430,9 +1319,10 @@
         "operationId" : "otoroshi.controllers.adminapi.JwtVerifierController.patchEntityAction",
         "parameters" : [ {
           "name" : "id",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "The id param of the target entity"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -1493,9 +1383,10 @@
         "operationId" : "otoroshi.controllers.adminapi.JwtVerifierController.findEntityByIdAction",
         "parameters" : [ {
           "name" : "id",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "The id param of the target entity"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -1549,9 +1440,10 @@
         "operationId" : "otoroshi.controllers.adminapi.JwtVerifierController.deleteEntityAction",
         "parameters" : [ {
           "name" : "id",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "The id param of the target entity"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -1605,9 +1497,10 @@
         "operationId" : "otoroshi.controllers.adminapi.JwtVerifierController.updateEntityAction",
         "parameters" : [ {
           "name" : "id",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "The id param of the target entity"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -1670,9 +1563,10 @@
         "operationId" : "otoroshi.controllers.adminapi.ServicesController.servicesForALine",
         "parameters" : [ {
           "name" : "line",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "The line param of the target entity"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -1728,9 +1622,10 @@
         "operationId" : "otoroshi.controllers.adminapi.AuthModulesController.startRegistration",
         "parameters" : [ {
           "name" : "id",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "The id param of the target entity"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -1793,9 +1688,10 @@
         "operationId" : "otoroshi.controllers.adminapi.ServiceGroupController.serviceGroupServices",
         "parameters" : [ {
           "name" : "id",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "The id param of the target entity"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -2296,9 +2192,10 @@
         "operationId" : "otoroshi.controllers.adminapi.ServicesController.updateServiceTargets",
         "parameters" : [ {
           "name" : "serviceId",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "The serviceId param of the target entity"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -2359,9 +2256,10 @@
         "operationId" : "otoroshi.controllers.adminapi.ServicesController.serviceAddTarget",
         "parameters" : [ {
           "name" : "serviceId",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "The serviceId param of the target entity"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -2422,9 +2320,10 @@
         "operationId" : "otoroshi.controllers.adminapi.ServicesController.serviceTargets",
         "parameters" : [ {
           "name" : "serviceId",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "The serviceId param of the target entity"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -2478,9 +2377,10 @@
         "operationId" : "otoroshi.controllers.adminapi.ServicesController.serviceDeleteTarget",
         "parameters" : [ {
           "name" : "serviceId",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "The serviceId param of the target entity"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -2536,9 +2436,10 @@
         "operationId" : "otoroshi.controllers.adminapi.PkiController.signCert",
         "parameters" : [ {
           "name" : "ca",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "the ca parameter"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -2828,9 +2729,10 @@
         "operationId" : "otoroshi.controllers.adminapi.DataExporterConfigController.patchEntityAction",
         "parameters" : [ {
           "name" : "id",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "The id param of the target entity"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -2891,9 +2793,10 @@
         "operationId" : "otoroshi.controllers.adminapi.DataExporterConfigController.findEntityByIdAction",
         "parameters" : [ {
           "name" : "id",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "The id param of the target entity"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -2947,9 +2850,10 @@
         "operationId" : "otoroshi.controllers.adminapi.DataExporterConfigController.deleteEntityAction",
         "parameters" : [ {
           "name" : "id",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "The id param of the target entity"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -3003,9 +2907,10 @@
         "operationId" : "otoroshi.controllers.adminapi.DataExporterConfigController.updateEntityAction",
         "parameters" : [ {
           "name" : "id",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "The id param of the target entity"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -3624,9 +3529,10 @@
         "operationId" : "otoroshi.controllers.adminapi.ServicesController.patchEntityAction",
         "parameters" : [ {
           "name" : "id",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "The id param of the target entity"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -3687,9 +3593,10 @@
         "operationId" : "otoroshi.controllers.adminapi.ServicesController.findEntityByIdAction",
         "parameters" : [ {
           "name" : "id",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "The id param of the target entity"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -3743,9 +3650,10 @@
         "operationId" : "otoroshi.controllers.adminapi.ServicesController.deleteEntityAction",
         "parameters" : [ {
           "name" : "id",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "The id param of the target entity"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -3799,9 +3707,10 @@
         "operationId" : "otoroshi.controllers.adminapi.ServicesController.updateEntityAction",
         "parameters" : [ {
           "name" : "id",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "The id param of the target entity"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -3864,9 +3773,10 @@
         "operationId" : "otoroshi.controllers.adminapi.AnalyticsController.serviceStats",
         "parameters" : [ {
           "name" : "serviceId",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "the serviceId parameter"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -4036,9 +3946,10 @@
         "operationId" : "otoroshi.controllers.adminapi.AnalyticsController.serviceStatus",
         "parameters" : [ {
           "name" : "serviceId",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "the serviceId parameter"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -4094,9 +4005,10 @@
         "operationId" : "otoroshi.controllers.adminapi.ClusterController.isSessionValid",
         "parameters" : [ {
           "name" : "id",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "the id parameter"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -4152,9 +4064,10 @@
         "operationId" : "otoroshi.controllers.adminapi.UsersController.deleteAdmin",
         "parameters" : [ {
           "name" : "username",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "the username parameter"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -4208,9 +4121,10 @@
         "operationId" : "otoroshi.controllers.adminapi.UsersController.updateAdmin",
         "parameters" : [ {
           "name" : "username",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "the username parameter"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -5217,140 +5131,10 @@
         "operationId" : "otoroshi.controllers.adminapi.AnalyticsController.groupStatus",
         "parameters" : [ {
           "name" : "groupId",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
-        } ],
-        "security" : [ {
-          "otoroshi_auth" : [ ]
-        } ],
-        "responses" : {
-          "401" : {
-            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404" : {
-            "description" : "Resource not found or does not exist",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "200" : {
-            "description" : "Successful operation",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Unknown"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/groups/:groupId/apikeys/:clientId" : {
-      "patch" : {
-        "tags" : [ "groups" ],
-        "summary" : "???",
-        "operationId" : "otoroshi.controllers.adminapi.ApiKeysFromGroupController.patchApiKeyFromGroup",
-        "parameters" : [ {
-          "name" : "groupId",
-          "in" : "query",
-          "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
-        }, {
-          "name" : "clientId",
-          "in" : "query",
-          "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
-        } ],
-        "security" : [ {
-          "otoroshi_auth" : [ ]
-        } ],
-        "responses" : {
-          "401" : {
-            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404" : {
-            "description" : "Resource not found or does not exist",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "200" : {
-            "description" : "Successful operation",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Unknown"
-                }
-              }
-            }
-          }
-        },
-        "requestBody" : {
-          "description" : "request body",
           "required" : true,
-          "content" : {
-            "$ref" : "#/components/schemas/Unknown"
-          }
-        }
-      },
-      "get" : {
-        "tags" : [ "groups" ],
-        "summary" : "???",
-        "operationId" : "otoroshi.controllers.adminapi.ApiKeysFromGroupController.apiKeyFromGroup",
-        "parameters" : [ {
-          "name" : "groupId",
-          "in" : "query",
-          "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
-        }, {
-          "name" : "clientId",
-          "in" : "query",
-          "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "description" : "the groupId parameter"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -5395,135 +5179,6 @@
                 }
               }
             }
-          }
-        }
-      },
-      "delete" : {
-        "tags" : [ "groups" ],
-        "summary" : "???",
-        "operationId" : "otoroshi.controllers.adminapi.ApiKeysFromGroupController.deleteApiKeyFromGroup",
-        "parameters" : [ {
-          "name" : "groupId",
-          "in" : "query",
-          "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
-        }, {
-          "name" : "clientId",
-          "in" : "query",
-          "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
-        } ],
-        "security" : [ {
-          "otoroshi_auth" : [ ]
-        } ],
-        "responses" : {
-          "401" : {
-            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404" : {
-            "description" : "Resource not found or does not exist",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "200" : {
-            "description" : "Successful operation",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Unknown"
-                }
-              }
-            }
-          }
-        }
-      },
-      "put" : {
-        "tags" : [ "groups" ],
-        "summary" : "???",
-        "operationId" : "otoroshi.controllers.adminapi.ApiKeysFromGroupController.updateApiKeyFromGroup",
-        "parameters" : [ {
-          "name" : "groupId",
-          "in" : "query",
-          "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
-        }, {
-          "name" : "clientId",
-          "in" : "query",
-          "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
-        } ],
-        "security" : [ {
-          "otoroshi_auth" : [ ]
-        } ],
-        "responses" : {
-          "401" : {
-            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404" : {
-            "description" : "Resource not found or does not exist",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "200" : {
-            "description" : "Successful operation",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Unknown"
-                }
-              }
-            }
-          }
-        },
-        "requestBody" : {
-          "description" : "request body",
-          "required" : true,
-          "content" : {
-            "$ref" : "#/components/schemas/Unknown"
           }
         }
       }
@@ -5655,9 +5310,10 @@
         "operationId" : "otoroshi.controllers.adminapi.ServicesController.createServiceTemplate",
         "parameters" : [ {
           "name" : "serviceId",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "The serviceId param of the target entity"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -5718,9 +5374,10 @@
         "operationId" : "otoroshi.controllers.adminapi.ServicesController.serviceTemplate",
         "parameters" : [ {
           "name" : "serviceId",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "The serviceId param of the target entity"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -5774,9 +5431,10 @@
         "operationId" : "otoroshi.controllers.adminapi.ServicesController.deleteServiceTemplate",
         "parameters" : [ {
           "name" : "serviceId",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "The serviceId param of the target entity"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -5830,9 +5488,10 @@
         "operationId" : "otoroshi.controllers.adminapi.ServicesController.updateServiceTemplate",
         "parameters" : [ {
           "name" : "serviceId",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "The serviceId param of the target entity"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -5895,9 +5554,10 @@
         "operationId" : "otoroshi.controllers.adminapi.TemplatesController.createFromTemplate_templates",
         "parameters" : [ {
           "name" : "entity",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "the entity parameter"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -5960,9 +5620,10 @@
         "operationId" : "otoroshi.controllers.adminapi.UsersController.discardSession",
         "parameters" : [ {
           "name" : "id",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "the id parameter"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -6243,9 +5904,10 @@
         "operationId" : "otoroshi.controllers.adminapi.StatsController.serviceLiveStats_services",
         "parameters" : [ {
           "name" : "serviceId",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "the serviceId parameter"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -6412,9 +6074,10 @@
         "operationId" : "otoroshi.controllers.adminapi.AuthModulesController.patchEntityAction",
         "parameters" : [ {
           "name" : "id",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "The id param of the target entity"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -6475,9 +6138,10 @@
         "operationId" : "otoroshi.controllers.adminapi.AuthModulesController.findEntityByIdAction",
         "parameters" : [ {
           "name" : "id",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "The id param of the target entity"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -6531,9 +6195,10 @@
         "operationId" : "otoroshi.controllers.adminapi.AuthModulesController.deleteEntityAction",
         "parameters" : [ {
           "name" : "id",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "The id param of the target entity"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -6587,9 +6252,10 @@
         "operationId" : "otoroshi.controllers.adminapi.AuthModulesController.updateEntityAction",
         "parameters" : [ {
           "name" : "id",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "The id param of the target entity"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -6705,9 +6371,10 @@
         "operationId" : "otoroshi.controllers.adminapi.TcpServiceApiController.patchEntityAction",
         "parameters" : [ {
           "name" : "id",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "The id param of the target entity"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -6768,9 +6435,10 @@
         "operationId" : "otoroshi.controllers.adminapi.TcpServiceApiController.findEntityByIdAction",
         "parameters" : [ {
           "name" : "id",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "The id param of the target entity"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -6824,9 +6492,10 @@
         "operationId" : "otoroshi.controllers.adminapi.TcpServiceApiController.deleteEntityAction",
         "parameters" : [ {
           "name" : "id",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "The id param of the target entity"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -6880,9 +6549,10 @@
         "operationId" : "otoroshi.controllers.adminapi.TcpServiceApiController.updateEntityAction",
         "parameters" : [ {
           "name" : "id",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "The id param of the target entity"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -7065,9 +6735,10 @@
         "operationId" : "otoroshi.controllers.adminapi.ServicesController.serviceHealth",
         "parameters" : [ {
           "name" : "serviceId",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "The serviceId param of the target entity"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -7682,14 +7353,16 @@
         "operationId" : "otoroshi.controllers.adminapi.UsersController.webAuthnDeleteAdmin",
         "parameters" : [ {
           "name" : "username",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "the username parameter"
         }, {
           "name" : "id",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "the id parameter"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -8481,9 +8154,10 @@
         "operationId" : "otoroshi.controllers.adminapi.PkiController.genCert",
         "parameters" : [ {
           "name" : "ca",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "the ca parameter"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -8766,130 +8440,6 @@
         }
       }
     },
-    "/api/services/:serviceId/apikeys/:clientId/quotas" : {
-      "get" : {
-        "tags" : [ "services" ],
-        "summary" : "???",
-        "operationId" : "otoroshi.controllers.adminapi.ApiKeysFromServiceController.apiKeyQuotas",
-        "parameters" : [ {
-          "name" : "serviceId",
-          "in" : "query",
-          "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
-        }, {
-          "name" : "clientId",
-          "in" : "query",
-          "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
-        } ],
-        "security" : [ {
-          "otoroshi_auth" : [ ]
-        } ],
-        "responses" : {
-          "401" : {
-            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404" : {
-            "description" : "Resource not found or does not exist",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "200" : {
-            "description" : "Successful operation",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Unknown"
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete" : {
-        "tags" : [ "services" ],
-        "summary" : "???",
-        "operationId" : "otoroshi.controllers.adminapi.ApiKeysFromServiceController.resetApiKeyQuotas",
-        "parameters" : [ {
-          "name" : "serviceId",
-          "in" : "query",
-          "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
-        }, {
-          "name" : "clientId",
-          "in" : "query",
-          "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
-        } ],
-        "security" : [ {
-          "otoroshi_auth" : [ ]
-        } ],
-        "responses" : {
-          "401" : {
-            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404" : {
-            "description" : "Resource not found or does not exist",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "200" : {
-            "description" : "Successful operation",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Unknown"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/scripts/:id" : {
       "patch" : {
         "tags" : [ "scripts" ],
@@ -8897,9 +8447,10 @@
         "operationId" : "otoroshi.controllers.adminapi.ScriptApiController.patchEntityAction",
         "parameters" : [ {
           "name" : "id",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "The id param of the target entity"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -8960,9 +8511,10 @@
         "operationId" : "otoroshi.controllers.adminapi.ScriptApiController.findEntityByIdAction",
         "parameters" : [ {
           "name" : "id",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "The id param of the target entity"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -9016,9 +8568,10 @@
         "operationId" : "otoroshi.controllers.adminapi.ScriptApiController.deleteEntityAction",
         "parameters" : [ {
           "name" : "id",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "The id param of the target entity"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -9072,9 +8625,10 @@
         "operationId" : "otoroshi.controllers.adminapi.ScriptApiController.updateEntityAction",
         "parameters" : [ {
           "name" : "id",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "The id param of the target entity"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -9357,266 +8911,6 @@
         }
       }
     },
-    "/api/services/:serviceId/apikeys/:clientId" : {
-      "patch" : {
-        "tags" : [ "services" ],
-        "summary" : "???",
-        "operationId" : "otoroshi.controllers.adminapi.ApiKeysFromServiceController.patchApiKey",
-        "parameters" : [ {
-          "name" : "serviceId",
-          "in" : "query",
-          "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
-        }, {
-          "name" : "clientId",
-          "in" : "query",
-          "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
-        } ],
-        "security" : [ {
-          "otoroshi_auth" : [ ]
-        } ],
-        "responses" : {
-          "401" : {
-            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404" : {
-            "description" : "Resource not found or does not exist",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "200" : {
-            "description" : "Successful operation",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Unknown"
-                }
-              }
-            }
-          }
-        },
-        "requestBody" : {
-          "description" : "request body",
-          "required" : true,
-          "content" : {
-            "$ref" : "#/components/schemas/Unknown"
-          }
-        }
-      },
-      "get" : {
-        "tags" : [ "services" ],
-        "summary" : "???",
-        "operationId" : "otoroshi.controllers.adminapi.ApiKeysFromServiceController.apiKey",
-        "parameters" : [ {
-          "name" : "serviceId",
-          "in" : "query",
-          "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
-        }, {
-          "name" : "clientId",
-          "in" : "query",
-          "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
-        } ],
-        "security" : [ {
-          "otoroshi_auth" : [ ]
-        } ],
-        "responses" : {
-          "401" : {
-            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404" : {
-            "description" : "Resource not found or does not exist",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "200" : {
-            "description" : "Successful operation",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Unknown"
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete" : {
-        "tags" : [ "services" ],
-        "summary" : "???",
-        "operationId" : "otoroshi.controllers.adminapi.ApiKeysFromServiceController.deleteApiKey",
-        "parameters" : [ {
-          "name" : "serviceId",
-          "in" : "query",
-          "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
-        }, {
-          "name" : "clientId",
-          "in" : "query",
-          "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
-        } ],
-        "security" : [ {
-          "otoroshi_auth" : [ ]
-        } ],
-        "responses" : {
-          "401" : {
-            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404" : {
-            "description" : "Resource not found or does not exist",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "200" : {
-            "description" : "Successful operation",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Unknown"
-                }
-              }
-            }
-          }
-        }
-      },
-      "put" : {
-        "tags" : [ "services" ],
-        "summary" : "???",
-        "operationId" : "otoroshi.controllers.adminapi.ApiKeysFromServiceController.updateApiKey",
-        "parameters" : [ {
-          "name" : "serviceId",
-          "in" : "query",
-          "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
-        }, {
-          "name" : "clientId",
-          "in" : "query",
-          "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
-        } ],
-        "security" : [ {
-          "otoroshi_auth" : [ ]
-        } ],
-        "responses" : {
-          "401" : {
-            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404" : {
-            "description" : "Resource not found or does not exist",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "200" : {
-            "description" : "Successful operation",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Unknown"
-                }
-              }
-            }
-          }
-        },
-        "requestBody" : {
-          "description" : "request body",
-          "required" : true,
-          "content" : {
-            "$ref" : "#/components/schemas/Unknown"
-          }
-        }
-      }
-    },
     "/api/certificates/:certId/_renew" : {
       "post" : {
         "tags" : [ "certificates" ],
@@ -9624,9 +8918,10 @@
         "operationId" : "otoroshi.controllers.adminapi.CertificatesController.renewCert",
         "parameters" : [ {
           "name" : "certId",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "The certId param of the target entity"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -9803,9 +9098,10 @@
         "operationId" : "otoroshi.controllers.adminapi.ClusterController.createLoginToken",
         "parameters" : [ {
           "name" : "id",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "the id parameter"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -9866,9 +9162,10 @@
         "operationId" : "otoroshi.controllers.adminapi.ClusterController.isLoginTokenValid",
         "parameters" : [ {
           "name" : "id",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "the id parameter"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -10134,9 +9431,10 @@
         "operationId" : "otoroshi.controllers.adminapi.PkiController.genSubCA",
         "parameters" : [ {
           "name" : "ca",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "the ca parameter"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -10199,9 +9497,10 @@
         "operationId" : "otoroshi.controllers.adminapi.TenantsController.patchEntityAction",
         "parameters" : [ {
           "name" : "id",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "The id param of the target entity"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -10262,9 +9561,10 @@
         "operationId" : "otoroshi.controllers.adminapi.TenantsController.findEntityByIdAction",
         "parameters" : [ {
           "name" : "id",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "The id param of the target entity"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -10318,9 +9618,10 @@
         "operationId" : "otoroshi.controllers.adminapi.TenantsController.deleteEntityAction",
         "parameters" : [ {
           "name" : "id",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "The id param of the target entity"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -10374,9 +9675,10 @@
         "operationId" : "otoroshi.controllers.adminapi.TenantsController.updateEntityAction",
         "parameters" : [ {
           "name" : "id",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "The id param of the target entity"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -10439,9 +9741,10 @@
         "operationId" : "otoroshi.controllers.adminapi.TeamsController.patchEntityAction",
         "parameters" : [ {
           "name" : "id",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "The id param of the target entity"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -10502,9 +9805,10 @@
         "operationId" : "otoroshi.controllers.adminapi.TeamsController.findEntityByIdAction",
         "parameters" : [ {
           "name" : "id",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "The id param of the target entity"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -10558,9 +9862,10 @@
         "operationId" : "otoroshi.controllers.adminapi.TeamsController.deleteEntityAction",
         "parameters" : [ {
           "name" : "id",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "The id param of the target entity"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -10614,9 +9919,10 @@
         "operationId" : "otoroshi.controllers.adminapi.TeamsController.updateEntityAction",
         "parameters" : [ {
           "name" : "id",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "The id param of the target entity"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -11410,9 +10716,10 @@
         "operationId" : "otoroshi.controllers.adminapi.AuthModulesController.finishRegistration",
         "parameters" : [ {
           "name" : "id",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "The id param of the target entity"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -11475,9 +10782,10 @@
         "operationId" : "otoroshi.controllers.adminapi.UsersController.discardPrivateAppsSession",
         "parameters" : [ {
           "name" : "id",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "the id parameter"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -11586,9 +10894,10 @@
         "operationId" : "otoroshi.controllers.adminapi.StatsController.serviceLiveStats_live",
         "parameters" : [ {
           "name" : "id",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "the id parameter"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -11924,9 +11233,10 @@
         "operationId" : "otoroshi.controllers.adminapi.CanaryController.serviceCanaryMembers",
         "parameters" : [ {
           "name" : "serviceId",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "the serviceId parameter"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -11980,9 +11290,10 @@
         "operationId" : "otoroshi.controllers.adminapi.CanaryController.resetServiceCanaryMembers",
         "parameters" : [ {
           "name" : "serviceId",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "the serviceId parameter"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -12438,9 +11749,10 @@
         "operationId" : "otoroshi.controllers.adminapi.AnalyticsController.serviceEvents",
         "parameters" : [ {
           "name" : "serviceId",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "the serviceId parameter"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -12653,9 +11965,10 @@
         "operationId" : "otoroshi.controllers.adminapi.ApiKeysController.patchEntityAction",
         "parameters" : [ {
           "name" : "id",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "The id param of the target entity"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -12716,9 +12029,10 @@
         "operationId" : "otoroshi.controllers.adminapi.ApiKeysController.findEntityByIdAction",
         "parameters" : [ {
           "name" : "id",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "The id param of the target entity"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -12772,9 +12086,10 @@
         "operationId" : "otoroshi.controllers.adminapi.ApiKeysController.deleteEntityAction",
         "parameters" : [ {
           "name" : "id",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "The id param of the target entity"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -12828,9 +12143,10 @@
         "operationId" : "otoroshi.controllers.adminapi.ApiKeysController.updateEntityAction",
         "parameters" : [ {
           "name" : "id",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "The id param of the target entity"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -12893,9 +12209,10 @@
         "operationId" : "otoroshi.controllers.adminapi.UsersController.updateWebAuthnAdmin",
         "parameters" : [ {
           "name" : "username",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "the username parameter"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -13122,251 +12439,6 @@
         }
       }
     },
-    "/api/services/:serviceId/apikeys" : {
-      "post" : {
-        "tags" : [ "services" ],
-        "summary" : "???",
-        "operationId" : "otoroshi.controllers.adminapi.ApiKeysFromServiceController.createApiKey",
-        "parameters" : [ {
-          "name" : "serviceId",
-          "in" : "query",
-          "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
-        } ],
-        "security" : [ {
-          "otoroshi_auth" : [ ]
-        } ],
-        "responses" : {
-          "401" : {
-            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404" : {
-            "description" : "Resource not found or does not exist",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "200" : {
-            "description" : "Successful operation",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Unknown"
-                }
-              }
-            }
-          }
-        },
-        "requestBody" : {
-          "description" : "request body",
-          "required" : true,
-          "content" : {
-            "$ref" : "#/components/schemas/Unknown"
-          }
-        }
-      },
-      "get" : {
-        "tags" : [ "services" ],
-        "summary" : "???",
-        "operationId" : "otoroshi.controllers.adminapi.ApiKeysFromServiceController.apiKeys",
-        "parameters" : [ {
-          "name" : "serviceId",
-          "in" : "query",
-          "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
-        } ],
-        "security" : [ {
-          "otoroshi_auth" : [ ]
-        } ],
-        "responses" : {
-          "401" : {
-            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404" : {
-            "description" : "Resource not found or does not exist",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "200" : {
-            "description" : "Successful operation",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Unknown"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/groups/:groupId/apikeys/:clientId/quotas" : {
-      "get" : {
-        "tags" : [ "groups" ],
-        "summary" : "???",
-        "operationId" : "otoroshi.controllers.adminapi.ApiKeysFromGroupController.apiKeyFromGroupQuotas",
-        "parameters" : [ {
-          "name" : "groupId",
-          "in" : "query",
-          "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
-        }, {
-          "name" : "clientId",
-          "in" : "query",
-          "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
-        } ],
-        "security" : [ {
-          "otoroshi_auth" : [ ]
-        } ],
-        "responses" : {
-          "401" : {
-            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404" : {
-            "description" : "Resource not found or does not exist",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "200" : {
-            "description" : "Successful operation",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Unknown"
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete" : {
-        "tags" : [ "groups" ],
-        "summary" : "???",
-        "operationId" : "otoroshi.controllers.adminapi.ApiKeysFromGroupController.resetApiKeyFromGroupQuotas",
-        "parameters" : [ {
-          "name" : "groupId",
-          "in" : "query",
-          "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
-        }, {
-          "name" : "clientId",
-          "in" : "query",
-          "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
-        } ],
-        "security" : [ {
-          "otoroshi_auth" : [ ]
-        } ],
-        "responses" : {
-          "401" : {
-            "description" : "You have to provide an Api Key. Api Key can be passed with 'Otoroshi-Client-Id' and 'Otoroshi-Client-Secret' headers, or use basic http authentication",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad resource format. Take another look to the swagger, or open an issue",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404" : {
-            "description" : "Resource not found or does not exist",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "200" : {
-            "description" : "Successful operation",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Unknown"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/privateapps/sessions/:id/:username" : {
       "post" : {
         "tags" : [ "privateapps" ],
@@ -13374,14 +12446,16 @@
         "operationId" : "otoroshi.controllers.PrivateAppsController.registerSession",
         "parameters" : [ {
           "name" : "id",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "the id parameter"
         }, {
           "name" : "username",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "the username parameter"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -13504,9 +12578,10 @@
         "operationId" : "otoroshi.controllers.adminapi.ServiceGroupController.patchEntityAction",
         "parameters" : [ {
           "name" : "id",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "The id param of the target entity"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -13567,9 +12642,10 @@
         "operationId" : "otoroshi.controllers.adminapi.ServiceGroupController.findEntityByIdAction",
         "parameters" : [ {
           "name" : "id",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "The id param of the target entity"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -13623,9 +12699,10 @@
         "operationId" : "otoroshi.controllers.adminapi.ServiceGroupController.deleteEntityAction",
         "parameters" : [ {
           "name" : "id",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "The id param of the target entity"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -13679,9 +12756,10 @@
         "operationId" : "otoroshi.controllers.adminapi.ServiceGroupController.updateEntityAction",
         "parameters" : [ {
           "name" : "id",
-          "in" : "query",
+          "in" : "path",
           "type" : "string",
-          "description" : "whether or not the document will be soft deleted (true) or not (false). By default, delete operation will soft delete documents."
+          "required" : true,
+          "description" : "The id param of the target entity"
         } ],
         "security" : [ {
           "otoroshi_auth" : [ ]
@@ -14082,8 +13160,39 @@
         }
       },
       "otoroshi.models.Exporter" : {
-        "type" : "object",
-        "properties" : { }
+        "oneOf" : [ {
+          "$ref" : "#/components/schemas/otoroshi.events.KafkaConfig"
+        }, {
+          "$ref" : "#/components/schemas/otoroshi.events.PulsarConfig"
+        }, {
+          "$ref" : "#/components/schemas/otoroshi.models.ConsoleSettings"
+        }, {
+          "$ref" : "#/components/schemas/otoroshi.models.ElasticAnalyticsConfig"
+        }, {
+          "$ref" : "#/components/schemas/otoroshi.models.Exporter$NoneExporter$"
+        }, {
+          "$ref" : "#/components/schemas/otoroshi.models.ExporterRef"
+        }, {
+          "$ref" : "#/components/schemas/otoroshi.models.FileSettings"
+        }, {
+          "$ref" : "#/components/schemas/otoroshi.models.MetricsSettings"
+        }, {
+          "$ref" : "#/components/schemas/otoroshi.models.Webhook"
+        }, {
+          "$ref" : "#/components/schemas/otoroshi.utils.mailer.ConsoleMailerSettings"
+        }, {
+          "$ref" : "#/components/schemas/otoroshi.utils.mailer.GenericMailerSettings"
+        }, {
+          "$ref" : "#/components/schemas/otoroshi.utils.mailer.MailerSettings"
+        }, {
+          "$ref" : "#/components/schemas/otoroshi.utils.mailer.MailgunSettings"
+        }, {
+          "$ref" : "#/components/schemas/otoroshi.utils.mailer.MailjetSettings"
+        }, {
+          "$ref" : "#/components/schemas/otoroshi.utils.mailer.NoneMailerSettings"
+        }, {
+          "$ref" : "#/components/schemas/otoroshi.utils.mailer.SendgridSettings"
+        } ]
       },
       "otoroshi.auth.LdapAuthModuleConfig" : {
         "type" : "object",
@@ -14298,8 +13407,11 @@
         }
       },
       "otoroshi.models.SecComVersion" : {
-        "type" : "object",
-        "properties" : { }
+        "oneOf" : [ {
+          "$ref" : "#/components/schemas/otoroshi.models.SecComVersion$V1$"
+        }, {
+          "$ref" : "#/components/schemas/otoroshi.models.SecComVersion$V2$"
+        } ]
       },
       "otoroshi.models.ApiKey" : {
         "type" : "object",
@@ -14647,8 +13759,23 @@
         }
       },
       "otoroshi.models.TargetPredicate" : {
-        "type" : "object",
-        "properties" : { }
+        "oneOf" : [ {
+          "$ref" : "#/components/schemas/otoroshi.models.AlwaysMatch$"
+        }, {
+          "$ref" : "#/components/schemas/otoroshi.models.DataCenterMatch"
+        }, {
+          "$ref" : "#/components/schemas/otoroshi.models.GeolocationMatch"
+        }, {
+          "$ref" : "#/components/schemas/otoroshi.models.InfraProviderMatch"
+        }, {
+          "$ref" : "#/components/schemas/otoroshi.models.NetworkLocationMatch"
+        }, {
+          "$ref" : "#/components/schemas/otoroshi.models.RackMatch"
+        }, {
+          "$ref" : "#/components/schemas/otoroshi.models.RegionMatch"
+        }, {
+          "$ref" : "#/components/schemas/otoroshi.models.ZoneMatch"
+        } ]
       },
       "otoroshi.models.DataExporterConfigFiltering" : {
         "type" : "object",
@@ -14698,12 +13825,46 @@
         }
       },
       "otoroshi.script.PluginType" : {
-        "type" : "object",
-        "properties" : { }
+        "oneOf" : [ {
+          "$ref" : "#/components/schemas/otoroshi.script.AccessValidatorType$"
+        }, {
+          "$ref" : "#/components/schemas/otoroshi.script.AppType$"
+        }, {
+          "$ref" : "#/components/schemas/otoroshi.script.DataExporterType$"
+        }, {
+          "$ref" : "#/components/schemas/otoroshi.script.EventListenerType$"
+        }, {
+          "$ref" : "#/components/schemas/otoroshi.script.JobType$"
+        }, {
+          "$ref" : "#/components/schemas/otoroshi.script.PreRoutingType$"
+        }, {
+          "$ref" : "#/components/schemas/otoroshi.script.RequestSinkType$"
+        }, {
+          "$ref" : "#/components/schemas/otoroshi.script.TransformerType$"
+        } ]
       },
       "otoroshi.models.DataExporterConfigType" : {
-        "type" : "object",
-        "properties" : { }
+        "oneOf" : [ {
+          "$ref" : "#/components/schemas/otoroshi.models.DataExporterConfigType$Console$"
+        }, {
+          "$ref" : "#/components/schemas/otoroshi.models.DataExporterConfigType$Custom$"
+        }, {
+          "$ref" : "#/components/schemas/otoroshi.models.DataExporterConfigType$Elastic$"
+        }, {
+          "$ref" : "#/components/schemas/otoroshi.models.DataExporterConfigType$File$"
+        }, {
+          "$ref" : "#/components/schemas/otoroshi.models.DataExporterConfigType$Kafka$"
+        }, {
+          "$ref" : "#/components/schemas/otoroshi.models.DataExporterConfigType$Mailer$"
+        }, {
+          "$ref" : "#/components/schemas/otoroshi.models.DataExporterConfigType$Metrics$"
+        }, {
+          "$ref" : "#/components/schemas/otoroshi.models.DataExporterConfigType$None$"
+        }, {
+          "$ref" : "#/components/schemas/otoroshi.models.DataExporterConfigType$Pulsar$"
+        }, {
+          "$ref" : "#/components/schemas/otoroshi.models.DataExporterConfigType$Webhook$"
+        } ]
       },
       "otoroshi.script.Script" : {
         "type" : "object",
@@ -14745,6 +13906,10 @@
         "type" : "object",
         "properties" : { }
       },
+      "otoroshi.models.ServiceDescriptorIdentifier" : {
+        "type" : "string",
+        "description" : "the id of a service prefixed by 'service_'"
+      },
       "otoroshi.models.SecComHeaders" : {
         "type" : "object",
         "properties" : {
@@ -14775,8 +13940,8 @@
         }
       },
       "otoroshi.tcp.TlsMode" : {
-        "type" : "object",
-        "properties" : { }
+        "type" : "string",
+        "enum" : [ "Disabled", "Enabled", "PassThrough" ]
       },
       "otoroshi.models.ServiceDescriptor" : {
         "type" : "object",
@@ -15195,8 +14360,11 @@
         }
       },
       "otoroshi.models.OtoroshiAdminType" : {
-        "type" : "object",
-        "properties" : { }
+        "oneOf" : [ {
+          "$ref" : "#/components/schemas/otoroshi.models.OtoroshiAdminType$SimpleAdmin$"
+        }, {
+          "$ref" : "#/components/schemas/otoroshi.models.OtoroshiAdminType$WebAuthnAdmin$"
+        } ]
       },
       "otoroshi.ssl.Cert" : {
         "type" : "object",
@@ -15310,8 +14478,21 @@
         }
       },
       "otoroshi.models.AlgoSettings" : {
-        "type" : "object",
-        "properties" : { }
+        "oneOf" : [ {
+          "$ref" : "#/components/schemas/otoroshi.models.ESAlgoSettings"
+        }, {
+          "$ref" : "#/components/schemas/otoroshi.models.ESKPAlgoSettings"
+        }, {
+          "$ref" : "#/components/schemas/otoroshi.models.HSAlgoSettings"
+        }, {
+          "$ref" : "#/components/schemas/otoroshi.models.JWKSAlgoSettings"
+        }, {
+          "$ref" : "#/components/schemas/otoroshi.models.KidAlgoSettings"
+        }, {
+          "$ref" : "#/components/schemas/otoroshi.models.RSAKPAlgoSettings"
+        }, {
+          "$ref" : "#/components/schemas/otoroshi.models.RSAlgoSettings"
+        } ]
       },
       "otoroshi.tcp.TcpRule" : {
         "type" : "object",
@@ -15641,8 +14822,8 @@
         }
       },
       "otoroshi.models.OutageStrategy" : {
-        "type" : "object",
-        "properties" : { }
+        "type" : "string",
+        "enum" : [ "AllServicesPerGroup$", "OneServicePerGroup$" ]
       },
       "otoroshi.models.ClientIdAuthConstraints" : {
         "type" : "object",
@@ -15810,8 +14991,13 @@
         }
       },
       "otoroshi.ssl.ClientAuth" : {
-        "type" : "object",
-        "properties" : { }
+        "oneOf" : [ {
+          "$ref" : "#/components/schemas/otoroshi.ssl.ClientAuth$Need$"
+        }, {
+          "$ref" : "#/components/schemas/otoroshi.ssl.ClientAuth$None$"
+        }, {
+          "$ref" : "#/components/schemas/otoroshi.ssl.ClientAuth$Want$"
+        } ]
       },
       "otoroshi.models.SimpleOtoroshiAdmin" : {
         "type" : "object",
@@ -15854,8 +15040,11 @@
         }
       },
       "otoroshi.models.EntityIdentifier" : {
-        "type" : "object",
-        "properties" : { }
+        "oneOf" : [ {
+          "$ref" : "#/components/schemas/otoroshi.models.ServiceDescriptorIdentifier"
+        }, {
+          "$ref" : "#/components/schemas/otoroshi.models.ServiceGroupIdentifier"
+        } ]
       },
       "otoroshi.events.KafkaConfig" : {
         "type" : "object",
@@ -16112,8 +15301,15 @@
         }
       },
       "otoroshi.models.VerifierStrategy" : {
-        "type" : "object",
-        "properties" : { }
+        "oneOf" : [ {
+          "$ref" : "#/components/schemas/otoroshi.models.DefaultToken"
+        }, {
+          "$ref" : "#/components/schemas/otoroshi.models.PassThrough"
+        }, {
+          "$ref" : "#/components/schemas/otoroshi.models.Sign"
+        }, {
+          "$ref" : "#/components/schemas/otoroshi.models.Transform"
+        } ]
       },
       "otoroshi.models.GlobalScripts" : {
         "type" : "object",
@@ -16242,6 +15438,10 @@
             "type" : "boolean"
           }
         }
+      },
+      "otoroshi.models.ServiceGroupIdentifier" : {
+        "type" : "string",
+        "description" : "the id of a group prefixed by 'group_'"
       },
       "otoroshi.script.AccessValidatorRef" : {
         "type" : "object",
@@ -16670,8 +15870,19 @@
         }
       },
       "otoroshi.models.LoadBalancing" : {
-        "type" : "object",
-        "properties" : { }
+        "oneOf" : [ {
+          "$ref" : "#/components/schemas/otoroshi.models.BestResponseTime$"
+        }, {
+          "$ref" : "#/components/schemas/otoroshi.models.IpAddressHash$"
+        }, {
+          "$ref" : "#/components/schemas/otoroshi.models.Random$"
+        }, {
+          "$ref" : "#/components/schemas/otoroshi.models.RoundRobin$"
+        }, {
+          "$ref" : "#/components/schemas/otoroshi.models.Sticky$"
+        }, {
+          "$ref" : "#/components/schemas/otoroshi.models.WeightedBestResponseTime"
+        } ]
       },
       "otoroshi.models.RedirectionSettings" : {
         "type" : "object",
@@ -16692,12 +15903,20 @@
         }
       },
       "otoroshi.models.OtoroshiAdmin" : {
-        "type" : "object",
-        "properties" : { }
+        "oneOf" : [ {
+          "$ref" : "#/components/schemas/otoroshi.models.SimpleOtoroshiAdmin"
+        }, {
+          "$ref" : "#/components/schemas/otoroshi.models.WebAuthnOtoroshiAdmin"
+        } ]
       },
       "otoroshi.models.JwtVerifier" : {
-        "type" : "object",
-        "properties" : { }
+        "oneOf" : [ {
+          "$ref" : "#/components/schemas/otoroshi.models.GlobalJwtVerifier"
+        }, {
+          "$ref" : "#/components/schemas/otoroshi.models.LocalJwtVerifier"
+        }, {
+          "$ref" : "#/components/schemas/otoroshi.models.RefJwtVerifier"
+        } ]
       },
       "otoroshi.auth.BasicAuthModuleConfig" : {
         "type" : "object",
@@ -16860,8 +16079,13 @@
         }
       },
       "otoroshi.models.GeolocationSettings" : {
-        "type" : "object",
-        "properties" : { }
+        "oneOf" : [ {
+          "$ref" : "#/components/schemas/otoroshi.models.IpStackGeolocationSettings"
+        }, {
+          "$ref" : "#/components/schemas/otoroshi.models.MaxmindGeolocationSettings"
+        }, {
+          "$ref" : "#/components/schemas/otoroshi.models.NoneGeolocationSettings$"
+        } ]
       },
       "otoroshi.models.ApiDescriptor" : {
         "type" : "object",
@@ -17250,8 +16474,19 @@
         }
       },
       "otoroshi.utils.mailer.MailerSettings" : {
-        "type" : "object",
-        "properties" : { }
+        "oneOf" : [ {
+          "$ref" : "#/components/schemas/otoroshi.utils.mailer.ConsoleMailerSettings"
+        }, {
+          "$ref" : "#/components/schemas/otoroshi.utils.mailer.GenericMailerSettings"
+        }, {
+          "$ref" : "#/components/schemas/otoroshi.utils.mailer.MailgunSettings"
+        }, {
+          "$ref" : "#/components/schemas/otoroshi.utils.mailer.MailjetSettings"
+        }, {
+          "$ref" : "#/components/schemas/otoroshi.utils.mailer.NoneMailerSettings"
+        }, {
+          "$ref" : "#/components/schemas/otoroshi.utils.mailer.SendgridSettings"
+        } ]
       },
       "otoroshi.models.EntityLocation" : {
         "type" : "object",
@@ -17270,8 +16505,8 @@
         }
       },
       "otoroshi.models.SecComInfoTokenVersion" : {
-        "type" : "object",
-        "properties" : { }
+        "type" : "string",
+        "enum" : [ "Legacy", "Latest" ]
       },
       "otoroshi.auth.AuthModuleConfig" : {
         "oneOf" : [ {
@@ -17344,8 +16579,13 @@
         }
       },
       "otoroshi.models.JwtTokenLocation" : {
-        "type" : "object",
-        "properties" : { }
+        "oneOf" : [ {
+          "$ref" : "#/components/schemas/otoroshi.models.InCookie"
+        }, {
+          "$ref" : "#/components/schemas/otoroshi.models.InHeader"
+        }, {
+          "$ref" : "#/components/schemas/otoroshi.models.InQueryParam"
+        } ]
       },
       "otoroshi.models.UserAgentSettings" : {
         "type" : "object",

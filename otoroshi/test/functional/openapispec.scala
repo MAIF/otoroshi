@@ -15,5 +15,4 @@ class OpenApiSpec extends WordSpec with MustMatchers with OptionValues {
   )
 
   generator.run()
-  // generator.readOldSpec()
 }
