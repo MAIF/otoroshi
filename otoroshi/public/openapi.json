@@ -13823,32 +13823,32 @@
         "description" : "Settings for custom timeouts for a specific path",
         "properties" : {
           "path" : {
-            "description" : "???",
+            "description" : "path on which this configuration works",
             "type" : "string"
           },
           "callAndStreamTimeout" : {
             "format" : "int64",
-            "description" : "???",
+            "description" : "Specify how long each call should last at most in milliseconds (hard timeout, connection will be closed after that duration)",
             "type" : "integer"
           },
           "callTimeout" : {
             "format" : "int64",
-            "description" : "???",
+            "description" : "Specify how long each call should last at most in milliseconds (soft timeout as it's enforced by the circuit breaker)",
             "type" : "integer"
           },
           "idleTimeout" : {
             "format" : "int64",
-            "description" : "???",
+            "description" : "Timeout on idle connection",
             "type" : "integer"
           },
           "globalTimeout" : {
             "format" : "int64",
-            "description" : "???",
+            "description" : "Specify how long the global call (with retries) should last at most in milliseconds",
             "type" : "integer"
           },
           "connectionTimeout" : {
             "format" : "int64",
-            "description" : "???",
+            "description" : "Timeout at connection",
             "type" : "integer"
           }
         }
@@ -13858,7 +13858,7 @@
         "description" : "Settings to extract apikey from a basic auth header like",
         "properties" : {
           "enabled" : {
-            "description" : "???",
+            "description" : "Constraint enabled",
             "type" : "boolean"
           },
           "headerName" : {
@@ -13867,7 +13867,7 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "Header name to get client_id:client_secret base64 encoded"
           },
           "queryName" : {
             "oneOf" : [ {
@@ -13875,7 +13875,7 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "Query param name to get client_id:client_secret base64 encoded"
           }
         }
       },
@@ -14190,7 +14190,7 @@
                 "$ref" : "#/components/schemas/otoroshi.models.BadResponsesFaultConfig"
               } ]
             } ],
-            "description" : "???"
+            "description" : "Settings for bad responses"
           },
           "largeRequestFaultConfig" : {
             "oneOf" : [ {
@@ -14202,7 +14202,7 @@
                 "$ref" : "#/components/schemas/otoroshi.models.LargeRequestFaultConfig"
               } ]
             } ],
-            "description" : "???"
+            "description" : "Settings for large requests"
           },
           "largeResponseFaultConfig" : {
             "oneOf" : [ {
@@ -14214,7 +14214,7 @@
                 "$ref" : "#/components/schemas/otoroshi.models.LargeResponseFaultConfig"
               } ]
             } ],
-            "description" : "???"
+            "description" : "Settings for large responses"
           },
           "latencyInjectionFaultConfig" : {
             "oneOf" : [ {
@@ -14226,7 +14226,7 @@
                 "$ref" : "#/components/schemas/otoroshi.models.LatencyInjectionFaultConfig"
               } ]
             } ],
-            "description" : "???"
+            "description" : "Settings for latency injection"
           },
           "enabled" : {
             "description" : "Whether or not this config is enabled",
@@ -14719,14 +14719,14 @@
             "items" : {
               "type" : "object"
             },
-            "description" : "???"
+            "description" : "Exclude the events matching one of those filters"
           },
           "exclude" : {
             "type" : "array",
             "items" : {
               "type" : "object"
             },
-            "description" : "???"
+            "description" : "Include the events matching one of those filters"
           }
         }
       },
@@ -15562,23 +15562,23 @@
         "description" : "Settings for connection to the clever-cloud api",
         "properties" : {
           "consumerSecret" : {
-            "description" : "???",
+            "description" : "Clever-Cloud oauth consumer secret",
             "type" : "string"
           },
           "consumerKey" : {
-            "description" : "???",
+            "description" : "Clever-Cloud oauth consumer key",
             "type" : "string"
           },
           "secret" : {
-            "description" : "???",
+            "description" : "Clever-Cloud oauth secret",
             "type" : "string"
           },
           "token" : {
-            "description" : "???",
+            "description" : "Clever-Cloud oauth token",
             "type" : "string"
           },
           "orgaId" : {
-            "description" : "???",
+            "description" : "Clever-Cloud organization id",
             "type" : "string"
           }
         }
@@ -15922,7 +15922,7 @@
         "description" : "Settings to extract apikey (using client_id only) from a header or query param",
         "properties" : {
           "enabled" : {
-            "description" : "???",
+            "description" : "Constraint enabled",
             "type" : "boolean"
           },
           "headerName" : {
@@ -15931,7 +15931,7 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "Header name to find client_id"
           },
           "queryName" : {
             "oneOf" : [ {
@@ -15939,7 +15939,7 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "Query param name to find client_id"
           }
         }
       },
@@ -15987,7 +15987,7 @@
         "properties" : {
           "connectionTimeout" : {
             "format" : "int64",
-            "description" : "???",
+            "description" : "Timeout at connection",
             "type" : "integer"
           },
           "useCircuitBreaker" : {
@@ -16009,16 +16009,16 @@
                 "$ref" : "#/components/schemas/play.api.libs.ws.WSProxyServer"
               } ]
             } ],
-            "description" : "???"
+            "description" : "Web proxy settings for http client"
           },
           "callTimeout" : {
             "format" : "int64",
-            "description" : "Specify how long each call should last at most in milliseconds",
+            "description" : "Specify how long each call should last at most in milliseconds (soft timeout as it's enforced by the circuit breaker)",
             "type" : "integer"
           },
           "callAndStreamTimeout" : {
             "format" : "int64",
-            "description" : "???",
+            "description" : "Specify how long each call should last at most in milliseconds (hard timeout, connection will be closed after that duration)",
             "type" : "integer"
           },
           "globalTimeout" : {
@@ -16046,11 +16046,11 @@
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.models.CustomTimeouts"
             },
-            "description" : "???"
+            "description" : "Custom timeouts per path"
           },
           "idleTimeout" : {
             "format" : "int64",
-            "description" : "???",
+            "description" : "Timeout on idle connection",
             "type" : "integer"
           },
           "sampleInterval" : {
@@ -16069,23 +16069,23 @@
         "description" : "Settings used to extract apikeys from http requests and routing traffic",
         "properties" : {
           "customHeadersAuth" : {
-            "description" : "???",
+            "description" : "Settings to extract apikey from custom headers",
             "$ref" : "#/components/schemas/otoroshi.models.CustomHeadersAuthConstraints"
           },
           "routing" : {
-            "description" : "???",
+            "description" : "Routing settings for this apikey",
             "$ref" : "#/components/schemas/otoroshi.models.ApiKeyRouteMatcher"
           },
           "clientIdAuth" : {
-            "description" : "???",
+            "description" : "Settings to extract client_id only apikey",
             "$ref" : "#/components/schemas/otoroshi.models.ClientIdAuthConstraints"
           },
           "jwtAuth" : {
-            "description" : "???",
+            "description" : "Settings to extract apikey from jwt token",
             "$ref" : "#/components/schemas/otoroshi.models.JwtAuthConstraints"
           },
           "basicAuth" : {
-            "description" : "???",
+            "description" : "Settings to extract basic auth style apikey",
             "$ref" : "#/components/schemas/otoroshi.models.BasicAuthConstraints"
           }
         }
@@ -17005,14 +17005,14 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "allowed domains"
           },
           "enabled" : {
-            "description" : "???",
+            "description" : "Enable auto cert",
             "type" : "boolean"
           },
           "replyNicely" : {
-            "description" : "???",
+            "description" : "Reply TLS error with an auto generated certificate for the domain",
             "type" : "boolean"
           },
           "notAllowed" : {
@@ -17020,7 +17020,7 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "not allowed domains"
           },
           "caRef" : {
             "oneOf" : [ {
@@ -17028,7 +17028,7 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "Generate cert from the following CA"
           }
         }
       },
@@ -17259,17 +17259,17 @@
         "description" : "Settings for automatic apikey rotation with grace period",
         "properties" : {
           "enabled" : {
-            "description" : "???",
+            "description" : "Rotation enabled",
             "type" : "boolean"
           },
           "rotationEvery" : {
             "format" : "int64",
-            "description" : "???",
+            "description" : "Rotate every n hours",
             "type" : "integer"
           },
           "gracePeriod" : {
             "format" : "int64",
-            "description" : "???",
+            "description" : "period (in hours) during which both secrets works",
             "type" : "integer"
           },
           "nextSecret" : {
@@ -17278,7 +17278,7 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "Next client_secret value"
           }
         }
       },
@@ -17517,31 +17517,31 @@
         "description" : "User session for otoroshi-ui admins",
         "properties" : {
           "randomId" : {
-            "description" : "???",
+            "description" : "Session user random id",
             "type" : "string"
           },
           "profile" : {
-            "description" : "???",
+            "description" : "Session user profile",
             "type" : "object"
           },
           "authConfigId" : {
-            "description" : "???",
+            "description" : "Session created from auth module id",
             "type" : "string"
           },
           "rights" : {
-            "description" : "???",
+            "description" : "Session user rights",
             "$ref" : "#/components/schemas/otoroshi.models.UserRights"
           },
           "createdAt" : {
-            "description" : "???",
+            "description" : "Creation date for the session",
             "type" : "number"
           },
           "token" : {
-            "description" : "???",
+            "description" : "Session tokens (only if OAuth/OIDC)",
             "type" : "object"
           },
           "name" : {
-            "description" : "???",
+            "description" : "Session user name",
             "type" : "string"
           },
           "metadata" : {
@@ -17549,26 +17549,26 @@
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Entity metadata"
           },
           "email" : {
-            "description" : "???",
+            "description" : "User email",
             "type" : "string"
           },
           "simpleLogin" : {
-            "description" : "???",
+            "description" : "Session generated from a simple login module (like basic or ldap)",
             "type" : "boolean"
           },
           "expiredAt" : {
-            "description" : "???",
+            "description" : "Expiration date for the session",
             "type" : "number"
           },
           "location" : {
-            "description" : "???",
+            "description" : "Entity location",
             "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
           },
           "lastRefresh" : {
-            "description" : "???",
+            "description" : "Last refresh of the session (OAuth with refresh tokens)",
             "type" : "number"
           }
         }
@@ -17663,63 +17663,63 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "outing if one tag presents in apikey"
           },
           "noneMetaKeysIn" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Routing if none meta keys presents in apikey"
           },
           "oneMetaIn" : {
             "type" : "object",
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Routing if one meta presents in apikey"
           },
           "oneMetaKeyIn" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Routing if one meta key presents in apikey"
           },
           "allMetaKeysIn" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Routing if all meta keys presents in apikey"
           },
           "noneTagIn" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Routing if none tags presents in apikey"
           },
           "allTagsIn" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Routing if all tags presents in apikey"
           },
           "allMetaIn" : {
             "type" : "object",
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Routing if all meta presents in apikey"
           },
           "noneMetaIn" : {
             "type" : "object",
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Routing if none meta presents in apikey"
           }
         }
       },
@@ -17928,7 +17928,7 @@
         "description" : "Settings to extract apikey from a custom headers",
         "properties" : {
           "enabled" : {
-            "description" : "???",
+            "description" : "Constraint enabled",
             "type" : "boolean"
           },
           "clientIdHeaderName" : {
@@ -17937,7 +17937,7 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "Header name to find client_id"
           },
           "clientSecretHeaderName" : {
             "oneOf" : [ {
@@ -17945,7 +17945,7 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "Header name to find client_secret"
           }
         }
       },
@@ -18422,7 +18422,7 @@
         "description" : "Match a target if in the same datacenter",
         "properties" : {
           "dc" : {
-            "description" : "???",
+            "description" : "DC name",
             "type" : "string"
           }
         }
