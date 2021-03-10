@@ -11402,7 +11402,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/ApikeyQuotasResponse"
+                  "$ref" : "#/components/schemas/otoroshi.models.RemainingQuotas"
                 }
               }
             }
@@ -16410,6 +16410,57 @@
           "verificationSettings" : {
             "description" : "???",
             "$ref" : "#/components/schemas/otoroshi.models.VerificationSettings"
+          }
+        }
+      },
+      "otoroshi.models.RemainingQuotas" : {
+        "type" : "object",
+        "description" : "???",
+        "properties" : {
+          "currentCallsPerSec" : {
+            "format" : "int64",
+            "description" : "???",
+            "type" : "integer"
+          },
+          "remainingCallsPerSec" : {
+            "format" : "int64",
+            "description" : "???",
+            "type" : "integer"
+          },
+          "currentCallsPerDay" : {
+            "format" : "int64",
+            "description" : "???",
+            "type" : "integer"
+          },
+          "authorizedCallsPerDay" : {
+            "format" : "int64",
+            "description" : "???",
+            "type" : "integer"
+          },
+          "currentCallsPerMonth" : {
+            "format" : "int64",
+            "description" : "???",
+            "type" : "integer"
+          },
+          "remainingCallsPerMonth" : {
+            "format" : "int64",
+            "description" : "???",
+            "type" : "integer"
+          },
+          "authorizedCallsPerSec" : {
+            "format" : "int64",
+            "description" : "???",
+            "type" : "integer"
+          },
+          "authorizedCallsPerMonth" : {
+            "format" : "int64",
+            "description" : "???",
+            "type" : "integer"
+          },
+          "remainingCallsPerDay" : {
+            "format" : "int64",
+            "description" : "???",
+            "type" : "integer"
           }
         }
       },

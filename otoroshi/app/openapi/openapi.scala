@@ -96,7 +96,8 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
       world.get("otoroshi.models.GlobalConfig") ++
       world.get("otoroshi.ssl.pki.models.GenKeyPairQuery") ++
       world.get("otoroshi.ssl.pki.models.GenCsrQuery") ++
-      world.get("otoroshi.models.ErrorTemplate")
+      world.get("otoroshi.models.ErrorTemplate") ++
+      world.get("otoroshi.models.RemainingQuotas")
     ).toSeq.distinct
 
   var adts = Seq.empty[JsObject]
