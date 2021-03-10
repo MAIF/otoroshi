@@ -1,8 +1,8 @@
 {
   "openapi" : "3.0.3",
   "info" : {
-    "title" : "otoroshi api",
-    "description" : "otoroshi api",
+    "title" : "Otoroshi Admin API",
+    "description" : "Admin API of the Otoroshi reverse proxy",
     "version" : "1.5.0-dev",
     "contact" : {
       "name" : "Otoroshi Team",
@@ -428,7 +428,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/Unknown"
+                "$ref" : "#/components/schemas/otoroshi.models.WebAuthnOtoroshiAdmin"
               }
             }
           }
@@ -1229,7 +1229,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/Unknown"
+                "$ref" : "#/components/schemas/otoroshi.models.Target"
               }
             }
           }
@@ -1299,7 +1299,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/Unknown"
+                "$ref" : "#/components/schemas/otoroshi.models.Target"
               }
             }
           }
@@ -2206,7 +2206,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Unknown"
+                  "$ref" : "#/components/schemas/Empty"
                 }
               }
             }
@@ -2218,7 +2218,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/Unknown"
+                "$ref" : "#/components/schemas/Empty"
               }
             }
           }
@@ -2932,7 +2932,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/Unknown"
+                "$ref" : "#/components/schemas/PatchBody"
               }
             }
           }
@@ -3045,7 +3045,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/Unknown"
+                "$ref" : "#/components/schemas/otoroshi.models.SnowMonkeyConfig"
               }
             }
           }
@@ -3402,7 +3402,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/Unknown"
+                "$ref" : "#/components/schemas/Empty"
               }
             }
           }
@@ -3474,7 +3474,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/Unknown"
+                "$ref" : "#/components/schemas/otoroshi.ssl.pki.models.GenCsrQuery"
               }
             }
           }
@@ -4839,7 +4839,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/Unknown"
+                "$ref" : "#/components/schemas/otoroshi.ssl.pki.models.GenKeyPairQuery"
               }
             }
           }
@@ -4903,7 +4903,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/Unknown"
+                "$ref" : "#/components/schemas/ByteStreamBody"
               }
             }
           }
@@ -4967,7 +4967,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/Unknown"
+                "$ref" : "#/components/schemas/GlobalConfigImportBody"
               }
             }
           }
@@ -5200,7 +5200,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/Unknown"
+                "$ref" : "#/components/schemas/Empty"
               }
             }
           }
@@ -5957,7 +5957,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/Unknown"
+                "$ref" : "#/components/schemas/GlobalConfigImportBody"
               }
             }
           }
@@ -6021,7 +6021,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/Unknown"
+                "$ref" : "#/components/schemas/otoroshi.ssl.pki.models.GenCsrQuery"
               }
             }
           }
@@ -6398,7 +6398,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/Unknown"
+                "$ref" : "#/components/schemas/otoroshi.ssl.pki.models.GenCsrQuery"
               }
             }
           }
@@ -6523,7 +6523,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/Unknown"
+                "$ref" : "#/components/schemas/WebAuthnRegistrationFinishBody"
               }
             }
           }
@@ -6640,7 +6640,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/Unknown"
+                "$ref" : "#/components/schemas/Empty"
               }
             }
           }
@@ -7167,7 +7167,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/Unknown"
+                "$ref" : "#/components/schemas/PatchBody"
               }
             }
           }
@@ -7280,7 +7280,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/Unknown"
+                "$ref" : "#/components/schemas/otoroshi.models.GlobalConfig"
               }
             }
           }
@@ -7718,7 +7718,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/Unknown"
+                "$ref" : "#/components/schemas/PemCertificateBody"
               }
             }
           }
@@ -7782,7 +7782,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/Unknown"
+                "$ref" : "#/components/schemas/UpdateQuotasBody"
               }
             }
           }
@@ -7854,7 +7854,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/Unknown"
+                "$ref" : "#/components/schemas/otoroshi.models.WebAuthnOtoroshiAdmin"
               }
             }
           }
@@ -8717,7 +8717,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/Unknown"
+                "$ref" : "#/components/schemas/otoroshi.ssl.pki.models.GenCsrQuery"
               }
             }
           }
@@ -9019,7 +9019,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/Unknown"
+                "$ref" : "#/components/schemas/otoroshi.models.SimpleOtoroshiAdmin"
               }
             }
           }
@@ -9411,7 +9411,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/Unknown"
+                "$ref" : "#/components/schemas/Empty"
               }
             }
           }
@@ -9847,7 +9847,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/Unknown"
+                "$ref" : "#/components/schemas/Empty"
               }
             }
           }
@@ -10350,7 +10350,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/Unknown"
+                "$ref" : "#/components/schemas/otoroshi.ssl.pki.models.GenCsrQuery"
               }
             }
           }
@@ -10581,7 +10581,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/Unknown"
+                "$ref" : "#/components/schemas/Empty"
               }
             }
           }
@@ -11171,7 +11171,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/Unknown"
+                "$ref" : "#/components/schemas/otoroshi.ssl.Cert"
               }
             }
           }
@@ -11402,7 +11402,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Unknown"
+                  "$ref" : "#/components/schemas/ApikeyQuotasResponse"
                 }
               }
             }
@@ -11461,7 +11461,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Unknown"
+                  "$ref" : "#/components/schemas/otoroshi.models.RemainingQuotas"
                 }
               }
             }
@@ -11526,7 +11526,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/Unknown"
+                "$ref" : "#/components/schemas/UserTokenBody"
               }
             }
           }
@@ -11590,7 +11590,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/Unknown"
+                "$ref" : "#/components/schemas/LetsEncryptCertBody"
               }
             }
           }
@@ -12233,7 +12233,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/Unknown"
+                "$ref" : "#/components/schemas/otoroshi.models.ErrorTemplate"
               }
             }
           }
@@ -12421,7 +12421,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/Unknown"
+                "$ref" : "#/components/schemas/otoroshi.models.ErrorTemplate"
               }
             }
           }
@@ -12485,7 +12485,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/Unknown"
+                "$ref" : "#/components/schemas/ServiceDescriptorList"
               }
             }
           }
@@ -12553,7 +12553,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Unknown"
+                  "$ref" : "#/components/schemas/Empty"
                 }
               }
             }
@@ -12565,7 +12565,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/Unknown"
+                "$ref" : "#/components/schemas/Empty"
               }
             }
           }
@@ -12629,7 +12629,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/Unknown"
+                "$ref" : "#/components/schemas/otoroshi.models.SimpleOtoroshiAdmin"
               }
             }
           }
@@ -12752,7 +12752,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/Unknown"
+                "$ref" : "#/components/schemas/WebAuthnRegistrationStartBody"
               }
             }
           }
@@ -12877,7 +12877,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/Unknown"
+                "$ref" : "#/components/schemas/CodeBody"
               }
             }
           }
@@ -12949,7 +12949,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/Unknown"
+                "$ref" : "#/components/schemas/PemCsrBody"
               }
             }
           }
@@ -13021,7 +13021,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/Unknown"
+                "$ref" : "#/components/schemas/Empty"
               }
             }
           }
@@ -13152,7 +13152,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/Unknown"
+                "$ref" : "#/components/schemas/Empty"
               }
             }
           }
@@ -13529,7 +13529,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/Unknown"
+                "$ref" : "#/components/schemas/otoroshi.models.PrivateAppsUser"
               }
             }
           }
@@ -13786,6 +13786,9 @@
           }
         }
       },
+      "LetsEncryptCertBody" : {
+        "type" : "object"
+      },
       "otoroshi.models.CustomTimeouts" : {
         "type" : "object",
         "description" : "Settings for custom timeouts for a specific path",
@@ -13886,6 +13889,9 @@
       },
       "otoroshi.models.TenantId" : {
         "type" : "string"
+      },
+      "UserTokenBody" : {
+        "type" : "object"
       },
       "otoroshi.utils.mailer.MailgunSettings" : {
         "type" : "object",
@@ -14203,6 +14209,12 @@
             "description" : "???",
             "$ref" : "#/components/schemas/otoroshi.models.MappingSettings"
           }
+        }
+      },
+      "ServiceDescriptorList" : {
+        "type" : "array",
+        "items" : {
+          "$ref" : "#/components/schemas/otoroshi.models.ServiceDescriptor"
         }
       },
       "otoroshi.models.ApiKey" : {
@@ -14612,6 +14624,9 @@
           }
         }
       },
+      "UpdateQuotasBody" : {
+        "type" : "string"
+      },
       "otoroshi.models.DataExporterConfigFiltering" : {
         "type" : "object",
         "description" : "Settings to match otoroshi events",
@@ -14658,6 +14673,71 @@
           "description" : {
             "description" : "???",
             "type" : "string"
+          }
+        }
+      },
+      "otoroshi.ssl.pki.models.GenCsrQuery" : {
+        "type" : "object",
+        "description" : "???",
+        "properties" : {
+          "client" : {
+            "description" : "???",
+            "type" : "boolean"
+          },
+          "hosts" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          },
+          "key" : {
+            "description" : "???",
+            "$ref" : "#/components/schemas/otoroshi.ssl.pki.models.GenKeyPairQuery"
+          },
+          "includeAIA" : {
+            "description" : "???",
+            "type" : "boolean"
+          },
+          "signatureAlg" : {
+            "description" : "???",
+            "type" : "string"
+          },
+          "existingSerialNumber" : {
+            "oneOf" : [ {
+              "$ref" : "#/components/schemas/Null"
+            }, {
+              "type" : "integer",
+              "format" : "int64"
+            } ],
+            "description" : "???"
+          },
+          "duration" : {
+            "description" : "???",
+            "type" : "number"
+          },
+          "digestAlg" : {
+            "description" : "???",
+            "type" : "string"
+          },
+          "ca" : {
+            "description" : "???",
+            "type" : "boolean"
+          },
+          "name" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          },
+          "subject" : {
+            "oneOf" : [ {
+              "$ref" : "#/components/schemas/Null"
+            }, {
+              "type" : "string"
+            } ],
+            "description" : "???"
           }
         }
       },
@@ -15712,6 +15792,21 @@
           }
         }
       },
+      "otoroshi.ssl.pki.models.GenKeyPairQuery" : {
+        "type" : "object",
+        "description" : "???",
+        "properties" : {
+          "algo" : {
+            "description" : "???",
+            "type" : "string"
+          },
+          "size" : {
+            "format" : "int32",
+            "description" : "???",
+            "type" : "integer"
+          }
+        }
+      },
       "otoroshi.models.OutageStrategy" : {
         "type" : "string",
         "enum" : [ "AllServicesPerGroup", "OneServicePerGroup" ]
@@ -16186,6 +16281,9 @@
           }
         }
       },
+      "WebAuthnRegistrationFinishBody" : {
+        "type" : "object"
+      },
       "otoroshi.models.LocalJwtVerifier" : {
         "type" : "object",
         "description" : "Local jwt verifier (deprecated)",
@@ -16636,6 +16734,9 @@
           }
         }
       },
+      "CodeBody" : {
+        "type" : "string"
+      },
       "otoroshi.models.AutoCert" : {
         "type" : "object",
         "description" : "Settings to generate certificates on the fly",
@@ -17082,6 +17183,9 @@
           }
         }
       },
+      "WebAuthnRegistrationStartBody" : {
+        "type" : "object"
+      },
       "PatchDocument" : {
         "type" : "object",
         "description" : "A JSONPatch document as defined by RFC 6902",
@@ -17355,6 +17459,12 @@
           }
         }
       },
+      "ByteStreamBody" : {
+        "type" : "string"
+      },
+      "PemCertificateBody" : {
+        "type" : "string"
+      },
       "otoroshi.models.LargeRequestFaultConfig" : {
         "type" : "object",
         "description" : "Settings for a large request fault (chaos engineering)",
@@ -17475,6 +17585,9 @@
       "BulkBody" : {
         "type" : "string",
         "description" : "Body composed of stringified JSON lines, each one representing an entity"
+      },
+      "PemCsrBody" : {
+        "type" : "string"
       },
       "Unknown" : {
         "type" : "object",
@@ -17800,6 +17913,39 @@
           }
         }
       },
+      "otoroshi.models.ErrorTemplate" : {
+        "type" : "object",
+        "description" : "???",
+        "properties" : {
+          "template50x" : {
+            "description" : "???",
+            "type" : "string"
+          },
+          "templateMaintenance" : {
+            "description" : "???",
+            "type" : "string"
+          },
+          "templateBuild" : {
+            "description" : "???",
+            "type" : "string"
+          },
+          "serviceId" : {
+            "description" : "???",
+            "type" : "string"
+          },
+          "messages" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          },
+          "template40x" : {
+            "description" : "???",
+            "type" : "string"
+          }
+        }
+      },
       "otoroshi.utils.mailer.NoneMailerSettings" : {
         "type" : "object",
         "description" : "Settings for the /dev/null mailer",
@@ -17808,6 +17954,9 @@
       "otoroshi.models.SecComInfoTokenVersion" : {
         "type" : "string",
         "enum" : [ "Legacy", "Latest" ]
+      },
+      "GlobalConfigImportBody" : {
+        "type" : "object"
       },
       "otoroshi.auth.AuthModuleConfig" : {
         "oneOf" : [ {

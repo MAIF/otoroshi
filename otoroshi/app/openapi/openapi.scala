@@ -93,7 +93,10 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
   val entities = (
     scanResult.getClassesImplementing(classOf[Entity].getName).asScala ++
       scanResult.getSubclasses(classOf[Entity].getName).asScala ++
-      world.get("otoroshi.models.GlobalConfig")
+      world.get("otoroshi.models.GlobalConfig") ++
+      world.get("otoroshi.ssl.pki.models.GenKeyPairQuery") ++
+      world.get("otoroshi.ssl.pki.models.GenCsrQuery") ++
+      world.get("otoroshi.models.ErrorTemplate")
     ).toSeq.distinct
 
   var adts = Seq.empty[JsObject]
@@ -261,7 +264,7 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
           case _ if typ.toString.startsWith("scala.Option<") => {
             world.get(valueName).map(cl => visitEntity(cl, result, config))
             result.get(valueName) match {
-              case None if valueName == "java.lang.Object" && name == "maxJwtLifespanSecs" => Json.obj("type" -> "integer", "format" -> "int64").some
+              case None if valueName == "java.lang.Object" && (name == "maxJwtLifespanSecs" || name == "existingSerialNumber")  => Json.obj("type" -> "integer", "format" -> "int64").some
               case Some(v) => Json.obj("oneOf" -> Json.arr(nullType, Json.obj("$ref" -> s"#/components/schemas/$valueName"))).some
               case _ =>
                 println("fuuuuu opt", name, valueName)
@@ -430,41 +433,46 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
     (resStatus, resBody)
   }
 
-  def extractReqBody(verb: String, path: String, operationId: String, tag: String, controllerName: String, controllerMethod: String, isCrud: Boolean, isBulk: Boolean, entity: Option[String], rawTag: String, config: OpenApiGeneratorConfig): JsValue = {
-    def foundDescription(finalPath: String, value: String): String = {
-      inFound.incrementAndGet()
-      foundDescriptions.put(finalPath, value)
-      value
-    }
-    val finalPath = s"operations_input_entity.$controllerName.${controllerMethod}_$tag"
-    val reqBody = (config.descriptions.get(finalPath).filterNot(_ == unknownValue) match {
-      case None if isBulk && controllerMethod == "bulkUpdateAction"      => foundDescription(finalPath, "BulkBody")
-      case None if isBulk && controllerMethod == "bulkCreateAction"      => foundDescription(finalPath, "BulkBody")
-      case None if isBulk && controllerMethod == "bulkPatchAction"       => foundDescription(finalPath, "BulkBody")
-      case None if isBulk && controllerMethod == "bulkDeleteAction"      => foundDescription(finalPath, "BulkBody")
-
-      case None if isCrud && controllerMethod == "createAction"          => foundDescription(finalPath, entity.get)
-      case None if isCrud && controllerMethod == "findAllEntitiesAction" => foundDescription(finalPath, entity.get)
-      case None if isCrud && controllerMethod == "findEntityByIdAction"  => foundDescription(finalPath, entity.get)
-      case None if isCrud && controllerMethod == "updateEntityAction"    => foundDescription(finalPath, entity.get)
-      case None if isCrud && controllerMethod == "patchEntityAction"     => foundDescription(finalPath, entity.get)
-      case None if isCrud && controllerMethod == "deleteEntityAction"    => foundDescription(finalPath, entity.get)
-      case None if isCrud && controllerMethod == "deleteEntitiesAction"  => foundDescription(finalPath, entity.get)
-
-      case None =>
-        inNotFound.incrementAndGet()
-        foundDescriptions.put(finalPath,unknownValue)
-        unknownValue
-      case Some(value) =>
+  def extractReqBody(verb: String, path: String, operationId: String, tag: String, controllerName: String, controllerMethod: String, isCrud: Boolean, isBulk: Boolean, entity: Option[String], rawTag: String, config: OpenApiGeneratorConfig): Option[JsValue] = {
+    val shouldHaveBody = verb.toLowerCase() != "get" && verb.toLowerCase() != "delete" && verb.toLowerCase() != "options"
+    if (shouldHaveBody) {
+      def foundDescription(finalPath: String, value: String): String = {
         inFound.incrementAndGet()
         foundDescriptions.put(finalPath, value)
         value
-    }) match {
-      case v if v == unknownValue => Json.obj("$ref" -> "#/components/schemas/Unknown")
-      case v => Json.obj("$ref" -> s"#/components/schemas/$v")
-    }
+      }
 
-    reqBody
+      val finalPath = s"operations_input_entity.$controllerName.${controllerMethod}_$tag"
+      val reqBody = (config.descriptions.get(finalPath).filterNot(_ == unknownValue) match {
+        case None if isBulk && controllerMethod == "bulkUpdateAction" => foundDescription(finalPath, "BulkBody")
+        case None if isBulk && controllerMethod == "bulkCreateAction" => foundDescription(finalPath, "BulkBody")
+        case None if isBulk && controllerMethod == "bulkPatchAction" => foundDescription(finalPath, "BulkBody")
+        case None if isBulk && controllerMethod == "bulkDeleteAction" => foundDescription(finalPath, "BulkBody")
+
+        case None if isCrud && controllerMethod == "createAction" => foundDescription(finalPath, entity.get)
+        case None if isCrud && controllerMethod == "findAllEntitiesAction" => foundDescription(finalPath, entity.get)
+        case None if isCrud && controllerMethod == "findEntityByIdAction" => foundDescription(finalPath, entity.get)
+        case None if isCrud && controllerMethod == "updateEntityAction" => foundDescription(finalPath, entity.get)
+        case None if isCrud && controllerMethod == "patchEntityAction" => foundDescription(finalPath, entity.get)
+        case None if isCrud && controllerMethod == "deleteEntityAction" => foundDescription(finalPath, entity.get)
+        case None if isCrud && controllerMethod == "deleteEntitiesAction" => foundDescription(finalPath, entity.get)
+
+        case None =>
+          inNotFound.incrementAndGet()
+          foundDescriptions.put(finalPath, unknownValue)
+          unknownValue
+        case Some(value) =>
+          inFound.incrementAndGet()
+          foundDescriptions.put(finalPath, value)
+          value
+      }) match {
+        case v if v == unknownValue => Json.obj("$ref" -> "#/components/schemas/Unknown")
+        case v => Json.obj("$ref" -> s"#/components/schemas/$v")
+      }
+      reqBody.some
+    } else {
+      None
+    }
   }
 
   def scanPaths(config: OpenApiGeneratorConfig): (JsValue, JsValue) = {
@@ -520,7 +528,7 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
             }
             tags = tags :+ tag
             val (resCode, resBody) = extractResBody(verb, path, operationId, tag, controllerName, methodName, isCrud, isBulk, entity, rawTag, config)
-            val reqBody = extractReqBody(verb, path, operationId, tag, controllerName, methodName, isCrud, isBulk, entity, rawTag, config)
+            val reqBodyOpt = extractReqBody(verb, path, operationId, tag, controllerName, methodName, isCrud, isBulk, entity, rawTag, config)
             val customizedPath = path.split("/").map {
               case part if part.startsWith(":") => s"{${part.substring(1)}}"
               case part => part
@@ -579,7 +587,7 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
                     "required" -> true,
                     "content" -> Json.obj(
                       "application/json" -> Json.obj(
-                        "schema" -> reqBody
+                        "schema" -> reqBodyOpt.get
                       )
                     )
                   ))
@@ -609,7 +617,13 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
     }
 
     entities.foreach { clazz =>
+      if (clazz.getName == "otoroshi.ssl.pki.GenCsrQuery") {
+        println("bimmmmm otoroshi.ssl.pki.GenCsrQuery")
+      }
       if (!config.banned.contains(clazz.getName)) {
+        if (clazz.getName == "otoroshi.ssl.pki.GenCsrQuery") {
+          println("otoroshi.ssl.pki.GenCsrQuery")
+        }
         visitEntity(clazz, result, config)
       }
     }
@@ -620,12 +634,14 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
     println(s"found ${found.get()} descriptions, not found ${notFound.get()} descriptions")
     println(s"found ${resFound.get()} response types, not found ${resNotFound.get()} response types")
     println(s"found ${inFound.get()} input types, not found ${inNotFound.get()} input types")
+    println("")
+    println(s"total found ${found.get() + resFound.get() + inFound.get()}, not found ${notFound.get() + resNotFound.get() + inNotFound.get()}")
 
     val spec = Json.obj(
       "openapi" -> openApiVersion,
       "info" -> Json.obj(
-        "title" -> "otoroshi api",
-        "description" -> "otoroshi api",
+        "title" -> "Otoroshi Admin API",
+        "description" -> "Admin API of the Otoroshi reverse proxy",
         "version" -> "1.5.0-dev",
         "contact" -> Json.obj(
           "name" -> "Otoroshi Team",
