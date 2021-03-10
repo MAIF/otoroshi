@@ -14028,7 +14028,7 @@
             "additionalProperties" : {
               "$ref" : "#/components/schemas/otoroshi.models.UserRights"
             },
-            "description" : "???"
+            "description" : "Overrides user rights. Object with email as key"
           },
           "metadataField" : {
             "oneOf" : [ {
@@ -14036,10 +14036,10 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "Field name to get metadata from user profile"
           },
           "extraMetadata" : {
-            "description" : "???",
+            "description" : "Add metadata to user. Object with email as key",
             "type" : "object"
           },
           "adminPassword" : {
@@ -14087,19 +14087,19 @@
             "description" : "LDAP user base DN"
           },
           "superAdmins" : {
-            "description" : "???",
+            "description" : "This module produces only super admins",
             "type" : "boolean"
           },
           "allowEmptyPassword" : {
-            "description" : "???",
+            "description" : "Allow empty password access",
             "type" : "boolean"
           },
           "basicAuth" : {
-            "description" : "???",
+            "description" : "Use standard basic auth or web login form",
             "type" : "boolean"
           },
           "location" : {
-            "description" : "???",
+            "description" : "Location of the module",
             "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
           },
           "metadata" : {
@@ -14107,7 +14107,7 @@
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Metadata of the module"
           },
           "name" : {
             "description" : "Name of the config",
@@ -14127,7 +14127,7 @@
             "type" : "integer"
           },
           "sessionCookieValues" : {
-            "description" : "???",
+            "description" : "Settings for the session cookie",
             "$ref" : "#/components/schemas/otoroshi.auth.SessionCookieValues"
           },
           "dataOverride" : {
@@ -14135,7 +14135,7 @@
             "additionalProperties" : {
               "type" : "object"
             },
-            "description" : "???"
+            "description" : "Overiddes user data. Object with email as key"
           },
           "searchBase" : {
             "description" : "LDAP search base",
@@ -14244,7 +14244,7 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "Error if any"
           },
           "health" : {
             "oneOf" : [ {
@@ -14252,24 +14252,24 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "Health status"
           },
           "logicCheck" : {
-            "description" : "???",
+            "description" : "Did the service respond with the logic check",
             "type" : "boolean"
           },
           "status" : {
             "format" : "int32",
-            "description" : "???",
+            "description" : "Check status",
             "type" : "integer"
           },
           "url" : {
-            "description" : "???",
+            "description" : "Checked url",
             "type" : "string"
           },
           "duration" : {
             "format" : "int64",
-            "description" : "???",
+            "description" : "Duration of the call",
             "type" : "integer"
           }
         }
@@ -14321,19 +14321,19 @@
             "type" : "integer"
           },
           "constrainedServicesOnly" : {
-            "description" : "???",
+            "description" : "This apikey can only be used on services that constrained their apikey routing",
             "type" : "boolean"
           },
           "allowClientIdOnly" : {
-            "description" : "???",
+            "description" : "This apikey can be used juste with the client_id value",
             "type" : "boolean"
           },
           "location" : {
-            "description" : "???",
+            "description" : "The location of the apikey",
             "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
           },
           "restrictions" : {
-            "description" : "???",
+            "description" : "Apikey restrictions settings",
             "$ref" : "#/components/schemas/otoroshi.models.Restrictions"
           },
           "tags" : {
@@ -14341,14 +14341,14 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Apikey tags"
           },
           "enabled" : {
             "description" : "Whether or not the key is enabled. If disabled, resources won't be available to calls using this key",
             "type" : "boolean"
           },
           "readOnly" : {
-            "description" : "???",
+            "description" : "The apikey only allow access for GET, HEAD and OPTIONS verbs",
             "type" : "boolean"
           },
           "clientSecret" : {
@@ -14361,7 +14361,7 @@
             }, {
               "type" : "number"
             } ],
-            "description" : "???"
+            "description" : "Date until when the apikey is valid"
           },
           "clientName" : {
             "description" : "The name of the api key, for humans ;-)",
@@ -14373,7 +14373,7 @@
             "type" : "integer"
           },
           "rotation" : {
-            "description" : "???",
+            "description" : "Apikey rotation settings",
             "$ref" : "#/components/schemas/otoroshi.models.ApiKeyRotation"
           },
           "authorizedEntities" : {
@@ -14425,7 +14425,7 @@
         "description" : "Authentication module that works with OAuth2/OIDC",
         "properties" : {
           "superAdmins" : {
-            "description" : "???",
+            "description" : "This module produces only super admins",
             "type" : "boolean"
           },
           "loginUrl" : {
@@ -14433,7 +14433,7 @@
             "type" : "string"
           },
           "location" : {
-            "description" : "???",
+            "description" : "Location of the module",
             "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
           },
           "userInfoUrl" : {
@@ -14441,7 +14441,7 @@
             "type" : "string"
           },
           "mtlsConfig" : {
-            "description" : "???",
+            "description" : "TLS config. for the module (for server accessed endpoints like tokenUrl, introspectionUrl, etc)",
             "$ref" : "#/components/schemas/otoroshi.utils.http.MtlsConfig"
           },
           "accessTokenField" : {
@@ -14453,11 +14453,11 @@
             "type" : "string"
           },
           "extraMetadata" : {
-            "description" : "???",
+            "description" : "Add metadata to user. Object with email as key",
             "type" : "object"
           },
           "apiKeyTagsField" : {
-            "description" : "???",
+            "description" : "Field name to extract apikey tags",
             "type" : "string"
           },
           "authorizeUrl" : {
@@ -14473,7 +14473,7 @@
             "additionalProperties" : {
               "type" : "object"
             },
-            "description" : "???"
+            "description" : "Overiddes user data. Object with email as key"
           },
           "name" : {
             "description" : "Name of the config",
@@ -14489,7 +14489,7 @@
           },
           "sessionMaxAge" : {
             "format" : "int32",
-            "description" : "Max age of the session",
+            "description" : "max age for the session cookie in seconds",
             "type" : "integer"
           },
           "clientSecret" : {
@@ -14501,10 +14501,10 @@
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Metadata of the module"
           },
           "introspectionUrl" : {
-            "description" : "???",
+            "description" : "URL to introspect access_token",
             "type" : "string"
           },
           "claims" : {
@@ -14516,11 +14516,11 @@
             "type" : "string"
           },
           "sessionCookieValues" : {
-            "description" : "???",
+            "description" : "Settings for the session cookie",
             "$ref" : "#/components/schemas/otoroshi.auth.SessionCookieValues"
           },
           "useCookie" : {
-            "description" : "???",
+            "description" : "Use cookies for redirection",
             "type" : "boolean"
           },
           "proxy" : {
@@ -14533,14 +14533,14 @@
                 "$ref" : "#/components/schemas/play.api.libs.ws.WSProxyServer"
               } ]
             } ],
-            "description" : "???"
+            "description" : "Web proxy configuration for the module's http client"
           },
           "scope" : {
             "description" : "The scope of the token",
             "type" : "string"
           },
           "refreshTokens" : {
-            "description" : "???",
+            "description" : "Refresh token support",
             "type" : "boolean"
           },
           "oidConfig" : {
@@ -14572,14 +14572,14 @@
             "additionalProperties" : {
               "$ref" : "#/components/schemas/otoroshi.models.UserRights"
             },
-            "description" : "???"
+            "description" : "Overrides user rights. Object with email as key"
           },
           "emailField" : {
             "description" : "Field name to get email from user profile",
             "type" : "string"
           },
           "apiKeyMetaField" : {
-            "description" : "???",
+            "description" : "Field name to extract apikey metadata",
             "type" : "string"
           },
           "callbackUrl" : {
@@ -15948,15 +15948,15 @@
         "description" : "A user model for the BasicAuthModuleConfig module",
         "properties" : {
           "metadata" : {
-            "description" : "???",
+            "description" : "User metadata",
             "type" : "object"
           },
           "password" : {
-            "description" : "???",
+            "description" : "User password (bcrypt hashed)",
             "type" : "string"
           },
           "email" : {
-            "description" : "???",
+            "description" : "User email",
             "type" : "string"
           },
           "webauthn" : {
@@ -15969,14 +15969,14 @@
                 "$ref" : "#/components/schemas/otoroshi.auth.WebAuthnDetails"
               } ]
             } ],
-            "description" : "???"
+            "description" : "Webauthn details"
           },
           "rights" : {
-            "description" : "???",
+            "description" : "User rights",
             "$ref" : "#/components/schemas/otoroshi.models.UserRights"
           },
           "name" : {
-            "description" : "???",
+            "description" : "User name",
             "type" : "string"
           }
         }
@@ -16201,11 +16201,11 @@
             "description" : "URLs of the kafka servers"
           },
           "mtlsConfig" : {
-            "description" : "???",
+            "description" : "TLS config to access the cluster",
             "$ref" : "#/components/schemas/otoroshi.utils.http.MtlsConfig"
           },
           "sendEvents" : {
-            "description" : "???",
+            "description" : "Send events to it, or just connect",
             "type" : "boolean"
           },
           "truststore" : {
@@ -16214,7 +16214,7 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "Optional truststore"
           },
           "topic" : {
             "description" : "Optional kafka topic (otoroshi-events by default)",
@@ -16226,7 +16226,7 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "Optional keystore"
           }
         }
       },
@@ -16280,7 +16280,7 @@
         "description" : "Handle and credentials for a webauthn user",
         "properties" : {
           "handle" : {
-            "description" : "???",
+            "description" : "Webauthn user handle",
             "type" : "string"
           },
           "credentials" : {
@@ -16288,7 +16288,7 @@
             "additionalProperties" : {
               "type" : "object"
             },
-            "description" : "???"
+            "description" : "Webauthn credentials"
           }
         }
       },
@@ -17355,7 +17355,7 @@
         "properties" : {
           "sessionMaxAge" : {
             "format" : "int32",
-            "description" : "???",
+            "description" : "max age for the session cookie in seconds",
             "type" : "integer"
           },
           "users" : {
@@ -17363,30 +17363,30 @@
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.auth.BasicAuthUser"
             },
-            "description" : "???"
+            "description" : "Users attached to the module"
           },
           "location" : {
-            "description" : "???",
+            "description" : "location of the module",
             "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
           },
           "basicAuth" : {
-            "description" : "???",
+            "description" : "Use standard basic auth or web login form",
             "type" : "boolean"
           },
           "name" : {
-            "description" : "???",
+            "description" : "name of the module",
             "type" : "string"
           },
           "desc" : {
-            "description" : "???",
+            "description" : "description of the module",
             "type" : "string"
           },
           "webauthn" : {
-            "description" : "???",
+            "description" : "Use webauthn for login",
             "type" : "boolean"
           },
           "id" : {
-            "description" : "???",
+            "description" : "id of the module",
             "type" : "string"
           },
           "metadata" : {
@@ -17394,10 +17394,10 @@
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "metadata of the module"
           },
           "sessionCookieValues" : {
-            "description" : "???",
+            "description" : "Settings for the session cookie",
             "$ref" : "#/components/schemas/otoroshi.auth.SessionCookieValues"
           }
         }
@@ -17591,7 +17591,7 @@
         "description" : "Represent if a service exposes an API with an optional url to an openapi descriptor",
         "properties" : {
           "exposeApi" : {
-            "description" : "???",
+            "description" : "Is this an API",
             "type" : "boolean"
           },
           "openApiDescriptorUrl" : {
@@ -17600,7 +17600,7 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "openapi descriptor url"
           }
         }
       },
@@ -17609,11 +17609,11 @@
         "description" : "The configuration for session cookie",
         "properties" : {
           "httpOnly" : {
-            "description" : "???",
+            "description" : "Is cookie accessible on server side only",
             "type" : "boolean"
           },
           "secure" : {
-            "description" : "???",
+            "description" : "Is cookie for https only",
             "type" : "boolean"
           }
         }
@@ -18009,23 +18009,23 @@
         "description" : "Settings for connection to a pulsar cluster",
         "properties" : {
           "namespace" : {
-            "description" : "???",
+            "description" : "Pulsar namespace",
             "type" : "string"
           },
           "mtlsConfig" : {
-            "description" : "???",
+            "description" : "TLS config to access the cluster",
             "$ref" : "#/components/schemas/otoroshi.utils.http.MtlsConfig"
           },
           "tenant" : {
-            "description" : "???",
+            "description" : "Pulsar tenant",
             "type" : "string"
           },
           "topic" : {
-            "description" : "???",
+            "description" : "Pulsar topic",
             "type" : "string"
           },
           "uri" : {
-            "description" : "???",
+            "description" : "Pulsar cluster url",
             "type" : "string"
           },
           "tlsTrustCertsFilePath" : {
@@ -18034,7 +18034,7 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "Trusted cert path"
           }
         }
       },
