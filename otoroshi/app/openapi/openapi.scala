@@ -96,8 +96,14 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
       world.get("otoroshi.models.GlobalConfig") ++
       world.get("otoroshi.ssl.pki.models.GenKeyPairQuery") ++
       world.get("otoroshi.ssl.pki.models.GenCsrQuery") ++
+      world.get("otoroshi.ssl.pki.models.GenCertResponse") ++
+      world.get("otoroshi.ssl.pki.models.GenCsrResponse") ++
+      world.get("otoroshi.ssl.pki.models.SignCertResponse") ++
+      world.get("otoroshi.ssl.pki.models.GenKeyPairResponse") ++
       world.get("otoroshi.models.ErrorTemplate") ++
-      world.get("otoroshi.models.RemainingQuotas")
+      world.get("otoroshi.models.Outage") ++
+      world.get("otoroshi.models.RemainingQuotas") ++
+      world.get("otoroshi.events.HealthCheckEvent")
     ).toSeq.distinct
 
   var adts = Seq.empty[JsObject]
@@ -262,6 +268,11 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
           case "play.api.libs.json.JsObject" => Json.obj("type" -> "object").some
           case "play.api.libs.json.JsArray" => Json.obj("type" -> "array").some
           case "akka.http.scaladsl.model.HttpProtocol" => Json.obj("type" -> "string").some
+          case "java.security.cert.X509Certificate" => Json.obj("type" -> "string", "description" -> "pem encoded X509 certificate").some
+          case "java.security.PrivateKey" => Json.obj("type" -> "string", "description" -> "pem encoded private key").some
+          case "java.security.PublicKey" => Json.obj("type" -> "string", "description" -> "pem encoded private key").some
+          case "org.bouncycastle.pkcs.PKCS10CertificationRequest" => Json.obj("type" -> "string", "description" -> "pem encoded csr").some
+          case "com.nimbusds.jose.jwk.KeyType" => Json.obj("type" -> "string", "description" -> "key type").some
           case _ if typ.toString.startsWith("scala.Option<") => {
             world.get(valueName).map(cl => visitEntity(cl, result, config))
             result.get(valueName) match {

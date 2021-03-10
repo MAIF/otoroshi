@@ -7,6 +7,7 @@
     "entity_description.otoroshi.auth.LdapAuthModuleConfig": "Authentication module that works with LDAP",
     "entity_description.otoroshi.auth.SessionCookieValues": "The configuration for session cookie",
     "entity_description.otoroshi.auth.WebAuthnDetails": "Handle and credentials for a webauthn user",
+    "entity_description.otoroshi.events.HealthCheckEvent": "???",
     "entity_description.otoroshi.events.KafkaConfig": "Settings for connection to a kafka cluster",
     "entity_description.otoroshi.events.PulsarConfig": "Settings for connection to a pulsar cluster",
     "entity_description.otoroshi.events.StatsdConfig": "Settings for connection to a statsd agent",
@@ -37,7 +38,7 @@
     "entity_description.otoroshi.models.ESKPAlgoSettings": "Settings to use elliptic curve signing algorithm from a certificate keypair",
     "entity_description.otoroshi.models.ElasticAnalyticsConfig": "Settings for connection to an elastic cluster",
     "entity_description.otoroshi.models.EntityLocation": "Location of any entity (teams and organization)",
-    "entity_description.otoroshi.models.ErrorTemplate": "???",
+    "entity_description.otoroshi.models.ErrorTemplate": "Service descriptor error template",
     "entity_description.otoroshi.models.ExporterRef": "Reference to a data exporter",
     "entity_description.otoroshi.models.FileSettings": "Settings for a file data exporter",
     "entity_description.otoroshi.models.GeoPositionRadius": "Geolocation radius",
@@ -64,6 +65,7 @@
     "entity_description.otoroshi.models.MaxmindGeolocationSettings": "Settings for connection to a maxmind db",
     "entity_description.otoroshi.models.MetricsSettings": "Settings for metrics labels",
     "entity_description.otoroshi.models.NetworkLocationMatch": "Match a target if in the same network location",
+    "entity_description.otoroshi.models.Outage": "A snowmonkey outage model",
     "entity_description.otoroshi.models.PassThrough": "jwt token validation policicy that just validate the token",
     "entity_description.otoroshi.models.PrivateAppsUser": "User session for private apps",
     "entity_description.otoroshi.models.Proxies": "Various web proxy settings for http client",
@@ -73,7 +75,7 @@
     "entity_description.otoroshi.models.RedirectionSettings": "Settings for routing redirection",
     "entity_description.otoroshi.models.RefJwtVerifier": "Reference to a jwt verifier",
     "entity_description.otoroshi.models.RegionMatch": "Match a target if in the same region",
-    "entity_description.otoroshi.models.RemainingQuotas": "???",
+    "entity_description.otoroshi.models.RemainingQuotas": "Remaining quotas for an apikey",
     "entity_description.otoroshi.models.RestrictionPath": "Represent an http request on which restrictions will apply",
     "entity_description.otoroshi.models.Restrictions": "Http requests restrictions for a service or an apikey",
     "entity_description.otoroshi.models.SecComHeaders": "Header names for the otoroshi exchange protocol",
@@ -103,8 +105,12 @@
     "entity_description.otoroshi.script.Script": "An otoroshi plugins stored as scala code in the otoroshi datastore",
     "entity_description.otoroshi.script.plugins.Plugins": "Settings for plugins (of any kind)",
     "entity_description.otoroshi.ssl.Cert": "The otoroshi model for X509 certificates",
-    "entity_description.otoroshi.ssl.pki.models.GenCsrQuery": "???",
-    "entity_description.otoroshi.ssl.pki.models.GenKeyPairQuery": "???",
+    "entity_description.otoroshi.ssl.pki.models.GenCertResponse": "Response for a certificate generation operation",
+    "entity_description.otoroshi.ssl.pki.models.GenCsrQuery": "Settings for generating a certificate",
+    "entity_description.otoroshi.ssl.pki.models.GenCsrResponse": "Response for a csr generation operation",
+    "entity_description.otoroshi.ssl.pki.models.GenKeyPairQuery": "Settings for generating a keypair",
+    "entity_description.otoroshi.ssl.pki.models.GenKeyPairResponse": "Response for a keypair generation operation",
+    "entity_description.otoroshi.ssl.pki.models.SignCertResponse": "Response for a certificate signing operation",
     "entity_description.otoroshi.tcp.SniSettings": "SNI settings for a TCP proxy",
     "entity_description.otoroshi.tcp.TcpRule": "Associate targets for a domain (SNI)",
     "entity_description.otoroshi.tcp.TcpService": "Model for a TCP proxy",
@@ -448,16 +454,16 @@
     "operations_input_entity.otoroshi.controllers.adminapi.UsersController.updateWebAuthnAdmin_admins": "otoroshi.models.WebAuthnOtoroshiAdmin",
     "operations_response_entity.otoroshi.controllers.PrivateAppsController.registerSession_privateapps": "Empty",
     "operations_response_entity.otoroshi.controllers.PrivateAppsController.sendSelfUpdateLink_privateapps": "Empty",
-    "operations_response_entity.otoroshi.controllers.adminapi.AnalyticsController.filterableEvents_analytics": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.AnalyticsController.filterableStats_analytics": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.AnalyticsController.globalStats_analytics": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.AnalyticsController.globalStatus_analytics": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.AnalyticsController.groupStatus_groups": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.AnalyticsController.serviceEvents_services": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.AnalyticsController.serviceResponseTime_services": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.AnalyticsController.serviceStats_services": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.AnalyticsController.serviceStatus_services": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.AnalyticsController.servicesStatus_analytics": "???",
+    "operations_response_entity.otoroshi.controllers.adminapi.AnalyticsController.filterableEvents_analytics": "Unknown",
+    "operations_response_entity.otoroshi.controllers.adminapi.AnalyticsController.filterableStats_analytics": "Unknown",
+    "operations_response_entity.otoroshi.controllers.adminapi.AnalyticsController.globalStats_analytics": "Unknown",
+    "operations_response_entity.otoroshi.controllers.adminapi.AnalyticsController.globalStatus_analytics": "Unknown",
+    "operations_response_entity.otoroshi.controllers.adminapi.AnalyticsController.groupStatus_groups": "Unknown",
+    "operations_response_entity.otoroshi.controllers.adminapi.AnalyticsController.serviceEvents_services": "Unknown",
+    "operations_response_entity.otoroshi.controllers.adminapi.AnalyticsController.serviceResponseTime_services": "Unknown",
+    "operations_response_entity.otoroshi.controllers.adminapi.AnalyticsController.serviceStats_services": "Unknown",
+    "operations_response_entity.otoroshi.controllers.adminapi.AnalyticsController.serviceStatus_services": "Unknown",
+    "operations_response_entity.otoroshi.controllers.adminapi.AnalyticsController.servicesStatus_analytics": "Unknown",
     "operations_response_entity.otoroshi.controllers.adminapi.ApiKeysController.apiKeyQuotas_apikeys": "otoroshi.models.RemainingQuotas",
     "operations_response_entity.otoroshi.controllers.adminapi.ApiKeysController.bulkCreateAction_apikeys": "BulkResponseBody",
     "operations_response_entity.otoroshi.controllers.adminapi.ApiKeysController.bulkDeleteAction_apikeys": "BulkResponseBody",
@@ -478,12 +484,12 @@
     "operations_response_entity.otoroshi.controllers.adminapi.AuthModulesController.deleteEntityAction_auth-modules": "otoroshi.auth.AuthModuleConfig",
     "operations_response_entity.otoroshi.controllers.adminapi.AuthModulesController.findAllEntitiesAction_auth-modules": "otoroshi.auth.AuthModuleConfig",
     "operations_response_entity.otoroshi.controllers.adminapi.AuthModulesController.findEntityByIdAction_auth-modules": "otoroshi.auth.AuthModuleConfig",
-    "operations_response_entity.otoroshi.controllers.adminapi.AuthModulesController.finishRegistration_auth-modules": "???",
+    "operations_response_entity.otoroshi.controllers.adminapi.AuthModulesController.finishRegistration_auth-modules": "Unknown",
     "operations_response_entity.otoroshi.controllers.adminapi.AuthModulesController.patchEntityAction_auth-modules": "otoroshi.auth.AuthModuleConfig",
-    "operations_response_entity.otoroshi.controllers.adminapi.AuthModulesController.startRegistration_auth-modules": "???",
+    "operations_response_entity.otoroshi.controllers.adminapi.AuthModulesController.startRegistration_auth-modules": "Unknown",
     "operations_response_entity.otoroshi.controllers.adminapi.AuthModulesController.updateEntityAction_auth-modules": "otoroshi.auth.AuthModuleConfig",
-    "operations_response_entity.otoroshi.controllers.adminapi.CanaryController.resetServiceCanaryMembers_services": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.CanaryController.serviceCanaryMembers_services": "???",
+    "operations_response_entity.otoroshi.controllers.adminapi.CanaryController.resetServiceCanaryMembers_services": "Done",
+    "operations_response_entity.otoroshi.controllers.adminapi.CanaryController.serviceCanaryMembers_services": "Any",
     "operations_response_entity.otoroshi.controllers.adminapi.CertificatesController.bulkCreateAction_certificates": "BulkResponseBody",
     "operations_response_entity.otoroshi.controllers.adminapi.CertificatesController.bulkDeleteAction_certificates": "BulkResponseBody",
     "operations_response_entity.otoroshi.controllers.adminapi.CertificatesController.bulkPatchAction_certificates": "BulkResponseBody",
@@ -493,19 +499,19 @@
     "operations_response_entity.otoroshi.controllers.adminapi.CertificatesController.findAllEntitiesAction_certificates": "otoroshi.ssl.Cert",
     "operations_response_entity.otoroshi.controllers.adminapi.CertificatesController.findEntityByIdAction_certificates": "otoroshi.ssl.Cert",
     "operations_response_entity.otoroshi.controllers.adminapi.CertificatesController.patchEntityAction_certificates": "otoroshi.ssl.Cert",
-    "operations_response_entity.otoroshi.controllers.adminapi.CertificatesController.renewCert_certificates": "???",
+    "operations_response_entity.otoroshi.controllers.adminapi.CertificatesController.renewCert_certificates": "otoroshi.ssl.Cert",
     "operations_response_entity.otoroshi.controllers.adminapi.CertificatesController.updateEntityAction_certificates": "otoroshi.ssl.Cert",
-    "operations_response_entity.otoroshi.controllers.adminapi.ClusterController.clearClusterMembers_cluster": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.ClusterController.createLoginToken_cluster": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.ClusterController.createSession_cluster": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.ClusterController.getClusterMembers_cluster": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.ClusterController.getUserToken_cluster": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.ClusterController.internalState_cluster": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.ClusterController.isLoginTokenValid_cluster": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.ClusterController.isSessionValid_cluster": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.ClusterController.liveCluster_cluster": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.ClusterController.setUserToken_cluster": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.ClusterController.updateQuotas_cluster": "???",
+    "operations_response_entity.otoroshi.controllers.adminapi.ClusterController.clearClusterMembers_cluster": "Done",
+    "operations_response_entity.otoroshi.controllers.adminapi.ClusterController.createLoginToken_cluster": "TokenResponse",
+    "operations_response_entity.otoroshi.controllers.adminapi.ClusterController.createSession_cluster": "otoroshi.models.PrivateAppsUser",
+    "operations_response_entity.otoroshi.controllers.adminapi.ClusterController.getClusterMembers_cluster": "Any",
+    "operations_response_entity.otoroshi.controllers.adminapi.ClusterController.getUserToken_cluster": "TokenResponse",
+    "operations_response_entity.otoroshi.controllers.adminapi.ClusterController.internalState_cluster": "Any",
+    "operations_response_entity.otoroshi.controllers.adminapi.ClusterController.isLoginTokenValid_cluster": "TokenResponse",
+    "operations_response_entity.otoroshi.controllers.adminapi.ClusterController.isSessionValid_cluster": "otoroshi.models.PrivateAppsUser",
+    "operations_response_entity.otoroshi.controllers.adminapi.ClusterController.liveCluster_cluster": "Any",
+    "operations_response_entity.otoroshi.controllers.adminapi.ClusterController.setUserToken_cluster": "TokenResponse",
+    "operations_response_entity.otoroshi.controllers.adminapi.ClusterController.updateQuotas_cluster": "Done",
     "operations_response_entity.otoroshi.controllers.adminapi.DataExporterConfigController.bulkCreateAction_data-exporters": "BulkResponseBody",
     "operations_response_entity.otoroshi.controllers.adminapi.DataExporterConfigController.bulkDeleteAction_data-exporters": "BulkResponseBody",
     "operations_response_entity.otoroshi.controllers.adminapi.DataExporterConfigController.bulkPatchAction_data-exporters": "BulkResponseBody",
@@ -516,14 +522,14 @@
     "operations_response_entity.otoroshi.controllers.adminapi.DataExporterConfigController.findEntityByIdAction_data-exporters": "otoroshi.models.DataExporterConfig",
     "operations_response_entity.otoroshi.controllers.adminapi.DataExporterConfigController.patchEntityAction_data-exporters": "otoroshi.models.DataExporterConfig",
     "operations_response_entity.otoroshi.controllers.adminapi.DataExporterConfigController.updateEntityAction_data-exporters": "otoroshi.models.DataExporterConfig",
-    "operations_response_entity.otoroshi.controllers.adminapi.EventsController.alertEvents_events": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.EventsController.auditEvents_events": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.GlobalConfigController.globalConfig_globalconfig": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.GlobalConfigController.patchGlobalConfig_globalconfig": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.GlobalConfigController.updateGlobalConfig_globalconfig": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.ImportExportController.fullExport_import-export": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.ImportExportController.fullImportFromFile_import-export": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.ImportExportController.fullImport_import-export": "???",
+    "operations_response_entity.otoroshi.controllers.adminapi.EventsController.alertEvents_events": "AlertEventList",
+    "operations_response_entity.otoroshi.controllers.adminapi.EventsController.auditEvents_events": "AuditEventList",
+    "operations_response_entity.otoroshi.controllers.adminapi.GlobalConfigController.globalConfig_globalconfig": "otoroshi.models.GlobalConfig",
+    "operations_response_entity.otoroshi.controllers.adminapi.GlobalConfigController.patchGlobalConfig_globalconfig": "otoroshi.models.GlobalConfig",
+    "operations_response_entity.otoroshi.controllers.adminapi.GlobalConfigController.updateGlobalConfig_globalconfig": "otoroshi.models.GlobalConfig",
+    "operations_response_entity.otoroshi.controllers.adminapi.ImportExportController.fullExport_import-export": "Any",
+    "operations_response_entity.otoroshi.controllers.adminapi.ImportExportController.fullImportFromFile_import-export": "Done",
+    "operations_response_entity.otoroshi.controllers.adminapi.ImportExportController.fullImport_import-export": "Done",
     "operations_response_entity.otoroshi.controllers.adminapi.JwtVerifierController.bulkCreateAction_jwt-verifiers": "BulkResponseBody",
     "operations_response_entity.otoroshi.controllers.adminapi.JwtVerifierController.bulkDeleteAction_jwt-verifiers": "BulkResponseBody",
     "operations_response_entity.otoroshi.controllers.adminapi.JwtVerifierController.bulkPatchAction_jwt-verifiers": "BulkResponseBody",
@@ -534,26 +540,26 @@
     "operations_response_entity.otoroshi.controllers.adminapi.JwtVerifierController.findEntityByIdAction_jwt-verifiers": "otoroshi.models.GlobalJwtVerifier",
     "operations_response_entity.otoroshi.controllers.adminapi.JwtVerifierController.patchEntityAction_jwt-verifiers": "otoroshi.models.GlobalJwtVerifier",
     "operations_response_entity.otoroshi.controllers.adminapi.JwtVerifierController.updateEntityAction_jwt-verifiers": "otoroshi.models.GlobalJwtVerifier",
-    "operations_response_entity.otoroshi.controllers.adminapi.PkiController.certificateData_pki": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.PkiController.certificateIsValid_pki": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.PkiController.genCert_pki": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.PkiController.genCsr_pki": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.PkiController.genKeyPair_pki": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.PkiController.genLetsEncryptCert_pki": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.PkiController.genSelfSignedCA_pki": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.PkiController.genSelfSignedCert_pki": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.PkiController.genSubCA_pki": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.PkiController.importCertFromP12_pki": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.PkiController.signCert_pki": "???",
+    "operations_response_entity.otoroshi.controllers.adminapi.PkiController.certificateData_pki": "Any",
+    "operations_response_entity.otoroshi.controllers.adminapi.PkiController.certificateIsValid_pki": "CertValidResponse",
+    "operations_response_entity.otoroshi.controllers.adminapi.PkiController.genCert_pki": "otoroshi.ssl.pki.models.GenCertResponse",
+    "operations_response_entity.otoroshi.controllers.adminapi.PkiController.genCsr_pki": "otoroshi.ssl.pki.models.GenCsrResponse",
+    "operations_response_entity.otoroshi.controllers.adminapi.PkiController.genKeyPair_pki": "otoroshi.ssl.pki.models.GenKeyPairResponse",
+    "operations_response_entity.otoroshi.controllers.adminapi.PkiController.genLetsEncryptCert_pki": "otoroshi.ssl.pki.models.GenCertResponse",
+    "operations_response_entity.otoroshi.controllers.adminapi.PkiController.genSelfSignedCA_pki": "otoroshi.ssl.pki.models.GenCertResponse",
+    "operations_response_entity.otoroshi.controllers.adminapi.PkiController.genSelfSignedCert_pki": "otoroshi.ssl.pki.models.GenCertResponse",
+    "operations_response_entity.otoroshi.controllers.adminapi.PkiController.genSubCA_pki": "otoroshi.ssl.pki.models.GenCertResponse",
+    "operations_response_entity.otoroshi.controllers.adminapi.PkiController.importCertFromP12_pki": "Done",
+    "operations_response_entity.otoroshi.controllers.adminapi.PkiController.signCert_pki": "otoroshi.ssl.pki.models.SignCertResponse",
     "operations_response_entity.otoroshi.controllers.adminapi.ScriptApiController.bulkCreateAction_scripts": "BulkResponseBody",
     "operations_response_entity.otoroshi.controllers.adminapi.ScriptApiController.bulkDeleteAction_scripts": "BulkResponseBody",
     "operations_response_entity.otoroshi.controllers.adminapi.ScriptApiController.bulkPatchAction_scripts": "BulkResponseBody",
     "operations_response_entity.otoroshi.controllers.adminapi.ScriptApiController.bulkUpdateAction_scripts": "BulkResponseBody",
-    "operations_response_entity.otoroshi.controllers.adminapi.ScriptApiController.compileScript_scripts": "???",
+    "operations_response_entity.otoroshi.controllers.adminapi.ScriptApiController.compileScript_scripts": "Any",
     "operations_response_entity.otoroshi.controllers.adminapi.ScriptApiController.createAction_scripts": "otoroshi.script.Script",
     "operations_response_entity.otoroshi.controllers.adminapi.ScriptApiController.deleteEntityAction_scripts": "otoroshi.script.Script",
     "operations_response_entity.otoroshi.controllers.adminapi.ScriptApiController.findAllEntitiesAction_scripts": "otoroshi.script.Script",
-    "operations_response_entity.otoroshi.controllers.adminapi.ScriptApiController.findAllScriptsList_scripts": "???",
+    "operations_response_entity.otoroshi.controllers.adminapi.ScriptApiController.findAllScriptsList_scripts": "ScriptsList",
     "operations_response_entity.otoroshi.controllers.adminapi.ScriptApiController.findEntityByIdAction_scripts": "otoroshi.script.Script",
     "operations_response_entity.otoroshi.controllers.adminapi.ScriptApiController.patchEntityAction_scripts": "otoroshi.script.Script",
     "operations_response_entity.otoroshi.controllers.adminapi.ScriptApiController.updateEntityAction_scripts": "otoroshi.script.Script",
@@ -566,40 +572,40 @@
     "operations_response_entity.otoroshi.controllers.adminapi.ServiceGroupController.findAllEntitiesAction_groups": "otoroshi.models.ServiceGroup",
     "operations_response_entity.otoroshi.controllers.adminapi.ServiceGroupController.findEntityByIdAction_groups": "otoroshi.models.ServiceGroup",
     "operations_response_entity.otoroshi.controllers.adminapi.ServiceGroupController.patchEntityAction_groups": "otoroshi.models.ServiceGroup",
-    "operations_response_entity.otoroshi.controllers.adminapi.ServiceGroupController.serviceGroupServices_groups": "???",
+    "operations_response_entity.otoroshi.controllers.adminapi.ServiceGroupController.serviceGroupServices_groups": "ServiceDescriptorList",
     "operations_response_entity.otoroshi.controllers.adminapi.ServiceGroupController.updateEntityAction_groups": "otoroshi.models.ServiceGroup",
-    "operations_response_entity.otoroshi.controllers.adminapi.ServicesController.allLines_lines": "???",
+    "operations_response_entity.otoroshi.controllers.adminapi.ServicesController.allLines_lines": "StringList",
     "operations_response_entity.otoroshi.controllers.adminapi.ServicesController.bulkCreateAction_services": "BulkResponseBody",
     "operations_response_entity.otoroshi.controllers.adminapi.ServicesController.bulkDeleteAction_services": "BulkResponseBody",
     "operations_response_entity.otoroshi.controllers.adminapi.ServicesController.bulkPatchAction_services": "BulkResponseBody",
     "operations_response_entity.otoroshi.controllers.adminapi.ServicesController.bulkUpdateAction_services": "BulkResponseBody",
     "operations_response_entity.otoroshi.controllers.adminapi.ServicesController.createAction_services": "otoroshi.models.ServiceDescriptor",
-    "operations_response_entity.otoroshi.controllers.adminapi.ServicesController.createServiceTemplate_services": "???",
+    "operations_response_entity.otoroshi.controllers.adminapi.ServicesController.createServiceTemplate_services": "otoroshi.models.ErrorTemplate",
     "operations_response_entity.otoroshi.controllers.adminapi.ServicesController.deleteEntityAction_services": "otoroshi.models.ServiceDescriptor",
-    "operations_response_entity.otoroshi.controllers.adminapi.ServicesController.deleteServiceTemplate_services": "???",
+    "operations_response_entity.otoroshi.controllers.adminapi.ServicesController.deleteServiceTemplate_services": "Done",
     "operations_response_entity.otoroshi.controllers.adminapi.ServicesController.findAllEntitiesAction_services": "otoroshi.models.ServiceDescriptor",
     "operations_response_entity.otoroshi.controllers.adminapi.ServicesController.findEntityByIdAction_services": "otoroshi.models.ServiceDescriptor",
     "operations_response_entity.otoroshi.controllers.adminapi.ServicesController.patchEntityAction_services": "otoroshi.models.ServiceDescriptor",
-    "operations_response_entity.otoroshi.controllers.adminapi.ServicesController.serviceAddTarget_services": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.ServicesController.serviceDeleteTarget_services": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.ServicesController.serviceHealth_services": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.ServicesController.serviceTargets_services": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.ServicesController.serviceTemplate_services": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.ServicesController.servicesForALine_lines": "???",
+    "operations_response_entity.otoroshi.controllers.adminapi.ServicesController.serviceAddTarget_services": "otoroshi.models.Target",
+    "operations_response_entity.otoroshi.controllers.adminapi.ServicesController.serviceDeleteTarget_services": "Done",
+    "operations_response_entity.otoroshi.controllers.adminapi.ServicesController.serviceHealth_services": "HealthCheckEventList",
+    "operations_response_entity.otoroshi.controllers.adminapi.ServicesController.serviceTargets_services": "TargetsList",
+    "operations_response_entity.otoroshi.controllers.adminapi.ServicesController.serviceTemplate_services": "ErrorTemplateList",
+    "operations_response_entity.otoroshi.controllers.adminapi.ServicesController.servicesForALine_lines": "ServiceDescriptorList",
     "operations_response_entity.otoroshi.controllers.adminapi.ServicesController.updateEntityAction_services": "otoroshi.models.ServiceDescriptor",
-    "operations_response_entity.otoroshi.controllers.adminapi.ServicesController.updateServiceTargets_services": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.ServicesController.updateServiceTemplate_services": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.SnowMonkeyController.getSnowMonkeyConfig_snowmonkey": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.SnowMonkeyController.getSnowMonkeyOutages_snowmonkey": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.SnowMonkeyController.patchSnowMonkey_snowmonkey": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.SnowMonkeyController.resetSnowMonkey_snowmonkey": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.SnowMonkeyController.startSnowMonkey_snowmonkey": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.SnowMonkeyController.stopSnowMonkey_snowmonkey": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.SnowMonkeyController.updateSnowMonkey_snowmonkey": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.StatsController.globalLiveStats_live": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.StatsController.hostMetrics_live": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.StatsController.serviceLiveStats_live": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.StatsController.serviceLiveStats_services": "???",
+    "operations_response_entity.otoroshi.controllers.adminapi.ServicesController.updateServiceTargets_services": "otoroshi.models.Target",
+    "operations_response_entity.otoroshi.controllers.adminapi.ServicesController.updateServiceTemplate_services": "otoroshi.models.ErrorTemplate",
+    "operations_response_entity.otoroshi.controllers.adminapi.SnowMonkeyController.getSnowMonkeyConfig_snowmonkey": "otoroshi.models.SnowMonkeyConfig",
+    "operations_response_entity.otoroshi.controllers.adminapi.SnowMonkeyController.getSnowMonkeyOutages_snowmonkey": "OutagesList",
+    "operations_response_entity.otoroshi.controllers.adminapi.SnowMonkeyController.patchSnowMonkey_snowmonkey": "otoroshi.models.SnowMonkeyConfig",
+    "operations_response_entity.otoroshi.controllers.adminapi.SnowMonkeyController.resetSnowMonkey_snowmonkey": "Done",
+    "operations_response_entity.otoroshi.controllers.adminapi.SnowMonkeyController.startSnowMonkey_snowmonkey": "Done",
+    "operations_response_entity.otoroshi.controllers.adminapi.SnowMonkeyController.stopSnowMonkey_snowmonkey": "Done",
+    "operations_response_entity.otoroshi.controllers.adminapi.SnowMonkeyController.updateSnowMonkey_snowmonkey": "otoroshi.models.SnowMonkeyConfig",
+    "operations_response_entity.otoroshi.controllers.adminapi.StatsController.globalLiveStats_live": "LiveStats",
+    "operations_response_entity.otoroshi.controllers.adminapi.StatsController.hostMetrics_live": "HostMetrics",
+    "operations_response_entity.otoroshi.controllers.adminapi.StatsController.serviceLiveStats_live": "LiveStats",
+    "operations_response_entity.otoroshi.controllers.adminapi.StatsController.serviceLiveStats_services": "LiveStats",
     "operations_response_entity.otoroshi.controllers.adminapi.TcpServiceApiController.bulkCreateAction_tcp": "BulkResponseBody",
     "operations_response_entity.otoroshi.controllers.adminapi.TcpServiceApiController.bulkDeleteAction_tcp": "BulkResponseBody",
     "operations_response_entity.otoroshi.controllers.adminapi.TcpServiceApiController.bulkPatchAction_tcp": "BulkResponseBody",
@@ -620,28 +626,28 @@
     "operations_response_entity.otoroshi.controllers.adminapi.TeamsController.findEntityByIdAction_teams": "otoroshi.models.Team",
     "operations_response_entity.otoroshi.controllers.adminapi.TeamsController.patchEntityAction_teams": "otoroshi.models.Team",
     "operations_response_entity.otoroshi.controllers.adminapi.TeamsController.updateEntityAction_teams": "otoroshi.models.Team",
-    "operations_response_entity.otoroshi.controllers.adminapi.TemplatesController.createFromTemplate_admins": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.TemplatesController.createFromTemplate_tcp": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.TemplatesController.createFromTemplate_templates": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.TemplatesController.initiateApiKey_apikeys": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.TemplatesController.initiateApiKey_templates": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.TemplatesController.initiateAuthModule_auth-modules": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.TemplatesController.initiateCertificate_certificates": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.TemplatesController.initiateDataExporterConfig_data-exporters": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.TemplatesController.initiateGlobalConfig_globalconfig": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.TemplatesController.initiateJwtVerifier_jwt-verifiers": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.TemplatesController.initiateScript_scripts": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.TemplatesController.initiateServiceGroup_groups": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.TemplatesController.initiateServiceGroup_templates": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.TemplatesController.initiateService_services": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.TemplatesController.initiateService_templates": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.TemplatesController.initiateSimpleAdmin_admins": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.TemplatesController.initiateTcpService_tcp": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.TemplatesController.initiateTcpService_templates": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.TemplatesController.initiateTeam_teams": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.TemplatesController.initiateTenant_organizations": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.TemplatesController.initiateWebauthnAdmin_admins": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.TemplatesController.templateSpec_analytics": "???",
+    "operations_response_entity.otoroshi.controllers.adminapi.TemplatesController.createFromTemplate_admins": "otoroshi.models.OtoroshiAdmin",
+    "operations_response_entity.otoroshi.controllers.adminapi.TemplatesController.createFromTemplate_tcp": "otoroshi.tcp.TcpService",
+    "operations_response_entity.otoroshi.controllers.adminapi.TemplatesController.createFromTemplate_templates": "Any",
+    "operations_response_entity.otoroshi.controllers.adminapi.TemplatesController.initiateApiKey_apikeys": "otoroshi.models.ApiKey",
+    "operations_response_entity.otoroshi.controllers.adminapi.TemplatesController.initiateApiKey_templates": "otoroshi.models.ApiKey",
+    "operations_response_entity.otoroshi.controllers.adminapi.TemplatesController.initiateAuthModule_auth-modules": "otoroshi.auth.AuthModuleConfig",
+    "operations_response_entity.otoroshi.controllers.adminapi.TemplatesController.initiateCertificate_certificates": "otoroshi.ssl.Cert",
+    "operations_response_entity.otoroshi.controllers.adminapi.TemplatesController.initiateDataExporterConfig_data-exporters": "otoroshi.models.DataExporterConfig",
+    "operations_response_entity.otoroshi.controllers.adminapi.TemplatesController.initiateGlobalConfig_globalconfig": "otoroshi.models.GlobalConfig",
+    "operations_response_entity.otoroshi.controllers.adminapi.TemplatesController.initiateJwtVerifier_jwt-verifiers": "otoroshi.models.GlobalJwtVerifier",
+    "operations_response_entity.otoroshi.controllers.adminapi.TemplatesController.initiateScript_scripts": "otoroshi.script.Script",
+    "operations_response_entity.otoroshi.controllers.adminapi.TemplatesController.initiateServiceGroup_groups": "otoroshi.models.ServiceGroup",
+    "operations_response_entity.otoroshi.controllers.adminapi.TemplatesController.initiateServiceGroup_templates": "otoroshi.models.ServiceGroup",
+    "operations_response_entity.otoroshi.controllers.adminapi.TemplatesController.initiateService_services": "otoroshi.models.ServiceDescriptor",
+    "operations_response_entity.otoroshi.controllers.adminapi.TemplatesController.initiateService_templates": "otoroshi.models.ServiceDescriptor",
+    "operations_response_entity.otoroshi.controllers.adminapi.TemplatesController.initiateSimpleAdmin_admins": "otoroshi.models.SimpleOtoroshiAdmin",
+    "operations_response_entity.otoroshi.controllers.adminapi.TemplatesController.initiateTcpService_tcp": "otoroshi.tcp.TcpService",
+    "operations_response_entity.otoroshi.controllers.adminapi.TemplatesController.initiateTcpService_templates": "otoroshi.tcp.TcpService",
+    "operations_response_entity.otoroshi.controllers.adminapi.TemplatesController.initiateTeam_teams": "otoroshi.models.Team",
+    "operations_response_entity.otoroshi.controllers.adminapi.TemplatesController.initiateTenant_organizations": "otoroshi.models.Tenant",
+    "operations_response_entity.otoroshi.controllers.adminapi.TemplatesController.initiateWebauthnAdmin_admins": "otoroshi.models.SimpleOtoroshiAdmin",
+    "operations_response_entity.otoroshi.controllers.adminapi.TemplatesController.templateSpec_analytics": "Any",
     "operations_response_entity.otoroshi.controllers.adminapi.TenantsController.bulkCreateAction_organizations": "BulkResponseBody",
     "operations_response_entity.otoroshi.controllers.adminapi.TenantsController.bulkDeleteAction_organizations": "BulkResponseBody",
     "operations_response_entity.otoroshi.controllers.adminapi.TenantsController.bulkPatchAction_organizations": "BulkResponseBody",
@@ -652,20 +658,20 @@
     "operations_response_entity.otoroshi.controllers.adminapi.TenantsController.findEntityByIdAction_organizations": "otoroshi.models.Tenant",
     "operations_response_entity.otoroshi.controllers.adminapi.TenantsController.patchEntityAction_organizations": "otoroshi.models.Tenant",
     "operations_response_entity.otoroshi.controllers.adminapi.TenantsController.updateEntityAction_organizations": "otoroshi.models.Tenant",
-    "operations_response_entity.otoroshi.controllers.adminapi.UsersController.deleteAdmin_admins": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.UsersController.discardAllPrivateAppsSessions_apps-sessions": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.UsersController.discardAllSessions_admin-sessions": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.UsersController.discardPrivateAppsSession_apps-sessions": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.UsersController.discardSession_admin-sessions": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.UsersController.privateAppsSessions_apps-sessions": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.UsersController.registerSimpleAdmin_admins": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.UsersController.registerWebAuthnAdmin_admins": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.UsersController.sessions_admin-sessions": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.UsersController.simpleAdmins_admins": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.UsersController.updateAdmin_admins": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.UsersController.updateWebAuthnAdmin_admins": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.UsersController.webAuthnAdmins_admins": "???",
-    "operations_response_entity.otoroshi.controllers.adminapi.UsersController.webAuthnDeleteAdmin_admins": "???",
+    "operations_response_entity.otoroshi.controllers.adminapi.UsersController.deleteAdmin_admins": "Done",
+    "operations_response_entity.otoroshi.controllers.adminapi.UsersController.discardAllPrivateAppsSessions_apps-sessions": "Done",
+    "operations_response_entity.otoroshi.controllers.adminapi.UsersController.discardAllSessions_admin-sessions": "Done",
+    "operations_response_entity.otoroshi.controllers.adminapi.UsersController.discardPrivateAppsSession_apps-sessions": "Done",
+    "operations_response_entity.otoroshi.controllers.adminapi.UsersController.discardSession_admin-sessions": "Done",
+    "operations_response_entity.otoroshi.controllers.adminapi.UsersController.privateAppsSessions_apps-sessions": "otoroshi.models.PrivateAppsUser",
+    "operations_response_entity.otoroshi.controllers.adminapi.UsersController.registerSimpleAdmin_admins": "otoroshi.models.SimpleOtoroshiAdmin",
+    "operations_response_entity.otoroshi.controllers.adminapi.UsersController.registerWebAuthnAdmin_admins": "otoroshi.models.WebAuthnOtoroshiAdmin",
+    "operations_response_entity.otoroshi.controllers.adminapi.UsersController.sessions_admin-sessions": "otoroshi.models.BackOfficeUser",
+    "operations_response_entity.otoroshi.controllers.adminapi.UsersController.simpleAdmins_admins": "SimpleAdminList",
+    "operations_response_entity.otoroshi.controllers.adminapi.UsersController.updateAdmin_admins": "otoroshi.models.SimpleOtoroshiAdmin",
+    "operations_response_entity.otoroshi.controllers.adminapi.UsersController.updateWebAuthnAdmin_admins": "otoroshi.models.WebAuthnOtoroshiAdmin",
+    "operations_response_entity.otoroshi.controllers.adminapi.UsersController.webAuthnAdmins_admins": "WebauthnAdminList",
+    "operations_response_entity.otoroshi.controllers.adminapi.UsersController.webAuthnDeleteAdmin_admins": "Done",
     "otoroshi.auth.BasicAuthModuleConfig.basicAuth": "???",
     "otoroshi.auth.BasicAuthModuleConfig.desc": "???",
     "otoroshi.auth.BasicAuthModuleConfig.id": "???",
@@ -745,6 +751,12 @@
     "otoroshi.auth.SessionCookieValues.secure": "???",
     "otoroshi.auth.WebAuthnDetails.credentials": "???",
     "otoroshi.auth.WebAuthnDetails.handle": "???",
+    "otoroshi.events.HealthCheckEvent.duration": "???",
+    "otoroshi.events.HealthCheckEvent.error": "???",
+    "otoroshi.events.HealthCheckEvent.health": "???",
+    "otoroshi.events.HealthCheckEvent.logicCheck": "???",
+    "otoroshi.events.HealthCheckEvent.status": "???",
+    "otoroshi.events.HealthCheckEvent.url": "???",
     "otoroshi.events.KafkaConfig.keyPass": "Optional keypass",
     "otoroshi.events.KafkaConfig.keystore": "???",
     "otoroshi.events.KafkaConfig.mtlsConfig": "???",
@@ -997,6 +1009,7 @@
     "otoroshi.models.IpStackGeolocationSettings.enabled": "???",
     "otoroshi.models.IpStackGeolocationSettings.timeout": "???",
     "otoroshi.models.JWKSAlgoSettings.headers": "???",
+    "otoroshi.models.JWKSAlgoSettings.kty": "???",
     "otoroshi.models.JWKSAlgoSettings.mtlsConfig": "???",
     "otoroshi.models.JWKSAlgoSettings.proxy": "???",
     "otoroshi.models.JWKSAlgoSettings.timeout": "???",
@@ -1035,6 +1048,11 @@
     "otoroshi.models.NetworkLocationMatch.rack": "???",
     "otoroshi.models.NetworkLocationMatch.region": "???",
     "otoroshi.models.NetworkLocationMatch.zone": "???",
+    "otoroshi.models.Outage.descriptorId": "???",
+    "otoroshi.models.Outage.descriptorName": "???",
+    "otoroshi.models.Outage.duration": "???",
+    "otoroshi.models.Outage.startedAt": "???",
+    "otoroshi.models.Outage.until": "???",
     "otoroshi.models.PassThrough.verificationSettings": "???",
     "otoroshi.models.PrivateAppsUser.authConfigId": "???",
     "otoroshi.models.PrivateAppsUser.createdAt": "???",
@@ -1289,6 +1307,13 @@
     "otoroshi.ssl.Cert.subject": "???",
     "otoroshi.ssl.Cert.to": "???",
     "otoroshi.ssl.Cert.valid": "???",
+    "otoroshi.ssl.pki.models.GenCertResponse.ca": "???",
+    "otoroshi.ssl.pki.models.GenCertResponse.caChain": "???",
+    "otoroshi.ssl.pki.models.GenCertResponse.cert": "???",
+    "otoroshi.ssl.pki.models.GenCertResponse.csr": "???",
+    "otoroshi.ssl.pki.models.GenCertResponse.csrQuery": "???",
+    "otoroshi.ssl.pki.models.GenCertResponse.key": "???",
+    "otoroshi.ssl.pki.models.GenCertResponse.serial": "???",
     "otoroshi.ssl.pki.models.GenCsrQuery.ca": "???",
     "otoroshi.ssl.pki.models.GenCsrQuery.client": "???",
     "otoroshi.ssl.pki.models.GenCsrQuery.digestAlg": "???",
@@ -1300,8 +1325,16 @@
     "otoroshi.ssl.pki.models.GenCsrQuery.name": "???",
     "otoroshi.ssl.pki.models.GenCsrQuery.signatureAlg": "???",
     "otoroshi.ssl.pki.models.GenCsrQuery.subject": "???",
+    "otoroshi.ssl.pki.models.GenCsrResponse.csr": "???",
+    "otoroshi.ssl.pki.models.GenCsrResponse.privateKey": "???",
+    "otoroshi.ssl.pki.models.GenCsrResponse.publicKey": "???",
     "otoroshi.ssl.pki.models.GenKeyPairQuery.algo": "???",
     "otoroshi.ssl.pki.models.GenKeyPairQuery.size": "???",
+    "otoroshi.ssl.pki.models.GenKeyPairResponse.privateKey": "???",
+    "otoroshi.ssl.pki.models.GenKeyPairResponse.publicKey": "???",
+    "otoroshi.ssl.pki.models.SignCertResponse.ca": "???",
+    "otoroshi.ssl.pki.models.SignCertResponse.cert": "???",
+    "otoroshi.ssl.pki.models.SignCertResponse.csr": "???",
     "otoroshi.tcp.SniSettings.enabled": "???",
     "otoroshi.tcp.SniSettings.forwardIfNoMatch": "???",
     "otoroshi.tcp.SniSettings.forwardsTo": "???",
@@ -1392,7 +1425,8 @@
     },
     "play.api.libs.ws.WSProxyServer" : {
       "type" : "object",
-      "properties" : { }
+      "properties" : { },
+      "description" : "???"
     },
     "PatchDocument" : {
       "type" : "object",
@@ -1431,6 +1465,21 @@
     "Unknown" : {
       "type" : "object",
       "description" : "value used by the openapi generator when no matching type found. Should be fixed in a near future."
+    },
+    "Any" : {
+      "oneOf" : [ {
+        "type" : "object"
+      }, {
+        "type" : "array"
+      }, {
+        "type" : "string"
+      }, {
+        "type" : "boolean"
+      }, {
+        "type" : "number"
+      }, {
+        "type" : "integer"
+      } ]
     },
     "Null" : {
       "type" : "object",
@@ -1517,7 +1566,8 @@
     },
     "otoroshi.models.DataExporterConfigType" : {
       "type" : "string",
-      "enum" : [ "kafka", "pulsar", "elastic", "webhook", "file", "mailer", "custom", "none", "console", "metrics" ]
+      "enum" : [ "kafka", "pulsar", "elastic", "webhook", "file", "mailer", "custom", "none", "console", "metrics" ],
+      "description" : "???"
     },
     "otoroshi.models.Exporter" : {
       "oneOf" : [ {
@@ -1601,13 +1651,16 @@
       } ]
     },
     "otoroshi.models.TenantId" : {
-      "type" : "string"
+      "type" : "string",
+      "description" : "???"
     },
     "otoroshi.models.TeamId" : {
-      "type" : "string"
+      "type" : "string",
+      "description" : "???"
     },
     "otoroshi.models.AlwaysMatch" : {
       "type" : "object",
+      "description" : "???",
       "properties" : {
         "type" : {
           "type" : "string",
@@ -1617,14 +1670,17 @@
     },
     "otoroshi.models.SecComInfoTokenVersion" : {
       "type" : "string",
-      "enum" : [ "Legacy", "Latest" ]
+      "enum" : [ "Legacy", "Latest" ],
+      "description" : "???"
     },
     "otoroshi.models.SecComVersion" : {
       "type" : "string",
-      "enum" : [ "V1", "v2" ]
+      "enum" : [ "V1", "v2" ],
+      "description" : "???"
     },
     "otoroshi.models.LoadBalancing" : {
       "type" : "object",
+      "description" : "???",
       "properties" : {
         "type" : {
           "type" : "string",
@@ -1647,19 +1703,23 @@
     },
     "otoroshi.models.OtoroshiAdminType" : {
       "type" : "string",
-      "enum" : [ "SIMPLE", "WEBAUTHN" ]
+      "enum" : [ "SIMPLE", "WEBAUTHN" ],
+      "description" : "???"
     },
     "otoroshi.script.PluginType" : {
       "type" : "string",
-      "enum" : [ "app", "transformer", "validator", "preroute", "sink", "listener", "job", "exporter" ]
+      "enum" : [ "app", "transformer", "validator", "preroute", "sink", "listener", "job", "exporter" ],
+      "description" : "???"
     },
     "otoroshi.ssl.ClientAuth" : {
       "type" : "string",
-      "enum" : [ "Need", "None", "Want" ]
+      "enum" : [ "Need", "None", "Want" ],
+      "description" : "???"
     },
     "otoroshi.tcp.TlsMode" : {
       "type" : "string",
-      "enum" : [ "Disabled", "Enabled", "PassThrough" ]
+      "enum" : [ "Disabled", "Enabled", "PassThrough" ],
+      "description" : "???"
     },
     "otoroshi.models.GeolocationSettings" : {
       "oneOf" : [ {
@@ -1672,6 +1732,7 @@
     },
     "otoroshi.models.NoneGeolocationSettings" : {
       "type" : "object",
+      "description" : "???",
       "properties" : {
         "type" : {
           "type" : "string",
@@ -1699,39 +1760,152 @@
       "enum" : [ "AllServicesPerGroup", "OneServicePerGroup" ]
     },
     "WebAuthnRegistrationFinishBody" : {
-      "type" : "object"
+      "type" : "object",
+      "description" : "???"
     },
     "WebAuthnRegistrationStartBody" : {
-      "type" : "object"
+      "type" : "object",
+      "description" : "???"
     },
     "UserTokenBody" : {
-      "type" : "object"
+      "type" : "object",
+      "description" : "???"
     },
     "ByteStreamBody" : {
-      "type" : "string"
+      "type" : "string",
+      "description" : "???"
     },
     "GlobalConfigImportBody" : {
-      "type" : "object"
+      "type" : "object",
+      "description" : "???"
     },
     "PemCertificateBody" : {
-      "type" : "string"
+      "type" : "string",
+      "description" : "???"
     },
     "PemCsrBody" : {
-      "type" : "string"
+      "type" : "string",
+      "description" : "???"
     },
     "UpdateQuotasBody" : {
-      "type" : "string"
+      "type" : "string",
+      "description" : "???"
     },
     "LetsEncryptCertBody" : {
-      "type" : "object"
+      "type" : "object",
+      "description" : "???"
     },
     "CodeBody" : {
-      "type" : "string"
+      "type" : "string",
+      "description" : "???"
+    },
+    "Done" : {
+      "type" : "object",
+      "description" : "operation is done",
+      "properties" : {
+        "done" : {
+          "type" : "boolean"
+        }
+      }
+    },
+    "StringList" : {
+      "type" : "array",
+      "items" : {
+        "type" : "string"
+      }
+    },
+    "OutagesList" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/components/schemas/otoroshi.models.Outage"
+      }
+    },
+    "ScriptsList" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/components/schemas/otoroshi.script.Script"
+      }
+    },
+    "WebauthnAdminList" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/components/schemas/otoroshi.models.WebAuthnOtoroshiAdmin"
+      }
+    },
+    "SimpleAdminList" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/components/schemas/otoroshi.models.SimpleOtoroshiAdmin"
+      }
+    },
+    "AlertEventList" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/components/schemas/otoroshi.events.AlertEvent"
+      }
+    },
+    "AuditEventList" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/components/schemas/otoroshi.events.AuditEvent"
+      }
+    },
+    "TargetsList" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/components/schemas/otoroshi.models.Target"
+      }
+    },
+    "ErrorTemplateList" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/components/schemas/otoroshi.models.ErrorTemplate"
+      }
+    },
+    "HealthCheckEventList" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/components/schemas/otoroshi.events.HealthCheckEvent"
+      }
+    },
+    "LiveStats" : {
+      "type" : "object",
+      "description" : "???"
+    },
+    "HostMetrics" : {
+      "type" : "object",
+      "description" : "???"
+    },
+    "CertValidResponse" : {
+      "type" : "object",
+      "description" : "???",
+      "properties" : {
+        "valid" : {
+          "type" : "boolean"
+        }
+      }
     },
     "ServiceDescriptorList" : {
       "type" : "array",
       "items" : {
         "$ref" : "#/components/schemas/otoroshi.models.ServiceDescriptor"
+      }
+    },
+    "otoroshi.events.AuditEvent" : {
+      "type" : "object",
+      "description" : "Audit trail event"
+    },
+    "otoroshi.events.AlertEvent" : {
+      "type" : "object",
+      "description" : "Alert trail event"
+    },
+    "TokenResponse" : {
+      "type" : "object",
+      "description" : "User login token response",
+      "properties" : {
+        "valid" : {
+          "type" : "string"
+        }
       }
     }
   }
