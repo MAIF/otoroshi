@@ -13695,14 +13695,14 @@
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Fields validation"
           },
           "arrayFields" : {
             "type" : "object",
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Fields array validation"
           }
         }
       },
@@ -13809,7 +13809,7 @@
         "properties" : {
           "ratio" : {
             "format" : "double",
-            "description" : "???",
+            "description" : "Weight ratio",
             "type" : "number"
           }
         }
@@ -13884,15 +13884,15 @@
         "description" : "jwt token transformation policy settings",
         "properties" : {
           "verificationSettings" : {
-            "description" : "???",
+            "description" : "Verification settings",
             "$ref" : "#/components/schemas/otoroshi.models.VerificationSettings"
           },
           "transformSettings" : {
-            "description" : "???",
+            "description" : "Transformation settings",
             "$ref" : "#/components/schemas/otoroshi.models.TransformSettings"
           },
           "algoSettings" : {
-            "description" : "???",
+            "description" : "Algorithm settings for re-signing token",
             "$ref" : "#/components/schemas/otoroshi.models.AlgoSettings"
           }
         }
@@ -14152,15 +14152,15 @@
         "description" : "An otoroshi model for a team of users in the organization (otoroshi-ui)",
         "properties" : {
           "name" : {
-            "description" : "???",
+            "description" : "Entity name",
             "type" : "string"
           },
           "description" : {
-            "description" : "???",
+            "description" : "Entity description",
             "type" : "string"
           },
           "tenant" : {
-            "description" : "???",
+            "description" : "Entity organization",
             "$ref" : "#/components/schemas/otoroshi.models.TenantId"
           },
           "metadata" : {
@@ -14168,10 +14168,10 @@
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Entity metadata"
           },
           "id" : {
-            "description" : "???",
+            "description" : "Entity id",
             "$ref" : "#/components/schemas/otoroshi.models.TeamId"
           }
         }
@@ -14284,11 +14284,11 @@
         "description" : "jwt token transformation settings",
         "properties" : {
           "location" : {
-            "description" : "???",
+            "description" : "Location of the token",
             "$ref" : "#/components/schemas/otoroshi.models.JwtTokenLocation"
           },
           "mappingSettings" : {
-            "description" : "???",
+            "description" : "Token mapping settings",
             "$ref" : "#/components/schemas/otoroshi.models.MappingSettings"
           }
         }
@@ -14394,7 +14394,7 @@
         "description" : "Represent a user right (teams, organizations) in otoroshi-ui",
         "properties" : {
           "tenant" : {
-            "description" : "???",
+            "description" : "Access rights on organizations",
             "$ref" : "#/components/schemas/otoroshi.models.TenantAccess"
           },
           "teams" : {
@@ -14402,7 +14402,7 @@
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.models.TeamAccess"
             },
-            "description" : "???"
+            "description" : "Access rights on teams"
           }
         }
       },
@@ -14655,15 +14655,15 @@
         "description" : "Access rights for organizations",
         "properties" : {
           "canWrite" : {
-            "description" : "???",
+            "description" : "Can this access right write data",
             "type" : "boolean"
           },
           "value" : {
-            "description" : "???",
+            "description" : "Access pattern",
             "type" : "string"
           },
           "canRead" : {
-            "description" : "???",
+            "description" : "Can this access right read data",
             "type" : "boolean"
           }
         }
@@ -14878,10 +14878,10 @@
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Entity metadata"
           },
           "location" : {
-            "description" : "???",
+            "description" : "Entity location",
             "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
           },
           "desc" : {
@@ -14897,7 +14897,7 @@
             "type" : "string"
           },
           "type" : {
-            "description" : "???",
+            "description" : "Plugin type",
             "$ref" : "#/components/schemas/otoroshi.script.PluginType"
           }
         }
@@ -15393,15 +15393,15 @@
         "description" : "Access rights for teams",
         "properties" : {
           "canRead" : {
-            "description" : "???",
+            "description" : "Can this access right read data",
             "type" : "boolean"
           },
           "value" : {
-            "description" : "???",
+            "description" : "Access pattern",
             "type" : "string"
           },
           "canWrite" : {
-            "description" : "???",
+            "description" : "Can this access right write data",
             "type" : "boolean"
           }
         }
@@ -15416,55 +15416,55 @@
         "description" : "The otoroshi model for X509 certificates",
         "properties" : {
           "letsEncrypt" : {
-            "description" : "???",
+            "description" : "Let's encrypt (ACME) generated",
             "type" : "boolean"
           },
           "keypair" : {
-            "description" : "???",
+            "description" : "Is cert used for its keypair only ?",
             "type" : "boolean"
           },
           "to" : {
-            "description" : "???",
+            "description" : "Stop date",
             "type" : "number"
           },
           "exposed" : {
-            "description" : "???",
+            "description" : "Is the cert exposed (public key exposed in jwks.json)",
             "type" : "boolean"
           },
           "autoRenew" : {
-            "description" : "???",
+            "description" : "Auto renew cert",
             "type" : "boolean"
           },
           "id" : {
-            "description" : "???",
+            "description" : "Entity id",
             "type" : "string"
           },
           "revoked" : {
-            "description" : "???",
+            "description" : "Certificate is revoked",
             "type" : "boolean"
           },
           "from" : {
-            "description" : "???",
+            "description" : "Start date",
             "type" : "number"
           },
           "client" : {
-            "description" : "???",
+            "description" : "Is cert a client cert ?",
             "type" : "boolean"
           },
           "ca" : {
-            "description" : "???",
+            "description" : "Is cert a CA ?",
             "type" : "boolean"
           },
           "name" : {
-            "description" : "???",
+            "description" : "Entity name",
             "type" : "string"
           },
           "chain" : {
-            "description" : "???",
+            "description" : "Certicates chain (PEM encoded)",
             "type" : "string"
           },
           "location" : {
-            "description" : "???",
+            "description" : "Entity location",
             "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
           },
           "password" : {
@@ -15473,17 +15473,17 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "Certificate password"
           },
           "sans" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Certificate SANs"
           },
           "selfSigned" : {
-            "description" : "???",
+            "description" : "Is cert self signed",
             "type" : "boolean"
           },
           "entityMetadata" : {
@@ -15491,14 +15491,14 @@
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Entity metadata"
           },
           "privateKey" : {
-            "description" : "???",
+            "description" : "Certificate private key (PEM encoded)",
             "type" : "string"
           },
           "domain" : {
-            "description" : "???",
+            "description" : "Certificate domain",
             "type" : "string"
           },
           "caRef" : {
@@ -15507,18 +15507,18 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "Reference to the CA (if any)"
           },
           "description" : {
-            "description" : "???",
+            "description" : "Entity description",
             "type" : "string"
           },
           "subject" : {
-            "description" : "???",
+            "description" : "Certificate subject",
             "type" : "string"
           },
           "valid" : {
-            "description" : "???",
+            "description" : "Is cert valid",
             "type" : "boolean"
           }
         }
@@ -16115,23 +16115,23 @@
         "description" : "An otoroshi admin user",
         "properties" : {
           "username" : {
-            "description" : "???",
+            "description" : "User username",
             "type" : "string"
           },
           "password" : {
-            "description" : "???",
+            "description" : "User password (bcrypt hashed)",
             "type" : "string"
           },
           "location" : {
-            "description" : "???",
+            "description" : "Entity location",
             "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
           },
           "label" : {
-            "description" : "???",
+            "description" : "User label",
             "type" : "string"
           },
           "createdAt" : {
-            "description" : "???",
+            "description" : "User creation date",
             "type" : "number"
           },
           "metadata" : {
@@ -16139,14 +16139,14 @@
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Entity metadata"
           },
           "rights" : {
-            "description" : "???",
+            "description" : "User rights",
             "$ref" : "#/components/schemas/otoroshi.models.UserRights"
           },
           "typ" : {
-            "description" : "???",
+            "description" : "Type of user",
             "$ref" : "#/components/schemas/otoroshi.models.OtoroshiAdminType"
           }
         }
@@ -16239,7 +16239,7 @@
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.models.UserRight"
             },
-            "description" : "???"
+            "description" : "Access rights of a user"
           }
         }
       },
@@ -16248,15 +16248,15 @@
         "description" : "Settings for plugins (of any kind)",
         "properties" : {
           "name" : {
-            "description" : "???",
+            "description" : "Debug name",
             "type" : "string"
           },
           "config" : {
-            "description" : "???",
+            "description" : "Plugins configuration",
             "type" : "object"
           },
           "enabled" : {
-            "description" : "???",
+            "description" : "Plugins enabled",
             "type" : "boolean"
           },
           "excluded" : {
@@ -16264,14 +16264,14 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Excluded paths"
           },
           "refs" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Enabled plugins"
           }
         }
       },
@@ -16529,7 +16529,7 @@
             "description" : "Headers to authorize the call or whatever"
           },
           "mtlsConfig" : {
-            "description" : "???",
+            "description" : "TLS config when calling webhook",
             "$ref" : "#/components/schemas/otoroshi.utils.http.MtlsConfig"
           }
         }
@@ -16769,7 +16769,7 @@
         "description" : "References to access validation plugins",
         "properties" : {
           "enabled" : {
-            "description" : "???",
+            "description" : "Access validator plugins enabled",
             "type" : "boolean"
           },
           "excludedPatterns" : {
@@ -16777,17 +16777,17 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Excluded paths"
           },
           "refs" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Enabled plugins"
           },
           "config" : {
-            "description" : "???",
+            "description" : "Access validator plugins configuration",
             "type" : "object"
           }
         }
@@ -16797,7 +16797,7 @@
         "description" : "Response for a certificate generation operation",
         "properties" : {
           "ca" : {
-            "description" : "???",
+            "description" : "Ca cert (PEM encoded)",
             "type" : "string"
           },
           "caChain" : {
@@ -16806,7 +16806,7 @@
               "type" : "string",
               "description" : "pem encoded X509 certificate"
             },
-            "description" : "???"
+            "description" : "Ca chain (PEM encoded)"
           },
           "csrQuery" : {
             "oneOf" : [ {
@@ -16818,23 +16818,23 @@
                 "$ref" : "#/components/schemas/otoroshi.ssl.pki.models.GenCsrQuery"
               } ]
             } ],
-            "description" : "???"
+            "description" : "JSON generation query"
           },
           "cert" : {
-            "description" : "???",
+            "description" : "Cert (PEM encoded)",
             "type" : "string"
           },
           "serial" : {
             "format" : "int64",
-            "description" : "???",
+            "description" : "Certificate serial number",
             "type" : "integer"
           },
           "key" : {
-            "description" : "???",
+            "description" : "Private key (PEM encoded)",
             "type" : "string"
           },
           "csr" : {
-            "description" : "???",
+            "description" : "CSR (PEM encoded)",
             "type" : "string"
           }
         }
@@ -16941,7 +16941,7 @@
             "type" : "number"
           },
           "chaosConfig" : {
-            "description" : "???",
+            "description" : "Chaos settings",
             "$ref" : "#/components/schemas/otoroshi.models.ChaosConfig"
           },
           "timesPerDay" : {
@@ -16987,7 +16987,7 @@
         "description" : "Match a target if in the same zone",
         "properties" : {
           "zone" : {
-            "description" : "???",
+            "description" : "Zone name",
             "type" : "string"
           }
         }
@@ -17117,15 +17117,15 @@
           },
           "weight" : {
             "format" : "int32",
-            "description" : "???",
+            "description" : "The weight of the target when choosing",
             "type" : "integer"
           },
           "protocol" : {
-            "description" : "???",
+            "description" : "Protocol for the target",
             "type" : "string"
           },
           "predicate" : {
-            "description" : "???",
+            "description" : "Predicate to choose this target",
             "$ref" : "#/components/schemas/otoroshi.models.TargetPredicate"
           },
           "ipAddress" : {
@@ -17134,10 +17134,10 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "Target ip address. Usefull to make manual DNS resolution without breaking SNI"
           },
           "mtlsConfig" : {
-            "description" : "???",
+            "description" : "TLS settings to contact this target",
             "$ref" : "#/components/schemas/otoroshi.utils.http.MtlsConfig"
           },
           "scheme" : {
@@ -17492,15 +17492,15 @@
         "description" : "An otoroshi model for an organization (otoroshi-ui)",
         "properties" : {
           "id" : {
-            "description" : "???",
+            "description" : "Entity id",
             "$ref" : "#/components/schemas/otoroshi.models.TenantId"
           },
           "name" : {
-            "description" : "???",
+            "description" : "Entity name",
             "type" : "string"
           },
           "description" : {
-            "description" : "???",
+            "description" : "Entity description",
             "type" : "string"
           },
           "metadata" : {
@@ -17508,7 +17508,7 @@
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Entity metadata"
           }
         }
       },
@@ -17801,7 +17801,7 @@
         "description" : "References to pre-routing plugins",
         "properties" : {
           "enabled" : {
-            "description" : "???",
+            "description" : "pre-routing plugins enabled",
             "type" : "boolean"
           },
           "excludedPatterns" : {
@@ -17809,17 +17809,17 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Excluded paths"
           },
           "refs" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Enabled plugins"
           },
           "config" : {
-            "description" : "???",
+            "description" : "pre-routing plugins configuration",
             "type" : "object"
           }
         }
@@ -17959,10 +17959,10 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "Default domain to choose if not found from current certificates"
           },
           "randomIfNotFound" : {
-            "description" : "???",
+            "description" : "Use a random one",
             "type" : "boolean"
           }
         }
@@ -17985,11 +17985,11 @@
         "description" : "jwt token re-sign policy settings",
         "properties" : {
           "verificationSettings" : {
-            "description" : "???",
+            "description" : "Verification settings",
             "$ref" : "#/components/schemas/otoroshi.models.VerificationSettings"
           },
           "algoSettings" : {
-            "description" : "???",
+            "description" : "Re-signing jwt token settings",
             "$ref" : "#/components/schemas/otoroshi.models.AlgoSettings"
           }
         }
@@ -18364,7 +18364,7 @@
         "description" : "An otoroshi admin user that uses webauthn at login",
         "properties" : {
           "label" : {
-            "description" : "???",
+            "description" : "User label",
             "type" : "string"
           },
           "credentials" : {
@@ -18372,26 +18372,26 @@
             "additionalProperties" : {
               "type" : "object"
             },
-            "description" : "???"
+            "description" : "User webauthn credentials"
           },
           "location" : {
-            "description" : "???",
+            "description" : "Entity location",
             "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
           },
           "createdAt" : {
-            "description" : "???",
+            "description" : "User creation date",
             "type" : "number"
           },
           "password" : {
-            "description" : "???",
+            "description" : "User password",
             "type" : "string"
           },
           "typ" : {
-            "description" : "???",
+            "description" : "User type",
             "$ref" : "#/components/schemas/otoroshi.models.OtoroshiAdminType"
           },
           "username" : {
-            "description" : "???",
+            "description" : "User username",
             "type" : "string"
           },
           "metadata" : {
@@ -18399,14 +18399,14 @@
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Entity metadata"
           },
           "handle" : {
-            "description" : "???",
+            "description" : "User webauthn handle",
             "type" : "string"
           },
           "rights" : {
-            "description" : "???",
+            "description" : "User rights",
             "$ref" : "#/components/schemas/otoroshi.models.UserRights"
           }
         }
@@ -18460,7 +18460,7 @@
         "description" : "Settings to extract informations about user agent (for otoroshi events)",
         "properties" : {
           "enabled" : {
-            "description" : "???",
+            "description" : "User agent extraction enabled",
             "type" : "boolean"
           }
         }
