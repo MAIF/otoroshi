@@ -13548,10 +13548,10 @@
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Additionnal headers in the http request"
           },
           "clusterUri" : {
-            "description" : "???",
+            "description" : "Cluster URL",
             "type" : "string"
           },
           "type" : {
@@ -13560,7 +13560,7 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "Object type"
           },
           "user" : {
             "oneOf" : [ {
@@ -13568,7 +13568,7 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "Elastic user"
           },
           "index" : {
             "oneOf" : [ {
@@ -13576,7 +13576,7 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "Index name"
           },
           "password" : {
             "oneOf" : [ {
@@ -13584,10 +13584,10 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "Elastic password"
           },
           "mtlsConfig" : {
-            "description" : "???",
+            "description" : "TLS settings for the http client",
             "$ref" : "#/components/schemas/otoroshi.utils.http.MtlsConfig"
           }
         }
@@ -13964,12 +13964,12 @@
         "description" : "Settings for a file data exporter",
         "properties" : {
           "path" : {
-            "description" : "???",
+            "description" : "File path",
             "type" : "string"
           },
           "maxFileSize" : {
             "format" : "int32",
-            "description" : "???",
+            "description" : "Max file size in bytes",
             "type" : "integer"
           }
         }
@@ -13979,7 +13979,7 @@
         "description" : "Match a target if in the same infrastructure",
         "properties" : {
           "provider" : {
-            "description" : "???",
+            "description" : "provider name",
             "type" : "string"
           }
         }
@@ -14411,11 +14411,11 @@
         "description" : "JWT token location (header)",
         "properties" : {
           "name" : {
-            "description" : "???",
+            "description" : "Header name",
             "type" : "string"
           },
           "remove" : {
-            "description" : "???",
+            "description" : "Remove from value",
             "type" : "string"
           }
         }
@@ -14613,7 +14613,7 @@
             "type" : "boolean"
           },
           "algoSettings" : {
-            "description" : "???",
+            "description" : "Algo settings of the verifier",
             "$ref" : "#/components/schemas/otoroshi.models.AlgoSettings"
           },
           "name" : {
@@ -14621,11 +14621,11 @@
             "type" : "string"
           },
           "source" : {
-            "description" : "???",
+            "description" : "Where to find the jwt token",
             "$ref" : "#/components/schemas/otoroshi.models.JwtTokenLocation"
           },
           "strategy" : {
-            "description" : "???",
+            "description" : "The strategy of the verifier",
             "$ref" : "#/components/schemas/otoroshi.models.VerifierStrategy"
           },
           "desc" : {
@@ -14633,7 +14633,7 @@
             "type" : "string"
           },
           "location" : {
-            "description" : "???",
+            "description" : "Entity location",
             "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
           },
           "metadata" : {
@@ -14641,7 +14641,7 @@
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Entity metadata"
           }
         }
       },
@@ -14973,11 +14973,11 @@
         "properties" : {
           "size" : {
             "format" : "int32",
-            "description" : "???",
+            "description" : "Size of the key",
             "type" : "integer"
           },
           "certId" : {
-            "description" : "???",
+            "description" : "Certificate id to use the keypair",
             "type" : "string"
           }
         }
@@ -15636,7 +15636,7 @@
         "description" : "The global config (dynamic) for otoroshi",
         "properties" : {
           "geolocationSettings" : {
-            "description" : "???",
+            "description" : "Settings for geolocation extraction",
             "$ref" : "#/components/schemas/otoroshi.models.GeolocationSettings"
           },
           "alertsEmails" : {
@@ -15653,7 +15653,7 @@
           },
           "maxWebhookSize" : {
             "format" : "int32",
-            "description" : "???",
+            "description" : "Max number of items in webhooks",
             "type" : "integer"
           },
           "maxConcurrentRequests" : {
@@ -15681,7 +15681,7 @@
             "description" : "IP addresses for which any request to Otoroshi will respond with 128 Gb of zeros"
           },
           "plugins" : {
-            "description" : "???",
+            "description" : "global plugins settings",
             "$ref" : "#/components/schemas/otoroshi.script.plugins.Plugins"
           },
           "kafkaConfig" : {
@@ -15694,7 +15694,7 @@
                 "$ref" : "#/components/schemas/otoroshi.events.KafkaConfig"
               } ]
             } ],
-            "description" : "???"
+            "description" : "Global kafka settings. deprecated"
           },
           "maxLogsSize" : {
             "format" : "int32",
@@ -15702,11 +15702,11 @@
             "type" : "integer"
           },
           "proxies" : {
-            "description" : "???",
+            "description" : "Web proxies settings",
             "$ref" : "#/components/schemas/otoroshi.models.Proxies"
           },
           "enableEmbeddedMetrics" : {
-            "description" : "???",
+            "description" : "Enable embedded metrics",
             "type" : "boolean"
           },
           "elasticReadsConfig" : {
@@ -15726,7 +15726,7 @@
             "type" : "boolean"
           },
           "useAkkaHttpClient" : {
-            "description" : "???",
+            "description" : "Globally use akka http client for everything",
             "type" : "boolean"
           },
           "elasticWritesConfigs" : {
@@ -15737,7 +15737,7 @@
             "description" : "Configs. for Elastic writes"
           },
           "logAnalyticsOnServer" : {
-            "description" : "???",
+            "description" : "Log analytics event on the server",
             "type" : "boolean"
           },
           "metadata" : {
@@ -15745,7 +15745,7 @@
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Entity metadata"
           },
           "apiReadOnly" : {
             "description" : "If enabled, Admin API won't be able to write/update/delete entities",
@@ -15757,14 +15757,14 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "Id of the auth module used for otoroshi-ui login"
           },
           "streamEntityOnly" : {
             "description" : "HTTP will be streamed only. Doesn't work with old browsers",
             "type" : "boolean"
           },
           "otoroshiId" : {
-            "description" : "???",
+            "description" : "Unique id for this otoroshi instance",
             "type" : "string"
           },
           "mailerSettings" : {
@@ -15798,23 +15798,23 @@
             "description" : "Webhook that will receive all internal Otoroshi events"
           },
           "autoCert" : {
-            "description" : "???",
+            "description" : "Auto certs settings",
             "$ref" : "#/components/schemas/otoroshi.models.AutoCert"
           },
           "maintenanceMode" : {
-            "description" : "???",
+            "description" : "Global maintenant mode",
             "type" : "boolean"
           },
           "letsEncryptSettings" : {
-            "description" : "???",
+            "description" : "Let's encrypt (ACME) settings",
             "$ref" : "#/components/schemas/otoroshi.utils.letsencrypt.LetsEncryptSettings"
           },
           "snowMonkeyConfig" : {
-            "description" : "???",
+            "description" : "Snowmonky settings",
             "$ref" : "#/components/schemas/otoroshi.models.SnowMonkeyConfig"
           },
           "scripts" : {
-            "description" : "???",
+            "description" : "global plugins settings. will be deprecated soon",
             "$ref" : "#/components/schemas/otoroshi.models.GlobalScripts"
           },
           "perIpThrottlingQuota" : {
@@ -15832,7 +15832,7 @@
             "type" : "integer"
           },
           "tlsSettings" : {
-            "description" : "???",
+            "description" : "TLS settings",
             "$ref" : "#/components/schemas/otoroshi.models.TlsSettings"
           },
           "statsdConfig" : {
@@ -15845,7 +15845,7 @@
                 "$ref" : "#/components/schemas/otoroshi.events.StatsdConfig"
               } ]
             } ],
-            "description" : "???"
+            "description" : "Statsd settings (agent connection)"
           },
           "autoLinkToDefaultGroup" : {
             "description" : "If not defined, every new service descriptor will be added to the default group",
@@ -15859,7 +15859,7 @@
             "description" : "Webhook that will receive all Otoroshi alert events"
           },
           "ipFiltering" : {
-            "description" : "???",
+            "description" : "Global ip filtering settings",
             "$ref" : "#/components/schemas/otoroshi.models.IpFiltering"
           },
           "u2fLoginOnly" : {
@@ -15867,7 +15867,7 @@
             "type" : "boolean"
           },
           "userAgentSettings" : {
-            "description" : "???",
+            "description" : "Settings for useragent extraction",
             "$ref" : "#/components/schemas/otoroshi.models.UserAgentSettings"
           }
         }
@@ -15883,11 +15883,11 @@
         "description" : "Reference to a data exporter",
         "properties" : {
           "ref" : {
-            "description" : "???",
+            "description" : "Script id",
             "type" : "string"
           },
           "config" : {
-            "description" : "???",
+            "description" : "Script config",
             "type" : "object"
           }
         }
@@ -16325,17 +16325,17 @@
         "properties" : {
           "latitude" : {
             "format" : "double",
-            "description" : "???",
+            "description" : "Latitude of the position",
             "type" : "number"
           },
           "longitude" : {
             "format" : "double",
-            "description" : "???",
+            "description" : "Longitude of the position",
             "type" : "number"
           },
           "radius" : {
             "format" : "double",
-            "description" : "???",
+            "description" : "Radius of the circle in meters",
             "type" : "number"
           }
         }
@@ -16345,7 +16345,7 @@
         "description" : "JWT token location (cookie)",
         "properties" : {
           "name" : {
-            "description" : "???",
+            "description" : "Cookie name",
             "type" : "string"
           }
         }
@@ -16550,15 +16550,15 @@
         "description" : "Default jwt token when no other token validated",
         "properties" : {
           "strict" : {
-            "description" : "???",
+            "description" : "If the token already exists in the request, then fail",
             "type" : "boolean"
           },
           "token" : {
-            "description" : "???",
+            "description" : "The default token",
             "type" : "object"
           },
           "verificationSettings" : {
-            "description" : "???",
+            "description" : "Verification settings",
             "$ref" : "#/components/schemas/otoroshi.models.VerificationSettings"
           }
         }
@@ -16619,15 +16619,15 @@
         "description" : "Settings to apply plugins globally",
         "properties" : {
           "jobConfig" : {
-            "description" : "???",
+            "description" : "jobs enabled",
             "type" : "object"
           },
           "enabled" : {
-            "description" : "???",
+            "description" : "Global scripts enabled",
             "type" : "boolean"
           },
           "transformersConfig" : {
-            "description" : "???",
+            "description" : "transformers config",
             "type" : "object"
           },
           "transformersRefs" : {
@@ -16635,17 +16635,17 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "transformers enabled"
           },
           "preRouteRefs" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "pre-route plugins enabled"
           },
           "sinkConfig" : {
-            "description" : "???",
+            "description" : "sinks config",
             "type" : "object"
           },
           "jobRefs" : {
@@ -16653,28 +16653,28 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "running jobs"
           },
           "validatorRefs" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "validator enabled"
           },
           "sinkRefs" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "sinks enabled"
           },
           "preRouteConfig" : {
-            "description" : "???",
+            "description" : "pre-route config",
             "type" : "object"
           },
           "validatorConfig" : {
-            "description" : "???",
+            "description" : "validator config",
             "type" : "object"
           }
         }
@@ -17064,7 +17064,7 @@
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.models.GeoPositionRadius"
             },
-            "description" : "???"
+            "description" : "Possible positions"
           }
         }
       },
@@ -17432,11 +17432,11 @@
         "properties" : {
           "size" : {
             "format" : "int32",
-            "description" : "???",
+            "description" : "Size of the key: 256, 384, 512",
             "type" : "integer"
           },
           "publicKey" : {
-            "description" : "???",
+            "description" : "The EC private key. If used for signing, can be null",
             "type" : "string"
           },
           "privateKey" : {
@@ -17445,7 +17445,7 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "The EC private key. If used for verification, can be null"
           }
         }
       },
@@ -18243,7 +18243,7 @@
         "description" : "JWT token location (query param)",
         "properties" : {
           "name" : {
-            "description" : "???",
+            "description" : "Query param name",
             "type" : "string"
           }
         }
@@ -18253,7 +18253,7 @@
         "description" : "Location of any entity (teams and organization)",
         "properties" : {
           "tenant" : {
-            "description" : "???",
+            "description" : "Organization of the current entity",
             "$ref" : "#/components/schemas/otoroshi.models.TenantId"
           },
           "teams" : {
@@ -18261,7 +18261,7 @@
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.models.TeamId"
             },
-            "description" : "???"
+            "description" : "Teams of the current entity"
           }
         }
       },
@@ -18274,19 +18274,19 @@
         "description" : "Service descriptor error template",
         "properties" : {
           "template50x" : {
-            "description" : "???",
+            "description" : "The 50x error html template",
             "type" : "string"
           },
           "templateMaintenance" : {
-            "description" : "???",
+            "description" : "The maintenance html template",
             "type" : "string"
           },
           "templateBuild" : {
-            "description" : "???",
+            "description" : "The build html template",
             "type" : "string"
           },
           "serviceId" : {
-            "description" : "???",
+            "description" : "Service id for this template",
             "type" : "string"
           },
           "messages" : {
@@ -18294,10 +18294,10 @@
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Map of messages"
           },
           "template40x" : {
-            "description" : "???",
+            "description" : "The 40x error html template",
             "type" : "string"
           }
         }
@@ -18442,15 +18442,15 @@
         "properties" : {
           "size" : {
             "format" : "int32",
-            "description" : "???",
+            "description" : "Size for SHA function",
             "type" : "integer"
           },
           "secret" : {
-            "description" : "???",
+            "description" : "HMAC secret",
             "type" : "string"
           },
           "base64" : {
-            "description" : "???",
+            "description" : "The secret is base64 encoded",
             "type" : "boolean"
           }
         }
