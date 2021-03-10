@@ -191,9 +191,8 @@ class OpenapiGeneratorTests
 
 class DevOtoroshiTests
     extends Suites(
-      new OpenApiSpec()
-      // new TeamsSpec("DEV", Configurations.InMemoryConfiguration),
-      // new BasicSpec("DEV", Configurations.PgConfiguration)
-      // new MapFilterSpec(),
-      // new VersionSpec(),
+      new TeamsSpec("DEV", Configurations.InMemoryConfiguration),
+      new BasicSpec("DEV", Configurations.PgConfiguration),
+      new MapFilterSpec(),
+      new VersionSpec(),
     )
