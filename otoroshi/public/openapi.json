@@ -13708,7 +13708,7 @@
       },
       "otoroshi.models.TeamId" : {
         "type" : "string",
-        "description" : "???"
+        "description" : "team id"
       },
       "WebauthnAdminList" : {
         "type" : "array",
@@ -13737,15 +13737,15 @@
         "description" : "TLS settings for the http client",
         "properties" : {
           "mtls" : {
-            "description" : "???",
+            "description" : "Enabled",
             "type" : "boolean"
           },
           "loose" : {
-            "description" : "???",
+            "description" : "Loose verification",
             "type" : "boolean"
           },
           "trustAll" : {
-            "description" : "???",
+            "description" : "Trust any certificate",
             "type" : "boolean"
           },
           "trustedCerts" : {
@@ -13753,14 +13753,14 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Trusted cert. ids"
           },
           "certs" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Trusted cert. ids"
           }
         }
       },
@@ -13816,7 +13816,7 @@
       },
       "LetsEncryptCertBody" : {
         "type" : "object",
-        "description" : "???"
+        "description" : "PEM encoded certificate"
       },
       "otoroshi.models.CustomTimeouts" : {
         "type" : "object",
@@ -13909,7 +13909,7 @@
       },
       "otoroshi.models.AlwaysMatch" : {
         "type" : "object",
-        "description" : "???",
+        "description" : "Always select target",
         "properties" : {
           "type" : {
             "type" : "string",
@@ -13919,7 +13919,7 @@
       },
       "otoroshi.models.TenantId" : {
         "type" : "string",
-        "description" : "???"
+        "description" : "organization id"
       },
       "Done" : {
         "type" : "object",
@@ -13932,22 +13932,26 @@
       },
       "UserTokenBody" : {
         "type" : "object",
-        "description" : "???"
+        "properties" : {
+          "token" : {
+            "type" : "string"
+          }
+        }
       },
       "otoroshi.utils.mailer.MailgunSettings" : {
         "type" : "object",
         "description" : "Settings for the mailgun mailer",
         "properties" : {
           "eu" : {
-            "description" : "???",
+            "description" : "European tenant",
             "type" : "boolean"
           },
           "apiKey" : {
-            "description" : "???",
+            "description" : "Mailgun apikey",
             "type" : "string"
           },
           "domain" : {
-            "description" : "???",
+            "description" : "Mailgun domain",
             "type" : "string"
           },
           "to" : {
@@ -13955,7 +13959,7 @@
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.utils.mailer.EmailLocation"
             },
-            "description" : "???"
+            "description" : "Destination email address"
           }
         }
       },
@@ -14277,7 +14281,7 @@
       "otoroshi.models.SecComVersion" : {
         "type" : "string",
         "enum" : [ "V1", "v2" ],
-        "description" : "???"
+        "description" : "Version of the challenge token"
       },
       "otoroshi.models.TransformSettings" : {
         "type" : "object",
@@ -14708,7 +14712,7 @@
       },
       "UpdateQuotasBody" : {
         "type" : "string",
-        "description" : "???"
+        "description" : ""
       },
       "otoroshi.models.DataExporterConfigFiltering" : {
         "type" : "object",
@@ -14764,7 +14768,7 @@
         "description" : "Settings for generating a certificate",
         "properties" : {
           "client" : {
-            "description" : "???",
+            "description" : "Is cert client ?",
             "type" : "boolean"
           },
           "hosts" : {
@@ -14772,18 +14776,18 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Certificate SANs"
           },
           "key" : {
-            "description" : "???",
+            "description" : "Keypair specs",
             "$ref" : "#/components/schemas/otoroshi.ssl.pki.models.GenKeyPairQuery"
           },
           "includeAIA" : {
-            "description" : "???",
+            "description" : "Include AIA extension (if generated from otoroshi CA)",
             "type" : "boolean"
           },
           "signatureAlg" : {
-            "description" : "???",
+            "description" : "Signature algorithm",
             "type" : "string"
           },
           "existingSerialNumber" : {
@@ -14793,18 +14797,18 @@
               "type" : "integer",
               "format" : "int64"
             } ],
-            "description" : "???"
+            "description" : ""
           },
           "duration" : {
-            "description" : "???",
+            "description" : "Certificate lifespan",
             "type" : "number"
           },
           "digestAlg" : {
-            "description" : "???",
+            "description" : "Digest algo",
             "type" : "string"
           },
           "ca" : {
-            "description" : "???",
+            "description" : "Is cert ca ?",
             "type" : "boolean"
           },
           "name" : {
@@ -14812,7 +14816,7 @@
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Certificate name"
           },
           "subject" : {
             "oneOf" : [ {
@@ -14820,7 +14824,7 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "Certificate subject"
           }
         }
       },
@@ -14853,7 +14857,7 @@
       "otoroshi.script.PluginType" : {
         "type" : "string",
         "enum" : [ "app", "transformer", "validator", "preroute", "sink", "listener", "job", "exporter" ],
-        "description" : "???"
+        "description" : "Plugin kind"
       },
       "otoroshi.utils.mailer.ConsoleMailerSettings" : {
         "type" : "object",
@@ -14863,7 +14867,7 @@
       "otoroshi.models.DataExporterConfigType" : {
         "type" : "string",
         "enum" : [ "kafka", "pulsar", "elastic", "webhook", "file", "mailer", "custom", "none", "console", "metrics" ],
-        "description" : "???"
+        "description" : "Type of data exporter"
       },
       "otoroshi.script.Script" : {
         "type" : "object",
@@ -14907,11 +14911,11 @@
         "description" : "Settings for the mailjet mailer",
         "properties" : {
           "apiKeyPublic" : {
-            "description" : "???",
+            "description" : "Public key",
             "type" : "string"
           },
           "apiKeyPrivate" : {
-            "description" : "???",
+            "description" : "Private key",
             "type" : "string"
           },
           "to" : {
@@ -14919,14 +14923,14 @@
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.utils.mailer.EmailLocation"
             },
-            "description" : "???"
+            "description" : "Destination email address"
           }
         }
       },
       "play.api.libs.ws.WSProxyServer" : {
         "type" : "object",
         "properties" : { },
-        "description" : "???"
+        "description" : "Proxy server"
       },
       "otoroshi.models.ServiceDescriptorIdentifier" : {
         "type" : "string",
@@ -14965,7 +14969,7 @@
       "otoroshi.tcp.TlsMode" : {
         "type" : "string",
         "enum" : [ "Disabled", "Enabled", "PassThrough" ],
-        "description" : "???"
+        "description" : "TLS mode"
       },
       "otoroshi.models.ESKPAlgoSettings" : {
         "type" : "object",
@@ -15409,7 +15413,7 @@
       "otoroshi.models.OtoroshiAdminType" : {
         "type" : "string",
         "enum" : [ "SIMPLE", "WEBAUTHN" ],
-        "description" : "???"
+        "description" : "Admin kind"
       },
       "otoroshi.ssl.Cert" : {
         "type" : "object",
@@ -15545,7 +15549,7 @@
         "description" : "Associate targets for a domain (SNI)",
         "properties" : {
           "domain" : {
-            "description" : "???",
+            "description" : "match on SNI domain",
             "type" : "string"
           },
           "targets" : {
@@ -15553,7 +15557,7 @@
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.tcp.TcpTarget"
             },
-            "description" : "???"
+            "description" : "TCP targets"
           }
         }
       },
@@ -15897,12 +15901,12 @@
         "description" : "Settings for generating a keypair",
         "properties" : {
           "algo" : {
-            "description" : "???",
+            "description" : "Keypair algorithm",
             "type" : "string"
           },
           "size" : {
             "format" : "int32",
-            "description" : "???",
+            "description" : "Keypair size",
             "type" : "integer"
           }
         }
@@ -16062,7 +16066,7 @@
       },
       "LiveStats" : {
         "type" : "object",
-        "description" : "???"
+        "description" : "Service live stats"
       },
       "otoroshi.models.ApiKeyConstraints" : {
         "type" : "object",
@@ -16108,7 +16112,7 @@
       "otoroshi.ssl.ClientAuth" : {
         "type" : "string",
         "enum" : [ "Need", "None", "Want" ],
-        "description" : "???"
+        "description" : "Client authentication mode"
       },
       "otoroshi.models.SimpleOtoroshiAdmin" : {
         "type" : "object",
@@ -16163,11 +16167,11 @@
         "description" : "Response for a certificate signing operation",
         "properties" : {
           "cert" : {
-            "description" : "???",
+            "description" : "Cert (PEM encoded)",
             "type" : "string"
           },
           "csr" : {
-            "description" : "???",
+            "description" : "CSR (PEM encoded)",
             "type" : "string"
           },
           "ca" : {
@@ -16177,7 +16181,7 @@
               "type" : "string",
               "description" : "pem encoded X509 certificate"
             } ],
-            "description" : "???"
+            "description" : "Ca cert (PEM encoded)"
           }
         }
       },
@@ -16297,7 +16301,7 @@
         "description" : "Target for a TCP proxy",
         "properties" : {
           "host" : {
-            "description" : "???",
+            "description" : "Target host",
             "type" : "string"
           },
           "ip" : {
@@ -16306,15 +16310,15 @@
             }, {
               "type" : "string"
             } ],
-            "description" : "???"
+            "description" : "Target ip"
           },
           "port" : {
             "format" : "int32",
-            "description" : "???",
+            "description" : "Target port",
             "type" : "integer"
           },
           "tls" : {
-            "description" : "???",
+            "description" : "Use tls",
             "type" : "boolean"
           }
         }
@@ -16378,7 +16382,7 @@
         "description" : "Model for a TCP proxy",
         "properties" : {
           "enabled" : {
-            "description" : "???",
+            "description" : "Service enabled",
             "type" : "boolean"
           },
           "metadata" : {
@@ -16386,11 +16390,11 @@
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Entity metadata"
           },
           "port" : {
             "format" : "int32",
-            "description" : "???",
+            "description" : "network port",
             "type" : "integer"
           },
           "rules" : {
@@ -16398,41 +16402,41 @@
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.tcp.TcpRule"
             },
-            "description" : "???"
+            "description" : "Routing rules"
           },
           "clientAuth" : {
-            "description" : "???",
+            "description" : "Use client authentication",
             "$ref" : "#/components/schemas/otoroshi.ssl.ClientAuth"
           },
           "interface" : {
-            "description" : "???",
+            "description" : "Network interface",
             "type" : "string"
           },
           "sni" : {
-            "description" : "???",
+            "description" : "SNI settings",
             "$ref" : "#/components/schemas/otoroshi.tcp.SniSettings"
           },
           "id" : {
-            "description" : "???",
+            "description" : "Entity id",
             "type" : "string"
           },
           "location" : {
-            "description" : "???",
+            "description" : "Entity location",
             "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
           },
           "name" : {
-            "description" : "???",
+            "description" : "Entity name",
             "type" : "string"
           },
           "tls" : {
-            "description" : "???",
+            "description" : "TLS mode",
             "$ref" : "#/components/schemas/otoroshi.tcp.TlsMode"
           }
         }
       },
       "WebAuthnRegistrationFinishBody" : {
         "type" : "object",
-        "description" : "???"
+        "description" : ""
       },
       "otoroshi.models.LocalJwtVerifier" : {
         "type" : "object",
@@ -16473,7 +16477,7 @@
         "properties" : {
           "compressionLevel" : {
             "format" : "int32",
-            "description" : "???",
+            "description" : "Compression level (0 - 9)",
             "type" : "integer"
           },
           "blackList" : {
@@ -16481,11 +16485,11 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "blocklisted content types"
           },
           "chunkedThreshold" : {
             "format" : "int32",
-            "description" : "???",
+            "description" : "Chunk size",
             "type" : "integer"
           },
           "excludedPatterns" : {
@@ -16493,11 +16497,11 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Excluded paths"
           },
           "bufferSize" : {
             "format" : "int32",
-            "description" : "???",
+            "description" : "Buffer size in bytes",
             "type" : "integer"
           },
           "whiteList" : {
@@ -16505,10 +16509,10 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "allow listed content types"
           },
           "enabled" : {
-            "description" : "???",
+            "description" : "Gzip enabled",
             "type" : "boolean"
           }
         }
@@ -16906,7 +16910,7 @@
       },
       "HostMetrics" : {
         "type" : "object",
-        "description" : "???"
+        "description" : "Host metrics"
       },
       "AlertEventList" : {
         "type" : "array",
@@ -16994,7 +16998,7 @@
       },
       "CodeBody" : {
         "type" : "string",
-        "description" : "???"
+        "description" : "Plugin scala code"
       },
       "otoroshi.models.AutoCert" : {
         "type" : "object",
@@ -17034,7 +17038,7 @@
       },
       "CertValidResponse" : {
         "type" : "object",
-        "description" : "???",
+        "description" : "Is certificate valid",
         "properties" : {
           "valid" : {
             "type" : "boolean"
@@ -17287,22 +17291,22 @@
         "description" : "SNI settings for a TCP proxy",
         "properties" : {
           "enabled" : {
-            "description" : "???",
+            "description" : "SNI extraction enabled",
             "type" : "boolean"
           },
           "forwardIfNoMatch" : {
-            "description" : "???",
+            "description" : "",
             "type" : "boolean"
           },
           "forwardsTo" : {
-            "description" : "???",
+            "description" : "forwards call to",
             "$ref" : "#/components/schemas/otoroshi.tcp.TcpTarget"
           }
         }
       },
       "otoroshi.models.LoadBalancing" : {
         "type" : "object",
-        "description" : "???",
+        "description" : "Loadbalancing strategy",
         "properties" : {
           "type" : {
             "type" : "string",
@@ -17407,11 +17411,11 @@
         "description" : "Email location settings",
         "properties" : {
           "name" : {
-            "description" : "???",
+            "description" : "Destination name",
             "type" : "string"
           },
           "email" : {
-            "description" : "???",
+            "description" : "Email address",
             "type" : "string"
           }
         }
@@ -17451,7 +17455,7 @@
       },
       "otoroshi.models.NoneGeolocationSettings" : {
         "type" : "object",
-        "description" : "???",
+        "description" : "No geolocation extraction",
         "properties" : {
           "type" : {
             "type" : "string",
@@ -17461,7 +17465,7 @@
       },
       "WebAuthnRegistrationStartBody" : {
         "type" : "object",
-        "description" : "???"
+        "description" : ""
       },
       "PatchDocument" : {
         "type" : "object",
@@ -17623,7 +17627,7 @@
         "description" : "Settings for connection to a let's encrypt (or ACME) server",
         "properties" : {
           "privateKey" : {
-            "description" : "???",
+            "description" : "Let's encrypt (ACME) private key",
             "type" : "string"
           },
           "contacts" : {
@@ -17631,25 +17635,25 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Let's encrypt (ACME) contacts"
           },
           "emails" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Let's encrypt (ACME) contact emails"
           },
           "enabled" : {
-            "description" : "???",
+            "description" : "Let's encrypt (ACME) enabled",
             "type" : "boolean"
           },
           "publicKey" : {
-            "description" : "???",
+            "description" : "Let's encrypt (ACME) public key",
             "type" : "string"
           },
           "server" : {
-            "description" : "???",
+            "description" : "Let's encrypt (ACME) server",
             "type" : "string"
           }
         }
@@ -17754,7 +17758,7 @@
         "description" : "Settings for the sendgrid mailer",
         "properties" : {
           "apiKey" : {
-            "description" : "???",
+            "description" : "Sendgrid apikey",
             "type" : "string"
           },
           "to" : {
@@ -17762,17 +17766,17 @@
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.utils.mailer.EmailLocation"
             },
-            "description" : "???"
+            "description" : "Destination email address"
           }
         }
       },
       "ByteStreamBody" : {
         "type" : "string",
-        "description" : "???"
+        "description" : ""
       },
       "PemCertificateBody" : {
         "type" : "string",
-        "description" : "???"
+        "description" : "PEM encoded certificate"
       },
       "otoroshi.models.LargeRequestFaultConfig" : {
         "type" : "object",
@@ -17902,11 +17906,11 @@
         "description" : "Response for a keypair generation operation",
         "properties" : {
           "publicKey" : {
-            "description" : "???",
+            "description" : "Public key (PEM encoded)",
             "type" : "string"
           },
           "privateKey" : {
-            "description" : "???",
+            "description" : "Private key (PEM encoded)",
             "type" : "string"
           }
         }
@@ -17917,7 +17921,7 @@
       },
       "PemCsrBody" : {
         "type" : "string",
-        "description" : "???"
+        "description" : "PEM encoded csr"
       },
       "Unknown" : {
         "type" : "object",
@@ -18162,15 +18166,15 @@
         "description" : "Response for a csr generation operation",
         "properties" : {
           "csr" : {
-            "description" : "???",
+            "description" : "CSR (PEM encoded)",
             "type" : "string"
           },
           "publicKey" : {
-            "description" : "???",
+            "description" : "Public key (PEM encoded)",
             "type" : "string"
           },
           "privateKey" : {
-            "description" : "???",
+            "description" : "Private key (PEM encoded)",
             "type" : "string"
           }
         }
@@ -18310,11 +18314,11 @@
       "otoroshi.models.SecComInfoTokenVersion" : {
         "type" : "string",
         "enum" : [ "Legacy", "Latest" ],
-        "description" : "???"
+        "description" : "Version of the info token"
       },
       "GlobalConfigImportBody" : {
         "type" : "object",
-        "description" : "???"
+        "description" : ""
       },
       "otoroshi.auth.AuthModuleConfig" : {
         "oneOf" : [ {
@@ -18330,7 +18334,7 @@
         "description" : "Settings for the generic mailer (http requests)",
         "properties" : {
           "url" : {
-            "description" : "???",
+            "description" : "Sender URL",
             "type" : "string"
           },
           "headers" : {
@@ -18338,14 +18342,14 @@
             "additionalProperties" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Sender headers"
           },
           "to" : {
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/otoroshi.utils.mailer.EmailLocation"
             },
-            "description" : "???"
+            "description" : "Destination email address"
           }
         }
       },

@@ -1314,79 +1314,79 @@
     "otoroshi.ssl.pki.models.GenCertResponse.csrQuery": "JSON generation query",
     "otoroshi.ssl.pki.models.GenCertResponse.key": "Private key (PEM encoded)",
     "otoroshi.ssl.pki.models.GenCertResponse.serial": "Certificate serial number",
-    "otoroshi.ssl.pki.models.GenCsrQuery.ca": "???",
-    "otoroshi.ssl.pki.models.GenCsrQuery.client": "???",
-    "otoroshi.ssl.pki.models.GenCsrQuery.digestAlg": "???",
-    "otoroshi.ssl.pki.models.GenCsrQuery.duration": "???",
-    "otoroshi.ssl.pki.models.GenCsrQuery.existingSerialNumber": "???",
-    "otoroshi.ssl.pki.models.GenCsrQuery.hosts": "???",
-    "otoroshi.ssl.pki.models.GenCsrQuery.includeAIA": "???",
-    "otoroshi.ssl.pki.models.GenCsrQuery.key": "???",
-    "otoroshi.ssl.pki.models.GenCsrQuery.name": "???",
-    "otoroshi.ssl.pki.models.GenCsrQuery.signatureAlg": "???",
-    "otoroshi.ssl.pki.models.GenCsrQuery.subject": "???",
-    "otoroshi.ssl.pki.models.GenCsrResponse.csr": "???",
-    "otoroshi.ssl.pki.models.GenCsrResponse.privateKey": "???",
-    "otoroshi.ssl.pki.models.GenCsrResponse.publicKey": "???",
-    "otoroshi.ssl.pki.models.GenKeyPairQuery.algo": "???",
-    "otoroshi.ssl.pki.models.GenKeyPairQuery.size": "???",
-    "otoroshi.ssl.pki.models.GenKeyPairResponse.privateKey": "???",
-    "otoroshi.ssl.pki.models.GenKeyPairResponse.publicKey": "???",
-    "otoroshi.ssl.pki.models.SignCertResponse.ca": "???",
-    "otoroshi.ssl.pki.models.SignCertResponse.cert": "???",
-    "otoroshi.ssl.pki.models.SignCertResponse.csr": "???",
-    "otoroshi.tcp.SniSettings.enabled": "???",
-    "otoroshi.tcp.SniSettings.forwardIfNoMatch": "???",
-    "otoroshi.tcp.SniSettings.forwardsTo": "???",
-    "otoroshi.tcp.TcpRule.domain": "???",
-    "otoroshi.tcp.TcpRule.targets": "???",
-    "otoroshi.tcp.TcpService.clientAuth": "???",
-    "otoroshi.tcp.TcpService.enabled": "???",
-    "otoroshi.tcp.TcpService.id": "???",
-    "otoroshi.tcp.TcpService.interface": "???",
-    "otoroshi.tcp.TcpService.location": "???",
-    "otoroshi.tcp.TcpService.metadata": "???",
-    "otoroshi.tcp.TcpService.name": "???",
-    "otoroshi.tcp.TcpService.port": "???",
-    "otoroshi.tcp.TcpService.rules": "???",
-    "otoroshi.tcp.TcpService.sni": "???",
-    "otoroshi.tcp.TcpService.tls": "???",
-    "otoroshi.tcp.TcpTarget.host": "???",
-    "otoroshi.tcp.TcpTarget.ip": "???",
-    "otoroshi.tcp.TcpTarget.port": "???",
-    "otoroshi.tcp.TcpTarget.tls": "???",
-    "otoroshi.utils.gzip.GzipConfig.blackList": "???",
-    "otoroshi.utils.gzip.GzipConfig.bufferSize": "???",
-    "otoroshi.utils.gzip.GzipConfig.chunkedThreshold": "???",
-    "otoroshi.utils.gzip.GzipConfig.compressionLevel": "???",
-    "otoroshi.utils.gzip.GzipConfig.enabled": "???",
-    "otoroshi.utils.gzip.GzipConfig.excludedPatterns": "???",
-    "otoroshi.utils.gzip.GzipConfig.whiteList": "???",
-    "otoroshi.utils.http.MtlsConfig.certs": "???",
-    "otoroshi.utils.http.MtlsConfig.loose": "???",
-    "otoroshi.utils.http.MtlsConfig.mtls": "???",
-    "otoroshi.utils.http.MtlsConfig.trustAll": "???",
-    "otoroshi.utils.http.MtlsConfig.trustedCerts": "???",
-    "otoroshi.utils.letsencrypt.LetsEncryptSettings.contacts": "???",
-    "otoroshi.utils.letsencrypt.LetsEncryptSettings.emails": "???",
-    "otoroshi.utils.letsencrypt.LetsEncryptSettings.enabled": "???",
-    "otoroshi.utils.letsencrypt.LetsEncryptSettings.privateKey": "???",
-    "otoroshi.utils.letsencrypt.LetsEncryptSettings.publicKey": "???",
-    "otoroshi.utils.letsencrypt.LetsEncryptSettings.server": "???",
-    "otoroshi.utils.mailer.EmailLocation.email": "???",
-    "otoroshi.utils.mailer.EmailLocation.name": "???",
-    "otoroshi.utils.mailer.GenericMailerSettings.headers": "???",
-    "otoroshi.utils.mailer.GenericMailerSettings.to": "???",
-    "otoroshi.utils.mailer.GenericMailerSettings.url": "???",
-    "otoroshi.utils.mailer.MailgunSettings.apiKey": "???",
-    "otoroshi.utils.mailer.MailgunSettings.domain": "???",
-    "otoroshi.utils.mailer.MailgunSettings.eu": "???",
-    "otoroshi.utils.mailer.MailgunSettings.to": "???",
-    "otoroshi.utils.mailer.MailjetSettings.apiKeyPrivate": "???",
-    "otoroshi.utils.mailer.MailjetSettings.apiKeyPublic": "???",
-    "otoroshi.utils.mailer.MailjetSettings.to": "???",
-    "otoroshi.utils.mailer.SendgridSettings.apiKey": "???",
-    "otoroshi.utils.mailer.SendgridSettings.to": "???",
+    "otoroshi.ssl.pki.models.GenCsrQuery.ca": "Is cert ca ?",
+    "otoroshi.ssl.pki.models.GenCsrQuery.client": "Is cert client ?",
+    "otoroshi.ssl.pki.models.GenCsrQuery.digestAlg": "Digest algo",
+    "otoroshi.ssl.pki.models.GenCsrQuery.duration": "Certificate lifespan",
+    "otoroshi.ssl.pki.models.GenCsrQuery.existingSerialNumber": "",
+    "otoroshi.ssl.pki.models.GenCsrQuery.hosts": "Certificate SANs",
+    "otoroshi.ssl.pki.models.GenCsrQuery.includeAIA": "Include AIA extension (if generated from otoroshi CA)",
+    "otoroshi.ssl.pki.models.GenCsrQuery.key": "Keypair specs",
+    "otoroshi.ssl.pki.models.GenCsrQuery.name": "Certificate name",
+    "otoroshi.ssl.pki.models.GenCsrQuery.signatureAlg": "Signature algorithm",
+    "otoroshi.ssl.pki.models.GenCsrQuery.subject": "Certificate subject",
+    "otoroshi.ssl.pki.models.GenCsrResponse.csr": "CSR (PEM encoded)",
+    "otoroshi.ssl.pki.models.GenCsrResponse.privateKey": "Private key (PEM encoded)",
+    "otoroshi.ssl.pki.models.GenCsrResponse.publicKey": "Public key (PEM encoded)",
+    "otoroshi.ssl.pki.models.GenKeyPairQuery.algo": "Keypair algorithm",
+    "otoroshi.ssl.pki.models.GenKeyPairQuery.size": "Keypair size",
+    "otoroshi.ssl.pki.models.GenKeyPairResponse.privateKey": "Private key (PEM encoded)",
+    "otoroshi.ssl.pki.models.GenKeyPairResponse.publicKey": "Public key (PEM encoded)",
+    "otoroshi.ssl.pki.models.SignCertResponse.ca": "Ca cert (PEM encoded)",
+    "otoroshi.ssl.pki.models.SignCertResponse.cert": "Cert (PEM encoded)",
+    "otoroshi.ssl.pki.models.SignCertResponse.csr": "CSR (PEM encoded)",
+    "otoroshi.tcp.SniSettings.enabled": "SNI extraction enabled",
+    "otoroshi.tcp.SniSettings.forwardIfNoMatch": "",
+    "otoroshi.tcp.SniSettings.forwardsTo": "forwards call to",
+    "otoroshi.tcp.TcpRule.domain": "match on SNI domain",
+    "otoroshi.tcp.TcpRule.targets": "TCP targets",
+    "otoroshi.tcp.TcpService.clientAuth": "Use client authentication",
+    "otoroshi.tcp.TcpService.enabled": "Service enabled",
+    "otoroshi.tcp.TcpService.id": "Entity id",
+    "otoroshi.tcp.TcpService.interface": "Network interface",
+    "otoroshi.tcp.TcpService.location": "Entity location",
+    "otoroshi.tcp.TcpService.metadata": "Entity metadata",
+    "otoroshi.tcp.TcpService.name": "Entity name",
+    "otoroshi.tcp.TcpService.port": "network port",
+    "otoroshi.tcp.TcpService.rules": "Routing rules",
+    "otoroshi.tcp.TcpService.sni": "SNI settings",
+    "otoroshi.tcp.TcpService.tls": "TLS mode",
+    "otoroshi.tcp.TcpTarget.host": "Target host",
+    "otoroshi.tcp.TcpTarget.ip": "Target ip",
+    "otoroshi.tcp.TcpTarget.port": "Target port",
+    "otoroshi.tcp.TcpTarget.tls": "Use tls",
+    "otoroshi.utils.gzip.GzipConfig.blackList": "blocklisted content types",
+    "otoroshi.utils.gzip.GzipConfig.bufferSize": "Buffer size in bytes",
+    "otoroshi.utils.gzip.GzipConfig.chunkedThreshold": "Chunk size",
+    "otoroshi.utils.gzip.GzipConfig.compressionLevel": "Compression level (0 - 9)",
+    "otoroshi.utils.gzip.GzipConfig.enabled": "Gzip enabled",
+    "otoroshi.utils.gzip.GzipConfig.excludedPatterns": "Excluded paths",
+    "otoroshi.utils.gzip.GzipConfig.whiteList": "allow listed content types",
+    "otoroshi.utils.http.MtlsConfig.certs": "Trusted cert. ids",
+    "otoroshi.utils.http.MtlsConfig.loose": "Loose verification",
+    "otoroshi.utils.http.MtlsConfig.mtls": "Enabled",
+    "otoroshi.utils.http.MtlsConfig.trustAll": "Trust any certificate",
+    "otoroshi.utils.http.MtlsConfig.trustedCerts": "Trusted cert. ids",
+    "otoroshi.utils.letsencrypt.LetsEncryptSettings.contacts": "Let's encrypt (ACME) contacts",
+    "otoroshi.utils.letsencrypt.LetsEncryptSettings.emails": "Let's encrypt (ACME) contact emails",
+    "otoroshi.utils.letsencrypt.LetsEncryptSettings.enabled": "Let's encrypt (ACME) enabled",
+    "otoroshi.utils.letsencrypt.LetsEncryptSettings.privateKey": "Let's encrypt (ACME) private key",
+    "otoroshi.utils.letsencrypt.LetsEncryptSettings.publicKey": "Let's encrypt (ACME) public key",
+    "otoroshi.utils.letsencrypt.LetsEncryptSettings.server": "Let's encrypt (ACME) server",
+    "otoroshi.utils.mailer.EmailLocation.email": "Email address",
+    "otoroshi.utils.mailer.EmailLocation.name": "Destination name",
+    "otoroshi.utils.mailer.GenericMailerSettings.headers": "Sender headers",
+    "otoroshi.utils.mailer.GenericMailerSettings.to": "Destination email address",
+    "otoroshi.utils.mailer.GenericMailerSettings.url": "Sender URL",
+    "otoroshi.utils.mailer.MailgunSettings.apiKey": "Mailgun apikey",
+    "otoroshi.utils.mailer.MailgunSettings.domain": "Mailgun domain",
+    "otoroshi.utils.mailer.MailgunSettings.eu": "European tenant",
+    "otoroshi.utils.mailer.MailgunSettings.to": "Destination email address",
+    "otoroshi.utils.mailer.MailjetSettings.apiKeyPrivate": "Private key",
+    "otoroshi.utils.mailer.MailjetSettings.apiKeyPublic": "Public key",
+    "otoroshi.utils.mailer.MailjetSettings.to": "Destination email address",
+    "otoroshi.utils.mailer.SendgridSettings.apiKey": "Sendgrid apikey",
+    "otoroshi.utils.mailer.SendgridSettings.to": "Destination email address",
     "tags.admin-sessions": "All api endpoints about admin-session",
     "tags.admins": "All api endpoints about admins",
     "tags.analytics": "All api endpoints about analytics",
@@ -1426,7 +1426,7 @@
     "play.api.libs.ws.WSProxyServer" : {
       "type" : "object",
       "properties" : { },
-      "description" : "???"
+      "description" : "Proxy server"
     },
     "PatchDocument" : {
       "type" : "object",
@@ -1567,7 +1567,7 @@
     "otoroshi.models.DataExporterConfigType" : {
       "type" : "string",
       "enum" : [ "kafka", "pulsar", "elastic", "webhook", "file", "mailer", "custom", "none", "console", "metrics" ],
-      "description" : "???"
+      "description" : "Type of data exporter"
     },
     "otoroshi.models.Exporter" : {
       "oneOf" : [ {
@@ -1652,15 +1652,15 @@
     },
     "otoroshi.models.TenantId" : {
       "type" : "string",
-      "description" : "???"
+      "description" : "organization id"
     },
     "otoroshi.models.TeamId" : {
       "type" : "string",
-      "description" : "???"
+      "description" : "team id"
     },
     "otoroshi.models.AlwaysMatch" : {
       "type" : "object",
-      "description" : "???",
+      "description" : "Always select target",
       "properties" : {
         "type" : {
           "type" : "string",
@@ -1671,16 +1671,16 @@
     "otoroshi.models.SecComInfoTokenVersion" : {
       "type" : "string",
       "enum" : [ "Legacy", "Latest" ],
-      "description" : "???"
+      "description" : "Version of the info token"
     },
     "otoroshi.models.SecComVersion" : {
       "type" : "string",
       "enum" : [ "V1", "v2" ],
-      "description" : "???"
+      "description" : "Version of the challenge token"
     },
     "otoroshi.models.LoadBalancing" : {
       "type" : "object",
-      "description" : "???",
+      "description" : "Loadbalancing strategy",
       "properties" : {
         "type" : {
           "type" : "string",
@@ -1704,22 +1704,22 @@
     "otoroshi.models.OtoroshiAdminType" : {
       "type" : "string",
       "enum" : [ "SIMPLE", "WEBAUTHN" ],
-      "description" : "???"
+      "description" : "Admin kind"
     },
     "otoroshi.script.PluginType" : {
       "type" : "string",
       "enum" : [ "app", "transformer", "validator", "preroute", "sink", "listener", "job", "exporter" ],
-      "description" : "???"
+      "description" : "Plugin kind"
     },
     "otoroshi.ssl.ClientAuth" : {
       "type" : "string",
       "enum" : [ "Need", "None", "Want" ],
-      "description" : "???"
+      "description" : "Client authentication mode"
     },
     "otoroshi.tcp.TlsMode" : {
       "type" : "string",
       "enum" : [ "Disabled", "Enabled", "PassThrough" ],
-      "description" : "???"
+      "description" : "TLS mode"
     },
     "otoroshi.models.GeolocationSettings" : {
       "oneOf" : [ {
@@ -1732,7 +1732,7 @@
     },
     "otoroshi.models.NoneGeolocationSettings" : {
       "type" : "object",
-      "description" : "???",
+      "description" : "No geolocation extraction",
       "properties" : {
         "type" : {
           "type" : "string",
@@ -1761,43 +1761,47 @@
     },
     "WebAuthnRegistrationFinishBody" : {
       "type" : "object",
-      "description" : "???"
+      "description" : ""
     },
     "WebAuthnRegistrationStartBody" : {
       "type" : "object",
-      "description" : "???"
+      "description" : ""
     },
     "UserTokenBody" : {
       "type" : "object",
-      "description" : "???"
+      "properties" : {
+        "token" : {
+          "type" : "string"
+        }
+      }
     },
     "ByteStreamBody" : {
       "type" : "string",
-      "description" : "???"
+      "description" : ""
     },
     "GlobalConfigImportBody" : {
       "type" : "object",
-      "description" : "???"
+      "description" : ""
     },
     "PemCertificateBody" : {
       "type" : "string",
-      "description" : "???"
+      "description" : "PEM encoded certificate"
     },
     "PemCsrBody" : {
       "type" : "string",
-      "description" : "???"
+      "description" : "PEM encoded csr"
     },
     "UpdateQuotasBody" : {
       "type" : "string",
-      "description" : "???"
+      "description" : ""
     },
     "LetsEncryptCertBody" : {
       "type" : "object",
-      "description" : "???"
+      "description" : "PEM encoded certificate"
     },
     "CodeBody" : {
       "type" : "string",
-      "description" : "???"
+      "description" : "Plugin scala code"
     },
     "Done" : {
       "type" : "object",
@@ -1870,15 +1874,15 @@
     },
     "LiveStats" : {
       "type" : "object",
-      "description" : "???"
+      "description" : "Service live stats"
     },
     "HostMetrics" : {
       "type" : "object",
-      "description" : "???"
+      "description" : "Host metrics"
     },
     "CertValidResponse" : {
       "type" : "object",
-      "description" : "???",
+      "description" : "Is certificate valid",
       "properties" : {
         "valid" : {
           "type" : "boolean"
