@@ -453,7 +453,6 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
                     Try {
                       (reader.reads(customSpec), item.raw)
                     }.debug {
-                      case Success(_) => ()
                       case Success(_) if failed =>  {
                         logger.error(s"error while customizing spec entity of type $pluralName", err.get)
                         FailedCrdParsing(
@@ -466,6 +465,7 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
                           error = err.map(_.getMessage).getOrElse("--")
                         ).toAnalytics()(env)
                       }
+                      case Success(_) => ()
                       case Failure(e) =>
                         logger.error(s"error while reading entity of type $pluralName", e)
                         FailedCrdParsing(

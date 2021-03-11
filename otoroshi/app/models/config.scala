@@ -410,7 +410,7 @@ case class GlobalConfig(
     userAgentSettings: UserAgentSettings = UserAgentSettings(false),
     autoCert: AutoCert = AutoCert(),
     tlsSettings: TlsSettings = TlsSettings(),
-    plugins: Plugins = Plugins("default-config-plugins"),
+    plugins: Plugins = Plugins(),
     metadata: Map[String, String] = Map.empty
 ) {
   def save()(implicit ec: ExecutionContext, env: Env)                                   = env.datastores.globalConfigDataStore.set(this)
@@ -657,7 +657,7 @@ object GlobalConfig {
             .getOrElse(TlsSettings()),
           plugins = Plugins.format
             .reads((json \ "plugins").asOpt[JsValue].getOrElse(JsNull))
-            .getOrElse(Plugins("config-plugins")),
+            .getOrElse(Plugins()),
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty)
         )
       } map { case sd =>

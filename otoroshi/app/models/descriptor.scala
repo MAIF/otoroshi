@@ -1520,7 +1520,7 @@ case class ServiceDescriptor(
     transformerConfig: JsValue = Json.obj(),
     accessValidator: AccessValidatorRef = AccessValidatorRef(),
     preRouting: PreRoutingRef = PreRoutingRef(),
-    plugins: Plugins = Plugins("default-descriptor-plugins"),
+    plugins: Plugins = Plugins(),
     ///////////////////////////////////////////////////////////
     gzip: GzipConfig = GzipConfig(),
     // thirdPartyApiKey: ThirdPartyApiKeyConfig = OIDCThirdPartyApiKeyConfig(false, None),
@@ -2076,7 +2076,7 @@ object ServiceDescriptor {
             .getOrElse(AccessValidatorRef()),
           plugins = Plugins.format
             .reads((json \ "plugins").asOpt[JsValue].getOrElse(JsNull))
-            .getOrElse(Plugins("descriptor-plugins")),
+            .getOrElse(Plugins()),
           preRouting = PreRoutingRef.format
             .reads((json \ "preRouting").asOpt[JsValue].getOrElse(JsNull))
             .getOrElse(PreRoutingRef()),

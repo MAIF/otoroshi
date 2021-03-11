@@ -32,7 +32,6 @@ object Plugins {
             refs = (json \ "refs")
               .asOpt[Seq[String]]
               .getOrElse(Seq.empty),
-            name = (json \ "name").asOpt[String].getOrElse("no-name"),
             enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
             config = (json \ "config").asOpt[JsValue].getOrElse(Json.obj()),
             excluded = (json \ "excluded").asOpt[Seq[String]].getOrElse(Seq.empty[String])
@@ -45,7 +44,6 @@ object Plugins {
 }
 
 case class Plugins(
-    name: String,
     enabled: Boolean = false,
     excluded: Seq[String] = Seq.empty[String],
     refs: Seq[String] = Seq.empty,
@@ -68,7 +66,7 @@ case class Plugins(
       .map(_.plugins)
       .filter(p => p.enabled && p.refs.nonEmpty)
       .filter(pls => pls.excluded.isEmpty || !pls.excluded.exists(p => utils.RegexPool.regex(p).matches(req.thePath)))
-      .getOrElse(Plugins(s"fake-global-${ct.runtimeClass.getName}"))
+      .getOrElse(Plugins())
       .refs
       .map(r => (r, plugin[A](r)))
       .collect { case (ref, Some(_)) =>
@@ -77,7 +75,7 @@ case class Plugins(
     val localPlugins  = Some(this)
       .filter(p => p.enabled && p.refs.nonEmpty)
       .filter(pls => pls.excluded.isEmpty || !pls.excluded.exists(p => RegexPool.regex(p).matches(req.thePath)))
-      .getOrElse(Plugins(s"fake-local-${ct.runtimeClass.getName}"))
+      .getOrElse(Plugins())
       .refs
       .map(r => (r, plugin[A](r)))
       .collect { case (ref, Some(_)) =>

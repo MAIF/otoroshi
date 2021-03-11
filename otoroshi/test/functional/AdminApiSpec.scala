@@ -6,6 +6,10 @@ import org.scalatest.concurrent.IntegrationPatience
 import org.scalatestplus.play.PlaySpec
 import play.api.Configuration
 import play.api.libs.json.{JsArray, JsSuccess, Json, Reads}
+import otoroshi.utils.syntax.implicits._
+
+import java.io.File
+import java.nio.file.Files
 
 class AdminApiSpec(name: String, configurationSpec: => Configuration) extends OtoroshiSpec {
 
@@ -139,7 +143,7 @@ class AdminApiSpec(name: String, configurationSpec: => Configuration) extends Ot
       {
         val (res1, status1) = otoroshiApiCall("GET", "/api/services").futureValue
         status1 mustBe 200
-        Reads.seq[ServiceDescriptor](ServiceDescriptor._fmt).reads(res1).get.contains(testServiceDescriptor) mustBe true
+        Reads.seq[ServiceDescriptor](ServiceDescriptor._fmt).reads(res1).get.exists(_.id == testServiceDescriptor.id) mustBe true
       }
       {
         val (res1, status1) = otoroshiApiCall("GET", s"/api/services/${testServiceDescriptor.id}/apikeys").futureValue
@@ -199,7 +203,7 @@ class AdminApiSpec(name: String, configurationSpec: => Configuration) extends Ot
       {
         val (res1, status1) = otoroshiApiCall("GET", s"/api/groups/${testGroup.id}/services").futureValue
         status1 mustBe 200
-        Reads.seq[ServiceDescriptor](ServiceDescriptor._fmt).reads(res1).get.contains(testServiceDescriptor) mustBe true
+        Reads.seq[ServiceDescriptor](ServiceDescriptor._fmt).reads(res1).get.exists(_.id == testServiceDescriptor.id) mustBe true
       }
       {
         val (res1, status1) = otoroshiApiCall("GET", s"/api/groups/${testGroup.id}").futureValue

@@ -170,7 +170,7 @@ class Version1410Spec(name: String, configurationSpec: => Configuration) extends
     resp1.status mustBe 200
     counter1.get() mustBe 1
 
-    resp2.status mustBe 400
+    resp2.status mustBe 401
     counter1.get() mustBe 1
 
     deleteOtoroshiService(service1).futureValue
