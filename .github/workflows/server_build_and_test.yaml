@@ -1,0 +1,30 @@
+name: build and test server
+on:
+  push:
+    paths:
+    - 'otoroshi/**'
+  pull_request:
+    paths:
+    - 'otoroshi/**'
+    
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2.2.0
+    # setup java to use sbt
+    - name: Set up JDK 11
+      uses: actions/setup-java@v1
+      with:
+        java-version: 11
+    - uses: actions/setup-node@v2
+      with:
+        node-version: '13'
+    #test oto
+    - uses: coursier/cache-action@v5
+    - name: test
+      id: test
+      run: |
+        sh ./scripts/build.sh test_all
