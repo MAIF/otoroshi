@@ -29,8 +29,16 @@
               SwaggerUIBundle.plugins.DownloadUrl
             ],
             layout: "StandaloneLayout",
-            docExpansion: 'none'
+            docExpansion: 'none',
+            tryItOutEnabled: true,
+            displayOperationId: false,
+            displayRequestDuration: true,
+            defaultModelRendering: 'model',
+            onComplete: () => {
+              document.querySelector('.topbar').style.display = 'none';
+            }
           });
+          document.querySelector('.topbar').style.display = 'none';
         </script>
     </body>
 </html>
