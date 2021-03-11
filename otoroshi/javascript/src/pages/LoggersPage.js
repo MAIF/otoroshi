@@ -19,7 +19,7 @@ class LogLevel extends Component {
 
   render() {
     return (
-      <select value={this.state.logger.level} onChange={this.changeLogLevel}>
+      <select value={this.state.logger.level} onChange={this.changeLogLevel} className="select-css">
         <option value="OFF">OFF</option>
         <option value="TRACE">TRACE</option>
         <option value="DEBUG">DEBUG</option>

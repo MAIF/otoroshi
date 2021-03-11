@@ -20,11 +20,11 @@ export class LabelInput extends Component {
 
   render() {
     return (
-      <div className="form-group">
-        <label className="col-sm-2 control-label">
+      <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
+        <label>
           {this.props.label} <Help text={this.props.help} />
         </label>
-        <div className="col-sm-10">
+        <div>
           {!this.state.loading && <p>Loading ...</p>}
           {this.state.loading && <p>{this.state.value}</p>}
         </div>
@@ -40,9 +40,9 @@ export class HelpInput extends Component {
 
   render() {
     return (
-      <div className="form-group">
-        <label className="col-sm-2 control-label" />
-        <div className="col-sm-10">{this.state.value}</div>
+      <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
+        <label />
+        <div>{this.state.value}</div>
       </div>
     );
   }

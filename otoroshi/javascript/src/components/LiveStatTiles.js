@@ -177,14 +177,14 @@ export class LiveStatTiles extends Component {
       );
     }
     return (
-      <div>
-        <h4 className="live-title">LIVE METRICS</h4>
-        <div className="rowMetrics">
+      <div className="">
+        <h3>LIVE METRICS</h3>
+        <div className="metric-row">
           <Metric time={Date.now()} value={this.state.rate} legend="requests per second" />
           <Metric time={Date.now()} value={this.state.duration} legend="ms. per request" />
           <Metric time={Date.now()} value={this.state.overhead} legend="ms. overhead per request" />
         </div>
-        <div className="rowMetrics">
+        <div className="metric-row">
           <Metric time={Date.now()} value={this.state.dataInRate} />
           <Metric time={Date.now()} value={this.state.dataOutRate} />
           <Metric
@@ -193,8 +193,8 @@ export class LiveStatTiles extends Component {
             legend="concurrent requests"
           />
         </div>
-        <h4 className="live-title">GLOBAL METRICS</h4>
-        <div className="rowMetrics">
+        <h3 className="mt-20">GLOBAL METRICS</h3>
+        <div className="metric-row">
           <Metric time={Date.now()} value={this.state.requests} legend="requests served" />
           <Metric time={Date.now()} value={this.state.dataIn} />
           <Metric time={Date.now()} value={this.state.dataOut} />

@@ -43,8 +43,7 @@ export class ServiceSidebar extends Component {
     return (
       <ul className="nav nav-sidebar">
         <li>
-          <h3
-            style={{ marginTop: 0 }}
+          <h2
             {...createTooltip(`Back to the service descriptor of ${name}`)}>
             {nolink && (
               <span>
@@ -56,7 +55,7 @@ export class ServiceSidebar extends Component {
                 <span className="fas fa-cube" /> {name}
               </Link>
             )}
-          </h3>
+          </h2  >
         </li>
         {!this.props.noSideMenu && (
           <li>

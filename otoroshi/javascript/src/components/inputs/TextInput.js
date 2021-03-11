@@ -35,17 +35,16 @@ export class TextInput extends Component {
       return null;
     }
     return (
-      <div className="form-group">
-        <label htmlFor={`input-${this.props.label}`} className="col-xs-12 col-sm-2 control-label">
+      <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
+        <label htmlFor={`input-${this.props.label}`} >
           {this.props.label} <Help text={this.props.help} />
         </label>
-        <div className="col-sm-10" style={{ display: 'flex' }}>
+        <div className="display--flex align-items--center">
           {(this.props.prefix || this.props.suffix) && (
             <div className="input-group">
               {this.props.prefix && <div className="input-group-addon">{this.props.prefix}</div>}
               <input
                 type={this.props.type || 'text'}
-                className="form-control"
                 disabled={this.props.disabled}
                 id={`input-${this.props.label}`}
                 placeholder={this.props.placeholder}
@@ -60,7 +59,6 @@ export class TextInput extends Component {
           {!(this.props.prefix || this.props.suffix) && (
             <input
               type={this.props.type || 'text'}
-              className="form-control"
               disabled={this.props.disabled}
               id={`input-${this.props.label}`}
               placeholder={this.props.placeholder}
@@ -102,13 +100,12 @@ export class TextareaInput extends Component {
 
   render() {
     return (
-      <div className="form-group">
-        <label htmlFor={`input-${this.props.label}`} className="col-xs-12 col-sm-2 control-label">
+      <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
+        <label htmlFor={`input-${this.props.label}`} >
           {this.props.label} <Help text={this.props.help} />
         </label>
-        <div className="col-sm-10">
+        <div >
           <textarea
-            className="form-control"
             disabled={this.props.disabled}
             id={`input-${this.props.label}`}
             placeholder={this.props.placeholder}
@@ -171,19 +168,18 @@ export class RangeTextInput extends Component {
 
   render() {
     return (
-      <div className="form-group">
-        <label htmlFor={`input-${this.props.label}`} className="col-xs-12 col-sm-2 control-label">
+      <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
+        <label htmlFor={`input-${this.props.label}`} >
           {this.props.label} <Help text={this.props.help} />
         </label>
-        <div className="col-sm-10" style={{ display: 'flex' }}>
+        <div  style={{ display: 'flex' }}>
           {(this.props.prefixFrom || this.props.suffixFrom) && (
-            <div className="input-group col-sm-6">
+            <div className="input-group">
               {this.props.prefixFrom && (
                 <div className="input-group-addon">{this.props.prefixFrom}</div>
               )}
               <input
                 type={this.props.typeFrom || 'text'}
-                className="form-control"
                 disabled={this.props.disabled}
                 id={`input-${this.props.label}`}
                 placeholder={this.props.placeholderFrom}
@@ -198,13 +194,12 @@ export class RangeTextInput extends Component {
             </div>
           )}
           {(this.props.prefixTo || this.props.suffixTo) && (
-            <div className="input-group col-sm-6">
+            <div className="input-group">
               {this.props.prefixTo && (
                 <div className="input-group-addon">{this.props.prefixTo}</div>
               )}
               <input
                 type={this.props.typeTo || 'text'}
-                className="form-control"
                 disabled={this.props.disabled}
                 id={`input-${this.props.label}`}
                 placeholder={this.props.placeholderTo}
@@ -222,7 +217,6 @@ export class RangeTextInput extends Component {
             <div style={{ width: '50%' }}>
               <input
                 type={this.props.typeFrom || 'text'}
-                className="form-control col-sm-6"
                 disabled={this.props.disabled}
                 id={`input-${this.props.label}`}
                 placeholder={this.props.placeholderFrom}
@@ -237,7 +231,6 @@ export class RangeTextInput extends Component {
             <div style={{ width: '50%' }}>
               <input
                 type={this.props.typeTo || 'text'}
-                className="form-control col-sm-6"
                 disabled={this.props.disabled}
                 id={`input-${this.props.label}`}
                 placeholder={this.props.placeholderTo}
@@ -278,9 +271,9 @@ export class VerticalTextInput extends Component {
 
   render() {
     return (
-      <div className="form-group">
-        <div className="col-xs-12">
-          <label htmlFor={`input-${this.props.label}`} className="control-label">
+      <div>
+        <div>
+          <label htmlFor={`input-${this.props.label}`}>
             {this.props.label} <Help text={this.props.help} />
           </label>
           <div>
@@ -289,7 +282,6 @@ export class VerticalTextInput extends Component {
                 {this.props.prefix && <div className="input-group-addon">{this.props.prefix}</div>}
                 <input
                   type={this.props.type || 'text'}
-                  className="form-control"
                   disabled={this.props.disabled}
                   id={`input-${this.props.label}`}
                   placeholder={this.props.placeholder}
@@ -304,7 +296,6 @@ export class VerticalTextInput extends Component {
             {!(this.props.prefix || this.props.suffix) && (
               <input
                 type={this.props.type || 'text'}
-                className="form-control"
                 disabled={this.props.disabled}
                 id={`input-${this.props.label}`}
                 placeholder={this.props.placeholder}

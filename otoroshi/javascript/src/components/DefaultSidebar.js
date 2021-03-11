@@ -11,11 +11,11 @@ export function DefaultSidebar(props) {
   const className = (part) =>
     base === pathname && search.indexOf(`env=${part}`) > -1 ? 'active' : '';
   return (
-    <ul className="nav nav-sidebar">
+    <ul>
       <li>
-        <h3 style={{ marginTop: 0 }}>
+        <h2>
           <i className="fas fa-cubes" /> Services
-        </h3>
+        </h2>
       </li>
       <li key="all">
         <a
@@ -58,9 +58,9 @@ export function DefaultSidebar(props) {
         </li>
       )}
       <li>
-        <h3 style={{ marginTop: 20 }}>
+        <h2>
           <i className="fas fa-key" /> Apikeys
-        </h3>
+        </h2>
       </li>
       <li key="all-apikeys">
         <a
@@ -77,9 +77,9 @@ export function DefaultSidebar(props) {
         </a>
       </li>
       <li>
-        <h3 style={{ marginTop: 20 }}>
+        <h2>
           <i className="fas fa-cubes" /> Tcp Services
-        </h3>
+        </h2>
       </li>
       <li key="all-tcp-services">
         <a

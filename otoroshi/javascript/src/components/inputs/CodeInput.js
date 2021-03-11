@@ -31,11 +31,11 @@ export default class CodeInput extends Component {
     const [display, setDisplay] = useState(true);
     if (display) return <CodeInput {...props} />;
     return (
-      <div className="form-group">
-        <label htmlFor={`input-${props.label}`} className="col-sm-2 control-label">
+      <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
+        <label htmlFor={`input-${props.label}`}>
           {props.label} <Help text={props.help} />
         </label>
-        <div className="col-sm-10">
+        <div>
           <button type="button" className="btn btn-default" onClick={(e) => setDisplay(!display)}>
             Display
           </button>
@@ -77,11 +77,11 @@ export default class CodeInput extends Component {
       code = JSON.stringify(code, null, 2);
     }
     return (
-      <div className="form-group">
-        <label htmlFor={`input-${this.props.label}`} className="col-sm-2 control-label">
+      <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
+        <label htmlFor={`input-${this.props.label}`}>
           {this.props.label} <Help text={this.props.help} />
         </label>
-        <div className="col-sm-10">
+        <div>
           <AceEditor
             mode={
               this.props.mode

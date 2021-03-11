@@ -1,0 +1,13 @@
+.jumbotron {
+  text-align: center;
+  background-color: $secondaryBgColor;
+  padding: 40px;
+  border-radius: 10px;
+  h1{
+    color: $primaryColor;
+  }
+  .logo{
+    width: 300px;
+    padding: 30px;
+  }
+}

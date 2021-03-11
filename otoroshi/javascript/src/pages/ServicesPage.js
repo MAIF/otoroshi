@@ -9,15 +9,15 @@ import * as BackOfficeServices from '../services/BackOfficeServices';
 export class ServicesPage extends Component {
   color(env) {
     if (env === 'prod') {
-      return 'label-success';
+      return 'bg__success';
     } else if (env === 'preprod') {
-      return 'label-primary';
+      return 'bg__primary';
     } else if (env === 'experiments') {
-      return 'label-warning';
+      return 'bg__warning';
     } else if (env === 'dev') {
-      return 'label-info';
+      return 'bg__info';
     } else {
-      return 'label-default';
+      return 'bg__dark';
     }
   }
 
@@ -30,7 +30,7 @@ export class ServicesPage extends Component {
           return (
             <span
               title="This service is the API that drives the UI you're currently using. Without it, Otoroshi UI won't be able to work and anything that uses Otoroshi admin API too. You might not want to delete it"
-              className="label label-danger">
+              className="label bg__alert">
               {item.name}
             </span>
           );
@@ -47,7 +47,7 @@ export class ServicesPage extends Component {
         return (
           <button
             type="button"
-            className="btn btn-danger btn-sm"
+            className="btn-danger btn-sm"
             disabled={this.state && this.state.env && this.state.env.adminApiId === item.id}
             onClick={(e) => this.deleteService(item, table)}>
             <i className="fas fa-trash" />
@@ -66,7 +66,7 @@ export class ServicesPage extends Component {
       style: { textAlign: 'center', width: 70 },
       notFilterable: true,
       content: (item) => item.enabled,
-      cell: (v, item) => (item.enabled ? <span className="fas fa-check-circle" /> : ''),
+      cell: (v, item) => (item.enabled ? <span className="fas fa-check-circle text__success" /> : ''),
     },
     {
       title: 'Private',
@@ -87,9 +87,9 @@ export class ServicesPage extends Component {
         !item.privateApp &&
         item.privatePatterns.length === 0 &&
         item.publicPatterns.indexOf('/.*') > -1 ? (
-          <i className="fas fa-times-circle alertorange" />
+          <i className="fas fa-times-circle text__warning" />
         ) : (
-          <i className="fas fa-globe-americas fa-lg" aria-hidden="true" />
+          <i className="fas fa-globe-americas fa-lg text__success" aria-hidden="true" />
         ),
     },
     {
@@ -99,9 +99,9 @@ export class ServicesPage extends Component {
       content: (item) => item.enforceSecureCommunication,
       cell: (v, item) =>
         item.enforceSecureCommunication ? (
-          <i className="fas fa-lock fa-lg" />
+          <i className="fas fa-lock fa-lg text__success" />
         ) : (
-          <i className="fas fa-unlock-alt fa-lg" />
+          <i className="fas fa-unlock-alt fa-lg text__warning" />
         ),
     },
     {
@@ -114,9 +114,9 @@ export class ServicesPage extends Component {
       cell: (v, item) =>
         item.targets.map((i) => i.scheme).filter((i) => i.toLowerCase() === 'https').length ===
         item.targets.length ? (
-          <i className="fas fa-lock fa-lg" />
+          <i className="fas fa-lock fa-lg text__success" />
         ) : (
-          <i className="fas fa-unlock-alt fa-lg" />
+          <i className="fas fa-unlock-alt fa-lg text__warning" />
         ),
     },
   ];
@@ -136,7 +136,7 @@ export class ServicesPage extends Component {
   displayName = (item) => {
     console.log(this.state);
     return this.state && this.state.env && this.state.env.adminApiId === item.id ? (
-      <span className="label label-danger">{item.name}</span>
+      <span className="label bg__alert">{item.name}</span>
     ) : (
       item.name
     );
@@ -146,7 +146,7 @@ export class ServicesPage extends Component {
     return (
       <button
         type="button"
-        className="btn btn-danger btn-sm"
+        className="btn-danger btn-sm"
         disabled={this.state && this.state.env && this.state.env.adminApiId === item.id}
         onClick={(e) => this.deleteService(item, table)}>
         <i className="fas fa-trash" />
@@ -252,15 +252,12 @@ export class ServicesPage extends Component {
           itemUrl={(i) => `/bo/dashboard/lines/${i.env}/services/${i.id}`}
           injectTopBar={() => (
             <>
-              <div className="btn-group" style={{ marginRight: 5 }}>
-                <button
-                  type="button"
-                  onClick={this.addService}
-                  style={{ marginRight: 0 }}
-                  className="btn btn-primary">
-                  <i className="fas fa-plus-circle" /> Create new service
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={this.addService}
+                className="btn-info ml-5">
+                <i className="fas fa-plus-circle" /> Create new service
+              </button>
             </>
           )}
         />

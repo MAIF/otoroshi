@@ -155,7 +155,7 @@ class Targets extends Component {
             justifyContent: 'center',
             alignItems: 'center',
           }}>
-          <button type="button" className="btn btn-primary" onClick={this.addTarget}>
+          <button type="button" className="btn-info" onClick={this.addTarget}>
             <i className="fas fa-plus-circle" />
           </button>
         </div>

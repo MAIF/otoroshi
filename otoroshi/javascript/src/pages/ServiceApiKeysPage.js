@@ -1,19 +1,18 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import * as BackOfficeServices from '../services/BackOfficeServices';
-import { Table, SelectInput, SimpleBooleanInput } from '../components/inputs';
+import {Table, SelectInput, SimpleBooleanInput, Help} from '../components/inputs';
 import { ServiceSidebar } from '../components/ServiceSidebar';
 import faker from 'faker';
 import { Restrictions } from '../components/Restrictions';
 
 const Both = ({ label, rawValue }) => (
-  <div className="form-group">
-    <label className="col-sm-2 control-label">{label}</label>
-    <div className="col-sm-10">
+  <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
+    <label>{label}</label>
+    <div>
       <input
         onChange={(e) => ''}
         type="text"
-        className="form-control"
         value={`${rawValue.clientId}:${rawValue.clientSecret}`}
       />
     </div>
@@ -21,14 +20,13 @@ const Both = ({ label, rawValue }) => (
 );
 
 const CurlCommand = ({ label, rawValue, env }) => (
-  <div className="form-group">
-    <label className="col-sm-2 control-label">{label}</label>
-    <div className="col-sm-10">
+  <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
+    <label>{label}</label>
+    <div>
       {env && (
         <input
           onChange={(e) => ''}
           type="text"
-          className="form-control"
           value={`curl -X GET -H '${env.clientIdHeader || 'Opun-Client-Id'}: ${
             rawValue.clientId
           }' -H '${env.clientSecretHeader || 'Opun-Client-Secret'}: ${
@@ -41,13 +39,12 @@ const CurlCommand = ({ label, rawValue, env }) => (
 );
 
 const BasicAuthToken = ({ label, rawValue }) => (
-  <div className="form-group">
-    <label className="col-sm-2 control-label">{label}</label>
-    <div className="col-sm-10">
+  <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
+    <label>{label}</label>
+    <div>
       <input
         onChange={(e) => ''}
         type="text"
-        className="form-control"
         value={`Authorization: Basic ${window.btoa(
           rawValue.clientId + ':' + rawValue.clientSecret
         )}`}
@@ -57,9 +54,9 @@ const BasicAuthToken = ({ label, rawValue }) => (
 );
 
 const ResetSecret = ({ changeValue }) => (
-  <div className="form-group">
-    <label className="col-sm-2 control-label" />
-    <div className="col-sm-10">
+  <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
+    <label />
+    <div>
       <button
         type="button"
         className="btn btn-danger btn-xs"
@@ -84,9 +81,9 @@ class ResetQuotas extends Component {
   render() {
     console.log(this.props);
     return (
-      <div className="form-group">
-        <label className="col-sm-2 control-label" />
-        <div className="col-sm-10">
+      <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
+        <label />
+        <div>
           <button type="button" className="btn btn-danger btn-xs" onClick={this.resetQuotas}>
             <i className="fas fa-sync" /> Reset quotas consumption
           </button>
@@ -100,9 +97,9 @@ class CopyCredentials extends Component {
   render() {
     const props = this.props;
     return (
-      <div className="form-group">
-        <label className="col-sm-2 control-label" />
-        <div className="col-sm-10">
+      <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
+        <label />
+        <div>
           <input
             ref={(r) => (this.clipboard = r)}
             style={{ position: 'fixed', left: 0, top: -250 }}
@@ -131,7 +128,7 @@ class CopyFromLineItem extends Component {
     return (
       <button
         type="button"
-        className="btn btn-sm btn-info"
+        className="btn-sm btn-info"
         onClick={(e) => {
           this.clipboard.select();
           document.execCommand('Copy');
@@ -177,22 +174,14 @@ class DailyRemainingQuotas extends Component {
       remainingCallsPerMonth: 0,
     };
     return [
-      <div className="form-group">
-        <label htmlFor="input-Throttling quota" className="col-xs-12 col-sm-2 control-label">
-          Consumed daily calls
-          <i
-            className="far fa-question-circle"
-            data-toggle="tooltip"
-            data-placement="top"
-            title=""
-            data-original-title="The number of calls consumed today"
-          />
+      <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
+        <label htmlFor="input-Throttling quota">
+          Consumed daily calls <Help text="The number of calls consumed today" />
         </label>
-        <div className="col-sm-10">
-          <div className="input-group">
+        <div>
+          <div className="display--grid grid-template-col__1fr-auto">
             <input
               type="number"
-              className="form-control"
               id="input-Throttling quota"
               value={quotas.currentCallsPerDay}
             />
@@ -200,22 +189,14 @@ class DailyRemainingQuotas extends Component {
           </div>
         </div>
       </div>,
-      <div className="form-group">
-        <label htmlFor="input-Throttling quota" className="col-xs-12 col-sm-2 control-label">
-          Remaining daily calls
-          <i
-            className="far fa-question-circle"
-            data-toggle="tooltip"
-            data-placement="top"
-            title=""
-            data-original-title="The remaining number of calls for today"
-          />
+      <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
+        <label htmlFor="input-Throttling quota">
+          Remaining daily calls <Help text="The remaining number of calls for today" />
         </label>
-        <div className="col-sm-10">
-          <div className="input-group">
+        <div>
+          <div className="display--grid grid-template-col__1fr-auto">
             <input
               type="number"
-              className="form-control"
               id="input-Throttling quota"
               value={quotas.remainingCallsPerDay}
             />
@@ -223,22 +204,14 @@ class DailyRemainingQuotas extends Component {
           </div>
         </div>
       </div>,
-      <div className="form-group">
-        <label htmlFor="input-Throttling quota" className="col-xs-12 col-sm-2 control-label">
-          Consumed monthly calls
-          <i
-            className="far fa-question-circle"
-            data-toggle="tooltip"
-            data-placement="top"
-            title=""
-            data-original-title="The number of calls consumed this month"
-          />
+      <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
+        <label htmlFor="input-Throttling quota" >
+          Consumed monthly calls <Help text="The number of calls consumed this month" />
         </label>
-        <div className="col-sm-10">
-          <div className="input-group">
+        <div>
+          <div className="display--grid grid-template-col__1fr-auto">
             <input
               type="number"
-              className="form-control"
               id="input-Throttling quota"
               value={quotas.currentCallsPerMonth}
             />
@@ -246,22 +219,14 @@ class DailyRemainingQuotas extends Component {
           </div>
         </div>
       </div>,
-      <div className="form-group">
-        <label htmlFor="input-Throttling quota" className="col-xs-12 col-sm-2 control-label">
-          Remaining monthly calls
-          <i
-            className="far fa-question-circle"
-            data-toggle="tooltip"
-            data-placement="top"
-            title=""
-            data-original-title="The remaining number of calls for this month"
-          />
+      <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
+        <label htmlFor="input-Throttling quota" >
+          Remaining monthly calls <Help text="The remaining number of calls for this month" />
         </label>
-        <div className="col-sm-10">
-          <div className="input-group">
+        <div>
+          <div className="display--grid grid-template-col__1fr-auto">
             <input
               type="number"
-              className="form-control"
               id="input-Throttling quota"
               value={quotas.remainingCallsPerMonth}
             />
@@ -341,7 +306,7 @@ const ApiKeysConstants = {
           return (
             <div style={{ display: 'flex' }}>
               <div style={{ width: 60 }}>
-                <span className={`label ${p.kind === 'group' ? 'label-warning' : 'label-success'}`}>
+                <span className={`label ${p.kind === 'group' ? 'bg__warning' : 'bg__success'}`}>
                   {p.kind}
                 </span>
               </div>
@@ -481,7 +446,7 @@ const ApiKeysConstants = {
           return (
             <span
               title="This apikey controls the API that drives the UI you're currently using. Without it, Otoroshi UI won't be able to work and anything that uses Otoroshi admin API too. You might not want to delete it"
-              className="label label-danger">
+              className="label bg__alert">
               {item.clientName}
             </span>
           );

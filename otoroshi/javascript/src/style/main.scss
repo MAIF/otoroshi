@@ -1,32 +1,26 @@
 @import 'variables';
-
-@import 'components/checkbox';
-@import 'components/table';
-@import 'components/btn';
-@import 'components/input-search';
-@import 'components/nav';
-@import 'components/dropdown';
-@import 'components/form';
-@import 'components/input';
-@import 'components/reactTable';
-@import 'components/modal';
-@import 'components/panel';
-@import 'components/sweet-alert';
-@import 'components/toggleButton';
-@import 'components/selectReact';
-@import 'components/popover';
-@import 'components/popup';
-@import 'components/servicesMap';
-@import 'components/metrics';
-@import 'components/serviceHealth';
-@import 'components/pagination';
+@import "reset";
 
 @import 'layout/global';
-@import 'layout/header';
-@import 'layout/sidebar';
+@import "layout/header";
+@import "layout/aside";
+@import "layout/section";
+@import "layout/otoroshi";
 
-
-.plugin-doc pre {
-  height: auto;
-  background-color: rgb(39, 40, 34);
-}
+@import "component/form";
+@import "component/btn";
+@import "component/selectReact";
+@import "component/label";
+@import "component/reactTable";
+@import "component/panel";
+@import "component/popup";
+@import "component/modal";
+@import "component/searchToolbar";
+@import "component/dropdown";
+@import "component/jumbotron";
+@import "component/badge";
+@import "component/metrics";
+@import "component/calendar";
+@import "component/tooltip";
+@import "component/alert";
+@import "component/select";

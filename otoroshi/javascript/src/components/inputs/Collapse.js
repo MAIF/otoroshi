@@ -24,15 +24,15 @@ export class Collapse extends Component {
       return (
         <div>
           <hr />
-          <div className="form-group">
-            <label className="col-sm-2 control-label" />
-            <div className="col-sm-10" onClick={this.toggle} style={{ cursor: 'pointer' }}>
-              <span style={{ color: 'grey', fontWeight: 'bold', marginTop: 7 }}>
+          <div className="form__group grid-template-col-xs-up__1fr-5fr mb-10 mt-10">
+            <label />
+            <div className="display--flex justify-content--between cursor--pointer mb-10" onClick={this.toggle}>
+              <h3>
                 {this.props.label}
-              </span>
+              </h3>
               <button
                 type="button"
-                className="btn btn-info pull-right btn-xs"
+                className="btn-info btn-xs"
                 onClick={this.toggle}>
                 <i className="fas fa-eye" />
               </button>
@@ -45,15 +45,15 @@ export class Collapse extends Component {
       return (
         <div>
           <hr />
-          <div className="form-group">
-            <label className="col-sm-2 control-label" />
-            <div className="col-sm-10" onClick={this.toggle} style={{ cursor: 'pointer' }}>
-              <span style={{ color: 'grey', fontWeight: 'bold', marginTop: 7 }}>
+          <div className="form__group grid-template-col-xs-up__1fr-5fr mb-10 mt-10">
+            <label />
+            <div className="display--flex justify-content--between cursor--pointer mb-10" onClick={this.toggle}>
+              <h3>
                 {this.props.label}
-              </span>
+              </h3>
               <button
                 type="button"
-                className="btn btn-info pull-right btn-xs"
+                className="btn-info btn-xs"
                 onClick={this.toggle}>
                 <i className="fas fa-eye-slash" />
               </button>
@@ -85,7 +85,7 @@ export class Panel extends Component {
 
   render() {
     return (
-      <div className="col-xs-12 col-sm-3">
+      <div className="ml-5 mb-5 w-25 w-xs-100">
         <div className="panel panel-primary" style={{ marginBottom: 0 }}>
           <div className="panel-heading" style={{ cursor: 'pointer' }} onClick={this.toggle}>
             {this.props.title}

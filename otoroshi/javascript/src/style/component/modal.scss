@@ -6,7 +6,10 @@
   left: 0;
   z-index: 1050;
   margin: 0 auto;
-  width: 50%;
+  overflow: hidden;
+  @media screen and (min-width: $bp-xs) {
+    width: 50%;
+  }
 }
 
 .modal-dialog {
@@ -15,8 +18,10 @@
 }
 
 .modal-content {
+  -webkit-box-shadow: 0 5px 15px rgba(0,0,0,.5);
+  box-shadow: 0 5px 15px rgba(0,0,0,.5);
   position: relative;
-  background-color: $fondBody;
+  background-color: $primaryBgColor;
   background-clip: padding-box;
   border: 1px solid rgba(0,0,0,.2);
   border-radius: 6px;
@@ -33,17 +38,14 @@
   position: relative;
   padding: 15px;
   font-size: 16px;
+  word-wrap: anywhere;
 
   label {
     font-size: 14px;
   }
 
-  .form-group {
-    margin-top: 30px;
-  }
-
   strong {
-    color: $colorBleue;
+    color: $infoColor;
   }
 }
 
@@ -54,5 +56,5 @@
 }
 
 pre {
-  height: 600px;
+  //height: 600px; mis en com suite au bloc Request transformers
 }

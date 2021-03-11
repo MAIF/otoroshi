@@ -86,18 +86,20 @@ export class CleverPage extends Component {
       return null;
     }
     return (
-      <Table
-        parentProps={this.props}
-        selfUrl="clever"
-        defaultTitle="Clevercloud Apps"
-        defaultValue={() => ({})}
-        itemName="user"
-        columns={this.columns}
-        fetchItems={BackOfficeServices.findAllApps}
-        showActions={false}
-        showLink={false}
-        extractKey={(item) => item.id}
-      />
+        <div>
+          <Table
+            parentProps={this.props}
+            selfUrl="clever"
+            defaultTitle="Clevercloud Apps"
+            defaultValue={() => ({})}
+            itemName="user"
+            columns={this.columns}
+            fetchItems={BackOfficeServices.findAllApps}
+            showActions={false}
+            showLink={false}
+            extractKey={(item) => item.id}
+          />
+        </div>
     );
   }
 }

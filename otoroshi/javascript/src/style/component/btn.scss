@@ -1,0 +1,178 @@
+
+button,.button {
+  background-color: $primaryBgColor;
+  padding: 6px 12px;
+  font-size: 14px;
+  line-height: 1.4;
+  border-radius: 4px;
+  border-width: 1px;
+  border-style: solid;
+  cursor: pointer;
+  border-color: transparent;
+  transition: background-color ease-in-out .15s,  border-color ease-in-out .15s;
+  &:hover{
+    border-color: darken($primaryColor,10%);
+    background-color: darken($secondaryBgColor,5%);
+  }
+  &[disabled],&[disabled]:hover{
+    color: grey;
+    background-color: darkgrey;
+    border-color: darkgrey;
+    cursor: not-allowed;
+  }
+  &:focus{
+    outline: 0;
+  }
+  &.close {
+    font-size: 21px;
+    font-weight: 700;
+    line-height: 1;
+    color: #000;
+    text-shadow: 0 1px 0 #fff;
+    border-color: transparent;
+    &:hover{
+      background-color: transparent;
+      border-color: transparent;
+      color:#444;
+      transition: color 0.5s;
+    }
+  }
+}
+
+input.button[type="file"]{
+  padding-bottom: 4px;
+}
+
+.btn__group{
+  
+  &--right{
+    display: flex;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    button {
+      margin-bottom: 5px;
+    }
+  }
+
+  &-fixed--right {
+    position: fixed;
+    right: 20px;
+    z-index: 1;
+    background-color: $primaryBgColor;
+    +div,+form{
+      padding-top: 50px;
+    }
+  }
+  & > .button:not(:last-child):not(.dropdown-toggle), 
+  & > .btn__group:not(:last-child) > .button {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+  & > .button:not(:first-child), 
+  & > .btn__group:not(:first-child) > .button {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+  }
+}
+
+
+
+
+// btn color
+.btn-info{
+  color:#fff;
+  border-color:  $infoColor;
+  &:hover{
+    color:#fff;
+    border-color: darken($infoColor,10%);
+    background-color: darken($secondaryBgColor,5%);
+  }
+}
+
+.btn-danger{
+  color:#fff;
+  border-color:  $alertColor;
+  &:hover{
+    color:#fff;
+    border-color: darken($alertColor,10%);
+    background-color: darken($secondaryBgColor,5%);
+  }
+}
+
+.btn-success{
+  color:#fff;
+  border-color: $successColor;
+  &:hover{
+    color:#fff;
+    border-color: darken($successColor,10%);
+    background-color: darken($secondaryBgColor,5%);
+  }
+}
+
+.btn-black {
+  color: #fff;
+  border-color: #111;
+  &:hover{
+    color:#fff;
+    border-color: #000;
+    background-color: #000;
+  }
+}
+//btn sizing
+.btn-sm {
+  padding: 5px 10px;
+  font-size: 12px;
+  line-height: 1.5;
+  border-radius: 3px;
+}
+
+.btn-xs {
+  padding: 1px 5px;
+  font-size: 12px;
+  line-height: 1.5;
+  border-radius: 3px;
+}
+
+//switch
+.content-switch-button {
+  width: 35px;
+  height: 22px;
+  border-radius: 20px;
+  display: flex;
+  //margin-top: 10px;
+  &-on {
+    @extend .content-switch-button;
+    background-color: $successColor;
+    border: 1px solid $successColor;
+    justify-content: flex-end;
+  }
+  &-off {
+    @extend .content-switch-button;
+    background-color: #fff;
+    border: 1px solid #dfdfdf;
+    justify-content: flex-start;
+  }
+}
+
+.switch-button {
+  background-color: #fff;
+  border-radius: 20px;
+  cursor: pointer;
+  &-on {
+    @extend .switch-button;
+    width: 20px;
+    height: 20px;
+    background-color: #fff;
+    border-radius: 20px;
+  }
+  &-off {
+    @extend .switch-button;
+    width: 22px;
+    height: 22px;
+    margin-top: -1px;
+    margin-left: -1px;
+    border: 1px solid #dfdfdf;
+    box-shadow: 1px 0px 5px 0px rgba(0, 0, 0, 0.3);
+  }
+}
+

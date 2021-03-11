@@ -121,8 +121,7 @@ export class SessionsPage extends Component {
               <button
                 key="discard-all"
                 type="button"
-                className="btn btn-danger"
-                style={{ marginLeft: 15 }}
+                className="btn-danger ml-5 mr-5 mb-5"
                 onClick={this.discardSessions}>
                 <i className="fas fa-fire" /> Discard all sessions
               </button>
@@ -130,8 +129,7 @@ export class SessionsPage extends Component {
             <button
               key="discard-old"
               type="button"
-              className="btn btn-danger"
-              style={{ marginLeft: 15 }}
+              className="btn-danger mb-5"
               onClick={this.discardOldSessions}>
               <i className="fas fa-fire" /> Discard old sessions
             </button>,

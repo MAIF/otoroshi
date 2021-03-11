@@ -368,7 +368,7 @@ export class DangerZonePage extends Component {
           value: a.id,
           label: (
             <span>
-              <span className="label label-success" style={{ minWidth: 63 }}>
+              <span className="label bg__success" style={{ minWidth: 63 }}>
                 {a.certType}
               </span>{' '}
               {a.name} - {a.description}
@@ -387,7 +387,7 @@ export class DangerZonePage extends Component {
           value: a.id,
           label: (
             <span>
-              <span className="label label-success" style={{ minWidth: 63 }}>
+              <span className="label bg__success" style={{ minWidth: 63 }}>
                 {a.certType}
               </span>{' '}
               {a.name} - {a.description}
@@ -433,7 +433,7 @@ export class DangerZonePage extends Component {
           value: a.id,
           label: (
             <span>
-              <span className="label label-success" style={{ minWidth: 63 }}>
+              <span className="label bg__success" style={{ minWidth: 63 }}>
                 {a.certType}
               </span>{' '}
               {a.name} - {a.description}
@@ -452,7 +452,7 @@ export class DangerZonePage extends Component {
           value: a.id,
           label: (
             <span>
-              <span className="label label-success" style={{ minWidth: 63 }}>
+              <span className="label bg__success" style={{ minWidth: 63 }}>
                 {a.certType}
               </span>{' '}
               {a.name} - {a.description}
@@ -689,14 +689,14 @@ export class DangerZonePage extends Component {
       type: 'text',
       props: {
         label: 'Public Key',
-        style: { fontFamily: 'monospace' },
+        style: { fontFamily: 'monospace', width:'100%' },
       },
     },
     'letsEncryptSettings.privateKey': {
       type: 'text',
       props: {
         label: 'Private Key',
-        style: { fontFamily: 'monospace' },
+        style: { fontFamily: 'monospace', width:'100%' },
       },
     },
     'mailGunSettings.eu': {
@@ -853,7 +853,7 @@ export class DangerZonePage extends Component {
           value: a.id,
           label: (
             <span>
-              <span className="label label-success" style={{ minWidth: 63 }}>
+              <span className="label bg__success" style={{ minWidth: 63 }}>
                 {a.certType}
               </span>{' '}
               {a.name} - {a.description}
@@ -1161,10 +1161,8 @@ export class DangerZonePage extends Component {
     }
     return (
       <div>
-        <div className="row">
-          <div className="form-group btnsService">
-            <div className="col-md-10">
-              <div className="btn-group pull-right">
+          <div className="btn__group-fixed--right">
+              <div className="btn__group--right">
                 <button
                   title="Add item"
                   className="btn btn-success"
@@ -1173,19 +1171,18 @@ export class DangerZonePage extends Component {
                   {...propsDisabled}>
                   <i className="fas fa-hdd" />
                 </button>
-              </div>
             </div>
           </div>
+        <div>
+          <Form
+            value={this.state.value}
+            onChange={this.updateState}
+            flow={this.formFlow}
+            schema={this.formSchema}
+          />
         </div>
-        <Form
-          value={this.state.value}
-          onChange={this.updateState}
-          flow={this.formFlow}
-          schema={this.formSchema}
-          style={{ marginTop: 50 }}
-        />
         <hr />
-        <form className="form-horizontal">
+        <form>
           <input
             type="file"
             name="export"
@@ -1196,30 +1193,22 @@ export class DangerZonePage extends Component {
             onChange={this.readyToPush}
           />
           {!this.state.readyToPush && (
-            <div className="form-group">
-              <label className="col-sm-2 control-label" />
-              <div className="col-sm-10">
+            <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
+              <label/>
+              <div className="mt-10">
                 <label
                   htmlFor="export"
-                  className="fake-inputfile"
-                  style={{
-                    borderRadius: 5,
-                    border: '1px solid #3e8f3e',
-                    paddingLeft: 12,
-                    paddingRight: 12,
-                    paddingTop: 6,
-                    paddingBottom: 6,
-                    cursor: 'pointer',
-                  }}>
+                  className="button btn-success mt-5"
+                  >
                   <i className="fas fa-file" /> Recover from a full export file
                 </label>
               </div>
             </div>
           )}
           {this.state.readyToPush && (
-            <div className="form-group">
-              <label className="col-sm-2 control-label" />
-              <div className="col-sm-10">
+            <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
+              <label  />
+              <div >
                 <button type="button" className="btn btn-danger" onClick={this.importData}>
                   <i className="fas fa-file-import" /> Flush DataStore & Import file '
                   {this.state.readyToPush}'
@@ -1229,28 +1218,27 @@ export class DangerZonePage extends Component {
           )}
         </form>
         <hr />
-        <form className="form-horizontal">
-          <div className="form-group">
-            <label className="col-sm-2 control-label" />
-            <div className="col-sm-10">
-              <button type="button" className="btn btn-success" onClick={this.fullExport}>
+        <form>
+          <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
+            <label  />
+            <div >
+              <button type="button" className="btn-success mr-5 mb-5" onClick={this.fullExport}>
                 <i className="fas fa-file-export" /> Full export
               </button>
-              <button type="button" className="btn btn-success" onClick={this.fullExportNdJson}>
+              <button type="button" className="btn-success mr-5 mb-5" onClick={this.fullExportNdJson}>
                 <i className="fas fa-file-export" /> Full export (ndjson)
               </button>
-              <button type="button" className="btn btn-info" onClick={this.exportJson}>
-                <i className="glyphicon glyphicon-export" /> JSON
+              <button type="button" className="btn-info mr-5 mb-5" onClick={this.exportJson}>
+                <i className="fas fa-file-export" /> JSON
               </button>
-              <button type="button" className="btn btn-info" onClick={this.exportYaml}>
-                <i className="glyphicon glyphicon-export" /> YAML
+              <button type="button" className="btn-info mr-5 mb-5" onClick={this.exportYaml}>
+                <i className="fas fa-file-export" /> YAML
               </button>
-              <button
-                type="button"
-                className="btn btn-danger"
-                style={{ marginLeft: 5, marginRight: 5 }}
+              <button 
+                type="button" 
+                className="btn-danger mr-5 mb-5" 
                 onClick={this.panicMode}>
-                <i className="fas fa-fire" /> Enable Panic Mode
+                  <i className="fas fa-fire" /> Enable Panic Mode
               </button>
             </div>
           </div>
@@ -1264,23 +1252,23 @@ export class DangerZonePage extends Component {
 class BackOfficeAuthButtons extends Component {
   render() {
     return (
-      <div className="form-group">
-        <label className="col-xs-12 col-sm-2 control-label" />
-        <div className="col-sm-10">
+      <div className="form__group mb-20 grid-template-col-xs-up__1fr-5fr">
+        <label />
+        <div >
           {!this.props.rawValue.backOfficeAuthRef && (
-            <a href={`/bo/dashboard/auth-configs/add`} className="btn btn-sm btn-primary">
-              <i className="fas fa-plus" /> Create a new auth. config.
+            <a href={`/bo/dashboard/auth-configs/add`} className="button btn-sm btn-info mr-5">
+              <i className="fas fa-plus" /> Create a new auth. config
             </a>
           )}
           {this.props.rawValue.backOfficeAuthRef && (
             <a
               href={`/bo/dashboard/auth-configs/edit/${this.props.rawValue.backOfficeAuthRef}`}
-              className="btn btn-sm btn-success">
-              <i className="fas fa-edit" /> Edit the auth. config.
+              className="button btn-sm btn-success mr-5">
+              <i className="fas fa-edit" /> Edit the auth. config
             </a>
           )}
-          <a href={`/bo/dashboard/auth-configs`} className="btn btn-sm btn-primary">
-            <i className="fas fa-link" /> all auth. config.
+          <a href={`/bo/dashboard/auth-configs`} className="button btn-sm btn-info">
+            <i className="fas fa-link" /> all auth. config
           </a>
         </div>
       </div>
@@ -1323,16 +1311,14 @@ class GlobalScripts extends Component {
           config={config.jobConfig}
           onChangeConfig={(e) => this.changeTheValue('jobConfig', e)}
         />
-        <div className="form-group">
-          <Suspense fallback={<div>loading ...</div>}>
-            <CodeInput
-              label="Jobs configuration"
-              mode="json"
-              value={JSON.stringify(config.jobConfig, null, 2)}
-              onChange={(e) => this.changeTheValue('jobConfig', JSON.parse(e))}
-            />
-          </Suspense>
-        </div>
+        <Suspense fallback={<div>loading ...</div>}>
+          <CodeInput
+            label="Jobs configuration"
+            mode="json"
+            value={JSON.stringify(config.jobConfig, null, 2)}
+            onChange={(e) => this.changeTheValue('jobConfig', JSON.parse(e))}
+          />
+        </Suspense>
         <Scripts
           label="Request sinks"
           refs={config.sinkRefs}
@@ -1341,16 +1327,14 @@ class GlobalScripts extends Component {
           config={config.sinkConfig}
           onChangeConfig={(e) => this.changeTheValue('sinkConfig', e)}
         />
-        <div className="form-group">
-          <Suspense fallback={<div>loading ...</div>}>
-            <CodeInput
-              label="Request sinks configuration"
-              mode="json"
-              value={JSON.stringify(config.sinkConfig, null, 2)}
-              onChange={(e) => this.changeTheValue('sinkConfig', JSON.parse(e))}
-            />
-          </Suspense>
-        </div>
+        <Suspense fallback={<div>loading ...</div>}>
+          <CodeInput
+            label="Request sinks configuration"
+            mode="json"
+            value={JSON.stringify(config.sinkConfig, null, 2)}
+            onChange={(e) => this.changeTheValue('sinkConfig', JSON.parse(e))}
+          />
+        </Suspense>
         <Scripts
           label="Pre-routes"
           refs={config.preRouteRefs}
@@ -1359,16 +1343,14 @@ class GlobalScripts extends Component {
           config={config.preRouteConfig}
           onChangeConfig={(e) => this.changeTheValue('preRouteConfig', e)}
         />
-        <div className="form-group">
-          <Suspense fallback={<div>loading ...</div>}>
-            <CodeInput
-              label="Pre-routes configuration"
-              mode="json"
-              value={JSON.stringify(config.preRouteConfig, null, 2)}
-              onChange={(e) => this.changeTheValue('preRouteConfig', JSON.parse(e))}
-            />
-          </Suspense>
-        </div>
+        <Suspense fallback={<div>loading ...</div>}>
+          <CodeInput
+            label="Pre-routes configuration"
+            mode="json"
+            value={JSON.stringify(config.preRouteConfig, null, 2)}
+            onChange={(e) => this.changeTheValue('preRouteConfig', JSON.parse(e))}
+          />
+        </Suspense>
         <Scripts
           label="Access validators"
           refs={config.validatorRefs}
@@ -1377,16 +1359,14 @@ class GlobalScripts extends Component {
           config={config.validatorConfig}
           onChangeConfig={(e) => this.changeTheValue('validatorConfig', e)}
         />
-        <div className="form-group">
-          <Suspense fallback={<div>loading ...</div>}>
-            <CodeInput
-              label="Access validators configuration"
-              mode="json"
-              value={JSON.stringify(config.validatorConfig, null, 2)}
-              onChange={(e) => this.changeTheValue('validatorConfig', JSON.parse(e))}
-            />
-          </Suspense>
-        </div>
+        <Suspense fallback={<div>loading ...</div>}>
+          <CodeInput
+            label="Access validators configuration"
+            mode="json"
+            value={JSON.stringify(config.validatorConfig, null, 2)}
+            onChange={(e) => this.changeTheValue('validatorConfig', JSON.parse(e))}
+          />
+        </Suspense>
         <Scripts
           label="Transformers"
           refs={config.transformersRefs}
@@ -1395,16 +1375,14 @@ class GlobalScripts extends Component {
           config={config.transformersConfig}
           onChangeConfig={(e) => this.changeTheValue('transformersConfig', e)}
         />
-        <div className="form-group">
-          <Suspense fallback={<div>loading ...</div>}>
-            <CodeInput
-              label="Transformers configuration"
-              mode="json"
-              value={JSON.stringify(config.transformersConfig, null, 2)}
-              onChange={(e) => this.changeTheValue('transformersConfig', JSON.parse(e))}
-            />
-          </Suspense>
-        </div>
+        <Suspense fallback={<div>loading ...</div>}>
+          <CodeInput
+            label="Transformers configuration"
+            mode="json"
+            value={JSON.stringify(config.transformersConfig, null, 2)}
+            onChange={(e) => this.changeTheValue('transformersConfig', JSON.parse(e))}
+          />
+        </Suspense>
       </>
     );
   }

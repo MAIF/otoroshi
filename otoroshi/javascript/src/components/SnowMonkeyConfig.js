@@ -38,7 +38,7 @@ export class SnowMonkeyConfig extends Component {
   render() {
     if (!this.state.config) return null;
     return [
-      <form className="form-horizontal" style={{ marginRight: 15 }}>
+      <form style={{ marginRight: 15 }}>
         <BooleanInput
           label="Include user facing apps."
           value={this.state.config.includeUserFacingDescriptors}
