@@ -88,6 +88,16 @@ case "${1}" in
     rc=$?; if [ $rc != 0 ]; then exit $rc; fi
     # build_cli
     ;;
+  test_server)
+    clean
+    build_ui
+    rc=$?; if [ $rc != 0 ]; then exit $rc; fi
+    # build_manual
+    compile_server
+    rc=$?; if [ $rc != 0 ]; then exit $rc; fi
+    test_server
+    rc=$?; if [ $rc != 0 ]; then exit $rc; fi
+    ;;
   cli)
     build_cli
     ;;
