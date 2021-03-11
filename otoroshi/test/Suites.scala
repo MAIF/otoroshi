@@ -184,11 +184,15 @@ class OtoroshiTests extends Suites(OtoroshiTests.getSuites(): _*) with BeforeAnd
   }
 }
 
+class OpenapiGeneratorTests
+  extends Suites(
+    new OpenApiSpec()
+  )
+
 class DevOtoroshiTests
     extends Suites(
-      new OpenApiSpec()
-      // new TeamsSpec("DEV", Configurations.InMemoryConfiguration),
-      // new BasicSpec("DEV", Configurations.PgConfiguration)
-      // new MapFilterSpec(),
-      // new VersionSpec(),
+      new TeamsSpec("DEV", Configurations.InMemoryConfiguration),
+      new BasicSpec("DEV", Configurations.PgConfiguration),
+      new MapFilterSpec(),
+      new VersionSpec(),
     )
