@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+export SBT_OPTS="-XX:MaxPermSize=2048m -Xmx2048m -Xss8M"
+
 LOCATION=`pwd`
 
 clean () {
