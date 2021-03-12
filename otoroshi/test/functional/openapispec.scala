@@ -11,7 +11,7 @@ class OpenApiSpec extends WordSpec with MustMatchers with OptionValues {
     "./conf/routes",
     "./app/openapi/openapi-cfg.json",
     Seq("./public/openapi.json", "../manual/src/main/paradox/code/openapi.json"),
-    ""
+    write = true
   )
 
   generator.run()

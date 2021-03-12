@@ -40,14 +40,14 @@ case class OpenApiGeneratorConfig(filePath: String, raw: JsValue) {
     "otoroshi.ssl.ClientCertificateValidator"
   ))
   lazy val descriptions: Map[String, String] = raw.select("descriptions").asOpt[Map[String, String]].getOrElse(Map.empty)
-  lazy val old_descriptions: Map[String, String] = raw.select("old_descriptions").asOpt[Map[String, String]].getOrElse(Map.empty)
-  lazy val old_examples: Map[String, String] = raw.select("old_examples").asOpt[Map[String, String]].getOrElse(Map.empty)
+  // lazy val old_descriptions: Map[String, String] = raw.select("old_descriptions").asOpt[Map[String, String]].getOrElse(Map.empty)
+  // lazy val old_examples: Map[String, String] = raw.select("old_examples").asOpt[Map[String, String]].getOrElse(Map.empty)
   def write(): Unit = {
     val config = Json.obj(
       "banned" -> JsArray(banned.map(JsString.apply)),
       "descriptions" -> JsObject(descriptions.mapValues(JsString.apply)),
-      "old_descriptions" -> JsObject(old_descriptions.mapValues(JsString.apply)),
-      "old_examples" -> JsObject(old_examples.mapValues(JsString.apply)),
+      // "old_descriptions" -> JsObject(old_descriptions.mapValues(JsString.apply)),
+      // "old_examples" -> JsObject(old_examples.mapValues(JsString.apply)),
       "bulkControllerMethods" -> JsArray(bulkControllerMethods.map(JsString.apply)),
       "crudControllerMethods" -> JsArray(crudControllerMethods.map(JsString.apply)),
       "add_schemas" -> add_schemas
@@ -58,7 +58,7 @@ case class OpenApiGeneratorConfig(filePath: String, raw: JsValue) {
     }
 
     val descs = descriptions.mapValues(JsString.apply).toSeq.sortWith((a, b) => a._1.compareTo(b._1) < 0).map(t => s"    ${JsString(t._1).stringify}: ${t._2.stringify}").mkString(",\n")
-    val olddescs = old_descriptions.mapValues(JsString.apply).toSeq.sortWith((a, b) => a._1.compareTo(b._1) < 0).map(t => s"    ${JsString(t._1).stringify}: ${t._2.stringify}").mkString(",\n")
+    // val olddescs = old_descriptions.mapValues(JsString.apply).toSeq.sortWith((a, b) => a._1.compareTo(b._1) < 0).map(t => s"    ${JsString(t._1).stringify}: ${t._2.stringify}").mkString(",\n")
 
     val fileContent = s"""{
   "banned": ${JsArray(banned.map(JsString.apply)).prettify},
@@ -76,7 +76,7 @@ $descs
 // TODO: handle all Unknown data type
 // TODO: handle all ???
 // TODO: handle adt with type field
-class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Seq[String], oldSpecPath: String) {
+class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Seq[String], write: Boolean) {
 
   val nullType = Json.obj("$ref" -> s"#/components/schemas/Null") // Json.obj("type" -> "null") needs openapi 3.1.0 support :(
   val openApiVersion = JsString("3.0.3")
@@ -122,9 +122,7 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
       case "ServiceGroup" => "Service"
       case v => v
     }
-    config.descriptions.get(s"${clazz.getName}.$name").orElse(
-      config.old_descriptions.get(s"old.$simpleName.$name")
-    ).filterNot(_ == unknownValue) match {
+    config.descriptions.get(s"${clazz.getName}.$name").filterNot(_ == unknownValue) match {
       case None =>
         notFound.incrementAndGet()
         foundDescriptions.put(finalPath,unknownValue)
@@ -620,7 +618,7 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
     }
   }
 
-  def run(): Unit = {
+  def run(): JsValue = {
     val config = getConfig()
     val result = new TrieMap[String, JsValue]()
 
@@ -684,21 +682,23 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
       )
     )
 
-    println("")
-    specFiles.foreach { specFile =>
-      val file = new File(specFile)
-      println(s"writing spec to: '${file.getAbsolutePath}'")
-      Files.writeString(file.toPath, spec.prettify, StandardCharsets.UTF_8)
+    if (write) {
+      println("")
+      specFiles.foreach { specFile =>
+        val file = new File(specFile)
+        println(s"writing spec to: '${file.getAbsolutePath}'")
+        Files.writeString(file.toPath, spec.prettify, StandardCharsets.UTF_8)
+      }
+      OpenApiGeneratorConfig(config.filePath, config.raw.asObject ++ Json.obj(
+        "descriptions" -> JsObject(foundDescriptions.mapValues(JsString.apply)),
+        // "add_schemas" -> (config.add_schemas ++ adts.foldLeft(Json.obj())(_ ++ _))
+      )).write()
+      println("")
     }
-
-    OpenApiGeneratorConfig(config.filePath, config.raw.asObject ++ Json.obj(
-      "descriptions" -> JsObject(foundDescriptions.mapValues(JsString.apply)),
-      // "add_schemas" -> (config.add_schemas ++ adts.foldLeft(Json.obj())(_ ++ _))
-    )).write()
-    println("")
+    spec
   }
 
-  def readOldSpec(): Unit = {
+  def readOldSpec(oldSpecPath: String): Unit = {
     val config = getConfig()
     val f = new File(oldSpecPath)
     if (f.exists()) {
@@ -734,7 +734,7 @@ class OpenApiGeneratorRunner extends App {
     "./conf/routes",
     "./app/openapi/openapi-cfg.json",
     Seq("./public/openapi.json", "../manual/src/main/paradox/code/openapi.json"),
-    ""
+    write = true
   )
 
   generator.run()
