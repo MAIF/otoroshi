@@ -44,7 +44,7 @@ const service = {
   },
   "targets": [
     {
-      "host": "localhost:18445",
+      "host": "localhost:32445",
       "scheme": "https",
       "weight": 1,
       "protocol": "HTTP/1.1",
