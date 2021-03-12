@@ -17,7 +17,8 @@ object Implicits {
 
 }
 
-class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(implicit env: Env) extends AbstractController(cc) {
+class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(implicit env: Env)
+    extends AbstractController(cc) {
 
   import Implicits._
 
@@ -32,14 +33,22 @@ class SwaggerController(cc: ControllerComponents, assetsBuilder: AssetsBuilder)(
 
   def swaggerUi =
     Action { req =>
-      Ok(otoroshi.views.html.oto.documentationframe(s"${env.exposedRootScheme}://${env.backOfficeHost}${env.privateAppsPort}/api/swagger.json"))
+      Ok(
+        otoroshi.views.html.oto.documentationframe(
+          s"${env.exposedRootScheme}://${env.backOfficeHost}${env.privateAppsPort}/api/swagger.json"
+        )
+      )
     }
 
   def openapi = assetsBuilder.at("openapi.json")
 
   def openapiUi =
     Action { req =>
-      Ok(otoroshi.views.html.oto.documentationframe(s"${env.exposedRootScheme}://${env.backOfficeHost}${env.privateAppsPort}/assets/openapi.json"))
+      Ok(
+        otoroshi.views.html.oto.documentationframe(
+          s"${env.exposedRootScheme}://${env.backOfficeHost}${env.privateAppsPort}/assets/openapi.json"
+        )
+      )
     }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

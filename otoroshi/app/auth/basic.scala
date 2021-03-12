@@ -385,7 +385,10 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
         }
       } else {
         Results
-          .Ok(otoroshi.views.html.oto.login(s"/backoffice/auth0/callback?hash=$hash", "POST", token, authConfig.webauthn, env))
+          .Ok(
+            otoroshi.views.html.oto
+              .login(s"/backoffice/auth0/callback?hash=$hash", "POST", token, authConfig.webauthn, env)
+          )
           .addingToSession(
             "bo-redirect-after-login" -> redirect.getOrElse(
               routes.BackOfficeController.dashboard().absoluteURL(env.exposedRootSchemeIsHttps)

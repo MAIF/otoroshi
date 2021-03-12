@@ -445,15 +445,15 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
               if (resp.status == 200) {
                 filterLabels((resp.json \ "items").as[JsArray].value.map(v => KubernetesOtoroshiResource(v)))
                   .map { item =>
-                    val spec       = (item.raw \ "spec").as[JsValue]
+                    val spec                      = (item.raw \ "spec").as[JsValue]
                     val (failed, err, customSpec) = Try(customize(spec, item)) match {
                       case Success(value) => (false, None, value)
-                      case Failure(e) => (true, e.some, spec)
+                      case Failure(e)     => (true, e.some, spec)
                     }
                     Try {
                       (reader.reads(customSpec), item.raw)
                     }.debug {
-                      case Success(_) if failed =>  {
+                      case Success(_) if failed => {
                         logger.error(s"error while customizing spec entity of type $pluralName", err.get)
                         FailedCrdParsing(
                           `@id` = env.snowflakeGenerator.nextIdStr(),
@@ -465,8 +465,8 @@ class KubernetesClient(val config: KubernetesConfig, env: Env) {
                           error = err.map(_.getMessage).getOrElse("--")
                         ).toAnalytics()(env)
                       }
-                      case Success(_) => ()
-                      case Failure(e) =>
+                      case Success(_)           => ()
+                      case Failure(e)           =>
                         logger.error(s"error while reading entity of type $pluralName", e)
                         FailedCrdParsing(
                           `@id` = env.snowflakeGenerator.nextIdStr(),

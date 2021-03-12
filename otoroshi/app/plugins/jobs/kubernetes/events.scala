@@ -7,14 +7,14 @@ import otoroshi.models.ApiKey
 import play.api.libs.json.{JsValue, Json}
 
 case class FailedCrdParsing(
-  `@id`: String,
-  `@env`: String,
-  namespace: String,
-  pluralName: String,
-  crd: JsValue,
-  customizedSpec: JsValue,
-  error: String,
-  `@timestamp`: DateTime = DateTime.now()
+    `@id`: String,
+    `@env`: String,
+    namespace: String,
+    pluralName: String,
+    crd: JsValue,
+    customizedSpec: JsValue,
+    error: String,
+    `@timestamp`: DateTime = DateTime.now()
 ) extends AlertEvent {
 
   override def `@service`: String   = "Otoroshi"
@@ -25,7 +25,7 @@ case class FailedCrdParsing(
 
   override def toJson(implicit _env: Env): JsValue =
     Json.obj(
-      "@id"           -> `@id`,
+      "@id"            -> `@id`,
       "@timestamp"     -> play.api.libs.json.JodaWrites.JodaDateTimeNumberWrites.writes(`@timestamp`),
       "@type"          -> `@type`,
       "@product"       -> _env.eventsName,

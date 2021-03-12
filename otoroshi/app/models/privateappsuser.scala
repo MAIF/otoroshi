@@ -212,9 +212,10 @@ object PrivateAppsUserHelper {
         val redirect   = req
           .getQueryString("redirect")
           .getOrElse(s"${req.theProtocol}://${req.theHost}${req.relativeUri}")
-        val redirectTo = env.rootScheme + env.privateAppsHost + env.privateAppsPort + otoroshi.controllers.routes.AuthController
-          .confidentialAppLoginPage()
-          .url + s"?desc=${descriptor.id}&redirect=${redirect}"
+        val redirectTo =
+          env.rootScheme + env.privateAppsHost + env.privateAppsPort + otoroshi.controllers.routes.AuthController
+            .confidentialAppLoginPage()
+            .url + s"?desc=${descriptor.id}&redirect=${redirect}"
         logger.trace("should redirect to " + redirectTo)
         descriptor.authConfigRef match {
           case None      =>

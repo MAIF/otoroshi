@@ -358,7 +358,8 @@ class AuthController(
             case Some(aconf) => {
               env.datastores.authConfigsDataStore.findById(aconf).flatMap {
                 case None        =>
-                  FastFuture.successful(NotFound(otoroshi.views.html.oto.error("BackOffice Oauth is not configured", env)))
+                  FastFuture
+                    .successful(NotFound(otoroshi.views.html.oto.error("BackOffice Oauth is not configured", env)))
                 case Some(oauth) => oauth.authModule(config).boLoginPage(ctx.request, config)
               }
             }
@@ -473,11 +474,13 @@ class AuthController(
 
               config.backOfficeAuthRef match {
                 case None                        =>
-                  FastFuture.successful(NotFound(otoroshi.views.html.oto.error("BackOffice OAuth is not configured", env)))
+                  FastFuture
+                    .successful(NotFound(otoroshi.views.html.oto.error("BackOffice OAuth is not configured", env)))
                 case Some(backOfficeAuth0Config) => {
                   env.datastores.authConfigsDataStore.findById(backOfficeAuth0Config).flatMap {
                     case None        =>
-                      FastFuture.successful(NotFound(otoroshi.views.html.oto.error("BackOffice OAuth is not found", env)))
+                      FastFuture
+                        .successful(NotFound(otoroshi.views.html.oto.error("BackOffice OAuth is not found", env)))
                     case Some(oauth) =>
                       verifyHash("backoffice", oauth, ctx.request) {
 

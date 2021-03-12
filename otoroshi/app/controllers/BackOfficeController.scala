@@ -77,7 +77,8 @@ class BackOfficeController(
           val host                   = env.adminApiExposedHost
           val localUrl               =
             if (env.adminApiProxyHttps) s"https://127.0.0.1:${env.httpsPort}" else s"http://127.0.0.1:${env.port}"
-          val url                    = if (env.adminApiProxyUseLocal) localUrl else s"https://${env.adminApiExposedHost}${env.exposedHttpsPort}"
+          val url                    =
+            if (env.adminApiProxyUseLocal) localUrl else s"https://${env.adminApiExposedHost}${env.exposedHttpsPort}"
           lazy val currentReqHasBody = ctx.request.theHasBody
           logger.debug(s"Calling ${ctx.request.method} $url/$path with Host = $host")
           val headers                = Seq(

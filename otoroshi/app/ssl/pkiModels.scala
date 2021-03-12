@@ -28,19 +28,19 @@ object GenKeyPairQuery {
 }
 
 case class GenCsrQuery(
-                        hosts: Seq[String] = Seq.empty,
-                        key: GenKeyPairQuery = GenKeyPairQuery(),
-                        name: Map[String, String] = Map.empty,
-                        subject: Option[String] = None,
-                        client: Boolean = false,
-                        ca: Boolean = false,
-                        includeAIA: Boolean = false,
-                        duration: FiniteDuration = 365.days,
-                        signatureAlg: String = "SHA256WithRSAEncryption",
-                        digestAlg: String = "SHA-256",
-                        existingKeyPair: Option[KeyPair] = None,
-                        existingSerialNumber: Option[Long] = None
-                      )                  {
+    hosts: Seq[String] = Seq.empty,
+    key: GenKeyPairQuery = GenKeyPairQuery(),
+    name: Map[String, String] = Map.empty,
+    subject: Option[String] = None,
+    client: Boolean = false,
+    ca: Boolean = false,
+    includeAIA: Boolean = false,
+    duration: FiniteDuration = 365.days,
+    signatureAlg: String = "SHA256WithRSAEncryption",
+    digestAlg: String = "SHA-256",
+    existingKeyPair: Option[KeyPair] = None,
+    existingSerialNumber: Option[Long] = None
+)                  {
   def subj: String               = subject.getOrElse(name.map(t => s"${t._1}=${t._2}").mkString(","))
   def json: JsValue              = GenCsrQuery.format.writes(this)
   def hasDnsNameOrCName: Boolean =
@@ -122,14 +122,14 @@ case class GenCsrResponse(csr: PKCS10CertificationRequest, publicKey: PublicKey,
 }
 
 case class GenCertResponse(
-                            serial: java.math.BigInteger,
-                            cert: X509Certificate,
-                            csr: PKCS10CertificationRequest,
-                            csrQuery: Option[GenCsrQuery],
-                            key: PrivateKey,
-                            ca: X509Certificate,
-                            caChain: Seq[X509Certificate]
-                          ) {
+    serial: java.math.BigInteger,
+    cert: X509Certificate,
+    csr: PKCS10CertificationRequest,
+    csrQuery: Option[GenCsrQuery],
+    key: PrivateKey,
+    ca: X509Certificate,
+    caChain: Seq[X509Certificate]
+) {
   def json: JsValue        =
     Json.obj(
       "serial" -> serial,
@@ -172,4 +172,3 @@ case class SignCertResponse(cert: X509Certificate, csr: PKCS10CertificationReque
   def chain: String        = s"${cert.asPem}\n${ca.map(_.asPem + "\n").getOrElse("")}"
   def chainWithCsr: String = s"${cert.asPem}\n${ca.map(_.asPem + "\n").getOrElse("")}${csr.asPem}"
 }
-

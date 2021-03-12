@@ -468,11 +468,14 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
           case None    => s.as[JsObject] ++ Json.obj("subdomain" -> (s \ "id").as[String])
         }
       }
-      .applyOn(s => s.select("secComTtl").asOpt[JsValue] match {
-        case Some(JsString(duration)) => Try(Duration.apply(duration).toMillis).map(d => s.asObject ++ Json.obj("secComTtl" -> d)).getOrElse(s)
-        case Some(JsNumber(_)) => s
-        case _ => s
-      })
+      .applyOn(s =>
+        s.select("secComTtl").asOpt[JsValue] match {
+          case Some(JsString(duration)) =>
+            Try(Duration.apply(duration).toMillis).map(d => s.asObject ++ Json.obj("secComTtl" -> d)).getOrElse(s)
+          case Some(JsNumber(_))        => s
+          case _                        => s
+        }
+      )
       .applyOn { serviceDesc =>
         (serviceDesc \ "targets").asOpt[JsValue] match {
           case Some(JsArray(targets))  => {
@@ -624,11 +627,14 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
           }
         }
       }
-      .applyOn(s => s.select("validUntil").asOpt[JsValue] match {
-        case Some(JsString(date)) => Try(DateTime.parse(date)).map(d => s ++ Json.obj("validUntil" -> d.toDate.getTime)).getOrElse(s)
-        case Some(JsNumber(_)) => s
-        case _ => s
-      })
+      .applyOn(s =>
+        s.select("validUntil").asOpt[JsValue] match {
+          case Some(JsString(date)) =>
+            Try(DateTime.parse(date)).map(d => s ++ Json.obj("validUntil" -> d.toDate.getTime)).getOrElse(s)
+          case Some(JsNumber(_))    => s
+          case _                    => s
+        }
+      )
       .applyOn(s =>
         s.as[JsObject] ++ Json.obj(
           "metadata" -> ((s \ "metadata").asOpt[JsObject].getOrElse(Json.obj()) ++ Json.obj(
@@ -677,16 +683,22 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
           case Some(_) => s
         }
       )
-      .applyOn(s => s.select("from").asOpt[JsValue] match {
-        case Some(JsString(date)) => Try(DateTime.parse(date)).map(d => s ++ Json.obj("from" -> d.toDate.getTime)).getOrElse(s)
-        case Some(JsNumber(_)) => s
-        case _ => s
-      })
-      .applyOn(s => s.select("to").asOpt[JsValue] match {
-        case Some(JsString(date)) => Try(DateTime.parse(date)).map(d => s ++ Json.obj("to" -> d.toDate.getTime)).getOrElse(s)
-        case Some(JsNumber(_)) => s
-        case _ => s
-      })
+      .applyOn(s =>
+        s.select("from").asOpt[JsValue] match {
+          case Some(JsString(date)) =>
+            Try(DateTime.parse(date)).map(d => s ++ Json.obj("from" -> d.toDate.getTime)).getOrElse(s)
+          case Some(JsNumber(_))    => s
+          case _                    => s
+        }
+      )
+      .applyOn(s =>
+        s.select("to").asOpt[JsValue] match {
+          case Some(JsString(date)) =>
+            Try(DateTime.parse(date)).map(d => s ++ Json.obj("to" -> d.toDate.getTime)).getOrElse(s)
+          case Some(JsNumber(_))    => s
+          case _                    => s
+        }
+      )
       .applyOn(s =>
         s.as[JsObject] ++ Json.obj(
           "metadata" -> ((s \ "metadata").asOpt[JsObject].getOrElse(Json.obj()) ++ Json.obj(
@@ -731,11 +743,18 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
                 ))
               )
             } else {
-              GenCsrQuery.fromJson(csrJson.applyOn(s => s.select("duration").asOpt[JsValue] match {
-                case Some(JsString(duration)) => Try(Duration.apply(duration).toMillis).map(d => s.asObject ++ Json.obj("duration" -> d)).getOrElse(s)
-                case Some(JsNumber(_)) => s
-                case _ => s
-              })) match {
+              GenCsrQuery.fromJson(
+                csrJson.applyOn(s =>
+                  s.select("duration").asOpt[JsValue] match {
+                    case Some(JsString(duration)) =>
+                      Try(Duration.apply(duration).toMillis)
+                        .map(d => s.asObject ++ Json.obj("duration" -> d))
+                        .getOrElse(s)
+                    case Some(JsNumber(_))        => s
+                    case _                        => s
+                  }
+                )
+              ) match {
                 case Left(_)    => s
                 case Right(csr) => {
                   (caOpt match {
@@ -869,11 +888,14 @@ class ClientSupport(val client: KubernetesClient, logger: Logger)(implicit ec: E
   ): JsValue = {
     val spec = findAndMerge[SimpleOtoroshiAdmin](_spec, res, "admin", None, entities, _.metadata, _.username, _.json)
     customizeIdAndName(spec, res).asObject
-      .applyOn(s => s.select("createdAt").asOpt[JsValue] match {
-        case Some(JsString(date)) => Try(DateTime.parse(date)).map(d => s ++ Json.obj("createdAt" -> d.toDate.getTime)).getOrElse(s)
-        case Some(JsNumber(_)) => s
-        case _ => s
-      })
+      .applyOn(s =>
+        s.select("createdAt").asOpt[JsValue] match {
+          case Some(JsString(date)) =>
+            Try(DateTime.parse(date)).map(d => s ++ Json.obj("createdAt" -> d.toDate.getTime)).getOrElse(s)
+          case Some(JsNumber(_))    => s
+          case _                    => s
+        }
+      )
   }
 
   private[kubernetes] def customizeGlobalConfig(

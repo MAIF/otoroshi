@@ -54,7 +54,7 @@ trait OneServerPerSuiteWithMyComponents
 
   lazy val otoroshiComponents = {
     val cpts = new OtoroshiTestComponentsInstances(context, getConfiguration, Some(port), Some(port + 1))
-    println(s"Using env ${cpts.env}") // WARNING: important to keep, needed to switch env between suites 
+    println(s"Using env ${cpts.env}") // WARNING: important to keep, needed to switch env between suites
     cpts
   }
 
