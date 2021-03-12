@@ -24,7 +24,7 @@ jobs:
         node-version: '13'
     #test oto
     - uses: coursier/cache-action@v5
-    - name: test
-      id: test
+    - name: run-tests
+      id: run-tests
       run: |
         sh ./scripts/build.sh test_all
