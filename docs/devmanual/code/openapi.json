@@ -16251,10 +16251,6 @@
         "type" : "object",
         "description" : "Settings for plugins (of any kind)",
         "properties" : {
-          "name" : {
-            "description" : "Debug name",
-            "type" : "string"
-          },
           "config" : {
             "description" : "Plugins configuration",
             "type" : "object"
