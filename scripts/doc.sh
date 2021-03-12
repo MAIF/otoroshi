@@ -44,7 +44,7 @@ build () {
 buildDev () {
   cd $LOCATION/otoroshi
   sbt ';clean;compile;testOnly OpenapiGeneratorTests'
-  cp $LOCATION/otoroshi/public/openapi.json $LOCATION/manual/src/main/paradox/code/
+  # cp $LOCATION/otoroshi/public/openapi.json $LOCATION/manual/src/main/paradox/code/
   cd $LOCATION/manual
   cp -R $LOCATION/kubernetes $LOCATION/manual/src/main/paradox/snippets
   rm -rf $LOCATION/manual/src/main/paradox/snippets/kubernetes/.old

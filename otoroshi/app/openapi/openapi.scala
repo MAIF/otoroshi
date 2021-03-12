@@ -733,7 +733,7 @@ class OpenApiGeneratorRunner extends App {
   val generator = new OpenApiGenerator(
     "./conf/routes",
     "./app/openapi/openapi-cfg.json",
-    Seq("./public/openapi.json"),
+    Seq("./public/openapi.json", "../manual/src/main/paradox/code/openapi.json"),
     ""
   )
 
