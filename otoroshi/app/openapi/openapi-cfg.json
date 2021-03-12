@@ -1282,7 +1282,6 @@
     "otoroshi.script.plugins.Plugins.config": "Plugins configuration",
     "otoroshi.script.plugins.Plugins.enabled": "Plugins enabled",
     "otoroshi.script.plugins.Plugins.excluded": "Excluded paths",
-    "otoroshi.script.plugins.Plugins.name": "Debug name",
     "otoroshi.script.plugins.Plugins.refs": "Enabled plugins",
     "otoroshi.ssl.Cert.autoRenew": "Auto renew cert",
     "otoroshi.ssl.Cert.ca": "Is cert a CA ?",
