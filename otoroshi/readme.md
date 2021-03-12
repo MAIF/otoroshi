@@ -76,3 +76,4 @@ at the root of the repository, run the following command
 ```sh
 sh ./scripts/docs.sh
 ```
+
