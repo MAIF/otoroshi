@@ -89,7 +89,7 @@ $descs
   "add_schemas": ${add_schemas.prettify.split("\n").map(v => "  " + v).mkString("\n")}
 }"""
     println(s"write config file: '${f.getAbsolutePath}'")
-    Files.writeString(f.toPath, fileContent, StandardCharsets.UTF_8)
+    Files.write(f.toPath, fileContent.split("\n").toList.asJava, StandardCharsets.UTF_8)
   }
 }
 
@@ -438,7 +438,7 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
   def getConfig(): OpenApiGeneratorConfig = {
     val f = new File(configFilePath)
     if (f.exists()) {
-      OpenApiGeneratorConfig(configFilePath, Json.parse(Files.readString(f.toPath)))
+      OpenApiGeneratorConfig(configFilePath, Json.parse(Files.readAllLines(f.toPath).asScala.mkString("\n")))
     } else {
       OpenApiGeneratorConfig(configFilePath, Json.obj())
     }
@@ -879,7 +879,7 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
       specFiles.foreach { specFile =>
         val file = new File(specFile)
         println(s"writing spec to: '${file.getAbsolutePath}'")
-        Files.writeString(file.toPath, spec.prettify, StandardCharsets.UTF_8)
+        Files.write(file.toPath, spec.prettify.split("\n").toList.asJava, StandardCharsets.UTF_8)
       }
       OpenApiGeneratorConfig(
         config.filePath,
@@ -897,7 +897,7 @@ class OpenApiGenerator(routerPath: String, configFilePath: String, specFiles: Se
     val config = getConfig()
     val f      = new File(oldSpecPath)
     if (f.exists()) {
-      val oldSpec      = Json.parse(Files.readString(f.toPath))
+      val oldSpec      = Json.parse(Files.readAllLines(f.toPath).asScala.mkString("\n"))
       val descriptions = new TrieMap[String, String]()
       val examples     = new TrieMap[String, String]()
       oldSpec.select("components").select("schemas").asObject.value.map {
