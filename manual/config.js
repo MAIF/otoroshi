@@ -9,4 +9,3 @@ fs.writeFileSync(dest, finalContent);
 
 const finalContent2 = content.split('\n').filter(l => l.indexOf('include') !== 0).join('\n');
 fs.writeFileSync(src, finalContent2);
-

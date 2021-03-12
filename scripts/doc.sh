@@ -2,6 +2,8 @@
 
 LOCATION=`pwd`
 
+export SBT_OPTS="-XX:MaxPermSize=2048m -Xmx2048m -Xss8M"
+
 build_schemas () {
   sh $LOCATION/scripts/schemas.sh
 }
