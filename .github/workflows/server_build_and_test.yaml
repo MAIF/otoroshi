@@ -27,4 +27,4 @@ jobs:
     - name: test
       id: test
       run: |
-        sh ./scripts/build.sh test_server
+        sh ./scripts/build.sh test_all

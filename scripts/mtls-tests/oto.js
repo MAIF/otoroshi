@@ -52,8 +52,13 @@ const service = {
         "type": "AlwaysMatch"
       },
       "ipAddress": null,
-      "mtls": true,
-      "certId": "otoCertBack"
+      "mtlsConfig": {
+        "certs": ["otoCertBack"],
+        "trustedCerts": [],
+        "mtls": true,
+        "trustAll": true,
+        "loose": false
+      }
     }
   ],
   "root": "/hello",

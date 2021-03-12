@@ -37,8 +37,12 @@
     <script src="./swagger-ui-standalone-preset.js" charset="UTF-8"> </script>
     <script>
     window.onload = function() {
+
+      var additionalPath = window.location.host === 'maif.github.io' ? 
+        (window.location.pathname.indexOf('devmanual') > -1 ? '/otoroshi/devmanual' :  '/otoroshi/manual') : '';
+
       const ui = SwaggerUIBundle({
-        url: "https://maif.github.io/otoroshi/manual/code/openapi.json",
+        url: "https://maif.github.io" + additionalPath + "/code/openapi.json",
         dom_id: '#swagger-ui',
         deepLinking: true,
         presets: [
