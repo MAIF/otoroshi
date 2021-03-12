@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0-alpha.9] - 2021-03-12
+
+https://github.com/MAIF/otoroshi/issues?q=is%3Aissue+label%3A1.5.0-alpha.9+is%3Aclosed
+https://github.com/MAIF/otoroshi/compare/v1.5.0-alpha.8...v1.5.0-alpha.9
+https://github.com/MAIF/otoroshi/releases/tag/v1.5.0-alpha.9
+
+- Scoping otoroshi sources (#130)
+- Biscuit basic support (#783)
+- Add hash and line count in response header when exporting cluster state (#785)
+- Limit classpath scanning to the bare minimum (#786)
+- Introduce generic plugins (#787)
+- Use exposed ports instead of regular ports (#790)
+- Try to parse datetime as string in json readers (#791)
+- Add alerts when kubernetes jobs fails crd parsing (#792)
+- fix documentation about kubernetes webhooks (#793)
+- openapi descriptor generation (#795)
+
 ## [1.5.0-alpha.8] - 2021-02-24
 
 https://github.com/MAIF/otoroshi/issues?q=is%3Aissue+label%3A1.5.0-alpha.8+is%3Aclosed
