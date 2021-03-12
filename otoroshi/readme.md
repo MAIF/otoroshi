@@ -35,7 +35,7 @@ then open two bash session, in the first one run the following commands
 cd ./otorosohi
 sbt
 
-[otoroshi] $ ~run -Dapp.storage=file -Dapp.liveJs=true -Dhttps.port=9998 -Dapp.privateapps.port=9999 -Dapp.adminPassword=password -Dapp.domain=oto.tools
+[otoroshi] $ ~run -Dapp.storage=file -Dapp.liveJs=true -Dapp.adminPassword=password -Dapp.domain=oto.tools
 ```
 
 it will run the play app in dev mode with hot reload
