@@ -1,6 +1,9 @@
 $(function() {
   $('.swagger-frame').each(function() {
-    $(this).append('<iframe class="swagger-frame" src="https://maif.github.io/otoroshi/swagger-ui/index.html" frameborder="0" style="width:100%;height:100vh;"><iframe>');
+    
+    var url = window.location.pathname.indexOf('devmanual') > -1 ? 'https://maif.github.io/otoroshi/swagger-ui/index-dev.html' : 'https://maif.github.io/otoroshi/swagger-ui/index.html';
+
+    $(this).append('<iframe class="swagger-frame" src="' + url + '" frameborder="0" style="width:100%;height:100vh;"><iframe>');
     var frame = $(this).find('iframe');
     var lastHeight = 0;
     setInterval(function() {
