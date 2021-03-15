@@ -9,7 +9,6 @@ import com.auth0.jwt.interfaces.DecodedJWT
 import com.github.blemale.scaffeine.Cache
 import com.typesafe.config.ConfigFactory
 import org.apache.commons.codec.binary.{Base64, Hex}
-import org.apache.commons.io.Charsets
 import otoroshi.plugins.JsonPathUtils
 import otoroshi.utils.{Regex, RegexPool}
 import play.api.{ConfigLoader, Configuration, Logger}
