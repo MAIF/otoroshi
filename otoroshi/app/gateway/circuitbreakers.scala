@@ -120,6 +120,15 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
 
   def clear(): Unit = breakers.clear()
 
+  def getCircuitBreaker(descriptor: ServiceDescriptor, path: String): AkkaCircuitBreaker = {
+    new AkkaCircuitBreaker(
+      scheduler = scheduler,
+      maxFailures = descriptor.clientConfig.maxErrors,
+      callTimeout = descriptor.clientConfig.extractTimeout(path, _.callTimeout, _.callTimeout),
+      resetTimeout = descriptor.clientConfig.sampleInterval.millis
+    )
+  }
+
   def chooseTarget(
       descriptor: ServiceDescriptor,
       path: String,
@@ -141,12 +150,13 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
       val target  = descriptor.targetsLoadBalancing.select(reqId, trackingId, requestHeader, targets, descriptor)
       //val target = targets.apply(index.toInt)
       if (!breakers.contains(target.host)) {
-        val cb = new AkkaCircuitBreaker(
-          scheduler = scheduler,
-          maxFailures = descriptor.clientConfig.maxErrors,
-          callTimeout = descriptor.clientConfig.extractTimeout(path, _.callTimeout, _.callTimeout),
-          resetTimeout = descriptor.clientConfig.sampleInterval.millis
-        )
+        // val cb = new AkkaCircuitBreaker(
+        //   scheduler = scheduler,
+        //   maxFailures = descriptor.clientConfig.maxErrors,
+        //   callTimeout = descriptor.clientConfig.extractTimeout(path, _.callTimeout, _.callTimeout),
+        //   resetTimeout = descriptor.clientConfig.sampleInterval.millis
+        // )
+        val cb = getCircuitBreaker(descriptor, path)
         cb.onOpen {
           env.datastores.globalConfigDataStore.singleton().fast.map { config =>
             env.metrics.markString(s"services.${descriptor.id}.circuit-breaker", "open")
@@ -224,13 +234,20 @@ class ServiceDescriptorCircuitBreaker()(implicit ec: ExecutionContext, scheduler
       if (bodyAlreadyConsumed.get) {
         FastFuture.failed(BodyAlreadyConsumedException)
       } else {
-        chooseTarget(descriptor, path, reqId, trackingId, requestHeader, attrs) match {
-          case Some((target, breaker)) =>
-            breaker.withCircuitBreaker {
-              logger.debug(s"Try to call target : $target")
-              f(target, attempts)
-            }
-          case None                    => FastFuture.failed(AllCircuitBreakersOpenException)
+        attrs.get(otoroshi.plugins.Keys.PreExtractedRequestTargetKey).map { target =>
+          getCircuitBreaker(descriptor, path).withCircuitBreaker {
+            logger.debug(s"Try to call target : $target")
+            f(target, attempts)
+          }
+        } getOrElse {
+          chooseTarget(descriptor, path, reqId, trackingId, requestHeader, attrs) match {
+            case Some((target, breaker)) =>
+              breaker.withCircuitBreaker {
+                logger.debug(s"Try to call target : $target")
+                f(target, attempts)
+              }
+            case None => FastFuture.failed(AllCircuitBreakersOpenException)
+          }
         }
       }
     }

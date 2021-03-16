@@ -503,6 +503,7 @@ case class Target(
 ) {
 
   def toJson        = Target.format.writes(this)
+  def json          = toJson
   def asUrl         = s"${scheme}://$host"
   def asKey         = s"${protocol.value}:$scheme://$host@${ipAddress.getOrElse(host)}"
   def asTargetStr   = s"$scheme://$host@${ipAddress.getOrElse(host)}"

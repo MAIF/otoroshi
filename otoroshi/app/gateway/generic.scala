@@ -903,17 +903,21 @@ class ReverseProxyAction(env: Env) {
                                                             .map(Left.apply)
                                                       }
                                                     } else {
-                                                      val targets: Seq[Target] = descriptor.targets
-                                                        .filter(_.predicate.matches(reqNumber.toString, req, attrs))
-                                                        .flatMap(t => Seq.fill(t.weight)(t))
-                                                      val target               = descriptor.targetsLoadBalancing
-                                                        .select(
-                                                          reqNumber.toString,
-                                                          trackingId,
-                                                          req,
-                                                          targets,
-                                                          descriptor
-                                                        )
+
+                                                      val target = attrs.get(otoroshi.plugins.Keys.PreExtractedRequestTargetKey).getOrElse {
+
+                                                        val targets: Seq[Target] = descriptor.targets
+                                                          .filter(_.predicate.matches(reqNumber.toString, req, attrs))
+                                                          .flatMap(t => Seq.fill(t.weight)(t))
+                                                        descriptor.targetsLoadBalancing
+                                                          .select(
+                                                            reqNumber.toString,
+                                                            trackingId,
+                                                            req,
+                                                            targets,
+                                                            descriptor
+                                                          )
+                                                      }
                                                       //val index = reqCounter.get() % (if (targets.nonEmpty) targets.size else 1)
                                                       // Round robin loadbalancing is happening here !!!!!
                                                       //val target = targets.apply(index.toInt)

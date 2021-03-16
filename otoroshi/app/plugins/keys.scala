@@ -27,4 +27,5 @@ object Keys {
   val SnowFlakeKey              = TypedKey[String]("otoroshi.core.SnowFlake")
   val ElCtxKey                  = TypedKey[Map[String, String]]("otoroshi.core.ElCtx")
   val GatewayEventExtraInfosKey = TypedKey[JsValue]("otoroshi.core.GatewayEventExtraInfos")
+  val PreExtractedRequestTargetKey = TypedKey[Target]("otoroshi.core.PreExtractedRequestTarget")
 }

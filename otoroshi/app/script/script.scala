@@ -728,7 +728,7 @@ class ScriptManager(env: Env) {
       val scanResult: ScanResult    = new ClassGraph()
         .addClassLoader(env.environment.classLoader)
         .enableClassInfo()
-        .whitelistPackages(allPackages: _*)
+        .acceptPackages(allPackages: _*)
         .scan
 
       // val scanResult: ScanResult = new ClassGraph().addClassLoader(env.environment.classLoader).enableAllInfo.blacklistPackages(
@@ -837,23 +837,26 @@ class ScriptManager(env: Env) {
       logger.debug(s"classpath scanning in ${System.currentTimeMillis() - start} ms.")
       try {
 
-        def predicate(c: ClassInfo): Boolean =
-          c.getName == "otoroshi.script.DefaultRequestTransformer$" ||
-          c.getName == "otoroshi.script.CompilingRequestTransformer$" ||
-          c.getName == "otoroshi.script.CompilingValidator$" ||
-          c.getName == "otoroshi.script.CompilingPreRouting$" ||
-          c.getName == "otoroshi.script.CompilingRequestSink$" ||
-          c.getName == "otoroshi.script.CompilingOtoroshiEventListener$" ||
-          c.getName == "otoroshi.script.DefaultValidator$" ||
-          c.getName == "otoroshi.script.DefaultPreRouting$" ||
-          c.getName == "otoroshi.script.DefaultRequestSink$" ||
-          c.getName == "otoroshi.script.FailingPreRoute" ||
-          c.getName == "otoroshi.script.FailingPreRoute$" ||
-          c.getName == "otoroshi.script.DefaultOtoroshiEventListener$" ||
-          c.getName == "otoroshi.script.DefaultJob$" ||
-          c.getName == "otoroshi.script.CompilingJob$" ||
-          c.getName == "otoroshi.script.NanoApp" ||
-          c.getName == "otoroshi.script.NanoApp$"
+        def predicate(c: ClassInfo): Boolean = {
+          c.isInterface || (
+            c.getName == "otoroshi.script.DefaultRequestTransformer$" ||
+            c.getName == "otoroshi.script.CompilingRequestTransformer$" ||
+            c.getName == "otoroshi.script.CompilingValidator$" ||
+            c.getName == "otoroshi.script.CompilingPreRouting$" ||
+            c.getName == "otoroshi.script.CompilingRequestSink$" ||
+            c.getName == "otoroshi.script.CompilingOtoroshiEventListener$" ||
+            c.getName == "otoroshi.script.DefaultValidator$" ||
+            c.getName == "otoroshi.script.DefaultPreRouting$" ||
+            c.getName == "otoroshi.script.DefaultRequestSink$" ||
+            c.getName == "otoroshi.script.FailingPreRoute" ||
+            c.getName == "otoroshi.script.FailingPreRoute$" ||
+            c.getName == "otoroshi.script.DefaultOtoroshiEventListener$" ||
+            c.getName == "otoroshi.script.DefaultJob$" ||
+            c.getName == "otoroshi.script.CompilingJob$" ||
+            c.getName == "otoroshi.script.NanoApp" ||
+            c.getName == "otoroshi.script.NanoApp$"
+          )
+        }
 
         val requestTransformers: Seq[String] = (scanResult.getSubclasses(classOf[RequestTransformer].getName).asScala ++
           scanResult.getClassesImplementing(classOf[RequestTransformer].getName).asScala)
