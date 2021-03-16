@@ -15,6 +15,7 @@ import otoroshi.env.Env
 import otoroshi.events.{AlertDataStore, AuditDataStore, HealthCheckDataStore}
 import otoroshi.gateway.{InMemoryRequestsDataStore, RequestsDataStore}
 import io.vertx.core.buffer.Buffer
+import io.vertx.core.json.{JsonArray, JsonObject}
 import io.vertx.core.net.{PemKeyCertOptions, PemTrustOptions}
 import io.vertx.pgclient.{PgConnectOptions, PgPool, SslMode}
 import io.vertx.sqlclient.{PoolOptions, Row}
@@ -685,7 +686,8 @@ class ReactivePgRedis(
   )(implicit ec: ExecutionContext, env: Env): Future[Seq[ServiceDescriptor]] =
     measure("pg.ops.optm.find-by-group") {
       querySeq(
-        s"select value from $schemaDotTable where kind = 'service-descriptor' and jvalue -> 'groups' ? '${id}' and (ttl_starting_at + ttl) > NOW();"
+        s"select value from $schemaDotTable where kind = 'service-descriptor' and jvalue -> 'groups' ? $$1 and (ttl_starting_at + ttl) > NOW();",
+        Seq(id)
       ) { row =>
         row.optJsObject("value").map(ServiceDescriptor.fromJsonSafe).collect { case JsSuccess(service, _) =>
           service
@@ -697,12 +699,19 @@ class ReactivePgRedis(
       service: ServiceDescriptor
   )(implicit ec: ExecutionContext, env: Env): Future[Seq[ApiKey]] =
     measure("pg.ops.optm.apikeys-find-by-service") {
+
+      var params = Seq[Any]()
       val predicates = (
-        Seq(s"jvalue -> 'authorizedEntities' ? '${ServiceDescriptorIdentifier(service.id).str}'") ++
-          service.groups.map(g => s"jvalue -> 'authorizedEntities' ? '${ServiceGroupIdentifier(g).str}'")
+        Seq(s"jvalue -> 'authorizedEntities' ? $$1") ++
+          service.groups.zipWithIndex.map { case (g, count) =>
+            params = params ++ ServiceGroupIdentifier(g).str
+            s"jvalue -> 'authorizedEntities' ? $$${count+1}"
+          }
       ).mkString(" or ")
+
       querySeq(
-        s"""select value from $schemaDotTable where kind = 'apikey' and ($predicates) and (ttl_starting_at + ttl) > NOW();""".stripMargin
+        s"""select value from $schemaDotTable where kind = 'apikey' and ($predicates) and (ttl_starting_at + ttl) > NOW();""".stripMargin,
+        Seq(ServiceDescriptorIdentifier(service.id).str ++ params)
       ) { row =>
         row.optJsObject("value").map(ApiKey.fromJsonSafe).collect { case JsSuccess(apikey, _) =>
           apikey
@@ -713,7 +722,8 @@ class ReactivePgRedis(
   override def apiKeys_findByGroup(groupId: String)(implicit ec: ExecutionContext, env: Env): Future[Seq[ApiKey]] =
     measure("pg.ops.optm.apikeys-find-by-group") {
       querySeq(
-        s"select value from $schemaDotTable where kind = 'apikey' and jvalue -> 'authorizedEntities' ? '${ServiceGroupIdentifier(groupId).str}' and (ttl_starting_at + ttl) > NOW();"
+        s"select value from $schemaDotTable where kind = 'apikey' and jvalue -> 'authorizedEntities' ? $$1 and (ttl_starting_at + ttl) > NOW();",
+        Seq(ServiceGroupIdentifier(groupId).str)
       ) { row =>
         row.optJsObject("value").map(ApiKey.fromJsonSafe).collect { case JsSuccess(apikey, _) =>
           apikey
@@ -737,9 +747,10 @@ class ReactivePgRedis(
 
   override def mget(keys: String*): Future[Seq[Option[ByteString]]] =
     measure("pg.ops.mget") {
-      val allkeys = keys.map(k => s"'$k'").mkString(", ")
+      val inValues = keys.zipWithIndex.map { case (_, count) => s"$$${count+1}" }.mkString(", ")
       querySeq(
-        s"select key, value, counter, type from $schemaDotTable where key in ($allkeys) and (ttl_starting_at + ttl) > NOW();"
+        s"select key, value, counter, type from $schemaDotTable where key in ($inValues) and (ttl_starting_at + ttl) > NOW();",
+        keys
       ) { row =>
         val value = row.optString("type") match {
           case Some("counter") => row.optLong("counter").map(_.toString.byteString)
@@ -764,8 +775,10 @@ class ReactivePgRedis(
 
   override def del(keys: String*): Future[Long] =
     measure("pg.ops.del") {
+      val inValues = keys.zipWithIndex.map { case (_, count) => s"$$${count+1}" }.mkString(", ")
       queryRaw(
-        s"delete from $schemaDotTable where key in (${keys.map(k => s"'$k'").mkString(", ")}) and (ttl_starting_at + ttl) > NOW();"
+        s"delete from $schemaDotTable where key in ($inValues) and (ttl_starting_at + ttl) > NOW();",
+        keys
       ) { _ =>
         keys.size
       }
@@ -830,26 +843,24 @@ class ReactivePgRedis(
         .map(ttl => s", ttl = $ttl, ttl_starting_at = NOW()")
         .getOrElse("")
       matchesEntity(key, value) match {
-        case Some((kind, jsonValue)) => {
+        case Some((kind, jsonValue)) =>
           queryOne(s"""insert into $schemaDotTable (key, type, ttl, ttl_starting_at, value, kind, jvalue)
-             |values ('${key}', 'string', $ttl, NOW(), '${value.utf8String}', '${kind}', '$jsonValue'::jsonb)
+             |values ($$1, 'string', $ttl, NOW(), $$2, '$kind', '$jsonValue'::jsonb)
              |ON CONFLICT (key)
              |DO
-             |  update set type = 'string', value = '${value.utf8String}'${maybeTtlUpdate}, kind = '${kind}', jvalue = '$jsonValue'::jsonb;
-             |""".stripMargin) { _ =>
+             |  update set type = 'string', value = $$2$maybeTtlUpdate, kind = $$3, jvalue = $$4::jsonb;
+             |""".stripMargin, Seq(key, value.utf8String, kind, new JsonObject(jsonValue))) { _ =>
             true.some
           }.map(_.getOrElse(true))
-        }
-        case None                    => {
+        case None                    =>
           queryOne(s"""insert into $schemaDotTable (key, type, ttl, ttl_starting_at, value)
-             |values ('${key}', 'string', $ttl, NOW(), '${value.utf8String}')
+             |values ($$1, 'string', $ttl, NOW(), $$2)
              |ON CONFLICT (key)
              |DO
-             |  update set type = 'string', value = '${value.utf8String}'${maybeTtlUpdate};
-             |""".stripMargin) { _ =>
+             |  update set type = 'string', value = $$2${maybeTtlUpdate};
+             |""".stripMargin, Seq(key, value.utf8String)) { _ =>
             true.some
           }.map(_.getOrElse(true))
-        }
       }
     }
 
@@ -891,8 +902,10 @@ class ReactivePgRedis(
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   override def hdel(key: String, fields: String*): Future[Long]          =
     measure("pg.ops.hdel") {
+      val arr = fields.zipWithIndex.map { case (_, count) => s"$$${count+2}" }.mkString(",")
       queryRaw(
-        s"update $schemaDotTable set type = 'hash', mvalue = mvalue - ARRAY[${fields.map(m => s"'$m'").mkString(",")}] where key = $$1 and (ttl_starting_at + ttl) > NOW();"
+        s"update $schemaDotTable set type = 'hash', mvalue = mvalue - ARRAY[$arr] where key = $$1 and (ttl_starting_at + ttl) > NOW();",
+        fields
       ) { _ =>
         fields.size
       }
@@ -954,12 +967,12 @@ class ReactivePgRedis(
       val arr = JsArray(values.map(v => JsString(v.utf8String))).stringify
       queryRaw(
         s"""insert into $schemaDotTable (key, type, lvalue)
-         |values ($$1, 'list', '$arr'::jsonb)
+         |values ($$1, 'list', $$2::jsonb)
          |on conflict (key)
          |do
-         |  update set type = 'list', lvalue = $schemaDotTable.lvalue || '$arr'::jsonb;
+         |  update set type = 'list', lvalue = $schemaDotTable.lvalue || $$2::jsonb;
          |""".stripMargin,
-        Seq(key)
+        Seq(key, new JsonArray(arr))
       ) { _ =>
         values.size
       }
@@ -1018,15 +1031,14 @@ class ReactivePgRedis(
             // awful but not supported in some cases like cockroachdb
             getArray(key).flatMap {
               case None      => FastFuture.successful(false)
-              case Some(arr) => {
+              case Some(arr) =>
                 val newArr = JsArray(arr.slice(start.toInt, stop.toInt).map(i => JsString(i.utf8String))).stringify
                 queryRaw(
-                  s"""update $schemaDotTable set type = 'list', lvalue = '$newArr'::jsonb where key = $$1 and (ttl_starting_at + ttl) > NOW();""",
-                  Seq(key)
+                  s"""update $schemaDotTable set type = 'list', lvalue = $$2::jsonb where key = $$1 and (ttl_starting_at + ttl) > NOW();""",
+                  Seq(key, new JsonArray(newArr))
                 ) { _ =>
                   true
                 }
-              }
             }
           }
         }
@@ -1041,12 +1053,12 @@ class ReactivePgRedis(
       val obj = JsObject(members.map(m => (m.utf8String, JsString("-")))).stringify
       queryRaw(
         s"""insert into $schemaDotTable (key, type, svalue)
-         |values ($$1, 'set', '$obj'::jsonb)
+         |values ($$1, 'set', $$2::jsonb)
          |on conflict (key)
          |do
-         |  update set type = 'set', svalue = $schemaDotTable.svalue || '$obj'::jsonb;
+         |  update set type = 'set', svalue = $schemaDotTable.svalue || $$2::jsonb;
          |""".stripMargin,
-        Seq(key)
+        Seq(key, new JsonObject(obj))
       ) { _ =>
         members.size
       }
@@ -1057,8 +1069,8 @@ class ReactivePgRedis(
   override def sismemberBS(key: String, member: ByteString): Future[Boolean] =
     measure("pg.ops.sismember") {
       queryRaw(
-        s"select svalue from $schemaDotTable where key = $$1 and svalue ? '${member.utf8String}' and (ttl_starting_at + ttl) > NOW() limit 1;",
-        Seq(key)
+        s"select svalue from $schemaDotTable where key = $$1 and svalue ? $$2 and (ttl_starting_at + ttl) > NOW() limit 1;",
+        Seq(key, member.utf8String)
       ) { rows =>
         rows.nonEmpty
       }
@@ -1078,9 +1090,10 @@ class ReactivePgRedis(
 
   override def sremBS(key: String, members: ByteString*): Future[Long] =
     measure("pg.ops.srem") {
+      val arr = members.zipWithIndex.map { case (_, count) => s"$$${count+2}" }.mkString(",")
       queryRaw(
-        s"update $schemaDotTable set type = 'set', svalue = svalue - ARRAY[${members.map(m => s"'$m'").mkString(",")}] where key = $$1 and (ttl_starting_at + ttl) > NOW();",
-        Seq(key)
+        s"update $schemaDotTable set type = 'set', svalue = svalue - ARRAY[$arr] where key = $$1 and (ttl_starting_at + ttl) > NOW();",
+        Seq(key) ++ members
       ) { _ =>
         members.size
       }
