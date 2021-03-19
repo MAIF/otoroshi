@@ -25,6 +25,7 @@ import _ from 'lodash';
 import faker from 'faker';
 import bcrypt from 'bcryptjs';
 import { JsonObjectAsCodeInput } from './inputs/CodeInput';
+import { SimpleBooleanInput } from './inputs/BooleanInput';
 
 function Base64Url() {
   let chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
@@ -1030,6 +1031,11 @@ export class LdapModuleConfig extends Component {
     window.newAlert(<LdapUserLoginTest config={settings} />, `Testing user login`);
   };
 
+  setGroupFilterValues = (groupFilter, i, group, tenant, team) => {
+    groupFilter[i] = { group, tenant, team };
+    this.changeTheValue(this.props.path + '.groupFilter', groupFilter);
+  }
+
   render() {
     const settings = this.props.value || this.props.settings;
     const path = this.props.path || '';
@@ -1076,12 +1082,12 @@ export class LdapModuleConfig extends Component {
           help="All logged in users will have super admins rights"
           onChange={(v) => changeTheValue(path + '.superAdmins', v)}
         />
-        <TextInput
-          label="LDAP Server URL"
-          value={settings.serverUrl}
-          help="..."
-          onChange={(v) => changeTheValue(path + '.serverUrl', v)}
-        />
+        <ArrayInput
+            label="LDAP Server URL"
+            placeholder="Set your LDAP server"
+            value={settings.serverUrl}
+            help="List of your LDAP servers"
+            onChange={(v) => changeTheValue(path + '.serverUrl', v)} />
         <TextInput
           label="Search Base"
           value={settings.searchBase}
@@ -1094,12 +1100,95 @@ export class LdapModuleConfig extends Component {
           help="..."
           onChange={(v) => changeTheValue(path + '.userBase', v)}
         />
-        <TextInput
-          label="Group filter"
-          value={settings.groupFilter}
-          help="..."
-          onChange={(v) => changeTheValue(path + '.groupFilter', v)}
-        />
+        <Separator title="Match LDAP group to Otoroshi rights" />
+        <div className="form-group">
+          <label className="col-xs-12 col-sm-2 control-label">Mapping group filter</label>
+          <div className="col-sm-10" style={{ display: 'flex' }}>
+            {(settings.groupFilter && settings.groupFilter.length > 0) ? <table style={{ width: "100%" }}>
+              <thead style={{ backgroundColor: "transparent" }}>
+                <tr>
+                  <th scope="col" className="text-center">Group filter</th>
+                  <th scope="col" className="text-center">Tenant</th>
+                  <th scope="col" className="text-center">Team</th>
+                  <th scope="col" className="text-center">Read</th>
+                  <th scope="col" className="text-center">Write</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(settings.groupFilter || []).map(({ group, tenant, team }, i) => (
+                  <tr key={`group-filter-${i}`} style={{ marginTop: '5px' }}>
+                    <th>
+                      <input type="text" className="form-control" placeholder="Group filter" value={group}
+                        onChange={e => this.setGroupFilterValues(settings.groupFilter, i, e.target.value, tenant, team)}
+                        onDragOver={(e) => e.preventDefault()}
+                      />
+                    </th>
+                    <td style={{ width: '25%', padding: '5px' }}>
+                      <SelectInput
+                        value={tenant.split(":")[0]}
+                        onChange={e => this.setGroupFilterValues(settings.groupFilter, i, group, `${e}:${tenant.split(":")[1]}`, team)}
+                        valuesFrom="/bo/api/proxy/api/tenants"
+                        staticValues={[
+                          { value: '*', label: 'All' }
+                        ]}
+                        transformer={a => ({ value: a.id, label: a.name, })}
+                      />
+                    </td>
+                    <td style={{ width: '25%', padding: '5px' }}>
+                      <SelectInput
+                        value={team}
+                        onChange={e => this.setGroupFilterValues(settings.groupFilter, i, group, tenant, e)}
+                        valuesFrom="/bo/api/proxy/api/teams"
+                        staticValues={[
+                          { value: '*', label: 'All' }
+                        ]}
+                        transformer={a => ({ value: a.id, label: a.name, })}
+                      />
+                    </td>
+                    <td style={{ width: '15%', padding: '5px' }}>
+                      <SelectInput
+                        value={tenant.split(":")[1]}
+                        onChange={e => this.setGroupFilterValues(settings.groupFilter, i, group, `${tenant.split(':')[0]}:${e}`, team)}
+                        staticValues={[
+                          { value: 'rw', label: 'Read/Write' },
+                          { value: 'r', label: 'Read' }
+                        ]}
+                        transformer={a => ({ value: a.id, label: a.name, })}
+                      />
+                    </td>
+                    <td style={{ width: "1%" }}>
+                      <span className="input-group-btn">
+                        <button
+                          type="button"
+                          className="btn btn-danger"
+                          onClick={() => this.changeTheValue(path + '.groupFilter', settings.groupFilter.filter((_, j) => i !== j))}>
+                          <i className="fas fa-trash" />
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-primary"
+                          onClick={() => changeTheValue(path + '.groupFilter', [
+                            ...settings.groupFilter,
+                            { group: '', tenant: '*rw', team: '*' }
+                          ])}>
+                          <i className="fas fa-plus-circle" />{' '}
+                        </button>
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+              : <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => changeTheValue(path + '.groupFilter', [
+                  { group: '', tenant: '*rw', team: '*' }
+                ])}>
+                <i className="fas fa-plus-circle" />{' '}
+              </button>}
+          </div>
+        </div>
         <TextInput
           label="Search Filter"
           value={settings.searchFilter}
@@ -1169,12 +1258,18 @@ export class LdapModuleConfig extends Component {
           onChange={(e) => this.changeTheValue(path + '.dataOverride', e)}
         />
         <JsonObjectAsCodeInput
+          label="Additional rights group"
+          mode="json"
+          value={settings.groupRights || {}}
+          onChange={(e) => this.changeTheValue(path + '.groupRights', e)}
+        />
+        <JsonObjectAsCodeInput
           label="Rights override"
           mode="json"
           value={settings.rightsOverride || {}}
           onChange={(e) => this.changeTheValue(path + '.rightsOverride', e)}
         />
-      </div>
+      </div >
     );
   }
 }
