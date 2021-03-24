@@ -30,6 +30,7 @@ case class BackOfficeUser(
     createdAt: DateTime = DateTime.now(),
     expiredAt: DateTime = DateTime.now(),
     lastRefresh: DateTime = DateTime.now(),
+    tags: Seq[String],
     metadata: Map[String, String],
     rights: UserRights,
     location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation()
@@ -38,6 +39,10 @@ case class BackOfficeUser(
 
   def internalId: String = randomId
   def json: JsValue      = toJson
+  def theDescription: String = name
+  def theMetadata: Map[String,String] = metadata
+  def theName: String = name
+  def theTags: Seq[String] = tags
 
   def save(duration: Duration)(implicit ec: ExecutionContext, env: Env): Future[BackOfficeUser] = {
     val withDuration = this.copy(expiredAt = expiredAt.plus(duration.toMillis))
@@ -87,6 +92,7 @@ object BackOfficeUser {
             expiredAt = (json \ "expiredAt").asOpt[Long].map(l => new DateTime(l)).getOrElse(DateTime.now()),
             lastRefresh = (json \ "lastRefresh").asOpt[Long].map(l => new DateTime(l)).getOrElse(DateTime.now()),
             metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
+            tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
             rights = UserRights.readFromObject(json)
           )
         )
@@ -107,6 +113,7 @@ object BackOfficeUser {
         "expiredAt"    -> o.expiredAt.getMillis,
         "lastRefresh"  -> o.lastRefresh.getMillis,
         "metadata"     -> o.metadata,
+        "tags"         -> JsArray(o.tags.map(JsString.apply)),
         "rights"       -> o.rights.json
       )
   }

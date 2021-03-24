@@ -132,12 +132,17 @@ case class Cert(
     to: DateTime = DateTime.now(),
     sans: Seq[String] = Seq.empty,
     entityMetadata: Map[String, String] = Map.empty,
+    tags: Seq[String] = Seq.empty,
     password: Option[String] = None,
     location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation()
 ) extends otoroshi.models.EntityLocationSupport {
 
   def json: JsValue      = toJson
   def internalId: String = id
+  def theDescription: String = description
+  def theMetadata: Map[String,String] = entityMetadata
+  def theName: String = name
+  def theTags: Seq[String] = tags
 
   lazy val certType = {
     if (client) "client"
@@ -501,7 +506,8 @@ object Cert {
         "sans"        -> JsArray(cert.sans.map(JsString.apply)),
         "certType"    -> cert.certType,
         "password"    -> cert.password,
-        "metadata"    -> cert.entityMetadata
+        "metadata"    -> cert.entityMetadata,
+        "tags"       -> JsArray(cert.tags.map(JsString.apply)),
       )
     override def reads(json: JsValue): JsResult[Cert] =
       Try {
@@ -531,7 +537,8 @@ object Cert {
           subject = (json \ "subject").asOpt[String].getOrElse("--"),
           from = (json \ "from").asOpt[Long].map(v => new DateTime(v)).getOrElse(DateTime.now()),
           to = (json \ "to").asOpt[Long].map(v => new DateTime(v)).getOrElse(DateTime.now()),
-          entityMetadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty)
+          entityMetadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
+          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
         )
       } map { case sd =>
         JsSuccess(sd)
@@ -2102,7 +2109,9 @@ object ClientCertificateValidator {
             noCache = (json \ "noCache").asOpt[Boolean].getOrElse(false),
             alwaysValid = (json \ "alwaysValid").asOpt[Boolean].getOrElse(false),
             headers = (json \ "headers").asOpt[Map[String, String]].getOrElse(Map.empty),
-            proxy = (json \ "proxy").asOpt[JsValue].flatMap(p => WSProxyServerJson.proxyFromJson(p))
+            proxy = (json \ "proxy").asOpt[JsValue].flatMap(p => WSProxyServerJson.proxyFromJson(p)),
+            metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
+            tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
           )
         )
       } recover { case e =>
@@ -2124,7 +2133,9 @@ object ClientCertificateValidator {
         "noCache"     -> o.noCache,
         "alwaysValid" -> o.alwaysValid,
         "headers"     -> o.headers,
-        "proxy"       -> WSProxyServerJson.maybeProxyToJson(o.proxy)
+        "proxy"       -> WSProxyServerJson.maybeProxyToJson(o.proxy),
+        "metadata"    -> o.metadata,
+        "tags"        -> JsArray(o.tags.map(JsString.apply)),
       )
   }
 
@@ -2157,11 +2168,17 @@ case class ClientCertificateValidator(
     alwaysValid: Boolean,
     headers: Map[String, String] = Map.empty,
     proxy: Option[WSProxyServer],
-    location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation()
+    location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation(),
+    tags: Seq[String] = Seq.empty,
+    metadata: Map[String, String] = Map.empty,
 ) extends otoroshi.models.EntityLocationSupport {
 
   def json: JsValue      = asJson
   def internalId: String = id
+  def theDescription: String = description
+  def theMetadata: Map[String,String] = metadata
+  def theName: String = name
+  def theTags: Seq[String] = tags
 
   import otoroshi.utils.http.Implicits._
 

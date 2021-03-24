@@ -396,6 +396,10 @@ class BackOfficeController(
   ) extends EntityLocationSupport {
     override def internalId: String = id
     override def json: JsValue      = Json.obj()
+    def theDescription: String = name
+    def theMetadata: Map[String,String] = Map.empty
+    def theName: String = name
+    def theTags: Seq[String] = Seq.empty
   }
 
   def searchServicesApi() =
@@ -577,6 +581,7 @@ class BackOfficeController(
                 clientId = clientId,
                 clientSecret = clientSecret,
                 oidConfig = None,
+                tags = Seq.empty,
                 metadata = Map.empty,
                 sessionCookieValues = sessionCookieValues
               ).asJson
@@ -595,6 +600,7 @@ class BackOfficeController(
                     name = name,
                     desc = desc,
                     oidConfig = Some(url),
+                    tags = Seq.empty,
                     metadata = Map.empty,
                     sessionCookieValues = sessionCookieValues
                   )
@@ -662,6 +668,7 @@ class BackOfficeController(
                       clientId = clientId,
                       clientSecret = clientSecret,
                       oidConfig = Some(url),
+                      tags = Seq.empty,
                       metadata = Map.empty,
                       sessionCookieValues = sessionCookieValues
                     ).asJson
@@ -677,6 +684,7 @@ class BackOfficeController(
                     clientId = clientId,
                     clientSecret = clientSecret,
                     oidConfig = Some(url),
+                    tags = Seq.empty,
                     metadata = Map.empty,
                     sessionCookieValues = sessionCookieValues
                   ).asJson

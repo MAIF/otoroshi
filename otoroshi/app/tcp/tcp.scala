@@ -65,7 +65,8 @@ import otoroshi.utils.syntax.implicits._
  */
 case class TcpService(
     id: String = IdGenerator.token,
-    name: String = "A TCP Proxy",
+    name: String = "TCP Proxy",
+    description: String = "A TCP Proxy",
     enabled: Boolean,
     tls: TlsMode,
     sni: SniSettings,
@@ -73,6 +74,7 @@ case class TcpService(
     port: Int,
     interface: String = "0.0.0.0",
     rules: Seq[TcpRule],
+    tags: Seq[String],
     metadata: Map[String, String],
     location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation()
     // clientValidatorRef: Option[String]
@@ -84,6 +86,10 @@ case class TcpService(
   def internalId: String                              = id
   def json: JsValue                                   = TcpService.fmt.writes(this)
   def save()(implicit ec: ExecutionContext, env: Env) = env.datastores.tcpServiceDataStore.set(this)
+  def theDescription: String = description
+  def theMetadata: Map[String,String] = metadata
+  def theName: String = name
+  def theTags: Seq[String] = tags
 }
 case class SniSettings(
     enabled: Boolean,
@@ -220,6 +226,7 @@ object TcpService {
             location = otoroshi.models.EntityLocation.readFromKey(json),
             id = (json \ "id").as[String],
             name = (json \ "name").as[String],
+            description = (json \ "description").as[String],
             port = (json \ "port").as[Int],
             interface = (json \ "interface").asOpt[String].getOrElse("0.0.0.0"),
             enabled = (json \ "enabled").asOpt[Boolean].getOrElse(false),
@@ -227,7 +234,8 @@ object TcpService {
             sni = (json \ "sni").asOpt(SniSettings.fmt).getOrElse(SniSettings(false, false)),
             clientAuth = (json \ "clientAuth").asOpt[String].flatMap(ClientAuth.apply).getOrElse(ClientAuth.None),
             rules = (json \ "rules").asOpt(Reads.seq(TcpRule.fmt)).getOrElse(Seq.empty),
-            metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty)
+            metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
+            tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
           )
         )
       } recover { case e =>
@@ -238,6 +246,7 @@ object TcpService {
       o.location.jsonWithKey ++ Json.obj(
         "id"         -> o.id,
         "name"       -> o.name,
+        "description" -> o.description,
         "enabled"    -> o.enabled,
         "tls"        -> o.tls.name,
         "sni"        -> o.sni.json,
@@ -245,7 +254,8 @@ object TcpService {
         "port"       -> o.port,
         "interface"  -> o.interface,
         "rules"      -> JsArray(o.rules.map(_.json)),
-        "metadata"   -> o.metadata
+        "metadata"   -> o.metadata,
+        "tags"       -> JsArray(o.tags.map(JsString.apply)),
       )
   }
 
@@ -961,6 +971,7 @@ sealed trait TcpServiceDataStore extends BasicStore[TcpService] {
       sni = SniSettings(false, false),
       clientAuth = ClientAuth.None,
       port = 4200,
+      tags = Seq.empty,
       metadata = Map.empty,
       rules = Seq(
         TcpRule(

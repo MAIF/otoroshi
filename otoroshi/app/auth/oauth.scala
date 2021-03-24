@@ -73,6 +73,7 @@ object GenericOauth2ModuleConfig extends FromJson[AuthModuleConfig] {
           extraMetadata = (json \ "extraMetadata").asOpt[JsObject].getOrElse(Json.obj()),
           mtlsConfig = MtlsConfig.read((json \ "mtlsConfig").asOpt[JsValue]),
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
+          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
           sessionCookieValues =
             (json \ "sessionCookieValues").asOpt(SessionCookieValues.fmt).getOrElse(SessionCookieValues()),
           superAdmins = (json \ "superAdmins").asOpt[Boolean].getOrElse(true), // for backward compatibility reasons
@@ -119,6 +120,7 @@ case class GenericOauth2ModuleConfig(
     extraMetadata: JsObject = Json.obj(),
     mtlsConfig: MtlsConfig = MtlsConfig(),
     refreshTokens: Boolean = false,
+    tags: Seq[String],
     metadata: Map[String, String],
     sessionCookieValues: SessionCookieValues,
     location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation(),
@@ -126,6 +128,10 @@ case class GenericOauth2ModuleConfig(
     rightsOverride: Map[String, UserRights] = Map.empty,
     dataOverride: Map[String, JsObject] = Map.empty
 ) extends OAuth2ModuleConfig {
+  def theDescription: String = desc
+  def theMetadata: Map[String,String] = metadata
+  def theName: String = name
+  def theTags: Seq[String] = tags
   def `type`: String                                                   = "oauth2"
   override def authModule(config: GlobalConfig): AuthModule            = GenericOauth2Module(this)
   override def asJson                                                  =
@@ -161,6 +167,7 @@ case class GenericOauth2ModuleConfig(
       "proxy"                -> WSProxyServerJson.maybeProxyToJson(this.proxy),
       "extraMetadata"        -> this.extraMetadata,
       "metadata"             -> this.metadata,
+      "tags"       -> JsArray(tags.map(JsString.apply)),
       "refreshTokens"        -> this.refreshTokens,
       "sessionCookieValues"  -> SessionCookieValues.fmt.writes(this.sessionCookieValues),
       "superAdmins"          -> superAdmins,
@@ -430,6 +437,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
                       .get(email)
                       .map(v => authConfig.extraMetadata.deepMerge(v))
                       .orElse(Some(authConfig.extraMetadata.deepMerge(meta.getOrElse(Json.obj())))),
+                    tags = Seq.empty,
                     metadata = Map.empty,
                     location = authConfig.location
                   )
@@ -478,6 +486,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
                     profile = user,
                     authConfigId = authConfig.id,
                     simpleLogin = false,
+                    tags = Seq.empty,
                     metadata = Map.empty,
                     rights =
                       if (authConfig.superAdmins) UserRights.superAdmin

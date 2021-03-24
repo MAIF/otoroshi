@@ -631,6 +631,7 @@ class TeamsSpec(name: String, configurationSpec: => Configuration) extends Otoro
     profile = Json.obj(),
     authConfigId = "basic",
     simpleLogin = true,
+    tags = Seq.empty,
     metadata = Map.empty,
     rights = UserRights(
       Seq(
@@ -648,6 +649,7 @@ class TeamsSpec(name: String, configurationSpec: => Configuration) extends Otoro
     profile = Json.obj(),
     authConfigId = "basic",
     simpleLogin = true,
+    tags = Seq.empty,
     metadata = Map.empty,
     rights = UserRights(
       Seq(
@@ -666,6 +668,7 @@ class TeamsSpec(name: String, configurationSpec: => Configuration) extends Otoro
     profile = Json.obj(),
     authConfigId = "basic",
     simpleLogin = true,
+    tags = Seq.empty,
     metadata = Map.empty,
     rights = UserRights(
       Seq(
@@ -683,6 +686,7 @@ class TeamsSpec(name: String, configurationSpec: => Configuration) extends Otoro
     profile = Json.obj(),
     authConfigId = "basic",
     simpleLogin = true,
+    tags = Seq.empty,
     metadata = Map.empty,
     rights = UserRights(
       Seq(
@@ -700,6 +704,7 @@ class TeamsSpec(name: String, configurationSpec: => Configuration) extends Otoro
     profile = Json.obj(),
     authConfigId = "basic",
     simpleLogin = true,
+    tags = Seq.empty,
     metadata = Map.empty,
     rights = UserRights(
       Seq(

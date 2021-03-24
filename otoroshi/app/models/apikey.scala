@@ -108,6 +108,7 @@ case class ApiKey(
     clientId: String = IdGenerator.token(16),
     clientSecret: String = IdGenerator.token(64),
     clientName: String,
+    description: String = "",
     authorizedEntities: Seq[EntityIdentifier],
     enabled: Boolean = true,
     readOnly: Boolean = false,
@@ -126,6 +127,10 @@ case class ApiKey(
 
   def json: JsValue      = toJson
   def internalId: String = clientId
+  def theDescription: String = description
+  def theMetadata: Map[String,String] = metadata
+  def theName: String = clientName
+  def theTags: Seq[String] = tags
 
   def save()(implicit ec: ExecutionContext, env: Env)     = env.datastores.apiKeyDataStore.set(this)
   def delete()(implicit ec: ExecutionContext, env: Env)   = env.datastores.apiKeyDataStore.delete(this)
@@ -277,6 +282,7 @@ object ApiKey {
         "clientId"                -> apk.clientId,
         "clientSecret"            -> apk.clientSecret,
         "clientName"              -> apk.clientName,
+        "description"             -> apk.description,
         "authorizedGroup"         -> authGroup,
         "authorizedEntities"      -> JsArray(apk.authorizedEntities.map(_.json)),
         "enabled"                 -> enabled, //apk.enabled,
@@ -306,6 +312,7 @@ object ApiKey {
           clientId = (json \ "clientId").as[String],
           clientSecret = (json \ "clientSecret").as[String],
           clientName = (json \ "clientName").as[String],
+          description = (json \ "description").as[String],
           authorizedEntities = {
             val authorizedGroup: Seq[EntityIdentifier]    =
               (json \ "authorizedGroup").asOpt[String].map(ServiceGroupIdentifier.apply).toSeq

@@ -73,7 +73,7 @@ libraryDependencies ++= Seq(
   "com.sksamuel.pulsar4s"           %% "pulsar4s-core"               % pulsarVersion,
   "com.sksamuel.pulsar4s"           %% "pulsar4s-akka-streams"       % pulsarVersion,
   "org.jsoup"                        % "jsoup"                       % "1.13.1",
-  "com.clever-cloud"                 % "biscuit-java"                % "0.6.1",
+  "com.clever-cloud"                 % "biscuit-java"                % "1.0.0",
   // fix multiple CVEs
   "com.fasterxml.jackson.core"       % "jackson-databind"            % "2.10.5.1",
   "com.fasterxml.jackson.dataformat" % "jackson-dataformat-yaml"     % "2.10.5",

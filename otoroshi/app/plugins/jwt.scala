@@ -124,6 +124,7 @@ class JwtUserExtractor extends PreRouting {
                   createdAt = DateTime.now(),
                   expiredAt = DateTime.now().plusHours(1),
                   lastRefresh = DateTime.now(),
+                  tags = Seq.empty,
                   metadata = Map.empty,
                   location = ctx.descriptor.location
                 )

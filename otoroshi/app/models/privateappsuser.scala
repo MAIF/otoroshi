@@ -31,10 +31,16 @@ case class PrivateAppsUser(
     createdAt: DateTime = DateTime.now(),
     expiredAt: DateTime = DateTime.now(),
     lastRefresh: DateTime = DateTime.now(),
+    tags: Seq[String],
     metadata: Map[String, String],
     location: otoroshi.models.EntityLocation
 ) extends RefreshableUser
     with otoroshi.models.EntityLocationSupport {
+
+  def theDescription: String = name
+  def theMetadata: Map[String,String] = metadata
+  def theName: String = name
+  def theTags: Seq[String] = tags
 
   def picture: Option[String]             = (profile \ "picture").asOpt[String]
   def field(name: String): Option[String] = (profile \ name).asOpt[String]
@@ -104,6 +110,7 @@ object PrivateAppsUser {
             expiredAt = new DateTime((json \ "expiredAt").as[Long]),
             lastRefresh = new DateTime((json \ "lastRefresh").as[Long]),
             metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
+            tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
             location = otoroshi.models.EntityLocation.readFromKey(json)
           )
         )
@@ -124,7 +131,8 @@ object PrivateAppsUser {
         "createdAt"    -> o.createdAt.toDate.getTime,
         "expiredAt"    -> o.expiredAt.toDate.getTime,
         "lastRefresh"  -> o.lastRefresh.toDate.getTime,
-        "metadata"     -> o.metadata
+        "metadata"     -> o.metadata,
+        "tags"         -> JsArray(o.tags.map(JsString.apply)),
       )
   }
 }

@@ -6,7 +6,7 @@ import java.util.Base64
 
 import akka.http.scaladsl.util.FastFuture
 import com.clevercloud.biscuit.crypto._
-import com.clevercloud.biscuit.token.builder.Caveat
+import com.clevercloud.biscuit.token.builder.Check
 import com.clevercloud.biscuit.token.builder.Term.Str
 import com.clevercloud.biscuit.token.builder.Utils.{fact, s, string}
 import com.clevercloud.biscuit.token.builder.parser.Parser
@@ -37,7 +37,7 @@ object vavr_implicits {
 case class BiscuitConfig(
     publicKey: Option[String],
     secret: Option[String],
-    caveats: Seq[String],
+    checks: Seq[String],
     facts: Seq[String],
     resources: Seq[String],
     rules: Seq[String],
@@ -52,7 +52,7 @@ object BiscuitConfig {
   val example: JsObject = Json.obj(
     "publicKey"      -> "xxxxxx",
     "secret"         -> "secret",
-    "caveats"        -> Json.arr(),
+    "checks"         -> Json.arr(),
     "facts"          -> Json.arr(),
     "resources"      -> Json.arr(),
     "rules"          -> Json.arr(),
@@ -104,7 +104,7 @@ object BiscuitHelper {
     BiscuitConfig(
       publicKey = (rawConfig \ "publicKey").asOpt[String],
       secret = (rawConfig \ "secret").asOpt[String],
-      caveats = (rawConfig \ "caveats").asOpt[Seq[String]].getOrElse(Seq.empty),
+      checks = (rawConfig \ "checks").asOpt[Seq[String]].getOrElse(Seq.empty),
       facts = (rawConfig \ "facts").asOpt[Seq[String]].getOrElse(Seq.empty),
       resources = (rawConfig \ "resources").asOpt[Seq[String]].getOrElse(Seq.empty),
       rules = (rawConfig \ "rules").asOpt[Seq[String]].getOrElse(Seq.empty),
@@ -181,18 +181,13 @@ object BiscuitHelper {
       )
     }
     config.resources.foreach(r => verifier.add_resource(r))
-    // TODO: change when implemented
-    // config.caveats.map(Parser.caveat).filter(_.isRight).map(_.get()._2).foreach(r => verifier.add_caveat(r))
-    config.caveats
-      .map(v => " " + v)
-      .map(Parser.rule)
+    config.checks
+      .map(Parser.check)
       .filter(_.isRight)
       .map(_.get()._2)
-      .map(r => new Caveat(r))
-      .foreach(r => verifier.add_caveat(r))
+      .foreach(r => verifier.add_check(r))
     config.facts.map(Parser.fact).filter(_.isRight).map(_.get()._2).foreach(r => verifier.add_fact(r))
     config.rules
-      .map(v => " " + v)
       .map(Parser.rule)
       .filter(_.isRight)
       .map(_.get()._2)

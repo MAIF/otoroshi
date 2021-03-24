@@ -14,7 +14,7 @@ import otoroshi.cluster.ClusterAgent
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.clevercloud.biscuit.token
-import com.clevercloud.biscuit.token.builder.Caveat
+import com.clevercloud.biscuit.token.builder.Check
 import com.clevercloud.biscuit.token.builder.parser.Parser
 import com.clevercloud.biscuit.token.format.SealedBiscuit
 import com.github.blemale.scaffeine.{Cache, Scaffeine}
@@ -921,7 +921,7 @@ case class BiscuitConf(
     privkey: Option[String] = None,
     secret: Option[String] = Some("secret"),
     sealedToken: Boolean = false,
-    caveats: Seq[String] = Seq.empty,
+    checks: Seq[String] = Seq.empty,
     facts: Seq[String] = Seq.empty,
     rules: Seq[String] = Seq.empty
 )
@@ -944,7 +944,7 @@ class ClientCredentialService extends RequestSink {
           privkey = (js \ "privkey").asOpt[String],
           secret = (js \ "secret").asOpt[String],
           sealedToken = (js \ "sealedToken").asOpt[Boolean].getOrElse(false),
-          caveats = (js \ "caveats").asOpt[Seq[String]].getOrElse(Seq.empty),
+          checks = (js \ "checks").asOpt[Seq[String]].getOrElse(Seq.empty),
           facts = (js \ "facts").asOpt[Seq[String]].getOrElse(Seq.empty),
           rules = (js \ "rules").asOpt[Seq[String]].getOrElse(Seq.empty)
         )
@@ -1133,20 +1133,17 @@ class ClientCredentialService extends RequestSink {
               )
             )
 
-            biscuitConf.caveats
-              .map(v => " " + v)
-              .map(Parser.rule)
+            biscuitConf.checks
+              .map(Parser.check)
               .filter(_.isRight)
               .map(_.get()._2)
-              .map(r => new Caveat(r))
-              .foreach(r => authority_builder.add_caveat(r))
+              .foreach(r => authority_builder.add_check(r))
             biscuitConf.facts
               .map(Parser.fact)
               .filter(_.isRight)
               .map(_.get()._2)
               .foreach(r => authority_builder.add_fact(r))
             biscuitConf.rules
-              .map(v => " " + v)
               .map(Parser.rule)
               .filter(_.isRight)
               .map(_.get()._2)
@@ -1155,20 +1152,17 @@ class ClientCredentialService extends RequestSink {
             def fromApiKey(name: String): Seq[String] =
               apiKey.metadata.get(name).map(Json.parse).map(_.asArray.value.map(_.asString)).getOrElse(Seq.empty)
 
-            fromApiKey("biscuit_caveats")
-              .map(v => " " + v)
-              .map(Parser.rule)
+            fromApiKey("biscuit_checks")
+              .map(Parser.check)
               .filter(_.isRight)
               .map(_.get()._2)
-              .map(r => new Caveat(r))
-              .foreach(r => authority_builder.add_caveat(r))
+              .foreach(r => authority_builder.add_check(r))
             fromApiKey("biscuit_facts")
               .map(Parser.fact)
               .filter(_.isRight)
               .map(_.get()._2)
               .foreach(r => authority_builder.add_fact(r))
             fromApiKey("biscuit_rules")
-              .map(v => " " + v)
               .map(Parser.rule)
               .filter(_.isRight)
               .map(_.get()._2)

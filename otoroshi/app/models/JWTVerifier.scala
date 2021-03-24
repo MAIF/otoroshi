@@ -1460,6 +1460,7 @@ case class GlobalJwtVerifier(
     source: JwtTokenLocation = InHeader("X-JWT-Token"),
     algoSettings: AlgoSettings = HSAlgoSettings(512, "secret", false),
     strategy: VerifierStrategy = PassThrough(VerificationSettings(Map("iss" -> "The Issuer"))),
+    tags: Seq[String] = Seq.empty,
     metadata: Map[String, String] = Map.empty,
     location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation()
 ) extends JwtVerifier
@@ -1468,18 +1469,23 @@ case class GlobalJwtVerifier(
 
   def json: JsValue      = asJson
   def internalId: String = id
+  def theDescription: String = desc
+  def theMetadata: Map[String,String] = metadata
+  def theName: String = name
+  def theTags: Seq[String] = tags
 
   def asJson: JsValue =
     location.jsonWithKey ++ Json.obj(
       "type"         -> "global",
-      "id"           -> this.id,
-      "name"         -> this.name,
-      "desc"         -> this.desc,
-      "strict"       -> this.strict,
-      "source"       -> this.source.asJson,
-      "algoSettings" -> this.algoSettings.asJson,
-      "strategy"     -> this.strategy.asJson,
-      "metadata"     -> this.metadata
+      "id"           -> id,
+      "name"         -> name,
+      "desc"         -> desc,
+      "strict"       -> strict,
+      "source"       -> source.asJson,
+      "algoSettings" -> algoSettings.asJson,
+      "strategy"     -> strategy.asJson,
+      "metadata"     -> metadata,
+      "tags"         -> JsArray(tags.map(JsString.apply)),
     )
 
   override def isRef = false
@@ -1532,6 +1538,7 @@ object GlobalJwtVerifier extends FromJson[GlobalJwtVerifier] {
           desc = (json \ "desc").asOpt[String].getOrElse("--"),
           strict = (json \ "strict").asOpt[Boolean].getOrElse(false),
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
+          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
           source = source,
           algoSettings = algoSettings,
           strategy = strategy

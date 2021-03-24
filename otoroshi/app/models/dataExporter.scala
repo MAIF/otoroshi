@@ -99,6 +99,7 @@ object DataExporterConfig {
         "name"          -> o.name,
         "desc"          -> o.desc,
         "metadata"      -> o.metadata,
+        "tags"       -> JsArray(o.tags.map(JsString.apply)),
         "bufferSize"    -> o.bufferSize,
         "jsonWorkers"   -> o.jsonWorkers,
         "sendWorkers"   -> o.sendWorkers,
@@ -122,6 +123,7 @@ object DataExporterConfig {
           name = (json \ "name").as[String],
           desc = (json \ "desc").asOpt[String].getOrElse("--"),
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
+          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
           bufferSize = (json \ "bufferSize").asOpt[Int].getOrElse(5000),
           jsonWorkers = (json \ "jsonWorkers").asOpt[Int].getOrElse(1),
           sendWorkers = (json \ "sendWorkers").asOpt[Int].getOrElse(5),
@@ -221,6 +223,7 @@ case class DataExporterConfig(
     name: String,
     desc: String,
     metadata: Map[String, String],
+    tags: Seq[String] = Seq.empty,
     location: EntityLocation = EntityLocation(),
     bufferSize: Int = 5000,
     jsonWorkers: Int = 1,
@@ -235,6 +238,10 @@ case class DataExporterConfig(
   override def json: JsValue = DataExporterConfig.format.writes(this)
 
   override def internalId: String = id
+  def theDescription: String = desc
+  def theMetadata: Map[String,String] = metadata
+  def theName: String = name
+  def theTags: Seq[String] = tags
 
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = {
     env.datastores.dataExporterConfigDataStore.set(this)
@@ -298,6 +305,7 @@ class DataExporterConfigMigrationJob extends Job {
         id = IdGenerator.token,
         name = name,
         desc = "--",
+        tags = Seq.empty,
         metadata = Map.empty,
         location = EntityLocation(),
         filtering = filter,

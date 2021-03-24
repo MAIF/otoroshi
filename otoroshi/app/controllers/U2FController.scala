@@ -79,6 +79,7 @@ class U2FController(
                   token = Json.obj(),
                   authConfigId = "none",
                   simpleLogin = true,
+                  tags = Seq.empty,
                   metadata = Map.empty,
                   rights = user.rights,
                   location = user.location
@@ -507,6 +508,7 @@ class U2FController(
                             token = Json.obj(),
                             authConfigId = "none",
                             simpleLogin = false,
+                            tags = Seq.empty,
                             metadata = Map.empty,
                             rights = user.rights,
                             location = user.location

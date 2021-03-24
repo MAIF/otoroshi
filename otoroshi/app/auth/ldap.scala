@@ -98,6 +98,7 @@ object LdapAuthModuleConfig extends FromJson[AuthModuleConfig] {
           metadataField = (json \ "metadataField").asOpt[String].filterNot(_.trim.isEmpty),
           extraMetadata = (json \ "extraMetadata").asOpt[JsObject].getOrElse(Json.obj()),
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
+          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
           sessionCookieValues =
             (json \ "sessionCookieValues").asOpt(SessionCookieValues.fmt).getOrElse(SessionCookieValues()),
           superAdmins = (json \ "superAdmins").asOpt[Boolean].getOrElse(false), // for backward compatibility reasons
@@ -132,6 +133,7 @@ case class LdapAuthModuleConfig(
     emailField: String = "mail",
     metadataField: Option[String] = None,
     extraMetadata: JsObject = Json.obj(),
+    tags: Seq[String],
     metadata: Map[String, String],
     sessionCookieValues: SessionCookieValues,
     location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation(),
@@ -140,6 +142,11 @@ case class LdapAuthModuleConfig(
     dataOverride: Map[String, JsObject] = Map.empty
 ) extends AuthModuleConfig {
   def `type`: String = "ldap"
+
+  def theDescription: String = desc
+  def theMetadata: Map[String,String] = metadata
+  def theName: String = name
+  def theTags: Seq[String] = tags
 
   override def authModule(config: GlobalConfig): AuthModule = LdapAuthModule(this)
 
@@ -164,6 +171,7 @@ case class LdapAuthModuleConfig(
       "metadataField"       -> metadataField.map(JsString.apply).getOrElse(JsNull).as[JsValue],
       "extraMetadata"       -> extraMetadata,
       "metadata"            -> metadata,
+      "tags"       -> JsArray(tags.map(JsString.apply)),
       "sessionCookieValues" -> SessionCookieValues.fmt.writes(this.sessionCookieValues),
       "superAdmins"         -> superAdmins,
       "rightsOverride"      -> JsObject(rightsOverride.mapValues(_.json)),
@@ -335,6 +343,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
               .map(v => authConfig.extraMetadata.deepMerge(v))
               .orElse(Some(authConfig.extraMetadata.deepMerge(user.metadata))),
             authConfigId = authConfig.id,
+            tags = Seq.empty,
             metadata = Map.empty,
             location = authConfig.location
           )
@@ -354,6 +363,7 @@ case class LdapAuthModule(authConfig: LdapAuthModuleConfig) extends AuthModule {
             profile = user.asJson,
             simpleLogin = false,
             authConfigId = authConfig.id,
+            tags = Seq.empty,
             metadata = Map.empty,
             rights =
               if (authConfig.superAdmins) UserRights.superAdmin

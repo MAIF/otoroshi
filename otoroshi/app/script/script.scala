@@ -1403,7 +1403,8 @@ case class Script(
     desc: String,
     code: String,
     `type`: PluginType,
-    metadata: Map[String, String],
+    tags: Seq[String] = Seq.empty,
+    metadata: Map[String, String] = Map.empty,
     location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation()
 ) extends otoroshi.models.EntityLocationSupport {
   def save()(implicit ec: ExecutionContext, env: Env)   = env.datastores.scriptDataStore.set(this)
@@ -1413,6 +1414,10 @@ case class Script(
   def hash: String                                      = Hashing.sha256().hashString(code, StandardCharsets.UTF_8).toString
   def json: JsValue                                     = toJson
   def internalId: String                                = id
+  def theDescription: String = desc
+  def theMetadata: Map[String,String] = metadata
+  def theName: String = name
+  def theTags: Seq[String] = tags
 }
 
 object Script {
@@ -1429,7 +1434,8 @@ object Script {
         "desc"     -> apk.desc,
         "code"     -> apk.code,
         "type"     -> apk.`type`.name,
-        "metadata" -> apk.metadata
+        "metadata" -> apk.metadata,
+        "tags"     -> JsArray(apk.tags.map(JsString.apply))
       )
     override def reads(json: JsValue): JsResult[Script] =
       Try {
@@ -1450,6 +1456,7 @@ object Script {
           desc = (json \ "desc").as[String],
           code = (json \ "code").as[String],
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
+          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
           `type` = scriptType
         )
       } map { case sd =>

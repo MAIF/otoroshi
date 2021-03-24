@@ -373,6 +373,7 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
                                                  loginUrl = s"https://${c.domain}/authorize",
                                                  logoutUrl = s"https://${c.domain}/logout",
                                                  callbackUrl = c.callbackURL,
+                                                 tags = Seq.empty,
                                                  metadata = Map.empty,
                                                  sessionCookieValues = SessionCookieValues()
                                                )
@@ -395,6 +396,7 @@ class KvGlobalConfigDataStore(redisCli: RedisLike, _env: Env)
                                                  loginUrl = s"https://${c.domain}/authorize",
                                                  logoutUrl = s"https://${c.domain}/logout",
                                                  callbackUrl = c.callbackURL,
+                                                 tags = Seq.empty,
                                                  metadata = Map.empty,
                                                  sessionCookieValues = SessionCookieValues()
                                                )

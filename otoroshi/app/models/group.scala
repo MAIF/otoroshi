@@ -13,6 +13,7 @@ case class ServiceGroup(
     id: String = IdGenerator.token(64),
     name: String,
     description: String = "No description",
+    tags: Seq[String] = Seq.empty,
     metadata: Map[String, String] = Map.empty,
     location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation()
 ) extends otoroshi.models.EntityLocationSupport {
@@ -25,6 +26,10 @@ case class ServiceGroup(
 
   def json: JsValue      = toJson
   def internalId: String = id
+  def theDescription: String = description
+  def theMetadata: Map[String,String] = metadata
+  def theName: String = name
+  def theTags: Seq[String] = tags
 }
 
 object ServiceGroup {
@@ -39,7 +44,8 @@ object ServiceGroup {
           id = (json \ "id").as[String],
           name = (json \ "name").as[String],
           description = (json \ "description").asOpt[String].getOrElse(""),
-          metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty)
+          metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
+          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
         )
       } match {
         case Failure(e) => JsError(e.getMessage)
@@ -50,6 +56,7 @@ object ServiceGroup {
         "id"          -> o.id,
         "name"        -> o.name,
         "description" -> o.description,
+        "tags"    -> JsArray(o.tags.map(JsString.apply)),
         "metadata"    -> o.metadata
       )
   }
@@ -72,6 +79,7 @@ trait ServiceGroupDataStore extends BasicStore[ServiceGroup] {
       id = IdGenerator.token(64),
       name = "product-group",
       description = "group for product",
-      metadata = Map.empty
+      metadata = Map.empty,
+      tags = Seq.empty
     )
 }

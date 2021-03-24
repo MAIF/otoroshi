@@ -411,8 +411,17 @@ case class GlobalConfig(
     autoCert: AutoCert = AutoCert(),
     tlsSettings: TlsSettings = TlsSettings(),
     plugins: Plugins = Plugins(),
+    tags: Seq[String] = Seq.empty,
     metadata: Map[String, String] = Map.empty
-) {
+) extends Entity {
+
+  def internalId: String = "global"
+  def json: play.api.libs.json.JsValue = toJson
+  def theMetadata: Map[String,String] = metadata
+  def theTags: Seq[String] = tags
+  def theDescription: String = "The global config for otoroshi"
+  def theName: String = "otoroshi-global-config"
+
   def save()(implicit ec: ExecutionContext, env: Env)                                   = env.datastores.globalConfigDataStore.set(this)
   def delete()(implicit ec: ExecutionContext, env: Env)                                 = env.datastores.globalConfigDataStore.delete(this)
   def exists()(implicit ec: ExecutionContext, env: Env)                                 = env.datastores.globalConfigDataStore.exists(this)
@@ -494,6 +503,7 @@ object GlobalConfig {
           )
       }
       Json.obj(
+        "tags" -> JsArray(o.tags.map(JsString.apply)),
         "letsEncryptSettings" -> o.letsEncryptSettings.json,
         "lines"                   -> JsArray(o.lines.map(JsString.apply)),
         "maintenanceMode"         -> o.maintenanceMode,
@@ -658,7 +668,8 @@ object GlobalConfig {
           plugins = Plugins.format
             .reads((json \ "plugins").asOpt[JsValue].getOrElse(JsNull))
             .getOrElse(Plugins()),
-          metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty)
+          metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
+          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String])
         )
       } map { case sd =>
         JsSuccess(sd)

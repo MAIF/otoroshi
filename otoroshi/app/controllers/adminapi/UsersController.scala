@@ -30,6 +30,7 @@ class UsersController(ApiAction: ApiAction, cc: ControllerComponents)(implicit e
     profile = Json.obj(),
     simpleLogin = false,
     authConfigId = "none",
+    tags = Seq.empty,
     metadata = Map.empty,
     rights = UserRights.superAdmin,
     location = EntityLocation()

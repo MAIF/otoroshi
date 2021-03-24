@@ -156,6 +156,7 @@ trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {
           id = IdGenerator.token,
           name = "New auth. module",
           desc = "New auth. module",
+          tags = Seq.empty,
           metadata = Map.empty,
           sessionCookieValues = SessionCookieValues()
         )
@@ -164,6 +165,7 @@ trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {
           id = IdGenerator.token,
           name = "New auth. module",
           desc = "New auth. module",
+          tags = Seq.empty,
           metadata = Map.empty,
           sessionCookieValues = SessionCookieValues()
         )
@@ -172,6 +174,7 @@ trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {
           id = IdGenerator.token,
           name = "New auth. module",
           desc = "New auth. module",
+          tags = Seq.empty,
           metadata = Map.empty,
           sessionCookieValues = SessionCookieValues()
         )
@@ -185,6 +188,7 @@ trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {
           searchFilter = "(uid=${username})",
           adminUsername = Some("cn=read-only-admin,dc=example,dc=com"),
           adminPassword = Some("password"),
+          tags = Seq.empty,
           metadata = Map.empty,
           sessionCookieValues = SessionCookieValues()
         )
@@ -193,6 +197,7 @@ trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {
           id = IdGenerator.token,
           name = "New auth. module",
           desc = "New auth. module",
+          tags = Seq.empty,
           metadata = Map.empty,
           sessionCookieValues = SessionCookieValues()
         )

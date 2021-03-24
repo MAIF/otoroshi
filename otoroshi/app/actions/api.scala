@@ -78,6 +78,7 @@ case class ApiActionContext[A](apiKey: ApiKey, request: Request[A]) {
                     profile = Json.obj(),
                     authConfigId = "apikey",
                     simpleLogin = false,
+                    tags = Seq.empty,
                     metadata = Map.empty,
                     rights = userRights,
                     location = EntityLocation(currentTenant, teams = Seq(TeamId.all))

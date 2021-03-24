@@ -37,6 +37,7 @@ trait OtoroshiAdmin extends EntityLocationSupport {
   def label: String
   def createdAt: DateTime
   def typ: OtoroshiAdminType
+  def tags: Seq[String]
   def metadata: Map[String, String]
   def json: JsValue
   def rights: UserRights
@@ -48,11 +49,16 @@ case class SimpleOtoroshiAdmin(
     label: String,
     createdAt: DateTime,
     typ: OtoroshiAdminType,
+    tags: Seq[String] = Seq.empty,
     metadata: Map[String, String],
     rights: UserRights,
     location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation()
 ) extends OtoroshiAdmin {
   def internalId: String = username
+  def theDescription: String = label
+  def theMetadata: Map[String,String] = metadata
+  def theName: String = username
+  def theTags: Seq[String] = tags
   def json: JsValue      =
     location.jsonWithKey ++ Json.obj(
       "username"  -> username,
@@ -61,6 +67,7 @@ case class SimpleOtoroshiAdmin(
       "createdAt" -> createdAt.getMillis,
       "type"      -> typ.json,
       "metadata"  -> metadata,
+      "tags"      -> JsArray(tags.map(JsString.apply)),
       "rights"    -> rights.json
     )
 }
@@ -81,6 +88,7 @@ object SimpleOtoroshiAdmin {
         typ =
           (json \ "typ").asOpt[JsValue].flatMap(OtoroshiAdminType.fromJson).getOrElse(OtoroshiAdminType.SimpleAdmin),
         metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
+        tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
         rights = UserRights.readFromObject(json)
       )
     } match {
@@ -98,11 +106,16 @@ case class WebAuthnOtoroshiAdmin(
     credentials: Map[String, JsValue],
     createdAt: DateTime,
     typ: OtoroshiAdminType,
+    tags: Seq[String] = Seq.empty,
     metadata: Map[String, String],
     rights: UserRights,
     location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation()
 ) extends OtoroshiAdmin {
   def internalId: String = username
+  def theDescription: String = label
+  def theMetadata: Map[String,String] = metadata
+  def theName: String = username
+  def theTags: Seq[String] = tags
   def json: JsValue      =
     location.jsonWithKey ++ Json.obj(
       "username"    -> username,
@@ -113,6 +126,7 @@ case class WebAuthnOtoroshiAdmin(
       "createdAt"   -> createdAt.getMillis,
       "type"        -> typ.json,
       "metadata"    -> metadata,
+      "tags"        -> JsArray(tags.map(JsString.apply)),
       "rights"      -> rights.json
     )
 }
@@ -138,6 +152,7 @@ object WebAuthnOtoroshiAdmin {
         typ =
           (json \ "typ").asOpt[JsValue].flatMap(OtoroshiAdminType.fromJson).getOrElse(OtoroshiAdminType.WebAuthnAdmin),
         metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
+        tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
         rights = UserRights.readFromObject(json)
       )
     } match {

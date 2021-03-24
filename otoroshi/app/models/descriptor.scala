@@ -1445,6 +1445,7 @@ case class ServiceDescriptor(
     id: String,
     groups: Seq[String] = Seq("default"),
     name: String,
+    description: String = "",
     env: String,
     domain: String,
     subdomain: String,
@@ -1510,6 +1511,7 @@ case class ServiceDescriptor(
     clientConfig: ClientConfig = ClientConfig(),
     canary: Canary = Canary(),
     metadata: Map[String, String] = Map.empty[String, String],
+    tags: Seq[String] = Seq.empty,
     chaosConfig: ChaosConfig = ChaosConfig(),
     jwtVerifier: JwtVerifier = RefJwtVerifier(),
     authConfigRef: Option[String] = None,
@@ -1536,6 +1538,11 @@ case class ServiceDescriptor(
 
   def json: JsValue      = toJson
   def internalId: String = id
+
+  def theDescription: String = description
+  def theMetadata: Map[String,String] = metadata
+  def theName: String = name
+  def theTags: Seq[String] = tags
 
   def algoChallengeFromOtoToBack: AlgoSettings = if (secComUseSameAlgo) secComSettings else secComAlgoChallengeOtoToBack
   def algoChallengeFromBackToOto: AlgoSettings = if (secComUseSameAlgo) secComSettings else secComAlgoChallengeBackToOto
@@ -2030,6 +2037,7 @@ object ServiceDescriptor {
           clientConfig = (json \ "clientConfig").asOpt(ClientConfig.format).getOrElse(ClientConfig()),
           canary = (json \ "canary").asOpt(Canary.format).getOrElse(Canary()),
           gzip = (json \ "gzip").asOpt(GzipConfig._fmt).getOrElse(GzipConfig()),
+          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
           metadata = (json \ "metadata")
             .asOpt[Map[String, String]]
             .map(_.filter(_._1.nonEmpty))
@@ -2155,6 +2163,7 @@ object ServiceDescriptor {
         "canary"                       -> sd.canary.toJson,
         "gzip"                         -> sd.gzip.asJson,
         "metadata"                     -> JsObject(sd.metadata.filter(_._1.nonEmpty).mapValues(JsString.apply)),
+        "tags"       -> JsArray(sd.tags.map(JsString.apply)),
         "chaosConfig"                  -> sd.chaosConfig.asJson,
         "jwtVerifier"                  -> sd.jwtVerifier.asJson,
         "secComSettings"               -> sd.secComSettings.asJson,
@@ -2216,6 +2225,7 @@ trait ServiceDescriptorDataStore extends BasicStore[ServiceDescriptor] {
     ServiceDescriptor(
       id = IdGenerator.token(64),
       name = "my-service",
+      description = "a service",
       groups = Seq("default"),
       env = envir,
       domain = domain,

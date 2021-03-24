@@ -845,6 +845,7 @@ class Env(
     backOfficeApiKeyClientId,
     backOfficeApiKeyClientSecret,
     "Otoroshi Backoffice ApiKey",
+    "The apikey use by the Otoroshi UI",
     Seq(ServiceGroupIdentifier(backOfficeGroupId)),
     validUntil = None
   )
@@ -1014,11 +1015,12 @@ class Env(
               }
               case _         => {
 
-                val defaultGroup       = ServiceGroup("default", "default-group", "The default service group", Map.empty)
+                val defaultGroup       = ServiceGroup("default", "default-group", "The default service group", Seq.empty, Map.empty)
                 val defaultGroupApiKey = ApiKey(
                   IdGenerator.token(16),
                   IdGenerator.token(64),
                   "default-apikey",
+                  "the default apikey",
                   Seq(ServiceGroupIdentifier("default")),
                   validUntil = None
                 )

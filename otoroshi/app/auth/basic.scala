@@ -131,6 +131,7 @@ object BasicAuthModuleConfig extends FromJson[AuthModuleConfig] {
           webauthn = (json \ "webauthn").asOpt[Boolean].getOrElse(false),
           users = (json \ "users").asOpt(Reads.seq(BasicAuthUser.fmt)).getOrElse(Seq.empty[BasicAuthUser]),
           metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
+          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
           sessionCookieValues =
             (json \ "sessionCookieValues").asOpt(SessionCookieValues.fmt).getOrElse(SessionCookieValues())
         )
@@ -148,6 +149,7 @@ case class BasicAuthModuleConfig(
     sessionMaxAge: Int = 86400,
     basicAuth: Boolean = false,
     webauthn: Boolean = false,
+    tags: Seq[String],
     metadata: Map[String, String],
     sessionCookieValues: SessionCookieValues,
     location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation()
@@ -164,11 +166,16 @@ case class BasicAuthModuleConfig(
       "webauthn"            -> this.webauthn,
       "sessionMaxAge"       -> this.sessionMaxAge,
       "metadata"            -> this.metadata,
+      "tags"                 -> JsArray(tags.map(JsString.apply)),
       "users"               -> Writes.seq(BasicAuthUser.fmt).writes(this.users),
       "sessionCookieValues" -> SessionCookieValues.fmt.writes(this.sessionCookieValues)
     )
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.authConfigsDataStore.set(this)
   override def cookieSuffix(desc: ServiceDescriptor)                   = s"basic-auth-$id"
+  def theDescription: String = desc
+  def theMetadata: Map[String,String] = metadata
+  def theName: String = name
+  def theTags: Seq[String] = tags
 }
 
 case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule {
@@ -198,6 +205,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
             realm = authConfig.cookieSuffix(descriptor),
             otoroshiData = Some(user.metadata),
             authConfigId = authConfig.id,
+            tags = Seq.empty,
             metadata = Map.empty,
             location = authConfig.location
           )
@@ -219,6 +227,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
             profile = user.asJson,
             simpleLogin = false,
             authConfigId = authConfig.id,
+            tags = Seq.empty,
             metadata = Map.empty,
             rights = user.rights,
             location = authConfig.location
@@ -330,6 +339,7 @@ case class BasicAuthModule(authConfig: BasicAuthModuleConfig) extends AuthModule
                           realm = authConfig.cookieSuffix(descriptor),
                           otoroshiData = Some(user.metadata),
                           authConfigId = authConfig.id,
+                          tags = Seq.empty,
                           metadata = Map.empty,
                           location = authConfig.location
                         )

@@ -267,7 +267,8 @@ object Tenant                     {
         "id"          -> o.id.value,
         "name"        -> o.name,
         "description" -> o.description,
-        "metadata"    -> o.metadata
+        "metadata"    -> o.metadata,
+        "tags"       -> JsArray(o.tags.map(JsString.apply)),
       )
     override def reads(json: JsValue): JsResult[Tenant] =
       Try {
@@ -275,7 +276,8 @@ object Tenant                     {
           id = TenantId((json \ "id").as[String]),
           name = (json \ "name").asOpt[String].getOrElse((json \ "id").as[String]),
           description = (json \ "description").asOpt[String].getOrElse(""),
-          metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty)
+          metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
+          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
         )
       } match {
         case Failure(e) => JsError(e.getMessage)
@@ -289,12 +291,16 @@ object Tenant                     {
       case e: Throwable => throw e
     }
 }
-case class Tenant(id: TenantId, name: String, description: String, metadata: Map[String, String])
+case class Tenant(id: TenantId, name: String, description: String, tags: Seq[String] = Seq.empty, metadata: Map[String, String])
     extends EntityLocationSupport {
   override def internalId: String                                      = id.value
   override def json: JsValue                                           = Tenant.format.writes(this)
   override def location: EntityLocation                                = EntityLocation(id, Seq.empty)
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.tenantDataStore.set(this)
+  def theDescription: String = description
+  def theMetadata: Map[String,String] = metadata
+  def theName: String = name
+  def theTags: Seq[String] = tags
 }
 object Team                       {
   val format                          = new Format[Team] {
@@ -304,7 +310,8 @@ object Team                       {
         "tenant"      -> o.tenant.value,
         "name"        -> o.name,
         "description" -> o.description,
-        "metadata"    -> o.metadata
+        "metadata"    -> o.metadata,
+        "tags"       -> JsArray(o.tags.map(JsString.apply)),
       )
     override def reads(json: JsValue): JsResult[Team] =
       Try {
@@ -313,7 +320,8 @@ object Team                       {
           tenant = TenantId((json \ "tenant").as[String]),
           name = (json \ "name").asOpt[String].getOrElse((json \ "id").as[String]),
           description = (json \ "description").asOpt[String].getOrElse(""),
-          metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty)
+          metadata = (json \ "metadata").asOpt[Map[String, String]].getOrElse(Map.empty),
+          tags = (json \ "tags").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
         )
       } match {
         case Failure(e) => JsError(e.getMessage)
@@ -327,10 +335,15 @@ object Team                       {
       case e: Throwable => throw e
     }
 }
-case class Team(id: TeamId, tenant: TenantId, name: String, description: String, metadata: Map[String, String])
+case class Team(id: TeamId, tenant: TenantId, name: String, description: String, tags: Seq[String] = Seq.empty, metadata: Map[String, String])
     extends EntityLocationSupport {
   override def internalId: String                                      = id.value
   override def json: JsValue                                           = Team.format.writes(this)
   override def location: EntityLocation                                = EntityLocation(tenant, Seq(id))
   def save()(implicit ec: ExecutionContext, env: Env): Future[Boolean] = env.datastores.teamDataStore.set(this)
+
+  def theDescription: String = description
+  def theMetadata: Map[String,String] = metadata
+  def theName: String = name
+  def theTags: Seq[String] = tags
 }
