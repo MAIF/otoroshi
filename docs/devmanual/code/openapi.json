@@ -14054,6 +14054,13 @@
             } ],
             "description" : "The admin password"
           },
+          "tags" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          },
           "groupFilter" : {
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
@@ -14155,6 +14162,13 @@
         "type" : "object",
         "description" : "An otoroshi model for a team of users in the organization (otoroshi-ui)",
         "properties" : {
+          "tags" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          },
           "name" : {
             "description" : "Entity name",
             "type" : "string"
@@ -14376,6 +14390,10 @@
             "description" : "Authorized number of calls per month",
             "type" : "integer"
           },
+          "description" : {
+            "description" : "???",
+            "type" : "string"
+          },
           "rotation" : {
             "description" : "Apikey rotation settings",
             "$ref" : "#/components/schemas/otoroshi.models.ApiKeyRotation"
@@ -14511,6 +14529,13 @@
             "description" : "URL to introspect access_token",
             "type" : "string"
           },
+          "tags" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          },
           "claims" : {
             "description" : "The claims of the token",
             "type" : "string"
@@ -14636,6 +14661,13 @@
             "description" : "Verifier description",
             "type" : "string"
           },
+          "tags" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          },
           "location" : {
             "description" : "Entity location",
             "$ref" : "#/components/schemas/otoroshi.models.EntityLocation"
@@ -14760,6 +14792,13 @@
           "description" : {
             "description" : "Entity description",
             "type" : "string"
+          },
+          "tags" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "???"
           }
         }
       },
@@ -14883,6 +14922,13 @@
               "type" : "string"
             },
             "description" : "Entity metadata"
+          },
+          "tags" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "???"
           },
           "location" : {
             "description" : "Entity location",
@@ -15216,6 +15262,13 @@
             "description" : "Redirection settings",
             "$ref" : "#/components/schemas/otoroshi.models.RedirectionSettings"
           },
+          "tags" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          },
           "restrictions" : {
             "description" : "Restriction settings",
             "$ref" : "#/components/schemas/otoroshi.models.Restrictions"
@@ -15311,6 +15364,10 @@
           "secComTtl" : {
             "description" : "TTL for the info token",
             "type" : "number"
+          },
+          "description" : {
+            "description" : "???",
+            "type" : "string"
           },
           "secComVersion" : {
             "description" : "Version of the sec. com.",
@@ -15430,6 +15487,13 @@
           "to" : {
             "description" : "Stop date",
             "type" : "number"
+          },
+          "tags" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "???"
           },
           "exposed" : {
             "description" : "Is the cert exposed (public key exposed in jwks.json)",
@@ -15724,6 +15788,13 @@
               } ]
             } ],
             "description" : "Config. for elastic reads"
+          },
+          "tags" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "???"
           },
           "limitConcurrentRequests" : {
             "description" : "If enabled, Otoroshi will reject new request if too much at the same time",
@@ -16145,6 +16216,13 @@
             },
             "description" : "Entity metadata"
           },
+          "tags" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          },
           "rights" : {
             "description" : "User rights",
             "$ref" : "#/components/schemas/otoroshi.models.UserRights"
@@ -16381,6 +16459,10 @@
             "description" : "Service enabled",
             "type" : "boolean"
           },
+          "description" : {
+            "description" : "???",
+            "type" : "string"
+          },
           "metadata" : {
             "type" : "object",
             "additionalProperties" : {
@@ -16392,6 +16474,13 @@
             "format" : "int32",
             "description" : "network port",
             "type" : "integer"
+          },
+          "tags" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "???"
           },
           "rules" : {
             "type" : "array",
@@ -16883,6 +16972,13 @@
             "description" : "Auth module id that created the session",
             "type" : "string"
           },
+          "tags" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          },
           "name" : {
             "description" : "Entity name",
             "type" : "string"
@@ -17358,6 +17454,13 @@
             "description" : "max age for the session cookie in seconds",
             "type" : "integer"
           },
+          "tags" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          },
           "users" : {
             "type" : "array",
             "items" : {
@@ -17491,14 +17594,6 @@
         "type" : "object",
         "description" : "An otoroshi model for an organization (otoroshi-ui)",
         "properties" : {
-          "id" : {
-            "description" : "Entity id",
-            "$ref" : "#/components/schemas/otoroshi.models.TenantId"
-          },
-          "name" : {
-            "description" : "Entity name",
-            "type" : "string"
-          },
           "description" : {
             "description" : "Entity description",
             "type" : "string"
@@ -17509,6 +17604,21 @@
               "type" : "string"
             },
             "description" : "Entity metadata"
+          },
+          "name" : {
+            "description" : "Entity name",
+            "type" : "string"
+          },
+          "tags" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "???"
+          },
+          "id" : {
+            "description" : "Entity id",
+            "$ref" : "#/components/schemas/otoroshi.models.TenantId"
           }
         }
       },
@@ -17543,6 +17653,13 @@
           "name" : {
             "description" : "Session user name",
             "type" : "string"
+          },
+          "tags" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "???"
           },
           "metadata" : {
             "type" : "object",
@@ -17858,6 +17975,13 @@
           "typ" : {
             "description" : "Type of data exporter",
             "$ref" : "#/components/schemas/otoroshi.models.DataExporterConfigType"
+          },
+          "tags" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "???"
           },
           "sendWorkers" : {
             "format" : "int32",
@@ -18389,6 +18513,13 @@
           "typ" : {
             "description" : "User type",
             "$ref" : "#/components/schemas/otoroshi.models.OtoroshiAdminType"
+          },
+          "tags" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "???"
           },
           "username" : {
             "description" : "User username",
