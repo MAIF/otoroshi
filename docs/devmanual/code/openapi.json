@@ -13732,6 +13732,23 @@
           "$ref" : "#/components/schemas/otoroshi.models.ErrorTemplate"
         }
       },
+      "otoroshi.auth.GroupRights" : {
+        "type" : "object",
+        "description" : "User rights associated with a group",
+        "properties" : {
+          "userRights" : {
+            "description" : "The user rights associated with this group",
+            "$ref" : "#/components/schemas/otoroshi.models.UserRights"
+          },
+          "users" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "The users associated with this group"
+          }
+        }
+      },
       "otoroshi.utils.http.MtlsConfig" : {
         "type" : "object",
         "description" : "TLS settings for the http client",
@@ -14034,6 +14051,13 @@
             },
             "description" : "Overrides user rights. Object with email as key"
           },
+          "groupRights" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "$ref" : "#/components/schemas/otoroshi.auth.GroupRights"
+            },
+            "description" : "Rights associated with groups"
+          },
           "metadataField" : {
             "oneOf" : [ {
               "$ref" : "#/components/schemas/Null"
@@ -14059,19 +14083,7 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
-          },
-          "groupFilter" : {
-            "oneOf" : [ {
-              "$ref" : "#/components/schemas/Null"
-            }, {
-              "type" : "string"
-            } ],
-            "description" : "Filter for groups"
-          },
-          "serverUrl" : {
-            "description" : "URL of the ldap server",
-            "type" : "string"
+            "description" : "Entity tags"
           },
           "adminUsername" : {
             "oneOf" : [ {
@@ -14104,6 +14116,13 @@
           "allowEmptyPassword" : {
             "description" : "Allow empty password access",
             "type" : "boolean"
+          },
+          "groupFilters" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/otoroshi.auth.GroupFilter"
+            },
+            "description" : "LDAP group filters"
           },
           "basicAuth" : {
             "description" : "Use standard basic auth or web login form",
@@ -14141,6 +14160,13 @@
             "description" : "Settings for the session cookie",
             "$ref" : "#/components/schemas/otoroshi.auth.SessionCookieValues"
           },
+          "serverUrls" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "LDAP server list of url"
+          },
           "dataOverride" : {
             "type" : "object",
             "additionalProperties" : {
@@ -14167,7 +14193,7 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Entity tags"
           },
           "name" : {
             "description" : "Entity name",
@@ -14391,7 +14417,7 @@
             "type" : "integer"
           },
           "description" : {
-            "description" : "???",
+            "description" : "Description of this apikey",
             "type" : "string"
           },
           "rotation" : {
@@ -14534,7 +14560,7 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Entity tags"
           },
           "claims" : {
             "description" : "The claims of the token",
@@ -14666,7 +14692,7 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Entity tags"
           },
           "location" : {
             "description" : "Entity location",
@@ -14798,7 +14824,7 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Entity tags"
           }
         }
       },
@@ -14928,7 +14954,7 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Entity tags"
           },
           "location" : {
             "description" : "Entity location",
@@ -15267,7 +15293,7 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Entity tags"
           },
           "restrictions" : {
             "description" : "Restriction settings",
@@ -15366,7 +15392,7 @@
             "type" : "number"
           },
           "description" : {
-            "description" : "???",
+            "description" : "Entity description",
             "type" : "string"
           },
           "secComVersion" : {
@@ -15493,7 +15519,7 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Entity tags"
           },
           "exposed" : {
             "description" : "Is the cert exposed (public key exposed in jwks.json)",
@@ -15794,7 +15820,7 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Entity tags"
           },
           "limitConcurrentRequests" : {
             "description" : "If enabled, Otoroshi will reject new request if too much at the same time",
@@ -16221,7 +16247,7 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Entity tags"
           },
           "rights" : {
             "description" : "User rights",
@@ -16460,7 +16486,7 @@
             "type" : "boolean"
           },
           "description" : {
-            "description" : "???",
+            "description" : "Entity tags",
             "type" : "string"
           },
           "metadata" : {
@@ -16480,7 +16506,7 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Entity tags"
           },
           "rules" : {
             "type" : "array",
@@ -16977,7 +17003,7 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Entity tags"
           },
           "name" : {
             "description" : "Entity name",
@@ -17084,6 +17110,24 @@
         "properties" : {
           "zone" : {
             "description" : "Zone name",
+            "type" : "string"
+          }
+        }
+      },
+      "otoroshi.auth.GroupFilter" : {
+        "type" : "object",
+        "description" : "Filter for a LDAP group",
+        "properties" : {
+          "group" : {
+            "description" : "The LDAP group",
+            "type" : "string"
+          },
+          "tenant" : {
+            "description" : "The tenant associated with this group",
+            "$ref" : "#/components/schemas/otoroshi.models.TenantAccess"
+          },
+          "team" : {
+            "description" : "The team associated with this group",
             "type" : "string"
           }
         }
@@ -17459,7 +17503,7 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Entity tags"
           },
           "users" : {
             "type" : "array",
@@ -17614,7 +17658,7 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Entity tags"
           },
           "id" : {
             "description" : "Entity id",
@@ -17659,7 +17703,7 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Entity tags"
           },
           "metadata" : {
             "type" : "object",
@@ -17981,7 +18025,7 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Entity tags"
           },
           "sendWorkers" : {
             "format" : "int32",
@@ -18519,7 +18563,7 @@
             "items" : {
               "type" : "string"
             },
-            "description" : "???"
+            "description" : "Entity tags"
           },
           "username" : {
             "description" : "User username",
