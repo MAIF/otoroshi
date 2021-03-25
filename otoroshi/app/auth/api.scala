@@ -183,7 +183,7 @@ trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {
           id = IdGenerator.token,
           name = "New auth. module",
           desc = "New auth. module",
-          serverUrl = "ldap://ldap.forumsys.com:389",
+          serverUrl = Seq("ldap://ldap.forumsys.com:389"),
           searchBase = "dc=example,dc=com",
           searchFilter = "(uid=${username})",
           adminUsername = Some("cn=read-only-admin,dc=example,dc=com"),

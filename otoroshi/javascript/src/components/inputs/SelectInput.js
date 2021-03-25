@@ -120,6 +120,21 @@ export class SelectInput extends Component {
         </div>
       );
     }
+    if (this.props.staticValues) {
+      return (
+        <div style={{ width: '100%' }}>
+          <Select
+            style={{ width: '100%' }}
+            name={`${this.props.label}-search`}
+            isLoading={this.state.loading}
+            value={this.state.value}
+            placeholder={this.props.placeholder}
+            options={[...(this.props.staticValues || []), ...this.state.values]}
+            onChange={this.onChange}
+          />
+        </div>
+      );
+    }
     return (
       <div className="form-group">
         <label htmlFor={`input-${this.props.label}`} className="col-xs-12 col-sm-2 control-label">
