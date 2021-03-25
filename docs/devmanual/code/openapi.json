@@ -16486,7 +16486,7 @@
             "type" : "boolean"
           },
           "description" : {
-            "description" : "Entity tags",
+            "description" : "Entity description",
             "type" : "string"
           },
           "metadata" : {
