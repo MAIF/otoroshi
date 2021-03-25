@@ -84,19 +84,26 @@ object LdapAuthModuleConfig extends FromJson[AuthModuleConfig] {
 
   override def fromJson(json: JsValue): Either[Throwable, LdapAuthModuleConfig] =
     Try {
+      val location = otoroshi.models.EntityLocation.readFromKey(json)
       Right(
         LdapAuthModuleConfig(
-          location = otoroshi.models.EntityLocation.readFromKey(json),
+          location = location,
           id = (json \ "id").as[String],
           name = (json \ "name").as[String],
           desc = (json \ "desc").asOpt[String].getOrElse("--"),
           sessionMaxAge = (json \ "sessionMaxAge").asOpt[Int].getOrElse(86400),
           basicAuth = (json \ "basicAuth").asOpt[Boolean].getOrElse(false),
           allowEmptyPassword = (json \ "allowEmptyPassword").asOpt[Boolean].getOrElse(false),
-          serverUrl = (json \ "serverUrl").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+          serverUrls = (json \ "serverUrl").asOpt[String] match {
+            case Some(url) => Seq(url)
+            case None => (json \ "serverUrls").asOpt[Seq[String]].getOrElse(Seq.empty[String])
+          },
           searchBase = (json \ "searchBase").as[String],
           userBase = (json \ "userBase").asOpt[String].filterNot(_.trim.isEmpty),
-          groupFilter = (json \ "groupFilter").asOpt[Seq[GroupFilter]](Reads.seq(GroupFilter._fmt)).getOrElse(Seq.empty[GroupFilter]),
+          groupFilters = (json \ "groupFilter").asOpt[String] match {
+            case Some(filter) => location.teams.map(t => GroupFilter(filter, TenantAccess(location.tenant.value), t.value))
+            case None => (json \ "groupFilters").asOpt[Seq[GroupFilter]](Reads.seq(GroupFilter._fmt)).getOrElse(Seq.empty[GroupFilter])
+          },
           searchFilter = (json \ "searchFilter").as[String],
           adminUsername = (json \ "adminUsername").asOpt[String].filterNot(_.trim.isEmpty),
           adminPassword = (json \ "adminPassword").asOpt[String].filterNot(_.trim.isEmpty),
@@ -116,7 +123,9 @@ object LdapAuthModuleConfig extends FromJson[AuthModuleConfig] {
           dataOverride = (json \ "dataOverride").asOpt[Map[String, JsObject]].getOrElse(Map.empty),
           groupRights = (json \ "groupRights")
             .asOpt[Map[String, JsObject]]
-            .map(_.mapValues(GroupRights.reads))
+            .map(_.mapValues(GroupRights.reads).collect {
+              case (key, Some(v)) => (key, v)
+            })
             .getOrElse(Map.empty),
         )
       )
@@ -149,10 +158,8 @@ object GroupRights {
       } get
   }
 
-  def reads(json: JsObject): GroupRights =
-    this._fmt.reads(json) match {
-      case JsSuccess(value, _) => value
-    }
+  def reads(json: JsObject): Option[GroupRights] =
+    this._fmt.reads(json).asOpt
 }
 
 case class GroupFilter (group: String, tenant: TenantAccess, team: String)
@@ -188,10 +195,10 @@ case class LdapAuthModuleConfig(
     sessionMaxAge: Int = 86400,
     basicAuth: Boolean = false,
     allowEmptyPassword: Boolean = false,
-    serverUrl: Seq[String] = Seq.empty,
+    serverUrls: Seq[String] = Seq.empty,
     searchBase: String,
     userBase: Option[String] = None,
-    groupFilter: Seq[GroupFilter] = Seq.empty,
+    groupFilters: Seq[GroupFilter] = Seq.empty,
     searchFilter: String = "(mail=${username})",
     adminUsername: Option[String] = None,
     adminPassword: Option[String] = None,
@@ -226,10 +233,10 @@ case class LdapAuthModuleConfig(
       "basicAuth"           -> basicAuth,
       "allowEmptyPassword"  -> allowEmptyPassword,
       "sessionMaxAge"       -> sessionMaxAge,
-      "serverUrl"           -> serverUrl,
+      "serverUrls"          -> serverUrls,
       "searchBase"          -> searchBase,
       "userBase"            -> userBase.map(JsString.apply).getOrElse(JsNull).as[JsValue],
-      "groupFilter"         -> JsArray(groupFilter.map(o => GroupFilter._fmt.writes(o))),
+      "groupFilters"        -> JsArray(groupFilters.map(o => GroupFilter._fmt.writes(o))),
       "searchFilter"        -> searchFilter,
       "adminUsername"       -> adminUsername.map(JsString.apply).getOrElse(JsNull).as[JsValue],
       "adminPassword"       -> adminPassword.map(JsString.apply).getOrElse(JsNull).as[JsValue],
@@ -238,7 +245,7 @@ case class LdapAuthModuleConfig(
       "metadataField"       -> metadataField.map(JsString.apply).getOrElse(JsNull).as[JsValue],
       "extraMetadata"       -> extraMetadata,
       "metadata"            -> metadata,
-      "tags"       -> JsArray(tags.map(JsString.apply)),
+      "tags"                -> JsArray(tags.map(JsString.apply)),
       "sessionCookieValues" -> SessionCookieValues.fmt.writes(this.sessionCookieValues),
       "superAdmins"         -> superAdmins,
       "rightsOverride"      -> JsObject(rightsOverride.mapValues(_.json)),
@@ -286,7 +293,7 @@ case class LdapAuthModuleConfig(
       LdapAuthModuleConfig.logger.error("Empty admin password are not allowed for this LDAP auth. module")
       Left("Empty admin password are not allowed for this LDAP auth. module")
     } else
-      _bindUser(serverUrl.filter(_ => true), username, password)
+      _bindUser(serverUrls.filter(_ => true), username, password)
   }
 
   private def getDefaultSearchControls() = {
@@ -312,7 +319,7 @@ case class LdapAuthModuleConfig(
         LdapAuthModuleConfig.logger.debug(s"bind user for $username")
 
         //                          GROUP      TENANT       LIST[TEAM]    LIST[USER]
-        val usersInGroup: Map[((String, TenantAccess), Seq[String]), Seq[String]] = groupFilter
+        val usersInGroup: Map[((String, TenantAccess), Seq[String]), Seq[String]] = groupFilters
           .groupBy(record => (record.group, record.tenant))
           .map { group => (group._1, group._2.map(_.team)) }
           .map { filter =>
@@ -394,7 +401,7 @@ case class LdapAuthModuleConfig(
               )
             } catch {
               case _: ServiceUnavailableException | _: CommunicationException => Left(s"Communication error")
-              case e =>
+              case e: Throwable =>
                 LdapAuthModuleConfig.logger.debug(s"bind failed", e)
                 Left(s"bind failed ${e.getMessage}")
             }
@@ -412,7 +419,7 @@ case class LdapAuthModuleConfig(
       } catch {
         case _ : CommunicationException | _ : ServiceUnavailableException =>
           _bindUser(urls.tail, username, password)
-        case e =>
+        case e: Throwable =>
           LdapAuthModuleConfig.logger.debug(s"error on LDAP searching method", e)
           Left(s"error on LDAP searching method ${e.getMessage}")
       }
@@ -427,7 +434,7 @@ case class LdapAuthModuleConfig(
     adminPassword.foreach(p => env.put(Context.SECURITY_CREDENTIALS, p))
 
     try {
-      for (url <- serverUrl) {
+      for (url <- serverUrls) {
         env.put(Context.PROVIDER_URL, url)
         scala.util.Try {
           val ctx2 = new InitialDirContext(env)

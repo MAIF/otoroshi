@@ -1031,9 +1031,9 @@ export class LdapModuleConfig extends Component {
     window.newAlert(<LdapUserLoginTest config={settings} />, `Testing user login`);
   };
 
-  setGroupFilterValues = (groupFilter, i, group, tenant, team) => {
-    groupFilter[i] = { group, tenant, team };
-    this.changeTheValue(this.props.path + '.groupFilter', groupFilter);
+  setGroupFiltersValues = (groupFilters, i, group, tenant, team) => {
+    groupFilters[i] = { group, tenant, team };
+    this.changeTheValue(this.props.path + '.groupFilters', groupFilters);
   }
 
   render() {
@@ -1085,9 +1085,9 @@ export class LdapModuleConfig extends Component {
         <ArrayInput
             label="LDAP Server URL"
             placeholder="Set your LDAP server"
-            value={settings.serverUrl}
+            value={settings.serverUrls}
             help="List of your LDAP servers"
-            onChange={(v) => changeTheValue(path + '.serverUrl', v)} />
+            onChange={(v) => changeTheValue(path + '.serverUrls', v)} />
         <TextInput
           label="Search Base"
           value={settings.searchBase}
@@ -1104,7 +1104,7 @@ export class LdapModuleConfig extends Component {
         <div className="form-group">
           <label className="col-xs-12 col-sm-2 control-label">Mapping group filter</label>
           <div className="col-sm-10" style={{ display: 'flex' }}>
-            {(settings.groupFilter && settings.groupFilter.length > 0) ? <table style={{ width: "100%" }}>
+            {(settings.groupFilters && settings.groupFilters.length > 0) ? <table style={{ width: "100%" }}>
               <thead style={{ backgroundColor: "transparent" }}>
                 <tr>
                   <th scope="col" className="text-center">Group filter</th>
@@ -1115,18 +1115,18 @@ export class LdapModuleConfig extends Component {
                 </tr>
               </thead>
               <tbody>
-                {(settings.groupFilter || []).map(({ group, tenant, team }, i) => (
+                {(settings.groupFilters || []).map(({ group, tenant, team }, i) => (
                   <tr key={`group-filter-${i}`} style={{ marginTop: '5px' }}>
                     <th>
                       <input type="text" className="form-control" placeholder="Group filter" value={group}
-                        onChange={e => this.setGroupFilterValues(settings.groupFilter, i, e.target.value, tenant, team)}
+                        onChange={e => this.setGroupFiltersValues(settings.groupFilters, i, e.target.value, tenant, team)}
                         onDragOver={(e) => e.preventDefault()}
                       />
                     </th>
                     <td style={{ width: '25%', padding: '5px' }}>
                       <SelectInput
                         value={tenant.split(":")[0]}
-                        onChange={e => this.setGroupFilterValues(settings.groupFilter, i, group, `${e}:${tenant.split(":")[1]}`, team)}
+                        onChange={e => this.setGroupFiltersValues(settings.groupFilters, i, group, `${e}:${tenant.split(":")[1]}`, team)}
                         valuesFrom="/bo/api/proxy/api/tenants"
                         staticValues={[
                           { value: '*', label: 'All' }
@@ -1137,7 +1137,7 @@ export class LdapModuleConfig extends Component {
                     <td style={{ width: '25%', padding: '5px' }}>
                       <SelectInput
                         value={team}
-                        onChange={e => this.setGroupFilterValues(settings.groupFilter, i, group, tenant, e)}
+                        onChange={e => this.setGroupFiltersValues(settings.groupFilters, i, group, tenant, e)}
                         valuesFrom="/bo/api/proxy/api/teams"
                         staticValues={[
                           { value: '*', label: 'All' }
@@ -1148,7 +1148,7 @@ export class LdapModuleConfig extends Component {
                     <td style={{ width: '15%', padding: '5px' }}>
                       <SelectInput
                         value={tenant.split(":")[1]}
-                        onChange={e => this.setGroupFilterValues(settings.groupFilter, i, group, `${tenant.split(':')[0]}:${e}`, team)}
+                        onChange={e => this.setGroupFiltersValues(settings.groupFilters, i, group, `${tenant.split(':')[0]}:${e}`, team)}
                         staticValues={[
                           { value: 'rw', label: 'Read/Write' },
                           { value: 'r', label: 'Read' }
@@ -1161,14 +1161,14 @@ export class LdapModuleConfig extends Component {
                         <button
                           type="button"
                           className="btn btn-danger"
-                          onClick={() => this.changeTheValue(path + '.groupFilter', settings.groupFilter.filter((_, j) => i !== j))}>
+                          onClick={() => this.changeTheValue(path + '.groupFilters', settings.groupFilters.filter((_, j) => i !== j))}>
                           <i className="fas fa-trash" />
                         </button>
                         <button
                           type="button"
                           className="btn btn-primary"
-                          onClick={() => changeTheValue(path + '.groupFilter', [
-                            ...settings.groupFilter,
+                          onClick={() => changeTheValue(path + '.groupFilters', [
+                            ...settings.groupFilters,
                             { group: '', tenant: '*rw', team: '*' }
                           ])}>
                           <i className="fas fa-plus-circle" />{' '}
@@ -1182,7 +1182,7 @@ export class LdapModuleConfig extends Component {
               : <button
                 type="button"
                 className="btn btn-primary"
-                onClick={() => changeTheValue(path + '.groupFilter', [
+                onClick={() => changeTheValue(path + '.groupFilters', [
                   { group: '', tenant: '*rw', team: '*' }
                 ])}>
                 <i className="fas fa-plus-circle" />{' '}
