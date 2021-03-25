@@ -883,6 +883,10 @@ export class DangerZonePage extends Component {
       type: 'object',
       props: { label: 'Metadata' },
     },
+    tags: {
+      type: 'array',
+      props: { label: 'Tags' },
+    },
   };
 
   formFlow = [
@@ -964,6 +968,7 @@ export class DangerZonePage extends Component {
     'autoCert.allowed',
     'autoCert.notAllowed',
     '>>>Global metadata',
+    'tags',
     'metadata',
   ];
 

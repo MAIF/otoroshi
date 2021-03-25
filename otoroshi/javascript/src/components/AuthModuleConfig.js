@@ -1478,6 +1478,11 @@ export class AuthModuleConfig extends Component {
         {settings.type === 'basic' && <BasicModuleConfig {...this.props} />}
         {settings.type === 'ldap' && <LdapModuleConfig {...this.props} />}
         <Separator title="Module metadata" />
+        <ArrayInput
+          label="Tags"
+          value={settings.tags}
+          onChange={(v) => this.changeTheValue(path + '.tags', v)}
+        />
         <ObjectInput
           label="Metadata"
           value={settings.metadata}

@@ -37,7 +37,7 @@ export class TenantsPage extends Component {
     });
   };
 
-  formFlow = ['id', 'name', 'description', 'metadata'];
+  formFlow = ['id', 'name', 'description', 'tags', 'metadata'];
 
   formSchema = {
     id: { type: 'string', props: { label: 'Id', placeholder: '---' } },
@@ -52,6 +52,10 @@ export class TenantsPage extends Component {
     metadata: {
       type: 'object',
       props: { label: 'Metadata' },
+    },
+    tags: {
+      type: 'array',
+      props: { label: 'Tags' },
     },
   };
 

@@ -428,6 +428,10 @@ export class ScriptsPage extends Component {
       type: 'object',
       props: { label: 'Script metadata' },
     },
+    tags: {
+      type: 'array',
+      props: { label: 'Script tags' },
+    },
     code: {
       type: 'code',
       props: {
@@ -464,7 +468,7 @@ export class ScriptsPage extends Component {
     { title: 'Description', content: (item) => item.desc },
   ];
 
-  formFlow = ['_loc', 'id', 'name', 'desc', 'type', 'compilation', 'code', 'metadata'];
+  formFlow = ['_loc', 'id', 'name', 'desc', 'type', 'compilation', 'code', 'tags', 'metadata'];
 
   componentDidMount() {
     this.props.setTitle(`All Plugins`);

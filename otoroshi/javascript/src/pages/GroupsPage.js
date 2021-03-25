@@ -23,6 +23,10 @@ export class GroupsPage extends Component {
       type: 'object',
       props: { label: 'Group metadata' },
     },
+    tags: {
+      type: 'array',
+      props: { label: 'Group tags' },
+    },
   };
 
   columns = [
@@ -58,7 +62,7 @@ export class GroupsPage extends Component {
     },
   ];
 
-  formFlow = ['_loc', 'id', 'name', 'description', 'metadata'];
+  formFlow = ['_loc', 'id', 'name', 'description', 'tags','metadata'];
 
   state = { env: null };
 

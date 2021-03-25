@@ -330,6 +330,14 @@ const ApiKeysConstants = {
         placeholder: `The name of the client (ie. ${faker.name.firstName()} ${faker.name.lastName()}'s ApiKey)`,
       },
     },
+    description: {
+      type: 'string',
+      props: {
+        label: 'ApiKey description',
+        help: 'A useful description for this apikey',
+        placeholder: `A useful description for this apikey`,
+      },
+    },
     authorizedEntities: {
       type: 'array',
       props: {
@@ -397,7 +405,7 @@ const ApiKeysConstants = {
         label: 'Metadata',
         placeholderKey: 'Metadata Name',
         placeholderValue: 'Metadata value',
-        help: 'Some useful metadata for downstream services',
+        help: 'Some useful metadata',
       },
     },
     tags: {
@@ -546,6 +554,7 @@ const ApiKeysConstants = {
     'clientId',
     'clientSecret',
     'clientName',
+    'description',
     'validUntil',
     'copyCredentials',
     'resetSecret',
@@ -638,6 +647,7 @@ export class ServiceApiKeysPage extends Component {
           clientId: faker.random.alphaNumeric(16),
           clientSecret: faker.random.alphaNumeric(64),
           clientName: `${faker.name.firstName()} ${faker.name.lastName()}'s api-key`,
+          description: '',
           enabled: true,
           throttlingQuota: 100,
           dailyQuota: 1000000,
@@ -712,6 +722,7 @@ export class ApiKeysPage extends Component {
           clientId: faker.random.alphaNumeric(16),
           clientSecret: faker.random.alphaNumeric(64),
           clientName: `${faker.name.firstName()} ${faker.name.lastName()}'s api-key`,
+          description: '',
           enabled: true,
           throttlingQuota: 100,
           dailyQuota: 1000000,

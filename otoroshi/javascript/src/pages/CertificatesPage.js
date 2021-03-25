@@ -412,6 +412,10 @@ export class CertificatesPage extends Component {
       type: 'object',
       props: { label: 'Certificate metadata' },
     },
+    tags: {
+      type: 'array',
+      props: { label: 'Certificate tags' },
+    },
     commands: {
       type: Commands,
       props: {
@@ -595,6 +599,7 @@ export class CertificatesPage extends Component {
     'privateKey',
     'password',
     'infos',
+    'tags',
     'metadata',
   ];
 

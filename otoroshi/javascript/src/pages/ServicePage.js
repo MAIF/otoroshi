@@ -1188,6 +1188,13 @@ export class ServicePage extends Component {
             help="The name of your service. Only for debug and human readability purposes."
             onChange={(e) => this.changeTheValue('name', e)}
           />
+          <TextInput
+            label="Description"
+            placeholder="Your service description"
+            value={this.state.service.description}
+            help="The description of your service. Only for debug and human readability purposes."
+            onChange={(e) => this.changeTheValue('description', e)}
+          />
           <Collapse collapsed={this.state.allCollapsed} initCollapsed={false} label="Flags">
             <div className="row">
               <div className="col-md-6">
@@ -2842,6 +2849,13 @@ export class ServicePage extends Component {
               value={this.state.service.api.openApiDescriptorUrl}
               help="Specify an open API descriptor. Useful to display the documentation"
               onChange={(e) => this.changeTheValue('api.openApiDescriptorUrl', e)}
+            />
+            <ArrayInput
+              label="Tags"
+              placeholder="A tag"
+              value={this.state.service.tags}
+              help="Specify tags for the service"
+              onChange={(v) => this.changeTheValue('tags', v)}
             />
             <ObjectInput
               label="Metadata"

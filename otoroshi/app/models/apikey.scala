@@ -312,7 +312,7 @@ object ApiKey {
           clientId = (json \ "clientId").as[String],
           clientSecret = (json \ "clientSecret").as[String],
           clientName = (json \ "clientName").as[String],
-          description = (json \ "description").as[String],
+          description = (json \ "description").asOpt[String].getOrElse(""),
           authorizedEntities = {
             val authorizedGroup: Seq[EntityIdentifier]    =
               (json \ "authorizedGroup").asOpt[String].map(ServiceGroupIdentifier.apply).toSeq

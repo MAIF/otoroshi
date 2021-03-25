@@ -254,6 +254,7 @@ export class TcpServicesPage extends Component {
     'enabled',
     'port',
     'interface',
+    'tags',
     'metadata',
     '>>>TLS',
     'tls',
@@ -294,6 +295,10 @@ export class TcpServicesPage extends Component {
     metadata: {
       type: 'object',
       props: { label: 'Metadata' },
+    },
+    tags: {
+      type: 'array',
+      props: { label: 'Tags' },
     },
     tls: {
       type: 'select',

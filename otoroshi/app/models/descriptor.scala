@@ -1969,6 +1969,7 @@ object ServiceDescriptor {
             (groupId ++ groups).distinct
           },
           name = (json \ "name").asOpt[String].getOrElse((json \ "id").as[String]),
+          description = (json \ "description").asOpt[String].getOrElse(""),
           env = (json \ "env").asOpt[String].getOrElse("prod"),
           domain = (json \ "domain").as[String],
           subdomain = (json \ "subdomain").as[String],
@@ -2108,6 +2109,7 @@ object ServiceDescriptor {
         "groupId"                      -> oldGroupId,
         "groups"                       -> JsArray(sd.groups.map(JsString.apply)),
         "name"                         -> sd.name,
+        "description"                  -> sd.description,
         "env"                          -> sd.env,
         "domain"                       -> sd.domain,
         "subdomain"                    -> sd.subdomain,

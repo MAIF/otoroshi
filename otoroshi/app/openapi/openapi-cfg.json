@@ -1366,7 +1366,7 @@
     "otoroshi.tcp.TcpRule.domain": "match on SNI domain",
     "otoroshi.tcp.TcpRule.targets": "TCP targets",
     "otoroshi.tcp.TcpService.clientAuth": "Use client authentication",
-    "otoroshi.tcp.TcpService.description": "Entity tags",
+    "otoroshi.tcp.TcpService.description": "Entity description",
     "otoroshi.tcp.TcpService.enabled": "Service enabled",
     "otoroshi.tcp.TcpService.id": "Entity id",
     "otoroshi.tcp.TcpService.interface": "Network interface",

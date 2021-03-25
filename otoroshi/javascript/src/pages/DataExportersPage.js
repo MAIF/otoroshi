@@ -345,6 +345,11 @@ export class NewExporterForm extends Component {
             help="The data exporter description"
             onChange={(e) => this.dataChange({ desc: e })}
           />
+          <ArrayInput
+            label="Tags"
+            value={this.data().tags}
+            onChange={(e) => this.dataChange({ tags: e })}
+          />
           <ObjectInput
             label="Metadata"
             value={this.data().metadata}

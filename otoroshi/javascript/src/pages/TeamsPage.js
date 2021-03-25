@@ -37,7 +37,7 @@ export class TeamsPage extends Component {
     });
   };
 
-  formFlow = ['id', 'tenant', 'name', 'description', 'metadata'];
+  formFlow = ['id', 'tenant', 'name', 'description', 'tags','metadata'];
 
   formSchema = {
     id: { type: 'string', props: { label: 'Id', placeholder: '---' } },
@@ -63,6 +63,10 @@ export class TeamsPage extends Component {
     metadata: {
       type: 'object',
       props: { label: 'Metadata' },
+    },
+    tags: {
+      type: 'array',
+      props: { label: 'Tags' },
     },
   };
 
