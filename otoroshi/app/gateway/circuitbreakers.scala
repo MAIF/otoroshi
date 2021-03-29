@@ -56,21 +56,21 @@ object Retry {
     try {
       (times, failure) match {
         case (0, Some(e)) =>
-          logger.warn(s"Retry failure ($totalCalls attemps) for $ctx => ${e.getMessage}")
+          logger.warn(s"Retry failure ($totalCalls attempts) for $ctx => ${e.getMessage}")
           promise.tryFailure(e)
         case (0, None)    =>
-          logger.warn(s"Retry failure ($totalCalls attemps) for $ctx => lost exception")
+          logger.warn(s"Retry failure ($totalCalls attempts) for $ctx => lost exception")
           promise.tryFailure(new RuntimeException("Failure, but lost track of exception :-("))
         case (i, _)       =>
           if (totalCalls > 1 && (times < totalCalls)) {
-            logger.warn(s"Retrying call for $ctx ($times/$totalCalls attemps)")
+            logger.warn(s"Retrying call for $ctx ($times/$totalCalls attempts)")
           }
           counter.incrementAndGet()
           f((totalCalls - times) + 1).onComplete {
             case Success(t) =>
               promise.trySuccess(t)
             case Failure(e) =>
-              logger.warn(s"Error calling $ctx ($times/$totalCalls attemps) : ${e.getMessage}")
+              logger.warn(s"Error calling $ctx ($times/$totalCalls attempts) : ${e.getMessage}")
               if (delay == 0L) {
                 retryPromise[T](totalCalls, times - 1, 0L, factor, promise, Some(e), ctx, f, counter)
               } else {
