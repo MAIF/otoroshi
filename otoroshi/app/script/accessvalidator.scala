@@ -7,7 +7,7 @@ import java.util.concurrent.TimeUnit
 import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.util.FastFuture
 import otoroshi.env.Env
-import otoroshi.gateway.Errors
+import otoroshi.gateway.{Errors, GwError}
 import otoroshi.models._
 import org.apache.commons.codec.binary.Hex
 import otoroshi.utils.{RegexPool, TypedMap}
@@ -104,6 +104,7 @@ object DefaultValidator extends AccessValidator {
 
 object CompilingValidator extends AccessValidator {
   override def canAccess(context: AccessContext)(implicit env: Env, ec: ExecutionContext): Future[Boolean] = {
+    context.attrs.put(otoroshi.plugins.Keys.GwErrorKey -> GwError("not ready yet, plugin is loading ..."))
     FastFuture.successful(false)
   }
 }

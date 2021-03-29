@@ -17,6 +17,8 @@ import otoroshi.utils.http.RequestImplicits._
 
 import scala.concurrent.{ExecutionContext, Future}
 
+case class GwError(message: String)
+
 object Errors {
 
   val messages = Map(

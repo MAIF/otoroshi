@@ -17,6 +17,7 @@ import com.google.common.hash.Hashing
 import otoroshi.env.Env
 import otoroshi.events._
 import otoroshi.events.{AnalyticEvent, OtoroshiEvent}
+import otoroshi.gateway.GwError
 
 import javax.script._
 import otoroshi.models._
@@ -537,19 +538,22 @@ trait RequestTransformer extends StartableAndStoppable with NamedPlugin with Int
 object DefaultRequestTransformer extends RequestTransformer
 
 object CompilingRequestTransformer extends RequestTransformer {
-  override def transformRequestSync(
-      snowflake: String,
-      rawRequest: HttpRequest,
-      otoroshiRequest: HttpRequest,
-      desc: ServiceDescriptor,
-      apiKey: Option[ApiKey],
-      user: Option[PrivateAppsUser]
-  )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Either[Result, HttpRequest] = {
-    val accept = rawRequest.headers.get("Accept").getOrElse("text/html").split(",").toSeq.map(_.trim)
+
+  override def  transformRequestWithCtx(ctx: TransformerRequestContext)(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] = {
+    val accept = ctx.rawRequest.headers.get("Accept").getOrElse("text/html").split(",").toSeq.map(_.trim)
+    ctx.attrs.put(otoroshi.plugins.Keys.GwErrorKey -> GwError("not ready yet, plugin is loading ..."))
     if (accept.contains("text/html")) { // in a browser
-      Left(Results.ServiceUnavailable("<h3>not ready yet, plugin is loading ...</h3>").as("text/html"))
+      Left(Results.ServiceUnavailable("<h3>not ready yet, plugin is loading ...</h3>").as("text/html").withHeaders(
+        env.Headers.OtoroshiGatewayError -> "true",
+        env.Headers.OtoroshiErrorMsg     -> "not ready yet, plugin is loading ...",
+        env.Headers.OtoroshiStateResp    -> ctx.request.headers.get(env.Headers.OtoroshiState).getOrElse("--")
+      )).future
     } else {
-      Left(Results.ServiceUnavailable(Json.obj("error" -> "not ready yet, plugin is loading ...")))
+      Left(Results.ServiceUnavailable(Json.obj("error" -> "not ready yet, plugin is loading ...")).withHeaders(
+        env.Headers.OtoroshiGatewayError -> "true",
+        env.Headers.OtoroshiErrorMsg     -> "not ready yet, plugin is loading ...",
+        env.Headers.OtoroshiStateResp    -> ctx.request.headers.get(env.Headers.OtoroshiState).getOrElse("--")
+      )).future
     }
   }
 }

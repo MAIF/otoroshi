@@ -3,6 +3,7 @@ package otoroshi.script
 import akka.http.scaladsl.util.FastFuture
 import akka.util.ByteString
 import otoroshi.env.Env
+import otoroshi.gateway.GwError
 import otoroshi.models.ServiceDescriptor
 import otoroshi.script.CompilingPreRouting.funit
 import otoroshi.utils.TypedMap
@@ -14,7 +15,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 import scala.util.control.NoStackTrace
 
-case class PreRoutingError(body: ByteString, code: Int = 500, contentType: String)
+case class PreRoutingError(body: ByteString, code: Int = 500, contentType: String, headers: Map[String, String] = Map.empty)
     extends RuntimeException("PreRoutingError")
     with NoStackTrace
 case class PreRoutingErrorWithResult(result: Result)
@@ -107,6 +108,8 @@ object CompilingPreRouting extends PreRouting {
 }
 
 class FailingPreRoute extends PreRouting {
-  override def preRoute(context: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] =
+  override def preRoute(context: PreRoutingContext)(implicit env: Env, ec: ExecutionContext): Future[Unit] = {
+    context.attrs.put(otoroshi.plugins.Keys.GwErrorKey -> GwError("epic fail!"))
     Future.failed(PreRoutingError.fromString("epic fail!"))
+  }
 }

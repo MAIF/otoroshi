@@ -1925,8 +1925,8 @@ case class ServiceDescriptor(
           }
           .flatMap(_ => f)
           .recoverWith {
-            case PreRoutingError(body, code, ctype) =>
-              FastFuture.successful(Results.Status(code)(body).as(ctype)).map(Left.apply)
+            case PreRoutingError(body, code, ctype, headers) =>
+              FastFuture.successful(Results.Status(code)(body).as(ctype).withHeaders(headers.toSeq: _*)).map(Left.apply)
             case PreRoutingErrorWithResult(result)  =>
               FastFuture.successful(result).map(Left.apply)
             case e                                  =>

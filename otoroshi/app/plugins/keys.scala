@@ -1,9 +1,9 @@
 package otoroshi.plugins
 
 import java.util.concurrent.atomic.AtomicLong
-
 import otoroshi.models.{ApiKey, ApiKeyRotationInfo, PrivateAppsUser, Target}
 import org.joda.time.DateTime
+import otoroshi.gateway.GwError
 import play.api.libs.json.JsValue
 import play.api.libs.typedmap.TypedKey
 
@@ -28,4 +28,5 @@ object Keys {
   val ElCtxKey                  = TypedKey[Map[String, String]]("otoroshi.core.ElCtx")
   val GatewayEventExtraInfosKey = TypedKey[JsValue]("otoroshi.core.GatewayEventExtraInfos")
   val PreExtractedRequestTargetKey = TypedKey[Target]("otoroshi.core.PreExtractedRequestTarget")
+  val GwErrorKey                = TypedKey[GwError]("otoroshi.core.GwError")
 }
