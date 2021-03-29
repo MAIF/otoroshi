@@ -40,9 +40,7 @@ case class ProxyDone(
     upstreamLatency: Long,
     headersOut: Seq[Header],
     otoroshiHeadersOut: Seq[Header],
-    otoroshiHeadersIn: Seq[Header],
-    gwError: Boolean = false,
-    gwErrorMessage: Option[String] = None
+    otoroshiHeadersIn: Seq[Header]
 )
 
 class ErrorHandler()(implicit env: Env) extends HttpErrorHandler {

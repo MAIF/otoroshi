@@ -267,7 +267,8 @@ class WebSocketHandler()(implicit env: Env) {
               remainingQuotas = q,
               viz = Some(viz),
               clientCertChain = req.clientCertChainPem,
-              err = false,
+              err = attrs.get(otoroshi.plugins.Keys.GwErrorKey).isDefined,
+              gwError = attrs.get(otoroshi.plugins.Keys.GwErrorKey).map(_.message),
               userAgentInfo = attrs.get[JsValue](otoroshi.plugins.Keys.UserAgentInfoKey),
               geolocationInfo = attrs.get[JsValue](otoroshi.plugins.Keys.GeolocationInfoKey),
               extraAnalyticsData = attrs.get[JsValue](otoroshi.plugins.Keys.ExtraAnalyticsDataKey)

@@ -126,7 +126,7 @@ object Errors {
             responseChunked = false,
             viz = Some(viz),
             err = true,
-            gwError = Some(message),
+            gwError = Some(attrs.get(otoroshi.plugins.Keys.GwErrorKey).map(_.message + " / " + message).getOrElse(message)),
             userAgentInfo = attrs.get[JsValue](otoroshi.plugins.Keys.UserAgentInfoKey),
             geolocationInfo = attrs.get[JsValue](otoroshi.plugins.Keys.GeolocationInfoKey),
             extraAnalyticsData = attrs.get[JsValue](otoroshi.plugins.Keys.ExtraAnalyticsDataKey)
@@ -179,7 +179,7 @@ object Errors {
             responseChunked = false,
             viz = None,
             err = true,
-            gwError = Some(message),
+            gwError = Some(attrs.get(otoroshi.plugins.Keys.GwErrorKey).map(_.message + " / " + message).getOrElse(message)),
             userAgentInfo = attrs.get[JsValue](otoroshi.plugins.Keys.UserAgentInfoKey),
             geolocationInfo = attrs.get[JsValue](otoroshi.plugins.Keys.GeolocationInfoKey),
             extraAnalyticsData = attrs.get[JsValue](otoroshi.plugins.Keys.ExtraAnalyticsDataKey)
