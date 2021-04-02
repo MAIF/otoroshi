@@ -500,7 +500,7 @@ export class ScriptsPage extends Component {
         navigateTo={(item) => {
           window.location = `/bo/dashboard/plugins/edit/${item.id}`;
         }}
-        itemUrl={(i) => `/bo/dashboard/plugins/edit/${item.id}`}
+        itemUrl={(i) => `/bo/dashboard/plugins/edit/${i.id}`}
         showActions={true}
         showLink={true}
         rowNavigation={true}
