@@ -444,6 +444,30 @@ export class TopBar extends Component {
     }
   }
 
+  brandName = () => {
+    if (this.state.env && this.state.env.instanceName) {
+      if (this.state.env.instanceName.toLowerCase() === 'otoroshi') {
+        return (
+          <>
+            <span>おとろし</span> &nbsp; {window.__title || 'Otoroshi'}
+          </>
+        );
+      } else {
+        return (
+          <>
+            Otoroshi - {this.state.env.instanceName}
+          </>
+        );
+      }
+    } else {
+      return (
+        <>
+          <span>おとろし</span> &nbsp; {window.__title || 'Otoroshi'}
+        </>
+      )
+    }
+  }
+
   render() {
     const selected = (this.props.params || {}).lineId;
     return (
@@ -462,8 +486,9 @@ export class TopBar extends Component {
                 <span className="sr-only">Toggle sidebar</span>
                 <span>Menu</span>
               </button>
+              
               <a className="navbar-brand" href="/bo/dashboard" style={{ display: 'flex' }}>
-                <span>おとろし</span> &nbsp; {window.__title || 'Otoroshi'}
+              {this.brandName()}
               </a>
             </div>
             <ul className="nav navbar-nav navbar-right">

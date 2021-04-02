@@ -206,7 +206,9 @@ class BackOfficeController(
               "staticExposedDomain"     -> env.staticExposedDomain.map(JsString.apply).getOrElse(JsNull).as[JsValue],
               "providerDashboardUrl"    -> env.providerDashboardUrl.map(JsString.apply).getOrElse(JsNull).as[JsValue],
               "providerDashboardTitle"  -> env.providerDashboardTitle,
-              "providerDashboardSecret" -> env.providerDashboardSecret
+              "providerDashboardSecret" -> env.providerDashboardSecret,
+              "instanceId"              -> config.otoroshiId,
+              "instanceName"            -> env.name,
             )
           )
         }
