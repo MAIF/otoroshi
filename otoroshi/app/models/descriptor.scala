@@ -1531,6 +1531,7 @@ case class ServiceDescriptor(
     restrictions: Restrictions = Restrictions(),
     hosts: Seq[String] = Seq.empty[String],
     paths: Seq[String] = Seq.empty[String],
+    handleLegacyDomain: Boolean = true, 
     issueCert: Boolean = false,
     issueCertCA: Option[String] = None,
     location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation()
@@ -1555,8 +1556,8 @@ case class ServiceDescriptor(
     case s                               => s"$subdomain.$env.$domain"
   }
 
-  lazy val allHosts: Seq[String] = hosts :+ toHost
-  lazy val allPaths: Seq[String] = paths ++ matchingRoot.toSeq
+  lazy val allHosts: Seq[String] = hosts ++ (if (handleLegacyDomain) Seq(toHost) else Seq.empty[String])
+  lazy val allPaths: Seq[String] = paths ++ (if (handleLegacyDomain) matchingRoot.toSeq else Seq.empty[String])
 
   def maybeStrippedUri(req: RequestHeader, rawUri: String): String = {
     val root        = req.relativeUri
@@ -2092,6 +2093,7 @@ object ServiceDescriptor {
             .getOrElse(PreRoutingRef()),
           hosts = (json \ "hosts").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
           paths = (json \ "paths").asOpt[Seq[String]].getOrElse(Seq.empty[String]),
+          handleLegacyDomain = (json \ "handleLegacyDomain").asOpt[Boolean].getOrElse(true),
           issueCert = (json \ "issueCert").asOpt[Boolean].getOrElse(false),
           issueCertCA = (json \ "issueCertCA").asOpt[String]
         )
@@ -2188,6 +2190,7 @@ object ServiceDescriptor {
         "plugins"                      -> sd.plugins.json,
         "hosts"                        -> JsArray(sd.hosts.map(JsString.apply)),
         "paths"                        -> JsArray(sd.paths.map(JsString.apply)),
+        "handleLegacyDomain"           -> sd.handleLegacyDomain,
         "issueCert"                    -> sd.issueCert,
         "issueCertCA"                  -> sd.issueCertCA.map(JsString.apply).getOrElse(JsNull).as[JsValue]
       )

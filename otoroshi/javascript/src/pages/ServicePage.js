@@ -1301,114 +1301,143 @@ export class ServicePage extends Component {
             collapsed={this.state.allCollapsed}
             initCollapsed={false}
             label="Service exposition settings">
-            {this.state.freeDomain && (
-              <FreeDomainInput
-                label="Exposed domain"
-                placeholder="(http|https)://subdomain?.env?.domain.tld?/root?"
-                help="The domain used to expose your service. Should follow pattern: (http|https)://subdomain?.env?.domain.tld?/root? or regex (http|https):\/\/(.*?)\.?(.*?)\.?(.*?)\.?(.*)\/?(.*)"
-                value={this.state.service}
-                disabled={!!(this.state.env && this.state.env.staticExposedDomain)}
-                onChange={(newService) => {
-                  this.setState({
-                    changed: shallowDiffers(this.state.originalService, newService),
-                    service: newService,
-                  });
-                }}
-              />
-            )}
-            {!this.state.freeDomain && (
-              <TextInput
-                label="Subdomain"
-                placeholder="The subdomain on which the service is available"
-                value={this.state.service.subdomain}
-                disabled={!!(this.state.env && this.state.env.staticExposedDomain)}
-                help="The subdomain on which the service is available"
-                onChange={(e) => this.changeTheValue('subdomain', e)}
-              />
-            )}
-            {!this.state.freeDomain && (
-              <SelectInput
-                label="Line"
-                placeholder="The line on which the service is available"
-                value={this.state.service.env}
-                onChange={(e) => this.changeTheValue('env', e)}
-                disabled={!!(this.state.env && this.state.env.staticExposedDomain)}
-                valuesFrom="/bo/api/proxy/api/lines"
-                help="The line on which the service is available. Based on that value, the name of the line will be appended to the subdomain. For line prod, nothing will be appended. For example, if the subdomain is 'foo' and line is 'preprod', then the exposed service will be available at 'foo.preprod.mydomain'"
-                transformer={(v) => ({ value: v, label: v })}
-              />
-            )}
-            {!this.state.freeDomain && (
-              <TextInput
-                label="Domain"
-                placeholder="The domain on which the service is available"
-                value={this.state.service.domain}
-                help="The domain on which the service is available."
-                onChange={(e) => this.changeTheValue('domain', e)}
-                disabled={!!(this.state.env && this.state.env.staticExposedDomain)}
-              />
-            )}
-            {!this.state.freeDomain && (
-              <TextInput
-                label="Matching root"
-                placeholder="The root path on which the service is available"
-                value={this.state.service.matchingRoot}
-                help="The root path on which the service is available"
-                onChange={(e) => this.changeTheValue('matchingRoot', e)}
-              />
-            )}
-            <div className="form-group">
-              <label className="col-xs-12 col-sm-2 control-label" />
-              <div className="col-sm-10">
-                <button
-                  className="btn btn-xs btn-info"
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    this.setState({ freeDomain: !this.state.freeDomain });
-                  }}>
-                  {this.state.freeDomain ? 'exposed domain assistant' : 'exposed domain free input'}
-                </button>
-                {!this.state.neverSaved && (
-                  <button
-                    type="button"
-                    onClick={this.createLetsEncrypt}
-                    className="btn btn-xs btn-info">
-                    <i className="fas fa-plus-circle" /> Create Let's Encrypt cert.
-                  </button>
+            {this.state.service.handleLegacyDomain && (
+              <>  
+                {this.state.freeDomain && (
+                  <FreeDomainInput
+                    label="Exposed domain"
+                    placeholder="(http|https)://subdomain?.env?.domain.tld?/root?"
+                    help="The domain used to expose your service. Should follow pattern: (http|https)://subdomain?.env?.domain.tld?/root? or regex (http|https):\/\/(.*?)\.?(.*?)\.?(.*?)\.?(.*)\/?(.*)"
+                    value={this.state.service}
+                    disabled={!!(this.state.env && this.state.env.staticExposedDomain)}
+                    onChange={(newService) => {
+                      this.setState({
+                        changed: shallowDiffers(this.state.originalService, newService),
+                        service: newService,
+                      });
+                    }}
+                  />
                 )}
-                {!this.state.neverSaved && (
-                  <button type="button" onClick={this.createCert} className="btn btn-xs btn-info">
-                    <i className="fas fa-plus-circle" /> Create certificate
-                  </button>
+                {!this.state.freeDomain && (
+                  <TextInput
+                    label="Subdomain"
+                    placeholder="The subdomain on which the service is available"
+                    value={this.state.service.subdomain}
+                    disabled={!!(this.state.env && this.state.env.staticExposedDomain)}
+                    help="The subdomain on which the service is available"
+                    onChange={(e) => this.changeTheValue('subdomain', e)}
+                  />
                 )}
-              </div>
-            </div>
-            {this.state.service.env === 'prod' &&
-              this.state.service.subdomain.trim().length === 0 && (
-                <LinkDisplay
-                  link={`${this.state.service.forceHttps ? 'https' : 'http'}://${
-                    this.state.service.domain
-                  }${this.state.service.matchingRoot || ''}/`}
-                />
-              )}
-            {this.state.service.env === 'prod' &&
-              this.state.service.subdomain.trim().length > 0 && (
-                <LinkDisplay
-                  link={`${this.state.service.forceHttps ? 'https' : 'http'}://${
-                    this.state.service.subdomain
-                  }.${this.state.service.domain}${this.state.service.matchingRoot || ''}/`}
-                />
-              )}
-            {this.state.service.env !== 'prod' && (
-              <LinkDisplay
-                link={`${this.state.service.forceHttps ? 'https' : 'http'}://${
-                  this.state.service.subdomain
-                }.${this.state.service.env}.${this.state.service.domain}${
-                  this.state.service.matchingRoot || ''
-                }/`}
-              />
+                {!this.state.freeDomain && (
+                  <SelectInput
+                    label="Line"
+                    placeholder="The line on which the service is available"
+                    value={this.state.service.env}
+                    onChange={(e) => this.changeTheValue('env', e)}
+                    disabled={!!(this.state.env && this.state.env.staticExposedDomain)}
+                    valuesFrom="/bo/api/proxy/api/lines"
+                    help="The line on which the service is available. Based on that value, the name of the line will be appended to the subdomain. For line prod, nothing will be appended. For example, if the subdomain is 'foo' and line is 'preprod', then the exposed service will be available at 'foo.preprod.mydomain'"
+                    transformer={(v) => ({ value: v, label: v })}
+                  />
+                )}
+                {!this.state.freeDomain && (
+                  <TextInput
+                    label="Domain"
+                    placeholder="The domain on which the service is available"
+                    value={this.state.service.domain}
+                    help="The domain on which the service is available."
+                    onChange={(e) => this.changeTheValue('domain', e)}
+                    disabled={!!(this.state.env && this.state.env.staticExposedDomain)}
+                  />
+                )}
+                {!this.state.freeDomain && (
+                  <TextInput
+                    label="Matching root"
+                    placeholder="The root path on which the service is available"
+                    value={this.state.service.matchingRoot}
+                    help="The root path on which the service is available"
+                    onChange={(e) => this.changeTheValue('matchingRoot', e)}
+                  />
+                )}
+                <div className="form-group">
+                  <label className="col-xs-12 col-sm-2 control-label" />
+                  <div className="col-sm-10">
+                    <button
+                      className="btn btn-xs btn-info"
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        this.setState({ freeDomain: !this.state.freeDomain });
+                      }}>
+                      {this.state.freeDomain ? 'exposed domain assistant' : 'exposed domain free input'}
+                    </button>
+                    {!this.state.neverSaved && (
+                      <button
+                        type="button"
+                        onClick={this.createLetsEncrypt}
+                        className="btn btn-xs btn-info">
+                        <i className="fas fa-plus-circle" /> Create Let's Encrypt cert.
+                      </button>
+                    )}
+                    {!this.state.neverSaved && (
+                      <button type="button" onClick={this.createCert} className="btn btn-xs btn-info">
+                        <i className="fas fa-plus-circle" /> Create certificate
+                      </button>
+                    )}
+                  </div>
+                </div>
+                {this.state.service.env === 'prod' &&
+                  this.state.service.subdomain.trim().length === 0 && (
+                    <LinkDisplay
+                      link={`${this.state.service.forceHttps ? 'https' : 'http'}://${
+                        this.state.service.domain
+                      }${this.state.service.matchingRoot || ''}/`}
+                    />
+                  )}
+                {this.state.service.env === 'prod' &&
+                  this.state.service.subdomain.trim().length > 0 && (
+                    <LinkDisplay
+                      link={`${this.state.service.forceHttps ? 'https' : 'http'}://${
+                        this.state.service.subdomain
+                      }.${this.state.service.domain}${this.state.service.matchingRoot || ''}/`}
+                    />
+                  )}
+                {this.state.service.env !== 'prod' && (
+                  <LinkDisplay
+                    link={`${this.state.service.forceHttps ? 'https' : 'http'}://${
+                      this.state.service.subdomain
+                    }.${this.state.service.env}.${this.state.service.domain}${
+                      this.state.service.matchingRoot || ''
+                    }/`}
+                  />
+                )}
+              </>
             )}
+            {!this.state.service.handleLegacyDomain && (
+              <>
+                <ArrayInput
+                  label="Possible hostnames"
+                  placeholder="www.oto.tools"
+                  value={this.state.service.hosts}
+                  help="All the possible hostnames for your service"
+                  onChange={(e) => this.changeTheValue('hosts', e)}
+                  disabled={!!(this.state.env && this.state.env.staticExposedDomain)}
+                />
+                <ArrayInput
+                  label="Possible matching paths"
+                  placeholder="/"
+                  value={this.state.service.paths}
+                  help="All the possible matching paths for your service"
+                  onChange={(e) => this.changeTheValue('paths', e)}
+                />
+              </>
+            )}
+            <BooleanInput
+              label="Legacy domain"
+              value={this.state.service.handleLegacyDomain}
+              help="Use 'domain', 'subdomain', 'env' and 'matchingRoot' for routing in addition to hosts, or just use hosts."
+              onChange={(e) => this.changeTheValue('handleLegacyDomain', e)}
+            />
             <BooleanInput
               label="Strip path"
               value={this.state.service.stripPath}
@@ -1448,27 +1477,27 @@ export class ServicePage extends Component {
                 onChange={(e) => this.changeTheValue('issueCertCA', e)}
               />
             )}
-            {/*!this.state.freeDomain && (*/}
-            <>
-              <div style={{ borderBottom: '1px solid #424242', marginBottom: 10 }}></div>
-              <ArrayInput
-                label="Possible hostnames"
-                placeholder="www.oto.tools"
-                value={this.state.service.hosts}
-                help="All the possible hostnames for your service"
-                onChange={(e) => this.changeTheValue('hosts', e)}
-                disabled={!!(this.state.env && this.state.env.staticExposedDomain)}
-              />
-              <ArrayInput
-                label="Possible matching paths"
-                placeholder="/"
-                value={this.state.service.paths}
-                help="All the possible matching paths for your service"
-                onChange={(e) => this.changeTheValue('paths', e)}
-              />
-              {/*<div style={{ borderBottom: '1px solid #424242', marginBottom: 10 }}></div>*/}
-            </>
-            {/*})}*/}
+            {this.state.service.handleLegacyDomain && (
+              <>
+                <div style={{ borderBottom: '1px solid #424242', marginBottom: 10 }}></div>
+                <ArrayInput
+                  label="Possible hostnames"
+                  placeholder="www.oto.tools"
+                  value={this.state.service.hosts}
+                  help="All the possible hostnames for your service"
+                  onChange={(e) => this.changeTheValue('hosts', e)}
+                  disabled={!!(this.state.env && this.state.env.staticExposedDomain)}
+                />
+                <ArrayInput
+                  label="Possible matching paths"
+                  placeholder="/"
+                  value={this.state.service.paths}
+                  help="All the possible matching paths for your service"
+                  onChange={(e) => this.changeTheValue('paths', e)}
+                />
+                {/*<div style={{ borderBottom: '1px solid #424242', marginBottom: 10 }}></div>*/}
+              </>
+            )}
           </Collapse>
           <Collapse
             notVisible={this.state.service.tcpUdpTunneling}
