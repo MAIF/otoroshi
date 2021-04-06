@@ -15375,6 +15375,10 @@
             "description" : "Sec. com. settings",
             "$ref" : "#/components/schemas/otoroshi.models.AlgoSettings"
           },
+          "handleLegacyDomain" : {
+            "description" : "Use 'domain', 'subdomain', 'env' and 'matchingRoot' for routing in addition to hosts, or just use hosts.",
+            "type" : "boolean"
+          },
           "canary" : {
             "description" : "Canary settings",
             "$ref" : "#/components/schemas/otoroshi.models.Canary"

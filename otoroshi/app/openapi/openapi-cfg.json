@@ -1146,6 +1146,7 @@
     "otoroshi.models.ServiceDescriptor.forceHttps": "Will force redirection to https:// if not present",
     "otoroshi.models.ServiceDescriptor.groups": "Each service descriptor is attached to groups. A group can have one or more services. Each API key is linked to a group and allow access to every service in the group",
     "otoroshi.models.ServiceDescriptor.gzip": "GZIP settings",
+    "otoroshi.models.ServiceDescriptor.handleLegacyDomain": "Use 'domain', 'subdomain', 'env' and 'matchingRoot' for routing in addition to hosts, or just use hosts.",
     "otoroshi.models.ServiceDescriptor.headersVerification": "Specify headers that will be verified after routing.",
     "otoroshi.models.ServiceDescriptor.healthCheck": "Healthcheck settings",
     "otoroshi.models.ServiceDescriptor.hosts": "Possible hosts for the service",
