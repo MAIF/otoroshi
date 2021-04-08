@@ -1296,7 +1296,7 @@ case class Restrictions(
     if (enabled) {
       val method = req.method
       val domain = req.theDomain
-      val path   = req.relativeUri
+      val path   = req.thePath
       val key    = s"${descriptor.id}:${apk.map(_.clientId).getOrElse("none")}:$method:$domain:$path"
       cache.getOrElseUpdate(
         key, {
