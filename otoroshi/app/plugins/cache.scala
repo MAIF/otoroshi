@@ -189,7 +189,7 @@ class ResponseCache extends RequestTransformer {
   }
 
   private def couldCacheResponse(ctx: TransformerResponseBodyContext, config: ResponseCacheConfig): Boolean = {
-    if (filter(ctx.request, config)) {
+    if (filter(ctx.request, config, Some(ctx.rawResponse.status))) {
       ctx.rawResponse.headers
         .get("Content-Length")
         .orElse(ctx.rawResponse.headers.get("content-Length"))
