@@ -52,8 +52,6 @@ import otoroshi.security.IdGenerator
 import otoroshi.storage.{BasicStore, RedisLike, RedisLikeStore}
 import otoroshi.utils.http.DN
 import otoroshi.utils.metrics.{FakeHasMetrics, HasMetrics}
-import sun.security.util.ObjectIdentifier
-import sun.security.x509._
 import otoroshi.utils.metrics.FakeHasMetrics
 import otoroshi.utils.syntax.implicits._
 
@@ -1758,7 +1756,6 @@ object FakeKeyStore {
     val KeyPairAlgorithmName                    = "RSA"
     val KeyPairKeyLength                        = 2048 // 2048 is the NIST acceptable key length until 2030
     val KeystoreType                            = "JKS"
-    val SignatureAlgorithmOID: ObjectIdentifier = AlgorithmId.sha256WithRSAEncryption_oid
   }
 
   private implicit val ec = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(4))

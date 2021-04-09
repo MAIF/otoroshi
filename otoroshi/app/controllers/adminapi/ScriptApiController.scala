@@ -51,7 +51,6 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
 
   def findAllScriptsList() =
     ApiAction.async { ctx =>
-      OnlyIfScriptingEnabled {
 
         val transformersNames = env.scriptManager.transformersNames
         val validatorsNames   = env.scriptManager.validatorsNames
@@ -161,7 +160,6 @@ class ScriptApiController(val ApiAction: ApiAction, val cc: ControllerComponents
             }
           Ok(JsArray(allClasses))
         }
-      }
     }
 
   def compileScript() =

@@ -475,6 +475,16 @@ export class ScriptsPage extends Component {
   }
 
   render() {
+    if (!this.props.globalEnv) {
+      return null;
+    }
+    if (!this.props.globalEnv.scriptingEnabled) {
+      return (
+        <p>
+          Scripting is not enabled on your otoroshi cluster
+        </p>
+      );
+    }
     return (
       <Table
         parentProps={this.props}

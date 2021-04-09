@@ -925,7 +925,7 @@ class ScriptManager(env: Env) {
   if (printPlugins) logger.info("\n\n" + allPlugins.map(s => s" - $s").mkString("\n") + "\n")
 
   def start(): ScriptManager = {
-    if (env.scriptingEnabled) {
+    if (env.scriptingEnabled) { // valid
       updateRef.set(
         env.otoroshiScheduler.scheduleAtFixedRate(1.second, 10.second)(
           SchedulerHelper.runnable(updateScriptCache(firstScan.compareAndSet(false, true)))
@@ -1076,7 +1076,7 @@ class ScriptManager(env: Env) {
           case None         => Left("not-in-cache")
         }
       }
-      case r                        => {
+      case r if env.scriptingEnabled => {
         env.datastores.scriptDataStore.findById(ref).map {
           case Some(script) => compileAndUpdateIfNeeded(script)
           case None         =>
@@ -1091,6 +1091,7 @@ class ScriptManager(env: Env) {
           }
         }
       }
+      case _ => Left("scripting-not-enabled")
     }
   }
 
@@ -1136,33 +1137,29 @@ object Implicits {
         ctx: BeforeRequestContext
     )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Done] = {
       env.metrics.withTimerAsync("otoroshi.core.proxy.before-request") {
-        env.scriptingEnabled match {
-          case true =>
-            val plugs    = desc.plugins.requestTransformers(ctx.request)
-            val gScripts = env.datastores.globalConfigDataStore.latestSafe
-              .filter(_.scripts.enabled)
-              .map(_.scripts)
-              .getOrElse(GlobalScripts(transformersConfig = Json.obj()))
-            val refs     = (plugs ++ gScripts.transformersRefs ++ desc.transformerRefs).distinct
-            if (refs.nonEmpty) {
-              Source(refs.toList.zipWithIndex).runForeach { case (ref, index) =>
-                env.scriptManager
-                  .getScript(ref)
-                  .beforeRequest(
-                    ctx.copy(
-                      index = index,
-                      globalConfig = ConfigUtils.mergeOpt(
-                        gScripts.transformersConfig,
-                        env.datastores.globalConfigDataStore.latestSafe.map(_.plugins.config)
-                      ),
-                      config = ConfigUtils.merge(ctx.config, desc.plugins.config)
-                    )
-                  )(env, ec, mat)
-              }
-            } else {
-              FastFuture.successful(Done)
-            }
-          case _    => FastFuture.successful(Done)
+        val plugs    = desc.plugins.requestTransformers(ctx.request)
+        val gScripts = env.datastores.globalConfigDataStore.latestSafe
+          .filter(_.scripts.enabled)
+          .map(_.scripts)
+          .getOrElse(GlobalScripts(transformersConfig = Json.obj()))
+        val refs     = (plugs ++ gScripts.transformersRefs ++ desc.transformerRefs).distinct
+        if (refs.nonEmpty) {
+          Source(refs.toList.zipWithIndex).runForeach { case (ref, index) =>
+            env.scriptManager
+              .getScript(ref)
+              .beforeRequest(
+                ctx.copy(
+                  index = index,
+                  globalConfig = ConfigUtils.mergeOpt(
+                    gScripts.transformersConfig,
+                    env.datastores.globalConfigDataStore.latestSafe.map(_.plugins.config)
+                  ),
+                  config = ConfigUtils.merge(ctx.config, desc.plugins.config)
+                )
+              )(env, ec, mat)
+          }
+        } else {
+          FastFuture.successful(Done)
         }
       }
     }
@@ -1171,33 +1168,29 @@ object Implicits {
         ctx: AfterRequestContext
     )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Done] = {
       env.metrics.withTimerAsync("otoroshi.core.proxy.after-request") {
-        env.scriptingEnabled match {
-          case true =>
-            val plugs    = desc.plugins.requestTransformers(ctx.request)
-            val gScripts = env.datastores.globalConfigDataStore.latestSafe
-              .filter(_.scripts.enabled)
-              .map(_.scripts)
-              .getOrElse(GlobalScripts(transformersConfig = Json.obj()))
-            val refs     = (plugs ++ gScripts.transformersRefs ++ desc.transformerRefs).distinct
-            if (refs.nonEmpty) {
-              Source(refs.toList.zipWithIndex).runForeach { case (ref, index) =>
-                env.scriptManager
-                  .getScript(ref)
-                  .afterRequest(
-                    ctx.copy(
-                      index = index,
-                      globalConfig = ConfigUtils.mergeOpt(
-                        gScripts.transformersConfig,
-                        env.datastores.globalConfigDataStore.latestSafe.map(_.plugins.config)
-                      ),
-                      config = ConfigUtils.merge(ctx.config, desc.plugins.config)
-                    )
-                  )(env, ec, mat)
-              }
-            } else {
-              FastFuture.successful(Done)
-            }
-          case _    => FastFuture.successful(Done)
+        val plugs    = desc.plugins.requestTransformers(ctx.request)
+        val gScripts = env.datastores.globalConfigDataStore.latestSafe
+          .filter(_.scripts.enabled)
+          .map(_.scripts)
+          .getOrElse(GlobalScripts(transformersConfig = Json.obj()))
+        val refs     = (plugs ++ gScripts.transformersRefs ++ desc.transformerRefs).distinct
+        if (refs.nonEmpty) {
+          Source(refs.toList.zipWithIndex).runForeach { case (ref, index) =>
+            env.scriptManager
+              .getScript(ref)
+              .afterRequest(
+                ctx.copy(
+                  index = index,
+                  globalConfig = ConfigUtils.mergeOpt(
+                    gScripts.transformersConfig,
+                    env.datastores.globalConfigDataStore.latestSafe.map(_.plugins.config)
+                  ),
+                  config = ConfigUtils.merge(ctx.config, desc.plugins.config)
+                )
+              )(env, ec, mat)
+          }
+        } else {
+          FastFuture.successful(Done)
         }
       }
     }
@@ -1206,37 +1199,33 @@ object Implicits {
         context: TransformerRequestContext
     )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpRequest]] =
       env.metrics.withTimerAsync("otoroshi.core.proxy.transform-request") {
-        env.scriptingEnabled match {
-          case true =>
-            val plugs    = desc.plugins.requestTransformers(context.request)
-            val gScripts = env.datastores.globalConfigDataStore.latestSafe
-              .filter(_.scripts.enabled)
-              .map(_.scripts)
-              .getOrElse(GlobalScripts(transformersConfig = Json.obj()))
-            val refs     = (plugs ++ gScripts.transformersRefs ++ desc.transformerRefs).distinct
-            if (refs.nonEmpty) {
-              val either: Either[Result, HttpRequest] = Right(context.otoroshiRequest)
-              Source(refs.toList.zipWithIndex).runFoldAsync(either) {
-                case (Left(badResult), (_, _))              => FastFuture.successful(Left(badResult))
-                case (Right(lastHttpRequest), (ref, index)) =>
-                  env.scriptManager
-                    .getScript(ref)
-                    .transformRequestWithCtx(
-                      context.copy(
-                        otoroshiRequest = lastHttpRequest,
-                        index = index,
-                        globalConfig = ConfigUtils.mergeOpt(
-                          gScripts.transformersConfig,
-                          env.datastores.globalConfigDataStore.latestSafe.map(_.plugins.config)
-                        ),
-                        config = ConfigUtils.merge(context.config, desc.plugins.config)
-                      )
-                    )(env, ec, mat)
-              }
-            } else {
-              FastFuture.successful(Right(context.otoroshiRequest))
-            }
-          case _    => FastFuture.successful(Right(context.otoroshiRequest))
+        val plugs    = desc.plugins.requestTransformers(context.request)
+        val gScripts = env.datastores.globalConfigDataStore.latestSafe
+          .filter(_.scripts.enabled)
+          .map(_.scripts)
+          .getOrElse(GlobalScripts(transformersConfig = Json.obj()))
+        val refs     = (plugs ++ gScripts.transformersRefs ++ desc.transformerRefs).distinct
+        if (refs.nonEmpty) {
+          val either: Either[Result, HttpRequest] = Right(context.otoroshiRequest)
+          Source(refs.toList.zipWithIndex).runFoldAsync(either) {
+            case (Left(badResult), (_, _))              => FastFuture.successful(Left(badResult))
+            case (Right(lastHttpRequest), (ref, index)) =>
+              env.scriptManager
+                .getScript(ref)
+                .transformRequestWithCtx(
+                  context.copy(
+                    otoroshiRequest = lastHttpRequest,
+                    index = index,
+                    globalConfig = ConfigUtils.mergeOpt(
+                      gScripts.transformersConfig,
+                      env.datastores.globalConfigDataStore.latestSafe.map(_.plugins.config)
+                    ),
+                    config = ConfigUtils.merge(context.config, desc.plugins.config)
+                  )
+                )(env, ec, mat)
+          }
+        } else {
+          FastFuture.successful(Right(context.otoroshiRequest))
         }
       }
 
@@ -1244,37 +1233,33 @@ object Implicits {
         context: TransformerResponseContext
     )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Either[Result, HttpResponse]] =
       env.metrics.withTimerAsync("otoroshi.core.proxy.transform-response") {
-        env.scriptingEnabled match {
-          case true =>
-            val plugs    = desc.plugins.requestTransformers(context.request)
-            val gScripts = env.datastores.globalConfigDataStore.latestSafe
-              .filter(_.scripts.enabled)
-              .map(_.scripts)
-              .getOrElse(GlobalScripts(transformersConfig = Json.obj()))
-            val refs     = (plugs ++ gScripts.transformersRefs ++ desc.transformerRefs).distinct
-            if (refs.nonEmpty) {
-              val either: Either[Result, HttpResponse] = Right(context.otoroshiResponse)
-              Source(refs.toList.zipWithIndex).runFoldAsync(either) {
-                case (Left(badResult), _)                    => FastFuture.successful(Left(badResult))
-                case (Right(lastHttpResponse), (ref, index)) =>
-                  env.scriptManager
-                    .getScript(ref)
-                    .transformResponseWithCtx(
-                      context.copy(
-                        otoroshiResponse = lastHttpResponse,
-                        index = index,
-                        globalConfig = ConfigUtils.mergeOpt(
-                          gScripts.transformersConfig,
-                          env.datastores.globalConfigDataStore.latestSafe.map(_.plugins.config)
-                        ),
-                        config = ConfigUtils.merge(context.config, desc.plugins.config)
-                      )
-                    )(env, ec, mat)
-              }
-            } else {
-              FastFuture.successful(Right(context.otoroshiResponse))
-            }
-          case _    => FastFuture.successful(Right(context.otoroshiResponse))
+        val plugs    = desc.plugins.requestTransformers(context.request)
+        val gScripts = env.datastores.globalConfigDataStore.latestSafe
+          .filter(_.scripts.enabled)
+          .map(_.scripts)
+          .getOrElse(GlobalScripts(transformersConfig = Json.obj()))
+        val refs     = (plugs ++ gScripts.transformersRefs ++ desc.transformerRefs).distinct
+        if (refs.nonEmpty) {
+          val either: Either[Result, HttpResponse] = Right(context.otoroshiResponse)
+          Source(refs.toList.zipWithIndex).runFoldAsync(either) {
+            case (Left(badResult), _)                    => FastFuture.successful(Left(badResult))
+            case (Right(lastHttpResponse), (ref, index)) =>
+              env.scriptManager
+                .getScript(ref)
+                .transformResponseWithCtx(
+                  context.copy(
+                    otoroshiResponse = lastHttpResponse,
+                    index = index,
+                    globalConfig = ConfigUtils.mergeOpt(
+                      gScripts.transformersConfig,
+                      env.datastores.globalConfigDataStore.latestSafe.map(_.plugins.config)
+                    ),
+                    config = ConfigUtils.merge(context.config, desc.plugins.config)
+                  )
+                )(env, ec, mat)
+          }
+        } else {
+          FastFuture.successful(Right(context.otoroshiResponse))
         }
       }
 
@@ -1282,50 +1267,46 @@ object Implicits {
         context: TransformerErrorContext
     )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Future[Result] =
       env.metrics.withTimerAsync("otoroshi.core.proxy.transform-error") {
-        env.scriptingEnabled match {
-          case true =>
-            val plugs    = desc.plugins.requestTransformers(context.request)
-            val gScripts = env.datastores.globalConfigDataStore.latestSafe
-              .filter(_.scripts.enabled)
-              .map(_.scripts)
-              .getOrElse(GlobalScripts(transformersConfig = Json.obj()))
-            val refs     = (plugs ++ gScripts.transformersRefs ++ desc.transformerRefs).distinct
-            if (refs.nonEmpty) {
-              val result: Result = context.otoroshiResult
-              Source(refs.toList.zipWithIndex).runFoldAsync(result) { case (lastResult, (ref, index)) =>
-                env.scriptManager
-                  .getScript(ref)
-                  .transformErrorWithCtx(
-                    context.copy(
-                      otoroshiResult = lastResult,
-                      otoroshiResponse = HttpResponse(
-                        lastResult.header.status,
-                        lastResult.header.headers,
-                        lastResult.newCookies.map(c =>
-                          DefaultWSCookie(
-                            name = c.name,
-                            value = c.value,
-                            domain = c.domain,
-                            path = Option(c.path),
-                            maxAge = c.maxAge.map(_.toLong),
-                            secure = c.secure,
-                            httpOnly = c.httpOnly
-                          )
-                        )
-                      ),
-                      index = index,
-                      globalConfig = ConfigUtils.mergeOpt(
-                        gScripts.transformersConfig,
-                        env.datastores.globalConfigDataStore.latestSafe.map(_.plugins.config)
-                      ),
-                      config = ConfigUtils.merge(context.config, desc.plugins.config)
+        val plugs    = desc.plugins.requestTransformers(context.request)
+        val gScripts = env.datastores.globalConfigDataStore.latestSafe
+          .filter(_.scripts.enabled)
+          .map(_.scripts)
+          .getOrElse(GlobalScripts(transformersConfig = Json.obj()))
+        val refs     = (plugs ++ gScripts.transformersRefs ++ desc.transformerRefs).distinct
+        if (refs.nonEmpty) {
+          val result: Result = context.otoroshiResult
+          Source(refs.toList.zipWithIndex).runFoldAsync(result) { case (lastResult, (ref, index)) =>
+            env.scriptManager
+              .getScript(ref)
+              .transformErrorWithCtx(
+                context.copy(
+                  otoroshiResult = lastResult,
+                  otoroshiResponse = HttpResponse(
+                    lastResult.header.status,
+                    lastResult.header.headers,
+                    lastResult.newCookies.map(c =>
+                      DefaultWSCookie(
+                        name = c.name,
+                        value = c.value,
+                        domain = c.domain,
+                        path = Option(c.path),
+                        maxAge = c.maxAge.map(_.toLong),
+                        secure = c.secure,
+                        httpOnly = c.httpOnly
+                      )
                     )
-                  )(env, ec, mat)
-              }
-            } else {
-              FastFuture.successful(context.otoroshiResult)
-            }
-          case _    => FastFuture.successful(context.otoroshiResult)
+                  ),
+                  index = index,
+                  globalConfig = ConfigUtils.mergeOpt(
+                    gScripts.transformersConfig,
+                    env.datastores.globalConfigDataStore.latestSafe.map(_.plugins.config)
+                  ),
+                  config = ConfigUtils.merge(context.config, desc.plugins.config)
+                )
+              )(env, ec, mat)
+          }
+        } else {
+          FastFuture.successful(context.otoroshiResult)
         }
       }
 
@@ -1333,69 +1314,61 @@ object Implicits {
         context: TransformerRequestBodyContext
     )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, Any] =
       env.metrics.withTimer("otoroshi.core.proxy.transform-request-body") {
-        env.scriptingEnabled match {
-          case true =>
-            val plugs    = desc.plugins.requestTransformers(context.request)
-            val gScripts = env.datastores.globalConfigDataStore.latestSafe
-              .filter(_.scripts.enabled)
-              .map(_.scripts)
-              .getOrElse(GlobalScripts(transformersConfig = Json.obj()))
-            val refs     = (plugs ++ gScripts.transformersRefs ++ desc.transformerRefs).distinct
-            if (refs.nonEmpty) {
-              Source.futureSource(Source(refs.toList.zipWithIndex).runFold(context.body) { case (body, (ref, index)) =>
-                env.scriptManager
-                  .getScript(ref)
-                  .transformRequestBodyWithCtx(
-                    context.copy(
-                      body = body,
-                      index = index,
-                      globalConfig = ConfigUtils.mergeOpt(
-                        gScripts.transformersConfig,
-                        env.datastores.globalConfigDataStore.latestSafe.map(_.plugins.config)
-                      ),
-                      config = ConfigUtils.merge(context.config, desc.plugins.config)
-                    )
-                  )(env, ec, mat)
-              })
-            } else {
-              context.body
-            }
-          case _    => context.body
-        }
+          val plugs    = desc.plugins.requestTransformers(context.request)
+          val gScripts = env.datastores.globalConfigDataStore.latestSafe
+            .filter(_.scripts.enabled)
+            .map(_.scripts)
+            .getOrElse(GlobalScripts(transformersConfig = Json.obj()))
+          val refs     = (plugs ++ gScripts.transformersRefs ++ desc.transformerRefs).distinct
+          if (refs.nonEmpty) {
+            Source.futureSource(Source(refs.toList.zipWithIndex).runFold(context.body) { case (body, (ref, index)) =>
+              env.scriptManager
+                .getScript(ref)
+                .transformRequestBodyWithCtx(
+                  context.copy(
+                    body = body,
+                    index = index,
+                    globalConfig = ConfigUtils.mergeOpt(
+                      gScripts.transformersConfig,
+                      env.datastores.globalConfigDataStore.latestSafe.map(_.plugins.config)
+                    ),
+                    config = ConfigUtils.merge(context.config, desc.plugins.config)
+                  )
+                )(env, ec, mat)
+            })
+          } else {
+            context.body
+          }
       }
 
     def transformResponseBody(
         context: TransformerResponseBodyContext
     )(implicit env: Env, ec: ExecutionContext, mat: Materializer): Source[ByteString, Any] =
       env.metrics.withTimer("otoroshi.core.proxy.transform-response-body") {
-        env.scriptingEnabled match {
-          case true =>
-            val plugs    = desc.plugins.requestTransformers(context.request)
-            val gScripts = env.datastores.globalConfigDataStore.latestSafe
-              .filter(_.scripts.enabled)
-              .map(_.scripts)
-              .getOrElse(GlobalScripts(transformersConfig = Json.obj()))
-            val refs     = (plugs ++ gScripts.transformersRefs ++ desc.transformerRefs).distinct
-            if (refs.nonEmpty) {
-              Source.futureSource(Source(refs.toList.zipWithIndex).runFold(context.body) { case (body, (ref, index)) =>
-                env.scriptManager
-                  .getScript(ref)
-                  .transformResponseBodyWithCtx(
-                    context.copy(
-                      body = body,
-                      index = index,
-                      globalConfig = ConfigUtils.mergeOpt(
-                        gScripts.transformersConfig,
-                        env.datastores.globalConfigDataStore.latestSafe.map(_.plugins.config)
-                      ),
-                      config = ConfigUtils.merge(context.config, desc.plugins.config)
-                    )
-                  )(env, ec, mat)
-              })
-            } else {
-              context.body
-            }
-          case _    => context.body
+        val plugs    = desc.plugins.requestTransformers(context.request)
+        val gScripts = env.datastores.globalConfigDataStore.latestSafe
+          .filter(_.scripts.enabled)
+          .map(_.scripts)
+          .getOrElse(GlobalScripts(transformersConfig = Json.obj()))
+        val refs     = (plugs ++ gScripts.transformersRefs ++ desc.transformerRefs).distinct
+        if (refs.nonEmpty) {
+          Source.futureSource(Source(refs.toList.zipWithIndex).runFold(context.body) { case (body, (ref, index)) =>
+            env.scriptManager
+              .getScript(ref)
+              .transformResponseBodyWithCtx(
+                context.copy(
+                  body = body,
+                  index = index,
+                  globalConfig = ConfigUtils.mergeOpt(
+                    gScripts.transformersConfig,
+                    env.datastores.globalConfigDataStore.latestSafe.map(_.plugins.config)
+                  ),
+                  config = ConfigUtils.merge(context.config, desc.plugins.config)
+                )
+              )(env, ec, mat)
+          })
+        } else {
+          context.body
         }
       }
   }

@@ -32,26 +32,31 @@ prepare_build () {
 }
 
 build_jdk8 () {
-  docker build --no-cache -f ./Dockerfile-jdk8 -t otoroshi-jdk8 .
-  docker build --no-cache -f ./Dockerfile-jdk8-jar -t otoroshi-jdk8-jar .
+  docker build --no-cache -f ./Dockerfile-jdk8 -t otoroshi-jdk8-no-scripting .
+  docker build --no-cache -f ./Dockerfile-jdk8-jar -t otoroshi-jdk8 .
+  docker tag otoroshi-jdk8-no-scripting "maif/otoroshi:$1-jdk8-no-scripting"
   docker tag otoroshi-jdk8 "maif/otoroshi:$1-jdk8"
-  docker tag otoroshi-jdk8-jar "maif/otoroshi:$1-jdk8-jar"
 }
 
 build_jdk11 () {
-  docker build --no-cache -f ./Dockerfile-jdk11 -t otoroshi-jdk11 .
-  docker build --no-cache -f ./Dockerfile-jdk11-jar -t otoroshi-jdk11-jar .
+  docker build --no-cache -f ./Dockerfile-jdk11 -t otoroshi-jdk11-no-scripting .
+  docker build --no-cache -f ./Dockerfile-jdk11-jar -t otoroshi-jdk11 .
   docker tag otoroshi-jdk11-jar "maif/otoroshi:latest" 
   docker tag otoroshi-jdk11-jar "maif/otoroshi:$1" 
-  docker tag otoroshi-jdk11 "maif/otoroshi:$1-jdk11-jar"
-  docker tag otoroshi-jdk11-jar "maif/otoroshi:$1-jdk11-jar"
+  docker tag otoroshi-jdk11-no-scripting "maif/otoroshi:$1-jdk11-no-scripting"
+  docker tag otoroshi-jdk11 "maif/otoroshi:$1-jdk11"
 }
 
 build_jdk15 () {
-  docker build --no-cache -f ./Dockerfile-jdk15 -t otoroshi-jdk15 .
-  docker build --no-cache -f ./Dockerfile-jdk15-jar -t otoroshi-jdk15-jar .
+  docker build --no-cache -f ./Dockerfile-jdk15 -t otoroshi-jdk15-no-scripting .
+  docker build --no-cache -f ./Dockerfile-jdk15-jar -t otoroshi-jdk15 .
+  docker tag otoroshi-jdk15-no-scripting "maif/otoroshi:$1-jdk15-no-scripting"
   docker tag otoroshi-jdk15 "maif/otoroshi:$1-jdk15"
-  docker tag otoroshi-jdk15-jar "maif/otoroshi:$1-jdk15-jar"
+}
+
+build_jdk16 () {
+  docker build --no-cache -f ./Dockerfile-jdk16-jar -t otoroshi-jdk16 .
+  docker tag otoroshi-jdk16 "maif/otoroshi:$1-jdk16"
 }
 
 build_graal () {
@@ -83,6 +88,11 @@ case "${1}" in
     build_jdk15 $2
     cleanup
     ;;
+  build-jdk16)
+    prepare_build
+    build_jdk16 $2
+    cleanup
+    ;;
   build-graal)
     prepare_build
     build_graal $2
@@ -92,23 +102,22 @@ case "${1}" in
     prepare_build
     build_jdk8 $2
     build_jdk11 $2
-    build_jdk15 $2
+    build_jdk16 $2
     cleanup
     ;;
   push-all)
     prepare_build
     build_jdk8 $2
     build_jdk11 $2
-    build_jdk15 $2
+    build_jdk16 $2
     build_graal $2
     cleanup
     docker push "maif/otoroshi:$2"
     docker push "maif/otoroshi:$2-jdk8"
-    docker push "maif/otoroshi:$2-jdk8-jar"
+    docker push "maif/otoroshi:$2-jdk8-no-scripting"
     docker push "maif/otoroshi:$2-jdk11"
-    docker push "maif/otoroshi:$2-jdk11-jar"
-    docker push "maif/otoroshi:$2-jdk15"
-    docker push "maif/otoroshi:$2-jdk15-jar"
+    docker push "maif/otoroshi:$2-jdk11-no-scripting"
+    docker push "maif/otoroshi:$2-jdk16"
     docker push "maif/otoroshi:$2-graal"
     docker push "maif/otoroshi:latest"
     ;;

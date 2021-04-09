@@ -17,6 +17,7 @@ VOLUME /usr/app/otoroshi/imports
 VOLUME /usr/app/otoroshi/filedb
 VOLUME /usr/app/otoroshi/conf
 VOLUME /usr/app/otoroshi
+ENV OTOROSHI_SCRIPTS_ENABLED="false"
 
 ENTRYPOINT ["./entrypoint.sh"]
 
