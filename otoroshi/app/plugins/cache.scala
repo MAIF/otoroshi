@@ -29,8 +29,8 @@ case class ResponseCacheFilterConfig(json: JsValue) {
     .asOpt[Seq[Int]]
     .orElse((json \ "not" \ "statuses").asOpt[Seq[String]].map(_.map(_.toInt)))
     .getOrElse(Seq.empty)
-  lazy val notMethods: Seq[String] = (json \ "not" \ "methods").asOpt[Seq[String]].getOrElse(Seq("GET"))
-  lazy val notPaths: Seq[String]   = (json \ "not" \ "paths").asOpt[Seq[String]].getOrElse(Seq("/.*"))
+  lazy val notMethods: Seq[String] = (json \ "not" \ "methods").asOpt[Seq[String]].getOrElse(Seq.empty)
+  lazy val notPaths: Seq[String]   = (json \ "not" \ "paths").asOpt[Seq[String]].getOrElse(Seq.empty)
 }
 
 case class ResponseCacheConfig(json: JsValue) {
@@ -162,12 +162,12 @@ class ResponseCache extends RequestTransformer {
         val matchPath      =
           if (filter.paths.isEmpty) true else filter.paths.exists(p => RegexPool.regex(p).matches(req.relativeUri))
         val matchNotPath   =
-          if (filter.notPaths.isEmpty) true
+          if (filter.notPaths.isEmpty) false
           else filter.notPaths.exists(p => RegexPool.regex(p).matches(req.relativeUri))
         val methodMatch    =
           if (filter.methods.isEmpty) true else filter.methods.map(_.toLowerCase()).contains(req.method.toLowerCase())
         val methodNotMatch =
-          if (filter.notMethods.isEmpty) true
+          if (filter.notMethods.isEmpty) false
           else filter.notMethods.map(_.toLowerCase()).contains(req.method.toLowerCase())
         val statusMatch    =
           if (filter.statuses.isEmpty) true
@@ -177,7 +177,7 @@ class ResponseCache extends RequestTransformer {
               case Some(status) => filter.statuses.contains(status)
             }
         val statusNotMatch =
-          if (filter.notStatuses.isEmpty) true
+          if (filter.notStatuses.isEmpty) false
           else
             statusOpt match {
               case None         => true
@@ -234,7 +234,7 @@ class ResponseCache extends RequestTransformer {
           )
         case Right(Some(res)) => {
           val status  = (res \ "status").as[Int]
-          val body    = new String(ResponseCache.base64Decoder.decode((res \ "body").as[String]))
+          val body    = ByteString(ResponseCache.base64Decoder.decode((res \ "body").as[String]))
           val headers = (res \ "headers").as[Map[String, String]] ++ Map("X-Otoroshi-Cache" -> "HIT")
           val ctype   = (res \ "ctype").as[String]
           ResponseCache.logger.debug(
