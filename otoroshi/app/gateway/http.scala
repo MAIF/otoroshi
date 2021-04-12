@@ -528,7 +528,7 @@ class HttpHandler()(implicit env: Env) {
               if (
                 (descriptor.enforceSecureCommunication && descriptor.sendStateChallenge)
                 && !descriptor.isUriExcludedFromSecuredCommunication("/" + uri)
-                && !ReverseProxyActionHelper.stateRespValid(stateValue, stateResp, jti, descriptor)
+                && !ReverseProxyActionHelper.stateRespValid(stateValue, stateResp, jti, descriptor, logger)
               ) {
                 // && !headers.get(stateRespHeaderName).contains(state)) {
                 resp.ignore()

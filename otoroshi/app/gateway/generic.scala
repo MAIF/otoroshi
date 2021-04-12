@@ -208,7 +208,7 @@ object ReverseProxyActionHelper {
     }
   }
 
-  def stateRespValid(stateValue: String, stateResp: Option[String], jti: String, descriptor: ServiceDescriptor)(implicit
+  def stateRespValid(stateValue: String, stateResp: Option[String], jti: String, descriptor: ServiceDescriptor, logger: Logger)(implicit
       ec: ExecutionContext,
       env: Env
   ): Boolean = {
@@ -222,6 +222,7 @@ object ReverseProxyActionHelper {
               case None       => false
               case Some(algo) => {
                 Try {
+                  logger.debug(s"trying to validate challenge with state ${stateValue} for token ${resp}")
                   val jwt = JWT
                     .require(algo)
                     .withAudience(env.Headers.OtoroshiIssuer)
@@ -234,17 +235,23 @@ object ReverseProxyActionHelper {
                   val iat =
                     Option(jwt.getClaim("iat")).filterNot(_.isNull).map(_.asLong())
                   if (exp.isEmpty || iat.isEmpty) {
+                    logger.debug(s"missing claim exp (${exp}) or iat (${iat})")
                     false
                   } else {
                     if ((exp.get - iat.get) <= descriptor.secComTtl.toSeconds) { // seconds
+                      logger.debug(s"challenge validated")
                       true
                     } else {
+                      logger.debug(s"jwt expirency is too big (exp:${exp.get} - iat:${iat.get} <= ttl:${descriptor.secComTtl.toSeconds})")
                       false
                     }
                   }
                 } match {
                   case Success(v) => v
-                  case Failure(e) => false
+                  case Failure(e) => {
+                    logger.debug(s"error verifying challenge response jwt ${resp}", e)
+                    false
+                  }
                 }
               }
             }
