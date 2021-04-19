@@ -1510,10 +1510,10 @@ export class SamlModuleConfig extends Component {
     "credentials",
     // "credentials.signingKey.certificate",
     // 'credentials.signingKey.privateKey',
-    'credentials.encryptionKey.certificate',
-    'credentials.encryptionKey.privateKey',
-    'signature.canocalizationMethod',
-    'signature.algorithm',
+    // 'credentials.encryptionKey.certificate',
+    // 'credentials.encryptionKey.privateKey',
+    // 'signature.canocalizationMethod',
+    // 'signature.algorithm',
     "nameIDFormat",
     "relyingPartyIdentifier",
     "issuer",
@@ -1580,89 +1580,102 @@ export class SamlModuleConfig extends Component {
     // }
     'credentials': {
       type: ({ }) => {
-        const [rawPEM, setRawPEM] = useState(true);
+        const [rawSigningPEM, setSigningRawPEM] = useState(false);
+        const [rawEncryptionPEM, setRawEncryptionPEM] = useState(false);
 
-        console.log(this.props.value)
-        const { signingKey } = this.props.value.credentials
-        return (
-          <div>
-            <BooleanInput
-              label="Signing with custom PEM/Private Key"
-              value={rawPEM}
-              help="Enable it when using PEM certificate and private key"
-              onChange={() => setRawPEM(!rawPEM)}
-            />
-            {rawPEM ?
-              <div>
-                <TextareaInput
-                  label="Signing Certificate"
-                  value={signingKey ? signingKey.certificate : ""}
-                  help="..."
-                  onChange={(v) => this.changeTheValue('credentials.signingKey.certificate', v)}
-                />
-                <TextareaInput
-                  label="Signing Private key"
-                  value={signingKey ? signingKey.privateKey : ""}
-                  help="..."
-                  onChange={(v) => this.changeTheValue('credentials.signingKey.privateKey', v)}
-                />
-              </div> :
-              <div>
-                <SelectInput
-                  label="Signing KeyPair"
-                  help="The keypair used to sign/verify documents"
-                  value={signingKey ? signingKey.certId : ""}
-                  onChange={(v) => this.changeTheValue('credentials.signingKey.certId', v)}
-                  valuesFrom="/bo/api/proxy/api/certificates?keypair=true"
-                  transformer={(a) => ({ value: a.id, label: a.name + ' - ' + a.description })}
-                />
-              </div>
+        const { signingKey, encryptionKey } = this.props.value.credentials;
+
+        const configs = [
+          {
+            element: 'documents',
+            switch: {
+              value: rawSigningPEM,
+              setValue: setSigningRawPEM
+            },
+            key: "Signing",
+            path: "credentials.signingKey",
+            value: {
+              certificate: signingKey ? signingKey.certificate : "",
+              privateKey: signingKey ? signingKey.privateKey : "",
+              certId: signingKey ? signingKey.certId : ""
             }
-          </div>
+          },
+          {
+            element: 'assertions',
+            switch: {
+              value: rawEncryptionPEM,
+              setValue: setRawEncryptionPEM
+            },
+            key: "Encryption",
+            path: "credentials.encryptionKey",
+            value: {
+              certificate: encryptionKey ? encryptionKey.certificate : "",
+              privateKey: encryptionKey ? encryptionKey.privateKey : "",
+              certId: encryptionKey ? encryptionKey.certId : ""
+            }
+          }
+        ]
+
+        return (
+          configs.map((config, i) => (
+            <div key={`config${i}`}>
+              <BooleanInput
+                label={`Sign ${config.element} with custom PEM/Private Key`}
+                value={config.switch.value}
+                onChange={() => config.switch.setValue(!config.switch.value)}
+              />
+              {config.switch.value ?
+                <div>
+                  <TextareaInput
+                    label={`${config.key} Certificate`}
+                    value={config.value.certificate}
+                    help="..."
+                    onChange={(v) => this.changeTheValue(`${config.path}.certificate`, v)}
+                  />
+                  <TextareaInput
+                    label={`${config.key} Private Key`}
+                    value={config.value.privateKey}
+                    help="..."
+                    onChange={(v) => this.changeTheValue(`${config.path}.privateKey`, v)}
+                  />
+                  <SelectInput
+                    label="Signature al"
+                    help="The signature algorithm to use to sign documents"
+                    value={this.props.value.signature.algorithm}
+                    onChange={(v) => this.changeTheValue('signature.algorithm', v)}
+                    possibleValues={[
+                      { label: 'RSA_SHA1', value: 'rsa_sha1' },
+                      { label: 'RSA_SHA512', value: 'rsa_sha512' },
+                      { label: 'RSA_SHA256', value: 'rsa_sha256' },
+                      { label: 'DSA_SHA1', value: 'dsa_sha1' }
+                    ]}
+                  />
+                  <SelectInput
+                    label="Canonicalization Method"
+                    help="Canonicalization Method for XML Signatures"
+                    value={this.props.value.signature.canocalizationMethod}
+                    onChange={(v) => this.changeTheValue('signature.canocalizationMethod', v)}
+                    possibleValues={[
+                      { label: 'EXCLUSIVE', value: 'exclusive' },
+                      { label: 'EXCLUSIVE_WITH_COMMENTS', value: 'with_comments' },
+                    ]}
+                  />
+                </div> :
+                <div>
+                  <SelectInput
+                    label={`${config.key} KeyPair`}
+                    help={`The keypair used to sign/verify ${config.element}`}
+                    value={config.value.certId}
+                    onChange={(v) => this.changeTheValue(`${config.path}.certId`, v)}
+                    valuesFrom="/bo/api/proxy/api/certificates?keypair=true"
+                    transformer={(a) => ({ value: a.id, label: a.name + ' - ' + a.description })}
+                  />
+                </div>
+              }
+            </div>
+          ))
         )
       }
-    },
-    // 'credentials.signingKey.privateKey': {
-    //   type: 'text',
-    //   props: {
-    //     label: 'Signing private key'
-    //   }
-    // },
-    'credentials.encryptionKey.certificate': {
-      type: 'text',
-      props: {
-        label: 'Encryption certificate'
-      }
-    },
-    'credentials.encryptionKey.privateKey': {
-      type: 'text',
-      props: {
-        label: 'Encryption private key'
-      }
-    },
-    'signature.canocalizationMethod': {
-      type: 'select',
-      props: {
-        label: 'Canonicalization Method',
-        help: 'Canonicalization Method for XML Signatures',
-        possibleValues: [
-          { label: 'EXCLUSIVE', value: 'exclusive' },
-          { label: 'EXCLUSIVE_WITH_COMMENTS', value: 'with_comments' },
-        ],
-      },
-    },
-    'signature.algorithm': {
-      type: 'select',
-      props: {
-        label: 'Signature algorithm',
-        help: 'The signature algorithm to use to sign documents',
-        possibleValues: [
-          { label: 'RSA_SHA1', value: 'rsa_sha1' },
-          { label: 'RSA_SHA512', value: 'rsa_sha512' },
-          { label: 'RSA_SHA256', value: 'rsa_sha256' },
-          { label: 'DSA_SHA1', value: 'dsa_sha1' }
-        ],
-      },
     },
     nameIDFormat: {
       type: 'select',
@@ -1670,6 +1683,8 @@ export class SamlModuleConfig extends Component {
         label: 'Name ID Format',
         defaultValue: 'The name ID Format to use for the subject',
         possibleValues: [
+          { value: 'unspecified', label: 'Unspecified' },
+          { value: 'emailAddress', label: 'Email address' },
           { value: 'persistent', label: 'Persistent' },
           { value: 'transient', label: 'Transient' },
           { value: 'kerberos', label: 'Kerberos' },

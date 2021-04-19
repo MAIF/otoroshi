@@ -30,13 +30,16 @@ object ValidatorUtils {
         Left(s"Invalid status code: $statusCode")
     }
     
-    def validateIssuer(response: StatusResponseType, responseIssuer: String): Either[String, Unit] =
+    def validateIssuer(response: StatusResponseType, responseIssuer: String): Either[String, Unit] = {
+      println(response.getIssuer.getValue)
+      println(responseIssuer)
       if (response.getIssuer.getValue.equals(responseIssuer))
         Right()
       else
         Left("The response issuer didn't match the expected value")
+    }
 
-    def validateIssuer(request: RequestAbstractType, requestIssuer: String): Either[String, Unit] =
+  def validateIssuer(request: RequestAbstractType, requestIssuer: String): Either[String, Unit] =
       if (!request.getIssuer.getValue.equals(requestIssuer))
         Right()
       else

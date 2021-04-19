@@ -68,6 +68,7 @@ case class SAMLModule(samlConfig: SamlAuthModuleConfig) extends AuthModule {
       case Left(value) => FastFuture.successful(BadRequest(value.getMessage))
       case Right(encoded) =>
         val e = URLEncoder.encode(encoded, "UTF-8")
+        //val e = "PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4gPHNhbWwycDpBdXRoblJlcXVlc3QgICAgIHhtbG5zOnNhbWwycD0idXJuOm9hc2lzOm5hbWVzOnRjOlNBTUw6Mi4wOnByb3RvY29sIiAgICAgRGVzdGluYXRpb249Imh0dHA6Ly9sb2NhbGhvc3Q6ODA4MC9hdXRoL3JlYWxtcy9tYXN0ZXIvcHJvdG9jb2wvc2FtbCIgICAgIFByb3RvY29sQmluZGluZz0idXJuOm9hc2lzOm5hbWVzOnRjOlNBTUw6Mi4wOmJpbmRpbmdzOkhUVFAtUE9TVCIgICAgIFZlcnNpb249IjIuMCI+ICAgIDxzYW1sMnA6TmFtZUlEUG9saWN5IEZvcm1hdD0idXJuOm9hc2lzOm5hbWVzOnRjOlNBTUw6MS4xOm5hbWVpZC1mb3JtYXQ6dW5zcGVjaWZpZWQiIC8+IDwvc2FtbDJwOkF1dGhuUmVxdWVzdD4g"
         println(s"${samlConfig.idpUrl}?SAMLRequest=$e")
         Redirect(s"${samlConfig.idpUrl}?SAMLRequest=$e")
           .addingToSession("hash" -> env.sign(s"${samlConfig.id}:::backoffice"))(request)
@@ -96,6 +97,8 @@ case class SAMLModule(samlConfig: SamlAuthModuleConfig) extends AuthModule {
     request.body.asFormUrlEncoded match {
       case Some(body) =>
         val samlResponse = body("SAMLResponse").head
+
+        println(samlResponse)
 
         decodeAndValidateSamlResponse(samlConfig, samlResponse, "") match {
           case Left(value)        =>
@@ -270,30 +273,42 @@ object NameIDFormat {
     val value = "urn:oasis:names:tc:SAML:2.0:nameid-format:entity"
     val name = "entity"
   }
+  case object EmailAddress extends NameIDFormat {
+    val value = "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress"
+    val name = "emailAddress"
+  }
+  case object Unspecified extends NameIDFormat {
+    val value = "urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified"
+    val name = "unspecified"
+  }
   def apply(name: String): Option[NameIDFormat] = {
     name.toLowerCase.trim match {
-      case "persistent" => Some(Persistent)
-      case "transient"  => Some(Transient)
-      case "kerberos"   => Some(Kerberos)
-      case "entity"     => Some(Entity)
+      case "persistent"   => Some(Persistent)
+      case "transient"    => Some(Transient)
+      case "kerberos"     => Some(Kerberos)
+      case "entity"       => Some(Entity)
+      case "emailAddress" => Some(EmailAddress)
+      case "unspecified"  => Some(Unspecified)
     }
   }
 }
 
-case class Credential (certificate: String, privateKey: String)
+case class Credential (certificate: String, privateKey: String, certId: String)
 
 object Credential {
   def fmt = new Format[Credential] {
     override def writes(o: Credential) = Json.obj(
       "certificate" -> o.certificate,
-      "privateKey"  -> o.privateKey
+      "privateKey"  -> o.privateKey,
+      "certId" -> o.certId
     )
     override def reads(json: JsValue) =
       Try {
         JsSuccess(
           Credential(
             certificate = (json \ "certificate").as[String],
-            privateKey = (json \ "privateKey").as[String]
+            privateKey = (json \ "privateKey").as[String],
+            certId = (json \ "certId").as[String]
           )
         )
       } recover { case e =>
@@ -448,13 +463,13 @@ case class SamlAuthModuleConfig (
                         desc: String,
                         sessionMaxAge: Int = 86400,
                         idpUrl: String,
-                        protocolBinding: SAMLProtocolBinding = SAMLProtocolBinding.Post,
+                        protocolBinding: SAMLProtocolBinding = SAMLProtocolBinding.Redirect,
                         credentials: SAMLCredentials = SAMLCredentials(None, None),
                         signature: SAMLSignature = SAMLSignature(
                           canocalizationMethod = SAMLCanocalizationMethod.Exclusive,
                           algorithm = SAMLSignatureAlgorithm.RSA_SHA256
                         ),
-                        nameIDFormat: NameIDFormat = NameIDFormat.Transient,
+                        nameIDFormat: NameIDFormat = NameIDFormat.Unspecified,
                         tags: Seq[String],
                         issuer: String,
                         location: otoroshi.models.EntityLocation = otoroshi.models.EntityLocation(),
@@ -533,7 +548,7 @@ object SAMLModule {
     request.setNameIDPolicy(nameIDPolicy)
 
     val issuer = buildObject(Issuer.DEFAULT_ELEMENT_NAME).asInstanceOf[Issuer]
-    issuer.setValue("http://www.okta.com/exklbrcf6PPdnpE3Q5d6")
+    issuer.setValue(samlConfig.issuer)
     request.setIssuer(issuer)
 
     request.setIssueInstant(Instant.now())
