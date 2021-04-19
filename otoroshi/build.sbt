@@ -84,7 +84,12 @@ libraryDependencies ++= Seq(
   "org.scalatestplus.play"          %% "scalatestplus-play"          % "5.1.0" % Test,
   // do not update because the feature is deprecated and will be removed
   "org.reactivemongo"               %% "reactivemongo"               % "0.20.13",
-  "org.iq80.leveldb"                 % "leveldb"                     % "0.12"
+  "org.iq80.leveldb"                 % "leveldb"                     % "0.12",
+
+  "org.opensaml"                     % "opensaml-core"               % "4.0.1",
+  "org.opensaml"                     % "opensaml-saml-api"           % "4.0.1",
+  //"org.opensaml"                     % "opensaml-xmlsec-impl"        % "4.0.1",
+  "org.opensaml"                     % "opensaml-saml-impl"          % "4.0.1"
 )
 
 scalacOptions ++= Seq(

@@ -72,6 +72,7 @@ POST    /bo/api/auth/:id/_check                               otoroshi.controlle
 POST    /bo/api/auth/_check                                   otoroshi.controllers.BackOfficeController.checkLdapConnection()
 
 POST    /bo/api/oidc/_fetchConfig                             otoroshi.controllers.BackOfficeController.fetchOpenIdConfiguration()
+POST    /bo/api/saml/_fetchConfig                             otoroshi.controllers.BackOfficeController.fetchSAMLConfiguration()
 
 # Admin API proxy
 GET     /bo/api/proxy/*path                                   otoroshi.controllers.BackOfficeController.proxyAdminApi(path)

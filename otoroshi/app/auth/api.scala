@@ -1,5 +1,6 @@
 package otoroshi.auth
 
+import auth.saml.{SAMLModule, SamlAuthModuleConfig}
 import otoroshi.env.Env
 import otoroshi.models._
 import otoroshi.models.{UserRight, UserRights}
@@ -30,7 +31,7 @@ trait AuthModule {
   ): Future[Either[String, PrivateAppsUser]]
 
   def boLoginPage(request: RequestHeader, config: GlobalConfig)(implicit ec: ExecutionContext, env: Env): Future[Result]
-  def boLogout(request: RequestHeader, config: GlobalConfig)(implicit
+  def boLogout(request: RequestHeader, user: BackOfficeUser, config: GlobalConfig)(implicit
       ec: ExecutionContext,
       env: Env
   ): Future[Option[String]]
@@ -104,6 +105,7 @@ object AuthModuleConfig {
         case "oauth2-global" => GenericOauth2ModuleConfig._fmt.reads(json)
         case "basic"         => BasicAuthModuleConfig._fmt.reads(json)
         case "ldap"          => LdapAuthModuleConfig._fmt.reads(json)
+        case "saml"          => SamlAuthModuleConfig._fmt.reads(json)
         case _               => JsError("Unknown auth. config type")
       }
     override def writes(o: AuthModuleConfig): JsValue             = o.asJson
@@ -191,6 +193,15 @@ trait AuthConfigsDataStore extends BasicStore[AuthModuleConfig] {
           tags = Seq.empty,
           metadata = Map.empty,
           sessionCookieValues = SessionCookieValues()
+        )
+      case Some("saml")          =>
+        SamlAuthModuleConfig(
+          id    = IdGenerator.token,
+          name  = "New auth. module",
+          desc  = "New auth. module",
+          tags  = Seq.empty,
+          idpUrl = "",
+          issuer = ""
         )
       case _                     =>
         BasicAuthModuleConfig(

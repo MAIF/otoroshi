@@ -257,7 +257,7 @@ case class GenericOauth2Module(authConfig: OAuth2ModuleConfig) extends AuthModul
       .asFuture
   }
 
-  override def boLogout(request: RequestHeader, config: GlobalConfig)(implicit
+  override def boLogout(request: RequestHeader, user: BackOfficeUser, config: GlobalConfig)(implicit
       ec: ExecutionContext,
       env: Env
   ): Future[Option[String]] = {

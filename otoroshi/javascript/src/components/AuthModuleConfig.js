@@ -1,4 +1,4 @@
-import React, { Component, Suspense } from 'react';
+import React, { Component, Suspense, useState } from 'react';
 
 import {
   TextInput,
@@ -8,6 +8,7 @@ import {
   BooleanInput,
   PasswordInput,
   ArrayInput,
+  TextareaInput,
 } from './inputs';
 
 const CodeInput = React.lazy(() => Promise.resolve(require('./inputs/CodeInput')));
@@ -25,7 +26,7 @@ import _ from 'lodash';
 import faker from 'faker';
 import bcrypt from 'bcryptjs';
 import { JsonObjectAsCodeInput } from './inputs/CodeInput';
-import { SimpleBooleanInput } from './inputs/BooleanInput';
+import { Form } from './inputs';
 
 function Base64Url() {
   let chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
@@ -1083,11 +1084,11 @@ export class LdapModuleConfig extends Component {
           onChange={(v) => changeTheValue(path + '.superAdmins', v)}
         />
         <ArrayInput
-            label="LDAP Server URL"
-            placeholder="Set your LDAP server"
-            value={settings.serverUrls}
-            help="List of your LDAP servers"
-            onChange={(v) => changeTheValue(path + '.serverUrls', v)} />
+          label="LDAP Server URL"
+          placeholder="Set your LDAP server"
+          value={settings.serverUrls}
+          help="List of your LDAP servers"
+          onChange={(v) => changeTheValue(path + '.serverUrls', v)} />
         <TextInput
           label="Search Base"
           value={settings.searchBase}
@@ -1363,6 +1364,7 @@ export class AuthModuleConfig extends Component {
         label="Type"
         value={settings.type}
         onChange={(e) => {
+          console.log(e)
           BackOfficeServices.createNewAuthConfig(e).then((templ) => {
             this.props.onChange(templ);
           });
@@ -1454,12 +1456,13 @@ export class AuthModuleConfig extends Component {
           { label: 'OAuth2 / OIDC provider', value: 'oauth2' },
           { label: 'In memory auth. provider', value: 'basic' },
           { label: 'Ldap auth. provider', value: 'ldap' },
+          { label: 'SAML provider', value: 'saml' }
         ]}
         help="The type of settings to log into your app."
       />
     );
 
-    if (!['oauth2', 'basic', 'ldap'].includes(settings.type)) {
+    if (!['oauth2', 'basic', 'ldap', 'saml'].includes(settings.type)) {
       return <h3>Unknown config type ...</h3>;
     }
 
@@ -1477,6 +1480,7 @@ export class AuthModuleConfig extends Component {
         {settings.type === 'oauth2' && <Oauth2ModuleConfig {...this.props} />}
         {settings.type === 'basic' && <BasicModuleConfig {...this.props} />}
         {settings.type === 'ldap' && <LdapModuleConfig {...this.props} />}
+        {settings.type === 'saml' && <SamlModuleConfig {...this.props} />}
         <Separator title="Module metadata" />
         <ArrayInput
           label="Tags"
@@ -1489,6 +1493,286 @@ export class AuthModuleConfig extends Component {
           onChange={(v) => this.changeTheValue(path + '.metadata', v)}
         />
         <SessionCookieConfig {...this.props} />
+      </div>
+    );
+  }
+}
+
+export class SamlModuleConfig extends Component {
+  flow = [
+    "warning",
+    "id",
+    "name",
+    "desc",
+    "idpUrl",
+    // "assertionConsumerServiceUrl",
+    "protocolBinding",
+    "credentials",
+    // "credentials.signingKey.certificate",
+    // 'credentials.signingKey.privateKey',
+    'credentials.encryptionKey.certificate',
+    'credentials.encryptionKey.privateKey',
+    'signature.canocalizationMethod',
+    'signature.algorithm',
+    "nameIDFormat",
+    "relyingPartyIdentifier",
+    "issuer",
+    "validateSignature",
+    "validatingCertificates"
+  ];
+
+  changeTheValue = (name, value) => {
+    if (this.props.onChange)
+      this.props.onChange(deepSet(
+        _.cloneDeep(this.props.value || this.props.settings),
+        name.startsWith('.') ? name.substr(1) : name,
+        value
+      ));
+    else
+      this.props.changeTheValue(name, value);
+  };
+
+  schema = {
+    warning: {
+      type: ({ }) => {
+        if (this.props.value.warning) {
+          const { warning } = this.props.value;
+          return <div className="form-group">
+            <label className="col-xs-12 col-sm-2 control-label"></label>
+            <div className="col-sm-10">{warning.error ? warning.error : warning.success}</div>
+          </div>
+        }
+        return null
+      }
+    },
+    id: { type: 'string', disabled: true, props: { label: 'Id', placeholder: '---' } },
+    name: {
+      type: 'string',
+      props: { label: 'Name', placeholder: 'New SAML config' }
+    },
+    desc: {
+      type: 'string',
+      props: { label: 'Description', placeholder: 'New SAML Description' }
+    },
+    idpUrl: {
+      type: 'string',
+      props: { label: 'IDP url' }
+    },
+    // assertionConsumerServiceUrl: {
+    //   type: 'string',
+    //   props: { label: 'URL of the Assertion Consumer Service' }
+    // },
+    protocolBinding: {
+      type: 'select',
+      props: {
+        label: 'The protocol binding URI for the request',
+        defaultValue: 'post',
+        possibleValues: [
+          { value: 'post', label: 'Post' },
+          { value: 'redirect', label: 'Redirect' }
+        ],
+      },
+    },
+    // 'credentials.signingKey.certificate': 
+    // type: 'text',
+    // props: {
+    //   label: 'Signing certificate'
+    // }
+    'credentials': {
+      type: ({ }) => {
+        const [rawPEM, setRawPEM] = useState(true);
+
+        console.log(this.props.value)
+        const { signingKey } = this.props.value.credentials
+        return (
+          <div>
+            <BooleanInput
+              label="Signing with custom PEM/Private Key"
+              value={rawPEM}
+              help="Enable it when using PEM certificate and private key"
+              onChange={() => setRawPEM(!rawPEM)}
+            />
+            {rawPEM ?
+              <div>
+                <TextareaInput
+                  label="Signing Certificate"
+                  value={signingKey ? signingKey.certificate : ""}
+                  help="..."
+                  onChange={(v) => this.changeTheValue('credentials.signingKey.certificate', v)}
+                />
+                <TextareaInput
+                  label="Signing Private key"
+                  value={signingKey ? signingKey.privateKey : ""}
+                  help="..."
+                  onChange={(v) => this.changeTheValue('credentials.signingKey.privateKey', v)}
+                />
+              </div> :
+              <div>
+                <SelectInput
+                  label="Signing KeyPair"
+                  help="The keypair used to sign/verify documents"
+                  value={signingKey ? signingKey.certId : ""}
+                  onChange={(v) => this.changeTheValue('credentials.signingKey.certId', v)}
+                  valuesFrom="/bo/api/proxy/api/certificates?keypair=true"
+                  transformer={(a) => ({ value: a.id, label: a.name + ' - ' + a.description })}
+                />
+              </div>
+            }
+          </div>
+        )
+      }
+    },
+    // 'credentials.signingKey.privateKey': {
+    //   type: 'text',
+    //   props: {
+    //     label: 'Signing private key'
+    //   }
+    // },
+    'credentials.encryptionKey.certificate': {
+      type: 'text',
+      props: {
+        label: 'Encryption certificate'
+      }
+    },
+    'credentials.encryptionKey.privateKey': {
+      type: 'text',
+      props: {
+        label: 'Encryption private key'
+      }
+    },
+    'signature.canocalizationMethod': {
+      type: 'select',
+      props: {
+        label: 'Canonicalization Method',
+        help: 'Canonicalization Method for XML Signatures',
+        possibleValues: [
+          { label: 'EXCLUSIVE', value: 'exclusive' },
+          { label: 'EXCLUSIVE_WITH_COMMENTS', value: 'with_comments' },
+        ],
+      },
+    },
+    'signature.algorithm': {
+      type: 'select',
+      props: {
+        label: 'Signature algorithm',
+        help: 'The signature algorithm to use to sign documents',
+        possibleValues: [
+          { label: 'RSA_SHA1', value: 'rsa_sha1' },
+          { label: 'RSA_SHA512', value: 'rsa_sha512' },
+          { label: 'RSA_SHA256', value: 'rsa_sha256' },
+          { label: 'DSA_SHA1', value: 'dsa_sha1' }
+        ],
+      },
+    },
+    nameIDFormat: {
+      type: 'select',
+      props: {
+        label: 'Name ID Format',
+        defaultValue: 'The name ID Format to use for the subject',
+        possibleValues: [
+          { value: 'persistent', label: 'Persistent' },
+          { value: 'transient', label: 'Transient' },
+          { value: 'kerberos', label: 'Kerberos' },
+          { value: 'entity', label: 'Entity' }
+        ],
+      },
+    },
+    // relyingPartyIdentifier: {
+    //   type: 'string',
+    //   props: {
+    //     label: 'IDP Initiated SSO Relay State'
+    //   }
+    // },
+    issuer: {
+      type: 'string',
+      props: {
+        label: 'URL issuer'
+      }
+    },
+    validateSignature: {
+      type: 'bool',
+      props: {
+        label: 'Validate Signature',
+        help: 'Enable/disable signature validation of SAML responses'
+      },
+    },
+    validatingCertificates: {
+      type: 'array',
+      props: {
+        label: 'Validating Certificates',
+        help: 'The certificate in PEM format that must be used to check for signatures.'
+      },
+    },
+  };
+
+  fetchFromURL = () => {
+    window.newPrompt('URL of the entity descriptor config')
+      .then(url => {
+        if (url)
+          this._fetchConfig({ url })
+      });
+  }
+
+  _fetchConfig = body => {
+    fetch('/bo/api/saml/_fetchConfig', {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        "Content-Type": 'application/json'
+      },
+      body: JSON.stringify(body)
+    })
+      .then(res => {
+        const onError = res.status >= 400
+        res.json()
+          .then(r => {
+            if (onError)
+              this.props.onChange({
+                ...this.props.value,
+                warning: {
+                  error: r.error
+                }
+              })
+            else
+              this.props.onChange({
+                ...r,
+                warning: {
+                  success: 'Config loaded'
+                }
+              })
+          })
+      })
+  }
+
+  fetchConfig = () => {
+    window
+      .newPrompt('Entities descriptor config', { value: '', textarea: true, rows: 12 })
+      .then(xml => {
+        if (xml)
+          this._fetchConfig({ xml })
+      });
+  }
+
+  render() {
+    return (
+      <div>
+        <div className="form-group">
+          <label htmlFor={`input-${this.props.label}`} className="col-xs-12 col-sm-2 control-label"></label>
+          <div className="col-sm-10">
+            <button type="button" className="btn btn-success" onClick={this.fetchFromURL}>
+              Get entity descriptor from URL
+            </button>
+            <button type="button" className="btn btn-success" onClick={this.fetchConfig}>
+              Paste config
+            </button>
+          </div>
+        </div>
+        <Form
+          value={this.props.value}
+          onChange={this.props.onChange}
+          flow={this.flow}
+          schema={this.schema}
+        />
       </div>
     );
   }

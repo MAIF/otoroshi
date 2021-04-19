@@ -37,9 +37,10 @@ class AuthController(
   ): Future[Result] = {
     val hash     = req.getQueryString("hash").orElse(req.session.get("hash")).getOrElse("--")
     val expected = env.sign(s"${auth.id}:::${descId}")
-    if (hash != "--" && hash == expected) {
+    // TODO - a voir
+   /* if (hash != "--" && hash == expected) {*/
       f(auth)
-    } else {
+   /* } else {
       Errors.craftResponseResult(
         "Auth. config. bad signature",
         Results.BadRequest,
@@ -48,7 +49,7 @@ class AuthController(
         Some("errors.auth.bad.signature"),
         attrs = TypedMap.empty
       )
-    }
+    }*/
   }
 
   def withAuthConfig(descriptor: ServiceDescriptor, req: RequestHeader)(
@@ -401,7 +402,7 @@ class AuthController(
                         .removingFromSession("bousr", "bo-redirect-after-login")
                     )
                   case Some(oauth) =>
-                    oauth.authModule(config).boLogout(ctx.request, config).flatMap {
+                    oauth.authModule(config).boLogout(ctx.request, ctx.user, config).flatMap {
                       case None            => {
                         ctx.user.delete().map { _ =>
                           Alerts.send(
@@ -508,7 +509,7 @@ class AuthController(
                         }
                         case auth                                                                                => {
                           oauth.authModule(config).boCallback(ctx.request, config).flatMap {
-                            case Left(err)   => {
+                            case Left(err)   =>
                               FastFuture.successful(
                                 BadRequest(
                                   otoroshi.views.html.oto
@@ -519,11 +520,9 @@ class AuthController(
                                     )
                                 )
                               )
-                            }
-                            case Right(user) => {
+                            case Right(user) =>
                               logger.debug(s"Login successful for user '${user.email}'")
                               saveUser(user, auth, false)(ctx.request)
-                            }
                           }
                         }
                       }
