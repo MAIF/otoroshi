@@ -1,11 +1,13 @@
 package auth.saml
 
+import akka.http.scaladsl.model.{ContentTypes, FormData, HttpEntity, HttpMethod, HttpMethods, HttpRequest, HttpResponse}
 import akka.http.scaladsl.util.FastFuture
-import auth.saml.SAMLModule.{decodeAndValidateSamlResponse, encodedCertToX509Certificate, getLogoutRequest, getRequest}
+import auth.saml.SAMLModule.{decodeAndValidateSamlResponse, getLogoutRequest, getRequest}
 import com.nimbusds.jose.util.X509CertUtils
 import net.shibboleth.utilities.java.support.xml.BasicParserPool
 import org.apache.pulsar.shade.org.apache.commons.io.IOUtils
 import org.apache.pulsar.shade.org.apache.commons.io.input.BOMInputStream
+import play.shaded.ahc.org.asynchttpclient.request.body.multipart.StringPart
 import org.opensaml.core.xml.XMLObject
 import org.opensaml.core.config.InitializationService
 import org.opensaml.core.xml.config.XMLObjectProviderRegistrySupport
@@ -37,8 +39,10 @@ import otoroshi.security.IdGenerator
 import otoroshi.utils.future.Implicits.EnhancedObject
 import play.api.Logger
 import play.api.libs.json.{Format, JsArray, JsError, JsString, JsSuccess, JsValue, Json}
-import play.api.mvc.Results.{BadRequest, Redirect}
+import play.api.mvc.Results.{BadRequest, Ok, Redirect}
 import play.api.mvc.{AnyContent, Request, RequestHeader, Result}
+import play.shaded.ahc.org.asynchttpclient.AsyncHttpClient
+import play.shaded.ahc.org.asynchttpclient.request.body.multipart.part.StringMultipartPart
 
 import java.net.URLEncoder
 import java.security.{KeyFactory, PrivateKey}
@@ -67,12 +71,18 @@ case class SAMLModule(samlConfig: SamlAuthModuleConfig) extends AuthModule {
     encodedRequest match {
       case Left(value) => FastFuture.successful(BadRequest(value.getMessage))
       case Right(encoded) =>
-        val e = URLEncoder.encode(encoded, "UTF-8")
-        //val e = "PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4gPHNhbWwycDpBdXRoblJlcXVlc3QgICAgIHhtbG5zOnNhbWwycD0idXJuOm9hc2lzOm5hbWVzOnRjOlNBTUw6Mi4wOnByb3RvY29sIiAgICAgRGVzdGluYXRpb249Imh0dHA6Ly9sb2NhbGhvc3Q6ODA4MC9hdXRoL3JlYWxtcy9tYXN0ZXIvcHJvdG9jb2wvc2FtbCIgICAgIFByb3RvY29sQmluZGluZz0idXJuOm9hc2lzOm5hbWVzOnRjOlNBTUw6Mi4wOmJpbmRpbmdzOkhUVFAtUE9TVCIgICAgIFZlcnNpb249IjIuMCI+ICAgIDxzYW1sMnA6TmFtZUlEUG9saWN5IEZvcm1hdD0idXJuOm9hc2lzOm5hbWVzOnRjOlNBTUw6MS4xOm5hbWVpZC1mb3JtYXQ6dW5zcGVjaWZpZWQiIC8+IDwvc2FtbDJwOkF1dGhuUmVxdWVzdD4g"
-        println(s"${samlConfig.idpUrl}?SAMLRequest=$e")
-        Redirect(s"${samlConfig.idpUrl}?SAMLRequest=$e")
-          .addingToSession("hash" -> env.sign(s"${samlConfig.id}:::backoffice"))(request)
-        .asFuture
+        println(encoded)
+
+        if (samlConfig.protocolBinding == SAMLProtocolBinding.Post) {
+          FastFuture.successful(Ok(otoroshi.views.html.oto.saml(encoded, samlConfig.idpUrl, env)))
+        } else {
+          val e = URLEncoder.encode(encoded, "UTF-8")
+          println(s"${samlConfig.idpUrl}?SAMLRequest=$e")
+
+          Redirect(s"${samlConfig.idpUrl}?SAMLRequest=$e")
+            .addingToSession("hash" -> env.sign(s"${samlConfig.id}:::backoffice"))(request)
+            .asFuture
+        }
     }
   }
 

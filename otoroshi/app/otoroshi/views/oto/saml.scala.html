@@ -1,0 +1,12 @@
+@import otoroshi.env.Env
+
+@(samlRequest: String, idpUrl: String, _env: Env)
+
+@main("HTTP-POST binding", _env) {
+    <div>
+        <form id="samlId" action="@(idpUrl)" method="POST">
+            <input type="hidden" id="SAMLRequest" value="@(samlRequest)" />
+        </form>
+        <script type='text/javascript'>document.getElementById('samlId').submit();</script>
+    </div>
+}
